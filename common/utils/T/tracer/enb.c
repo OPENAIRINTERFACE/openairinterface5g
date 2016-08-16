@@ -33,9 +33,6 @@ typedef struct {
   pthread_mutex_t lock;
 } enb_data;
 
-#define DEFAULT_REMOTE_IP "127.0.0.1"
-#define DEFAULT_REMOTE_PORT 2021
-
 void is_on_changed(void *_d)
 {
   enb_data *d = _d;
@@ -116,8 +113,11 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   widget *text;
   view *textview;
   int i;
+  widget *w;
+  view *v;
+  logger *l;
 
-  main_window = new_toplevel_window(g, 800, 600, "eNB tracer");
+  main_window = new_toplevel_window(g, 1200, 900, "eNB tracer");
   top_container = new_container(g, VERTICAL);
   widget_add_child(g, main_window, top_container, -1);
 
@@ -129,14 +129,44 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   widget_add_child(g, line, input_signal_plot, -1);
   xy_plot_set_range(g, input_signal_plot, 0, 7680*10, 20, 70);
   input_signal_log = new_framelog(h, database,
-      "ENB_INPUT_SIGNAL", "subframe", "rxdata");
+      "ENB_PHY_INPUT_SIGNAL", "subframe", "rxdata");
   /* a skip value of 10 means to process 1 frame over 10, that is
    * more or less 10 frames per second
    */
   framelog_set_skip(input_signal_log, 10);
   input_signal_view = new_view_xy(7680*10, 10,
-      g, input_signal_plot, new_color(g, "#0c0c72"));
+      g, input_signal_plot, new_color(g, "#0c0c72"), XY_LOOP_MODE);
   logger_add_view(input_signal_log, input_signal_view);
+
+  /* UE 0 PUSCH IQ data */
+  w = new_xy_plot(g, 55, 55, "PUSCH IQ", 50);
+  widget_add_child(g, line, w, -1);
+  xy_plot_set_range(g, w, -1000, 1000, -1000, 1000);
+  l = new_iqlog(h, database, "ENB_PHY_PUSCH_IQ", "nb_rb",
+      "N_RB_UL", "symbols_per_tti", "pusch_comp");
+  v = new_view_xy(100*12*14,10,g,w,new_color(g,"#000"),XY_FORCED_MODE);
+  logger_add_view(l, v);
+  logger_set_filter(l,
+      filter_eq(
+        filter_evarg(database, "ENB_PHY_PUSCH_IQ", "UE_ID"),
+        filter_int(0)
+      ));
+
+  /* UE 0 estimated UL channel */
+  w = new_xy_plot(g, 256*2, 55, "UL estimated channel", 50);
+  widget_add_child(g, line, w, -1);
+  xy_plot_set_range(g, w, 0, 512*10, -10, 80);
+  l = new_framelog(h, database,
+      "ENB_PHY_UL_CHANNEL_ESTIMATE", "subframe", "chest_t");
+  //framelog_set_skip(input_signal_log, 10);
+  framelog_set_update_only_at_sf9(l, 0);
+  v = new_view_xy(512*10, 10, g, w, new_color(g, "#0c0c72"), XY_LOOP_MODE);
+  logger_add_view(l, v);
+  logger_set_filter(l,
+      filter_eq(
+        filter_evarg(database, "ENB_PHY_UL_CHANNEL_ESTIMATE", "UE_ID"),
+        filter_int(0)
+      ));
 
   /* downlink/uplink UE DCIs */
   widget_add_child(g, top_container,
@@ -151,40 +181,40 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
         new_color(g, i==0 || i==4 ? "#aaf" : "#eee"));
   timeview = new_view_time(3600, 10, g, timeline_plot);
   /* DL tick logging */
-  timelog = new_timelog(h, database, "ENB_DL_TICK");
+  timelog = new_timelog(h, database, "ENB_PHY_DL_TICK");
   subview = new_subview_time(timeview, 0, new_color(g, "#77c"), 3600*1000);
   logger_add_view(timelog, subview);
   /* DL DCI logging */
-  timelog = new_timelog(h, database, "ENB_DLSCH_UE_DCI");
+  timelog = new_timelog(h, database, "ENB_PHY_DLSCH_UE_DCI");
   subview = new_subview_time(timeview, 1, new_color(g, "#228"), 3600*1000);
   logger_add_view(timelog, subview);
   /* DL ACK */
-  timelog = new_timelog(h, database, "ENB_DLSCH_UE_ACK");
+  timelog = new_timelog(h, database, "ENB_PHY_DLSCH_UE_ACK");
   subview = new_subview_time(timeview, 2, new_color(g, "#282"), 3600*1000);
   logger_add_view(timelog, subview);
   /* DL NACK */
-  timelog = new_timelog(h, database, "ENB_DLSCH_UE_NACK");
+  timelog = new_timelog(h, database, "ENB_PHY_DLSCH_UE_NACK");
   subview = new_subview_time(timeview, 3, new_color(g, "#f22"), 3600*1000);
   logger_add_view(timelog, subview);
 
   /* UL tick logging */
-  timelog = new_timelog(h, database, "ENB_UL_TICK");
+  timelog = new_timelog(h, database, "ENB_PHY_UL_TICK");
   subview = new_subview_time(timeview, 4, new_color(g, "#77c"), 3600*1000);
   logger_add_view(timelog, subview);
   /* UL DCI logging */
-  timelog = new_timelog(h, database, "ENB_ULSCH_UE_DCI");
+  timelog = new_timelog(h, database, "ENB_PHY_ULSCH_UE_DCI");
   subview = new_subview_time(timeview, 5, new_color(g, "#228"), 3600*1000);
   logger_add_view(timelog, subview);
   /* UL retransmission without DCI logging */
-  timelog = new_timelog(h, database, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION");
+  timelog = new_timelog(h,database,"ENB_PHY_ULSCH_UE_NO_DCI_RETRANSMISSION");
   subview = new_subview_time(timeview, 5, new_color(g, "#f22"), 3600*1000);
   logger_add_view(timelog, subview);
   /* UL ACK */
-  timelog = new_timelog(h, database, "ENB_ULSCH_UE_ACK");
+  timelog = new_timelog(h, database, "ENB_PHY_ULSCH_UE_ACK");
   subview = new_subview_time(timeview, 6, new_color(g, "#282"), 3600*1000);
   logger_add_view(timelog, subview);
   /* UL NACK */
-  timelog = new_timelog(h, database, "ENB_ULSCH_UE_NACK");
+  timelog = new_timelog(h, database, "ENB_PHY_ULSCH_UE_NACK");
   subview = new_subview_time(timeview, 7, new_color(g, "#f22"), 3600*1000);
   logger_add_view(timelog, subview);
 
@@ -212,72 +242,73 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   logger_add_view(timelog, subview);
   /* DL harq pids */
   for (i = 0; i < 8; i++) {
-    timelog = new_ticklog(h, database, "ENB_DLSCH_UE_DCI",
+    timelog = new_ticklog(h, database, "ENB_PHY_DLSCH_UE_DCI",
         "frame", "subframe");
     subview = new_subview_ticktime(timeview, i+1,
         new_color(g,"#55f"), 3600*1000);
     logger_add_view(timelog, subview);
     logger_set_filter(timelog,
-        ticktime_filter(database, "ENB_DLSCH_UE_DCI", i));
+        ticktime_filter(database, "ENB_PHY_DLSCH_UE_DCI", i));
   }
   /* DL ACK */
   for (i = 0; i < 8; i++) {
-    timelog = new_ticklog(h, database, "ENB_DLSCH_UE_ACK",
+    timelog = new_ticklog(h, database, "ENB_PHY_DLSCH_UE_ACK",
         "frame", "subframe");
     subview = new_subview_ticktime(timeview, i+1,
         new_color(g,"#282"), 3600*1000);
     logger_add_view(timelog, subview);
     logger_set_filter(timelog,
-        ticktime_filter(database, "ENB_DLSCH_UE_ACK", i));
+        ticktime_filter(database, "ENB_PHY_DLSCH_UE_ACK", i));
   }
   /* DL NACK */
   for (i = 0; i < 8; i++) {
-    timelog = new_ticklog(h, database, "ENB_DLSCH_UE_NACK",
+    timelog = new_ticklog(h, database, "ENB_PHY_DLSCH_UE_NACK",
         "frame", "subframe");
     subview = new_subview_ticktime(timeview, i+1,
         new_color(g,"#f22"), 3600*1000);
     logger_add_view(timelog, subview);
     logger_set_filter(timelog,
-        ticktime_filter(database, "ENB_DLSCH_UE_NACK", i));
+        ticktime_filter(database, "ENB_PHY_DLSCH_UE_NACK", i));
   }
   /* UL harq pids */
   for (i = 0; i < 8; i++) {
     /* first transmission */
-    timelog = new_ticklog(h, database, "ENB_ULSCH_UE_DCI",
+    timelog = new_ticklog(h, database, "ENB_PHY_ULSCH_UE_DCI",
         "frame", "subframe");
     subview = new_subview_ticktime(timeview, i+9+1,
         new_color(g,"#55f"), 3600*1000);
     logger_add_view(timelog, subview);
     logger_set_filter(timelog,
-        ticktime_filter(database, "ENB_ULSCH_UE_DCI", i));
+        ticktime_filter(database, "ENB_PHY_ULSCH_UE_DCI", i));
     /* retransmission */
-    timelog = new_ticklog(h, database, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION",
-        "frame", "subframe");
+    timelog = new_ticklog(h, database,
+        "ENB_PHY_ULSCH_UE_NO_DCI_RETRANSMISSION", "frame", "subframe");
     subview = new_subview_ticktime(timeview, i+9+1,
         new_color(g,"#99f"), 3600*1000);
     logger_add_view(timelog, subview);
     logger_set_filter(timelog,
-        ticktime_filter(database, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION", i));
+        ticktime_filter(database,
+            "ENB_PHY_ULSCH_UE_NO_DCI_RETRANSMISSION", i));
   }
   /* UL ACK */
   for (i = 0; i < 8; i++) {
-    timelog = new_ticklog(h, database, "ENB_ULSCH_UE_ACK",
+    timelog = new_ticklog(h, database, "ENB_PHY_ULSCH_UE_ACK",
         "frame", "subframe");
     subview = new_subview_ticktime(timeview, i+9+1,
         new_color(g,"#282"), 3600*1000);
     logger_add_view(timelog, subview);
     logger_set_filter(timelog,
-        ticktime_filter(database, "ENB_ULSCH_UE_ACK", i));
+        ticktime_filter(database, "ENB_PHY_ULSCH_UE_ACK", i));
   }
   /* UL NACK */
   for (i = 0; i < 8; i++) {
-    timelog = new_ticklog(h, database, "ENB_ULSCH_UE_NACK",
+    timelog = new_ticklog(h, database, "ENB_PHY_ULSCH_UE_NACK",
         "frame", "subframe");
     subview = new_subview_ticktime(timeview, i+9+1,
         new_color(g,"#f22"), 3600*1000);
     logger_add_view(timelog, subview);
     logger_set_filter(timelog,
-        ticktime_filter(database, "ENB_ULSCH_UE_NACK", i));
+        ticktime_filter(database, "ENB_PHY_ULSCH_UE_NACK", i));
   }
 
   /* phy/mac/rlc/pdcp/rrc textlog */
@@ -439,44 +470,49 @@ int main(int n, char **v)
     logger *textlog;
     char *name, *desc;
     database_get_generic_description(database, i, &name, &desc);
-    if (strncmp(name, "LEGACY_", 7) != 0) continue;
-    textlog = new_textlog(h, database, name, desc);
-    logger_add_view(textlog, eg.legacy);
+    if (!strncmp(name, "LEGACY_", 7)) {
+      textlog = new_textlog(h, database, name, desc);
+      logger_add_view(textlog, eg.legacy);
+    }
     free(name);
     free(desc);
   }
 
-  on_off(database, "ENB_INPUT_SIGNAL", is_on, 1);
-  on_off(database, "ENB_DL_TICK", is_on, 1);
-  on_off(database, "ENB_DLSCH_UE_DCI", is_on, 1);
-  on_off(database, "ENB_DLSCH_UE_ACK", is_on, 1);
-  on_off(database, "ENB_DLSCH_UE_NACK", is_on, 1);
-  on_off(database, "ENB_UL_TICK", is_on, 1);
-  on_off(database, "ENB_ULSCH_UE_DCI", is_on, 1);
-  on_off(database, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION", is_on, 1);
-  on_off(database, "ENB_ULSCH_UE_ACK", is_on, 1);
-  on_off(database, "ENB_ULSCH_UE_NACK", is_on, 1);
+  on_off(database, "ENB_PHY_INPUT_SIGNAL", is_on, 1);
+  on_off(database, "ENB_PHY_UL_CHANNEL_ESTIMATE", is_on, 1);
+  on_off(database, "ENB_PHY_DL_TICK", is_on, 1);
+  on_off(database, "ENB_PHY_DLSCH_UE_DCI", is_on, 1);
+  on_off(database, "ENB_PHY_DLSCH_UE_ACK", is_on, 1);
+  on_off(database, "ENB_PHY_DLSCH_UE_NACK", is_on, 1);
+  on_off(database, "ENB_PHY_UL_TICK", is_on, 1);
+  on_off(database, "ENB_PHY_ULSCH_UE_DCI", is_on, 1);
+  on_off(database, "ENB_PHY_ULSCH_UE_NO_DCI_RETRANSMISSION", is_on, 1);
+  on_off(database, "ENB_PHY_ULSCH_UE_ACK", is_on, 1);
+  on_off(database, "ENB_PHY_ULSCH_UE_NACK", is_on, 1);
   on_off(database, "ENB_MASTER_TICK", is_on, 1);
+  on_off(database, "ENB_PHY_PUSCH_IQ", is_on, 1);
 
   on_off(database, "LEGACY_RRC_INFO", is_on, 1);
   on_off(database, "LEGACY_RRC_ERROR", is_on, 1);
   on_off(database, "LEGACY_RRC_WARNING", is_on, 1);
 
-  view_add_log(eg.phyview, "ENB_DLSCH_UE_DCI", h, database, is_on);
-  view_add_log(eg.phyview, "ENB_DLSCH_UE_ACK", h, database, is_on);
-  view_add_log(eg.phyview, "ENB_DLSCH_UE_NACK", h, database, is_on);
-  view_add_log(eg.phyview, "ENB_ULSCH_UE_DCI", h, database, is_on);
-  view_add_log(eg.phyview, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION",
+  view_add_log(eg.phyview, "ENB_PHY_DLSCH_UE_DCI", h, database, is_on);
+  view_add_log(eg.phyview, "ENB_PHY_DLSCH_UE_ACK", h, database, is_on);
+  view_add_log(eg.phyview, "ENB_PHY_DLSCH_UE_NACK", h, database, is_on);
+  view_add_log(eg.phyview, "ENB_PHY_ULSCH_UE_DCI", h, database, is_on);
+  view_add_log(eg.phyview, "ENB_PHY_ULSCH_UE_NO_DCI_RETRANSMISSION",
       h, database, is_on);
-  view_add_log(eg.phyview, "ENB_ULSCH_UE_ACK", h, database, is_on);
-  view_add_log(eg.phyview, "ENB_ULSCH_UE_NACK", h, database, is_on);
+  view_add_log(eg.phyview, "ENB_PHY_ULSCH_UE_ACK", h, database, is_on);
+  view_add_log(eg.phyview, "ENB_PHY_ULSCH_UE_NACK", h, database, is_on);
 
   view_add_log(eg.macview, "ENB_MAC_UE_DL_SDU", h, database, is_on);
   view_add_log(eg.macview, "ENB_MAC_UE_UL_SCHEDULE", h, database, is_on);
   view_add_log(eg.macview, "ENB_MAC_UE_UL_SCHEDULE_RETRANSMISSION",
       h, database, is_on);
   view_add_log(eg.macview, "ENB_MAC_UE_UL_PDU", h, database, is_on);
+  view_add_log(eg.macview, "ENB_MAC_UE_UL_PDU_WITH_DATA", h, database, is_on);
   view_add_log(eg.macview, "ENB_MAC_UE_UL_SDU", h, database, is_on);
+  view_add_log(eg.macview, "ENB_MAC_UE_UL_SDU_WITH_DATA", h, database, is_on);
   view_add_log(eg.macview, "ENB_MAC_UE_UL_CE", h, database, is_on);
 
   view_add_log(eg.rlcview, "ENB_RLC_DL", h, database, is_on);
@@ -543,6 +579,10 @@ int main(int n, char **v)
       h, database, is_on);
   view_add_log(eg.rrcview, "ENB_RRC_UNKNOW_MESSAGE",
       h, database, is_on);
+
+  /* deactivate those two by default, they are a bit heavy */
+  on_off(database, "ENB_MAC_UE_UL_SDU_WITH_DATA", is_on, 0);
+  on_off(database, "ENB_MAC_UE_UL_PDU_WITH_DATA", is_on, 0);
 
   for (i = 0; i < on_off_n; i++)
     on_off(database, on_off_name[i], is_on, on_off_action[i]);

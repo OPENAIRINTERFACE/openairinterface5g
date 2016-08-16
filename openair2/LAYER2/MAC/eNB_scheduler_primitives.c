@@ -320,7 +320,6 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
   for (i=UE_list->head; i>=0; i=UE_list->next[i]) {
     if (i == UE_id) {
       // link prev to next in Active list
-      //if (prev==UE_list->head)
       if (i==UE_list->head) {
         UE_list->head = UE_list->next[i];
       } else {
@@ -345,7 +344,7 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
   for (i=UE_list->head_ul; i>=0; i=UE_list->next_ul[i]) {
     if (i == UE_id) {
       // link prev to next in Active list
-      if (prev==UE_list->head_ul) {
+      if (i==UE_list->head_ul) {
         UE_list->head_ul = UE_list->next_ul[i];
       } else {
         UE_list->next_ul[prev] = UE_list->next_ul[i];
@@ -996,79 +995,71 @@ int allocate_CCEs(int module_idP,
   int nCCE_max = mac_xface->get_nCCE_max(module_idP,CC_idP,1,subframeP);
   int fCCE;
   int i,j;
-  int allocation_is_feasible = 1;
   DCI_ALLOC_t *dci_alloc;
   int nCCE=0;
 
   LOG_D(MAC,"Allocate CCEs subframe %d, test %d : (common %d,uspec %d)\n",subframeP,test_onlyP,DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci);
   DCI_pdu->num_pdcch_symbols=1;
 
-  while (allocation_is_feasible == 1) {
-    init_CCE_table(module_idP,CC_idP);
-    nCCE=0;
+try_again:
+  init_CCE_table(module_idP,CC_idP);
+  nCCE=0;
 
-    for (i=0;i<DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci;i++) {
-      dci_alloc = &DCI_pdu->dci_alloc[i];
-      LOG_D(MAC,"Trying to allocate DCI %d/%d (%d,%d) : rnti %x, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
-	    i,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci,
-	    DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci,
-	    dci_alloc->rnti,1<<dci_alloc->L,
-	    nCCE,nCCE_max,DCI_pdu->num_pdcch_symbols);
+  for (i=0;i<DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci;i++) {
+    dci_alloc = &DCI_pdu->dci_alloc[i];
+    LOG_D(MAC,"Trying to allocate DCI %d/%d (%d,%d) : rnti %x, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
+          i,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci,
+          DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci,
+          dci_alloc->rnti,1<<dci_alloc->L,
+          nCCE,nCCE_max,DCI_pdu->num_pdcch_symbols);
 
-      if (nCCE + (1<<dci_alloc->L) > nCCE_max) {
-	if (DCI_pdu->num_pdcch_symbols == 3)
-	  allocation_is_feasible = 0;
-	else {
-	  DCI_pdu->num_pdcch_symbols++;
-	  nCCE_max = mac_xface->get_nCCE_max(module_idP,CC_idP,DCI_pdu->num_pdcch_symbols,subframeP);
-	}
-	break;
+    if (nCCE + (1<<dci_alloc->L) > nCCE_max) {
+      if (DCI_pdu->num_pdcch_symbols == 3)
+        goto failed;
+      DCI_pdu->num_pdcch_symbols++;
+      nCCE_max = mac_xface->get_nCCE_max(module_idP,CC_idP,DCI_pdu->num_pdcch_symbols,subframeP);
+      goto try_again;
+    }
+
+    // number of CCEs left can potentially hold this allocation
+    fCCE = get_nCCE_offset(CCE_table,
+                           1<<(dci_alloc->L),
+                           nCCE_max,
+                           (i<DCI_pdu->Num_common_dci) ? 1 : 0,
+                           dci_alloc->rnti,
+                           subframeP);
+    if (fCCE == -1) {
+      if (DCI_pdu->num_pdcch_symbols == 3) {
+        LOG_I(MAC,"subframe %d: Dropping Allocation for RNTI %x\n",
+              subframeP,dci_alloc->rnti);
+        for (j=0;j<=i;j++){
+          LOG_I(MAC,"DCI %d/%d (%d,%d) : rnti %x dci format %d, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
+                i,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci,
+                DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci,
+                DCI_pdu->dci_alloc[j].rnti,DCI_pdu->dci_alloc[j].format,
+                1<<DCI_pdu->dci_alloc[j].L,
+                nCCE,nCCE_max,DCI_pdu->num_pdcch_symbols);
+        }
+        goto failed;
       }
-      else { // number of CCEs left can potentially hold this allocation
-	if ((fCCE = get_nCCE_offset(CCE_table,
-				    1<<(dci_alloc->L), 
-				    nCCE_max,
-				    (i<DCI_pdu->Num_common_dci) ? 1 : 0, 
-				    dci_alloc->rnti, 
-				    subframeP))>=0) {// the allocation is feasible, rnti rule passes
+      DCI_pdu->num_pdcch_symbols++;
+      nCCE_max = mac_xface->get_nCCE_max(module_idP,CC_idP,DCI_pdu->num_pdcch_symbols,subframeP);
+      goto try_again;
+    } // fCCE==-1
 
-	  LOG_D(MAC,"Allocating at nCCE %d\n",fCCE);
-	  if (test_onlyP == 0) {
-	    nCCE += (1<<dci_alloc->L);
-	    dci_alloc->firstCCE=fCCE;
-	    LOG_D(MAC,"Allocate CCEs subframe %d, test %d\n",subframeP,test_onlyP);
-	  }
-	} // fCCE>=0
-	else {
-	  if (DCI_pdu->num_pdcch_symbols == 3) {
-	    allocation_is_feasible = 0;
-	    LOG_I(MAC,"subframe %d: Dropping Allocation for RNTI %x\n",
-		  subframeP,dci_alloc->rnti);
-	    for (j=0;j<=i;j++){
-	     
-	      LOG_I(MAC,"DCI %d/%d (%d,%d) : rnti %x dci format %d, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
-		    i,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci,
-		    DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci,
-		    DCI_pdu->dci_alloc[j].rnti,DCI_pdu->dci_alloc[j].format,
-		    1<<DCI_pdu->dci_alloc[j].L,
-		    nCCE,nCCE_max,DCI_pdu->num_pdcch_symbols);
-	    }
-	  }
-	  else {
-	    DCI_pdu->num_pdcch_symbols++;
-	    nCCE_max = mac_xface->get_nCCE_max(module_idP,CC_idP,DCI_pdu->num_pdcch_symbols,subframeP);
-	  }
-	  break;
-	} // fCCE==-1
-      } // nCCE <= nCCE_max
-    } // for i = 0 ... num_dcis  
-    if (allocation_is_feasible==1)
-      return (0);
-  } // allocation_is_feasible == 1
+    // the allocation is feasible, rnti rule passes
+    nCCE += (1<<dci_alloc->L);
+    LOG_D(MAC,"Allocating at nCCE %d\n",fCCE);
+    if (test_onlyP == 0) {
+      dci_alloc->firstCCE=fCCE;
+      LOG_D(MAC,"Allocate CCEs subframe %d, test %d\n",subframeP,test_onlyP);
+    }
+  } // for i = 0 ... num_dcis
 
-  return(-1);
-  
+  return 0;
 
+failed:
+  return -1;
 }
 
 boolean_t CCE_allocation_infeasible(int module_idP,

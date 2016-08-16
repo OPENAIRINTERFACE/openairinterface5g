@@ -490,6 +490,7 @@ void help (void) {
 #if T_TRACER
   printf("  --T_port [port]    use given port\n");
   printf("  --T_nowait         don't wait for tracer, start immediately\n");
+  printf("  --T_dont_fork      to ease debugging with gdb\n");
 #endif
   printf(RESET);
   fflush(stdout);
@@ -2332,6 +2333,7 @@ static void get_options (int argc, char **argv)
 #if T_TRACER
     LONG_OPTION_T_PORT,
     LONG_OPTION_T_NOWAIT,
+    LONG_OPTION_T_DONT_FORK,
 #endif
   };
 
@@ -2355,6 +2357,7 @@ static void get_options (int argc, char **argv)
 #if T_TRACER
     {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
     {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
+    {"T_dont_fork",            no_argument,       0, LONG_OPTION_T_DONT_FORK},
 #endif
 
     {NULL, 0, NULL, 0}
@@ -2455,6 +2458,12 @@ static void get_options (int argc, char **argv)
     case LONG_OPTION_T_NOWAIT: {
       extern int T_wait;
       T_wait = 0;
+      break;
+    }
+
+    case LONG_OPTION_T_DONT_FORK: {
+      extern int T_dont_fork;
+      T_dont_fork = 1;
       break;
     }
 #endif
@@ -2822,6 +2831,7 @@ static void get_options (int argc, char **argv)
 #if T_TRACER
 int T_wait = 1;       /* by default we wait for the tracer */
 int T_port = 2021;    /* default port to listen to to wait for the tracer */
+int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
 
 int main( int argc, char **argv )
@@ -2894,7 +2904,7 @@ int main( int argc, char **argv )
     openair0_cfg[0].configFilename = rf_config_file;
   
 #if T_TRACER
-  T_init(T_port, T_wait);
+  T_init(T_port, T_wait, T_dont_fork);
 #endif
 
   // initialize the log (see log.h for details)

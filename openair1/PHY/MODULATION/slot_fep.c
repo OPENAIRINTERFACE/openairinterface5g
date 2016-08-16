@@ -55,7 +55,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
   unsigned int rx_offset;
 
   void (*dft)(int16_t *,int16_t *, int);
-  int tmp_dft_in[2048];  // This is for misalignment issues for 6 and 15 PRBs
+  int tmp_dft_in[2048] __attribute__ ((aligned (32)));  // This is for misalignment issues for 6 and 15 PRBs
 
   switch (frame_parms->ofdm_symbol_size) {
   case 128:

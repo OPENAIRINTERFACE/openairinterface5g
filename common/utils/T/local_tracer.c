@@ -11,10 +11,12 @@
 #include <inttypes.h>
 #include <signal.h>
 
+#include "T.h"
+#include "T_messages.txt.h"
 #include "T_defs.h"
 #include "T_IDs.h"
 
-static T_cache_t *T_cache;
+static T_cache_t *T_local_cache;
 static int T_busylist_head;
 
 typedef struct databuf {
@@ -83,6 +85,38 @@ static int get_connection(char *addr, int port)
   printf("connected\n");
 
   return t;
+}
+
+static void forward(void *_forwarder, char *buf, int size);
+
+void send_T_messages_txt(void *forwarder)
+{
+  char buf[T_BUFFER_MAX];
+  char *T_LOCAL_buf = buf;
+  int T_LOCAL_size;
+  unsigned char *src;
+  int src_len;
+
+  /* trace T_message.txt
+   * Send several messages -1 with content followed by message -2.
+   */
+  src = T_messages_txt;
+  src_len = T_messages_txt_len;
+  while (src_len) {
+    int send_size = src_len;
+    if (send_size > T_PAYLOAD_MAXSIZE - sizeof(int))
+      send_size = T_PAYLOAD_MAXSIZE - sizeof(int);
+    /* TODO: be careful, we use internal T stuff, to rewrite? */
+    T_LOCAL_size = 0;
+    T_HEADER(T_ID(-1));
+    T_PUT_buffer(1, ((T_buffer){addr:(src), length:(send_size)}));
+    forward(forwarder, buf, T_LOCAL_size);
+    src += send_size;
+    src_len -= send_size;
+  }
+  T_LOCAL_size = 0;
+  T_HEADER(T_ID(-2));
+  forward(forwarder, buf, T_LOCAL_size);
 }
 
 /****************************************************************************/
@@ -213,6 +247,7 @@ dead:
 
   close(f->socket_remote);
   f->socket_remote = get_connection("0.0.0.0", f->remote_port);
+  send_T_messages_txt(f);
   goto again;
 
   return NULL;
@@ -237,6 +272,7 @@ static void *forwarder(int port, int s)
 
   f->remote_port = port;
   f->socket_remote = get_connection("0.0.0.0", port);
+  send_T_messages_txt(f);
 
   new_thread(data_sender, f);
   new_thread(forward_remote_messages, f);
@@ -287,7 +323,7 @@ static void forward(void *_forwarder, char *buf, int size)
 
 static void wait_message(void)
 {
-  while (T_cache[T_busylist_head].busy == 0) usleep(1000);
+  while (T_local_cache[T_busylist_head].busy == 0) usleep(1000);
 }
 
 static void init_shm(void)
@@ -297,17 +333,17 @@ static void init_shm(void)
   if (s == -1) { perror(T_SHM_FILENAME); abort(); }
   if (ftruncate(s, T_CACHE_SIZE * sizeof(T_cache_t)))
     { perror(T_SHM_FILENAME); abort(); }
-  T_cache = mmap(NULL, T_CACHE_SIZE * sizeof(T_cache_t),
-                 PROT_READ | PROT_WRITE, MAP_SHARED, s, 0);
-  if (T_cache == NULL)
+  T_local_cache = mmap(NULL, T_CACHE_SIZE * sizeof(T_cache_t),
+                       PROT_READ | PROT_WRITE, MAP_SHARED, s, 0);
+  if (T_local_cache == NULL)
     { perror(T_SHM_FILENAME); abort(); }
   close(s);
 
   /* let's garbage the memory to catch some potential problems
    * (think multiprocessor sync issues, barriers, etc.)
    */
-  memset(T_cache, 0x55, T_CACHE_SIZE * sizeof(T_cache_t));
-  for (i = 0; i < T_CACHE_SIZE; i++) T_cache[i].busy = 0;
+  memset(T_local_cache, 0x55, T_CACHE_SIZE * sizeof(T_cache_t));
+  for (i = 0; i < T_CACHE_SIZE; i++) T_local_cache[i].busy = 0;
 }
 
 void T_local_tracer_main(int remote_port, int wait_for_tracer,
@@ -335,9 +371,9 @@ void T_local_tracer_main(int remote_port, int wait_for_tracer,
   while (1) {
     wait_message();
     __sync_synchronize();
-    forward(f, T_cache[T_busylist_head].buffer,
-            T_cache[T_busylist_head].length);
-    T_cache[T_busylist_head].busy = 0;
+    forward(f, T_local_cache[T_busylist_head].buffer,
+            T_local_cache[T_busylist_head].length);
+    T_local_cache[T_busylist_head].busy = 0;
     T_busylist_head++;
     T_busylist_head &= T_CACHE_SIZE - 1;
   }

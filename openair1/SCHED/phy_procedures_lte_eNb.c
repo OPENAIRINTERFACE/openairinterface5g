@@ -133,30 +133,6 @@ uint8_t is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,uint8_t UE_id,uint8_t sched_su
   return(0);
 }
 
-void put_harq_pid_in_freelist(LTE_eNB_DLSCH_t *DLSCH_ptr, int harq_pid)
-{
-  DLSCH_ptr->harq_pid_freelist[DLSCH_ptr->tail_freelist] = harq_pid;
-  DLSCH_ptr->tail_freelist = (DLSCH_ptr->tail_freelist + 1) % 10;
-}
-
-void remove_harq_pid_from_freelist(LTE_eNB_DLSCH_t *DLSCH_ptr, int harq_pid)
-{
-  if (DLSCH_ptr->head_freelist == DLSCH_ptr->tail_freelist) {
-    LOG_E(PHY, "%s:%d: you cannot read this!\n", __FILE__, __LINE__);
-    abort();
-  }
-  /* basic check, in case several threads deal with the free list at the same time
-   * in normal situations it should not happen, that's also why we don't use any
-   * locking mechanism to protect the free list
-   * to be refined in case things don't work properly
-   */
-  if (harq_pid != DLSCH_ptr->harq_pid_freelist[DLSCH_ptr->head_freelist]) {
-    LOG_E(PHY, "%s:%d: critical error, get in touch with the authors\n", __FILE__, __LINE__);
-    abort();
-  }
-  DLSCH_ptr->head_freelist = (DLSCH_ptr->head_freelist + 1) % 10;
-}
-
 int32_t add_ue(int16_t rnti, PHY_VARS_eNB *phy_vars_eNB)
 {
   uint8_t i;
@@ -221,12 +197,6 @@ int mac_phy_remove_ue(module_id_t Mod_idP,rnti_t rntiP) {
 	  memset(&phy_vars_eNB->eNB_UE_stats[i],0,sizeof(LTE_eNB_UE_stats));
 	  //  mac_exit_wrapper("Removing UE");
 	  
-	  /* clear the harq pid freelist */
-	  phy_vars_eNB->dlsch_eNB[i][0]->head_freelist = 0;
-	  phy_vars_eNB->dlsch_eNB[i][0]->tail_freelist = 0;
-	  for (j = 0; j < 8; j++)
-	    put_harq_pid_in_freelist(phy_vars_eNB->dlsch_eNB[i][0], j);
-	  
 	  return(i);
 	}
       }
@@ -258,9 +228,8 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
   LTE_eNB_DLSCH_t *DLSCH_ptr;
   LTE_eNB_ULSCH_t *ULSCH_ptr;
   uint8_t ulsch_subframe,ulsch_frame;
-  uint8_t i;
+  int i;
   int8_t UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id][CC_id]);
-  int sf1=(10*frame)+subframe,sf2,sfdiff,sfdiff_max=7;
 
   if (UE_id==-1) {
     LOG_D(PHY,"Cannot find UE with rnti %x (Mod_id %d, CC_id %d)\n",rnti, Mod_id, CC_id);
@@ -271,40 +240,19 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
   if (ul_flag == 0)  {// this is a DL request
     DLSCH_ptr = PHY_vars_eNB_g[Mod_id][CC_id]->dlsch_eNB[(uint32_t)UE_id][0];
 
-    // set to no available process first
-    *harq_pid = -1;
+    /* let's go synchronous for the moment - maybe we can change at some point */
+    i = (frame * 10 + subframe) % 8;
 
-    for (i=0; i<DLSCH_ptr->Mdlharq; i++) {
-      if (DLSCH_ptr->harq_processes[i]!=NULL) {
-	if (DLSCH_ptr->harq_processes[i]->status == ACTIVE) {
-	  sf2 = (DLSCH_ptr->harq_processes[i]->frame*10) + DLSCH_ptr->harq_processes[i]->subframe;
-	  if (sf2<=sf1)
-	    sfdiff = sf1-sf2;
-	  else // this happens when wrapping around 1024 frame barrier
-	    sfdiff = 10240 + sf1-sf2;
-	  LOG_D(PHY,"process %d is active, round %d (waiting %d)\n",i,DLSCH_ptr->harq_processes[i]->round,sfdiff);
-
-	  if (sfdiff>sfdiff_max) { // this is an active process that is waiting longer than the others (and longer than 7 ms)
-	    sfdiff_max = sfdiff; 
-	    *harq_pid = i;
-	    *round = DLSCH_ptr->harq_processes[i]->round;
-	  }
-	}
-      } else { // a process is not defined
-	LOG_E(PHY,"[eNB %d] DLSCH process %d for rnti %x (UE_id %d) not allocated\n",Mod_id,i,rnti,UE_id);
-	return(-1);
-      }
-    }
-
-    /* if no active harq pid, get the oldest in the freelist, if any */
-    if (*harq_pid == 255 && DLSCH_ptr->head_freelist != DLSCH_ptr->tail_freelist) {
-      *harq_pid = DLSCH_ptr->harq_pid_freelist[DLSCH_ptr->head_freelist];
+    if (DLSCH_ptr->harq_processes[i]->status == ACTIVE) {
+      *harq_pid = i;
+      *round = DLSCH_ptr->harq_processes[i]->round;
+    } else if (DLSCH_ptr->harq_processes[i]->status == SCH_IDLE) {
+      *harq_pid = i;
       *round = 0;
-      LOG_D(PHY,"process %d is first free process\n", *harq_pid);
+    } else {
+      printf("%s:%d: bad state for harq process - PLEASE REPORT!!\n", __FILE__, __LINE__);
+      abort();
     }
-
-    LOG_D(PHY,"get_ue_active_harq_pid DL => Frame %d, Subframe %d : harq_pid %d\n",
-	  frame,subframe,*harq_pid);
   } else { // This is a UL request
 
     ULSCH_ptr = PHY_vars_eNB_g[Mod_id][CC_id]->ulsch_eNB[(uint32_t)UE_id];
@@ -598,7 +546,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX,1);
   start_meas(&phy_vars_eNB->phy_proc_tx);
 
-  T(T_ENB_DL_TICK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe));
+  T(T_ENB_PHY_DL_TICK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe));
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     // If we've dropped the UE, go back to PRACH mode for this UE
@@ -1097,7 +1045,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
               phy_vars_eNB->Mod_id,DCI_pdu->dci_alloc[i].rnti,phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->current_harq_pid,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe);
 
 
-        T(T_ENB_DLSCH_UE_DCI, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id),
+        T(T_ENB_PHY_DLSCH_UE_DCI, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id),
           T_INT(DCI_pdu->dci_alloc[i].rnti), T_INT(DCI_pdu->dci_alloc[i].format),
           T_INT(phy_vars_eNB->dlsch_eNB[(int)UE_id][0]->current_harq_pid));
 
@@ -1151,7 +1099,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
       else
 	UE_id = i;
 
-      T(T_ENB_ULSCH_UE_DCI, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id),
+      T(T_ENB_PHY_ULSCH_UE_DCI, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id),
         T_INT(DCI_pdu->dci_alloc[i].rnti), T_INT(harq_pid));
 
       if (UE_id<0) {
@@ -1878,7 +1826,7 @@ void process_HARQ_feedback(uint8_t UE_id,
                   dlsch->rnti,dl_harq_pid[m],M,m,mp,dlsch_harq_proc->round);
 #endif
 
-            T(T_ENB_DLSCH_UE_NACK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id), T_INT(dlsch->rnti),
+            T(T_ENB_PHY_DLSCH_UE_NACK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id), T_INT(dlsch->rnti),
               T_INT(dl_harq_pid[m]));
 
             if (dlsch_harq_proc->round == 0)
@@ -1906,7 +1854,6 @@ void process_HARQ_feedback(uint8_t UE_id,
               dlsch_harq_proc->round = 0;
               ue_stats->dlsch_l2_errors[dl_harq_pid[m]]++;
               dlsch_harq_proc->status = SCH_IDLE;
-              put_harq_pid_in_freelist(dlsch, dl_harq_pid[m]);
               dlsch->harq_ids[dl_subframe] = dlsch->Mdlharq;
             }
           } else {
@@ -1915,7 +1862,7 @@ void process_HARQ_feedback(uint8_t UE_id,
                   dlsch->rnti,dl_harq_pid[m],dlsch_harq_proc->round);
 #endif
 
-            T(T_ENB_DLSCH_UE_ACK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id), T_INT(dlsch->rnti),
+            T(T_ENB_PHY_DLSCH_UE_ACK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id), T_INT(dlsch->rnti),
               T_INT(dl_harq_pid[m]));
 
             ue_stats->dlsch_ACK[dl_harq_pid[m]][dlsch_harq_proc->round]++;
@@ -1923,7 +1870,6 @@ void process_HARQ_feedback(uint8_t UE_id,
             // Received ACK so set round to 0 and set dlsch_harq_pid IDLE
             dlsch_harq_proc->round  = 0;
             dlsch_harq_proc->status = SCH_IDLE;
-            put_harq_pid_in_freelist(dlsch, dl_harq_pid[m]);
             dlsch->harq_ids[dl_subframe] = dlsch->Mdlharq;
 
             ue_stats->total_TBS = ue_stats->total_TBS +
@@ -2345,9 +2291,6 @@ void pucch_procedures(const unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_
             phy_vars_eNB->eNB_UE_stats[UE_id].sr_received++;
 
             if (phy_vars_eNB->first_sr[UE_id] == 1) { // this is the first request for uplink after Connection Setup, so clear HARQ process 0 use for Msg4
-              /* is this test necessary? */
-              if (phy_vars_eNB->dlsch_eNB[UE_id][0]->harq_processes[0]->status != SCH_IDLE)
-                put_harq_pid_in_freelist(phy_vars_eNB->dlsch_eNB[UE_id][0], 0);
               phy_vars_eNB->first_sr[UE_id] = 0;
               phy_vars_eNB->dlsch_eNB[UE_id][0]->harq_processes[0]->round=0;
               phy_vars_eNB->dlsch_eNB[UE_id][0]->harq_processes[0]->status=SCH_IDLE;
@@ -2748,9 +2691,9 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
   LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_RX(%d)\n",phy_vars_eNB->Mod_id,frame, subframe);
 #endif
 
-  T(T_ENB_UL_TICK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe));
+  T(T_ENB_PHY_UL_TICK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe));
 
-  T(T_ENB_INPUT_SIGNAL, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(0),
+  T(T_ENB_PHY_INPUT_SIGNAL, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(0),
     T_BUFFER(&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][0][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti],
              phy_vars_eNB->lte_frame_parms.samples_per_tti * 4));
 
@@ -2984,7 +2927,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_MSG3,0);
 
       if (ret == (1+MAX_TURBO_ITERATIONS)) {
-        T(T_ENB_ULSCH_UE_NACK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(i), T_INT(phy_vars_eNB->ulsch_eNB[i]->rnti),
+        T(T_ENB_PHY_ULSCH_UE_NACK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(i), T_INT(phy_vars_eNB->ulsch_eNB[i]->rnti),
           T_INT(harq_pid));
 
         phy_vars_eNB->eNB_UE_stats[i].ulsch_round_errors[harq_pid][phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round]++;
@@ -3089,7 +3032,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
         }
       }  // ulsch in error
       else {
-        T(T_ENB_ULSCH_UE_ACK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(i), T_INT(phy_vars_eNB->ulsch_eNB[i]->rnti),
+        T(T_ENB_PHY_ULSCH_UE_ACK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(i), T_INT(phy_vars_eNB->ulsch_eNB[i]->rnti),
           T_INT(harq_pid));
 
         if (phy_vars_eNB->ulsch_eNB[i]->Msg3_flag == 1) {

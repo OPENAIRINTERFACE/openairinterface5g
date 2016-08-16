@@ -32,12 +32,13 @@ struct textlog {
   int fsize;
   /* local output buffer */
   OBUF o;
+  int dump_buffer;
 };
 
 static void _event(void *p, event e)
 {
   struct textlog *l = p;
-  int i;
+  int i, j;
 #ifdef T_SEND_TIME
   struct tm *t;
   char tt[64];
@@ -65,6 +66,14 @@ static void _event(void *p, event e)
   case BUFFER:
     PUTS(&l->o, "{buffer size:");
     PUTI(&l->o, e.e[l->f[i].event_arg].bsize);
+    if (l->dump_buffer) {
+      PUTS(&l->o, " [");
+      for (j = 0; j < e.e[l->f[i].event_arg].bsize; j++) {
+        PUTX2(&l->o, ((unsigned char *)e.e[l->f[i].event_arg].b)[j]);
+        PUTC(&l->o, ' ');
+      }
+      PUTS(&l->o, "]");
+    }
     PUTS(&l->o, "}");
     break;
   }
@@ -195,4 +204,14 @@ logger *new_textlog(event_handler *h, void *database,
 error:
   printf("%s:%d: bad format '%s'\n", __FILE__, __LINE__, format);
   abort();
+}
+
+/****************************************************************************/
+/*                             public functions                             */
+/****************************************************************************/
+
+void textlog_dump_buffer(logger *_this, int dump_buffer)
+{
+  struct textlog *l = _this;
+  l->dump_buffer = dump_buffer;
 }

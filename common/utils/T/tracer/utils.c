@@ -190,6 +190,13 @@ void PUTI(OBUF *o, int i)
   PUTS(o, s);
 }
 
+void PUTX2(OBUF *o, int i)
+{
+  char s[64];
+  sprintf(s, "%2.2x", i);
+  PUTS(o, s);
+}
+
 void PUTUL(OBUF *o, unsigned long l)
 {
   char s[128];
