@@ -88,41 +88,40 @@ typedef struct {
 } network_record_t;
 
 typedef struct {
-	const char* fullname;
-	const char* shortname;
-	const char* mnc;
-	const char* mcc;
+	const char *fullname;
+	const char *shortname;
+	const char *mnc;
+	const char *mcc;
 } plmn_conf_param_t;
 
-const char options[]="c:o:h";
-unsigned char parse_data=FALSE;
-unsigned char print_data=FALSE;
-unsigned char output=FALSE;
-const char* output_dir = NULL;
+extern const char* output_dir;
 
-const char* imsi=NULL;
-const char* msin=NULL;
-const char* usim_api_k = NULL;
-const char* msisdn = NULL;
-const char* opc=NULL;
-const char* hplmn=NULL;
+extern const char *msin;
+extern const char *usim_api_k;
+extern const char *msisdn;
+extern const char *opc;
+extern const char *hplmn;
 
-int* ucplmn=NULL;
-int* oplmn=NULL;
-int* ocplmn=NULL;
-int* fplmn=NULL;
-int* ehplmn=NULL;
+extern int *ucplmn;
+extern int *oplmn;
+extern int *ocplmn;
+extern int *fplmn;
+extern int *ehplmn;
 
-int hplmn_index =0;
-int plmn_nb = 0;
-int ucplmn_nb=0;
-int oplmn_nb=0;
-int ocplmn_nb=0;
-int fplmn_nb=0;
-int ehplmn_nb=0;
+extern int hplmn_index;
+extern int plmn_nb;
+extern int ucplmn_nb;
+extern int oplmn_nb;
+extern int ocplmn_nb;
+extern int fplmn_nb;
+extern int ehplmn_nb;
 
-plmn_conf_param_t* user_plmn_list=NULL;
-network_record_t* user_network_record_list = NULL;
+extern plmn_conf_param_t* user_plmn_list;
+extern network_record_t* user_network_record_list;
+
+char *make_filename(const char *output_dir, const char *filename, int ueid);
+int get_config_from_file(const char *filename, config_t *config);
+int parse_config_file(const char *filename);
 
 void _display_usim_data(int user_id);
 

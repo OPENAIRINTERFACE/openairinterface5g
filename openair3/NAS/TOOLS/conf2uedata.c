@@ -6,13 +6,35 @@
 #include "user_api.h"
 #include "utils.h"
 
-char * make_filename(const char *output_dir, const char *filename, int ueid);
-int get_config_from_file(const char *filename, config_t *config);
-int parse_config_file(const char *filename);
+const char *output_dir = NULL;
+
+const char *msin = NULL;
+const char *usim_api_k = NULL;
+const char *msisdn = NULL;
+const char *opc = NULL;
+const char *hplmn = NULL;
+
+int *ucplmn = NULL;
+int *oplmn = NULL;
+int *ocplmn = NULL;
+int *fplmn = NULL;
+int *ehplmn = NULL;
+
+int hplmn_index = 0;
+int plmn_nb = 0;
+int ucplmn_nb = 0;
+int oplmn_nb = 0;
+int ocplmn_nb = 0;
+int fplmn_nb = 0;
+int ehplmn_nb = 0;
+
+plmn_conf_param_t* user_plmn_list=NULL;
+network_record_t* user_network_record_list = NULL;
 
 int main(int argc, char**argv) {
 	int option;
     const char* conf_file = NULL;
+    const char options[]="c:o:h";
 
     while ((option = getopt(argc, argv, options)) != -1) {
 		switch (option) {
@@ -48,7 +70,6 @@ int main(int argc, char**argv) {
     }
 
 	exit(EXIT_SUCCESS);
-
 }
 
 int parse_config_file(const char *filename) {
