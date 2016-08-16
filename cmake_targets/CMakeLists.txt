@@ -126,6 +126,7 @@ endmacro(add_list_string_option)
 if (CMAKE_BUILD_TYPE STREQUAL "")
    set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
+message("CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 add_list_string_option(CMAKE_BUILD_TYPE "RelWithDebInfo" "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." Debug Release RelWithDebInfo MinSizeRel)
 
 Message("Architecture is ${CMAKE_SYSTEM_PROCESSOR}")
@@ -1518,7 +1519,7 @@ if (${RF_BOARD} STREQUAL "OAI_USRP")
   include_directories(${LIBBOOST_INCLUDE_DIR})
 endif (${RF_BOARD} STREQUAL "OAI_USRP")
 
-pkg_search_module(OPENPGM openpgm-5.1)
+pkg_search_module(OPENPGM openpgm-5.1 openpgm-5.2)
 if(NOT ${OPENPGM_FOUND})
   message("PACKAGE openpgm-5.1 is required by binaries such as oaisim: will fail later if this target is built")
 else()
@@ -1625,15 +1626,14 @@ add_executable(lte-softmodem
   ${T_SOURCE}
   )
 
-target_link_libraries (lte-softmodem
+target_link_libraries (lte-softmodem -ldl
   -Wl,--start-group
   RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} 
   -Wl,--end-group )
 
-
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ) 
-target_link_libraries (lte-softmodem ${LIBBOOST_LIBRARIES})
+target_link_libraries (lte-softmodem ${LIBBOOST_LIBRARIES} -lboost_system) #Added manually as it is not found for some reason for USRP
 target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem ${T_LIB})
 
@@ -1652,8 +1652,8 @@ add_executable(lte-softmodem-nos1
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
-  #${OPENAIR2_DIR}/RRC/NAS/nas_config.c # enable if you want rrc to mount ip interface
-  #${OPENAIR2_DIR}/RRC/NAS/rb_config.c
+  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
+  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}  
@@ -1669,9 +1669,9 @@ target_link_libraries (lte-softmodem-nos1
 
 target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib}  ${option_TP_lib} ${XFORMS_LIBRARIES} )
-target_link_libraries (lte-softmodem-nos1 ${LIBBOOST_LIBRARIES})
+target_link_libraries (lte-softmodem-nos1 ${LIBBOOST_LIBRARIES} -lboost_system) #Added manually as it is not found for some reason for USRP
 target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
-target_link_libraries (lte-softmodem ${T_LIB})
+target_link_libraries (lte-softmodem-nos1 ${T_LIB})
 
 # rrh
 ################################
@@ -1928,6 +1928,11 @@ get_directory_property( DirDefs INCLUDE_DIRECTORIES )
 foreach( d ${DirDefs} )
     list(APPEND itti_compiler_options "-I${d}")
 endforeach()
+
+# castxml doesn't work with c11 (gcc 5 default)
+# force castxml and clang compilation with gnu89 standard
+# we can't use cXX standard as pthread_rwlock_t is gnu standard
+list(APPEND itti_compiler_options "-std=gnu89")
 
 set (ITTI_H ${ITTI_DIR}/intertask_interface_types.h)
 add_custom_command (

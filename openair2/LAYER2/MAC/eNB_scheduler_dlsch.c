@@ -1110,6 +1110,9 @@ schedule_ue_spec(
                   module_idP, CC_id, frameP, UE_RNTI(module_idP,UE_id), TBS);
           }
 
+          T(T_ENB_MAC_UE_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
+            T_INT(harq_pid), T_BUFFER(UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0], TBS));
+
           aggregation = process_ue_cqi(module_idP,UE_id);
           UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid] = nb_rb;
 

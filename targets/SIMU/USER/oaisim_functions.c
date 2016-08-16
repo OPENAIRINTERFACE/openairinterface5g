@@ -216,6 +216,7 @@ void get_simulation_options(int argc, char *argv[])
 #if T_TRACER
     LONG_OPTION_T_PORT,
     LONG_OPTION_T_NOWAIT,
+    LONG_OPTION_T_DONT_FORK,
 #endif
   };
 
@@ -254,6 +255,7 @@ void get_simulation_options(int argc, char *argv[])
 #if T_TRACER
     {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
     {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
+    {"T_dont_fork",            no_argument,       0, LONG_OPTION_T_DONT_FORK},
 #endif
 
     {NULL, 0, NULL, 0}
@@ -434,6 +436,12 @@ void get_simulation_options(int argc, char *argv[])
     case LONG_OPTION_T_NOWAIT: {
       extern int T_wait;
       T_wait = 0;
+      break;
+    }
+
+    case LONG_OPTION_T_DONT_FORK: {
+      extern int T_dont_fork;
+      T_dont_fork = 1;
       break;
     }
 #endif

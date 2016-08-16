@@ -5,7 +5,16 @@ CFLAGS=-Wall -g -pthread -DT_TRACER -I.
 
 LIBS=-lX11 -lm -lpng -lXft
 
-all: textlog enb vcd
+all: record replay extract_config textlog enb vcd macpdu2wireshark
+
+record: utils.o record.o database.o config.o
+	$(CC) $(CFLAGS) -o record $^ $(LIBS)
+
+replay: utils.o replay.o
+	$(CC) $(CFLAGS) -o replay $^ $(LIBS)
+
+extract_config: extract_config.o
+	$(CC) $(CFLAGS) -o extract_config $^ $(LIBS)
 
 textlog: utils.o textlog.o database.o event.o handler.o config.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a \
@@ -21,6 +30,10 @@ vcd: utils.o vcd.o database.o event.o handler.o config.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a \
          filter/filter.a
 	$(CC) $(CFLAGS) -o vcd $^ $(LIBS)
+
+macpdu2wireshark: macpdu2wireshark.o database.o utils.o handler.o event.o \
+                  config.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 .PHONY: all gui/gui.a view/view.a logger/logger.a filter/filter.a
 
@@ -40,8 +53,10 @@ filter/filter.a:
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f *.o core tracer_remote textlog enb vcd
+	rm -f *.o core tracer_remote textlog enb vcd record replay
+	rm -f extract_config macpdu2wireshark
 	cd gui && make clean
 	cd view && make clean
 	cd logger && make clean
 	cd filter && make clean
+	cd hacks && make clean
