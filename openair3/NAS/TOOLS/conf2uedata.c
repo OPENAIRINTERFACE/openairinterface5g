@@ -7,10 +7,12 @@
 #include "utils.h"
 
 char * make_filename(const char *output_dir, const char *filename, int ueid);
+int get_config_from_file(const char *filename, config_t *config);
 
 int main(int argc, char**argv) {
 	int rc = EXIT_SUCCESS;
 	int option;
+    const char* conf_file = NULL;
 	while ((option = getopt(argc, argv, options)) != -1) {
 		switch (option) {
 		case 'c':
@@ -42,26 +44,17 @@ int main(int argc, char**argv) {
 		_display_usage();
 		return EXIT_FAILURE;
 	} else if (parse_data) {
+        int ret;
 		int ue_nb = 0;
-		config_t cfg;
 		config_setting_t *root_setting = NULL;
 		config_setting_t *ue_setting = NULL;
 		config_setting_t *all_plmn_setting = NULL;
 		char user[10];
-		config_init(&cfg);
-		if (conf_file != NULL) {
-			/* Read the file. If there is an error, report it and exit. */
-			if (!config_read_file(&cfg, conf_file)) {
-				fprintf(stderr, "%s:%d - %s\n", config_error_file(&cfg),
-						config_error_line(&cfg), config_error_text(&cfg));
-				config_destroy(&cfg);
-				return (EXIT_FAILURE);
-			}
-		} else {
-			config_destroy(&cfg);
-			perror("ERROR\t: config_read failed");
-			exit(EXIT_FAILURE);
-		}
+		config_t cfg;
+        ret = get_config_from_file(conf_file, &cfg);
+        if (ret == EXIT_FAILURE) {
+            exit(1);
+        }
 		root_setting = config_root_setting(&cfg);
 		ue_nb = config_setting_length(root_setting) - 1;
 		all_plmn_setting = config_setting_get_member(root_setting, PLMN);
@@ -110,6 +103,26 @@ int main(int argc, char**argv) {
 	}
 	exit(EXIT_SUCCESS);
 
+}
+
+int get_config_from_file(const char *filename, config_t *config) {
+    config_init(config);
+    if (filename == NULL) {
+        // XXX write error message ?
+        exit(EXIT_FAILURE);
+    }
+
+    /* Read the file. If there is an error, report it and exit. */
+    if (!config_read_file(config, filename)) {
+        fprintf(stderr, "Cant read config file '%s': %s\n", filename,
+                config_error_text(config));
+        if ( config_error_type(config) == CONFIG_ERR_PARSE ) {
+            fprintf(stderr, "This is line %d\n", config_error_line(config));
+        }
+        config_destroy(config);
+        return (EXIT_FAILURE);
+    }
+    return EXIT_SUCCESS;
 }
 
 void gen_usim_data(int user_id) {

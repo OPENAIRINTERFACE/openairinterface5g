@@ -98,7 +98,6 @@ const char options[]="c:o:h";
 unsigned char parse_data=FALSE;
 unsigned char print_data=FALSE;
 unsigned char output=FALSE;
-const char* conf_file = NULL;
 const char* output_dir = NULL;
 
 const char* imsi=NULL;
