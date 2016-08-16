@@ -1692,7 +1692,7 @@ target_link_libraries(rrh_gw
   UTIL LFDS  
   -Wl,--end-group )
 target_link_libraries (rrh_gw rt pthread m )
-target_link_libraries (rrh_gw  ${option_HW_lib} ${option_TP_lib} ${LIBBOOST_LIBRARIES} )
+target_link_libraries (rrh_gw  ${option_HW_lib} ${option_TP_lib} ${LIBBOOST_LIBRARIES} -lboost_system ) #Added manually as it is not found for some reason for USRP
 target_link_libraries (rrh_gw ${LIB_LMS_LIBRARIES})
 target_link_libraries (rrh_gw ${T_LIB})
 
