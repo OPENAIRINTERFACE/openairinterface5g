@@ -19,6 +19,7 @@ set(conf2uedata_SRC
     ${OPENAIR_DIR}/openair3/NAS/TOOLS/conf2uedata.c
     ${OPENAIR_DIR}/openair3/NAS/TOOLS/conf_emm.c
     ${OPENAIR_DIR}/openair3/NAS/TOOLS/conf_user_data.c
+    ${OPENAIR_DIR}/openair3/NAS/TOOLS/conf_usim.c
     ${OPENAIR_DIR}/openair3/NAS/TOOLS/fs.c
     ${OPENAIR_DIR}/openair3/NAS/TOOLS/display.c
     ${OPENAIR_DIR}/openair3/NAS/UE/API/USIM/usim_api.c

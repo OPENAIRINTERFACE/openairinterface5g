@@ -5,7 +5,7 @@
 #include "conf_emm.h"
 #include "fs.h"
 
-void gen_emm_data(emm_nvdata_t *emm_data) {
+void gen_emm_data(emm_nvdata_t *emm_data, const char *hplmn, const char *msin) {
 	hplmn_index = get_plmn_index(hplmn);
 	memset(emm_data, 0, sizeof(emm_nvdata_t));
 	int hplmn_index = get_plmn_index(hplmn);
