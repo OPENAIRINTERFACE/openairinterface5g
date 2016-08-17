@@ -11,6 +11,7 @@
 #include "display.h"
 #include "fs.h"
 #include "conf_emm.h"
+#include "conf_user_data.h"
 
 const char *msin = NULL;
 const char *usim_api_k = NULL;
@@ -113,6 +114,7 @@ int parse_config_file(const char *output_dir, const char *conf_filename) {
 	    emm_nvdata_t emm_data;
 	    user_nvdata_t user_data;
 	    usim_data_t usim_data;
+	    user_data_conf_t user_data_conf;
 
         sprintf(user, "%s%d", UE, i);
 
@@ -122,11 +124,12 @@ int parse_config_file(const char *output_dir, const char *conf_filename) {
             return EXIT_FAILURE;
         }
 
-        rc = parse_ue_user_param(ue_setting, i, &user_data);
+        rc = parse_ue_user_data(ue_setting, i, &user_data_conf);
         if (rc != EXIT_SUCCESS) {
             printf("Problem in USER section for UE%d. EXITING...\n", i);
             return EXIT_FAILURE;
         }
+        gen_user_data(&user_data_conf, &user_data);
         write_user_data(output_dir, i, &user_data);
 
         rc = parse_ue_sim_param(ue_setting, i);
@@ -582,69 +585,6 @@ int parse_ue_sim_param(config_setting_t *ue_setting, int user_id) {
 	return EXIT_SUCCESS;
 }
 
-int parse_ue_user_param(config_setting_t *ue_setting, int user_id, user_nvdata_t *user_data) {
-	config_setting_t *ue_param_setting = NULL;
-	const char* imei = NULL;
-	const char* manufacturer = NULL;
-	const char* model = NULL;
-	const char* pin = NULL;
-
-	int rc = EXIT_SUCCESS;
-	ue_param_setting = config_setting_get_member(ue_setting, USER);
-	if (ue_param_setting == NULL) {
-		printf("Check USER section of UE%d. EXITING...\n", user_id);
-		return EXIT_FAILURE;
-	}
-	rc = config_setting_lookup_string(ue_param_setting, UE_IMEI, &imei);
-	if (rc != 1) {
-		printf("Check USER IMEI section for UE%d. Exiting\n", user_id);
-		return EXIT_FAILURE;
-	}
-	rc = config_setting_lookup_string(ue_param_setting, MANUFACTURER,
-			&manufacturer);
-	if (rc != 1) {
-		printf("Check USER MANUFACTURER for UE%d FULLNAME. Exiting\n", user_id);
-		return EXIT_FAILURE;
-	}
-	rc = config_setting_lookup_string(ue_param_setting, MODEL, &model);
-	if (rc != 1) {
-		printf("Check USER MODEL for UE%d FULLNAME. Exiting\n", user_id);
-		return EXIT_FAILURE;
-	}
-	rc = config_setting_lookup_string(ue_param_setting, PINCODE, &pin);
-	if (rc != 1) {
-		printf("Check USER PIN for UE%d FULLNAME. Exiting\n", user_id);
-		return EXIT_FAILURE;
-	}
-
-	memset(user_data, 0, sizeof(user_nvdata_t));
-	snprintf(user_data->IMEI, USER_IMEI_SIZE + 1, "%s%d", imei, _luhn(imei));
-	/*
-	 * Manufacturer identifier
-	 */
-	strncpy(user_data->manufacturer, manufacturer, USER_MANUFACTURER_SIZE);
-	/*
-	 * Model identifier
-	 */
-	strncpy(user_data->model, model, USER_MODEL_SIZE);
-	/*
-	 * SIM Personal Identification Number
-	 */
-	strncpy(user_data->PIN, pin, USER_PIN_SIZE);
-
-	return EXIT_SUCCESS;
-}
-
-void write_user_data(const char *directory, int user_id, user_nvdata_t *data) {
-    int rc;
-	char* filename = make_filename(directory, USER_NVRAM_FILENAME, user_id);
-	rc = memory_write(filename, data, sizeof(user_nvdata_t));
-    free(filename);
-	if (rc != RETURNok) {
-		perror("ERROR\t: memory_write() failed");
-		exit(EXIT_FAILURE);
-	}
-}
 
 int fill_ucplmn(config_setting_t* setting, int user_id) {
 	int rc;
@@ -786,21 +726,6 @@ void fill_network_record_list() {
 		}
 
 	}
-}
-
-/*
- * Computes the check digit using Luhn algorithm
- */
-int _luhn(const char* cc) {
-	const int m[] = { 0, 2, 4, 6, 8, 1, 3, 5, 7, 9 };
-	int odd = 1, sum = 0;
-
-	for (int i = strlen(cc); i--; odd = !odd) {
-		int digit = cc[i] - '0';
-		sum += odd ? m[digit] : digit;
-	}
-
-	return 10 - (sum % 10);
 }
 
 /*

@@ -4,9 +4,7 @@
 #include <libconfig.h>
 
 #include "usim_api.h"
-#include "userDef.h"
 
-#define USER "USER"
 #define UE "UE"
 #define SIM "SIM"
 #define PLMN "PLMN"
@@ -101,13 +99,8 @@ int parse_config_file(const char *output_dir, const char *filename);
 void _display_usage(void);
 void fill_network_record_list(void);
 
-int parse_ue_user_param(config_setting_t *ue_setting, int user_id, user_nvdata_t *user_data);
-void write_user_data(const char *directory, int user_id, user_nvdata_t *data);
 int write_usim_data(const char *directory, int user_id, usim_data_t *usim_data);
 void gen_usim_data(usim_data_t *usim_data);
-
-
-int _luhn(const char* cc);
 
 int parse_ue_sim_param(config_setting_t *ue_setting, int user_id);
 int parse_plmn_param(config_setting_t *plmn_setting, int index);
