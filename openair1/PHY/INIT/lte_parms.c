@@ -191,6 +191,7 @@ void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms)
   printf("frame_parms->tdd_config=%d\n",frame_parms->tdd_config);
   printf("frame_parms->tdd_config_S=%d\n",frame_parms->tdd_config_S);
   printf("frame_parms->mode1_flag=%d\n",frame_parms->mode1_flag);
+  printf("frame_parms->nb_antennas_tx_eNB(nb_antenna_ports)=%d\n",frame_parms->nb_antennas_tx_eNB);
   printf("frame_parms->nb_antennas_tx=%d\n",frame_parms->nb_antennas_tx);
   printf("frame_parms->nb_antennas_rx=%d\n",frame_parms->nb_antennas_rx);
   printf("frame_parms->ofdm_symbol_size=%d\n",frame_parms->ofdm_symbol_size);

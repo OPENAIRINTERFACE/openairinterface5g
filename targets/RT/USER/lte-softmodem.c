@@ -331,7 +331,7 @@ time_stats_t softmodem_stats_tx_sf[10]; // total tx time
 time_stats_t softmodem_stats_rx_sf[10]; // total rx time
 void reset_opp_meas(void);
 void print_opp_meas(void);
-int transmission_mode=1;
+//int transmission_mode=1;
 
 int16_t           glog_level         = LOG_INFO;
 int16_t           glog_verbosity     = LOG_MED;
@@ -2662,12 +2662,16 @@ static void get_options (int argc, char **argv)
       break;
 
     case 'x':
+      printf("Transmission mode should be set in config file now\n");
+      exit(-1);
+      /*
       transmission_mode = atoi(optarg);
 
       if (transmission_mode > 7) {
         printf("Transmission mode %d not supported for the moment\n",transmission_mode);
         exit(-1);
       }
+      */
       break;
 
     case 'T':
@@ -2754,7 +2758,7 @@ static void get_options (int argc, char **argv)
         frame_parms[CC_id]->N_RB_DL             =  enb_properties->properties[i]->N_RB_DL[CC_id];
         frame_parms[CC_id]->N_RB_UL             =  enb_properties->properties[i]->N_RB_DL[CC_id];
         frame_parms[CC_id]->nb_antennas_tx      =  enb_properties->properties[i]->nb_antennas_tx[CC_id];
-        frame_parms[CC_id]->nb_antennas_tx_eNB  =  enb_properties->properties[i]->nb_antennas_tx[CC_id];
+        frame_parms[CC_id]->nb_antennas_tx_eNB  =  enb_properties->properties[i]->nb_antenna_ports[CC_id];
         frame_parms[CC_id]->nb_antennas_rx      =  enb_properties->properties[i]->nb_antennas_rx[CC_id];
         //} // j
       }
@@ -3030,10 +3034,10 @@ int main( int argc, char **argv )
       //UE_flag==1
       frame_parms[CC_id]->nb_antennas_tx     = 1;
       frame_parms[CC_id]->nb_antennas_rx     = 1;
-      frame_parms[CC_id]->nb_antennas_tx_eNB = (transmission_mode == 1) ? 1 : 2; //initial value overwritten by initial sync later
+      frame_parms[CC_id]->nb_antennas_tx_eNB = 1; //initial value overwritten by initial sync later
     }
 
-    frame_parms[CC_id]->mode1_flag         = (transmission_mode == 1) ? 1 : 0;
+    frame_parms[CC_id]->mode1_flag         = (frame_parms[CC_id]->nb_antennas_tx_eNB == 1) ? 1 : 0;
     frame_parms[CC_id]->phich_config_common.phich_resource = oneSixth;
     frame_parms[CC_id]->phich_config_common.phich_duration = normal;
     // UL RS Config
@@ -3069,7 +3073,7 @@ int main( int argc, char **argv )
 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
-      PHY_vars_UE_g[0][CC_id] = init_lte_UE(frame_parms[CC_id], 0,abstraction_flag,transmission_mode);
+      PHY_vars_UE_g[0][CC_id] = init_lte_UE(frame_parms[CC_id], 0,abstraction_flag);
       UE[CC_id] = PHY_vars_UE_g[0][CC_id];
       printf("PHY_vars_UE_g[0][%d] = %p\n",CC_id,UE[CC_id]);
 
@@ -3169,7 +3173,7 @@ int main( int argc, char **argv )
     PHY_vars_eNB_g[0] = malloc(sizeof(PHY_VARS_eNB*));
 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      PHY_vars_eNB_g[0][CC_id] = init_lte_eNB(frame_parms[CC_id],0,frame_parms[CC_id]->Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
+      PHY_vars_eNB_g[0][CC_id] = init_lte_eNB(frame_parms[CC_id],0,frame_parms[CC_id]->Nid_cell,cooperation_flag,abstraction_flag);
       PHY_vars_eNB_g[0][CC_id]->CC_id = CC_id;
 
       if (phy_test==1)
