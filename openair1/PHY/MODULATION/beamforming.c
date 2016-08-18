@@ -120,4 +120,3 @@ int beam_precoding(int32_t **txdataF,
     }  
   }
 }
-

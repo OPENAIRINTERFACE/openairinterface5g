@@ -593,6 +593,15 @@ typedef enum {
   TM9_10=14
 } MIMO_mode_t;
 
+typedef enum {
+  /// MRT
+  MRT=0,
+  /// ZF
+  ZF=1,
+  /// MMSE
+  MMSE=2
+} PRECODE_TYPE_t;
+
 typedef struct {
   /// \brief Holds the transmit data in time domain.
   /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
@@ -632,18 +641,16 @@ typedef struct {
   /// - first index: eNB id [0..2] (hard coded)
   /// - second index: sample [0..samples_per_tti*10[
   uint32_t *sync_corr[3];
-  // int32_t **beam_weights[3][15];
   /// \brief Holds the beamforming weights
   /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: eNB antenna port index
+  /// - second index: eNB antenna port index (hard coded)
   /// - third index: tx antenna [0..nb_antennas_tx[
   /// - fourth index: sample [0..]
   int32_t **beam_weights[3][15];
   /// \brief Holds the tdd reciprocity calibration coefficients 
   /// - first index: eNB id [0..2] (hard coded) 
-  /// - second index: ue specific eNB antenna port index, port5->index0, port7-15->index0-7
-  /// - third index: tx antenna [0..nb_antennas_tx[
-  /// - forth index: frenquency [0..]
+  /// - second index: tx antenna [0..nb_antennas_tx[
+  /// - third index: frequency [0..]
   int32_t **tdd_calib_coeffs[3];
 } LTE_eNB_COMMON;
 

@@ -991,6 +991,9 @@ int main(int argc, char **argv)
       PHY_vars_eNB->eNB_UE_stats[1].DL_pmi_single = 0;
   }
 
+  //TODO: allocate memory for calibration matrix and calib_dl_ch_estimates in init_lte.c
+  //for first tests initialze calibration matrix with idendity
+  //read_calibration_matrix(calib_fname, nb_ant, nb_freq, PHY_vars_eNB->lte_eNB_common_vars.tdd_calib_coeffs[0]);
 
   if (input_fd==NULL) {
 
@@ -2142,6 +2145,32 @@ int main(int argc, char **argv)
 
 PMI_FEEDBACK:
 
+	  //make sure dlsim is called with perfect channel estimation option (for freq_channel)
+	  //fill drs_ch_estimates with data from eNB2UE->chF
+	  for(aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
+	    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+	      for (i=0; i<frame_parms->N_RB_DL*12; i++) {
+		for (l=0; l<frame_parms->symbols_per_tti; l++) {
+		  ((int16_t *) PHY_vars_eNB->lte_eNB_pusch_vars[0]->drs_ch_estimates[0][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size)*2]=(int16_t)(eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
+                          //printf("x=%d,AMP=%d\n",eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x,AMP);
+		  ((int16_t *) PHY_vars_eNB->lte_eNB_pusch_vars[0]->drs_ch_estimates[0][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size)*2]=(int16_t)(eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
+		}
+	      }
+	    }
+	  }
+
+	  estimate_DLCSI_from_ULCSI(PHY_vars_eNB->dlsch_eNB[0][0]->calib_dl_ch_estimates,
+					 &PHY_vars_eNB->lte_eNB_pusch_vars[0]->drs_ch_estimates[0][0/*position of second DMRS*/],
+					 PHY_vars_eNB->lte_eNB_common_vars.tdd_calib_coeffs[0],
+					 frame_parms->nb_antennas_tx,
+					 frame_parms->N_RB_DL*12);
+	  
+	  compute_BF_weights(PHY_vars_eNB->dlsch_eNB[0][0]->ue_spec_bf_weights[0],
+			     PHY_vars_eNB->dlsch_eNB[0][0]->calib_dl_ch_estimates,
+			     MRT,
+			     frame_parms->nb_antennas_tx,
+			     frame_parms->N_RB_DL*12);
+
           //printf("Trial %d : Round %d, pmi_feedback %d \n",trials,round,pmi_feedback);
           for (aa=0; aa<NB_ANTENNA_PORTS_ENB; aa++) {
             memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][aa][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t));
@@ -3088,6 +3117,7 @@ PMI_FEEDBACK:
                                 eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
 
                           if (transmission_mode == 7){
+			    //this should include the BF weights! Will not work for a random channel
                             if (PHY_vars_UE->high_speed_flag==0) {
                               ((int16_t *)PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i]=(int16_t)(
                                   eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
