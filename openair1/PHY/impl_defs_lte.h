@@ -593,6 +593,15 @@ typedef enum {
   TM9_10=14
 } MIMO_mode_t;
 
+typedef enum {
+  /// MRT
+  MRT=0,
+  /// ZF
+  ZF=1,
+  /// MMSE
+  MMSE=2
+} PRECODE_TYPE_t;
+
 typedef struct {
   /// \brief Holds the transmit data in time domain.
   /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.

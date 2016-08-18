@@ -118,6 +118,13 @@ int beam_precoding(int32_t **txdataF,
                    int slot,
                    int symbol);
 
+int f_read(char *calibF_fname, int nb_ant, int nb_freq, int32_t **tdd_calib_coeffs);
+
+int estimate_DLCSI_from_ULCSI(int32_t **calib_dl_ch_estimates, int32_t **ul_ch_estimates, int32_t **tdd_calib_coeffs, int nb_ant, int nb_freq);
+
+int compute_BF_weights(int32_t **beam_weights, int32_t **calib_dl_ch_estimates, PRECODE_TYPE_t precode_type, int nb_ant, int nb_freq);
+
+
 #endif
 /** @}*/
 #endif
