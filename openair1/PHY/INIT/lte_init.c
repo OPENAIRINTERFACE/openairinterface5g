@@ -473,7 +473,7 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB)
 
       if (physicalConfigDedicated->antennaInfo) {
         phy_vars_eNB->transmission_mode[UE_id] = 1+(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode);
-        LOG_D(PHY,"Transmission Mode %d\n",phy_vars_eNB->transmission_mode[UE_id]);
+        LOG_I(PHY,"Transmission Mode (phy_config_dedicated_eNB_step2) %d\n",phy_vars_eNB->transmission_mode[UE_id]);
         LOG_D(PHY,"\n");
       }
 
@@ -651,7 +651,7 @@ void phy_config_dedicated_eNB(uint8_t Mod_id,
 
   if (physicalConfigDedicated) {
     phy_vars_eNB->physicalConfigDedicated[UE_id] = physicalConfigDedicated;
-    LOG_I(PHY,"phy_config_dedicated_eNB: physicalConfigDedicated=%p\n",physicalConfigDedicated);
+    LOG_D(PHY,"phy_config_dedicated_eNB: physicalConfigDedicated=%p\n",physicalConfigDedicated);
 
     if (physicalConfigDedicated->antennaInfo) {
       switch(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode) {
@@ -679,7 +679,9 @@ void phy_config_dedicated_eNB(uint8_t Mod_id,
       default:
 	LOG_E(PHY,"Unknown transmission mode!\n");
 	break;
-      } 
+      }
+      LOG_I(PHY,"Transmission Mode (phy_config_dedicated_eNB) %d\n",phy_vars_eNB->transmission_mode[UE_id]);
+ 
     } else {
       LOG_D(PHY,"[eNB %d] Frame %d: Received NULL radioResourceConfigDedicated->antennaInfo from eNB %d\n",Mod_id, phy_vars_eNB->proc[8].frame_tx,UE_id);
     }
