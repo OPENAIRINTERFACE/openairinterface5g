@@ -35,6 +35,10 @@ $SUDO echo "set pagination off"               >> $gdb_file
 $SUDO echo "handle SIG33 pass nostop noprint" >> $gdb_file
 $SUDO echo "echo backtrace:\n"                >> $gdb_file
 $SUDO echo "backtrace full"                   >> $gdb_file
+$SUDO echo "echo \n\nVariables:\n"            >> $gdb_file
+$SUDO echo "info variables"                   >> $gdb_file
+$SUDO echo "echo \n\nlocals:\n"               >> $gdb_file
+$SUDO echo "info locals"                      >> $gdb_file
 $SUDO echo "echo \n\nregisters:\n"            >> $gdb_file
 $SUDO echo "info registers"                   >> $gdb_file
 $SUDO echo "echo \n\ncurrent instructions:\n" >> $gdb_file 
