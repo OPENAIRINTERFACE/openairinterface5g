@@ -74,7 +74,7 @@ int allocate_pbch_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
   MIMO_mode_t mimo_mode   = (frame_parms->mode1_flag==1)?SISO:ALAMOUTI;
 
 
-  uint32_t tti_offset,aa;
+  uint32_t tti_offset;
   uint8_t re;
   int16_t gain_lin_QPSK;
   int16_t re_off=re_offset;
@@ -99,15 +99,11 @@ int allocate_pbch_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
         *re_allocated = *re_allocated + 1;
 
         //    printf("%d(%d) : %d,%d => ",tti_offset,*jj,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
-        for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-          ((int16_t*)&txdataF[aa][tti_offset])[0] += (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I //b_i
-        }
+        ((int16_t*)&txdataF[0][tti_offset])[0] += (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I //b_i
 
         *jj = *jj + 1;
 
-        for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-          ((int16_t*)&txdataF[aa][tti_offset])[1] += (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //Q //b_{i+1}
-        }
+        ((int16_t*)&txdataF[0][tti_offset])[1] += (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //Q //b_{i+1}
 
         *jj = *jj + 1;
       } else if (mimo_mode == ALAMOUTI) {
