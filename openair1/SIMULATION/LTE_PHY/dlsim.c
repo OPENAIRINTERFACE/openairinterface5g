@@ -934,13 +934,10 @@ int main(int argc, char **argv)
       } else {
          // this initilisation may should be moved to another place
         for (j=0; j<4; j++) {                                                            
-          PHY_vars_eNB->dlsch_eNB[k][i]->ue_spec_bf_weights[j] = (int32_t **)malloc16(n_tx_phy*sizeof(int32_t*));       
- 
           for (aa=0; aa<n_tx_phy; aa++) {                                          
-            PHY_vars_eNB->dlsch_eNB[k][i]->ue_spec_bf_weights[j][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
             ue_spec_bf_weights = PHY_vars_eNB->dlsch_eNB[k][i]->ue_spec_bf_weights[j][aa];
 
-            for (re=0;re<frame_parms->ofdm_symbol_size;re++) {
+            for (re=0;re<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES;re++) {
               if (n_tx_phy==1 || n_tx_phy==2)
                 ue_spec_bf_weights[re] = 0x00007fff;
               else if (n_tx_phy==4 || n_tx_phy==8)

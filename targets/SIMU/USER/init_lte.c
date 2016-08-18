@@ -79,18 +79,6 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
       } else {
         LOG_D(PHY,"dlsch_eNB[%d][%d] => %p\n",i,j,PHY_vars_eNB->dlsch_eNB[i][j]);
         PHY_vars_eNB->dlsch_eNB[i][j]->rnti=0;
-
-        for (layer=0; layer<4; layer++) {
-          PHY_vars_eNB->dlsch_eNB[i][j]->ue_spec_bf_weights[layer] = (int32_t **)malloc16(frame_parms->nb_antennas_tx*sizeof(int32_t*));
-
-          for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-            PHY_vars_eNB->dlsch_eNB[i][j]->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
-            for (re=0;re<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; re++) {
-              PHY_vars_eNB->dlsch_eNB[i][j]->ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
-            }
-          }
-        } 
-
       }
     }
 

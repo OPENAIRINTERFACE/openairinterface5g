@@ -123,7 +123,8 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
 {
 
   LTE_eNB_DLSCH_t *dlsch;
-  unsigned char exit_flag = 0,i,j,r,aa;
+  unsigned char exit_flag = 0,i,j,r,aa,layer;
+  int re;
   unsigned char bw_scaling =1;
   uint8_t nb_antennas_tx = frame_parms->nb_antennas_tx;
 
@@ -153,6 +154,23 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
     dlsch->Mdlharq = Mdlharq;
     dlsch->Mlimit = 4;
     dlsch->Nsoft = Nsoft;
+
+    for (layer=0; layer<4; layer++) {
+      dlsch->ue_spec_bf_weights[layer] = (int32_t**)malloc16(frame_parms->nb_antennas_tx*sizeof(int32_t*));
+  
+       for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+         dlsch->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
+         for (re=0;re<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; re++) {
+           dlsch->ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
+         }
+       }
+     }
+
+     dlsch->calib_dl_ch_estimates = (int32_t**)malloc16(frame_parms->nb_antennas_tx*sizeof(int32_t*));
+     for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+       dlsch->calib_dl_ch_estimates[aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
+       
+     }
 
     for (i=0; i<10; i++)
       dlsch->harq_ids[i] = Mdlharq;
