@@ -47,8 +47,10 @@ int compute_BF_weights(int32_t **beam_weights, int32_t **calib_dl_ch_estimates, 
 } 
 
 // temporal test function
+/*
 void main(){
   // initialization
   // compare
   printf("Hello world!\n");
 }
+*/
