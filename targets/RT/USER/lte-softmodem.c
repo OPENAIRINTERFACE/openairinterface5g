@@ -3278,9 +3278,11 @@ int main( int argc, char **argv )
       openair0_cfg[card].rx_bw = 1.5e6;
     }
 
+    /*
     if (frame_parms[0]->frame_type==TDD)
       openair0_cfg[card].duplex_mode = duplex_mode_TDD;
     else //FDD
+    */
       openair0_cfg[card].duplex_mode = duplex_mode_FDD;
 
 
