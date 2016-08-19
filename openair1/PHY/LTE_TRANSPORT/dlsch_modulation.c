@@ -408,10 +408,12 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
           if (x0[*jj] == 1)
             qam16_table_offset_im+=1;
           *jj=*jj+1;
-          
-          ((int16_t *)&txdataF[0][tti_offset])[0]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
-          ((int16_t *)&txdataF[0][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
-          
+
+          //((int16_t *)&txdataF[0][tti_offset])[0]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
+          //((int16_t *)&txdataF[0][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+	  ((int16_t *)&txdataF[0][tti_offset])[0]+=qam_table_s0[qam16_table_offset_re];
+	  ((int16_t *)&txdataF[0][tti_offset])[1]+=qam_table_s0[qam16_table_offset_im];
+
           // Antenna 1 position n Real part -> -x1*
           
           qam16_table_offset_re = 0;
@@ -431,11 +433,12 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
           if (x0[*jj] == 1)
             qam16_table_offset_im+=1;
           *jj=*jj+1;
-          
-          ((int16_t *)&txdataF[1][tti_offset])[0]+=-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
-          ((int16_t *)&txdataF[1][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
-        
-        break;
+
+          //((int16_t *)&txdataF[1][tti_offset])[0]+=-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
+          //((int16_t *)&txdataF[1][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+	  ((int16_t *)&txdataF[1][tti_offset])[0]+=-qam_table_s0[qam16_table_offset_re];
+	  ((int16_t *)&txdataF[1][tti_offset])[1]+=qam_table_s0[qam16_table_offset_im];
+          break;
 
         case 6:   // 64-QAM
           
@@ -462,10 +465,11 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
             qam64_table_offset_im+=1;
           *jj=*jj+1;
           
-          ((int16_t *)&txdataF[0][tti_offset])[0]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
-          ((int16_t *)&txdataF[0][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
-          
-          
+          //((int16_t *)&txdataF[0][tti_offset])[0]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
+          //((int16_t *)&txdataF[0][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+	  ((int16_t *)&txdataF[0][tti_offset])[0]+=qam_table_s0[qam64_table_offset_re];
+	  ((int16_t *)&txdataF[0][tti_offset])[1]+=qam_table_s0[qam64_table_offset_im];
+
           // Antenna 1 => -x1*
           qam64_table_offset_re = 0;
           qam64_table_offset_im = 0;
@@ -487,13 +491,14 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
           if (x0[*jj] == 1)
             qam64_table_offset_im+=1;
           *jj=*jj+1;
-          
-          ((int16_t *)&txdataF[1][tti_offset])[0]+=-(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
-          ((int16_t *)&txdataF[1][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
-          
-        break;
+
+          //((int16_t *)&txdataF[1][tti_offset])[0]+=-(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
+          //((int16_t *)&txdataF[1][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+	  ((int16_t *)&txdataF[1][tti_offset])[0]+=-qam_table_s0[qam64_table_offset_re];
+	  ((int16_t *)&txdataF[1][tti_offset])[1]+=qam_table_s0[qam64_table_offset_im];
+          break;
         }
-  // fill in the rest of the ALAMOUTI precoding
+	// fill in the rest of the ALAMOUTI precoding
         if (is_not_pilot(pilots,re + 1,frame_parms->nushift,use2ndpilots)==1) {
           ((int16_t *)&txdataF[0][tti_offset+1])[0] += -((int16_t *)&txdataF[1][tti_offset])[0]; //x1
           ((int16_t *)&txdataF[0][tti_offset+1])[1] += ((int16_t *)&txdataF[1][tti_offset])[1];

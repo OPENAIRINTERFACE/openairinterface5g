@@ -1602,6 +1602,7 @@ do_RRCConnectionSetup(
   //     AntennaInfoDedicated__transmissionMode_tm2);
 
   switch (transmission_mode) {
+  default:
   case 1:
     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm1;
     break;
@@ -1633,6 +1634,10 @@ do_RRCConnectionSetup(
 
   case 6:
     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm6;
+    break;
+
+  case 7:
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm7;
     break;
   }
 
