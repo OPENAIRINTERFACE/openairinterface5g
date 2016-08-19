@@ -388,7 +388,7 @@
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
      <compile_prog_args>--eNB -w USRP -t ETHERNET  -c </compile_prog_args>
      <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/liboai_usrpdevif.so
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_usrpdevif.so
                        $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_eth_transpro.so</compile_prog_out>
      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
      <pre_exec_args></pre_exec_args>
@@ -405,7 +405,7 @@
      <desc>Build RRU (NGFI) for EXMIMO  (Rel 10) w/ ETHERNET transport</desc>
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-     <compile_prog_args>--eNB -w EXMIMO -t ETHNERNET  -c </compile_prog_args>
+     <compile_prog_args>--eNB -w EXMIMO -t ETHERNET  -c </compile_prog_args>
      <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
                        $OPENAIR_DIR/cmake_targets/lte_build_oai/build/CMakeFiles/openair_rf/openair_rf.ko
                        $OPENAIR_DIR/cmake_targets/lte_build_oai/build/updatefw
@@ -456,7 +456,7 @@
      <main_exec_args></main_exec_args>
      <search_expr_true></search_expr_true>
      <search_expr_false></search_expr_false>
-     <tags>RRH.LMSSDR.Rel10</tags>
+     <tags>RRU.LMSSDR.Rel10</tags>
      <nruns>1</nruns>
      </testCase>
 
