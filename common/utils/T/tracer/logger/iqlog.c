@@ -169,7 +169,7 @@ logger *new_iqlog(event_handler *h, void *database,
   }
   if (strcmp(f.type[ret->N_RB_UL_arg], "int") != 0) {
     printf("%s:%d: argument '%s' has wrong type (should be 'int')\n",
-        __FILE__, __LINE__, nb_rb);
+        __FILE__, __LINE__, N_RB_UL);
     abort();
   }
   if (strcmp(f.type[ret->symbols_per_tti_arg], "int") != 0) {

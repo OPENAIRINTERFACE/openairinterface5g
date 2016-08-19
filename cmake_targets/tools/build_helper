@@ -1,4 +1,4 @@
-################################################################################
+ ################################################################################
 #
 # Copyright (c) 2015, EURECOM (www.eurecom.fr)
 # All rights reserved.
@@ -205,10 +205,8 @@ install_gnutls_from_source(){
     cd /tmp 
     echo "Downloading gnutls archive"
     $SUDO rm -rf /tmp/gnutls-3.1.23.tar.xz* /tmp/gnutls-3.1.23
-    wget http://mirrors.dotsrc.org/gcrypt/gnutls/v3.1/gnutls-3.1.23.tar.xz
-    if [ $? -ne 0 ]; then
+    wget http://mirrors.dotsrc.org/gcrypt/gnutls/v3.1/gnutls-3.1.23.tar.xz || \
       wget ftp://ftp.gnutls.org/gcrypt/gnutls/v3.1/gnutls-3.1.23.tar.xz
-    fi
     if [ ! -f gnutls-3.1.23.tar.xz ]; then
       echo_error "Could not download gnutls source files"
       cd -
@@ -285,7 +283,8 @@ check_install_additional_tools (){
         android-tools-adb \
 	wvdial \
         python-numpy \
-    sshpass
+    sshpass \
+    nscd
 
     $SUDO pip install paramiko
     $SUDO pip install pyroute2
@@ -459,6 +458,8 @@ CURPID=$$
 ppid=$$
 arraycounter=1
 echo_info "** Trapped CTRL-C. Killing all subprocesses now..."
+echo_info "** Calling sync now..."
+sync 
 while true
 do
         FORLOOP=FALSE
