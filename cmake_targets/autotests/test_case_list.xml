@@ -381,6 +381,85 @@
      <nruns>1</nruns>
      </testCase>
 
+     <testCase id="010150" >
+     <class>compilation</class>
+     <desc>Build RRU (NGFI) for USRP (Rel 10) w/ ETHERNET transport</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--eNB -w USRP -t ETHERNET  -c </compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/liboai_usrpdevif.so
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_eth_transpro.so</compile_prog_out>
+     <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <tags>RRU.USRP.Rel10</tags>
+     <nruns>1</nruns>
+     </testCase>
+
+     <testCase id="010151" >
+     <class>compilation</class>
+     <desc>Build RRU (NGFI) for EXMIMO  (Rel 10) w/ ETHERNET transport</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--eNB -w EXMIMO -t ETHNERNET  -c </compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/CMakeFiles/openair_rf/openair_rf.ko
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/updatefw
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/oarf_config_exmimo.oct
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_exmimodevif.so
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_eth_transpro.so</compile_prog_out>
+     <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <tags>RRU.EXMIMO.Rel10</tags>
+     <nruns>1</nruns>
+     </testCase>
+
+     <testCase id="010152" >
+     <class>compilation</class>
+     <desc>Build RRU (NGFI) for BLADERF (Rel 10) w/ ETHERNET transport</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--eNB -w BLADERF -t ETHERNET  -c </compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_bladerfdevif.so
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_eth_transpro.so</compile_prog_out>
+     <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <tags>RRU.BLADERF.Rel10</tags>
+     <nruns>1</nruns>
+     </testCase>
+
+    <testCase id="010153" >
+     <class>compilation</class>
+     <desc>Build RRU (NGFI) for LMSSDR  (Rel 10) w/ ETHERNET transport</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--eNB -w LMSSDR -t ETHERNET  -c </compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_lmssdrdevif.so
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_eth_transpro.so</compile_prog_out>
+     <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <tags>RRH.LMSSDR.Rel10</tags>
+     <nruns>1</nruns>
+     </testCase>
+
    <testCase id="010200">
       <class>execution</class>
       <desc>Run OAISIM Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) and search for errors, segmentation fault or exit</desc>
