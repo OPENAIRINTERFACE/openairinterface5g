@@ -1272,6 +1272,28 @@ static void* eNB_thread_tx( void* param )
 
     do_OFDM_mod_rt( proc->subframe_tx, PHY_vars_eNB_g[0][proc->CC_id] );
     /*
+    if ((proc->frame_tx==100) && (proc->subframe_tx==9)) {
+      write_output("/tmp/eNBtxsig0.m","txs0",
+		   PHY_vars_eNB_g[0][proc->CC_id]->lte_eNB_common_vars.txdata[0][0],
+		   PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.samples_per_tti*10,
+		   1,1);
+      write_output("/tmp/eNBtxsig1.m","txs1",
+		   PHY_vars_eNB_g[0][proc->CC_id]->lte_eNB_common_vars.txdata[0][1],
+		   PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.samples_per_tti*10,
+		   1,1);
+      write_output("/tmp/eNBtxsigF0.m","txsF0",
+		   PHY_vars_eNB_g[0][proc->CC_id]->lte_eNB_common_vars.txdataF[0][0],
+		   PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.ofdm_symbol_size*10,
+		   1,1);
+      write_output("/tmp/eNBtxsigF1.m","txsF1",
+		   PHY_vars_eNB_g[0][proc->CC_id]->lte_eNB_common_vars.txdataF[0][1],
+		   PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.ofdm_symbol_size*10,
+		   1,1);
+
+      exit_fun("DEBUG: Exiting after writing files");
+    }
+    */
+    /*
     short *txdata = (short*)&PHY_vars_eNB_g[0][proc->CC_id]->lte_eNB_common_vars.txdata[0][0][proc->subframe_tx*PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.samples_per_tti];
     int i;
     for (i=0;i<PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.samples_per_tti*2;i+=8) {
