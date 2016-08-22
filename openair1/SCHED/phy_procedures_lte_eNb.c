@@ -1649,27 +1649,21 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
   phy_procedures_emos_eNB_TX(subframe, phy_vars_eNB);
 #endif
 
-  //cell-specific beamforming
-
 #if !(defined(EXMIMO) || defined(OAI_USRP) || defined (CPRIGW))
 
   if (abstraction_flag==0)
   {
     start_meas(&phy_vars_eNB->ofdm_mod_stats);
     
-    //do_OFDM_mod (without l) ?
-
     do_OFDM_mod_l(&phy_vars_eNB->lte_eNB_common_vars,
                   0,
                   subframe<<1,
-                  &phy_vars_eNB->lte_frame_parms,
-                  num_pdcch_symbols);
+                  &phy_vars_eNB->lte_frame_parms);
                   
     do_OFDM_mod_l(&phy_vars_eNB->lte_eNB_common_vars,
                   0,
                   1+(subframe<<1),
-                  &phy_vars_eNB->lte_frame_parms,
-                  num_pdcch_symbols);
+                  &phy_vars_eNB->lte_frame_parms);
 
     stop_meas(&phy_vars_eNB->ofdm_mod_stats);
   }

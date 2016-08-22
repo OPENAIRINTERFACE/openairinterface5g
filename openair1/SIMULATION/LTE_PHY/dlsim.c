@@ -2835,14 +2835,12 @@ PMI_FEEDBACK:
             do_OFDM_mod_l(&PHY_vars_eNB->lte_eNB_common_vars,
                           eNB_id,
                           (subframe*2),
-                          &PHY_vars_eNB->lte_frame_parms,
-                          num_pdcch_symbols);
+                          &PHY_vars_eNB->lte_frame_parms);
 
             do_OFDM_mod_l(&PHY_vars_eNB->lte_eNB_common_vars,
                           eNB_id,
                           (subframe*2)+1,
-                          &PHY_vars_eNB->lte_frame_parms,
-                          num_pdcch_symbols);
+                          &PHY_vars_eNB->lte_frame_parms);
 
             stop_meas(&PHY_vars_eNB->ofdm_mod_stats);
             stop_meas(&PHY_vars_eNB->phy_proc_tx);

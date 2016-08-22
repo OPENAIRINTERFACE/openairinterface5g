@@ -291,19 +291,17 @@ void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t ne
 }
 
 // OFDM modulation for each symbol
-void do_OFDM_mod_l(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms, uint8_t num_pdcch_symbols)
+void do_OFDM_mod_l(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms)
 {
 
-  int aa, l, slot_offset, slot_offset_F;
-  int8_t UE_id=0;
+  int aa, l, slot_offset;
   int32_t **txdataF = eNB_common_vars->txdataF[eNB_id];
   int32_t **txdataF_BF = eNB_common_vars->txdataF_BF[eNB_id];
   int32_t **txdata = eNB_common_vars->txdata[eNB_id];
 
-  //slot_offset_F = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==1) ? 6 : 7);
   slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
 
-  //    printf("Thread %d starting ... aa %d (%llu)\n",omp_get_thread_num(),aa,rdtsc());
+  //printf("Thread %d starting ... aa %d (%llu)\n",omp_get_thread_num(),aa,rdtsc());
   for (l=0; l<frame_parms->symbols_per_tti>>1; l++) {
   
     //printf("do_OFDM_mod_l, slot=%d, l=%d, NUMBER_OF_OFDM_CARRIERS=%d,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES=%d\n",next_slot, l,NUMBER_OF_OFDM_CARRIERS,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
@@ -311,6 +309,8 @@ void do_OFDM_mod_l(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_sl
     beam_precoding(txdataF,txdataF_BF,frame_parms,eNB_common_vars->beam_weights[eNB_id],next_slot,l);
 
     for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+
+      //PMCH case not implemented... 
 
       if (frame_parms->Ncp == 1)
         PHY_ofdm_mod(txdataF_BF[aa],         // input
@@ -335,6 +335,10 @@ void do_OFDM_mod_l(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_sl
                        1,                                  // number of symbols
                        frame_parms->nb_prefix_samples,     // number of prefix samples
                        CYCLIC_PREFIX);
+
+          /* printf("txdata[%d][%d]=%d\n",aa, 
+                 slot_offset+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(l-1)*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,
+                 &txdata[aa][slot_offset+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(l-1)*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES]);*/
         }
       }
     }
