@@ -6,11 +6,10 @@
 #include "fs.h"
 
 void gen_emm_data(emm_nvdata_t *emm_data, const char *hplmn, const char *msin) {
-	hplmn_index = get_plmn_index(hplmn);
 	memset(emm_data, 0, sizeof(emm_nvdata_t));
 	int hplmn_index = get_plmn_index(hplmn);
 	emm_data->imsi.length = 8;
-	emm_data->imsi.u.num.parity = get_msin_parity(msin);
+	emm_data->imsi.u.num.parity = get_msin_parity(msin, user_plmn_list[hplmn_index].mcc, user_plmn_list[hplmn_index].mnc);
 	emm_data->imsi.u.num.digit1 = user_plmn_list[hplmn_index].mcc[0];
 	emm_data->imsi.u.num.digit2 = user_plmn_list[hplmn_index].mcc[1];
 	emm_data->imsi.u.num.digit3 = user_plmn_list[hplmn_index].mcc[2];
@@ -69,9 +68,9 @@ int write_emm_data(const char *directory, int user_id, emm_nvdata_t *emm_data) {
     return(EXIT_SUCCESS);
 }
 
-int get_msin_parity(const char * msin) {
-	int imsi_size = strlen(msin) + strlen(user_plmn_list[hplmn_index].mcc)
-			+ strlen(user_plmn_list[hplmn_index].mnc);
+int get_msin_parity(const char * msin, const char *mcc, const char *mnc) {
+	int imsi_size = strlen(msin) + strlen(mcc)
+			+ strlen(mnc);
 	int result = (imsi_size % 2 == 0) ? 0 : 1;
 	return result;
 

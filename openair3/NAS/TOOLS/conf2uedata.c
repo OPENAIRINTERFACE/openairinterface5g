@@ -18,7 +18,6 @@ int *ocplmn = NULL;
 int *fplmn = NULL;
 int *ehplmn = NULL;
 
-int hplmn_index = 0;
 int plmn_nb = 0;
 int ucplmn_nb = 0;
 int oplmn_nb = 0;

@@ -49,7 +49,6 @@ extern int *ocplmn;
 extern int *fplmn;
 extern int *ehplmn;
 
-extern int hplmn_index;
 extern int plmn_nb;
 extern int ucplmn_nb;
 extern int oplmn_nb;

@@ -41,9 +41,12 @@ int parse_ue_sim_param(config_setting_t *ue_setting, int user_id, usim_data_conf
 }
 
 void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data) {
+    int hplmn_index = get_plmn_index(u->hplmn);
 	memset(usim_data, 0, sizeof(usim_data_t));
 	usim_data->imsi.length = 8;
-	usim_data->imsi.u.num.parity = get_msin_parity(u->msin);
+	usim_data->imsi.u.num.parity = get_msin_parity(u->msin,
+		user_plmn_list[hplmn_index].mcc,
+		user_plmn_list[hplmn_index].mnc);
 
 	usim_data->imsi.u.num.digit1 = user_plmn_list[hplmn_index].mcc[0];
 	usim_data->imsi.u.num.digit2 = user_plmn_list[hplmn_index].mcc[1];
