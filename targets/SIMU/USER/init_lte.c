@@ -291,8 +291,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       (frame_parms[CC_id])->nb_antennas_tx     = 1;
-      (frame_parms[CC_id])->nb_antennas_rx     = nb_antennas_rx;
-
+      (frame_parms[CC_id])->nb_antennas_rx     = 1; // UE rx number hard coded 
 
       PHY_vars_UE_g[UE_id][CC_id] = init_lte_UE(frame_parms[CC_id], UE_id,abstraction_flag);
       PHY_vars_UE_g[UE_id][CC_id]->Mod_id=UE_id;
