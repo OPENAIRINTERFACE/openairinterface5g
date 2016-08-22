@@ -1394,11 +1394,52 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
 #endif
 
   //change the transmission mode for the primary component carrier
+  //TODO: add codebook subset restriction here
   //TODO: change TM for secondary CC in SCelltoaddmodlist
   if (*physicalConfigDedicated)
     if ((*physicalConfigDedicated)->antennaInfo) {
       (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.transmissionMode = rrc_inst->configuration->ue_TransmissionMode[0];
       LOG_D(RRC,"Setting transmission mode to %d+1\n",rrc_inst->configuration->ue_TransmissionMode[0]);
+      if (rrc_inst->configuration->ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm3) {
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
+	  CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
+	  AntennaInfoDedicated__codebookSubsetRestriction_PR_n2TxAntenna_tm3;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.buf= MALLOC(1);
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.buf[0] = 0xc0;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.size=1;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.bits_unused=6;
+      }
+      else if (rrc_inst->configuration->ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm4) {
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
+	  CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
+	  AntennaInfoDedicated__codebookSubsetRestriction_PR_n2TxAntenna_tm4;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.buf= MALLOC(1);
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.buf[0] = 0xfc;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.size=1;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.bits_unused=2;
+      }
+      else if (rrc_inst->configuration->ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm5) {
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
+	  CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
+	  AntennaInfoDedicated__codebookSubsetRestriction_PR_n2TxAntenna_tm5;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.buf= MALLOC(1);
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.buf[0] = 0xf0;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.size=1;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.bits_unused=4;
+      }
+      else if (rrc_inst->configuration->ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm6) {
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
+	  CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
+	  AntennaInfoDedicated__codebookSubsetRestriction_PR_n2TxAntenna_tm6;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm6.buf= MALLOC(1);
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm6.buf[0] = 0xf0;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm6.size=1;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm6.bits_unused=4;
+      }
     }
 
   // Measurement ID list
