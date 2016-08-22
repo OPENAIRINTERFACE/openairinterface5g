@@ -1603,6 +1603,7 @@ do_RRCConnectionSetup(
 
   switch (transmission_mode) {
   default:
+    LOG_W(RRC,"At RRCConnectionSetup Transmission mode can only take values 1 or 2! Defaulting to 1!\n");
   case 1:
     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm1;
     break;
@@ -1610,7 +1611,7 @@ do_RRCConnectionSetup(
   case 2:
     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm2;
     break;
-
+    /*
   case 3:
     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm3;
     physicalConfigDedicated2->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     CALLOC(1,
@@ -1639,6 +1640,7 @@ do_RRCConnectionSetup(
   case 7:
     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm7;
     break;
+    */
   }
 
 
