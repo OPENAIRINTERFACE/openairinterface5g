@@ -3393,7 +3393,6 @@ c
     <EPC_compile_prog_args></EPC_compile_prog_args>
     <HSS_compile_prog>sudo mkdir -p /usr/local/etc/oai/freeDiamter; sudo cp -vf $OPENAIRCN_DIR/ETC/hss.conf /usr/local/etc/oai ; sudo cp -vf $OPENAIRCN_DIR/ETC/hss_fd.conf /usr/local/etc/oai/freeDiameter ; $OPENAIRCN_DIR/SCRIPTS/check_hss_s6a_certificate /usr/local/etc/oai/freeDiameter/ hss.openair4G.eur;  $OPENAIRCN_DIR/SCRIPTS/build_hss -c </HSS_compile_prog>
     <HSS_compile_prog_args></HSS_compile_prog_args>
-c
     <EPC_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo -E ifconfig eth0 add 192.172.0.1</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>sleep 10;$OPENAIRCN_DIR/TEST/autotests/tools/run_epc  </EPC_main_exec>
