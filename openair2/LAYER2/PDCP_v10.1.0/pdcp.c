@@ -29,8 +29,9 @@
 
 /*! \file pdcp.c
  * \brief pdcp interface with RLC
- * \author  Lionel GAUTHIER and Navid Nikaein
+ * \author Navid Nikaein and Lionel GAUTHIER
  * \date 2009-2012
+ * \email navid.nikaein@eurecom.fr
  * \version 1.0
  */
 
@@ -83,7 +84,7 @@ extern int otg_enabled;
  * code at targets/TEST/PDCP/test_pdcp.c:test_pdcp_data_req()
  */
 boolean_t pdcp_data_req(
-  const protocol_ctxt_t* const  ctxt_pP,
+  protocol_ctxt_t*  ctxt_pP,
   const srb_flag_t     srb_flagP,
   const rb_id_t        rb_idP,
   const mui_t          muiP,
@@ -105,7 +106,6 @@ boolean_t pdcp_data_req(
   rlc_op_status_t    rlc_status;
   boolean_t          ret             = TRUE;
 
-
   hash_key_t         key             = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t     h_rc;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_REQ,VCD_FUNCTION_IN);
@@ -115,28 +115,6 @@ boolean_t pdcp_data_req(
   if (ctxt_pP->enb_flag != ENB_FLAG_NO)
     T(T_ENB_PDCP_DL, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->rnti), T_INT(rb_idP), T_INT(sdu_buffer_sizeP));
 #endif
-
-  if (modeP == PDCP_TRANSMISSION_MODE_TRANSPARENT) {
-    AssertError (rb_idP < NB_RB_MBMS_MAX, return FALSE, "RB id is too high (%u/%d) %u %u!\n", rb_idP, NB_RB_MBMS_MAX, ctxt_pP->module_id, ctxt_pP->rnti);
-  } else {
-    if (srb_flagP) {
-      AssertError (rb_idP < 3, return FALSE, "RB id is too high (%u/%d) %u %u!\n", rb_idP, 3, ctxt_pP->module_id, ctxt_pP->rnti);
-    } else {
-      AssertError (rb_idP < maxDRB, return FALSE, "RB id is too high (%u/%d) %u %u!\n", rb_idP, maxDRB, ctxt_pP->module_id, ctxt_pP->rnti);
-    }
-  }
-
-  key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
-  h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
-
-  if (h_rc != HASH_TABLE_OK) {
-    if (modeP != PDCP_TRANSMISSION_MODE_TRANSPARENT) {
-      LOG_W(PDCP, PROTOCOL_CTXT_FMT" Instance is not configured for rb_id %d Ignoring SDU...\n",
-            PROTOCOL_CTXT_ARGS(ctxt_pP),
-            rb_idP);
-    return FALSE;
-    }
-  }
 
   if (sdu_buffer_sizeP == 0) {
     LOG_W(PDCP, "Handed SDU is of size 0! Ignoring...\n");
@@ -153,13 +131,39 @@ boolean_t pdcp_data_req(
     // XXX What does following call do?
     mac_xface->macphy_exit("PDCP sdu buffer size > MAX_IP_PACKET_SIZE");
   }
+  
+  if (modeP == PDCP_TRANSMISSION_MODE_TRANSPARENT) {
+    AssertError (rb_idP < NB_RB_MBMS_MAX, return FALSE, "RB id is too high (%u/%d) %u %u!\n", rb_idP, NB_RB_MBMS_MAX, ctxt_pP->module_id, ctxt_pP->rnti);
+  } else {
+    if (srb_flagP) {
+      AssertError (rb_idP < 3, return FALSE, "RB id is too high (%u/%d) %u %u!\n", rb_idP, 3, ctxt_pP->module_id, ctxt_pP->rnti);
+    } else {
+      AssertError (rb_idP < maxDRB, return FALSE, "RB id is too high (%u/%d) %u %u!\n", rb_idP, maxDRB, ctxt_pP->module_id, ctxt_pP->rnti);
+    }
+  }
 
+  key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
+  h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
+
+  if (h_rc != HASH_TABLE_OK) {
+    if (modeP != PDCP_TRANSMISSION_MODE_TRANSPARENT) {
+      if ((ctxt_pP->configured == 0) && (ctxt_pP->frame%10 == 0)) 
+	LOG_W(PDCP, PROTOCOL_CTXT_FMT" Instance is not configured for rb_id %d Ignoring SDU...\n",
+	      PROTOCOL_CTXT_ARGS(ctxt_pP),
+	      rb_idP);
+      ctxt_pP->configured=0;
+      return FALSE;
+    }
+  }else{
+    // instance for a given RB is configured
+    ctxt_pP->configured=1;
+  }
+    
   if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
     start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].data_req);
   } else {
     start_meas(&UE_pdcp_stats[ctxt_pP->module_id].data_req);
   }
-
 
   // PDCP transparent mode for MBMS traffic
 

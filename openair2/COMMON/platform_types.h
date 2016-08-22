@@ -68,6 +68,7 @@ typedef uint32_t              frame_t;
 typedef int32_t               sframe_t;
 typedef uint32_t              sub_frame_t;
 typedef uint8_t               module_id_t;
+typedef uint8_t               configured_t;
 typedef uint8_t               eNB_index_t;
 typedef uint16_t              ue_id_t;
 typedef int16_t               smodule_id_t;
@@ -215,6 +216,7 @@ typedef struct protocol_ctxt_s {
   frame_t     frame;         /*!< \brief  LTE frame number.*/
   sub_frame_t subframe;      /*!< \brief  LTE sub frame number.*/
   eNB_index_t eNB_index;     /*!< \brief  valid for UE indicating the index of connected eNB(s)      */
+  configured_t configured;  /*!< \brief  flag indicating whether the instance is configured or not  */
 } protocol_ctxt_t;
 // warning time hardcoded
 #define PROTOCOL_CTXT_TIME_MILLI_SECONDS(CtXt_h) ((CtXt_h)->frame*10+(CtXt_h)->subframe)
