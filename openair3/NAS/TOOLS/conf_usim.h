@@ -3,6 +3,7 @@
 
 #include <libconfig.h>
 #include "usim_api.h"
+#include "conf_user_plmn.h"
 
 #define SIM "SIM"
 #define MSIN "MSIN"

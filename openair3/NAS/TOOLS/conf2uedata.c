@@ -105,8 +105,7 @@ int parse_config_file(const char *output_dir, const char *conf_filename) {
             return EXIT_FAILURE;
         }
 
-        rc = parse_user_plmns_conf(ue_setting, i, &user_plmns, &usim_data_conf.hplmn, networks);
-        if (rc != EXIT_SUCCESS) {
+        if ( parse_user_plmns_conf(ue_setting, i, &user_plmns, &usim_data_conf.hplmn, networks) == false ) {
             return EXIT_FAILURE;
         }
 
@@ -129,6 +128,8 @@ int parse_config_file(const char *output_dir, const char *conf_filename) {
         gen_emm_data(&emm_data, usim_data_conf.hplmn, usim_data_conf.msin,
                      user_plmns.equivalents_home.size, networks);
         write_emm_data(output_dir, i, &emm_data);
+
+		user_plmns_free(&user_plmns);
 
      }
     free(networks.items);
@@ -155,74 +156,6 @@ int get_config_from_file(const char *filename, config_t *config) {
         return (EXIT_FAILURE);
     }
     return EXIT_SUCCESS;
-}
-
-
-int parse_user_plmns_conf(config_setting_t *ue_setting, int user_id,
-                          user_plmns_t *user_plmns, const char **h,
-                          const networks_t networks) {
-	int nb_errors = 0;
-	const char *hplmn;
-
-	if ( config_setting_lookup_string(ue_setting, HPLMN, h) != 1 ) {
-		printf("Check HPLMN section for UE%d. Exiting\n", user_id);
-		return EXIT_FAILURE;
-	}
-	hplmn = *h;
-	if (get_plmn_index(hplmn, networks) == -1) {
-		printf("HPLMN for UE%d is not defined in PLMN section. Exiting\n",
-				user_id);
-		return EXIT_FAILURE;
-	}
-
-	if ( parse_Xplmn(ue_setting, UCPLMN, user_id, &user_plmns->users_controlled, networks) == EXIT_FAILURE )
-		nb_errors++;
-	if ( parse_Xplmn(ue_setting, OPLMN, user_id, &user_plmns->operators, networks) == EXIT_FAILURE )
-		nb_errors++;
-	if ( parse_Xplmn(ue_setting, OCPLMN, user_id, &user_plmns->operators_controlled, networks) == EXIT_FAILURE )
-		nb_errors++;
-	if ( parse_Xplmn(ue_setting, FPLMN, user_id, &user_plmns->forbiddens, networks) == EXIT_FAILURE )
-		nb_errors++;
-	if ( parse_Xplmn(ue_setting, EHPLMN, user_id, &user_plmns->equivalents_home, networks) == EXIT_FAILURE )
-		nb_errors++;
-
-	if ( nb_errors > 0 )
-		return EXIT_FAILURE;
-	return EXIT_SUCCESS;
-}
-
-int parse_Xplmn(config_setting_t *ue_setting, const char *section,
-               int user_id, plmns_list *plmns, const networks_t networks) {
-	int rc;
-	int item_count;
-	config_setting_t *setting;
-
-	setting = config_setting_get_member(ue_setting, section);
-	if (setting == NULL) {
-		printf("Check %s section for UE%d. Exiting\n", section, user_id);
-		return EXIT_FAILURE;
-	}
-
-	item_count = config_setting_length(setting);
-	int *datas = malloc(item_count * sizeof(int));
-	for (int i = 0; i < item_count; i++) {
-		const char *mccmnc = config_setting_get_string_elem(setting, i);
-		if (mccmnc == NULL) {
-			printf("Check %s section for UE%d. Exiting\n", section, user_id);
-			return EXIT_FAILURE;
-		}
-		rc = get_plmn_index(mccmnc, networks);
-		if (rc == -1) {
-			printf("The PLMN %s is not defined in PLMN section. Exiting...\n",
-					mccmnc);
-			return EXIT_FAILURE;
-		}
-		datas[i] = rc;
-	}
-
-	plmns->size = item_count;
-	plmns->items = datas;
-	return EXIT_SUCCESS;
 }
 
 /*
