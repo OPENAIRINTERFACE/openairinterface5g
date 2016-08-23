@@ -227,11 +227,10 @@ int parse_plmns(config_setting_t *all_plmn_setting) {
 }
 
 int parse_ue_plmn_param(config_setting_t *ue_setting, int user_id, const char **h) {
-	int rc = EXIT_SUCCESS;
+	int nb_errors = 0;
 	const char *hplmn;
-	config_setting_t *setting = NULL;
-	rc = config_setting_lookup_string(ue_setting, HPLMN, h);
-	if (rc != 1) {
+
+	if ( config_setting_lookup_string(ue_setting, HPLMN, h) != 1 ) {
 		printf("Check HPLMN section for UE%d. Exiting\n", user_id);
 		return EXIT_FAILURE;
 	}
@@ -241,67 +240,41 @@ int parse_ue_plmn_param(config_setting_t *ue_setting, int user_id, const char **
 				user_id);
 		return EXIT_FAILURE;
 	}
-	setting = config_setting_get_member(ue_setting, UCPLMN);
-	if (setting == NULL) {
-		printf("Check UCPLMN section for UE%d. Exiting\n", user_id);
+
+	if ( parse_Xplmn(ue_setting, UCPLMN, user_id, &ucplmn_nb, &ucplmn) == EXIT_FAILURE )
+		nb_errors++;
+	if ( parse_Xplmn(ue_setting, OPLMN, user_id, &oplmn_nb, &oplmn) == EXIT_FAILURE )
+		nb_errors++;
+	if ( parse_Xplmn(ue_setting, OCPLMN, user_id, &ocplmn_nb, &ocplmn) == EXIT_FAILURE )
+		nb_errors++;
+	if ( parse_Xplmn(ue_setting, FPLMN, user_id, &fplmn_nb, &fplmn) == EXIT_FAILURE )
+		nb_errors++;
+	if ( parse_Xplmn(ue_setting, EHPLMN, user_id, &ehplmn_nb, &ehplmn) == EXIT_FAILURE )
+		nb_errors++;
+
+	if ( nb_errors > 0 )
 		return EXIT_FAILURE;
-	}
-	rc = fill_ucplmn(setting, user_id);
-	if (rc != EXIT_SUCCESS) {
-		printf("Check UCPLMN section for UE%d. Exiting\n", user_id);
-		return EXIT_FAILURE;
-	}
-	setting = config_setting_get_member(ue_setting, OPLMN);
-	if (setting == NULL) {
-		printf("Check OPLMN section for UE%d. Exiting\n", user_id);
-		return EXIT_FAILURE;
-	}
-	rc = fill_oplmn(setting, user_id);
-	if (rc != EXIT_SUCCESS) {
-		printf("Check OPLMN section for UE%d. Exiting\n", user_id);
-		return EXIT_FAILURE;
-	}
-	setting = config_setting_get_member(ue_setting, OCPLMN);
-	if (setting == NULL) {
-		printf("Check OCPLMN section for UE%d. Exiting\n", user_id);
-		return EXIT_FAILURE;
-	}
-	rc = fill_ocplmn(setting, user_id);
-	if (rc != EXIT_SUCCESS) {
-		printf("Check OCPLMN section for UE%d. Exiting\n", user_id);
-		return EXIT_FAILURE;
-	}
-	setting = config_setting_get_member(ue_setting, FPLMN);
-	if (setting == NULL) {
-		printf("Check FPLMN section for UE%d. Exiting\n", user_id);
-		return EXIT_FAILURE;
-	}
-	rc = fill_fplmn(setting, user_id);
-	if (rc != EXIT_SUCCESS) {
-		printf("Check FPLMN section for UE%d. Exiting\n", user_id);
-		return EXIT_FAILURE;
-	}
-	setting = config_setting_get_member(ue_setting, EHPLMN);
-	if (setting == NULL) {
-		printf("Check EHPLMN section for UE%d. Exiting\n", user_id);
-		return EXIT_FAILURE;
-	}
-	rc = fill_ehplmn(setting, user_id);
-	if (rc != EXIT_SUCCESS) {
-		printf("Check EHPLMN section for UE%d. Exiting\n", user_id);
-		return EXIT_FAILURE;
-	}
 	return EXIT_SUCCESS;
 }
 
-int fill_ucplmn(config_setting_t* setting, int user_id) {
+int parse_Xplmn(config_setting_t *ue_setting, const char *section,
+               int user_id, int *plmns_count, int **plmns ) {
 	int rc;
-	ucplmn_nb = config_setting_length(setting);
-	ucplmn = malloc(ucplmn_nb * sizeof(int));
-	for (int i = 0; i < ucplmn_nb; i++) {
+	int item_count;
+	config_setting_t *setting;
+
+	setting = config_setting_get_member(ue_setting, section);
+	if (setting == NULL) {
+		printf("Check %s section for UE%d. Exiting\n", section, user_id);
+		return EXIT_FAILURE;
+	}
+
+	item_count = config_setting_length(setting);
+	int *datas = malloc(item_count * sizeof(int));
+	for (int i = 0; i < item_count; i++) {
 		const char *mccmnc = config_setting_get_string_elem(setting, i);
 		if (mccmnc == NULL) {
-			printf("Check UCPLMN section for UE%d. Exiting\n", user_id);
+			printf("Check %s section for UE%d. Exiting\n", section, user_id);
 			return EXIT_FAILURE;
 		}
 		rc = get_plmn_index(mccmnc);
@@ -310,88 +283,11 @@ int fill_ucplmn(config_setting_t* setting, int user_id) {
 					mccmnc);
 			return EXIT_FAILURE;
 		}
-		ucplmn[i] = rc;
+		datas[i] = rc;
 	}
-	return EXIT_SUCCESS;
-}
-int fill_oplmn(config_setting_t* setting, int user_id) {
-	int rc;
-	oplmn_nb = config_setting_length(setting);
-	oplmn = malloc(oplmn_nb * sizeof(int));
-	for (int i = 0; i < oplmn_nb; i++) {
-		const char *mccmnc = config_setting_get_string_elem(setting, i);
-		if (mccmnc == NULL) {
-			printf("Check OPLMN section for UE%d. Exiting\n", user_id);
-			return EXIT_FAILURE;
-		}
-		rc = get_plmn_index(mccmnc);
-		if (rc == -1) {
-			printf("The PLMN %s is not defined in PLMN section. Exiting...\n",
-					mccmnc);
-			return EXIT_FAILURE;
-		}
-		oplmn[i] = rc;
-	}
-	return EXIT_SUCCESS;
-}
-int fill_ocplmn(config_setting_t* setting, int user_id) {
-	int rc;
-	ocplmn_nb = config_setting_length(setting);
-	ocplmn = malloc(ocplmn_nb * sizeof(int));
-	for (int i = 0; i < ocplmn_nb; i++) {
-		const char *mccmnc = config_setting_get_string_elem(setting, i);
-		if (mccmnc == NULL) {
-			printf("Check OCPLMN section for UE%d. Exiting\n", user_id);
-			return EXIT_FAILURE;
-		}
-		rc = get_plmn_index(mccmnc);
-		if (rc == -1) {
-			printf("The PLMN %s is not defined in PLMN section. Exiting...\n",
-					mccmnc);
-			return EXIT_FAILURE;
-		}
-		ocplmn[i] = rc;
-	}
-	return EXIT_SUCCESS;
-}
-int fill_fplmn(config_setting_t* setting, int user_id) {
-	int rc;
-	fplmn_nb = config_setting_length(setting);
-	fplmn = malloc(fplmn_nb * sizeof(int));
-	for (int i = 0; i < fplmn_nb; i++) {
-		const char *mccmnc = config_setting_get_string_elem(setting, i);
-		if (mccmnc == NULL) {
-			printf("Check FPLMN section for UE%d. Exiting\n", user_id);
-			return EXIT_FAILURE;
-		}
-		rc = get_plmn_index(mccmnc);
-		if (rc == -1) {
-			printf("The PLMN %s is not defined in PLMN section. Exiting...\n",
-					mccmnc);
-			return EXIT_FAILURE;
-		}
-		fplmn[i] = rc;
-	}
-	return EXIT_SUCCESS;
-}
-int fill_ehplmn(config_setting_t* setting, int user_id) {
-	int rc;
-	ehplmn_nb = config_setting_length(setting);
-	ehplmn = malloc(ehplmn_nb * sizeof(int));
-	for (int i = 0; i < ehplmn_nb; i++) {
-		const char *mccmnc = config_setting_get_string_elem(setting, i);
-		if (mccmnc == NULL) {
-			printf("Check EHPLMN section for UE%d. Exiting\n", user_id);
-			return EXIT_FAILURE;
-		}
-		rc = get_plmn_index(mccmnc);
-		if (rc == -1) {
-			printf("The PLMN %s is not defined in PLMN section. Exiting...\n",
-					mccmnc);
-			return EXIT_FAILURE;
-		}
-		ehplmn[i] = rc;
-	}
+
+	*plmns_count = item_count;
+	*plmns = datas;
 	return EXIT_SUCCESS;
 }
 

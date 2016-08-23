@@ -69,10 +69,8 @@ int parse_plmn_param(config_setting_t *plmn_setting, int index);
 int parse_plmns(config_setting_t *all_plmn_setting);
 int get_plmn_index(const char * mccmnc);
 int parse_ue_plmn_param(config_setting_t *ue_setting, int user_id, const char **hplmn);
-int fill_ucplmn(config_setting_t* setting, int use_id);
-int fill_oplmn(config_setting_t* setting, int use_id);
-int fill_ocplmn(config_setting_t* setting, int use_id);
-int fill_fplmn(config_setting_t* setting, int use_id);
-int fill_ehplmn(config_setting_t* setting, int use_id);
+int parse_Xplmn(config_setting_t *ue_setting, const char *section,
+               int user_id, int *plmns_count, int **plmns );
+
 
 #endif // _CONF2UEDATA_H
