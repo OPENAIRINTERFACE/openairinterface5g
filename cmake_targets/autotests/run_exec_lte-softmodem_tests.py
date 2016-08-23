@@ -313,7 +313,7 @@ def SSHSessionWrapper(machine, username, key_file, password, logdir_remote, logd
 # \param CleanUpAluLteBox program to terminate AlU Bell Labs LTE Box
 # \param ExmimoRfStop String to stop EXMIMO card (specified in test_case_list.xml)
 def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop, logdir, logdirOAI5GRepo):
-  cmd = 'killall -9 -q -r ' + programList
+  cmd = 'sudo -E killall -9 -q -r ' + programList
   result = oai.send(cmd, True)
   print "Killing old programs..." + result
   programArray = programList.split()
@@ -1268,7 +1268,8 @@ except KeyError:
    sys.exit(1)
 
 print "Killing zombie ssh sessions from earlier sessions..."
-cmd='ps aux |grep \"/usr/bin/ssh -q -l guptar\"|tr -s \" \" :|cut -f 2 -d :|xargs kill -9 '
+cmd='ps aux |grep \"/usr/bin/ssh -q -l guptar\"| awk \'{print $2}\' | sudo xargs kill -9  '
+
 os.system(cmd)
 
 if flag_start_testcase == False:
@@ -1449,7 +1450,6 @@ for oai in oai_list:
       #cmd = cmd + 'mkdir -p ' + logdir + '\n'
       cmd = cmd + 'cd '+ logdir   + '\n'
       cmd = cmd + 'sudo apt-get install -y git \n'
-      cmd = cmd + 'git config --global http.sslVerify false \n' 
       cmd = cmd + 'chmod 700 ' + logdir + '/git-retry.sh \n' 
       cmd = cmd + logdir + '/git-retry.sh clone  '+ GitOAI5GRepo  +' \n'
       cmd = cmd + logdir + '/git-retry.sh clone '+ GitOpenaircnRepo + ' \n'

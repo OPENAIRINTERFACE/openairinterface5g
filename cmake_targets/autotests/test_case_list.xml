@@ -6,13 +6,13 @@
  <GitOpenair-cnRepo>https://gitlab.eurecom.fr/oai/openair-cn.git</GitOpenair-cnRepo>
  <GitOAI5GRepoBranch>develop</GitOAI5GRepoBranch>
  <GitOpenair-cnRepoBranch>develop</GitOpenair-cnRepoBranch>
- <CleanUpOldProgs>oaisim oaisim_nos1 lte-softmodem lte-softmodem-nos1 mme_gw run_epc auth_request run_hss oai_hss mme spgw hss hss_sim configure_cots* wvdial  iperf iperf_script iperf_script_phone ping tshark rrh_gw iperf3 iperf3_script iperf3_script_phone pppd</CleanUpOldProgs>	
+ <CleanUpOldProgs>oaisim oaisim_nos1 lte-softmodem lte-softmodem-nos1 mme_gw run_epc auth_request run_hss oai_hss mme spgw hss hss_sim configure_cots* wvdial  iperf iperf_script iperf_script_phone ping tshark rrh_gw iperf3 iperf3_script iperf3_script_phone pppd starthss start_ltebox stop_ltebox</CleanUpOldProgs>	
  <CleanUpAluLteBox>sudo -S -E /opt/ltebox/tools/stop_ltebox</CleanUpAluLteBox>
 <ExmimoRfStop>exmimo_pci=`lspci -m | grep Xilinx`; if [ -n "$exmimo_pci" ] ; then $OPENAIR_DIR/cmake_targets/build_oai -w EXMIMO -c; sudo -S -E $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2; fi; sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_huaweiE398_ue.py --reset-ue;  sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_sony_experia_m4_ue.py --stop-ue; uname -a; sudo -E dmesg</ExmimoRfStop>
  <Timeout_execution>36000</Timeout_execution>
  <TestCaseExclusionList>010141 0102+ 010304 010305 0104+ 015502 015505 015506 015507 015508 015509 015510 015511 015514 015517 015602 015605 015702 015705 015802 015805 015808 015811 016102 016105 016502 016505 017002 017005 017502 017505 018002 018005 018502 018505 025502 025505 025508 025511</TestCaseExclusionList>
  <nruns_lte-softmodem>3</nruns_lte-softmodem>
- <MachineListGeneric>mozart hutch starsky stevens amerique calisson nano</MachineListGeneric>
+ <MachineListGeneric>mozart hutch starsky stevens amerique calisson </MachineListGeneric>
      <testCase id="010101" >
      <class>compilation</class>
      <desc>Build oaisim.Rel8</desc>
@@ -3354,7 +3354,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3426,7 +3426,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3497,7 +3497,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3569,7 +3569,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3640,7 +3640,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args>sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3711,7 +3711,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3782,7 +3782,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3854,7 +3854,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3925,7 +3925,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3997,7 +3997,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4068,7 +4068,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args>sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4139,7 +4139,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4212,7 +4212,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ;  sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -7897,7 +7897,3 @@ c
 
 
   </testCaseList>
-
-
-
-
