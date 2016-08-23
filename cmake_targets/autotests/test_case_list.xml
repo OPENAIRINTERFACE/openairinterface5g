@@ -391,12 +391,12 @@
       <pre_exec_args></pre_exec_args>
       <test_config_file></test_config_file>
       <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
-      <main_exec_args> -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 1 -s15
-                       -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 1 -s15 
-                       -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1 -s15 
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 2 -s15 
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50  -x 2 -s15 
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2 -s15 </main_exec_args>
+      <main_exec_args> -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -s15
+                       -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -s15 
+                       -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -s15 
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -s15 
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -s15 
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -s15 </main_exec_args>
       <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2</tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -413,12 +413,12 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
-      <main_exec_args> -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 1 -a -s15
-                       -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 1 -a -s15 
-                       -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1 -a -s15 
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 2 -a -s15 
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50  -x 2 -a -s15
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2 -a -s15 </main_exec_args>
+      <main_exec_args> -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -a -s15
+                       -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -a -s15 
+                       -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -a -s15 
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -a -s15 
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -a -s15
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -a -s15 </main_exec_args>
       <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2</tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -435,12 +435,12 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
-      <main_exec_args> -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 1 -s15
-                       -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 1 -s15
-                       -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1 -s15
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 2 -s15
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50  -x 2 -s15
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2 -s15 </main_exec_args>
+      <main_exec_args> -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -s15
+                       -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -s15
+                       -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -s15
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -s15
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -s15
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -s15 </main_exec_args>
       <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 </tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0" "Received RRCConnectionReconfigurationComplete from UE 1" "Received RRCConnectionReconfigurationComplete from UE 2"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -457,12 +457,12 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
-      <main_exec_args> -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 1 -a -s15
-                       -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 1 -a -s15
-                       -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1 -a -s15
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 2 -a -s15
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50  -x 2 -a -s15
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2 -a -s15</main_exec_args>
+      <main_exec_args> -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -a -s15
+                       -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -a -s15
+                       -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -a -s15
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -a -s15
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -a -s15
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -a -s15</main_exec_args>
       <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2  oaisim_nos1.tdd.20MHz.TM2</tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0" "Received RRCConnectionReconfigurationComplete from UE 1" "Received RRCConnectionReconfigurationComplete from UE 2"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -479,12 +479,12 @@
       <pre_exec_args></pre_exec_args>
       <test_config_file></test_config_file>
       <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
-      <main_exec_args> -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 1 -c26 
-                       -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 1 -c26 
-                       -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1 -c26 
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 2 -c26 
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50  -x 2 -c26 
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2 -c26</main_exec_args>
+      <main_exec_args> -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -c26 
+                       -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -c26 
+                       -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -c26 
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -c26 
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -c26 
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -c26</main_exec_args>
       <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 </tags>
       <search_expr_true>"DL and UL loss rate below 10"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -501,12 +501,12 @@
       <pre_exec_args></pre_exec_args>
       <test_config_file></test_config_file>
       <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
-      <main_exec_args> -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 1 -c26 -a
-                       -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 1 -c26  -a
-                       -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1 -c26 -a
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 2 -c26  -a
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50  -x 2 -c26 -a
-                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2 -c26  -a</main_exec_args>
+      <main_exec_args> -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -c26 -a
+                       -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -c26  -a
+                       -O $OPENAIR_LOGDIR/enb.band38.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -c26 -a
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -c26  -a
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -c26 -a
+                      -O $OPENAIR_LOGDIR/enb.band38.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -c26  -a</main_exec_args>
       <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 </tags>
       <search_expr_true>"DL and UL loss rate below 10"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -522,12 +522,12 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
-      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 1 -F -s15
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 1 -F -s15
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1 -F -s15
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 2 -F -s15
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50  -x 2 -F -s15
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2 -F -s15</main_exec_args>
+      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -F -s15
+                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -F -s15
+                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -F -s15
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -F -s15
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -F -s15
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -F -s15</main_exec_args>
       <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2</tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -543,12 +543,12 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
-      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 1 -F -a -s15
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 1 -F -a -s15
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1 -F -a -s15
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 2 -F -a -s15
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50  -x 2 -F -a -s15
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2 -F -a -s15</main_exec_args>
+      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -F -a -s15
+                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -F -a -s15
+                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -F -a -s15
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -F -a -s15
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -F -a -s15
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -F -a -s15</main_exec_args>
       <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2</tags> 
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -564,12 +564,12 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
-      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 1 -F -s15
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 1 -F -s15
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1 -F -s15
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 2 -F -s15
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50  -x 2 -F -s15
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2 -F -s15</main_exec_args>
+      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -F -s15
+                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -F -s15
+                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -F -s15
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -F -s15
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -F -s15
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -F -s15</main_exec_args>
       <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2 </tags> 
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0" "Received RRCConnectionReconfigurationComplete from UE 1" "Received RRCConnectionReconfigurationComplete from UE 2"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -585,12 +585,12 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
-      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 1 -F -a -s15
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 1 -F -a -s15
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1 -F -a -s15
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 2 -F -a -s15
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50  -x 2 -F -a -s15
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2 -F -a -s15</main_exec_args>
+      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -F -a -s15
+                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -F -a -s15
+                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -F -a -s15
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -F -a -s15
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -F -a -s15
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -F -a -s15</main_exec_args>
       <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2</tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0" "Received RRCConnectionReconfigurationComplete from UE 1" "Received RRCConnectionReconfigurationComplete from UE 2"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -606,12 +606,12 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
-      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 1 -F -c26
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 1 -F -c26
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1 -F -c26
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 2 -F -c26
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50  -x 2 -F -c26
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2 -F -c26</main_exec_args>
+      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -F -c26
+                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -F -c26
+                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -F -c26
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -F -c26
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -F -c26
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -F -c26</main_exec_args>
       <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2</tags>
       <search_expr_true>"DL and UL loss rate below 10"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -627,12 +627,12 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
-      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 1 -F -c26 -a
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 1 -F -c26 -a
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1 -F -c26 -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 2 -F -c26 -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50  -x 2 -F -c26 -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2 -F -c26 -a</main_exec_args>
+      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -F -c26 -a
+                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -F -c26 -a
+                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -F -c26 -a
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -F -c26 -a
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -F -c26 -a
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -F -c26 -a</main_exec_args>
       <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2 </tags>
       <search_expr_true>"DL and UL loss rate below 10"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -648,7 +648,7 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
-      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -l7 -x 1 -Q3 -n 100 -b1 -u1</main_exec_args>
+      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -l7 -Q3 -n 100 -b1 -u1</main_exec_args>
       <search_expr_true>"Found MBSFNAreaConfiguration from eNB 0"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <tags>oaisim_noS1.eMBMS</tags>
@@ -664,7 +664,7 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
-      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -l7 -x 1 -T mscbr -Q3 -n 100 -b1 -u1</main_exec_args>
+      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -l7 -T mscbr -Q3 -n 100 -b1 -u1</main_exec_args>
       <search_expr_true>"Received a multicast packet"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <tags>oaisim_noS1.eMBMS</tags>
@@ -680,7 +680,7 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
-      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -l7 -F -T mscbr -x 1 -Q3 -n 100 -b1 -u1</main_exec_args>
+      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -l7 -F -T mscbr -Q3 -n 100 -b1 -u1</main_exec_args>
       <search_expr_true>"Received a multicast packet"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <tags>oaisim_noS1.eMBMS</tags>
@@ -696,7 +696,7 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
-      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -l7 -c43 -F -T mbvbr -Q4 -j1 -n120</main_exec_args>
+      <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.generic.oaisim.local_no_mme.conf -A AWGN -l7 -c43 -F -T mbvbr -Q4 -j1 -n120</main_exec_args>
       <search_expr_true>"MTCH for sync area 1"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <tags>oaisim_noS1.eMBMS</tags>

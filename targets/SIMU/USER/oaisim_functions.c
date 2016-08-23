@@ -971,7 +971,7 @@ void init_openair1(void)
 		   cooperation_flag, 
 		   enb_properties->properties[0]->nb_antenna_ports[CC_id], 
 		   abstraction_flag,
-		   enb_properties->properties[0]->nb_antennas_tx[CC_id],
+		   enb_properties->properties[0]->nb_antennas_rx[CC_id],
 		   enb_properties->properties[0]->nb_antennas_tx[CC_id], 
 		   oai_emulation.info.eMBMS_active_state);
   }
