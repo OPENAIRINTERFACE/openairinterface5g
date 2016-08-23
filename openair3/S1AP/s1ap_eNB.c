@@ -185,8 +185,6 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
     
   }
     
-  S1AP_DEBUG("s1ap mme nb %d\n", instance_p->s1ap_mme_nb); 
-    
   itti_send_msg_to_task(TASK_SCTP, instance_p->instance, message_p);
 }
 
@@ -260,8 +258,6 @@ void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
 
   instance_p = s1ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
-
-  S1AP_WARN("s1ap cnx_id %d\n", sctp_new_association_resp->ulp_cnx_id);
 
   s1ap_mme_data_p = s1ap_eNB_get_MME(instance_p, -1,
                                      sctp_new_association_resp->ulp_cnx_id);
