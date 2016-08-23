@@ -77,7 +77,8 @@ Description Implements the API used by the NAS layer to read/write
  * Subscriber authentication security key
  */
 #define USIM_API_K_SIZE         16
-#define USIM_API_K_VALUE        "fec86ba6eb707ed08905757b1bb44b8f"
+//#define USIM_API_K_VALUE        "fec86ba6eb707ed08905757b1bb44b8f"
+#define USIM_API_K_VALUE        "8BAF473F2F8FD09487CCCBD7097C6862"
 
 static uint8_t _usim_api_k[USIM_API_K_SIZE];
 
