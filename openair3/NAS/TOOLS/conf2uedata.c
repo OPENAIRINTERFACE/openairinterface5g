@@ -12,12 +12,6 @@
 #include "conf_user_data.h"
 #include "conf_usim.h"
 
-plmns_list ucplmns;
-plmns_list oplmns;
-plmns_list ocplmns;
-plmns_list fplmns;
-plmns_list ehplmns;
-
 int plmn_nb = 0;
 
 plmn_conf_param_t* user_plmn_list=NULL;
@@ -106,6 +100,8 @@ int parse_config_file(const char *output_dir, const char *conf_filename) {
 	    usim_data_t usim_data;
 	    usim_data_conf_t usim_data_conf;
 
+		user_plmns_t user_plmns;
+
         sprintf(user, "%s%d", UE, i);
 
         ue_setting = config_setting_get_member(root_setting, user);
@@ -114,7 +110,7 @@ int parse_config_file(const char *output_dir, const char *conf_filename) {
             return EXIT_FAILURE;
         }
 
-        rc = parse_ue_plmn_param(ue_setting, i, &usim_data_conf.hplmn);
+        rc = parse_user_plmns_conf(ue_setting, i, &user_plmns, &usim_data_conf.hplmn);
         if (rc != EXIT_SUCCESS) {
             return EXIT_FAILURE;
         }
@@ -132,10 +128,10 @@ int parse_config_file(const char *output_dir, const char *conf_filename) {
             printf("Problem in SIM section for UE%d. EXITING...\n", i);
             return EXIT_FAILURE;
         }
-        gen_usim_data(&usim_data_conf, &usim_data);
+        gen_usim_data(&usim_data_conf, &usim_data, &user_plmns);
         write_usim_data(output_dir, i, &usim_data);
 
-        gen_emm_data(&emm_data, usim_data_conf.hplmn, usim_data_conf.msin);
+        gen_emm_data(&emm_data, usim_data_conf.hplmn, usim_data_conf.msin, user_plmns.equivalents_home.size);
         write_emm_data(output_dir, i, &emm_data);
 
      }
@@ -221,7 +217,8 @@ int parse_plmns(config_setting_t *all_plmn_setting) {
 	return rc;
 }
 
-int parse_ue_plmn_param(config_setting_t *ue_setting, int user_id, const char **h) {
+int parse_user_plmns_conf(config_setting_t *ue_setting, int user_id,
+                          user_plmns_t *user_plmns, const char **h) {
 	int nb_errors = 0;
 	const char *hplmn;
 
@@ -236,15 +233,15 @@ int parse_ue_plmn_param(config_setting_t *ue_setting, int user_id, const char **
 		return EXIT_FAILURE;
 	}
 
-	if ( parse_Xplmn(ue_setting, UCPLMN, user_id, &ucplmns) == EXIT_FAILURE )
+	if ( parse_Xplmn(ue_setting, UCPLMN, user_id, &user_plmns->users_controlled) == EXIT_FAILURE )
 		nb_errors++;
-	if ( parse_Xplmn(ue_setting, OPLMN, user_id, &oplmns) == EXIT_FAILURE )
+	if ( parse_Xplmn(ue_setting, OPLMN, user_id, &user_plmns->operators) == EXIT_FAILURE )
 		nb_errors++;
-	if ( parse_Xplmn(ue_setting, OCPLMN, user_id, &ocplmns) == EXIT_FAILURE )
+	if ( parse_Xplmn(ue_setting, OCPLMN, user_id, &user_plmns->operators_controlled) == EXIT_FAILURE )
 		nb_errors++;
-	if ( parse_Xplmn(ue_setting, FPLMN, user_id, &fplmns) == EXIT_FAILURE )
+	if ( parse_Xplmn(ue_setting, FPLMN, user_id, &user_plmns->forbiddens) == EXIT_FAILURE )
 		nb_errors++;
-	if ( parse_Xplmn(ue_setting, EHPLMN, user_id, &ehplmns) == EXIT_FAILURE )
+	if ( parse_Xplmn(ue_setting, EHPLMN, user_id, &user_plmns->equivalents_home) == EXIT_FAILURE )
 		nb_errors++;
 
 	if ( nb_errors > 0 )

@@ -5,7 +5,7 @@
 #include "conf_emm.h"
 #include "fs.h"
 
-void gen_emm_data(emm_nvdata_t *emm_data, const char *hplmn, const char *msin) {
+void gen_emm_data(emm_nvdata_t *emm_data, const char *hplmn, const char *msin, int ehplmn_count) {
 	memset(emm_data, 0, sizeof(emm_nvdata_t));
 	int hplmn_index = get_plmn_index(hplmn);
 	emm_data->imsi.length = 8;
@@ -53,7 +53,7 @@ void gen_emm_data(emm_nvdata_t *emm_data, const char *hplmn, const char *msin) {
 	emm_data->rplmn.MNCdigit1 = user_plmn_list[hplmn_index].mnc[0];
 	emm_data->rplmn.MNCdigit2 = user_plmn_list[hplmn_index].mnc[1];
 
-	emm_data->eplmn.n_plmns = ehplmns.size;
+	emm_data->eplmn.n_plmns = ehplmn_count;
 }
 
 int write_emm_data(const char *directory, int user_id, emm_nvdata_t *emm_data) {

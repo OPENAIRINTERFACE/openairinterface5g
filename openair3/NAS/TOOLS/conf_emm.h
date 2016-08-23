@@ -3,7 +3,8 @@
 
 #include "emmData.h"
 
-void gen_emm_data(emm_nvdata_t *emm_data, const char *hplmn, const char *msin);
+void gen_emm_data(emm_nvdata_t *emm_data, const char *hplmn, const char *msin,
+                  int ehplmn_count);
 int write_emm_data(const char *directory, int user_id, emm_nvdata_t *emm_data);
 int get_msin_parity(const char * msin, const char *mcc, const char *mnc);
 

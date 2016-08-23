@@ -48,11 +48,13 @@ typedef struct {
     int *items;
 } plmns_list;
 
-extern plmns_list ucplmns;
-extern plmns_list oplmns;
-extern plmns_list ocplmns;
-extern plmns_list fplmns;
-extern plmns_list ehplmns;
+typedef struct {
+    plmns_list users_controlled;
+    plmns_list operators;
+    plmns_list operators_controlled;
+    plmns_list forbiddens;
+    plmns_list equivalents_home;
+} user_plmns_t;
 
 extern int plmn_nb;
 
@@ -68,7 +70,8 @@ void fill_network_record_list(void);
 int parse_plmn_param(config_setting_t *plmn_setting, int index);
 int parse_plmns(config_setting_t *all_plmn_setting);
 int get_plmn_index(const char * mccmnc);
-int parse_ue_plmn_param(config_setting_t *ue_setting, int user_id, const char **hplmn);
+int parse_user_plmns_conf(config_setting_t *ue_setting, int user_id,
+                          user_plmns_t *user_plmns, const char **h);
 int parse_Xplmn(config_setting_t *ue_setting, const char *section,
                int user_id, plmns_list *plmns);
 
