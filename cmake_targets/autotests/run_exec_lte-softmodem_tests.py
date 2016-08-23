@@ -1450,7 +1450,6 @@ for oai in oai_list:
       #cmd = cmd + 'mkdir -p ' + logdir + '\n'
       cmd = cmd + 'cd '+ logdir   + '\n'
       cmd = cmd + 'sudo apt-get install -y git \n'
-      cmd = cmd + 'git config --global http.sslVerify false \n' 
       cmd = cmd + 'chmod 700 ' + logdir + '/git-retry.sh \n' 
       cmd = cmd + logdir + '/git-retry.sh clone  '+ GitOAI5GRepo  +' \n'
       cmd = cmd + logdir + '/git-retry.sh clone '+ GitOpenaircnRepo + ' \n'
