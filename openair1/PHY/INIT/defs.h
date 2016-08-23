@@ -313,6 +313,18 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms);
 
 //void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parm, PHY_FRAMING *phy_framing);
 
+void lte_param_init(unsigned char N_tx, 
+		    unsigned char N_rx,
+		    unsigned char transmission_mode,
+		    uint8_t extended_prefix_flag,
+		    frame_t frame_type, 
+		    uint16_t Nid_cell,
+		    uint8_t tdd_config,
+		    uint8_t N_RB_DL,
+		    uint8_t threequarter_fs,
+                    uint8_t osf,
+		    uint32_t perfect_ce);
+
 #ifdef Rel10
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
                                    uint8_t eNB_index,

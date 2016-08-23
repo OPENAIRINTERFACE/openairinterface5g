@@ -1378,23 +1378,23 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  N_RB_DL 25
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.26\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  downlink_frequency 2660000000L
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  uplink_frequency_offset -120000000
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tx_gain 90
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.19/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  tracking_area_code \"1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mobile_country_code \"208\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  N_RB_DL 25
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.26\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  downlink_frequency 2660000000L
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  uplink_frequency_offset -120000000
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  tx_gain 90
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  rx_gain 125
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  frame_type \"FDD\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  nb_antennas_rx  2
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  nb_antennas_tx 2
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.19/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
@@ -1453,20 +1453,20 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  N_RB_DL 50
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.26\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  downlink_frequency 2660000000L
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  uplink_frequency_offset -120000000
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tx_gain 90
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  tracking_area_code \"1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mobile_country_code \"208\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  N_RB_DL 50
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.26\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  downlink_frequency 2660000000L
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  uplink_frequency_offset -120000000
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  tx_gain 90
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  rx_gain 125
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  frame_type \"FDD\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  nb_antennas_rx  2
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  nb_antennas_tx 2
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.19/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
@@ -1526,23 +1526,23 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  N_RB_DL 100
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.26\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  downlink_frequency 2660000000L
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  uplink_frequency_offset -120000000
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tx_gain 90
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.19/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  tracking_area_code \"1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mobile_country_code \"208\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  N_RB_DL 100
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.26\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  downlink_frequency 2660000000L
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  uplink_frequency_offset -120000000
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  tx_gain 90
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  rx_gain 125
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  frame_type \"FDD\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  nb_antennas_rx  2
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  nb_antennas_tx 2
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.19/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
@@ -1600,23 +1600,23 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  N_RB_DL 25
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.26\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  downlink_frequency 2660000000L
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  uplink_frequency_offset -120000000
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tx_gain 90
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.19/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  tracking_area_code \"1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mobile_country_code \"208\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  N_RB_DL 25
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.26\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  downlink_frequency 2660000000L
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  uplink_frequency_offset -120000000
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  tx_gain 90
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  rx_gain 125
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  frame_type \"FDD\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  nb_antennas_rx  2
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  nb_antennas_tx 2
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.19/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
@@ -1674,23 +1674,23 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  N_RB_DL 50
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.26\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  downlink_frequency 2660000000L
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  uplink_frequency_offset -120000000
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tx_gain 90
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.19/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  tracking_area_code \"1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mobile_country_code \"208\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  N_RB_DL 50
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.26\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  downlink_frequency 2660000000L
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  uplink_frequency_offset -120000000
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  tx_gain 90
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  rx_gain 125
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  frame_type \"FDD\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  nb_antennas_rx  2
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  nb_antennas_tx 2
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.19/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
@@ -1748,23 +1748,23 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  N_RB_DL 100
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.26\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  downlink_frequency 2660000000L
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  uplink_frequency_offset -120000000
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tx_gain 90
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.19/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  tracking_area_code \"1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mobile_country_code \"208\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  N_RB_DL 100
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.26\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  downlink_frequency 2660000000L
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  uplink_frequency_offset -120000000
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  tx_gain 90
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  rx_gain 125
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  frame_type \"FDD\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  nb_antennas_rx  2
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  nb_antennas_tx 2
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.19/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
