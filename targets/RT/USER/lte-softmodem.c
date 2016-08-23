@@ -958,9 +958,12 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 
   slot_offset = subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti;
 
+  
   if ((subframe_select(&phy_vars_eNB->lte_frame_parms,subframe)==SF_DL)||
       ((subframe_select(&phy_vars_eNB->lte_frame_parms,subframe)==SF_S))) {
     //    LOG_D(HW,"Frame %d: Generating slot %d\n",frame,next_slot);
+
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_OFDM_MODULATION,1);
 
     do_OFDM_mod_l(&phy_vars_eNB->lte_eNB_common_vars,
                   0,
@@ -974,6 +977,8 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
                     1+(subframe<<1),
                     &phy_vars_eNB->lte_frame_parms);
     }
+
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_OFDM_MODULATION,0);
     
 
 /*
@@ -1289,7 +1294,7 @@ static void* eNB_thread_tx( void* param )
         break;
       }
     }
-
+    
     do_OFDM_mod_rt( proc->subframe_tx, PHY_vars_eNB_g[0][proc->CC_id] );
     /*
     short *txdata = (short*)&PHY_vars_eNB_g[0][proc->CC_id]->lte_eNB_common_vars.txdata[0][0][proc->subframe_tx*PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.samples_per_tti];

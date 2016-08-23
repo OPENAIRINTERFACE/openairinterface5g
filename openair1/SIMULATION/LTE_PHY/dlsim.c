@@ -951,10 +951,6 @@ int main(int argc, char **argv)
           }
         } 
 
-           ue_spec_bf_weights = PHY_vars_eNB->dlsch_eNB[k][i]->ue_spec_bf_weights[j]; 
-
-           for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-           }
       }
 
       PHY_vars_eNB->dlsch_eNB[k][i]->rnti = n_rnti+k;
