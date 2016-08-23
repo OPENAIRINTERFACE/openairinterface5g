@@ -369,7 +369,6 @@ check_install_oai_software() {
 	libxml2 \
 	libxml2-dev  \
 	libxslt1-dev \
-	linux-headers-`uname -r` \
 	mscgen  \
 	octave \
 	octave-signal \
@@ -385,6 +384,8 @@ check_install_oai_software() {
 
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
     
+    #Sometimes linux headers are not available in apt-get if kernel is custom or new
+    $SUDO apt-get install linux-headers-`uname -r` || true
     # First we remove gnutls/nettle installation and then install from sources
     $SUDO apt-get remove -y libgnutls-dev nettle-dev nettle-bin
     install_nettle_from_source
