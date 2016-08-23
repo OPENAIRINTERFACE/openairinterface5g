@@ -53,7 +53,7 @@ void gen_emm_data(emm_nvdata_t *emm_data, const char *hplmn, const char *msin) {
 	emm_data->rplmn.MNCdigit1 = user_plmn_list[hplmn_index].mnc[0];
 	emm_data->rplmn.MNCdigit2 = user_plmn_list[hplmn_index].mnc[1];
 
-	emm_data->eplmn.n_plmns = ehplmn_nb;
+	emm_data->eplmn.n_plmns = ehplmns.size;
 }
 
 int write_emm_data(const char *directory, int user_id, emm_nvdata_t *emm_data) {

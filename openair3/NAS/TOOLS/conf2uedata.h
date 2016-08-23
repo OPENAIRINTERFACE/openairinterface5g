@@ -43,18 +43,18 @@ typedef struct {
 	const char *mcc;
 } plmn_conf_param_t;
 
-extern int *ucplmn;
-extern int *oplmn;
-extern int *ocplmn;
-extern int *fplmn;
-extern int *ehplmn;
+typedef struct {
+    int size;
+    int *items;
+} plmns_list;
+
+extern plmns_list ucplmns;
+extern plmns_list oplmns;
+extern plmns_list ocplmns;
+extern plmns_list fplmns;
+extern plmns_list ehplmns;
 
 extern int plmn_nb;
-extern int ucplmn_nb;
-extern int oplmn_nb;
-extern int ocplmn_nb;
-extern int fplmn_nb;
-extern int ehplmn_nb;
 
 extern plmn_conf_param_t* user_plmn_list;
 extern network_record_t* user_network_record_list;
@@ -70,7 +70,7 @@ int parse_plmns(config_setting_t *all_plmn_setting);
 int get_plmn_index(const char * mccmnc);
 int parse_ue_plmn_param(config_setting_t *ue_setting, int user_id, const char **hplmn);
 int parse_Xplmn(config_setting_t *ue_setting, const char *section,
-               int user_id, int *plmns_count, int **plmns );
+               int user_id, plmns_list *plmns);
 
 
 #endif // _CONF2UEDATA_H

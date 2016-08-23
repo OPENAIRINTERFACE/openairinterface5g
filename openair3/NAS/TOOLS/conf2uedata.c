@@ -12,18 +12,13 @@
 #include "conf_user_data.h"
 #include "conf_usim.h"
 
-int *ucplmn = NULL;
-int *oplmn = NULL;
-int *ocplmn = NULL;
-int *fplmn = NULL;
-int *ehplmn = NULL;
+plmns_list ucplmns;
+plmns_list oplmns;
+plmns_list ocplmns;
+plmns_list fplmns;
+plmns_list ehplmns;
 
 int plmn_nb = 0;
-int ucplmn_nb = 0;
-int oplmn_nb = 0;
-int ocplmn_nb = 0;
-int fplmn_nb = 0;
-int ehplmn_nb = 0;
 
 plmn_conf_param_t* user_plmn_list=NULL;
 network_record_t* user_network_record_list = NULL;
@@ -241,15 +236,15 @@ int parse_ue_plmn_param(config_setting_t *ue_setting, int user_id, const char **
 		return EXIT_FAILURE;
 	}
 
-	if ( parse_Xplmn(ue_setting, UCPLMN, user_id, &ucplmn_nb, &ucplmn) == EXIT_FAILURE )
+	if ( parse_Xplmn(ue_setting, UCPLMN, user_id, &ucplmns) == EXIT_FAILURE )
 		nb_errors++;
-	if ( parse_Xplmn(ue_setting, OPLMN, user_id, &oplmn_nb, &oplmn) == EXIT_FAILURE )
+	if ( parse_Xplmn(ue_setting, OPLMN, user_id, &oplmns) == EXIT_FAILURE )
 		nb_errors++;
-	if ( parse_Xplmn(ue_setting, OCPLMN, user_id, &ocplmn_nb, &ocplmn) == EXIT_FAILURE )
+	if ( parse_Xplmn(ue_setting, OCPLMN, user_id, &ocplmns) == EXIT_FAILURE )
 		nb_errors++;
-	if ( parse_Xplmn(ue_setting, FPLMN, user_id, &fplmn_nb, &fplmn) == EXIT_FAILURE )
+	if ( parse_Xplmn(ue_setting, FPLMN, user_id, &fplmns) == EXIT_FAILURE )
 		nb_errors++;
-	if ( parse_Xplmn(ue_setting, EHPLMN, user_id, &ehplmn_nb, &ehplmn) == EXIT_FAILURE )
+	if ( parse_Xplmn(ue_setting, EHPLMN, user_id, &ehplmns) == EXIT_FAILURE )
 		nb_errors++;
 
 	if ( nb_errors > 0 )
@@ -258,7 +253,7 @@ int parse_ue_plmn_param(config_setting_t *ue_setting, int user_id, const char **
 }
 
 int parse_Xplmn(config_setting_t *ue_setting, const char *section,
-               int user_id, int *plmns_count, int **plmns ) {
+               int user_id, plmns_list *plmns) {
 	int rc;
 	int item_count;
 	config_setting_t *setting;
@@ -286,8 +281,8 @@ int parse_Xplmn(config_setting_t *ue_setting, const char *section,
 		datas[i] = rc;
 	}
 
-	*plmns_count = item_count;
-	*plmns = datas;
+	plmns->size = item_count;
+	plmns->items = datas;
 	return EXIT_SUCCESS;
 }
 

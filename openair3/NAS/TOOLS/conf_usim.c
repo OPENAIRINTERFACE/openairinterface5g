@@ -96,9 +96,9 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data) {
 	for (int i = 0; i < USIM_FPLMN_MAX; i++) {
 		memset(&usim_data->fplmn[i], 0xff, sizeof(plmn_t));
 	}
-	if (fplmn_nb > 0) {
-		for (int i = 0; i < fplmn_nb; i++) {
-			usim_data->fplmn[i] = user_network_record_list[fplmn[i]].plmn;
+	if (fplmns.size > 0) {
+		for (int i = 0; i < fplmns.size; i++) {
+			usim_data->fplmn[i] = user_network_record_list[fplmns.items[i]].plmn;
 		}
 	}
 
@@ -183,8 +183,8 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data) {
 	/*
 	 * PLMN Network Name and Operator PLMN List
 	 */
-	for (int i = 0; i < oplmn_nb; i++) {
-		network_record_t record = user_network_record_list[oplmn[i]];
+	for (int i = 0; i < oplmns.size; i++) {
+		network_record_t record = user_network_record_list[oplmns.items[i]];
 		usim_data->pnn[i].fullname.type = USIM_PNN_FULLNAME_TAG;
 		usim_data->pnn[i].fullname.length = strlen(record.fullname);
 		strncpy((char*) usim_data->pnn[i].fullname.value, record.fullname,
@@ -198,8 +198,8 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data) {
 		usim_data->opl[i].end = record.tac_end;
 		usim_data->opl[i].record_id = i;
 	}
-	if (oplmn_nb < USIM_OPL_MAX) {
-		for (int i = oplmn_nb; i < USIM_OPL_MAX; i++) {
+	if (oplmns.size < USIM_OPL_MAX) {
+		for (int i = oplmns.size; i < USIM_OPL_MAX; i++) {
 			memset(&usim_data->opl[i].plmn, 0xff, sizeof(plmn_t));
 		}
 	}
@@ -207,11 +207,11 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data) {
 	/*
 	 * List of Equivalent HPLMNs
 	 */
-	for (int i = 0; i < ehplmn_nb; i++) {
-		usim_data->ehplmn[i] = user_network_record_list[ehplmn[i]].plmn;
+	for (int i = 0; i < ehplmns.size; i++) {
+		usim_data->ehplmn[i] = user_network_record_list[ehplmns.items[i]].plmn;
 	}
-	if (ehplmn_nb < USIM_EHPLMN_MAX) {
-		for (int i = ehplmn_nb; i < USIM_EHPLMN_MAX; i++) {
+	if (ehplmns.size < USIM_EHPLMN_MAX) {
+		for (int i = ehplmns.size; i < USIM_EHPLMN_MAX; i++) {
 			memset(&usim_data->ehplmn[i], 0xff, sizeof(plmn_t));
 		}
 	}
@@ -227,9 +227,9 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data) {
 	for (int i = 0; i < USIM_PLMN_MAX; i++) {
 		memset(&usim_data->plmn[i], 0xff, sizeof(plmn_t));
 	}
-	if (ucplmn_nb > 0) {
-		for (int i = 0; i < ucplmn_nb; i++) {
-			usim_data->plmn[i].plmn = user_network_record_list[ucplmn[i]].plmn;
+	if (ucplmns.size > 0) {
+		for (int i = 0; i < ucplmns.size; i++) {
+			usim_data->plmn[i].plmn = user_network_record_list[ucplmns.items[i]].plmn;
 		}
 	}
 
@@ -238,9 +238,9 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data) {
 	for (int i = 0; i < USIM_OPLMN_MAX; i++) {
 		memset(&usim_data->oplmn[i], 0xff, sizeof(plmn_t));
 	}
-	if (ocplmn_nb > 0) {
-		for (int i = 0; i < ocplmn_nb; i++) {
-			usim_data->oplmn[i].plmn = user_network_record_list[ocplmn[i]].plmn;
+	if (ocplmns.size > 0) {
+		for (int i = 0; i < ocplmns.size; i++) {
+			usim_data->oplmn[i].plmn = user_network_record_list[ocplmns.items[i]].plmn;
 			usim_data->oplmn[i].AcT = (USIM_ACT_GSM | USIM_ACT_UTRAN
 					| USIM_ACT_EUTRAN);
 		}
