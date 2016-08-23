@@ -433,8 +433,8 @@ typedef struct eNB_RRC_INST_s {
   struct list loc_list;
 #endif
 
-  //pointer to configuration
-  RrcConfigurationReq *configuration;
+  //RRC configuration
+  RrcConfigurationReq configuration;
 } eNB_RRC_INST;
 
 #define MAX_UE_CAPABILITY_SIZE 255
