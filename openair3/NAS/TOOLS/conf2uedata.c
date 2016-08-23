@@ -300,27 +300,40 @@ int get_plmn_index(const char * mccmnc) {
 	return -1;
 }
 
+
+plmn_t make_plmn_from_conf(const plmn_conf_param_t *plmn_conf) {
+	plmn_t plmn;
+	char num[6];
+
+	memset(&plmn, 0xff, sizeof(plmn));
+
+	snprintf(num, 6, "%s%s", plmn_conf->mcc, plmn_conf->mnc);
+
+	plmn.MCCdigit2 = plmn_conf->mcc[1];
+	plmn.MCCdigit1 = plmn_conf->mcc[0];
+	plmn.MCCdigit3 = plmn_conf->mcc[2];
+	plmn.MNCdigit2 = plmn_conf->mnc[1];
+	plmn.MNCdigit1 = plmn_conf->mnc[0];
+	if (strlen(plmn_conf->mnc) > 2) {
+		plmn.MNCdigit3 = plmn_conf->mnc[2];
+	}
+	return plmn;
+}
+
 void fill_network_record_list() {
 	for (int i = 0; i < plmn_nb; i++) {
 		strcpy(user_network_record_list[i].fullname,
 				user_plmn_list[i].fullname);
 		strcpy(user_network_record_list[i].shortname,
 				user_plmn_list[i].shortname);
+
 		char num[6];
 		sprintf(num, "%s%s", user_plmn_list[i].mcc, user_plmn_list[i].mnc);
 		user_network_record_list[i].num = atoi(num);
-		user_network_record_list[i].plmn.MCCdigit2 = user_plmn_list[i].mcc[1];
-		user_network_record_list[i].plmn.MCCdigit1 = user_plmn_list[i].mcc[0];
-		user_network_record_list[i].plmn.MCCdigit3 = user_plmn_list[i].mcc[2];
-		user_network_record_list[i].plmn.MNCdigit2 = user_plmn_list[i].mnc[1];
-		user_network_record_list[i].plmn.MNCdigit1 = user_plmn_list[i].mnc[0];
+
+		user_network_record_list[i].plmn = make_plmn_from_conf(&user_plmn_list[i]);
 		user_network_record_list[i].tac_end = 0xfffd;
 		user_network_record_list[i].tac_start = 0x0001;
-		if (strlen(user_plmn_list[i].mnc) > 2) {
-			user_network_record_list[i].plmn.MNCdigit3 =
-					user_plmn_list[i].mnc[2];
-		}
-
 	}
 }
 
