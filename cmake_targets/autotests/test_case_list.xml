@@ -1,6 +1,6 @@
 <testCaseList>
 
-<MachineList>mozart hutch starsky stevens amerique calisson nano qseven</MachineList>
+<MachineList>mozart hutch starsky stevens amerique calisson nano</MachineList>
  <NFSResultsShare>/mnt/sradio/TEST_RESULTS/</NFSResultsShare>
  <GitOAI5GRepo>https://gitlab.eurecom.fr/oai/openairinterface5g.git</GitOAI5GRepo>
  <GitOpenair-cnRepo>https://gitlab.eurecom.fr/oai/openair-cn.git</GitOpenair-cnRepo>
