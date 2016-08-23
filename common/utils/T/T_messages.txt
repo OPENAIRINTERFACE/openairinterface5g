@@ -95,6 +95,10 @@ ID = ENB_MAC_UE_UL_CE
     DESC = MAC uplink UE received control element
     GROUP = ALL:MAC:ENB
     FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,ce
+ID = ENB_MAC_UE_DL_PDU_WITH_DATA
+    DESC = MAC downlink PDU for an UE
+    GROUP = ALL:MAC:ENB
+    FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : buffer,data
 
 #RLC logs
 ID = ENB_RLC_DL

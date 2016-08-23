@@ -61,6 +61,7 @@ TEST_CASE_GROUP=""
 BUILD_DOXYGEN=0
 T_TRACER="False"
 DISABLE_HARDWARE_DEPENDENCY="False"
+CMAKE_BUILD_TYPE=""
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -82,7 +83,7 @@ Options
 --install-optional-packages
    Install useful but not mandatory packages such as valgrind
 -g | --run-with-gdb
-   Add debugging symbols to compilation directives
+   Add debugging symbols to compilation directives. It also disables any compiler optimization.
 -h | --help
    Print this help
 --eNB
@@ -170,7 +171,8 @@ function main() {
             shift;;
        -g | --run-with-gdb)
             GDB=1
-            echo_info "Will Compile with gdb symbols"
+            CMAKE_BUILD_TYPE="Debug"
+            echo_info "Will Compile with gdb symbols and disable compiler optimization"
             shift;;
        --eNB)
             eNB=1
@@ -446,6 +448,7 @@ function main() {
     if [ "$NOS1" = "1" ] ; then
 	cat  $DIR/$lte_build_dir/CMakeLists.template >>  $cmake_file
     fi
+    echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
@@ -571,6 +574,8 @@ function main() {
     cp $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 $dbin
   fi
 
+  # oaisim compilation
+  ###############
   if [ "$oaisim" = "1" ] ; then
     dconf=$OPENAIR_DIR/targets/bin
       if [ "$NOS1" =  "1" ] ; then
@@ -584,6 +589,7 @@ function main() {
     echo_info "Compiling $oaisim_exec ($oaisim_build_dir)"
     cmake_file=$DIR/$oaisim_build_dir/CMakeLists.txt
     cp $DIR/$oaisim_build_dir/CMakeLists.template $cmake_file
+    echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )" >>  $cmake_file
     echo "set ( PRINT_STATS $PRINT_STATS )" >>  $cmake_file
@@ -652,9 +658,10 @@ function main() {
 
     cmake_file=$DIR/oaisim_mme_build_oai/CMakeLists.txt
     cp $DIR/oaisim_mme_build_oai/CMakeLists.template $cmake_file
-    echo "set(XFORMS $XFORMS )" >>  $cmake_file
-    echo "set(RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
-    echo "set(ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
+    echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
+    echo "set ( XFORMS $XFORMS )" >>  $cmake_file
+    echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
+    echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
     echo "set ( T_TRACER $T_TRACER )"        >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     #[ "$CLEAN" = "1" ] && rm -rf $DIR/oaisim_mme_build_oai/build
@@ -679,13 +686,14 @@ function main() {
      mkdir -p $DIR/$rrh_build_dir/build
      cmake_file=$DIR/$rrh_build_dir/CMakeLists.txt
      echo "cmake_minimum_required(VERSION 2.8)"   >   $cmake_file
-     echo "set(ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
-     echo "set(ENABLE_ITTI False )"     		 >>  $cmake_file
-     echo "set(RF_BOARD \"${HW}\")"               >>  $cmake_file
-     echo "set(TRANSP_PRO \"${TP}\")"             >>  $cmake_file
-     echo 'set(PACKAGE_NAME "\"rrh_gw\"")'        >>  $cmake_file
-     echo "set (DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )"    >>$cmake_file
-     echo "set (CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"    >>$cmake_file
+     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
+     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
+     echo "set ( ENABLE_ITTI False )"     		 >>  $cmake_file
+     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
+     echo "set ( TRANSP_PRO \"${TP}\")"             >>  $cmake_file
+     echo 'set ( PACKAGE_NAME "\"rrh_gw\"")'        >>  $cmake_file
+     echo "set ( DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )"    >>$cmake_file
+     echo "set ( CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"    >>$cmake_file
      echo "set ( T_TRACER $T_TRACER )"            >>  $cmake_file
      echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file    
      cd $DIR/$rrh_build_dir/build

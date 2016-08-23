@@ -331,7 +331,7 @@ time_stats_t softmodem_stats_tx_sf[10]; // total tx time
 time_stats_t softmodem_stats_rx_sf[10]; // total rx time
 void reset_opp_meas(void);
 void print_opp_meas(void);
-int transmission_mode=1;
+//int transmission_mode=1;
 
 int16_t           glog_level         = LOG_INFO;
 int16_t           glog_verbosity     = LOG_MED;
@@ -1291,6 +1291,28 @@ static void* eNB_thread_tx( void* param )
     }
 
     do_OFDM_mod_rt( proc->subframe_tx, PHY_vars_eNB_g[0][proc->CC_id] );
+    /*
+    if ((proc->frame_tx==100) && (proc->subframe_tx==9)) {
+      write_output("/tmp/eNBtxsig0.m","txs0",
+		   PHY_vars_eNB_g[0][proc->CC_id]->lte_eNB_common_vars.txdata[0][0],
+		   PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.samples_per_tti*10,
+		   1,1);
+      write_output("/tmp/eNBtxsig1.m","txs1",
+		   PHY_vars_eNB_g[0][proc->CC_id]->lte_eNB_common_vars.txdata[0][1],
+		   PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.samples_per_tti*10,
+		   1,1);
+      write_output("/tmp/eNBtxsigF0.m","txsF0",
+		   PHY_vars_eNB_g[0][proc->CC_id]->lte_eNB_common_vars.txdataF[0][0],
+		   PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.ofdm_symbol_size*10,
+		   1,1);
+      write_output("/tmp/eNBtxsigF1.m","txsF1",
+		   PHY_vars_eNB_g[0][proc->CC_id]->lte_eNB_common_vars.txdataF[0][1],
+		   PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.ofdm_symbol_size*10,
+		   1,1);
+
+      exit_fun("DEBUG: Exiting after writing files");
+    }
+    */
     /*
     short *txdata = (short*)&PHY_vars_eNB_g[0][proc->CC_id]->lte_eNB_common_vars.txdata[0][0][proc->subframe_tx*PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.samples_per_tti];
     int i;
@@ -2682,12 +2704,16 @@ static void get_options (int argc, char **argv)
       break;
 
     case 'x':
+      printf("Transmission mode should be set in config file now\n");
+      exit(-1);
+      /*
       transmission_mode = atoi(optarg);
 
       if (transmission_mode > 7) {
         printf("Transmission mode %d not supported for the moment\n",transmission_mode);
         exit(-1);
       }
+      */
       break;
 
     case 'T':
@@ -2773,8 +2799,8 @@ static void get_options (int argc, char **argv)
         frame_parms[CC_id]->Nid_cell            =  enb_properties->properties[i]->Nid_cell[CC_id];
         frame_parms[CC_id]->N_RB_DL             =  enb_properties->properties[i]->N_RB_DL[CC_id];
         frame_parms[CC_id]->N_RB_UL             =  enb_properties->properties[i]->N_RB_DL[CC_id];
+        frame_parms[CC_id]->nb_antenna_ports_eNB  =  enb_properties->properties[i]->nb_antenna_ports[CC_id];
         frame_parms[CC_id]->nb_antennas_tx      =  enb_properties->properties[i]->nb_antennas_tx[CC_id];
-        frame_parms[CC_id]->nb_antenna_ports_eNB  =  1;//enb_properties->properties[i]->nb_antenna_ports_eNB[CC_id];
         frame_parms[CC_id]->nb_antennas_rx      =  enb_properties->properties[i]->nb_antennas_rx[CC_id];
         //} // j
       }
@@ -3050,10 +3076,10 @@ int main( int argc, char **argv )
       //UE_flag==1
       frame_parms[CC_id]->nb_antennas_tx     = 1;
       frame_parms[CC_id]->nb_antennas_rx     = 1;
-      frame_parms[CC_id]->nb_antenna_ports_eNB = (transmission_mode == 1 || transmission_mode ==7) ? 1 : 2; //initial value overwritten by initial sync later
+      frame_parms[CC_id]->nb_antenna_ports_eNB = 1; //initial value overwritten by initial sync later
     }
 
-    frame_parms[CC_id]->mode1_flag         = (transmission_mode == 1 || transmission_mode ==7) ? 1 : 0;
+    frame_parms[CC_id]->mode1_flag         = (frame_parms[CC_id]->nb_antenna_ports_eNB == 1) ? 1 : 0;
     frame_parms[CC_id]->phich_config_common.phich_resource = oneSixth;
     frame_parms[CC_id]->phich_config_common.phich_duration = normal;
     // UL RS Config

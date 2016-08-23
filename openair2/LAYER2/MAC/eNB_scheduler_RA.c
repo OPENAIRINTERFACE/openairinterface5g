@@ -68,6 +68,7 @@
 
 #include "SIMULATION/TOOLS/defs.h" // for taus
 
+#include "T.h"
 
 void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,unsigned char Msg3_subframe)
 {
@@ -644,6 +645,9 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 		     &eNB->common_channels[CC_id].CCCH_pdu.payload[0],
 		     rrc_sdu_length);
 	      
+              T(T_ENB_MAC_UE_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(RA_template->rnti), T_INT(frameP), T_INT(subframeP),
+                T_INT(0 /*harq_pid always 0?*/), T_BUFFER(&eNB->UE_list.DLSCH_pdu[CC_id][0][UE_id].payload[0], TBsize));
+
 	      if (opt_enabled==1) {
 		trace_pdu(1, (uint8_t *)eNB->UE_list.DLSCH_pdu[CC_id][0][(unsigned char)UE_id].payload[0],
 			  rrc_sdu_length, UE_id, 3, UE_RNTI(module_idP, UE_id),

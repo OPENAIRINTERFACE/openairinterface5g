@@ -16,6 +16,8 @@ logger *new_ticklog(void *event_handler, void *database,
 logger *new_iqlog(void *event_handler, void *database,
     char *event_name, char *nb_rb, char *N_RB_UL, char *symbols_per_tti,
     char *buffer_varname);
+logger *new_iqdotlog(void *event_handler, void *database,
+    char *event_name, char *I, char *Q);
 
 void framelog_set_skip(logger *_this, int skip_delay);
 void framelog_set_update_only_at_sf9(logger *_this, int update_only_at_sf9);
