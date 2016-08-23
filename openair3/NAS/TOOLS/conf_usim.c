@@ -41,22 +41,23 @@ int parse_ue_sim_param(config_setting_t *ue_setting, int user_id, usim_data_conf
 }
 
 void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data,
-                   const user_plmns_t *user_plmns) {
-    int hplmn_index = get_plmn_index(u->hplmn);
+                   const user_plmns_t *user_plmns, const networks_t networks) {
+    int hplmn_index = get_plmn_index(u->hplmn, networks);
+	const plmn_conf_param_t *conf = &networks.items[hplmn_index].conf;
 	memset(usim_data, 0, sizeof(usim_data_t));
 	usim_data->imsi.length = 8;
 	usim_data->imsi.u.num.parity = get_msin_parity(u->msin,
-		user_plmn_list[hplmn_index].mcc,
-		user_plmn_list[hplmn_index].mnc);
+		conf->mcc,
+		conf->mnc);
 
-	usim_data->imsi.u.num.digit1 = user_plmn_list[hplmn_index].mcc[0];
-	usim_data->imsi.u.num.digit2 = user_plmn_list[hplmn_index].mcc[1];
-	usim_data->imsi.u.num.digit3 = user_plmn_list[hplmn_index].mcc[2];
+	usim_data->imsi.u.num.digit1 = conf->mcc[0];
+	usim_data->imsi.u.num.digit2 = conf->mcc[1];
+	usim_data->imsi.u.num.digit3 = conf->mcc[2];
 
-	usim_data->imsi.u.num.digit4 = user_plmn_list[hplmn_index].mnc[0];
-	usim_data->imsi.u.num.digit5 = user_plmn_list[hplmn_index].mnc[1];
+	usim_data->imsi.u.num.digit4 = conf->mnc[0];
+	usim_data->imsi.u.num.digit5 = conf->mnc[1];
 
-	if (strlen(user_plmn_list[hplmn_index].mnc) == 2) {
+	if (strlen(conf->mnc) == 2) {
 		usim_data->imsi.u.num.digit6 = u->msin[0];
 		usim_data->imsi.u.num.digit7 = u->msin[1];
 		usim_data->imsi.u.num.digit8 = u->msin[2];
@@ -68,7 +69,7 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data,
 		usim_data->imsi.u.num.digit14 = u->msin[8];
 		usim_data->imsi.u.num.digit15 = u->msin[9];
 	} else {
-		usim_data->imsi.u.num.digit6 = user_plmn_list[hplmn_index].mnc[2];
+		usim_data->imsi.u.num.digit6 = conf->mnc[2];
 		usim_data->imsi.u.num.digit7 = u->msin[0];
 		usim_data->imsi.u.num.digit8 = u->msin[1];
 		usim_data->imsi.u.num.digit9 = u->msin[2];
@@ -99,7 +100,7 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data,
 	}
 	if (user_plmns->forbiddens.size > 0) {
 		for (int i = 0; i < user_plmns->forbiddens.size; i++) {
-			usim_data->fplmn[i] = user_network_record_list[user_plmns->forbiddens.items[i]].plmn;
+			usim_data->fplmn[i] = networks.items[user_plmns->forbiddens.items[i]].plmn;
 		}
 	}
 
@@ -107,7 +108,7 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data,
 	 * Location Information
 	 */
 	usim_data->loci.tmsi = DEFAULT_TMSI;
-	usim_data->loci.lai.plmn = user_network_record_list[hplmn_index].plmn;
+	usim_data->loci.lai.plmn = networks.items[hplmn_index].plmn;
 	usim_data->loci.lai.lac = DEFAULT_LAC;
 	usim_data->loci.status = USIM_LOCI_NOT_UPDATED;
 	/*
@@ -117,7 +118,7 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data,
 	usim_data->psloci.signature[0] = 0x01;
 	usim_data->psloci.signature[1] = 0x02;
 	usim_data->psloci.signature[2] = 0x03;
-	usim_data->psloci.rai.plmn = user_network_record_list[hplmn_index].plmn;
+	usim_data->psloci.rai.plmn = networks.items[hplmn_index].plmn;
 	usim_data->psloci.rai.lac = DEFAULT_LAC;
 	usim_data->psloci.rai.rac = DEFAULT_RAC;
 	usim_data->psloci.status = USIM_PSLOCI_NOT_UPDATED;
@@ -126,7 +127,7 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data,
 	 */
 	usim_data->ad.UE_Operation_Mode = USIM_NORMAL_MODE;
 	usim_data->ad.Additional_Info = 0xffff;
-	usim_data->ad.MNC_Length = strlen(user_plmn_list[hplmn_index].mnc);
+	usim_data->ad.MNC_Length = strlen(conf->mnc);
 	/*
 	 * EPS NAS security context
 	 */
@@ -185,7 +186,7 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data,
 	 * PLMN Network Name and Operator PLMN List
 	 */
 	for (int i = 0; i < user_plmns->operators.size; i++) {
-		network_record_t record = user_network_record_list[user_plmns->operators.items[i]];
+		network_record_t record = networks.items[user_plmns->operators.items[i]].record;
 		usim_data->pnn[i].fullname.type = USIM_PNN_FULLNAME_TAG;
 		usim_data->pnn[i].fullname.length = strlen(record.fullname);
 		strncpy((char*) usim_data->pnn[i].fullname.value, record.fullname,
@@ -209,7 +210,7 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data,
 	 * List of Equivalent HPLMNs
 	 */
 	for (int i = 0; i < user_plmns->equivalents_home.size; i++) {
-		usim_data->ehplmn[i] = user_network_record_list[user_plmns->equivalents_home.items[i]].plmn;
+		usim_data->ehplmn[i] = networks.items[user_plmns->equivalents_home.items[i]].plmn;
 	}
 	if (user_plmns->equivalents_home.size < USIM_EHPLMN_MAX) {
 		for (int i = user_plmns->equivalents_home.size; i < USIM_EHPLMN_MAX; i++) {
@@ -219,7 +220,7 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data,
 	/*
 	 * Home PLMN Selector with Access Technology
 	 */
-	usim_data->hplmn.plmn = user_network_record_list[hplmn_index].plmn;
+	usim_data->hplmn.plmn = networks.items[hplmn_index].plmn;
 	usim_data->hplmn.AcT = (USIM_ACT_GSM | USIM_ACT_UTRAN | USIM_ACT_EUTRAN);
 
 	/*
@@ -230,7 +231,7 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data,
 	}
 	if (user_plmns->users_controlled.size > 0) {
 		for (int i = 0; i < user_plmns->users_controlled.size; i++) {
-			usim_data->plmn[i].plmn = user_network_record_list[user_plmns->users_controlled.items[i]].plmn;
+			usim_data->plmn[i].plmn = networks.items[user_plmns->users_controlled.items[i]].plmn;
 		}
 	}
 
@@ -241,7 +242,7 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data,
 	}
 	if (user_plmns->operators_controlled.size > 0) {
 		for (int i = 0; i < user_plmns->operators_controlled.size; i++) {
-			usim_data->oplmn[i].plmn = user_network_record_list[user_plmns->operators_controlled.items[i]].plmn;
+			usim_data->oplmn[i].plmn = networks.items[user_plmns->operators_controlled.items[i]].plmn;
 			usim_data->oplmn[i].AcT = (USIM_ACT_GSM | USIM_ACT_UTRAN
 					| USIM_ACT_EUTRAN);
 		}
@@ -250,7 +251,7 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data,
 	 * EPS Location Information
 	 */
 	usim_data->epsloci.guti.gummei.plmn =
-			user_network_record_list[hplmn_index].plmn;
+			networks.items[hplmn_index].plmn;
 	usim_data->epsloci.guti.gummei.MMEgid = DEFAULT_MME_ID;
 	usim_data->epsloci.guti.gummei.MMEcode = DEFAULT_MME_CODE;
 	usim_data->epsloci.guti.m_tmsi = DEFAULT_M_TMSI;

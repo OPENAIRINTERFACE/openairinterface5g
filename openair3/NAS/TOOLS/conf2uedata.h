@@ -56,24 +56,31 @@ typedef struct {
     plmns_list equivalents_home;
 } user_plmns_t;
 
-extern int plmn_nb;
+typedef struct {
+    plmn_conf_param_t conf;
+    network_record_t record;
+    plmn_t plmn;
+} network_t;
 
-extern plmn_conf_param_t* user_plmn_list;
-extern network_record_t* user_network_record_list;
+typedef struct {
+    int size;
+    network_t *items;
+} networks_t;
 
 int get_config_from_file(const char *filename, config_t *config);
 int parse_config_file(const char *output_dir, const char *filename);
 
 void _display_usage(void);
-void fill_network_record_list(void);
+void gen_network_record_from_conf(const plmn_conf_param_t *conf, network_record_t *record);
 
-int parse_plmn_param(config_setting_t *plmn_setting, int index);
-int parse_plmns(config_setting_t *all_plmn_setting);
-int get_plmn_index(const char * mccmnc);
+int parse_plmn_param(config_setting_t *plmn_setting, plmn_conf_param_t *conf);
+int parse_plmns(config_setting_t *all_plmn_setting, networks_t *plmns);
+int get_plmn_index(const char * mccmnc, const networks_t networks);
 int parse_user_plmns_conf(config_setting_t *ue_setting, int user_id,
-                          user_plmns_t *user_plmns, const char **h);
+                          user_plmns_t *user_plmns, const char **h,
+                          const networks_t networks);
 int parse_Xplmn(config_setting_t *ue_setting, const char *section,
-               int user_id, plmns_list *plmns);
+               int user_id, plmns_list *plmns, const networks_t networks);
 
 
 #endif // _CONF2UEDATA_H

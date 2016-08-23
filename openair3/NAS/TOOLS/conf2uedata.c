@@ -12,11 +12,6 @@
 #include "conf_user_data.h"
 #include "conf_usim.h"
 
-int plmn_nb = 0;
-
-plmn_conf_param_t* user_plmn_list=NULL;
-network_record_t* user_network_record_list = NULL;
-
 int main(int argc, char**argv) {
 	int option;
     const char* conf_file = NULL;
@@ -71,6 +66,8 @@ int parse_config_file(const char *output_dir, const char *conf_filename) {
     char user[10];
     config_t cfg;
 
+	networks_t networks;;
+
     ret = get_config_from_file(conf_filename, &cfg);
     if (ret == EXIT_FAILURE) {
         exit(1);
@@ -85,11 +82,10 @@ int parse_config_file(const char *output_dir, const char *conf_filename) {
         return (EXIT_FAILURE);
     }
 
-    rc = parse_plmns(all_plmn_setting);
+    rc = parse_plmns(all_plmn_setting, &networks);
     if (rc == EXIT_FAILURE) {
         return rc;
     }
-    fill_network_record_list();
 
     for (int i = 0; i < ue_nb; i++) {
 	    emm_nvdata_t emm_data;
@@ -110,7 +106,7 @@ int parse_config_file(const char *output_dir, const char *conf_filename) {
             return EXIT_FAILURE;
         }
 
-        rc = parse_user_plmns_conf(ue_setting, i, &user_plmns, &usim_data_conf.hplmn);
+        rc = parse_user_plmns_conf(ue_setting, i, &user_plmns, &usim_data_conf.hplmn, networks);
         if (rc != EXIT_SUCCESS) {
             return EXIT_FAILURE;
         }
@@ -128,13 +124,16 @@ int parse_config_file(const char *output_dir, const char *conf_filename) {
             printf("Problem in SIM section for UE%d. EXITING...\n", i);
             return EXIT_FAILURE;
         }
-        gen_usim_data(&usim_data_conf, &usim_data, &user_plmns);
+        gen_usim_data(&usim_data_conf, &usim_data, &user_plmns, networks);
         write_usim_data(output_dir, i, &usim_data);
 
-        gen_emm_data(&emm_data, usim_data_conf.hplmn, usim_data_conf.msin, user_plmns.equivalents_home.size);
+        gen_emm_data(&emm_data, usim_data_conf.hplmn, usim_data_conf.msin,
+                     user_plmns.equivalents_home.size, networks);
         write_emm_data(output_dir, i, &emm_data);
 
      }
+    free(networks.items);
+	networks.size=0;
     config_destroy(&cfg);
 	return(EXIT_SUCCESS);
 }
@@ -160,52 +159,52 @@ int get_config_from_file(const char *filename, config_t *config) {
 }
 
 
-int parse_plmn_param(config_setting_t *plmn_setting, int index) {
+int parse_plmn_param(config_setting_t *plmn_setting, plmn_conf_param_t *conf) {
 	int rc = 0;
-	rc = config_setting_lookup_string(plmn_setting,
-	FULLNAME, &user_plmn_list[index].fullname);
+	rc = config_setting_lookup_string(plmn_setting, FULLNAME, &conf->fullname);
 	if (rc != 1) {
-		printf("Check PLMN%d FULLNAME. Exiting\n", index);
+		printf("Error on FULLNAME\n");
 		return EXIT_FAILURE;
 	}
-	rc = config_setting_lookup_string(plmn_setting,
-	SHORTNAME, &user_plmn_list[index].shortname);
+	rc = config_setting_lookup_string(plmn_setting, SHORTNAME, &conf->shortname);
 	if (rc != 1) {
-		printf("Check PLMN%d SHORTNAME. Exiting\n", index);
+		printf("Error on SHORTNAME\n");
 		return EXIT_FAILURE;
 	}
-	rc = config_setting_lookup_string(plmn_setting,
-	MNC, &user_plmn_list[index].mnc);
-	if (rc != 1 || strlen(user_plmn_list[index].mnc) > 3
-			|| strlen(user_plmn_list[index].mnc) < 2) {
-		printf("Check PLMN%d MNC. Exiting\n", index);
+	rc = config_setting_lookup_string(plmn_setting, MNC, &conf->mnc);
+	if (rc != 1 || strlen(conf->mnc) > 3
+			|| strlen(conf->mnc) < 2) {
+		printf("Error ond MNC. Exiting\n");
 		return EXIT_FAILURE;
 	}
-	rc = config_setting_lookup_string(plmn_setting,
-	MCC, &user_plmn_list[index].mcc);
-	if (rc != 1 || strlen(user_plmn_list[index].mcc) != 3) {
-		printf("Check PLMN%d MCC. Exiting\n", index);
+	rc = config_setting_lookup_string(plmn_setting, MCC, &conf->mcc);
+	if (rc != 1 || strlen(conf->mcc) != 3) {
+		printf("Error on MCC\n");
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;
 }
 
-int parse_plmns(config_setting_t *all_plmn_setting) {
+int parse_plmns(config_setting_t *all_plmn_setting, networks_t *networks) {
 	config_setting_t *plmn_setting = NULL;
 	char plmn[10];
 	int rc = EXIT_SUCCESS;
-	plmn_nb = config_setting_length(all_plmn_setting);
-	user_plmn_list = malloc(sizeof(plmn_conf_param_t) * plmn_nb);
-	user_network_record_list = malloc(sizeof(network_record_t) * plmn_nb);
-	for (int i = 0; i < plmn_nb; i++) {
-		memset(&user_network_record_list[i], 0xff, sizeof(network_record_t));
-		memset(&user_plmn_list[i], 0xff, sizeof(plmn_conf_param_t));
+	int size = 0;
+
+	size = config_setting_length(all_plmn_setting);
+
+	networks->size = size;
+	networks->items = malloc(sizeof(network_t) * size);
+	for (int i = 0; i < size; i++) {
+		memset(&networks->items[i].record, 0xff, sizeof(network_record_t));
 	}
-	for (int i = 0; i < plmn_nb; i++) {
+
+	for (int i = 0; i < networks->size; i++) {
+		network_t *network = &networks->items[i];
 		sprintf(plmn, "%s%d", PLMN, i);
 		plmn_setting = config_setting_get_member(all_plmn_setting, plmn);
 		if (plmn_setting != NULL) {
-			rc = parse_plmn_param(plmn_setting, i);
+			rc = parse_plmn_param(plmn_setting, &network->conf);
 			if (rc == EXIT_FAILURE) {
 				return rc;
 			}
@@ -213,12 +212,15 @@ int parse_plmns(config_setting_t *all_plmn_setting) {
 			printf("Problem in PLMN%d. Exiting...\n", i);
 			return EXIT_FAILURE;
 		}
+		gen_network_record_from_conf(&network->conf, &network->record);
+		network->plmn = network->record.plmn;
 	}
 	return rc;
 }
 
 int parse_user_plmns_conf(config_setting_t *ue_setting, int user_id,
-                          user_plmns_t *user_plmns, const char **h) {
+                          user_plmns_t *user_plmns, const char **h,
+                          const networks_t networks) {
 	int nb_errors = 0;
 	const char *hplmn;
 
@@ -227,21 +229,21 @@ int parse_user_plmns_conf(config_setting_t *ue_setting, int user_id,
 		return EXIT_FAILURE;
 	}
 	hplmn = *h;
-	if (get_plmn_index(hplmn) == -1) {
+	if (get_plmn_index(hplmn, networks) == -1) {
 		printf("HPLMN for UE%d is not defined in PLMN section. Exiting\n",
 				user_id);
 		return EXIT_FAILURE;
 	}
 
-	if ( parse_Xplmn(ue_setting, UCPLMN, user_id, &user_plmns->users_controlled) == EXIT_FAILURE )
+	if ( parse_Xplmn(ue_setting, UCPLMN, user_id, &user_plmns->users_controlled, networks) == EXIT_FAILURE )
 		nb_errors++;
-	if ( parse_Xplmn(ue_setting, OPLMN, user_id, &user_plmns->operators) == EXIT_FAILURE )
+	if ( parse_Xplmn(ue_setting, OPLMN, user_id, &user_plmns->operators, networks) == EXIT_FAILURE )
 		nb_errors++;
-	if ( parse_Xplmn(ue_setting, OCPLMN, user_id, &user_plmns->operators_controlled) == EXIT_FAILURE )
+	if ( parse_Xplmn(ue_setting, OCPLMN, user_id, &user_plmns->operators_controlled, networks) == EXIT_FAILURE )
 		nb_errors++;
-	if ( parse_Xplmn(ue_setting, FPLMN, user_id, &user_plmns->forbiddens) == EXIT_FAILURE )
+	if ( parse_Xplmn(ue_setting, FPLMN, user_id, &user_plmns->forbiddens, networks) == EXIT_FAILURE )
 		nb_errors++;
-	if ( parse_Xplmn(ue_setting, EHPLMN, user_id, &user_plmns->equivalents_home) == EXIT_FAILURE )
+	if ( parse_Xplmn(ue_setting, EHPLMN, user_id, &user_plmns->equivalents_home, networks) == EXIT_FAILURE )
 		nb_errors++;
 
 	if ( nb_errors > 0 )
@@ -250,7 +252,7 @@ int parse_user_plmns_conf(config_setting_t *ue_setting, int user_id,
 }
 
 int parse_Xplmn(config_setting_t *ue_setting, const char *section,
-               int user_id, plmns_list *plmns) {
+               int user_id, plmns_list *plmns, const networks_t networks) {
 	int rc;
 	int item_count;
 	config_setting_t *setting;
@@ -269,7 +271,7 @@ int parse_Xplmn(config_setting_t *ue_setting, const char *section,
 			printf("Check %s section for UE%d. Exiting\n", section, user_id);
 			return EXIT_FAILURE;
 		}
-		rc = get_plmn_index(mccmnc);
+		rc = get_plmn_index(mccmnc, networks);
 		if (rc == -1) {
 			printf("The PLMN %s is not defined in PLMN section. Exiting...\n",
 					mccmnc);
@@ -283,23 +285,22 @@ int parse_Xplmn(config_setting_t *ue_setting, const char *section,
 	return EXIT_SUCCESS;
 }
 
-int get_plmn_index(const char * mccmnc) {
+int get_plmn_index(const char * mccmnc, const networks_t networks) {
 	char mcc[4];
 	char mnc[strlen(mccmnc) - 2];
 	strncpy(mcc, mccmnc, 3);
 	mcc[3] = '\0';
 	strncpy(mnc, mccmnc + 3, 3);
 	mnc[strlen(mccmnc) - 3] = '\0';
-	for (int i = 0; i < plmn_nb; i++) {
-		if (strcmp(user_plmn_list[i].mcc, mcc) == 0) {
-			if (strcmp(user_plmn_list[i].mnc, mnc) == 0) {
+	for (int i = 0; i < networks.size; i++) {
+		if (strcmp(networks.items[i].conf.mcc, mcc) == 0) {
+			if (strcmp(networks.items[i].conf.mnc, mnc) == 0) {
 				return i;
 			}
 		}
 	}
 	return -1;
 }
-
 
 plmn_t make_plmn_from_conf(const plmn_conf_param_t *plmn_conf) {
 	plmn_t plmn;
@@ -320,21 +321,17 @@ plmn_t make_plmn_from_conf(const plmn_conf_param_t *plmn_conf) {
 	return plmn;
 }
 
-void fill_network_record_list() {
-	for (int i = 0; i < plmn_nb; i++) {
-		strcpy(user_network_record_list[i].fullname,
-				user_plmn_list[i].fullname);
-		strcpy(user_network_record_list[i].shortname,
-				user_plmn_list[i].shortname);
+void gen_network_record_from_conf(const plmn_conf_param_t *conf, network_record_t *record) {
+		strcpy(record->fullname, conf->fullname);
+		strcpy(record->shortname, conf->shortname);
 
 		char num[6];
-		sprintf(num, "%s%s", user_plmn_list[i].mcc, user_plmn_list[i].mnc);
-		user_network_record_list[i].num = atoi(num);
+		sprintf(num, "%s%s", conf->mcc, conf->mnc);
+		record->num = atoi(num);
 
-		user_network_record_list[i].plmn = make_plmn_from_conf(&user_plmn_list[i]);
-		user_network_record_list[i].tac_end = 0xfffd;
-		user_network_record_list[i].tac_start = 0x0001;
-	}
+		record->plmn = make_plmn_from_conf(conf);
+		record->tac_end = 0xfffd;
+		record->tac_start = 0x0001;
 }
 
 /*
