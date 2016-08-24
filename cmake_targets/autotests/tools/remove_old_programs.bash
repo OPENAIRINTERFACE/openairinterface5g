@@ -13,7 +13,7 @@ pid="$$"
 echo "pid = $pid"
 
 echo "Killing programs now..."
-var=`ps -aux |grep -E -i $1 |awk '{print $2}'| tr '\n' ' ' | sed  "s/$pid/ /"`
+var=`ps -aux |grep -E -i '$1' |awk '{print $2}'| tr '\n' ' ' | sed  "s/$pid/ /"`
 echo $var 
 if [ -n "$var" ] ; then  sudo  kill -9 $var ; fi
 
