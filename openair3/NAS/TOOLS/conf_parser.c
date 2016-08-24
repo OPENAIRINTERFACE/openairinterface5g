@@ -6,7 +6,7 @@
 #include "conf_user_data.h"
 #include "conf_user_plmn.h"
 
-bool parse_config_file(const char *output_dir, const char *conf_filename) {
+bool parse_config_file(const char *output_dir, const char *conf_filename, int output_flags) {
 	int rc = true;
     int ret;
     int ue_nb = 0;
@@ -65,7 +65,6 @@ bool parse_config_file(const char *output_dir, const char *conf_filename) {
             return false;
         }
         gen_user_data(&user_data_conf, &user_data);
-        write_user_data(output_dir, i, &user_data);
 
         rc = parse_ue_sim_param(ue_setting, i, &usim_data_conf);
         if (rc != true) {
@@ -73,11 +72,21 @@ bool parse_config_file(const char *output_dir, const char *conf_filename) {
             return false;
         }
         gen_usim_data(&usim_data_conf, &usim_data, &user_plmns, networks);
-        write_usim_data(output_dir, i, &usim_data);
 
         gen_emm_data(&emm_data, usim_data_conf.hplmn, usim_data_conf.msin,
                      user_plmns.equivalents_home.size, networks);
-        write_emm_data(output_dir, i, &emm_data);
+
+        if ( output_flags & OUTPUT_UEDATA ) {
+            write_user_data(output_dir, i, &user_data);
+        }
+
+        if ( output_flags & OUTPUT_USIM ) {
+            write_usim_data(output_dir, i, &usim_data);
+        }
+
+        if ( output_flags & OUTPUT_EMM ) {
+            write_emm_data(output_dir, i, &emm_data);
+        }
 
 		user_plmns_free(&user_plmns);
 

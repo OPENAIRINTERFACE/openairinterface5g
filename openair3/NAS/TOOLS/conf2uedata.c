@@ -42,7 +42,7 @@ int main(int argc, char**argv) {
 		exit(1);
 	}
 
-    if ( parse_config_file(output_dir, conf_file) == false ) {
+    if ( parse_config_file(output_dir, conf_file, OUTPUT_ALL) == false ) {
         exit(1);
     }
 
