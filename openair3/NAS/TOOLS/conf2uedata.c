@@ -28,7 +28,7 @@ int main(int argc, char**argv) {
 			break;
 		case 'h':
 			_display_usage();
-			return EXIT_SUCCESS;
+			return true;
 			break;
 		default:
 			break;
@@ -38,26 +38,26 @@ int main(int argc, char**argv) {
 	if (output_dir == NULL ) {
 		printf("No output option found\n");
 		_display_usage();
-		return EXIT_FAILURE;
+		exit(1);
 	}
 
     if ( conf_file == NULL ) {
 		printf("No Configuration file is given\n");
 		_display_usage();
-		return EXIT_FAILURE;
+		exit(1);
 	}
 
-    if ( parse_config_file(output_dir, conf_file) == EXIT_FAILURE ) {
-        exit(EXIT_FAILURE);
+    if ( parse_config_file(output_dir, conf_file) == false ) {
+        exit(1);
     }
 
     display_data_from_directory(output_dir);
 
-	exit(EXIT_SUCCESS);
+	exit(0);
 }
 
-int parse_config_file(const char *output_dir, const char *conf_filename) {
-	int rc = EXIT_SUCCESS;
+bool parse_config_file(const char *output_dir, const char *conf_filename) {
+	int rc = true;
     int ret;
     int ue_nb = 0;
     config_setting_t *root_setting = NULL;
@@ -69,7 +69,7 @@ int parse_config_file(const char *output_dir, const char *conf_filename) {
 	networks_t networks;;
 
     ret = get_config_from_file(conf_filename, &cfg);
-    if (ret == EXIT_FAILURE) {
+    if (ret == false) {
         exit(1);
     }
 
@@ -79,11 +79,11 @@ int parse_config_file(const char *output_dir, const char *conf_filename) {
     all_plmn_setting = config_setting_get_member(root_setting, PLMN);
     if (all_plmn_setting == NULL) {
         printf("NO PLMN SECTION...EXITING...\n");
-        return (EXIT_FAILURE);
+        return (false);
     }
 
     if ( parse_plmns(all_plmn_setting, &networks) == false ) {
-        return EXIT_FAILURE;
+        return false;
     }
 
     for (int i = 0; i < ue_nb; i++) {
@@ -102,25 +102,25 @@ int parse_config_file(const char *output_dir, const char *conf_filename) {
         ue_setting = config_setting_get_member(root_setting, user);
         if (ue_setting == NULL) {
             printf("Check UE%d settings\n", i);
-            return EXIT_FAILURE;
+            return false;
         }
 
         if ( parse_user_plmns_conf(ue_setting, i, &user_plmns, &usim_data_conf.hplmn, networks) == false ) {
-            return EXIT_FAILURE;
+            return false;
         }
 
         rc = parse_ue_user_data(ue_setting, i, &user_data_conf);
-        if (rc != EXIT_SUCCESS) {
+        if (rc != true) {
             printf("Problem in USER section for UE%d. EXITING...\n", i);
-            return EXIT_FAILURE;
+            return false;
         }
         gen_user_data(&user_data_conf, &user_data);
         write_user_data(output_dir, i, &user_data);
 
         rc = parse_ue_sim_param(ue_setting, i, &usim_data_conf);
-        if (rc != EXIT_SUCCESS) {
+        if (rc != true) {
             printf("Problem in SIM section for UE%d. EXITING...\n", i);
-            return EXIT_FAILURE;
+            return false;
         }
         gen_usim_data(&usim_data_conf, &usim_data, &user_plmns, networks);
         write_usim_data(output_dir, i, &usim_data);
@@ -135,14 +135,14 @@ int parse_config_file(const char *output_dir, const char *conf_filename) {
     free(networks.items);
 	networks.size=0;
     config_destroy(&cfg);
-	return(EXIT_SUCCESS);
+	return(true);
 }
 
-int get_config_from_file(const char *filename, config_t *config) {
+bool get_config_from_file(const char *filename, config_t *config) {
     config_init(config);
     if (filename == NULL) {
         // XXX write error message ?
-        exit(EXIT_FAILURE);
+        return(false);
     }
 
     /* Read the file. If there is an error, report it and exit. */
@@ -153,9 +153,9 @@ int get_config_from_file(const char *filename, config_t *config) {
             fprintf(stderr, "This is line %d\n", config_error_line(config));
         }
         config_destroy(config);
-        return (EXIT_FAILURE);
+        return (false);
     }
-    return EXIT_SUCCESS;
+    return true;
 }
 
 /*

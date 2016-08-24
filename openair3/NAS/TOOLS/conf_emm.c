@@ -56,16 +56,16 @@ void gen_emm_data(emm_nvdata_t *emm_data, const char *hplmn, const char *msin, i
 	emm_data->eplmn.n_plmns = ehplmn_count;
 }
 
-int write_emm_data(const char *directory, int user_id, emm_nvdata_t *emm_data) {
+bool write_emm_data(const char *directory, int user_id, emm_nvdata_t *emm_data) {
     int rc;
 	char* filename = make_filename(directory, EMM_NVRAM_FILENAME, user_id);
 	rc = memory_write(filename, emm_data, sizeof(emm_nvdata_t));
 	free(filename);
 	if (rc != RETURNok) {
 		perror("ERROR\t: memory_write() failed");
-		exit(EXIT_FAILURE);
+		exit(false);
 	}
-    return(EXIT_SUCCESS);
+    return(true);
 }
 
 int get_msin_parity(const char * msin, const char *mcc, const char *mnc) {

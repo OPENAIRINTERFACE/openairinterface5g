@@ -8,36 +8,36 @@
 #include "conf2uedata.h"
 #include "conf_usim.h"
 
-int parse_ue_sim_param(config_setting_t *ue_setting, int user_id, usim_data_conf_t *u) {
-	int rc = EXIT_SUCCESS;
+bool parse_ue_sim_param(config_setting_t *ue_setting, int user_id, usim_data_conf_t *u) {
+	int rc = true;
 	config_setting_t *ue_param_setting = NULL;
 	ue_param_setting = config_setting_get_member(ue_setting, SIM);
 	if (ue_param_setting == NULL) {
 		printf("Check SIM section for UE%d. EXITING...\n", user_id);
-		return EXIT_FAILURE;
+		return false;
 	}
 	rc = config_setting_lookup_string(ue_param_setting, MSIN, &u->msin);
 	if (rc != 1 || strlen(u->msin) > 10 || strlen(u->msin) < 9) {
 		printf("Check SIM MSIN section for UE%d. Exiting\n", user_id);
-		return EXIT_FAILURE;
+		return false;
 	}
 	rc = config_setting_lookup_string(ue_param_setting, USIM_API_K,
 			&u->usim_api_k);
 	if (rc != 1) {
 		printf("Check SIM USIM_API_K  section for UE%d. Exiting\n", user_id);
-		return EXIT_FAILURE;
+		return false;
 	}
 	rc = config_setting_lookup_string(ue_param_setting, OPC, &u->opc);
 	if (rc != 1) {
 		printf("Check SIM OPC section for UE%d. Exiting\n", user_id);
-		return EXIT_FAILURE;
+		return false;
 	}
 	rc = config_setting_lookup_string(ue_param_setting, MSISDN, &u->msisdn);
 	if (rc != 1) {
 		printf("Check SIM MSISDN section for UE%d. Exiting\n", user_id);
-		return EXIT_FAILURE;
+		return false;
 	}
-	return EXIT_SUCCESS;
+	return true;
 }
 
 void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data,
@@ -295,7 +295,7 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data,
 	OPC_SIZE);
 }
 
-int write_usim_data(const char *directory, int user_id, usim_data_t *usim_data){
+bool write_usim_data(const char *directory, int user_id, usim_data_t *usim_data){
     int rc;
     char *filename = make_filename(directory, USIM_API_NVRAM_FILENAME, user_id);
     rc = usim_api_write(filename, usim_data);

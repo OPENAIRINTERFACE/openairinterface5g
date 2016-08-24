@@ -39,8 +39,8 @@ typedef struct {
     const char *hplmn;
 } usim_data_conf_t;
 
-int parse_ue_sim_param(config_setting_t *ue_setting, int user_id, usim_data_conf_t *u);
-int write_usim_data(const char *directory, int user_id, usim_data_t *usim_data);
+bool parse_ue_sim_param(config_setting_t *ue_setting, int user_id, usim_data_conf_t *u);
+bool write_usim_data(const char *directory, int user_id, usim_data_t *usim_data);
 void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data,
                    const user_plmns_t *user_plmns, const networks_t networks);
 

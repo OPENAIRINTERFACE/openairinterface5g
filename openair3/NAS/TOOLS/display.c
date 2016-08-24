@@ -64,7 +64,7 @@ void display_ue_data(const char *filename) {
 
 	if (rc != RETURNok) {
 		perror("ERROR\t: memory_read() failed");
-		exit(EXIT_FAILURE);
+		exit(false);
 	}
 
 	/*
@@ -92,7 +92,7 @@ void display_emm_data(const char *filename) {
 	rc = memory_read(filename, &data, sizeof(emm_nvdata_t));
 	if (rc != RETURNok) {
 		perror("ERROR\t: memory_read() failed ");
-		exit(EXIT_FAILURE);
+		exit(false);
 	}
 
 	/*
@@ -168,7 +168,7 @@ void display_usim_data(const char *filename) {
 
 	if (rc != RETURNok) {
 		perror("ERROR\t: usim_api_read() failed");
-		exit(EXIT_FAILURE);
+		exit(2);
 	}
 
 	/*

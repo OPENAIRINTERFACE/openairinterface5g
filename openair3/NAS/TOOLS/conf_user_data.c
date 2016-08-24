@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "commonDef.h"
 #include "memory.h"
 #include "fs.h"
 #include "conf_user_data.h"
@@ -8,34 +9,34 @@
 int parse_ue_user_data(config_setting_t *ue_setting, int user_id, user_data_conf_t *u) {
 	config_setting_t *ue_param_setting = NULL;
 
-	int rc = EXIT_SUCCESS;
+	int rc = true;
 	ue_param_setting = config_setting_get_member(ue_setting, USER);
 	if (ue_param_setting == NULL) {
 		printf("Check USER section of UE%d. EXITING...\n", user_id);
-		return EXIT_FAILURE;
+		return false;
 	}
 	rc = config_setting_lookup_string(ue_param_setting, UE_IMEI, &u->imei);
 	if (rc != 1) {
 		printf("Check USER IMEI section for UE%d. Exiting\n", user_id);
-		return EXIT_FAILURE;
+		return false;
 	}
 	rc = config_setting_lookup_string(ue_param_setting, MANUFACTURER,
 			&u->manufacturer);
 	if (rc != 1) {
 		printf("Check USER MANUFACTURER for UE%d FULLNAME. Exiting\n", user_id);
-		return EXIT_FAILURE;
+		return false;
 	}
 	rc = config_setting_lookup_string(ue_param_setting, MODEL, &u->model);
 	if (rc != 1) {
 		printf("Check USER MODEL for UE%d FULLNAME. Exiting\n", user_id);
-		return EXIT_FAILURE;
+		return false;
 	}
 	rc = config_setting_lookup_string(ue_param_setting, PINCODE, &u->pin);
 	if (rc != 1) {
 		printf("Check USER PIN for UE%d FULLNAME. Exiting\n", user_id);
-		return EXIT_FAILURE;
+		return false;
 	}
-	return EXIT_SUCCESS;
+	return true;
 }
 
 void gen_user_data(user_data_conf_t *u, user_nvdata_t *user_data) {
@@ -55,15 +56,16 @@ void gen_user_data(user_data_conf_t *u, user_nvdata_t *user_data) {
 	strncpy(user_data->PIN, u->pin, USER_PIN_SIZE);
 }
 
-void write_user_data(const char *directory, int user_id, user_nvdata_t *data) {
+bool write_user_data(const char *directory, int user_id, user_nvdata_t *data) {
     int rc;
 	char* filename = make_filename(directory, USER_NVRAM_FILENAME, user_id);
 	rc = memory_write(filename, data, sizeof(user_nvdata_t));
     free(filename);
-	if (rc != EXIT_SUCCESS) {
+	if (rc != RETURNok) {
 		perror("ERROR\t: memory_write() failed");
-		exit(EXIT_FAILURE);
+		return false;
 	}
+	return true;
 }
 
 /*
