@@ -13,14 +13,19 @@ pid="$$"
 echo "pid = $pid"
 
 echo "Killing programs now..."
-var=`ps -aux |grep -E -i '$1' |awk '{print $2}'| tr '\n' ' ' | sed  "s/$pid/ /"`
-echo $var 
+
+ps -aux |grep -E -i -w "$1"
+
+var=`ps -aux |grep -E -i -w "$1" |awk '{print $2}'| tr '\n' ' ' | sed  "s/$pid/ /"`
+echo "Killing processes...$var"
+#var=`ps -aux |grep -E -i '$1' |awk '{print $2}'| tr '\n' ' ' | sed  "s/$pid/ /"`
+#echo $var 
 if [ -n "$var" ] ; then  sudo  kill -9 $var ; fi
 
 #| sudo xargs kill -9 
 
 echo "checking for old programs..."
-var=`ps -aux |grep -E -i '$1' |grep -Ev 'grep' | grep -Ev '$filename'`
+var=`ps -aux |grep -E -i -w '$1' |grep -Ev 'grep' | grep -Ev '$filename'`
 
 echo $var
 if [ -n "$var" ]; then echo 'Match found'; else echo 'Match not found' ;fi 
