@@ -13,7 +13,11 @@ pid="$$"
 echo "pid = $pid"
 
 echo "Killing programs now..."
-ps -aux |grep -E -i $1 |awk '{print $2}'| tr '\n' ' ' | sed  "s/$pid/ /" | sudo xargs kill -9 
+var=`ps -aux |grep -E -i $1 |awk '{print $2}'| tr '\n' ' ' | sed  "s/$pid/ /"`
+echo $var 
+if [ -n "$var" ] ; then  sudo  kill -9 $var ; fi
+
+#| sudo xargs kill -9 
 
 echo "checking for old programs..."
 var=`ps -aux |grep -E -i '$1' |grep -Ev 'grep' | grep -Ev '$filename'`
