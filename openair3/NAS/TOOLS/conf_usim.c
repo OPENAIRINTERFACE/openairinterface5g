@@ -5,7 +5,6 @@
 #include "utils.h"
 #include "conf_emm.h"
 #include "fs.h"
-#include "conf2uedata.h"
 #include "conf_usim.h"
 
 bool parse_ue_sim_param(config_setting_t *ue_setting, int user_id, usim_data_conf_t *u) {
