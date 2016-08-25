@@ -46,6 +46,7 @@
 #include <fstream>
 #include <cmath>
 #include <time.h>
+#include "UTIL/LOG/log_extern.h"
 #include "common_lib.h"
 #ifdef __SSE4_1__
 #  include <smmintrin.h>
@@ -213,9 +214,11 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
     time_avg= time_diff;
   else
     time_avg=(time_diff+time_avg) /2.0;
-  
-  if ( loop%10000 ==0)
-     printf("\n usrp_write: min(ns)=%d, max(ns)=%d, avg(ns)=%d", (int)time_min, (int)time_max,(int)time_avg);
+
+   //prints statics of uhd every 10 seconds
+   if ( loop % (10 * ((int)device->openair0_cfg[0].sample_rate /(int)nsamps )) ==0)
+     LOG_I(HW,"usrp_write: min(ns)=%d, max(ns)=%d, avg(ns)=%d\n", (int)time_min, (int)time_max,(int)time_avg);
+
    loop++;
   return ret;
 }
@@ -318,20 +321,23 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
   s->rx_timestamp = s->rx_md.time_spec.to_ticks(s->sample_rate);
   *ptimestamp = s->rx_timestamp;
 
-   clock_gettime(CLOCK_MONOTONIC_RAW, &tp_end);
-   time_diff = (tp_end.tv_sec - tp_start.tv_sec) *1E09  + (tp_end.tv_nsec - tp_start.tv_nsec);
-   if  (time_min==0 ||loop==1 || time_min > time_diff)
-     time_min=time_diff;
-   if  (time_max==0 || loop==1|| time_max < time_diff)
-     time_max=time_diff;
-   if (time_avg ==0 ||loop==1)
-     time_avg= time_diff;
-   else
-     time_avg=(time_diff+time_avg) /2.0;
-   if ( loop % 10000==0)
-     printf("\n usrp_read: min(ns)=%d, max(ns)=%d, avg(ns)=%d", (int)time_min, (int)time_max,(int)time_avg);
-   loop++;
-   return samples_received;
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tp_end);
+  time_diff = (tp_end.tv_sec - tp_start.tv_sec) *1E09  + (tp_end.tv_nsec - tp_start.tv_nsec);
+  if  (time_min==0 ||loop==1 || time_min > time_diff)
+    time_min=time_diff;
+  if  (time_max==0 ||loop==1 || time_max < time_diff)
+    time_max=time_diff;
+  if (time_avg ==0 ||loop==1)
+    time_avg= time_diff;
+  else
+    time_avg=(time_diff+time_avg) /2.0;
+
+  //prints statics of uhd every 10 seconds
+  if ( loop % (10 * ((int)device->openair0_cfg[0].sample_rate /(int)nsamps )) ==0)
+     LOG_I(HW,"usrp_read: min(ns)=%d, max(ns)=%d, avg(ns)=%d\n", (int)time_min, (int)time_max,(int)time_avg);
+
+  loop++;
+  return samples_received;
 }
 
 /*! \brief Get current timestamp of USRP
