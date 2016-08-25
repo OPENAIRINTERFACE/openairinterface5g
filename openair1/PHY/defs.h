@@ -612,6 +612,8 @@ typedef struct {
   int is_synchronized;
   /// Data structure for UE process scheduling
   UE_proc_t proc;
+  /// Flag to indicate the UE shouldn't do timing correction at all
+  int no_timing_correction;
   /// \brief Total gain of the TX chain (16-bit baseband I/Q to antenna)
   uint32_t tx_total_gain_dB;
   /// \brief Total gain of the RX chain (antenna to baseband I/Q) This is a function of rx_gain_mode (and the corresponding gain) and the rx_gain of the card.
@@ -623,9 +625,9 @@ typedef struct {
   /// \brief Total gains with bypassed RF gain stage (ExpressMIMO2/Lime)
   uint32_t rx_gain_byp[4];
   /// \brief Current transmit power
-  int8_t tx_power_dBm;
+  int8_t tx_power_dBm[10];
   /// \brief Total number of REs in current transmission
-  int tx_total_RE;
+  int tx_total_RE[10];
   /// \brief Maximum transmit power
   int8_t tx_power_max_dBm;
   /// \brief Number of eNB seen by UE

@@ -30,6 +30,8 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 
+#include "UTIL/LOG/vcd_signal_dumper.h"
+
 #define DEBUG_PHY
 
 // Adjust location synchronization point to account for drift
@@ -47,6 +49,8 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   int temp = 0, i, aa, max_val = 0, max_pos = 0;
   int diff;
   short Re,Im,ncoef;
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_IN);
 
   ncoef = 32767 - coef;
 
@@ -98,6 +102,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
         ue->proc.proc_rxtx[0].frame_rx,ue->rx_offset,max_pos,max_pos_fil,temp);
 #endif //DEBUG_PHY
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_OUT);
 
 }
 

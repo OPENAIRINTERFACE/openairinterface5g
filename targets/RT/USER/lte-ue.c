@@ -793,6 +793,16 @@ static void *UE_thread_rxn_txnp4(void *arg)
 	UE->UE_mode[0] = PRACH;
       }
     }
+
+    if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
+	(UE->frame_parms.frame_type == FDD) ||
+	(subframe_select( &UE->frame_parms, proc->subframe_tx ) == SF_S)) {
+
+      if (UE->mode != loop_through_memory) {
+	phy_procedures_UE_TX(UE,proc,0,0,normal_txrx,no_relay);
+      }
+    }
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_THREAD_RXTX0+(proc->subframe_rx&1), 0 );
 
     
@@ -967,15 +977,18 @@ void *UE_thread(void *arg) {
       if (start_rx_stream==0) {
 	start_rx_stream=1;
 	if (UE->mode != loop_through_memory) {
-	  LOG_I(PHY,"Resynchronizing RX by %d samples\n",UE->rx_offset);
-	  rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
-					   &timestamp,
-					   (void**)rxdata,
-					   UE->rx_offset,
-					   UE->frame_parms.nb_antennas_rx);
-	  if (rxs != UE->rx_offset) {
-	    exit_fun("problem in rx");
-	    return &UE_thread_retval;
+
+	  if (UE->no_timing_correction==0) {
+	    LOG_I(PHY,"Resynchronizing RX by %d samples\n",UE->rx_offset);
+	    rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
+					     &timestamp,
+					     (void**)rxdata,
+					     UE->rx_offset,
+					     UE->frame_parms.nb_antennas_rx);
+	    if (rxs != UE->rx_offset) {
+	      exit_fun("problem in rx");
+	      return &UE_thread_retval;
+	    }
 	  }
 	  UE->rx_offset=0;
 	  UE->proc.proc_rxtx[0].frame_rx++;
@@ -1049,9 +1062,14 @@ void *UE_thread(void *arg) {
 	  int instance_cnt_rxtx = ++proc->instance_cnt_rxtx;
 	  proc->subframe_rx=sf;
 	  proc->subframe_tx=(sf+4)%10;
-	  proc->frame_tx = proc->frame_rx + (proc->subframe_rx>5)?1:0;
+	  proc->frame_tx = proc->frame_rx + ((proc->subframe_rx>5)?1:0);
 	  proc->timestamp_tx = timestamp+(4*UE->frame_parms.samples_per_tti)-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
 
+
+	  if (sf != (timestamp/UE->frame_parms.samples_per_tti)%10) {
+	    LOG_E(PHY,"steady-state UE_thread error : frame_rx %d, subframe_rx %d, frame_tx %d, subframe_tx %d, rx subframe %d\n",proc->frame_rx,proc->subframe_rx,proc->frame_tx,proc->subframe_tx,(timestamp/UE->frame_parms.samples_per_tti)%10);
+	    exit(-1);
+	  }
 
 	  if (pthread_mutex_unlock(&proc->mutex_rxtx) != 0) {
 	    LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE RX\n" );

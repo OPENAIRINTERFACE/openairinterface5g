@@ -437,9 +437,14 @@ void do_UL_sig(channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX][MAX_N
       txdata = PHY_vars_UE_g[UE_id][CC_id]->common_vars.txdata;
       sf_offset = subframe*frame_parms->samples_per_tti;
       
-      if (((double)PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm +
+      if (((double)PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm[subframe] +
 	   UE2eNB[UE_id][eNB_id][CC_id]->path_loss_dB) <= -125.0) {
 	// don't simulate a UE that is too weak
+	LOG_D(OCM,"[SIM][UL] UE %d tx_pwr %d dBm (num_RE %d) for subframe %d (sf_offset %d)\n",
+	      UE_id,
+	      PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm[subframe],
+	      PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe],
+	      subframe,sf_offset);	
       } else {
 	
 	tx_pwr = dac_fixed_gain((double**)s_re,
@@ -451,13 +456,13 @@ void do_UL_sig(channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX][MAX_N
 				sf_offset,
 				frame_parms->ofdm_symbol_size,
 				14,
-				(double)PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm-10*log10((double)PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE),
-				PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE);  // This make the previous argument the total power
+				(double)PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm[subframe]-10*log10((double)PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe]),
+				PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe]);  // This make the previous argument the total power
 	LOG_D(OCM,"[SIM][UL] UE %d tx_pwr %f dBm (target %d dBm, num_RE %d) for subframe %d (sf_offset %d)\n",
 	      UE_id,
 	      10*log10(tx_pwr),
-	      PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm,
-	      PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE,
+	      PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm[subframe],
+	      PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe],
 	      subframe,sf_offset);
        
 	

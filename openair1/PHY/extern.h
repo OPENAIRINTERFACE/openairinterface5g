@@ -111,7 +111,7 @@ extern double p_qam64[8];
 extern double beta1_dlsch[6][MCS_COUNT];
 extern double beta2_dlsch[6][MCS_COUNT];
 
-extern char eNB_functions[5][20];
+extern char eNB_functions[6][20];
 extern char eNB_timing[2][20];
 
 

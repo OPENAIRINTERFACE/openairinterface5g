@@ -988,7 +988,8 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
     ue->total_received_bits[eNB_id] = 0;
   }
 
-  ue->tx_power_dBm=-127;
+  for (i=0;i<10;i++)
+    ue->tx_power_dBm[i]=-127;
 
   if (abstraction_flag == 0) {
 

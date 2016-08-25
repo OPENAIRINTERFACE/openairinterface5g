@@ -139,8 +139,10 @@ node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
-int sync_var;
+int sync_var=-1;
 
+pthread_mutex_t subframe_mutex;
+int subframe_eNB_mask=0,subframe_UE_mask=0;
 
 openair0_config_t openair0_cfg[MAX_CARDS];
 uint32_t          downlink_frequency[MAX_NUM_CCs][4];
@@ -451,6 +453,10 @@ typedef enum l2l1_task_state_e {
 
 l2l1_task_state_t l2l1_state = L2L1_WAITTING;
 
+extern openair0_timestamp current_eNB_rx_timestamp[NUMBER_OF_eNB_MAX][MAX_NUM_CCs];
+extern openair0_timestamp current_UE_rx_timestamp[NUMBER_OF_UE_MAX][MAX_NUM_CCs];
+
+
 /*------------------------------------------------------------------------------*/
 void *
 l2l1_task (void *args_p)
@@ -719,6 +725,40 @@ l2l1_task (void *args_p)
 
 	clear_eNB_transport_info (oai_emulation.info.nb_enb_local);
 
+        CC_id=0;
+        int all_done=0;
+        while (all_done==0) {
+          pthread_mutex_lock(&subframe_mutex);
+          int subframe_eNB_mask_local = subframe_eNB_mask;
+          int subframe_UE_mask_local  = subframe_UE_mask;
+          pthread_mutex_unlock(&subframe_mutex);
+          LOG_D(EMU,"Frame %d, Subframe %d: Checking masks %x,%x\n",frame,sf,subframe_eNB_mask,subframe_UE_mask);
+          if ((subframe_eNB_mask_local == ((1<<NB_eNB_INST)-1)) &&
+              (subframe_UE_mask_local == ((1<<NB_UE_INST)-1)))
+             all_done=1;
+          else
+             usleep(500);
+        }
+
+        //clear subframe masks for next round
+        pthread_mutex_lock(&subframe_mutex);
+        subframe_eNB_mask=0;
+        subframe_UE_mask=0;
+        pthread_mutex_unlock(&subframe_mutex);
+
+        // increment timestamps
+        for (eNB_inst = oai_emulation.info.first_enb_local;
+             (eNB_inst
+              < (oai_emulation.info.first_enb_local
+                 + oai_emulation.info.nb_enb_local));
+             eNB_inst++) {
+             current_eNB_rx_timestamp[eNB_inst][CC_id] += PHY_vars_eNB_g[eNB_inst][CC_id]->frame_parms.samples_per_tti;
+        }
+        for (UE_inst = 0; UE_inst<NB_UE_INST;UE_inst++) {
+             current_UE_rx_timestamp[UE_inst][CC_id] += PHY_vars_UE_g[UE_inst][CC_id]->frame_parms.samples_per_tti;
+        }
+
+
         for (eNB_inst = oai_emulation.info.first_enb_local;
              (eNB_inst
               < (oai_emulation.info.first_enb_local
@@ -727,6 +767,7 @@ l2l1_task (void *args_p)
           if (oai_emulation.info.cli_start_enb[eNB_inst] != 0) {
         
 	    T(T_ENB_MASTER_TICK, T_INT(eNB_inst), T_INT(frame % 1024), T_INT(sf));
+	    /*
 	    LOG_D(EMU,
 		  "PHY procedures eNB %d for frame %d, subframe %d TDD %d/%d Nid_cell %d\n",
 		  eNB_inst,
@@ -736,7 +777,7 @@ l2l1_task (void *args_p)
 		  PHY_vars_eNB_g[eNB_inst][0]->frame_parms.tdd_config,
 		  PHY_vars_eNB_g[eNB_inst][0]->frame_parms.Nid_cell);
             
-
+	    */
 #ifdef OPENAIR2
 	    //Application: traffic gen
             update_otg_eNB (eNB_inst, oai_emulation.info.time_ms);
@@ -744,35 +785,8 @@ l2l1_task (void *args_p)
             //IP/OTG to PDCP and PDCP to IP operation
             //        pdcp_run (frame, 1, 0, eNB_inst); //PHY_vars_eNB_g[eNB_id]->Mod_id
 #endif
+           
 
-	    CC_id=0;
-	    // trigger synch event to RAN FH thread for CC_id
-	    eNB_proc_t *proc =  &PHY_vars_eNB_g[eNB_inst][CC_id]->proc;
-
-
-	    if (pthread_mutex_lock(&proc->mutex_FH) != 0) {
-	      LOG_E( PHY, "error locking mutex for FH\n");
-	      exit_fun( "error locking mutex" );
-	      break;
-	    }	    
-	    int cnt_FH       = ++proc->instance_cnt_FH;
-	    proc->frame_rx    = frame;
-            proc->subframe_rx = sf;
-	    proc->timestamp_rx += PHY_vars_eNB_g[eNB_inst][CC_id]->frame_parms.samples_per_tti;
-	    pthread_mutex_unlock( &proc->mutex_FH );
-
-	    if (cnt_FH == 0) {
-	      if (pthread_cond_signal(&proc->cond_FH) != 0) {
-		LOG_E(PHY,"ERROR pthread_cond_signal for eNB FH CCid %d\n",proc->CC_id);
-		exit_fun("ERROR pthread_cond_signal");
-		break;
-	      }
-	    }
-	    else {
-	      LOG_W(PHY,"[eNB] Frame %d, FH CC_id %d thread busy!! (cnt_FH %d)\n",proc->instance_cnt_FH);
-	      exit_fun("FH thread busy");
-              break;
-	    }
 #ifdef PRINT_STATS
 
             if((sf==9) && frame%10==0)
@@ -1099,6 +1113,10 @@ main (int argc, char **argv)
     sinr_dB = -20;
   }
 
+  pthread_cond_init(&sync_cond,NULL);
+  pthread_mutex_init(&sync_mutex, NULL);
+  pthread_mutex_init(&subframe_mutex, NULL);
+
 #ifdef OPENAIR2
   init_omv ();
 #endif
@@ -1116,6 +1134,15 @@ main (int argc, char **argv)
   init_openair2 ();
 
   init_ocm ();
+  
+  // wait for all threads to startup 
+  sleep(3);
+  printf("Sending sync to all threads\n");
+
+  pthread_mutex_lock(&sync_mutex);
+  sync_var=0;
+  pthread_cond_broadcast(&sync_cond);
+  pthread_mutex_unlock(&sync_mutex);
 
 #ifdef SMBV
   // Rohde&Schwarz SMBV100A vector signal generator
