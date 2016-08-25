@@ -1040,13 +1040,13 @@ typedef struct {
   /// first index: ? [0..1023] (hard coded)
   int16_t *prachF;
   /// \brief ?.
-  /// first index: rx antenna [0..3] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
+  /// first index: rx antenna [0..63] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
   /// second index: ? [0..ofdm_symbol_size*12[
-  int16_t *rxsigF[4];
+  int16_t *rxsigF[64];
   /// \brief local buffer to compute prach_ifft (necessary in case of multiple CCs)
-  /// first index: rx antenna [0..3] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
+  /// first index: rx antenna [0..63] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
   /// second index: ? [0..2047] (hard coded)
-  int16_t *prach_ifft[4];
+  int16_t *prach_ifft[64];
 } LTE_eNB_PRACH;
 
 typedef struct {

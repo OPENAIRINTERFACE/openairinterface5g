@@ -252,7 +252,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   // Initialize card
   //  exmimo_config_t         *p_exmimo_config;
   exmimo_id_t             *p_exmimo_id;
-  int ret;
+  int ret, card;
 
   ret = openair0_open();
 
@@ -276,15 +276,17 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
     printf ("Detected %d number of cards, %d number of antennas.\n", openair0_num_detected_cards, openair0_num_antennas[0]);
   }
 
-  //  p_exmimo_config = openair0_exmimo_pci[0].exmimo_config_ptr;
-  p_exmimo_id     = openair0_exmimo_pci[0].exmimo_id_ptr;
+  for (card=0; card<openair0_num_detected_cards; card++) {
+    //  p_exmimo_config = openair0_exmimo_pci[0].exmimo_config_ptr;
+    p_exmimo_id     = openair0_exmimo_pci[card].exmimo_id_ptr;
 
-  printf("Card %d: ExpressMIMO %d, HW Rev %d, SW Rev 0x%d\n", 0, p_exmimo_id->board_exmimoversion, p_exmimo_id->board_hwrev, p_exmimo_id->board_swrev);
+    printf("Card %d: ExpressMIMO %d, HW Rev %d, SW Rev 0x%d\n", card, p_exmimo_id->board_exmimoversion, p_exmimo_id->board_hwrev, p_exmimo_id->board_swrev);
 
-  // check if the software matches firmware
-  if (p_exmimo_id->board_swrev!=BOARD_SWREV_CNTL2) {
-    printf("Software revision %d and firmware revision %d do not match. Please update either the firmware or the software!\n",BOARD_SWREV_CNTL2,p_exmimo_id->board_swrev);
-    return(-1);
+    // check if the software matches firmware
+    if (p_exmimo_id->board_swrev!=BOARD_SWREV_CNTL2) {
+      printf("Software revision %d and firmware revision %d do not match. Please update either the firmware or the software!\n",BOARD_SWREV_CNTL2,p_exmimo_id->board_swrev);
+      return(-1);
+    }
   }
 
   device->type             = EXMIMO_DEV; 
@@ -361,11 +363,17 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
 #endif
 
     for (ant=0; ant<4; ant++) {
+      p_exmimo_config->rf.rf_freq_rx[ant] = 0;
+      p_exmimo_config->rf.rf_freq_tx[ant] = 0;
+      p_exmimo_config->rf.rf_mode[ant] = 0;
+      p_exmimo_config->rf.rx_gain[ant][0] = 0;
+      p_exmimo_config->rf.tx_gain[ant][0] = 0;
+
       if (openair0_cfg[card].rx_freq[ant] || openair0_cfg[card].tx_freq[ant]) {
 	ACTIVE_RF += (1<<ant)<<5;
         p_exmimo_config->rf.rf_mode[ant] = RF_MODE_BASE;
         p_exmimo_config->rf.do_autocal[ant] = 1;//openair0_cfg[card].autocal[ant];
-	printf("card %d, antenna %d, autocal %d\n",card,ant,openair0_cfg[card].autocal[ant]);
+	printf("card %d, antenna %d, autocal %d\n",card,ant,p_exmimo_config->rf.do_autocal[ant]);
       }
 
       if (openair0_cfg[card].tx_freq[ant]) {
@@ -396,10 +404,7 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
           p_exmimo_config->rf.rf_mode[ant] += LNAByp;
           break;
         }
-      } else {
-        p_exmimo_config->rf.rf_mode[ant] = 0;
-        p_exmimo_config->rf.do_autocal[ant] = 0;
-      }
+      } 
 
       p_exmimo_config->rf.rf_local[ant]   = rf_local[ant];
       p_exmimo_config->rf.rf_rxdc[ant]    = rf_rxdc[ant];

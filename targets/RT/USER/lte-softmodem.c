@@ -2926,7 +2926,8 @@ int main( int argc, char **argv )
   if (rf_config_file[0] == '\0')
     openair0_cfg[0].configFilename = NULL;
   else
-    openair0_cfg[0].configFilename = rf_config_file;
+    for (card=0; card<MAX_CARDS; card++)
+      openair0_cfg[card].configFilename = rf_config_file;
   
 #if T_TRACER
   T_init(T_port, T_wait, T_dont_fork);
@@ -3923,7 +3924,7 @@ int main( int argc, char **argv )
 int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs])
 {
 
-  int i, CC_id;
+  int i, CC_id, card, ant;
 #ifndef EXMIMO
   uint16_t N_TA_offset = 0;
 #else
@@ -3960,17 +3961,19 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
     openair0_cfg[CC_id].rx_num_channels = 0;
 
     for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-      printf("Mapping eNB CC_id %d, rx_ant %d, freq %u on card %d, chain %d\n",CC_id,i,downlink_frequency[CC_id][i]+uplink_frequency_offset[CC_id][i],rf_map[CC_id].card,rf_map[CC_id].chain+i);
+      card = i/4;
+      ant = i%4;
+      printf("Mapping eNB CC_id %d, rx_ant %d, freq %u on card %d, chain %d\n",CC_id,i,downlink_frequency[CC_id][ant]+uplink_frequency_offset[CC_id][ant],rf_map[CC_id].card+card, rf_map[CC_id].chain+ant);
       free(phy_vars_eNB[CC_id]->lte_eNB_common_vars.rxdata[0][i]);
-      phy_vars_eNB[CC_id]->lte_eNB_common_vars.rxdata[0][i] = (int32_t*) openair0_exmimo_pci[rf_map[CC_id].card].adc_head[rf_map[CC_id].chain+i];
+      phy_vars_eNB[CC_id]->lte_eNB_common_vars.rxdata[0][i] = (int32_t*) openair0_exmimo_pci[rf_map[CC_id].card+card].adc_head[rf_map[CC_id].chain+ant];
 
-      if (openair0_cfg[rf_map[CC_id].card].rx_freq[rf_map[CC_id].chain+i]) {
+      if (openair0_cfg[rf_map[CC_id].card+card].rx_freq[rf_map[CC_id].chain+ant]) {
         printf("Error with rf_map! A channel has already been allocated!\n");
         return(-1);
       } else {
-        openair0_cfg[rf_map[CC_id].card].rx_freq[rf_map[CC_id].chain+i] = downlink_frequency[CC_id][i]+uplink_frequency_offset[CC_id][i];
-        openair0_cfg[rf_map[CC_id].card].rx_gain[rf_map[CC_id].chain+i] = rx_gain[CC_id][i];
-        openair0_cfg[rf_map[CC_id].card].rx_num_channels++;
+        openair0_cfg[rf_map[CC_id].card+card].rx_freq[rf_map[CC_id].chain+ant] = downlink_frequency[CC_id][ant]+uplink_frequency_offset[CC_id][ant];
+        openair0_cfg[rf_map[CC_id].card+card].rx_gain[rf_map[CC_id].chain+ant] = rx_gain[CC_id][ant];
+        openair0_cfg[rf_map[CC_id].card+card].rx_num_channels++;
       }
 
       printf("rxdata[%d] @ %p\n",i,phy_vars_eNB[CC_id]->lte_eNB_common_vars.rxdata[0][i]);
@@ -3982,17 +3985,19 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
     }
 
     for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-      printf("Mapping eNB CC_id %d, tx_ant %d, freq %u on card %d, chain %d\n",CC_id,i,downlink_frequency[CC_id][i],rf_map[CC_id].card,rf_map[CC_id].chain+i);
+      card = i/4;
+      ant = i%4;
+      printf("Mapping eNB CC_id %d, tx_ant %d, freq %u on card %d chain %d\n",CC_id,i,downlink_frequency[CC_id][ant],rf_map[CC_id].card+card,rf_map[CC_id].chain+ant);
       free(phy_vars_eNB[CC_id]->lte_eNB_common_vars.txdata[0][i]);
-      phy_vars_eNB[CC_id]->lte_eNB_common_vars.txdata[0][i] = (int32_t*) openair0_exmimo_pci[rf_map[CC_id].card].dac_head[rf_map[CC_id].chain+i];
+      phy_vars_eNB[CC_id]->lte_eNB_common_vars.txdata[0][i] = (int32_t*) openair0_exmimo_pci[rf_map[CC_id].card+card].dac_head[rf_map[CC_id].chain+ant];
 
-      if (openair0_cfg[rf_map[CC_id].card].tx_freq[rf_map[CC_id].chain+i]) {
+      if (openair0_cfg[rf_map[CC_id].card+card].tx_freq[rf_map[CC_id].chain+ant]) {
         printf("Error with rf_map! A channel has already been allocated!\n");
         return(-1);
       } else {
-        openair0_cfg[rf_map[CC_id].card].tx_freq[rf_map[CC_id].chain+i] = downlink_frequency[CC_id][i];
-        openair0_cfg[rf_map[CC_id].card].tx_gain[rf_map[CC_id].chain+i] = tx_gain[CC_id][i];
-        openair0_cfg[rf_map[CC_id].card].tx_num_channels++;
+        openair0_cfg[rf_map[CC_id].card+card].tx_freq[rf_map[CC_id].chain+ant] = downlink_frequency[CC_id][ant];
+        openair0_cfg[rf_map[CC_id].card+card].tx_gain[rf_map[CC_id].chain+ant] = tx_gain[CC_id][ant];
+        openair0_cfg[rf_map[CC_id].card+card].tx_num_channels++;
       }
 
       printf("txdata[%d] @ %p\n",i,phy_vars_eNB[CC_id]->lte_eNB_common_vars.txdata[0][i]);
