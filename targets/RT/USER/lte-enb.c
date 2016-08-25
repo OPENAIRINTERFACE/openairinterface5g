@@ -188,7 +188,7 @@ static inline void thread_top_init(char *thread_name,
 
   if (sched_setattr(0, &attr, flags) < 0 ) {
     perror("[SCHED] eNB tx thread: sched_setattr failed\n");
-    return &eNB_thread_rxtx_status;
+    exit_fun("Error setting deadline scheduler");
   }
 
   LOG_I( HW, "[SCHED] eNB %s deadline thread (TID %ld) started on CPU %d\n", gettid(), thread_name,sched_getcpu() );
