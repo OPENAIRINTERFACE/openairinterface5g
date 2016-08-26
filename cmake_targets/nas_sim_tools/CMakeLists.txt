@@ -15,8 +15,7 @@ set(CMAKE_C_FLAGS
 set(OPENAIR_DIR     $ENV{OPENAIR_DIR})
 set(OPENAIR3_DIR    $ENV{OPENAIR_DIR}/openair3)
 
-set(conf2uedata_SRC
-    ${OPENAIR_DIR}/openair3/NAS/TOOLS/conf2uedata.c
+set(CONF2UEDATA_LIB_SRC
     ${OPENAIR_DIR}/openair3/NAS/TOOLS/conf_emm.c
     ${OPENAIR_DIR}/openair3/NAS/TOOLS/conf_user_data.c
     ${OPENAIR_DIR}/openair3/NAS/TOOLS/conf_usim.c
@@ -58,5 +57,23 @@ include_directories(
     ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL
 )
 
-ADD_EXECUTABLE(conf2uedata  ${conf2uedata_SRC} ${conf2uedata_HDR})
+# conf2uedata binary
+
+set(conf2uedata_SRC
+    ${OPENAIR_DIR}/openair3/NAS/TOOLS/conf2uedata.c
+	${CONF2UEDATA_LIB_SRC}
+)
+
+add_executable(conf2uedata  ${conf2uedata_SRC} ${conf2uedata_HDR} )
 target_link_libraries(conf2uedata ${CONFIG_LIBRARIES})
+
+# usim binary
+
+set(usim_SRC
+    ${OPENAIR_DIR}/openair3/NAS/TOOLS/usim.c
+	${CONF2UEDATA_LIB_SRC}
+)
+
+
+add_executable(usim  ${usim_SRC} ${conf2uedata_HDR} )
+target_link_libraries(usim ${CONFIG_LIBRARIES})
