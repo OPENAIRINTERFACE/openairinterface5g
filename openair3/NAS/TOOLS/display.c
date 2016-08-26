@@ -28,29 +28,49 @@
     PRINT_PLMN_DIGIT((plmn).MNCdigit2); \
     PRINT_PLMN_DIGIT((plmn).MNCdigit3)
 
-void display_data_from_directory(const char *directory) {
-    int user_id = 0;
-    char *filename;
+// return number of files displayed
+int display_data_from_directory(const char *directory, int flags) {
+	int user_id = 0;
+	char *filename;
+	bool found = true;
+  int displayed_count = 0;
 
-    filename = get_ue_filename(directory, user_id);
-    while ( file_exist_and_is_readable(filename) ) {
+	while ( found ) {
+		found = false;
 
-        display_ue_data(filename);
-        free(filename);
+		if ( flags & DISPLAY_UEDATA ) {
+			filename = get_ue_filename(directory, user_id);
+			if ( file_exist_and_is_readable(filename) ) {
+				display_ue_data(filename);
+        displayed_count += 1;
+				found = true;
+			}
+			free(filename);
+		}
 
-        filename = get_emm_filename(directory, user_id);
-        display_emm_data(filename);
-        free(filename);
+		if ( flags & DISPLAY_EMM ) {
+			filename = get_emm_filename(directory, user_id);
+			if ( file_exist_and_is_readable(filename) ) {
+				display_emm_data(filename);
+        displayed_count += 1;
+				found = true;
+			}
+			free(filename);
+		}
 
-        filename = get_usim_filename(directory, user_id);
-        display_usim_data(filename);
-        free(filename);
+		if ( flags & DISPLAY_USIM ) {
+			filename = get_usim_filename(directory, user_id);
+			if ( file_exist_and_is_readable(filename) ) {
+				display_usim_data(filename);
+        displayed_count += 1;
+				found = true;
+			}
+			free(filename);
+		}
 
-
-        user_id += 1;
-        filename = get_ue_filename(directory, user_id);
-    }
-    free(filename);
+		user_id += 1;
+	}
+  return displayed_count;
 }
 
 void display_ue_data(const char *filename) {

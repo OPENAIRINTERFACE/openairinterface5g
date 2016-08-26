@@ -46,7 +46,7 @@ int main(int argc, char**argv) {
         exit(1);
     }
 
-    display_data_from_directory(output_dir);
+    display_data_from_directory(output_dir, DISPLAY_ALL);
 
 	exit(0);
 }
@@ -55,7 +55,7 @@ int main(int argc, char**argv) {
  * Displays command line usage
  */
 void _display_usage(void) {
-	fprintf(stderr, "usage: conf2uedata [OPTION] [directory] ...\n");
+	fprintf(stderr, "usage: conf2uedata [OPTION]...\n");
 	fprintf(stderr, "\t[-c]\tConfig file to use\n");
 	fprintf(stderr, "\t[-o]\toutput file directory\n");
 	fprintf(stderr, "\t[-h]\tDisplay this usage\n");
