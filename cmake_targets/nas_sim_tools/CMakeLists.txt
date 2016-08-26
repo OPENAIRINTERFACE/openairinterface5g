@@ -77,3 +77,14 @@ set(usim_SRC
 
 add_executable(usim  ${usim_SRC} ${conf2uedata_HDR} )
 target_link_libraries(usim ${CONFIG_LIBRARIES})
+
+# nvram binary
+
+set(nvram_SRC
+    ${OPENAIR_DIR}/openair3/NAS/TOOLS/nvram.c
+	${CONF2UEDATA_LIB_SRC}
+)
+
+
+add_executable(nvram  ${nvram_SRC} ${conf2uedata_HDR} )
+target_link_libraries(nvram ${CONFIG_LIBRARIES})

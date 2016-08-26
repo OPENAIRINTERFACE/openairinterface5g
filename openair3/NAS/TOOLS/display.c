@@ -44,6 +44,7 @@ int display_data_from_directory(const char *directory, int flags) {
 				display_ue_data(filename);
 				displayed_count += 1;
 				found = true;
+				printf("UE identity data file: %s\n", filename);
 			}
 			free(filename);
 		}
@@ -54,6 +55,7 @@ int display_data_from_directory(const char *directory, int flags) {
 				display_emm_data(filename);
 				displayed_count += 1;
 				found = true;
+				printf("EPS Mobility Management data file: %s\n", filename);
 			}
 			free(filename);
 		}
