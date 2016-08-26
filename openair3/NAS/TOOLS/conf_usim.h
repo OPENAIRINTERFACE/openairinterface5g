@@ -27,7 +27,8 @@
 #define DEFAULT_MME_ID    0x0102
 #define DEFAULT_MME_CODE  0x0F
 
-#define INT_ALGO          USIM_INT_EIA1
+// TODO add this setting in configuration file
+#define INT_ALGO          USIM_INT_EIA2
 #define ENC_ALGO          USIM_ENC_EEA0
 #define SECURITY_ALGORITHMS (ENC_ALGO | INT_ALGO)
 
