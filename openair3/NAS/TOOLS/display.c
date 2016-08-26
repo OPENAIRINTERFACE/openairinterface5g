@@ -42,7 +42,7 @@ int display_data_from_directory(const char *directory, int flags) {
 			filename = get_ue_filename(directory, user_id);
 			if ( file_exist_and_is_readable(filename) ) {
 				display_ue_data(filename);
-        displayed_count += 1;
+				displayed_count += 1;
 				found = true;
 			}
 			free(filename);
@@ -52,7 +52,7 @@ int display_data_from_directory(const char *directory, int flags) {
 			filename = get_emm_filename(directory, user_id);
 			if ( file_exist_and_is_readable(filename) ) {
 				display_emm_data(filename);
-        displayed_count += 1;
+				displayed_count += 1;
 				found = true;
 			}
 			free(filename);
@@ -62,15 +62,16 @@ int display_data_from_directory(const char *directory, int flags) {
 			filename = get_usim_filename(directory, user_id);
 			if ( file_exist_and_is_readable(filename) ) {
 				display_usim_data(filename);
-        displayed_count += 1;
+				displayed_count += 1;
 				found = true;
+				printf("USIM data file: %s\n", filename);
 			}
 			free(filename);
 		}
 
 		user_id += 1;
 	}
-  return displayed_count;
+	return displayed_count;
 }
 
 void display_ue_data(const char *filename) {
