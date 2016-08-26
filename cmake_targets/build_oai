@@ -520,12 +520,22 @@ function main() {
     
     cmake ..
     compilations \
+      nas_sim_tools usim \
+      usim $dbin/usim
+    compilations \
+      nas_sim_tools nvram \
+      nvram $dbin/nvram
+    compilations \
         nas_sim_tools conf2uedata \
         conf2uedata $dbin/conf2uedata
 
     # generate USIM data
     if [ -f $dbin/conf2uedata ]; then
       install_nas_tools $conf_nvram_path $gen_nvram_path
+      echo_info "Copying UE specific part to $DIR/$lte_build_dir/build"
+      cp -Rvf $dbin/.ue_emm.nvram0 $DIR/$lte_build_dir/build
+      cp -Rvf $dbin/.ue.nvram0 $DIR/$lte_build_dir/build
+      cp -Rvf $dbin/.usim.nvram0 $DIR/$lte_build_dir/build
     else
       echo_warning "not generated UE NAS files: binaries not found"
     fi
@@ -641,6 +651,12 @@ function main() {
 	mkdir -p $DIR/nas_sim_tools/build
 	cd $DIR/nas_sim_tools/build
 	cmake ..
+	compilations \
+	    nas_sim_tools usim \
+	    usim $dbin/usim
+	compilations \
+	    nas_sim_tools nvram \
+	    nvram $dbin/nvram
 	compilations \
         nas_sim_tools conf2uedata \
         conf2uedata $dbin/conf2uedata
