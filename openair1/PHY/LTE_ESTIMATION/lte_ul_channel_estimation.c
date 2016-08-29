@@ -41,8 +41,8 @@ static int16_t temp_out_ifft_0[2048*4] __attribute__((aligned(16)));
 static int16_t temp_out_ifft_1[2048*4] __attribute__((aligned(16)));
 
 
-static int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(16)));
-static int32_t temp_in_ifft_1[2048*2] __attribute__((aligned(16)));
+static int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
+static int32_t temp_in_ifft_1[2048*2] __attribute__((aligned(32)));
 static int32_t temp_in_fft_0[2048*2] __attribute__((aligned(16)));
 static int32_t temp_in_fft_1[2048*2] __attribute__((aligned(16)));
 
