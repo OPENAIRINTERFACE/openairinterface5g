@@ -243,10 +243,13 @@ help (void)
 #else
   printf ("-W [Rohde&Schwarz SMBV100A functions disabled. Recompile with SMBV=1]\n");
 #endif
-  printf ("-x Set the transmission mode (1,2,5,6 supported for now)\n");
+  printf ("-x deprecated. Set the transmission mode in config file!\n");
+  printf ("-y Set the number of receive antennas at the UE (1 or 2)\n");
   printf ("-Y Set the global log verbosity (none, low, medium, high, full) \n");
   printf ("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
   printf ("-Z Reserved\n");
+  printf ("--xforms Activate the grapical scope\n");
+
 #if T_TRACER
   printf ("--T_port [port]    use given port\n");
   printf ("--T_nowait         don't wait for tracer, start immediately\n");
@@ -1142,7 +1145,7 @@ l2l1_task (void *args_p)
         stop_meas (&oaisim_stats_f);
     } //end of slot
 
-    if ((frame >= 10) && (frame <= 11) && (abstraction_flag == 0)
+    if ((frame >= 12) && (frame <= 12) && (abstraction_flag == 0)
 #ifdef PROC
         &&(Channel_Flag==0)
 #endif
@@ -1155,22 +1158,42 @@ l2l1_task (void *args_p)
                     PHY_vars_UE_g[0][0]->lte_frame_parms.samples_per_tti
                     * 10,
                     1, 1);
-      sprintf (fname, "eNBtxsig%d.m", frame % MAX_FRAME_NUMBER);
-      sprintf (vname, "txs%d", frame % MAX_FRAME_NUMBER);
+      sprintf (fname, "eNBtxsig0_%d.m", frame % MAX_FRAME_NUMBER);
+      sprintf (vname, "txs0_%d", frame % MAX_FRAME_NUMBER);
       write_output (fname,
                     vname,
                     PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.txdata[0][0],
                     PHY_vars_UE_g[0][0]->lte_frame_parms.samples_per_tti
                     * 10,
                     1, 1);
-      sprintf (fname, "eNBtxsigF%d.m", frame % MAX_FRAME_NUMBER);
-      sprintf (vname, "txsF%d", frame % MAX_FRAME_NUMBER);
+      if (PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx>1) {
+	sprintf (fname, "eNBtxsig1_%d.m", frame % MAX_FRAME_NUMBER);
+	sprintf (vname, "txs1_%d", frame % MAX_FRAME_NUMBER);
+	write_output (fname,
+		      vname,
+		      PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.txdata[0][0],
+		      PHY_vars_UE_g[0][0]->lte_frame_parms.samples_per_tti
+		      * 10,
+		      1, 1);
+      }
+      sprintf (fname, "eNBtxsigF0_%d.m", frame % MAX_FRAME_NUMBER);
+      sprintf (vname, "txsF0_%d", frame % MAX_FRAME_NUMBER);
       write_output (fname,
                     vname,
                     PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.txdataF[0][0],
                     PHY_vars_eNB_g[0][0]->lte_frame_parms.symbols_per_tti
-                    * PHY_vars_eNB_g[0][0]->lte_frame_parms.ofdm_symbol_size,
+                    * PHY_vars_eNB_g[0][0]->lte_frame_parms.ofdm_symbol_size*10,
                     1, 1);
+      if (PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx>1) {
+	sprintf (fname, "eNBtxsigF1_%d.m", frame % MAX_FRAME_NUMBER);
+	sprintf (vname, "txsF1_%d", frame % MAX_FRAME_NUMBER);
+	write_output (fname,
+		      vname,
+		      PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.txdataF[0][1],
+		      PHY_vars_eNB_g[0][0]->lte_frame_parms.symbols_per_tti
+		      * PHY_vars_eNB_g[0][0]->lte_frame_parms.ofdm_symbol_size *10,
+		      1, 1);
+      }
       sprintf (fname, "UErxsig%d.m", frame % MAX_FRAME_NUMBER);
       sprintf (vname, "rxs%d", frame % MAX_FRAME_NUMBER);
       write_output (fname,

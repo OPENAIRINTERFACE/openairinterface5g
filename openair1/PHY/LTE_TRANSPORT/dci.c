@@ -1754,7 +1754,7 @@ int32_t rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
       avgs = cmax(avgs,avgP[(aarx<<1)+aatx]);
 
-  log2_maxh = (log2_approx(avgs)/2) + 6 + frame_parms->nb_antennas_rx - 1;
+  log2_maxh = (log2_approx(avgs)/2) + 5;  //+frame_parms->nb_antennas_rx;
 #ifdef DEBUG_PHY
   LOG_I(PHY,"subframe %d: pdcch log2_maxh = %d (%d,%d)\n",subframe,log2_maxh,avgP[0],avgs);
 #endif
