@@ -1,0 +1,13 @@
+package protocol;
+
+message fsp_header {
+	optional uint32 version = 1;
+	optional uint32 type = 2;
+	optional uint32 xid = 4;
+}
+
+enum fsp_type {
+     // Discovery and maintenance messages
+     FSPT_HELLO = 0;
+}
+

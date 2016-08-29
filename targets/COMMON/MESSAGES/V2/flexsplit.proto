@@ -1,0 +1,44 @@
+package protocol;
+
+import "header.proto";
+
+message flexsplit_message {
+     optional flexsplit_direction msg_dir = 100;
+	oneof msg {
+              fsp_hello hello_msg = 1;
+	}
+}
+
+enum flexsplit_direction {
+     //option allow_alias = true;
+     NOT_SET = 0;
+     INITIATING_MESSAGE = 1;
+     SUCCESSFUL_OUTCOME=2;
+     UNSUCCESSFUL_OUTCOME=3;	
+}
+
+enum flexsplit_err {
+        option allow_alias = true;
+	// message errors
+	NO_ERR = 0;	
+	MSG_DEQUEUING = -1;
+	MSG_ENQUEUING = -2;
+	MSG_DECODING = -3;
+	MSG_ENCODING = -4;
+	MSG_BUILD = -5;
+	MSG_NOT_SUPPORTED = -6; 
+	MSG_NOT_HANDLED = -7;
+	MSG_NOT_VALIDATED = -8;
+	MSG_OUT_DATED = -9;
+	
+	// other erros
+	UNEXPECTED = -100;	
+}
+
+//
+// Maintenance and discovery messages
+//
+
+message fsp_hello {
+      optional fsp_header header = 1;
+}
