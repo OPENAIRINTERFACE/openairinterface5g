@@ -43,7 +43,6 @@
 #include "LAYER2/MAC/vars.h"
 #include "OCG_vars.h"
 
-
 #ifdef XFORMS
 #include "PHY/TOOLS/lte_phy_scope.h"
 #endif
@@ -931,8 +930,8 @@ int main(int argc, char **argv)
           }
 
           if (n_frames==1)
-            printf("dci %d: rnti 0x%x, format %d, L %d, nCCE %d/%d dci_length %d\n",i,DCI_pdu.dci_alloc[i].rnti, DCI_pdu.dci_alloc[i].format,
-                   DCI_pdu.dci_alloc[i].L, DCI_pdu.dci_alloc[i].firstCCE, numCCE, DCI_pdu.dci_alloc[i].dci_length);
+            printf("dci %d: rnti 0x%x, format %d, L %d (aggreg %d), nCCE %d/%d dci_length %d\n",i,DCI_pdu.dci_alloc[i].rnti, DCI_pdu.dci_alloc[i].format,
+                   DCI_pdu.dci_alloc[i].L, 1<<DCI_pdu.dci_alloc[i].L, DCI_pdu.dci_alloc[i].firstCCE, numCCE, DCI_pdu.dci_alloc[i].dci_length);
 
           if (DCI_pdu.dci_alloc[i].firstCCE==-1)
             exit(-1);

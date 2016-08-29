@@ -100,7 +100,7 @@ int           if_times              = 0;
 int           for_times             = 0;
 
 uint16_t           Nid_cell              = 0; //needed by init_lte_vars
-int           nb_antennas_rx        = 2; // //
+int           nb_antennas_rx_ue        = 1; // //
 uint8_t            target_dl_mcs         = 16; // max mcs used by MAC scheduler
 uint8_t            rate_adaptation_flag  = 0;
 uint8_t        set_snr         = 0;
@@ -750,9 +750,9 @@ void get_simulation_options(int argc, char *argv[])
       break;
 
     case 'y':
-      nb_antennas_rx=atoi(optarg);
+      nb_antennas_rx_ue=atoi(optarg);
 
-      if (nb_antennas_rx>4) {
+      if (nb_antennas_rx_ue>4) {
         printf("Cannot have more than 4 antennas\n");
         exit(-1);
       }
@@ -972,7 +972,8 @@ void init_openair1(void)
 		   enb_properties->properties[0]->nb_antenna_ports[CC_id], 
 		   abstraction_flag,
 		   enb_properties->properties[0]->nb_antennas_rx[CC_id],
-		   enb_properties->properties[0]->nb_antennas_tx[CC_id], 
+		   enb_properties->properties[0]->nb_antennas_tx[CC_id],
+		   nb_antennas_rx_ue,
 		   oai_emulation.info.eMBMS_active_state);
   }
 
