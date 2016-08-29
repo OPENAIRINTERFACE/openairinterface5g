@@ -434,7 +434,9 @@ typedef struct eNB_RRC_INST_s {
 #endif
 
   //RRC configuration
+#if defined(ENABLE_ITTI)
   RrcConfigurationReq configuration;
+#endif
 } eNB_RRC_INST;
 
 #define MAX_UE_CAPABILITY_SIZE 255
