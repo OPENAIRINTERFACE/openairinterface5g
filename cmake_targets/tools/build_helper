@@ -221,6 +221,35 @@ install_gnutls_from_source(){
     )>& $gnutls_install_log
 }
 
+install_protobuf_from_source(){
+    cd /tmp
+    echo "Downloading protobuf"
+    rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
+    wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
+    tar -xzvf protobuf-2.6.1.tar.gz
+    cd protobuf-2.6.1/
+    ./configure
+    echo "Compiling protobuf"
+    make -j`nproc`
+    $SUDO make install
+    rm -rf /tmp/protobuf-2.6.1.tar.gz /tmp/protobuf-2.6.1
+    $SUDO ldconfig
+}
+
+install_protobuf_c_from_source(){
+    cd /tmp
+    echo "Downloading protobuf-c"
+    rm -rf /tmp/protobuf-c
+    git clone https://github.com/protobuf-c/protobuf-c.git
+    cd protobuf-c
+    ./autogen.sh
+    ./configure
+    echo "Compiling protobuf-c"
+    make -j`nproc`
+    $SUDO make install
+    rm -rf /tmp/protobuf-c
+    $SUDO ldconfig
+}
 
 
 check_install_usrp_uhd_driver(){
@@ -392,6 +421,9 @@ check_install_oai_software() {
     install_gnutls_from_source
 
     install_asn1c_from_source
+
+    install_protobuf_from_source
+    install_protobuf_c_from_source
 }
 
 install_asn1c_from_source(){

@@ -635,6 +635,9 @@ add_boolean_option(MESSAGE_CHART_GENERATOR_PHY     False "trace some PHY exchang
 
 add_boolean_option(ENB_AGENT                   True         "enable eNB agent to inteface with a SDN contrller")
 
+# temporary FLAG
+add_boolean_option(PDCP_SPLIT                   True         "enable PDCP split")
+
 ########################
 # Include order
 ##########################
@@ -849,6 +852,56 @@ include_directories("${OPENAIR_DIR}")
 
 # Utilities Library
 ################
+if (PDCP_SPLIT)
+  # set the version of protobuf messages, V3 not supported yet
+  add_list1_option(FSPT_VERSION V2 "PRPT MSG  protobuf  grammar version" V2 V3)
+  
+  if (${FSPT_VERSION} STREQUAL "V2")
+    set (FSPTDIR V2)
+  elseif (${FSPT_VERSION} STREQUAL "V3")
+    set (FSPTDIR V3)
+  endif(${FSPT_VERSION} STREQUAL "V2")
+  
+  set(FSPT_MSG_DIR ${OPENAIR_DIR}/targets/COMMON/MESSAGES/${FSPTDIR} )
+  set(FSPT_MSG_FILES
+    ${FSPT_MSG_DIR}/header.proto
+    ${FSPT_MSG_DIR}/flexsplit.proto
+    )
+
+  set(FSPT_C_DIR ${protobuf_generated_dir}/${FSPTDIR})
+  message("calling protoc_call=${protoc_call} FSPT_C_DIR=${FSPT_C_DIR} FSPT_MSG_FILES=${FSPT_MSG_FILES}")
+  execute_process(COMMAND ${protoc_call} ${FSPT_C_DIR} ${FSPT_MSG_DIR} ${FSPT_MSG_FILES})
+  file(GLOB PRPT_source ${FSPT_C_DIR}/*.c)
+  set(FSPT_OAI_generated
+    ${FSPT_C_DIR}/header.pb-c.c
+    ${FSPT_C_DIR}/flexsplit.pb-c.c
+    )
+  
+  file(GLOB fspt_h ${FSPT_C_DIR}/*.h)
+  set(fspt_h ${fspt_h} )
+  
+  add_library(FSPT_MSG
+    ${FSPT_OAI_generated}
+    ${FSPT_source}
+    )
+  set(FSPT_MSG_LIB FSPT_MSG)
+  message("fspt c dir is : ${FSPT_C_DIR}")
+  include_directories (${FSPT_C_DIR})
+
+  add_library(ASYNC_IF
+    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/socket_link.c
+    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/link_manager.c
+    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/message_queue.c
+    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/ringbuffer_queue.c
+    )
+  set(ASYNC_IF_LIB ASYNC_IF)
+  include_directories(${OPENAIR2_DIR}/UTIL/ASYNC_IF)
+
+  set(PROTOBUF_LIB "protobuf-c")
+  
+  #set(PROTOBUF_LIB "protobuf") #for Cpp
+endif()
+
 add_library(HASHTABLE
   ${OPENAIR_DIR}/common/utils/collection/hashtable/hashtable.c
   ${OPENAIR_DIR}/common/utils/collection/hashtable/obj_hashtable.c
