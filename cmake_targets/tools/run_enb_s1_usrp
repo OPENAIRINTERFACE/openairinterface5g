@@ -60,7 +60,9 @@ function help()
   echo_error "  -f, --rf-config-file      filename  RF specific configuration file"
   echo_error "  -K, --itti-dump-file      filename  ITTI dump file containing all ITTI events occuring during EPC runtime.(can omit file name if last argument)"
   echo_error "  -M, --target-dl-mcs       mcs       Downlink target MCS."
-  echo_error "  -m, --mscgen              directory Generate mscgen output files in a directory"
+  echo_error "  -n, --T-no-wait                     don't wait for tracer, start immediately"
+  echo_error "  -p, --T-port              port      use given port"
+  echo_error "  -m, --mscgen                        directory Generate mscgen output files in a directory"
   echo_error "  -s, --show-stdout                   Do not redirect stdout and stderr to file /tmp/lte_softmodem.stdout.txt."
   echo_error "  -S, --enable-missed-slot            Continue execution in case of missed slot."
   echo_error "  -T, --target-ul-mcs       mcs       Uplink target MCS."
@@ -188,7 +190,17 @@ function main()
         exe_arguments="$exe_arguments -m $2"
         shift 2;
         ;;
-      -V | --vcd)
+      -n | --T-no-wait)
+        echo "setting T tracer operation"
+        exe_arguments="$exe_arguments --T_nowait"   
+	shift ;
+	;;
+      -p | --T-port)
+        echo "setting T tracer port"
+        exe_arguments="$exe_arguments --T_port $2"   
+	shift 2;
+	;;
+	-V | --vcd)
         echo "setting gtk-wave output"
         exe_arguments="$exe_arguments -V /tmp/oai_gtk_wave.vcd"
         shift ;

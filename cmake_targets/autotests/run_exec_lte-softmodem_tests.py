@@ -313,7 +313,7 @@ def SSHSessionWrapper(machine, username, key_file, password, logdir_remote, logd
 # \param CleanUpAluLteBox program to terminate AlU Bell Labs LTE Box
 # \param ExmimoRfStop String to stop EXMIMO card (specified in test_case_list.xml)
 def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop, logdir, logdirOAI5GRepo):
-  cmd = 'killall -9 -q -r ' + programList
+  cmd = 'sudo -E killall -9 -q -r ' + programList
   result = oai.send(cmd, True)
   print "Killing old programs..." + result
   programArray = programList.split()
@@ -781,7 +781,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
        task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
        task_eNB = task_eNB + 'echo eNB_traffic_exec PID = $! \n'
 
-    task_eNB = task_eNB + ' (date; sudo rm -f ' + logfile_pcap_tmp_eNB + ' ; sudo -E tshark -i any -s 65535 -a duration:' + str(timeout_cmd-10)+ ' -w ' + logfile_pcap_tmp_eNB+ ' ; sudo -E chown ' + user + ' ' + logfile_pcap_tmp_eNB + ' ; zip -j -9  ' + logfile_pcap_zip_eNB + ' ' + logfile_pcap_tmp_eNB + '   ) > ' + logfile_tshark_eNB + ' 2>&1 & \n '
+    task_eNB = task_eNB + ' (date; sudo rm -f ' + logfile_pcap_tmp_eNB + ' ; sudo -E tshark -i lo -s 65535 -a duration:' + str(timeout_cmd-10)+ ' -w ' + logfile_pcap_tmp_eNB+ ' ; sudo -E chown ' + user + ' ' + logfile_pcap_tmp_eNB + ' ; zip -j -9  ' + logfile_pcap_zip_eNB + ' ' + logfile_pcap_tmp_eNB + '   ) > ' + logfile_tshark_eNB + ' 2>&1 & \n '
     task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
     task_eNB = task_eNB + 'echo eNB_tshark_exec PID = $! \n'
     #terminate the eNB test case after timeout_cmd seconds
@@ -1005,7 +1005,28 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
       run_result_string = ' RUN_'+str(run) + ' = PASS'
     else:
       run_result_string = ' RUN_'+str(run) + ' = FAIL'
-    
+
+    #If there is assertion, we mark the test case as failure as most likely eNB crashed
+    cmd = "grep -ilr \"assertion\" " + logdir_local_testcase + " | cat " 
+    cmd_out = subprocess.check_output ([cmd], shell=True)
+    if len(cmd_out) !=0 :
+      run_result=0
+      run_result_string = ' RUN_'+str(run) + ' = FAIL(Assert)'
+
+    #If there is thread busy error, we mark the test case as failure as most likely eNB crashed
+    cmd = "grep -ilr \"thread busy\" " + logdir_local_testcase + " | cat "
+    cmd_out = subprocess.check_output ([cmd], shell=True)
+    if len(cmd_out) !=0:
+      run_result=0
+      run_result_string = ' RUN_'+str(run) + ' = FAIL(Thread_Busy)'
+
+    #If there is Segmentation fault, we mark the test case as failure as most likely eNB crashed
+    cmd = "grep -ilr \"segmentation fault\" " + logdir_local_testcase + " | cat "
+    cmd_out = subprocess.check_output ([cmd], shell=True)
+    if len(cmd_out) !=0:
+      run_result=0
+      run_result_string = ' RUN_'+str(run) + ' = FAIL(SEGFAULT)'
+
     run_result_string = run_result_string + tput_run_string
 
     test_result=test_result & run_result
@@ -1247,7 +1268,8 @@ except KeyError:
    sys.exit(1)
 
 print "Killing zombie ssh sessions from earlier sessions..."
-cmd='ps aux |grep \"/usr/bin/ssh -q -l guptar\"|tr -s \" \" :|cut -f 2 -d :|xargs kill -9 '
+cmd='ps aux |grep \"/usr/bin/ssh -q -l guptar\"| awk \'{print $2}\' | sudo xargs kill -9  '
+
 os.system(cmd)
 
 if flag_start_testcase == False:
@@ -1412,13 +1434,25 @@ for oai in oai_list:
      
       setuplogfile  = logdir  + '/setup_log_' + MachineList[index] + '_.txt'
       setup_script  = locallogdir  + '/setup_script_' + MachineList[index] +  '_.txt'
+
+      #Sometimes git fails so the script below retries in that case
+      localfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/tools/git-retry.sh')
+      remotefile = logdir + '/git-retry.sh'
+      paramList=[]
+      port=22
+      paramList.append ( {"operation":'put', "localfile":localfile, "remotefile":remotefile} )
+      sftp_log = os.path.expandvars(locallogdir + '/sftp_module.log')
+      sftp_module (user, pw, MachineList[index], port, paramList, sftp_log)
+
+
       cmd = ' ( \n'
       #cmd = cmd  + 'rm -fR ' +  logdir + '\n'
       #cmd = cmd + 'mkdir -p ' + logdir + '\n'
       cmd = cmd + 'cd '+ logdir   + '\n'
-      cmd = cmd + 'git config --global http.sslVerify false \n' 
-      cmd = cmd + 'git clone  '+ GitOAI5GRepo  +' \n'
-      cmd = cmd + 'git clone '+ GitOpenaircnRepo + ' \n'
+      cmd = cmd + 'sudo apt-get install -y git \n'
+      cmd = cmd + 'chmod 700 ' + logdir + '/git-retry.sh \n' 
+      cmd = cmd + logdir + '/git-retry.sh clone  '+ GitOAI5GRepo  +' \n'
+      cmd = cmd + logdir + '/git-retry.sh clone '+ GitOpenaircnRepo + ' \n'
       cmd = cmd +  'cd ' + logdirOAI5GRepo  + '\n'
       cmd = cmd + 'git checkout ' + GitOAI5GRepoBranch   + '\n'                      
       #cmd = cmd + 'git checkout ' + GitOAI5GHeadVersion   + '\n'

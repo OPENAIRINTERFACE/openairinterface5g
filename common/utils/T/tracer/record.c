@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
+#include <unistd.h>
 #include "database.h"
 #include "utils.h"
 #include "../T_defs.h"

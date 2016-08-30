@@ -60,6 +60,8 @@
 #endif
 #include "msc.h"
 
+#include "UERadioAccessCapabilityInformation.h"
+
 #include "gtpv1u_eNB_task.h"
 #include "RRC/LITE/rrc_eNB_GTPV1U.h"
 
@@ -584,29 +586,42 @@ void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(
 //------------------------------------------------------------------------------
 {
   UECapabilityInformation_t *ueCapabilityInformation = &ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation;
+  /* 4096 is arbitrary, should be big enough */
+  unsigned char buf[4096];
+  unsigned char *buf2;
+  UERadioAccessCapabilityInformation_t rac;
 
-  if ((ueCapabilityInformation->criticalExtensions.present == UECapabilityInformation__criticalExtensions_PR_c1)
-      && (ueCapabilityInformation->criticalExtensions.choice.c1.present
-          == UECapabilityInformation__criticalExtensions__c1_PR_ueCapabilityInformation_r8)
-      && (ueCapabilityInformation->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.count > 0)) {
-    UE_CapabilityRAT_ContainerList_t* ue_CapabilityRAT_ContainerList =
-      &ueCapabilityInformation->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList;
-    MessageDef *msg_p;
-
-    msg_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_UE_CAPABILITIES_IND);
-    S1AP_UE_CAPABILITIES_IND (msg_p).eNB_ue_s1ap_id = ue_context_pP->ue_context.eNB_ue_s1ap_id;
-    S1AP_UE_CAPABILITIES_IND (msg_p).ue_radio_cap.length = ue_CapabilityRAT_ContainerList->list.array[0]->ueCapabilityRAT_Container.size;
-    S1AP_UE_CAPABILITIES_IND (msg_p).ue_radio_cap.buffer = ue_CapabilityRAT_ContainerList->list.array[0]->ueCapabilityRAT_Container.buf;
-
-    itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
-
-    if (ue_CapabilityRAT_ContainerList->list.count > 1) {
-      LOG_W (RRC,"[eNB %d][UE %x] can only handle 1 UE capability RAT item for now (%d)\n",
-             ctxt_pP->module_id,
-             ue_context_pP->ue_context.rnti,
-             ue_CapabilityRAT_ContainerList->list.count);
-    }
+  if (ueCapabilityInformation->criticalExtensions.present != UECapabilityInformation__criticalExtensions_PR_c1
+      || ueCapabilityInformation->criticalExtensions.choice.c1.present != UECapabilityInformation__criticalExtensions__c1_PR_ueCapabilityInformation_r8) {
+    LOG_E(RRC, "[eNB %d][UE %x] bad UE capabilities\n", ctxt_pP->module_id, ue_context_pP->ue_context.rnti);
+    return;
   }
+
+  asn_enc_rval_t ret = uper_encode_to_buffer(&asn_DEF_UECapabilityInformation, ueCapabilityInformation, buf, 4096);
+  if (ret.encoded == -1) abort();
+
+  memset(&rac, 0, sizeof(UERadioAccessCapabilityInformation_t));
+
+  rac.criticalExtensions.present = UERadioAccessCapabilityInformation__criticalExtensions_PR_c1;
+  rac.criticalExtensions.choice.c1.present = UERadioAccessCapabilityInformation__criticalExtensions__c1_PR_ueRadioAccessCapabilityInformation_r8;
+  rac.criticalExtensions.choice.c1.choice.ueRadioAccessCapabilityInformation_r8.ue_RadioAccessCapabilityInfo.buf = buf;
+  rac.criticalExtensions.choice.c1.choice.ueRadioAccessCapabilityInformation_r8.ue_RadioAccessCapabilityInfo.size = (ret.encoded+7)/8;
+  rac.criticalExtensions.choice.c1.choice.ueRadioAccessCapabilityInformation_r8.nonCriticalExtension = NULL;
+
+  /* 8192 is arbitrary, should be big enough */
+  buf2 = malloc16(8192);
+  if (buf2 == NULL) abort();
+  ret = uper_encode_to_buffer(&asn_DEF_UERadioAccessCapabilityInformation, &rac, buf2, 8192);
+  if (ret.encoded == -1) abort();
+
+  MessageDef *msg_p;
+
+  msg_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_UE_CAPABILITIES_IND);
+  S1AP_UE_CAPABILITIES_IND (msg_p).eNB_ue_s1ap_id = ue_context_pP->ue_context.eNB_ue_s1ap_id;
+  S1AP_UE_CAPABILITIES_IND (msg_p).ue_radio_cap.length = (ret.encoded+7)/8;
+  S1AP_UE_CAPABILITIES_IND (msg_p).ue_radio_cap.buffer = buf2;
+
+  itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
 }
 
 //------------------------------------------------------------------------------

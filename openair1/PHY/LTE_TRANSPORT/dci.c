@@ -1754,7 +1754,7 @@ int32_t rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
       avgs = cmax(avgs,avgP[(aarx<<1)+aatx]);
 
-  log2_maxh = (log2_approx(avgs)/2) + 6 + frame_parms->nb_antennas_rx - 1;
+  log2_maxh = (log2_approx(avgs)/2) + 5;  //+frame_parms->nb_antennas_rx;
 #ifdef DEBUG_PHY
   LOG_I(PHY,"subframe %d: pdcch log2_maxh = %d (%d,%d)\n",subframe,log2_maxh,avgP[0],avgs);
 #endif
@@ -2086,7 +2086,6 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
                   frame_parms,
                   txdataF,
                   subframe);
-
   wbar[0] = &wbar0[0];
   wbar[1] = &wbar1[0];
   y[0] = &yseq0[0];
@@ -2190,15 +2189,15 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
       LOG_I(PHY," PDCCH Modulation (TX diversity): REG %d\n",i>>2);
 #endif
       // first antenna position n -> x0
-      ((int16_t*)&y[0][i])[0] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
+      ((int16_t*)&y[0][i])[0] = (*e_ptr==2) ? 0 : (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
       e_ptr++;
-      ((int16_t*)&y[0][i])[1] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
+      ((int16_t*)&y[0][i])[1] = (*e_ptr==2) ? 0 : (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
       e_ptr++;
 
       // second antenna position n -> -x1*
-      ((int16_t*)&y[1][i])[0] = (*e_ptr == 1) ? gain_lin_QPSK : -gain_lin_QPSK;
+      ((int16_t*)&y[1][i])[0] = (*e_ptr==2) ? 0 : (*e_ptr == 1) ? gain_lin_QPSK : -gain_lin_QPSK;
       e_ptr++;
-      ((int16_t*)&y[1][i])[1] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
+      ((int16_t*)&y[1][i])[1] = (*e_ptr==2) ? 0 : (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
       e_ptr++;
 
       // fill in the rest of the ALAMOUTI precoding

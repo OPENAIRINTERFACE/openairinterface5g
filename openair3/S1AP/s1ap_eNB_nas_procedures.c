@@ -668,6 +668,8 @@ int s1ap_eNB_ue_capabilities(instance_t instance,
     return -1;
   }
 
+  free(ue_cap_info_ind_p->ue_radio_cap.buffer);
+
   MSC_LOG_TX_MESSAGE(
     MSC_S1AP_ENB,
     MSC_S1AP_MME,
