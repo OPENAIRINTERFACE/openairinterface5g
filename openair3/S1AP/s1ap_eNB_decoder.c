@@ -29,8 +29,9 @@
 
 /*! \file s1ap_eNB_decoder.c
  * \brief s1ap pdu decode procedures for eNB
- * \author Sebastien ROUX <sebastien.roux@eurecom.fr>
- * \date 2013
+ * \author Sebastien ROUX and Navid Nikaein
+ * \email navid.nikaein@eurecom.fr
+ * \date 2013 - 2015
  * \version 0.1
  */
 
@@ -119,6 +120,29 @@ static int s1ap_eNB_decode_initiating_message(s1ap_message *message,
     free(message_string);
     break;
 
+
+  case S1ap_ProcedureCode_id_E_RABSetup:
+    ret = s1ap_decode_s1ap_e_rabsetuprequesties(
+						&message->msg.s1ap_E_RABSetupRequestIEs, &initiating_p->value);
+    //s1ap_xer_print_s1ap_e_rabsetuprequest(s1ap_xer__print2sp, message_string, message);
+    message_id = S1AP_E_RAB_SETUP_REQUEST_LOG;
+    message_string_size = strlen(message_string);
+    message_p           = itti_alloc_new_message_sized(TASK_S1AP,
+                          message_id,
+                          message_string_size + sizeof (IttiMsgText));
+    message_p->ittiMsg.s1ap_e_rab_setup_request_log.size = message_string_size;
+    memcpy(&message_p->ittiMsg.s1ap_e_rab_setup_request_log.text, message_string, message_string_size);
+    itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
+    free(message_string);
+    S1AP_INFO("E_RABSetup initiating message\n");
+    break;
+  case S1ap_ProcedureCode_id_E_RABRelease:
+    ret = s1ap_decode_s1ap_e_rabreleasecommandies(&message->msg.s1ap_E_RABReleaseCommandIEs, 
+						 &initiating_p->value);
+    //s1ap_xer_print_s1ap_e_rabsetuprequest(s1ap_xer__print2sp, message_string, message);
+    S1AP_INFO("TODO  E_RABRelease nitiating message\n");
+    free(message_string);
+    break;
 
   default:
     S1AP_ERROR("Unknown procedure ID (%d) for initiating message\n",

@@ -2024,7 +2024,7 @@ do_RRCConnectionReconfiguration(
                                    (void*)&dl_dcch_msg,
                                    buffer,
                                    RRC_BUF_SIZE);
-  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %l)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
 
 #ifdef XER_PRINT
