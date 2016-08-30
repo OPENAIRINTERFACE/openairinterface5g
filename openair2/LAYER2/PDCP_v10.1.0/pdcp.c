@@ -147,16 +147,15 @@ boolean_t pdcp_data_req(
 
   if (h_rc != HASH_TABLE_OK) {
     if (modeP != PDCP_TRANSMISSION_MODE_TRANSPARENT) {
-      if ((ctxt_pP->configured == 0) && (ctxt_pP->frame%10 == 0)) 
-	LOG_W(PDCP, PROTOCOL_CTXT_FMT" Instance is not configured for rb_id %d Ignoring SDU...\n",
-	      PROTOCOL_CTXT_ARGS(ctxt_pP),
-	      rb_idP);
-      ctxt_pP->configured=0;
+      LOG_W(PDCP, PROTOCOL_CTXT_FMT" Instance is not configured for rb_id %d Ignoring SDU...\n",
+	    PROTOCOL_CTXT_ARGS(ctxt_pP),
+	    rb_idP);
+      ctxt_pP->configured=FALSE;
       return FALSE;
     }
   }else{
     // instance for a given RB is configured
-    ctxt_pP->configured=1;
+    ctxt_pP->configured=TRUE;
   }
     
   if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
