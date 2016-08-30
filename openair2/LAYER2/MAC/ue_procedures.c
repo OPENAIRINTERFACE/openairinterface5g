@@ -302,16 +302,12 @@ uint32_t ue_get_SR(module_id_t module_idP,int CC_id,frame_t frameP,uint8_t eNB_i
 
 //------------------------------------------------------------------------------
 void
-ue_send_sdu(
-  module_id_t module_idP,
-  uint8_t CC_id,
-  frame_t frameP,
-  uint8_t* sdu,
-  uint16_t sdu_len,
-  uint8_t eNB_index
-)
-//------------------------------------------------------------------------------
-{
+ue_send_sdu(module_id_t module_idP,
+	    uint8_t CC_id,
+	    frame_t frameP,
+	    uint8_t* sdu,
+	    uint16_t sdu_len,
+	    uint8_t eNB_index) {
 
   unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
   unsigned char rx_lcids[NB_RB_MAX];
@@ -401,7 +397,7 @@ ue_send_sdu(
 #ifdef DEBUG_HEADER_PARSING
     LOG_D(MAC,"[UE] SDU %d : LCID %d, length %d\n",i,rx_lcids[i],rx_lengths[i]);
 #endif
-
+    
     if (rx_lcids[i] == CCCH) {
 
       LOG_D(MAC,"[UE %d] rnti %x Frame %d : DLSCH -> DL-CCCH, RRC message (eNB %d, %d bytes)\n",
@@ -431,7 +427,7 @@ ue_send_sdu(
                        eNB_index,
                        0);
 
-    } else if (rx_lcids[i] == DCCH) {
+    } else if ((rx_lcids[i] == DCCH) || (rx_lcids[i] == DCCH1)) {
       LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DCCH%d, RRC message (eNB %d, %d bytes)\n", module_idP, frameP, rx_lcids[i],eNB_index,rx_lengths[i]);
       mac_rlc_data_ind(module_idP,
                        UE_mac_inst[module_idP].crnti,
@@ -439,53 +435,39 @@ ue_send_sdu(
                        frameP,
                        ENB_FLAG_NO,
                        MBMS_FLAG_NO,
-                       DCCH,
+                       rx_lcids[i],
                        (char *)payload_ptr,
                        rx_lengths[i],
                        1,
                        NULL);
-    } else if (rx_lcids[i] == DCCH1) {
-      LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DCCH%d, RRC message (eNB %d, %d bytes)\n", module_idP, frameP, rx_lcids[i], eNB_index,rx_lengths[i]);
-      mac_rlc_data_ind(module_idP,
-                       UE_mac_inst[module_idP].crnti,
-		       eNB_index,
-		       frameP,
-                       ENB_FLAG_NO,
-                       MBMS_FLAG_NO,
-                       DCCH1,
-                       (char *)payload_ptr,
-                       rx_lengths[i],
-                       1,
-                       NULL);
-    } else if (rx_lcids[i] == DTCH) {
+ 
+    } else if ((rx_lcids[i]  < NB_RB_MAX) && (rx_lcids[i] > DCCH1 )) {
+      
       LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DTCH%d (eNB %d, %d bytes)\n", module_idP, frameP,rx_lcids[i], eNB_index,rx_lengths[i]);
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       int j;
-
-      for (j=0; j<rx_lengths[i]; j++) {
-        LOG_T(MAC,"%x.",(unsigned char)payload_ptr[j]);
-      }
-
+      for (j=0;j<rx_lengths[i];j++)
+	LOG_T(MAC,"%x.",(unsigned char)payload_ptr[j]);
       LOG_T(MAC,"\n");
 #endif
-
       mac_rlc_data_ind(module_idP,
-                       UE_mac_inst[module_idP].crnti,
+		       UE_mac_inst[module_idP].crnti,
 		       eNB_index,
 		       frameP,
-                       ENB_FLAG_NO,
-                       MBMS_FLAG_NO,
-                       DTCH,
-                       (char *)payload_ptr,
-                       rx_lengths[i],
-                       1,
-                       NULL);
+		       ENB_FLAG_NO,
+		       MBMS_FLAG_NO,
+		       rx_lcids[i],
+		       (char *)payload_ptr,
+		       rx_lengths[i],
+		       1,
+		       NULL);
+    } else {
+      LOG_E(MAC,"[UE %d] Frame %d : unknown LCID %d (eNB %d)\n", module_idP, frameP,rx_lcids[i], eNB_index);
     }
-
     payload_ptr+= rx_lengths[i];
   }
-
+  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
   stop_meas(&UE_mac_inst[module_idP].rx_dlsch_sdu);
 }
@@ -1196,10 +1178,11 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
 {
 
   mac_rlc_status_resp_t rlc_status;
-  uint8_t dcch_header_len=0,dcch1_header_len=0,dtch_header_len=0;
+  uint8_t dcch_header_len=0,dcch1_header_len=0,dtch_header_len=0,dtch_header_len_last=0;
   uint8_t dcch_header_len_tmp=0, dtch_header_len_tmp=0;
   uint8_t bsr_header_len=0, bsr_ce_len=0, bsr_len=0;
   uint8_t phr_header_len=0, phr_ce_len=0,phr_len=0;
+  uint8_t lcid=0;
   uint16_t sdu_lengths[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
   uint8_t sdu_lcids[8]    = { 0, 0, 0, 0, 0, 0, 0, 0 };
   uint8_t payload_offset=0,num_sdus=0;
@@ -1277,18 +1260,27 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
   // check for UL bandwidth requests and add SR control element
 
   // Check for DCCH first
-  sdu_lengths[0]=0;
 
   if (UE_mac_inst[module_idP].scheduling_info.LCID_status[DCCH] == LCID_NOT_EMPTY) {
 
-    rlc_status = mac_rlc_status_ind(module_idP, UE_mac_inst[module_idP].crnti, eNB_index, frameP,ENB_FLAG_NO,MBMS_FLAG_NO, // eNB_index
+    rlc_status = mac_rlc_status_ind(module_idP, 
+				    UE_mac_inst[module_idP].crnti, 
+				    eNB_index, 
+				    frameP,
+				    ENB_FLAG_NO,
+				    MBMS_FLAG_NO, // eNB_index
                                     DCCH,
                                     (buflen-dcch_header_len-bsr_len-phr_len));
     LOG_D(MAC, "[UE %d] Frame %d : UL-DCCH -> ULSCH, RRC message has %d bytes to "
           "send (Transport Block size %d, mac header len %d)\n",
           module_idP,frameP, rlc_status.bytes_in_buffer,buflen,dcch_header_len);
 
-    sdu_lengths[0] += mac_rlc_data_req(module_idP, UE_mac_inst[module_idP].crnti,eNB_index,frameP,ENB_FLAG_NO, MBMS_FLAG_NO,
+    sdu_lengths[0] += mac_rlc_data_req(module_idP, 
+				       UE_mac_inst[module_idP].crnti,
+				       eNB_index,
+				       frameP,
+				       ENB_FLAG_NO, 
+				       MBMS_FLAG_NO,
                                        DCCH,
                                        (char *)&ulsch_buff[sdu_lengths[0]]);
 
@@ -1306,11 +1298,15 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
   // if the RLC AM is used, then RLC will only provide 2 bytes for ACK
   // in this case, we sould add bsr
 
-
   // DCCH1
   if (UE_mac_inst[module_idP].scheduling_info.LCID_status[DCCH1] == LCID_NOT_EMPTY) {
 
-    rlc_status = mac_rlc_status_ind(module_idP, UE_mac_inst[module_idP].crnti, eNB_index,frameP,ENB_FLAG_NO,MBMS_FLAG_NO, // eNB_index
+    rlc_status = mac_rlc_status_ind(module_idP, 
+				    UE_mac_inst[module_idP].crnti, 
+				    eNB_index,
+				    frameP,
+				    ENB_FLAG_NO,
+				    MBMS_FLAG_NO, // eNB_index
                                     DCCH1,
                                     (buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-sdu_length_total));
 
@@ -1318,9 +1314,14 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
           " send (Transport Block size %d, mac header len %d)\n",
           module_idP,frameP, rlc_status.bytes_in_buffer,buflen,dcch1_header_len);
 
-    sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, UE_mac_inst[module_idP].crnti,eNB_index,frameP,ENB_FLAG_NO,MBMS_FLAG_NO,
-                            DCCH1,
-                            (char *)&ulsch_buff[sdu_lengths[0]]);
+    sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, 
+					     UE_mac_inst[module_idP].crnti,
+					     eNB_index,
+					     frameP,
+					     ENB_FLAG_NO,
+					     MBMS_FLAG_NO,
+					     DCCH1,
+					     (char *)&ulsch_buff[sdu_lengths[num_sdus]]);
     sdu_length_total += sdu_lengths[num_sdus];
     sdu_lcids[num_sdus] = DCCH1;
     LOG_D(MAC,"[UE %d] TX Got %d bytes for DCCH1\n",module_idP,sdu_lengths[num_sdus]);
@@ -1331,8 +1332,14 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
     dcch1_header_len =0;
   }
 
-  if ((UE_mac_inst[module_idP].scheduling_info.LCID_status[DTCH] == LCID_NOT_EMPTY) &&
-      ((bsr_len+phr_len+dcch_header_len+dcch1_header_len+dtch_header_len+sdu_length_total) <= buflen)) {
+  dtch_header_len=0;
+  dtch_header_len_last=0;
+  for (lcid=NB_RB_MAX-1; lcid>=DTCH ; lcid--){
+    dtch_header_len+=3; 
+    dtch_header_len_last=3;
+    
+    if ((UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY) &&
+	((bsr_len+phr_len+dcch_header_len+dcch1_header_len+dtch_header_len+sdu_length_total) <= buflen)) {
 
     // optimize the dtch header lenght
     //if ((UE_mac_inst[module_idP].scheduling_info.BSR_bytes[DTCH] > 128) &&
@@ -1343,29 +1350,47 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
     else
     dtch_header_len = 2;//sizeof(SCH_SUBHEADER_SHORT);
      */
-    rlc_status = mac_rlc_status_ind(module_idP, UE_mac_inst[module_idP].crnti, eNB_index,frameP,ENB_FLAG_NO,MBMS_FLAG_NO, // eNB_index
-                                    DTCH,
-                                    buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total);
+      rlc_status = mac_rlc_status_ind(module_idP, 
+				      UE_mac_inst[module_idP].crnti, 
+				      eNB_index,
+				      frameP,
+				      ENB_FLAG_NO,
+				      MBMS_FLAG_NO, // eNB_index
+				      lcid,
+				      buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total);
 
-    LOG_D(MAC,"[UE %d] Frame %d : UL-DTCH -> ULSCH, %d bytes to send (Transport Block size %d, mac header len %d, BSR byte[DTCH] %d)\n",
-          module_idP,frameP, rlc_status.bytes_in_buffer,buflen,dtch_header_len,
-          UE_mac_inst[module_idP].scheduling_info.BSR_bytes[DTCH]);
-
-    sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,UE_mac_inst[module_idP].crnti,eNB_index,frameP, ENB_FLAG_NO, MBMS_FLAG_NO, // eNB_index
-                            DTCH,
-                            (char *)&ulsch_buff[sdu_length_total]);
-
-    //adjust dtch header
-    dtch_header_len = (sdu_lengths[num_sdus] >= 128) ? 3 : 2;
-    LOG_D(MAC,"[UE %d] TX Got %d bytes for DTCH\n",module_idP,sdu_lengths[num_sdus]);
-    sdu_lcids[num_sdus] = DTCH;
-    sdu_length_total += sdu_lengths[num_sdus];
-    num_sdus++;
-    UE_mac_inst[module_idP].ul_active = update_bsr(module_idP, frameP, eNB_index,DTCH, UE_mac_inst[module_idP].scheduling_info.LCGID[DTCH]);
-  } else { // no rlc pdu : generate the dummy header
-    dtch_header_len = 0;
+      LOG_D(MAC,"[UE %d] Frame %d : UL-DTCH -> ULSCH%d, %d bytes to send (Transport Block size %d, mac header len %d, BSR byte[%d] %d)\n",
+	    module_idP,frameP, lcid, rlc_status.bytes_in_buffer,buflen,dtch_header_len,
+	    lcid, UE_mac_inst[module_idP].scheduling_info.BSR_bytes[lcid]);
+      
+       if (rlc_status.bytes_in_buffer > 0) {
+	 sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
+						  UE_mac_inst[module_idP].crnti,
+						  eNB_index,
+						  frameP, 
+						  ENB_FLAG_NO, 
+						  MBMS_FLAG_NO, // eNB_index
+						  lcid,
+						  (char *)&ulsch_buff[sdu_length_total]);
+	 
+	 //adjust dtch header
+	 LOG_D(MAC,"[UE %d] TX Got %d bytes for DTCH\n",module_idP,sdu_lengths[num_sdus]);
+	 sdu_lcids[num_sdus] = lcid;
+	 sdu_length_total += sdu_lengths[num_sdus];
+	 if (sdu_lengths[num_sdus] < 128) {
+	   dtch_header_len --;
+	   dtch_header_len_last --;
+	 }
+	 num_sdus++;
+	 UE_mac_inst[module_idP].ul_active = update_bsr(module_idP, frameP, eNB_index,lcid, UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]);
+       } else {
+	 dtch_header_len -= 3;
+       }
+    } else { // no rlc pdu : generate the dummy header
+      dtch_header_len -= 3;
+    }
   }
-
+  
   lcgid= get_bsr_lcgid(module_idP);
 
   if (lcgid < 0 ) {
@@ -1406,6 +1431,9 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
 
   LOG_T(MAC,"[UE %d] Frame %d: bsr s %p bsr_l %p, phr_p %p\n",  module_idP,frameP,bsr_s, bsr_l, phr_p);
 
+  if (dtch_header_len == 0 )
+    dtch_header_len_last =0;
+
   // adjust the header length
   dcch_header_len_tmp = dcch_header_len;
   dtch_header_len_tmp = dtch_header_len;
@@ -1413,7 +1441,8 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
   if (dtch_header_len==0) {
     dcch_header_len = (dcch_header_len>0)? 1: dcch_header_len;
   } else {
-    dtch_header_len= (dtch_header_len >0)? 1: dtch_header_len;   // for short and long, cut the length+F fields
+    dtch_header_len_last-=1; 
+    dtch_header_len= (dtch_header_len >0)? dtch_header_len - dtch_header_len_last : dtch_header_len;   
   }
 
   if ((buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total) <= 2) {
