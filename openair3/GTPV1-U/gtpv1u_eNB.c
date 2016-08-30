@@ -335,27 +335,25 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
 
 //#warning "LG eps bearer mapping to DRB id to do (offset -4)"
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, gtpv1u_teid_data_p->enb_id, ENB_FLAG_YES,  gtpv1u_teid_data_p->ue_id, 0, 0,gtpv1u_teid_data_p->enb_id);
-      if (ctxt.configured == TRUE ) {
-
-	MSC_LOG_TX_MESSAGE(
-			   MSC_GTPU_ENB,
-			   MSC_PDCP_ENB,
-			   NULL,0,
-			   MSC_AS_TIME_FMT" DATA-REQ rb %u size %u",
-			   0,0,
-			   (gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
-			   buffer_len);
-	
-	result = pdcp_data_req(
-			       &ctxt,
-			       SRB_FLAG_NO,
-			       (gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
-			       0, // mui
-			       SDU_CONFIRM_NO, // confirm
-			       buffer_len,
-			       buffer,
-			       PDCP_TRANSMISSION_MODE_DATA);
-      } 
+      MSC_LOG_TX_MESSAGE(
+			 MSC_GTPU_ENB,
+			 MSC_PDCP_ENB,
+			 NULL,0,
+			 MSC_AS_TIME_FMT" DATA-REQ rb %u size %u",
+			 0,0,
+			 (gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
+			 buffer_len);
+      
+      result = pdcp_data_req(
+			     &ctxt,
+			     SRB_FLAG_NO,
+			     (gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
+			     0, // mui
+			     SDU_CONFIRM_NO, // confirm
+			     buffer_len,
+			     buffer,
+			     PDCP_TRANSMISSION_MODE_DATA);
+      
       
       if ( result == FALSE ) {
 	
