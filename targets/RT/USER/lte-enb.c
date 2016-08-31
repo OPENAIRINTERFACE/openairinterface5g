@@ -1076,8 +1076,8 @@ int wakeup_rxtx(eNB_proc_t *proc,eNB_rxtx_proc_t *proc_rxtx,LTE_DL_FRAME_PARMS *
   // TS_rx is the last received timestamp (start of 1st slot), TS_tx is the desired 
   // transmitted timestamp of the next TX slot (first).
   // The last (TS_rx mod samples_per_frame) was n*samples_per_tti, 
-  // we want to generate subframe (n+3), so TS_tx = TX_rx+3*samples_per_tti,
-  // and proc->subframe_tx = proc->subframe_rx+3
+  // we want to generate subframe (n+4), so TS_tx = TX_rx+4*samples_per_tti,
+  // and proc->subframe_tx = proc->subframe_rx+4
   proc_rxtx->timestamp_tx = proc->timestamp_rx + (4*fp->samples_per_tti);
   proc_rxtx->frame_rx     = proc->frame_rx;
   proc_rxtx->subframe_rx  = proc->subframe_rx;
