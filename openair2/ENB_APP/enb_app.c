@@ -187,6 +187,9 @@ static void configure_rrc(uint32_t enb_id, const Enb_properties_array_t *enb_pro
     RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n310[CC_id]               = enb_properties->properties[enb_id]->ue_TimersAndConstants_n310[CC_id];
     RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t311[CC_id]               = enb_properties->properties[enb_id]->ue_TimersAndConstants_t311[CC_id];
     RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n311[CC_id]               = enb_properties->properties[enb_id]->ue_TimersAndConstants_n311[CC_id];
+
+    RRC_CONFIGURATION_REQ (msg_p).ue_TransmissionMode[CC_id]                      = enb_properties->properties[enb_id]->ue_TransmissionMode[CC_id];
+
   }
 
   itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);

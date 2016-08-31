@@ -440,6 +440,11 @@ typedef struct eNB_RRC_INST_s {
   /// localization list for aggregated measurements from PHY
   struct list loc_list;
 #endif
+
+  //RRC configuration
+#if defined(ENABLE_ITTI)
+  RrcConfigurationReq configuration;
+#endif
 } eNB_RRC_INST;
 
 #define MAX_UE_CAPABILITY_SIZE 255

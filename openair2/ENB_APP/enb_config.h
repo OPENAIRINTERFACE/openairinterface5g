@@ -136,9 +136,10 @@ typedef struct Enb_properties_s {
 
   int16_t                 Nid_cell[1+MAX_NUM_CCs];// for testing, change later
   int16_t                 N_RB_DL[1+MAX_NUM_CCs];// for testing, change later
-  int                   nb_antennas_tx[1+MAX_NUM_CCs];
+  int                     nb_antenna_ports[1+MAX_NUM_CCs];
+  int                     nb_antennas_tx[1+MAX_NUM_CCs];
   int                     nb_antennas_rx[1+MAX_NUM_CCs];
-  int                   tx_gain[1+MAX_NUM_CCs];
+  int                     tx_gain[1+MAX_NUM_CCs];
   int                     rx_gain[1+MAX_NUM_CCs];
   long                    prach_root[1+MAX_NUM_CCs];
   long                    prach_config_index[1+MAX_NUM_CCs];
@@ -198,7 +199,7 @@ typedef struct Enb_properties_s {
   long                    ue_TimersAndConstants_t311[1+MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n310[1+MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n311[1+MAX_NUM_CCs];
-
+  long                    ue_TransmissionMode[1+MAX_NUM_CCs];
 
   long                    srb1_timer_poll_retransmit;
   long                    srb1_timer_reordering;

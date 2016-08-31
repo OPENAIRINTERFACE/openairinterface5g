@@ -311,10 +311,11 @@ int main(int argc, char **argv)
 		 n_rx,
 		 transmission_mode,
 		 extended_prefix_flag,
-		 Nid_cell,
 		 FDD,
+		 Nid_cell,
 		 3,
 		 N_RB_DL,
+		 0,
 		 osf,
 		 0);
 

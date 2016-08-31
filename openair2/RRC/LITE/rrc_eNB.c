@@ -101,7 +101,7 @@
 
 #include "SIMULATION/TOOLS/defs.h" // for taus
 
-//#define XER_PRINT
+#define XER_PRINT
 
 #ifdef PHY_EMUL
 extern EMULATION_VARS              *Emul_vars;
@@ -1440,9 +1440,9 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
   uint16_t                            size;
   int                                 i;
 
-  // configure SRB1/SRB2, PhysicalConfiDedgicated, MAC_MainConfig for UE
-  //eNB_RRC_INST*                       rrc_inst = &eNB_rrc_inst[ctxt_pP->module_id];
-  //struct PhysicalConfigDedicated**    physicalConfigDedicated = &ue_context_pP->ue_context.physicalConfigDedicated;
+  // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
+  eNB_RRC_INST*                       rrc_inst = &eNB_rrc_inst[ctxt_pP->module_id];
+  struct PhysicalConfigDedicated**    physicalConfigDedicated = &ue_context_pP->ue_context.physicalConfigDedicated;
 
   struct SRB_ToAddMod                *SRB2_config                      = NULL;
   struct SRB_ToAddMod__rlc_Config    *SRB2_rlc_config                  = NULL;
@@ -1697,6 +1697,80 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
   mac_MainConfig->ext1->sr_ProhibitTimer_r9 = sr_ProhibitTimer_r9;
   //sps_RA_ConfigList_rlola = NULL;
 #endif
+
+  //change the transmission mode for the primary component carrier
+  //TODO: add codebook subset restriction here
+  //TODO: change TM for secondary CC in SCelltoaddmodlist
+  if (*physicalConfigDedicated) {
+    if ((*physicalConfigDedicated)->antennaInfo) {
+      (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.transmissionMode = rrc_inst->configuration.ue_TransmissionMode[0];
+      LOG_D(RRC,"Setting transmission mode to %d+1\n",rrc_inst->configuration.ue_TransmissionMode[0]);
+      if (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm3) {
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
+	  CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
+	  AntennaInfoDedicated__codebookSubsetRestriction_PR_n2TxAntenna_tm3;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.buf= MALLOC(1);
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.buf[0] = 0xc0;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.size=1;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.bits_unused=6;
+      }
+      else if (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm4) {
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
+	  CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
+	  AntennaInfoDedicated__codebookSubsetRestriction_PR_n2TxAntenna_tm4;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.buf= MALLOC(1);
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.buf[0] = 0xfc;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.size=1;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.bits_unused=2;
+
+      }
+      else if (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm5) {
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
+	  CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
+	  AntennaInfoDedicated__codebookSubsetRestriction_PR_n2TxAntenna_tm5;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.buf= MALLOC(1);
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.buf[0] = 0xf0;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.size=1;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.bits_unused=4;
+      }
+      else if (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm6) {
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
+	  CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
+	  AntennaInfoDedicated__codebookSubsetRestriction_PR_n2TxAntenna_tm6;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm6.buf= MALLOC(1);
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm6.buf[0] = 0xf0;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm6.size=1;
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm6.bits_unused=4;
+      }
+    }
+    else {
+      LOG_E(RRC,"antenna_info not present in physical_config_dedicated. Not reconfiguring!\n");
+    }
+    if ((*physicalConfigDedicated)->cqi_ReportConfig) {
+      if ((rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm4) ||
+	  (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm5) ||
+	  (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm6)) {
+	//feedback mode needs to be set as well
+	//TODO: I think this is taken into account in the PHY automatically based on the transmission mode variable
+	printf("setting cqi reporting mode to rm31\n");
+#ifdef Rel10
+	*((*physicalConfigDedicated)->cqi_ReportConfig->cqi_ReportModeAperiodic)=CQI_ReportModeAperiodic_rm31;
+#else
+	*((*physicalConfigDedicated)->cqi_ReportConfig->cqi_ReportModeAperiodic)=CQI_ReportConfig__cqi_ReportModeAperiodic_rm31; // HLC CQI, no PMI
+#endif
+      }
+    }
+    else {
+      LOG_E(RRC,"cqi_ReportConfig not present in physical_config_dedicated. Not reconfiguring!\n");
+    }
+  }
+  else {
+    LOG_E(RRC,"physical_config_dedicated not present in RRCConnectionReconfiguration. Not reconfiguring!\n");
+  }
 
   // Measurement ID list
   MeasId_list = CALLOC(1, sizeof(*MeasId_list));
@@ -2013,10 +2087,10 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
                                          (DRB_ToAddModList_t*)*DRB_configList,
                                          (DRB_ToReleaseList_t*)NULL,  // DRB2_list,
                                          (struct SPS_Config*)NULL,    // *sps_Config,
-#ifdef EXMIMO_IOT
-                                         NULL, NULL, NULL, NULL,NULL,
-#else
                                          (struct PhysicalConfigDedicated*)*physicalConfigDedicated,
+#ifdef EXMIMO_IOT
+                                         NULL, NULL, NULL,NULL,
+#else
                                          (MeasObjectToAddModList_t*)MeasObj_list,
                                          (ReportConfigToAddModList_t*)ReportConfig_list,
                                          (QuantityConfig_t*)quantityConfig,
@@ -3670,7 +3744,7 @@ rrc_eNB_generate_RRCConnectionSetup(
     do_RRCConnectionSetup(ctxt_pP,
                           ue_context_pP,
                           (uint8_t*) eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.Payload,
-                          (mac_xface->lte_frame_parms->nb_antennas_tx==2)?2:1,
+			  (mac_xface->lte_frame_parms->nb_antennas_tx_eNB==2)?2:1, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
                           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
                           mac_xface->lte_frame_parms,
                           SRB_configList,
@@ -3829,6 +3903,7 @@ openair_rrc_eNB_init(
   eNB_rrc_inst[ctxt.module_id].initial_id2_s1ap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
   eNB_rrc_inst[ctxt.module_id].s1ap_id2_s1ap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
 
+  memcpy(&eNB_rrc_inst[ctxt.module_id].configuration,configuration,sizeof(RrcConfigurationReq));
 
   /// System Information INIT
 
