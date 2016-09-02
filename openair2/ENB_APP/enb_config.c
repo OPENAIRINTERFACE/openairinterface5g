@@ -84,6 +84,7 @@
 #define ENB_CONFIG_STRING_NID_CELL                                      "Nid_cell"
 #define ENB_CONFIG_STRING_N_RB_DL                                       "N_RB_DL"
 #define ENB_CONFIG_STRING_CELL_MBSFN                                  "Nid_cell_mbsfn"
+#define ENB_CONFIG_STRING_NB_ANT_PORTS                              "nb_antenna_ports"
 #define ENB_CONFIG_STRING_NB_ANT_TX                                 "nb_antennas_tx"
 #define ENB_CONFIG_STRING_NB_ANT_RX                                 "nb_antennas_rx"
 #define ENB_CONFIG_STRING_TX_GAIN                                       "tx_gain"
@@ -145,6 +146,7 @@
 #define ENB_CONFIG_STRING_UETIMERS_T311                                 "ue_TimersAndConstants_t311"
 #define ENB_CONFIG_STRING_UETIMERS_N310                                 "ue_TimersAndConstants_n310"
 #define ENB_CONFIG_STRING_UETIMERS_N311                                 "ue_TimersAndConstants_n311"
+#define ENB_CONFIG_STRING_UE_TRANSMISSION_MODE                          "ue_TransmissionMode"
 
 #define ENB_CONFIG_STRING_SRB1                                          "srb1_parameters"
 #define ENB_CONFIG_STRING_SRB1_TIMER_POLL_RETRANSMIT                    "timer_poll_retransmit"
@@ -337,6 +339,7 @@ void enb_config_display(void)
 
       printf( "\n\tCell ID for CC %d:\t%"PRId16":\n",j,enb_properties.properties[i]->Nid_cell[j]);
       printf( "\tN_RB_DL for CC %d:\t%"PRId16":\n",j,enb_properties.properties[i]->N_RB_DL[j]);
+      printf( "\tnb_antenna_ports for CC %d:\t%d:\n",j,enb_properties.properties[i]->nb_antenna_ports[j]);
       printf( "\tnb_antennas_tx for CC %d:\t%d:\n",j,enb_properties.properties[i]->nb_antennas_tx[j]);
       printf( "\tnb_antennas_rx for CC %d:\t%d:\n",j,enb_properties.properties[i]->nb_antennas_rx[j]);
 
@@ -425,6 +428,8 @@ void enb_config_display(void)
       printf( "\tue_TimersAndConstants_n310 for CC %d:\t%ld:\n",j,enb_properties.properties[i]->ue_TimersAndConstants_n310[j]);
       printf( "\tue_TimersAndConstants_t311 for CC %d:\t%ld:\n",j,enb_properties.properties[i]->ue_TimersAndConstants_t311[j]);
       printf( "\tue_TimersAndConstants_n311 for CC %d:\t%ld:\n",j,enb_properties.properties[i]->ue_TimersAndConstants_n311[j]);
+
+      printf( "\tue_TransmissionMode for CC %d:\t%ld:\n",j,enb_properties.properties[i]->ue_TransmissionMode[j]);
 
     }
 
@@ -541,6 +546,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
   libconfig_int     Nid_cell                      = 0;
   libconfig_int     Nid_cell_mbsfn                = 0;
   libconfig_int     N_RB_DL                       = 0;
+  libconfig_int     nb_antenna_ports              = 0;
   libconfig_int     nb_antennas_tx                = 0;
   libconfig_int     nb_antennas_rx                = 0;
   libconfig_int     tx_gain                       = 0;
@@ -604,7 +610,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
   libconfig_int     ue_TimersAndConstants_t311    = 0;
   libconfig_int     ue_TimersAndConstants_n310    = 0;
   libconfig_int     ue_TimersAndConstants_n311    = 0;
-
+  libconfig_int     ue_TransmissionMode           = 0;
 
 
   libconfig_int     srb1_timer_poll_retransmit    = 0;
@@ -816,6 +822,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_NID_CELL, &Nid_cell)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_N_RB_DL, &N_RB_DL)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_CELL_MBSFN, &Nid_cell_mbsfn)
+                   && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_NB_ANT_PORTS, &nb_antenna_ports)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_NB_ANT_TX, &nb_antennas_tx)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_NB_ANT_RX, &nb_antennas_rx)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_TX_GAIN, &tx_gain)
@@ -871,6 +878,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_UETIMERS_T311,  &ue_TimersAndConstants_t311)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_UETIMERS_N310,  &ue_TimersAndConstants_n310)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_UETIMERS_N311,  &ue_TimersAndConstants_n311)
+                   && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,  &ue_TransmissionMode)
 
 #ifdef Rel10
 
@@ -987,7 +995,14 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
 
               enb_properties.properties[enb_properties_index]->nb_antennas_tx[j] = nb_antennas_tx;
 
-              if ((nb_antennas_tx <1) || (nb_antennas_tx > 4))
+              if ((nb_antenna_ports <1) || (nb_antenna_ports > 2))
+                AssertError (0, parse_errors ++,
+                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for nb_antenna_ports choice: 1..2 !\n",
+                             lib_config_file_name_pP, i, nb_antenna_ports);
+
+              enb_properties.properties[enb_properties_index]->nb_antenna_ports[j] = nb_antenna_ports;
+
+              if ((nb_antennas_tx <1) || (nb_antennas_tx > 64))
                 AssertError (0, parse_errors ++,
                              "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for nb_antennas_tx choice: 1..4 !\n",
                              lib_config_file_name_pP, i, nb_antennas_tx);
@@ -1851,6 +1866,35 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
                 break;
 
               }
+
+	      switch (ue_TransmissionMode) {
+	      case 1:
+		enb_properties.properties[enb_properties_index]->ue_TransmissionMode[j] = AntennaInfoDedicated__transmissionMode_tm1;
+		break;
+	      case 2:
+		enb_properties.properties[enb_properties_index]->ue_TransmissionMode[j] = AntennaInfoDedicated__transmissionMode_tm2;
+		break;
+	      case 3:
+		enb_properties.properties[enb_properties_index]->ue_TransmissionMode[j] = AntennaInfoDedicated__transmissionMode_tm3;
+		break;
+	      case 4:
+		enb_properties.properties[enb_properties_index]->ue_TransmissionMode[j] = AntennaInfoDedicated__transmissionMode_tm4;
+		break;
+	      case 5:
+		enb_properties.properties[enb_properties_index]->ue_TransmissionMode[j] = AntennaInfoDedicated__transmissionMode_tm5;
+		break;
+	      case 6:
+		enb_properties.properties[enb_properties_index]->ue_TransmissionMode[j] = AntennaInfoDedicated__transmissionMode_tm6;
+		break;
+	      case 7:
+		enb_properties.properties[enb_properties_index]->ue_TransmissionMode[j] = AntennaInfoDedicated__transmissionMode_tm7;
+		break;
+	      default:
+                AssertError (0, parse_errors ++,
+                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_TransmissionMode choice: 1,2,3,4,5,6,7",
+                             lib_config_file_name_pP, i, ue_TransmissionMode);
+		break;
+	      }
             }
           }
 

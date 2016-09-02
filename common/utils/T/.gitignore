@@ -9,4 +9,5 @@ tracer/record
 tracer/replay
 tracer/textlog
 tracer/vcd
+tracer/macpdu2wireshark
 tracee/tracee

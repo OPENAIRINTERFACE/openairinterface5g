@@ -50,8 +50,10 @@ void lte_param_init(unsigned char N_tx,
   lte_frame_parms->nushift            = Nid_cell%6;
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
-  lte_frame_parms->nb_antennas_tx_eNB = N_tx;
-  lte_frame_parms->phich_config_common.phich_resource         = one;
+  lte_frame_parms->nb_antennas_tx_eNB = (transmission_mode == 1)? 1 : 2;
+  lte_frame_parms->phich_config_common.phich_resource = oneSixth;
+  lte_frame_parms->phich_config_common.phich_duration = normal;
+
   lte_frame_parms->tdd_config         = tdd_config;
   lte_frame_parms->frame_type         = frame_type;
   //  lte_frame_parms->Csrs = 2;

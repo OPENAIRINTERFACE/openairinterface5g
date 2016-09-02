@@ -29,14 +29,17 @@
 
 /*! \file s1ap_eNB_encoder.c
  * \brief s1ap pdu encode procedures for eNB
- * \author Sebastien ROUX <sebastien.roux@eurecom.fr>
- * \date 2013
+ * \author Sebastien ROUX and Navid Nikaein
+ * \email navid.nikaein@eurecom.fr
+ * \date 2013 - 2015
  * \version 0.1
  */
 
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+
+#include "assertions.h"
 
 #include "conversions.h"
 
@@ -99,6 +102,11 @@ int s1ap_eNB_encode_ue_context_release_request(
   S1ap_UEContextReleaseRequestIEs_t *s1ap_UEContextReleaseRequestIEs,
   uint8_t                              **buffer,
   uint32_t                              *length);
+
+static inline
+int s1ap_eNB_encode_e_rab_setup_response(S1ap_E_RABSetupResponseIEs_t  *E_RABSetupResponseIEs,
+					 uint8_t                              **buffer,
+					 uint32_t                              *length);
 
 int s1ap_eNB_encode_pdu(s1ap_message *message, uint8_t **buffer, uint32_t *len)
 {
@@ -251,8 +259,21 @@ int s1ap_eNB_encode_successfull_outcome(s1ap_message *s1ap_message_p,
     free(message_string);
     break;
 
+  case S1ap_ProcedureCode_id_E_RABSetup:
+
+    ret = s1ap_eNB_encode_e_rab_setup_response (
+           &s1ap_message_p->msg.s1ap_E_RABSetupResponseIEs, buffer, len);
+    //s1ap_xer_print_s1ap_e_rabsetupresponse (s1ap_xer__print2sp, message_string, s1ap_message_p);
+    message_id =  S1AP_E_RAB_SETUP_RESPONSE_LOG ;
+    message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id, message_string_size + sizeof (IttiMsgText));
+    message_p->ittiMsg.s1ap_e_rab_setup_response_log.size = message_string_size;
+    memcpy(&message_p->ittiMsg.s1ap_e_rab_setup_response_log.text, message_string, message_string_size);
+    itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
+    free(message_string);
+    S1AP_INFO("E_RABSetup successful message\n");
+    break;
   default:
-    S1AP_DEBUG("Unknown procedure ID (%d) for successfull outcome message\n",
+    S1AP_WARN("Unknown procedure ID (%d) for successfull outcome message\n",
                (int)s1ap_message_p->procedureCode);
     return ret;
     break;
@@ -528,3 +549,25 @@ int s1ap_eNB_encode_ue_context_release_request(
                                           ue_context_release_request_p);
 }
 
+static inline
+int s1ap_eNB_encode_e_rab_setup_response(S1ap_E_RABSetupResponseIEs_t  *s1ap_E_RABSetupResponseIEs,
+					 uint8_t                              **buffer,
+					 uint32_t                              *length)
+{
+  S1ap_E_RABSetupResponse_t  e_rab_setup_response;
+  S1ap_E_RABSetupResponse_t  *e_rab_setup_response_p = &e_rab_setup_response;
+  
+  memset((void *)e_rab_setup_response_p, 0,
+         sizeof(e_rab_setup_response));
+
+  if (s1ap_encode_s1ap_e_rabsetupresponseies (e_rab_setup_response_p, s1ap_E_RABSetupResponseIEs) < 0) {
+    return -1;
+  }
+  
+  return s1ap_generate_successfull_outcome(buffer,
+         length,
+         S1ap_ProcedureCode_id_E_RABSetup,
+         S1ap_Criticality_reject,
+         &asn_DEF_S1ap_E_RABSetupResponse,
+         e_rab_setup_response_p);
+}
