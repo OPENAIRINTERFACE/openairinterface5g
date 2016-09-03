@@ -1627,8 +1627,10 @@ void restart_phy(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uint8_t eNB_id,uint8_t ab
   ue->dlsch_fer[eNB_id] = 0;
   ue->dlsch_SI_received[eNB_id] = 0;
   ue->dlsch_ra_received[eNB_id] = 0;
+  ue->dlsch_p_received[eNB_id] = 0;
   ue->dlsch_SI_errors[eNB_id] = 0;
   ue->dlsch_ra_errors[eNB_id] = 0;
+  ue->dlsch_p_errors[eNB_id] = 0;
 
   ue->dlsch_mch_received[eNB_id] = 0;
 
@@ -2022,6 +2024,35 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
  
 
 	LOG_D(PHY,"[UE  %d] Frame %d, subframe %d : Generate UE DLSCH SI_RNTI format 1%s\n",ue->Mod_id,frame_rx,subframe_rx,dci_alloc_rx[i].format==format1A?"A":"C");
+	//dump_dci(&ue->frame_parms, &dci_alloc_rx[i]);
+
+      }
+    }
+
+    else if ((dci_alloc_rx[i].rnti == P_RNTI) &&
+	     ((dci_alloc_rx[i].format == format1A) || (dci_alloc_rx[i].format == format1C))) {
+
+#ifdef DEBUG_PHY_PROC
+      LOG_D(PHY,"[UE  %d] subframe %d: Found rnti %x, format 1%s, dci_cnt %d\n",ue->Mod_id,subframe_rx,dci_alloc_rx[i].rnti,dci_alloc_rx[i].format==format1A?"A":"C",i);
+#endif
+
+
+      if (generate_ue_dlsch_params_from_dci(frame_rx,
+					    subframe_rx,
+					    (void *)&dci_alloc_rx[i].dci_pdu,
+					    SI_RNTI,
+					    dci_alloc_rx[i].format,
+					    &ue->dlsch_SI[eNB_id],
+					    &ue->frame_parms,
+					    ue->pdsch_config_dedicated,
+					    SI_RNTI,
+					    0,
+					    P_RNTI)==0) {
+
+	ue->dlsch_p_received[eNB_id]++;
+ 
+
+	LOG_D(PHY,"[UE  %d] Frame %d, subframe %d : Generate UE DLSCH P_RNTI format 1%s\n",ue->Mod_id,frame_rx,subframe_rx,dci_alloc_rx[i].format==format1A?"A":"C");
 	//dump_dci(&ue->frame_parms, &dci_alloc_rx[i]);
 
       }
@@ -2440,6 +2471,9 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
     case RA_PDSCH:
       pdsch_vars = ue->pdsch_vars_ra[eNB_id];
       break;
+    case P_PDSCH:
+      pdsch_vars = ue->pdsch_vars_p[eNB_id];
+      break;
     case PDSCH:
       pdsch_vars = ue->pdsch_vars[eNB_id];
       break;
@@ -2557,6 +2591,14 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
 				  ue->dlsch_SI[eNB_id]->harq_processes[0]->b,
 				  ue->dlsch_SI[eNB_id]->harq_processes[0]->TBS>>3);
 	  break;
+	case P_PDSCH:
+	  mac_xface->ue_decode_p(ue->Mod_id,
+				 CC_id,
+				 frame_rx,
+				 eNB_id,
+				 ue->dlsch_SI[eNB_id]->harq_processes[0]->b,
+				 ue->dlsch_SI[eNB_id]->harq_processes[0]->TBS>>3);
+	  break;
 	case RA_PDSCH:
 	  process_rar(ue,proc,eNB_id,mode,abstraction_flag);
 	  break;
@@ -2630,6 +2672,8 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 
   if (ue->dlsch_SI[eNB_id])
     ue->dlsch_SI[eNB_id]->active = 0;
+  if (ue->dlsch_p[eNB_id])
+    ue->dlsch_p[eNB_id]->active = 0;
   if (ue->dlsch_ra[eNB_id])
     ue->dlsch_ra[eNB_id]->active = 0;
 
@@ -2726,6 +2770,20 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			ue->frame_parms.symbols_per_tti>>1,
 			abstraction_flag);
   }
+
+  // do procedures for SI-RNTI
+  if ((ue->dlsch_p[eNB_id]) && (ue->dlsch_p[eNB_id]->active == 1)) {
+    ue_pdsch_procedures(ue,
+			proc,
+			eNB_id,
+			P_PDSCH,
+			ue->dlsch_p[eNB_id],
+			NULL,
+			ue->pdcch_vars[eNB_id]->num_pdcch_symbols,
+			ue->frame_parms.symbols_per_tti>>1,
+			abstraction_flag);
+  }
+
   // do procedures for RA-RNTI
   if ((ue->dlsch_ra[eNB_id]) && (ue->dlsch_ra[eNB_id]->active == 1)) {
     ue_pdsch_procedures(ue,
@@ -2820,6 +2878,30 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			mode,
 			abstraction_flag);
     ue->dlsch_SI[eNB_id]->active = 0;
+  }
+
+  // do procedures for P-RNTI
+  if ((ue->dlsch_p[eNB_id]) && (ue->dlsch_p[eNB_id]->active == 1)) {
+    ue_pdsch_procedures(ue,
+			proc,
+			eNB_id,
+			P_PDSCH,
+			ue->dlsch_p[eNB_id],
+			NULL,
+			1+(ue->frame_parms.symbols_per_tti>>1),
+			ue->frame_parms.symbols_per_tti-1,
+			abstraction_flag);
+
+    ue_dlsch_procedures(ue,
+			proc,
+			eNB_id,
+			P_PDSCH,
+			ue->dlsch_p[eNB_id],
+			NULL,
+			&ue->dlsch_p_errors[eNB_id],
+			mode,
+			abstraction_flag);
+    ue->dlsch_p[eNB_id]->active = 0;
   }
   // do procedures for RA-RNTI
   if ((ue->dlsch_ra[eNB_id]) && (ue->dlsch_ra[eNB_id]->active == 1)) {

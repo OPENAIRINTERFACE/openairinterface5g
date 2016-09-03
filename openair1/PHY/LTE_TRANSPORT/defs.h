@@ -729,6 +729,7 @@ typedef enum {format0,
 typedef enum {
   SI_PDSCH=0,
   RA_PDSCH,
+  P_PDSCH,
   PDSCH,
   PDSCH1,
   PMCH
