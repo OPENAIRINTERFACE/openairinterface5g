@@ -328,7 +328,7 @@ int allocate_REs_in_RB_no_pilots_64QAM_siso(LTE_DL_FRAME_PARMS *frame_parms,
 
     for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset,re=0; 
 	 re<12; 
-	 re++,x0p+=6,tti_offset++) {
+	 re+=4,x0p+=24,tti_offset+=4) {
       
       qam64_table_offset_re=FOUR[x0p[0]];
       qam64_table_offset_im=FOUR[x0p[1]];
@@ -338,6 +338,33 @@ int allocate_REs_in_RB_no_pilots_64QAM_siso(LTE_DL_FRAME_PARMS *frame_parms,
       qam64_table_offset_im+=x0p[5];
       ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qam64_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qam64_table_offset_im];
+
+      qam64_table_offset_re=FOUR[x0p[6]];
+      qam64_table_offset_im=FOUR[x0p[7]];
+      qam64_table_offset_re+=TWO[x0p[8]];
+      qam64_table_offset_im+=TWO[x0p[9]];
+      qam64_table_offset_re+=x0p[10];
+      qam64_table_offset_im+=x0p[11];
+      ((int16_t *)&txdataF[0][tti_offset])[2]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[3]=qam_table_s0[qam64_table_offset_im];
+
+      qam64_table_offset_re=FOUR[x0p[12]];
+      qam64_table_offset_im=FOUR[x0p[13]];
+      qam64_table_offset_re+=TWO[x0p[14]];
+      qam64_table_offset_im+=TWO[x0p[15]];
+      qam64_table_offset_re+=x0p[16];
+      qam64_table_offset_im+=x0p[17];
+      ((int16_t *)&txdataF[0][tti_offset])[4]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[5]=qam_table_s0[qam64_table_offset_im];
+
+      qam64_table_offset_re=FOUR[x0p[18]];
+      qam64_table_offset_im=FOUR[x0p[19]];
+      qam64_table_offset_re+=TWO[x0p[20]];
+      qam64_table_offset_im+=TWO[x0p[21]];
+      qam64_table_offset_re+=x0p[22];
+      qam64_table_offset_im+=x0p[23];
+      ((int16_t *)&txdataF[0][tti_offset])[6]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[7]=qam_table_s0[qam64_table_offset_im];
     }
   }
   else {

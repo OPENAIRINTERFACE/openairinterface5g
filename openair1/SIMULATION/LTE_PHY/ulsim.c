@@ -188,7 +188,7 @@ int main(int argc, char **argv)
   int **txdata;
 
   LTE_DL_FRAME_PARMS *frame_parms;
-  double **s_re,**s_im,**r_re,**r_im;
+  double s_re[2][30720],s_im[2][30720],r_re[2][30720],r_im[2][30720];
   double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
   double iqim=0.0;
   uint8_t extended_prefix_flag=0;
@@ -583,12 +583,6 @@ int main(int argc, char **argv)
   txdata = UE->common_vars.txdata;
 
 
-  s_re = malloc(2*sizeof(double*));
-  s_im = malloc(2*sizeof(double*));
-  r_re = malloc(2*sizeof(double*));
-  r_im = malloc(2*sizeof(double*));
-  //  r_re0 = malloc(2*sizeof(double*));
-  //  r_im0 = malloc(2*sizeof(double*));
 
   nsymb = (eNB->frame_parms.Ncp == NORMAL) ? 14 : 12;
 
@@ -628,13 +622,6 @@ int main(int argc, char **argv)
       exit(-1);
     }
     fprintf(csv_fdUL,"data_all%d=[",mcs);
-  }
-
-  for (i=0; i<2; i++) {
-    s_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    s_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    r_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    r_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
   }
 
 
@@ -1715,22 +1702,6 @@ int main(int argc, char **argv)
 
   if (test_perf !=0)
     fclose (time_meas_fd);
-
-  printf("Freeing channel I/O\n");
-
-  for (i=0; i<2; i++) {
-    free(s_re[i]);
-    free(s_im[i]);
-    free(r_re[i]);
-    free(r_im[i]);
-  }
-
-  free(s_re);
-  free(s_im);
-  free(r_re);
-  free(r_im);
-
-  //  lte_sync_time_free();
 
   return(0);
 
