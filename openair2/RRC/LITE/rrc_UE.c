@@ -58,6 +58,7 @@
 #include "UL-DCCH-Message.h"
 #include "DL-DCCH-Message.h"
 #include "BCCH-DL-SCH-Message.h"
+#include "PCCH-Message.h"
 #ifdef Rel10
 #include "MCCH-Message.h"
 #endif
@@ -2463,6 +2464,39 @@ int decode_BCCH_DLSCH_Message(
   return 0;
 }
 
+//-----------------------------------------------------------------------------
+int decode_PCCH_DLSCH_Message(
+  const protocol_ctxt_t* const ctxt_pP,
+  const uint8_t                eNB_index,
+  uint8_t*               const Sdu,
+  const uint8_t                Sdu_len)
+{
+  PCCH_Message_t *pcch_message = NULL;
+  int i;
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_IN );
+
+  asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
+                            &asn_DEF_PCCH_Message,
+                            (void **)&pcch_message,
+                            (const void *)Sdu,
+                            Sdu_len );
+
+  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+    LOG_E( RRC, "[UE %"PRIu8"] Failed to decode PCCH_MESSAGE (%zu bits)\n",
+           ctxt_pP->module_id,
+           dec_rval.consumed );
+    for (i=0;i<Sdu_len;i++)
+      printf("%02x ",Sdu[i]);
+    printf("\n");
+    // free the memory
+    SEQUENCE_free( &asn_DEF_PCCH_Message, (void*)pcch_message, 1 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_OUT );
+    return -1;
+  }
+
+  return(0);
+}
 
 //-----------------------------------------------------------------------------
 static int decode_SIB1( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, const uint8_t rsrq, const uint8_t rsrp )

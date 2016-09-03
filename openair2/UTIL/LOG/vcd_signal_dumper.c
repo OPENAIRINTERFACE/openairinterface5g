@@ -293,6 +293,7 @@ const char* eurecomFunctionsNames[] = {
 
   "macxface_out_of_sync_ind",
   "macxface_ue_decode_si",
+  "macxface_ue_decode_pcch",
   "macxface_ue_decode_ccch",
   "macxface_ue_decode_bcch",
   "macxface_ue_send_sdu",
