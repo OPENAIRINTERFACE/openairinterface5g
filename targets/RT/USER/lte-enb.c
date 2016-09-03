@@ -191,7 +191,7 @@ static inline void thread_top_init(char *thread_name,
     exit_fun("Error setting deadline scheduler");
   }
 
-  LOG_I( HW, "[SCHED] eNB %s deadline thread (TID %ld) started on CPU %d\n", gettid(), thread_name,sched_getcpu() );
+  LOG_I( HW, "[SCHED] eNB %s deadline thread started on CPU %d\n", thread_name,sched_getcpu() );
 
 #else //LOW_LATENCY
   int policy, s, j;
@@ -880,7 +880,7 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   void *rxp[fp->nb_antennas_rx],*txp[fp->nb_antennas_tx]; 
   unsigned int rxs,txs;
   int i;
-  int tx_sfoffset = (eNB->single_thread_flag == 1) ? 3 : 3;
+  int tx_sfoffset = 2;//(eNB->single_thread_flag == 1) ? 3 : 3;
   if (proc->first_rx==0) {
     
     // Transmit TX buffer based on timestamp from RX

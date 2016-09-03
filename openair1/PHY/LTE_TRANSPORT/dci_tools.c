@@ -6221,6 +6221,9 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
   if (dci_format == format0) {
 
+    if (!ulsch)
+      return -1;
+
     if (rnti == ra_rnti)
       harq_pid = 0;
     else
