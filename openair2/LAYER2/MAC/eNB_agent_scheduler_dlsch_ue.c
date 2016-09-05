@@ -364,8 +364,9 @@ schedule_ue_spec_default(
 
 	header_len_dcch = 2; // 2 bytes DCCH SDU subheader
 
+	// TODO : Need to prioritize DRBs
 	// Loop through the UE logical channels (DCCH, DCCH1, DTCH for now)
-	for (j = 1; j < 4; j++) {
+	for (j = 1; j < NB_RB_MAX; j++) {
 	  header_len+=3;
 
 	  // Need to see if we have space for data from this channel
@@ -389,8 +390,8 @@ schedule_ue_spec_default(
 	       if (data_to_request < 128) { //The header will be one byte less
 		 header_len--;
 	       }
-	       if (j == 1) {
-		 data_to_request++; //It is not correct but fixes some RLC bug for DCCH
+	       if (j == 1 || j == 2) {
+	        data_to_request++; //It is not correct but fixes some RLC bug for DCCH
 	       }
 	       LOG_D(MAC, "[TEST]Will request %d from DCCH\n", data_to_request);
 	       rlc_pdus[channels_added] = (Protocol__PrpRlcPdu *) malloc(sizeof(Protocol__PrpRlcPdu));
