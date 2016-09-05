@@ -78,6 +78,8 @@
 #include "PHY/TOOLS/lte_phy_scope.h"
 //#endif
 
+//#include "LAYER2/PROTO_AGENT/proto_agent.h"
+
 #ifdef SMBV
 // Rohde&Schwarz SMBV100A vector signal generator
 #include "PHY/TOOLS/smbv.h"
@@ -114,6 +116,8 @@ char smbv_ip[16];
 #endif
 
 #include "T.h"
+
+#include "LAYER2/PROTO_AGENT/proto_agent.h"
 
 /*
  DCI0_5MHz_TDD0_t          UL_alloc_pdu;
@@ -255,6 +259,73 @@ help (void)
 }
 
 pthread_t log_thread;
+pthread_t async_server_thread;
+int async_server_thread_finalize (void);
+
+void
+async_server_thread_init (void)
+{
+  //create log_list
+  //log_list_init(&log_list);
+
+  async_server_shutdown = 0;
+
+  if ((pthread_mutex_init (&async_server_lock, NULL) != 0)
+      || (pthread_cond_init (&async_server_notify, NULL) != 0)) {
+    return;
+  }
+
+  if (pthread_create (&async_server_thread, NULL, proto_server_init, (void*) NULL)
+      != 0) {
+    async_server_thread_finalize();
+    return;
+  }
+
+
+}
+
+//Call it after the last LOG call
+int
+async_server_thread_finalize (void)
+{
+  int err = 0;
+
+
+  if (pthread_mutex_lock (&async_server_lock) != 0) {
+    return -1;
+  }
+
+  async_server_shutdown = 1;
+
+  /* Wake up LOG thread */
+  if ((pthread_cond_broadcast (&async_server_notify) != 0)
+      || (pthread_mutex_unlock (&async_server_lock) != 0)) {
+    err = -1;
+  }
+
+  if (pthread_join (async_server_thread, NULL) != 0) {
+    err = -1;
+  }
+
+  if (pthread_mutex_unlock (&async_server_lock) != 0) {
+    err = -1;
+  }
+
+  if (!err) {
+    //log_list_free(&log_list);
+    pthread_mutex_lock (&async_server_lock);
+    pthread_mutex_destroy (&async_server_lock);
+    pthread_cond_destroy (&async_server_notify);
+  }
+
+
+  return err;
+}
+
+
+
+
+
 
 void
 log_thread_init (void)
@@ -1279,6 +1350,7 @@ main (int argc, char **argv)
   int port,Process_Flag=0,wgt,Channel_Flag=0,temp;
 #endif
 
+
   //default parameters
   oai_emulation.info.n_frames = MAX_FRAME_NUMBER; //1024;          //10;
   oai_emulation.info.n_frames_flag = 0; //fixme
@@ -1339,6 +1411,9 @@ main (int argc, char **argv)
   init_omv ();
 #endif
   //Before this call, NB_UE_INST and NB_eNB_INST are not set correctly
+
+
+
   check_and_adjust_params ();
 
   set_seed = oai_emulation.emulation_config.seed.value;
@@ -1353,11 +1428,13 @@ main (int argc, char **argv)
 
   init_ocm ();
 
+
 #ifdef SMBV
   // Rohde&Schwarz SMBV100A vector signal generator
   smbv_init_config(smbv_fname, smbv_nframes);
   smbv_write_config_from_frame_parms(smbv_fname, &PHY_vars_eNB_g[0][0]->lte_frame_parms);
 #endif
+
 
   // add events to future event list: Currently not used
   //oai_emulation.info.oeh_enabled = 1;
@@ -1373,6 +1450,8 @@ main (int argc, char **argv)
   init_slot_isr ();
 
   t = clock ();
+
+  async_server_thread_init();
 
   LOG_N(EMU,
         ">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");

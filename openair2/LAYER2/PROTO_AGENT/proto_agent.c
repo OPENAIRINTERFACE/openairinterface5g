@@ -37,152 +37,25 @@
 #include "proto_agent_common.h"
 #include "log.h"
 #include "proto_agent.h"
-//#include "enb_agent_mac_defs.h" // TODO: Check if they are needed
-
-//#include "enb_agent_extern.h" // TODO: Check if they are needed for this implementation
-
 #include "assertions.h"
-
-#include "proto_agent_net_comm.h" // TODO: Check if they are needed
+#include "proto_agent_net_comm.h"
 #include "proto_agent_async.h" 
-
-//#define TEST_TIMER
 
 proto_agent_instance_t proto_agent[NUM_MAX_ENB];
 proto_agent_instance_t proto_server[NUM_MAX_ENB];
-
-// Use the same configuration file for the moment
 
 char in_ip[40];
 static uint16_t in_port;
 char local_cache[40];
 
 void *send_thread(void *args);
-void *client_receive_thread(void *args);
-void *server_receive_thread(void *args);
-//void *server_send_thread(void *args);
+void *receive_thread(void *args);
 pthread_t new_thread(void *(*f)(void *), void *b);
-//Protocol__ProgranMessage *enb_agent_timeout_prp(void* args);
 Protocol__FlexsplitMessage *proto_agent_timeout_fsp(void* args);
 
+#define ECHO
 
-/* 
- * enb agent task mainly wakes up the tx thread for periodic and oneshot messages to the controller 
- * and can interact with other itti tasks
-*/
-void *proto_agent_task(void *args){
-
-  proto_agent_instance_t         *d = (proto_agent_instance_t *) args;
-  Protocol__FlexsplitMessage *msg;
-  void *data;
-  int size;
-  err_code_t err_code;
-  int                   priority;
-
-  MessageDef                     *msg_p           = NULL;
-  const char                     *msg_name        = NULL;
-  instance_t                      instance;
-  int                             result;
-
-
-  itti_mark_task_ready(TASK_PROTO_AGENT);
-
-  do {
-    // Wait for a message
-    itti_receive_msg (TASK_PROTO_AGENT, &msg_p);
-    DevAssert(msg_p != NULL);
-    msg_name = ITTI_MSG_NAME (msg_p);
-    instance = ITTI_MSG_INSTANCE (msg_p);
-
-    switch (ITTI_MSG_ID(msg_p)) {
-    case TERMINATE_MESSAGE:
-      itti_exit_task ();
-      break;
-
-    case MESSAGE_TEST:
-      LOG_I(PROTO_AGENT, "Received %s\n", ITTI_MSG_NAME(msg_p));
-      break;
-    
-    case TIMER_HAS_EXPIRED:
-      msg = proto_agent_process_timeout(msg_p->ittiMsg.timer_has_expired.timer_id, msg_p->ittiMsg.timer_has_expired.arg);
-      if (msg != NULL){
-	data=proto_agent_pack_message(msg,&size);
-	if (proto_agent_msg_send(d->enb_id, PROTO_AGENT_DEFAULT, data, size, priority)) {
-	  err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
-	  goto error;
-	}
-
-	LOG_D(PROTO_AGENT,"sent message with size %d\n", size);
-      }
-      break;
-
-    default:
-      LOG_E(PROTO_AGENT, "Received unexpected message %s\n", msg_name);
-      break;
-    }
-
-    result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
-    AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-    continue;
-  error:
-    LOG_E(PROTO_AGENT,"proto_agent_task: error %d occured\n",err_code);
-  } while (1);
-
-  return NULL;
-}
-
-void *send_thread(void *args) {
-
-  proto_agent_instance_t         *d = args;
-  void                  *data;
-  int                   size;
-  int                   priority;
-  err_code_t             err_code;
-
-  Protocol__FlexsplitMessage *msg;
-  
-  void **init_msg;
-  int msg_flag = 0;
-  msg_flag = proto_agent_hello(d->enb_id, args, init_msg);
-
-  if (msg_flag == -1)
-  {
-	LOG_E( PROTO_AGENT, "Server did not create the message\n");
-	goto error;
-  }
-  if (proto_agent_msg_send(d->enb_id, PROTO_AGENT_DEFAULT, init_msg, sizeof(Protocol__FlexsplitMessage), 0)) {
-    err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
-    goto error;
-  }
-
-    LOG_D(PROTO_AGENT,"sent message with size %d\n", size);
-  
-    
-//    msg=proto_agent_handle_message(d->enb_id, data, size);
-
-    free(data);
-
-    free(*init_msg);
-    // check if there is something to send back to the controller
-    if (msg != NULL){
-      data=proto_agent_pack_message(msg,&size);
-
-      if (proto_agent_msg_send(d->enb_id, PROTO_AGENT_DEFAULT, data, size, priority)) {
-	err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
-	goto error;
-      }
-      
-      LOG_D(PROTO_AGENT,"sent message with size %d\n", size);
-    }
-    
-  //}
-
-  return NULL;
-
-error:
-  LOG_E(PROTO_AGENT,"receive_thread: error %d occured\n",err_code);
-  return NULL;
-}
+/* Thread continuously listening for incomming packets */
 
 void *receive_thread(void *args) {
 
@@ -193,32 +66,31 @@ void *receive_thread(void *args) {
   err_code_t             err_code;
 
   Protocol__FlexsplitMessage *msg;
-  
+
   while (1) {
     if (proto_agent_msg_recv(d->enb_id, PROTO_AGENT_DEFAULT, &data, &size, &priority)) {
       err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
       goto error;
     }
 
-    LOG_D(PROTO_AGENT,"received message with size %d\n", size);
-  
-    
+    LOG_D(PROTO_AGENT,"Received message with size %d and priority %d, calling message handle\n", size, priority);
+
     msg=proto_agent_handle_message(d->enb_id, data, size);
 
-    free(data);
-    
-    // check if there is something to send back to the controller
-    if (msg != NULL){
-      data=proto_agent_pack_message(msg,&size);
+    if (msg == NULL)
+    {
+        LOG_E(PROTO_AGENT,"msg to send back is NULL\n");
+    }
 
-      if (proto_agent_msg_send(d->enb_id, PROTO_AGENT_DEFAULT, data, size, priority)) {
+    free(data);
+
+    if (msg != NULL){
+      if (proto_agent_msg_send(d->enb_id, PROTO_AGENT_DEFAULT, msg, size, priority)) {
 	err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
 	goto error;
       }
-      
       LOG_D(PROTO_AGENT,"sent message with size %d\n", size);
     }
-    
   }
 
   return NULL;
@@ -254,40 +126,41 @@ pthread_t new_thread(void *(*f)(void *), void *b) {
   return t;
 }
 
+/* Function to be called as a thread: 
+   it is calling the proto_agent_server with 
+   the appropriate arguments 
+*/
 
-// This is the only function that we will call for the moment from this file
+void * proto_server_init(void *args)
+{
+   LOG_D(PROTO_AGENT, "Initializing server thread for listening connections\n");
+   mid_t mod_id = (mid_t) 1;
+   Enb_properties_array_t* enb_properties = NULL;
+   enb_properties = enb_config_get();
+   proto_server_start(mod_id, (const Enb_properties_array_t*) enb_properties);
+   return NULL;
+}
+
+/*  Server side function; upon a new connection 
+    reception, sends the hello packets
+*/
 int proto_server_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
   
   int channel_id;
 
-  printf("INSIDE PROTO_SERVER_START\n"); 
   //  Maybe change the RAN_LTE_OAI to protocol?? (e.g. PDCP)
   set_enb_vars(mod_id, RAN_LTE_OAI);
   proto_server[mod_id].enb_id = mod_id;
   
   /* 
    * check the configuration - Getting all the values from the config file
+   * TODO: get the configuration optionally from the conf file
    */ 
-  if (enb_properties->properties[mod_id]->proto_agent_cache != NULL) {
-    strncpy(local_cache, enb_properties->properties[mod_id]->proto_agent_cache, sizeof(local_cache));
-    local_cache[sizeof(local_cache) - 1] = 0;
-  } else {
-    strcpy(local_cache, DEFAULT_PROTO_AGENT_CACHE);
-  }
-  
-  if (enb_properties->properties[mod_id]->proto_agent_ipv4_address != NULL) {
-    strncpy(in_ip, enb_properties->properties[mod_id]->proto_agent_ipv4_address, sizeof(in_ip) );
-    in_ip[sizeof(in_ip) - 1] = 0; // terminate string
-  } else {
-    strcpy(in_ip, DEFAULT_PROTO_AGENT_IPv4_ADDRESS ); 
-  }
-  
-  if (enb_properties->properties[mod_id]->proto_agent_port != 0 ) {
-    in_port = enb_properties->properties[mod_id]->proto_agent_port;
-  } else {
-    in_port = DEFAULT_PROTO_AGENT_PORT ;
-  }
-  LOG_I(ENB_AGENT,"starting PROTO agent SERVER for module id %d on ipv4 %s, port %d\n",  
+  strcpy(local_cache, DEFAULT_PROTO_AGENT_CACHE);
+  strcpy(in_ip, DEFAULT_PROTO_AGENT_IPv4_ADDRESS ); 
+  in_port = DEFAULT_PROTO_AGENT_PORT ;
+
+  LOG_I(PROTO_AGENT,"Starting PROTO agent SERVER for module id %d on ipv4 %s, port %d\n",
 	proto_server[mod_id].enb_id,
 	in_ip,
 	in_port);
@@ -298,76 +171,77 @@ int proto_server_start(mid_t mod_id, const Enb_properties_array_t* enb_propertie
   proto_agent_init_channel_container();
 
   /*Create the async channel info*/
-  printf("Before creating the async server channe;\n");
   proto_agent_instance_t *channel_info = proto_server_async_channel_info(mod_id, in_ip, in_port);
-  printf("After creating the async server channe;\n");
 
   /*Create a channel using the async channel info*/
-  printf("Before creating the receive channel\n");
-
-  channel_id = proto_agent_create_channel((void *) channel_info, 
-					proto_agent_async_msg_send, 
+  channel_id = proto_agent_create_channel((void *) channel_info,
+					proto_agent_async_msg_send,
 					proto_agent_async_msg_recv,
 					proto_agent_async_release);
 
-  printf("After creating the receive channel\n");
-  
   if (channel_id <= 0) {
     goto error;
   }
-  printf("Before getting ing the receive thread\n");
 
   proto_agent_channel_t *channel = get_channel(channel_id);
-  printf("After getting ing the receive thread\n");
   
   if (channel == NULL) {
     goto error;
   }
 
   /*Register the channel for all underlying agents (use ENB_AGENT_MAX)*/
-  printf("Before registering the receive channel \n");
-
   proto_agent_register_channel(mod_id, channel, ENB_AGENT_MAX);
-  printf("After registering the receive channel\n");
 
-  /*Example of registration for a specific agent(MAC):
-   *enb_agent_register_channel(mod_id, channel, ENB_AGENT_MAC);
-   */
+  // Code for sending the HELLO/ECHO_REQ message once a connection is established
+  Protocol__FlexsplitMessage *msg = NULL;
+  Protocol__FlexsplitMessage *init_msg=NULL;
+  Protocol__FlexsplitMessage *rep_msg=NULL;
+  int msg_flag = 0;
+  int priority;
+  int size;
 
-  /*Initialize the continuous MAC stats update mechanism*/
-  // For the moment we do not need this
-  // enb_agent_init_cont_mac_stats_update(mod_id);
-  printf("Before initializing the receive thread\n");
-  //new_thread(send_thread, &proto_server[mod_id]);
-  new_thread(receive_thread, &proto_server[mod_id]);
-  printf("After initializing the receive thread\n");
+#ifdef ECHO
+  LOG_D(PROTO_AGENT, "Proto agent Server: Calling the echo_request packet constructor\n");
+  msg_flag = proto_agent_echo_request(mod_id, NULL, &init_msg);
+#else
+  LOG_D(PROTO_AGENT, "Proto agent Server: Calling the hello packet constructor\n");
+  msg_flag = proto_agent_hello(mod_id, NULL, &init_msg);
+#endif
 
-  /*
-   * initilize a timer 
-   */ 
-  printf("Before initializing the receive timer\n");
+  int msgsize = 0;
+  int err_code;
+  proto_agent_serialize_message(init_msg, &msg, &msgsize);
+
+  LOG_D(PROTO_AGENT,"Server sending the message over the async channel\n");
+  proto_agent_async_msg_send((void *)msg, (int) msgsize, 1, (void *) channel_info);
+
+  /* After sending the message, wait for any replies; 
+     the server thread blocks until it reads any data 
+     over the channel
+  */
+
+  LOG_D(PROTO_AGENT, "Server reading any message over the async channel.\n");
   
-  proto_agent_init_timer();
-
-  printf("After initializing the receive thread\n");
-
-  /* 
-   * start the enb agent task for tx and interaction with the underlying network function
-   */ 
-  
-  if (itti_create_task (TASK_PROTO_AGENT, proto_agent_task, (void *) &proto_server[mod_id]) < 0) {
-    LOG_E(PROTO_AGENT, "Create task for eNB Agent failed\n");
-    return -1;
+  while (1) {
+    if (proto_agent_msg_recv(mod_id, PROTO_AGENT_DEFAULT, &rep_msg, &size, &priority)) {
+      err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
+      goto error;
+    }
   } 
+    LOG_D(PROTO_AGENT,"Server received reply message with size %d and priority %d, calling message handler\n", size, priority);
+  
+    msg=proto_agent_handle_message(mod_id, rep_msg, size);
 
-  new_thread(send_thread, &proto_server[mod_id]);
+    if (msg == NULL)
+    {
+        LOG_E(PROTO_AGENT,"msg to send back is NULL\n");
+    }
 
-
-  LOG_I(PROTO_AGENT,"server ends\n");
+    LOG_I(PROTO_AGENT,"server ends\n");
   return 0;
 
 error:
-  LOG_I(PROTO_AGENT,"there was an error\n");
+  LOG_E(PROTO_AGENT,"there was an error\n");
   return 1;
 
 }
@@ -376,34 +250,17 @@ int proto_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties
   
   int channel_id;
   
-  printf("Starting client\n");
-
-  //  Maybe change the RAN_LTE_OAI to protocol?? (e.g. PDCP)
   set_enb_vars(mod_id, RAN_LTE_OAI);
   proto_agent[mod_id].enb_id = mod_id;
   
   /* 
    * check the configuration - Getting all the values from the config file
    */ 
-  if (enb_properties->properties[mod_id]->proto_agent_cache != NULL) {
-    strncpy(local_cache, enb_properties->properties[mod_id]->proto_agent_cache, sizeof(local_cache));
-    local_cache[sizeof(local_cache) - 1] = 0;
-  } else {
-    strcpy(local_cache, DEFAULT_PROTO_AGENT_CACHE);
-  }
-  
-  if (enb_properties->properties[mod_id]->proto_agent_ipv4_address != NULL) {
-    strncpy(in_ip, enb_properties->properties[mod_id]->proto_agent_ipv4_address, sizeof(in_ip) );
-    in_ip[sizeof(in_ip) - 1] = 0; // terminate string
-  } else {
-    strcpy(in_ip, DEFAULT_PROTO_AGENT_IPv4_ADDRESS ); 
-  }
-  
-  if (enb_properties->properties[mod_id]->proto_agent_port != 0 ) {
-    in_port = enb_properties->properties[mod_id]->proto_agent_port;
-  } else {
-    in_port = DEFAULT_PROTO_AGENT_PORT ;
-  }
+
+  strcpy(local_cache, DEFAULT_PROTO_AGENT_CACHE);
+  strcpy(in_ip, DEFAULT_PROTO_AGENT_IPv4_ADDRESS );
+  in_port = DEFAULT_PROTO_AGENT_PORT;
+
   LOG_I(PROTO_AGENT,"starting PROTO agent client for module id %d on ipv4 %s, port %d\n",  
 	proto_agent[mod_id].enb_id,
 	in_ip,
@@ -422,14 +279,12 @@ int proto_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties
 					proto_agent_async_msg_send, 
 					proto_agent_async_msg_recv,
 					proto_agent_async_release);
-
-  
   if (channel_id <= 0) {
     goto error;
   }
 
- proto_agent_channel_t *channel = get_channel(channel_id);
-  
+  proto_agent_channel_t *channel = get_channel(channel_id);
+
   if (channel == NULL) {
     goto error;
   }
@@ -441,59 +296,14 @@ int proto_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties
    *enb_agent_register_channel(mod_id, channel, ENB_AGENT_MAC);
    */
 
-  /*Initialize the continuous MAC stats update mechanism*/
-  // For the moment we do not need this
-  // enb_agent_init_cont_mac_stats_update(mod_id);
-  
   new_thread(receive_thread, &proto_agent[mod_id]);
+  LOG_D(PROTO_AGENT, "Client launched the the receive thread for mod_id %d\n", proto_agent[mod_id]);
 
-  /*Initialize and register the mac xface. Must be modified later
-   *for more flexibility in agent management */
-   // We do not need this 
-  // AGENT_MAC_xface *mac_agent_xface = (AGENT_MAC_xface *) malloc(sizeof(AGENT_MAC_xface));
-  // enb_agent_register_mac_xface(mod_id, mac_agent_xface);
-  
-  /* 
-   * initilize a timer 
-   */ 
-  
-  proto_agent_init_timer();
-
-  /*
-   * Initialize the mac agent
-   */
-  //enb_agent_init_mac_agent(mod_id);
-  
-  /* 
-   * start the enb agent task for tx and interaction with the underlying network function
-   */ 
-  
-  if (itti_create_task (TASK_PROTO_AGENT, proto_agent_task, (void *) &proto_agent[mod_id]) < 0) {
-    LOG_E(PROTO_AGENT, "Create task for eNB Agent failed\n");
-    return -1;
-  } 
-
-  LOG_I(PROTO_AGENT,"client ends\n");
   return 0;
 
 error:
-  LOG_I(PROTO_AGENT,"there was an error\n");
+  LOG_E(PROTO_AGENT,"there was an error\n");
   return 1;
 
 }
 
-
-
-
-Protocol__FlexsplitMessage *proto_agent_timeout(void* args){
-
-  //  enb_agent_timer_args_t *timer_args = calloc(1, sizeof(*timer_args));
-  //memcpy (timer_args, args, sizeof(*timer_args));
-  proto_agent_timer_args_t *timer_args = (proto_agent_timer_args_t *) args;
-  
-  LOG_I(PROTO_AGENT, "proto_agent %d timeout\n", timer_args->mod_id);
-  //LOG_I(ENB_AGENT, "eNB action %d ENB flags %d \n", timer_args->cc_actions,timer_args->cc_report_flags);
-  //LOG_I(ENB_AGENT, "UE action %d UE flags %d \n", timer_args->ue_actions,timer_args->ue_report_flags);
-  
-  return NULL;
-}

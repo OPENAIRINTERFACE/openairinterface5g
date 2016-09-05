@@ -43,7 +43,7 @@
 
 #include "UTIL/ASYNC_IF/link_manager.h"
 
-#define NUM_MAX_ENB 2
+#define NUM_MAX_ENB 10
 #define NUM_MAX_UE 2048
 #define DEFAULT_PROTO_AGENT_IPv4_ADDRESS "127.0.0.1"
 #define DEFAULT_PROTO_AGENT_PORT          2210

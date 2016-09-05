@@ -56,6 +56,10 @@
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "msc.h"
 
+#include "ENB_APP/enb_config.h"
+#include "LAYER2/PROTO_AGENT/proto_agent.h"
+
+
 #if defined(ENABLE_SECURITY)
 # include "UTIL/OSA/osa_defs.h"
 #endif
@@ -73,6 +77,7 @@
 extern int otg_enabled;
 #endif
 
+//#include "LAYER2/PROTO_AGENT/proto_agent.h"
 
 //-----------------------------------------------------------------------------
 /*
@@ -110,6 +115,7 @@ boolean_t pdcp_data_req(
   hashtable_rc_t     h_rc;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_REQ,VCD_FUNCTION_IN);
   CHECK_CTXT_ARGS(ctxt_pP);
+
 
 #if T_TRACER
   if (ctxt_pP->enb_flag != ENB_FLAG_NO)
@@ -361,6 +367,27 @@ boolean_t pdcp_data_req(
 #endif
     rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
 
+  
+  //starting async
+//   const Enb_properties_array_t   *enb_properties_p  = NULL;
+   Enb_properties_array_t *enb_properties_p  = NULL;
+//   enb_properties_p = malloc(sizeof(Enb_properties_array_t));
+//   memset(enb_properties_p, 0, sizeof(Enb_properties_array_t));
+//   printf("starting the client\n\n");
+
+   printf("Starting the async client\\n");
+//   new_thread(proto_server_start, NULL);
+   enb_properties_p = enb_config_get();
+
+  static int agent_started = 1;
+
+  if (agent_started == 1)
+  {
+     agent_started = proto_agent_start(ctxt_pP->module_id, enb_properties_p);
+  }
+
+
+
   }
 
   switch (rlc_status) {
@@ -410,9 +437,24 @@ boolean_t pdcp_data_req(
       Pdcp_stats_tx_bytes[module_id][(rb_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rb_id & RAB_OFFSET)-DTCH] += sdu_buffer_size;
     }
     }*/
+   
+  //starting async
+//   const Enb_properties_array_t   *enb_properties_p  = NULL;
+//   Enb_properties_array_t *enb_properties_p  = NULL;
+//   enb_properties_p = malloc(sizeof(Enb_properties_array_t));
+//   memset(enb_properties_p, 0, sizeof(Enb_properties_array_t));
+//   printf("starting the client\n\n");
+
+//   printf("Starting the async client\\n");
+//   new_thread(proto_server_start, NULL);
+//   enb_properties_p = enb_config_get();
+
+//   proto_agent_start(ctxt_pP->module_id, enb_properties_p);
+
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_REQ,VCD_FUNCTION_OUT);
   return ret;
-
+ 
 }
 
 

@@ -36,19 +36,26 @@
 
 
 #include "proto_agent_common.h"
-
-//#include "enb_agent_mac.h" // Do we need this?
-
 #include "log.h"
-
 #include "assertions.h"
 
 proto_agent_message_decoded_callback agent_messages_callback[][3] = {
-  {proto_agent_hello, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_HELLO_MSG*/
+  {proto_agent_hello, proto_agent_hello, 0},
+  {proto_agent_echo_reply, 0, 0},
+//  {proto_agent_rlc_data_req, proto_agent_rlc_data_req_ack, proto_agent_rlc_data_req_nack},
+//  {proto_agent_pdcp_data_ind, proto_agent_pdcp_data_ind_ack, proto_agent_rlc_data_ind_nack},
 };
 
 proto_agent_message_destruction_callback message_destruction_callback[] = {
   proto_agent_destroy_hello,
+  proto_agent_destroy_echo_request,
+  proto_agent_destroy_echo_reply,
+//  proto_agent_destroy_rlc_data_req,
+//  proto_agent_destroy_rlc_data_req_ack,
+//  proto_agent_destroy_rlc_data_req_nack,
+//  proto_agent_destroy_pdcp_data_ind,
+//  proto_agent_destroy_pdcp_data_ind_ack,
+//  proto_agent_destroy_rlc_data_ind_nack,
 };
 
 static const char *proto_agent_direction2String[] = {
@@ -67,43 +74,45 @@ Protocol__FlexsplitMessage* proto_agent_handle_message (mid_t mod_id,
   err_code_t err_code;
   DevAssert(data != NULL);
 
-  if (proto_agent_deserialize_message(data, size, &decoded_message) < 0) {
+  LOG_D(PROTO_AGENT, "Deserializing message \n");
+  if (proto_agent_deserialize_message(data, (int) size, &decoded_message) < 0) {
     err_code= PROTOCOL__FLEXSPLIT_ERR__MSG_DECODING;
     goto error; 
   }
-  
-  // Undestand why these calculations take place
+  Protocol__FspHeader *header = (Protocol__FspHeader*) decoded_message;
+  if (header->has_type)
+   {
+    LOG_D(PROTO_AGENT, "Deserialized MSG type is %d\n", header->type);
+   }
+
   if ((decoded_message->msg_case > sizeof(agent_messages_callback) / (3*sizeof(proto_agent_message_decoded_callback))) || 
       (decoded_message->msg_dir > PROTOCOL__FLEXSPLIT_DIRECTION__UNSUCCESSFUL_OUTCOME)){
     err_code= PROTOCOL__FLEXSPLIT_ERR__MSG_NOT_HANDLED;
+      LOG_D(PROTO_AGENT,"Handling message: MSG NOT handled, going to error\n");
       goto error;
-  }
-    
-  if (agent_messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1] == NULL) {
-    err_code= PROTOCOL__FLEXSPLIT_ERR__MSG_NOT_SUPPORTED;
-    goto error;
-
   }
 
   err_code = ((*agent_messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1])(mod_id, (void *) decoded_message, &reply_message));
-  if ( err_code < 0 ){
+  if ( err_code < 0 )
+  {
     goto error;
-  } else if (err_code == 1) { //If err_code > 1, we do not want to dispose the message yet
+  }
+  else if (err_code == 1) 
+  {
     protocol__flexsplit_message__free_unpacked(decoded_message, NULL);
   }
+  LOG_D(PROTO_AGENT,"Returning REPLY message after the callback\n");
   return reply_message;
   
 error:
   LOG_E(PROTO_AGENT,"errno %d occured\n",err_code);
   return NULL;
-
 }
 
 
 
 void * proto_agent_pack_message(Protocol__FlexsplitMessage *msg, 
 			      uint32_t * size){
-
   void * buffer;
   err_code_t err_code = PROTOCOL__FLEXSPLIT_ERR__NO_ERR;
   
@@ -118,31 +127,13 @@ void * proto_agent_pack_message(Protocol__FlexsplitMessage *msg,
   
   DevAssert(buffer !=NULL);
   
-  LOG_D(PROTO_AGENT,"Serilized the enb mac stats reply (size %d)\n", *size);
-  
+  LOG_D(PROTO_AGENT,"Serialized the enb mac stats reply (size %d)\n", *size);
   return buffer;
   
  error : 
   LOG_E(PROTO_AGENT,"errno %d occured\n",err_code);
   
   return NULL;   
-}
-
-Protocol__FlexsplitMessage* proto_agent_process_timeout(long timer_id, void* timer_args){
-    
-  struct proto_agent_timer_element_s *found = get_timer_entry(timer_id);
- 
-  if (found == NULL ) goto error;
-//  LOG_I(PROTO_AGENT, "Found the entry (%p): timer_id is 0x%lx  0x%lx\n", found, timer_id, found->timer_id);
-  
-  if (timer_args == NULL)
-    LOG_W(PROTO_AGENT,"null timer args\n");
-  
-//  return found->cb(timer_args);
-    return 1;
- error:
-  LOG_E(PROTO_AGENT, "can't get the timer element\n");
-  return TIMER_ELEMENT_NOT_FOUND;
 }
 
 err_code_t proto_agent_destroy_flexsplit_message(Protocol__FlexsplitMessage *msg) {

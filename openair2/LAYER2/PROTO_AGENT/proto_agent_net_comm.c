@@ -126,7 +126,7 @@ int proto_agent_create_channel(void *channel_info,
   /*element should be a real pointer*/
   RB_INSERT(proto_agent_channel_map, &channel_instance.proto_agent_head, channel); 
   
-  LOG_I(PROTO_AGENT,"Created a new channel with id 0x%lx\n", channel->channel_id);
+  LOG_D(PROTO_AGENT,"Created a new channel with id 0x%lx\n", channel->channel_id);
  
   return channel_id; 
 }
@@ -166,10 +166,10 @@ int proto_agent_destroy_channel(int channel_id) {
 
 err_code_t proto_agent_init_channel_container(void) {
   int i, j;
-  LOG_I(PROTO_AGENT, "init RB tree for channel container\n");
+  LOG_D(PROTO_AGENT, "init RB tree for channel container\n");
 
   RB_INIT(&channel_instance.proto_agent_head);
-  
+
   for (i = 0; i < NUM_MAX_ENB; i++) {
     for (j = 0; j < ENB_AGENT_MAX; j++) {
     agent_channel[i][j] == NULL;

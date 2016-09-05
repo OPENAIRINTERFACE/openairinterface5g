@@ -58,31 +58,31 @@ socket_link_t *new_link_server(int port)
   socklen_t          addrlen;
   int                socket_server = -1;
   int no_delay;
-  
+
   ret = calloc(1, sizeof(socket_link_t));
   if (ret == NULL) {
-    LOG_E(MAC, "%s:%d: out of memory\n", __FILE__, __LINE__);
+    LOG_D(PROTO_AGENT, "%s:%d: out of memory\n", __FILE__, __LINE__);
     goto error;
   }
   ret->socket_fd = -1;
 
-  LOG_D(MAC, "create a new link server socket at port %d\n", port);
+  LOG_D(PROTO_AGENT, "create a new link server socket at port %d\n", port);
 
   socket_server = socket(AF_INET, SOCK_STREAM, 0);
   if (socket_server == -1) {
-    LOG_E(MAC, "%s:%d: socket: %s\n", __FILE__, __LINE__, strerror(errno));
+    LOG_E(PROTO_AGENT, "%s:%d: socket: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
 
   reuse = 1;
   if (setsockopt(socket_server, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1) {
-    LOG_E(MAC, "%s:%d: setsockopt: %s\n", __FILE__, __LINE__, strerror(errno));
+    LOG_E(PROTO_AGENT, "%s:%d: setsockopt: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
 
   no_delay = 1;
   if (setsockopt(socket_server, IPPROTO_TCP, TCP_NODELAY, &no_delay, sizeof(no_delay)) == -1) {
-    LOG_E(MAC, "%s:%d: setsockopt: %s\n", __FILE__, __LINE__, strerror(errno));
+    LOG_E(PROTO_AGENT, "%s:%d: setsockopt: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
   
@@ -90,32 +90,33 @@ socket_link_t *new_link_server(int port)
   addr.sin_port = htons(port);
   addr.sin_addr.s_addr = INADDR_ANY;
   if (bind(socket_server, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-    LOG_E(MAC, "%s:%d: bind: %s\n", __FILE__, __LINE__, strerror(errno));
+    LOG_E(PROTO_AGENT, "%s:%d: bind: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
 
   if (listen(socket_server, 5)) {
-    LOG_E(MAC, "%s:%d: listen: %s\n", __FILE__, __LINE__, strerror(errno));
+    LOG_E(PROTO_AGENT, "%s:%d: listen: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
 
   addrlen = sizeof(addr);
   ret->socket_fd = accept(socket_server, (struct sockaddr *)&addr, &addrlen);
   if (ret->socket_fd == -1) {
-    LOG_E(MAC, "%s:%d: accept: %s\n", __FILE__, __LINE__, strerror(errno));
+    LOG_E(PROTO_AGENT, "%s:%d: accept: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
-
+  printf("Accepted new connection from client\n");
   close(socket_server);
 
-  LOG_D(MAC, "connection from %s:%d\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+  LOG_D(PROTO_AGENT, "connection from %s:%d\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+  
   return ret;
 
 error:
   close(socket_server);
   if (ret != NULL) close(ret->socket_fd);
   free(ret);
-  LOG_E(MAC, "ERROR in new_link_server (see above), returning NULL\n");
+  LOG_E(PROTO_AGENT, "ERROR in new_link_server (see above), returning NULL\n");
   return NULL;
 }
 
@@ -132,32 +133,31 @@ socket_link_t *new_link_client(char *server, int port)
   }
   ret->socket_fd = -1;
 
-  LOG_D(MAC, "create a new link client socket connecting to %s:%d\n", server, port);
+  LOG_I(PROTO_AGENT, "Creating a new link client socket connecting to %s:%d\n", server, port);
 
   ret->socket_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (ret->socket_fd == -1) {
-    LOG_E(MAC, "%s:%d: socket: %s\n", __FILE__, __LINE__, strerror(errno));
+    LOG_E(PROTO_AGENT, "%s:%d: socket: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
 
   no_delay = 1;
   if (setsockopt(ret->socket_fd, SOL_TCP, TCP_NODELAY, &no_delay, sizeof(no_delay)) == -1) {
-    LOG_E(MAC, "%s:%d: setsockopt: %s\n", __FILE__, __LINE__, strerror(errno));
+    LOG_E(PROTO_AGENT, "%s:%d: setsockopt: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
   
   addr.sin_family = AF_INET;
   addr.sin_port = htons(port);
   if (inet_aton(server, &addr.sin_addr) == 0) {
-    LOG_E(MAC, "invalid IP address '%s', use a.b.c.d notation\n", server);
+    LOG_E(PROTO_AGENT, "invalid IP address '%s', use a.b.c.d notation\n", server);
     goto error;
   }
   if (connect(ret->socket_fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-    LOG_E(MAC, "%s:%d: connect: %s\n", __FILE__, __LINE__, strerror(errno));
+    LOG_E(PROTO_AGENT, "%s:%d: connect: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
-
-  LOG_D(MAC, "connection to %s:%d established\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+  LOG_D(PROTO_AGENT, "connection to %s:%d established\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
   return ret;
 
 error:
@@ -178,7 +178,7 @@ static int socket_send(int socket_fd, void *buf, int size)
   while (size) {
     l = send(socket_fd, s, size, MSG_NOSIGNAL);
     if (l == -1) goto error;
-    if (l == 0) { LOG_E(MAC, "%s:%d: this cannot happen, normally...\n", __FILE__, __LINE__); abort(); }
+    if (l == 0) { LOG_E(PROTO_AGENT, "%s:%d: this cannot happen, normally...\n", __FILE__, __LINE__); abort(); }
     size -= l;
     s += l;
   }
@@ -186,7 +186,7 @@ static int socket_send(int socket_fd, void *buf, int size)
   return 0;
 
 error:
-  LOG_E(MAC, "socket_send: ERROR: %s\n", strerror(errno));
+  LOG_E(PROTO_AGENT, "socket_send: ERROR: %s\n", strerror(errno));
   return -1;
 }
 
@@ -268,6 +268,11 @@ int link_receive_packet(socket_link_t *link, void **ret_data, int *ret_size)
 
   link->bytes_received += 4;
 
+  
+
+  LOG_I(PROTO_AGENT, "ASYNC BYTES Received are :%d \n", link->bytes_received);
+  LOG_I(PROTO_AGENT, "Size is :%d \n", size);
+
   data = malloc(size);
   if (data == NULL) {
     LOG_E(MAC, "%s:%d: out of memory\n", __FILE__, __LINE__);
@@ -279,6 +284,8 @@ int link_receive_packet(socket_link_t *link, void **ret_data, int *ret_size)
 
   link->bytes_received += size;
   link->packets_received++;
+
+  LOG_I(PROTO_AGENT, "received %d bytes\n", link->bytes_received);
 
   *ret_data = data;
   *ret_size = size;

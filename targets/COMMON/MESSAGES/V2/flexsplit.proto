@@ -6,6 +6,8 @@ message flexsplit_message {
      optional flexsplit_direction msg_dir = 100;
 	oneof msg {
               fsp_hello hello_msg = 1;
+              fsp_echo_request echo_request_msg = 2;
+              fsp_echo_reply echo_reply_msg = 3;
 	}
 }
 
@@ -42,3 +44,15 @@ enum flexsplit_err {
 message fsp_hello {
       optional fsp_header header = 1;
 }
+
+message fsp_echo_request {
+        optional fsp_header header = 1;
+//        extensions 100 to 199;
+}
+
+
+message fsp_echo_reply {
+        optional fsp_header header = 1;
+//        extensions 100 to 199;
+}
+

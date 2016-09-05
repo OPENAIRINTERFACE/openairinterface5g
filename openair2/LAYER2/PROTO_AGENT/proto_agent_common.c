@@ -49,6 +49,7 @@
 void * enb[NUM_MAX_ENB];
 void * enb_ue[NUM_MAX_ENB];
 void * enb_rrc[NUM_MAX_ENB];
+
 /*
  * message primitives
  */
@@ -66,18 +67,16 @@ int proto_agent_serialize_message(Protocol__FlexsplitMessage *msg, void **buf, i
   return 0;
   
  error:
-  LOG_E(PROTO_AGENT, "an error occured\n"); // change the com
+  LOG_E(PROTO_AGENT, "an error occured\n"); 
   return -1;
 }
-
-
 
 /* We assume that the buffer size is equal to the message size.
    Should be chekced durint Tx/Rx */
 int proto_agent_deserialize_message(void *data, int size, Protocol__FlexsplitMessage **msg) {
   *msg = protocol__flexsplit_message__unpack(NULL, size, data);
   if (*msg == NULL)
-    goto error;
+    goto error;  
 
   return 0;
   
@@ -86,8 +85,6 @@ int proto_agent_deserialize_message(void *data, int size, Protocol__FlexsplitMes
   return -1;
 }
 
-
-
 int fsp_create_header(xid_t xid, Protocol__FspType type,  Protocol__FspHeader **header) {
   
   *header = malloc(sizeof(Protocol__FspHeader));
@@ -95,9 +92,11 @@ int fsp_create_header(xid_t xid, Protocol__FspType type,  Protocol__FspHeader **
     goto error;
   
   protocol__fsp_header__init(*header);
+  LOG_D(PROTO_AGENT, "Initialized the PROTOBUF message header\n");
   (*header)->version = FLEXSPLIT_VERSION;
+  LOG_D(PROTO_AGENT, "Set the vversion to FLEXSPLIT_VERSION\n");
+
   (*header)->has_version = 1; 
-  // check if the type is set
   (*header)->type = type;
   (*header)->has_type = 1;
   (*header)->xid = xid;
@@ -109,7 +108,6 @@ int fsp_create_header(xid_t xid, Protocol__FspType type,  Protocol__FspHeader **
   return -1;
 }
 
-
 int proto_agent_hello(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg) {
  
   Protocol__FspHeader *header;
@@ -118,7 +116,7 @@ int proto_agent_hello(mid_t mod_id, const void *params, Protocol__FlexsplitMessa
   if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_HELLO, &header) != 0)
     goto error;
 
-  Protocol__FspHello *hello_msg;
+  Protocol__FspHello *hello_msg = NULL;
   hello_msg = malloc(sizeof(Protocol__FspHello));
   if(hello_msg == NULL)
     goto error;
@@ -163,6 +161,111 @@ int proto_agent_destroy_hello(Protocol__FlexsplitMessage *msg) {
   return -1;
 }
 
+int proto_agent_echo_request(mid_t mod_id, const void* params, Protocol__FlexsplitMessage **msg) {
+  Protocol__FspHeader *header;
+
+  xid_t xid = 1;
+  if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_ECHO_REQUEST, &header) != 0)
+    goto error;
+  LOG_I(PROTO_AGENT,"Created the fsp message header\n");
+
+  Protocol__FspEchoRequest *echo_request_msg = NULL;
+  echo_request_msg = malloc(sizeof(Protocol__FspEchoRequest));
+  if(echo_request_msg == NULL)
+    goto error;
+
+  protocol__fsp_echo_request__init(echo_request_msg);
+  echo_request_msg->header = header;
+
+  *msg = malloc(sizeof(Protocol__FlexsplitMessage));
+  if(*msg == NULL)
+    goto error;
+  protocol__flexsplit_message__init(*msg);
+
+  LOG_I(PROTO_AGENT,"setting the message direction to %d\n", PROTOCOL__FLEXSPLIT_MESSAGE__MSG_ECHO_REQUEST_MSG);
+  (*msg)->msg_case = PROTOCOL__FLEXSPLIT_MESSAGE__MSG_ECHO_REQUEST_MSG;
+  (*msg)->msg_dir = PROTOCOL__FLEXSPLIT_DIRECTION__INITIATING_MESSAGE;
+  (*msg)->has_msg_dir = 1;
+  (*msg)->echo_request_msg = echo_request_msg;
+  return 0;
+
+ error:
+  if(header != NULL)
+    free(header);
+  if(echo_request_msg != NULL)
+    free(echo_request_msg);
+  if(*msg != NULL)
+    free(*msg);
+  return -1;
+}
+
+int proto_agent_destroy_echo_request(Protocol__FlexsplitMessage *msg) {
+  if(msg->msg_case != PROTOCOL__FLEXSPLIT_MESSAGE__MSG_ECHO_REQUEST_MSG)
+    goto error;
+  
+  free(msg->echo_request_msg->header);
+  free(msg->echo_request_msg);
+  free(msg);
+  return 0;
+  
+ error:
+  LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
+}
+
+int proto_agent_echo_reply(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg) {
+  
+  xid_t xid;
+  Protocol__FlexsplitMessage *input = (Protocol__FlexsplitMessage *)params;
+  Protocol__FspEchoRequest *echo_req = input->echo_request_msg;
+  xid = (echo_req->header)->xid;
+
+  Protocol__FspHeader *header;
+  if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_ECHO_REPLY, &header) != 0)
+    goto error;
+
+  Protocol__FspEchoReply *echo_reply_msg;
+  echo_reply_msg = malloc(sizeof(Protocol__FspEchoReply));
+  if(echo_reply_msg == NULL)
+    goto error;
+  protocol__fsp_echo_reply__init(echo_reply_msg);
+  echo_reply_msg->header = header;
+
+  *msg = malloc(sizeof(Protocol__FlexsplitMessage));
+  if(*msg == NULL)
+    goto error;
+  protocol__flexsplit_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__FLEXSPLIT_MESSAGE__MSG_ECHO_REPLY_MSG;
+  (*msg)->msg_dir = PROTOCOL__FLEXSPLIT_DIRECTION__SUCCESSFUL_OUTCOME;
+  (*msg)->has_msg_dir = 1;
+  (*msg)->echo_reply_msg = echo_reply_msg;
+  return 0;
+
+ error:
+  if(header != NULL)
+    free(header);
+  if(echo_reply_msg != NULL)
+    free(echo_reply_msg);
+  if(*msg != NULL)
+    free(*msg);
+  LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
+}
+
+int proto_agent_destroy_echo_reply(Protocol__FlexsplitMessage *msg) {
+  if(msg->msg_case != PROTOCOL__FLEXSPLIT_MESSAGE__MSG_ECHO_REPLY_MSG)
+    goto error;
+  
+  free(msg->echo_reply_msg->header);
+  free(msg->echo_reply_msg);
+  free(msg);
+  return 0;
+  
+ error:
+  LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
+}
+/*
 // call this function to start a nanosecond-resolution timer
 struct timespec timer_start(){
     struct timespec start_time;
@@ -177,7 +280,7 @@ long timer_end(struct timespec start_time){
     long diffInNanos = end_time.tv_nsec - start_time.tv_nsec;
     return diffInNanos;
 }
-
+*/
 
 /*
  * get generic info from RAN
@@ -200,233 +303,3 @@ void set_enb_vars(mid_t mod_id, ran_name_t ran){
  error:
   LOG_E(PROTO_AGENT, "unknown RAN name %d\n", ran);
 }
-
-
-//struct proto_agent_map agent_map;
-proto_agent_timer_instance_t timer_instance;
-err_code_t proto_agent_init_timer(void){
-  
-  LOG_I(PROTO_AGENT, "init RB tree\n");
-
-  RB_INIT(&timer_instance.proto_agent_head);
- 
-  /*
-    struct proto_agent_timer_element_s e;
-  memset(&e, 0, sizeof(proto_agent_timer_element_t));
-  RB_INSERT(proto_agent_map, &agent_map, &e); 
-  */
- return PROTOCOL__FLEXSPLIT_ERR__NO_ERR;
-}
-
-RB_GENERATE(proto_agent_map,proto_agent_timer_element_s, entry, proto_agent_compare_timer);
-
-/* The timer_id might not be the best choice for the comparison */
-int proto_agent_compare_timer(struct proto_agent_timer_element_s *a, struct proto_agent_timer_element_s *b){
-
-  if (a->timer_id < b->timer_id) return -1;
-  if (a->timer_id > b->timer_id) return 1;
-
-  // equal timers
-  return 0;
-}
-
-err_code_t proto_agent_create_timer(uint32_t interval_sec,
-				  uint32_t interval_usec,
-				  agent_id_t     agent_id,
-				  instance_t     instance,
-				  uint32_t timer_type,
-				  xid_t xid,
-				  proto_agent_timer_callback_t cb,
-				  void*    timer_args,
-				  long *timer_id){
-  
-  struct proto_agent_timer_element_s *e = calloc(1, sizeof(*e));
-  DevAssert(e != NULL);
-  
-//uint32_t timer_id;
-  int ret=-1;
-  
-  if ((interval_sec == 0) && (interval_usec == 0 ))
-    return TIMER_NULL;
-  
-  if (timer_type >= PROTO_AGENT_TIMER_TYPE_MAX)
-    return TIMER_TYPE_INVALIDE;
-  
-  if (timer_type  ==   PROTO_AGENT_TIMER_TYPE_ONESHOT){ 
-    ret = timer_setup(interval_sec, 
-		      interval_usec, 
-		      TASK_PROTO_AGENT, 
-		      instance, 
-		      TIMER_ONE_SHOT,
-		      timer_args,
-		      timer_id);
-    
-    e->type = TIMER_ONE_SHOT;
-  }
-  else if (timer_type  ==   PROTO_AGENT_TIMER_TYPE_PERIODIC ){
-    ret = timer_setup(interval_sec, 
-		      interval_usec, 
-		      TASK_PROTO_AGENT, 
-		      instance, 
-		      TIMER_PERIODIC,
-		      timer_args,
-		      timer_id);
-    
-    e->type = TIMER_PERIODIC;
-  }
-  
-  if (ret < 0 ) {
-    return TIMER_SETUP_FAILED; 
-  }
-
-  e->agent_id = agent_id;
-  e->instance = instance;
-  e->state = PROTO_AGENT_TIMER_STATE_ACTIVE;
-  e->timer_id = *timer_id;
-  e->xid = xid;
-  e->timer_args = timer_args; 
-  e->cb = cb;
-  /*element should be a real pointer*/
-  RB_INSERT(proto_agent_map, &timer_instance.proto_agent_head, e); 
-  
-  LOG_I(PROTO_AGENT,"Created a new timer with id 0x%lx for agent %d, instance %d \n",
-	e->timer_id, e->agent_id, e->instance);
- 
-  return 0; 
-}
-
-err_code_t proto_agent_destroy_timer(long timer_id){
-  
-  struct proto_agent_timer_element_s *e = get_timer_entry(timer_id);
-
-  if (e != NULL ) {
-    RB_REMOVE(proto_agent_map, &timer_instance.proto_agent_head, e);
-    proto_agent_destroy_flexsplit_message(e->timer_args->msg);
-    free(e);
-  }
-  
-  if (timer_remove(timer_id) < 0 ) 
-    goto error;
-  
-  return 0;
-
- error:
-  LOG_E(PROTO_AGENT, "timer can't be removed\n");
-  return TIMER_REMOVED_FAILED ;
-}
-
-err_code_t proto_agent_destroy_timer_by_task_id(xid_t xid) {
-  struct proto_agent_timer_element_s *e = NULL;
-  long timer_id;
-  RB_FOREACH(e, proto_agent_map, &timer_instance.proto_agent_head) {
-    if (e->xid == xid) {
-      timer_id = e->timer_id;
-      RB_REMOVE(proto_agent_map, &timer_instance.proto_agent_head, e);
-      proto_agent_destroy_flexsplit_message(e->timer_args->msg);
-      free(e);
-      if (timer_remove(timer_id) < 0 ) { 
-	goto error;
-      }
-    }
-  }
-  return 0;
-
- error:
-  LOG_E(PROTO_AGENT, "timer can't be removed\n");
-  return TIMER_REMOVED_FAILED ;
-}
-
-err_code_t proto_agent_destroy_timers(void){
-  
-  struct proto_agent_timer_element_s *e = NULL;
-  
-  RB_FOREACH(e, proto_agent_map, &timer_instance.proto_agent_head) {
-    RB_REMOVE(proto_agent_map, &timer_instance.proto_agent_head, e);
-    timer_remove(e->timer_id);
-    proto_agent_destroy_flexsplit_message(e->timer_args->msg);
-    free(e);
-  }  
-
-  return 0;
-
-}
-
-void proto_agent_sleep_until(struct timespec *ts, int delay) {
-  ts->tv_nsec += delay;
-  if(ts->tv_nsec >= 1000*1000*1000){
-    ts->tv_nsec -= 1000*1000*1000;
-    ts->tv_sec++;
-  }
-  clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, ts,  NULL);
-}
-
-/*
- int i =0;
-  RB_FOREACH(e, proto_agent_map, &proto_agent_head) {
-    printf("%d: %p\n", i, e); i++;
-    }
-*/
-
-
-err_code_t proto_agent_stop_timer(long timer_id){
-  
-  struct proto_agent_timer_element_s *e=NULL;
-  struct proto_agent_timer_element_s search;
-  memset(&search, 0, sizeof(struct proto_agent_timer_element_s));
-  search.timer_id = timer_id;
-
-  e = RB_FIND(proto_agent_map, &timer_instance.proto_agent_head, &search);
-
-  if (e != NULL ) {
-    e->state =  PROTO_AGENT_TIMER_STATE_STOPPED;
-  }
-  
-  timer_remove(timer_id);
-  
-  return 0;
-}
-
-struct proto_agent_timer_element_s * get_timer_entry(long timer_id) {
-  
-  struct proto_agent_timer_element_s search;
-  memset(&search, 0, sizeof(struct proto_agent_timer_element_s));
-  search.timer_id = timer_id;
-
-  return  RB_FIND(proto_agent_map, &timer_instance.proto_agent_head, &search); 
-}
-
-/*
-// this will change the timer_id
-err_code_t enb_agent_restart_timer(uint32_t *timer_id){
-  
-  struct enb_agent_timer_element_s *e=NULL;
-    
-  RB_FOREACH(e, enb_agent_map, &enb_agent_head) {
-    if (e->timer_id == timer_id)
-      break;
-  }
-
-  if (e != NULL ) {
-    e->state =  ENB_AGENT_TIMER_STATE_ACTIVE;
-  }
-  
-  ret = timer_setup(e->interval_sec, 
-		    e->interval_usec, 
-		    e->agent_id, 
-		    e->instance, 
-		    e->type,
-		    e->timer_args,
-		    &timer_id);
-    
-  }
-
-  if (ret < 0 ) {
-    return PROTOCOL__PROGRAN_ERR__TIMER_SETUP_FAILED; 
-  }
-  
-  return 0;
-
-}
-
-*/
-

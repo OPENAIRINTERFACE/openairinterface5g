@@ -831,9 +831,12 @@ include_directories("${OPENAIR_DIR}/targets/COMMON")
 include_directories("${OPENAIR_DIR}/targets/ARCH/COMMON")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/USERSPACE/LIB/")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/DEFS")
+include_directories("${OPENAIR2_DIR}/UTIL/ASYNC_IF")
+include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds6.1.1/liblfds611/inc")
+include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds7.0.0/liblfds700/inc")
+include_directories("${OPENAIR2_DIR}/LAYER2/PROTO_AGENT")
 include_directories("${OPENAIR2_DIR}/ENB_APP")
 include_directories("${OPENAIR2_DIR}/UTIL/OSA")
-include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds6.1.1/liblfds611/inc")
 include_directories("${OPENAIR2_DIR}/UTIL/MEM")
 include_directories("${OPENAIR2_DIR}/UTIL/LISTS")
 include_directories("${OPENAIR2_DIR}/UTIL/FIFO")
@@ -854,7 +857,7 @@ include_directories("${OPENAIR_DIR}")
 ################
 if (PDCP_SPLIT)
   # set the version of protobuf messages, V3 not supported yet
-  add_list1_option(FSPT_VERSION V2 "PRPT MSG  protobuf  grammar version" V2 V3)
+  add_list1_option(FSPT_VERSION V2 "FSPT MSG  protobuf  grammar version" V2 V3)
   
   if (${FSPT_VERSION} STREQUAL "V2")
     set (FSPTDIR V2)
@@ -871,7 +874,7 @@ if (PDCP_SPLIT)
   set(FSPT_C_DIR ${protobuf_generated_dir}/${FSPTDIR})
   message("calling protoc_call=${protoc_call} FSPT_C_DIR=${FSPT_C_DIR} FSPT_MSG_FILES=${FSPT_MSG_FILES}")
   execute_process(COMMAND ${protoc_call} ${FSPT_C_DIR} ${FSPT_MSG_DIR} ${FSPT_MSG_FILES})
-  file(GLOB PRPT_source ${FSPT_C_DIR}/*.c)
+  file(GLOB FSPT_source ${FSPT_C_DIR}/*.c)
   set(FSPT_OAI_generated
     ${FSPT_C_DIR}/header.pb-c.c
     ${FSPT_C_DIR}/flexsplit.pb-c.c
@@ -896,6 +899,18 @@ if (PDCP_SPLIT)
     )
   set(ASYNC_IF_LIB ASYNC_IF)
   include_directories(${OPENAIR2_DIR}/UTIL/ASYNC_IF)
+
+  add_library(PROTO_AGENT
+    ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_handler.c
+    ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_common.c
+    ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent.c
+    ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_net_comm.c
+    ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_async.c
+    )
+  set(PROTO_AGENT_LIB PROTO_AGENT)
+  #include_directories(${OPENAIR2_DIR}/LAYER2/PROTO_AGENT)
+
+
 
   set(PROTOBUF_LIB "protobuf-c")
   
@@ -1525,6 +1540,24 @@ add_library(LFDS
   ${lfds}/lfds611_abstraction/lfds611_abstraction_malloc.c
 )
 
+
+set(lfds7 ${OPENAIR2_DIR}/UTIL/LFDS/liblfds7.0.0/liblfds700/src/)
+file(GLOB lfds7_queue ${lfds7}/lfds700_queue/*.c)
+file(GLOB lfds7_ring ${lfds7}/lfds700_ringbuffer/*.c)
+file(GLOB lfds7_qbss ${lfds7}/lfds700_queue_bounded_singleconsumer_singleproducer/*.c)
+file(GLOB lfds7_stack ${lfds7}/lfds700_stack/*.c)
+file(GLOB lfds7_freelist ${lfds7}/lfds700_freelist/*.c)
+file(GLOB lfds7_btree ${lfds7}/lfds700_btree_addonly_unbalanced/*.c)
+file(GLOB lfds7_hash ${lfds7}/lfds700_hash_addonly/*.c)
+file(GLOB lfds7_ordered_list ${lfds7}/lfds700_list_addonly_ordered_singlylinked/*.c)
+file(GLOB lfds7_unordered_list ${lfds7}/lfds700_list_addonly_singlylinked_unordered/*.c)
+file(GLOB lfds7_misc ${lfds7}/lfds700_misc/*.c)
+
+include_directories(${lfds7})
+add_library(LFDS7
+  ${lfds7_queue} ${lfds7_ring} ${lfds7_qbss} ${lfds7_stack} ${lfds7_freelist} ${lfds7_btree} ${lfds7_hash} ${lfds7_ordered_list} ${lfds7_unordered_list} ${lfds7_misc}
+)
+
 # Simulation library
 ##########################
 add_library(SIMU
@@ -1688,11 +1721,11 @@ add_executable(lte-softmodem
 
 target_link_libraries (lte-softmodem -ldl
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} 
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} ${FSPT_MSG_LIB} ${ASYNC_IF_LIB} ${PROTO_AGENT_LIB} LFDS7 protobuf-c
   -Wl,--end-group )
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ) 
+target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt ${PROTOBUF_LIB} crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ) 
 target_link_libraries (lte-softmodem ${LIBBOOST_LIBRARIES} -lboost_system) #Added manually as it is not found for some reason for USRP
 target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem ${T_LIB})
@@ -1724,11 +1757,11 @@ add_executable(lte-softmodem-nos1
   )
 target_link_libraries (lte-softmodem-nos1
   -Wl,--start-group
-  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} ${MIH_LIB}
+  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB PHY LFDS ${RAL_LIB} ${ITTI_LIB} ${MIH_LIB}
   -Wl,--end-group )
 
 target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib}  ${option_TP_lib} ${XFORMS_LIBRARIES} )
+target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt ${PROTOBUF_LIB} crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib}  ${option_TP_lib} ${XFORMS_LIBRARIES} )
 target_link_libraries (lte-softmodem-nos1 ${LIBBOOST_LIBRARIES} -lboost_system) #Added manually as it is not found for some reason for USRP
 target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 ${T_LIB})
@@ -1827,11 +1860,11 @@ add_executable(oaisim
 target_include_directories(oaisim PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} LIB_NAS_UE SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
+  RRC_LIB S1AP_LIB S1AP_ENB ${FSPT_MSG_LIB} ${ASYNC_IF_LIB} ${PROTO_AGENT_LIB} LFDS7 X2AP_LIB GTPV1U SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} LIB_NAS_UE SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
   -Wl,--end-group )
 
 target_link_libraries (oaisim ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
-target_link_libraries (oaisim pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${option_TP_lib}
+target_link_libraries (oaisim pthread m ${PROTOBUF_LIB} ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${option_TP_lib}
   ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES})
 #Force link with forms, regardless XFORMS option
 target_link_libraries (oaisim forms)
@@ -1866,11 +1899,11 @@ add_executable(oaisim_nos1
 target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim_nos1
   -Wl,--start-group
-  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
+  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB} ${FSPT_MSG_LIB} ${ASYNC_IF_LIB} ${PROTO_AGENT_LIB} LFDS7 protobuf-c
   -Wl,--end-group )
 
 target_link_libraries (oaisim_nos1 ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
-target_link_libraries (oaisim_nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES}  ${option_HW_lib}  ${option_TP_lib}
+target_link_libraries (oaisim_nos1 pthread m ${PROTOBUF_LIB} ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES}  ${option_HW_lib}  ${option_TP_lib}
   ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES})
 #Force link with forms, regardless XFORMS option
 target_link_libraries (oaisim_nos1 forms)

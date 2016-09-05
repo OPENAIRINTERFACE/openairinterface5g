@@ -170,6 +170,14 @@
 #define ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U         "ENB_IPV4_ADDRESS_FOR_S1U"
 #define ENB_CONFIG_STRING_ENB_PORT_FOR_S1U              "ENB_PORT_FOR_S1U"
 
+#define ENB_CONFIG_STRING_FLEXSPLIT_CONFIG     		"FLEXSPLIT"
+#define ENB_CONFIG_STRING_PROTO_AGENT_INTERFACE_NAME      "PROTO_AGENT_INTERFACE_NAME"
+#define ENB_CONFIG_STRING_PROTO_AGENT_IPV4_ADDRESS        "PROTO_AGENT_IPV4_ADDRESS"
+#define ENB_CONFIG_STRING_PROTO_AGENT_PORT                "PROTO_AGENT_PORT"
+#define ENB_CONFIG_STRING_PROTO_AGENT_CACHE               "PROTO_AGENT_CACHE"
+
+
+
 #define ENB_CONFIG_STRING_RRH_GW_CONFIG                   "rrh_gw_config"
 #define ENB_CONFIG_STRING_RRH_GW_LOCAL_IF_NAME            "local_if_name"
 #define ENB_CONFIG_STRING_RRH_GW_LOCAL_ADDRESS            "local_address"
@@ -314,6 +322,7 @@ void enb_config_display(void)
 	}
       }
     }
+
 
     for (j=0; j< enb_properties.properties[i]->nb_cc; j++) {
       printf( "\teutra band for CC %d:         \t%"PRId16":\n",j,enb_properties.properties[i]->eutra_band[j]);
@@ -625,6 +634,12 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
   char             *address                       = NULL;
   char             *cidr                          = NULL;
   char             *astring                       = NULL;
+
+  char*             proto_agent_interface_name      = NULL;
+  char*             proto_agent_ipv4_address        = NULL;
+  libconfig_int     proto_agent_port                = 0;
+  char*             proto_agent_cache               = NULL;
+
   libconfig_int     otg_ue_id                     = 0;
   char*             otg_app_type                  = NULL;
   char*             otg_bg_traffic                = NULL;
@@ -2327,7 +2342,6 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
               if (address) {
                 IPV4_STR_ADDR_TO_INT_NWBO ( address, enb_properties.properties[enb_properties_index]->enb_ipv4_address_for_S1U, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
               }
-
               enb_properties.properties[enb_properties_index]->enb_port_for_S1U = enb_port_for_S1U;
 
               enb_properties.properties[enb_properties_index]->enb_interface_name_for_S1_MME = strdup(enb_interface_name_for_S1_MME);
@@ -2339,6 +2353,34 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
               }
             }
           }
+
+// PROTO_AGENT configuration
+          subsetting = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_FLEXSPLIT_CONFIG);
+
+          if (subsetting != NULL) {
+            if (  (
+                   config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_PROTO_AGENT_INTERFACE_NAME,
+                                                 (const char **)&proto_agent_interface_name)
+                   && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_PROTO_AGENT_IPV4_ADDRESS,
+                                                    (const char **)&proto_agent_ipv4_address)
+                   && config_setting_lookup_int(subsetting, ENB_CONFIG_STRING_PROTO_AGENT_PORT,
+                                                &proto_agent_port)
+                   && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_PROTO_AGENT_CACHE,
+                                                    (const char **)&proto_agent_cache)
+                 )
+              ) {
+              enb_properties.properties[enb_properties_index]->proto_agent_interface_name = strdup(proto_agent_interface_name);
+              cidr = proto_agent_ipv4_address;
+              address = strtok(cidr, "/");
+              enb_properties.properties[enb_properties_index]->proto_agent_ipv4_address = strdup(address);
+
+              enb_properties.properties[enb_properties_index]->proto_agent_port = proto_agent_port;
+              enb_properties.properties[enb_properties_index]->proto_agent_cache = strdup(proto_agent_cache);
+            }
+          }
+
+
+
 
           // OTG _CONFIG
           setting_otg = config_setting_get_member (setting_enb, ENB_CONF_STRING_OTG_CONFIG);

@@ -31,6 +31,10 @@
 
 extern log_t *g_log;
 
+extern pthread_mutex_t async_server_lock;
+extern pthread_cond_t async_server_notify;
+extern int async_server_shutdown;
+
 #if !defined(LOG_NO_THREAD)
 extern LOG_params log_list[2000];
 extern pthread_mutex_t log_lock;

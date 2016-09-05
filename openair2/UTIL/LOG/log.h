@@ -282,6 +282,7 @@ typedef enum {
   USIM,
   LOCALIZE,
   RRH,
+  PROTO_AGENT,
   X2AP,
   MAX_LOG_COMPONENTS,
 }

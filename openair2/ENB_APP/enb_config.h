@@ -222,6 +222,13 @@ typedef struct Enb_properties_s {
   in_addr_t           enb_ipv4_address_for_S1_MME;
 
 
+  char               *proto_agent_interface_name;
+  in_addr_t           proto_agent_ipv4_address;
+  tcp_udp_port_t      proto_agent_port;
+  char               *proto_agent_cache;
+
+
+
   /* Nb of RRH to connect to */
   uint8_t             nb_rrh_gw;
   char               *rrh_gw_if_name;

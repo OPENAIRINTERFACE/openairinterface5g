@@ -87,12 +87,19 @@ int fsp_create_header(xid_t xid, Protocol__FspType type, Protocol__FspHeader **h
 
 int proto_agent_hello(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
 int proto_agent_destroy_hello(Protocol__FlexsplitMessage *msg);
+int proto_agent_echo_request(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
+int proto_agent_destroy_echo_request(Protocol__FlexsplitMessage *msg);
+int proto_agent_echo_reply(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
+int proto_agent_destroy_echo_reply(Protocol__FlexsplitMessage *msg);
+
+
 
 Protocol__FlexsplitMessage* proto_agent_handle_message (mid_t mod_id, 
 						    uint8_t *data, 
 						    uint32_t size);
 
 Protocol__FlexsplitMessage *proto_agent_handle_timed_task(void *args);
+
 
 
 

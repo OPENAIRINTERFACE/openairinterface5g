@@ -34,6 +34,9 @@
  * \email: cedric.roux@eurecom.fr
  * @ingroup _mac
  */
+//#ifndef SERVER_TEST
+//#define SERVER_TEST
+//#endif
 
 #include "link_manager.h"
 #include "log.h"

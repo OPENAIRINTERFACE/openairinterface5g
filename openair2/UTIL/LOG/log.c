@@ -94,6 +94,10 @@ int log_list_nb_elements = 0;
 pthread_mutex_t log_lock;
 pthread_cond_t log_notify;
 
+pthread_mutex_t async_server_lock;
+pthread_cond_t async_server_notify;
+int async_server_shutdown;
+
 #if !defined(LOG_NO_THREAD)
 int log_list_head = 0;
 int log_shutdown;
@@ -284,6 +288,16 @@ int logInit (void)
   g_log->log_component[MSC].fd = 0;
   g_log->log_component[MSC].filelog =  0;
   g_log->log_component[MSC].filelog_name = "/tmp/msc.log";
+
+  g_log->log_component[PROTO_AGENT].name = "PROTO_AGENT";
+  g_log->log_component[PROTO_AGENT].level = LOG_EMERG;
+  g_log->log_component[PROTO_AGENT].flag =  LOG_MED;
+  g_log->log_component[PROTO_AGENT].interval =  1;
+  g_log->log_component[PROTO_AGENT].fd = 0;
+  g_log->log_component[PROTO_AGENT].filelog =  0;
+  g_log->log_component[PROTO_AGENT].filelog_name = "/tmp/proto_agent.log";
+
+
 
   g_log->log_component[OCM].name = "OCM";
   g_log->log_component[OCM].level = LOG_EMERG;

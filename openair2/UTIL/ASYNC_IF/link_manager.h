@@ -38,8 +38,8 @@
 #ifndef LINK_MANAGER_H
 #define LINK_MANAGER_H
 
-//#include "message_queue.h"
-#include "ringbuffer_queue.h"
+#include "message_queue.h"
+//#include "ringbuffer_queue.h"
 #include "socket_link.h"
 
 #include <pthread.h>

@@ -43,6 +43,9 @@
 
 #include "assertions.h"
 
+#include "ENB_APP/enb_config.h"
+#include "LAYER2/PROTO_AGENT/proto_agent.h"
+
 extern boolean_t pdcp_data_ind(
   const protocol_ctxt_t* const ctxt_pP,
   const srb_flag_t srb_flagP,

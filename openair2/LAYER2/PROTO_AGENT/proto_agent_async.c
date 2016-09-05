@@ -51,8 +51,8 @@ proto_agent_async_channel_t * proto_server_async_channel_info(mid_t mod_id, char
   channel->enb_id = mod_id;
   /*Create a socket*/
   printf("Starting async server\n");
-  new_thread(new_link_server, (void *) &dst_port);
-  channel->link = (void *) &dst_port;
+  channel->link = new_link_server(dst_port);
+  //channel->link = NULL;
   printf("Started async server\n");
   if (channel->link == NULL) goto error;
   
@@ -79,7 +79,7 @@ proto_agent_async_channel_t * proto_server_async_channel_info(mid_t mod_id, char
   return channel;
 
  error:
-  LOG_I(PROTO_AGENT,"there was an error\n");
+  LOG_E(PROTO_AGENT,"there was an error\n");
   return 1;
 }
 
