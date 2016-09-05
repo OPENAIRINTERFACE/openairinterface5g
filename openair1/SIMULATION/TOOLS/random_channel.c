@@ -562,7 +562,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       Td = 0.8;
       channel_length = (int)11+2*sampling_rate*Td;
       ricean_factor = 0.1;
-      aoa = .03;
+      aoa = 0.7854;
       maxDoppler = 0;
 
       fill_channel_desc(chan_desc,nb_tx,
@@ -715,7 +715,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       Td = 0;
       channel_length = 1;
       ricean_factor = 0.1;
-      aoa = .03;
+      aoa = 0.7854;
       maxDoppler = 0;
 
       fill_channel_desc(chan_desc,nb_tx,
