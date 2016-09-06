@@ -28,7 +28,7 @@
  *******************************************************************************/
 /*! \file gtpv1u_eNB.c
  * \brief
- * \author Sebastien ROUX, Lionel GAUTHIER
+ * \author Sebastien ROUX, Lionel GAUTHIER, Navid Nikaein
  * \version 1.0
  * \company Eurecom
  * \email: lionel.gauthier@eurecom.fr
@@ -289,7 +289,7 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
   NwGtpv1uUlpHandleT hUlp,
   NwGtpv1uUlpApiT   *pUlpApi)
 {
-  int                 result             = 0;
+  boolean_t           result             = FALSE;
   teid_t              teid               = 0;
   hashtable_rc_t      hash_rc            = HASH_TABLE_KEY_NOT_EXISTS;
   gtpv1u_teid_data_t *gtpv1u_teid_data_p = NULL;
@@ -335,38 +335,49 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
 
 //#warning "LG eps bearer mapping to DRB id to do (offset -4)"
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, gtpv1u_teid_data_p->enb_id, ENB_FLAG_YES,  gtpv1u_teid_data_p->ue_id, 0, 0,gtpv1u_teid_data_p->enb_id);
-
       MSC_LOG_TX_MESSAGE(
-    		  MSC_GTPU_ENB,
-    		  MSC_PDCP_ENB,
-    		  NULL,0,
-    		  MSC_AS_TIME_FMT" DATA-REQ rb %u size %u",
-    		  0,0,
-    		  (gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
-    		  buffer_len);
-
+			 MSC_GTPU_ENB,
+			 MSC_PDCP_ENB,
+			 NULL,0,
+			 MSC_AS_TIME_FMT" DATA-REQ rb %u size %u",
+			 0,0,
+			 (gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
+			 buffer_len);
+      
       result = pdcp_data_req(
-                 &ctxt,
-                 SRB_FLAG_NO,
-                 (gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
-                 0, // mui
-                 SDU_CONFIRM_NO, // confirm
-                 buffer_len,
-                 buffer,
-                 PDCP_TRANSMISSION_MODE_DATA);
-      AssertError (result == TRUE, return NW_GTPV1U_FAILURE ,"PDCP data request failed!\n");
+			     &ctxt,
+			     SRB_FLAG_NO,
+			     (gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
+			     0, // mui
+			     SDU_CONFIRM_NO, // confirm
+			     buffer_len,
+			     buffer,
+			     PDCP_TRANSMISSION_MODE_DATA);
+      
+      
+      if ( result == FALSE ) {
+	
+	if (ctxt.configured == FALSE )
+	  LOG_W(GTPU, "PDCP data request failed, cause: RB is not configured!\n") ;
+	else  
+	  LOG_W(GTPU, "PDCP data request failed\n");
+	
+	return NW_GTPV1U_FAILURE;
+      }
+      
     } else {
-      LOG_E(GTPU, "Received T-PDU from gtpv1u stack teid %u unknown size %u", teid, buffer_len);
+      LOG_W(GTPU, "Received T-PDU from gtpv1u stack teid %u unknown size %u", teid, buffer_len);
     }
   }
-  break;
-
+    break;
+    
   default: {
     LOG_E(GTPU, "Received undefined UlpApi (%02x) from gtpv1u stack!\n",
           pUlpApi->apiType);
   }
-  }
-
+  
+  } // end of switch 
+  
   return NW_GTPV1U_OK;
 }
 

@@ -234,7 +234,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
       drb_id = drb_toaddmod_p->drb_Identity;
       lc_id  = drb_id + 2;
 
-      LOG_D(RLC, "Adding DRB %d, lc_id %d\n",drb_id,lc_id);
+      LOG_I(RLC, "Adding DRB %d, lc_id %d\n",drb_id,lc_id);
 
 
       if (drb_toaddmod_p->rlc_Config) {

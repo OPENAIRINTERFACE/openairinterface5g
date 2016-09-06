@@ -221,7 +221,7 @@ typedef struct pdcp_mbms_s {
 * @ingroup _pdcp
 */
 public_pdcp(boolean_t pdcp_data_req(
-              const protocol_ctxt_t* const  ctxt_pP,
+              protocol_ctxt_t*  ctxt_pP,
               const srb_flag_t srb_flagP,
               const rb_id_t rb_id,
               const mui_t muiP,

@@ -1052,12 +1052,11 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
       if (fmt==pucch_format1b)
         *(1+payload) = (stat_im<0) ? 1 : 0;
     } else { // insufficient energy on PUCCH so NAK
-      *payload = 0;
       ((int16_t*)&phy_vars_eNB->pucch1ab_stats[UE_id][(subframe<<10) + (phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe])])[0] = (int16_t)(stat_re);
       ((int16_t*)&phy_vars_eNB->pucch1ab_stats[UE_id][(subframe<<10) + (phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe])])[1] = (int16_t)(stat_im);
       phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe] = (phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe]+1)&1023;
 
-      *payload = (stat_re<0) ? 1 : 0;
+      *payload = 0;
 
       if (fmt==pucch_format1b)
         *(1+payload) = 0;

@@ -29,9 +29,10 @@
 
 /*! \file pdcp_fifo.c
  * \brief pdcp interface with linux IP interface, have a look at http://man7.org/linux/man-pages/man7/netlink.7.html for netlink
- * \author  Lionel GAUTHIER and Navid Nikaein
- * \date 2009
+ * \author  Navid Nikaein and Lionel GAUTHIER
+ * \date 2009 - 2016
  * \version 0.5
+ * \email navid.nikaein@eurecom.fr
  * \warning This component can be runned only in user-space
  * @ingroup pdcp
  */
@@ -484,7 +485,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
             ctxt.enb_flag      = ENB_FLAG_NO;
             ctxt.module_id     = pdcp_read_header_g.inst - oai_emulation.info.nb_enb_local + oai_emulation.info.first_ue_local;
             ctxt.rnti          = pdcp_UE_UE_module_id_to_rnti[ctxt.module_id];
-            rab_id    = pdcp_read_header_g.rb_id  % maxDRB;
+            rab_id    = pdcp_read_header_g.rb_id % maxDRB;
           }
 
           CHECK_CTXT_ARGS(&ctxt);

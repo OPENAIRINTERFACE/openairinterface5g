@@ -42,6 +42,7 @@ set (OPENAIR_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY})
 
 project (OpenAirInterface)
 
+#add_definitions("-DEMIT_ASN_DEBUG=1")
 add_subdirectory(${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms7002m lms7002m)
 add_subdirectory(${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lmsSDR lmsSDR)
 add_subdirectory(${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/Si5351C Si5351C)
@@ -555,7 +556,7 @@ elseif (${RF_BOARD} STREQUAL "OAI_USRP")
   set(HW_SOURCE ${HW_SOURCE}
     ${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/usrp_lib.cpp)
   LINK_DIRECTORIES("/opt/lib")
-  set(option_HW_lib "-luhd -rdynamic -ldl")
+  set(option_HW_lib "-luhd -rdynamic -ldl -lboost_system")
 
 elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
   include_directories("${OPENAIR_TARGETS}/ARCH/BLADERF/USERSPACE/LIB/")
@@ -1640,7 +1641,6 @@ target_link_libraries (lte-softmodem -ldl
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ) 
-target_link_libraries (lte-softmodem ${LIBBOOST_LIBRARIES} -lboost_system) #Added manually as it is not found for some reason for USRP
 target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem ${T_LIB})
 
@@ -1676,7 +1676,6 @@ target_link_libraries (lte-softmodem-nos1
 
 target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib}  ${option_TP_lib} ${XFORMS_LIBRARIES} )
-target_link_libraries (lte-softmodem-nos1 ${LIBBOOST_LIBRARIES} -lboost_system) #Added manually as it is not found for some reason for USRP
 target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 ${T_LIB})
 
@@ -1699,7 +1698,7 @@ target_link_libraries(rrh_gw
   UTIL LFDS  
   -Wl,--end-group )
 target_link_libraries (rrh_gw rt pthread m )
-target_link_libraries (rrh_gw  ${option_HW_lib} ${option_TP_lib} ${LIBBOOST_LIBRARIES} -lboost_system ) #Added manually as it is not found for some reason for USRP
+target_link_libraries (rrh_gw  ${option_HW_lib} ${option_TP_lib})
 target_link_libraries (rrh_gw ${LIB_LMS_LIBRARIES})
 target_link_libraries (rrh_gw ${T_LIB})
 
