@@ -37,11 +37,12 @@
 
 #ifndef PROTO_AGENT_H_
 #define PROTO_AGENT_H_
-
-#include "ENB_APP/enb_config.h" // for enb properties
 #include "proto_agent_common.h"
+//#include "ENB_APP/enb_config.h" // for enb properties
+
 
 void * proto_server_init(void *args);
+void * proto_server_receive(void);
 
 int proto_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties);
 int proto_server_start(mid_t mod_id, const Enb_properties_array_t* enb_properties);

@@ -56,8 +56,7 @@
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "msc.h"
 
-#include "ENB_APP/enb_config.h"
-#include "LAYER2/PROTO_AGENT/proto_agent.h"
+
 
 
 #if defined(ENABLE_SECURITY)
@@ -73,11 +72,13 @@
 #  include "gtpv1u.h"
 #endif
 
+#include "ENB_APP/enb_config.h"
+#include "LAYER2/PROTO_AGENT/proto_agent.h"
+
+
 #ifndef OAI_EMU
 extern int otg_enabled;
 #endif
-
-//#include "LAYER2/PROTO_AGENT/proto_agent.h"
 
 //-----------------------------------------------------------------------------
 /*
@@ -365,7 +366,6 @@ boolean_t pdcp_data_req(
 
     LOG_F(PDCP,"\n");
 #endif
-    rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
 
   
   //starting async
@@ -375,7 +375,7 @@ boolean_t pdcp_data_req(
 //   memset(enb_properties_p, 0, sizeof(Enb_properties_array_t));
 //   printf("starting the client\n\n");
 
-   printf("Starting the async client\\n");
+//   printf("Starting the async client\n");
 //   new_thread(proto_server_start, NULL);
    enb_properties_p = enb_config_get();
 
@@ -385,9 +385,17 @@ boolean_t pdcp_data_req(
   {
      agent_started = proto_agent_start(ctxt_pP->module_id, enb_properties_p);
   }
-
-
-
+  
+  // Send a Hello Message Everytime that we have a packet
+  //proto_agent_send_hello();
+  //printf("PROTOPDCP is sending a message request\n");
+  //printf("PROTOPDCP: vals are %u, %u, %u, %u, %u, %u, %u \n", ctxt_pP, srb_flagP, rb_idP, muiP, confirmP, pdcp_pdu_size);
+  if (pdcp_pdu_p!=NULL)
+  {
+    proto_agent_send_rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
+  }
+  rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
+  
   }
 
   switch (rlc_status) {

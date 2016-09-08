@@ -62,6 +62,12 @@
 #    include "SRB-ToAddModList.h"
 #    include "DRB-ToReleaseList.h"
 
+// for proto_agent operation
+#include "UTIL/LOG/log.h"
+#include "ENB_APP/enb_config.h"
+#include "LAYER2/PROTO_AGENT/proto_agent.h"
+
+
 #ifdef Rel10
 #include "PMCH-InfoList-r9.h"
 #endif
@@ -669,5 +675,10 @@ public_rlc(int rlc_module_init(void);)
 #define RLC_FG_BRIGHT_COLOR_DEFAULT   "\e[0;39m"
 #define RLC_REVERSE_VIDEO             "\e[7m"
 #define RLC_NORMAL_VIDEO              "\e[27m"
+
+// PROTO AGENT
+pthread_t async_server_thread;
+int async_server_thread_finalize (void);
+void async_server_thread_init (void);
 
 #endif

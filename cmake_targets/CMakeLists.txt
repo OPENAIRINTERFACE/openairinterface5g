@@ -830,6 +830,9 @@ include_directories("${OPENAIR3_DIR}/GTPV1-U")
 include_directories("${OPENAIR_DIR}/targets/COMMON")
 include_directories("${OPENAIR_DIR}/targets/ARCH/COMMON")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/USERSPACE/LIB/")
+include_directories("${OPENAIR2_DIR}/UTIL/MEM")
+include_directories("${OPENAIR2_DIR}/UTIL/LISTS")
+include_directories("${OPENAIR2_DIR}/UTIL/FIFO")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/DEFS")
 include_directories("${OPENAIR2_DIR}/UTIL/ASYNC_IF")
 include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds6.1.1/liblfds611/inc")
@@ -837,9 +840,6 @@ include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds7.0.0/liblfds700/inc")
 include_directories("${OPENAIR2_DIR}/LAYER2/PROTO_AGENT")
 include_directories("${OPENAIR2_DIR}/ENB_APP")
 include_directories("${OPENAIR2_DIR}/UTIL/OSA")
-include_directories("${OPENAIR2_DIR}/UTIL/MEM")
-include_directories("${OPENAIR2_DIR}/UTIL/LISTS")
-include_directories("${OPENAIR2_DIR}/UTIL/FIFO")
 include_directories("${OPENAIR2_DIR}/UTIL/OCG")
 include_directories("${OPENAIR2_DIR}/UTIL/MATH")
 include_directories("${OPENAIR2_DIR}/UTIL/TIMER")
@@ -858,17 +858,18 @@ include_directories("${OPENAIR_DIR}")
 if (PDCP_SPLIT)
   # set the version of protobuf messages, V3 not supported yet
   add_list1_option(FSPT_VERSION V2 "FSPT MSG  protobuf  grammar version" V2 V3)
-  
+
   if (${FSPT_VERSION} STREQUAL "V2")
     set (FSPTDIR V2)
   elseif (${FSPT_VERSION} STREQUAL "V3")
     set (FSPTDIR V3)
   endif(${FSPT_VERSION} STREQUAL "V2")
-  
+
   set(FSPT_MSG_DIR ${OPENAIR_DIR}/targets/COMMON/MESSAGES/${FSPTDIR} )
   set(FSPT_MSG_FILES
     ${FSPT_MSG_DIR}/header.proto
     ${FSPT_MSG_DIR}/flexsplit.proto
+    ${FSPT_MSG_DIR}/flexsplit-messages.proto
     )
 
   set(FSPT_C_DIR ${protobuf_generated_dir}/${FSPTDIR})
@@ -878,6 +879,7 @@ if (PDCP_SPLIT)
   set(FSPT_OAI_generated
     ${FSPT_C_DIR}/header.pb-c.c
     ${FSPT_C_DIR}/flexsplit.pb-c.c
+    ${FSPT_C_DIR}/flexsplit-messages.pb-c.c
     )
   
   file(GLOB fspt_h ${FSPT_C_DIR}/*.h)

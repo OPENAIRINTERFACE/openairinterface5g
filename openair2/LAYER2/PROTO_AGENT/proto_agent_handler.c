@@ -42,7 +42,7 @@
 proto_agent_message_decoded_callback agent_messages_callback[][3] = {
   {proto_agent_hello, proto_agent_hello, 0},
   {proto_agent_echo_reply, 0, 0},
-//  {proto_agent_rlc_data_req, proto_agent_rlc_data_req_ack, proto_agent_rlc_data_req_nack},
+  {proto_agent_pdcp_data_req_ack, 0, 0},
 //  {proto_agent_pdcp_data_ind, proto_agent_pdcp_data_ind_ack, proto_agent_rlc_data_ind_nack},
 };
 
@@ -50,8 +50,8 @@ proto_agent_message_destruction_callback message_destruction_callback[] = {
   proto_agent_destroy_hello,
   proto_agent_destroy_echo_request,
   proto_agent_destroy_echo_reply,
-//  proto_agent_destroy_rlc_data_req,
-//  proto_agent_destroy_rlc_data_req_ack,
+  proto_agent_destroy_pdcp_data_req,
+  proto_agent_destroy_pdcp_data_req_ack,
 //  proto_agent_destroy_rlc_data_req_nack,
 //  proto_agent_destroy_pdcp_data_ind,
 //  proto_agent_destroy_pdcp_data_ind_ack,

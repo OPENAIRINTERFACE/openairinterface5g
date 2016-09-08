@@ -361,6 +361,11 @@ int logInit (void);
 }
 #endif
 
+
+pthread_mutex_t async_server_lock;
+pthread_cond_t async_server_notify;
+int async_server_shutdown;
+
 #endif
 
 

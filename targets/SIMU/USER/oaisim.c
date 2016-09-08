@@ -259,68 +259,68 @@ help (void)
 }
 
 pthread_t log_thread;
-pthread_t async_server_thread;
-int async_server_thread_finalize (void);
-
-void
-async_server_thread_init (void)
-{
-  //create log_list
-  //log_list_init(&log_list);
-
-  async_server_shutdown = 0;
-
-  if ((pthread_mutex_init (&async_server_lock, NULL) != 0)
-      || (pthread_cond_init (&async_server_notify, NULL) != 0)) {
-    return;
-  }
-
-  if (pthread_create (&async_server_thread, NULL, proto_server_init, (void*) NULL)
-      != 0) {
-    async_server_thread_finalize();
-    return;
-  }
-
-
-}
-
-//Call it after the last LOG call
-int
-async_server_thread_finalize (void)
-{
-  int err = 0;
-
-
-  if (pthread_mutex_lock (&async_server_lock) != 0) {
-    return -1;
-  }
-
-  async_server_shutdown = 1;
-
-  /* Wake up LOG thread */
-  if ((pthread_cond_broadcast (&async_server_notify) != 0)
-      || (pthread_mutex_unlock (&async_server_lock) != 0)) {
-    err = -1;
-  }
-
-  if (pthread_join (async_server_thread, NULL) != 0) {
-    err = -1;
-  }
-
-  if (pthread_mutex_unlock (&async_server_lock) != 0) {
-    err = -1;
-  }
-
-  if (!err) {
-    //log_list_free(&log_list);
-    pthread_mutex_lock (&async_server_lock);
-    pthread_mutex_destroy (&async_server_lock);
-    pthread_cond_destroy (&async_server_notify);
-  }
-
-
-  return err;
-}
+// pthread_t async_server_thread;
+// int async_server_thread_finalize (void);
+// 
+// void
+// async_server_thread_init (void)
+// {
+//   //create log_list
+//   //log_list_init(&log_list);
+// 
+//   async_server_shutdown = 0;
+// 
+//   if ((pthread_mutex_init (&async_server_lock, NULL) != 0)
+//       || (pthread_cond_init (&async_server_notify, NULL) != 0)) {
+//     return;
+//   }
+// 
+//   if (pthread_create (&async_server_thread, NULL, proto_server_init, (void*) NULL)
+//       != 0) {
+//     async_server_thread_finalize();
+//     return;
+//   }
+// 
+// 
+// }
+// 
+// //Call it after the last LOG call
+// int
+// async_server_thread_finalize (void)
+// {
+//   int err = 0;
+// 
+// 
+//   if (pthread_mutex_lock (&async_server_lock) != 0) {
+//     return -1;
+//   }
+// 
+//   async_server_shutdown = 1;
+// 
+//   /* Wake up LOG thread */
+//   if ((pthread_cond_broadcast (&async_server_notify) != 0)
+//       || (pthread_mutex_unlock (&async_server_lock) != 0)) {
+//     err = -1;
+//   }
+// 
+//   if (pthread_join (async_server_thread, NULL) != 0) {
+//     err = -1;
+//   }
+// 
+//   if (pthread_mutex_unlock (&async_server_lock) != 0) {
+//     err = -1;
+//   }
+// 
+//   if (!err) {
+//     //log_list_free(&log_list);
+//     pthread_mutex_lock (&async_server_lock);
+//     pthread_mutex_destroy (&async_server_lock);
+//     pthread_cond_destroy (&async_server_notify);
+//   }
+// 
+// 
+//   return err;
+// }
 
 
 
@@ -1451,7 +1451,7 @@ main (int argc, char **argv)
 
   t = clock ();
 
-  async_server_thread_init();
+//   async_server_thread_init();
 
   LOG_N(EMU,
         ">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");

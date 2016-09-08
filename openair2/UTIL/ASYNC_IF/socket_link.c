@@ -47,6 +47,7 @@
 #include <sys/socket.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
+#include <netinet/udp.h>
 #include <arpa/inet.h>
 #include <stdint.h>
 
@@ -119,6 +120,7 @@ error:
   LOG_E(PROTO_AGENT, "ERROR in new_link_server (see above), returning NULL\n");
   return NULL;
 }
+
 
 socket_link_t *new_link_client(char *server, int port)
 {

@@ -50,9 +50,10 @@
 
 #include "proto_agent_defs.h"
 #include "enb_config.h"
+#include "UTIL/MEM/mem_block.h"
 
-#include "LAYER2/MAC/extern.h"
-#include "LAYER2/RLC/rlc.h"
+//#include "LAYER2/MAC/extern.h"
+//#include "LAYER2/RLC/rlc.h"
 
 # include "tree.h"
 # include "intertask_interface.h"
@@ -92,6 +93,10 @@ int proto_agent_destroy_echo_request(Protocol__FlexsplitMessage *msg);
 int proto_agent_echo_reply(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
 int proto_agent_destroy_echo_reply(Protocol__FlexsplitMessage *msg);
 
+int proto_agent_pdcp_data_req(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
+int proto_agent_pdcp_data_req_ack(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
+int proto_agent_destroy_pdcp_data_req(Protocol__FlexsplitMessage *msg);
+int proto_agent_destroy_pdcp_data_req_ack(Protocol__FlexsplitMessage *msg);
 
 
 Protocol__FlexsplitMessage* proto_agent_handle_message (mid_t mod_id, 
@@ -100,8 +105,18 @@ Protocol__FlexsplitMessage* proto_agent_handle_message (mid_t mod_id,
 
 Protocol__FlexsplitMessage *proto_agent_handle_timed_task(void *args);
 
+typedef struct _data_req_args data_req_args;
 
-
+struct _data_req_args{
+  protocol_ctxt_t* ctxt;
+  srb_flag_t srb_flag;
+  MBMS_flag_t MBMS_flag;
+  rb_id_t rb_id; 
+  mui_t mui;
+  confirm_t confirm;
+  sdu_size_t sdu_size;
+  mem_block_t *sdu_p;
+};
 
 
 /****************************

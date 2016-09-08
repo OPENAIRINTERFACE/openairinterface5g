@@ -43,8 +43,72 @@
 
 #include "assertions.h"
 
-#include "ENB_APP/enb_config.h"
-#include "LAYER2/PROTO_AGENT/proto_agent.h"
+
+
+// PROTO AGENT
+void
+async_server_thread_init (void)
+{
+  //create log_list
+  //log_list_init(&log_list);
+
+  async_server_shutdown = 0;
+
+  if ((pthread_mutex_init (&async_server_lock, NULL) != 0)
+      || (pthread_cond_init (&async_server_notify, NULL) != 0)) {
+    return;
+  }
+
+  if (pthread_create (&async_server_thread, NULL, proto_server_init, (void*) NULL)
+      != 0) {
+    async_server_thread_finalize();
+    return;
+  }
+
+
+}
+
+
+
+int
+async_server_thread_finalize (void)
+{
+  int err = 0;
+
+
+  if (pthread_mutex_lock (&async_server_lock) != 0) {
+    return -1;
+  }
+
+  async_server_shutdown = 1;
+
+  /* Wake up LOG thread */
+  if ((pthread_cond_broadcast (&async_server_notify) != 0)
+      || (pthread_mutex_unlock (&async_server_lock) != 0)) {
+    err = -1;
+  }
+
+  if (pthread_join (async_server_thread, NULL) != 0) {
+    err = -1;
+  }
+
+  if (pthread_mutex_unlock (&async_server_lock) != 0) {
+    err = -1;
+  }
+
+  if (!err) {
+    //log_list_free(&log_list);
+    pthread_mutex_lock (&async_server_lock);
+    pthread_mutex_destroy (&async_server_lock);
+    pthread_cond_destroy (&async_server_notify);
+  }
+
+  return err;
+}
+
+
+
+
 
 extern boolean_t pdcp_data_ind(
   const protocol_ctxt_t* const ctxt_pP,
@@ -420,7 +484,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 #ifdef DEBUG_RLC_DATA_REQ
     LOG_D(RLC,"RLC_TYPE : %d\n", rlc_mode);
 #endif
-
+     
     switch (rlc_mode) {
     case RLC_MODE_NONE:
       free_mem_block(sdu_pP);
@@ -457,6 +521,9 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
       break;
 
     case RLC_MODE_UM:
+
+      //proto_server_receive();
+
       new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_um_data_req_alloc));
 
       if (new_sdu_p != NULL) {
@@ -657,6 +724,12 @@ rlc_module_init (void)
   }
 
   pool_buffer_init();
+
+  /* Launch the RLC listening server
+   * as a separate thread
+   */
+  async_server_thread_init();
+
 
   return(0);
 }

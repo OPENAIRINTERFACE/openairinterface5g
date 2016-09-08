@@ -94,9 +94,6 @@ int log_list_nb_elements = 0;
 pthread_mutex_t log_lock;
 pthread_cond_t log_notify;
 
-pthread_mutex_t async_server_lock;
-pthread_cond_t async_server_notify;
-int async_server_shutdown;
 
 #if !defined(LOG_NO_THREAD)
 int log_list_head = 0;
