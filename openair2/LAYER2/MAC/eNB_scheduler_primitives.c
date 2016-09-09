@@ -75,7 +75,7 @@ void init_ue_sched_info(void)
   module_id_t i,j,k;
 
   for (i=0; i<NUMBER_OF_eNB_MAX; i++) {
-    for (k=0; i<MAX_NUM_CCs; i++) {
+    for (k=0; k<MAX_NUM_CCs; k++) {
       for (j=0; j<NUMBER_OF_UE_MAX; j++) {
         // init DL
         eNB_dlsch_info[i][k][j].weight           = 0;
