@@ -169,6 +169,12 @@ int main(int argc, char **argv)
 
   unsigned char *input_buffer0[2],*input_buffer1[2];
   unsigned short input_buffer_length0,input_buffer_length1;
+
+  /* A variable "ret" is a nuumber of turbo iterations, that are performed in the turbo-decoder for each CW. 
+  The decoder checks CRC, and if CRC test fails, it increments "ret". Ret is between 1 and 4, where 4 is for
+  the max number of turbo iterations. If the CRC is passed, ret is equal to a current iteration. 
+  This is done separately for each CW inside decoding process. 
+  Again: this is not a HARQ retransmission!*/
   unsigned int ret[2];
   unsigned int coded_bits_per_codeword[2],nsymb,dci_cnt,tbs[2];
 
@@ -984,7 +990,7 @@ n(tikz_fname,"w");
 
   for (k=0; k<n_users; k++) {
     // Create transport channel structures for 2 transport blocks (MIMO)
-    for (i=0; i<2; i++) {
+    for (i=0; i<2; i++) { //i is a CW
       PHY_vars_eNB->dlsch_eNB[k][i] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0);
 
       if (!PHY_vars_eNB->dlsch_eNB[k][i]) {
@@ -1626,8 +1632,8 @@ n(tikz_fname,"w");
           ((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->mcs2           = mcs2;  
           ((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->ndi2           = 1;
           ((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->rv2            = 0;
-          ((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tb_swap  = 0;
-          ((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi      = 2;
+          ((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tb_swap        = 0;
+          ((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi           = 2;
           break;
               case 25:
           dci_length = sizeof_DCI2_5MHz_2A_TDD_t;
@@ -2053,7 +2059,9 @@ n(tikz_fname,"w");
       for (i=0; i<4; i++) {
         errs[0][i]=0;
         errs[1][i]=0;
-        round_trials[i] = 0;
+        /*Let see, how it will work, if */
+        round_trials[i] = 0; 
+       // round_trials_1[i] = 0;
       }
       dci_errors=0;
       //avg_ber = 0;
@@ -2109,7 +2117,7 @@ n(tikz_fname,"w");
       initialize(&time_vector_rx_dec);
       
       for (trials = 0;trials<n_frames;trials++) {
-  //  printf("Trial %d\n",trials);
+      //printf("Trial %d\n",trials);
         fflush(stdout);
         round=0;
         for (i=0; i<frame_parms->nb_antennas_tx; i++) {
@@ -2120,9 +2128,20 @@ n(tikz_fname,"w");
 
         ret[0] = PHY_vars_UE->dlsch_ue[0][0]->max_turbo_iterations+1;
         ret[1] = PHY_vars_UE->dlsch_ue[0][0]->max_turbo_iterations+1;
-        while ((round < num_rounds) && (ret[0] > PHY_vars_UE->dlsch_ue[0][0]->max_turbo_iterations)) {
-          //printf("Trial %d, round %d\n",trials,round);
+
+        /*This condition indicates, that the round_trials must go on, while CRC keeps failing at 
+        least for one of the CW and round < num_rounds. This also means that round_trials is a unique 
+        variable for both CW*/
+
+        while ((round < num_rounds) && ((ret[0] > PHY_vars_UE->dlsch_ue[0][0]->max_turbo_iterations) \
+         || (ret[1] > PHY_vars_UE->dlsch_ue[0][0]->max_turbo_iterations))) {
+          
+          //printf("Trial %d, round %d , ret[0] %d, ret[1] %d, round_trials %d\n",trials,round, ret[0], ret[1], round_trials[round]);
+          //printf("round_trials %d round %d\n", round_trials[round], round);
+
           round_trials[round]++;
+
+          //printf("round_trials %d round %d\n", round_trials[round], round);
 
           if (transmission_mode == 4 || transmission_mode == 5 || transmission_mode == 6) 
             pmi_feedback=1;
@@ -2258,8 +2277,8 @@ n(tikz_fname,"w");
                 }
                 else { // FDD
                   switch (transmission_mode) {
-                  case 1:
-                  case 2:
+                    case 1:
+                    case 2:
                     switch (PHY_vars_eNB->lte_frame_parms.N_RB_DL) {
                     case 6:
                       ((DCI1_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[0])->ndi             = trials&1;
@@ -2642,6 +2661,7 @@ n(tikz_fname,"w");
                         ((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->rv1              = 1;
                         ((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->ndi2             = trials&1;
                         ((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->rv2              = round&3;
+                        //change tpmi
                       }
                       memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu_1[0],sizeof(DCI2_5MHz_2A_FDD_t));
                       break;
@@ -3192,7 +3212,7 @@ n(tikz_fname,"w");
                                                    dci_alloc_rx,1,
                                                    eNB_id,
                                                    subframe);
-                  //printf("dci_cnt %d\n",dci_cnt);
+                  printf("dci_cnt %d\n",dci_cnt);
           
                   if (dci_cnt==0) {
                     dlsch_active = 0;
@@ -3427,6 +3447,7 @@ n(tikz_fname,"w");
             } 
             
           for (cw_non_sic=0; cw_non_sic<cw_to_decode_interf; cw_non_sic++){
+
             PHY_vars_UE->dlsch_ue[0][cw_non_sic]->rnti = (common_flag==0) ? n_rnti: SI_RNTI;
             coded_bits_per_codeword[cw_non_sic] = get_G(&PHY_vars_eNB->lte_frame_parms,
                                             PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->nb_rb,
@@ -3435,23 +3456,28 @@ n(tikz_fname,"w");
                                             PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->Nl,
                                             num_pdcch_symbols,
                                             0,subframe);
+
             PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_non_sic]->current_harq_pid]->G = coded_bits_per_codeword[cw_non_sic];
             PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_non_sic]->current_harq_pid]->Qm = get_Qm(PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->mcs);
-            if (n_frames==2) {
+            
+            if (n_frames==1) {
               printf("Kmimo=%d, cw=%d, G=%d, TBS=%d\n",Kmimo,cw_non_sic,coded_bits_per_codeword[cw_non_sic],
                      PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_non_sic]->current_harq_pid]->TBS);
             
               // calculate uncoded BER
               uncoded_ber_bit = (short*) malloc(sizeof(short)*coded_bits_per_codeword[cw_non_sic]);
+
               AssertFatal(uncoded_ber_bit, "uncoded_ber_bit==NULL");
+              
               sprintf(fname,"dlsch%d_rxF_r%d_cw%d_llr.m",eNB_id,round, cw_non_sic);
               sprintf(vname,"dl%d_r%d_cw%d_llr",eNB_id,round, cw_non_sic);
               write_output(fname,vname, PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[cw_non_sic],coded_bits_per_codeword[cw_non_sic],1,0);
               sprintf(fname,"dlsch_cw%d_e.m", cw_non_sic);
               sprintf(vname,"dlschcw%d_e", cw_non_sic);
-               write_output(fname, vname,PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->e,coded_bits_per_codeword[cw_non_sic],1,4);
+              write_output(fname, vname,PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->e,coded_bits_per_codeword[cw_non_sic],1,4);
               uncoded_ber=0;
               printf("trials=%d\n", trials);
+
               for (i=0;i<coded_bits_per_codeword[cw_non_sic];i++) 
                 if (PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->e[i] != (PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[cw_non_sic][i]<0)) {
                   uncoded_ber_bit[i] = 1;
@@ -3495,7 +3521,7 @@ n(tikz_fname,"w");
             stop_meas(&PHY_vars_UE->dlsch_decoding_stats); 
            
              
-            if (ret[cw_non_sic] <= PHY_vars_UE->dlsch_ue[0][cw_non_sic]->max_turbo_iterations ) { 
+            if (ret[cw_non_sic] <= PHY_vars_UE->dlsch_ue[0][cw_non_sic]->max_turbo_iterations ) { //If CRC for the first CW did not fail
               if (cw_non_sic==0) {    
                 avg_iter[0] += ret[0];
                 iter_trials[0]++;
@@ -3623,7 +3649,6 @@ n(tikz_fname,"w");
               if ((PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
                   (PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->mimo_mode <=DUALSTREAM_PUSCH_PRECODING) &&
                   rx_type==rx_SIC_dual_stream) {
-                remove("rho_rho_in_llr.m");
           
          // for (round = 0 ; round < 1 ; round++) {
                 dlsch0_ue_harq = PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid];
@@ -3730,7 +3755,7 @@ n(tikz_fname,"w");
                                         get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs),
                                         PHY_vars_UE->dlsch_ue[eNB_id][0]);
                   break;
-                    }// round
+                    }
             
                     //  write_output("rxdata_llr1.m","llr1", PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],re_allocated*2,1,0);
             
@@ -3866,7 +3891,7 @@ n(tikz_fname,"w");
             } //if SIC
             
             
-            } //if (ret <= PHY_vars_UE->dlsch_ue[0][cw_non_sic]->max_turbo_iterations )
+          } //if (ret <= PHY_vars_UE->dlsch_ue[0][cw_non_sic]->max_turbo_iterations )
             else {
               errs[cw_non_sic][round]++;
               

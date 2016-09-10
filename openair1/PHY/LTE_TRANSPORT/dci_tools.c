@@ -1522,11 +1522,9 @@ int generate_eNB_dlsch_params_from_dci(int frame,
                  frame_parms->N_RB_DL,
                  dlsch0_harq->rb_alloc);
 
-    dlsch1_harq->rb_alloc[0]                         = dlsch0_harq->rb_alloc[0];
-    dlsch0_harq->nb_rb                               = conv_nprb(rah,
-        rballoc,
-        frame_parms->N_RB_DL);
-    dlsch1_harq->nb_rb                               = dlsch0_harq->nb_rb;
+    dlsch1_harq->rb_alloc[0] = dlsch0_harq->rb_alloc[0];
+    dlsch0_harq->nb_rb = conv_nprb(rah, rballoc, frame_parms->N_RB_DL);
+    dlsch1_harq->nb_rb = dlsch0_harq->nb_rb;
 
     if (dlsch0_harq->nb_rb == 0)
       return(-1);
