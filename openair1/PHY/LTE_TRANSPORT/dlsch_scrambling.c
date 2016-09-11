@@ -48,6 +48,34 @@
 #include "PHY/extern.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
+static inline unsigned int lte_gold_scram(unsigned int *x1, unsigned int *x2, unsigned char reset) __attribute__((always_inline));
+static inline unsigned int lte_gold_scram(unsigned int *x1, unsigned int *x2, unsigned char reset)
+{
+  int n;
+
+  if (reset) {
+    *x1 = 1+ (1<<31);
+    *x2=*x2 ^ ((*x2 ^ (*x2>>1) ^ (*x2>>2) ^ (*x2>>3))<<31);
+
+    // skip first 50 double words (1600 bits)
+    //      printf("n=0 : x1 %x, x2 %x\n",x1,x2);
+    for (n=1; n<50; n++) {
+      *x1 = (*x1>>1) ^ (*x1>>4);
+      *x1 = *x1 ^ (*x1<<31) ^ (*x1<<28);
+      *x2 = (*x2>>1) ^ (*x2>>2) ^ (*x2>>3) ^ (*x2>>4);
+      *x2 = *x2 ^ (*x2<<31) ^ (*x2<<30) ^ (*x2<<29) ^ (*x2<<28);
+    }
+  }
+
+  *x1 = (*x1>>1) ^ (*x1>>4);
+  *x1 = *x1 ^ (*x1<<31) ^ (*x1<<28);
+  *x2 = (*x2>>1) ^ (*x2>>2) ^ (*x2>>3) ^ (*x2>>4);
+  *x2 = *x2 ^ (*x2<<31) ^ (*x2<<30) ^ (*x2<<29) ^ (*x2<<28);
+  return(*x1^*x2);
+  //  printf("n=%d : c %x\n",n,x1^x2);
+
+}
+
 void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
                       int mbsfn_flag,
                       LTE_eNB_DLSCH_t *dlsch,
@@ -75,53 +103,57 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_SCRAMBLING
   printf("scrambling: rnti %x, q %d, Ns %d, Nid_cell %d, length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell, G);
 #endif
-  s = lte_gold_generic(&x1, &x2, 1);
+  s = lte_gold_scram(&x1, &x2, 1);
 
   for (i=0; i<(1+(G>>5)); i++) {
 
 #ifdef DEBUG_SCRAMBLING
     printf("scrambling %d : %d => ",k,e[k]);
 #endif
+
+                
+    e[0] = (e[0]) ^ (s&1);      
+    e[1] = (e[1]) ^ ((s>>1)&1);      
+    e[2] = (e[2]) ^ ((s>>2)&1);      
+    e[3] = (e[3]) ^ ((s>>3)&1);      
+    e[4] = (e[4]) ^ ((s>>4)&1);      
+    e[5] = (e[5]) ^ ((s>>5)&1);      
+    e[6] = (e[6]) ^ ((s>>6)&1);      
+    e[7] = (e[7]) ^ ((s>>7)&1);      
+    e[8] = (e[8]) ^ ((s>>8)&1);      
+    e[9] = (e[9]) ^ ((s>>9)&1);      
+    e[10] = (e[10]) ^ ((s>>10)&1);      
+    e[11] = (e[11]) ^ ((s>>11)&1);      
+    e[12] = (e[12]) ^ ((s>>12)&1);      
+    e[13] = (e[13]) ^ ((s>>13)&1);      
+    e[14] = (e[14]) ^ ((s>>14)&1);      
+    e[15] = (e[15]) ^ ((s>>15)&1);      
+    e[16] = (e[16]) ^ ((s>>16)&1);      
+    e[17] = (e[17]) ^ ((s>>17)&1);      
+    e[18] = (e[18]) ^ ((s>>18)&1);      
+    e[19] = (e[19]) ^ ((s>>19)&1);      
+    e[20] = (e[20]) ^ ((s>>20)&1);      
+    e[21] = (e[21]) ^ ((s>>21)&1);      
+    e[22] = (e[22]) ^ ((s>>22)&1);      
+    e[23] = (e[23]) ^ ((s>>23)&1);      
+    e[24] = (e[24]) ^ ((s>>24)&1);      
+    e[25] = (e[25]) ^ ((s>>25)&1);      
+    e[26] = (e[26]) ^ ((s>>26)&1);      
+    e[27] = (e[27]) ^ ((s>>27)&1);      
+    e[28] = (e[28]) ^ ((s>>28)&1);      
+    e[29] = (e[29]) ^ ((s>>29)&1);      
+    e[30] = (e[30]) ^ ((s>>30)&1);      
+    e[31] = (e[31]) ^ ((s>>31)&1);      
     
-    e[0] = (e[0]&1) ^ (s&1);      
-    e[1] = (e[1]&1) ^ ((s>>1)&1);      
-    e[2] = (e[2]&1) ^ ((s>>2)&1);      
-    e[3] = (e[3]&1) ^ ((s>>3)&1);      
-    e[4] = (e[4]&1) ^ ((s>>4)&1);      
-    e[5] = (e[5]&1) ^ ((s>>5)&1);      
-    e[6] = (e[6]&1) ^ ((s>>6)&1);      
-    e[7] = (e[7]&1) ^ ((s>>7)&1);      
-    e[8] = (e[8]&1) ^ ((s>>8)&1);      
-    e[9] = (e[9]&1) ^ ((s>>9)&1);      
-    e[10] = (e[10]&1) ^ ((s>>10)&1);      
-    e[11] = (e[11]&1) ^ ((s>>11)&1);      
-    e[12] = (e[12]&1) ^ ((s>>12)&1);      
-    e[13] = (e[13]&1) ^ ((s>>13)&1);      
-    e[14] = (e[14]&1) ^ ((s>>14)&1);      
-    e[15] = (e[15]&1) ^ ((s>>15)&1);      
-    e[16] = (e[16]&1) ^ ((s>>16)&1);      
-    e[17] = (e[17]&1) ^ ((s>>17)&1);      
-    e[18] = (e[18]&1) ^ ((s>>18)&1);      
-    e[19] = (e[19]&1) ^ ((s>>19)&1);      
-    e[20] = (e[20]&1) ^ ((s>>20)&1);      
-    e[21] = (e[21]&1) ^ ((s>>21)&1);      
-    e[22] = (e[22]&1) ^ ((s>>22)&1);      
-    e[23] = (e[23]&1) ^ ((s>>23)&1);      
-    e[24] = (e[24]&1) ^ ((s>>24)&1);      
-    e[25] = (e[25]&1) ^ ((s>>25)&1);      
-    e[26] = (e[26]&1) ^ ((s>>26)&1);      
-    e[27] = (e[27]&1) ^ ((s>>27)&1);      
-    e[28] = (e[28]&1) ^ ((s>>28)&1);      
-    e[29] = (e[29]&1) ^ ((s>>29)&1);      
-    e[30] = (e[30]&1) ^ ((s>>30)&1);      
-    e[31] = (e[31]&1) ^ ((s>>31)&1);      
-    
+    // This is not faster for some unknown reason
+    //    ((__m128i *)e)[0] = _mm_xor_si128(((__m128i *)e)[0],((__m128i *)scrambling_lut)[s&65535]);
+    //    ((__m128i *)e)[1] = _mm_xor_si128(((__m128i *)e)[1],((__m128i *)scrambling_lut)[s>>16]);
 #ifdef DEBUG_SCRAMBLING
     printf("%d\n",e[k]);
 #endif
     
     
-    s = lte_gold_generic(&x1, &x2, 0);
+    s = lte_gold_scram(&x1, &x2, 0);
     e += 32;
   }
 
@@ -153,7 +185,7 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_SCRAMBLING
   printf("unscrambling: rnti %x, q %d, Ns %d, Nid_cell %d length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell,G);
 #endif
-  s = lte_gold_generic(&x1, &x2, 1);
+  s = lte_gold_scram(&x1, &x2, 1);
 
   for (i=0; i<(1+(G>>5)); i++) {
     for (j=0; j<32; j++,k++) {
@@ -166,6 +198,30 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
     }
 
-    s = lte_gold_generic(&x1, &x2, 0);
+    s = lte_gold_scram(&x1, &x2, 0);
+  }
+}
+
+void init_unscrambling_lut() {
+
+  uint32_t s;
+  int i=0,j;
+
+  for (s=0;s<=65535;s++) {
+    for (j=0;j<16;j++) {
+      unscrambling_lut[i++] = (int16_t)((((s>>j)&1)<<1)-1);
+    }
+  }
+}
+
+void init_scrambling_lut() {
+
+  uint32_t s;
+  int i=0,j;
+
+  for (s=0;s<=65535;s++) {
+    for (j=0;j<16;j++) {
+      scrambling_lut[i++] = (uint8_t)((s>>j)&1);
+    }
   }
 }

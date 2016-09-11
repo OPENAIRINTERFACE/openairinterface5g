@@ -1030,14 +1030,14 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
     LOG_D(PHY,"Generating DLSCH/PDSCH %d\n",ra_flag);
     // 36-212
     start_meas(&eNB->dlsch_encoding_stats);
-    dlsch_encoding(DLSCH_pdu,
-		   fp,
-		   num_pdcch_symbols,
-		   dlsch,
-		   frame,subframe,
-		   &eNB->dlsch_rate_matching_stats,
-		   &eNB->dlsch_turbo_encoding_stats,
-		   &eNB->dlsch_interleaving_stats);
+    eNB->te(eNB,
+	    DLSCH_pdu,
+	    num_pdcch_symbols,
+	    dlsch,
+	    frame,subframe,
+	    &eNB->dlsch_rate_matching_stats,
+	    &eNB->dlsch_turbo_encoding_stats,
+	    &eNB->dlsch_interleaving_stats);
     stop_meas(&eNB->dlsch_encoding_stats);
     // 36-211
     start_meas(&eNB->dlsch_scrambling_stats);
@@ -1053,6 +1053,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
 		     0,
 		     subframe<<1);
     stop_meas(&eNB->dlsch_scrambling_stats);
+
     start_meas(&eNB->dlsch_modulation_stats);
 
 
@@ -1084,7 +1085,8 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
 void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 			   eNB_rxtx_proc_t *proc,
                            relaying_type_t r_type,
-			   PHY_VARS_RN *rn)
+			   PHY_VARS_RN *rn,
+			   int do_meas)
 {
   UNUSED(rn);
   int frame=proc->frame_tx;
@@ -1113,7 +1115,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_DL)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
-  start_meas(&eNB->phy_proc_tx);
+  if (do_meas==1) start_meas(&eNB->phy_proc_tx);
 
   T(T_ENB_PHY_DL_TICK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe));
 
@@ -1399,7 +1401,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 #endif
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,0);
-  stop_meas(&eNB->phy_proc_tx);
+  if (do_meas==1) stop_meas(&eNB->phy_proc_tx);
   
 }
 
@@ -2522,73 +2524,10 @@ void fep0(PHY_VARS_eNB *eNB,int slot) {
   }
 }
 
-static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *name) {
 
-  if (pthread_mutex_lock(mutex) != 0) {
-    LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
-  
-  *instance_cnt=*instance_cnt-1;
-  
-  if (pthread_mutex_unlock(mutex) != 0) {
-    LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
-  return(0);
-}
-
-static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
-
-  if (pthread_mutex_lock(mutex) != 0) {
-    LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
-  
-  while (*instance_cnt < 0) {
-    // most of the time the thread is waiting here
-    // proc->instance_cnt_rxtx is -1
-    pthread_cond_wait(cond,mutex); // this unlocks mutex_rxtx while waiting and then locks it again
-  }
-
-  if (pthread_mutex_unlock(mutex) != 0) {
-    LOG_E(PHY,"[SCHED][eNB] error unlocking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
-  return(0);
-}
-
-static inline int wait_on_busy_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
-
-  if (pthread_mutex_lock(mutex) != 0) {
-    LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
-  
-  while (*instance_cnt == 0) {
-    // most of the time the thread will skip this
-    // waits only if proc->instance_cnt_rxtx is 0
-    pthread_cond_wait(cond,mutex); // this unlocks mutex_rxtx while waiting and then locks it again
-  }
-
-  if (pthread_mutex_unlock(mutex) != 0) {
-    LOG_E(PHY,"[SCHED][eNB] error unlocking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
-  return(0);
-}
 
 extern int oai_exit;
 
-#define THREAD_FULL 1
-
-#ifdef THREAD_FULL
 static void *fep_thread(void *param) {
 
   PHY_VARS_eNB *eNB = (PHY_VARS_eNB *)param;
@@ -2611,19 +2550,6 @@ static void *fep_thread(void *param) {
   return(NULL);
 }
 
-#else
-
-static void *fep_thread(void *param) {
-
-  PHY_VARS_eNB *eNB = (PHY_VARS_eNB *)param;
-  eNB_proc_t *proc  = &eNB->proc;
-
-  fep0(eNB,0);
-
-  return(NULL);
-}
-
-#endif
 void init_fep_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_fep) {
 
   eNB_proc_t *proc = &eNB->proc;
@@ -2633,9 +2559,41 @@ void init_fep_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_fep) {
   pthread_mutex_init( &proc->mutex_fep, NULL);
   pthread_cond_init( &proc->cond_fep, NULL);
 
-#ifdef THREAD_FULL
   pthread_create(&proc->pthread_fep, attr_fep, fep_thread, (void*)eNB);
-#endif
+
+
+}
+
+extern void *td_thread(void*);
+
+void init_td_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_td) {
+
+  eNB_proc_t *proc = &eNB->proc;
+
+  proc->tdp.eNB = eNB;
+  proc->instance_cnt_td         = -1;
+    
+  pthread_mutex_init( &proc->mutex_td, NULL);
+  pthread_cond_init( &proc->cond_td, NULL);
+
+  pthread_create(&proc->pthread_td, attr_td, td_thread, (void*)&proc->tdp);
+
+}
+
+extern void *te_thread(void*);
+
+void init_te_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_te) {
+
+  eNB_proc_t *proc = &eNB->proc;
+
+  proc->tep.eNB = eNB;
+  proc->instance_cnt_te         = -1;
+    
+  pthread_mutex_init( &proc->mutex_te, NULL);
+  pthread_cond_init( &proc->cond_te, NULL);
+
+  printf("Creating te_thread\n");
+  pthread_create(&proc->pthread_te, attr_te, te_thread, (void*)&proc->tep);
 
 }
 
@@ -2645,14 +2603,12 @@ void eNB_fep_full_2thread(PHY_VARS_eNB *eNB) {
   eNB_proc_t *proc = &eNB->proc;
 
   struct timespec wait;
-  int wait_cnt=0;
+
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,1);
   start_meas(&eNB->ofdm_demod_stats);
-
-#ifdef THREAD_FULL
 
   if (pthread_mutex_timedlock(&proc->mutex_fep,&wait) != 0) {
     printf("[eNB] ERROR pthread_mutex_lock for fep thread %d (IC %d)\n", proc->instance_cnt_fep);
@@ -2683,14 +2639,6 @@ void eNB_fep_full_2thread(PHY_VARS_eNB *eNB) {
 
   wait_on_busy_condition(&proc->mutex_fep,&proc->cond_fep,&proc->instance_cnt_fep,"fep thread");  
 
-#else
-
-  pthread_create(&proc->pthread_fep, NULL, fep_thread, (void*)eNB);
-  // call second slot in this symbol
-  fep0(eNB,1);
-  pthread_join(proc->pthread_fep,(void**)NULL);
-
-#endif
   stop_meas(&eNB->ofdm_demod_stats);
 }
 

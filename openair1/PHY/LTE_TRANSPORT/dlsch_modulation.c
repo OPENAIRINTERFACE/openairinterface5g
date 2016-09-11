@@ -325,47 +325,74 @@ int allocate_REs_in_RB_no_pilots_64QAM_siso(LTE_DL_FRAME_PARMS *frame_parms,
 
   if (skip_dc == 0) {
 
+    x0p=&x0[*jj],tti_offset=symbol_offset+re_offset;
 
-    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset,re=0; 
+    /*    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset,re=0; 
 	 re<12; 
-	 re+=4,x0p+=24,tti_offset+=4) {
+	 re+=4,x0p+=24,tti_offset+=4) {*/
       
-      qam64_table_offset_re=FOUR[x0p[0]];
-      qam64_table_offset_im=FOUR[x0p[1]];
-      qam64_table_offset_re+=TWO[x0p[2]];
-      qam64_table_offset_im+=TWO[x0p[3]];
-      qam64_table_offset_re+=x0p[4];
-      qam64_table_offset_im+=x0p[5];
+      qam64_table_offset_re=(x0p[0]<<2)|(x0p[2]<<1)|x0p[4];
+      qam64_table_offset_im=(x0p[1]<<2)|(x0p[3]<<1)|x0p[5];
       ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qam64_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qam64_table_offset_im];
 
-      qam64_table_offset_re=FOUR[x0p[6]];
-      qam64_table_offset_im=FOUR[x0p[7]];
-      qam64_table_offset_re+=TWO[x0p[8]];
-      qam64_table_offset_im+=TWO[x0p[9]];
-      qam64_table_offset_re+=x0p[10];
-      qam64_table_offset_im+=x0p[11];
+      qam64_table_offset_re=(x0p[6]<<2)|(x0p[8]<<1)|x0p[10];
+      qam64_table_offset_im=(x0p[7]<<2)|(x0p[9]<<1)|x0p[11];
       ((int16_t *)&txdataF[0][tti_offset])[2]=qam_table_s0[qam64_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[3]=qam_table_s0[qam64_table_offset_im];
 
-      qam64_table_offset_re=FOUR[x0p[12]];
-      qam64_table_offset_im=FOUR[x0p[13]];
-      qam64_table_offset_re+=TWO[x0p[14]];
-      qam64_table_offset_im+=TWO[x0p[15]];
-      qam64_table_offset_re+=x0p[16];
-      qam64_table_offset_im+=x0p[17];
+      qam64_table_offset_re=(x0p[12]<<2)|(x0p[14]<<1)|x0p[16];
+      qam64_table_offset_im=(x0p[13]<<2)|(x0p[15]<<1)|x0p[17];
       ((int16_t *)&txdataF[0][tti_offset])[4]=qam_table_s0[qam64_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[5]=qam_table_s0[qam64_table_offset_im];
 
-      qam64_table_offset_re=FOUR[x0p[18]];
-      qam64_table_offset_im=FOUR[x0p[19]];
-      qam64_table_offset_re+=TWO[x0p[20]];
-      qam64_table_offset_im+=TWO[x0p[21]];
-      qam64_table_offset_re+=x0p[22];
-      qam64_table_offset_im+=x0p[23];
+      qam64_table_offset_re=(x0p[18]<<2)|(x0p[20]<<1)|x0p[22];
+      qam64_table_offset_im=(x0p[19]<<2)|(x0p[21]<<1)|x0p[23];
       ((int16_t *)&txdataF[0][tti_offset])[6]=qam_table_s0[qam64_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[7]=qam_table_s0[qam64_table_offset_im];
-    }
+
+      qam64_table_offset_re=(x0p[24]<<2)|(x0p[26]<<1)|x0p[28];
+      qam64_table_offset_im=(x0p[25]<<2)|(x0p[27]<<1)|x0p[29];
+      ((int16_t *)&txdataF[0][tti_offset])[8]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[9]=qam_table_s0[qam64_table_offset_im];
+
+      qam64_table_offset_re=(x0p[30]<<2)|(x0p[32]<<1)|x0p[34];
+      qam64_table_offset_im=(x0p[31]<<2)|(x0p[33]<<1)|x0p[35];
+      ((int16_t *)&txdataF[0][tti_offset])[10]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[11]=qam_table_s0[qam64_table_offset_im];
+
+      qam64_table_offset_re=(x0p[36]<<2)|(x0p[38]<<1)|x0p[40];
+      qam64_table_offset_im=(x0p[37]<<2)|(x0p[39]<<1)|x0p[41];
+      ((int16_t *)&txdataF[0][tti_offset])[12]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[13]=qam_table_s0[qam64_table_offset_im];
+
+      qam64_table_offset_re=(x0p[42]<<2)|(x0p[44]<<1)|x0p[46];
+      qam64_table_offset_im=(x0p[43]<<2)|(x0p[45]<<1)|x0p[47];
+      ((int16_t *)&txdataF[0][tti_offset])[14]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[15]=qam_table_s0[qam64_table_offset_im];
+
+      qam64_table_offset_re=(x0p[48]<<2)|(x0p[50]<<1)|x0p[52];
+      qam64_table_offset_im=(x0p[49]<<2)|(x0p[51]<<1)|x0p[53];
+      ((int16_t *)&txdataF[0][tti_offset])[16]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[17]=qam_table_s0[qam64_table_offset_im];
+
+      qam64_table_offset_re=(x0p[54]<<2)|(x0p[56]<<1)|x0p[58];
+      qam64_table_offset_im=(x0p[55]<<2)|(x0p[57]<<1)|x0p[59];
+      ((int16_t *)&txdataF[0][tti_offset])[18]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[19]=qam_table_s0[qam64_table_offset_im];
+
+      qam64_table_offset_re=(x0p[60]<<2)|(x0p[62]<<1)|x0p[64];
+      qam64_table_offset_im=(x0p[61]<<2)|(x0p[63]<<1)|x0p[65];
+      ((int16_t *)&txdataF[0][tti_offset])[20]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[21]=qam_table_s0[qam64_table_offset_im];
+
+      qam64_table_offset_re=(x0p[66]<<2)|(x0p[68]<<1)|x0p[70];
+      qam64_table_offset_im=(x0p[67]<<2)|(x0p[69]<<1)|x0p[71];
+      ((int16_t *)&txdataF[0][tti_offset])[22]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[23]=qam_table_s0[qam64_table_offset_im];
+
+
+      //    }
   }
   else {
     for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset,re=0; 
@@ -1668,6 +1695,69 @@ int dlsch_modulation(int32_t **txdataF,
     re_offset = frame_parms->first_carrier_offset;
     symbol_offset = (uint32_t)frame_parms->ofdm_symbol_size*(l+(subframe_offset*nsymb));
 
+    allocate_REs = allocate_REs_in_RB;
+    
+    switch (mod_order0) {
+    case 2:
+      qam_table_s0 = NULL;
+      break;
+    case 4:
+      if (pilots) {
+	qam_table_s0 = qam16_table_b0; 
+	allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ? 
+	  allocate_REs_in_RB_pilots_16QAM_siso :
+	  allocate_REs_in_RB;
+      }
+      else {
+	qam_table_s0 = qam16_table_a0;
+	allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ? 
+	  allocate_REs_in_RB_no_pilots_16QAM_siso :
+	  allocate_REs_in_RB;
+	
+      }
+      break;
+      
+    case 6:
+      if (pilots) {
+	qam_table_s0 = qam64_table_b0; 
+	allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ? 
+	  allocate_REs_in_RB_pilots_64QAM_siso :
+	  allocate_REs_in_RB;
+      }
+      else {
+	qam_table_s0 = qam64_table_a0;
+	allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ? 
+	  allocate_REs_in_RB_no_pilots_64QAM_siso :
+	  allocate_REs_in_RB;
+      }
+      break;
+      
+    }
+    
+    switch (mod_order1) {
+    case 2:
+      qam_table_s1 = NULL;
+      allocate_REs = allocate_REs_in_RB;
+      break;
+    case 4:
+      if (pilots) {
+	qam_table_s1 = qam16_table_b1; 
+      }
+      else {
+	qam_table_s1 = qam16_table_a1;
+      }
+      break;
+    case 6:
+      if (pilots) {
+	qam_table_s1 = qam64_table_b1; 
+      }
+      else {
+	qam_table_s1 = qam64_table_a1;
+      }
+      break;
+      
+    }
+
     //for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
     //  memset(&txdataF[aa][symbol_offset],0,frame_parms->ofdm_symbol_size<<2);
     //printf("symbol_offset %d,subframe offset %d : pilots %d\n",symbol_offset,subframe_offset,pilots);
@@ -1816,68 +1906,7 @@ int dlsch_modulation(int32_t **txdataF,
         }
       }
 
-      allocate_REs = allocate_REs_in_RB;
 
-      switch (mod_order0) {
-      case 2:
-	qam_table_s0 = NULL;
-	break;
-      case 4:
-	if (pilots) {
-	  qam_table_s0 = qam16_table_b0; 
-	  allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ? 
-	    allocate_REs_in_RB_pilots_16QAM_siso :
-	    allocate_REs_in_RB;
-	}
-	else {
-	  qam_table_s0 = qam16_table_a0;
-	  allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ? 
-	    allocate_REs_in_RB_no_pilots_16QAM_siso :
-	    allocate_REs_in_RB;
-	  
-	}
-	break;
-
-      case 6:
-	if (pilots) {
-	  qam_table_s0 = qam64_table_b0; 
-	  allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ? 
-	                 allocate_REs_in_RB_pilots_64QAM_siso :
-	                 allocate_REs_in_RB;
-	}
-	else {
-	  qam_table_s0 = qam64_table_a0;
-	  allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ? 
-	                 allocate_REs_in_RB_no_pilots_64QAM_siso :
-	                 allocate_REs_in_RB;
-	}
-	break;
-      
-      }
-
-      switch (mod_order1) {
-      case 2:
-	qam_table_s1 = NULL;
-	allocate_REs = allocate_REs_in_RB;
-	break;
-      case 4:
-	if (pilots) {
-	  qam_table_s1 = qam16_table_b1; 
-	}
-	else {
-	  qam_table_s1 = qam16_table_a1;
-	}
-	break;
-      case 6:
-	if (pilots) {
-	  qam_table_s1 = qam64_table_b1; 
-	}
-	else {
-	  qam_table_s1 = qam64_table_a1;
-	}
-	break;
-      
-      }
 
       if (rb_alloc_ind > 0) {
 	//	printf("Allocated rb %d/symbol %d, skip_half %d, subframe_offset %d, symbol_offset %d, re_offset %d, jj %d\n",rb,l,skip_half,subframe_offset,symbol_offset,re_offset,jj);

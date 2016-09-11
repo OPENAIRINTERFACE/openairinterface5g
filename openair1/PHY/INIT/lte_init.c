@@ -864,7 +864,8 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
   generate_16qam_table();
   generate_RIV_tables();
 
-
+  init_unscrambling_lut();
+  init_scrambling_lut();
   //set_taus_seed(1328);
 
 }
@@ -1106,6 +1107,7 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
   ue->ch_est_alpha    = 24576;
 
   init_prach_tables(839);
+
 
   return 0;
 }
