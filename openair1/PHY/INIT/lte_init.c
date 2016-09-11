@@ -26,9 +26,6 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#ifdef EXMIMO
-#include "openair0_lib.h"
-#endif
 #include "defs.h"
 #include "SCHED/defs.h"
 #include "PHY/extern.h"
@@ -48,7 +45,7 @@ extern uint16_t prach_root_sequence_map4[138];
 uint8_t dmrs1_tab[8] = {0,2,3,4,6,8,9,10};
 
 // FIXME not used anywhere
-void phy_config_mib(LTE_DL_FRAME_PARMS *frame_parms,
+void phy_config_mib(LTE_DL_FRAME_PARMS *fp,
                     uint8_t N_RB_DL,
                     uint8_t Nid_cell,
                     uint8_t Ncp,
@@ -57,14 +54,14 @@ void phy_config_mib(LTE_DL_FRAME_PARMS *frame_parms,
                     PHICH_CONFIG_COMMON *phich_config)
 {
 
-  frame_parms->N_RB_DL                            = N_RB_DL;
-  frame_parms->Nid_cell                           = Nid_cell;
-  frame_parms->nushift                            = Nid_cell%6;
-  frame_parms->Ncp                                = Ncp;
-  frame_parms->frame_type                         = frame_type;
-  frame_parms->nb_antennas_tx_eNB                 = p_eNB;
-  frame_parms->phich_config_common.phich_resource = phich_config->phich_resource;
-  frame_parms->phich_config_common.phich_duration = phich_config->phich_duration;
+  fp->N_RB_DL                            = N_RB_DL;
+  fp->Nid_cell                           = Nid_cell;
+  fp->nushift                            = Nid_cell%6;
+  fp->Ncp                                = Ncp;
+  fp->frame_type                         = frame_type;
+  fp->nb_antennas_tx_eNB                 = p_eNB;
+  fp->phich_config_common.phich_resource = phich_config->phich_resource;
+  fp->phich_config_common.phich_duration = phich_config->phich_duration;
 }
 
 void phy_config_sib1_eNB(uint8_t Mod_id,
@@ -74,15 +71,15 @@ void phy_config_sib1_eNB(uint8_t Mod_id,
                          uint16_t SIPeriod)
 {
 
-  LTE_DL_FRAME_PARMS *frame_parms = &PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = &PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms;
 
   if (tdd_Config) {
-    frame_parms->tdd_config    = tdd_Config->subframeAssignment;
-    frame_parms->tdd_config_S  = tdd_Config->specialSubframePatterns;
+    fp->tdd_config    = tdd_Config->subframeAssignment;
+    fp->tdd_config_S  = tdd_Config->specialSubframePatterns;
   }
 
-  frame_parms->SIwindowsize  = SIwindowsize;
-  frame_parms->SIPeriod      = SIPeriod;
+  fp->SIwindowsize  = SIwindowsize;
+  fp->SIPeriod      = SIPeriod;
 }
 
 void phy_config_sib1_ue(uint8_t Mod_id,int CC_id,
@@ -92,15 +89,15 @@ void phy_config_sib1_ue(uint8_t Mod_id,int CC_id,
                         uint16_t SIperiod)
 {
 
-  LTE_DL_FRAME_PARMS *frame_parms = &PHY_vars_UE_g[Mod_id][CC_id]->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = &PHY_vars_UE_g[Mod_id][CC_id]->frame_parms;
 
   if (tdd_Config) {
-    frame_parms->tdd_config    = tdd_Config->subframeAssignment;
-    frame_parms->tdd_config_S  = tdd_Config->specialSubframePatterns;
+    fp->tdd_config    = tdd_Config->subframeAssignment;
+    fp->tdd_config_S  = tdd_Config->specialSubframePatterns;
   }
 
-  frame_parms->SIwindowsize  = SIwindowsize;
-  frame_parms->SIPeriod      = SIperiod;
+  fp->SIwindowsize  = SIwindowsize;
+  fp->SIPeriod      = SIperiod;
 }
 
 void phy_config_sib2_eNB(uint8_t Mod_id,
@@ -112,132 +109,132 @@ void phy_config_sib2_eNB(uint8_t Mod_id,
                          struct MBSFN_SubframeConfigList  *mbsfn_SubframeConfigList)
 {
 
-  LTE_DL_FRAME_PARMS *frame_parms = &PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = &PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms;
   //LTE_eNB_UE_stats *eNB_UE_stats      = PHY_vars_eNB_g[Mod_id][CC_id]->eNB_UE_stats;
   //int32_t rx_total_gain_eNB_dB        = PHY_vars_eNB_g[Mod_id][CC_id]->rx_total_gain_eNB_dB;
   int i;
 
   LOG_D(PHY,"[eNB%d] CCid %d: Applying radioResourceConfigCommon\n",Mod_id,CC_id);
 
-  frame_parms->prach_config_common.rootSequenceIndex                           =radioResourceConfigCommon->prach_Config.rootSequenceIndex;
-  LOG_D(PHY,"prach_config_common.rootSequenceIndex = %d\n",frame_parms->prach_config_common.rootSequenceIndex );
+  fp->prach_config_common.rootSequenceIndex                           =radioResourceConfigCommon->prach_Config.rootSequenceIndex;
+  LOG_D(PHY,"prach_config_common.rootSequenceIndex = %d\n",fp->prach_config_common.rootSequenceIndex );
 
-  frame_parms->prach_config_common.prach_Config_enabled=1;
+  fp->prach_config_common.prach_Config_enabled=1;
 
-  frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex          =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_ConfigIndex;
-  LOG_D(PHY,"prach_config_common.prach_ConfigInfo.prach_ConfigIndex = %d\n",frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex);
+  fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex          =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_ConfigIndex;
+  LOG_D(PHY,"prach_config_common.prach_ConfigInfo.prach_ConfigIndex = %d\n",fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex);
 
-  frame_parms->prach_config_common.prach_ConfigInfo.highSpeedFlag              =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.highSpeedFlag;
-  LOG_D(PHY,"prach_config_common.prach_ConfigInfo.highSpeedFlag = %d\n",frame_parms->prach_config_common.prach_ConfigInfo.highSpeedFlag);
-  frame_parms->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig  =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig;
-  LOG_D(PHY,"prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig = %d\n",frame_parms->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig);
-  frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset           =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_FreqOffset;
-  LOG_D(PHY,"prach_config_common.prach_ConfigInfo.prach_FreqOffset = %d\n",frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset);
-  compute_prach_seq(&frame_parms->prach_config_common,frame_parms->frame_type,
+  fp->prach_config_common.prach_ConfigInfo.highSpeedFlag              =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.highSpeedFlag;
+  LOG_D(PHY,"prach_config_common.prach_ConfigInfo.highSpeedFlag = %d\n",fp->prach_config_common.prach_ConfigInfo.highSpeedFlag);
+  fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig  =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig;
+  LOG_D(PHY,"prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig = %d\n",fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig);
+  fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset           =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_FreqOffset;
+  LOG_D(PHY,"prach_config_common.prach_ConfigInfo.prach_FreqOffset = %d\n",fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset);
+  compute_prach_seq(&fp->prach_config_common,fp->frame_type,
                     PHY_vars_eNB_g[Mod_id][CC_id]->X_u);
 
-  frame_parms->pucch_config_common.deltaPUCCH_Shift = 1+radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift;
-  frame_parms->pucch_config_common.nRB_CQI          = radioResourceConfigCommon->pucch_ConfigCommon.nRB_CQI;
-  frame_parms->pucch_config_common.nCS_AN           = radioResourceConfigCommon->pucch_ConfigCommon.nCS_AN;
-  frame_parms->pucch_config_common.n1PUCCH_AN       = radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN;
+  fp->pucch_config_common.deltaPUCCH_Shift = 1+radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift;
+  fp->pucch_config_common.nRB_CQI          = radioResourceConfigCommon->pucch_ConfigCommon.nRB_CQI;
+  fp->pucch_config_common.nCS_AN           = radioResourceConfigCommon->pucch_ConfigCommon.nCS_AN;
+  fp->pucch_config_common.n1PUCCH_AN       = radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN;
 
 
 
-  frame_parms->pdsch_config_common.referenceSignalPower = radioResourceConfigCommon->pdsch_ConfigCommon.referenceSignalPower;
-  frame_parms->pdsch_config_common.p_b                  = radioResourceConfigCommon->pdsch_ConfigCommon.p_b;
+  fp->pdsch_config_common.referenceSignalPower = radioResourceConfigCommon->pdsch_ConfigCommon.referenceSignalPower;
+  fp->pdsch_config_common.p_b                  = radioResourceConfigCommon->pdsch_ConfigCommon.p_b;
 
 
-  frame_parms->pusch_config_common.n_SB                                         = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.n_SB;
-  LOG_D(PHY,"pusch_config_common.n_SB = %d\n",frame_parms->pusch_config_common.n_SB );
+  fp->pusch_config_common.n_SB                                         = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.n_SB;
+  LOG_D(PHY,"pusch_config_common.n_SB = %d\n",fp->pusch_config_common.n_SB );
 
-  frame_parms->pusch_config_common.hoppingMode                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode;
-  LOG_D(PHY,"pusch_config_common.hoppingMode = %d\n",frame_parms->pusch_config_common.hoppingMode);
+  fp->pusch_config_common.hoppingMode                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode;
+  LOG_D(PHY,"pusch_config_common.hoppingMode = %d\n",fp->pusch_config_common.hoppingMode);
 
-  frame_parms->pusch_config_common.pusch_HoppingOffset                          = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset;
-  LOG_D(PHY,"pusch_config_common.pusch_HoppingOffset = %d\n",frame_parms->pusch_config_common.pusch_HoppingOffset);
+  fp->pusch_config_common.pusch_HoppingOffset                          = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset;
+  LOG_D(PHY,"pusch_config_common.pusch_HoppingOffset = %d\n",fp->pusch_config_common.pusch_HoppingOffset);
 
-  frame_parms->pusch_config_common.enable64QAM                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM;
-  LOG_D(PHY,"pusch_config_common.enable64QAM = %d\n",frame_parms->pusch_config_common.enable64QAM );
+  fp->pusch_config_common.enable64QAM                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM;
+  LOG_D(PHY,"pusch_config_common.enable64QAM = %d\n",fp->pusch_config_common.enable64QAM );
 
-  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled    = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled;
-  LOG_D(PHY,"pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = %d\n",frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled);
+  fp->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled    = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled;
+  LOG_D(PHY,"pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = %d\n",fp->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled);
 
-  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH   = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
-  LOG_D(PHY,"pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = %d\n",frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH);
+  fp->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH   = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
+  LOG_D(PHY,"pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = %d\n",fp->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH);
 
-  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled;
-  LOG_D(PHY,"pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = %d\n",frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled);
+  fp->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled;
+  LOG_D(PHY,"pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = %d\n",fp->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled);
 
-  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift            = dmrs1_tab[radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift];
-  LOG_D(PHY,"pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = %d\n",frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift);
+  fp->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift            = dmrs1_tab[radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift];
+  LOG_D(PHY,"pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = %d\n",fp->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift);
 
-  init_ul_hopping(frame_parms);
+  init_ul_hopping(fp);
 
-  frame_parms->soundingrs_ul_config_common.enabled_flag                        = 0;
+  fp->soundingrs_ul_config_common.enabled_flag                        = 0;
 
   if (radioResourceConfigCommon->soundingRS_UL_ConfigCommon.present==SoundingRS_UL_ConfigCommon_PR_setup) {
-    frame_parms->soundingrs_ul_config_common.enabled_flag                        = 1;
-    frame_parms->soundingrs_ul_config_common.srs_BandwidthConfig                 = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.srs_BandwidthConfig;
-    frame_parms->soundingrs_ul_config_common.srs_SubframeConfig                  = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig;
-    frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
+    fp->soundingrs_ul_config_common.enabled_flag                        = 1;
+    fp->soundingrs_ul_config_common.srs_BandwidthConfig                 = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.srs_BandwidthConfig;
+    fp->soundingrs_ul_config_common.srs_SubframeConfig                  = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig;
+    fp->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
 
     if (radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts)
-      frame_parms->soundingrs_ul_config_common.srs_MaxUpPts                      = 1;
+      fp->soundingrs_ul_config_common.srs_MaxUpPts                      = 1;
     else
-      frame_parms->soundingrs_ul_config_common.srs_MaxUpPts                      = 0;
+      fp->soundingrs_ul_config_common.srs_MaxUpPts                      = 0;
   }
 
 
 
-  frame_parms->ul_power_control_config_common.p0_NominalPUSCH       = radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUSCH;
-  frame_parms->ul_power_control_config_common.alpha                 = radioResourceConfigCommon->uplinkPowerControlCommon.alpha;
-  frame_parms->ul_power_control_config_common.p0_NominalPUCCH       = radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUCCH;
-  frame_parms->ul_power_control_config_common.deltaPreambleMsg3     = radioResourceConfigCommon->uplinkPowerControlCommon.deltaPreambleMsg3;
-  frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1;
-  frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1b  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b;
-  frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format2  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2;
-  frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format2a  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2a;
-  frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format2b  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2b;
+  fp->ul_power_control_config_common.p0_NominalPUSCH       = radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUSCH;
+  fp->ul_power_control_config_common.alpha                 = radioResourceConfigCommon->uplinkPowerControlCommon.alpha;
+  fp->ul_power_control_config_common.p0_NominalPUCCH       = radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUCCH;
+  fp->ul_power_control_config_common.deltaPreambleMsg3     = radioResourceConfigCommon->uplinkPowerControlCommon.deltaPreambleMsg3;
+  fp->ul_power_control_config_common.deltaF_PUCCH_Format1  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1;
+  fp->ul_power_control_config_common.deltaF_PUCCH_Format1b  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b;
+  fp->ul_power_control_config_common.deltaF_PUCCH_Format2  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2;
+  fp->ul_power_control_config_common.deltaF_PUCCH_Format2a  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2a;
+  fp->ul_power_control_config_common.deltaF_PUCCH_Format2b  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2b;
 
-  frame_parms->maxHARQ_Msg3Tx = radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx;
+  fp->maxHARQ_Msg3Tx = radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx;
 
 
   // Now configure some of the Physical Channels
 
   // PUCCH
 
-  init_ncs_cell(frame_parms,PHY_vars_eNB_g[Mod_id][CC_id]->ncs_cell);
+  init_ncs_cell(fp,PHY_vars_eNB_g[Mod_id][CC_id]->ncs_cell);
 
-  init_ul_hopping(frame_parms);
+  init_ul_hopping(fp);
 
 
   // MBSFN
   if (mbsfn_SubframeConfigList != NULL) {
-    frame_parms->num_MBSFN_config = mbsfn_SubframeConfigList->list.count;
+    fp->num_MBSFN_config = mbsfn_SubframeConfigList->list.count;
 
     for (i=0; i<mbsfn_SubframeConfigList->list.count; i++) {
-      frame_parms->MBSFN_config[i].radioframeAllocationPeriod = mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationPeriod;
-      frame_parms->MBSFN_config[i].radioframeAllocationOffset = mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationOffset;
+      fp->MBSFN_config[i].radioframeAllocationPeriod = mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationPeriod;
+      fp->MBSFN_config[i].radioframeAllocationOffset = mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationOffset;
 
       if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) {
-        frame_parms->MBSFN_config[i].fourFrames_flag = 0;
-        frame_parms->MBSFN_config[i].mbsfn_SubframeConfig = mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]; // 6-bit subframe configuration
+        fp->MBSFN_config[i].fourFrames_flag = 0;
+        fp->MBSFN_config[i].mbsfn_SubframeConfig = mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]; // 6-bit subframe configuration
         LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i,
-              frame_parms->MBSFN_config[i].mbsfn_SubframeConfig);
+              fp->MBSFN_config[i].mbsfn_SubframeConfig);
       } else if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) { // 24-bit subframe configuration
-        frame_parms->MBSFN_config[i].fourFrames_flag = 1;
-        frame_parms->MBSFN_config[i].mbsfn_SubframeConfig =
+        fp->MBSFN_config[i].fourFrames_flag = 1;
+        fp->MBSFN_config[i].mbsfn_SubframeConfig =
           mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]|
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]<<16);
 
         LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i,
-              frame_parms->MBSFN_config[i].mbsfn_SubframeConfig);
+              fp->MBSFN_config[i].mbsfn_SubframeConfig);
       }
     }
 
   } else
-    frame_parms->num_MBSFN_config = 0;
+    fp->num_MBSFN_config = 0;
 }
 
 
@@ -250,106 +247,109 @@ void phy_config_sib2_ue(uint8_t Mod_id,int CC_id,
                         struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList)
 {
 
-  LTE_DL_FRAME_PARMS *frame_parms = &PHY_vars_UE_g[Mod_id][CC_id]->frame_parms;
+  PHY_VARS_UE *ue        = PHY_vars_UE_g[Mod_id][CC_id];
+  LTE_DL_FRAME_PARMS *fp = &ue->frame_parms;
   int i;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_UE_CONFIG_SIB2, VCD_FUNCTION_IN);
 
   LOG_I(PHY,"[UE%d] Applying radioResourceConfigCommon from eNB%d\n",Mod_id,CH_index);
 
-  frame_parms->prach_config_common.rootSequenceIndex                           =radioResourceConfigCommon->prach_Config.rootSequenceIndex;
+  fp->prach_config_common.rootSequenceIndex                           =radioResourceConfigCommon->prach_Config.rootSequenceIndex;
 
-  frame_parms->prach_config_common.prach_Config_enabled=1;
-  frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex          =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_ConfigIndex;
-  frame_parms->prach_config_common.prach_ConfigInfo.highSpeedFlag              =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.highSpeedFlag;
-  frame_parms->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig  =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig;
-  frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset           =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_FreqOffset;
+  fp->prach_config_common.prach_Config_enabled=1;
+  fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex          =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_ConfigIndex;
+  fp->prach_config_common.prach_ConfigInfo.highSpeedFlag              =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.highSpeedFlag;
+  fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig  =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig;
+  fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset           =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_FreqOffset;
 
-  compute_prach_seq(&frame_parms->prach_config_common,frame_parms->frame_type,PHY_vars_UE_g[Mod_id][CC_id]->X_u);
-
-
-
-  frame_parms->pucch_config_common.deltaPUCCH_Shift = 1+radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift;
-  frame_parms->pucch_config_common.nRB_CQI          = radioResourceConfigCommon->pucch_ConfigCommon.nRB_CQI;
-  frame_parms->pucch_config_common.nCS_AN           = radioResourceConfigCommon->pucch_ConfigCommon.nCS_AN;
-  frame_parms->pucch_config_common.n1PUCCH_AN       = radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN;
+  compute_prach_seq(&fp->prach_config_common,fp->frame_type,ue->X_u);
 
 
 
-  frame_parms->pdsch_config_common.referenceSignalPower = radioResourceConfigCommon->pdsch_ConfigCommon.referenceSignalPower;
-  frame_parms->pdsch_config_common.p_b                  = radioResourceConfigCommon->pdsch_ConfigCommon.p_b;
+  fp->pucch_config_common.deltaPUCCH_Shift = 1+radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift;
+  fp->pucch_config_common.nRB_CQI          = radioResourceConfigCommon->pucch_ConfigCommon.nRB_CQI;
+  fp->pucch_config_common.nCS_AN           = radioResourceConfigCommon->pucch_ConfigCommon.nCS_AN;
+  fp->pucch_config_common.n1PUCCH_AN       = radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN;
 
 
-  frame_parms->pusch_config_common.n_SB                                         = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.n_SB;
-  frame_parms->pusch_config_common.hoppingMode                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode;
-  frame_parms->pusch_config_common.pusch_HoppingOffset                          = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset;
-  frame_parms->pusch_config_common.enable64QAM                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM;
-  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled    = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled;
-  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH   = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
-  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled;
-  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift            = dmrs1_tab[radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift];
+
+  fp->pdsch_config_common.referenceSignalPower = radioResourceConfigCommon->pdsch_ConfigCommon.referenceSignalPower;
+  fp->pdsch_config_common.p_b                  = radioResourceConfigCommon->pdsch_ConfigCommon.p_b;
 
 
-  init_ul_hopping(frame_parms);
-  frame_parms->soundingrs_ul_config_common.enabled_flag                        = 0;
+  fp->pusch_config_common.n_SB                                         = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.n_SB;
+  fp->pusch_config_common.hoppingMode                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode;
+  fp->pusch_config_common.pusch_HoppingOffset                          = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset;
+  fp->pusch_config_common.enable64QAM                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM;
+  fp->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled    = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled;
+  fp->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH   = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
+  fp->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled;
+  fp->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift            = dmrs1_tab[radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift];
+
+
+  init_ul_hopping(fp);
+  fp->soundingrs_ul_config_common.enabled_flag                        = 0;
 
   if (radioResourceConfigCommon->soundingRS_UL_ConfigCommon.present==SoundingRS_UL_ConfigCommon_PR_setup) {
-    frame_parms->soundingrs_ul_config_common.enabled_flag                        = 1;
-    frame_parms->soundingrs_ul_config_common.srs_BandwidthConfig                 = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.srs_BandwidthConfig;
-    frame_parms->soundingrs_ul_config_common.srs_SubframeConfig                  = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig;
-    frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
+    fp->soundingrs_ul_config_common.enabled_flag                        = 1;
+    fp->soundingrs_ul_config_common.srs_BandwidthConfig                 = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.srs_BandwidthConfig;
+    fp->soundingrs_ul_config_common.srs_SubframeConfig                  = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig;
+    fp->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
 
     if (radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts)
-      frame_parms->soundingrs_ul_config_common.srs_MaxUpPts                      = 1;
+      fp->soundingrs_ul_config_common.srs_MaxUpPts                      = 1;
     else
-      frame_parms->soundingrs_ul_config_common.srs_MaxUpPts                      = 0;
+      fp->soundingrs_ul_config_common.srs_MaxUpPts                      = 0;
   }
 
 
 
-  frame_parms->ul_power_control_config_common.p0_NominalPUSCH   = radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUSCH;
-  frame_parms->ul_power_control_config_common.alpha             = radioResourceConfigCommon->uplinkPowerControlCommon.alpha;
-  frame_parms->ul_power_control_config_common.p0_NominalPUCCH   = radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUCCH;
-  frame_parms->ul_power_control_config_common.deltaPreambleMsg3 = radioResourceConfigCommon->uplinkPowerControlCommon.deltaPreambleMsg3;
-  frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1;
-  frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1b  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b;
-  frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format2  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2;
-  frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format2a  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2a;
-  frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format2b  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2b;
+  fp->ul_power_control_config_common.p0_NominalPUSCH   = radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUSCH;
+  fp->ul_power_control_config_common.alpha             = radioResourceConfigCommon->uplinkPowerControlCommon.alpha;
+  fp->ul_power_control_config_common.p0_NominalPUCCH   = radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUCCH;
+  fp->ul_power_control_config_common.deltaPreambleMsg3 = radioResourceConfigCommon->uplinkPowerControlCommon.deltaPreambleMsg3;
+  fp->ul_power_control_config_common.deltaF_PUCCH_Format1  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1;
+  fp->ul_power_control_config_common.deltaF_PUCCH_Format1b  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b;
+  fp->ul_power_control_config_common.deltaF_PUCCH_Format2  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2;
+  fp->ul_power_control_config_common.deltaF_PUCCH_Format2a  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2a;
+  fp->ul_power_control_config_common.deltaF_PUCCH_Format2b  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2b;
 
-  frame_parms->maxHARQ_Msg3Tx = radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx;
+  fp->maxHARQ_Msg3Tx = radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx;
 
   // Now configure some of the Physical Channels
 
   // PUCCH
-  init_ncs_cell(frame_parms,PHY_vars_UE_g[Mod_id][CC_id]->ncs_cell);
+  init_ncs_cell(fp,ue->ncs_cell);
 
-  init_ul_hopping(frame_parms);
+  init_ul_hopping(fp);
 
+  // PCH
+  init_ue_paging_info(ue,radioResourceConfigCommon->pcch_Config.defaultPagingCycle,radioResourceConfigCommon->pcch_Config.nB);
 
   // MBSFN
 
   if (mbsfn_SubframeConfigList != NULL) {
-    frame_parms->num_MBSFN_config = mbsfn_SubframeConfigList->list.count;
+    fp->num_MBSFN_config = mbsfn_SubframeConfigList->list.count;
 
     for (i=0; i<mbsfn_SubframeConfigList->list.count; i++) {
-      frame_parms->MBSFN_config[i].radioframeAllocationPeriod = mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationPeriod;
-      frame_parms->MBSFN_config[i].radioframeAllocationOffset = mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationOffset;
+      fp->MBSFN_config[i].radioframeAllocationPeriod = mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationPeriod;
+      fp->MBSFN_config[i].radioframeAllocationOffset = mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationOffset;
 
       if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) {
-        frame_parms->MBSFN_config[i].fourFrames_flag = 0;
-        frame_parms->MBSFN_config[i].mbsfn_SubframeConfig = mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]; // 6-bit subframe configuration
+        fp->MBSFN_config[i].fourFrames_flag = 0;
+        fp->MBSFN_config[i].mbsfn_SubframeConfig = mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]; // 6-bit subframe configuration
         LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i,
-              frame_parms->MBSFN_config[i].mbsfn_SubframeConfig);
+              fp->MBSFN_config[i].mbsfn_SubframeConfig);
       } else if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) { // 24-bit subframe configuration
-        frame_parms->MBSFN_config[i].fourFrames_flag = 1;
-        frame_parms->MBSFN_config[i].mbsfn_SubframeConfig =
+        fp->MBSFN_config[i].fourFrames_flag = 1;
+        fp->MBSFN_config[i].mbsfn_SubframeConfig =
           mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]|
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]<<16);
 
         LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i,
-              frame_parms->MBSFN_config[i].mbsfn_SubframeConfig);
+              fp->MBSFN_config[i].mbsfn_SubframeConfig);
       }
     }
   }
@@ -362,17 +362,17 @@ void phy_config_sib13_ue(uint8_t Mod_id,int CC_id,uint8_t CH_index,int mbsfn_Are
                          long mbsfn_AreaId_r9)
 {
 
-  LTE_DL_FRAME_PARMS *frame_parms = &PHY_vars_UE_g[Mod_id][CC_id]->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = &PHY_vars_UE_g[Mod_id][CC_id]->frame_parms;
 
 
   LOG_I(PHY,"[UE%d] Applying MBSFN_Area_id %d for index %d\n",Mod_id,mbsfn_AreaId_r9,mbsfn_Area_idx);
 
   if (mbsfn_Area_idx == 0) {
-    frame_parms->Nid_cell_mbsfn = (uint16_t)mbsfn_AreaId_r9;
+    fp->Nid_cell_mbsfn = (uint16_t)mbsfn_AreaId_r9;
     LOG_N(PHY,"Fix me: only called when mbsfn_Area_idx == 0)\n");
   }
 
-  lte_gold_mbsfn(frame_parms,PHY_vars_UE_g[Mod_id][CC_id]->lte_gold_mbsfn_table,frame_parms->Nid_cell_mbsfn);
+  lte_gold_mbsfn(fp,PHY_vars_UE_g[Mod_id][CC_id]->lte_gold_mbsfn_table,fp->Nid_cell_mbsfn);
 
 }
 
@@ -381,17 +381,17 @@ void phy_config_sib13_eNB(uint8_t Mod_id,int CC_id,int mbsfn_Area_idx,
                           long mbsfn_AreaId_r9)
 {
 
-  LTE_DL_FRAME_PARMS *frame_parms = &PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = &PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms;
 
 
   LOG_I(PHY,"[eNB%d] Applying MBSFN_Area_id %d for index %d\n",Mod_id,mbsfn_AreaId_r9,mbsfn_Area_idx);
 
   if (mbsfn_Area_idx == 0) {
-    frame_parms->Nid_cell_mbsfn = (uint16_t)mbsfn_AreaId_r9;
+    fp->Nid_cell_mbsfn = (uint16_t)mbsfn_AreaId_r9;
     LOG_N(PHY,"Fix me: only called when mbsfn_Area_idx == 0)\n");
   }
 
-  lte_gold_mbsfn(frame_parms,PHY_vars_eNB_g[Mod_id][CC_id]->lte_gold_mbsfn_table,frame_parms->Nid_cell_mbsfn);
+  lte_gold_mbsfn(fp,PHY_vars_eNB_g[Mod_id][CC_id]->lte_gold_mbsfn_table,fp->Nid_cell_mbsfn);
 }
 
 
@@ -400,6 +400,7 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *eNB)
 
   uint8_t UE_id;
   struct PhysicalConfigDedicated *physicalConfigDedicated;
+  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
     physicalConfigDedicated = eNB->physicalConfigDedicated[UE_id];
@@ -421,7 +422,7 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *eNB)
           eNB->pucch_config_dedicated[UE_id].ackNackRepetition=1;
         }
 
-        if (eNB->frame_parms.frame_type == FDD) {
+        if (fp->frame_type == FDD) {
           eNB->pucch_config_dedicated[UE_id].tdd_AckNackFeedbackMode = multiplexing;
         } else {
           if (physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode)
@@ -508,7 +509,7 @@ void phy_config_afterHO_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_id, Mobility
     PHY_vars_UE_g[Mod_id][CC_id]->ho_triggered = 1;
     //PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH;
 
-    LTE_DL_FRAME_PARMS *frame_parms = &PHY_vars_UE_g[Mod_id][CC_id]->frame_parms;
+    LTE_DL_FRAME_PARMS *fp = &PHY_vars_UE_g[Mod_id][CC_id]->frame_parms;
     //     int N_ZC;
     //     uint8_t prach_fmt;
     //     int u;
@@ -516,88 +517,88 @@ void phy_config_afterHO_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_id, Mobility
     LOG_I(PHY,"[UE%d] Handover triggered: Applying radioResourceConfigCommon from eNB %d\n",
           Mod_id,eNB_id);
 
-    frame_parms->prach_config_common.rootSequenceIndex                           =radioResourceConfigCommon->prach_Config.rootSequenceIndex;
-    frame_parms->prach_config_common.prach_Config_enabled=1;
-    frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex          =radioResourceConfigCommon->prach_Config.prach_ConfigInfo->prach_ConfigIndex;
-    frame_parms->prach_config_common.prach_ConfigInfo.highSpeedFlag              =radioResourceConfigCommon->prach_Config.prach_ConfigInfo->highSpeedFlag;
-    frame_parms->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig  =radioResourceConfigCommon->prach_Config.prach_ConfigInfo->zeroCorrelationZoneConfig;
-    frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset           =radioResourceConfigCommon->prach_Config.prach_ConfigInfo->prach_FreqOffset;
+    fp->prach_config_common.rootSequenceIndex                           =radioResourceConfigCommon->prach_Config.rootSequenceIndex;
+    fp->prach_config_common.prach_Config_enabled=1;
+    fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex          =radioResourceConfigCommon->prach_Config.prach_ConfigInfo->prach_ConfigIndex;
+    fp->prach_config_common.prach_ConfigInfo.highSpeedFlag              =radioResourceConfigCommon->prach_Config.prach_ConfigInfo->highSpeedFlag;
+    fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig  =radioResourceConfigCommon->prach_Config.prach_ConfigInfo->zeroCorrelationZoneConfig;
+    fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset           =radioResourceConfigCommon->prach_Config.prach_ConfigInfo->prach_FreqOffset;
 
-    //     prach_fmt = get_prach_fmt(radioResourceConfigCommon->prach_Config.prach_ConfigInfo->prach_ConfigIndex,frame_parms->frame_type);
+    //     prach_fmt = get_prach_fmt(radioResourceConfigCommon->prach_Config.prach_ConfigInfo->prach_ConfigIndex,fp->frame_type);
     //     N_ZC = (prach_fmt <4)?839:139;
-    //     u = (prach_fmt < 4) ? prach_root_sequence_map0_3[frame_parms->prach_config_common.rootSequenceIndex] :
-    //       prach_root_sequence_map4[frame_parms->prach_config_common.rootSequenceIndex];
+    //     u = (prach_fmt < 4) ? prach_root_sequence_map0_3[fp->prach_config_common.rootSequenceIndex] :
+    //       prach_root_sequence_map4[fp->prach_config_common.rootSequenceIndex];
 
     //compute_prach_seq(u,N_ZC, PHY_vars_UE_g[Mod_id]->X_u);
     compute_prach_seq(&PHY_vars_UE_g[Mod_id][CC_id]->frame_parms.prach_config_common,
-                      frame_parms->frame_type,
+                      fp->frame_type,
                       PHY_vars_UE_g[Mod_id][CC_id]->X_u);
 
 
-    frame_parms->pucch_config_common.deltaPUCCH_Shift = 1+radioResourceConfigCommon->pucch_ConfigCommon->deltaPUCCH_Shift;
-    frame_parms->pucch_config_common.nRB_CQI          = radioResourceConfigCommon->pucch_ConfigCommon->nRB_CQI;
-    frame_parms->pucch_config_common.nCS_AN           = radioResourceConfigCommon->pucch_ConfigCommon->nCS_AN;
-    frame_parms->pucch_config_common.n1PUCCH_AN       = radioResourceConfigCommon->pucch_ConfigCommon->n1PUCCH_AN;
-    frame_parms->pdsch_config_common.referenceSignalPower = radioResourceConfigCommon->pdsch_ConfigCommon->referenceSignalPower;
-    frame_parms->pdsch_config_common.p_b                  = radioResourceConfigCommon->pdsch_ConfigCommon->p_b;
+    fp->pucch_config_common.deltaPUCCH_Shift = 1+radioResourceConfigCommon->pucch_ConfigCommon->deltaPUCCH_Shift;
+    fp->pucch_config_common.nRB_CQI          = radioResourceConfigCommon->pucch_ConfigCommon->nRB_CQI;
+    fp->pucch_config_common.nCS_AN           = radioResourceConfigCommon->pucch_ConfigCommon->nCS_AN;
+    fp->pucch_config_common.n1PUCCH_AN       = radioResourceConfigCommon->pucch_ConfigCommon->n1PUCCH_AN;
+    fp->pdsch_config_common.referenceSignalPower = radioResourceConfigCommon->pdsch_ConfigCommon->referenceSignalPower;
+    fp->pdsch_config_common.p_b                  = radioResourceConfigCommon->pdsch_ConfigCommon->p_b;
 
 
-    frame_parms->pusch_config_common.n_SB                                         = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.n_SB;
-    frame_parms->pusch_config_common.hoppingMode                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode;
-    frame_parms->pusch_config_common.pusch_HoppingOffset                          = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset;
-    frame_parms->pusch_config_common.enable64QAM                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM;
-    frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled    = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled;
-    frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH   = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
-    frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled;
-    frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift            = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift;
+    fp->pusch_config_common.n_SB                                         = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.n_SB;
+    fp->pusch_config_common.hoppingMode                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode;
+    fp->pusch_config_common.pusch_HoppingOffset                          = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset;
+    fp->pusch_config_common.enable64QAM                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM;
+    fp->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled    = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled;
+    fp->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH   = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
+    fp->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled;
+    fp->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift            = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift;
 
-    init_ul_hopping(frame_parms);
-    frame_parms->soundingrs_ul_config_common.enabled_flag                        = 0;
+    init_ul_hopping(fp);
+    fp->soundingrs_ul_config_common.enabled_flag                        = 0;
 
     if (radioResourceConfigCommon->soundingRS_UL_ConfigCommon->present==SoundingRS_UL_ConfigCommon_PR_setup) {
-      frame_parms->soundingrs_ul_config_common.enabled_flag                        = 1;
-      frame_parms->soundingrs_ul_config_common.srs_BandwidthConfig                 = radioResourceConfigCommon->soundingRS_UL_ConfigCommon->choice.setup.srs_BandwidthConfig;
-      frame_parms->soundingrs_ul_config_common.srs_SubframeConfig                  = radioResourceConfigCommon->soundingRS_UL_ConfigCommon->choice.setup.srs_SubframeConfig;
-      frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission = radioResourceConfigCommon->soundingRS_UL_ConfigCommon->choice.setup.ackNackSRS_SimultaneousTransmission;
+      fp->soundingrs_ul_config_common.enabled_flag                        = 1;
+      fp->soundingrs_ul_config_common.srs_BandwidthConfig                 = radioResourceConfigCommon->soundingRS_UL_ConfigCommon->choice.setup.srs_BandwidthConfig;
+      fp->soundingrs_ul_config_common.srs_SubframeConfig                  = radioResourceConfigCommon->soundingRS_UL_ConfigCommon->choice.setup.srs_SubframeConfig;
+      fp->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission = radioResourceConfigCommon->soundingRS_UL_ConfigCommon->choice.setup.ackNackSRS_SimultaneousTransmission;
 
       if (radioResourceConfigCommon->soundingRS_UL_ConfigCommon->choice.setup.srs_MaxUpPts)
-        frame_parms->soundingrs_ul_config_common.srs_MaxUpPts                      = 1;
+        fp->soundingrs_ul_config_common.srs_MaxUpPts                      = 1;
       else
-        frame_parms->soundingrs_ul_config_common.srs_MaxUpPts                      = 0;
+        fp->soundingrs_ul_config_common.srs_MaxUpPts                      = 0;
     }
 
-    frame_parms->ul_power_control_config_common.p0_NominalPUSCH   = radioResourceConfigCommon->uplinkPowerControlCommon->p0_NominalPUSCH;
-    frame_parms->ul_power_control_config_common.alpha             = radioResourceConfigCommon->uplinkPowerControlCommon->alpha;
-    frame_parms->ul_power_control_config_common.p0_NominalPUCCH   = radioResourceConfigCommon->uplinkPowerControlCommon->p0_NominalPUCCH;
-    frame_parms->ul_power_control_config_common.deltaPreambleMsg3 = radioResourceConfigCommon->uplinkPowerControlCommon->deltaPreambleMsg3;
-    frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1  = radioResourceConfigCommon->uplinkPowerControlCommon->deltaFList_PUCCH.deltaF_PUCCH_Format1;
-    frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1b  = radioResourceConfigCommon->uplinkPowerControlCommon->deltaFList_PUCCH.deltaF_PUCCH_Format1b;
-    frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format2  = radioResourceConfigCommon->uplinkPowerControlCommon->deltaFList_PUCCH.deltaF_PUCCH_Format2;
-    frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format2a  = radioResourceConfigCommon->uplinkPowerControlCommon->deltaFList_PUCCH.deltaF_PUCCH_Format2a;
-    frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format2b  = radioResourceConfigCommon->uplinkPowerControlCommon->deltaFList_PUCCH.deltaF_PUCCH_Format2b;
+    fp->ul_power_control_config_common.p0_NominalPUSCH   = radioResourceConfigCommon->uplinkPowerControlCommon->p0_NominalPUSCH;
+    fp->ul_power_control_config_common.alpha             = radioResourceConfigCommon->uplinkPowerControlCommon->alpha;
+    fp->ul_power_control_config_common.p0_NominalPUCCH   = radioResourceConfigCommon->uplinkPowerControlCommon->p0_NominalPUCCH;
+    fp->ul_power_control_config_common.deltaPreambleMsg3 = radioResourceConfigCommon->uplinkPowerControlCommon->deltaPreambleMsg3;
+    fp->ul_power_control_config_common.deltaF_PUCCH_Format1  = radioResourceConfigCommon->uplinkPowerControlCommon->deltaFList_PUCCH.deltaF_PUCCH_Format1;
+    fp->ul_power_control_config_common.deltaF_PUCCH_Format1b  = radioResourceConfigCommon->uplinkPowerControlCommon->deltaFList_PUCCH.deltaF_PUCCH_Format1b;
+    fp->ul_power_control_config_common.deltaF_PUCCH_Format2  = radioResourceConfigCommon->uplinkPowerControlCommon->deltaFList_PUCCH.deltaF_PUCCH_Format2;
+    fp->ul_power_control_config_common.deltaF_PUCCH_Format2a  = radioResourceConfigCommon->uplinkPowerControlCommon->deltaFList_PUCCH.deltaF_PUCCH_Format2a;
+    fp->ul_power_control_config_common.deltaF_PUCCH_Format2b  = radioResourceConfigCommon->uplinkPowerControlCommon->deltaFList_PUCCH.deltaF_PUCCH_Format2b;
 
-    frame_parms->maxHARQ_Msg3Tx = radioResourceConfigCommon->rach_ConfigCommon->maxHARQ_Msg3Tx;
+    fp->maxHARQ_Msg3Tx = radioResourceConfigCommon->rach_ConfigCommon->maxHARQ_Msg3Tx;
 
     // Now configure some of the Physical Channels
     if (radioResourceConfigCommon->antennaInfoCommon)
-      frame_parms->nb_antennas_tx                     = (1<<radioResourceConfigCommon->antennaInfoCommon->antennaPortsCount);
+      fp->nb_antennas_tx                     = (1<<radioResourceConfigCommon->antennaInfoCommon->antennaPortsCount);
     else
-      frame_parms->nb_antennas_tx                     = 1;
+      fp->nb_antennas_tx                     = 1;
 
     //PHICH
     if (radioResourceConfigCommon->antennaInfoCommon) {
-      frame_parms->phich_config_common.phich_resource = radioResourceConfigCommon->phich_Config->phich_Resource;
-      frame_parms->phich_config_common.phich_duration = radioResourceConfigCommon->phich_Config->phich_Duration;
+      fp->phich_config_common.phich_resource = radioResourceConfigCommon->phich_Config->phich_Resource;
+      fp->phich_config_common.phich_duration = radioResourceConfigCommon->phich_Config->phich_Duration;
     }
 
     //Target CellId
-    frame_parms->Nid_cell = mobilityControlInfo->targetPhysCellId;
-    frame_parms->nushift  = frame_parms->Nid_cell%6;
+    fp->Nid_cell = mobilityControlInfo->targetPhysCellId;
+    fp->nushift  = fp->Nid_cell%6;
 
     // PUCCH
-    init_ncs_cell(frame_parms,PHY_vars_UE_g[Mod_id][CC_id]->ncs_cell);
+    init_ncs_cell(fp,PHY_vars_UE_g[Mod_id][CC_id]->ncs_cell);
 
-    init_ul_hopping(frame_parms);
+    init_ul_hopping(fp);
 
     // RNTI
 
@@ -676,46 +677,13 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
   ARFCN_ValueEUTRA_t dl_CarrierFreq_r10 = sCellToAddMod_r10->cellIdentification_r10->dl_CarrierFreq_r10;
   uint32_t carrier_freq_local;
 
-#ifdef EXMIMO
-#ifdef DRIVER2013
-  //  exmimo_config_t *p_exmimo_config = openair0_exmimo_pci[rf_map[CC_id].card].exmimo_config_ptr;
-#endif
-#endif
-
   if ((dl_CarrierFreq_r10>=36000) && (dl_CarrierFreq_r10<=36199)) {
     carrier_freq_local = 1900000000 + (dl_CarrierFreq_r10-36000)*100000; //band 33 from 3GPP 36.101 v 10.9 Table 5.7.3-1
     LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %d) for UE %d\n",Mod_id,/*eNB->frame*/0,CC_id,carrier_freq_local,dl_CarrierFreq_r10,UE_id);
-    /*
-#ifdef EXMIMO
-#ifdef DRIVER2013
-    //carrier_freq[CC_id] = carrier_freq_local;
-    //openair_daq_vars.freq_offset = -6540;
-    p_exmimo_config->rf.rf_freq_rx[rf_map[CC_id].chain] = carrier_freq_local;//+openair_daq_vars.freq_offset2;
-    p_exmimo_config->rf.rf_freq_tx[rf_map[CC_id].chain] = carrier_freq_local;//+openair_daq_vars.freq_offset2;
-    p_exmimo_config->rf.tx_gain[rf_map[CC_id].chain][0] = 25;
-    p_exmimo_config->rf.rf_vcocal[rf_map[CC_id].chain] = 910;
-    p_exmimo_config->rf.rf_local[rf_map[CC_id].chain] = 8255063; //this should be taken form calibration file
-    p_exmimo_config->rf.rffe_band_mode[rf_map[CC_id].chain] = B19G_TDD;
-#endif
-#endif*/
   } else if ((dl_CarrierFreq_r10>=6150) && (dl_CarrierFreq_r10<=6449)) {
     carrier_freq_local = 832000000 + (dl_CarrierFreq_r10-6150)*100000; //band 20 from 3GPP 36.101 v 10.9 Table 5.7.3-1
     // this is actually for the UL only, but we use it for DL too, since there is no TDD mode for this band
     LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %d) for UE %d\n",Mod_id,/*eNB->frame*/0,CC_id,carrier_freq_local,dl_CarrierFreq_r10,UE_id);
-/*
-#ifdef EXMIMO
-#ifdef DRIVER2013
-    //carrier_freq[CC_id] = carrier_freq_local;
-    //openair_daq_vars.freq_offset = -2000;
-    p_exmimo_config->rf.rf_freq_rx[rf_map[CC_id].chain] = carrier_freq_local;//+openair_daq_vars.freq_offset2;
-    p_exmimo_config->rf.rf_freq_tx[rf_map[CC_id].chain] = carrier_freq_local;//+openair_daq_vars.freq_offset2;
-    p_exmimo_config->rf.tx_gain[rf_map[CC_id].chain][0] = 10;
-    p_exmimo_config->rf.rf_vcocal[rf_map[CC_id].chain] = 2015;
-    p_exmimo_config->rf.rf_local[rf_map[CC_id].chain] =  8254992; //this should be taken form calibration file
-    p_exmimo_config->rf.rffe_band_mode[rf_map[CC_id].chain] = DD_TDD;
-#endif
-#endif
-*/
   } else {
     LOG_E(PHY,"[eNB %d] Frame %d: ARFCN %d of SCell %d for UE %d not supported\n",Mod_id,/*eNB->frame*/0,dl_CarrierFreq_r10,CC_id,UE_id);
   }
@@ -906,11 +874,11 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
  * \param[in] frame_parms LTE_DL_FRAME_PARMS structure.
  * \note This function is optimistic in that it expects malloc() to succeed.
  */
-void phy_init_lte_ue__PDSCH( LTE_UE_PDSCH* const pdsch, const LTE_DL_FRAME_PARMS* const frame_parms )
+void phy_init_lte_ue__PDSCH( LTE_UE_PDSCH* const pdsch, const LTE_DL_FRAME_PARMS* const fp )
 {
   AssertFatal( pdsch, "pdsch==0" );
 
-  pdsch->pmi_ext = (uint8_t*)malloc16_clear( frame_parms->N_RB_DL );
+  pdsch->pmi_ext = (uint8_t*)malloc16_clear( fp->N_RB_DL );
   pdsch->llr[0] = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
   pdsch->llr128 = (int16_t**)malloc16_clear( sizeof(int16_t*) );
   pdsch->llr128_2ndstream = (int16_t**)malloc16_clear( sizeof(int16_t*) );
@@ -918,7 +886,7 @@ void phy_init_lte_ue__PDSCH( LTE_UE_PDSCH* const pdsch, const LTE_DL_FRAME_PARMS
 
   pdsch->rxdataF_ext         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
   pdsch->rxdataF_comp0       = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-  pdsch->rho                 = (int32_t**)malloc16_clear( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
+  pdsch->rho                 = (int32_t**)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t*) );
   pdsch->dl_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
   pdsch->dl_ch_rho_ext       = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
   pdsch->dl_ch_rho2_ext       = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
@@ -926,14 +894,14 @@ void phy_init_lte_ue__PDSCH( LTE_UE_PDSCH* const pdsch, const LTE_DL_FRAME_PARMS
   pdsch->dl_ch_magb0         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
 
   // the allocated memory size is fixed:
-  AssertFatal( frame_parms->nb_antennas_rx <= 2, "nb_antennas_rx > 2" );
+  AssertFatal( fp->nb_antennas_rx <= 2, "nb_antennas_rx > 2" );
 
-  for (int i=0; i<frame_parms->nb_antennas_rx; i++) {
-    pdsch->rho[i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*(frame_parms->N_RB_DL*12*7*2) );
+  for (int i=0; i<fp->nb_antennas_rx; i++) {
+    pdsch->rho[i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->N_RB_DL*12*7*2) );
 
-    for (int j=0; j<4; j++) { //frame_parms->nb_antennas_tx; j++)
+    for (int j=0; j<4; j++) { //fp->nb_antennas_tx; j++)
       const int idx = (j<<1)+i;
-      const size_t num = 7*2*frame_parms->N_RB_DL*12;
+      const size_t num = 7*2*fp->N_RB_DL*12;
       pdsch->rxdataF_ext[idx]         = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
       pdsch->rxdataF_comp0[idx]       = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
       pdsch->dl_ch_estimates_ext[idx] = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
@@ -952,7 +920,7 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
 {
 
   // create shortcuts
-  LTE_DL_FRAME_PARMS* const frame_parms      = &ue->frame_parms;
+  LTE_DL_FRAME_PARMS* const fp            = &ue->frame_parms;
   LTE_UE_COMMON* const common_vars        = &ue->common_vars;
   LTE_UE_PDSCH** const pdsch_vars         = ue->pdsch_vars;
   LTE_UE_PDSCH** const pdsch_vars_SI      = ue->pdsch_vars_SI;
@@ -965,11 +933,11 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
   int i,j,k;
   int eNB_id;
 
-  printf("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);
+  printf("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
   LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
 
   // many memory allocation sizes are hard coded
-  AssertFatal( frame_parms->nb_antennas_rx <= 2, "hard coded allocation for ue_common_vars->dl_ch_estimates[eNB_id]" );
+  AssertFatal( fp->nb_antennas_rx <= 2, "hard coded allocation for ue_common_vars->dl_ch_estimates[eNB_id]" );
   AssertFatal( ue->n_connected_eNB <= NUMBER_OF_CONNECTED_eNB_MAX, "n_connected_eNB is too large" );
   // init phy_vars_ue
 
@@ -988,31 +956,32 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
     ue->total_received_bits[eNB_id] = 0;
   }
 
-  ue->tx_power_dBm=-127;
+  for (i=0;i<10;i++)
+    ue->tx_power_dBm[i]=-127;
 
   if (abstraction_flag == 0) {
 
     // init TX buffers
 
-    common_vars->txdata  = (int32_t**)malloc16( frame_parms->nb_antennas_tx*sizeof(int32_t*) );
-    common_vars->txdataF = (int32_t **)malloc16( frame_parms->nb_antennas_tx*sizeof(int32_t*) );
+    common_vars->txdata  = (int32_t**)malloc16( fp->nb_antennas_tx*sizeof(int32_t*) );
+    common_vars->txdataF = (int32_t **)malloc16( fp->nb_antennas_tx*sizeof(int32_t*) );
 
-    for (i=0; i<frame_parms->nb_antennas_tx; i++) {
+    for (i=0; i<fp->nb_antennas_tx; i++) {
 
-      common_vars->txdata[i]  = (int32_t*)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int32_t) );
-      common_vars->txdataF[i] = (int32_t *)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t) );
+      common_vars->txdata[i]  = (int32_t*)malloc16_clear( fp->samples_per_tti*10*sizeof(int32_t) );
+      common_vars->txdataF[i] = (int32_t *)malloc16_clear( fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
     }
 
     // init RX buffers
 
-    common_vars->rxdata   = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
-    common_vars->rxdataF  = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
-    common_vars->rxdataF2 = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
+    common_vars->rxdata   = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+    common_vars->rxdataF  = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+    common_vars->rxdataF2 = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
 
-    for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-      common_vars->rxdata[i] = (int32_t*) malloc16_clear( (FRAME_LENGTH_COMPLEX_SAMPLES+2048)*sizeof(int32_t) );
-      common_vars->rxdataF[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(frame_parms->ofdm_symbol_size*14) );
-      common_vars->rxdataF2[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti*10) );
+    for (i=0; i<fp->nb_antennas_rx; i++) {
+      common_vars->rxdata[i] = (int32_t*) malloc16_clear( (fp->samples_per_tti*10+2048)*sizeof(int32_t) );
+      common_vars->rxdataF[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->ofdm_symbol_size*14) );
+      common_vars->rxdataF2[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->ofdm_symbol_size*fp->symbols_per_tti*10) );
     }
   }
 
@@ -1021,11 +990,11 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
     common_vars->dl_ch_estimates[eNB_id]      = (int32_t**)malloc16_clear(8*sizeof(int32_t*));
     common_vars->dl_ch_estimates_time[eNB_id] = (int32_t**)malloc16_clear(8*sizeof(int32_t*));
 
-    for (i=0; i<frame_parms->nb_antennas_rx; i++)
+    for (i=0; i<fp->nb_antennas_rx; i++)
       for (j=0; j<4; j++) {
         int idx = (j<<1) + i;
-        common_vars->dl_ch_estimates[eNB_id][idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*frame_parms->symbols_per_tti*(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH) );
-        common_vars->dl_ch_estimates_time[eNB_id][idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*frame_parms->ofdm_symbol_size*2 );
+        common_vars->dl_ch_estimates[eNB_id][idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->symbols_per_tti*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH) );
+        common_vars->dl_ch_estimates_time[eNB_id][idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2 );
       }
   }
 
@@ -1040,9 +1009,9 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
     pbch_vars[eNB_id]      = (LTE_UE_PBCH *)malloc16_clear(sizeof(LTE_UE_PBCH));
 
     if (abstraction_flag == 0) {
-      phy_init_lte_ue__PDSCH( pdsch_vars[eNB_id], frame_parms );
+      phy_init_lte_ue__PDSCH( pdsch_vars[eNB_id], fp );
 
-      pdsch_vars[eNB_id]->llr_shifts   = (uint8_t*)malloc16_clear(7*2*frame_parms->N_RB_DL*12);
+      pdsch_vars[eNB_id]->llr_shifts   = (uint8_t*)malloc16_clear(7*2*fp->N_RB_DL*12);
       pdsch_vars[eNB_id]->llr_shifts_p = pdsch_vars[eNB_id]->llr_shifts;
       pdsch_vars[eNB_id]->dl_ch_mag1   = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
       pdsch_vars[eNB_id]->dl_ch_magb1  = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
@@ -1051,19 +1020,19 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
       for (k=0; k<8; k++)
         pdsch_vars[eNB_id]->rxdataF_comp1[k] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
 
-      for (i=0; i<frame_parms->nb_antennas_rx; i++)
+      for (i=0; i<fp->nb_antennas_rx; i++)
         for (j=0; j<4; j++) {
           int idx = (j<<1)+i;
-          pdsch_vars[eNB_id]->dl_ch_mag1[idx]  = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(frame_parms->N_RB_DL*12) );
-          pdsch_vars[eNB_id]->dl_ch_magb1[idx] = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(frame_parms->N_RB_DL*12) );
+          pdsch_vars[eNB_id]->dl_ch_mag1[idx]  = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
+          pdsch_vars[eNB_id]->dl_ch_magb1[idx] = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
 
           for (k=0; k<8; k++)
-            pdsch_vars[eNB_id]->rxdataF_comp1[idx][k] = (int32_t*)malloc16_clear( sizeof(int32_t)*(frame_parms->N_RB_DL*12*14) );
+            pdsch_vars[eNB_id]->rxdataF_comp1[idx][k] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->N_RB_DL*12*14) );
         }
 
-      phy_init_lte_ue__PDSCH( pdsch_vars_SI[eNB_id], frame_parms );
-      phy_init_lte_ue__PDSCH( pdsch_vars_ra[eNB_id], frame_parms );
-      phy_init_lte_ue__PDSCH( pdsch_vars_mch[eNB_id], frame_parms );
+      phy_init_lte_ue__PDSCH( pdsch_vars_SI[eNB_id], fp );
+      phy_init_lte_ue__PDSCH( pdsch_vars_ra[eNB_id], fp );
+      phy_init_lte_ue__PDSCH( pdsch_vars_mch[eNB_id], fp );
       // 100 PRBs * 12 REs/PRB * 4 PDCCH SYMBOLS * 2 LLRs/RE
       pdcch_vars[eNB_id]->llr   = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
       pdcch_vars[eNB_id]->llr16 = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
@@ -1072,17 +1041,17 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
 
       pdcch_vars[eNB_id]->rxdataF_comp        = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
       pdcch_vars[eNB_id]->dl_ch_rho_ext       = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-      pdcch_vars[eNB_id]->rho                 = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
+      pdcch_vars[eNB_id]->rho                 = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
       pdcch_vars[eNB_id]->rxdataF_ext         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
       pdcch_vars[eNB_id]->dl_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
 
-      for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-        //ue_pdcch_vars[eNB_id]->rho[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(frame_parms->N_RB_DL*12*7*2) );
+      for (i=0; i<fp->nb_antennas_rx; i++) {
+        //ue_pdcch_vars[eNB_id]->rho[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->N_RB_DL*12*7*2) );
         pdcch_vars[eNB_id]->rho[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(100*12*4) );
 
-        for (j=0; j<4; j++) { //frame_parms->nb_antennas_tx; j++)
+        for (j=0; j<4; j++) { //fp->nb_antennas_tx; j++)
           int idx = (j<<1)+i;
-          //  size_t num = 7*2*frame_parms->N_RB_DL*12;
+          //  size_t num = 7*2*fp->N_RB_DL*12;
           size_t num = 4*100*12;  // 4 symbols, 100 PRBs, 12 REs per PRB
           pdcch_vars[eNB_id]->rxdataF_comp[idx]        = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
           pdcch_vars[eNB_id]->dl_ch_rho_ext[idx]       = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
@@ -1092,17 +1061,17 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
       }
 
       // PBCH
-      pbch_vars[eNB_id]->rxdataF_ext         = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
+      pbch_vars[eNB_id]->rxdataF_ext         = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
       pbch_vars[eNB_id]->rxdataF_comp        = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
       pbch_vars[eNB_id]->dl_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
       pbch_vars[eNB_id]->llr                 = (int8_t*)malloc16_clear( 1920 );
-      prach_vars[eNB_id]->prachF             = (int16_t*)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(frame_parms->ofdm_symbol_size*12)) );
-      prach_vars[eNB_id]->prach              = (int16_t*)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(frame_parms->ofdm_symbol_size*12)) );
+      prach_vars[eNB_id]->prachF             = (int16_t*)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
+      prach_vars[eNB_id]->prach              = (int16_t*)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
 
-      for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+      for (i=0; i<fp->nb_antennas_rx; i++) {
         pbch_vars[eNB_id]->rxdataF_ext[i]    = (int32_t*)malloc16_clear( sizeof(int32_t)*6*12*4 );
 
-        for (j=0; j<4; j++) {//frame_parms->nb_antennas_tx;j++) {
+        for (j=0; j<4; j++) {//fp->nb_antennas_tx;j++) {
           int idx = (j<<1)+i;
           pbch_vars[eNB_id]->rxdataF_comp[idx]        = (int32_t*)malloc16_clear( sizeof(int32_t)*6*12*4 );
           pbch_vars[eNB_id]->dl_ch_estimates_ext[idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*6*12*4 );
@@ -1120,14 +1089,14 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
   pdsch_vars_ra[eNB_id]  = (LTE_UE_PDSCH *)malloc16_clear( sizeof(LTE_UE_PDSCH) );
 
   if (abstraction_flag == 0) {
-    phy_init_lte_ue__PDSCH( pdsch_vars[eNB_id], frame_parms );
+    phy_init_lte_ue__PDSCH( pdsch_vars[eNB_id], fp );
     pdsch_vars[eNB_id]->llr[1] = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
 
   } else { //abstraction == 1
-    ue->sinr_dB = (double*) malloc16_clear( frame_parms->N_RB_DL*12*sizeof(double) );
+    ue->sinr_dB = (double*) malloc16_clear( fp->N_RB_DL*12*sizeof(double) );
   }
 
-  ue->sinr_CQI_dB = (double*) malloc16_clear( frame_parms->N_RB_DL*12*sizeof(double) );
+  ue->sinr_CQI_dB = (double*) malloc16_clear( fp->N_RB_DL*12*sizeof(double) );
 
   ue->init_averaging = 1;
   ue->pdsch_config_dedicated->p_a = dB0; // default value until overwritten by RRCConnectionReconfiguration
@@ -1148,7 +1117,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 {
 
   // shortcuts
-  LTE_DL_FRAME_PARMS* const frame_parms = &eNB->frame_parms;
+  LTE_DL_FRAME_PARMS* const fp      = &eNB->frame_parms;
   LTE_eNB_COMMON* const common_vars = &eNB->common_vars;
   LTE_eNB_PUSCH** const pusch_vars  = eNB->pusch_vars;
   LTE_eNB_SRS* const srs_vars       = eNB->srs_vars;
@@ -1162,14 +1131,14 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 
   LOG_I(PHY,"[eNB %"PRIu8"] Initializing DL_FRAME_PARMS : N_RB_DL %"PRIu8", PHICH Resource %d, PHICH Duration %d\n",
         eNB->Mod_id,
-        frame_parms->N_RB_DL,frame_parms->phich_config_common.phich_resource,
-        frame_parms->phich_config_common.phich_duration);
+        fp->N_RB_DL,fp->phich_config_common.phich_resource,
+        fp->phich_config_common.phich_duration);
   LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_eNB][MOD %02"PRIu8"][]\n", eNB->Mod_id);
 
   if (eNB->node_function != NGFI_RRU_IF4p5) {
-    lte_gold(frame_parms,eNB->lte_gold_table,frame_parms->Nid_cell);
-    generate_pcfich_reg_mapping(frame_parms);
-    generate_phich_reg_mapping(frame_parms);
+    lte_gold(fp,eNB->lte_gold_table,fp->Nid_cell);
+    generate_pcfich_reg_mapping(fp);
+    generate_phich_reg_mapping(fp);
     
     for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
       eNB->first_run_timing_advance[UE_id] =
@@ -1191,35 +1160,35 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
       
       // TX vars
       if (eNB->node_function != NGFI_RCC_IF4p5)
-	common_vars->txdata[eNB_id]  = (int32_t**)malloc16( frame_parms->nb_antennas_tx*sizeof(int32_t*) );
-      common_vars->txdataF[eNB_id] = (int32_t **)malloc16( frame_parms->nb_antennas_tx*sizeof(int32_t*) );
+	common_vars->txdata[eNB_id]  = (int32_t**)malloc16( fp->nb_antennas_tx*sizeof(int32_t*) );
+      common_vars->txdataF[eNB_id] = (int32_t **)malloc16( fp->nb_antennas_tx*sizeof(int32_t*) );
       
-      for (i=0; i<frame_parms->nb_antennas_tx; i++) {
+      for (i=0; i<fp->nb_antennas_tx; i++) {
 	if (eNB->node_function != NGFI_RCC_IF4p5)
-	  common_vars->txdata[eNB_id][i]  = (int32_t*)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int32_t) );
-	common_vars->txdataF[eNB_id][i] = (int32_t*)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t) );
+	  common_vars->txdata[eNB_id][i]  = (int32_t*)malloc16_clear( fp->samples_per_tti*10*sizeof(int32_t) );
+	common_vars->txdataF[eNB_id][i] = (int32_t*)malloc16_clear( fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
 #ifdef DEBUG_PHY
 	printf("[openair][LTE_PHY][INIT] common_vars->txdata[%d][%d] = %p\n",eNB_id,i,common_vars->txdata[eNB_id][i]);
 	printf("[openair][LTE_PHY][INIT] common_vars->txdataF[%d][%d] = %p (%d bytes)\n",
 	    eNB_id,i,common_vars->txdataF[eNB_id][i],
-	    FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t));
+	    fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t));
 #endif
       }
       
       // RX vars
       if (eNB->node_function != NGFI_RCC_IF4p5) {
-	common_vars->rxdata[eNB_id]        = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
-	common_vars->rxdata_7_5kHz[eNB_id] = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
+	common_vars->rxdata[eNB_id]        = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	common_vars->rxdata_7_5kHz[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
       }
-      common_vars->rxdataF[eNB_id]       = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
+      common_vars->rxdataF[eNB_id]       = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
       
-      for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+      for (i=0; i<fp->nb_antennas_rx; i++) {
 	if (eNB->node_function != NGFI_RCC_IF4p5) {
-	  common_vars->rxdata[eNB_id][i] = (int32_t*)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int32_t) );
-	  common_vars->rxdata_7_5kHz[eNB_id][i] = (int32_t*)malloc16_clear( frame_parms->samples_per_tti*sizeof(int32_t) );
+	  common_vars->rxdata[eNB_id][i] = (int32_t*)malloc16_clear( fp->samples_per_tti*10*sizeof(int32_t) );
+	  common_vars->rxdata_7_5kHz[eNB_id][i] = (int32_t*)malloc16_clear( fp->samples_per_tti*sizeof(int32_t) );
 	}
 	
-	common_vars->rxdataF[eNB_id][i] = (int32_t*)malloc16_clear(sizeof(int32_t)*(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti) );
+	common_vars->rxdataF[eNB_id][i] = (int32_t*)malloc16_clear(sizeof(int32_t)*(fp->ofdm_symbol_size*fp->symbols_per_tti) );
 #ifdef DEBUG_PHY
 	printf("[openair][LTE_PHY][INIT] common_vars->rxdata[%d][%d] = %p\n",eNB_id,i,common_vars->rxdata[eNB_id][i]);
 	printf("[openair][LTE_PHY][INIT] common_vars->rxdata_7_5kHz[%d][%d] = %p\n",eNB_id,i,common_vars->rxdata_7_5kHz[eNB_id][i]);
@@ -1230,19 +1199,19 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 	// Channel estimates for SRS
 	for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
 	  
-	  srs_vars[UE_id].srs_ch_estimates[eNB_id]      = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
-	  srs_vars[UE_id].srs_ch_estimates_time[eNB_id] = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
+	  srs_vars[UE_id].srs_ch_estimates[eNB_id]      = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	  srs_vars[UE_id].srs_ch_estimates_time[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
 	  
-	  for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-	    srs_vars[UE_id].srs_ch_estimates[eNB_id][i]      = (int32_t*)malloc16_clear( sizeof(int32_t)*frame_parms->ofdm_symbol_size );
-	    srs_vars[UE_id].srs_ch_estimates_time[eNB_id][i] = (int32_t*)malloc16_clear( sizeof(int32_t)*frame_parms->ofdm_symbol_size*2 );
+	  for (i=0; i<fp->nb_antennas_rx; i++) {
+	    srs_vars[UE_id].srs_ch_estimates[eNB_id][i]      = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size );
+	    srs_vars[UE_id].srs_ch_estimates_time[eNB_id][i] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2 );
 	  }
 	} //UE_id
 	
-	common_vars->sync_corr[eNB_id] = (uint32_t*)malloc16_clear( LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(uint32_t)*frame_parms->samples_per_tti );
+	common_vars->sync_corr[eNB_id] = (uint32_t*)malloc16_clear( LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(uint32_t)*fp->samples_per_tti );
       }
     } else { //UPLINK abstraction = 1
-      eNB->sinr_dB = (double*) malloc16_clear( frame_parms->N_RB_DL*12*sizeof(double) );
+      eNB->sinr_dB = (double*) malloc16_clear( fp->N_RB_DL*12*sizeof(double) );
     }
   } //eNB_id
   
@@ -1254,7 +1223,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
       
       // SRS
       for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-	srs_vars[UE_id].srs = (int32_t*)malloc16_clear(2*frame_parms->ofdm_symbol_size*sizeof(int32_t));
+	srs_vars[UE_id].srs = (int32_t*)malloc16_clear(2*fp->ofdm_symbol_size*sizeof(int32_t));
       }
     }
   }
@@ -1267,19 +1236,19 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
     prach_vars->prachF = (int16_t*)malloc16_clear( 1024*2*sizeof(int16_t) );
   
   /* number of elements of an array X is computed as sizeof(X) / sizeof(X[0]) */
-  AssertFatal(frame_parms->nb_antennas_rx <= sizeof(prach_vars->rxsigF) / sizeof(prach_vars->rxsigF[0]),
+  AssertFatal(fp->nb_antennas_rx <= sizeof(prach_vars->rxsigF) / sizeof(prach_vars->rxsigF[0]),
               "nb_antennas_rx too large");
-  for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-    prach_vars->rxsigF[i] = (int16_t*)malloc16_clear( frame_parms->ofdm_symbol_size*12*2*sizeof(int16_t) );
+  for (i=0; i<fp->nb_antennas_rx; i++) {
+    prach_vars->rxsigF[i] = (int16_t*)malloc16_clear( fp->ofdm_symbol_size*12*2*sizeof(int16_t) );
 #ifdef DEBUG_PHY
     printf("[openair][LTE_PHY][INIT] prach_vars->rxsigF[%d] = %p\n",i,prach_vars->rxsigF[i]);
 #endif
   }
   
   if (eNB->node_function != NGFI_RRU_IF4p5) {
-    AssertFatal(frame_parms->nb_antennas_rx <= sizeof(prach_vars->prach_ifft) / sizeof(prach_vars->prach_ifft[0]),
+    AssertFatal(fp->nb_antennas_rx <= sizeof(prach_vars->prach_ifft) / sizeof(prach_vars->prach_ifft[0]),
 		"nb_antennas_rx too large");
-    for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+    for (i=0; i<fp->nb_antennas_rx; i++) {
       prach_vars->prach_ifft[i] = (int16_t*)malloc16_clear(1024*2*sizeof(int16_t));
 #ifdef DEBUG_PHY
       printf("[openair][LTE_PHY][INIT] prach_vars->prach_ifft[%d] = %p\n",i,prach_vars->prach_ifft[i]);
@@ -1294,61 +1263,61 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
       if (abstraction_flag==0) {
 	for (eNB_id=0; eNB_id<3; eNB_id++) {
 	  
-	  pusch_vars[UE_id]->rxdataF_ext[eNB_id]      = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
-	  pusch_vars[UE_id]->rxdataF_ext2[eNB_id]     = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
-	  pusch_vars[UE_id]->drs_ch_estimates[eNB_id] = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
-	  pusch_vars[UE_id]->drs_ch_estimates_time[eNB_id] = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
-	  pusch_vars[UE_id]->rxdataF_comp[eNB_id]     = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
-	  pusch_vars[UE_id]->ul_ch_mag[eNB_id]  = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
-	  pusch_vars[UE_id]->ul_ch_magb[eNB_id] = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
+	  pusch_vars[UE_id]->rxdataF_ext[eNB_id]      = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	  pusch_vars[UE_id]->rxdataF_ext2[eNB_id]     = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	  pusch_vars[UE_id]->drs_ch_estimates[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	  pusch_vars[UE_id]->drs_ch_estimates_time[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	  pusch_vars[UE_id]->rxdataF_comp[eNB_id]     = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	  pusch_vars[UE_id]->ul_ch_mag[eNB_id]  = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	  pusch_vars[UE_id]->ul_ch_magb[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
 	  
-	  for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+	  for (i=0; i<fp->nb_antennas_rx; i++) {
 	    // RK 2 times because of output format of FFT!
 	    // FIXME We should get rid of this
-	    pusch_vars[UE_id]->rxdataF_ext[eNB_id][i]      = (int32_t*)malloc16_clear( 2*sizeof(int32_t)*frame_parms->N_RB_UL*12*frame_parms->symbols_per_tti );
-	    pusch_vars[UE_id]->rxdataF_ext2[eNB_id][i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*frame_parms->N_RB_UL*12*frame_parms->symbols_per_tti );
-	    pusch_vars[UE_id]->drs_ch_estimates[eNB_id][i] = (int32_t*)malloc16_clear( sizeof(int32_t)*frame_parms->N_RB_UL*12*frame_parms->symbols_per_tti );
-	    pusch_vars[UE_id]->drs_ch_estimates_time[eNB_id][i] = (int32_t*)malloc16_clear( 2*2*sizeof(int32_t)*frame_parms->ofdm_symbol_size );
-	    pusch_vars[UE_id]->rxdataF_comp[eNB_id][i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*frame_parms->N_RB_UL*12*frame_parms->symbols_per_tti );
-	    pusch_vars[UE_id]->ul_ch_mag[eNB_id][i]  = (int32_t*)malloc16_clear( frame_parms->symbols_per_tti*sizeof(int32_t)*frame_parms->N_RB_UL*12 );
-	    pusch_vars[UE_id]->ul_ch_magb[eNB_id][i] = (int32_t*)malloc16_clear( frame_parms->symbols_per_tti*sizeof(int32_t)*frame_parms->N_RB_UL*12 );
+	    pusch_vars[UE_id]->rxdataF_ext[eNB_id][i]      = (int32_t*)malloc16_clear( 2*sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
+	    pusch_vars[UE_id]->rxdataF_ext2[eNB_id][i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
+	    pusch_vars[UE_id]->drs_ch_estimates[eNB_id][i] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
+	    pusch_vars[UE_id]->drs_ch_estimates_time[eNB_id][i] = (int32_t*)malloc16_clear( 2*2*sizeof(int32_t)*fp->ofdm_symbol_size );
+	    pusch_vars[UE_id]->rxdataF_comp[eNB_id][i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
+	    pusch_vars[UE_id]->ul_ch_mag[eNB_id][i]  = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
+	    pusch_vars[UE_id]->ul_ch_magb[eNB_id][i] = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
 	  }
 	  
 	  // In case of Distributed Alamouti Collabrative scheme separate channel estimates are required for both the UEs
 	  if (cooperation_flag == 2) {
-	    pusch_vars[UE_id]->drs_ch_estimates_0[eNB_id] = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) ); // UE 0 DRS estimates
-	    pusch_vars[UE_id]->drs_ch_estimates_1[eNB_id] = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) ); // UE 1 DRS estimates
+	    pusch_vars[UE_id]->drs_ch_estimates_0[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) ); // UE 0 DRS estimates
+	    pusch_vars[UE_id]->drs_ch_estimates_1[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) ); // UE 1 DRS estimates
 	    
-	    for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-	      pusch_vars[UE_id]->drs_ch_estimates_0[eNB_id][i] = (int32_t*)malloc16_clear( frame_parms->symbols_per_tti*sizeof(int32_t)*frame_parms->N_RB_UL*12 );
-	      pusch_vars[UE_id]->drs_ch_estimates_1[eNB_id][i] = (int32_t*)malloc16_clear( frame_parms->symbols_per_tti*sizeof(int32_t)*frame_parms->N_RB_UL*12 );
+	    for (i=0; i<fp->nb_antennas_rx; i++) {
+	      pusch_vars[UE_id]->drs_ch_estimates_0[eNB_id][i] = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
+	      pusch_vars[UE_id]->drs_ch_estimates_1[eNB_id][i] = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
 	    }
 	    
 	    // Compensated data for the case of Distributed Alamouti Scheme
-	    pusch_vars[UE_id]->rxdataF_comp_0[eNB_id] = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) ); // it will contain(y)*(h0*)
-	    pusch_vars[UE_id]->rxdataF_comp_1[eNB_id] = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) ); // it will contain(y*)*(h1)
+	    pusch_vars[UE_id]->rxdataF_comp_0[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) ); // it will contain(y)*(h0*)
+	    pusch_vars[UE_id]->rxdataF_comp_1[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) ); // it will contain(y*)*(h1)
 	    
-	    for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-	      pusch_vars[UE_id]->rxdataF_comp_0[eNB_id][i] = (int32_t*)malloc16_clear( frame_parms->symbols_per_tti*sizeof(int32_t)*frame_parms->N_RB_UL*12 );
-	      pusch_vars[UE_id]->rxdataF_comp_1[eNB_id][i] = (int32_t*)malloc16_clear( frame_parms->symbols_per_tti*sizeof(int32_t)*frame_parms->N_RB_UL*12 );
+	    for (i=0; i<fp->nb_antennas_rx; i++) {
+	      pusch_vars[UE_id]->rxdataF_comp_0[eNB_id][i] = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
+	      pusch_vars[UE_id]->rxdataF_comp_1[eNB_id][i] = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
 	    }
 	    
 	    // UE 0
-	    pusch_vars[UE_id]->ul_ch_mag_0[eNB_id]  = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
-	    pusch_vars[UE_id]->ul_ch_magb_0[eNB_id] = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
+	    pusch_vars[UE_id]->ul_ch_mag_0[eNB_id]  = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	    pusch_vars[UE_id]->ul_ch_magb_0[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
 	    
-	    for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-	      pusch_vars[UE_id]->ul_ch_mag_0[eNB_id][i]  = (int32_t*)malloc16_clear( frame_parms->symbols_per_tti*sizeof(int32_t)*frame_parms->N_RB_UL*12 );
-	      pusch_vars[UE_id]->ul_ch_magb_0[eNB_id][i] = (int32_t*)malloc16_clear( frame_parms->symbols_per_tti*sizeof(int32_t)*frame_parms->N_RB_UL*12 );
+	    for (i=0; i<fp->nb_antennas_rx; i++) {
+	      pusch_vars[UE_id]->ul_ch_mag_0[eNB_id][i]  = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
+	      pusch_vars[UE_id]->ul_ch_magb_0[eNB_id][i] = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
 	    }
 	    
 	    // UE 1
-	    pusch_vars[UE_id]->ul_ch_mag_1[eNB_id]  = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
-	    pusch_vars[UE_id]->ul_ch_magb_1[eNB_id] = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
+	    pusch_vars[UE_id]->ul_ch_mag_1[eNB_id]  = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	    pusch_vars[UE_id]->ul_ch_magb_1[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
 	    
-	    for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-	      pusch_vars[UE_id]->ul_ch_mag_1[eNB_id][i]  = (int32_t*)malloc16( frame_parms->symbols_per_tti*sizeof(int32_t)*frame_parms->N_RB_UL*12 );
-	      pusch_vars[UE_id]->ul_ch_magb_1[eNB_id][i] = (int32_t*)malloc16( frame_parms->symbols_per_tti*sizeof(int32_t)*frame_parms->N_RB_UL*12 );
+	    for (i=0; i<fp->nb_antennas_rx; i++) {
+	      pusch_vars[UE_id]->ul_ch_mag_1[eNB_id][i]  = (int32_t*)malloc16( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
+	      pusch_vars[UE_id]->ul_ch_magb_1[eNB_id][i] = (int32_t*)malloc16( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
 	    }
 	  }//cooperation_flag
 	} //eNB_id
@@ -1373,15 +1342,15 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 	    return(-1);
 	  }
 	  
-	  for (j=0; j<eNB->frame_parms.nb_antennas_tx; j++) {
-	    eNB->dl_precoder_SeNB[eNB_id][j] = (int *)malloc16(2*sizeof(int)*(eNB->frame_parms.ofdm_symbol_size)); // repeated format (hence the '2*')
+	  for (j=0; j<fp->nb_antennas_tx; j++) {
+	    eNB->dl_precoder_SeNB[eNB_id][j] = (int *)malloc16(2*sizeof(int)*(fp->ofdm_symbol_size)); // repeated format (hence the '2*')
 	    
 	    if (eNB->dl_precoder_SeNB[eNB_id][j]) {
 #ifdef DEBUG_PHY
 	      printf("[openair][LTE_PHY][INIT] eNB->dl_precoder_SeNB[%d][%d] allocated at %p\n",eNB_id,j,
 		  eNB->dl_precoder_SeNB[eNB_id][j]);
 #endif
-	      memset(eNB->dl_precoder_SeNB[eNB_id][j],0,2*sizeof(int)*(eNB->frame_parms.ofdm_symbol_size));
+	      memset(eNB->dl_precoder_SeNB[eNB_id][j],0,2*sizeof(int)*(fp->ofdm_symbol_size));
 	    } else {
 	      printf("[openair][LTE_PHY][INIT] eNB->dl_precoder_SeNB[%d][%d] not allocated\n",eNB_id,j);
 	      return(-1);

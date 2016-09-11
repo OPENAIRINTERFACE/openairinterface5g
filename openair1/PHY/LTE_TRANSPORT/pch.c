@@ -26,31 +26,36 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-void adc(double r_re[2][30720],
-         double r_im[2][30720],
-         unsigned int input_offset,
-         unsigned int output_offset,
-         unsigned int **output,
-         unsigned int nb_rx_antennas,
-         unsigned int length,
-         unsigned char B)
-{
+#include "PHY/defs.h"
+#include "PHY/extern.h"
+#include "assertions.h"
 
-  int i;
-  int aa;
-  double gain = (double)(1<<(B-1));
-  //double gain = 1.0;
+const unsigned int Ttab[4] = {32,64,128,256};
 
-  for (i=0; i<length; i++) {
-    for (aa=0; aa<nb_rx_antennas; aa++) {
-      ((short *)output[aa])[((i+output_offset)<<1)]   = (short)(r_re[aa][i+input_offset]*gain);
-      ((short *)output[aa])[1+((i+output_offset)<<1)] = (short)(r_im[aa][i+input_offset]*gain);
+// This function implements the initialization of paging parameters for UE (See Section 7, 36.304)
+// It must be called after setting IMSImod1024 during UE startup and after receiving SIB2
+int init_ue_paging_info(PHY_VARS_UE *ue, long defaultPagingCycle, long nB) {
 
-      if ((r_re[aa][i+input_offset]*gain) > 30000) {
-        //("Adc outputs %d %e  %d \n",i,((short *)output[0])[((i+output_offset)<<1)], ((i+output_offset)<<1) );
-      }
-    }
+   LTE_DL_FRAME_PARMS *fp = &ue->frame_parms;
 
-    //printf("Adc outputs %d %e  %d \n",i,((short *)output[0])[((i+output_offset)<<1)], ((i+output_offset)<<1) );
-  }
+   unsigned int T         = Ttab[defaultPagingCycle];
+   unsigned int N         = (nB<=2) ? T : (T>>(nB-2));
+   unsigned int Ns        = (nB<2)  ? (1<<(2-nB)) : 1;
+   unsigned int UE_ID     = ue->IMSImod1024;
+   unsigned int i_s       = (UE_ID/N)%Ns;
+
+   
+   ue->PF = (T/N) * (UE_ID % N);
+
+   // This implements Section 7.2 from 36.304
+   if (Ns==1)
+     ue->PO = (fp->frame_type==FDD) ? 9 : 0; 
+   else if (Ns==2)
+     ue->PO = (fp->frame_type==FDD) ? (4+(5*i_s)) : (5*i_s); 
+   else if (Ns==4)
+     ue->PO = (fp->frame_type==FDD) ? (4*(i_s&1)+(5*(i_s>>1))) : ((i_s&1)+(5*(i_s>>1))); 
+   else
+     AssertFatal(1==0,"init_ue_paging_info: Ns is %d\n",Ns);
+
+   return(0);
 }

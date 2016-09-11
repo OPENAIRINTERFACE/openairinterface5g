@@ -382,7 +382,8 @@ void help (void) {
   printf("  --ue-txgain set UE TX gain\n");
   printf("  --ue-scan_carrier set UE to scan around carrier\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
-  printf("  --mmapped-dma sets flag for improved EXMIMO UE performance\n");   
+  printf("  --mmapped-dma sets flag for improved EXMIMO UE performance\n");  
+  printf("  --single-thread runs lte-softmodem in only one thread\n"); 
   printf("  -C Set the downlink frequency for all component carriers\n");
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
   printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
@@ -401,6 +402,7 @@ void help (void) {
   printf("  -W Enable L2 wireshark messages on localhost \n");
   printf("  -V Enable VCD (generated file will be located atopenair_dump_eNB.vcd, read it with target/RT/USER/eNB.gtkw\n");
   printf("  -x Set the transmission mode, valid options: 1 \n");
+  printf("  -E Apply three-quarter of sampling frequency, 23.04 Msps to reduce the data rate on USB/PCIe transfers (only valid for 20 MHz)\n");
 #if T_TRACER
   printf("  --T_port [port]    use given port\n");
   printf("  --T_nowait         don't wait for tracer, start immediately\n");

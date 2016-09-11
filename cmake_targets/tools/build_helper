@@ -318,7 +318,6 @@ check_install_oai_software() {
 	libxml2 \
 	libxml2-dev  \
 	libxslt1-dev \
-	linux-headers-`uname -r` \
 	mscgen  \
 	octave \
 	octave-signal \
@@ -333,7 +332,8 @@ check_install_oai_software() {
 	wget
 
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
-        $SUDO apt-get install libgnutls-dev nettle-dev nettle-bin
+    $SUDO apt-get install libgnutls-dev nettle-dev nettle-bin
+    
     install_asn1c_from_source
 }
 
@@ -341,13 +341,9 @@ install_asn1c_from_source(){
     asn1_install_log=$OPENAIR_DIR/cmake_targets/log/asn1c_install_log.txt
     echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_log "
     (
-    $SUDO rm -rf /tmp/asn1c-r1516
-    svn co https://github.com/vlm/asn1c/trunk  /tmp/asn1c-r1516 -r 1516
-    cd /tmp/asn1c-r1516 
-    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch.p0 
-    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_2.p0 
-    patch -p0 < $OPENAIR_DIR/openair2/RRC/LITE/MESSAGES/asn1c/asn1cpatch.p0 
-    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_3.p0 
+    $SUDO rm -rf /tmp/asn1c
+    git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
+    cd /tmp/asn1c
     ./configure
     make -j`nproc`
     $SUDO make install

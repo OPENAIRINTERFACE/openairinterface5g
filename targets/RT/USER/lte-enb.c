@@ -190,10 +190,10 @@ static inline void thread_top_init(char *thread_name,
 
   if (sched_setattr(0, &attr, flags) < 0 ) {
     perror("[SCHED] eNB tx thread: sched_setattr failed\n");
-    exit(1);
+    exit_fun("Error setting deadline scheduler");
   }
 
-  LOG_I( HW, "[SCHED] eNB RXn-TXnp4 deadline thread (TID %ld) started on CPU %d\n", gettid(), sched_getcpu() );
+  LOG_I( HW, "[SCHED] eNB %s deadline thread (TID %ld) started on CPU %d\n", gettid(), thread_name,sched_getcpu() );
 
 #else //LOW_LATENCY
   int policy, s, j;
@@ -657,7 +657,7 @@ static void* eNB_thread_rxtx( void* param ) {
   return &eNB_thread_rxtx_status;
 }
 
-#if defined(ENABLE_ITTI)
+#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
 /* Wait for eNB application initialization to be complete (eNB registration to MME) */
 static void wait_system_ready (char *message, volatile int *start_flag) {
   
@@ -1036,7 +1036,7 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 
 void rx_fh_slave(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   // This case is for synchronization to another thread
-  // it just waits for an external event.  The actual rx_rh is handle by the asynchronous RX thread
+  // it just waits for an external event.  The actual rx_fh is handle by the asynchronous RX thread
   eNB_proc_t *proc=&eNB->proc;
 
   if (wait_on_condition(&proc->mutex_FH,&proc->cond_FH,&proc->instance_cnt_FH,"rx_fh_slave") < 0)
@@ -1080,8 +1080,8 @@ int wakeup_rxtx(eNB_proc_t *proc,eNB_rxtx_proc_t *proc_rxtx,LTE_DL_FRAME_PARMS *
   // TS_rx is the last received timestamp (start of 1st slot), TS_tx is the desired 
   // transmitted timestamp of the next TX slot (first).
   // The last (TS_rx mod samples_per_frame) was n*samples_per_tti, 
-  // we want to generate subframe (n+3), so TS_tx = TX_rx+3*samples_per_tti,
-  // and proc->subframe_tx = proc->subframe_rx+3
+  // we want to generate subframe (n+4), so TS_tx = TX_rx+4*samples_per_tti,
+  // and proc->subframe_tx = proc->subframe_rx+4
   proc_rxtx->timestamp_tx = proc->timestamp_rx + (4*fp->samples_per_tti);
   proc_rxtx->frame_rx     = proc->frame_rx;
   proc_rxtx->subframe_rx  = proc->subframe_rx;
@@ -1133,7 +1133,7 @@ void wakeup_slaves(eNB_proc_t *proc) {
 	  break;
       }
     } else {
-      LOG_W( PHY,"[eNB] Frame %d, FH CC_id %d thread busy!! (cnt_FH %i)\n",slave_proc->frame_rx,slave_proc->CC_id, cnt_slave);
+      LOG_W( PHY,"[eNB] Frame %d, slave CC_id %d thread busy!! (cnt_FH %i)\n",slave_proc->frame_rx,slave_proc->CC_id, cnt_slave);
       exit_fun( "FH thread busy" );
       break;
     }             
@@ -1165,7 +1165,7 @@ static void* eNB_thread_FH( void* param ) {
 
   wait_sync("eNB_thread_FH");
 
-#if defined(ENABLE_ITTI)
+#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
   if (eNB->node_function < NGFI_RRU_IF5)
     wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
 #endif 
@@ -1277,7 +1277,7 @@ static void* eNB_thread_single( void* param ) {
 
   wait_sync("eNB_thread_single");
 
-#if defined(ENABLE_ITTI)
+#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
   if (eNB->node_function < NGFI_RRU_IF5)
     wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
 #endif 
@@ -1311,12 +1311,14 @@ static void* eNB_thread_single( void* param ) {
       subframe++;
     }      
 
+    LOG_D(PHY,"eNB Fronthaul thread, frame %d, subframe %d\n",frame,subframe);
  
     // synchronization on FH interface, acquire signals/data and block
     if (eNB->rx_fh) eNB->rx_fh(eNB,&frame,&subframe);
     else AssertFatal(1==0, "No fronthaul interface : eNB->node_function %d",eNB->node_function);
 
     T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
+
 
     // At this point, all information for subframe has been received on FH interface
     // If this proc is to provide synchronization, do so
@@ -1552,17 +1554,17 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
       
       for (i=0; i<frame_parms->nb_antennas_rx; i++) {
 	free(phy_vars_eNB[CC_id]->common_vars.rxdata[0][i]);
-	rxdata[i] = (int32_t*)(32 + malloc16(32+openair0_cfg[phy_vars_eNB[CC_id]->rf_map.card].samples_per_frame*sizeof(int32_t))); // FIXME broken memory allocation
+	rxdata[i] = (int32_t*)(32 + malloc16(32+frame_parms->samples_per_tti*10*sizeof(int32_t))); // FIXME broken memory allocation
 	phy_vars_eNB[CC_id]->common_vars.rxdata[0][i] = rxdata[i]-N_TA_offset; // N_TA offset for TDD         FIXME! N_TA_offset > 16 => access of unallocated memory
-	memset(rxdata[i], 0, openair0_cfg[phy_vars_eNB[CC_id]->rf_map.card].samples_per_frame*sizeof(int32_t));
+	memset(rxdata[i], 0, frame_parms->samples_per_tti*10*sizeof(int32_t));
 	printf("rxdata[%d] @ %p (%p) (N_TA_OFFSET %d)\n", i, phy_vars_eNB[CC_id]->common_vars.rxdata[0][i],rxdata[i],N_TA_offset);      
       }
       
       for (i=0; i<frame_parms->nb_antennas_tx; i++) {
 	free(phy_vars_eNB[CC_id]->common_vars.txdata[0][i]);
-	txdata[i] = (int32_t*)(32 + malloc16(32 + openair0_cfg[phy_vars_eNB[CC_id]->rf_map.card].samples_per_frame*sizeof(int32_t))); // FIXME broken memory allocation
+	txdata[i] = (int32_t*)(32 + malloc16(32 + frame_parms->samples_per_tti*10*sizeof(int32_t))); // FIXME broken memory allocation
 	phy_vars_eNB[CC_id]->common_vars.txdata[0][i] = txdata[i];
-	memset(txdata[i],0, openair0_cfg[phy_vars_eNB[CC_id]->rf_map.card].samples_per_frame*sizeof(int32_t));
+	memset(txdata[i],0, frame_parms->samples_per_tti*10*sizeof(int32_t));
 	printf("txdata[%d] @ %p\n", i, phy_vars_eNB[CC_id]->common_vars.txdata[0][i]);
       }
     }

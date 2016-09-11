@@ -45,7 +45,8 @@
 #include <complex>
 #include <fstream>
 #include <cmath>
-
+#include <time.h>
+#include "UTIL/LOG/log_extern.h"
 #include "common_lib.h"
 #ifdef __SSE4_1__
 #  include <smmintrin.h>
@@ -172,7 +173,13 @@ static void trx_usrp_end(openair0_device *device)
 */ 
 static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags)
 {
-  int ret;
+   static long long int loop=0;
+   static long time_min=0, time_max=0, time_avg=0;
+   struct timespec tp_start, tp_end;
+   long time_diff;
+   clock_gettime(CLOCK_MONOTONIC_RAW, &tp_start);
+
+  int ret=0, ret_i=0;
   usrp_state_t *s = (usrp_state_t*)device->priv;
 
   s->tx_md.time_spec = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
@@ -196,7 +203,23 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
   if (ret != nsamps) {
     printf("[xmit] tx samples %d != %d\n",ret,nsamps);
   }
-      
+
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tp_end);
+  time_diff = (tp_end.tv_sec - tp_start.tv_sec) *1E09  + (tp_end.tv_nsec - tp_start.tv_nsec);
+  if  (time_min==0 ||loop==1 || time_min > time_diff)
+    time_min=time_diff;
+  if  (time_max==0 ||loop==1 || time_max < time_diff)
+    time_max=time_diff;
+  if (time_avg ==0 ||loop==1)
+    time_avg= time_diff;
+  else
+    time_avg=(time_diff+time_avg) /2.0;
+
+   //prints statics of uhd every 10 seconds
+   if ( loop % (10 * ((int)device->openair0_cfg[0].sample_rate /(int)nsamps )) ==0)
+     LOG_I(HW,"usrp_write: min(ns)=%d, max(ns)=%d, avg(ns)=%d\n", (int)time_min, (int)time_max,(int)time_avg);
+
+   loop++;
   return ret;
 }
 
@@ -213,6 +236,11 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
 */
 static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc)
 {
+   static long long int loop=0;
+   static long time_min=0, time_max=0, time_avg=0;
+   struct timespec tp_start, tp_end;
+   long time_diff;
+   clock_gettime(CLOCK_MONOTONIC_RAW, &tp_start);
    usrp_state_t *s = (usrp_state_t*)device->priv;
    int samples_received=0,i,j;
    int nsamps2;  // aligned to upper 32 or 16 byte boundary
@@ -293,6 +321,22 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
   s->rx_timestamp = s->rx_md.time_spec.to_ticks(s->sample_rate);
   *ptimestamp = s->rx_timestamp;
 
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tp_end);
+  time_diff = (tp_end.tv_sec - tp_start.tv_sec) *1E09  + (tp_end.tv_nsec - tp_start.tv_nsec);
+  if  (time_min==0 ||loop==1 || time_min > time_diff)
+    time_min=time_diff;
+  if  (time_max==0 ||loop==1 || time_max < time_diff)
+    time_max=time_diff;
+  if (time_avg ==0 ||loop==1)
+    time_avg= time_diff;
+  else
+    time_avg=(time_diff+time_avg) /2.0;
+
+  //prints statics of uhd every 10 seconds
+  if ( loop % (10 * ((int)device->openair0_cfg[0].sample_rate /(int)nsamps )) ==0)
+     LOG_I(HW,"usrp_read: min(ns)=%d, max(ns)=%d, avg(ns)=%d\n", (int)time_min, (int)time_max,(int)time_avg);
+
+  loop++;
   return samples_received;
 }
 
@@ -500,6 +544,7 @@ extern "C" {
     
     // Initialize USRP device
 
+  device->openair0_cfg = openair0_cfg;
 
   std::string args = "type=b200";
 
@@ -522,6 +567,8 @@ extern "C" {
     
     // workaround for an api problem, master clock has to be set with the constructor not via set_master_clock_rate
     args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
+    
+    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=4096, recv_frame_size=4096";
     
     uhd::device_addrs_t device_adds = uhd::device::find(args);
 
@@ -554,25 +601,25 @@ extern "C" {
     switch ((int)openair0_cfg[0].sample_rate) {
     case 30720000:
             // from usrp_time_offset
-      openair0_cfg[0].samples_per_packet    = 2048;
+      //openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 15;
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
       break;
     case 15360000:
-      openair0_cfg[0].samples_per_packet    = 2048;
+      //openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 45;
       openair0_cfg[0].tx_bw                 = 10e6;
       openair0_cfg[0].rx_bw                 = 10e6;
       break;
     case 7680000:
-      openair0_cfg[0].samples_per_packet    = 1024;
+      //openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 50;
       openair0_cfg[0].tx_bw                 = 5e6;
       openair0_cfg[0].rx_bw                 = 5e6;
       break;
     case 1920000:
-      openair0_cfg[0].samples_per_packet    = 256;
+      //openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 50;
       openair0_cfg[0].tx_bw                 = 1.25e6;
       openair0_cfg[0].rx_bw                 = 1.25e6;
@@ -585,7 +632,7 @@ extern "C" {
 
   } else {
     printf("Found USRP B200");
-    args += ",num_recv_frames=256" ; 
+    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=4096, recv_frame_size=4096" ; 
     s->usrp = uhd::usrp::multi_usrp::make(args);
 
     //  s->usrp->set_rx_subdev_spec(rx_subdev);
@@ -611,30 +658,35 @@ extern "C" {
     switch ((int)openair0_cfg[0].sample_rate) {
     case 30720000:
       s->usrp->set_master_clock_rate(30.72e6);
+      //openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 115;
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
       break;
     case 23040000:
       s->usrp->set_master_clock_rate(23.04e6); //to be checked
+      //openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 113;
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
       break;
     case 15360000:
       s->usrp->set_master_clock_rate(30.72e06);
+      //openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 103; 
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
       break;
     case 7680000:
       s->usrp->set_master_clock_rate(30.72e6);
+      //openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 80;
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
       break;
     case 1920000:
       s->usrp->set_master_clock_rate(30.72e6);
+      //openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 40;
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
@@ -758,7 +810,8 @@ extern "C" {
   device->trx_stop_func  = trx_usrp_stop;
   device->trx_set_freq_func = trx_usrp_set_freq;
   device->trx_set_gains_func   = trx_usrp_set_gains;
-  
+  device->openair0_cfg = openair0_cfg;
+
   s->sample_rate = openair0_cfg[0].sample_rate;
   // TODO:
   // init tx_forward_nsamps based usrp_time_offset ex

@@ -126,6 +126,7 @@ endmacro(add_list_string_option)
 if (CMAKE_BUILD_TYPE STREQUAL "")
    set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
+message("CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 add_list_string_option(CMAKE_BUILD_TYPE "RelWithDebInfo" "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." Debug Release RelWithDebInfo MinSizeRel)
 
 Message("Architecture is ${CMAKE_SYSTEM_PROCESSOR}")
@@ -922,7 +923,14 @@ add_library(SECU_CN ${SECU_CN_SRC})
 
 # Scheduler
 ################################"
-file(GLOB SCHED_SRC ${OPENAIR1_DIR}/SCHED/*.c)
+set(SCHED_SRC 
+  ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_eNb.c
+  ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_ue.c
+  ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_common.c
+  ${OPENAIR1_DIR}/SCHED/phy_mac_stub.c
+  ${OPENAIR1_DIR}/SCHED/pucch_pc.c
+  ${OPENAIR1_DIR}/SCHED/pusch_pc.c
+)
 add_library(SCHED_LIB ${SCHED_SRC})
 
 # Layer 1
@@ -952,6 +960,7 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pucch.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/prach.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pmch.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pch.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/group_hopping.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/srs_modulation.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/drs_modulation.c
@@ -1624,10 +1633,9 @@ target_link_libraries (lte-softmodem -ldl
   RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} 
   -Wl,--end-group )
 
-
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ) 
-target_link_libraries (lte-softmodem ${LIBBOOST_LIBRARIES})
+target_link_libraries (lte-softmodem ${LIBBOOST_LIBRARIES} -lboost_system) #Added manually as it is not found for some reason for USRP
 target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem ${T_LIB})
 
@@ -1662,7 +1670,7 @@ target_link_libraries (lte-softmodem-nos1
 
 target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib}  ${option_TP_lib} ${XFORMS_LIBRARIES} )
-target_link_libraries (lte-softmodem-nos1 ${LIBBOOST_LIBRARIES})
+target_link_libraries (lte-softmodem-nos1 ${LIBBOOST_LIBRARIES} -lboost_system) #Added manually as it is not found for some reason for USRP
 target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 ${T_LIB})
 
@@ -1685,7 +1693,7 @@ target_link_libraries(rrh_gw
   UTIL LFDS  
   -Wl,--end-group )
 target_link_libraries (rrh_gw rt pthread m )
-target_link_libraries (rrh_gw  ${option_HW_lib} ${option_TP_lib} ${LIBBOOST_LIBRARIES} )
+target_link_libraries (rrh_gw  ${option_HW_lib} ${option_TP_lib} ${LIBBOOST_LIBRARIES} -lboost_system ) #Added manually as it is not found for some reason for USRP
 target_link_libraries (rrh_gw ${LIB_LMS_LIBRARIES})
 target_link_libraries (rrh_gw ${T_LIB})
 

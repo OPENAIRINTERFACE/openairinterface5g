@@ -525,6 +525,41 @@ void ue_decode_si(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_i
   }
 }
 
+void ue_decode_p(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_index, void *pdu,uint16_t len)
+{
+
+  start_meas(&UE_mac_inst[module_idP].rx_p);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_IN);
+
+  LOG_D(MAC,"[UE %d] Frame %d Sending Paging message to RRC (LCID Id %d,len %d)\n",module_idP,frameP,PCCH,len);
+
+  mac_rrc_data_ind(module_idP,
+                   CC_id,
+                   frameP,0, // unknown subframe
+                   P_RNTI,
+                   PCCH,
+                   (uint8_t *)pdu,
+                   len,
+                   ENB_FLAG_NO,
+                   eNB_index,
+                   0);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_OUT);
+  stop_meas(&UE_mac_inst[module_idP].rx_p);
+  if (opt_enabled == 1) {
+    trace_pdu(0,
+	      (uint8_t *)pdu,
+	      len,
+	      module_idP,
+	      4,
+	      P_RNTI,
+	      UE_mac_inst[module_idP].subframe,
+	      0,
+	      0);
+    LOG_D(OPT,"[UE %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
+	    module_idP, frameP, CC_id, P_RNTI, len);
+  }
+}
+
 #ifdef Rel10
 unsigned char *parse_mch_header(unsigned char *mac_header,
                                 unsigned char *num_sdu,

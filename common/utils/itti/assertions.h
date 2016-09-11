@@ -34,7 +34,7 @@
 #include <platform_types.h>
 #endif
 
-#if defined(ENB_MODE)
+#if defined(ENB_MODE2)
 # define display_backtrace()
 #else
 # include "backtrace.h"
@@ -59,7 +59,7 @@ do {                                                        \
                 "In %s() %s:%d\n" fORMAT,                   \
                 __FUNCTION__, __FILE__, __LINE__, ##aRGS);  \
         aCTION;                                             \
-    }                                                       \
+    }						\
 } while(0)
 
 #define AssertFatal(cOND, fORMAT, aRGS...)          _Assert_(cOND, _Assert_Exit_, fORMAT, ##aRGS)

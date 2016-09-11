@@ -53,11 +53,6 @@
 # define msg mexPrintf
 #else
 # ifdef OPENAIR2
-#   if ENABLE_RAL
-#     include "collection/hashtable/hashtable.h"
-#     include "COMMON/ral_messages_types.h"
-#     include "UTIL/queue.h"
-#   endif
 #   include "log.h"
 #   define msg(aRGS...) LOG_D(PHY, ##aRGS)
 # else
@@ -132,10 +127,6 @@ static inline void* malloc16_clear( size_t size )
 #include "PHY/TOOLS/defs.h"
 #include "platform_types.h"
 
-#ifdef OPENAIR_LTE
-
-//#include "PHY/LTE_ESTIMATION/defs.h"
-
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include <pthread.h>
 
@@ -177,16 +168,6 @@ typedef struct UE_SCAN_INFO_s {
   /// 10 frequency offsets (kHz) corresponding to best amplitudes, with respect do minimum DL frequency in the band
   int32_t freq_offset_Hz[3][10];
 } UE_SCAN_INFO_t;
-
-#if ENABLE_RAL
-typedef struct ral_threshold_phy_s {
-  SLIST_ENTRY(ral_threshold_phy_s) ral_thresholds;
-  ral_threshold_t                  threshold;
-  ral_th_action_t                  th_action;
-  ral_link_param_t                 link_param;
-  long                             timer_id;
-} ral_threshold_phy_t;
-#endif
 
 /// Top-level PHY Data Structure for RN
 typedef struct {
@@ -612,6 +593,8 @@ typedef struct {
   int is_synchronized;
   /// Data structure for UE process scheduling
   UE_proc_t proc;
+  /// Flag to indicate the UE shouldn't do timing correction at all
+  int no_timing_correction;
   /// \brief Total gain of the TX chain (16-bit baseband I/Q to antenna)
   uint32_t tx_total_gain_dB;
   /// \brief Total gain of the RX chain (antenna to baseband I/Q) This is a function of rx_gain_mode (and the corresponding gain) and the rx_gain of the card.
@@ -623,9 +606,9 @@ typedef struct {
   /// \brief Total gains with bypassed RF gain stage (ExpressMIMO2/Lime)
   uint32_t rx_gain_byp[4];
   /// \brief Current transmit power
-  int8_t tx_power_dBm;
+  int8_t tx_power_dBm[10];
   /// \brief Total number of REs in current transmission
-  int tx_total_RE;
+  int tx_total_RE[10];
   /// \brief Maximum transmit power
   int8_t tx_power_max_dBm;
   /// \brief Number of eNB seen by UE
@@ -645,16 +628,24 @@ typedef struct {
   LTE_UE_PDSCH_FLP *pdsch_vars_flp[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_ra[NUMBER_OF_CONNECTED_eNB_MAX+1];
+  LTE_UE_PDSCH     *pdsch_vars_p[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_MCH[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_PDCCH     *pdcch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch[NUMBER_OF_CONNECTED_eNB_MAX][2];
   LTE_UE_ULSCH_t   *ulsch[NUMBER_OF_CONNECTED_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch_SI[NUMBER_OF_CONNECTED_eNB_MAX],*dlsch_ra[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_DLSCH_t   *dlsch_SI[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_DLSCH_t   *dlsch_ra[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_DLSCH_t   *dlsch_p[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_MCH[NUMBER_OF_CONNECTED_eNB_MAX];
   // This is for SIC in the UE, to store the reencoded data
   LTE_eNB_DLSCH_t  *dlsch_eNB[NUMBER_OF_CONNECTED_eNB_MAX];
+
+  //Paging parameters
+  uint32_t              IMSImod1024;
+  uint32_t              PF;
+  uint32_t              PO;
 
   // For abstraction-purposes only
   uint8_t               sr[10];
@@ -710,6 +701,8 @@ typedef struct {
   int dlsch_SI_errors[NUMBER_OF_CONNECTED_eNB_MAX];
   int dlsch_ra_received[NUMBER_OF_CONNECTED_eNB_MAX];
   int dlsch_ra_errors[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_p_received[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_p_errors[NUMBER_OF_CONNECTED_eNB_MAX];
   int dlsch_mch_received_sf[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
   int dlsch_mch_received[NUMBER_OF_CONNECTED_eNB_MAX];
   int dlsch_mcch_received[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
@@ -833,11 +826,6 @@ typedef struct {
   /// RF and Interface devices per CC
   openair0_device rfdevice; 
 
-#if ENABLE_RAL
-  hash_table_t    *ral_thresholds_timed;
-  SLIST_HEAD(ral_thresholds_gen_poll_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
-  SLIST_HEAD(ral_thresholds_lte_poll_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
-#endif
 } PHY_VARS_UE;
 
 
@@ -849,6 +837,5 @@ typedef struct {
 #include "PHY/LTE_ESTIMATION/defs.h"
 
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
-#endif //OPENAIR_LTE
 
 #endif //  __PHY_DEFS__H__

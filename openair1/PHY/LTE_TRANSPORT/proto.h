@@ -1339,6 +1339,14 @@ int32_t generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
   @param frame_parms Pointer to a LTE_DL_FRAME_PARMS structure (eNB or UE)*/
 void init_ul_hopping(LTE_DL_FRAME_PARMS *frame_parms);
 
+
+/*!
+  \brief This function implements the initialization of paging parameters for UE (See Section 7, 36.304).It must be called after setting IMSImod1024 during UE startup and after receiving SIB2
+  @param ue Pointer to UE context
+  @param defaultPagingCycle T from 36.304 (0=32,1=64,2=128,3=256)
+  @param nB nB from 36.304 (0=4T,1=2T,2=T,3=T/2,4=T/4,5=T/8,6=T/16,7=T/32*/
+int init_ue_paging_info(PHY_VARS_UE *ue, long defaultPagingCycle, long nB);
+
 int32_t compareints (const void * a, const void * b);
 
 

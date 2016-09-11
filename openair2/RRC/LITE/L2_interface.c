@@ -397,6 +397,10 @@ mac_rrc_data_ind(
 #endif
     }
 
+    if(srb_idP == PCCH) {
+      LOG_D(RRC,"[UE %d] Received SDU for PCCH on SRB %d from eNB %d\n",module_idP,srb_idP,eNB_indexP);
+      decode_PCCH_DLSCH_Message(&ctxt,eNB_indexP,(uint8_t*)sduP,sdu_lenP);
+    }
     if((srb_idP & RAB_OFFSET) == CCCH) {
       if (sdu_lenP>0) {
         LOG_T(RRC,"[UE %d] Received SDU for CCCH on SRB %d from eNB %d\n",module_idP,srb_idP & RAB_OFFSET,eNB_indexP);

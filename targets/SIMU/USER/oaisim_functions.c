@@ -957,6 +957,11 @@ void init_seed(uint8_t set_seed)
   }
 }
 
+openair0_timestamp current_eNB_rx_timestamp[NUMBER_OF_eNB_MAX][MAX_NUM_CCs];
+openair0_timestamp current_UE_rx_timestamp[NUMBER_OF_UE_MAX][MAX_NUM_CCs];
+openair0_timestamp last_eNB_rx_timestamp[NUMBER_OF_eNB_MAX][MAX_NUM_CCs];
+openair0_timestamp last_UE_rx_timestamp[NUMBER_OF_UE_MAX][MAX_NUM_CCs];
+
 int eNB_trx_start(openair0_device *device) {
   return(0);
 }
@@ -990,42 +995,44 @@ int UE_trx_set_gains(openair0_device *device, openair0_config_t *openair0_cfg) {
   return(0);
 }
 
+extern pthread_mutex_t subframe_mutex;
+extern int subframe_eNB_mask,subframe_UE_mask;
+
 int eNB_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
-  return(0);
-}
-
-int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
-  return(0);
-}
-
-int eNB_trx_write(openair0_device *device,openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
 
   int eNB_id = device->Mod_id;
   int CC_id  = device->CC_id;
-  int UE_id;
-  int subframe = (timestamp/PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti)%10;
 
-  for (UE_id=0;UE_id<=NB_UE_INST;UE_id++) {
-    do_DL_sig(eNB2UE,
-	      enb_data,
-	      ue_data,
-	      subframe,
-	      0, //abstraction_flag,
-	      &PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms,
-	      UE_id,
-	      CC_id);
-  }
-  return(0);
-}
+  int subframe;
+  int ready_for_new_subframe=0;
+  int subframe_eNB_mask_local;
+  int sample_count=0;
 
-int UE_trx_write(openair0_device *device,openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
+  *ptimestamp = last_eNB_rx_timestamp[eNB_id][CC_id];
 
-  int UE_id = device->Mod_id;
-  int CC_id  = device->CC_id;
-  int eNB_id;
-  int subframe = (timestamp/PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)%10;
+  LOG_D(PHY,"eNB_trx_read nsamps %d TS(%llu,%llu) => subframe %d\n",nsamps,
+        (unsigned long long)current_eNB_rx_timestamp[eNB_id][CC_id],
+        (unsigned long long)last_eNB_rx_timestamp[eNB_id][CC_id],
+	(*ptimestamp/PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti)%10);
+  // if we're at a subframe boundary generate UL signals for this eNB
 
-  for (eNB_id=0;eNB_id<=NB_eNB_INST;eNB_id++) {
+  while (sample_count<nsamps) {
+    while (current_eNB_rx_timestamp[eNB_id][CC_id]<
+	   (nsamps+last_eNB_rx_timestamp[eNB_id][CC_id])) {
+      LOG_D(EMU,"eNB: current TS %llu, last TS %llu, sleeping\n",current_eNB_rx_timestamp[eNB_id][CC_id],last_eNB_rx_timestamp[eNB_id][CC_id]);
+      usleep(500);
+    }
+
+    // tell top-level we are busy
+    pthread_mutex_lock(&subframe_mutex);
+    subframe_eNB_mask|=(1<<eNB_id);
+    pthread_mutex_unlock(&subframe_mutex); 
+    
+    subframe = (last_eNB_rx_timestamp[eNB_id][CC_id]/PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti)%10;
+    LOG_D(PHY,"eNB_trx_read generating UL subframe %d (Ts %llu, current TS %llu)\n",
+	  subframe,(unsigned long long)*ptimestamp,
+	  (unsigned long long)current_eNB_rx_timestamp[eNB_id][CC_id]);
+    
     do_UL_sig(UE2eNB,
 	      enb_data,
 	      ue_data,
@@ -1035,8 +1042,87 @@ int UE_trx_write(openair0_device *device,openair0_timestamp timestamp, void **bu
 	      0,  // frame is only used for abstraction
 	      eNB_id,
 	      CC_id);
+  
+
+    last_eNB_rx_timestamp[eNB_id][CC_id] += PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti;
+    sample_count += PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti;
   }
-  return(0);
+
+  return(nsamps);
+}
+
+int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
+
+  int UE_id = device->Mod_id;
+  int CC_id  = device->CC_id;
+  int subframe;
+  int ready_for_new_subframe=0;
+  int subframe_UE_mask_local;
+  int sample_count=0;
+  int read_size;
+
+  *ptimestamp = last_UE_rx_timestamp[UE_id][CC_id];
+
+  LOG_D(PHY,"UE_trx_read nsamps %d TS(%llu,%llu)\n",nsamps,
+        (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
+        (unsigned long long)last_UE_rx_timestamp[UE_id][CC_id]);
+
+  if (nsamps < PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)
+    read_size = nsamps;
+  else
+    read_size = PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti;
+
+  while (sample_count<nsamps) {
+    while (current_UE_rx_timestamp[UE_id][CC_id] < 
+	   (last_UE_rx_timestamp[UE_id][CC_id]+read_size)) {
+      LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+      
+      usleep(500);
+    }
+
+    LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+      
+    // tell top-level we are busy 
+    pthread_mutex_lock(&subframe_mutex);
+    subframe_UE_mask|=(1<<UE_id);
+    pthread_mutex_unlock(&subframe_mutex);
+    // if we didn't ask for at least a subframe's worth of samples return
+
+    // otherwise we have one subframe here so generate the received signal
+    subframe = (last_UE_rx_timestamp[UE_id][CC_id]/PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)%10;
+    if ((last_UE_rx_timestamp[UE_id][CC_id]%PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti) > 0)
+      subframe++;
+
+    last_UE_rx_timestamp[UE_id][CC_id] += read_size;
+    sample_count += read_size;
+ 
+    if (subframe > 9) 
+      return(nsamps);
+
+    LOG_D(PHY,"UE_trx_read generating DL subframe %d (Ts %llu, current TS %llu)\n",
+	  subframe,(unsigned long long)*ptimestamp,
+	  (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id]);    
+    do_DL_sig(eNB2UE,
+	      enb_data,
+	      ue_data,
+	      subframe,
+	      0, //abstraction_flag,
+	      &PHY_vars_UE_g[UE_id][CC_id]->frame_parms,
+	      UE_id,
+	      CC_id);
+  }
+  
+  return(nsamps);
+}
+
+int eNB_trx_write(openair0_device *device,openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
+
+  return(nsamps);
+}
+
+int UE_trx_write(openair0_device *device,openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
+
+  return(nsamps);
 }
 
 void init_devices(void){
@@ -1055,8 +1141,10 @@ void init_devices(void){
       PHY_vars_eNB_g[eNB_id][CC_id]->rfdevice.trx_stop_func      = eNB_trx_stop;
       PHY_vars_eNB_g[eNB_id][CC_id]->rfdevice.trx_set_freq_func  = eNB_trx_set_freq;
       PHY_vars_eNB_g[eNB_id][CC_id]->rfdevice.trx_set_gains_func = eNB_trx_set_gains;
+      current_eNB_rx_timestamp[eNB_id][CC_id] = PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti;
+      last_eNB_rx_timestamp[eNB_id][CC_id] = 0;
     }
-    for (UE_id=0;UE_id<NB_eNB_INST;UE_id++) {
+    for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
       PHY_vars_UE_g[UE_id][CC_id]->rfdevice.Mod_id               = UE_id;
       PHY_vars_UE_g[UE_id][CC_id]->rfdevice.CC_id                = CC_id;
       PHY_vars_UE_g[UE_id][CC_id]->rfdevice.trx_start_func       = UE_trx_start;
@@ -1066,6 +1154,9 @@ void init_devices(void){
       PHY_vars_UE_g[UE_id][CC_id]->rfdevice.trx_stop_func        = UE_trx_stop;
       PHY_vars_UE_g[UE_id][CC_id]->rfdevice.trx_set_freq_func    = UE_trx_set_freq;
       PHY_vars_UE_g[UE_id][CC_id]->rfdevice.trx_set_gains_func   = UE_trx_set_gains;
+      current_UE_rx_timestamp[UE_id][CC_id] = PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti;
+      last_UE_rx_timestamp[UE_id][CC_id] = 0;
+
     }
   }
 }
@@ -1123,7 +1214,11 @@ void init_openair1(void)
   //N_TA_offset
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
-      PHY_vars_UE_g[UE_id][CC_id]->use_ia_receiver = 0;
+
+      PHY_vars_UE_g[UE_id][CC_id]->use_ia_receiver      = 0;
+      PHY_vars_UE_g[UE_id][CC_id]->mode                 = normal_txrx;
+      PHY_vars_UE_g[UE_id][CC_id]->mac_enabled          = 1;
+      PHY_vars_UE_g[UE_id][CC_id]->no_timing_correction = 1;
 
       if (PHY_vars_UE_g[UE_id][CC_id]->frame_parms.frame_type == TDD) {
         if (PHY_vars_UE_g[UE_id][CC_id]->frame_parms.N_RB_DL == 100)
@@ -1396,7 +1491,7 @@ void update_ocm()
     enb_data[eNB_id]->tx_power_dBm = PHY_vars_eNB_g[eNB_id][0]->frame_parms.pdsch_config_common.referenceSignalPower;
 
   for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
-    ue_data[UE_id]->tx_power_dBm = PHY_vars_UE_g[UE_id][0]->tx_power_dBm;
+    ue_data[UE_id]->tx_power_dBm = PHY_vars_UE_g[UE_id][0]->tx_power_dBm[0];
 
 
   /* check if the openair channel model is activated used for PHY abstraction : path loss*/
@@ -1450,10 +1545,10 @@ void update_ocm()
             UE2eNB[UE_id][eNB_id][CC_id]->path_loss_dB = -132.24 + sinr_dB - PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.pdsch_config_common.referenceSignalPower;
           }
 
-          LOG_I(OCM,"Path loss from eNB %d to UE %d (CCid %d)=> %f dB (eNB TX %d, SNR %f)\n",eNB_id,UE_id,CC_id,
+          LOG_D(OCM,"Path loss from eNB %d to UE %d (CCid %d)=> %f dB (eNB TX %d, SNR %f)\n",eNB_id,UE_id,CC_id,
                 eNB2UE[eNB_id][UE_id][CC_id]->path_loss_dB,
                 PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.pdsch_config_common.referenceSignalPower,snr_dB);
-          //      printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,UE2eNB[UE_id][eNB_id]->path_loss_dB);
+        
         }
       }
     }
@@ -1721,3 +1816,14 @@ void init_time()
   td_avg        = TARGET_SF_TIME_NS;
 }
 
+int openair0_transport_load(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t * eth_params) {
+
+	return(0);
+
+
+}
+
+int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cfg) {
+
+	return(0);
+}
