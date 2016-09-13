@@ -392,10 +392,23 @@ boolean_t pdcp_data_req(
   //printf("PROTOPDCP: vals are %u, %u, %u, %u, %u, %u, %u \n", ctxt_pP, srb_flagP, rb_idP, muiP, confirmP, pdcp_pdu_size);
   if (pdcp_pdu_p!=NULL)
   {
+    printf("subframe is %u\n", ctxt_pP->subframe);
+    printf("srb is %u\n", srb_flagP);
+    printf("MBMS is %u\n", MBMS_FLAG_NO);
+    printf("rb_id is %u\n", rb_idP);
+    printf("muiP is %u\n", muiP);
+    printf("confirm is %u\n", confirmP);
+    printf("Size is %u\n", pdcp_pdu_size);
+      
     proto_agent_send_rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
+    //rlc_status = ack_result;
+    printf("Response is %u\n", ack_result_nikos);
+    rlc_status = ack_result_nikos;
   }
-  rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
-  
+  else
+  {
+    rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
+  }
   }
 
   switch (rlc_status) {

@@ -42,7 +42,10 @@
 proto_agent_message_decoded_callback agent_messages_callback[][3] = {
   {proto_agent_hello, proto_agent_hello, 0},
   {proto_agent_echo_reply, 0, 0},
+  {0, just_print, 0},
   {proto_agent_pdcp_data_req_ack, 0, 0},
+  {0, proto_agent_get_ack_result, 0},
+  {0, 0, 0},
 //  {proto_agent_pdcp_data_ind, proto_agent_pdcp_data_ind_ack, proto_agent_rlc_data_ind_nack},
 };
 
@@ -70,11 +73,12 @@ Protocol__FlexsplitMessage* proto_agent_handle_message (mid_t mod_id,
 						    uint8_t *data, 
 						    uint32_t size){
   
-  Protocol__FlexsplitMessage *decoded_message, *reply_message;
+  Protocol__FlexsplitMessage *decoded_message = NULL;
+  Protocol__FlexsplitMessage *reply_message = NULL;
   err_code_t err_code;
   DevAssert(data != NULL);
 
-  LOG_D(PROTO_AGENT, "Deserializing message \n");
+  LOG_I(PROTO_AGENT, "Deserializing message with size %u \n", size);
   if (proto_agent_deserialize_message(data, (int) size, &decoded_message) < 0) {
     err_code= PROTOCOL__FLEXSPLIT_ERR__MSG_DECODING;
     goto error; 
@@ -82,17 +86,27 @@ Protocol__FlexsplitMessage* proto_agent_handle_message (mid_t mod_id,
   Protocol__FspHeader *header = (Protocol__FspHeader*) decoded_message;
   if (header->has_type)
    {
-    LOG_D(PROTO_AGENT, "Deserialized MSG type is %d\n", header->type);
+    LOG_I(PROTO_AGENT, "Deserialized MSG type is %d and %u\n", decoded_message->msg_case, decoded_message->msg_dir);
    }
 
+  //printf("HANDLER: msg_case %u msg_dir %u\n\n", decoded_message->msg_case, decoded_message->msg_dir);
   if ((decoded_message->msg_case > sizeof(agent_messages_callback) / (3*sizeof(proto_agent_message_decoded_callback))) || 
       (decoded_message->msg_dir > PROTOCOL__FLEXSPLIT_DIRECTION__UNSUCCESSFUL_OUTCOME)){
     err_code= PROTOCOL__FLEXSPLIT_ERR__MSG_NOT_HANDLED;
-      LOG_D(PROTO_AGENT,"Handling message: MSG NOT handled, going to error\n");
+      LOG_I(PROTO_AGENT,"Handling message: MSG NOT handled, going to error\n");
       goto error;
   }
+  
+  
+//   if ((decoded_message->msg_case != 5)&&(decoded_message->msg_dir!=2)){
 
   err_code = ((*agent_messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1])(mod_id, (void *) decoded_message, &reply_message));
+  printf("Err code is %u\n", err_code);
+//   }
+//   else{
+//     err_code = 0;
+//   }
+
   if ( err_code < 0 )
   {
     goto error;

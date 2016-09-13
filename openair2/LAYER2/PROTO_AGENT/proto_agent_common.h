@@ -71,6 +71,9 @@ typedef int (*proto_agent_message_destruction_callback)(
 	Protocol__FlexsplitMessage *msg
 );
 
+
+uint32_t ack_result_nikos;
+
 /**********************************
  * progRAN protocol messages helper 
  * functions and generic handlers
@@ -97,6 +100,13 @@ int proto_agent_pdcp_data_req(mid_t mod_id, const void *params, Protocol__Flexsp
 int proto_agent_pdcp_data_req_ack(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
 int proto_agent_destroy_pdcp_data_req(Protocol__FlexsplitMessage *msg);
 int proto_agent_destroy_pdcp_data_req_ack(Protocol__FlexsplitMessage *msg);
+int proto_agent_pdcp_data_ind(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
+int proto_agent_destroy_pdcp_data_ind(Protocol__FlexsplitMessage *msg);
+
+int just_print(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
+
+
+int proto_agent_get_ack_result(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
 
 
 Protocol__FlexsplitMessage* proto_agent_handle_message (mid_t mod_id, 

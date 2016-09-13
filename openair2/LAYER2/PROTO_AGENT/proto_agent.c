@@ -203,12 +203,13 @@ int proto_server_start(mid_t mod_id, const Enb_properties_array_t* enb_propertie
   Protocol__FlexsplitMessage *msg = NULL;
   Protocol__FlexsplitMessage *init_msg=NULL;
   Protocol__FlexsplitMessage *rep_msg=NULL;
+  Protocol__FlexsplitMessage *ser_msg=NULL;
   int msg_flag = 0;
   int priority;
   int size;
 
 #ifdef ECHO
-  LOG_D(PROTO_AGENT, "Proto agent Server: Calling the echo_request packet constructor\n");
+  LOG_I(PROTO_AGENT, "Proto agent Server: Calling the echo_request packet constructor\n");
   msg_flag = proto_agent_echo_request(mod_id, NULL, &init_msg);
 #else
   LOG_D(PROTO_AGENT, "Proto agent Server: Calling the hello packet constructor\n");
@@ -217,9 +218,10 @@ int proto_server_start(mid_t mod_id, const Enb_properties_array_t* enb_propertie
 
   int msgsize = 0;
   int err_code;
-  proto_agent_serialize_message(init_msg, &msg, &msgsize);
+  msg = proto_agent_pack_message(init_msg, &msgsize);
+  //proto_agent_serialize_message(init_msg, &msg, &msgsize);
 
-  LOG_D(PROTO_AGENT,"Server sending the message over the async channel\n");
+  LOG_I(PROTO_AGENT,"Server sending the message over the async channel\n");
   proto_agent_async_msg_send((void *)msg, (int) msgsize, 1, (void *) channel_info);
 
   /* After sending the message, wait for any replies; 
@@ -227,28 +229,43 @@ int proto_server_start(mid_t mod_id, const Enb_properties_array_t* enb_propertie
      over the channel
   */
 
-  LOG_D(PROTO_AGENT, "Server reading any message over the async channel.\n");
+  LOG_I(PROTO_AGENT, "Server reading any message over the async channel.\n");
   
   while (1) {
-    if (proto_agent_msg_recv(mod_id, PROTO_AGENT_DEFAULT, &rep_msg, &size, &priority)) {
+    LOG_I(PROTO_AGENT, "Server reading any message over the async channel.\n");
+    if (proto_agent_async_msg_recv(&rep_msg, &size, &priority, channel_info)){
+      //(mod_id, PROTO_AGENT_DEFAULT, &rep_msg, &size, &priority)) {
       err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
       goto error;
     }
-  } 
-    LOG_D(PROTO_AGENT,"Server received reply message with size %d and priority %d, calling message handler\n", size, priority);
+ 
+    LOG_I(PROTO_AGENT,"Server received reply message with size %d and priority %d, calling message handler\n", size, priority);
   
     msg=proto_agent_handle_message(mod_id, rep_msg, size);
-
+    
     if (msg == NULL)
     {
-        LOG_E(PROTO_AGENT,"msg to send back is NULL\n");
+        LOG_I(PROTO_AGENT,"Server msg to send back is NULL\n");
     }
+    else
+    { //(msg != NULL){
+      ser_msg = proto_agent_pack_message(msg, &size);
+      //proto_agent_serialize_message(msg, &ser_msg, &size);      
 
+//      if (proto_agent_msg_send(mod_id, PROTO_AGENT_DEFAULT, msg, size, priority)) {
+      if (proto_agent_async_msg_send((void *)ser_msg, (int) size, 1, (void *) channel_info)) {
+
+	err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
+	goto error;
+      }
+      LOG_I(PROTO_AGENT,"sent message with size %d\n", size);
+    }
+  }
     LOG_I(PROTO_AGENT,"server ends\n");
   return 0;
 
 error:
-  LOG_E(PROTO_AGENT,"there was an error\n");
+  LOG_I(PROTO_AGENT,"there was an error\n");
   return 1;
 
 }
@@ -304,13 +321,49 @@ int proto_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties
    *enb_agent_register_channel(mod_id, channel, ENB_AGENT_MAC);
    */
 
-  new_thread(receive_thread, &proto_agent[mod_id]);
-  LOG_D(PROTO_AGENT, "Client launched the the receive thread for mod_id %d\n", proto_agent[mod_id]);
+  // Do not call a new thread, but do the msg exchange without threads
+  //new_thread(receive_thread, &proto_agent[mod_id]);
+  
+  void                  *data;
+  int                   size;
+  int                   priority;
+  err_code_t             err_code;
+  Protocol__FlexsplitMessage *msg;
+  Protocol__FlexsplitMessage *ser_msg;
+  
+  if (proto_agent_async_msg_recv(&data, &size, &priority, channel_info)) {
+      err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
+      goto error;
+  }
+
+  LOG_I(PROTO_AGENT,"Received message with size %d and priority %d, calling message handle\n", size, priority);
+
+  msg=proto_agent_handle_message(proto_agent[mod_id].enb_id, data, size);
+
+  if (msg == NULL)
+  {
+        LOG_I(PROTO_AGENT," CLIENT msg to send back is NULL\n");
+  }
+
+    //free(data);
+
+    if (msg != NULL){
+      ser_msg = proto_agent_pack_message(msg, &size);
+      //proto_agent_serialize_message(msg, &ser_msg, &size);
+      if(  proto_agent_async_msg_send((void *)ser_msg, (int) size, 1, (void *) channel_info)){
+	  err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
+	goto error;
+      }
+      LOG_I(PROTO_AGENT,"CLIENT sent message with size %d\n", size);
+    }
+  
+ 
+  //LOG_D(PROTO_AGENT, "Client launched the the receive thread for mod_id %d\n", proto_agent[mod_id]);
 
   return 0;
 
 error:
-  LOG_E(PROTO_AGENT,"there was an error\n");
+  LOG_E(PROTO_AGENT,"there was an error %u\n", err_code);
   return 1;
 
 }
@@ -346,10 +399,13 @@ proto_agent_send_rlc_data_req(const protocol_ctxt_t* const ctxt_pP, const srb_fl
 			      confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sdu_pP)
 {
   
-  printf("PROTOPDCP: sendig the data req over the async channel\n");
+  printf("PROTOPDCP: sending the data req over the async channel\n");
   
   Protocol__FlexsplitMessage *msg = NULL;
   Protocol__FlexsplitMessage *init_msg=NULL;
+  Protocol__FlexsplitMessage *rep = NULL;
+  Protocol__FlexsplitMessage *srep = NULL;
+
   //Protocol__FlexsplitMessage *rep_msg=NULL;
   int msg_flag = 0;
   void *data=NULL;
@@ -380,38 +436,55 @@ proto_agent_send_rlc_data_req(const protocol_ctxt_t* const ctxt_pP, const srb_fl
   printf("PROTO_AGENT msg flag is %d", msg_flag);
   int msgsize = 0;
   //int err_code;
-  proto_agent_serialize_message(init_msg, &msg, &msgsize);
-
-  LOG_D(PROTO_AGENT,"Server sending the message over the async channel\n");
+  msg = proto_agent_pack_message(init_msg, &msgsize);
+  
+  free(init_msg);
+  
+  LOG_I(PROTO_AGENT,"Server sending the pdcp data_req message over the async channel\n");
+  
   proto_agent_async_msg_send((void *)msg, (int) msgsize, 1, (void *) client_channel);
   
-  
   // Block until you receive the ACK with the op code
-  while (1) {
-    if (proto_agent_msg_recv(proto_agent[client_mod].enb_id, PROTO_AGENT_DEFAULT, &data, &size, &priority)) {
-      err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
-      goto error;
+ // while (1) {
+  /*
+    msg = NULL;
+    rep = NULL;*/
+    //data = NULL;
+    msgsize = 0;
+    priority = 0;
+    msg = NULL;
+    
+    while (rep == NULL)
+    {
+     if (proto_agent_async_msg_recv(&rep, &msgsize, &priority, client_channel)) {
+       err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
+       goto error;
+     }
     }
-
     LOG_D(PROTO_AGENT,"Received message with size %d and priority %d, calling message handle\n", size, priority);
 
-    msg=proto_agent_handle_message(proto_agent[client_mod].enb_id, data, size);
+    msg = proto_agent_handle_message(proto_agent[client_mod].enb_id, rep, msgsize);
 
     if (msg == NULL)
     {
         LOG_E(PROTO_AGENT,"msg to send back is NULL\n");
     }
+    else
+    {
+    srep = proto_agent_pack_message(rep, &size);
 
-    free(data);
+    //free(data);
 
-    if (msg != NULL){
-      if (proto_agent_msg_send(proto_agent[client_mod].enb_id, PROTO_AGENT_DEFAULT, msg, size, priority)) {
+    
+      if (proto_agent_async_msg_send((void *)msg, (int) size, 1, (void *) client_channel)){
+      //if (proto_agent_msg_send(proto_agent[client_mod].enb_id, PROTO_AGENT_DEFAULT, msg, size, priority)) {
 	err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
 	goto error;
       }
       LOG_D(PROTO_AGENT,"sent message with size %d\n", size);
     }
-  }
+    
+  //}
 
 error:
   LOG_E(PROTO_AGENT,"there was an error\n");
@@ -449,7 +522,7 @@ proto_server_receive(void)
         LOG_E(PROTO_AGENT,"msg to send back is NULL\n");
     }
 
-    free(data);
+    //free(data);
 
     if (msg != NULL){
       if (proto_agent_msg_send(d->enb_id, PROTO_AGENT_DEFAULT, msg, size, priority)) {

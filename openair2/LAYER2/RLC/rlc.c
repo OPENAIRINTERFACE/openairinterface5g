@@ -396,6 +396,8 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
                                   mem_block_t *sdu_pP)
 {
   //-----------------------------------------------------------------------------
+  
+ 
   mem_block_t           *new_sdu_p    = NULL;
   rlc_mode_t             rlc_mode     = RLC_MODE_NONE;
   rlc_union_t           *rlc_union_p = NULL;
@@ -484,7 +486,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 #ifdef DEBUG_RLC_DATA_REQ
     LOG_D(RLC,"RLC_TYPE : %d\n", rlc_mode);
 #endif
-     
+
     switch (rlc_mode) {
     case RLC_MODE_NONE:
       free_mem_block(sdu_pP);

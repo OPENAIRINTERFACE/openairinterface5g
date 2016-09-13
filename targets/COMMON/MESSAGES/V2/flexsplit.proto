@@ -11,7 +11,7 @@ message flexsplit_message {
               fsp_echo_reply echo_reply_msg = 3;
               fspRlcDataReq data_req_msg = 4;
 	      fspRlcDataReqAck data_req_ack = 5;
-//	      fsp_pdcp_data_ind data_ind_msg = 6;
+	      fspPdcpDataInd data_ind_msg = 6;
 	}
 }
 
@@ -72,8 +72,8 @@ message fspRlcDataReqAck {
 	optional uint32 result = 2;
 }
 
-message fsp_pdcp_data_ind {
+message fspPdcpDataInd {
         optional fsp_header header = 1;
 	optional uint32 eNB_id = 2;
-        optional fsp_pdcp_split_ind_data rlc_data = 3;
+        optional fspRlcData rlc_data = 3;
 }
