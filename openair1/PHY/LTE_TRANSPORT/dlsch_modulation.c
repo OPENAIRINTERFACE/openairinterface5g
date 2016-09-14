@@ -1542,6 +1542,142 @@ uint8_t get_pmi(uint8_t N_RB_DL,LTE_DL_eNB_HARQ_t *dlsch_harq,uint16_t rb)
 }
 
 
+inline int check_skip(int rb,int subframe_offset,LTE_DL_FRAME_PARMS *frame_parms,int l,int nsymb) __attribute__((always_inline));
+inline int check_skip(int rb,int subframe_offset,LTE_DL_FRAME_PARMS *frame_parms,int l,int nsymb) {
+
+
+  if ((frame_parms->N_RB_DL&1) == 1) { // ODD N_RB_DL
+    // PBCH
+    if ((subframe_offset==0) &&
+	(rb>((frame_parms->N_RB_DL>>1)-3)) &&
+	(rb<((frame_parms->N_RB_DL>>1)+3)) &&
+	(l>=(nsymb>>1)) &&
+	(l<((nsymb>>1) + 4))) {
+      return(1);
+    }
+    if (frame_parms->frame_type == TDD) { // TDD
+            //SSS TDD
+      if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==(nsymb-1)) ) {
+	return(1);
+      } 
+      //PSS TDD
+      if (((subframe_offset==1) || (subframe_offset==6)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==2) ) {
+	return(1);
+      }
+    } else {
+      //PSS FDD
+      if (((subframe_offset==0)||(subframe_offset==5)) &&
+	  (rb>((frame_parms->N_RB_DL>>1)-3)) &&
+	  (rb<((frame_parms->N_RB_DL>>1)+3)) &&
+	  (l==((nsymb>>1)-1)) ) {
+	return(1);
+      }
+      //SSS FDD
+      if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==((nsymb>>1)-2)) ) {
+	return(1);
+      }
+    }
+  }
+  else { // even N_RB_DL
+    //PBCH
+    if ((subframe_offset==0) &&
+	(rb>=((frame_parms->N_RB_DL>>1)-3)) &&
+	(rb<((frame_parms->N_RB_DL>>1)+3)) &&
+	(l>=nsymb>>1) && (l<((nsymb>>1) + 4)))
+      return(1);
+
+    if (frame_parms->frame_type == TDD) { // TDD
+      //SSS
+      if (((subframe_offset==0)||
+	   (subframe_offset==5)) &&
+	  (rb>=((frame_parms->N_RB_DL>>1)-3)) &&
+	  (rb<((frame_parms->N_RB_DL>>1)+3)) &&
+	  (l==nsymb-1) ) {
+	 return(1);
+      }
+      
+      //PSS
+      if (((subframe_offset==1)||
+	   (subframe_offset==6)) &&
+	  (rb>=((frame_parms->N_RB_DL>>1)-3)) &&
+	  (rb<((frame_parms->N_RB_DL>>1)+3)) &&
+	  (l==2) ) {
+	 return(1);
+      }
+    } else { // FDD
+      //SSS
+      if (((subframe_offset==0)||(subframe_offset==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==((nsymb>>1)-2)) ) {
+	 return(1);
+      }
+      
+      //PSS
+      if (((subframe_offset==0)||(subframe_offset==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==((nsymb>>1)-1)) ) {
+	 return(1);
+      }
+    }
+  }
+
+  return(0);
+}
+
+inline int check_skiphalf(int rb,int subframe_offset,LTE_DL_FRAME_PARMS *frame_parms,int l,int nsymb) __attribute__((always_inline));
+inline int check_skiphalf(int rb,int subframe_offset,LTE_DL_FRAME_PARMS *frame_parms,int l,int nsymb) {
+
+  printf("check_skiphalf : rb %d, subframe_offset %d,l %d, nsymb %d\n",rb,subframe_offset,l,nsymb);
+
+  if ((frame_parms->N_RB_DL&1) == 1) { // ODD N_RB_DL
+
+    // PBCH
+    if ((subframe_offset==0) &&
+	(rb==((frame_parms->N_RB_DL>>1)-3)) &&
+	(l>=(nsymb>>1)) &&
+	(l<((nsymb>>1) + 4)))
+      return(1);
+    else if ((subframe_offset==0) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l>=(nsymb>>1)) && (l<((nsymb>>1) + 4)))
+      return(2);
+
+    if (frame_parms->frame_type == TDD) { // TDD
+      //SSS TDD
+      if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==(nsymb-1)))
+	return(1);
+      else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==(nsymb-1)))
+	return(2);
+      //PSS TDD
+      if (((subframe_offset==1)||(subframe_offset==6)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==2))
+	return(1);
+      else if (((subframe_offset==1)||(subframe_offset==6)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==2))
+	return(2);
+    }
+    else { // FDD
+      //PSS FDD
+      if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==((nsymb>>1)-1)))
+	return(1);
+      else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==(((nsymb>>1)-1))))
+	return(2);
+      //SSS FDD
+      if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && ((l==((nsymb>>1)-2))))
+	return(1);
+      else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && ((l==(nsymb>>1)-2)))
+	return(2);
+    }
+  }
+  else { // EVEN N_RB_DL
+    return(0);
+  }
+
+  return(0);
+}
+
+inline int check_skip_dc(int rb,LTE_DL_FRAME_PARMS *frame_parms) __attribute__((always_inline));
+inline int check_skip_dc(int rb,LTE_DL_FRAME_PARMS *frame_parms) {
+
+  if (((frame_parms->N_RB_DL&1) == 1) &&  // odd N_RB_DL, rb==N_RB_DL/2 PRB contains DC element
+      (rb==(frame_parms->N_RB_DL>>1)))
+    return(1);
+  else
+    return(0);
+}
+
 int dlsch_modulation(int32_t **txdataF,
                      int16_t amp,
                      uint32_t subframe_offset,
@@ -1560,7 +1696,7 @@ int dlsch_modulation(int32_t **txdataF,
   uint32_t rb_alloc_ind;
   uint32_t *rb_alloc = dlsch0_harq->rb_alloc;
   uint8_t pilots=0;
-  uint8_t skip_dc,skip_half;
+  uint8_t skip_dc=0,skip_half=0;
   uint8_t mod_order0 = get_Qm(dlsch0_harq->mcs);
   uint8_t mod_order1 = 0;
   int16_t amp_rho_a, amp_rho_b;
@@ -1636,6 +1772,7 @@ int dlsch_modulation(int32_t **txdataF,
   jj2=0;
   re_allocated=0;
 
+  
   //  printf("num_pdcch_symbols %d, nsymb %d\n",num_pdcch_symbols,nsymb);
   for (l=num_pdcch_symbols; l<nsymb; l++) {
 
@@ -1774,126 +1911,12 @@ int dlsch_modulation(int32_t **txdataF,
       else
         rb_alloc_ind = 0;
 
-      // check for PBCH
-      skip_half=0;
-
-      if ((frame_parms->N_RB_DL&1) == 1) { // ODD N_RB_DL
-
-        if (rb==(frame_parms->N_RB_DL>>1))
-          skip_dc = 1;
-        else
-          skip_dc = 0;
-
-        // PBCH
-        if ((subframe_offset==0) &&
-            (rb>((frame_parms->N_RB_DL>>1)-3)) &&
-            (rb<((frame_parms->N_RB_DL>>1)+3)) &&
-            (l>=(nsymb>>1)) &&
-            (l<((nsymb>>1) + 4))) {
-          rb_alloc_ind = 0;
-        }
-
-        //PBCH subframe 0, symbols nsymb>>1 ... nsymb>>1 + 3
-        if ((subframe_offset==0) &&
-            (rb==((frame_parms->N_RB_DL>>1)-3)) &&
-            (l>=(nsymb>>1)) &&
-            (l<((nsymb>>1) + 4)))
-          skip_half=1;
-        else if ((subframe_offset==0) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l>=(nsymb>>1)) && (l<((nsymb>>1) + 4)))
-          skip_half=2;
-
-        if (frame_parms->frame_type == TDD) { // TDD
-          //SSS TDD
-          if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==(nsymb-1)) ) {
-            rb_alloc_ind = 0;
-          }
-
-          //SSS TDD
-          if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==(nsymb-1)))
-            skip_half=1;
-          else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==(nsymb-1)))
-            skip_half=2;
-
-          //PSS TDD
-          if (((subframe_offset==1) || (subframe_offset==6)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==2) ) {
-            rb_alloc_ind = 0;
-          }
-
-          //PSS TDD
-          if (((subframe_offset==1)||(subframe_offset==6)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==2))
-            skip_half=1;
-          else if (((subframe_offset==1)||(subframe_offset==6)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==2))
-            skip_half=2;
-        } else {
-          //PSS FDD
-          if (((subframe_offset==0)||(subframe_offset==5)) &&
-              (rb>((frame_parms->N_RB_DL>>1)-3)) &&
-              (rb<((frame_parms->N_RB_DL>>1)+3)) &&
-              (l==((nsymb>>1)-1)) ) {
-            rb_alloc_ind = 0;
-          }
-
-          //PSS FDD
-          if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==((nsymb>>1)-1)))
-            skip_half=1;
-          else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==(((nsymb>>1)-1))))
-            skip_half=2;
-
-          //SSS FDD
-          if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==((nsymb>>1)-2)) ) {
-            rb_alloc_ind = 0;
-          }
-
-          //SSS FDD
-          if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && ((l==((nsymb>>1)-2))))
-            skip_half=1;
-          else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && ((l==(nsymb>>1)-2)))
-            skip_half=2;
-
-        }
-
-      } else { // EVEN N_RB_DL
-        //PBCH
-        if ((subframe_offset==0) &&
-            (rb>=((frame_parms->N_RB_DL>>1)-3)) &&
-            (rb<((frame_parms->N_RB_DL>>1)+3)) &&
-            (l>=nsymb>>1) && (l<((nsymb>>1) + 4)))
-          rb_alloc_ind = 0;
-
-        skip_dc=0;
-        skip_half=0;
-
-        if (frame_parms->frame_type == TDD) { // TDD
-          //SSS
-          if (((subframe_offset==0)||
-               (subframe_offset==5)) &&
-              (rb>=((frame_parms->N_RB_DL>>1)-3)) &&
-              (rb<((frame_parms->N_RB_DL>>1)+3)) &&
-              (l==nsymb-1) ) {
-            rb_alloc_ind = 0;
-          }
-
-          //PSS
-          if (((subframe_offset==1)||
-               (subframe_offset==6)) &&
-              (rb>=((frame_parms->N_RB_DL>>1)-3)) &&
-              (rb<((frame_parms->N_RB_DL>>1)+3)) &&
-              (l==2) ) {
-            rb_alloc_ind = 0;
-          }
-        } else { // FDD
-          //SSS
-          if (((subframe_offset==0)||(subframe_offset==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==((nsymb>>1)-2)) ) {
-            rb_alloc_ind = 0;
-          }
-
-          //PSS
-          if (((subframe_offset==0)||(subframe_offset==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==((nsymb>>1)-1)) ) {
-            rb_alloc_ind = 0;
-          }
-        }
+      if (check_skip(rb,subframe_offset,frame_parms,l,nsymb)==1)
+	rb_alloc_ind = 0;
+      else {
+	skip_half = check_skiphalf(rb,subframe_offset,frame_parms,l,nsymb);
+	skip_dc   = check_skip_dc(rb,frame_parms);
       }
-
       if (dlsch0_harq->Nlayers>1) {
         printf("Nlayers %d: re_offset %d, symbol %d offset %d\n",dlsch0_harq->Nlayers,re_offset,l,symbol_offset);
         return(-1);
@@ -1909,7 +1932,7 @@ int dlsch_modulation(int32_t **txdataF,
 
 
       if (rb_alloc_ind > 0) {
-	//	printf("Allocated rb %d/symbol %d, skip_half %d, subframe_offset %d, symbol_offset %d, re_offset %d, jj %d\n",rb,l,skip_half,subframe_offset,symbol_offset,re_offset,jj);
+	printf("Allocated rb %d/symbol %d, skip_half %d, subframe_offset %d, symbol_offset %d, re_offset %d, jj %d\n",rb,l,skip_half,subframe_offset,symbol_offset,re_offset,jj);
 	allocate_REs(frame_parms,
 		     txdataF,
 		     &jj,
