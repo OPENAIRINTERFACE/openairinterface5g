@@ -1,12 +1,3 @@
-/***************************************************************************
-                          nasrg_tool.c  -  description
-                             -------------------
-    copyright            : (C) 2002 by Eurecom
-    email                : yan.moret@eurecom.fr
-                           michelle.wetterwald@eurecom.fr
- ***************************************************************************
-
- ***************************************************************************/
 #include "nasrg_variables.h"
 #include "nasrg_proto.h"
 

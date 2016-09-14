@@ -1,12 +1,3 @@
-/***************************************************************************
-                          netltest.c  -
-                          -------------------
-    begin                : Tue Jan 15 2002
-    copyright            : (C) 2002, 2010 by Eurecom
-    created by           : michelle.wetterwald@eurecom.fr
- **************************************************************************
-    This file contains the functions used to interface the NAS // from MESH Driver
- ***************************************************************************/
 //-----------------------------------------------------------------------------
 // For FIFOS / NETLINK interface
 #include <unistd.h>

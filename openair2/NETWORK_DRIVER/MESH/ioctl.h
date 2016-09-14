@@ -1,13 +1,3 @@
-/***************************************************************************
-                          nas_iocontrol.h  -  description
-                             -------------------
-    copyright            : (C) 2002 by Eurecom
-    email                : michelle.wetterwald@eurecom.fr
-                           yan.moret@eurecom.fr
-                           knopp@eurecom.fr
- ***************************************************************************
-
- ***************************************************************************/
 #ifndef NAS_CTL_H
 #define NAS_CTL_H
 

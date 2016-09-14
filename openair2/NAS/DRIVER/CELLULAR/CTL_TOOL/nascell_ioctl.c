@@ -1,12 +1,3 @@
-/***************************************************************************
-                          nascell_ioctl.c  -  description
-                             -------------------
-    copyright            : (C) 2002 by Eurecom
-    email                : michelle.wetterwald@eurecom.fr
-                           yan.moret@eurecom.fr
- ***************************************************************************
-
- ***************************************************************************/
 #include "nascell_ioctl.h"
 #include "rrc_nas_primitives.h"
 //#include "rrc_qos.h"

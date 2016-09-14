@@ -1,12 +1,3 @@
-/***************************************************************************
-                          nas_control_proto.h  -  description
-                             -------------------
-    begin                : June 25, 2002
-    copyright            : (C) 2002 by Eurecom
-    email                : Michelle.Wetterwald@eurecom.fr
- **************************************************************************
-  Prototypes related to NAS control functions
- ***************************************************************************/
 #ifndef __NAS_CONTROL_H__
 #define __NAS_CONTROL_H__
 

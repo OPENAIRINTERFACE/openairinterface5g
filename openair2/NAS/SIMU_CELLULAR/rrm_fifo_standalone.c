@@ -1,13 +1,3 @@
-/***************************************************************************
-                          rrm_fifo_standalone.c  -
-                          -------------------
-    begin                : June 27, 2002
-    copyright            : (C) 2002 by Eurecom
-    created by           : michelle.wetterwald@eurecom.fr
-
-    description:
-    This file contains an emulator of the RRM
- ***************************************************************************/
 #include <errno.h>
 #include <sys/time.h>
 #include <ctype.h>

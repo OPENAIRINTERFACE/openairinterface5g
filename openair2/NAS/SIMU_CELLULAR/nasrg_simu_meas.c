@@ -1,12 +1,3 @@
-/***************************************************************************
-                          nasrg_simu_meas.c  -  description
-                             -------------------
-    begin                : June 2004
-    copyright            : (C) 2004, 2010 by Eurecom
-    email                : Michelle.Wetterwald@eurecom.fr
- **************************************************************************
-  Simulations of measures for tests
- ***************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
