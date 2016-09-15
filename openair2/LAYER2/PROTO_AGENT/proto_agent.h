@@ -43,6 +43,7 @@
 
 void * proto_server_init(void *args);
 void * proto_server_receive(void);
+void * proto_client_receive(void);
 
 int proto_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties);
 int proto_server_start(mid_t mod_id, const Enb_properties_array_t* enb_properties);

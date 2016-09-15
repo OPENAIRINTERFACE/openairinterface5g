@@ -12,6 +12,7 @@ message flexsplit_message {
               fspRlcDataReq data_req_msg = 4;
 	      fspRlcDataReqAck data_req_ack = 5;
 	      fspPdcpDataInd data_ind_msg = 6;
+	      fspPdcpDataIndAck data_ind_ack = 7;
 	}
 }
 
@@ -76,4 +77,9 @@ message fspPdcpDataInd {
         optional fsp_header header = 1;
 	optional uint32 eNB_id = 2;
         optional fspRlcData rlc_data = 3;
+}
+
+message fspPdcpDataIndAck {
+        optional fsp_header header = 1;
+	optional uint32 result = 2;
 }

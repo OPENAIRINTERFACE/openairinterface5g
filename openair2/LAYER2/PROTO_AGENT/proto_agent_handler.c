@@ -45,8 +45,8 @@ proto_agent_message_decoded_callback agent_messages_callback[][3] = {
   {0, just_print, 0},
   {proto_agent_pdcp_data_req_ack, 0, 0},
   {0, proto_agent_get_ack_result, 0},
-  {0, 0, 0},
-//  {proto_agent_pdcp_data_ind, proto_agent_pdcp_data_ind_ack, proto_agent_rlc_data_ind_nack},
+  {proto_agent_pdcp_data_ind_ack, 0, 0},
+  {0, just_print, 0},
 };
 
 proto_agent_message_destruction_callback message_destruction_callback[] = {
@@ -55,10 +55,9 @@ proto_agent_message_destruction_callback message_destruction_callback[] = {
   proto_agent_destroy_echo_reply,
   proto_agent_destroy_pdcp_data_req,
   proto_agent_destroy_pdcp_data_req_ack,
-//  proto_agent_destroy_rlc_data_req_nack,
-//  proto_agent_destroy_pdcp_data_ind,
-//  proto_agent_destroy_pdcp_data_ind_ack,
-//  proto_agent_destroy_rlc_data_ind_nack,
+  proto_agent_destroy_pdcp_data_ind,
+  proto_agent_destroy_pdcp_data_ind_ack,
+
 };
 
 static const char *proto_agent_direction2String[] = {
@@ -91,21 +90,14 @@ Protocol__FlexsplitMessage* proto_agent_handle_message (mid_t mod_id,
 
   //printf("HANDLER: msg_case %u msg_dir %u\n\n", decoded_message->msg_case, decoded_message->msg_dir);
   if ((decoded_message->msg_case > sizeof(agent_messages_callback) / (3*sizeof(proto_agent_message_decoded_callback))) || 
-      (decoded_message->msg_dir > PROTOCOL__FLEXSPLIT_DIRECTION__UNSUCCESSFUL_OUTCOME)){
-    err_code= PROTOCOL__FLEXSPLIT_ERR__MSG_NOT_HANDLED;
+      (decoded_message->msg_dir > PROTOCOL__FLEXSPLIT_DIRECTION__UNSUCCESSFUL_OUTCOME))
+  {
+      err_code= PROTOCOL__FLEXSPLIT_ERR__MSG_NOT_HANDLED;
       LOG_I(PROTO_AGENT,"Handling message: MSG NOT handled, going to error\n");
       goto error;
   }
   
-  
-//   if ((decoded_message->msg_case != 5)&&(decoded_message->msg_dir!=2)){
-
   err_code = ((*agent_messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1])(mod_id, (void *) decoded_message, &reply_message));
-  printf("Err code is %u\n", err_code);
-//   }
-//   else{
-//     err_code = 0;
-//   }
 
   if ( err_code < 0 )
   {
@@ -118,7 +110,7 @@ Protocol__FlexsplitMessage* proto_agent_handle_message (mid_t mod_id,
   LOG_D(PROTO_AGENT,"Returning REPLY message after the callback\n");
   return reply_message;
   
-error:
+ error:
   LOG_E(PROTO_AGENT,"errno %d occured\n",err_code);
   return NULL;
 }
@@ -130,6 +122,7 @@ void * proto_agent_pack_message(Protocol__FlexsplitMessage *msg,
   void * buffer;
   err_code_t err_code = PROTOCOL__FLEXSPLIT_ERR__NO_ERR;
   
+  printf("serializing message\n");
   if (proto_agent_serialize_message(msg, &buffer, size) < 0 ) {
     err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENCODING;
     goto error;
@@ -137,8 +130,10 @@ void * proto_agent_pack_message(Protocol__FlexsplitMessage *msg,
   
   // free the msg --> later keep this in the data struct and just update the values
   //TODO call proper destroy function
+  printf("destruction callback\n");
   err_code = ((*message_destruction_callback[msg->msg_case-1])(msg));
   
+  printf("asserion");
   DevAssert(buffer !=NULL);
   
   LOG_D(PROTO_AGENT,"Serialized the enb mac stats reply (size %d)\n", *size);

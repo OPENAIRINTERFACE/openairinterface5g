@@ -14,5 +14,6 @@ enum fsp_type {
      FSPT_RLC_DATA_REQ = 3;
      FSPT_RLC_DATA_REQ_ACK = 4;
      FSPT_PDCP_DATA_IND = 5;
+     FSPT_PDCP_DATA_IND_ACK = 6;
 }
 
