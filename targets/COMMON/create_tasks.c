@@ -51,6 +51,20 @@
 int create_tasks(uint32_t enb_nb, uint32_t ue_nb)
 {
   itti_wait_ready(1);
+  if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {
+    LOG_E(PDCP, "Create task for L2L1 failed\n");
+    return -1;
+  }
+
+  if (enb_nb > 0) {
+    /* Last task to create, others task must be ready before its start */
+    if (itti_create_task (TASK_ENB_APP, eNB_app_task, NULL) < 0) {
+      LOG_E(ENB_APP, "Create task for eNB APP failed\n");
+      return -1;
+    }
+  }
+
+
 # ifdef OPENAIR2
   {
 #   if defined(ENABLE_USE_MME)
@@ -120,20 +134,8 @@ int create_tasks(uint32_t enb_nb, uint32_t ue_nb)
 #   endif
     }
   }
-# endif
+# endif // openair2: NN: should be openair3
 
-  if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {
-    LOG_E(PDCP, "Create task for L2L1 failed\n");
-    return -1;
-  }
-
-  if (enb_nb > 0) {
-    /* Last task to create, others task must be ready before its start */
-    if (itti_create_task (TASK_ENB_APP, eNB_app_task, NULL) < 0) {
-      LOG_E(ENB_APP, "Create task for eNB APP failed\n");
-      return -1;
-    }
-  }
 
   itti_wait_ready(0);
 

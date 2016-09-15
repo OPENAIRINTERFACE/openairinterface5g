@@ -258,6 +258,8 @@ static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end, con
       str = inet_ntoa(addr);
       strcpy(s1ap_register_eNB->enb_ip_address.ipv4_address, str);
 
+      LOG_I(ENB_APP,"[eNB %d] eNB_app_register for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));
+
       itti_send_msg_to_task (TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
 
       register_enb_pending++;
