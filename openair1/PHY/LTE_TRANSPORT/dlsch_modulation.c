@@ -182,10 +182,11 @@ int allocate_REs_in_RB_no_pilots_16QAM_siso(LTE_DL_FRAME_PARMS *frame_parms,
     }
   }
   else {
+    // 1st half of PRB   
     for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset,re=0; 
 	 re<6; 
 	 re++,x0p+=4,tti_offset++) {
-      
+       
       qam16_table_offset_re=TWO[x0p[0]];
       qam16_table_offset_im=TWO[x0p[1]];
       qam16_table_offset_re+=x0p[2];
@@ -193,7 +194,7 @@ int allocate_REs_in_RB_no_pilots_16QAM_siso(LTE_DL_FRAME_PARMS *frame_parms,
       ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qam16_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qam16_table_offset_im];
     }
-
+    // 2nd half of PRB   
     for (tti_offset=symbol_offset+re_offset-frame_parms->ofdm_symbol_size+7; 
 	 re<12; 
 	 re++,x0p+=4,tti_offset++) {
@@ -626,7 +627,7 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
         switch (mod_order0) {
         case 2:  //QPSK
 
-//          printf("%d(%d) : %d,%d => ",tti_offset,*jj,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+	  //          printf("re %d %d(%d) : %d,%d => ",re,tti_offset,*jj,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
           for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
             ((int16_t*)&txdataF[aa][tti_offset])[0] += (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I //b_i
           }
@@ -639,7 +640,7 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
 
           *jj = *jj + 1;
 
- //         printf("%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+	  //	  printf("%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
           break;
 
         case 4:  //16QAM
@@ -1623,7 +1624,7 @@ inline int check_skip(int rb,int subframe_offset,LTE_DL_FRAME_PARMS *frame_parms
 inline int check_skiphalf(int rb,int subframe_offset,LTE_DL_FRAME_PARMS *frame_parms,int l,int nsymb) __attribute__((always_inline));
 inline int check_skiphalf(int rb,int subframe_offset,LTE_DL_FRAME_PARMS *frame_parms,int l,int nsymb) {
 
-  printf("check_skiphalf : rb %d, subframe_offset %d,l %d, nsymb %d\n",rb,subframe_offset,l,nsymb);
+  //  printf("check_skiphalf : rb %d, subframe_offset %d,l %d, nsymb %d\n",rb,subframe_offset,l,nsymb);
 
   if ((frame_parms->N_RB_DL&1) == 1) { // ODD N_RB_DL
 
@@ -1913,10 +1914,11 @@ int dlsch_modulation(int32_t **txdataF,
 
       if (check_skip(rb,subframe_offset,frame_parms,l,nsymb)==1)
 	rb_alloc_ind = 0;
-      else {
-	skip_half = check_skiphalf(rb,subframe_offset,frame_parms,l,nsymb);
-	skip_dc   = check_skip_dc(rb,frame_parms);
-      }
+
+      skip_half = check_skiphalf(rb,subframe_offset,frame_parms,l,nsymb);
+      skip_dc   = check_skip_dc(rb,frame_parms);
+      
+
       if (dlsch0_harq->Nlayers>1) {
         printf("Nlayers %d: re_offset %d, symbol %d offset %d\n",dlsch0_harq->Nlayers,re_offset,l,symbol_offset);
         return(-1);
@@ -1932,7 +1934,7 @@ int dlsch_modulation(int32_t **txdataF,
 
 
       if (rb_alloc_ind > 0) {
-	printf("Allocated rb %d/symbol %d, skip_half %d, subframe_offset %d, symbol_offset %d, re_offset %d, jj %d\n",rb,l,skip_half,subframe_offset,symbol_offset,re_offset,jj);
+	//	printf("Allocated rb %d/symbol %d, skip_half %d, subframe_offset %d, symbol_offset %d, re_offset %d, jj %d\n",rb,l,skip_half,subframe_offset,symbol_offset,re_offset,jj);
 	allocate_REs(frame_parms,
 		     txdataF,
 		     &jj,
@@ -1952,11 +1954,13 @@ int dlsch_modulation(int32_t **txdataF,
 		     P1_SHIFT,
 		     P2_SHIFT);
       }
-
+      else {
+	//	printf("Unallocated rb %d/symbol %d, re_offset %d, jj %d\n",rb,l,re_offset,jj);
+      }
       re_offset+=12; // go to next RB
 
-
-      // check if we crossed the symbol boundary and skip DC
+      
+      // check if we crossed the symbol boundary and skip DCs
       if (re_offset >= frame_parms->ofdm_symbol_size) {
         if (skip_dc == 0)  //even number of RBs (doesn't straddle DC)
           re_offset=1;

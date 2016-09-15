@@ -2404,6 +2404,8 @@ int main(int argc, char **argv)
               write_output("txsig0.m","txs0", &eNB->common_vars.txdata[eNB_id][0][subframe* eNB->frame_parms.samples_per_tti],
 
                            eNB->frame_parms.samples_per_tti,1,1);
+	      write_output("txsigF0.m","txsF0", &eNB->common_vars.txdataF[eNB_id][0][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],
+			   nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
             }
 	  }
 
