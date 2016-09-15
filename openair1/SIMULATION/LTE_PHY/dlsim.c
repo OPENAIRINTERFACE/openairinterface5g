@@ -2133,8 +2133,9 @@ n(tikz_fname,"w");
         least for one of the CW and round < num_rounds. This also means that round_trials is a unique 
         variable for both CW*/
 
-        while ((round < num_rounds) && ((ret[0] > PHY_vars_UE->dlsch_ue[0][0]->max_turbo_iterations) \
-         || (ret[1] > PHY_vars_UE->dlsch_ue[0][0]->max_turbo_iterations))) {
+        while (((transmission_mode == 3 || transmission_mode == 4) && ((round < num_rounds) && ((ret[0] > PHY_vars_UE->dlsch_ue[0][0]->max_turbo_iterations)
+         || (ret[1] > PHY_vars_UE->dlsch_ue[0][0]->max_turbo_iterations)))) || 
+          ((transmission_mode!=4 && transmission_mode != 3)&& ((round < num_rounds) && (ret[0] > PHY_vars_UE->dlsch_ue[0][0]->max_turbo_iterations)))) {
           
           //printf("Trial %d, round %d , ret[0] %d, ret[1] %d, round_trials %d\n",trials,round, ret[0], ret[1], round_trials[round]);
           //printf("round_trials %d round %d\n", round_trials[round], round);
