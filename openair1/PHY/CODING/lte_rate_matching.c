@@ -518,7 +518,8 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
   // if (rvidx==3)
   //  for (cnt=0;cnt<Ncb;cnt++)
   //    counter_buffer[rvidx][cnt]=0;
-  AssertFatal(Ncb>=(3*RTC<<5),"Exiting, RM condition (Ncb %d, Nir/C %d, Nsoft %d, Kw %d\n",Ncb,Nir/C,Nsoft,3*(RTC<<5));
+  if (Ncb>(3*(RTC<<5)))
+    AssertFatal(1==0,"Exiting, RM condition (Ncb %d, RTC %d, Nir/C %d, Nsoft %d, Kw %d)\n",Ncb,RTC,Nir/C,Nsoft,3*(RTC<<5));
   
 
   Gp = G/Nl/Qm;

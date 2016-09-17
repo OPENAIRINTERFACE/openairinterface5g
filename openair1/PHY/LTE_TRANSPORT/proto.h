@@ -1709,17 +1709,16 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
 void init_ncs_cell(LTE_DL_FRAME_PARMS *frame_parms,uint8_t ncs_cell[20][7]);
 
-void generate_pucch(int32_t **txdataF,
-                    LTE_DL_FRAME_PARMS *frame_parms,
-                    uint8_t ncs_cell[20][7],
-                    PUCCH_FMT_t fmt,
-                    PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                    uint16_t n1_pucch,
-                    uint16_t n2_pucch,
-                    uint8_t shortened_format,
-                    uint8_t *payload,
-                    int16_t amp,
-                    uint8_t subframe);
+void generate_pucch1x(int32_t **txdataF,
+		      LTE_DL_FRAME_PARMS *frame_parms,
+		      uint8_t ncs_cell[20][7],
+		      PUCCH_FMT_t fmt,
+		      PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+		      uint16_t n1_pucch,
+		      uint8_t shortened_format,
+		      uint8_t *payload,
+		      int16_t amp,
+		      uint8_t subframe);
 
 void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
 			 UE_rxtx_proc_t *proc,

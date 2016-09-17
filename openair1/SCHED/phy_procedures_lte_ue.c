@@ -1189,17 +1189,16 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 	    
     if (abstraction_flag == 0) {
 	      
-      generate_pucch(ue->common_vars.txdataF,
-		     &ue->frame_parms,
-		     ue->ncs_cell,
-		     format,
-		     &ue->pucch_config_dedicated[eNB_id],
-		     n1_pucch,
-		     0,  // n2_pucch
-		     1,  // shortened format
-		     pucch_ack_payload,
-		     tx_amp,
-		     subframe_tx);
+      generate_pucch1x(ue->common_vars.txdataF,
+		       &ue->frame_parms,
+		       ue->ncs_cell,
+		       format,
+		       &ue->pucch_config_dedicated[eNB_id],
+		       n1_pucch,
+		       1,  // shortened format
+		       pucch_ack_payload,
+		       tx_amp,
+		       subframe_tx);
 	      
     } else {
 #ifdef PHY_ABSTRACTION
@@ -1240,17 +1239,16 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 	    
     if (abstraction_flag == 0) {
 	      
-      generate_pucch(ue->common_vars.txdataF,
-		     &ue->frame_parms,
-		     ue->ncs_cell,
-		     pucch_format1,
-		     &ue->pucch_config_dedicated[eNB_id],
-		     ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex,
-		     0,  // n2_pucch
-		     1,  // shortened format
-		     pucch_ack_payload,  // this is ignored anyway, we just need a pointer
-		     tx_amp,
-		     subframe_tx);
+      generate_pucch1x(ue->common_vars.txdataF,
+		       &ue->frame_parms,
+		       ue->ncs_cell,
+		       pucch_format1,
+		       &ue->pucch_config_dedicated[eNB_id],
+		       ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex,
+		       1,  // shortened format
+		       pucch_ack_payload,  // this is ignored anyway, we just need a pointer
+		       tx_amp,
+		       subframe_tx);
     } else {
       LOG_D(PHY,"Calling generate_pucch_emul ...\n");
       generate_pucch_emul(ue,

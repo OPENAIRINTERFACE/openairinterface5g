@@ -1679,6 +1679,7 @@ inline int check_skip_dc(int rb,LTE_DL_FRAME_PARMS *frame_parms) {
     return(0);
 }
 
+
 int dlsch_modulation(int32_t **txdataF,
                      int16_t amp,
                      uint32_t subframe_offset,
