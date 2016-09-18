@@ -1065,7 +1065,7 @@ rrc_pdcp_config_asn1_req (
 #ifdef Rel10
   ,PMCH_InfoList_r9_t*  const pmch_InfoList_r9_pP
 #endif
-  ,rb_id_t                 *const defaultDRB // 2016-05-28 wilson : remember the default DRB
+  ,rb_id_t                 *const defaultDRB 
 )
 //-----------------------------------------------------------------------------
 {
@@ -1087,10 +1087,8 @@ rrc_pdcp_config_asn1_req (
 
   hash_key_t      key            = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t  h_rc;
-#ifndef ASTRI_FIX // 2016-05-28 wilson : remember the default DRB
   hash_key_t      key_defaultDRB = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t  h_defaultDRB_rc;
-#endif
 #ifdef Rel10
   int i,j;
   MBMS_SessionInfoList_r9_t *mbms_SessionInfoList_r9_p = NULL;
@@ -1111,11 +1109,7 @@ rrc_pdcp_config_asn1_req (
       srb_id = srb2add_list_pP->list.array[cnt]->srb_Identity;
       srb_toaddmod_p = srb2add_list_pP->list.array[cnt];
       rlc_type = RLC_MODE_AM;
-#if 0
-      lc_id = srb_id;// + 2;
-#else // 2016-05-27 wilson : fixing the LC-id <-> SRB-id mapping
       lc_id = srb_id;
-#endif
       key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, srb_id, SRB_FLAG_YES);
       h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
 
@@ -1195,9 +1189,6 @@ rrc_pdcp_config_asn1_req (
       drb_toaddmod_p = drb2add_list_pP->list.array[cnt];
 
       drb_id = drb_toaddmod_p->drb_Identity;// + drb_id_offset;
-#ifdef ASTRI_FIX
-      lc_id = drb_id + 2;
-#else // 2016-05-27 wilson : fixing the mapping between LC-id and DRB-id
       if (drb_toaddmod_p->logicalChannelIdentity) {
         lc_id = *(drb_toaddmod_p->logicalChannelIdentity);
       } else {
@@ -1210,7 +1201,6 @@ rrc_pdcp_config_asn1_req (
         LOG_E(RLC, PROTOCOL_CTXT_FMT" logicalChannelIdentity = %d is invalid in RRC message when adding DRB!\n", PROTOCOL_CTXT_ARGS(ctxt_pP), lc_id);
         continue;
       }
-#endif
 
       DevCheck4(drb_id < maxDRB, drb_id, maxDRB, ctxt_pP->module_id, ctxt_pP->rnti);
       key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, drb_id, SRB_FLAG_NO);
@@ -1227,7 +1217,7 @@ rrc_pdcp_config_asn1_req (
         pdcp_p = calloc(1, sizeof(pdcp_t));
         h_rc = hashtable_insert(pdcp_coll_p, key, pdcp_p);
 
-#ifndef ASTRI_FIX
+        // save the first configured DRB-ID as the default DRB-ID
         if ((defaultDRB != NULL) && (*defaultDRB == drb_id)) {
           key_defaultDRB = PDCP_COLL_KEY_DEFAULT_DRB_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag);
           h_defaultDRB_rc = hashtable_insert(pdcp_coll_p, key_defaultDRB, pdcp_p);
@@ -1241,9 +1231,7 @@ rrc_pdcp_config_asn1_req (
                 key_defaultDRB);
           free(pdcp_p);
           return TRUE;
-        } else
-#endif
-        if (h_rc != HASH_TABLE_OK) {
+        } else if (h_rc != HASH_TABLE_OK) {
           LOG_E(PDCP, PROTOCOL_PDCP_CTXT_FMT" CONFIG_ACTION_ADD ADD key 0x%"PRIx64" FAILED\n",
                 PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
                 key);
@@ -1337,9 +1325,6 @@ rrc_pdcp_config_asn1_req (
     for (cnt=0; cnt<drb2release_list_pP->list.count; cnt++) {
       pdrb_id_p = drb2release_list_pP->list.array[cnt];
       drb_id =  *pdrb_id_p;
-#if 0 // 2016-05-27 wilson : fixing the hard-coded mapping between DRB-id <-> LC-id
-      lc_id = drb_id + 2;
-#endif
       key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, srb_id, SRB_FLAG_NO);
       h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
 
@@ -1349,10 +1334,7 @@ rrc_pdcp_config_asn1_req (
               drb_id);
         continue;
       }
-
-#ifndef ASTRI_FIX // 2016-05-27 wilson : fixing the hard-coded mapping between DRB-id <-> LC-id
       lc_id = pdcp_p->lcid;
-#endif
 
       action = CONFIG_ACTION_REMOVE;
       pdcp_config_req_asn1 (
@@ -1373,9 +1355,8 @@ rrc_pdcp_config_asn1_req (
         kUPenc_pP);
       h_rc = hashtable_remove(pdcp_coll_p, key);
 
-#ifndef ASTRI_FIX // 2016-05-28 wilson : remember the default DRB
       if ((defaultDRB != NULL) && (*defaultDRB == drb_id)) {
-        // this is the default DRB being removed, although this is not allowed in standard
+        // default DRB being removed. nevertheless this shouldn't happen as removing default DRB is not allowed in standard
         key_defaultDRB = PDCP_COLL_KEY_DEFAULT_DRB_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag);
         h_defaultDRB_rc = hashtable_get(pdcp_coll_p, key_defaultDRB, (void**)&pdcp_p);
 
@@ -1387,7 +1368,6 @@ rrc_pdcp_config_asn1_req (
       } else {
         key_defaultDRB = HASH_TABLE_OK; // do not trigger any error handling if this is not a default DRB
       }
-#endif
     }
   }
 

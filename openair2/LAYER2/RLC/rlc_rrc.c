@@ -104,11 +104,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
   if (srb2add_listP != NULL) {
     for (cnt=0; cnt<srb2add_listP->list.count; cnt++) {
       rb_id = srb2add_listP->list.array[cnt]->srb_Identity;
-#if 0
-      lc_id  = rb_id + 2;
-#else // 2016-05-26 wilson : fixing the LC-id<->SRB-id mapping for SRB
       lc_id = rb_id;
-#endif
 
       LOG_D(RLC, "Adding SRB %d, rb_id %d\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
       srb_toaddmod_p = srb2add_listP->list.array[cnt];
@@ -236,9 +232,6 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
       drb_toaddmod_p = drb2add_listP->list.array[cnt];
 
       drb_id = drb_toaddmod_p->drb_Identity;
-#if 0
-      lc_id  = drb_id + 2;
-#else // 2016-05-26 wilson : fixing the LC-id <-> DRB-id mapping
       if (drb_toaddmod_p->logicalChannelIdentity) {
         lc_id = *drb_toaddmod_p->logicalChannelIdentity;
       } else {
@@ -251,9 +244,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
         continue;
       }
 
-#endif
-
-      LOG_I(RLC, "Adding DRB %d, lc_id %d\n",drb_id,lc_id);
+      LOG_D(RLC, "Adding DRB %d, lc_id %d\n",drb_id,lc_id);
 
 
       if (drb_toaddmod_p->rlc_Config) {
@@ -478,10 +469,8 @@ rlc_op_status_t rrc_rlc_remove_rlc   (
   logical_chan_id_t      lcid            = 0;
   hash_key_t             key             = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_rc;
-#ifndef ASTRI_FIX // 2016-05-27 wilson : fixing DRB-id <-> LC-id mapping
   hash_key_t             key_lcid        = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_lcid_rc;
-#endif
   rlc_union_t           *rlc_union_p = NULL;
 #ifdef Rel10
   rlc_mbms_id_t         *mbms_id_p  = NULL;
@@ -525,7 +514,6 @@ rlc_op_status_t rrc_rlc_remove_rlc   (
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
 
   if (h_rc == HASH_TABLE_OK) {
-#ifndef ASTRI_FIX // 2016-05-27 wilson : fixing the DRB-id <-> LC-id mapping
     // also remove the hash-key created by LC-id
     switch (rlc_union_p->mode) {
     case RLC_MODE_AM:
@@ -551,7 +539,6 @@ rlc_op_status_t rrc_rlc_remove_rlc   (
 
   if ((h_rc == HASH_TABLE_OK) && (h_lcid_rc == HASH_TABLE_OK)) {
     h_lcid_rc = hashtable_remove(rlc_coll_p, key_lcid);
-#endif
     h_rc = hashtable_remove(rlc_coll_p, key);
     LOG_D(RLC, PROTOCOL_CTXT_FMT"[%s %u LCID %d] RELEASED %s\n",
           PROTOCOL_CTXT_ARGS(ctxt_pP),
@@ -587,10 +574,8 @@ rlc_union_t* rrc_rlc_add_rlc   (
   //-----------------------------------------------------------------------------
   hash_key_t             key         = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_rc;
-#if 1 // 2016-05-26 wilson hash_key to the same RLC entity but indexed by LC_id instead of RB_id
   hash_key_t             key_lcid    = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_lcid_rc;
-#endif
   rlc_union_t           *rlc_union_p = NULL;
 #ifdef Rel10
   rlc_mbms_id_t         *mbms_id_p  = NULL;
@@ -631,9 +616,7 @@ rlc_union_t* rrc_rlc_add_rlc   (
 #endif
   {
     key = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
-#ifndef ASTRI_FIX // 2016-05-26 wilson : fix DRB-id <-> LC-id mapping
     key_lcid = RLC_COLL_KEY_LCID_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, chan_idP, srb_flagP);
-#endif
   }
 
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
@@ -649,9 +632,7 @@ rlc_union_t* rrc_rlc_add_rlc   (
   } else if (h_rc == HASH_TABLE_KEY_NOT_EXISTS) {
     rlc_union_p = calloc(1, sizeof(rlc_union_t));
     h_rc = hashtable_insert(rlc_coll_p, key, rlc_union_p);
-#ifndef ASTRI_FIX // 2016-05-26 wilson
     h_lcid_rc = hashtable_insert(rlc_coll_p, key_lcid, rlc_union_p);
-#endif
 
     if ((h_rc == HASH_TABLE_OK) && (h_lcid_rc == HASH_TABLE_OK)) {
 #ifdef Rel10

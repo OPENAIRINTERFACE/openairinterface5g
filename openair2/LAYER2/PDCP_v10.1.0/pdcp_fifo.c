@@ -599,15 +599,12 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
             }
           } else { // enb_flag
             if (rab_id != 0) {
-#ifndef ASTRI_FIX // 2016-05-30 wilson : fix hard-code default DRB ID
               if (rab_id == UE_IP_DEFAULT_RAB_ID) {
                 LOG_D(PDCP, "PDCP_COLL_KEY_DEFAULT_DRB_VALUE(module_id=%d, rnti=%x, enb_flag=%d)\n",
                     ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
                 key = PDCP_COLL_KEY_DEFAULT_DRB_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
                 h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
-              } else
-#endif
-              {
+              } else {
                 rab_id = rab_id % maxDRB;
                 LOG_D(PDCP, "PDCP_COLL_KEY_VALUE(module_id=%d, rnti=%x, enb_flag=%d, rab_id=%d, SRB_FLAG=%d)\n",
                     ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
@@ -616,9 +613,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
               }
 
               if (h_rc == HASH_TABLE_OK) {
-#ifndef ASTRI_FIX // 2016-05-30 wilson : fix default DRB-ID to be configurable
                 rab_id = pdcp_p->rb_id;
-#endif
 #ifdef PDCP_DEBUG
                 LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n",
                       ctxt.frame,

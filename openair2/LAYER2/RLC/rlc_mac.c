@@ -136,7 +136,6 @@ tbs_size_t mac_rlc_data_req(
 {
   //-----------------------------------------------------------------------------
   struct mac_data_req    data_request;
-  // rb_id_t                rb_id           = 0; // 2016-05-27 wilson : not needed after DRB-id <-> LC-id mapping fix
   rlc_mode_t             rlc_mode        = RLC_MODE_NONE;
   rlc_mbms_id_t         *mbms_id_p       = NULL;
   rlc_union_t           *rlc_union_p     = NULL;
@@ -179,17 +178,7 @@ tbs_size_t mac_rlc_data_req(
       return (tbs_size_t)0;
     }
   } else {
-#ifdef ASTRI_FIX // 2016-05-27 wilson : fixing the DRB-id <-> LC-id mapping
-    if (channel_idP > 2) {
-      rb_id = channel_idP - 2;
-    } else {
-      rb_id = channel_idP;
-    }
-
-    key = RLC_COLL_KEY_VALUE(module_idP, rntiP, enb_flagP, rb_id, srb_flag);
-#else
     key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);
-#endif
   }
 
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
@@ -248,7 +237,6 @@ void mac_rlc_data_ind     (
   crc_t                    *crcs_pP)
 {
   //-----------------------------------------------------------------------------
-  // rb_id_t                rb_id      = 0; // 2016-05-27 wilson : not needed after DRB-id <-> LC-id mapping fix
   rlc_mode_t             rlc_mode   = RLC_MODE_NONE;
   rlc_mbms_id_t         *mbms_id_p  = NULL;
   rlc_union_t           *rlc_union_p     = NULL;
@@ -298,17 +286,7 @@ void mac_rlc_data_ind     (
       return;
     }
   } else {
-#ifdef ASTRI_FIX // 2016-05-27 wilson : fixing the DRB-id <-> LC-id mapping
-    if (channel_idP > 2) {
-      rb_id = channel_idP - 2;
-    } else {
-      rb_id = channel_idP;
-    }
-
-    key = RLC_COLL_KEY_VALUE(module_idP, rntiP, enb_flagP, rb_id, srb_flag);
-#else
     key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);
-#endif
   }
 
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
@@ -358,7 +336,6 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   mac_rlc_status_resp_t  mac_rlc_status_resp;
   struct mac_status_ind  tx_status;
   struct mac_status_resp status_resp;
-  // rb_id_t                rb_id       = 0; // 2016-05-27 wilson : not needed after DRB-id <-> LC-id mapping fix
   rlc_mode_t             rlc_mode    = RLC_MODE_NONE;
   rlc_mbms_id_t         *mbms_id_p   = NULL;
   rlc_union_t           *rlc_union_p = NULL;
@@ -407,17 +384,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
 
     key = RLC_COLL_KEY_MBMS_VALUE(module_idP, rntiP, enb_flagP, mbms_id_p->service_id, mbms_id_p->session_id);
   } else {
-#ifdef ASTRI_FIX // 2016-05-27 wilson : fixing the DRB-id <-> LC-id mapping
-    if (channel_idP > 2) {
-      rb_id = channel_idP - 2;
-    } else {
-      rb_id = channel_idP;
-    }
-
-    key = RLC_COLL_KEY_VALUE(module_idP, rntiP, enb_flagP, rb_id, srb_flag);
-#else
     key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);
-#endif
   }
 
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);

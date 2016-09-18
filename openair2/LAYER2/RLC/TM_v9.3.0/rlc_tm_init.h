@@ -87,7 +87,7 @@ public_rlc_tm_init(   void config_req_rlc_tm (
                         const srb_flag_t  srb_flagP,
                         const rlc_tm_info_t * const config_tmP,
                         const rb_id_t     rb_idP,
-                        const logical_chan_id_t chan_idP);) // 2016-05-27 wilson : fixing DRB-id <-> LC-id mapping
+                        const logical_chan_id_t chan_idP);) 
 
 /*! \fn void rlc_tm_init (const protocol_ctxt_t* const  ctxt_pP, rlc_tm_entity_t * const rlcP)
 * \brief    Initialize a RLC TM protocol instance, initialize all variables, lists, allocate buffers for making this instance ready to be configured with protocol configuration parameters. After this initialization the RLC TM protocol instance will be in RLC_NULL_STATE state.
@@ -135,7 +135,7 @@ protected_rlc_tm_init(void rlc_tm_set_debug_infos(
                         rlc_tm_entity_t * const       rlcP,
                         const srb_flag_t              srb_flagP,
                         const rb_id_t                 rb_idP,
-                        const logical_chan_id_t chan_idP);) /*2016-05-27 wilson : added this argument for storing the DRB-id <-> LC-id mapping in RLC)*/
+                        const logical_chan_id_t chan_idP);)
 
 /** @} */
 #    endif

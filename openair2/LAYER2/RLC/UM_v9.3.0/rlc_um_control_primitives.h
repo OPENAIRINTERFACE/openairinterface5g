@@ -91,7 +91,7 @@ public_rlc_um_control_primitives(   void config_req_rlc_um (
                                       const srb_flag_t srb_flagP,
                                       const rlc_um_info_t * const config_umP,
                                       const rb_id_t rb_idP,
-                                      const logical_chan_id_t chan_idP);) // 2016-05-27 wilson : fixing DRB-id <-> LC-id mapping
+                                      const logical_chan_id_t chan_idP);) 
 
 /*! \fn void config_req_rlc_um_asn1 (
  *     const protocol_ctxt_t* const ctxt_pP,
@@ -122,7 +122,7 @@ public_rlc_um_control_primitives(   void config_req_rlc_um_asn1 (
                                       const UL_UM_RLC_t       * const ul_rlc_pP,
                                       const DL_UM_RLC_t       * const dl_rlc_pP,
                                       const rb_id_t            rb_idP,
-                                      const logical_chan_id_t  chan_idP);) // 2016-05-27 wilson : fixing DRB-id <-> LC-id mapping
+                                      const logical_chan_id_t  chan_idP);)
 
 /*! \fn void rlc_um_init (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP)
 * \brief    Initialize a RLC UM protocol instance, initialize all variables, lists, allocate buffers for making this instance ready to be configured with protocol configuration parameters. After this initialization the RLC UM protocol instance will be in RLC_NULL_STATE state.
@@ -189,6 +189,6 @@ protected_rlc_um_control_primitives(void rlc_um_set_debug_infos(
                                       rlc_um_entity_t * const rlc_pP,
                                       const srb_flag_t srb_flagP,
                                       const rb_id_t rb_idP,
-                                      const logical_chan_id_t chan_idP);) // 2016-05-27 wilson : fixing DRB-id <-> LC-id mapping
+                                      const logical_chan_id_t chan_idP);) 
 /** @} */
 #    endif

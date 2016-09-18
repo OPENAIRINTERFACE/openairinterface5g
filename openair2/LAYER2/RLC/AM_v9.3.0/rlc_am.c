@@ -121,7 +121,7 @@ config_req_rlc_am (
   const srb_flag_t             srb_flagP,
   rlc_am_info_t  * const       config_am_pP,
   const rb_id_t                rb_idP,
-  const logical_chan_id_t      chan_idP // 2016-05-27 wilson : added this argument for storing the DRB-id <-> LC-id mapping in RLC
+  const logical_chan_id_t      chan_idP 
 )
 {
   rlc_union_t       *rlc_union_p = NULL;
@@ -169,7 +169,7 @@ void config_req_rlc_am_asn1 (
   const srb_flag_t                     srb_flagP,
   const struct RLC_Config__am  * const config_am_pP,
   const rb_id_t                        rb_idP,
-  const logical_chan_id_t              chan_idP) // 2016-05-27 wilson : added this argument for storing the DRB-id <-> LC-id mapping in RLC
+  const logical_chan_id_t              chan_idP)
 {
   rlc_union_t     *rlc_union_p   = NULL;
   rlc_am_entity_t *l_rlc_p         = NULL;

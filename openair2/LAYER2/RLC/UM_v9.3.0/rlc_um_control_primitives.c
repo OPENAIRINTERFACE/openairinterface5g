@@ -427,14 +427,14 @@ void rlc_um_set_debug_infos(
   rlc_um_entity_t * const rlc_pP,
   const srb_flag_t        srb_flagP,
   const rb_id_t           rb_idP,
-  const logical_chan_id_t chan_idP) // 2016-05-27 wilson : fixing DRB-id <-> LC-id mapping
+  const logical_chan_id_t chan_idP) 
 {
   LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" [SET DEBUG INFOS] rb_id %d srb_flag %d\n",
         PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
         rb_idP,
         srb_flagP);
   rlc_pP->rb_id      = rb_idP;
-  rlc_pP->channel_id = chan_idP; // 2016-05-27 wilson : fixing DRB-id <-> LC-id mapping
+  rlc_pP->channel_id = chan_idP;
 
   if (srb_flagP) {
     rlc_pP->is_data_plane = 0;

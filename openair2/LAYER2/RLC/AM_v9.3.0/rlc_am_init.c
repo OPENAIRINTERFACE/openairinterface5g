@@ -254,12 +254,10 @@ rlc_am_set_debug_infos(
   rlc_am_entity_t *const        rlc_pP,
   const srb_flag_t              srb_flagP,
   const rb_id_t                 rb_idP,
-  const logical_chan_id_t       chan_idP) // 2016-05-27 wilson : added this argument for storing the DRB-id <-> LC-id mapping in RLC)
+  const logical_chan_id_t       chan_idP) 
 {
   rlc_pP->rb_id         = rb_idP;
-#ifndef ASTRI_FIX // 2016-05-27 wilson : added this argument for storing the DRB-id <-> LC-id mapping in RLC)
   rlc_pP->channel_id    = chan_idP;
-#endif
 
   if (srb_flagP) {
     rlc_pP->is_data_plane = 0;

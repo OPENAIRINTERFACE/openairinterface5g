@@ -56,11 +56,7 @@ void config_req_rlc_tm (
 
     rlc_tm_init(ctxt_pP, rlc_p);
     rlc_p->protocol_state = RLC_DATA_TRANSFER_READY_STATE;
-#ifdef ASTRI_FIX
-    rlc_tm_set_debug_infos(ctxt_pP, rlc_p, srb_flagP, rb_idP); // 2016-05-27 wilson : fix incorrect argument ordering!
-#else
-    rlc_tm_set_debug_infos(ctxt_pP, rlc_p, srb_flagP, rb_idP, chan_idP); // 2016-05-27 wilson : fix DRB-id <-> LC-id mapping
-#endif
+    rlc_tm_set_debug_infos(ctxt_pP, rlc_p, srb_flagP, rb_idP, chan_idP);
     rlc_tm_configure(ctxt_pP, rlc_p, config_tmP->is_uplink_downlink);
   } else {
     LOG_E(RLC, PROTOCOL_RLC_TM_CTXT_FMT" CONFIG_REQ RB %u RLC NOT FOUND\n",
@@ -157,7 +153,7 @@ void rlc_tm_set_debug_infos(
   rlc_tm_entity_t * const rlcP,
   const srb_flag_t  srb_flagP,
   const rb_id_t     rb_idP,
-  const logical_chan_id_t chan_idP) // 2016-05-27 wilson : fixing the DRB-id <-> LC-id mapping
+  const logical_chan_id_t chan_idP) 
 {
   rlcP->rb_id      = rb_idP;
   rlcP->channel_id = chan_idP;

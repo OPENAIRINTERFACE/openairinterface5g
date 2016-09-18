@@ -1201,7 +1201,6 @@ rrc_ue_process_radioResourceConfigDedicated(
   // Establish DRBs if present
   if (radioResourceConfigDedicated->drb_ToAddModList) {
 
-#ifndef ASTRI_FIX // 2016-05-28 wilson : remember the default DRB ID
     if ( (UE_rrc_inst[ctxt_pP->module_id].defaultDRB == NULL) &&
          (radioResourceConfigDedicated->drb_ToAddModList->list.count >= 1) ) {
         // configure the first DRB ID as the default DRB ID
@@ -1209,8 +1208,6 @@ rrc_ue_process_radioResourceConfigDedicated(
         *UE_rrc_inst[ctxt_pP->module_id].defaultDRB = radioResourceConfigDedicated->drb_ToAddModList->list.array[0]->drb_Identity;
         LOG_I(RRC,"[UE %d] default DRB = %d\n",ctxt_pP->module_id, *UE_rrc_inst[ctxt_pP->module_id].defaultDRB);
       }
-
-#endif
 
     uint8_t *kUPenc = NULL;
 

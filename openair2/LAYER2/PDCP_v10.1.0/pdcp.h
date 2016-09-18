@@ -295,7 +295,7 @@ public_pdcp(
 #ifdef Rel10
     ,PMCH_InfoList_r9_t  *pmch_InfoList_r9
 #endif
-    ,rb_id_t                 *const defaultDRB // 2016-05-28 wilson : remember the default DRB
+    ,rb_id_t                 *const defaultDRB 
   ));
 
 /*! \fn boolean_t pdcp_config_req_asn1 (const protocol_ctxt_t* const ctxt_pP, srb_flag_t srb_flagP, uint32_t  action, rb_id_t rb_id, uint8_t rb_sn, uint8_t rb_report, uint16_t header_compression_profile, uint8_t security_mode)
@@ -478,8 +478,6 @@ protected_pdcp(sdu_size_t             pdcp_input_sdu_remaining_size_to_read;)
     (((hash_key_t)(iS_sRB)) << 33) | \
     (((hash_key_t)(0x55))   << 34))
 
-#ifndef ASTRI_FIX // 2016-05-28 wilson : for remeber the default DRB
-
 // hash key to the same PDCP as indexed by PDCP_COLL_KEY_VALUE(... rB_iD, iS_sRB=0) where rB_iD
 // is the default DRB ID. The hidden code 0x55 indicates the key is indexed by (rB_iD,is_sRB)
 // whereas the hidden code 0xaa indicates the key is for default DRB only
@@ -490,7 +488,6 @@ protected_pdcp(sdu_size_t             pdcp_input_sdu_remaining_size_to_read;)
      (((hash_key_t)(0xff))   << 25) | \
      (((hash_key_t)(0x00))   << 33) | \
      (((hash_key_t)(0xaa))   << 34))
-#endif
 
 // service id max val is maxServiceCount = 16 (asn1_constants.h)
 

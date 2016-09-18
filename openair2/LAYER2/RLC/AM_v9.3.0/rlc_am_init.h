@@ -121,6 +121,6 @@ public_rlc_am_init( void rlc_am_configure(const protocol_ctxt_t* const ctxtP,
 * \param[in]  rb_idP                    Radio bearer identifier.
 * \param[in]  chan_idP                  Transport channel identifier.
 */
-public_rlc_am_init( void rlc_am_set_debug_infos(const protocol_ctxt_t* const ctxtP, rlc_am_entity_t * const rlc_pP, const srb_flag_t srb_flagP, const rb_id_t rb_idP, const logical_chan_id_t chan_idP /*2016-05-27 wilson : added this argument for storing the DRB-id <-> LC-id mapping in RLC)*/);)
+public_rlc_am_init( void rlc_am_set_debug_infos(const protocol_ctxt_t* const ctxtP, rlc_am_entity_t * const rlc_pP, const srb_flag_t srb_flagP, const rb_id_t rb_idP, const logical_chan_id_t chan_idP);)
 /** @} */
 #endif
