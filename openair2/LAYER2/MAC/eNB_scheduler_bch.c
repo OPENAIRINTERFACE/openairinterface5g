@@ -319,6 +319,7 @@ schedule_SI(
                   0xffff,
                   4,
                   0xffff,
+                  eNB->frame,
                   eNB->subframe,
                   0,
                   0);
