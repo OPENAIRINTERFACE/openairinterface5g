@@ -49,7 +49,6 @@
 PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
                            uint8_t eNB_id,
                            uint8_t Nid_cell,
-                           uint8_t cooperation_flag,
                            uint8_t abstraction_flag)
 {
 
@@ -57,18 +56,17 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   PHY_VARS_eNB* PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
   memset(PHY_vars_eNB,0,sizeof(PHY_VARS_eNB));
   PHY_vars_eNB->Mod_id=eNB_id;
-  PHY_vars_eNB->cooperation_flag=cooperation_flag;
+  PHY_vars_eNB->cooperation_flag=0;//cooperation_flag;
   memcpy(&(PHY_vars_eNB->frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
   PHY_vars_eNB->frame_parms.Nid_cell = ((Nid_cell/3)*3)+((eNB_id+Nid_cell)%3);
   PHY_vars_eNB->frame_parms.nushift = PHY_vars_eNB->frame_parms.Nid_cell%6;
-  phy_init_lte_eNB(PHY_vars_eNB,0,cooperation_flag,abstraction_flag);
+  phy_init_lte_eNB(PHY_vars_eNB,0,abstraction_flag);
 
   LOG_I(PHY,"init eNB: Nid_cell %d\n", frame_parms->Nid_cell);
   LOG_I(PHY,"init eNB: frame_type %d,tdd_config %d\n", frame_parms->frame_type,frame_parms->tdd_config);
   LOG_I(PHY,"init eNB: number of ue max %d number of enb max %d number of harq pid max %d\n",
         NUMBER_OF_UE_MAX, NUMBER_OF_eNB_MAX, NUMBER_OF_HARQ_PID_MAX);
   LOG_I(PHY,"init eNB: N_RB_DL %d\n", frame_parms->N_RB_DL);
-  LOG_I(PHY,"init eNB: Transmission mode %d\n", transmission_mode);
   LOG_I(PHY,"init eNB: prach_config_index %d\n", frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex);
 
 
@@ -281,7 +279,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
     PHY_vars_eNB_g[eNB_id] = (PHY_VARS_eNB**) malloc(MAX_NUM_CCs*sizeof(PHY_VARS_eNB*));
 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      PHY_vars_eNB_g[eNB_id][CC_id] = init_lte_eNB(frame_parms[CC_id],eNB_id,Nid_cell,cooperation_flag,abstraction_flag);
+      PHY_vars_eNB_g[eNB_id][CC_id] = init_lte_eNB(frame_parms[CC_id],eNB_id,Nid_cell,abstraction_flag);
       PHY_vars_eNB_g[eNB_id][CC_id]->Mod_id=eNB_id;
       PHY_vars_eNB_g[eNB_id][CC_id]->CC_id=CC_id;
     }

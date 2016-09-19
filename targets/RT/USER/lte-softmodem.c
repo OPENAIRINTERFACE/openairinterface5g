@@ -1121,7 +1121,7 @@ static void get_options (int argc, char **argv)
 	frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_ConfigIndex = enb_properties->properties[i]->prach_config_index[CC_id];
 	frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset  = enb_properties->properties[i]->prach_freq_offset[CC_id];
 
-	frame_parms[CC_id]->mode1_flag         = (transmission_mode == 1) ? 1 : 0;
+	frame_parms[CC_id]->mode1_flag         = (frame_parms[CC_id]->nb_antennas_tx_eNB == 1) ? 1 : 0;
 	frame_parms[CC_id]->threequarter_fs    = threequarter_fs;
 
         //} // j
@@ -1202,7 +1202,8 @@ int T_port = 2021;    /* default port to listen to to wait for the tracer */
 int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
 
-void set_default_frame_parms() {
+void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
+void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 
   int CC_id;
 
@@ -1247,6 +1248,8 @@ void set_default_frame_parms() {
   }
 
 }
+
+void init_openair0(void);
 
 void init_openair0() {
 

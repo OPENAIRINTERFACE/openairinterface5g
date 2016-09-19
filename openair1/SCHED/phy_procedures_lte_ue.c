@@ -2481,6 +2481,11 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
       pdsch_vars = NULL;
       return;
       break;
+    default:
+      pdsch_vars = NULL;
+      return;
+      break;
+
     }
   
     harq_pid = dlsch0->current_harq_pid;

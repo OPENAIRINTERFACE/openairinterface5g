@@ -1175,7 +1175,6 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
 
 int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
                      unsigned char is_secondary_eNB,
-                     uint8_t cooperation_flag,
                      unsigned char abstraction_flag)
 {
 
@@ -1191,7 +1190,6 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   eNB->total_transmitted_bits = 0;
   eNB->total_system_throughput = 0;
   eNB->check_for_MUMIMO_transmissions=0;
-
   LOG_I(PHY,"[eNB %"PRIu8"] Initializing DL_FRAME_PARMS : N_RB_DL %"PRIu8", PHICH Resource %d, PHICH Duration %d\n",
         eNB->Mod_id,
         fp->N_RB_DL,fp->phich_config_common.phich_resource,
@@ -1345,44 +1343,6 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 	    pusch_vars[UE_id]->ul_ch_mag[eNB_id][i]  = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
 	    pusch_vars[UE_id]->ul_ch_magb[eNB_id][i] = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
 	  }
-	  
-	  // In case of Distributed Alamouti Collabrative scheme separate channel estimates are required for both the UEs
-	  if (cooperation_flag == 2) {
-	    pusch_vars[UE_id]->drs_ch_estimates_0[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) ); // UE 0 DRS estimates
-	    pusch_vars[UE_id]->drs_ch_estimates_1[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) ); // UE 1 DRS estimates
-	    
-	    for (i=0; i<fp->nb_antennas_rx; i++) {
-	      pusch_vars[UE_id]->drs_ch_estimates_0[eNB_id][i] = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
-	      pusch_vars[UE_id]->drs_ch_estimates_1[eNB_id][i] = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
-	    }
-	    
-	    // Compensated data for the case of Distributed Alamouti Scheme
-	    pusch_vars[UE_id]->rxdataF_comp_0[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) ); // it will contain(y)*(h0*)
-	    pusch_vars[UE_id]->rxdataF_comp_1[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) ); // it will contain(y*)*(h1)
-	    
-	    for (i=0; i<fp->nb_antennas_rx; i++) {
-	      pusch_vars[UE_id]->rxdataF_comp_0[eNB_id][i] = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
-	      pusch_vars[UE_id]->rxdataF_comp_1[eNB_id][i] = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
-	    }
-	    
-	    // UE 0
-	    pusch_vars[UE_id]->ul_ch_mag_0[eNB_id]  = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	    pusch_vars[UE_id]->ul_ch_magb_0[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	    
-	    for (i=0; i<fp->nb_antennas_rx; i++) {
-	      pusch_vars[UE_id]->ul_ch_mag_0[eNB_id][i]  = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
-	      pusch_vars[UE_id]->ul_ch_magb_0[eNB_id][i] = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
-	    }
-	    
-	    // UE 1
-	    pusch_vars[UE_id]->ul_ch_mag_1[eNB_id]  = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	    pusch_vars[UE_id]->ul_ch_magb_1[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	    
-	    for (i=0; i<fp->nb_antennas_rx; i++) {
-	      pusch_vars[UE_id]->ul_ch_mag_1[eNB_id][i]  = (int32_t*)malloc16( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
-	      pusch_vars[UE_id]->ul_ch_magb_1[eNB_id][i] = (int32_t*)malloc16( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
-	    }
-	  }//cooperation_flag
 	} //eNB_id
 	
 	pusch_vars[UE_id]->llr = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );

@@ -2541,7 +2541,7 @@ static void *fep_thread(void *param) {
     if (pthread_cond_signal(&proc->cond_fep) != 0) {
       printf("[eNB] ERROR pthread_cond_signal for fep thread exit\n");
       exit_fun( "ERROR pthread_cond_signal" );
-      return;
+      return NULL;
     }
   }
 
@@ -2611,7 +2611,7 @@ void eNB_fep_full_2thread(PHY_VARS_eNB *eNB) {
   start_meas(&eNB->ofdm_demod_stats);
 
   if (pthread_mutex_timedlock(&proc->mutex_fep,&wait) != 0) {
-    printf("[eNB] ERROR pthread_mutex_lock for fep thread %d (IC %d)\n", proc->instance_cnt_fep);
+    printf("[eNB] ERROR pthread_mutex_lock for fep thread (IC %d)\n", proc->instance_cnt_fep);
     exit_fun( "error locking mutex_fep" );
     return;
   }

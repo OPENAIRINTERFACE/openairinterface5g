@@ -1291,6 +1291,8 @@ static void* eNB_thread_single( void* param ) {
 }
 
 extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
+extern void init_td_thread(PHY_VARS_eNB *, pthread_attr_t *);
+extern void init_te_thread(PHY_VARS_eNB *, pthread_attr_t *);
 
 void init_eNB_proc(int inst) {
   
@@ -1299,7 +1301,7 @@ void init_eNB_proc(int inst) {
   PHY_VARS_eNB *eNB;
   eNB_proc_t *proc;
   eNB_rxtx_proc_t *proc_rxtx;
-  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_single=NULL,*attr_fep=NULL,*attr_td=NULL;
+  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_single=NULL,*attr_fep=NULL,*attr_td=NULL,*attr_te;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     eNB = PHY_vars_eNB_g[inst][CC_id];
@@ -1642,7 +1644,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->do_prach             = do_prach;
 	eNB->fep                  = eNB_fep_full;
 	eNB->td                   = ulsch_decoding_data_2thread;
-	eNB->te                   = dlsch_encoding_2thread;
+	eNB->te                   = dlsch_encoding_2threads;
 	eNB->proc_uespec_rx       = phy_procedures_eNB_uespec_RX;
 	eNB->proc_tx              = proc_tx_full;
 	eNB->tx_fh                = NULL;
@@ -1662,7 +1664,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->do_prach       = do_prach;
 	eNB->fep            = eNB_fep_full;
 	eNB->td             = ulsch_decoding_data_2thread;
-	eNB->te             = dlsch_encoding_2thread;
+	eNB->te             = dlsch_encoding_2threads;
 	eNB->proc_uespec_rx = phy_procedures_eNB_uespec_RX;
 	eNB->proc_tx        = proc_tx_full;
 	eNB->tx_fh          = tx_fh_if5;
@@ -1686,7 +1688,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->do_prach             = do_prach;
 	eNB->fep                  = NULL;
 	eNB->td                   = ulsch_decoding_data_2thread;
-	eNB->te                   = dlsch_encoding_2thread;
+	eNB->te                   = dlsch_encoding_2threads;
 	eNB->proc_uespec_rx       = phy_procedures_eNB_uespec_RX;
 	eNB->proc_tx              = proc_tx_high;
 	eNB->tx_fh                = tx_fh_if4p5;
@@ -1709,7 +1711,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->do_prach       = do_prach;
 	eNB->fep            = NULL;
 	eNB->td             = ulsch_decoding_data_2thread;
-	eNB->te             = dlsch_encoding_2thread;
+	eNB->te             = dlsch_encoding_2threads;
 	eNB->proc_uespec_rx = phy_procedures_eNB_uespec_RX;
 	eNB->proc_tx        = proc_tx_high;
 	eNB->tx_fh          = tx_fh_if4p5; 

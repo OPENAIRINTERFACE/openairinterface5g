@@ -73,7 +73,6 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 \details Only a subset of phy_vars_eNb is initialized.
 @param[out] phy_vars_eNb Pointer to eNB Variables
 @param is_secondary_eNb Flag to indicate this eNB gets synch from another
-@param cooperation_flag 0 for no cooperation, 1 for Delay Diversity and 2 for Distributed Alamouti
 @param abstraction_flag 1 indicates memory should be allocated for abstracted MODEM
 @returns 0 on success
 @returns -1 if any memory allocation failed
@@ -81,7 +80,6 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
  */
 int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNb,
                      unsigned char is_secondary_eNb,
-                     unsigned char cooperation_flag,
                      unsigned char abstraction_flag);
 
 /** \brief Configure LTE_DL_FRAME_PARMS with components derived after initial synchronization (MIB decoding + primary/secondary synch).

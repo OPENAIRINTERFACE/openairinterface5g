@@ -6,7 +6,7 @@
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
+ 
 
     OpenAirInterface is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -490,19 +490,19 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
     tc = phy_threegpplte_turbo_decoder8;
 
   if (pthread_mutex_timedlock(&proc->mutex_td,&wait) != 0) {
-    printf("[eNB] ERROR pthread_mutex_lock for TD thread %d (IC %d)\n", proc->instance_cnt_td);
+    printf("[eNB] ERROR pthread_mutex_lock for TD thread (IC %d)\n", proc->instance_cnt_td);
     exit_fun( "error locking mutex_fep" );
-    return;
+    return -1;
   }
 
   if (proc->instance_cnt_td==0) {
     printf("[eNB] TD thread busy\n");
     exit_fun("TD thread busy");
     pthread_mutex_unlock( &proc->mutex_td );
-    return;
+    return -1;
   }
   
-  ++proc->instance_cnt_te;
+  ++proc->instance_cnt_td;
 
   proc->tdp.eNB       = eNB;
   proc->tdp.UE_id     = UE_id;
