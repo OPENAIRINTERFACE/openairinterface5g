@@ -179,7 +179,7 @@ typedef struct RrcConfigurationReq_s {
   long                    ue_TimersAndConstants_t311[MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n310[MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n311[MAX_NUM_CCs];
-
+  long                    ue_TransmissionMode[MAX_NUM_CCs];
 } RrcConfigurationReq;
 
 // UE: NAS -> RRC messages

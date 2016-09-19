@@ -1250,8 +1250,6 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       ((int16_t*)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[1] = (int16_t)(stat_im);
       eNB->pucch1ab_stats_cnt[UE_id][subframe] = (eNB->pucch1ab_stats_cnt[UE_id][subframe]+1)&1023;
 
-      *payload = (stat_re<0) ? 1 : 0;
-
       if (fmt==pucch_format1b)
         *(1+payload) = 0;
     }

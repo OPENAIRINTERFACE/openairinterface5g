@@ -52,7 +52,8 @@ void lte_param_init(unsigned char N_tx,
   frame_parms->nb_antennas_tx     = N_tx;
   frame_parms->nb_antennas_rx     = N_rx;
   frame_parms->nb_antennas_tx_eNB = N_tx;
-  frame_parms->phich_config_common.phich_resource         = one;
+  frame_parms->phich_config_common.phich_resource         = oneSixth;
+  frame_parms->phich_config_common.phich_duration         = normal;
   frame_parms->tdd_config         = tdd_config;
   frame_parms->frame_type         = frame_type;
   //  frame_parms->Csrs = 2;

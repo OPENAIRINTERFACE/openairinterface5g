@@ -907,7 +907,7 @@ typedef struct {
   /// CCE table used to build DCI scheduling information
   int CCE_table[MAX_NUM_CCs][800];
   ///  active flag for Other lcid
-  //  uint8_t lcid_active[NB_RB_MAX];
+  uint8_t lcid_active[NB_RB_MAX];
   /// eNB stats
   eNB_STATS eNB_stats[MAX_NUM_CCs];
   // MAC function execution peformance profiler

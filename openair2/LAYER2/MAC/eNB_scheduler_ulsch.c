@@ -71,16 +71,15 @@
 // This table holds the allowable PRB sizes for ULSCH transmissions
 uint8_t rb_table[33] = {1,2,3,4,5,6,8,9,10,12,15,16,18,20,24,25,27,30,32,36,40,45,48,50,54,60,72,75,80,81,90,96,100};
 
-void rx_sdu(
-  const module_id_t enb_mod_idP,
-  const int         CC_idP,
-  const frame_t     frameP,
-  const sub_frame_t subframeP,
-  const rnti_t      rntiP,
-  uint8_t          *sduP,
-  const uint16_t    sdu_lenP,
-  const int         harq_pidP,
-  uint8_t          *msg3_flagP)
+void rx_sdu(const module_id_t enb_mod_idP,
+	    const int         CC_idP,
+	    const frame_t     frameP,
+	    const sub_frame_t subframeP,
+	    const rnti_t      rntiP,
+	    uint8_t          *sduP,
+	    const uint16_t    sdu_lenP,
+	    const int         harq_pidP,
+	    uint8_t          *msg3_flagP)
 {
 
   unsigned char  rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
@@ -325,7 +324,6 @@ void rx_sdu(
               enb_mod_idP, CC_idP, frameP, rx_lengths[i], CCCH_PAYLOAD_SIZE_MAX);
         break;
       }
-
       LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, Received CCCH:  %x.%x.%x.%x.%x.%x, Terminating RA procedure for UE rnti %x\n",
             enb_mod_idP,CC_idP,frameP,
             payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4], payload_ptr[5], rntiP);
@@ -382,21 +380,19 @@ void rx_sdu(
 
         } // if process is active
       } // loop on RA processes
+      
+      break ;
 
-      break;
-
-    case  DCCH :
+    case DCCH :
     case DCCH1 :
       //      if(eNB_mac_inst[module_idP][CC_idP].Dcch_lchan[UE_id].Active==1){
       
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       LOG_T(MAC,"offset: %d\n",(unsigned char)((unsigned char*)payload_ptr-sduP));
-      
       for (j=0; j<32; j++) {
         LOG_T(MAC,"%x ",payload_ptr[j]);
       }
-
       LOG_T(MAC,"\n");
 #endif
 
@@ -425,67 +421,69 @@ void rx_sdu(
           UE_list->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]]+=1;
           UE_list->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]]+=rx_lengths[i];
       } /* UE_id != -1 */
-
-      //      }
+ 
+      // } 
       break;
 
-    case DTCH: // default DRB
-      //      if(eNB_mac_inst[module_idP][CC_idP].Dcch_lchan[UE_id].Active==1){
+      // all the DRBS
+    case DTCH:
+    default :
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       LOG_T(MAC,"offset: %d\n",(unsigned char)((unsigned char*)payload_ptr-sduP));
-
       for (j=0; j<32; j++) {
         LOG_T(MAC,"%x ",payload_ptr[j]);
       }
-
       LOG_T(MAC,"\n");
 #endif
+      if (rx_lcids[i]  < NB_RB_MAX ) {
+	LOG_D(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d\n",
+	      enb_mod_idP,CC_idP,frameP, rx_lengths[i], UE_id, rx_lcids[i]);
+	
+	if (UE_id != -1) {
+	  // adjust buffer occupancy of the correponding logical channel group
+	  LOG_D(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d, removing from LCGID %d, %d\n",
+		enb_mod_idP,CC_idP,frameP, rx_lengths[i], UE_id,rx_lcids[i],
+		UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]],
+		UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]]);
+	  
+	  if (UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] >= rx_lengths[i])
+	    UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] -= rx_lengths[i];
+	  else
+	    UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] = 0;
+	  if ((rx_lengths[i] <SCH_PAYLOAD_SIZE_MAX) &&  (rx_lengths[i] > 0) ) {   // MAX SIZE OF transport block
+	    mac_rlc_data_ind(
+			     enb_mod_idP,
+			     rntiP,
+			     enb_mod_idP,
+			     frameP,
+			     ENB_FLAG_YES,
+			     MBMS_FLAG_NO,
+			     rx_lcids[i],
+			     (char *)payload_ptr,
+			     rx_lengths[i],
+			     1,
+			     NULL);//(unsigned int*)crc_status);
+	    
+	    UE_list->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]]+=1;
+	    UE_list->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]]+=rx_lengths[i];
+	  }
+	  else { /* rx_length[i] */
+	    UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx+=1;
+	    LOG_E(MAC,"[eNB %d] CC_id %d Frame %d : Max size of transport block reached LCID %d from UE %d ",
+		  enb_mod_idP, CC_idP, frameP, rx_lcids[i], UE_id);
+	  }
+	}    
+	else {/*(UE_id != -1*/ 
+	  UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx+=1;
+	  LOG_E(MAC,"[eNB %d] CC_id %d Frame %d : received unsupported or unknown LCID %d from UE %d ",
+		enb_mod_idP, CC_idP, frameP, rx_lcids[i], UE_id);
+	}
+      }
 
-      LOG_D(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d\n",
-            enb_mod_idP,CC_idP,frameP, rx_lengths[i], UE_id,rx_lcids[i]);
-
-      if (UE_id != -1) {
-	// adjust buffer occupancy of the correponding logical channel group
-	LOG_D(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d, removing from LCGID %d, %d\n",
-	      enb_mod_idP,CC_idP,frameP, rx_lengths[i], UE_id,rx_lcids[i],
-	      UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]],
-	      UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]]);
-
-	if (UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] >= rx_lengths[i])
-	  UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] -= rx_lengths[i];
-	else
-	  UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] = 0;
-
-        if ((rx_lengths[i] <SCH_PAYLOAD_SIZE_MAX) &&  (rx_lengths[i] > 0) ) {   // MAX SIZE OF transport block
-          mac_rlc_data_ind(
-            enb_mod_idP,
-            rntiP,
-            enb_mod_idP,
-            frameP,
-            ENB_FLAG_YES,
-            MBMS_FLAG_NO,
-            DTCH,
-            (char *)payload_ptr,
-            rx_lengths[i],
-            1,
-            NULL);//(unsigned int*)crc_status);
-          UE_list->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]]+=1;
-          UE_list->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]]+=rx_lengths[i];
-        }
-      } /* UE_id != -1 */
-
-      //      }
-      break;
-
-    default :  //if (rx_lcids[i] >= DTCH) {
-      if (UE_id != -1)
-        UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx+=1;
-      LOG_E(MAC,"[eNB %d] CC_id %d Frame %d : received unsupported or unknown LCID %d from UE %d ",
-            enb_mod_idP, CC_idP, frameP, rx_lcids[i], UE_id);
       break;
     }
-
+  
     payload_ptr+=rx_lengths[i];
   }
 
