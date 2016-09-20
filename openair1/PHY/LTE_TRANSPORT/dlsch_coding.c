@@ -344,9 +344,11 @@ void *te_thread(void *param) {
   eNB_proc_t *proc = &((te_params *)param)->eNB->proc;
   while (!oai_exit) {
 
+
     if (wait_on_condition(&proc->mutex_te,&proc->cond_te,&proc->instance_cnt_te,"te thread")<0) break;  
 
     dlsch_encoding_2threads0((te_params*)param);
+
 
     if (release_thread(&proc->mutex_te,&proc->instance_cnt_te,"te thread")<0) break;
 
