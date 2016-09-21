@@ -1015,7 +1015,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       *payload = 0;
       *Po_PUCCH1_below = ((*Po_PUCCH1_below<<9) + (stat_max<<9)+1024)>>10;
     }
-    printf("[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (I0 %d dBm, thres %d), Po_PUCCH1_below/above : %d / %d\n",dB_fixed(stat_max),sigma2_dB,eNB->measurements[0].n0_subband_power_tot_dBm[6],pucch1_thres,dB_fixed(*Po_PUCCH1_below),dB_fixed(*Po_PUCCH1_above));
+    //printf("[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (I0 %d dBm, thres %d), Po_PUCCH1_below/above : %d / %d\n",dB_fixed(stat_max),sigma2_dB,eNB->measurements[0].n0_subband_power_tot_dBm[6],pucch1_thres,dB_fixed(*Po_PUCCH1_below),dB_fixed(*Po_PUCCH1_above));
     *Po_PUCCH_update = 1;
     if (UE_id==0) {
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_SR_ENERGY,dB_fixed(stat_max));
@@ -1107,18 +1107,18 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
     stat_re=0;
     stat_im=0;
-    printf("PUCCH1A : Po_PUCCH before %d dB (%d)\n",dB_fixed(*Po_PUCCH),*Po_PUCCH);
+    //    printf("PUCCH1A : Po_PUCCH before %d dB (%d)\n",dB_fixed(*Po_PUCCH),*Po_PUCCH);
     *Po_PUCCH = ((*Po_PUCCH>>1) + ((stat_max)>>1));
     *Po_PUCCH_dBm = dB_fixed(*Po_PUCCH/frame_parms->N_RB_UL) - eNB->rx_total_gain_dB;
     *Po_PUCCH_update = 1;
- 
+    /*
     printf("PUCCH1A : stat_max %d (%d,%d,%d) => Po_PUCCH %d\n",
 	   dB_fixed(stat_max),
 	   pucch1_thres+sigma2_dB,
 	   pucch1_thres,
 	   sigma2_dB,
 	   dB_fixed(*Po_PUCCH));
-
+    */
     // Do detection now
     if (sigma2_dB<(dB_fixed(stat_max)-pucch1_thres))  {//
 
