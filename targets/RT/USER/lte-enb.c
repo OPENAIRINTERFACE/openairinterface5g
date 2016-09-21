@@ -191,7 +191,7 @@ static inline void thread_top_init(char *thread_name,
     exit_fun("Error setting deadline scheduler");
   }
 
-  LOG_I( HW, "[SCHED] eNB %s deadline thread (TID %ld) started on CPU %d\n", gettid(), thread_name,sched_getcpu() );
+  LOG_I( HW, "[SCHED] eNB %s deadline thread started on CPU %d\n", thread_name,sched_getcpu() );
 
 #else //LOW_LATENCY
   int policy, s, j;
