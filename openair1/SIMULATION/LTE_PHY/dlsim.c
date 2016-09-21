@@ -4025,8 +4025,10 @@ n(tikz_fname,"w");
           round++;
         }  //round
 
-        //if ((errs[0][0]>=n_frames/10) && (trials>(n_frames/2)) )
-        // break;
+        if(transmission_mode != 3 && transmission_mode !=4 ){
+          if ((errs[0][0]>=n_frames/10) && (trials>(n_frames/2)) )
+          break;
+        }  
             
         //len = chbch_stats_read(stats_buffer,NULL,0,4096);
         //printf("%s\n\n",stats_buffer);
@@ -4183,21 +4185,21 @@ n(tikz_fname,"w");
        round_trials[0],
        errs[0][1],
        errs[1][1],
-       round_trials[1],
+       round_trials[0],
        errs[0][2],
        errs[1][2],
-       round_trials[2],
+       round_trials[0],
        errs[0][3],
        errs[1][3],
-       round_trials[3],
+       round_trials[0],
        (double)errs[0][0]/(round_trials[0]),
        (double)errs[1][0]/(round_trials[0]),
-       (double)errs[0][1]/(round_trials[1]),
-       (double)errs[1][1]/(round_trials[1]),
-       (double)errs[0][2]/(round_trials[2]),
-       (double)errs[1][2]/(round_trials[2]),
-       (double)errs[0][3]/(round_trials[3]),
-       (double)errs[1][3]/(round_trials[3]),
+       (double)errs[0][1]/(round_trials[0]),
+       (double)errs[1][1]/(round_trials[0]),
+       (double)errs[0][2]/(round_trials[0]),
+       (double)errs[1][2]/(round_trials[0]),
+       (double)errs[0][3]/(round_trials[0]),
+       (double)errs[1][3]/(round_trials[0]),
        dci_errors,
        round_trials[0],
        (double)dci_errors/(round_trials[0]),

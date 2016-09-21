@@ -212,7 +212,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                    subframe,
                                    phy_vars_ue->high_speed_flag,
                                    frame_parms,
-				   dlsch0_harq->mimo_mode);
+				                           dlsch0_harq->mimo_mode);
 //#ifdef DEBUG_DLSCH_MOD
     /*   printf("dlsch: using pmi %lx, rb_alloc %x, pmi_ext ",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),*rballoc);
        for (rb=0;rb<nb_rb;rb++)
@@ -307,7 +307,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 
   if (dlsch0_harq->mimo_mode<LARGE_CDD) {// SISO or ALAMOUTI
     
-      dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+     dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 			  frame_parms,
 			  dlsch_ue,
 			  symbol,
@@ -330,7 +330,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
         avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
     //  avgs = cmax(avgs,avg[(aarx<<1)+aatx]);
 
-     lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2); //+ interf_unaw_shift_tm1_mcs[dlsch0_harq->mcs];
+     lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2)+1; //+ interf_unaw_shift_tm1_mcs[dlsch0_harq->mcs];
    // printf("TM4 I-A log2_maxh0 = %d\n", lte_ue_pdsch_vars[eNB_id]->log2_maxh);
       }
     
@@ -625,11 +625,11 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 			  nb_rb);
   
       if (first_symbol_flag==1) {
-	dlsch_channel_level(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                        frame_parms,
-                        avg,
-                        symbol,
-                        nb_rb);
+	      dlsch_channel_level(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+                            frame_parms,
+                            avg,
+                            symbol,
+                            nb_rb);
 #ifdef DEBUG_PHY
     LOG_D(PHY,"[DLSCH] avg[0] %d\n",avg[0]);
 #endif
@@ -4249,7 +4249,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
                                       unsigned char subframe,
                                       uint32_t high_speed_flag,
                                       LTE_DL_FRAME_PARMS *frame_parms,
-				      MIMO_mode_t mimo_mode) {
+				                              MIMO_mode_t mimo_mode) {
     
   int prb,nb_rb=0;
   int prb_off,prb_off2;
@@ -4388,9 +4388,9 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
             memcpy(dl_ch0_ext,dl_ch0p,12*sizeof(int));
             memcpy(dl_ch1_ext,dl_ch1p,12*sizeof(int));
             memcpy(rxF_ext,rxF,12*sizeof(int));
-	    dl_ch0_ext +=12;
-	    dl_ch1_ext +=12;
-	    rxF_ext    +=12;
+            dl_ch0_ext +=12;
+            dl_ch1_ext +=12;
+            rxF_ext    +=12;
           } else { // pilots==1
             j=0;
             for (i=0; i<12; i++) {
