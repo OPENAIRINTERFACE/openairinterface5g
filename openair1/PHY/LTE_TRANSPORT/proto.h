@@ -93,7 +93,8 @@ LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t max_turbo_iterations,uint8_t N_RB_UL, uin
 
 LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag);
 
-/** \fn dlsch_encoding(uint8_t *input_buffer,
+/** \fn dlsch_encoding(PHY_VARS_eNB *eNB,
+    uint8_t *input_buffer,
     LTE_DL_FRAME_PARMS *frame_parms,
     uint8_t num_pdcch_symbols,
     LTE_eNB_DLSCH_t *dlsch,
@@ -105,6 +106,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag);
     - Channel coding (Turbo coding)
     - Rate matching (sub-block interleaving, bit collection, selection and transmission
     - Code block concatenation
+    @param eNB Pointer to eNB PHY context
     @param input_buffer Pointer to input buffer for sub-frame
     @param frame_parms Pointer to frame descriptor structure
     @param num_pdcch_symbols Number of PDCCH symbols in this subframe
@@ -116,8 +118,8 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag);
     @param i_stats Time statistics for interleaving
     @returns status
 */
-int32_t dlsch_encoding(uint8_t *a,
-                       LTE_DL_FRAME_PARMS *frame_parms,
+int32_t dlsch_encoding(PHY_VARS_eNB *eNB,
+		       uint8_t *a,
                        uint8_t num_pdcch_symbols,
                        LTE_eNB_DLSCH_t *dlsch,
                        int frame,
@@ -125,6 +127,39 @@ int32_t dlsch_encoding(uint8_t *a,
                        time_stats_t *rm_stats,
                        time_stats_t *te_stats,
                        time_stats_t *i_stats);
+
+/** \fn dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
+    uint8_t *input_buffer,
+    uint8_t num_pdcch_symbols,
+    LTE_eNB_DLSCH_t *dlsch,
+    int frame,
+    uint8_t subframe)
+    \brief This function performs a subset of the bit-coding functions for LTE as described in 36-212, Release 8.Support is limited to turbo-coded channels (DLSCH/ULSCH). This version spawns 1 worker thread. The implemented functions are:
+    - CRC computation and addition
+    - Code block segmentation and sub-block CRC addition
+    - Channel coding (Turbo coding)
+    - Rate matching (sub-block interleaving, bit collection, selection and transmission
+    - Code block concatenation
+    @param eNB Pointer to eNB PHY context
+    @param input_buffer Pointer to input buffer for sub-frame
+    @param num_pdcch_symbols Number of PDCCH symbols in this subframe
+    @param dlsch Pointer to dlsch to be encoded
+    @param frame Frame number
+    @param subframe Subframe number
+    @param rm_stats Time statistics for rate-matching
+    @param te_stats Time statistics for turbo-encoding
+    @param i_stats Time statistics for interleaving
+    @returns status
+*/
+int32_t dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
+				uint8_t *a,
+				uint8_t num_pdcch_symbols,
+				LTE_eNB_DLSCH_t *dlsch,
+				int frame,
+				uint8_t subframe,
+				time_stats_t *rm_stats,
+				time_stats_t *te_stats,
+				time_stats_t *i_stats);
 
 void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
                          uint8_t *DLSCH_pdu,
@@ -1544,6 +1579,32 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
                              uint8_t Nbundled,
                              uint8_t llr8_flag);
 
+/*!
+  \brief Decoding of ULSCH data component from 36-212. This one spawns 1 worker thread in parallel,half of the segments in each thread.
+  @param phy_vars_eNB Pointer to eNB top-level descriptor
+  @param UE_id ID of UE transmitting this PUSCH
+  @param harq_pid HARQ process ID
+  @param llr8_flag If 1, indicate that the 8-bit turbo decoder should be used
+  @returns 0 on success
+*/
+int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,
+				int UE_id,
+				int harq_pid,
+				int llr8_flag);
+
+/*!
+  \brief Decoding of ULSCH data component from 36-212. This one is single thread.
+  @param phy_vars_eNB Pointer to eNB top-level descriptor
+  @param UE_id ID of UE transmitting this PUSCH
+  @param harq_pid HARQ process ID
+  @param llr8_flag If 1, indicate that the 8-bit turbo decoder should be used
+  @returns 0 on success
+*/
+int ulsch_decoding_data(PHY_VARS_eNB *eNB,
+			int UE_id,
+			int harq_pid,
+			int llr8_flag);
+
 uint32_t ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
                              eNB_rxtx_proc_t *proc,
 			     uint8_t UE_index,
@@ -1648,17 +1709,16 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
 void init_ncs_cell(LTE_DL_FRAME_PARMS *frame_parms,uint8_t ncs_cell[20][7]);
 
-void generate_pucch(int32_t **txdataF,
-                    LTE_DL_FRAME_PARMS *frame_parms,
-                    uint8_t ncs_cell[20][7],
-                    PUCCH_FMT_t fmt,
-                    PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                    uint16_t n1_pucch,
-                    uint16_t n2_pucch,
-                    uint8_t shortened_format,
-                    uint8_t *payload,
-                    int16_t amp,
-                    uint8_t subframe);
+void generate_pucch1x(int32_t **txdataF,
+		      LTE_DL_FRAME_PARMS *frame_parms,
+		      uint8_t ncs_cell[20][7],
+		      PUCCH_FMT_t fmt,
+		      PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+		      uint16_t n1_pucch,
+		      uint8_t shortened_format,
+		      uint8_t *payload,
+		      int16_t amp,
+		      uint8_t subframe);
 
 void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
 			 UE_rxtx_proc_t *proc,
@@ -1754,6 +1814,9 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
                        uint32_t X_u[64][839]);
 
 void init_prach_tables(int N_ZC);
+
+void init_unscrambling_lut(void);
+void init_scrambling_lut(void);
 
 /*!
   \brief Return the status of MBSFN in this frame/subframe

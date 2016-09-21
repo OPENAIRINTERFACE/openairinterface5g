@@ -1381,6 +1381,7 @@ int main(int argc, char **argv)
   char csv_fname[32];
   int dci_flag=1;
   int llr8_flag=1;
+  int two_thread_flag=0;
   int DLSCH_RB_ALLOC;
 
 #if defined(__arm__)
@@ -1412,7 +1413,7 @@ int main(int argc, char **argv)
   //  num_layers = 1;
   perfect_ce = 0;
 
-  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:XY")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:WXY")) != -1) {
     switch (c) {
     case 'a':
       awgn_flag = 1;
@@ -1479,7 +1480,10 @@ int main(int argc, char **argv)
     case 'L':
       llr8_flag=1;
       break;
-
+      
+    case 'W':
+      two_thread_flag = 1;
+      break;
     case 'l':
       offset_mumimo_llr_drange_fix=atoi(optarg);
       break;
@@ -1779,6 +1783,15 @@ int main(int argc, char **argv)
 		 perfect_ce);
 
   eNB->mac_enabled=1;
+  if (two_thread_flag == 0) {
+    eNB->te = dlsch_encoding;
+  }
+  else {
+    eNB->te = dlsch_encoding_2threads;
+    init_td_thread(eNB,NULL);
+    init_te_thread(eNB,NULL);
+  }
+
   // callback functions required for phy_procedures_tx 
   mac_xface->get_dci_sdu = get_dci_sdu;
   mac_xface->get_dlsch_sdu = get_dlsch_sdu;
@@ -2272,7 +2285,6 @@ int main(int argc, char **argv)
 
           if (input_fd==NULL) {
 
-            start_meas(&eNB->phy_proc_tx);
 
             // Simulate HARQ procedures!!!
 	    memset(CCE_table,0,800*sizeof(int));
@@ -2345,7 +2357,7 @@ int main(int argc, char **argv)
 	    proc_eNB->subframe_tx = subframe;
 	    eNB->abstraction_flag=0;
  
-	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL);
+	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,1);
 	    
 	    
 	    start_meas(&eNB->ofdm_mod_stats);
@@ -2366,7 +2378,7 @@ int main(int argc, char **argv)
 	    
 	    proc_eNB->subframe_tx = subframe+1;
 	    
-	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL);
+	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,0);
 	    
 	    do_OFDM_mod_l(eNB->common_vars.txdataF[eNB_id],
 			  eNB->common_vars.txdata[eNB_id],
@@ -2392,6 +2404,8 @@ int main(int argc, char **argv)
               write_output("txsig0.m","txs0", &eNB->common_vars.txdata[eNB_id][0][subframe* eNB->frame_parms.samples_per_tti],
 
                            eNB->frame_parms.samples_per_tti,1,1);
+	      write_output("txsigF0.m","txsF0", &eNB->common_vars.txdataF[eNB_id][0][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],
+			   nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
             }
 	  }
 

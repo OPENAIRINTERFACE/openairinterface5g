@@ -163,8 +163,9 @@ void phy_procedures_UE_S_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abst
   @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
   @param phy_vars_rn pointer to the RN variables
+  @param do_meas Do inline timing measurement
 */
-void phy_procedures_eNB_TX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn);
+void phy_procedures_eNB_TX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn,int do_meas);
 
 /*! \brief Scheduling for eNB RX UE-specific procedures in normal subframes.
   @param phy_vars_eNB Pointer to eNB variables on which to act

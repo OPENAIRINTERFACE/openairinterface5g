@@ -66,7 +66,7 @@ int main(int argc, char **argv)
   uint8_t snr1set=0;
   //mod_sym_t **txdataF;
   int **txdata;
-  double **s_re,**s_im,**r_re,**r_im;
+  double s_re[2][30720],s_im[2][30720],r_re[2][30720],r_im[2][30720];
   double ricean_factor=0.0000005,iqim=0.0;
 
   int trial, n_trials, ntrials=1, n_errors;
@@ -325,10 +325,6 @@ int main(int argc, char **argv)
 
   txdata = eNB->common_vars.txdata[eNB_id];
 
-  s_re = malloc(2*sizeof(double*));
-  s_im = malloc(2*sizeof(double*));
-  r_re = malloc(2*sizeof(double*));
-  r_im = malloc(2*sizeof(double*));
   nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
 
   printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %d\n",NUMBER_OF_OFDM_CARRIERS,
@@ -352,19 +348,6 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  for (i=0; i<2; i++) {
-
-    s_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    bzero(s_re[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    s_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    bzero(s_im[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-
-    r_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    bzero(r_re[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    r_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    bzero(r_im[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-  }
-
   init_ncs_cell(&eNB->frame_parms,eNB->ncs_cell);
 
   init_ncs_cell(&UE->frame_parms,UE->ncs_cell);
@@ -378,17 +361,16 @@ int main(int argc, char **argv)
 
   pucch_payload = 0;
 
-  generate_pucch(UE->common_vars.txdataF,
-                 frame_parms,
-                 UE->ncs_cell,
-                 pucch_format,
-                 &pucch_config_dedicated,
-                 n1_pucch,
-                 n2_pucch,
-                 0, //shortened_format,
-                 &pucch_payload,
-                 AMP, //amp,
-                 subframe); //subframe
+  generate_pucch1x(UE->common_vars.txdataF,
+		   frame_parms,
+		   UE->ncs_cell,
+		   pucch_format,
+		   &pucch_config_dedicated,
+		   n1_pucch,
+		   0, //shortened_format,
+		   &pucch_payload,
+		   AMP, //amp,
+		   subframe); //subframe
   write_output("txsigF0.m","txsF0", &UE->common_vars.txdataF[0][2*subframe*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*nsymb,1,1);
 
   tx_lev = 0;
@@ -453,7 +435,7 @@ int main(int argc, char **argv)
 
 
       multipath_channel(UE2eNB,s_re,s_im,r_re,r_im,
-                        2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
+                        eNB->frame_parms.samples_per_tti,0);
 
       sigma2_dB = N0;//10*log10((double)tx_lev) - SNR;
       tx_gain = sqrt(pow(10.0,.1*(N0+SNR))/(double)tx_lev);
@@ -509,8 +491,7 @@ int main(int argc, char **argv)
 
             if (sig==1) {
               ((short*) &eNB->common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i] = (short) (((tx_gain*r_re[aa][i]) +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-              ((short*) &eNB->common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i+1] = (short) (((tx_gain*r_im[aa][i]) + (iqim*r_re[aa][i]*tx_gain) + sqrt(sigma2/2)*gaussdouble(
-                    0.0,1.0)));
+              ((short*) &eNB->common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i+1] = (short) (((tx_gain*r_im[aa][i]) + (iqim*r_re[aa][i]*tx_gain) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
             } else {
               ((short*) &eNB->common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i] = (short) ((sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
               ((short*) &eNB->common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i+1] = (short) ((sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
@@ -602,18 +583,6 @@ int main(int argc, char **argv)
     write_output("rxsigF0.m","rxsF0", &eNB->common_vars.rxdataF[0][0][0],512*nsymb*2,2,1);
   }
 
-
-  for (i=0; i<2; i++) {
-    free(s_re[i]);
-    free(s_im[i]);
-    free(r_re[i]);
-    free(r_im[i]);
-  }
-
-  free(s_re);
-  free(s_im);
-  free(r_re);
-  free(r_im);
 
   lte_sync_time_free();
 

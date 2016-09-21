@@ -676,8 +676,10 @@ int main(int argc, char **argv)
   eNB->ulsch[0] = new_eNB_ulsch(max_turbo_iterations,N_RB_DL,0);
   UE->ulsch[0]   = new_ue_ulsch(N_RB_DL,0);
 
-  if (parallel_flag == 1) init_fep_thread(eNB,&eNB->proc.attr_fep);
-
+  if (parallel_flag == 1) {
+    init_fep_thread(eNB,NULL);
+    init_td_thread(eNB,NULL);
+  }
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0; i<2; i++) {
     eNB->dlsch[0][i] = new_eNB_dlsch(1,8,1827072,N_RB_DL,0);
@@ -1171,7 +1173,8 @@ int main(int argc, char **argv)
           }
 
 
-	  eNB->fep = (parallel_flag == 1) ? eNB_fep_full_2thread : eNB_fep_full;
+	  eNB->fep = (parallel_flag == 1) ? eNB_fep_full_2thread        : eNB_fep_full;
+	  eNB->td  = (parallel_flag == 1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
 	  eNB->do_prach = NULL;
 
 	  phy_procedures_eNB_common_RX(eNB);

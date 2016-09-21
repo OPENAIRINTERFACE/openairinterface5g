@@ -319,8 +319,8 @@ void generate_mch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t *a)
                          AMP);
 
 
-    if (dlsch_encoding(a,
-                       &eNB->frame_parms,
+    if (dlsch_encoding(eNB,
+		       a,
                        1,
                        eNB->dlsch_MCH,
                        proc->frame_tx,

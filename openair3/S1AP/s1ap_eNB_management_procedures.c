@@ -27,6 +27,15 @@
 
  *******************************************************************************/
 
+/*! \file s1ap_eNB_management_procedures.c
+ * \brief S1AP eNB task 
+ * \author  S. Roux and Navid Nikaein 
+ * \date 2010 - 2016
+ * \email: navid.nikaein@eurecom.fr
+ * \version 1.0
+ * @ingroup _s1ap
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -116,6 +125,23 @@ struct s1ap_eNB_mme_data_s *s1ap_eNB_get_MME(
   return NULL;
 }
 
+struct s1ap_eNB_mme_data_s *s1ap_eNB_get_MME_from_instance(
+  s1ap_eNB_instance_t *instance_p)
+{
+ 
+  struct s1ap_eNB_mme_data_s *mme = NULL;
+  struct s1ap_eNB_mme_data_s *mme_next = NULL;
+
+  for (mme = RB_MIN(s1ap_mme_map, &instance_p->s1ap_mme_head); mme!=NULL ; mme = mme_next) {
+    mme_next = RB_NEXT(s1ap_mme_map, &instance_p->s1ap_mme_head, mme);
+    if (mme->s1ap_eNB_instance == instance_p) {
+      return mme;
+    }
+  }
+
+  return NULL;
+}
+
 s1ap_eNB_instance_t *s1ap_eNB_get_instance(instance_t instance)
 {
   s1ap_eNB_instance_t *temp = NULL;
@@ -129,4 +155,42 @@ s1ap_eNB_instance_t *s1ap_eNB_get_instance(instance_t instance)
   }
 
   return NULL;
+}
+
+void s1ap_eNB_remove_mme_desc(s1ap_eNB_instance_t * instance) 
+{
+
+    struct s1ap_eNB_mme_data_s *mme = NULL;
+    struct s1ap_eNB_mme_data_s *mmeNext = NULL;
+    struct plmn_identity_s* plmnInfo;
+    struct served_group_id_s* groupInfo;
+    struct served_gummei_s* gummeiInfo;
+    struct mme_code_s* mmeCode;
+
+    for (mme = RB_MIN(s1ap_mme_map, &instance->s1ap_mme_head); mme; mme = mmeNext) {
+      mmeNext = RB_NEXT(s1ap_mme_map, &instance->s1ap_mme_head, mme);
+      RB_REMOVE(s1ap_mme_map, &instance->s1ap_mme_head, mme);
+      while (!STAILQ_EMPTY(&mme->served_gummei)) {
+        gummeiInfo = STAILQ_FIRST(&mme->served_gummei);
+        STAILQ_REMOVE_HEAD(&mme->served_gummei, next);
+	
+        while (!STAILQ_EMPTY(&gummeiInfo->served_plmns)) {
+	  plmnInfo = STAILQ_FIRST(&gummeiInfo->served_plmns);
+	  STAILQ_REMOVE_HEAD(&gummeiInfo->served_plmns, next);
+	  free(plmnInfo);
+        }
+        while (!STAILQ_EMPTY(&gummeiInfo->served_group_ids)) {
+	  groupInfo = STAILQ_FIRST(&gummeiInfo->served_group_ids);
+	  STAILQ_REMOVE_HEAD(&gummeiInfo->served_group_ids, next);
+	  free(groupInfo);
+        }
+        while (!STAILQ_EMPTY(&gummeiInfo->mme_codes)) {
+	  mmeCode = STAILQ_FIRST(&gummeiInfo->mme_codes);
+	  STAILQ_REMOVE_HEAD(&gummeiInfo->mme_codes, next);
+	  free(mmeCode);
+        }
+        free(gummeiInfo);
+      }
+      free(mme);
+    }
 }

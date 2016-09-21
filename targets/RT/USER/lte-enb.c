@@ -279,51 +279,6 @@ static inline void wait_sync(char *thread_name) {
 
 }
 
-static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
-
-  struct timespec wait;
-  
-  wait.tv_sec=0;
-  wait.tv_nsec=5000000L;
-
-  if (pthread_mutex_timedlock(mutex,&wait) != 0) {
-    LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
-  
-  while (*instance_cnt < 0) {
-    // most of the time the thread is waiting here
-    // proc->instance_cnt_rxtx is -1
-    pthread_cond_wait(cond,mutex); // this unlocks mutex_rxtx while waiting and then locks it again
-  }
-
-  if (pthread_mutex_unlock(mutex) != 0) {
-    LOG_E(PHY,"[SCHED][eNB] error unlocking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
-  return(0);
-}
-
-static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *name) {
-
-  if (pthread_mutex_lock(mutex) != 0) {
-    LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
-  
-  *instance_cnt=*instance_cnt-1;
-  
-  if (pthread_mutex_unlock(mutex) != 0) {
-    LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
-  return(0);
-}
-
 void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB) {
      
   unsigned int aa,slot_offset, slot_offset_F;
@@ -470,7 +425,7 @@ void proc_tx_high0(PHY_VARS_eNB *eNB,
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_ENB+offset, proc->frame_tx );
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB+offset, proc->subframe_tx );
 
-  phy_procedures_eNB_TX(eNB,proc,r_type,rn);
+  phy_procedures_eNB_TX(eNB,proc,r_type,rn,1);
 
   /* we're done, let the next one proceed */
   if (pthread_mutex_lock(&sync_phy_proc.mutex_phy_proc_tx) != 0) {
@@ -880,7 +835,7 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   void *rxp[fp->nb_antennas_rx],*txp[fp->nb_antennas_tx]; 
   unsigned int rxs,txs;
   int i;
-  int tx_sfoffset = (eNB->single_thread_flag == 1) ? 3 : 3;
+  int tx_sfoffset = 2;//(eNB->single_thread_flag == 1) ? 3 : 3;
   if (proc->first_rx==0) {
     
     // Transmit TX buffer based on timestamp from RX
@@ -1336,6 +1291,8 @@ static void* eNB_thread_single( void* param ) {
 }
 
 extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
+extern void init_td_thread(PHY_VARS_eNB *, pthread_attr_t *);
+extern void init_te_thread(PHY_VARS_eNB *, pthread_attr_t *);
 
 void init_eNB_proc(int inst) {
   
@@ -1344,7 +1301,7 @@ void init_eNB_proc(int inst) {
   PHY_VARS_eNB *eNB;
   eNB_proc_t *proc;
   eNB_rxtx_proc_t *proc_rxtx;
-  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_single=NULL,*attr_fep=NULL;
+  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_single=NULL,*attr_fep=NULL,*attr_td=NULL,*attr_te;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     eNB = PHY_vars_eNB_g[inst][CC_id];
@@ -1379,6 +1336,8 @@ void init_eNB_proc(int inst) {
     pthread_attr_init( &proc->attr_asynch_rxtx);
     pthread_attr_init( &proc->attr_single);
     pthread_attr_init( &proc->attr_fep);
+    pthread_attr_init( &proc->attr_td);
+    pthread_attr_init( &proc->attr_te);
     pthread_attr_init( &proc_rxtx[0].attr_rxtx);
     pthread_attr_init( &proc_rxtx[1].attr_rxtx);
 #ifndef DEADLINE_SCHEDULER
@@ -1389,6 +1348,8 @@ void init_eNB_proc(int inst) {
     attr_asynch = &proc->attr_asynch_rxtx;
     attr_single = &proc->attr_single;
     attr_fep    = &proc->attr_fep;
+    attr_td     = &proc->attr_td;
+    attr_te     = &proc->attr_te; 
 #endif
 
     if (eNB->single_thread_flag==0) {
@@ -1399,6 +1360,8 @@ void init_eNB_proc(int inst) {
     else {
       pthread_create(&proc->pthread_single, attr_single, eNB_thread_single, &eNB->proc);
       init_fep_thread(eNB,attr_fep);
+      init_td_thread(eNB,attr_td);
+      init_te_thread(eNB,attr_te);
     }
     pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, &eNB->proc );
     if ((eNB->node_timing == synch_to_other) ||
@@ -1625,6 +1588,8 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       case NGFI_RRU_IF5:
 	eNB->do_prach             = NULL;
 	eNB->fep                  = eNB_fep_rru_if5;
+	eNB->td                   = NULL;
+	eNB->te                   = NULL;
 	eNB->proc_uespec_rx       = NULL;
 	eNB->proc_tx              = NULL;
 	eNB->tx_fh                = NULL;
@@ -1649,6 +1614,8 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       case NGFI_RRU_IF4p5:
 	eNB->do_prach             = do_prach;
 	eNB->fep                  = eNB_fep_full;
+	eNB->td                   = NULL;
+	eNB->te                   = NULL;
 	eNB->proc_uespec_rx       = NULL;
 	eNB->proc_tx              = NULL;//proc_tx_rru_if4p5;
 	eNB->tx_fh                = NULL;
@@ -1676,6 +1643,8 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       case eNodeB_3GPP:
 	eNB->do_prach             = do_prach;
 	eNB->fep                  = eNB_fep_full;
+	eNB->td                   = ulsch_decoding_data_2thread;
+	eNB->te                   = dlsch_encoding_2threads;
 	eNB->proc_uespec_rx       = phy_procedures_eNB_uespec_RX;
 	eNB->proc_tx              = proc_tx_full;
 	eNB->tx_fh                = NULL;
@@ -1694,6 +1663,8 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       case eNodeB_3GPP_BBU:
 	eNB->do_prach       = do_prach;
 	eNB->fep            = eNB_fep_full;
+	eNB->td             = ulsch_decoding_data_2thread;
+	eNB->te             = dlsch_encoding_2threads;
 	eNB->proc_uespec_rx = phy_procedures_eNB_uespec_RX;
 	eNB->proc_tx        = proc_tx_full;
 	eNB->tx_fh          = tx_fh_if5;
@@ -1716,6 +1687,8 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       case NGFI_RCC_IF4p5:
 	eNB->do_prach             = do_prach;
 	eNB->fep                  = NULL;
+	eNB->td                   = ulsch_decoding_data_2thread;
+	eNB->te                   = dlsch_encoding_2threads;
 	eNB->proc_uespec_rx       = phy_procedures_eNB_uespec_RX;
 	eNB->proc_tx              = proc_tx_high;
 	eNB->tx_fh                = tx_fh_if4p5;
@@ -1737,6 +1710,8 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       case NGFI_RAU_IF4p5:
 	eNB->do_prach       = do_prach;
 	eNB->fep            = NULL;
+	eNB->td             = ulsch_decoding_data_2thread;
+	eNB->te             = dlsch_encoding_2threads;
 	eNB->proc_uespec_rx = phy_procedures_eNB_uespec_RX;
 	eNB->proc_tx        = proc_tx_high;
 	eNB->tx_fh          = tx_fh_if4p5; 

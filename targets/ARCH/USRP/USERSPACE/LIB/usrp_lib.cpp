@@ -568,7 +568,7 @@ extern "C" {
     // workaround for an api problem, master clock has to be set with the constructor not via set_master_clock_rate
     args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
     
-    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=4096, recv_frame_size=4096";
+//    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=4096, recv_frame_size=4096";
     
     uhd::device_addrs_t device_adds = uhd::device::find(args);
 

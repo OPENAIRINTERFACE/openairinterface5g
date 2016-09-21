@@ -29,8 +29,9 @@
 
 /*! \file s1ap_common.c
  * \brief s1ap procedures for both eNB and MME
- * \author Sebastien ROUX <sebastien.roux@eurecom.fr>
- * \date 2012
+ * \author Sebastien ROUX and Navid Nikaein
+ * \email navid.nikaein@eurecom.fr 
+ * \date 2012-2015
  * \version 0.1
  */
 
