@@ -424,10 +424,16 @@ void exit_fun(const char* s)
   oai_exit = 1;
   
   for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    if (PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func)
-      PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->rfdevice);
-    if (PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func)
-      PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->ifdevice);  
+    if (UE_flag == 0) {
+      if (PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func)
+	PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->rfdevice);
+      if (PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func)
+	PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->ifdevice);  
+    }
+    else {
+      if (PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func)
+	PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][CC_id]->rfdevice);
+    }
   }
 
 #if defined(ENABLE_ITTI)
@@ -1789,14 +1795,16 @@ int main( int argc, char **argv )
 
   // start the main thread
   if (UE_flag == 1) init_UE(1);
-  else init_eNB(node_function,node_timing,1,eth_params,single_thread_flag);
+  else { 
+    init_eNB(node_function,node_timing,1,eth_params,single_thread_flag);
   // Sleep to allow all threads to setup
 
-  number_of_cards = 1;
-
-  for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    PHY_vars_eNB_g[0][CC_id]->rf_map.card=0;
-    PHY_vars_eNB_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
+    number_of_cards = 1;
+    
+    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_eNB_g[0][CC_id]->rf_map.card=0;
+      PHY_vars_eNB_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
+    }
   }
 
   // connect the TX/RX buffers

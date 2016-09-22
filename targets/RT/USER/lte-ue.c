@@ -188,7 +188,7 @@ void init_UE(int nb_inst) {
 
     ret = openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]);
     UE->rfdevice.host_type = BBU_HOST;
-    UE->rfdevice.type      = NONE_DEV;
+    //    UE->rfdevice.type      = NONE_DEV;
     error_code = pthread_create(&UE->proc.pthread_ue, &UE->proc.attr_ue, UE_thread, NULL);
     
     if (error_code!= 0) {
@@ -369,10 +369,7 @@ static void *UE_thread_synch(void *arg)
 
   }
 
-  if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) { 
-    LOG_E(HW,"Could not start the device\n");
-    oai_exit=1;
-  }
+
   pthread_mutex_lock(&sync_mutex);
   printf("Locked sync_mutex, waiting (UE_sync_thread)\n");
 
@@ -381,6 +378,11 @@ static void *UE_thread_synch(void *arg)
 
   pthread_mutex_unlock(&sync_mutex);
   printf("Started device, unlocked sync_mutex (UE_sync_thread)\n");
+
+  if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) { 
+    LOG_E(HW,"Could not start the device\n");
+    oai_exit=1;
+  }
 
   while (oai_exit==0) {
 
@@ -941,7 +943,14 @@ void *UE_thread(void *arg) {
 					   rxp,
 					   UE->frame_parms.samples_per_tti*10,
 					   UE->frame_parms.nb_antennas_rx);
+
+	  
+	  if (rxs!=UE->frame_parms.samples_per_tti*10) {
+	    exit_fun("problem in rx");
+	    return &UE_thread_retval;
+	  }
 	}
+
 	instance_cnt_synch = ++UE->proc.instance_cnt_synch;
 	if (instance_cnt_synch == 0) {
 	  if (pthread_cond_signal(&UE->proc.cond_synch) != 0) {
@@ -968,6 +977,12 @@ void *UE_thread(void *arg) {
 					     rxp,
 					     UE->frame_parms.samples_per_tti,
 					     UE->frame_parms.nb_antennas_rx);
+
+	    if (rxs!=UE->frame_parms.samples_per_tti){
+	      exit_fun("problem in rx");
+	      return &UE_thread_retval;
+	    }
+
 	  }
 	}
       }
@@ -1065,12 +1080,12 @@ void *UE_thread(void *arg) {
 	  proc->frame_tx = proc->frame_rx + ((proc->subframe_rx>5)?1:0);
 	  proc->timestamp_tx = timestamp+(4*UE->frame_parms.samples_per_tti)-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
 
-
+	  /*
 	  if (sf != (timestamp/UE->frame_parms.samples_per_tti)%10) {
 	    LOG_E(PHY,"steady-state UE_thread error : frame_rx %d, subframe_rx %d, frame_tx %d, subframe_tx %d, rx subframe %d\n",proc->frame_rx,proc->subframe_rx,proc->frame_tx,proc->subframe_tx,(timestamp/UE->frame_parms.samples_per_tti)%10);
 	    exit(-1);
 	  }
-
+	  */
 	  if (pthread_mutex_unlock(&proc->mutex_rxtx) != 0) {
 	    LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE RX\n" );
 	    exit_fun("nothing to add");
