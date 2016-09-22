@@ -487,7 +487,7 @@ void create_watchdog(openair0_device *dev) {
   pthread_attr_setschedpolicy(&priv->watchdog_attr,SCHED_FIFO);
   pthread_create(&priv->watchdog,&priv->watchdog_attr,watchdog_thread,dev);
 #else
-  pthread_create(&priv->watchdog,NULL,watchdog_thread,devv);
+  pthread_create(&priv->watchdog,NULL,watchdog_thread,dev);
 #endif
   pthread_mutex_init(&priv->watchdog_mutex,NULL);
 
