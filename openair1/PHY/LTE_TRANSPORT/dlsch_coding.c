@@ -266,10 +266,7 @@ int dlsch_encoding_2threads0(te_params *tep) {
   unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
 
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
-
-
-
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING_W, VCD_FUNCTION_IN);
 
   if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
 
@@ -333,7 +330,7 @@ int dlsch_encoding_2threads0(te_params *tep) {
                                         m);                       // r
   }
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING_W, VCD_FUNCTION_OUT);
 
   return(0);
 }
@@ -424,7 +421,8 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
       pthread_mutex_unlock( &proc->mutex_te );
       return(-1);
     }
-  
+
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);  
     ++proc->instance_cnt_te;
 
     proc->tep.eNB               = eNB;
@@ -440,6 +438,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
 
     pthread_mutex_unlock( &proc->mutex_te );
 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
     for (r=dlsch->harq_processes[harq_pid]->C>>1; r<dlsch->harq_processes[harq_pid]->C; r++) {
 
       if (r<dlsch->harq_processes[harq_pid]->Cminus)
@@ -500,7 +499,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
   // Fill in the "e"-sequence from 36-212, V8.6 2009-03, p. 16-17 (for each "e") and concatenate the
   // outputs for each code segment, see Section 5.1.5 p.20
 
-  for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
+  for (r=0,r_offset=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
 
     // get information for E for the segments that are handled by the worker thread
     if (r<(dlsch->harq_processes[harq_pid]->C>>1)) {

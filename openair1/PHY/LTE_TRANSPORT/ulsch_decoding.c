@@ -299,6 +299,12 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
       E = Nl*Q_m * ((GpmodC==0?0:1) + (Gp/C));
     
     r_offset += E;
+
+    if (r==0) {
+      offset = Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0);
+    } else {
+      offset += (Kr_bytes- ((ulsch_harq->C>1)?3:0));
+    }
   }
 
   // go through second half of segments
@@ -393,8 +399,7 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
 	     &eNB->ulsch_tc_intl1_stats,
 	     &eNB->ulsch_tc_intl2_stats);
     
-    
-  // Reassembly of Transport block here
+    // Reassembly of Transport block here
 
     if (ret != (1+ulsch->max_turbo_iterations)) {
       if (r<ulsch_harq->Cminus)
@@ -404,17 +409,11 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
       
       Kr_bytes = Kr>>3;
       
-      if (r==0) {
-	memcpy(ulsch_harq->b,
-	       &ulsch_harq->c[0][(ulsch_harq->F>>3)],
-	       Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0));
-	offset = Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0);
-      } else {
-	memcpy(ulsch_harq->b+offset,
-	       ulsch_harq->c[r],
-	       Kr_bytes - ((ulsch_harq->C>1)?3:0));
-	offset += (Kr_bytes- ((ulsch_harq->C>1)?3:0));
-      }
+      memcpy(ulsch_harq->b+offset,
+	     ulsch_harq->c[r],
+	     Kr_bytes - ((ulsch_harq->C>1)?3:0));
+      offset += (Kr_bytes- ((ulsch_harq->C>1)?3:0));
+      
       
     } else {
       break;
@@ -621,7 +620,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
 	     &eNB->ulsch_tc_ext_stats,
 	     &eNB->ulsch_tc_intl1_stats,
 	     &eNB->ulsch_tc_intl2_stats);
-    
+
   // Reassembly of Transport block here
 
     if (ret != (1+ulsch->max_turbo_iterations)) {

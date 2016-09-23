@@ -237,7 +237,7 @@ static inline void thread_top_init(char *thread_name,
     }
 
   memset(&sparam, 0, sizeof(sparam));
-  sparam.sched_priority = sched_get_priority_max(SCHED_FIFO)-1;
+  sparam.sched_priority = sched_get_priority_max(SCHED_FIFO);
   policy = SCHED_FIFO ; 
   
   s = pthread_setschedparam(pthread_self(), policy, &sparam);
@@ -1566,6 +1566,7 @@ int start_rf(PHY_VARS_eNB *eNB) {
 
 extern void eNB_fep_rru_if5(PHY_VARS_eNB *eNB);
 extern void eNB_fep_full(PHY_VARS_eNB *eNB);
+extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB);
 extern void do_prach(PHY_VARS_eNB *eNB);
 
 void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *eth_params,int single_thread_flag) {
@@ -1613,7 +1614,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	break;
       case NGFI_RRU_IF4p5:
 	eNB->do_prach             = do_prach;
-	eNB->fep                  = eNB_fep_full;
+	eNB->fep                  = (single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
 	eNB->td                   = NULL;
 	eNB->te                   = NULL;
 	eNB->proc_uespec_rx       = NULL;
@@ -1642,9 +1643,9 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	break;
       case eNodeB_3GPP:
 	eNB->do_prach             = do_prach;
-	eNB->fep                  = eNB_fep_full;
-	eNB->td                   = ulsch_decoding_data_2thread;
-	eNB->te                   = dlsch_encoding_2threads;
+	eNB->fep                  = (single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
+	eNB->td                   = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+	eNB->te                   = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
 	eNB->proc_uespec_rx       = phy_procedures_eNB_uespec_RX;
 	eNB->proc_tx              = proc_tx_full;
 	eNB->tx_fh                = NULL;
@@ -1662,9 +1663,9 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	break;
       case eNodeB_3GPP_BBU:
 	eNB->do_prach       = do_prach;
-	eNB->fep            = eNB_fep_full;
-	eNB->td             = ulsch_decoding_data_2thread;
-	eNB->te             = dlsch_encoding_2threads;
+	eNB->fep            = (single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
+	eNB->td             = (single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+	eNB->te             = (single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
 	eNB->proc_uespec_rx = phy_procedures_eNB_uespec_RX;
 	eNB->proc_tx        = proc_tx_full;
 	eNB->tx_fh          = tx_fh_if5;
@@ -1687,8 +1688,8 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       case NGFI_RCC_IF4p5:
 	eNB->do_prach             = do_prach;
 	eNB->fep                  = NULL;
-	eNB->td                   = ulsch_decoding_data_2thread;
-	eNB->te                   = dlsch_encoding_2threads;
+	eNB->td                   = (single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+	eNB->te                   = (single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
 	eNB->proc_uespec_rx       = phy_procedures_eNB_uespec_RX;
 	eNB->proc_tx              = proc_tx_high;
 	eNB->tx_fh                = tx_fh_if4p5;
@@ -1710,8 +1711,9 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       case NGFI_RAU_IF4p5:
 	eNB->do_prach       = do_prach;
 	eNB->fep            = NULL;
-	eNB->td             = ulsch_decoding_data_2thread;
-	eNB->te             = dlsch_encoding_2threads;
+
+	eNB->td             = (single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+	eNB->te             = (single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
 	eNB->proc_uespec_rx = phy_procedures_eNB_uespec_RX;
 	eNB->proc_tx        = proc_tx_high;
 	eNB->tx_fh          = tx_fh_if4p5; 

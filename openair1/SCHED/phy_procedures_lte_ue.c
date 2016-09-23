@@ -713,12 +713,14 @@ void ue_prach_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   if (ue->mac_enabled==1){
     // ask L2 for RACH transport
     if ((mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) && (mode != no_L2_connect) ) {
+      LOG_D(PHY,"Getting PRACH resources\n");
       ue->prach_resources[eNB_id] = mac_xface->ue_get_rach(ue->Mod_id,
 							   ue->CC_id,
 							   frame_tx,
 							   eNB_id,
 							   subframe_tx);
       LOG_D(PHY,"Got prach_resources for eNB %d address %d, RRCCommon %d\n",eNB_id,ue->prach_resources[eNB_id],UE_mac_inst[ue->Mod_id].radioResourceConfigCommon);
+      LOG_D(PHY,"Prach resources %p\n",ue->prach_resources[eNB_id]);
     }
   }
   

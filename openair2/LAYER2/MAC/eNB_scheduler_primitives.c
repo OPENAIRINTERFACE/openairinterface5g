@@ -1005,6 +1005,46 @@ int get_nCCE_offset(int *CCE_table,
   }
 }
 
+void dump_CCE_table(int *CCE_table,const int nCCE,const unsigned short rnti,const int subframe,int L) {
+
+  int nb_candidates = 0,i;
+  unsigned int Yk;
+  
+  for (i=0;i<nCCE;i++) {
+    printf("%1d.",CCE_table[i]);
+    if ((i&7) == 0)
+      printf("\n");
+  }
+
+  Yk = (unsigned int)rnti;
+  
+  for (i=0; i<=subframe; i++)
+    Yk = (Yk*39827)%65537;
+  
+  Yk = Yk % (nCCE/L);
+  
+  
+  switch (L) {
+  case 1:
+  case 2:
+    nb_candidates = 6;
+    break;
+    
+  case 4:
+  case 8:
+    nb_candidates = 2;
+    break;
+    
+  default:
+    DevParam(L, nCCE, rnti);
+    break;
+  }
+  
+  
+  printf("rnti %x, Yk*L = %d, nCCE %d (nCCE/L %d),nb_cand*L %d\n",rnti,Yk*L,nCCE,nCCE/L,nb_candidates*L);
+
+}
+
 // Allocate the CCEs
 int allocate_CCEs(int module_idP,
 		  int CC_idP,
@@ -1056,12 +1096,14 @@ try_again:
               subframeP,dci_alloc->rnti);
         for (j=0;j<=i;j++){
           LOG_I(MAC,"DCI %d/%d (%d,%d) : rnti %x dci format %d, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
-                i,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci,
+                j,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci,
                 DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci,
                 DCI_pdu->dci_alloc[j].rnti,DCI_pdu->dci_alloc[j].format,
                 1<<DCI_pdu->dci_alloc[j].L,
                 nCCE,nCCE_max,DCI_pdu->num_pdcch_symbols);
         }
+	dump_CCE_table(CCE_table,nCCE_max,subframeP,dci_alloc->rnti,dci_alloc->L);
+
         goto failed;
       }
       DCI_pdu->num_pdcch_symbols++;
