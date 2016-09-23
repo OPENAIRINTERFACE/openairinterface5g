@@ -851,10 +851,10 @@ void *UE_thread(void *arg) {
   static int UE_thread_retval;
   PHY_VARS_UE *UE = PHY_vars_UE_g[0][0];
   //  int tx_enabled = 0;
-  unsigned int rxs;
+  unsigned int rxs,txs;
   int dummy_rx[UE->frame_parms.nb_antennas_rx][UE->frame_parms.samples_per_tti] __attribute__((aligned(32)));
   openair0_timestamp timestamp,timestamp1;
-  void* rxp[2];
+  void* rxp[2], *txp[2];
 
 #ifdef NAS_UE
   MessageDef *message_p;
@@ -863,6 +863,7 @@ void *UE_thread(void *arg) {
   int start_rx_stream = 0;
   int rx_off_diff = 0;
   int rx_correction_timer = 0;
+  int i;
 
 #ifdef DEADLINE_SCHEDULER
 
@@ -1033,9 +1034,24 @@ void *UE_thread(void *arg) {
       else {
 	UE->proc.proc_rxtx[0].frame_rx++;
 	UE->proc.proc_rxtx[1].frame_rx++;
-
+	
 	for (int sf=0;sf<10;sf++) {
-	  for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++) 
+	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+	  // prepare tx buffer pointers
+	  
+	  for (i=0; i<UE->frame_parms.nb_antennas_tx; i++)
+	    txp[i] = (void*)&UE->common_vars.txdata[i][((sf+4)%10)*UE->frame_parms.samples_per_tti];
+	  
+	  txs = UE->rfdevice.trx_write_func(&UE->rfdevice,
+					    timestamp+(4*UE->frame_parms.samples_per_tti)-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0-openair0_cfg[0].tx_sample_advance,
+					    txp,
+					    UE->frame_parms.samples_per_tti,
+					    UE->frame_parms.nb_antennas_tx,
+					    1);
+	  
+	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
+
+	  for (i=0; i<UE->frame_parms.nb_antennas_rx; i++) 
 	    rxp[i] = (void*)&rxdata[i][UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0+(sf*UE->frame_parms.samples_per_tti)];
 	  // grab signal for subframe
 	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
@@ -1047,7 +1063,7 @@ void *UE_thread(void *arg) {
 					       UE->frame_parms.samples_per_tti,
 					       UE->frame_parms.nb_antennas_rx);
 	    }
-
+	    
 	    else {
 	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
 					       &timestamp,
@@ -1056,10 +1072,10 @@ void *UE_thread(void *arg) {
 					       UE->frame_parms.nb_antennas_rx);
 	      // read in first symbol of next frame and adjust for timing drift
 	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
-					   &timestamp1,
-					   (void**)rxdata,
-					   UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0 - rx_off_diff,
-					   UE->frame_parms.nb_antennas_rx);
+					       &timestamp1,
+					       (void**)rxdata,
+					       UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0 - rx_off_diff,
+					       UE->frame_parms.nb_antennas_rx);
 	      rx_off_diff = 0;
 	    }
 	  }
