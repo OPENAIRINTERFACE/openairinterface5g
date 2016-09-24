@@ -1305,7 +1305,7 @@ if flag_remove_logdir == True:
    print "Removing directory: " + locallogdir
    os.system(' rm -fr ' + locallogdir + '; mkdir -p ' +  locallogdir  )
 else:
-   oa.system('mkdir -p  ' + locallogdir)
+   os.system('mkdir -p  ' + locallogdir)
 
 paramiko_logfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/log/paramiko.log')
 res=os.system(' echo > ' + paramiko_logfile)
