@@ -588,7 +588,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   RRH_pre_exec_args = testcase.findtext('RRH_pre_exec_args',default='')
   RRH_main_exec = testcase.findtext('RRH_main_exec',default='')
   RRH_main_exec_args = testcase.findtext('RRH_main_exec_args',default='')
-  RRH_terminate_missing_procs = testcase.findtext('RRH_terminate_missing_procs',default='True')
+  RRH_terminate_missing_procs = testcase.findtext('RRH_terminate_missing_procs',default='False')
 
 
   eNBMachine = testcase.findtext('eNB',default='')
@@ -601,7 +601,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   eNB_main_exec_args = testcase.findtext('eNB_main_exec_args',default='')
   eNB_traffic_exec = testcase.findtext('eNB_traffic_exec',default='')
   eNB_traffic_exec_args = testcase.findtext('eNB_traffic_exec_args',default='')
-  eNB_terminate_missing_procs = testcase.findtext('eNB_terminate_missing_procs',default='True')
+  eNB_terminate_missing_procs = testcase.findtext('eNB_terminate_missing_procs',default='False')
   eNB_search_expr_true = testcase.findtext('eNB_search_expr_true','')
   if re.compile('\w+').match(eNB_search_expr_true) != None:
       eNB_search_expr_true = eNB_search_expr_true + '  duration=' + str(timeout_cmd-90) + 's' 
@@ -616,7 +616,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   UE_main_exec_args = testcase.findtext('UE_main_exec_args',default='')
   UE_traffic_exec = testcase.findtext('UE_traffic_exec',default='')
   UE_traffic_exec_args = testcase.findtext('UE_traffic_exec_args',default='')
-  UE_terminate_missing_procs = testcase.findtext('UE_terminate_missing_procs',default='True')
+  UE_terminate_missing_procs = testcase.findtext('UE_terminate_missing_procs',default='False')
   UE_search_expr_true = testcase.findtext('UE_search_expr_true','')
   UE_stop_script =  testcase.findtext('UE_stop_script','')
   if re.compile('\w+').match(UE_search_expr_true) != None:
@@ -637,7 +637,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   HSS_main_exec_args = testcase.findtext('HSS_main_exec_args',default='')  
   EPC_traffic_exec = testcase.findtext('EPC_traffic_exec',default='')
   EPC_traffic_exec_args = testcase.findtext('EPC_traffic_exec_args',default='')
-  EPC_terminate_missing_procs = testcase.findtext('EPC_terminate_missing_procs',default='True')
+  EPC_terminate_missing_procs = testcase.findtext('EPC_terminate_missing_procs',default='False')
   EPC_search_expr_true = testcase.findtext('EPC_search_expr_true','')
   if re.compile('\w+').match(EPC_search_expr_true) != None:
      EPC_search_expr_true = EPC_search_expr_true + '  duration=' + str(timeout_cmd-90) + 's'
