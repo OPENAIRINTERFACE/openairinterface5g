@@ -108,12 +108,28 @@ void do_DL_sig(channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX][MAX_N
   uint8_t nb_antennas_rx = eNB2UE[0][0][CC_id]->nb_rx; // number of rx antennas at UE
   uint8_t nb_antennas_tx = eNB2UE[0][0][CC_id]->nb_tx; // number of tx antennas at eNB
 
-  double s_re[2][30720];//PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti];
-  double s_im[2][30720];//PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti];
-  double r_re0[2][30720];//PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti];
-  double r_im0[2][30720];//PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti];
-  
+  double s_re0[30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
+  double s_re1[30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
+  double *s_re[2];
+  double s_im0[30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
+  double s_im1[30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
+  double *s_im[2];
+  double r_re00[30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
+  double r_re01[30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
+  double *r_re0[2];
+  double r_im00[30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
+  double r_im01[30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
+  double *r_im0[2];
 
+  s_re[0] = s_re0;
+  s_im[0] = s_im0;
+  s_re[1] = s_re1;
+  s_im[1] = s_im1;
+
+  r_re0[0] = r_re00;
+  r_im0[0] = r_im00;
+  r_re0[1] = r_re01;
+  r_im0[1] = r_im01;
 
   if (subframe==0)
     hold_channel = 0;
@@ -318,17 +334,21 @@ void do_DL_sig(channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX][MAX_N
       if (eNB_output_mask[UE_id] == (1<<NB_eNB_INST)-1) {
 	eNB_output_mask[UE_id]=0;
       
-      
+
+	double *r_re_p[2] = {r_re_DL[eNB_id][0],r_re_DL[eNB_id][1]};
+	double *r_im_p[2] = {r_im_DL[eNB_id][0],r_im_DL[eNB_id][1]};
+
 #ifdef DEBUG_SIM
-	rx_pwr = signal_energy_fp((double**)r_re_DL[UE_id],(double**)r_im_DL[UE_id],nb_antennas_rx,frame_parms->ofdm_symbol_size,sf_offset)/(12.0*frame_parms->N_RB_DL);
+	rx_pwr = signal_energy_fp(r_re_p,r_im_p,nb_antennas_rx,frame_parms->ofdm_symbol_size,sf_offset)/(12.0*frame_parms->N_RB_DL);
 	LOG_D(OCM,"[SIM][DL] UE %d : ADC in %f dBm for subframe %d\n",UE_id,10*log10(rx_pwr),subframe);
 #endif
 	
 	rxdata = PHY_vars_UE_g[UE_id][CC_id]->common_vars.rxdata;
 	sf_offset = subframe*frame_parms->samples_per_tti;
-	
-	adc(r_re_DL[UE_id],
-	    r_im_DL[UE_id],
+
+
+	adc(r_re_p,
+	    r_im_p,
 	    0,
 	    sf_offset,
 	    rxdata,
@@ -384,10 +404,28 @@ void do_UL_sig(channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX][MAX_N
   int ulfrrb2 ;
   uint8_t harq_pid;
 #endif
-  double s_re[2][30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
-  double s_im[2][30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
-  double r_re0[2][30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
-  double r_im0[2][30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
+  double s_re0[30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
+  double s_re1[30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
+  double *s_re[2];
+  double s_im0[30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
+  double s_im1[30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
+  double *s_im[2];
+  double r_re00[30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
+  double r_re01[30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
+  double *r_re0[2];
+  double r_im00[30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
+  double r_im01[30720];//PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti];
+  double *r_im0[2];
+
+  s_re[0] = s_re0;
+  s_im[0] = s_im0;
+  s_re[1] = s_re1;
+  s_im[1] = s_im1;
+
+  r_re0[0] = r_re00;
+  r_im0[0] = r_im00;
+  r_re0[1] = r_re01;
+  r_im0[1] = r_im01;
 
   if (abstraction_flag!=0)  {
 #ifdef PHY_ABSTRACTION_UL
@@ -447,7 +485,6 @@ void do_UL_sig(channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX][MAX_N
 	      PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe],
 	      subframe,sf_offset);	
       } else {
-	
 	tx_pwr = dac_fixed_gain((double**)s_re,
 				(double**)s_im,
 				txdata,
@@ -466,8 +503,8 @@ void do_UL_sig(channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX][MAX_N
 	      PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe],
 	      subframe,sf_offset);
        
-	
-	multipath_channel(UE2eNB[UE_id][eNB_id][CC_id],(double**)s_re,(double**)s_im,(double**)r_re0,(double**)r_im0,
+		
+	multipath_channel(UE2eNB[UE_id][eNB_id][CC_id],s_re,s_im,r_re0,r_im0,
 			  frame_parms->samples_per_tti,hold_channel);
 	
 
@@ -498,23 +535,27 @@ void do_UL_sig(channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX][MAX_N
       }
     } //UE_id
     
-    rf_rx_simple(r_re_UL[eNB_id],
-		 r_im_UL[eNB_id],
+    double *r_re_p[2] = {r_re_UL[eNB_id][0],r_re_UL[eNB_id][1]};
+    double *r_im_p[2] = {r_im_UL[eNB_id][0],r_im_UL[eNB_id][1]};
+
+    rf_rx_simple(r_re_p,
+		 r_im_p,
 		 nb_antennas_rx,
 		 frame_parms->samples_per_tti,
 		 1e3/UE2eNB[0][eNB_id][CC_id]->sampling_rate,  // sampling time (ns)
 		 (double)PHY_vars_eNB_g[eNB_id][CC_id]->rx_total_gain_dB - 66.227);   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
     
 #ifdef DEBUG_SIM
-    rx_pwr = signal_energy_fp(r_re_UL[eNB_id],r_im_UL[eNB_id],nb_antennas_rx,frame_parms->samples_per_tti,0)*(double)frame_parms->ofdm_symbol_size/(12.0*frame_parms->N_RB_DL);
+    rx_pwr = signal_energy_fp(r_re_p,r_im_p,nb_antennas_rx,frame_parms->samples_per_tti,0)*(double)frame_parms->ofdm_symbol_size/(12.0*frame_parms->N_RB_DL);
     LOG_D(OCM,"[SIM][UL] rx_pwr (ADC in) %f dB for subframe %d\n",10*log10(rx_pwr),subframe);
 #endif
     
     rxdata = PHY_vars_eNB_g[eNB_id][CC_id]->common_vars.rxdata[0];
     sf_offset = subframe*frame_parms->samples_per_tti;
+
     
-    adc(r_re_UL[eNB_id],
-	r_im_UL[eNB_id],
+    adc(r_re_p,
+	r_im_p,
 	0,
 	sf_offset,
 	rxdata,

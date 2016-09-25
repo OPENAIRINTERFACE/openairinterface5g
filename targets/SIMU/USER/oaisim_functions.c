@@ -1120,7 +1120,6 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 	      UE_id,
 	      CC_id);
 
-    printf("Signaling main thread: UE subframe mask %x\n",subframe_UE_mask);
 
   }
 

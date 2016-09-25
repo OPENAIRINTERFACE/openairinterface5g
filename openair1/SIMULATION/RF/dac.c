@@ -31,8 +31,8 @@
 #include <stdio.h>
 #include "PHY/TOOLS/defs.h"
 
-void dac(double s_re[2][30720],
-         double s_im[2][30720],
+void dac(double *s_re[2],
+         double *s_im[2],
          uint32_t **input,
          uint32_t input_offset,
          uint32_t nb_tx_antennas,
@@ -81,8 +81,8 @@ void dac(double s_re[2][30720],
   }
 }
 
-double dac_fixed_gain(double s_re[2][30720],
-                      double s_im[2][30720],
+double dac_fixed_gain(double *s_re[2],
+                      double *s_im[2],
                       uint32_t **input,
                       uint32_t input_offset,
                       uint32_t nb_tx_antennas,

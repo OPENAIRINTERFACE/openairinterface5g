@@ -26,8 +26,8 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-void adc(double r_re[2][30720],
-         double r_im[2][30720],
+void adc(double *r_re[2],
+         double *r_im[2],
          unsigned int input_offset,
          unsigned int output_offset,
          unsigned int **output,
