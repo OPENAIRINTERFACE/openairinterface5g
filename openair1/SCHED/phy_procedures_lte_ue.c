@@ -2735,6 +2735,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     }
     
   } // for l=1..l2
+  ue_measurement_procedures(l-1,ue,proc,eNB_id,abstraction_flag,mode);  
   
     // If this is PMCH, call procedures and return
   if (pmch_flag == 1) {
@@ -2748,7 +2749,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 	   ue->rx_offset,
 	   0,
 	   0);
-  
+
   // first slot has been processed (FFTs + Channel Estimation, PCFICH/PHICH/PDCCH)
  
   // do procedures for C-RNTI

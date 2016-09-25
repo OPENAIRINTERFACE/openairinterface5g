@@ -121,6 +121,7 @@ double dac_fixed_gain(double s_re[2][30720],
     //printf("DL: amp1 %f dB (%d,%d), tx_power %f\n",20*log10(amp1),input_offset,input_offset_meas,txpwr_dBm);
   */
 
+
   for (i=0; i<length; i++) {
     for (aa=0; aa<nb_tx_antennas; aa++) {
       s_re[aa][i] = amp*((double)(((short *)input[aa]))[((i+input_offset)<<1)])/amp1; ///(1<<(B-1));

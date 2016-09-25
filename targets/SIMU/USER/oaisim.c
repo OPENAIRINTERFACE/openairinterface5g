@@ -749,7 +749,7 @@ l2l1_task (void *args_p)
               (subframe_UE_mask_local == ((1<<NB_UE_INST)-1)))
              all_done=1;
           else
-             usleep(500);
+	    usleep(500);
         }
 
         //clear subframe masks for next round
@@ -774,16 +774,18 @@ l2l1_task (void *args_p)
 
 	if (oai_emulation.info.cli_start_enb[eNB_inst] != 0) {
 	  T(T_ENB_MASTER_TICK, T_INT(eNB_inst), T_INT(frame % 1024), T_INT(slot/2));
+	  /*
 	  LOG_D(EMU,
 		"PHY procedures eNB %d for frame %d, slot %d (subframe TX %d, RX %d) TDD %d/%d Nid_cell %d\n",
 		eNB_inst,
 		frame%MAX_FRAME_NUMBER,
-		slot,
+		2*sf,
 		PHY_vars_eNB_g[eNB_inst][0]->proc[slot >> 1].subframe_tx,
 		PHY_vars_eNB_g[eNB_inst][0]->proc[slot >> 1].subframe_rx,
 		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.frame_type,
 		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.tdd_config,
 		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.Nid_cell);
+	  */
 	}
 
         for (eNB_inst = oai_emulation.info.first_enb_local;
@@ -1825,7 +1827,7 @@ oai_shutdown (void)
 	  free(txdata);
 	  #endif
 	*/
-
+	/*
 	for (int i = 0; i < 2; i++) {
 	  free (s_re[i]);
 	  free (s_im[i]);
@@ -1840,7 +1842,7 @@ oai_shutdown (void)
 	s_re = 0;
 	s_im = 0;
 	r_re = 0;
-	r_im = 0;
+	r_im = 0;*/
 
 	lte_sync_time_free ();
       }

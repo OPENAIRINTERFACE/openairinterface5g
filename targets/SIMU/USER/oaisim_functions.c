@@ -1050,10 +1050,11 @@ int eNB_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void *
 	      eNB_id,
 	      CC_id);
   
-
     last_eNB_rx_timestamp[eNB_id][CC_id] += PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti;
     sample_count += PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti;
   }
+  
+
 
   return(nsamps);
 }
@@ -1070,9 +1071,10 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 
   *ptimestamp = last_UE_rx_timestamp[UE_id][CC_id];
 
-  LOG_D(PHY,"UE_trx_read nsamps %d TS(%llu,%llu)\n",nsamps,
+  LOG_D(EMU,"UE_trx_read nsamps %d TS(%llu,%llu) antenna %d\n",nsamps,
         (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
-        (unsigned long long)last_UE_rx_timestamp[UE_id][CC_id]);
+        (unsigned long long)last_UE_rx_timestamp[UE_id][CC_id],
+	cc);
 
   if (nsamps < PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)
     read_size = nsamps;
@@ -1083,7 +1085,7 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
     while (current_UE_rx_timestamp[UE_id][CC_id] < 
 	   (last_UE_rx_timestamp[UE_id][CC_id]+read_size)) {
       LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
-      
+
       usleep(500);
     }
 
@@ -1093,7 +1095,7 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
     pthread_mutex_lock(&subframe_mutex);
     subframe_UE_mask|=(1<<UE_id);
     pthread_mutex_unlock(&subframe_mutex);
-    // if we didn't ask for at least a subframe's worth of samples return
+
 
     // otherwise we have one subframe here so generate the received signal
     subframe = (last_UE_rx_timestamp[UE_id][CC_id]/PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)%10;
@@ -1117,8 +1119,12 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 	      &PHY_vars_UE_g[UE_id][CC_id]->frame_parms,
 	      UE_id,
 	      CC_id);
+
+    printf("Signaling main thread: UE subframe mask %x\n",subframe_UE_mask);
+
   }
-  
+
+
   return(nsamps);
 }
 
