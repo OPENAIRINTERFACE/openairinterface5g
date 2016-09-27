@@ -983,6 +983,12 @@ typedef struct {
   int16_t prohibitPHR_SF;
   ///DL Pathloss Change in db
   uint16_t PathlossChange_db;
+
+  /// default value is false
+  uint16_t extendedBSR_Sizes_r10;
+  /// default value is false
+  uint16_t extendedPHR_r10;
+
   //Bj bucket usage per  lcid
   int16_t Bj[MAX_NUM_LCID];
   // Bucket size per lcid
@@ -1070,6 +1076,8 @@ typedef struct {
   uint8_t PHR_reporting_active;
   /// power backoff due to power management (as allowed by P-MPRc) for this cell
   uint8_t power_backoff_db[NUMBER_OF_eNB_MAX];
+  /// BSR report falg management
+  uint8_t BSR_reporting_active;
   /// MBSFN_Subframe Configuration
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8]; // FIXME replace 8 by MAX_MBSFN_AREA?
   /// number of subframe allocation pattern available for MBSFN sync area

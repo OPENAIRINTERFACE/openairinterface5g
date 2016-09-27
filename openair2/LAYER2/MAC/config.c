@@ -76,6 +76,7 @@ void ue_mac_reset(module_id_t module_idP,uint8_t eNB_index)
   // cancel all pending SRs
   UE_mac_inst[module_idP].scheduling_info.SR_pending=0;
   UE_mac_inst[module_idP].scheduling_info.SR_COUNTER=0;
+  UE_mac_inst[module_idP].BSR_reporting_active=0;
 
   // stop ongoing RACH procedure
 
@@ -235,10 +236,31 @@ rrc_mac_config_req(
         UE_mac_inst[Mod_idP].scheduling_info.sr_ProhibitTimer  = (uint16_t) 0;
       }
 
+      if (mac_MainConfig->ext2 && mac_MainConfig->ext2->mac_MainConfig_v1020) {
+        if (mac_MainConfig->ext2->mac_MainConfig_v1020->extendedBSR_Sizes_r10) {
+          UE_mac_inst[Mod_idP].scheduling_info.extendedBSR_Sizes_r10 = (uint16_t) *mac_MainConfig->ext2->mac_MainConfig_v1020->extendedBSR_Sizes_r10;
+        } else {
+          UE_mac_inst[Mod_idP].scheduling_info.extendedBSR_Sizes_r10 = (uint16_t)0;
+        }
+        if (mac_MainConfig->ext2->mac_MainConfig_v1020->extendedPHR_r10) {
+          UE_mac_inst[Mod_idP].scheduling_info.extendedPHR_r10 = (uint16_t) *mac_MainConfig->ext2->mac_MainConfig_v1020->extendedPHR_r10;
+        } else {
+          UE_mac_inst[Mod_idP].scheduling_info.extendedPHR_r10 = (uint16_t)0;
+        }
+      } else {
+        UE_mac_inst[Mod_idP].scheduling_info.extendedBSR_Sizes_r10 = (uint16_t)0;
+        UE_mac_inst[Mod_idP].scheduling_info.extendedPHR_r10 = (uint16_t)0;
+      }
 #endif
       UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_SF  = get_sf_periodicBSRTimer(UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer);
       UE_mac_inst[Mod_idP].scheduling_info.retxBSR_SF     = get_sf_retxBSRTimer(UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer);
+      UE_mac_inst[Mod_idP].BSR_reporting_active = 0;
 
+      LOG_D(MAC,"[UE %d]: periodic BSR %d (SF), retx BSR %d (SF)\n",
+            Mod_idP,
+            UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_SF,
+            UE_mac_inst[Mod_idP].scheduling_info.retxBSR_SF);
+      
       UE_mac_inst[Mod_idP].scheduling_info.drx_config     = mac_MainConfig->drx_Config;
       UE_mac_inst[Mod_idP].scheduling_info.phr_config     = mac_MainConfig->phr_Config;
 
@@ -259,6 +281,7 @@ rrc_mac_config_req(
       UE_mac_inst[Mod_idP].scheduling_info.periodicPHR_SF =  get_sf_perioidicPHR_Timer(UE_mac_inst[Mod_idP].scheduling_info.periodicPHR_Timer);
       UE_mac_inst[Mod_idP].scheduling_info.prohibitPHR_SF =  get_sf_prohibitPHR_Timer(UE_mac_inst[Mod_idP].scheduling_info.prohibitPHR_Timer);
       UE_mac_inst[Mod_idP].scheduling_info.PathlossChange_db =  get_db_dl_PathlossChange(UE_mac_inst[Mod_idP].scheduling_info.PathlossChange);
+      UE_mac_inst[Mod_idP].PHR_reporting_active = 0;
       LOG_D(MAC,"[UE %d] config PHR (%d): periodic %d (SF) prohibit %d (SF)  pathlosschange %d (db) \n",
             Mod_idP,
             (mac_MainConfig->phr_Config)?mac_MainConfig->phr_Config->present:-1,
