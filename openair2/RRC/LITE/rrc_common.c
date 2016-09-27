@@ -496,6 +496,19 @@ rrc_rx_tx(
 
     // check for UL failure
     RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(eNB_rrc_inst[ctxt_pP->module_id].rrc_ue_head)) {
+      if ((ctxt_pP->frame == 0) && (ctxt_pP->subframe==0)) {
+	if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {
+	  LOG_I(RRC,"UE rnti %x:S-TMSI %x failure timer %d/20000\n",
+		ue_context_p->ue_context.rnti,
+		ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
+		ue_context_p->ue_context.ul_failure_timer);
+	}
+	else {
+	  LOG_I(RRC,"UE rnti %x failure timer %d/20000\n",
+		ue_context_p->ue_context.rnti,
+		ue_context_p->ue_context.ul_failure_timer);
+	}
+      }
       if (ue_context_p->ue_context.ul_failure_timer>0) {
 	ue_context_p->ue_context.ul_failure_timer++;
 	if (ue_context_p->ue_context.ul_failure_timer >= 20000) {
@@ -507,8 +520,8 @@ rrc_rx_tx(
       }
       if (ue_context_p->ue_context.ue_release_timer>0) {
 	ue_context_p->ue_context.ue_release_timer++;
-	if (ue_context_p->ue_context.ue_release_timer >= 100) {
-	  // remove UE after 10 frames after RRCConnectionRelease is triggered
+	if (ue_context_p->ue_context.ue_release_timer >= 
+	    ue_context_p->ue_context.ue_release_timer_thres) {
 	  LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
 	  ue_to_be_removed = ue_context_p;
 	  break;

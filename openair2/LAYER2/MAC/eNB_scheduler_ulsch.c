@@ -808,14 +808,14 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	    UE_list->eNB_UE_stats[CC_id][UE_id].normalized_rx_power=normalized_rx_power;
 	    UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power=target_rx_power;
 	    UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1=UE_template->pre_assigned_mcs_ul;
-            mcs = cmin (UE_template->pre_assigned_mcs_ul, openair_daq_vars.target_ue_ul_mcs); // adjust, based on user-defined MCS
+            mcs = UE_template->pre_assigned_mcs_ul;//cmin (UE_template->pre_assigned_mcs_ul, openair_daq_vars.target_ue_ul_mcs); // adjust, based on user-defined MCS
 	    if ((cqi_req==1) && (mcs>19)) {
 		mcs=19;
 	    }
             if (UE_template->pre_allocated_rb_table_index_ul >=0) {
               rb_table_index=UE_template->pre_allocated_rb_table_index_ul;
             } else {
-	      mcs=cmin (10, openair_daq_vars.target_ue_ul_mcs);
+	      mcs=10;//cmin (10, openair_daq_vars.target_ue_ul_mcs);
               rb_table_index=5; // for PHR
 	    }
 
@@ -1162,7 +1162,7 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
     required_rbs[cba_group] = 0;
     num_cba_resources[cba_group]=0;
     active_UEs[cba_group]=0;
-    mcs[cba_group]=openair_daq_vars.target_ue_ul_mcs;
+    mcs[cba_group]=10;//openair_daq_vars.target_ue_ul_mcs;
   }
 
   //LOG_D(MAC, "[eNB ] CBA granted ues are %d\n",granted_UEs );
@@ -1210,7 +1210,7 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
           }
         }
 
-        mcs[cba_group]= cmin(mcs[cba_group],openair_daq_vars.target_ue_ul_mcs);
+        mcs[cba_group]= mcs[cba_group];//cmin(mcs[cba_group],openair_daq_vars.target_ue_ul_mcs);
 
         if (available_rbs < min_rb_unit )
           break;

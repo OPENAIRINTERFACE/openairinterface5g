@@ -84,7 +84,7 @@ schedule_SI(
       // Allocate 4 PRBs in a random location
       /*
       while (1) {
-	first_rb = (unsigned char)(taus()%(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL-4));
+	first_rb = (unsigned char)(taus()%(PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL-4));
 	if ((vrb_map[first_rb] != 1) && 
 	    (vrb_map[first_rb+1] != 1) && 
 	    (vrb_map[first_rb+2] != 1) && 
@@ -92,7 +92,7 @@ schedule_SI(
 	  break;
       }
       */
-      switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+      switch (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
       case 6:
 	first_rb = 0;
 	break;
@@ -138,11 +138,11 @@ schedule_SI(
 
 
 
-      if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
-        switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+      if (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.frame_type == TDD) {
+        switch (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
         case 6:
           ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL,first_rb,4);
           ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
           ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
           ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
@@ -157,7 +157,7 @@ schedule_SI(
 
         case 25:
           ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL,first_rb,4);
           ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
           ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
           ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
@@ -172,7 +172,7 @@ schedule_SI(
 
         case 50:
           ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL,first_rb,4);
           ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
           ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
           ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
@@ -187,7 +187,7 @@ schedule_SI(
 
         case 100:
           ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL,first_rb,4);
           ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
           ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
           ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
@@ -202,10 +202,10 @@ schedule_SI(
         }
 
       } else {
-        switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+        switch (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
         case 6:
           ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL,first_rb,4);
           ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
           ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
           ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
@@ -221,7 +221,7 @@ schedule_SI(
 
         case 25:
           ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL,first_rb,4);
           ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
           ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
           ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
@@ -237,7 +237,7 @@ schedule_SI(
 
         case 50:
           ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL,first_rb,4);
           ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
           ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
           ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
@@ -253,7 +253,7 @@ schedule_SI(
 
         case 100:
           ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL,first_rb,4);
           ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
           ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
           ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
@@ -296,7 +296,7 @@ schedule_SI(
 	LOG_D(OPT,"[eNB %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
 	    module_idP, frameP, CC_id, 0xffff, bcch_sdu_length);
       }
-      if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
+      if (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.frame_type == TDD) {
         LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH->DLSCH (TDD) for CC_id %d SI %d bytes (mcs %d, rb 3, TBS %d)\n",
               frameP,
               CC_id,

@@ -196,8 +196,8 @@ int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, ui
       RA_template = (RA_TEMPLATE *)&eNB_mac_inst[i].common_channels[CC_id].RA_template[0];
 
       for (j=0; j<NB_RA_PROC_MAX; j++) {
-        if (mac_xface->lte_frame_parms->frame_type == TDD) {
-          switch (mac_xface->lte_frame_parms->N_RB_DL) {
+        if (mac_xface->frame_parms->frame_type == TDD) {
+          switch (mac_xface->frame_parms->N_RB_DL) {
           case 6:
             size_bytes1 = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
             size_bytes2 = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
@@ -235,7 +235,7 @@ int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, ui
           }
 
         } else {
-          switch (mac_xface->lte_frame_parms->N_RB_DL) {
+          switch (mac_xface->frame_parms->N_RB_DL) {
           case 6:
             size_bytes1 = sizeof(DCI1A_1_5MHz_FDD_t);
             size_bytes2 = sizeof(DCI1A_1_5MHz_FDD_t);
@@ -298,7 +298,7 @@ int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, ui
   //ICIC init param
 #ifdef ICIC
   uint8_t SB_size;
-  SB_size=mac_xface->get_SB_size(mac_xface->lte_frame_parms->N_RB_DL);
+  SB_size=mac_xface->get_SB_size(mac_xface->frame_parms->N_RB_DL);
 
   srand (time(NULL));
 
@@ -437,7 +437,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
   mac_xface->UL_failure_indication     = UL_failure_indication;
   mac_xface->rx_sdu                    = rx_sdu;
   mac_xface->get_dlsch_sdu             = get_dlsch_sdu;
-  mac_xface->get_eNB_UE_stats          = get_eNB_UE_stats;
+  mac_xface->get_eNB_UE_stats          = get_UE_stats;
   mac_xface->get_transmission_mode     = get_transmission_mode;
   mac_xface->get_rballoc               = get_rballoc;
   mac_xface->get_nb_rb                 = conv_nprb;
@@ -452,6 +452,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
 
   LOG_I(MAC,"[MAIN] init UE MAC functions \n");
   mac_xface->ue_decode_si              = ue_decode_si;
+  mac_xface->ue_decode_p               = ue_decode_p;
   mac_xface->ue_send_sdu               = ue_send_sdu;
 #ifdef Rel10
   mac_xface->ue_send_mch_sdu           = ue_send_mch_sdu;
@@ -466,7 +467,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
 
 
   LOG_I(MAC,"[MAIN] PHY Frame configuration \n");
-  mac_xface->lte_frame_parms = frame_parms;
+  mac_xface->frame_parms = frame_parms;
 
   mac_xface->get_ue_active_harq_pid = get_ue_active_harq_pid;
   mac_xface->get_PL                 = get_PL;

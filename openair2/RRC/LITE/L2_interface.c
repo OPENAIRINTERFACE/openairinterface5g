@@ -262,10 +262,10 @@ mac_rrc_data_req(
 
 #endif //Rel10
   } else {  //This is an UE
-#ifdef DEBUG_RRC
+
     LOG_D(RRC,"[UE %d] Frame %d Filling CCCH SRB_ID %d\n",Mod_idP,frameP,Srb_id);
     LOG_D(RRC,"[UE %d] Frame %d buffer_pP status %d,\n",Mod_idP,frameP, UE_rrc_inst[Mod_idP].Srb0[eNB_index].Tx_buffer.payload_size);
-#endif
+
 
     if( (UE_rrc_inst[Mod_idP].Srb0[eNB_index].Tx_buffer.payload_size > 0) ) {
 
@@ -368,6 +368,10 @@ mac_rrc_data_ind(
 #endif
     }
 
+    if(srb_idP == PCCH) {
+      LOG_D(RRC,"[UE %d] Received SDU for PCCH on SRB %d from eNB %d\n",module_idP,srb_idP,eNB_indexP);
+      decode_PCCH_DLSCH_Message(&ctxt,eNB_indexP,(uint8_t*)sduP,sdu_lenP);
+    }
     if((srb_idP & RAB_OFFSET) == CCCH) {
       if (sdu_lenP>0) {
         LOG_T(RRC,"[UE %d] Received SDU for CCCH on SRB %d from eNB %d\n",module_idP,srb_idP & RAB_OFFSET,eNB_indexP);
@@ -648,13 +652,14 @@ void rrc_in_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_index)
 void rrc_out_of_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_index)
 {
   //-------------------------------------------------------------------------------------------//
-  LOG_I(RRC,"[UE %d] Frame %d: OUT OF SYNC FROM eNB %d (T310 active %d : T310 %d, N310 %d, N311 %d)\n ",
-        Mod_idP,frameP,eNB_index,
-	UE_rrc_inst[Mod_idP].Info[eNB_index].T300_active,
-        UE_rrc_inst[Mod_idP].Info[eNB_index].T310_cnt,
-        UE_rrc_inst[Mod_idP].Info[eNB_index].N310_cnt,
-        UE_rrc_inst[Mod_idP].Info[eNB_index].N311_cnt);
-
+  if (UE_rrc_inst[Mod_idP].Info[eNB_index].N310_cnt>10)
+    LOG_I(RRC,"[UE %d] Frame %d: OUT OF SYNC FROM eNB %d (T310 active %d : T310 %d, N310 %d, N311 %d)\n ",
+	  Mod_idP,frameP,eNB_index,
+	  UE_rrc_inst[Mod_idP].Info[eNB_index].T300_active,
+	  UE_rrc_inst[Mod_idP].Info[eNB_index].T310_cnt,
+	  UE_rrc_inst[Mod_idP].Info[eNB_index].N310_cnt,
+	  UE_rrc_inst[Mod_idP].Info[eNB_index].N311_cnt);
+  
 #if defined(ENABLE_ITTI)
   {
     MessageDef *message_p;

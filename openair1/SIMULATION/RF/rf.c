@@ -178,8 +178,8 @@ void rf_rx(double **r_re,
   }
 }
 
-void rf_rx_simple(double **r_re,
-                  double **r_im,
+void rf_rx_simple(double *r_re[2],
+                  double *r_im[2],
                   unsigned int nb_rx_antennas,
                   unsigned int length,
                   double s_time,

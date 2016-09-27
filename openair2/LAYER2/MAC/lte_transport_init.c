@@ -1,6 +1,6 @@
-#define UL_RB_ALLOC mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,0,24)
-#define BCCH_RB_ALLOC mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,0,4)
-#define RA_RB_ALLOC mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,0,4)
+#define UL_RB_ALLOC mac_xface->computeRIV(mac_xface->frame_parms->N_RB_UL,0,24)
+#define BCCH_RB_ALLOC mac_xface->computeRIV(mac_xface->frame_parms->N_RB_UL,0,4)
+#define RA_RB_ALLOC mac_xface->computeRIV(mac_xface->frame_parms->N_RB_UL,0,4)
 #define DLSCH_RB_ALLOC 0x1fff
 #include "extern.h"
 

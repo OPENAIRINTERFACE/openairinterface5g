@@ -53,7 +53,7 @@ void lte_sync_timefreq(PHY_VARS_UE *ue,int band,unsigned int DL_freq)
 
     //compute frequency-domain representation of 6144-sample chunk
 
-    rxp = &ue->lte_ue_common_vars.rxdata[0][i];
+    rxp = &ue->common_vars.rxdata[0][i];
     sp=spectrum;
 
     while (1) {
@@ -312,8 +312,8 @@ void lte_sync_timefreq(PHY_VARS_UE *ue,int band,unsigned int DL_freq)
         } // loop on pss index
       }
 
-      if (rxp == &ue->lte_ue_common_vars.rxdata[0][i+38400*4]) {
-        rxp = &ue->lte_ue_common_vars.rxdata[0][i+38400*4];
+      if (rxp == &ue->common_vars.rxdata[0][i+38400*4]) {
+        rxp = &ue->common_vars.rxdata[0][i+38400*4];
         sp=spectrum_p5ms;
       } else {
         break;

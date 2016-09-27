@@ -117,6 +117,9 @@ typedef struct {
   ///  Send a received SI sdu
   void (*ue_decode_si)(module_id_t Mod_id,int CC_id,frame_t frameP, uint8_t CH_index, void *pdu, uint16_t len);
 
+  ///  Send a received Paging sdu
+  void (*ue_decode_p)(module_id_t Mod_id,int CC_id,frame_t frameP, uint8_t CH_index, void *pdu, uint16_t len);
+
   /// Send a received DLSCH sdu to MAC
   void (*ue_send_sdu)(module_id_t Mod_id,uint8_t CC_id,frame_t frameP,uint8_t *sdu,uint16_t sdu_len,uint8_t CH_index);
 
@@ -303,7 +306,7 @@ typedef struct {
   unsigned char cluster_head_index;
 
   /// PHY Frame Configuration
-  LTE_DL_FRAME_PARMS *lte_frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms;
 
   uint8_t (*get_prach_prb_offset)(LTE_DL_FRAME_PARMS *frame_parms, uint8_t tdd_mapindex, uint16_t Nf); 
 

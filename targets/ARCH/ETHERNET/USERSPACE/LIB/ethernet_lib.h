@@ -24,19 +24,11 @@
 #define MAX_INST      4
 #define DEFAULT_IF   "lo"
 
-#define ETH_RAW_MODE        1
-#define ETH_UDP_MODE        0
-
 #define TX_FLAG	        1
 #define RX_FLAG 	0
 
-#define MAX_PACKET_SEQ_NUM(spp,spf) (spf/spp)
-#define MAC_HEADER_SIZE_BYTES (sizeof(struct ether_header))
+#include "if_defs.h"
 #define APP_HEADER_SIZE_BYTES (sizeof(int32_t) + sizeof(openair0_timestamp))
-#define PAYLOAD_SIZE_BYTES(nsamps) (nsamps<<2)
-#define UDP_PACKET_SIZE_BYTES(nsamps) (APP_HEADER_SIZE_BYTES + PAYLOAD_SIZE_BYTES(nsamps))
-#define RAW_PACKET_SIZE_BYTES(nsamps) (APP_HEADER_SIZE_BYTES + MAC_HEADER_SIZE_BYTES + PAYLOAD_SIZE_BYTES(nsamps))
-
 
 /*!\brief opaque ethernet data structure */
 typedef struct {
@@ -92,6 +84,8 @@ typedef struct {
   uint64_t tx_count; 
   /*!\brief number of packets received */
   uint64_t rx_count;
+
+  struct ether_header eh; 
 
 } eth_state_t;
 
@@ -154,9 +148,10 @@ typedef struct {
 void dump_packet(char *title, unsigned char* pkt, int bytes, unsigned int tx_rx_flag);
 unsigned short calc_csum (unsigned short *buf, int nwords);
 void dump_dev(openair0_device *device);
-void inline dump_buff(openair0_device *device, char *buff,unsigned int tx_rx_flag,int nsamps);
+/*void inline dump_buff(openair0_device *device, char *buff,unsigned int tx_rx_flag,int nsamps);
 void inline dump_rxcounters(openair0_device *device);
 void inline dump_txcounters(openair0_device *device);
+*/
 void dump_iqs(char * buff, int iq_cnt);
 
 
@@ -184,6 +179,8 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value);
 int eth_socket_init_udp(openair0_device *device);
 int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
 int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
+//int trx_eth_write_udp_IF4(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
+//int trx_eth_read_udp_IF4(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
 int eth_get_dev_conf_udp(openair0_device *device);
 
 /*! \fn static int eth_set_dev_conf_udp(openair0_device *device)
@@ -198,8 +195,13 @@ int eth_set_dev_conf_udp(openair0_device *device);
 int eth_socket_init_raw(openair0_device *device);
 int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
 int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
+int trx_eth_write_raw_IF4p5(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
+int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
+int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
+int trx_eth_read_udp_IF4p5(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
 int eth_get_dev_conf_raw(openair0_device *device);
 int eth_set_dev_conf_raw(openair0_device *device);
-
+int eth_get_dev_conf_raw_IF4p5(openair0_device *device);
+int eth_set_dev_conf_raw_IF4p5(openair0_device *device);
 
 #endif

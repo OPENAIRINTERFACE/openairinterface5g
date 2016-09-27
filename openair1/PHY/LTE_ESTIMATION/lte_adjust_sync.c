@@ -2,6 +2,8 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 
+#include "UTIL/LOG/vcd_signal_dumper.h"
+
 #define DEBUG_PHY
 
 // Adjust location synchronization point to account for drift
@@ -9,7 +11,7 @@
 // last channel estimate of the receiver
 
 void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
-                      PHY_VARS_UE *phy_vars_ue,
+                      PHY_VARS_UE *ue,
                       unsigned char eNB_id,
                       unsigned char clear,
                       short coef)
@@ -20,10 +22,12 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   int diff;
   short Re,Im,ncoef;
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_IN);
+
   ncoef = 32767 - coef;
 
 #ifdef DEBUG_PHY
-  LOG_D(PHY,"frame %d, slot %d: rx_offset (before) = %d\n",phy_vars_ue->frame_rx,phy_vars_ue->slot_rx,phy_vars_ue->rx_offset);
+  LOG_D(PHY,"frame %d: rx_offset (before) = %d\n",ue->proc.proc_rxtx[0].frame_rx,ue->rx_offset);
 #endif //DEBUG_PHY
 
 
@@ -32,8 +36,8 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
     temp = 0;
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-      Re = ((int16_t*)phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_id][aa])[(i<<2)];
-      Im = ((int16_t*)phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_id][aa])[1+(i<<2)];
+      Re = ((int16_t*)ue->common_vars.dl_ch_estimates_time[eNB_id][aa])[(i<<2)];
+      Im = ((int16_t*)ue->common_vars.dl_ch_estimates_time[eNB_id][aa])[1+(i<<2)];
       temp += (Re*Re/2) + (Im*Im/2);
     }
 
@@ -53,29 +57,30 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   diff = max_pos_fil - frame_parms->nb_prefix_samples/8;
 
   if ( diff > SYNCH_HYST )
-    phy_vars_ue->rx_offset++;
+    ue->rx_offset++;
   else if (diff < -SYNCH_HYST)
-    phy_vars_ue->rx_offset--;
+    ue->rx_offset--;
 
-  if ( phy_vars_ue->rx_offset < 0 )
-    phy_vars_ue->rx_offset += FRAME_LENGTH_COMPLEX_SAMPLES;
+  if ( ue->rx_offset < 0 )
+    ue->rx_offset += FRAME_LENGTH_COMPLEX_SAMPLES;
 
-  if ( phy_vars_ue->rx_offset >= FRAME_LENGTH_COMPLEX_SAMPLES )
-    phy_vars_ue->rx_offset -= FRAME_LENGTH_COMPLEX_SAMPLES;
+  if ( ue->rx_offset >= FRAME_LENGTH_COMPLEX_SAMPLES )
+    ue->rx_offset -= FRAME_LENGTH_COMPLEX_SAMPLES;
 
 
 
 #ifdef DEBUG_PHY
   LOG_D(PHY,"frame %d: rx_offset (after) = %d : max_pos = %d,max_pos_fil = %d (peak %d)\n",
-        phy_vars_ue->frame_rx,phy_vars_ue->rx_offset,max_pos,max_pos_fil,temp);
+        ue->proc.proc_rxtx[0].frame_rx,ue->rx_offset,max_pos,max_pos_fil,temp);
 #endif //DEBUG_PHY
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_OUT);
 
 }
 
 
 int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
-                           LTE_eNB_SRS *lte_eNb_srs,
+                           LTE_eNB_SRS *lte_eNB_srs,
                            unsigned int  *eNB_id,
                            unsigned char clear,
                            unsigned char number_of_cards,
@@ -105,23 +110,23 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
       // do ifft of channel estimate
       switch(frame_parms->N_RB_DL) {
       case 6:
-	dft128((int16_t*) &lte_eNb_srs->srs_ch_estimates[ind][aa][0],
-	       (int16_t*) lte_eNb_srs->srs_ch_estimates_time[ind][aa],
+	dft128((int16_t*) &lte_eNB_srs->srs_ch_estimates[ind][aa][0],
+	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[ind][aa],
 	       1);
 	break;
       case 25:
-	dft512((int16_t*) &lte_eNb_srs->srs_ch_estimates[ind][aa][0],
-	       (int16_t*) lte_eNb_srs->srs_ch_estimates_time[ind][aa],
+	dft512((int16_t*) &lte_eNB_srs->srs_ch_estimates[ind][aa][0],
+	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[ind][aa],
 	       1);
 	break;
       case 50:
-	dft1024((int16_t*) &lte_eNb_srs->srs_ch_estimates[ind][aa][0],
-		(int16_t*) lte_eNb_srs->srs_ch_estimates_time[ind][aa],
+	dft1024((int16_t*) &lte_eNB_srs->srs_ch_estimates[ind][aa][0],
+		(int16_t*) lte_eNB_srs->srs_ch_estimates_time[ind][aa],
 		1);
 	break;
       case 100:
-	dft2048((int16_t*) &lte_eNb_srs->srs_ch_estimates[ind][aa][0],
-	       (int16_t*) lte_eNb_srs->srs_ch_estimates_time[ind][aa],
+	dft2048((int16_t*) &lte_eNB_srs->srs_ch_estimates[ind][aa][0],
+	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[ind][aa],
 	       1);
 	break;
       }
@@ -129,7 +134,7 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_PHY
       sprintf(fname,"srs_ch_estimates_time_%d%d.m",ind,aa);
       sprintf(vname,"srs_time_%d%d",ind,aa);
-      write_output(fname,vname,lte_eNb_srs->srs_ch_estimates_time[ind][aa],frame_parms->ofdm_symbol_size*2,2,1);
+      write_output(fname,vname,lte_eNB_srs->srs_ch_estimates_time[ind][aa],frame_parms->ofdm_symbol_size*2,2,1);
 #endif
 #endif
     }
@@ -140,8 +145,8 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
       temp = 0;
 
       for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-        Re = ((int16_t*)lte_eNb_srs->srs_ch_estimates_time[ind][aa])[(i<<1)];
-        Im = ((int16_t*)lte_eNb_srs->srs_ch_estimates_time[ind][aa])[1+(i<<1)];
+        Re = ((int16_t*)lte_eNB_srs->srs_ch_estimates_time[ind][aa])[(i<<1)];
+        Im = ((int16_t*)lte_eNB_srs->srs_ch_estimates_time[ind][aa])[1+(i<<1)];
         temp += (Re*Re/2) + (Im*Im/2);
       }
 
@@ -167,7 +172,7 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 
-int lte_est_timing_advance_pusch(PHY_VARS_eNB* phy_vars_eNB,uint8_t UE_id,uint8_t sched_subframe)
+int lte_est_timing_advance_pusch(PHY_VARS_eNB* eNB,uint8_t UE_id)
 {
   static int first_run=1;
   static int max_pos_fil2=0;
@@ -175,8 +180,8 @@ int lte_est_timing_advance_pusch(PHY_VARS_eNB* phy_vars_eNB,uint8_t UE_id,uint8_
   short Re,Im,coef=24576;
   short ncoef = 32768 - coef;
 
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
-  LTE_eNB_PUSCH *eNB_pusch_vars = phy_vars_eNB->lte_eNB_pusch_vars[UE_id];
+  LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
+  LTE_eNB_PUSCH *eNB_pusch_vars = eNB->pusch_vars[UE_id];
   int32_t **ul_ch_estimates_time=  eNB_pusch_vars->drs_ch_estimates_time[0];
   uint8_t cyclic_shift = 0;
   int sync_pos = (frame_parms->ofdm_symbol_size-cyclic_shift*frame_parms->ofdm_symbol_size/12)%(frame_parms->ofdm_symbol_size);
@@ -208,7 +213,7 @@ int lte_est_timing_advance_pusch(PHY_VARS_eNB* phy_vars_eNB,uint8_t UE_id,uint8_
     max_pos_fil2 = ((max_pos_fil2 * coef) + (max_pos * ncoef)) >> 15;
 
 #ifdef DEBUG_PHY
-  LOG_D(PHY,"frame %d: max_pos = %d, max_pos_fil = %d, sync_pos=%d\n",phy_vars_eNB->proc[sched_subframe].frame_rx,max_pos,max_pos_fil2,sync_pos);
+  LOG_D(PHY,"frame %d: max_pos = %d, max_pos_fil = %d, sync_pos=%d\n",eNB->proc.frame_rx,max_pos,max_pos_fil2,sync_pos);
 #endif //DEBUG_PHY
 
   return(max_pos_fil2-sync_pos);

@@ -179,7 +179,7 @@ set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${CMAKE_CU
 # these changes are related to hardcoded path to include .h files
 add_definitions(-DCMAKER)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3 -O3") 
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3 -O2") 
 
 
 set(GIT_BRANCH        "UNKNOWN")
@@ -262,15 +262,7 @@ if (${ENABLE_ITTI})
 endif (${ENABLE_ITTI})
 
 add_boolean_option(RTAI False "Use RTAI")
-if (${RTAI})
-  set(DEADLINE_SCHEDULER False)
-  set(CPU_AFFINITY False)
-  add_definitions("-DENABLE_RTAI_CLOCK")
-  add_definitions("-DCONFIG_RTAI_LXRT_INLINE")
-  include_directories ("/usr/realtime/include")
-  include_directories ("/usr/realtime/include/asm")
-  set(RTAI_SOURCE sched_dlsch.c sched_rx_pdsch.c rt_wrapper.c vcd_signal_dumper.c log.c)
-endif (${RTAI})
+
 
 #############################
 # ASN.1 grammar C code generation & dependancies
@@ -505,7 +497,7 @@ include_directories ("${OPENAIR_TARGETS}/ARCH/EXMIMO/DEFS/")
 #set (option_HWEXMIMOLIB_lib "-l ")
 set(HWLIB_EXMIMO_SOURCE 
   ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c
-  ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/gain_control.c
+#  ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/gain_control.c
   )
 add_library(oai_exmimodevif MODULE ${HWLIB_EXMIMO_SOURCE} )
 
@@ -546,8 +538,8 @@ if (${RF_BOARD} STREQUAL "EXMIMO")
   include_directories ("${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/")
   include_directories ("${OPENAIR_TARGETS}/ARCH/EXMIMO/DEFS/")
   set(HW_SOURCE ${HW_SOURCE}
-    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c
-    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/gain_control.c)
+    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c)
+#    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/gain_control.c)
   set(option_HW_lib "-rdynamic -ldl")
 
 elseif (${RF_BOARD} STREQUAL "OAI_USRP")
@@ -628,6 +620,7 @@ add_boolean_option(NAS_ADDRESS_FIX False "specific to oaisim: for nasmesh driver
 add_boolean_option(NAS_NETLINK False "???? Must be True to compile nasmesh driver without rtai")
 add_boolean_option(OAISIM False "specific to oaisim")
 add_boolean_option(OAI_NW_DRIVER_USE_NETLINK True "????")
+
 add_boolean_option(USE_MME False "this flag is used only one time in lte-softmodem.c")
 add_list_string_option(PACKAGE_NAME "NotDefined" "As per attribute name")
 add_boolean_option(MESSAGE_CHART_GENERATOR False         "For generating sequence diagrams")
@@ -968,6 +961,7 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pucch.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/prach.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pmch.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pch.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/group_hopping.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/srs_modulation.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/drs_modulation.c
@@ -978,6 +972,8 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/rar_tools.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/print_stats.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/initial_sync.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if4_tools.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if5_tools.c
   ${OPENAIR1_DIR}/PHY/MODULATION/ofdm_mod.c
   ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep.c
   ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep_mbsfn.c
@@ -1614,10 +1610,9 @@ add_executable(lte-softmodem
   ${rrc_h}
   ${s1ap_h}
   ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIR_TARGETS}/RT/USER/sched_dlsch.c
-  ${OPENAIR_TARGETS}/RT/USER/sched_rx_pdsch.c
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
@@ -1650,10 +1645,9 @@ add_executable(lte-softmodem-nos1
   ${rrc_h}
   ${s1ap_h}
   ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIR_TARGETS}/RT/USER/sched_dlsch.c
-  ${OPENAIR_TARGETS}/RT/USER/sched_rx_pdsch.c
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
@@ -1749,6 +1743,9 @@ add_executable(oaisim
   ${s1ap_h}
   ${x2ap_h}
   ${OPENAIR_BIN_DIR}/messages_xml.h
+  ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
+  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/SIMU/USER/channel_sim.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
   ${OPENAIR_TARGETS}/SIMU/USER/oaisim_config.c
@@ -1792,6 +1789,9 @@ add_executable(oaisim_nos1
   ${s1ap_h}
   ${x2ap_h}
   ${OPENAIR_BIN_DIR}/messages_xml.h
+  ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
+  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/SIMU/USER/channel_sim.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
   ${OPENAIR_TARGETS}/SIMU/USER/oaisim_config.c

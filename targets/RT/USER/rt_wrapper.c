@@ -49,8 +49,6 @@ void set_latency_target(void) {
 }
 
 
-#ifndef RTAI
-
 struct timespec interval, next, now, res;
 clockid_t clock_id = CLOCK_MONOTONIC; //other options are CLOCK_MONOTONIC, CLOCK_REALTIME, CLOCK_PROCESS_CPUTIME_ID, CLOCK_THREAD_CPUTIME_ID
 RTIME rt_get_time_ns (void)
@@ -228,12 +226,7 @@ int sched_getattr(pid_t pid,struct sched_attr *attr,unsigned int size, unsigned 
 
 #endif
 
-#else
 
-int rt_sleep_ns(RTIME x)
-{
-  rt_sleep(nano2count(x));
-  return(0);
-}
 
-#endif
+
+

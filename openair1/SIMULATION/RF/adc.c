@@ -1,5 +1,5 @@
-void adc(double **r_re,
-         double **r_im,
+void adc(double *r_re[2],
+         double *r_im[2],
          unsigned int input_offset,
          unsigned int output_offset,
          unsigned int **output,

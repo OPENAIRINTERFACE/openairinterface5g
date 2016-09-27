@@ -189,9 +189,9 @@ void phy_adjust_gain (PHY_VARS_UE *phy_vars_ue,
                       unsigned char eNB_id);
 
 int lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
+			      eNB_rxtx_proc_t *proc,
                               module_id_t eNB_id,
                               module_id_t UE_id,
-                              uint8_t subframe,
                               uint8_t l,
                               uint8_t Ns,
                               uint8_t cooperation_flag);
@@ -214,7 +214,7 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
                            unsigned char number_of_cards,
                            short coef);
 
-int lte_est_timing_advance_pusch(PHY_VARS_eNB* phy_vars_eNB,module_id_t UE_id,uint8_t subframe);
+int lte_est_timing_advance_pusch(PHY_VARS_eNB* phy_vars_eNB,module_id_t UE_id);
 
 void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNB,
 			     int subframe,

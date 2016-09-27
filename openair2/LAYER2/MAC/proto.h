@@ -357,6 +357,8 @@ void mac_out_of_sync_ind(module_id_t module_idP, frame_t frameP, uint16_t CH_ind
 
 void ue_decode_si(module_id_t module_idP, int CC_id,frame_t frame, uint8_t CH_index, void *pdu, uint16_t len);
 
+void ue_decode_p(module_id_t module_idP, int CC_id,frame_t frame, uint8_t CH_index, void *pdu, uint16_t len);
+
 
 void ue_send_sdu(module_id_t module_idP, uint8_t CC_id,frame_t frame, uint8_t *sdu,uint16_t sdu_len,uint8_t CH_index);
 
@@ -758,7 +760,7 @@ rrc_get_estimated_ue_distance(
   const int         CC_idP,
   const uint8_t     loc_typeP);
 
-void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_eNB);
+void fill_dci(DCI_PDU *DCI_pdu, PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc);
 
 #endif
 /** @}*/

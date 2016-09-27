@@ -13,7 +13,7 @@
 #include "PHY/LTE_TRANSPORT/proto.h"
 #include "PHY/extern.h"
 
-int8_t pucch_power_cntl(PHY_VARS_UE *phy_vars_ue,uint8_t subframe,uint8_t eNB_id,PUCCH_FMT_t pucch_fmt)
+int8_t pucch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t subframe,uint8_t eNB_id,PUCCH_FMT_t pucch_fmt)
 {
 
   int8_t Po_PUCCH;
@@ -23,29 +23,29 @@ int8_t pucch_power_cntl(PHY_VARS_UE *phy_vars_ue,uint8_t subframe,uint8_t eNB_id
   //
   //if ((pucch_fmt == pucch_format1a) ||
   //    (pucch_fmt == pucch_format1b)) {  // Update g_pucch based on TPC/delta_PUCCH received in PDCCH for this process
-    //harq_pid = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[subframe].harq_id;
+    //harq_pid = ue->dlsch[eNB_id][0]->harq_ack[subframe].harq_id;
     //this is now done in dci_tools
-    //phy_vars_ue->g_pucch[eNB_id] += phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->delta_PUCCH;
+    //ue->g_pucch[eNB_id] += ue->dlsch[eNB_id][0]->harq_processes[harq_pid]->delta_PUCCH;
   //}
 
-  Po_PUCCH = get_PL(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,eNB_id)+
-    phy_vars_ue->lte_frame_parms.ul_power_control_config_common.p0_NominalPUCCH+
-    phy_vars_ue->dlsch_ue[eNB_id][0]->g_pucch;
+  Po_PUCCH = get_PL(ue->Mod_id,ue->CC_id,eNB_id)+
+    ue->frame_parms.ul_power_control_config_common.p0_NominalPUCCH+
+    ue->dlsch[eNB_id][0]->g_pucch;
 
   switch (pucch_fmt) {
   case pucch_format1:
   case pucch_format2a:
   case pucch_format2b:
-    Po_PUCCH += (-2+(phy_vars_ue->lte_frame_parms.ul_power_control_config_common.deltaF_PUCCH_Format1<<1));
+    Po_PUCCH += (-2+(ue->frame_parms.ul_power_control_config_common.deltaF_PUCCH_Format1<<1));
     break;
 
   case pucch_format1a:
   case pucch_format1b:
-    Po_PUCCH += (1+(phy_vars_ue->lte_frame_parms.ul_power_control_config_common.deltaF_PUCCH_Format1b<<1));
+    Po_PUCCH += (1+(ue->frame_parms.ul_power_control_config_common.deltaF_PUCCH_Format1b<<1));
     break;
 
   case pucch_format2:
-    switch (phy_vars_ue->lte_frame_parms.ul_power_control_config_common.deltaF_PUCCH_Format2a) {
+    switch (ue->frame_parms.ul_power_control_config_common.deltaF_PUCCH_Format2a) {
     case 0:
       Po_PUCCH -= 2;
       break;
@@ -68,20 +68,20 @@ int8_t pucch_power_cntl(PHY_VARS_UE *phy_vars_ue,uint8_t subframe,uint8_t eNB_id
 
   if (pucch_fmt!=pucch_format1) {
     LOG_I(PHY,"[UE  %d][PDSCH %x] frame %d, subframe %d: Po_PUCCH %d dBm : Po_NOMINAL_PUCCH %d dBm, PL %d dB, g_pucch %d dB\n",
-          phy_vars_ue->Mod_id,
-          phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,phy_vars_ue->frame_tx,subframe,
+          ue->Mod_id,
+          ue->dlsch[eNB_id][0]->rnti,proc->frame_tx,subframe,
           Po_PUCCH,
-          phy_vars_ue->lte_frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
-          get_PL(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,eNB_id),
-          phy_vars_ue->dlsch_ue[eNB_id][0]->g_pucch);
+          ue->frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
+          get_PL(ue->Mod_id,ue->CC_id,eNB_id),
+          ue->dlsch[eNB_id][0]->g_pucch);
   } else {
     LOG_I(PHY,"[UE  %d][SR %x] frame %d, subframe %d: Po_PUCCH %d dBm : Po_NOMINAL_PUCCH %d dBm, PL %d dB g_pucch %d dB\n",
-          phy_vars_ue->Mod_id,
-          phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,phy_vars_ue->frame_tx,subframe,
+          ue->Mod_id,
+          ue->dlsch[eNB_id][0]->rnti,proc->frame_tx,subframe,
           Po_PUCCH,
-          phy_vars_ue->lte_frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
-          get_PL(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,eNB_id),
-          phy_vars_ue->dlsch_ue[eNB_id][0]->g_pucch);
+          ue->frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
+          get_PL(ue->Mod_id,ue->CC_id,eNB_id),
+          ue->dlsch[eNB_id][0]->g_pucch);
   }
 
   return(Po_PUCCH);

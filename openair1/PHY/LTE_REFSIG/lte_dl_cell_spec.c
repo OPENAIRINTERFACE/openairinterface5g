@@ -12,7 +12,7 @@
 
 
 //Calibration
-int lte_dl_cell_spec_SS(PHY_VARS_eNB *phy_vars_eNB,
+int lte_dl_cell_spec_SS(PHY_VARS_eNB *eNB,
                         int32_t *output,
                         short amp,
                         unsigned char Ns,
@@ -48,27 +48,27 @@ int lte_dl_cell_spec_SS(PHY_VARS_eNB *phy_vars_eNB,
     return(-1);
   }
 
-  mprime = 110 - phy_vars_eNB->lte_frame_parms.N_RB_DL;
+  mprime = 110 - eNB->frame_parms.N_RB_DL;
 
-  k = (nu + phy_vars_eNB->lte_frame_parms.nushift);
+  k = (nu + eNB->frame_parms.nushift);
 
   if (k > 6)//b
     k -=6;//b
 
-  k+=phy_vars_eNB->lte_frame_parms.first_carrier_offset;
+  k+=eNB->frame_parms.first_carrier_offset;
 
-  for (m=0; m<phy_vars_eNB->lte_frame_parms.N_RB_DL<<1; m++) { // loop over pilots in one slot/symbol, 2*N_RB_DL pilots
+  for (m=0; m<eNB->frame_parms.N_RB_DL<<1; m++) { // loop over pilots in one slot/symbol, 2*N_RB_DL pilots
 
     mprime_dword     = mprime>>4;
     mprime_qpsk_symb = mprime&0xf;
 
     // this is r_mprime from 3GPP 36-211 6.10.1.2
-    output[k] = qpsk[(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
+    output[k] = qpsk[(eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
     //output[k] = (lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
 #ifdef DEBUG_DL_CELL_SPEC
     printf("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
               Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    printf("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    printf("index = %d (k %d)\n",(eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
 #endif
 
     mprime++;
@@ -80,9 +80,9 @@ int lte_dl_cell_spec_SS(PHY_VARS_eNB *phy_vars_eNB,
 #endif
     k+=6;//b
 
-    if (k >= phy_vars_eNB->lte_frame_parms.ofdm_symbol_size) {
+    if (k >= eNB->frame_parms.ofdm_symbol_size) {
       k++;  // skip DC carrier
-      k-=phy_vars_eNB->lte_frame_parms.ofdm_symbol_size;
+      k-=eNB->frame_parms.ofdm_symbol_size;
     }
 
     //    printf("** k %d\n",k);
@@ -92,7 +92,7 @@ int lte_dl_cell_spec_SS(PHY_VARS_eNB *phy_vars_eNB,
 }
 
 
-int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
+int lte_dl_cell_spec(PHY_VARS_eNB *eNB,
                      int32_t *output,
                      short amp,
                      unsigned char Ns,
@@ -127,31 +127,31 @@ int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
     return(-1);
   }
 
-  mprime = 110 - phy_vars_eNB->lte_frame_parms.N_RB_DL;
+  mprime = 110 - eNB->frame_parms.N_RB_DL;
 
-  k = (nu + phy_vars_eNB->lte_frame_parms.nushift);
+  k = (nu + eNB->frame_parms.nushift);
 
   if (k > 5)
     k -=6;
 
-  k+=phy_vars_eNB->lte_frame_parms.first_carrier_offset;
+  k+=eNB->frame_parms.first_carrier_offset;
 
   DevAssert( Ns < 20 );
   DevAssert( l < 2 );
   DevAssert( mprime>>4 < 14 );
 
-  for (m=0; m<phy_vars_eNB->lte_frame_parms.N_RB_DL<<1; m++) {
+  for (m=0; m<eNB->frame_parms.N_RB_DL<<1; m++) {
 
     mprime_dword     = mprime>>4;
     mprime_qpsk_symb = mprime&0xf;
 
     // this is r_mprime from 3GPP 36-211 6.10.1.2
-    output[k] = qpsk[(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
+    output[k] = qpsk[(eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
     //output[k] = (lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
 #ifdef DEBUG_DL_CELL_SPEC
     printf("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
         Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    printf("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    printf("index = %d (k %d)\n",(eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
 #endif
 
     mprime++;
@@ -163,9 +163,9 @@ int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
 #endif
     k+=6;
 
-    if (k >= phy_vars_eNB->lte_frame_parms.ofdm_symbol_size) {
+    if (k >= eNB->frame_parms.ofdm_symbol_size) {
       k++;  // skip DC carrier
-      k-=phy_vars_eNB->lte_frame_parms.ofdm_symbol_size;
+      k-=eNB->frame_parms.ofdm_symbol_size;
     }
 
     //    printf("** k %d\n",k);
@@ -174,7 +174,7 @@ int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
   return(0);
 }
 
-int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
+int lte_dl_cell_spec_rx(PHY_VARS_UE *ue,
                         uint8_t eNB_offset,
                         int *output,
                         unsigned char Ns,
@@ -202,19 +202,19 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
   ((short *)&qpsk[3])[0] = -pamp;
   ((short *)&qpsk[3])[1] = pamp;
 
-  mprime = 110 - phy_vars_ue->lte_frame_parms.N_RB_DL;
+  mprime = 110 - ue->frame_parms.N_RB_DL;
 
-  for (m=0; m<phy_vars_ue->lte_frame_parms.N_RB_DL<<1; m++) {
+  for (m=0; m<ue->frame_parms.N_RB_DL<<1; m++) {
 
     mprime_dword     = mprime>>4;
     mprime_qpsk_symb = mprime&0xf;
 
     // this is r_mprime from 3GPP 36-211 6.10.1.2
-    output[k] = qpsk[(phy_vars_ue->lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
+    output[k] = qpsk[(ue->lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
 #ifdef DEBUG_DL_CELL_SPEC
     printf("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
            Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    printf("index = %d (k %d)\n",(phy_vars_ue->lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    printf("index = %d (k %d)\n",(ue->lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
 #endif
 
     mprime++;

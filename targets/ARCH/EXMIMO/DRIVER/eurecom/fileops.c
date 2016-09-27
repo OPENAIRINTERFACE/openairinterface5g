@@ -150,6 +150,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
   int tmp;
 
+  unsigned int user_args[4];
+
   static unsigned int update_firmware_command;
   static unsigned int update_firmware_address;
   static unsigned int update_firmware_length;
@@ -299,15 +301,38 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
      acknowledge with no limit */
 
 #define MAX_IOCTL_ACK_CNT    500
-    update_firmware_command = *((unsigned int*)arg);
 
+    /* 'arg' is an unsigned long and is supposed to be big enough
+     * to hold an address - this hypothesis is okay for i386 and x86_64
+     * maybe not somewhere else
+     * this will probably fail with older kernels
+     * (works with 3.17 on x86_64)
+     */
+    tmp = copy_from_user(&user_args, (void*)arg, 4*sizeof(unsigned int));
+    if (tmp) {
+      printk("[openair][IOCTL] UPDATE_FIRMWARE: error copying parameters to kernel-space (%d bytes uncopied).\n", tmp);
+      return -1;
+    }
+
+    update_firmware_command = user_args[0];
 
     switch (update_firmware_command) {
     case UPDATE_FIRMWARE_TRANSFER_BLOCK:
-      update_firmware_address   = ((unsigned int*)arg)[1];
-      update_firmware_length    = ((unsigned int*)arg)[2];
+      update_firmware_address   = user_args[1];
+      update_firmware_length    = user_args[2];
 
-      update_firmware_ubuffer   = (unsigned int*)((unsigned int*)arg)[3];
+      /* This is totally wrong on x86_64: a pointer is 64 bits and
+       * unsigned int is 32 bits. The userspace program has to ensure
+       * that its buffer address fits into 32 bits.
+       * If it proves a too strong requirement, we may change things
+       * in the future.
+       * The compiler emits a warning here. Do not remove this warning!
+       * This is to clearly remember this problem.
+       * If you require the compilation to work with zero warning,
+       * consider this one as an exception and find a proper workaround.
+       */
+      update_firmware_ubuffer   = user_args[3];
+
       update_firmware_kbuffer = (unsigned int*)kmalloc(update_firmware_length * 4 /* 4 because kmalloc expects bytes */,
                                 GFP_KERNEL);
 
@@ -361,8 +386,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
     case UPDATE_FIRMWARE_CLEAR_BSS:
 
-      update_firmware_bss_address   = ((unsigned int*)arg)[1];
-      update_firmware_bss_size      = ((unsigned int*)arg)[2];
+      update_firmware_bss_address   = user_args[1];
+      update_firmware_bss_size      = user_args[2];
       sparc_tmp_0 = update_firmware_bss_address;
       sparc_tmp_1 = update_firmware_bss_size;
 
@@ -382,8 +407,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
     case UPDATE_FIRMWARE_START_EXECUTION:
 
-      update_firmware_start_address = ((unsigned int*)arg)[1];
-      update_firmware_stack_pointer = ((unsigned int*)arg)[2];
+      update_firmware_start_address = user_args[1];
+      update_firmware_stack_pointer = user_args[2];
       sparc_tmp_0 = update_firmware_start_address;
       sparc_tmp_1 = update_firmware_stack_pointer;
 

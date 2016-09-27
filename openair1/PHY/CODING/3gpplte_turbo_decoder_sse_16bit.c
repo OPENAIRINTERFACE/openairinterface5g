@@ -16,6 +16,7 @@
 ///
 ///
 
+#undef __AVX2__
 #include "PHY/sse_intrin.h"
 
 #ifndef TEST_DEBUG

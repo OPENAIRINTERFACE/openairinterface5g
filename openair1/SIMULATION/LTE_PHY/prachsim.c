@@ -15,10 +15,12 @@
 
 #include "OCG_vars.h"
 
+#include "unitary_defs.h"
+
 int current_dlsch_cqi; //FIXME!
 
-PHY_VARS_eNB *PHY_vars_eNB;
-PHY_VARS_UE *PHY_vars_UE;
+PHY_VARS_eNB *eNB;
+PHY_VARS_UE *UE;
 
 #define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 
@@ -77,17 +79,9 @@ int main(int argc, char **argv)
   logInit();
 
   number_of_cards = 1;
-  openair_daq_vars.rx_rf_mode = 1;
 
-  /*
-    rxdataF    = (int **)malloc16(2*sizeof(int*));
-    rxdataF[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-    rxdataF[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
 
-    rxdata    = (int **)malloc16(2*sizeof(int*));
-    rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-    rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
-  */
+
   while ((c = getopt (argc, argv, "hHaA:Cr:p:g:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:")) != -1) {
     switch (c) {
     case 'a':
@@ -315,10 +309,10 @@ int main(int argc, char **argv)
 
   printf("SNR0 %f, SNR1 %f\n",snr0,snr1);
 
-  frame_parms = &PHY_vars_eNB->lte_frame_parms;
+  frame_parms = &eNB->frame_parms;
 
 
-  txdata = PHY_vars_UE->lte_ue_common_vars.txdata;
+  txdata = UE->common_vars.txdata;
   printf("txdata %p\n",&txdata[0][subframe*frame_parms->samples_per_tti]);
 
   s_re = malloc(2*sizeof(double*));
@@ -333,11 +327,11 @@ int main(int argc, char **argv)
 
 
   msg("[SIM] Using SCM/101\n");
-  UE2eNB = new_channel_desc_scm(PHY_vars_UE->lte_frame_parms.nb_antennas_tx,
-                                PHY_vars_eNB->lte_frame_parms.nb_antennas_rx,
+  UE2eNB = new_channel_desc_scm(UE->frame_parms.nb_antennas_tx,
+                                eNB->frame_parms.nb_antennas_rx,
                                 channel_model,
-				N_RB2sampling_rate(PHY_vars_eNB->lte_frame_parms.N_RB_UL),
-				N_RB2channel_bandwidth(PHY_vars_eNB->lte_frame_parms.N_RB_UL),
+				N_RB2sampling_rate(eNB->frame_parms.N_RB_UL),
+				N_RB2channel_bandwidth(eNB->frame_parms.N_RB_UL),
                                 0.0,
                                 delay,
                                 0);
@@ -360,32 +354,35 @@ int main(int argc, char **argv)
     bzero(r_im[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
   }
 
-  PHY_vars_UE->lte_frame_parms.prach_config_common.rootSequenceIndex=rootSequenceIndex;
-  PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0;
-  PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=NCS_config;
-  PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag=hs_flag;
-  PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
+  UE->frame_parms.prach_config_common.rootSequenceIndex=rootSequenceIndex;
+  UE->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0;
+  UE->frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=NCS_config;
+  UE->frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag=hs_flag;
+  UE->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
 
 
-  PHY_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex=rootSequenceIndex;
-  PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0;
-  PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=NCS_config;
-  PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag=hs_flag;
-  PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
+  eNB->frame_parms.prach_config_common.rootSequenceIndex=rootSequenceIndex;
+  eNB->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0;
+  eNB->frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=NCS_config;
+  eNB->frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag=hs_flag;
+  eNB->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
+
+  eNB->node_function = eNodeB_3GPP;
+  eNB->proc.subframe_rx = subframe;
 
   /* N_ZC not used later, so prach_fmt is also useless, don't set */
-  //prach_fmt = get_prach_fmt(PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
-  //                          PHY_vars_eNB->lte_frame_parms.frame_type);
+  //prach_fmt = get_prach_fmt(eNB->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
+  //                          eNB->frame_parms.frame_type);
   /* N_ZC not used later, no need to set */
   //N_ZC = (prach_fmt <4)?839:139;
 
-  compute_prach_seq(&PHY_vars_eNB->lte_frame_parms.prach_config_common,PHY_vars_eNB->lte_frame_parms.frame_type,PHY_vars_eNB->X_u);
+  compute_prach_seq(&eNB->frame_parms.prach_config_common,eNB->frame_parms.frame_type,eNB->X_u);
 
-  compute_prach_seq(&PHY_vars_UE->lte_frame_parms.prach_config_common,PHY_vars_UE->lte_frame_parms.frame_type,PHY_vars_UE->X_u);
+  compute_prach_seq(&UE->frame_parms.prach_config_common,UE->frame_parms.frame_type,UE->X_u);
 
-  PHY_vars_UE->lte_ue_prach_vars[0]->amp = AMP;
+  UE->prach_vars[0]->amp = AMP;
 
-  PHY_vars_UE->prach_resources[0] = &prach_resources;
+  UE->prach_resources[0] = &prach_resources;
 
   if (preamble_tx == 99)
     preamble_tx = (uint16_t)(taus()&0x3f);
@@ -393,10 +390,10 @@ int main(int argc, char **argv)
   if (n_frames == 1)
     printf("raPreamble %d\n",preamble_tx);
 
-  PHY_vars_UE->prach_resources[0]->ra_PreambleIndex = preamble_tx;
-  PHY_vars_UE->prach_resources[0]->ra_TDD_map_index = 0;
+  UE->prach_resources[0]->ra_PreambleIndex = preamble_tx;
+  UE->prach_resources[0]->ra_TDD_map_index = 0;
 
-  tx_lev = generate_prach(PHY_vars_UE,
+  tx_lev = generate_prach(UE,
                           0, //eNB_id,
                           subframe,
                           0); //Nf
@@ -408,7 +405,7 @@ int main(int argc, char **argv)
   //write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
   // multipath channel
-  dump_prach_config(&PHY_vars_eNB->lte_frame_parms,subframe);
+  dump_prach_config(&eNB->frame_parms,subframe);
 
   for (i=0; i<2*frame_parms->samples_per_tti; i++) {
     for (aa=0; aa<1; aa++) {
@@ -416,7 +413,7 @@ int main(int argc, char **argv)
         s_re[aa][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)]);
         s_im[aa][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)+1]);
       } else {
-        for (aarx=0; aarx<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx; aarx++) {
+        for (aarx=0; aarx<eNB->frame_parms.nb_antennas_rx; aarx++) {
           if (aa==0) {
             r_re[aarx][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)]);
             r_im[aarx][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)+1]);
@@ -463,15 +460,14 @@ int main(int argc, char **argv)
         }
 
         for (i=0; i<frame_parms->samples_per_tti; i++) {
-          for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) {
+          for (aa=0; aa<eNB->frame_parms.nb_antennas_rx; aa++) {
 
-            ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i] = (short) (.167*(r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-            ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i+1] = (short) (.167*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+            ((short*) &eNB->common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i] = (short) (.167*(r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+            ((short*) &eNB->common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i+1] = (short) (.167*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
           }
         }
 
-        rx_prach(PHY_vars_eNB,
-                 subframe,
+        rx_prach(eNB,
                  preamble_energy_list,
                  preamble_delay_list,
                  0,   //Nf
@@ -502,12 +498,12 @@ int main(int argc, char **argv)
               printf("preamble %d : energy %d, delay %d\n",i,preamble_energy_list[i],preamble_delay_list[i]);
 
           write_output("prach0.m","prach0", &txdata[0][subframe*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
-          write_output("prachF0.m","prachF0", &PHY_vars_eNB->lte_eNB_prach_vars.prachF[0],24576,1,1);
+          write_output("prachF0.m","prachF0", &eNB->prach_vars.prachF[0],24576,1,1);
           write_output("rxsig0.m","rxs0",
-                       &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][subframe*frame_parms->samples_per_tti],
+                       &eNB->common_vars.rxdata[0][0][subframe*frame_parms->samples_per_tti],
                        frame_parms->samples_per_tti,1,1);
-          write_output("rxsigF0.m","rxsF0", &PHY_vars_eNB->lte_eNB_common_vars.rxdataF[0][0][0],512*nsymb*2,2,1);
-          write_output("prach_preamble.m","prachp",&PHY_vars_eNB->X_u[0],839,1,1);
+          write_output("rxsigF0.m","rxsF0", &eNB->common_vars.rxdataF[0][0][0],512*nsymb*2,2,1);
+          write_output("prach_preamble.m","prachp",&eNB->X_u[0],839,1,1);
         }
       }
 

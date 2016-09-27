@@ -223,13 +223,13 @@ void get_prach_resources(module_id_t module_idP,
 
   // choose random PRACH resource in TDD
   if (UE_mac_inst[module_idP].tdd_Config) {
-    num_prach = mac_xface->get_num_prach_tdd(mac_xface->lte_frame_parms);
+    num_prach = mac_xface->get_num_prach_tdd(mac_xface->frame_parms);
 
     if ((num_prach>0) && (num_prach<6)) {
       UE_mac_inst[module_idP].RA_prach_resources.ra_TDD_map_index = (taus()%num_prach);
     }
 
-    f_id = mac_xface->get_fid_prach_tdd(mac_xface->lte_frame_parms,
+    f_id = mac_xface->get_fid_prach_tdd(mac_xface->frame_parms,
                                         UE_mac_inst[module_idP].RA_prach_resources.ra_TDD_map_index);
   }
 

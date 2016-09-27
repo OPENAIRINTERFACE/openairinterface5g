@@ -164,7 +164,7 @@ init_SI(
     eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].sizeof_SIB1 = do_SIB1(
           ctxt_pP->module_id,
           CC_id,
-          mac_xface->lte_frame_parms,
+          mac_xface->frame_parms,
           (uint8_t*)eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].SIB1,
           &eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].siblock1,
           &eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].sib1
@@ -194,7 +194,7 @@ init_SI(
     eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].sizeof_SIB23 = do_SIB23(
           ctxt_pP->module_id,
           CC_id,
-          mac_xface->lte_frame_parms,
+          mac_xface->frame_parms,
           eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].SIB23,
           &eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].systemInformation,
           &eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].sib2,
@@ -360,7 +360,7 @@ init_MCCH(
       mac_xface->macphy_exit("[RRC][init_MCCH] not enough memory\n");
     } else {
       eNB_rrc_inst[enb_mod_idP].carrier[CC_id].sizeof_MCCH_MESSAGE[sync_area] = do_MBSFNAreaConfig(enb_mod_idP,
-          mac_xface->lte_frame_parms,
+          mac_xface->frame_parms,
           sync_area,
           (uint8_t *)eNB_rrc_inst[enb_mod_idP].carrier[CC_id].MCCH_MESSAGE[sync_area],
           &eNB_rrc_inst[enb_mod_idP].carrier[CC_id].mcch,
@@ -542,7 +542,7 @@ rrc_eNB_ue_context_stmsi_exist(
 	  m_tmsiP, mme_codeP, ue_context_p, 
 	  ue_context_p->ue_context.rnti);
     if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {
-      printf("S-TMSI %x, MME %x\n",
+      printf("=> S-TMSI %x, MME %x\n",
 	    ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
 	    ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code);
       if (ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi == m_tmsiP)
@@ -1084,7 +1084,8 @@ rrc_eNB_generate_RRCConnectionRelease(
   size = do_RRCConnectionRelease(ctxt_pP->module_id, buffer,rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
   // set release timer
   ue_context_pP->ue_context.ue_release_timer=1;
-
+  // remove UE after 10 frames after RRCConnectionRelease is triggered
+  ue_context_pP->ue_context.ue_release_timer_thres=100;
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate RRCConnectionRelease (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -2708,11 +2709,11 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   physicalConfigDedicated2->schedulingRequestConfig->present = SchedulingRequestConfig_PR_setup;
   physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = ue_context_pP->local_uid;
 
-  if (mac_xface->lte_frame_parms->frame_type == 0) {  // FDD
+  if (mac_xface->frame_parms->frame_type == 0) {  // FDD
     physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 5 + (ue_context_pP->local_uid %
         10);   // Isr = 5 (every 10 subframes, offset=2+UE_id mod3)
   } else {
-    switch (mac_xface->lte_frame_parms->tdd_config) {
+    switch (mac_xface->frame_parms->tdd_config) {
     case 1:
       physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 7 + (ue_context_pP->local_uid & 1) + ((
             ue_context_pP->local_uid & 3) >> 1) * 5;    // Isr = 5 (every 10 subframes, offset=2 for UE0, 3 for UE1, 7 for UE2, 8 for UE3 , 2 for UE4 etc..)
@@ -3706,6 +3707,7 @@ rrc_eNB_generate_RRCConnectionSetup(
   SRB_ToAddModList_t                **SRB_configList;
   SRB_ToAddMod_t                     *SRB1_config;
   int                                 cnt;
+  LTE_DL_FRAME_PARMS *fp = mac_xface->get_lte_frame_parms(ctxt_pP->module_id,CC_id);
 
   T(T_ENB_RRC_CONNECTION_SETUP, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
@@ -3715,9 +3717,9 @@ rrc_eNB_generate_RRCConnectionSetup(
     do_RRCConnectionSetup(ctxt_pP,
                           ue_context_pP,
                           (uint8_t*) eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.Payload,
-			  (mac_xface->lte_frame_parms->nb_antennas_tx_eNB==2)?2:1, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
+			  (fp->nb_antennas_tx_eNB==2)?2:1, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
                           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
-                          mac_xface->lte_frame_parms,
+                          fp,
                           SRB_configList,
                           &ue_context_pP->ue_context.physicalConfigDedicated);
 
@@ -3802,6 +3804,10 @@ rrc_eNB_generate_RRCConnectionSetup(
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
         eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size);
 
+  // activate release timer, if RRCSetupComplete not received after 10 frames, remove UE
+  ue_context_pP->ue_context.ue_release_timer=1;
+  // remove UE after 10 frames after RRCConnectionRelease is triggered
+  ue_context_pP->ue_context.ue_release_timer_thres=100;
 }
 
 #if defined(ENABLE_ITTI)
@@ -4164,7 +4170,7 @@ rrc_eNB_decode_ccch(
             if ((ue_context_p = rrc_eNB_ue_context_stmsi_exist(ctxt_pP, mme_code, m_tmsi))) {
 
 		//#warning "TODO: stmsi_exist: remove UE from MAC/PHY (how?)"
-	      LOG_I(RRC," S-TMSI exists, ue_context_p %p\n",ue_context_p);
+	      LOG_I(RRC," S-TMSI exists, ue_context_p %p, old rnti %x => %x\n",ue_context_p,ue_context_p->ue_context.rnti,ctxt_pP->rnti);
 	      stmsi_received=1;
               /* replace rnti in the context */
               /* for that, remove the context from the RB tree */
@@ -4179,6 +4185,7 @@ rrc_eNB_decode_ccch(
 	      //   AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");
 	      //              ue_context_p = NULL;
             } else {
+	      LOG_I(RRC," S-TMSI doesn't exist, setting Initialue_identity_s_TMSI.m_tmsi to %x => %x\n",ue_context_p,m_tmsi);
               ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, NOT_A_RANDOM_UE_IDENTITY);
               if (ue_context_p == NULL)
                 LOG_E(RRC, "%s:%d:%s: rrc_eNB_get_next_free_ue_context returned NULL\n", __FILE__, __LINE__, __FUNCTION__);
@@ -4250,6 +4257,7 @@ rrc_eNB_decode_ccch(
           LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Can't create new context for UE random UE identity (0x%" PRIx64 ")\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
                 random_value);
+	  rrc_mac_remove_ue(ctxt_pP->module_id,ctxt_pP->rnti);
           return -1;
         }
       }
@@ -4599,6 +4607,7 @@ rrc_eNB_decode_dcch(
         }
       }
 
+      ue_context_p->ue_context.ue_release_timer=0;
       break;
 
     case UL_DCCH_MessageType__c1_PR_securityModeComplete:
@@ -4608,7 +4617,7 @@ rrc_eNB_decode_dcch(
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC Security Mode Complete\n");
 
-      for (i = 0; i < sdu_sizeP; i++) {
+      for (i = 0; i < sdu_sizeP; i++) eNB->pusch_vars[UE_id]{
         LOG_F(RRC,"%02x ", ((uint8_t*)Rx_sdu)[i]);
       }
 

@@ -150,7 +150,7 @@ void assign_rbs_required (module_id_t Mod_id,
       */
       eNB_UE_stats[CC_id]->dlsch_mcs1=cqi_to_mcs[eNB_UE_stats[CC_id]->DL_cqi[0]];
 
-      eNB_UE_stats[CC_id]->dlsch_mcs1 = cmin(eNB_UE_stats[CC_id]->dlsch_mcs1,openair_daq_vars.target_ue_dl_mcs);
+      eNB_UE_stats[CC_id]->dlsch_mcs1 = eNB_UE_stats[CC_id]->dlsch_mcs1;//cmin(eNB_UE_stats[CC_id]->dlsch_mcs1,openair_daq_vars.target_ue_dl_mcs);
 
     }
 
@@ -170,7 +170,7 @@ void assign_rbs_required (module_id_t Mod_id,
 
     /*
     if ((mac_get_rrc_status(Mod_id,1,UE_id) < RRC_RECONFIGURED)){  // If we still don't have a default radio bearer
-      nb_rbs_required[pCCid][UE_id] = PHY_vars_eNB_g[Mod_id][pCCid]->lte_frame_parms.N_RB_DL;
+      nb_rbs_required[pCCid][UE_id] = PHY_vars_eNB_g[Mod_id][pCCid]->frame_parms.N_RB_DL;
       continue;
     }
     */
@@ -621,8 +621,8 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 
 
                         if ((j == N_RBG[CC_id]-1) &&
-                            ((PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms.N_RB_DL == 25) ||
-                             (PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms.N_RB_DL == 50))) {
+                            ((PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms.N_RB_DL == 25) ||
+                             (PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms.N_RB_DL == 50))) {
 			  
                           nb_rbs_required_remaining[CC_id][UE_id] = nb_rbs_required_remaining[CC_id][UE_id] - min_rb_unit[CC_id]+1;
                           ue_sched_ctl->pre_nb_available_rbs[CC_id] = ue_sched_ctl->pre_nb_available_rbs[CC_id] + min_rb_unit[CC_id]-1;
@@ -731,7 +731,7 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   rnti_t rnti = UE_RNTI(module_idP,UE_id);
   uint8_t *vrb_map = eNB_mac_inst[module_idP].common_channels[CC_id].vrb_map;
-  int RBGsize = PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL/N_RBG;
+  int RBGsize = PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL/N_RBG;
 #ifdef SF05_LIMIT
   //int subframe05_limit=0;
   int sf05_upper=-1,sf05_lower=-1;
@@ -748,7 +748,7 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
     // WE SHOULD PROTECT the eNB_UE_stats with a mutex here ...
 
     ue_sched_ctl->ta_timer = 20;  // wait 20 subframes before taking TA measurement from PHY
-    switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+    switch (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
     case 6:
       ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update;
       break;
