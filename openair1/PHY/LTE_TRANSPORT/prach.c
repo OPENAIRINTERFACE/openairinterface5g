@@ -46,7 +46,7 @@
 #include "SCHED/extern.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
-#define PRACH_DEBUG 1
+//#define PRACH_DEBUG 1
 
 uint16_t NCS_unrestricted[16] = {0,13,15,18,22,26,32,38,46,59,76,93,119,167,279,419};
 uint16_t NCS_restricted[15]   = {15,18,22,26,32,38,46,55,68,82,100,128,158,202,237}; // high-speed case
@@ -1009,22 +1009,21 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
       }
     }
     else {
-    if (prach_fmt == 4) {
-      idft3072(prachF,prach2);
-      //TODO: account for repeated format in dft output
-      memmove( prach, prach+6144, Ncp<<2 );
-      prach_len = 3072+Ncp;
-    } else {
-      idft18432(prachF,prach2);
-      memmove( prach, prach+36864, Ncp<<2 );
-      prach_len = 18432+Ncp;
-
-      if (prach_fmt>1) {
-        memmove( prach2+36834, prach2, 73728 );
-        prach_len = 2*18432+Ncp;
-      }
-    }
-
+      if (prach_fmt == 4) {
+	idft3072(prachF,prach2);
+	//TODO: account for repeated format in dft output
+	memmove( prach, prach+6144, Ncp<<2 );
+	prach_len = 3072+Ncp;
+      } else {
+	idft18432(prachF,prach2);
+	memmove( prach, prach+36864, Ncp<<2 );
+	prach_len = 18432+Ncp;
+	printf("Generated prach for 100 PRB, 3/4 sampling\n");
+	if (prach_fmt>1) {
+	  memmove( prach2+36834, prach2, 73728 );
+	  prach_len = 2*18432+Ncp;
+	}
+      } 
     }
 
     break;
@@ -1052,18 +1051,18 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
       ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1]<<4;
     }
 #if defined(EXMIMO)
-	    // handle switch before 1st TX subframe, guarantee that the slot prior to transmission is switch on
-	    for (k=prach_start - (ue->frame_parms.samples_per_tti>>1) ; k<prach_start ; k++) {
-	      if (k<0)
-		ue->common_vars.txdata[0][k+ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
-	      else if (k>(ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME))
-		ue->common_vars.txdata[0][k-ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
-	      else
-		ue->common_vars.txdata[0][k] &= 0xFFFEFFFE;
-	    }
+    // handle switch before 1st TX subframe, guarantee that the slot prior to transmission is switch on
+    for (k=prach_start - (ue->frame_parms.samples_per_tti>>1) ; k<prach_start ; k++) {
+      if (k<0)
+	ue->common_vars.txdata[0][k+ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
+      else if (k>(ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME))
+	ue->common_vars.txdata[0][k-ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
+      else
+	ue->common_vars.txdata[0][k] &= 0xFFFEFFFE;
+    }
 #endif
 #else
-
+    
     for (i=0; i<prach_len; i++) {
       ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i] = prach[2*i];
       ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i+1] = prach[2*i+1];

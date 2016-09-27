@@ -5680,15 +5680,58 @@ void idft12288(int16_t *input, int16_t *output)
   //  write_output("out.m","out",output,6144,1,1);
 }
 
+#include "twiddle18432.h"
 // 6144 x 3
-void dft18432(int16_t *input, int16_t *output)
-{
+void dft18432(int16_t *input, int16_t *output) {
 
+  int i,i2,j;
+  uint32_t tmp[3][6144] __attribute__((aligned(32)));
+  uint32_t tmpo[3][6144] __attribute__((aligned(32)));
+
+  for (i=0,j=0; i<6144; i++) {
+    tmp[0][i] = ((uint32_t *)input)[j++];
+    tmp[1][i] = ((uint32_t *)input)[j++];
+    tmp[2][i] = ((uint32_t *)input)[j++];
+  }
+
+  dft6144((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]));
+  dft6144((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]));
+  dft6144((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]));
+
+  for (i=0,i2=0; i<12288; i+=8,i2+=4)  {
+    bfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),(simd_q15_t*)(&tmpo[2][i2]),
+          (simd_q15_t*)(output+i),(simd_q15_t*)(output+12288+i),(simd_q15_t*)(output+24576+i),
+          (simd_q15_t*)(twa18432+i),(simd_q15_t*)(twb18432+i));
+  }
+
+  _mm_empty();
+  _m_empty();
 }
 
-void idft18432(int16_t *input, int16_t *output)
-{
+void idft18432(int16_t *input, int16_t *output) {
 
+  int i,i2,j;
+  uint32_t tmp[3][6144] __attribute__((aligned(32)));
+  uint32_t tmpo[3][6144] __attribute__((aligned(32)));
+
+  for (i=0,j=0; i<6144; i++) {
+    tmp[0][i] = ((uint32_t *)input)[j++];
+    tmp[1][i] = ((uint32_t *)input)[j++];
+    tmp[2][i] = ((uint32_t *)input)[j++];
+  }
+
+  idft6144((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]));
+  idft6144((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]));
+  idft6144((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]));
+
+  for (i=0,i2=0; i<12288; i+=8,i2+=4)  {
+    ibfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),(simd_q15_t*)(&tmpo[2][i2]),
+	   (simd_q15_t*)(output+i),(simd_q15_t*)(output+12288+i),(simd_q15_t*)(output+24576+i),
+	   (simd_q15_t*)(twa18432+i),(simd_q15_t*)(twb18432+i));
+  }
+
+  _mm_empty();
+  _m_empty();
 }
 
 #include "twiddle24576.h"
