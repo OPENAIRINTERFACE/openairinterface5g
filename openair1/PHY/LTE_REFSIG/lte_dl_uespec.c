@@ -52,7 +52,7 @@
 
 int Wbar_NCP[8][4] = {{1,1,1,1},{1,-1,1,-1},{1,1,1,1},{1,-1,1,-1},{1,1,-1,-1},{-1,-1,1,1},{1,-1,-1,1},{-1,1,1,-1}};
 
-int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
+int lte_dl_ue_spec(PHY_VARS_eNB *eNB,
                    uint8_t UE_id,
                    int32_t *output,
                    short amp,
@@ -64,7 +64,7 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
   int32_t qpsk[4],nqpsk[4],*qpsk_p,*output_p;
   int16_t a;
   int w,lprime,ind,l,ind_dword,ind_qpsk_symb,nPRB;
-  //  LTE_eNB_DLSCH_t *dlsch = phy_vars_eNB->dlsch_eNB[UE_id][0];
+  //  LTE_eNB_DLSCH_t *dlsch = eNB->dlsch_eNB[UE_id][0];
 
   a = (amp*ONE_OVER_SQRT2_Q15)>>15;
   ((short *)&qpsk[0])[0] = a;
@@ -87,13 +87,13 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
 
   if (p>=7) {
     if (SS_flag==0) {
-      if (phy_vars_eNB->lte_frame_parms.Ncp == NORMAL) {
+      if (eNB->frame_parms.Ncp == NORMAL) {
         // this is 3GPP 36-211 6.10.3.2, NORMAL CP, p>=7
 
 
 
         // position output pointer to 5th symbol in slot
-        output_p = output+(60*phy_vars_eNB->lte_frame_parms.N_RB_DL);
+        output_p = output+(60*eNB->frame_parms.N_RB_DL);
 
         // shift to 2nd RE in PRB for p=7,8,11,13
         if ((p==7) || (p==8) || (p==11) || (p==13)) output_p++;
@@ -101,12 +101,12 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
 
         for (lprime=0; lprime<2; lprime++) {
 
-          ind = 3*lprime*phy_vars_eNB->lte_frame_parms.N_RB_DL;
+          ind = 3*lprime*eNB->frame_parms.N_RB_DL;
           l = lprime + ((Ns&1)<<1);
 
           // loop over pairs of PRBs, this is the periodicity of the W_bar_NCP sequence
           // unroll the computations for the 6 pilots, select qpsk or nqpsk as function of W_bar_NCP
-          for (nPRB=0; nPRB<phy_vars_eNB->lte_frame_parms.N_RB_DL; nPRB+=2) {
+          for (nPRB=0; nPRB<eNB->frame_parms.N_RB_DL; nPRB+=2) {
 
             // First pilot
             w = Wbar_NCP[p-7][l];
@@ -116,13 +116,13 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
             ind_dword     = ind>>4;
             ind_qpsk_symb = ind&0xf;
 
-            *output_p = qpsk_p[(phy_vars_eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
+            *output_p = qpsk_p[(eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
 
 
 #ifdef DEBUG_DL_UESPEC
             LOG_D(PHY,"Ns %d, l %d, m %d,ind_dword %d, ind_qpsk_symbol %d\n",
                   Ns,l,m,mprime_dword,mprime_qpsk_symb);
-            LOG_D(PHY,"index = %d\n",(phy_vars_eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
+            LOG_D(PHY,"index = %d\n",(eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
 #endif
 
             output_p+=5;
@@ -135,12 +135,12 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
             ind_dword     = ind>>4;
             ind_qpsk_symb = ind&0xf;
 
-            *output_p = qpsk_p[(phy_vars_eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
+            *output_p = qpsk_p[(eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
 
 #ifdef DEBUG_DL_UESPEC
             LOG_D(PHY,"Ns %d, l %d, m %d,ind_dword %d, ind_qpsk_symbol %d\n",
                   Ns,l,m,mprime_dword,mprime_qpsk_symb);
-            LOG_D(PHY,"index = %d\n",(phy_vars_eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
+            LOG_D(PHY,"index = %d\n",(eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
 #endif
 
             output_p+=5;
@@ -152,12 +152,12 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
             ind_dword     = ind>>4;
             ind_qpsk_symb = ind&0xf;
 
-            *output_p = qpsk_p[(phy_vars_eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
+            *output_p = qpsk_p[(eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
 
 #ifdef DEBUG_DL_UESPEC
             LOG_D(PHY,"Ns %d, l %d, m %d,ind_dword %d, ind_qpsk_symbol %d\n",
                   Ns,l,m,mprime_dword,mprime_qpsk_symb);
-            LOG_D(PHY,"index = %d\n",(phy_vars_eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
+            LOG_D(PHY,"index = %d\n",(eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
 #endif
 
             output_p+=2;
@@ -171,13 +171,13 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
             ind_dword     = ind>>4;
             ind_qpsk_symb = ind&0xf;
 
-            *output_p = qpsk_p[(phy_vars_eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
+            *output_p = qpsk_p[(eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
 
 
 #ifdef DEBUG_DL_UESPEC
             LOG_D(PHY,"Ns %d, l %d, m %d,ind_dword %d, ind_qpsk_symbol %d\n",
                   Ns,l,m,mprime_dword,mprime_qpsk_symb);
-            LOG_D(PHY,"index = %d\n",(phy_vars_eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
+            LOG_D(PHY,"index = %d\n",(eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
 #endif
 
             output_p+=5;
@@ -190,12 +190,12 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
             ind_dword     = ind>>4;
             ind_qpsk_symb = ind&0xf;
 
-            *output_p = qpsk_p[(phy_vars_eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
+            *output_p = qpsk_p[(eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
 
 #ifdef DEBUG_DL_UESPEC
             LOG_D(PHY,"Ns %d, l %d, m %d,ind_dword %d, ind_qpsk_symbol %d\n",
                   Ns,l,m,mprime_dword,mprime_qpsk_symb);
-            LOG_D(PHY,"index = %d\n",(phy_vars_eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
+            LOG_D(PHY,"index = %d\n",(eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
 #endif
 
             output_p+=5;
@@ -207,12 +207,12 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
             ind_dword     = ind>>4;
             ind_qpsk_symb = ind&0xf;
 
-            *output_p = qpsk_p[(phy_vars_eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
+            *output_p = qpsk_p[(eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
 
 #ifdef DEBUG_DL_UESPEC
             LOG_D(PHY,"Ns %d, l %d, m %d,ind_dword %d, ind_qpsk_symbol %d\n",
                   Ns,l,m,mprime_dword,mprime_qpsk_symb);
-            LOG_D(PHY,"index = %d\n",(phy_vars_eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
+            LOG_D(PHY,"index = %d\n",(eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
 #endif
 
             output_p+=2;
@@ -260,9 +260,9 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
   ((short *)&qpsk[3])[0] = -pamp;
   ((short *)&qpsk[3])[1] = pamp;
 
-  mprime = 110 - phy_vars_ue->lte_frame_parms.N_RB_DL;
+  mprime = 110 - phy_vars_ue->frame_parms.N_RB_DL;
 
-  for (m=0;m<phy_vars_ue->lte_frame_parms.N_RB_DL<<1;m++) {
+  for (m=0;m<phy_vars_ue->frame_parms.N_RB_DL<<1;m++) {
 
     mprime_dword     = mprime>>4;
     mprime_qpsk_symb = mprime&0xf;

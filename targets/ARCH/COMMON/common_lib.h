@@ -51,6 +51,9 @@
 #define BBU_LOCAL_RADIO_HEAD  0
 #define BBU_REMOTE_RADIO_HEAD 1
 
+#define MAX_CARDS 8
+
+
 typedef int64_t openair0_timestamp;
 typedef volatile int64_t openair0_vtimestamp;
 
@@ -59,9 +62,9 @@ typedef volatile int64_t openair0_vtimestamp;
 typedef struct openair0_device_t openair0_device;
 
 
-#ifndef EXMIMO
-#define MAX_CARDS 1
-#endif
+
+
+
 
 //#define USRP_GAIN_OFFSET (56.0)  // 86 calibrated for USRP B210 @ 2.6 GHz to get equivalent RS EPRE in OAI to SMBV100 output
 
@@ -145,27 +148,27 @@ typedef struct {
   unsigned int  samples_per_frame;
   //! the sample rate for both transmit and receive.
   double sample_rate;
-  //! number of samples per RX/TX packet (USRP + Ethernet)
-  unsigned int samples_per_packet; 
-  //! delay in sending samples (write)  due to hardware access, softmodem processing and fronthaul delay if exist
-  int tx_scheduling_advance;
+  //! flag to indicate that the device is doing mmapped DMA transfers
+  int mmapped_dma;
   //! offset in samples between TX and RX paths
   int tx_sample_advance;
-  //! configurable tx thread lauch delay 
-  int txlaunch_wait;               /* 1 or 0 */
-  //! configurable tx thread lauch delay 
-  int txlaunch_wait_slotcount;
+  //! samples per packet on the fronthaul interface
+  int samples_per_packet;
   //! number of RX channels (=RX antennas)
   int rx_num_channels;
   //! number of TX channels (=TX antennas)
   int tx_num_channels;
+  //! \brief RX base addresses for mmapped_dma
+  int32_t* rxbase[4];
+  //! \brief TX base addresses for mmapped_dma
+  int32_t* txbase[4];
   //! \brief Center frequency in Hz for RX.
   //! index: [0..rx_num_channels[
   double rx_freq[4];
   //! \brief Center frequency in Hz for TX.
   //! index: [0..rx_num_channels[ !!! see lte-ue.c:427 FIXME iterates over rx_num_channels
   double tx_freq[4];
-
+  //! \brief memory
   //! \brief Pointer to Calibration table for RX gains
   rx_gain_calib_table_t *rx_gain_calib_table;
 
@@ -233,10 +236,21 @@ typedef struct {
 } eth_params_t;
 
 
+typedef struct {
+  //! Tx buffer for if device
+  void *tx;
+  //! Rx buffer for if device
+  void *rx;
+} if_buffer_t;
+
+
 /*!\brief structure holds the parameters to configure USRP devices */
 struct openair0_device_t {
   /*!brief Module ID of this device */
   int Mod_id;
+
+  /*!brief Component Carrier ID of this device */
+  int CC_id;
   
   /*!brief Type of this device */
   dev_type_t type;
@@ -315,9 +329,8 @@ struct openair0_device_t {
   void (*trx_end_func)(openair0_device *device);
 
   /*! \brief Stop operation of the transceiver 
-   * \param card RF Card to use
    */
-  int (*trx_stop_func)(int card);
+  int (*trx_stop_func)(openair0_device *device);
 
   /* Functions API related to UE*/
 

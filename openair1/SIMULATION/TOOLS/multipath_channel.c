@@ -44,10 +44,10 @@ uint8_t multipath_channel_nosigconv(channel_desc_t *desc)
 //#define CHANNEL_SSE
 #ifdef CHANNEL_SSE
 void multipath_channel(channel_desc_t *desc,
-                       double **tx_sig_re,
-                       double **tx_sig_im,
-                       double **rx_sig_re,
-                       double **rx_sig_im,
+                       double tx_sig_re[2][30720*2],
+                       double tx_sig_im[2][30720*2],
+                       double rx_sig_re[2][30720*2],
+                       double rx_sig_im[2][30720*2],
                        uint32_t length,
                        uint8_t keep_channel)
 {
@@ -150,10 +150,10 @@ void multipath_channel(channel_desc_t *desc,
 
 #else
 void multipath_channel(channel_desc_t *desc,
-                       double **tx_sig_re,
-                       double **tx_sig_im,
-                       double **rx_sig_re,
-                       double **rx_sig_im,
+                       double *tx_sig_re[2],
+                       double *tx_sig_im[2],
+                       double *rx_sig_re[2],
+                       double *rx_sig_im[2],
                        uint32_t length,
                        uint8_t keep_channel)
 {

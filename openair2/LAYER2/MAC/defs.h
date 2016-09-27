@@ -82,6 +82,7 @@
 
 #define BCCH_PAYLOAD_SIZE_MAX 128
 #define CCCH_PAYLOAD_SIZE_MAX 128
+#define PCCH_PAYLOAD_SIZE_MAX 128
 
 #define SCH_PAYLOAD_SIZE_MAX 4096
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
@@ -263,6 +264,10 @@ typedef struct {
 typedef struct {
   uint8_t payload[BCCH_PAYLOAD_SIZE_MAX] ;
 } __attribute__((__packed__))BCCH_PDU;
+/*! \brief BCCH payload */
+typedef struct {
+  uint8_t payload[PCCH_PAYLOAD_SIZE_MAX] ;
+} __attribute__((__packed__))PCCH_PDU;
 
 #ifdef Rel10
 /*! \brief MCCH payload */
@@ -291,6 +296,8 @@ typedef struct {
 #define CCCH_LCHANID 0
 /*!\brief Values of BCCH logical channel */
 #define BCCH 3  // SI 
+/*!\brief Values of PCCH logical channel */
+#define PCCH 4  // Paging 
 /*!\brief Value of CCCH / SRB0 logical channel */
 #define CCCH 0  // srb0
 /*!\brief DCCH / SRB1 logical channel */
@@ -1104,6 +1111,8 @@ typedef struct {
   time_stats_t rx_mch_sdu;
   /// UE BCCH rx processing time including RLC interface (mac_rrc_data_ind) 
   time_stats_t rx_si; 
+  /// UE PCCH rx processing time including RLC interface (mac_rrc_data_ind) 
+  time_stats_t rx_p; 
 } UE_MAC_INST;
 /*! \brief ID of the neighboring cells used for HO*/
 typedef struct {
