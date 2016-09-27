@@ -174,27 +174,29 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
 
 int8_t delta_PUSCH_msg2[8] = {-6,-4,-2,0,2,4,6,8};
 
-int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
+int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *ue,
+				      UE_rxtx_proc_t *proc,
                                       unsigned char eNB_id )
 {
 
   //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
-  uint8_t transmission_mode = phy_vars_ue->transmission_mode[eNB_id];
-  unsigned char *rar_pdu = phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b;
-  unsigned char subframe = phy_vars_ue->ulsch_ue_Msg3_subframe[eNB_id];
-  LTE_UE_ULSCH_t *ulsch  = phy_vars_ue->ulsch_ue[eNB_id];
-  PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
-  LTE_DL_FRAME_PARMS *frame_parms =  &phy_vars_ue->lte_frame_parms;
-  //  int current_dlsch_cqi = phy_vars_ue->current_dlsch_cqi[eNB_id];
+  uint8_t transmission_mode = ue->transmission_mode[eNB_id];
+  unsigned char *rar_pdu = ue->dlsch_ra[eNB_id]->harq_processes[0]->b;
+  unsigned char subframe = ue->ulsch_Msg3_subframe[eNB_id];
+  LTE_UE_ULSCH_t *ulsch  = ue->ulsch[eNB_id];
+  PHY_MEASUREMENTS *meas = &ue->measurements;
+
+  LTE_DL_FRAME_PARMS *frame_parms =  &ue->frame_parms;
+  //  int current_dlsch_cqi = ue->current_dlsch_cqi[eNB_id];
 
   uint8_t *rar = (uint8_t *)(rar_pdu+1);
-  uint8_t harq_pid = subframe2harq_pid(frame_parms,phy_vars_ue->frame_tx,subframe);
+  uint8_t harq_pid = subframe2harq_pid(frame_parms,proc->frame_tx,subframe);
   uint16_t rballoc;
   uint8_t cqireq;
   uint16_t *RIV2nb_rb_LUT, *RIV2first_rb_LUT;
   uint16_t RIV_max = 0;
 
-  LOG_D(PHY,"[eNB][RAPROC] Frame %d: generate_ue_ulsch_params_from_rar: subframe %d (harq_pid %d)\n",phy_vars_ue->frame_tx,subframe,harq_pid);
+  LOG_D(PHY,"[eNB][RAPROC] Frame %d: generate_ue_ulsch_params_from_rar: subframe %d (harq_pid %d)\n",proc->frame_tx,subframe,harq_pid);
 
   switch (frame_parms->N_RB_DL) {
   case 6:
@@ -269,10 +271,10 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
     }
 
     ulsch->uci_format = HLC_subband_cqi_nopmi;
-    fill_CQI(ulsch,meas,eNB_id,0,phy_vars_ue->lte_frame_parms.N_RB_DL,0, transmission_mode,phy_vars_ue->sinr_eff);
+    fill_CQI(ulsch,meas,eNB_id,0,ue->frame_parms.N_RB_DL,0, transmission_mode,ue->sinr_eff);
 
-    if (((phy_vars_ue->frame_tx % 100) == 0) || (phy_vars_ue->frame_tx < 10))
-      print_CQI(ulsch->o,ulsch->uci_format,eNB_id,phy_vars_ue->lte_frame_parms.N_RB_DL);
+    if (((proc->frame_tx % 100) == 0) || (proc->frame_tx < 10))
+      print_CQI(ulsch->o,ulsch->uci_format,eNB_id,ue->frame_parms.N_RB_DL);
   } else {
     ulsch->O_RI                                = 0;
     ulsch->O                                   = 0;
@@ -304,10 +306,10 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
 
   // initialize power control based on PRACH power
   ulsch->f_pusch = delta_PUSCH_msg2[ulsch->harq_processes[harq_pid]->TPC] +
-                   mac_xface->get_deltaP_rampup(phy_vars_ue->Mod_id,phy_vars_ue->CC_id);
+                   mac_xface->get_deltaP_rampup(ue->Mod_id,ue->CC_id);
   LOG_D(PHY,"[UE %d][PUSCH PC] Initializing f_pusch to %d dB, TPC %d (delta_PUSCH_msg2 %d dB), deltaP_rampup %d dB\n",
-        phy_vars_ue->Mod_id,ulsch->f_pusch,ulsch->harq_processes[harq_pid]->TPC,delta_PUSCH_msg2[ulsch->harq_processes[harq_pid]->TPC],
-        mac_xface->get_deltaP_rampup(phy_vars_ue->Mod_id,phy_vars_ue->CC_id));
+        ue->Mod_id,ulsch->f_pusch,ulsch->harq_processes[harq_pid]->TPC,delta_PUSCH_msg2[ulsch->harq_processes[harq_pid]->TPC],
+        mac_xface->get_deltaP_rampup(ue->Mod_id,ue->CC_id));
 
 
   //#ifdef DEBUG_RAR

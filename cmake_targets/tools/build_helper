@@ -179,7 +179,7 @@ install_nettle_from_source() {
     cd /tmp
     echo "Downloading nettle archive"
     $SUDO rm -rf /tmp/nettle-2.5.tar.gz* /tmp/nettle-2.5
-    wget https://ftp.gnu.org/gnu/nettle/nettle-2.5.tar.gz
+    wget http://ftp.nluug.nl/gnu/nettle/nettle-2.5.tar.gz
     if [ $? -ne 0 ]; then
       wget ftp://ftp.lysator.liu.se/pub/security/lsh/nettle-2.5.tar.gz
     fi
@@ -284,7 +284,9 @@ check_install_additional_tools (){
 	wvdial \
         python-numpy \
     sshpass \
-    nscd
+    nscd \
+    bc \
+    ntp
 
     $SUDO pip install paramiko
     $SUDO pip install pyroute2

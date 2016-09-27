@@ -45,6 +45,7 @@
 #include "platform_types.h"
 #include "platform_constants.h"
 #include "PHY/impl_defs_lte.h"
+#include "PHY/defs.h"
 #include "s1ap_messages_types.h"
 #ifdef CMAKER
 #include "SystemInformationBlockType2.h"
@@ -86,6 +87,9 @@ typedef struct rrh_gw_config_s {
   char     *remote_address;
   uint16_t  local_port;
   uint16_t  remote_port;
+  uint8_t   udpif4p5;
+  uint8_t   rawif4p5;
+  uint8_t   rawif5_mobipass;
   int tx_scheduling_advance;
   int tx_sample_advance;
   int iq_txshift;
@@ -126,6 +130,9 @@ typedef struct Enb_properties_s {
 
   /* Physical parameters */
   int16_t                 nb_cc;
+  eNB_func_t              cc_node_function[1+MAX_NUM_CCs];
+  eNB_timing_t            cc_node_timing[1+MAX_NUM_CCs];
+  int16_t                 cc_node_synch_ref[1+MAX_NUM_CCs];
   lte_frame_type_t        frame_type[1+MAX_NUM_CCs];
   uint8_t                 tdd_config[1+MAX_NUM_CCs];
   uint8_t                 tdd_config_s[1+MAX_NUM_CCs];

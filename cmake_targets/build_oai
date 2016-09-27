@@ -48,7 +48,7 @@ PRINT_STATS="False"
 VCD_TIMING="False"
 DEADLINE_SCHEDULER_FLAG_USER="False"
 FORCE_DEADLINE_SCHEDULER_FLAG_USER=""
-CPU_AFFINITY_FLAG_USER="True" #Only valid when lowlatecy flag is set to False
+CPU_AFFINITY_FLAG_USER="False" #Only valid when lowlatecy flag is set to False
 REL="Rel10"
 HW="None"
 TP="None"
@@ -306,9 +306,6 @@ function main() {
       if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
 	  echo_fatal "Define a local radio head (e.g. -w EXMIMO) or a transport protocol (e.g. -t ETHERNET) to communicate with a remote radio head!"
       fi
-      if [ "$HW" != "None" -a  "$TP" != "None" ] ; then
-	  echo_fatal "Currently eNB  can not support simultaniously local and remote radio heads!!"
-      fi      
       if [ "$HW" = "None" ] ; then 
 	  echo_info "No radio head has been selected (HW set to $HW)"	
       fi
@@ -333,9 +330,9 @@ function main() {
   #By default: EXMIMO: enable
   if [ "$FORCE_DEADLINE_SCHEDULER_FLAG_USER" = "" ]; then
      if [ "$HW" = "EXMIMO" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="True"
+        DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "ETHERNET" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="True"
+        DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "OAI_USRP" ] ; then 
         DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "OAI_BLADERF" ] ; then 
@@ -725,7 +722,9 @@ function main() {
 	      
 	      #add exmimo compilation
 	      #TODO EXMIMO library support
-	     
+	      compilations \
+		  $build_dir oai_exmimodevif \
+		  liboai_exmimodevif.so $dbin/liboai_exmimodevif.so.$REL
 	      echo_info "liboai_device.so is linked to EXMIMO device library"       
 	  elif [ "$HW" == "OAI_USRP" ] ; then
 	      if [ -d "/usr/include/uhd" ] ; then
