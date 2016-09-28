@@ -1060,7 +1060,7 @@ rrc_ue_process_radioResourceConfigDedicated(
 #ifdef Rel10
                              ,(PMCH_InfoList_r9_t *)NULL
 #endif
-                            );
+                             ,NULL);
 
     // Refresh SRBs
     rrc_rlc_config_asn1_req(ctxt_pP,
@@ -1200,6 +1200,15 @@ rrc_ue_process_radioResourceConfigDedicated(
 
   // Establish DRBs if present
   if (radioResourceConfigDedicated->drb_ToAddModList) {
+
+    if ( (UE_rrc_inst[ctxt_pP->module_id].defaultDRB == NULL) &&
+         (radioResourceConfigDedicated->drb_ToAddModList->list.count >= 1) ) {
+        // configure the first DRB ID as the default DRB ID
+        UE_rrc_inst[ctxt_pP->module_id].defaultDRB = malloc(sizeof(rb_id_t));
+        *UE_rrc_inst[ctxt_pP->module_id].defaultDRB = radioResourceConfigDedicated->drb_ToAddModList->list.array[0]->drb_Identity;
+        LOG_I(RRC,"[UE %d] default DRB = %d\n",ctxt_pP->module_id, *UE_rrc_inst[ctxt_pP->module_id].defaultDRB);
+      }
+
     uint8_t *kUPenc = NULL;
 
 #if defined(ENABLE_SECURITY)
@@ -1231,7 +1240,7 @@ rrc_ue_process_radioResourceConfigDedicated(
 #ifdef Rel10
                              ,(PMCH_InfoList_r9_t *)NULL
 #endif
-                            );
+                             , UE_rrc_inst[ctxt_pP->module_id].defaultDRB);
 
     // Refresh DRBs
     rrc_rlc_config_asn1_req(ctxt_pP,
@@ -1725,7 +1734,7 @@ rrc_ue_process_mobilityControlInfo(
   #ifdef Rel10
          ,NULL
   #endif
-         );
+         ,NULL);
 
   rrc_rlc_config_asn1_req(NB_eNB_INST+ue_mod_idP, frameP,0,eNB_index,
         NULL,// SRB_ToAddModList
@@ -1734,7 +1743,7 @@ rrc_ue_process_mobilityControlInfo(
   #ifdef Rel10
         ,NULL
   #endif
-        );
+        ,NULL);
    */
 
 
@@ -3906,7 +3915,7 @@ static void decode_MBSFNAreaConfiguration( module_id_t ue_mod_idP, uint8_t eNB_i
 #ifdef Rel10
                            ,&(UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index]->pmch_InfoList_r9)
 #endif
-                          );
+                           ,NULL);
 
   rrc_rlc_config_asn1_req(&ctxt,
                           NULL,// SRB_ToAddModList
