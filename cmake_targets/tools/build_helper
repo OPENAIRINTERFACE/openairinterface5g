@@ -291,7 +291,7 @@ check_install_additional_tools (){
     $SUDO pip install paramiko
     $SUDO pip install pyroute2
     $SUDO rm -fr /opt/ssh
-    $SUDO GIT_SSL_NO_VERIFY=true git clone https://gist.github.com/2190472.git /opt/ssh
+    $SUDO GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/ssh.git /opt/ssh
     
     log_netiface=$OPENAIR_DIR/cmake_targets/log/netiface_install_log.txt
     echo_info "Installing Netinterfaces package. The logfile for installation is in $log_netiface"
