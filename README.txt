@@ -7,7 +7,7 @@ The OpenAirInterface (OAI) software is composed of the following parts:
 openairinterface5g
 ├── cmake_targets: build utilities to compile (simulation, emulation and real-time platforms), and generated build files
 ├── common : some common OAI utilities, other tools can be found at openair2/UTILS
-├── COPYING
+├── LICENSE
 ├── maketags : script to generate emacs tags
 ├── openair1 : 3GPP LTE Rel-10 PHY layer + PHY RF simulation and a subset of Rel 12 Features.
 ├── openair2 :3GPP LTE Rel-10 RLC/MAC/PDCP/RRC/X2AP implementation. 
