@@ -621,7 +621,9 @@ typedef struct {
   uint8_t DLSCH_dci_size_bits;
 
   /// DCI buffer for DLSCH
-  uint8_t DLSCH_DCI[8][(MAX_DCI_SIZE_BITS>>3)+1];
+  /* rounded to 32 bits unit (actual value should be 8 due to the logic
+   * of the function generate_dci0) */
+  uint8_t DLSCH_DCI[8][(((MAX_DCI_SIZE_BITS)+31)>>5)*4];
 
   /// Number of Allocated RBs for DL after scheduling (prior to frequency allocation)
   uint16_t nb_rb[8]; // num_max_harq
@@ -645,7 +647,9 @@ typedef struct {
   uint8_t assigned_mcs_ul;
 
   /// DCI buffer for ULSCH
-  uint8_t ULSCH_DCI[8][(MAX_DCI_SIZE_BITS>>3)+1];
+  /* rounded to 32 bits unit (actual value should be 8 due to the logic
+   * of the function generate_dci0) */
+  uint8_t ULSCH_DCI[8][(((MAX_DCI_SIZE_BITS)+31)>>5)*4];
 
   /// DL DAI
   uint8_t DAI;
