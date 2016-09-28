@@ -151,7 +151,7 @@ unsigned char *parse_header(unsigned char *mac_header,
                             unsigned short tb_length)
 {
 
-  unsigned char not_done=1,num_ces=0,num_sdus=0,lcid, num_sdu_cnt;
+  unsigned char not_done=1,num_ces=0,num_cont_res = 0,num_padding = 0,num_sdus=0,lcid, num_sdu_cnt;
   unsigned char *mac_header_ptr = mac_header;
   unsigned short length,ce_len=0;
 
@@ -165,6 +165,14 @@ unsigned char *parse_header(unsigned char *mac_header,
     lcid = ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID;
 
     if (lcid < UE_CONT_RES) {
+    	//FNA: Contention Resolution check according to Annex B of 36.321
+    	// if this is for CCCH then a Contention Resolution must have been parsed before
+    	if ((lcid == 0) && (num_cont_res == 0)) {
+    		LOG_W(MAC,"[UE] Msg4 Wrong received format: CCCH received without Contention Resolution before\n");
+    		// exit parsing
+    		return NULL;
+    	}
+
       //printf("[MAC][UE] header %x.%x.%x\n",mac_header_ptr[0],mac_header_ptr[1],mac_header_ptr[2]);
       if (not_done==0) {// last MAC SDU, length is implicit
         mac_header_ptr++;
@@ -196,6 +204,7 @@ unsigned char *parse_header(unsigned char *mac_header,
       num_sdus++;
     } else { // This is a control element subheader
       if (lcid == SHORT_PADDING) {
+    	num_padding ++;
         mac_header_ptr++;
       } else {
         rx_ces[num_ces] = lcid;
@@ -205,6 +214,23 @@ unsigned char *parse_header(unsigned char *mac_header,
         if (lcid==TIMING_ADV_CMD) {
           ce_len++;
         } else if (lcid==UE_CONT_RES) {
+
+        	// FNA: check MAC Header is one of thoses defined in Annex B of 36.321
+        	// Check there is only 1 Contention Resolution
+        	if (num_cont_res) {
+        		LOG_W(MAC,"[UE] Msg4 Wrong received format: More than 1 Contention Resolution\n");
+        		// exit parsing
+        		return NULL;
+
+        	}
+
+        	// UE_CONT_RES shall never be the last subheader unless this is the only MAC subheader
+        	if ((not_done == 0) && ((num_sdus) || (num_ces > 1) || (num_padding))) {
+        		LOG_W(MAC,"[UE] Msg4 Wrong received format: Contention Resolution after num_ces=%d num_sdus=%d num_padding=%d\n",num_ces,num_sdus,num_padding);
+        		// exit parsing
+        		return NULL;
+        	}
+          num_cont_res ++;
           ce_len+=6;
         }
       }
@@ -343,6 +369,8 @@ ue_send_sdu(module_id_t module_idP,
   LOG_T(MAC,"\n");
 #endif
 
+  if (payload_ptr != NULL) {
+
   for (i=0; i<num_ce; i++) {
     //    printf("ce %d : %d\n",i,rx_ces[i]);
     switch (rx_ces[i]) {
@@ -467,6 +495,7 @@ ue_send_sdu(module_id_t module_idP,
     }
     payload_ptr+= rx_lengths[i];
   }
+  } // end if (payload_ptr != NULL)
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
   stop_meas(&UE_mac_inst[module_idP].rx_dlsch_sdu);
