@@ -48,7 +48,7 @@ PRINT_STATS="False"
 VCD_TIMING="False"
 DEADLINE_SCHEDULER_FLAG_USER="False"
 FORCE_DEADLINE_SCHEDULER_FLAG_USER=""
-CPU_AFFINITY_FLAG_USER="True" #Only valid when lowlatecy flag is set to False
+CPU_AFFINITY_FLAG_USER="False" #Only valid when lowlatecy flag is set to False
 REL="Rel10"
 HW="None"
 TP="None"
@@ -330,9 +330,9 @@ function main() {
   #By default: EXMIMO: enable
   if [ "$FORCE_DEADLINE_SCHEDULER_FLAG_USER" = "" ]; then
      if [ "$HW" = "EXMIMO" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="True"
+        DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "ETHERNET" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="True"
+        DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "OAI_USRP" ] ; then 
         DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "OAI_BLADERF" ] ; then 

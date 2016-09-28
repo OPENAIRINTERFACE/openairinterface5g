@@ -73,7 +73,7 @@ def start_ue () :
      time.sleep ( 2)
      #Now we check if ppp0 interface is up and running
      try:
-        cmd = 'sudo adb -s ' + device_id + ' shell netcfg |grep 192.'
+        cmd = 'sudo adb -s ' + device_id + ' shell netcfg |grep UP'
         status, out = commands.getstatusoutput(cmd)
         if (out == '') :
             print "Waiting for UE to connect and get IP Address..."

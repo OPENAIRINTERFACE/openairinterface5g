@@ -284,7 +284,9 @@ check_install_additional_tools (){
 	wvdial \
         python-numpy \
     sshpass \
-    nscd
+    nscd \
+    bc \
+    ntp
 
     $SUDO pip install paramiko
     $SUDO pip install pyroute2

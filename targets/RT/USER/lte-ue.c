@@ -448,7 +448,7 @@ static void *UE_thread_synch(void *arg)
  
     case pbch:
 
-      LOG_I(PHY,"[UE thread Synch] Running Initial Synch\n");
+      LOG_I(PHY,"[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
       if (initial_sync( UE, UE->mode ) == 0) {
 
         hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_tti;
@@ -493,7 +493,7 @@ static void *UE_thread_synch(void *arg)
 	    break;
 	  }
 
-	  //UE->rfdevice.trx_set_freq_func(&openair0,&openair0_cfg[0],0);
+	  UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
 	  //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
 	  UE->rfdevice.trx_stop_func(&UE->rfdevice);	  
 	  sleep(1);
@@ -801,7 +801,7 @@ static void *UE_thread_rxn_txnp4(void *arg)
 	(subframe_select( &UE->frame_parms, proc->subframe_tx ) == SF_S)) {
 
       if (UE->mode != loop_through_memory) {
-	phy_procedures_UE_TX(UE,proc,0,0,normal_txrx,no_relay);
+	phy_procedures_UE_TX(UE,proc,0,0,UE->mode,no_relay);
       }
     }
 
@@ -995,7 +995,7 @@ void *UE_thread(void *arg) {
 	if (UE->mode != loop_through_memory) {
 
 	  if (UE->no_timing_correction==0) {
-	    LOG_I(PHY,"Resynchronizing RX by %d samples\n",UE->rx_offset);
+	    LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
 	    rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
 					     &timestamp,
 					     (void**)rxdata,
@@ -1036,21 +1036,6 @@ void *UE_thread(void *arg) {
 	UE->proc.proc_rxtx[1].frame_rx++;
 	
 	for (int sf=0;sf<10;sf++) {
-	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
-	  // prepare tx buffer pointers
-	  
-	  for (i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-	    txp[i] = (void*)&UE->common_vars.txdata[i][((sf+4)%10)*UE->frame_parms.samples_per_tti];
-	  
-	  txs = UE->rfdevice.trx_write_func(&UE->rfdevice,
-					    timestamp+(4*UE->frame_parms.samples_per_tti)-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0-openair0_cfg[0].tx_sample_advance,
-					    txp,
-					    UE->frame_parms.samples_per_tti,
-					    UE->frame_parms.nb_antennas_tx,
-					    1);
-	  
-	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
-
 	  for (i=0; i<UE->frame_parms.nb_antennas_rx; i++) 
 	    rxp[i] = (void*)&rxdata[i][UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0+(sf*UE->frame_parms.samples_per_tti)];
 	  // grab signal for subframe
@@ -1062,6 +1047,24 @@ void *UE_thread(void *arg) {
 					       rxp,
 					       UE->frame_parms.samples_per_tti,
 					       UE->frame_parms.nb_antennas_rx);
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+	      // prepare tx buffer pointers
+	      
+	      for (i=0; i<UE->frame_parms.nb_antennas_tx; i++)
+		txp[i] = (void*)&UE->common_vars.txdata[i][((sf+2)%10)*UE->frame_parms.samples_per_tti];
+	      
+	      txs = UE->rfdevice.trx_write_func(&UE->rfdevice,
+						timestamp+
+						(2*UE->frame_parms.samples_per_tti) -
+						UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
+						openair0_cfg[0].tx_sample_advance,
+						txp,
+						UE->frame_parms.samples_per_tti,
+						UE->frame_parms.nb_antennas_tx,
+						1);
+	      
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
+
 	    }
 	    
 	    else {
@@ -1070,6 +1073,24 @@ void *UE_thread(void *arg) {
 					       rxp,
 					       UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0,
 					       UE->frame_parms.nb_antennas_rx);
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+	      // prepare tx buffer pointers
+	      
+	      for (i=0; i<UE->frame_parms.nb_antennas_tx; i++)
+		txp[i] = (void*)&UE->common_vars.txdata[i][((sf+2)%10)*UE->frame_parms.samples_per_tti];
+	      
+	      txs = UE->rfdevice.trx_write_func(&UE->rfdevice,
+						timestamp+
+						(2*UE->frame_parms.samples_per_tti) -
+						UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
+						openair0_cfg[0].tx_sample_advance,
+						txp,
+						UE->frame_parms.samples_per_tti - rx_off_diff,
+						UE->frame_parms.nb_antennas_tx,
+						1);
+	      
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
+
 	      // read in first symbol of next frame and adjust for timing drift
 	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
 					       &timestamp1,
