@@ -73,7 +73,6 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 \details Only a subset of phy_vars_eNb is initialized.
 @param[out] phy_vars_eNb Pointer to eNB Variables
 @param is_secondary_eNb Flag to indicate this eNB gets synch from another
-@param cooperation_flag 0 for no cooperation, 1 for Delay Diversity and 2 for Distributed Alamouti
 @param abstraction_flag 1 indicates memory should be allocated for abstracted MODEM
 @returns 0 on success
 @returns -1 if any memory allocation failed
@@ -81,7 +80,6 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
  */
 int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNb,
                      unsigned char is_secondary_eNb,
-                     unsigned char cooperation_flag,
                      unsigned char abstraction_flag);
 
 /** \brief Configure LTE_DL_FRAME_PARMS with components derived after initial synchronization (MIB decoding + primary/secondary synch).
@@ -300,6 +298,18 @@ int phy_init_secsys_eNB(PHY_VARS_eNB *phy_vars_eNb);
 void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms);
 
 //void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parm, PHY_FRAMING *phy_framing);
+
+void lte_param_init(unsigned char N_tx, 
+		    unsigned char N_rx,
+		    unsigned char transmission_mode,
+		    uint8_t extended_prefix_flag,
+		    frame_t frame_type, 
+		    uint16_t Nid_cell,
+		    uint8_t tdd_config,
+		    uint8_t N_RB_DL,
+		    uint8_t threequarter_fs,
+                    uint8_t osf,
+		    uint32_t perfect_ce);
 
 #ifdef Rel10
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,

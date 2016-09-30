@@ -238,9 +238,10 @@ uint32_t timing_advance = 0;
 uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
+
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
-int transmission_mode=1;
+//int transmission_mode=1;
 
 int16_t           glog_level         = LOG_INFO;
 int16_t           glog_verbosity     = LOG_MED;
@@ -423,10 +424,16 @@ void exit_fun(const char* s)
   oai_exit = 1;
   
   for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    if (PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func)
-      PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->rfdevice);
-    if (PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func)
-      PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->ifdevice);  
+    if (UE_flag == 0) {
+      if (PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func)
+	PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->rfdevice);
+      if (PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func)
+	PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->ifdevice);  
+    }
+    else {
+      if (PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func)
+	PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][CC_id]->rfdevice);
+    }
   }
 
 #if defined(ENABLE_ITTI)
@@ -747,7 +754,6 @@ static void get_options (int argc, char **argv)
       printf("Running with UE calibration on (LNA max), input level %d dBm\n",rx_input_level_dBm);
       break;
 
-
     case LONG_OPTION_CALIB_UE_RX_MED:
       mode = rx_calib_ue_med;
       rx_input_level_dBm = atoi(optarg);
@@ -770,6 +776,7 @@ static void get_options (int argc, char **argv)
 
     case LONG_OPTION_CALIB_PRACH_TX:
       mode = calib_prach_tx;
+      printf("Setting mode to calib_prach_tx (%d)\n",mode);
       break;
 
     case LONG_OPTION_RXGAIN:
@@ -1002,12 +1009,16 @@ static void get_options (int argc, char **argv)
       break;
 
     case 'x':
+      printf("Transmission mode should be set in config file now\n");
+      exit(-1);
+      /*
       transmission_mode = atoi(optarg);
 
       if (transmission_mode > 7) {
         printf("Transmission mode %d not supported for the moment\n",transmission_mode);
         exit(-1);
       }
+      */
       break;
 
     case 'T':
@@ -1111,13 +1122,13 @@ static void get_options (int argc, char **argv)
         frame_parms[CC_id]->N_RB_DL             =  enb_properties->properties[i]->N_RB_DL[CC_id];
         frame_parms[CC_id]->N_RB_UL             =  enb_properties->properties[i]->N_RB_DL[CC_id];
         frame_parms[CC_id]->nb_antennas_tx      =  enb_properties->properties[i]->nb_antennas_tx[CC_id];
-        frame_parms[CC_id]->nb_antennas_tx_eNB  =  enb_properties->properties[i]->nb_antennas_tx[CC_id];
+        frame_parms[CC_id]->nb_antennas_tx_eNB  =  enb_properties->properties[i]->nb_antenna_ports[CC_id];
         frame_parms[CC_id]->nb_antennas_rx      =  enb_properties->properties[i]->nb_antennas_rx[CC_id];
 
 	frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_ConfigIndex = enb_properties->properties[i]->prach_config_index[CC_id];
 	frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset  = enb_properties->properties[i]->prach_freq_offset[CC_id];
 
-	frame_parms[CC_id]->mode1_flag         = (transmission_mode == 1) ? 1 : 0;
+	frame_parms[CC_id]->mode1_flag         = (frame_parms[CC_id]->nb_antennas_tx_eNB == 1) ? 1 : 0;
 	frame_parms[CC_id]->threequarter_fs    = threequarter_fs;
 
         //} // j
@@ -1198,7 +1209,8 @@ int T_port = 2021;    /* default port to listen to to wait for the tracer */
 int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
 
-void set_default_frame_parms() {
+void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
+void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 
   int CC_id;
 
@@ -1243,6 +1255,8 @@ void set_default_frame_parms() {
   }
 
 }
+
+void init_openair0(void);
 
 void init_openair0() {
 
@@ -1511,8 +1525,9 @@ int main( int argc, char **argv )
     if (UE_flag==1) {
       frame_parms[CC_id]->nb_antennas_tx     = 1;
       frame_parms[CC_id]->nb_antennas_rx     = 1;
-      frame_parms[CC_id]->nb_antennas_tx_eNB = (transmission_mode == 1) ? 1 : 2; //initial value overwritten by initial sync later
+      frame_parms[CC_id]->nb_antennas_tx_eNB = 1; //initial value overwritten by initial sync later
     }
+
     init_ul_hopping(frame_parms[CC_id]);
     init_frame_parms(frame_parms[CC_id],1);
     //   phy_init_top(frame_parms[CC_id]);
@@ -1536,7 +1551,7 @@ int main( int argc, char **argv )
 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
-      PHY_vars_UE_g[0][CC_id] = init_lte_UE(frame_parms[CC_id], 0,abstraction_flag,transmission_mode);
+      PHY_vars_UE_g[0][CC_id] = init_lte_UE(frame_parms[CC_id], 0,abstraction_flag);
       UE[CC_id] = PHY_vars_UE_g[0][CC_id];
       printf("PHY_vars_UE_g[0][%d] = %p\n",CC_id,UE[CC_id]);
 
@@ -1560,6 +1575,7 @@ int main( int argc, char **argv )
       UE[CC_id]->UE_scan = UE_scan;
       UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
       UE[CC_id]->mode    = mode;
+      printf("UE[%d]->mode = %d\n",CC_id,mode);
 
       compute_prach_seq(&UE[CC_id]->frame_parms.prach_config_common,
                         UE[CC_id]->frame_parms.frame_type,
@@ -1583,7 +1599,7 @@ int main( int argc, char **argv )
     PHY_vars_eNB_g[0] = malloc(sizeof(PHY_VARS_eNB*));
 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      PHY_vars_eNB_g[0][CC_id] = init_lte_eNB(frame_parms[CC_id],0,frame_parms[CC_id]->Nid_cell,0,transmission_mode,abstraction_flag);
+      PHY_vars_eNB_g[0][CC_id] = init_lte_eNB(frame_parms[CC_id],0,frame_parms[CC_id]->Nid_cell,abstraction_flag);
       PHY_vars_eNB_g[0][CC_id]->CC_id = CC_id;
 
       if (phy_test==1) PHY_vars_eNB_g[0][CC_id]->mac_enabled = 0;
@@ -1781,14 +1797,16 @@ int main( int argc, char **argv )
 
   // start the main thread
   if (UE_flag == 1) init_UE(1);
-  else init_eNB(node_function,node_timing,1,eth_params,single_thread_flag);
+  else { 
+    init_eNB(node_function,node_timing,1,eth_params,single_thread_flag);
   // Sleep to allow all threads to setup
 
-  number_of_cards = 1;
-
-  for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    PHY_vars_eNB_g[0][CC_id]->rf_map.card=0;
-    PHY_vars_eNB_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
+    number_of_cards = 1;
+    
+    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_eNB_g[0][CC_id]->rf_map.card=0;
+      PHY_vars_eNB_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
+    }
   }
 
   // connect the TX/RX buffers

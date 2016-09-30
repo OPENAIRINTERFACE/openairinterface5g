@@ -188,7 +188,7 @@ void init_UE(int nb_inst) {
 
     ret = openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]);
     UE->rfdevice.host_type = BBU_HOST;
-    UE->rfdevice.type      = NONE_DEV;
+    //    UE->rfdevice.type      = NONE_DEV;
     error_code = pthread_create(&UE->proc.pthread_ue, &UE->proc.attr_ue, UE_thread, NULL);
     
     if (error_code!= 0) {
@@ -369,10 +369,7 @@ static void *UE_thread_synch(void *arg)
 
   }
 
-  if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) { 
-    LOG_E(HW,"Could not start the device\n");
-    oai_exit=1;
-  }
+
   pthread_mutex_lock(&sync_mutex);
   printf("Locked sync_mutex, waiting (UE_sync_thread)\n");
 
@@ -381,6 +378,11 @@ static void *UE_thread_synch(void *arg)
 
   pthread_mutex_unlock(&sync_mutex);
   printf("Started device, unlocked sync_mutex (UE_sync_thread)\n");
+
+  if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) { 
+    LOG_E(HW,"Could not start the device\n");
+    oai_exit=1;
+  }
 
   while (oai_exit==0) {
 
@@ -446,7 +448,7 @@ static void *UE_thread_synch(void *arg)
  
     case pbch:
 
-      LOG_I(PHY,"[UE thread Synch] Running Initial Synch\n");
+      LOG_I(PHY,"[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
       if (initial_sync( UE, UE->mode ) == 0) {
 
         hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_tti;
@@ -491,7 +493,7 @@ static void *UE_thread_synch(void *arg)
 	    break;
 	  }
 
-	  //UE->rfdevice.trx_set_freq_func(&openair0,&openair0_cfg[0],0);
+	  UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
 	  //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
 	  UE->rfdevice.trx_stop_func(&UE->rfdevice);	  
 	  sleep(1);
@@ -799,7 +801,7 @@ static void *UE_thread_rxn_txnp4(void *arg)
 	(subframe_select( &UE->frame_parms, proc->subframe_tx ) == SF_S)) {
 
       if (UE->mode != loop_through_memory) {
-	phy_procedures_UE_TX(UE,proc,0,0,normal_txrx,no_relay);
+	phy_procedures_UE_TX(UE,proc,0,0,UE->mode,no_relay);
       }
     }
 
@@ -849,10 +851,10 @@ void *UE_thread(void *arg) {
   static int UE_thread_retval;
   PHY_VARS_UE *UE = PHY_vars_UE_g[0][0];
   //  int tx_enabled = 0;
-  unsigned int rxs;
+  unsigned int rxs,txs;
   int dummy_rx[UE->frame_parms.nb_antennas_rx][UE->frame_parms.samples_per_tti] __attribute__((aligned(32)));
   openair0_timestamp timestamp,timestamp1;
-  void* rxp[2];
+  void* rxp[2], *txp[2];
 
 #ifdef NAS_UE
   MessageDef *message_p;
@@ -861,6 +863,7 @@ void *UE_thread(void *arg) {
   int start_rx_stream = 0;
   int rx_off_diff = 0;
   int rx_correction_timer = 0;
+  int i;
 
 #ifdef DEADLINE_SCHEDULER
 
@@ -941,7 +944,14 @@ void *UE_thread(void *arg) {
 					   rxp,
 					   UE->frame_parms.samples_per_tti*10,
 					   UE->frame_parms.nb_antennas_rx);
+
+	  
+	  if (rxs!=UE->frame_parms.samples_per_tti*10) {
+	    exit_fun("problem in rx");
+	    return &UE_thread_retval;
+	  }
 	}
+
 	instance_cnt_synch = ++UE->proc.instance_cnt_synch;
 	if (instance_cnt_synch == 0) {
 	  if (pthread_cond_signal(&UE->proc.cond_synch) != 0) {
@@ -968,6 +978,12 @@ void *UE_thread(void *arg) {
 					     rxp,
 					     UE->frame_parms.samples_per_tti,
 					     UE->frame_parms.nb_antennas_rx);
+
+	    if (rxs!=UE->frame_parms.samples_per_tti){
+	      exit_fun("problem in rx");
+	      return &UE_thread_retval;
+	    }
+
 	  }
 	}
       }
@@ -979,7 +995,7 @@ void *UE_thread(void *arg) {
 	if (UE->mode != loop_through_memory) {
 
 	  if (UE->no_timing_correction==0) {
-	    LOG_I(PHY,"Resynchronizing RX by %d samples\n",UE->rx_offset);
+	    LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
 	    rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
 					     &timestamp,
 					     (void**)rxdata,
@@ -1018,9 +1034,9 @@ void *UE_thread(void *arg) {
       else {
 	UE->proc.proc_rxtx[0].frame_rx++;
 	UE->proc.proc_rxtx[1].frame_rx++;
-
+	
 	for (int sf=0;sf<10;sf++) {
-	  for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++) 
+	  for (i=0; i<UE->frame_parms.nb_antennas_rx; i++) 
 	    rxp[i] = (void*)&rxdata[i][UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0+(sf*UE->frame_parms.samples_per_tti)];
 	  // grab signal for subframe
 	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
@@ -1031,20 +1047,56 @@ void *UE_thread(void *arg) {
 					       rxp,
 					       UE->frame_parms.samples_per_tti,
 					       UE->frame_parms.nb_antennas_rx);
-	    }
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+	      // prepare tx buffer pointers
+	      
+	      for (i=0; i<UE->frame_parms.nb_antennas_tx; i++)
+		txp[i] = (void*)&UE->common_vars.txdata[i][((sf+2)%10)*UE->frame_parms.samples_per_tti];
+	      
+	      txs = UE->rfdevice.trx_write_func(&UE->rfdevice,
+						timestamp+
+						(2*UE->frame_parms.samples_per_tti) -
+						UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
+						openair0_cfg[0].tx_sample_advance,
+						txp,
+						UE->frame_parms.samples_per_tti,
+						UE->frame_parms.nb_antennas_tx,
+						1);
+	      
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
 
+	    }
+	    
 	    else {
 	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
 					       &timestamp,
 					       rxp,
 					       UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0,
 					       UE->frame_parms.nb_antennas_rx);
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+	      // prepare tx buffer pointers
+	      
+	      for (i=0; i<UE->frame_parms.nb_antennas_tx; i++)
+		txp[i] = (void*)&UE->common_vars.txdata[i][((sf+2)%10)*UE->frame_parms.samples_per_tti];
+	      
+	      txs = UE->rfdevice.trx_write_func(&UE->rfdevice,
+						timestamp+
+						(2*UE->frame_parms.samples_per_tti) -
+						UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
+						openair0_cfg[0].tx_sample_advance,
+						txp,
+						UE->frame_parms.samples_per_tti - rx_off_diff,
+						UE->frame_parms.nb_antennas_tx,
+						1);
+	      
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
+
 	      // read in first symbol of next frame and adjust for timing drift
 	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
-					   &timestamp1,
-					   (void**)rxdata,
-					   UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0 - rx_off_diff,
-					   UE->frame_parms.nb_antennas_rx);
+					       &timestamp1,
+					       (void**)rxdata,
+					       UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0 - rx_off_diff,
+					       UE->frame_parms.nb_antennas_rx);
 	      rx_off_diff = 0;
 	    }
 	  }
@@ -1065,12 +1117,12 @@ void *UE_thread(void *arg) {
 	  proc->frame_tx = proc->frame_rx + ((proc->subframe_rx>5)?1:0);
 	  proc->timestamp_tx = timestamp+(4*UE->frame_parms.samples_per_tti)-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
 
-
+	  /*
 	  if (sf != (timestamp/UE->frame_parms.samples_per_tti)%10) {
 	    LOG_E(PHY,"steady-state UE_thread error : frame_rx %d, subframe_rx %d, frame_tx %d, subframe_tx %d, rx subframe %d\n",proc->frame_rx,proc->subframe_rx,proc->frame_tx,proc->subframe_tx,(timestamp/UE->frame_parms.samples_per_tti)%10);
 	    exit(-1);
 	  }
-
+	  */
 	  if (pthread_mutex_unlock(&proc->mutex_rxtx) != 0) {
 	    LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE RX\n" );
 	    exit_fun("nothing to add");

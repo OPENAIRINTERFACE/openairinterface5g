@@ -262,10 +262,13 @@ help (void)
 #else
   printf ("-W [Rohde&Schwarz SMBV100A functions disabled. Recompile with SMBV=1]\n");
 #endif
-  printf ("-x Set the transmission mode (1,2,5,6 supported for now)\n");
+  printf ("-x deprecated. Set the transmission mode in config file!\n");
+  printf ("-y Set the number of receive antennas at the UE (1 or 2)\n");
   printf ("-Y Set the global log verbosity (none, low, medium, high, full) \n");
   printf ("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
   printf ("-Z Reserved\n");
+  printf ("--xforms Activate the grapical scope\n");
+
 #if T_TRACER
   printf ("--T_port [port]    use given port\n");
   printf ("--T_nowait         don't wait for tracer, start immediately\n");
@@ -618,10 +621,20 @@ l2l1_task (void *args_p)
   }
 
 #endif
+  module_id_t enb_id;
+  module_id_t UE_id;
+  for (enb_id = 0; enb_id < NB_eNB_INST; enb_id++)
+    mac_xface->mrbch_phy_sync_failure (enb_id, 0, enb_id);
+  
+  if (abstraction_flag == 1) {
+    for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
+      mac_xface->dl_phy_sync_success (UE_id, 0, 0,1);   //UE_id%NB_eNB_INST);
+  }
+  
   start_meas (&oaisim_stats);
 
   for (frame = 0;
-       (l2l1_state != L2L1_TERMINATED) &&
+       (l2l1_state != L2L1_TERMINATED) && 
 	 ((oai_emulation.info.n_frames_flag == 0) ||
 	  (frame < oai_emulation.info.n_frames));
        frame++) {
@@ -685,8 +698,7 @@ l2l1_task (void *args_p)
     //oai_emulation.info.time_ms += 1;
     oai_emulation.info.time_s += 0.01; // emu time in s, each frame lasts for 10 ms // JNote: TODO check the coherency of the time and frame (I corrected it to 10 (instead of 0.01)
 
-    update_omg (frame); // frequency is defined in the omg_global params configurable by the user
-
+     update_omg (frame); // frequency is defined in the omg_global params configurable by the user
     update_omg_ocm ();
 
 #ifdef OPENAIR2
@@ -737,7 +749,7 @@ l2l1_task (void *args_p)
               (subframe_UE_mask_local == ((1<<NB_UE_INST)-1)))
              all_done=1;
           else
-             usleep(500);
+	    usleep(500);
         }
 
         //clear subframe masks for next round
@@ -752,12 +764,29 @@ l2l1_task (void *args_p)
               < (oai_emulation.info.first_enb_local
                  + oai_emulation.info.nb_enb_local));
              eNB_inst++) {
-             current_eNB_rx_timestamp[eNB_inst][CC_id] += PHY_vars_eNB_g[eNB_inst][CC_id]->frame_parms.samples_per_tti;
+	  
+	  current_eNB_rx_timestamp[eNB_inst][CC_id] += PHY_vars_eNB_g[eNB_inst][CC_id]->frame_parms.samples_per_tti;
         }
         for (UE_inst = 0; UE_inst<NB_UE_INST;UE_inst++) {
-             current_UE_rx_timestamp[UE_inst][CC_id] += PHY_vars_UE_g[UE_inst][CC_id]->frame_parms.samples_per_tti;
+	  current_UE_rx_timestamp[UE_inst][CC_id] += PHY_vars_UE_g[UE_inst][CC_id]->frame_parms.samples_per_tti;
         }
 
+
+	if (oai_emulation.info.cli_start_enb[eNB_inst] != 0) {
+	  T(T_ENB_MASTER_TICK, T_INT(eNB_inst), T_INT(frame % 1024), T_INT(slot/2));
+	  /*
+	  LOG_D(EMU,
+		"PHY procedures eNB %d for frame %d, slot %d (subframe TX %d, RX %d) TDD %d/%d Nid_cell %d\n",
+		eNB_inst,
+		frame%MAX_FRAME_NUMBER,
+		2*sf,
+		PHY_vars_eNB_g[eNB_inst][0]->proc[slot >> 1].subframe_tx,
+		PHY_vars_eNB_g[eNB_inst][0]->proc[slot >> 1].subframe_rx,
+		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.frame_type,
+		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.tdd_config,
+		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.Nid_cell);
+	  */
+	}
 
         for (eNB_inst = oai_emulation.info.first_enb_local;
              (eNB_inst
@@ -822,8 +851,137 @@ l2l1_task (void *args_p)
         log_set_instance_type (LOG_INSTANCE_UE);
 #endif
 
+
 	/*
 	clear_UE_transport_info (oai_emulation.info.nb_ue_local);
+          clear_UE_transport_info (oai_emulation.info.nb_ue_local);
+
+        for (UE_inst = oai_emulation.info.first_ue_local;
+             (UE_inst < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local));
+             UE_inst++) {
+          if (oai_emulation.info.cli_start_ue[UE_inst] != 0) {
+#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
+
+#else
+
+            if (frame >= (UE_inst * 20)) // activate UE only after 20*UE_id frames so that different UEs turn on separately
+#endif
+            {
+              LOG_D(EMU,
+                    "PHY procedures UE %d for frame %d, slot %d (subframe TX %d, RX %d)\n",
+                    UE_inst, frame % MAX_FRAME_NUMBER, slot, next_slot >> 1,
+                    last_slot >> 1);
+
+              if (PHY_vars_UE_g[UE_inst][0]->UE_mode[0]
+                  != NOT_SYNCHED) {
+                if (frame > 0) {
+                  PHY_vars_UE_g[UE_inst][0]->frame_rx = frame % MAX_FRAME_NUMBER;
+                  PHY_vars_UE_g[UE_inst][0]->slot_rx =  last_slot;
+                  PHY_vars_UE_g[UE_inst][0]->slot_tx = next_slot;
+
+                  if (next_slot > 1)
+                    PHY_vars_UE_g[UE_inst][0]->frame_tx = frame % MAX_FRAME_NUMBER;
+                  else
+                    PHY_vars_UE_g[UE_inst][0]->frame_tx = (frame + 1) % MAX_FRAME_NUMBER;
+#ifdef OPENAIR2
+                  //Application
+                  update_otg_UE (UE_inst, oai_emulation.info.time_ms);
+
+                  //Access layer
+		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE_inst, 0, ENB_FLAG_NO, NOT_A_RNTI, frame % MAX_FRAME_NUMBER, next_slot);
+                  pdcp_run (&ctxt);
+#endif
+
+                  for (CC_id = 0; CC_id < MAX_NUM_CCs;
+                       CC_id++) {
+                    phy_procedures_UE_lte (
+                      PHY_vars_UE_g[UE_inst][CC_id],
+                      0, abstraction_flag,
+                      normal_txrx, no_relay,
+                      NULL);
+                  }
+
+                  ue_data[UE_inst]->tx_power_dBm =
+                    PHY_vars_UE_g[UE_inst][0]->tx_power_dBm;
+                }
+              } else {
+                if (abstraction_flag == 1) {
+                  LOG_E(EMU,
+                        "sync not supported in abstraction mode (UE%d,mode%d)\n",
+                        UE_inst,
+                        PHY_vars_UE_g[UE_inst][0]->UE_mode[0]);
+                  exit (-1);
+                }
+
+                if ((frame > 0)
+                    && (last_slot
+                        == (LTE_SLOTS_PER_FRAME
+                            - 2))) {
+                  initial_sync (PHY_vars_UE_g[UE_inst][0],
+                                normal_txrx);
+
+                }
+              }
+
+#ifdef PRINT_STATS
+
+              if(last_slot==2 && frame%10==0) {
+                if (UE_stats_th[UE_inst]) {
+                  fprintf(UE_stats_th[UE_inst],"%d %d\n",frame%MAX_FRAME_NUMBER, PHY_vars_UE_g[UE_inst][0]->bitrate[0]/1000);
+                }
+              }
+
+              if (UE_stats[UE_inst]) {
+                len = dump_ue_stats (PHY_vars_UE_g[UE_inst][0], stats_buffer, 0, normal_txrx, 0);
+                rewind (UE_stats[UE_inst]);
+                fwrite (stats_buffer, 1, len, UE_stats[UE_inst]);
+                fflush(UE_stats[UE_inst]);
+              }
+
+#endif
+            }
+          }
+        }
+
+#ifdef Rel10
+
+        for (RN_id=oai_emulation.info.first_rn_local;
+             RN_id<oai_emulation.info.first_rn_local+oai_emulation.info.nb_rn_local;
+             RN_id++) {
+          // UE id and eNB id of the RN
+          UE_inst= oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local + RN_id;// NB_UE_INST + RN_id
+          eNB_inst= oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local + RN_id;// NB_eNB_INST + RN_id
+
+          // currently only works in FDD
+          if (oai_emulation.info.eMBMS_active_state == 4) {
+            r_type = multicast_relay;
+            //LOG_I(EMU,"Activating the multicast relaying\n");
+          } else {
+            LOG_E(EMU,"Not supported eMBMS option when relaying is enabled %d\n", r_type);
+            exit(-1);
+          }
+
+          PHY_vars_RN_g[RN_id]->frame = frame % MAX_FRAME_NUMBER;
+
+          if ( oai_emulation.info.frame_type == 0) {
+            // RN == UE
+            if (frame>0) {
+              if (PHY_vars_UE_g[UE_inst][0]->UE_mode[0] != NOT_SYNCHED) {
+                LOG_D(EMU,"[RN %d] PHY procedures UE %d for frame %d, slot %d (subframe TX %d, RX %d)\n",
+                      RN_id, UE_inst, frame, slot, next_slot >> 1,last_slot>>1);
+                PHY_vars_UE_g[UE_inst][0]->frame_rx = frame % MAX_FRAME_NUMBER;
+                PHY_vars_UE_g[UE_inst][0]->slot_rx = last_slot;
+                PHY_vars_UE_g[UE_inst][0]->slot_tx = next_slot;
+
+                if (next_slot>1) PHY_vars_UE_g[UE_inst][0]->frame_tx = frame % MAX_FRAME_NUMBER;
+                else PHY_vars_UE_g[UE_inst][0]->frame_tx = (frame+1) % MAX_FRAME_NUMBER;
+
+                phy_procedures_UE_lte (PHY_vars_UE_g[UE_inst][0], 0, abstraction_flag,normal_txrx,
+                                       r_type, PHY_vars_RN_g[RN_id]);
+              } else if (last_slot == (LTE_SLOTS_PER_FRAME-2)) {
+                initial_sync(PHY_vars_UE_g[UE_inst][0],normal_txrx);
+              }
+            }
 
         emu_transport (frame % MAX_FRAME_NUMBER, sf<<1, ((sf+4)%10)<<1, subframe_select(&PHY_vars_eNB_g[0][0]->frame_parms,sf),
                        oai_emulation.info.frame_type[0], ethernet_flag);
@@ -919,6 +1077,7 @@ l2l1_task (void *args_p)
     
 	stop_meas (&oaisim_stats_f);
       } // SUBFRAME INNER PART
+
 
     }
   
@@ -1668,7 +1827,7 @@ oai_shutdown (void)
 	  free(txdata);
 	  #endif
 	*/
-
+	/*
 	for (int i = 0; i < 2; i++) {
 	  free (s_re[i]);
 	  free (s_im[i]);
@@ -1683,7 +1842,7 @@ oai_shutdown (void)
 	s_re = 0;
 	s_im = 0;
 	r_re = 0;
-	r_im = 0;
+	r_im = 0;*/
 
 	lte_sync_time_free ();
       }

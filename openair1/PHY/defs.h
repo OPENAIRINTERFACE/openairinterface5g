@@ -222,6 +222,21 @@ typedef struct {
   /// scheduling parameters for RXn-TXnp4 thread
   struct sched_param sched_param_rxtx;
 } eNB_rxtx_proc_t;
+
+typedef struct {
+  struct PHY_VARS_eNB_s *eNB;
+  int UE_id;
+  int harq_pid;
+  int llr8_flag;
+  int ret;
+} td_params;
+
+typedef struct {
+  struct PHY_VARS_eNB_s *eNB;
+  LTE_eNB_DLSCH_t *dlsch;
+  int G;
+} te_params;
+
 /// Context data structure for eNB subframe processing
 typedef struct eNB_proc_t_s {
   /// Component Carrier index
@@ -240,6 +255,10 @@ typedef struct eNB_proc_t_s {
   int frame_prach;
   /// \internal This variable is protected by \ref mutex_fep.
   int instance_cnt_fep;
+  /// \internal This variable is protected by \ref mutex_td.
+  int instance_cnt_td;
+  /// \internal This variable is protected by \ref mutex_te.
+  int instance_cnt_te;
   /// \brief Instance count for FH processing thread.
   /// \internal This variable is protected by \ref mutex_FH.
   int instance_cnt_FH;
@@ -260,6 +279,10 @@ typedef struct eNB_proc_t_s {
   int first_tx;
   /// pthread attributes for parallel fep thread
   pthread_attr_t attr_fep;
+  /// pthread attributes for parallel turbo-decoder thread
+  pthread_attr_t attr_td;
+  /// pthread attributes for parallel turbo-encoder thread
+  pthread_attr_t attr_te;
   /// pthread attributes for FH processing thread
   pthread_attr_t attr_FH;
   /// pthread attributes for single eNB processing thread
@@ -270,6 +293,10 @@ typedef struct eNB_proc_t_s {
   pthread_attr_t attr_asynch_rxtx;
   /// scheduling parameters for parallel fep thread
   struct sched_param sched_param_fep;
+  /// scheduling parameters for parallel turbo-decoder thread
+  struct sched_param sched_param_td;
+  /// scheduling parameters for parallel turbo-encoder thread
+  struct sched_param sched_param_te;
   /// scheduling parameters for FH thread
   struct sched_param sched_param_FH;
   /// scheduling parameters for single eNB thread
@@ -280,10 +307,18 @@ typedef struct eNB_proc_t_s {
   struct sched_param sched_param_asynch_rxtx;
   /// pthread structure for parallel fep thread
   pthread_t pthread_fep;
+  /// pthread structure for parallel turbo-decoder thread
+  pthread_t pthread_td;
+  /// pthread structure for parallel turbo-encoder thread
+  pthread_t pthread_te;
   /// pthread structure for PRACH thread
   pthread_t pthread_prach;
   /// condition variable for parallel fep thread
   pthread_cond_t cond_fep;
+  /// condition variable for parallel turbo-decoder thread
+  pthread_cond_t cond_td;
+  /// condition variable for parallel turbo-encoder thread
+  pthread_cond_t cond_te;
   /// condition variable for FH thread
   pthread_cond_t cond_FH;
   /// condition variable for PRACH processing thread;
@@ -292,12 +327,20 @@ typedef struct eNB_proc_t_s {
   pthread_cond_t cond_asynch_rxtx;
   /// mutex for parallel fep thread
   pthread_mutex_t mutex_fep;
+  /// mutex for parallel turbo-decoder thread
+  pthread_mutex_t mutex_td;
+  /// mutex for parallel turbo-encoder thread
+  pthread_mutex_t mutex_te;
   /// mutex for FH
   pthread_mutex_t mutex_FH;
   /// mutex for PRACH thread
   pthread_mutex_t mutex_prach;
   /// mutex for asynch RX/TX thread
   pthread_mutex_t mutex_asynch_rxtx;
+  /// parameters for turbo-decoding worker thread
+  td_params tdp;
+  /// parameters for turbo-encoding worker thread
+  te_params tep;
   /// set of scheduling variables RXn-TXnp4 threads
   eNB_rxtx_proc_t proc_rxtx[2];
   /// number of slave threads
@@ -378,6 +421,8 @@ typedef struct PHY_VARS_eNB_s {
   int                  abstraction_flag;
   void                 (*do_prach)(struct PHY_VARS_eNB_s *eNB);
   void                 (*fep)(struct PHY_VARS_eNB_s *eNB);
+  int                  (*td)(struct PHY_VARS_eNB_s *eNB,int UE_id,int harq_pid,int llr8_flag);
+  int                  (*te)(struct PHY_VARS_eNB_s *,uint8_t *,uint8_t,LTE_eNB_DLSCH_t *,int,uint8_t,time_stats_t *,time_stats_t *,time_stats_t *);
   void                 (*proc_uespec_rx)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc,const relaying_type_t r_type);
   void                 (*proc_tx)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type,PHY_VARS_RN *rn);
   void                 (*tx_fh)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc);
@@ -839,6 +884,69 @@ typedef struct {
 
 } PHY_VARS_UE;
 
+void exit_fun(const char* s);
+
+static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
+
+  if (pthread_mutex_lock(mutex) != 0) {
+    LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
+    exit_fun("nothing to add");
+    return(-1);
+  }
+  
+  while (*instance_cnt < 0) {
+    // most of the time the thread is waiting here
+    // proc->instance_cnt_rxtx is -1
+    pthread_cond_wait(cond,mutex); // this unlocks mutex_rxtx while waiting and then locks it again
+  }
+
+  if (pthread_mutex_unlock(mutex) != 0) {
+    LOG_E(PHY,"[SCHED][eNB] error unlocking mutex for %s\n",name);
+    exit_fun("nothing to add");
+    return(-1);
+  }
+  return(0);
+}
+
+static inline int wait_on_busy_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
+
+  if (pthread_mutex_lock(mutex) != 0) {
+    LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
+    exit_fun("nothing to add");
+    return(-1);
+  }
+  
+  while (*instance_cnt == 0) {
+    // most of the time the thread will skip this
+    // waits only if proc->instance_cnt_rxtx is 0
+    pthread_cond_wait(cond,mutex); // this unlocks mutex_rxtx while waiting and then locks it again
+  }
+
+  if (pthread_mutex_unlock(mutex) != 0) {
+    LOG_E(PHY,"[SCHED][eNB] error unlocking mutex for %s\n",name);
+    exit_fun("nothing to add");
+    return(-1);
+  }
+  return(0);
+}
+
+static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *name) {
+
+  if (pthread_mutex_lock(mutex) != 0) {
+    LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
+    exit_fun("nothing to add");
+    return(-1);
+  }
+  
+  *instance_cnt=*instance_cnt-1;
+  
+  if (pthread_mutex_unlock(mutex) != 0) {
+    LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for %s\n",name);
+    exit_fun("nothing to add");
+    return(-1);
+  }
+  return(0);
+}
 
 
 #include "PHY/INIT/defs.h"

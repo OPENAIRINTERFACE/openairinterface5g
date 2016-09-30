@@ -143,7 +143,7 @@ typedef struct {
   /// downlink power offset field
   uint8_t dl_power_off;
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
-  uint8_t e[MAX_NUM_CHANNEL_BITS];
+  uint8_t e[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
   /// Turbo-code outputs (36-212 V8.6 2009-03, p.12
   uint8_t *d[MAX_NUM_DLSCH_SEGMENTS];//[(96+3+(3*6144))];
   /// Sub-block interleaver outputs (36-212 V8.6 2009-03, p.16-17)
@@ -407,7 +407,7 @@ typedef struct {
   /// coded RI bits
   int16_t q_RI[MAX_RI_PAYLOAD];
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
-  int16_t e[MAX_NUM_CHANNEL_BITS];
+  int16_t e[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
   /// Temporary h sequence to flag PUSCH_x/PUSCH_y symbols which are not scrambled
   uint8_t h[MAX_NUM_CHANNEL_BITS];
   /// Pointer to the payload

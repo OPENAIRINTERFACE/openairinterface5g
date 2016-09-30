@@ -60,7 +60,6 @@ void fill_dci(DCI_PDU *DCI_pdu,PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 
   int subframe = proc->subframe_tx;
 
-  LTE_eNB_DLSCH_t *DLSCH_ptr = eNB->dlsch[0][0];
 
   /*
     uint32_t rand = taus();

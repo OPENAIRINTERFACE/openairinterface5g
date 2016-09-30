@@ -291,10 +291,10 @@ mac_rrc_data_req(
 
 #endif //Rel10
   } else {  //This is an UE
-#ifdef DEBUG_RRC
+
     LOG_D(RRC,"[UE %d] Frame %d Filling CCCH SRB_ID %d\n",Mod_idP,frameP,Srb_id);
     LOG_D(RRC,"[UE %d] Frame %d buffer_pP status %d,\n",Mod_idP,frameP, UE_rrc_inst[Mod_idP].Srb0[eNB_index].Tx_buffer.payload_size);
-#endif
+
 
     if( (UE_rrc_inst[Mod_idP].Srb0[eNB_index].Tx_buffer.payload_size > 0) ) {
 
@@ -601,14 +601,14 @@ rrc_data_ind(
   rb_id_t    DCCH_index = Srb_id;
 
   if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
-    LOG_N(RRC, "[UE %x] Frame %d: received a DCCH %d message on SRB %d with Size %d from eNB ???\n",
-          ctxt_pP->module_id, ctxt_pP->frame, DCCH_index,Srb_id-1,sdu_sizeP);
+    LOG_N(RRC, "[UE %x] Frame %d: received a DCCH %d message on SRB %d with Size %d from eNB %d\n",
+          ctxt_pP->module_id, ctxt_pP->frame, DCCH_index,Srb_id,sdu_sizeP,  ctxt_pP->eNB_index);
   } else {
     LOG_N(RRC, "[eNB %d] Frame %d: received a DCCH %d message on SRB %d with Size %d from UE %x\n",
           ctxt_pP->module_id,
           ctxt_pP->frame,
           DCCH_index,
-          Srb_id-1,
+          Srb_id,
           sdu_sizeP,
           ctxt_pP->rnti);
   }
@@ -660,7 +660,7 @@ void rrc_in_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_index)
 #if defined(ENABLE_ITTI)
   {
     MessageDef *message_p;
-
+    //LOG_I(RRC,"sending a message to task_mac_ue\n");
     message_p = itti_alloc_new_message (TASK_MAC_UE, RRC_MAC_IN_SYNC_IND);
     RRC_MAC_IN_SYNC_IND (message_p).frame = frameP;
     RRC_MAC_IN_SYNC_IND (message_p).enb_index = eNB_index;

@@ -64,16 +64,16 @@ void rf_rx(double **r_re,
            double IQ_imb_dB,
            double IQ_phase);
 
-void rf_rx_simple(double r_re[2][30720],
-                  double r_im[2][30720],
+void rf_rx_simple(double *r_re[2],
+                  double *r_im[2],
                   unsigned int nb_rx_antennas,
                   unsigned int length,
                   double s_time,
                   double rx_gain_dB);
 
 
-void adc(double r_re[2][30720],
-         double r_im[2][30720],
+void adc(double *r_re[2],
+         double *r_im[2],
          unsigned int input_offset,
          unsigned int output_offset,
          int **output,
@@ -81,8 +81,8 @@ void adc(double r_re[2][30720],
          unsigned int length,
          unsigned char B);
 
-void dac(double s_re[2][30720],
-         double s_im[2][30720],
+void dac(double *s_re[2],
+         double *s_im[2],
          int **input,
          unsigned int input_offset,
          unsigned int nb_tx_antennas,
@@ -92,8 +92,8 @@ void dac(double s_re[2][30720],
          unsigned int meas_length,
          unsigned int meas_offset);
 
-double dac_fixed_gain(double s_re[2][30720],
-                      double s_im[2][30720],
+double dac_fixed_gain(double *s_re[2],
+                      double *s_im[2],
                       int **input,
                       unsigned int input_offset,
                       unsigned int nb_tx_antennas,

@@ -187,6 +187,9 @@ static void configure_rrc(uint32_t enb_id, const Enb_properties_array_t *enb_pro
     RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n310[CC_id]               = enb_properties->properties[enb_id]->ue_TimersAndConstants_n310[CC_id];
     RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t311[CC_id]               = enb_properties->properties[enb_id]->ue_TimersAndConstants_t311[CC_id];
     RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n311[CC_id]               = enb_properties->properties[enb_id]->ue_TimersAndConstants_n311[CC_id];
+
+    RRC_CONFIGURATION_REQ (msg_p).ue_TransmissionMode[CC_id]                      = enb_properties->properties[enb_id]->ue_TransmissionMode[CC_id];
+
   }
 
   itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
@@ -254,6 +257,8 @@ static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end, con
       addr.s_addr = enb_properties->properties[enb_id]->enb_ipv4_address_for_S1_MME;
       str = inet_ntoa(addr);
       strcpy(s1ap_register_eNB->enb_ip_address.ipv4_address, str);
+
+      LOG_I(ENB_APP,"[eNB %d] eNB_app_register for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));
 
       itti_send_msg_to_task (TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
 

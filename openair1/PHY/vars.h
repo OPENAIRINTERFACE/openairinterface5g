@@ -151,6 +151,10 @@ char eNB_functions[6][20]={"eNodeB_3GPP","eNodeB_3GPP_BBU","NGFI_RCC_IF4p5","NGF
 char eNB_timing[2][20]={"synch_to_ext_device","synch_to_other"};
 #endif
 
+/// lookup table for unscrambling in RX
+int16_t unscrambling_lut[65536*16] __attribute__((aligned(32)));
+/// lookup table for scrambling in TX
+uint8_t scrambling_lut[65536*16] __attribute__((aligned(32)));
 
 
 #endif /*__PHY_VARS_H__ */

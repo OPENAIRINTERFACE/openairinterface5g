@@ -182,10 +182,11 @@ int allocate_REs_in_RB_no_pilots_16QAM_siso(LTE_DL_FRAME_PARMS *frame_parms,
     }
   }
   else {
+    // 1st half of PRB   
     for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset,re=0; 
 	 re<6; 
 	 re++,x0p+=4,tti_offset++) {
-      
+       
       qam16_table_offset_re=TWO[x0p[0]];
       qam16_table_offset_im=TWO[x0p[1]];
       qam16_table_offset_re+=x0p[2];
@@ -193,7 +194,7 @@ int allocate_REs_in_RB_no_pilots_16QAM_siso(LTE_DL_FRAME_PARMS *frame_parms,
       ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qam16_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qam16_table_offset_im];
     }
-
+    // 2nd half of PRB   
     for (tti_offset=symbol_offset+re_offset-frame_parms->ofdm_symbol_size+7; 
 	 re<12; 
 	 re++,x0p+=4,tti_offset++) {
@@ -325,47 +326,74 @@ int allocate_REs_in_RB_no_pilots_64QAM_siso(LTE_DL_FRAME_PARMS *frame_parms,
 
   if (skip_dc == 0) {
 
+    x0p=&x0[*jj],tti_offset=symbol_offset+re_offset;
 
-    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset,re=0; 
+    /*    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset,re=0; 
 	 re<12; 
-	 re+=4,x0p+=24,tti_offset+=4) {
+	 re+=4,x0p+=24,tti_offset+=4) {*/
       
-      qam64_table_offset_re=FOUR[x0p[0]];
-      qam64_table_offset_im=FOUR[x0p[1]];
-      qam64_table_offset_re+=TWO[x0p[2]];
-      qam64_table_offset_im+=TWO[x0p[3]];
-      qam64_table_offset_re+=x0p[4];
-      qam64_table_offset_im+=x0p[5];
+      qam64_table_offset_re=(x0p[0]<<2)|(x0p[2]<<1)|x0p[4];
+      qam64_table_offset_im=(x0p[1]<<2)|(x0p[3]<<1)|x0p[5];
       ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qam64_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qam64_table_offset_im];
 
-      qam64_table_offset_re=FOUR[x0p[6]];
-      qam64_table_offset_im=FOUR[x0p[7]];
-      qam64_table_offset_re+=TWO[x0p[8]];
-      qam64_table_offset_im+=TWO[x0p[9]];
-      qam64_table_offset_re+=x0p[10];
-      qam64_table_offset_im+=x0p[11];
+      qam64_table_offset_re=(x0p[6]<<2)|(x0p[8]<<1)|x0p[10];
+      qam64_table_offset_im=(x0p[7]<<2)|(x0p[9]<<1)|x0p[11];
       ((int16_t *)&txdataF[0][tti_offset])[2]=qam_table_s0[qam64_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[3]=qam_table_s0[qam64_table_offset_im];
 
-      qam64_table_offset_re=FOUR[x0p[12]];
-      qam64_table_offset_im=FOUR[x0p[13]];
-      qam64_table_offset_re+=TWO[x0p[14]];
-      qam64_table_offset_im+=TWO[x0p[15]];
-      qam64_table_offset_re+=x0p[16];
-      qam64_table_offset_im+=x0p[17];
+      qam64_table_offset_re=(x0p[12]<<2)|(x0p[14]<<1)|x0p[16];
+      qam64_table_offset_im=(x0p[13]<<2)|(x0p[15]<<1)|x0p[17];
       ((int16_t *)&txdataF[0][tti_offset])[4]=qam_table_s0[qam64_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[5]=qam_table_s0[qam64_table_offset_im];
 
-      qam64_table_offset_re=FOUR[x0p[18]];
-      qam64_table_offset_im=FOUR[x0p[19]];
-      qam64_table_offset_re+=TWO[x0p[20]];
-      qam64_table_offset_im+=TWO[x0p[21]];
-      qam64_table_offset_re+=x0p[22];
-      qam64_table_offset_im+=x0p[23];
+      qam64_table_offset_re=(x0p[18]<<2)|(x0p[20]<<1)|x0p[22];
+      qam64_table_offset_im=(x0p[19]<<2)|(x0p[21]<<1)|x0p[23];
       ((int16_t *)&txdataF[0][tti_offset])[6]=qam_table_s0[qam64_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[7]=qam_table_s0[qam64_table_offset_im];
-    }
+
+      qam64_table_offset_re=(x0p[24]<<2)|(x0p[26]<<1)|x0p[28];
+      qam64_table_offset_im=(x0p[25]<<2)|(x0p[27]<<1)|x0p[29];
+      ((int16_t *)&txdataF[0][tti_offset])[8]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[9]=qam_table_s0[qam64_table_offset_im];
+
+      qam64_table_offset_re=(x0p[30]<<2)|(x0p[32]<<1)|x0p[34];
+      qam64_table_offset_im=(x0p[31]<<2)|(x0p[33]<<1)|x0p[35];
+      ((int16_t *)&txdataF[0][tti_offset])[10]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[11]=qam_table_s0[qam64_table_offset_im];
+
+      qam64_table_offset_re=(x0p[36]<<2)|(x0p[38]<<1)|x0p[40];
+      qam64_table_offset_im=(x0p[37]<<2)|(x0p[39]<<1)|x0p[41];
+      ((int16_t *)&txdataF[0][tti_offset])[12]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[13]=qam_table_s0[qam64_table_offset_im];
+
+      qam64_table_offset_re=(x0p[42]<<2)|(x0p[44]<<1)|x0p[46];
+      qam64_table_offset_im=(x0p[43]<<2)|(x0p[45]<<1)|x0p[47];
+      ((int16_t *)&txdataF[0][tti_offset])[14]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[15]=qam_table_s0[qam64_table_offset_im];
+
+      qam64_table_offset_re=(x0p[48]<<2)|(x0p[50]<<1)|x0p[52];
+      qam64_table_offset_im=(x0p[49]<<2)|(x0p[51]<<1)|x0p[53];
+      ((int16_t *)&txdataF[0][tti_offset])[16]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[17]=qam_table_s0[qam64_table_offset_im];
+
+      qam64_table_offset_re=(x0p[54]<<2)|(x0p[56]<<1)|x0p[58];
+      qam64_table_offset_im=(x0p[55]<<2)|(x0p[57]<<1)|x0p[59];
+      ((int16_t *)&txdataF[0][tti_offset])[18]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[19]=qam_table_s0[qam64_table_offset_im];
+
+      qam64_table_offset_re=(x0p[60]<<2)|(x0p[62]<<1)|x0p[64];
+      qam64_table_offset_im=(x0p[61]<<2)|(x0p[63]<<1)|x0p[65];
+      ((int16_t *)&txdataF[0][tti_offset])[20]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[21]=qam_table_s0[qam64_table_offset_im];
+
+      qam64_table_offset_re=(x0p[66]<<2)|(x0p[68]<<1)|x0p[70];
+      qam64_table_offset_im=(x0p[67]<<2)|(x0p[69]<<1)|x0p[71];
+      ((int16_t *)&txdataF[0][tti_offset])[22]=qam_table_s0[qam64_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[23]=qam_table_s0[qam64_table_offset_im];
+
+
+      //    }
   }
   else {
     for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset,re=0; 
@@ -599,7 +627,7 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
         switch (mod_order0) {
         case 2:  //QPSK
 
-//          printf("%d(%d) : %d,%d => ",tti_offset,*jj,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+	  //          printf("re %d %d(%d) : %d,%d => ",re,tti_offset,*jj,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
           for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
             ((int16_t*)&txdataF[aa][tti_offset])[0] += (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I //b_i
           }
@@ -612,7 +640,7 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
 
           *jj = *jj + 1;
 
- //         printf("%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+	  //	  printf("%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
           break;
 
         case 4:  //16QAM
@@ -698,8 +726,6 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
 
       else if (mimo_mode == ALAMOUTI) {
         *re_allocated = *re_allocated + 1;
-        // normalization for 2 tx antennas
-        amp = (int16_t)(((int32_t)tmp_amp*ONE_OVER_SQRT2_Q15)>>15);
 
         switch (mod_order0) {
         case 2:  //QPSK
@@ -754,8 +780,10 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
 
           *jj=*jj+1;
 
-          ((int16_t *)&txdataF[0][tti_offset])[0]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
-          ((int16_t *)&txdataF[0][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+          //((int16_t *)&txdataF[0][tti_offset])[0]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
+          //((int16_t *)&txdataF[0][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+	  ((int16_t *)&txdataF[0][tti_offset])[0]+=(qam_table_s0[qam16_table_offset_re]*ONE_OVER_SQRT2_Q15)>>15;
+	  ((int16_t *)&txdataF[0][tti_offset])[1]+=(qam_table_s0[qam16_table_offset_im]*ONE_OVER_SQRT2_Q15)>>15;
 
           // Antenna 1 position n Real part -> -x1*
 
@@ -783,8 +811,10 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
 
           *jj=*jj+1;
 
-          ((int16_t *)&txdataF[1][tti_offset])[0]+=-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
-          ((int16_t *)&txdataF[1][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+          //((int16_t *)&txdataF[1][tti_offset])[0]+=-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
+          //((int16_t *)&txdataF[1][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+	  ((int16_t *)&txdataF[1][tti_offset])[0]+=-(qam_table_s0[qam16_table_offset_re]*ONE_OVER_SQRT2_Q15)>>15;
+	  ((int16_t *)&txdataF[1][tti_offset])[1]+=(qam_table_s0[qam16_table_offset_im]*ONE_OVER_SQRT2_Q15)>>15;
 
 
           break;
@@ -825,8 +855,10 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
 
           *jj=*jj+1;
 
-          ((int16_t *)&txdataF[0][tti_offset])[0]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
-          ((int16_t *)&txdataF[0][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+          //((int16_t *)&txdataF[0][tti_offset])[0]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
+          //((int16_t *)&txdataF[0][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+	  ((int16_t *)&txdataF[0][tti_offset])[0]+=(qam_table_s0[qam64_table_offset_re]*ONE_OVER_SQRT2_Q15)>>15;
+	  ((int16_t *)&txdataF[0][tti_offset])[1]+=(qam_table_s0[qam64_table_offset_im]*ONE_OVER_SQRT2_Q15)>>15;
 
 
           // Antenna 1 => -x1*
@@ -863,8 +895,11 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
 
           *jj=*jj+1;
 
-          ((int16_t *)&txdataF[1][tti_offset])[0]+=-(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
-          ((int16_t *)&txdataF[1][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+          //((int16_t *)&txdataF[1][tti_offset])[0]+=-(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
+          //((int16_t *)&txdataF[1][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+	  ((int16_t *)&txdataF[1][tti_offset])[0]+=-(qam_table_s0[qam64_table_offset_re]*ONE_OVER_SQRT2_Q15)>>15;
+	  ((int16_t *)&txdataF[1][tti_offset])[1]+=(qam_table_s0[qam64_table_offset_im]*ONE_OVER_SQRT2_Q15)>>15;
+
 
           break;
         }
@@ -1515,6 +1550,143 @@ uint8_t get_pmi(uint8_t N_RB_DL,LTE_DL_eNB_HARQ_t *dlsch_harq,uint16_t rb)
 }
 
 
+inline int check_skip(int rb,int subframe_offset,LTE_DL_FRAME_PARMS *frame_parms,int l,int nsymb) __attribute__((always_inline));
+inline int check_skip(int rb,int subframe_offset,LTE_DL_FRAME_PARMS *frame_parms,int l,int nsymb) {
+
+
+  if ((frame_parms->N_RB_DL&1) == 1) { // ODD N_RB_DL
+    // PBCH
+    if ((subframe_offset==0) &&
+	(rb>((frame_parms->N_RB_DL>>1)-3)) &&
+	(rb<((frame_parms->N_RB_DL>>1)+3)) &&
+	(l>=(nsymb>>1)) &&
+	(l<((nsymb>>1) + 4))) {
+      return(1);
+    }
+    if (frame_parms->frame_type == TDD) { // TDD
+            //SSS TDD
+      if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==(nsymb-1)) ) {
+	return(1);
+      } 
+      //PSS TDD
+      if (((subframe_offset==1) || (subframe_offset==6)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==2) ) {
+	return(1);
+      }
+    } else {
+      //PSS FDD
+      if (((subframe_offset==0)||(subframe_offset==5)) &&
+	  (rb>((frame_parms->N_RB_DL>>1)-3)) &&
+	  (rb<((frame_parms->N_RB_DL>>1)+3)) &&
+	  (l==((nsymb>>1)-1)) ) {
+	return(1);
+      }
+      //SSS FDD
+      if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==((nsymb>>1)-2)) ) {
+	return(1);
+      }
+    }
+  }
+  else { // even N_RB_DL
+    //PBCH
+    if ((subframe_offset==0) &&
+	(rb>=((frame_parms->N_RB_DL>>1)-3)) &&
+	(rb<((frame_parms->N_RB_DL>>1)+3)) &&
+	(l>=nsymb>>1) && (l<((nsymb>>1) + 4)))
+      return(1);
+
+    if (frame_parms->frame_type == TDD) { // TDD
+      //SSS
+      if (((subframe_offset==0)||
+	   (subframe_offset==5)) &&
+	  (rb>=((frame_parms->N_RB_DL>>1)-3)) &&
+	  (rb<((frame_parms->N_RB_DL>>1)+3)) &&
+	  (l==nsymb-1) ) {
+	 return(1);
+      }
+      
+      //PSS
+      if (((subframe_offset==1)||
+	   (subframe_offset==6)) &&
+	  (rb>=((frame_parms->N_RB_DL>>1)-3)) &&
+	  (rb<((frame_parms->N_RB_DL>>1)+3)) &&
+	  (l==2) ) {
+	 return(1);
+      }
+    } else { // FDD
+      //SSS
+      if (((subframe_offset==0)||(subframe_offset==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==((nsymb>>1)-2)) ) {
+	 return(1);
+      }
+      
+      //PSS
+      if (((subframe_offset==0)||(subframe_offset==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==((nsymb>>1)-1)) ) {
+	 return(1);
+      }
+    }
+  }
+
+  return(0);
+}
+
+inline int check_skiphalf(int rb,int subframe_offset,LTE_DL_FRAME_PARMS *frame_parms,int l,int nsymb) __attribute__((always_inline));
+inline int check_skiphalf(int rb,int subframe_offset,LTE_DL_FRAME_PARMS *frame_parms,int l,int nsymb) {
+
+  //  printf("check_skiphalf : rb %d, subframe_offset %d,l %d, nsymb %d\n",rb,subframe_offset,l,nsymb);
+
+  if ((frame_parms->N_RB_DL&1) == 1) { // ODD N_RB_DL
+
+    // PBCH
+    if ((subframe_offset==0) &&
+	(rb==((frame_parms->N_RB_DL>>1)-3)) &&
+	(l>=(nsymb>>1)) &&
+	(l<((nsymb>>1) + 4)))
+      return(1);
+    else if ((subframe_offset==0) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l>=(nsymb>>1)) && (l<((nsymb>>1) + 4)))
+      return(2);
+
+    if (frame_parms->frame_type == TDD) { // TDD
+      //SSS TDD
+      if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==(nsymb-1)))
+	return(1);
+      else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==(nsymb-1)))
+	return(2);
+      //PSS TDD
+      if (((subframe_offset==1)||(subframe_offset==6)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==2))
+	return(1);
+      else if (((subframe_offset==1)||(subframe_offset==6)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==2))
+	return(2);
+    }
+    else { // FDD
+      //PSS FDD
+      if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==((nsymb>>1)-1)))
+	return(1);
+      else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==(((nsymb>>1)-1))))
+	return(2);
+      //SSS FDD
+      if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && ((l==((nsymb>>1)-2))))
+	return(1);
+      else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && ((l==(nsymb>>1)-2)))
+	return(2);
+    }
+  }
+  else { // EVEN N_RB_DL
+    return(0);
+  }
+
+  return(0);
+}
+
+inline int check_skip_dc(int rb,LTE_DL_FRAME_PARMS *frame_parms) __attribute__((always_inline));
+inline int check_skip_dc(int rb,LTE_DL_FRAME_PARMS *frame_parms) {
+
+  if (((frame_parms->N_RB_DL&1) == 1) &&  // odd N_RB_DL, rb==N_RB_DL/2 PRB contains DC element
+      (rb==(frame_parms->N_RB_DL>>1)))
+    return(1);
+  else
+    return(0);
+}
+
+
 int dlsch_modulation(int32_t **txdataF,
                      int16_t amp,
                      uint32_t subframe_offset,
@@ -1533,7 +1705,7 @@ int dlsch_modulation(int32_t **txdataF,
   uint32_t rb_alloc_ind;
   uint32_t *rb_alloc = dlsch0_harq->rb_alloc;
   uint8_t pilots=0;
-  uint8_t skip_dc,skip_half;
+  uint8_t skip_dc=0,skip_half=0;
   uint8_t mod_order0 = get_Qm(dlsch0_harq->mcs);
   uint8_t mod_order1 = 0;
   int16_t amp_rho_a, amp_rho_b;
@@ -1609,6 +1781,7 @@ int dlsch_modulation(int32_t **txdataF,
   jj2=0;
   re_allocated=0;
 
+  
   //  printf("num_pdcch_symbols %d, nsymb %d\n",num_pdcch_symbols,nsymb);
   for (l=num_pdcch_symbols; l<nsymb; l++) {
 
@@ -1668,6 +1841,69 @@ int dlsch_modulation(int32_t **txdataF,
     re_offset = frame_parms->first_carrier_offset;
     symbol_offset = (uint32_t)frame_parms->ofdm_symbol_size*(l+(subframe_offset*nsymb));
 
+    allocate_REs = allocate_REs_in_RB;
+    
+    switch (mod_order0) {
+    case 2:
+      qam_table_s0 = NULL;
+      break;
+    case 4:
+      if (pilots) {
+	qam_table_s0 = qam16_table_b0; 
+	allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ? 
+	  allocate_REs_in_RB_pilots_16QAM_siso :
+	  allocate_REs_in_RB;
+      }
+      else {
+	qam_table_s0 = qam16_table_a0;
+	allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ? 
+	  allocate_REs_in_RB_no_pilots_16QAM_siso :
+	  allocate_REs_in_RB;
+	
+      }
+      break;
+      
+    case 6:
+      if (pilots) {
+	qam_table_s0 = qam64_table_b0; 
+	allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ? 
+	  allocate_REs_in_RB_pilots_64QAM_siso :
+	  allocate_REs_in_RB;
+      }
+      else {
+	qam_table_s0 = qam64_table_a0;
+	allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ? 
+	  allocate_REs_in_RB_no_pilots_64QAM_siso :
+	  allocate_REs_in_RB;
+      }
+      break;
+      
+    }
+    
+    switch (mod_order1) {
+    case 2:
+      qam_table_s1 = NULL;
+      allocate_REs = allocate_REs_in_RB;
+      break;
+    case 4:
+      if (pilots) {
+	qam_table_s1 = qam16_table_b1; 
+      }
+      else {
+	qam_table_s1 = qam16_table_a1;
+      }
+      break;
+    case 6:
+      if (pilots) {
+	qam_table_s1 = qam64_table_b1; 
+      }
+      else {
+	qam_table_s1 = qam64_table_a1;
+      }
+      break;
+      
+    }
+
     //for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
     //  memset(&txdataF[aa][symbol_offset],0,frame_parms->ofdm_symbol_size<<2);
     //printf("symbol_offset %d,subframe offset %d : pilots %d\n",symbol_offset,subframe_offset,pilots);
@@ -1684,125 +1920,12 @@ int dlsch_modulation(int32_t **txdataF,
       else
         rb_alloc_ind = 0;
 
-      // check for PBCH
-      skip_half=0;
+      if (check_skip(rb,subframe_offset,frame_parms,l,nsymb)==1)
+	rb_alloc_ind = 0;
 
-      if ((frame_parms->N_RB_DL&1) == 1) { // ODD N_RB_DL
-
-        if (rb==(frame_parms->N_RB_DL>>1))
-          skip_dc = 1;
-        else
-          skip_dc = 0;
-
-        // PBCH
-        if ((subframe_offset==0) &&
-            (rb>((frame_parms->N_RB_DL>>1)-3)) &&
-            (rb<((frame_parms->N_RB_DL>>1)+3)) &&
-            (l>=(nsymb>>1)) &&
-            (l<((nsymb>>1) + 4))) {
-          rb_alloc_ind = 0;
-        }
-
-        //PBCH subframe 0, symbols nsymb>>1 ... nsymb>>1 + 3
-        if ((subframe_offset==0) &&
-            (rb==((frame_parms->N_RB_DL>>1)-3)) &&
-            (l>=(nsymb>>1)) &&
-            (l<((nsymb>>1) + 4)))
-          skip_half=1;
-        else if ((subframe_offset==0) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l>=(nsymb>>1)) && (l<((nsymb>>1) + 4)))
-          skip_half=2;
-
-        if (frame_parms->frame_type == TDD) { // TDD
-          //SSS TDD
-          if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==(nsymb-1)) ) {
-            rb_alloc_ind = 0;
-          }
-
-          //SSS TDD
-          if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==(nsymb-1)))
-            skip_half=1;
-          else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==(nsymb-1)))
-            skip_half=2;
-
-          //PSS TDD
-          if (((subframe_offset==1) || (subframe_offset==6)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==2) ) {
-            rb_alloc_ind = 0;
-          }
-
-          //PSS TDD
-          if (((subframe_offset==1)||(subframe_offset==6)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==2))
-            skip_half=1;
-          else if (((subframe_offset==1)||(subframe_offset==6)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==2))
-            skip_half=2;
-        } else {
-          //PSS FDD
-          if (((subframe_offset==0)||(subframe_offset==5)) &&
-              (rb>((frame_parms->N_RB_DL>>1)-3)) &&
-              (rb<((frame_parms->N_RB_DL>>1)+3)) &&
-              (l==((nsymb>>1)-1)) ) {
-            rb_alloc_ind = 0;
-          }
-
-          //PSS FDD
-          if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==((nsymb>>1)-1)))
-            skip_half=1;
-          else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==(((nsymb>>1)-1))))
-            skip_half=2;
-
-          //SSS FDD
-          if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==((nsymb>>1)-2)) ) {
-            rb_alloc_ind = 0;
-          }
-
-          //SSS FDD
-          if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && ((l==((nsymb>>1)-2))))
-            skip_half=1;
-          else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && ((l==(nsymb>>1)-2)))
-            skip_half=2;
-
-        }
-
-      } else { // EVEN N_RB_DL
-        //PBCH
-        if ((subframe_offset==0) &&
-            (rb>=((frame_parms->N_RB_DL>>1)-3)) &&
-            (rb<((frame_parms->N_RB_DL>>1)+3)) &&
-            (l>=nsymb>>1) && (l<((nsymb>>1) + 4)))
-          rb_alloc_ind = 0;
-
-        skip_dc=0;
-        skip_half=0;
-
-        if (frame_parms->frame_type == TDD) { // TDD
-          //SSS
-          if (((subframe_offset==0)||
-               (subframe_offset==5)) &&
-              (rb>=((frame_parms->N_RB_DL>>1)-3)) &&
-              (rb<((frame_parms->N_RB_DL>>1)+3)) &&
-              (l==nsymb-1) ) {
-            rb_alloc_ind = 0;
-          }
-
-          //PSS
-          if (((subframe_offset==1)||
-               (subframe_offset==6)) &&
-              (rb>=((frame_parms->N_RB_DL>>1)-3)) &&
-              (rb<((frame_parms->N_RB_DL>>1)+3)) &&
-              (l==2) ) {
-            rb_alloc_ind = 0;
-          }
-        } else { // FDD
-          //SSS
-          if (((subframe_offset==0)||(subframe_offset==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==((nsymb>>1)-2)) ) {
-            rb_alloc_ind = 0;
-          }
-
-          //PSS
-          if (((subframe_offset==0)||(subframe_offset==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==((nsymb>>1)-1)) ) {
-            rb_alloc_ind = 0;
-          }
-        }
-      }
+      skip_half = check_skiphalf(rb,subframe_offset,frame_parms,l,nsymb);
+      skip_dc   = check_skip_dc(rb,frame_parms);
+      
 
       if (dlsch0_harq->Nlayers>1) {
         printf("Nlayers %d: re_offset %d, symbol %d offset %d\n",dlsch0_harq->Nlayers,re_offset,l,symbol_offset);
@@ -1816,68 +1939,7 @@ int dlsch_modulation(int32_t **txdataF,
         }
       }
 
-      allocate_REs = allocate_REs_in_RB;
 
-      switch (mod_order0) {
-      case 2:
-	qam_table_s0 = NULL;
-	break;
-      case 4:
-	if (pilots) {
-	  qam_table_s0 = qam16_table_b0; 
-	  allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ? 
-	    allocate_REs_in_RB_pilots_16QAM_siso :
-	    allocate_REs_in_RB;
-	}
-	else {
-	  qam_table_s0 = qam16_table_a0;
-	  allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ? 
-	    allocate_REs_in_RB_no_pilots_16QAM_siso :
-	    allocate_REs_in_RB;
-	  
-	}
-	break;
-
-      case 6:
-	if (pilots) {
-	  qam_table_s0 = qam64_table_b0; 
-	  allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ? 
-	                 allocate_REs_in_RB_pilots_64QAM_siso :
-	                 allocate_REs_in_RB;
-	}
-	else {
-	  qam_table_s0 = qam64_table_a0;
-	  allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ? 
-	                 allocate_REs_in_RB_no_pilots_64QAM_siso :
-	                 allocate_REs_in_RB;
-	}
-	break;
-      
-      }
-
-      switch (mod_order1) {
-      case 2:
-	qam_table_s1 = NULL;
-	allocate_REs = allocate_REs_in_RB;
-	break;
-      case 4:
-	if (pilots) {
-	  qam_table_s1 = qam16_table_b1; 
-	}
-	else {
-	  qam_table_s1 = qam16_table_a1;
-	}
-	break;
-      case 6:
-	if (pilots) {
-	  qam_table_s1 = qam64_table_b1; 
-	}
-	else {
-	  qam_table_s1 = qam64_table_a1;
-	}
-	break;
-      
-      }
 
       if (rb_alloc_ind > 0) {
 	//	printf("Allocated rb %d/symbol %d, skip_half %d, subframe_offset %d, symbol_offset %d, re_offset %d, jj %d\n",rb,l,skip_half,subframe_offset,symbol_offset,re_offset,jj);
@@ -1900,11 +1962,13 @@ int dlsch_modulation(int32_t **txdataF,
 		     P1_SHIFT,
 		     P2_SHIFT);
       }
-
+      else {
+	//	printf("Unallocated rb %d/symbol %d, re_offset %d, jj %d\n",rb,l,re_offset,jj);
+      }
       re_offset+=12; // go to next RB
 
-
-      // check if we crossed the symbol boundary and skip DC
+      
+      // check if we crossed the symbol boundary and skip DCs
       if (re_offset >= frame_parms->ofdm_symbol_size) {
         if (skip_dc == 0)  //even number of RBs (doesn't straddle DC)
           re_offset=1;

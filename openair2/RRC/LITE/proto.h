@@ -228,19 +228,21 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
 void
 rrc_eNB_process_RRCConnectionSetupComplete(
   const protocol_ctxt_t* const ctxt_pP,
-  rrc_eNB_ue_context_t*          const ue_context_pP,
+  rrc_eNB_ue_context_t*        ue_context_pP,
   RRCConnectionSetupComplete_r8_IEs_t* rrcConnectionSetupComplete
 );
 
 /**\brief Process the RRCConnectionReconfigurationComplete based on information coming from UE
    \param ctxt_pP       Running context
    \param ue_context_pP RRC UE context
-   \param rrcConnectionReconfigurationComplete Pointer to RRCConnectionReconfigurationComplete message*/
+   \param rrcConnectionReconfigurationComplete Pointer to RRCConnectionReconfigurationComplete message
+   \param xid         the transaction id for the rrcconnectionreconfiguration procedure
+*/
 void
 rrc_eNB_process_RRCConnectionReconfigurationComplete(
   const protocol_ctxt_t* const ctxt_pP,
-  rrc_eNB_ue_context_t*          const ue_context_pP,
-  RRCConnectionReconfigurationComplete_r8_IEs_t* rrcConnectionReconfigurationComplete
+  rrc_eNB_ue_context_t*        ue_context_pP,
+  const uint8_t xid
 );
 
 /**\brief Generate the RRCConnectionRelease
@@ -258,6 +260,17 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
   rrc_eNB_ue_context_t*          const ue_context_pP,
   const uint8_t                ho_state
 );
+
+void
+rrc_eNB_generate_dedeicatedRRCConnectionReconfiguration(
+  const protocol_ctxt_t* const ctxt_pP,
+  rrc_eNB_ue_context_t*          const ue_context_pP,
+  const uint8_t                ho_state
+);
+
+void 
+rrc_eNB_reconfigure_DRBs (const protocol_ctxt_t* const ctxt_pP,
+			  rrc_eNB_ue_context_t*  ue_context_pP);
 
 #if defined(ENABLE_ITTI)
 /**\brief RRC eNB task.

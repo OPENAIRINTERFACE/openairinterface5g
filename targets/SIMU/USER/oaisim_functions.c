@@ -100,7 +100,7 @@ int           if_times              = 0;
 int           for_times             = 0;
 
 uint16_t           Nid_cell              = 0; //needed by init_lte_vars
-int           nb_antennas_rx        = 2; // //
+int           nb_antennas_rx_ue        = 1; // //
 uint8_t            target_dl_mcs         = 16; // max mcs used by MAC scheduler
 uint8_t            rate_adaptation_flag  = 0;
 uint8_t        set_snr         = 0;
@@ -173,16 +173,19 @@ extern time_stats_t ul_chan_stats;
 
 extern int xforms;
 
+
 extern uint32_t          downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t           uplink_frequency_offset[MAX_NUM_CCs][4];
 
 void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst);
 void stop_eNB(int nb_inst);
 
+const Enb_properties_array_t *enb_properties;
+
+
 void get_simulation_options(int argc, char *argv[])
 {
   int                           option;
-  const Enb_properties_array_t *enb_properties;
   char  *conf_config_file_name = NULL;
 
   enum long_option_e {
@@ -720,6 +723,7 @@ void get_simulation_options(int argc, char *argv[])
       break;
 
     case 'x':
+      /*
       oai_emulation.info.transmission_mode[0] = atoi (optarg);
 
       if ((oai_emulation.info.transmission_mode[0] != 1) &&  (oai_emulation.info.transmission_mode[0] != 2) && (oai_emulation.info.transmission_mode[0] != 3)
@@ -727,6 +731,9 @@ void get_simulation_options(int argc, char *argv[])
         printf("Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode[0]);
         exit(-1);
       }
+      */
+      printf("Option -x deprecated. Please set transmission mode in eNB config file\n");
+      exit(-1);
 
       break;
 
@@ -751,9 +758,9 @@ void get_simulation_options(int argc, char *argv[])
       break;
 
     case 'y':
-      nb_antennas_rx=atoi(optarg);
+      nb_antennas_rx_ue=atoi(optarg);
 
-      if (nb_antennas_rx>4) {
+      if (nb_antennas_rx_ue>4) {
         printf("Cannot have more than 4 antennas\n");
         exit(-1);
       }
@@ -1043,10 +1050,11 @@ int eNB_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void *
 	      eNB_id,
 	      CC_id);
   
-
     last_eNB_rx_timestamp[eNB_id][CC_id] += PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti;
     sample_count += PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti;
   }
+  
+
 
   return(nsamps);
 }
@@ -1063,9 +1071,10 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 
   *ptimestamp = last_UE_rx_timestamp[UE_id][CC_id];
 
-  LOG_D(PHY,"UE_trx_read nsamps %d TS(%llu,%llu)\n",nsamps,
+  LOG_D(EMU,"UE_trx_read nsamps %d TS(%llu,%llu) antenna %d\n",nsamps,
         (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
-        (unsigned long long)last_UE_rx_timestamp[UE_id][CC_id]);
+        (unsigned long long)last_UE_rx_timestamp[UE_id][CC_id],
+	cc);
 
   if (nsamps < PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)
     read_size = nsamps;
@@ -1076,7 +1085,7 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
     while (current_UE_rx_timestamp[UE_id][CC_id] < 
 	   (last_UE_rx_timestamp[UE_id][CC_id]+read_size)) {
       LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
-      
+
       usleep(500);
     }
 
@@ -1086,7 +1095,7 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
     pthread_mutex_lock(&subframe_mutex);
     subframe_UE_mask|=(1<<UE_id);
     pthread_mutex_unlock(&subframe_mutex);
-    // if we didn't ask for at least a subframe's worth of samples return
+
 
     // otherwise we have one subframe here so generate the received signal
     subframe = (last_UE_rx_timestamp[UE_id][CC_id]/PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)%10;
@@ -1110,8 +1119,11 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 	      &PHY_vars_UE_g[UE_id][CC_id]->frame_parms,
 	      UE_id,
 	      CC_id);
+
+
   }
-  
+
+
   return(nsamps);
 }
 
@@ -1171,8 +1183,20 @@ void init_openair1(void)
 
   // change the nb_connected_eNB
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    init_lte_vars (&frame_parms[CC_id], oai_emulation.info.frame_type[CC_id], oai_emulation.info.tdd_config[CC_id], oai_emulation.info.tdd_config_S[CC_id],oai_emulation.info.extended_prefix_flag[CC_id],
-                   oai_emulation.info.N_RB_DL[CC_id], Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode[CC_id], abstraction_flag,nb_antennas_rx, oai_emulation.info.eMBMS_active_state);
+    init_lte_vars (&frame_parms[CC_id], 
+		   oai_emulation.info.frame_type[CC_id], 
+		   oai_emulation.info.tdd_config[CC_id], 
+		   oai_emulation.info.tdd_config_S[CC_id],
+		   oai_emulation.info.extended_prefix_flag[CC_id],
+                   oai_emulation.info.N_RB_DL[CC_id], 
+		   Nid_cell, 
+		   cooperation_flag, 
+		   enb_properties->properties[0]->nb_antenna_ports[CC_id], 
+		   abstraction_flag,
+		   enb_properties->properties[0]->nb_antennas_rx[CC_id],
+		   enb_properties->properties[0]->nb_antennas_tx[CC_id],
+		   nb_antennas_rx_ue,
+		   oai_emulation.info.eMBMS_active_state);
   }
 
   for (eNB_id=0; eNB_id<NB_eNB_INST; eNB_id++) {
@@ -1316,14 +1340,6 @@ void init_openair2(void)
              NULL,
              oai_emulation.info.cba_group_active,
              oai_emulation.info.handover_active);
-
-  for (enb_id = 0; enb_id < NB_eNB_INST; enb_id++)
-    mac_xface->mrbch_phy_sync_failure (enb_id, 0, enb_id);
-
-  if (abstraction_flag == 1) {
-    for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
-      mac_xface->dl_phy_sync_success (UE_id, 0, 0,1);   //UE_id%NB_eNB_INST);
-  }
 
   mac_xface->macphy_exit = exit_fun;
 

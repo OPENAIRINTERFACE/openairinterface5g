@@ -52,7 +52,8 @@ void lte_param_init(unsigned char N_tx,
   frame_parms->nb_antennas_tx     = N_tx;
   frame_parms->nb_antennas_rx     = N_rx;
   frame_parms->nb_antennas_tx_eNB = N_tx;
-  frame_parms->phich_config_common.phich_resource         = one;
+  frame_parms->phich_config_common.phich_resource         = oneSixth;
+  frame_parms->phich_config_common.phich_duration         = normal;
   frame_parms->tdd_config         = tdd_config;
   frame_parms->frame_type         = frame_type;
   //  frame_parms->Csrs = 2;
@@ -82,7 +83,7 @@ void lte_param_init(unsigned char N_tx,
     lte_gold(frame_parms,UE->lte_gold_table[i],Nid_cell+i);
 
   phy_init_lte_ue(UE,1,0);
-  phy_init_lte_eNB(eNB,0,0,0);
+  phy_init_lte_eNB(eNB,0,0);
 
   generate_pcfich_reg_mapping(&UE->frame_parms);
   generate_phich_reg_mapping(&UE->frame_parms);
