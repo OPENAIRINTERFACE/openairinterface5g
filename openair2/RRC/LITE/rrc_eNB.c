@@ -481,7 +481,7 @@ static void init_MBMS(
 #   ifdef Rel10
                              , &(eNB_rrc_inst[enb_mod_idP].carrier[CC_id].mcch_message->pmch_InfoList_r9)
 #   endif
-                            );
+                             ,NULL);
 
     rrc_rlc_config_asn1_req(&ctxt,
                             NULL, // SRB_ToAddModList
@@ -3282,7 +3282,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 #ifdef Rel10
                            , (PMCH_InfoList_r9_t *) NULL
 #endif
-                          );
+                           ,NULL);
 
   rrc_rlc_config_asn1_req(&ctxt,
                           ue_context_pP->ue_context.SRB_configList,
@@ -3524,7 +3524,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 #ifdef Rel10
     , (PMCH_InfoList_r9_t *) NULL
 #endif
-  );
+    ,NULL);
   // Refresh SRBs/DRBs
   rrc_rlc_config_asn1_req(
     ctxt_pP,
@@ -4336,7 +4336,7 @@ rrc_eNB_decode_ccch(
 #   ifdef Rel10
                                , (PMCH_InfoList_r9_t *) NULL
 #   endif
-                              );
+                               ,NULL);
 
       rrc_rlc_config_asn1_req(ctxt_pP,
                               ue_context_p->ue_context.SRB_configList,
