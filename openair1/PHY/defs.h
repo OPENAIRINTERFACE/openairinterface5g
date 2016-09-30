@@ -132,6 +132,8 @@ static inline void* malloc16_clear( size_t size )
 #include "PHY/TOOLS/defs.h"
 #include "platform_types.h"
 
+#ifdef OPENAIR_LTE
+
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include <pthread.h>
 
@@ -846,5 +848,5 @@ typedef struct {
 #include "PHY/LTE_ESTIMATION/defs.h"
 
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
-
+#endif
 #endif //  __PHY_DEFS__H__
