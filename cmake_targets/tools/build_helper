@@ -332,7 +332,7 @@ check_install_oai_software() {
 	wget
 
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
-    $SUDO apt-get install libgnutls-dev nettle-dev nettle-bin
+    $SUDO apt-get install -y libgnutls-dev nettle-dev nettle-bin
     
     install_asn1c_from_source
 }
@@ -342,7 +342,7 @@ install_asn1c_from_source(){
     echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_log "
     (
     $SUDO rm -rf /tmp/asn1c
-    git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
+    $SUDO GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
     cd /tmp/asn1c
     ./configure
     make -j`nproc`

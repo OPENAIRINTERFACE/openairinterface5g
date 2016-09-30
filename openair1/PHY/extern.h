@@ -47,11 +47,17 @@ extern int number_of_cards;
 
 //extern PHY_CONFIG *PHY_config;
 //extern PHY_VARS *PHY_vars;
-
+#ifndef OCP_FRAMEWORK
 extern PHY_VARS_UE ***PHY_vars_UE_g;
 extern PHY_VARS_eNB ***PHY_vars_eNB_g;
 extern PHY_VARS_RN **PHY_vars_RN_g;
 extern LTE_DL_FRAME_PARMS *lte_frame_parms_g;
+#else
+#define MAX_UE 10
+#define MAX_eNB 20
+extern PHY_VARS_UE * PHY_vars_UE_g[MAX_UE][MAX_NUM_CCs];
+extern PHY_VARS_eNB * PHY_vars_eNB_g[MAX_eNB][MAX_NUM_CCs];
+#endif
 
 extern MAC_xface *mac_xface;
 
