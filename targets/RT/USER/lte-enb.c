@@ -190,10 +190,10 @@ static inline void thread_top_init(char *thread_name,
 
   if (sched_setattr(0, &attr, flags) < 0 ) {
     perror("[SCHED] eNB tx thread: sched_setattr failed\n");
-    exit_fun("Error setting deadline scheduler");
+    exit(1);
   }
 
-  LOG_I( HW, "[SCHED] eNB %s deadline thread (TID %ld) started on CPU %d\n", gettid(), thread_name,sched_getcpu() );
+  LOG_I( HW, "[SCHED] eNB RXn-TXnp4 deadline thread (TID %ld) started on CPU %d\n", gettid(), sched_getcpu() );
 
 #else //LOW_LATENCY
   int policy, s, j;
@@ -1352,7 +1352,9 @@ void init_eNB_proc(int inst) {
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     eNB = PHY_vars_eNB_g[inst][CC_id];
+#ifndef OCP_FRAMEWORK
     LOG_I(PHY,"Initializing eNB %d CC_id %d (%s,%s),\n",inst,CC_id,eNB_functions[eNB->node_function],eNB_timing[eNB->node_timing]);
+#endif
     proc = &eNB->proc;
 
     proc_rxtx = proc->proc_rxtx;
@@ -1625,7 +1627,9 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       eNB->node_timing        = node_timing[CC_id];
       eNB->abstraction_flag   = 0;
       eNB->single_thread_flag = single_thread_flag;
+#ifndef OCP_FRAMEWORK
       LOG_I(PHY,"Initializing eNB %d CC_id %d : (%s,%s)\n",inst,CC_id,eNB_functions[node_function[CC_id]],eNB_timing[node_timing[CC_id]]);
+#endif
 
       switch (node_function[CC_id]) {
       case NGFI_RRU_IF5:

@@ -62,7 +62,9 @@
 
 #define MAX_MBSFN_AREA 8
 
-
+#ifdef OCP_FRAMEWORK
+#include "enums.h"
+#else
 typedef enum {TDD=1,FDD=0} lte_frame_type_t;
 
 typedef enum {EXTENDED=1,NORMAL=0} lte_prefix_type_t;
@@ -82,7 +84,7 @@ typedef enum {
   one=6,
   two=12
 } PHICH_RESOURCE_t;
-
+#endif
 /// PHICH-Config from 36.331 RRC spec
 typedef struct {
   /// Parameter: PHICH-Duration, see TS 36.211 (Table 6.9.3-1).
@@ -169,10 +171,12 @@ typedef struct {
 } UL_REFERENCE_SIGNALS_PUSCH_t;
 
 /// Enumeration for parameter Hopping-mode \ref PUSCH_CONFIG_COMMON::hoppingMode.
+#ifndef OCP_FRAMEWORK
 typedef enum {
   interSubFrame=0,
   intraAndInterSubFrame=1
 } PUSCH_HOPPING_t;
+#endif
 
 /// PUSCH-ConfigCommon from 36.331 RRC spec.
 typedef struct {
@@ -337,6 +341,7 @@ typedef struct {
   uint8_t filterCoefficient;
 } UL_POWER_CONTROL_DEDICATED;
 
+#ifndef OCP_FRAMEWORK
 /// Enumeration for parameter \f$\alpha\f$ \ref UL_POWER_CONTROL_CONFIG_COMMON::alpha.
 typedef enum {
   al0=0,
@@ -348,6 +353,7 @@ typedef enum {
   al09=6,
   al1=7
 } PUSCH_alpha_t;
+#endif
 
 /// \note UNUSED
 typedef enum {

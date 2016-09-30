@@ -881,7 +881,7 @@ set(UTIL_SRC
   ${OPENAIR2_DIR}/UTIL/OMG/job.c
   ${OPENAIR2_DIR}/UTIL/OMG/mobility_parser.c
   ${OPENAIR2_DIR}/UTIL/OMG/omg.c
-  ${OPENAIR2_DIR}/UTIL/OMG/omg_hashtable.c
+  #${OPENAIR2_DIR}/UTIL/OMG/omg_hashtable.c
   ${OPENAIR2_DIR}/UTIL/OMG/rwalk.c
   ${OPENAIR2_DIR}/UTIL/OMG/rwp.c
   ${OPENAIR2_DIR}/UTIL/OMG/socket_traci_OMG.c
