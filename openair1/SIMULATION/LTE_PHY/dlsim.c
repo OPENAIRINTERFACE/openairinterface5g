@@ -2086,6 +2086,7 @@ n(tikz_fname,"w");
       reset_meas(&PHY_vars_UE->dlsch_channel_estimation_stats);
       reset_meas(&PHY_vars_UE->dlsch_freq_offset_estimation_stats);
       reset_meas(&PHY_vars_UE->rx_dft_stats);
+      reset_meas(&PHY_vars_UE->dlsch_llr_stats);
       reset_meas(&PHY_vars_UE->dlsch_decoding_stats);
       reset_meas(&PHY_vars_UE->dlsch_turbo_decoding_stats);
       reset_meas(&PHY_vars_UE->dlsch_deinterleaving_stats);
@@ -4241,7 +4242,7 @@ n(tikz_fname,"w");
         std_phy_proc_tx_enc = sqrt((double)PHY_vars_eNB->dlsch_encoding_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
                                    2)/PHY_vars_eNB->dlsch_encoding_stats.trials - pow((double)PHY_vars_eNB->dlsch_encoding_stats.diff/PHY_vars_eNB->dlsch_encoding_stats.trials/cpu_freq_GHz/1000,2));
         printf("DLSCH encoding time               :%f us (%d trials)\n",(double)PHY_vars_eNB->dlsch_encoding_stats.diff/PHY_vars_eNB->dlsch_encoding_stats.trials/cpu_freq_GHz/1000.0,
-               PHY_vars_eNB->dlsch_modulation_stats.trials);
+               PHY_vars_eNB->dlsch_encoding_stats.trials);
         printf("|__ Statistcs                           std: %fus median %fus q1 %fus q3 %fus \n",std_phy_proc_tx_enc, tx_enc_median, tx_enc_q1, tx_enc_q3);
         printf("|__ DLSCH turbo encoding time         :%f us (%d trials)\n",
                ((double)PHY_vars_eNB->dlsch_turbo_encoding_stats.trials/PHY_vars_eNB->dlsch_encoding_stats.trials)*(double)
@@ -4257,7 +4258,7 @@ n(tikz_fname,"w");
         std_phy_proc_rx = sqrt((double)PHY_vars_UE->phy_proc_rx.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
                                2)/PHY_vars_UE->phy_proc_rx.trials - pow((double)PHY_vars_UE->phy_proc_rx.diff/PHY_vars_UE->phy_proc_rx.trials/cpu_freq_GHz/1000,2));
         printf("Total PHY proc rx                                   :%f us (%d trials)\n",(double)PHY_vars_UE->phy_proc_rx.diff/PHY_vars_UE->phy_proc_rx.trials/cpu_freq_GHz/1000.0,
-               PHY_vars_UE->phy_proc_rx.trials*2/3);
+               PHY_vars_UE->phy_proc_rx.trials);
         printf("|__Statistcs                                            std: %fus max: %fus min: %fus median %fus q1 %fus q3 %fus n_dropped: %d packet \n", std_phy_proc_rx, t_rx_max, t_rx_min, rx_median,
                rx_q1, rx_q3, n_rx_dropped);
         std_phy_proc_rx_fft = sqrt((double)PHY_vars_UE->ofdm_demod_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,

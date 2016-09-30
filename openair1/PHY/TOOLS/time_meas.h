@@ -52,6 +52,7 @@ typedef struct {
   long long diff_square; /*!< \brief process duration square */
   long long max;
   int trials;
+  int meas_flag;
 } time_stats_t;
 #elif defined(__arm__)
 typedef struct {
@@ -105,9 +106,14 @@ static inline void start_meas(time_stats_t *ts)
 {
 
   if (opp_enabled) {
-
+    if (ts->meas_flag==0) {
       ts->trials++;
       ts->in = rdtsc_oai();
+      ts->meas_flag=1;
+    }
+    else {
+      ts->in = rdtsc_oai();
+    }
   }
 }
 
@@ -127,7 +133,8 @@ static inline void stop_meas(time_stats_t *ts)
     
     if ((out-ts->in) > ts->max)
       ts->max = out-ts->in;
-    
+
+    ts->meas_flag=0;    
   }
 }
 
@@ -139,6 +146,7 @@ static inline void reset_meas(time_stats_t *ts) {
   ts->p_time=0;
   ts->diff_square=0;
   ts->max=0;
+  ts->meas_flag=0;
   
 }
 
