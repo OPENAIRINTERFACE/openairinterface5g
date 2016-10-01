@@ -48,7 +48,7 @@ void test_uncipher_ctr(const struct nettle_cipher *cipher, const uint8_t *key,
   uint8_t *data = malloc(length);
   uint8_t *ctr = malloc(cipher->block_size);
 
-  cipher->set_encrypt_key(ctx,  key);
+  cipher->set_encrypt_key(ctx, key_length,  key);
   memcpy(ctr, ictr, cipher->block_size);
 
   ctr_crypt(ctx, cipher->encrypt,
