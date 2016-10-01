@@ -92,6 +92,24 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2 -std=gnu99 -Wall -Wstrict-prototype
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -ggdb -DMALLOC_CHECK_=3")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -ggdb -DMALLOC_CHECK_=3 -O2")
 
+#This is to detect nettle version changes between Ubuntu 14.04/16.04
+set ( nettle_cmd "nettle-hash" )
+set ( nettle_arg "-V" )
+execute_process(COMMAND  ${nettle_cmd} ${nettle_arg}   RESULT_VARIABLE rv OUTPUT_VARIABLE ov ERROR_VARIABLE ev)
+
+string(REGEX MATCH "[+-]?[0-9]+([.][0-9]+)?" nv ${ov})
+
+message("NETTLE_VERSION = ${nv}")
+
+# we need to remove decimal as floating point arithematic does not work properly with C preprocessor
+STRING(REGEX REPLACE "[.]" "" nv ${nv})
+
+if ("${nv}" STREQUAL "")
+  message( FATAL_ERROR "The nettle version not detected properly. Try to run build_oai -I again" )
+endif()
+
+set (NETTLE_VERSION "${nv}")
+add_definitions("-DNETTLE_VERSION=${NETTLE_VERSION}")
 
 include(FindPkgConfig)
 
