@@ -34,7 +34,7 @@
 #include <platform_types.h>
 #endif
 
-#if defined(ENB_MODE2)
+#if defined(ENB_MODE)
 # define display_backtrace()
 #else
 # include "backtrace.h"
