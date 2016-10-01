@@ -47,7 +47,7 @@
 #include "T.h"
 
 //uint8_t ncs_cell[20][7];
-//#define DEBUG_PUCCH_TX
+#define DEBUG_PUCCH_TX
 //#define DEBUG_PUCCH_RX
 
 int16_t cfo_pucch_np[24*7] = {20787,-25330,27244,-18205,31356,-9512,32767,0,31356,9511,27244,18204,20787,25329,
@@ -190,6 +190,9 @@ void generate_pucch1x(int32_t **txdataF,
   else {
     d = (frame_parms->Ncp==0) ? 2 : 0;
     h= (nprime0+d)%(c*Nprime_div_deltaPUCCH_Shift);
+#ifdef DEBUG_PUCCH_TX
+    printf("[PHY] PUCCH: h %d, d %d\n",h,d);
+#endif
     nprime1 = (h/c) + (h%c)*Nprime_div_deltaPUCCH_Shift;
   }
 
@@ -208,7 +211,7 @@ void generate_pucch1x(int32_t **txdataF,
     n_oc1<<=1;
 
 #ifdef DEBUG_PUCCH_TX
-  printf("[PHY] PUCCH: noc0 %d noc11 %d\n",n_oc0,n_oc1);
+  printf("[PHY] PUCCH: noc0 %d noc1 %d\n",n_oc0,n_oc1);
 #endif
 
   nprime=nprime0;
