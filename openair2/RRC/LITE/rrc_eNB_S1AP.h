@@ -79,6 +79,14 @@ rrc_eNB_S1AP_remove_ue_ids(
   eNB_RRC_INST*              const rrc_instance_pP,
   struct rrc_ue_s1ap_ids_s* const ue_ids_pP
 );
+
+void
+rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* const ctxt_pP,
+                                                     rrc_eNB_ue_context_t*          const ue_context_pP,
+                                                     const uint8_t                ho_state
+                                                     );
+
+
 /*! \fn void rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(uint8_t mod_id, uint8_t ue_index)
  *\brief create a S1AP_INITIAL_CONTEXT_SETUP_RESP for S1AP.
  *\param ctxt_pP       Running context.
