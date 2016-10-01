@@ -47,7 +47,12 @@ static void test_cipher_ctr(const struct nettle_cipher *cipher, const uint8_t *k
   uint8_t *data = malloc(length);
   uint8_t *ctr = malloc(cipher->block_size);
 
+#if NETTLE_VERSION <= 27
   cipher->set_encrypt_key(ctx, key_length, key);
+#else
+  cipher->set_encrypt_key(ctx, key);
+#endif
+
   memcpy(ctr, ictr, cipher->block_size);
 
   ctr_crypt(ctx, cipher->encrypt,
