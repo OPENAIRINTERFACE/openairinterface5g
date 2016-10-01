@@ -104,13 +104,15 @@ int main(int argc, char **argv)
   double delay_avg=0;
   double ue_speed = 0;
   int NCS_config = 1,rootSequenceIndex=0;
+  int threequarter_fs = 0;
+
   logInit();
 
   number_of_cards = 1;
 
 
 
-  while ((c = getopt (argc, argv, "hHaA:Cr:p:g:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:")) != -1) {
+  while ((c = getopt (argc, argv, "hHaA:Cr:p:g:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:E")) != -1) {
     switch (c) {
     case 'a':
       printf("Running AWGN simulation\n");
@@ -180,6 +182,10 @@ int main(int argc, char **argv)
         exit(-1);
       }
 
+      break;
+
+    case 'E':
+      threequarter_fs=1;
       break;
 
     case 'n':
@@ -316,7 +322,7 @@ int main(int argc, char **argv)
 		 Nid_cell,
 		 3,
 		 N_RB_DL,
-		 0,
+		 threequarter_fs,
 		 osf,
 		 0);
 
@@ -395,8 +401,9 @@ int main(int argc, char **argv)
   eNB->frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag=hs_flag;
   eNB->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
 
-  eNB->node_function = eNodeB_3GPP;
-  eNB->proc.subframe_rx = subframe;
+  eNB->node_function       = eNodeB_3GPP;
+  eNB->proc.subframe_rx    = subframe;
+  eNB->proc.subframe_prach = subframe;
 
   /* N_ZC not used later, so prach_fmt is also useless, don't set */
   //prach_fmt = get_prach_fmt(eNB->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
@@ -530,7 +537,7 @@ int main(int argc, char **argv)
           write_output("rxsig0.m","rxs0",
                        &eNB->common_vars.rxdata[0][0][subframe*frame_parms->samples_per_tti],
                        frame_parms->samples_per_tti,1,1);
-          write_output("rxsigF0.m","rxsF0", &eNB->common_vars.rxdataF[0][0][0],512*nsymb*2,2,1);
+          write_output("rxsigF0.m","rxsF0", eNB->prach_vars.rxsigF[0],6144,1,1);
           write_output("prach_preamble.m","prachp",&eNB->X_u[0],839,1,1);
         }
       }

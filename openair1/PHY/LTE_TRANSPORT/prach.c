@@ -818,11 +818,14 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
     break;
 
   case 75:
-    memset((void*)prachF,0,4*19432);
+    memset((void*)prachF,0,4*18432);
     break;
 
   case 100:
-    memset((void*)prachF,0,4*24576);
+    if (ue->frame_parms.threequarter_fs == 0)
+      memset((void*)prachF,0,4*24576);
+    else
+      memset((void*)prachF,0,4*18432);
     break;
   }
 
@@ -885,6 +888,9 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
     Ncp=(Ncp*3)>>2;
     break;
   }
+
+  if (ue->frame_parms.threequarter_fs == 1)
+    Ncp=(Ncp*3)>>2;
 
   prach2 = prach+(Ncp<<1);
 
@@ -986,19 +992,38 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
     break;
 
   case 100:
-    if (prach_fmt == 4) {
-      idft4096(prachF,prach2,1);
-      memmove( prach, prach+8192, Ncp<<2 );
-      prach_len = 4096+Ncp;
-    } else {
-      idft24576(prachF,prach2);
-      memmove( prach, prach+49152, Ncp<<2 );
-      prach_len = 24576+Ncp;
-
-      if (prach_fmt>1) {
-        memmove( prach2+49152, prach2, 98304 );
-        prach_len = 2* 24576+Ncp;
+    if (ue->frame_parms.threequarter_fs == 0) { 
+      if (prach_fmt == 4) {
+	idft4096(prachF,prach2,1);
+	memmove( prach, prach+8192, Ncp<<2 );
+	prach_len = 4096+Ncp;
+      } else {
+	idft24576(prachF,prach2);
+	memmove( prach, prach+49152, Ncp<<2 );
+	prach_len = 24576+Ncp;
+	
+	if (prach_fmt>1) {
+	  memmove( prach2+49152, prach2, 98304 );
+	  prach_len = 2* 24576+Ncp;
+	}
       }
+    }
+    else {
+      if (prach_fmt == 4) {
+	idft3072(prachF,prach2);
+	//TODO: account for repeated format in dft output
+	memmove( prach, prach+6144, Ncp<<2 );
+	prach_len = 3072+Ncp;
+      } else {
+	idft18432(prachF,prach2);
+	memmove( prach, prach+36864, Ncp<<2 );
+	prach_len = 18432+Ncp;
+	printf("Generated prach for 100 PRB, 3/4 sampling\n");
+	if (prach_fmt>1) {
+	  memmove( prach2+36834, prach2, 73728 );
+	  prach_len = 2*18432+Ncp;
+	}
+      } 
     }
 
     break;
@@ -1026,18 +1051,18 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
       ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1]<<4;
     }
 #if defined(EXMIMO)
-	    // handle switch before 1st TX subframe, guarantee that the slot prior to transmission is switch on
-	    for (k=prach_start - (ue->frame_parms.samples_per_tti>>1) ; k<prach_start ; k++) {
-	      if (k<0)
-		ue->common_vars.txdata[0][k+ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
-	      else if (k>(ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME))
-		ue->common_vars.txdata[0][k-ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
-	      else
-		ue->common_vars.txdata[0][k] &= 0xFFFEFFFE;
-	    }
+    // handle switch before 1st TX subframe, guarantee that the slot prior to transmission is switch on
+    for (k=prach_start - (ue->frame_parms.samples_per_tti>>1) ; k<prach_start ; k++) {
+      if (k<0)
+	ue->common_vars.txdata[0][k+ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
+      else if (k>(ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME))
+	ue->common_vars.txdata[0][k-ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
+      else
+	ue->common_vars.txdata[0][k] &= 0xFFFEFFFE;
+    }
 #endif
 #else
-
+    
     for (i=0; i<prach_len; i++) {
       ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i] = prach[2*i];
       ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i+1] = prach[2*i+1];
@@ -1496,7 +1521,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
 
 #ifdef PRACH_DEBUG
 
-      if (en>40) {
+      //      if (en>40) {
 	k = (12*n_ra_prb) - 6*eNB->frame_parms.N_RB_UL;
 	
 	if (k<0)
@@ -1510,7 +1535,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
 	write_output("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
 	write_output("prach_ifft0.m","prach_t0",prach_ifft[0],1024,1,1);
 	exit(-1);
-      }
+	//      }
 #endif
     } // new dft
     

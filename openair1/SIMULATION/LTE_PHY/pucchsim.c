@@ -66,7 +66,11 @@ int main(int argc, char **argv)
   uint8_t snr1set=0;
   //mod_sym_t **txdataF;
   int **txdata;
-  double s_re[2][30720],s_im[2][30720],r_re[2][30720],r_im[2][30720];
+  double s_re0[30720],s_re1[30720],s_im0[30720],s_im1[30720],r_re0[30720],r_im0[30720],r_re1[30720],r_im1[30720];
+  double *s_re[2]={s_re0,s_re1};
+  double *s_im[2]={s_im0,s_im1};
+  double *r_re[2]={r_re0,r_re1};
+  double *r_im[2]={r_im0,r_im1};
   double ricean_factor=0.0000005,iqim=0.0;
 
   int trial, n_trials, ntrials=1, n_errors;
@@ -352,12 +356,15 @@ int main(int argc, char **argv)
 
   init_ncs_cell(&UE->frame_parms,UE->ncs_cell);
 
-  eNB->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
-  eNB->frame_parms.pucch_config_common.nRB_CQI          = 0;
-  eNB->frame_parms.pucch_config_common.nCS_AN           = 0;
-  UE->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
-  UE->frame_parms.pucch_config_common.nRB_CQI          = 0;
-  UE->frame_parms.pucch_config_common.nCS_AN           = 0;
+  init_ul_hopping(&eNB->frame_parms);
+  init_ul_hopping(&UE->frame_parms);
+
+  eNB->frame_parms.pucch_config_common.deltaPUCCH_Shift = 2;
+  eNB->frame_parms.pucch_config_common.nRB_CQI          = 4;
+  eNB->frame_parms.pucch_config_common.nCS_AN           = 6;
+  UE->frame_parms.pucch_config_common.deltaPUCCH_Shift = 2;
+  UE->frame_parms.pucch_config_common.nRB_CQI          = 4;
+  UE->frame_parms.pucch_config_common.nCS_AN           = 6;
 
   pucch_payload = 0;
 
