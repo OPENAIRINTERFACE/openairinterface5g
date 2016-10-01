@@ -791,7 +791,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_cmac_encrypt</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_cmac_encrypt</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -807,7 +807,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_ctr_decrypt</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_ctr_decrypt</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -823,7 +823,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_ctr_encrypt</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_ctr_encrypt</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -839,7 +839,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_kenb</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_kenb</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -855,7 +855,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -871,7 +871,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eea1</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eea1</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -887,7 +887,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eea2</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eea2</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -903,7 +903,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eia1</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eia1</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -919,7 +919,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eia1</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eia1</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -935,7 +935,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_kdf</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_kdf</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -962,7 +962,7 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/dlsim</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/dlsim</main_exec>
       <main_exec_args> -m5 -gF -s-1 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70 -L
                        -m4 -gF -s0 -w1.0 -f.2 -n500 -B6 -c4 -z2 -O70
                        -m15 -gF -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70 -L
@@ -993,7 +993,7 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/ulsim</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/ulsim</main_exec>
       <main_exec_args> -B25 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 -L
                        -B25 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 -L
                         -B50 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 -L 
