@@ -85,8 +85,13 @@ int nas_stream_encrypt_eea2(nas_stream_cipher_t *stream_cipher, uint8_t *out)
   }
 #endif
 
+#if NETTLE_VERSION <= 27
+  nettle_aes128.set_encrypt_key(ctx, stream_cipher->key_length,
+                                stream_cipher->key);
+#else
   nettle_aes128.set_encrypt_key(ctx,
                                 stream_cipher->key);
+#endif
 
   nettle_ctr_crypt(ctx, nettle_aes128.encrypt,
                    nettle_aes128.block_size, m,

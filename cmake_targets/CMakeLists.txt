@@ -186,6 +186,24 @@ set(GIT_BRANCH        "UNKNOWN")
 set(GIT_COMMIT_HASH   "UNKNOWN")
 set(GIT_COMMIT_DATE   "UNKNOWN")
 
+#This is to detect nettle version changes between Ubuntu 14.04/16.04
+set ( nettle_cmd "nettle-hash" )
+set ( nettle_arg "-V" )
+execute_process(COMMAND  ${nettle_cmd} ${nettle_arg}   RESULT_VARIABLE rv OUTPUT_VARIABLE ov ERROR_VARIABLE ev)
+
+string(REGEX MATCH "[+-]?[0-9]+([.][0-9]+)?" nv ${ov})
+
+message("NETTLE_VERSION = ${nv}")
+
+# we need to remove decimal as floating point arithematic does not work properly with C preprocessor
+STRING(REGEX REPLACE "[.]" "" nv ${nv})
+
+if ("${nv}" STREQUAL "")
+  message( FATAL_ERROR "The nettle version not detected properly. Try to run build_oai -I again" )
+endif()
+
+set (NETTLE_VERSION "${nv}")
+add_definitions("-DNETTLE_VERSION=${NETTLE_VERSION}")
 
 find_package(Git)
 if(GIT_FOUND)

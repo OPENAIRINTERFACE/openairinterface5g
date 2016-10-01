@@ -334,9 +334,64 @@ check_install_oai_software() {
 	wget
 
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
-    $SUDO apt-get install -y libgnutls-dev nettle-dev nettle-bin
+    
+    #Remove old gnutls/nettle installation that was done from sources
+    remove_nettle_from_source
+    
+    $SUDO apt-get install -y nettle-dev nettle-bin
+    remove_gnutls_from_source
+
+    $SUDO apt-get install -y libgnutls-dev
     
     install_asn1c_from_source
+}
+
+### Remove Nettle installation which was done from sources
+remove_nettle_from_source() {
+    nettle_uninstall_log=$OPENAIR_DIR/cmake_targets/log/nettle_uninstall_log.txt
+    echo_info "\nUn-Installing Nettle from sources. The log file for nettle un-installation is here: $nettle_uninstall_log "
+    (
+    $SUDO apt-get remove -y nettle-dev nettle-bin 
+    cd /tmp
+    echo "Downloading nettle archive"
+    $SUDO rm -rf /tmp/nettle-2.5.tar.gz* /tmp/nettle-2.5
+    wget https://ftp.gnu.org/gnu/nettle/nettle-2.5.tar.gz
+    if [ $? -ne 0 ]; then
+      wget ftp://ftp.lysator.liu.se/pub/security/lsh/nettle-2.5.tar.gz
+    fi
+    if [ ! -f nettle-2.5.tar.gz ]; then
+      echo_error "Could not download nettle source files"
+      cd -
+      return
+    fi
+    tar -xzf nettle-2.5.tar.gz
+    cd nettle-2.5/
+    ./configure --disable-openssl --enable-shared --prefix=/usr 
+    $SUDO make uninstall || true 
+    ) >& $nettle_uninstall_log
+}
+
+### Remove Gnutls from source
+remove_gnutls_from_source(){
+    gnutls_uninstall_log=$OPENAIR_DIR/cmake_targets/log/gnutls_uninstall_log.txt
+    echo_info "\nUn-Installing Gnutls. The log file for Gnutls un-installation is here: $gnutls_uninstall_log "
+    (
+    $SUDO apt-get remove -y libgnutls-dev
+    cd /tmp 
+    echo "Downloading gnutls archive"
+    $SUDO rm -rf /tmp/gnutls-3.1.23.tar.xz* /tmp/gnutls-3.1.23
+    wget http://mirrors.dotsrc.org/gcrypt/gnutls/v3.1/gnutls-3.1.23.tar.xz || \
+      wget ftp://ftp.gnutls.org/gcrypt/gnutls/v3.1/gnutls-3.1.23.tar.xz
+    if [ ! -f gnutls-3.1.23.tar.xz ]; then
+      echo_error "Could not download gnutls source files"
+      cd -
+      return
+    fi
+    tar -xJf gnutls-3.1.23.tar.xz
+    cd gnutls-3.1.23/
+    ./configure --prefix=/usr
+    $SUDO make uninstall || true
+    )>& $gnutls_uninstall_log
 }
 
 install_asn1c_from_source(){
@@ -344,7 +399,7 @@ install_asn1c_from_source(){
     echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_log "
     (
     $SUDO rm -rf /tmp/asn1c
-    $SUDO GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
+    GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
     cd /tmp/asn1c
     ./configure
     make -j`nproc`
