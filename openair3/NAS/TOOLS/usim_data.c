@@ -185,12 +185,11 @@ int main (int argc, const char* argv[])
     usim_data.imsi.u.num.digit15 = 0b1111;
 #endif
 #if (SELECTED_PLMN == OAI_LTEBOX)
-#warning "IMSI 208.93.00001111"
     /*
      * International Mobile Subscriber Identity
      * IMSI = MCC + MNC + MSIN = 208 (France) + 10 (SFR) + 00001234
      */
-    #warning "IMSI 208.93.0100001110"
+#warning "IMSI 208.93.0100001111"
     usim_data.imsi.length = 8;
     usim_data.imsi.u.num.parity = ODD_PARITY;      // Parity: even
     usim_data.imsi.u.num.digit1 = 2;                // MCC digit 1

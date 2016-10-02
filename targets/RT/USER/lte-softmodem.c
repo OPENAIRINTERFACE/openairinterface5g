@@ -108,6 +108,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #   include "s1ap_eNB.h"
 #ifdef PDCP_USE_NETLINK
 #   include "SIMULATION/ETH_TRANSPORT/proto.h"
+extern int netlink_init(void);
 #endif
 # endif
 #endif
@@ -1364,7 +1365,7 @@ void init_openair0() {
 
 int main( int argc, char **argv )
 {
-  int i,aa,card=0;
+  int i,aa;
 #if defined (XFORMS)
   void *status;
 #endif

@@ -212,6 +212,8 @@ sigh (void *arg);
 void
 oai_shutdown (void);
 
+void reset_opp_meas_oaisim (void);
+
 void
 help (void)
 {
@@ -444,9 +446,6 @@ static Data_Flow_Unit omv_data;
 #endif //ALU
 static module_id_t UE_inst = 0;
 static module_id_t eNB_inst = 0;
-#ifdef Rel10
-static module_id_t RN_id = 0;
-#endif
 
 Packet_OTG_List_t *otg_pdcp_buffer;
 
@@ -470,13 +469,8 @@ l2l1_task (void *args_p)
   // Framing variables
   int32_t sf;
 
-#ifdef Rel10
-  relaying_type_t r_type = no_relay; // no relaying
-#endif
-  
   char fname[64], vname[64];
 
-  protocol_ctxt_t  ctxt;
   //#ifdef XFORMS
   // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
   // at eNB 0, an UL scope for every UE
