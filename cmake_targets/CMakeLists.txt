@@ -186,25 +186,6 @@ set(GIT_BRANCH        "UNKNOWN")
 set(GIT_COMMIT_HASH   "UNKNOWN")
 set(GIT_COMMIT_DATE   "UNKNOWN")
 
-#This is to detect nettle version changes between Ubuntu 14.04/16.04
-set ( nettle_cmd "nettle-hash" )
-set ( nettle_arg "-V" )
-execute_process(COMMAND  ${nettle_cmd} ${nettle_arg}   RESULT_VARIABLE rv OUTPUT_VARIABLE ov ERROR_VARIABLE ev)
-
-string(REGEX MATCH "[+-]?[0-9]+([.][0-9]+)?" nv ${ov})
-
-message("NETTLE_VERSION = ${nv}")
-
-# we need to remove decimal as floating point arithematic does not work properly with C preprocessor
-STRING(REGEX REPLACE "[.]" "" nv ${nv})
-
-if ("${nv}" STREQUAL "")
-  message( FATAL_ERROR "The nettle version not detected properly. Try to run build_oai -I again" )
-endif()
-
-set (NETTLE_VERSION "${nv}")
-add_definitions("-DNETTLE_VERSION=${NETTLE_VERSION}")
-
 find_package(Git)
 if(GIT_FOUND)
   message("git found: ${GIT_EXECUTABLE}")
@@ -1550,10 +1531,27 @@ endif()
 
 pkg_search_module(NETTLE nettle)
 if(NOT ${NETTLE_FOUND})
-  message("PACKAGE nettle not found: some targets will fail")
+  message( FATAL_ERROR "PACKAGE nettle not found: some targets will fail. Run build_oai -I again!")
 else()
   include_directories(${NETTLE_INCLUDE_DIRS})
 endif()
+
+message ("NETTLE VERSION_INSTALLED  = ${NETTLE_VERSION}")
+
+string(REGEX MATCH "[+-]?[0-9]+([.][0-9]+)?" nv ${NETTLE_VERSION})
+
+# WE only pass the major and first minor in the define and ignore the rest
+#message("NETTLE_VERSION USED = ${nv}")
+
+# we need to remove decimal as floating point arithematic does not work properly with C preprocessor
+STRING(REGEX REPLACE "[.]" "" nv ${nv})
+
+if ("${nv}" STREQUAL "")
+  message( FATAL_ERROR "The nettle version not detected properly. Try to run build_oai -I again" )
+endif()
+
+set (NETTLE_VERSION "${nv}")
+add_definitions("-DNETTLE_VERSION=${NETTLE_VERSION}")
 
 pkg_search_module(XPM xpm)
 if(NOT ${XPM_FOUND})
