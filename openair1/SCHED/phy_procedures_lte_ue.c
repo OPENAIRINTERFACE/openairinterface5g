@@ -1049,7 +1049,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
       ue->tx_total_RE[subframe_tx] = nb_rb*12;
       
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
-      tx_amp = get_tx_amp(ue->tx_power_dBm,
+      tx_amp = get_tx_amp(ue->tx_power_dBm[subframe_tx],
 			  ue->tx_power_max_dBm,
 			  ue->frame_parms.N_RB_UL,
 			  nb_rb);
