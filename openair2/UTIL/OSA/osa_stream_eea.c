@@ -199,7 +199,7 @@ int stream_encrypt_eea2(stream_cipher_t *stream_cipher, uint8_t **out)
   }
 #endif
 
-#if NETTLE_VERSION <= 27
+#if NETTLE_VERSION_MAJOR < 3
   nettle_aes128.set_encrypt_key(ctx, stream_cipher->key_length,
                                 stream_cipher->key);
 #else
