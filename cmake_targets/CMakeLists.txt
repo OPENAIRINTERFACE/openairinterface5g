@@ -1538,20 +1538,17 @@ endif()
 
 message ("NETTLE VERSION_INSTALLED  = ${NETTLE_VERSION}")
 
-string(REGEX MATCH "[+-]?[0-9]+([.][0-9]+)?" nv ${NETTLE_VERSION})
+string(REGEX REPLACE "([0-9]+).*" "\\1" NETTLE_VERSION_MAJOR ${NETTLE_VERSION})
+string(REGEX REPLACE "[0-9]+\\.([0-9]+).*" "\\1" NETTLE_VERSION_MINOR ${NETTLE_VERSION})
+message ("NETTLE_VERSION_MAJOR = ${NETTLE_VERSION_MAJOR}")
+message ("NETTLE_VERSION_MINOR = ${NETTLE_VERSION_MINOR}")
 
-# WE only pass the major and first minor in the define and ignore the rest
-#message("NETTLE_VERSION USED = ${nv}")
-
-# we need to remove decimal as floating point arithematic does not work properly with C preprocessor
-STRING(REGEX REPLACE "[.]" "" nv ${nv})
-
-if ("${nv}" STREQUAL "")
+if ("${NETTLE_VERSION_MAJOR}" STREQUAL "" OR "${NETTLE_VERSION_MINOR}" STREQUAL "")
   message( FATAL_ERROR "The nettle version not detected properly. Try to run build_oai -I again" )
 endif()
 
-set (NETTLE_VERSION "${nv}")
-add_definitions("-DNETTLE_VERSION=${NETTLE_VERSION}")
+add_definitions("-DNETTLE_VERSION_MAJOR=${NETTLE_VERSION_MAJOR}")
+add_definitions("-DNETTLE_VERSION_MINOR=${NETTLE_VERSION_MINOR}")
 
 pkg_search_module(XPM xpm)
 if(NOT ${XPM_FOUND})
