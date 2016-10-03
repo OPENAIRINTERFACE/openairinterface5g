@@ -108,6 +108,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #   include "s1ap_eNB.h"
 #ifdef PDCP_USE_NETLINK
 #   include "SIMULATION/ETH_TRANSPORT/proto.h"
+extern int netlink_init(void);
 #endif
 # endif
 #endif
@@ -776,6 +777,7 @@ static void get_options (int argc, char **argv)
 
     case LONG_OPTION_CALIB_PRACH_TX:
       mode = calib_prach_tx;
+      printf("Setting mode to calib_prach_tx (%d)\n",mode);
       break;
 
     case LONG_OPTION_RXGAIN:
@@ -1363,7 +1365,7 @@ void init_openair0() {
 
 int main( int argc, char **argv )
 {
-  int i,aa,card=0;
+  int i,aa;
 #if defined (XFORMS)
   void *status;
 #endif
@@ -1574,6 +1576,7 @@ int main( int argc, char **argv )
       UE[CC_id]->UE_scan = UE_scan;
       UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
       UE[CC_id]->mode    = mode;
+      printf("UE[%d]->mode = %d\n",CC_id,mode);
 
       compute_prach_seq(&UE[CC_id]->frame_parms.prach_config_common,
                         UE[CC_id]->frame_parms.frame_type,

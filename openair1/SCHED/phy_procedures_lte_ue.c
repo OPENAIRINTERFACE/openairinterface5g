@@ -736,14 +736,8 @@ void ue_prach_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 #endif
     
     if (abstraction_flag == 0) {
-      LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
-	    ue->Mod_id,
-	    frame_tx,
-	    subframe_tx,
-	    ue->prach_resources[eNB_id]->ra_PreambleIndex,
-	    ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER,
-	    ue->prach_resources[eNB_id]->ra_TDD_map_index,
-	    ue->prach_resources[eNB_id]->ra_RNTI);
+
+      LOG_I(PHY,"mode %d\n",mode);
       
       if ((ue->mac_enabled==1) && (mode != calib_prach_tx)) {
 	ue->tx_power_dBm[subframe_tx] = ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(ue->Mod_id,ue->CC_id,eNB_id);
@@ -753,6 +747,15 @@ void ue_prach_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 	ue->prach_resources[eNB_id]->ra_PreambleIndex = 19;	      
       }
       
+      LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
+	    ue->Mod_id,
+	    frame_tx,
+	    subframe_tx,
+	    ue->prach_resources[eNB_id]->ra_PreambleIndex,
+	    ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER,
+	    ue->prach_resources[eNB_id]->ra_TDD_map_index,
+	    ue->prach_resources[eNB_id]->ra_RNTI);
+
       ue->tx_total_RE[subframe_tx] = 96;
       
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
@@ -1046,7 +1049,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
       ue->tx_total_RE[subframe_tx] = nb_rb*12;
       
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
-      tx_amp = get_tx_amp(ue->tx_power_dBm,
+      tx_amp = get_tx_amp(ue->tx_power_dBm[subframe_tx],
 			  ue->tx_power_max_dBm,
 			  ue->frame_parms.N_RB_UL,
 			  nb_rb);
