@@ -1398,10 +1398,12 @@ void init_eNB_proc(int inst) {
       pthread_setname_np( proc->pthread_single, name );
     }
   }
-  
-  PHY_vars_eNB_g[inst][0]->proc.num_slaves=1;//hardcoded
-  PHY_vars_eNB_g[inst][0]->proc.slave_proc = (eNB_proc_t**)malloc(1*sizeof(eNB_proc_t*));
-  PHY_vars_eNB_g[inst][0]->proc.slave_proc[0]=&(PHY_vars_eNB_g[inst][1]->proc);
+
+ if (MAX_NUM_CCs >1){
+    PHY_vars_eNB_g[inst][0]->proc.num_slaves=1;//hardcoded
+    PHY_vars_eNB_g[inst][0]->proc.slave_proc = (eNB_proc_t**)malloc(1*sizeof(eNB_proc_t*));
+    PHY_vars_eNB_g[inst][0]->proc.slave_proc[0]=&(PHY_vars_eNB_g[inst][1]->proc);
+}
 /*  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {//TTN - we supposed that CC_id=0 will play the role of master
     eNB = PHY_vars_eNB_g[inst][CC_id];
 
