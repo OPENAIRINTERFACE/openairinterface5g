@@ -11,7 +11,7 @@
  <CleanUpAluLteBox>sudo -S -E /opt/ltebox/tools/stop_ltebox</CleanUpAluLteBox>
 <ExmimoRfStop>exmimo_pci=`lspci -m | grep Xilinx`; if [ -n "$exmimo_pci" ] ; then $OPENAIR_DIR/cmake_targets/build_oai -w EXMIMO -c; sudo -S -E $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2; fi; sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_huaweiE398_ue.py --reset-ue;  sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_sony_experia_m4_ue.py --stop-ue; uname -a; sudo -E dmesg</ExmimoRfStop>
  <Timeout_execution>36000</Timeout_execution>
- <TestCaseExclusionList>010141 0102+ 010301 010303 010304 010305 0104+ 015518 015519 015520 015521 015522 015523 015602 015605 015702 015705 015818 015819 015820 015821 015822 015823 016102 016105 016502 016505 017002 017005 017502 017505 018002 018005 018502 018505  025518 025519 025520 025521 025522 025523</TestCaseExclusionList>
+ <TestCaseExclusionList>010141 0102+ 010301 010303 010304 010305 0104+ 015508 015511 015520 015523 015518 015519 015520 015521 015522 015523 015602 015605 015702 015705 015818 015819 015820 015821 015822 015823 016102 016105 016502 016505 017002 017005 017502 017505 018002 018005 018502 018505  025514 025517 025520 025523 025518 025519 025520 025521 025522 025523</TestCaseExclusionList>
  <nruns_lte-softmodem>3</nruns_lte-softmodem>
  <MachineListGeneric>mozart hutch starsky stevens amerique calisson </MachineListGeneric>
      <testCase id="010101" >
