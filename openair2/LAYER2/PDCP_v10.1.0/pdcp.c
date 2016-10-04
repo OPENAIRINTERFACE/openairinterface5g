@@ -368,16 +368,10 @@ boolean_t pdcp_data_req(
 #endif
 
   
-  //starting async
-//   const Enb_properties_array_t   *enb_properties_p  = NULL;
-   Enb_properties_array_t *enb_properties_p  = NULL;
-//   enb_properties_p = malloc(sizeof(Enb_properties_array_t));
-//   memset(enb_properties_p, 0, sizeof(Enb_properties_array_t));
-//   printf("starting the client\n\n");
 
-//   printf("Starting the async client\n");
-//   new_thread(proto_server_start, NULL);
-   enb_properties_p = enb_config_get();
+  Enb_properties_array_t *enb_properties_p  = NULL;
+
+  enb_properties_p = enb_config_get();
 
   static int agent_started = 1;
 
@@ -407,6 +401,7 @@ boolean_t pdcp_data_req(
   }
   else
   {
+    // It should never get here
     rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
   }
   }

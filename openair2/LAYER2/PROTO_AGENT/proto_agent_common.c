@@ -437,7 +437,7 @@ int proto_agent_pdcp_data_ind(mid_t mod_id, const void *params, Protocol__Flexsp
   
   printf("MSG payload is %u", args->sdu_size);
   
-  //memcpy(pdu->fsp_pdu_data.data, args->sdu_p, args->sdu_size); 
+  memcpy(pdu->fsp_pdu_data.data, args->sdu_p, args->sdu_size); 
   pdu->has_fsp_pdu_data = 1;
   
   // Copy data to the ctxt structure

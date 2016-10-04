@@ -653,25 +653,25 @@ void rlc_data_ind     (
     T(T_ENB_RLC_UL, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->rnti), T_INT(rb_idP), T_INT(sdu_sizeP));
 #endif
 
-  if (!srb_flagP)
-  {
+//   if (!srb_flagP)
+//   {
     proto_agent_send_pdcp_data_ind(ctxt_pP,
     srb_flagP,
     MBMS_flagP,
     rb_idP,
     sdu_sizeP,
     sdu_pP);
-  }
-  else
-  {
-    pdcp_data_ind (
-    ctxt_pP,
-    srb_flagP,
-    MBMS_flagP,
-    rb_idP,
-    sdu_sizeP,
-    sdu_pP);
-  }
+//   }
+//   else
+//   {
+//     pdcp_data_ind (
+//     ctxt_pP,
+//     srb_flagP,
+//     MBMS_flagP,
+//     rb_idP,
+//     sdu_sizeP,
+//     sdu_pP);
+//   }
 }
 //-----------------------------------------------------------------------------
 void rlc_data_conf     (const protocol_ctxt_t* const ctxt_pP,
