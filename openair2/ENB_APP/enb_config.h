@@ -83,6 +83,7 @@ typedef struct rrh_gw_config_s {
   unsigned  udp:1;
   unsigned  raw:1;
   unsigned  active:1;
+  char      *rrh_gw_if_name;
   char     *local_address;
   char     *remote_address;
   uint16_t  local_port;

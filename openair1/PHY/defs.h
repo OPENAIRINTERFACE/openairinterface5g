@@ -234,6 +234,8 @@ typedef struct eNB_proc_t_s {
   int thread_index;
   /// timestamp received from HW
   openair0_timestamp timestamp_rx;
+  /// timestamp to send to "slave rru"
+  openair0_timestamp timestamp_tx;
   /// subframe to act upon for reception
   int subframe_rx;
   /// subframe to act upon for PRACH
