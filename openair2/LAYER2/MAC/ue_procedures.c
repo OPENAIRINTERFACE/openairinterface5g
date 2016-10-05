@@ -347,7 +347,7 @@ ue_send_sdu(module_id_t module_idP,
 
   if (opt_enabled) {
     trace_pdu(1, sdu, sdu_len, module_idP, 3, UE_mac_inst[module_idP].crnti,
-              UE_mac_inst[module_idP].subframe, 0, 0); 
+        UE_mac_inst[module_idP].frame, UE_mac_inst[module_idP].subframe, 0, 0);
     LOG_D(OPT,"[UE %d][DLSCH] Frame %d trace pdu for rnti %x  with size %d\n",
           module_idP, frameP, UE_mac_inst[module_idP].crnti, sdu_len);
   }
@@ -528,6 +528,7 @@ void ue_decode_si(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_i
 	      module_idP,
 	      4,
 	      0xffff,
+	      UE_mac_inst[module_idP].frame,
 	      UE_mac_inst[module_idP].subframe,
 	      0,
 	      0);
@@ -1527,9 +1528,9 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
   stop_meas(&UE_mac_inst[module_idP].tx_ulsch_sdu);
   
   if (opt_enabled) {
-    trace_pdu(0, ulsch_buffer, buflen, module_idP, 3, UE_mac_inst[module_idP].crnti, UE_mac_inst[module_idP].subframe, 0, 0);
+    trace_pdu(0, ulsch_buffer, buflen, module_idP, 3, UE_mac_inst[module_idP].crnti, UE_mac_inst[module_idP].frame, UE_mac_inst[module_idP].subframe, 0, 0);
     LOG_D(OPT,"[UE %d][ULSCH] Frame %d trace pdu for rnti %x  with size %d\n",
-          module_idP, UE_mac_inst[module_idP].subframe, UE_mac_inst[module_idP].crnti, buflen);
+          module_idP, UE_mac_inst[module_idP].frame, UE_mac_inst[module_idP].subframe, UE_mac_inst[module_idP].crnti, buflen);
   }
 }
 
