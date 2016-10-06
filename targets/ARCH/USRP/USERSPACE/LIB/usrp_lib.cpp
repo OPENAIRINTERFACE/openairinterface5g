@@ -632,7 +632,7 @@ extern "C" {
 
   } else {
     printf("Found USRP B200");
-    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=4096, recv_frame_size=4096" ; 
+    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=15360, recv_frame_size=15360" ; 
     s->usrp = uhd::usrp::multi_usrp::make(args);
 
     //  s->usrp->set_rx_subdev_spec(rx_subdev);

@@ -1399,27 +1399,21 @@ void init_eNB_proc(int inst) {
     }
   }
 
- if (MAX_NUM_CCs >1){
-    PHY_vars_eNB_g[inst][0]->proc.num_slaves=1;//hardcoded
-    PHY_vars_eNB_g[inst][0]->proc.slave_proc = (eNB_proc_t**)malloc(1*sizeof(eNB_proc_t*));
-    PHY_vars_eNB_g[inst][0]->proc.slave_proc[0]=&(PHY_vars_eNB_g[inst][1]->proc);
-}
-/*  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {//TTN - we supposed that CC_id=0 will play the role of master
+  //for multiple CCs: setup master and slaves
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     eNB = PHY_vars_eNB_g[inst][CC_id];
 
-    if (eNB->node_timing == synch_to_ext_device) { //CC_id=0
-     // eNB = PHY_vars_eNB_g[inst][CC_id];
-
+    if (eNB->node_timing == synch_to_ext_device) { //master
       eNB->proc.num_slaves = MAX_NUM_CCs-1;
       eNB->proc.slave_proc = (eNB_proc_t**)malloc(eNB->proc.num_slaves*sizeof(eNB_proc_t*));
 
       for (i=0; i< eNB->proc.num_slaves; i++) {
-        eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i+1]->proc);
+        if (i < CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i]->proc);
+        if (i >= CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i+1]->proc);
       }
     }
   }
 
-*/
 
   /* setup PHY proc TX sync mechanism */
   pthread_mutex_init(&sync_phy_proc.mutex_phy_proc_tx, NULL);
