@@ -16,17 +16,22 @@ Obj.#   Case#   Test#	Description
 01      01      20      Build lte-softmodem.USRP.Rel10
 01      01      21      Build lte-softmodem.EXMIMO.Rel10
 01      01      22      Build lte-softmodem.BLADERF.Rel10
-01      01      23      Build lte-softmodem.ETHERNET.Rel10
+01      01      23      Build lte-softmodem.ETHERNET.Rel10 (RCC)
 01      01      24      Build lte-softmodem.LMSSDR.Rel10
 
 01      01      30      Build (dlsim.Rel10 + ulsim.Rel10 + pucchsim.Rel10 + prachsim.Rel10 + pdcchsim.Rel10 + pbchsim.Rel10 + mbmssim.Rel10
                         secu_knas_encrypt_eia1.Rel10 secu_kenb.Rel10 aes128_ctr_encrypt.Rel10 aes128_ctr_decrypt.Rel10 secu_knas_encrypt_eea2.Rel10
                         secu_knas.Rel10 secu_knas_encrypt_eea1.Rel10 kdf.Rel10 aes128_cmac_encrypt.Rel10 secu_knas_encrypt_eia2.Rel10)
 
-01      01      40      Build RRH Gateway for USRP (Rel 10)
-01      01      41      Build RRH Gateway for EXMIMO  (Rel 10)
-01      01      42      Build RRH Gateway for BLADERF  (Rel 10)
-01      01      43      Build RRH Gateway for LMSSDR (Rel 10)
+01      01      40      Build RRH Gateway (time domain) for USRP (Rel 10)
+01      01      41      Build RRH Gateway (time domain) for EXMIMO  (Rel 10)
+01      01      42      Build RRH Gateway (time domain) for BLADERF  (Rel 10)
+01      01      43      Build RRH Gateway (time domain) for LMSSDR (Rel 10)
+
+01      01      50      Build RRU (NGFI) for USRP (Rel 10) w/ ETHERNET transport
+01      01      51      Build RRU (NGFI) for EXMIMO  (Rel 10) w/ ETHERNET transport
+01      01      52      Build RRU (NGFI) for BLADERF  (Rel 10) w/ ETHERNET transport
+01      01      53      Build RRU (NGFI) for LMSSDR (Rel 10) w/ ETHERNET transport
 
 
 01      02              Run OAISIM-NOS1 Rel10 (TDD + 5MHz/10MHz/20MHz + TM 1,2), and check the operation

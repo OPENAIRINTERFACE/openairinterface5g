@@ -40,6 +40,7 @@
 extern "C" {
 #include "openair0_lib.h"
 }
+#include "oarf.h"
 
 #define FCNNAME "oarf_stop"
 

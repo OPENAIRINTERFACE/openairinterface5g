@@ -90,7 +90,7 @@ int mult_cpx_conj_vector(int16_t *x1,
  
   // we compute 4 cpx multiply for each loop
   for(i=0; i<(N>>2); i++) {
-  #if defined(__x86_64__) || defined(__i386__)
+#if defined(__x86_64__) || defined(__i386__)
     tmp_re = _mm_madd_epi16(*x1_128,*x2_128);
     tmp_im = _mm_shufflelo_epi16(*x1_128,_MM_SHUFFLE(2,3,0,1));
     tmp_im = _mm_shufflehi_epi16(tmp_im,_MM_SHUFFLE(2,3,0,1));

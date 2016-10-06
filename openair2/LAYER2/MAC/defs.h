@@ -82,6 +82,7 @@
 
 #define BCCH_PAYLOAD_SIZE_MAX 128
 #define CCCH_PAYLOAD_SIZE_MAX 128
+#define PCCH_PAYLOAD_SIZE_MAX 128
 
 #define SCH_PAYLOAD_SIZE_MAX 4096
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
@@ -263,6 +264,10 @@ typedef struct {
 typedef struct {
   uint8_t payload[BCCH_PAYLOAD_SIZE_MAX] ;
 } __attribute__((__packed__))BCCH_PDU;
+/*! \brief BCCH payload */
+typedef struct {
+  uint8_t payload[PCCH_PAYLOAD_SIZE_MAX] ;
+} __attribute__((__packed__))PCCH_PDU;
 
 #ifdef Rel10
 /*! \brief MCCH payload */
@@ -291,6 +296,8 @@ typedef struct {
 #define CCCH_LCHANID 0
 /*!\brief Values of BCCH logical channel */
 #define BCCH 3  // SI 
+/*!\brief Values of PCCH logical channel */
+#define PCCH 4  // Paging 
 /*!\brief Value of CCCH / SRB0 logical channel */
 #define CCCH 0  // srb0
 /*!\brief DCCH / SRB1 logical channel */
@@ -614,7 +621,9 @@ typedef struct {
   uint8_t DLSCH_dci_size_bits;
 
   /// DCI buffer for DLSCH
-  uint8_t DLSCH_DCI[8][(MAX_DCI_SIZE_BITS>>3)+1];
+  /* rounded to 32 bits unit (actual value should be 8 due to the logic
+   * of the function generate_dci0) */
+  uint8_t DLSCH_DCI[8][(((MAX_DCI_SIZE_BITS)+31)>>5)*4];
 
   /// Number of Allocated RBs for DL after scheduling (prior to frequency allocation)
   uint16_t nb_rb[8]; // num_max_harq
@@ -638,7 +647,9 @@ typedef struct {
   uint8_t assigned_mcs_ul;
 
   /// DCI buffer for ULSCH
-  uint8_t ULSCH_DCI[8][(MAX_DCI_SIZE_BITS>>3)+1];
+  /* rounded to 32 bits unit (actual value should be 8 due to the logic
+   * of the function generate_dci0) */
+  uint8_t ULSCH_DCI[8][(((MAX_DCI_SIZE_BITS)+31)>>5)*4];
 
   /// DL DAI
   uint8_t DAI;
@@ -1104,6 +1115,8 @@ typedef struct {
   time_stats_t rx_mch_sdu;
   /// UE BCCH rx processing time including RLC interface (mac_rrc_data_ind) 
   time_stats_t rx_si; 
+  /// UE PCCH rx processing time including RLC interface (mac_rrc_data_ind) 
+  time_stats_t rx_p; 
 } UE_MAC_INST;
 /*! \brief ID of the neighboring cells used for HO*/
 typedef struct {

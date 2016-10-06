@@ -1101,7 +1101,7 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   len_mod4 =len&3;
   len2=len>>2;  // length in quad words (4 REs)
-  len2+=(len_mod4?0:1);
+  len2+=((len_mod4==0)?0:1);
 
   for (i=0; i<len2; i++) {
 

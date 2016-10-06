@@ -36,6 +36,7 @@
 #include <octave/oct.h>
 
 #include "pcie_interface.h"
+#include "oarf.h"
 
 extern "C" {
 #include "openair0_lib.h"

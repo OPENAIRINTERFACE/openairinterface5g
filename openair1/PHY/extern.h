@@ -111,6 +111,12 @@ extern double p_qam64[8];
 extern double beta1_dlsch[6][MCS_COUNT];
 extern double beta2_dlsch[6][MCS_COUNT];
 
+extern char eNB_functions[6][20];
+extern char eNB_timing[2][20];
+
+
+extern int16_t unscrambling_lut[65536*16];
+extern uint8_t scrambling_lut[65536*16];
 
 #endif /*__PHY_EXTERN_H__ */
 

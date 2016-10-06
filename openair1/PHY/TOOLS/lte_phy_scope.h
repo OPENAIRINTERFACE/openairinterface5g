@@ -37,7 +37,6 @@
 #include "../defs.h"
 #include "../../SCHED/defs.h" // for OPENAIR_DAQ_VARS
 
-extern OPENAIR_DAQ_VARS openair_daq_vars;
 
 /* Forms and Objects */
 typedef struct {

@@ -307,10 +307,10 @@ int32_t subcarrier_energy(int32_t *,uint32_t, int32_t* subcarrier_energy, uint16
 */
 int32_t signal_energy_nodc(int32_t *,uint32_t);
 
-/*!\fn double signal_energy_fp(double **, double **,uint32_t, uint32_t,uint32_t);
+/*!\fn double signal_energy_fp(double *s_re[2], double *s_im[2],uint32_t, uint32_t,uint32_t);
 \brief Computes the signal energy per subcarrier
 */
-double signal_energy_fp(double **s_re, double **s_im, uint32_t nb_antennas, uint32_t length,uint32_t offset);
+double signal_energy_fp(double *s_re[2], double *s_im[2], uint32_t nb_antennas, uint32_t length,uint32_t offset);
 
 /*!\fn double signal_energy_fp2(struct complex *, uint32_t);
 \brief Computes the signal energy per subcarrier
