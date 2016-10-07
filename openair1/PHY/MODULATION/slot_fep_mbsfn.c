@@ -38,7 +38,7 @@ int slot_fep_mbsfn(PHY_VARS_UE *ue,
                    int sample_offset,
                    int no_prefix)
 {
-
+ 
   LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   LTE_UE_COMMON *common_vars   = &ue->common_vars;
   uint8_t eNB_id = 0;//ue_common_vars->eNb_id;
@@ -115,10 +115,8 @@ int slot_fep_mbsfn(PHY_VARS_UE *ue,
       sample_offset);
 #endif
 
-
   for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-    memset(&common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*l],0,2*frame_parms->ofdm_symbol_size*sizeof(int));
-
+    memset(&common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*l],0,frame_parms->ofdm_symbol_size*sizeof(int));
     if (l==0) {
       start_meas(&ue->rx_dft_stats);
       dft((int16_t *)&common_vars->rxdata[aa][(sample_offset +
@@ -146,8 +144,9 @@ int slot_fep_mbsfn(PHY_VARS_UE *ue,
           (int16_t *)&common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*l],1);
       stop_meas(&ue->rx_dft_stats);
     }
-
   }
+
+
 
   //if ((l==0) || (l==(4-frame_parms->Ncp))) {
   // changed to invoke MBSFN channel estimation in symbols 2,6,10
