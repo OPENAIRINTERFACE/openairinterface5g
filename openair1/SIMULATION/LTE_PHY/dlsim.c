@@ -130,7 +130,7 @@ void do_OFDM_mod_l(int32_t **txdataF, int32_t **txdata, uint16_t next_slot, LTE_
 }
 
 void DL_channel(PHY_VARS_eNB *eNB,PHY_VARS_UE *UE,int subframe,int awgn_flag,double SNR, int tx_lev,int hold_channel,int abstx, int num_rounds, int trials, int round, channel_desc_t *eNB2UE[4], 
-		double s_re[2][30720*2],double s_im[2][30720*2],double r_re[2][30720*2],double r_im[2][30720*2],FILE *csv_fd) {
+		double *s_re[2],double *s_im[2],double *r_re[2],double *r_im[2],FILE *csv_fd) {
 
   int i,u;
   int aa,aarx,aatx;
@@ -1267,7 +1267,12 @@ int main(int argc, char **argv)
   double snr_step=1,input_snr_step=1, snr_int=30;
 
   LTE_DL_FRAME_PARMS *frame_parms;
-  double s_re[2][30720*2],s_im[2][30720*2],r_re[2][30720*2],r_im[2][30720*2];
+  double s_re0[30720*2],s_im0[30720*2],r_re0[30720*2],r_im0[30720*2];
+  double s_re1[30720*2],s_im1[30720*2],r_re1[30720*2],r_im1[30720*2];
+  double *s_re[2]={s_re0,s_re1};
+  double *s_im[2]={s_im0,s_im1};
+  double *r_re[2]={r_re0,r_re1};
+  double *r_im[2]={r_im0,r_im1};
   double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
 
 
@@ -1380,7 +1385,6 @@ int main(int argc, char **argv)
   FILE *csv_fd=NULL;
   char csv_fname[32];
   int dci_flag=1;
-  int llr8_flag=1;
   int two_thread_flag=0;
   int DLSCH_RB_ALLOC;
 
@@ -1413,7 +1417,7 @@ int main(int argc, char **argv)
   //  num_layers = 1;
   perfect_ce = 0;
 
-  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:WXY")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:Pl:WXY")) != -1) {
     switch (c) {
     case 'a':
       awgn_flag = 1;
@@ -1477,10 +1481,6 @@ int main(int argc, char **argv)
       input_trch_file=1;
       break;
 
-    case 'L':
-      llr8_flag=1;
-      break;
-      
     case 'W':
       two_thread_flag = 1;
       break;
