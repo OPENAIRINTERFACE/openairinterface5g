@@ -200,7 +200,7 @@ double tx_gain[MAX_NUM_CCs][4] = {{20,0,0,0},{20,0,0,0}};
 double rx_gain[MAX_NUM_CCs][4] = {{110,0,0,0},{20,0,0,0}};
 #endif
 
-
+double rx_gain_off = 0.0;
 
 double sample_rate=30.72e6;
 double bw = 10.0e6;
@@ -380,6 +380,7 @@ void help (void) {
   printf("  --calib-prach-tx run normal prach with maximum power, but don't continue random-access\n");
   printf("  --no-L2-connect bypass L2 and upper layers\n");
   printf("  --ue-rxgain set UE RX gain\n");
+  printf("  --ue-rxgain-off external UE amplifier offset\n");
   printf("  --ue-txgain set UE TX gain\n");
   printf("  --ue-scan_carrier set UE to scan around carrier\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
@@ -684,6 +685,7 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_NO_L2_CONNECT,
     LONG_OPTION_CALIB_PRACH_TX,
     LONG_OPTION_RXGAIN,
+	LONG_OPTION_RXGAINOFF,
     LONG_OPTION_TXGAIN,
     LONG_OPTION_SCANCARRIER,
     LONG_OPTION_MAXPOWER,
@@ -709,6 +711,7 @@ static void get_options (int argc, char **argv)
     {"no-L2-connect",   no_argument,        NULL, LONG_OPTION_NO_L2_CONNECT},
     {"calib-prach-tx",   no_argument,        NULL, LONG_OPTION_CALIB_PRACH_TX},
     {"ue-rxgain",   required_argument,  NULL, LONG_OPTION_RXGAIN},
+	{"ue-rxgain-off",   required_argument,  NULL, LONG_OPTION_RXGAINOFF},
     {"ue-txgain",   required_argument,  NULL, LONG_OPTION_TXGAIN},
     {"ue-scan-carrier",   no_argument,  NULL, LONG_OPTION_SCANCARRIER},
     {"ue-max-power",   required_argument,  NULL, LONG_OPTION_MAXPOWER},
@@ -783,6 +786,10 @@ static void get_options (int argc, char **argv)
       for (i=0; i<4; i++)
         rx_gain[0][i] = atof(optarg);
 
+      break;
+
+    case LONG_OPTION_RXGAINOFF:
+      rx_gain_off = atof(optarg);
       break;
 
     case LONG_OPTION_TXGAIN:
@@ -1352,7 +1359,7 @@ void init_openair0() {
 	openair0_cfg[card].rx_gain[i] = PHY_vars_eNB_g[0][0]->rx_total_gain_dB;
       }
       else {
-	openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB;
+	openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB - rx_gain_off;
       }
 
 
@@ -1586,7 +1593,7 @@ int main( int argc, char **argv )
       else
 	UE[CC_id]->pdcch_vars[0]->crnti = 0x1235;
 
-      UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0];
+      UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
       UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
       UE[CC_id]->N_TA_offset = 0;
 
