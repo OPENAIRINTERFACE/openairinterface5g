@@ -768,6 +768,7 @@ static void get_options (int argc, char **argv)
 
     case LONG_OPTION_CALIB_PRACH_TX:
       mode = calib_prach_tx;
+      printf("Setting mode to calib_prach_tx (%d)\n",mode);
       break;
 
     case LONG_OPTION_RXGAIN:
@@ -1566,6 +1567,7 @@ int main( int argc, char **argv )
       UE[CC_id]->UE_scan = UE_scan;
       UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
       UE[CC_id]->mode    = mode;
+      printf("UE[%d]->mode = %d\n",CC_id,mode);
 
       compute_prach_seq(&UE[CC_id]->frame_parms.prach_config_common,
                         UE[CC_id]->frame_parms.frame_type,

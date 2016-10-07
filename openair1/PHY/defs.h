@@ -867,7 +867,7 @@ typedef struct {
 
 void exit_fun(const char* s);
 
-inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
+static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
 
   if (pthread_mutex_lock(mutex) != 0) {
     LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
@@ -889,7 +889,7 @@ inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *in
   return(0);
 }
 
-inline int wait_on_busy_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
+static inline int wait_on_busy_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
 
   if (pthread_mutex_lock(mutex) != 0) {
     LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
@@ -911,7 +911,7 @@ inline int wait_on_busy_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,in
   return(0);
 }
 
-inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *name) {
+static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *name) {
 
   if (pthread_mutex_lock(mutex) != 0) {
     LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
