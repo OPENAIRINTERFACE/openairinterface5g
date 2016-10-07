@@ -880,6 +880,7 @@ set(UTIL_SRC
   ${OPENAIR2_DIR}/UTIL/OMG/omg_hashtable.c
   ${OPENAIR2_DIR}/UTIL/OMG/rwalk.c
   ${OPENAIR2_DIR}/UTIL/OMG/rwp.c
+  ${OPENAIR2_DIR}/UTIL/OMG/sumo.c
   ${OPENAIR2_DIR}/UTIL/OMG/socket_traci_OMG.c
   ${OPENAIR2_DIR}/UTIL/OMG/static.c
   ${OPENAIR2_DIR}/UTIL/OMG/steadystaterwp.c
@@ -1797,7 +1798,6 @@ add_executable(oaisim_nos1
   ${OPENAIR_TARGETS}/SIMU/USER/oaisim.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR2_DIR}/UTIL/OMG/sumo.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}  
@@ -1882,7 +1882,6 @@ foreach(myExe s1ap
     aes128_cmac_encrypt
     secu_knas_encrypt_eia2)
   add_executable(test_${myExe}
-    ${OPENAIR3_DIR}/TEST/test_util.c
     ${OPENAIR3_DIR}/TEST/test_${myExe}.c
     )
   target_link_libraries (test_${myExe}
