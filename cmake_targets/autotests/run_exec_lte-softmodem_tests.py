@@ -894,27 +894,28 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     task_EPC  = task_EPC + ' ) > ' + logfile_task_EPC_out + ' 2>&1 ' 
     write_file(logfile_task_EPC, task_EPC, mode="w")
     
-    #first we compile all the programs
-    thread_EPC = oaiThread(1, "EPC_thread", EPCMachine, user, password , task_EPC_compile, False, timeout_thread)
-    thread_eNB = oaiThread(2, "eNB_thread", eNBMachine, user, password , task_eNB_compile, False, timeout_thread)
-    thread_UE = oaiThread(3, "UE_thread", UEMachine, user, password  , task_UE_compile, False, timeout_thread) 
-    if RRHMachine != '':
-        thread_RRH = oaiThread(4, "RRH_thread", RRHMachine, user, password  , task_RRH_compile, False, timeout_thread) 
-    threads=[]
-    threads.append(thread_eNB)
-    threads.append(thread_UE)
-    threads.append(thread_EPC)
-    if RRHMachine != '':
-        threads.append(thread_RRH)
-    # Start new Threads
-    thread_eNB.start()
-    thread_UE.start()
-    thread_EPC.start()
-    if RRHMachine != '':
-        thread_RRH.start()
-    #Wait for all the compile threads to complete
-    for t in threads:
-       t.join()
+    #first we compile all the programs but only for run_0
+    if run == 0:
+       thread_EPC = oaiThread(1, "EPC_thread", EPCMachine, user, password , task_EPC_compile, False, timeout_thread)
+       thread_eNB = oaiThread(2, "eNB_thread", eNBMachine, user, password , task_eNB_compile, False, timeout_thread)
+       thread_UE = oaiThread(3, "UE_thread", UEMachine, user, password  , task_UE_compile, False, timeout_thread) 
+       if RRHMachine != '':
+          thread_RRH = oaiThread(4, "RRH_thread", RRHMachine, user, password  , task_RRH_compile, False, timeout_thread) 
+       threads=[]
+       threads.append(thread_eNB)
+       threads.append(thread_UE)
+       threads.append(thread_EPC)
+       if RRHMachine != '':
+         threads.append(thread_RRH)
+       # Start new Threads
+       thread_eNB.start()
+       thread_UE.start()
+       thread_EPC.start()
+       if RRHMachine != '':
+         thread_RRH.start()
+       #Wait for all the compile threads to complete
+       for t in threads:
+         t.join()
 
     #Now we execute all the threads
     thread_EPC = oaiThread(1, "EPC_thread", EPCMachine, user, password , task_EPC, False, timeout_thread)

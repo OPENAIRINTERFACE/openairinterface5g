@@ -108,6 +108,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #   include "s1ap_eNB.h"
 #ifdef PDCP_USE_NETLINK
 #   include "SIMULATION/ETH_TRANSPORT/proto.h"
+extern int netlink_init(void);
 #endif
 # endif
 #endif
@@ -1065,7 +1066,7 @@ static void get_options (int argc, char **argv)
         	
         if (enb_properties->properties[i]->rrh_gw_config[j].active == 1 ) {
           local_remote_radio = BBU_REMOTE_RADIO_HEAD;
-          (eth_params+j)->local_if_name             = enb_properties->properties[i]->rrh_gw_if_name;
+          (eth_params+j)->local_if_name             = enb_properties->properties[i]->rrh_gw_config[j].rrh_gw_if_name;
           (eth_params+j)->my_addr                   = enb_properties->properties[i]->rrh_gw_config[j].local_address;
           (eth_params+j)->my_port                   = enb_properties->properties[i]->rrh_gw_config[j].local_port;
           (eth_params+j)->remote_addr               = enb_properties->properties[i]->rrh_gw_config[j].remote_address;
@@ -1305,10 +1306,10 @@ void init_openair0() {
 
     
     if (local_remote_radio == BBU_REMOTE_RADIO_HEAD) {      
-      openair0_cfg[card].remote_addr    = eth_params->remote_addr;
-      openair0_cfg[card].remote_port    = eth_params->remote_port;
-      openair0_cfg[card].my_addr        = eth_params->my_addr;
-      openair0_cfg[card].my_port        = eth_params->my_port;    
+      openair0_cfg[card].remote_addr    = (eth_params+card)->remote_addr;
+      openair0_cfg[card].remote_port    = (eth_params+card)->remote_port;
+      openair0_cfg[card].my_addr        = (eth_params+card)->my_addr;
+      openair0_cfg[card].my_port        = (eth_params+card)->my_port;    
     } 
     
     printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
@@ -1364,7 +1365,7 @@ void init_openair0() {
 
 int main( int argc, char **argv )
 {
-  int i,aa,card=0;
+  int i,aa;
 #if defined (XFORMS)
   void *status;
 #endif

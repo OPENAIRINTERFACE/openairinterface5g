@@ -187,6 +187,9 @@ void init_UE(int nb_inst) {
     UE = PHY_vars_UE_g[inst][0];
 
     ret = openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]);
+    if (ret !=0){
+       exit_fun("Error loading device library");
+    }
     UE->rfdevice.host_type = BBU_HOST;
     //    UE->rfdevice.type      = NONE_DEV;
     error_code = pthread_create(&UE->proc.pthread_ue, &UE->proc.attr_ue, UE_thread, NULL);
@@ -1062,7 +1065,11 @@ void *UE_thread(void *arg) {
 						UE->frame_parms.samples_per_tti,
 						UE->frame_parms.nb_antennas_tx,
 						1);
-	      
+              if (txs !=  UE->frame_parms.samples_per_tti) {
+                 LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, UE->frame_parms.samples_per_tti);
+                 exit_fun( "problem transmitting samples" );
+              }
+
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
 
 	    }
@@ -1088,7 +1095,10 @@ void *UE_thread(void *arg) {
 						UE->frame_parms.samples_per_tti - rx_off_diff,
 						UE->frame_parms.nb_antennas_tx,
 						1);
-	      
+              if (txs !=  UE->frame_parms.samples_per_tti - rx_off_diff) {
+                 LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, UE->frame_parms.samples_per_tti-rx_off_diff);
+                 exit_fun( "problem transmitting samples" );
+              }
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
 
 	      // read in first symbol of next frame and adjust for timing drift
@@ -1170,6 +1180,7 @@ void *UE_thread(void *arg) {
     } // UE->is_synchronized==1
       
   } // while !oai_exit
+ return NULL;
 } // UE_thread
 
 /*
