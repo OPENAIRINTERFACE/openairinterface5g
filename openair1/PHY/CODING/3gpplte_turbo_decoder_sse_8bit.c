@@ -517,9 +517,11 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
   beta_ptr[6] = alpha128[6+(frame_length>>1)];
   beta_ptr[7] = alpha128[7+(frame_length>>1)];
 
+  int overlap = (frame_length>>4)> L ? (frame_length>>4)-L : 0 ;
+
   for (rerun_flag=0, loopval=0;
        rerun_flag<2 ;
-       loopval=(frame_length>>4)-L,rerun_flag++) {
+       loopval=overlap,rerun_flag++) {
 
     if (offset8_flag==0) {
       // FIXME! beta0-beta7 are used uninitialized. FIXME!
