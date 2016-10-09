@@ -435,9 +435,10 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
   if (HI>0)
     HI=1;
 
+
   //  c = (1-(2*HI))*SSS_AMP;
   // x1 is set in lte_gold_generic
-  x2 = (((subframe+1)*(frame_parms->Nid_cell+1))<<9) + frame_parms->Nid_cell;
+  x2 = (((subframe+1)*((frame_parms->Nid_cell<<1)+1))<<9) + frame_parms->Nid_cell;
 
   s = lte_gold_generic(&x1, &x2, reset);
 
