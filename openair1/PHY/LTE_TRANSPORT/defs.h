@@ -374,6 +374,8 @@ typedef struct {
   uint32_t TBS;
   /// The payload + CRC size in bits
   uint32_t B;
+  /// Number of soft channel bits
+  uint32_t G;
   /// CQI CRC status
   uint8_t cqi_crc_status;
   /// Pointer to CQI data
