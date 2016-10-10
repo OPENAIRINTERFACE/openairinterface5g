@@ -165,14 +165,6 @@ unsigned char *parse_header(unsigned char *mac_header,
     lcid = ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID;
 
     if (lcid < UE_CONT_RES) {
-    	//FNA: Contention Resolution check according to Annex B of 36.321
-    	// if this is for CCCH then a Contention Resolution must have been parsed before
-    	if ((lcid == 0) && (num_cont_res == 0)) {
-    		LOG_W(MAC,"[UE] Msg4 Wrong received format: CCCH received without Contention Resolution before\n");
-    		// exit parsing
-    		return NULL;
-    	}
-
       //printf("[MAC][UE] header %x.%x.%x\n",mac_header_ptr[0],mac_header_ptr[1],mac_header_ptr[2]);
       if (not_done==0) {// last MAC SDU, length is implicit
         mac_header_ptr++;
