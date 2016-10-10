@@ -367,6 +367,7 @@ typedef struct eNB_RRC_UE_s {
 #endif
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;
+  uint32_t                           ue_release_timer_thres;
 } eNB_RRC_UE_t;
 
 typedef uid_t ue_uid_t;

@@ -537,6 +537,41 @@ void ue_decode_si(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_i
   }
 }
 
+void ue_decode_p(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_index, void *pdu,uint16_t len)
+{
+
+  start_meas(&UE_mac_inst[module_idP].rx_p);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_IN);
+
+  LOG_D(MAC,"[UE %d] Frame %d Sending Paging message to RRC (LCID Id %d,len %d)\n",module_idP,frameP,PCCH,len);
+
+  mac_rrc_data_ind(module_idP,
+                   CC_id,
+                   frameP,0, // unknown subframe
+                   P_RNTI,
+                   PCCH,
+                   (uint8_t *)pdu,
+                   len,
+                   ENB_FLAG_NO,
+                   eNB_index,
+                   0);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_OUT);
+  stop_meas(&UE_mac_inst[module_idP].rx_p);
+  if (opt_enabled == 1) {
+    trace_pdu(0,
+	      (uint8_t *)pdu,
+	      len,
+	      module_idP,
+	      4,
+	      P_RNTI,
+	      UE_mac_inst[module_idP].subframe,
+	      0,
+	      0);
+    LOG_D(OPT,"[UE %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
+	    module_idP, frameP, CC_id, P_RNTI, len);
+  }
+}
+
 #ifdef Rel10
 unsigned char *parse_mch_header(unsigned char *mac_header,
                                 unsigned char *num_sdu,
@@ -740,7 +775,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
         // Check if the subframe is for MSI, MCCH or MTCHs and Set the correspoding flag to 1
         switch (subframe) {
         case 1:
-          if (mac_xface->lte_frame_parms->frame_type == FDD) {
+          if (mac_xface->frame_parms->frame_type == FDD) {
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF1) == MBSFN_FDD_SF1) {
               if (msi_pos == 1) {
                 msi_flag = 1;
@@ -758,7 +793,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 2:
-          if (mac_xface->lte_frame_parms->frame_type == FDD) {
+          if (mac_xface->frame_parms->frame_type == FDD) {
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF2) == MBSFN_FDD_SF2) {
               if (msi_pos == 2) {
                 msi_flag = 1;
@@ -776,7 +811,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 3:
-          if (mac_xface->lte_frame_parms->frame_type == TDD) { // TDD
+          if (mac_xface->frame_parms->frame_type == TDD) { // TDD
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF3) == MBSFN_TDD_SF3) {
               if (msi_pos == 1) {
                 msi_flag = 1;
@@ -807,7 +842,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 4:
-          if (mac_xface->lte_frame_parms->frame_type == TDD) {
+          if (mac_xface->frame_parms->frame_type == TDD) {
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF4) == MBSFN_TDD_SF4) {
               if (msi_pos == 2) {
                 msi_flag = 1;
@@ -825,7 +860,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 6:
-          if (mac_xface->lte_frame_parms->frame_type == FDD) {
+          if (mac_xface->frame_parms->frame_type == FDD) {
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF6) == MBSFN_FDD_SF6) {
               if (msi_pos == 4) {
                 msi_flag = 1;
@@ -843,7 +878,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 7:
-          if (mac_xface->lte_frame_parms->frame_type == TDD) { // TDD
+          if (mac_xface->frame_parms->frame_type == TDD) { // TDD
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF7) == MBSFN_TDD_SF7) {
               if (msi_pos == 3) {
                 msi_flag = 1;
@@ -874,7 +909,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 8:
-          if (mac_xface->lte_frame_parms->frame_type == TDD) { //TDD
+          if (mac_xface->frame_parms->frame_type == TDD) { //TDD
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF8) == MBSFN_TDD_SF8) {
               if (msi_pos == 4) {
                 msi_flag = 1;
@@ -905,7 +940,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 9:
-          if (mac_xface->lte_frame_parms->frame_type == TDD) {
+          if (mac_xface->frame_parms->frame_type == TDD) {
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF9) == MBSFN_TDD_SF9) {
               if (msi_pos == 5) {
                 msi_flag = 1;

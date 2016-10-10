@@ -324,7 +324,7 @@ int trx_lms_start(openair0_device *device){
  * \param card Index of the RF card to use 
  * \returns 0 on success
  */
-int trx_lms_stop(int card) {
+int trx_lms_stop(openair0_device *device) {
   /*
   LMS_DeviceClose(usbport);
   LMS_DeviceClose(comport);
@@ -410,28 +410,24 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg){
     openair0_cfg[0].tx_sample_advance     = 15;
     openair0_cfg[0].tx_bw                 = 30.72e6;
     openair0_cfg[0].rx_bw                 = 30.72e6;
-    openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
     break;
   case 15360000:
     openair0_cfg[0].samples_per_packet    = 2048;
     openair0_cfg[0].tx_sample_advance     = 45;
     openair0_cfg[0].tx_bw                 = 28e6;
     openair0_cfg[0].rx_bw                 = 10e6;
-    openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
     break;
   case 7680000:
     openair0_cfg[0].samples_per_packet    = 1024;
     openair0_cfg[0].tx_sample_advance     = 70;
     openair0_cfg[0].tx_bw                 = 28e6;
     openair0_cfg[0].rx_bw                 = 5.0e6;
-    openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
     break;
   case 1920000:
     openair0_cfg[0].samples_per_packet    = 256;
     openair0_cfg[0].tx_sample_advance     = 50;
     openair0_cfg[0].tx_bw                 = 1.25e6;
     openair0_cfg[0].rx_bw                 = 1.25e6;
-    openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
     break;
   default:
     printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);

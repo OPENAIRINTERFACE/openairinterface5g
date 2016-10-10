@@ -1,4 +1,4 @@
-fc  = 1907600000;
+fc  = 2560000000
 %fc  = 1907600000;
 %fc = 859.5e6;
 
@@ -6,7 +6,7 @@ rxgain=0;
 txgain=0;
 eNB_flag = 0;
 card = 0;
-active_rf = [1 1 1 1];
+active_rf = [1 0 0 0];
 autocal = [1 1 1 1];
 resampling_factor = [2 2 2 2];
 limeparms;

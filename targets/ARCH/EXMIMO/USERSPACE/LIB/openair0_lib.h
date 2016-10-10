@@ -42,6 +42,30 @@
 #include "pcie_interface.h"
 #include "openair_device.h"
 #include "common_lib.h"
+#include <pthread.h>
+#include <sched.h>
+#include <linux/sched.h>
+
+typedef enum {
+  idle=0,
+  waiting_for_synch,
+  running
+} exmimo_daq_state_t;
+
+typedef struct {
+  pthread_t watchdog;
+  pthread_attr_t watchdog_attr;
+  struct sched_param watchdog_sched_param;
+  pthread_mutex_t watchdog_mutex;
+  int watchdog_exit;
+  int wait_first_read;
+  exmimo_daq_state_t daq_state;
+  openair0_timestamp ts;
+  openair0_timestamp last_ts_rx;
+  int samples_per_tick;
+  int samples_per_frame;
+  int last_mbox;
+} exmimo_state_t;
 
 // Use this to access shared memory (configuration structures, adc/dac data buffers, ...)
 // contains userspace pointers

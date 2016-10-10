@@ -32,15 +32,15 @@
 
 #define SOFFSET 0
 
-int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
+int slot_fep_mbsfn(PHY_VARS_UE *ue,
                    unsigned char l,
                    int subframe,
                    int sample_offset,
                    int no_prefix)
 {
-
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
-  LTE_UE_COMMON *ue_common_vars   = &phy_vars_ue->lte_ue_common_vars;
+ 
+  LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  LTE_UE_COMMON *common_vars   = &ue->common_vars;
   uint8_t eNB_id = 0;//ue_common_vars->eNb_id;
 
   unsigned char aa;
@@ -115,67 +115,66 @@ int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
       sample_offset);
 #endif
 
-
   for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-    memset(&ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*l],0,2*frame_parms->ofdm_symbol_size*sizeof(int));
-
+    memset(&common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*l],0,frame_parms->ofdm_symbol_size*sizeof(int));
     if (l==0) {
-      start_meas(&phy_vars_ue->rx_dft_stats);
-      dft((int16_t *)&ue_common_vars->rxdata[aa][(sample_offset +
+      start_meas(&ue->rx_dft_stats);
+      dft((int16_t *)&common_vars->rxdata[aa][(sample_offset +
           nb_prefix_samples0 +
           subframe_offset -
           SOFFSET) % frame_length_samples],
-          (int16_t *)&ue_common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*l],1);
-      stop_meas(&phy_vars_ue->rx_dft_stats);
+          (int16_t *)&common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*l],1);
+      stop_meas(&ue->rx_dft_stats);
     } else {
       if ((sample_offset +
            (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) +
            (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1) +
            subframe_offset-
            SOFFSET) > (frame_length_samples - frame_parms->ofdm_symbol_size))
-        memcpy((short *)&ue_common_vars->rxdata[aa][frame_length_samples],
-               (short *)&ue_common_vars->rxdata[aa][0],
+        memcpy((short *)&common_vars->rxdata[aa][frame_length_samples],
+               (short *)&common_vars->rxdata[aa][0],
                frame_parms->ofdm_symbol_size*sizeof(int));
 
-      start_meas(&phy_vars_ue->rx_dft_stats);
-      dft((int16_t *)&ue_common_vars->rxdata[aa][(sample_offset +
+      start_meas(&ue->rx_dft_stats);
+      dft((int16_t *)&common_vars->rxdata[aa][(sample_offset +
           (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) +
           (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1) +
           subframe_offset-
           SOFFSET) % frame_length_samples],
-          (int16_t *)&ue_common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*l],1);
-      stop_meas(&phy_vars_ue->rx_dft_stats);
+          (int16_t *)&common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*l],1);
+      stop_meas(&ue->rx_dft_stats);
     }
-
   }
+
+
 
   //if ((l==0) || (l==(4-frame_parms->Ncp))) {
   // changed to invoke MBSFN channel estimation in symbols 2,6,10
   if ((l==2)||(l==6)||(l==10)) {
     for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-      if (phy_vars_ue->perfect_ce == 0) {
+      if (ue->perfect_ce == 0) {
 #ifdef DEBUG_FEP
         msg("Channel estimation eNB %d, aatx %d, subframe %d, symbol %d\n",eNB_id,aa,subframe,l);
 #endif
 
-        lte_dl_mbsfn_channel_estimation(phy_vars_ue,
+        lte_dl_mbsfn_channel_estimation(ue,
                                         eNB_id,
                                         0,
                                         subframe,
                                         l);
-        /*   for (i=0;i<phy_vars_ue->PHY_measurements.n_adj_cells;i++) {
-        lte_dl_mbsfn_channel_estimation(phy_vars_ue,
+        /*   for (i=0;i<ue->PHY_measurements.n_adj_cells;i++) {
+        lte_dl_mbsfn_channel_estimation(ue,
                eNB_id,
              i+1,
                subframe,
                l);
-             lte_dl_channel_estimation(phy_vars_ue,eNB_id,0,
+             lte_dl_channel_estimation(ue,eNB_id,0,
            Ns,
            aa,
            l,
            symbol);
-           for (i=0;i<phy_vars_ue->PHY_measurements.n_adj_cells;i++) {
-        lte_dl_channel_estimation(phy_vars_ue,eNB_id,i+1,
+           for (i=0;i<ue->PHY_measurements.n_adj_cells;i++) {
+        lte_dl_channel_estimation(ue,eNB_id,i+1,
              Ns,
              aa,
              l,
@@ -189,10 +188,10 @@ int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
 #endif
         // if ((l == 0) || (l==(4-frame_parms->Ncp)))
         /*    if ((l==2)||(l==6)||(l==10))
-          lte_mbsfn_est_freq_offset(ue_common_vars->dl_ch_estimates[0],
+          lte_mbsfn_est_freq_offset(common_vars->dl_ch_estimates[0],
                   frame_parms,
                   l,
-                  &ue_common_vars->freq_offset); */
+                  &common_vars->freq_offset); */
       }
     }
   }

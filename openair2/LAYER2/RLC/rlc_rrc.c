@@ -202,6 +202,27 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
         case SRB_ToAddMod__rlc_Config_PR_defaultValue:
 //#warning TO DO SRB_ToAddMod__rlc_Config_PR_defaultValue
+          LOG_I(RRC, "RLC SRB1 is default value !!\n");
+          struct RLC_Config__am  *  config_am_pP = &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.am;
+          config_am_pP->dl_AM_RLC.t_Reordering     = T_Reordering_ms35;
+          config_am_pP->dl_AM_RLC.t_StatusProhibit = T_StatusProhibit_ms0;
+          config_am_pP->ul_AM_RLC.t_PollRetransmit = T_PollRetransmit_ms45;
+          config_am_pP->ul_AM_RLC.pollPDU          = PollPDU_pInfinity;
+          config_am_pP->ul_AM_RLC.pollByte         = PollByte_kBinfinity;
+          config_am_pP->ul_AM_RLC.maxRetxThreshold = UL_AM_RLC__maxRetxThreshold_t4;
+
+          if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_AM) != NULL) {
+            config_req_rlc_am_asn1 (
+              ctxt_pP,
+              SRB_FLAG_YES,
+              &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.am,
+              rb_id);
+          } else {
+            LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
+                  PROTOCOL_CTXT_ARGS(ctxt_pP),
+                  rb_id);
+          }
+/*
           if (rrc_rlc_add_rlc   (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_UM) != NULL) {
             config_req_rlc_um_asn1(
               ctxt_pP,
@@ -217,6 +238,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
                   PROTOCOL_CTXT_ARGS(ctxt_pP),
                   rb_id);
           }
+          */
 
           break;
 

@@ -59,6 +59,7 @@
 #include "sctp_default_values.h"
 #include "SystemInformationBlockType2.h"
 #include "LAYER2/MAC/extern.h"
+#include "PHY/extern.h"
 
 /* those macros are here to help diagnose problems in configuration files
  * if the lookup fails, a warning is printed
@@ -93,6 +94,10 @@
 #define ENB_CONFIG_STRING_MOBILE_NETWORK_CODE           "mobile_network_code"
 
 #define ENB_CONFIG_STRING_COMPONENT_CARRIERS                            "component_carriers"
+
+#define ENB_CONFIG_STRING_CC_NODE_FUNCTION                              "node_function"
+#define ENB_CONFIG_STRING_CC_NODE_TIMING                                "node_timing"   
+#define ENB_CONFIG_STRING_CC_NODE_SYNCH_REF                             "node_synch_ref"   
 
 #define ENB_CONFIG_STRING_FRAME_TYPE                                    "frame_type"
 #define ENB_CONFIG_STRING_TDD_CONFIG                                    "tdd_config"
@@ -313,7 +318,7 @@ void enb_config_display(void)
     for (j=0; j< enb_properties.properties[i]->nb_rrh_gw; j++) {
       if (enb_properties.properties[i]->rrh_gw_config[j].active == 1 ){
 	printf( "\n\tRRH GW %d config for eNB %u:\n\n", j, i);
-	printf( "\tinterface name :       \t%s:\n",enb_properties.properties[i]->rrh_gw_if_name);
+        printf( "\tinterface name :       \t%s:\n",enb_properties.properties[i]->rrh_gw_config[j].rrh_gw_if_name);
 	printf( "\tlocal address  :       \t%s:\n",enb_properties.properties[i]->rrh_gw_config[j].local_address);
 	printf( "\tlocal port     :       \t%d:\n",enb_properties.properties[i]->rrh_gw_config[j].local_port);
 	printf( "\tremote address :       \t%s:\n",enb_properties.properties[i]->rrh_gw_config[j].remote_address);
@@ -321,24 +326,29 @@ void enb_config_display(void)
 	printf( "\ttx_scheduling_advance :\t%d:\n",enb_properties.properties[i]->rrh_gw_config[j].tx_scheduling_advance);
 	printf( "\ttx_sample_advance :    \t%d:\n",enb_properties.properties[i]->rrh_gw_config[j].tx_sample_advance);
 	printf( "\tiq_txshift :           \t%d:\n",enb_properties.properties[i]->rrh_gw_config[j].iq_txshift);
-	printf( "\ttransport  :           \t%s Ethernet:\n",(enb_properties.properties[i]->rrh_gw_config[j].raw == 1)? "RAW" : "UDP");
+	printf( "\ttransport  :           \t%s Ethernet:\n",(enb_properties.properties[i]->rrh_gw_config[j].raw == 1)? "RAW" : (enb_properties.properties[i]->rrh_gw_config[j].rawif4p5 == 1)? "RAW_IF4p5" : (enb_properties.properties[i]->rrh_gw_config[j].udpif4p5 == 1)? "UDP_IF4p5" : (enb_properties.properties[i]->rrh_gw_config[j].rawif5_mobipass == 1)? "RAW_IF5_MOBIPASS" : "UDP");
 	if (enb_properties.properties[i]->rrh_gw_config[j].exmimo == 1) {
-	  printf( "\tRF target  :           \tEXMIMO:\n\n");
+	  printf( "\tRF target  :           \tEXMIMO:\n");
 	} else if (enb_properties.properties[i]->rrh_gw_config[j].usrp_b200 == 1) {
-	  printf( "\tRF target  :           \tUSRP_B200:\n\n");
+	  printf( "\tRF target  :           \tUSRP_B200:\n");
 	} else if (enb_properties.properties[i]->rrh_gw_config[j].usrp_x300 == 1) {
-	  printf( "\tRF target  :           \tUSRP_X300:\n\n");
+	  printf( "\tRF target  :           \tUSRP_X300:\n");
 	} else if (enb_properties.properties[i]->rrh_gw_config[j].bladerf == 1) {
-	  printf( "\tRF target  :           \tBLADERF:\n\n");
+	  printf( "\tRF target  :           \tBLADERF:\n");
 	} else if (enb_properties.properties[i]->rrh_gw_config[j].lmssdr == 1) {
-	  printf( "\tRF target  :           \tLMSSDR:\n\n");
+	  printf( "\tRF target  :           \tLMSSDR:\n");
 	} else {
-	  printf( "\tRF target  :           \tNONE:\n\n");
+	  printf( "\tRF target  :           \tNONE:\n");
 	}
       }
     }
 
     for (j=0; j< enb_properties.properties[i]->nb_cc; j++) {
+      // CC_ID node function/timing
+      printf( "\n\tnode_function for CC %d:      \t%s:\n",j,eNB_functions[enb_properties.properties[i]->cc_node_function[j]]);
+      printf( "\tnode_timing for CC %d:        \t%s:\n",j,eNB_timing[enb_properties.properties[i]->cc_node_timing[j]]);
+      printf( "\tnode_synch_ref for CC %d:     \t%d:\n",j,enb_properties.properties[i]->cc_node_synch_ref[j]);
+
       printf( "\teutra band for CC %d:         \t%"PRId16":\n",j,enb_properties.properties[i]->eutra_band[j]);
       printf( "\tdownlink freq for CC %d:      \t%"PRIu64":\n",j,enb_properties.properties[i]->downlink_frequency[j]);
       printf( "\tuplink freq offset for CC %d: \t%"PRId32":\n",j,enb_properties.properties[i]->uplink_frequency_offset[j]);
@@ -348,7 +358,7 @@ void enb_config_display(void)
       printf( "\tnb_antenna_ports for CC %d:\t%d:\n",j,enb_properties.properties[i]->nb_antenna_ports[j]);
       printf( "\tnb_antennas_tx for CC %d:\t%d:\n",j,enb_properties.properties[i]->nb_antennas_tx[j]);
       printf( "\tnb_antennas_rx for CC %d:\t%d:\n",j,enb_properties.properties[i]->nb_antennas_rx[j]);
-
+      
       // RACH-Config
       printf( "\trach_numberOfRA_Preambles for CC %d:\t%ld:\n",j,enb_properties.properties[i]->rach_numberOfRA_Preambles[j]);
       printf( "\trach_preamblesGroupAConfig for CC %d:\t%d:\n",j,enb_properties.properties[i]->rach_preamblesGroupAConfig[j]);
@@ -526,6 +536,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
   config_setting_t *setting_enb                   = NULL;
   config_setting_t *setting_otg                   = NULL;
   config_setting_t *subsetting_otg                = NULL;
+  int               parse_errors                  = 0;
   int               num_enb_properties            = 0;
   int               enb_properties_index          = 0;
   int               num_enbs                      = 0;
@@ -536,6 +547,11 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
   int               i                             = 0;
   int               j                             = 0;
   libconfig_int     enb_id                        = 0;
+
+  const char*       cc_node_function              = NULL; 
+  const char*       cc_node_timing                = NULL; 
+  int               cc_node_synch_ref             = 0;
+
   const char*       cell_type                     = NULL;
   const char*       tac                           = 0;
   const char*       enb_name                      = NULL;
@@ -812,7 +828,10 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
               component_carrier = config_setting_get_elem(setting_component_carriers, j);
 
               //printf("Component carrier %d\n",component_carrier);
-              if (!(config_setting_lookup_string(component_carrier, ENB_CONFIG_STRING_FRAME_TYPE, &frame_type)
+              if (!(config_setting_lookup_string(component_carrier, ENB_CONFIG_STRING_CC_NODE_FUNCTION, &cc_node_function)
+                   && config_setting_lookup_string(component_carrier, ENB_CONFIG_STRING_CC_NODE_TIMING, &cc_node_timing)
+                   && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_CC_NODE_SYNCH_REF, &cc_node_synch_ref)
+                   && config_setting_lookup_string(component_carrier, ENB_CONFIG_STRING_FRAME_TYPE, &frame_type)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_TDD_CONFIG, &tdd_config)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_TDD_CONFIG_S, &tdd_config_s)
                    && config_setting_lookup_string(component_carrier, ENB_CONFIG_STRING_PREFIX_TYPE, &prefix_type)
@@ -892,6 +911,42 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
 
               enb_properties.properties[enb_properties_index]->nb_cc++;
 
+              if (strcmp(cc_node_function, "eNodeB_3GPP") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_function[j] = eNodeB_3GPP;
+              } else if (strcmp(cc_node_function, "eNodeB_3GPP_BBU") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_function[j] = eNodeB_3GPP_BBU;
+              } else if (strcmp(cc_node_function, "NGFI_RCC_IF4p5") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_function[j] = NGFI_RCC_IF4p5;
+              } else if (strcmp(cc_node_function, "NGFI_RAU_IF4p5") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_function[j] = NGFI_RAU_IF4p5;
+              } else if (strcmp(cc_node_function, "NGFI_RRU_IF4p5") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_function[j] = NGFI_RRU_IF4p5;
+              } else if (strcmp(cc_node_function, "NGFI_RRU_IF5") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_function[j] = NGFI_RRU_IF5;
+              } else {
+                AssertError (0, parse_errors ++,
+                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for node_function choice: eNodeB_3GPP or eNodeB_3GPP_BBU or NGFI_IF4_RCC or NGFI_IF4_RRU or NGFI_IF5_RRU !\n",
+                             lib_config_file_name_pP, i, cc_node_function);
+              }
+
+              if (strcmp(cc_node_timing, "synch_to_ext_device") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_timing[j] = synch_to_ext_device;
+              } else if (strcmp(cc_node_timing, "synch_to_other") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_timing[j] = synch_to_other;
+              } else {
+                AssertError (0, parse_errors ++,
+                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for node_function choice: SYNCH_TO_DEVICE or SYNCH_TO_OTHER !\n",
+                             lib_config_file_name_pP, i, cc_node_timing);
+              }
+
+              if ((cc_node_synch_ref >= -1) && (cc_node_synch_ref < num_component_carriers)) {  
+               enb_properties.properties[enb_properties_index]->cc_node_synch_ref[j] = (int16_t) cc_node_synch_ref; 
+              } else {
+                AssertError (0, parse_errors ++,
+                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for node_synch_ref choice: valid CC_id or -1 !\n",
+                             lib_config_file_name_pP, i, cc_node_synch_ref);
+              }
+              
               enb_properties.properties[enb_properties_index]->tdd_config[j] = tdd_config;
               AssertFatal (tdd_config <= TDD_Config__subframeAssignment_sa6,
                            "Failed to parse eNB configuration file %s, enb %d illegal tdd_config %d (should be 0-%d)!",
@@ -915,7 +970,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
                              "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for prefix_type choice: NORMAL or EXTENDED !\n",
                              lib_config_file_name_pP, i, prefix_type);
               }
-
+              
               enb_properties.properties[enb_properties_index]->eutra_band[j] = eutra_band;
               enb_properties.properties[enb_properties_index]->downlink_frequency[j] = (uint32_t) downlink_frequency;
               enb_properties.properties[enb_properties_index]->uplink_frequency_offset[j] = (unsigned int) uplink_frequency_offset;
@@ -2289,7 +2344,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
 
             enb_properties.properties[enb_properties_index]->nb_rrh_gw += 1;
 
-	    enb_properties.properties[enb_properties_index]->rrh_gw_if_name = strdup(if_name);
+            enb_properties.properties[enb_properties_index]->rrh_gw_config[j].rrh_gw_if_name = strdup(if_name);
             enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_address  = strdup(ipv4);
             enb_properties.properties[enb_properties_index]->rrh_gw_config[j].remote_address = strdup(ipv4_remote);
 	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_port = local_port;
@@ -2306,6 +2361,12 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
               enb_properties.properties[enb_properties_index]->rrh_gw_config[j].udp = 1;
             } else if (strcmp(tr_preference, "raw") == 0) {
               enb_properties.properties[enb_properties_index]->rrh_gw_config[j].raw = 1;
+            } else if (strcmp(tr_preference, "udp_if4p5") == 0) {
+              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].udpif4p5 = 1; 
+            } else if (strcmp(tr_preference, "raw_if4p5") == 0) {
+              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].rawif4p5 = 1;
+            } else if (strcmp(tr_preference, "raw_if5_mobipass") == 0) {
+              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].rawif5_mobipass = 1;
             } else {//if (strcmp(preference, "no") == 0) 
               enb_properties.properties[enb_properties_index]->rrh_gw_config[j].udp = 1;
               enb_properties.properties[enb_properties_index]->rrh_gw_config[j].raw = 1;
@@ -2332,7 +2393,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
           }
 	  } else {
 	    enb_properties.properties[enb_properties_index]->nb_rrh_gw = 0;	    
-	    enb_properties.properties[enb_properties_index]->rrh_gw_if_name = "none";
+            enb_properties.properties[enb_properties_index]->rrh_gw_config[j].rrh_gw_if_name = "none";
             enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_address  = "0.0.0.0";
             enb_properties.properties[enb_properties_index]->rrh_gw_config[j].remote_address = "0.0.0.0";
 	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_port= 0;

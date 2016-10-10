@@ -39,6 +39,7 @@
 extern "C" {
 #include "openair0_lib.h"
 }
+#include "oarf.h"
 
 #define FCNNAME "oarf_get_num_detected_cards"
 
