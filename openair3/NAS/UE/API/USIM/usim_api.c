@@ -42,7 +42,7 @@ Description Implements the API used by the NAS layer to read/write
 #include "usim_api.h"
 #include "nas_log.h"
 #include "memory.h"
-
+#include <stdio.h>
 #include "aka_functions.h"
 #include <string.h> // memcpy, memset
 #include <stdlib.h> // malloc, free

@@ -2857,6 +2857,7 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
           }
         }
 
+        LOG_D(PHY,"DCI decoding CRNTI  [format_c: %d, nCCE[subframe: %d]: %d ]\n",format_c, subframe, pdcch_vars[eNB_id]->nCCE[subframe]);
         //  memcpy(&dci_alloc[*dci_cnt].dci_pdu[0],dci_decoded_output,sizeof_bytes);
 
 

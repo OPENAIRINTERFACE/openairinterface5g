@@ -225,7 +225,7 @@ int trx_brf_reset_stats(openair0_device* device) {
  * \param card the hardware to use
  * \returns 0 in success 
  */
-int trx_brf_stop(int card) {
+int trx_brf_stop(openair0_device* device) {
 
   return(0);
 

@@ -426,7 +426,7 @@ schedule_ue_spec(
   int                   N_RBG[MAX_NUM_CCs];
   unsigned char         aggregation;
   mac_rlc_status_resp_t rlc_status;
-  unsigned char         header_len_dcch=0, header_len_dcch_tmp=0, header_len_dcch_last=0; 
+  unsigned char         header_len_dcch=0, header_len_dcch_tmp=0; 
   unsigned char         header_len_dtch=0, header_len_dtch_tmp=0, header_len_dtch_last=0; 
   unsigned char         ta_len=0;
   unsigned char         sdu_lcids[NB_RB_MAX],lcid,offset,num_sdus=0;

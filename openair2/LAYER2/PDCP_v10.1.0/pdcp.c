@@ -1159,6 +1159,22 @@ rrc_pdcp_config_asn1_req (
           break;
 
         case SRB_ToAddMod__rlc_Config_PR_defaultValue:
+        	pdcp_config_req_asn1 (
+        	              ctxt_pP,
+        	              pdcp_p,
+        	              SRB_FLAG_YES,
+        	              rlc_type,
+        	              action,
+        	              lc_id,
+        	              mch_id,
+        	              srb_id,
+        	              srb_sn,
+        	              0, // drb_report
+        	              0, // header compression
+        	              security_modeP,
+        	              kRRCenc_pP,
+        	              kRRCint_pP,
+        	              kUPenc_pP);
           // already the default values
           break;
 

@@ -124,7 +124,7 @@ static void rrc_ue_generate_RRCConnectionSetupComplete( const protocol_ctxt_t* c
  */
 static void rrc_ue_generate_RRCConnectionReconfigurationComplete( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, const uint8_t Transaction_id );
 
-static void rrc_ue_generate_MeasurementReport( const protocol_ctxt_t* const ctxt_pP, uint8_t eNB_index );
+static void rrc_ue_generate_MeasurementReport(protocol_ctxt_t* const ctxt_pP, uint8_t eNB_index );
 
 static uint8_t check_trigger_meas_event(
   uint8_t module_idP,
@@ -3555,7 +3555,7 @@ void ue_meas_filtering( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_
 
 //Below routine implements Measurement Reporting procedure from 36.331 Section 5.5.5
 //-----------------------------------------------------------------------------
-static void rrc_ue_generate_MeasurementReport( const protocol_ctxt_t* const ctxt_pP, uint8_t eNB_index )
+static void rrc_ue_generate_MeasurementReport(protocol_ctxt_t* const ctxt_pP, uint8_t eNB_index )
 {
 
   uint8_t             buffer[32], size;
@@ -3636,7 +3636,7 @@ static void rrc_ue_generate_MeasurementReport( const protocol_ctxt_t* const ctxt
 
 // Measurement report triggering, described in 36.331 Section 5.5.4.1: called periodically
 //-----------------------------------------------------------------------------
-void ue_measurement_report_triggering( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index )
+void ue_measurement_report_triggering(protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index )
 {
   uint8_t               i,j;
   Hysteresis_t     hys;

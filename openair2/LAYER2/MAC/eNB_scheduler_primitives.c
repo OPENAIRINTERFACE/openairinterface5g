@@ -1002,10 +1002,11 @@ void dump_CCE_table(int *CCE_table,const int nCCE,const unsigned short rnti,cons
   int nb_candidates = 0,i;
   unsigned int Yk;
   
+  printf("CCE 0: ");
   for (i=0;i<nCCE;i++) {
     printf("%1d.",CCE_table[i]);
-    if ((i&7) == 0)
-      printf("\n");
+    if ((i&7) == 7)
+      printf("\n CCE %d: ");
   }
 
   Yk = (unsigned int)rnti;

@@ -377,7 +377,7 @@ ue_meas_filtering(
 
 void
 ue_measurement_report_triggering(
-  const protocol_ctxt_t* const ctxt_pP,
+  protocol_ctxt_t*        const ctxt_pP,
   const uint8_t                 eNB_index
 );
 

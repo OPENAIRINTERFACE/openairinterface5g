@@ -310,7 +310,7 @@ void enb_config_display(void)
     for (j=0; j< enb_properties.properties[i]->nb_rrh_gw; j++) {
       if (enb_properties.properties[i]->rrh_gw_config[j].active == 1 ){
 	printf( "\n\tRRH GW %d config for eNB %u:\n\n", j, i);
-	printf( "\tinterface name :       \t%s:\n",enb_properties.properties[i]->rrh_gw_if_name);
+        printf( "\tinterface name :       \t%s:\n",enb_properties.properties[i]->rrh_gw_config[j].rrh_gw_if_name);
 	printf( "\tlocal address  :       \t%s:\n",enb_properties.properties[i]->rrh_gw_config[j].local_address);
 	printf( "\tlocal port     :       \t%d:\n",enb_properties.properties[i]->rrh_gw_config[j].local_port);
 	printf( "\tremote address :       \t%s:\n",enb_properties.properties[i]->rrh_gw_config[j].remote_address);
@@ -2336,7 +2336,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
 
             enb_properties.properties[enb_properties_index]->nb_rrh_gw += 1;
 
-	    enb_properties.properties[enb_properties_index]->rrh_gw_if_name = strdup(if_name);
+            enb_properties.properties[enb_properties_index]->rrh_gw_config[j].rrh_gw_if_name = strdup(if_name);
             enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_address  = strdup(ipv4);
             enb_properties.properties[enb_properties_index]->rrh_gw_config[j].remote_address = strdup(ipv4_remote);
 	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_port = local_port;
@@ -2385,7 +2385,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
           }
 	  } else {
 	    enb_properties.properties[enb_properties_index]->nb_rrh_gw = 0;	    
-	    enb_properties.properties[enb_properties_index]->rrh_gw_if_name = "none";
+            enb_properties.properties[enb_properties_index]->rrh_gw_config[j].rrh_gw_if_name = "none";
             enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_address  = "0.0.0.0";
             enb_properties.properties[enb_properties_index]->rrh_gw_config[j].remote_address = "0.0.0.0";
 	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_port= 0;

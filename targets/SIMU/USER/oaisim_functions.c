@@ -1004,8 +1004,6 @@ int eNB_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void *
   int CC_id  = device->CC_id;
 
   int subframe;
-  int ready_for_new_subframe=0;
-  int subframe_eNB_mask_local;
   int sample_count=0;
 
   *ptimestamp = last_eNB_rx_timestamp[eNB_id][CC_id];
@@ -1057,8 +1055,6 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
   int UE_id = device->Mod_id;
   int CC_id  = device->CC_id;
   int subframe;
-  int ready_for_new_subframe=0;
-  int subframe_UE_mask_local;
   int sample_count=0;
   int read_size;
 
@@ -1322,8 +1318,6 @@ void init_openair1(void)
 void init_openair2(void)
 {
 #ifdef OPENAIR2
-  module_id_t enb_id;
-  module_id_t UE_id;
   int CC_id;
 //#warning "eNB index is hard coded to zero"
 
