@@ -45,7 +45,9 @@
 #include "trace.h"
 #include "grid.h"
 #include "steadystaterwp.h"
+#ifdef SUMO_IF
 #include "sumo.h"
+#endif 
 #include "../OMV/structures.h"
 //#define STANDALONE
 
@@ -109,11 +111,11 @@ init_mobility_generator (omg_global_param omg_param_list[])
     case TRACE:
       start_trace_generator (omg_param_list[node_t]);
       break;
-
+#ifdef SUMO_IF
     case SUMO:
       start_sumo_generator (omg_param_list[node_t]);
       break;
-
+#endif 
     case STEADY_RWP:
       start_steadystaterwp_generator (omg_param_list[node_t]);
       break;
@@ -152,12 +154,12 @@ stop_mobility_generator (omg_global_param * omg_param_list)
 
     case STEADY_RWP:
       break;
-
+#ifdef SUMO_IF
     case SUMO:
       stop_sumo_generator ();
       //LOG_D(OMG," --------OMG will interface with SUMO for mobility generation-------- \n");
       break;
-
+#endif 
     default:
       LOG_N (OMG, "Unsupported generator\n");
     }
@@ -198,12 +200,12 @@ update_node_vector (int mobility_type, double cur_time)
   case TRACE:
     update_trace_nodes (cur_time);
     break;
-
+#ifdef SUMO_IF
   case SUMO:
     // printf("in SUMO case \n");
     update_sumo_nodes (cur_time);
     break;
-
+#endif 
   case STEADY_RWP:
     update_steadystaterwp_nodes (cur_time);
     break;
@@ -248,12 +250,12 @@ get_nodes_positions (int mobility_type, double cur_time)
   case TRACE:
     get_trace_positions_updated (cur_time);
     break;
-
+#ifdef SUMO_IF
   case SUMO:
     LOG_I (OMG, "getting positions from SUMO\n");
     get_sumo_positions_updated (cur_time);
     break;
-
+#endif 
   case STEADY_RWP:
     get_steadystaterwp_positions_updated (cur_time);
     break;
@@ -371,11 +373,11 @@ set_new_mob_type (int id, int node_t, int mob_t, double cur_time)
         move_steadystaterwp_node (pair, cur_time);
 
       break;
-
+#ifdef SUMO_IF
     case SUMO:
       LOG_E (OMG, "not possible to change mobility type to sumo \n");
       break;
-
+#endif
     case TRACE:
       LOG_E (OMG, "not possible to change mobility type to trace \n");
       break;

@@ -870,21 +870,16 @@ set(UTIL_SRC
   ${OPENAIR2_DIR}/UTIL/OCG/OCG_parse_filename.c
   ${OPENAIR2_DIR}/UTIL/OCG/OCG_parse_XML.c
   ${OPENAIR2_DIR}/UTIL/OCG/OCG_save_XML.c
-  ${OPENAIR2_DIR}/UTIL/OMG/client_traci_OMG.c
   ${OPENAIR2_DIR}/UTIL/OMG/common.c
   ${OPENAIR2_DIR}/UTIL/OMG/grid.c
-  ${OPENAIR2_DIR}/UTIL/OMG/id_manager.c
   ${OPENAIR2_DIR}/UTIL/OMG/job.c
   ${OPENAIR2_DIR}/UTIL/OMG/mobility_parser.c
   ${OPENAIR2_DIR}/UTIL/OMG/omg.c
   ${OPENAIR2_DIR}/UTIL/OMG/omg_hashtable.c
   ${OPENAIR2_DIR}/UTIL/OMG/rwalk.c
   ${OPENAIR2_DIR}/UTIL/OMG/rwp.c
-  ${OPENAIR2_DIR}/UTIL/OMG/sumo.c
-  ${OPENAIR2_DIR}/UTIL/OMG/socket_traci_OMG.c
   ${OPENAIR2_DIR}/UTIL/OMG/static.c
   ${OPENAIR2_DIR}/UTIL/OMG/steadystaterwp.c
-  ${OPENAIR2_DIR}/UTIL/OMG/storage_traci_OMG.c
   ${OPENAIR2_DIR}/UTIL/OMG/trace.c
   ${OPENAIR2_DIR}/UTIL/OMG/trace_hashtable.c
   ${OPENAIR2_DIR}/UTIL/OPT/probe.c
@@ -896,6 +891,15 @@ set(UTIL_SRC
   ${OPENAIR2_DIR}/UTIL/OTG/otg_rx.c
   )
 add_library(UTIL ${UTIL_SRC})
+
+#set(OMG_SUMO_SRC
+#  ${OPENAIR2_DIR}/UTIL/OMG/client_traci_OMG.c
+#  ${OPENAIR2_DIR}/UTIL/OMG/id_manager.c
+#  ${OPENAIR2_DIR}/UTIL/OMG/sumo.c
+#  ${OPENAIR2_DIR}/UTIL/OMG/socket_traci_OMG.c
+#  ${OPENAIR2_DIR}/UTIL/OMG/storage_traci_OMG.c
+#  )
+#add_library(OMG_SUMO ${OMG_SUMO_SRC})
 
 set(SECU_OSA_SRC
   ${OPENAIR2_DIR}/UTIL/OSA/osa_key_deriver.c
@@ -1752,7 +1756,6 @@ add_executable(oaisim
   ${OPENAIR_TARGETS}/SIMU/USER/oaisim.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR2_DIR}/UTIL/OMG/sumo.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${GTPU_need_ITTI}
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
