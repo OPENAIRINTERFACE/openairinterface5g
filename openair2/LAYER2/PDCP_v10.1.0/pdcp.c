@@ -380,27 +380,12 @@ boolean_t pdcp_data_req(
      agent_started = proto_agent_start(ctxt_pP->module_id, enb_properties_p);
   }
   
-  // Send a Hello Message Everytime that we have a packet
-  //proto_agent_send_hello();
-  //printf("PROTOPDCP is sending a message request\n");
-  //printf("PROTOPDCP: vals are %u, %u, %u, %u, %u, %u, %u \n", ctxt_pP, srb_flagP, rb_idP, muiP, confirmP, pdcp_pdu_size);
+
   if (pdcp_pdu_p!=NULL)
   {
-    printf("subframe is %u\n", ctxt_pP->subframe);
-    printf("srb is %u\n", srb_flagP);
-    printf("MBMS is %u\n", MBMS_FLAG_NO);
-    printf("rb_id is %u\n", rb_idP);
-    printf("muiP is %u\n", muiP);
-    printf("confirm is %u\n", confirmP);
-    printf("Size is %u\n", pdcp_pdu_size);
-      
     proto_agent_send_rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
-    //rlc_status = ack_result;
-    // free the memory for this block
     free_mem_block(pdcp_pdu_p);
-    
-    printf("Response is %u\n", ack_result_nikos);
-    rlc_status = ack_result_nikos;
+    rlc_status = ack_result;
   }
   else
   {

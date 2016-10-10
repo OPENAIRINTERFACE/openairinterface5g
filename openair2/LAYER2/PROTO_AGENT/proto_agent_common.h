@@ -72,7 +72,7 @@ typedef int (*proto_agent_message_destruction_callback)(
 );
 
 
-uint32_t ack_result_nikos;
+uint32_t ack_result;
 
 /**********************************
  * progRAN protocol messages helper 

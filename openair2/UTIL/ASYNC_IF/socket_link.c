@@ -135,7 +135,7 @@ socket_link_t *new_link_client(char *server, int port)
   }
   ret->socket_fd = -1;
 
-  LOG_I(PROTO_AGENT, "Creating a new link client socket connecting to %s:%d\n", server, port);
+  LOG_D(PROTO_AGENT, "Creating a new link client socket connecting to %s:%d\n", server, port);
 
   ret->socket_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (ret->socket_fd == -1) {
@@ -270,11 +270,8 @@ int link_receive_packet(socket_link_t *link, void **ret_data, int *ret_size)
 
   link->bytes_received += 4;
 
+  LOG_D(PROTO_AGENT, "ASYNC BYTES Received are :%d \n", link->bytes_received);
   
-
-  LOG_I(PROTO_AGENT, "ASYNC BYTES Received are :%d \n", link->bytes_received);
-  LOG_I(PROTO_AGENT, "Size is :%d \n", size);
-
   data = malloc(size);
   if (data == NULL) {
     LOG_E(MAC, "%s:%d: out of memory\n", __FILE__, __LINE__);
@@ -286,9 +283,6 @@ int link_receive_packet(socket_link_t *link, void **ret_data, int *ret_size)
 
   link->bytes_received += size;
   link->packets_received++;
-
-  LOG_I(PROTO_AGENT, "received %d bytes\n", link->bytes_received);
-
   *ret_data = data;
   *ret_size = size;
   return 0;

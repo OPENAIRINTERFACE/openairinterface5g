@@ -39,16 +39,12 @@
 #include <time.h>
 
 #include "proto_agent_common.h"
-//#include "proto_agent.h"
 #include "PHY/extern.h"
 #include "log.h"
 
 #include "RRC/LITE/extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "rrc_eNB_UE_context.h"
-
-
-//#include <protobuf-c/protobuf-c.h>
 
 void * enb[NUM_MAX_ENB];
 void * enb_ue[NUM_MAX_ENB];
@@ -114,7 +110,6 @@ int fsp_create_header(xid_t xid, Protocol__FspType type,  Protocol__FspHeader **
 
 int just_print(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
 {
-    printf("Called the callback function, returing 1\n");
     return 1;
 }
 
@@ -127,7 +122,7 @@ int proto_agent_pdcp_data_req(mid_t mod_id, const void *params, Protocol__Flexsp
   // Create the protobuf header
   Protocol__FspHeader *header;
   xid_t xid = 1;
-  LOG_I(PROTO_AGENT, "creating the data_req message\n");
+  LOG_D(PROTO_AGENT, "creating the data_req message\n");
   
   if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_RLC_DATA_REQ, &header) != 0)
      goto error;
@@ -156,9 +151,7 @@ int proto_agent_pdcp_data_req(mid_t mod_id, const void *params, Protocol__Flexsp
   // Copy data to the RlcPdu structure
   pdu->fsp_pdu_data.data =  malloc(args->sdu_size);
   pdu->fsp_pdu_data.len = args->sdu_size;
-  
-  printf("MSG payload is %u", args->sdu_size);
-  
+   
   memcpy(pdu->fsp_pdu_data.data, args->sdu_p, args->sdu_size); 
   pdu->has_fsp_pdu_data = 1;
   
@@ -203,11 +196,6 @@ int proto_agent_pdcp_data_req(mid_t mod_id, const void *params, Protocol__Flexsp
   data_req->has_enb_id = 1;
   data_req->pdcp_data = rlc_data;
   
-  
-/*  
-  printf("PROTOPDCP:initialized the data_req\n");
-  printf("PROTOPDCP2: instance is %u, fame is %u", args->ctxt->instance, args->ctxt->frame);*/
- 
   *msg = malloc(sizeof(Protocol__FlexsplitMessage));
 
   if(*msg == NULL)
@@ -218,7 +206,7 @@ int proto_agent_pdcp_data_req(mid_t mod_id, const void *params, Protocol__Flexsp
   (*msg)->msg_case = PROTOCOL__FLEXSPLIT_MESSAGE__MSG_DATA_REQ_MSG;
   (*msg)->msg_dir = PROTOCOL__FLEXSPLIT_DIRECTION__INITIATING_MESSAGE; //we will be waiting for the ACK
   (*msg)->has_msg_dir = 1;
-  (*msg)->data_req_msg = data_req; //data_req;
+  (*msg)->data_req_msg = data_req;
   
   return 0;
   
@@ -258,19 +246,14 @@ int proto_agent_destroy_pdcp_data_req(Protocol__FlexsplitMessage *msg) {
 
 int proto_agent_get_ack_result(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
 {
- // printf("Inside data handler for ACK");
   Protocol__FspHeader *header;
   xid_t xid;
   rlc_op_status_t result = 0;
-  
-  LOG_I(PROTO_AGENT, "handling the data_req_ack message\n");
- 
+  LOG_D(PROTO_AGENT, "handling the data_req_ack message\n");
   Protocol__FlexsplitMessage *input = (Protocol__FlexsplitMessage *)params;
   Protocol__FspRlcDataReqAck *data_ack = input->data_req_ack;
-  
   result = data_ack->result;
-  printf("Received result is %u\n", result);
-  ack_result_nikos = result;
+  ack_result = result;
 
 }
 
@@ -281,7 +264,7 @@ int proto_agent_pdcp_data_req_ack(mid_t mod_id, const void *params, Protocol__Fl
   xid_t xid;
   rlc_op_status_t result = 0;
   
-  LOG_I(PROTO_AGENT, "creating the data_req_ack message\n");
+  LOG_D(PROTO_AGENT, "creating the data_req_ack message\n");
   
   Protocol__FlexsplitMessage *input = (Protocol__FlexsplitMessage *)params;
   Protocol__FspRlcDataReq *data_req = input->data_req_msg;
@@ -406,7 +389,7 @@ int proto_agent_pdcp_data_ind(mid_t mod_id, const void *params, Protocol__Flexsp
   // Create the protobuf header
   Protocol__FspHeader *header;
   xid_t xid = 1;
-  LOG_I(PROTO_AGENT, "creating the data_ind message\n");
+  LOG_D(PROTO_AGENT, "creating the data_ind message\n");
   
   if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_PDCP_DATA_IND, &header) != 0)
      goto error;
@@ -436,8 +419,6 @@ int proto_agent_pdcp_data_ind(mid_t mod_id, const void *params, Protocol__Flexsp
   // Copy data to the RlcPdu structure
   pdu->fsp_pdu_data.data =  malloc(args->sdu_size);
   pdu->fsp_pdu_data.len = args->sdu_size;
-  
-  printf("MSG payload is %u", args->sdu_size);
   
   memcpy(pdu->fsp_pdu_data.data, args->sdu_p, args->sdu_size); 
   pdu->has_fsp_pdu_data = 1;
@@ -486,7 +467,7 @@ int proto_agent_pdcp_data_ind(mid_t mod_id, const void *params, Protocol__Flexsp
     goto error;
   
   protocol__flexsplit_message__init(*msg);
-  LOG_I(PROTO_AGENT,"setting the message case to %d\n", PROTOCOL__FLEXSPLIT_MESSAGE__MSG_DATA_IND_MSG);
+  LOG_D(PROTO_AGENT,"setting the message case to %d\n", PROTOCOL__FLEXSPLIT_MESSAGE__MSG_DATA_IND_MSG);
 
   (*msg)->msg_case = PROTOCOL__FLEXSPLIT_MESSAGE__MSG_DATA_IND_MSG;
   (*msg)->msg_dir = PROTOCOL__FLEXSPLIT_DIRECTION__INITIATING_MESSAGE; //we will be waiting for the ACK
@@ -518,7 +499,7 @@ int proto_agent_pdcp_data_ind_ack(mid_t mod_id, const void *params, Protocol__Fl
   xid_t xid;
   rlc_op_status_t result = 0;
   
-  LOG_I(PROTO_AGENT, "creating the data_ind_ack message\n");
+  LOG_D(PROTO_AGENT, "creating the data_ind_ack message\n");
   
   Protocol__FlexsplitMessage *input = (Protocol__FlexsplitMessage *)params;
   Protocol__FspPdcpDataInd *data_ind = input->data_ind_msg;
@@ -624,7 +605,7 @@ int proto_agent_hello(mid_t mod_id, const void *params, Protocol__FlexsplitMessa
   if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_HELLO, &header) != 0)
     goto error;
 
-  LOG_I(PROTO_AGENT, "creating the HELLO message\n");
+  LOG_D(PROTO_AGENT, "creating the HELLO message\n");
   Protocol__FspHello *hello_msg = NULL;
   hello_msg = malloc(sizeof(Protocol__FspHello));
   if(hello_msg == NULL)
@@ -676,8 +657,7 @@ int proto_agent_echo_request(mid_t mod_id, const void* params, Protocol__Flexspl
   xid_t xid = 1;
   if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_ECHO_REQUEST, &header) != 0)
     goto error;
-  LOG_I(PROTO_AGENT,"Created the fsp message header\n");
-  LOG_I(PROTO_AGENT, "creating the echo request message\n");
+  LOG_D(PROTO_AGENT, "creating the echo request message\n");
   
   Protocol__FspEchoRequest *echo_request_msg = NULL;
   echo_request_msg = malloc(sizeof(Protocol__FspEchoRequest));
@@ -692,7 +672,7 @@ int proto_agent_echo_request(mid_t mod_id, const void* params, Protocol__Flexspl
     goto error;
   protocol__flexsplit_message__init(*msg);
 
-  LOG_I(PROTO_AGENT,"setting the message direction to %d\n", PROTOCOL__FLEXSPLIT_MESSAGE__MSG_ECHO_REQUEST_MSG);
+  LOG_D(PROTO_AGENT,"setting the message direction to %d\n", PROTOCOL__FLEXSPLIT_MESSAGE__MSG_ECHO_REQUEST_MSG);
   (*msg)->msg_case = PROTOCOL__FLEXSPLIT_MESSAGE__MSG_ECHO_REQUEST_MSG;
   (*msg)->msg_dir = PROTOCOL__FLEXSPLIT_DIRECTION__INITIATING_MESSAGE;
   (*msg)->has_msg_dir = 1;
@@ -732,7 +712,7 @@ int proto_agent_echo_reply(mid_t mod_id, const void *params, Protocol__Flexsplit
 
   
   
-  LOG_I(PROTO_AGENT, "creating the echo reply message\n");
+  LOG_D(PROTO_AGENT, "creating the echo reply message\n");
   Protocol__FspHeader *header;
   if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_ECHO_REPLY, &header) != 0)
     goto error;

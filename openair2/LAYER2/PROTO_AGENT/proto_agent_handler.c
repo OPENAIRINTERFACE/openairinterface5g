@@ -77,7 +77,7 @@ Protocol__FlexsplitMessage* proto_agent_handle_message (mid_t mod_id,
   err_code_t err_code;
   DevAssert(data != NULL);
 
-  LOG_I(PROTO_AGENT, "Deserializing message with size %u \n", size);
+  LOG_D(PROTO_AGENT, "Deserializing message with size %u \n", size);
   if (proto_agent_deserialize_message(data, (int) size, &decoded_message) < 0) {
     err_code= PROTOCOL__FLEXSPLIT_ERR__MSG_DECODING;
     goto error; 
@@ -85,15 +85,14 @@ Protocol__FlexsplitMessage* proto_agent_handle_message (mid_t mod_id,
   Protocol__FspHeader *header = (Protocol__FspHeader*) decoded_message;
   if (header->has_type)
    {
-    LOG_I(PROTO_AGENT, "Deserialized MSG type is %d and %u\n", decoded_message->msg_case, decoded_message->msg_dir);
+    LOG_D(PROTO_AGENT, "Deserialized MSG type is %d and %u\n", decoded_message->msg_case, decoded_message->msg_dir);
    }
 
-  //printf("HANDLER: msg_case %u msg_dir %u\n\n", decoded_message->msg_case, decoded_message->msg_dir);
   if ((decoded_message->msg_case > sizeof(agent_messages_callback) / (3*sizeof(proto_agent_message_decoded_callback))) || 
       (decoded_message->msg_dir > PROTOCOL__FLEXSPLIT_DIRECTION__UNSUCCESSFUL_OUTCOME))
   {
       err_code= PROTOCOL__FLEXSPLIT_ERR__MSG_NOT_HANDLED;
-      LOG_I(PROTO_AGENT,"Handling message: MSG NOT handled, going to error\n");
+      LOG_D(PROTO_AGENT,"Handling message: MSG NOT handled, going to error\n");
       goto error;
   }
   
@@ -122,18 +121,15 @@ void * proto_agent_pack_message(Protocol__FlexsplitMessage *msg,
   void * buffer;
   err_code_t err_code = PROTOCOL__FLEXSPLIT_ERR__NO_ERR;
   
-  printf("serializing message\n");
   if (proto_agent_serialize_message(msg, &buffer, size) < 0 ) {
     err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENCODING;
     goto error;
   }
   
-  // free the msg --> later keep this in the data struct and just update the values
   //TODO call proper destroy function
-  printf("destruction callback\n");
+  
   err_code = ((*message_destruction_callback[msg->msg_case-1])(msg));
   
-  printf("asserion");
   DevAssert(buffer !=NULL);
   
   LOG_D(PROTO_AGENT,"Serialized the enb mac stats reply (size %d)\n", *size);
