@@ -72,6 +72,10 @@ Description Defines the security mode control EMM procedure executed by the
 #include "secu_defs.h"
 #include "msc.h"
 
+#if  defined(NAS_BUILT_IN_UE)
+#include "nas_itti_messaging.h"
+#endif
+
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
 /****************************************************************************/
@@ -293,7 +297,9 @@ int emm_proc_security_mode_command(int native_ksi, int ksi,
 
       _emm_data.security->selected_algorithms.encryption = seea;
       _emm_data.security->selected_algorithms.integrity  = seia;
-
+#if  defined(NAS_BUILT_IN_UE)
+      nas_itti_kenb_refresh_req(_security_data.kenb.value);
+#endif
     }
     /*
      * NAS security mode command not accepted by the UE

@@ -3163,7 +3163,7 @@ int main( int argc, char **argv )
       UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
 
 
-#ifdef EXMIMO
+#if defined(EXMIMO) || defined(OAI_USRP) 
       //N_TA_offset
       if (UE[CC_id]->lte_frame_parms.frame_type == TDD) {
         if (UE[CC_id]->lte_frame_parms.N_RB_DL == 100)

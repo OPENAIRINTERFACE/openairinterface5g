@@ -182,7 +182,7 @@ typedef enum HO_STATE_e {
 #define PAYLOAD_SIZE_MAX 1024
 #define RRC_BUF_SIZE 255
 #define UNDEF_SECURITY_MODE 0xff
-#define NO_SECURITY_MODE 0x33
+#define NO_SECURITY_MODE 0x20
 
 #define CBA_OFFSET        0xfff4
 // #define NUM_MAX_CBA_GROUP 4 // in the platform_constants

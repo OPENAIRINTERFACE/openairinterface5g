@@ -280,7 +280,7 @@ void Msg1_tx(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id
 
   if (opt_enabled) {
     trace_pdu(0, NULL, 0, module_idP, 2, UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex,
-              UE_mac_inst[module_idP].subframe, 0, UE_mac_inst[module_idP].RA_attempt_number);
+        UE_mac_inst[module_idP].frame, UE_mac_inst[module_idP].subframe, 0, UE_mac_inst[module_idP].RA_attempt_number);
     LOG_D(OPT,"[UE %d][RAPROC] TX MSG1 Frame %d trace pdu for rnti %x  with size %d\n",
           module_idP, frameP, 1, UE_mac_inst[module_idP].RA_Msg3_size);
   }
@@ -304,7 +304,7 @@ void Msg3_tx(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id
 
   if (opt_enabled) { // msg3
     trace_pdu(0, &UE_mac_inst[module_idP].CCCH_pdu.payload[0], UE_mac_inst[module_idP].RA_Msg3_size,
-              module_idP, 3, UE_mac_inst[module_idP].crnti, UE_mac_inst[module_idP].subframe, 0, 0);
+              module_idP, 3, UE_mac_inst[module_idP].crnti, UE_mac_inst[module_idP].frame, UE_mac_inst[module_idP].subframe, 0, 0);
     LOG_D(OPT,"[UE %d][RAPROC] MSG3 Frame %d trace pdu Preamble %d   with size %d\n",
           module_idP, frameP, UE_mac_inst[module_idP].crnti /*UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex*/, UE_mac_inst[module_idP].RA_Msg3_size);
   }
