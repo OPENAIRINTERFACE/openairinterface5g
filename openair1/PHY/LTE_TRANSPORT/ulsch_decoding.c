@@ -1200,6 +1200,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
         y[i2] = c*ulsch_llr[i++];
         i2=(i2+(Cmux<<2)-3);
 	*/
+	// slightly more optimized version (equivalent to above) for 16QAM to improve computational performance
 	*(__m64 *)&y[i2] = _mm_sign_pi16(*(__m64*)&ulsch_llr[i],*(__m64*)&cseq[i]);i+=4;i2+=(Cmux<<2);
 
 
@@ -1531,6 +1532,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 
   // RI
 
+  // rank 1
   if ((ulsch_harq->O_RI == 1) && (Qprime_RI > 0)) {
     ulsch_harq->o_RI[0] = ((ulsch_harq->q_RI[0] + ulsch_harq->q_RI[Q_m/2]) > 0) ? 0 : 1;
   }

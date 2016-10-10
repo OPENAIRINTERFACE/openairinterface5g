@@ -11,7 +11,7 @@
  <CleanUpAluLteBox>sudo -S -E /opt/ltebox/tools/stop_ltebox</CleanUpAluLteBox>
 <ExmimoRfStop>exmimo_pci=`lspci -m | grep Xilinx`; if [ -n "$exmimo_pci" ] ; then $OPENAIR_DIR/cmake_targets/build_oai -w EXMIMO -c; sudo -S -E $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2; fi; sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_huaweiE398_ue.py --reset-ue;  sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_sony_experia_m4_ue.py --stop-ue; uname -a; sudo -E dmesg</ExmimoRfStop>
  <Timeout_execution>36000</Timeout_execution>
- <TestCaseExclusionList>010141 0102+ 010301 010303 010304 010305 0104+ 015518 015519 015520 015521 015522 015523 015602 015605 015702 015705 015818 015819 015820 015821 015822 015823 016102 016105 016502 016505 017002 017005 017502 017505 018002 018005 018502 018505 025502  025518 025519 025520 025521 025522 025523</TestCaseExclusionList>
+ <TestCaseExclusionList>010141 0102+ 010301 010303 010304 010305 0104+ 015508 015511 015520 015523 015518 015519 015520 015521 015522 015523 015602 015605 015702 015705 015818 015819 015820 015821 015822 015823 016102 016105 016502 016505 017002 017005 017502 017505 018002 018005 018502 018505  025514 025517 025520 025523 025518 025519 025520 025521 025522 025523</TestCaseExclusionList>
  <nruns_lte-softmodem>3</nruns_lte-softmodem>
  <MachineListGeneric>mozart hutch starsky stevens amerique calisson </MachineListGeneric>
      <testCase id="010101" >
@@ -791,7 +791,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_cmac_encrypt</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_cmac_encrypt</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -807,7 +807,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_ctr_decrypt</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_ctr_decrypt</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -823,7 +823,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_ctr_encrypt</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_ctr_encrypt</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -839,7 +839,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_kenb</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_kenb</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -855,7 +855,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -871,7 +871,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eea1</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eea1</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -887,7 +887,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eea2</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eea2</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -903,7 +903,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eia1</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eia1</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -919,7 +919,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eia1</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eia1</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -935,7 +935,7 @@
       <compile_prog_args> --core_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_kdf</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_kdf</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -962,7 +962,7 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/dlsim</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/dlsim</main_exec>
       <main_exec_args> -m5 -gF -s-1 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70 -L
                        -m4 -gF -s0 -w1.0 -f.2 -n500 -B6 -c4 -z2 -O70
                        -m15 -gF -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70 -L
@@ -993,7 +993,7 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte-simulators/build/ulsim</main_exec>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/ulsim</main_exec>
       <main_exec_args> -B25 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 -L
                        -B25 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 -L
                         -B50 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 -L 
@@ -1170,13 +1170,12 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.26\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  downlink_frequency 2660000000L
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  uplink_frequency_offset -120000000
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower  -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower  -30
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tx_gain 90
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  rx_gain 125
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower  -32
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
@@ -1276,7 +1275,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -f m -u</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -f m -u</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
@@ -1348,7 +1347,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -f m -u </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -f m -u </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=9.0Mbits/sec average=8.5Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1394,11 +1393,10 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  uplink_frequency_offset -120000000
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tx_gain 90
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower  -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower  -30
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower  -32
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
@@ -1424,7 +1422,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -u -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=10.0Mbits/sec average=10.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1623,7 +1621,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  uplink_frequency_offset -120000000
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  tx_gain 90
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  pdsch_referenceSignalPower  -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  pdsch_referenceSignalPower  -30
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antenna_ports 2
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antennas_rx  2
@@ -1639,7 +1637,7 @@
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf   --single-thread   </eNB_main_exec_args>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf   --single-thread -E  </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
@@ -1730,7 +1728,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -u -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=5.0Mbits/sec average=4.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1806,7 +1804,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0  -s -i 1 -u -f m </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo  -s -i 1 -u -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=9.0Mbits/sec average=8.5Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1852,7 +1850,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  uplink_frequency_offset -120000000
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  tx_gain 90
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  pdsch_referenceSignalPower  -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  pdsch_referenceSignalPower  -30
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antenna_ports 2
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antennas_rx  2
@@ -1868,7 +1866,7 @@
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  --single-thread    </eNB_main_exec_args>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  --single-thread -E   </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
@@ -1883,7 +1881,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0  -s -i 1 -u -f m </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo  -s -i 1 -u -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=15.0Mbits/sec average=15.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -2078,11 +2076,10 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  uplink_frequency_offset -120000000
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tx_gain 90
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower   -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower   -30
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower  -32
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
@@ -2182,7 +2179,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1  -f m </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1  -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
@@ -2254,7 +2251,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1  -f m </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1  -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=9.0Mbits/sec average=8.5Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -2300,11 +2297,10 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  uplink_frequency_offset -120000000
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tx_gain 90
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower -30
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower  -32
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
@@ -2330,7 +2326,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1  -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1  -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=15.0Mbits/sec average=15.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -2531,7 +2527,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  uplink_frequency_offset -120000000
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  tx_gain 90
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  pdsch_referenceSignalPower  -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  pdsch_referenceSignalPower  -30
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antenna_ports 2
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antennas_rx  2
@@ -2547,7 +2543,7 @@
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf   --single-thread   </eNB_main_exec_args>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf   --single-thread -E  </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
@@ -2638,7 +2634,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1  -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1  -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=5.0Mbits/sec average=4.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -2714,7 +2710,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0  -s -i 1  -f m </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo  -s -i 1  -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=9.0Mbits/sec average=8.5Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -2760,7 +2756,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  uplink_frequency_offset -120000000
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  tx_gain 90
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  pdsch_referenceSignalPower  -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  pdsch_referenceSignalPower  -30
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antenna_ports 2
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antennas_rx  2
@@ -2776,7 +2772,7 @@
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  --single-thread    </eNB_main_exec_args>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  --single-thread -E   </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
@@ -2791,7 +2787,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0  -s -i 1  -f m </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo  -s -i 1  -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=15.0Mbits/sec average=15.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -4150,7 +4146,7 @@ c
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s  -i 1 -u -f m </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s  -i 1 -u -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
@@ -4221,7 +4217,7 @@ c
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -u -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
@@ -4241,7 +4237,7 @@ c
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 10 192.172.0.2 -c 192.172.0.2 -b 32Mbits/s -i 1 -f m -u     </EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 10 192.172.0.2 -c 192.172.0.2 -b 31Mbits/s -i 1 -f m -u     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -4293,7 +4289,7 @@ c
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -u -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
@@ -4313,7 +4309,7 @@ c
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 10 192.172.0.2 -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 10 192.172.0.2 -u -c  192.172.0.2 -b 33Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -4580,7 +4576,7 @@ c
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1  -f m </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1  -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
@@ -4651,7 +4647,7 @@ c
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1  -f m </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1  -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
@@ -4723,7 +4719,7 @@ c
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1  -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1  -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
@@ -4743,7 +4739,7 @@ c
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 75 lo -c  192.172.0.2     </EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 10 192.172.0.2 -c  192.172.0.2     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -5018,7 +5014,7 @@ c
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s  -i 1 -u -f m </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s  -i 1 -u -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
@@ -5091,7 +5087,7 @@ c
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -u -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
@@ -5165,7 +5161,7 @@ c
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -u -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
@@ -5460,7 +5456,7 @@ c
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1  -f m </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1  -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
@@ -5533,7 +5529,7 @@ c
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1  -f m </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1  -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
@@ -5607,7 +5603,7 @@ c
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1  -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1  -f m </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
@@ -6387,7 +6383,7 @@ c
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s  -i 1 -u -f m</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s  -i 1 -u -f m</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
@@ -6458,7 +6454,7 @@ c
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s  -i 1 -u -f m</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s  -i 1 -u -f m</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
@@ -6529,7 +6525,7 @@ c
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s  -i 1 -u -f m</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s  -i 1 -u -f m</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
@@ -8628,7 +8624,7 @@ c
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower  -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower  -30
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
@@ -8851,7 +8847,7 @@ c
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower  -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower  -30
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
@@ -9075,7 +9071,7 @@ c
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower  -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower  -30
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
@@ -9298,7 +9294,7 @@ c
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower  -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower  -30
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.19/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
@@ -9524,7 +9520,7 @@ c
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  uplink_frequency_offset -120000000
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  tx_gain 90
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  pdsch_referenceSignalPower  -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  pdsch_referenceSignalPower  -30
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antenna_ports 2
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antennas_rx  2
@@ -9540,7 +9536,7 @@ c
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf    --single-thread  </eNB_main_exec_args>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf    --single-thread -E </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
@@ -9753,7 +9749,7 @@ c
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  uplink_frequency_offset -120000000
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  tx_gain 90
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  pdsch_referenceSignalPower  -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  pdsch_referenceSignalPower  -30
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antenna_ports 2
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antennas_rx  2
@@ -9769,7 +9765,7 @@ c
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf    --single-thread  </eNB_main_exec_args>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf    --single-thread -E </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
@@ -9907,7 +9903,6 @@ c
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  uplink_frequency_offset -120000000
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  tx_gain 90
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  pdsch_referenceSignalPower  -32
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antenna_ports 2
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antennas_rx  2
@@ -9984,7 +9979,7 @@ c
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  uplink_frequency_offset -120000000
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  tx_gain 90
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  pdsch_referenceSignalPower  -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  pdsch_referenceSignalPower  -30
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antenna_ports 2
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antennas_rx  2
@@ -10000,7 +9995,7 @@ c
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf    --single-thread  </eNB_main_exec_args>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf    --single-thread -E </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
@@ -10213,7 +10208,7 @@ c
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  uplink_frequency_offset -120000000
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  tx_gain 90
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  rx_gain 125
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  pdsch_referenceSignalPower  -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  pdsch_referenceSignalPower  -30
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antenna_ports 2
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf  nb_antennas_rx  2
@@ -10229,7 +10224,7 @@ c
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf   --single-thread   </eNB_main_exec_args>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf   --single-thread  -E </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>

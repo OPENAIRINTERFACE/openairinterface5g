@@ -5229,7 +5229,7 @@ void dft8192(int16_t *x,int16_t *y,int scale)
   
   xtmpp = xtmp;
 
-  for (i=0; i<32; i++) {
+  for (i=0; i<16; i++) {
     transpose4_ooff_simd256(x256  ,xtmpp,512);
     transpose4_ooff_simd256(x256+2,xtmpp+1,512);
     transpose4_ooff_simd256(x256+4,xtmpp+2,512);
@@ -5267,7 +5267,7 @@ void dft8192(int16_t *x,int16_t *y,int scale)
   }
 
   dft4096((int16_t*)(xtmp),(int16_t*)ytmp,1);
-  dft4096((int16_t*)(xtmp+1024),(int16_t*)(ytmp+512),1);
+  dft4096((int16_t*)(xtmp+512),(int16_t*)(ytmp+512),1);
 
 
   for (i=0; i<512; i++) {
@@ -5319,7 +5319,7 @@ void idft8192(int16_t *x,int16_t *y,int scale)
   
   xtmpp = xtmp;
 
-  for (i=0; i<32; i++) {
+  for (i=0; i<16; i++) {
     transpose4_ooff_simd256(x256  ,xtmpp,512);
     transpose4_ooff_simd256(x256+2,xtmpp+1,512);
     transpose4_ooff_simd256(x256+4,xtmpp+2,512);
@@ -5357,7 +5357,7 @@ void idft8192(int16_t *x,int16_t *y,int scale)
   }
 
   idft4096((int16_t*)(xtmp),(int16_t*)ytmp,1);
-  idft4096((int16_t*)(xtmp+1024),(int16_t*)(ytmp+512),1);
+  idft4096((int16_t*)(xtmp+512),(int16_t*)(ytmp+512),1);
 
 
   for (i=0; i<512; i++) {
@@ -5680,15 +5680,58 @@ void idft12288(int16_t *input, int16_t *output)
   //  write_output("out.m","out",output,6144,1,1);
 }
 
+#include "twiddle18432.h"
 // 6144 x 3
-void dft18432(int16_t *input, int16_t *output)
-{
+void dft18432(int16_t *input, int16_t *output) {
 
+  int i,i2,j;
+  uint32_t tmp[3][6144] __attribute__((aligned(32)));
+  uint32_t tmpo[3][6144] __attribute__((aligned(32)));
+
+  for (i=0,j=0; i<6144; i++) {
+    tmp[0][i] = ((uint32_t *)input)[j++];
+    tmp[1][i] = ((uint32_t *)input)[j++];
+    tmp[2][i] = ((uint32_t *)input)[j++];
+  }
+
+  dft6144((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]));
+  dft6144((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]));
+  dft6144((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]));
+
+  for (i=0,i2=0; i<12288; i+=8,i2+=4)  {
+    bfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),(simd_q15_t*)(&tmpo[2][i2]),
+          (simd_q15_t*)(output+i),(simd_q15_t*)(output+12288+i),(simd_q15_t*)(output+24576+i),
+          (simd_q15_t*)(twa18432+i),(simd_q15_t*)(twb18432+i));
+  }
+
+  _mm_empty();
+  _m_empty();
 }
 
-void idft18432(int16_t *input, int16_t *output)
-{
+void idft18432(int16_t *input, int16_t *output) {
 
+  int i,i2,j;
+  uint32_t tmp[3][6144] __attribute__((aligned(32)));
+  uint32_t tmpo[3][6144] __attribute__((aligned(32)));
+
+  for (i=0,j=0; i<6144; i++) {
+    tmp[0][i] = ((uint32_t *)input)[j++];
+    tmp[1][i] = ((uint32_t *)input)[j++];
+    tmp[2][i] = ((uint32_t *)input)[j++];
+  }
+
+  idft6144((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]));
+  idft6144((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]));
+  idft6144((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]));
+
+  for (i=0,i2=0; i<12288; i+=8,i2+=4)  {
+    ibfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),(simd_q15_t*)(&tmpo[2][i2]),
+	   (simd_q15_t*)(output+i),(simd_q15_t*)(output+12288+i),(simd_q15_t*)(output+24576+i),
+	   (simd_q15_t*)(twa18432+i),(simd_q15_t*)(twb18432+i));
+  }
+
+  _mm_empty();
+  _m_empty();
 }
 
 #include "twiddle24576.h"
@@ -5733,8 +5776,8 @@ void dft24576(int16_t *input, int16_t *output)
 void idft24576(int16_t *input, int16_t *output)
 {
   int i,i2,j;
-  uint32_t tmp[3][16384] __attribute__((aligned(32)));
-  uint32_t tmpo[3][16384] __attribute__((aligned(32)));
+  uint32_t tmp[3][8192] __attribute__((aligned(32)));
+  uint32_t tmpo[3][8192] __attribute__((aligned(32)));
 
   for (i=0,j=0; i<8192; i++) {
     tmp[0][i] = ((uint32_t *)input)[j++];
@@ -5746,13 +5789,6 @@ void idft24576(int16_t *input, int16_t *output)
   idft8192((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
   idft8192((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
   
-  /*
-  for (i=1; i<8192; i++) {
-    tmpo[0][i] = tmpo[0][i<<1];
-    tmpo[1][i] = tmpo[1][i<<1];
-    tmpo[2][i] = tmpo[2][i<<1];
-    }*/
-
   /*
     write_output("in.m","in",input,24576,1,1);
     write_output("out0.m","o0",tmpo[0],8192,1,1);
@@ -19128,6 +19164,55 @@ int main(int argc, char**argv)
   printf("\n\n2048-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
   write_output("y2048.m","y2048",y,2048,1,1);
   write_output("x2048.m","x2048",x,2048,1,1);
+
+  memset((void*)x,0,2048*sizeof(int32_t));
+  for (i=2;i<2402;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  for (i=2*(4096-1200);i<8192;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  reset_meas(&ts);
+
+  for (i=0; i<10000; i++) {
+    start_meas(&ts);
+    idft4096((int16_t *)x,(int16_t *)y,1);
+    stop_meas(&ts);
+  }
+
+  printf("\n\n4096-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
+  write_output("y4096.m","y4096",y,4096,1,1);
+  write_output("x4096.m","x4096",x,4096,1,1);
+
+  memset((void*)x,0,8192*sizeof(int32_t));
+  for (i=2;i<4802;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  for (i=2*(4096-1200);i<8192;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  reset_meas(&ts);
+  for (i=0; i<10000; i++) {
+    start_meas(&ts);
+    idft8192((int16_t *)x,(int16_t *)y,1);
+    stop_meas(&ts);
+  }
+
+  printf("\n\n8192-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
+  write_output("y8192.m","y8192",y,8192,1,1);
+  write_output("x8192.m","x8192",x,8192,1,1);
 
   return(0);
 }

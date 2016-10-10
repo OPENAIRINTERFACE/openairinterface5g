@@ -41,6 +41,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdint.h>
 
 #include <sys/ioctl.h>
 #include "openair_device.h"
@@ -239,6 +240,18 @@ void find_and_transfer_section(char* section_name, unsigned int verboselevel) {
       /* Dynamically allocate a chunk of memory to store the section into. */
       section_content = (char*)malloc(elf_Shdr.sh_size);
 
+      /* Fail if the address returned by malloc does not fit in 32 bits.
+       * The kernel driver gets this address as 32 bits and uses it to copy
+       * from userspace. If the address does not fit into 32 bits the kernel
+       * will copy garbage or fail to copy completely.
+       * To be reworked if things do not work on some setups.
+       */
+      if (sizeof(char*) > 4 && (((uintptr_t)section_content)>>32)) {
+        fprintf(stderr, "FATAL ERROR: an internal serious problem has been encountered.\n");
+        fprintf(stderr, "Contact the authors so as to solve this issue.\n");
+        exit(-1);
+      }
+
       if (!section_content) {
         fprintf(stderr, "Error: could not dynamically allocate %d bytes for section %s.\n",
                 elf_Shdr.sh_size, SecNameStnTable + elf_Shdr.sh_name);
@@ -281,6 +294,13 @@ void find_and_transfer_section(char* section_name, unsigned int verboselevel) {
         ioctl_params[0] = UPDATE_FIRMWARE_TRANSFER_BLOCK;
         ioctl_params[1] = elf_Shdr.sh_addr;
         ioctl_params[2] = elf_Shdr.sh_size / 4;
+        /* This is wrong on x86_64 because a pointer is 64 bits and
+         * an unsigned int is only 32 bits.
+         * The compiler emits a warning, but the test
+         * above on the value of section_content makes it work
+         * (hopefully).
+         * To be changed if things do not work.
+         */
         ioctl_params[3] = (unsigned int)((unsigned int*)section_content);
         //invert4(ioctl_params[1]);
         //invert4(ioctl_params[2]);

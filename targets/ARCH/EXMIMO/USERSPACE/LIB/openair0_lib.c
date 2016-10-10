@@ -774,6 +774,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
       openair0_cfg[card].rxbase[ant] = (int32_t*)openair0_exmimo_pci[card].adc_head[ant];
       openair0_cfg[card].txbase[ant] = (int32_t*)openair0_exmimo_pci[card].dac_head[ant];
     }
+    openair0_cfg[card].mmapped_dma = 1;
   }
 
   create_watchdog(device);
