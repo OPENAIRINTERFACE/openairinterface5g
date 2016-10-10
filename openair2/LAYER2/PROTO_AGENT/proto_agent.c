@@ -86,7 +86,7 @@ void *receive_thread(void *args) {
         LOG_E(PROTO_AGENT,"msg to send back is NULL\n");
     }
 
-    free(data);
+    //free(data);
 
     if (msg != NULL){
       if (proto_agent_msg_send(d->enb_id, PROTO_AGENT_DEFAULT, msg, size, priority)) {
@@ -373,12 +373,10 @@ proto_agent_send_rlc_data_req(const protocol_ctxt_t* const ctxt_pP, const srb_fl
   int msgsize = 0;
   if (init_msg != NULL)
   {
-    printf("Will pack the message\n");
+    
     msg = proto_agent_pack_message(init_msg, &msgsize);
   
-    printf("Will free the message\n");
-    free(init_msg);
-  
+    
     LOG_I(PROTO_AGENT,"Server sending the pdcp data_req message over the async channel\n");
   
     if (msg!=NULL)
@@ -441,7 +439,7 @@ proto_agent_send_pdcp_data_ind(const protocol_ctxt_t* const ctxt_pP, const srb_f
     printf("Will pack the message \n");
     msg = proto_agent_pack_message(init_msg, &msgsize);
     printf("packed the message \n");
-    free(init_msg);
+    //free(init_msg);
   
     if (msg!=NULL)
     {
@@ -496,7 +494,7 @@ proto_server_receive(void)
     }
     else
     {
-      free(data);
+      //free(data);
 
       ser_msg = proto_agent_pack_message(msg, &size);
     }
@@ -554,7 +552,7 @@ proto_client_receive(void)
     }
     else
     {
-      free(data);
+      //free(data);
 
       ser_msg = proto_agent_pack_message(msg, &size);
     }

@@ -242,13 +242,13 @@ int proto_agent_destroy_pdcp_data_req(Protocol__FlexsplitMessage *msg) {
   if(msg->msg_case != PROTOCOL__FLEXSPLIT_MESSAGE__MSG_DATA_REQ_MSG)
     goto error;
   
-  //free(msg->data_req_msg->header);
-  //free(msg->data_req_msg->pdcp_data->fsp_pdu->fsp_pdu_data.data);
-  //free(msg->data_req_msg->pdcp_data->fsp_pdu);
-  //free(msg->data_req_msg->pdcp_data->fsp_ctxt);
-  //free(msg->data_req_msg->pdcp_data);
-  //free(msg->data_req_msg);
-  //free(msg);
+  free(msg->data_req_msg->header);
+  free(msg->data_req_msg->pdcp_data->fsp_pdu->fsp_pdu_data.data);
+  free(msg->data_req_msg->pdcp_data->fsp_pdu);
+  free(msg->data_req_msg->pdcp_data->fsp_ctxt);
+  free(msg->data_req_msg->pdcp_data);
+  free(msg->data_req_msg);
+  free(msg);
   return 0;
   
   error:
@@ -355,6 +355,8 @@ int proto_agent_pdcp_data_req_ack(mid_t mod_id, const void *params, Protocol__Fl
   return 0;
   
   error:
+    if (pdcp_pdu_p != NULL)
+      free_mem_block(pdcp_pdu_p);
     if(header != NULL)
       free(header);
     if(ack!=NULL)
@@ -370,9 +372,9 @@ int proto_agent_destroy_pdcp_data_req_ack(Protocol__FlexsplitMessage *msg) {
   if(msg->msg_case != PROTOCOL__FLEXSPLIT_MESSAGE__MSG_DATA_REQ_ACK)
     goto error;
   
-  //free(msg->data_req_ack->header);
-  //free(msg->data_req_ack);
-  //free(msg);
+  free(msg->data_req_ack->header);
+  free(msg->data_req_ack);
+  free(msg);
   return 0;
   
   error:
@@ -385,9 +387,9 @@ int proto_agent_destroy_pdcp_data_ind(Protocol__FlexsplitMessage *msg) {
   if(msg->msg_case != PROTOCOL__FLEXSPLIT_MESSAGE__MSG_DATA_IND_MSG)
     goto error;
   
-  //free(msg->data_req_ack->header);
-  //free(msg->data_req_ack);
-  //free(msg);
+  free(msg->data_req_ack->header);
+  free(msg->data_req_ack);
+  free(msg);
   return 0;
   
   error:
@@ -591,6 +593,9 @@ int proto_agent_pdcp_data_ind_ack(mid_t mod_id, const void *params, Protocol__Fl
       free(ack);
     if(*msg != NULL)
       free(*msg);
+    if (pdcp_pdu_p != NULL)
+      free_mem_block(pdcp_pdu_p);
+
     LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
     return -1;
 
@@ -601,9 +606,9 @@ int proto_agent_destroy_pdcp_data_ind_ack(Protocol__FlexsplitMessage *msg) {
   if(msg->msg_case != PROTOCOL__FLEXSPLIT_MESSAGE__MSG_DATA_IND_ACK)
     goto error;
   
-  //free(msg->data_req_ack->header);
-  //free(msg->data_req_ack);
-  //free(msg);
+  free(msg->data_req_ack->header);
+  free(msg->data_req_ack);
+  free(msg);
   return 0;
   
   error:
@@ -764,9 +769,9 @@ int proto_agent_destroy_echo_reply(Protocol__FlexsplitMessage *msg) {
   if(msg->msg_case != PROTOCOL__FLEXSPLIT_MESSAGE__MSG_ECHO_REPLY_MSG)
     goto error;
   
-  //free(msg->echo_reply_msg->header);
-  //free(msg->echo_reply_msg);
-  //free(msg);
+  free(msg->echo_reply_msg->header);
+  free(msg->echo_reply_msg);
+  free(msg);
   return 0;
   
  error:

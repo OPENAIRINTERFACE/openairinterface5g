@@ -396,6 +396,9 @@ boolean_t pdcp_data_req(
       
     proto_agent_send_rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
     //rlc_status = ack_result;
+    // free the memory for this block
+    free_mem_block(pdcp_pdu_p);
+    
     printf("Response is %u\n", ack_result_nikos);
     rlc_status = ack_result_nikos;
   }
@@ -454,18 +457,6 @@ boolean_t pdcp_data_req(
     }
     }*/
    
-  //starting async
-//   const Enb_properties_array_t   *enb_properties_p  = NULL;
-//   Enb_properties_array_t *enb_properties_p  = NULL;
-//   enb_properties_p = malloc(sizeof(Enb_properties_array_t));
-//   memset(enb_properties_p, 0, sizeof(Enb_properties_array_t));
-//   printf("starting the client\n\n");
-
-//   printf("Starting the async client\\n");
-//   new_thread(proto_server_start, NULL);
-//   enb_properties_p = enb_config_get();
-
-//   proto_agent_start(ctxt_pP->module_id, enb_properties_p);
 
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_REQ,VCD_FUNCTION_OUT);
