@@ -564,6 +564,7 @@ void ue_decode_p(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_in
 	      module_idP,
 	      4,
 	      P_RNTI,
+		  UE_mac_inst[module_idP].frame,
 	      UE_mac_inst[module_idP].subframe,
 	      0,
 	      0);

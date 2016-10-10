@@ -216,7 +216,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
               ctxt_pP,
               SRB_FLAG_YES,
               &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.am,
-              rb_id);
+              rb_id,lc_id);
           } else {
             LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
                   PROTOCOL_CTXT_ARGS(ctxt_pP),
