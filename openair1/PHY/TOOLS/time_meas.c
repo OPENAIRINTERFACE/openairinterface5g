@@ -48,7 +48,7 @@ double get_cpu_freq_GHz(void) {
   return cpu_freq_GHz; 
 }
 
-void print_meas_now(time_stats_t *ts, const char* name, int subframe, FILE* file_name){
+void print_meas_now(time_stats_t *ts, const char* name, FILE* file_name){
 
   if (opp_enabled) {
 

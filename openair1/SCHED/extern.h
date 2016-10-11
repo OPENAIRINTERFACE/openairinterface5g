@@ -75,7 +75,6 @@ extern int openair_sched_status;
 
 extern int synch_wait_cnt;
 
-extern OPENAIR_DAQ_VARS openair_daq_vars;
 
 extern int16_t hundred_times_delta_TF[100];
 extern uint16_t hundred_times_log10_NPRB[100];

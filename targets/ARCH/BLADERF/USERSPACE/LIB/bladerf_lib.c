@@ -233,7 +233,7 @@ int trx_brf_reset_stats(openair0_device* device) {
  * \param card the hardware to use
  * \returns 0 in success 
  */
-int trx_brf_stop(int card) {
+int trx_brf_stop(openair0_device* device) {
 
   return(0);
 
@@ -902,8 +902,8 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   brf_state_t *brf = (brf_state_t*)malloc(sizeof(brf_state_t));
   memset(brf, 0, sizeof(brf_state_t));
   /* device specific */
-  openair0_cfg->txlaunch_wait = 1;//manage when TX processing is triggered
-  openair0_cfg->txlaunch_wait_slotcount = 1; //manage when TX processing is triggered
+  //openair0_cfg->txlaunch_wait = 1;//manage when TX processing is triggered
+  //openair0_cfg->txlaunch_wait_slotcount = 1; //manage when TX processing is triggered
   openair0_cfg->iq_txshift = 0;// shift
   openair0_cfg->iq_rxrescale = 15;//rescale iqs
   
@@ -912,22 +912,18 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   case 30720000:
     openair0_cfg->samples_per_packet    = 2048;
     openair0_cfg->tx_sample_advance     = 0;
-    openair0_cfg->tx_scheduling_advance = 8*openair0_cfg->samples_per_packet;
     break;
   case 15360000:
     openair0_cfg->samples_per_packet    = 2048;
     openair0_cfg->tx_sample_advance     = 0;
-    openair0_cfg->tx_scheduling_advance = 4*openair0_cfg->samples_per_packet;
     break;
   case 7680000:
     openair0_cfg->samples_per_packet    = 1024;
     openair0_cfg->tx_sample_advance     = 0;
-    openair0_cfg->tx_scheduling_advance = 4*openair0_cfg->samples_per_packet;
     break;
   case 1920000:
     openair0_cfg->samples_per_packet    = 256;
     openair0_cfg->tx_sample_advance     = 50;
-    openair0_cfg->tx_scheduling_advance = 8*openair0_cfg->samples_per_packet;
     break;
   default:
     printf("Error: unknown sampling rate %f\n",openair0_cfg->sample_rate);

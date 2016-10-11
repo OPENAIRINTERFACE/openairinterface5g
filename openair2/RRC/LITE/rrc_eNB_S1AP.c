@@ -1259,7 +1259,6 @@ int rrc_eNB_process_S1AP_E_RAB_SETUP_REQ(MessageDef *msg_p, const char *msg_name
 {
   uint16_t                        ue_initial_id;
   uint32_t                        eNB_ue_s1ap_id;
-  MessageDef                     *message_gtpv1u_p = NULL;
   gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
   gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
 

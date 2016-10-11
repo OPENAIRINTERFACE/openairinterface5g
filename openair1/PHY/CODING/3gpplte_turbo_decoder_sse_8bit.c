@@ -132,18 +132,18 @@ void log_map8(llr_t* systematic,
   msg("log_map, frame_length %d\n",frame_length);
 #endif
 
-  start_meas(gamma_stats) ;
+  if (gamma_stats) start_meas(gamma_stats) ;
   compute_gamma8(m11,m10,systematic,y_parity,frame_length,term_flag) ;
-  stop_meas(gamma_stats);
-  start_meas(alpha_stats) ;
+  if (gamma_stats) stop_meas(gamma_stats);
+  if (alpha_stats) start_meas(alpha_stats) ;
   compute_alpha8(alpha,beta,m11,m10,frame_length,F)                  ;
-  stop_meas(alpha_stats);
-  start_meas(beta_stats)  ;
+  if (alpha_stats) stop_meas(alpha_stats);
+  if (beta_stats) start_meas(beta_stats)  ;
   compute_beta8(alpha,beta,m11,m10,frame_length,F,offset8_flag)      ;
-  stop_meas(beta_stats);
-  start_meas(ext_stats)   ;
+  if (beta_stats) stop_meas(beta_stats);
+  if (ext_stats) start_meas(ext_stats)   ;
   compute_ext8(alpha,beta,m11,m10,ext,systematic,frame_length)       ;
-  stop_meas(ext_stats);
+  if (ext_stats) stop_meas(ext_stats);
 
 
 }
@@ -493,6 +493,11 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
 
 #endif
 
+  if (frame_length > 6143) {
+    LOG_E(PHY,"compute_beta: frame_length %d\n",frame_length);
+    return;
+  }
+
   // we are supposed to run compute_alpha just before compute_beta
   // so the initial states of backward computation can be set from last value of alpha states (forward computation)
 
@@ -512,9 +517,11 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
   beta_ptr[6] = alpha128[6+(frame_length>>1)];
   beta_ptr[7] = alpha128[7+(frame_length>>1)];
 
+  int overlap = (frame_length>>4)> L ? (frame_length>>4)-L : 0 ;
+
   for (rerun_flag=0, loopval=0;
        rerun_flag<2 ;
-       loopval=(frame_length>>4)-L,rerun_flag++) {
+       loopval=overlap,rerun_flag++) {
 
     if (offset8_flag==0) {
       // FIXME! beta0-beta7 are used uninitialized. FIXME!
@@ -963,7 +970,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
   }
 
 
-  start_meas(init_stats);
+  if (init_stats) start_meas(init_stats);
 
 
   if ((n&15)>0) {
@@ -1326,7 +1333,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
   msg("\n");
 #endif //DEBUG_LOGMAP
 
-  stop_meas(init_stats);
+  if (init_stats) stop_meas(init_stats);
 
   // do log_map from first parity bit
 
@@ -1338,7 +1345,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
     printf("\n*******************ITERATION %d (n %d, n2 %d), ext %p\n\n",iteration_cnt,n,n2,ext);
 #endif //DEBUG_LOGMAP
 
-    start_meas(intl1_stats);
+    if (intl1_stats) start_meas(intl1_stats);
     pi4_p=pi4tab8[iind];
 
     for (i=0; i<(n2>>4); i++) { // steady-state portion
@@ -1379,7 +1386,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
 #endif
     }
 
-    stop_meas(intl1_stats);
+    if (intl1_stats) stop_meas(intl1_stats);
 
     // do log_map from second parity bit
 
@@ -1484,7 +1491,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
 
     // Check if we decoded the block
     if (iteration_cnt>1) {
-      start_meas(intl2_stats);
+      if (intl2_stats) start_meas(intl2_stats);
 
       if ((n2&0x7f) == 0) {  // n2 is a multiple of 128 bits
 
@@ -1623,7 +1630,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
         break;
       }
 
-      stop_meas(intl2_stats);
+      if (intl2_stats) stop_meas(intl2_stats);
 
       if ((crc == oldcrc) && (crc!=0)) {
         return(iteration_cnt);

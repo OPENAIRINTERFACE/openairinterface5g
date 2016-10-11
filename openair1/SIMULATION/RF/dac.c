@@ -31,8 +31,8 @@
 #include <stdio.h>
 #include "PHY/TOOLS/defs.h"
 
-void dac(double **s_re,
-         double **s_im,
+void dac(double *s_re[2],
+         double *s_im[2],
          uint32_t **input,
          uint32_t input_offset,
          uint32_t nb_tx_antennas,
@@ -81,8 +81,8 @@ void dac(double **s_re,
   }
 }
 
-double dac_fixed_gain(double **s_re,
-                      double **s_im,
+double dac_fixed_gain(double *s_re[2],
+                      double *s_im[2],
                       uint32_t **input,
                       uint32_t input_offset,
                       uint32_t nb_tx_antennas,
@@ -120,6 +120,7 @@ double dac_fixed_gain(double **s_re,
     amp1 = amp1*sqrt(512.0/300.0); //account for loss due to null carriers
     //printf("DL: amp1 %f dB (%d,%d), tx_power %f\n",20*log10(amp1),input_offset,input_offset_meas,txpwr_dBm);
   */
+
 
   for (i=0; i<length; i++) {
     for (aa=0; aa<nb_tx_antennas; aa++) {

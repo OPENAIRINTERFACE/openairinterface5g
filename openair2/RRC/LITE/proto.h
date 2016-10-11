@@ -370,6 +370,12 @@ int decode_BCCH_DLSCH_Message(
   const uint8_t                rsrq,
   const uint8_t                rsrp );
 
+int decode_PCCH_DLSCH_Message(
+  const protocol_ctxt_t* const ctxt_pP,
+  const uint8_t                eNB_index,
+  uint8_t*               const Sdu,
+  const uint8_t                Sdu_len);
+
 void
 ue_meas_filtering(
   const protocol_ctxt_t* const ctxt_pP,
@@ -378,7 +384,7 @@ ue_meas_filtering(
 
 void
 ue_measurement_report_triggering(
-  const protocol_ctxt_t* const ctxt_pP,
+  protocol_ctxt_t*        const ctxt_pP,
   const uint8_t                 eNB_index
 );
 
