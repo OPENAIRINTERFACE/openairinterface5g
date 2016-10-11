@@ -114,7 +114,11 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
                 RA_template->RA_dci_fmt1,
                 RA_template->RA_dci_size_bits1);
 
-
+          first_rb = 0;
+          vrb_map[first_rb] = 1;
+          vrb_map[first_rb+1] = 1;
+          vrb_map[first_rb+2] = 1;
+          vrb_map[first_rb+3] = 1;
 
           if (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.frame_type == TDD) {
             switch(PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
