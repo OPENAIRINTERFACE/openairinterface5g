@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-   Contact Information
-   OpenAirInterface Admin: openair_admin@eurecom.fr
-   OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file lte-enb.c
  * \brief Top-level threads for eNodeB
@@ -144,6 +136,8 @@ time_stats_t softmodem_stats_rxtx_sf; // total tx time
 time_stats_t softmodem_stats_rx_sf; // total rx time
 int32_t **rxdata;
 int32_t **txdata;
+
+uint8_t seqno; //sequence number
 
 static int                      time_offset[4] = {0,0,0,0};
 
@@ -288,6 +282,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB) {
                    ((phy_vars_eNB->frame_parms.Ncp==1) ? 6 : 7);
   int len,len2;
   int16_t *txdata;
+//  int CC_id = phy_vars_eNB->proc.CC_id;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_SFGEN , 1 );
 
@@ -406,9 +401,13 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB) {
 }
 
 void tx_fh_if5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
-  uint8_t seqno;
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, proc->timestamp_tx&0xffffffff );
   send_IF5(eNB, proc->timestamp_tx, proc->subframe_tx, &seqno, IF5_RRH_GW_DL);
+}
+
+void tx_fh_if5_mobipass(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, proc->timestamp_tx&0xffffffff );
+  send_IF5(eNB, proc->timestamp_tx, proc->subframe_tx, &seqno, IF5_MOBIPASS); 
 }
 
 void tx_fh_if4p5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {    
@@ -552,7 +551,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   // run PHY TX procedures the one after the other for all CCs to avoid race conditions
   // (may be relaxed in the future for performance reasons)
   // *****************************************
-  if (wait_CCs(proc)<0) return(-1);
+  //if (wait_CCs(proc)<0) return(-1);
   
   if (oai_exit) return(-1);
   
@@ -881,6 +880,7 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   
   proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
   proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
+  proc->timestamp_tx = proc->timestamp_rx+(4*fp->samples_per_tti);
   //  printf("trx_read <- USRP TS %llu (sf %d, first_rx %d)\n", proc->timestamp_rx,proc->subframe_rx,proc->first_rx);  
   
   if (proc->first_rx == 0) {
@@ -967,7 +967,12 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     }
 
   } while( (symbol_mask != symbol_mask_full) || (prach_rx == 1));    
-  
+
+  //caculate timestamp_rx, timestamp_tx based on frame and subframe
+   proc->timestamp_rx = ((proc->frame_rx * 10)  + proc->subframe_rx ) * fp->samples_per_tti ;
+   proc->timestamp_tx = proc->timestamp_rx +  (4*fp->samples_per_tti);
+ 
+ 
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
       LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,*subframe);
@@ -1075,7 +1080,8 @@ void wakeup_slaves(eNB_proc_t *proc) {
     slave_proc->frame_rx     = proc->frame_rx;
     slave_proc->subframe_rx  = proc->subframe_rx;
     slave_proc->timestamp_rx = proc->timestamp_rx;
-    
+    slave_proc->timestamp_tx = proc->timestamp_tx; 
+
     pthread_mutex_unlock( &slave_proc->mutex_FH );
     
     if (cnt_slave == 0) {
@@ -1272,15 +1278,16 @@ static void* eNB_thread_single( void* param ) {
 
     T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
 
+    proc_rxtx->subframe_rx = proc->subframe_rx;
+    proc_rxtx->frame_rx    = proc->frame_rx;
+    proc_rxtx->subframe_tx = (proc->subframe_rx+4)%10;
+    proc_rxtx->frame_tx    = (proc->subframe_rx < 6) ? proc->frame_rx : (proc->frame_rx+1)&1023; 
+    proc_rxtx->timestamp_tx = proc->timestamp_tx;
 
     // At this point, all information for subframe has been received on FH interface
     // If this proc is to provide synchronization, do so
     wakeup_slaves(proc);
 
-    proc_rxtx->subframe_rx = proc->subframe_rx;
-    proc_rxtx->frame_rx    = proc->frame_rx;
-    proc_rxtx->subframe_tx = (proc->subframe_rx+4)%10;
-    proc_rxtx->frame_tx    = (proc->subframe_rx < 6) ? proc->frame_rx : (proc->frame_rx+1)&1023; 
     if (rxtx(eNB,proc_rxtx,"eNB_thread_single") < 0) break;
   }
   
@@ -1389,7 +1396,23 @@ void init_eNB_proc(int inst) {
       pthread_setname_np( proc->pthread_single, name );
     }
   }
-  
+
+  //for multiple CCs: setup master and slaves
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    eNB = PHY_vars_eNB_g[inst][CC_id];
+
+    if (eNB->node_timing == synch_to_ext_device) { //master
+      eNB->proc.num_slaves = MAX_NUM_CCs-1;
+      eNB->proc.slave_proc = (eNB_proc_t**)malloc(eNB->proc.num_slaves*sizeof(eNB_proc_t*));
+
+      for (i=0; i< eNB->proc.num_slaves; i++) {
+        if (i < CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i]->proc);
+        if (i >= CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i+1]->proc);
+      }
+    }
+  }
+
+
   /* setup PHY proc TX sync mechanism */
   pthread_mutex_init(&sync_phy_proc.mutex_phy_proc_tx, NULL);
   pthread_cond_init(&sync_phy_proc.cond_phy_proc_tx, NULL);
@@ -1606,14 +1629,14 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->start_rf             = start_rf;
 	eNB->start_if             = start_if;
 	eNB->fh_asynch            = fh_if5_asynch_DL;
-	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[0]);
+	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
         if (ret<0) {
           printf("Exiting, cannot initialize rf device\n");
           exit(-1);
         }
 	eNB->rfdevice.host_type   = RRH_HOST;
 	eNB->ifdevice.host_type   = RRH_HOST;
-        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[0], (eth_params+CC_id));
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
 	printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
         if (ret<0) {
           printf("Exiting, cannot initialize transport protocol\n");
@@ -1622,7 +1645,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	break;
       case NGFI_RRU_IF4p5:
 	eNB->do_prach             = do_prach;
-	eNB->fep                  = (single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
+	eNB->fep                  = eNB_fep_full;//(single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
 	eNB->td                   = NULL;
 	eNB->te                   = NULL;
 	eNB->proc_uespec_rx       = NULL;
@@ -1632,14 +1655,14 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->fh_asynch            = fh_if4p5_asynch_DL;
 	eNB->start_rf             = start_rf;
 	eNB->start_if             = start_if;
-	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[0]);
+	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
         if (ret<0) {
           printf("Exiting, cannot initialize rf device\n");
           exit(-1);
         }
 	eNB->rfdevice.host_type   = RRH_HOST;
 	eNB->ifdevice.host_type   = RRH_HOST;
-        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[0], (eth_params+CC_id));
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
 	printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
         if (ret<0) {
           printf("Exiting, cannot initialize transport protocol\n");
@@ -1651,7 +1674,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	break;
       case eNodeB_3GPP:
 	eNB->do_prach             = do_prach;
-	eNB->fep                  = (single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
+	eNB->fep                  = eNB_fep_full;//(single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
 	eNB->td                   = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
 	eNB->te                   = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
 	eNB->proc_uespec_rx       = phy_procedures_eNB_uespec_RX;
@@ -1661,7 +1684,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->start_rf             = start_rf;
 	eNB->start_if             = NULL;
         eNB->fh_asynch            = NULL;
-	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[0]);
+	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
         if (ret<0) {
           printf("Exiting, cannot initialize rf device\n");
           exit(-1);
@@ -1671,14 +1694,22 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	break;
       case eNodeB_3GPP_BBU:
 	eNB->do_prach       = do_prach;
-	eNB->fep            = (single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
-	eNB->td             = (single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
-	eNB->te             = (single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
+	eNB->fep            = eNB_fep_full;//(single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
+	eNB->td             = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+	eNB->te             = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
 	eNB->proc_uespec_rx = phy_procedures_eNB_uespec_RX;
 	eNB->proc_tx        = proc_tx_full;
-	eNB->tx_fh          = tx_fh_if5;
-	eNB->rx_fh          = rx_fh_if5;
-        eNB->fh_asynch      = (eNB->node_timing == synch_to_other) ? fh_if5_asynch_UL : NULL;
+        if (eNB->node_timing == synch_to_other) {
+           eNB->tx_fh          = tx_fh_if5_mobipass;
+           eNB->rx_fh          = rx_fh_slave;
+           eNB->fh_asynch      = fh_if5_asynch_UL;
+
+        }
+        else {
+           eNB->tx_fh          = tx_fh_if5;
+           eNB->rx_fh          = rx_fh_if5;
+           eNB->fh_asynch      = NULL;
+        }
 
 	eNB->start_rf       = NULL;
 	eNB->start_if       = start_if;
@@ -1686,7 +1717,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 
 	eNB->ifdevice.host_type   = BBU_HOST;
 
-        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[0], (eth_params+CC_id));
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
         printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
         if (ret<0) {
           printf("Exiting, cannot initialize transport protocol\n");
@@ -1696,8 +1727,8 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       case NGFI_RCC_IF4p5:
 	eNB->do_prach             = do_prach;
 	eNB->fep                  = NULL;
-	eNB->td                   = (single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
-	eNB->te                   = (single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
+	eNB->td                   = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+	eNB->te                   = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
 	eNB->proc_uespec_rx       = phy_procedures_eNB_uespec_RX;
 	eNB->proc_tx              = proc_tx_high;
 	eNB->tx_fh                = tx_fh_if4p5;
@@ -1707,7 +1738,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
         eNB->fh_asynch            = (eNB->node_timing == synch_to_other) ? fh_if4p5_asynch_UL : NULL;
 	eNB->rfdevice.host_type   = BBU_HOST;
 	eNB->ifdevice.host_type   = BBU_HOST;
-        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[0], (eth_params+CC_id));
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
         printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
         if (ret<0) {
           printf("Exiting, cannot initialize transport protocol\n");
@@ -1720,8 +1751,8 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->do_prach       = do_prach;
 	eNB->fep            = NULL;
 
-	eNB->td             = (single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
-	eNB->te             = (single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
+	eNB->td             = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+	eNB->te             = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
 	eNB->proc_uespec_rx = phy_procedures_eNB_uespec_RX;
 	eNB->proc_tx        = proc_tx_high;
 	eNB->tx_fh          = tx_fh_if4p5; 
@@ -1732,7 +1763,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 
 	eNB->rfdevice.host_type   = BBU_HOST;
 	eNB->ifdevice.host_type   = BBU_HOST;
-        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[0], (eth_params+CC_id));
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
         printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
         if (ret<0) {
           printf("Exiting, cannot initialize transport protocol\n");
@@ -1744,7 +1775,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       }
     }
 
-    if (setup_eNB_buffers(PHY_vars_eNB_g[inst],&openair0_cfg[inst])!=0) {
+    if (setup_eNB_buffers(PHY_vars_eNB_g[inst],&openair0_cfg[CC_id])!=0) {
       printf("Exiting, cannot initialize eNodeB Buffers\n");
       exit(-1);
     }
