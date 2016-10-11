@@ -163,7 +163,7 @@ volatile int             oai_exit = 0;
 
 static char              UE_flag=0;
 unsigned int                    mmapped_dma=0;
-int                             single_thread_flag=0;
+int                             single_thread_flag=1;
 
 static char                     threequarter_fs=0;
 
@@ -378,7 +378,7 @@ void help (void) {
   printf("  --ue-scan_carrier set UE to scan around carrier\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
   printf("  --mmapped-dma sets flag for improved EXMIMO UE performance\n");  
-  printf("  --single-thread runs lte-softmodem in only one thread\n"); 
+  printf("  --single-thread-disable. Disables single-thread mode in lte-softmodem\n"); 
   printf("  -C Set the downlink frequency for all component carriers\n");
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
   printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
@@ -686,7 +686,7 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_LOOPMEMORY,
     LONG_OPTION_PHYTEST,
     LONG_OPTION_MMAPPED_DMA,
-    LONG_OPTION_SINGLE_THREAD,
+    LONG_OPTION_SINGLE_THREAD_DISABLE,
 #if T_TRACER
     LONG_OPTION_T_PORT,
     LONG_OPTION_T_NOWAIT,
@@ -712,7 +712,7 @@ static void get_options (int argc, char **argv)
     {"loop-memory", required_argument, NULL, LONG_OPTION_LOOPMEMORY},
     {"phy-test", no_argument, NULL, LONG_OPTION_PHYTEST},
     {"mmapped-dma", no_argument, NULL, LONG_OPTION_MMAPPED_DMA},
-    {"single-thread", no_argument, NULL, LONG_OPTION_SINGLE_THREAD},
+    {"single-thread-disable", no_argument, NULL, LONG_OPTION_SINGLE_THREAD_DISABLE},
 #if T_TRACER
     {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
     {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
@@ -814,8 +814,8 @@ static void get_options (int argc, char **argv)
       mmapped_dma = 1;
       break;
 
-    case LONG_OPTION_SINGLE_THREAD:
-      single_thread_flag = 1;
+    case LONG_OPTION_SINGLE_THREAD_DISABLE:
+      single_thread_flag = 0;
       break;
               
 #if T_TRACER
@@ -1039,7 +1039,6 @@ static void get_options (int argc, char **argv)
 
   if (UE_flag == 0)
     AssertFatal(conf_config_file_name != NULL,"Please provide a configuration file\n");
-
 
   if ((UE_flag == 0) && (conf_config_file_name != NULL)) {
     int i,j;
