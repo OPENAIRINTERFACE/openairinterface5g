@@ -502,7 +502,7 @@ void ue_compute_srs_occasion(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id
   if(frame_parms->soundingrs_ul_config_common.enabled_flag)
   {
 
-      LOG_D(PHY," SRS SUBFRAMECONFIG: %d, Isrs: %d \n", frame_parms->soundingrs_ul_config_common.srs_SubframeConfig, pSoundingrs_ul_config_dedicated->srs_ConfigIndex);
+      LOG_I(PHY," SRS SUBFRAMECONFIG: %d, Isrs: %d \n", frame_parms->soundingrs_ul_config_common.srs_SubframeConfig, pSoundingrs_ul_config_dedicated->srs_ConfigIndex);
 
       uint8_t  TSFC;
       uint16_t deltaTSFC; // bitmap
@@ -528,8 +528,6 @@ void ue_compute_srs_occasion(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id
           TSFC      = deltaTSFCTabType2[srs_SubframeConfig][1];
       }
 
-      LOG_D(PHY," ISTDD: %d, TSFC: %d, deltaTSFC: %d, AbsSubframeTX: %d\n", frame_parms->frame_type, TSFC, deltaTSFC, (((int)frame_tx*10)+(int)subframe_tx));
-
       // Sounding reference signal subframes are the subframes satisfying ns/2 mod TSFC (- deltaTSFC
       uint16_t tmp = (subframe_tx %  TSFC);
       if((1<<tmp) & deltaTSFC)
@@ -538,8 +536,10 @@ void ue_compute_srs_occasion(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id
           isSubframeSRS = 1;
           pSoundingrs_ul_config_dedicated->srsCellSubframe  = 1;
       }
+      LOG_I(PHY," ISTDD: %d, TSFC: %d, deltaTSFC: %d, AbsSubframeTX: %d.%d, srsCellSubframe: %d \n", frame_parms->frame_type, TSFC, deltaTSFC, frame_tx, subframe_tx, pSoundingrs_ul_config_dedicated->srsCellSubframe);
 
-
+      if(pSoundingrs_ul_config_dedicated->srsConfigDedicatedSetup)
+      {
       compute_srs_pos(frame_parms->frame_type, pSoundingrs_ul_config_dedicated->srs_ConfigIndex, &srsPeriodicity, &srsOffset);
 
       // transmit SRS if the four following constraints are respected:
@@ -556,7 +556,8 @@ void ue_compute_srs_occasion(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id
           isSubframeSRSTx = 1;
           pSoundingrs_ul_config_dedicated->srsUeSubframe = 1;
       }
-      LOG_D(PHY," isSubframeSRS: %d, isSubframeSRSTx: %d \n", isSubframeSRS, isSubframeSRSTx);
+      LOG_I(PHY," isSubframeSRS: %d, isSubframeSRSTx: %d \n", isSubframeSRS, isSubframeSRSTx);
+      }
   }
 }
 

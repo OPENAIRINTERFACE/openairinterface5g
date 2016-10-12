@@ -59,7 +59,7 @@ void srs_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t 
   
   uint8_t Bsrs  = psoundingrs_ul_config_dedicated->srs_Bandwidth;
   uint8_t Csrs  = pframe_parms->soundingrs_ul_config_common.srs_BandwidthConfig;
-  LOG_I(PHY," SRS Power Control; AbsSubframe %d.%d, eNB_id %d, srs_Bandwidth %d, srs_BandwidthConfig %d \n",proc->frame_tx,proc->subframe_tx,eNB_id,Bsrs,Csrs);
+  LOG_I(PHY," SRS Power Control; AbsSubframe %d.%d, eNB_id %d, N_RB_UL %d, srs_Bandwidth %d, srs_BandwidthConfig %d \n",proc->frame_tx,proc->subframe_tx,eNB_id,pframe_parms->N_RB_UL,Bsrs,Csrs);
   
   if (pframe_parms->N_RB_UL < 41)
   {
@@ -88,12 +88,13 @@ void srs_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t 
   PL          = get_PL(ue->Mod_id,ue->CC_id,eNB_id);
 
   LOG_I(PHY," SRS Power Control; eNB_id %d, p0_NominalPUSCH %d, alpha %d \n",eNB_id,P_opusch,alpha);
-  LOG_I(PHY," SRS Power Control; eNB_id %d, pSRS_Offset %d, Msrs %d, PL %d, f_pusch %d \n",eNB_id,Psrs_offset,Msrs,PL,f_pusch);
+  LOG_I(PHY," SRS Power Control; eNB_id %d, pSRS_Offset[dB] %d, Msrs %d, PL %d, f_pusch %d \n",eNB_id,Psrs_offset,Msrs,PL,f_pusch);
 
   P_srs  = P_opusch + Psrs_offset + f_pusch;
   P_srs += (((int32_t)alpha * (int32_t)PL) + hundred_times_log10_NPRB[Msrs-1])/100 ;
   
-  ue->ulsch[eNB_id]->Po_SRS = P_srs;
+  ue->ulsch[eNB_id]->Po_SRS = P_srs < ue->tx_power_max_dBm ? P_srs:ue->tx_power_max_dBm; // MIN(PcMax,Psrs)
+
   pnb_rb_srs[0]             = Msrs;
-  LOG_I(PHY," SRS Power Control; eNB_id %d, P_srs[dBm] %d\n",eNB_id,P_srs);
+  LOG_I(PHY," SRS Power Control; eNB_id %d, P_srs[dBm] %d, P_cmax[dBm] %d, Psrs[dBm] %d\n",eNB_id,P_srs,ue->tx_power_max_dBm,ue->ulsch[eNB_id]->Po_SRS);
 }
