@@ -45,6 +45,11 @@
 # define msg mexPrintf
 #else
 # ifdef OPENAIR2
+#   if ENABLE_RAL
+#     include "collection/hashtable/hashtable.h"
+#     include "COMMON/ral_messages_types.h"
+#     include "UTIL/queue.h"
+#   endif
 #   include "log.h"
 #   define msg(aRGS...) LOG_D(PHY, ##aRGS)
 # else
@@ -119,6 +124,8 @@ static inline void* malloc16_clear( size_t size )
 #include "PHY/TOOLS/defs.h"
 #include "platform_types.h"
 
+#ifdef OPENAIR_LTE
+
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include <pthread.h>
 
@@ -130,6 +137,9 @@ static inline void* malloc16_clear( size_t size )
 
 #define NB_BANDS_MAX 8
 
+#ifdef OCP_FRAMEWORK
+#include <enums.h>
+#else
 typedef enum {normal_txrx=0,rx_calib_ue=1,rx_calib_ue_med=2,rx_calib_ue_byp=3,debug_prach=4,no_L2_connect=5,calib_prach_tx=6,rx_dump_frame=7,loop_through_memory=8} runmode_t;
 
 enum transmission_access_mode {
@@ -153,6 +163,7 @@ typedef enum {
   synch_to_ext_device=0,  // synch to RF or Ethernet device
   synch_to_other          // synch to another source (timer, other CC_id)
 } eNB_timing_t;
+#endif
 
 typedef struct UE_SCAN_INFO_s {
   /// 10 best amplitudes (linear) for each pss signals
@@ -939,5 +950,5 @@ static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *
 #include "PHY/LTE_ESTIMATION/defs.h"
 
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
-
+#endif
 #endif //  __PHY_DEFS__H__

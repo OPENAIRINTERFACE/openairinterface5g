@@ -181,7 +181,6 @@ set(GIT_BRANCH        "UNKNOWN")
 set(GIT_COMMIT_HASH   "UNKNOWN")
 set(GIT_COMMIT_DATE   "UNKNOWN")
 
-
 find_package(Git)
 if(GIT_FOUND)
   message("git found: ${GIT_EXECUTABLE}")
@@ -875,7 +874,7 @@ set(UTIL_SRC
   ${OPENAIR2_DIR}/UTIL/OMG/job.c
   ${OPENAIR2_DIR}/UTIL/OMG/mobility_parser.c
   ${OPENAIR2_DIR}/UTIL/OMG/omg.c
-  ${OPENAIR2_DIR}/UTIL/OMG/omg_hashtable.c
+  #${OPENAIR2_DIR}/UTIL/OMG/omg_hashtable.c
   ${OPENAIR2_DIR}/UTIL/OMG/rwalk.c
   ${OPENAIR2_DIR}/UTIL/OMG/rwp.c
   ${OPENAIR2_DIR}/UTIL/OMG/static.c
@@ -1532,10 +1531,24 @@ endif()
 
 pkg_search_module(NETTLE nettle)
 if(NOT ${NETTLE_FOUND})
-  message("PACKAGE nettle not found: some targets will fail")
+  message( FATAL_ERROR "PACKAGE nettle not found: some targets will fail. Run build_oai -I again!")
 else()
   include_directories(${NETTLE_INCLUDE_DIRS})
 endif()
+
+message ("NETTLE VERSION_INSTALLED  = ${NETTLE_VERSION}")
+
+string(REGEX REPLACE "([0-9]+).*" "\\1" NETTLE_VERSION_MAJOR ${NETTLE_VERSION})
+string(REGEX REPLACE "[0-9]+\\.([0-9]+).*" "\\1" NETTLE_VERSION_MINOR ${NETTLE_VERSION})
+message ("NETTLE_VERSION_MAJOR = ${NETTLE_VERSION_MAJOR}")
+message ("NETTLE_VERSION_MINOR = ${NETTLE_VERSION_MINOR}")
+
+if ("${NETTLE_VERSION_MAJOR}" STREQUAL "" OR "${NETTLE_VERSION_MINOR}" STREQUAL "")
+  message( FATAL_ERROR "The nettle version not detected properly. Try to run build_oai -I again" )
+endif()
+
+add_definitions("-DNETTLE_VERSION_MAJOR=${NETTLE_VERSION_MAJOR}")
+add_definitions("-DNETTLE_VERSION_MINOR=${NETTLE_VERSION_MINOR}")
 
 pkg_search_module(XPM xpm)
 if(NOT ${XPM_FOUND})

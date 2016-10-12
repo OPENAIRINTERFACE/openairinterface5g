@@ -37,7 +37,8 @@ void display_backtrace(void)
   size_t size;
   char **strings;
   size_t i;
-
+  char* test=getenv("NO_BACKTRACE");
+  if (test!=0) *((int*)0)=0;
   size = backtrace(array, 10);
   strings = backtrace_symbols(array, size);
 

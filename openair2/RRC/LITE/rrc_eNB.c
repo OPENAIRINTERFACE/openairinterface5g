@@ -3867,6 +3867,12 @@ openair_rrc_eNB_init(
         PROTOCOL_RRC_CTXT_FMT" Init...\n",
         PROTOCOL_RRC_CTXT_ARGS(&ctxt));
 
+#if OCP_FRAMEWORK
+while ( eNB_rrc_inst == NULL ) {
+  LOG_E(RRC, "eNB_rrc_inst not yet initialized, waiting 1 second\n");
+  sleep(1);
+}
+#endif 
   AssertFatal(eNB_rrc_inst != NULL, "eNB_rrc_inst not initialized!");
   AssertFatal(NUMBER_OF_UE_MAX < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
 

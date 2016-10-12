@@ -32,6 +32,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <libconfig.h>
 
 #include "commonDef.h"
 #include "platform_types.h"
@@ -41,6 +42,7 @@
 #include "s1ap_messages_types.h"
 #ifdef CMAKER
 #include "SystemInformationBlockType2.h"
+#include "rrc_messages_types.h"
 #else
 #include "RRC/LITE/MESSAGES/SystemInformationBlockType2.h"
 #endif
@@ -109,6 +111,7 @@ typedef struct Enb_properties_s {
    */
   char               *eNB_name;
 
+
   /* Tracking area code */
   uint16_t            tac;
 
@@ -123,6 +126,7 @@ typedef struct Enb_properties_s {
 
   /* Physical parameters */
   int16_t                 nb_cc;
+#ifndef OCP_FRAMEWORK
   eNB_func_t              cc_node_function[1+MAX_NUM_CCs];
   eNB_timing_t            cc_node_timing[1+MAX_NUM_CCs];
   int16_t                 cc_node_synch_ref[1+MAX_NUM_CCs];
@@ -199,8 +203,10 @@ typedef struct Enb_properties_s {
   long                    ue_TimersAndConstants_t311[1+MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n310[1+MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n311[1+MAX_NUM_CCs];
+#else
+   RrcConfigurationReq    RrcReq;
+#endif
   long                    ue_TransmissionMode[1+MAX_NUM_CCs];
-
   long                    srb1_timer_poll_retransmit;
   long                    srb1_timer_reordering;
   long                    srb1_timer_status_prohibit;
@@ -229,6 +235,7 @@ typedef struct Enb_properties_s {
   /* List of MME to connect to */
   rrh_gw_config_t       rrh_gw_config[4];
 
+#ifndef OCP_FRAMEWORK
   // otg config
   /* Nb of OTG elements */
   uint8_t            num_otg_elements;
@@ -257,7 +264,7 @@ typedef struct Enb_properties_s {
   int16_t           udp_log_verbosity;
   int16_t           osa_log_level;
   int16_t           osa_log_verbosity;
-
+#endif
 } Enb_properties_t;
 
 typedef struct Enb_properties_array_s {

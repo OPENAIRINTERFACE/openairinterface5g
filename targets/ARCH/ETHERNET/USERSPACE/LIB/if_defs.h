@@ -37,11 +37,15 @@
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
 // ETH transport preference modes
+#ifdef OCP_FRAMEWORK
+#include "enums.h"
+#else
 #define ETH_UDP_MODE        0
 #define ETH_RAW_MODE        1
 #define ETH_UDP_IF4p5_MODE    2
 #define ETH_RAW_IF4p5_MODE    3
 #define ETH_RAW_IF5_MOBIPASS    4    
+#endif
 
 // Time domain RRH packet sizes
 #define MAC_HEADER_SIZE_BYTES (sizeof(struct ether_header))

@@ -552,6 +552,7 @@ function main() {
     compilations \
 	  $lte_build_dir updatefw \
 	  updatefw $dbin/updatefw
+    echo_info "Compiling oarf tools. The logfile for compilation is here: $dlog/oarf.txt"
     make -C $OPENAIR_DIR/cmake_targets/$lte_build_dir/build oarf > $dlog/oarf.txt 2>&1
     cp $OPENAIR_DIR/cmake_targets/$lte_build_dir/build/*.oct $dbin
     if [ -s $dbin/oarf_config_exmimo.oct ] ; then

@@ -45,10 +45,15 @@ int16_t *primary_synch2_time;
 #include "PHY/CODING/vars.h"
 
 //PHY_VARS *PHY_vars;
+#ifndef OCP_FRAMEWORK
 PHY_VARS_UE ***PHY_vars_UE_g;
 PHY_VARS_eNB ***PHY_vars_eNB_g;
 PHY_VARS_RN **PHY_vars_RN_g;
 LTE_DL_FRAME_PARMS *lte_frame_parms_g;
+#else
+PHY_VARS_UE * PHY_vars_UE_g[MAX_UE][MAX_NUM_CCs]={NULL};
+PHY_VARS_eNB * PHY_vars_eNB_g[MAX_eNB][MAX_NUM_CCs]={NULL};
+#endif
 
 
 unsigned short rev[2048],rev_times4[8192],rev_half[1024];
@@ -132,8 +137,12 @@ double beta2_dlsch[6][MCS_COUNT] = { {2.52163, 0.83231, 0.77472, 1.36536, 1.1682
 
 */
 
+#ifdef OCP_FRAMEWORK
+#include <enums.h>
+#else
 char eNB_functions[6][20]={"eNodeB_3GPP","eNodeB_3GPP_BBU","NGFI_RCC_IF4p5","NGFI_RAI_IF4p5","NGFI_RRU_IF5","NGFI_RRU_IF4p5",};
 char eNB_timing[2][20]={"synch_to_ext_device","synch_to_other"};
+#endif
 
 /// lookup table for unscrambling in RX
 int16_t unscrambling_lut[65536*16] __attribute__((aligned(32)));

@@ -51,7 +51,7 @@ do {                                                        \
                 "In %s() %s:%d\n" fORMAT,                   \
                 __FUNCTION__, __FILE__, __LINE__, ##aRGS);  \
         aCTION;                                             \
-    }                                                       \
+    }						\
 } while(0)
 
 #define AssertFatal(cOND, fORMAT, aRGS...)          _Assert_(cOND, _Assert_Exit_, fORMAT, ##aRGS)

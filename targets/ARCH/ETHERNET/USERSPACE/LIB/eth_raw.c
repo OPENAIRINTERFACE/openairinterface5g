@@ -264,6 +264,7 @@ int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, voi
 	if (bytes_received ==-1) {
 	  eth->num_rx_errors++;
 	  perror("ETHERNET IF5 READ: ");
+          if (errno == EAGAIN) continue;
 	  exit(-1);	
 	} else {
 	  /* store the timestamp value from packet's header */

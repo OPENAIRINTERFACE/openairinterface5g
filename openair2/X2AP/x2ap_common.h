@@ -282,8 +282,10 @@
 # define X2AP_PORT 36422
 #endif
 
+#ifndef TRUE
 #define TRUE 1
 #define FALSE 0
+#endif
 
 extern int asn_debug;
 extern int asn1_xer_print;

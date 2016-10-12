@@ -65,10 +65,13 @@ typedef enum {
   max_gain=0,med_gain,byp_gain
 } rx_gain_t;
 
+#if OCP_FRAMEWORK
+#include <enums.h>
+#else
 typedef enum {
   duplex_mode_TDD=1,duplex_mode_FDD=0
 } duplex_mode_t;
-
+#endif
 
 
 /** @addtogroup _GENERIC_PHY_RF_INTERFACE_
@@ -76,6 +79,9 @@ typedef enum {
  */
 /*!\brief RF device types
  */
+#ifdef OCP_FRAMEWORK
+#include <enums.h>
+#else
 typedef enum {
   MIN_RF_DEV_TYPE = 0,
   /*!\brief device is ExpressMIMO */
@@ -93,6 +99,7 @@ typedef enum {
   MAX_RF_DEV_TYPE
 
 } dev_type_t;
+#endif
 
 /*!\brief transport protocol types
  */

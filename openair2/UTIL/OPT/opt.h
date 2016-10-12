@@ -55,12 +55,16 @@ This header file must be included */
 #include "PHY/impl_defs_lte.h"
 #endif
 
+#ifdef OCP_FRAMEWORK
+#include <enums.h>
+#else
 typedef enum trace_mode_e {
   OPT_WIRESHARK,
   OPT_PCAP,
   OPT_TSHARK,
   OPT_NONE
 } trace_mode_t;
+#endif
 
 typedef enum radio_type_e {
   RADIO_TYPE_FDD = 1,
