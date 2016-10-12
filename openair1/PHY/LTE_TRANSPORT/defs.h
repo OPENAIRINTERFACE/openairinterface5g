@@ -341,6 +341,8 @@ typedef struct {
   int16_t Po_PUSCH;
   /// PHR - current power headroom (based on last PUSCH transmission)
   int16_t PHR;
+  /// Po_SRS - target output power for SRS
+  int16_t Po_SRS;
   /// num active cba group
   uint8_t num_active_cba_groups;
   /// num dci found for cba

@@ -1496,7 +1496,7 @@ do_RRCConnectionSetup(
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH         = CALLOC(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH));
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH         = CALLOC(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH));
   physicalConfigDedicated2->cqi_ReportConfig              = CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL;//CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
+  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
   physicalConfigDedicated2->antennaInfo                   = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->schedulingRequestConfig       = CALLOC(1,sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
 #ifdef CBA
@@ -1582,19 +1582,17 @@ do_RRCConnectionSetup(
     */
 
   //soundingRS-UL-ConfigDedicated
-  /*
   physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->present = SoundingRS_UL_ConfigDedicated_PR_setup;
-  assign_enum(&physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth,
-        SoundingRS_UL_ConfigDedicated__setup__srs_Bandwidth_bw0);
-  assign_enum(&physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth,
-        SoundingRS_UL_ConfigDedicated__setup__srs_HoppingBandwidth_hbw0);
+  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth =
+                                                           SoundingRS_UL_ConfigDedicated__setup__srs_Bandwidth_bw0;
+  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth =
+        SoundingRS_UL_ConfigDedicated__setup__srs_HoppingBandwidth_hbw0;
   physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition=0;
   physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.duration=1;
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=1;
+  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=45;
   physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb=0;
-  assign_enum(&physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift,
-        SoundingRS_UL_ConfigDedicated__setup__cyclicShift_cs0);
-  */
+  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift=
+        SoundingRS_UL_ConfigDedicated__setup__cyclicShift_cs0;
 
 
   //AntennaInfoDedicated

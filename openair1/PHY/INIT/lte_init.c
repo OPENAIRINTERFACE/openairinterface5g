@@ -489,6 +489,26 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *eNB)
 
       }
 
+      if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated) {
+        if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated->present == SchedulingRequestConfig_PR_setup) {
+
+          eNB->soundingrs_ul_config_dedicated[UE_id].duration             = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.duration;
+          eNB->soundingrs_ul_config_dedicated[UE_id].cyclicShift          = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift;
+          eNB->soundingrs_ul_config_dedicated[UE_id].freqDomainPosition   = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition;
+          eNB->soundingrs_ul_config_dedicated[UE_id].srs_Bandwidth        = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth;
+          eNB->soundingrs_ul_config_dedicated[UE_id].srs_ConfigIndex      = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex;
+          eNB->soundingrs_ul_config_dedicated[UE_id].srs_HoppingBandwidth = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth;
+          eNB->soundingrs_ul_config_dedicated[UE_id].transmissionComb     = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb;
+
+
+          LOG_D(PHY,"soundingrs_ul_config_dedicated.srs_ConfigIndex %d\n",eNB->soundingrs_ul_config_dedicated[UE_id].srs_ConfigIndex);
+
+        }
+
+        LOG_D(PHY,"------------------------------------------------------------\n");
+
+      }
+
       eNB->physicalConfigDedicated[UE_id] = NULL;
     }
   }
@@ -858,6 +878,27 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
       LOG_D(PHY,"------------------------------------------------------------\n");
 
     }
+
+    if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated) {
+
+      if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated->present == SchedulingRequestConfig_PR_setup) {
+
+        phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id].duration             = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.duration;
+        phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id].cyclicShift          = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift;
+        phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id].freqDomainPosition   = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition;
+        phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id].srs_Bandwidth        = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth;
+        phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id].srs_ConfigIndex      = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex;
+        phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id].srs_HoppingBandwidth = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth;
+        phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id].transmissionComb     = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb;
+
+
+        LOG_D(PHY,"soundingrs_ul_config_dedicated.srs_ConfigIndex %d\n",phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id].srs_ConfigIndex);
+      }
+
+      LOG_D(PHY,"------------------------------------------------------------\n");
+
+    }
+
 
 #ifdef CBA
 
