@@ -140,9 +140,8 @@ void rx_sdu(const module_id_t enb_mod_idP,
         LOG_D(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d : Received PHR PH = %d (db)\n",
               enb_mod_idP, CC_idP, rx_ces[i], UE_list->UE_template[CC_idP][UE_id].phr_info);
         UE_list->UE_template[CC_idP][UE_id].phr_info_configured=1;
+	UE_list->UE_sched_ctrl[UE_id].phr_received = 1;
       }
-      UE_list->UE_sched_ctrl[UE_id].phr_received = 1;
-
       payload_ptr+=sizeof(POWER_HEADROOM_CMD);
       break;
 
@@ -467,7 +466,6 @@ void rx_sdu(const module_id_t enb_mod_idP,
 	  }
 	}    
 	else {/*(UE_id != -1*/ 
-	  UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx+=1;
 	  LOG_E(MAC,"[eNB %d] CC_id %d Frame %d : received unsupported or unknown LCID %d from UE %d ",
 		enb_mod_idP, CC_idP, frameP, rx_lcids[i], UE_id);
 	}
