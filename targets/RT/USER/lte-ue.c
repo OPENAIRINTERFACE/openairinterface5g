@@ -568,11 +568,10 @@ static void *UE_thread_synch(void *arg)
 	    
 
             openair0_cfg[card].rx_gain[i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
-	    
+	        UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
 	    
           }
         }
-	//	UE->rfdevice.trx_set_freq_func(&openair0,&openair0_cfg[0],0);
 
 	if (UE->UE_scan_carrier==1) {
 	  for (i=0;i<openair0_cfg[0].rx_num_channels;i++) {
