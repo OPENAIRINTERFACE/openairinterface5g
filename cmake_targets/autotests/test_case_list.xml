@@ -271,27 +271,17 @@
 
      <testCase id="010130" >
      <class>compilation</class>
-     <desc>Build phy unitary simulators + secuirity unitary tests</desc>
+     <desc>Build phy unitary simulators</desc>
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-     <compile_prog_args>--phy_simulators --core_simulators  -c </compile_prog_args>
+     <compile_prog_args>--phy_simulators   -c </compile_prog_args>
      <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte-simulators/build/dlsim
                        $OPENAIR_DIR/cmake_targets/lte-simulators/build/ulsim
                        $OPENAIR_DIR/cmake_targets/lte-simulators/build/pucchsim
                        $OPENAIR_DIR/cmake_targets/lte-simulators/build/prachsim
                        $OPENAIR_DIR/cmake_targets/lte-simulators/build/pdcchsim
                        $OPENAIR_DIR/cmake_targets/lte-simulators/build/pbchsim
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/mbmssim
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eia1
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_kenb
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_ctr_encrypt
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_ctr_decrypt
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eea2
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eea1
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_kdf
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_cmac_encrypt
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eia2</compile_prog_out>
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/mbmssim</compile_prog_out>
      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -301,7 +291,6 @@
      <tags>unitary-sim.Rel10</tags>
      <nruns>1</nruns>
      </testCase>
-
 
      <testCase id="010140" >
      <class>compilation</class>
