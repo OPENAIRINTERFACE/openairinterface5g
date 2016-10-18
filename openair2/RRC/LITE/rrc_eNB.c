@@ -2621,7 +2621,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH =
     CALLOC(1, sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH));
   physicalConfigDedicated2->cqi_ReportConfig = NULL;  //CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL; //CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
+  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
   physicalConfigDedicated2->antennaInfo = CALLOC(1, sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->schedulingRequestConfig =
     CALLOC(1, sizeof(*physicalConfigDedicated2->schedulingRequestConfig));

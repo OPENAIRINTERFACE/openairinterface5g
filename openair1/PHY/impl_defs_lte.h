@@ -148,6 +148,11 @@ typedef struct {
   uint8_t nCS_AN;
   /// Parameter: \f$N^{(1)}_\text{PUCCH}\f$ see TS 36.213 (10.1). \vr{[0..2047]}
   uint16_t n1PUCCH_AN;
+
+  /// group hopping sequence for DRS \note not part of offical UL-PUCCH_CONFIG_COMMON ASN1 specification.
+  uint8_t grouphop[20];
+  /// sequence hopping sequence for DRS \note not part of offical UL-PUCCH_CONFIG_COMMON ASN1 specification.
+  uint8_t seqhop[20];
 } PUCCH_CONFIG_COMMON;
 
 /// UL-ReferenceSignalsPUSCH from 36.331 RRC spec
@@ -319,6 +324,12 @@ typedef struct {
   uint16_t srs_ConfigIndex;
   /// Parameter: \f$n^\text{CS}_\text{SRS}\f$. See TS 36.211 (5.5.3.1). \vr{[0..7]} \note the specification sais it is an enumerated value.
   uint8_t cyclicShift;
+  // Parameter: ue srs subframe for internal implementation
+  uint8_t srsConfigDedicatedSetup;
+  // Parameter: cell srs subframe for internal implementation
+  uint8_t srsCellSubframe;
+  // Parameter: ue srs subframe for internal implementation
+  uint8_t srsUeSubframe;
 } SOUNDINGRS_UL_CONFIG_DEDICATED;
 
 /// UplinkPowerControlDedicated Information Element from 36.331 RRC spec
