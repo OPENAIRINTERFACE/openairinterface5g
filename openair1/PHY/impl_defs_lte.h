@@ -148,6 +148,11 @@ typedef struct {
   uint8_t nCS_AN;
   /// Parameter: \f$N^{(1)}_\text{PUCCH}\f$ see TS 36.213 (10.1). \vr{[0..2047]}
   uint16_t n1PUCCH_AN;
+
+  /// group hopping sequence for DRS \note not part of offical UL-PUCCH_CONFIG_COMMON ASN1 specification.
+  uint8_t grouphop[20];
+  /// sequence hopping sequence for DRS \note not part of offical UL-PUCCH_CONFIG_COMMON ASN1 specification.
+  uint8_t seqhop[20];
 } PUCCH_CONFIG_COMMON;
 
 /// UL-ReferenceSignalsPUSCH from 36.331 RRC spec

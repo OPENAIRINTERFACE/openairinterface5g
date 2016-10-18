@@ -205,7 +205,6 @@ unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb
   int gain_dB = power_dBm - power_max_dBm;
   double gain_lin;
 
-  LOG_I(PHY,"Get Tx Amp; Gain[dB]: %d, AMP: %d\n",gain_dB,AMP);
   if (gain_dB < -20)
     return(AMP/10);
 
@@ -492,17 +491,19 @@ void ue_compute_srs_occasion(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id
     int frame_tx    = proc->frame_tx;
     int subframe_tx = proc->subframe_tx;
     uint8_t isSubframeSRS   = 0; // SRS Cell Occasion
-    uint8_t isSubframeSRSTx = 0; // SRS UE Occasion
 
     SOUNDINGRS_UL_CONFIG_DEDICATED *pSoundingrs_ul_config_dedicated=&ue->soundingrs_ul_config_dedicated[eNB_id];
 
   // check for SRS opportunity
   pSoundingrs_ul_config_dedicated->srsUeSubframe   = 0;
   pSoundingrs_ul_config_dedicated->srsCellSubframe = 0;
+
+  ue->ulsch[eNB_id]->srs_active   = 0;
+  ue->ulsch[eNB_id]->Nsymb_pusch  = 12-(frame_parms->Ncp<<1)- ue->ulsch[eNB_id]->srs_active;
   if(frame_parms->soundingrs_ul_config_common.enabled_flag)
   {
 
-      LOG_I(PHY," SRS SUBFRAMECONFIG: %d, Isrs: %d \n", frame_parms->soundingrs_ul_config_common.srs_SubframeConfig, pSoundingrs_ul_config_dedicated->srs_ConfigIndex);
+      LOG_D(PHY," SRS SUBFRAMECONFIG: %d, Isrs: %d \n", frame_parms->soundingrs_ul_config_common.srs_SubframeConfig, pSoundingrs_ul_config_dedicated->srs_ConfigIndex);
 
       uint8_t  TSFC;
       uint16_t deltaTSFC; // bitmap
@@ -536,11 +537,13 @@ void ue_compute_srs_occasion(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id
           isSubframeSRS = 1;
           pSoundingrs_ul_config_dedicated->srsCellSubframe  = 1;
       }
-      LOG_I(PHY," ISTDD: %d, TSFC: %d, deltaTSFC: %d, AbsSubframeTX: %d.%d, srsCellSubframe: %d \n", frame_parms->frame_type, TSFC, deltaTSFC, frame_tx, subframe_tx, pSoundingrs_ul_config_dedicated->srsCellSubframe);
-
+      LOG_D(PHY," ISTDD: %d, TSFC: %d, deltaTSFC: %d, AbsSubframeTX: %d.%d, srsCellSubframe: %d \n", frame_parms->frame_type, TSFC, deltaTSFC, frame_tx, subframe_tx, pSoundingrs_ul_config_dedicated->srsCellSubframe);
+      LOG_D(PHY," SrsDedicatedSetup: %d \n",pSoundingrs_ul_config_dedicated->srsConfigDedicatedSetup);
       if(pSoundingrs_ul_config_dedicated->srsConfigDedicatedSetup)
       {
       compute_srs_pos(frame_parms->frame_type, pSoundingrs_ul_config_dedicated->srs_ConfigIndex, &srsPeriodicity, &srsOffset);
+
+      LOG_D(PHY," srsPeriodicity: %d srsOffset: %d isSubframeSRS %d \n",srsPeriodicity,srsOffset,isSubframeSRS);
 
       // transmit SRS if the four following constraints are respected:
       // - UE is configured to transmit SRS
@@ -553,11 +556,12 @@ void ue_compute_srs_occasion(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id
               //(! is_pucch_per_cqi_report))
       )
       {
-          isSubframeSRSTx = 1;
           pSoundingrs_ul_config_dedicated->srsUeSubframe = 1;
+          ue->ulsch[eNB_id]->srs_active   = 1;
+          ue->ulsch[eNB_id]->Nsymb_pusch  = 12-(frame_parms->Ncp<<1)- ue->ulsch[eNB_id]->srs_active;
       }
-      LOG_I(PHY," isSubframeSRS: %d, isSubframeSRSTx: %d \n", isSubframeSRS, isSubframeSRSTx);
       }
+      LOG_D(PHY," srsCellSubframe: %d, srsUeSubframe: %d, Nsymb-pusch: %d \n", pSoundingrs_ul_config_dedicated->srsCellSubframe, pSoundingrs_ul_config_dedicated->srsUeSubframe, ue->ulsch[eNB_id]->Nsymb_pusch);
   }
 }
 
@@ -1289,14 +1293,21 @@ void ue_srs_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8
     }
 
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
+    if (ue->mac_enabled==1)
+    {
     tx_amp = get_tx_amp(Po_SRS,
                         ue->tx_power_max_dBm,
                         ue->frame_parms.N_RB_UL,
                         nb_rb_srs);
+    }
+    else
+    {
+        tx_amp = AMP;
+    }
 #else
       tx_amp = AMP;
 #endif
-    LOG_I(PHY,"SRS PROC; TX_MAX_POWER %d, Po_SRS %d, NB_RB_UL %d, NB_RB_SRS %d TX_AMPL %d\n",ue->tx_power_max_dBm,
+    LOG_D(PHY,"SRS PROC; TX_MAX_POWER %d, Po_SRS %d, NB_RB_UL %d, NB_RB_SRS %d TX_AMPL %d\n",ue->tx_power_max_dBm,
             Po_SRS,
             ue->frame_parms.N_RB_UL,
             nb_rb_srs,
@@ -1323,7 +1334,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   int8_t Po_PUCCH;
 
   SOUNDINGRS_UL_CONFIG_DEDICATED *pSoundingrs_ul_config_dedicated=&ue->soundingrs_ul_config_dedicated[eNB_id];
-  uint8_t isShortenPucch = pSoundingrs_ul_config_dedicated->srsCellSubframe;
+  uint8_t isShortenPucch = (pSoundingrs_ul_config_dedicated->srsCellSubframe && frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission);
 
   bundling_flag = ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
   
@@ -1397,9 +1408,10 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 #endif
 	    
     if (SR_payload>0) {
-      LOG_I(PHY,"[UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 1a/1b payload %d,%d (with SR for PUSCH), shorten_pucch %d, n1_pucch %d, Po_PUCCH, amp %d\n",
+      LOG_D(PHY,"[UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 1a/1b payload %d,%d (with SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH, amp %d\n",
 	    Mod_id,
 	    ue->dlsch[eNB_id][0]->rnti,
+		frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission,
 	    isShortenPucch,
 	    frame_tx, subframe_tx,
 	    pucch_ack_payload[0],pucch_ack_payload[1],
@@ -1407,10 +1419,11 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 	    Po_PUCCH,
 	    tx_amp);
     } else {
-      LOG_I(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating PUCCH 1a/1b, shorten_pucch %d, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d, amp %d\n",
+      LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating PUCCH 1a/1b, an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d, amp %d\n",
 	    Mod_id,
 	    ue->dlsch[eNB_id][0]->rnti,
 	    frame_tx, subframe_tx,
+		frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission,
 	    isShortenPucch,
 	    n1_pucch,pucch_ack_payload[0],pucch_ack_payload[1],SR_payload,
 	    Po_PUCCH,
@@ -1460,10 +1473,11 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 #else
     tx_amp = AMP;
 #endif
-    LOG_I(PHY,"[UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 1 (SR for PUSCH), shorten_pucch %d, n1_pucch %d, Po_PUCCH %d\n",
+    LOG_D(PHY,"[UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 1 (SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d\n",
 	  Mod_id,
 	  ue->dlsch[eNB_id][0]->rnti,
 	  frame_tx, subframe_tx,
+	  frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission,
 	  isShortenPucch,
 	  ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex,
 	  Po_PUCCH);
@@ -1526,14 +1540,14 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
   }
       
   if (ue->UE_mode[eNB_id] != PRACH) {
+    // check cell srs subframe and ue srs subframe. This has an impact on pusch encoding
+    ue_compute_srs_occasion(ue,proc,eNB_id);
 
     ue_ulsch_uespec_procedures(ue,proc,eNB_id,abstraction_flag);
 
   }
   	  
   if (ue->UE_mode[eNB_id] == PUSCH) {
-      // check cell srs subframe and ue srs subframe
-      ue_compute_srs_occasion(ue,proc,eNB_id);
       // check if we need to use PUCCH 1a/1b
       ue_pucch_procedures(ue,proc,eNB_id,abstraction_flag);
       // check if we need to use SRS
