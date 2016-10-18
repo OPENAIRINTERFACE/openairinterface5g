@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any lat_er version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,10 +51,10 @@
 #define print_ints(s,x) printf("%s %d %d %d %d\n",s,(x)[0],(x)[1],(x)[2],(x)[3])
 
 
-static int16_t conjugatedft[32] __attribute__((aligned(32))) = {-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1};
+const static int16_t conjugatedft[32] __attribute__((aligned(32))) = {-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1};
 
 
-static int16_t reflip[32]  __attribute__((aligned(32))) = {1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1};
+const static int16_t reflip[32]  __attribute__((aligned(32))) = {1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1};
 
 #if defined(__x86_64__) || defined(__i386__)
 static inline void cmac(__m128i a,__m128i b, __m128i *re32, __m128i *im32) __attribute__((always_inline));
@@ -474,33 +467,33 @@ static inline int16x8_t packed_cmult2(int16x8_t a,int16x8_t b,  int16x8_t b2)
 
 #endif
 
-static int16_t W0s[16]__attribute__((aligned(32))) = {32767,0,32767,0,32767,0,32767,0,32767,0,32767,0,32767,0,32767,0};
+const static int16_t W0s[16]__attribute__((aligned(32))) = {32767,0,32767,0,32767,0,32767,0,32767,0,32767,0,32767,0,32767,0};
 
-static int16_t W13s[16]__attribute__((aligned(32))) = {-16384,-28378,-16384,-28378,-16384,-28378,-16384,-28378,-16384,-28378,-16384,-28378,-16384,-28378,-16384,-28378};
-static int16_t W23s[16]__attribute__((aligned(32))) = {-16384,28378,-16384,28378,-16384,28378,-16384,28378,-16384,28378,-16384,28378,-16384,28378,-16384,28378};
+const static int16_t W13s[16]__attribute__((aligned(32))) = {-16384,-28378,-16384,-28378,-16384,-28378,-16384,-28378,-16384,-28378,-16384,-28378,-16384,-28378,-16384,-28378};
+const static int16_t W23s[16]__attribute__((aligned(32))) = {-16384,28378,-16384,28378,-16384,28378,-16384,28378,-16384,28378,-16384,28378,-16384,28378,-16384,28378};
 
-static int16_t W15s[16]__attribute__((aligned(32))) = {10126,-31163,10126,-31163,10126,-31163,10126,-31163,10126,-31163,10126,-31163,10126,-31163,10126,-31163};
-static int16_t W25s[16]__attribute__((aligned(32))) = {-26509,-19260,-26509,-19260,-26509,-19260,-26509,-19260,-26509,-19260,-26509,-19260,-26509,-19260,-26509,-19260};
-static int16_t W35s[16]__attribute__((aligned(32))) = {-26510,19260,-26510,19260,-26510,19260,-26510,19260,-26510,19260,-26510,19260,-26510,19260,-26510,19260};
-static int16_t W45s[16]__attribute__((aligned(32))) = {10126,31163,10126,31163,10126,31163,10126,31163,10126,31163,10126,31163,10126,31163,10126,31163};
+const static int16_t W15s[16]__attribute__((aligned(32))) = {10126,-31163,10126,-31163,10126,-31163,10126,-31163,10126,-31163,10126,-31163,10126,-31163,10126,-31163};
+const static int16_t W25s[16]__attribute__((aligned(32))) = {-26509,-19260,-26509,-19260,-26509,-19260,-26509,-19260,-26509,-19260,-26509,-19260,-26509,-19260,-26509,-19260};
+const static int16_t W35s[16]__attribute__((aligned(32))) = {-26510,19260,-26510,19260,-26510,19260,-26510,19260,-26510,19260,-26510,19260,-26510,19260,-26510,19260};
+const static int16_t W45s[16]__attribute__((aligned(32))) = {10126,31163,10126,31163,10126,31163,10126,31163,10126,31163,10126,31163,10126,31163,10126,31163};
 
 #if defined(__x86_64__) || defined(__i386__)
-__m128i *W0 = (__m128i *)W0s;
-__m128i *W13 = (__m128i *)W13s;
-__m128i *W23 = (__m128i *)W23s;
-__m128i *W15 = (__m128i *)W15s;
-__m128i *W25 = (__m128i *)W25s;
-__m128i *W35 = (__m128i *)W35s;
-__m128i *W45 = (__m128i *)W45s;
+const __m128i *W0 = (__m128i *)W0s;
+const __m128i *W13 = (__m128i *)W13s;
+const __m128i *W23 = (__m128i *)W23s;
+const __m128i *W15 = (__m128i *)W15s;
+const __m128i *W25 = (__m128i *)W25s;
+const __m128i *W35 = (__m128i *)W35s;
+const __m128i *W45 = (__m128i *)W45s;
 
 #ifdef __AVX2__
-__m256i *W0_256 =  (__m256i *)W0s;
-__m256i *W13_256 = (__m256i *)W13s;
-__m256i *W23_256 = (__m256i *)W23s;
-__m256i *W15_256 = (__m256i *)W15s;
-__m256i *W25_256 = (__m256i *)W25s;
-__m256i *W35_256 = (__m256i *)W35s;
-__m256i *W45_256 = (__m256i *)W45s;
+const __m256i *W0_256 =  (__m256i *)W0s;
+const __m256i *W13_256 = (__m256i *)W13s;
+const __m256i *W23_256 = (__m256i *)W23s;
+const __m256i *W15_256 = (__m256i *)W15s;
+const __m256i *W25_256 = (__m256i *)W25s;
+const __m256i *W35_256 = (__m256i *)W35s;
+const __m256i *W45_256 = (__m256i *)W45s;
 #endif
 
 #elif defined(__arm__)
@@ -512,23 +505,23 @@ int16x8_t *W25 = (int16x8_t *)W25s;
 int16x8_t *W35 = (int16x8_t *)W35s;
 int16x8_t *W45 = (int16x8_t *)W45s;
 #endif
-static int16_t dft_norm_table[16] = {9459,  //12
-                                     6689,//24
-                                     5461,//36
-                                     4729,//482
-                                     4230,//60
-                                     23170,//72
-                                     3344,//96
-                                     3153,//108
-                                     2991,//120
-                                     18918,//sqrt(3),//144
-                                     18918,//sqrt(3),//180
-                                     16384,//2, //192
-                                     18918,//sqrt(3), // 216
-                                     16384,//2, //240
-                                     18918,//sqrt(3), // 288
-                                     14654
-                                    }; //sqrt(5) //300
+const static int16_t dft_norm_table[16] = {9459,  //12
+					   6689,//24
+					   5461,//36
+					   4729,//482
+					   4230,//60
+					   23170,//72
+					   3344,//96
+					   3153,//108
+					   2991,//120
+					   18918,//sqrt(3),//144
+					   18918,//sqrt(3),//180
+					   16384,//2, //192
+					   18918,//sqrt(3), // 216
+					   16384,//2, //240
+					   18918,//sqrt(3), // 288
+					   14654
+}; //sqrt(5) //300
 
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -2036,42 +2029,42 @@ static inline void transpose4_ooff(int16x4_t *x,int16x4_t *y,int off)
 
 // 16-point optimized DFT kernel
 
-int16_t tw16[24] __attribute__((aligned(32))) = { 32767,0,30272,-12540,23169 ,-23170,12539 ,-30273,
+const static int16_t tw16[24] __attribute__((aligned(32))) = { 32767,0,30272,-12540,23169 ,-23170,12539 ,-30273,
                                                   32767,0,23169,-23170,0     ,-32767,-23170,-23170,
                                                   32767,0,12539,-30273,-23170,-23170,-30273,12539
                                                 };
 
-int16_t tw16a[24] __attribute__((aligned(32))) = {32767,0,30272,12540,23169 ,23170,12539 ,30273,
+const static int16_t tw16a[24] __attribute__((aligned(32))) = {32767,0,30272,12540,23169 ,23170,12539 ,30273,
                                                   32767,0,23169,23170,0     ,32767,-23170,23170,
                                                   32767,0,12539,30273,-23170,23170,-30273,-12539
                                                  };
 
-int16_t tw16b[24] __attribute__((aligned(32))) = { 0,32767,-12540,30272,-23170,23169 ,-30273,12539,
+const static int16_t tw16b[24] __attribute__((aligned(32))) = { 0,32767,-12540,30272,-23170,23169 ,-30273,12539,
                                                    0,32767,-23170,23169,-32767,0     ,-23170,-23170,
                                                    0,32767,-30273,12539,-23170,-23170,12539 ,-30273
                                                  };
 
-int16_t tw16c[24] __attribute__((aligned(32))) = { 0,32767,12540,30272,23170,23169 ,30273 ,12539,
+const static int16_t tw16c[24] __attribute__((aligned(32))) = { 0,32767,12540,30272,23170,23169 ,30273 ,12539,
                                                    0,32767,23170,23169,32767,0     ,23170 ,-23170,
                                                    0,32767,30273,12539,23170,-23170,-12539,-30273
                                                  };
 
-int16_t tw16rep[48] __attribute__((aligned(32))) = { 32767,0,30272,-12540,23169 ,-23170,12539 ,-30273,32767,0,30272,-12540,23169 ,-23170,12539 ,-30273,
+const static int16_t tw16rep[48] __attribute__((aligned(32))) = { 32767,0,30272,-12540,23169 ,-23170,12539 ,-30273,32767,0,30272,-12540,23169 ,-23170,12539 ,-30273,
 						     32767,0,23169,-23170,0     ,-32767,-23170,-23170,32767,0,23169,-23170,0     ,-32767,-23170,-23170,
 						     32767,0,12539,-30273,-23170,-23170,-30273,12539,32767,0,12539,-30273,-23170,-23170,-30273,12539
                                                    };
 
-int16_t tw16arep[48] __attribute__((aligned(32))) = {32767,0,30272,12540,23169 ,23170,12539 ,30273,32767,0,30272,12540,23169 ,23170,12539 ,30273,
+const static int16_t tw16arep[48] __attribute__((aligned(32))) = {32767,0,30272,12540,23169 ,23170,12539 ,30273,32767,0,30272,12540,23169 ,23170,12539 ,30273,
 						     32767,0,23169,23170,0     ,32767,-23170,23170,32767,0,23169,23170,0     ,32767,-23170,23170,
 						     32767,0,12539,30273,-23170,23170,-30273,-12539,32767,0,12539,30273,-23170,23170,-30273,-12539
                                                     }; 
 
-int16_t tw16brep[48] __attribute__((aligned(32))) = { 0,32767,-12540,30272,-23170,23169 ,-30273,12539,0,32767,-12540,30272,-23170,23169 ,-30273,12539,
+const static int16_t tw16brep[48] __attribute__((aligned(32))) = { 0,32767,-12540,30272,-23170,23169 ,-30273,12539,0,32767,-12540,30272,-23170,23169 ,-30273,12539,
                                                       0,32767,-23170,23169,-32767,0     ,-23170,-23170,0,32767,-23170,23169,-32767,0     ,-23170,-23170,
                                                       0,32767,-30273,12539,-23170,-23170,12539 ,-30273,0,32767,-30273,12539,-23170,-23170,12539 ,-30273
                                                     };
 
-int16_t tw16crep[48] __attribute__((aligned(32))) = { 0,32767,12540,30272,23170,23169 ,30273 ,12539,0,32767,12540,30272,23170,23169 ,30273 ,12539,
+const static int16_t tw16crep[48] __attribute__((aligned(32))) = { 0,32767,12540,30272,23170,23169 ,30273 ,12539,0,32767,12540,30272,23170,23169 ,30273 ,12539,
 						      0,32767,23170,23169,32767,0     ,23170 ,-23170,0,32767,23170,23169,32767,0     ,23170 ,-23170,
 						      0,32767,30273,12539,23170,-23170,-12539,-30273,0,32767,30273,12539,23170,-23170,-12539,-30273
                                                     };
@@ -2502,7 +2495,7 @@ static inline void idft16_simd256(int16_t *x,int16_t *y)
 
 // 64-point optimized DFT
 
-int16_t tw64[96] __attribute__((aligned(32))) = { 
+const static int16_t tw64[96] __attribute__((aligned(32))) = { 
 32767,0,32609,-3212,32137,-6393,31356,-9512,
 30272,-12540,28897,-15447,27244,-18205,25329,-20788,
 23169,-23170,20787,-25330,18204,-27245,15446,-28898,
@@ -2517,7 +2510,7 @@ int16_t tw64[96] __attribute__((aligned(32))) = {
 -30273,12539,-25330,20787,-18205,27244,-9512,31356
                                                 };
 
-int16_t tw64rep[192] __attribute__((aligned(32))) = { 
+const static int16_t tw64rep[192] __attribute__((aligned(32))) = { 
 32767,0,32609,-3212,32137,-6393,31356,-9512,32767,0,32609,-3212,32137,-6393,31356,-9512,
 30272,-12540,28897,-15447,27244,-18205,25329,-20788,30272,-12540,28897,-15447,27244,-18205,25329,-20788,
 23169,-23170,20787,-25330,18204,-27245,15446,-28898,23169,-23170,20787,-25330,18204,-27245,15446,-28898,
@@ -2532,7 +2525,7 @@ int16_t tw64rep[192] __attribute__((aligned(32))) = {
 -30273,12539,-25330,20787,-18205,27244,-9512,31356,-30273,12539,-25330,20787,-18205,27244,-9512,31356
                                                 };
 
-int16_t tw64a[96] __attribute__((aligned(32))) = { 
+const static int16_t tw64a[96] __attribute__((aligned(32))) = { 
 32767,0,32609,3212,32137,6393,31356,9512,
 30272,12540,28897,15447,27244,18205,25329,20788,
 23169,23170,20787,25330,18204,27245,15446,28898,
@@ -2546,7 +2539,7 @@ int16_t tw64a[96] __attribute__((aligned(32))) = {
 -23170,23170,-28898,15447,-32138,6393,-32610,-3211,
 -30273,-12539,-25330,-20787,-18205,-27244,-9512,-31356
                                                  };
-int16_t tw64arep[192] __attribute__((aligned(32))) = { 
+const static int16_t tw64arep[192] __attribute__((aligned(32))) = { 
 32767,0,32609,3212,32137,6393,31356,9512,32767,0,32609,3212,32137,6393,31356,9512,
 30272,12540,28897,15447,27244,18205,25329,20788,30272,12540,28897,15447,27244,18205,25329,20788,
 23169,23170,20787,25330,18204,27245,15446,28898,23169,23170,20787,25330,18204,27245,15446,28898,
@@ -2561,7 +2554,7 @@ int16_t tw64arep[192] __attribute__((aligned(32))) = {
 -30273,-12539,-25330,-20787,-18205,-27244,-9512,-31356,-30273,-12539,-25330,-20787,-18205,-27244,-9512,-31356
                                                  };
 
-int16_t tw64b[96] __attribute__((aligned(32))) = { 
+const static int16_t tw64b[96] __attribute__((aligned(32))) = { 
 0,32767,-3212,32609,-6393,32137,-9512,31356,
 -12540,30272,-15447,28897,-18205,27244,-20788,25329,
 -23170,23169,-25330,20787,-27245,18204,-28898,15446,
@@ -2576,7 +2569,7 @@ int16_t tw64b[96] __attribute__((aligned(32))) = {
 12539,-30273,20787,-25330,27244,-18205,31356,-9512
                                                  };
 
-int16_t tw64brep[192] __attribute__((aligned(32))) = { 
+const static int16_t tw64brep[192] __attribute__((aligned(32))) = { 
 0,32767,-3212,32609,-6393,32137,-9512,31356,0,32767,-3212,32609,-6393,32137,-9512,31356,
 -12540,30272,-15447,28897,-18205,27244,-20788,25329,-12540,30272,-15447,28897,-18205,27244,-20788,25329,
 -23170,23169,-25330,20787,-27245,18204,-28898,15446,-23170,23169,-25330,20787,-27245,18204,-28898,15446,
@@ -2591,7 +2584,7 @@ int16_t tw64brep[192] __attribute__((aligned(32))) = {
 12539,-30273,20787,-25330,27244,-18205,31356,-9512,12539,-30273,20787,-25330,27244,-18205,31356,-9512
                                                  };
 
-int16_t tw64c[96] __attribute__((aligned(32))) = { 
+const static int16_t tw64c[96] __attribute__((aligned(32))) = { 
 0,32767,3212,32609,6393,32137,9512,31356,
 12540,30272,15447,28897,18205,27244,20788,25329,
 23170,23169,25330,20787,27245,18204,28898,15446,
@@ -2606,7 +2599,7 @@ int16_t tw64c[96] __attribute__((aligned(32))) = {
 -12539,-30273,-20787,-25330,-27244,-18205,-31356,-9512
                                                  };
 
-int16_t tw64crep[192] __attribute__((aligned(32))) = { 
+const static int16_t tw64crep[192] __attribute__((aligned(32))) = { 
 0,32767,3212,32609,6393,32137,9512,31356,0,32767,3212,32609,6393,32137,9512,31356,
 12540,30272,15447,28897,18205,27244,20788,25329,12540,30272,15447,28897,18205,27244,20788,25329,
 23170,23169,25330,20787,27245,18204,28898,15446,23170,23169,25330,20787,27245,18204,28898,15446,
@@ -2627,7 +2620,7 @@ int16_t tw64crep[192] __attribute__((aligned(32))) = {
 #define simdshort_q15_t __m64
 #define shiftright_int16(a,shift) _mm_srai_epi16(a,shift)
 #define set1_int16(a) _mm_set1_epi16(a);
-#define mulhi_int16(a,b) _mm_slli_epi16(_mm_mulhi_epi16(a,b),1);
+#define mulhi_int16(a,b) _mm_mulhrs_epi16 (a,b)
 #ifdef __AVX2__
 #define simd256_q15_t __m256i
 #define shiftright_int16_simd256(a,shift) _mm256_srai_epi16(a,shift)
@@ -5229,7 +5222,7 @@ void dft8192(int16_t *x,int16_t *y,int scale)
   
   xtmpp = xtmp;
 
-  for (i=0; i<32; i++) {
+  for (i=0; i<16; i++) {
     transpose4_ooff_simd256(x256  ,xtmpp,512);
     transpose4_ooff_simd256(x256+2,xtmpp+1,512);
     transpose4_ooff_simd256(x256+4,xtmpp+2,512);
@@ -5267,7 +5260,7 @@ void dft8192(int16_t *x,int16_t *y,int scale)
   }
 
   dft4096((int16_t*)(xtmp),(int16_t*)ytmp,1);
-  dft4096((int16_t*)(xtmp+1024),(int16_t*)(ytmp+512),1);
+  dft4096((int16_t*)(xtmp+512),(int16_t*)(ytmp+512),1);
 
 
   for (i=0; i<512; i++) {
@@ -5319,7 +5312,7 @@ void idft8192(int16_t *x,int16_t *y,int scale)
   
   xtmpp = xtmp;
 
-  for (i=0; i<32; i++) {
+  for (i=0; i<16; i++) {
     transpose4_ooff_simd256(x256  ,xtmpp,512);
     transpose4_ooff_simd256(x256+2,xtmpp+1,512);
     transpose4_ooff_simd256(x256+4,xtmpp+2,512);
@@ -5357,7 +5350,7 @@ void idft8192(int16_t *x,int16_t *y,int scale)
   }
 
   idft4096((int16_t*)(xtmp),(int16_t*)ytmp,1);
-  idft4096((int16_t*)(xtmp+1024),(int16_t*)(ytmp+512),1);
+  idft4096((int16_t*)(xtmp+512),(int16_t*)(ytmp+512),1);
 
 
   for (i=0; i<512; i++) {
@@ -5680,15 +5673,58 @@ void idft12288(int16_t *input, int16_t *output)
   //  write_output("out.m","out",output,6144,1,1);
 }
 
+#include "twiddle18432.h"
 // 6144 x 3
-void dft18432(int16_t *input, int16_t *output)
-{
+void dft18432(int16_t *input, int16_t *output) {
 
+  int i,i2,j;
+  uint32_t tmp[3][6144] __attribute__((aligned(32)));
+  uint32_t tmpo[3][6144] __attribute__((aligned(32)));
+
+  for (i=0,j=0; i<6144; i++) {
+    tmp[0][i] = ((uint32_t *)input)[j++];
+    tmp[1][i] = ((uint32_t *)input)[j++];
+    tmp[2][i] = ((uint32_t *)input)[j++];
+  }
+
+  dft6144((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]));
+  dft6144((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]));
+  dft6144((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]));
+
+  for (i=0,i2=0; i<12288; i+=8,i2+=4)  {
+    bfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),(simd_q15_t*)(&tmpo[2][i2]),
+          (simd_q15_t*)(output+i),(simd_q15_t*)(output+12288+i),(simd_q15_t*)(output+24576+i),
+          (simd_q15_t*)(twa18432+i),(simd_q15_t*)(twb18432+i));
+  }
+
+  _mm_empty();
+  _m_empty();
 }
 
-void idft18432(int16_t *input, int16_t *output)
-{
+void idft18432(int16_t *input, int16_t *output) {
 
+  int i,i2,j;
+  uint32_t tmp[3][6144] __attribute__((aligned(32)));
+  uint32_t tmpo[3][6144] __attribute__((aligned(32)));
+
+  for (i=0,j=0; i<6144; i++) {
+    tmp[0][i] = ((uint32_t *)input)[j++];
+    tmp[1][i] = ((uint32_t *)input)[j++];
+    tmp[2][i] = ((uint32_t *)input)[j++];
+  }
+
+  idft6144((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]));
+  idft6144((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]));
+  idft6144((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]));
+
+  for (i=0,i2=0; i<12288; i+=8,i2+=4)  {
+    ibfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),(simd_q15_t*)(&tmpo[2][i2]),
+	   (simd_q15_t*)(output+i),(simd_q15_t*)(output+12288+i),(simd_q15_t*)(output+24576+i),
+	   (simd_q15_t*)(twa18432+i),(simd_q15_t*)(twb18432+i));
+  }
+
+  _mm_empty();
+  _m_empty();
 }
 
 #include "twiddle24576.h"
@@ -5733,8 +5769,8 @@ void dft24576(int16_t *input, int16_t *output)
 void idft24576(int16_t *input, int16_t *output)
 {
   int i,i2,j;
-  uint32_t tmp[3][16384] __attribute__((aligned(32)));
-  uint32_t tmpo[3][16384] __attribute__((aligned(32)));
+  uint32_t tmp[3][8192] __attribute__((aligned(32)));
+  uint32_t tmpo[3][8192] __attribute__((aligned(32)));
 
   for (i=0,j=0; i<8192; i++) {
     tmp[0][i] = ((uint32_t *)input)[j++];
@@ -5746,13 +5782,6 @@ void idft24576(int16_t *input, int16_t *output)
   idft8192((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
   idft8192((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
   
-  /*
-  for (i=1; i<8192; i++) {
-    tmpo[0][i] = tmpo[0][i<<1];
-    tmpo[1][i] = tmpo[1][i<<1];
-    tmpo[2][i] = tmpo[2][i<<1];
-    }*/
-
   /*
     write_output("in.m","in",input,24576,1,1);
     write_output("out0.m","o0",tmpo[0],8192,1,1);
@@ -6817,6 +6846,7 @@ void dft60(int16_t *x,int16_t *y,unsigned char scale)
 
     for (i=0; i<60; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
+//      printf("y[%d] = (%d,%d)\n",i,((int16_t*)&y128[i])[0],((int16_t*)&y128[i])[1]);
     }
   }
 
@@ -18553,6 +18583,7 @@ int main(int argc, char**argv)
   simd_q15_t x[4096],y[4096],tw0,tw1,tw2,tw3;
 #endif
   int i;
+  simd_q15_t *x128=x,*y128=y;
 
   set_taus_seed(0);
   opp_enabled = 1;
@@ -18592,17 +18623,22 @@ int main(int argc, char**argv)
     ((int16_t *)&tw3)[5] = 0;
     ((int16_t *)&tw3)[6] = 32767;
     ((int16_t *)&tw3)[7] = 0;
-
+ */
     for (i=0;i<300;i++) {
 #if defined(__x86_64__) || defined(__i386__)
+#ifndef __AVX2__
       x[i] = _mm_set1_epi32(taus());
       x[i] = _mm_srai_epi16(x[i],4);
+#else
+      x[i] = _mm256_set1_epi32(taus());
+      x[i] = _mm256_srai_epi16(x[i],4);
+#endif
 #elif defined(__arm__)
       x[i] = (int16x8_t)vdupq_n_s32(taus());
       x[i] = vshrq_n_s16(x[i],4);
 #endif
     }
-
+      /*
     bfly2_tw1(x,x+1,y,y+1);
     printf("(%d,%d) (%d,%d) => (%d,%d) (%d,%d)\n",((int16_t*)&x[0])[0],((int16_t*)&x[0])[1],((int16_t*)&x[1])[0],((int16_t*)&x[1])[1],((int16_t*)&y[0])[0],((int16_t*)&y[0])[1],((int16_t*)&y[1])[0],((int16_t*)&y[1])[1]);
     printf("(%d,%d) (%d,%d) => (%d,%d) (%d,%d)\n",((int16_t*)&x[0])[0],((int16_t*)&x[0])[1],((int16_t*)&x[1])[0],((int16_t*)&x[1])[1],((int16_t*)&y[0])[2],((int16_t*)&y[0])[3],((int16_t*)&y[1])[2],((int16_t*)&y[1])[3]);
@@ -18743,27 +18779,27 @@ int main(int argc, char**argv)
     for (i=0;i<48;i++)
       printf("%d,%d,",((int16_t*)(&y[i]))[0],((int16_t *)(&y[i]))[1]);
     printf("\n");
-
+ */
     dft60((int16_t *)x,(int16_t *)y,1);
     printf("\n\n60-point\n");
     printf("X: ");
     for (i=0;i<60;i++)
-      printf("%d,%d,",((int16_t*)(&x[i]))[0],((int16_t *)(&x[i]))[1]);
+      printf("%d,%d,",((int16_t*)(&x128[i]))[0],((int16_t *)(&x128[i]))[1]);
     printf("\nY:");
     for (i=0;i<60;i++)
-      printf("%d,%d,",((int16_t*)(&y[i]))[0],((int16_t *)(&y[i]))[1]);
+      printf("%d,%d,",((int16_t*)(&y128[i]))[0],((int16_t *)(&y128[i]))[1]);
     printf("\n");
-
+    
     dft72((int16_t *)x,(int16_t *)y,1);
     printf("\n\n72-point\n");
     printf("X: ");
     for (i=0;i<72;i++)
-      printf("%d,%d,",((int16_t*)(&x[i]))[0],((int16_t *)(&x[i]))[1]);
+      printf("%d,%d,",((int16_t*)(&x128[i]))[0],((int16_t *)(&x128[i]))[1]);
     printf("\nY:");
     for (i=0;i<72;i++)
-      printf("%d: %d,%d\n",i,((int16_t*)(&y[i]))[0],((int16_t *)(&y[i]))[1]);
+      printf("%d: %d,%d\n",i,((int16_t*)(&y128[i]))[0],((int16_t *)(&y128[i]))[1]);
     printf("\n");
-
+    /*
     dft96((int16_t *)x,(int16_t *)y,1);
     printf("\n\n96-point\n");
     printf("X: ");
@@ -18783,17 +18819,17 @@ int main(int argc, char**argv)
     for (i=0;i<108;i++)
       printf("%d: %d,%d\n",i,((int16_t*)(&y[i]))[0],((int16_t *)(&y[i]))[1]);
     printf("\n");
-
+    */
     dft120((int16_t *)x,(int16_t *)y,1);
     printf("\n\n120-point\n");
     printf("X: ");
     for (i=0;i<120;i++)
-      printf("%d,%d,",((int16_t*)(&x[i]))[0],((int16_t *)(&x[i]))[1]);
+      printf("%d,%d,",((int16_t*)(&x128[i]))[0],((int16_t *)(&x128[i]))[1]);
     printf("\nY:");
     for (i=0;i<120;i++)
-      printf("%d: %d,%d\n",i,((int16_t*)(&y[i]))[0],((int16_t *)(&y[i]))[1]);
+      printf("%d: %d,%d\n",i,((int16_t*)(&y128[i]))[0],((int16_t *)(&y128[i]))[1]);
     printf("\n");
-
+    /*
     dft144((int16_t *)x,(int16_t *)y,1);
     printf("\n\n144-point\n");
     printf("X: ");
@@ -19121,6 +19157,55 @@ int main(int argc, char**argv)
   printf("\n\n2048-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
   write_output("y2048.m","y2048",y,2048,1,1);
   write_output("x2048.m","x2048",x,2048,1,1);
+
+  memset((void*)x,0,2048*sizeof(int32_t));
+  for (i=2;i<2402;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  for (i=2*(4096-1200);i<8192;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  reset_meas(&ts);
+
+  for (i=0; i<10000; i++) {
+    start_meas(&ts);
+    idft4096((int16_t *)x,(int16_t *)y,1);
+    stop_meas(&ts);
+  }
+
+  printf("\n\n4096-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
+  write_output("y4096.m","y4096",y,4096,1,1);
+  write_output("x4096.m","x4096",x,4096,1,1);
+
+  memset((void*)x,0,8192*sizeof(int32_t));
+  for (i=2;i<4802;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  for (i=2*(4096-1200);i<8192;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  reset_meas(&ts);
+  for (i=0; i<10000; i++) {
+    start_meas(&ts);
+    idft8192((int16_t *)x,(int16_t *)y,1);
+    stop_meas(&ts);
+  }
+
+  printf("\n\n8192-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
+  write_output("y8192.m","y8192",y,8192,1,1);
+  write_output("x8192.m","x8192",x,8192,1,1);
 
   return(0);
 }

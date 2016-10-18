@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-   Contact Information
-   OpenAirInterface Admin: openair_admin@eurecom.fr
-   OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*
     C Header file <updatefw.h> for updatefw tool.
@@ -41,6 +33,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdint.h>
 
 #include <sys/ioctl.h>
 #include "openair_device.h"
@@ -239,6 +232,18 @@ void find_and_transfer_section(char* section_name, unsigned int verboselevel) {
       /* Dynamically allocate a chunk of memory to store the section into. */
       section_content = (char*)malloc(elf_Shdr.sh_size);
 
+      /* Fail if the address returned by malloc does not fit in 32 bits.
+       * The kernel driver gets this address as 32 bits and uses it to copy
+       * from userspace. If the address does not fit into 32 bits the kernel
+       * will copy garbage or fail to copy completely.
+       * To be reworked if things do not work on some setups.
+       */
+      if (sizeof(char*) > 4 && (((uintptr_t)section_content)>>32)) {
+        fprintf(stderr, "FATAL ERROR: an internal serious problem has been encountered.\n");
+        fprintf(stderr, "Contact the authors so as to solve this issue.\n");
+        exit(-1);
+      }
+
       if (!section_content) {
         fprintf(stderr, "Error: could not dynamically allocate %d bytes for section %s.\n",
                 elf_Shdr.sh_size, SecNameStnTable + elf_Shdr.sh_name);
@@ -281,6 +286,13 @@ void find_and_transfer_section(char* section_name, unsigned int verboselevel) {
         ioctl_params[0] = UPDATE_FIRMWARE_TRANSFER_BLOCK;
         ioctl_params[1] = elf_Shdr.sh_addr;
         ioctl_params[2] = elf_Shdr.sh_size / 4;
+        /* This is wrong on x86_64 because a pointer is 64 bits and
+         * an unsigned int is only 32 bits.
+         * The compiler emits a warning, but the test
+         * above on the value of section_content makes it work
+         * (hopefully).
+         * To be changed if things do not work.
+         */
         ioctl_params[3] = (unsigned int)((unsigned int*)section_content);
         //invert4(ioctl_params[1]);
         //invert4(ioctl_params[2]);

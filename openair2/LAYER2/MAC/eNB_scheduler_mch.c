@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file eNB_scheduler_mch.c
  * \brief procedures related to eNB for the MCH transport channel
@@ -159,7 +151,7 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
         // Check if the subframeP is for MSI, MCCH or MTCHs and Set the correspoding flag to 1
         switch (subframeP) {
         case 1:
-          if (mac_xface->lte_frame_parms->frame_type == FDD) {
+          if (mac_xface->frame_parms->frame_type == FDD) {
             if ((eNB_mac_inst[module_idP].common_channels[CC_id].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF1) == MBSFN_FDD_SF1) {
               if (msi_pos == 1) {
                 msi_flag = 1;
@@ -177,7 +169,7 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
           break;
 
         case 2:
-          if (mac_xface->lte_frame_parms->frame_type == FDD) {
+          if (mac_xface->frame_parms->frame_type == FDD) {
             if ((eNB_mac_inst[module_idP].common_channels[CC_id].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF2) == MBSFN_FDD_SF2) {
               if (msi_pos == 2) {
                 msi_flag = 1;
@@ -195,7 +187,7 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
           break;
 
         case 3:
-          if (mac_xface->lte_frame_parms->frame_type == TDD) { // TDD
+          if (mac_xface->frame_parms->frame_type == TDD) { // TDD
             if ((eNB_mac_inst[module_idP].common_channels[CC_id].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF3) == MBSFN_TDD_SF3) {
               if (msi_pos == 1) {
                 msi_flag = 1;
@@ -226,7 +218,7 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
           break;
 
         case 4:
-          if (mac_xface->lte_frame_parms->frame_type == TDD) {
+          if (mac_xface->frame_parms->frame_type == TDD) {
             if ((eNB_mac_inst[module_idP].common_channels[CC_id].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF4) == MBSFN_TDD_SF4) {
               if (msi_pos == 2) {
                 msi_flag = 1;
@@ -244,7 +236,7 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
           break;
 
         case 6:
-          if (mac_xface->lte_frame_parms->frame_type == FDD) {
+          if (mac_xface->frame_parms->frame_type == FDD) {
             if ((eNB_mac_inst[module_idP].common_channels[CC_id].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF6) == MBSFN_FDD_SF6) {
               if (msi_pos == 4) {
                 msi_flag = 1;
@@ -262,7 +254,7 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
           break;
 
         case 7:
-          if (mac_xface->lte_frame_parms->frame_type == TDD) { // TDD
+          if (mac_xface->frame_parms->frame_type == TDD) { // TDD
             if ((eNB_mac_inst[module_idP].common_channels[CC_id].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF7) == MBSFN_TDD_SF7) {
               if (msi_pos == 3) {
                 msi_flag = 1;
@@ -293,7 +285,7 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
           break;
 
         case 8:
-          if (mac_xface->lte_frame_parms->frame_type == TDD) { //TDD
+          if (mac_xface->frame_parms->frame_type == TDD) { //TDD
             if ((eNB_mac_inst[module_idP].common_channels[CC_id].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF8) == MBSFN_TDD_SF8) {
               if (msi_pos == 4) {
                 msi_flag = 1;
@@ -324,7 +316,7 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
           break;
 
         case 9:
-          if (mac_xface->lte_frame_parms->frame_type == TDD) {
+          if (mac_xface->frame_parms->frame_type == TDD) {
             if ((eNB_mac_inst[module_idP].common_channels[CC_id].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF9) == MBSFN_TDD_SF9) {
               if (msi_pos == 5) {
                 msi_flag = 1;
@@ -441,7 +433,7 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
 
       header_len_mcch = 2;
 
-      if (mac_xface->lte_frame_parms->frame_type == TDD) {
+      if (mac_xface->frame_parms->frame_type == TDD) {
         LOG_D(MAC,"[eNB %d] CC_id %d Frame %d subframeP %d: Scheduling MCCH->MCH (TDD) for MCCH message %d bytes (mcs %d )\n",
               module_idP, CC_id,
               frameP,subframeP,
@@ -473,7 +465,7 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
     }
   }
 
-  TBS = mac_xface->get_TBS_DL(eNB_mac_inst[module_idP].common_channels[CC_id].MCH_pdu.mcs, mac_xface->lte_frame_parms->N_RB_DL);
+  TBS = mac_xface->get_TBS_DL(eNB_mac_inst[module_idP].common_channels[CC_id].MCH_pdu.mcs, mac_xface->frame_parms->N_RB_DL);
 #ifdef Rel10
   // do not let mcch and mtch multiplexing when relaying is active
   // for sync area 1, so not transmit data
@@ -484,10 +476,10 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
   if (mtch_flag == 1) {
     // Calculate TBS
     /* if ((msi_flag==1) || (mcch_flag==1)) {
-     TBS = mac_xface->get_TBS(mcch_mcs, mac_xface->lte_frame_parms->N_RB_DL);
+     TBS = mac_xface->get_TBS(mcch_mcs, mac_xface->frame_parms->N_RB_DL);
      }
      else { // only MTCH in this subframeP
-     TBS = mac_xface->get_TBS(eNB_mac_inst[module_idP].pmch_Config[0]->dataMCS_r9, mac_xface->lte_frame_parms->N_RB_DL);
+     TBS = mac_xface->get_TBS(eNB_mac_inst[module_idP].pmch_Config[0]->dataMCS_r9, mac_xface->frame_parms->N_RB_DL);
      }
 
     // get MTCH data from RLC (like for DTCH)

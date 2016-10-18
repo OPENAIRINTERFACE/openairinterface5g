@@ -577,7 +577,7 @@ int get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id,int CC_id)
 	}
 
 	int32_t time_advance;
-	switch (PHY_vars_eNB_g[mod_id][CC_id]->lte_frame_parms.N_RB_DL) {
+	switch (PHY_vars_eNB_g[mod_id][CC_id]->frame_parms.N_RB_DL) {
 	case 6:
 	  time_advance = eNB_UE_stats->timing_advance_update;
 	  break;

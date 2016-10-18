@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /*! \file main.c
  * \brief top init of Layer 2
  * \author  Navid Nikaein and Raymond Knopp
@@ -224,8 +217,8 @@ int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, ui
       RA_template = (RA_TEMPLATE *)&eNB_mac_inst[i].common_channels[CC_id].RA_template[0];
 
       for (j=0; j<NB_RA_PROC_MAX; j++) {
-        if (mac_xface->lte_frame_parms->frame_type == TDD) {
-          switch (mac_xface->lte_frame_parms->N_RB_DL) {
+        if (mac_xface->frame_parms->frame_type == TDD) {
+          switch (mac_xface->frame_parms->N_RB_DL) {
           case 6:
             size_bytes1 = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
             size_bytes2 = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
@@ -263,7 +256,7 @@ int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, ui
           }
 
         } else {
-          switch (mac_xface->lte_frame_parms->N_RB_DL) {
+          switch (mac_xface->frame_parms->N_RB_DL) {
           case 6:
             size_bytes1 = sizeof(DCI1A_1_5MHz_FDD_t);
             size_bytes2 = sizeof(DCI1A_1_5MHz_FDD_t);
@@ -326,7 +319,7 @@ int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, ui
   //ICIC init param
 #ifdef ICIC
   uint8_t SB_size;
-  SB_size=mac_xface->get_SB_size(mac_xface->lte_frame_parms->N_RB_DL);
+  SB_size=mac_xface->get_SB_size(mac_xface->frame_parms->N_RB_DL);
 
   srand (time(NULL));
 
@@ -465,7 +458,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
   mac_xface->UL_failure_indication     = UL_failure_indication;
   mac_xface->rx_sdu                    = rx_sdu;
   mac_xface->get_dlsch_sdu             = get_dlsch_sdu;
-  mac_xface->get_eNB_UE_stats          = get_eNB_UE_stats;
+  mac_xface->get_eNB_UE_stats          = get_UE_stats;
   mac_xface->get_transmission_mode     = get_transmission_mode;
   mac_xface->get_rballoc               = get_rballoc;
   mac_xface->get_nb_rb                 = conv_nprb;
@@ -480,6 +473,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
 
   LOG_I(MAC,"[MAIN] init UE MAC functions \n");
   mac_xface->ue_decode_si              = ue_decode_si;
+  mac_xface->ue_decode_p               = ue_decode_p;
   mac_xface->ue_send_sdu               = ue_send_sdu;
 #ifdef Rel10
   mac_xface->ue_send_mch_sdu           = ue_send_mch_sdu;
@@ -494,7 +488,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
 
 
   LOG_I(MAC,"[MAIN] PHY Frame configuration \n");
-  mac_xface->lte_frame_parms = frame_parms;
+  mac_xface->frame_parms = frame_parms;
 
   mac_xface->get_ue_active_harq_pid = get_ue_active_harq_pid;
   mac_xface->get_PL                 = get_PL;

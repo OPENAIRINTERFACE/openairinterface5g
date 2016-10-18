@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /*! \file eNB_scheduler.c
  * \brief eNB scheduler top level function operates on per subframe basis
  * \author  Navid Nikaein and Raymond Knopp
@@ -130,8 +123,10 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   while (i>=0) {
     rnti = UE_RNTI(module_idP, i);
     CC_id = UE_PCCID(module_idP, i);
-    LOG_D(MAC,"UE %d: rnti %x (%p)\n", i, rnti,
-          mac_xface->get_eNB_UE_stats(module_idP, CC_id, rnti));
+    if ((frameP==0)&&(subframeP==0))
+      LOG_I(MAC,"UE  rnti %x : %s\n", rnti, 
+	    UE_list->UE_sched_ctrl[i].ul_out_of_sync==0 ? "in synch" : "out of sync");
+
     next_i= UE_list->next[i];
 
     PHY_vars_eNB_g[module_idP][CC_id]->pusch_stats_bsr[i][(frameP*10)+subframeP]=-63;
@@ -163,8 +158,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 	  LOG_D(MAC,"UE %d rnti %x: sending PDCCH order for RAPROC (failure timer %d) \n",i,rnti,UE_list->UE_sched_ctrl[i].ul_failure_timer);	    
 	  DLSCH_dci = (void *)UE_list->UE_template[CC_id][i].DLSCH_DCI[0];
 	  *(uint32_t*)DLSCH_dci = 0;
-	  if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
-	    switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+	  if (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.frame_type == TDD) {
+	    switch (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
 	    case 6:
 	      ((DCI1A_1_5MHz_TDD_1_6_t*)DLSCH_dci)->type = 1;
 	      ((DCI1A_1_5MHz_TDD_1_6_t*)DLSCH_dci)->rballoc = 31;
@@ -192,7 +187,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 	    }
 	  }
 	  else { // FDD
-	    switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+	    switch (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
 	    case 6:
 	      ((DCI1A_1_5MHz_FDD_t*)DLSCH_dci)->type = 1;
 	      ((DCI1A_1_5MHz_FDD_t*)DLSCH_dci)->rballoc = 31;
@@ -341,7 +336,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   
   //if (subframeP%5 == 0)
   //#ifdef EXMIMO
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frameP, 0,module_idP);
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frameP, subframeP,module_idP);
   pdcp_run(&ctxt);
   //#endif
 
@@ -385,11 +380,11 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     schedule_RA(module_idP,frameP,subframeP,2);
 
 
-    if (mac_xface->lte_frame_parms->frame_type == FDD) {  //FDD
+    if (mac_xface->frame_parms->frame_type == FDD) {  //FDD
       schedule_ulsch(module_idP,frameP,cooperation_flag,0,4);//,calibration_flag);
-    } else if  ((mac_xface->lte_frame_parms->tdd_config == TDD) || //TDD
-                (mac_xface->lte_frame_parms->tdd_config == 3) ||
-                (mac_xface->lte_frame_parms->tdd_config == 6)) {
+    } else if  ((mac_xface->frame_parms->tdd_config == TDD) || //TDD
+                (mac_xface->frame_parms->tdd_config == 3) ||
+                (mac_xface->frame_parms->tdd_config == 6)) {
       //schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,4);//,calibration_flag);
     }
 #ifndef ENABLE_ENB_AGENT_DL_SCHEDULER
@@ -418,8 +413,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
     // TDD, schedule UL for subframeP 7 (TDD config 0,1) / subframeP 8 (TDD Config 6)
     // FDD, schedule normal UL/DLSCH
-    if (mac_xface->lte_frame_parms->frame_type == TDD) { // TDD
-      switch (mac_xface->lte_frame_parms->tdd_config) {
+    if (mac_xface->frame_parms->frame_type == TDD) { // TDD
+      switch (mac_xface->frame_parms->tdd_config) {
       case 0:
       case 1:
         schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,7);
@@ -468,7 +463,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
     // TDD, nothing
     // FDD, normal UL/DLSCH
-    if (mac_xface->lte_frame_parms->frame_type == FDD) {  //FDD
+    if (mac_xface->frame_parms->frame_type == FDD) {  //FDD
       schedule_ulsch(module_idP,frameP,cooperation_flag,2,6);
 #ifndef ENABLE_ENB_AGENT_DL_SCHEDULER
       schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
@@ -499,8 +494,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     // TDD Config 2, ULSCH for subframeP 7
     // TDD Config 2/5 normal DLSCH
     // FDD, normal UL/DLSCH
-    if (mac_xface->lte_frame_parms->frame_type == TDD) {
-      switch (mac_xface->lte_frame_parms->tdd_config) {
+    if (mac_xface->frame_parms->frame_type == TDD) {
+      switch (mac_xface->frame_parms->tdd_config) {
       case 2:
         schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,7);
 
@@ -563,8 +558,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     // TDD Config 1, ULSCH for subframeP 8
     // TDD Config 1/2/4/5 DLSCH
     // FDD UL/DLSCH
-    if (mac_xface->lte_frame_parms->frame_type == 1) { // TDD
-      switch (mac_xface->lte_frame_parms->tdd_config) {
+    if (mac_xface->frame_parms->frame_type == 1) { // TDD
+      switch (mac_xface->frame_parms->tdd_config) {
       case 1:
         //        schedule_RA(module_idP,frameP,subframeP);
         schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,8);
@@ -603,7 +598,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         break;
       }
     } else {
-      if (mac_xface->lte_frame_parms->frame_type == FDD) {  //FDD
+      if (mac_xface->frame_parms->frame_type == FDD) {  //FDD
 
 	schedule_ulsch(module_idP, frameP, cooperation_flag, 4, 8);
 #ifndef ENABLE_ENB_AGENT_DL_SCHEDULER
@@ -639,7 +634,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     schedule_SI(module_idP,frameP,subframeP);
 
     //schedule_RA(module_idP,frameP,subframeP,5);
-    if (mac_xface->lte_frame_parms->frame_type == FDD) {
+    if (mac_xface->frame_parms->frame_type == FDD) {
       schedule_RA(module_idP,frameP,subframeP,1);
       schedule_ulsch(module_idP,frameP,cooperation_flag,5,9);
 #ifndef ENABLE_ENB_AGENT_DL_SCHEDULER
@@ -662,8 +657,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 	  enb_agent_mac_destroy_dl_config(msg);
 	}
 #endif
-    } else if ((mac_xface->lte_frame_parms->tdd_config == 0) || // TDD Config 0
-               (mac_xface->lte_frame_parms->tdd_config == 6)) { // TDD Config 6
+    } else if ((mac_xface->frame_parms->tdd_config == 0) || // TDD Config 0
+               (mac_xface->frame_parms->tdd_config == 6)) { // TDD Config 6
       //schedule_ulsch(module_idP,cooperation_flag,subframeP);
 #ifndef ENABLE_ENB_AGENT_DL_SCHEDULER
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
@@ -698,8 +693,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     // TDD Config 0,1,6 ULSCH for subframes 2,3
     // TDD Config 3,4,5 Normal DLSCH
     // FDD normal ULSCH/DLSCH
-    if (mac_xface->lte_frame_parms->frame_type == TDD) { // TDD
-      switch (mac_xface->lte_frame_parms->tdd_config) {
+    if (mac_xface->frame_parms->frame_type == TDD) { // TDD
+      switch (mac_xface->frame_parms->tdd_config) {
       case 0:
         break;
 
@@ -800,8 +795,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
     // TDD Config 3,4,5 Normal DLSCH
     // FDD Normal UL/DLSCH
-    if (mac_xface->lte_frame_parms->frame_type == TDD) { // TDD
-      switch (mac_xface->lte_frame_parms->tdd_config) {
+    if (mac_xface->frame_parms->frame_type == TDD) { // TDD
+      switch (mac_xface->frame_parms->tdd_config) {
       case 3:
       case 4:
         schedule_RA(module_idP,frameP,subframeP,3);  // 3 = Msg3 subframeP, not
@@ -884,8 +879,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     // TDD Config 2,3,4,5 ULSCH for subframeP 2
     //
     // FDD Normal UL/DLSCH
-    if (mac_xface->lte_frame_parms->frame_type == TDD) { // TDD
-      switch (mac_xface->lte_frame_parms->tdd_config) {
+    if (mac_xface->frame_parms->frame_type == TDD) { // TDD
+      switch (mac_xface->frame_parms->tdd_config) {
       case 2:
       case 3:
       case 4:
@@ -947,8 +942,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   case 9:
 
     // TDD Config 1,3,4,6 ULSCH for subframes 3,3,3,4
-    if (mac_xface->lte_frame_parms->frame_type == TDD) {
-      switch (mac_xface->lte_frame_parms->tdd_config) {
+    if (mac_xface->frame_parms->frame_type == TDD) {
+      switch (mac_xface->frame_parms->tdd_config) {
       case 1:
         schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,3);
         schedule_RA(module_idP,frameP,subframeP,7);  // 7 = Msg3 subframeP, not

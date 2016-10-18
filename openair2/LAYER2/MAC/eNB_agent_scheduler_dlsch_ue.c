@@ -236,7 +236,7 @@ schedule_ue_spec_default(
       */
 
       mcs = cqi_to_mcs[eNB_UE_stats->DL_cqi[0]];
-      mcs = cmin(mcs, openair_daq_vars.target_ue_dl_mcs);
+      //      mcs = cmin(mcs, openair_daq_vars.target_ue_dl_mcs);
 
 #ifdef EXMIMO
 
@@ -564,7 +564,7 @@ schedule_ue_spec_default(
 	    tpc = 1; //0
 	  }
 
-	  for(i=0; i<PHY_vars_eNB_g[mod_id][CC_id]->lte_frame_parms.N_RBG; i++) {
+	  for(i=0; i<PHY_vars_eNB_g[mod_id][CC_id]->frame_parms.N_RBG; i++) {
 	    rballoc_sub[i] = UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][i];
           }	
 

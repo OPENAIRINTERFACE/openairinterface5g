@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "defs.h"
@@ -49,6 +42,10 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
   unsigned int slot_offset;
 
   void (*dft)(int16_t *,int16_t *, int);
+
+  int tmp_dft_in[2048] __attribute__ ((aligned (32)));  // This is for misalignment issues for 6 and 15 PRBs
+  unsigned int frame_length_samples = frame_parms->samples_per_tti * 10;
+  unsigned int rx_offset;
 
   switch (frame_parms->ofdm_symbol_size) {
   case 128:
@@ -103,28 +100,37 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 
   for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-
+    rx_offset = slot_offset +nb_prefix_samples0;
     if (l==0) {
 
-      dft(
-#ifndef OFDMA_ULSCH
-        (int16_t *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][slot_offset +
-            nb_prefix_samples0],
-#else
-        (int16_t *)&eNB_common_vars->rxdata[eNB_id][aa][((frame_parms->samples_per_tti>>1)*Ns) +
-            nb_prefix_samples0],
-#endif
-        (int16_t *)&eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],1);
+      dft( (int16_t *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][rx_offset],
+           (int16_t *)&eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],
+           1
+         );
     } else {
-      dft(
-#ifndef OFDMA_ULSCH
-        (short *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][slot_offset +
-#else
-        (short *)&eNB_common_vars->rxdata[eNB_id][aa][((frame_parms->samples_per_tti>>1)*Ns) +
-#endif
-            (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) +
-            (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1)],
-        (short*)&eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],1);
+      rx_offset += (frame_parms->ofdm_symbol_size+nb_prefix_samples)*l;
+      if(rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
+      {
+        memcpy((void *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][frame_length_samples],
+               (void *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][0],
+               frame_parms->ofdm_symbol_size*sizeof(int));
+      }
+
+      if( (rx_offset & 7) != 0){
+        memcpy((void *)&tmp_dft_in,
+        		(void *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][(rx_offset % frame_length_samples)],
+				frame_parms->ofdm_symbol_size*sizeof(int));
+        dft( (short *) tmp_dft_in,
+             (short*)  &eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],
+             1
+           );
+      }
+      else{
+      dft( (short *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][rx_offset],
+           (short*)&eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],
+           1
+         );
+      }
     }
   }
 
