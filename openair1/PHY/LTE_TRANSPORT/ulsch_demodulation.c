@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_TRANSPORT/ulsch_demodulation.c
 * \brief Top-level routines for demodulating the PUSCH physical channel from 36.211 V8.6 2009-03
@@ -739,9 +731,9 @@ void ulsch_extract_rbs_single(int32_t **rxdataF,
 
     nb_rb1 = cmin(cmax((int)(frame_parms->N_RB_UL) - (int)(2*first_rb),(int)0),(int)(2*nb_rb));    // 2 times no. RBs before the DC
     nb_rb2 = 2*nb_rb - nb_rb1;                                   // 2 times no. RBs after the DC
-
+ 
 #ifdef DEBUG_ULSCH
-    msg("ulsch_extract_rbs_single: 2*nb_rb1 = %d, 2*nb_rb2 = %d\n",nb_rb1,nb_rb2);
+    printf("ulsch_extract_rbs_single: 2*nb_rb1 = %d, 2*nb_rb2 = %d\n",nb_rb1,nb_rb2);
 #endif
 
     rxF_ext   = &rxdataF_ext[aarx][(symbol*frame_parms->N_RB_UL*12)];
@@ -1578,8 +1570,8 @@ void ulsch_channel_level(int32_t **drs_ch_estimates_ext,
 int32_t avgU[2];
 int32_t avgU_0[2],avgU_1[2]; // For the Distributed Alamouti Scheme
 
-void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
-              uint32_t sched_subframe,
+void rx_ulsch(PHY_VARS_eNB *eNB,
+	      eNB_rxtx_proc_t *proc,
               uint8_t eNB_id,  // this is the effective sector id
               uint8_t UE_id,
               LTE_eNB_ULSCH_t **ulsch,
@@ -1587,9 +1579,9 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 {
 
   // flagMag = 0;
-  LTE_eNB_COMMON *eNB_common_vars = &phy_vars_eNB->lte_eNB_common_vars;
-  LTE_eNB_PUSCH *eNB_pusch_vars = phy_vars_eNB->lte_eNB_pusch_vars[UE_id];
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
+  LTE_eNB_COMMON *common_vars = &eNB->common_vars;
+  LTE_eNB_PUSCH *pusch_vars = eNB->pusch_vars[UE_id];
+  LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
 
   uint32_t l,i;
   int32_t avgs;
@@ -1605,12 +1597,12 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
   uint8_t Qm;
   uint16_t rx_power_correction;
   int16_t *llrp;
-  int subframe = phy_vars_eNB->proc[sched_subframe].subframe_rx;
+  int subframe = proc->subframe_rx;
 
-  harq_pid = subframe2harq_pid(frame_parms,phy_vars_eNB->proc[sched_subframe].frame_rx,subframe);
+  harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
   Qm = get_Qm_ul(ulsch[UE_id]->harq_processes[harq_pid]->mcs);
 #ifdef DEBUG_ULSCH
-  msg("rx_ulsch: eNB_id %d, harq_pid %d, nb_rb %d first_rb %d, cooperation %d\n",eNB_id,harq_pid,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,ulsch[UE_id]->harq_processes[harq_pid]->first_rb,
+  printf("rx_ulsch: eNB_id %d, harq_pid %d, nb_rb %d first_rb %d, cooperation %d\n",eNB_id,harq_pid,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,ulsch[UE_id]->harq_processes[harq_pid]->first_rb,
       cooperation_flag);
 #endif //DEBUG_ULSCH
 
@@ -1624,25 +1616,24 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
   for (l=0; l<(frame_parms->symbols_per_tti-ulsch[UE_id]->harq_processes[harq_pid]->srs_active); l++) {
 
 #ifdef DEBUG_ULSCH
-    msg("rx_ulsch : symbol %d (first_rb %d,nb_rb %d), rxdataF %p, rxdataF_ext %p\n",l,
+    printf("rx_ulsch : symbol %d (first_rb %d,nb_rb %d), rxdataF %p, rxdataF_ext %p\n",l,
         ulsch[UE_id]->harq_processes[harq_pid]->first_rb,
         ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
-        eNB_common_vars->rxdataF[eNB_id],
-        eNB_pusch_vars->rxdataF_ext[eNB_id]);
+        common_vars->rxdataF[eNB_id],
+        pusch_vars->rxdataF_ext[eNB_id]);
 #endif //DEBUG_ULSCH
 
-    ulsch_extract_rbs_single(eNB_common_vars->rxdataF[eNB_id],
-                             eNB_pusch_vars->rxdataF_ext[eNB_id],
+    ulsch_extract_rbs_single(common_vars->rxdataF[eNB_id],
+                             pusch_vars->rxdataF_ext[eNB_id],
                              ulsch[UE_id]->harq_processes[harq_pid]->first_rb,
                              ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
                              l%(frame_parms->symbols_per_tti/2),
                              l/(frame_parms->symbols_per_tti/2),
                              frame_parms);
 
-    lte_ul_channel_estimation(phy_vars_eNB,
+    lte_ul_channel_estimation(eNB,proc,
                               eNB_id,
                               UE_id,
-                              sched_subframe,
                               l%(frame_parms->symbols_per_tti/2),
                               l/(frame_parms->symbols_per_tti/2),
                               cooperation_flag);
@@ -1650,41 +1641,41 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 
   if(cooperation_flag == 2) {
     for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-      eNB_pusch_vars->ulsch_power_0[i] = signal_energy(eNB_pusch_vars->drs_ch_estimates_0[eNB_id][i],
+      pusch_vars->ulsch_power_0[i] = signal_energy(pusch_vars->drs_ch_estimates_0[eNB_id][i],
                                          ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12)*rx_power_correction;
-      eNB_pusch_vars->ulsch_power_1[i] = signal_energy(eNB_pusch_vars->drs_ch_estimates_1[eNB_id][i],
+      pusch_vars->ulsch_power_1[i] = signal_energy(pusch_vars->drs_ch_estimates_1[eNB_id][i],
                                          ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12)*rx_power_correction;
     }
   } else {
     for (i=0; i<frame_parms->nb_antennas_rx; i++) {
       /*
-      eNB_pusch_vars->ulsch_power[i] = signal_energy_nodc(eNB_pusch_vars->drs_ch_estimates[eNB_id][i],
+      pusch_vars->ulsch_power[i] = signal_energy_nodc(pusch_vars->drs_ch_estimates[eNB_id][i],
                                        ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12)*rx_power_correction;
 
       */
       
-      eNB_pusch_vars->ulsch_power[i] = signal_energy_nodc(eNB_pusch_vars->drs_ch_estimates[eNB_id][i],
+      pusch_vars->ulsch_power[i] = signal_energy_nodc(pusch_vars->drs_ch_estimates[eNB_id][i],
 							  ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12);
       
 #ifdef LOCALIZATION
-      eNB_pusch_vars->subcarrier_power = (int32_t *)malloc(ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12*sizeof(int32_t));
-      eNB_pusch_vars->active_subcarrier = subcarrier_energy(eNB_pusch_vars->drs_ch_estimates[eNB_id][i],
-                                          ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12, eNB_pusch_vars->subcarrier_power, rx_power_correction);
+      pusch_vars->subcarrier_power = (int32_t *)malloc(ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12*sizeof(int32_t));
+      pusch_vars->active_subcarrier = subcarrier_energy(pusch_vars->drs_ch_estimates[eNB_id][i],
+                                          ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12, pusch_vars->subcarrier_power, rx_power_correction);
 #endif
     }
   }
 
-  //write_output("rxdataF_ext.m","rxF_ext",eNB_pusch_vars->rxdataF_ext[eNB_id][0],300*(frame_parms->symbols_per_tti-ulsch[UE_id]->srs_active),1,1);
-  //write_output("ulsch_chest.m","drs_est",eNB_pusch_vars->drs_ch_estimates[eNB_id][0],300*(frame_parms->symbols_per_tti-ulsch[UE_id]->srs_active),1,1);
+  //write_output("rxdataF_ext.m","rxF_ext",pusch_vars->rxdataF_ext[eNB_id][0],300*(frame_parms->symbols_per_tti-ulsch[UE_id]->srs_active),1,1);
+  //write_output("ulsch_chest.m","drs_est",pusch_vars->drs_ch_estimates[eNB_id][0],300*(frame_parms->symbols_per_tti-ulsch[UE_id]->srs_active),1,1);
 
 
   if(cooperation_flag == 2) {
-    ulsch_channel_level(eNB_pusch_vars->drs_ch_estimates_0[eNB_id],
+    ulsch_channel_level(pusch_vars->drs_ch_estimates_0[eNB_id],
                         frame_parms,
                         avgU_0,
                         ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
 
-    //  msg("[ULSCH] avg_0[0] %d\n",avgU_0[0]);
+    //  printf("[ULSCH] avg_0[0] %d\n",avgU_0[0]);
 
 
     avgs_0 = 0;
@@ -1694,15 +1685,15 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 
     log2_maxh_0 = (log2_approx(avgs_0)/2)+ log2_approx(frame_parms->nb_antennas_rx-1)+3;
 #ifdef DEBUG_ULSCH
-    msg("[ULSCH] log2_maxh_0 = %d (%d,%d)\n",log2_maxh_0,avgU_0[0],avgs_0);
+    printf("[ULSCH] log2_maxh_0 = %d (%d,%d)\n",log2_maxh_0,avgU_0[0],avgs_0);
 #endif
 
-    ulsch_channel_level(eNB_pusch_vars->drs_ch_estimates_1[eNB_id],
+    ulsch_channel_level(pusch_vars->drs_ch_estimates_1[eNB_id],
                         frame_parms,
                         avgU_1,
                         ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
 
-    //  msg("[ULSCH] avg_1[0] %d\n",avgU_1[0]);
+    //  printf("[ULSCH] avg_1[0] %d\n",avgU_1[0]);
 
 
     avgs_1 = 0;
@@ -1712,16 +1703,16 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 
     log2_maxh_1 = (log2_approx(avgs_1)/2) + log2_approx(frame_parms->nb_antennas_rx-1)+3;
 #ifdef DEBUG_ULSCH
-    msg("[ULSCH] log2_maxh_1 = %d (%d,%d)\n",log2_maxh_1,avgU_1[0],avgs_1);
+    printf("[ULSCH] log2_maxh_1 = %d (%d,%d)\n",log2_maxh_1,avgU_1[0],avgs_1);
 #endif
     log2_maxh = max(log2_maxh_0,log2_maxh_1);
   } else {
-    ulsch_channel_level(eNB_pusch_vars->drs_ch_estimates[eNB_id],
+    ulsch_channel_level(pusch_vars->drs_ch_estimates[eNB_id],
                         frame_parms,
                         avgU,
                         ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
 
-    //  msg("[ULSCH] avg[0] %d\n",avgU[0]);
+    //  printf("[ULSCH] avg[0] %d\n",avgU[0]);
 
 
     avgs = 0;
@@ -1734,7 +1725,7 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
     log2_maxh = (log2_approx(avgs)/2)+ log2_approx(frame_parms->nb_antennas_rx-1)+4;
 
 #ifdef DEBUG_ULSCH
-    msg("[ULSCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avgU[0],avgs);
+    printf("[ULSCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avgU[0],avgs);
 #endif
   }
 
@@ -1748,15 +1739,15 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
     if(cooperation_flag == 2) {
 
       ulsch_channel_compensation_alamouti(
-        eNB_pusch_vars->rxdataF_ext[eNB_id],
-        eNB_pusch_vars->drs_ch_estimates_0[eNB_id],
-        eNB_pusch_vars->drs_ch_estimates_1[eNB_id],
-        eNB_pusch_vars->ul_ch_mag_0[eNB_id],
-        eNB_pusch_vars->ul_ch_magb_0[eNB_id],
-        eNB_pusch_vars->ul_ch_mag_1[eNB_id],
-        eNB_pusch_vars->ul_ch_magb_1[eNB_id],
-        eNB_pusch_vars->rxdataF_comp_0[eNB_id],
-        eNB_pusch_vars->rxdataF_comp_1[eNB_id],
+        pusch_vars->rxdataF_ext[eNB_id],
+        pusch_vars->drs_ch_estimates_0[eNB_id],
+        pusch_vars->drs_ch_estimates_1[eNB_id],
+        pusch_vars->ul_ch_mag_0[eNB_id],
+        pusch_vars->ul_ch_magb_0[eNB_id],
+        pusch_vars->ul_ch_mag_1[eNB_id],
+        pusch_vars->ul_ch_magb_1[eNB_id],
+        pusch_vars->rxdataF_comp_0[eNB_id],
+        pusch_vars->rxdataF_comp_1[eNB_id],
         frame_parms,
         l,
         Qm,
@@ -1764,24 +1755,24 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
         log2_maxh);
 
       ulsch_alamouti(frame_parms,
-                     eNB_pusch_vars->rxdataF_comp[eNB_id],
-                     eNB_pusch_vars->rxdataF_comp_0[eNB_id],
-                     eNB_pusch_vars->rxdataF_comp_1[eNB_id],
-                     eNB_pusch_vars->ul_ch_mag[eNB_id],
-                     eNB_pusch_vars->ul_ch_magb[eNB_id],
-                     eNB_pusch_vars->ul_ch_mag_0[eNB_id],
-                     eNB_pusch_vars->ul_ch_magb_0[eNB_id],
-                     eNB_pusch_vars->ul_ch_mag_1[eNB_id],
-                     eNB_pusch_vars->ul_ch_magb_1[eNB_id],
+                     pusch_vars->rxdataF_comp[eNB_id],
+                     pusch_vars->rxdataF_comp_0[eNB_id],
+                     pusch_vars->rxdataF_comp_1[eNB_id],
+                     pusch_vars->ul_ch_mag[eNB_id],
+                     pusch_vars->ul_ch_magb[eNB_id],
+                     pusch_vars->ul_ch_mag_0[eNB_id],
+                     pusch_vars->ul_ch_magb_0[eNB_id],
+                     pusch_vars->ul_ch_mag_1[eNB_id],
+                     pusch_vars->ul_ch_magb_1[eNB_id],
                      l,
                      ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
     } else {
       ulsch_channel_compensation(
-        eNB_pusch_vars->rxdataF_ext[eNB_id],
-        eNB_pusch_vars->drs_ch_estimates[eNB_id],
-        eNB_pusch_vars->ul_ch_mag[eNB_id],
-        eNB_pusch_vars->ul_ch_magb[eNB_id],
-        eNB_pusch_vars->rxdataF_comp[eNB_id],
+        pusch_vars->rxdataF_ext[eNB_id],
+        pusch_vars->drs_ch_estimates[eNB_id],
+        pusch_vars->ul_ch_mag[eNB_id],
+        pusch_vars->ul_ch_magb[eNB_id],
+        pusch_vars->rxdataF_comp[eNB_id],
         frame_parms,
         l,
         Qm,
@@ -1796,7 +1787,7 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
     //writing for the first time
     write_output(namepointer_log2,"xxx",log2_maxh,1,1,12);
 
-    write_output(namepointer_chMag,"xxx",eNB_pusch_vars->ul_ch_mag[eNB_id][0],300,1,11);
+    write_output(namepointer_chMag,"xxx",pusch_vars->ul_ch_mag[eNB_id][0],300,1,11);
 
     //namepointer_chMag = NULL;
     flagMag=1;
@@ -1804,20 +1795,20 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 
     if (frame_parms->nb_antennas_rx > 1)
       ulsch_detection_mrc(frame_parms,
-                          eNB_pusch_vars->rxdataF_comp[eNB_id],
-                          eNB_pusch_vars->ul_ch_mag[eNB_id],
-                          eNB_pusch_vars->ul_ch_magb[eNB_id],
+                          pusch_vars->rxdataF_comp[eNB_id],
+                          pusch_vars->ul_ch_mag[eNB_id],
+                          pusch_vars->ul_ch_magb[eNB_id],
                           l,
                           ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
 
 #ifndef OFDMA_ULSCH
 
-    if ((phy_vars_eNB->PHY_measurements_eNB->n0_power_dB[0]+3)<eNB_pusch_vars->ulsch_power[0]) {
+    if ((eNB->measurements->n0_power_dB[0]+3)<pusch_vars->ulsch_power[0]) {
 
       freq_equalization(frame_parms,
-                        eNB_pusch_vars->rxdataF_comp[eNB_id],
-                        eNB_pusch_vars->ul_ch_mag[eNB_id],
-                        eNB_pusch_vars->ul_ch_magb[eNB_id],
+                        pusch_vars->rxdataF_comp[eNB_id],
+                        pusch_vars->ul_ch_mag[eNB_id],
+                        pusch_vars->ul_ch_magb[eNB_id],
                         l,
                         ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12,
                         Qm);
@@ -1830,23 +1821,24 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 
   //#ifdef DEBUG_ULSCH
   // Inverse-Transform equalized outputs
-  //  msg("Doing IDFTs\n");
+  //  printf("Doing IDFTs\n");
   lte_idft(frame_parms,
-           (uint32_t*)eNB_pusch_vars->rxdataF_comp[eNB_id][0],
+           (uint32_t*)pusch_vars->rxdataF_comp[eNB_id][0],
            ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12);
-  //  msg("Done\n");
+  //  printf("Done\n");
   //#endif //DEBUG_ULSCH
 
 #endif
 
 
-  T(T_ENB_PHY_PUSCH_IQ, T_INT(eNB_id), T_INT(UE_id), T_INT(phy_vars_eNB->proc[sched_subframe].frame_rx),
+
+  llrp = (int16_t*)&pusch_vars->llr[0];
+
+  T(T_ENB_PHY_PUSCH_IQ, T_INT(eNB_id), T_INT(UE_id), T_INT(proc->frame_rx),
     T_INT(subframe), T_INT(ulsch[UE_id]->harq_processes[harq_pid]->nb_rb),
     T_INT(frame_parms->N_RB_UL), T_INT(frame_parms->symbols_per_tti),
-    T_BUFFER(eNB_pusch_vars->rxdataF_comp[eNB_id][0],
+    T_BUFFER(pusch_vars->rxdataF_comp[eNB_id][0],
              2 * /* ulsch[UE_id]->harq_processes[harq_pid]->nb_rb */ frame_parms->N_RB_UL *12*frame_parms->symbols_per_tti*2));
-
-  llrp = (int16_t*)&eNB_pusch_vars->llr[0];
 
   for (l=0; l<frame_parms->symbols_per_tti-ulsch[UE_id]->harq_processes[harq_pid]->srs_active; l++) {
 
@@ -1858,8 +1850,8 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
     switch (Qm) {
     case 2 :
       ulsch_qpsk_llr(frame_parms,
-                     eNB_pusch_vars->rxdataF_comp[eNB_id],
-                     eNB_pusch_vars->llr,
+                     pusch_vars->rxdataF_comp[eNB_id],
+                     pusch_vars->llr,
                      l,
                      ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
                      &llrp);
@@ -1867,26 +1859,26 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 
     case 4 :
       ulsch_16qam_llr(frame_parms,
-                      eNB_pusch_vars->rxdataF_comp[eNB_id],
-                      eNB_pusch_vars->llr,
-                      eNB_pusch_vars->ul_ch_mag[eNB_id],
+                      pusch_vars->rxdataF_comp[eNB_id],
+                      pusch_vars->llr,
+                      pusch_vars->ul_ch_mag[eNB_id],
                       l,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
                       &llrp);
       break;
 
     case 6 :
       ulsch_64qam_llr(frame_parms,
-                      eNB_pusch_vars->rxdataF_comp[eNB_id],
-                      eNB_pusch_vars->llr,
-                      eNB_pusch_vars->ul_ch_mag[eNB_id],
-                      eNB_pusch_vars->ul_ch_magb[eNB_id],
+                      pusch_vars->rxdataF_comp[eNB_id],
+                      pusch_vars->llr,
+                      pusch_vars->ul_ch_mag[eNB_id],
+                      pusch_vars->ul_ch_magb[eNB_id],
                       l,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
                       &llrp);
       break;
 
     default:
 #ifdef DEBUG_ULSCH
-      msg("ulsch_demodulation.c (rx_ulsch): Unknown Qm!!!!\n");
+      printf("ulsch_demodulation.c (rx_ulsch): Unknown Qm!!!!\n");
 #endif //DEBUG_ULSCH
       break;
     }
@@ -1894,66 +1886,66 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 
 }
 
-void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
-                   uint8_t subframe,
+void rx_ulsch_emul(PHY_VARS_eNB *eNB,
+		   eNB_rxtx_proc_t *proc,
                    uint8_t sect_id,
                    uint8_t UE_index)
 {
-  msg("[PHY] EMUL eNB %d rx_ulsch_emul : subframe %d, sect_id %d, UE_index %d\n",phy_vars_eNB->Mod_id,subframe,sect_id,UE_index);
-  phy_vars_eNB->lte_eNB_pusch_vars[UE_index]->ulsch_power[0] = 31622; //=45dB;
-  phy_vars_eNB->lte_eNB_pusch_vars[UE_index]->ulsch_power[1] = 31622; //=45dB;
+  printf("[PHY] EMUL eNB %d rx_ulsch_emul : subframe %d, sect_id %d, UE_index %d\n",eNB->Mod_id,proc->subframe_rx,sect_id,UE_index);
+  eNB->pusch_vars[UE_index]->ulsch_power[0] = 31622; //=45dB;
+  eNB->pusch_vars[UE_index]->ulsch_power[1] = 31622; //=45dB;
 
 }
 
 
-void dump_ulsch(PHY_VARS_eNB *PHY_vars_eNB,uint8_t sched_subframe, uint8_t UE_id)
+ void dump_ulsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t UE_id)
 {
-
-  uint32_t nsymb = (PHY_vars_eNB->lte_frame_parms.Ncp == 0) ? 14 : 12;
+  
+  uint32_t nsymb = (eNB->frame_parms.Ncp == 0) ? 14 : 12;
   uint8_t harq_pid;
-  int subframe = PHY_vars_eNB->proc[sched_subframe].subframe_rx;
+  int subframe = proc->subframe_rx;
 
-  harq_pid = subframe2harq_pid(&PHY_vars_eNB->lte_frame_parms,PHY_vars_eNB->proc[sched_subframe].frame_rx,subframe);
+  harq_pid = subframe2harq_pid(&eNB->frame_parms,proc->frame_rx,subframe);
 
-  printf("Dumping ULSCH in subframe %d with harq_pid %d, for NB_rb %d, mcs %d, Qm %d, N_symb %d\n", subframe,harq_pid,PHY_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb,
-         PHY_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->mcs,get_Qm_ul(PHY_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->mcs),
-         PHY_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->Nsymb_pusch);
+  printf("Dumping ULSCH in subframe %d with harq_pid %d, for NB_rb %d, mcs %d, Qm %d, N_symb %d\n", subframe,harq_pid,eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
+         eNB->ulsch[UE_id]->harq_processes[harq_pid]->mcs,get_Qm_ul(eNB->ulsch[UE_id]->harq_processes[harq_pid]->mcs),
+         eNB->ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_pusch);
   //#ifndef OAI_EMU
-  write_output("/tmp/ulsch_d.m","ulsch_dseq",&PHY_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->d[0][96],
-               PHY_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->Kplus*3,1,0);
-  write_output("/tmp/rxsig0.m","rxs0", &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][0],PHY_vars_eNB->lte_frame_parms.samples_per_tti*10,1,1);
+  write_output("/tmp/ulsch_d.m","ulsch_dseq",&eNB->ulsch[UE_id]->harq_processes[harq_pid]->d[0][96],
+               eNB->ulsch[UE_id]->harq_processes[harq_pid]->Kplus*3,1,0);
+  write_output("/tmp/rxsig0.m","rxs0", &eNB->common_vars.rxdata[0][0][0],eNB->frame_parms.samples_per_tti*10,1,1);
 
-  if (PHY_vars_eNB->lte_frame_parms.nb_antennas_rx>1)
-    write_output("/tmp/rxsig1.m","rxs1", &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][1][0],PHY_vars_eNB->lte_frame_parms.samples_per_tti*10,1,1);
+  if (eNB->frame_parms.nb_antennas_rx>1)
+    write_output("/tmp/rxsig1.m","rxs1", &eNB->common_vars.rxdata[0][1][0],eNB->frame_parms.samples_per_tti*10,1,1);
 
-  write_output("/tmp/rxsigF0.m","rxsF0", &PHY_vars_eNB->lte_eNB_common_vars.rxdataF[0][0][0],PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size*nsymb,1,1);
+  write_output("/tmp/rxsigF0.m","rxsF0", &eNB->common_vars.rxdataF[0][0][0],eNB->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
-  if (PHY_vars_eNB->lte_frame_parms.nb_antennas_rx>1)
-    write_output("/tmp/rxsigF1.m","rxsF1", &PHY_vars_eNB->lte_eNB_common_vars.rxdataF[0][1][0],PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size*nsymb,1,1);
+  if (eNB->frame_parms.nb_antennas_rx>1)
+    write_output("/tmp/rxsigF1.m","rxsF1", &eNB->common_vars.rxdataF[0][1][0],eNB->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
-  write_output("/tmp/rxsigF0_ext.m","rxsF0_ext", &PHY_vars_eNB->lte_eNB_pusch_vars[UE_id]->rxdataF_ext[0][0][0],PHY_vars_eNB->lte_frame_parms.N_RB_UL*12*nsymb,1,1);
+  write_output("/tmp/rxsigF0_ext.m","rxsF0_ext", &eNB->pusch_vars[UE_id]->rxdataF_ext[0][0][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
 
-  if (PHY_vars_eNB->lte_frame_parms.nb_antennas_rx>1)
-    write_output("/tmp/rxsigF1_ext.m","rxsF1_ext", &PHY_vars_eNB->lte_eNB_pusch_vars[UE_id]->rxdataF_ext[1][0][0],PHY_vars_eNB->lte_frame_parms.N_RB_UL*12*nsymb,1,1);
+  if (eNB->frame_parms.nb_antennas_rx>1)
+    write_output("/tmp/rxsigF1_ext.m","rxsF1_ext", &eNB->pusch_vars[UE_id]->rxdataF_ext[1][0][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
 
 
-  write_output("/tmp/srs_est0.m","srsest0",PHY_vars_eNB->lte_eNB_srs_vars[UE_id].srs_ch_estimates[0][0],PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,1,1);
+  write_output("/tmp/srs_est0.m","srsest0",eNB->srs_vars[UE_id].srs_ch_estimates[0][0],eNB->frame_parms.ofdm_symbol_size,1,1);
 
-  if (PHY_vars_eNB->lte_frame_parms.nb_antennas_rx>1)
-    write_output("/tmp/srs_est1.m","srsest1",PHY_vars_eNB->lte_eNB_srs_vars[UE_id].srs_ch_estimates[0][1],PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,1,1);
+  if (eNB->frame_parms.nb_antennas_rx>1)
+    write_output("/tmp/srs_est1.m","srsest1",eNB->srs_vars[UE_id].srs_ch_estimates[0][1],eNB->frame_parms.ofdm_symbol_size,1,1);
 
-  write_output("/tmp/drs_est0.m","drsest0",PHY_vars_eNB->lte_eNB_pusch_vars[UE_id]->drs_ch_estimates[0][0],PHY_vars_eNB->lte_frame_parms.N_RB_UL*12*nsymb,1,1);
+  write_output("/tmp/drs_est0.m","drsest0",eNB->pusch_vars[UE_id]->drs_ch_estimates[0][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
 
-  if (PHY_vars_eNB->lte_frame_parms.nb_antennas_rx>1)
-    write_output("/tmp/drs_est1.m","drsest1",PHY_vars_eNB->lte_eNB_pusch_vars[UE_id]->drs_ch_estimates[0][1],PHY_vars_eNB->lte_frame_parms.N_RB_UL*12*nsymb,1,1);
+  if (eNB->frame_parms.nb_antennas_rx>1)
+    write_output("/tmp/drs_est1.m","drsest1",eNB->pusch_vars[UE_id]->drs_ch_estimates[0][1],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
 
-  write_output("/tmp/ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&PHY_vars_eNB->lte_eNB_pusch_vars[UE_id]->rxdataF_comp[0][0][0],PHY_vars_eNB->lte_frame_parms.N_RB_UL*12*nsymb,1,1);
-  //  write_output("ulsch_rxF_comp1.m","ulsch0_rxF_comp1",&PHY_vars_eNB->lte_eNB_pusch_vars[UE_id]->rxdataF_comp[0][1][0],PHY_vars_eNB->lte_frame_parms.N_RB_UL*12*nsymb,1,1);
-  write_output("/tmp/ulsch_rxF_llr.m","ulsch_llr",PHY_vars_eNB->lte_eNB_pusch_vars[UE_id]->llr,
-               PHY_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb*12*get_Qm_ul(PHY_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->mcs)
-               *PHY_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->Nsymb_pusch,1,0);
-  write_output("/tmp/ulsch_ch_mag.m","ulsch_ch_mag",&PHY_vars_eNB->lte_eNB_pusch_vars[UE_id]->ul_ch_mag[0][0][0],PHY_vars_eNB->lte_frame_parms.N_RB_UL*12*nsymb,1,1);
-  //  write_output("ulsch_ch_mag1.m","ulsch_ch_mag1",&PHY_vars_eNB->lte_eNB_pusch_vars[UE_id]->ul_ch_mag[0][1][0],PHY_vars_eNB->lte_frame_parms.N_RB_UL*12*nsymb,1,1);
+  write_output("/tmp/ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&eNB->pusch_vars[UE_id]->rxdataF_comp[0][0][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
+  //  write_output("ulsch_rxF_comp1.m","ulsch0_rxF_comp1",&eNB->pusch_vars[UE_id]->rxdataF_comp[0][1][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
+  write_output("/tmp/ulsch_rxF_llr.m","ulsch_llr",eNB->pusch_vars[UE_id]->llr,
+               eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12*get_Qm_ul(eNB->ulsch[UE_id]->harq_processes[harq_pid]->mcs)
+               *eNB->ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_pusch,1,0);
+  write_output("/tmp/ulsch_ch_mag.m","ulsch_ch_mag",&eNB->pusch_vars[UE_id]->ul_ch_mag[0][0][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
+  //  write_output("ulsch_ch_mag1.m","ulsch_ch_mag1",&eNB->pusch_vars[UE_id]->ul_ch_mag[0][1][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
   //#endif
 }
 

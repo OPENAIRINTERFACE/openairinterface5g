@@ -1,0 +1,79 @@
+#!/bin/bash
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+
+# \author Navid Nikaein, Rohit Gupta
+
+
+#arg0 -> Name of executable
+#args[1...N] -> arguments to be passed to executable
+if [ -z "$OPENAIR_DIR" ]
+then
+    echo "OPENAIR_DIR environment not set. Exiting.."
+    exit
+fi 
+
+source $OPENAIR_DIR/cmake_targets/tools/build_helper
+
+args=($*)
+exec_name=${args[0]}
+exe_args=(${args[@]:1})
+gdb_file=$OPENAIR_DIR/targets/bin/gdb_file
+gdb_log=$OPENAIR_DIR/targets/bin/gdb_log.bt
+
+echo "args = ${args[@]}"
+echo "exec_name = $exec_name"
+echo "exe_args = ${exe_args[@]}"
+echo "gdb log file = $gdb_log"
+
+$SUDO rm -fr $gdb_file $gdb_log
+$SUDO touch $gdb_file $gdb_log 
+$SUDO chmod 777  $gdb_file $gdb_log
+
+$SUDO echo "file $exec_name"                  >> $gdb_file
+$SUDO echo "set args ${exe_args[@]}"          >> $gdb_file
+$SUDO echo "run"                              >> $gdb_file
+$SUDO echo "set logging overwrite on"         >> $gdb_file
+$SUDO echo "set logging file $gdb_log"        >> $gdb_file
+$SUDO echo "set logging on"                   >> $gdb_file
+$SUDO echo "set pagination off"               >> $gdb_file
+$SUDO echo "handle SIG33 pass nostop noprint" >> $gdb_file
+$SUDO echo "echo backtrace:\n"                >> $gdb_file
+$SUDO echo "backtrace full"                   >> $gdb_file
+$SUDO echo "echo \n\nVariables:\n"            >> $gdb_file
+$SUDO echo "info variables"                   >> $gdb_file
+$SUDO echo "echo \n\nlocals:\n"               >> $gdb_file
+$SUDO echo "info locals"                      >> $gdb_file
+$SUDO echo "echo \n\nregisters:\n"            >> $gdb_file
+$SUDO echo "info registers"                   >> $gdb_file
+$SUDO echo "echo \n\ncurrent instructions:\n" >> $gdb_file 
+$SUDO echo "x/16i \$pc"                       >> $gdb_file
+$SUDO echo "echo \n\nthreads backtrace:\n"    >> $gdb_file
+$SUDO echo "thread apply all backtrace"       >> $gdb_file
+$SUDO echo "set logging off"                  >> $gdb_file
+$SUDO echo "quit"                             >> $gdb_file
+
+echo "Contents of gdb_file...start"
+$SUDO cat $gdb_file
+echo "Contents of gdb_file...finish"
+
+$SUDO gdb -n -x $gdb_file 2>&1
+

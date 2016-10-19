@@ -1,34 +1,25 @@
 #!/bin/bash
-################################################################################
-#
-# Copyright (c) 2015, EURECOM (www.eurecom.fr)
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# The views and conclusions contained in the software and documentation are those
-# of the authors and should not be interpreted as representing official policies,
-# either expressed or implied, of the FreeBSD Project.
-#
-################################################################################
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+
 # file build_oai
 # brief OAI automated build tool that can be used to install, compile, run OAI.
 # author  Navid Nikaein, Lionel GAUTHIER, Laurent Thomas
@@ -48,7 +39,7 @@ PRINT_STATS="False"
 VCD_TIMING="False"
 DEADLINE_SCHEDULER_FLAG_USER="False"
 FORCE_DEADLINE_SCHEDULER_FLAG_USER=""
-CPU_AFFINITY_FLAG_USER="True" #Only valid when lowlatecy flag is set to False
+CPU_AFFINITY_FLAG_USER="False" #Only valid when lowlatecy flag is set to False
 REL="Rel10"
 HW="None"
 TP="None"
@@ -61,6 +52,7 @@ TEST_CASE_GROUP=""
 BUILD_DOXYGEN=0
 T_TRACER="False"
 DISABLE_HARDWARE_DEPENDENCY="False"
+CMAKE_BUILD_TYPE=""
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -82,7 +74,7 @@ Options
 --install-optional-packages
    Install useful but not mandatory packages such as valgrind
 -g | --run-with-gdb
-   Add debugging symbols to compilation directives
+   Add debugging symbols to compilation directives. It also disables any compiler optimization. Only for debugging. Do not use in normal operation!
 -h | --help
    Print this help
 --eNB
@@ -136,9 +128,9 @@ Options
 --disable-hardware-dependency
    Disable HW dependency during installation
 Usage (first build):
- oaisim (eNB + UE): ./build_oai -I -g --oaisim -x --install-system-files
- Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB -x --install-system-files
- NI/ETTUS B201  + COTS UE : ./build_oai -I -g --eNB -x --install-system-files -w USRP
+ oaisim (eNB + UE): ./build_oai -I  --oaisim -x --install-system-files
+ Eurecom EXMIMO + COTS UE : ./build_oai -I  --eNB -x --install-system-files
+ NI/ETTUS B201  + COTS UE : ./build_oai -I  --eNB -x --install-system-files -w USRP
 Usage (Regular):
  oaisim : ./build_oai --oaisim -x 
  Eurecom EXMIMO + OAI ENB : ./build_oai --eNB -x 
@@ -170,7 +162,8 @@ function main() {
             shift;;
        -g | --run-with-gdb)
             GDB=1
-            echo_info "Will Compile with gdb symbols"
+            CMAKE_BUILD_TYPE="Debug"
+            echo_info "Will Compile with gdb symbols and disable compiler optimization"
             shift;;
        --eNB)
             eNB=1
@@ -304,9 +297,6 @@ function main() {
       if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
 	  echo_fatal "Define a local radio head (e.g. -w EXMIMO) or a transport protocol (e.g. -t ETHERNET) to communicate with a remote radio head!"
       fi
-      if [ "$HW" != "None" -a  "$TP" != "None" ] ; then
-	  echo_fatal "Currently eNB  can not support simultaniously local and remote radio heads!!"
-      fi      
       if [ "$HW" = "None" ] ; then 
 	  echo_info "No radio head has been selected (HW set to $HW)"	
       fi
@@ -333,7 +323,7 @@ function main() {
      if [ "$HW" = "EXMIMO" ] ; then 
         DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "ETHERNET" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="True"
+        DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "OAI_USRP" ] ; then 
         DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "OAI_BLADERF" ] ; then 
@@ -446,6 +436,7 @@ function main() {
     if [ "$NOS1" = "1" ] ; then
 	cat  $DIR/$lte_build_dir/CMakeLists.template >>  $cmake_file
     fi
+    echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
@@ -561,6 +552,7 @@ function main() {
     compilations \
 	  $lte_build_dir updatefw \
 	  updatefw $dbin/updatefw
+    echo_info "Compiling oarf tools. The logfile for compilation is here: $dlog/oarf.txt"
     make -C $OPENAIR_DIR/cmake_targets/$lte_build_dir/build oarf > $dlog/oarf.txt 2>&1
     cp $OPENAIR_DIR/cmake_targets/$lte_build_dir/build/*.oct $dbin
     if [ -s $dbin/oarf_config_exmimo.oct ] ; then
@@ -571,6 +563,8 @@ function main() {
     cp $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 $dbin
   fi
 
+  # oaisim compilation
+  ###############
   if [ "$oaisim" = "1" ] ; then
     dconf=$OPENAIR_DIR/targets/bin
       if [ "$NOS1" =  "1" ] ; then
@@ -584,6 +578,7 @@ function main() {
     echo_info "Compiling $oaisim_exec ($oaisim_build_dir)"
     cmake_file=$DIR/$oaisim_build_dir/CMakeLists.txt
     cp $DIR/$oaisim_build_dir/CMakeLists.template $cmake_file
+    echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )" >>  $cmake_file
     echo "set ( PRINT_STATS $PRINT_STATS )" >>  $cmake_file
@@ -652,9 +647,10 @@ function main() {
 
     cmake_file=$DIR/oaisim_mme_build_oai/CMakeLists.txt
     cp $DIR/oaisim_mme_build_oai/CMakeLists.template $cmake_file
-    echo "set(XFORMS $XFORMS )" >>  $cmake_file
-    echo "set(RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
-    echo "set(ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
+    echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
+    echo "set ( XFORMS $XFORMS )" >>  $cmake_file
+    echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
+    echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
     echo "set ( T_TRACER $T_TRACER )"        >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     #[ "$CLEAN" = "1" ] && rm -rf $DIR/oaisim_mme_build_oai/build
@@ -679,13 +675,14 @@ function main() {
      mkdir -p $DIR/$rrh_build_dir/build
      cmake_file=$DIR/$rrh_build_dir/CMakeLists.txt
      echo "cmake_minimum_required(VERSION 2.8)"   >   $cmake_file
-     echo "set(ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
-     echo "set(ENABLE_ITTI False )"     		 >>  $cmake_file
-     echo "set(RF_BOARD \"${HW}\")"               >>  $cmake_file
-     echo "set(TRANSP_PRO \"${TP}\")"             >>  $cmake_file
-     echo 'set(PACKAGE_NAME "\"rrh_gw\"")'        >>  $cmake_file
-     echo "set (DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )"    >>$cmake_file
-     echo "set (CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"    >>$cmake_file
+     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
+     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
+     echo "set ( ENABLE_ITTI False )"     		 >>  $cmake_file
+     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
+     echo "set ( TRANSP_PRO \"${TP}\")"             >>  $cmake_file
+     echo 'set ( PACKAGE_NAME "\"rrh_gw\"")'        >>  $cmake_file
+     echo "set ( DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )"    >>$cmake_file
+     echo "set ( CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"    >>$cmake_file
      echo "set ( T_TRACER $T_TRACER )"            >>  $cmake_file
      echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file    
      cd $DIR/$rrh_build_dir/build
@@ -717,7 +714,9 @@ function main() {
 	      
 	      #add exmimo compilation
 	      #TODO EXMIMO library support
-	     
+	      compilations \
+		  $build_dir oai_exmimodevif \
+		  liboai_exmimodevif.so $dbin/liboai_exmimodevif.so.$REL
 	      echo_info "liboai_device.so is linked to EXMIMO device library"       
 	  elif [ "$HW" == "OAI_USRP" ] ; then
 	      if [ -d "/usr/include/uhd" ] ; then

@@ -34,11 +34,14 @@ static void scroll(void *private, gui *g,
   int number_of_lines;
   int new_line;
   int inc;
+  int *d = notification_data;
+  int key_modifiers = *d;
 
   textlist_state(g, w, &visible_lines, &start_line, &number_of_lines);
   inc = 10;
   if (inc > visible_lines - 2) inc = visible_lines - 2;
   if (inc < 1) inc = 1;
+  if (key_modifiers & KEY_CONTROL) inc = 1;
   if (!strcmp(notification, "scrollup")) inc = -inc;
 
   new_line = start_line + inc;

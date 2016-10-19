@@ -1,37 +1,30 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #ifndef __INIT_DEFS__H__
 #define __INIT_DEFS__H__
 
 #include "PHY/defs.h"
 
-#ifdef OPENAIR_LTE
+
 #include "SystemInformationBlockType2.h"
 //#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
@@ -41,18 +34,6 @@
 #ifdef Rel10
 #include "SCellToAddMod-r10.h"
 #endif
-#else
-
-/**
-\fn int phy_init(unsigned char nb_antennas_tx)
-\brief Allocate and Initialize the PHY variables after receiving static configuration
-@param nb_antennas_tx Number of TX antennas
-*/
-int phy_init(unsigned char nb_antennas_tx);
-#endif
-
-#ifdef OPENAIR_LTE
-
 /** @addtogroup _PHY_STRUCTURES_
  * @{
  */
@@ -85,7 +66,6 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 \details Only a subset of phy_vars_eNb is initialized.
 @param[out] phy_vars_eNb Pointer to eNB Variables
 @param is_secondary_eNb Flag to indicate this eNB gets synch from another
-@param cooperation_flag 0 for no cooperation, 1 for Delay Diversity and 2 for Distributed Alamouti
 @param abstraction_flag 1 indicates memory should be allocated for abstracted MODEM
 @returns 0 on success
 @returns -1 if any memory allocation failed
@@ -93,7 +73,6 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
  */
 int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNb,
                      unsigned char is_secondary_eNb,
-                     unsigned char cooperation_flag,
                      unsigned char abstraction_flag);
 
 /** \brief Configure LTE_DL_FRAME_PARMS with components derived after initial synchronization (MIB decoding + primary/secondary synch).
@@ -313,6 +292,18 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms);
 
 //void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parm, PHY_FRAMING *phy_framing);
 
+void lte_param_init(unsigned char N_tx, 
+		    unsigned char N_rx,
+		    unsigned char transmission_mode,
+		    uint8_t extended_prefix_flag,
+		    frame_t frame_type, 
+		    uint16_t Nid_cell,
+		    uint8_t tdd_config,
+		    uint8_t N_RB_DL,
+		    uint8_t threequarter_fs,
+                    uint8_t osf,
+		    uint32_t perfect_ce);
+
 #ifdef Rel10
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
                                    uint8_t eNB_index,
@@ -325,17 +316,28 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
                                     int CC_id);
 
 #endif
-#endif
+
 
 
 /*! !\fn void phy_cleanup(void)
 \brief Cleanup the PHY variables*/
 void phy_cleanup(void);
 
-#ifdef OPENAIR_LTE
+
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf);
 void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms);
-#endif
+
+void lte_param_init(unsigned char N_tx, 
+		    unsigned char N_rx,
+		    unsigned char transmission_mode,
+		    uint8_t extended_prefix_flag,
+		    frame_t frame_type, 
+		    uint16_t Nid_cell,
+		    uint8_t tdd_config,
+		    uint8_t N_RB_DL,
+		    uint8_t threequarter_fs,
+                    uint8_t osf,
+		    uint32_t perfect_ce);
 
 /** @} */
 #endif

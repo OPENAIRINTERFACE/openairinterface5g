@@ -1,34 +1,27 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*! \file gtpv1u_eNB.c
  * \brief
- * \author Sebastien ROUX, Lionel GAUTHIER
+ * \author Sebastien ROUX, Lionel GAUTHIER, Navid Nikaein
  * \version 1.0
  * \company Eurecom
  * \email: lionel.gauthier@eurecom.fr
@@ -289,7 +282,7 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
   NwGtpv1uUlpHandleT hUlp,
   NwGtpv1uUlpApiT   *pUlpApi)
 {
-  int                 result             = 0;
+  boolean_t           result             = FALSE;
   teid_t              teid               = 0;
   hashtable_rc_t      hash_rc            = HASH_TABLE_KEY_NOT_EXISTS;
   gtpv1u_teid_data_t *gtpv1u_teid_data_p = NULL;
@@ -335,38 +328,49 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
 
 //#warning "LG eps bearer mapping to DRB id to do (offset -4)"
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, gtpv1u_teid_data_p->enb_id, ENB_FLAG_YES,  gtpv1u_teid_data_p->ue_id, 0, 0,gtpv1u_teid_data_p->enb_id);
-
       MSC_LOG_TX_MESSAGE(
-    		  MSC_GTPU_ENB,
-    		  MSC_PDCP_ENB,
-    		  NULL,0,
-    		  MSC_AS_TIME_FMT" DATA-REQ rb %u size %u",
-    		  0,0,
-    		  (gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
-    		  buffer_len);
-
+			 MSC_GTPU_ENB,
+			 MSC_PDCP_ENB,
+			 NULL,0,
+			 MSC_AS_TIME_FMT" DATA-REQ rb %u size %u",
+			 0,0,
+			 (gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
+			 buffer_len);
+      
       result = pdcp_data_req(
-                 &ctxt,
-                 SRB_FLAG_NO,
-                 (gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
-                 0, // mui
-                 SDU_CONFIRM_NO, // confirm
-                 buffer_len,
-                 buffer,
-                 PDCP_TRANSMISSION_MODE_DATA);
-      AssertError (result == TRUE, return NW_GTPV1U_FAILURE ,"PDCP data request failed!\n");
+			     &ctxt,
+			     SRB_FLAG_NO,
+			     (gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
+			     0, // mui
+			     SDU_CONFIRM_NO, // confirm
+			     buffer_len,
+			     buffer,
+			     PDCP_TRANSMISSION_MODE_DATA);
+      
+      
+      if ( result == FALSE ) {
+	
+	if (ctxt.configured == FALSE )
+	  LOG_W(GTPU, "PDCP data request failed, cause: RB is not configured!\n") ;
+	else  
+	  LOG_W(GTPU, "PDCP data request failed\n");
+	
+	return NW_GTPV1U_FAILURE;
+      }
+      
     } else {
-      LOG_E(GTPU, "Received T-PDU from gtpv1u stack teid %u unknown size %u", teid, buffer_len);
+      LOG_W(GTPU, "Received T-PDU from gtpv1u stack teid %u unknown size %u", teid, buffer_len);
     }
   }
-  break;
-
+    break;
+    
   default: {
     LOG_E(GTPU, "Received undefined UlpApi (%02x) from gtpv1u stack!\n",
           pUlpApi->apiType);
   }
-  }
-
+  
+  } // end of switch 
+  
   return NW_GTPV1U_OK;
 }
 

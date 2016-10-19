@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file eNB_scheduler_dlsch.c
  * \brief procedures related to eNB for the DLSCH transport channel
@@ -434,10 +426,12 @@ schedule_ue_spec(
   int                   N_RBG[MAX_NUM_CCs];
   unsigned char         aggregation;
   mac_rlc_status_resp_t rlc_status;
-  unsigned char         header_len_dcch=0, header_len_dcch_tmp=0,header_len_dtch=0,header_len_dtch_tmp=0, ta_len=0;
-  unsigned char         sdu_lcids[11],offset,num_sdus=0;
+  unsigned char         header_len_dcch=0, header_len_dcch_tmp=0; 
+  unsigned char         header_len_dtch=0, header_len_dtch_tmp=0, header_len_dtch_last=0; 
+  unsigned char         ta_len=0;
+  unsigned char         sdu_lcids[NB_RB_MAX],lcid,offset,num_sdus=0;
   uint16_t              nb_rb,nb_rb_temp,total_nb_available_rb[MAX_NUM_CCs],nb_available_rb;
-  uint16_t              TBS,j,sdu_lengths[11],rnti,padding=0,post_padding=0;
+  uint16_t              TBS,j,sdu_lengths[NB_RB_MAX],rnti,padding=0,post_padding=0;
   unsigned char         dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
   unsigned char         round            = 0;
   unsigned char         harq_pid         = 0;
@@ -571,16 +565,8 @@ schedule_ue_spec(
       eNB_UE_stats->DL_cqi[0], MIN_CQI_VALUE, MAX_CQI_VALUE);
       */
       eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[eNB_UE_stats->DL_cqi[0]];
-      eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
+      eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->dlsch_mcs1;//cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
 
-
-#ifdef EXMIMO
-
-      if (mac_xface->get_transmission_mode(module_idP,CC_id, rnti)==5) {
-        eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,16);
-      }
-
-#endif
 
       // store stats
       UE_list->eNB_UE_stats[CC_id][UE_id].dl_cqi= eNB_UE_stats->DL_cqi[0];
@@ -883,7 +869,7 @@ schedule_ue_spec(
                                        ENB_FLAG_YES,
                                        MBMS_FLAG_NO,
                                        DCCH+1,
-                                       (char *)&dlsch_buffer[sdu_lengths[0]]);
+                                       (char *)&dlsch_buffer[sdu_lengths[num_sdus]]);
 
             T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
               T_INT(harq_pid), T_INT(DCCH+1), T_INT(sdu_lengths[num_sdus]));
@@ -893,80 +879,96 @@ schedule_ue_spec(
             header_len_dcch += 2;
             UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[DCCH1]+=1;
             UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[DCCH1]+=sdu_lengths[num_sdus];
-            num_sdus++;
-            LOG_D(MAC,"[eNB %d] CC_id %d Got %d bytes for DCCH from RLC\n",module_idP,CC_id,sdu_lengths[0]);
-          }
-        }
+	    num_sdus++;
+#ifdef DEBUG_eNB_SCHEDULER
+            LOG_T(MAC,"[eNB %d][DCCH1] CC_id %d Got %d bytes :",module_idP,CC_id,sdu_lengths[num_sdus]);
 
-        // check for DTCH and update header information
-        // here we should loop over all possible DTCH
-
-        header_len_dtch = 3; // 3 bytes DTCH SDU subheader
-
-        LOG_D(MAC,"[eNB %d], Frame %d, DTCH->DLSCH, CC_id %d, Checking RLC status (rab %d, tbs %d, len %d)\n",
-              module_idP,frameP,CC_id,DTCH,TBS,
-              TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
-
-        if (TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch > 0 ) {
-          rlc_status = mac_rlc_status_ind(
-                         module_idP,
-                         rnti,
-			 module_idP,
-                         frameP,
-                         ENB_FLAG_YES,
-                         MBMS_FLAG_NO,
-                         DTCH,
-                         TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
-
-          if (rlc_status.bytes_in_buffer > 0) {
-
-            LOG_D(MAC,"[eNB %d][USER-PLANE DEFAULT DRB], Frame %d, DTCH->DLSCH, CC_id %d, Requesting %d bytes from RLC (hdr len dtch %d)\n",
-                  module_idP,frameP,CC_id,TBS-header_len_dcch-sdu_length_total-header_len_dtch,header_len_dtch);
-            sdu_lengths[num_sdus] = mac_rlc_data_req(
-                                      module_idP,
-                                      rnti,
-				      module_idP,
-                                      frameP,
-                                      ENB_FLAG_YES,
-                                      MBMS_FLAG_NO,
-                                      DTCH,
-                                      (char*)&dlsch_buffer[sdu_length_total]);
-
-            T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
-              T_INT(harq_pid), T_INT(DTCH), T_INT(sdu_lengths[num_sdus]));
-
-            LOG_D(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] CC_id %d Got %d bytes for DTCH %d \n",
-                  module_idP,CC_id,sdu_lengths[num_sdus],DTCH);
-            sdu_lcids[num_sdus] = DTCH;
-            sdu_length_total += sdu_lengths[num_sdus];
-            UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[DTCH]+=1;
-            UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[DTCH]+=sdu_lengths[num_sdus];
-
-            if (sdu_lengths[num_sdus] < 128) {
-              header_len_dtch=2;
+            for (j=0; j<sdu_lengths[num_sdus]; j++) {
+              LOG_T(MAC,"%x ",dlsch_buffer[j]);
             }
 
-            num_sdus++;
-          } else {
-            header_len_dtch = 0;
-          }
+            LOG_T(MAC,"\n");
+#endif
+
+	  }
         }
 
-        // there is a payload
-        if (((sdu_length_total + header_len_dcch + header_len_dtch )> 0)) {
+	// assume the max dtch header size, and adjust it later
+	header_len_dtch=0;
+	header_len_dtch_last=0; // the header length of the last mac sdu
+	// lcid has to be sorted before the actual allocation (similar struct as ue_list).
+	for (lcid=NB_RB_MAX-1; lcid>=DTCH ; lcid--){
+	  // TBD: check if the lcid is active
+	  
+	  header_len_dtch+=3; 
+	  header_len_dtch_last=3;
+	  LOG_D(MAC,"[eNB %d], Frame %d, DTCH%d->DLSCH, Checking RLC status (tbs %d, len %d)\n",
+		module_idP,frameP,lcid,TBS,
+		TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
+	  
+	  if (TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch > 0 ) { // NN: > 2 ? 
+	    rlc_status = mac_rlc_status_ind(module_idP,
+					    rnti,
+					    module_idP,
+					    frameP,
+					    ENB_FLAG_YES,
+					    MBMS_FLAG_NO,
+					    lcid,
+					    TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
+	   
 
-          // Now compute number of required RBs for total sdu length
-          // Assume RAH format 2
-          // adjust  header lengths
-          header_len_dcch_tmp = header_len_dcch;
-          header_len_dtch_tmp = header_len_dtch;
+	    if (rlc_status.bytes_in_buffer > 0) {
+	      
+	      LOG_D(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d)\n",
+		    module_idP,frameP,TBS-header_len_dcch-sdu_length_total-header_len_dtch,lcid, header_len_dtch);
+	      sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
+						       rnti,
+						       module_idP,
+						       frameP,
+						       ENB_FLAG_YES,
+						       MBMS_FLAG_NO,
+						       lcid,
+						       (char*)&dlsch_buffer[sdu_length_total]);
+	      T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
+              T_INT(harq_pid), T_INT(lcid), T_INT(sdu_lengths[num_sdus]));
 
-          if (header_len_dtch==0) {
-            header_len_dcch = (header_len_dcch >0) ? 1 : header_len_dcch;  // remove length field
-          } else {
-            header_len_dtch = (header_len_dtch > 0) ? 1 :header_len_dtch;     // remove length field for the last SDU
-          }
-
+	      LOG_D(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",module_idP,sdu_lengths[num_sdus],lcid);
+	      sdu_lcids[num_sdus] = lcid;
+	      sdu_length_total += sdu_lengths[num_sdus];
+	      UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[lcid]+=1;
+	      UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[lcid]+=sdu_lengths[num_sdus];
+	      if (sdu_lengths[num_sdus] < 128) {
+		header_len_dtch--;
+		header_len_dtch_last--;
+	      }
+	      num_sdus++;
+	    } // no data for this LCID
+	    else {
+	      header_len_dtch-=3;
+	    }
+	  } // no TBS left
+	  else {
+	    header_len_dtch-=3;
+	    break; 
+	  }
+	}
+	if (header_len_dtch == 0 )
+	  header_len_dtch_last= 0;
+	// there is at least one SDU 
+	// if (num_sdus > 0 ){
+	if ((sdu_length_total + header_len_dcch + header_len_dtch )> 0) {
+	  
+	  // Now compute number of required RBs for total sdu length
+	  // Assume RAH format 2
+	  // adjust  header lengths
+	  header_len_dcch_tmp = header_len_dcch;
+	  header_len_dtch_tmp = header_len_dtch;
+	  if (header_len_dtch==0) {
+	    header_len_dcch = (header_len_dcch >0) ? 1 : 0;//header_len_dcch;  // remove length field
+	  } else {
+	    header_len_dtch_last-=1; // now use it to find how many bytes has to be removed for the last MAC SDU 
+	    header_len_dtch = (header_len_dtch > 0) ? header_len_dtch - header_len_dtch_last  :header_len_dtch;     // remove length field for the last SDU
+	  }
 
           mcs = eNB_UE_stats->dlsch_mcs1;
 
@@ -1080,8 +1082,7 @@ schedule_ue_spec(
                   "[eNB %d][DLSCH] Frame %d Generate header for UE_id %d on CC_id %d: sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",
                   module_idP,frameP, UE_id, CC_id, sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,
                   ue_sched_ctl->ta_update,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch);
-          }
-
+	  }
           //#endif
 #ifdef DEBUG_eNB_SCHEDULER
           LOG_T(MAC,"[eNB %d] First 16 bytes of DLSCH : \n");
@@ -1109,6 +1110,9 @@ schedule_ue_spec(
             LOG_D(OPT,"[eNB %d][DLSCH] CC_id %d Frame %d  rnti %x  with size %d\n",
                   module_idP, CC_id, frameP, UE_RNTI(module_idP,UE_id), TBS);
           }
+
+          T(T_ENB_MAC_UE_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
+            T_INT(harq_pid), T_BUFFER(UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0], TBS));
 
           aggregation = process_ue_cqi(module_idP,UE_id);
           UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid] = nb_rb;
@@ -1546,7 +1550,7 @@ fill_DLSCH_dci(
 
 
         /// Synchronizing rballoc with rballoc_sub
-        for(i=0; i<PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RBG; i++) {
+        for(i=0; i<PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RBG; i++) {
           rballoc_sub[i] = UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][i];
         }
 
@@ -1558,8 +1562,8 @@ fill_DLSCH_dci(
         case 2:
           LOG_D(MAC,"[eNB %d] CC_id %d Adding UE %d spec DCI for %d PRBS \n",module_idP, CC_id, UE_id, nb_rb);
 
-          if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
-            switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+          if (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.frame_type == TDD) {
+            switch (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
             case 6:
               ((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
               ((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->rah = 0;
@@ -1598,7 +1602,7 @@ fill_DLSCH_dci(
 
 
           } else {
-            switch(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+            switch(PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
             case 6:
               ((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
               ((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->rah = 0;
@@ -1651,8 +1655,8 @@ fill_DLSCH_dci(
           LOG_D(MAC,"[eNB %d] CC_id %d Adding Format 2A UE %d spec DCI for %d PRBS (rb alloc: %x) \n",
                 module_idP, CC_id, UE_id, nb_rb);
 
-          if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
-            switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+          if (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.frame_type == TDD) {
+            switch (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
             case 6:
               ((DCI2A_1_5MHz_2A_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
               ((DCI2A_1_5MHz_2A_TDD_t*)DLSCH_dci)->rah = 0;
@@ -1691,7 +1695,7 @@ fill_DLSCH_dci(
 
 
           } else {
-            switch(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+            switch(PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
             case 6:
               ((DCI2A_1_5MHz_2A_FDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
               ((DCI2A_1_5MHz_2A_FDD_t*)DLSCH_dci)->rah = 0;
@@ -1853,7 +1857,7 @@ update_ul_dci(
   int                  i;
   DCI0_5MHz_TDD_1_6_t *ULSCH_dci = NULL;;
 
-  if (mac_xface->lte_frame_parms->frame_type == TDD) {
+  if (mac_xface->frame_parms->frame_type == TDD) {
     for (i=0; i<DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci; i++) {
       ULSCH_dci = (DCI0_5MHz_TDD_1_6_t *)DCI_pdu->dci_alloc[i].dci_pdu;
 

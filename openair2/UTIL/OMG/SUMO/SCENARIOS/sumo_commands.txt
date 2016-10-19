@@ -1,5 +1,0 @@
-
-Sumo version used 0.12.3:
-to start sumo with the existing route and network files below command was used.
-
-sumo -n traci_ex_Map.net.xml -r traci_ex_ROU.rou.xml -b 0 -e 1000 --remote-port 8883 -v

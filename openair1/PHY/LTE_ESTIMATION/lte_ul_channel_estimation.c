@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "PHY/sse_intrin.h"
@@ -41,8 +34,8 @@ static int16_t temp_out_ifft_0[2048*4] __attribute__((aligned(16)));
 static int16_t temp_out_ifft_1[2048*4] __attribute__((aligned(16)));
 
 
-static int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(16)));
-static int32_t temp_in_ifft_1[2048*2] __attribute__((aligned(16)));
+static int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
+static int32_t temp_in_ifft_1[2048*2] __attribute__((aligned(32)));
 static int32_t temp_in_fft_0[2048*2] __attribute__((aligned(16)));
 static int32_t temp_in_fft_1[2048*2] __attribute__((aligned(16)));
 
@@ -53,29 +46,29 @@ static int16_t ru_90c[2*128] = {32767, 0,32766, -402,32758, -804,32746, -1206,32
 
 #define SCALE 0x3FFF
 
-int32_t lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
+int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
+				  eNB_rxtx_proc_t *proc,
                                   uint8_t eNB_id,
                                   uint8_t UE_id,
-                                  uint8_t sched_subframe,
                                   unsigned char l,
                                   unsigned char Ns,
                                   uint8_t cooperation_flag)
 {
 
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
-  LTE_eNB_PUSCH *eNB_pusch_vars = phy_vars_eNB->lte_eNB_pusch_vars[UE_id];
-  int32_t **ul_ch_estimates=eNB_pusch_vars->drs_ch_estimates[eNB_id];
-  int32_t **ul_ch_estimates_time=  eNB_pusch_vars->drs_ch_estimates_time[eNB_id];
-  int32_t **ul_ch_estimates_0=  eNB_pusch_vars->drs_ch_estimates_0[eNB_id];
-  int32_t **ul_ch_estimates_1=  eNB_pusch_vars->drs_ch_estimates_1[eNB_id];
-  int32_t **rxdataF_ext=  eNB_pusch_vars->rxdataF_ext[eNB_id];
-  int subframe = phy_vars_eNB->proc[sched_subframe].subframe_rx;
-  uint8_t harq_pid = subframe2harq_pid(frame_parms,phy_vars_eNB->proc[sched_subframe].frame_rx,subframe);
+  LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
+  LTE_eNB_PUSCH *pusch_vars = eNB->pusch_vars[UE_id];
+  int32_t **ul_ch_estimates=pusch_vars->drs_ch_estimates[eNB_id];
+  int32_t **ul_ch_estimates_time=  pusch_vars->drs_ch_estimates_time[eNB_id];
+  int32_t **ul_ch_estimates_0=  pusch_vars->drs_ch_estimates_0[eNB_id];
+  int32_t **ul_ch_estimates_1=  pusch_vars->drs_ch_estimates_1[eNB_id];
+  int32_t **rxdataF_ext=  pusch_vars->rxdataF_ext[eNB_id];
+  int subframe = proc->subframe_rx;
+  uint8_t harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
   int16_t delta_phase = 0;
   int16_t *ru1 = ru_90;
   int16_t *ru2 = ru_90;
   int16_t current_phase1,current_phase2;
-  uint16_t N_rb_alloc = phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb;
+  uint16_t N_rb_alloc = eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb;
   uint16_t aa,Msc_RS,Msc_RS_idx;
   uint16_t * Msc_idx_ptr;
   int k,pilot_pos1 = 3 - frame_parms->Ncp, pilot_pos2 = 10 - 2*frame_parms->Ncp;
@@ -117,7 +110,7 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
   Msc_RS = N_rb_alloc*12;
 
   cyclic_shift = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
-                  phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->n_DMRS2 +
+                  eNB->ulsch[UE_id]->harq_processes[harq_pid]->n_DMRS2 +
                   frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+Ns]) % 12;
 
 #if defined(USER_MODE)
@@ -335,7 +328,7 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 #if T_TRACER
       if (aa == 0)
         T(T_ENB_PHY_UL_CHANNEL_ESTIMATE, T_INT(eNB_id), T_INT(UE_id),
-          T_INT(phy_vars_eNB->proc[sched_subframe].frame_rx), T_INT(subframe),
+          T_INT(proc->frame_rx), T_INT(subframe),
           T_INT(0), T_BUFFER(ul_ch_estimates_time[0], 512  * 4));
 #endif
 
@@ -677,11 +670,11 @@ extern uint16_t transmission_offset_tdd[16];
 #define DEBUG_SRS
 
 int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
-                                   LTE_eNB_COMMON *eNb_common_vars,
-                                   LTE_eNB_SRS *eNb_srs_vars,
+                                   LTE_eNB_COMMON *common_vars,
+                                   LTE_eNB_SRS *srs_vars,
                                    SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
                                    unsigned char sub_frame_number,
-                                   unsigned char eNb_id)
+                                   unsigned char eNB_id)
 {
 
   int T_SFC,aa;
@@ -698,7 +691,7 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
   T_SFC = (Ssrs<=7 ? 5 : 10);
 
   /*
-     msg("SRS channel estimation eNb %d, subframs %d, %d %d %d %d %d\n",eNb_id,sub_frame_number,
+     msg("SRS channel estimation eNB %d, subframs %d, %d %d %d %d %d\n",eNB_id,sub_frame_number,
      SRS_parms->Csrs,
      SRS_parms->Bsrs,
      SRS_parms->kTC,
@@ -710,34 +703,34 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 
     if (generate_srs_rx(frame_parms,
                         soundingrs_ul_config_dedicated,
-                        eNb_srs_vars->srs)==-1) {
+                        srs_vars->srs)==-1) {
       msg("lte_srs_channel_estimation: Error in generate_srs_rx\n");
       return(-1);
     }
 
     for (aa=0; aa<nb_antennas_rx; aa++) {
 #ifdef DEBUG_SRS
-      msg("SRS channel estimation eNb %d, subframs %d, aarx %d, %p, %p, %p\n",eNb_id,sub_frame_number,aa,
-          &eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
-          eNb_srs_vars->srs,
-          eNb_srs_vars->srs_ch_estimates[eNb_id][aa]);
+      msg("SRS channel estimation eNB %d, subframs %d, aarx %d, %p, %p, %p\n",eNB_id,sub_frame_number,aa,
+          &common_vars->rxdataF[eNB_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
+          srs_vars->srs,
+          srs_vars->srs_ch_estimates[eNB_id][aa]);
 #endif
 
-      //write_output("eNb_rxF.m","rxF",&eNb_common_vars->rxdataF[0][aa][2*frame_parms->ofdm_symbol_size*symbol],2*(frame_parms->ofdm_symbol_size),2,1);
-      //write_output("eNb_srs.m","srs_eNb",eNb_common_vars->srs,(frame_parms->ofdm_symbol_size),1,1);
+      //write_output("eNB_rxF.m","rxF",&common_vars->rxdataF[0][aa][2*frame_parms->ofdm_symbol_size*symbol],2*(frame_parms->ofdm_symbol_size),2,1);
+      //write_output("eNB_srs.m","srs_eNB",common_vars->srs,(frame_parms->ofdm_symbol_size),1,1);
 
-      mult_cpx_conj_vector((int16_t*) &eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
-                      (int16_t*) eNb_srs_vars->srs,
-                      (int16_t*) eNb_srs_vars->srs_ch_estimates[eNb_id][aa],
+      mult_cpx_conj_vector((int16_t*) &common_vars->rxdataF[eNB_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
+                      (int16_t*) srs_vars->srs,
+                      (int16_t*) srs_vars->srs_ch_estimates[eNB_id][aa],
                       frame_parms->ofdm_symbol_size,
                       15);
 
       //msg("SRS channel estimation cmult out\n");
 #ifdef USER_MODE
 #ifdef DEBUG_SRS
-      sprintf(fname,"eNB_id%d_an%d_srs_ch_est.m",eNb_id,aa);
-      sprintf(vname,"eNB%d_%d_srs_ch_est",eNb_id,aa);
-      write_output(fname,vname,eNb_srs_vars->srs_ch_estimates[eNb_id][aa],frame_parms->ofdm_symbol_size,1,1);
+      sprintf(fname,"eNB_id%d_an%d_srs_ch_est.m",eNB_id,aa);
+      sprintf(vname,"eNB%d_%d_srs_ch_est",eNB_id,aa);
+      write_output(fname,vname,srs_vars->srs_ch_estimates[eNB_id][aa],frame_parms->ofdm_symbol_size,1,1);
 #endif
 #endif
     }
@@ -746,7 +739,7 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
   /*
     else {
     for (aa=0;aa<nb_antennas_rx;aa++)
-    bzero(eNb_srs_vars->srs_ch_estimates[eNb_id][aa],frame_parms->ofdm_symbol_size*sizeof(int));
+    bzero(srs_vars->srs_ch_estimates[eNB_id][aa],frame_parms->ofdm_symbol_size*sizeof(int));
     }
   */
   return(0);

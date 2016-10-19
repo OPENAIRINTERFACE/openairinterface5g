@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /*! \file rrc_eNB_S1AP.h
  * \brief rrc S1AP procedures for eNB
  * \author Laurent Winckel and Sebastien ROUX and Navid Nikaein and Lionel GAUTHIER
@@ -79,6 +72,14 @@ rrc_eNB_S1AP_remove_ue_ids(
   eNB_RRC_INST*              const rrc_instance_pP,
   struct rrc_ue_s1ap_ids_s* const ue_ids_pP
 );
+
+void
+rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* const ctxt_pP,
+                                                     rrc_eNB_ue_context_t*          const ue_context_pP,
+                                                     const uint8_t                ho_state
+                                                     );
+
+
 /*! \fn void rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(uint8_t mod_id, uint8_t ue_index)
  *\brief create a S1AP_INITIAL_CONTEXT_SETUP_RESP for S1AP.
  *\param ctxt_pP       Running context.
@@ -165,6 +166,25 @@ int rrc_eNB_process_S1AP_DOWNLINK_NAS(MessageDef *msg_p, const char *msg_name, i
  *\return 0 when successful, -1 if the UE index can not be retrieved.
  */
 int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char *msg_name, instance_t instance);
+
+
+/*! \fn rrc_eNB_process_S1AP_E_RAB_SETUP_REQ(MessageDef *msg_p, const char *msg_name, instance_t instance);
+ *\brief process a S1AP dedicated E_RAB setup request message received from S1AP.
+ *\param msg_p Message received by RRC.
+ *\param msg_name Message name.
+ *\param instance Message instance.
+ *\return 0 when successful, -1 if the UE index can not be retrieved.
+ */
+int rrc_eNB_process_S1AP_E_RAB_SETUP_REQ(MessageDef *msg_p, const char *msg_name, instance_t instance);
+
+/*! \fn rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(const protocol_ctxt_t* const ctxt_pP, rrc_eNB_ue_context_t*  const ue_context_pP, uint8_t xid )
+ *\brief send a S1AP dedicated E_RAB setup response
+ *\param ctxt_pP contxt infirmation
+ *\param e_contxt_pP ue specific context at the eNB
+ *\param xid transaction identifier 
+ *\return 0 when successful, -1 if the UE index can not be retrieved.
+ */
+int rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(const protocol_ctxt_t* const ctxt_pP, rrc_eNB_ue_context_t*  const ue_context_pP, uint8_t xid );  
 
 /*! \fn rrc_eNB_process_S1AP_UE_CTXT_MODIFICATION_REQ(MessageDef *msg_p, const char *msg_name, instance_t instance)
  *\brief process a S1AP_UE_CTXT_MODIFICATION_REQ message received from S1AP.

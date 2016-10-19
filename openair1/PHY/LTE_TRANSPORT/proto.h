@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_TRANSPORT/proto.h
  * \brief Function prototypes for PHY physical/transport channel processing and generation V8.6 2009-03
@@ -93,7 +85,8 @@ LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t max_turbo_iterations,uint8_t N_RB_UL, uin
 
 LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag);
 
-/** \fn dlsch_encoding(uint8_t *input_buffer,
+/** \fn dlsch_encoding(PHY_VARS_eNB *eNB,
+    uint8_t *input_buffer,
     LTE_DL_FRAME_PARMS *frame_parms,
     uint8_t num_pdcch_symbols,
     LTE_eNB_DLSCH_t *dlsch,
@@ -105,6 +98,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag);
     - Channel coding (Turbo coding)
     - Rate matching (sub-block interleaving, bit collection, selection and transmission
     - Code block concatenation
+    @param eNB Pointer to eNB PHY context
     @param input_buffer Pointer to input buffer for sub-frame
     @param frame_parms Pointer to frame descriptor structure
     @param num_pdcch_symbols Number of PDCCH symbols in this subframe
@@ -116,8 +110,8 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag);
     @param i_stats Time statistics for interleaving
     @returns status
 */
-int32_t dlsch_encoding(uint8_t *a,
-                       LTE_DL_FRAME_PARMS *frame_parms,
+int32_t dlsch_encoding(PHY_VARS_eNB *eNB,
+		       uint8_t *a,
                        uint8_t num_pdcch_symbols,
                        LTE_eNB_DLSCH_t *dlsch,
                        int frame,
@@ -125,6 +119,39 @@ int32_t dlsch_encoding(uint8_t *a,
                        time_stats_t *rm_stats,
                        time_stats_t *te_stats,
                        time_stats_t *i_stats);
+
+/** \fn dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
+    uint8_t *input_buffer,
+    uint8_t num_pdcch_symbols,
+    LTE_eNB_DLSCH_t *dlsch,
+    int frame,
+    uint8_t subframe)
+    \brief This function performs a subset of the bit-coding functions for LTE as described in 36-212, Release 8.Support is limited to turbo-coded channels (DLSCH/ULSCH). This version spawns 1 worker thread. The implemented functions are:
+    - CRC computation and addition
+    - Code block segmentation and sub-block CRC addition
+    - Channel coding (Turbo coding)
+    - Rate matching (sub-block interleaving, bit collection, selection and transmission
+    - Code block concatenation
+    @param eNB Pointer to eNB PHY context
+    @param input_buffer Pointer to input buffer for sub-frame
+    @param num_pdcch_symbols Number of PDCCH symbols in this subframe
+    @param dlsch Pointer to dlsch to be encoded
+    @param frame Frame number
+    @param subframe Subframe number
+    @param rm_stats Time statistics for rate-matching
+    @param te_stats Time statistics for turbo-encoding
+    @param i_stats Time statistics for interleaving
+    @returns status
+*/
+int32_t dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
+				uint8_t *a,
+				uint8_t num_pdcch_symbols,
+				LTE_eNB_DLSCH_t *dlsch,
+				int frame,
+				uint8_t subframe,
+				time_stats_t *rm_stats,
+				time_stats_t *te_stats,
+				time_stats_t *i_stats);
 
 void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
                          uint8_t *DLSCH_pdu,
@@ -183,7 +210,9 @@ int32_t allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
                            int16_t *qam_table_s1,
                            uint32_t *re_allocated,
                            uint8_t skip_dc,
-                           uint8_t skip_half);
+                           uint8_t skip_half,
+			   int *P1_SHIFT,
+			   int *P2_SHIFT);
 
 
 /** \fn int32_t dlsch_modulation(int32_t **txdataF,
@@ -226,22 +255,20 @@ int mch_modulation(int32_t **txdataF,
 
 /** \brief Top-level generation function for eNB TX of MBSFN
     @param phy_vars_eNB Pointer to eNB variables
-    @param subframe Subframe for PMCH
     @param a Pointer to transport block
     @param abstraction_flag
 
 */
-void generate_mch(PHY_VARS_eNB *phy_vars_eNB,int subframe,uint8_t *a,int abstraction_flag);
+void generate_mch(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,uint8_t *a);
 
 /** \brief This function generates the frequency-domain pilots (cell-specific downlink reference signals)
     @param phy_vars_eNB Pointer to eNB variables
+    @param proc Pointer to RXn-TXnp4 proc information
     @param mcs MCS for MBSFN
     @param ndi new data indicator
     @param rdvix
-    @param abstraction_flag
-
 */
-void fill_eNB_dlsch_MCH(PHY_VARS_eNB *phy_vars_eNB,int mcs,int ndi,int rvidx,int abstraction_flag);
+void fill_eNB_dlsch_MCH(PHY_VARS_eNB *phy_vars_eNB,int mcs,int ndi,int rvidx);
 
 /** \brief This function generates the frequency-domain pilots (cell-specific downlink reference signals)
     @param phy_vars_ue Pointer to UE variables
@@ -298,9 +325,9 @@ int32_t generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
                              int first_pilot_only);
 
 int32_t generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
-                             int32_t **txdataF,
-                             int16_t amp,
-                             uint16_t subframe);
+                             eNB_rxtx_proc_t *proc,
+			     int32_t **txdataF,
+                             int16_t amp);
 
 int32_t generate_pss(int32_t **txdataF,
                      int16_t amp,
@@ -1037,7 +1064,7 @@ uint32_t dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 
 uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
                              uint8_t subframe,
-                             uint8_t dlsch_id,
+                             PDSCH_t dlsch_id,
                              uint8_t eNB_id);
 
 /** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
@@ -1326,6 +1353,7 @@ int32_t generate_srs_tx(PHY_VARS_UE *phy_vars_ue,
 */
 
 int32_t generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
+			   UE_rxtx_proc_t *proc,
                            uint8_t eNB_id,
                            int16_t amp,
                            uint32_t subframe,
@@ -1337,6 +1365,14 @@ int32_t generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
   \brief This function initializes the Group Hopping, Sequence Hopping and nPRS sequences for PUCCH/PUSCH according to 36.211 v8.6.0. It should be called after configuration of UE (reception of SIB2/3) and initial configuration of eNB (or after reconfiguration of cell-specific parameters).
   @param frame_parms Pointer to a LTE_DL_FRAME_PARMS structure (eNB or UE)*/
 void init_ul_hopping(LTE_DL_FRAME_PARMS *frame_parms);
+
+
+/*!
+  \brief This function implements the initialization of paging parameters for UE (See Section 7, 36.304).It must be called after setting IMSImod1024 during UE startup and after receiving SIB2
+  @param ue Pointer to UE context
+  @param defaultPagingCycle T from 36.304 (0=32,1=64,2=128,3=256)
+  @param nB nB from 36.304 (0=4T,1=2T,2=T,3=T/2,4=T/4,5=T/8,6=T/16,7=T/32*/
+int init_ue_paging_info(PHY_VARS_UE *ue, long defaultPagingCycle, long nB);
 
 int32_t compareints (const void * a, const void * b);
 
@@ -1396,7 +1432,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
                                       uint8_t subframe,
                                       DCI_format_t dci_format,
                                       PHY_VARS_UE *phy_vars_ue,
-                                      uint16_t si_rnti,
+                                      UE_rxtx_proc_t *proc,
+				      uint16_t si_rnti,
                                       uint16_t ra_rnti,
                                       uint16_t p_rnti,
                                       uint16_t cba_rnti,
@@ -1404,34 +1441,32 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
                                       uint8_t use_srs);
 
 int32_t generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
-    uint8_t eNB_id);
+					  UE_rxtx_proc_t *proc,
+					  uint8_t eNB_id);
 double sinr_eff_cqi_calc(PHY_VARS_UE *phy_vars_ue,
                          uint8_t eNB_id);
-int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
+int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *PHY_vars_eNB,
+				       eNB_rxtx_proc_t *proc,
+				       void *dci_pdu,
                                        rnti_t rnti,
-                                       uint8_t subframe,
-                                       DCI_format_t dci_format,
+				       DCI_format_t dci_format,
                                        uint8_t UE_id,
-                                       PHY_VARS_eNB *PHY_vars_eNB,
-                                       uint16_t si_rnti,
+				       uint16_t si_rnti,
                                        uint16_t ra_rnti,
                                        uint16_t p_rnti,
                                        uint16_t cba_rnti,
                                        uint8_t use_srs);
 
-#ifdef USER_MODE
-void dump_ulsch(PHY_VARS_eNB *phy_vars_eNb,uint8_t subframe, uint8_t UE_id);
 
-void dump_dlsch(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe,uint8_t harq_pid);
-void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe);
-void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe);
+void dump_ulsch(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,uint8_t UE_id);
 
-void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword,int round);
-#endif
+
+
+
 
 int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci);
 
-int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t mode, int input_level_dBm);
+int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, UE_rxtx_proc_t *proc, char* buffer, int length, runmode_t mode, int input_level_dBm);
 int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length);
 
 
@@ -1475,14 +1510,14 @@ void generate_RIV_tables(void);
 int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode);
 
 void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
-              uint32_t subframe,
-              uint8_t eNB_id,  // this is the effective sector id
+              eNB_rxtx_proc_t *proc,
+	      uint8_t eNB_id,  // this is the effective sector id
               uint8_t UE_id,
               LTE_eNB_ULSCH_t **ulsch,
               uint8_t cooperation_flag);
 
 void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
-                   uint8_t subframe,
+		   eNB_rxtx_proc_t *proc,
                    uint8_t sect_id,
                    uint8_t UE_index);
 
@@ -1521,6 +1556,7 @@ int32_t ulsch_encoding_emul(uint8_t *ulsch_buffer,
 /*!
   \brief Decoding of PUSCH/ACK/RI/ACK from 36-212.
   @param phy_vars_eNB Pointer to eNB top-level descriptor
+  @param proc Pointer to RXTX proc variables
   @param UE_id ID of UE transmitting this PUSCH
   @param subframe Index of subframe for PUSCH
   @param control_only_flag Receive PUSCH with control information only
@@ -1529,30 +1565,57 @@ int32_t ulsch_encoding_emul(uint8_t *ulsch_buffer,
   @returns 0 on success
 */
 unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
+			     eNB_rxtx_proc_t *proc,
                              uint8_t UE_id,
-                             uint8_t subframe,
                              uint8_t control_only_flag,
                              uint8_t Nbundled,
                              uint8_t llr8_flag);
 
+/*!
+  \brief Decoding of ULSCH data component from 36-212. This one spawns 1 worker thread in parallel,half of the segments in each thread.
+  @param phy_vars_eNB Pointer to eNB top-level descriptor
+  @param UE_id ID of UE transmitting this PUSCH
+  @param harq_pid HARQ process ID
+  @param llr8_flag If 1, indicate that the 8-bit turbo decoder should be used
+  @returns 0 on success
+*/
+int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,
+				int UE_id,
+				int harq_pid,
+				int llr8_flag);
+
+/*!
+  \brief Decoding of ULSCH data component from 36-212. This one is single thread.
+  @param phy_vars_eNB Pointer to eNB top-level descriptor
+  @param UE_id ID of UE transmitting this PUSCH
+  @param harq_pid HARQ process ID
+  @param llr8_flag If 1, indicate that the 8-bit turbo decoder should be used
+  @returns 0 on success
+*/
+int ulsch_decoding_data(PHY_VARS_eNB *eNB,
+			int UE_id,
+			int harq_pid,
+			int llr8_flag);
+
 uint32_t ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
-                             uint8_t subframe,
-                             uint8_t UE_index,
+                             eNB_rxtx_proc_t *proc,
+			     uint8_t UE_index,
                              uint16_t *crnti);
 
 void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
-                        uint8_t subframe,
+			eNB_rxtx_proc_t *proc,
                         int16_t amp,
-                        uint8_t sect_id,
-                        uint8_t abstraction_flag);
+                        uint8_t sect_id);
 
 /* \brief  This routine demodulates the PHICH and updates PUSCH/ULSCH parameters.
    @param phy_vars_ue Pointer to UE variables
+   @param proc Pointer to RXN_TXNp4 proc
    @param subframe Subframe of received PDCCH/PHICH
    @param eNB_id Index of eNB
 */
 
 void rx_phich(PHY_VARS_UE *phy_vars_ue,
+	      UE_rxtx_proc_t *proc,
               uint8_t subframe,
               uint8_t eNB_id);
 
@@ -1638,24 +1701,24 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
 void init_ncs_cell(LTE_DL_FRAME_PARMS *frame_parms,uint8_t ncs_cell[20][7]);
 
-void generate_pucch(int32_t **txdataF,
-                    LTE_DL_FRAME_PARMS *frame_parms,
-                    uint8_t ncs_cell[20][7],
-                    PUCCH_FMT_t fmt,
-                    PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                    uint16_t n1_pucch,
-                    uint16_t n2_pucch,
-                    uint8_t shortened_format,
-                    uint8_t *payload,
-                    int16_t amp,
-                    uint8_t subframe);
+void generate_pucch1x(int32_t **txdataF,
+		      LTE_DL_FRAME_PARMS *frame_parms,
+		      uint8_t ncs_cell[20][7],
+		      PUCCH_FMT_t fmt,
+		      PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+		      uint16_t n1_pucch,
+		      uint8_t shortened_format,
+		      uint8_t *payload,
+		      int16_t amp,
+		      uint8_t subframe);
 
 void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
+			 UE_rxtx_proc_t *proc,
                          PUCCH_FMT_t format,
                          uint8_t ncs1,
                          uint8_t *pucch_ack_payload,
-                         uint8_t sr,
-                         uint8_t subframe);
+                         uint8_t sr);
+
 
 
 uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
@@ -1670,11 +1733,12 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 		  uint8_t pucch1_thres);
 
 int32_t rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
-		       uint8_t UE_index,
-		       PUCCH_FMT_t fmt,
-		       uint8_t n1_pucch_sel,
-		       uint8_t *payload,
-		       uint8_t subframe);
+		      eNB_rxtx_proc_t *proc,
+		      uint8_t UE_index,
+		      PUCCH_FMT_t fmt,
+		      uint8_t n1_pucch_sel,
+		      uint8_t *payload);
+
 
 
 /*!
@@ -1701,7 +1765,6 @@ int32_t generate_prach(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe,
 /*!
   \brief Process PRACH waveform
   @param phy_vars_eNB Pointer to eNB top-level descriptor
-  @param subframe subframe index to operate on
   @param preamble_energy_list List of energies for each candidate preamble
   @param preamble_delay_list List of delays for each candidate preamble
   @param Nf System frame number
@@ -1709,7 +1772,7 @@ int32_t generate_prach(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe,
   @returns 0 on success
 
 */
-void rx_prach(PHY_VARS_eNB *phy_vars_eNB,uint8_t subframe,uint16_t *preamble_energy_list, uint16_t *preamble_delay_list, uint16_t Nf, uint8_t tdd_mapindex);
+void rx_prach(PHY_VARS_eNB *phy_vars_eNB,uint16_t *preamble_energy_list, uint16_t *preamble_delay_list, uint16_t Nf, uint8_t tdd_mapindex);
 
 /*!
   \brief Helper for MAC, returns number of available PRACH in TDD for a particular configuration index
@@ -1743,6 +1806,9 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
                        uint32_t X_u[64][839]);
 
 void init_prach_tables(int N_ZC);
+
+void init_unscrambling_lut(void);
+void init_scrambling_lut(void);
 
 /*!
   \brief Return the status of MBSFN in this frame/subframe
