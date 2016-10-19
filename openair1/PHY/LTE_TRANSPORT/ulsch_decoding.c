@@ -299,10 +299,16 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
       E = Nl*Q_m * ((GpmodC==0?0:1) + (Gp/C));
     
     r_offset += E;
+
+    if (r==0) {
+      offset = Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0);
+    } else {
+      offset += (Kr_bytes- ((ulsch_harq->C>1)?3:0));
+    }
   }
 
   // go through second half of segments
-  for (; r<(ulsch_harq->C/2); r++) {
+  for (; r<(ulsch_harq->C); r++) {
 
 
     //    printf("before subblock deinterleaving c[%d] = %p\n",r,ulsch_harq->c[r]);
@@ -393,8 +399,7 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
 	     &eNB->ulsch_tc_intl1_stats,
 	     &eNB->ulsch_tc_intl2_stats);
     
-    
-  // Reassembly of Transport block here
+    // Reassembly of Transport block here
 
     if (ret != (1+ulsch->max_turbo_iterations)) {
       if (r<ulsch_harq->Cminus)
@@ -404,17 +409,11 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
       
       Kr_bytes = Kr>>3;
       
-      if (r==0) {
-	memcpy(ulsch_harq->b,
-	       &ulsch_harq->c[0][(ulsch_harq->F>>3)],
-	       Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0));
-	offset = Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0);
-      } else {
-	memcpy(ulsch_harq->b+offset,
-	       ulsch_harq->c[r],
-	       Kr_bytes - ((ulsch_harq->C>1)?3:0));
-	offset += (Kr_bytes- ((ulsch_harq->C>1)?3:0));
-      }
+      memcpy(ulsch_harq->b+offset,
+	     ulsch_harq->c[r],
+	     Kr_bytes - ((ulsch_harq->C>1)?3:0));
+      offset += (Kr_bytes- ((ulsch_harq->C>1)?3:0));
+      
       
     } else {
       break;
@@ -461,6 +460,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
   int Q_m = get_Qm_ul(ulsch_harq->mcs);
   int G = ulsch_harq->nb_rb * (12 * Q_m) * ulsch_harq->Nsymb_pusch;
   unsigned int E;
+  int Cby2;
 
   uint8_t (*tc)(int16_t *y,
                 uint8_t *,
@@ -489,38 +489,44 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
   else
     tc = phy_threegpplte_turbo_decoder8;
 
-  if (pthread_mutex_timedlock(&proc->mutex_td,&wait) != 0) {
-    printf("[eNB] ERROR pthread_mutex_lock for TD thread (IC %d)\n", proc->instance_cnt_td);
-    exit_fun( "error locking mutex_fep" );
-    return -1;
-  }
+  if (ulsch_harq->C>1) { // wakeup worker if more than 1 segment
+    if (pthread_mutex_timedlock(&proc->mutex_td,&wait) != 0) {
+      printf("[eNB] ERROR pthread_mutex_lock for TD thread (IC %d)\n", proc->instance_cnt_td);
+      exit_fun( "error locking mutex_fep" );
+      return -1;
+    }
+    
+    if (proc->instance_cnt_td==0) {
+      printf("[eNB] TD thread busy\n");
+      exit_fun("TD thread busy");
+      pthread_mutex_unlock( &proc->mutex_td );
+      return -1;
+    }
+    
+    ++proc->instance_cnt_td;
+    
+    proc->tdp.eNB       = eNB;
+    proc->tdp.UE_id     = UE_id;
+    proc->tdp.harq_pid  = harq_pid;
+    proc->tdp.llr8_flag = llr8_flag;
+    
+    
+    // wakeup worker to do second half segments 
+    if (pthread_cond_signal(&proc->cond_td) != 0) {
+      printf("[eNB] ERROR pthread_cond_signal for td thread exit\n");
+      exit_fun( "ERROR pthread_cond_signal" );
+      return (1+ulsch->max_turbo_iterations);
+    }
 
-  if (proc->instance_cnt_td==0) {
-    printf("[eNB] TD thread busy\n");
-    exit_fun("TD thread busy");
     pthread_mutex_unlock( &proc->mutex_td );
-    return -1;
+    Cby2 = ulsch_harq->C/2;
   }
-  
-  ++proc->instance_cnt_td;
-
-  proc->tdp.eNB       = eNB;
-  proc->tdp.UE_id     = UE_id;
-  proc->tdp.harq_pid  = harq_pid;
-  proc->tdp.llr8_flag = llr8_flag;
-
-  // wakeup worker to do second half segments 
-  if (pthread_cond_signal(&proc->cond_td) != 0) {
-    printf("[eNB] ERROR pthread_cond_signal for td thread exit\n");
-    exit_fun( "ERROR pthread_cond_signal" );
-    return (1+ulsch->max_turbo_iterations);
+  else {
+    Cby2 = 1;
   }
-
-  pthread_mutex_unlock( &proc->mutex_td );
-
 
   // go through first half of segments in main thread
-  for (r=0; r<(ulsch_harq->C/2); r++) {
+  for (r=0; r<Cby2; r++) {
 
     //    printf("before subblock deinterleaving c[%d] = %p\n",r,ulsch_harq->c[r]);
     // Get Turbo interleaver parameters
@@ -614,7 +620,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
 	     &eNB->ulsch_tc_ext_stats,
 	     &eNB->ulsch_tc_intl1_stats,
 	     &eNB->ulsch_tc_intl2_stats);
-    
+
   // Reassembly of Transport block here
 
     if (ret != (1+ulsch->max_turbo_iterations)) {
@@ -1194,6 +1200,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
         y[i2] = c*ulsch_llr[i++];
         i2=(i2+(Cmux<<2)-3);
 	*/
+	// slightly more optimized version (equivalent to above) for 16QAM to improve computational performance
 	*(__m64 *)&y[i2] = _mm_sign_pi16(*(__m64*)&ulsch_llr[i],*(__m64*)&cseq[i]);i+=4;i2+=(Cmux<<2);
 
 
@@ -1525,6 +1532,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 
   // RI
 
+  // rank 1
   if ((ulsch_harq->O_RI == 1) && (Qprime_RI > 0)) {
     ulsch_harq->o_RI[0] = ((ulsch_harq->q_RI[0] + ulsch_harq->q_RI[Q_m/2]) > 0) ? 0 : 1;
   }

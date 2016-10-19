@@ -212,6 +212,8 @@ sigh (void *arg);
 void
 oai_shutdown (void);
 
+void reset_opp_meas_oaisim (void);
+
 void
 help (void)
 {
@@ -444,9 +446,6 @@ static Data_Flow_Unit omv_data;
 #endif //ALU
 static module_id_t UE_inst = 0;
 static module_id_t eNB_inst = 0;
-#ifdef Rel10
-static module_id_t RN_id = 0;
-#endif
 
 Packet_OTG_List_t *otg_pdcp_buffer;
 
@@ -470,13 +469,8 @@ l2l1_task (void *args_p)
   // Framing variables
   int32_t sf;
 
-#ifdef Rel10
-  relaying_type_t r_type = no_relay; // no relaying
-#endif
-  
   char fname[64], vname[64];
 
-  protocol_ctxt_t  ctxt;
   //#ifdef XFORMS
   // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
   // at eNB 0, an UL scope for every UE
@@ -749,7 +743,7 @@ l2l1_task (void *args_p)
               (subframe_UE_mask_local == ((1<<NB_UE_INST)-1)))
              all_done=1;
           else
-             usleep(500);
+	    usleep(500);
         }
 
         //clear subframe masks for next round
@@ -774,16 +768,18 @@ l2l1_task (void *args_p)
 
 	if (oai_emulation.info.cli_start_enb[eNB_inst] != 0) {
 	  T(T_ENB_MASTER_TICK, T_INT(eNB_inst), T_INT(frame % 1024), T_INT(slot/2));
+	  /*
 	  LOG_D(EMU,
 		"PHY procedures eNB %d for frame %d, slot %d (subframe TX %d, RX %d) TDD %d/%d Nid_cell %d\n",
 		eNB_inst,
 		frame%MAX_FRAME_NUMBER,
-		slot,
+		2*sf,
 		PHY_vars_eNB_g[eNB_inst][0]->proc[slot >> 1].subframe_tx,
 		PHY_vars_eNB_g[eNB_inst][0]->proc[slot >> 1].subframe_rx,
 		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.frame_type,
 		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.tdd_config,
 		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.Nid_cell);
+	  */
 	}
 
         for (eNB_inst = oai_emulation.info.first_enb_local;
@@ -1825,7 +1821,7 @@ oai_shutdown (void)
 	  free(txdata);
 	  #endif
 	*/
-
+	/*
 	for (int i = 0; i < 2; i++) {
 	  free (s_re[i]);
 	  free (s_im[i]);
@@ -1840,7 +1836,7 @@ oai_shutdown (void)
 	s_re = 0;
 	s_im = 0;
 	r_re = 0;
-	r_im = 0;
+	r_im = 0;*/
 
 	lte_sync_time_free ();
       }

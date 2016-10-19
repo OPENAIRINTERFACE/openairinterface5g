@@ -105,8 +105,8 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
     __m128i t0, t1;
 
     tx_buffer = memalign(16, MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + db_fulllength*sizeof(int16_t));
-    IF5_mobipass_header_t *header = (IF5_mobipass_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
-    data_block_head = (__m128i *)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + 4);
+    IF5_mobipass_header_t *header = (IF5_mobipass_header_t *)((uint8_t *)tx_buffer + MAC_HEADER_SIZE_BYTES);
+    data_block_head = (__m128i *)((uint8_t *)tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + 4);
     
     header->flags = 0;
     header->fifo_status = 0;  
@@ -117,11 +117,11 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
     txp[0] = (void*)&eNB->common_vars.txdata[0][0][subframe*eNB->frame_parms.samples_per_tti];
     txp128 = (__m128i *) txp[0];
               
-    for (packet_id=0; packet_id<(fp->samples_per_tti*2)/db_fulllength; packet_id++) {
-      header->time_stamp = proc_timestamp + packet_id*db_fulllength; 
+    for (packet_id=0; packet_id<fp->samples_per_tti/db_fulllength; packet_id++) {
+      header->time_stamp = (uint32_t)(proc_timestamp + packet_id*db_fulllength);
       data_block = data_block_head; 
     
-      for (i=0; i<db_fulllength>>3; i+=2) {
+      for (i=0; i<db_fulllength>>2; i+=2) {
         t0 = _mm_srai_epi16(*txp128++, 4);
         t1 = _mm_srai_epi16(*txp128++, 4);   
         

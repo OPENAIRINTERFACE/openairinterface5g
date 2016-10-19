@@ -108,6 +108,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #   include "s1ap_eNB.h"
 #ifdef PDCP_USE_NETLINK
 #   include "SIMULATION/ETH_TRANSPORT/proto.h"
+extern int netlink_init(void);
 #endif
 # endif
 #endif
@@ -424,10 +425,16 @@ void exit_fun(const char* s)
   oai_exit = 1;
   
   for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    if (PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func)
-      PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->rfdevice);
-    if (PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func)
-      PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->ifdevice);  
+    if (UE_flag == 0) {
+      if (PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func)
+	PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->rfdevice);
+      if (PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func)
+	PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->ifdevice);  
+    }
+    else {
+      if (PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func)
+	PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][CC_id]->rfdevice);
+    }
   }
 
 #if defined(ENABLE_ITTI)
@@ -770,6 +777,7 @@ static void get_options (int argc, char **argv)
 
     case LONG_OPTION_CALIB_PRACH_TX:
       mode = calib_prach_tx;
+      printf("Setting mode to calib_prach_tx (%d)\n",mode);
       break;
 
     case LONG_OPTION_RXGAIN:
@@ -1058,7 +1066,7 @@ static void get_options (int argc, char **argv)
         	
         if (enb_properties->properties[i]->rrh_gw_config[j].active == 1 ) {
           local_remote_radio = BBU_REMOTE_RADIO_HEAD;
-          (eth_params+j)->local_if_name             = enb_properties->properties[i]->rrh_gw_if_name;
+          (eth_params+j)->local_if_name             = enb_properties->properties[i]->rrh_gw_config[j].rrh_gw_if_name;
           (eth_params+j)->my_addr                   = enb_properties->properties[i]->rrh_gw_config[j].local_address;
           (eth_params+j)->my_port                   = enb_properties->properties[i]->rrh_gw_config[j].local_port;
           (eth_params+j)->remote_addr               = enb_properties->properties[i]->rrh_gw_config[j].remote_address;
@@ -1298,10 +1306,10 @@ void init_openair0() {
 
     
     if (local_remote_radio == BBU_REMOTE_RADIO_HEAD) {      
-      openair0_cfg[card].remote_addr    = eth_params->remote_addr;
-      openair0_cfg[card].remote_port    = eth_params->remote_port;
-      openair0_cfg[card].my_addr        = eth_params->my_addr;
-      openair0_cfg[card].my_port        = eth_params->my_port;    
+      openair0_cfg[card].remote_addr    = (eth_params+card)->remote_addr;
+      openair0_cfg[card].remote_port    = (eth_params+card)->remote_port;
+      openair0_cfg[card].my_addr        = (eth_params+card)->my_addr;
+      openair0_cfg[card].my_port        = (eth_params+card)->my_port;    
     } 
     
     printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
@@ -1357,7 +1365,7 @@ void init_openair0() {
 
 int main( int argc, char **argv )
 {
-  int i,aa,card=0;
+  int i,aa;
 #if defined (XFORMS)
   void *status;
 #endif
@@ -1568,6 +1576,7 @@ int main( int argc, char **argv )
       UE[CC_id]->UE_scan = UE_scan;
       UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
       UE[CC_id]->mode    = mode;
+      printf("UE[%d]->mode = %d\n",CC_id,mode);
 
       compute_prach_seq(&UE[CC_id]->frame_parms.prach_config_common,
                         UE[CC_id]->frame_parms.frame_type,
@@ -1789,14 +1798,16 @@ int main( int argc, char **argv )
 
   // start the main thread
   if (UE_flag == 1) init_UE(1);
-  else init_eNB(node_function,node_timing,1,eth_params,single_thread_flag);
+  else { 
+    init_eNB(node_function,node_timing,1,eth_params,single_thread_flag);
   // Sleep to allow all threads to setup
 
-  number_of_cards = 1;
-
-  for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    PHY_vars_eNB_g[0][CC_id]->rf_map.card=0;
-    PHY_vars_eNB_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
+    number_of_cards = 1;
+    
+    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_eNB_g[0][CC_id]->rf_map.card=0;
+      PHY_vars_eNB_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
+    }
   }
 
   // connect the TX/RX buffers

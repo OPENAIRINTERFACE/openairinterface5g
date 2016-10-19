@@ -31,6 +31,26 @@
 # \author Navid Nikaein, Rohit Gupta
 
 # To free unused memory else test setup runs out of memory
-sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches ' 
+
+mem_threshold=0.2 #If free memory is less than this threshold, then VM drop cache is called
+mem_tot=`vmstat -s -S k |grep "total memory" | awk '{print $1}'`
+mem_free=`vmstat -s -S k |grep "free memory" | awk '{print $1}'`
+
+mem_frac=`bc <<< "scale=4;$mem_free/$mem_tot"`
+echo $mem_frac
+#mem_frac=`bc <<< "scale=4;`echo $mem_free`/`echo $mem_tot`"`
+echo "Total Memory = $mem_tot k "
+echo "Free Memory = $mem_free k"
+echo "Fraction free memory = $mem_frac "
+
+res=`bc <<< "$mem_frac < 0.2" `
+
+echo "Comparison Result = $res"
+
+if [ "$res" == "1" ]
+then
+  echo "Free memory less than threshold = $mem_threshold"
+  sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches ' 
+fi
 
 

@@ -255,7 +255,7 @@ int32_t signal_energy_nodc(int32_t *input,uint32_t length)
 }
 
 #endif
-double signal_energy_fp(double s_re[2][30720],double s_im[2][30720],uint32_t nb_antennas,uint32_t length,uint32_t offset)
+double signal_energy_fp(double *s_re[2],double *s_im[2],uint32_t nb_antennas,uint32_t length,uint32_t offset)
 {
 
   int32_t aa,i;

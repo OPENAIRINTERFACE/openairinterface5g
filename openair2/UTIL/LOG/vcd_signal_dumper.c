@@ -272,6 +272,7 @@ const char* eurecomFunctionsNames[] = {
   "phy_ue_ulsch_scrambling",
   "phy_eNB_dlsch_modulation",
   "phy_eNB_dlsch_encoding",
+  "phy_eNB_dlsch_encoding_w",
   "phy_eNB_dlsch_scrambling",
 
   /* MAC  signals  */

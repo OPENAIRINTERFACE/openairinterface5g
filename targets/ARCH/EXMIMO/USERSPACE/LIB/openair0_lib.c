@@ -487,7 +487,7 @@ void create_watchdog(openair0_device *dev) {
   pthread_attr_setschedpolicy(&priv->watchdog_attr,SCHED_FIFO);
   pthread_create(&priv->watchdog,&priv->watchdog_attr,watchdog_thread,dev);
 #else
-  pthread_create(&priv->watchdog,NULL,watchdog_thread,devv);
+  pthread_create(&priv->watchdog,NULL,watchdog_thread,dev);
 #endif
   pthread_mutex_init(&priv->watchdog_mutex,NULL);
 
@@ -774,6 +774,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
       openair0_cfg[card].rxbase[ant] = (int32_t*)openair0_exmimo_pci[card].adc_head[ant];
       openair0_cfg[card].txbase[ant] = (int32_t*)openair0_exmimo_pci[card].dac_head[ant];
     }
+    openair0_cfg[card].mmapped_dma = 1;
   }
 
   create_watchdog(device);

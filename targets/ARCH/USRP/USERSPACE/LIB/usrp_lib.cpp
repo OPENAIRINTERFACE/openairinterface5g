@@ -215,10 +215,10 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
   else
     time_avg=(time_diff+time_avg) /2.0;
 
-   //prints statics of uhd every 10 seconds
+  /*   //prints statics of uhd every 10 seconds
    if ( loop % (10 * ((int)device->openair0_cfg[0].sample_rate /(int)nsamps )) ==0)
      LOG_I(HW,"usrp_write: min(ns)=%d, max(ns)=%d, avg(ns)=%d\n", (int)time_min, (int)time_max,(int)time_avg);
-
+  */
    loop++;
   return ret;
 }
@@ -331,12 +331,12 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
     time_avg= time_diff;
   else
     time_avg=(time_diff+time_avg) /2.0;
-
+  /*
   //prints statics of uhd every 10 seconds
   if ( loop % (10 * ((int)device->openair0_cfg[0].sample_rate /(int)nsamps )) ==0)
      LOG_I(HW,"usrp_read: min(ns)=%d, max(ns)=%d, avg(ns)=%d\n", (int)time_min, (int)time_max,(int)time_avg);
 
-  loop++;
+     loop++;*/
   return samples_received;
 }
 
@@ -632,7 +632,7 @@ extern "C" {
 
   } else {
     printf("Found USRP B200");
-    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=4096, recv_frame_size=4096" ; 
+    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=15360, recv_frame_size=15360" ; 
     s->usrp = uhd::usrp::multi_usrp::make(args);
 
     //  s->usrp->set_rx_subdev_spec(rx_subdev);

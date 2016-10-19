@@ -353,8 +353,8 @@ int main(int argc, char **argv)
   eNB2->frame_parms.nushift=(Nid_cell+2)%6;
   eNB2->Mod_id=2;
 
-  phy_init_lte_eNB(eNB1,0,0,0);
-  phy_init_lte_eNB(eNB2,0,0,0);
+  phy_init_lte_eNB(eNB1,0,0);
+  phy_init_lte_eNB(eNB2,0,0);
 
 #ifdef XFORMS
   fl_initialize (&argc, argv, NULL, 0, 0);
