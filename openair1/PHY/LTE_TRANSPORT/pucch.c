@@ -460,9 +460,12 @@ inline void pucch2x_modulation(uint8_t *btilde,int16_t *d,int16_t amp) {
 
 }
 
+
+
 uint32_t pucch_code[13] = {0xFFFFF,0x5A933,0x10E5A,0x6339C,0x73CE0,
 			   0xFFC00,0xD8E64,0x4F6B0,0x218EC,0x1B746,
 			   0x0FFFF,0x33FFF,0x3FFFC};
+
 
 void generate_pucch2x(int32_t **txdataF,
 		      LTE_DL_FRAME_PARMS *fp,
@@ -471,7 +474,7 @@ void generate_pucch2x(int32_t **txdataF,
 		      PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
 		      uint16_t n2_pucch,
 		      uint8_t shortened_format,
-		      uint32_t *payload,
+		      uint16_t *payload,
 		      int A,
 		      int B2,
 		      int16_t amp,
@@ -559,10 +562,13 @@ void generate_pucch2x(int32_t **txdataF,
       nprime = (n2_pucch < 12*NRB2) ? 
 	n2_pucch % 12 :
 	(n2_pucch+Ncs1 + 1)%12;
-    else
+    else {
       nprime = (n2_pucch < 12*NRB2) ? 
         ((12*(nprime+1)) % 13)-1 :
 	(10-n2_pucch)%12;
+      if (shortened_format == 1)
+	N_UL_symb--;
+    }
 
     //loop over symbols in slot
     for (l=0; l<N_UL_symb; l++) {
@@ -629,6 +635,10 @@ void generate_pucch2x(int32_t **txdataF,
     }
   }
 }
+
+
+//#define Amax 13
+//void init_pucch2x_rx() {};
 
 
 uint32_t rx_pucch(PHY_VARS_eNB *eNB,

@@ -377,6 +377,112 @@ uint8_t is_SR_TXOp(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id)
   return(0);
 }
 
+void get_cqipmiri_params(PHY_VARS_UE *ue,uint8_t eNB_id)
+{
+
+  CQI_REPORTPERIODIC *cqirep = &ue->cqi_report_config[eNB_id].CQI_ReportPeriodic;
+  int cqi_PMI_ConfigIndex = cqirep->cqi_PMI_ConfigIndex;
+
+  if (ue->frame_parms.frame_type == FDD) {
+    if (cqi_PMI_ConfigIndex <= 1) {        // 2 ms CQI_PMI period
+      cqirep->Npd = 2;
+      cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex;
+    } else if (cqi_PMI_ConfigIndex <= 6) { // 5 ms CQI_PMI period
+      cqirep->Npd = 5;
+      cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-1;
+    } else if (cqi_PMI_ConfigIndex <=16) { // 10ms CQI_PMI period
+      cqirep->Npd = 10;
+      cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-6;
+    } else if (cqi_PMI_ConfigIndex <= 36) { // 20 ms CQI_PMI period
+      cqirep->Npd = 20;
+      cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-16;
+    } else if (cqi_PMI_ConfigIndex <= 76) { // 40 ms CQI_PMI period
+      cqirep->Npd = 40;
+      cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-36;
+    } else if (cqi_PMI_ConfigIndex <= 156) { // 80 ms CQI_PMI period
+      cqirep->Npd = 80;
+      cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-76;
+    } else if (cqi_PMI_ConfigIndex <= 316) { // 160 ms CQI_PMI period
+      cqirep->Npd = 160;
+      cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-156;
+    }
+    else if (cqi_PMI_ConfigIndex > 317) {
+      
+      if (cqi_PMI_ConfigIndex <= 349) { // 32 ms CQI_PMI period
+	cqirep->Npd = 32;
+      cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-316;
+      }
+      else if (cqi_PMI_ConfigIndex <= 413) { // 64 ms CQI_PMI period
+	cqirep->Npd = 64;
+	cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-349;
+      }
+      else if (cqi_PMI_ConfigIndex <= 541) { // 128 ms CQI_PMI period
+	cqirep->Npd = 128;
+	cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-413;
+      }  
+    }
+  }
+  else { // TDD
+   if (cqi_PMI_ConfigIndex == 0) {        // all UL subframes
+     cqirep->Npd = 1;
+     cqirep->N_OFFSET_CQI = 0;
+   } else if (cqi_PMI_ConfigIndex <= 6) { // 5 ms CQI_PMI period
+     cqirep->Npd = 5;
+     cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-1;
+   } else if (cqi_PMI_ConfigIndex <=16) { // 10ms CQI_PMI period
+     cqirep->Npd = 10;
+     cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-6;
+   } else if (cqi_PMI_ConfigIndex <= 36) { // 20 ms CQI_PMI period
+     cqirep->Npd = 20;
+     cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-16;
+   } else if (cqi_PMI_ConfigIndex <= 76) { // 40 ms CQI_PMI period
+     cqirep->Npd = 40;
+     cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-36;
+   } else if (cqi_PMI_ConfigIndex <= 156) { // 80 ms CQI_PMI period
+     cqirep->Npd = 80;
+     cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-76;
+   } else if (cqi_PMI_ConfigIndex <= 316) { // 160 ms CQI_PMI period
+     cqirep->Npd = 160;
+     cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-156;
+   }
+  }
+}
+
+uint8_t is_cqi_TXOp(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id)
+{
+  int subframe = proc->subframe_tx;
+  int frame    = proc->frame_tx;
+  CQI_REPORTPERIODIC *cqirep = &ue->cqi_report_config[eNB_id].CQI_ReportPeriodic;
+
+  LOG_D(PHY,"[UE %d][SR %x] Frame %d subframe %d Checking for CQI TXOp (cqi_ConfigIndex %d)\n",
+        ue->Mod_id,ue->pdcch_vars[eNB_id]->crnti,frame,subframe,
+        cqirep->cqi_PMI_ConfigIndex);
+ 
+  if (((10*frame + subframe) % cqirep->Npd) == cqirep->N_OFFSET_CQI)
+    return(1);
+  else
+    return(0);
+}
+uint8_t is_ri_TXOp(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id)
+{
+
+
+  int subframe = proc->subframe_tx;
+  int frame    = proc->frame_tx;
+  CQI_REPORTPERIODIC *cqirep = &ue->cqi_report_config[eNB_id].CQI_ReportPeriodic;
+  int log2Mri = cqirep->ri_ConfigIndex/161;
+  int N_OFFSET_RI = cqirep->ri_ConfigIndex % 161;
+
+  LOG_D(PHY,"[UE %d][SR %x] Frame %d subframe %d Checking for RI TXOp (ri_ConfigIndex %d)\n",
+        ue->Mod_id,ue->pdcch_vars[eNB_id]->crnti,frame,subframe,
+        cqirep->ri_ConfigIndex);
+
+  if (((10*frame + subframe + cqirep->N_OFFSET_CQI - N_OFFSET_RI) % (cqirep->Npd<<log2Mri)) == 0)
+    return(1);
+  else
+    return(0);
+}
+
 uint16_t get_n1_pucch(PHY_VARS_UE *ue,
 		      UE_rxtx_proc_t *proc,
                       uint8_t eNB_id,
@@ -1079,14 +1185,42 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
 }
 
 
+int16_t get_pucch2_cqi(PHY_VARS_UE *ue,int eNB_id,int *len) {
+
+  if ((ue->transmission_mode[eNB_id]<4)||
+      (ue->transmission_mode[eNB_id]==7)) { // Mode 1-0 feedback
+    // 4-bit CQI message
+    *len=4;
+    return(sinr2cqi((double)ue->measurements.wideband_cqi_avg[eNB_id],
+		    ue->transmission_mode[eNB_id]));
+  }
+  else { // Mode 1-1 feedback, later
+    *len=0;
+    // 2-antenna ports RI=1, 6 bits (2 PMI, 4 CQI)
+
+    // 2-antenna ports RI=2, 8 bits (1 PMI, 7 CQI/DIFF CQI)
+    return(0);
+  }
+}
+
+
+int16_t get_pucch2_ri(PHY_VARS_UE *ue,int eNB_id) {
+
+  return(1);
+}
+
 void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag) {
 
 
   uint8_t pucch_ack_payload[2];
-  uint8_t n1_pucch;
+  uint8_t n1_pucch,n2_pucch;
   ANFBmode_t bundling_flag;
   PUCCH_FMT_t format;
+
   uint8_t SR_payload;
+  uint16_t CQI_payload;
+  uint16_t RI_payload;
+
   LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   int frame_tx=proc->frame_tx;
   int subframe_tx=proc->subframe_tx;
@@ -1210,7 +1344,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 #endif
     }
   } else if (SR_payload==1) { // no ACK/NAK but SR is triggered by MAC
-	    
+
     if (ue->mac_enabled == 1) {
       Po_PUCCH = pucch_power_cntl(ue,proc,subframe_tx,eNB_id,pucch_format1);
     }
@@ -1258,6 +1392,107 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 
     }
   } // SR_Payload==1
+
+  // PUCCH 2x
+
+  if (ue->generate_ul_signal[eNB_id] == 0) { // we have not generated ACK/NAK/SR in this subframe
+
+    n2_pucch = ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PUCCH_ResourceIndex;
+    // only use format2 for now, i.e. now ACK/NAK - CQI multiplexing
+    format = pucch_format2;
+
+    // Periodic CQI report
+    if ((ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex>0)&&
+	(is_cqi_TXOp(ue,proc,eNB_id)==1)){
+
+      if (ue->mac_enabled == 1) {
+	Po_PUCCH = pucch_power_cntl(ue,proc,subframe_tx,eNB_id,format);
+      }
+      else {
+	Po_PUCCH = ue->tx_power_max_dBm;
+      }
+      ue->tx_power_dBm[subframe_tx] = Po_PUCCH;
+      ue->tx_total_RE[subframe_tx] = 12;
+      
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
+      tx_amp =  get_tx_amp(Po_PUCCH,
+			   ue->tx_power_max_dBm,
+			   ue->frame_parms.N_RB_UL,
+			   1);
+#else
+      tx_amp = AMP;
+#endif
+      LOG_D(PHY,"[UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 2 (CQI), n2_pucch %d, Po_PUCCH %d\n",
+	    Mod_id,
+	    ue->dlsch[eNB_id][0]->rnti,
+	    frame_tx, subframe_tx,
+	    n2_pucch,
+	    Po_PUCCH);
+      
+      int len;
+      // get the payload : < 12 bits, returned in len
+      CQI_payload = get_pucch2_cqi(ue,eNB_id,&len);
+      generate_pucch2x(ue->common_vars.txdataF,
+		       &ue->frame_parms,
+		       ue->ncs_cell,
+		       format,
+		       &ue->pucch_config_dedicated[eNB_id],
+		       n2_pucch,
+		       1,  // shortened format
+		       &CQI_payload,
+		       len,          // A
+		       0,            // B2 not needed
+		       tx_amp,
+		       subframe_tx,
+		       ue->pdcch_vars[eNB_id]->crnti);
+      
+    }
+    // Periodic RI report
+    else if ((ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0) &&
+	     (is_ri_TXOp(ue,proc,eNB_id)==1)){
+
+      if (ue->mac_enabled == 1) {
+	Po_PUCCH = pucch_power_cntl(ue,proc,subframe_tx,eNB_id,format);
+      }
+      else {
+	Po_PUCCH = ue->tx_power_max_dBm;
+      }
+      ue->tx_power_dBm[subframe_tx] = Po_PUCCH;
+      ue->tx_total_RE[subframe_tx] = 12;
+      
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
+      tx_amp =  get_tx_amp(Po_PUCCH,
+			   ue->tx_power_max_dBm,
+			   ue->frame_parms.N_RB_UL,
+			   1);
+#else
+      tx_amp = AMP;
+#endif
+      LOG_D(PHY,"[UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 2 (RI), n2_pucch %d, Po_PUCCH %d\n",
+	    Mod_id,
+	    ue->dlsch[eNB_id][0]->rnti,
+	    frame_tx, subframe_tx,
+	    n2_pucch,
+	    Po_PUCCH);
+
+      RI_payload = get_pucch2_ri(ue,eNB_id);
+
+      generate_pucch2x(ue->common_vars.txdataF,
+		       &ue->frame_parms,
+		       ue->ncs_cell,
+		       format,
+		       &ue->pucch_config_dedicated[eNB_id],
+		       n2_pucch,
+		       1,  // shortened format
+		       &RI_payload,
+		       1,            // A
+		       0,            // B2 not needed
+		       tx_amp,
+		       subframe_tx,
+		       ue->pdcch_vars[eNB_id]->crnti);
+      
+    }
+  }
 }
 
 void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,runmode_t mode,relaying_type_t r_type) {
@@ -1299,7 +1534,10 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
   }
   	  
   if (ue->UE_mode[eNB_id] == PUSCH) { // check if we need to use PUCCH 1a/1b
-	  ue_pucch_procedures(ue,proc,eNB_id,abstraction_flag);
+
+    ue_pucch_procedures(ue,proc,eNB_id,abstraction_flag);
+
+
   } // UE_mode==PUSCH
 	
   	
