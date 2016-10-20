@@ -142,54 +142,59 @@ int trx_eth_read_udp_IF4p5(openair0_device *device, openair0_timestamp *timestam
 
   // Read nblocks info from packet itself
   int nblocks = nsamps;  
-  int bytes_received=0;
+  int bytes_received=-1;
   eth_state_t *eth = (eth_state_t*)device->priv;
   int Mod_id = device->Mod_id;
   
   ssize_t packet_size = sizeof_IF4p5_header_t;      
   IF4p5_header_t *test_header = (IF4p5_header_t*)(buff[0]);
+  
+  int block_cnt=0; 
+  int again_cnt=0;
+  packet_size = max(UDP_IF4p5_PRACH_SIZE_BYTES, max(UDP_IF4p5_PULFFT_SIZE_BYTES(nblocks), UDP_IF4p5_PDLFFT_SIZE_BYTES(nblocks)));
 
-
-  bytes_received = recvfrom(eth->sockfd[Mod_id],
-			    buff[0],
-			    packet_size,
-			    0,
-			    (struct sockaddr *)&dest_addr[Mod_id],
-			    (socklen_t *)&addr_len[Mod_id]);
-  
-  if (bytes_received ==-1) {
-    eth->num_rx_errors++;
-    perror("ETHERNET IF4p5 READ (header): ");
-    exit(-1);	
-  }
-  
-  *timestamp = test_header->sub_type; 
-  
-  if (test_header->sub_type == IF4p5_PDLFFT) {
-    packet_size = UDP_IF4p5_PDLFFT_SIZE_BYTES(nblocks);             
-  } else if (test_header->sub_type == IF4p5_PULFFT) {
-    packet_size = UDP_IF4p5_PULFFT_SIZE_BYTES(nblocks);             
-  } else {
-    packet_size = UDP_IF4p5_PRACH_SIZE_BYTES;
-  }
-  
-  
-  while(bytes_received < packet_size) {
+  while(bytes_received == -1) {
+  again:
     bytes_received = recvfrom(eth->sockfd[Mod_id],
-			      buff[0],
-			      packet_size,
-			      0,
-			      (struct sockaddr *)&dest_addr[Mod_id],
-			      (socklen_t *)&addr_len[Mod_id]);
+                              buff[0],
+                              packet_size,
+                              0,
+                              (struct sockaddr *)&dest_addr[Mod_id],
+                              (socklen_t *)&addr_len[Mod_id]);
     if (bytes_received ==-1) {
       eth->num_rx_errors++;
-      perror("ETHERNET IF4p5 READ (payload): ");
-      exit(-1);	
+      if (errno == EAGAIN) {
+        again_cnt++;
+        usleep(10);
+        if (again_cnt == 1000) {
+          perror("ETHERNET IF4p5 READ (EAGAIN): ");
+          exit(-1);
+        } else {
+          printf("AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN \n");
+          goto again;
+        }
+      } else if (errno == EWOULDBLOCK) {
+        block_cnt++;
+        usleep(10);
+        if (block_cnt == 1000) {
+          perror("ETHERNET IF4p5 READ (EWOULDBLOCK): ");
+          exit(-1);
+        } else {
+          printf("BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK \n");
+          goto again;
+        }
+      } else {
+        perror("ETHERNET IF4p5 READ");
+        printf("(%s):\n", strerror(errno));
+        exit(-1);
+      }
     } else {
-      eth->rx_actual_nsamps = bytes_received>>1;   
+      *timestamp = test_header->sub_type;
+      eth->rx_actual_nsamps = bytes_received>>1;
       eth->rx_count++;
     }
   }
+  //printf("size of third %d subtype %d frame %d subframe %d symbol %d \n", bytes_received, test_header->sub_type, ((test_header->frame_status)>>6)&0xffff, ((test_header->frame_status)>>22)&0x000f, ((test_header->frame_status)>>26)&0x000f) ;
 
   eth->rx_nsamps = nsamps;  
   return(bytes_received);
@@ -298,7 +303,7 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
     eth->tx_actual_nsamps=bytes_sent>>2;
     eth->tx_count++;
     pck_seq_num++;
-    if ( pck_seq_num > MAX_PACKET_SEQ_NUM(nsamps,76800) )  pck_seq_num = 1;
+    if ( pck_seq_num > MAX_PACKET_SEQ_NUM(nsamps,device->openair0_cfg->samples_per_frame) )  pck_seq_num = 1;
       }
     }              
       /* tx buffer values restored */  
@@ -396,7 +401,7 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
 	   /* get the packet sequence number from packet's header */
 	   pck_seq_num_cur = *(uint16_t *)buff2;
 	   //printf("cur=%d prev=%d buff=%d\n",pck_seq_num_cur,pck_seq_num_prev,*(uint16_t *)(buff2));
-	   if ( ( pck_seq_num_cur != (pck_seq_num_prev + 1) ) && !((pck_seq_num_prev==75) && (pck_seq_num_cur==1 ))){
+       if ( ( pck_seq_num_cur != (pck_seq_num_prev + 1) ) && !((pck_seq_num_prev==MAX_PACKET_SEQ_NUM(nsamps,device->openair0_cfg->samples_per_frame)) && (pck_seq_num_cur==1 )) && !((pck_seq_num_prev==1) && (pck_seq_num_cur==1))) {
 	     printf("out of order packet received1! %d|%d|%d\n",pck_seq_num_cur,pck_seq_num_prev,(int)*timestamp);
 	   }
 	   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RX_SEQ_NUM,pck_seq_num_cur);
