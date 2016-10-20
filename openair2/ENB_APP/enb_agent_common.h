@@ -29,7 +29,7 @@
 
 /*! \file enb_agent_common.h
  * \brief common message primitves and utilities 
- * \author Navid Nikaein and Xenofon Foukas
+ * \author Xenofon Foukas, Mohamed Kassem and Navid Nikaein
  * \date 2016
  * \version 0.1
  */
@@ -42,7 +42,7 @@
 #include <time.h>
 
 #include "header.pb-c.h"
-#include "progran.pb-c.h"
+#include "flexran.pb-c.h"
 #include "stats_messages.pb-c.h"
 #include "stats_common.pb-c.h"
 
@@ -56,72 +56,72 @@
 # include "intertask_interface.h"
 # include "timer.h"
 
-#define PROGRAN_VERSION 0
+#define FLEXRAN_VERSION 0
 
 typedef int (*enb_agent_message_decoded_callback)(
 	mid_t mod_id,
        	const void *params,
-	Protocol__ProgranMessage **msg
+	Protocol__FlexranMessage **msg
 );
 
 typedef int (*enb_agent_message_destruction_callback)(
-	Protocol__ProgranMessage *msg
+	Protocol__FlexranMessage *msg
 );
 
 /**********************************
- * progRAN protocol messages helper 
+ * FlexRAN protocol messages helper 
  * functions and generic handlers
  **********************************/
 
-int enb_agent_serialize_message(Protocol__ProgranMessage *msg, void **buf, int *size);
-int enb_agent_deserialize_message(void *data, int size, Protocol__ProgranMessage **msg);
+int enb_agent_serialize_message(Protocol__FlexranMessage *msg, void **buf, int *size);
+int enb_agent_deserialize_message(void *data, int size, Protocol__FlexranMessage **msg);
 
-void * enb_agent_pack_message(Protocol__ProgranMessage *msg, 
+void * enb_agent_pack_message(Protocol__FlexranMessage *msg, 
 			      uint32_t * size);
 
-err_code_t enb_agent_destroy_progran_message(Protocol__ProgranMessage *msg);
+err_code_t enb_agent_destroy_flexran_message(Protocol__FlexranMessage *msg);
 
-int prp_create_header(xid_t xid, Protocol__PrpType type, Protocol__PrpHeader **header);
+int flex_create_header(xid_t xid, Protocol__FlexType type, Protocol__FlexHeader **header);
 
-int enb_agent_hello(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
-int enb_agent_destroy_hello(Protocol__ProgranMessage *msg);
+int enb_agent_hello(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
+int enb_agent_destroy_hello(Protocol__FlexranMessage *msg);
 
-int enb_agent_echo_request(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
-int enb_agent_destroy_echo_request(Protocol__ProgranMessage *msg);
+int enb_agent_echo_request(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
+int enb_agent_destroy_echo_request(Protocol__FlexranMessage *msg);
 
-int enb_agent_echo_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
-int enb_agent_destroy_echo_reply(Protocol__ProgranMessage *msg);
+int enb_agent_echo_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
+int enb_agent_destroy_echo_reply(Protocol__FlexranMessage *msg);
 
-int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
-int enb_agent_destroy_enb_config_reply(Protocol__ProgranMessage *msg);
+int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
+int enb_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg);
 
-int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
-int enb_agent_destroy_ue_config_reply(Protocol__ProgranMessage *msg);
+int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
+int enb_agent_destroy_ue_config_reply(Protocol__FlexranMessage *msg);
 
-int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
-int enb_agent_destroy_lc_config_reply(Protocol__ProgranMessage *msg);
+int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
+int enb_agent_destroy_lc_config_reply(Protocol__FlexranMessage *msg);
 
-int enb_agent_enb_config_request(mid_t mod_id, const void* params, Protocol__ProgranMessage **msg);
-int enb_agent_destroy_enb_config_request(Protocol__ProgranMessage *msg);
+int enb_agent_enb_config_request(mid_t mod_id, const void* params, Protocol__FlexranMessage **msg);
+int enb_agent_destroy_enb_config_request(Protocol__FlexranMessage *msg);
 
-int enb_agent_destroy_ue_config_request(Protocol__ProgranMessage *msg);
+int enb_agent_destroy_ue_config_request(Protocol__FlexranMessage *msg);
 
-int enb_agent_destroy_lc_config_request(Protocol__ProgranMessage *msg);
+int enb_agent_destroy_lc_config_request(Protocol__FlexranMessage *msg);
 
 int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change);
-int enb_agent_destroy_ue_state_change(Protocol__ProgranMessage *msg);
+int enb_agent_destroy_ue_state_change(Protocol__FlexranMessage *msg);
 
-int enb_agent_control_delegation(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
-int enb_agent_destroy_control_delegation(Protocol__ProgranMessage *msg);
+int enb_agent_control_delegation(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
+int enb_agent_destroy_control_delegation(Protocol__FlexranMessage *msg);
 
-int enb_agent_reconfiguration(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
-int enb_agent_destroy_agent_reconfiguration(Protocol__ProgranMessage *msg);
+int enb_agent_reconfiguration(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
+int enb_agent_destroy_agent_reconfiguration(Protocol__FlexranMessage *msg);
 
-Protocol__ProgranMessage* enb_agent_handle_message (mid_t mod_id, 
+Protocol__FlexranMessage* enb_agent_handle_message (mid_t mod_id, 
 						    uint8_t *data, 
 						    uint32_t size);
 
-Protocol__ProgranMessage *enb_agent_handle_timed_task(void *args);
+Protocol__FlexranMessage *enb_agent_handle_timed_task(void *args);
 
 
 
@@ -145,7 +145,7 @@ unsigned int get_current_system_frame_num(mid_t mod_id);
 unsigned int get_current_subframe(mid_t mod_id);
 
 /*Return the frame and subframe number in compact 16-bit format.
-  Bits 0-3 subframe, rest for frame. Required by progRAN protocol*/
+  Bits 0-3 subframe, rest for frame. Required by FlexRAN protocol*/
 uint16_t get_sfn_sf (mid_t mod_id);
 
 uint16_t get_future_sfn_sf(mid_t mod_id, int ahead_of_time);
@@ -287,7 +287,7 @@ int get_direction(mid_t ue_id, mid_t lc_id);
 
 
 /* Type of the callback executed when the timer expired */
-typedef Protocol__ProgranMessage *(*enb_agent_timer_callback_t)(void*);
+typedef Protocol__FlexranMessage *(*enb_agent_timer_callback_t)(void*);
 
 typedef enum {
   /* oneshot timer:  */
@@ -319,7 +319,7 @@ typedef enum {
 
 typedef struct enb_agent_timer_args_s{
   mid_t            mod_id;
-  Protocol__ProgranMessage *msg;
+  Protocol__FlexranMessage *msg;
 } enb_agent_timer_args_t;
 
 
@@ -371,7 +371,7 @@ err_code_t enb_agent_restart_timer(long *timer_id);
 
 struct enb_agent_timer_element_s * get_timer_entry(long timer_id);
 
-Protocol__ProgranMessage * enb_agent_process_timeout(long timer_id, void* timer_args);
+Protocol__FlexranMessage * enb_agent_process_timeout(long timer_id, void* timer_args);
 
 int enb_agent_compare_timer(struct enb_agent_timer_element_s *a, struct enb_agent_timer_element_s *b);
 

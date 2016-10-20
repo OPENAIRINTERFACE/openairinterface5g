@@ -48,7 +48,7 @@
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/proto.h"
 #include "LAYER2/MAC/extern.h"
-#include "LAYER2/MAC/progran_dci_conversions.h"
+#include "LAYER2/MAC/flexran_dci_conversions.h"
 
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
@@ -60,7 +60,7 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 #include "header.pb-c.h"
-#include "progran.pb-c.h"
+#include "flexran.pb-c.h"
 
 #include "SIMULATION/TOOLS/defs.h" // for taus
 
@@ -69,9 +69,9 @@ void apply_dl_scheduling_decisions(mid_t mod_id,
 				   uint32_t frame,
 				   uint32_t subframe,
 				   int *mbsfn_flag,
-				   const Protocol__ProgranMessage *dl_scheduling_info) {
+				   const Protocol__FlexranMessage *dl_scheduling_info) {
 
-  Protocol__PrpDlMacConfig *mac_config = dl_scheduling_info->dl_mac_config_msg;
+  Protocol__FlexDlMacConfig *mac_config = dl_scheduling_info->dl_mac_config_msg;
 
   // Check if there is anything to schedule for random access
   if (mac_config->n_dl_rar > 0) {
@@ -97,7 +97,7 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
 					uint32_t subframe,
 					int *mbsfn_flag,
 					uint32_t n_dl_ue_data,
-					const Protocol__PrpDlData **dl_ue_data) {
+					const Protocol__FlexDlData **dl_ue_data) {
 
   uint8_t               CC_id;
   int                   UE_id;
@@ -128,8 +128,8 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
 
   int i;
 
-  Protocol__PrpDlData *dl_data;
-  Protocol__PrpDlDci *dl_dci;
+  Protocol__FlexDlData *dl_data;
+  Protocol__FlexDlDci *dl_dci;
 
   uint32_t rlc_size, n_lc, lcid;
   
@@ -161,7 +161,7 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
       
       if (dl_data->n_ce_bitmap > 0) {
 	//Check if there is TA command and set the length appropriately
-	ta_len = (dl_data->ce_bitmap[0] & PROTOCOL__PRP_CE_TYPE__PRPCET_TA) ? 2 : 0; 
+	ta_len = (dl_data->ce_bitmap[0] & PROTOCOL__FLEX_CE_TYPE__FLPCET_TA) ? 2 : 0; 
       }
 
       if (ta_len > 0) {
@@ -359,7 +359,7 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
 }
 
 void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
-		  const Protocol__PrpDlDci *dl_dci) {
+		  const Protocol__FlexDlDci *dl_dci) {
 
   void         *DLSCH_dci        = NULL;
   DCI_PDU      *DCI_pdu;
@@ -397,92 +397,92 @@ void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
   switch (frame_parms[CC_id]->N_RB_DL) {
   case 6:
     if (frame_parms[CC_id]->frame_type == TDD) {
-      if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
+      if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1) {
 	FILL_DCI_TDD_1(DCI1_1_5MHz_TDD_t, DLSCH_dci, dl_dci);
 	size_bytes = sizeof(DCI1_1_5MHz_TDD_t);
 	size_bits  = sizeof_DCI1_1_5MHz_TDD_t;
-      } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A) {
+      } else if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_2A) {
 	//TODO
-      } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1D) {
+      } else if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1D) {
 	//TODO
       }
     } else {
-      if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
+      if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1) {
 	FILL_DCI_FDD_1(DCI1_1_5MHz_FDD_t, DLSCH_dci, dl_dci);
 	size_bytes = sizeof(DCI1_1_5MHz_FDD_t);
 	size_bits  = sizeof_DCI1_1_5MHz_FDD_t;
-      } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A) {
+      } else if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_2A) {
 	//TODO
-      } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1D) {
+      } else if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1D) {
 	  //TODO
       }
     }
     break;
   case 25:
     if (frame_parms[CC_id]->frame_type == TDD) {
-      if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
+      if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1) {
 	FILL_DCI_TDD_1(DCI1_5MHz_TDD_t, DLSCH_dci, dl_dci);
 	size_bytes = sizeof(DCI1_5MHz_TDD_t);
 	size_bits  = sizeof_DCI1_5MHz_TDD_t;
-      } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A) {
+      } else if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_2A) {
 	//TODO
-      } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1D) {
+      } else if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1D) {
 	//TODO
       }
     } else {
-      if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
+      if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1) {
 	FILL_DCI_FDD_1(DCI1_5MHz_FDD_t, DLSCH_dci, dl_dci);
 	size_bytes = sizeof(DCI1_5MHz_FDD_t);
 	size_bits  = sizeof_DCI1_5MHz_FDD_t;
-      } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A) {
+      } else if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_2A) {
 	//TODO
-      } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1D) {
+      } else if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1D) {
 	//TODO
       }
     }
     break;
   case 50:
     if (frame_parms[CC_id]->frame_type == TDD) {
-      if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
+      if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1) {
 	FILL_DCI_TDD_1(DCI1_10MHz_TDD_t, DLSCH_dci, dl_dci);
 	size_bytes = sizeof(DCI1_10MHz_TDD_t);
 	size_bits  = sizeof_DCI1_10MHz_TDD_t;
-      } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A) {
+      } else if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_2A) {
 	//TODO
-      } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1D) {
+      } else if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1D) {
 	//TODO
       }
     } else {
-      if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
+      if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1) {
 	FILL_DCI_FDD_1(DCI1_10MHz_FDD_t, DLSCH_dci, dl_dci);
 	size_bytes = sizeof(DCI1_10MHz_FDD_t);
 	size_bits  = sizeof_DCI1_10MHz_FDD_t;
-      } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A) {
+      } else if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_2A) {
 	//TODO
-      } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1D) {
+      } else if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1D) {
 	//TODO
       }
     }
     break;
   case 100:
     if (frame_parms[CC_id]->frame_type == TDD) {
-      if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
+      if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1) {
 	FILL_DCI_TDD_1(DCI1_20MHz_TDD_t, DLSCH_dci, dl_dci);
 	size_bytes = sizeof(DCI1_20MHz_TDD_t);
 	size_bits  = sizeof_DCI1_20MHz_TDD_t;
-      } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A) {
+      } else if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_2A) {
 	//TODO
-      } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1D) {
+      } else if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1D) {
 	//TODO
       }
     } else {
-      if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
+      if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1) {
 	FILL_DCI_FDD_1(DCI1_20MHz_FDD_t, DLSCH_dci, dl_dci);
 	size_bytes = sizeof(DCI1_20MHz_FDD_t);
 	size_bits  = sizeof_DCI1_20MHz_FDD_t;
-      } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A) {
+      } else if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_2A) {
 	//TODO
-      } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1D) {
+      } else if (dl_dci->format ==  PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1D) {
 	//TODO
       }
     }
@@ -491,31 +491,31 @@ void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
 
   //Set format to the proper type
   switch(dl_dci->format) {
-  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1:
+  case PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1:
     format = format1;
     break;
-  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1A:
+  case PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1A:
     format = format1A;
     break;
-  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1B:
+  case PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1B:
     format = format1B;
     break;
-  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1C:
+  case PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1C:
     format = format1C;
     break;
-  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1D:
+  case PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1D:
     format = format1E_2A_M10PRB;
     break;
-  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2:
+  case PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_2:
     format  = format2;
     break;
-  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A:
+  case PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_2A:
     format = format2A;
     break;
-  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2B:
+  case PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_2B:
     format = format2B;
     break;
-  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_3:
+  case PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_3:
     format = 3;
     break;
   default:

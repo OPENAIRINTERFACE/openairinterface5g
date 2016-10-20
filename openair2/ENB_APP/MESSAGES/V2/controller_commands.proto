@@ -6,11 +6,11 @@ import "mac_primitives.proto";
 // Body of UE DL MAC scheduling configuration info
 //
 
-message prp_dl_data {
+message flex_dl_data {
 	optional uint32 rnti = 1;
-	optional prp_dl_dci dl_dci = 2;
+	optional flex_dl_dci dl_dci = 2;
 	repeated uint32 ce_bitmap = 3; // list of 2 MAC CEs, one for each TB
-	repeated prp_rlc_pdu rlc_pdu = 4; // list of parameters for the creation of RLC PDUs. One for each lcid
+	repeated flex_rlc_pdu rlc_pdu = 4; // list of parameters for the creation of RLC PDUs. One for each lcid
 	optional uint32 serv_cell_index = 5;
 	optional uint32 act_deact_ce = 6; //Hex content of MAC CE for Activation/Deactivation in CA
 }
@@ -18,10 +18,10 @@ message prp_dl_data {
 //
 // Body of the RAR scheduler configuration
 //
-message prp_dl_rar {
+message flex_dl_rar {
 	optional uint32 rnti = 1;
 	optional uint32 grant = 2;	// The 20-bit UL grant. TS 36.213, sec 6.2
-	optional prp_dl_dci rar_dci = 3;
+	optional flex_dl_dci rar_dci = 3;
 	optional uint32 carrier_index = 4; // The carrier index for the RAR
 }
 
@@ -29,13 +29,13 @@ message prp_dl_rar {
 // Body of the paging/broadcast configuration message
 //
 
-message prp_dl_broadcast {
-	optional uint32 type = 1;	// The PRBT_* values
+message flex_dl_broadcast {
+	optional uint32 type = 1;	// The FLBT_* values
 	optional uint32 index = 2;	// Index of the broadcast message:
 		       	       		// 0 - SIB1,
                                     	// 1..31 - Six,
-                                     	// 32..63 - PCCH (PCCH index obtained from  prp_paging_info)
-	optional prp_dl_dci broad_dci = 3;
+                                     	// 32..63 - PCCH (PCCH index obtained from  flex_paging_info)
+	optional flex_dl_dci broad_dci = 3;
 	optional uint32 carrier_index = 4; // Index of the carrier for broadcast
 }
 
@@ -43,7 +43,7 @@ message prp_dl_broadcast {
 // Body of the OFDM symbol count message
 //
 
-message prp_pdcch_ofdm_sym_count {
+message flex_pdcch_ofdm_sym_count {
 	optional uint32 carrier_index = 1;
 	optional uint32 num_pdcch_ofdm_symbols = 2;
 }
@@ -52,7 +52,7 @@ message prp_pdcch_ofdm_sym_count {
 // Types of commands related enums
 //
 
-enum prp_broadcast_type {
-     PRBT_BCCH = 0;
-     PRBT_PCCH = 1;
+enum flex_broadcast_type {
+     FLBT_BCCH = 0;
+     FLBT_PCCH = 1;
 }

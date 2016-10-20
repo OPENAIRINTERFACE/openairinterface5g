@@ -40,7 +40,7 @@
 #ifndef __LAYER2_MAC_ENB_AGENT_SCHEDULER_DLSCH_UE_REMOTE_H__
 #define __LAYER2_MAC_ENB_AGENT_SCHEDULER_DLSCH_UE_REMOTE_H___
 
-#include "progran.pb-c.h"
+#include "flexran.pb-c.h"
 #include "header.pb-c.h"
 
 #include "ENB_APP/enb_agent_defs.h"
@@ -54,7 +54,7 @@
 #define SCHED_AHEAD_SUBFRAMES 20
 
 typedef struct dl_mac_config_element_s {
-  Protocol__ProgranMessage *dl_info;
+  Protocol__FlexranMessage *dl_info;
   TAILQ_ENTRY(dl_mac_config_element_s) configs;
 } dl_mac_config_element_t;
 
@@ -64,7 +64,7 @@ TAILQ_HEAD(DlMacConfigHead, dl_mac_config_element_s);
  * Default scheduler used by the eNB agent
  */
 void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
-			     int *mbsfn_flag, Protocol__ProgranMessage **dl_info);
+			     int *mbsfn_flag, Protocol__FlexranMessage **dl_info);
 
 
 // Find the difference in subframes from the given subframe

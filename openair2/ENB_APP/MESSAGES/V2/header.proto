@@ -1,43 +1,43 @@
 package protocol;
 
-message prp_header {
+message flex_header {
 	optional uint32 version = 1;
 	optional uint32 type = 2;
 	optional uint32 xid = 4;
 }
 
-enum prp_type {
+enum flex_type {
      // Discovery and maintenance messages
-     PRPT_HELLO = 0;
-     PRPT_ECHO_REQUEST = 1;
-     PRPT_ECHO_REPLY = 2;
+     FLPT_HELLO = 0;
+     FLPT_ECHO_REQUEST = 1;
+     FLPT_ECHO_REPLY = 2;
 
      // Statistics and measurement messages
-     PRPT_STATS_REQUEST = 3;
-     PRPT_STATS_REPLY = 4;
+     FLPT_STATS_REQUEST = 3;
+     FLPT_STATS_REPLY = 4;
      
      // Time indication messages
-     PRPT_SF_TRIGGER = 5;
+     FLPT_SF_TRIGGER = 5;
 
      // Asynchronous messages
-     PRPT_UL_SR_INFO = 6;
+     FLPT_UL_SR_INFO = 6;
 
      // eNB configuration messages
-     PRPT_GET_ENB_CONFIG_REQUEST = 7;
-     PRPT_GET_ENB_CONFIG_REPLY = 8;
-     PRPT_GET_UE_CONFIG_REQUEST = 9;
-     PRPT_GET_UE_CONFIG_REPLY = 10;
-     PRPT_GET_LC_CONFIG_REQUEST = 11;
-     PRPT_GET_LC_CONFIG_REPLY = 12;
+     FLPT_GET_ENB_CONFIG_REQUEST = 7;
+     FLPT_GET_ENB_CONFIG_REPLY = 8;
+     FLPT_GET_UE_CONFIG_REQUEST = 9;
+     FLPT_GET_UE_CONFIG_REPLY = 10;
+     FLPT_GET_LC_CONFIG_REQUEST = 11;
+     FLPT_GET_LC_CONFIG_REPLY = 12;
 
      //Controller command messages
-     PRPT_DL_MAC_CONFIG = 13;
+     FLPT_DL_MAC_CONFIG = 13;
 
      // UE state change messages
-     PRPT_UE_STATE_CHANGE = 14;
+     FLPT_UE_STATE_CHANGE = 14;
 
      // Control delegation messages
-     PRPT_DELEGATE_CONTROL = 15;
-     PRPT_RECONFIGURE_AGENT = 16;
+     FLPT_DELEGATE_CONTROL = 15;
+     FLPT_RECONFIGURE_AGENT = 16;
 }
 

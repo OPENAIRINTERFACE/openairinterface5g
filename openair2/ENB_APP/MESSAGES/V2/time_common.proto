@@ -1,25 +1,25 @@
 package protocol;
 
-enum prp_harq_status {
-     PRHS_ACK = 0;
-     PRHS_NACK = 1;
-     PRHS_DTX = 2;
+enum flex_harq_status {
+     FLHS_ACK = 0;
+     FLHS_NACK = 1;
+     FLHS_DTX = 2;
 }
 
-enum prp_reception_status {
-     PRRS_OK = 0;
-     PRRS_NOT_OK = 1;
-     PRRS_NOT_VALID = 2;
+enum flex_reception_status {
+     FLRS_OK = 0;
+     FLRS_NOT_OK = 1;
+     FLRS_NOT_VALID = 2;
 }
 
-message prp_dl_info {
+message flex_dl_info {
 	optional uint32 rnti = 1;
 	optional uint32 harq_process_id = 2;
 	repeated uint32 harq_status = 3;
 	optional uint32 serv_cell_index = 4;
 }
 
-message prp_ul_info {
+message flex_ul_info {
 	optional uint32 rnti = 1;
 	repeated uint32 ul_reception = 2;
 	optional uint32 reception_status = 3;

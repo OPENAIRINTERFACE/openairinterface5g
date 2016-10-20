@@ -53,8 +53,8 @@ typedef struct {
   uint8_t is_initialized;
   volatile uint8_t cont_update;
   xid_t xid;
-  Protocol__ProgranMessage *stats_req;
-  Protocol__ProgranMessage *prev_stats_reply;
+  Protocol__FlexranMessage *stats_req;
+  Protocol__FlexranMessage *prev_stats_reply;
 
   pthread_mutex_t *mutex;
 } mac_stats_updates_context_t;
@@ -75,30 +75,30 @@ err_code_t enb_agent_enable_cont_mac_stats_update(mid_t mod_id, xid_t xid,
 
 err_code_t enb_agent_disable_cont_mac_stats_update(mid_t mod_id);
 
-Protocol__ProgranMessage * enb_agent_generate_diff_mac_stats_report(Protocol__ProgranMessage *new_report,
-								    Protocol__ProgranMessage *old_report);
+Protocol__FlexranMessage * enb_agent_generate_diff_mac_stats_report(Protocol__FlexranMessage *new_report,
+								    Protocol__FlexranMessage *old_report);
 
-Protocol__PrpUeStatsReport * copy_ue_stats_report(Protocol__PrpUeStatsReport * original);
+Protocol__FlexUeStatsReport * copy_ue_stats_report(Protocol__FlexUeStatsReport * original);
 
-Protocol__PrpCellStatsReport * copy_cell_stats_report(Protocol__PrpCellStatsReport *original);
+Protocol__FlexCellStatsReport * copy_cell_stats_report(Protocol__FlexCellStatsReport *original);
 
-Protocol__PrpRlcBsr * copy_rlc_report(Protocol__PrpRlcBsr * original);
+Protocol__FlexRlcBsr * copy_rlc_report(Protocol__FlexRlcBsr * original);
 
-Protocol__PrpUlCqiReport * copy_ul_cqi_report(Protocol__PrpUlCqiReport * original);
+Protocol__FlexUlCqiReport * copy_ul_cqi_report(Protocol__FlexUlCqiReport * original);
 
-Protocol__PrpDlCqiReport * copy_dl_cqi_report(Protocol__PrpDlCqiReport * original);
+Protocol__FlexDlCqiReport * copy_dl_cqi_report(Protocol__FlexDlCqiReport * original);
 
-Protocol__PrpPagingBufferReport * copy_paging_buffer_report(Protocol__PrpPagingBufferReport *original);
+Protocol__FlexPagingBufferReport * copy_paging_buffer_report(Protocol__FlexPagingBufferReport *original);
 
-Protocol__PrpDlCsi * copy_csi_report(Protocol__PrpDlCsi * original);
+Protocol__FlexDlCsi * copy_csi_report(Protocol__FlexDlCsi * original);
 
-Protocol__PrpNoiseInterferenceReport * copy_noise_inter_report(Protocol__PrpNoiseInterferenceReport *original);
+Protocol__FlexNoiseInterferenceReport * copy_noise_inter_report(Protocol__FlexNoiseInterferenceReport *original);
 
-int compare_ue_stats_reports(Protocol__PrpUeStatsReport *rep1,
-			    Protocol__PrpUeStatsReport *rep2);
+int compare_ue_stats_reports(Protocol__FlexUeStatsReport *rep1,
+			    Protocol__FlexUeStatsReport *rep2);
 
-int compare_cell_stats_reports(Protocol__PrpCellStatsReport *rep1,
-			    Protocol__PrpCellStatsReport *rep2);
+int compare_cell_stats_reports(Protocol__FlexCellStatsReport *rep1,
+			    Protocol__FlexCellStatsReport *rep2);
 
 
 /* Functions for parsing the MAC agent policy reconfiguration command */

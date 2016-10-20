@@ -29,7 +29,7 @@
 
 /*! \file enb_agent_mac.c
  * \brief enb agent message handler for MAC layer
- * \author Navid Nikaein and Xenofon Foukas
+ * \author Xenofon Foukas, Mohamed Kassem and Navid Nikaein
  * \date 2016
  * \version 0.1
  */
@@ -61,7 +61,7 @@ struct lfds700_ringbuffer_element *dl_mac_config_array[NUM_MAX_ENB];
 struct lfds700_ringbuffer_state ringbuffer_state[NUM_MAX_ENB];
 
 
-int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg){
+int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg){
 
   // TODO: Must deal with sanitization of input
   // TODO: Must check if RNTIs and cell ids of the request actually exist
@@ -86,16 +86,16 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
   uint32_t ue_flags = 0;
   uint32_t c_flags = 0;
 
-  Protocol__ProgranMessage *input = (Protocol__ProgranMessage *)params;
+  Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
 
-  Protocol__PrpStatsRequest *stats_req = input->stats_request_msg;
+  Protocol__FlexStatsRequest *stats_req = input->stats_request_msg;
   xid = (stats_req->header)->xid;
 
   // Check the type of request that is made
   switch(stats_req->body_case) {
-  case PROTOCOL__PRP_STATS_REQUEST__BODY_COMPLETE_STATS_REQUEST: ;
-    Protocol__PrpCompleteStatsRequest *comp_req = stats_req->complete_stats_request;
-    if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_OFF) {
+  case PROTOCOL__FLEX_STATS_REQUEST__BODY_COMPLETE_STATS_REQUEST: ;
+    Protocol__FlexCompleteStatsRequest *comp_req = stats_req->complete_stats_request;
+    if (comp_req->report_frequency == PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_OFF) {
       /*Disable both periodic and continuous updates*/
       enb_agent_disable_cont_mac_stats_update(mod_id);
       enb_agent_destroy_timer_by_task_id(xid);
@@ -133,12 +133,12 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
 	report_config.cc_report_type[i].cc_report_flags = c_flags;
       }
       /* Check if request was periodical */
-      if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_PERIODICAL) {
-	/* Create a one off progran message as an argument for the periodical task */
-	Protocol__ProgranMessage *timer_msg;
+      if (comp_req->report_frequency == PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_PERIODICAL) {
+	/* Create a one off flexran message as an argument for the periodical task */
+	Protocol__FlexranMessage *timer_msg;
 	stats_request_config_t request_config;
-	request_config.report_type = PROTOCOL__PRP_STATS_TYPE__PRST_COMPLETE_STATS;
-	request_config.report_frequency = PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_ONCE;
+	request_config.report_type = PROTOCOL__FLEX_STATS_TYPE__FLST_COMPLETE_STATS;
+	request_config.report_frequency = PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_ONCE;
 	request_config.period = 0;
 	/* Need to make sure that the ue flags are saved (Bug) */
 	if (report_config.nr_ue == 0) {
@@ -170,13 +170,13 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
 	  usec_interval = usec_interval%(1000*1000);
 	}
 	enb_agent_create_timer(sec_interval, usec_interval, ENB_AGENT_DEFAULT, enb_id, ENB_AGENT_TIMER_TYPE_PERIODIC, xid, enb_agent_handle_timed_task,(void*) timer_args, &timer_id);
-      } else if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_CONTINUOUS) {
+      } else if (comp_req->report_frequency == PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_CONTINUOUS) {
 	/*If request was for continuous updates, disable the previous configuration and
 	  set up a new one*/
 	enb_agent_disable_cont_mac_stats_update(mod_id);
 	stats_request_config_t request_config;
-	request_config.report_type = PROTOCOL__PRP_STATS_TYPE__PRST_COMPLETE_STATS;
-	request_config.report_frequency = PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_ONCE;
+	request_config.report_type = PROTOCOL__FLEX_STATS_TYPE__FLST_COMPLETE_STATS;
+	request_config.report_frequency = PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_ONCE;
 	request_config.period = 0;
 	/* Need to make sure that the ue flags are saved (Bug) */
 	if (report_config.nr_ue == 0) {
@@ -195,8 +195,8 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
       }
     }
     break;
-  case PROTOCOL__PRP_STATS_REQUEST__BODY_CELL_STATS_REQUEST:;
-    Protocol__PrpCellStatsRequest *cell_req = stats_req->cell_stats_request;
+  case PROTOCOL__FLEX_STATS_REQUEST__BODY_CELL_STATS_REQUEST:;
+    Protocol__FlexCellStatsRequest *cell_req = stats_req->cell_stats_request;
     // UE report config will be blank
     report_config.nr_ue = 0;
     report_config.ue_report_type = NULL;
@@ -213,8 +213,8 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
       report_config.cc_report_type[i].cc_report_flags = cell_req->flags;
     }
     break;
-  case PROTOCOL__PRP_STATS_REQUEST__BODY_UE_STATS_REQUEST:;
-    Protocol__PrpUeStatsRequest *ue_req = stats_req->ue_stats_request;
+  case PROTOCOL__FLEX_STATS_REQUEST__BODY_UE_STATS_REQUEST:;
+    Protocol__FlexUeStatsRequest *ue_req = stats_req->ue_stats_request;
     // Cell report config will be blank
     report_config.nr_cc = 0;
     report_config.cc_report_type = NULL;
@@ -237,7 +237,7 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
   }
 
   if (enb_agent_mac_stats_reply(enb_id, xid, &report_config, msg) < 0 ){
-    err_code = PROTOCOL__PROGRAN_ERR__MSG_BUILD;
+    err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
     goto error;
   }
 
@@ -254,32 +254,32 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
 int enb_agent_mac_stats_request(mid_t mod_id,
 				xid_t xid,
 				const stats_request_config_t *report_config,
-				Protocol__ProgranMessage **msg) {
-  Protocol__PrpHeader *header;
+				Protocol__FlexranMessage **msg) {
+  Protocol__FlexHeader *header;
   int i;
 
-  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_STATS_REQUEST, &header) != 0)
+  if (flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_STATS_REQUEST, &header) != 0)
     goto error;
 
-  Protocol__PrpStatsRequest *stats_request_msg;
-  stats_request_msg = malloc(sizeof(Protocol__PrpStatsRequest));
+  Protocol__FlexStatsRequest *stats_request_msg;
+  stats_request_msg = malloc(sizeof(Protocol__FlexStatsRequest));
   if(stats_request_msg == NULL)
     goto error;
 
-  protocol__prp_stats_request__init(stats_request_msg);
+  protocol__flex_stats_request__init(stats_request_msg);
   stats_request_msg->header = header;
 
   stats_request_msg->type = report_config->report_type;
   stats_request_msg->has_type = 1;
 
   switch (report_config->report_type) {
-  case PROTOCOL__PRP_STATS_TYPE__PRST_COMPLETE_STATS:
-    stats_request_msg->body_case =  PROTOCOL__PRP_STATS_REQUEST__BODY_COMPLETE_STATS_REQUEST;
-    Protocol__PrpCompleteStatsRequest *complete_stats;
-    complete_stats = malloc(sizeof(Protocol__PrpCompleteStatsRequest));
+  case PROTOCOL__FLEX_STATS_TYPE__FLST_COMPLETE_STATS:
+    stats_request_msg->body_case =  PROTOCOL__FLEX_STATS_REQUEST__BODY_COMPLETE_STATS_REQUEST;
+    Protocol__FlexCompleteStatsRequest *complete_stats;
+    complete_stats = malloc(sizeof(Protocol__FlexCompleteStatsRequest));
     if(complete_stats == NULL)
       goto error;
-    protocol__prp_complete_stats_request__init(complete_stats);
+    protocol__flex_complete_stats_request__init(complete_stats);
     complete_stats->report_frequency = report_config->report_frequency;
     complete_stats->has_report_frequency = 1;
     complete_stats->sf = report_config->period;
@@ -294,13 +294,13 @@ int enb_agent_mac_stats_request(mid_t mod_id,
     }
     stats_request_msg->complete_stats_request = complete_stats;
     break;
-  case  PROTOCOL__PRP_STATS_TYPE__PRST_CELL_STATS:
-    stats_request_msg->body_case = PROTOCOL__PRP_STATS_REQUEST__BODY_CELL_STATS_REQUEST;
-     Protocol__PrpCellStatsRequest *cell_stats;
-     cell_stats = malloc(sizeof(Protocol__PrpCellStatsRequest));
+  case  PROTOCOL__FLEX_STATS_TYPE__FLST_CELL_STATS:
+    stats_request_msg->body_case = PROTOCOL__FLEX_STATS_REQUEST__BODY_CELL_STATS_REQUEST;
+     Protocol__FlexCellStatsRequest *cell_stats;
+     cell_stats = malloc(sizeof(Protocol__FlexCellStatsRequest));
     if(cell_stats == NULL)
       goto error;
-    protocol__prp_cell_stats_request__init(cell_stats);
+    protocol__flex_cell_stats_request__init(cell_stats);
     cell_stats->n_cell = report_config->config->nr_cc;
     cell_stats->has_flags = 1;
     if (cell_stats->n_cell > 0) {
@@ -314,13 +314,13 @@ int enb_agent_mac_stats_request(mid_t mod_id,
     }
     stats_request_msg->cell_stats_request = cell_stats;
     break;
-  case PROTOCOL__PRP_STATS_TYPE__PRST_UE_STATS:
-    stats_request_msg->body_case = PROTOCOL__PRP_STATS_REQUEST__BODY_UE_STATS_REQUEST;
-     Protocol__PrpUeStatsRequest *ue_stats;
-     ue_stats = malloc(sizeof(Protocol__PrpUeStatsRequest));
+  case PROTOCOL__FLEX_STATS_TYPE__FLST_UE_STATS:
+    stats_request_msg->body_case = PROTOCOL__FLEX_STATS_REQUEST__BODY_UE_STATS_REQUEST;
+     Protocol__FlexUeStatsRequest *ue_stats;
+     ue_stats = malloc(sizeof(Protocol__FlexUeStatsRequest));
     if(ue_stats == NULL)
       goto error;
-    protocol__prp_ue_stats_request__init(ue_stats);
+    protocol__flex_ue_stats_request__init(ue_stats);
     ue_stats->n_rnti = report_config->config->nr_ue;
     ue_stats->has_flags = 1;
     if (ue_stats->n_rnti > 0) {
@@ -337,12 +337,12 @@ int enb_agent_mac_stats_request(mid_t mod_id,
   default:
     goto error;
   }
-  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  *msg = malloc(sizeof(Protocol__FlexranMessage));
   if(*msg == NULL)
     goto error;
-  protocol__progran_message__init(*msg);
-  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_STATS_REQUEST_MSG;
-  (*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
+  protocol__flexran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_STATS_REQUEST_MSG;
+  (*msg)->msg_dir = PROTOCOL__FLEXRAN_DIRECTION__INITIATING_MESSAGE;
   (*msg)->stats_request_msg = stats_request_msg;
   return 0;
 
@@ -358,14 +358,14 @@ int enb_agent_mac_stats_request(mid_t mod_id,
   return -1;
 }
 
-int enb_agent_mac_destroy_stats_request(Protocol__ProgranMessage *msg) {
-   if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_STATS_REQUEST_MSG)
+int enb_agent_mac_destroy_stats_request(Protocol__FlexranMessage *msg) {
+   if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_STATS_REQUEST_MSG)
     goto error;
   free(msg->stats_request_msg->header);
-  if (msg->stats_request_msg->body_case == PROTOCOL__PRP_STATS_REQUEST__BODY_CELL_STATS_REQUEST) {
+  if (msg->stats_request_msg->body_case == PROTOCOL__FLEX_STATS_REQUEST__BODY_CELL_STATS_REQUEST) {
     free(msg->stats_request_msg->cell_stats_request->cell);
   }
-  if (msg->stats_request_msg->body_case == PROTOCOL__PRP_STATS_REQUEST__BODY_UE_STATS_REQUEST) {
+  if (msg->stats_request_msg->body_case == PROTOCOL__FLEX_STATS_REQUEST__BODY_UE_STATS_REQUEST) {
     free(msg->stats_request_msg->ue_stats_request->rnti);
   }
   free(msg->stats_request_msg);
@@ -380,8 +380,8 @@ int enb_agent_mac_destroy_stats_request(Protocol__ProgranMessage *msg) {
 int enb_agent_mac_stats_reply(mid_t mod_id,
 			      xid_t xid,
 			      const report_config_t *report_config,
-			      Protocol__ProgranMessage **msg) {
-  Protocol__PrpHeader *header;
+			      Protocol__FlexranMessage **msg) {
+  Protocol__FlexHeader *header;
   int i, j, k;
   int cc_id = 0;
   int enb_id = mod_id;
@@ -389,31 +389,31 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
   //UE_list_t *eNB_UE_list=  &eNB->UE_list;
 
 
-  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_STATS_REPLY, &header) != 0)
+  if (flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_STATS_REPLY, &header) != 0)
     goto error;
 
-  Protocol__PrpStatsReply *stats_reply_msg;
-  stats_reply_msg = malloc(sizeof(Protocol__PrpStatsReply));
+  Protocol__FlexStatsReply *stats_reply_msg;
+  stats_reply_msg = malloc(sizeof(Protocol__FlexStatsReply));
   if (stats_reply_msg == NULL)
     goto error;
-  protocol__prp_stats_reply__init(stats_reply_msg);
+  protocol__flex_stats_reply__init(stats_reply_msg);
   stats_reply_msg->header = header;
 
   stats_reply_msg->n_ue_report = report_config->nr_ue;
   stats_reply_msg->n_cell_report = report_config->nr_cc;
 
-  Protocol__PrpUeStatsReport **ue_report;
-  Protocol__PrpCellStatsReport **cell_report;
+  Protocol__FlexUeStatsReport **ue_report;
+  Protocol__FlexCellStatsReport **cell_report;
 
 
   /* Allocate memory for list of UE reports */
   if (report_config->nr_ue > 0) {
-    ue_report = malloc(sizeof(Protocol__PrpUeStatsReport *) * report_config->nr_ue);
+    ue_report = malloc(sizeof(Protocol__FlexUeStatsReport *) * report_config->nr_ue);
     if (ue_report == NULL)
       goto error;
     for (i = 0; i < report_config->nr_ue; i++) {
-      ue_report[i] = malloc(sizeof(Protocol__PrpUeStatsReport));
-      protocol__prp_ue_stats_report__init(ue_report[i]);
+      ue_report[i] = malloc(sizeof(Protocol__FlexUeStatsReport));
+      protocol__flex_ue_stats_report__init(ue_report[i]);
       ue_report[i]->rnti = report_config->ue_report_type[i].ue_rnti;
       ue_report[i]->has_rnti = 1;
       ue_report[i]->flags = report_config->ue_report_type[i].ue_report_flags;
@@ -421,9 +421,9 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
       /* Check the types of reports that need to be constructed based on flag values */
 
       /* Check flag for creation of buffer status report */
-      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_BSR) {
-	//TODO: Create a report for each LCG (4 elements). See prp_ue_stats_report of
-	// progRAN specifications for more details
+      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_BSR) {
+	//TODO: Create a report for each LCG (4 elements). See flex_ue_stats_report of
+	// FlexRAN specifications for more details
 	ue_report[i]->n_bsr = 4;
 	uint32_t *elem;
 	elem = (uint32_t *) malloc(sizeof(uint32_t)*ue_report[i]->n_bsr);
@@ -438,28 +438,28 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
       }
 
       /* Check flag for creation of PRH report */
-      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_PRH) {
+      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PRH) {
 	// TODO: Fill in the actual power headroom value for the RNTI
 	ue_report[i]->phr = get_ue_phr (enb_id, i); // eNB_UE_list->UE_template[UE_PCCID(enb_id,i)][i].phr_info;
 	ue_report[i]->has_phr = 1;
       }
 
       /* Check flag for creation of RLC buffer status report */
-      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_RLC_BS) {
+      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RLC_BS) {
 	// TODO: Fill in the actual RLC buffer status reports
 	ue_report[i]->n_rlc_report = 3; // Set this to the number of LCs for this UE
-	Protocol__PrpRlcBsr ** rlc_reports;
-	rlc_reports = malloc(sizeof(Protocol__PrpRlcBsr *) * ue_report[i]->n_rlc_report);
+	Protocol__FlexRlcBsr ** rlc_reports;
+	rlc_reports = malloc(sizeof(Protocol__FlexRlcBsr *) * ue_report[i]->n_rlc_report);
 	if (rlc_reports == NULL)
 	  goto error;
 
 	// Fill the buffer status report for each logical channel of the UE
 	// NN: see LAYER2/openair2_proc.c for rlc status
 	for (j = 0; j < ue_report[i]->n_rlc_report; j++) {
-	  rlc_reports[j] = malloc(sizeof(Protocol__PrpRlcBsr));
+	  rlc_reports[j] = malloc(sizeof(Protocol__FlexRlcBsr));
 	  if (rlc_reports[j] == NULL)
 	    goto error;
-	  protocol__prp_rlc_bsr__init(rlc_reports[j]);
+	  protocol__flex_rlc_bsr__init(rlc_reports[j]);
 	  //TODO:Set logical channel id
 	  rlc_reports[j]->lc_id = j+1;
 	  rlc_reports[j]->has_lc_id = 1;
@@ -485,38 +485,38 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
       }
 
       /* Check flag for creation of MAC CE buffer status report */
-      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_MAC_CE_BS) {
+      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_CE_BS) {
 	// TODO: Fill in the actual MAC CE buffer status report
 	ue_report[i]->pending_mac_ces = (get_MAC_CE_bitmap_TA(enb_id,i,0) | (0 << 1) | (0 << 2) | (0 << 3)) & 15; /* Use as bitmap. Set one or more of the; /* Use as bitmap. Set one or more of the
-					       PROTOCOL__PRP_CE_TYPE__PRPCET_ values
+					       PROTOCOL__FLEX_CE_TYPE__FLPCET_ values
 					       found in stats_common.pb-c.h. See
-					       prp_ce_type in progRAN specification */
+					       flex_ce_type in FlexRAN specification */
 	ue_report[i]->has_pending_mac_ces = 1;
       }
 
       /* Check flag for creation of DL CQI report */
-      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_DL_CQI) {
+      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_DL_CQI) {
 	// TODO: Fill in the actual DL CQI report for the UE based on its configuration
-	Protocol__PrpDlCqiReport * dl_report;
-	dl_report = malloc(sizeof(Protocol__PrpDlCqiReport));
+	Protocol__FlexDlCqiReport * dl_report;
+	dl_report = malloc(sizeof(Protocol__FlexDlCqiReport));
 	if (dl_report == NULL)
 	  goto error;
-	protocol__prp_dl_cqi_report__init(dl_report);
+	protocol__flex_dl_cqi_report__init(dl_report);
 	//TODO:Set the SFN and SF of the last report held in the agent.
 	dl_report->sfn_sn = get_sfn_sf(enb_id);
 	dl_report->has_sfn_sn = 1;
 	//TODO:Set the number of DL CQI reports for this UE. One for each CC
 	dl_report->n_csi_report = get_active_CC(enb_id,i);
 	//TODO:Create the actual CSI reports.
-	Protocol__PrpDlCsi **csi_reports;
-	csi_reports = malloc(sizeof(Protocol__PrpDlCsi *)*dl_report->n_csi_report);
+	Protocol__FlexDlCsi **csi_reports;
+	csi_reports = malloc(sizeof(Protocol__FlexDlCsi *)*dl_report->n_csi_report);
 	if (csi_reports == NULL)
 	  goto error;
 	for (j = 0; j < dl_report->n_csi_report; j++) {
-	  csi_reports[j] = malloc(sizeof(Protocol__PrpDlCsi));
+	  csi_reports[j] = malloc(sizeof(Protocol__FlexDlCsi));
 	  if (csi_reports[j] == NULL)
 	    goto error;
-	  protocol__prp_dl_csi__init(csi_reports[j]);
+	  protocol__flex_dl_csi__init(csi_reports[j]);
 	  //TODO: the servCellIndex for this report
 	  csi_reports[j]->serv_cell_index = j;
 	  csi_reports[j]->has_serv_cell_index = 1;
@@ -526,16 +526,16 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	  //TODO: the type of CSI report based on the configuration of the UE
 	  //For this example we use type P10, which only needs a wideband value
 	  //The full set of types can be found in stats_common.pb-c.h and
-	  //in the progRAN specifications
-    csi_reports[j]->type =  PROTOCOL__PRP_CSI_TYPE__PRCSIT_P10;
+	  //in the FlexRAN specifications
+    csi_reports[j]->type =  PROTOCOL__FLEX_CSI_TYPE__FLCSIT_P10;
 		  csi_reports[j]->has_type = 1;
-		  csi_reports[j]->report_case = PROTOCOL__PRP_DL_CSI__REPORT_P10CSI;
-		  if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_P10CSI){
-			  Protocol__PrpCsiP10 *csi10;
-			  csi10 = malloc(sizeof(Protocol__PrpCsiP10));
+		  csi_reports[j]->report_case = PROTOCOL__FLEX_DL_CSI__REPORT_P10CSI;
+		  if(csi_reports[j]->report_case == PROTOCOL__FLEX_DL_CSI__REPORT_P10CSI){
+			  Protocol__FlexCsiP10 *csi10;
+			  csi10 = malloc(sizeof(Protocol__FlexCsiP10));
 			  if (csi10 == NULL)
 				goto error;
-			  protocol__prp_csi_p10__init(csi10);
+			  protocol__flex_csi_p10__init(csi10);
 			  //TODO: set the wideband value
 			  // NN: this is also depends on cc_id
 			  csi10->wb_cqi = get_ue_wcqi (enb_id, i); //eNB_UE_list->eNB_UE_stats[UE_PCCID(enb_id,i)][i].dl_cqi;
@@ -543,28 +543,28 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 			  //Add the type of measurements to the csi report in the proper union type
 			  csi_reports[j]->p10csi = csi10;
 		  }
-		  else if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_P11CSI){
+		  else if(csi_reports[j]->report_case == PROTOCOL__FLEX_DL_CSI__REPORT_P11CSI){
 
 		  }
-		  else if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_P20CSI){
+		  else if(csi_reports[j]->report_case == PROTOCOL__FLEX_DL_CSI__REPORT_P20CSI){
 
 		  }
-		  else if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_P21CSI){
+		  else if(csi_reports[j]->report_case == PROTOCOL__FLEX_DL_CSI__REPORT_P21CSI){
 
 		  }
-		  else if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_A12CSI){
+		  else if(csi_reports[j]->report_case == PROTOCOL__FLEX_DL_CSI__REPORT_A12CSI){
 
 		  }
-		  else if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_A22CSI){
+		  else if(csi_reports[j]->report_case == PROTOCOL__FLEX_DL_CSI__REPORT_A22CSI){
 
 		  }
-		  else if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_A20CSI){
+		  else if(csi_reports[j]->report_case == PROTOCOL__FLEX_DL_CSI__REPORT_A20CSI){
 
 		  }
-		  else if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_A30CSI){
+		  else if(csi_reports[j]->report_case == PROTOCOL__FLEX_DL_CSI__REPORT_A30CSI){
 
 		  }
-		  else if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_A31CSI){
+		  else if(csi_reports[j]->report_case == PROTOCOL__FLEX_DL_CSI__REPORT_A31CSI){
 
 		  }
 		}
@@ -575,26 +575,26 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
       }
 
       /* Check flag for creation of paging buffer status report */
-      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_PBS) {
+      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PBS) {
 	//TODO: Fill in the actual paging buffer status report. For this field to be valid, the RNTI
 	//set in the report must be a P-RNTI
-	Protocol__PrpPagingBufferReport *paging_report;
-	paging_report = malloc(sizeof(Protocol__PrpPagingBufferReport));
+	Protocol__FlexPagingBufferReport *paging_report;
+	paging_report = malloc(sizeof(Protocol__FlexPagingBufferReport));
 	if (paging_report == NULL)
 	  goto error;
-	protocol__prp_paging_buffer_report__init(paging_report);
+	protocol__flex_paging_buffer_report__init(paging_report);
 	//Set the number of pending paging messages
 	paging_report->n_paging_info = 1;
 	//Provide a report for each pending paging message
-	Protocol__PrpPagingInfo **p_info;
-	p_info = malloc(sizeof(Protocol__PrpPagingInfo *) * paging_report->n_paging_info);
+	Protocol__FlexPagingInfo **p_info;
+	p_info = malloc(sizeof(Protocol__FlexPagingInfo *) * paging_report->n_paging_info);
 	if (p_info == NULL)
 	  goto error;
 	for (j = 0; j < paging_report->n_paging_info; j++) {
-	  p_info[j] = malloc(sizeof(Protocol__PrpPagingInfo));
+	  p_info[j] = malloc(sizeof(Protocol__FlexPagingInfo));
 	  if(p_info[j] == NULL)
 	    goto error;
-	  protocol__prp_paging_info__init(p_info[j]);
+	  protocol__flex_paging_info__init(p_info[j]);
 	  //TODO: Set paging index. This index is the same that will be used for the scheduling of the
 	  //paging message by the controller
 	  p_info[j]->paging_index = 10;
@@ -616,35 +616,35 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
       }
 
       /* Check flag for creation of UL CQI report */
-      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_UL_CQI) {
+      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_UL_CQI) {
 	//Fill in the full UL CQI report of the UE
-	Protocol__PrpUlCqiReport *full_ul_report;
-	full_ul_report = malloc(sizeof(Protocol__PrpUlCqiReport));
+	Protocol__FlexUlCqiReport *full_ul_report;
+	full_ul_report = malloc(sizeof(Protocol__FlexUlCqiReport));
 	if(full_ul_report == NULL)
 	  goto error;
-	protocol__prp_ul_cqi_report__init(full_ul_report);
+	protocol__flex_ul_cqi_report__init(full_ul_report);
 	//TODO:Set the SFN and SF of the generated report
 	full_ul_report->sfn_sn = get_sfn_sf(enb_id);
 	full_ul_report->has_sfn_sn = 1;
 	//TODO:Set the number of UL measurement reports based on the types of measurements
 	//configured for this UE and on the servCellIndex
 	full_ul_report->n_cqi_meas = 1;
-	Protocol__PrpUlCqi **ul_report;
-	ul_report = malloc(sizeof(Protocol__PrpUlCqi *) * full_ul_report->n_cqi_meas);
+	Protocol__FlexUlCqi **ul_report;
+	ul_report = malloc(sizeof(Protocol__FlexUlCqi *) * full_ul_report->n_cqi_meas);
 	if(ul_report == NULL)
 	  goto error;
 	//Fill each UL report of the UE for each of the configured report types
 	for(j = 0; j < full_ul_report->n_cqi_meas; j++) {
-	  ul_report[j] = malloc(sizeof(Protocol__PrpUlCqi));
+	  ul_report[j] = malloc(sizeof(Protocol__FlexUlCqi));
 	  if(ul_report[j] == NULL)
 	  goto error;
-	  protocol__prp_ul_cqi__init(ul_report[j]);
+	  protocol__flex_ul_cqi__init(ul_report[j]);
 	  //TODO: Set the type of the UL report. As an example set it to SRS UL report
-	  // See enum prp_ul_cqi_type in progRAN specification for more details
-	  ul_report[j]->type = PROTOCOL__PRP_UL_CQI_TYPE__PRUCT_SRS;
+	  // See enum flex_ul_cqi_type in FlexRAN specification for more details
+	  ul_report[j]->type = PROTOCOL__FLEX_UL_CQI_TYPE__FLUCT_SRS;
 	  ul_report[j]->has_type = 1;
 	  //TODO:Set the number of SINR measurements based on the report type
-	  //See struct prp_ul_cqi in progRAN specification for more details
+	  //See struct flex_ul_cqi in FlexRAN specification for more details
 	  ul_report[j]->n_sinr = 100;
 	  uint32_t *sinr_meas;
 	  sinr_meas = (uint32_t *) malloc(sizeof(uint32_t) * ul_report[j]->n_sinr);
@@ -663,11 +663,11 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	  full_ul_report->cqi_meas = ul_report;
 
 	  full_ul_report->n_pucch_dbm = MAX_NUM_CCs;
-	  full_ul_report->pucch_dbm = malloc(sizeof(Protocol__PrpPucchDbm *) * full_ul_report->n_pucch_dbm);
+	  full_ul_report->pucch_dbm = malloc(sizeof(Protocol__FlexPucchDbm *) * full_ul_report->n_pucch_dbm);
 
 	  for (j = 0; j < MAX_NUM_CCs; j++) {
-	    full_ul_report->pucch_dbm[j] = malloc(sizeof(Protocol__PrpPucchDbm));
-	    protocol__prp_pucch_dbm__init(full_ul_report->pucch_dbm[j]);
+	    full_ul_report->pucch_dbm[j] = malloc(sizeof(Protocol__FlexPucchDbm));
+	    protocol__flex_pucch_dbm__init(full_ul_report->pucch_dbm[j]);
 	    full_ul_report->pucch_dbm[j]->has_serv_cell_index = 1;
 	    full_ul_report->pucch_dbm[j]->serv_cell_index = j;
 	    if(get_p0_pucch_dbm(enb_id,i, j) != -1){
@@ -687,28 +687,28 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 
   /* Allocate memory for list of cell reports */
   if (report_config->nr_cc > 0) {
-    cell_report = malloc(sizeof(Protocol__PrpCellStatsReport *) * report_config->nr_cc);
+    cell_report = malloc(sizeof(Protocol__FlexCellStatsReport *) * report_config->nr_cc);
     if (cell_report == NULL)
       goto error;
     // Fill in the Cell reports
     for (i = 0; i < report_config->nr_cc; i++) {
-      cell_report[i] = malloc(sizeof(Protocol__PrpCellStatsReport));
+      cell_report[i] = malloc(sizeof(Protocol__FlexCellStatsReport));
       if(cell_report[i] == NULL)
 	goto error;
-      protocol__prp_cell_stats_report__init(cell_report[i]);
+      protocol__flex_cell_stats_report__init(cell_report[i]);
       cell_report[i]->carrier_index = report_config->cc_report_type[i].cc_id;
       cell_report[i]->has_carrier_index = 1;
       cell_report[i]->flags = report_config->cc_report_type[i].cc_report_flags;
       cell_report[i]->has_flags = 1;
 
       /* Check flag for creation of noise and interference report */
-      if(report_config->cc_report_type[i].cc_report_flags & PROTOCOL__PRP_CELL_STATS_TYPE__PRCST_NOISE_INTERFERENCE) {
+      if(report_config->cc_report_type[i].cc_report_flags & PROTOCOL__FLEX_CELL_STATS_TYPE__FLCST_NOISE_INTERFERENCE) {
 	// TODO: Fill in the actual noise and interference report for this cell
-	Protocol__PrpNoiseInterferenceReport *ni_report;
-	ni_report = malloc(sizeof(Protocol__PrpNoiseInterferenceReport));
+	Protocol__FlexNoiseInterferenceReport *ni_report;
+	ni_report = malloc(sizeof(Protocol__FlexNoiseInterferenceReport));
 	if(ni_report == NULL)
 	  goto error;
-	protocol__prp_noise_interference_report__init(ni_report);
+	protocol__flex_noise_interference_report__init(ni_report);
 	// Current frame and subframe number
 	ni_report->sfn_sf = get_sfn_sf(enb_id);
 	ni_report->has_sfn_sf = 1;
@@ -728,12 +728,12 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
     stats_reply_msg->cell_report = cell_report;
   }
 
-  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  *msg = malloc(sizeof(Protocol__FlexranMessage));
   if(*msg == NULL)
     goto error;
-  protocol__progran_message__init(*msg);
-  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_STATS_REPLY_MSG;
-  (*msg)->msg_dir =  PROTOCOL__PROGRAN_DIRECTION__SUCCESSFUL_OUTCOME;
+  protocol__flexran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_STATS_REPLY_MSG;
+  (*msg)->msg_dir =  PROTOCOL__FLEXRAN_DIRECTION__SUCCESSFUL_OUTCOME;
   (*msg)->stats_reply_msg = stats_reply_msg;
   return 0;
 
@@ -749,17 +749,17 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
   return -1;
 }
 
-int enb_agent_mac_destroy_stats_reply(Protocol__ProgranMessage *msg) {
+int enb_agent_mac_destroy_stats_reply(Protocol__FlexranMessage *msg) {
   //TODO: Need to deallocate memory for the stats reply message
-  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_STATS_REPLY_MSG)
+  if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_STATS_REPLY_MSG)
     goto error;
   free(msg->stats_reply_msg->header);
   int i, j, k;
 
-  Protocol__PrpStatsReply *reply = msg->stats_reply_msg;
-  Protocol__PrpDlCqiReport *dl_report;
-  Protocol__PrpUlCqiReport *ul_report;
-  Protocol__PrpPagingBufferReport *paging_report;
+  Protocol__FlexStatsReply *reply = msg->stats_reply_msg;
+  Protocol__FlexDlCqiReport *dl_report;
+  Protocol__FlexUlCqiReport *ul_report;
+  Protocol__FlexPagingBufferReport *paging_report;
 
   // Free the memory for the UE reports
   for (i = 0; i < reply->n_ue_report; i++) {
@@ -769,47 +769,47 @@ int enb_agent_mac_destroy_stats_reply(Protocol__ProgranMessage *msg) {
     }
     free(reply->ue_report[i]->rlc_report);
     // If DL CQI report flag was set
-    if (reply->ue_report[i]->flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_DL_CQI) {
+    if (reply->ue_report[i]->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_DL_CQI) {
       dl_report = reply->ue_report[i]->dl_cqi_report;
       // Delete all CSI reports
       for (j = 0; j < dl_report->n_csi_report; j++) {
 	//Must free memory based on the type of report
 	switch(dl_report->csi_report[j]->report_case) {
-	case PROTOCOL__PRP_DL_CSI__REPORT_P10CSI:
+	case PROTOCOL__FLEX_DL_CSI__REPORT_P10CSI:
 	  free(dl_report->csi_report[j]->p10csi);
 	  break;
-	case PROTOCOL__PRP_DL_CSI__REPORT_P11CSI:
+	case PROTOCOL__FLEX_DL_CSI__REPORT_P11CSI:
 	  free(dl_report->csi_report[j]->p11csi->wb_cqi);
 	  free(dl_report->csi_report[j]->p11csi);
 	  break;
-	case PROTOCOL__PRP_DL_CSI__REPORT_P20CSI:
+	case PROTOCOL__FLEX_DL_CSI__REPORT_P20CSI:
 	  free(dl_report->csi_report[j]->p20csi);
 	  break;
-	case PROTOCOL__PRP_DL_CSI__REPORT_P21CSI:
+	case PROTOCOL__FLEX_DL_CSI__REPORT_P21CSI:
 	  free(dl_report->csi_report[j]->p21csi->wb_cqi);
 	  free(dl_report->csi_report[j]->p21csi->sb_cqi);
 	  free(dl_report->csi_report[j]->p21csi);
 	  break;
-	case PROTOCOL__PRP_DL_CSI__REPORT_A12CSI:
+	case PROTOCOL__FLEX_DL_CSI__REPORT_A12CSI:
 	  free(dl_report->csi_report[j]->a12csi->wb_cqi);
 	  free(dl_report->csi_report[j]->a12csi->sb_pmi);
 	  free(dl_report->csi_report[j]->a12csi);
 	  break;
-	case PROTOCOL__PRP_DL_CSI__REPORT_A22CSI:
+	case PROTOCOL__FLEX_DL_CSI__REPORT_A22CSI:
 	  free(dl_report->csi_report[j]->a22csi->wb_cqi);
 	  free(dl_report->csi_report[j]->a22csi->sb_cqi);
 	  free(dl_report->csi_report[j]->a22csi->sb_list);
 	  free(dl_report->csi_report[j]->a22csi);
 	  break;
-	case PROTOCOL__PRP_DL_CSI__REPORT_A20CSI:
+	case PROTOCOL__FLEX_DL_CSI__REPORT_A20CSI:
 	  free(dl_report->csi_report[j]->a20csi->sb_list);
 	  free(dl_report->csi_report[j]->a20csi);
 	  break;
-	case PROTOCOL__PRP_DL_CSI__REPORT_A30CSI:
+	case PROTOCOL__FLEX_DL_CSI__REPORT_A30CSI:
 	  free(dl_report->csi_report[j]->a30csi->sb_cqi);
 	  free(dl_report->csi_report[j]->a30csi);
 	  break;
-	case PROTOCOL__PRP_DL_CSI__REPORT_A31CSI:
+	case PROTOCOL__FLEX_DL_CSI__REPORT_A31CSI:
 	  free(dl_report->csi_report[j]->a31csi->wb_cqi);
 	  for (k = 0; k < dl_report->csi_report[j]->a31csi->n_sb_cqi; k++) {
 	    free(dl_report->csi_report[j]->a31csi->sb_cqi[k]);
@@ -824,7 +824,7 @@ int enb_agent_mac_destroy_stats_reply(Protocol__ProgranMessage *msg) {
       free(dl_report);
     }
     // If Paging buffer report flag was set
-    if (reply->ue_report[i]->flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_PBS) {
+    if (reply->ue_report[i]->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PBS) {
       paging_report = reply->ue_report[i]->pbr;
       // Delete all paging buffer reports
       for (j = 0; j < paging_report->n_paging_info; j++) {
@@ -834,7 +834,7 @@ int enb_agent_mac_destroy_stats_reply(Protocol__ProgranMessage *msg) {
       free(paging_report);
     }
     // If UL CQI report flag was set
-    if (reply->ue_report[i]->flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_UL_CQI) {
+    if (reply->ue_report[i]->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_UL_CQI) {
       ul_report = reply->ue_report[i]->ul_cqi_report;
       for (j = 0; j < ul_report->n_cqi_meas; j++) {
 	free(ul_report->cqi_meas[j]->sinr);
@@ -866,19 +866,19 @@ int enb_agent_mac_destroy_stats_reply(Protocol__ProgranMessage *msg) {
   return -1;
 }
 
-int enb_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
-  Protocol__PrpHeader *header;
+int enb_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
+  Protocol__FlexHeader *header;
   int i;
   const int xid = *((int *)params);
-  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_UL_SR_INFO, &header) != 0)
+  if (flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_UL_SR_INFO, &header) != 0)
     goto error;
 
-  Protocol__PrpUlSrInfo *ul_sr_info_msg;
-  ul_sr_info_msg = malloc(sizeof(Protocol__PrpUlSrInfo));
+  Protocol__FlexUlSrInfo *ul_sr_info_msg;
+  ul_sr_info_msg = malloc(sizeof(Protocol__FlexUlSrInfo));
   if (ul_sr_info_msg == NULL) {
     goto error;
   }
-  protocol__prp_ul_sr_info__init(ul_sr_info_msg);
+  protocol__flex_ul_sr_info__init(ul_sr_info_msg);
 
   ul_sr_info_msg->header = header;
   ul_sr_info_msg->has_sfn_sf = 1;
@@ -895,12 +895,12 @@ int enb_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__ProgranMes
     ul_sr_info_msg->rnti[i] = 1;
   }
 
-  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  *msg = malloc(sizeof(Protocol__FlexranMessage));
   if(*msg == NULL)
     goto error;
-  protocol__progran_message__init(*msg);
-  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_UL_SR_INFO_MSG;
-  (*msg)->msg_dir =  PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
+  protocol__flexran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_UL_SR_INFO_MSG;
+  (*msg)->msg_dir =  PROTOCOL__FLEXRAN_DIRECTION__INITIATING_MESSAGE;
   (*msg)->ul_sr_info_msg = ul_sr_info_msg;
   return 0;
 
@@ -918,8 +918,8 @@ int enb_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__ProgranMes
   return -1;
 }
 
-int enb_agent_mac_destroy_sr_info(Protocol__ProgranMessage *msg) {
-   if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_UL_SR_INFO_MSG)
+int enb_agent_mac_destroy_sr_info(Protocol__FlexranMessage *msg) {
+   if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_UL_SR_INFO_MSG)
      goto error;
 
    free(msg->ul_sr_info_msg->header);
@@ -933,19 +933,19 @@ int enb_agent_mac_destroy_sr_info(Protocol__ProgranMessage *msg) {
    return -1;
 }
 
-int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
-  Protocol__PrpHeader *header;
+int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
+  Protocol__FlexHeader *header;
   int i,j;
   const int xid = *((int *)params);
-  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_SF_TRIGGER, &header) != 0)
+  if (flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_SF_TRIGGER, &header) != 0)
     goto error;
 
-  Protocol__PrpSfTrigger *sf_trigger_msg;
-  sf_trigger_msg = malloc(sizeof(Protocol__PrpSfTrigger));
+  Protocol__FlexSfTrigger *sf_trigger_msg;
+  sf_trigger_msg = malloc(sizeof(Protocol__FlexSfTrigger));
   if (sf_trigger_msg == NULL) {
     goto error;
   }
-  protocol__prp_sf_trigger__init(sf_trigger_msg);
+  protocol__flex_sf_trigger__init(sf_trigger_msg);
 
   frame_t frame;
   sub_frame_t subframe;
@@ -974,18 +974,18 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
    */
   sf_trigger_msg->n_dl_info = get_num_ues(mod_id);
 
-  Protocol__PrpDlInfo **dl_info = NULL;
+  Protocol__FlexDlInfo **dl_info = NULL;
 
   if (sf_trigger_msg->n_dl_info > 0) {
-    dl_info = malloc(sizeof(Protocol__PrpDlInfo *) * sf_trigger_msg->n_dl_info);
+    dl_info = malloc(sizeof(Protocol__FlexDlInfo *) * sf_trigger_msg->n_dl_info);
     if(dl_info == NULL)
       goto error;
     //Fill the status of the current HARQ process for each UE
     for(i = 0; i < sf_trigger_msg->n_dl_info; i++) {
-      dl_info[i] = malloc(sizeof(Protocol__PrpDlInfo));
+      dl_info[i] = malloc(sizeof(Protocol__FlexDlInfo));
       if(dl_info[i] == NULL)
 	goto error;
-      protocol__prp_dl_info__init(dl_info[i]);
+      protocol__flex_dl_info__init(dl_info[i]);
       dl_info[i]->rnti = get_ue_crnti(mod_id, i);
       dl_info[i]->has_rnti = 1;
       /*TODO: fill in the right id of this round's HARQ process for this UE*/
@@ -1000,9 +1000,9 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
       for (j = 0; j < dl_info[i]->n_harq_status; j++) {
 	// TODO: This should be different per TB
 	if(harq_status == 0)
-	  dl_info[i]->harq_status[j] = PROTOCOL__PRP_HARQ_STATUS__PRHS_ACK;
+	  dl_info[i]->harq_status[j] = PROTOCOL__FLEX_HARQ_STATUS__FLHS_ACK;
 	else if (harq_status == 1)
-	  dl_info[i]->harq_status[j] = PROTOCOL__PRP_HARQ_STATUS__PRHS_NACK;
+	  dl_info[i]->harq_status[j] = PROTOCOL__FLEX_HARQ_STATUS__FLHS_NACK;
       }
       /*TODO: fill in the serving cell index for this UE */
       dl_info[i]->serv_cell_index = UE_PCCID(mod_id,i);
@@ -1017,18 +1017,18 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
    */
   sf_trigger_msg->n_ul_info = get_num_ues(mod_id);
 
-  Protocol__PrpUlInfo **ul_info = NULL;
+  Protocol__FlexUlInfo **ul_info = NULL;
 
   if (sf_trigger_msg->n_ul_info > 0) {
-    ul_info = malloc(sizeof(Protocol__PrpUlInfo *) * sf_trigger_msg->n_ul_info);
+    ul_info = malloc(sizeof(Protocol__FlexUlInfo *) * sf_trigger_msg->n_ul_info);
     if(ul_info == NULL)
       goto error;
     //Fill the reception info for each transmitting UE
     for(i = 0; i < sf_trigger_msg->n_ul_info; i++) {
-      ul_info[i] = malloc(sizeof(Protocol__PrpUlInfo));
+      ul_info[i] = malloc(sizeof(Protocol__FlexUlInfo));
       if(ul_info[i] == NULL)
 	goto error;
-      protocol__prp_ul_info__init(ul_info[i]);
+      protocol__flex_ul_info__init(ul_info[i]);
       ul_info[i]->rnti = get_ue_crnti(mod_id, i);
       ul_info[i]->has_rnti = 1;
       /*TODO: fill in the Tx power control command for this UE (if available)*/
@@ -1048,7 +1048,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
 	ul_info[i]->ul_reception[j] = 100;
       }
       /*TODO: Fill in the reception status for each UEs data*/
-      ul_info[i]->reception_status = PROTOCOL__PRP_RECEPTION_STATUS__PRRS_OK;
+      ul_info[i]->reception_status = PROTOCOL__FLEX_RECEPTION_STATUS__FLRS_OK;
       ul_info[i]->has_reception_status = 1;
       /*TODO: fill in the serving cell index for this UE */
       ul_info[i]->serv_cell_index = UE_PCCID(mod_id,i);
@@ -1058,12 +1058,12 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
 
   sf_trigger_msg->ul_info = ul_info;
 
-  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  *msg = malloc(sizeof(Protocol__FlexranMessage));
   if(*msg == NULL)
     goto error;
-  protocol__progran_message__init(*msg);
-  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_SF_TRIGGER_MSG;
-  (*msg)->msg_dir =  PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
+  protocol__flexran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_SF_TRIGGER_MSG;
+  (*msg)->msg_dir =  PROTOCOL__FLEXRAN_DIRECTION__INITIATING_MESSAGE;
   (*msg)->sf_trigger_msg = sf_trigger_msg;
   return 0;
 
@@ -1087,9 +1087,9 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
   return -1;
 }
 
-int enb_agent_mac_destroy_sf_trigger(Protocol__ProgranMessage *msg) {
+int enb_agent_mac_destroy_sf_trigger(Protocol__FlexranMessage *msg) {
   int i;
-  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_SF_TRIGGER_MSG)
+  if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_SF_TRIGGER_MSG)
     goto error;
 
   free(msg->sf_trigger_msg->header);
@@ -1113,30 +1113,30 @@ int enb_agent_mac_destroy_sf_trigger(Protocol__ProgranMessage *msg) {
   return -1;
 }
 
-int enb_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__ProgranMessage **msg) {
+int enb_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMessage **msg) {
 
   int xid = 0;
-  Protocol__PrpHeader *header;
-  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_DL_MAC_CONFIG, &header) != 0)
+  Protocol__FlexHeader *header;
+  if (flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_DL_MAC_CONFIG, &header) != 0)
     goto error;
 
-  Protocol__PrpDlMacConfig *dl_mac_config_msg;
-  dl_mac_config_msg = malloc(sizeof(Protocol__PrpDlMacConfig));
+  Protocol__FlexDlMacConfig *dl_mac_config_msg;
+  dl_mac_config_msg = malloc(sizeof(Protocol__FlexDlMacConfig));
   if (dl_mac_config_msg == NULL) {
     goto error;
   }
-  protocol__prp_dl_mac_config__init(dl_mac_config_msg);
+  protocol__flex_dl_mac_config__init(dl_mac_config_msg);
 
   dl_mac_config_msg->header = header;
   dl_mac_config_msg->has_sfn_sf = 1;
   dl_mac_config_msg->sfn_sf = get_sfn_sf(mod_id);
 
-  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  *msg = malloc(sizeof(Protocol__FlexranMessage));
   if(*msg == NULL)
     goto error;
-  protocol__progran_message__init(*msg);
-  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_DL_MAC_CONFIG_MSG;
-  (*msg)->msg_dir =  PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
+  protocol__flexran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_DL_MAC_CONFIG_MSG;
+  (*msg)->msg_dir =  PROTOCOL__FLEXRAN_DIRECTION__INITIATING_MESSAGE;
   (*msg)->dl_mac_config_msg = dl_mac_config_msg;
 
   return 0;
@@ -1145,12 +1145,12 @@ int enb_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__ProgranMessage 
   return -1;
 }
 
-int enb_agent_mac_destroy_dl_config(Protocol__ProgranMessage *msg) {
+int enb_agent_mac_destroy_dl_config(Protocol__FlexranMessage *msg) {
   int i,j, k;
-  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_DL_MAC_CONFIG_MSG)
+  if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_DL_MAC_CONFIG_MSG)
     goto error;
 
-  Protocol__PrpDlDci *dl_dci;
+  Protocol__FlexDlDci *dl_dci;
 
   free(msg->dl_mac_config_msg->header);
   for (i = 0; i < msg->dl_mac_config_msg->n_dl_ue_data; i++) {
@@ -1208,7 +1208,7 @@ int enb_agent_mac_destroy_dl_config(Protocol__ProgranMessage *msg) {
   return -1;
 }
 
-void enb_agent_get_pending_dl_mac_config(mid_t mod_id, Protocol__ProgranMessage **msg) {
+void enb_agent_get_pending_dl_mac_config(mid_t mod_id, Protocol__FlexranMessage **msg) {
 
   struct lfds700_misc_prng_state ls;
   
@@ -1220,11 +1220,11 @@ void enb_agent_get_pending_dl_mac_config(mid_t mod_id, Protocol__ProgranMessage 
   }
 }
 
-int enb_agent_mac_handle_dl_mac_config(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+int enb_agent_mac_handle_dl_mac_config(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
 
   struct lfds700_misc_prng_state ls;
   enum lfds700_misc_flag overwrite_occurred_flag;
-  Protocol__ProgranMessage *overwritten_dl_config;
+  Protocol__FlexranMessage *overwritten_dl_config;
    
   LFDS700_MISC_MAKE_VALID_ON_CURRENT_LOGICAL_CORE_INITS_COMPLETED_BEFORE_NOW_ON_ANY_OTHER_LOGICAL_CORE;
   lfds700_misc_prng_init(&ls);
@@ -1264,7 +1264,7 @@ void enb_agent_init_mac_agent(mid_t mod_id) {
 
 void enb_agent_send_sr_info(mid_t mod_id) {
   int size;
-  Protocol__ProgranMessage *msg;
+  Protocol__FlexranMessage *msg;
   void *data;
   int priority;
   err_code_t err_code;
@@ -1281,7 +1281,7 @@ void enb_agent_send_sr_info(mid_t mod_id) {
     data=enb_agent_pack_message(msg, &size);
     /*Send sr info using the MAC channel of the eNB*/
     if (enb_agent_msg_send(mod_id, ENB_AGENT_MAC, data, size, priority)) {
-      err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
+      err_code = PROTOCOL__FLEXRAN_ERR__MSG_ENQUEUING;
       goto error;
     }
 
@@ -1294,7 +1294,7 @@ void enb_agent_send_sr_info(mid_t mod_id) {
 
 void enb_agent_send_sf_trigger(mid_t mod_id) {
   int size;
-  Protocol__ProgranMessage *msg;
+  Protocol__FlexranMessage *msg;
   void *data;
   int priority;
   err_code_t err_code;
@@ -1311,7 +1311,7 @@ void enb_agent_send_sf_trigger(mid_t mod_id) {
     data=enb_agent_pack_message(msg, &size);
     /*Send sr info using the MAC channel of the eNB*/
     if (enb_agent_msg_send(mod_id, ENB_AGENT_MAC, data, size, priority)) {
-      err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
+      err_code = PROTOCOL__FLEXRAN_ERR__MSG_ENQUEUING;
       goto error;
     }
 
@@ -1324,7 +1324,7 @@ void enb_agent_send_sf_trigger(mid_t mod_id) {
 
 void enb_agent_send_update_mac_stats(mid_t mod_id) {
 
-  Protocol__ProgranMessage *current_report = NULL, *msg;
+  Protocol__FlexranMessage *current_report = NULL, *msg;
   void *data;
   int size;
   err_code_t err_code;
@@ -1352,7 +1352,7 @@ void enb_agent_send_update_mac_stats(mid_t mod_id) {
   /*   msg = enb_agent_generate_diff_mac_stats_report(current_report, mac_stats_context[mod_id].prev_stats_reply); */
 
   /*   /\*Destroy the old stats*\/ */
-  /*    enb_agent_destroy_progran_message(mac_stats_context[mod_id].prev_stats_reply); */
+  /*    enb_agent_destroy_flexran_message(mac_stats_context[mod_id].prev_stats_reply); */
   /* } */
   /* /\*Use the current report for future comparissons*\/ */
   /* mac_stats_context[mod_id].prev_stats_reply = current_report; */
@@ -1366,7 +1366,7 @@ void enb_agent_send_update_mac_stats(mid_t mod_id) {
     data=enb_agent_pack_message(current_report, &size);
     /*Send any stats updates using the MAC channel of the eNB*/
     if (enb_agent_msg_send(mod_id, ENB_AGENT_MAC, data, size, priority)) {
-      err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
+      err_code = PROTOCOL__FLEXRAN_ERR__MSG_ENQUEUING;
       goto error;
     }
 
@@ -1447,8 +1447,8 @@ err_code_t enb_agent_destroy_cont_mac_stats_update(mid_t mod_id) {
   /*Disable the continuous updates for the MAC*/
   mac_stats_context[mod_id].cont_update = 0;
   mac_stats_context[mod_id].is_initialized = 0;
-  enb_agent_destroy_progran_message(mac_stats_context[mod_id].stats_req);
-  enb_agent_destroy_progran_message(mac_stats_context[mod_id].prev_stats_reply);
+  enb_agent_destroy_flexran_message(mac_stats_context[mod_id].stats_req);
+  enb_agent_destroy_flexran_message(mac_stats_context[mod_id].prev_stats_reply);
   free(mac_stats_context[mod_id].mutex);
 
   mac_agent_registered[mod_id] = NULL;
@@ -1463,7 +1463,7 @@ err_code_t enb_agent_enable_cont_mac_stats_update(mid_t mod_id,
     goto error;
   }
 
-  Protocol__ProgranMessage *req_msg;
+  Protocol__FlexranMessage *req_msg;
 
   enb_agent_mac_stats_request(mod_id, xid, stats_req, &req_msg);
   mac_stats_context[mod_id].stats_req = req_msg;
@@ -1490,10 +1490,10 @@ err_code_t enb_agent_disable_cont_mac_stats_update(mid_t mod_id) {
   mac_stats_context[mod_id].cont_update = 0;
   mac_stats_context[mod_id].xid = 0;
   if (mac_stats_context[mod_id].stats_req != NULL) {
-    enb_agent_destroy_progran_message(mac_stats_context[mod_id].stats_req);
+    enb_agent_destroy_flexran_message(mac_stats_context[mod_id].stats_req);
   }
   if (mac_stats_context[mod_id].prev_stats_reply != NULL) {
-    enb_agent_destroy_progran_message(mac_stats_context[mod_id].prev_stats_reply);
+    enb_agent_destroy_flexran_message(mac_stats_context[mod_id].prev_stats_reply);
   }
   if (pthread_mutex_unlock(mac_stats_context[mod_id].mutex)) {
     goto error;

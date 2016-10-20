@@ -29,7 +29,7 @@
 
 /*! \file enb_agent_handler.c
  * \brief enb agent tx and rx message handler 
- * \author Navid Nikaein and Xenofon Foukas 
+ * \author Xenofon Foukas and Navid Nikaein
  * \date 2016
  * \version 0.1
  */
@@ -42,23 +42,23 @@
 #include "assertions.h"
 
 enb_agent_message_decoded_callback agent_messages_callback[][3] = {
-  {enb_agent_hello, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_HELLO_MSG*/
-  {enb_agent_echo_reply, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_ECHO_REQUEST_MSG*/
-  {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_ECHO_REPLY_MSG*/ //Must add handler when receiving echo reply
-  {enb_agent_mac_handle_stats, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_STATS_REQUEST_MSG*/
-  {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_STATS_REPLY_MSG*/
-  {0, 0, 0}, /*PROTOCOK__PROGRAN_MESSAGE__MSG_SF_TRIGGER_MSG*/
-  {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_UL_SR_INFO_MSG*/
-  {enb_agent_enb_config_reply, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_ENB_CONFIG_REQUEST_MSG*/
-  {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG*/
-  {enb_agent_ue_config_reply, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_UE_CONFIG_REQUEST_MSG*/
-  {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_UE_CONFIG_REPLY_MSG*/
-  {enb_agent_lc_config_reply, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_LC_CONFIG_REQUEST_MSG*/
-  {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_LC_CONFIG_REPLY_MSG*/
-  {enb_agent_mac_handle_dl_mac_config, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_DL_MAC_CONFIG_MSG*/
-  {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_UE_STATE_CHANGE_MSG*/
-  {enb_agent_control_delegation, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_CONTROL_DELEGATION_MSG*/
-  {enb_agent_reconfiguration, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_AGENT_RECONFIGURATION_MSG*/
+  {enb_agent_hello, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_HELLO_MSG*/
+  {enb_agent_echo_reply, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_ECHO_REQUEST_MSG*/
+  {0, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_ECHO_REPLY_MSG*/ //Must add handler when receiving echo reply
+  {enb_agent_mac_handle_stats, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_STATS_REQUEST_MSG*/
+  {0, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_STATS_REPLY_MSG*/
+  {0, 0, 0}, /*PROTOCOK__FLEXRAN_MESSAGE__MSG_SF_TRIGGER_MSG*/
+  {0, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_UL_SR_INFO_MSG*/
+  {enb_agent_enb_config_reply, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_ENB_CONFIG_REQUEST_MSG*/
+  {0, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG*/
+  {enb_agent_ue_config_reply, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_UE_CONFIG_REQUEST_MSG*/
+  {0, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_UE_CONFIG_REPLY_MSG*/
+  {enb_agent_lc_config_reply, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_LC_CONFIG_REQUEST_MSG*/
+  {0, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_LC_CONFIG_REPLY_MSG*/
+  {enb_agent_mac_handle_dl_mac_config, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_DL_MAC_CONFIG_MSG*/
+  {0, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_UE_STATE_CHANGE_MSG*/
+  {enb_agent_control_delegation, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_CONTROL_DELEGATION_MSG*/
+  {enb_agent_reconfiguration, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_AGENT_RECONFIGURATION_MSG*/
 };
 
 enb_agent_message_destruction_callback message_destruction_callback[] = {
@@ -89,27 +89,27 @@ static const char *enb_agent_direction2String[] = {
 };
 
 
-Protocol__ProgranMessage* enb_agent_handle_message (mid_t mod_id,
+Protocol__FlexranMessage* enb_agent_handle_message (mid_t mod_id,
 						    uint8_t *data, 
 						    uint32_t size){
   
-  Protocol__ProgranMessage *decoded_message, *reply_message;
+  Protocol__FlexranMessage *decoded_message, *reply_message;
   err_code_t err_code;
   DevAssert(data != NULL);
 
   if (enb_agent_deserialize_message(data, size, &decoded_message) < 0) {
-    err_code= PROTOCOL__PROGRAN_ERR__MSG_DECODING;
+    err_code= PROTOCOL__FLEXRAN_ERR__MSG_DECODING;
     goto error; 
   }
   
   if ((decoded_message->msg_case > sizeof(agent_messages_callback) / (3*sizeof(enb_agent_message_decoded_callback))) || 
-      (decoded_message->msg_dir > PROTOCOL__PROGRAN_DIRECTION__UNSUCCESSFUL_OUTCOME)){
-    err_code= PROTOCOL__PROGRAN_ERR__MSG_NOT_HANDLED;
+      (decoded_message->msg_dir > PROTOCOL__FLEXRAN_DIRECTION__UNSUCCESSFUL_OUTCOME)){
+    err_code= PROTOCOL__FLEXRAN_ERR__MSG_NOT_HANDLED;
       goto error;
   }
     
   if (agent_messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1] == NULL) {
-    err_code= PROTOCOL__PROGRAN_ERR__MSG_NOT_SUPPORTED;
+    err_code= PROTOCOL__FLEXRAN_ERR__MSG_NOT_SUPPORTED;
     goto error;
 
   }
@@ -118,7 +118,7 @@ Protocol__ProgranMessage* enb_agent_handle_message (mid_t mod_id,
   if ( err_code < 0 ){
     goto error;
   } else if (err_code == 1) { //If err_code > 1, we do not want to dispose the message yet
-    protocol__progran_message__free_unpacked(decoded_message, NULL);
+    protocol__flexran_message__free_unpacked(decoded_message, NULL);
   }
   return reply_message;
   
@@ -130,14 +130,14 @@ error:
 
 
 
-void * enb_agent_pack_message(Protocol__ProgranMessage *msg, 
+void * enb_agent_pack_message(Protocol__FlexranMessage *msg, 
 			      uint32_t * size){
 
   void * buffer;
-  err_code_t err_code = PROTOCOL__PROGRAN_ERR__NO_ERR;
+  err_code_t err_code = PROTOCOL__FLEXRAN_ERR__NO_ERR;
   
   if (enb_agent_serialize_message(msg, &buffer, size) < 0 ) {
-    err_code = PROTOCOL__PROGRAN_ERR__MSG_ENCODING;
+    err_code = PROTOCOL__FLEXRAN_ERR__MSG_ENCODING;
     goto error;
   }
   
@@ -157,11 +157,11 @@ void * enb_agent_pack_message(Protocol__ProgranMessage *msg,
   return NULL;   
 }
 
-Protocol__ProgranMessage *enb_agent_handle_timed_task(void *args) {
+Protocol__FlexranMessage *enb_agent_handle_timed_task(void *args) {
   err_code_t err_code;
   enb_agent_timer_args_t *timer_args = (enb_agent_timer_args_t *) args;
 
-  Protocol__ProgranMessage *timed_task, *reply_message;
+  Protocol__FlexranMessage *timed_task, *reply_message;
   timed_task = timer_args->msg;
    err_code = ((*agent_messages_callback[timed_task->msg_case-1][timed_task->msg_dir-1])(timer_args->mod_id, (void *) timed_task, &reply_message));
   if ( err_code < 0 ){
@@ -175,7 +175,7 @@ Protocol__ProgranMessage *enb_agent_handle_timed_task(void *args) {
   return NULL;
 }
 
-Protocol__ProgranMessage* enb_agent_process_timeout(long timer_id, void* timer_args){
+Protocol__FlexranMessage* enb_agent_process_timeout(long timer_id, void* timer_args){
     
   struct enb_agent_timer_element_s *found = get_timer_entry(timer_id);
  
@@ -192,6 +192,6 @@ Protocol__ProgranMessage* enb_agent_process_timeout(long timer_id, void* timer_a
   return TIMER_ELEMENT_NOT_FOUND;
 }
 
-err_code_t enb_agent_destroy_progran_message(Protocol__ProgranMessage *msg) {
+err_code_t enb_agent_destroy_flexran_message(Protocol__FlexranMessage *msg) {
   return ((*message_destruction_callback[msg->msg_case-1])(msg));
 }

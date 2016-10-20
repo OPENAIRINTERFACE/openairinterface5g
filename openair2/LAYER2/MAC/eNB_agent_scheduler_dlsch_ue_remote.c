@@ -53,7 +53,7 @@ int queue_initialized = 0;
 //uint32_t sched [] = {1, 2, 3};
 
 void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
-			     int *mbsfn_flag, Protocol__ProgranMessage **dl_info) {
+			     int *mbsfn_flag, Protocol__FlexranMessage **dl_info) {
 
   
   //if ((subframe == skip_subframe) && (frame % period == 0)) {

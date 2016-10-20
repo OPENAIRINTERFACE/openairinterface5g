@@ -39,20 +39,20 @@
 
 #include "enb_agent_mac_internal.h"
 
-Protocol__ProgranMessage * enb_agent_generate_diff_mac_stats_report(Protocol__ProgranMessage *new_message,
-								    Protocol__ProgranMessage *old_message) {
+Protocol__FlexranMessage * enb_agent_generate_diff_mac_stats_report(Protocol__FlexranMessage *new_message,
+								    Protocol__FlexranMessage *old_message) {
 
   int i, j;
   
-  Protocol__PrpStatsReply *old_report, *new_report;
+  Protocol__FlexStatsReply *old_report, *new_report;
 
-  Protocol__PrpStatsReply *stats_reply_msg = NULL;
-  Protocol__ProgranMessage *msg = NULL;
+  Protocol__FlexStatsReply *stats_reply_msg = NULL;
+  Protocol__FlexranMessage *msg = NULL;
   
-  Protocol__PrpUeStatsReport **ue_report;
-  Protocol__PrpUeStatsReport *tmp_ue_report[NUM_MAX_UE];
-  Protocol__PrpCellStatsReport **cell_report;
-  Protocol__PrpCellStatsReport *tmp_cell_report[NUM_MAX_UE];
+  Protocol__FlexUeStatsReport **ue_report;
+  Protocol__FlexUeStatsReport *tmp_ue_report[NUM_MAX_UE];
+  Protocol__FlexCellStatsReport **cell_report;
+  Protocol__FlexCellStatsReport *tmp_cell_report[NUM_MAX_UE];
   
   old_report = old_message->stats_reply_msg;
   new_report = new_message->stats_reply_msg;
@@ -113,7 +113,7 @@ Protocol__ProgranMessage * enb_agent_generate_diff_mac_stats_report(Protocol__Pr
   /*TODO: create the reply message based on the findings*/
   /*Create ue report list*/
   if (n_ue_report > 0) {
-    ue_report = malloc(sizeof(Protocol__PrpUeStatsReport *));
+    ue_report = malloc(sizeof(Protocol__FlexUeStatsReport *));
     for (i = 0; i<n_ue_report; i++) {
       ue_report[i] = tmp_ue_report[i];
     }
@@ -121,7 +121,7 @@ Protocol__ProgranMessage * enb_agent_generate_diff_mac_stats_report(Protocol__Pr
 
   /*Create cell report list*/
   if (n_cell_report > 0) {
-    cell_report = malloc(sizeof(Protocol__PrpCellStatsReport *));
+    cell_report = malloc(sizeof(Protocol__FlexCellStatsReport *));
     for (i = 0; i<n_cell_report; i++) {
       cell_report[i] = tmp_cell_report[i];
     }
@@ -130,23 +130,23 @@ Protocol__ProgranMessage * enb_agent_generate_diff_mac_stats_report(Protocol__Pr
   if (n_cell_report > 0 || n_ue_report > 0) {
     /*Create header*/
     int xid = old_report->header->xid;
-    Protocol__PrpHeader *header;
-    if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_STATS_REPLY, &header) != 0) {
+    Protocol__FlexHeader *header;
+    if (flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_STATS_REPLY, &header) != 0) {
     goto error;
     }
-    stats_reply_msg = malloc(sizeof(Protocol__PrpStatsReply));
-    protocol__prp_stats_reply__init(stats_reply_msg);
+    stats_reply_msg = malloc(sizeof(Protocol__FlexStatsReply));
+    protocol__flex_stats_reply__init(stats_reply_msg);
     stats_reply_msg->header = header;
     stats_reply_msg->n_ue_report = n_ue_report;
     stats_reply_msg->ue_report = ue_report;
     stats_reply_msg->n_cell_report = n_cell_report;
     stats_reply_msg->cell_report = cell_report;
-    msg = malloc(sizeof(Protocol__ProgranMessage));
+    msg = malloc(sizeof(Protocol__FlexranMessage));
     if(msg == NULL)
       goto error;
-    protocol__progran_message__init(msg);
-    msg->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_STATS_REPLY_MSG;
-    msg->msg_dir = PROTOCOL__PROGRAN_DIRECTION__SUCCESSFUL_OUTCOME;
+    protocol__flexran_message__init(msg);
+    msg->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_STATS_REPLY_MSG;
+    msg->msg_dir = PROTOCOL__FLEXRAN_DIRECTION__SUCCESSFUL_OUTCOME;
     msg->stats_reply_msg = stats_reply_msg;
   }
   return msg;
@@ -155,28 +155,28 @@ Protocol__ProgranMessage * enb_agent_generate_diff_mac_stats_report(Protocol__Pr
    return NULL;
 }
 
-int compare_ue_stats_reports(Protocol__PrpUeStatsReport *rep1,
-			    Protocol__PrpUeStatsReport *rep2) {
+int compare_ue_stats_reports(Protocol__FlexUeStatsReport *rep1,
+			    Protocol__FlexUeStatsReport *rep2) {
   return 1;
 }
 
-int compare_cell_stats_reports(Protocol__PrpCellStatsReport *rep1,
-			      Protocol__PrpCellStatsReport *rep2) {
+int compare_cell_stats_reports(Protocol__FlexCellStatsReport *rep1,
+			      Protocol__FlexCellStatsReport *rep2) {
   return 1;
 }
 
-Protocol__PrpUeStatsReport * copy_ue_stats_report(Protocol__PrpUeStatsReport * original) {
+Protocol__FlexUeStatsReport * copy_ue_stats_report(Protocol__FlexUeStatsReport * original) {
   int i;
-  Protocol__PrpUeStatsReport *copy =  malloc(sizeof(Protocol__PrpUeStatsReport));
+  Protocol__FlexUeStatsReport *copy =  malloc(sizeof(Protocol__FlexUeStatsReport));
   if (copy == NULL)
     goto error;
-  protocol__prp_ue_stats_report__init(copy);
+  protocol__flex_ue_stats_report__init(copy);
   copy->rnti = original->rnti;
   copy->has_rnti = original->has_rnti;
   copy->flags = original->flags;
   copy->has_flags = original->has_flags;
   
-  if (copy->flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_BSR) {
+  if (copy->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_BSR) {
     copy->n_bsr = original->n_bsr;
     if (copy->n_bsr > 0) {
       uint32_t *elem;
@@ -190,16 +190,16 @@ Protocol__PrpUeStatsReport * copy_ue_stats_report(Protocol__PrpUeStatsReport * o
     }
   }
 
-  if (copy->flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_PRH) {
+  if (copy->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PRH) {
     copy->has_phr = original->has_phr;
     copy->phr = original->phr;
   }
 
-  if (copy->flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_RLC_BS) {
+  if (copy->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RLC_BS) {
     copy->n_rlc_report = original->n_rlc_report; 
     if (copy->n_rlc_report > 0) {
-      Protocol__PrpRlcBsr ** rlc_reports;
-      rlc_reports = malloc(sizeof(Protocol__PrpRlcBsr) * copy->n_rlc_report);
+      Protocol__FlexRlcBsr ** rlc_reports;
+      rlc_reports = malloc(sizeof(Protocol__FlexRlcBsr) * copy->n_rlc_report);
       if (rlc_reports == NULL)
 	goto error;
       for (i = 0; i < copy->n_rlc_report; i++) {
@@ -209,22 +209,22 @@ Protocol__PrpUeStatsReport * copy_ue_stats_report(Protocol__PrpUeStatsReport * o
     }
   }
 
-  if (copy->flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_MAC_CE_BS) {
+  if (copy->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_CE_BS) {
     copy->has_pending_mac_ces = original->has_pending_mac_ces;
     copy->pending_mac_ces = original->pending_mac_ces;
   
   }
   
-  if (copy->flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_DL_CQI) {
+  if (copy->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_DL_CQI) {
     copy->dl_cqi_report = copy_dl_cqi_report(original->dl_cqi_report);
   }
 
-  if (copy->flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_PBS) {  
+  if (copy->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PBS) {  
     /*Copy the Paging Buffer report*/
     copy->pbr = copy_paging_buffer_report(original->pbr);
   }
 
-  if (copy->flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_UL_CQI) {
+  if (copy->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_UL_CQI) {
     /*TODO: Copy the UL report*/  
     copy->ul_cqi_report = copy_ul_cqi_report(original->ul_cqi_report);
   }
@@ -235,11 +235,11 @@ Protocol__PrpUeStatsReport * copy_ue_stats_report(Protocol__PrpUeStatsReport * o
   return NULL;
 }
 
-Protocol__PrpRlcBsr * copy_rlc_report(Protocol__PrpRlcBsr * original) {
-  Protocol__PrpRlcBsr * copy = malloc(sizeof(Protocol__PrpRlcBsr));
+Protocol__FlexRlcBsr * copy_rlc_report(Protocol__FlexRlcBsr * original) {
+  Protocol__FlexRlcBsr * copy = malloc(sizeof(Protocol__FlexRlcBsr));
   if (copy == NULL)
     goto error;
-  protocol__prp_rlc_bsr__init(copy);
+  protocol__flex_rlc_bsr__init(copy);
   copy->lc_id = original->lc_id;
   copy->has_lc_id = original->has_lc_id;
   copy->tx_queue_size = original->tx_queue_size;
@@ -259,30 +259,30 @@ Protocol__PrpRlcBsr * copy_rlc_report(Protocol__PrpRlcBsr * original) {
   return NULL;
 }
 
-Protocol__PrpUlCqiReport * copy_ul_cqi_report(Protocol__PrpUlCqiReport * original) {
+Protocol__FlexUlCqiReport * copy_ul_cqi_report(Protocol__FlexUlCqiReport * original) {
   int i, j;
   
   //Fill in the full UL CQI report of the UE
-  Protocol__PrpUlCqiReport *full_ul_report;
-  full_ul_report = malloc(sizeof(Protocol__PrpUlCqiReport));
+  Protocol__FlexUlCqiReport *full_ul_report;
+  full_ul_report = malloc(sizeof(Protocol__FlexUlCqiReport));
   if(full_ul_report == NULL) {
     goto error;
   }
-  protocol__prp_ul_cqi_report__init(full_ul_report);
+  protocol__flex_ul_cqi_report__init(full_ul_report);
   //TODO:Set the SFN and SF of the generated report
   full_ul_report->sfn_sn = original->sfn_sn;
   full_ul_report->has_sfn_sn = original->has_sfn_sn;
   full_ul_report->n_cqi_meas = original->n_cqi_meas;
 
-  Protocol__PrpUlCqi **ul_report;
-  ul_report = malloc(sizeof(Protocol__PrpUlCqi *) * full_ul_report->n_cqi_meas);
+  Protocol__FlexUlCqi **ul_report;
+  ul_report = malloc(sizeof(Protocol__FlexUlCqi *) * full_ul_report->n_cqi_meas);
   if(ul_report == NULL)
     goto error;
   for(i = 0; i++; i < full_ul_report->n_cqi_meas) {
-    ul_report[i] = malloc(sizeof(Protocol__PrpUlCqi));
+    ul_report[i] = malloc(sizeof(Protocol__FlexUlCqi));
     if(ul_report[i] == NULL)
       goto error;
-    protocol__prp_ul_cqi__init(ul_report[i]);
+    protocol__flex_ul_cqi__init(ul_report[i]);
     ul_report[i]->type = original->cqi_meas[i]->type;
     ul_report[i]->has_type = original->cqi_meas[i]->has_type;
     ul_report[i]->n_sinr = original->cqi_meas[i]->n_sinr;
@@ -305,21 +305,21 @@ Protocol__PrpUlCqiReport * copy_ul_cqi_report(Protocol__PrpUlCqiReport * origina
     return NULL;
 }
 
-Protocol__PrpDlCqiReport * copy_dl_cqi_report(Protocol__PrpDlCqiReport * original) {
+Protocol__FlexDlCqiReport * copy_dl_cqi_report(Protocol__FlexDlCqiReport * original) {
   int i;
   /*Copy the DL report*/
-  Protocol__PrpDlCqiReport * dl_report;
-  dl_report = malloc(sizeof(Protocol__PrpDlCqiReport));
+  Protocol__FlexDlCqiReport * dl_report;
+  dl_report = malloc(sizeof(Protocol__FlexDlCqiReport));
   if (dl_report == NULL)
     goto error;
-  protocol__prp_dl_cqi_report__init(dl_report);
+  protocol__flex_dl_cqi_report__init(dl_report);
 
   dl_report->sfn_sn = original->sfn_sn;
   dl_report->has_sfn_sn = original->has_sfn_sn;
   dl_report->n_csi_report = original->n_csi_report;
 
-  Protocol__PrpDlCsi **csi_reports;
-  csi_reports = malloc(sizeof(Protocol__PrpDlCsi *) * dl_report->n_csi_report);
+  Protocol__FlexDlCsi **csi_reports;
+  csi_reports = malloc(sizeof(Protocol__FlexDlCsi *) * dl_report->n_csi_report);
   if (csi_reports == NULL)
     goto error;
   
@@ -334,26 +334,26 @@ Protocol__PrpDlCqiReport * copy_dl_cqi_report(Protocol__PrpDlCqiReport * origina
   return NULL;
 }
 
-Protocol__PrpPagingBufferReport * copy_paging_buffer_report(Protocol__PrpPagingBufferReport *original) {
+Protocol__FlexPagingBufferReport * copy_paging_buffer_report(Protocol__FlexPagingBufferReport *original) {
   
   int i;
-  Protocol__PrpPagingBufferReport *copy;
-  copy = malloc(sizeof(Protocol__PrpPagingBufferReport));
+  Protocol__FlexPagingBufferReport *copy;
+  copy = malloc(sizeof(Protocol__FlexPagingBufferReport));
   if (copy == NULL)
     goto error;
   
-  protocol__prp_paging_buffer_report__init(copy);
+  protocol__flex_paging_buffer_report__init(copy);
   copy->n_paging_info = original->n_paging_info;
   
-  Protocol__PrpPagingInfo **p_info;
-  p_info = malloc(sizeof(Protocol__PrpPagingInfo *) * copy->n_paging_info);
+  Protocol__FlexPagingInfo **p_info;
+  p_info = malloc(sizeof(Protocol__FlexPagingInfo *) * copy->n_paging_info);
   if (p_info == NULL)
     goto error;
   for (i = 0; i < copy->n_paging_info; i++) {
-    p_info[i] = malloc(sizeof(Protocol__PrpPagingInfo));
+    p_info[i] = malloc(sizeof(Protocol__FlexPagingInfo));
     if(p_info[i] == NULL)
       goto error;
-    protocol__prp_paging_info__init(p_info[i]);
+    protocol__flex_paging_info__init(p_info[i]);
     p_info[i]->paging_index = original->paging_info[i]->paging_index;
     p_info[i]->has_paging_index = original->paging_info[i]->has_paging_index;;
     p_info[i]->paging_message_size = original->paging_info[i]->paging_message_size;
@@ -371,12 +371,12 @@ Protocol__PrpPagingBufferReport * copy_paging_buffer_report(Protocol__PrpPagingB
   return NULL;
 }
 
-Protocol__PrpDlCsi * copy_csi_report(Protocol__PrpDlCsi * original) {
+Protocol__FlexDlCsi * copy_csi_report(Protocol__FlexDlCsi * original) {
   int i, j;
-  Protocol__PrpDlCsi *copy = malloc(sizeof(Protocol__PrpDlCsi));
+  Protocol__FlexDlCsi *copy = malloc(sizeof(Protocol__FlexDlCsi));
   if (copy == NULL)
     goto error;
-  protocol__prp_dl_csi__init(copy);
+  protocol__flex_dl_csi__init(copy);
   copy->serv_cell_index = original->serv_cell_index;
   copy->has_serv_cell_index = original->has_serv_cell_index;
   copy->ri = original->ri;
@@ -387,11 +387,11 @@ Protocol__PrpDlCsi * copy_csi_report(Protocol__PrpDlCsi * original) {
   copy->report_case = original->report_case;
   
   switch (copy->report_case) {
-  case PROTOCOL__PRP_DL_CSI__REPORT_P10CSI:
+  case PROTOCOL__FLEX_DL_CSI__REPORT_P10CSI:
     copy->p10csi->wb_cqi = original->p10csi->wb_cqi;
     copy->p10csi->has_wb_cqi = original->p10csi->has_wb_cqi;
     break;
-  case PROTOCOL__PRP_DL_CSI__REPORT_P11CSI:
+  case PROTOCOL__FLEX_DL_CSI__REPORT_P11CSI:
     copy->p11csi->n_wb_cqi = original->p11csi->n_wb_cqi;
     copy->p11csi->wb_cqi = (uint32_t *) malloc(sizeof(uint32_t) * copy->p11csi->n_wb_cqi);
     for (i = 0; i < copy->p11csi->n_wb_cqi; i++) {
@@ -400,7 +400,7 @@ Protocol__PrpDlCsi * copy_csi_report(Protocol__PrpDlCsi * original) {
     copy->p11csi->has_wb_pmi = original->p11csi->has_wb_pmi;
     copy->p11csi->wb_pmi = original->p11csi->wb_pmi;
     break;
-  case PROTOCOL__PRP_DL_CSI__REPORT_P20CSI:
+  case PROTOCOL__FLEX_DL_CSI__REPORT_P20CSI:
     copy->p20csi->has_wb_cqi = original->p20csi->has_wb_cqi;
     copy->p20csi->wb_cqi = original->p20csi->wb_cqi;
     copy->p20csi->has_sb_cqi = original->p20csi->has_sb_cqi;
@@ -410,7 +410,7 @@ Protocol__PrpDlCsi * copy_csi_report(Protocol__PrpDlCsi * original) {
     copy->p20csi->has_sb_index = original->p20csi->has_sb_index;
     copy->p20csi->sb_index = original->p20csi->sb_index;
     break;
-  case PROTOCOL__PRP_DL_CSI__REPORT_P21CSI:
+  case PROTOCOL__FLEX_DL_CSI__REPORT_P21CSI:
     copy->p21csi->n_wb_cqi = original->p21csi->n_wb_cqi;
     copy->p21csi->wb_cqi = (uint32_t *) malloc(sizeof(uint32_t) * copy->p21csi->n_wb_cqi);
     for (i = 0; i < copy->p21csi->n_wb_cqi; i++) {
@@ -428,7 +428,7 @@ Protocol__PrpDlCsi * copy_csi_report(Protocol__PrpDlCsi * original) {
     copy->p21csi->has_sb_index = original->p21csi->has_sb_index;
     copy->p21csi->sb_index = original->p21csi->sb_index;
     break;
-  case PROTOCOL__PRP_DL_CSI__REPORT_A12CSI:
+  case PROTOCOL__FLEX_DL_CSI__REPORT_A12CSI:
     copy->a12csi->n_wb_cqi = original->a12csi->n_wb_cqi;
     copy->a12csi->wb_cqi = (uint32_t *) malloc(sizeof(uint32_t) * copy->a12csi->n_wb_cqi);
     for (i = 0; i < copy->a12csi->n_wb_cqi; i++) {
@@ -440,7 +440,7 @@ Protocol__PrpDlCsi * copy_csi_report(Protocol__PrpDlCsi * original) {
       copy->a12csi->sb_pmi[i] = original->a12csi->sb_pmi[i];
     }
     break;
-  case PROTOCOL__PRP_DL_CSI__REPORT_A22CSI:
+  case PROTOCOL__FLEX_DL_CSI__REPORT_A22CSI:
     copy->a22csi->n_wb_cqi = original->a22csi->n_wb_cqi;
     copy->a22csi->wb_cqi = (uint32_t *) malloc(sizeof(uint32_t) * copy->a22csi->n_wb_cqi);
     for (i = 0; i < copy->a22csi->n_wb_cqi; i++) {
@@ -461,7 +461,7 @@ Protocol__PrpDlCsi * copy_csi_report(Protocol__PrpDlCsi * original) {
       copy->a22csi->sb_list[i] = original->a22csi->sb_list[i];
     }
     break;
-  case PROTOCOL__PRP_DL_CSI__REPORT_A20CSI:
+  case PROTOCOL__FLEX_DL_CSI__REPORT_A20CSI:
     copy->a20csi->has_wb_cqi = original->a20csi->has_wb_cqi;
     copy->a20csi->wb_cqi = original->a20csi->wb_cqi;
     copy->a20csi->has_sb_cqi = original->a20csi->has_sb_cqi;
@@ -472,7 +472,7 @@ Protocol__PrpDlCsi * copy_csi_report(Protocol__PrpDlCsi * original) {
       copy->a20csi->sb_list[i] = original->a20csi->sb_list[i];
     }
     break;
-  case PROTOCOL__PRP_DL_CSI__REPORT_A30CSI:
+  case PROTOCOL__FLEX_DL_CSI__REPORT_A30CSI:
     copy->a30csi->has_wb_cqi = original->a30csi->has_wb_cqi;
     copy->a30csi->wb_cqi = original->a30csi->wb_cqi;
     copy->a30csi->n_sb_cqi = original->a30csi->n_sb_cqi;
@@ -481,7 +481,7 @@ Protocol__PrpDlCsi * copy_csi_report(Protocol__PrpDlCsi * original) {
       copy->a30csi->sb_cqi[i] = original->a30csi->sb_cqi[i];
     }
     break;
-  case PROTOCOL__PRP_DL_CSI__REPORT_A31CSI:
+  case PROTOCOL__FLEX_DL_CSI__REPORT_A31CSI:
     copy->a31csi->n_wb_cqi = original->a31csi->n_wb_cqi;
     copy->a31csi->wb_cqi = (uint32_t *) malloc(sizeof(uint32_t) * copy->a31csi->n_wb_cqi);
     for (i = 0; i < copy->a31csi->n_wb_cqi; i++) {
@@ -490,16 +490,16 @@ Protocol__PrpDlCsi * copy_csi_report(Protocol__PrpDlCsi * original) {
     copy->a31csi->has_wb_pmi = original->a31csi->has_wb_pmi;
     copy->a31csi->wb_pmi = original->a31csi->wb_pmi;
     copy->a31csi->n_sb_cqi = original->a31csi->n_sb_cqi;
-    copy->a31csi->sb_cqi = malloc(sizeof(Protocol__PrpMsbCqi *) * copy->a31csi->n_sb_cqi);
+    copy->a31csi->sb_cqi = malloc(sizeof(Protocol__FlexMsbCqi *) * copy->a31csi->n_sb_cqi);
     if (copy->a31csi == NULL) {
       goto error;
     }
     for (i = 0; i < copy->a31csi->n_sb_cqi; i++) {
-      copy->a31csi->sb_cqi[i] = malloc(sizeof(Protocol__PrpMsbCqi));
+      copy->a31csi->sb_cqi[i] = malloc(sizeof(Protocol__FlexMsbCqi));
       if (copy->a31csi->sb_cqi[i] == NULL) {
 	goto error;
       }
-      protocol__prp_msb_cqi__init(copy->a31csi->sb_cqi[i]);
+      protocol__flex_msb_cqi__init(copy->a31csi->sb_cqi[i]);
       copy->a31csi->sb_cqi[i]->n_sb_cqi = original->a31csi->sb_cqi[i]->n_sb_cqi;
       copy->a31csi->sb_cqi[i]->sb_cqi = (uint32_t *) malloc(sizeof(uint32_t) * copy->a31csi->sb_cqi[i]->n_sb_cqi);
       for (j = 0; j < copy->a31csi->sb_cqi[i]->n_sb_cqi; j++) {
@@ -516,20 +516,20 @@ Protocol__PrpDlCsi * copy_csi_report(Protocol__PrpDlCsi * original) {
   return NULL;
 }
 
-Protocol__PrpCellStatsReport * copy_cell_stats_report(Protocol__PrpCellStatsReport *original) {
+Protocol__FlexCellStatsReport * copy_cell_stats_report(Protocol__FlexCellStatsReport *original) {
  
-  Protocol__PrpCellStatsReport * copy =  malloc(sizeof(Protocol__PrpCellStatsReport));
+  Protocol__FlexCellStatsReport * copy =  malloc(sizeof(Protocol__FlexCellStatsReport));
   
   if(copy == NULL) {
     goto error;
   }
-  protocol__prp_cell_stats_report__init(copy);
+  protocol__flex_cell_stats_report__init(copy);
   copy->carrier_index = original->carrier_index;
   copy->has_carrier_index = original->has_carrier_index;
   copy->flags = original->flags;
   copy->has_flags = original->has_flags;
 
-   if(copy->flags & PROTOCOL__PRP_CELL_STATS_TYPE__PRCST_NOISE_INTERFERENCE) {
+   if(copy->flags & PROTOCOL__FLEX_CELL_STATS_TYPE__FLCST_NOISE_INTERFERENCE) {
      copy->noise_inter_report = copy_noise_inter_report(original->noise_inter_report);
    }
 
@@ -539,13 +539,13 @@ Protocol__PrpCellStatsReport * copy_cell_stats_report(Protocol__PrpCellStatsRepo
    return NULL;
 }
 
-Protocol__PrpNoiseInterferenceReport * copy_noise_inter_report(Protocol__PrpNoiseInterferenceReport *original) {
-  Protocol__PrpNoiseInterferenceReport *ni_report;
-  ni_report = malloc(sizeof(Protocol__PrpNoiseInterferenceReport));
+Protocol__FlexNoiseInterferenceReport * copy_noise_inter_report(Protocol__FlexNoiseInterferenceReport *original) {
+  Protocol__FlexNoiseInterferenceReport *ni_report;
+  ni_report = malloc(sizeof(Protocol__FlexNoiseInterferenceReport));
   if(ni_report == NULL) {
     goto error;
   }
-  protocol__prp_noise_interference_report__init(ni_report);
+  protocol__flex_noise_interference_report__init(ni_report);
   // Current frame and subframe number
   ni_report->sfn_sf = original->sfn_sf;
   ni_report->has_sfn_sf = original->sfn_sf;

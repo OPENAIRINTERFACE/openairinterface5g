@@ -29,7 +29,7 @@
 
 /*! \file enb_agent.h
  * \brief top level enb agent receive thread and itti task
- * \author Navid Nikaein and Xenofon Foukas
+ * \author Xenofon Foukas and Navid Nikaein
  * \date 2016
  * \version 0.1
  */
@@ -57,7 +57,7 @@ char local_cache[40];
 void *send_thread(void *args);
 void *receive_thread(void *args);
 pthread_t new_thread(void *(*f)(void *), void *b);
-Protocol__ProgranMessage *enb_agent_timeout(void* args);
+Protocol__FlexranMessage *enb_agent_timeout(void* args);
 
 
 int agent_task_created = 0;
@@ -68,7 +68,7 @@ int agent_task_created = 0;
 void *enb_agent_task(void *args){
 
   //enb_agent_instance_t         *d = (enb_agent_instance_t *) args;
-  Protocol__ProgranMessage *msg;
+  Protocol__FlexranMessage *msg;
   void *data;
   int size;
   err_code_t err_code;
@@ -104,7 +104,7 @@ void *enb_agent_task(void *args){
 	data=enb_agent_pack_message(msg,&size);
 	elem = get_timer_entry(msg_p->ittiMsg.timer_has_expired.timer_id);
 	if (enb_agent_msg_send(elem->agent_id, ENB_AGENT_DEFAULT, data, size, priority)) {
-	  err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
+	  err_code = PROTOCOL__FLEXRAN_ERR__MSG_ENQUEUING;
 	  goto error;
 	}
 
@@ -135,11 +135,11 @@ void *receive_thread(void *args) {
   int                   priority;
   err_code_t             err_code;
 
-  Protocol__ProgranMessage *msg;
+  Protocol__FlexranMessage *msg;
   
   while (1) {
     //if (enb_agent_msg_recv(d->enb_id, ENB_AGENT_DEFAULT, &data, &size, &priority)) {
-    //  err_code = PROTOCOL__PROGRAN_ERR__MSG_DEQUEUING;
+    //  err_code = PROTOCOL__FLEXRAN_ERR__MSG_DEQUEUING;
     //  goto error;
     //}
 
@@ -157,7 +157,7 @@ void *receive_thread(void *args) {
 	data=enb_agent_pack_message(msg,&size);
 
 	if (enb_agent_msg_send(d->enb_id, ENB_AGENT_DEFAULT, data, size, priority)) {
-	  err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
+	  err_code = PROTOCOL__FLEXRAN_ERR__MSG_ENQUEUING;
 	  goto error;
 	}
       
@@ -337,7 +337,7 @@ error:
 
 
 
-Protocol__ProgranMessage *enb_agent_timeout(void* args){
+Protocol__FlexranMessage *enb_agent_timeout(void* args){
 
   //  enb_agent_timer_args_t *timer_args = calloc(1, sizeof(*timer_args));
   //memcpy (timer_args, args, sizeof(*timer_args));

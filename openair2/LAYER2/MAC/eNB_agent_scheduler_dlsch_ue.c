@@ -63,7 +63,7 @@
 #include "pdcp.h"
 
 #include "header.pb-c.h"
-#include "progran.pb-c.h"
+#include "flexran.pb-c.h"
 #include "enb_agent_mac.h"
 
 #include "SIMULATION/TOOLS/defs.h" // for taus
@@ -81,7 +81,7 @@ schedule_ue_spec_default(
   uint32_t      frame,
   uint32_t      subframe,
   int           *mbsfn_flag,
-  Protocol__ProgranMessage **dl_info
+  Protocol__FlexranMessage **dl_info
 )
 //------------------------------------------------------------------------------
 {
@@ -109,14 +109,14 @@ schedule_ue_spec_default(
   static int32_t          tpc_accumulated=0;
   UE_sched_ctrl           *ue_sched_ctl;
 
-  Protocol__PrpDlData *dl_data[NUM_MAX_UE];
+  Protocol__FlexDlData *dl_data[NUM_MAX_UE];
   int num_ues_added = 0;
   int channels_added = 0;
 
-  Protocol__PrpDlDci *dl_dci;
-  Protocol__PrpRlcPdu *rlc_pdus[11];
+  Protocol__FlexDlDci *dl_dci;
+  Protocol__FlexRlcPdu *rlc_pdus[11];
   uint32_t *ce_bitmap;
-  Protocol__PrpRlcPdu **rlc_pdu;
+  Protocol__FlexRlcPdu **rlc_pdu;
   int num_tb;
   uint32_t ce_flags = 0;
 
@@ -216,8 +216,8 @@ schedule_ue_spec_default(
       channels_added = 0;
 
       // After this point all the UEs will be scheduled
-      dl_data[num_ues_added] = (Protocol__PrpDlData *) malloc(sizeof(Protocol__PrpDlData));
-      protocol__prp_dl_data__init(dl_data[num_ues_added]);
+      dl_data[num_ues_added] = (Protocol__FlexDlData *) malloc(sizeof(Protocol__FlexDlData));
+      protocol__flex_dl_data__init(dl_data[num_ues_added]);
       dl_data[num_ues_added]->has_rnti = 1;
       dl_data[num_ues_added]->rnti = rnti;
       dl_data[num_ues_added]->n_rlc_pdu = 0;
@@ -258,8 +258,8 @@ schedule_ue_spec_default(
             eNB_UE_stats->DL_cqi[0], mcs,
             UE_list->eNB_UE_stats[CC_id][UE_id].rrc_status);
 
-      dl_dci = (Protocol__PrpDlDci*) malloc(sizeof(Protocol__PrpDlDci));
-      protocol__prp_dl_dci__init(dl_dci);
+      dl_dci = (Protocol__FlexDlDci*) malloc(sizeof(Protocol__FlexDlDci));
+      protocol__flex_dl_dci__init(dl_dci);
       dl_data[num_ues_added]->dl_dci = dl_dci;
 
       
@@ -353,12 +353,12 @@ schedule_ue_spec_default(
 	dl_data[num_ues_added]->ce_bitmap = (uint32_t *) malloc(sizeof(uint32_t) * 2);
 	
 	if (ta_len > 0) {
-	  ce_flags |= PROTOCOL__PRP_CE_TYPE__PRPCET_TA;
+	  ce_flags |= PROTOCOL__FLEX_CE_TYPE__FLPCET_TA;
 	}
 
 	/*TODO: Add other flags if DRX and other CE are required*/
 	
-	// Add the control element flags to the progran message
+	// Add the control element flags to the flexran message
 	dl_data[num_ues_added]->ce_bitmap[0] = ce_flags;
 	dl_data[num_ues_added]->ce_bitmap[1] = ce_flags;
 
@@ -394,18 +394,18 @@ schedule_ue_spec_default(
 	        data_to_request++; //It is not correct but fixes some RLC bug for DCCH
 	       }
 	       LOG_D(MAC, "[TEST]Will request %d from DCCH\n", data_to_request);
-	       rlc_pdus[channels_added] = (Protocol__PrpRlcPdu *) malloc(sizeof(Protocol__PrpRlcPdu));
-	       protocol__prp_rlc_pdu__init(rlc_pdus[channels_added]);
+	       rlc_pdus[channels_added] = (Protocol__FlexRlcPdu *) malloc(sizeof(Protocol__FlexRlcPdu));
+	       protocol__flex_rlc_pdu__init(rlc_pdus[channels_added]);
 	       rlc_pdus[channels_added]->n_rlc_pdu_tb = 2;
-	       rlc_pdus[channels_added]->rlc_pdu_tb = (Protocol__PrpRlcPduTb **) malloc(sizeof(Protocol__PrpRlcPduTb *) * 2);
-	       rlc_pdus[channels_added]->rlc_pdu_tb[0] = (Protocol__PrpRlcPduTb *) malloc(sizeof(Protocol__PrpRlcPduTb));
-	       protocol__prp_rlc_pdu_tb__init(rlc_pdus[channels_added]->rlc_pdu_tb[0]);
+	       rlc_pdus[channels_added]->rlc_pdu_tb = (Protocol__FlexRlcPduTb **) malloc(sizeof(Protocol__FlexRlcPduTb *) * 2);
+	       rlc_pdus[channels_added]->rlc_pdu_tb[0] = (Protocol__FlexRlcPduTb *) malloc(sizeof(Protocol__FlexRlcPduTb));
+	       protocol__flex_rlc_pdu_tb__init(rlc_pdus[channels_added]->rlc_pdu_tb[0]);
 	       rlc_pdus[channels_added]->rlc_pdu_tb[0]->has_logical_channel_id = 1;
 	       rlc_pdus[channels_added]->rlc_pdu_tb[0]->logical_channel_id = j;
 	       rlc_pdus[channels_added]->rlc_pdu_tb[0]->has_size = 1;
 	       rlc_pdus[channels_added]->rlc_pdu_tb[0]->size = data_to_request;
-	       rlc_pdus[channels_added]->rlc_pdu_tb[1] = (Protocol__PrpRlcPduTb *) malloc(sizeof(Protocol__PrpRlcPduTb));
-	       protocol__prp_rlc_pdu_tb__init(rlc_pdus[channels_added]->rlc_pdu_tb[1]);
+	       rlc_pdus[channels_added]->rlc_pdu_tb[1] = (Protocol__FlexRlcPduTb *) malloc(sizeof(Protocol__FlexRlcPduTb));
+	       protocol__flex_rlc_pdu_tb__init(rlc_pdus[channels_added]->rlc_pdu_tb[1]);
 	       rlc_pdus[channels_added]->rlc_pdu_tb[1]->has_logical_channel_id = 1;
 	       rlc_pdus[channels_added]->rlc_pdu_tb[1]->logical_channel_id = j;
 	       rlc_pdus[channels_added]->rlc_pdu_tb[1]->has_size = 1;
@@ -422,7 +422,7 @@ schedule_ue_spec_default(
 	} // End of iterating the logical channels
 	
 	// Add rlc_pdus to the dl_data message
-	dl_data[num_ues_added]->rlc_pdu = (Protocol__PrpRlcPdu **) malloc(sizeof(Protocol__PrpRlcPdu *) *
+	dl_data[num_ues_added]->rlc_pdu = (Protocol__FlexRlcPdu **) malloc(sizeof(Protocol__FlexRlcPdu *) *
 									  dl_data[num_ues_added]->n_rlc_pdu);
 	for (i = 0; i < dl_data[num_ues_added]->n_rlc_pdu; i++) {
 	  dl_data[num_ues_added]->rlc_pdu[i] = rlc_pdus[i];
@@ -595,9 +595,9 @@ schedule_ue_spec_default(
 	  dl_dci->has_res_alloc = 1;
 	  dl_dci->res_alloc = 0;
 	  dl_dci->has_vrb_format = 1;
-	  dl_dci->vrb_format = PROTOCOL__PRP_VRB_FORMAT__PRVRBF_LOCALIZED;
+	  dl_dci->vrb_format = PROTOCOL__FLEX_VRB_FORMAT__FLVRBF_LOCALIZED;
 	  dl_dci->has_format = 1;
-	  dl_dci->format = PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1;
+	  dl_dci->format = PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1;
 	  dl_dci->has_rb_bitmap = 1;
 	  dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, rballoc_sub);
 	  dl_dci->has_rb_shift = 1;
@@ -625,9 +625,9 @@ schedule_ue_spec_default(
 	  dl_dci->has_res_alloc = 1;
 	  dl_dci->res_alloc = 0;
 	  dl_dci->has_vrb_format = 1;
-	  dl_dci->vrb_format = PROTOCOL__PRP_VRB_FORMAT__PRVRBF_LOCALIZED;
+	  dl_dci->vrb_format = PROTOCOL__FLEX_VRB_FORMAT__FLVRBF_LOCALIZED;
 	  dl_dci->has_format = 1;
-	  dl_dci->format = PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A;
+	  dl_dci->format = PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_2A;
 	  dl_dci->has_rb_bitmap = 1;
 	  dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, rballoc_sub);
 	  dl_dci->has_rb_shift = 1;
@@ -659,9 +659,9 @@ schedule_ue_spec_default(
 	  dl_dci->has_res_alloc = 1;
 	  dl_dci->res_alloc = 0;
 	  dl_dci->has_vrb_format = 1;
-	  dl_dci->vrb_format = PROTOCOL__PRP_VRB_FORMAT__PRVRBF_LOCALIZED;
+	  dl_dci->vrb_format = PROTOCOL__FLEX_VRB_FORMAT__FLVRBF_LOCALIZED;
 	  dl_dci->has_format = 1;
-	  dl_dci->format = PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A;
+	  dl_dci->format = PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_2A;
 	  dl_dci->has_rb_bitmap = 1;
 	  dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, rballoc_sub);
 	  dl_dci->has_rb_shift = 1;
@@ -693,9 +693,9 @@ schedule_ue_spec_default(
 	  dl_dci->has_res_alloc = 1;
 	  dl_dci->res_alloc = 0;
 	  dl_dci->has_vrb_format = 1;
-	  dl_dci->vrb_format = PROTOCOL__PRP_VRB_FORMAT__PRVRBF_LOCALIZED;
+	  dl_dci->vrb_format = PROTOCOL__FLEX_VRB_FORMAT__FLVRBF_LOCALIZED;
 	  dl_dci->has_format = 1;
-	  dl_dci->format = PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1D;
+	  dl_dci->format = PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1D;
 	  dl_dci->has_rb_bitmap = 1;
 	  dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, rballoc_sub);
 	  dl_dci->has_rb_shift = 1;
@@ -733,9 +733,9 @@ schedule_ue_spec_default(
 	  dl_dci->has_res_alloc = 1;
 	  dl_dci->res_alloc = 0;
 	  dl_dci->has_vrb_format = 1;
-	  dl_dci->vrb_format = PROTOCOL__PRP_VRB_FORMAT__PRVRBF_LOCALIZED;
+	  dl_dci->vrb_format = PROTOCOL__FLEX_VRB_FORMAT__FLVRBF_LOCALIZED;
 	  dl_dci->has_format = 1;
-	  dl_dci->format = PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1D;
+	  dl_dci->format = PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1D;
 	  dl_dci->has_rb_bitmap = 1;
 	  dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, rballoc_sub);
 	  dl_dci->has_rb_shift = 1;
@@ -770,9 +770,9 @@ schedule_ue_spec_default(
     } // UE_id loop
    } // CC_id loop
 
-   // Add all the dl_data elements to the progran message
+   // Add all the dl_data elements to the flexran message
    (*dl_info)->dl_mac_config_msg->n_dl_ue_data = num_ues_added;
-   (*dl_info)->dl_mac_config_msg->dl_ue_data = (Protocol__PrpDlData **) malloc(sizeof(Protocol__PrpDlData *) * num_ues_added);
+   (*dl_info)->dl_mac_config_msg->dl_ue_data = (Protocol__FlexDlData **) malloc(sizeof(Protocol__FlexDlData *) * num_ues_added);
    for (i = 0; i < num_ues_added; i++) {
      (*dl_info)->dl_mac_config_msg->dl_ue_data[i] = dl_data[i];
    }

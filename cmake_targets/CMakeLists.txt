@@ -840,55 +840,55 @@ include_directories("${OPENAIR_DIR}")
 ################
 if (ENB_AGENT_SB_IF)
   # set the version of protobuf messages, V3 not supported yet
-  add_list1_option(PRPT_VERSION V2 "PRPT MSG  protobuf  grammar version" V2 V3)
+  add_list1_option(FLPT_VERSION V2 "FLPT MSG  protobuf  grammar version" V2 V3)
   
-  if (${PRPT_VERSION} STREQUAL "V2")
-    set (PRPTDIR V2)
-  elseif (${PRPT_VERSION} STREQUAL "V3")
-    set (PRPTDIR V3)
-  endif(${PRPT_VERSION} STREQUAL "V2")
+  if (${FLPT_VERSION} STREQUAL "V2")
+    set (FLPTDIR V2)
+  elseif (${FLPT_VERSION} STREQUAL "V3")
+    set (FLPTDIR V3)
+  endif(${FLPT_VERSION} STREQUAL "V2")
   
-  set(PRPT_MSG_DIR ${OPENAIR2_DIR}/ENB_APP/MESSAGES/${PRPTDIR} )
-  set(PRPT_MSG_FILES
-    ${PRPT_MSG_DIR}/header.proto
-    ${PRPT_MSG_DIR}/progran.proto
-    ${PRPT_MSG_DIR}/stats_common.proto
-    ${PRPT_MSG_DIR}/stats_messages.proto
-    ${PRPT_MSG_DIR}/time_common.proto
-    ${PRPT_MSG_DIR}/controller_commands.proto
-    ${PRPT_MSG_DIR}/mac_primitives.proto
-    ${PRPT_MSG_DIR}/config_messages.proto
-    ${PRPT_MSG_DIR}/config_common.proto
-    ${PRPT_MSG_DIR}/control_delegation.proto
+  set(FLPT_MSG_DIR ${OPENAIR2_DIR}/ENB_APP/MESSAGES/${FLPTDIR} )
+  set(FLPT_MSG_FILES
+    ${FLPT_MSG_DIR}/header.proto
+    ${FLPT_MSG_DIR}/flexran.proto
+    ${FLPT_MSG_DIR}/stats_common.proto
+    ${FLPT_MSG_DIR}/stats_messages.proto
+    ${FLPT_MSG_DIR}/time_common.proto
+    ${FLPT_MSG_DIR}/controller_commands.proto
+    ${FLPT_MSG_DIR}/mac_primitives.proto
+    ${FLPT_MSG_DIR}/config_messages.proto
+    ${FLPT_MSG_DIR}/config_common.proto
+    ${FLPT_MSG_DIR}/control_delegation.proto
     )
 
-  set(PRPT_C_DIR ${protobuf_generated_dir}/${PRPTDIR})
-  #message("calling protoc_call=${protoc_call} PRPT_C_DIR=${PRPT_C_DIR} PRPT_MSG_FILES=${PRPT_MSG_FILES}")
-  execute_process(COMMAND ${protoc_call} ${PRPT_C_DIR} ${PRPT_MSG_DIR} ${PRPT_MSG_FILES})
-  file(GLOB PRPT_source ${PRPT_C_DIR}/*.c)
-  set(PRPT_OAI_generated
-    ${PRPT_C_DIR}/header.pb-c.c
-    ${PRPT_C_DIR}/progran.pb-c.c
-    ${PRPT_C_DIR}/stats_common.pb-c.c
-    ${PRPT_C_DIR}/stats_messages.pb-c.c
-    ${PRPT_C_DIR}/time_common.pb-c.c
-    ${PRPT_C_DIR}/controller_commands.pb-c.c
-    ${PRPT_C_DIR}/mac_primitives.pb-c.c
-    ${PRPT_C_DIR}/config_messages.pb-c.c
-    ${PRPT_C_DIR}/config_common.pb-c.c
-    ${PRPT_C_DIR}/control_delegation.pb-c.c
+  set(FLPT_C_DIR ${protobuf_generated_dir}/${FLPTDIR})
+  #message("calling protoc_call=${protoc_call} FLPT_C_DIR=${FLPT_C_DIR} FLPT_MSG_FILES=${FLPT_MSG_FILES}")
+  execute_process(COMMAND ${protoc_call} ${FLPT_C_DIR} ${FLPT_MSG_DIR} ${FLPT_MSG_FILES})
+  file(GLOB FLPT_source ${FLPT_C_DIR}/*.c)
+  set(FLPT_OAI_generated
+    ${FLPT_C_DIR}/header.pb-c.c
+    ${FLPT_C_DIR}/flexran.pb-c.c
+    ${FLPT_C_DIR}/stats_common.pb-c.c
+    ${FLPT_C_DIR}/stats_messages.pb-c.c
+    ${FLPT_C_DIR}/time_common.pb-c.c
+    ${FLPT_C_DIR}/controller_commands.pb-c.c
+    ${FLPT_C_DIR}/mac_primitives.pb-c.c
+    ${FLPT_C_DIR}/config_messages.pb-c.c
+    ${FLPT_C_DIR}/config_common.pb-c.c
+    ${FLPT_C_DIR}/control_delegation.pb-c.c
     )
   
-  file(GLOB prpt_h ${PRPT_C_DIR}/*.h)
-  set(prpt_h ${prpt_h} )
+  file(GLOB flpt_h ${FLPT_C_DIR}/*.h)
+  set(flpt_h ${flpt_h} )
   
-  add_library(PRPT_MSG
-    ${PRPT_OAI_generated}
-    ${PRPT_source}
+  add_library(FLPT_MSG
+    ${FLPT_OAI_generated}
+    ${FLPT_source}
     )
-  set(PRPT_MSG_LIB PRPT_MSG)
-  #message("prpt c dir is : ${PRPT_C_DIR}")
-  include_directories (${PRPT_C_DIR})
+  set(FLPT_MSG_LIB FLPT_MSG)
+  #message("prpt c dir is : ${FLPT_C_DIR}")
+  include_directories (${FLPT_C_DIR})
 
   add_library(ASYNC_IF
     ${OPENAIR2_DIR}/UTIL/ASYNC_IF/socket_link.c
@@ -1757,7 +1757,7 @@ add_executable(lte-softmodem
 
 target_link_libraries (lte-softmodem -ldl
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} ${PRPT_MSG_LIB} ${ASYNC_IF_LIB} ${ENB_AGENT_LIB} LFDS7
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${ENB_AGENT_LIB} LFDS7
   -Wl,--end-group )
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
@@ -1791,7 +1791,7 @@ add_executable(lte-softmodem-nos1
   )
 target_link_libraries (lte-softmodem-nos1
   -Wl,--start-group
-  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} ${MIH_LIB} ${PRPT_MSG_LIB} ${ASYNC_IF_LIB} ${ENB_AGENT_LIB} LFDS7
+  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${ENB_AGENT_LIB} LFDS7
   -Wl,--end-group )
 
 target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
@@ -1936,7 +1936,7 @@ add_executable(oaisim_nos1
 target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim_nos1
   -Wl,--start-group
-  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB} ${PRPT_MSG_LIB} ${ASYNC_IF_LIB} ${ENB_AGENT_LIB} LFDS7
+  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${ENB_AGENT_LIB} LFDS7
   -Wl,--end-group )
 
 target_link_libraries (oaisim_nos1 ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})

@@ -29,7 +29,7 @@
 
 /*! \file enb_agent_common.c
  * \brief common primitives for all agents 
- * \author Navid Nikaein and Xenofon Foukas
+ * \author Xenofon Foukas, Mohamed Kassem and Navid Nikaein
  * \date 2016
  * \version 0.1
  */
@@ -55,15 +55,15 @@ void * enb_rrc[NUM_MAX_ENB];
  * message primitives
  */
 
-int enb_agent_serialize_message(Protocol__ProgranMessage *msg, void **buf, int *size) {
+int enb_agent_serialize_message(Protocol__FlexranMessage *msg, void **buf, int *size) {
 
-  *size = protocol__progran_message__get_packed_size(msg);
+  *size = protocol__flexran_message__get_packed_size(msg);
   
   *buf = malloc(*size);
   if (buf == NULL)
     goto error;
   
-  protocol__progran_message__pack(msg, *buf);
+  protocol__flexran_message__pack(msg, *buf);
   
   return 0;
   
@@ -76,8 +76,8 @@ int enb_agent_serialize_message(Protocol__ProgranMessage *msg, void **buf, int *
 
 /* We assume that the buffer size is equal to the message size.
    Should be chekced durint Tx/Rx */
-int enb_agent_deserialize_message(void *data, int size, Protocol__ProgranMessage **msg) {
-  *msg = protocol__progran_message__unpack(NULL, size, data);
+int enb_agent_deserialize_message(void *data, int size, Protocol__FlexranMessage **msg) {
+  *msg = protocol__flexran_message__unpack(NULL, size, data);
   if (*msg == NULL)
     goto error;
 
@@ -90,14 +90,14 @@ int enb_agent_deserialize_message(void *data, int size, Protocol__ProgranMessage
 
 
 
-int prp_create_header(xid_t xid, Protocol__PrpType type,  Protocol__PrpHeader **header) {
+int flex_create_header(xid_t xid, Protocol__FlexType type,  Protocol__FlexHeader **header) {
   
-  *header = malloc(sizeof(Protocol__PrpHeader));
+  *header = malloc(sizeof(Protocol__FlexHeader));
   if(*header == NULL)
     goto error;
   
-  protocol__prp_header__init(*header);
-  (*header)->version = PROGRAN_VERSION;
+  protocol__flex_header__init(*header);
+  (*header)->version = FLEXRAN_VERSION;
   (*header)->has_version = 1; 
   // check if the type is set
   (*header)->type = type;
@@ -112,28 +112,28 @@ int prp_create_header(xid_t xid, Protocol__PrpType type,  Protocol__PrpHeader **
 }
 
 
-int enb_agent_hello(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+int enb_agent_hello(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
  
-  Protocol__PrpHeader *header;
+  Protocol__FlexHeader *header;
   /*TODO: Need to set random xid or xid from received hello message*/
   xid_t xid = 1;
-  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_HELLO, &header) != 0)
+  if (flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_HELLO, &header) != 0)
     goto error;
 
-  Protocol__PrpHello *hello_msg;
-  hello_msg = malloc(sizeof(Protocol__PrpHello));
+  Protocol__FlexHello *hello_msg;
+  hello_msg = malloc(sizeof(Protocol__FlexHello));
   if(hello_msg == NULL)
     goto error;
-  protocol__prp_hello__init(hello_msg);
+  protocol__flex_hello__init(hello_msg);
   hello_msg->header = header;
 
-  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  *msg = malloc(sizeof(Protocol__FlexranMessage));
   if(*msg == NULL)
     goto error;
   
-  protocol__progran_message__init(*msg);
-  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_HELLO_MSG;
-  (*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__SUCCESSFUL_OUTCOME;
+  protocol__flexran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_HELLO_MSG;
+  (*msg)->msg_dir = PROTOCOL__FLEXRAN_DIRECTION__SUCCESSFUL_OUTCOME;
   (*msg)->has_msg_dir = 1;
   (*msg)->hello_msg = hello_msg;
   return 0;
@@ -150,9 +150,9 @@ int enb_agent_hello(mid_t mod_id, const void *params, Protocol__ProgranMessage *
 }
 
 
-int enb_agent_destroy_hello(Protocol__ProgranMessage *msg) {
+int enb_agent_destroy_hello(Protocol__FlexranMessage *msg) {
   
-  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_HELLO_MSG)
+  if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_HELLO_MSG)
     goto error;
   
   free(msg->hello_msg->header);
@@ -166,26 +166,26 @@ int enb_agent_destroy_hello(Protocol__ProgranMessage *msg) {
 }
 
 
-int enb_agent_echo_request(mid_t mod_id, const void* params, Protocol__ProgranMessage **msg) {
-  Protocol__PrpHeader *header;
+int enb_agent_echo_request(mid_t mod_id, const void* params, Protocol__FlexranMessage **msg) {
+  Protocol__FlexHeader *header;
   /*TODO: Need to set a random xid*/
   xid_t xid = 1;
-  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_ECHO_REQUEST, &header) != 0)
+  if (flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_ECHO_REQUEST, &header) != 0)
     goto error;
 
-  Protocol__PrpEchoRequest *echo_request_msg;
-  echo_request_msg = malloc(sizeof(Protocol__PrpEchoRequest));
+  Protocol__FlexEchoRequest *echo_request_msg;
+  echo_request_msg = malloc(sizeof(Protocol__FlexEchoRequest));
   if(echo_request_msg == NULL)
     goto error;
-  protocol__prp_echo_request__init(echo_request_msg);
+  protocol__flex_echo_request__init(echo_request_msg);
   echo_request_msg->header = header;
 
-  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  *msg = malloc(sizeof(Protocol__FlexranMessage));
   if(*msg == NULL)
     goto error;
-  protocol__progran_message__init(*msg);
-  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_ECHO_REQUEST_MSG;
-  (*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
+  protocol__flexran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_ECHO_REQUEST_MSG;
+  (*msg)->msg_dir = PROTOCOL__FLEXRAN_DIRECTION__INITIATING_MESSAGE;
   (*msg)->echo_request_msg = echo_request_msg;
   return 0;
 
@@ -201,8 +201,8 @@ int enb_agent_echo_request(mid_t mod_id, const void* params, Protocol__ProgranMe
 }
 
 
-int enb_agent_destroy_echo_request(Protocol__ProgranMessage *msg) {
-  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_ECHO_REQUEST_MSG)
+int enb_agent_destroy_echo_request(Protocol__FlexranMessage *msg) {
+  if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_ECHO_REQUEST_MSG)
     goto error;
   
   free(msg->echo_request_msg->header);
@@ -217,30 +217,30 @@ int enb_agent_destroy_echo_request(Protocol__ProgranMessage *msg) {
 
 
 
-int enb_agent_echo_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+int enb_agent_echo_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
   
   xid_t xid;
-  Protocol__ProgranMessage *input = (Protocol__ProgranMessage *)params;
-  Protocol__PrpEchoRequest *echo_req = input->echo_request_msg;
+  Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
+  Protocol__FlexEchoRequest *echo_req = input->echo_request_msg;
   xid = (echo_req->header)->xid;
 
-  Protocol__PrpHeader *header;
-  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_ECHO_REPLY, &header) != 0)
+  Protocol__FlexHeader *header;
+  if (flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_ECHO_REPLY, &header) != 0)
     goto error;
 
-  Protocol__PrpEchoReply *echo_reply_msg;
-  echo_reply_msg = malloc(sizeof(Protocol__PrpEchoReply));
+  Protocol__FlexEchoReply *echo_reply_msg;
+  echo_reply_msg = malloc(sizeof(Protocol__FlexEchoReply));
   if(echo_reply_msg == NULL)
     goto error;
-  protocol__prp_echo_reply__init(echo_reply_msg);
+  protocol__flex_echo_reply__init(echo_reply_msg);
   echo_reply_msg->header = header;
 
-  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  *msg = malloc(sizeof(Protocol__FlexranMessage));
   if(*msg == NULL)
     goto error;
-  protocol__progran_message__init(*msg);
-  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_ECHO_REPLY_MSG;
-  (*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__SUCCESSFUL_OUTCOME;
+  protocol__flexran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_ECHO_REPLY_MSG;
+  (*msg)->msg_dir = PROTOCOL__FLEXRAN_DIRECTION__SUCCESSFUL_OUTCOME;
   (*msg)->has_msg_dir = 1;
   (*msg)->echo_reply_msg = echo_reply_msg;
   return 0;
@@ -257,8 +257,8 @@ int enb_agent_echo_reply(mid_t mod_id, const void *params, Protocol__ProgranMess
 }
 
 
-int enb_agent_destroy_echo_reply(Protocol__ProgranMessage *msg) {
-  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_ECHO_REPLY_MSG)
+int enb_agent_destroy_echo_reply(Protocol__FlexranMessage *msg) {
+  if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_ECHO_REPLY_MSG)
     goto error;
   
   free(msg->echo_reply_msg->header);
@@ -272,12 +272,12 @@ int enb_agent_destroy_echo_reply(Protocol__ProgranMessage *msg) {
 }
 
 
-int enb_agent_destroy_enb_config_reply(Protocol__ProgranMessage *msg) {
-  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG)
+int enb_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg) {
+  if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG)
     goto error;
   free(msg->enb_config_reply_msg->header);
   int i, j;
-  Protocol__PrpEnbConfigReply *reply = msg->enb_config_reply_msg;
+  Protocol__FlexEnbConfigReply *reply = msg->enb_config_reply_msg;
   
   for(i = 0; i < reply->n_cell_config;i++){
     free(reply->cell_config[i]->mbsfn_subframe_config_rfoffset);
@@ -302,12 +302,12 @@ int enb_agent_destroy_enb_config_reply(Protocol__ProgranMessage *msg) {
   return -1;
 }
 
-int enb_agent_destroy_ue_config_reply(Protocol__ProgranMessage *msg) {
-  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_UE_CONFIG_REPLY_MSG)
+int enb_agent_destroy_ue_config_reply(Protocol__FlexranMessage *msg) {
+  if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_UE_CONFIG_REPLY_MSG)
     goto error;
   free(msg->ue_config_reply_msg->header);
   int i, j;
-  Protocol__PrpUeConfigReply *reply = msg->ue_config_reply_msg;
+  Protocol__FlexUeConfigReply *reply = msg->ue_config_reply_msg;
   
   for(i = 0; i < reply->n_ue_config;i++){
     free(reply->ue_config[i]->capabilities);
@@ -323,8 +323,8 @@ int enb_agent_destroy_ue_config_reply(Protocol__ProgranMessage *msg) {
   return -1;
 }
 
-int enb_agent_destroy_lc_config_reply(Protocol__ProgranMessage *msg) {
-  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_LC_CONFIG_REPLY_MSG)
+int enb_agent_destroy_lc_config_reply(Protocol__FlexranMessage *msg) {
+  if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_LC_CONFIG_REPLY_MSG)
     goto error;
 
   int i, j;
@@ -345,8 +345,8 @@ int enb_agent_destroy_lc_config_reply(Protocol__ProgranMessage *msg) {
   return -1;
 }
 
-int enb_agent_destroy_ue_state_change(Protocol__ProgranMessage *msg) {
-  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_UE_STATE_CHANGE_MSG)
+int enb_agent_destroy_ue_state_change(Protocol__FlexranMessage *msg) {
+  if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_UE_STATE_CHANGE_MSG)
     goto error;
   free(msg->ue_state_change_msg->header);
   //TODO: Free the contents of the UE config structure
@@ -359,8 +359,8 @@ int enb_agent_destroy_ue_state_change(Protocol__ProgranMessage *msg) {
   return -1;
 }
 
-int enb_agent_destroy_enb_config_request(Protocol__ProgranMessage *msg) {
-  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_ENB_CONFIG_REQUEST_MSG)
+int enb_agent_destroy_enb_config_request(Protocol__FlexranMessage *msg) {
+  if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_ENB_CONFIG_REQUEST_MSG)
     goto error;
   free(msg->enb_config_request_msg->header);
   free(msg->enb_config_request_msg);
@@ -372,12 +372,12 @@ int enb_agent_destroy_enb_config_request(Protocol__ProgranMessage *msg) {
   return -1;
 }
 
-int enb_agent_destroy_ue_config_request(Protocol__ProgranMessage *msg) {
+int enb_agent_destroy_ue_config_request(Protocol__FlexranMessage *msg) {
   /* TODO: Deallocate memory for a dynamically allocated UE config message */
   return 0;
 }
 
-int enb_agent_destroy_lc_config_request(Protocol__ProgranMessage *msg) {
+int enb_agent_destroy_lc_config_request(Protocol__FlexranMessage *msg) {
   /* TODO: Deallocate memory for a dynamically allocated LC config message */
   return 0;
 }
@@ -397,10 +397,10 @@ long timer_end(struct timespec start_time){
     return diffInNanos;
 }
 
-int enb_agent_control_delegation(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+int enb_agent_control_delegation(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
 
-  Protocol__ProgranMessage *input = (Protocol__ProgranMessage *)params;
-  Protocol__PrpControlDelegation *control_delegation_msg = input->control_delegation_msg;
+  Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
+  Protocol__FlexControlDelegation *control_delegation_msg = input->control_delegation_msg;
 
   uint32_t delegation_type = control_delegation_msg->delegation_type;
 
@@ -428,13 +428,13 @@ int enb_agent_control_delegation(mid_t mod_id, const void *params, Protocol__Pro
   return -1;
 }
 
-int enb_agent_destroy_control_delegation(Protocol__ProgranMessage *msg) {
+int enb_agent_destroy_control_delegation(Protocol__FlexranMessage *msg) {
   /*TODO: Dealocate memory for a dynamically allocated control delegation message*/
 }
 
-int enb_agent_reconfiguration(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
-  Protocol__ProgranMessage *input = (Protocol__ProgranMessage *)params;
-  Protocol__PrpAgentReconfiguration *agent_reconfiguration_msg = input->agent_reconfiguration_msg;
+int enb_agent_reconfiguration(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
+  Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
+  Protocol__FlexAgentReconfiguration *agent_reconfiguration_msg = input->agent_reconfiguration_msg;
 
   apply_reconfiguration_policy(mod_id, agent_reconfiguration_msg->policy, strlen(agent_reconfiguration_msg->policy));
 
@@ -442,7 +442,7 @@ int enb_agent_reconfiguration(mid_t mod_id, const void *params, Protocol__Progra
   return 0;
 }
 
-int enb_agent_destroy_agent_reconfiguration(Protocol__ProgranMessage *msg) {
+int enb_agent_destroy_agent_reconfiguration(Protocol__FlexranMessage *msg) {
   /*TODO: Dealocate memory for a dynamically allocated agent reconfiguration message*/
 }
 
@@ -949,11 +949,11 @@ int get_meas_gap_config(mid_t mod_id, mid_t ue_id) {
     if(ue_context_p->ue_context.measGapConfig != NULL){
       if(ue_context_p->ue_context.measGapConfig->present == MeasGapConfig_PR_setup) {
 	if (ue_context_p->ue_context.measGapConfig->choice.setup.gapOffset.present == MeasGapConfig__setup__gapOffset_PR_gp0) {
-	  return PROTOCOL__PRP_MEAS_GAP_CONFIG_PATTERN__PRMGCP_GP1;
+	  return PROTOCOL__FLEX_MEAS_GAP_CONFIG_PATTERN__FLMGCP_GP1;
 	} else if (ue_context_p->ue_context.measGapConfig->choice.setup.gapOffset.present == MeasGapConfig__setup__gapOffset_PR_gp1) {
-	  return PROTOCOL__PRP_MEAS_GAP_CONFIG_PATTERN__PRMGCP_GP2;
+	  return PROTOCOL__FLEX_MEAS_GAP_CONFIG_PATTERN__FLMGCP_GP2;
 	} else {
-	  return PROTOCOL__PRP_MEAS_GAP_CONFIG_PATTERN__PRMGCP_OFF;
+	  return PROTOCOL__FLEX_MEAS_GAP_CONFIG_PATTERN__FLMGCP_OFF;
 	}
       }
     }
@@ -1258,38 +1258,38 @@ int get_direction(mid_t ue_id, mid_t lc_id)
 
 int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change) {
   int size;
-  Protocol__ProgranMessage *msg;
-  Protocol__PrpHeader *header;
+  Protocol__FlexranMessage *msg;
+  Protocol__FlexHeader *header;
   void *data;
   int priority;
   err_code_t err_code;
 
   int xid = 0;
 
-  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_UE_STATE_CHANGE, &header) != 0)
+  if (flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_UE_STATE_CHANGE, &header) != 0)
     goto error;
 
-  Protocol__PrpUeStateChange *ue_state_change_msg;
-  ue_state_change_msg = malloc(sizeof(Protocol__PrpUeStateChange));
+  Protocol__FlexUeStateChange *ue_state_change_msg;
+  ue_state_change_msg = malloc(sizeof(Protocol__FlexUeStateChange));
   if(ue_state_change_msg == NULL) {
     goto error;
   }
-  protocol__prp_ue_state_change__init(ue_state_change_msg);
+  protocol__flex_ue_state_change__init(ue_state_change_msg);
   ue_state_change_msg->has_type = 1;
   ue_state_change_msg->type = state_change;
 
-  Protocol__PrpUeConfig *config;
-  config = malloc(sizeof(Protocol__PrpUeConfig));
+  Protocol__FlexUeConfig *config;
+  config = malloc(sizeof(Protocol__FlexUeConfig));
   if (config == NULL) {
     goto error;
   }
-  protocol__prp_ue_config__init(config);
-  if (state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_DEACTIVATED) {
+  protocol__flex_ue_config__init(config);
+  if (state_change == PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED) {
     // Simply set the rnti of the UE
     config->has_rnti = 1;
     config->rnti = rnti;
-  } else if (state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_UPDATED
-	     || state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_ACTIVATED) {
+  } else if (state_change == PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_UPDATED
+	     || state_change == PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_ACTIVATED) {
 	  	  int i =find_UE_id(mod_id,rnti);
      	  config->has_rnti = 1;
           config->rnti = rnti;
@@ -1305,7 +1305,7 @@ int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change)
 	  	  }
 	  	  //TODO: Set the measurement gap offset if applicable
 	  	  if(config->has_meas_gap_config_pattern == 1 &&
-		     config->meas_gap_config_pattern != PROTOCOL__PRP_MEAS_GAP_CONFIG_PATTERN__PRMGCP_OFF) {
+		     config->meas_gap_config_pattern != PROTOCOL__FLEX_MEAS_GAP_CONFIG_PATTERN__FLMGCP_OFF) {
 		    config->meas_gap_config_sf_offset = get_meas_gap_config_offset(mod_id,i);
 		    config->has_meas_gap_config_sf_offset = 1;
 	  	  }
@@ -1333,9 +1333,9 @@ int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change)
 	  	  config->has_ue_aggregated_max_bitrate_dl = 1;
 
 	  	  //TODO: Set the UE capabilities
-	  	  Protocol__PrpUeCapabilities *c_capabilities;
-	  	  c_capabilities = malloc(sizeof(Protocol__PrpUeCapabilities));
-	  	  protocol__prp_ue_capabilities__init(c_capabilities);
+	  	  Protocol__FlexUeCapabilities *c_capabilities;
+	  	  c_capabilities = malloc(sizeof(Protocol__FlexUeCapabilities));
+	  	  protocol__flex_ue_capabilities__init(c_capabilities);
 	  	  //TODO: Set half duplex (FDD operation)
 	  	  c_capabilities->has_half_duplex = 1;
 	  	  c_capabilities->half_duplex = 1;//get_half_duplex(i);
@@ -1353,7 +1353,7 @@ int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change)
 	  	  c_capabilities->res_alloc_type1 = 1;//get_res_alloc_type1(i);
 	  	  //Set the capabilites to the message
 	  	  config->capabilities = c_capabilities;
-	  	  //TODO: Set UE transmission antenna. One of the PRUTA_* values
+	  	  //TODO: Set UE transmission antenna. One of the FLUTA_* values
 	  	  if(get_ue_transmission_antenna(mod_id,i) != -1){
 	  		  config->has_ue_transmission_antenna = 1;
 	  		  config->ue_transmission_antenna = get_ue_transmission_antenna(mod_id,i);
@@ -1398,7 +1398,7 @@ int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change)
 	  		  config->has_aperiodic_cqi_rep_mode = 1;
 			  int mode = get_aperiodic_cqi_rep_mode(mod_id,i);
 			  if (mode > 4) {
-			    config->aperiodic_cqi_rep_mode = PROTOCOL__PRP_APERIODIC_CQI_REPORT_MODE__PRACRM_NONE;
+			    config->aperiodic_cqi_rep_mode = PROTOCOL__FLEX_APERIODIC_CQI_REPORT_MODE__FLACRM_NONE;
 			      } else {
 			    config->aperiodic_cqi_rep_mode = mode;
 			  }
@@ -1435,24 +1435,24 @@ int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change)
 	  		  config->has_scell_deactivation_timer = 1;
 	  		  config->scell_deactivation_timer = 1;
 	  	  }
-  } else if (state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_MOVED) {
+  } else if (state_change == PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_MOVED) {
     // TODO: Not supported for now. Leave blank
   }
 
   ue_state_change_msg->config = config;
-  msg = malloc(sizeof(Protocol__ProgranMessage));
+  msg = malloc(sizeof(Protocol__FlexranMessage));
   if (msg == NULL) {
     goto error;
   }
-  protocol__progran_message__init(msg);
-  msg->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_UE_STATE_CHANGE_MSG;
-  msg->msg_dir = PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
+  protocol__flexran_message__init(msg);
+  msg->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_UE_STATE_CHANGE_MSG;
+  msg->msg_dir = PROTOCOL__FLEXRAN_DIRECTION__INITIATING_MESSAGE;
   msg->ue_state_change_msg = ue_state_change_msg;
 
   data = enb_agent_pack_message(msg, &size);
   /*Send sr info using the MAC channel of the eNB*/
   if (enb_agent_msg_send(mod_id, ENB_AGENT_DEFAULT, data, size, priority)) {
-    err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
+    err_code = PROTOCOL__FLEXRAN_ERR__MSG_ENQUEUING;
     goto error;
   }
 
@@ -1466,38 +1466,38 @@ int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change)
  * timer primitives
  */
 
-int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
 
   xid_t xid;
-  Protocol__ProgranMessage *input = (Protocol__ProgranMessage *)params;
-  Protocol__PrpLcConfigRequest *lc_config_request_msg = input->lc_config_request_msg;
+  Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
+  Protocol__FlexLcConfigRequest *lc_config_request_msg = input->lc_config_request_msg;
   xid = (lc_config_request_msg->header)->xid;
 
   int i, j;
-  Protocol__PrpHeader *header;
-  if(prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_GET_LC_CONFIG_REPLY, &header) != 0)
+  Protocol__FlexHeader *header;
+  if(flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_GET_LC_CONFIG_REPLY, &header) != 0)
     goto error;
 
-  Protocol__PrpLcConfigReply *lc_config_reply_msg;
-  lc_config_reply_msg = malloc(sizeof(Protocol__PrpLcConfigReply));
+  Protocol__FlexLcConfigReply *lc_config_reply_msg;
+  lc_config_reply_msg = malloc(sizeof(Protocol__FlexLcConfigReply));
   if(lc_config_reply_msg == NULL)
     goto error;
-  protocol__prp_lc_config_reply__init(lc_config_reply_msg);
+  protocol__flex_lc_config_reply__init(lc_config_reply_msg);
   lc_config_reply_msg->header = header;
 
   //TODO: Fill in the actual number of UEs that we are going to report LC configs about
   lc_config_reply_msg->n_lc_ue_config = get_num_ues(mod_id);
 
-  Protocol__PrpLcUeConfig **lc_ue_config;
+  Protocol__FlexLcUeConfig **lc_ue_config;
   if (lc_config_reply_msg->n_lc_ue_config > 0) {
-    lc_ue_config = malloc(sizeof(Protocol__PrpLcUeConfig *) * lc_config_reply_msg->n_lc_ue_config);
+    lc_ue_config = malloc(sizeof(Protocol__FlexLcUeConfig *) * lc_config_reply_msg->n_lc_ue_config);
     if (lc_ue_config == NULL) {
       goto error;
     }
     // Fill the config for each UE
     for (i = 0; i < lc_config_reply_msg->n_lc_ue_config; i++) {
-      lc_ue_config[i] = malloc(sizeof(Protocol__PrpLcUeConfig));
-      protocol__prp_lc_ue_config__init(lc_ue_config[i]);
+      lc_ue_config[i] = malloc(sizeof(Protocol__FlexLcUeConfig));
+      protocol__flex_lc_ue_config__init(lc_ue_config[i]);
       //TODO: Set the RNTI of the UE
       lc_ue_config[i]->has_rnti = 1;
       lc_ue_config[i]->rnti = get_ue_crnti(mod_id,i);
@@ -1512,15 +1512,15 @@ int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Progra
       } else {
 	lc_ue_config[i]->n_lc_config = 3;
       }
-      Protocol__PrpLcConfig **lc_config;
+      Protocol__FlexLcConfig **lc_config;
       if (lc_ue_config[i]->n_lc_config > 0) {
-	lc_config = malloc(sizeof(Protocol__PrpLcConfig *) * lc_ue_config[i]->n_lc_config);
+	lc_config = malloc(sizeof(Protocol__FlexLcConfig *) * lc_ue_config[i]->n_lc_config);
 	if (lc_config == NULL) {
 	  goto error;
 	}
 	for (j = 0; j < lc_ue_config[i]->n_lc_config; j++) {
-	  lc_config[j] = malloc(sizeof(Protocol__PrpLcConfig));
-	  protocol__prp_lc_config__init(lc_config[j]);
+	  lc_config[j] = malloc(sizeof(Protocol__FlexLcConfig));
+	  protocol__flex_lc_config__init(lc_config[j]);
 	  //TODO: Set the LC id
 	  lc_config[j]->has_lcid = 1;
 	  lc_config[j]->lcid = j+1;
@@ -1533,14 +1533,14 @@ int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Progra
 	  //TODO: Set the LC direction
 	  lc_config[j]->has_direction = 1;
 	  lc_config[j]->direction = get_direction(i,j+1);
-	  //TODO: Bearer type. One of PRQBT_* values
+	  //TODO: Bearer type. One of FLQBT_* values
 	  lc_config[j]->has_qos_bearer_type = 1;
-	  lc_config[j]->qos_bearer_type = PROTOCOL__PRP_QOS_BEARER_TYPE__PRQBT_NON_GBR;
+	  lc_config[j]->qos_bearer_type = PROTOCOL__FLEX_QOS_BEARER_TYPE__FLQBT_NON_GBR;
 	  //TODO: Set the QCI defined in TS 23.203, coded as defined in TS 36.413
 	  // One less than the actual QCI value
 	  lc_config[j]->has_qci = 1;
 	  lc_config[j]->qci = 1;
-	  if (lc_config[j]->direction == PROTOCOL__PRP_QOS_BEARER_TYPE__PRQBT_GBR) {
+	  if (lc_config[j]->direction == PROTOCOL__FLEX_QOS_BEARER_TYPE__FLQBT_GBR) {
 	    //TODO: Set the max bitrate (UL)
 	    lc_config[j]->has_e_rab_max_bitrate_ul = 1;
 	    lc_config[j]->e_rab_max_bitrate_ul = 1;
@@ -1560,12 +1560,12 @@ int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Progra
     } // end for UE
     lc_config_reply_msg->lc_ue_config = lc_ue_config;
   } // lc_config_reply_msg->n_lc_ue_config > 0
-  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  *msg = malloc(sizeof(Protocol__FlexranMessage));
   if (*msg == NULL)
     goto error;
-  protocol__progran_message__init(*msg);
-  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_LC_CONFIG_REPLY_MSG;
-  (*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__SUCCESSFUL_OUTCOME;
+  protocol__flexran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_LC_CONFIG_REPLY_MSG;
+  (*msg)->msg_dir = PROTOCOL__FLEXRAN_DIRECTION__SUCCESSFUL_OUTCOME;
   (*msg)->lc_config_reply_msg = lc_config_reply_msg;
 
   return 0;
@@ -1588,38 +1588,38 @@ int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Progra
  * ************************************
  */
 
-int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
 
   xid_t xid;
-  Protocol__ProgranMessage *input = (Protocol__ProgranMessage *)params;
-  Protocol__PrpUeConfigRequest *ue_config_request_msg = input->ue_config_request_msg;
+  Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
+  Protocol__FlexUeConfigRequest *ue_config_request_msg = input->ue_config_request_msg;
   xid = (ue_config_request_msg->header)->xid;
 
   int i;
 
-  Protocol__PrpHeader *header;
-  if(prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_GET_UE_CONFIG_REPLY, &header) != 0)
+  Protocol__FlexHeader *header;
+  if(flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_GET_UE_CONFIG_REPLY, &header) != 0)
     goto error;
 
-  Protocol__PrpUeConfigReply *ue_config_reply_msg;
-  ue_config_reply_msg = malloc(sizeof(Protocol__PrpUeConfigReply));
+  Protocol__FlexUeConfigReply *ue_config_reply_msg;
+  ue_config_reply_msg = malloc(sizeof(Protocol__FlexUeConfigReply));
   if(ue_config_reply_msg == NULL)
     goto error;
-  protocol__prp_ue_config_reply__init(ue_config_reply_msg);
+  protocol__flex_ue_config_reply__init(ue_config_reply_msg);
   ue_config_reply_msg->header = header;
 
   //TODO: Fill in the actual number of UEs that are currently connected
   ue_config_reply_msg->n_ue_config = get_num_ues(mod_id);
 
-  Protocol__PrpUeConfig **ue_config;
+  Protocol__FlexUeConfig **ue_config;
   if (ue_config_reply_msg->n_ue_config > 0) {
-    ue_config = malloc(sizeof(Protocol__PrpUeConfig *) * ue_config_reply_msg->n_ue_config);
+    ue_config = malloc(sizeof(Protocol__FlexUeConfig *) * ue_config_reply_msg->n_ue_config);
     if (ue_config == NULL) {
       goto error;
     }
     for (i = 0; i < ue_config_reply_msg->n_ue_config; i++) {
-      ue_config[i] = malloc(sizeof(Protocol__PrpUeConfig));
-      protocol__prp_ue_config__init(ue_config[i]);
+      ue_config[i] = malloc(sizeof(Protocol__FlexUeConfig));
+      protocol__flex_ue_config__init(ue_config[i]);
       //TODO: Set the RNTI of the ue with id i
       ue_config[i]->rnti = get_ue_crnti(mod_id,i);
       ue_config[i]->has_rnti = 1;
@@ -1638,7 +1638,7 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Progra
 	  }
       //TODO: Set the measurement gap offset if applicable
       if(ue_config[i]->has_meas_gap_config_pattern == 1 &&
-	 ue_config[i]->meas_gap_config_pattern != PROTOCOL__PRP_MEAS_GAP_CONFIG_PATTERN__PRMGCP_OFF) {
+	 ue_config[i]->meas_gap_config_pattern != PROTOCOL__FLEX_MEAS_GAP_CONFIG_PATTERN__FLMGCP_OFF) {
 	ue_config[i]->meas_gap_config_sf_offset = get_meas_gap_config_offset(mod_id,i);
 	ue_config[i]->has_meas_gap_config_sf_offset = 1;
       }
@@ -1666,9 +1666,9 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Progra
       ue_config[i]->has_ue_aggregated_max_bitrate_dl = 1;
 
       //TODO: Set the UE capabilities
-      Protocol__PrpUeCapabilities *capabilities;
-      capabilities = malloc(sizeof(Protocol__PrpUeCapabilities));
-      protocol__prp_ue_capabilities__init(capabilities);
+      Protocol__FlexUeCapabilities *capabilities;
+      capabilities = malloc(sizeof(Protocol__FlexUeCapabilities));
+      protocol__flex_ue_capabilities__init(capabilities);
       //TODO: Set half duplex (FDD operation)
       capabilities->has_half_duplex = 1;
       capabilities->half_duplex = 1;//get_half_duplex(i);
@@ -1686,7 +1686,7 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Progra
       capabilities->res_alloc_type1 = 1;//get_res_alloc_type1(i);
       //Set the capabilites to the message
       ue_config[i]->capabilities = capabilities;
-      //TODO: Set UE transmission antenna. One of the PRUTA_* values
+      //TODO: Set UE transmission antenna. One of the FLUTA_* values
       if(get_ue_transmission_antenna(mod_id,i) != -1){
     	  ue_config[i]->has_ue_transmission_antenna = 1;
     	  ue_config[i]->ue_transmission_antenna = get_ue_transmission_antenna(mod_id,i);
@@ -1726,12 +1726,12 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Progra
     	  ue_config[i]->has_simultaneous_ack_nack_cqi = 1;
     	  ue_config[i]->simultaneous_ack_nack_cqi = get_simultaneous_ack_nack_cqi(mod_id,i);
 	  }
-      //TODO: Set PRACRM_* value regarding aperiodic cqi report mode
+      //TODO: Set FLACRM_* value regarding aperiodic cqi report mode
       if(get_aperiodic_cqi_rep_mode(mod_id,i) != -1){
     	  ue_config[i]->has_aperiodic_cqi_rep_mode = 1;
 	  int mode = get_aperiodic_cqi_rep_mode(mod_id,i);
 	  if (mode > 4) {
-	    ue_config[i]->aperiodic_cqi_rep_mode = PROTOCOL__PRP_APERIODIC_CQI_REPORT_MODE__PRACRM_NONE;
+	    ue_config[i]->aperiodic_cqi_rep_mode = PROTOCOL__FLEX_APERIODIC_CQI_REPORT_MODE__FLACRM_NONE;
 	  } else {
 	    ue_config[i]->aperiodic_cqi_rep_mode = mode;
 	  }
@@ -1770,12 +1770,12 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Progra
     }
     ue_config_reply_msg->ue_config = ue_config;
   }
-  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  *msg = malloc(sizeof(Protocol__FlexranMessage));
   if (*msg == NULL)
     goto error;
-  protocol__progran_message__init(*msg);
-  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_UE_CONFIG_REPLY_MSG;
-  (*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__SUCCESSFUL_OUTCOME;
+  protocol__flexran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_UE_CONFIG_REPLY_MSG;
+  (*msg)->msg_dir = PROTOCOL__FLEXRAN_DIRECTION__SUCCESSFUL_OUTCOME;
   (*msg)->ue_config_reply_msg = ue_config_reply_msg;
   return 0;
 
@@ -1798,29 +1798,29 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Progra
  * ************************************
  */
 
-int enb_agent_enb_config_request(mid_t mod_id, const void* params, Protocol__ProgranMessage **msg) {
+int enb_agent_enb_config_request(mid_t mod_id, const void* params, Protocol__FlexranMessage **msg) {
 
-	Protocol__PrpHeader *header;
+	Protocol__FlexHeader *header;
 	xid_t xid = 1;
-	if(prp_create_header(xid,PROTOCOL__PRP_TYPE__PRPT_GET_ENB_CONFIG_REQUEST, &header) != 0)
+	if(flex_create_header(xid,PROTOCOL__FLEX_TYPE__FLPT_GET_ENB_CONFIG_REQUEST, &header) != 0)
 		goto error;
 
-	Protocol__PrpEnbConfigRequest *enb_config_request_msg;
-	enb_config_request_msg = malloc(sizeof(Protocol__PrpEnbConfigRequest));
+	Protocol__FlexEnbConfigRequest *enb_config_request_msg;
+	enb_config_request_msg = malloc(sizeof(Protocol__FlexEnbConfigRequest));
 
 	if(enb_config_request_msg == NULL)
 		goto error;
 
-	protocol__prp_enb_config_request__init(enb_config_request_msg);
+	protocol__flex_enb_config_request__init(enb_config_request_msg);
 	enb_config_request_msg->header = header;
 
-	*msg = malloc(sizeof(Protocol__ProgranMessage));
+	*msg = malloc(sizeof(Protocol__FlexranMessage));
 	if(*msg == NULL)
 		goto error;
 
-	protocol__progran_message__init(*msg);
-	(*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_ENB_CONFIG_REQUEST_MSG;
-	(*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
+	protocol__flexran_message__init(*msg);
+	(*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_ENB_CONFIG_REQUEST_MSG;
+	(*msg)->msg_dir = PROTOCOL__FLEXRAN_DIRECTION__INITIATING_MESSAGE;
 	(*msg)->enb_config_request_msg = enb_config_request_msg;
 	return 0;
 
@@ -1836,26 +1836,26 @@ int enb_agent_enb_config_request(mid_t mod_id, const void* params, Protocol__Pro
 	  return -1;
 }
 
-int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
 
   xid_t xid;
-  Protocol__ProgranMessage *input = (Protocol__ProgranMessage *)params;
-  Protocol__PrpEnbConfigRequest *enb_config_req_msg = input->enb_config_request_msg;
+  Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
+  Protocol__FlexEnbConfigRequest *enb_config_req_msg = input->enb_config_request_msg;
   xid = (enb_config_req_msg->header)->xid;
   
   int i, j, k;
   int cc_id = 0;
   int enb_id = mod_id;
   
-  Protocol__PrpHeader *header;
-  if(prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_GET_ENB_CONFIG_REPLY, &header) != 0)
+  Protocol__FlexHeader *header;
+  if(flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_GET_ENB_CONFIG_REPLY, &header) != 0)
     goto error;
   
-  Protocol__PrpEnbConfigReply *enb_config_reply_msg;
-  enb_config_reply_msg = malloc(sizeof(Protocol__PrpEnbConfigReply));
+  Protocol__FlexEnbConfigReply *enb_config_reply_msg;
+  enb_config_reply_msg = malloc(sizeof(Protocol__FlexEnbConfigReply));
   if(enb_config_reply_msg == NULL)
     goto error;
-  protocol__prp_enb_config_reply__init(enb_config_reply_msg);
+  protocol__flex_enb_config_reply__init(enb_config_reply_msg);
   enb_config_reply_msg->header = header;
   
   enb_config_reply_msg->enb_id = mod_id;
@@ -1863,14 +1863,14 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Progr
   
   enb_config_reply_msg->n_cell_config = MAX_NUM_CCs;
   
-  Protocol__PrpCellConfig **cell_conf;
+  Protocol__FlexCellConfig **cell_conf;
   if(enb_config_reply_msg->n_cell_config > 0){
-    cell_conf = malloc(sizeof(Protocol__PrpCellConfig *) * enb_config_reply_msg->n_cell_config);
+    cell_conf = malloc(sizeof(Protocol__FlexCellConfig *) * enb_config_reply_msg->n_cell_config);
     if(cell_conf == NULL)
       goto error;
     for(i = 0; i < enb_config_reply_msg->n_cell_config; i++){
-      cell_conf[i] = malloc(sizeof(Protocol__PrpCellConfig));
-      protocol__prp_cell_config__init(cell_conf[i]);
+      cell_conf[i] = malloc(sizeof(Protocol__FlexCellConfig));
+      protocol__flex_cell_config__init(cell_conf[i]);
       //TODO: Fill in with actual value, the PCI of this cell
       cell_conf[i]->phy_cell_id = 1;
       cell_conf[i]->has_phy_cell_id = get_cell_id(enb_id,i);
@@ -1882,41 +1882,41 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Progr
       cell_conf[i]->has_pusch_hopping_offset = 1;
       //TODO: Fill in with actual value
       if(get_hopping_mode(enb_id,i) == 0){
-	 cell_conf[i]->hopping_mode = PROTOCOL__PRP_HOPPING_MODE__PRHM_INTER;
+	 cell_conf[i]->hopping_mode = PROTOCOL__FLEX_HOPPING_MODE__FLHM_INTER;
       }else if(get_hopping_mode(enb_id,i) == 1){
-	cell_conf[i]->hopping_mode = PROTOCOL__PRP_HOPPING_MODE__PRHM_INTERINTRA;
+	cell_conf[i]->hopping_mode = PROTOCOL__FLEX_HOPPING_MODE__FLHM_INTERINTRA;
       }
       cell_conf[i]->has_hopping_mode = 1;
       //TODO: Fill in with actual value, the number of subbands
       cell_conf[i]->n_sb = get_n_SB(enb_id,i);
       cell_conf[i]->has_n_sb = 1;
-      //TODO: Fill in with actual value, The number of resource element groups used for PHICH. One of PRPR_
+      //TODO: Fill in with actual value, The number of resource element groups used for PHICH. One of FLPR_
       if(get_phich_resource(enb_id,i) == 0){
-	cell_conf[i]->phich_resource = PROTOCOL__PRP_PHICH_RESOURCE__PRPR_ONE_SIXTH; //0
+	cell_conf[i]->phich_resource = PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_ONE_SIXTH; //0
       }else if (get_phich_resource(enb_id,i) == 1){
-	cell_conf[i]->phich_resource = PROTOCOL__PRP_PHICH_RESOURCE__PRPR_HALF; //1
+	cell_conf[i]->phich_resource = PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_HALF; //1
       }else if (get_phich_resource(enb_id,i) == 2){
-	cell_conf[i]->phich_resource = PROTOCOL__PRP_PHICH_RESOURCE__PRPR_ONE; // 2
+	cell_conf[i]->phich_resource = PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_ONE; // 2
       }else if (get_phich_resource(enb_id,i) == 3){
-	cell_conf[i]->phich_resource = PROTOCOL__PRP_PHICH_RESOURCE__PRPR_TWO;//3
+	cell_conf[i]->phich_resource = PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_TWO;//3
       }
       cell_conf[i]->has_phich_resource = 1;
-      //TODO: Fill in with actual value, one of the PRPD_ values
+      //TODO: Fill in with actual value, one of the FLPD_ values
       if(get_phich_duration(enb_id,i) == 0){
-    	cell_conf[i]->phich_duration = PROTOCOL__PRP_PHICH_DURATION__PRPD_NORMAL;
+    	cell_conf[i]->phich_duration = PROTOCOL__FLEX_PHICH_DURATION__FLPD_NORMAL;
       }else if(get_phich_duration(enb_id,i) == 1){
-	cell_conf[i]->phich_duration = PROTOCOL__PRP_PHICH_DURATION__PRPD_EXTENDED;
+	cell_conf[i]->phich_duration = PROTOCOL__FLEX_PHICH_DURATION__FLPD_EXTENDED;
       }
       cell_conf[i]->has_phich_duration = 1;
       //TODO: Fill in with actual value, See TS 36.211, section 6.9
       cell_conf[i]->init_nr_pdcch_ofdm_sym = get_num_pdcch_symb(enb_id,i);
       cell_conf[i]->has_init_nr_pdcch_ofdm_sym = 1;
       //TODO: Fill in with actual value
-      /* Protocol__PrpSiConfig *si_config; */
-      /* si_config = malloc(sizeof(Protocol__PrpSiConfig)); */
+      /* Protocol__FlexSiConfig *si_config; */
+      /* si_config = malloc(sizeof(Protocol__FlexSiConfig)); */
       /* if(si_config == NULL) */
       /* 	goto error; */
-      /* protocol__prp_si_config__init(si_config); */
+      /* protocol__flex_si_config__init(si_config); */
       /* //TODO: Fill in with actual value, Frame number to apply the SI configuration */
       /* si_config->sfn = 1; */
       /* si_config->has_sfn = 1; */
@@ -1928,15 +1928,15 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Progr
       /* si_config->has_si_window_length = 1; */
       /* //TODO: Fill in with actual value, the number of SI messages */
       /* si_config->n_si_message=1; */
-      /* Protocol__PrpSiMessage **si_message; */
-      /* si_message = malloc(sizeof(Protocol__PrpSiMessage *) * si_config->n_si_message); */
+      /* Protocol__FlexSiMessage **si_message; */
+      /* si_message = malloc(sizeof(Protocol__FlexSiMessage *) * si_config->n_si_message); */
       /* if(si_message == NULL) */
       /* 	goto error; */
       /* for(j = 0; j < si_config->n_si_message; j++){ */
-      /* 	si_message[j] = malloc(sizeof(Protocol__PrpSiMessage)); */
+      /* 	si_message[j] = malloc(sizeof(Protocol__FlexSiMessage)); */
       /* 	if(si_message[j] == NULL) */
       /* 	  goto error; */
-      /* 	protocol__prp_si_message__init(si_message[j]); */
+      /* 	protocol__flex_si_message__init(si_message[j]); */
       /* 	//TODO: Fill in with actual value, Periodicity of SI msg in radio frames */
       /* 	si_message[j]->periodicity = 1;				//SIPeriod */
       /* 	si_message[j]->has_periodicity = 1; */
@@ -1955,29 +1955,29 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Progr
       //TODO: Fill in with actual value, the UL transmission bandwidth in RBs
       cell_conf[i]->ul_bandwidth = get_N_RB_UL(enb_id,i);
       cell_conf[i]->has_ul_bandwidth = 1;
-      //TODO: Fill in with actual value, one of PRUCPL values
+      //TODO: Fill in with actual value, one of FLUCPL values
       if(get_ul_cyclic_prefix_length(enb_id,i) == 0){
-    	  cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__PRP_UL_CYCLIC_PREFIX_LENGTH__PRUCPL_NORMAL;
+    	  cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__FLEX_UL_CYCLIC_PREFIX_LENGTH__FLUCPL_NORMAL;
       }else if(get_ul_cyclic_prefix_length(enb_id,i) == 1){
-	cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__PRP_UL_CYCLIC_PREFIX_LENGTH__PRUCPL_EXTENDED;      
+	cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__FLEX_UL_CYCLIC_PREFIX_LENGTH__FLUCPL_EXTENDED;      
       }
       cell_conf[i]->has_ul_cyclic_prefix_length = 1;
-      //TODO: Fill in with actual value, one of PRUCPL values
+      //TODO: Fill in with actual value, one of FLUCPL values
       if(get_ul_cyclic_prefix_length(enb_id,i) == 0){
-    	  cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__PRP_DL_CYCLIC_PREFIX_LENGTH__PRDCPL_NORMAL;
+    	  cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__FLEX_DL_CYCLIC_PREFIX_LENGTH__FLDCPL_NORMAL;
       }else if(get_ul_cyclic_prefix_length(enb_id,i) == 1){
-	  cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__PRP_DL_CYCLIC_PREFIX_LENGTH__PRDCPL_EXTENDED;
+	  cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__FLEX_DL_CYCLIC_PREFIX_LENGTH__FLDCPL_EXTENDED;
       }
 
       cell_conf[i]->has_dl_cyclic_prefix_length = 1;
       //TODO: Fill in with actual value, number of cell specific antenna ports
       cell_conf[i]->antenna_ports_count = 1;
       cell_conf[i]->has_antenna_ports_count = 1;
-      //TODO: Fill in with actual value, one of PRDM values
+      //TODO: Fill in with actual value, one of FLDM values
       if(get_duplex_mode(enb_id,i) == 1){
-	cell_conf[i]->duplex_mode = PROTOCOL__PRP_DUPLEX_MODE__PRDM_FDD;
+	cell_conf[i]->duplex_mode = PROTOCOL__FLEX_DUPLEX_MODE__FLDM_FDD;
       }else if(get_duplex_mode(enb_id,i) == 0){
-	cell_conf[i]->duplex_mode = PROTOCOL__PRP_DUPLEX_MODE__PRDM_TDD;
+	cell_conf[i]->duplex_mode = PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD;
       }
       cell_conf[i]->has_duplex_mode = 1;
       //TODO: Fill in with actual value, DL/UL subframe assignment. TDD only
@@ -2052,11 +2052,11 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Progr
       //TODO: Fill in with actual value, Boolean value. See TS 36.211, section 5.5.3.2. TDD only
       cell_conf[i]->srs_mac_up_pts = get_srs_MaxUpPts(enb_id,i);
       cell_conf[i]->has_srs_mac_up_pts = 1;
-      //TODO: Fill in with actual value, One of the PREQ_ values
+      //TODO: Fill in with actual value, One of the FLEQ_ values
       if(get_enable64QAM(enb_id,i) == 0){
-	cell_conf[i]->enable_64qam = PROTOCOL__PRP_QAM__PREQ_MOD_16QAM;
+	cell_conf[i]->enable_64qam = PROTOCOL__FLEX_QAM__FLEQ_MOD_16QAM;
       }else if(get_enable64QAM(enb_id,i) == 1){
-	cell_conf[i]->enable_64qam = PROTOCOL__PRP_QAM__PREQ_MOD_64QAM;
+	cell_conf[i]->enable_64qam = PROTOCOL__FLEX_QAM__FLEQ_MOD_64QAM;
       }
       cell_conf[i]->has_enable_64qam = 1;
       //TODO: Fill in with actual value, Carrier component index
@@ -2065,12 +2065,12 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Progr
     }
     enb_config_reply_msg->cell_config=cell_conf;
   }
-  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  *msg = malloc(sizeof(Protocol__FlexranMessage));
   if(*msg == NULL)
     goto error;
-  protocol__progran_message__init(*msg);
-  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG;
-  (*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__SUCCESSFUL_OUTCOME;
+  protocol__flexran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG;
+  (*msg)->msg_dir = PROTOCOL__FLEXRAN_DIRECTION__SUCCESSFUL_OUTCOME;
   (*msg)->enb_config_reply_msg = enb_config_reply_msg;
   
   return 0;
@@ -2104,7 +2104,7 @@ err_code_t enb_agent_init_timer(void){
   memset(&e, 0, sizeof(enb_agent_timer_element_t));
   RB_INSERT(enb_agent_map, &agent_map, &e); 
   */
- return PROTOCOL__PROGRAN_ERR__NO_ERR;
+ return PROTOCOL__FLEXRAN_ERR__NO_ERR;
 }
 
 RB_GENERATE(enb_agent_map,enb_agent_timer_element_s, entry, enb_agent_compare_timer);
@@ -2190,7 +2190,7 @@ err_code_t enb_agent_destroy_timer(long timer_id){
 
   if (e != NULL ) {
     RB_REMOVE(enb_agent_map, &timer_instance.enb_agent_head, e);
-    enb_agent_destroy_progran_message(e->timer_args->msg);
+    enb_agent_destroy_flexran_message(e->timer_args->msg);
     free(e);
   }
   
@@ -2211,7 +2211,7 @@ err_code_t enb_agent_destroy_timer_by_task_id(xid_t xid) {
     if (e->xid == xid) {
       timer_id = e->timer_id;
       RB_REMOVE(enb_agent_map, &timer_instance.enb_agent_head, e);
-      enb_agent_destroy_progran_message(e->timer_args->msg);
+      enb_agent_destroy_flexran_message(e->timer_args->msg);
       free(e);
       if (timer_remove(timer_id) < 0 ) { 
 	goto error;
@@ -2232,7 +2232,7 @@ err_code_t enb_agent_destroy_timers(void){
   RB_FOREACH(e, enb_agent_map, &timer_instance.enb_agent_head) {
     RB_REMOVE(enb_agent_map, &timer_instance.enb_agent_head, e);
     timer_remove(e->timer_id);
-    enb_agent_destroy_progran_message(e->timer_args->msg);
+    enb_agent_destroy_flexran_message(e->timer_args->msg);
     free(e);
   }  
 
@@ -2310,7 +2310,7 @@ err_code_t enb_agent_restart_timer(uint32_t *timer_id){
   }
 
   if (ret < 0 ) {
-    return PROTOCOL__PROGRAN_ERR__TIMER_SETUP_FAILED; 
+    return PROTOCOL__FLEXRAN_ERR__TIMER_SETUP_FAILED; 
   }
   
   return 0;

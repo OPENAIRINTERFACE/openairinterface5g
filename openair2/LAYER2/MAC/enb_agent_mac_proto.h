@@ -42,29 +42,29 @@
 
 #include "enb_agent_defs.h"
 #include "header.pb-c.h"
-#include "progran.pb-c.h"
+#include "flexran.pb-c.h"
 
 /*
  * Default scheduler used by the eNB agent
  */
 void schedule_ue_spec_default(mid_t mod_id, uint32_t frame, uint32_t subframe,
-				     int *mbsfn_flag, Protocol__ProgranMessage **dl_info);
+				     int *mbsfn_flag, Protocol__FlexranMessage **dl_info);
 
 /*
  * Data plane function for applying the DL decisions of the scheduler
  */
 void apply_dl_scheduling_decisions(mid_t mod_id, uint32_t frame, uint32_t subframe, int *mbsfn_flag,
-				const Protocol__ProgranMessage *dl_scheduling_info);
+				const Protocol__FlexranMessage *dl_scheduling_info);
 
 /*
  * Data plane function for applying the UE specific DL decisions of the scheduler
  */
 void apply_ue_spec_scheduling_decisions(mid_t mod_id, uint32_t frame, uint32_t subframe, int *mbsfn_flag,
-					uint32_t n_dl_ue_data, const Protocol__PrpDlData **dl_ue_data);
+					uint32_t n_dl_ue_data, const Protocol__FlexDlData **dl_ue_data);
 
 /*
  * Data plane function for filling the DCI structure
  */
-void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti, const Protocol__PrpDlDci *dl_dci);
+void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti, const Protocol__FlexDlDci *dl_dci);
 
 #endif

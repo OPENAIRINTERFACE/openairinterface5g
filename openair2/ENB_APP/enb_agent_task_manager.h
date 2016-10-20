@@ -41,7 +41,7 @@
 #include <stdint.h>
 #include <pthread.h>
 
-#include "progran.pb-c.h"
+#include "flexran.pb-c.h"
 
 #include "enb_agent_common.h"
 
@@ -59,8 +59,8 @@ typedef struct enb_agent_task_s {
   uint16_t frame_num;
   /* The subframe in which the task needs to be executed */
   uint8_t subframe_num;
-  /* The task to be executed in the form of a Protocol__ProgranMessage */
-  Protocol__ProgranMessage *task;
+  /* The task to be executed in the form of a Protocol__FlexranMessage */
+  Protocol__FlexranMessage *task;
 } enb_agent_task_t;
 
 /**
@@ -95,7 +95,7 @@ typedef enum {
 /**
  * Allocate memory for a task in the queue
  */
-enb_agent_task_t *enb_agent_task_create(Protocol__ProgranMessage *msg,
+enb_agent_task_t *enb_agent_task_create(Protocol__FlexranMessage *msg,
 				      uint16_t frame_num, uint8_t subframe_num);
   
 /**

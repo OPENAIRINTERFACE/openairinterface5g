@@ -28,32 +28,32 @@
  *******************************************************************************/
 
 /*! \file dci_conversions.h
- * \brief Conversion helpers from progran messages to OAI formats DCI  
+ * \brief Conversion helpers from flexran messages to OAI formats DCI  
  * \author Xenofon Foukas
  * \date 2016
  * \version 0.1
  */
 
-#ifndef LAYER2_MAC_PROGRAN_DCI_CONVERISIONS_H__
-#define LAYER2_MAC_DCI_PROGRAN_CONVERISIONS_H__
+#ifndef LAYER2_MAC_FLEXRAN_DCI_CONVERISIONS_H__
+#define LAYER2_MAC_DCI_FLEXRAN_CONVERISIONS_H__
 
-#define FILL_DCI_FDD_1(TYPE, DCI, PROGRAN_DCI) \
-  ((TYPE*)DCI)->harq_pid = PROGRAN_DCI->harq_process; \
-  ((TYPE*)DCI)->rv = PROGRAN_DCI->rv[0]; \
-  ((TYPE*)DCI)->rballoc = PROGRAN_DCI->rb_bitmap; \
-  ((TYPE*)DCI)->rah = PROGRAN_DCI->res_alloc; \
-  ((TYPE*)DCI)->mcs = PROGRAN_DCI->mcs[0]; \
-  ((TYPE*)DCI)->TPC = PROGRAN_DCI->tpc; \
-  ((TYPE*)DCI)->ndi = PROGRAN_DCI->ndi[0];
+#define FILL_DCI_FDD_1(TYPE, DCI, FLEXRAN_DCI) \
+  ((TYPE*)DCI)->harq_pid = FLEXRAN_DCI->harq_process; \
+  ((TYPE*)DCI)->rv = FLEXRAN_DCI->rv[0]; \
+  ((TYPE*)DCI)->rballoc = FLEXRAN_DCI->rb_bitmap; \
+  ((TYPE*)DCI)->rah = FLEXRAN_DCI->res_alloc; \
+  ((TYPE*)DCI)->mcs = FLEXRAN_DCI->mcs[0]; \
+  ((TYPE*)DCI)->TPC = FLEXRAN_DCI->tpc; \
+  ((TYPE*)DCI)->ndi = FLEXRAN_DCI->ndi[0];
 
-#define FILL_DCI_TDD_1(TYPE, DCI, PROGRAN_DCI) \
-  ((TYPE*)DCI)->harq_pid = PROGRAN_DCI->harq_process; \
-  ((TYPE*)DCI)->rv = PROGRAN_DCI->rv[0]; \
-  ((TYPE*)DCI)->dai = PROGRAN_DCI->dai; \
-  ((TYPE*)DCI)->rballoc = PROGRAN_DCI->rb_bitmap; \
-  ((TYPE*)DCI)->rah = PROGRAN_DCI->res_alloc; \
-  ((TYPE*)DCI)->mcs = PROGRAN_DCI->mcs[0]; \
-  ((TYPE*)DCI)->TPC = PROGRAN_DCI->tpc; \
-  ((TYPE*)DCI)->ndi = PROGRAN_DCI->ndi[0];
+#define FILL_DCI_TDD_1(TYPE, DCI, FLEXRAN_DCI) \
+  ((TYPE*)DCI)->harq_pid = FLEXRAN_DCI->harq_process; \
+  ((TYPE*)DCI)->rv = FLEXRAN_DCI->rv[0]; \
+  ((TYPE*)DCI)->dai = FLEXRAN_DCI->dai; \
+  ((TYPE*)DCI)->rballoc = FLEXRAN_DCI->rb_bitmap; \
+  ((TYPE*)DCI)->rah = FLEXRAN_DCI->res_alloc; \
+  ((TYPE*)DCI)->mcs = FLEXRAN_DCI->mcs[0]; \
+  ((TYPE*)DCI)->TPC = FLEXRAN_DCI->tpc; \
+  ((TYPE*)DCI)->ndi = FLEXRAN_DCI->ndi[0];
   
 #endif

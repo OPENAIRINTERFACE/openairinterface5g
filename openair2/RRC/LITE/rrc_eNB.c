@@ -4545,7 +4545,7 @@ rrc_eNB_decode_dcch(
 	if (mac_agent_registered[ctxt_pP->module_id]) {
 	  agent_mac_xface[ctxt_pP->eNB_index]->enb_agent_notify_ue_state_change(ctxt_pP->module_id,
 										ue_context_p->ue_id_rnti,
-										PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_UPDATED);
+										PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_UPDATED);
 	}
       }
 #if defined(ENABLE_ITTI)
@@ -4646,7 +4646,7 @@ rrc_eNB_decode_dcch(
 	  if (mac_agent_registered[ctxt_pP->module_id]) {
 	    agent_mac_xface[ctxt_pP->eNB_index]->enb_agent_notify_ue_state_change(ctxt_pP->module_id,
 										  ue_context_p->ue_id_rnti,
-										  PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_ACTIVATED);
+										  PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_ACTIVATED);
 	  }
         }
       }

@@ -103,7 +103,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   void         *DLSCH_dci=NULL;
   int size_bits=0,size_bytes=0;
 
-  Protocol__ProgranMessage *msg;
+  Protocol__FlexranMessage *msg;
 
   LOG_D(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler (UE_list->head %d)\n",module_idP, frameP, subframeP,UE_list->head);
 
@@ -143,7 +143,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       if (mac_agent_registered[module_idP]) {
 	agent_mac_xface[module_idP]->enb_agent_notify_ue_state_change(module_idP,
 								      rnti,
-								      PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_DEACTIVATED);
+								      PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
       }
     }
     else {

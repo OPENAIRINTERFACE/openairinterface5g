@@ -29,7 +29,7 @@
 
 /*! \file enb_agent_mac.h
  * \brief enb agent message handler APIs for MAC layer
- * \author  Navid Nikaein and Xenofon Foukas
+ * \author  Xenofon Foukas, Mohamed Kassem and Navid Nikaein
  * \date 2016
  * \version 0.1
  */
@@ -38,7 +38,7 @@
 #define ENB_AGENT_MAC_H_
 
 #include "header.pb-c.h"
-#include "progran.pb-c.h"
+#include "flexran.pb-c.h"
 #include "stats_messages.pb-c.h"
 #include "stats_common.pb-c.h"
 
@@ -52,14 +52,14 @@ typedef struct {
   uint16_t ue_rnti;
   uint32_t ue_report_flags; /* Indicates the report elements
 			       required for this UE id. See
-			       ProgRAN specification 1.2.4.2 */
+			       FlexRAN specification 1.2.4.2 */
 } ue_report_type_t;
 
 typedef struct {
   uint16_t cc_id;
   uint32_t cc_report_flags; /* Indicates the report elements
 			      required for this CC index. See
-			      ProgRAN specification 1.2.4.3 */
+			      FlexRAN specification 1.2.4.3 */
 } cc_report_type_t;
 
 typedef struct {
@@ -79,29 +79,29 @@ typedef struct stats_request_config_s{
 /* Initialization function for the agent structures etc */
 void enb_agent_init_mac_agent(mid_t mod_id);
 
-int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
+int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 
-int enb_agent_mac_stats_request(mid_t mod_id, xid_t xid, const stats_request_config_t *report_config, Protocol__ProgranMessage **msg);
+int enb_agent_mac_stats_request(mid_t mod_id, xid_t xid, const stats_request_config_t *report_config, Protocol__FlexranMessage **msg);
 
-int enb_agent_mac_destroy_stats_request(Protocol__ProgranMessage *msg);
+int enb_agent_mac_destroy_stats_request(Protocol__FlexranMessage *msg);
 
-int enb_agent_mac_stats_reply(mid_t mod_id, xid_t xid, const report_config_t *report_config, Protocol__ProgranMessage **msg);
+int enb_agent_mac_stats_reply(mid_t mod_id, xid_t xid, const report_config_t *report_config, Protocol__FlexranMessage **msg);
 
-int enb_agent_mac_destroy_stats_reply(Protocol__ProgranMessage *msg);
+int enb_agent_mac_destroy_stats_reply(Protocol__FlexranMessage *msg);
 
-int enb_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
+int enb_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 
-int enb_agent_mac_destroy_sr_info(Protocol__ProgranMessage *msg);
+int enb_agent_mac_destroy_sr_info(Protocol__FlexranMessage *msg);
 
-int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
+int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 
-int enb_agent_mac_destroy_sf_trigger(Protocol__ProgranMessage *msg);
+int enb_agent_mac_destroy_sf_trigger(Protocol__FlexranMessage *msg);
 
-int enb_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__ProgranMessage **msg);
+int enb_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMessage **msg);
 
-int enb_agent_mac_destroy_dl_config(Protocol__ProgranMessage *msg);
+int enb_agent_mac_destroy_dl_config(Protocol__FlexranMessage *msg);
 
-int enb_agent_mac_handle_dl_mac_config(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
+int enb_agent_mac_handle_dl_mac_config(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 
 
 /**********************************
@@ -119,7 +119,7 @@ void enb_agent_send_sf_trigger(mid_t mod_id);
 void enb_agent_send_update_mac_stats(mid_t mod_id);
 
 /// Provide to the scheduler a pending dl_mac_config message
-void enb_agent_get_pending_dl_mac_config(mid_t mod_id, Protocol__ProgranMessage **msg);
+void enb_agent_get_pending_dl_mac_config(mid_t mod_id, Protocol__FlexranMessage **msg);
 
 /*Register technology specific interface callbacks*/
 int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface);

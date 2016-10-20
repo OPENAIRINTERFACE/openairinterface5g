@@ -48,7 +48,7 @@
 #define RIGHT(x) (2 * (x) + 2)
 #define PARENT(x) ((x - 1) / 2)
 
-enb_agent_task_t *enb_agent_task_create(Protocol__ProgranMessage *msg,
+enb_agent_task_t *enb_agent_task_create(Protocol__FlexranMessage *msg,
 				      uint16_t frame_num, uint8_t subframe_num) {
   enb_agent_task_t *task = NULL;
   task = malloc(sizeof(enb_agent_task_t));

@@ -39,7 +39,7 @@
 #define __ENB_AGENT_MAC_PRIMITIVES_H__
 
 #include "enb_agent_defs.h"
-#include "progran.pb-c.h"
+#include "flexran.pb-c.h"
 #include "header.pb-c.h"
 
 #define RINGBUFFER_SIZE 100
@@ -60,13 +60,13 @@ typedef struct {
 
   /// Provide to the scheduler a pending dl_mac_config message
   void (*enb_agent_get_pending_dl_mac_config)(mid_t mod_id,
-					      Protocol__ProgranMessage **msg);
+					      Protocol__FlexranMessage **msg);
   
-  /// Run the UE DL scheduler and fill the Protocol__ProgranMessage. Assumes that
-  /// dl_info is already initialized as prp_dl_mac_config and fills the
-  /// prp_dl_data part of it
+  /// Run the UE DL scheduler and fill the Protocol__FlexranMessage. Assumes that
+  /// dl_info is already initialized as flex_dl_mac_config and fills the
+  /// flex_dl_data part of it
   void (*enb_agent_schedule_ue_spec)(mid_t mod_id, uint32_t frame, uint32_t subframe,
-				     int *mbsfn_flag, Protocol__ProgranMessage **dl_info);
+				     int *mbsfn_flag, Protocol__FlexranMessage **dl_info);
 
 
   /// Notify the controller for a state change of a particular UE, by sending the proper
