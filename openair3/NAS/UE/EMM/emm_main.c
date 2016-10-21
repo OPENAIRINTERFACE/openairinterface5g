@@ -59,6 +59,7 @@ Description Defines the EPS Mobility Management procedure call manager,
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
 /****************************************************************************/
+extern uint8_t usim_test;
 
 /****************************************************************************/
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
@@ -166,6 +167,7 @@ void emm_main_initialize(emm_indication_callback_t cb, const char *imei)
   /*
    * Get USIM application data
    */
+  _usim_data.usimtestmode = usim_test;
   if ( usim_api_read(&_usim_data) != RETURNok ) {
     /* The USIM application may not be present or not valid */
     LOG_TRACE(WARNING, "EMM-MAIN  - Failed to read USIM application data");
