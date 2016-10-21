@@ -334,6 +334,8 @@ typedef struct {
   usim_epsloci_t epsloci;
   /* Non-Access Stratum configuration       */
   usim_nasconfig_t nasconfig;
+  /* usim test mode */
+  uint8_t usimtestmode;
 } usim_data_t;
 
 /****************************************************************************/
@@ -351,5 +353,8 @@ int usim_api_write(const usim_data_t* data);
 int usim_api_authenticate(const OctetString* rand, const OctetString* autn,
                           OctetString* auts, OctetString* res,
                           OctetString* ck, OctetString* ik);
+int usim_api_authenticate_test(const OctetString* rand, const OctetString* autn,
+                               OctetString* auts, OctetString* res,
+                               OctetString* ck, OctetString* ik);
 
 #endif /* __USIM_API_H__*/
