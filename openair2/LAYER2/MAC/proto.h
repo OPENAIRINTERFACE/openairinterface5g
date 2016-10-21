@@ -548,7 +548,7 @@ int cba_access(module_id_t module_idP,frame_t frameP,sub_frame_t subframe, uint8
 \param[in] Mod_id instance of the UE
 \param[out] lcgid
 */
-int get_bsr_lcgid (module_id_t module_idP, int *num_lcgid);
+int get_bsr_lcgid (module_id_t module_idP);
 
 /*! \fn  uint8_t get_bsr_len (module_id_t module_idP,uint16_t bufflen);
 \brief determine whether the bsr is short or long assuming that the MAC pdu is built
@@ -556,7 +556,7 @@ int get_bsr_lcgid (module_id_t module_idP, int *num_lcgid);
 \param[in] bufflen size of phy transport block
 \param[out] bsr_len size of bsr control element
 */
-uint8_t get_bsr_len (module_id_t module_idP, uint16_t buflen);
+uint8_t get_bsr_len (module_id_t module_idP, uint8_t eNB_index,frame_t frameP,uint16_t buflen);
 
 /*! \fn  BSR_SHORT *  get_bsr_short(module_id_t module_idP, uint8_t bsr_len)
 \brief get short bsr level
