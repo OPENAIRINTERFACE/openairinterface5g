@@ -233,7 +233,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                        subframe,
                                        phy_vars_ue->high_speed_flag,
                                        frame_parms,
-				       dlsch0_harq->mimo_mode);
+				                               dlsch0_harq->mimo_mode);
      else 
        nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
                                        lte_ue_common_vars->dl_ch_estimates[eNB_id],
@@ -246,7 +246,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                        subframe,
                                        phy_vars_ue->high_speed_flag,
                                        frame_parms,
-				       dlsch0_harq->mimo_mode);
+				                               dlsch0_harq->mimo_mode);
     }
   } // if n_tx>1
   else {
@@ -475,7 +475,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                                     &(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext, 
-			   	    lte_ue_pdsch_vars[eNB_id]->log2_maxh0);
+                                    lte_ue_pdsch_vars[eNB_id]->log2_maxh0);
 	
 	//printf("rho stream1 =%d\n", &lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round] );
 
@@ -517,13 +517,13 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                           frame_parms,
                           dlsch_ue,
                           symbol,
-                          nb_rb); 
+                          nb_rb);
 
       dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
                           frame_parms,
                           dlsch_ue,
                           symbol,
-                          nb_rb);     
+                          nb_rb);
 
       /* compute new log2_maxh for effective channel */
       if (first_symbol_flag==1) {
@@ -734,7 +734,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       ((dlsch0_harq->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) && 
        (dlsch0_harq->mimo_mode <=DUALSTREAM_PUSCH_PRECODING)))  {
     rxdataF_comp_ptr = lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round];
-    dl_ch_mag_ptr = lte_ue_pdsch_vars[eNB_id]->dl_ch_mag1;
+    dl_ch_mag_ptr = lte_ue_pdsch_vars[eNB_id]->dl_ch_mag1[harq_pid][round];
   }
   else {
     rxdataF_comp_ptr = lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp0;
@@ -1011,7 +1011,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       dlsch_16qam_llr(frame_parms,
                       rxdataF_comp_ptr,
                       lte_ue_pdsch_vars[eNB_id]->llr[1],
-                      lte_ue_pdsch_vars[eNB_id]->dl_ch_mag1,
+                      lte_ue_pdsch_vars[eNB_id]->dl_ch_mag1[harq_pid][round],
                       symbol,first_symbol_flag,nb_rb,
                       adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,4,subframe,symbol),
                       lte_ue_pdsch_vars[eNB_id]->llr128_2ndstream);
@@ -1024,8 +1024,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       dlsch_64qam_llr(frame_parms,
                       rxdataF_comp_ptr,
                       lte_ue_pdsch_vars[eNB_id]->llr[1],
-                      lte_ue_pdsch_vars[eNB_id]->dl_ch_mag1,
-                      lte_ue_pdsch_vars[eNB_id]->dl_ch_magb1,
+                      lte_ue_pdsch_vars[eNB_id]->dl_ch_mag1[harq_pid][round],
+                      lte_ue_pdsch_vars[eNB_id]->dl_ch_magb1[harq_pid][round],
                       symbol,first_symbol_flag,nb_rb,
                       adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,6,subframe,symbol),
                       lte_ue_pdsch_vars[eNB_id]->llr128_2ndstream);
@@ -1040,7 +1040,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   } 
   }
 
-  return(0);    
+  return(0);
 
 }
 
@@ -1900,9 +1900,9 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
   int **rxdataF_ext           = lte_ue_pdsch_vars->rxdataF_ext;
   int **dl_ch_estimates_ext   = lte_ue_pdsch_vars->dl_ch_estimates_ext;
   int **dl_ch_mag0            = lte_ue_pdsch_vars->dl_ch_mag0;
-  int **dl_ch_mag1            = lte_ue_pdsch_vars->dl_ch_mag1;
+  int **dl_ch_mag1            = lte_ue_pdsch_vars->dl_ch_mag1[harq_pid][round];
   int **dl_ch_magb0           = lte_ue_pdsch_vars->dl_ch_magb0;
-  int **dl_ch_magb1           = lte_ue_pdsch_vars->dl_ch_magb1;
+  int **dl_ch_magb1           = lte_ue_pdsch_vars->dl_ch_magb1[harq_pid][round];
   int **rxdataF_comp0         = lte_ue_pdsch_vars->rxdataF_comp0;
   int **rxdataF_comp1         = lte_ue_pdsch_vars->rxdataF_comp1[harq_pid][round];
   unsigned char *pmi_ext     = lte_ue_pdsch_vars->pmi_ext;
@@ -2290,9 +2290,9 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
   int **rxdataF_ext           = lte_ue_pdsch_vars->rxdataF_ext;
   int **dl_ch_estimates_ext   = lte_ue_pdsch_vars->dl_ch_estimates_ext;
   int **dl_ch_mag0            = lte_ue_pdsch_vars->dl_ch_mag0;
-  int **dl_ch_mag1            = lte_ue_pdsch_vars->dl_ch_mag1;
+  int **dl_ch_mag1            = lte_ue_pdsch_vars->dl_ch_mag1[harq_pid][round];
   int **dl_ch_magb0           = lte_ue_pdsch_vars->dl_ch_magb0;
-  int **dl_ch_magb1           = lte_ue_pdsch_vars->dl_ch_magb1;
+  int **dl_ch_magb1           = lte_ue_pdsch_vars->dl_ch_magb1[harq_pid][round];
   int **rxdataF_comp0         = lte_ue_pdsch_vars->rxdataF_comp0;
   int **rxdataF_comp1         = lte_ue_pdsch_vars->rxdataF_comp1[harq_pid][round];
   
@@ -2968,9 +2968,9 @@ void dlsch_detection_mrc_TM34(LTE_DL_FRAME_PARMS *frame_parms,
   int **dl_ch_rho_ext 		=lte_ue_pdsch_vars->dl_ch_rho_ext[harq_pid][round]; //for second stream
   int **dl_ch_rho2_ext 		=lte_ue_pdsch_vars->dl_ch_rho2_ext;
   int **dl_ch_mag0            	= lte_ue_pdsch_vars->dl_ch_mag0;
-  int **dl_ch_mag1            	= lte_ue_pdsch_vars->dl_ch_mag1;
+  int **dl_ch_mag1            	= lte_ue_pdsch_vars->dl_ch_mag1[harq_pid][round];
   int **dl_ch_magb0           	= lte_ue_pdsch_vars->dl_ch_magb0;
-  int **dl_ch_magb1           	= lte_ue_pdsch_vars->dl_ch_magb1;
+  int **dl_ch_magb1           	= lte_ue_pdsch_vars->dl_ch_magb1[harq_pid][round];
   
   
   if (frame_parms->nb_antennas_rx>1) {
@@ -3107,7 +3107,7 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 
   short rb;
   unsigned char aatx,aarx,nre=12,symbol_mod;
-  __m128i *dl_ch128,avg128D;
+  __m128i *dl_ch128, avg128D;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 

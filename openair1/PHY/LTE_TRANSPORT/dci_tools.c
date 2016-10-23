@@ -860,7 +860,7 @@ uint8_t get_transmission_mode(module_id_t Mod_id, uint8_t CC_id, rnti_t rnti)
 }
 
 int generate_eNB_dlsch_params_from_dci(int frame,
-               uint8_t subframe,
+                                       uint8_t subframe,
                                        void *dci_pdu,
                                        uint16_t rnti,
                                        DCI_format_t dci_format,
@@ -871,7 +871,7 @@ int generate_eNB_dlsch_params_from_dci(int frame,
                                        uint16_t ra_rnti,
                                        uint16_t p_rnti,
                                        uint16_t DL_pmi_single
-              )
+                                      )
 {
 
   uint8_t harq_pid = UINT8_MAX;
@@ -1551,68 +1551,101 @@ int generate_eNB_dlsch_params_from_dci(int frame,
     }
 
     if (frame_parms->nb_antennas_tx == 2) {
-      if (dlsch1->active == 1) { // both TBs are active
+      if (dlsch0->active == 1 && dlsch1->active == 1) { // both TBs are active
 
         dlsch0_harq->dl_power_off = 1; 
         dlsch1_harq->dl_power_off = 1; 
-  dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][dlsch0_harq->nb_rb-1];
-  dlsch1_harq->TBS         = TBStable[get_I_TBS(dlsch1_harq->mcs)][dlsch0_harq->nb_rb-1];
-  switch (tpmi) {
-  case 0:
-    dlsch0_harq->mimo_mode   = DUALSTREAM_UNIFORM_PRECODING1;
-    dlsch1_harq->mimo_mode   = DUALSTREAM_UNIFORM_PRECODING1;
-    dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,0,1);
-    dlsch1_harq->pmi_alloc   = pmi_extend(frame_parms,0,1);
-    break;
-  case 1:
-    dlsch0_harq->mimo_mode   = DUALSTREAM_UNIFORM_PRECODINGj;
-    dlsch1_harq->mimo_mode   = DUALSTREAM_UNIFORM_PRECODINGj;
-    dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,1,1);
-    dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,1,1);
+        dlsch0_harq->TBS = TBStable[get_I_TBS(dlsch0_harq->mcs)][dlsch0_harq->nb_rb-1];
+        dlsch1_harq->TBS = TBStable[get_I_TBS(dlsch1_harq->mcs)][dlsch0_harq->nb_rb-1];
+        switch (tpmi) {
+        case 0:
+          dlsch0_harq->mimo_mode   = DUALSTREAM_UNIFORM_PRECODING1;
+          dlsch1_harq->mimo_mode   = DUALSTREAM_UNIFORM_PRECODING1;
+          dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,0,1);
+          dlsch1_harq->pmi_alloc   = pmi_extend(frame_parms,0,1);
+          break;
+        case 1:
+          dlsch0_harq->mimo_mode   = DUALSTREAM_UNIFORM_PRECODINGj;
+          dlsch1_harq->mimo_mode   = DUALSTREAM_UNIFORM_PRECODINGj;
+          dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,1,1);
+          dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,1,1);
 
-    break;
-  case 2: // PUSCH precoding
-    dlsch0_harq->mimo_mode   = DUALSTREAM_PUSCH_PRECODING;
-    dlsch0_harq->pmi_alloc   = DL_pmi_single;
-    dlsch1_harq->mimo_mode   = DUALSTREAM_PUSCH_PRECODING;
-    dlsch1_harq->pmi_alloc   = DL_pmi_single; 
-    break;
-  default:
-    break;
-  }
+          break;
+        case 2: // PUSCH precoding
+          dlsch0_harq->mimo_mode   = DUALSTREAM_PUSCH_PRECODING;
+          dlsch0_harq->pmi_alloc   = DL_pmi_single;
+          dlsch1_harq->mimo_mode   = DUALSTREAM_PUSCH_PRECODING;
+          dlsch1_harq->pmi_alloc   = DL_pmi_single; 
+          break;
+        default:
+          break;
+        }
       }
-      else { // only one is active
-  dlsch0_harq->dl_power_off = 1;
-  dlsch0_harq->TBS= TBStable[get_I_TBS(dlsch0_harq->mcs)][dlsch0_harq->nb_rb-1];
-  switch (tpmi) {
-  case 0 :
-    dlsch0_harq->mimo_mode   = ALAMOUTI;
-    break;
-  case 1:
-    dlsch0_harq->mimo_mode   = UNIFORM_PRECODING11;
-    dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,0,0);
-    break;
-  case 2:
-    dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1m1;
-    dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,1,0);
-    break;
-  case 3:
-    dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1j;
-    dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,2,0);
-    break;
-  case 4:
-    dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1mj;
-    dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,3,0);
-    break;
-  case 5:
-    dlsch0_harq->mimo_mode   = PUSCH_PRECODING0;
-    dlsch0_harq->pmi_alloc   = DL_pmi_single;
-    break;
-  case 6:
-    dlsch0_harq->mimo_mode   = PUSCH_PRECODING1;
-    dlsch0_harq->pmi_alloc   = DL_pmi_single;
-    break;
-  }
+      else if (dlsch1->active == 0) { // only one is active
+        dlsch0_harq->dl_power_off = 1;
+        dlsch0_harq->TBS= TBStable[get_I_TBS(dlsch0_harq->mcs)][dlsch0_harq->nb_rb-1];
+        switch (tpmi) {
+        case 0 :
+          dlsch0_harq->mimo_mode   = ALAMOUTI;
+          break;
+        case 1:
+          dlsch0_harq->mimo_mode   = UNIFORM_PRECODING11;
+          dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,0,0);
+          break;
+        case 2:
+          dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1m1;
+          dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,1,0);
+          break;
+        case 3:
+          dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1j;
+          dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,2,0);
+          break;
+        case 4:
+          dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1mj;
+          dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,3,0);
+          break;
+        case 5:
+          dlsch0_harq->mimo_mode   = PUSCH_PRECODING0;
+          dlsch0_harq->pmi_alloc   = DL_pmi_single;
+          break;
+        case 6:
+          dlsch0_harq->mimo_mode   = PUSCH_PRECODING1;
+          dlsch0_harq->pmi_alloc   = DL_pmi_single;
+          break;
+        }
+      }
+      else if (dlsch0->active == 0) { // only one is active
+        dlsch1_harq->dl_power_off = 1;
+        dlsch1_harq->TBS= TBStable[get_I_TBS(dlsch1_harq->mcs)][dlsch1_harq->nb_rb-1];
+        switch (tpmi) {
+        case 0 :
+          dlsch1_harq->mimo_mode   = ALAMOUTI;
+          break;
+        case 1:
+          dlsch1_harq->mimo_mode   = UNIFORM_PRECODING11;
+          dlsch1_harq->pmi_alloc   = pmi_extend(frame_parms,0,0);
+          break;
+        case 2:
+          dlsch1_harq->mimo_mode   = UNIFORM_PRECODING1m1;
+          dlsch1_harq->pmi_alloc   = pmi_extend(frame_parms,1,0);
+          break;
+        case 3:
+          dlsch1_harq->mimo_mode   = UNIFORM_PRECODING1j;
+          dlsch1_harq->pmi_alloc   = pmi_extend(frame_parms,2,0);
+          break;
+        case 4:
+          dlsch1_harq->mimo_mode   = UNIFORM_PRECODING1mj;
+          dlsch1_harq->pmi_alloc   = pmi_extend(frame_parms,3,0);
+          break;
+        case 5:
+          dlsch1_harq->mimo_mode   = PUSCH_PRECODING0;
+          dlsch1_harq->pmi_alloc   = DL_pmi_single;
+          break;
+        case 6:
+          dlsch1_harq->mimo_mode   = PUSCH_PRECODING1;
+          dlsch1_harq->pmi_alloc   = DL_pmi_single;
+          break;
+        }
       }
     } else if (frame_parms->nb_antennas_tx == 4) {
       // fill in later
@@ -2668,6 +2701,20 @@ int generate_eNB_dlsch_params_from_dci(int frame,
     printf("dlsch0 eNB: mcs      %d\n",dlsch0_harq->mcs);
     printf("dlsch0 eNB: tpmi %d\n",tpmi);
     printf("dlsch0 eNB: mimo_mode %d\n",dlsch0_harq->mimo_mode);
+  }
+
+    if (dlsch1) {
+    printf("dlsch1 eNB: dlsch1   %p\n",dlsch1);
+    printf("dlsch1 eNB: rnti     %x\n",dlsch1->rnti);
+    printf("dlsch1 eNB: NBRB     %d\n",dlsch1_harq->nb_rb);
+    printf("dlsch1 eNB: rballoc  %x\n",dlsch1_harq->rb_alloc[0]);
+    printf("dlsch1 eNB: harq_pid %d\n",harq_pid);
+    printf("dlsch1 eNB: round    %d\n",dlsch1_harq->round);
+    printf("dlsch1 eNB: rvidx    %d\n",dlsch1_harq->rvidx);
+    printf("dlsch1 eNB: TBS      %d (NPRB %d)\n",dlsch1_harq->TBS,NPRB);
+    printf("dlsch1 eNB: mcs      %d\n",dlsch1_harq->mcs);
+    printf("dlsch1 eNB: tpmi %d\n",tpmi);
+    printf("dlsch1 eNB: mimo_mode %d\n",dlsch1_harq->mimo_mode);
   }
 
 #endif
@@ -3794,7 +3841,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci)
 
 
 int generate_ue_dlsch_params_from_dci(int frame,
-              uint8_t subframe,
+                                      uint8_t subframe,
                                       void *dci_pdu,
                                       uint16_t rnti,
                                       DCI_format_t dci_format,
@@ -4730,10 +4777,11 @@ int generate_ue_dlsch_params_from_dci(int frame,
       return(-1);
     }
 
-    if (frame_type == TDD)
+    /*if (frame_type == TDD)
       tbswap = ((DCI2_5MHz_2A_TDD_t *)dci_pdu)->tb_swap;
     else
-      tbswap = ((DCI2_5MHz_2A_FDD_t *)dci_pdu)->tb_swap;
+      tbswap = ((DCI2_5MHz_2A_FDD_t *)dci_pdu)->tb_swap;*/
+
 
     if (tbswap == 0) {
       dlsch0 = dlsch[0];
@@ -4769,16 +4817,16 @@ int generate_ue_dlsch_params_from_dci(int frame,
     dlsch1_harq->rb_alloc_odd[2] = dlsch0_harq->rb_alloc_odd[2];
     dlsch1_harq->rb_alloc_odd[3] = dlsch0_harq->rb_alloc_odd[3];
 
-    dlsch0_harq->nb_rb           = conv_nprb(rah,
-              rballoc,
-              frame_parms->N_RB_DL);
-    dlsch1_harq->nb_rb           = dlsch0_harq->nb_rb;
+    dlsch0_harq->nb_rb = conv_nprb(rah,
+                                   rballoc,
+                                   frame_parms->N_RB_DL);
+    dlsch1_harq->nb_rb = dlsch0_harq->nb_rb;
 
     dlsch0_harq->mcs       = mcs1;
     dlsch1_harq->mcs       = mcs2;
 
-    dlsch0_harq->delta_PUCCH     = delta_PUCCH_lut[TPC&3];      
-    dlsch1_harq->delta_PUCCH     = delta_PUCCH_lut[TPC&3];      
+    dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];      
+    dlsch1_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];      
     dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
     dlsch[1]->g_pucch += delta_PUCCH_lut[TPC&3];
     /*
@@ -4789,8 +4837,8 @@ int generate_ue_dlsch_params_from_dci(int frame,
     */
 
 
-    dlsch0_harq->rvidx     = rv1;
-    dlsch1_harq->rvidx     = rv2;
+    dlsch0_harq->rvidx = rv1;
+    dlsch1_harq->rvidx = rv2;
 
     // assume both TBs are active
     dlsch0_harq->Nl        = 1;
@@ -4802,11 +4850,14 @@ int generate_ue_dlsch_params_from_dci(int frame,
     // check if either TB is disabled (see 36-213 V8.6 p. 26)
 
     if ((dlsch0_harq->rvidx == 1) && (dlsch0_harq->mcs == 0)) {
+      
       dlsch0_harq->status = DISABLED;
+      dlsch0->active = 0; 
     }
 
     if ((dlsch1_harq->rvidx == 1) && (dlsch1_harq->mcs == 0)) {
       dlsch1_harq->status = DISABLED;
+      dlsch1->active = 0;
     }
 
     dlsch0_harq->Nl        = 1;
@@ -4815,65 +4866,98 @@ int generate_ue_dlsch_params_from_dci(int frame,
     //    dlsch0->layer_index                         = tbswap;
     //    dlsch1->layer_index                         = 1-tbswap;
 
-    if (dlsch1->active==1) {  //two codewords
+    if (dlsch0->active==1 && dlsch1->active==1) {  //two TB
       dlsch0_harq->dl_power_off = 1;
       dlsch1_harq->dl_power_off = 1; 
       switch (tpmi) {
       case 0:
-  dlsch0_harq->mimo_mode   = DUALSTREAM_UNIFORM_PRECODING1;
-  dlsch1_harq->mimo_mode   = DUALSTREAM_UNIFORM_PRECODING1;
-  dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,0, 1);
-  dlsch1_harq->pmi_alloc   = pmi_extend(frame_parms,0, 1);
-  break;
+        dlsch0_harq->mimo_mode   = DUALSTREAM_UNIFORM_PRECODING1;
+        dlsch1_harq->mimo_mode   = DUALSTREAM_UNIFORM_PRECODING1;
+        dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,0, 1);
+        dlsch1_harq->pmi_alloc   = pmi_extend(frame_parms,0, 1);
+      break;
       case 1:
-  dlsch0_harq->mimo_mode   = DUALSTREAM_UNIFORM_PRECODINGj;
-  dlsch1_harq->mimo_mode   = DUALSTREAM_UNIFORM_PRECODINGj;
-  dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,1,1);
-  dlsch1_harq->pmi_alloc   = pmi_extend(frame_parms,1, 1);
-  break;
+        dlsch0_harq->mimo_mode   = DUALSTREAM_UNIFORM_PRECODINGj;
+        dlsch1_harq->mimo_mode   = DUALSTREAM_UNIFORM_PRECODINGj;
+        dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,1,1);
+        dlsch1_harq->pmi_alloc   = pmi_extend(frame_parms,1, 1);
+      break;
       case 2: // PUSCH precoding
-  dlsch0_harq->mimo_mode   = DUALSTREAM_PUSCH_PRECODING;
-  dlsch0_harq->pmi_alloc   = dlsch0->pmi_alloc;
-  dlsch1_harq->mimo_mode   = DUALSTREAM_PUSCH_PRECODING;
-  dlsch1_harq->pmi_alloc   = dlsch0->pmi_alloc^0x1555;
-  break;
+        dlsch0_harq->mimo_mode   = DUALSTREAM_PUSCH_PRECODING;
+        dlsch0_harq->pmi_alloc   = dlsch0->pmi_alloc;
+        dlsch1_harq->mimo_mode   = DUALSTREAM_PUSCH_PRECODING;
+        dlsch1_harq->pmi_alloc   = dlsch0->pmi_alloc^0x1555;
+      break;
       default:
-  break;
+      break;
       }
-    }
-    else {
+    } else if (dlsch1_harq->status == DISABLED) {
       dlsch0_harq->dl_power_off = 1;
       switch (tpmi) {
       case 0 :
-  dlsch0_harq->mimo_mode   = ALAMOUTI;
-  break;
+        dlsch0_harq->mimo_mode   = ALAMOUTI;
+      break;
       case 1:
-  dlsch0_harq->mimo_mode   = UNIFORM_PRECODING11;
-  dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,0, 0);
-  break;
+        dlsch0_harq->mimo_mode   = UNIFORM_PRECODING11;
+        dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,0, 0);
+      break;
       case 2:
-  dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1m1;
-  dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,1, 0);
-  break;
+        dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1m1;
+        dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,1, 0);
+      break;
       case 3:
-  dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1j;
-  dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,2, 0);
-  break;
+        dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1j;
+        dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,2, 0);
+      break;
       case 4:
-  dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1mj;
-  dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,3, 0);
-  break;
+        dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1mj;
+        dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,3, 0);
+      break;
       case 5:
-  dlsch0_harq->mimo_mode   = PUSCH_PRECODING0;
-  // pmi stored from ulsch allocation routine
-  dlsch0_harq->pmi_alloc   = dlsch0->pmi_alloc;
-  //LOG_I(PHY,"XXX using PMI %x\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc));
-  break;
+        dlsch0_harq->mimo_mode   = PUSCH_PRECODING0;
+        // pmi stored from ulsch allocation routine
+        dlsch0_harq->pmi_alloc   = dlsch0->pmi_alloc;
+        //LOG_I(PHY,"XXX using PMI %x\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc));
+      break;
       case 6:
-  dlsch0_harq->mimo_mode   = PUSCH_PRECODING1;
-  LOG_E(PHY,"Unsupported TPMI\n");
-  return(-1);
-  break;
+        dlsch0_harq->mimo_mode   = PUSCH_PRECODING1;
+        LOG_E(PHY,"Unsupported TPMI\n");
+      return(-1);
+      break;
+      }
+    } else if (dlsch0_harq->status == DISABLED) {
+      dlsch1_harq->dl_power_off = 1;
+      switch (tpmi) {
+      case 0 :
+        dlsch1_harq->mimo_mode   = ALAMOUTI;
+      break;
+      case 1:
+        dlsch1_harq->mimo_mode   = UNIFORM_PRECODING11;
+        dlsch1_harq->pmi_alloc   = pmi_extend(frame_parms,0, 0);
+      break;
+      case 2:
+        dlsch1_harq->mimo_mode   = UNIFORM_PRECODING1m1;
+        dlsch1_harq->pmi_alloc   = pmi_extend(frame_parms,1, 0);
+      break;
+      case 3:
+        dlsch1_harq->mimo_mode   = UNIFORM_PRECODING1j;
+        dlsch1_harq->pmi_alloc   = pmi_extend(frame_parms,2, 0);
+      break;
+      case 4:
+        dlsch1_harq->mimo_mode   = UNIFORM_PRECODING1mj;
+        dlsch1_harq->pmi_alloc   = pmi_extend(frame_parms,3, 0);
+      break;
+      case 5:
+        dlsch1_harq->mimo_mode   = PUSCH_PRECODING0;
+        // pmi stored from ulsch allocation routine
+        dlsch1_harq->pmi_alloc   = dlsch0->pmi_alloc;
+        //LOG_I(PHY,"XXX using PMI %x\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc));
+      break;
+      case 6:
+        dlsch1_harq->mimo_mode   = PUSCH_PRECODING1;
+        LOG_E(PHY,"Unsupported TPMI\n");
+      return(-1);
+      break;
       }
     }
 
@@ -4882,61 +4966,59 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
 
     if (dlsch0->active == 1) {
-      if ((ndi1!=dlsch0_harq->DCINdi) ||
-    (dlsch0_harq->first_tx==1))  {
-  dlsch0_harq->round = 0;
-  dlsch0_harq->status = ACTIVE;
-  dlsch0_harq->DCINdi         = ndi1;
-  if (dlsch0_harq->first_tx==1) {
-    LOG_D(PHY,"Format 2 DCI First TX0: Clearing flag\n");
-    dlsch0_harq->first_tx = 0;
-  }
+      if ((ndi1!=dlsch0_harq->DCINdi) || (dlsch0_harq->first_tx==1))  {
+        dlsch0_harq->round = 0;
+        dlsch0_harq->status = ACTIVE;
+        dlsch0_harq->DCINdi = ndi1;
+
+        if (dlsch0_harq->first_tx==1) {
+          LOG_D(PHY,"Format 2 DCI First TX0: Clearing flag\n");
+          dlsch0_harq->first_tx = 0;
+        }
       }      
       else if (dlsch0_harq->status == SCH_IDLE) {  // we got an Ndi = 0 for a previously decoded process,
 
       // this happens if either another harq process in the same
       // is NAK or an ACK was not received
   
-  dlsch0->harq_ack[subframe].ack              = 1;
-  dlsch0->harq_ack[subframe].harq_id          = harq_pid;
-  dlsch0->harq_ack[subframe].send_harq_status = 1;
-  dlsch0->active = 0;
+        dlsch0->harq_ack[subframe].ack = 1;
+        dlsch0->harq_ack[subframe].harq_id = harq_pid;
+        dlsch0->harq_ack[subframe].send_harq_status = 1;
+        dlsch0->active = 0;
       }
     }
 
     if (dlsch1->active == 1) {
-      if ((ndi2!=dlsch1_harq->DCINdi) ||
-    (dlsch1_harq->first_tx==1)) {
-  dlsch1_harq->round = 0;
-  dlsch1_harq->status = ACTIVE;
-  dlsch1_harq->DCINdi         = ndi2;
-  if (dlsch1_harq->first_tx==1) {
-    LOG_D(PHY,"Format 2 DCI First TX1: Clearing flag\n");
-    dlsch1_harq->first_tx = 0;
-  }
-      }      
+      if ((ndi2!=dlsch1_harq->DCINdi) || (dlsch1_harq->first_tx==1)) {
+        dlsch1_harq->round = 0;
+        dlsch1_harq->status = ACTIVE;
+        dlsch1_harq->DCINdi = ndi2;
+        if (dlsch1_harq->first_tx==1) {
+          LOG_D(PHY,"Format 2 DCI First TX1: Clearing flag\n");
+          dlsch1_harq->first_tx = 0;
+        }
+      }
       else if (dlsch1_harq->status == SCH_IDLE) {  // we got an Ndi = 0 for a previously decoded process,
       // this happens if either another harq process in the same
       // is NAK or an ACK was not received
   
-  dlsch1->harq_ack[subframe].ack              = 1;
-  dlsch1->harq_ack[subframe].harq_id          = harq_pid;
-  dlsch1->harq_ack[subframe].send_harq_status = 1;
-  dlsch1->active = 0;
+        dlsch1->harq_ack[subframe].ack = 1;
+        dlsch1->harq_ack[subframe].harq_id = harq_pid;
+        dlsch1->harq_ack[subframe].send_harq_status = 1;
+        dlsch1->active = 0;
       }
     }
 
-    dlsch0_harq->mcs         = mcs1;
+   // dlsch0_harq->mcs         = mcs1;
 
     if (dlsch0_harq->nb_rb>1) {
-      dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][dlsch0_harq->nb_rb-1];
+      dlsch0_harq->TBS = TBStable[get_I_TBS(dlsch0_harq->mcs)][dlsch0_harq->nb_rb-1];
       if (mcs1 <= 28)
-  dlsch0_harq->Qm        = get_Qm(mcs1);
+        dlsch0_harq->Qm = get_Qm(mcs1);
       else if (mcs1<=31)
-  dlsch0_harq->Qm        = (mcs1-28)<<1;
+        dlsch0_harq->Qm = (mcs1-28)<<1;
       else
-  LOG_E(PHY,"invalid mcs1 %d\n",mcs1);
-
+        LOG_E(PHY,"invalid mcs1 %d\n",mcs1);
     } else
       dlsch0_harq->TBS         =0;
 
@@ -4952,14 +5034,14 @@ int generate_ue_dlsch_params_from_dci(int frame,
     }
 
     dlsch1_harq->DCINdi      = ndi2;
-    dlsch1_harq->mcs         = mcs2;
+   // dlsch1_harq->mcs         = mcs2;
 
     if (dlsch1_harq->nb_rb>1) {
-      dlsch1_harq->TBS       = TBStable[get_I_TBS(dlsch1_harq->mcs)][dlsch1_harq->nb_rb-1];
+      dlsch1_harq->TBS = TBStable[get_I_TBS(dlsch1_harq->mcs)][dlsch1_harq->nb_rb-1];
       if (mcs2 <= 28)
-  dlsch1_harq->Qm      = get_Qm(mcs2);
+        dlsch1_harq->Qm = get_Qm(mcs2);
       else if (mcs1<=31)
-  dlsch1_harq->Qm      = (mcs2-28)<<1;
+        dlsch1_harq->Qm = (mcs2-28)<<1;
       else
       LOG_E(PHY,"invalid mcs2 %d\n",mcs2);
     } else

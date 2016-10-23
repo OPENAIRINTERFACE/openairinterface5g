@@ -624,9 +624,9 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     pdsch_comp1 = (int16_t*) (phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[0][0])[0];
     //pdsch_comp1 = (int16_t*) (phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][0])[0];
     pdsch_mag0 = (int16_t*) phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_mag0[0];
-    pdsch_mag1 = (int16_t*) phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_mag1[0];
+    pdsch_mag1 = (int16_t*) (phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_mag1[0][0])[0];
     pdsch_magb0 = (int16_t*) phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_magb0[0];
-    pdsch_magb1 = (int16_t*) phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_magb1[0];
+    pdsch_magb1 = (int16_t*) (phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_magb1[0][0])[0];
     
     fl_freeze_form(form->lte_phy_scope_ue);
 

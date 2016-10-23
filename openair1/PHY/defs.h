@@ -678,6 +678,13 @@ typedef struct {
   time_stats_t dlsch_tc_intl2_stats;
   time_stats_t tx_prach;
 
+  //for SIC
+  time_stats_t dlsch_encoding_SIC_stats;
+  time_stats_t dlsch_scrambling_SIC_stats;
+  time_stats_t dlsch_modulation_SIC_stats;
+  time_stats_t dlsch_llr_stripping_unit_SIC_stats;
+  time_stats_t dlsch_unscrambling_SIC_stats;
+
 #if ENABLE_RAL
   hash_table_t    *ral_thresholds_timed;
   SLIST_HEAD(ral_thresholds_gen_poll_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
