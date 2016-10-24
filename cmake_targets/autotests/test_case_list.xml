@@ -7,7 +7,7 @@
  <GitOpenair-cnRepo>https://gitlab.eurecom.fr/oai/openair-cn.git</GitOpenair-cnRepo>
  <GitOAI5GRepoBranch>develop</GitOAI5GRepoBranch>
  <GitOpenair-cnRepoBranch>develop</GitOpenair-cnRepoBranch>
- <CleanUpOldProgs>oaisim oaisim_nos1 lte-softmodem lte-softmodem-nos1 mme_gw run_epc auth_request run_hss oai_hss mme spgw hss hss_sim configure_cots* wvdial  iperf iperf_script iperf_script_phone ping tshark rrh_gw iperf3 iperf3_script iperf3_script_phone pppd starthss start_ltebox stop_ltebox configure_cots_sony_experia_m4_ue configure_cots_huaweiE398_ue configure_cots_bandrich_ue</CleanUpOldProgs>	
+ <CleanUpOldProgs>oaisim oaisim_nos1 lte-softmodem lte-softmodem-nos1 mme_gw run_epc auth_request run_hss oai_hss mme spgw hss hss_sim wvdial  iperf iperf_script iperf_script_phone ping tshark rrh_gw iperf3 iperf3_script iperf3_script_phone pppd starthss start_ltebox stop_ltebox configure_cots_sony_experia_m4_ue configure_cots_huaweiE398_ue configure_cots_bandrich_ue</CleanUpOldProgs>	
  <CleanUpAluLteBox>sudo -S -E /opt/ltebox/tools/stop_ltebox</CleanUpAluLteBox>
 <ExmimoRfStop>exmimo_pci=`lspci -m | grep Xilinx`; if [ -n "$exmimo_pci" ] ; then $OPENAIR_DIR/cmake_targets/build_oai -w EXMIMO -c; sudo -S -E $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2; fi; sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_huaweiE398_ue.py --reset-ue;  sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_sony_experia_m4_ue.py --stop-ue; uname -a; sudo -E dmesg</ExmimoRfStop>
  <Timeout_execution>36000</Timeout_execution>
@@ -271,27 +271,17 @@
 
      <testCase id="010130" >
      <class>compilation</class>
-     <desc>Build phy unitary simulators + secuirity unitary tests</desc>
+     <desc>Build phy unitary simulators</desc>
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-     <compile_prog_args>--phy_simulators --core_simulators  -c </compile_prog_args>
+     <compile_prog_args>--phy_simulators   -c </compile_prog_args>
      <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte-simulators/build/dlsim
                        $OPENAIR_DIR/cmake_targets/lte-simulators/build/ulsim
                        $OPENAIR_DIR/cmake_targets/lte-simulators/build/pucchsim
                        $OPENAIR_DIR/cmake_targets/lte-simulators/build/prachsim
                        $OPENAIR_DIR/cmake_targets/lte-simulators/build/pdcchsim
                        $OPENAIR_DIR/cmake_targets/lte-simulators/build/pbchsim
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/mbmssim
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eia1
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_kenb
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_ctr_encrypt
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_ctr_decrypt
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eea2
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eea1
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_kdf
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_cmac_encrypt
-                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eia2</compile_prog_out>
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/mbmssim</compile_prog_out>
      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -301,7 +291,6 @@
      <tags>unitary-sim.Rel10</tags>
      <nruns>1</nruns>
      </testCase>
-
 
      <testCase id="010140" >
      <class>compilation</class>
