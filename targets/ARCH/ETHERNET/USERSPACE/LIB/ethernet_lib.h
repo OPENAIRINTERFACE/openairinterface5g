@@ -62,11 +62,23 @@
 typedef struct {
   
   /*!\brief socket file desc */ 
-  int sockfd[MAX_INST];
+  int sockfd;
   /*!\brief interface name */ 
-  char *if_name[MAX_INST];
+  char *if_name;
   /*!\brief buffer size */ 
   unsigned int buffer_size;
+  /*!\brief destination address for UDP socket*/
+  struct sockaddr_in dest_addr;
+  /*!\brief local address for UDP socket*/
+  struct sockaddr_in local_addr;
+  /*!\brief address length for both UDP and RAW socket*/
+  int addr_len;
+  /*!\brief destination address for RAW socket*/
+  struct sockaddr_ll dest_addr_ll;
+  /*!\brief local address for RAW socket*/
+  struct sockaddr_ll local_addr_ll;
+  /*!\brief inteface index for RAW socket*/
+  struct ifreq if_index;
   /*!\brief timeout ms */ 
   unsigned int rx_timeout_ms;
   /*!\brief timeout ms */ 

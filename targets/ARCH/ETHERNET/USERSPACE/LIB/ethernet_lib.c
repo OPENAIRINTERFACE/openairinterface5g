@@ -52,9 +52,9 @@
 #include "common_lib.h"
 #include "ethernet_lib.h"
 
-int num_devices_eth = 0;
-struct sockaddr_in dest_addr[MAX_INST];
-int dest_addr_len[MAX_INST];
+//int num_devices_eth = 0;
+//struct sockaddr_in dest_addr[MAX_INST];
+//int dest_addr_len[MAX_INST];
 
 
 int trx_eth_start(openair0_device *device) {
@@ -119,13 +119,12 @@ int trx_eth_start(openair0_device *device) {
 void trx_eth_end(openair0_device *device) {
 
   eth_state_t *eth = (eth_state_t*)device->priv;
-  int Mod_id = device->Mod_id;
   /* destroys socket only for the processes that call the eth_end fuction-- shutdown() for beaking the pipe */
-  if ( close(eth->sockfd[Mod_id]) <0 ) {
+  if ( close(eth->sockfd) <0 ) {
     perror("ETHERNET: Failed to close socket");
     exit(0);
    } else {
-    printf("[%s] socket for mod_id %d has been successfully closed.\n",(device->host_type == BBU_HOST)? "BBU":"RRH",Mod_id);
+    printf("[%s] socket has been successfully closed.\n",(device->host_type == BBU_HOST)? "BBU":"RRH");
    }
  
 }
@@ -133,15 +132,15 @@ void trx_eth_end(openair0_device *device) {
 
 int trx_eth_request(openair0_device *device, void *msg, ssize_t msg_len) {
 
-  int 	       Mod_id = device->Mod_id;
   eth_state_t *eth = (eth_state_t*)device->priv;
  
   /* BBU sends a message to RRH */
- if (sendto(eth->sockfd[Mod_id],msg,msg_len,0,(struct sockaddr *)&dest_addr[Mod_id],dest_addr_len[Mod_id])==-1) {
+  
+  if (sendto(eth->sockfd,msg,msg_len,0,(struct sockaddr *)&eth->dest_addr,eth->addr_len)==-1) {
     perror("ETHERNET: ");
     exit(0);
   }
-     
+  
   return 0;
 }
 
@@ -149,19 +148,21 @@ int trx_eth_request(openair0_device *device, void *msg, ssize_t msg_len) {
 int trx_eth_reply(openair0_device *device, void *msg, ssize_t msg_len) {
 
   eth_state_t   *eth = (eth_state_t*)device->priv;
-  int 		Mod_id = device->Mod_id;
 
   /* RRH receives from BBU a message */
-  if (recvfrom(eth->sockfd[Mod_id],
+
+  if (recvfrom(eth->sockfd,
 	       msg,
 	       msg_len,
 	       0,
-	       (struct sockaddr *)&dest_addr[Mod_id],
-	       (socklen_t *)&dest_addr_len[Mod_id])==-1) {
-    perror("ETHERNET: ");
-    exit(0);
-  }	
- 
+	       (struct sockaddr *)&eth->dest_addr,
+	       (socklen_t *)&eth->addr_len)==-1) {
+    perror("ETHERNET: recv_from in trx_eth_reply ");
+    exit(0);	
+  }
+
+    
+
    return 0;
 }
 
@@ -191,7 +192,6 @@ int trx_eth_reset_stats(openair0_device* device) {
 int ethernet_tune(openair0_device *device, unsigned int option, int value) {
   
   eth_state_t *eth = (eth_state_t*)device->priv;
-  int Mod_id=device->Mod_id;
   struct timeval timeout;
   struct ifreq ifr;   
   char system_cmd[256]; 
@@ -204,7 +204,7 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
   /****************** socket level options ************************/  
   switch(option) {
   case SND_BUF_SIZE:  /* transmit socket buffer size */   
-    if (setsockopt(eth->sockfd[Mod_id],  
+    if (setsockopt(eth->sockfd,  
 		   SOL_SOCKET,  
 		   SO_SNDBUF,  
 		   &value,sizeof(value))) {
@@ -215,7 +215,7 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
     break;
     
   case RCV_BUF_SIZE:   /* receive socket buffer size */   
-    if (setsockopt(eth->sockfd[Mod_id],  
+    if (setsockopt(eth->sockfd,  
 		   SOL_SOCKET,  
 		   SO_RCVBUF,  
 		   &value,sizeof(value))) {
@@ -228,7 +228,7 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
   case RCV_TIMEOUT:
     timeout.tv_sec = value/1000000;
     timeout.tv_usec = value%1000000;//less than rt_period?
-    if (setsockopt(eth->sockfd[Mod_id],  
+    if (setsockopt(eth->sockfd,  
 		   SOL_SOCKET,  
 		   SO_RCVTIMEO,  
 		   (char *)&timeout,sizeof(timeout))) {
@@ -241,7 +241,7 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
   case SND_TIMEOUT:
     timeout.tv_sec = value/1000000000;
     timeout.tv_usec = value%1000000000;//less than rt_period?
-    if (setsockopt(eth->sockfd[Mod_id],  
+    if (setsockopt(eth->sockfd,  
 		   SOL_SOCKET,  
 		   SO_SNDTIMEO,  
 		   (char *)&timeout,sizeof(timeout))) {
@@ -255,27 +255,27 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
     /******************* interface level options  *************************/
   case MTU_SIZE: /* change  MTU of the eth interface */ 
     ifr.ifr_addr.sa_family = AF_INET;
-    strncpy(ifr.ifr_name,eth->if_name[Mod_id], sizeof(ifr.ifr_name));
+    strncpy(ifr.ifr_name,eth->if_name, sizeof(ifr.ifr_name));
     ifr.ifr_mtu =value;
-    if (ioctl(eth->sockfd[Mod_id],SIOCSIFMTU,(caddr_t)&ifr) < 0 )
+    if (ioctl(eth->sockfd,SIOCSIFMTU,(caddr_t)&ifr) < 0 )
       perror ("[ETHERNET] Can't set the MTU");
     else 
-      printf("[ETHERNET] %s MTU size has changed to %d\n",eth->if_name[Mod_id],ifr.ifr_mtu);
+      printf("[ETHERNET] %s MTU size has changed to %d\n",eth->if_name,ifr.ifr_mtu);
     break;
     
   case TX_Q_LEN:  /* change TX queue length of eth interface */ 
     ifr.ifr_addr.sa_family = AF_INET;
-    strncpy(ifr.ifr_name,eth->if_name[Mod_id], sizeof(ifr.ifr_name));
+    strncpy(ifr.ifr_name,eth->if_name, sizeof(ifr.ifr_name));
     ifr.ifr_qlen =value;
-    if (ioctl(eth->sockfd[Mod_id],SIOCSIFTXQLEN,(caddr_t)&ifr) < 0 )
+    if (ioctl(eth->sockfd,SIOCSIFTXQLEN,(caddr_t)&ifr) < 0 )
       perror ("[ETHERNET] Can't set the txqueuelen");
     else 
-      printf("[ETHERNET] %s txqueuelen size has changed to %d\n",eth->if_name[Mod_id],ifr.ifr_qlen);
+      printf("[ETHERNET] %s txqueuelen size has changed to %d\n",eth->if_name,ifr.ifr_qlen);
     break;
     
     /******************* device level options  *************************/
   case COALESCE_PAR:
-    ret=snprintf(system_cmd,sizeof(system_cmd),"ethtool -C %s rx-usecs %d",eth->if_name[Mod_id],value);
+    ret=snprintf(system_cmd,sizeof(system_cmd),"ethtool -C %s rx-usecs %d",eth->if_name,value);
     if (ret > 0) {
       ret=system(system_cmd);
       if (ret == -1) {
@@ -290,8 +290,8 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
     break;
     
   case PAUSE_PAR:
-    if (value==1) ret=snprintf(system_cmd,sizeof(system_cmd),"ethtool -A %s autoneg off rx off tx off",eth->if_name[Mod_id]);
-    else if (value==0) ret=snprintf(system_cmd,sizeof(system_cmd),"ethtool -A %s autoneg on rx on tx on",eth->if_name[Mod_id]);
+    if (value==1) ret=snprintf(system_cmd,sizeof(system_cmd),"ethtool -A %s autoneg off rx off tx off",eth->if_name);
+    else if (value==0) ret=snprintf(system_cmd,sizeof(system_cmd),"ethtool -A %s autoneg on rx on tx on",eth->if_name);
     else break;
     if (ret > 0) {
       ret=system(system_cmd);
@@ -307,7 +307,7 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
     break;
     
   case RING_PAR:
-    ret=snprintf(system_cmd,sizeof(system_cmd),"ethtool -G %s val %d",eth->if_name[Mod_id],value);
+    ret=snprintf(system_cmd,sizeof(system_cmd),"ethtool -G %s val %d",eth->if_name,value);
     if (ret > 0) {
       ret=system(system_cmd);
       if (ret == -1) {
@@ -351,7 +351,7 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
   }
   
   printf("[ETHERNET]: Initializing openair0_device for %s ...\n", ((device->host_type == BBU_HOST) ? "BBU": "RRH"));
-  device->Mod_id           = num_devices_eth++;
+  device->Mod_id           = 0;//num_devices_eth++;
   device->transp_type      = ETHERNET_TP;
   device->trx_start_func   = trx_eth_start;
   device->trx_request_func = trx_eth_request;
@@ -383,7 +383,7 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
     //device->trx_read_func    = trx_eth_read_udp_IF4p5;     
   }
     
-  eth->if_name[device->Mod_id] = eth_params->local_if_name;
+  eth->if_name = eth_params->local_if_name;
   device->priv = eth;
  	
   /* device specific */
