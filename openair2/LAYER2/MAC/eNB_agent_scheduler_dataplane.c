@@ -126,6 +126,8 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
   static int32_t          tpc_accumulated=0;
   UE_sched_ctrl           *ue_sched_ctl;
 
+  int last_sdu_header_len = 0;
+
   int i;
 
   Protocol__FlexDlData *dl_data;
@@ -161,18 +163,21 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
       
       if (dl_data->n_ce_bitmap > 0) {
 	//Check if there is TA command and set the length appropriately
-	ta_len = (dl_data->ce_bitmap[0] & PROTOCOL__FLEX_CE_TYPE__FLPCET_TA) ? 2 : 0; 
+	ta_len = (dl_data->ce_bitmap[0] & PROTOCOL__FLEX_CE_TYPE__FLPCET_TA) ? 1 : 0; 
       }
+      
+      num_sdus = 0;
+      sdu_length_total = 0;
 
       if (ta_len > 0) {
 	// Reset the measurement
 	ue_sched_ctl->ta_timer = 20;
 	eNB_UE_stats->timing_advance_update = 0;
+	header_len = ta_len;
+	last_sdu_header_len = ta_len;
       }
-      
+
       n_lc = dl_data->n_rlc_pdu;
-      num_sdus = 0;
-      sdu_length_total = 0;
       // Go through each one of the channel commands and create SDUs
       for (i = 0; i < n_lc; i++) {
 	lcid = dl_data->rlc_pdu[i]->rlc_pdu_tb[0]->logical_channel_id;
@@ -191,6 +196,10 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	   				  0);
 
 	  if (rlc_status.bytes_in_buffer > 0) {
+
+	    if (rlc_size <= 2) {
+	      rlc_size = 3;
+	    }
 
 	    rlc_status = mac_rlc_status_ind(mod_id,
 					    rnti,
@@ -223,12 +232,13 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	      UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[lcid] += 1;
 	      UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[lcid] += sdu_lengths[i];
 	      
-	      if (sdu_lengths[i] < 128) {
+	      if (sdu_lengths[i] <= 128) {
 		header_len += 2;
+		last_sdu_header_len = 2;
 	      } else {
 		header_len += 3;
+		last_sdu_header_len = 3;
 	      }
-	      
 	      num_sdus++;
 	    }
 	  }
@@ -238,13 +248,14 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
       
       if (((sdu_length_total + header_len) > 0)) {
 
-	header_len_tmp = header_len;
+	//	header_len_tmp = header_len;
 	
 	// If we have only a single SDU, header length becomes 1
-	if (header_len == 2 || header_len == 3) {
+	if ((num_sdus + ta_len) == 1) {
+	  //if (header_len == 2 || header_len == 3) {
 	  header_len = 1;
 	} else {
-	  header_len--;
+	  header_len = (header_len - last_sdu_header_len) + 1;
 	}
 	
 	// there is a payload

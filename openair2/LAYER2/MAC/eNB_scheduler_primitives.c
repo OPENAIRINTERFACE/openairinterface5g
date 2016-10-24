@@ -146,7 +146,7 @@ rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP)
     return (rnti);
   }
 
-  LOG_E(MAC,"[eNB %d] Couldn't find RNTI for UE %d\n",mod_idP,ue_idP);
+  LOG_D(MAC,"[eNB %d] Couldn't find RNTI for UE %d\n",mod_idP,ue_idP);
   //display_backtrace();
   return(NOT_A_RNTI);
 }

@@ -371,7 +371,7 @@ schedule_ue_spec_default(
 
 	  // Need to see if we have space for data from this channel
 	  if (dci_tbs - ta_len - header_len > 0) {
-	     LOG_D(MAC, "[TEST]Requested %d bytes from RLC buffer if channel %d during first call\n", dci_tbs-ta_len-header_len);
+	     LOG_D(MAC, "[TEST]Requested %d bytes from RLC buffer on channel %d during first call\n", dci_tbs-ta_len-header_len);
 	     //If we have space, we need to see how much data we can request at most (if any available)
 	     rlc_status = mac_rlc_status_ind(mod_id,
 					     rnti,
@@ -390,10 +390,10 @@ schedule_ue_spec_default(
 	       if (data_to_request < 128) { //The header will be one byte less
 		 header_len--;
 	       }
-	       if (j == 1 || j == 2) {
-	        data_to_request++; //It is not correct but fixes some RLC bug for DCCH
-	       }
-	       LOG_D(MAC, "[TEST]Will request %d from DCCH\n", data_to_request);
+	       /* if (j == 1 || j == 2) { */
+	       /*  data_to_request+=0; 
+	       /* } */
+	       LOG_D(MAC, "[TEST]Will request %d from channel %d\n", data_to_request, j);
 	       rlc_pdus[channels_added] = (Protocol__FlexRlcPdu *) malloc(sizeof(Protocol__FlexRlcPdu));
 	       protocol__flex_rlc_pdu__init(rlc_pdus[channels_added]);
 	       rlc_pdus[channels_added]->n_rlc_pdu_tb = 2;
@@ -523,7 +523,7 @@ schedule_ue_spec_default(
 	  if (frame_parms[CC_id]->frame_type == TDD) {
             UE_list->UE_template[CC_id][UE_id].DAI++;
             //  printf("DAI update: subframeP %d: UE %d, DAI %d\n",subframeP,UE_id,UE_list->UE_template[CC_id][UE_id].DAI);
-#warning only for 5MHz channel
+	    //#warning only for 5MHz channel
             update_ul_dci(mod_id, CC_id, rnti, UE_list->UE_template[CC_id][UE_id].DAI);
           }
 
