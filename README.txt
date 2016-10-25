@@ -2,6 +2,10 @@ OpenAirInterface is under OpenAirInterface Software Alliance license.
 ├── http://www.openairinterface.org/?page_id=101
 ├── http://www.openairinterface.org/?page_id=698
 
+It is distributed under OAI Public License V1.0. 
+The license information is distributed under LICENSE file in the same directory.
+Please see NOTICE.txt for third party software that is included in the sources.
+
 The OpenAirInterface (OAI) software is composed of the following parts: 
 
 openairinterface5g
