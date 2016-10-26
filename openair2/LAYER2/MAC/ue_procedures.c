@@ -1422,6 +1422,12 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
     bsr_l->Buffer_size2 = UE_mac_inst[module_idP].scheduling_info.BSR[LCGID2];
     bsr_l->Buffer_size3 = UE_mac_inst[module_idP].scheduling_info.BSR[LCGID3];
 
+    LOG_D(MAC, "[UE %d] Frame %d report long BSR (level LCGID0 %d,level LCGID1 %d,level LCGID2 %d,level LCGID3 %d)\n", module_idP,frameP,
+          UE_mac_inst[module_idP].scheduling_info.BSR[LCGID0],
+          UE_mac_inst[module_idP].scheduling_info.BSR[LCGID1],
+          UE_mac_inst[module_idP].scheduling_info.BSR[LCGID2],
+          UE_mac_inst[module_idP].scheduling_info.BSR[LCGID3]);
+    
     UE_mac_inst[module_idP].scheduling_info.BSR_bytes[LCGID0] = 0;
     UE_mac_inst[module_idP].scheduling_info.BSR_bytes[LCGID1] = 0;
     UE_mac_inst[module_idP].scheduling_info.BSR_bytes[LCGID2] = 0;
@@ -1430,12 +1436,6 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
     UE_mac_inst[module_idP].scheduling_info.BSR[LCGID1] = 0;
     UE_mac_inst[module_idP].scheduling_info.BSR[LCGID2] = 0;
     UE_mac_inst[module_idP].scheduling_info.BSR[LCGID3] = 0;
-
-    LOG_D(MAC, "[UE %d] Frame %d report long BSR (level LCGID0 %d,level LCGID1 %d,level LCGID2 %d,level LCGID3 %d)\n", module_idP,frameP,
-          UE_mac_inst[module_idP].scheduling_info.BSR[LCGID0],
-          UE_mac_inst[module_idP].scheduling_info.BSR[LCGID1],
-          UE_mac_inst[module_idP].scheduling_info.BSR[LCGID2],
-          UE_mac_inst[module_idP].scheduling_info.BSR[LCGID3]);
   } else if (bsr_ce_len == sizeof(BSR_SHORT)) {
     bsr_l = NULL;
     bsr_s->LCGID = lcgid;
