@@ -886,6 +886,15 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   
   proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
   proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
+  // synchronize first reception to frame 0 subframe 0
+  if (eNB->iframe_offset == -1)
+    eNB->iframe_offset = proc->frame_rx;
+  if (eNB->isubframe_offset == -1)
+    eNB->isubframe_offset = proc->subframe_rx;
+
+  proc->frame_rx    -= eNB->iframe_offset;
+  proc->subframe_rx -= eNB->isubframe_offset;
+
   proc->timestamp_tx = proc->timestamp_rx+(4*fp->samples_per_tti);
   //  printf("trx_read <- USRP TS %llu (sf %d, first_rx %d)\n", proc->timestamp_rx,proc->subframe_rx,proc->first_rx);  
   
@@ -1614,6 +1623,9 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       eNB->node_timing        = node_timing[CC_id];
       eNB->abstraction_flag   = 0;
       eNB->single_thread_flag = single_thread_flag;
+      eNB->iframe_offset = -1;
+      eNB->isubframe_offset = -1;
+
       LOG_I(PHY,"Initializing eNB %d CC_id %d : (%s,%s)\n",inst,CC_id,eNB_functions[node_function[CC_id]],eNB_timing[node_timing[CC_id]]);
 
       switch (node_function[CC_id]) {
