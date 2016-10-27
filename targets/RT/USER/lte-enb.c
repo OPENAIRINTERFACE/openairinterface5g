@@ -892,7 +892,7 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   // synchronize first reception to frame 0 subframe 0
 
   proc->timestamp_tx = proc->timestamp_rx+(4*fp->samples_per_tti);
-  printf("trx_read <- USRP TS %llu (sf %d, f %d, first_rx %d)\n", proc->timestamp_rx,proc->subframe_rx,proc->frame_rx,proc->first_rx);  
+  //printf("trx_read <- USRP TS %llu (sf %d, f %d, first_rx %d)\n", proc->timestamp_rx,proc->subframe_rx,proc->frame_rx,proc->first_rx);  
   
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
