@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #ifndef __PHY_EXTERN_H__
 #define __PHY_EXTERN_H__
 
@@ -47,11 +40,17 @@ extern int number_of_cards;
 
 //extern PHY_CONFIG *PHY_config;
 //extern PHY_VARS *PHY_vars;
-
+#ifndef OCP_FRAMEWORK
 extern PHY_VARS_UE ***PHY_vars_UE_g;
 extern PHY_VARS_eNB ***PHY_vars_eNB_g;
 extern PHY_VARS_RN **PHY_vars_RN_g;
 extern LTE_DL_FRAME_PARMS *lte_frame_parms_g;
+#else
+#define MAX_UE 10
+#define MAX_eNB 20
+extern PHY_VARS_UE * PHY_vars_UE_g[MAX_UE][MAX_NUM_CCs];
+extern PHY_VARS_eNB * PHY_vars_eNB_g[MAX_eNB][MAX_NUM_CCs];
+#endif
 
 extern MAC_xface *mac_xface;
 
@@ -111,6 +110,24 @@ extern double p_qam64[8];
 extern double beta1_dlsch[6][MCS_COUNT];
 extern double beta2_dlsch[6][MCS_COUNT];
 
+extern char eNB_functions[6][20];
+extern char eNB_timing[2][20];
+
+
+extern int16_t unscrambling_lut[65536*16];
+extern uint8_t scrambling_lut[65536*16];
+
+extern unsigned short msrsb_6_40[8][4];
+extern unsigned short msrsb_41_60[8][4];
+extern unsigned short msrsb_61_80[8][4];
+extern unsigned short msrsb_81_110[8][4];
+extern unsigned short Nb_6_40[8][4];
+extern unsigned short Nb_41_60[8][4];
+extern unsigned short Nb_61_80[8][4];
+extern unsigned short Nb_81_110[8][4];
+
+extern uint16_t hundred_times_log10_NPRB[100];
+extern uint8_t alpha_lut[8];
 
 #endif /*__PHY_EXTERN_H__ */
 

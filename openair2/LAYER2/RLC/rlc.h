@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /*! \file rlc.h
 * \brief This file, and only this file must be included by external code that interact with RLC layer.
 * \author GAUTHIER Lionel
@@ -269,7 +262,18 @@ public_rlc(logical_chan_id_t    rlc_mbms_rbid2lcid_eNB[NUMBER_OF_eNB_MAX][NB_RB_
     (((hash_key_t)(rNTI))   << 8)  | \
     (((hash_key_t)(iS_eNB)) << 24) | \
     (((hash_key_t)(rB_iD))  << 25) | \
-    (((hash_key_t)(iS_sRB)) << 33))
+    (((hash_key_t)(iS_sRB)) << 33) | \
+    (((hash_key_t)(0x05))   << 34))
+
+// index to the same RLC entity as RLC_COLL_KEY_VALUE(), but using LC_id instead
+// the hidden last key indicates if this is a hash-key with RB_id (0x05) or LC_id (0x0a)
+#define RLC_COLL_KEY_LCID_VALUE(eNB_iD, rNTI, iS_eNB, lC_iD, iS_sRB) \
+   ((hash_key_t)eNB_iD             | \
+    (((hash_key_t)(rNTI))   << 8)  | \
+    (((hash_key_t)(iS_eNB)) << 24) | \
+    (((hash_key_t)(lC_iD))  << 25) | \
+    (((hash_key_t)(iS_sRB)) << 33) | \
+    (((hash_key_t)(0x0a))   << 34))
 
 // service id max val is maxServiceCount = 16 (asn1_constants.h)
 

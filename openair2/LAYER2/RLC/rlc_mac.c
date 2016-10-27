@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /*
                                 rlc_mac.c
                              -------------------
@@ -136,7 +129,6 @@ tbs_size_t mac_rlc_data_req(
 {
   //-----------------------------------------------------------------------------
   struct mac_data_req    data_request;
-  rb_id_t                rb_id           = 0;
   rlc_mode_t             rlc_mode        = RLC_MODE_NONE;
   rlc_mbms_id_t         *mbms_id_p       = NULL;
   rlc_union_t           *rlc_union_p     = NULL;
@@ -179,13 +171,7 @@ tbs_size_t mac_rlc_data_req(
       return (tbs_size_t)0;
     }
   } else {
-    if (channel_idP > 2) {
-      rb_id = channel_idP - 2;
-    } else {
-      rb_id = channel_idP;
-    }
-
-    key = RLC_COLL_KEY_VALUE(module_idP, rntiP, enb_flagP, rb_id, srb_flag);
+    key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);
   }
 
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
@@ -194,7 +180,7 @@ tbs_size_t mac_rlc_data_req(
     rlc_mode = rlc_union_p->mode;
   } else {
     rlc_mode = RLC_MODE_NONE;
-    AssertFatal (0 , "RLC not configured rb id %u lcid %u RNTI %x!\n", rb_id, channel_idP, rntiP);
+    AssertFatal (0 , "RLC not configured lcid %u RNTI %x!\n", channel_idP, rntiP);
   }
 
   switch (rlc_mode) {
@@ -244,7 +230,6 @@ void mac_rlc_data_ind     (
   crc_t                    *crcs_pP)
 {
   //-----------------------------------------------------------------------------
-  rb_id_t                rb_id      = 0;
   rlc_mode_t             rlc_mode   = RLC_MODE_NONE;
   rlc_mbms_id_t         *mbms_id_p  = NULL;
   rlc_union_t           *rlc_union_p     = NULL;
@@ -294,13 +279,7 @@ void mac_rlc_data_ind     (
       return;
     }
   } else {
-    if (channel_idP > 2) {
-      rb_id = channel_idP - 2;
-    } else {
-      rb_id = channel_idP;
-    }
-
-    key = RLC_COLL_KEY_VALUE(module_idP, rntiP, enb_flagP, rb_id, srb_flag);
+    key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);
   }
 
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
@@ -350,7 +329,6 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   mac_rlc_status_resp_t  mac_rlc_status_resp;
   struct mac_status_ind  tx_status;
   struct mac_status_resp status_resp;
-  rb_id_t                rb_id       = 0;
   rlc_mode_t             rlc_mode    = RLC_MODE_NONE;
   rlc_mbms_id_t         *mbms_id_p   = NULL;
   rlc_union_t           *rlc_union_p = NULL;
@@ -399,13 +377,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
 
     key = RLC_COLL_KEY_MBMS_VALUE(module_idP, rntiP, enb_flagP, mbms_id_p->service_id, mbms_id_p->session_id);
   } else {
-    if (channel_idP > 2) {
-      rb_id = channel_idP - 2;
-    } else {
-      rb_id = channel_idP;
-    }
-
-    key = RLC_COLL_KEY_VALUE(module_idP, rntiP, enb_flagP, rb_id, srb_flag);
+    key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);
   }
 
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);

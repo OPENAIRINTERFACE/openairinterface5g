@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #define RLC_UM_MODULE
 #define RLC_C
 #define RLC_UM_TEST_C
@@ -195,8 +188,8 @@ void rlc_um_v9_3_0_test_windows_10()
   rlc_um_init(&um1);
   rlc_um_init(&um2);
 
-  rlc_um_set_debug_infos(&um1, g_frame, 0, 0, 0, 1);
-  rlc_um_set_debug_infos(&um2, g_frame, 1, 1, 1, 1);
+  rlc_um_set_debug_infos(&um1, g_frame, 0, 0, 0, 1, 1 /*LC-id = RAB-id*/);
+  rlc_um_set_debug_infos(&um2, g_frame, 1, 1, 1, 1, 1 /*LC-id = RAB-id*/);
 
   rlc_um_configure(&um1, g_frame, timer_reordering, sn_field_length, sn_field_length, is_mXch);
   rlc_um_configure(&um2, g_frame, timer_reordering, sn_field_length, sn_field_length, is_mXch);
@@ -249,8 +242,8 @@ void rlc_um_v9_3_0_test_windows_5()
   rlc_um_init(&um1);
   rlc_um_init(&um2);
 
-  rlc_um_set_debug_infos(&um1, g_frame, 0, 0, 0, 1);
-  rlc_um_set_debug_infos(&um2, g_frame, 1, 1, 1, 1);
+  rlc_um_set_debug_infos(&um1, g_frame, 0, 0, 0, 1, 1 /* LC-id = DRB-id */);
+  rlc_um_set_debug_infos(&um2, g_frame, 1, 1, 1, 1, 1 /* LC-id = DRB-id */);
 
   rlc_um_configure(&um1, g_frame, timer_reordering, sn_field_length, sn_field_length, is_mXch);
   rlc_um_configure(&um2, g_frame, timer_reordering, sn_field_length, sn_field_length, is_mXch);
@@ -621,8 +614,8 @@ void rlc_um_v9_3_0_test_reordering(uint32_t sn_field_lengthP)
   um_info.is_mXch          = 0;
 
   srand (0);
-  config_req_rlc_um (&um_tx, 0,0,0, &um_info, 0, SIGNALLING_RADIO_BEARER);
-  config_req_rlc_um (&um_rx, 0,1,1, &um_info, 1, SIGNALLING_RADIO_BEARER);
+  config_req_rlc_um (&um_tx, 0,0,0, &um_info, 0, SIGNALLING_RADIO_BEARER, SIGNALLING_RADIO_BEARER /*LC-id = DRB-id*/);
+  config_req_rlc_um (&um_rx, 0,1,1, &um_info, 1, SIGNALLING_RADIO_BEARER, SIGNALLING_RADIO_BEARER /*LC-id = DRB-id*/);
 
   rlc_um_display_rx_window(&um_tx);
 
@@ -743,8 +736,8 @@ void rlc_um_v9_3_0_test_tx_rx_10(void)
   um_info.is_mXch          = 0;
 
   srand (0);
-  config_req_rlc_um (&um_tx, 0,0,0, &um_info, 0, SIGNALLING_RADIO_BEARER);
-  config_req_rlc_um (&um_rx, 0,1,1, &um_info, 1, SIGNALLING_RADIO_BEARER);
+  config_req_rlc_um (&um_tx, 0,0,0, &um_info, 0, SIGNALLING_RADIO_BEARER, SIGNALLING_RADIO_BEARER /*LC-id = DRB-id*/);
+  config_req_rlc_um (&um_rx, 0,1,1, &um_info, 1, SIGNALLING_RADIO_BEARER, SIGNALLING_RADIO_BEARER /*LC-id = DRB-id*/);
 
   rlc_um_display_rx_window(&um_tx);
 
@@ -1072,8 +1065,8 @@ void rlc_um_v9_3_0_test_tx_rx_5(void)
   um_info.is_mXch          = 0;
 
   srand (0);
-  config_req_rlc_um (&um_tx, 0,0,0, &um_info, 0, SIGNALLING_RADIO_BEARER);
-  config_req_rlc_um (&um_rx, 0,1,1, &um_info, 1, SIGNALLING_RADIO_BEARER);
+  config_req_rlc_um (&um_tx, 0,0,0, &um_info, 0, SIGNALLING_RADIO_BEARER, SIGNALLING_RADIO_BEARER /*LC-id = DRB-id*/);
+  config_req_rlc_um (&um_rx, 0,1,1, &um_info, 1, SIGNALLING_RADIO_BEARER, SIGNALLING_RADIO_BEARER /*LC-id = DRB-id*/);
 
   rlc_um_display_rx_window(&um_tx);
 
