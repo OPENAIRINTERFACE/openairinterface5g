@@ -96,6 +96,7 @@ int trx_eth_start(openair0_device *device) {
     } else {
       if(eth_get_dev_conf_udp(device)!=0)  return -1;
     }
+    if(ethernet_tune (device,RCV_TIMEOUT,999999)!=0)  return -1;
   } else if (eth->flags == ETH_RAW_IF5_MOBIPASS) {
     printf("Setting ETHERNET to RAW_IF5_MODE\n");
     if (eth_socket_init_raw(device)!=0)   return -1;
