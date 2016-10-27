@@ -140,7 +140,6 @@ int trx_eth_request(openair0_device *device, void *msg, ssize_t msg_len) {
     perror("ETHERNET: ");
     exit(0);
   }
-  
   return 0;
 }
 

@@ -981,11 +981,11 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
  
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
-      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,*subframe);
+      LOG_E(PHY,"Received Timestamp (IF4p5) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d,CCid %d)\n",proc->subframe_rx,*subframe,eNB->CC_id);
       exit_fun("Exiting");
     }
     if (proc->frame_rx != *frame) {
-      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,*frame);
+      LOG_E(PHY,"Received Timestamp (IF4p5) doesn't correspond to the time we think it is (proc->frame_rx %d frame %d,CCid %d)\n",proc->frame_rx,*frame,eNB->CC_id);
       exit_fun("Exiting");
     }
   } else {
@@ -1276,7 +1276,8 @@ static void* eNB_thread_single( void* param ) {
       subframe++;
     }      
 
-    LOG_D(PHY,"eNB Fronthaul thread, frame %d, subframe %d\n",frame,subframe);
+    LOG_D(PHY,"eNB thread single %p (proc %p, CC_id %d), frame %d (%p), subframe %d (%p)\n",
+	  pthread_self(), proc, eNB->CC_id, frame,&frame,subframe,&subframe);
  
     // synchronization on FH interface, acquire signals/data and block
     if (eNB->rx_fh) eNB->rx_fh(eNB,&frame,&subframe);
@@ -1400,6 +1401,7 @@ void init_eNB_proc(int inst) {
   }
 
   //for multiple CCs: setup master and slaves
+  /*
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     eNB = PHY_vars_eNB_g[inst][CC_id];
 
@@ -1412,7 +1414,7 @@ void init_eNB_proc(int inst) {
         if (i >= CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i+1]->proc);
       }
     }
-  }
+    }*/
 
 
   /* setup PHY proc TX sync mechanism */
@@ -1614,6 +1616,8 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       eNB->node_timing        = node_timing[CC_id];
       eNB->abstraction_flag   = 0;
       eNB->single_thread_flag = single_thread_flag;
+      eNB->iframe_offset      = -1;
+      eNB->isubframe_offset   = -1;
       LOG_I(PHY,"Initializing eNB %d CC_id %d : (%s,%s)\n",inst,CC_id,eNB_functions[node_function[CC_id]],eNB_timing[node_timing[CC_id]]);
 
       switch (node_function[CC_id]) {
