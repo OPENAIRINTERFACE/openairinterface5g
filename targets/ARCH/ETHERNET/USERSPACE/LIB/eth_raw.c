@@ -311,6 +311,9 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
   ssize_t packet_size = MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t;      
   IF4p5_header_t *test_header = (IF4p5_header_t*)(buff[0] + MAC_HEADER_SIZE_BYTES);
 
+#ifdef DEBUG
+  printf("Reading from device %p, eth %p, sockfd %d\n",device,eth,eth->sockfd[Mod_id]);
+#endif
 
   bytes_received = recv(eth->sockfd[Mod_id],
                         buff[0],
@@ -321,7 +324,12 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
 	  perror("ETHERNET IF4p5 READ (header): ");
 	  exit(-1);	
   }
- 
+#ifdef DEBUG
+  for (int i=0;i<packet_size;i++)
+    printf("%2x.",((uint8_t*)buff[0])[i]);
+  printf("\n");
+#endif
+		
   *timestamp = test_header->sub_type; 
   
   if (test_header->sub_type == IF4p5_PDLFFT) {
