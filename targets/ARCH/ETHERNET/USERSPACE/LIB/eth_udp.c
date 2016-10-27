@@ -160,6 +160,7 @@ int trx_eth_read_udp_IF4p5(openair0_device *device, openair0_timestamp *timestam
     if (bytes_received ==-1) {
       eth->num_rx_errors++;
       if (errno == EAGAIN) {
+	/*
         again_cnt++;
         usleep(10);
         if (again_cnt == 1000) {
@@ -169,6 +170,9 @@ int trx_eth_read_udp_IF4p5(openair0_device *device, openair0_timestamp *timestam
           printf("AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN \n");
           goto again;
         }
+	*/
+	printf("Lost IF4p5 connection with %s\n", inet_ntoa(eth->dest_addr.sin_addr));
+	exit(-1);
       } else if (errno == EWOULDBLOCK) {
         block_cnt++;
         usleep(10);
