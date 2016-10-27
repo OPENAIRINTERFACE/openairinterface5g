@@ -883,29 +883,25 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 				    fp->nb_antennas_rx);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
-  
-  proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
-  proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
+ 
+  if (proc->first_rx == 1)
+    eNB->ts_offset = proc->timestamp_rx;
+ 
+  proc->frame_rx    = ((proc->timestamp_rx-eNB->ts_offset) / (fp->samples_per_tti*10))&1023;
+  proc->subframe_rx = ((proc->timestamp_rx-eNB->ts_offset) / fp->samples_per_tti)%10;
   // synchronize first reception to frame 0 subframe 0
-  if (eNB->iframe_offset == -1)
-    eNB->iframe_offset = proc->frame_rx;
-  if (eNB->isubframe_offset == -1)
-    eNB->isubframe_offset = proc->subframe_rx;
-
-  proc->frame_rx    -= eNB->iframe_offset;
-  proc->subframe_rx -= eNB->isubframe_offset;
 
   proc->timestamp_tx = proc->timestamp_rx+(4*fp->samples_per_tti);
-  //  printf("trx_read <- USRP TS %llu (sf %d, first_rx %d)\n", proc->timestamp_rx,proc->subframe_rx,proc->first_rx);  
+  printf("trx_read <- USRP TS %llu (sf %d, f %d, first_rx %d)\n", proc->timestamp_rx,proc->subframe_rx,proc->frame_rx,proc->first_rx);  
   
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
-      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,*subframe);
+      LOG_E(PHY,"Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->timestamp_rx,proc->subframe_rx,*subframe);
       exit_fun("Exiting");
     }
     
     if (proc->frame_rx != *frame) {
-      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,*frame);
+      LOG_E(PHY,"Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->timestamp_rx,proc->frame_rx,*frame);
       exit_fun("Exiting");
     }
   } else {
@@ -1625,8 +1621,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       eNB->node_timing        = node_timing[CC_id];
       eNB->abstraction_flag   = 0;
       eNB->single_thread_flag = single_thread_flag;
-      eNB->iframe_offset      = -1;
-      eNB->isubframe_offset   = -1;
+      eNB->ts_offset          = 0;
       LOG_I(PHY,"Initializing eNB %d CC_id %d : (%s,%s)\n",inst,CC_id,eNB_functions[node_function[CC_id]],eNB_timing[node_timing[CC_id]]);
 
       switch (node_function[CC_id]) {

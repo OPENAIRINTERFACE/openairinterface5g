@@ -410,8 +410,7 @@ typedef struct PHY_VARS_eNB_s {
   int                  single_thread_flag;
   openair0_rf_map      rf_map;
   int                  abstraction_flag;
-  int                  iframe_offset;
-  int                  isubframe_offset;
+  openair0_timestamp   ts_offset;
   void                 (*do_prach)(struct PHY_VARS_eNB_s *eNB);
   void                 (*fep)(struct PHY_VARS_eNB_s *eNB);
   int                  (*td)(struct PHY_VARS_eNB_s *eNB,int UE_id,int harq_pid,int llr8_flag);
