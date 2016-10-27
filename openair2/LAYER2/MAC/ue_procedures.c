@@ -331,7 +331,7 @@ ue_send_sdu(module_id_t module_idP,
 
   if (opt_enabled) {
     trace_pdu(1, sdu, sdu_len, module_idP, 3, UE_mac_inst[module_idP].crnti,
-        UE_mac_inst[module_idP].frame, UE_mac_inst[module_idP].subframe, 0, 0);
+        UE_mac_inst[module_idP].rxFrame, UE_mac_inst[module_idP].rxSubframe, 0, 0);
     LOG_D(OPT,"[UE %d][DLSCH] Frame %d trace pdu for rnti %x  with size %d\n",
           module_idP, frameP, UE_mac_inst[module_idP].crnti, sdu_len);
   }
@@ -512,8 +512,8 @@ void ue_decode_si(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_i
 	      module_idP,
 	      4,
 	      0xffff,
-	      UE_mac_inst[module_idP].frame,
-	      UE_mac_inst[module_idP].subframe,
+	      UE_mac_inst[module_idP].rxFrame,
+	      UE_mac_inst[module_idP].rxSubframe,
 	      0,
 	      0);
     LOG_D(OPT,"[UE %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
@@ -548,8 +548,8 @@ void ue_decode_p(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_in
 	      module_idP,
 	      4,
 	      P_RNTI,
-		  UE_mac_inst[module_idP].frame,
-	      UE_mac_inst[module_idP].subframe,
+	      UE_mac_inst[module_idP].rxFrame,
+	      UE_mac_inst[module_idP].rxSubframe,
 	      0,
 	      0);
     LOG_D(OPT,"[UE %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
@@ -1548,9 +1548,9 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
   stop_meas(&UE_mac_inst[module_idP].tx_ulsch_sdu);
   
   if (opt_enabled) {
-    trace_pdu(0, ulsch_buffer, buflen, module_idP, 3, UE_mac_inst[module_idP].crnti, UE_mac_inst[module_idP].frame, UE_mac_inst[module_idP].subframe, 0, 0);
+    trace_pdu(0, ulsch_buffer, buflen, module_idP, 3, UE_mac_inst[module_idP].crnti, UE_mac_inst[module_idP].txFrame, UE_mac_inst[module_idP].txSubframe, 0, 0);
     LOG_D(OPT,"[UE %d][ULSCH] Frame %d trace pdu for rnti %x  with size %d\n",
-          module_idP, UE_mac_inst[module_idP].frame, UE_mac_inst[module_idP].subframe, UE_mac_inst[module_idP].crnti, buflen);
+          module_idP, UE_mac_inst[module_idP].txFrame, UE_mac_inst[module_idP].txSubframe, UE_mac_inst[module_idP].crnti, buflen);
   }
 }
 
@@ -1565,8 +1565,10 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
 UE_L2_STATE_t
 ue_scheduler(
   const module_id_t    module_idP,
-  const frame_t        frameP,
-  const sub_frame_t    subframeP,
+  const frame_t        rxFrameP,
+  const sub_frame_t    rxSubframeP,
+  const frame_t        txFrameP,
+  const sub_frame_t    txSubframeP,
   const lte_subframe_t directionP,
   const uint8_t        eNB_indexP,
   const int            CC_id)
@@ -1590,7 +1592,7 @@ ue_scheduler(
   start_meas(&UE_mac_inst[module_idP].ue_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SCHEDULER, VCD_FUNCTION_IN);
 
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_NO, UE_mac_inst[module_idP].crnti, frameP, subframeP,eNB_indexP);
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_NO, UE_mac_inst[module_idP].crnti, txFrameP, txSubframeP,eNB_indexP);
 #if defined(ENABLE_ITTI)
 
   do {
@@ -1629,11 +1631,13 @@ ue_scheduler(
   //LG#ifdef EXMIMO
   pdcp_run(&ctxt);
   //#endif
-  UE_mac_inst[module_idP].frame = frameP;
-  UE_mac_inst[module_idP].subframe = subframeP;
+  UE_mac_inst[module_idP].txFrame    = txFrameP;
+  UE_mac_inst[module_idP].txSubframe = txSubframeP;
+  UE_mac_inst[module_idP].rxFrame    = rxFrameP;
+  UE_mac_inst[module_idP].rxSubframe = rxSubframeP;
 
 #ifdef CELLULAR
-  rrc_rx_tx(module_idP, frameP, 0, eNB_indexP);
+  rrc_rx_tx(module_idP, txFrameP, 0, eNB_indexP);
 #else
 
   switch (rrc_rx_tx(&ctxt,
@@ -1687,7 +1691,7 @@ ue_scheduler(
       //return(RRC_OK);
     }
 
-    LOG_I(MAC,"Frame %d: Contention resolution timer %d/%d\n",frameP,UE_mac_inst[module_idP].RA_contention_resolution_cnt,
+    LOG_I(MAC,"Frame %d: Contention resolution timer %d/%d\n",txFrameP,UE_mac_inst[module_idP].RA_contention_resolution_cnt,
           ((1+rach_ConfigCommon->ra_SupervisionInfo.mac_ContentionResolutionTimer)<<3));
 
     UE_mac_inst[module_idP].RA_contention_resolution_cnt++;
@@ -1727,10 +1731,10 @@ ue_scheduler(
         }
       }
 
-      if (update_bsr(module_idP,frameP, eNB_indexP, lcid, UE_mac_inst[module_idP].scheduling_info.LCGID[lcid])) {
+      if (update_bsr(module_idP,txFrameP, eNB_indexP, lcid, UE_mac_inst[module_idP].scheduling_info.LCGID[lcid])) {
         UE_mac_inst[module_idP].scheduling_info.SR_pending= 1;
         LOG_D(MAC,"[UE %d][SR] Frame %d subframe %d SR for PUSCH is pending for LCGID %d with BSR level %d (%d bytes in RLC)\n",
-              module_idP, frameP,subframeP,UE_mac_inst[module_idP].scheduling_info.LCGID[lcid],
+              module_idP, txFrameP,txSubframeP,UE_mac_inst[module_idP].scheduling_info.LCGID[lcid],
               UE_mac_inst[module_idP].scheduling_info.BSR[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]],
               UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]]);
       }

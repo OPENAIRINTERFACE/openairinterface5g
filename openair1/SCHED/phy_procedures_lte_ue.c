@@ -3684,12 +3684,14 @@ void phy_procedures_UE_lte(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,u
        
     if (ue->mac_enabled==1) {
       if (slot==0) {
-	ret = mac_xface->ue_scheduler(ue->Mod_id,
-				      frame_tx,
-				      subframe_rx,
-				      subframe_select(&ue->frame_parms,subframe_tx),
-				      eNB_id,
-				      0/*FIXME CC_id*/);
+        ret = mac_xface->ue_scheduler(ue->Mod_id,
+            frame_rx,
+            subframe_rx,
+            frame_tx,
+            subframe_tx,
+            subframe_select(&ue->frame_parms,subframe_tx),
+            eNB_id,
+            0/*FIXME CC_id*/);
 	   
 	if (ret == CONNECTION_LOST) {
 	  LOG_E(PHY,"[UE %d] Frame %d, subframe %d RRC Connection lost, returning to PRACH\n",ue->Mod_id,

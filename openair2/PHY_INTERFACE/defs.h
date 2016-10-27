@@ -169,7 +169,7 @@ typedef struct {
   void (*dl_phy_sync_success) (module_id_t Mod_id,frame_t frameP, uint8_t CH_index,uint8_t first_sync);
 
   /// Only calls the PDCP for now
-  UE_L2_STATE_t (*ue_scheduler)(module_id_t Mod_id, frame_t frameP,sub_frame_t subframe, lte_subframe_t direction, uint8_t eNB_id, int CC_id);
+  UE_L2_STATE_t (*ue_scheduler)(module_id_t Mod_id, frame_t rxFrameP,sub_frame_t rxSubframe, frame_t txFrameP,sub_frame_t txSubframe, lte_subframe_t direction, uint8_t eNB_id, int CC_id);
 
   /// PHY-Config-Dedicated UE
   void (*phy_config_dedicated_ue)(module_id_t Mod_id,int CC_id,uint8_t CH_index,

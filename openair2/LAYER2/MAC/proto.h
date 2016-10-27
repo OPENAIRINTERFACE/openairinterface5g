@@ -515,15 +515,20 @@ void adjust_bsr_info(int buffer_occupancy, uint16_t TBS, UE_TEMPLATE *UE_templat
 /*! \fn  UE_L2_state_t ue_scheduler(const module_id_t module_idP,const frame_t frameP, const sub_frame_t subframe, const lte_subframe_t direction,const uint8_t eNB_index)
    \brief UE scheduler where all the ue background tasks are done.  This function performs the following:  1) Trigger PDCP every 5ms 2) Call RRC for link status return to PHY3) Perform SR/BSR procedures for scheduling feedback 4) Perform PHR procedures.
 \param[in] module_idP instance of the UE
-\param[in] subframe t the subframe number
+\param[in] rxFrame the RX frame number
+\param[in] rxSubframe the RX subframe number
+\param[in] txFrame the TX frame number
+\param[in] txSubframe the TX subframe number
 \param[in] direction  subframe direction
 \param[in] eNB_index  instance of eNB
 @returns L2 state (CONNETION_OK or CONNECTION_LOST or PHY_RESYNCH)
 */
 UE_L2_STATE_t ue_scheduler(
   const module_id_t module_idP,
-  const frame_t frameP,
-  const sub_frame_t subframe,
+  const frame_t rxFrameP,
+  const sub_frame_t rxSubframe,
+  const frame_t txFrameP,
+  const sub_frame_t txSubframe,
   const lte_subframe_t direction,
   const uint8_t eNB_index,
   const int CC_id);
