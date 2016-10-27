@@ -947,6 +947,10 @@ typedef struct {
   uint8_t  BSR[MAX_NUM_LCGID]; // should be more for mesh topology
   /// keep the number of bytes in rlc buffer for each lcgid
   uint16_t  BSR_bytes[MAX_NUM_LCGID];
+#if 0 //calvin for BSR test,current buffer greater then previous one, or buffer from 0 to !0
+  /// after multiplexing buffer remain for each lcid
+  uint16_t  LCID_buffer_remain[MAX_NUM_LCID];
+#endif
   /// buffer status for each lcid
   uint8_t  LCID_status[MAX_NUM_LCID];
   /// SR pending as defined in 36.321

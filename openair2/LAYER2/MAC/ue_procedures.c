@@ -1356,6 +1356,9 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
     //update_bsr(module_idP, frameP, eNB_index, DCCH, UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]);
     //header_len +=2;
     UE_mac_inst[module_idP].scheduling_info.LCID_status[DCCH] = LCID_EMPTY;
+#if 0 //calvin for BSR test,current buffer greater then previous one, or buffer from 0 to !0
+    UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[DCCH] = rlc_status.bytes_in_buffer-sdu_lengths[0];
+#endif
   } else {
     dcch_header_len=0;
     num_sdus = 0;
@@ -1391,10 +1394,13 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
     sdu_length_total += sdu_lengths[num_sdus];
     sdu_lcids[num_sdus] = DCCH1;
     LOG_D(MAC,"[UE %d] TX Got %d bytes for DCCH1\n",module_idP,sdu_lengths[num_sdus]);
-    num_sdus++;
     //update_bsr(module_idP, frameP, DCCH1);
     //dcch_header_len +=2; // include dcch1
     UE_mac_inst[module_idP].scheduling_info.LCID_status[DCCH1] = LCID_EMPTY;
+#if 0 //calvin for BSR test,current buffer greater then previous one, or buffer from 0 to !0
+    UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[DCCH1] = rlc_status.bytes_in_buffer-sdu_lengths[num_sdus];
+#endif
+    num_sdus++;
   } else {
     dcch1_header_len =0;
   }
@@ -1449,6 +1455,9 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
 	   dtch_header_len --;
 	   dtch_header_len_last --;
 	 }
+#if 0 //calvin for BSR test,current buffer greater then previous one, or buffer from 0 to !0
+           UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] = rlc_status.bytes_in_buffer-sdu_lengths[num_sdus];
+#endif
 	 num_sdus++;
 	 //UE_mac_inst[module_idP].ul_active = update_bsr(module_idP, frameP, eNB_index,lcid, UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]);
        } else {
@@ -2077,7 +2086,11 @@ boolean_t  update_bsr(module_id_t module_idP, frame_t frameP, eNB_index_t eNB_in
                                     lcid,
                                     0);
 
-    if (rlc_status.bytes_in_buffer > 0 ) {
+    if ((rlc_status.bytes_in_buffer > 0 )
+#if 0 //calvin for BSR test,current buffer greater then previous one, or buffer from 0 to !0
+      && (rlc_status.bytes_in_buffer > UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid])
+#endif
+      ){
       //BSR trigger SR  
       sr_pending = TRUE;
       UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] = LCID_NOT_EMPTY;
