@@ -2663,6 +2663,21 @@ OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname)
 
     // UE_EUTRA_Capability->measParameters.bandListEUTRA.list.count                         = 0;  // no measurements on other bands
     // UE_EUTRA_Capability->featureGroupIndicators  // null
+
+    // featureGroup is mandatory for CMW tests
+    // featureGroup is filled only for usim-test mode
+    BIT_STRING_t *bit_string;
+    uint32_t     featrG;
+    bit_string = CALLOC(1, sizeof(*bit_string));
+    featrG     = 0x04000800;
+    if(usim_test == 0)
+    {
+        bit_string->buf         = &featrG;
+        bit_string->size        = 4;
+        bit_string->bits_unused = 0;
+        UE_EUTRA_Capability->featureGroupIndicators = bit_string;
+    }
+
     // UE_EUTRA_Capability->interRAT_Parameters     // null
   } else {
 
