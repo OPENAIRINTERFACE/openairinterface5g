@@ -442,7 +442,7 @@ inline void pucch2x_scrambling(LTE_DL_FRAME_PARMS *fp,int subframe,uint16_t rnti
   int i;
   uint8_t c;
 
-  x2 = (rnti<<14) + ((1+subframe)<<16)*(1+(fp->Nid_cell<<1)); //this is c_init in 36.211 Sec 6.3.1
+  x2 = (rnti) + ((uint32_t)(1+subframe)<<16)*(1+(fp->Nid_cell<<1)); //this is c_init in 36.211 Sec 6.3.1
   s = lte_gold_generic(&x1, &x2, 1);
   for (i=0;i<19;i++) {
     c = (uint8_t)((s>>i)&1);
@@ -456,13 +456,16 @@ inline void pucch2x_modulation(uint8_t *btilde,int16_t *d,int16_t amp) {
   int i;
 
   for (i=0;i<20;i++) 
-    d[i] = btilde[i] == 1 ? amp : -amp;
+    d[i] = btilde[i] == 1 ? -amp : amp;
 
 }
+
+
 
 uint32_t pucch_code[13] = {0xFFFFF,0x5A933,0x10E5A,0x6339C,0x73CE0,
 			   0xFFC00,0xD8E64,0x4F6B0,0x218EC,0x1B746,
 			   0x0FFFF,0x33FFF,0x3FFFC};
+
 
 void generate_pucch2x(int32_t **txdataF,
 		      LTE_DL_FRAME_PARMS *fp,
@@ -470,8 +473,7 @@ void generate_pucch2x(int32_t **txdataF,
 		      PUCCH_FMT_t fmt,
 		      PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
 		      uint16_t n2_pucch,
-		      uint8_t shortened_format,
-		      uint32_t *payload,
+		      uint16_t *payload,
 		      int A,
 		      int B2,
 		      int16_t amp,
@@ -486,13 +488,14 @@ void generate_pucch2x(int32_t **txdataF,
   uint8_t NRB2                      = fp->pucch_config_common.nRB_CQI;
   uint8_t Ncs1                      = fp->pucch_config_common.nCS_AN;
 
-  uint32_t u0 = (fp->Nid_cell + fp->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1]) % 30;
-  uint32_t u1 = (fp->Nid_cell + fp->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)]) % 30;
-  uint32_t v0=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
-  uint32_t v1=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
+  uint32_t u0 = fp->pucch_config_common.grouphop[subframe<<1];
+  uint32_t u1 = fp->pucch_config_common.grouphop[1+(subframe<<1)];
+  uint32_t v0 = fp->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
+  uint32_t v1 = fp->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
+
   uint32_t z[12*14],*zptr;
   uint32_t u,v,n;
-  uint8_t ns,N_UL_symb,nsymb;
+  uint8_t ns,N_UL_symb,nsymb_slot0,nsymb_pertti;
   uint32_t nprime,l,n_cs;
   int alpha_ind,data_ind;
   int16_t ref_re,ref_im;
@@ -508,7 +511,6 @@ void generate_pucch2x(int32_t **txdataF,
     printf("[PHY] generate_pucch: Illegal Ncs1 %d (should be 0...7)\n",Ncs1);
     return;
   }
-
 
   // pucch2x_encoding
   for (i=0;i<A;i++)
@@ -545,66 +547,72 @@ void generate_pucch2x(int32_t **txdataF,
     }
   }
 
-  zptr = z;
 
 #ifdef DEBUG_PUCCH_TX
   printf("[PHY] PUCCH2x: n2_pucch %d\n",n2_pucch);
 #endif
 
   N_UL_symb = (fp->Ncp==0) ? 7 : 6;
-
+  data_ind  = 0;
+  zptr      = z;
   for (ns=(subframe<<1),u=u0,v=v0; ns<(2+(subframe<<1)); ns++,u=u1,v=v1) {
 
     if ((ns&1) == 0)
-      nprime = (n2_pucch < 12*NRB2) ? 
-	n2_pucch % 12 :
-	(n2_pucch+Ncs1 + 1)%12;
-    else
-      nprime = (n2_pucch < 12*NRB2) ? 
-        ((12*(nprime+1)) % 13)-1 :
-	(10-n2_pucch)%12;
-
+        nprime = (n2_pucch < 12*NRB2) ?
+                n2_pucch % 12 :
+                (n2_pucch+Ncs1 + 1)%12;
+    else {
+        nprime = (n2_pucch < 12*NRB2) ?
+                ((12*(nprime+1)) % 13)-1 :
+                (10-n2_pucch)%12;
+    }
     //loop over symbols in slot
     for (l=0; l<N_UL_symb; l++) {
       // Compute n_cs (36.211 p. 18)
       n_cs = (ncs_cell[ns][l]+nprime)%12;
 
-      alpha_ind = n_cs;
-      data_ind = 0;
-
+      alpha_ind = 0;
       for (n=0; n<12; n++) {
+          // this is r_uv^alpha(n)
+          ref_re = (int16_t)(((int32_t)alpha_re[alpha_ind] * ul_ref_sigs[u][v][0][n<<1] - (int32_t)alpha_im[alpha_ind] * ul_ref_sigs[u][v][0][1+(n<<1)])>>15);
+          ref_im = (int16_t)(((int32_t)alpha_re[alpha_ind] * ul_ref_sigs[u][v][0][1+(n<<1)] + (int32_t)alpha_im[alpha_ind] * ul_ref_sigs[u][v][0][n<<1])>>15);
 
-        // this is r_uv^alpha(n)
-        ref_re = (int16_t)(((int32_t)alpha_re[alpha_ind] * ul_ref_sigs[u][v][0][n<<1] - (int32_t)alpha_im[alpha_ind] * ul_ref_sigs[u][v][0][1+(n<<1)])>>15);
-        ref_im = (int16_t)(((int32_t)alpha_re[alpha_ind] * ul_ref_sigs[u][v][0][1+(n<<1)] + (int32_t)alpha_im[alpha_ind] * ul_ref_sigs[u][v][0][n<<1])>>15);
-
-        if ((l<2)||(l>=(N_UL_symb-2))) { //these are PUCCH data symbols
-	  ((int16_t *)&zptr[n])[0] = ((int32_t)d[data_ind]*ref_re - (int32_t)d[data_ind+1]*ref_im)>>15;
-	  ((int16_t *)&zptr[n])[1] = ((int32_t)d[data_ind]*ref_im + (int32_t)d[data_ind+1]*ref_re)>>15;
-	}
-	else {
-	  ((int16_t *)&zptr[n])[0] = ref_re;
-	  ((int16_t *)&zptr[n])[1] = ref_im;
-	}
-
+          if ((l!=1)&&(l!=5)) { //these are PUCCH data symbols
+              ((int16_t *)&zptr[n])[0] = ((int32_t)d[data_ind]*ref_re - (int32_t)d[data_ind+1]*ref_im)>>15;
+              ((int16_t *)&zptr[n])[1] = ((int32_t)d[data_ind]*ref_im + (int32_t)d[data_ind+1]*ref_re)>>15;
+              //LOG_I(PHY,"slot %d ofdm# %d ==> d[%d,%d] \n",ns,l,data_ind,n);
+          }
+          else {
+              ((int16_t *)&zptr[n])[0] = ((int32_t)amp*ref_re>>15);
+              ((int16_t *)&zptr[n])[1] = ((int32_t)amp*ref_im>>15);
+              //LOG_I(PHY,"slot %d ofdm# %d ==> dmrs[%d] \n",ns,l,n);
+          }
+          alpha_ind = (alpha_ind + n_cs)%12;
       } // n
-      if ((l<2)||(l>=(N_UL_symb-2)))  //these are PUCCH data symbols so increment data index
-	data_ind+=2;
+      zptr+=12;
+
+      if ((l!=1)&&(l!=5))  //these are PUCCH data symbols so increment data index
+	     data_ind+=2;
     } // l
   } //ns
 
   m = n2_pucch/12;
 
 #ifdef DEBUG_PUCCH_TX
-  printf("[PHY] PUCCH: m %d\n",m);
+  LOG_D(PHY,"[PHY] PUCCH: n2_pucch %d m %d\n",n2_pucch,m);
 #endif
-  nsymb = N_UL_symb<<1;
+
+  nsymb_slot0  = ((fp->Ncp==0) ? 7 : 6);
+  nsymb_pertti = nsymb_slot0 << 1;
+
+  //nsymb = nsymb_slot0<<1;
 
   //for (j=0,l=0;l<(nsymb-1);l++) {
-  for (j=0,l=0; l<(nsymb); l++) {
-    if ((l<(nsymb>>1)) && ((m&1) == 0))
+  for (j=0,l=0; l<(nsymb_pertti); l++) {
+
+    if ((l<nsymb_slot0) && ((m&1) == 0))
       re_offset = (m*6) + fp->first_carrier_offset;
-    else if ((l<(nsymb>>1)) && ((m&1) == 1))
+    else if ((l<nsymb_slot0) && ((m&1) == 1))
       re_offset = fp->first_carrier_offset + (fp->N_RB_DL - (m>>1) - 1)*12;
     else if ((m&1) == 0)
       re_offset = fp->first_carrier_offset + (fp->N_RB_DL - (m>>1) - 1)*12;
@@ -614,21 +622,31 @@ void generate_pucch2x(int32_t **txdataF,
     if (re_offset > fp->ofdm_symbol_size)
       re_offset -= (fp->ofdm_symbol_size);
 
-    symbol_offset = (unsigned int)fp->ofdm_symbol_size*(l+(subframe*nsymb));
+
+
+    symbol_offset = (unsigned int)fp->ofdm_symbol_size*(l+(subframe*nsymb_pertti));
     txptr = &txdataF[0][symbol_offset];
 
+    //LOG_I(PHY,"ofdmSymb %d/%d, firstCarrierOffset %d, symbolOffset[sfn %d] %d, reOffset %d, &txptr: %x \n", l, nsymb, fp->first_carrier_offset, subframe, symbol_offset, re_offset, &txptr[0]);
+
     for (i=0; i<12; i++,j++) {
-      txptr[re_offset++] = z[j];
+      txptr[re_offset] = z[j];
+
+      re_offset++;
 
       if (re_offset==fp->ofdm_symbol_size)
-        re_offset = 0;
+          re_offset -= (fp->ofdm_symbol_size);
 
 #ifdef DEBUG_PUCCH_TX
-      printf("[PHY] PUCCH subframe %d (%d,%d,%d,%d) => %d,%d\n",subframe,l,i,re_offset-1,m,((int16_t *)&z[j])[0],((int16_t *)&z[j])[1]);
+      LOG_D(PHY,"[PHY] PUCCH subframe %d (%d,%d,%d,%d) => %d,%d\n",subframe,l,i,re_offset-1,m,((int16_t *)&z[j])[0],((int16_t *)&z[j])[1]);
 #endif
     }
   }
 }
+
+
+//#define Amax 13
+//void init_pucch2x_rx() {};
 
 
 uint32_t rx_pucch(PHY_VARS_eNB *eNB,
