@@ -63,7 +63,6 @@ DISABLE_HARDWARE_DEPENDENCY="False"
 CMAKE_BUILD_TYPE=""
 UE_AUTOTEST_TRACE="False"
 BUILD_ECLIPSE=0
-CMAKE_CMD='cmake'
 trap handle_ctrl_c INT
 
 function print_help() {

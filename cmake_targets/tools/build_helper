@@ -24,6 +24,22 @@
 # authors Laurent Thomas, Lionel GAUTHIER
 #
 #######################################
+if [ ! -f /etc/os-release ]; then
+  echo "No /etc/os-release file found. You're likely on an unsupported distro."
+  exit -1
+fi
+OS_DISTRO=$(grep "^ID=" /etc/os-release | sed "s/ID=//" | sed "s/\"//g")
+OS_RELEASE=$(grep "^VERSION_ID=" /etc/os-release | sed "s/VERSION_ID=//" | sed "s/\"//g")
+case "$OS_DISTRO" in
+  fedora) OS_BASEDISTRO="fedora"; INSTALLER="dnf"; CMAKE_CMD="cmake" ;;
+  rhel)   OS_BASEDISTRO="fedora"; INSTALLER="yum"; CMAKE_CMD="cmake3" ;;
+  centos) OS_BASEDISTRO="fedora"; INSTALLER="yum"; CMAKE_CMD="cmake3" ;;
+  debian) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE_CMD="cmake" ;;
+  ubuntu) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE_CMD="cmake" ;;
+esac
+KERNEL_VERSION=$(uname -r | cut -d '.' -f1)
+KERNEL_MAJOR=$(uname -r | cut -d '.' -f2)
+
 SUDO='sudo -E'
 
 ###############################
@@ -69,9 +85,8 @@ echo_info()    { cecho "$*" $blue         ;}
 #   Ubuntu16.04
 #   Debian8.5
 get_distribution_release() {
-    local distributor
-    if distributor=$(lsb_release -si 2>/dev/null) ; then
-        echo $distributor$(lsb_release -sr)
+    if [[ ! -z "$OS_DISTRO$OS_RELEASE" ]]; then
+        echo "$OS_DISTRO$OS_RELEASE"
     else
         echo Unknown
     fi
@@ -80,8 +95,11 @@ get_distribution_release() {
 check_supported_distribution() {
     local distribution=$(get_distribution_release)
     case "$distribution" in
-        "Ubuntu16.04") return 0 ;;
-        "Ubuntu14.04") return 0 ;;
+        "ubuntu16.04") return 0 ;;
+        "ubuntu14.04") return 0 ;;
+        "fedora24")    return 0 ;;
+        "rhel7")       return 0 ;;
+        "centos7")     return 0 ;;
     esac
     return 1
 }
@@ -215,6 +233,7 @@ install_protobuf_c_from_source(){
 }
 
 check_install_usrp_uhd_driver(){
+    if [[ "$OS_DISTRO" == "ubuntu" ]]; then
         #first we remove old installation
         $SUDO apt-get remove -y uhd || true
         $SUDO apt-get remove libuhd-dev libuhd003 uhd-host -y
@@ -225,21 +244,27 @@ check_install_usrp_uhd_driver(){
         $SUDO apt-get update
         $SUDO apt-get -y --allow-unauthenticated install  python python-tk libboost-all-dev libusb-1.0-0-dev
         $SUDO apt-get -y --allow-unauthenticated install libuhd-dev libuhd003 uhd-host
+    elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
+        $SUDO $INSTALLER -y install python boost libusb-devel
+        $SUDO $INSTALLER -y install uhd uhd-devel uhd-firmware
+    fi
 }
 
 install_usrp_uhd_driver() {
+    if [[ "$OS_DISTRO" == "ubuntu" ]]; then
         # We move uhd-host apart because it depends on linux kernel version
         # On newer kernels, it fails to install
         $SUDO apt-get -y install uhd-host
-        if [ -z $1 ]; then
-          $SUDO uhd_images_downloader
-        else
-          $SUDO uhd_images_downloader -i $1
-        fi
+    fi
+    if [ -z $1 ]; then
+      $SUDO uhd_images_downloader
+    else
+      $SUDO uhd_images_downloader -i $1
+    fi
 }
 
 check_install_bladerf_driver(){
-	if [ "$(get_distribution_release)" == "Ubuntu14.04" ] ; then
+	if [ "$(get_distribution_release)" == "ubuntu14.04" ] ; then
 		$SUDO add-apt-repository -y ppa:bladerf/bladerf
 		$SUDO apt-get update
 	fi
@@ -268,7 +293,8 @@ check_install_lmssdr_driver(){
 }
 
 check_install_additional_tools (){
-    $SUDO apt-get update
+  $SUDO $INSTALLER update -y
+  if [[ "$OS_DISTRO" == "ubuntu" ]]; then
     $SUDO apt-get install -y \
 	check \
 	dialog \
@@ -315,6 +341,65 @@ check_install_additional_tools (){
     $SUDO python setup.py install
     cd -
     ) >& $log_netiface
+  elif [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
+    $SUDO $INSTALLER install -y \
+      check \
+      dialog \
+      dkms \
+      gawk \
+      boost-devel \
+      openvpn \
+      pkgconfig \
+      pexpect \
+      sshfs \
+      swig  \
+      wireshark \
+      unzip  \
+      valgrind  \
+      vconfig	  \
+      ctags \
+      ntpdate \
+      iperf3 \
+      wvdial \
+      numpy \
+      sshpass \
+      nscd \
+      python2-paramiko \
+      python-pyroute2 \
+      python-netifaces
+
+    $SUDO rm -fr /opt/ssh
+    $SUDO GIT_SSL_NO_VERIFY=true git clone https://gist.github.com/2190472.git /opt/ssh
+  elif [[ "$OS_DISTRO" == "fedora" ]]; then
+    $SUDO $INSTALLER install -y \
+      check \
+      dialog \
+      dkms \
+      gawk \
+      boost-devel \
+      openvpn \
+      pkgconfig \
+      python-pexpect \
+      sshfs \
+      swig  \
+      wireshark \
+      unzip  \
+      valgrind  \
+      vconfig	  \
+      ctags \
+      ntpdate \
+      iperf3 \
+      wvdial \
+      python-numpy \
+      sshpass \
+      nscd \
+      python2-paramiko \
+      python-pyroute2 \
+      python-netifaces
+
+    $SUDO rm -fr /opt/ssh
+    $SUDO GIT_SSL_NO_VERIFY=true git clone https://gist.github.com/2190472.git /opt/ssh
+  fi
 }
 
 check_install_oai_software() {
@@ -323,16 +408,17 @@ check_install_oai_software() {
         echo_error "Your distribution $(get_distribution_release) is not supported by oai !"
         exit 1
     fi
-    $SUDO apt-get update
+    $SUDO $INSTALLER update -y
+  if [[ "$OS_DISTRO" == "ubuntu" ]]; then
     $SUDO apt install -y software-properties-common
     case "$(get_distribution_release)" in
-        "Ubuntu14.04")
+        "ubuntu14.04")
             specific_packages="libtasn1-3-dev"
             # For iperf3
             $SUDO add-apt-repository "deb http://archive.ubuntu.com/ubuntu trusty-backports universe"
             $SUDO apt-get update
             ;;
-        "Ubuntu16.04")
+        "ubuntu16.04")
             specific_packages="libtasn1-6-dev"
             ;;
     esac
@@ -406,7 +492,77 @@ check_install_oai_software() {
     remove_gnutls_from_source
 
     $SUDO apt-get install -y libgnutls-dev
+  elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
+    if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
+      if rpm -q epel-release > /dev/null; then
+        echo "EPEL repos already present. Good."
+      else
+        echo "EPEL repos not present. Installing them."
+        $SUDO $INSTALLER install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+      fi
+      $SUDO $INSTALLER install -y python-epdb
+      $SUDO $INSTALLER install -y gccxml
+    else
+      $SUDO $INSTALLER install -y mscgen pydb
+      # Fedora repos already contain gccxml's successor castxml.
+      $SUDO $INSTALLER install -y castxml
+    fi
     
+    $SUDO $INSTALLER install -y \
+      autoconf \
+      automake \
+      bison \
+      $CMAKE_CMD \
+      doxygen \
+      ethtool \
+      flex \
+      gdb \
+      git \
+      graphviz \
+      gtkwave \
+      guile-devel \
+      iperf \
+      iproute \
+      iptables \
+      iptables-devel \
+      atlas-devel \
+      blas-devel \
+      libconfig-devel \
+      libffi-devel \
+      xforms \
+      xforms-devel \
+      libgcrypt-devel \
+      gmp-devel \
+      gtk3-devel \
+      libidn2-devel  \
+      libidn-devel \
+      mariadb-devel \
+      octave-devel \
+      openpgm-devel \
+      lksctp-tools \
+      lksctp-tools-devel \
+      openssl-devel \
+      libtasn1 \
+      libtool \
+      libusb-devel \
+      libxml2 \
+      libxml2-devel \
+      libxslt-devel \
+      octave \
+      octave-signal \
+      openssh-clients \
+      openssh-server \
+      openssl \
+      python \
+      subversion \
+      xmlstarlet \
+      python-pip \
+      wget \
+      kernel-headers \
+      nettle-devel \
+      gnutls-devel
+  fi
+
     install_asn1c_from_source
     $SUDO rm -fr /opt/ssh
     $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
