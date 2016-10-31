@@ -193,7 +193,7 @@ int trx_lms_start(openair0_device *device){
         LMS_EnableChannel(lms_device,LMS_CH_RX,1,true);
         LMS_EnableChannel(lms_device,LMS_CH_TX,1,true);
     } */
-    LMS_VCTCXOWrite(lms_device,125);
+    LMS_VCTCXOWrite(lms_device,129);
 
     if (LMS_SetSampleRate(lms_device,device->openair0_cfg->sample_rate,2)!=0)
     {
@@ -239,14 +239,14 @@ int trx_lms_start(openair0_device *device){
     rx_stream.channel = 0;
     rx_stream.fifoSize = 256*1024;
     rx_stream.throughputVsLatency = 0.1;
-    rx_stream.dataFmt = lms_stream_t::LMS_FMT_I16;
+    rx_stream.dataFmt = lms_stream_t::LMS_FMT_I12;
     rx_stream.isTx = false;
     if (LMS_SetupStream(lms_device, &rx_stream)!=0)
         printf("RX stream setup failed %s\n",LMS_GetLastErrorMessage());
     tx_stream.channel = 0;
     tx_stream.fifoSize = 256*1024;
     tx_stream.throughputVsLatency = 0.1;
-    tx_stream.dataFmt = lms_stream_t::LMS_FMT_I16;
+    tx_stream.dataFmt = lms_stream_t::LMS_FMT_I12;
     tx_stream.isTx = true;
     if (LMS_SetupStream(lms_device, &tx_stream)!=0)
         printf("TX stream setup failed %s\n",LMS_GetLastErrorMessage());
