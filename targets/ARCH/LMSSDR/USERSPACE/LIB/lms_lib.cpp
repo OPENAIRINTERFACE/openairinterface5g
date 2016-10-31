@@ -258,7 +258,7 @@ int trx_lms_start(openair0_device *device){
  * \param card Index of the RF card to use
  * \returns 0 on success
  */
-int trx_lms_stop(int card) {
+int trx_lms_stop(openair0_device *device) {
     LMS_StopStream(&rx_stream);
     LMS_StopStream(&tx_stream);
     LMS_DestroyStream(lms_device,&rx_stream);
