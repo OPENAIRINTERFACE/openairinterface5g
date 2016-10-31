@@ -1,31 +1,32 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
+/*! \file s1ap_eNB.c
+ * \brief S1AP eNB task 
+ * \author  S. Roux and Navid Nikaein 
+ * \date 2010 - 2015
+ * \email: navid.nikaein@eurecom.fr
+ * \version 1.0
+ * @ingroup _s1ap
+ */
 
 #include <pthread.h>
 #include <stdio.h>
@@ -105,7 +106,8 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
   MessageDef                 *message_p                   = NULL;
   sctp_new_association_req_t *sctp_new_association_req_p  = NULL;
   s1ap_eNB_mme_data_t        *s1ap_mme_data_p             = NULL;
-
+  struct s1ap_eNB_mme_data_s *mme                         = NULL;
+ 
   DevAssert(instance_p != NULL);
   DevAssert(mme_ip_address != NULL);
 
@@ -126,27 +128,56 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
   memcpy(&sctp_new_association_req_p->local_address,
          local_ip_addr,
          sizeof(*local_ip_addr));
+ 
+  S1AP_INFO("[eNB %d] check the mme registration state\n",instance_p->instance);
+	      
+  mme = s1ap_eNB_get_MME_from_instance(instance_p);
 
-  /* Create new MME descriptor */
-  s1ap_mme_data_p = calloc(1, sizeof(*s1ap_mme_data_p));
-  DevAssert(s1ap_mme_data_p != NULL);
+  if ( mme == NULL ) {
+    
+    /* Create new MME descriptor */
+    s1ap_mme_data_p = calloc(1, sizeof(*s1ap_mme_data_p));
+    DevAssert(s1ap_mme_data_p != NULL);
+    
+    s1ap_mme_data_p->cnx_id                = s1ap_eNB_fetch_add_global_cnx_id();
+    sctp_new_association_req_p->ulp_cnx_id = s1ap_mme_data_p->cnx_id;
+    
+    s1ap_mme_data_p->assoc_id          = -1;
+    s1ap_mme_data_p->s1ap_eNB_instance = instance_p;
+    
+    STAILQ_INIT(&s1ap_mme_data_p->served_gummei);
+  
+    /* Insert the new descriptor in list of known MME
+     * but not yet associated.
+     */
+    RB_INSERT(s1ap_mme_map, &instance_p->s1ap_mme_head, s1ap_mme_data_p);
+    s1ap_mme_data_p->state = S1AP_ENB_STATE_WAITING;
+    instance_p->s1ap_mme_nb ++;
+    instance_p->s1ap_mme_pending_nb ++;
+  } else if (mme->state == S1AP_ENB_STATE_WAITING) {
+    instance_p->s1ap_mme_pending_nb ++;
+    sctp_new_association_req_p->ulp_cnx_id = mme->cnx_id;
 
-  s1ap_mme_data_p->cnx_id                = s1ap_eNB_fetch_add_global_cnx_id();
-  sctp_new_association_req_p->ulp_cnx_id = s1ap_mme_data_p->cnx_id;
+    S1AP_INFO("[eNB %d] MME already registered, retrive the data (state %d, cnx %d, mme_nb %d, mme_pending_nb %d)\n",
+	      instance_p->instance, 
+	      mme->state, mme->cnx_id,
+	      instance_p->s1ap_mme_nb, instance_p->s1ap_mme_pending_nb);
 
-  s1ap_mme_data_p->assoc_id          = -1;
-  s1ap_mme_data_p->s1ap_eNB_instance = instance_p;
-
-  STAILQ_INIT(&s1ap_mme_data_p->served_gummei);
-
-  /* Insert the new descriptor in list of known MME
-   * but not yet associated.
-   */
-  RB_INSERT(s1ap_mme_map, &instance_p->s1ap_mme_head, s1ap_mme_data_p);
-  s1ap_mme_data_p->state = S1AP_ENB_STATE_WAITING;
-  instance_p->s1ap_mme_nb ++;
-  instance_p->s1ap_mme_pending_nb ++;
-
+    /*s1ap_mme_data_p->cnx_id                = mme->cnx_id;
+    sctp_new_association_req_p->ulp_cnx_id = mme->cnx_id;
+    
+    s1ap_mme_data_p->assoc_id          = -1;
+    s1ap_mme_data_p->s1ap_eNB_instance = instance_p;
+    */ 
+  } else {
+    
+    S1AP_WARN("[eNB %d] MME already registered but not in the waiting state, retrive the data (state %d, cnx %d, mme_nb %d, mme_pending_nb %d)\n",
+	      instance_p->instance, 
+	      mme->state, mme->cnx_id, 
+	      instance_p->s1ap_mme_nb, instance_p->s1ap_mme_pending_nb);
+    
+  }
+    
   itti_send_msg_to_task(TASK_SCTP, instance_p->instance, message_p);
 }
 
@@ -155,13 +186,14 @@ void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *
 {
   s1ap_eNB_instance_t *new_instance;
   uint8_t index;
-
+  
   DevAssert(s1ap_register_eNB != NULL);
 
   /* Look if the provided instance already exists */
   new_instance = s1ap_eNB_get_instance(instance);
-
-  if (new_instance != NULL) {
+  
+ 
+  if (new_instance != NULL) { 
     /* Checks if it is a retry on the same eNB */
     DevCheck(new_instance->eNB_id == s1ap_register_eNB->eNB_id, new_instance->eNB_id, s1ap_register_eNB->eNB_id, 0);
     DevCheck(new_instance->cell_type == s1ap_register_eNB->cell_type, new_instance->cell_type, s1ap_register_eNB->cell_type, 0);
@@ -191,7 +223,7 @@ void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *
     /* Add the new instance to the list of eNB (meaningfull in virtual mode) */
     s1ap_eNB_insert_new_instance(new_instance);
 
-    S1AP_DEBUG("Registered new eNB[%d] and %s eNB id %u\n",
+    S1AP_INFO("Registered new eNB[%d] and %s eNB id %u\n",
                instance,
                s1ap_register_eNB->cell_type == CELL_MACRO_ENB ? "macro" : "home",
                s1ap_register_eNB->eNB_id);
@@ -203,7 +235,7 @@ void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *
   /* Trying to connect to provided list of MME ip address */
   for (index = 0; index < s1ap_register_eNB->nb_mme; index++) {
     s1ap_eNB_register_mme(new_instance,
-    		              &s1ap_register_eNB->mme_ip_address[index],
+    		          &s1ap_register_eNB->mme_ip_address[index],
                           &s1ap_register_eNB->enb_ip_address,
                           s1ap_register_eNB->sctp_in_streams,
                           s1ap_register_eNB->sctp_out_streams);
@@ -327,6 +359,12 @@ void *s1ap_eNB_task(void *arg)
     }
     break;
 
+    case S1AP_E_RAB_SETUP_RESP: {
+      s1ap_eNB_e_rab_setup_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+				&S1AP_E_RAB_SETUP_RESP(received_msg));
+    }
+    break;
+      
     case S1AP_NAS_NON_DELIVERY_IND: {
       s1ap_eNB_nas_non_delivery_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                     &S1AP_NAS_NON_DELIVERY_IND(received_msg));

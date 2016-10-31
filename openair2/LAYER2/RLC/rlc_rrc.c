@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /*
                                 rlc_rrc.c
                              -------------------
@@ -202,6 +195,27 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
         case SRB_ToAddMod__rlc_Config_PR_defaultValue:
 //#warning TO DO SRB_ToAddMod__rlc_Config_PR_defaultValue
+          LOG_I(RRC, "RLC SRB1 is default value !!\n");
+          struct RLC_Config__am  *  config_am_pP = &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.am;
+          config_am_pP->dl_AM_RLC.t_Reordering     = T_Reordering_ms35;
+          config_am_pP->dl_AM_RLC.t_StatusProhibit = T_StatusProhibit_ms0;
+          config_am_pP->ul_AM_RLC.t_PollRetransmit = T_PollRetransmit_ms45;
+          config_am_pP->ul_AM_RLC.pollPDU          = PollPDU_pInfinity;
+          config_am_pP->ul_AM_RLC.pollByte         = PollByte_kBinfinity;
+          config_am_pP->ul_AM_RLC.maxRetxThreshold = UL_AM_RLC__maxRetxThreshold_t4;
+
+          if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_AM) != NULL) {
+            config_req_rlc_am_asn1 (
+              ctxt_pP,
+              SRB_FLAG_YES,
+              &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.am,
+              rb_id);
+          } else {
+            LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
+                  PROTOCOL_CTXT_ARGS(ctxt_pP),
+                  rb_id);
+          }
+/*
           if (rrc_rlc_add_rlc   (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_UM) != NULL) {
             config_req_rlc_um_asn1(
               ctxt_pP,
@@ -217,6 +231,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
                   PROTOCOL_CTXT_ARGS(ctxt_pP),
                   rb_id);
           }
+          */
 
           break;
 
@@ -234,7 +249,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
       drb_id = drb_toaddmod_p->drb_Identity;
       lc_id  = drb_id + 2;
 
-      LOG_D(RLC, "Adding DRB %d, lc_id %d\n",drb_id,lc_id);
+      LOG_I(RLC, "Adding DRB %d, lc_id %d\n",drb_id,lc_id);
 
 
       if (drb_toaddmod_p->rlc_Config) {

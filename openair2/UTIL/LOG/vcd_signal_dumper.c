@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file vcd_signal_dumper.c
  * \brief Dump functions calls and variables to VCD file. Use GTKWave to display this file.
@@ -75,16 +67,24 @@ struct vcd_module_s {
 } vcd_module_s;
 
 const char* eurecomVariablesNames[] = {
-  "frame_number_TX_eNB",
-  "frame_number_RX_eNB",
+  "frame_number_TX0_eNB",
+  "frame_number_TX1_eNB",
+  "frame_number_RX0_eNB",
+  "frame_number_RX1_eNB",
+  "subframe_number_TX0_eNB",
+  "subframe_number_TX1_eNB",
+  "subframe_number_RX0_eNB",
+  "subframe_number_RX1_eNB",
   "runtime_TX_eNB",
   "runtime_RX_eNB",
-  "frame_number_TX_UE",
-  "frame_number_RX_UE",
-  "slot_number_TX_UE",
-  "slot_number_RX_UE",
-  "subframe_number_TX_UE",
-  "subframe_number_RX_UE",
+  "frame_number_TX0_UE",
+  "frame_number_TX1_UE",
+  "frame_number_RX0_UE",
+  "frame_number_RX1_UE",
+  "subframe_TX0_UE",
+  "subframe_TX1_UE",
+  "subframe_RX0_UE",
+  "subframe_RX1_UE",
   "missed_slot_enb",
   "daq_mbox",
   "rx_offset_mbox",
@@ -181,28 +181,13 @@ const char* eurecomFunctionsNames[] = {
   "rt_sleep",
   "trx_read",
   "trx_write",
-  "eNB_thread_tx0",
-  "eNB_thread_rx0",
-  "eNB_thread_tx1",
-  "eNB_thread_rx1",
-  "eNB_thread_tx2",
-  "eNB_thread_rx2",
-  "eNB_thread_tx3",
-  "eNB_thread_rx3",
-  "eNB_thread_tx4",
-  "eNB_thread_rx4",
-  "eNB_thread_tx5",
-  "eNB_thread_rx5",
-  "eNB_thread_tx6",
-  "eNB_thread_rx6",
-  "eNB_thread_tx7",
-  "eNB_thread_rx7",
-  "eNB_thread_tx8",
-  "eNB_thread_rx8",
-  "eNB_thread_tx9",
-  "eNB_thread_rx9",
-  "ue_thread_tx",
-  "ue_thread_rx",
+  "trx_read_if",
+  "trx_write_if",
+  "eNB_thread_rxtx0",
+  "eNB_thread_rxtx1",
+  "ue_thread_synch",
+  "ue_thread_rxtx0",
+  "ue_thread_rxtx1",
 
  /* RRH signals  */ 
   "eNB_tx",
@@ -224,8 +209,13 @@ const char* eurecomFunctionsNames[] = {
   "lte_ue_measurement_procedures",
   "lte_ue_pdcch_procedures",
   "lte_ue_pbch_procedures",
-  "phy_procedures_eNb_tx",
-  "phy_procedures_eNb_rx",
+  "phy_procedures_eNb_tx0",
+  "phy_procedures_eNb_tx1",
+  "phy_procedures_eNb_rx_common0",
+  "phy_procedures_eNb_rx_common1",
+  "phy_procedures_eNb_rx_uespec0",
+  "phy_procedures_eNb_rx_uespec1",
+  "phy_eNB_slot_fep",
   "phy_procedures_ue_tx",
   "phy_procedures_ue_rx",
   "phy_procedures_eNB_lte",
@@ -274,6 +264,7 @@ const char* eurecomFunctionsNames[] = {
   "phy_ue_ulsch_scrambling",
   "phy_eNB_dlsch_modulation",
   "phy_eNB_dlsch_encoding",
+  "phy_eNB_dlsch_encoding_w",
   "phy_eNB_dlsch_scrambling",
 
   /* MAC  signals  */
@@ -295,6 +286,7 @@ const char* eurecomFunctionsNames[] = {
 
   "macxface_out_of_sync_ind",
   "macxface_ue_decode_si",
+  "macxface_ue_decode_pcch",
   "macxface_ue_decode_ccch",
   "macxface_ue_decode_bcch",
   "macxface_ue_send_sdu",
@@ -340,7 +332,13 @@ const char* eurecomFunctionsNames[] = {
   "itti_dump_enqueue_message",
   "itti_dump_enqueue_message_malloc",
   "itti_relay_thread",
-  "test"
+  "test",
+  
+  /* IF4/IF5 signals */
+  "send_if4",
+  "recv_if4",
+  "send_if5",
+  "recv_if5"  
 };
 
 struct vcd_module_s vcd_modules[VCD_SIGNAL_DUMPER_MODULE_END] = {

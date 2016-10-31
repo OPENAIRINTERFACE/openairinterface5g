@@ -1,36 +1,29 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file s1ap_eNB_handlers.c
  * \brief s1ap messages handlers for eNB part
- * \author Sebastien ROUX <sebastien.roux@eurecom.fr>
- * \date 2013
+ * \author Sebastien ROUX and Navid Nikaein
+ * \email navid.nikaein@eurecom.fr
+ * \date 2013 - 2015
  * \version 0.1
  */
 
@@ -82,6 +75,13 @@ int s1ap_eNB_handle_ue_context_release_command(uint32_t               assoc_id,
     uint32_t               stream,
     struct s1ap_message_s *s1ap_message_p);
 
+
+static
+int s1ap_eNB_handle_e_rab_setup_request(uint32_t               assoc_id,
+					uint32_t               stream,
+					struct s1ap_message_s *s1ap_message_p);
+
+
 /* Handlers matrix. Only eNB related procedure present here */
 s1ap_message_decoded_callback messages_callback[][3] = {
   { 0, 0, 0 }, /* HandoverPreparation */
@@ -89,7 +89,7 @@ s1ap_message_decoded_callback messages_callback[][3] = {
   { 0, 0, 0 }, /* HandoverNotification */
   { 0, 0, 0 }, /* PathSwitchRequest */
   { 0, 0, 0 }, /* HandoverCancel */
-  { 0, 0, 0 }, /* E_RABSetup */
+  { s1ap_eNB_handle_e_rab_setup_request, 0, 0 }, /* E_RABSetup */
   { 0, 0, 0 }, /* E_RABModify */
   { 0, 0, 0 }, /* E_RABRelease */
   { 0, 0, 0 }, /* E_RABReleaseIndication */
@@ -762,7 +762,8 @@ int s1ap_eNB_handle_initial_context_request(uint32_t               assoc_id,
         malloc(sizeof(uint8_t) * item_p->nAS_PDU->size);
 
       memcpy(S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).e_rab_param[i].nas_pdu.buffer,
-             item_p->nAS_PDU->buf, item_p->nAS_PDU->size);
+             item_p->nAS_PDU->buf, item_p->nAS_PDU->size); 
+      S1AP_DEBUG("Received NAS message with the E_RAB setup procedure\n");
     } else {
       S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).e_rab_param[i].nas_pdu.length = 0;
       S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).e_rab_param[i].nas_pdu.buffer = NULL;
@@ -872,4 +873,114 @@ int s1ap_eNB_handle_ue_context_release_command(uint32_t               assoc_id,
     return -1;
   }
 }
+
+static
+int s1ap_eNB_handle_e_rab_setup_request(uint32_t               assoc_id,
+					uint32_t               stream,
+					struct s1ap_message_s *s1ap_message_p) {
+
+  int i;
+
+  s1ap_eNB_mme_data_t   *mme_desc_p       = NULL;
+  s1ap_eNB_ue_context_t *ue_desc_p        = NULL;
+  MessageDef            *message_p        = NULL;
+
+  S1ap_E_RABSetupRequestIEs_t         *s1ap_E_RABSetupRequest;
+  DevAssert(s1ap_message_p != NULL);
+
+  s1ap_E_RABSetupRequest = &s1ap_message_p->msg.s1ap_E_RABSetupRequestIEs;
+
+  if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
+    S1AP_ERROR("[SCTP %d] Received initial context setup request for non "
+               "existing MME context\n", assoc_id);
+    return -1;
+  }
+
+    
+  if ((ue_desc_p = s1ap_eNB_get_ue_context(mme_desc_p->s1ap_eNB_instance,
+                   s1ap_E_RABSetupRequest->eNB_UE_S1AP_ID)) == NULL) {
+    S1AP_ERROR("[SCTP %d] Received initial context setup request for non "
+               "existing UE context 0x%06x\n", assoc_id,
+               s1ap_E_RABSetupRequest->eNB_UE_S1AP_ID);
+    return -1;
+  }
+
+  /* Initial context request = UE-related procedure -> stream != 0 */
+  if (stream == 0) {
+    S1AP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
+               assoc_id, stream);
+    return -1;
+  }
+
+  ue_desc_p->rx_stream = stream;
+
+  if ( ue_desc_p->mme_ue_s1ap_id != s1ap_E_RABSetupRequest->mme_ue_s1ap_id){
+    S1AP_WARN("UE context mme_ue_s1ap_id is different form that of the message (%d != %d)", 
+	      ue_desc_p->mme_ue_s1ap_id, s1ap_E_RABSetupRequest->mme_ue_s1ap_id);
+
+  }
+  message_p        = itti_alloc_new_message(TASK_S1AP, S1AP_E_RAB_SETUP_REQ);
+ 
+  S1AP_E_RAB_SETUP_REQ(message_p).ue_initial_id  = ue_desc_p->ue_initial_id;
+  
+  S1AP_E_RAB_SETUP_REQ(message_p).mme_ue_s1ap_id  = s1ap_E_RABSetupRequest->mme_ue_s1ap_id;
+  S1AP_E_RAB_SETUP_REQ(message_p).eNB_ue_s1ap_id  = s1ap_E_RABSetupRequest->eNB_UE_S1AP_ID;
+   
+   S1AP_E_RAB_SETUP_REQ(message_p).nb_e_rabs_tosetup =
+    s1ap_E_RABSetupRequest->e_RABToBeSetupListBearerSUReq.s1ap_E_RABToBeSetupItemBearerSUReq.count;
+ 
+  for (i = 0; i < s1ap_E_RABSetupRequest->e_RABToBeSetupListBearerSUReq.s1ap_E_RABToBeSetupItemBearerSUReq.count; i++) {
+    S1ap_E_RABToBeSetupItemBearerSUReq_t *item_p;
+   
+    item_p = (S1ap_E_RABToBeSetupItemBearerSUReq_t *)s1ap_E_RABSetupRequest->e_RABToBeSetupListBearerSUReq.s1ap_E_RABToBeSetupItemBearerSUReq.array[i];
+
+    S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].e_rab_id = item_p->e_RAB_ID;
+
+    // check for the NAS PDU
+    if (item_p->nAS_PDU.size > 0 ) {
+      S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].nas_pdu.length = item_p->nAS_PDU.size;
+
+      S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].nas_pdu.buffer = malloc(sizeof(uint8_t) * item_p->nAS_PDU.size);
+
+      memcpy(S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].nas_pdu.buffer,
+             item_p->nAS_PDU.buf, item_p->nAS_PDU.size); 
+      // S1AP_INFO("received a NAS PDU with size %d (%02x.%02x)\n",S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].nas_pdu.length, item_p->nAS_PDU.buf[0], item_p->nAS_PDU.buf[1]);
+    } else {
+      S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].nas_pdu.length = 0;
+      S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].nas_pdu.buffer = NULL;
+      
+      S1AP_WARN("NAS PDU is not provided, generate a E_RAB_SETUP Failure (TBD) back to MME \n");
+      return -1;
+    }
+
+    /* Set the transport layer address */
+    memcpy(S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].sgw_addr.buffer,
+           item_p->transportLayerAddress.buf, item_p->transportLayerAddress.size);
+    S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].sgw_addr.length =
+      item_p->transportLayerAddress.size * 8 - item_p->transportLayerAddress.bits_unused;
+
+    /* S1AP_INFO("sgw addr %s  len: %d (size %d, index %d)\n", 
+	      S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].sgw_addr.buffer,
+	      S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].sgw_addr.length,
+	      item_p->transportLayerAddress.size, i);
+    */
+    /* GTP tunnel endpoint ID */
+    OCTET_STRING_TO_INT32(&item_p->gTP_TEID, S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].gtp_teid);
+
+    /* Set the QOS informations */
+    S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].qos.qci = item_p->e_RABlevelQoSParameters.qCI;
+
+    S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].qos.allocation_retention_priority.priority_level =
+      item_p->e_RABlevelQoSParameters.allocationRetentionPriority.priorityLevel;
+    S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].qos.allocation_retention_priority.pre_emp_capability =
+      item_p->e_RABlevelQoSParameters.allocationRetentionPriority.pre_emptionCapability;
+    S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].qos.allocation_retention_priority.pre_emp_vulnerability =
+      item_p->e_RABlevelQoSParameters.allocationRetentionPriority.pre_emptionVulnerability;
+  }
+
+  itti_send_msg_to_task(TASK_RRC_ENB, ue_desc_p->eNB_instance->instance, message_p);
+
+  return 0;
+}
+
 

@@ -1,32 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
-
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file RRC/LITE/defs.h
 * \brief RRC struct definitions and function prototypes
@@ -187,6 +178,9 @@ typedef enum HO_STATE_e {
 #define CBA_OFFSET        0xfff4
 // #define NUM_MAX_CBA_GROUP 4 // in the platform_constants
 
+/* TS 36.331: RRC-TransactionIdentifier ::= INTEGER (0..3) */
+#define RRC_TRANSACTION_IDENTIFIER_NUMBER  3
+
 typedef struct UE_RRC_INFO_s {
   UE_STATE_t State;
   uint8_t SIB1systemInfoValueTag;
@@ -220,16 +214,17 @@ typedef struct UE_S_TMSI_s {
 #if defined(ENABLE_ITTI)
 typedef enum e_rab_satus_e {
   E_RAB_STATUS_NEW,
-  E_RAB_STATUS_DONE,
+  E_RAB_STATUS_DONE, // from the eNB perspective
+  E_RAB_STATUS_ESTABLISHED, // get the reconfigurationcomplete form UE
   E_RAB_STATUS_FAILED,
 } e_rab_status_t;
 
 typedef struct e_rab_param_s {
   e_rab_t param;
   uint8_t status;
+  uint8_t xid; // transaction_id
 } __attribute__ ((__packed__)) e_rab_param_t;
 #endif
-
 
 
 
@@ -282,7 +277,7 @@ typedef struct SRB_INFO_TABLE_ENTRY_s {
   SRB_INFO Srb_info;
   uint8_t Active;
   uint8_t Status;
-  uint32_t Next_check_frame;
+  uint32_t Next_check_frame; 
 } SRB_INFO_TABLE_ENTRY;
 
 typedef struct MEAS_REPORT_LIST_s {
@@ -302,7 +297,9 @@ typedef struct eNB_RRC_UE_s {
   SCellToAddMod_r10_t                sCell_config[2];
 #endif
   SRB_ToAddModList_t*                SRB_configList;
+  SRB_ToAddModList_t*                SRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
   DRB_ToAddModList_t*                DRB_configList;
+  DRB_ToAddModList_t*                DRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
   uint8_t                            DRB_active[8];
   struct PhysicalConfigDedicated*    physicalConfigDedicated;
   struct SPS_Config*                 sps_Config;
@@ -347,10 +344,12 @@ typedef struct eNB_RRC_UE_s {
 
   security_capabilities_t            security_capabilities;
 
+  /* Total number of e_rab already setup in the list */
+  uint8_t                           setup_e_rabs;
   /* Number of e_rab to be setup in the list */
   uint8_t                            nb_of_e_rabs;
   /* list of e_rab to be setup by RRC layers */
-  e_rab_param_t                      e_rab[S1AP_MAX_E_RAB];
+  e_rab_param_t                      e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
 
   // LG: For GTPV1 TUNNELS
   uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];
@@ -359,6 +358,7 @@ typedef struct eNB_RRC_UE_s {
 #endif
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;
+  uint32_t                           ue_release_timer_thres;
 } eNB_RRC_UE_t;
 
 typedef uid_t ue_uid_t;
@@ -408,10 +408,10 @@ typedef struct {
 #endif
   SRB_INFO                          SI;
   SRB_INFO                          Srb0;
-} rcc_eNB_carrier_data_t;
+} rrc_eNB_carrier_data_t;
 
 typedef struct eNB_RRC_INST_s {
-  rcc_eNB_carrier_data_t          carrier[MAX_NUM_CCs];
+  rrc_eNB_carrier_data_t          carrier[MAX_NUM_CCs];
   uid_allocator_t                    uid_allocator; // for rrc_ue_head
   RB_HEAD(rrc_ue_tree_s, rrc_eNB_ue_context_s)     rrc_ue_head; // ue_context tree key search by rnti
   uint8_t                           HO_flag;
@@ -431,6 +431,11 @@ typedef struct eNB_RRC_INST_s {
   int32_t aggregation_period_ms;
   /// localization list for aggregated measurements from PHY
   struct list loc_list;
+#endif
+
+  //RRC configuration
+#if defined(ENABLE_ITTI)
+  RrcConfigurationReq configuration;
 #endif
 } eNB_RRC_INST;
 

@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file rrc_common.c
  * \brief rrc common procedures for eNB and UE
@@ -525,6 +517,19 @@ rrc_rx_tx(
 
     // check for UL failure
     RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(eNB_rrc_inst[ctxt_pP->module_id].rrc_ue_head)) {
+      if ((ctxt_pP->frame == 0) && (ctxt_pP->subframe==0)) {
+	if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {
+	  LOG_I(RRC,"UE rnti %x:S-TMSI %x failure timer %d/20000\n",
+		ue_context_p->ue_context.rnti,
+		ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
+		ue_context_p->ue_context.ul_failure_timer);
+	}
+	else {
+	  LOG_I(RRC,"UE rnti %x failure timer %d/20000\n",
+		ue_context_p->ue_context.rnti,
+		ue_context_p->ue_context.ul_failure_timer);
+	}
+      }
       if (ue_context_p->ue_context.ul_failure_timer>0) {
 	ue_context_p->ue_context.ul_failure_timer++;
 	if (ue_context_p->ue_context.ul_failure_timer >= 20000) {
@@ -536,8 +541,8 @@ rrc_rx_tx(
       }
       if (ue_context_p->ue_context.ue_release_timer>0) {
 	ue_context_p->ue_context.ue_release_timer++;
-	if (ue_context_p->ue_context.ue_release_timer >= 100) {
-	  // remove UE after 10 frames after RRCConnectionRelease is triggered
+	if (ue_context_p->ue_context.ue_release_timer >= 
+	    ue_context_p->ue_context.ue_release_timer_thres) {
 	  LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
 	  ue_to_be_removed = ue_context_p;
 	  break;

@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_TRANSPORT/ulsch_coding.c
 * \brief Top-level routines for coding the ULSCH transport channel as described in 36.212 V8.6 2009-03
@@ -70,35 +62,35 @@ void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch)
 
   if (ulsch) {
 #ifdef DEBUG_ULSCH_FREE
-    msg("Freeing ulsch %p\n",ulsch);
+    printf("Freeing ulsch %p\n",ulsch);
 #endif
 
     for (i=0; i<8; i++) {
 #ifdef DEBUG_ULSCH_FREE
-      msg("Freeing ulsch process %d\n",i);
+      printf("Freeing ulsch process %d\n",i);
 #endif
 
       if (ulsch->harq_processes[i]) {
 #ifdef DEBUG_ULSCH_FREE
-        msg("Freeing ulsch process %d (%p)\n",i,ulsch->harq_processes[i]);
+        printf("Freeing ulsch process %d (%p)\n",i,ulsch->harq_processes[i]);
 #endif
 
         if (ulsch->harq_processes[i]->b) {
           free16(ulsch->harq_processes[i]->b,MAX_ULSCH_PAYLOAD_BYTES);
           ulsch->harq_processes[i]->b = NULL;
 #ifdef DEBUG_ULSCH_FREE
-          msg("Freeing ulsch process %d b (%p)\n",i,ulsch->harq_processes[i]->b);
+          printf("Freeing ulsch process %d b (%p)\n",i,ulsch->harq_processes[i]->b);
 #endif
         }
 
 #ifdef DEBUG_ULSCH_FREE
-        msg("Freeing ulsch process %d c (%p)\n",i,ulsch->harq_processes[i]->c);
+        printf("Freeing ulsch process %d c (%p)\n",i,ulsch->harq_processes[i]->c);
 #endif
 
         for (r=0; r<MAX_NUM_ULSCH_SEGMENTS; r++) {
 
 #ifdef DEBUG_ULSCH_FREE
-          msg("Freeing ulsch process %d c[%d] (%p)\n",i,r,ulsch->harq_processes[i]->c[r]);
+          printf("Freeing ulsch process %d c[%d] (%p)\n",i,r,ulsch->harq_processes[i]->c[r]);
 #endif
 
           if (ulsch->harq_processes[i]->c[r]) {
@@ -205,7 +197,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag)
 
 
 uint32_t ulsch_encoding(uint8_t *a,
-                        PHY_VARS_UE *phy_vars_ue,
+                        PHY_VARS_UE *ue,
                         uint8_t harq_pid,
                         uint8_t eNB_id,
                         uint8_t tmode,
@@ -213,11 +205,11 @@ uint32_t ulsch_encoding(uint8_t *a,
                         uint8_t Nbundled)
 {
 
-  time_stats_t *seg_stats=&phy_vars_ue->ulsch_segmentation_stats;
-  time_stats_t *rm_stats=&phy_vars_ue->ulsch_rate_matching_stats;
-  time_stats_t *te_stats=&phy_vars_ue->ulsch_turbo_encoding_stats;
-  time_stats_t *i_stats=&phy_vars_ue->ulsch_interleaving_stats;
-  time_stats_t *m_stats=&phy_vars_ue->ulsch_multiplexing_stats;
+  time_stats_t *seg_stats=&ue->ulsch_segmentation_stats;
+  time_stats_t *rm_stats=&ue->ulsch_rate_matching_stats;
+  time_stats_t *te_stats=&ue->ulsch_turbo_encoding_stats;
+  time_stats_t *i_stats=&ue->ulsch_interleaving_stats;
+  time_stats_t *m_stats=&ue->ulsch_multiplexing_stats;
 
   //  uint16_t offset;
   uint32_t crc=1;
@@ -236,10 +228,10 @@ uint32_t ulsch_encoding(uint8_t *a,
   uint16_t o_RCC;
   uint8_t o_flip[8];
   uint32_t wACK_idx;
-  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
-  PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
-  LTE_UE_ULSCH_t *ulsch=phy_vars_ue->ulsch_ue[eNB_id];
-  LTE_UE_DLSCH_t **dlsch = phy_vars_ue->dlsch_ue[eNB_id];
+  LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
+  PHY_MEASUREMENTS *meas = &ue->measurements;
+  LTE_UE_ULSCH_t *ulsch=ue->ulsch[eNB_id];
+  LTE_UE_DLSCH_t **dlsch = ue->dlsch[eNB_id];
   uint16_t rnti;
 
   if (!ulsch) {
@@ -266,11 +258,11 @@ uint32_t ulsch_encoding(uint8_t *a,
 
   // fill CQI/PMI information
   if (ulsch->O>0) {
-    rnti = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti;
-    fill_CQI(ulsch,meas,0,harq_pid,phy_vars_ue->lte_frame_parms.N_RB_DL,rnti, tmode,phy_vars_ue->sinr_eff);
+    rnti = ue->pdcch_vars[eNB_id]->crnti;
+    fill_CQI(ulsch,meas,0,harq_pid,ue->frame_parms.N_RB_DL,rnti, tmode,ue->sinr_eff);
 
     LOG_D(PHY,"UE CQI\n");
-    print_CQI(ulsch->o,ulsch->uci_format,0,phy_vars_ue->lte_frame_parms.N_RB_DL);
+    print_CQI(ulsch->o,ulsch->uci_format,0,ue->frame_parms.N_RB_DL);
 
     // save PUSCH pmi for later (transmission modes 4,5,6)
     if (dlsch[0]) {
@@ -302,7 +294,7 @@ uint32_t ulsch_encoding(uint8_t *a,
     ulsch->harq_processes[harq_pid]->control_only = 0;
 
 #ifdef DEBUG_ULSCH_CODING
-    msg("[PHY][UE] ULSCH coding : A %d, Qm %d, mcs %d, harq_pid %d, round %d, RV %d\n",
+    printf("[PHY][UE] ULSCH coding : A %d, Qm %d, mcs %d, harq_pid %d, round %d, RV %d\n",
         ulsch->harq_processes[harq_pid]->TBS,
         Q_m,
         ulsch->harq_processes[harq_pid]->mcs,
@@ -311,22 +303,22 @@ uint32_t ulsch_encoding(uint8_t *a,
         ulsch->harq_processes[harq_pid]->rvidx);
 
     for (i=0; i<ulsch->harq_processes[harq_pid]->O_ACK; i++)
-      msg("ulsch_coding: o_ACK[%d] %d\n",i,ulsch->o_ACK[i]);
+      printf("ulsch_coding: o_ACK[%d] %d\n",i,ulsch->o_ACK[i]);
 
     for (i=0; i<ulsch->O_RI; i++)
-      msg("ulsch_coding: o_RI[%d] %d\n",i,ulsch->o_RI[i]);
+      printf("ulsch_coding: o_RI[%d] %d\n",i,ulsch->o_RI[i]);
 
-    msg("ulsch_coding: O=%d\n",ulsch->O);
+    printf("ulsch_coding: O=%d\n",ulsch->O);
 
     for (i=0; i<1+((8+ulsch->O)/8); i++) {
       //    ulsch->o[i] = i;
-      msg("ulsch_coding: O[%d] %d\n",i,ulsch->o[i]);
+      printf("ulsch_coding: O[%d] %d\n",i,ulsch->o[i]);
     }
 
     if ((tmode != 4))
-      print_CQI(ulsch->o,wideband_cqi_rank1_2A,0,phy_vars_ue->lte_frame_parms.N_RB_DL);
+      print_CQI(ulsch->o,wideband_cqi_rank1_2A,0,ue->frame_parms.N_RB_DL);
     else
-      print_CQI(ulsch->o,HLC_subband_cqi_rank1_2A,0,phy_vars_ue->lte_frame_parms.N_RB_DL);
+      print_CQI(ulsch->o,HLC_subband_cqi_rank1_2A,0,ue->frame_parms.N_RB_DL);
 
 #endif
 
@@ -380,20 +372,20 @@ uint32_t ulsch_encoding(uint8_t *a,
 
 
 #ifdef DEBUG_ULSCH_CODING
-        msg("Generating Code Segment %d (%d bits)\n",r,Kr);
+        printf("Generating Code Segment %d (%d bits)\n",r,Kr);
         // generate codewords
 
-        msg("bits_per_codeword (Kr)= %d\n",Kr);
-        msg("N_RB = %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-        msg("Ncp %d\n",frame_parms->Ncp);
-        msg("Qm %d\n",Q_m);
+        printf("bits_per_codeword (Kr)= %d\n",Kr);
+        printf("N_RB = %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+        printf("Ncp %d\n",frame_parms->Ncp);
+        printf("Qm %d\n",Q_m);
 #endif
 
         //  offset=0;
 
 
 #ifdef DEBUG_ULSCH_CODING
-        msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
+        printf("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
 #endif
         start_meas(te_stats);
         threegpplte_turbo_encoder(ulsch->harq_processes[harq_pid]->c[r],
@@ -526,7 +518,7 @@ uint32_t ulsch_encoding(uint8_t *a,
 
     for (r=0; r<ulsch->harq_processes[harq_pid]->C; r++) {
 #ifdef DEBUG_ULSCH_CODING
-      msg("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
+      printf("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
           r,
           G,
           Kr*3,
@@ -633,7 +625,7 @@ uint32_t ulsch_encoding(uint8_t *a,
   //  Do ACK coding, Section 5.2.2.6 36.213 (p.23-24 in v8.6)
   wACK_idx = (ulsch->bundling==0) ? 4 : ((Nbundled-1)&3);
 #ifdef DEBUG_ULSCH_CODING
-  msg("ulsch_coding.c: Bundling %d, Nbundled %d, wACK_idx %d\n",
+  printf("ulsch_coding.c: Bundling %d, Nbundled %d, wACK_idx %d\n",
       ulsch->bundling,Nbundled,wACK_idx);
 #endif
 
@@ -865,7 +857,7 @@ uint32_t ulsch_encoding(uint8_t *a,
     for (q=0; q<Q_m; q++) {
       y[q+(Q_m*((r*Cmux) + columnset[j]))]  = ulsch->q_ACK[(q+(Q_m*i))%len_ACK];
 #ifdef DEBUG_ULSCH_CODING
-      msg("ulsch_coding.c: ACK %d => y[%d]=%d (i %d, r*Cmux %d, columnset %d)\n",q+(Q_m*i),
+      printf("ulsch_coding.c: ACK %d => y[%d]=%d (i %d, r*Cmux %d, columnset %d)\n",q+(Q_m*i),
           q+(Q_m*((r*Cmux) + columnset[j])),ulsch->q_ACK[(q+(Q_m*i))%len_ACK],
           i,r*Cmux,columnset[j]);
 #endif
@@ -938,68 +930,68 @@ uint32_t ulsch_encoding(uint8_t *a,
 #include "LAYER2/MAC/defs.h"
 #endif
 int ulsch_encoding_emul(uint8_t *ulsch_buffer,
-                        PHY_VARS_UE *phy_vars_ue,
+                        PHY_VARS_UE *ue,
                         uint8_t eNB_id,
                         uint8_t harq_pid,
                         uint8_t control_only_flag)
 {
 
-  LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[eNB_id];
-  LTE_UE_DLSCH_t **dlsch = phy_vars_ue->dlsch_ue[eNB_id];
-  PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
-  uint8_t tmode = phy_vars_ue->transmission_mode[eNB_id];
-  uint16_t rnti=phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti;
+  LTE_UE_ULSCH_t *ulsch = ue->ulsch[eNB_id];
+  LTE_UE_DLSCH_t **dlsch = ue->dlsch[eNB_id];
+  PHY_MEASUREMENTS *meas = &ue->measurements;
+  uint8_t tmode = ue->transmission_mode[eNB_id];
+  uint16_t rnti=ue->pdcch_vars[eNB_id]->crnti;
   LOG_D(PHY,"EMUL UE ulsch_encoding for eNB %d,mod_id %d, harq_pid %d rnti %x, ACK(%d,%d) \n",
-        eNB_id,phy_vars_ue->Mod_id, harq_pid, rnti,ulsch->o_ACK[0],ulsch->o_ACK[1]);
+        eNB_id,ue->Mod_id, harq_pid, rnti,ulsch->o_ACK[0],ulsch->o_ACK[1]);
 
   if (ulsch->O>0) {
     /*
     if(flag_LA==1)
-      sinr_eff = sinr_eff_cqi_calc(phy_vars_ue, eNB_id);
+      sinr_eff = sinr_eff_cqi_calc(ue, eNB_id);
     else
       sinr_eff = meas->wideband_cqi_avg[eNB_id];
     */
 
-    fill_CQI(ulsch,meas,eNB_id,harq_pid,phy_vars_ue->lte_frame_parms.N_RB_DL,rnti,tmode,phy_vars_ue->sinr_eff);
+    fill_CQI(ulsch,meas,eNB_id,harq_pid,ue->frame_parms.N_RB_DL,rnti,tmode,ue->sinr_eff);
     //LOG_D(PHY,"UE CQI\n");
     //    print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
 
     // save PUSCH pmi for later (transmission modes 4,5,6)
-    //    msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
+    //    printf("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
     // if (ulsch->uci_format != HLC_subband_cqi_mcs_CBA)
     dlsch[0]->harq_processes[harq_pid]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
   }
 
-  memcpy(phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->b,
+  memcpy(ue->ulsch[eNB_id]->harq_processes[harq_pid]->b,
          ulsch_buffer,
-         phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
+         ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS>>3);
 
 
-  //memcpy(&UE_transport_info[phy_vars_ue->Mod_id].transport_blocks[UE_transport_info_TB_index[phy_vars_ue->Mod_id]],
-  memcpy(&UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].transport_blocks,
+  //memcpy(&UE_transport_info[ue->Mod_id].transport_blocks[UE_transport_info_TB_index[ue->Mod_id]],
+  memcpy(&UE_transport_info[ue->Mod_id][ue->CC_id].transport_blocks,
          ulsch_buffer,
-         phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
-  //UE_transport_info_TB_index[phy_vars_ue->Mod_id]+=phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3;
+         ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS>>3);
+  //UE_transport_info_TB_index[ue->Mod_id]+=ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS>>3;
   // navid: currently more than one eNB is not supported in the code
-  UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].num_eNB = 1;
-  UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].rnti[0] = phy_vars_ue->lte_ue_pdcch_vars[0]->crnti;
-  UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].eNB_id[0]  = eNB_id;
-  UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].harq_pid[0] = harq_pid;
-  UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].tbs[0]     = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3 ;
-  // msg("\nphy_vars_ue->Mod_id%d\n",phy_vars_ue->Mod_id);
+  UE_transport_info[ue->Mod_id][ue->CC_id].num_eNB = 1;
+  UE_transport_info[ue->Mod_id][ue->CC_id].rnti[0] = ue->pdcch_vars[0]->crnti;
+  UE_transport_info[ue->Mod_id][ue->CC_id].eNB_id[0]  = eNB_id;
+  UE_transport_info[ue->Mod_id][ue->CC_id].harq_pid[0] = harq_pid;
+  UE_transport_info[ue->Mod_id][ue->CC_id].tbs[0]     = ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS>>3 ;
+  // printf("\nue->Mod_id%d\n",ue->Mod_id);
 
-  UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].cntl.pusch_flag = 1;
-  //UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_uci = *(uint32_t *)ulsch->o;
-  memcpy(UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].cntl.pusch_uci,
+  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pusch_flag = 1;
+  //UE_transport_info[ue->Mod_id].cntl.pusch_uci = *(uint32_t *)ulsch->o;
+  memcpy(UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pusch_uci,
          ulsch->o,
          MAX_CQI_BYTES);
-  // msg("[UE]cqi is %d \n", ((HLC_subband_cqi_rank1_2A_5MHz *)ulsch->o)->cqi1);
+  // printf("[UE]cqi is %d \n", ((HLC_subband_cqi_rank1_2A_5MHz *)ulsch->o)->cqi1);
 
-  UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].cntl.length_uci = ulsch->O;
-  UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].cntl.uci_format = ulsch->uci_format;
-  UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].cntl.pusch_ri = (ulsch->o_RI[0]&1)+((ulsch->o_RI[1]&1)<<1);
-  UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].cntl.pusch_ack =   (ulsch->o_ACK[0]&1) + ((ulsch->o_ACK[1]&1)<<1);
-  //msg("ack is %d %d %d\n",UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack, (ulsch->o_ACK[1]&1)<<1, ulsch->o_ACK[0]&1);
+  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.length_uci = ulsch->O;
+  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.uci_format = ulsch->uci_format;
+  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pusch_ri = (ulsch->o_RI[0]&1)+((ulsch->o_RI[1]&1)<<1);
+  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pusch_ack =   (ulsch->o_ACK[0]&1) + ((ulsch->o_ACK[1]&1)<<1);
+  //printf("ack is %d %d %d\n",UE_transport_info[ue->Mod_id].cntl.pusch_ack, (ulsch->o_ACK[1]&1)<<1, ulsch->o_ACK[0]&1);
   return(0);
 
 }

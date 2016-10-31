@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file ulsim.c
  \brief Top-level DL simulator
@@ -51,13 +43,15 @@
 #include "LAYER2/MAC/vars.h"
 #include "OCG_vars.h"
 
+#include "unitary_defs.h"
+
 #include "PHY/TOOLS/lte_phy_scope.h"
 
-extern unsigned short dftsizes[33];
-extern short *ul_ref_sigs[30][2][33];
+PHY_VARS_eNB *eNB;
+PHY_VARS_UE *UE;
 
-PHY_VARS_eNB *PHY_vars_eNB;
-PHY_VARS_UE *PHY_vars_UE;
+
+
 
 //#define MCS_COUNT 23//added for PHY abstraction
 
@@ -83,6 +77,94 @@ double t_rx_min = 1000000000; /*!< \brief initial min process time for tx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
+
+void fill_ulsch_dci(PHY_VARS_eNB *eNB,void *UL_dci,int first_rb,int nb_rb,int mcs,int ndi,int cqi_flag) {
+
+  switch (eNB->frame_parms.N_RB_UL) {
+  case 6:
+    break;
+
+  case 25:
+    if (eNB->frame_parms.frame_type == TDD) {
+      ((DCI0_5MHz_TDD_1_6_t*)UL_dci)->type    = 0;
+      ((DCI0_5MHz_TDD_1_6_t*)UL_dci)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
+      //printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_5MHz_TDD_1_6_t*)UL_dci)->rballoc,*(uint32_t *)UL_dci);
+      ((DCI0_5MHz_TDD_1_6_t*)UL_dci)->mcs     = mcs;
+      ((DCI0_5MHz_TDD_1_6_t*)UL_dci)->ndi     = ndi;
+      ((DCI0_5MHz_TDD_1_6_t*)UL_dci)->TPC     = 0;
+      ((DCI0_5MHz_TDD_1_6_t*)UL_dci)->cqi_req = cqi_flag&1;
+      ((DCI0_5MHz_TDD_1_6_t*)UL_dci)->cshift  = 0;
+      ((DCI0_5MHz_TDD_1_6_t*)UL_dci)->dai     = 1;
+    } else {
+      ((DCI0_5MHz_FDD_t*)UL_dci)->type    = 0;
+      ((DCI0_5MHz_FDD_t*)UL_dci)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
+      //      printf("nb_rb %d/%d, rballoc %d (dci %x) (dcip %p)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_5MHz_FDD_t*)UL_dci)->rballoc,*(uint32_t *)UL_dci,UL_dci);
+      ((DCI0_5MHz_FDD_t*)UL_dci)->mcs     = mcs;
+      ((DCI0_5MHz_FDD_t*)UL_dci)->ndi     = ndi;
+      ((DCI0_5MHz_FDD_t*)UL_dci)->TPC     = 0;
+      ((DCI0_5MHz_FDD_t*)UL_dci)->cqi_req = cqi_flag&1;
+      ((DCI0_5MHz_FDD_t*)UL_dci)->cshift  = 0;
+    }
+
+    break;
+
+  case 50:
+    if (eNB->frame_parms.frame_type == TDD) {
+      ((DCI0_10MHz_TDD_1_6_t*)UL_dci)->type    = 0;
+      ((DCI0_10MHz_TDD_1_6_t*)UL_dci)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
+      //      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_10MHz_TDD_1_6_t*)UL_dci)->rballoc,*(uint32_t *)UL_dci);
+      ((DCI0_10MHz_TDD_1_6_t*)UL_dci)->mcs     = mcs;
+      ((DCI0_10MHz_TDD_1_6_t*)UL_dci)->ndi     = ndi;
+      ((DCI0_10MHz_TDD_1_6_t*)UL_dci)->TPC     = 0;
+      ((DCI0_10MHz_TDD_1_6_t*)UL_dci)->cqi_req = cqi_flag&1;
+      ((DCI0_10MHz_TDD_1_6_t*)UL_dci)->cshift  = 0;
+      ((DCI0_10MHz_TDD_1_6_t*)UL_dci)->dai     = 1;
+    } else {
+      ((DCI0_10MHz_FDD_t*)UL_dci)->type    = 0;
+      ((DCI0_10MHz_FDD_t*)UL_dci)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
+      //printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_10MHz_FDD_t*)UL_dci)->rballoc,*(uint32_t *)UL_dci);
+      ((DCI0_10MHz_FDD_t*)UL_dci)->mcs     = mcs;
+      ((DCI0_10MHz_FDD_t*)UL_dci)->ndi     = ndi;
+      ((DCI0_10MHz_FDD_t*)UL_dci)->TPC     = 0;
+      ((DCI0_10MHz_FDD_t*)UL_dci)->cqi_req = cqi_flag&1;
+      ((DCI0_10MHz_FDD_t*)UL_dci)->cshift  = 0;
+    }
+
+    break;
+
+  case 100:
+    if (eNB->frame_parms.frame_type == TDD) {
+      ((DCI0_20MHz_TDD_1_6_t*)UL_dci)->type    = 0;
+      ((DCI0_20MHz_TDD_1_6_t*)UL_dci)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
+      //      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_20MHz_TDD_1_6_t*)UL_dci)->rballoc,*(uint32_t *)UL_dci);
+      ((DCI0_20MHz_TDD_1_6_t*)UL_dci)->mcs     = mcs;
+      ((DCI0_20MHz_TDD_1_6_t*)UL_dci)->ndi     = ndi;
+      ((DCI0_20MHz_TDD_1_6_t*)UL_dci)->TPC     = 0;
+      ((DCI0_20MHz_TDD_1_6_t*)UL_dci)->cqi_req = cqi_flag&1;
+      ((DCI0_20MHz_TDD_1_6_t*)UL_dci)->cshift  = 0;
+      ((DCI0_20MHz_TDD_1_6_t*)UL_dci)->dai     = 1;
+    } else {
+      ((DCI0_20MHz_FDD_t*)UL_dci)->type    = 0;
+      ((DCI0_20MHz_FDD_t*)UL_dci)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
+      //   printf("nb_rb %d/%d, rballoc %d (dci %x) (UL_dci %p)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_20MHz_FDD_t*)UL_dci)->rballoc,*(uint32_t *)UL_dci,(void*)UL_dci);
+      ((DCI0_20MHz_FDD_t*)UL_dci)->mcs     = mcs;
+      ((DCI0_20MHz_FDD_t*)UL_dci)->ndi     = ndi;
+      ((DCI0_20MHz_FDD_t*)UL_dci)->TPC     = 0;
+      ((DCI0_20MHz_FDD_t*)UL_dci)->cqi_req = cqi_flag&1;
+      ((DCI0_20MHz_FDD_t*)UL_dci)->cshift  = 0;
+    }
+
+    break;
+
+  default:
+    break;
+  }
+
+}
+
+extern void eNB_fep_full(PHY_VARS_eNB *eNB);
+extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB);
+
 int main(int argc, char **argv)
 {
 
@@ -98,7 +180,12 @@ int main(int argc, char **argv)
   int **txdata;
 
   LTE_DL_FRAME_PARMS *frame_parms;
-  double **s_re,**s_im,**r_re,**r_im;
+  double s_re0[30720],s_im0[30720],r_re0[30720],r_im0[30720];
+  double s_re1[30720],s_im1[30720],r_re1[30720],r_im1[30720];
+  double *s_re[2]={s_re0,s_re1};
+  double *s_im[2]={s_im0,s_im1};
+  double *r_re[2]={r_re0,r_re1};
+  double *r_im[2]={r_im0,r_im1};
   double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
   double iqim=0.0;
   uint8_t extended_prefix_flag=0;
@@ -184,11 +271,12 @@ int main(int argc, char **argv)
   char channel_model_input[10];
 
   uint8_t max_turbo_iterations=4;
-  uint8_t llr8_flag=0;
+  uint8_t parallel_flag=0;
   int nb_rb_set = 0;
-  int sf;
 
   int threequarter_fs=0;
+  int ndi;
+
   opp_enabled=1; // to enable the time meas
 
   cpu_freq_GHz = (double)get_cpu_freq_GHz();
@@ -441,7 +529,7 @@ int main(int argc, char **argv)
       break;
 
     case 'L':
-      llr8_flag=1;
+      parallel_flag=1;
       break;
 
     case 'I':
@@ -478,38 +566,22 @@ int main(int argc, char **argv)
 		 0);
 
   if (nb_rb_set == 0)
-    nb_rb = PHY_vars_eNB->lte_frame_parms.N_RB_UL;
+    nb_rb = eNB->frame_parms.N_RB_UL;
 
-  printf("1 . rxdataF_comp[0] %p\n",PHY_vars_eNB->lte_eNB_pusch_vars[0]->rxdataF_comp[0][0]);
+  printf("1 . rxdataF_comp[0] %p\n",eNB->pusch_vars[0]->rxdataF_comp[0][0]);
   printf("Setting mcs = %d\n",mcs);
   printf("n_frames = %d\n", n_frames);
 
   snr1 = snr0+snr_int;
   printf("SNR0 %f, SNR1 %f\n",snr0,snr1);
 
-  /*
-    txdataF    = (int **)malloc16(2*sizeof(int*));
-    txdataF[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-    txdataF[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
+  frame_parms = &eNB->frame_parms;
 
-    txdata    = (int **)malloc16(2*sizeof(int*));
-    txdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-    txdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
-  */
-
-  frame_parms = &PHY_vars_eNB->lte_frame_parms;
-
-  txdata = PHY_vars_UE->lte_ue_common_vars.txdata;
+  txdata = UE->common_vars.txdata;
 
 
-  s_re = malloc(2*sizeof(double*));
-  s_im = malloc(2*sizeof(double*));
-  r_re = malloc(2*sizeof(double*));
-  r_im = malloc(2*sizeof(double*));
-  //  r_re0 = malloc(2*sizeof(double*));
-  //  r_im0 = malloc(2*sizeof(double*));
 
-  nsymb = (PHY_vars_eNB->lte_frame_parms.Ncp == NORMAL) ? 14 : 12;
+  nsymb = (eNB->frame_parms.Ncp == NORMAL) ? 14 : 12;
 
 
   sprintf(bler_fname,"ULbler_mcs%d_nrb%d_ChannelModel%d_nsim%d.csv",mcs,nb_rb,chMod,n_frames);
@@ -538,32 +610,6 @@ int main(int argc, char **argv)
     }
   }
 
-  /*
-  if(abstx) {
-    sprintf(fperen_name,"ULchan_estims_F_mcs%d_rb%d_chanMod%d_nframes%d_chanReal%d.m",mcs,nb_rb,chMod,n_frames,n_ch_rlz);
-    fperen = fopen(fperen_name,"a+");
-    fprintf(fperen,"chest_f = [");
-    fclose(fperen);
-
-    sprintf(fmageren_name,"ChanMag_F_mcs%d_rb%d_chanMod%d_nframes%d_chanReal%d.m",mcs,nb_rb,chMod,n_frames,n_ch_rlz);
-    fmageren = fopen(fmageren_name,"a+");
-    fprintf(fmageren,"mag_f = [");
-    fclose(fmageren);
-
-    sprintf(flogeren_name,"Log2Max_mcs%d_rb%d_chanMod%d_nframes%d_chanReal%d.m",mcs,nb_rb,chMod,n_frames,n_ch_rlz);
-    flogeren = fopen(flogeren_name,"a+");
-    fprintf(flogeren,"mag_f = [");
-    fclose(flogeren);
-  }
-  */
-
-  /*
-    sprintf(ftxlev_name,"txlevel_mcs%d_rb%d_chanMod%d_nframes%d_chanReal%d.m",mcs,nb_rb,chMod,n_frames,n_ch_rlz);
-    ftxlev = fopen(ftxlev_name,"a+");
-    fprintf(ftxlev,"txlev = [");
-    fclose(ftexlv);
-  */
-
   if(abstx) {
     // CSV file
     sprintf(csv_fname,"EULdataout_tx%d_mcs%d_nbrb%d_chan%d_nsimus%d_eren.m",transmission_mode,mcs,nb_rb,chMod,n_frames);
@@ -575,17 +621,6 @@ int main(int argc, char **argv)
     fprintf(csv_fdUL,"data_all%d=[",mcs);
   }
 
-  for (i=0; i<2; i++) {
-    s_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    s_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    r_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    r_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    //    r_re0[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    //    bzero(r_re0[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    //    r_im0[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    //    bzero(r_im0[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-  }
-
 
   if (xforms==1) {
     fl_initialize (&argc, argv, NULL, 0, 0);
@@ -594,40 +629,40 @@ int main(int argc, char **argv)
     fl_show_form (form_enb->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
   }
 
-  PHY_vars_UE->lte_ue_pdcch_vars[0]->crnti = 14;
+  UE->pdcch_vars[0]->crnti = 14;
 
-  PHY_vars_UE->lte_frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
-  PHY_vars_UE->lte_frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
-  PHY_vars_UE->soundingrs_ul_config_dedicated[eNB_id].srs_Bandwidth = 0;
-  PHY_vars_UE->soundingrs_ul_config_dedicated[eNB_id].transmissionComb = 0;
-  PHY_vars_UE->soundingrs_ul_config_dedicated[eNB_id].freqDomainPosition = 0;
+  UE->frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
+  UE->frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
+  UE->soundingrs_ul_config_dedicated[eNB_id].srs_Bandwidth = 0;
+  UE->soundingrs_ul_config_dedicated[eNB_id].transmissionComb = 0;
+  UE->soundingrs_ul_config_dedicated[eNB_id].freqDomainPosition = 0;
 
-  PHY_vars_eNB->lte_frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
-  PHY_vars_eNB->lte_frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
+  eNB->frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
+  eNB->frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
 
-  PHY_vars_eNB->soundingrs_ul_config_dedicated[UE_id].srs_ConfigIndex = 1;
-  PHY_vars_eNB->soundingrs_ul_config_dedicated[UE_id].srs_Bandwidth = 0;
-  PHY_vars_eNB->soundingrs_ul_config_dedicated[UE_id].transmissionComb = 0;
-  PHY_vars_eNB->soundingrs_ul_config_dedicated[UE_id].freqDomainPosition = 0;
-  PHY_vars_eNB->cooperation_flag = cooperation_flag;
-  //  PHY_vars_eNB->eNB_UE_stats[0].SRS_parameters = PHY_vars_UE->SRS_parameters;
+  eNB->soundingrs_ul_config_dedicated[UE_id].srs_ConfigIndex = 1;
+  eNB->soundingrs_ul_config_dedicated[UE_id].srs_Bandwidth = 0;
+  eNB->soundingrs_ul_config_dedicated[UE_id].transmissionComb = 0;
+  eNB->soundingrs_ul_config_dedicated[UE_id].freqDomainPosition = 0;
+  eNB->cooperation_flag = cooperation_flag;
+  //  eNB->eNB_UE_stats[0].SRS_parameters = UE->SRS_parameters;
 
-  PHY_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_ACK_Index = beta_ACK;
-  PHY_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_RI_Index  = beta_RI;
-  PHY_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_CQI_Index = beta_CQI;
-  PHY_vars_UE->pusch_config_dedicated[eNB_id].betaOffset_ACK_Index = beta_ACK;
-  PHY_vars_UE->pusch_config_dedicated[eNB_id].betaOffset_RI_Index  = beta_RI;
-  PHY_vars_UE->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index = beta_CQI;
+  eNB->pusch_config_dedicated[UE_id].betaOffset_ACK_Index = beta_ACK;
+  eNB->pusch_config_dedicated[UE_id].betaOffset_RI_Index  = beta_RI;
+  eNB->pusch_config_dedicated[UE_id].betaOffset_CQI_Index = beta_CQI;
+  UE->pusch_config_dedicated[eNB_id].betaOffset_ACK_Index = beta_ACK;
+  UE->pusch_config_dedicated[eNB_id].betaOffset_RI_Index  = beta_RI;
+  UE->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index = beta_CQI;
 
-  PHY_vars_UE->ul_power_control_dedicated[eNB_id].deltaMCS_Enabled = 1;
+  UE->ul_power_control_dedicated[eNB_id].deltaMCS_Enabled = 1;
 
   printf("PUSCH Beta : ACK %f, RI %f, CQI %f\n",(double)beta_ack[beta_ACK]/8,(double)beta_ri[beta_RI]/8,(double)beta_cqi[beta_CQI]/8);
 
-  UE2eNB = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
-                                PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
+  UE2eNB = new_channel_desc_scm(eNB->frame_parms.nb_antennas_tx,
+                                UE->frame_parms.nb_antennas_rx,
                                 channel_model,
-				N_RB2sampling_rate(PHY_vars_eNB->lte_frame_parms.N_RB_UL),
-				N_RB2channel_bandwidth(PHY_vars_eNB->lte_frame_parms.N_RB_UL),
+				N_RB2sampling_rate(eNB->frame_parms.N_RB_UL),
+				N_RB2channel_bandwidth(eNB->frame_parms.N_RB_UL),
                                 forgetting_factor,
                                 delay,
                                 0);
@@ -635,152 +670,81 @@ int main(int argc, char **argv)
   UE2eNB->max_Doppler = maxDoppler;
 
   // NN: N_RB_UL has to be defined in ulsim
-  PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(max_turbo_iterations,N_RB_DL,0);
-  PHY_vars_UE->ulsch_ue[0]   = new_ue_ulsch(N_RB_DL,0);
+  eNB->ulsch[0] = new_eNB_ulsch(max_turbo_iterations,N_RB_DL,0);
+  UE->ulsch[0]   = new_ue_ulsch(N_RB_DL,0);
 
+  if (parallel_flag == 1) {
+    init_fep_thread(eNB,NULL);
+    init_td_thread(eNB,NULL);
+  }
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0; i<2; i++) {
-    PHY_vars_eNB->dlsch_eNB[0][i] = new_eNB_dlsch(1,8,1827072,N_RB_DL,0);
-    PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8,1827072,MAX_TURBO_ITERATIONS,N_RB_DL,0);
+    eNB->dlsch[0][i] = new_eNB_dlsch(1,8,1827072,N_RB_DL,0);
+    UE->dlsch[0][i]  = new_ue_dlsch(1,8,1827072,MAX_TURBO_ITERATIONS,N_RB_DL,0);
 
-    if (!PHY_vars_eNB->dlsch_eNB[0][i]) {
+    if (!eNB->dlsch[0][i]) {
       printf("Can't get eNB dlsch structures\n");
       exit(-1);
     }
 
-    if (!PHY_vars_UE->dlsch_ue[0][i]) {
+    if (!UE->dlsch[0][i]) {
       printf("Can't get ue dlsch structures\n");
       exit(-1);
     }
 
-    PHY_vars_eNB->dlsch_eNB[0][i]->rnti = 14;
-    PHY_vars_UE->dlsch_ue[0][i]->rnti   = 14;
+    eNB->dlsch[0][i]->rnti = 14;
+    UE->dlsch[0][i]->rnti   = 14;
 
   } 
 
 
-  switch (PHY_vars_eNB->lte_frame_parms.N_RB_UL) {
-  case 6:
-    break;
-
-  case 25:
-    if (PHY_vars_eNB->lte_frame_parms.frame_type == TDD) {
-      ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->type    = 0;
-      ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,PHY_vars_eNB->lte_frame_parms.N_RB_UL,((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
-      ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->mcs     = mcs;
-      ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->ndi     = 1;
-      ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->TPC     = 0;
-      ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->cqi_req = cqi_flag&1;
-      ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->cshift  = 0;
-      ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->dai     = 1;
-    } else {
-      ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->type    = 0;
-      ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->rballoc = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,PHY_vars_eNB->lte_frame_parms.N_RB_UL,((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
-      ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->mcs     = mcs;
-      ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->ndi     = 1;
-      ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->TPC     = 0;
-      ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->cqi_req = cqi_flag&1;
-      ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->cshift  = 0;
-    }
-
-    break;
-
-  case 50:
-    if (PHY_vars_eNB->lte_frame_parms.frame_type == TDD) {
-      ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->type    = 0;
-      ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,PHY_vars_eNB->lte_frame_parms.N_RB_UL,((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
-      ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->mcs     = mcs;
-      ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->ndi     = 1;
-      ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->TPC     = 0;
-      ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->cqi_req = cqi_flag&1;
-      ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->cshift  = 0;
-      ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->dai     = 1;
-    } else {
-      ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->type    = 0;
-      ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->rballoc = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,PHY_vars_eNB->lte_frame_parms.N_RB_UL,((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
-      ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->mcs     = mcs;
-      ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->ndi     = 1;
-      ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->TPC     = 0;
-      ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->cqi_req = cqi_flag&1;
-      ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->cshift  = 0;
-    }
-
-    break;
-
-  case 100:
-    if (PHY_vars_eNB->lte_frame_parms.frame_type == TDD) {
-      ((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->type    = 0;
-      ((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,PHY_vars_eNB->lte_frame_parms.N_RB_UL,((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
-      ((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->mcs     = mcs;
-      ((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->ndi     = 1;
-      ((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->TPC     = 0;
-      ((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->cqi_req = cqi_flag&1;
-      ((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->cshift  = 0;
-      ((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->dai     = 1;
-    } else {
-      ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->type    = 0;
-      ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->rballoc = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,PHY_vars_eNB->lte_frame_parms.N_RB_UL,((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
-      ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->mcs     = mcs;
-      ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->ndi     = 1;
-      ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->TPC     = 0;
-      ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->cqi_req = cqi_flag&1;
-      ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->cshift  = 0;
-    }
-
-    break;
-
-  default:
-    break;
-  }
 
 
-  PHY_vars_UE->PHY_measurements.rank[0] = 0;
-  PHY_vars_UE->transmission_mode[0] = 2;
-  PHY_vars_UE->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling_flag == 1 ? bundling : multiplexing;
-  PHY_vars_eNB->transmission_mode[0] = 2;
-  PHY_vars_eNB->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling_flag == 1 ? bundling : multiplexing;
-  PHY_vars_UE->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
-  PHY_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
-  PHY_vars_UE->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
-  PHY_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
-  PHY_vars_UE->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
-  PHY_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
-  PHY_vars_UE->frame_tx=1;
+  UE->measurements.rank[0] = 0;
+  UE->transmission_mode[0] = 2;
+  UE->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling_flag == 1 ? bundling : multiplexing;
+  eNB->transmission_mode[0] = 2;
+  eNB->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling_flag == 1 ? bundling : multiplexing;
+  UE->frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
+  eNB->frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
+  UE->frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
+  eNB->frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
+  UE->frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
+  eNB->frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
 
-  for (sf=0; sf<10; sf++) {
-    PHY_vars_eNB->proc[sf].frame_tx=1;
-    PHY_vars_eNB->proc[sf].subframe_tx=sf;
-    PHY_vars_eNB->proc[sf].frame_rx=1;
-    PHY_vars_eNB->proc[sf].subframe_rx=sf;
-  }
+
+  UE->mac_enabled=0;
+  
+  eNB_rxtx_proc_t *proc_rxtx   = &eNB->proc.proc_rxtx[subframe&1];
+  UE_rxtx_proc_t *proc_rxtx_ue = &UE->proc.proc_rxtx[subframe&1];
+  proc_rxtx->frame_rx=1;
+  proc_rxtx->subframe_rx=subframe;
+
+  proc_rxtx->frame_tx=pdcch_alloc2ul_frame(&eNB->frame_parms,1,subframe);
+  proc_rxtx->subframe_tx=pdcch_alloc2ul_subframe(&eNB->frame_parms,subframe);
+
+  proc_rxtx_ue->frame_tx = proc_rxtx->frame_rx;
+  proc_rxtx_ue->frame_rx = proc_rxtx->frame_tx;
+  proc_rxtx_ue->subframe_tx = proc_rxtx->subframe_rx;
+  proc_rxtx_ue->subframe_rx = proc_rxtx->subframe_tx;
 
   printf("Init UL hopping UE\n");
-  init_ul_hopping(&PHY_vars_UE->lte_frame_parms);
+  init_ul_hopping(&UE->frame_parms);
   printf("Init UL hopping eNB\n");
-  init_ul_hopping(&PHY_vars_eNB->lte_frame_parms);
-
-  PHY_vars_eNB->proc[subframe].frame_rx = PHY_vars_UE->frame_tx;
-
-  if (ul_subframe2pdcch_alloc_subframe(&PHY_vars_eNB->lte_frame_parms,subframe) > subframe) // allocation was in previous frame
-    PHY_vars_eNB->proc[ul_subframe2pdcch_alloc_subframe(&PHY_vars_eNB->lte_frame_parms,subframe)].frame_tx = (PHY_vars_UE->frame_tx-1)&1023;
-
-  PHY_vars_UE->dlsch_ue[0][0]->harq_ack[ul_subframe2pdcch_alloc_subframe(&PHY_vars_eNB->lte_frame_parms,subframe)].send_harq_status = 1;
+  init_ul_hopping(&eNB->frame_parms);
 
 
-  //  printf("UE frame %d, eNB frame %d (eNB frame_tx %d)\n",PHY_vars_UE->frame,PHY_vars_eNB->proc[subframe].frame_rx,PHY_vars_eNB->proc[ul_subframe2pdcch_alloc_subframe(&PHY_vars_eNB->lte_frame_parms,subframe)].frame_tx);
-  PHY_vars_UE->frame_tx = (PHY_vars_UE->frame_tx-1)&1023;
+  UE->dlsch[0][0]->harq_ack[ul_subframe2pdcch_alloc_subframe(&eNB->frame_parms,subframe)].send_harq_status = 1;
 
+  UE->ulsch_Msg3_active[eNB_id] = 0;
+  UE->ul_power_control_dedicated[eNB_id].accumulationEnabled=1;
+  /*
   generate_ue_ulsch_params_from_dci((void *)&UL_alloc_pdu,
                                     14,
-                                    ul_subframe2pdcch_alloc_subframe(&PHY_vars_UE->lte_frame_parms,subframe),
+                                    proc_rxtx->subframe_tx,
                                     format0,
-                                    PHY_vars_UE,
+                                    UE,
+				    proc_rxtx_ue,
                                     SI_RNTI,
                                     0,
                                     P_RNTI,
@@ -790,28 +754,26 @@ int main(int argc, char **argv)
 
   //  printf("RIV %d\n",UL_alloc_pdu.rballoc);
 
-  generate_eNB_ulsch_params_from_dci((void *)&UL_alloc_pdu,
+  generate_eNB_ulsch_params_from_dci(eNB,proc_rxtx,
+				     (void *)&UL_alloc_pdu,
                                      14,
-                                     ul_subframe2pdcch_alloc_subframe(&PHY_vars_eNB->lte_frame_parms,subframe),
                                      format0,
                                      0,
-                                     PHY_vars_eNB,
-                                     SI_RNTI,
+				     SI_RNTI,
                                      0,
                                      P_RNTI,
                                      CBA_RNTI,
                                      srs_flag);
+  */
 
   coded_bits_per_codeword = nb_rb * (12 * get_Qm_ul(mcs)) * nsymb;
 
-  if (cqi_flag == 1) coded_bits_per_codeword-=PHY_vars_UE->ulsch_ue[0]->O;
+  if (cqi_flag == 1) coded_bits_per_codeword-=UE->ulsch[0]->O;
 
   rate = (double)dlsch_tbs25[get_I_TBS(mcs)][nb_rb-1]/(coded_bits_per_codeword);
 
   printf("Rate = %f (mod %d), coded bits %d\n",rate,get_Qm_ul(mcs),coded_bits_per_codeword);
 
-
-  PHY_vars_UE->frame_tx = (PHY_vars_UE->frame_tx+1)&1023;
 
 
   for (ch_realization=0; ch_realization<n_ch_rlz; ch_realization++) {
@@ -830,7 +792,7 @@ int main(int argc, char **argv)
 
 
     //    if ((subframe>5) || (subframe < 4))
-    //      PHY_vars_UE->frame++;
+    //      UE->frame++;
 
     for (SNR=snr0; SNR<snr1; SNR+=input_snr_step) {
       errs[0]=0;
@@ -850,10 +812,10 @@ int main(int argc, char **argv)
       //randominit(0);
 
 
-      harq_pid = subframe2harq_pid(&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->frame_tx,subframe);
-      input_buffer_length = PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->TBS/8;
-      input_buffer = (unsigned char *)malloc(input_buffer_length+4);
-      //      printf("UL frame %d/subframe %d, harq_pid %d\n",PHY_vars_UE->frame,subframe,harq_pid);
+      harq_pid = subframe2harq_pid(&UE->frame_parms,proc_rxtx_ue->frame_tx,subframe);
+      input_buffer_length = UE->ulsch[0]->harq_processes[harq_pid]->TBS/8;
+      input_buffer = (unsigned char *)memalign(32,input_buffer_length+64);
+      //      printf("UL frame %d/subframe %d, harq_pid %d\n",UE->frame,subframe,harq_pid);
       if (input_fdUL == NULL) {
 
 
@@ -904,35 +866,35 @@ int main(int argc, char **argv)
 
       avg_iter = 0;
       iter_trials=0;
-      reset_meas(&PHY_vars_UE->phy_proc_tx);
-      reset_meas(&PHY_vars_UE->ofdm_mod_stats);
-      reset_meas(&PHY_vars_UE->ulsch_modulation_stats);
-      reset_meas(&PHY_vars_UE->ulsch_encoding_stats);
-      reset_meas(&PHY_vars_UE->ulsch_interleaving_stats);
-      reset_meas(&PHY_vars_UE->ulsch_rate_matching_stats);
-      reset_meas(&PHY_vars_UE->ulsch_turbo_encoding_stats);
-      reset_meas(&PHY_vars_UE->ulsch_segmentation_stats);
-      reset_meas(&PHY_vars_UE->ulsch_multiplexing_stats);
+      reset_meas(&UE->phy_proc_tx);
+      reset_meas(&UE->ofdm_mod_stats);
+      reset_meas(&UE->ulsch_modulation_stats);
+      reset_meas(&UE->ulsch_encoding_stats);
+      reset_meas(&UE->ulsch_interleaving_stats);
+      reset_meas(&UE->ulsch_rate_matching_stats);
+      reset_meas(&UE->ulsch_turbo_encoding_stats);
+      reset_meas(&UE->ulsch_segmentation_stats);
+      reset_meas(&UE->ulsch_multiplexing_stats);
 
-      reset_meas(&PHY_vars_eNB->phy_proc_rx);
-      reset_meas(&PHY_vars_eNB->ofdm_demod_stats);
-      reset_meas(&PHY_vars_eNB->ulsch_channel_estimation_stats);
-      reset_meas(&PHY_vars_eNB->ulsch_freq_offset_estimation_stats);
-      reset_meas(&PHY_vars_eNB->rx_dft_stats);
-      reset_meas(&PHY_vars_eNB->ulsch_decoding_stats);
-      reset_meas(&PHY_vars_eNB->ulsch_turbo_decoding_stats);
-      reset_meas(&PHY_vars_eNB->ulsch_deinterleaving_stats);
-      reset_meas(&PHY_vars_eNB->ulsch_demultiplexing_stats);
-      reset_meas(&PHY_vars_eNB->ulsch_rate_unmatching_stats);
-      reset_meas(&PHY_vars_eNB->ulsch_tc_init_stats);
-      reset_meas(&PHY_vars_eNB->ulsch_tc_alpha_stats);
-      reset_meas(&PHY_vars_eNB->ulsch_tc_beta_stats);
-      reset_meas(&PHY_vars_eNB->ulsch_tc_gamma_stats);
-      reset_meas(&PHY_vars_eNB->ulsch_tc_ext_stats);
-      reset_meas(&PHY_vars_eNB->ulsch_tc_intl1_stats);
-      reset_meas(&PHY_vars_eNB->ulsch_tc_intl2_stats);
+      reset_meas(&eNB->phy_proc_rx);
+      reset_meas(&eNB->ofdm_demod_stats);
+      reset_meas(&eNB->ulsch_channel_estimation_stats);
+      reset_meas(&eNB->ulsch_freq_offset_estimation_stats);
+      reset_meas(&eNB->rx_dft_stats);
+      reset_meas(&eNB->ulsch_decoding_stats);
+      reset_meas(&eNB->ulsch_turbo_decoding_stats);
+      reset_meas(&eNB->ulsch_deinterleaving_stats);
+      reset_meas(&eNB->ulsch_demultiplexing_stats);
+      reset_meas(&eNB->ulsch_rate_unmatching_stats);
+      reset_meas(&eNB->ulsch_tc_init_stats);
+      reset_meas(&eNB->ulsch_tc_alpha_stats);
+      reset_meas(&eNB->ulsch_tc_beta_stats);
+      reset_meas(&eNB->ulsch_tc_gamma_stats);
+      reset_meas(&eNB->ulsch_tc_ext_stats);
+      reset_meas(&eNB->ulsch_tc_intl1_stats);
+      reset_meas(&eNB->ulsch_tc_intl2_stats);
 
-      // initialization
+      // initialization 
       struct list time_vector_tx;
       initialize(&time_vector_tx);
       struct list time_vector_tx_ifft;
@@ -951,32 +913,50 @@ int main(int argc, char **argv)
       struct list time_vector_rx_dec;
       initialize(&time_vector_rx_dec);
 
+      ndi=0;
       for (trials = 0; trials<n_frames; trials++) {
         //      printf("*");
-        //        PHY_vars_UE->frame++;
-        //        PHY_vars_eNB->frame++;
-
+        //        UE->frame++;
+        //        eNB->frame++;
+	ndi = (1-ndi);
         fflush(stdout);
         round=0;
 
         while (round < 4) {
-          PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->round=round;
-          PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->round=round;
-          //  printf("Trial %d : Round %d ",trials,round);
+          eNB->ulsch[0]->harq_processes[harq_pid]->round=round;
+          UE->ulsch[0]->harq_processes[harq_pid]->round=round;
+	  //	  printf("Trial %d : Round %d (subframe %d, frame %d)\n",trials,round,proc_rxtx_ue->subframe_rx,proc_rxtx_ue->frame_rx);
           round_trials[round]++;
 
-          if (round == 0) {
-            //PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Ndi = 1;
-            PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->rvidx = round>>1;
-            //PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->Ndi = 1;
-            PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->rvidx = round>>1;
-          } else {
-            //PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Ndi = 0;
-            PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->rvidx = round>>1;
-            //PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->Ndi = 0;
-            PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->rvidx = round>>1;
-          }
 
+	  fill_ulsch_dci(eNB,(void*)&UL_alloc_pdu,first_rb,nb_rb,mcs,ndi,cqi_flag);
+
+	  UE->ulsch_Msg3_active[eNB_id] = 0;
+	  UE->ul_power_control_dedicated[eNB_id].accumulationEnabled=1;
+	  generate_ue_ulsch_params_from_dci((void *)&UL_alloc_pdu,
+					    14,
+					    proc_rxtx->subframe_tx,
+					    format0,
+					    UE,
+					    proc_rxtx_ue,
+					    SI_RNTI,
+					    0,
+					    P_RNTI,
+					    CBA_RNTI,
+					    0,
+					    srs_flag);
+
+	  generate_eNB_ulsch_params_from_dci(eNB,proc_rxtx,
+					     (void *)&UL_alloc_pdu,
+					     14,
+					     format0,
+					     0,
+					     SI_RNTI,
+					     0,
+					     P_RNTI,
+					     CBA_RNTI,
+					     srs_flag);
+	  eNB->ulsch[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
 
           /////////////////////
           if (abstx) {
@@ -996,39 +976,37 @@ int main(int argc, char **argv)
 
           if (input_fdUL == NULL) {
 
-            start_meas(&PHY_vars_UE->phy_proc_tx);
+	    eNB->proc.frame_rx = 1;
+	    eNB->proc.subframe_rx = subframe;
+	    proc_rxtx_ue->frame_tx = proc_rxtx->frame_rx;
+	    proc_rxtx_ue->frame_rx = proc_rxtx->frame_tx;
+	    proc_rxtx_ue->subframe_tx = proc_rxtx->subframe_rx;
+	    proc_rxtx_ue->subframe_rx = proc_rxtx->subframe_tx;
 
-#ifdef OFDMA_ULSCH
+	    phy_procedures_UE_TX(UE,proc_rxtx_ue,0,0,normal_txrx,no_relay);
 
+	    /*
             if (srs_flag)
-              generate_srs_tx(PHY_vars_UE,0,AMP,subframe);
+              generate_srs_tx(UE,0,AMP,subframe);
 
-            generate_drs_pusch(PHY_vars_UE,0,AMP,subframe,first_rb,nb_rb,0);
-
-#else
-
-            if (srs_flag)
-              generate_srs_tx(PHY_vars_UE,0,AMP,subframe);
-
-            generate_drs_pusch(PHY_vars_UE,0,
+            generate_drs_pusch(UE,proc_rxtx_ue,0,
                                AMP,subframe,
-                               PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->first_rb,
-                               PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->nb_rb,
+                               UE->ulsch[0]->harq_processes[harq_pid]->first_rb,
+                               UE->ulsch[0]->harq_processes[harq_pid]->nb_rb,
                                0);
-#endif
 
             if ((cqi_flag == 1) && (n_frames == 1) ) {
-              printf("CQI information (O %d) %d %d\n",PHY_vars_UE->ulsch_ue[0]->O,
-                     PHY_vars_UE->ulsch_ue[0]->o[0],PHY_vars_UE->ulsch_ue[0]->o[1]);
-              print_CQI(PHY_vars_UE->ulsch_ue[0]->o,PHY_vars_UE->ulsch_ue[0]->uci_format,PHY_vars_UE->lte_frame_parms.N_RB_DL,0);
+              printf("CQI information (O %d) %d %d\n",UE->ulsch[0]->O,
+                     UE->ulsch[0]->o[0],UE->ulsch[0]->o[1]);
+              print_CQI(UE->ulsch[0]->o,UE->ulsch[0]->uci_format,UE->frame_parms.N_RB_DL,0);
             }
 
-            PHY_vars_UE->ulsch_ue[0]->o_ACK[0] = taus()&1;
+            UE->ulsch[0]->o_ACK[0] = taus()&1;
 
-            start_meas(&PHY_vars_UE->ulsch_encoding_stats);
+            start_meas(&UE->ulsch_encoding_stats);
 
             if (ulsch_encoding(input_buffer,
-                               PHY_vars_UE,
+                               UE,
                                harq_pid,
                                eNB_id,
                                2, // transmission mode
@@ -1039,101 +1017,96 @@ int main(int argc, char **argv)
               exit(-1);
             }
 
-            stop_meas(&PHY_vars_UE->ulsch_encoding_stats);
+            stop_meas(&UE->ulsch_encoding_stats);
 
-            start_meas(&PHY_vars_UE->ulsch_modulation_stats);
-#ifdef OFDMA_ULSCH
-            ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,AMP,
-                             PHY_vars_UE->frame_tx,subframe,&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->ulsch_ue[0]);
-#else
-            //    printf("Generating PUSCH in subframe %d with amp %d, nb_rb %d\n",subframe,AMP,nb_rb);
-            ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,AMP,
-                             PHY_vars_UE->frame_tx,subframe,&PHY_vars_UE->lte_frame_parms,
-                             PHY_vars_UE->ulsch_ue[0]);
-#endif
-            stop_meas(&PHY_vars_UE->ulsch_modulation_stats);
+            start_meas(&UE->ulsch_modulation_stats);
+            ulsch_modulation(UE->common_vars.txdataF,AMP,
+                             proc_rxtx_ue->frame_tx,subframe,&UE->frame_parms,
+                             UE->ulsch[0]);
+            stop_meas(&UE->ulsch_modulation_stats);
+	    */
 
-            if (n_frames==1) {
-              write_output("txsigF0UL.m","txsF0", &PHY_vars_UE->lte_ue_common_vars.txdataF[0][PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size*nsymb*subframe],PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size*nsymb,1,
-                           1);
-              //write_output("txsigF1.m","txsF1", PHY_vars_UE->lte_ue_common_vars.txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-            }
 
-            tx_lev=0;
-            start_meas(&PHY_vars_UE->ofdm_mod_stats);
 
-            for (aa=0; aa<1; aa++) {
+
+	    /*
+	    for (aa=0; aa<1; aa++) {
               if (frame_parms->Ncp == EXTENDED)
-                PHY_ofdm_mod(&PHY_vars_UE->lte_ue_common_vars.txdataF[aa][subframe*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],        // input
-                             &txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],         // output
-                             PHY_vars_UE->lte_frame_parms.ofdm_symbol_size,
+                PHY_ofdm_mod(&UE->common_vars.txdataF[aa][subframe*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],        // input
+                             &txdata[aa][eNB->frame_parms.samples_per_tti*subframe],         // output
+                             UE->frame_parms.ofdm_symbol_size,
                              nsymb,                 // number of symbols
-                             PHY_vars_UE->lte_frame_parms.nb_prefix_samples,               // number of prefix samples
+                             UE->frame_parms.nb_prefix_samples,               // number of prefix samples
                              CYCLIC_PREFIX);
               else
-                normal_prefix_mod(&PHY_vars_UE->lte_ue_common_vars.txdataF[aa][subframe*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],
-                                  &txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],
+                normal_prefix_mod(&UE->common_vars.txdataF[aa][subframe*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],
+                                  &txdata[aa][eNB->frame_parms.samples_per_tti*subframe],
                                   nsymb,
                                   frame_parms);
 
-#ifndef OFDMA_ULSCH
-              apply_7_5_kHz(PHY_vars_UE,PHY_vars_UE->lte_ue_common_vars.txdata[aa],subframe<<1);
-              apply_7_5_kHz(PHY_vars_UE,PHY_vars_UE->lte_ue_common_vars.txdata[aa],1+(subframe<<1));
-#endif
 
-              stop_meas(&PHY_vars_UE->ofdm_mod_stats);
-              stop_meas(&PHY_vars_UE->phy_proc_tx);
-              tx_lev += signal_energy(&txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],
-                                      PHY_vars_eNB->lte_frame_parms.samples_per_tti);
+              apply_7_5_kHz(UE,UE->common_vars.txdata[aa],subframe<<1);
+              apply_7_5_kHz(UE,UE->common_vars.txdata[aa],1+(subframe<<1));
 
+*/
+
+	    tx_lev = signal_energy(&UE->common_vars.txdata[0][eNB->frame_parms.samples_per_tti*subframe],
+				   eNB->frame_parms.samples_per_tti);
+	    
+	    
+            if (n_frames==1) {
+              write_output("txsigF0UL.m","txsF0", &UE->common_vars.txdataF[0][eNB->frame_parms.ofdm_symbol_size*nsymb*subframe],eNB->frame_parms.ofdm_symbol_size*nsymb,1,
+                           1);
+              //write_output("txsigF1.m","txsF1", UE->common_vars.txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
             }
-          }  // input_fd == NULL
-
-
+	    
+	  }  // input_fd == NULL
+	  
           tx_lev_dB = (unsigned int) dB_fixed_times10(tx_lev);
 
           if (n_frames==1) {
-            write_output("txsig0UL.m","txs0", &txdata[0][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],2*frame_parms->samples_per_tti,1,1);
-            //        write_output("txsig1UL.m","txs1", &txdata[1][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],2*frame_parms->samples_per_tti,1,1);
+            write_output("txsig0UL.m","txs0", &txdata[0][eNB->frame_parms.samples_per_tti*subframe],2*frame_parms->samples_per_tti,1,1);
+            //        write_output("txsig1UL.m","txs1", &txdata[1][eNB->frame_parms.samples_per_tti*subframe],2*frame_parms->samples_per_tti,1,1);
           }
 
           //AWGN
           //Set target wideband RX noise level to N0
-          sigma2_dB = N0;//10*log10((double)tx_lev)  +10*log10(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size/(PHY_vars_UE->lte_frame_parms.N_RB_DL*12)) - SNR;
+          sigma2_dB = N0;//10*log10((double)tx_lev)  +10*log10(UE->frame_parms.ofdm_symbol_size/(UE->frame_parms.N_RB_DL*12)) - SNR;
           sigma2 = pow(10,sigma2_dB/10);
 
           // compute tx_gain to achieve target SNR (per resource element!)
-          tx_gain = sqrt(pow(10.0,.1*(N0+SNR))*(nb_rb*12/(double)PHY_vars_UE->lte_frame_parms.ofdm_symbol_size)/(double)tx_lev);
+          tx_gain = sqrt(pow(10.0,.1*(N0+SNR))*(nb_rb*12/(double)UE->frame_parms.ofdm_symbol_size)/(double)tx_lev);
 
-          if (n_frames==1)
+
+	  if (n_frames==1)
             printf("tx_lev = %d (%d.%d dB,%f), gain %f\n",tx_lev,tx_lev_dB/10,tx_lev_dB,10*log10((double)tx_lev),10*log10(tx_gain));
 
 
           // fill measurement symbol (19) with noise
           for (i=0; i<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
-            for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) {
+            for (aa=0; aa<eNB->frame_parms.nb_antennas_rx; aa++) {
 
-              ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][(frame_parms->samples_per_tti<<1) -frame_parms->ofdm_symbol_size])[2*i] = (short) ((sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-              ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][(frame_parms->samples_per_tti<<1) -frame_parms->ofdm_symbol_size])[2*i+1] = (short) ((sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+              ((short*) &eNB->common_vars.rxdata[0][aa][(frame_parms->samples_per_tti<<1) -frame_parms->ofdm_symbol_size])[2*i] = (short) ((sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+              ((short*) &eNB->common_vars.rxdata[0][aa][(frame_parms->samples_per_tti<<1) -frame_parms->ofdm_symbol_size])[2*i+1] = (short) ((sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
             }
           }
 
           // multipath channel
 
-          for (i=0; i<PHY_vars_eNB->lte_frame_parms.samples_per_tti; i++) {
+          for (i=0; i<eNB->frame_parms.samples_per_tti; i++) {
             for (aa=0; aa<1; aa++) {
-              s_re[aa][i] = ((double)(((short *)&txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe]))[(i<<1)]);
-              s_im[aa][i] = ((double)(((short *)&txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe]))[(i<<1)+1]);
+              s_re[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][eNB->frame_parms.samples_per_tti*subframe]))[(i<<1)]);
+              s_im[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][eNB->frame_parms.samples_per_tti*subframe]))[(i<<1)+1]);
             }
           }
 
           if (awgn_flag == 0) {
             if (UE2eNB->max_Doppler == 0) {
               multipath_channel(UE2eNB,s_re,s_im,r_re,r_im,
-                                PHY_vars_eNB->lte_frame_parms.samples_per_tti,hold_channel);
+                                eNB->frame_parms.samples_per_tti,hold_channel);
             } else {
               multipath_tv_channel(UE2eNB,s_re,s_im,r_re,r_im,
-                                   2*PHY_vars_eNB->lte_frame_parms.samples_per_tti,hold_channel);
+                                   2*eNB->frame_parms.samples_per_tti,hold_channel);
             }
           }
 
@@ -1169,111 +1142,49 @@ int main(int argc, char **argv)
           if (n_frames==1)
             printf("Sigma2 %f (sigma2_dB %f), tx_gain %f (%f dB)\n",sigma2,sigma2_dB,tx_gain,20*log10(tx_gain));
 
-          for (i=0; i<PHY_vars_eNB->lte_frame_parms.samples_per_tti; i++) {
-            for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) {
-              ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe])[2*i] = (short) ((tx_gain*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-              ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe])[2*i+1] = (short) ((tx_gain*r_im[aa][i]) + (iqim*tx_gain*r_re[aa][i]) + sqrt(
+          for (i=0; i<eNB->frame_parms.samples_per_tti; i++) {
+            for (aa=0; aa<eNB->frame_parms.nb_antennas_rx; aa++) {
+              ((short*) &eNB->common_vars.rxdata[0][aa][eNB->frame_parms.samples_per_tti*subframe])[2*i] = (short) ((tx_gain*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+              ((short*) &eNB->common_vars.rxdata[0][aa][eNB->frame_parms.samples_per_tti*subframe])[2*i+1] = (short) ((tx_gain*r_im[aa][i]) + (iqim*tx_gain*r_re[aa][i]) + sqrt(
                     sigma2/2)*gaussdouble(0.0,1.0));
             }
           }
 
           if (n_frames==1) {
             printf("rx_level Null symbol %f\n",10*log10((double)signal_energy((int*)
-                   &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][(PHY_vars_eNB->lte_frame_parms.samples_per_tti<<1) -PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
-            printf("rx_level data symbol %f\n",10*log10(signal_energy((int*)&PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][160+(PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe)],
+                   &eNB->common_vars.rxdata[0][0][(eNB->frame_parms.samples_per_tti<<1) -eNB->frame_parms.ofdm_symbol_size],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
+            printf("rx_level data symbol %f\n",10*log10(signal_energy((int*)&eNB->common_vars.rxdata[0][0][160+(eNB->frame_parms.samples_per_tti*subframe)],
                    OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
           }
 
-          SNRmeas = 10*log10(((double)signal_energy((int*)&PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][160+(PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe)],
+          SNRmeas = 10*log10(((double)signal_energy((int*)&eNB->common_vars.rxdata[0][0][160+(eNB->frame_parms.samples_per_tti*subframe)],
                               OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2))/((double)signal_energy((int*)
-                                  &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][(PHY_vars_eNB->lte_frame_parms.samples_per_tti<<1) -PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],
-                                  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)) - 1)+10*log10(PHY_vars_eNB->lte_frame_parms.N_RB_UL/nb_rb);
+                                  &eNB->common_vars.rxdata[0][0][(eNB->frame_parms.samples_per_tti<<1) -eNB->frame_parms.ofdm_symbol_size],
+                                  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)) - 1)+10*log10(eNB->frame_parms.N_RB_UL/nb_rb);
 
           if (n_frames==1) {
             printf("SNRmeas %f\n",SNRmeas);
 
-            //    write_output("rxsig0UL.m","rxs0", &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],PHY_vars_eNB->lte_frame_parms.samples_per_tti,1,1);
-            //write_output("rxsig1UL.m","rxs1", &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],PHY_vars_eNB->lte_frame_parms.samples_per_tti,1,1);
+            //    write_output("rxsig0UL.m","rxs0", &eNB->common_vars.rxdata[0][0][eNB->frame_parms.samples_per_tti*subframe],eNB->frame_parms.samples_per_tti,1,1);
+            //write_output("rxsig1UL.m","rxs1", &eNB->common_vars.rxdata[0][0][eNB->frame_parms.samples_per_tti*subframe],eNB->frame_parms.samples_per_tti,1,1);
           }
 
-#ifndef OFDMA_ULSCH
-          remove_7_5_kHz(PHY_vars_eNB,subframe<<1);
-          remove_7_5_kHz(PHY_vars_eNB,1+(subframe<<1));
-          //  write_output("rxsig0_75.m","rxs0_75", &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],PHY_vars_eNB->lte_frame_parms.samples_per_tti,1,1);
-          //  write_output("rxsig1_75.m","rxs1_75", &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],PHY_vars_eNB->lte_frame_parms.samples_per_tti,1,1);
 
-#endif
+	  eNB->fep = (parallel_flag == 1) ? eNB_fep_full_2thread        : eNB_fep_full;
+	  eNB->td  = (parallel_flag == 1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+	  eNB->do_prach = NULL;
 
-          start_meas(&PHY_vars_eNB->phy_proc_rx);
-          start_meas(&PHY_vars_eNB->ofdm_demod_stats);
-          lte_eNB_I0_measurements(PHY_vars_eNB,
-				  subframe,
-                                  0,
-                                  1);
+	  phy_procedures_eNB_common_RX(eNB);
+	  phy_procedures_eNB_uespec_RX(eNB,proc_rxtx,no_relay);
 
-          for (l=subframe*PHY_vars_UE->lte_frame_parms.symbols_per_tti; l<((1+subframe)*PHY_vars_UE->lte_frame_parms.symbols_per_tti); l++) {
-
-            slot_fep_ul(&PHY_vars_eNB->lte_frame_parms,
-                        &PHY_vars_eNB->lte_eNB_common_vars,
-                        l%(PHY_vars_eNB->lte_frame_parms.symbols_per_tti/2),
-                        l/(PHY_vars_eNB->lte_frame_parms.symbols_per_tti/2),
-                        0,
-                        0);
-          }
-
-          stop_meas(&PHY_vars_eNB->ofdm_demod_stats);
-
-          PHY_vars_eNB->ulsch_eNB[0]->cyclicShift = cyclic_shift;// cyclic shift for DMRS
-
-	  /*
-          if(abstx) {
-            namepointer_log2 = &flogeren_name;
-            namepointer_chMag = &fmageren_name;
-            //namepointer_txlev = &ftxlev;
-          }
-	  */
-
-          start_meas(&PHY_vars_eNB->ulsch_demodulation_stats);
-          rx_ulsch(PHY_vars_eNB,
-                   subframe,
-                   0,  // this is the effective sector id
-                   0,  // this is the UE_id
-                   PHY_vars_eNB->ulsch_eNB,
-                   cooperation_flag);
-          stop_meas(&PHY_vars_eNB->ulsch_demodulation_stats);
-
-	  /*
-          if(abstx) {
-            namepointer_chMag = NULL;
-
-            if(trials==0 && round==0 && SNR==snr0) {
-              char* namepointer ;
-              namepointer = &fperen_name;
-              write_output(namepointer, "xxx" ,PHY_vars_eNB->lte_eNB_pusch_vars[0]->drs_ch_estimates[0][0],300,1,10);
-              namepointer = NULL ;
-              // flagMag = 1;
-            }
-          }
-	  */
-
-          start_meas(&PHY_vars_eNB->ulsch_decoding_stats);
-
-          ret= ulsch_decoding(PHY_vars_eNB,
-                              0, // UE_id
-                              subframe,
-                              control_only_flag,
-                              1,  // Nbundled
-                              llr8_flag);
-          stop_meas(&PHY_vars_eNB->ulsch_decoding_stats);
-          stop_meas(&PHY_vars_eNB->phy_proc_rx);
 
           if (cqi_flag > 0) {
             cqi_error = 0;
 
-            if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Or1 < 32) {
+            if (eNB->ulsch[0]->harq_processes[harq_pid]->Or1 < 32) {
               for (i=2; i<4; i++) {
-                //                printf("cqi %d : %d (%d)\n",i,PHY_vars_eNB->ulsch_eNB[0]->o[i],PHY_vars_UE->ulsch_ue[0]->o[i]);
-                if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o[i] != PHY_vars_UE->ulsch_ue[0]->o[i])
+                //                printf("cqi %d : %d (%d)\n",i,eNB->ulsch[0]->o[i],UE->ulsch[0]->o[i]);
+                if (eNB->ulsch[0]->harq_processes[harq_pid]->o[i] != UE->ulsch[0]->o[i])
                   cqi_error = 1;
               }
             } else {
@@ -1283,62 +1194,64 @@ int main(int argc, char **argv)
             if (cqi_error == 1) {
               cqi_errors++;
 
-              if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->cqi_crc_status == 1)
+              if (eNB->ulsch[0]->harq_processes[harq_pid]->cqi_crc_status == 1)
                 cqi_crc_falsepositives++;
             } else {
-              if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->cqi_crc_status == 0)
+              if (eNB->ulsch[0]->harq_processes[harq_pid]->cqi_crc_status == 0)
                 cqi_crc_falsenegatives++;
             }
           }
 
-          if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o_ACK[0] != PHY_vars_UE->ulsch_ue[0]->o_ACK[0])
+          if (eNB->ulsch[0]->harq_processes[harq_pid]->o_ACK[0] != UE->ulsch[0]->o_ACK[0])
             ack_errors++;
 
           //    printf("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
 
+	  
+	  //          if (ret <= eNB->ulsch[0]->max_turbo_iterations) {
+	  
+	  if (eNB->ulsch[0]->harq_processes[harq_pid]->round == 0) {
 
-          if (ret <= PHY_vars_eNB->ulsch_eNB[0]->max_turbo_iterations) {
-
-            avg_iter += ret;
-            iter_trials++;
+	    //  avg_iter += ret;
+	    iter_trials++;
 
             if (n_frames==1) {
-              printf("No ULSCH errors found, o_ACK[0]= %d, cqi_crc_status=%d\n",PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o_ACK[0],PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->cqi_crc_status);
+              printf("No ULSCH errors found, o_ACK[0]= %d, cqi_crc_status=%d\n",eNB->ulsch[0]->harq_processes[harq_pid]->o_ACK[0],eNB->ulsch[0]->harq_processes[harq_pid]->cqi_crc_status);
 
-              if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->cqi_crc_status==1)
-                print_CQI(PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o,
-                          PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->uci_format,0,PHY_vars_eNB->lte_frame_parms.N_RB_DL);
+              if (eNB->ulsch[0]->harq_processes[harq_pid]->cqi_crc_status==1)
+                print_CQI(eNB->ulsch[0]->harq_processes[harq_pid]->o,
+                          eNB->ulsch[0]->harq_processes[harq_pid]->uci_format,0,eNB->frame_parms.N_RB_DL);
 
-              dump_ulsch(PHY_vars_eNB,subframe,0);
+              dump_ulsch(eNB,proc_rxtx,0);
               exit(-1);
             }
 
             round=5;
           } else {
-            avg_iter += ret-1;
+	    //            avg_iter += ret-1;
             iter_trials++;
 
             errs[round]++;
 
             if (n_frames==1) {
-              printf("ULSCH errors found o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o_ACK[0]);
+              printf("ULSCH errors found o_ACK[0]= %d\n",eNB->ulsch[0]->harq_processes[harq_pid]->o_ACK[0]);
 
-              for (s=0; s<PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->C; s++) {
-                if (s<PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Cminus)
-                  Kr = PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Kminus;
+              for (s=0; s<eNB->ulsch[0]->harq_processes[harq_pid]->C; s++) {
+                if (s<eNB->ulsch[0]->harq_processes[harq_pid]->Cminus)
+                  Kr = eNB->ulsch[0]->harq_processes[harq_pid]->Kminus;
                 else
-                  Kr = PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Kplus;
+                  Kr = eNB->ulsch[0]->harq_processes[harq_pid]->Kplus;
 
                 Kr_bytes = Kr>>3;
 
                 printf("Decoded_output (Segment %d):\n",s);
 
                 for (i=0; i<Kr_bytes; i++)
-                  printf("%d : %x (%x)\n",i,PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->c[s][i],
-                         PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->c[s][i]^PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->c[s][i]);
+                  printf("%d : %x (%x)\n",i,eNB->ulsch[0]->harq_processes[harq_pid]->c[s][i],
+                         eNB->ulsch[0]->harq_processes[harq_pid]->c[s][i]^UE->ulsch[0]->harq_processes[harq_pid]->c[s][i]);
               }
 
-              dump_ulsch(PHY_vars_eNB,subframe,0);
+              dump_ulsch(eNB,proc_rxtx,0);
               exit(-1);
             }
 
@@ -1349,6 +1262,8 @@ int main(int argc, char **argv)
               printf("ULSCH in error in round %d\n",round);
             }
           }  // ulsch error
+	  
+
         } // round
 
         //      printf("\n");
@@ -1356,20 +1271,20 @@ int main(int argc, char **argv)
           break;
 
 	if (xforms==1)
-	  phy_scope_eNB(form_enb,PHY_vars_eNB,0);
+	  phy_scope_eNB(form_enb,eNB,0);
 
         /*calculate the total processing time for each packet, get the max, min, and number of packets that exceed t>3000us*/
 
-        double t_tx = (double)PHY_vars_UE->phy_proc_tx.p_time/cpu_freq_GHz/1000.0;
-        double t_tx_ifft = (double)PHY_vars_UE->ofdm_mod_stats.p_time/cpu_freq_GHz/1000.0;
-        double t_tx_mod = (double)PHY_vars_UE->ulsch_modulation_stats.p_time/cpu_freq_GHz/1000.0;
-        double t_tx_enc = (double)PHY_vars_UE->ulsch_encoding_stats.p_time/cpu_freq_GHz/1000.0;
+        double t_tx = (double)UE->phy_proc_tx.p_time/cpu_freq_GHz/1000.0;
+        double t_tx_ifft = (double)UE->ofdm_mod_stats.p_time/cpu_freq_GHz/1000.0;
+        double t_tx_mod = (double)UE->ulsch_modulation_stats.p_time/cpu_freq_GHz/1000.0;
+        double t_tx_enc = (double)UE->ulsch_encoding_stats.p_time/cpu_freq_GHz/1000.0;
 
 
-        double t_rx = (double)PHY_vars_eNB->phy_proc_rx.p_time/cpu_freq_GHz/1000.0;
-        double t_rx_fft = (double)PHY_vars_eNB->ofdm_demod_stats.p_time/cpu_freq_GHz/1000.0;
-        double t_rx_demod = (double)PHY_vars_eNB->ulsch_demodulation_stats.p_time/cpu_freq_GHz/1000.0;
-        double t_rx_dec = (double)PHY_vars_eNB->ulsch_decoding_stats.p_time/cpu_freq_GHz/1000.0;
+        double t_rx = (double)eNB->phy_proc_rx.p_time/cpu_freq_GHz/1000.0;
+        double t_rx_fft = (double)eNB->ofdm_demod_stats.p_time/cpu_freq_GHz/1000.0;
+        double t_rx_demod = (double)eNB->ulsch_demodulation_stats.p_time/cpu_freq_GHz/1000.0;
+        double t_rx_dec = (double)eNB->ulsch_decoding_stats.p_time/cpu_freq_GHz/1000.0;
 
         if (t_tx > t_tx_max)
           t_tx_max = t_tx;
@@ -1492,12 +1407,12 @@ int main(int argc, char **argv)
              tx_lev_dB,
              20*log10(tx_gain),
              (double)N0,
-             PHY_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dB,
-             get_hundred_times_delta_IF(PHY_vars_UE,eNB_id,harq_pid) ,
-             dB_fixed(PHY_vars_eNB->lte_eNB_pusch_vars[0]->ulsch_power[0]),
-             dB_fixed(PHY_vars_eNB->lte_eNB_pusch_vars[0]->ulsch_power[1]),
-             PHY_vars_eNB->PHY_measurements_eNB->n0_power_dB[0],
-             PHY_vars_eNB->PHY_measurements_eNB->n0_power_dB[1]);
+             eNB->measurements[0].n0_power_tot_dB,
+             get_hundred_times_delta_IF(UE,eNB_id,harq_pid) ,
+             dB_fixed(eNB->pusch_vars[0]->ulsch_power[0]),
+             dB_fixed(eNB->pusch_vars[0]->ulsch_power[1]),
+             eNB->measurements->n0_power_dB[0],
+             eNB->measurements->n0_power_dB[1]);
 
       effective_rate = ((double)(round_trials[0])/((double)round_trials[0] + round_trials[1] + round_trials[2] + round_trials[3]));
 
@@ -1519,7 +1434,7 @@ int main(int argc, char **argv)
              rate,
              rate*get_Qm_ul(mcs),
              (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/
-             (double)PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->TBS,
+             (double)eNB->ulsch[0]->harq_processes[harq_pid]->TBS,
              (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
 
       if (cqi_flag >0) {
@@ -1529,7 +1444,7 @@ int main(int argc, char **argv)
                cqi_crc_falsenegatives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
       }
 
-      if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o_ACK[0] > 0)
+      if (eNB->ulsch[0]->harq_processes[harq_pid]->o_ACK[0] > 0)
         printf("ACK/NAK errors %d/%d\n",ack_errors,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
 
 
@@ -1537,7 +1452,7 @@ int main(int argc, char **argv)
               SNR,
               mcs,
               nb_rb,
-              PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->TBS,
+              eNB->ulsch[0]->harq_processes[harq_pid]->TBS,
               rate,
               errs[0],
               round_trials[0],
@@ -1551,101 +1466,101 @@ int main(int argc, char **argv)
 
       if (dump_perf==1) {
         printf("UE TX function statistics (per 1ms subframe)\n\n");
-        std_phy_proc_tx = sqrt((double)PHY_vars_UE->phy_proc_tx.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                               2)/PHY_vars_UE->phy_proc_tx.trials - pow((double)PHY_vars_UE->phy_proc_tx.diff/PHY_vars_UE->phy_proc_tx.trials/cpu_freq_GHz/1000,2));
-        printf("Total PHY proc tx                 :%f us (%d trials)\n",(double)PHY_vars_UE->phy_proc_tx.diff/PHY_vars_UE->phy_proc_tx.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->phy_proc_tx.trials);
+        std_phy_proc_tx = sqrt((double)UE->phy_proc_tx.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
+                               2)/UE->phy_proc_tx.trials - pow((double)UE->phy_proc_tx.diff/UE->phy_proc_tx.trials/cpu_freq_GHz/1000,2));
+        printf("Total PHY proc tx                 :%f us (%d trials)\n",(double)UE->phy_proc_tx.diff/UE->phy_proc_tx.trials/cpu_freq_GHz/1000.0,UE->phy_proc_tx.trials);
         printf("|__ Statistics                         std: %f us max: %fus min: %fus median %fus q1 %fus q3 %fus n_dropped: %d packet \n",std_phy_proc_tx, t_tx_max, t_tx_min, tx_median, tx_q1, tx_q3,
                n_tx_dropped);
-        std_phy_proc_tx_ifft = sqrt((double)PHY_vars_UE->ofdm_mod_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                                    2)/PHY_vars_UE->ofdm_mod_stats.trials - pow((double)PHY_vars_UE->ofdm_mod_stats.diff/PHY_vars_UE->ofdm_mod_stats.trials/cpu_freq_GHz/1000,2));
-        printf("OFDM_mod time                     :%f us (%d trials)\n",(double)PHY_vars_UE->ofdm_mod_stats.diff/PHY_vars_UE->ofdm_mod_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->ofdm_mod_stats.trials);
+        std_phy_proc_tx_ifft = sqrt((double)UE->ofdm_mod_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
+                                    2)/UE->ofdm_mod_stats.trials - pow((double)UE->ofdm_mod_stats.diff/UE->ofdm_mod_stats.trials/cpu_freq_GHz/1000,2));
+        printf("OFDM_mod time                     :%f us (%d trials)\n",(double)UE->ofdm_mod_stats.diff/UE->ofdm_mod_stats.trials/cpu_freq_GHz/1000.0,UE->ofdm_mod_stats.trials);
         printf("|__ Statistics                         std: %f us median %fus q1 %fus q3 %fus \n",std_phy_proc_tx_ifft, tx_ifft_median, tx_ifft_q1, tx_ifft_q3);
-        std_phy_proc_tx_mod = sqrt((double)PHY_vars_UE->ulsch_modulation_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                                   2)/PHY_vars_UE->ulsch_modulation_stats.trials - pow((double)PHY_vars_UE->ulsch_modulation_stats.diff/PHY_vars_UE->ulsch_modulation_stats.trials/cpu_freq_GHz/1000,2));
-        printf("ULSCH modulation time             :%f us (%d trials)\n",(double)PHY_vars_UE->ulsch_modulation_stats.diff/PHY_vars_UE->ulsch_modulation_stats.trials/cpu_freq_GHz/1000.0,
-               PHY_vars_UE->ulsch_modulation_stats.trials);
+        std_phy_proc_tx_mod = sqrt((double)UE->ulsch_modulation_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
+                                   2)/UE->ulsch_modulation_stats.trials - pow((double)UE->ulsch_modulation_stats.diff/UE->ulsch_modulation_stats.trials/cpu_freq_GHz/1000,2));
+        printf("ULSCH modulation time             :%f us (%d trials)\n",(double)UE->ulsch_modulation_stats.diff/UE->ulsch_modulation_stats.trials/cpu_freq_GHz/1000.0,
+               UE->ulsch_modulation_stats.trials);
         printf("|__ Statistics                         std: %f us median %fus q1 %fus q3 %fus \n",std_phy_proc_tx_mod, tx_mod_median, tx_mod_q1, tx_mod_q3);
-        std_phy_proc_tx_enc = sqrt((double)PHY_vars_UE->ulsch_encoding_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                                   2)/PHY_vars_UE->ulsch_encoding_stats.trials - pow((double)PHY_vars_UE->ulsch_encoding_stats.diff/PHY_vars_UE->ulsch_encoding_stats.trials/cpu_freq_GHz/1000,2));
-        printf("ULSCH encoding time               :%f us (%d trials)\n",(double)PHY_vars_UE->ulsch_encoding_stats.diff/PHY_vars_UE->ulsch_encoding_stats.trials/cpu_freq_GHz/1000.0,
-               PHY_vars_UE->ulsch_encoding_stats.trials);
+        std_phy_proc_tx_enc = sqrt((double)UE->ulsch_encoding_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
+                                   2)/UE->ulsch_encoding_stats.trials - pow((double)UE->ulsch_encoding_stats.diff/UE->ulsch_encoding_stats.trials/cpu_freq_GHz/1000,2));
+        printf("ULSCH encoding time               :%f us (%d trials)\n",(double)UE->ulsch_encoding_stats.diff/UE->ulsch_encoding_stats.trials/cpu_freq_GHz/1000.0,
+               UE->ulsch_encoding_stats.trials);
         printf("|__ Statistics                         std: %f us median %fus q1 %fus q3 %fus \n",std_phy_proc_tx_enc, tx_enc_median, tx_enc_q1, tx_enc_q3);
-        printf("|__ ULSCH segmentation time           :%f us (%d trials)\n",(double)PHY_vars_UE->ulsch_segmentation_stats.diff/PHY_vars_UE->ulsch_segmentation_stats.trials/cpu_freq_GHz/1000.0,
-               PHY_vars_UE->ulsch_segmentation_stats.trials);
+        printf("|__ ULSCH segmentation time           :%f us (%d trials)\n",(double)UE->ulsch_segmentation_stats.diff/UE->ulsch_segmentation_stats.trials/cpu_freq_GHz/1000.0,
+               UE->ulsch_segmentation_stats.trials);
         printf("|__ ULSCH turbo encoding time         :%f us (%d trials)\n",
-               ((double)PHY_vars_UE->ulsch_turbo_encoding_stats.trials/PHY_vars_UE->ulsch_encoding_stats.trials)*(double)
-               PHY_vars_UE->ulsch_turbo_encoding_stats.diff/PHY_vars_UE->ulsch_turbo_encoding_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->ulsch_turbo_encoding_stats.trials);
+               ((double)UE->ulsch_turbo_encoding_stats.trials/UE->ulsch_encoding_stats.trials)*(double)
+               UE->ulsch_turbo_encoding_stats.diff/UE->ulsch_turbo_encoding_stats.trials/cpu_freq_GHz/1000.0,UE->ulsch_turbo_encoding_stats.trials);
         printf("|__ ULSCH rate-matching time          :%f us (%d trials)\n",
-               ((double)PHY_vars_UE->ulsch_rate_matching_stats.trials/PHY_vars_UE->ulsch_encoding_stats.trials)*(double)
-               PHY_vars_UE->ulsch_rate_matching_stats.diff/PHY_vars_UE->ulsch_rate_matching_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->ulsch_rate_matching_stats.trials);
+               ((double)UE->ulsch_rate_matching_stats.trials/UE->ulsch_encoding_stats.trials)*(double)
+               UE->ulsch_rate_matching_stats.diff/UE->ulsch_rate_matching_stats.trials/cpu_freq_GHz/1000.0,UE->ulsch_rate_matching_stats.trials);
         printf("|__ ULSCH sub-block interleaving time :%f us (%d trials)\n",
-               ((double)PHY_vars_UE->ulsch_interleaving_stats.trials/PHY_vars_UE->ulsch_encoding_stats.trials)*(double)
-               PHY_vars_UE->ulsch_interleaving_stats.diff/PHY_vars_UE->ulsch_interleaving_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->ulsch_interleaving_stats.trials);
+               ((double)UE->ulsch_interleaving_stats.trials/UE->ulsch_encoding_stats.trials)*(double)
+               UE->ulsch_interleaving_stats.diff/UE->ulsch_interleaving_stats.trials/cpu_freq_GHz/1000.0,UE->ulsch_interleaving_stats.trials);
         printf("|__ ULSCH multiplexing time           :%f us (%d trials)\n",
-               ((double)PHY_vars_UE->ulsch_multiplexing_stats.trials/PHY_vars_UE->ulsch_encoding_stats.trials)*(double)
-               PHY_vars_UE->ulsch_multiplexing_stats.diff/PHY_vars_UE->ulsch_multiplexing_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->ulsch_multiplexing_stats.trials);
+               ((double)UE->ulsch_multiplexing_stats.trials/UE->ulsch_encoding_stats.trials)*(double)
+               UE->ulsch_multiplexing_stats.diff/UE->ulsch_multiplexing_stats.trials/cpu_freq_GHz/1000.0,UE->ulsch_multiplexing_stats.trials);
 
         printf("\n\neNB RX function statistics (per 1ms subframe)\n\n");
-        std_phy_proc_rx = sqrt((double)PHY_vars_eNB->phy_proc_rx.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                               2)/PHY_vars_eNB->phy_proc_rx.trials - pow((double)PHY_vars_eNB->phy_proc_rx.diff/PHY_vars_eNB->phy_proc_rx.trials/cpu_freq_GHz/1000,2));
-        printf("Total PHY proc rx                  :%f us (%d trials)\n",(double)PHY_vars_eNB->phy_proc_rx.diff/PHY_vars_eNB->phy_proc_rx.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->phy_proc_rx.trials);
+        std_phy_proc_rx = sqrt((double)eNB->phy_proc_rx.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
+                               2)/eNB->phy_proc_rx.trials - pow((double)eNB->phy_proc_rx.diff/eNB->phy_proc_rx.trials/cpu_freq_GHz/1000,2));
+        printf("Total PHY proc rx                  :%f us (%d trials)\n",(double)eNB->phy_proc_rx.diff/eNB->phy_proc_rx.trials/cpu_freq_GHz/1000.0,eNB->phy_proc_rx.trials);
         printf("|__ Statistcs                           std: %fus max: %fus min: %fus median %fus q1 %fus q3 %fus n_dropped: %d packet \n", std_phy_proc_rx, t_rx_max, t_rx_min, rx_median, rx_q1, rx_q3,
                n_rx_dropped);
-        std_phy_proc_rx_fft = sqrt((double)PHY_vars_eNB->ofdm_demod_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                                   2)/PHY_vars_eNB->ofdm_demod_stats.trials - pow((double)PHY_vars_eNB->ofdm_demod_stats.diff/PHY_vars_eNB->ofdm_demod_stats.trials/cpu_freq_GHz/1000,2));
-        printf("OFDM_demod time                   :%f us (%d trials)\n",(double)PHY_vars_eNB->ofdm_demod_stats.diff/PHY_vars_eNB->ofdm_demod_stats.trials/cpu_freq_GHz/1000.0,
-               PHY_vars_eNB->ofdm_demod_stats.trials);
+        std_phy_proc_rx_fft = sqrt((double)eNB->ofdm_demod_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
+                                   2)/eNB->ofdm_demod_stats.trials - pow((double)eNB->ofdm_demod_stats.diff/eNB->ofdm_demod_stats.trials/cpu_freq_GHz/1000,2));
+        printf("OFDM_demod time                   :%f us (%d trials)\n",(double)eNB->ofdm_demod_stats.diff/eNB->ofdm_demod_stats.trials/cpu_freq_GHz/1000.0,
+               eNB->ofdm_demod_stats.trials);
         printf("|__ Statistcs                           std: %fus median %fus q1 %fus q3 %fus \n", std_phy_proc_rx_fft, rx_fft_median, rx_fft_q1, rx_fft_q3);
-        std_phy_proc_rx_demod = sqrt((double)PHY_vars_eNB->ulsch_demodulation_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                                     2)/PHY_vars_eNB->ulsch_demodulation_stats.trials - pow((double)PHY_vars_eNB->ulsch_demodulation_stats.diff/PHY_vars_eNB->ulsch_demodulation_stats.trials/cpu_freq_GHz/1000,2));
-        printf("ULSCH demodulation time           :%f us (%d trials)\n",(double)PHY_vars_eNB->ulsch_demodulation_stats.diff/PHY_vars_eNB->ulsch_demodulation_stats.trials/cpu_freq_GHz/1000.0,
-               PHY_vars_eNB->ulsch_demodulation_stats.trials);
+        std_phy_proc_rx_demod = sqrt((double)eNB->ulsch_demodulation_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
+                                     2)/eNB->ulsch_demodulation_stats.trials - pow((double)eNB->ulsch_demodulation_stats.diff/eNB->ulsch_demodulation_stats.trials/cpu_freq_GHz/1000,2));
+        printf("ULSCH demodulation time           :%f us (%d trials)\n",(double)eNB->ulsch_demodulation_stats.diff/eNB->ulsch_demodulation_stats.trials/cpu_freq_GHz/1000.0,
+               eNB->ulsch_demodulation_stats.trials);
         printf("|__ Statistcs                           std: %fus median %fus q1 %fus q3 %fus \n", std_phy_proc_rx_demod, rx_demod_median, rx_demod_q1, rx_demod_q3);
-        std_phy_proc_rx_dec = sqrt((double)PHY_vars_eNB->ulsch_decoding_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                                   2)/PHY_vars_eNB->ulsch_decoding_stats.trials - pow((double)PHY_vars_eNB->ulsch_decoding_stats.diff/PHY_vars_eNB->ulsch_decoding_stats.trials/cpu_freq_GHz/1000,2));
+        std_phy_proc_rx_dec = sqrt((double)eNB->ulsch_decoding_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
+                                   2)/eNB->ulsch_decoding_stats.trials - pow((double)eNB->ulsch_decoding_stats.diff/eNB->ulsch_decoding_stats.trials/cpu_freq_GHz/1000,2));
         printf("ULSCH Decoding time (%.2f Mbit/s, avg iter %f)      :%f us (%d trials, max %f)\n",
-               PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->TBS/1000.0,(double)avg_iter/iter_trials,
-               (double)PHY_vars_eNB->ulsch_decoding_stats.diff/PHY_vars_eNB->ulsch_decoding_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->ulsch_decoding_stats.trials,
-               (double)PHY_vars_eNB->ulsch_decoding_stats.max/cpu_freq_GHz/1000.0);
+               UE->ulsch[0]->harq_processes[harq_pid]->TBS/1000.0,(double)avg_iter/iter_trials,
+               (double)eNB->ulsch_decoding_stats.diff/eNB->ulsch_decoding_stats.trials/cpu_freq_GHz/1000.0,eNB->ulsch_decoding_stats.trials,
+               (double)eNB->ulsch_decoding_stats.max/cpu_freq_GHz/1000.0);
         printf("|__ Statistcs                           std: %fus median %fus q1 %fus q3 %fus \n", std_phy_proc_rx_dec, rx_dec_median, rx_dec_q1, rx_dec_q3);
         printf("|__ sub-block interleaving                          %f us (%d trials)\n",
-               (double)PHY_vars_eNB->ulsch_deinterleaving_stats.diff/PHY_vars_eNB->ulsch_deinterleaving_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->ulsch_deinterleaving_stats.trials);
+               (double)eNB->ulsch_deinterleaving_stats.diff/eNB->ulsch_deinterleaving_stats.trials/cpu_freq_GHz/1000.0,eNB->ulsch_deinterleaving_stats.trials);
         printf("|__ demultiplexing                                  %f us (%d trials)\n",
-               (double)PHY_vars_eNB->ulsch_demultiplexing_stats.diff/PHY_vars_eNB->ulsch_demultiplexing_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->ulsch_demultiplexing_stats.trials);
+               (double)eNB->ulsch_demultiplexing_stats.diff/eNB->ulsch_demultiplexing_stats.trials/cpu_freq_GHz/1000.0,eNB->ulsch_demultiplexing_stats.trials);
         printf("|__ rate-matching                                   %f us (%d trials)\n",
-               (double)PHY_vars_eNB->ulsch_rate_unmatching_stats.diff/PHY_vars_eNB->ulsch_rate_unmatching_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->ulsch_rate_unmatching_stats.trials);
+               (double)eNB->ulsch_rate_unmatching_stats.diff/eNB->ulsch_rate_unmatching_stats.trials/cpu_freq_GHz/1000.0,eNB->ulsch_rate_unmatching_stats.trials);
         printf("|__ turbo_decoder(%d bits)                              %f us (%d cycles, %d trials)\n",
-               PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Cminus ? PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Kminus : PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Kplus,
-               (double)PHY_vars_eNB->ulsch_turbo_decoding_stats.diff/PHY_vars_eNB->ulsch_turbo_decoding_stats.trials/cpu_freq_GHz/1000.0,
-               (int)((double)PHY_vars_eNB->ulsch_turbo_decoding_stats.diff/PHY_vars_eNB->ulsch_turbo_decoding_stats.trials),PHY_vars_eNB->ulsch_turbo_decoding_stats.trials);
+               eNB->ulsch[0]->harq_processes[harq_pid]->Cminus ? eNB->ulsch[0]->harq_processes[harq_pid]->Kminus : eNB->ulsch[0]->harq_processes[harq_pid]->Kplus,
+               (double)eNB->ulsch_turbo_decoding_stats.diff/eNB->ulsch_turbo_decoding_stats.trials/cpu_freq_GHz/1000.0,
+               (int)((double)eNB->ulsch_turbo_decoding_stats.diff/eNB->ulsch_turbo_decoding_stats.trials),eNB->ulsch_turbo_decoding_stats.trials);
         printf("    |__ init                                            %f us (cycles/iter %f, %d trials)\n",
-               (double)PHY_vars_eNB->ulsch_tc_init_stats.diff/PHY_vars_eNB->ulsch_tc_init_stats.trials/cpu_freq_GHz/1000.0,
-               (double)PHY_vars_eNB->ulsch_tc_init_stats.diff/PHY_vars_eNB->ulsch_tc_init_stats.trials/((double)avg_iter/iter_trials),
-               PHY_vars_eNB->ulsch_tc_init_stats.trials);
+               (double)eNB->ulsch_tc_init_stats.diff/eNB->ulsch_tc_init_stats.trials/cpu_freq_GHz/1000.0,
+               (double)eNB->ulsch_tc_init_stats.diff/eNB->ulsch_tc_init_stats.trials/((double)avg_iter/iter_trials),
+               eNB->ulsch_tc_init_stats.trials);
         printf("    |__ alpha                                           %f us (cycles/iter %f, %d trials)\n",
-               (double)PHY_vars_eNB->ulsch_tc_alpha_stats.diff/PHY_vars_eNB->ulsch_tc_alpha_stats.trials/cpu_freq_GHz/1000.0,
-               (double)PHY_vars_eNB->ulsch_tc_alpha_stats.diff/PHY_vars_eNB->ulsch_tc_alpha_stats.trials*2,
-               PHY_vars_eNB->ulsch_tc_alpha_stats.trials);
+               (double)eNB->ulsch_tc_alpha_stats.diff/eNB->ulsch_tc_alpha_stats.trials/cpu_freq_GHz/1000.0,
+               (double)eNB->ulsch_tc_alpha_stats.diff/eNB->ulsch_tc_alpha_stats.trials*2,
+               eNB->ulsch_tc_alpha_stats.trials);
         printf("    |__ beta                                            %f us (cycles/iter %f,%d trials)\n",
-               (double)PHY_vars_eNB->ulsch_tc_beta_stats.diff/PHY_vars_eNB->ulsch_tc_beta_stats.trials/cpu_freq_GHz/1000.0,
-               (double)PHY_vars_eNB->ulsch_tc_beta_stats.diff/PHY_vars_eNB->ulsch_tc_beta_stats.trials*2,
-               PHY_vars_eNB->ulsch_tc_beta_stats.trials);
+               (double)eNB->ulsch_tc_beta_stats.diff/eNB->ulsch_tc_beta_stats.trials/cpu_freq_GHz/1000.0,
+               (double)eNB->ulsch_tc_beta_stats.diff/eNB->ulsch_tc_beta_stats.trials*2,
+               eNB->ulsch_tc_beta_stats.trials);
         printf("    |__ gamma                                           %f us (cycles/iter %f,%d trials)\n",
-               (double)PHY_vars_eNB->ulsch_tc_gamma_stats.diff/PHY_vars_eNB->ulsch_tc_gamma_stats.trials/cpu_freq_GHz/1000.0,
-               (double)PHY_vars_eNB->ulsch_tc_gamma_stats.diff/PHY_vars_eNB->ulsch_tc_gamma_stats.trials*2,
-               PHY_vars_eNB->ulsch_tc_gamma_stats.trials);
+               (double)eNB->ulsch_tc_gamma_stats.diff/eNB->ulsch_tc_gamma_stats.trials/cpu_freq_GHz/1000.0,
+               (double)eNB->ulsch_tc_gamma_stats.diff/eNB->ulsch_tc_gamma_stats.trials*2,
+               eNB->ulsch_tc_gamma_stats.trials);
         printf("    |__ ext                                             %f us (cycles/iter %f,%d trials)\n",
-               (double)PHY_vars_eNB->ulsch_tc_ext_stats.diff/PHY_vars_eNB->ulsch_tc_ext_stats.trials/cpu_freq_GHz/1000.0,
-               (double)PHY_vars_eNB->ulsch_tc_ext_stats.diff/PHY_vars_eNB->ulsch_tc_ext_stats.trials*2,
-               PHY_vars_eNB->ulsch_tc_ext_stats.trials);
+               (double)eNB->ulsch_tc_ext_stats.diff/eNB->ulsch_tc_ext_stats.trials/cpu_freq_GHz/1000.0,
+               (double)eNB->ulsch_tc_ext_stats.diff/eNB->ulsch_tc_ext_stats.trials*2,
+               eNB->ulsch_tc_ext_stats.trials);
         printf("    |__ intl1                                           %f us (cycles/iter %f,%d trials)\n",
-               (double)PHY_vars_eNB->ulsch_tc_intl1_stats.diff/PHY_vars_eNB->ulsch_tc_intl1_stats.trials/cpu_freq_GHz/1000.0,
-               (double)PHY_vars_eNB->ulsch_tc_intl1_stats.diff/PHY_vars_eNB->ulsch_tc_intl1_stats.trials,
-               PHY_vars_eNB->ulsch_tc_intl1_stats.trials);
+               (double)eNB->ulsch_tc_intl1_stats.diff/eNB->ulsch_tc_intl1_stats.trials/cpu_freq_GHz/1000.0,
+               (double)eNB->ulsch_tc_intl1_stats.diff/eNB->ulsch_tc_intl1_stats.trials,
+               eNB->ulsch_tc_intl1_stats.trials);
         printf("    |__ intl2+HD+CRC                                    %f us (cycles/iter %f,%d trials)\n",
-               (double)PHY_vars_eNB->ulsch_tc_intl2_stats.diff/PHY_vars_eNB->ulsch_tc_intl2_stats.trials/cpu_freq_GHz/1000.0,
-               (double)PHY_vars_eNB->ulsch_tc_intl2_stats.diff/PHY_vars_eNB->ulsch_tc_intl2_stats.trials,
-               PHY_vars_eNB->ulsch_tc_intl2_stats.trials);
+               (double)eNB->ulsch_tc_intl2_stats.diff/eNB->ulsch_tc_intl2_stats.trials/cpu_freq_GHz/1000.0,
+               (double)eNB->ulsch_tc_intl2_stats.diff/eNB->ulsch_tc_intl2_stats.trials,
+               eNB->ulsch_tc_intl2_stats.trials);
       }
 
       if(abstx) { //ABSTRACTION
@@ -1673,7 +1588,7 @@ int main(int argc, char **argv)
         fprintf(time_meas_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;",
                 SNR,
                 mcs,
-                PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->TBS,
+                eNB->ulsch[0]->harq_processes[harq_pid]->TBS,
                 rate,
                 errs[0],
                 round_trials[0],
@@ -1688,7 +1603,7 @@ int main(int argc, char **argv)
         fprintf(time_meas_fd,"%f;%d;%d;%f;%2.1f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%e;%e;%e;%e;%f;%f;",
                 SNR,
                 mcs,
-                PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->TBS,
+                eNB->ulsch[0]->harq_processes[harq_pid]->TBS,
                 rate*effective_rate,
                 100*effective_rate,
                 rate,
@@ -1705,29 +1620,29 @@ int main(int argc, char **argv)
                 (double)errs[2]/(round_trials[0]),
                 (double)errs[3]/(round_trials[0]),
                 (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/
-                (double)PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->TBS,
+                (double)eNB->ulsch[0]->harq_processes[harq_pid]->TBS,
                 (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
 
         //fprintf(time_meas_fd,"UE_PROC_TX(%d); OFDM_MOD(%d); UL_MOD(%d); UL_ENC(%d); eNB_PROC_RX(%d); OFDM_DEMOD(%d); UL_DEMOD(%d); UL_DECOD(%d);\n",
         fprintf(time_meas_fd,"%d; %d; %d; %d; %d; %d; %d; %d;",
-                PHY_vars_UE->phy_proc_tx.trials,
-                PHY_vars_UE->ofdm_mod_stats.trials,
-                PHY_vars_UE->ulsch_modulation_stats.trials,
-                PHY_vars_UE->ulsch_encoding_stats.trials,
-                PHY_vars_eNB->phy_proc_rx.trials,
-                PHY_vars_eNB->ofdm_demod_stats.trials,
-                PHY_vars_eNB->ulsch_demodulation_stats.trials,
-                PHY_vars_eNB->ulsch_decoding_stats.trials
+                UE->phy_proc_tx.trials,
+                UE->ofdm_mod_stats.trials,
+                UE->ulsch_modulation_stats.trials,
+                UE->ulsch_encoding_stats.trials,
+                eNB->phy_proc_rx.trials,
+                eNB->ofdm_demod_stats.trials,
+                eNB->ulsch_demodulation_stats.trials,
+                eNB->ulsch_decoding_stats.trials
                );
         fprintf(time_meas_fd,"%f;%f;%f;%f;%f;%f;%f;%f;",
-                get_time_meas_us(&PHY_vars_UE->phy_proc_tx),
-                get_time_meas_us(&PHY_vars_UE->ofdm_mod_stats),
-                get_time_meas_us(&PHY_vars_UE->ulsch_modulation_stats),
-                get_time_meas_us(&PHY_vars_UE->ulsch_encoding_stats),
-                get_time_meas_us(&PHY_vars_eNB->phy_proc_rx),
-                get_time_meas_us(&PHY_vars_eNB->ofdm_demod_stats),
-                get_time_meas_us(&PHY_vars_eNB->ulsch_demodulation_stats),
-                get_time_meas_us(&PHY_vars_eNB->ulsch_decoding_stats)
+                get_time_meas_us(&UE->phy_proc_tx),
+                get_time_meas_us(&UE->ofdm_mod_stats),
+                get_time_meas_us(&UE->ulsch_modulation_stats),
+                get_time_meas_us(&UE->ulsch_encoding_stats),
+                get_time_meas_us(&eNB->phy_proc_rx),
+                get_time_meas_us(&eNB->ofdm_demod_stats),
+                get_time_meas_us(&eNB->ulsch_demodulation_stats),
+                get_time_meas_us(&eNB->ulsch_decoding_stats)
                );
 
         //fprintf(time_meas_fd,"UE_PROC_TX_STD;UE_PROC_TX_MAX;UE_PROC_TX_MIN;UE_PROC_TX_MED;UE_PROC_TX_Q1;UE_PROC_TX_Q3;UE_PROC_TX_DROPPED;\n");
@@ -1764,40 +1679,21 @@ int main(int argc, char **argv)
 
       if (((double)errs[0]/(round_trials[0]))<1e-2)
         break;
-    } // SNR
+  } // SNR
 
     //
 
 
-    //write_output("chestim_f.m","chestf",PHY_vars_eNB->lte_eNB_pusch_vars[0]->drs_ch_estimates[0][0],300*12,2,1);
-    // write_output("chestim_t.m","chestt",PHY_vars_eNB->lte_eNB_pusch_vars[0]->drs_ch_estimates_time[0][0], (frame_parms->ofdm_symbol_size)*2,2,1);
+    //write_output("chestim_f.m","chestf",eNB->pusch_vars[0]->drs_ch_estimates[0][0],300*12,2,1);
+    // write_output("chestim_t.m","chestt",eNB->pusch_vars[0]->drs_ch_estimates_time[0][0], (frame_parms->ofdm_symbol_size)*2,2,1);
 
   }//ch realization
 
-  /*
-  if(abstx) {
-    fperen = fopen(fperen_name,"a+");
-    fprintf(fperen,"];\n");
-    fclose(fperen);
 
-    fmageren = fopen(fmageren_name,"a+");
-    fprintf(fmageren,"];\n");
-    fclose(fmageren);
+  oai_exit=1;
+  pthread_cond_signal(&eNB->proc.cond_fep);
 
-    flogeren = fopen(flogeren_name,"a+");
-    fprintf(flogeren,"];\n");
-    fclose(flogeren);
-  }
-  */
-
-  // ftxlev = fopen(ftxlev_name,"a+");
-  //fprintf(ftxlev,"];\n");
-  //fclose(ftxlev);
-
-
-  //  write_output("chestim_f_dene.m","chestf",ulchestim_f_all,300*12,2,1);*/
-
-  if(abstx) { // ABSTRACTION
+  if (abstx) { // ABSTRACTION
     fprintf(csv_fdUL,"];");
     fclose(csv_fdUL);
   }
@@ -1806,22 +1702,6 @@ int main(int argc, char **argv)
 
   if (test_perf !=0)
     fclose (time_meas_fd);
-
-  printf("Freeing channel I/O\n");
-
-  for (i=0; i<2; i++) {
-    free(s_re[i]);
-    free(s_im[i]);
-    free(r_re[i]);
-    free(r_im[i]);
-  }
-
-  free(s_re);
-  free(s_im);
-  free(r_re);
-  free(r_im);
-
-  //  lte_sync_time_free();
 
   return(0);
 

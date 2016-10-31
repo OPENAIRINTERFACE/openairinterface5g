@@ -1,42 +1,37 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file s1ap_eNB_encoder.c
  * \brief s1ap pdu encode procedures for eNB
- * \author Sebastien ROUX <sebastien.roux@eurecom.fr>
- * \date 2013
+ * \author Sebastien ROUX and Navid Nikaein
+ * \email navid.nikaein@eurecom.fr
+ * \date 2013 - 2015
  * \version 0.1
  */
 
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+
+#include "assertions.h"
 
 #include "conversions.h"
 
@@ -99,6 +94,11 @@ int s1ap_eNB_encode_ue_context_release_request(
   S1ap_UEContextReleaseRequestIEs_t *s1ap_UEContextReleaseRequestIEs,
   uint8_t                              **buffer,
   uint32_t                              *length);
+
+static inline
+int s1ap_eNB_encode_e_rab_setup_response(S1ap_E_RABSetupResponseIEs_t  *E_RABSetupResponseIEs,
+					 uint8_t                              **buffer,
+					 uint32_t                              *length);
 
 int s1ap_eNB_encode_pdu(s1ap_message *message, uint8_t **buffer, uint32_t *len)
 {
@@ -251,8 +251,21 @@ int s1ap_eNB_encode_successfull_outcome(s1ap_message *s1ap_message_p,
     free(message_string);
     break;
 
+  case S1ap_ProcedureCode_id_E_RABSetup:
+
+    ret = s1ap_eNB_encode_e_rab_setup_response (
+           &s1ap_message_p->msg.s1ap_E_RABSetupResponseIEs, buffer, len);
+    //s1ap_xer_print_s1ap_e_rabsetupresponse (s1ap_xer__print2sp, message_string, s1ap_message_p);
+    message_id =  S1AP_E_RAB_SETUP_RESPONSE_LOG ;
+    message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id, message_string_size + sizeof (IttiMsgText));
+    message_p->ittiMsg.s1ap_e_rab_setup_response_log.size = message_string_size;
+    memcpy(&message_p->ittiMsg.s1ap_e_rab_setup_response_log.text, message_string, message_string_size);
+    itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
+    free(message_string);
+    S1AP_INFO("E_RABSetup successful message\n");
+    break;
   default:
-    S1AP_DEBUG("Unknown procedure ID (%d) for successfull outcome message\n",
+    S1AP_WARN("Unknown procedure ID (%d) for successfull outcome message\n",
                (int)s1ap_message_p->procedureCode);
     return ret;
     break;
@@ -528,3 +541,25 @@ int s1ap_eNB_encode_ue_context_release_request(
                                           ue_context_release_request_p);
 }
 
+static inline
+int s1ap_eNB_encode_e_rab_setup_response(S1ap_E_RABSetupResponseIEs_t  *s1ap_E_RABSetupResponseIEs,
+					 uint8_t                              **buffer,
+					 uint32_t                              *length)
+{
+  S1ap_E_RABSetupResponse_t  e_rab_setup_response;
+  S1ap_E_RABSetupResponse_t  *e_rab_setup_response_p = &e_rab_setup_response;
+  
+  memset((void *)e_rab_setup_response_p, 0,
+         sizeof(e_rab_setup_response));
+
+  if (s1ap_encode_s1ap_e_rabsetupresponseies (e_rab_setup_response_p, s1ap_E_RABSetupResponseIEs) < 0) {
+    return -1;
+  }
+  
+  return s1ap_generate_successfull_outcome(buffer,
+         length,
+         S1ap_ProcedureCode_id_E_RABSetup,
+         S1ap_Criticality_reject,
+         &asn_DEF_S1ap_E_RABSetupResponse,
+         e_rab_setup_response_p);
+}

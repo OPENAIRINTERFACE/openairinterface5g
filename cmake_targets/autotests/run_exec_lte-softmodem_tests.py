@@ -1,33 +1,24 @@
 #! /usr/bin/python
-#******************************************************************************
-
-#    OpenAirInterface 
-#    Copyright(c) 1999 - 2014 Eurecom
-
-#    OpenAirInterface is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-
-
-#    OpenAirInterface is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-
-#   You should have received a copy of the GNU General Public License
-#   along with OpenAirInterface.The full GNU General Public License is 
-#   included in this distribution in the file called "COPYING". If not, 
-#   see <http://www.gnu.org/licenses/>.
-
-#  Contact Information
-#  OpenAirInterface Admin: openair_admin@eurecom.fr
-#  OpenAirInterface Tech : openair_tech@eurecom.fr
-#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-  
-#  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-# *******************************************************************************/
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
 
 # \author Rohit Gupta
 # \version 0.1
@@ -313,7 +304,7 @@ def SSHSessionWrapper(machine, username, key_file, password, logdir_remote, logd
 # \param CleanUpAluLteBox program to terminate AlU Bell Labs LTE Box
 # \param ExmimoRfStop String to stop EXMIMO card (specified in test_case_list.xml)
 def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop, logdir, logdirOAI5GRepo):
-  cmd = 'killall -9 -q -r ' + programList
+  cmd = 'sudo -E killall -s INT -q -r ' + programList + ' ; sleep 5 ; sudo -E killall -9 -q -r ' + programList
   result = oai.send(cmd, True)
   print "Killing old programs..." + result
   programArray = programList.split()
@@ -588,7 +579,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   RRH_pre_exec_args = testcase.findtext('RRH_pre_exec_args',default='')
   RRH_main_exec = testcase.findtext('RRH_main_exec',default='')
   RRH_main_exec_args = testcase.findtext('RRH_main_exec_args',default='')
-  RRH_terminate_missing_procs = testcase.findtext('RRH_terminate_missing_procs',default='True')
+  RRH_terminate_missing_procs = testcase.findtext('RRH_terminate_missing_procs',default='False')
 
 
   eNBMachine = testcase.findtext('eNB',default='')
@@ -601,7 +592,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   eNB_main_exec_args = testcase.findtext('eNB_main_exec_args',default='')
   eNB_traffic_exec = testcase.findtext('eNB_traffic_exec',default='')
   eNB_traffic_exec_args = testcase.findtext('eNB_traffic_exec_args',default='')
-  eNB_terminate_missing_procs = testcase.findtext('eNB_terminate_missing_procs',default='True')
+  eNB_terminate_missing_procs = testcase.findtext('eNB_terminate_missing_procs',default='False')
   eNB_search_expr_true = testcase.findtext('eNB_search_expr_true','')
   if re.compile('\w+').match(eNB_search_expr_true) != None:
       eNB_search_expr_true = eNB_search_expr_true + '  duration=' + str(timeout_cmd-90) + 's' 
@@ -616,7 +607,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   UE_main_exec_args = testcase.findtext('UE_main_exec_args',default='')
   UE_traffic_exec = testcase.findtext('UE_traffic_exec',default='')
   UE_traffic_exec_args = testcase.findtext('UE_traffic_exec_args',default='')
-  UE_terminate_missing_procs = testcase.findtext('UE_terminate_missing_procs',default='True')
+  UE_terminate_missing_procs = testcase.findtext('UE_terminate_missing_procs',default='False')
   UE_search_expr_true = testcase.findtext('UE_search_expr_true','')
   UE_stop_script =  testcase.findtext('UE_stop_script','')
   if re.compile('\w+').match(UE_search_expr_true) != None:
@@ -637,7 +628,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   HSS_main_exec_args = testcase.findtext('HSS_main_exec_args',default='')  
   EPC_traffic_exec = testcase.findtext('EPC_traffic_exec',default='')
   EPC_traffic_exec_args = testcase.findtext('EPC_traffic_exec_args',default='')
-  EPC_terminate_missing_procs = testcase.findtext('EPC_terminate_missing_procs',default='True')
+  EPC_terminate_missing_procs = testcase.findtext('EPC_terminate_missing_procs',default='False')
   EPC_search_expr_true = testcase.findtext('EPC_search_expr_true','')
   if re.compile('\w+').match(EPC_search_expr_true) != None:
      EPC_search_expr_true = EPC_search_expr_true + '  duration=' + str(timeout_cmd-90) + 's'
@@ -894,27 +885,28 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     task_EPC  = task_EPC + ' ) > ' + logfile_task_EPC_out + ' 2>&1 ' 
     write_file(logfile_task_EPC, task_EPC, mode="w")
     
-    #first we compile all the programs
-    thread_EPC = oaiThread(1, "EPC_thread", EPCMachine, user, password , task_EPC_compile, False, timeout_thread)
-    thread_eNB = oaiThread(2, "eNB_thread", eNBMachine, user, password , task_eNB_compile, False, timeout_thread)
-    thread_UE = oaiThread(3, "UE_thread", UEMachine, user, password  , task_UE_compile, False, timeout_thread) 
-    if RRHMachine != '':
-        thread_RRH = oaiThread(4, "RRH_thread", RRHMachine, user, password  , task_RRH_compile, False, timeout_thread) 
-    threads=[]
-    threads.append(thread_eNB)
-    threads.append(thread_UE)
-    threads.append(thread_EPC)
-    if RRHMachine != '':
-        threads.append(thread_RRH)
-    # Start new Threads
-    thread_eNB.start()
-    thread_UE.start()
-    thread_EPC.start()
-    if RRHMachine != '':
-        thread_RRH.start()
-    #Wait for all the compile threads to complete
-    for t in threads:
-       t.join()
+    #first we compile all the programs but only for run_0
+    if run == 0:
+       thread_EPC = oaiThread(1, "EPC_thread", EPCMachine, user, password , task_EPC_compile, False, timeout_thread)
+       thread_eNB = oaiThread(2, "eNB_thread", eNBMachine, user, password , task_eNB_compile, False, timeout_thread)
+       thread_UE = oaiThread(3, "UE_thread", UEMachine, user, password  , task_UE_compile, False, timeout_thread) 
+       if RRHMachine != '':
+          thread_RRH = oaiThread(4, "RRH_thread", RRHMachine, user, password  , task_RRH_compile, False, timeout_thread) 
+       threads=[]
+       threads.append(thread_eNB)
+       threads.append(thread_UE)
+       threads.append(thread_EPC)
+       if RRHMachine != '':
+         threads.append(thread_RRH)
+       # Start new Threads
+       thread_eNB.start()
+       thread_UE.start()
+       thread_EPC.start()
+       if RRHMachine != '':
+         thread_RRH.start()
+       #Wait for all the compile threads to complete
+       for t in threads:
+         t.join()
 
     #Now we execute all the threads
     thread_EPC = oaiThread(1, "EPC_thread", EPCMachine, user, password , task_EPC, False, timeout_thread)
@@ -1268,7 +1260,8 @@ except KeyError:
    sys.exit(1)
 
 print "Killing zombie ssh sessions from earlier sessions..."
-cmd='ps aux |grep \"/usr/bin/ssh -q -l guptar\"|tr -s \" \" :|cut -f 2 -d :|xargs kill -9 '
+cmd='ps aux |grep \"/usr/bin/ssh -q -l guptar\"| awk \'{print $2}\' | sudo xargs kill -9  '
+
 os.system(cmd)
 
 if flag_start_testcase == False:
@@ -1303,6 +1296,8 @@ logdirOpenaircnRepo = logdir + 'openair-cn/'
 if flag_remove_logdir == True:
    print "Removing directory: " + locallogdir
    os.system(' rm -fr ' + locallogdir + '; mkdir -p ' +  locallogdir  )
+else:
+   os.system('mkdir -p  ' + locallogdir)
 
 paramiko_logfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/log/paramiko.log')
 res=os.system(' echo > ' + paramiko_logfile)
@@ -1449,7 +1444,6 @@ for oai in oai_list:
       #cmd = cmd + 'mkdir -p ' + logdir + '\n'
       cmd = cmd + 'cd '+ logdir   + '\n'
       cmd = cmd + 'sudo apt-get install -y git \n'
-      cmd = cmd + 'git config --global http.sslVerify false \n' 
       cmd = cmd + 'chmod 700 ' + logdir + '/git-retry.sh \n' 
       cmd = cmd + logdir + '/git-retry.sh clone  '+ GitOAI5GRepo  +' \n'
       cmd = cmd + logdir + '/git-retry.sh clone '+ GitOpenaircnRepo + ' \n'

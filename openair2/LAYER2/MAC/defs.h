@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /*! \file LAYER2/MAC/defs.h
 * \brief MAC data structures, constant, and function prototype
 * \author Navid Nikaein and Raymond Knopp
@@ -82,6 +75,7 @@
 
 #define BCCH_PAYLOAD_SIZE_MAX 128
 #define CCCH_PAYLOAD_SIZE_MAX 128
+#define PCCH_PAYLOAD_SIZE_MAX 128
 
 #define SCH_PAYLOAD_SIZE_MAX 4096
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
@@ -263,6 +257,10 @@ typedef struct {
 typedef struct {
   uint8_t payload[BCCH_PAYLOAD_SIZE_MAX] ;
 } __attribute__((__packed__))BCCH_PDU;
+/*! \brief BCCH payload */
+typedef struct {
+  uint8_t payload[PCCH_PAYLOAD_SIZE_MAX] ;
+} __attribute__((__packed__))PCCH_PDU;
 
 #ifdef Rel10
 /*! \brief MCCH payload */
@@ -291,6 +289,8 @@ typedef struct {
 #define CCCH_LCHANID 0
 /*!\brief Values of BCCH logical channel */
 #define BCCH 3  // SI 
+/*!\brief Values of PCCH logical channel */
+#define PCCH 4  // Paging 
 /*!\brief Value of CCCH / SRB0 logical channel */
 #define CCCH 0  // srb0
 /*!\brief DCCH / SRB1 logical channel */
@@ -614,7 +614,9 @@ typedef struct {
   uint8_t DLSCH_dci_size_bits;
 
   /// DCI buffer for DLSCH
-  uint8_t DLSCH_DCI[8][(MAX_DCI_SIZE_BITS>>3)+1];
+  /* rounded to 32 bits unit (actual value should be 8 due to the logic
+   * of the function generate_dci0) */
+  uint8_t DLSCH_DCI[8][(((MAX_DCI_SIZE_BITS)+31)>>5)*4];
 
   /// Number of Allocated RBs for DL after scheduling (prior to frequency allocation)
   uint16_t nb_rb[8]; // num_max_harq
@@ -638,7 +640,9 @@ typedef struct {
   uint8_t assigned_mcs_ul;
 
   /// DCI buffer for ULSCH
-  uint8_t ULSCH_DCI[8][(MAX_DCI_SIZE_BITS>>3)+1];
+  /* rounded to 32 bits unit (actual value should be 8 due to the logic
+   * of the function generate_dci0) */
+  uint8_t ULSCH_DCI[8][(((MAX_DCI_SIZE_BITS)+31)>>5)*4];
 
   /// DL DAI
   uint8_t DAI;
@@ -900,7 +904,7 @@ typedef struct {
   /// CCE table used to build DCI scheduling information
   int CCE_table[MAX_NUM_CCs][800];
   ///  active flag for Other lcid
-  //  uint8_t lcid_active[NB_RB_MAX];
+  uint8_t lcid_active[NB_RB_MAX];
   /// eNB stats
   eNB_STATS eNB_stats[MAX_NUM_CCs];
   // MAC function execution peformance profiler
@@ -1104,6 +1108,8 @@ typedef struct {
   time_stats_t rx_mch_sdu;
   /// UE BCCH rx processing time including RLC interface (mac_rrc_data_ind) 
   time_stats_t rx_si; 
+  /// UE PCCH rx processing time including RLC interface (mac_rrc_data_ind) 
+  time_stats_t rx_p; 
 } UE_MAC_INST;
 /*! \brief ID of the neighboring cells used for HO*/
 typedef struct {

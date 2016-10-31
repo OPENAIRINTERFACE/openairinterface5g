@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /*! \file pre_processor.c
  * \brief eNB scheduler preprocessing fuction prior to scheduling
  * \author Navid Nikaein and Ankit Bhamri
@@ -178,7 +171,7 @@ void assign_rbs_required (module_id_t Mod_id,
       */
       eNB_UE_stats[CC_id]->dlsch_mcs1=cqi_to_mcs[eNB_UE_stats[CC_id]->DL_cqi[0]];
 
-      eNB_UE_stats[CC_id]->dlsch_mcs1 = cmin(eNB_UE_stats[CC_id]->dlsch_mcs1,openair_daq_vars.target_ue_dl_mcs);
+      eNB_UE_stats[CC_id]->dlsch_mcs1 = eNB_UE_stats[CC_id]->dlsch_mcs1;//cmin(eNB_UE_stats[CC_id]->dlsch_mcs1,openair_daq_vars.target_ue_dl_mcs);
 
     }
 
@@ -198,7 +191,7 @@ void assign_rbs_required (module_id_t Mod_id,
 
     /*
     if ((mac_get_rrc_status(Mod_id,1,UE_id) < RRC_RECONFIGURED)){  // If we still don't have a default radio bearer
-      nb_rbs_required[pCCid][UE_id] = PHY_vars_eNB_g[Mod_id][pCCid]->lte_frame_parms.N_RB_DL;
+      nb_rbs_required[pCCid][UE_id] = PHY_vars_eNB_g[Mod_id][pCCid]->frame_parms.N_RB_DL;
       continue;
     }
     */
@@ -649,8 +642,8 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 
 
                         if ((j == N_RBG[CC_id]-1) &&
-                            ((PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms.N_RB_DL == 25) ||
-                             (PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms.N_RB_DL == 50))) {
+                            ((PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms.N_RB_DL == 25) ||
+                             (PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms.N_RB_DL == 50))) {
 			  
                           nb_rbs_required_remaining[CC_id][UE_id] = nb_rbs_required_remaining[CC_id][UE_id] - min_rb_unit[CC_id]+1;
                           ue_sched_ctl->pre_nb_available_rbs[CC_id] = ue_sched_ctl->pre_nb_available_rbs[CC_id] + min_rb_unit[CC_id]-1;
@@ -759,7 +752,7 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   rnti_t rnti = UE_RNTI(module_idP,UE_id);
   uint8_t *vrb_map = eNB_mac_inst[module_idP].common_channels[CC_id].vrb_map;
-  int RBGsize = PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL/N_RBG;
+  int RBGsize = PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL/N_RBG;
 #ifdef SF05_LIMIT
   //int subframe05_limit=0;
   int sf05_upper=-1,sf05_lower=-1;
@@ -776,7 +769,7 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
     // WE SHOULD PROTECT the eNB_UE_stats with a mutex here ...
 
     ue_sched_ctl->ta_timer = 20;  // wait 20 subframes before taking TA measurement from PHY
-    switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+    switch (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
     case 6:
       ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update;
       break;

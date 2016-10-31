@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface 
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-    included in this distribution in the file called "COPYING". If not, 
-    see <http://www.gnu.org/licenses/>.
-
-   Contact Information
-   OpenAirInterface Admin: openair_admin@eurecom.fr
-   OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-  
-   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /** usrp_lib.cpp
  *
@@ -45,7 +37,8 @@
 #include <complex>
 #include <fstream>
 #include <cmath>
-
+#include <time.h>
+#include "UTIL/LOG/log_extern.h"
 #include "common_lib.h"
 #ifdef __SSE4_1__
 #  include <smmintrin.h>
@@ -172,23 +165,54 @@ static void trx_usrp_end(openair0_device *device)
 */ 
 static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags)
 {
+   static long long int loop=0;
+   static long time_min=0, time_max=0, time_avg=0;
+   struct timespec tp_start, tp_end;
+   long time_diff;
+   clock_gettime(CLOCK_MONOTONIC_RAW, &tp_start);
+
+  int ret=0, ret_i=0;
   usrp_state_t *s = (usrp_state_t*)device->priv;
+
   s->tx_md.time_spec = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
+
+  
   if(flags)
     s->tx_md.has_time_spec = true;
   else
     s->tx_md.has_time_spec = false;
-
+  
   if (cc>1) {
     std::vector<void *> buff_ptrs;
     for (int i=0;i<cc;i++) buff_ptrs.push_back(buff[i]);
-    s->tx_stream->send(buff_ptrs, nsamps, s->tx_md);
+    ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md,1e-3);
   }
   else
-    s->tx_stream->send(buff[0], nsamps, s->tx_md);
+    ret = (int)s->tx_stream->send(buff[0], nsamps, s->tx_md,1e-3);
+
   s->tx_md.start_of_burst = false;
 
-  return 0;
+  if (ret != nsamps) {
+    printf("[xmit] tx samples %d != %d\n",ret,nsamps);
+  }
+
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tp_end);
+  time_diff = (tp_end.tv_sec - tp_start.tv_sec) *1E09  + (tp_end.tv_nsec - tp_start.tv_nsec);
+  if  (time_min==0 ||loop==1 || time_min > time_diff)
+    time_min=time_diff;
+  if  (time_max==0 ||loop==1 || time_max < time_diff)
+    time_max=time_diff;
+  if (time_avg ==0 ||loop==1)
+    time_avg= time_diff;
+  else
+    time_avg=(time_diff+time_avg) /2.0;
+
+  /*   //prints statics of uhd every 10 seconds
+   if ( loop % (10 * ((int)device->openair0_cfg[0].sample_rate /(int)nsamps )) ==0)
+     LOG_I(HW,"usrp_write: min(ns)=%d, max(ns)=%d, avg(ns)=%d\n", (int)time_min, (int)time_max,(int)time_avg);
+  */
+   loop++;
+  return ret;
 }
 
 /*! \brief Receive samples from hardware.
@@ -204,20 +228,25 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
 */
 static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc)
 {
+   static long long int loop=0;
+   static long time_min=0, time_max=0, time_avg=0;
+   struct timespec tp_start, tp_end;
+   long time_diff;
+   clock_gettime(CLOCK_MONOTONIC_RAW, &tp_start);
    usrp_state_t *s = (usrp_state_t*)device->priv;
    int samples_received=0,i,j;
    int nsamps2;  // aligned to upper 32 or 16 byte boundary
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
-   __m256i buff_tmp[2][nsamps>>3];
    nsamps2 = (nsamps+7)>>3;
+   __m256i buff_tmp[2][nsamps2];
 #else
-   __m128i buff_tmp[2][nsamps>>2];
    nsamps2 = (nsamps+3)>>2;
+   __m128i buff_tmp[2][nsamps2];
 #endif
 #elif defined(__arm__)
-   int16x8_t buff_tmp[2][nsamps>>2];
    nsamps2 = (nsamps+3)>>2;
+   int16x8_t buff_tmp[2][nsamps2];
 #endif
 
 
@@ -232,7 +261,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
     // receive a single channel (e.g. from connector RF A)
       samples_received = s->rx_stream->recv(buff_tmp[0], nsamps, s->rx_md);
     }
-   
+
   // bring RX data into 12 LSBs for softmodem RX
     for (int i=0;i<cc;i++) {
       for (int j=0; j<nsamps2; j++) {      
@@ -248,7 +277,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
       }
     }
   } else if (device->type == USRP_X300_DEV) {
-    if (cc>1) {
+    if (cc>1) { 
     // receive multiple channels (e.g. RF A and RF B)
       std::vector<void *> buff_ptrs;
  
@@ -284,6 +313,22 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
   s->rx_timestamp = s->rx_md.time_spec.to_ticks(s->sample_rate);
   *ptimestamp = s->rx_timestamp;
 
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tp_end);
+  time_diff = (tp_end.tv_sec - tp_start.tv_sec) *1E09  + (tp_end.tv_nsec - tp_start.tv_nsec);
+  if  (time_min==0 ||loop==1 || time_min > time_diff)
+    time_min=time_diff;
+  if  (time_max==0 ||loop==1 || time_max < time_diff)
+    time_max=time_diff;
+  if (time_avg ==0 ||loop==1)
+    time_avg= time_diff;
+  else
+    time_avg=(time_diff+time_avg) /2.0;
+  /*
+  //prints statics of uhd every 10 seconds
+  if ( loop % (10 * ((int)device->openair0_cfg[0].sample_rate /(int)nsamps )) ==0)
+     LOG_I(HW,"usrp_read: min(ns)=%d, max(ns)=%d, avg(ns)=%d\n", (int)time_min, (int)time_max,(int)time_avg);
+
+     loop++;*/
   return samples_received;
 }
 
@@ -375,7 +420,7 @@ int trx_usrp_set_gains(openair0_device* device,
 /*! \brief Stop USRP
  * \param card refers to the hardware index to use
  */
-int trx_usrp_stop(int card) {
+int trx_usrp_stop(openair0_device* device) {
   return(0);
 }
 
@@ -491,6 +536,7 @@ extern "C" {
     
     // Initialize USRP device
 
+  device->openair0_cfg = openair0_cfg;
 
   std::string args = "type=b200";
 
@@ -513,6 +559,8 @@ extern "C" {
     
     // workaround for an api problem, master clock has to be set with the constructor not via set_master_clock_rate
     args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
+    
+//    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=4096, recv_frame_size=4096";
     
     uhd::device_addrs_t device_adds = uhd::device::find(args);
 
@@ -545,32 +593,28 @@ extern "C" {
     switch ((int)openair0_cfg[0].sample_rate) {
     case 30720000:
             // from usrp_time_offset
-      openair0_cfg[0].samples_per_packet    = 2048;
+      //openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 15;
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
-      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     case 15360000:
-      openair0_cfg[0].samples_per_packet    = 2048;
+      //openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 45;
       openair0_cfg[0].tx_bw                 = 10e6;
       openair0_cfg[0].rx_bw                 = 10e6;
-      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
     case 7680000:
-      openair0_cfg[0].samples_per_packet    = 1024;
+      //openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 50;
       openair0_cfg[0].tx_bw                 = 5e6;
       openair0_cfg[0].rx_bw                 = 5e6;
-      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
     case 1920000:
-      openair0_cfg[0].samples_per_packet    = 256;
+      //openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 50;
       openair0_cfg[0].tx_bw                 = 1.25e6;
       openair0_cfg[0].rx_bw                 = 1.25e6;
-      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     default:
       printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
@@ -580,7 +624,7 @@ extern "C" {
 
   } else {
     printf("Found USRP B200");
-    args += ",num_recv_frames=256" ; 
+    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=15360, recv_frame_size=15360" ; 
     s->usrp = uhd::usrp::multi_usrp::make(args);
 
     //  s->usrp->set_rx_subdev_spec(rx_subdev);
@@ -606,43 +650,38 @@ extern "C" {
     switch ((int)openair0_cfg[0].sample_rate) {
     case 30720000:
       s->usrp->set_master_clock_rate(30.72e6);
-      openair0_cfg[0].samples_per_packet    = 4096;
+      //openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 115;
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
-      openair0_cfg[0].tx_scheduling_advance = 11*openair0_cfg[0].samples_per_packet;
       break;
     case 23040000:
       s->usrp->set_master_clock_rate(23.04e6); //to be checked
-      openair0_cfg[0].samples_per_packet    = 2048;
+      //openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 113;
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
-      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     case 15360000:
       s->usrp->set_master_clock_rate(30.72e06);
-      openair0_cfg[0].samples_per_packet    = 2048;
+      //openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 103; 
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
-      openair0_cfg[0].tx_scheduling_advance = 10240;
       break;
     case 7680000:
       s->usrp->set_master_clock_rate(30.72e6);
-      openair0_cfg[0].samples_per_packet    = 1024;
+      //openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 80;
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
-      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
     case 1920000:
-      s->usrp->set_master_clock_rate(7.68e6);
-      openair0_cfg[0].samples_per_packet    = 256;
+      s->usrp->set_master_clock_rate(30.72e6);
+      //openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 40;
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
-      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     default:
       printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
@@ -652,8 +691,8 @@ extern "C" {
   }
 
   /* device specific */
-  openair0_cfg[0].txlaunch_wait = 1;//manage when TX processing is triggered
-  openair0_cfg[0].txlaunch_wait_slotcount = 1; //manage when TX processing is triggered
+  //openair0_cfg[0].txlaunch_wait = 1;//manage when TX processing is triggered
+  //openair0_cfg[0].txlaunch_wait_slotcount = 1; //manage when TX processing is triggered
   openair0_cfg[0].iq_txshift = 4;//shift
   openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
   
@@ -763,7 +802,8 @@ extern "C" {
   device->trx_stop_func  = trx_usrp_stop;
   device->trx_set_freq_func = trx_usrp_set_freq;
   device->trx_set_gains_func   = trx_usrp_set_gains;
-  
+  device->openair0_cfg = openair0_cfg;
+
   s->sample_rate = openair0_cfg[0].sample_rate;
   // TODO:
   // init tx_forward_nsamps based usrp_time_offset ex
