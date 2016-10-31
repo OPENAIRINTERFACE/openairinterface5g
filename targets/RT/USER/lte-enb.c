@@ -677,7 +677,7 @@ void fh_if4p5_asynch_UL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     if (proc->first_rx != 0) {
       *frame = proc->frame_rx;
       *subframe = proc->subframe_rx;
-      proc->first_rx = 0;
+      proc->first_rx--;
     }
     else {
       if (proc->frame_rx != *frame) {
@@ -881,7 +881,7 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
   proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
   proc->timestamp_tx = proc->timestamp_rx+(4*fp->samples_per_tti);
-  //  printf("trx_read <- USRP TS %llu (sf %d, first_rx %d)\n", proc->timestamp_rx,proc->subframe_rx,proc->first_rx);  
+  //printf("trx_read <- RX TS %llu (sf %d, first_rx %d)\n", proc->timestamp_rx,proc->subframe_rx,proc->first_rx);  
   
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
@@ -894,7 +894,7 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
       exit_fun("Exiting");
     }
   } else {
-    proc->first_rx = 0;
+    proc->first_rx--;
     *frame = proc->frame_rx;
     *subframe = proc->subframe_rx;        
   }
@@ -931,7 +931,7 @@ void rx_fh_if5(PHY_VARS_eNB *eNB,int *frame, int *subframe) {
       exit_fun("Exiting");
     }
   } else {
-    proc->first_rx = 0;
+    proc->first_rx--;
     *frame = proc->frame_rx;
     *subframe = proc->subframe_rx;        
   }      
@@ -983,7 +983,7 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
       exit_fun("Exiting");
     }
   } else {
-    proc->first_rx = 0;
+    proc->first_rx--;
     *frame = proc->frame_rx;
     *subframe = proc->subframe_rx;        
   }
@@ -1327,7 +1327,7 @@ void init_eNB_proc(int inst) {
     proc->instance_cnt_asynch_rxtx = -1;
     proc->CC_id = CC_id;    
     
-    proc->first_rx=1;
+    proc->first_rx=4;
     proc->first_tx=1;
 
     pthread_mutex_init( &proc_rxtx[0].mutex_rxtx, NULL);

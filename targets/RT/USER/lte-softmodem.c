@@ -1354,7 +1354,7 @@ void init_openair0() {
 	openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB - rx_gain_off;
       }
 
-
+      openair0_cfg[card].configFilename = rf_config_file;
     }
 
 
