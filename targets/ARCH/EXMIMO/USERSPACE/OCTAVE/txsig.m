@@ -1,4 +1,4 @@
-fc  = 2655000000;
+fc  = 2560000000
 %fc  = 1907600000;
 %fc = 859.5e6;
 
@@ -8,9 +8,9 @@ eNB_flag = 0;
 card = 0;
 active_rf = [1 0 0 0];
 autocal = [1 1 1 1];
-resampling_factor = [0 0 0 0];
+resampling_factor = [2 2 2 2];
 limeparms;
-rf_mode   = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF10+RXLPFNORM+RXLPFEN+RXLPF10+LNA1ON+LNAMax+RFBBNORM) * active_rf;
+rf_mode   = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM) * active_rf;
 rf_mode = rf_mode + (DMAMODE_RX + DMAMODE_TX)*active_rf;
 %rf_mode = rf_mode + (DMAMODE_TX)*active_rf + DMAMODE_RX*active_rf;
 %rf_mode   = RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAByp+RFBBLNA1;
@@ -56,10 +56,10 @@ case 0
   s(:,4) = amp * ones(1,length);
 
 case 1
-  s(:,1) = floor(amp * (exp(1i*2*pi*(0:((length)-1))/256)));
-  s(:,2) = floor(amp * (exp(1i*2*pi*(0:((length)-1))/256)));
-  s(:,3) = floor(amp * (exp(1i*2*pi*(0:((length)-1))/256)));
-  s(:,4) = floor(amp * (exp(1i*2*pi*(0:((length)-1))/256)));
+  s(:,1) = floor(amp * (exp(1i*2*pi*(0:((length)-1))/4)));
+  s(:,2) = floor(amp * (exp(1i*2*pi*(0:((length)-1))/4)));
+  s(:,3) = floor(amp * (exp(1i*2*pi*(0:((length)-1))/4)));
+  s(:,4) = floor(amp * (exp(1i*2*pi*(0:((length)-1))/4)));
 
 case 2
   s(38400+128,1)= 80-1j*40;
