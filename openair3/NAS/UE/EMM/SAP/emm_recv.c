@@ -142,7 +142,7 @@ int emm_recv_attach_accept(attach_accept_msg *msg, int *emm_cause)
   // typeoflist = 0 and numberofelements = 1 (ie numberofelements equal to zero see 3gpp 24.301 9.9.3.33.1)
   LOG_D(NAS,"attach accept type of list: %d, number of element: %d\n",msg->tailist.typeoflist, msg->tailist.numberofelements);
   if (!( (msg->tailist.typeoflist == TRACKING_AREA_IDENTITY_LIST_ONE_PLMN_CONSECUTIVE_TACS) ||
-         ((msg->tailist.typeoflist == 0) && ( (msg->tailist.numberofelements + 1) == 1))
+         ((msg->tailist.typeoflist == 0) && ( msg->tailist.numberofelements == 0))
        )
      )
   {
