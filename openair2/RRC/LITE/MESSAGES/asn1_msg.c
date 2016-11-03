@@ -2670,7 +2670,7 @@ OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname)
     uint32_t     featrG;
     bit_string = CALLOC(1, sizeof(*bit_string));
     featrG     = 0x04000800;
-    if(usim_test == 0)
+    if(usim_test == 1)
     {
         bit_string->buf         = &featrG;
         bit_string->size        = 4;
