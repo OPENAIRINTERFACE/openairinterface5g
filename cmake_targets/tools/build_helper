@@ -229,7 +229,7 @@ check_install_additional_tools (){
     ntp
 
     $SUDO pip install paramiko
-    $SUDO pip install pyroute2
+    $SUDO pip install pyroute2 colorama
     $SUDO rm -fr /opt/ssh
     $SUDO GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/ssh.git /opt/ssh
     
