@@ -817,6 +817,7 @@ rrc_ue_process_measConfig(
       }
     }
 
+    LOG_I(RRC,"call rrc_mac_config_req \n");
     rrc_mac_config_req(ctxt_pP->module_id,0,ENB_FLAG_NO,0,eNB_index,
                        (RadioResourceConfigCommonSIB_t *)NULL,
                        (struct PhysicalConfigDedicated *)NULL,
@@ -963,6 +964,199 @@ rrc_ue_process_measConfig(
   }
 }
 
+
+void
+rrc_ue_update_radioResourceConfigDedicated(RadioResourceConfigDedicated_t* radioResourceConfigDedicated,
+        const protocol_ctxt_t* const ctxt_pP,
+        uint8_t eNB_index)
+{
+    PhysicalConfigDedicated_t* physicalConfigDedicated2 = NULL;
+
+    physicalConfigDedicated2 = CALLOC(1,sizeof(*physicalConfigDedicated2));
+    physicalConfigDedicated2->pdsch_ConfigDedicated         = CALLOC(1,sizeof(*physicalConfigDedicated2->pdsch_ConfigDedicated));
+    physicalConfigDedicated2->pusch_ConfigDedicated         = CALLOC(1,sizeof(*physicalConfigDedicated2->pusch_ConfigDedicated));
+    physicalConfigDedicated2->pucch_ConfigDedicated         = CALLOC(1,sizeof(*physicalConfigDedicated2->pucch_ConfigDedicated));
+    physicalConfigDedicated2->cqi_ReportConfig              = CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
+    physicalConfigDedicated2->schedulingRequestConfig       = CALLOC(1,sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
+    physicalConfigDedicated2->antennaInfo                   = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
+
+    physicalConfigDedicated2->uplinkPowerControlDedicated   = CALLOC(1,sizeof(*physicalConfigDedicated2->uplinkPowerControlDedicated));
+    physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH         = CALLOC(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH));
+    physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH         = CALLOC(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH));
+
+    // Update pdsch_ConfigDedicated
+    if(radioResourceConfigDedicated->physicalConfigDedicated->pdsch_ConfigDedicated != NULL)
+    {
+        LOG_I(RRC,"Update pdsch_ConfigDedicated config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pdsch_ConfigDedicated == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pdsch_ConfigDedicated = CALLOC(1,sizeof(PDSCH_ConfigDedicated_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pdsch_ConfigDedicated,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->pdsch_ConfigDedicated,
+                sizeof(physicalConfigDedicated2->pdsch_ConfigDedicated));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for pdsch_ConfigDedicated\n");
+    }
+
+    // Update pusch_ConfigDedicated
+    if(radioResourceConfigDedicated->physicalConfigDedicated->pusch_ConfigDedicated != NULL)
+    {
+        LOG_I(RRC,"Update pusch_ConfigDedicated config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pusch_ConfigDedicated == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pusch_ConfigDedicated = CALLOC(1,sizeof(PUSCH_ConfigDedicated_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pusch_ConfigDedicated,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->pusch_ConfigDedicated,
+                sizeof(physicalConfigDedicated2->pusch_ConfigDedicated));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for pusch_ConfigDedicated\n");
+    }
+
+    // Update pucch_ConfigDedicated
+    if(radioResourceConfigDedicated->physicalConfigDedicated->pucch_ConfigDedicated != NULL)
+    {
+        LOG_I(RRC,"Update pucch_ConfigDedicated config \n");
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pucch_ConfigDedicated == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pucch_ConfigDedicated = CALLOC(1,sizeof(PUCCH_ConfigDedicated_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pucch_ConfigDedicated,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->pucch_ConfigDedicated,
+                sizeof(physicalConfigDedicated2->pucch_ConfigDedicated));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for pucch_ConfigDedicated\n");
+    }
+
+    // Update cqi_ReportConfig
+    if(radioResourceConfigDedicated->physicalConfigDedicated->cqi_ReportConfig != NULL)
+    {
+        LOG_I(RRC,"Update cqi_ReportConfig config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig = CALLOC(1,sizeof(CQI_ReportConfig_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->cqi_ReportConfig,
+                sizeof(physicalConfigDedicated2->cqi_ReportConfig));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for cqi_ReportConfig\n");
+    }
+
+    // Update schedulingRequestConfig
+    if(radioResourceConfigDedicated->physicalConfigDedicated->schedulingRequestConfig != NULL)
+    {
+        LOG_I(RRC,"Update schedulingRequestConfig config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->schedulingRequestConfig == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->schedulingRequestConfig = CALLOC(1,sizeof(SchedulingRequestConfig_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->schedulingRequestConfig,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->schedulingRequestConfig,
+                sizeof(physicalConfigDedicated2->schedulingRequestConfig));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for schedulingRequestConfig\n");
+    }
+
+    // Update soundingRS_UL_ConfigDedicated
+    if(radioResourceConfigDedicated->physicalConfigDedicated->soundingRS_UL_ConfigDedicated != NULL)
+    {
+        LOG_I(RRC,"Update soundingRS_UL_ConfigDedicated config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->soundingRS_UL_ConfigDedicated == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->soundingRS_UL_ConfigDedicated = CALLOC(1,sizeof(SoundingRS_UL_ConfigDedicated_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->soundingRS_UL_ConfigDedicated,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->soundingRS_UL_ConfigDedicated,
+                sizeof(physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for soundingRS_UL_ConfigDedicated\n");
+    }
+
+    // Update antennaInfo
+    if(radioResourceConfigDedicated->physicalConfigDedicated->antennaInfo != NULL)
+    {
+        LOG_I(RRC,"Update antennaInfo config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->antennaInfo == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->antennaInfo = CALLOC(1,sizeof(struct PhysicalConfigDedicated__antennaInfo));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->antennaInfo,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->antennaInfo,
+                sizeof(physicalConfigDedicated2->antennaInfo));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for antennaInfo\n");
+    }
+
+
+    // Update uplinkPowerControlDedicated
+    if(radioResourceConfigDedicated->physicalConfigDedicated->uplinkPowerControlDedicated != NULL)
+    {
+        LOG_I(RRC,"Update uplinkPowerControlDedicated config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->uplinkPowerControlDedicated == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->uplinkPowerControlDedicated = CALLOC(1,sizeof(UplinkPowerControlDedicated_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->uplinkPowerControlDedicated,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->uplinkPowerControlDedicated,
+                sizeof(physicalConfigDedicated2->uplinkPowerControlDedicated));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for uplinkPowerControlDedicated\n");
+    }
+
+    // Update tpc_PDCCH_ConfigPUCCH
+    if(radioResourceConfigDedicated->physicalConfigDedicated->tpc_PDCCH_ConfigPUCCH != NULL)
+    {
+        LOG_I(RRC,"Update tpc_PDCCH_ConfigPUCCH config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->tpc_PDCCH_ConfigPUCCH == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->tpc_PDCCH_ConfigPUCCH = CALLOC(1,sizeof(TPC_PDCCH_Config_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->tpc_PDCCH_ConfigPUCCH,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->tpc_PDCCH_ConfigPUCCH,
+                sizeof(physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for tpc_PDCCH_ConfigPUCCH\n");
+    }
+
+    // Update tpc_PDCCH_ConfigPUSCH
+    if(radioResourceConfigDedicated->physicalConfigDedicated->tpc_PDCCH_ConfigPUSCH != NULL)
+    {
+        LOG_I(RRC,"Update tpc_PDCCH_ConfigPUSCH config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->tpc_PDCCH_ConfigPUSCH == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->tpc_PDCCH_ConfigPUSCH = CALLOC(1,sizeof(TPC_PDCCH_Config_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->tpc_PDCCH_ConfigPUSCH,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->tpc_PDCCH_ConfigPUSCH,
+                sizeof(physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH));
+
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for tpc_PDCCH_ConfigPUSCH\n");
+    }
+
+}
 //-----------------------------------------------------------------------------
 void
 rrc_ue_process_radioResourceConfigDedicated(
@@ -983,11 +1177,17 @@ rrc_ue_process_radioResourceConfigDedicated(
 
   // Save physicalConfigDedicated if present
   if (radioResourceConfigDedicated->physicalConfigDedicated) {
+    LOG_I(RRC,"Save physicalConfigDedicated if present \n");
+
     if (UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]) {
+#if 1
+        rrc_ue_update_radioResourceConfigDedicated(radioResourceConfigDedicated, ctxt_pP, eNB_index);
+#else
       memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index],(char*)radioResourceConfigDedicated->physicalConfigDedicated,
              sizeof(struct PhysicalConfigDedicated));
-
+#endif
     } else {
+      LOG_I(RRC,"Init physicalConfigDedicated UE_rrc_inst to radioResourceConfigDedicated->physicalConfigDedicated\n");
       UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index] = radioResourceConfigDedicated->physicalConfigDedicated;
     }
   }
@@ -1105,7 +1305,7 @@ rrc_ue_process_radioResourceConfigDedicated(
             SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
           }
 
-          LOG_D(RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB1 eNB %d) --->][MAC_UE][MOD %02d][]\n",
+          LOG_I(RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB1 eNB %d) --->][MAC_UE][MOD %02d][]\n",
                 ctxt_pP->frame, ctxt_pP->module_id, eNB_index, ctxt_pP->module_id);
           rrc_mac_config_req(ctxt_pP->module_id,0,ENB_FLAG_NO,0,eNB_index,
                              (RadioResourceConfigCommonSIB_t *)NULL,
@@ -1160,7 +1360,7 @@ rrc_ue_process_radioResourceConfigDedicated(
             SRB2_logicalChannelConfig = &SRB2_logicalChannelConfig_defaultValue;
           }
 
-          LOG_D(RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB2 eNB %d) --->][MAC_UE][MOD %02d][]\n",
+          LOG_I(RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB2 eNB %d) --->][MAC_UE][MOD %02d][]\n",
                 ctxt_pP->frame,
                 ctxt_pP->module_id,
                 eNB_index,
@@ -1267,7 +1467,7 @@ rrc_ue_process_radioResourceConfigDedicated(
         UE_rrc_inst[ctxt_pP->module_id].DRB_config[eNB_index][DRB_id] = radioResourceConfigDedicated->drb_ToAddModList->list.array[i];
         rrc_ue_establish_drb(ctxt_pP->module_id,ctxt_pP->frame,eNB_index,radioResourceConfigDedicated->drb_ToAddModList->list.array[i]);
         // MAC/PHY Configuration
-        LOG_D(RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][]\n",
+        LOG_I(RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][]\n",
               ctxt_pP->frame, ctxt_pP->module_id,
               radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->drb_Identity,
               eNB_index,
@@ -1825,7 +2025,7 @@ rrc_ue_process_mobilityControlInfo(
   UE_rrc_inst[ue_mod_idP].DRB_config[eNB_index][0] = NULL;
    */
   //Synchronisation to DL of target cell
-  LOG_D(RRC,
+  LOG_I(RRC,
         "HO: Reset PDCP and RLC for configured RBs.. \n[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB2 eNB %d) --->][MAC_UE][MOD %02d][]\n",
         ctxt_pP->frame, ctxt_pP->module_id, eNB_index, ctxt_pP->module_id);
 
@@ -2685,7 +2885,7 @@ static int decode_SIB1( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_
 
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIperiod     = siPeriod_int[sib1->schedulingInfoList.list.array[0]->si_Periodicity];
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIwindowsize = siWindowLength_int[sib1->si_WindowLength];
-  LOG_D( RRC, "[FRAME unknown][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB1 params eNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
+  LOG_I( RRC, "[FRAME unknown][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB1 params eNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
          ctxt_pP->module_id, eNB_index, ctxt_pP->module_id );
 
   rrc_mac_config_req(ctxt_pP->module_id, 0, ENB_FLAG_NO, 0, eNB_index,
@@ -3499,7 +3699,7 @@ static int decode_SI( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_in
 	LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB13 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
 	dump_sib13( UE_rrc_inst[ctxt_pP->module_id].sib13[eNB_index] );
 	// adding here function to store necessary parameters for using in decode_MCCH_Message + maybe transfer to PHY layer
-	LOG_D( RRC, "[FRAME %05"PRIu32"][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB13 params eNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
+	LOG_I( RRC, "[FRAME %05"PRIu32"][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB13 params eNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
 	       ctxt_pP->frame, ctxt_pP->module_id, eNB_index, ctxt_pP->module_id);
 	rrc_mac_config_req(ctxt_pP->module_id,0,ENB_FLAG_NO,0,eNB_index,
 			   (RadioResourceConfigCommonSIB_t *)NULL,
@@ -3956,7 +4156,7 @@ static void decode_MBSFNAreaConfiguration( module_id_t ue_mod_idP, uint8_t eNB_i
 {
   protocol_ctxt_t               ctxt;
 
-  LOG_D(RRC,"[UE %d] Frame %d : Number of MCH(s) in the MBSFN Sync Area %d  is %d\n",
+  LOG_I(RRC,"[UE %d] Frame %d : Number of MCH(s) in the MBSFN Sync Area %d  is %d\n",
         ue_mod_idP, frameP, mbsfn_sync_area, UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index]->pmch_InfoList_r9.list.count);
   //  store to MAC/PHY necessary parameters for receiving MTCHs
   rrc_mac_config_req(ue_mod_idP,0,ENB_FLAG_NO,0,eNB_index,
@@ -4301,12 +4501,26 @@ void *rrc_ue_task( void *args_p )
 
       /* Transfer data to PDCP */
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, ENB_FLAG_NO, UE_rrc_inst[ue_mod_id].Info[0].rnti, 0, 0,0);
-      rrc_data_req (&ctxt,
-		    DCCH,
-		    rrc_mui++,
-		    SDU_CONFIRM_NO,
-		    length, buffer,
-		    PDCP_TRANSMISSION_MODE_CONTROL);
+
+      // check if SRB2 is created, if yes request data_req on DCCH1 (SRB2) 
+      if(UE_rrc_inst[ue_mod_id].SRB2_config[0] == NULL)
+      {
+          rrc_data_req (&ctxt,
+                  DCCH,
+                  rrc_mui++,
+                  SDU_CONFIRM_NO,
+                  length, buffer,
+                  PDCP_TRANSMISSION_MODE_CONTROL);
+      }
+      else
+      {
+          rrc_data_req (&ctxt,
+                  DCCH1,
+                  rrc_mui++,
+                  SDU_CONFIRM_NO,
+                  length, buffer,
+                  PDCP_TRANSMISSION_MODE_CONTROL);
+      }
       break;
     }
       
