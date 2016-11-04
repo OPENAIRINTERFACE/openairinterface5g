@@ -1,4 +1,3 @@
-
 /*******************************************************************************
     OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
@@ -28,28 +27,38 @@
 
  *******************************************************************************/
 
-/*! \file enb_agent.h
- * \brief top level enb agent  
- * \author Navid Nikaein and Xenofon Foukas
+/*! \file flexran_agent_common_internal.h
+ * \brief internal agent functions for common message primitves and utilities
+ * \author Xenofon Foukas
  * \date 2016
  * \version 0.1
  */
 
-#ifndef ENB_AGENT_H_
-#define ENB_AGENT_H_
+#ifndef FLEXRAN_AGENT_COMMON_INTERNAL_H_
+#define FLEXRAN_AGENT_COMMON_INTERNAL_H_
 
-#include "enb_config.h" // for enb properties
-#include "enb_agent_common.h"
+#include <yaml.h>
 
+#include "flexran_agent_defs.h"
 
-/* Initiation and termination of the eNodeB agent */
-int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties);
-int enb_agent_stop(mid_t mod_id);
+int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy_length);
 
-/* 
- * enb agent task mainly wakes up the tx thread for periodic and oneshot messages to the controller 
- * and can interact with other itti tasks
-*/
-void *enb_agent_task(void *args);
+int apply_parameter_modification(void *parameter, yaml_parser_t *parser);
+
+// This can be used when parsing for a specific system that is not yet implmeneted
+// in order to skip its configuration, without affecting the rest
+int skip_system_section(yaml_parser_t *parser);
+
+// This can be used when parsing for a specific subsystem that is not yet implmeneted
+// in order to skip its configuration, without affecting the rest
+int skip_subsystem_section(yaml_parser_t *parser);
+
+// This can be used when parsing for the parameters of a specific subsystem 
+//that is not yet implmeneted in order to skip its configuration, without affecting the rest
+int skip_subsystem_parameters_config(yaml_parser_t *parser);
+
+// This can be used when configuring the parameters of a specific subsystem 
+//that is not yet implmeneted in order to skip its configuration, without affecting the rest
+int skip_parameter_modification(yaml_parser_t *parser);
 
 #endif

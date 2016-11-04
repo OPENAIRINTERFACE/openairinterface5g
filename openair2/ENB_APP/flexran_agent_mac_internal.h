@@ -27,23 +27,23 @@
 
  *******************************************************************************/
 
-/*! \file enb_agent_mac_internal.h
- * \brief Implementation specific definitions for the eNB MAC agent
+/*! \file flexran_agent_mac_internal.h
+ * \brief Implementation specific definitions for the FlexRAN MAC agent
  * \author Xenofon Foukas
  * \date 2016
  * \version 0.1
  */
 
-#ifndef ENB_AGENT_MAC_INTERNAL_H_
-#define ENB_AGENT_MAC_INTERNAL_H_
+#ifndef FLEXRAN_AGENT_MAC_INTERNAL_H_
+#define FLEXRAN_AGENT_MAC_INTERNAL_H_
 
 #include <pthread.h>
 
 #include <yaml.h>
 
-#include "enb_agent_mac.h"
-#include "enb_agent_common.h"
-#include "enb_agent_defs.h"
+#include "flexran_agent_mac.h"
+#include "flexran_agent_common.h"
+#include "flexran_agent_defs.h"
 
 /*This will be used for producing continuous status updates for the MAC
  *Needs to be thread-safe
@@ -64,18 +64,18 @@ mac_stats_updates_context_t mac_stats_context[NUM_MAX_ENB];
 
 /*Functions to initialize and destroy the struct required for the
  *continuous stats update report*/
-err_code_t enb_agent_init_cont_mac_stats_update(mid_t mod_id);
+err_code_t flexran_agent_init_cont_mac_stats_update(mid_t mod_id);
 
-err_code_t enb_agent_destroy_cont_mac_stats_update(mid_t mod_id);
+err_code_t flexran_agent_destroy_cont_mac_stats_update(mid_t mod_id);
 
 
 /*Enable/Disable the continuous stats update service for the MAC*/
-err_code_t enb_agent_enable_cont_mac_stats_update(mid_t mod_id, xid_t xid,
+err_code_t flexran_agent_enable_cont_mac_stats_update(mid_t mod_id, xid_t xid,
 						  stats_request_config_t *stats_req);
 
-err_code_t enb_agent_disable_cont_mac_stats_update(mid_t mod_id);
+err_code_t flexran_agent_disable_cont_mac_stats_update(mid_t mod_id);
 
-Protocol__FlexranMessage * enb_agent_generate_diff_mac_stats_report(Protocol__FlexranMessage *new_report,
+Protocol__FlexranMessage * flexran_agent_generate_diff_mac_stats_report(Protocol__FlexranMessage *new_report,
 								    Protocol__FlexranMessage *old_report);
 
 Protocol__FlexUeStatsReport * copy_ue_stats_report(Protocol__FlexUeStatsReport * original);
@@ -111,4 +111,4 @@ int parse_dl_scheduler_parameters(mid_t mod_id, yaml_parser_t *parser);
 
 int load_dl_scheduler_function(mid_t mod_id, const char *function_name);
 
-#endif /*ENB_AGENT_MAC_INTERNAL_H_*/
+#endif /*FLEXRAN_AGENT_MAC_INTERNAL_H_*/

@@ -27,7 +27,7 @@
 
 *******************************************************************************/
 
-/*! \file eNB_agent_scheduler_dlsch_ue_remote.c
+/*! \file flexran_agent_scheduler_dlsch_ue_remote.c
  * \brief procedures related to remote scheduling in the DLSCH transport channel
  * \author Xenofon Foukas
  * \date 2016
@@ -37,9 +37,9 @@
 
  */
 
-#include "enb_agent_common_internal.h"
+#include "flexran_agent_common_internal.h"
 
-#include "eNB_agent_scheduler_dlsch_ue_remote.h"
+#include "flexran_agent_scheduler_dlsch_ue_remote.h"
 
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/extern.h"
@@ -52,8 +52,8 @@ int queue_initialized = 0;
 //uint32_t period = 10;
 //uint32_t sched [] = {1, 2, 3};
 
-void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
-			     int *mbsfn_flag, Protocol__FlexranMessage **dl_info) {
+void flexran_schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
+				     int *mbsfn_flag, Protocol__FlexranMessage **dl_info) {
 
   
   //if ((subframe == skip_subframe) && (frame % period == 0)) {
@@ -97,19 +97,19 @@ void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
     } else if (diff < 0) { //previous subframe , delete message and free memory
       LOG_D(MAC, "Found a decision for a previous subframe in the queue. Let's get rid of it\n");
       TAILQ_REMOVE(&queue_head, queue_head.tqh_first, configs);
-      enb_agent_mac_destroy_dl_config(dl_config_elem->dl_info);
+      flexran_agent_mac_destroy_dl_config(dl_config_elem->dl_info);
       free(dl_config_elem);
       eNB->eNB_stats[mod_id].sched_decisions++;
       eNB->eNB_stats[mod_id].missed_deadlines++;
     } else { // next subframe, nothing to do now
       LOG_D(MAC, "Found a decision for a future subframe in the queue. Nothing to do now\n");
-      enb_agent_mac_create_empty_dl_config(mod_id, dl_info);
+      flexran_agent_mac_create_empty_dl_config(mod_id, dl_info);
       return;
     }
   }
 
   //Done with the local cache. Now we need to check if something new arrived
-  enb_agent_get_pending_dl_mac_config(mod_id, dl_info);
+  flexran_agent_get_pending_dl_mac_config(mod_id, dl_info);
   while (*dl_info != NULL) {
 
     diff = get_sf_difference(mod_id, (*dl_info)->dl_mac_config_msg->sfn_sf);
@@ -119,9 +119,9 @@ void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
       return;
     } else if (diff < 0) {
       LOG_D(MAC, "Found a decision for a previous subframe. Let's get rid of it\n");
-      enb_agent_mac_destroy_dl_config(*dl_info);
+      flexran_agent_mac_destroy_dl_config(*dl_info);
       *dl_info = NULL;
-      enb_agent_get_pending_dl_mac_config(mod_id, dl_info);
+      flexran_agent_get_pending_dl_mac_config(mod_id, dl_info);
       eNB->eNB_stats[mod_id].sched_decisions++;
       eNB->eNB_stats[mod_id].missed_deadlines++;
     } else { // Intended for future subframe. Store it in local cache
@@ -129,22 +129,22 @@ void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
       dl_mac_config_element_t *e = malloc(sizeof(dl_mac_config_element_t));
       e->dl_info = *dl_info;
       TAILQ_INSERT_TAIL(&queue_head, e, configs);
-      enb_agent_mac_create_empty_dl_config(mod_id, dl_info);
+      flexran_agent_mac_create_empty_dl_config(mod_id, dl_info);
       // No need to look for another. Messages arrive ordered
       return;
     }
   }
   
   // We found no pending command, so we will simply pass an empty one
-  enb_agent_mac_create_empty_dl_config(mod_id, dl_info);
+  flexran_agent_mac_create_empty_dl_config(mod_id, dl_info);
 }
 
 int get_sf_difference(mid_t mod_id, uint32_t sfn_sf) {
   int diff_in_subframes;
   
-  uint16_t current_frame = get_current_system_frame_num(mod_id);
-  uint16_t current_subframe = get_current_subframe(mod_id);
-  uint32_t current_sfn_sf = get_sfn_sf(mod_id);
+  uint16_t current_frame = flexran_get_current_system_frame_num(mod_id);
+  uint16_t current_subframe = flexran_get_current_subframe(mod_id);
+  uint32_t current_sfn_sf = flexran_get_sfn_sf(mod_id);
   
   if (sfn_sf == current_sfn_sf) {
     return 0;

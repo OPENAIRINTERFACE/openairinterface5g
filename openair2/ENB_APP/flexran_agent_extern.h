@@ -28,21 +28,21 @@
  *******************************************************************************/
 
 /*! \file ENB_APP/extern.h
- * \brief enb agent - mac interface primitives
+ * \brief FlexRAN agent - mac interface primitives
  * \author Xenofon Foukas
  * \date 2016
  * \version 0.1
  * \mail x.foukas@sms.ed.ac.uk
  */
 
-#ifndef __ENB_AGENT_EXTERN_H__
-#define __ENB_AGENT_EXTERN_H__
+#ifndef __FLEXRAN_AGENT_EXTERN_H__
+#define __FLEXRAN_AGENT_EXTERN_H__
 
-#include "enb_agent_defs.h"
-#include "enb_agent_mac_defs.h"
+#include "flexran_agent_defs.h"
+#include "flexran_agent_mac_defs.h"
 
 
-//extern msg_context_t shared_ctxt[NUM_MAX_ENB][ENB_AGENT_MAX];
+//extern msg_context_t shared_ctxt[NUM_MAX_ENB][FLEXRAN_AGENT_MAX];
 
 /* full path of the local cache for storing VSFs */
 extern char local_cache[40];

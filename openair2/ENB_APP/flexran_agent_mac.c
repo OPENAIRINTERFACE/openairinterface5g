@@ -27,21 +27,21 @@
 
  *******************************************************************************/
 
-/*! \file enb_agent_mac.c
- * \brief enb agent message handler for MAC layer
+/*! \file flexran_agent_mac.c
+ * \brief FlexRAN agent message handler for MAC layer
  * \author Xenofon Foukas, Mohamed Kassem and Navid Nikaein
  * \date 2016
  * \version 0.1
  */
 
-#include "enb_agent_mac.h"
-#include "enb_agent_extern.h"
-#include "enb_agent_common.h"
-#include "enb_agent_mac_internal.h"
+#include "flexran_agent_mac.h"
+#include "flexran_agent_extern.h"
+#include "flexran_agent_common.h"
+#include "flexran_agent_mac_internal.h"
 
 #include "LAYER2/MAC/proto.h"
-#include "LAYER2/MAC/enb_agent_mac_proto.h"
-#include "LAYER2/MAC/eNB_agent_scheduler_dlsch_ue_remote.h"
+#include "LAYER2/MAC/flexran_agent_mac_proto.h"
+#include "LAYER2/MAC/flexran_agent_scheduler_dlsch_ue_remote.h"
 
 #include "liblfds700.h"
 
@@ -61,7 +61,7 @@ struct lfds700_ringbuffer_element *dl_mac_config_array[NUM_MAX_ENB];
 struct lfds700_ringbuffer_state ringbuffer_state[NUM_MAX_ENB];
 
 
-int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg){
+int flexran_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg){
 
   // TODO: Must deal with sanitization of input
   // TODO: Must check if RNTIs and cell ids of the request actually exist
@@ -97,8 +97,8 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
     Protocol__FlexCompleteStatsRequest *comp_req = stats_req->complete_stats_request;
     if (comp_req->report_frequency == PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_OFF) {
       /*Disable both periodic and continuous updates*/
-      enb_agent_disable_cont_mac_stats_update(mod_id);
-      enb_agent_destroy_timer_by_task_id(xid);
+      flexran_agent_disable_cont_mac_stats_update(mod_id);
+      flexran_agent_destroy_timer_by_task_id(xid);
       *msg = NULL;
       return 0;
     } else { //One-off, periodical or continuous reporting
@@ -108,7 +108,7 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
       //Create a list of all eNB RNTIs and cells
 
       //Set the number of UEs and create list with their RNTIs stats configs
-      report_config.nr_ue = get_num_ues(mod_id); //eNB_UE_list->num_UEs
+      report_config.nr_ue = flexran_get_num_ues(mod_id); //eNB_UE_list->num_UEs
       report_config.ue_report_type = (ue_report_type_t *) malloc(sizeof(ue_report_type_t) * report_config.nr_ue);
       if (report_config.ue_report_type == NULL) {
 	// TODO: Add appropriate error code
@@ -116,7 +116,7 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
 	goto error;
       }
       for (i = 0; i < report_config.nr_ue; i++) {
-	report_config.ue_report_type[i].ue_rnti = get_ue_crnti(enb_id, i); //eNB_UE_list->eNB_UE_stats[UE_PCCID(enb_id,i)][i].crnti;
+	report_config.ue_report_type[i].ue_rnti = flexran_get_ue_crnti(enb_id, i); //eNB_UE_list->eNB_UE_stats[UE_PCCID(enb_id,i)][i].crnti;
 	report_config.ue_report_type[i].ue_report_flags = ue_flags;
       }
       //Set the number of CCs and create a list with the cell stats configs
@@ -153,12 +153,12 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
 	   report_config.ue_report_type[0].ue_report_flags = ue_flags;
 	}
 	request_config.config = &report_config;
-	enb_agent_mac_stats_request(enb_id, xid, &request_config, &timer_msg);
+	flexran_agent_mac_stats_request(enb_id, xid, &request_config, &timer_msg);
 	/* Create a timer */
 	long timer_id = 0;
-	enb_agent_timer_args_t *timer_args;
-	timer_args = malloc(sizeof(enb_agent_timer_args_t));
-	memset (timer_args, 0, sizeof(enb_agent_timer_args_t));
+	flexran_agent_timer_args_t *timer_args;
+	timer_args = malloc(sizeof(flexran_agent_timer_args_t));
+	memset (timer_args, 0, sizeof(flexran_agent_timer_args_t));
 	timer_args->mod_id = enb_id;
 	timer_args->msg = timer_msg;
 	/*Convert subframes to usec time*/
@@ -169,11 +169,11 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
 	  sec_interval = usec_interval/(1000*1000);
 	  usec_interval = usec_interval%(1000*1000);
 	}
-	enb_agent_create_timer(sec_interval, usec_interval, ENB_AGENT_DEFAULT, enb_id, ENB_AGENT_TIMER_TYPE_PERIODIC, xid, enb_agent_handle_timed_task,(void*) timer_args, &timer_id);
+	flexran_agent_create_timer(sec_interval, usec_interval, FLEXRAN_AGENT_DEFAULT, enb_id, FLEXRAN_AGENT_TIMER_TYPE_PERIODIC, xid, flexran_agent_handle_timed_task,(void*) timer_args, &timer_id);
       } else if (comp_req->report_frequency == PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_CONTINUOUS) {
 	/*If request was for continuous updates, disable the previous configuration and
 	  set up a new one*/
-	enb_agent_disable_cont_mac_stats_update(mod_id);
+	flexran_agent_disable_cont_mac_stats_update(mod_id);
 	stats_request_config_t request_config;
 	request_config.report_type = PROTOCOL__FLEX_STATS_TYPE__FLST_COMPLETE_STATS;
 	request_config.report_frequency = PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_ONCE;
@@ -191,7 +191,7 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
 	  report_config.ue_report_type[0].ue_report_flags = ue_flags;
 	}
 	request_config.config = &report_config;
-	enb_agent_enable_cont_mac_stats_update(enb_id, xid, &request_config);
+	flexran_agent_enable_cont_mac_stats_update(enb_id, xid, &request_config);
       }
     }
     break;
@@ -236,7 +236,7 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
     goto error;
   }
 
-  if (enb_agent_mac_stats_reply(enb_id, xid, &report_config, msg) < 0 ){
+  if (flexran_agent_mac_stats_reply(enb_id, xid, &report_config, msg) < 0 ){
     err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
     goto error;
   }
@@ -247,18 +247,18 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
   return 0;
 
  error :
-  LOG_E(ENB_AGENT, "errno %d occured\n", err_code);
+  LOG_E(FLEXRAN_AGENT, "errno %d occured\n", err_code);
   return err_code;
 }
 
-int enb_agent_mac_stats_request(mid_t mod_id,
-				xid_t xid,
-				const stats_request_config_t *report_config,
-				Protocol__FlexranMessage **msg) {
+int flexran_agent_mac_stats_request(mid_t mod_id,
+				    xid_t xid,
+				    const stats_request_config_t *report_config,
+				    Protocol__FlexranMessage **msg) {
   Protocol__FlexHeader *header;
   int i;
 
-  if (flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_STATS_REQUEST, &header) != 0)
+  if (flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_STATS_REQUEST, &header) != 0)
     goto error;
 
   Protocol__FlexStatsRequest *stats_request_msg;
@@ -358,7 +358,7 @@ int enb_agent_mac_stats_request(mid_t mod_id,
   return -1;
 }
 
-int enb_agent_mac_destroy_stats_request(Protocol__FlexranMessage *msg) {
+int flexran_agent_mac_destroy_stats_request(Protocol__FlexranMessage *msg) {
    if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_STATS_REQUEST_MSG)
     goto error;
   free(msg->stats_request_msg->header);
@@ -377,10 +377,10 @@ int enb_agent_mac_destroy_stats_request(Protocol__FlexranMessage *msg) {
   return -1;
 }
 
-int enb_agent_mac_stats_reply(mid_t mod_id,
-			      xid_t xid,
-			      const report_config_t *report_config,
-			      Protocol__FlexranMessage **msg) {
+int flexran_agent_mac_stats_reply(mid_t mod_id,
+				  xid_t xid,
+				  const report_config_t *report_config,
+				  Protocol__FlexranMessage **msg) {
   Protocol__FlexHeader *header;
   int i, j, k;
   int cc_id = 0;
@@ -389,7 +389,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
   //UE_list_t *eNB_UE_list=  &eNB->UE_list;
 
 
-  if (flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_STATS_REPLY, &header) != 0)
+  if (flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_STATS_REPLY, &header) != 0)
     goto error;
 
   Protocol__FlexStatsReply *stats_reply_msg;
@@ -429,14 +429,14 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	  goto error;
 	for (j = 0; j++; j < ue_report[i]->n_bsr) {
 	  // NN: we need to know the cc_id here, consider the first one
-	  elem[j] = get_ue_bsr (enb_id, i, j); 
+	  elem[j] = flexran_get_ue_bsr (enb_id, i, j); 
 	}
 	ue_report[i]->bsr = elem;
       }
 
       /* Check flag for creation of PRH report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PRH) {
-	ue_report[i]->phr = get_ue_phr (enb_id, i); // eNB_UE_list->UE_template[UE_PCCID(enb_id,i)][i].phr_info;
+	ue_report[i]->phr = flexran_get_ue_phr (enb_id, i); // eNB_UE_list->UE_template[UE_PCCID(enb_id,i)][i].phr_info;
 	ue_report[i]->has_phr = 1;
       }
 
@@ -456,7 +456,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	  protocol__flex_rlc_bsr__init(rlc_reports[j]);
 	  rlc_reports[j]->lc_id = j+1;
 	  rlc_reports[j]->has_lc_id = 1;
-	  rlc_reports[j]->tx_queue_size = get_tx_queue_size(enb_id,i,j+1);
+	  rlc_reports[j]->tx_queue_size = flexran_get_tx_queue_size(enb_id,i,j+1);
 	  rlc_reports[j]->has_tx_queue_size = 1;
 
 	  //TODO:Set tx queue head of line delay in ms
@@ -480,7 +480,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
       /* Check flag for creation of MAC CE buffer status report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_CE_BS) {
 	// TODO: Fill in the actual MAC CE buffer status report
-	ue_report[i]->pending_mac_ces = (get_MAC_CE_bitmap_TA(enb_id,i,0) | (0 << 1) | (0 << 2) | (0 << 3)) & 15; /* Use as bitmap. Set one or more of the; /* Use as bitmap. Set one or more of the
+	ue_report[i]->pending_mac_ces = (flexran_get_MAC_CE_bitmap_TA(enb_id,i,0) | (0 << 1) | (0 << 2) | (0 << 3)) & 15; /* Use as bitmap. Set one or more of the; /* Use as bitmap. Set one or more of the
 					       PROTOCOL__FLEX_CE_TYPE__FLPCET_ values
 					       found in stats_common.pb-c.h. See
 					       flex_ce_type in FlexRAN specification */
@@ -496,10 +496,10 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	  goto error;
 	protocol__flex_dl_cqi_report__init(dl_report);
 
-	dl_report->sfn_sn = get_sfn_sf(enb_id);
+	dl_report->sfn_sn = flexran_get_sfn_sf(enb_id);
 	dl_report->has_sfn_sn = 1;
 	//Set the number of DL CQI reports for this UE. One for each CC
-	dl_report->n_csi_report = get_active_CC(enb_id,i);
+	dl_report->n_csi_report = flexran_get_active_CC(enb_id,i);
 
 	//Create the actual CSI reports.
 	Protocol__FlexDlCsi **csi_reports;
@@ -515,7 +515,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	  csi_reports[j]->serv_cell_index = j;
 	  csi_reports[j]->has_serv_cell_index = 1;
 	  //The rank indicator value for this cc
-	  csi_reports[j]->ri = get_current_RI(enb_id,i,j);
+	  csi_reports[j]->ri = flexran_get_current_RI(enb_id,i,j);
 	  csi_reports[j]->has_ri = 1;
 	  //TODO: the type of CSI report based on the configuration of the UE
 	  //For now we only support type P10, which only needs a wideband value
@@ -532,7 +532,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 			  protocol__flex_csi_p10__init(csi10);
 			  //TODO: set the wideband value
 			  // NN: this is also depends on cc_id
-			  csi10->wb_cqi = get_ue_wcqi (enb_id, i); //eNB_UE_list->eNB_UE_stats[UE_PCCID(enb_id,i)][i].dl_cqi;
+			  csi10->wb_cqi = flexran_get_ue_wcqi (enb_id, i); //eNB_UE_list->eNB_UE_stats[UE_PCCID(enb_id,i)][i].dl_cqi;
 			  csi10->has_wb_cqi = 1;
 			  //Add the type of measurements to the csi report in the proper union type
 			  csi_reports[j]->p10csi = csi10;
@@ -618,7 +618,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	  goto error;
 	protocol__flex_ul_cqi_report__init(full_ul_report);
 	//TODO:Set the SFN and SF of the generated report
-	full_ul_report->sfn_sn = get_sfn_sf(enb_id);
+	full_ul_report->sfn_sn = flexran_get_sfn_sf(enb_id);
 	full_ul_report->has_sfn_sn = 1;
 	//TODO:Set the number of UL measurement reports based on the types of measurements
 	//configured for this UE and on the servCellIndex
@@ -664,8 +664,8 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	    protocol__flex_pucch_dbm__init(full_ul_report->pucch_dbm[j]);
 	    full_ul_report->pucch_dbm[j]->has_serv_cell_index = 1;
 	    full_ul_report->pucch_dbm[j]->serv_cell_index = j;
-	    if(get_p0_pucch_dbm(enb_id,i, j) != -1){
-	      full_ul_report->pucch_dbm[j]->p0_pucch_dbm = get_p0_pucch_dbm(enb_id,i,j);
+	    if(flexran_get_p0_pucch_dbm(enb_id,i, j) != -1){
+	      full_ul_report->pucch_dbm[j]->p0_pucch_dbm = flexran_get_p0_pucch_dbm(enb_id,i,j);
 	      full_ul_report->pucch_dbm[j]->has_p0_pucch_dbm = 1;
 	    }
 	  }
@@ -704,7 +704,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	  goto error;
 	protocol__flex_noise_interference_report__init(ni_report);
 	// Current frame and subframe number
-	ni_report->sfn_sf = get_sfn_sf(enb_id);
+	ni_report->sfn_sf = flexran_get_sfn_sf(enb_id);
 	ni_report->has_sfn_sf = 1;
 	//TODO:Received interference power in dbm
 	ni_report->rip = 0;
@@ -713,7 +713,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	ni_report->tnp = 0;
 	ni_report->has_tnp = 0;
 
-	ni_report->p0_nominal_pucch = get_p0_nominal_pucch(enb_id, 0);
+	ni_report->p0_nominal_pucch = flexran_get_p0_nominal_pucch(enb_id, 0);
 	ni_report->has_p0_nominal_pucch = 1;
 	cell_report[i]->noise_inter_report = ni_report;
       }
@@ -743,7 +743,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
   return -1;
 }
 
-int enb_agent_mac_destroy_stats_reply(Protocol__FlexranMessage *msg) {
+int flexran_agent_mac_destroy_stats_reply(Protocol__FlexranMessage *msg) {
   //TODO: Need to deallocate memory for the stats reply message
   if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_STATS_REPLY_MSG)
     goto error;
@@ -860,11 +860,11 @@ int enb_agent_mac_destroy_stats_reply(Protocol__FlexranMessage *msg) {
   return -1;
 }
 
-int enb_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
+int flexran_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
   Protocol__FlexHeader *header;
   int i;
   const int xid = *((int *)params);
-  if (flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_UL_SR_INFO, &header) != 0)
+  if (flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_UL_SR_INFO, &header) != 0)
     goto error;
 
   Protocol__FlexUlSrInfo *ul_sr_info_msg;
@@ -876,7 +876,7 @@ int enb_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__FlexranMes
 
   ul_sr_info_msg->header = header;
   ul_sr_info_msg->has_sfn_sf = 1;
-  ul_sr_info_msg->sfn_sf = get_sfn_sf(mod_id);
+  ul_sr_info_msg->sfn_sf = flexran_get_sfn_sf(mod_id);
   /*TODO: Set the number of UEs that sent an SR */
   ul_sr_info_msg->n_rnti = 1;
   ul_sr_info_msg->rnti = (uint32_t *) malloc(ul_sr_info_msg->n_rnti * sizeof(uint32_t));
@@ -912,7 +912,7 @@ int enb_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__FlexranMes
   return -1;
 }
 
-int enb_agent_mac_destroy_sr_info(Protocol__FlexranMessage *msg) {
+int flexran_agent_mac_destroy_sr_info(Protocol__FlexranMessage *msg) {
    if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_UL_SR_INFO_MSG)
      goto error;
 
@@ -927,11 +927,11 @@ int enb_agent_mac_destroy_sr_info(Protocol__FlexranMessage *msg) {
    return -1;
 }
 
-int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
+int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
   Protocol__FlexHeader *header;
   int i,j;
   const int xid = *((int *)params);
-  if (flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_SF_TRIGGER, &header) != 0)
+  if (flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_SF_TRIGGER, &header) != 0)
     goto error;
 
   Protocol__FlexSfTrigger *sf_trigger_msg;
@@ -946,8 +946,8 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Flexran
 
   int ahead_of_time = 1;
   
-  frame = (frame_t) get_current_system_frame_num(mod_id);
-  subframe = (sub_frame_t) get_current_subframe(mod_id);
+  frame = (frame_t) flexran_get_current_system_frame_num(mod_id);
+  subframe = (sub_frame_t) flexran_get_current_subframe(mod_id);
 
   subframe = ((subframe + ahead_of_time) % 10);
 
@@ -955,18 +955,18 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Flexran
   
   frame = frame + full_frames_ahead;
 
-  if (subframe < get_current_subframe(mod_id)) {
+  if (subframe < flexran_get_current_subframe(mod_id)) {
     frame++;
   }
 
   sf_trigger_msg->header = header;
   sf_trigger_msg->has_sfn_sf = 1;
-  sf_trigger_msg->sfn_sf = get_future_sfn_sf(mod_id, 1);
+  sf_trigger_msg->sfn_sf = flexran_get_future_sfn_sf(mod_id, 1);
 
   /*TODO: Fill in the number of dl HARQ related info, based on the number of currently
    *transmitting UEs
    */
-  sf_trigger_msg->n_dl_info = get_num_ues(mod_id);
+  sf_trigger_msg->n_dl_info = flexran_get_num_ues(mod_id);
 
   Protocol__FlexDlInfo **dl_info = NULL;
 
@@ -980,12 +980,12 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Flexran
       if(dl_info[i] == NULL)
 	goto error;
       protocol__flex_dl_info__init(dl_info[i]);
-      dl_info[i]->rnti = get_ue_crnti(mod_id, i);
+      dl_info[i]->rnti = flexran_get_ue_crnti(mod_id, i);
       dl_info[i]->has_rnti = 1;
       /*Fill in the right id of this round's HARQ process for this UE*/
       int harq_id;
       int harq_status;
-      get_harq(mod_id, UE_PCCID(mod_id,i), i, frame, subframe, &harq_id, &harq_status);
+      flexran_get_harq(mod_id, UE_PCCID(mod_id,i), i, frame, subframe, &harq_id, &harq_status);
       dl_info[i]->harq_process_id = harq_id;
       dl_info[i]->has_harq_process_id = 1;
       /* Fill in the status of the HARQ process (2 TBs)*/
@@ -1009,7 +1009,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Flexran
   /* Fill in the number of UL reception status related info, based on the number of currently
    * transmitting UEs
    */
-  sf_trigger_msg->n_ul_info = get_num_ues(mod_id);
+  sf_trigger_msg->n_ul_info = flexran_get_num_ues(mod_id);
 
   Protocol__FlexUlInfo **ul_info = NULL;
 
@@ -1023,15 +1023,15 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Flexran
       if(ul_info[i] == NULL)
 	goto error;
       protocol__flex_ul_info__init(ul_info[i]);
-      ul_info[i]->rnti = get_ue_crnti(mod_id, i);
+      ul_info[i]->rnti = flexran_get_ue_crnti(mod_id, i);
       ul_info[i]->has_rnti = 1;
       /*Fill in the Tx power control command for this UE (if available)*/
-      if(get_tpc(mod_id,i) != 1){
-    	  ul_info[i]->tpc = get_tpc(mod_id,i);
+      if(flexran_get_tpc(mod_id,i) != 1){
+    	  ul_info[i]->tpc = flexran_get_tpc(mod_id,i);
           ul_info[i]->has_tpc = 1;
       }
       else{
-    	  ul_info[i]->tpc = get_tpc(mod_id,i);
+    	  ul_info[i]->tpc = flexran_get_tpc(mod_id,i);
     	  ul_info[i]->has_tpc = 0;
       }
       /*TODO: fill in the amount of data in bytes in the MAC SDU received in this subframe for the
@@ -1081,7 +1081,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Flexran
   return -1;
 }
 
-int enb_agent_mac_destroy_sf_trigger(Protocol__FlexranMessage *msg) {
+int flexran_agent_mac_destroy_sf_trigger(Protocol__FlexranMessage *msg) {
   int i;
   if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_SF_TRIGGER_MSG)
     goto error;
@@ -1107,11 +1107,11 @@ int enb_agent_mac_destroy_sf_trigger(Protocol__FlexranMessage *msg) {
   return -1;
 }
 
-int enb_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMessage **msg) {
+int flexran_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMessage **msg) {
 
   int xid = 0;
   Protocol__FlexHeader *header;
-  if (flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_DL_MAC_CONFIG, &header) != 0)
+  if (flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_DL_MAC_CONFIG, &header) != 0)
     goto error;
 
   Protocol__FlexDlMacConfig *dl_mac_config_msg;
@@ -1123,7 +1123,7 @@ int enb_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMessage 
 
   dl_mac_config_msg->header = header;
   dl_mac_config_msg->has_sfn_sf = 1;
-  dl_mac_config_msg->sfn_sf = get_sfn_sf(mod_id);
+  dl_mac_config_msg->sfn_sf = flexran_get_sfn_sf(mod_id);
 
   *msg = malloc(sizeof(Protocol__FlexranMessage));
   if(*msg == NULL)
@@ -1139,7 +1139,7 @@ int enb_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMessage 
   return -1;
 }
 
-int enb_agent_mac_destroy_dl_config(Protocol__FlexranMessage *msg) {
+int flexran_agent_mac_destroy_dl_config(Protocol__FlexranMessage *msg) {
   int i,j, k;
   if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_DL_MAC_CONFIG_MSG)
     goto error;
@@ -1202,7 +1202,7 @@ int enb_agent_mac_destroy_dl_config(Protocol__FlexranMessage *msg) {
   return -1;
 }
 
-void enb_agent_get_pending_dl_mac_config(mid_t mod_id, Protocol__FlexranMessage **msg) {
+void flexran_agent_get_pending_dl_mac_config(mid_t mod_id, Protocol__FlexranMessage **msg) {
 
   struct lfds700_misc_prng_state ls;
   
@@ -1214,7 +1214,7 @@ void enb_agent_get_pending_dl_mac_config(mid_t mod_id, Protocol__FlexranMessage 
   }
 }
 
-int enb_agent_mac_handle_dl_mac_config(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
+int flexran_agent_mac_handle_dl_mac_config(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
 
   struct lfds700_misc_prng_state ls;
   enum lfds700_misc_flag overwrite_occurred_flag;
@@ -1233,7 +1233,7 @@ int enb_agent_mac_handle_dl_mac_config(mid_t mod_id, const void *params, Protoco
 
   if (overwrite_occurred_flag == LFDS700_MISC_FLAG_RAISED) {
     // Delete unmanaged dl_config
-    enb_agent_mac_destroy_dl_config(overwritten_dl_config);
+    flexran_agent_mac_destroy_dl_config(overwritten_dl_config);
   }
   *msg = NULL;
   return 2;
@@ -1243,7 +1243,7 @@ int enb_agent_mac_handle_dl_mac_config(mid_t mod_id, const void *params, Protoco
   return -1;
 }
 
-void enb_agent_init_mac_agent(mid_t mod_id) {
+void flexran_agent_init_mac_agent(mid_t mod_id) {
   lfds700_misc_library_init_valid_on_current_logical_core();
   lfds700_misc_prng_init(&ps[mod_id]);
   int num_elements = RINGBUFFER_SIZE + 1;
@@ -1253,10 +1253,10 @@ void enb_agent_init_mac_agent(mid_t mod_id) {
 }
 
 /***********************************************
- * eNB agent - technology mac API implementation
+ * FlexRAN agent - technology mac API implementation
  ***********************************************/
 
-void enb_agent_send_sr_info(mid_t mod_id) {
+void flexran_agent_send_sr_info(mid_t mod_id) {
   int size;
   Protocol__FlexranMessage *msg;
   void *data;
@@ -1266,27 +1266,27 @@ void enb_agent_send_sr_info(mid_t mod_id) {
   int xid = 0;
 
   /*TODO: Must use a proper xid*/
-  err_code = enb_agent_mac_sr_info(mod_id, (void *) &xid, &msg);
+  err_code = flexran_agent_mac_sr_info(mod_id, (void *) &xid, &msg);
   if (err_code < 0) {
     goto error;
   }
 
   if (msg != NULL){
-    data=enb_agent_pack_message(msg, &size);
+    data=flexran_agent_pack_message(msg, &size);
     /*Send sr info using the MAC channel of the eNB*/
-    if (enb_agent_msg_send(mod_id, ENB_AGENT_MAC, data, size, priority)) {
+    if (flexran_agent_msg_send(mod_id, FLEXRAN_AGENT_MAC, data, size, priority)) {
       err_code = PROTOCOL__FLEXRAN_ERR__MSG_ENQUEUING;
       goto error;
     }
 
-    LOG_D(ENB_AGENT,"sent message with size %d\n", size);
+    LOG_D(FLEXRAN_AGENT,"sent message with size %d\n", size);
     return;
   }
  error:
-  LOG_D(ENB_AGENT, "Could not send sr message\n");
+  LOG_D(FLEXRAN_AGENT, "Could not send sr message\n");
 }
 
-void enb_agent_send_sf_trigger(mid_t mod_id) {
+void flexran_agent_send_sf_trigger(mid_t mod_id) {
   int size;
   Protocol__FlexranMessage *msg;
   void *data;
@@ -1296,27 +1296,27 @@ void enb_agent_send_sf_trigger(mid_t mod_id) {
   int xid = 0;
 
   /*TODO: Must use a proper xid*/
-  err_code = enb_agent_mac_sf_trigger(mod_id, (void *) &xid, &msg);
+  err_code = flexran_agent_mac_sf_trigger(mod_id, (void *) &xid, &msg);
   if (err_code < 0) {
     goto error;
   }
 
   if (msg != NULL){
-    data=enb_agent_pack_message(msg, &size);
+    data=flexran_agent_pack_message(msg, &size);
     /*Send sr info using the MAC channel of the eNB*/
-    if (enb_agent_msg_send(mod_id, ENB_AGENT_MAC, data, size, priority)) {
+    if (flexran_agent_msg_send(mod_id, FLEXRAN_AGENT_MAC, data, size, priority)) {
       err_code = PROTOCOL__FLEXRAN_ERR__MSG_ENQUEUING;
       goto error;
     }
 
-    LOG_D(ENB_AGENT,"sent message with size %d\n", size);
+    LOG_D(FLEXRAN_AGENT,"sent message with size %d\n", size);
     return;
   }
  error:
-  LOG_D(ENB_AGENT, "Could not send sf trigger message\n");
+  LOG_D(FLEXRAN_AGENT, "Could not send sf trigger message\n");
 }
 
-void enb_agent_send_update_mac_stats(mid_t mod_id) {
+void flexran_agent_send_update_mac_stats(mid_t mod_id) {
 
   Protocol__FlexranMessage *current_report = NULL, *msg;
   void *data;
@@ -1333,7 +1333,7 @@ void enb_agent_send_update_mac_stats(mid_t mod_id) {
   if (mac_stats_context[mod_id].cont_update == 1) {
   
     /*Create a fresh report with the required flags*/
-    err_code = enb_agent_mac_handle_stats(mod_id, (void *) mac_stats_context[mod_id].stats_req, &current_report);
+    err_code = flexran_agent_mac_handle_stats(mod_id, (void *) mac_stats_context[mod_id].stats_req, &current_report);
     if (err_code < 0) {
       goto error;
     }
@@ -1343,10 +1343,10 @@ void enb_agent_send_update_mac_stats(mid_t mod_id) {
   /*  *respecting the thresholds. Otherwise send the new report*\/ */
   /* if (mac_stats_context[mod_id].prev_stats_reply != NULL) { */
 
-  /*   msg = enb_agent_generate_diff_mac_stats_report(current_report, mac_stats_context[mod_id].prev_stats_reply); */
+  /*   msg = flexran_agent_generate_diff_mac_stats_report(current_report, mac_stats_context[mod_id].prev_stats_reply); */
 
   /*   /\*Destroy the old stats*\/ */
-  /*    enb_agent_destroy_flexran_message(mac_stats_context[mod_id].prev_stats_reply); */
+  /*    flexran_agent_destroy_flexran_message(mac_stats_context[mod_id].prev_stats_reply); */
   /* } */
   /* /\*Use the current report for future comparissons*\/ */
   /* mac_stats_context[mod_id].prev_stats_reply = current_report; */
@@ -1357,34 +1357,34 @@ void enb_agent_send_update_mac_stats(mid_t mod_id) {
   }
 
   if (current_report != NULL){
-    data=enb_agent_pack_message(current_report, &size);
+    data=flexran_agent_pack_message(current_report, &size);
     /*Send any stats updates using the MAC channel of the eNB*/
-    if (enb_agent_msg_send(mod_id, ENB_AGENT_MAC, data, size, priority)) {
+    if (flexran_agent_msg_send(mod_id, FLEXRAN_AGENT_MAC, data, size, priority)) {
       err_code = PROTOCOL__FLEXRAN_ERR__MSG_ENQUEUING;
       goto error;
     }
 
-    LOG_D(ENB_AGENT,"sent message with size %d\n", size);
+    LOG_D(FLEXRAN_AGENT,"sent message with size %d\n", size);
     return;
   }
  error:
-  LOG_D(ENB_AGENT, "Could not send sf trigger message\n");
+  LOG_D(FLEXRAN_AGENT, "Could not send sf trigger message\n");
 }
 
-int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
+int flexran_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   if (mac_agent_registered[mod_id]) {
     LOG_E(MAC, "MAC agent for eNB %d is already registered\n", mod_id);
     return -1;
   }
 
   //xface->agent_ctxt = &shared_ctxt[mod_id];
-  xface->enb_agent_send_sr_info = enb_agent_send_sr_info;
-  xface->enb_agent_send_sf_trigger = enb_agent_send_sf_trigger;
-  xface->enb_agent_send_update_mac_stats = enb_agent_send_update_mac_stats;
-  //xface->enb_agent_schedule_ue_spec = schedule_ue_spec_default;
-  xface->enb_agent_schedule_ue_spec = schedule_ue_spec_remote;
-  xface->enb_agent_get_pending_dl_mac_config = enb_agent_get_pending_dl_mac_config;
-  xface->enb_agent_notify_ue_state_change = enb_agent_ue_state_change;
+  xface->flexran_agent_send_sr_info = flexran_agent_send_sr_info;
+  xface->flexran_agent_send_sf_trigger = flexran_agent_send_sf_trigger;
+  xface->flexran_agent_send_update_mac_stats = flexran_agent_send_update_mac_stats;
+  xface->flexran_agent_schedule_ue_spec = flexran_schedule_ue_spec_default;
+  //xface->flexran_agent_schedule_ue_spec = flexran_schedule_ue_spec_remote;
+  xface->flexran_agent_get_pending_dl_mac_config = flexran_agent_get_pending_dl_mac_config;
+  xface->flexran_agent_notify_ue_state_change = flexran_agent_ue_state_change;
   
   xface->dl_scheduler_loaded_lib = NULL;
 
@@ -1394,15 +1394,15 @@ int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   return 0;
 }
 
-int enb_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
+int flexran_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
 
   //xface->agent_ctxt = NULL;
-  xface->enb_agent_send_sr_info = NULL;
-  xface->enb_agent_send_sf_trigger = NULL;
-  xface->enb_agent_send_update_mac_stats = NULL;
-  xface->enb_agent_schedule_ue_spec = NULL;
-  xface->enb_agent_get_pending_dl_mac_config = NULL;
-  xface->enb_agent_notify_ue_state_change = NULL;
+  xface->flexran_agent_send_sr_info = NULL;
+  xface->flexran_agent_send_sf_trigger = NULL;
+  xface->flexran_agent_send_update_mac_stats = NULL;
+  xface->flexran_agent_schedule_ue_spec = NULL;
+  xface->flexran_agent_get_pending_dl_mac_config = NULL;
+  xface->flexran_agent_notify_ue_state_change = NULL;
 
   xface->dl_scheduler_loaded_lib = NULL;
 
@@ -1414,10 +1414,10 @@ int enb_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
 
 
 /******************************************************
- *Implementations of enb_agent_mac_internal.h functions
+ *Implementations of flexran_agent_mac_internal.h functions
  ******************************************************/
 
-err_code_t enb_agent_init_cont_mac_stats_update(mid_t mod_id) {
+err_code_t flexran_agent_init_cont_mac_stats_update(mid_t mod_id) {
 
   /*Initialize the Mac stats update structure*/
   /*Initially the continuous update is set to false*/
@@ -1437,12 +1437,12 @@ err_code_t enb_agent_init_cont_mac_stats_update(mid_t mod_id) {
   return -1;
 }
 
-err_code_t enb_agent_destroy_cont_mac_stats_update(mid_t mod_id) {
+err_code_t flexran_agent_destroy_cont_mac_stats_update(mid_t mod_id) {
   /*Disable the continuous updates for the MAC*/
   mac_stats_context[mod_id].cont_update = 0;
   mac_stats_context[mod_id].is_initialized = 0;
-  enb_agent_destroy_flexran_message(mac_stats_context[mod_id].stats_req);
-  enb_agent_destroy_flexran_message(mac_stats_context[mod_id].prev_stats_reply);
+  flexran_agent_destroy_flexran_message(mac_stats_context[mod_id].stats_req);
+  flexran_agent_destroy_flexran_message(mac_stats_context[mod_id].prev_stats_reply);
   free(mac_stats_context[mod_id].mutex);
 
   mac_agent_registered[mod_id] = NULL;
@@ -1450,8 +1450,8 @@ err_code_t enb_agent_destroy_cont_mac_stats_update(mid_t mod_id) {
 }
 
 
-err_code_t enb_agent_enable_cont_mac_stats_update(mid_t mod_id,
-						  xid_t xid, stats_request_config_t *stats_req) {
+err_code_t flexran_agent_enable_cont_mac_stats_update(mid_t mod_id,
+						      xid_t xid, stats_request_config_t *stats_req) {
   /*Enable the continuous updates for the MAC*/
   if (pthread_mutex_lock(mac_stats_context[mod_id].mutex)) {
     goto error;
@@ -1459,7 +1459,7 @@ err_code_t enb_agent_enable_cont_mac_stats_update(mid_t mod_id,
 
   Protocol__FlexranMessage *req_msg;
 
-  enb_agent_mac_stats_request(mod_id, xid, stats_req, &req_msg);
+  flexran_agent_mac_stats_request(mod_id, xid, stats_req, &req_msg);
   mac_stats_context[mod_id].stats_req = req_msg;
   mac_stats_context[mod_id].prev_stats_reply = NULL;
 
@@ -1472,11 +1472,11 @@ err_code_t enb_agent_enable_cont_mac_stats_update(mid_t mod_id,
   return 0;
 
  error:
-  LOG_E(ENB_AGENT, "mac_stats_context for eNB %d is not initialized\n", mod_id);
+  LOG_E(FLEXRAN_AGENT, "mac_stats_context for eNB %d is not initialized\n", mod_id);
   return -1;
 }
 
-err_code_t enb_agent_disable_cont_mac_stats_update(mid_t mod_id) {
+err_code_t flexran_agent_disable_cont_mac_stats_update(mid_t mod_id) {
   /*Disable the continuous updates for the MAC*/
   if (pthread_mutex_lock(mac_stats_context[mod_id].mutex)) {
     goto error;
@@ -1484,10 +1484,10 @@ err_code_t enb_agent_disable_cont_mac_stats_update(mid_t mod_id) {
   mac_stats_context[mod_id].cont_update = 0;
   mac_stats_context[mod_id].xid = 0;
   if (mac_stats_context[mod_id].stats_req != NULL) {
-    enb_agent_destroy_flexran_message(mac_stats_context[mod_id].stats_req);
+    flexran_agent_destroy_flexran_message(mac_stats_context[mod_id].stats_req);
   }
   if (mac_stats_context[mod_id].prev_stats_reply != NULL) {
-    enb_agent_destroy_flexran_message(mac_stats_context[mod_id].prev_stats_reply);
+    flexran_agent_destroy_flexran_message(mac_stats_context[mod_id].prev_stats_reply);
   }
   if (pthread_mutex_unlock(mac_stats_context[mod_id].mutex)) {
     goto error;
@@ -1495,7 +1495,7 @@ err_code_t enb_agent_disable_cont_mac_stats_update(mid_t mod_id) {
   return 0;
 
  error:
-  LOG_E(ENB_AGENT, "mac_stats_context for eNB %d is not initialized\n", mod_id);
+  LOG_E(FLEXRAN_AGENT, "mac_stats_context for eNB %d is not initialized\n", mod_id);
   return -1;
 
 }

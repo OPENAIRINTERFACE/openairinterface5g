@@ -27,7 +27,7 @@
 
  *******************************************************************************/
 
-/*! \file enb_agent_mac_internal.c
+/*! \file flexran_agent_mac_internal.c
  * \brief Helper functions for the MAC agent
  * \author Xenofon Foukas
  * \date 2016
@@ -37,10 +37,10 @@
 #include <string.h>
 #include <dlfcn.h>
 
-#include "enb_agent_mac_internal.h"
+#include "flexran_agent_mac_internal.h"
 
-Protocol__FlexranMessage * enb_agent_generate_diff_mac_stats_report(Protocol__FlexranMessage *new_message,
-								    Protocol__FlexranMessage *old_message) {
+Protocol__FlexranMessage * flexran_agent_generate_diff_mac_stats_report(Protocol__FlexranMessage *new_message,
+									Protocol__FlexranMessage *old_message) {
 
   int i, j;
   
@@ -131,7 +131,7 @@ Protocol__FlexranMessage * enb_agent_generate_diff_mac_stats_report(Protocol__Fl
     /*Create header*/
     int xid = old_report->header->xid;
     Protocol__FlexHeader *header;
-    if (flex_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_STATS_REPLY, &header) != 0) {
+    if (flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_STATS_REPLY, &header) != 0) {
     goto error;
     }
     stats_reply_msg = malloc(sizeof(Protocol__FlexStatsReply));
@@ -780,7 +780,7 @@ int load_dl_scheduler_function(mid_t mod_id, const char *function_name) {
   void *loaded_scheduler = dlsym(lib, function_name);
   if (loaded_scheduler) {
     if (mac_agent_registered[mod_id]) {
-      agent_mac_xface[mod_id]->enb_agent_schedule_ue_spec = loaded_scheduler;
+      agent_mac_xface[mod_id]->flexran_agent_schedule_ue_spec = loaded_scheduler;
       if (agent_mac_xface[mod_id]->dl_scheduler_loaded_lib != NULL) {
 	dlclose(agent_mac_xface[mod_id]->dl_scheduler_loaded_lib);
       }

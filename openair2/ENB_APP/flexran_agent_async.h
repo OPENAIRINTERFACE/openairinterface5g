@@ -27,38 +27,37 @@
 
  *******************************************************************************/
 
-/*! \file enb_agent_common_internal.h
- * \brief internal agent functions for common message primitves and utilities
+/*! \file flexran_agent_async.h
+ * \brief channel implementation for async interface
  * \author Xenofon Foukas
  * \date 2016
  * \version 0.1
  */
 
-#ifndef ENB_AGENT_COMMON_INTERNAL_H_
-#define ENB_AGENT_COMMON_INTERNAL_H_
+#ifndef FLEXRAN_AGENT_ASYNC_H_
+#define FLEXRAN_AGENT_ASYNC_H_
 
-#include <yaml.h>
+#include "flexran_agent_net_comm.h"
 
-#include "enb_agent_defs.h"
+typedef struct {
+  mid_t            enb_id;
+  socket_link_t   *link;
+  message_queue_t *send_queue;
+  message_queue_t *receive_queue;
+  link_manager_t  *manager;
+} flexran_agent_async_channel_t;
 
-int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy_length);
+/* Create a new channel for a given destination ip and destination port */
+flexran_agent_async_channel_t * flexran_agent_async_channel_info(mid_t mod_id, char *dst_ip, uint16_t dst_port);
 
-int apply_parameter_modification(void *parameter, yaml_parser_t *parser);
+/* Send a message to the given channel */
+int flexran_agent_async_msg_send(void *data, int size, int priority, void *channel_info);
 
-// This can be used when parsing for a specific system that is not yet implmeneted
-// in order to skip its configuration, without affecting the rest
-int skip_system_section(yaml_parser_t *parser);
+/* Receive a message from a given channel */
+int flexran_agent_async_msg_recv(void **data, int *size, int *priority, void *channel_info);
 
-// This can be used when parsing for a specific subsystem that is not yet implmeneted
-// in order to skip its configuration, without affecting the rest
-int skip_subsystem_section(yaml_parser_t *parser);
+/* Release a channel */
+void flexran_agent_async_release(flexran_agent_channel_t *channel);
 
-// This can be used when parsing for the parameters of a specific subsystem 
-//that is not yet implmeneted in order to skip its configuration, without affecting the rest
-int skip_subsystem_parameters_config(yaml_parser_t *parser);
 
-// This can be used when configuring the parameters of a specific subsystem 
-//that is not yet implmeneted in order to skip its configuration, without affecting the rest
-int skip_parameter_modification(yaml_parser_t *parser);
-
-#endif
+#endif /*FLEXRAN_AGENT_ASYNC_H_*/

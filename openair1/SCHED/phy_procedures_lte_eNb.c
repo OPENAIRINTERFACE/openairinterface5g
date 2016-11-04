@@ -63,9 +63,9 @@
 
 
 //Agent-related headers
-#include "ENB_APP/enb_agent_extern.h"
-#include "ENB_APP/enb_agent_mac.h"
-#include "LAYER2/MAC/enb_agent_mac_proto.h"
+#include "ENB_APP/flexran_agent_extern.h"
+#include "ENB_APP/flexran_agent_mac.h"
+#include "LAYER2/MAC/flexran_agent_mac_proto.h"
 
 //#define DIAG_PHY
 
@@ -1372,7 +1372,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 #ifndef DISABLE_SF_TRIGGER
   //Send subframe trigger to the controller
   if (mac_agent_registered[eNB->Mod_id]) {
-    agent_mac_xface[eNB->Mod_id]->enb_agent_send_sf_trigger(eNB->Mod_id);
+    agent_mac_xface[eNB->Mod_id]->flexran_agent_send_sf_trigger(eNB->Mod_id);
   }
 #endif
 

@@ -75,8 +75,8 @@ uint8_t config_smbv = 0;
 char smbv_ip[16];
 #endif
 
-#if defined(ENB_AGENT_SB_IF)
-#   include "enb_agent.h"
+#if defined(FLEXRAN_AGENT_SB_IF)
+#   include "flexran_agent.h"
 #endif
 
 
@@ -1301,8 +1301,8 @@ main (int argc, char **argv)
   smbv_write_config_from_frame_parms(smbv_fname, &PHY_vars_eNB_g[0][0]->frame_parms);
 #endif
 
-  /* #if defined (ENB_AGENT_SB_IF)
-  enb_agent_start();
+  /* #if defined (FLEXRAN_AGENT_SB_IF)
+  flexran_agent_start();
   #endif */ 
 
   // add events to future event list: Currently not used

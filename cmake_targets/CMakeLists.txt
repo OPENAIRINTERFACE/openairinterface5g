@@ -621,7 +621,7 @@ add_boolean_option(MESSAGE_CHART_GENERATOR False         "For generating sequenc
 add_boolean_option(MESSAGE_CHART_GENERATOR_RLC_MAC False "trace RLC-MAC exchanges in sequence diagrams")
 add_boolean_option(MESSAGE_CHART_GENERATOR_PHY     False "trace some PHY exchanges in sequence diagrams")
 
-add_boolean_option(ENB_AGENT_SB_IF             True         "enable eNB agent to inteface with a SDN contrller")
+add_boolean_option(FLEXRAN_AGENT_SB_IF             True         "enable FlexRAN agent to inteface with a SDN contrller")
 
 ########################
 # Include order
@@ -838,7 +838,7 @@ include_directories("${OPENAIR_DIR}")
 
 # Utilities Library
 ################
-if (ENB_AGENT_SB_IF)
+if (FLEXRAN_AGENT_SB_IF)
   # set the version of protobuf messages, V3 not supported yet
   add_list1_option(FLPT_VERSION V2 "FLPT MSG  protobuf  grammar version" V2 V3)
   
@@ -899,18 +899,18 @@ if (ENB_AGENT_SB_IF)
   set(ASYNC_IF_LIB ASYNC_IF)
   include_directories(${OPENAIR2_DIR}/UTIL/ASYNC_IF)
 
- add_library(ENB_AGENT
-    ${OPENAIR2_DIR}/ENB_APP/enb_agent_handler.c
-    ${OPENAIR2_DIR}/ENB_APP/enb_agent_common.c
-    ${OPENAIR2_DIR}/ENB_APP/enb_agent_common_internal.c
-    ${OPENAIR2_DIR}/ENB_APP/enb_agent_mac.c
-    ${OPENAIR2_DIR}/ENB_APP/enb_agent.c
-    ${OPENAIR2_DIR}/ENB_APP/enb_agent_task_manager.c
-    ${OPENAIR2_DIR}/ENB_APP/enb_agent_net_comm.c
-    ${OPENAIR2_DIR}/ENB_APP/enb_agent_async.c
-    ${OPENAIR2_DIR}/ENB_APP/enb_agent_mac_internal.c
+ add_library(FLEXRAN_AGENT
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_handler.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_common.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_common_internal.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_mac.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_task_manager.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_net_comm.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_async.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_mac_internal.c
     )
-  set(ENB_AGENT_LIB ENB_AGENT)
+  set(FLEXRAN_AGENT_LIB FLEXRAN_AGENT)
   #include_directories(${OPENAIR2_DIR}/ENB_APP)
   
   set(PROTOBUF_LIB "protobuf-c")
@@ -1184,9 +1184,9 @@ set (MAC_SRC
   ${MAC_DIR}/eNB_scheduler_RA.c
   ${MAC_DIR}/pre_processor.c
   ${MAC_DIR}/config.c
-  ${MAC_DIR}/eNB_agent_scheduler_dlsch_ue.c
-  ${MAC_DIR}/eNB_agent_scheduler_dataplane.c
-  ${MAC_DIR}/eNB_agent_scheduler_dlsch_ue_remote.c
+  ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue.c
+  ${MAC_DIR}/flexran_agent_scheduler_dataplane.c
+  ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue_remote.c
  )
 
 set (ENB_APP_SRC
@@ -1201,8 +1201,8 @@ add_library(L2
 #  ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
 
 #Test for adding a shared library
-add_library(default_sched SHARED ${MAC_DIR}/eNB_agent_scheduler_dlsch_ue.c)
-add_library(remote_sched SHARED ${MAC_DIR}/eNB_agent_scheduler_dlsch_ue_remote.c)
+add_library(default_sched SHARED ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue.c)
+add_library(remote_sched SHARED ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue_remote.c)
 
 # L3 Libs
 ##########################
@@ -1757,7 +1757,7 @@ add_executable(lte-softmodem
 
 target_link_libraries (lte-softmodem -ldl
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${ENB_AGENT_LIB} LFDS7
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
   -Wl,--end-group )
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
@@ -1791,7 +1791,7 @@ add_executable(lte-softmodem-nos1
   )
 target_link_libraries (lte-softmodem-nos1
   -Wl,--start-group
-  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${ENB_AGENT_LIB} LFDS7
+  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
   -Wl,--end-group )
 
 target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
@@ -1936,7 +1936,7 @@ add_executable(oaisim_nos1
 target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim_nos1
   -Wl,--start-group
-  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${ENB_AGENT_LIB} LFDS7
+  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
   -Wl,--end-group )
 
 target_link_libraries (oaisim_nos1 ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})

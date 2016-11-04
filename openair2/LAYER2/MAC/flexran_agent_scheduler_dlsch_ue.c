@@ -27,7 +27,7 @@
 
 *******************************************************************************/
 
-/*! \file eNB_agent_scheduler_dlsch_ue.c
+/*! \file flexran_agent_scheduler_dlsch_ue.c
  * \brief procedures related to eNB for the DLSCH transport channel
  * \author Xenofon Foukas
  * \date 2016
@@ -44,7 +44,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
-#include "LAYER2/MAC/enb_agent_mac_proto.h"
+#include "LAYER2/MAC/flexran_agent_mac_proto.h"
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/proto.h"
 #include "LAYER2/MAC/extern.h"
@@ -57,14 +57,14 @@
 #include "RRC/LITE/extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
-#include "ENB_APP/enb_agent_defs.h"
+#include "ENB_APP/flexran_agent_defs.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
 #include "header.pb-c.h"
 #include "flexran.pb-c.h"
-#include "enb_agent_mac.h"
+#include "flexran_agent_mac.h"
 
 #include "SIMULATION/TOOLS/defs.h" // for taus
 
@@ -76,13 +76,11 @@
 
 //------------------------------------------------------------------------------
 void
-schedule_ue_spec_default(
-  mid_t   mod_id,
-  uint32_t      frame,
-  uint32_t      subframe,
-  int           *mbsfn_flag,
-  Protocol__FlexranMessage **dl_info
-)
+flexran_schedule_ue_spec_default(mid_t   mod_id,
+				 uint32_t      frame,
+				 uint32_t      subframe,
+				 int           *mbsfn_flag,
+				 Protocol__FlexranMessage **dl_info)
 //------------------------------------------------------------------------------
 {
   uint8_t               CC_id;
@@ -127,7 +125,7 @@ schedule_ue_spec_default(
   uint8_t ue_has_transmission = 0;
   uint32_t ndi;
   
-  enb_agent_mac_create_empty_dl_config(mod_id, dl_info);
+  flexran_agent_mac_create_empty_dl_config(mod_id, dl_info);
   
   if (UE_list->head==-1) {
     return;

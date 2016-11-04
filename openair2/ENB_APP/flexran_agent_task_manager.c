@@ -26,8 +26,8 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
 *******************************************************************************/
-/*! \file enb_agent_task_manager.h
- * \brief Implementation of scheduled tasks manager for the enb agent
+/*! \file flexran_agent_task_manager.h
+ * \brief Implementation of scheduled tasks manager for the FlexRAN agent
  * \author Xenofon Foukas
  * \date January 2016
  * \version 0.1
@@ -39,8 +39,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "enb_agent_task_manager.h"
-#include "enb_agent_common.c"
+#include "flexran_agent_task_manager.h"
+#include "flexran_agent_common.c"
 
 
 /* Util macros */
@@ -48,10 +48,10 @@
 #define RIGHT(x) (2 * (x) + 2)
 #define PARENT(x) ((x - 1) / 2)
 
-enb_agent_task_t *enb_agent_task_create(Protocol__FlexranMessage *msg,
-				      uint16_t frame_num, uint8_t subframe_num) {
-  enb_agent_task_t *task = NULL;
-  task = malloc(sizeof(enb_agent_task_t));
+flexran_agent_task_t *flexran_agent_task_create(Protocol__FlexranMessage *msg,
+						uint16_t frame_num, uint8_t subframe_num) {
+  flexran_agent_task_t *task = NULL;
+  task = malloc(sizeof(flexran_agent_task_t));
 
   if (task == NULL)
     goto error;
@@ -66,7 +66,7 @@ enb_agent_task_t *enb_agent_task_create(Protocol__FlexranMessage *msg,
   return NULL;
 }
 
-void enb_agent_task_destroy(enb_agent_task_t *task) {
+void flexran_agent_task_destroy(flexran_agent_task_t *task) {
   if (task == NULL)
     return;
 
@@ -75,26 +75,27 @@ void enb_agent_task_destroy(enb_agent_task_t *task) {
   free(task);
 }
 
-enb_agent_task_queue_t *enb_agent_task_queue_init(mid_t mod_id, size_t capacity,
-						  int (*cmp)(mid_t mod_id, const enb_agent_task_t *t1, const enb_agent_task_t *t2)) {
-  enb_agent_task_queue_t *queue = NULL;
+flexran_agent_task_queue_t *flexran_agent_task_queue_init(mid_t mod_id, size_t capacity,
+							  int (*cmp)(mid_t mod_id, const flexran_agent_task_t *t1,
+								     const flexran_agent_task_t *t2)) {
+  flexran_agent_task_queue_t *queue = NULL;
 
-  queue = malloc(sizeof(enb_agent_task_queue_t));
+  queue = malloc(sizeof(flexran_agent_task_queue_t));
   if (queue == NULL)
     goto error;
 
   /* If no comparator was given, use the default one */
   if (cmp == NULL)
-    queue->cmp = _enb_agent_task_queue_cmp;
+    queue->cmp = _flexran_agent_task_queue_cmp;
   else
     queue->cmp = cmp;
-
+  
   queue->mod_id = mod_id;
 
   queue->first_frame = 0;
   queue->first_subframe = 0;
   
-  queue->task = malloc(capacity * sizeof(enb_agent_task_t *));
+  queue->task = malloc(capacity * sizeof(flexran_agent_task_t *));
   if (queue->task == NULL)
     goto error;
 
@@ -118,27 +119,27 @@ enb_agent_task_queue_t *enb_agent_task_queue_init(mid_t mod_id, size_t capacity,
   return NULL;
 }
 
-enb_agent_task_queue_t *enb_agent_task_queue_default_init(mid_t mod_id) {
-  return enb_agent_task_queue_init(mod_id, DEFAULT_CAPACITY, NULL);
+flexran_agent_task_queue_t *flexran_agent_task_queue_default_init(mid_t mod_id) {
+  return flexran_agent_task_queue_init(mod_id, DEFAULT_CAPACITY, NULL);
 }
 
-void enb_agent_task_queue_destroy(enb_agent_task_queue_t *queue) {
+void flexran_agent_task_queue_destroy(flexran_agent_task_queue_t *queue) {
   int i;
   
   if (queue == NULL)
     return;
 
   for (i = 0; i < queue->count; i++) {
-    enb_agent_task_destroy(queue->task[i]);
+    flexran_agent_task_destroy(queue->task[i]);
   }
   free(queue->task);
   free(queue->mutex);
   free(queue);
 }
 
-int enb_agent_task_queue_put(enb_agent_task_queue_t *queue, enb_agent_task_t *task) {
+int flexran_agent_task_queue_put(flexran_agent_task_queue_t *queue, flexran_agent_task_t *task) {
   size_t i;
-  enb_agent_task_t *tmp = NULL;
+  flexran_agent_task_t *tmp = NULL;
   int realloc_status, err_code;
 
   if (pthread_mutex_lock(queue->mutex)) {
@@ -149,7 +150,7 @@ int enb_agent_task_queue_put(enb_agent_task_queue_t *queue, enb_agent_task_t *ta
 
   if (queue->count >= queue->capacity) {
     /*TODO: need to call realloc heap*/
-    realloc_status = _enb_agent_task_queue_realloc_heap(queue);
+    realloc_status = _flexran_agent_task_queue_realloc_heap(queue);
     if (realloc_status != HEAP_OK) {
       err_code = realloc_status;
       goto error;
@@ -179,7 +180,7 @@ int enb_agent_task_queue_put(enb_agent_task_queue_t *queue, enb_agent_task_t *ta
 }
 
 
-int enb_agent_task_queue_get_current_task(enb_agent_task_queue_t *queue, enb_agent_task_t **task) {
+int flexran_agent_task_queue_get_current_task(flexran_agent_task_queue_t *queue, flexran_agent_task_t **task) {
   int err_code;
   
   if (pthread_mutex_lock(queue->mutex)) {
@@ -195,8 +196,8 @@ int enb_agent_task_queue_get_current_task(enb_agent_task_queue_t *queue, enb_age
   }
 
   /* Find current frame and subframe number */
-  uint16_t curr_frame=get_current_frame(queue->mod_id);
-  uint8_t curr_subframe=get_current_subframe(queue->mod_id);
+  uint16_t curr_frame = flexran_get_current_frame(queue->mod_id);
+  uint8_t curr_subframe = flexran_get_current_subframe(queue->mod_id);
 
   /* If no task is scheduled for the current subframe, return without any task */
   if(queue->task[0]->frame_num != curr_frame || queue->task[0]->subframe_num != curr_subframe) {
@@ -208,7 +209,7 @@ int enb_agent_task_queue_get_current_task(enb_agent_task_queue_t *queue, enb_age
   queue->task[0] = queue->task[queue->count-1];
   queue->count--;
   /* Restore heap property */
-  _enb_agent_task_queue_heapify(queue, 0);
+  _flexran_agent_task_queue_heapify(queue, 0);
   
   /*If queue has no element*/
   if (queue->count < 1) {
@@ -231,9 +232,9 @@ int enb_agent_task_queue_get_current_task(enb_agent_task_queue_t *queue, enb_age
 }
 
 /*Warning: Internal function. Should not be called as API function. Not thread safe*/
-void _enb_agent_task_queue_heapify(enb_agent_task_queue_t *queue, size_t idx) {
+void _flexran_agent_task_queue_heapify(flexran_agent_task_queue_t *queue, size_t idx) {
   /* left index, right index, largest */
-  enb_agent_task_t *tmp = NULL;
+  flexran_agent_task_t *tmp = NULL;
   size_t l_idx, r_idx, lrg_idx;
 
   l_idx = LEFT(idx);
@@ -258,32 +259,32 @@ void _enb_agent_task_queue_heapify(enb_agent_task_queue_t *queue, size_t idx) {
     queue->task[lrg_idx] = queue->task[idx];
     queue->task[idx] = tmp;
     /* Heapify again */
-    _enb_agent_task_queue_heapify(queue, lrg_idx);
+    _flexran_agent_task_queue_heapify(queue, lrg_idx);
   }
 }
 
 /*Warning: Internal function. Should not be called as API function. Not thread safe*/
-int _enb_agent_task_queue_realloc_heap(enb_agent_task_queue_t *queue) {
-  enb_agent_task_t **resized_task_heap;
+int _flexran_agent_task_queue_realloc_heap(flexran_agent_task_queue_t *queue) {
+  flexran_agent_task_t **resized_task_heap;
   if (queue->count >= queue->capacity) {
-    size_t task_size = sizeof(enb_agent_task_t);
+    size_t task_size = sizeof(flexran_agent_task_t);
 
     resized_task_heap = realloc(queue->task, (2*queue->capacity) * task_size);
     if (resized_task_heap != NULL) {
       queue->capacity *= 2;
-      queue->task = (enb_agent_task_t **) resized_task_heap;
+      queue->task = (flexran_agent_task_t **) resized_task_heap;
       return HEAP_OK;
     } else return HEAP_REALLOCERROR;
   }
   return HEAP_NOREALLOC;
 }
 
-int _enb_agent_task_queue_cmp(mid_t mod_id, const enb_agent_task_t *t1, const enb_agent_task_t *t2) {
+int _flexran_agent_task_queue_cmp(mid_t mod_id, const flexran_agent_task_t *t1, const flexran_agent_task_t *t2) {
   if ((t1->frame_num == t2->frame_num) && (t1->subframe_num == t2->subframe_num))
     return 0;
 
-  uint16_t curr_frame = get_current_frame(mod_id);
-  uint8_t curr_subframe = get_current_subframe(mod_id);
+  uint16_t curr_frame = flexran_get_current_frame(mod_id);
+  uint8_t curr_subframe = flexran_get_current_subframe(mod_id);
 
   int f_offset, sf_offset, tmp1, tmp2;
 

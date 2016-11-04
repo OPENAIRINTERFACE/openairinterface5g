@@ -27,7 +27,7 @@
 
 *******************************************************************************/
 
-/*! \file eNB_agent_scheduler_dataplane.c
+/*! \file flexran_agent_scheduler_dataplane.c
  * \brief data plane procedures related to eNB scheduling
  * \author Xenofon Foukas
  * \date 2016
@@ -44,7 +44,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
-#include "LAYER2/MAC/enb_agent_mac_proto.h"
+#include "LAYER2/MAC/flexran_agent_mac_proto.h"
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/proto.h"
 #include "LAYER2/MAC/extern.h"
@@ -65,11 +65,11 @@
 #include "SIMULATION/TOOLS/defs.h" // for taus
 
 
-void apply_dl_scheduling_decisions(mid_t mod_id,
-				   uint32_t frame,
-				   uint32_t subframe,
-				   int *mbsfn_flag,
-				   const Protocol__FlexranMessage *dl_scheduling_info) {
+void flexran_apply_dl_scheduling_decisions(mid_t mod_id,
+					   uint32_t frame,
+					   uint32_t subframe,
+					   int *mbsfn_flag,
+					   const Protocol__FlexranMessage *dl_scheduling_info) {
 
   Protocol__FlexDlMacConfig *mac_config = dl_scheduling_info->dl_mac_config_msg;
 
@@ -85,19 +85,19 @@ void apply_dl_scheduling_decisions(mid_t mod_id,
 
   // Check if there is anything to schedule for the UEs
   if (mac_config->n_dl_ue_data > 0) {
-    apply_ue_spec_scheduling_decisions(mod_id, frame, subframe, mbsfn_flag,
-				       mac_config->n_dl_ue_data, mac_config->dl_ue_data);
+    flexran_apply_ue_spec_scheduling_decisions(mod_id, frame, subframe, mbsfn_flag,
+					       mac_config->n_dl_ue_data, mac_config->dl_ue_data);
   }
   
 }
 
 
-void apply_ue_spec_scheduling_decisions(mid_t mod_id,
-					uint32_t frame,
-					uint32_t subframe,
-					int *mbsfn_flag,
-					uint32_t n_dl_ue_data,
-					const Protocol__FlexDlData **dl_ue_data) {
+void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
+						uint32_t frame,
+						uint32_t subframe,
+						int *mbsfn_flag,
+						uint32_t n_dl_ue_data,
+						const Protocol__FlexDlData **dl_ue_data) {
 
   uint8_t               CC_id;
   int                   UE_id;

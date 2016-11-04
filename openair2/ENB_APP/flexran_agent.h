@@ -1,3 +1,4 @@
+
 /*******************************************************************************
     OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
@@ -27,37 +28,28 @@
 
  *******************************************************************************/
 
-/*! \file enb_agent_async.h
- * \brief channel implementation for async interface
- * \author Xenofon Foukas
+/*! \file flexran_agent.h
+ * \brief top level flexran agent  
+ * \author Navid Nikaein and Xenofon Foukas
  * \date 2016
  * \version 0.1
  */
 
-#ifndef ENB_AGENT_ASYNC_H_
-#define ENB_AGENT_ASYNC_H_
+#ifndef FLEXRAN_AGENT_H_
+#define FLEXRAN_AGENT_H_
 
-#include "enb_agent_net_comm.h"
-
-typedef struct {
-  mid_t            enb_id;
-  socket_link_t   *link;
-  message_queue_t *send_queue;
-  message_queue_t *receive_queue;
-  link_manager_t  *manager;
-} enb_agent_async_channel_t;
-
-/* Create a new channel for a given destination ip and destination port */
-enb_agent_async_channel_t * enb_agent_async_channel_info(mid_t mod_id, char *dst_ip, uint16_t dst_port);
-
-/* Send a message to the given channel */
-int enb_agent_async_msg_send(void *data, int size, int priority, void *channel_info);
-
-/* Receive a message from a given channel */
-int enb_agent_async_msg_recv(void **data, int *size, int *priority, void *channel_info);
-
-/* Release a channel */
-void enb_agent_async_release(enb_agent_channel_t *channel);
+#include "enb_config.h" // for enb properties
+#include "flexran_agent_common.h"
 
 
-#endif /*ENB_AGENT_ASYNC_H_*/
+/* Initiation and termination of the eNodeB agent */
+int flexran_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties);
+int flexran_agent_stop(mid_t mod_id);
+
+/* 
+ * enb agent task mainly wakes up the tx thread for periodic and oneshot messages to the controller 
+ * and can interact with other itti tasks
+*/
+void *flexran_agent_task(void *args);
+
+#endif

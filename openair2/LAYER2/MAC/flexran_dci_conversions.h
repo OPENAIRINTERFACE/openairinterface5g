@@ -27,7 +27,7 @@
 
  *******************************************************************************/
 
-/*! \file dci_conversions.h
+/*! \file flexran_dci_conversions.h
  * \brief Conversion helpers from flexran messages to OAI formats DCI  
  * \author Xenofon Foukas
  * \date 2016

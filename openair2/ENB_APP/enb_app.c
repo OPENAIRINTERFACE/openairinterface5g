@@ -49,8 +49,8 @@
 #   include "gtpv1u_eNB_task.h"
 # endif
 
-#if defined(ENB_AGENT_SB_IF)
-#   include "enb_agent.h"
+#if defined(FLEXRAN_AGENT_SB_IF)
+#   include "flexran_agent.h"
 #endif
 
 extern unsigned char NB_eNB_INST;
@@ -314,11 +314,11 @@ void *eNB_app_task(void *args_p)
     configure_rrc(enb_id, enb_properties_p);
   }
 
-#if defined (ENB_AGENT_SB_IF)
+#if defined (FLEXRAN_AGENT_SB_IF)
   
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
     printf("\n start enb agent %d\n", enb_id);
-    enb_agent_start(enb_id, enb_properties_p);
+    flexran_agent_start(enb_id, enb_properties_p);
   }
 #endif 
 

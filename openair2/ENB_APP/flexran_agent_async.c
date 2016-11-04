@@ -27,22 +27,22 @@
 
  *******************************************************************************/
 
-/*! \file enb_agent_async.c
+/*! \file flexran_agent_async.c
  * \brief channel implementation for async interface
  * \author Xenofon Foukas
  * \date 2016
  * \version 0.1
  */
 
-#include "enb_agent_async.h"
-#include "enb_agent_defs.h"
+#include "flexran_agent_async.h"
+#include "flexran_agent_defs.h"
 
 #include "log.h"
 
-enb_agent_async_channel_t * enb_agent_async_channel_info(mid_t mod_id, char *dst_ip, uint16_t dst_port) {
+flexran_agent_async_channel_t * flexran_agent_async_channel_info(mid_t mod_id, char *dst_ip, uint16_t dst_port) {
 
-  enb_agent_async_channel_t *channel;
-  channel = (enb_agent_async_channel_t *) malloc(sizeof(enb_agent_channel_t));
+  flexran_agent_async_channel_t *channel;
+  channel = (flexran_agent_async_channel_t *) malloc(sizeof(flexran_agent_channel_t));
   
   if (channel == NULL)
     goto error;
@@ -52,7 +52,7 @@ enb_agent_async_channel_t * enb_agent_async_channel_info(mid_t mod_id, char *dst
   channel->link = new_link_client(dst_ip, dst_port);
   if (channel->link == NULL) goto error;
   
-  LOG_I(ENB_AGENT,"starting enb agent client for module id %d on ipv4 %s, port %d\n",  
+  LOG_I(FLEXRAN_AGENT,"starting enb agent client for module id %d on ipv4 %s, port %d\n",  
 	channel->enb_id,
 	dst_ip,
 	dst_port);
@@ -75,27 +75,27 @@ enb_agent_async_channel_t * enb_agent_async_channel_info(mid_t mod_id, char *dst
   return channel;
 
  error:
-  LOG_I(ENB_AGENT,"there was an error\n");
+  LOG_I(FLEXRAN_AGENT,"there was an error\n");
   return 1;
 }
 
-int enb_agent_async_msg_send(void *data, int size, int priority, void *channel_info) {
-  enb_agent_async_channel_t *channel;
-  channel = (enb_agent_channel_t *)channel_info;
+int flexran_agent_async_msg_send(void *data, int size, int priority, void *channel_info) {
+  flexran_agent_async_channel_t *channel;
+  channel = (flexran_agent_channel_t *)channel_info;
 
   return message_put(channel->send_queue, data, size, priority);
 }
 
-int enb_agent_async_msg_recv(void **data, int *size, int *priority, void *channel_info) {
-  enb_agent_async_channel_t *channel;
-  channel = (enb_agent_async_channel_t *)channel_info;
+int flexran_agent_async_msg_recv(void **data, int *size, int *priority, void *channel_info) {
+  flexran_agent_async_channel_t *channel;
+  channel = (flexran_agent_async_channel_t *)channel_info;
 
   return message_get(channel->receive_queue, data, size, priority);
 }
 
-void enb_agent_async_release(enb_agent_channel_t *channel) {
-  enb_agent_async_channel_t *channel_info;
-  channel_info = (enb_agent_async_channel_t *) channel->channel_info;
+void flexran_agent_async_release(flexran_agent_channel_t *channel) {
+  flexran_agent_async_channel_t *channel_info;
+  channel_info = (flexran_agent_async_channel_t *) channel->channel_info;
 
   destroy_link_manager(channel_info->manager);
   

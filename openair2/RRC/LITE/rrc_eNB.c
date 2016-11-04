@@ -93,7 +93,7 @@
 
 #include "SIMULATION/TOOLS/defs.h" // for taus
 
-#include "enb_agent_extern.h"
+#include "flexran_agent_extern.h"
 #define XER_PRINT
 
 #ifdef PHY_EMUL
@@ -4543,7 +4543,7 @@ rrc_eNB_decode_dcch(
 
 	//WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
 	if (mac_agent_registered[ctxt_pP->module_id]) {
-	  agent_mac_xface[ctxt_pP->eNB_index]->enb_agent_notify_ue_state_change(ctxt_pP->module_id,
+	  agent_mac_xface[ctxt_pP->eNB_index]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
 										ue_context_p->ue_id_rnti,
 										PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_UPDATED);
 	}
@@ -4644,7 +4644,7 @@ rrc_eNB_decode_dcch(
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
 	  //WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
 	  if (mac_agent_registered[ctxt_pP->module_id]) {
-	    agent_mac_xface[ctxt_pP->eNB_index]->enb_agent_notify_ue_state_change(ctxt_pP->module_id,
+	    agent_mac_xface[ctxt_pP->eNB_index]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
 										  ue_context_p->ue_id_rnti,
 										  PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_ACTIVATED);
 	  }

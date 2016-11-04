@@ -27,7 +27,7 @@
 
  *******************************************************************************/
 
-/*! \file enb_agent_common_internal.c
+/*! \file flexran_agent_common_internal.c
  * \brief internal functions for common message primitves and utilities 
  * \author Xenofon Foukas
  * \date 2016
@@ -37,8 +37,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "enb_agent_common_internal.h"
-#include "enb_agent_mac_internal.h"
+#include "flexran_agent_common_internal.h"
+#include "flexran_agent_mac_internal.h"
 
 int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy_length) {
 

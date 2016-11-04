@@ -27,14 +27,14 @@
 
  *******************************************************************************/
 
-/*! \file enb_agent_defs.h
- * \brief enb agent common definitions 
+/*! \file flexran_agent_defs.h
+ * \brief FlexRAN agent common definitions 
  * \author Navid Nikaein and Xenofon Foukas
  * \date 2016
  * \version 0.1
  */
-#ifndef ENB_AGENT_DEFS_H_
-#define ENB_AGENT_DEFS_H_
+#ifndef FLEXRAN_AGENT_DEFS_H_
+#define FLEXRAN_AGENT_DEFS_H_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,54 +45,54 @@
 
 #define NUM_MAX_ENB 2
 #define NUM_MAX_UE 2048
-#define DEFAULT_ENB_AGENT_IPv4_ADDRESS "127.0.0.1"
-#define DEFAULT_ENB_AGENT_PORT          2210
-#define DEFAULT_ENB_AGENT_CACHE        "/mnt/oai_agent_cache"
+#define DEFAULT_FLEXRAN_AGENT_IPv4_ADDRESS "127.0.0.1"
+#define DEFAULT_FLEXRAN_AGENT_PORT          2210
+#define DEFAULT_FLEXRAN_AGENT_CACHE        "/mnt/oai_agent_cache"
 
 typedef enum {
   
-  ENB_AGENT_DEFAULT=0,
+  FLEXRAN_AGENT_DEFAULT=0,
   
-  ENB_AGENT_PHY=1,
-  ENB_AGENT_MAC=2,
-  ENB_AGENT_RLC=3,
-  ENB_AGENT_PDCP=4,
-  ENB_AGENT_RRC=5,
-  ENB_AGENT_S1AP=6,
-  ENB_AGENT_GTP=7,
-  ENB_AGENT_X2AP=8,
+  FLEXRAN_AGENT_PHY=1,
+  FLEXRAN_AGENT_MAC=2,
+  FLEXRAN_AGENT_RLC=3,
+  FLEXRAN_AGENT_PDCP=4,
+  FLEXRAN_AGENT_RRC=5,
+  FLEXRAN_AGENT_S1AP=6,
+  FLEXRAN_AGENT_GTP=7,
+  FLEXRAN_AGENT_X2AP=8,
 
-  ENB_AGENT_MAX=9,
+  FLEXRAN_AGENT_MAX=9,
     
 } agent_id_t;
 
 typedef enum {
   /* no action  */
-  ENB_AGENT_ACTION_NONE = 0x0,
+  FLEXRAN_AGENT_ACTION_NONE = 0x0,
 
   /* send action  */
-  ENB_AGENT_ACTION_SEND = 0x1,
+  FLEXRAN_AGENT_ACTION_SEND = 0x1,
 
  /* apply action  */
-  ENB_AGENT_ACTION_APPLY = 0x2,
+  FLEXRAN_AGENT_ACTION_APPLY = 0x2,
 
   /* clear action  */
-  ENB_AGENT_ACTION_CLEAR = 0x4,
+  FLEXRAN_AGENT_ACTION_CLEAR = 0x4,
 
   /* write action  */
-  ENB_AGENT_ACTION_WRITE = 0x8,
+  FLEXRAN_AGENT_ACTION_WRITE = 0x8,
 
   /* filter action  */
-  ENB_AGENT_ACTION_FILTER = 0x10,
+  FLEXRAN_AGENT_ACTION_FILTER = 0x10,
 
   /* preprocess action  */
-  ENB_AGENT_ACTION_PREPROCESS = 0x20,
+  FLEXRAN_AGENT_ACTION_PREPROCESS = 0x20,
 
   /* meter action  */
-  ENB_AGENT_ACTION_METER = 0x40,
+  FLEXRAN_AGENT_ACTION_METER = 0x40,
   
   /* Max number of states available */
-  ENB_AGENT_ACTION_MAX = 0x7f,
+  FLEXRAN_AGENT_ACTION_MAX = 0x7f,
 } agent_action_t;
 
 
@@ -122,12 +122,12 @@ typedef struct {
   uint32_t rx_msg[NUM_MAX_ENB];
   uint32_t tx_msg[NUM_MAX_ENB];
 
-}enb_agent_info_t;
+} flexran_agent_info_t;
 
 typedef struct {
   mid_t enb_id;
-  enb_agent_info_t agent_info;
+  flexran_agent_info_t agent_info;
   
-}enb_agent_instance_t;
+} flexran_agent_instance_t;
 
 #endif 
