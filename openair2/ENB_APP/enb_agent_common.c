@@ -51,6 +51,7 @@
 void * enb[NUM_MAX_ENB];
 void * enb_ue[NUM_MAX_ENB];
 void * enb_rrc[NUM_MAX_ENB];
+
 /*
  * message primitives
  */
@@ -446,6 +447,7 @@ int enb_agent_destroy_agent_reconfiguration(Protocol__FlexranMessage *msg) {
   /*TODO: Dealocate memory for a dynamically allocated agent reconfiguration message*/
 }
 
+
 /*
  * get generic info from RAN
  */
@@ -541,7 +543,7 @@ int get_num_ues (mid_t mod_id){
   return  ((UE_list_t *)enb_ue[mod_id])->num_UEs;
 }
 
-int get_ue_crnti (mid_t mod_id, mid_t ue_id){
+int get_ue_crnti (mid_t mod_id, mid_t ue_id) {
 
   return  UE_RNTI(mod_id, ue_id);
 }
@@ -608,13 +610,12 @@ int get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id,int CC_id)
 	else
 		return 0;
 }
-int get_active_CC(mid_t mod_id, mid_t ue_id)
-{
+
+int get_active_CC(mid_t mod_id, mid_t ue_id) {
 	return ((UE_list_t *)enb_ue[mod_id])->numactiveCCs[ue_id];
 }
 
-int get_current_RI(mid_t mod_id, mid_t ue_id, int CC_id)
-{
+int get_current_RI(mid_t mod_id, mid_t ue_id, int CC_id) {
 	LTE_eNB_UE_stats *eNB_UE_stats = NULL;
 
 	int pCCid = UE_PCCID(mod_id,ue_id);
@@ -629,8 +630,7 @@ int get_current_RI(mid_t mod_id, mid_t ue_id, int CC_id)
 	return eNB_UE_stats[CC_id].rank;
 }
 
-int get_tpc(mid_t mod_id, mid_t ue_id)
-{
+int get_tpc(mid_t mod_id, mid_t ue_id) {
 	LTE_eNB_UE_stats *eNB_UE_stats = NULL;
 	int32_t normalized_rx_power, target_rx_power;
 	int tpc = 1;
@@ -660,8 +660,7 @@ int get_tpc(mid_t mod_id, mid_t ue_id)
 	return tpc;
 }
 
-int get_harq(const mid_t mod_id, const uint8_t CC_id, const mid_t ue_id, const int frame, const uint8_t subframe, int *id, int *status)	//flag_id_status = 0 then id, else status
-{
+int get_harq(const mid_t mod_id, const uint8_t CC_id, const mid_t ue_id, const int frame, const uint8_t subframe, int *id, int *status)	{ //flag_id_status = 0 then id, else status
 	/*TODO: Add int TB in function parameters to get the status of the second TB. This can be done to by editing in
 	 * get_ue_active_harq_pid function in line 272 file: phy_procedures_lte_eNB.c to add
 	 * DLSCH_ptr = PHY_vars_eNB_g[Mod_id][CC_id]->dlsch_eNB[(uint32_t)UE_id][1];*/
@@ -684,8 +683,7 @@ int get_harq(const mid_t mod_id, const uint8_t CC_id, const mid_t ue_id, const i
   return 0;
 }
 
-int get_p0_pucch_dbm(mid_t mod_id, mid_t ue_id, int CC_id)
-{
+int get_p0_pucch_dbm(mid_t mod_id, mid_t ue_id, int CC_id) {
 	LTE_eNB_UE_stats *eNB_UE_stats = NULL;
 	uint32_t rnti = get_ue_crnti(mod_id,ue_id);
 
@@ -703,8 +701,7 @@ int get_p0_pucch_dbm(mid_t mod_id, mid_t ue_id, int CC_id)
 		return -1;
 }
 
-int get_p0_nominal_pucch(mid_t mod_id, int CC_id)
-{
+int get_p0_nominal_pucch(mid_t mod_id, int CC_id) {
 	int32_t pucch_rx_received = mac_xface->get_target_pucch_rx_power(mod_id, CC_id);
 	return pucch_rx_received;
 }
@@ -716,43 +713,42 @@ int get_p0_nominal_pucch(mid_t mod_id, int CC_id)
  * ************************************
  */
 
-int get_hopping_offset(mid_t mod_id, int CC_id)
-{
+int get_hopping_offset(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->pusch_config_common.pusch_HoppingOffset;
 }
-int get_hopping_mode(mid_t mod_id, int CC_id)
-{
+
+int get_hopping_mode(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->pusch_config_common.hoppingMode;
 }
-int get_n_SB(mid_t mod_id, int CC_id)
-{
+
+int get_n_SB(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->pusch_config_common.n_SB;
 }
-int get_enable64QAM(mid_t mod_id, int CC_id)
-{
+
+int get_enable64QAM(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->pusch_config_common.enable64QAM;
 }
-int get_phich_duration(mid_t mod_id, int CC_id)
-{
+
+int get_phich_duration(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->phich_config_common.phich_duration;
 }
-int get_phich_resource(mid_t mod_id, int CC_id)
-{
+
+int get_phich_resource(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
@@ -767,132 +763,132 @@ int get_phich_resource(mid_t mod_id, int CC_id)
 
 	return -1;
 }
-int get_n1pucch_an(mid_t mod_id, int CC_id)
-{
+
+int get_n1pucch_an(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->pucch_config_common.n1PUCCH_AN;
 }
-int get_nRB_CQI(mid_t mod_id, int CC_id)
-{
+
+int get_nRB_CQI(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->pucch_config_common.nRB_CQI;
 }
-int get_deltaPUCCH_Shift(mid_t mod_id, int CC_id)
-{
+
+int get_deltaPUCCH_Shift(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->pucch_config_common.deltaPUCCH_Shift;
 }
-int get_prach_ConfigIndex(mid_t mod_id, int CC_id)
-{
+
+int get_prach_ConfigIndex(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
 }
-int get_prach_FreqOffset(mid_t mod_id, int CC_id)
-{
+
+int get_prach_FreqOffset(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset;
 }
-int get_maxHARQ_Msg3Tx(mid_t mod_id, int CC_id)
-{
+
+int get_maxHARQ_Msg3Tx(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->maxHARQ_Msg3Tx;
 }
-int get_ul_cyclic_prefix_length(mid_t mod_id, int CC_id)
-{
+
+int get_ul_cyclic_prefix_length(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->Ncp_UL;
 }
-int get_dl_cyclic_prefix_length(mid_t mod_id, int CC_id)
-{
+
+int get_dl_cyclic_prefix_length(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->Ncp;
 }
-int get_cell_id(mid_t mod_id, int CC_id)
-{
+
+int get_cell_id(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->Nid_cell;
 }
-int get_srs_BandwidthConfig(mid_t mod_id, int CC_id)
-{
+
+int get_srs_BandwidthConfig(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->soundingrs_ul_config_common.srs_BandwidthConfig;
 }
-int get_srs_SubframeConfig(mid_t mod_id, int CC_id)
-{
+
+int get_srs_SubframeConfig(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->soundingrs_ul_config_common.srs_SubframeConfig;
 }
-int get_srs_MaxUpPts(mid_t mod_id, int CC_id)
-{
+
+int get_srs_MaxUpPts(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->soundingrs_ul_config_common.srs_MaxUpPts;
 }
-int get_N_RB_DL(mid_t mod_id, int CC_id)
-{
+
+int get_N_RB_DL(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->N_RB_DL;
 }
-int get_N_RB_UL(mid_t mod_id, int CC_id)
-{
+
+int get_N_RB_UL(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->N_RB_UL;
 }
-int get_subframe_assignment(mid_t mod_id, int CC_id)
-{
+
+int get_subframe_assignment(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->tdd_config;
 }
-int get_special_subframe_assignment(mid_t mod_id, int CC_id)
-{
+
+int get_special_subframe_assignment(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->tdd_config_S;
 }
-int get_ra_ResponseWindowSize(mid_t mod_id, int CC_id)
-{
+
+int get_ra_ResponseWindowSize(mid_t mod_id, int CC_id) {
 	Enb_properties_array_t *enb_properties;
 	enb_properties = enb_config_get();
 	return enb_properties->properties[mod_id]->rach_raResponseWindowSize[CC_id];
 }
-int get_mac_ContentionResolutionTimer(mid_t mod_id, int CC_id)
-{
+
+int get_mac_ContentionResolutionTimer(mid_t mod_id, int CC_id) {
 	Enb_properties_array_t *enb_properties;
 	enb_properties = enb_config_get();
 	return enb_properties->properties[mod_id]->rach_macContentionResolutionTimer[CC_id];
 }
-int get_duplex_mode(mid_t mod_id, int CC_id)
-{
+
+int get_duplex_mode(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
@@ -903,20 +899,22 @@ int get_duplex_mode(mid_t mod_id, int CC_id)
 
 	return -1;
 }
-long get_si_window_length(mid_t mod_id, int CC_id)
-{
+
+long get_si_window_length(mid_t mod_id, int CC_id) {
 	return  ((eNB_RRC_INST *)enb_rrc[mod_id])->carrier[CC_id].sib1->si_WindowLength;
 }
-int get_sib1_length(mid_t mod_id, int CC_id)
-{
+
+int get_sib1_length(mid_t mod_id, int CC_id) {
 	return  ((eNB_RRC_INST *)enb_rrc[mod_id])->carrier[CC_id].sizeof_SIB1;
 }
-int get_num_pdcch_symb(mid_t mod_id, int CC_id)
-{
+
+int get_num_pdcch_symb(mid_t mod_id, int CC_id) {
   /* TODO: This should return the number of PDCCH symbols initially used by the cell CC_id */
   return 0;
   //(PHY_vars_UE_g[mod_id][CC_id]->lte_ue_pdcch_vars[mod_id]->num_pdcch_symbols);
 }
+
+
 
 /*
  * ************************************
@@ -925,8 +923,7 @@ int get_num_pdcch_symb(mid_t mod_id, int CC_id)
  */
 
 
-int get_time_alignment_timer(mid_t mod_id, mid_t ue_id)
-{
+int get_time_alignment_timer(mid_t mod_id, mid_t ue_id) {
 	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
 	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
 
@@ -982,18 +979,16 @@ int get_meas_gap_config_offset(mid_t mod_id, mid_t ue_id) {
   return -1;
 }
 
-int get_ue_aggregated_max_bitrate_dl (mid_t mod_id, mid_t ue_id)
-{
+int get_ue_aggregated_max_bitrate_dl (mid_t mod_id, mid_t ue_id) {
 	return ((UE_list_t *)enb_ue[mod_id])->UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateDL;
 }
 
-int get_ue_aggregated_max_bitrate_ul (mid_t mod_id, mid_t ue_id)
-{
+int get_ue_aggregated_max_bitrate_ul (mid_t mod_id, mid_t ue_id) {
 	return ((UE_list_t *)enb_ue[mod_id])->UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateUL;
 }
 
-int get_half_duplex(mid_t ue_id)
-{
+int get_half_duplex(mid_t ue_id) {
+  // TODO
 	//int halfduplex = 0;
 	//int bands_to_scan = ((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->rf_Parameters.supportedBandListEUTRA.list.count;
 	//for (int i =0; i < bands_to_scan; i++){
@@ -1003,37 +998,32 @@ int get_half_duplex(mid_t ue_id)
 	//return halfduplex;
 }
 
-int get_intra_sf_hopping(mid_t ue_id)
-{
+int get_intra_sf_hopping(mid_t ue_id) {
 	//TODO:Get proper value
 	//temp = (((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->featureGroupIndicators->buf);
 	//return (0 & ( 1 << (31)));
 }
 
-int get_type2_sb_1(mid_t ue_id)
-{
+int get_type2_sb_1(mid_t ue_id) {
 	//TODO:Get proper value
 	//uint8_t temp = 0;
 	//temp = (((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->featureGroupIndicators->buf);
 	//return (temp & ( 1 << (11)));
 }
 
-int get_ue_category(mid_t ue_id)
-{
+int get_ue_category(mid_t ue_id) {
 	//TODO:Get proper value
 	//return (((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->ue_Category);
 }
 
-int get_res_alloc_type1(mid_t ue_id)
-{
+int get_res_alloc_type1(mid_t ue_id) {
 	//TODO:Get proper value
 	//uint8_t temp = 0;
 	//temp = (((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->featureGroupIndicators->buf);
 	//return (temp & ( 1 << (30)));
 }
 
-int get_ue_transmission_mode(mid_t mod_id, mid_t ue_id)
-{
+int get_ue_transmission_mode(mid_t mod_id, mid_t ue_id) {
 	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
 	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
 
@@ -1049,8 +1039,7 @@ int get_ue_transmission_mode(mid_t mod_id, mid_t ue_id)
 		return -1;
 }
 
-int get_tti_bundling(mid_t mod_id, mid_t ue_id)
-{
+int get_tti_bundling(mid_t mod_id, mid_t ue_id) {
 	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
 	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
 
@@ -1078,8 +1067,7 @@ int get_maxHARQ_TX(mid_t mod_id, mid_t ue_id) {
   return -1;
 }
 
-int get_beta_offset_ack_index(mid_t mod_id, mid_t ue_id)
-{
+int get_beta_offset_ack_index(mid_t mod_id, mid_t ue_id) {
 	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
 	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
 
@@ -1094,8 +1082,7 @@ int get_beta_offset_ack_index(mid_t mod_id, mid_t ue_id)
 		return -1;
 }
 
-int get_beta_offset_ri_index(mid_t mod_id, mid_t ue_id)
-{
+int get_beta_offset_ri_index(mid_t mod_id, mid_t ue_id) {
 	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
 	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
 
@@ -1110,8 +1097,7 @@ int get_beta_offset_ri_index(mid_t mod_id, mid_t ue_id)
 		return -1;
 }
 
-int get_beta_offset_cqi_index(mid_t mod_id, mid_t ue_id)
-{
+int get_beta_offset_cqi_index(mid_t mod_id, mid_t ue_id) {
 	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
 	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
 
@@ -1126,8 +1112,7 @@ int get_beta_offset_cqi_index(mid_t mod_id, mid_t ue_id)
 		return -1;
 }
 
-int get_simultaneous_ack_nack_cqi(mid_t mod_id, mid_t ue_id)
-{
+int get_simultaneous_ack_nack_cqi(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
   
@@ -1142,8 +1127,7 @@ int get_simultaneous_ack_nack_cqi(mid_t mod_id, mid_t ue_id)
   return -1;
 }
 
-int get_ack_nack_simultaneous_trans(mid_t mod_id,mid_t ue_id)
-{
+int get_ack_nack_simultaneous_trans(mid_t mod_id,mid_t ue_id) {
 	return (&eNB_rrc_inst[mod_id])->carrier[0].sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
 }
 
@@ -1161,8 +1145,7 @@ int get_aperiodic_cqi_rep_mode(mid_t mod_id,mid_t ue_id) {
   return -1;
 }
 
-int get_tdd_ack_nack_feedback(mid_t mod_id, mid_t ue_id)
-{
+int get_tdd_ack_nack_feedback(mid_t mod_id, mid_t ue_id) {
 	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
 	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
 
@@ -1178,8 +1161,7 @@ int get_tdd_ack_nack_feedback(mid_t mod_id, mid_t ue_id)
 		return -1;
 }
 
-int get_ack_nack_repetition_factor(mid_t mod_id, mid_t ue_id)
-{
+int get_ack_nack_repetition_factor(mid_t mod_id, mid_t ue_id) {
 	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
 	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
 
@@ -1213,8 +1195,7 @@ int get_extended_bsr_size(mid_t mod_id, mid_t ue_id) {
   return -1;
 }
 
-int get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id)
-{
+int get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id) {
 	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
 	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
 
@@ -1235,8 +1216,7 @@ int get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id)
 		return -1;
 }
 
-int get_lcg(mid_t ue_id, mid_t lc_id)
-{
+int get_lcg(mid_t ue_id, mid_t lc_id) {
   if (UE_mac_inst == NULL) {
     return -1;
   }
@@ -1247,8 +1227,7 @@ int get_lcg(mid_t ue_id, mid_t lc_id)
   }
 }
 
-int get_direction(mid_t ue_id, mid_t lc_id)
-{
+int get_direction(mid_t ue_id, mid_t lc_id) {
 	/*TODO: fill with the value for the rest of LCID*/
 	if(lc_id == DCCH | lc_id == DCCH1)
 		return 2;
@@ -1293,43 +1272,37 @@ int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change)
 	  	  int i =find_UE_id(mod_id,rnti);
      	  config->has_rnti = 1;
           config->rnti = rnti;
-	  		//TODO: Set the time_alignment_timer
 	  	  if(get_time_alignment_timer(mod_id,i) != -1){
 	  		  config->time_alignment_timer = get_time_alignment_timer(mod_id,i);
 	  		  config->has_time_alignment_timer = 1;
 	  	  }
-	  	  //TODO: Set the measurement gap configuration pattern
 	  	  if(get_meas_gap_config(mod_id,i) != -1){
 	  		  config->meas_gap_config_pattern = get_meas_gap_config(mod_id,i);
 	  	  	  config->has_meas_gap_config_pattern = 1;
 	  	  }
-	  	  //TODO: Set the measurement gap offset if applicable
 	  	  if(config->has_meas_gap_config_pattern == 1 &&
 		     config->meas_gap_config_pattern != PROTOCOL__FLEX_MEAS_GAP_CONFIG_PATTERN__FLMGCP_OFF) {
 		    config->meas_gap_config_sf_offset = get_meas_gap_config_offset(mod_id,i);
 		    config->has_meas_gap_config_sf_offset = 1;
 	  	  }
 	  	  //TODO: Set the SPS configuration (Optional)
-	  	  //Not supported for noe, so we do not set it
+	  	  //Not supported for now, so we do not set it
 
 	  	  //TODO: Set the SR configuration (Optional)
 	  	  //We do not set it for now
 
 	  	  //TODO: Set the CQI configuration (Optional)
 	  	  //We do not set it for now
-
-	  	  //TODO: Set the transmission mode
-	  	  if(get_ue_transmission_mode(mod_id,i) != -1){
+		  
+		  if(get_ue_transmission_mode(mod_id,i) != -1){
 	  		  config->transmission_mode = get_ue_transmission_mode(mod_id,i);
 	  		  config->has_transmission_mode = 1;
 	  	  }
 
-	  	  //TODO: Set the aggregated bit-rate of the non-gbr bearer (UL)
-	  	  config->ue_aggregated_max_bitrate_ul = get_ue_aggregated_max_bitrate_ul(mod_id,i);
+		  config->ue_aggregated_max_bitrate_ul = get_ue_aggregated_max_bitrate_ul(mod_id,i);
 	  	  config->has_ue_aggregated_max_bitrate_ul = 1;
 
-	  	  //TODO: Set the aggregated bit-rate of the non-gbr bearer (DL)
-	  	  config->ue_aggregated_max_bitrate_dl = get_ue_aggregated_max_bitrate_dl(mod_id,i);
+		  config->ue_aggregated_max_bitrate_dl = get_ue_aggregated_max_bitrate_dl(mod_id,i);
 	  	  config->has_ue_aggregated_max_bitrate_dl = 1;
 
 	  	  //TODO: Set the UE capabilities
@@ -1337,63 +1310,63 @@ int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change)
 	  	  c_capabilities = malloc(sizeof(Protocol__FlexUeCapabilities));
 	  	  protocol__flex_ue_capabilities__init(c_capabilities);
 	  	  //TODO: Set half duplex (FDD operation)
-	  	  c_capabilities->has_half_duplex = 1;
+	  	  c_capabilities->has_half_duplex = 0;
 	  	  c_capabilities->half_duplex = 1;//get_half_duplex(i);
 	  	  //TODO: Set intra-frame hopping flag
-	  	  c_capabilities->has_intra_sf_hopping = 1;
+	  	  c_capabilities->has_intra_sf_hopping = 0;
 	  	  c_capabilities->intra_sf_hopping = 1;//get_intra_sf_hopping(i);
 	  	  //TODO: Set support for type 2 hopping with n_sb > 1
-	  	  c_capabilities->has_type2_sb_1 = 1;
+	  	  c_capabilities->has_type2_sb_1 = 0;
 	  	  c_capabilities->type2_sb_1 = 1;//get_type2_sb_1(i);
 	  	  //TODO: Set ue category
-	  	  c_capabilities->has_ue_category = 1;
+	  	  c_capabilities->has_ue_category = 0;
 	  	  c_capabilities->ue_category = 1;//get_ue_category(i);
 	  	  //TODO: Set UE support for resource allocation type 1
-	  	  c_capabilities->has_res_alloc_type1 = 1;
+	  	  c_capabilities->has_res_alloc_type1 = 0;
 	  	  c_capabilities->res_alloc_type1 = 1;//get_res_alloc_type1(i);
 	  	  //Set the capabilites to the message
 	  	  config->capabilities = c_capabilities;
-	  	  //TODO: Set UE transmission antenna. One of the FLUTA_* values
+		  
 	  	  if(get_ue_transmission_antenna(mod_id,i) != -1){
 	  		  config->has_ue_transmission_antenna = 1;
 	  		  config->ue_transmission_antenna = get_ue_transmission_antenna(mod_id,i);
 	  	  }
-	  	  //TODO: Set tti bundling flag (See ts 36.321)
+
 	  	  if(get_tti_bundling(mod_id,i) != -1){
 	  		  config->has_tti_bundling = 1;
 	  		  config->tti_bundling = get_tti_bundling(mod_id,i);
 	  	  }
-	  	  //TODO: Set the max HARQ retransmission for the UL
+
 	  	  if(get_maxHARQ_TX(mod_id,i) != -1){
 	  		  config->has_max_harq_tx = 1;
 	  		  config->max_harq_tx = get_maxHARQ_TX(mod_id,i);
 	  	  }
-	  	  //TODO: Fill beta_offset_ack_index (TS 36.213)
+
 	  	  if(get_beta_offset_ack_index(mod_id,i) != -1){
 	  		  config->has_beta_offset_ack_index = 1;
 	  		  config->beta_offset_ack_index = get_beta_offset_ack_index(mod_id,i);
 	  	  }
-	  	  //TODO: Fill beta_offset_ri_index (TS 36.213)
+
 	  	  if(get_beta_offset_ri_index(mod_id,i) != -1){
 	  		  config->has_beta_offset_ri_index = 1;
 	  		  config->beta_offset_ri_index = get_beta_offset_ri_index(mod_id,i);
 	  	  }
-	  	  //TODO: Fill beta_offset_cqi_index (TS 36.213)
+
 	  	  if(get_beta_offset_cqi_index(mod_id,i) != -1){
 	  		  config->has_beta_offset_cqi_index = 1;
 	  		  config->beta_offset_cqi_index = get_beta_offset_cqi_index(mod_id,i);
 	  	  }
-	  	  //TODO: Fill ack_nack_simultaneous_trans (TS 36.213)
+
 	  	  if(get_ack_nack_simultaneous_trans(mod_id,i) != -1){
 	  		  config->has_ack_nack_simultaneous_trans = 1;
 	  		  config->ack_nack_simultaneous_trans = get_ack_nack_simultaneous_trans(mod_id,i);
 	  	  }
-	  	  //TODO: Fill simultaneous_ack_nack_cqi (TS 36.213)
+
 	  	  if(get_simultaneous_ack_nack_cqi(mod_id,i) != -1){
 	  		  config->has_simultaneous_ack_nack_cqi = 1;
 	  		  config->simultaneous_ack_nack_cqi = get_simultaneous_ack_nack_cqi(mod_id,i);
 	  	  }
-	  	  //TODO: Set PRACRM_* value regarding aperiodic cqi report mode
+
 	  	  if(get_aperiodic_cqi_rep_mode(mod_id,i) != -1){
 	  		  config->has_aperiodic_cqi_rep_mode = 1;
 			  int mode = get_aperiodic_cqi_rep_mode(mod_id,i);
@@ -1403,22 +1376,22 @@ int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change)
 			    config->aperiodic_cqi_rep_mode = mode;
 			  }
 	  	  }
-	  	  //TODO: Set tdd_ack_nack_feedback
+
 	  	  if(get_tdd_ack_nack_feedback(mod_id, i) != -1){
 	  		  config->has_tdd_ack_nack_feedback = 1;
 	  		  config->tdd_ack_nack_feedback = get_tdd_ack_nack_feedback(mod_id,i);
 	  	  }
-	  	  //TODO: Set ack_nack_repetition factor
+
 	  	  if(get_ack_nack_repetition_factor(mod_id, i) != -1){
 	  		  config->has_ack_nack_repetition_factor = 1;
 	  		  config->ack_nack_repetition_factor = get_ack_nack_repetition_factor(mod_id,i);
 	  	  }
-	  	  //TODO: Set extended BSR size
+
 	  	  if(get_extended_bsr_size(mod_id, i) != -1){
 	  		  config->has_extended_bsr_size = 1;
 	  		  config->extended_bsr_size = get_extended_bsr_size(mod_id,i);
 	  	  }
-		  //TODO: Set index of primary cell
+
 		  config->has_pcell_carrier_index = 1;
 		  config->pcell_carrier_index = UE_PCCID(mod_id, i);
 	  	  //TODO: Set carrier aggregation support (boolean)
@@ -1432,8 +1405,8 @@ int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change)
 	  		  // We do not set it for now. No carrier aggregation support
 
 	  		  //TODO: Set deactivation timer for secondary cell
-	  		  config->has_scell_deactivation_timer = 1;
-	  		  config->scell_deactivation_timer = 1;
+	  		  config->has_scell_deactivation_timer = 0;
+	  		  config->scell_deactivation_timer = 0;
 	  	  }
   } else if (state_change == PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_MOVED) {
     // TODO: Not supported for now. Leave blank
@@ -1462,9 +1435,7 @@ int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change)
   LOG_D(ENB_AGENT, "Could not send UE state message\n");
 }
 
-/*
- * timer primitives
- */
+
 
 int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
 
@@ -1485,7 +1456,6 @@ int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Flexra
   protocol__flex_lc_config_reply__init(lc_config_reply_msg);
   lc_config_reply_msg->header = header;
 
-  //TODO: Fill in the actual number of UEs that we are going to report LC configs about
   lc_config_reply_msg->n_lc_ue_config = get_num_ues(mod_id);
 
   Protocol__FlexLcUeConfig **lc_ue_config;
@@ -1498,9 +1468,10 @@ int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Flexra
     for (i = 0; i < lc_config_reply_msg->n_lc_ue_config; i++) {
       lc_ue_config[i] = malloc(sizeof(Protocol__FlexLcUeConfig));
       protocol__flex_lc_ue_config__init(lc_ue_config[i]);
-      //TODO: Set the RNTI of the UE
+
       lc_ue_config[i]->has_rnti = 1;
       lc_ue_config[i]->rnti = get_ue_crnti(mod_id,i);
+
       //TODO: Set the number of LC configurations that will be reported for this UE
       //Set this according to the current state of the UE. This is only a temporary fix
       int status = 0;
@@ -1512,6 +1483,7 @@ int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Flexra
       } else {
 	lc_ue_config[i]->n_lc_config = 3;
       }
+
       Protocol__FlexLcConfig **lc_config;
       if (lc_ue_config[i]->n_lc_config > 0) {
 	lc_config = malloc(sizeof(Protocol__FlexLcConfig *) * lc_ue_config[i]->n_lc_config);
@@ -1521,38 +1493,39 @@ int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Flexra
 	for (j = 0; j < lc_ue_config[i]->n_lc_config; j++) {
 	  lc_config[j] = malloc(sizeof(Protocol__FlexLcConfig));
 	  protocol__flex_lc_config__init(lc_config[j]);
-	  //TODO: Set the LC id
+	 
 	  lc_config[j]->has_lcid = 1;
 	  lc_config[j]->lcid = j+1;
-	  //TODO: Set the LCG of the channel
+	 
 	  int lcg = get_lcg(i, j+1);
 	  if (lcg >= 0 && lcg <= 3) {
 	    lc_config[j]->has_lcg = 1;
 	    lc_config[j]->lcg = get_lcg(i,j+1);
 	  }
-	  //TODO: Set the LC direction
+	 
 	  lc_config[j]->has_direction = 1;
 	  lc_config[j]->direction = get_direction(i,j+1);
-	  //TODO: Bearer type. One of FLQBT_* values
+	  //TODO: Bearer type. One of FLQBT_* values. Currently only default bearer supported
 	  lc_config[j]->has_qos_bearer_type = 1;
 	  lc_config[j]->qos_bearer_type = PROTOCOL__FLEX_QOS_BEARER_TYPE__FLQBT_NON_GBR;
+
 	  //TODO: Set the QCI defined in TS 23.203, coded as defined in TS 36.413
-	  // One less than the actual QCI value
+	  // One less than the actual QCI value. Needs to be generalized
 	  lc_config[j]->has_qci = 1;
 	  lc_config[j]->qci = 1;
 	  if (lc_config[j]->direction == PROTOCOL__FLEX_QOS_BEARER_TYPE__FLQBT_GBR) {
 	    //TODO: Set the max bitrate (UL)
-	    lc_config[j]->has_e_rab_max_bitrate_ul = 1;
-	    lc_config[j]->e_rab_max_bitrate_ul = 1;
+	    lc_config[j]->has_e_rab_max_bitrate_ul = 0;
+	    lc_config[j]->e_rab_max_bitrate_ul = 0;
 	    //TODO: Set the max bitrate (DL)
-	    lc_config[j]->has_e_rab_max_bitrate_dl = 1;
-	    lc_config[j]->e_rab_max_bitrate_dl = 1;
+	    lc_config[j]->has_e_rab_max_bitrate_dl = 0;
+	    lc_config[j]->e_rab_max_bitrate_dl = 0;
 	    //TODO: Set the guaranteed bitrate (UL)
-	    lc_config[j]->has_e_rab_guaranteed_bitrate_ul = 1;
-	    lc_config[j]->e_rab_guaranteed_bitrate_ul = 1;
+	    lc_config[j]->has_e_rab_guaranteed_bitrate_ul = 0;
+	    lc_config[j]->e_rab_guaranteed_bitrate_ul = 0;
 	    //TODO: Set the guaranteed bitrate (DL)
-	    lc_config[j]->has_e_rab_guaranteed_bitrate_dl = 1;
-	    lc_config[j]->e_rab_guaranteed_bitrate_dl = 1;
+	    lc_config[j]->has_e_rab_guaranteed_bitrate_dl = 0;
+	    lc_config[j]->e_rab_guaranteed_bitrate_dl = 0;
 	  }
 	}
 	lc_ue_config[i]->lc_config = lc_config;
@@ -1608,7 +1581,6 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Flexra
   protocol__flex_ue_config_reply__init(ue_config_reply_msg);
   ue_config_reply_msg->header = header;
 
-  //TODO: Fill in the actual number of UEs that are currently connected
   ue_config_reply_msg->n_ue_config = get_num_ues(mod_id);
 
   Protocol__FlexUeConfig **ue_config;
@@ -1620,23 +1592,22 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Flexra
     for (i = 0; i < ue_config_reply_msg->n_ue_config; i++) {
       ue_config[i] = malloc(sizeof(Protocol__FlexUeConfig));
       protocol__flex_ue_config__init(ue_config[i]);
-      //TODO: Set the RNTI of the ue with id i
+
       ue_config[i]->rnti = get_ue_crnti(mod_id,i);
       ue_config[i]->has_rnti = 1;
       //TODO: Set the DRX configuration (optional)
       //Not supported for now, so we do not set it
 
-      //TODO: Set the time_alignment_timer
       if(get_time_alignment_timer(mod_id,i) != -1){
     	  ue_config[i]->time_alignment_timer = get_time_alignment_timer(mod_id,i);
     	  ue_config[i]->has_time_alignment_timer = 1;
 	  }
-      //TODO: Set the measurement gap configuration pattern
+
       if(get_meas_gap_config(mod_id,i) != -1){
     	  ue_config[i]->meas_gap_config_pattern = get_meas_gap_config(mod_id,i);
     	  ue_config[i]->has_meas_gap_config_pattern = 1;
 	  }
-      //TODO: Set the measurement gap offset if applicable
+ 
       if(ue_config[i]->has_meas_gap_config_pattern == 1 &&
 	 ue_config[i]->meas_gap_config_pattern != PROTOCOL__FLEX_MEAS_GAP_CONFIG_PATTERN__FLMGCP_OFF) {
 	ue_config[i]->meas_gap_config_sf_offset = get_meas_gap_config_offset(mod_id,i);
@@ -1651,82 +1622,78 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Flexra
       //TODO: Set the CQI configuration (Optional)
       //We do not set it for now
 
-      //TODO: Set the transmission mode
       if(get_ue_transmission_mode(mod_id,i) != -1){
     	  ue_config[i]->transmission_mode = get_ue_transmission_mode(mod_id,i);
     	  ue_config[i]->has_transmission_mode = 1;
 	  }
 
-      //TODO: Set the aggregated bit-rate of the non-gbr bearer (UL)
       ue_config[i]->ue_aggregated_max_bitrate_ul = get_ue_aggregated_max_bitrate_ul(mod_id,i);
       ue_config[i]->has_ue_aggregated_max_bitrate_ul = 1;
 
-      //TODO: Set the aggregated bit-rate of the non-gbr bearer (DL)
       ue_config[i]->ue_aggregated_max_bitrate_dl = get_ue_aggregated_max_bitrate_dl(mod_id,i);
       ue_config[i]->has_ue_aggregated_max_bitrate_dl = 1;
 
-      //TODO: Set the UE capabilities
       Protocol__FlexUeCapabilities *capabilities;
       capabilities = malloc(sizeof(Protocol__FlexUeCapabilities));
       protocol__flex_ue_capabilities__init(capabilities);
       //TODO: Set half duplex (FDD operation)
-      capabilities->has_half_duplex = 1;
-      capabilities->half_duplex = 1;//get_half_duplex(i);
+      capabilities->has_half_duplex = 0;
+      capabilities->half_duplex = 0;//get_half_duplex(i);
       //TODO: Set intra-frame hopping flag
-      capabilities->has_intra_sf_hopping = 1;
+      capabilities->has_intra_sf_hopping = 0;
       capabilities->intra_sf_hopping = 1;//get_intra_sf_hopping(i);
       //TODO: Set support for type 2 hopping with n_sb > 1
-      capabilities->has_type2_sb_1 = 1;
+      capabilities->has_type2_sb_1 = 0;
       capabilities->type2_sb_1 = 1;//get_type2_sb_1(i);
       //TODO: Set ue category
-      capabilities->has_ue_category = 1;
+      capabilities->has_ue_category = 0;
       capabilities->ue_category = 1;//get_ue_category(i);
       //TODO: Set UE support for resource allocation type 1
-      capabilities->has_res_alloc_type1 = 1;
+      capabilities->has_res_alloc_type1 = 0;
       capabilities->res_alloc_type1 = 1;//get_res_alloc_type1(i);
       //Set the capabilites to the message
       ue_config[i]->capabilities = capabilities;
-      //TODO: Set UE transmission antenna. One of the FLUTA_* values
+
       if(get_ue_transmission_antenna(mod_id,i) != -1){
     	  ue_config[i]->has_ue_transmission_antenna = 1;
     	  ue_config[i]->ue_transmission_antenna = get_ue_transmission_antenna(mod_id,i);
 	  }
-      //TODO: Set tti bundling flag (See ts 36.321)
+
       if(get_tti_bundling(mod_id,i) != -1){
     	  ue_config[i]->has_tti_bundling = 1;
 		  ue_config[i]->tti_bundling = get_tti_bundling(mod_id,i);
 	  }
-      //TODO: Set the max HARQ retransmission for the UL
+
       if(get_maxHARQ_TX(mod_id,i) != -1){
     	  ue_config[i]->has_max_harq_tx = 1;
     	  ue_config[i]->max_harq_tx = get_maxHARQ_TX(mod_id,i);
 	  }
-      //TODO: Fill beta_offset_ack_index (TS 36.213)
+
       if(get_beta_offset_ack_index(mod_id,i) != -1){
     	  ue_config[i]->has_beta_offset_ack_index = 1;
     	  ue_config[i]->beta_offset_ack_index = get_beta_offset_ack_index(mod_id,i);
 	  }
-      //TODO: Fill beta_offset_ri_index (TS 36.213)
+
       if(get_beta_offset_ri_index(mod_id,i) != -1){
     	  ue_config[i]->has_beta_offset_ri_index = 1;
     	  ue_config[i]->beta_offset_ri_index = get_beta_offset_ri_index(mod_id,i);
 	  }
-      //TODO: Fill beta_offset_cqi_index (TS 36.213)
+
       if(get_beta_offset_cqi_index(mod_id,i) != -1){
     	  ue_config[i]->has_beta_offset_cqi_index = 1;
     	  ue_config[i]->beta_offset_cqi_index = get_beta_offset_cqi_index(mod_id,i);
-	  }
-      //TODO: Fill ack_nack_simultaneous_trans (TS 36.213)
+      }
+      
       if(get_ack_nack_simultaneous_trans(mod_id,i) != -1){
     	  ue_config[i]->has_ack_nack_simultaneous_trans = 1;
     	  ue_config[i]->ack_nack_simultaneous_trans = get_ack_nack_simultaneous_trans(mod_id,i);
 	  }
-      //TODO: Fill simultaneous_ack_nack_cqi (TS 36.213)
+      
       if(get_simultaneous_ack_nack_cqi(mod_id,i) != -1){
     	  ue_config[i]->has_simultaneous_ack_nack_cqi = 1;
     	  ue_config[i]->simultaneous_ack_nack_cqi = get_simultaneous_ack_nack_cqi(mod_id,i);
 	  }
-      //TODO: Set FLACRM_* value regarding aperiodic cqi report mode
+      
       if(get_aperiodic_cqi_rep_mode(mod_id,i) != -1){
     	  ue_config[i]->has_aperiodic_cqi_rep_mode = 1;
 	  int mode = get_aperiodic_cqi_rep_mode(mod_id,i);
@@ -1736,17 +1703,17 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Flexra
 	    ue_config[i]->aperiodic_cqi_rep_mode = mode;
 	  }
       }
-      //TODO: Set tdd_ack_nack_feedback
+      
       if(get_tdd_ack_nack_feedback(mod_id, i) != -1){
 	ue_config[i]->has_tdd_ack_nack_feedback = 1;
 	ue_config[i]->tdd_ack_nack_feedback = get_tdd_ack_nack_feedback(mod_id,i);
       }
-      //TODO: Set ack_nack_repetition factor
+      
       if(get_ack_nack_repetition_factor(mod_id, i) != -1){
 	ue_config[i]->has_ack_nack_repetition_factor = 1;
 	ue_config[i]->ack_nack_repetition_factor = get_ack_nack_repetition_factor(mod_id,i);
       }
-      //TODO: Set extended BSR size
+      
       if(get_extended_bsr_size(mod_id, i) != -1){
 	ue_config[i]->has_extended_bsr_size = 1;
 	ue_config[i]->extended_bsr_size = get_extended_bsr_size(mod_id,i);
@@ -1754,18 +1721,18 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Flexra
       //TODO: Set carrier aggregation support (boolean)
       ue_config[i]->has_ca_support = 0;
       ue_config[i]->ca_support = 0;
-      //TODO: Set index of primary cell
+
       ue_config[i]->has_pcell_carrier_index = 1;
       ue_config[i]->pcell_carrier_index = UE_PCCID(mod_id, i);
       if(ue_config[i]->has_ca_support){
 	//TODO: Set cross carrier scheduling support (boolean)
-	ue_config[i]->has_cross_carrier_sched_support = 1;
+	ue_config[i]->has_cross_carrier_sched_support = 0;
 	ue_config[i]->cross_carrier_sched_support = 0;
 	//TODO: Set secondary cells configuration
 	// We do not set it for now. No carrier aggregation support
 	//TODO: Set deactivation timer for secondary cell
-	ue_config[i]->has_scell_deactivation_timer = 1;
-	ue_config[i]->scell_deactivation_timer = 1;
+	ue_config[i]->has_scell_deactivation_timer = 0;
+	ue_config[i]->scell_deactivation_timer = 0;
       }
     }
     ue_config_reply_msg->ue_config = ue_config;
@@ -1871,26 +1838,26 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Flexr
     for(i = 0; i < enb_config_reply_msg->n_cell_config; i++){
       cell_conf[i] = malloc(sizeof(Protocol__FlexCellConfig));
       protocol__flex_cell_config__init(cell_conf[i]);
-      //TODO: Fill in with actual value, the PCI of this cell
+
       cell_conf[i]->phy_cell_id = 1;
       cell_conf[i]->has_phy_cell_id = get_cell_id(enb_id,i);
-      //TODO: Fill in with actual value, the PLMN cell id of this cell
+
       cell_conf[i]->cell_id = i;
       cell_conf[i]->has_cell_id = 1;
-      //TODO: Fill in with actual value, PUSCH resources in RBs for hopping
+
       cell_conf[i]->pusch_hopping_offset = get_hopping_offset(enb_id,i);
       cell_conf[i]->has_pusch_hopping_offset = 1;
-      //TODO: Fill in with actual value
+
       if(get_hopping_mode(enb_id,i) == 0){
 	 cell_conf[i]->hopping_mode = PROTOCOL__FLEX_HOPPING_MODE__FLHM_INTER;
       }else if(get_hopping_mode(enb_id,i) == 1){
 	cell_conf[i]->hopping_mode = PROTOCOL__FLEX_HOPPING_MODE__FLHM_INTERINTRA;
       }
       cell_conf[i]->has_hopping_mode = 1;
-      //TODO: Fill in with actual value, the number of subbands
+
       cell_conf[i]->n_sb = get_n_SB(enb_id,i);
       cell_conf[i]->has_n_sb = 1;
-      //TODO: Fill in with actual value, The number of resource element groups used for PHICH. One of FLPR_
+
       if(get_phich_resource(enb_id,i) == 0){
 	cell_conf[i]->phich_resource = PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_ONE_SIXTH; //0
       }else if (get_phich_resource(enb_id,i) == 1){
@@ -1901,7 +1868,7 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Flexr
 	cell_conf[i]->phich_resource = PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_TWO;//3
       }
       cell_conf[i]->has_phich_resource = 1;
-      //TODO: Fill in with actual value, one of the FLPD_ values
+
       if(get_phich_duration(enb_id,i) == 0){
     	cell_conf[i]->phich_duration = PROTOCOL__FLEX_PHICH_DURATION__FLPD_NORMAL;
       }else if(get_phich_duration(enb_id,i) == 1){
@@ -1910,7 +1877,7 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Flexr
       cell_conf[i]->has_phich_duration = 1;
       //TODO: Fill in with actual value, See TS 36.211, section 6.9
       cell_conf[i]->init_nr_pdcch_ofdm_sym = get_num_pdcch_symb(enb_id,i);
-      cell_conf[i]->has_init_nr_pdcch_ofdm_sym = 1;
+      cell_conf[i]->has_init_nr_pdcch_ofdm_sym = 0;
       //TODO: Fill in with actual value
       /* Protocol__FlexSiConfig *si_config; */
       /* si_config = malloc(sizeof(Protocol__FlexSiConfig)); */
@@ -1949,20 +1916,19 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Flexr
       /* } */
       /* cell_conf[i]->si_config = si_config; */
       
-      //TODO: Fill in with actual value, the DL transmission bandwidth in RBs
       cell_conf[i]->dl_bandwidth = get_N_RB_DL(enb_id,i);
       cell_conf[i]->has_dl_bandwidth = 1;
-      //TODO: Fill in with actual value, the UL transmission bandwidth in RBs
+
       cell_conf[i]->ul_bandwidth = get_N_RB_UL(enb_id,i);
       cell_conf[i]->has_ul_bandwidth = 1;
-      //TODO: Fill in with actual value, one of FLUCPL values
+
       if(get_ul_cyclic_prefix_length(enb_id,i) == 0){
     	  cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__FLEX_UL_CYCLIC_PREFIX_LENGTH__FLUCPL_NORMAL;
       }else if(get_ul_cyclic_prefix_length(enb_id,i) == 1){
 	cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__FLEX_UL_CYCLIC_PREFIX_LENGTH__FLUCPL_EXTENDED;      
       }
       cell_conf[i]->has_ul_cyclic_prefix_length = 1;
-      //TODO: Fill in with actual value, one of FLUCPL values
+
       if(get_ul_cyclic_prefix_length(enb_id,i) == 0){
     	  cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__FLEX_DL_CYCLIC_PREFIX_LENGTH__FLDCPL_NORMAL;
       }else if(get_ul_cyclic_prefix_length(enb_id,i) == 1){
@@ -1970,10 +1936,10 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Flexr
       }
 
       cell_conf[i]->has_dl_cyclic_prefix_length = 1;
-      //TODO: Fill in with actual value, number of cell specific antenna ports
+      //TODO: Fill in with actual value, number of cell specific antenna ports. Currently single port support
       cell_conf[i]->antenna_ports_count = 1;
       cell_conf[i]->has_antenna_ports_count = 1;
-      //TODO: Fill in with actual value, one of FLDM values
+
       if(get_duplex_mode(enb_id,i) == 1){
 	cell_conf[i]->duplex_mode = PROTOCOL__FLEX_DUPLEX_MODE__FLDM_FDD;
       }else if(get_duplex_mode(enb_id,i) == 0){
@@ -1982,10 +1948,10 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Flexr
       cell_conf[i]->has_duplex_mode = 1;
       //TODO: Fill in with actual value, DL/UL subframe assignment. TDD only
       cell_conf[i]->subframe_assignment = get_subframe_assignment(enb_id,i);
-      cell_conf[i]->has_subframe_assignment = 1;
+      cell_conf[i]->has_subframe_assignment = 0;
       //TODO: Fill in with actual value, TDD only. See TS 36.211, table 4.2.1
       cell_conf[i]->special_subframe_patterns = get_special_subframe_assignment(enb_id,i);
-      cell_conf[i]->has_special_subframe_patterns = 1;
+      cell_conf[i]->has_special_subframe_patterns = 0;
       //TODO: Fill in with actual value, The MBSFN radio frame period
       cell_conf[i]->n_mbsfn_subframe_config_rfperiod = 5;
       uint32_t *elem_rfperiod;
@@ -2019,47 +1985,46 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Flexr
       }
       cell_conf[i]->mbsfn_subframe_config_sfalloc = elem_sfalloc;
       
-      //TODO: Fill in with actual value, See TS 36.211, section 5.7.1
       cell_conf[i]->prach_config_index = get_prach_ConfigIndex(enb_id,i);
       cell_conf[i]->has_prach_config_index = 1;
-      //TODO: Fill in with actual value, See TS 36.211, section 5.7.1
+
       cell_conf[i]->prach_freq_offset = get_prach_FreqOffset(enb_id,i);
       cell_conf[i]->has_prach_freq_offset = 1;
-      //TODO: Fill in with actual value, Duration of RA response window in SF
+
       cell_conf[i]->ra_response_window_size = get_ra_ResponseWindowSize(enb_id,i);
       cell_conf[i]->has_ra_response_window_size = 1;
-      //TODO: Fill in with actual value, Timer used for RA
+
       cell_conf[i]->mac_contention_resolution_timer = get_mac_ContentionResolutionTimer(enb_id,i);
       cell_conf[i]->has_mac_contention_resolution_timer = 1;
-      //TODO: Fill in with actual value, See TS 36.321
+
       cell_conf[i]->max_harq_msg3tx = get_maxHARQ_Msg3Tx(enb_id,i);
       cell_conf[i]->has_max_harq_msg3tx = 1;
-      //TODO: Fill in with actual value, See TS 36.213, section 10.1
+
       cell_conf[i]->n1pucch_an = get_n1pucch_an(enb_id,i);
       cell_conf[i]->has_n1pucch_an = 1;
-      //TODO: Fill in with actual value, See TS 36.211, section 5.4
+
       cell_conf[i]->deltapucch_shift = get_deltaPUCCH_Shift(enb_id,i);
       cell_conf[i]->has_deltapucch_shift = 1;
-      //TODO: Fill in with actual value, See TS 36.211, section 5.4
+
       cell_conf[i]->nrb_cqi = get_nRB_CQI(enb_id,i);
       cell_conf[i]->has_nrb_cqi = 1;
-      //TODO: Fill in with actual value, See TS 36.211, table 5.5.3.3-1 and 2
+
       cell_conf[i]->srs_subframe_config = get_srs_SubframeConfig(enb_id,i);
       cell_conf[i]->has_srs_subframe_config = 1;
-      //TODO: Fill in with actual value, See TS 36.211, section 5.5.3.2
+
       cell_conf[i]->srs_bw_config = get_srs_BandwidthConfig(enb_id,i);
       cell_conf[i]->has_srs_bw_config = 1;
-      //TODO: Fill in with actual value, Boolean value. See TS 36.211, section 5.5.3.2. TDD only
+
       cell_conf[i]->srs_mac_up_pts = get_srs_MaxUpPts(enb_id,i);
       cell_conf[i]->has_srs_mac_up_pts = 1;
-      //TODO: Fill in with actual value, One of the FLEQ_ values
+
       if(get_enable64QAM(enb_id,i) == 0){
 	cell_conf[i]->enable_64qam = PROTOCOL__FLEX_QAM__FLEQ_MOD_16QAM;
       }else if(get_enable64QAM(enb_id,i) == 1){
 	cell_conf[i]->enable_64qam = PROTOCOL__FLEX_QAM__FLEQ_MOD_64QAM;
       }
       cell_conf[i]->has_enable_64qam = 1;
-      //TODO: Fill in with actual value, Carrier component index
+
       cell_conf[i]->carrier_index = i;
       cell_conf[i]->has_carrier_index = 1;
     }
@@ -2088,6 +2053,11 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Flexr
 }
 
 
+
+/*
+ * timer primitives
+ */
+
 //struct enb_agent_map agent_map;
 enb_agent_timer_instance_t timer_instance;
 int agent_timer_init = 0;
@@ -2099,11 +2069,6 @@ err_code_t enb_agent_init_timer(void){
     agent_timer_init = 1;
   }
  
-  /*
-    struct enb_agent_timer_element_s e;
-  memset(&e, 0, sizeof(enb_agent_timer_element_t));
-  RB_INSERT(enb_agent_map, &agent_map, &e); 
-  */
  return PROTOCOL__FLEXRAN_ERR__NO_ERR;
 }
 
@@ -2249,13 +2214,6 @@ void enb_agent_sleep_until(struct timespec *ts, int delay) {
   clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, ts,  NULL);
 }
 
-/*
- int i =0;
-  RB_FOREACH(e, enb_agent_map, &enb_agent_head) {
-    printf("%d: %p\n", i, e); i++;
-    }
-*/
-
 
 err_code_t enb_agent_stop_timer(long timer_id){
   
@@ -2283,39 +2241,3 @@ struct enb_agent_timer_element_s * get_timer_entry(long timer_id) {
 
   return  RB_FIND(enb_agent_map, &timer_instance.enb_agent_head, &search); 
 }
-
-/*
-// this will change the timer_id
-err_code_t enb_agent_restart_timer(uint32_t *timer_id){
-  
-  struct enb_agent_timer_element_s *e=NULL;
-    
-  RB_FOREACH(e, enb_agent_map, &enb_agent_head) {
-    if (e->timer_id == timer_id)
-      break;
-  }
-
-  if (e != NULL ) {
-    e->state =  ENB_AGENT_TIMER_STATE_ACTIVE;
-  }
-  
-  ret = timer_setup(e->interval_sec, 
-		    e->interval_usec, 
-		    e->agent_id, 
-		    e->instance, 
-		    e->type,
-		    e->timer_args,
-		    &timer_id);
-    
-  }
-
-  if (ret < 0 ) {
-    return PROTOCOL__FLEXRAN_ERR__TIMER_SETUP_FAILED; 
-  }
-  
-  return 0;
-
-}
-
-*/
-

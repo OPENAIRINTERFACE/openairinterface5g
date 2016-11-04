@@ -41,10 +41,15 @@
 #include "enb_config.h" // for enb properties
 #include "enb_agent_common.h"
 
-int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties);
 
+/* Initiation and termination of the eNodeB agent */
+int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties);
 int enb_agent_stop(mid_t mod_id);
 
+/* 
+ * enb agent task mainly wakes up the tx thread for periodic and oneshot messages to the controller 
+ * and can interact with other itti tasks
+*/
 void *enb_agent_task(void *args);
 
 #endif

@@ -44,10 +44,13 @@
 
 //extern msg_context_t shared_ctxt[NUM_MAX_ENB][ENB_AGENT_MAX];
 
+/* full path of the local cache for storing VSFs */
 extern char local_cache[40];
 
+/* Control module interface for the communication of the MAC Control Module with the agent */
 extern AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB];
 
+/* Flag indicating whether the VSFs for the MAC control module have been registered */
 extern unsigned int mac_agent_registered[NUM_MAX_ENB];
 
 #endif

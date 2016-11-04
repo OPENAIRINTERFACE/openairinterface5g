@@ -138,16 +138,12 @@ void *receive_thread(void *args) {
   Protocol__FlexranMessage *msg;
   
   while (1) {
-    //if (enb_agent_msg_recv(d->enb_id, ENB_AGENT_DEFAULT, &data, &size, &priority)) {
-    //  err_code = PROTOCOL__FLEXRAN_ERR__MSG_DEQUEUING;
-    //  goto error;
-    //}
 
     while (enb_agent_msg_recv(d->enb_id, ENB_AGENT_DEFAULT, &data, &size, &priority) == 0) {
       
       LOG_D(ENB_AGENT,"received message with size %d\n", size);
   
-    
+      // Invoke the message handler
       msg=enb_agent_handle_message(d->enb_id, data, size);
 
       free(data);
@@ -316,26 +312,6 @@ error:
   return 1;
 
 }
-
-
-
-/* int enb_agent_stop(mid_t mod_id){ */
-  
-/*   int i=0; */
-
-/*   enb_agent_destroy_timers(); */
-/*   for ( i =0; i < enb_agent_info.nb_modules; i++) { */
-  
-/*     destroy_link_manager(enb_agent[i].manager); */
-  
-/*     destroy_message_queue(enb_agent[i].send_queue); */
-/*     destroy_message_queue(enb_agent[i].receive_queue); */
-  
-/*     close_link(enb_agent[i].link); */
-/*   } */
-/* } */
-
-
 
 Protocol__FlexranMessage *enb_agent_timeout(void* args){
 

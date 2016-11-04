@@ -47,12 +47,16 @@ typedef struct {
   link_manager_t  *manager;
 } enb_agent_async_channel_t;
 
+/* Create a new channel for a given destination ip and destination port */
 enb_agent_async_channel_t * enb_agent_async_channel_info(mid_t mod_id, char *dst_ip, uint16_t dst_port);
 
+/* Send a message to the given channel */
 int enb_agent_async_msg_send(void *data, int size, int priority, void *channel_info);
 
+/* Receive a message from a given channel */
 int enb_agent_async_msg_recv(void **data, int *size, int *priority, void *channel_info);
 
+/* Release a channel */
 void enb_agent_async_release(enb_agent_channel_t *channel);
 
 

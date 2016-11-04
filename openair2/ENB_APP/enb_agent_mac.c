@@ -422,62 +422,55 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 
       /* Check flag for creation of buffer status report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_BSR) {
-	//TODO: Create a report for each LCG (4 elements). See flex_ue_stats_report of
-	// FlexRAN specifications for more details
 	ue_report[i]->n_bsr = 4;
 	uint32_t *elem;
 	elem = (uint32_t *) malloc(sizeof(uint32_t)*ue_report[i]->n_bsr);
 	if (elem == NULL)
 	  goto error;
 	for (j = 0; j++; j < ue_report[i]->n_bsr) {
-	  // Set the actual BSR for LCG j of the current UE
 	  // NN: we need to know the cc_id here, consider the first one
-	  elem[j] = get_ue_bsr (enb_id, i, j); //eNB_UE_list->UE_template[UE_PCCID(enb_id,i)][i].bsr_info[j];
+	  elem[j] = get_ue_bsr (enb_id, i, j); 
 	}
 	ue_report[i]->bsr = elem;
       }
 
       /* Check flag for creation of PRH report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PRH) {
-	// TODO: Fill in the actual power headroom value for the RNTI
 	ue_report[i]->phr = get_ue_phr (enb_id, i); // eNB_UE_list->UE_template[UE_PCCID(enb_id,i)][i].phr_info;
 	ue_report[i]->has_phr = 1;
       }
 
       /* Check flag for creation of RLC buffer status report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RLC_BS) {
-	// TODO: Fill in the actual RLC buffer status reports
-	ue_report[i]->n_rlc_report = 3; // Set this to the number of LCs for this UE
+	ue_report[i]->n_rlc_report = 3; // Set this to the number of LCs for this UE. This needs to be generalized for for LCs
 	Protocol__FlexRlcBsr ** rlc_reports;
 	rlc_reports = malloc(sizeof(Protocol__FlexRlcBsr *) * ue_report[i]->n_rlc_report);
 	if (rlc_reports == NULL)
 	  goto error;
 
-	// Fill the buffer status report for each logical channel of the UE
 	// NN: see LAYER2/openair2_proc.c for rlc status
 	for (j = 0; j < ue_report[i]->n_rlc_report; j++) {
 	  rlc_reports[j] = malloc(sizeof(Protocol__FlexRlcBsr));
 	  if (rlc_reports[j] == NULL)
 	    goto error;
 	  protocol__flex_rlc_bsr__init(rlc_reports[j]);
-	  //TODO:Set logical channel id
 	  rlc_reports[j]->lc_id = j+1;
 	  rlc_reports[j]->has_lc_id = 1;
-	  //TODO:Set tx queue size in bytes
 	  rlc_reports[j]->tx_queue_size = get_tx_queue_size(enb_id,i,j+1);
 	  rlc_reports[j]->has_tx_queue_size = 1;
+
 	  //TODO:Set tx queue head of line delay in ms
 	  rlc_reports[j]->tx_queue_hol_delay = 100;
-	  rlc_reports[j]->has_tx_queue_hol_delay = 1;
+	  rlc_reports[j]->has_tx_queue_hol_delay = 0;
 	  //TODO:Set retransmission queue size in bytes
 	  rlc_reports[j]->retransmission_queue_size = 10;
-	  rlc_reports[j]->has_retransmission_queue_size = 1;
+	  rlc_reports[j]->has_retransmission_queue_size = 0;
 	  //TODO:Set retransmission queue head of line delay in ms
 	  rlc_reports[j]->retransmission_queue_hol_delay = 100;
-	  rlc_reports[j]->has_retransmission_queue_hol_delay = 1;
+	  rlc_reports[j]->has_retransmission_queue_hol_delay = 0;
 	  //TODO:Set current size of the pending message in bytes
 	  rlc_reports[j]->status_pdu_size = 100;
-	  rlc_reports[j]->has_status_pdu_size = 1;
+	  rlc_reports[j]->has_status_pdu_size = 0;
 	}
 	// Add RLC buffer status reports to the full report
 	if (ue_report[i]->n_rlc_report > 0)
@@ -502,12 +495,13 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	if (dl_report == NULL)
 	  goto error;
 	protocol__flex_dl_cqi_report__init(dl_report);
-	//TODO:Set the SFN and SF of the last report held in the agent.
+
 	dl_report->sfn_sn = get_sfn_sf(enb_id);
 	dl_report->has_sfn_sn = 1;
-	//TODO:Set the number of DL CQI reports for this UE. One for each CC
+	//Set the number of DL CQI reports for this UE. One for each CC
 	dl_report->n_csi_report = get_active_CC(enb_id,i);
-	//TODO:Create the actual CSI reports.
+
+	//Create the actual CSI reports.
 	Protocol__FlexDlCsi **csi_reports;
 	csi_reports = malloc(sizeof(Protocol__FlexDlCsi *)*dl_report->n_csi_report);
 	if (csi_reports == NULL)
@@ -517,14 +511,14 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	  if (csi_reports[j] == NULL)
 	    goto error;
 	  protocol__flex_dl_csi__init(csi_reports[j]);
-	  //TODO: the servCellIndex for this report
+	  //The servCellIndex for this report
 	  csi_reports[j]->serv_cell_index = j;
 	  csi_reports[j]->has_serv_cell_index = 1;
-	  //TODO: the rank indicator value for this cc
+	  //The rank indicator value for this cc
 	  csi_reports[j]->ri = get_current_RI(enb_id,i,j);
 	  csi_reports[j]->has_ri = 1;
 	  //TODO: the type of CSI report based on the configuration of the UE
-	  //For this example we use type P10, which only needs a wideband value
+	  //For now we only support type P10, which only needs a wideband value
 	  //The full set of types can be found in stats_common.pb-c.h and
 	  //in the FlexRAN specifications
     csi_reports[j]->type =  PROTOCOL__FLEX_CSI_TYPE__FLCSIT_P10;
@@ -598,16 +592,16 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	  //TODO: Set paging index. This index is the same that will be used for the scheduling of the
 	  //paging message by the controller
 	  p_info[j]->paging_index = 10;
-	  p_info[j]->has_paging_index = 1;
+	  p_info[j]->has_paging_index = 0;
 	  //TODO:Set the paging message size
 	  p_info[j]->paging_message_size = 100;
-	  p_info[j]->has_paging_message_size = 1;
+	  p_info[j]->has_paging_message_size = 0;
 	  //TODO: Set the paging subframe
 	  p_info[j]->paging_subframe = 10;
-	  p_info[j]->has_paging_subframe = 1;
+	  p_info[j]->has_paging_subframe = 0;
 	  //TODO: Set the carrier index for the pending paging message
 	  p_info[j]->carrier_index = 0;
-	  p_info[j]->has_carrier_index = 1;
+	  p_info[j]->has_carrier_index = 0;
 	}
 	//Add all paging info to the paging buffer rerport
 	paging_report->paging_info = p_info;
@@ -645,7 +639,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	  ul_report[j]->has_type = 1;
 	  //TODO:Set the number of SINR measurements based on the report type
 	  //See struct flex_ul_cqi in FlexRAN specification for more details
-	  ul_report[j]->n_sinr = 100;
+	  ul_report[j]->n_sinr = 0;
 	  uint32_t *sinr_meas;
 	  sinr_meas = (uint32_t *) malloc(sizeof(uint32_t) * ul_report[j]->n_sinr);
 	  if (sinr_meas == NULL)
@@ -712,12 +706,12 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	// Current frame and subframe number
 	ni_report->sfn_sf = get_sfn_sf(enb_id);
 	ni_report->has_sfn_sf = 1;
-	// Received interference power in dbm
+	//TODO:Received interference power in dbm
 	ni_report->rip = 0;
-	ni_report->has_rip = 1;
-	// Thermal noise power in dbm
+	ni_report->has_rip = 0;
+	//TODO:Thermal noise power in dbm
 	ni_report->tnp = 0;
-	ni_report->has_tnp = 1;
+	ni_report->has_tnp = 0;
 
 	ni_report->p0_nominal_pucch = get_p0_nominal_pucch(enb_id, 0);
 	ni_report->has_p0_nominal_pucch = 1;
@@ -988,13 +982,13 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Flexran
       protocol__flex_dl_info__init(dl_info[i]);
       dl_info[i]->rnti = get_ue_crnti(mod_id, i);
       dl_info[i]->has_rnti = 1;
-      /*TODO: fill in the right id of this round's HARQ process for this UE*/
+      /*Fill in the right id of this round's HARQ process for this UE*/
       int harq_id;
       int harq_status;
       get_harq(mod_id, UE_PCCID(mod_id,i), i, frame, subframe, &harq_id, &harq_status);
       dl_info[i]->harq_process_id = harq_id;
       dl_info[i]->has_harq_process_id = 1;
-      /*TODO: fill in the status of the HARQ process (2 TBs)*/
+      /* Fill in the status of the HARQ process (2 TBs)*/
       dl_info[i]->n_harq_status = 2;
       dl_info[i]->harq_status = malloc(sizeof(uint32_t) * dl_info[i]->n_harq_status);
       for (j = 0; j < dl_info[i]->n_harq_status; j++) {
@@ -1004,7 +998,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Flexran
 	else if (harq_status == 1)
 	  dl_info[i]->harq_status[j] = PROTOCOL__FLEX_HARQ_STATUS__FLHS_NACK;
       }
-      /*TODO: fill in the serving cell index for this UE */
+      /*Fill in the serving cell index for this UE */
       dl_info[i]->serv_cell_index = UE_PCCID(mod_id,i);
       dl_info[i]->has_serv_cell_index = 1;
     }
@@ -1012,8 +1006,8 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Flexran
 
   sf_trigger_msg->dl_info = dl_info;
 
-    /*TODO: Fill in the number of UL reception status related info, based on the number of currently
-   *transmitting UEs
+  /* Fill in the number of UL reception status related info, based on the number of currently
+   * transmitting UEs
    */
   sf_trigger_msg->n_ul_info = get_num_ues(mod_id);
 
@@ -1031,7 +1025,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Flexran
       protocol__flex_ul_info__init(ul_info[i]);
       ul_info[i]->rnti = get_ue_crnti(mod_id, i);
       ul_info[i]->has_rnti = 1;
-      /*TODO: fill in the Tx power control command for this UE (if available)*/
+      /*Fill in the Tx power control command for this UE (if available)*/
       if(get_tpc(mod_id,i) != 1){
     	  ul_info[i]->tpc = get_tpc(mod_id,i);
           ul_info[i]->has_tpc = 1;
@@ -1042,7 +1036,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Flexran
       }
       /*TODO: fill in the amount of data in bytes in the MAC SDU received in this subframe for the
 	given logical channel*/
-      ul_info[i]->n_ul_reception = 11;
+      ul_info[i]->n_ul_reception = 0;
       ul_info[i]->ul_reception = malloc(sizeof(uint32_t) * ul_info[i]->n_ul_reception);
       for (j = 0; j < ul_info[i]->n_ul_reception; j++) {
 	ul_info[i]->ul_reception[j] = 100;
@@ -1050,7 +1044,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Flexran
       /*TODO: Fill in the reception status for each UEs data*/
       ul_info[i]->reception_status = PROTOCOL__FLEX_RECEPTION_STATUS__FLRS_OK;
       ul_info[i]->has_reception_status = 1;
-      /*TODO: fill in the serving cell index for this UE */
+      /*Fill in the serving cell index for this UE */
       ul_info[i]->serv_cell_index = UE_PCCID(mod_id,i);
       ul_info[i]->has_serv_cell_index = 1;
     }

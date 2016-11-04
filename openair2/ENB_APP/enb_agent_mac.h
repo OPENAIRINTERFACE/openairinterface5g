@@ -81,24 +81,24 @@ void enb_agent_init_mac_agent(mid_t mod_id);
 
 int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 
+/* Statistics request protocol message constructor and destructor */
 int enb_agent_mac_stats_request(mid_t mod_id, xid_t xid, const stats_request_config_t *report_config, Protocol__FlexranMessage **msg);
-
 int enb_agent_mac_destroy_stats_request(Protocol__FlexranMessage *msg);
 
+/* Statistics reply protocol message constructor and destructor */
 int enb_agent_mac_stats_reply(mid_t mod_id, xid_t xid, const report_config_t *report_config, Protocol__FlexranMessage **msg);
-
 int enb_agent_mac_destroy_stats_reply(Protocol__FlexranMessage *msg);
 
+/* Scheduling request information protocol message constructor and estructor */
 int enb_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
-
 int enb_agent_mac_destroy_sr_info(Protocol__FlexranMessage *msg);
 
+/* Subframe trigger protocol msssage constructor and destructor */
 int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
-
 int enb_agent_mac_destroy_sf_trigger(Protocol__FlexranMessage *msg);
 
+/* 
 int enb_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMessage **msg);
-
 int enb_agent_mac_destroy_dl_config(Protocol__FlexranMessage *msg);
 
 int enb_agent_mac_handle_dl_mac_config(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);

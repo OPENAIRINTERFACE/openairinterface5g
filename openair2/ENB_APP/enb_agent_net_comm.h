@@ -57,7 +57,6 @@ typedef struct enb_agent_channel_instance_s{
 
 /*Send and receive messages using the channel registered for a specific agent*/
 int enb_agent_msg_send(mid_t mod_id, agent_id_t agent_id, void *data, int size, int priority);
-
 int enb_agent_msg_recv(mid_t mod_id, agent_id_t agent_id, void **data, int *size, int *priority);
 
 /*Register a channel to an agent. Use ENB_AGENT_MAX to register the
