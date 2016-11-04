@@ -64,7 +64,7 @@
 
 //Agent-related headers
 #include "ENB_APP/flexran_agent_extern.h"
-#include "ENB_APP/flexran_agent_mac.h"
+#include "ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac.h"
 #include "LAYER2/MAC/flexran_agent_mac_proto.h"
 
 //#define DIAG_PHY
