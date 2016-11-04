@@ -97,7 +97,7 @@ int enb_agent_mac_destroy_sr_info(Protocol__FlexranMessage *msg);
 int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 int enb_agent_mac_destroy_sf_trigger(Protocol__FlexranMessage *msg);
 
-/* 
+/* DL MAC scheduling decision protocol message constructor (empty command) and destructor */ 
 int enb_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMessage **msg);
 int enb_agent_mac_destroy_dl_config(Protocol__FlexranMessage *msg);
 
