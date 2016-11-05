@@ -569,46 +569,73 @@ int flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t chann
 	return rlc_status.bytes_in_buffer;
 }
 
-int flexran_get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id,int CC_id)
-{
-	rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-	LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id,CC_id,rnti);
-	
-	if (eNB_UE_stats == NULL) {
-	  return 0;
-	}
+int flexran_update_TA(mid_t mod_id, mid_t ue_id, int CC_id) {
+  
+  UE_list_t *UE_list=&eNB_mac_inst[mod_id].UE_list;
+  UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[ue_id];
+  int rnti;
 
-	int32_t time_advance;
-	switch (PHY_vars_eNB_g[mod_id][CC_id]->frame_parms.N_RB_DL) {
-	case 6:
-	  time_advance = eNB_UE_stats->timing_advance_update;
-	  break;
+  rnti = flexran_get_ue_crnti(mod_id, ue_id);
+  if (ue_sched_ctl->ta_timer == 0) {
 
-	case 15:
-	  time_advance = eNB_UE_stats->timing_advance_update/2;
-	  break;
+    // WE SHOULD PROTECT the eNB_UE_stats with a mutex here ...                                                                         
+    LTE_eNB_UE_stats		*eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id, CC_id, rnti);
+    ue_sched_ctl->ta_timer		      = 20;	// wait 20 subframes before taking TA measurement from PHY                                         
+    switch (PHY_vars_eNB_g[mod_id][CC_id]->frame_parms.N_RB_DL) {
+    case 6:
+      ue_sched_ctl->ta_update		      = eNB_UE_stats->timing_advance_update;
+      break;
 
-	case 25:
-	  time_advance = eNB_UE_stats->timing_advance_update/4;
-	  break;
+    case 15:
+      ue_sched_ctl->ta_update		      = eNB_UE_stats->timing_advance_update/2;
+      break;
 
-	case 50:
-	  time_advance = eNB_UE_stats->timing_advance_update/8;
-	  break;
+    case 25:
+      ue_sched_ctl->ta_update		      = eNB_UE_stats->timing_advance_update/4;
+      break;
 
-	case 75:
-	  time_advance = eNB_UE_stats->timing_advance_update/12;
-	  break;
+    case 50:
+      ue_sched_ctl->ta_update		      = eNB_UE_stats->timing_advance_update/8;
+      break;
 
-	case 100:
-	  time_advance = eNB_UE_stats->timing_advance_update/16;
-	  break;
-	}
+    case 75:
+      ue_sched_ctl->ta_update		      = eNB_UE_stats->timing_advance_update/12;
+      break;
 
-	if(time_advance > 0)
-		return 1;
-	else
-		return 0;
+    case 100:
+      ue_sched_ctl->ta_update		      = eNB_UE_stats->timing_advance_update/16;
+      break;
+    }
+    // clear the update in case PHY does not have a new measurement after timer expiry                                               
+    eNB_UE_stats->timing_advance_update	      = 0;
+  }
+  else {
+    ue_sched_ctl->ta_timer--;
+    ue_sched_ctl->ta_update		      = 0;	// don't trigger a timing advance command                                                          
+  }
+
+  return ue_sched_ctl->ta_update	      = 0;
+
+}
+
+int flexran_get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id,int CC_id) {
+  
+  UE_list_t			*UE_list      = &eNB_mac_inst[mod_id].UE_list;
+  UE_sched_ctrl			*ue_sched_ctl = &UE_list->UE_sched_ctrl[ue_id];
+
+  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+  LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id,CC_id,rnti);
+  
+  if (eNB_UE_stats == NULL) {
+    return 0;
+  }
+
+  if (ue_sched_ctl->ta_update == 0) {
+    return 1;
+  } else {
+    return 0;
+  }
+
 }
 
 int flexran_get_active_CC(mid_t mod_id, mid_t ue_id) {
@@ -616,12 +643,12 @@ int flexran_get_active_CC(mid_t mod_id, mid_t ue_id) {
 }
 
 int flexran_get_current_RI(mid_t mod_id, mid_t ue_id, int CC_id) {
-	LTE_eNB_UE_stats *eNB_UE_stats = NULL;
+	LTE_eNB_UE_stats	*eNB_UE_stats = NULL;
 
-	int pCCid = UE_PCCID(mod_id,ue_id);
-	rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+	int			 pCCid	      = UE_PCCID(mod_id,ue_id);
+	rnti_t			 rnti	      = flexran_get_ue_crnti(mod_id,ue_id);
 
-	eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id,CC_id,rnti);
+	eNB_UE_stats			      = mac_xface->get_eNB_UE_stats(mod_id,CC_id,rnti);
 	
 	if (eNB_UE_stats == NULL) {
 	  return 0;
@@ -631,14 +658,14 @@ int flexran_get_current_RI(mid_t mod_id, mid_t ue_id, int CC_id) {
 }
 
 int flexran_get_tpc(mid_t mod_id, mid_t ue_id) {
-	LTE_eNB_UE_stats *eNB_UE_stats = NULL;
-	int32_t normalized_rx_power, target_rx_power;
-	int tpc = 1;
+	LTE_eNB_UE_stats	*eNB_UE_stats = NULL;
+	int32_t			 normalized_rx_power, target_rx_power;
+	int			 tpc	      = 1;
 
-	int pCCid = UE_PCCID(mod_id,ue_id);
-	rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+	int			 pCCid	      = UE_PCCID(mod_id,ue_id);
+	rnti_t			 rnti	      = flexran_get_ue_crnti(mod_id,ue_id);
 
-	eNB_UE_stats =  mac_xface->get_eNB_UE_stats(mod_id, pCCid, rnti);
+	eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id, pCCid, rnti);
 
 	target_rx_power = mac_xface->get_target_pusch_rx_power(mod_id,pCCid);
 
@@ -651,36 +678,38 @@ int flexran_get_tpc(mid_t mod_id, mid_t ue_id) {
 	}
 
 	if (normalized_rx_power>(target_rx_power+1)) {
-		tpc = 0; //-1
+		tpc = 0;	//-1
 	} else if (normalized_rx_power<(target_rx_power-1)) {
-		tpc = 2; //+1
+		tpc = 2;	//+1
 	} else {
-		tpc = 1; //0
+		tpc = 1;	//0
 	}
 	return tpc;
 }
 
-int flexran_get_harq(const mid_t mod_id, const uint8_t CC_id, const mid_t ue_id, const int frame, const uint8_t subframe, int *id, int *status)	{ //flag_id_status = 0 then id, else status
+int flexran_get_harq(const mid_t mod_id, const uint8_t CC_id, const mid_t ue_id, const int frame, const uint8_t subframe, int *id, int *round)	{ //flag_id_status = 0 then id, else status
 	/*TODO: Add int TB in function parameters to get the status of the second TB. This can be done to by editing in
 	 * get_ue_active_harq_pid function in line 272 file: phy_procedures_lte_eNB.c to add
 	 * DLSCH_ptr = PHY_vars_eNB_g[Mod_id][CC_id]->dlsch_eNB[(uint32_t)UE_id][1];*/
 
   uint8_t harq_pid;
-  uint8_t round;
+  uint8_t harq_round;
   
 
   uint16_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
 
-  mac_xface->get_ue_active_harq_pid(mod_id,CC_id,rnti,frame,subframe,&harq_pid,&round,openair_harq_DL);
+  mac_xface->get_ue_active_harq_pid(mod_id,CC_id,rnti,frame,subframe,&harq_pid,&harq_round,openair_harq_DL);
 
   *id = harq_pid;
-  if (round > 0) {
-    *status = 1;
-  } else {
-    *status = 0;
-  }
+  *round = harq_round;
+  /* if (round > 0) { */
+  /*   *status = 1; */
+  /* } else { */
+  /*   *status = 0; */
+  /* } */
 
-  return 0;
+  /* return 0; */
+  return round;
 }
 
 int flexran_get_p0_pucch_dbm(mid_t mod_id, mid_t ue_id, int CC_id) {
@@ -703,6 +732,24 @@ int flexran_get_p0_pucch_dbm(mid_t mod_id, mid_t ue_id, int CC_id) {
 int flexran_get_p0_nominal_pucch(mid_t mod_id, int CC_id) {
 	int32_t pucch_rx_received = mac_xface->get_target_pucch_rx_power(mod_id, CC_id);
 	return pucch_rx_received;
+}
+
+int flexran_get_p0_pucch_status(mid_t mod_id, mid_t ue_id, int CC_id) {
+        LTE_eNB_UE_stats *eNB_UE_stats = NULL;
+	uint32_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+
+	eNB_UE_stats =  mac_xface->get_eNB_UE_stats(mod_id, CC_id, rnti);
+	return eNB_UE_stats->Po_PUCCH_update;
+}
+
+int flexran_update_p0_pucch(mid_t mod_id, mid_t ue_id, int CC_id) {
+          LTE_eNB_UE_stats *eNB_UE_stats = NULL;
+	uint32_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+
+	eNB_UE_stats =  mac_xface->get_eNB_UE_stats(mod_id, CC_id, rnti);
+	eNB_UE_stats->Po_PUCCH_update = 0;
+
+	return 0;
 }
 
 
@@ -861,6 +908,13 @@ int flexran_get_N_RB_UL(mid_t mod_id, int CC_id) {
 	return frame_parms->N_RB_UL;
 }
 
+int flexran_get_N_RBG(mid_t mod_id, int CC_id) {
+  	LTE_DL_FRAME_PARMS   *frame_parms;
+
+	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
+	return frame_parms->N_RBG;
+}
+
 int flexran_get_subframe_assignment(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
@@ -891,10 +945,10 @@ int flexran_get_duplex_mode(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
-	if(frame_parms->frame_type == 0)
-		return 1;
-	else if (frame_parms->frame_type == 1)
-		return 0;
+	if(frame_parms->frame_type == TDD)
+		return PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD;
+	else if (frame_parms->frame_type == FDD)
+		return PROTOCOL__FLEX_DUPLEX_MODE__FLDM_FDD;
 
 	return -1;
 }

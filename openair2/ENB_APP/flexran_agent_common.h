@@ -193,6 +193,9 @@ int flexran_get_ue_wcqi (mid_t mod_id, mid_t ue_id);
 /* Get the transmission queue size for a UE with a channel_id logical channel id */
 int flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id);
 
+/* Update the timing advance status (find out whether a timing advance command is required) */
+int flexran_update_TA(mid_t mod_id, mid_t ue_id, int CC_id);
+
 /* Return timing advance MAC control element for a designated cell and UE */
 int flexran_get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id, int CC_id);
 
@@ -245,6 +248,9 @@ int flexran_get_N_RB_DL(mid_t mod_id, int CC_id);
 /* Get number of UL resource blocks */
 int flexran_get_N_RB_UL(mid_t mod_id, int CC_id);
 
+/* Get number of resource block groups */
+int flexran_get_N_RBG(mid_t mod_id, int CC_id);
+
 /* Get DL/UL subframe assignment. TDD only */
 int flexran_get_subframe_assignment(mid_t mod_id, int CC_id);
 
@@ -273,12 +279,17 @@ int flexran_get_tpc(mid_t mod_id, mid_t ue_id);
    a designated frame and subframe. Returns 0 for success. The id and the 
    status of the HARQ process are stored in id and status respectively */
 int flexran_get_harq(const mid_t mod_id, const uint8_t CC_id, const mid_t ue_id,
-		     const int frame, const uint8_t subframe, int *id, int *status);
+		     const int frame, const uint8_t subframe, int *id, int *round);
 
-/* Reported values for uplink power control */
+/* Uplink power control management*/
 int flexran_get_p0_pucch_dbm(mid_t mod_id, mid_t ue_id, int CC_id);
 
 int flexran_get_p0_nominal_pucch(mid_t mod_id, int CC_id);
+
+int flexran_get_p0_pucch_status(mid_t mod_id, mid_t ue_id, int CC_id);
+
+int flexran_update_p0_pucch(mid_t mod_id, mid_t ue_id, int CC_id);
+
 
 /*
  * ************************************

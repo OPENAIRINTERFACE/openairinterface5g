@@ -995,7 +995,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
 	// TODO: This should be different per TB
 	if(harq_status == 0)
 	  dl_info[i]->harq_status[j] = PROTOCOL__FLEX_HARQ_STATUS__FLHS_ACK;
-	else if (harq_status == 1)
+	else if (harq_status > 0)
 	  dl_info[i]->harq_status[j] = PROTOCOL__FLEX_HARQ_STATUS__FLHS_NACK;
       }
       /*Fill in the serving cell index for this UE */
