@@ -102,7 +102,7 @@ int lte_est_freq_offset(int **dl_ch_estimates,
 {
 
   int ch_offset, omega, dl_ch_shift;
-  struct complex16 *omega_cpx;
+  struct complex16 omega_cpx;
   double phase_offset;
   int freq_offset_est;
   unsigned char aa;
@@ -142,9 +142,8 @@ int lte_est_freq_offset(int **dl_ch_estimates,
     //    printf("Computing freq_offset\n");
     omega = dot_product(dl_ch,dl_ch_prev,(frame_parms->N_RB_DL/2 - 1)*12,dl_ch_shift);
     //omega = dot_product(dl_ch,dl_ch_prev,frame_parms->ofdm_symbol_size,15);
-    omega_cpx = (struct complex16*) &omega;
-
-    //    printf("omega (%d,%d)\n",omega_cpx->r,omega_cpx->i);
+    omega_cpx.r = ((struct complex16*) &omega)->r;
+    omega_cpx.i = ((struct complex16*) &omega)->i;
 
     dl_ch = (int16_t *)&dl_ch_estimates[aa][(((frame_parms->N_RB_DL/2) + 1)*12) + ch_offset];
 
@@ -155,10 +154,12 @@ int lte_est_freq_offset(int **dl_ch_estimates,
 
     // calculate omega = angle(conj(dl_ch)*dl_ch_prev))
     omega = dot_product(dl_ch,dl_ch_prev,((frame_parms->N_RB_DL/2) - 1)*12,dl_ch_shift);
-    omega_cpx->r += ((struct complex16*) &omega)->r;
-    omega_cpx->i += ((struct complex16*) &omega)->i;
+
+    omega_cpx.r += ((struct complex16*) &omega)->r;
+    omega_cpx.i += ((struct complex16*) &omega)->i;
+
     //    phase_offset += atan2((double)omega_cpx->i,(double)omega_cpx->r);
-    phase_offset += atan2((double)omega_cpx->i,(double)omega_cpx->r);
+    phase_offset += atan2((double)omega_cpx.i,(double)omega_cpx.r);
     //    LOG_I(PHY,"omega (%d,%d) -> %f\n",omega_cpx->r,omega_cpx->i,phase_offset);
   }
 

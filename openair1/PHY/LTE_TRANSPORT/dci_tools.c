@@ -1260,6 +1260,11 @@ int generate_eNB_dlsch_params_from_dci(int frame,
       dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][NPRB-1];
 
     }
+    else
+    {
+    	LOG_E(PHY,"DL Received HarqReTx round=%d mcs=%d rballoc=%d rv=%d \n",
+    			dlsch0_harq->round,mcs,rballoc,rv);
+    }
 
 
     dlsch[0]->current_harq_pid = harq_pid;
@@ -4143,6 +4148,20 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
     dlsch0_harq->DCINdi = ndi;
 
+    // this a retransmission
+    if(dlsch0_harq->round)
+    {
+	// compare old TBS to new TBS
+    	if(dlsch0_harq->TBS != TBStable[get_I_TBS(mcs)][NPRB-1])
+    	{
+    		// this is an eNB issue
+    		// retransmisison but old and new TBS are different !!!
+    		// work around, consider it as a new transmission
+    		LOG_E(PHY,"Format1A Retransmission but TBS are different: consider it as new transmission !!! \n");
+    		dlsch0_harq->round = 0;
+    	}
+    }
+
     dlsch0_harq->mcs = mcs;
     if ((rnti==si_rnti) || (rnti==p_rnti) || (rnti==ra_rnti)) {
       dlsch0_harq->TBS = TBStable[mcs][NPRB-1];
@@ -4451,6 +4470,20 @@ int generate_ue_dlsch_params_from_dci(int frame,
     }
 
     dlsch0_harq->mcs         = mcs;
+
+    // this a retransmission
+    if(dlsch0_harq->round)
+    {
+    	// compare old TBS to new TBS
+    	if(dlsch0_harq->TBS != TBStable[get_I_TBS(mcs)][NPRB-1])
+    	{
+    		// this is an eNB issue
+    		// retransmisison but old and new TBS are different !!!
+    		// work around, consider it as a new transmission
+    		LOG_E(PHY,"Format1 Retransmission but TBS are different: consider it as new transmission !!! \n");
+    		dlsch0_harq->round = 0;
+    	}
+    }
 
     dlsch0_harq->TBS         = TBStable[get_I_TBS(mcs)][NPRB-1];
     if (mcs <= 28)
