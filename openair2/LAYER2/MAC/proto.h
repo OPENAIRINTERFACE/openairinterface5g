@@ -551,7 +551,7 @@ int get_bsr_lcgid (module_id_t module_idP);
 \param[in] bufflen size of phy transport block
 \param[out] bsr_len size of bsr control element
 */
-uint8_t get_bsr_len (module_id_t module_idP, uint8_t eNB_index,frame_t frameP,uint16_t buflen);
+uint8_t get_bsr_len (module_id_t module_idP, uint16_t buflen);
 
 /*! \fn  BSR_SHORT *  get_bsr_short(module_id_t module_idP, uint8_t bsr_len)
 \brief get short bsr level
@@ -577,14 +577,14 @@ BSR_LONG * get_bsr_long(module_id_t module_idP, uint8_t bsr_len);
 */
 boolean_t update_bsr(module_id_t module_idP, frame_t frameP, eNB_index_t eNB_index, uint8_t lcid, uint8_t lcgid);
 
-/*! \fn  locate_BsrIndexByBufferSize (int *table, int size, int value)
+/*! \fn  locate (int *table, int size, int value)
    \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table.
 \param[in] *table Pointer to BSR table
 \param[in] size Size of the table
 \param[in] value Value of the buffer
 \return the index in the BSR_LEVEL table
 */
-uint8_t locate_BsrIndexByBufferSize (const uint32_t *table, int size, int value);
+uint8_t locate (const uint32_t *table, int size, int value);
 
 
 /*! \fn  int get_sf_periodicBSRTimer(uint8_t periodicBSR_Timer)
