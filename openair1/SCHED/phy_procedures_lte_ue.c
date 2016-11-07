@@ -2579,7 +2579,7 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
       if (generate_ue_dlsch_params_from_dci(frame_rx,
 					    subframe_rx,
 					    (void *)&dci_alloc_rx[i].dci_pdu,
-					    SI_RNTI,
+						P_RNTI,
 					    dci_alloc_rx[i].format,
 					    &ue->dlsch_SI[eNB_id],
 					    &ue->frame_parms,
@@ -3072,7 +3072,7 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
 			   subframe_rx,
 			   harq_pid,
 			   pdsch==PDSCH?1:0,
-			   dlsch0->harq_processes[harq_pid]->nb_rb>10?1:0);
+			   dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
       stop_meas(&ue->dlsch_decoding_stats);
     }
 	
