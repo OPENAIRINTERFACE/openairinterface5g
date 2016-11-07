@@ -249,7 +249,12 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     tc = phy_threegpplte_turbo_decoder16;
   }
   else
-    tc = phy_threegpplte_turbo_decoder8;
+  {
+	  AssertFatal (harq_process->TBS >= 256 , "Mismatch flag nbRB=%d TBS=%d mcs=%d Qm=%d RIV=%d round=%d \n",
+			  harq_process->nb_rb, harq_process->TBS,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
+	    tc = phy_threegpplte_turbo_decoder8;
+  }
+
 
   //  nb_rb = dlsch->nb_rb;
 
@@ -447,6 +452,11 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     //#ifndef __AVX2__
 #if 1
     if (err_flag == 0) {
+
+    	if (llr8_flag) {
+    		AssertFatal (Kr >= 256, "turbo algo issue Kr=%d cb_cnt=%d C=%d nbRB=%d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d\n",
+    				Kr,r,harq_process->C,harq_process->nb_rb,A,harq_process->TBS,harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
+    	}
 
       start_meas(dlsch_turbo_decoding_stats);
       ret = tc
