@@ -1,9 +1,0 @@
-MAC notes
----------
-
-The file OSX.zip contains xcode project files for an older version of the library.
-
-Find uuid.h (if missing) here:
-	http://www.die.net/doc/linux/include/uuid/uuid.h
-This used to be a problem, but isn't any more afaik.
-

@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /*! \file LAYER2/MAC/proto.h
  * \brief MAC functions prototypes for eNB and UE
  * \author Navid Nikaein and Raymond Knopp
@@ -550,7 +543,7 @@ int cba_access(module_id_t module_idP,frame_t frameP,sub_frame_t subframe, uint8
 \param[in] Mod_id instance of the UE
 \param[out] lcgid
 */
-int get_bsr_lcgid (module_id_t module_idP, int *num_lcgid);
+int get_bsr_lcgid (module_id_t module_idP);
 
 /*! \fn  uint8_t get_bsr_len (module_id_t module_idP,uint16_t bufflen);
 \brief determine whether the bsr is short or long assuming that the MAC pdu is built
@@ -558,7 +551,7 @@ int get_bsr_lcgid (module_id_t module_idP, int *num_lcgid);
 \param[in] bufflen size of phy transport block
 \param[out] bsr_len size of bsr control element
 */
-uint8_t get_bsr_len (module_id_t module_idP, uint16_t buflen);
+uint8_t get_bsr_len (module_id_t module_idP, uint8_t eNB_index,frame_t frameP,uint16_t buflen);
 
 /*! \fn  BSR_SHORT *  get_bsr_short(module_id_t module_idP, uint8_t bsr_len)
 \brief get short bsr level

@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-   Contact Information
-   OpenAirInterface Admin: openair_admin@eurecom.fr
-   OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file lte-enb.c
  * \brief Top-level threads for eNodeB
@@ -171,7 +163,7 @@ volatile int             oai_exit = 0;
 
 static char              UE_flag=0;
 unsigned int                    mmapped_dma=0;
-int                             single_thread_flag=0;
+int                             single_thread_flag=1;
 
 static char                     threequarter_fs=0;
 
@@ -212,6 +204,7 @@ char   rf_config_file[1024];
 
 int chain_offset=0;
 int phy_test = 0;
+uint8_t usim_test = 0;
 
 
 char ref[128] = "internal";
@@ -386,7 +379,8 @@ void help (void) {
   printf("  --ue-scan_carrier set UE to scan around carrier\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
   printf("  --mmapped-dma sets flag for improved EXMIMO UE performance\n");  
-  printf("  --single-thread runs lte-softmodem in only one thread\n"); 
+  printf("  --usim-test use XOR autentication algo in case of test usim mode\n"); 
+  printf("  --single-thread-disable. Disables single-thread mode in lte-softmodem\n"); 
   printf("  -C Set the downlink frequency for all component carriers\n");
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
   printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
@@ -693,8 +687,9 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_DUMP_FRAME,
     LONG_OPTION_LOOPMEMORY,
     LONG_OPTION_PHYTEST,
+    LONG_OPTION_USIMTEST,
     LONG_OPTION_MMAPPED_DMA,
-    LONG_OPTION_SINGLE_THREAD,
+    LONG_OPTION_SINGLE_THREAD_DISABLE,
 #if T_TRACER
     LONG_OPTION_T_PORT,
     LONG_OPTION_T_NOWAIT,
@@ -719,8 +714,9 @@ static void get_options (int argc, char **argv)
     {"ue-dump-frame", no_argument, NULL, LONG_OPTION_DUMP_FRAME},
     {"loop-memory", required_argument, NULL, LONG_OPTION_LOOPMEMORY},
     {"phy-test", no_argument, NULL, LONG_OPTION_PHYTEST},
+    {"usim-test", no_argument, NULL, LONG_OPTION_USIMTEST},
     {"mmapped-dma", no_argument, NULL, LONG_OPTION_MMAPPED_DMA},
-    {"single-thread", no_argument, NULL, LONG_OPTION_SINGLE_THREAD},
+    {"single-thread-disable", no_argument, NULL, LONG_OPTION_SINGLE_THREAD_DISABLE},
 #if T_TRACER
     {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
     {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
@@ -818,12 +814,15 @@ static void get_options (int argc, char **argv)
       phy_test = 1;
       break;
 
+    case LONG_OPTION_USIMTEST:
+        usim_test = 1;
+      break;
     case LONG_OPTION_MMAPPED_DMA:
       mmapped_dma = 1;
       break;
 
-    case LONG_OPTION_SINGLE_THREAD:
-      single_thread_flag = 1;
+    case LONG_OPTION_SINGLE_THREAD_DISABLE:
+      single_thread_flag = 0;
       break;
               
 #if T_TRACER
@@ -1047,7 +1046,6 @@ static void get_options (int argc, char **argv)
 
   if (UE_flag == 0)
     AssertFatal(conf_config_file_name != NULL,"Please provide a configuration file\n");
-
 
   if ((UE_flag == 0) && (conf_config_file_name != NULL)) {
     int i,j;
