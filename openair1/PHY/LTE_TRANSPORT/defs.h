@@ -94,7 +94,7 @@
 #define PMI_2A_1j  2
 #define PMI_2A_1mj 3
 //2 layers
-#define PMI_2A_R1_10 0 
+#define PMI_2A_R1_10 0
 #define PMI_2A_R1_11 1
 #define PMI_2A_R1_1j 2
 
@@ -172,6 +172,8 @@ typedef struct {
   uint8_t Nlayers;
   /// First layer for this PSCH transmission
   uint8_t first_layer;
+   /// codeword this transport block is mapped to
+  uint8_t codeword;
 } LTE_DL_eNB_HARQ_t;
 
 typedef struct {
@@ -575,6 +577,8 @@ typedef struct {
   uint32_t trials[8];
   /// error statistics per round
   uint32_t errors[8];
+  /// codeword this transport block is mapped to
+  uint8_t codeword;
 } LTE_DL_UE_HARQ_t;
 
 typedef struct {
