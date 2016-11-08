@@ -771,12 +771,15 @@ int load_dl_scheduler_function(mid_t mod_id, const char *function_name) {
   snprintf(lib_name, sizeof(lib_name), "/%s.so", function_name);
   strcpy(target, local_cache);
   strcat(target, lib_name);
-
+  
+  LOG_I(FLEXRAN_AGENT, "Opening pushed code: %s\n", target);
   lib = dlopen(target, RTLD_NOW);
   if (lib == NULL) {
+    LOG_I(FLEXRAN_AGENT, "Could not load library\n");
     goto error;
   }
   
+  LOG_I(FLEXRAN_AGENT, "Loading function: %s\n", function_name);
   void *loaded_scheduler = dlsym(lib, function_name);
   if (loaded_scheduler) {
     if (mac_agent_registered[mod_id]) {
@@ -785,8 +788,10 @@ int load_dl_scheduler_function(mid_t mod_id, const char *function_name) {
 	dlclose(agent_mac_xface[mod_id]->dl_scheduler_loaded_lib);
       }
       agent_mac_xface[mod_id]->dl_scheduler_loaded_lib = lib;
-      LOG_D(ENB_APP, "Delegated control for DL UE scheduler succesfully\n");
+      LOG_I(FLEXRAN_AGENT, "New DL UE scheduler: %s\n", function_name);
     }
+  } else {
+    LOG_I(FLEXRAN_AGENT, "Scheduler could not be loaded\n");
   }
 
   return 0;
