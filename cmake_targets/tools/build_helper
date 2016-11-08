@@ -82,8 +82,8 @@ echo_info()    { cecho "$*" $blue         ;}
 # If we can't check the distribution, it returns "Unknown"
 # This function return always true as exit code by design
 # Examples:
-#   Ubuntu16.04
-#   Debian8.5
+#   ubuntu16.04
+#   debian8.5
 get_distribution_release() {
     if [[ ! -z "$OS_DISTRO$OS_RELEASE" ]]; then
         echo "$OS_DISTRO$OS_RELEASE"
@@ -245,7 +245,7 @@ check_install_usrp_uhd_driver(){
         $SUDO apt-get -y --allow-unauthenticated install  python python-tk libboost-all-dev libusb-1.0-0-dev
         $SUDO apt-get -y --allow-unauthenticated install libuhd-dev libuhd003 uhd-host
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
-        $SUDO $INSTALLER -y install python boost libusb-devel
+        $SUDO $INSTALLER -y install python boost libusb-devel boost-devel
         $SUDO $INSTALLER -y install uhd uhd-devel uhd-firmware
     fi
 }
@@ -264,13 +264,17 @@ install_usrp_uhd_driver() {
 }
 
 check_install_bladerf_driver(){
-	if [ "$(get_distribution_release)" == "ubuntu14.04" ] ; then
-		$SUDO add-apt-repository -y ppa:bladerf/bladerf
-		$SUDO apt-get update
-	fi
-	$SUDO apt-get install -y --allow-unauthenticated  bladerf libbladerf-dev
-	$SUDO apt-get install -y --allow-unauthenticated bladerf-firmware-fx3
-	$SUDO apt-get install -y --allow-unauthenticated bladerf-fpga-hostedx40	
+    if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+        if [ "$(get_distribution_release)" == "ubuntu14.04" ] ; then
+            $SUDO add-apt-repository -y ppa:bladerf/bladerf
+            $SUDO apt-get update
+        fi
+        $SUDO apt-get install -y --allow-unauthenticated  bladerf libbladerf-dev
+        $SUDO apt-get install -y --allow-unauthenticated bladerf-firmware-fx3
+        $SUDO apt-get install -y --allow-unauthenticated bladerf-fpga-hostedx40	
+   else
+        echo_error "BladeRF Installer for OAI does not support automatic build. Install BladeRF compiling sources manually from BladeRF website"
+   fi
 }
 
 flash_firmware_bladerf() {
@@ -295,7 +299,7 @@ check_install_lmssdr_driver(){
 check_install_additional_tools (){
   $SUDO $INSTALLER update -y
   if [[ "$OS_DISTRO" == "ubuntu" ]]; then
-    $SUDO apt-get install -y \
+    PACKAGE_LIST="\
 	check \
 	dialog \
 	dkms \
@@ -324,25 +328,9 @@ check_install_additional_tools (){
         bc \
         ntp \
         python-scipy \
-        python-matplotlib
-
-    $SUDO pip install paramiko
-    $SUDO pip install pyroute2 colorama
-    $SUDO rm -fr /opt/ssh
-    $SUDO GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/ssh.git /opt/ssh
-    
-    log_netiface=$OPENAIR_DIR/cmake_targets/log/netiface_install_log.txt
-    echo_info "Installing Netinterfaces package. The logfile for installation is in $log_netiface"
-    (
-    $SUDO rm -fr /tmp/netifaces-0.10.4.tar.gz /tmp/netifaces
-    wget -P /tmp  https://pypi.python.org/packages/18/fa/dd13d4910aea339c0bb87d2b3838d8fd923c11869b1f6e741dbd0ff3bc00/netifaces-0.10.4.tar.gz
-    tar -xzvf /tmp/netifaces-0.10.4.tar.gz -C /tmp
-    cd /tmp/netifaces-0.10.4
-    $SUDO python setup.py install
-    cd -
-    ) >& $log_netiface
+        python-matplotlib"
   elif [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
-    $SUDO $INSTALLER install -y \
+    PACKAGE_LIST="\
       check \
       dialog \
       dkms \
@@ -366,12 +354,11 @@ check_install_additional_tools (){
       nscd \
       python2-paramiko \
       python-pyroute2 \
-      python-netifaces
-
-    $SUDO rm -fr /opt/ssh
-    $SUDO GIT_SSL_NO_VERIFY=true git clone https://gist.github.com/2190472.git /opt/ssh
+      python-netifaces \
+      scipy \
+      python-matplotlib"
   elif [[ "$OS_DISTRO" == "fedora" ]]; then
-    $SUDO $INSTALLER install -y \
+    PACKAGE_LIST=" \
       check \
       dialog \
       dkms \
@@ -395,10 +382,29 @@ check_install_additional_tools (){
       nscd \
       python2-paramiko \
       python-pyroute2 \
-      python-netifaces
-
+      python-netifaces \
+      python2-scipy \
+      python2-matplotlib"
+  fi
+    $SUDO $INSTALLER install -y $PACKAGE_LIST
+    
     $SUDO rm -fr /opt/ssh
-    $SUDO GIT_SSL_NO_VERIFY=true git clone https://gist.github.com/2190472.git /opt/ssh
+    $SUDO GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/ssh.git /opt/ssh
+
+  #The packages below are already installed for Redhat distros (RHEL, CentOS, Fedora)
+  if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+    $SUDO pip install paramiko
+    $SUDO pip install pyroute2 colorama
+    log_netiface=$OPENAIR_DIR/cmake_targets/log/netiface_install_log.txt
+    echo_info "Installing Netinterfaces package. The logfile for installation is in $log_netiface"
+    (
+    $SUDO rm -fr /tmp/netifaces-0.10.4.tar.gz /tmp/netifaces
+    wget -P /tmp  https://pypi.python.org/packages/18/fa/dd13d4910aea339c0bb87d2b3838d8fd923c11869b1f6e741dbd0ff3bc00/netifaces-0.10.4.tar.gz
+    tar -xzvf /tmp/netifaces-0.10.4.tar.gz -C /tmp
+    cd /tmp/netifaces-0.10.4
+    $SUDO python setup.py install
+    cd -
+    ) >& $log_netiface
   fi
 }
 
@@ -481,7 +487,8 @@ check_install_oai_software() {
 	python-pip \
 	pydb \
 	libyaml-dev \
-	wget
+	wget \
+	libxpm-dev
 
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
     
@@ -560,7 +567,12 @@ check_install_oai_software() {
       wget \
       kernel-headers \
       nettle-devel \
-      gnutls-devel
+      gnutls-devel \
+      libXpm-devel \
+      lapack \
+      lapack-devel \
+      blas \
+      libblas-devel
   fi
 
     install_asn1c_from_source
@@ -570,7 +582,7 @@ check_install_oai_software() {
     install_protobuf_c_from_source
 }
 
-### Remove Nettle installation which was done from sources
+### Remove Nettle installation which was done from sources (only done for Ubuntu Distro)
 remove_nettle_from_source() {
     nettle_uninstall_log=$OPENAIR_DIR/cmake_targets/log/nettle_uninstall_log.txt
     echo_info "\nUn-Installing Nettle from sources. The log file for nettle un-installation is here: $nettle_uninstall_log "
@@ -596,7 +608,7 @@ remove_nettle_from_source() {
     ) >& $nettle_uninstall_log
 }
 
-### Remove Gnutls from source
+### Remove Gnutls from source (Only done for Ubuntu Distro)
 remove_gnutls_from_source(){
     gnutls_uninstall_log=$OPENAIR_DIR/cmake_targets/log/gnutls_uninstall_log.txt
     echo_info "\nUn-Installing Gnutls. The log file for Gnutls un-installation is here: $gnutls_uninstall_log "
