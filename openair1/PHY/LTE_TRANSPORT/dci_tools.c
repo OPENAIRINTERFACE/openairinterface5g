@@ -6384,8 +6384,10 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 
     if (rballoc > RIV_max) {
-      LOG_E(PHY,"frame %d, subframe %d, rnti %x, format %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, rb_alloc > RIV_max\n",
-            proc->frame_rx, subframe, rnti, dci_format);
+      LOG_E(PHY,"frame %d, subframe %d, rnti %x, format %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, rb_alloc[%d] > RIV_max[%d]\n",
+            proc->frame_rx, subframe, rnti, dci_format,rballoc,RIV_max);
+      LOG_E(PHY,"Wrong DCI0 detection, do not transmit PUSCH for HARQID: %d\n",harq_pid);
+      ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
       return(-1);
     }
 
