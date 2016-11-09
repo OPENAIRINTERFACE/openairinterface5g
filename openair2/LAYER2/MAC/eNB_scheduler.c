@@ -52,10 +52,12 @@
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
+#if defined(FLEXRAN_AGENT_SB_IF)
 //Agent-related headers
 #include "flexran_agent_extern.h"
 #include "flexran_agent_mac.h"
 #include "flexran_agent_mac_proto.h"
+#endif
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
@@ -103,7 +105,9 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   void         *DLSCH_dci=NULL;
   int size_bits=0,size_bytes=0;
 
+#if defined(FLEXRAN_AGENT_SB_IF)
   Protocol__FlexranMessage *msg;
+#endif
 
   LOG_D(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler (UE_list->head %d)\n",module_idP, frameP, subframeP,UE_list->head);
 
@@ -137,14 +141,17 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
     eNB_mac_inst[module_idP].UE_list.UE_sched_ctrl[i].cqi_req_timer++;
     
+
     if (mac_xface->get_eNB_UE_stats(module_idP, CC_id, rnti)==NULL) {
 	//mac_remove_ue(module_idP, i, frameP, subframeP);
       //Inform the controller about the UE deactivation. Should be moved to RRC agent in the future
+#if defined(FLEXRAN_AGENT_SB_IF)
       if (mac_agent_registered[module_idP]) {
 	agent_mac_xface[module_idP]->flexran_agent_notify_ue_state_change(module_idP,
 									  rnti,
 									  PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
       }
+#endif
     }
     else {
       // check uplink failure
@@ -1081,11 +1088,13 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++)
     allocate_CCEs(module_idP,CC_id,subframeP,0);
 
+#if defined(FLEXRAN_AGENT_SB_IF)
 #ifndef DISABLE_CONT_STATS
   //Send subframe trigger to the controller
   if (mac_agent_registered[module_idP]) {
     agent_mac_xface[module_idP]->flexran_agent_send_update_mac_stats(module_idP);
   }
+#endif
 #endif
 
   /*

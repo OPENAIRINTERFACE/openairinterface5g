@@ -62,10 +62,12 @@
 #endif
 
 
+#if defined(FLEXRAN_AGENT_SB_IF)
 //Agent-related headers
 #include "ENB_APP/flexran_agent_extern.h"
 #include "ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac.h"
 #include "LAYER2/MAC/flexran_agent_mac_proto.h"
+#endif
 
 //#define DIAG_PHY
 
@@ -1369,11 +1371,13 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
     eNB->dlsch_ra->active = 0;
   }
 
+#if defined(FLEXRAN_AGENT_SB_IF)
 #ifndef DISABLE_SF_TRIGGER
   //Send subframe trigger to the controller
   if (mac_agent_registered[eNB->Mod_id]) {
     agent_mac_xface[eNB->Mod_id]->flexran_agent_send_sf_trigger(eNB->Mod_id);
   }
+#endif
 #endif
 
   // Now scan UE specific DLSCH

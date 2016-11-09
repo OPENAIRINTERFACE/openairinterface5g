@@ -93,7 +93,9 @@
 
 #include "SIMULATION/TOOLS/defs.h" // for taus
 
+#if defined(FLEXRAN_AGENT_SB_IF)
 #include "flexran_agent_extern.h"
+#endif
 #define XER_PRINT
 
 #ifdef PHY_EMUL
@@ -4541,12 +4543,14 @@ rrc_eNB_decode_dcch(
           ue_context_p,
 	  ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
 
+#if defined(FLEXRAN_AGENT_SB_IF)
 	//WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
 	if (mac_agent_registered[ctxt_pP->module_id]) {
 	  agent_mac_xface[ctxt_pP->eNB_index]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
 										ue_context_p->ue_id_rnti,
 										PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_UPDATED);
 	}
+#endif
       }
 #if defined(ENABLE_ITTI)
 #   if defined(ENABLE_USE_MME)
@@ -4642,12 +4646,15 @@ rrc_eNB_decode_dcch(
           ue_context_p->ue_context.Status = RRC_CONNECTED;
           LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_CONNECTED \n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+	  
+#if defined(FLEXRAN_AGENT_SB_IF)
 	  //WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
 	  if (mac_agent_registered[ctxt_pP->module_id]) {
 	    agent_mac_xface[ctxt_pP->eNB_index]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
 										  ue_context_p->ue_id_rnti,
 										  PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_ACTIVATED);
 	  }
+#endif
         }
       }
 
