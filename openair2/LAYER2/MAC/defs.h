@@ -336,6 +336,14 @@ typedef struct {
 #define SHORT_BSR 29
 /*!\brief LCID of long BSR for ULSCH */
 #define LONG_BSR 30
+/*!\brief first level bsr type for ULSCH: Regular BSR,Padding BSR,Periodic BSR*/
+#define BSR_TYPE_FIRST_LEVEL 3
+/*!\brief  first level bsr type states*/
+typedef enum {
+  REGULAR_BSR =0,
+  PADDING_BSR,
+  PERIODIC_BSR
+} UE_FIRST_LEVEL_BSR_TYPE;
 
 /*! \brief Downlink SCH PDU Structure */
 typedef struct {
@@ -945,8 +953,10 @@ typedef enum {
 typedef struct {
   /// buffer status for each lcgid
   uint8_t  BSR[MAX_NUM_LCGID]; // should be more for mesh topology
-  /// keep the number of bytes in rlc buffer for each lcid
+  /// keep the number of bytes in rlc buffer for each lcgid
   uint16_t  BSR_bytes[MAX_NUM_LCGID];
+  /// after multiplexing buffer remain for each lcid
+  uint16_t  LCID_buffer_remain[MAX_NUM_LCID];
   /// buffer status for each lcid
   uint8_t  LCID_status[MAX_NUM_LCID];
   /// SR pending as defined in 36.321
@@ -958,11 +968,11 @@ typedef struct {
   /// retxBSR-Timer, default value is sf2560
   uint16_t retxBSR_Timer;
   /// retxBSR_SF, number of subframe before triggering a regular BSR
-  int16_t retxBSR_SF;
+  int16_t retxBSR_SF; // if value equal oxFFFF means counters are NOT active
   /// periodicBSR-Timer, default to infinity
   uint16_t periodicBSR_Timer;
   /// periodicBSR_SF, number of subframe before triggering a periodic BSR
-  int16_t periodicBSR_SF;
+  int16_t periodicBSR_SF;  // if value equal oxFFFF means counters are NOT active
   /// default value is 0: not configured
   uint16_t sr_ProhibitTimer;
   /// sr ProhibitTime running
@@ -987,6 +997,12 @@ typedef struct {
   int16_t prohibitPHR_SF;
   ///DL Pathloss Change in db
   uint16_t PathlossChange_db;
+
+  /// default value is false
+  uint16_t extendedBSR_Sizes_r10;
+  /// default value is false
+  uint16_t extendedPHR_r10;
+
   //Bj bucket usage per  lcid
   int16_t Bj[MAX_NUM_LCID];
   // Bucket size per lcid
@@ -1074,6 +1090,11 @@ typedef struct {
   uint8_t PHR_reporting_active;
   /// power backoff due to power management (as allowed by P-MPRc) for this cell
   uint8_t power_backoff_db[NUMBER_OF_eNB_MAX];
+  /// BSR report falg management
+  uint8_t BSR_reporting_active[BSR_TYPE_FIRST_LEVEL];
+  /// retxBSR-Timer expires flag
+  uint8_t retxBSRTimer_expires_flag;
+  
   /// MBSFN_Subframe Configuration
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8]; // FIXME replace 8 by MAX_MBSFN_AREA?
   /// number of subframe allocation pattern available for MBSFN sync area
