@@ -1795,11 +1795,19 @@ int main( int argc, char **argv )
 
 
   // start the main thread
-  if (UE_flag == 1) init_UE(1);
+  if (UE_flag == 1) {
+    init_UE(1);
+    number_of_cards = 1;
+    
+    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
+      PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
+    }
+  }
   else { 
     init_eNB(node_function,node_timing,1,eth_params,single_thread_flag);
-  // Sleep to allow all threads to setup
-
+    // Sleep to allow all threads to setup
+    
     number_of_cards = 1;
     
     for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
