@@ -316,8 +316,6 @@ uint32_t ue_get_SR(module_id_t module_idP,int CC_id,frame_t frameP,uint8_t eNB_i
     UE_mac_inst[module_idP].scheduling_info.SR_pending=0;
     UE_mac_inst[module_idP].scheduling_info.SR_COUNTER=0;
     // release all pucch resource
-    UE_mac_inst[module_idP].physicalConfigDedicated = NULL;
-    UE_mac_inst[module_idP].ul_active=0;
     UE_mac_inst[module_idP].BSR_reporting_active[REGULAR_BSR]=0;
     UE_mac_inst[module_idP].BSR_reporting_active[PADDING_BSR]=0;
     UE_mac_inst[module_idP].BSR_reporting_active[PERIODIC_BSR]=0;
@@ -1313,11 +1311,11 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
 
   bsr_type = get_bsr_type(module_idP, eNB_index, frameP, buflen-phr_len);
   if (bsr_type == LONG_BSR) {
-    bsr_len = sizeof(SCH_SUBHEADER_FIXED)+sizeof(BSR_LONG);;
+    bsr_len = sizeof(SCH_SUBHEADER_FIXED)+sizeof(BSR_LONG);
     LOG_D(MAC,"[UE %d] header size info: dcch %d, dcch1 %d, dtch %d, bsr (bsr_type%d) buff_len %d\n",
           module_idP, dcch_header_len,dcch1_header_len,dtch_header_len, bsr_type, buflen);
   } else if ((bsr_type == SHORT_BSR) || (bsr_type == TRUNCATED_BSR)) {
-    bsr_len = sizeof(SCH_SUBHEADER_FIXED)+sizeof(BSR_SHORT);;
+    bsr_len = sizeof(SCH_SUBHEADER_FIXED)+sizeof(BSR_SHORT);
     LOG_D(MAC,"[UE %d] header size info: dcch %d, dcch1 %d, dtch %d, bsr (bsr_type%d) buff_len %d\n",
           module_idP, dcch_header_len,dcch1_header_len,dtch_header_len, bsr_type, buflen);
   } else {
@@ -1457,7 +1455,7 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
         						  MBMS_FLAG_NO, // eNB_index
         						  lcid,
         						  (char *)&ulsch_buff[sdu_length_total]);
-        	 
+
         	 //adjust dtch header
         	 LOG_D(MAC,"[UE %d] TX Got %d bytes for DTCH\n",module_idP,sdu_lengths[num_sdus]);
         	 sdu_lcids[num_sdus] = lcid;
@@ -1517,8 +1515,8 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
     bsr_s->LCGID = lcgid;
     bsr_s->Buffer_size = UE_mac_inst[module_idP].scheduling_info.BSR[lcgid];
     
-    LOG_D(MAC,"[UE %d] Frame %d report SHORT BSR with level %d for LCGID %d\n",
-          module_idP, frameP, UE_mac_inst[module_idP].scheduling_info.BSR[lcgid],lcgid);
+    LOG_I(MAC,"%%%%%%%%%%%%%%%%%%%%%%%%%%%%%[UE %d] Frame %d SubFrame %d,report SHORT BSR with level %d for LCGID %d\n",
+          module_idP, frameP, subframe, UE_mac_inst[module_idP].scheduling_info.BSR[lcgid],lcgid);
     UE_mac_inst[module_idP].scheduling_info.BSR_bytes[lcgid] = 0;
     UE_mac_inst[module_idP].scheduling_info.BSR[lcgid] = 0;
   } else if (bsr_type == TRUNCATED_BSR) {
@@ -2068,6 +2066,7 @@ int get_bsr_lcgid (module_id_t module_idP)
     if (UE_mac_inst[module_idP].scheduling_info.BSR[lcgid] > 0 ) {
       lcgid_tmp = lcgid;
       num_active_lcgid+=1;
+      printf("////////////////////////////////lcgid %d, BSR %d\n",lcgid,UE_mac_inst[module_idP].scheduling_info.BSR[lcgid]);
     }
   }
 
@@ -2090,7 +2089,8 @@ int get_bsr_type (module_id_t module_idP, uint8_t eNB_index,frame_t frameP,uint1
   int short_bsr_size=sizeof(SCH_SUBHEADER_FIXED)+sizeof(BSR_SHORT);
   int bsr_group_id[MAX_NUM_LCGID];
   int lcg_report_num=0;
-  
+  int new_data_arrived_flag=0;
+
   for (lcgid=0; lcgid < MAX_NUM_LCGID; lcgid++ ) {
     bsr_group_id[lcgid] = 0;
   }
@@ -2112,13 +2112,23 @@ int get_bsr_type (module_id_t module_idP, uint8_t eNB_index,frame_t frameP,uint1
          either the data belongs to a logical channel with higher priority than the priorities of the logical channels 
          which belong to any LCG and for which data is already available for transmission
       */
-      if (rlc_status.bytes_in_buffer > UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid]) {
+      if (rlc_status.bytes_in_buffer > UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid])  {
         bsr_group_id[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] ++;
+        new_data_arrived_flag = 1;
         UE_mac_inst[module_idP].BSR_reporting_active[REGULAR_BSR] = 1;
       }
     }
   }
-  
+
+/*
+  // one lcid buffer increased and all lcid buffer increased
+  if ((new_data_arrived_flag == 1) && (pdu > UE_mac_inst[module_idP].scheduling_info.All_lcid_buffer_size_lastTTI)) {
+    UE_mac_inst[module_idP].BSR_reporting_active[REGULAR_BSR] = 1;
+  }
+*/
+
+  UE_mac_inst[module_idP].scheduling_info.All_lcid_buffer_size_lastTTI = pdu;
+
   /* or there is no data available for transmission for any of the logical channels which belong to a LCG, 
      in which case the BSR is referred below to as "Regular BSR"
   if (pdu == 0) {
@@ -2130,6 +2140,7 @@ int get_bsr_type (module_id_t module_idP, uint8_t eNB_index,frame_t frameP,uint1
   for (lcgid=0; lcgid < MAX_NUM_LCGID; lcgid++ ) {
     if (bsr_group_id[lcgid] > 0) {
       lcg_report_num ++;
+      printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@lcgid bsr %d > 0\n",lcgid);
     }
   }
   /*
@@ -2150,6 +2161,7 @@ int get_bsr_type (module_id_t module_idP, uint8_t eNB_index,frame_t frameP,uint1
       bsr_type = LONG_BSR;
     } else {
       bsr_type = SHORT_BSR;
+      printf("-----------------------------------REGULAR_BSR or PERIODIC_BSR bsr trigger short bsr\n");
     }
   }
   /* For Padding BSR:
@@ -2170,12 +2182,13 @@ int get_bsr_type (module_id_t module_idP, uint8_t eNB_index,frame_t frameP,uint1
           bsr_type = LONG_BSR;
         } else {
           bsr_type = SHORT_BSR;
+          printf("+++++++++++++++++++++++++++++++++++padding bsr trigger short bsr\n");
         }
     }
   }
 
   if ( bsr_type > 0 ) {
-    LOG_D(MAC, "[UE %d] bsr_type %d (Transport Block Size %d, MAC pdu len %d) lcg_report_num %d\n",
+    LOG_I(MAC, "[UE %d] bsr_type %d (Transport Block Size %d, MAC pdu len %d) lcg_report_num %d\n",
           module_idP, bsr_type, buflen, pdu, lcg_report_num);
   }
   
@@ -2213,8 +2226,8 @@ boolean_t  update_bsr(module_id_t module_idP, frame_t frameP, eNB_index_t eNB_in
       UE_mac_inst[module_idP].scheduling_info.BSR_bytes[lcg_id] += rlc_status.bytes_in_buffer;
       UE_mac_inst[module_idP].scheduling_info.BSR[lcg_id] = locate_BsrIndexByBufferSize(BSR_TABLE, BSR_TABLE_SIZE, UE_mac_inst[module_idP].scheduling_info.BSR_bytes[lcg_id]);
       // UE_mac_inst[module_idP].scheduling_info.BSR_short_lcid = lcid; // only applicable to short bsr
-      LOG_D(MAC,"[UE %d] BSR level %d (LCGID %d, rlc buffer %d byte)\n",
-            module_idP, UE_mac_inst[module_idP].scheduling_info.BSR[lcg_id],lcg_id,  UE_mac_inst[module_idP].scheduling_info.BSR_bytes[lcg_id]);
+      LOG_D(MAC,"[UE %d] BSR level %d (LCGID %d,lcid %d rlc buffer %d byte)\n",
+            module_idP, UE_mac_inst[module_idP].scheduling_info.BSR[lcg_id],lcg_id, lcid,UE_mac_inst[module_idP].scheduling_info.BSR_bytes[lcg_id]);
     } else {
       UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid]=LCID_EMPTY;
     }

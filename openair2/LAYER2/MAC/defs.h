@@ -957,6 +957,8 @@ typedef struct {
   uint16_t  BSR_bytes[MAX_NUM_LCGID];
   /// after multiplexing buffer remain for each lcid
   uint16_t  LCID_buffer_remain[MAX_NUM_LCID];
+  /// sum of all lcid buffer size
+  uint16_t  All_lcid_buffer_size_lastTTI;
   /// buffer status for each lcid
   uint8_t  LCID_status[MAX_NUM_LCID];
   /// SR pending as defined in 36.321
