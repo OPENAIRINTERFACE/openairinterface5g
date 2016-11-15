@@ -133,6 +133,7 @@
 /*!\brief maximum value for channel quality indicator */
 #define MAX_CQI_VALUE  15
 
+#define MAC_UE_BSR_TIMER_NOT_RUNNING   (0xFFFF)
 
 #define LCID_EMPTY 0
 #define LCID_NOT_EMPTY 1
@@ -962,11 +963,11 @@ typedef struct {
   /// retxBSR-Timer, default value is sf2560
   uint16_t retxBSR_Timer;
   /// retxBSR_SF, number of subframe before triggering a regular BSR
-  int16_t retxBSR_SF;
+  uint16_t retxBSR_SF;
   /// periodicBSR-Timer, default to infinity
   uint16_t periodicBSR_Timer;
   /// periodicBSR_SF, number of subframe before triggering a periodic BSR
-  int16_t periodicBSR_SF;
+  uint16_t periodicBSR_SF;
   /// default value is 0: not configured
   uint16_t sr_ProhibitTimer;
   /// sr ProhibitTime running

@@ -245,8 +245,8 @@ rrc_mac_config_req(
         UE_mac_inst[Mod_idP].scheduling_info.extendedPHR_r10 = (uint16_t)0;
       }
 #endif
-      UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_SF  = get_sf_periodicBSRTimer(UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer);
-      UE_mac_inst[Mod_idP].scheduling_info.retxBSR_SF     = get_sf_retxBSRTimer(UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer);
+      UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_SF  = MAC_UE_BSR_TIMER_NOT_RUNNING;
+      UE_mac_inst[Mod_idP].scheduling_info.retxBSR_SF     = MAC_UE_BSR_TIMER_NOT_RUNNING;
       UE_mac_inst[Mod_idP].BSR_reporting_active = 0;
 
       LOG_D(MAC,"[UE %d]: periodic BSR %d (SF), retx BSR %d (SF)\n",
