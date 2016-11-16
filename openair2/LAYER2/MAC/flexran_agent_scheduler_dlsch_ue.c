@@ -353,7 +353,7 @@ flexran_schedule_ue_spec_default(mid_t   mod_id,
 	  header_len+=3;
 
 	  // Need to see if we have space for data from this channel
-	  if (dci_tbs - ta_len - header_len > 0) {
+	  if (dci_tbs - ta_len - header_len - sdu_length_total > 0) {
 	     LOG_D(MAC, "[TEST]Requested %d bytes from RLC buffer on channel %d during first call\n", dci_tbs-ta_len-header_len);
 	     //If we have space, we need to see how much data we can request at most (if any available)
 	     rlc_status = mac_rlc_status_ind(mod_id,
@@ -396,7 +396,7 @@ flexran_schedule_ue_spec_default(mid_t   mod_id,
 	       dl_data[num_ues_added]->n_rlc_pdu++;
 	       channels_added++;
 	       //Set this to the max value that we might request
-	       sdu_length_total = data_to_request;
+	       sdu_length_total += data_to_request;
 	     } else {
 	       //Take back the assumption of a header for this channel
 	       header_len -= 3;
