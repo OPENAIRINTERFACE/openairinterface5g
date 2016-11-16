@@ -1147,8 +1147,6 @@ unsigned char generate_ulsch_header(uint8_t *mac_header,
     *(ce_ptr)     = (long_bsr->Buffer_size0 << 2) | ((long_bsr->Buffer_size1 & 0x30) >> 4);
     *(ce_ptr + 1) = ((long_bsr->Buffer_size1 & 0x0F) << 4) | ((long_bsr->Buffer_size2 & 0x3C) >> 2);
     *(ce_ptr + 2) = ((long_bsr->Buffer_size2 & 0x03) << 2) | (long_bsr->Buffer_size3 & 0x3F);
-    /* Padding */
-    *(ce_ptr + 3) = 0;
     ce_ptr += BSR_LONG_SIZE;
 
     //    printf("(cont_res) : offset %d\n",ce_ptr-mac_header_control_elements);
@@ -1347,7 +1345,7 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
               bsr_ce_len = sizeof(BSR_SHORT); //1 byte
           }
           else{
-              bsr_ce_len = sizeof(BSR_LONG); //3 bytes
+              bsr_ce_len = BSR_LONG_SIZE; //3 bytes
           }
 
           bsr_header_len = 1;//sizeof(SCH_SUBHEADER_FIXED);
@@ -1601,7 +1599,7 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
     bsr_s = NULL;
     bsr_l = NULL ;
     //TO DO : compute padding or truncated BSR
-  } else if (bsr_ce_len == sizeof(BSR_LONG)) {
+  } else if (bsr_ce_len == BSR_LONG_SIZE) {
     bsr_s = NULL;
     bsr_l->Buffer_size0 = UE_mac_inst[module_idP].scheduling_info.BSR[LCGID0];
     bsr_l->Buffer_size1 = UE_mac_inst[module_idP].scheduling_info.BSR[LCGID1];
@@ -2194,7 +2192,7 @@ uint8_t get_bsr_len (module_id_t module_idP, uint8_t eNB_index,frame_t frameP,ui
     }
     if ( (pdu > buflen) && (rlc_status.bytes_in_buffer > 0 ) ) {
       num_lcid +=1;
-      bsr_len = (num_lcid >= 2 ) ? sizeof(BSR_LONG) :  sizeof(BSR_SHORT) ;
+      bsr_len = (num_lcid >= 2 ) ? BSR_LONG_SIZE :  sizeof(BSR_SHORT) ;
     }
     else if (rlc_status.bytes_in_buffer) {
         LOG_I(MAC,"pdu smaller than TBS! pdu=%d TBS=%d lcid=%d rlc buffer=%d bsr len=%d num lcid=%d\n",pdu,buflen,lcid,rlc_status.bytes_in_buffer,bsr_len, num_lcid);

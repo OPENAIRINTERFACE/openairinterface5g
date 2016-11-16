@@ -223,11 +223,10 @@ typedef struct {
 typedef BSR_SHORT BSR_TRUNCATED;
 /*!\brief  mac control element: long buffer status report for all logical channel group ID*/
 typedef struct {
-  uint32_t Buffer_size3:6;
-  uint32_t Buffer_size2:6;
-  uint32_t Buffer_size1:6;
-  uint32_t Buffer_size0:6;
-  uint32_t padding:8;
+  uint8_t Buffer_size3:6;
+  uint8_t Buffer_size2:6;
+  uint8_t Buffer_size1:6;
+  uint8_t Buffer_size0:6;
 } __attribute__((__packed__))BSR_LONG;
 
 #define BSR_LONG_SIZE  (sizeof(BSR_LONG))
