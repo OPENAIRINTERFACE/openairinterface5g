@@ -1510,7 +1510,9 @@ int generate_eNB_dlsch_params_from_dci(int frame,
     if ((rv2 == 1) && (mcs2 == 0)) {
       TB1_active=0;
     }
-
+#ifdef DEBUG_HARQ
+    printf("RV0 = %d, RV1 = %d. MCS0 = %d, MCS1=%d\n", rv1, rv2, mcs1, mcs2);
+#endif
     if (TB0_active && TB1_active && tbswap==0) {
       dlsch0=dlsch[0];
       dlsch1=dlsch[1];

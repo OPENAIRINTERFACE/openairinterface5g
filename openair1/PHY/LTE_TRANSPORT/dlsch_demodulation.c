@@ -149,6 +149,9 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       codeword_TB1      = dlsch_ue[1]->harq_processes[harq_pid]->codeword;
       dlsch0_harq       = dlsch_ue[codeword_TB0]->harq_processes[harq_pid];
       dlsch1_harq       = dlsch_ue[codeword_TB1]->harq_processes[harq_pid];
+#ifdef DEBUG_HARQ
+      printf("I am assuming both CW active\n");
+#endif
     }
      else if ((dlsch_ue[0]->harq_processes[harq_pid]->status == ACTIVE) &&
               (dlsch_ue[1]->harq_processes[harq_pid]->status != ACTIVE) ) {
