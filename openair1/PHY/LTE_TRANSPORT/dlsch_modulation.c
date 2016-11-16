@@ -156,7 +156,7 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
 
 
   uint8_t *x0 = NULL; //dlsch0_harq->e;
-  MIMO_mode_t mimo_mode = dlsch0_harq->mimo_mode;
+  MIMO_mode_t mimo_mode;//= dlsch0_harq->mimo_mode;
 
   int first_layer0; //= dlsch0_harq->first_layer;
   int Nlayers0; //  = dlsch0_harq->Nlayers;
@@ -1411,8 +1411,13 @@ int dlsch_modulation(int32_t **txdataF,
 
   nsymb = (frame_parms->Ncp==0) ? 14:12;
 
+  if (dlsch0 != NULL){
   amp_rho_a = (int16_t)(((int32_t)amp*dlsch0->sqrt_rho_a)>>13); //amp=512 in  full scale; dlsch0->sqrt_rho_a=8192in Q2.13, 1 in full scale
   amp_rho_b = (int16_t)(((int32_t)amp*dlsch0->sqrt_rho_b)>>13);
+  } else{
+  amp_rho_a = (int16_t)(((int32_t)amp*dlsch1->sqrt_rho_a)>>13);
+  amp_rho_b = (int16_t)(((int32_t)amp*dlsch1->sqrt_rho_b)>>13);
+  }
 
   if (mod_order0 == 4)
     for (i=0; i<4; i++) {
@@ -1445,6 +1450,7 @@ int dlsch_modulation(int32_t **txdataF,
   //  printf("num_pdcch_symbols %d, nsymb %d\n",num_pdcch_symbols,nsymb);
   for (l=num_pdcch_symbols; l<nsymb; l++) {
 
+  if (dlsch0 != NULL ) {
 #ifdef DEBUG_DLSCH_MODULATION
     printf("Generating DLSCH (harq_pid %d,mimo %d, pmi_alloc0 %lx, mod0 %d, mod1 %d, rb_alloc[0] %d) in %d\n",
             harq_pid,
@@ -1455,6 +1461,7 @@ int dlsch_modulation(int32_t **txdataF,
             rb_alloc[0],
             len);
 #endif
+  }
 
     if (frame_parms->Ncp==0) { // normal prefix
       if ((l==4)||(l==11))
@@ -1611,9 +1618,11 @@ int dlsch_modulation(int32_t **txdataF,
         }
       }
 
-      if (dlsch0_harq->Nlayers>1) {
-        msg("Nlayers %d: re_offset %d, symbol %d offset %d\n",dlsch0_harq->Nlayers,re_offset,l,symbol_offset);
-        return(-1);
+     if (dlsch0) {
+        if (dlsch0_harq->Nlayers>1) {
+          msg("Nlayers %d: re_offset %d, symbol %d offset %d\n",dlsch0_harq->Nlayers,re_offset,l,symbol_offset);
+          return(-1);
+        }
       }
 
       if (dlsch1) {
@@ -1639,6 +1648,17 @@ int dlsch_modulation(int32_t **txdataF,
 
       if (rb_alloc_ind > 0) {
         //    printf("Allocated rb %d/symbol %d, skip_half %d, subframe_offset %d, symbol_offset %d, re_offset %d, jj %d\n",rb,l,skip_half,subframe_offset,symbol_offset,re_offset,jj);
+      if (dlsch0 != NULL) {
+        get_pmi_temp = get_pmi(frame_parms->N_RB_DL,
+                               dlsch0->harq_processes[harq_pid]->mimo_mode,
+                               dlsch0->harq_processes[harq_pid]->pmi_alloc,
+                               rb);
+      } else
+        get_pmi_temp = get_pmi(frame_parms->N_RB_DL,
+                               dlsch1->harq_processes[harq_pid]->mimo_mode,
+                               dlsch1->harq_processes[harq_pid]->pmi_alloc,
+                               rb);
+
 
       allocate_REs_in_RB(frame_parms,
                          txdataF,
@@ -1646,11 +1666,11 @@ int dlsch_modulation(int32_t **txdataF,
                          &jj2,
                          re_offset,
                          symbol_offset,
-                         dlsch0->harq_processes[harq_pid],
-                         (dlsch1==NULL) ? NULL : dlsch1->harq_processes[harq_pid],
+                         (dlsch0 == NULL) ? NULL : dlsch0->harq_processes[harq_pid],
+                         (dlsch1 == NULL) ? NULL : dlsch1->harq_processes[harq_pid],
                          pilots,
                          ((pilots) ? amp_rho_b : amp_rho_a),
-                         get_pmi(frame_parms->N_RB_DL,dlsch0->harq_processes[harq_pid]->mimo_mode,dlsch0->harq_processes[harq_pid]->pmi_alloc,rb),
+                         get_pmi_temp,
                          qam_table_s0,
                          qam_table_s1,
                          &re_allocated,
@@ -1672,7 +1692,11 @@ int dlsch_modulation(int32_t **txdataF,
   }
 
 #ifdef DEBUG_DLSCH_MODULATION
-  msg("generate_dlsch : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch0_harq->nb_rb,dlsch0_harq->rb_alloc,mod_order0,Nl0,2,0,subframe_offset));
+  if (dlsch0 != NULL){
+    msg("generate_dlsch : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch0_harq->nb_rb,dlsch0_harq->rb_alloc,mod_order0,Nl0,2,0,subframe_offset));
+  }else{
+    msg("generate_dlsch : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch1_harq->nb_rb,dlsch1_harq->rb_alloc,mod_order1,Nl1,2,0,subframe_offset));
+  }
 #endif
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_MODULATION, VCD_FUNCTION_OUT);

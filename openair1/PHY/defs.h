@@ -387,7 +387,7 @@ typedef struct PHY_VARS_eNB_s {
 #ifdef LOCALIZATION
   /// time state for localization
   time_stats_t localization_stats;
-#endif 
+#endif
 
   int32_t pucch1_stats_cnt[NUMBER_OF_UE_MAX][10];
   int32_t pucch1_stats[NUMBER_OF_UE_MAX][10*1024];

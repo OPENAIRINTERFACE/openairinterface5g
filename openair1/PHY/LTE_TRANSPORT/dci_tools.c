@@ -44,6 +44,7 @@
 #include "PHY/vars.h"
 #endif
 #include "assertions.h"
+//#define DEBUG_HARQ
 
 //#define DEBUG_DCI
 
@@ -1525,7 +1526,9 @@ int generate_eNB_dlsch_params_from_dci(int frame,
       dlsch1_harq->status = ACTIVE;
       dlsch0_harq->codeword=0;
       dlsch1_harq->codeword=1;
+#ifdef DEBUG_HARQ
       printf("\n ENB: BOTH ACTIVE\n");
+#endif
     }
     else if (TB0_active && TB1_active && tbswap==1) {
       dlsch0=dlsch[0];
@@ -1564,7 +1567,9 @@ int generate_eNB_dlsch_params_from_dci(int frame,
       dlsch1_harq->codeword = 0;
       dlsch0=NULL;
       dlsch0_harq = NULL;
+#ifdef DEBUG_HARQ
       printf("\n ENB: TB0 is deactivated, retransmit TB1 transmit in TM6\n");
+#endif
     }
 
     if (dlsch0 != NULL){
@@ -2800,8 +2805,15 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 #endif
 
   // compute DL power control parameters
+  if (dlsch0 != NULL){
   computeRhoA_eNB(pdsch_config_dedicated, dlsch[0],dlsch0_harq->dl_power_off, frame_parms->nb_antennas_tx_eNB);
   computeRhoB_eNB(pdsch_config_dedicated,&(frame_parms->pdsch_config_common),frame_parms->nb_antennas_tx_eNB,dlsch[0],dlsch0_harq->dl_power_off);
+}
+  if (dlsch1 != NULL){
+      computeRhoA_eNB(pdsch_config_dedicated, dlsch[1],dlsch1_harq->dl_power_off, frame_parms->nb_antennas_tx_eNB);
+  computeRhoB_eNB(pdsch_config_dedicated,&(frame_parms->pdsch_config_common),frame_parms->nb_antennas_tx_eNB,dlsch[1],dlsch1_harq->dl_power_off);
+  }
+
 
   return(0);
 }
@@ -4879,6 +4891,9 @@ int generate_ue_dlsch_params_from_dci(int frame,
     if ((rv2 == 1) && (mcs2 == 0)) {
       TB1_active=0;
     }
+#ifdef DEBUG_HARQ
+    printf("[DCI UE]: TB0 status %d , TB1 status %d\n", TB0_active, TB1_active);
+#endif
 
     //printf("RV TB0 = %d\n", rv1);
 
@@ -4898,7 +4913,9 @@ int generate_ue_dlsch_params_from_dci(int frame,
       dlsch1_harq->status = ACTIVE;
       dlsch0_harq->codeword=0;
       dlsch1_harq->codeword=1;
-      //printf("\n UE: BOTH ACTIVE\n");
+#ifdef DEBUG_HARQ
+      printf("[DCI UE]: BOTH ACTIVE\n");
+#endif
     }
     else if (TB0_active && TB1_active && tbswap==1) {
       dlsch0=dlsch[0];
@@ -4937,7 +4954,9 @@ int generate_ue_dlsch_params_from_dci(int frame,
       dlsch1_harq->codeword = 0;
       dlsch0=NULL;
       dlsch0_harq = NULL;
-      //printf("\n UE: TB0 is deactivated, retransmit TB1 transmit in TM6\n");
+#ifdef DEBUG_HARQ
+      printf("[DCI UE]: TB0 is deactivated, retransmit TB1 transmit in TM6\n");
+#endif
     }
 
 
@@ -4990,7 +5009,9 @@ int generate_ue_dlsch_params_from_dci(int frame,
         dlsch1_harq->rb_alloc_odd[1]= dlsch1_harq->rb_alloc_even[1];
         dlsch1_harq->rb_alloc_odd[2]= dlsch1_harq->rb_alloc_even[2];
         dlsch1_harq->rb_alloc_odd[3]= dlsch1_harq->rb_alloc_even[3];
-        dlsch1_harq->nb_rb = dlsch0_harq->nb_rb;
+        dlsch1_harq->nb_rb = conv_nprb(rah,
+                                       rballoc,
+                                       frame_parms->N_RB_DL);
       }
 
 
@@ -5010,6 +5031,9 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
     if (dlsch1_harq != NULL)
       dlsch1_harq->Nl = 1;
+#ifdef DEBUG_HARQ
+    printf ("[DCI UE] tpmi = %d\n", tpmi);
+#endif
 
 
     if ((dlsch0 != NULL) && (dlsch1 != NULL)){  //two CW active
@@ -5112,7 +5136,10 @@ int generate_ue_dlsch_params_from_dci(int frame,
           break;
         }
     }
-
+#ifdef DEBUG_HARQ
+    printf("[DCI UE] harq1 MIMO mode = %d\n", dlsch1_harq->mimo_mode);
+#endif
+    //printf(" UE DCI harq0 MIMO mode = %d\n", dlsch0_harq->mimo_mode);
     if ((frame_parms->mode1_flag == 1) && (dlsch0_harq != NULL))
       dlsch0_harq->mimo_mode   = SISO;
 
@@ -5196,6 +5223,12 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
           dlsch1->rnti = rnti;
     }
+#ifdef DEBUG_HARQ
+    if (dlsch0 != NULL)
+      printf("[DCI UE] dlsch0_harq status = %d, dlsch1_harq status = %d\n", dlsch0_harq->status, dlsch1_harq->status);
+    else
+      printf("[DCI UE] dlsch1_harq status = %d\n", dlsch1_harq->status);
+#endif
 
    break;
 
@@ -5869,11 +5902,19 @@ int generate_ue_dlsch_params_from_dci(int frame,
   }
 
 #endif
-  dlsch[0]->active=1;
+  //dlsch[0]->active=1;
 
   // compute DL power control parameters
-  computeRhoA_UE(pdsch_config_dedicated, dlsch[0],dlsch0_harq->dl_power_off, frame_parms->nb_antennas_tx_eNB);
-  computeRhoB_UE(pdsch_config_dedicated,&(frame_parms->pdsch_config_common),frame_parms->nb_antennas_tx_eNB,dlsch[0],dlsch0_harq->dl_power_off);
+  if (dlsch0_harq != NULL){
+    computeRhoA_UE(pdsch_config_dedicated, dlsch[0],dlsch0_harq->dl_power_off, frame_parms->nb_antennas_tx_eNB);
+    computeRhoB_UE(pdsch_config_dedicated,&(frame_parms->pdsch_config_common),frame_parms->nb_antennas_tx_eNB,dlsch[0],dlsch0_harq->dl_power_off);
+  }
+
+  if (dlsch1_harq != NULL) {
+    computeRhoA_UE(pdsch_config_dedicated, dlsch[1],dlsch1_harq->dl_power_off, frame_parms->nb_antennas_tx_eNB);
+    computeRhoB_UE(pdsch_config_dedicated,&(frame_parms->pdsch_config_common),frame_parms->nb_antennas_tx_eNB,dlsch[1],dlsch1_harq->dl_power_off);
+  }
+
 
   return(0);
 }

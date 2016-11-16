@@ -793,7 +793,7 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) accessed via \c harq_pid
   /// - second index: ? [0..7] (hard coded) accessed via \c round
   /// - third index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - fourth index: ? [0..168*N_RB_DL[ 
+  /// - fourth index: ? [0..168*N_RB_DL[
   int32_t **rxdataF_comp1[8][8];
   /// \brief Downlink channel estimates extracted in PRBS.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
