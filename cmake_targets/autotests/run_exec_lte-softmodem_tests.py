@@ -313,7 +313,7 @@ def SSHSessionWrapper(machine, username, key_file, password, logdir_remote, logd
 # \param CleanUpAluLteBox program to terminate AlU Bell Labs LTE Box
 # \param ExmimoRfStop String to stop EXMIMO card (specified in test_case_list.xml)
 def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop, logdir, logdirOAI5GRepo):
-  cmd = 'sudo -E killall -9 -q -r ' + programList
+  cmd = 'sudo -E killall -s INT -q -r ' + programList + ' ; sleep 5 ; sudo -E killall -9 -q -r ' + programList
   result = oai.send(cmd, True)
   print "Killing old programs..." + result
   programArray = programList.split()

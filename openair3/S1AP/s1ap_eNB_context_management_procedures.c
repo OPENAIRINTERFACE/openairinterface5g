@@ -26,7 +26,14 @@
   Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
 
  *******************************************************************************/
-
+/*! \file s1ap_eNB_context_management_procedures.c
+ * \brief S1AP context management procedures 
+ * \author  S. Roux and Navid Nikaein 
+ * \date 2010 - 2015
+ * \email: navid.nikaein@eurecom.fr
+ * \version 1.0
+ * @ingroup _s1ap
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>

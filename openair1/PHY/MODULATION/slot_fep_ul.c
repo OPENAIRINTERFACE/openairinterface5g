@@ -50,6 +50,10 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 
   void (*dft)(int16_t *,int16_t *, int);
 
+  int tmp_dft_in[2048] __attribute__ ((aligned (32)));  // This is for misalignment issues for 6 and 15 PRBs
+  unsigned int frame_length_samples = frame_parms->samples_per_tti * 10;
+  unsigned int rx_offset;
+
   switch (frame_parms->ofdm_symbol_size) {
   case 128:
     dft = dft128;
@@ -103,28 +107,37 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 
   for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-
+    rx_offset = slot_offset +nb_prefix_samples0;
     if (l==0) {
 
-      dft(
-#ifndef OFDMA_ULSCH
-        (int16_t *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][slot_offset +
-            nb_prefix_samples0],
-#else
-        (int16_t *)&eNB_common_vars->rxdata[eNB_id][aa][((frame_parms->samples_per_tti>>1)*Ns) +
-            nb_prefix_samples0],
-#endif
-        (int16_t *)&eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],1);
+      dft( (int16_t *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][rx_offset],
+           (int16_t *)&eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],
+           1
+         );
     } else {
-      dft(
-#ifndef OFDMA_ULSCH
-        (short *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][slot_offset +
-#else
-        (short *)&eNB_common_vars->rxdata[eNB_id][aa][((frame_parms->samples_per_tti>>1)*Ns) +
-#endif
-            (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) +
-            (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1)],
-        (short*)&eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],1);
+      rx_offset += (frame_parms->ofdm_symbol_size+nb_prefix_samples)*l;
+      if(rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
+      {
+        memcpy((void *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][frame_length_samples],
+               (void *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][0],
+               frame_parms->ofdm_symbol_size*sizeof(int));
+      }
+
+      if( (rx_offset & 7) != 0){
+        memcpy((void *)&tmp_dft_in,
+        		(void *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][(rx_offset % frame_length_samples)],
+				frame_parms->ofdm_symbol_size*sizeof(int));
+        dft( (short *) tmp_dft_in,
+             (short*)  &eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],
+             1
+           );
+      }
+      else{
+      dft( (short *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][rx_offset],
+           (short*)&eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],
+           1
+         );
+      }
     }
   }
 

@@ -75,7 +75,8 @@ public_mem_block(void         check_mem_area (void);)
 private_mem_block(void        check_free_mem_block (mem_block_t * leP);)
 #    endif
 #ifdef USER_MODE
-#    define MEM_SCALE /*MAX_RG */ MAX_MOBILES_PER_ENB
+//#    define MEM_SCALE MAX_MOBILES_PER_ENB*NB_RB_MAX
+#    define MEM_SCALE MAX_MOBILES_PER_ENB
 #else
 #    ifdef NODE_RG
 #        define MEM_SCALE 2
