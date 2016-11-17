@@ -131,18 +131,8 @@ void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index) {
  */
 int trx_lms_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) {
 
- /* double gv = openair0_cfg[0].rx_gain[0] - openair0_cfg[0].rx_gain_offset[0];
-
-  if (gv > 31) {
-    printf("RX Gain 0 too high, reduce by %f dB\n",gv-31);
-    gv = 31;
-  }
-  if (gv < 0) {
-    printf("RX Gain 0 too low, increase by %f dB\n",-gv);
-    gv = 0;
-  }
-  printf("[LMS] Setting 7002M G_PGA_RBB to %d\n", (uint16_t)gv);
-  LMS_WriteParam(lms_device,LMS7param(G_PGA_RBB),(uint16_t)gv);*/
+  LMS_SetNormalizedGain(lms_device, LMS_CH_TX, 0, openair0_cfg[0].tx_gain[0]/100.0);
+  LMS_SetNormalizedGain(lms_device, LMS_CH_RX, 0, openair0_cfg[0].rx_gain[0]/openair0_cfg[0].rx_gain_offset[0]);
 
   return(0);
 }
@@ -209,10 +199,8 @@ int trx_lms_start(openair0_device *device){
     LMS_SetAntenna(lms_device, LMS_CH_RX, 0, 3);
     LMS_SetAntenna(lms_device, LMS_CH_TX, 0, 2);
 
-    trx_lms_set_gains(device, device->openair0_cfg);
-    /*LMS_SetNormalizedGain(lms_device, LMS_CH_TX, 0, 0.175);
-    LMS_SetNormalizedGain(lms_device, LMS_CH_RX, 0, 0.65);*/
 
+    
     for (int i = 0; i< device->openair0_cfg->rx_num_channels; i++)
     {
         if (LMS_SetLPFBW(lms_device,LMS_CH_RX,i,device->openair0_cfg->rx_bw)!=0)
@@ -239,6 +227,9 @@ int trx_lms_start(openair0_device *device){
     tx_stream.throughputVsLatency = 0.1;
     tx_stream.dataFmt = lms_stream_t::LMS_FMT_I12;
     tx_stream.isTx = true;
+
+    trx_lms_set_gains(device, device->openair0_cfg);
+
     if (LMS_SetupStream(lms_device, &tx_stream)!=0)
         printf("TX stream setup failed %s\n",LMS_GetLastErrorMessage());
 
