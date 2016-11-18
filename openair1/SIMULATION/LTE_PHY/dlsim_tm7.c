@@ -2830,12 +2830,12 @@ PMI_FEEDBACK:
  	      } 
 
 */
-            do_OFDM_mod_l(&eNB->common_vars,
+            do_OFDM_mod_symbol(&eNB->common_vars,
                           eNB_id,
                           (subframe*2),
                           &eNB->frame_parms);
 
-            do_OFDM_mod_l(&eNB->common_vars,
+            do_OFDM_mod_symbol(&eNB->common_vars,
                           eNB_id,
                           (subframe*2)+1,
                           &eNB->frame_parms);

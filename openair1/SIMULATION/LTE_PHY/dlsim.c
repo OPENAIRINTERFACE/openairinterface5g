@@ -403,7 +403,8 @@ void fill_DCI(PHY_VARS_eNB *eNB,
                                              SI_RNTI,
                                              0,
                                              P_RNTI,
-                                             eNB->UE_stats[0].DL_pmi_single);
+                                             eNB->UE_stats[0].DL_pmi_single,
+					     transmission_mode>=7?transmission_mode:0);
 
           *num_dci = *num_dci+1;
           *num_ue_spec_dci = *num_ue_spec_dci+1;
@@ -543,7 +544,8 @@ void fill_DCI(PHY_VARS_eNB *eNB,
                                              SI_RNTI,
                                              0,
                                              P_RNTI,
-                                             eNB->UE_stats[0].DL_pmi_single);
+                                             eNB->UE_stats[0].DL_pmi_single,
+					     transmission_mode>=7?transmission_mode:0);
 
           *num_common_dci=*num_common_dci+1;
           *num_dci = *num_dci + 1;
@@ -710,7 +712,8 @@ void fill_DCI(PHY_VARS_eNB *eNB,
                                              SI_RNTI,
                                              0,
                                              P_RNTI,
-                                             eNB->UE_stats[0].DL_pmi_single);
+                                             eNB->UE_stats[0].DL_pmi_single,
+					     transmission_mode>=7?transmission_mode:0);
 
           *num_dci = *num_dci + 1;
           *num_ue_spec_dci = *num_ue_spec_dci + 1;
@@ -850,7 +853,8 @@ void fill_DCI(PHY_VARS_eNB *eNB,
                                              SI_RNTI,
                                              0,
                                              P_RNTI,
-                                             eNB->UE_stats[0].DL_pmi_single);
+                                             eNB->UE_stats[0].DL_pmi_single,
+					     transmission_mode>=7?transmission_mode:0);
 
           *num_common_dci = *num_common_dci + 1;
           *num_dci = *num_dci + 1;
@@ -1018,7 +1022,8 @@ void fill_DCI(PHY_VARS_eNB *eNB,
                                              SI_RNTI,
                                              0,
                                              P_RNTI,
-                                             eNB->UE_stats[0].DL_pmi_single);
+                                             eNB->UE_stats[0].DL_pmi_single,
+					     transmission_mode>=7?transmission_mode:0);
 
           *num_dci = *num_dci + 1;
           *num_ue_spec_dci = *num_ue_spec_dci + 1;
@@ -1158,7 +1163,8 @@ void fill_DCI(PHY_VARS_eNB *eNB,
                                              SI_RNTI,
                                              0,
                                              P_RNTI,
-                                             eNB->UE_stats[0].DL_pmi_single);
+                                             eNB->UE_stats[0].DL_pmi_single,
+					     transmission_mode>=7?transmission_mode:0);
 
           *num_common_dci = *num_common_dci + 1;
           *num_dci = *num_dci + 1;
@@ -1187,7 +1193,8 @@ void fill_DCI(PHY_VARS_eNB *eNB,
                                            SI_RNTI,
                                            0,
                                            P_RNTI,
-                                           eNB->UE_stats[k].DL_pmi_single);
+                                           eNB->UE_stats[k].DL_pmi_single,
+					   transmission_mode>=7?transmission_mode:0);
 
         dump_dci(&eNB->frame_parms,&dci_alloc[*num_dci]);
         *num_ue_spec_dci = *num_ue_spec_dci + 1;
@@ -1762,7 +1769,8 @@ int main(int argc, char **argv)
     printf("dual_stream_UE=%d\n", dual_stream_UE);
   }
 
-  lte_param_init(n_tx,
+  lte_param_init(transmission_mode==1?1:2,
+		 n_tx,
 		 n_rx,
 		 transmission_mode,
 		 extended_prefix_flag,
@@ -2042,7 +2050,7 @@ int main(int argc, char **argv)
   for (k=0; k<n_users; k++) {
     // Create transport channel structures for 2 transport blocks (MIMO)
     for (i=0; i<2; i++) {
-      eNB->dlsch[k][i] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0);
+      eNB->dlsch[k][i] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0,&eNB->frame_parms);
 
       if (!eNB->dlsch[k][i]) {
         printf("Can't get eNB dlsch structures\n");
@@ -2065,7 +2073,7 @@ int main(int argc, char **argv)
   }
 
   // structure for SIC at UE
-  UE->dlsch_eNB[0] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0);
+  UE->dlsch_eNB[0] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0,&eNB->frame_parms);
 
   if (DLSCH_alloc_pdu2_1E[0].tpmi == 5) {
 
@@ -2159,7 +2167,9 @@ int main(int argc, char **argv)
                                   get_Qm(eNB->dlsch[0][0]->harq_processes[0]->mcs),
                                   eNB->dlsch[0][0]->harq_processes[0]->Nl,
                                   num_pdcch_symbols,
-                                  0,subframe);
+                                  0,
+				  subframe,
+				  transmission_mode>=7?transmission_mode:0);
 
   uncoded_ber_bit = (short*) malloc(sizeof(short)*coded_bits_per_codeword);
   printf("uncoded_ber_bit=%p\n",uncoded_ber_bit);
