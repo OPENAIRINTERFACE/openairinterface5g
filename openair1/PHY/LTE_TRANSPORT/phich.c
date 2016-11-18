@@ -1475,6 +1475,14 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
               ulsch[UE_id]->harq_processes[harq_pid]->previous_first_rb,
               ulsch[UE_id]->harq_processes[harq_pid]->dci_alloc);
 
+        T(T_ENB_PHY_PHICH, T_INT(eNB->Mod_id), T_INT(proc->frame_tx), T_INT(subframe),
+          T_INT(UE_id), T_INT(ulsch[UE_id]->rnti), T_INT(harq_pid),
+          T_INT(Ngroup_PHICH), T_INT(NSF_PHICH),
+          T_INT(ngroup_PHICH), T_INT(nseq_PHICH),
+          T_INT(ulsch[UE_id]->harq_processes[harq_pid]->phich_ACK),
+          T_INT(ulsch[UE_id]->harq_processes[harq_pid]->previous_first_rb),
+          T_INT(ulsch[UE_id]->harq_processes[harq_pid]->previous_n_DMRS));
+
         if (ulsch[UE_id]->Msg3_active == 1) {
           LOG_D(PHY,"[eNB %d][PUSCH %d][RAPROC] Frame %d, subframe %d: Generating Msg3 PHICH for UE %d, ngroup_PHICH %d/%d, nseq_PHICH %d : HI %d, first_rb %d\n",
                 eNB->Mod_id,harq_pid,proc->frame_tx,subframe,

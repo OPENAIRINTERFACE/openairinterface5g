@@ -61,6 +61,10 @@ ID = ENB_PHY_PUCCH_1_ENERGY
     DESC = eNodeB PUCCH 1 energy and threshold
     GROUP = ALL:PHY:GRAPHIC:HEAVY:ENB
     FORMAT = int,eNB_ID : int,UE_ID : int,frame : int,subframe : int,energy : int,threshold
+ID = ENB_PHY_PHICH
+    DESC = eNodeB PHICH
+    GROUP = ALL:PHY:ENB
+    FORMAT = int,eNB_ID : int,frame : int,subframe : int,UE_id : int,rnti : int,harq_pid : int,NGROUP : int,NSF : int,ngroup : int,nseq : int,ACK : int,first_rb : int,n_DMRS
 
 #MAC logs
 ID = ENB_MAC_UE_DL_SDU
