@@ -486,7 +486,7 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
 
 #endif
 
-  if (frame_length > 6143) {
+  if (frame_length > 6144) {
     LOG_E(PHY,"compute_beta: frame_length %d\n",frame_length);
     return;
   }
@@ -972,6 +972,11 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
   } else
     n2 = n;
 
+   if(n2<256)
+    {
+        printf("phy_threegpplte_turbo_decoder8 : frame length < 256\n");
+        return 255;
+    }
 
   for (iind=0; iind < 188 && f1f2mat[iind].nb_bits != n; iind++);
 

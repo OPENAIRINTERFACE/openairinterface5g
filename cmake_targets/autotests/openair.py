@@ -75,7 +75,7 @@ class openair(core):
         return (stdout, stderr)
 
     def connect(self, username, password, prompt='PEXPECT_OAI'):
-     max_retries=100
+     max_retries=10
      i=0
      while i <= max_retries:  
         self.prompt1 = prompt
@@ -97,9 +97,9 @@ class openair(core):
             # need to look for twice the string of the prompt
             self.oai.prompt()
             self.oai.prompt()
-            self.oai.sendline('uptime')
-            self.oai.prompt()
-            print self.oai.before
+#            self.oai.sendline('uptime')
+#            self.oai.prompt()
+#           print self.oai.before
             break
         except Exception, e:
             error=''
@@ -171,7 +171,7 @@ class openair(core):
                sys.exit(1)
 
     def disconnect(self):
-        print 'disconnecting the ssh connection to ' + self.address + '\n'
+#        print 'disconnecting the ssh connection to ' + self.address + '\n'
         self.oai.send('exit')
 #        self.cancel()
 

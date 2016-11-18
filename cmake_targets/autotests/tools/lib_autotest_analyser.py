@@ -41,7 +41,7 @@ from jinja2 import Environment, FileSystemLoader
 PATH = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_ENVIRONMENT = Environment(
     autoescape=False,
-    loader=FileSystemLoader(os.path.join(PATH, 'templates')),
+    loader=FileSystemLoader(os.path.join(PATH, '../templates')),
     trim_blocks=False)
 
 
@@ -101,6 +101,129 @@ def do_extract_metrics(args):
 			'metric_mean' 		: mean,
 			'metric_median' 	: median,
 			}
+	return(ret)
+
+
+def do_extract_metrics_new(args):
+
+#	print ""
+#	print "do_extract_metrics ... "
+
+	fname 	= args['file']
+	metric 	= args['metric']
+	print(fname)
+	print 'metric id = ' + metric['id']
+	print 'metric regex = ' + metric['regex']
+
+
+
+	count 		= 0
+	mmin 		= 0
+	mmin_index 	= 0
+	mmax  		= 0
+	mmax_index 	= 0
+	mean 		= 0
+	median 		= 0
+	
+	toto = [('id', 'S20'), ('metric', np.float), ('frame', np.int)]
+	print toto
+
+
+	np_format = []
+
+	for x in range(0, metric['nb_metric']):
+	 	np_format.append( ('id'+str(x), 'S20') )
+	 	np_format.append( ('metric'+str(x), np.float) )
+	 	np_format.append( ('uom'+str(x), 'S20') )
+	np_format.append( ('frame', np.int)) 
+
+	print np_format
+
+	output = np.fromregex(fname,metric['regex'], np_format)
+	print output
+	count =  output['frame'].size
+	print count
+	if count > 0:
+
+
+		fontP = FontProperties()
+		fontP.set_size('small')
+
+		fig = plt.figure(1)
+		plt.figure(figsize=(10,10))
+
+		plot_xmax = np.amax(output['frame'])+np.amin(output['frame'])
+
+		for x in range(0, metric['nb_metric']):	
+
+			metric_name = output['id'+str(x)][0]
+			metric_uom = output['uom'+str(x)][0]
+
+			mmin 	= np.amin(output['metric'+str(x)])
+			mmax 	= np.amax(output['metric'+str(x)])
+			mmean 	= np.mean(output['metric'+str(x)])
+			mmedian = np.median(output['metric'+str(x)])
+
+			plot_loc = 100*metric['nb_metric']+10+x+1
+
+			sbplt = plt.subplot(plot_loc)
+			sbplt.plot(output['frame'], output['metric'+str(x)], color='b' )
+			sbplt.set_title( metric_name+' ('+metric_uom+')')
+			if mmin < 0:
+				sbplot_ymin=mmin+mmin/10
+			else:
+				sbplot_ymin=0
+			sbplt.set_ylim(ymin=sbplot_ymin)	
+			if mmax > 0:
+				sbplot_ymax=mmax+mmax/10
+			else:
+				sbplot_ymax=0
+			sbplt.set_ylim(ymax=sbplot_ymax)
+
+			sbplt.set_xlim(xmax=plot_xmax)
+			sbplt.set_xlim(xmin=0)
+			text='min: '+str(mmin)+'\nmax: '+str(mmax)+'\nmean: '+str(mmean)+'\nmedian: '+str(mmedian)
+			sbplt.text( plot_xmax+10,sbplot_ymin,text)
+			sbplt.set_xlabel('frame')
+			sbplt.set_ylabel(metric_name)
+
+		plt.tight_layout()
+
+		fname = "toto.png"
+
+#		lgd = plt.legend(prop=fontP, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+		mng = plt.get_current_fig_manager()
+		plt.savefig(fname, bbox_inches='tight')
+		plt.close()
+
+
+
+
+
+
+
+
+
+		mmin  		= np.amin(output['metric']);
+		mmin_index 	= np.argmin(output['metric']);
+		mmax  		= np.amax(output['metric']);
+		mmax_index 	= np.argmax(output['metric']); 			
+		mean 		= np.mean(output['metric']);
+		median 		= np.median(output['metric']);
+
+#		print ( ( (metric['min_limit'] > output['metric']).sum() / float(output['metric'].size) ) * 100 )
+
+	ret = {	'metric_count'		: count,
+		'metric_buf' 		: output,
+		
+
+		'metric_min' 		: mmin, 
+		'metric_min_index' 	: mmin_index,
+		'metric_max' 		: mmax,
+		'metric_max_index' 	: mmax_index,
+		'metric_mean' 		: mean,
+		'metric_median' 	: median,
+		}
 	return(ret)
 
 #
@@ -182,24 +305,30 @@ def do_img_metrics(metric_def, metric_data, fname):
 #		print output['metric'].size
 
 		plt.scatter(output['frame'], output['metric'], color='b', alpha=0.33, s = 1 , label=metric_def['id'])
-		plt.plot([0, output['frame'][metric_data['metric_count']-1]],[ metric_def['min_limit'],metric_def['min_limit']], 'r-', lw=2, label='min limit') # Red straight line
+		
+		if 'min_limit' in metric_def:
+			plt.plot([0, output['frame'][metric_data['metric_count']-1]],[ metric_def['min_limit'],metric_def['min_limit']], 'r-', lw=2, label='min limit') # Red straight line
 
-		plt.title('Physical throughput ('+metric_def['unit_of_meas']+')')
+		plt.title(metric_def['id'] +' ('+metric_def['unit_of_meas']+')')
 		plt.xlabel('frame')
 		plt.ylabel(metric_def['id'])
 		
 		# Set graphic minimum Y axis
 		# -------------------------
-		if metric_data['metric_min'] == 0 :
-			plt.ylim(ymin=-metric_def['min_limit']/10)
+		if metric_data['metric_min'] < 0:
+			plt.ylim(ymin=metric_data['metric_min']+metric_data['metric_min']/10)
 		else :	
 			plt.ylim(ymin=0)
 
 		y_axis_max = 0
-		if metric_data['metric_max'] >  metric_def['min_limit']:
-			y_axis_max =metric_data['metric_max']+metric_data['metric_max']/10
+		if 'min_limit' in metric_def:
+			if metric_data['metric_max'] >  metric_def['min_limit']:
+				y_axis_max =metric_data['metric_max']+metric_data['metric_max']/10
+			else:
+				y_axis_max =metric_def['min_limit']+metric_def['min_limit']/10
 		else:
-			y_axis_max =metric_def['min_limit']+metric_def['min_limit']/10
+			y_axis_max =metric_data['metric_max']+metric_data['metric_max']/10
+
 
 		plt.ylim(ymax=y_axis_max)
 
@@ -218,9 +347,6 @@ def do_img_metrics(metric_def, metric_data, fname):
 
 
 def do_extract_traffic_metrics(args):
-
-	print ""
-	print "do_extract_traffic_metrics ... "
 
 	fname 	= args['file']
 
@@ -325,7 +451,8 @@ def do_img_traffic(traffic_data, fname):
 		ax1.set_xlim(xmax=np.amax(output['interval_stop']))
 		text='min: '+str(traffic_data['bw_min'])+'\nmax: '+str(traffic_data['bw_max'])+'\nmean: '+str(traffic_data['bw_mean'])+'\nmedian: '+str(traffic_data['bw_median'])
 		ax1.text( np.amax(output['interval_stop'])+10,0,text)
-
+		ax1.set_xlabel('time (s)')
+		ax1.set_ylabel(' ')
 
 		ax2=plt.subplot(312)
 		plt.plot(output['interval_stop'], output['jitter'], color='b' )
@@ -334,6 +461,8 @@ def do_img_traffic(traffic_data, fname):
 		ax2.set_ylim(ymin=-1)
 		text='min: '+str(traffic_data['jitter_min'])+'\nmax: '+str(traffic_data['jitter_max'])+'\nmean: '+str(traffic_data['jitter_mean'])+'\nmedian: '+str(traffic_data['jitter_median'])
 		ax2.text( np.amax(output['interval_stop'])+10,0,text)
+		ax2.set_xlabel('time (s)')
+		ax2.set_ylabel(' ')
 
 		ax3=plt.subplot(313)
 		plt.plot(output['interval_stop'], output['rate_lost'], color='b')
@@ -342,10 +471,11 @@ def do_img_traffic(traffic_data, fname):
 		ax3.set_ylim(ymin=-1)
 		text='min: '+str(traffic_data['rl_min'])+'\nmax: '+str(traffic_data['rl_max'])+'\nmean: '+str(traffic_data['rl_mean'])+'\nmedian: '+str(traffic_data['rl_median'])
 		ax3.text( np.amax(output['interval_stop'])+10,0,text)
-
+		ax3.set_xlabel('time (s)')
+		ax3.set_ylabel(' ')
 
 #		plt.title('Physical throughput ('+metric_def['unit_of_meas']+')')
-		plt.xlabel('time (s)')
+#		plt.xlabel('time (s)')
 #		plt.ylabel(metric_def['id'])
 		
 		# Set graphic minimum Y axis
@@ -365,7 +495,7 @@ def do_img_traffic(traffic_data, fname):
 
 		plt.tight_layout()
 
-		lgd = plt.legend(prop=fontP, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+#		lgd = plt.legend(prop=fontP, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 		mng = plt.get_current_fig_manager()
 		plt.savefig(fname, bbox_inches='tight')
 		plt.close()
@@ -395,7 +525,7 @@ def check_cell_synchro(fname):
 
 			m = re.search('AUTOTEST Cell Sync \:', line)
 			if m :
-				print line
+				#print line
 				return 'CELL_SYNCH'
 
 	return 'CELL_NOT_SYNCH'
@@ -407,7 +537,7 @@ def check_exec_seg_fault(fname):
 		for line in f:
 			m = re.search('Segmentation fault', line)
 			if m :
-				print line
+				#print line
 				return 'SEG_FAULT'
 
 	return 'NO_SEG_FAULT'
