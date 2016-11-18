@@ -91,7 +91,7 @@ void ue_init_mac(module_id_t module_idP)
   // default values as deined in 36.331 sec 9.2.2
   LOG_I(MAC,"[UE%d] Applying default macMainConfig\n",module_idP);
   //UE_mac_inst[module_idP].scheduling_info.macConfig=NULL;
-  UE_mac_inst[module_idP].scheduling_info.retxBSR_Timer= MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
+  UE_mac_inst[module_idP].scheduling_info.retxBSR_Timer= MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf10240;
   UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer=MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
   UE_mac_inst[module_idP].scheduling_info.periodicPHR_Timer = MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20;
   UE_mac_inst[module_idP].scheduling_info.prohibitPHR_Timer = MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20;
@@ -107,13 +107,14 @@ void ue_init_mac(module_id_t module_idP)
   UE_mac_inst[module_idP].scheduling_info.drx_config=NULL;
   UE_mac_inst[module_idP].scheduling_info.phr_config=NULL;
   // set init value 0xFFFF, make sure periodic timer and retx time counters are NOT active, after bsr transmission set the value configured by the NW.
-  UE_mac_inst[module_idP].scheduling_info.periodicBSR_SF  =  0xFFFF;
-  UE_mac_inst[module_idP].scheduling_info.retxBSR_SF     =  0xFFFF;
+  UE_mac_inst[module_idP].scheduling_info.periodicBSR_SF  =  MAC_UE_BSR_TIMER_NOT_RUNNING;
+  UE_mac_inst[module_idP].scheduling_info.retxBSR_SF     =  MAC_UE_BSR_TIMER_NOT_RUNNING;
   
   UE_mac_inst[module_idP].BSR_reporting_active[REGULAR_BSR]=0;
   UE_mac_inst[module_idP].BSR_reporting_active[PADDING_BSR]=0;
   UE_mac_inst[module_idP].BSR_reporting_active[PERIODIC_BSR]=0;
   UE_mac_inst[module_idP].retxBSRTimer_expires_flag = 0;
+  UE_mac_inst[module_idP].periodBSRTimer_expires_flag = 0;  
   UE_mac_inst[module_idP].scheduling_info.periodicPHR_SF =  get_sf_perioidicPHR_Timer(UE_mac_inst[module_idP].scheduling_info.periodicPHR_Timer);
   UE_mac_inst[module_idP].scheduling_info.prohibitPHR_SF =  get_sf_prohibitPHR_Timer(UE_mac_inst[module_idP].scheduling_info.prohibitPHR_Timer);
   UE_mac_inst[module_idP].scheduling_info.PathlossChange_db =  get_db_dl_PathlossChange(UE_mac_inst[module_idP].scheduling_info.PathlossChange);
@@ -320,6 +321,7 @@ uint32_t ue_get_SR(module_id_t module_idP,int CC_id,frame_t frameP,uint8_t eNB_i
     UE_mac_inst[module_idP].BSR_reporting_active[PADDING_BSR]=0;
     UE_mac_inst[module_idP].BSR_reporting_active[PERIODIC_BSR]=0;
     UE_mac_inst[module_idP].retxBSRTimer_expires_flag = 0;
+    UE_mac_inst[module_idP].periodBSRTimer_expires_flag = 0;  
     LOG_T(MAC,"[UE %d] Release all SRs \n", module_idP);
     return(0);
   }
@@ -1359,12 +1361,25 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
     num_sdus = 1;
     //update_bsr(module_idP, frameP, eNB_index, DCCH, UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]);
     //header_len +=2;
+    // update LCID remain buffer
     UE_mac_inst[module_idP].scheduling_info.LCID_status[DCCH] = LCID_EMPTY;
     if (rlc_status.bytes_in_buffer > sdu_lengths[0]) {
       UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[DCCH] = rlc_status.bytes_in_buffer-sdu_lengths[0];
     } else {
       UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[DCCH] = 0;
     }
+    // update LCGID buffer, in order to get right BSR value
+    if (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]] > sdu_lengths[0]) {
+      UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]] -= sdu_lengths[0];
+    } else {
+      UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]] = 0;
+      LOG_I(MAC, "[UE %d] Frame %d Subframe%d: WARNING Buffer occupancy =%d for LCGID%d is lower than data to transmit=%d for LCID%d\n",
+                   module_idP,frameP,subframe,
+                   UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]],
+                   UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH],
+                  rlc_status.bytes_in_buffer,DCCH);
+    }
+    
   } else {
     dcch_header_len=0;
     num_sdus = 0;
@@ -1408,7 +1423,11 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
     } else {
       UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[DCCH1] = 0;
     }
-    
+    if (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH1]] > sdu_lengths[num_sdus]) {
+      UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH1]] -= sdu_lengths[num_sdus];
+    } else {
+      UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH1]] = 0;
+    }
     num_sdus++;
   } else {
     dcch1_header_len =0;
@@ -1416,7 +1435,7 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
 
   dtch_header_len=0;
   dtch_header_len_last=0;
-  for (lcid=NB_RB_MAX-1; lcid>=DTCH ; lcid--){
+  for (lcid=MAX_NUM_LCID-1; lcid>=DTCH ; lcid--){
     dtch_header_len+=3; 
     dtch_header_len_last=3;
     
@@ -1469,7 +1488,13 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
 	         } else {
              UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] = 0;
 	         }
-
+           if (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] > sdu_lengths[num_sdus]) {
+             UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] -= sdu_lengths[num_sdus];
+           } else {
+             UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] = 0;
+           }
+           printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~rlc_status.bytes_in_buffer %d,sdu_lengths[num_sdus] %d buflen %d all_pdu_len %d\n"
+            ,rlc_status.bytes_in_buffer ,sdu_lengths[num_sdus],buflen, all_pdu_len);
            //UE_mac_inst[module_idP].ul_active = update_bsr(module_idP, frameP, eNB_index,lcid, UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]);
            num_sdus++;
        } else {
@@ -1481,13 +1506,13 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
     }
   }
 
-  lcgid= get_bsr_lcgid(module_idP);
+  lcgid= update_bsr_and_get_bsr_lcgid(module_idP);
 
   if (lcgid < 0 ) {
     bsr_s = NULL;
     bsr_l = NULL;
     bsr_t = NULL;
-  } else if ((lcgid ==MAX_NUM_LCGID) && (bsr_type == LONG_BSR)) {
+  } else if (bsr_type == LONG_BSR) {
     bsr_s = NULL;
     bsr_t = NULL;
     bsr_l->Buffer_size0 = UE_mac_inst[module_idP].scheduling_info.BSR[LCGID0];
@@ -1500,15 +1525,6 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
           UE_mac_inst[module_idP].scheduling_info.BSR[LCGID1],
           UE_mac_inst[module_idP].scheduling_info.BSR[LCGID2],
           UE_mac_inst[module_idP].scheduling_info.BSR[LCGID3]);
-    
-    UE_mac_inst[module_idP].scheduling_info.BSR_bytes[LCGID0] = 0;
-    UE_mac_inst[module_idP].scheduling_info.BSR_bytes[LCGID1] = 0;
-    UE_mac_inst[module_idP].scheduling_info.BSR_bytes[LCGID2] = 0;
-    UE_mac_inst[module_idP].scheduling_info.BSR_bytes[LCGID3] = 0;
-    UE_mac_inst[module_idP].scheduling_info.BSR[LCGID0] = 0;
-    UE_mac_inst[module_idP].scheduling_info.BSR[LCGID1] = 0;
-    UE_mac_inst[module_idP].scheduling_info.BSR[LCGID2] = 0;
-    UE_mac_inst[module_idP].scheduling_info.BSR[LCGID3] = 0;
   } else if (bsr_type == SHORT_BSR) {
     bsr_l = NULL;
     bsr_t = NULL;
@@ -1517,8 +1533,6 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
     
     LOG_I(MAC,"%%%%%%%%%%%%%%%%%%%%%%%%%%%%%[UE %d] Frame %d SubFrame %d,report SHORT BSR with level %d for LCGID %d\n",
           module_idP, frameP, subframe, UE_mac_inst[module_idP].scheduling_info.BSR[lcgid],lcgid);
-    UE_mac_inst[module_idP].scheduling_info.BSR_bytes[lcgid] = 0;
-    UE_mac_inst[module_idP].scheduling_info.BSR[lcgid] = 0;
   } else if (bsr_type == TRUNCATED_BSR) {
     bsr_l = NULL;
     bsr_s = NULL;
@@ -1527,8 +1541,6 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
     
     LOG_D(MAC,"[UE %d] Frame %d report SHORT BSR with level %d for LCGID %d\n",
           module_idP, frameP, UE_mac_inst[module_idP].scheduling_info.BSR[lcgid],lcgid);
-    UE_mac_inst[module_idP].scheduling_info.BSR_bytes[lcgid] = 0;
-    UE_mac_inst[module_idP].scheduling_info.BSR[lcgid] = 0;
   } else {
     bsr_s = NULL;
     bsr_l = NULL;
@@ -1620,6 +1632,7 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
     UE_mac_inst[module_idP].scheduling_info.periodicBSR_SF  =  get_sf_periodicBSRTimer(UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer);
     UE_mac_inst[module_idP].scheduling_info.retxBSR_SF     =  get_sf_retxBSRTimer(UE_mac_inst[module_idP].scheduling_info.retxBSR_Timer);
     UE_mac_inst[module_idP].retxBSRTimer_expires_flag = 0;
+    UE_mac_inst[module_idP].periodBSRTimer_expires_flag = 0;  
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_OUT);
   stop_meas(&UE_mac_inst[module_idP].tx_ulsch_sdu);
@@ -1789,7 +1802,7 @@ ue_scheduler(
         /*
           periodicBSR-Timer expires, in which case the BSR is referred below to as "Periodic BSR".
         */
-        UE_mac_inst[module_idP].BSR_reporting_active[PERIODIC_BSR] = 1;
+        UE_mac_inst[module_idP].periodBSRTimer_expires_flag = 1;
         UE_mac_inst[module_idP].scheduling_info.periodicBSR_SF = periodicBSR_Timer_infinity_value;
     } else {
         UE_mac_inst[module_idP].scheduling_info.periodicBSR_SF--;
@@ -2057,16 +2070,18 @@ int cba_access(module_id_t module_idP,frame_t frameP,sub_frame_t subframe, uint8
 }
 #endif
 
-int get_bsr_lcgid (module_id_t module_idP)
+//AFTER transmission update BSR value, and get witch LCGID have BSR
+int update_bsr_and_get_bsr_lcgid (module_id_t module_idP)
 {
   int lcgid, lcgid_tmp=-1;
   int num_active_lcgid = 0;
 
   for (lcgid = 0 ; lcgid < MAX_NUM_LCGID; lcgid++) {
+    // update BSR value, then ue can reprot correct value
+    UE_mac_inst[module_idP].scheduling_info.BSR[lcgid] = locate_BsrIndexByBufferSize(BSR_TABLE, BSR_TABLE_SIZE, UE_mac_inst[module_idP].scheduling_info.BSR_bytes[lcgid]);
     if (UE_mac_inst[module_idP].scheduling_info.BSR[lcgid] > 0 ) {
       lcgid_tmp = lcgid;
       num_active_lcgid+=1;
-      printf("////////////////////////////////lcgid %d, BSR %d\n",lcgid,UE_mac_inst[module_idP].scheduling_info.BSR[lcgid]);
     }
   }
 
@@ -2087,12 +2102,12 @@ int get_bsr_type (module_id_t module_idP, uint8_t eNB_index,frame_t frameP,uint1
   mac_rlc_status_resp_t rlc_status;
   int long_bsr_size=sizeof(SCH_SUBHEADER_FIXED)+sizeof(BSR_LONG);
   int short_bsr_size=sizeof(SCH_SUBHEADER_FIXED)+sizeof(BSR_SHORT);
-  int bsr_group_id[MAX_NUM_LCGID];
-  int lcg_report_num=0;
+  int lcgid_have_bsr_report_flag[MAX_NUM_LCGID];
+  int num_lcg_id_with_data=0;
   int new_data_arrived_flag=0;
 
   for (lcgid=0; lcgid < MAX_NUM_LCGID; lcgid++ ) {
-    bsr_group_id[lcgid] = 0;
+    lcgid_have_bsr_report_flag[lcgid] = 0;
   }
   
   for (lcid=DCCH; lcid<NB_RB_MAX ; lcid++) {
@@ -2103,6 +2118,11 @@ int get_bsr_type (module_id_t module_idP, uint8_t eNB_index,frame_t frameP,uint1
       */
       if (UE_mac_inst[module_idP].retxBSRTimer_expires_flag == 1) {
         UE_mac_inst[module_idP].BSR_reporting_active[REGULAR_BSR] = 1;
+        printf("retxBsrTimer flag %d, periodBsrTimer %d, regular bsr trigger\n",UE_mac_inst[module_idP].retxBSRTimer_expires_flag, UE_mac_inst[module_idP].periodBSRTimer_expires_flag);
+      }
+      if (UE_mac_inst[module_idP].periodBSRTimer_expires_flag == 1) {
+        UE_mac_inst[module_idP].BSR_reporting_active[PERIODIC_BSR] = 1;
+        printf("retxBsrTimer flag %d, periodBsrTimer %d, period bsr trigger\n",UE_mac_inst[module_idP].retxBSRTimer_expires_flag, UE_mac_inst[module_idP].periodBSRTimer_expires_flag);
       }
       pdu += rlc_status.bytes_in_buffer + sizeof(SCH_SUBHEADER_SHORT);
       if (rlc_status.bytes_in_buffer > 128 ) { 
@@ -2113,42 +2133,45 @@ int get_bsr_type (module_id_t module_idP, uint8_t eNB_index,frame_t frameP,uint1
          which belong to any LCG and for which data is already available for transmission
       */
       if (rlc_status.bytes_in_buffer > UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid])  {
-        bsr_group_id[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] ++;
+        lcgid_have_bsr_report_flag[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] = 1;
         new_data_arrived_flag = 1;
-        UE_mac_inst[module_idP].BSR_reporting_active[REGULAR_BSR] = 1;
       }
     }
   }
 
-/*
   // one lcid buffer increased and all lcid buffer increased
   if ((new_data_arrived_flag == 1) && (pdu > UE_mac_inst[module_idP].scheduling_info.All_lcid_buffer_size_lastTTI)) {
     UE_mac_inst[module_idP].BSR_reporting_active[REGULAR_BSR] = 1;
   }
-*/
 
-  UE_mac_inst[module_idP].scheduling_info.All_lcid_buffer_size_lastTTI = pdu;
-
-  /* or there is no data available for transmission for any of the logical channels which belong to a LCG, 
-     in which case the BSR is referred below to as "Regular BSR"
-  if (pdu == 0) {
+  /* empty buffer, report 0 bsr reset eNB buffer
+  */
+  if ((pdu == 0) && (UE_mac_inst[module_idP].scheduling_info.All_lcid_buffer_size_lastTTI > 0)) {
     UE_mac_inst[module_idP].BSR_reporting_active[REGULAR_BSR] = 1;
   }
-  */
   
-  // computed how many LCG has data available for transmission
+  UE_mac_inst[module_idP].scheduling_info.All_lcid_buffer_size_lastTTI = pdu;
+
+  // computed how many LCGID has data available for transmission
   for (lcgid=0; lcgid < MAX_NUM_LCGID; lcgid++ ) {
-    if (bsr_group_id[lcgid] > 0) {
-      lcg_report_num ++;
-      printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@lcgid bsr %d > 0\n",lcgid);
+    if (lcgid_have_bsr_report_flag[lcgid] == 1) {
+      num_lcg_id_with_data ++;
+      printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@lcgid %d have bsr report\n",lcgid);
     }
   }
   /*
   UL resources are allocated and number of padding bits is equal to or larger than the size of the Buffer Status 
   Report MAC control element plus its subheader, in which case the BSR is referred below to as "Padding BSR"
-  */
   if ((pdu > 0) && ((pdu+long_bsr_size) <= buflen)) {
     UE_mac_inst[module_idP].BSR_reporting_active[PADDING_BSR] = 1;
+  }
+  */
+  
+  if ((pdu+long_bsr_size) <= buflen) {
+    UE_mac_inst[module_idP].BSR_reporting_active[PADDING_BSR] = 0;
+    UE_mac_inst[module_idP].BSR_reporting_active[REGULAR_BSR] = 0;
+    UE_mac_inst[module_idP].BSR_reporting_active[REGULAR_BSR] = 0;    
+    //printf("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&ping test\n");
   }
 
   /* For Regular and Periodic BSR
@@ -2157,7 +2180,7 @@ int get_bsr_type (module_id_t module_idP, uint8_t eNB_index,frame_t frameP,uint1
   */
   if ((UE_mac_inst[module_idP].BSR_reporting_active[REGULAR_BSR] == 1) 
     || (UE_mac_inst[module_idP].BSR_reporting_active[PERIODIC_BSR] == 1)) {
-    if (lcg_report_num > 1) {
+    if (num_lcg_id_with_data > 1) {
       bsr_type = LONG_BSR;
     } else {
       bsr_type = SHORT_BSR;
@@ -2172,13 +2195,13 @@ int get_bsr_type (module_id_t module_idP, uint8_t eNB_index,frame_t frameP,uint1
   */
   if (UE_mac_inst[module_idP].BSR_reporting_active[PADDING_BSR] == 1) {
     if (((pdu + short_bsr_size) <= buflen)&&(buflen<(pdu + long_bsr_size))) {
-        if (lcg_report_num > 1) {
+        if (num_lcg_id_with_data > 1) {
           bsr_type = TRUNCATED_BSR;
         } else {
           bsr_type = SHORT_BSR;
         }
     } else if ((pdu + long_bsr_size) <= buflen) {
-        if (lcg_report_num > 1) {
+        if (num_lcg_id_with_data > 1) {
           bsr_type = LONG_BSR;
         } else {
           bsr_type = SHORT_BSR;
@@ -2189,7 +2212,7 @@ int get_bsr_type (module_id_t module_idP, uint8_t eNB_index,frame_t frameP,uint1
 
   if ( bsr_type > 0 ) {
     LOG_I(MAC, "[UE %d] bsr_type %d (Transport Block Size %d, MAC pdu len %d) lcg_report_num %d\n",
-          module_idP, bsr_type, buflen, pdu, lcg_report_num);
+          module_idP, bsr_type, buflen, pdu, num_lcg_id_with_data);
   }
   
   return bsr_type;

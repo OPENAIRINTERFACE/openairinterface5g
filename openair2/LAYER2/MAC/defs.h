@@ -133,6 +133,8 @@
 /*!\brief maximum value for channel quality indicator */
 #define MAX_CQI_VALUE  15
 
+//if value equal oxFFFF means counters are NOT active
+#define MAC_UE_BSR_TIMER_NOT_RUNNING   (0xFFFF)
 
 #define LCID_EMPTY 0
 #define LCID_NOT_EMPTY 1
@@ -226,7 +228,6 @@ typedef struct {
   uint32_t Buffer_size2:6;
   uint32_t Buffer_size1:6;
   uint32_t Buffer_size0:6;
-  uint32_t padding:8;
 } __attribute__((__packed__))BSR_LONG;
 
 #define BSR_LONG_SIZE  (sizeof(BSR_LONG))
@@ -344,6 +345,7 @@ typedef enum {
   PADDING_BSR,
   PERIODIC_BSR
 } UE_FIRST_LEVEL_BSR_TYPE;
+
 
 /*! \brief Downlink SCH PDU Structure */
 typedef struct {
@@ -1096,7 +1098,9 @@ typedef struct {
   uint8_t BSR_reporting_active[BSR_TYPE_FIRST_LEVEL];
   /// retxBSR-Timer expires flag
   uint8_t retxBSRTimer_expires_flag;
-  
+  /// periodBSR-Timer expires flag
+  uint8_t periodBSRTimer_expires_flag;
+
   /// MBSFN_Subframe Configuration
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8]; // FIXME replace 8 by MAX_MBSFN_AREA?
   /// number of subframe allocation pattern available for MBSFN sync area

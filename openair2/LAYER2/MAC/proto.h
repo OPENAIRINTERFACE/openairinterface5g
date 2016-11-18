@@ -538,14 +538,14 @@ UE_L2_STATE_t ue_scheduler(
 */
 int cba_access(module_id_t module_idP,frame_t frameP,sub_frame_t subframe, uint8_t eNB_index,uint16_t buflen);
 
-/*! \fn  int get_bsr_lcgid (module_id_t module_idP);
+/*! \fn  int update_bsr_and_get_bsr_lcgid (module_id_t module_idP);
 \brief determine the lcgid for the bsr
 \param[in] Mod_id instance of the UE
 \param[out] lcgid
 */
-int get_bsr_lcgid (module_id_t module_idP);
+int update_bsr_and_get_bsr_lcgid (module_id_t module_idP);
 
-/*! \fn  int get_bsr_type (module_id_t module_idP,uint16_t bufflen);
+/*! \fn  int get_bsr_type (module_id_t module_idP, uint8_t eNB_index,frame_t frameP,uint16_t buflen);
 \brief determine whether the bsr is short or long assuming that the MAC pdu is built
 \param[in] Mod_id instance of the UE
 \param[in] bufflen size of phy transport block
