@@ -1,3 +1,8 @@
+The source code of openairinterface5g is distributed under OAI Public License V1.0. 
+For more details of the license, refer to LICENSE file in the same directory.
+
+However, the source code also contains third party software that is acknowledged here for reference.
+
 Credits for LFDS user space source code located in folder openair2/UTILS/LFDS/liblfds6.1.1/
 http://liblfds.org/.
 Extract from http://liblfds.org/pages/downloads_and_license.html:
