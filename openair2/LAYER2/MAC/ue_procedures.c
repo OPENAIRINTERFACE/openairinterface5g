@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file ue_procedures.c
  * \brief procedures related to UE
@@ -507,6 +499,41 @@ void ue_decode_si(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_i
   }
 }
 
+void ue_decode_p(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_index, void *pdu,uint16_t len)
+{
+
+  start_meas(&UE_mac_inst[module_idP].rx_p);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_IN);
+
+  LOG_D(MAC,"[UE %d] Frame %d Sending Paging message to RRC (LCID Id %d,len %d)\n",module_idP,frameP,PCCH,len);
+
+  mac_rrc_data_ind(module_idP,
+                   CC_id,
+                   frameP,0, // unknown subframe
+                   P_RNTI,
+                   PCCH,
+                   (uint8_t *)pdu,
+                   len,
+                   ENB_FLAG_NO,
+                   eNB_index,
+                   0);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_OUT);
+  stop_meas(&UE_mac_inst[module_idP].rx_p);
+  if (opt_enabled == 1) {
+    trace_pdu(0,
+	      (uint8_t *)pdu,
+	      len,
+	      module_idP,
+	      4,
+	      P_RNTI,
+	      UE_mac_inst[module_idP].subframe,
+	      0,
+	      0);
+    LOG_D(OPT,"[UE %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
+	    module_idP, frameP, CC_id, P_RNTI, len);
+  }
+}
+
 #ifdef Rel10
 unsigned char *parse_mch_header(unsigned char *mac_header,
                                 unsigned char *num_sdu,
@@ -710,7 +737,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
         // Check if the subframe is for MSI, MCCH or MTCHs and Set the correspoding flag to 1
         switch (subframe) {
         case 1:
-          if (mac_xface->lte_frame_parms->frame_type == FDD) {
+          if (mac_xface->frame_parms->frame_type == FDD) {
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF1) == MBSFN_FDD_SF1) {
               if (msi_pos == 1) {
                 msi_flag = 1;
@@ -728,7 +755,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 2:
-          if (mac_xface->lte_frame_parms->frame_type == FDD) {
+          if (mac_xface->frame_parms->frame_type == FDD) {
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF2) == MBSFN_FDD_SF2) {
               if (msi_pos == 2) {
                 msi_flag = 1;
@@ -746,7 +773,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 3:
-          if (mac_xface->lte_frame_parms->frame_type == TDD) { // TDD
+          if (mac_xface->frame_parms->frame_type == TDD) { // TDD
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF3) == MBSFN_TDD_SF3) {
               if (msi_pos == 1) {
                 msi_flag = 1;
@@ -777,7 +804,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 4:
-          if (mac_xface->lte_frame_parms->frame_type == TDD) {
+          if (mac_xface->frame_parms->frame_type == TDD) {
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF4) == MBSFN_TDD_SF4) {
               if (msi_pos == 2) {
                 msi_flag = 1;
@@ -795,7 +822,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 6:
-          if (mac_xface->lte_frame_parms->frame_type == FDD) {
+          if (mac_xface->frame_parms->frame_type == FDD) {
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF6) == MBSFN_FDD_SF6) {
               if (msi_pos == 4) {
                 msi_flag = 1;
@@ -813,7 +840,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 7:
-          if (mac_xface->lte_frame_parms->frame_type == TDD) { // TDD
+          if (mac_xface->frame_parms->frame_type == TDD) { // TDD
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF7) == MBSFN_TDD_SF7) {
               if (msi_pos == 3) {
                 msi_flag = 1;
@@ -844,7 +871,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 8:
-          if (mac_xface->lte_frame_parms->frame_type == TDD) { //TDD
+          if (mac_xface->frame_parms->frame_type == TDD) { //TDD
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF8) == MBSFN_TDD_SF8) {
               if (msi_pos == 4) {
                 msi_flag = 1;
@@ -875,7 +902,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 9:
-          if (mac_xface->lte_frame_parms->frame_type == TDD) {
+          if (mac_xface->frame_parms->frame_type == TDD) {
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF9) == MBSFN_TDD_SF9) {
               if (msi_pos == 5) {
                 msi_flag = 1;

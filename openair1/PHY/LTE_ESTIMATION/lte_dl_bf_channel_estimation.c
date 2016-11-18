@@ -57,8 +57,8 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   int32_t **dl_bf_ch_estimates;
   int uespec_pilot[300];
 
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
-  LTE_UE_DLSCH_t **dlsch_ue       = phy_vars_ue->dlsch_ue[eNB_id];
+  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->frame_parms;
+  LTE_UE_DLSCH_t **dlsch_ue       = phy_vars_ue->dlsch[eNB_id];
   LTE_DL_UE_HARQ_t *dlsch0_harq; 
 
   harq_pid    = dlsch_ue[0]->current_harq_pid; 
@@ -70,9 +70,9 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   else
     rballoc = dlsch0_harq->rb_alloc_even;
 
-  rxdataF = phy_vars_ue->lte_ue_common_vars.rxdataF;
+  rxdataF = phy_vars_ue->common_vars.rxdataF;
 
-  dl_bf_ch_estimates = phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates;
+  dl_bf_ch_estimates = phy_vars_ue->pdsch_vars[eNB_id]->dl_bf_ch_estimates;
   beamforming_mode   = phy_vars_ue->transmission_mode[eNB_id]>6 ? phy_vars_ue->transmission_mode[eNB_id] : 0;
 
   if (phy_vars_ue->high_speed_flag == 0) // use second channel estimate position for temporary storage
@@ -101,7 +101,7 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
     if ((frame_parms->Ncp==0 && (symbol==6 ||symbol ==12)) || (frame_parms->Ncp==1 && symbol==7))
       uespec_poffset = 2;
 
-    if (phy_vars_ue->lte_frame_parms.Ncp == 0) { // normal prefix
+    if (phy_vars_ue->frame_parms.Ncp == 0) { // normal prefix
       pilot0 = 3;
       pilot1 = 6;
       pilot2 = 9;

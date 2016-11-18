@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_TRANSPORT/sss.c
 * \brief Top-level routines for generating and decoding the secondary synchronization signal (SSS) V8.6 2009-03
@@ -90,7 +82,7 @@ int generate_sss(int32_t **txdataF,
   return(0);
 }
 
-int pss_ch_est(PHY_VARS_UE *phy_vars_ue,
+int pss_ch_est(PHY_VARS_UE *ue,
                int32_t pss_ext[4][72],
                int32_t sss_ext[4][72])
 {
@@ -98,9 +90,9 @@ int pss_ch_est(PHY_VARS_UE *phy_vars_ue,
   int16_t *pss;
   int16_t *pss_ext2,*sss_ext2,*sss_ext3,tmp_re,tmp_im,tmp_re2,tmp_im2;
   uint8_t aarx,i;
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
-  switch (phy_vars_ue->lte_ue_common_vars.eNb_id) {
+  switch (ue->common_vars.eNb_id) {
 
   case 0:
     pss = &primary_synch0[10];
@@ -154,7 +146,7 @@ int pss_ch_est(PHY_VARS_UE *phy_vars_ue,
 }
 
 
-int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
+int pss_sss_extract(PHY_VARS_UE *ue,
                     int32_t pss_ext[4][72],
                     int32_t sss_ext[4][72])
 {
@@ -165,12 +157,12 @@ int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
   uint8_t i,aarx;
   int32_t *pss_rxF,*pss_rxF_ext;
   int32_t *sss_rxF,*sss_rxF_ext;
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
   int rx_offset = frame_parms->ofdm_symbol_size-3*12;
   uint8_t pss_symb,sss_symb;
 
-  int32_t **rxdataF =  phy_vars_ue->lte_ue_common_vars.rxdataF;
+  int32_t **rxdataF =  ue->common_vars.rxdataF;
 
   if (frame_parms->frame_type == FDD) {
     pss_symb = 6-frame_parms->Ncp;
@@ -219,74 +211,74 @@ int16_t phase_re[7] = {16383, 25101, 30791, 32767, 30791, 25101, 16383};
 int16_t phase_im[7] = {-28378, -21063, -11208, 0, 11207, 21062, 28377};
 
 
-int rx_sss(PHY_VARS_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uint8_t *phase_max)
+int rx_sss(PHY_VARS_UE *ue,int32_t *tot_metric,uint8_t *flip_max,uint8_t *phase_max)
 {
 
   uint8_t i;
   int32_t pss_ext[4][72];
   int32_t sss0_ext[4][72],sss5_ext[4][72];
-  uint8_t Nid2 = phy_vars_ue->lte_ue_common_vars.eNb_id;
+  uint8_t Nid2 = ue->common_vars.eNb_id;
   uint8_t flip,phase;
   uint16_t Nid1;
   int16_t *sss0,*sss5;
-  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int32_t metric;
   int16_t *d0,*d5;
 
-  if (phy_vars_ue->lte_frame_parms.frame_type == FDD) {
+  if (frame_parms->frame_type == FDD) {
 #ifdef DEBUG_SSS
 
-    if (phy_vars_ue->lte_frame_parms.Ncp == NORMAL)
-      msg("[PHY][UE%d] Doing SSS for FDD Normal Prefix\n",phy_vars_ue->Mod_id);
+    if (frame_parms->Ncp == NORMAL)
+      msg("[PHY][UE%d] Doing SSS for FDD Normal Prefix\n",ue->Mod_id);
     else
-      msg("[PHY][UE%d] Doing SSS for FDD Extended Prefix\n",phy_vars_ue->Mod_id);
+      msg("[PHY][UE%d] Doing SSS for FDD Extended Prefix\n",ue->Mod_id);
 
 #endif
     // Do FFTs for SSS/PSS
     // SSS
-    slot_fep(phy_vars_ue,
+    slot_fep(ue,
              (frame_parms->symbols_per_tti/2)-2, // second to last symbol of
              0,                                  // slot 0
-             phy_vars_ue->rx_offset,
+             ue->rx_offset,
              0,
 	     1);
     // PSS
-    slot_fep(phy_vars_ue,
+    slot_fep(ue,
              (frame_parms->symbols_per_tti/2)-1, // last symbol of
              0,                                  // slot 0
-             phy_vars_ue->rx_offset,
+             ue->rx_offset,
              0,
 	     1);
   } else { // TDD
 #ifdef DEBUG_SSS
-    if (phy_vars_ue->lte_frame_parms.Ncp == NORMAL)
-      msg("[PHY][UE%d] Doing SSS for TDD Normal Prefix\n",phy_vars_ue->Mod_id);
+    if (ue->frame_parms->Ncp == NORMAL)
+      msg("[PHY][UE%d] Doing SSS for TDD Normal Prefix\n",ue->Mod_id);
     else
-      msg("[PHY][UE%d] Doing SSS for TDD Extended Prefix\n",phy_vars_ue->Mod_id);
+      msg("[PHY][UE%d] Doing SSS for TDD Extended Prefix\n",ue->Mod_id);
 
 #endif
     // SSS
-    slot_fep(phy_vars_ue,
+    slot_fep(ue,
              (frame_parms->symbols_per_tti>>1)-1,  // last symbol of
              1,                                    // slot 1
-             phy_vars_ue->rx_offset,
+             ue->rx_offset,
              0,
 	     1);
     // PSS
-    slot_fep(phy_vars_ue,
+    slot_fep(ue,
              2,                                   // symbol 2 of
              2,                                   // slot 2
-             phy_vars_ue->rx_offset,
+             ue->rx_offset,
              0,
 	     1);
   }
 
-  pss_sss_extract(phy_vars_ue,
+  pss_sss_extract(ue,
                   pss_ext,
                   sss0_ext);
   /*
-  write_output("rxsig0.m","rxs0",&phy_vars_ue->lte_ue_common_vars.rxdata[0][0],phy_vars_ue->lte_frame_parms.samples_per_tti,1,1);
-  write_output("rxdataF0.m","rxF0",&phy_vars_ue->lte_ue_common_vars.rxdataF[0][0],2*14*phy_vars_ue->lte_frame_parms.ofdm_symbol_size,2,1);
+  write_output("rxsig0.m","rxs0",&ue->common_vars.rxdata[0][0],ue->frame_parms.samples_per_tti,1,1);
+  write_output("rxdataF0.m","rxF0",&ue->common_vars.rxdataF[0][0],2*14*ue->frame_parms.ofdm_symbol_size,2,1);
   write_output("pss_ext0.m","pssext0",pss_ext,72,1,1);
   write_output("sss0_ext0.m","sss0ext0",sss0_ext,72,1,1);
   */
@@ -294,44 +286,44 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uint8_
   // get conjugated channel estimate from PSS (symbol 6), H* = R* \cdot PSS
   // and do channel estimation and compensation based on PSS
 
-  pss_ch_est(phy_vars_ue,
+  pss_ch_est(ue,
              pss_ext,
              sss0_ext);
 
   //  write_output("sss0_comp0.m","sss0comp0",sss0_ext,72,1,1);
 
-  if (phy_vars_ue->lte_frame_parms.frame_type == FDD) { // FDD
+  if (ue->frame_parms.frame_type == FDD) { // FDD
 
     // SSS
-    slot_fep(phy_vars_ue,
+    slot_fep(ue,
              (frame_parms->symbols_per_tti/2)-2,
              10,
-             phy_vars_ue->rx_offset,
+             ue->rx_offset,
              0,1);
     // PSS
-    slot_fep(phy_vars_ue,
+    slot_fep(ue,
              (frame_parms->symbols_per_tti/2)-1,
              10,
-             phy_vars_ue->rx_offset,
+             ue->rx_offset,
              0,1);
   } else { // TDD
     // SSS
-    slot_fep(phy_vars_ue,
+    slot_fep(ue,
              (frame_parms->symbols_per_tti>>1)-1,
              11,
-             phy_vars_ue->rx_offset,
+             ue->rx_offset,
              0,
 	     1);
     // PSS
-    slot_fep(phy_vars_ue,
+    slot_fep(ue,
              2,
              12,
-             phy_vars_ue->rx_offset,
+             ue->rx_offset,
              0,
 	     1);
   }
 
-  pss_sss_extract(phy_vars_ue,
+  pss_sss_extract(ue,
                   pss_ext,
                   sss5_ext);
 
@@ -339,7 +331,7 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uint8_
   // get conjugated channel estimate from PSS (symbol 6), H* = R* \cdot PSS
   // and do channel estimation and compensation based on PSS
 
-  pss_ch_est(phy_vars_ue,
+  pss_ch_est(ue,
              pss_ext,
              sss5_ext);
 
@@ -375,7 +367,7 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uint8_
         // if the current metric is better than the last save it
         if (metric > *tot_metric) {
           *tot_metric = metric;
-          phy_vars_ue->lte_frame_parms.Nid_cell = Nid2+(3*Nid1);
+          ue->frame_parms.Nid_cell = Nid2+(3*Nid1);
           *phase_max = phase;
           *flip_max=flip;
 #ifdef DEBUG_SSS

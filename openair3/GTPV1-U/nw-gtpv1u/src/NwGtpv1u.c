@@ -577,7 +577,7 @@ nwGtpv1uProcessGpdu( NwGtpv1uStackT *thiz,
       " G-PDU ltid %u size %u",
       tunnelEndPointKey.teid,
       gpduLen);
-    GTPU_ERROR("Received T-PDU over non-existent tunnel end-point '%x' from "NW_IPV4_ADDR"\n",
+    GTPU_DEBUG("Received T-PDU over non-existent tunnel end-point '%x' from "NW_IPV4_ADDR"\n",
                ntohl(msgHdr->teid), NW_IPV4_ADDR_FORMAT((peerIp)));
   }
 

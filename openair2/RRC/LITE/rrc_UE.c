@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /*! \file rrc_UE.c
  * \brief rrc procedures for UE
  * \author Navid Nikaein and Raymond Knopp
@@ -58,6 +51,7 @@
 #include "UL-DCCH-Message.h"
 #include "DL-DCCH-Message.h"
 #include "BCCH-DL-SCH-Message.h"
+#include "PCCH-Message.h"
 #ifdef Rel10
 #include "MCCH-Message.h"
 #endif
@@ -130,7 +124,7 @@ static void rrc_ue_generate_RRCConnectionSetupComplete( const protocol_ctxt_t* c
  */
 static void rrc_ue_generate_RRCConnectionReconfigurationComplete( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, const uint8_t Transaction_id );
 
-static void rrc_ue_generate_MeasurementReport( const protocol_ctxt_t* const ctxt_pP, uint8_t eNB_index );
+static void rrc_ue_generate_MeasurementReport(protocol_ctxt_t* const ctxt_pP, uint8_t eNB_index );
 
 static uint8_t check_trigger_meas_event(
   uint8_t module_idP,
@@ -2463,6 +2457,39 @@ int decode_BCCH_DLSCH_Message(
   return 0;
 }
 
+//-----------------------------------------------------------------------------
+int decode_PCCH_DLSCH_Message(
+  const protocol_ctxt_t* const ctxt_pP,
+  const uint8_t                eNB_index,
+  uint8_t*               const Sdu,
+  const uint8_t                Sdu_len)
+{
+  PCCH_Message_t *pcch_message = NULL;
+  int i;
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_IN );
+
+  asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
+                            &asn_DEF_PCCH_Message,
+                            (void **)&pcch_message,
+                            (const void *)Sdu,
+                            Sdu_len );
+
+  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+    LOG_E( RRC, "[UE %"PRIu8"] Failed to decode PCCH_MESSAGE (%zu bits)\n",
+           ctxt_pP->module_id,
+           dec_rval.consumed );
+    for (i=0;i<Sdu_len;i++)
+      printf("%02x ",Sdu[i]);
+    printf("\n");
+    // free the memory
+    SEQUENCE_free( &asn_DEF_PCCH_Message, (void*)pcch_message, 1 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_OUT );
+    return -1;
+  }
+
+  return(0);
+}
 
 //-----------------------------------------------------------------------------
 static int decode_SIB1( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, const uint8_t rsrq, const uint8_t rsrp )
@@ -3467,7 +3494,7 @@ void ue_meas_filtering( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_
           UE_rrc_inst[ctxt_pP->module_id].rsrp_db[eNB_offset] =
             (dB_fixed_times10(mac_xface->get_RSRP(ctxt_pP->module_id,0,eNB_offset))/10.0) -
             mac_xface->get_rx_total_gain_dB(ctxt_pP->module_id,0) -
-            dB_fixed(mac_xface->lte_frame_parms->N_RB_DL*12);
+            dB_fixed(mac_xface->frame_parms->N_RB_DL*12);
           UE_rrc_inst[ctxt_pP->module_id].rsrp_db_filtered[eNB_offset] =
             (1.0-a)*UE_rrc_inst[ctxt_pP->module_id].rsrp_db_filtered[eNB_offset] +
             a*UE_rrc_inst[ctxt_pP->module_id].rsrp_db[eNB_offset];
@@ -3478,7 +3505,7 @@ void ue_meas_filtering( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_
 
           LOG_D(RRC,"RSRP_dBm: %3.2f \n",(dB_fixed_times10(mac_xface->get_RSRP(ctxt_pP->module_id,0,eNB_offset))/10.0));
           LOG_D(RRC,"gain_loss_dB: %d \n",mac_xface->get_rx_total_gain_dB(ctxt_pP->module_id,0));
-          LOG_D(RRC,"gain_fixed_dB: %d \n",dB_fixed(mac_xface->lte_frame_parms->N_RB_DL*12));
+          LOG_D(RRC,"gain_fixed_dB: %d \n",dB_fixed(mac_xface->frame_parms->N_RB_DL*12));
           LOG_D(PHY,"[UE %d] Frame %d, RRC Measurements => rssi %3.1f dBm (digital: %3.1f dB)\n",
                 ctxt_pP->module_id,
                 ctxt_pP->frame,
@@ -3528,7 +3555,7 @@ void ue_meas_filtering( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_
 
 //Below routine implements Measurement Reporting procedure from 36.331 Section 5.5.5
 //-----------------------------------------------------------------------------
-static void rrc_ue_generate_MeasurementReport( const protocol_ctxt_t* const ctxt_pP, uint8_t eNB_index )
+static void rrc_ue_generate_MeasurementReport(protocol_ctxt_t* const ctxt_pP, uint8_t eNB_index )
 {
 
   uint8_t             buffer[32], size;
@@ -3609,7 +3636,7 @@ static void rrc_ue_generate_MeasurementReport( const protocol_ctxt_t* const ctxt
 
 // Measurement report triggering, described in 36.331 Section 5.5.4.1: called periodically
 //-----------------------------------------------------------------------------
-void ue_measurement_report_triggering( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index )
+void ue_measurement_report_triggering(protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index )
 {
   uint8_t               i,j;
   Hysteresis_t     hys;
@@ -3736,7 +3763,7 @@ static uint8_t check_trigger_meas_event(
   TimeToTrigger_t ttt )
 {
   uint8_t eNB_offset;
-  uint8_t currentCellIndex = mac_xface->lte_frame_parms->Nid_cell;
+  uint8_t currentCellIndex = mac_xface->frame_parms->Nid_cell;
   uint8_t tmp_offset;
 
   LOG_I(RRC,"[UE %d] ofn(%d) ocn(%d) hys(%d) ofs(%d) ocs(%d) a3_offset(%d) ttt(%d) rssi %3.1f\n",
@@ -3769,9 +3796,9 @@ static uint8_t check_trigger_meas_event(
         LOG_D(RRC,"[UE %d] Frame %d eNB %d: Handover triggered: targetCellId: %d currentCellId: %d eNB_offset: %d rsrp source: %3.1f rsrp target: %3.1f\n", \
               ue_mod_idP, frameP, eNB_index,
               UE_rrc_inst->HandoverInfoUe.targetCellId,ue_cnx_index,eNB_offset,
-              (dB_fixed_times10(UE_rrc_inst[ue_mod_idP].rsrp_db[0])/10.0)-mac_xface->get_rx_total_gain_dB(ue_mod_idP,0)-dB_fixed(mac_xface->lte_frame_parms->N_RB_DL*12),
+              (dB_fixed_times10(UE_rrc_inst[ue_mod_idP].rsrp_db[0])/10.0)-mac_xface->get_rx_total_gain_dB(ue_mod_idP,0)-dB_fixed(mac_xface->frame_parms->N_RB_DL*12),
               (dB_fixed_times10(UE_rrc_inst[ue_mod_idP].rsrp_db[eNB_offset])/10.0)-mac_xface->get_rx_total_gain_dB(ue_mod_idP,
-                  0)-dB_fixed(mac_xface->lte_frame_parms->N_RB_DL*12));
+                  0)-dB_fixed(mac_xface->frame_parms->N_RB_DL*12));
         UE_rrc_inst->Info[0].handoverTarget = eNB_offset;
         //LOG_D(RRC,"PHY_ID: %d \n",UE_rrc_inst->HandoverInfoUe.targetCellId);
         return 1;

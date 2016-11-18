@@ -1,32 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-   Contact Information
-   OpenAirInterface Admin: openair_admin@eurecom.fr
-   OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-
-   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
-
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 #include <arpa/inet.h>
 #include <linux/if_packet.h>
@@ -324,7 +315,7 @@ int trx_lms_start(openair0_device *device){
  * \param card Index of the RF card to use 
  * \returns 0 on success
  */
-int trx_lms_stop(int card) {
+int trx_lms_stop(openair0_device *device) {
   /*
   LMS_DeviceClose(usbport);
   LMS_DeviceClose(comport);
@@ -410,28 +401,24 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg){
     openair0_cfg[0].tx_sample_advance     = 15;
     openair0_cfg[0].tx_bw                 = 30.72e6;
     openair0_cfg[0].rx_bw                 = 30.72e6;
-    openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
     break;
   case 15360000:
     openair0_cfg[0].samples_per_packet    = 2048;
     openair0_cfg[0].tx_sample_advance     = 45;
     openair0_cfg[0].tx_bw                 = 28e6;
     openair0_cfg[0].rx_bw                 = 10e6;
-    openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
     break;
   case 7680000:
     openair0_cfg[0].samples_per_packet    = 1024;
     openair0_cfg[0].tx_sample_advance     = 70;
     openair0_cfg[0].tx_bw                 = 28e6;
     openair0_cfg[0].rx_bw                 = 5.0e6;
-    openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
     break;
   case 1920000:
     openair0_cfg[0].samples_per_packet    = 256;
     openair0_cfg[0].tx_sample_advance     = 50;
     openair0_cfg[0].tx_bw                 = 1.25e6;
     openair0_cfg[0].rx_bw                 = 1.25e6;
-    openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
     break;
   default:
     printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
