@@ -1453,8 +1453,12 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
         LOG_D(PHY,"[eNB][PUSCH %d/%x] Frame %d subframe %d (pusch_subframe %d,pusch_frame %d) phich active %d\n",
               harq_pid,ulsch[UE_id]->rnti,proc->frame_tx,subframe,pusch_subframe,pusch_frame,ulsch[UE_id]->harq_processes[harq_pid]->phich_active);
 
-        ngroup_PHICH = (ulsch[UE_id]->harq_processes[harq_pid]->first_rb +
-                        ulsch[UE_id]->harq_processes[harq_pid]->n_DMRS)%Ngroup_PHICH;
+        /* the HARQ process may have been reused by a new scheduling, so we use
+         * previous values of first_rb and n_DMRS to compute ngroup_PHICH and nseq_PHICH
+         */
+
+        ngroup_PHICH = (ulsch[UE_id]->harq_processes[harq_pid]->previous_first_rb +
+                        ulsch[UE_id]->harq_processes[harq_pid]->previous_n_DMRS)%Ngroup_PHICH;
 
         if ((frame_parms->tdd_config == 0) && (frame_parms->frame_type == TDD) ) {
 
@@ -1462,20 +1466,20 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
             ngroup_PHICH += Ngroup_PHICH;
         }
 
-        nseq_PHICH = ((ulsch[UE_id]->harq_processes[harq_pid]->first_rb/Ngroup_PHICH) +
-                      ulsch[UE_id]->harq_processes[harq_pid]->n_DMRS)%(2*NSF_PHICH);
+        nseq_PHICH = ((ulsch[UE_id]->harq_processes[harq_pid]->previous_first_rb/Ngroup_PHICH) +
+                      ulsch[UE_id]->harq_processes[harq_pid]->previous_n_DMRS)%(2*NSF_PHICH);
         LOG_D(PHY,"[eNB %d][PUSCH %d] Frame %d subframe %d Generating PHICH, ngroup_PHICH %d/%d, nseq_PHICH %d : HI %d, first_rb %d dci_alloc %d)\n",
               eNB->Mod_id,harq_pid,proc->frame_tx,
               subframe,ngroup_PHICH,Ngroup_PHICH,nseq_PHICH,
               ulsch[UE_id]->harq_processes[harq_pid]->phich_ACK,
-              ulsch[UE_id]->harq_processes[harq_pid]->first_rb,
+              ulsch[UE_id]->harq_processes[harq_pid]->previous_first_rb,
               ulsch[UE_id]->harq_processes[harq_pid]->dci_alloc);
 
         if (ulsch[UE_id]->Msg3_active == 1) {
           LOG_D(PHY,"[eNB %d][PUSCH %d][RAPROC] Frame %d, subframe %d: Generating Msg3 PHICH for UE %d, ngroup_PHICH %d/%d, nseq_PHICH %d : HI %d, first_rb %d\n",
                 eNB->Mod_id,harq_pid,proc->frame_tx,subframe,
                 UE_id,ngroup_PHICH,Ngroup_PHICH,nseq_PHICH,ulsch[UE_id]->harq_processes[harq_pid]->phich_ACK,
-                ulsch[UE_id]->harq_processes[harq_pid]->first_rb);
+                ulsch[UE_id]->harq_processes[harq_pid]->previous_first_rb);
         }
 
         if (eNB->abstraction_flag == 0) {
