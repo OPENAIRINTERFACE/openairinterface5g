@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,7 +33,7 @@
 
 
 //Calibration
-int lte_dl_cell_spec_SS(PHY_VARS_eNB *phy_vars_eNB,
+int lte_dl_cell_spec_SS(PHY_VARS_eNB *eNB,
                         int32_t *output,
                         short amp,
                         unsigned char Ns,
@@ -76,27 +69,27 @@ int lte_dl_cell_spec_SS(PHY_VARS_eNB *phy_vars_eNB,
     return(-1);
   }
 
-  mprime = 110 - phy_vars_eNB->lte_frame_parms.N_RB_DL;
+  mprime = 110 - eNB->frame_parms.N_RB_DL;
 
-  k = (nu + phy_vars_eNB->lte_frame_parms.nushift);
+  k = (nu + eNB->frame_parms.nushift);
 
   if (k > 6)//b
     k -=6;//b
 
-  k+=phy_vars_eNB->lte_frame_parms.first_carrier_offset;
+  k+=eNB->frame_parms.first_carrier_offset;
 
-  for (m=0; m<phy_vars_eNB->lte_frame_parms.N_RB_DL<<1; m++) { // loop over pilots in one slot/symbol, 2*N_RB_DL pilots
+  for (m=0; m<eNB->frame_parms.N_RB_DL<<1; m++) { // loop over pilots in one slot/symbol, 2*N_RB_DL pilots
 
     mprime_dword     = mprime>>4;
     mprime_qpsk_symb = mprime&0xf;
 
     // this is r_mprime from 3GPP 36-211 6.10.1.2
-    output[k] = qpsk[(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
+    output[k] = qpsk[(eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
     //output[k] = (lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
 #ifdef DEBUG_DL_CELL_SPEC
     printf("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
               Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    printf("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    printf("index = %d (k %d)\n",(eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
 #endif
 
     mprime++;
@@ -108,9 +101,9 @@ int lte_dl_cell_spec_SS(PHY_VARS_eNB *phy_vars_eNB,
 #endif
     k+=6;//b
 
-    if (k >= phy_vars_eNB->lte_frame_parms.ofdm_symbol_size) {
+    if (k >= eNB->frame_parms.ofdm_symbol_size) {
       k++;  // skip DC carrier
-      k-=phy_vars_eNB->lte_frame_parms.ofdm_symbol_size;
+      k-=eNB->frame_parms.ofdm_symbol_size;
     }
 
     //    printf("** k %d\n",k);
@@ -120,7 +113,7 @@ int lte_dl_cell_spec_SS(PHY_VARS_eNB *phy_vars_eNB,
 }
 
 
-int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
+int lte_dl_cell_spec(PHY_VARS_eNB *eNB,
                      int32_t *output,
                      short amp,
                      unsigned char Ns,
@@ -155,31 +148,31 @@ int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
     return(-1);
   }
 
-  mprime = 110 - phy_vars_eNB->lte_frame_parms.N_RB_DL;
+  mprime = 110 - eNB->frame_parms.N_RB_DL;
 
-  k = (nu + phy_vars_eNB->lte_frame_parms.nushift);
+  k = (nu + eNB->frame_parms.nushift);
 
   if (k > 5)
     k -=6;
 
-  k+=phy_vars_eNB->lte_frame_parms.first_carrier_offset;
+  k+=eNB->frame_parms.first_carrier_offset;
 
   DevAssert( Ns < 20 );
   DevAssert( l < 2 );
   DevAssert( mprime>>4 < 14 );
 
-  for (m=0; m<phy_vars_eNB->lte_frame_parms.N_RB_DL<<1; m++) {
+  for (m=0; m<eNB->frame_parms.N_RB_DL<<1; m++) {
 
     mprime_dword     = mprime>>4;
     mprime_qpsk_symb = mprime&0xf;
 
     // this is r_mprime from 3GPP 36-211 6.10.1.2
-    output[k] = qpsk[(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
+    output[k] = qpsk[(eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
     //output[k] = (lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
 #ifdef DEBUG_DL_CELL_SPEC
     printf("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
         Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    printf("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    printf("index = %d (k %d)\n",(eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
 #endif
 
     mprime++;
@@ -191,9 +184,9 @@ int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
 #endif
     k+=6;
 
-    if (k >= phy_vars_eNB->lte_frame_parms.ofdm_symbol_size) {
+    if (k >= eNB->frame_parms.ofdm_symbol_size) {
       k++;  // skip DC carrier
-      k-=phy_vars_eNB->lte_frame_parms.ofdm_symbol_size;
+      k-=eNB->frame_parms.ofdm_symbol_size;
     }
 
     //    printf("** k %d\n",k);
@@ -202,7 +195,7 @@ int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
   return(0);
 }
 
-int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
+int lte_dl_cell_spec_rx(PHY_VARS_UE *ue,
                         uint8_t eNB_offset,
                         int *output,
                         unsigned char Ns,
@@ -230,19 +223,19 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
   ((short *)&qpsk[3])[0] = -pamp;
   ((short *)&qpsk[3])[1] = pamp;
 
-  mprime = 110 - phy_vars_ue->lte_frame_parms.N_RB_DL;
+  mprime = 110 - ue->frame_parms.N_RB_DL;
 
-  for (m=0; m<phy_vars_ue->lte_frame_parms.N_RB_DL<<1; m++) {
+  for (m=0; m<ue->frame_parms.N_RB_DL<<1; m++) {
 
     mprime_dword     = mprime>>4;
     mprime_qpsk_symb = mprime&0xf;
 
     // this is r_mprime from 3GPP 36-211 6.10.1.2
-    output[k] = qpsk[(phy_vars_ue->lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
+    output[k] = qpsk[(ue->lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
 #ifdef DEBUG_DL_CELL_SPEC
     printf("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
            Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    printf("index = %d (k %d)\n",(phy_vars_ue->lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    printf("index = %d (k %d)\n",(ue->lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
 #endif
 
     mprime++;

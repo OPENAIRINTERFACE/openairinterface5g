@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-   Contact Information
-   OpenAirInterface Admin: openair_admin@eurecom.fr
-   OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file eNB_transport_IQ.c
  * \brief eNB transport IQ samples 
@@ -710,14 +702,13 @@ static void check_dev_config( rrh_module_t *mod_enb) {
  
  printf("\n---------------------RF device configuration parameters---------------------\n");
  
- printf("\tMod_id=%d\n \tlog level=%d\n \tDL_RB=%d\n \tsamples_per_frame=%d\n \tsample_rate=%f\n \tsamples_per_packet=%d\n \ttx_scheduling_advance=%d\n \ttx_sample_advance=%d\n \trx_num_channels=%d\n \ttx_num_channels=%d\n \trx_freq_0=%f\n \ttx_freq_0=%f\n \trx_freq_1=%f\n \ttx_freq_1=%f\n \trx_freq_2=%f\n \ttx_freq_2=%f\n \trx_freq_3=%f\n \ttx_freq_3=%f\n \trxg_mode=%d\n \trx_gain_0=%f\n \ttx_gain_0=%f\n  \trx_gain_1=%f\n \ttx_gain_1=%f\n  \trx_gain_2=%f\n \ttx_gain_2=%f\n  \trx_gain_3=%f\n \ttx_gain_3=%f\n \trx_gain_offset_2=%f\n \ttx_gain_offset_3=%f\n  \trx_bw=%f\n \ttx_bw=%f\n \tautocal=%d\n",	
+ printf("\tMod_id=%d\n \tlog level=%d\n \tDL_RB=%d\n \tsamples_per_frame=%d\n \tsample_rate=%f\n \tsamples_per_packet=%d\n \ttx_sample_advance=%d\n \trx_num_channels=%d\n \ttx_num_channels=%d\n \trx_freq_0=%f\n \ttx_freq_0=%f\n \trx_freq_1=%f\n \ttx_freq_1=%f\n \trx_freq_2=%f\n \ttx_freq_2=%f\n \trx_freq_3=%f\n \ttx_freq_3=%f\n \trxg_mode=%d\n \trx_gain_0=%f\n \ttx_gain_0=%f\n  \trx_gain_1=%f\n \ttx_gain_1=%f\n  \trx_gain_2=%f\n \ttx_gain_2=%f\n  \trx_gain_3=%f\n \ttx_gain_3=%f\n \trx_gain_offset_2=%f\n \ttx_gain_offset_3=%f\n  \trx_bw=%f\n \ttx_bw=%f\n \tautocal=%d\n",	
 	mod_enb->devs->openair0_cfg->Mod_id,
 	mod_enb->devs->openair0_cfg->log_level,
 	mod_enb->devs->openair0_cfg->num_rb_dl,
 	mod_enb->devs->openair0_cfg->samples_per_frame,
 	mod_enb->devs->openair0_cfg->sample_rate,
 	mod_enb->devs->openair0_cfg->samples_per_packet,
-	mod_enb->devs->openair0_cfg->tx_scheduling_advance,
 	mod_enb->devs->openair0_cfg->tx_sample_advance,
 	mod_enb->devs->openair0_cfg->rx_num_channels,
 	mod_enb->devs->openair0_cfg->tx_num_channels,

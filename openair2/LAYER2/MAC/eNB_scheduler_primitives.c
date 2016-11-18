@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file eNB_scheduler_primitives.c
  * \brief primitives used by eNB for BCH, RACH, ULSCH, DLSCH scheduling
@@ -75,7 +67,7 @@ void init_ue_sched_info(void)
   module_id_t i,j,k;
 
   for (i=0; i<NUMBER_OF_eNB_MAX; i++) {
-    for (k=0; i<MAX_NUM_CCs; i++) {
+    for (k=0; k<MAX_NUM_CCs; k++) {
       for (j=0; j<NUMBER_OF_UE_MAX; j++) {
         // init DL
         eNB_dlsch_info[i][k][j].weight           = 0;
@@ -367,6 +359,22 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
 
   mac_phy_remove_ue(mod_idP,rntiP);
 
+  // check if this has an RA process active
+  RA_TEMPLATE *RA_template;
+  for (i=0;i<NB_RA_PROC_MAX;i++) {
+    RA_template = (RA_TEMPLATE *)&eNB_mac_inst[mod_idP].common_channels[pCC_id].RA_template[i];
+    if ((RA_template->RA_active == TRUE) && 
+	(RA_template->rnti == rntiP)){
+      RA_template->RA_active=FALSE;
+      RA_template->generate_rar=0;
+      RA_template->generate_Msg4=0;
+      RA_template->wait_ack_Msg4=0;
+      RA_template->timing_offset=0;
+      RA_template->RRC_timer=20;
+      RA_template->rnti = 0;
+      break;
+    }
+  }
   if (ret == 0) {
     return (0);
   }
@@ -736,7 +744,7 @@ uint32_t allocate_prbs(int UE_id,unsigned char nb_rb, uint32_t *rballoc)
   uint32_t rballoc_dci=0;
   unsigned char nb_rb_alloc=0;
 
-  for (i=0; i<(mac_xface->lte_frame_parms->N_RB_DL-2); i+=2) {
+  for (i=0; i<(mac_xface->frame_parms->N_RB_DL-2); i+=2) {
     if (((*rballoc>>i)&3)==0) {
       *rballoc |= (3<<i);
       rballoc_dci |= (1<<((12-i)>>1));
@@ -748,10 +756,10 @@ uint32_t allocate_prbs(int UE_id,unsigned char nb_rb, uint32_t *rballoc)
     }
   }
 
-  if ((mac_xface->lte_frame_parms->N_RB_DL&1)==1) {
-    if ((*rballoc>>(mac_xface->lte_frame_parms->N_RB_DL-1)&1)==0) {
-      *rballoc |= (1<<(mac_xface->lte_frame_parms->N_RB_DL-1));
-      rballoc_dci |= 1;//(1<<(mac_xface->lte_frame_parms->N_RB_DL>>1));
+  if ((mac_xface->frame_parms->N_RB_DL&1)==1) {
+    if ((*rballoc>>(mac_xface->frame_parms->N_RB_DL-1)&1)==0) {
+      *rballoc |= (1<<(mac_xface->frame_parms->N_RB_DL-1));
+      rballoc_dci |= 1;//(1<<(mac_xface->frame_parms->N_RB_DL>>1));
     }
   }
 
@@ -798,20 +806,20 @@ uint32_t allocate_prbs_sub(int nb_rb, uint8_t *rballoc)
   //uint8_t number_of_subbands=13;
 
   LOG_T(MAC,"*****Check1RBALLOC****: %d%d%d%d (nb_rb %d,N_RBG %d)\n",
-        rballoc[3],rballoc[2],rballoc[1],rballoc[0],nb_rb,mac_xface->lte_frame_parms->N_RBG);
+        rballoc[3],rballoc[2],rballoc[1],rballoc[0],nb_rb,mac_xface->frame_parms->N_RBG);
 
-  while((nb_rb >0) && (check < mac_xface->lte_frame_parms->N_RBG)) {
+  while((nb_rb >0) && (check < mac_xface->frame_parms->N_RBG)) {
     //printf("rballoc[%d] %d\n",check,rballoc[check]);
     if(rballoc[check] == 1) {
-      rballoc_dci |= (1<<((mac_xface->lte_frame_parms->N_RBG-1)-check));
+      rballoc_dci |= (1<<((mac_xface->frame_parms->N_RBG-1)-check));
 
-      switch (mac_xface->lte_frame_parms->N_RB_DL) {
+      switch (mac_xface->frame_parms->N_RB_DL) {
       case 6:
         nb_rb--;
         break;
 
       case 25:
-        if ((check == mac_xface->lte_frame_parms->N_RBG-1)) {
+        if ((check == mac_xface->frame_parms->N_RBG-1)) {
           nb_rb--;
         } else {
           nb_rb-=2;
@@ -820,7 +828,7 @@ uint32_t allocate_prbs_sub(int nb_rb, uint8_t *rballoc)
         break;
 
       case 50:
-        if ((check == mac_xface->lte_frame_parms->N_RBG-1)) {
+        if ((check == mac_xface->frame_parms->N_RBG-1)) {
           nb_rb-=2;
         } else {
           nb_rb-=3;
@@ -851,7 +859,7 @@ int get_nb_subband(void)
 
   int nb_sb=0;
 
-  switch (mac_xface->lte_frame_parms->N_RB_DL) {
+  switch (mac_xface->frame_parms->N_RB_DL) {
   case 6:
     nb_sb=0;
     break;
@@ -989,6 +997,47 @@ int get_nCCE_offset(int *CCE_table,
   }
 }
 
+void dump_CCE_table(int *CCE_table,const int nCCE,const unsigned short rnti,const int subframe,int L) {
+
+  int nb_candidates = 0,i;
+  unsigned int Yk;
+  
+  printf("CCE 0: ");
+  for (i=0;i<nCCE;i++) {
+    printf("%1d.",CCE_table[i]);
+    if ((i&7) == 7)
+      printf("\n CCE %d: ", i);
+  }
+
+  Yk = (unsigned int)rnti;
+  
+  for (i=0; i<=subframe; i++)
+    Yk = (Yk*39827)%65537;
+  
+  Yk = Yk % (nCCE/L);
+  
+  
+  switch (L) {
+  case 1:
+  case 2:
+    nb_candidates = 6;
+    break;
+    
+  case 4:
+  case 8:
+    nb_candidates = 2;
+    break;
+    
+  default:
+    DevParam(L, nCCE, rnti);
+    break;
+  }
+  
+  
+  printf("rnti %x, Yk*L = %d, nCCE %d (nCCE/L %d),nb_cand*L %d\n",rnti,Yk*L,nCCE,nCCE/L,nb_candidates*L);
+
+}
+
 // Allocate the CCEs
 int allocate_CCEs(int module_idP,
 		  int CC_idP,
@@ -1040,12 +1089,14 @@ try_again:
               subframeP,dci_alloc->rnti);
         for (j=0;j<=i;j++){
           LOG_I(MAC,"DCI %d/%d (%d,%d) : rnti %x dci format %d, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
-                i,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci,
+                j,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci,
                 DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci,
                 DCI_pdu->dci_alloc[j].rnti,DCI_pdu->dci_alloc[j].format,
                 1<<DCI_pdu->dci_alloc[j].L,
                 nCCE,nCCE_max,DCI_pdu->num_pdcch_symbols);
         }
+	dump_CCE_table(CCE_table,nCCE_max,subframeP,dci_alloc->rnti,dci_alloc->L);
+
         goto failed;
       }
       DCI_pdu->num_pdcch_symbols++;

@@ -1,30 +1,25 @@
-################################################################################
-#   OpenAirInterface
-#   Copyright(c) 1999 - 2014 Eurecom
-#
-#   OpenAirInterface is free software: you can redistribute it and/or modify
-#   it under the terms of the GNU General Public License as published by
-#   the Free Software Foundation, either version 3 of the License, or
-#   (at your option) any later version.
-#
-#   OpenAirInterface is distributed in the hope that it will be useful,
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#   GNU General Public License for more details.
-#
-#   You should have received a copy of the GNU General Public License
-#   along with OpenAirInterface.The full GNU General Public License is
-#  included in this distribution in the file called "COPYING". If not,
-#  see <http://www.gnu.org/licenses/>.
-#
-# Contact Information
-# OpenAirInterface Admin: openair_admin@eurecom.fr
-# OpenAirInterface Tech : openair_tech@eurecom.fr
-# OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-#
-# Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+
 # Author: laurent THOMAS, Lionel GAUTHIER
-###############################################################################
 
 cmake_minimum_required (VERSION 2.8)
 
@@ -42,6 +37,7 @@ set (OPENAIR_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY})
 
 project (OpenAirInterface)
 
+#add_definitions("-DEMIT_ASN_DEBUG=1")
 add_subdirectory(${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms7002m lms7002m)
 add_subdirectory(${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lmsSDR lmsSDR)
 add_subdirectory(${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/Si5351C Si5351C)
@@ -179,13 +175,12 @@ set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${CMAKE_CU
 # these changes are related to hardcoded path to include .h files
 add_definitions(-DCMAKER)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3 -O3") 
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3 -O2") 
 
 
 set(GIT_BRANCH        "UNKNOWN")
 set(GIT_COMMIT_HASH   "UNKNOWN")
 set(GIT_COMMIT_DATE   "UNKNOWN")
-
 
 find_package(Git)
 if(GIT_FOUND)
@@ -262,15 +257,7 @@ if (${ENABLE_ITTI})
 endif (${ENABLE_ITTI})
 
 add_boolean_option(RTAI False "Use RTAI")
-if (${RTAI})
-  set(DEADLINE_SCHEDULER False)
-  set(CPU_AFFINITY False)
-  add_definitions("-DENABLE_RTAI_CLOCK")
-  add_definitions("-DCONFIG_RTAI_LXRT_INLINE")
-  include_directories ("/usr/realtime/include")
-  include_directories ("/usr/realtime/include/asm")
-  set(RTAI_SOURCE sched_dlsch.c sched_rx_pdsch.c rt_wrapper.c vcd_signal_dumper.c log.c)
-endif (${RTAI})
+
 
 #############################
 # ASN.1 grammar C code generation & dependancies
@@ -505,7 +492,7 @@ include_directories ("${OPENAIR_TARGETS}/ARCH/EXMIMO/DEFS/")
 #set (option_HWEXMIMOLIB_lib "-l ")
 set(HWLIB_EXMIMO_SOURCE 
   ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c
-  ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/gain_control.c
+#  ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/gain_control.c
   )
 add_library(oai_exmimodevif MODULE ${HWLIB_EXMIMO_SOURCE} )
 
@@ -546,8 +533,8 @@ if (${RF_BOARD} STREQUAL "EXMIMO")
   include_directories ("${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/")
   include_directories ("${OPENAIR_TARGETS}/ARCH/EXMIMO/DEFS/")
   set(HW_SOURCE ${HW_SOURCE}
-    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c
-    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/gain_control.c)
+    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c)
+#    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/gain_control.c)
   set(option_HW_lib "-rdynamic -ldl")
 
 elseif (${RF_BOARD} STREQUAL "OAI_USRP")
@@ -628,6 +615,7 @@ add_boolean_option(NAS_ADDRESS_FIX False "specific to oaisim: for nasmesh driver
 add_boolean_option(NAS_NETLINK False "???? Must be True to compile nasmesh driver without rtai")
 add_boolean_option(OAISIM False "specific to oaisim")
 add_boolean_option(OAI_NW_DRIVER_USE_NETLINK True "????")
+
 add_boolean_option(USE_MME False "this flag is used only one time in lte-softmodem.c")
 add_list_string_option(PACKAGE_NAME "NotDefined" "As per attribute name")
 add_boolean_option(MESSAGE_CHART_GENERATOR False         "For generating sequence diagrams")
@@ -851,10 +839,10 @@ include_directories("${OPENAIR_DIR}")
 # Utilities Library
 ################
 add_library(HASHTABLE
-  ${OPENAIR_DIR}/common/utils/collection/hashtable/hashtable.c
-  ${OPENAIR_DIR}/common/utils/collection/hashtable/obj_hashtable.c
+  ${OPENAIR_DIR}/common/utils/hashtable/hashtable.c
+  ${OPENAIR_DIR}/common/utils/hashtable/obj_hashtable.c
 )
-include_directories(${OPENAIR_DIR}/common/utils/collection/hashtable)
+include_directories(${OPENAIR_DIR}/common/utils/hashtable)
 
 if (MESSAGE_CHART_GENERATOR)
   add_library(MSC  
@@ -882,20 +870,16 @@ set(UTIL_SRC
   ${OPENAIR2_DIR}/UTIL/OCG/OCG_parse_filename.c
   ${OPENAIR2_DIR}/UTIL/OCG/OCG_parse_XML.c
   ${OPENAIR2_DIR}/UTIL/OCG/OCG_save_XML.c
-  ${OPENAIR2_DIR}/UTIL/OMG/client_traci_OMG.c
   ${OPENAIR2_DIR}/UTIL/OMG/common.c
   ${OPENAIR2_DIR}/UTIL/OMG/grid.c
-  ${OPENAIR2_DIR}/UTIL/OMG/id_manager.c
   ${OPENAIR2_DIR}/UTIL/OMG/job.c
   ${OPENAIR2_DIR}/UTIL/OMG/mobility_parser.c
   ${OPENAIR2_DIR}/UTIL/OMG/omg.c
-  ${OPENAIR2_DIR}/UTIL/OMG/omg_hashtable.c
+  #${OPENAIR2_DIR}/UTIL/OMG/omg_hashtable.c
   ${OPENAIR2_DIR}/UTIL/OMG/rwalk.c
   ${OPENAIR2_DIR}/UTIL/OMG/rwp.c
-  ${OPENAIR2_DIR}/UTIL/OMG/socket_traci_OMG.c
   ${OPENAIR2_DIR}/UTIL/OMG/static.c
   ${OPENAIR2_DIR}/UTIL/OMG/steadystaterwp.c
-  ${OPENAIR2_DIR}/UTIL/OMG/storage_traci_OMG.c
   ${OPENAIR2_DIR}/UTIL/OMG/trace.c
   ${OPENAIR2_DIR}/UTIL/OMG/trace_hashtable.c
   ${OPENAIR2_DIR}/UTIL/OPT/probe.c
@@ -907,6 +891,15 @@ set(UTIL_SRC
   ${OPENAIR2_DIR}/UTIL/OTG/otg_rx.c
   )
 add_library(UTIL ${UTIL_SRC})
+
+#set(OMG_SUMO_SRC
+#  ${OPENAIR2_DIR}/UTIL/OMG/client_traci_OMG.c
+#  ${OPENAIR2_DIR}/UTIL/OMG/id_manager.c
+#  ${OPENAIR2_DIR}/UTIL/OMG/sumo.c
+#  ${OPENAIR2_DIR}/UTIL/OMG/socket_traci_OMG.c
+#  ${OPENAIR2_DIR}/UTIL/OMG/storage_traci_OMG.c
+#  )
+#add_library(OMG_SUMO ${OMG_SUMO_SRC})
 
 set(SECU_OSA_SRC
   ${OPENAIR2_DIR}/UTIL/OSA/osa_key_deriver.c
@@ -968,6 +961,7 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pucch.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/prach.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pmch.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pch.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/group_hopping.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/srs_modulation.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/drs_modulation.c
@@ -978,6 +972,8 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/rar_tools.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/print_stats.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/initial_sync.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if4_tools.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if5_tools.c
   ${OPENAIR1_DIR}/PHY/MODULATION/ofdm_mod.c
   ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep.c
   ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep_mbsfn.c
@@ -1539,10 +1535,24 @@ endif()
 
 pkg_search_module(NETTLE nettle)
 if(NOT ${NETTLE_FOUND})
-  message("PACKAGE nettle not found: some targets will fail")
+  message( FATAL_ERROR "PACKAGE nettle not found: some targets will fail. Run build_oai -I again!")
 else()
   include_directories(${NETTLE_INCLUDE_DIRS})
 endif()
+
+message ("NETTLE VERSION_INSTALLED  = ${NETTLE_VERSION}")
+
+string(REGEX REPLACE "([0-9]+).*" "\\1" NETTLE_VERSION_MAJOR ${NETTLE_VERSION})
+string(REGEX REPLACE "[0-9]+\\.([0-9]+).*" "\\1" NETTLE_VERSION_MINOR ${NETTLE_VERSION})
+message ("NETTLE_VERSION_MAJOR = ${NETTLE_VERSION_MAJOR}")
+message ("NETTLE_VERSION_MINOR = ${NETTLE_VERSION_MINOR}")
+
+if ("${NETTLE_VERSION_MAJOR}" STREQUAL "" OR "${NETTLE_VERSION_MINOR}" STREQUAL "")
+  message( FATAL_ERROR "The nettle version not detected properly. Try to run build_oai -I again" )
+endif()
+
+add_definitions("-DNETTLE_VERSION_MAJOR=${NETTLE_VERSION_MAJOR}")
+add_definitions("-DNETTLE_VERSION_MINOR=${NETTLE_VERSION_MINOR}")
 
 pkg_search_module(XPM xpm)
 if(NOT ${XPM_FOUND})
@@ -1617,10 +1627,9 @@ add_executable(lte-softmodem
   ${rrc_h}
   ${s1ap_h}
   ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIR_TARGETS}/RT/USER/sched_dlsch.c
-  ${OPENAIR_TARGETS}/RT/USER/sched_rx_pdsch.c
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
@@ -1644,7 +1653,6 @@ target_link_libraries (lte-softmodem -ldl
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ) 
-#target_link_libraries (lte-softmodem ${LIBBOOST_LIBRARIES} -lboost_system) #Added manually as it is not found for some reason for USRP
 target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem ${T_LIB})
 
@@ -1654,10 +1662,9 @@ add_executable(lte-softmodem-nos1
   ${rrc_h}
   ${s1ap_h}
   ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIR_TARGETS}/RT/USER/sched_dlsch.c
-  ${OPENAIR_TARGETS}/RT/USER/sched_rx_pdsch.c
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
@@ -1680,7 +1687,6 @@ target_link_libraries (lte-softmodem-nos1
 
 target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib}  ${option_TP_lib} ${XFORMS_LIBRARIES} )
-#target_link_libraries (lte-softmodem-nos1 ${LIBBOOST_LIBRARIES} -lboost_system) #Added manually as it is not found for some reason for USRP
 target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 ${T_LIB})
 
@@ -1703,7 +1709,7 @@ target_link_libraries(rrh_gw
   UTIL LFDS  
   -Wl,--end-group )
 target_link_libraries (rrh_gw rt pthread m )
-target_link_libraries (rrh_gw  ${option_HW_lib} ${option_TP_lib} ${LIBBOOST_LIBRARIES}) #Added manually as it is not found for some reason for USRP
+target_link_libraries (rrh_gw  ${option_HW_lib} ${option_TP_lib})
 target_link_libraries (rrh_gw ${LIB_LMS_LIBRARIES})
 target_link_libraries (rrh_gw ${T_LIB})
 
@@ -1754,6 +1760,9 @@ add_executable(oaisim
   ${s1ap_h}
   ${x2ap_h}
   ${OPENAIR_BIN_DIR}/messages_xml.h
+  ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
+  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/SIMU/USER/channel_sim.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
   ${OPENAIR_TARGETS}/SIMU/USER/oaisim_config.c
@@ -1764,7 +1773,6 @@ add_executable(oaisim
   ${OPENAIR_TARGETS}/SIMU/USER/oaisim.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR2_DIR}/UTIL/OMG/sumo.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${GTPU_need_ITTI}
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
@@ -1797,6 +1805,9 @@ add_executable(oaisim_nos1
   ${s1ap_h}
   ${x2ap_h}
   ${OPENAIR_BIN_DIR}/messages_xml.h
+  ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
+  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/SIMU/USER/channel_sim.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
   ${OPENAIR_TARGETS}/SIMU/USER/oaisim_config.c
@@ -1807,7 +1818,6 @@ add_executable(oaisim_nos1
   ${OPENAIR_TARGETS}/SIMU/USER/oaisim.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR2_DIR}/UTIL/OMG/sumo.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}  
@@ -1830,7 +1840,7 @@ target_link_libraries (oaisim_nos1 ${T_LIB})
 # Unitary tests for each piece of L1: example, mbmssim is MBMS L1 simulator
 #####################################
 
-foreach(myExe dlsim ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
+foreach(myExe dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
   add_executable(${myExe}
     ${OPENAIR_BIN_DIR}/messages_xml.h
     ${OPENAIR1_DIR}/SIMULATION/LTE_PHY/${myExe}.c
@@ -1892,7 +1902,6 @@ foreach(myExe s1ap
     aes128_cmac_encrypt
     secu_knas_encrypt_eia2)
   add_executable(test_${myExe}
-    ${OPENAIR3_DIR}/TEST/test_util.c
     ${OPENAIR3_DIR}/TEST/test_${myExe}.c
     )
   target_link_libraries (test_${myExe}
@@ -1911,7 +1920,7 @@ if (${T_TRACER})
   add_dependencies(rrh_gw generate_T)
   add_dependencies(oaisim generate_T)
   add_dependencies(oaisim_nos1 generate_T)
-  add_dependencies(dlsim generate_T)
+  add_dependencies(dlsim_tm7 generate_T)
   add_dependencies(ulsim generate_T)
   add_dependencies(pbchsim generate_T)
   add_dependencies(scansim generate_T)

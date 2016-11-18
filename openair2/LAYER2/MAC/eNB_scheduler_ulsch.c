@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file eNB_scheduler_ulsch.c
  * \brief eNB procedures for the ULSCH transport channel
@@ -71,16 +63,15 @@
 // This table holds the allowable PRB sizes for ULSCH transmissions
 uint8_t rb_table[33] = {1,2,3,4,5,6,8,9,10,12,15,16,18,20,24,25,27,30,32,36,40,45,48,50,54,60,72,75,80,81,90,96,100};
 
-void rx_sdu(
-  const module_id_t enb_mod_idP,
-  const int         CC_idP,
-  const frame_t     frameP,
-  const sub_frame_t subframeP,
-  const rnti_t      rntiP,
-  uint8_t          *sduP,
-  const uint16_t    sdu_lenP,
-  const int         harq_pidP,
-  uint8_t          *msg3_flagP)
+void rx_sdu(const module_id_t enb_mod_idP,
+	    const int         CC_idP,
+	    const frame_t     frameP,
+	    const sub_frame_t subframeP,
+	    const rnti_t      rntiP,
+	    uint8_t          *sduP,
+	    const uint16_t    sdu_lenP,
+	    const int         harq_pidP,
+	    uint8_t          *msg3_flagP)
 {
 
   unsigned char  rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
@@ -149,9 +140,8 @@ void rx_sdu(
         LOG_D(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d : Received PHR PH = %d (db)\n",
               enb_mod_idP, CC_idP, rx_ces[i], UE_list->UE_template[CC_idP][UE_id].phr_info);
         UE_list->UE_template[CC_idP][UE_id].phr_info_configured=1;
+	UE_list->UE_sched_ctrl[UE_id].phr_received = 1;
       }
-      UE_list->UE_sched_ctrl[UE_id].phr_received = 1;
-
       payload_ptr+=sizeof(POWER_HEADROOM_CMD);
       break;
 
@@ -325,7 +315,6 @@ void rx_sdu(
               enb_mod_idP, CC_idP, frameP, rx_lengths[i], CCCH_PAYLOAD_SIZE_MAX);
         break;
       }
-
       LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, Received CCCH:  %x.%x.%x.%x.%x.%x, Terminating RA procedure for UE rnti %x\n",
             enb_mod_idP,CC_idP,frameP,
             payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4], payload_ptr[5], rntiP);
@@ -382,21 +371,19 @@ void rx_sdu(
 
         } // if process is active
       } // loop on RA processes
+      
+      break ;
 
-      break;
-
-    case  DCCH :
+    case DCCH :
     case DCCH1 :
       //      if(eNB_mac_inst[module_idP][CC_idP].Dcch_lchan[UE_id].Active==1){
       
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       LOG_T(MAC,"offset: %d\n",(unsigned char)((unsigned char*)payload_ptr-sduP));
-      
       for (j=0; j<32; j++) {
         LOG_T(MAC,"%x ",payload_ptr[j]);
       }
-
       LOG_T(MAC,"\n");
 #endif
 
@@ -425,67 +412,68 @@ void rx_sdu(
           UE_list->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]]+=1;
           UE_list->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]]+=rx_lengths[i];
       } /* UE_id != -1 */
-
-      //      }
+ 
+      // } 
       break;
 
-    case DTCH: // default DRB
-      //      if(eNB_mac_inst[module_idP][CC_idP].Dcch_lchan[UE_id].Active==1){
+      // all the DRBS
+    case DTCH:
+    default :
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       LOG_T(MAC,"offset: %d\n",(unsigned char)((unsigned char*)payload_ptr-sduP));
-
       for (j=0; j<32; j++) {
         LOG_T(MAC,"%x ",payload_ptr[j]);
       }
-
       LOG_T(MAC,"\n");
 #endif
+      if (rx_lcids[i]  < NB_RB_MAX ) {
+	LOG_D(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d\n",
+	      enb_mod_idP,CC_idP,frameP, rx_lengths[i], UE_id, rx_lcids[i]);
+	
+	if (UE_id != -1) {
+	  // adjust buffer occupancy of the correponding logical channel group
+	  LOG_D(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d, removing from LCGID %d, %d\n",
+		enb_mod_idP,CC_idP,frameP, rx_lengths[i], UE_id,rx_lcids[i],
+		UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]],
+		UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]]);
+	  
+	  if (UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] >= rx_lengths[i])
+	    UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] -= rx_lengths[i];
+	  else
+	    UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] = 0;
+	  if ((rx_lengths[i] <SCH_PAYLOAD_SIZE_MAX) &&  (rx_lengths[i] > 0) ) {   // MAX SIZE OF transport block
+	    mac_rlc_data_ind(
+			     enb_mod_idP,
+			     rntiP,
+			     enb_mod_idP,
+			     frameP,
+			     ENB_FLAG_YES,
+			     MBMS_FLAG_NO,
+			     rx_lcids[i],
+			     (char *)payload_ptr,
+			     rx_lengths[i],
+			     1,
+			     NULL);//(unsigned int*)crc_status);
+	    
+	    UE_list->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]]+=1;
+	    UE_list->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]]+=rx_lengths[i];
+	  }
+	  else { /* rx_length[i] */
+	    UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx+=1;
+	    LOG_E(MAC,"[eNB %d] CC_id %d Frame %d : Max size of transport block reached LCID %d from UE %d ",
+		  enb_mod_idP, CC_idP, frameP, rx_lcids[i], UE_id);
+	  }
+	}    
+	else {/*(UE_id != -1*/ 
+	  LOG_E(MAC,"[eNB %d] CC_id %d Frame %d : received unsupported or unknown LCID %d from UE %d ",
+		enb_mod_idP, CC_idP, frameP, rx_lcids[i], UE_id);
+	}
+      }
 
-      LOG_D(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d\n",
-            enb_mod_idP,CC_idP,frameP, rx_lengths[i], UE_id,rx_lcids[i]);
-
-      if (UE_id != -1) {
-	// adjust buffer occupancy of the correponding logical channel group
-	LOG_D(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d, removing from LCGID %d, %d\n",
-	      enb_mod_idP,CC_idP,frameP, rx_lengths[i], UE_id,rx_lcids[i],
-	      UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]],
-	      UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]]);
-
-	if (UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] >= rx_lengths[i])
-	  UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] -= rx_lengths[i];
-	else
-	  UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] = 0;
-
-        if ((rx_lengths[i] <SCH_PAYLOAD_SIZE_MAX) &&  (rx_lengths[i] > 0) ) {   // MAX SIZE OF transport block
-          mac_rlc_data_ind(
-            enb_mod_idP,
-            rntiP,
-            enb_mod_idP,
-            frameP,
-            ENB_FLAG_YES,
-            MBMS_FLAG_NO,
-            DTCH,
-            (char *)payload_ptr,
-            rx_lengths[i],
-            1,
-            NULL);//(unsigned int*)crc_status);
-          UE_list->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]]+=1;
-          UE_list->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]]+=rx_lengths[i];
-        }
-      } /* UE_id != -1 */
-
-      //      }
-      break;
-
-    default :  //if (rx_lcids[i] >= DTCH) {
-      if (UE_id != -1)
-        UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx+=1;
-      LOG_E(MAC,"[eNB %d] CC_id %d Frame %d : received unsupported or unknown LCID %d from UE %d ",
-            enb_mod_idP, CC_idP, frameP, rx_lcids[i], UE_id);
       break;
     }
-
+  
     payload_ptr+=rx_lengths[i];
   }
 
@@ -839,14 +827,11 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	    UE_list->eNB_UE_stats[CC_id][UE_id].normalized_rx_power=normalized_rx_power;
 	    UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power=target_rx_power;
 	    UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1=UE_template->pre_assigned_mcs_ul;
-            mcs = cmin (UE_template->pre_assigned_mcs_ul, openair_daq_vars.target_ue_ul_mcs); // adjust, based on user-defined MCS
-	    if ((cqi_req==1) && (mcs>19)) {
-		mcs=19;
-	    }
+            mcs = UE_template->pre_assigned_mcs_ul;//cmin (UE_template->pre_assigned_mcs_ul, openair_daq_vars.target_ue_ul_mcs); // adjust, based on user-defined MCS
             if (UE_template->pre_allocated_rb_table_index_ul >=0) {
               rb_table_index=UE_template->pre_allocated_rb_table_index_ul;
             } else {
-	      mcs=cmin (10, openair_daq_vars.target_ue_ul_mcs);
+	      mcs=10;//cmin (10, openair_daq_vars.target_ue_ul_mcs);
               rb_table_index=5; // for PHR
 	    }
 
@@ -1193,7 +1178,7 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
     required_rbs[cba_group] = 0;
     num_cba_resources[cba_group]=0;
     active_UEs[cba_group]=0;
-    mcs[cba_group]=openair_daq_vars.target_ue_ul_mcs;
+    mcs[cba_group]=10;//openair_daq_vars.target_ue_ul_mcs;
   }
 
   //LOG_D(MAC, "[eNB ] CBA granted ues are %d\n",granted_UEs );
@@ -1241,7 +1226,7 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
           }
         }
 
-        mcs[cba_group]= cmin(mcs[cba_group],openair_daq_vars.target_ue_ul_mcs);
+        mcs[cba_group]= mcs[cba_group];//cmin(mcs[cba_group],openair_daq_vars.target_ue_ul_mcs);
 
         if (available_rbs < min_rb_unit )
           break;

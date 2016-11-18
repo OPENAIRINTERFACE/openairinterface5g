@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_REFSIG/lte_dl_ue_spec.c
 * \brief Top-level routines for generating UE-specific Reference signals from 36-211, V11.3.0 2013-06
@@ -53,7 +45,7 @@
 int Wbar_NCP[8][4] = {{1,1,1,1},{1,-1,1,-1},{1,1,1,1},{1,-1,1,-1},{1,1,-1,-1},{-1,-1,1,1},{1,-1,-1,1},{-1,1,1,-1}};
 
 /*
-int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
+int lte_dl_ue_spec(PHY_VARS_eNB *eNB,
                    uint8_t UE_id,
                    int32_t *output,
                    short amp,
@@ -67,7 +59,7 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
   int16_t k=0,a;
   int mprime,ind,ind_dword,ind_qpsk_symb;
   unsigned nushift,kprime;
-  //  LTE_eNB_DLSCH_t *dlsch = phy_vars_eNB->dlsch_eNB[UE_id][0];
+  //  LTE_eNB_DLSCH_t *dlsch = eNB->dlsch_eNB[UE_id][0];
 
   a = (amp*ONE_OVER_SQRT2_Q15)>>15;
   ((short *)&qpsk[0])[0] = a;
@@ -90,10 +82,10 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
 
   if (p==5) {
     if (SS_flag==0) {
-      if (phy_vars_eNB->lte_frame_parms.Ncp == NORMAL) {
+      if (eNB->frame_parms.Ncp == NORMAL) {
       // this is 3GPP 36-211 6.10.3.2, NORMAL CP, p=5
       
-      nushift =  phy_vars_eNB->lte_frame_parms.Nid_cell%3;
+      nushift =  eNB->frame_parms.Nid_cell%3;
 
       if(lprime==0){
         kprime=nushift;
@@ -101,7 +93,7 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
         kprime=(nushift+2*lprime)%4;
       }
 
-      k = kprime+phy_vars_eNB->lte_frame_parms.first_carrier_offset;
+      k = kprime+eNB->frame_parms.first_carrier_offset;
       printf("lte_dl_ue_spec:k=%d\n",k);
  
       for (mprime=0;mprime<3*nRB_PDSCH-1;mprime++) {
@@ -113,9 +105,9 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
         //output[k] = 0xffffffff;
 
         k += 4;
-        if (k >= phy_vars_eNB->lte_frame_parms.ofdm_symbol_size) {
+        if (k >= eNB->frame_parms.ofdm_symbol_size) {
           k++;  // skip DC carrier
-          k-=phy_vars_eNB->lte_frame_parms.ofdm_symbol_size;
+          k-=eNB->frame_parms.ofdm_symbol_size;
         }
 
        }
@@ -132,7 +124,7 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
 */
 
 
-int lte_dl_ue_spec_rx(PHY_VARS_UE *phy_vars_ue,
+int lte_dl_ue_spec_rx(PHY_VARS_UE *ue,
                       int32_t *output,
                       unsigned char Ns,
                       unsigned char p, 
@@ -168,17 +160,17 @@ int lte_dl_ue_spec_rx(PHY_VARS_UE *phy_vars_ue,
 
   if (p>=7) {
     if (SS_flag==0) {
-      if (phy_vars_ue->lte_frame_parms.Ncp == NORMAL) {
+      if (ue->frame_parms.Ncp == NORMAL) {
         // this is 3GPP 36-211 6.10.3.2, NORMAL CP, p>=7
 
         output_p = output;
 
-        ind = 3*lprime*phy_vars_ue->lte_frame_parms.N_RB_DL;
+        ind = 3*lprime*ue->frame_parms.N_RB_DL;
         l = lprime + ((Ns&1)<<1);
 
         // loop over pairs of PRBs, this is the periodicity of the W_bar_NCP sequence
         // unroll the computations for the 6 pilots, select qpsk or nqpsk as function of W_bar_NCP
-        for (nPRB=0; nPRB<phy_vars_ue->lte_frame_parms.N_RB_DL; nPRB+=2) {
+        for (nPRB=0; nPRB<ue->frame_parms.N_RB_DL; nPRB+=2) {
 
           // First pilot
           w = Wbar_NCP[p-7][l];
@@ -188,13 +180,13 @@ int lte_dl_ue_spec_rx(PHY_VARS_UE *phy_vars_ue,
           ind_dword     = ind>>4;
           ind_qpsk_symb = ind&0xf;
 
-          *output_p = qpsk_p[(phy_vars_ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
+          *output_p = qpsk_p[(ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
 
 
 #ifdef DEBUG_DL_UESPEC
           LOG_D(PHY,"Ns %d, l %d, m %d,ind_dword %d, ind_qpsk_symbol %d\n",
                 Ns,l,m,ind_dword,ind_qpsk_symb);
-          LOG_D(PHY,"index = %d\n",(phy_vars_eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
+          LOG_D(PHY,"index = %d\n",(eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
 #endif
 
           output_p++;
@@ -207,12 +199,12 @@ int lte_dl_ue_spec_rx(PHY_VARS_UE *phy_vars_ue,
           ind_dword     = ind>>4;
           ind_qpsk_symb = ind&0xf;
 
-          *output_p = qpsk_p[(phy_vars_ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
+          *output_p = qpsk_p[(ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
 
 #ifdef DEBUG_DL_UESPEC
           LOG_D(PHY,"Ns %d, l %d, m %d,ind_dword %d, ind_qpsk_symbol %d\n",
                 Ns,l,m,ind_dword,ind_qpsk_symb);
-          LOG_D(PHY,"index = %d\n",(phy_vars_ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
+          LOG_D(PHY,"index = %d\n",(ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
 #endif
 
           output_p++;
@@ -224,12 +216,12 @@ int lte_dl_ue_spec_rx(PHY_VARS_UE *phy_vars_ue,
           ind_dword     = ind>>4;
           ind_qpsk_symb = ind&0xf;
 
-          *output_p = qpsk_p[(phy_vars_ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
+          *output_p = qpsk_p[(ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
 
 #ifdef DEBUG_DL_UESPEC
           LOG_D(PHY,"Ns %d, l %d, m %d,ind_dword %d, ind_qpsk_symbol %d\n",
                 Ns,l,m,ind_dword,ind_qpsk_symb);
-          LOG_D(PHY,"index = %d\n",(phy_vars_eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
+          LOG_D(PHY,"index = %d\n",(eNB->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
 #endif
 
           output_p++;
@@ -243,13 +235,13 @@ int lte_dl_ue_spec_rx(PHY_VARS_UE *phy_vars_ue,
           ind_dword     = ind>>4;
           ind_qpsk_symb = ind&0xf;
 
-          *output_p = qpsk_p[(phy_vars_ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
+          *output_p = qpsk_p[(ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
 
 
 #ifdef DEBUG_DL_UESPEC
           LOG_D(PHY,"Ns %d, l %d, m %d,ind_dword %d, ind_qpsk_symbol %d\n",
                 Ns,l,m,ind_dword,ind_qpsk_symb);
-          LOG_D(PHY,"index = %d\n",(phy_vars_ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
+          LOG_D(PHY,"index = %d\n",(ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
 #endif
 
           output_p++;
@@ -262,12 +254,12 @@ int lte_dl_ue_spec_rx(PHY_VARS_UE *phy_vars_ue,
           ind_dword     = ind>>4;
           ind_qpsk_symb = ind&0xf;
 
-          *output_p = qpsk_p[(phy_vars_ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
+          *output_p = qpsk_p[(ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
 
 #ifdef DEBUG_DL_UESPEC
           LOG_D(PHY,"Ns %d, l %d, m %d,ind_dword %d, ind_qpsk_symbol %d\n",
                 Ns,l,m,ind_dword,ind_qpsk_symb);
-          LOG_D(PHY,"index = %d\n",(phy_vars_ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
+          LOG_D(PHY,"index = %d\n",(ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
 #endif
 
           output_p++;
@@ -279,12 +271,12 @@ int lte_dl_ue_spec_rx(PHY_VARS_UE *phy_vars_ue,
           ind_dword     = ind>>4;
           ind_qpsk_symb = ind&0xf;
 
-          *output_p = qpsk_p[(phy_vars_ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
+          *output_p = qpsk_p[(ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
 
 #ifdef DEBUG_DL_UESPEC
           LOG_D(PHY,"Ns %d, l %d, m %d,ind_dword %d, ind_qpsk_symbol %d\n",
                 Ns,l,m,ind_dword,ind_qpsk_symb);
-          LOG_D(PHY,"index = %d\n",(phy_vars_ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
+          LOG_D(PHY,"index = %d\n",(ue->lte_gold_uespec_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3);
 #endif
 
           output_p++;
@@ -298,14 +290,14 @@ int lte_dl_ue_spec_rx(PHY_VARS_UE *phy_vars_ue,
     if (SS_flag==0) {
       output_p = output;
 
-      if (phy_vars_ue->lte_frame_parms.Ncp == NORMAL) {
+      if (ue->frame_parms.Ncp == NORMAL) {
         for (mprime=0;mprime<3*nRB_PDSCH;mprime++) {
 
           ind = 3*lprime*nRB_PDSCH+mprime;
           ind_dword = ind>>4;
           ind_qpsk_symb = ind&0xf;
 
-          *output_p = qpsk[(phy_vars_ue->lte_gold_uespec_port5_table[Ns][ind_dword]>>(2*ind_qpsk_symb))&3];
+          *output_p = qpsk[(ue->lte_gold_uespec_port5_table[Ns][ind_dword]>>(2*ind_qpsk_symb))&3];
           //printf("lprime=%d,ind=%d,Ns=%d,output_p=(%d,%d)\n",lprime,ind,Ns,((short *)&output_p[0])[0],((short *)&output_p[0])[1]);
           output_p++;
       

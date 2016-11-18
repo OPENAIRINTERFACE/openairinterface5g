@@ -1,31 +1,32 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
+/*! \file s1ap_eNB_management_procedures.c
+ * \brief S1AP eNB task 
+ * \author  S. Roux and Navid Nikaein 
+ * \date 2010 - 2016
+ * \email: navid.nikaein@eurecom.fr
+ * \version 1.0
+ * @ingroup _s1ap
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -116,6 +117,23 @@ struct s1ap_eNB_mme_data_s *s1ap_eNB_get_MME(
   return NULL;
 }
 
+struct s1ap_eNB_mme_data_s *s1ap_eNB_get_MME_from_instance(
+  s1ap_eNB_instance_t *instance_p)
+{
+ 
+  struct s1ap_eNB_mme_data_s *mme = NULL;
+  struct s1ap_eNB_mme_data_s *mme_next = NULL;
+
+  for (mme = RB_MIN(s1ap_mme_map, &instance_p->s1ap_mme_head); mme!=NULL ; mme = mme_next) {
+    mme_next = RB_NEXT(s1ap_mme_map, &instance_p->s1ap_mme_head, mme);
+    if (mme->s1ap_eNB_instance == instance_p) {
+      return mme;
+    }
+  }
+
+  return NULL;
+}
+
 s1ap_eNB_instance_t *s1ap_eNB_get_instance(instance_t instance)
 {
   s1ap_eNB_instance_t *temp = NULL;
@@ -129,4 +147,42 @@ s1ap_eNB_instance_t *s1ap_eNB_get_instance(instance_t instance)
   }
 
   return NULL;
+}
+
+void s1ap_eNB_remove_mme_desc(s1ap_eNB_instance_t * instance) 
+{
+
+    struct s1ap_eNB_mme_data_s *mme = NULL;
+    struct s1ap_eNB_mme_data_s *mmeNext = NULL;
+    struct plmn_identity_s* plmnInfo;
+    struct served_group_id_s* groupInfo;
+    struct served_gummei_s* gummeiInfo;
+    struct mme_code_s* mmeCode;
+
+    for (mme = RB_MIN(s1ap_mme_map, &instance->s1ap_mme_head); mme; mme = mmeNext) {
+      mmeNext = RB_NEXT(s1ap_mme_map, &instance->s1ap_mme_head, mme);
+      RB_REMOVE(s1ap_mme_map, &instance->s1ap_mme_head, mme);
+      while (!STAILQ_EMPTY(&mme->served_gummei)) {
+        gummeiInfo = STAILQ_FIRST(&mme->served_gummei);
+        STAILQ_REMOVE_HEAD(&mme->served_gummei, next);
+	
+        while (!STAILQ_EMPTY(&gummeiInfo->served_plmns)) {
+	  plmnInfo = STAILQ_FIRST(&gummeiInfo->served_plmns);
+	  STAILQ_REMOVE_HEAD(&gummeiInfo->served_plmns, next);
+	  free(plmnInfo);
+        }
+        while (!STAILQ_EMPTY(&gummeiInfo->served_group_ids)) {
+	  groupInfo = STAILQ_FIRST(&gummeiInfo->served_group_ids);
+	  STAILQ_REMOVE_HEAD(&gummeiInfo->served_group_ids, next);
+	  free(groupInfo);
+        }
+        while (!STAILQ_EMPTY(&gummeiInfo->mme_codes)) {
+	  mmeCode = STAILQ_FIRST(&gummeiInfo->mme_codes);
+	  STAILQ_REMOVE_HEAD(&gummeiInfo->mme_codes, next);
+	  free(mmeCode);
+        }
+        free(gummeiInfo);
+      }
+      free(mme);
+    }
 }

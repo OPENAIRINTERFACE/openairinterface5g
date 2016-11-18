@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file phy_procedures_lte_eNB.c
 * \brief Implementation of common utilities for eNB/UE procedures from 36.213 LTE specifications
@@ -529,7 +521,7 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
 lte_subframe_t get_subframe_direction(uint8_t Mod_id,uint8_t CC_id,uint8_t subframe)
 {
 
-  return(subframe_select(&PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms,subframe));
+  return(subframe_select(&PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms,subframe));
 
 }
 
@@ -595,20 +587,20 @@ double aggregate_eNB_UE_localization_stats(PHY_VARS_eNB *phy_vars_eNB, int8_t UE
   struct timeval ts;
   double sys_bw = 0;
   uint8_t N_RB_DL;
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
 
-  Mod_id = phy_vars_eNB->Mod_id;
-  CC_id = phy_vars_eNB->CC_id;
-  ref_timestamp_ms = phy_vars_eNB->ulsch_eNB[UE_id+1]->reference_timestamp_ms;
+  Mod_id = eNB->Mod_id;
+  CC_id = eNB->CC_id;
+  ref_timestamp_ms = eNB->ulsch[UE_id+1]->reference_timestamp_ms;
 
   for (i=0; i<13; i++) {
-    len += sprintf(&cqis[len]," %d ", phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].DL_subband_cqi[0][i]);
+    len += sprintf(&cqis[len]," %d ", eNB->UE_stats[(uint32_t)UE_id].DL_subband_cqi[0][i]);
   }
 
   len = 0;
 
-  for (i=0; i<phy_vars_eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->active_subcarrier; i++) {
-    len += sprintf(&sub_powers[len]," %d ", phy_vars_eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->subcarrier_power[i]);
+  for (i=0; i<eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->active_subcarrier; i++) {
+    len += sprintf(&sub_powers[len]," %d ", eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->subcarrier_power[i]);
   }
 
   gettimeofday(&ts, NULL);
@@ -629,23 +621,23 @@ double aggregate_eNB_UE_localization_stats(PHY_VARS_eNB *phy_vars_eNB, int8_t UE
         "Wideband CQI (%d,%d), "
         "DL Subband CQI[13] %s \n",
         //          "timestamp %d, (%d active subcarrier) %s \n"
-        phy_vars_eNB->dlsch_eNB[(uint32_t)UE_id][0]->rnti, UE_id, Mod_id, current_timestamp_ms,
+        eNB->dlsch[(uint32_t)UE_id][0]->rnti, UE_id, Mod_id, current_timestamp_ms,
         frame,subframe,
         UE_tx_power_dB,
-        phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].UL_rssi[0],
-        phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].UL_rssi[1],
-        dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->ulsch_power[0]),
-        dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->ulsch_power[1]),
-        phy_vars_eNB->rx_total_gain_eNB_dB,
-        phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].UE_timing_offset, // raw timing advance 1/sampling rate
-        phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].timing_advance_update,
-        phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].DL_cqi[0],phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].DL_cqi[1],
-        phy_vars_eNB->PHY_measurements_eNB[Mod_id].wideband_cqi_dB[(uint32_t)UE_id][0],
-        phy_vars_eNB->PHY_measurements_eNB[Mod_id].wideband_cqi_dB[(uint32_t)UE_id][1],
+        eNB->UE_stats[(uint32_t)UE_id].UL_rssi[0],
+        eNB->UE_stats[(uint32_t)UE_id].UL_rssi[1],
+        dB_fixed(eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->ulsch_power[0]),
+        dB_fixed(eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->ulsch_power[1]),
+        eNB->rx_total_gain_eNB_dB,
+        eNB->UE_stats[(uint32_t)UE_id].UE_timing_offset, // raw timing advance 1/sampling rate
+        eNB->UE_stats[(uint32_t)UE_id].timing_advance_update,
+        eNB->UE_stats[(uint32_t)UE_id].DL_cqi[0],eNB->UE_stats[(uint32_t)UE_id].DL_cqi[1],
+        eNB->measurements[Mod_id].wideband_cqi_dB[(uint32_t)UE_id][0],
+        eNB->measurements[Mod_id].wideband_cqi_dB[(uint32_t)UE_id][1],
         cqis);
   LOG_D(LOCALIZE, " PHY: timestamp %d, (%d active subcarrier) %s \n",
         current_timestamp_ms,
-        phy_vars_eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->active_subcarrier,
+        eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->active_subcarrier,
         sub_powers);
 
   N_RB_DL = frame_parms->N_RB_DL;
@@ -668,75 +660,75 @@ double aggregate_eNB_UE_localization_stats(PHY_VARS_eNB *phy_vars_eNB, int8_t UE
     break;
   }
 
-  if ((current_timestamp_ms - ref_timestamp_ms > phy_vars_eNB->ulsch_eNB[UE_id+1]->aggregation_period_ms)) {
+  if ((current_timestamp_ms - ref_timestamp_ms > eNB->ulsch[UE_id+1]->aggregation_period_ms)) {
     // check the size of one list to be sure there was a message transmitted during the defined aggregation period
 
     // make the reference timestamp == current timestamp
-    phy_vars_eNB->ulsch_eNB[UE_id+1]->reference_timestamp_ms = current_timestamp_ms;
+    eNB->ulsch[UE_id+1]->reference_timestamp_ms = current_timestamp_ms;
     int i;
 
     for (i=0; i<10; i++) {
-      median_power = calculate_median(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_rss_list[i]);
-      del(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_rss_list[i]);
-      median_rssi = calculate_median(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_rssi_list[i]);
-      del(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_rssi_list[i]);
-      median_subcarrier_rss = calculate_median(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_subcarrier_rss_list[i]);
-      del(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_subcarrier_rss_list[i]);
-      median_TA = calculate_median(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_timing_advance_list[i]);
-      del(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_timing_advance_list[i]);
-      median_TA_update = calculate_median(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_timing_update_list[i]);
-      del(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_timing_update_list[i]);
+      median_power = calculate_median(&eNB->ulsch[UE_id+1]->loc_rss_list[i]);
+      del(&eNB->ulsch[UE_id+1]->loc_rss_list[i]);
+      median_rssi = calculate_median(&eNB->ulsch[UE_id+1]->loc_rssi_list[i]);
+      del(&eNB->ulsch[UE_id+1]->loc_rssi_list[i]);
+      median_subcarrier_rss = calculate_median(&eNB->ulsch[UE_id+1]->loc_subcarrier_rss_list[i]);
+      del(&eNB->ulsch[UE_id+1]->loc_subcarrier_rss_list[i]);
+      median_TA = calculate_median(&eNB->ulsch[UE_id+1]->loc_timing_advance_list[i]);
+      del(&eNB->ulsch[UE_id+1]->loc_timing_advance_list[i]);
+      median_TA_update = calculate_median(&eNB->ulsch[UE_id+1]->loc_timing_update_list[i]);
+      del(&eNB->ulsch[UE_id+1]->loc_timing_update_list[i]);
 
       if (median_power != 0)
-        push_front(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_rss_list,median_power);
+        push_front(&eNB->ulsch[UE_id+1]->tot_loc_rss_list,median_power);
 
       if (median_rssi != 0)
-        push_front(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_rssi_list,median_rssi);
+        push_front(&eNB->ulsch[UE_id+1]->tot_loc_rssi_list,median_rssi);
 
       if (median_subcarrier_rss != 0)
-        push_front(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_subcarrier_rss_list,median_subcarrier_rss);
+        push_front(&eNB->ulsch[UE_id+1]->tot_loc_subcarrier_rss_list,median_subcarrier_rss);
 
       if (median_TA != 0)
-        push_front(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_timing_advance_list,median_TA);
+        push_front(&eNB->ulsch[UE_id+1]->tot_loc_timing_advance_list,median_TA);
 
       if (median_TA_update != 0)
-        push_front(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_timing_update_list,median_TA_update);
+        push_front(&eNB->ulsch[UE_id+1]->tot_loc_timing_update_list,median_TA_update);
 
-      initialize(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_rss_list[i]);
-      initialize(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_subcarrier_rss_list[i]);
-      initialize(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_rssi_list[i]);
-      initialize(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_timing_advance_list[i]);
-      initialize(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_timing_update_list[i]);
+      initialize(&eNB->ulsch[UE_id+1]->loc_rss_list[i]);
+      initialize(&eNB->ulsch[UE_id+1]->loc_subcarrier_rss_list[i]);
+      initialize(&eNB->ulsch[UE_id+1]->loc_rssi_list[i]);
+      initialize(&eNB->ulsch[UE_id+1]->loc_timing_advance_list[i]);
+      initialize(&eNB->ulsch[UE_id+1]->loc_timing_update_list[i]);
     }
 
-    median_power = calculate_median(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_rss_list);
-    del(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_rss_list);
-    median_rssi = calculate_median(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_rssi_list);
-    del(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_rssi_list);
-    median_subcarrier_rss = calculate_median(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_subcarrier_rss_list);
-    del(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_subcarrier_rss_list);
-    median_TA = calculate_median(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_timing_advance_list);
-    del(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_timing_advance_list);
-    median_TA_update = calculate_median(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_timing_update_list);
-    del(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_timing_update_list);
+    median_power = calculate_median(&eNB->ulsch[UE_id+1]->tot_loc_rss_list);
+    del(&eNB->ulsch[UE_id+1]->tot_loc_rss_list);
+    median_rssi = calculate_median(&eNB->ulsch[UE_id+1]->tot_loc_rssi_list);
+    del(&eNB->ulsch[UE_id+1]->tot_loc_rssi_list);
+    median_subcarrier_rss = calculate_median(&eNB->ulsch[UE_id+1]->tot_loc_subcarrier_rss_list);
+    del(&eNB->ulsch[UE_id+1]->tot_loc_subcarrier_rss_list);
+    median_TA = calculate_median(&eNB->ulsch[UE_id+1]->tot_loc_timing_advance_list);
+    del(&eNB->ulsch[UE_id+1]->tot_loc_timing_advance_list);
+    median_TA_update = calculate_median(&eNB->ulsch[UE_id+1]->tot_loc_timing_update_list);
+    del(&eNB->ulsch[UE_id+1]->tot_loc_timing_update_list);
 
-    initialize(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_rss_list);
-    initialize(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_subcarrier_rss_list);
-    initialize(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_rssi_list);
-    initialize(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_timing_advance_list);
-    initialize(&phy_vars_eNB->ulsch_eNB[UE_id+1]->tot_loc_timing_update_list);
+    initialize(&eNB->ulsch[UE_id+1]->tot_loc_rss_list);
+    initialize(&eNB->ulsch[UE_id+1]->tot_loc_subcarrier_rss_list);
+    initialize(&eNB->ulsch[UE_id+1]->tot_loc_rssi_list);
+    initialize(&eNB->ulsch[UE_id+1]->tot_loc_timing_advance_list);
+    initialize(&eNB->ulsch[UE_id+1]->tot_loc_timing_update_list);
 
     double alpha = 2, power_distance, time_distance;
     // distance = 10^((Ptx - Prx - A)/10alpha), A is a constance experimentally evaluated
-    // A includes the rx gain (phy_vars_eNB->rx_total_gain_eNB_dB) and hardware calibration
-    power_distance = pow(10, ((UE_tx_power_dB - median_power - phy_vars_eNB->rx_total_gain_eNB_dB + 133)/(10.0*alpha)));
+    // A includes the rx gain (eNB->rx_total_gain_eNB_dB) and hardware calibration
+    power_distance = pow(10, ((UE_tx_power_dB - median_power - eNB->rx_total_gain_eNB_dB + 133)/(10.0*alpha)));
     /* current measurements shows constant UE_timing_offset = 18
        and timing_advance_update = 11 at 1m. at 5m, timing_advance_update = 12*/
-    //time_distance = (double) 299792458*(phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].timing_advance_update)/(sys_bw*1000000);
-    time_distance = (double) abs(phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].timing_advance_update - 11) * 4.89;//  (3 x 108 x 1 / (15000 x 2048)) / 2 = 4.89 m
+    //time_distance = (double) 299792458*(eNB->UE_stats[(uint32_t)UE_id].timing_advance_update)/(sys_bw*1000000);
+    time_distance = (double) abs(eNB->UE_stats[(uint32_t)UE_id].timing_advance_update - 11) * 4.89;//  (3 x 108 x 1 / (15000 x 2048)) / 2 = 4.89 m
 
-    phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].distance.time_based = time_distance;
-    phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].distance.power_based = power_distance;
+    eNB->UE_stats[(uint32_t)UE_id].distance.time_based = time_distance;
+    eNB->UE_stats[(uint32_t)UE_id].distance.power_based = power_distance;
 
     LOG_D(LOCALIZE, " PHY agg [UE %x/%d -> eNB %d], timestamp %d, "
           "frame %d, subframe %d "
@@ -747,61 +739,61 @@ double aggregate_eNB_UE_localization_stats(PHY_VARS_eNB *phy_vars_eNB, int8_t UE
           "power estimated r = %0.3f, "
           " TA %d, update %d "
           "TA estimated r = %0.3f\n"
-          ,phy_vars_eNB->dlsch_eNB[(uint32_t)UE_id][0]->rnti, UE_id, Mod_id, current_timestamp_ms,
+          ,eNB->dlsch[(uint32_t)UE_id][0]->rnti, UE_id, Mod_id, current_timestamp_ms,
           frame, subframe,
           UE_tx_power_dB,
           median_rssi,
           median_power,
-          phy_vars_eNB->rx_total_gain_eNB_dB,
+          eNB->rx_total_gain_eNB_dB,
           power_distance,
-          phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].UE_timing_offset, median_TA_update,
+          eNB->UE_stats[(uint32_t)UE_id].UE_timing_offset, median_TA_update,
           time_distance);
 
     return 0;
   } else {
-    avg_power = (dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->ulsch_power[0]) + dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->ulsch_power[1]))/2;
-    avg_rssi = (phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].UL_rssi[0] + phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].UL_rssi[1])/2;
+    avg_power = (dB_fixed(eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->ulsch_power[0]) + dB_fixed(eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->ulsch_power[1]))/2;
+    avg_rssi = (eNB->UE_stats[(uint32_t)UE_id].UL_rssi[0] + eNB->UE_stats[(uint32_t)UE_id].UL_rssi[1])/2;
 
-    push_front(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_rss_list[subframe],avg_power);
-    push_front(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_rssi_list[subframe],avg_rssi);
+    push_front(&eNB->ulsch[UE_id+1]->loc_rss_list[subframe],avg_power);
+    push_front(&eNB->ulsch[UE_id+1]->loc_rssi_list[subframe],avg_rssi);
 
-    for (i=0; i<phy_vars_eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->active_subcarrier; i++) {
-      push_front(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_subcarrier_rss_list[subframe], phy_vars_eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->subcarrier_power[i]);
+    for (i=0; i<eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->active_subcarrier; i++) {
+      push_front(&eNB->ulsch[UE_id+1]->loc_subcarrier_rss_list[subframe], eNB->lte_eNB_pusch_vars[(uint32_t)UE_id]->subcarrier_power[i]);
     }
 
-    push_front(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_timing_advance_list[subframe], phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].UE_timing_offset);
-    push_front(&phy_vars_eNB->ulsch_eNB[UE_id+1]->loc_timing_update_list[subframe], phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].timing_advance_update);
+    push_front(&eNB->ulsch[UE_id+1]->loc_timing_advance_list[subframe], eNB->UE_stats[(uint32_t)UE_id].UE_timing_offset);
+    push_front(&eNB->ulsch[UE_id+1]->loc_timing_update_list[subframe], eNB->UE_stats[(uint32_t)UE_id].timing_advance_update);
     return -1;
   }
 }
 #endif
-LTE_eNB_UE_stats* get_eNB_UE_stats(uint8_t Mod_id, uint8_t  CC_id,uint16_t rnti)
+LTE_eNB_UE_stats* get_UE_stats(uint8_t Mod_id, uint8_t  CC_id,uint16_t rnti)
 {
   int8_t UE_id;
 
   if ((PHY_vars_eNB_g == NULL) || (PHY_vars_eNB_g[Mod_id] == NULL) || (PHY_vars_eNB_g[Mod_id][CC_id]==NULL)) {
-    LOG_E(PHY,"get_eNB_UE_stats: No phy_vars_eNB found (or not allocated) for Mod_id %d,CC_id %d\n",Mod_id,CC_id);
+    LOG_E(PHY,"get_UE_stats: No eNB found (or not allocated) for Mod_id %d,CC_id %d\n",Mod_id,CC_id);
     return NULL;
   }
 
   UE_id = find_ue(rnti, PHY_vars_eNB_g[Mod_id][CC_id]);
 
   if (UE_id == -1) {
-    //    LOG_E(PHY,"get_eNB_UE_stats: UE with rnti %x not found\n",rnti);
+    //    LOG_E(PHY,"get_UE_stats: UE with rnti %x not found\n",rnti);
     return NULL;
   }
 
-  return(&PHY_vars_eNB_g[Mod_id][CC_id]->eNB_UE_stats[(uint32_t)UE_id]);
+  return(&PHY_vars_eNB_g[Mod_id][CC_id]->UE_stats[(uint32_t)UE_id]);
 }
 
-int8_t find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB)
+int8_t find_ue(uint16_t rnti, PHY_VARS_eNB *eNB)
 {
   uint8_t i;
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    if ((phy_vars_eNB->dlsch_eNB[i]) &&
-        (phy_vars_eNB->dlsch_eNB[i][0]) &&
-        (phy_vars_eNB->dlsch_eNB[i][0]->rnti==rnti)) {
+    if ((eNB->dlsch[i]) &&
+        (eNB->dlsch[i][0]) &&
+        (eNB->dlsch[i][0]->rnti==rnti)) {
       return(i);
     }
   }
@@ -809,9 +801,9 @@ int8_t find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB)
 #ifdef CBA
 
   for (i=0; i<NUM_MAX_CBA_GROUP; i++) {
-    if ((phy_vars_eNB->ulsch_eNB[i]) && // ue J is the representative of group j
-        (phy_vars_eNB->ulsch_eNB[i]->num_active_cba_groups) &&
-        (phy_vars_eNB->ulsch_eNB[i]->cba_rnti[i]== rnti))
+    if ((eNB->ulsch[i]) && // ue J is the representative of group j
+        (eNB->ulsch[i]->num_active_cba_groups) &&
+        (eNB->ulsch[i]->cba_rnti[i]== rnti))
       return(i);
   }
 
@@ -823,7 +815,7 @@ int8_t find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB)
 LTE_DL_FRAME_PARMS* get_lte_frame_parms(module_id_t Mod_id, uint8_t  CC_id)
 {
 
-  return(&PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms);
+  return(&PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms);
 
 }
 

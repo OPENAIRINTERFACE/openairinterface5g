@@ -1,3 +1,24 @@
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
 /*-------------------------------------------------------------------
  *          Example algorithms f1, f1*, f2, f3, f4, f5, f5*
  *-------------------------------------------------------------------
@@ -306,6 +327,11 @@ void ComputeOPc( u8 op_c_pP[16] )
 
   for (i=0; i<16; i++)
     op_c_pP[i] ^= OP[i];
+  LOG_TRACE(DEBUG,
+            "USIM-API  - OPc[0..15]=%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
+            op_c_pP[0],op_c_pP[1],op_c_pP[2], op_c_pP[3], op_c_pP[4], op_c_pP[5], op_c_pP[6], op_c_pP[7],
+            op_c_pP[8],op_c_pP[9],op_c_pP[10],op_c_pP[11],op_c_pP[12],op_c_pP[13],op_c_pP[14],op_c_pP[15]);
+
 
   return;
 } /* end of function ComputeOPc */
