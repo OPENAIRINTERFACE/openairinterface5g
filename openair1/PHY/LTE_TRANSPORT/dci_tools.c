@@ -5128,12 +5128,19 @@ int generate_ue_dlsch_params_from_dci(int frame,
           case 5:
             dlsch1_harq->mimo_mode   = PUSCH_PRECODING0;
             // pmi stored from ulsch allocation routine
-            dlsch1_harq->pmi_alloc   = dlsch0->pmi_alloc;
+            dlsch1_harq->pmi_alloc   = dlsch1->pmi_alloc;
+#ifdef DEBUG_HARQ
+            printf ("[DCI UE] I am calling from the UE side pmi_alloc_new = %d\n", dlsch1->pmi_alloc);
+#endif
+
             //LOG_I(PHY,"XXX using PMI %x\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc));
           break;
           case 6:
             dlsch1_harq->mimo_mode   = PUSCH_PRECODING1;
-            dlsch1_harq->pmi_alloc   = dlsch0->pmi_alloc;
+            dlsch1_harq->pmi_alloc   = dlsch1->pmi_alloc;
+#ifdef DEBUG_HARQ
+            printf ("[DCI UE] I am calling from the UE side pmi_alloc_new = %d\n", dlsch1->pmi_alloc);
+#endif
           return(-1);
           break;
         }
@@ -6069,6 +6076,52 @@ uint32_t pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, ui
 
 }
 
+int32_t pmi_convert_rank1_from_rank2(uint16_t pmi_alloc, int tpmi, int nb_rb)
+{
+  int nb_subbands = 0;
+  int32_t pmi_alloc_new = 0, pmi_new = 0, pmi_old = 0;
+  int i;
+
+  switch (nb_rb) {
+    case 6:
+      nb_subbands = 6;
+      break;
+    default:
+    case 25:
+      nb_subbands = 7;
+      break;
+    case 50:
+      nb_subbands = 9;
+      break;
+    case 100:
+      nb_subbands = 13;
+      break;
+    }
+
+  for (i = 0; i < nb_subbands; i++) {
+    pmi_old = (pmi_alloc >> i)&1;
+
+    if (pmi_old == 0)
+      if (tpmi == 5)
+        pmi_new = 0;
+      else
+        pmi_new = 1;
+    else
+      if (tpmi == 5)
+        pmi_new = 2;
+      else
+        pmi_new = 3;
+
+    pmi_alloc_new|=pmi_new<<(2*i);
+
+  }
+#ifdef DEBUG_HARQ
+printf("  [DCI UE] pmi_alloc_old %d, pmi_alloc_new %d pmi_old %d , pmi_new %d\n", pmi_alloc, pmi_alloc_new,pmi_old, pmi_new );
+#endif
+return(pmi_alloc_new);
+
+}
+
 uint16_t quantize_subband_pmi(PHY_MEASUREMENTS *meas,uint8_t eNB_id,int nb_rb)
 {
 
@@ -6150,8 +6203,9 @@ uint16_t quantize_subband_pmi(PHY_MEASUREMENTS *meas,uint8_t eNB_id,int nb_rb)
     }
 
   }
-     // printf( "pmivect %d \n", pmivect);
-
+#ifdef DEBUG_HARQ
+    printf( "quantize_subband_pmi pmivect %d \n", pmivect);
+#endif
   return(pmivect);
 }
 

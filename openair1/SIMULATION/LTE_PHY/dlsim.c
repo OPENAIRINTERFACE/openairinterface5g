@@ -46,7 +46,7 @@
 #include <unistd.h>
 #include <execinfo.h>
 #include <signal.h>
-
+#include <stdbool.h>
 #include "SIMULATION/TOOLS/defs.h"
 #include "PHY/types.h"
 #include "PHY/defs.h"
@@ -167,6 +167,8 @@ int main(int argc, char **argv)
   int TB=0;
   RX_type_t rx_type=rx_standard;
   unsigned char  cur_harq_pid;
+  int hold_rank1_precoder=0;
+  int tpmi_retr=2;
 
 
   SCM_t channel_model=Rayleigh1;
@@ -232,6 +234,7 @@ int main(int argc, char **argv)
   int ch_realization;
   int pmi_feedback=0;
   int hold_channel=0;
+  bool  is_first_time;
 
   // temporarily for retransmissions:
   unsigned char resend_cw1=0; //if 0 resend only cw0
@@ -272,6 +275,7 @@ int main(int argc, char **argv)
   char channel_model_input[17]="I";
 
   int TB0_active = 1;
+
   uint32_t perfect_ce = 0;
 
   LTE_DL_UE_HARQ_t *dlsch0_ue_harq;
@@ -326,7 +330,7 @@ int main(int argc, char **argv)
   //  num_layers = 1;
   perfect_ce = 0;
 
-  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:XYv:W:J:")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:XYv:W:J:K:")) != -1) {
 
     switch (c) {
     case 'a':
@@ -590,6 +594,10 @@ int main(int argc, char **argv)
       case 'J':
         interf_unaw_shift=atoi(optarg);
         break;
+      case 'K':
+      tpmi_retr = atoi(optarg);
+      //i_mod = get_Qm(mcs2); /// think here again!!!
+      break;
       case 'h':
       default:
       printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -p(extended prefix on) -m mcs1 -M mcs2 -n n_frames -s snr0 -x transmission mode (1,2,3,5,6) -y TXant -z RXant -I trch_file\n",argv[0]);
@@ -743,14 +751,14 @@ int main(int argc, char **argv)
     sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_u%d_imod%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1,mcs_i,rx_type,i_mod);
   else if (abstx == 1)
     if (perfect_ce==1)
-   sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_pce_sh%d_rpmi4.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2,interf_unaw_shift );
+   sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_pce_sh%d_rpmi0.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2,interf_unaw_shift );
     else
-      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_sh%d_rtpmi4.csv",transmission_mode,rx_type,channel_model, n_frames, n_rx, num_rounds, mcs1, mcs2,interf_unaw_shift );
+      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_sh%d_rtpmi0.csv",transmission_mode,rx_type,channel_model, n_frames, n_rx, num_rounds, mcs1, mcs2,interf_unaw_shift );
   else //abstx=0
     if (perfect_ce==1)
-      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d_rtpmi4.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift);
+      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d_rtpmi0.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift);
    else
-    sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d_pnort_rtpmi4.csv",transmission_mode,rx_type,channel_model,n_frames,n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift);
+    sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d_pnort_rtpmi0.csv",transmission_mode,rx_type,channel_model,n_frames,n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift);
 
   bler_fd = fopen(bler_fname,"w");
   if (bler_fd==NULL) {
@@ -2036,9 +2044,11 @@ int main(int argc, char **argv)
       //printf("Trial %d\n",trials);
         fflush(stdout);
         round = 0;
+        is_first_time = true;
 #ifdef DEBUG_HARQ
         printf("[DLSIM] TRIAL %d\n", trials);
 #endif
+        printf("TPMI_retr= %d\n", tpmi_retr);
 
         for (i=0; i<frame_parms->nb_antennas_tx; i++) {
           memset(sic_buffer[i], 0, FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t));
@@ -2466,7 +2476,7 @@ int main(int argc, char **argv)
                         ((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->rv2              = round&3;
                       }
                       else {  // deactivate TB0
-                        ((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi             = 4;
+                        ((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi             = tpmi_retr;
                         ((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->mcs1             = 0;
                         ((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->rv1              = 1;
                         ((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->ndi2             = trials&1;
@@ -2488,7 +2498,7 @@ int main(int argc, char **argv)
 #ifdef DEBUG_HARQ
                         printf("\n[DLSIM] Requesting only TB1 from temp DCI\n");
 #endif
-                        ((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->tpmi             = 4;
+                        ((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->tpmi             = tpmi_retr;
                         ((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->mcs1             = 0;
                         ((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->rv1              = 1;
                         ((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->ndi2             = trials&1;
@@ -2506,8 +2516,8 @@ int main(int argc, char **argv)
                                                          SI_RNTI,
                                                          0,
                                                          P_RNTI,
-                                                         PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
-
+                                                         PHY_vars_UE->dlsch_ue[0][1]->pmi_alloc
+                                                         );
                       break;
                     case 50:
                       if (TB0_active==1) {
@@ -2520,7 +2530,7 @@ int main(int argc, char **argv)
                         ((DCI2_10MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->rv2              = round&3;
                       }
                       else {  // deactivate TB0
-                        ((DCI2_10MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->tpmi             = 4;
+                        ((DCI2_10MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->tpmi             = tpmi_retr;
                         ((DCI2_10MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->mcs1             = 0;
                         ((DCI2_10MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->rv1              = 1;
                         ((DCI2_10MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->ndi2             = trials&1;
@@ -2539,7 +2549,7 @@ int main(int argc, char **argv)
                         ((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->rv2              = round&3;
                       }
                       else {  // deactivate TB0
-                        ((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->tpmi             = 4;
+                        ((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->tpmi             = tpmi_retr;
                         ((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->mcs1             = 0;
                         ((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->rv1              = 1;
                         ((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[0])->ndi2             = trials&1;
@@ -2662,7 +2672,7 @@ int main(int argc, char **argv)
                         ((DCI2_1_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->rv2              = round&3;
                       }
                       else {  // deactivate TB0
-                        ((DCI2_1_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->tpmi             = 4;
+                        ((DCI2_1_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->tpmi             = tpmi_retr;
                         ((DCI2_1_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->mcs1             = 0;
                         ((DCI2_1_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->rv1              = 1;
                         ((DCI2_1_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->ndi2             = trials&1;
@@ -2684,7 +2694,7 @@ int main(int argc, char **argv)
 #ifdef DEBUG_HARQ
                         printf("\n [DLSIM] Requesting only TB1 from temp DCI\n");
 #endif
-                        ((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->tpmi             = 4;
+                        ((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->tpmi             = tpmi_retr;
                         ((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->mcs1             = 0;
                         ((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->rv1              = 1;
                         ((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->ndi2             = trials&1;
@@ -2702,7 +2712,8 @@ int main(int argc, char **argv)
                                                          SI_RNTI,
                                                          0,
                                                          P_RNTI,
-                                                         PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
+                                                         PHY_vars_UE->dlsch_ue[0][1]->pmi_alloc
+                                                         );
                       break;
                     case 50:
                       if (TB0_active==1) {
@@ -2715,7 +2726,7 @@ int main(int argc, char **argv)
                         ((DCI2_10MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->rv2              = round&3;
                       }
                       else {  // deactivate TB0
-                        ((DCI2_10MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->tpmi             = 4;
+                        ((DCI2_10MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->tpmi             = tpmi_retr;
                         ((DCI2_10MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->mcs1             = 0;
                         ((DCI2_10MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->rv1              = 1;
                         ((DCI2_10MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->ndi2             = trials&1;
@@ -2734,7 +2745,7 @@ int main(int argc, char **argv)
                         ((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->rv2              = round&3;
                       }
                       else {  // deactivate TB0
-                        ((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->tpmi             = 4;
+                        ((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->tpmi             = tpmi_retr;
                         ((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->mcs1             = 0;
                         ((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->rv1              = 1;
                         ((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[0])->ndi2             = trials&1;
@@ -2828,8 +2839,27 @@ int main(int argc, char **argv)
                   PHY_vars_UE->dlsch_ue[0][TB]->pmi_alloc = quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0,PHY_vars_UE->lte_frame_parms.N_RB_DL);
                 }
 
+                if ((transmission_mode == 4) && (hold_rank1_precoder == 0) && ((((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 5) ||(((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 5))){
+#ifdef DEBUG_HARQ
+                  printf ("[DLSIM] I am calling from the  eNode B 1\n");
+#endif
+                  PHY_vars_eNB->dlsch_eNB[0][TB]->harq_processes[0]->pmi_alloc = pmi_convert_rank1_from_rank2(PHY_vars_eNB->dlsch_eNB[0][TB]->harq_processes[0]->pmi_alloc,5,PHY_vars_eNB->lte_frame_parms.N_RB_DL);
+#ifdef DEBUG_HARQ
+                  printf ("[DLSIM] I am calling from the  eNode B 2\n");
+#endif
+                  PHY_vars_UE->dlsch_ue[0][TB]->pmi_alloc = pmi_convert_rank1_from_rank2(PHY_vars_UE->dlsch_ue[0][TB]->pmi_alloc,5,PHY_vars_UE->lte_frame_parms.N_RB_DL);
+                }
 
-
+                if ((transmission_mode == 4) && (hold_rank1_precoder == 0) && ((((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 6) ||(((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 6))){
+#ifdef DEBUG_HARQ
+                  printf ("[DLSIM] I am calling from the  eNode B 1\n");
+#endif
+                  PHY_vars_eNB->dlsch_eNB[0][TB]->harq_processes[0]->pmi_alloc = pmi_convert_rank1_from_rank2(PHY_vars_eNB->dlsch_eNB[0][TB]->harq_processes[0]->pmi_alloc,6,PHY_vars_eNB->lte_frame_parms.N_RB_DL);
+#ifdef DEBUG_HARQ
+                  printf ("[DLSIM] I am calling from the  eNode B 2\n");
+#endif
+                  PHY_vars_UE->dlsch_ue[0][TB]->pmi_alloc = pmi_convert_rank1_from_rank2(PHY_vars_UE->dlsch_ue[0][TB]->pmi_alloc,6,PHY_vars_UE->lte_frame_parms.N_RB_DL);
+                }
 
                 start_meas(&PHY_vars_eNB->dlsch_encoding_stats);
                 if (dlsch_encoding(((TB==0) ? input_buffer0[k] : input_buffer1[k]),
@@ -3204,6 +3234,9 @@ int main(int argc, char **argv)
               }
 
               if ((Ns==((2*subframe))) && (l==0)) {
+#ifdef DEBUG_HARQ
+
+#endif
                 lte_ue_measurements(PHY_vars_UE,
                                     subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti,
                                     1,
@@ -3236,8 +3269,13 @@ int main(int argc, char **argv)
                   if (pmi_feedback == 1) {
                     pmi_feedback = 0;
                     hold_channel = 1;
+                      if (hold_rank1_precoder == 0)
+                        hold_rank1_precoder = 1;
                     //printf ("trial %d pmi_feedback %d \n", trials, pmi_feedback);
                     //printf ("go to PMI feedback\n");
+#ifdef DEBUG_HARQ
+                    printf ("[DLSIM] I am doing measurements and coming back to reencoding\n");
+#endif
                     goto PMI_FEEDBACK;
                   }
                 }
@@ -4175,6 +4213,13 @@ int main(int argc, char **argv)
             resend_one[round]++;
             resend_cw0_cw1=0;
               TB0_active=0;
+              if(is_first_time) {
+                hold_rank1_precoder = 0;
+                is_first_time = false;
+              }
+              else
+                hold_rank1_precoder = 1;
+
 #ifdef DEBUG_HARQ
             printf("[DLSIM] ret[TB0] =%d, ret[TB1] =%d, trial %d \n", ret[0], ret[1], trials);
             printf("[DLSIM] TB0 deactivated\n");
