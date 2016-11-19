@@ -751,14 +751,14 @@ int main(int argc, char **argv)
     sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_u%d_imod%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1,mcs_i,rx_type,i_mod);
   else if (abstx == 1)
     if (perfect_ce==1)
-   sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_pce_sh%d_rpmi0.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2,interf_unaw_shift );
+   sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_pce_sh%d_rpmi%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2,interf_unaw_shift, tpmi_retr);
     else
-      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_sh%d_rtpmi0.csv",transmission_mode,rx_type,channel_model, n_frames, n_rx, num_rounds, mcs1, mcs2,interf_unaw_shift );
+      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_sh%d_rtpmi%d.csv",transmission_mode,rx_type,channel_model, n_frames, n_rx, num_rounds, mcs1, mcs2,interf_unaw_shift, tpmi_retr);
   else //abstx=0
     if (perfect_ce==1)
-      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d_rtpmi0.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift);
+      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d_rtpmi%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift, tpmi_retr);
    else
-    sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d_pnort_rtpmi0.csv",transmission_mode,rx_type,channel_model,n_frames,n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift);
+    sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d_pnort_rtpmi%d.csv",transmission_mode,rx_type,channel_model,n_frames,n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift, tpmi_retr);
 
   bler_fd = fopen(bler_fname,"w");
   if (bler_fd==NULL) {
@@ -768,7 +768,7 @@ int main(int argc, char **argv)
   if ((transmission_mode != 3) && (transmission_mode != 4))
     fprintf(bler_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_st1; err0_st2 trials0; err1_st1; err1_st2; trials1; err2_st1; err2_st2; trials2; err3_st1; err3_st2; trials3; throug 0; throug 1; sum throug; dci_err\n");
   else
-    fprintf(bler_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_st1; err0_st2; trials0 r0; trials1 r0; err1_st1; err1_st2; trials0_r1; trials1_r1;; err2_st1; err2_st2; trials0_r2; trials1_r2; err3_st1; err3_st2; trials0_r3; trials1_r3; th0_r0; th1_r0; th_sum_r0; th0_r1; th1_r1; th_sum_r1; th0_r2; th1_r2; th_sum_r2; th0_r3; th1_r3; th_sum_r3; tot_th\n");
+    fprintf(bler_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_st1; err0_st2; trials0 r0; trials1 r0; err1_st1; err1_st2; trials0_r1; trials1_r1; err2_st1; err2_st2; trials0_r2; trials1_r2; err3_st1; err3_st2; trials0_r3; trials1_r3; th0_r0; th1_r0; th_sum_r0; th0_r1; th1_r1; th_sum_r1; th0_r2; th1_r2; th_sum_r2; th0_r3; th1_r3; th_sum_r3; tot_th\n");
 
 
   if (test_perf != 0) {
@@ -2047,8 +2047,8 @@ int main(int argc, char **argv)
         is_first_time = true;
 #ifdef DEBUG_HARQ
         printf("[DLSIM] TRIAL %d\n", trials);
-#endif
         printf("TPMI_retr= %d\n", tpmi_retr);
+#endif
 
         for (i=0; i<frame_parms->nb_antennas_tx; i++) {
           memset(sic_buffer[i], 0, FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t));
