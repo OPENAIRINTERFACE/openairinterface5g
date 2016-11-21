@@ -843,6 +843,8 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   unsigned int rxs,txs;
   int i;
   int tx_sfoffset = 3;//(eNB->single_thread_flag == 1) ? 3 : 3;
+  openair0_timestamp old_ts;
+
   if (proc->first_rx==0) {
     
     // Transmit TX buffer based on timestamp from RX
@@ -876,6 +878,8 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
 
+  old_ts = proc->timestamp_rx;
+
   rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
 				    &(proc->timestamp_rx),
 				    rxp,
@@ -883,13 +887,18 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 				    fp->nb_antennas_rx);
 
   if (rxs != fp->samples_per_tti)
-    printf("Asked for %d samples, got %d from USRP\n",fp->samples_per_tti,rxs);
+    LOG_E(PHY,"rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_tti,rxs);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
  
   if (proc->first_rx == 1)
     eNB->ts_offset = proc->timestamp_rx;
- 
+  else {
+    if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
+      LOG_I(PHY,"rx_rf: rfdevice timing drift of %d samples\n",proc->timestamp_rx - old_ts);
+      eNB->ts_offset += (proc->timestamp_rx - old_ts);
+    }
+  }
   proc->frame_rx    = ((proc->timestamp_rx-eNB->ts_offset) / (fp->samples_per_tti*10))&1023;
   proc->subframe_rx = ((proc->timestamp_rx-eNB->ts_offset) / fp->samples_per_tti)%10;
   // synchronize first reception to frame 0 subframe 0
