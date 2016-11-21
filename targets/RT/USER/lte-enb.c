@@ -895,8 +895,8 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     eNB->ts_offset = proc->timestamp_rx;
   else {
     if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
-      LOG_I(PHY,"rx_rf: rfdevice timing drift of %d samples\n",proc->timestamp_rx - old_ts);
-      eNB->ts_offset += (proc->timestamp_rx - old_ts);
+      LOG_I(PHY,"rx_rf: rfdevice timing drift of %d samples\n",proc->timestamp_rx - old_ts - fp->samples_per_tti);
+      eNB->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
     }
   }
   proc->frame_rx    = ((proc->timestamp_rx-eNB->ts_offset) / (fp->samples_per_tti*10))&1023;
