@@ -223,13 +223,15 @@ check_install_additional_tools (){
         android-tools-adb \
 	wvdial \
         python-numpy \
-    sshpass \
-    nscd \
-    bc \
-    ntp
+        sshpass \
+        nscd \
+        bc \
+        ntp \
+        python-scipy \
+        python-matplotlib
 
     $SUDO pip install paramiko
-    $SUDO pip install pyroute2
+    $SUDO pip install pyroute2 colorama
     $SUDO rm -fr /opt/ssh
     $SUDO GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/ssh.git /opt/ssh
     
