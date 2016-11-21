@@ -7240,7 +7240,17 @@ int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *eNB,
 
 
     if (cqi_req == 1) {
-      ulsch->harq_processes[harq_pid]->O_RI = 1; //we only support 2 antenna ports, so this is always 1 according to 3GPP 36.213 Table
+      /* 36.213 7.2.1 (release 10) says:
+       * "RI is only reported for transmission modes 3 and 4,
+       * as well as transmission modes 8 and 9 with PMI/RI reporting"
+       * This is for aperiodic reporting.
+       * TODO: deal with TM 8&9 correctly when they are implemented.
+       * TODO: deal with periodic reporting if we implement it.
+       */
+      if (transmission_mode == 3 || transmission_mode == 4)
+        ulsch->harq_processes[harq_pid]->O_RI = 1; //we only support 2 antenna ports, so this is always 1 according to 3GPP 36.213 Table
+      else
+        ulsch->harq_processes[harq_pid]->O_RI = 0;
 
       switch(transmission_mode) {
         // The aperiodic CQI reporting mode is fixed for every transmission mode instead of being configured by higher layer signaling

@@ -2,6 +2,10 @@ OpenAirInterface is under OpenAirInterface Software Alliance license.
 ├── http://www.openairinterface.org/?page_id=101
 ├── http://www.openairinterface.org/?page_id=698
 
+It is distributed under OAI Public License V1.0. 
+The license information is distributed under LICENSE file in the same directory.
+Please see NOTICE.txt for third party software that is included in the sources.
+
 The OpenAirInterface (OAI) software is composed of the following parts: 
 
 openairinterface5g
@@ -34,3 +38,4 @@ v0.2 -> Merge of enhancement-10-harmony to include NGFI RRH + New Interface for 
 v0.3 -> Last stable commit on develop branch before the merge of feature-131-new-license. This is the last commit with GPL License
 v0.4 -> Merge of feature-131-new-license. It closes issue#131 and changes the license to OAI Public License V1.0
 v0.5 -> Merge of enhancement-10-harmony-lts. It includes fixes for Ubuntu 16.04 support
+v0.5.1 -> Merge of bugfix-137-uplink-fixes. It includes stablity fixes for eNB
