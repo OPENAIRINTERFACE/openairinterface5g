@@ -227,6 +227,11 @@ typedef struct {
   uint8_t control_only;
   /// Flag to indicate that this is a calibration ULSCH (i.e. no MAC SDU and filled with TDD calibration information)
   //  int calibration_flag;
+  /// Number of soft channel bits
+  uint32_t G;
+
+  // decode phich
+  uint8_t decode_phich;
 } LTE_UL_UE_HARQ_t;
 
 typedef struct {
@@ -278,7 +283,7 @@ typedef struct {
   /// SRS active flag
   uint8_t srs_active;
   /// Pointers to 8 HARQ processes for the ULSCH
-  LTE_UL_UE_HARQ_t *harq_processes[8];
+  LTE_UL_UE_HARQ_t *harq_processes[9];
   /// Pointer to CQI data
   uint8_t o[MAX_CQI_BYTES];
   /// Length of CQI data (bits)
