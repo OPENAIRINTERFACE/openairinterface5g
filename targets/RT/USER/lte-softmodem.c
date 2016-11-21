@@ -120,7 +120,7 @@ extern int netlink_init(void);
 
 // In lte-enb.c
 extern int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg);
-extern void init_eNB(eNB_func_t *, eNB_timing_t *,int,eth_params_t *,int);
+extern void init_eNB(eNB_func_t *, eNB_timing_t *,int,eth_params_t *,int,int);
 extern void stop_eNB(int);
 extern void kill_eNB_proc(void);
 
@@ -169,6 +169,8 @@ volatile int             oai_exit = 0;
 
 
 static clock_source_t clock_source = internal;
+
+static wait_for_sync = 0;
 
 static char              UE_flag=0;
 unsigned int                    mmapped_dma=0;
@@ -696,6 +698,7 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_MMAPPED_DMA,
     LONG_OPTION_SINGLE_THREAD,
     LONG_OPTION_EXTERNAL_CLOCK,
+    LONG_OPTION_WAIT_FOR_SYNC,
 #if T_TRACER
     LONG_OPTION_T_PORT,
     LONG_OPTION_T_NOWAIT,
@@ -722,6 +725,7 @@ static void get_options (int argc, char **argv)
     {"mmapped-dma", no_argument, NULL, LONG_OPTION_MMAPPED_DMA},
     {"single-thread", no_argument, NULL, LONG_OPTION_SINGLE_THREAD},
     {"external-clock", no_argument, NULL, LONG_OPTION_EXTERNAL_CLOCK},
+    {"wait-for-sync", no_argument, NULL, LONG_OPTION_WAIT_FOR_SYNC},
 #if T_TRACER
     {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
     {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
@@ -825,6 +829,10 @@ static void get_options (int argc, char **argv)
 
     case LONG_OPTION_EXTERNAL_CLOCK:
       clock_source = external;
+      break;
+
+    case LONG_OPTION_WAIT_FOR_SYNC:
+      wait_for_sync = 1;
       break;
 
 #if T_TRACER
@@ -1808,7 +1816,7 @@ int main( int argc, char **argv )
   // start the main thread
   if (UE_flag == 1) init_UE(1);
   else { 
-    init_eNB(node_function,node_timing,1,eth_params,single_thread_flag);
+    init_eNB(node_function,node_timing,1,eth_params,single_thread_flag,wait_for_sync);
   // Sleep to allow all threads to setup
 
     number_of_cards = 1;
