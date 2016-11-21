@@ -936,12 +936,12 @@ void rx_fh_if5(PHY_VARS_eNB *eNB,int *frame, int *subframe) {
   
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
-      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
+      LOG_E(PHY,"rx_fh_if5: Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
       exit_fun("Exiting");
     }
     
     if (proc->frame_rx != *frame) {
-      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
+      LOG_E(PHY,"rx_fh_if5: Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
       exit_fun("Exiting");
     }
   } else {
@@ -989,11 +989,11 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
  
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
-      LOG_E(PHY,"Received Timestamp (IF4p5) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d,CCid %d)\n",proc->subframe_rx,*subframe,eNB->CC_id);
+      LOG_E(PHY,"rx_fh_if4p5: Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d,CCid %d)\n",proc->subframe_rx,*subframe,eNB->CC_id);
       exit_fun("Exiting");
     }
     if (proc->frame_rx != *frame) {
-      LOG_E(PHY,"Received Timestamp (IF4p5) doesn't correspond to the time we think it is (proc->frame_rx %d frame %d,CCid %d)\n",proc->frame_rx,*frame,eNB->CC_id);
+      LOG_E(PHY,"rx_fh_if4p5: Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d,CCid %d)\n",proc->frame_rx,*frame,eNB->CC_id);
       exit_fun("Exiting");
     }
   } else {
