@@ -36,7 +36,10 @@
 #include "PHY/vars.h"
 #endif
 #include "assertions.h"
- 
+
+#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/defs.h"
+
 //#define DEBUG_DCI
 
 uint32_t localRIV2alloc_LUT6[32];
@@ -3922,10 +3925,10 @@ int generate_ue_dlsch_params_from_dci(int frame,
         dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
       } else {
 
-        if (harq_pid>1) {
-          LOG_E(PHY,"Format 1A: harq_pid > 1\n");
-          return(-1);
-        }
+        //if (harq_pid>1) {
+        //  LOG_E(PHY,"Format 1A: harq_pid > 1\n");
+         // return(-1);
+        //}
 
         dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
         NPRB = RIV2nb_rb_LUT25[rballoc];
@@ -5552,7 +5555,8 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
 #ifdef DEBUG_DCI
 
-  if (dlsch[0]) {
+  if (dlsch[0] && (dlsch[0]->rnti != 0xffff)) {
+    printf("dci_format:%d \n",dci_format);
     printf("PDSCH dlsch0 UE: rnti     %x\n",dlsch[0]->rnti);
     printf("PDSCH dlsch0 UE: NBRB     %d\n",dlsch0_harq->nb_rb);
     printf("PDSCH dlsch0 UE: rballoc  %x\n",dlsch0_harq->rb_alloc_even[0]);
@@ -6396,7 +6400,11 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     if ((rnti >= cba_rnti) && (rnti < p_rnti))
       ulsch->harq_processes[harq_pid]->subframe_cba_scheduling_flag = 1; //+=1 this indicates the number of dci / cba group: not supported in the data struct
     else
-      ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+    {
+        ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+        //LOG_I(PHY,"[HARQ-UL harqId: %d] DCI0 ==> subframe_scheduling_flag = %d round: %d\n", harq_pid, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag, ulsch->harq_processes[harq_pid]->round);
+
+    }
 
     ulsch->harq_processes[harq_pid]->TPC                                   = TPC;
 
@@ -6426,7 +6434,41 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
         ulsch->harq_processes[harq_pid]->round = 0;
       } else {
         //  ulsch->harq_processes[harq_pid]->Ndi = 0;
-        // ulsch->harq_processes[harq_pid]->round++;  // This is done in phich RX
+        //ulsch->harq_processes[harq_pid]->round++;  // This is done in phich RX
+
+        //#ifdef DEBUG_PHICH
+        //LOG_I(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d Adaptative Retrans, NDI not toggled => Nack. maxHARQ_Tx %d \n",
+        //      ue->Mod_id,harq_pid,
+        //      proc->frame_rx,
+        //      subframe,
+        //      UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx);
+        //#endif
+
+
+        ulsch->harq_processes[harq_pid] = ulsch->harq_processes[8];
+        ulsch->harq_processes[harq_pid]->round++;
+        //LOG_I(PHY,"          Adaptative retransmission - copy temporary harq Process to current harq process. [harqId %d round %d] \n",harq_pid, ulsch->harq_processes[8]->round);
+
+
+        if (ulsch->harq_processes[harq_pid]->round >= UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx)
+        {
+            ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
+            ulsch->harq_processes[harq_pid]->round  = 0;
+            ulsch->harq_processes[harq_pid]->status = IDLE;
+            //LOG_I(PHY,"          PUSCH MAX Retransmission acheived ==> flush harq buff (%d) \n",harq_pid);
+            //LOG_I(PHY,"          [HARQ-UL harqId: %d] Adaptative retransmission NACK MAX RETRANS(%d) ==> subframe_scheduling_flag = %d round: %d\n", harq_pid, UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag, ulsch->harq_processes[harq_pid]->round);
+        }
+        else
+        {
+            // ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+            uint8_t rv_table[4] = {0, 2, 3, 1};
+            ulsch->harq_processes[harq_pid]->rvidx = rv_table[ulsch->harq_processes[harq_pid]->round&3];
+            ulsch->O_RI = 0;
+            ulsch->O    = 0;
+            ulsch->uci_format = HLC_subband_cqi_nopmi;
+            //LOG_I(PHY,"          [HARQ-UL harqId: %d] Adaptative retransmission NACK ==> subframe_scheduling_flag = %d round: %d\n", harq_pid, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag,ulsch->harq_processes[harq_pid]->round);
+        }
+
       }
     }
 
@@ -6476,7 +6518,16 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 
     if (cqi_req == 1) {
-      ulsch->O_RI = 1; //we only support 2 antenna ports, so this is always 1 according to 3GPP 36.213 Table
+
+      if( (AntennaInfoDedicated__transmissionMode_tm3 == transmission_mode) || (AntennaInfoDedicated__transmissionMode_tm4 == transmission_mode) )
+      {
+          ulsch->O_RI = 1;
+      }
+      else
+      {
+          ulsch->O_RI = 0;
+      }
+      //ulsch->O_RI = 0; //we only support 2 antenna ports, so this is always 1 according to 3GPP 36.213 Table
 
       switch(transmission_mode) {
         // The aperiodic CQI reporting mode is fixed for every transmission mode instead of being configured by higher layer signaling
@@ -7039,12 +7090,15 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 #ifdef DEBUG_DCI
     printf("Format 0 DCI : ulsch (ue): NBRB        %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
     printf("Format 0 DCI :ulsch (ue): first_rb    %d\n",ulsch->harq_processes[harq_pid]->first_rb);
+    printf("Format 0 DCI :ulsch (ue): rballoc     %d\n",rballoc);
     printf("Format 0 DCI :ulsch (ue): harq_pid    %d\n",harq_pid);
+    printf("Format 0 DCI :ulsch (ue): first_tx       %d\n",ulsch->harq_processes[harq_pid]->first_tx);
+    printf("Format 0 DCI :ulsch (ue): DCINdi       %d\n",ulsch->harq_processes[harq_pid]->DCINdi);
     printf("Format 0 DCI :ulsch (ue): round       %d\n",ulsch->harq_processes[harq_pid]->round);
     printf("Format 0 DCI :ulsch (ue): TBS         %d\n",ulsch->harq_processes[harq_pid]->TBS);
     printf("Format 0 DCI :ulsch (ue): mcs         %d\n",ulsch->harq_processes[harq_pid]->mcs);
     printf("Format 0 DCI :ulsch (ue): O           %d\n",ulsch->O);
-
+    printf("Format 0 DCI :ulsch (ue): cqiReq      %d\n",cqi_req);
     if (frame_parms->frame_type == TDD)
       printf("Format 0 DCI :ulsch (ue): O_ACK/DAI   %d/%d\n",ulsch->harq_processes[harq_pid]->O_ACK,dai);
     else

@@ -1213,7 +1213,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
     ue->generate_ul_signal[eNB_id] = 1;
     
     // deactivate service request
-    ue->ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
+    // ue->ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
     
     ack_status = get_ack(&ue->frame_parms,
 			 ue->dlsch[eNB_id][0]->harq_ack,
@@ -3089,22 +3089,27 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
     if (ret == (1+dlsch0->max_turbo_iterations)) {
       *dlsch_errors=*dlsch_errors+1;
       
-
+      if(dlsch0->rnti != 0xffff)
+      {
       LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d DLSCH in error (rv %d,mcs %d,TBS %d)\n",
 	    ue->Mod_id,dlsch0->rnti,
 	    harq_pid,frame_rx,subframe_rx,
 	    dlsch0->harq_processes[harq_pid]->rvidx,
 	    dlsch0->harq_processes[harq_pid]->mcs,
 	    dlsch0->harq_processes[harq_pid]->TBS);
+      }
       
 
     } else {
+        if(dlsch0->rnti != 0xffff)
+        {
       LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: Received DLSCH (rv %d,mcs %d,TBS %d)\n",
 	    ue->Mod_id,dlsch0->rnti,
 	    harq_pid,frame_rx,subframe_rx,
 	    dlsch0->harq_processes[harq_pid]->rvidx,
 	    dlsch0->harq_processes[harq_pid]->mcs,
 	    dlsch0->harq_processes[harq_pid]->TBS);
+        }
 
 #ifdef DEBUG_DLSCH
       int j;
@@ -3293,6 +3298,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
  
   // do procedures for C-RNTI
   if (ue->dlsch[eNB_id][0]->active == 1) {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
     ue_pdsch_procedures(ue,
 			proc,
 			eNB_id,
@@ -3302,9 +3308,11 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			ue->pdcch_vars[eNB_id]->num_pdcch_symbols,
 			ue->frame_parms.symbols_per_tti>>1,
 			abstraction_flag);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
   }
   // do procedures for SI-RNTI
   if ((ue->dlsch_SI[eNB_id]) && (ue->dlsch_SI[eNB_id]->active == 1)) {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_IN);
     ue_pdsch_procedures(ue,
 			proc,
 			eNB_id,
@@ -3314,10 +3322,12 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			ue->pdcch_vars[eNB_id]->num_pdcch_symbols,
 			ue->frame_parms.symbols_per_tti>>1,
 			abstraction_flag);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_OUT);
   }
 
   // do procedures for SI-RNTI
   if ((ue->dlsch_p[eNB_id]) && (ue->dlsch_p[eNB_id]->active == 1)) {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_P, VCD_FUNCTION_IN);
     ue_pdsch_procedures(ue,
 			proc,
 			eNB_id,
@@ -3327,10 +3337,12 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			ue->pdcch_vars[eNB_id]->num_pdcch_symbols,
 			ue->frame_parms.symbols_per_tti>>1,
 			abstraction_flag);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_P, VCD_FUNCTION_OUT);
   }
 
   // do procedures for RA-RNTI
   if ((ue->dlsch_ra[eNB_id]) && (ue->dlsch_ra[eNB_id]->active == 1)) {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_IN);
     ue_pdsch_procedures(ue,
 			proc,
 			eNB_id,
@@ -3340,6 +3352,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			ue->pdcch_vars[eNB_id]->num_pdcch_symbols,
 			ue->frame_parms.symbols_per_tti>>1,
 			abstraction_flag);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_OUT);
   }    
   
   if (subframe_select(&ue->frame_parms,subframe_rx) != SF_S) {  // do front-end processing for second slot, and first symbol of next subframe
@@ -3375,6 +3388,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
    
   // do procedures for C-RNTI
   if (ue->dlsch[eNB_id][0]->active == 1) {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
     ue_pdsch_procedures(ue,
 			proc,
 			eNB_id,
@@ -3393,7 +3407,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			&ue->dlsch_errors[eNB_id],
 			mode,
 			abstraction_flag);
-      
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
 
   }
   else {
