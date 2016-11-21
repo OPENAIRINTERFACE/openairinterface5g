@@ -169,6 +169,8 @@ int main(int argc, char **argv)
   unsigned char  cur_harq_pid;
   int hold_rank1_precoder=0;
   int tpmi_retr=2;
+  bool  is_first_time;
+  int updated_csi = 0;
 
 
   SCM_t channel_model=Rayleigh1;
@@ -234,7 +236,7 @@ int main(int argc, char **argv)
   int ch_realization;
   int pmi_feedback=0;
   int hold_channel=0;
-  bool  is_first_time;
+
 
   // temporarily for retransmissions:
   unsigned char resend_cw1=0; //if 0 resend only cw0
@@ -330,7 +332,7 @@ int main(int argc, char **argv)
   //  num_layers = 1;
   perfect_ce = 0;
 
-  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:XYv:W:J:K:")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:XYv:W:J:K:U")) != -1) {
 
     switch (c) {
     case 'a':
@@ -597,6 +599,9 @@ int main(int argc, char **argv)
       case 'K':
       tpmi_retr = atoi(optarg);
       //i_mod = get_Qm(mcs2); /// think here again!!!
+      break;
+      case 'U':
+      updated_csi=1;
       break;
       case 'h':
       default:
@@ -2835,31 +2840,88 @@ int main(int argc, char **argv)
 
                 //Here need to add cases for TPMI 6 and TPMI 5 and check for both TB.
                 if (transmission_mode == 4 && ((((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 2) ||(((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 2))){
+#ifdef DEBUG_HARQ
+                    printf ("[DLSIM] I am calling from the  eNode B 1\n");
+#endif
+
                   PHY_vars_eNB->dlsch_eNB[0][TB]->harq_processes[0]->pmi_alloc = quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0,PHY_vars_eNB->lte_frame_parms.N_RB_DL);
+#ifdef DEBUG_HARQ
+                    printf ("[DLSIM] I am calling from the  eNode B 2\n");
+#endif
+
                   PHY_vars_UE->dlsch_ue[0][TB]->pmi_alloc = quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0,PHY_vars_UE->lte_frame_parms.N_RB_DL);
                 }
 
-                if ((transmission_mode == 4) && (hold_rank1_precoder == 0) && ((((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 5) ||(((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 5))){
+                if (updated_csi == 0){
+
+                  if ((transmission_mode == 4) && (hold_rank1_precoder == 0) && ((((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 5) ||(((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 5))){
 #ifdef DEBUG_HARQ
-                  printf ("[DLSIM] I am calling from the  eNode B 1\n");
+                    printf ("[DLSIM] I am calling from the  eNode B 1\n");
+#endif
+                    PHY_vars_eNB->dlsch_eNB[0][TB]->harq_processes[0]->pmi_alloc = pmi_convert_rank1_from_rank2(PHY_vars_eNB->dlsch_eNB[0][TB]->harq_processes[0]->pmi_alloc,5,PHY_vars_eNB->lte_frame_parms.N_RB_DL);
+#ifdef DEBUG_HARQ
+                    printf ("[DLSIM] I am calling from the  eNode B 2\n");
+#endif
+                    PHY_vars_UE->dlsch_ue[0][TB]->pmi_alloc = pmi_convert_rank1_from_rank2(PHY_vars_UE->dlsch_ue[0][TB]->pmi_alloc,5,PHY_vars_UE->lte_frame_parms.N_RB_DL);
+                  }
+
+                  if ((transmission_mode == 4) && (hold_rank1_precoder == 0) && ((((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 6) ||(((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 6))){
+#ifdef DEBUG_HARQ
+                    printf ("[DLSIM] I am calling from the  eNode B 1\n");
+#endif
+                    PHY_vars_eNB->dlsch_eNB[0][TB]->harq_processes[0]->pmi_alloc = pmi_convert_rank1_from_rank2(PHY_vars_eNB->dlsch_eNB[0][TB]->harq_processes[0]->pmi_alloc,6,PHY_vars_eNB->lte_frame_parms.N_RB_DL);
+#ifdef DEBUG_HARQ
+                    printf ("[DLSIM] I am calling from the  eNode B 2\n");
+#endif
+                    PHY_vars_UE->dlsch_ue[0][TB]->pmi_alloc = pmi_convert_rank1_from_rank2(PHY_vars_UE->dlsch_ue[0][TB]->pmi_alloc,6,PHY_vars_UE->lte_frame_parms.N_RB_DL);
+                  }
+              } else if (updated_csi == 1){
+
+
+                if ((transmission_mode == 4) && ((((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 5) ||(((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 5))){
+#ifdef DEBUG_HARQ
+                    printf ("[DLSIM] Updating CSI\n");
+                    printf ("[DLSIM] I quantize from ENodeB 1\n");
+#endif
+
+                  PHY_vars_eNB->dlsch_eNB[0][TB]->harq_processes[0]->pmi_alloc = quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0,PHY_vars_eNB->lte_frame_parms.N_RB_DL);
+#ifdef DEBUG_HARQ
+                    printf ("[DLSIM] I convert pmi to rank1 eNode B 1\n");
 #endif
                   PHY_vars_eNB->dlsch_eNB[0][TB]->harq_processes[0]->pmi_alloc = pmi_convert_rank1_from_rank2(PHY_vars_eNB->dlsch_eNB[0][TB]->harq_processes[0]->pmi_alloc,5,PHY_vars_eNB->lte_frame_parms.N_RB_DL);
+
 #ifdef DEBUG_HARQ
-                  printf ("[DLSIM] I am calling from the  eNode B 2\n");
+                    printf ("[DLSIM] I quantize from ENodeB 2\n");
+#endif
+                  PHY_vars_UE->dlsch_ue[0][TB]->pmi_alloc = quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0,PHY_vars_UE->lte_frame_parms.N_RB_DL);
+#ifdef DEBUG_HARQ
+                    printf ("[DLSIM] I convert pmi to rank1 eNode B 2\n");
 #endif
                   PHY_vars_UE->dlsch_ue[0][TB]->pmi_alloc = pmi_convert_rank1_from_rank2(PHY_vars_UE->dlsch_ue[0][TB]->pmi_alloc,5,PHY_vars_UE->lte_frame_parms.N_RB_DL);
                 }
 
-                if ((transmission_mode == 4) && (hold_rank1_precoder == 0) && ((((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 6) ||(((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 6))){
+                if ((transmission_mode == 4) && ((((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 6) ||(((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 6))){
 #ifdef DEBUG_HARQ
-                  printf ("[DLSIM] I am calling from the  eNode B 1\n");
+                    printf ("[DLSIM] Updating CSI\n");
+                    printf ("[DLSIM] I quantize from ENodeB 1\n");
+#endif
+
+                  PHY_vars_eNB->dlsch_eNB[0][TB]->harq_processes[0]->pmi_alloc = quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0,PHY_vars_eNB->lte_frame_parms.N_RB_DL);
+#ifdef DEBUG_HARQ
+                    printf ("[DLSIM] I convert pmi to rank1 eNode B 1\n");
 #endif
                   PHY_vars_eNB->dlsch_eNB[0][TB]->harq_processes[0]->pmi_alloc = pmi_convert_rank1_from_rank2(PHY_vars_eNB->dlsch_eNB[0][TB]->harq_processes[0]->pmi_alloc,6,PHY_vars_eNB->lte_frame_parms.N_RB_DL);
 #ifdef DEBUG_HARQ
-                  printf ("[DLSIM] I am calling from the  eNode B 2\n");
+                    printf ("[DLSIM] I quantize from ENodeB 2\n");
+#endif
+                  PHY_vars_UE->dlsch_ue[0][TB]->pmi_alloc = quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0,PHY_vars_UE->lte_frame_parms.N_RB_DL);
+#ifdef DEBUG_HARQ
+                    printf ("[DLSIM] I convert pmi to rank1 eNode B 2\n");
 #endif
                   PHY_vars_UE->dlsch_ue[0][TB]->pmi_alloc = pmi_convert_rank1_from_rank2(PHY_vars_UE->dlsch_ue[0][TB]->pmi_alloc,6,PHY_vars_UE->lte_frame_parms.N_RB_DL);
                 }
+
+              }
 
                 start_meas(&PHY_vars_eNB->dlsch_encoding_stats);
                 if (dlsch_encoding(((TB==0) ? input_buffer0[k] : input_buffer1[k]),
@@ -3039,20 +3101,20 @@ int main(int argc, char **argv)
 
           // Multipath channel
           if (awgn_flag == 0) {
-            multipath_channel(eNB2UE[round],s_re,s_im,r_re,r_im,
-                              2*frame_parms->samples_per_tti,hold_channel);
-            //      printf("amc: ****************** eNB2UE[%d]->n_rx = %d,dd %d\n",round,eNB2UE[round]->nb_rx,eNB2UE[round]->channel_offset);
-            if(abstx==1 && num_rounds>1)
-              if(round==0 && hold_channel==0){
-                random_channel(eNB2UE[1],0);
-                random_channel(eNB2UE[2],0);
-                random_channel(eNB2UE[3],0);
+              multipath_channel(eNB2UE[round],s_re,s_im,r_re,r_im,
+                                2*frame_parms->samples_per_tti,hold_channel);
+              //      printf("amc: ****************** eNB2UE[%d]->n_rx = %d,dd %d\n",round,eNB2UE[round]->nb_rx,eNB2UE[round]->channel_offset);
+              if(abstx==1 && num_rounds>1)
+                if(round==0 && hold_channel==0){
+                  random_channel(eNB2UE[1],0);
+                  random_channel(eNB2UE[2],0);
+                  random_channel(eNB2UE[3],0);
+                }
+              if (PHY_vars_UE->perfect_ce==1){
+                freq_channel(eNB2UE[round],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
+                        //  write_output("channel.m","ch",eNB2UE[round]->ch[0],eNB2UE[round]->channel_length,1,8);
+                        //  write_output("channelF.m","chF",eNB2UE[round]->chF[0],12*PHY_vars_UE->lte_frame_parms.N_RB_DL +1,1,8);
               }
-            if (PHY_vars_UE->perfect_ce==1){
-              freq_channel(eNB2UE[round],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
-                      //  write_output("channel.m","ch",eNB2UE[round]->ch[0],eNB2UE[round]->channel_length,1,8);
-                      //  write_output("channelF.m","chF",eNB2UE[round]->chF[0],12*PHY_vars_UE->lte_frame_parms.N_RB_DL +1,1,8);
-            }
           }
 
         if(abstx){ // TODO: check the rounds here!!
@@ -3269,8 +3331,11 @@ int main(int argc, char **argv)
                   if (pmi_feedback == 1) {
                     pmi_feedback = 0;
                     hold_channel = 1;
+
+                    if (updated_csi==0) {
                       if (hold_rank1_precoder == 0)
                         hold_rank1_precoder = 1;
+                    }
                     //printf ("trial %d pmi_feedback %d \n", trials, pmi_feedback);
                     //printf ("go to PMI feedback\n");
 #ifdef DEBUG_HARQ
