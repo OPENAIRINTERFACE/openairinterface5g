@@ -161,7 +161,7 @@ static struct {
 
 void exit_fun(const char* s);
 
-void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *,int);
+void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *,int,int);
 void stop_eNB(int nb_inst);
 
 
@@ -1122,6 +1122,114 @@ void wakeup_slaves(eNB_proc_t *proc) {
   }
 }
 
+uint32_t sync_corr[307200] __attribute__((aligned(32)));
+
+// This thread run the initial synchronization like a UE
+void *eNB_thread_synch(void *arg) {
+
+  PHY_VARS_eNB *eNB = (PHY_VARS_eNB*)arg;
+  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+  int32_t sync_pos,sync_pos2;
+  uint32_t peak_val;
+
+  thread_top_init("eNB_thread_synch",0,5000000,10000000,10000000);
+
+  wait_sync("eNB_thread_synch");
+
+  // initialize variables for PSS detection
+  lte_sync_time_init(&eNB->frame_parms);
+
+  while (!oai_exit) {
+
+    // wait to be woken up
+    pthread_mutex_lock(&eNB->proc.mutex_synch);
+    while (eNB->proc.instance_cnt_synch < 0)
+      pthread_cond_wait(&eNB->proc.cond_synch,&eNB->proc.mutex_synch);
+    pthread_mutex_unlock(&eNB->proc.mutex_synch);
+
+    // if we're not in synch, then run initial synch
+    if (eNB->in_synch == 0) { 
+      // run intial synch like UE
+      LOG_I(PHY,"Running initial synchronization\n");
+      
+      sync_pos = lte_sync_time_eNB(eNB->common_vars.rxdata[0],
+				   fp,
+				   fp->samples_per_tti*5,
+				   &peak_val,
+				   sync_corr);
+      LOG_I(PHY,"eNB synch: %d, val %d\n",sync_pos,peak_val);
+
+      if (sync_pos >= 0) {
+	if (sync_pos >= fp->nb_prefix_samples)
+	  sync_pos2 = sync_pos - fp->nb_prefix_samples;
+	else
+	  sync_pos2 = sync_pos + (fp->samples_per_tti*10) - fp->nb_prefix_samples;
+	
+	if (fp->frame_type == FDD) {
+	  
+	  // PSS is hypothesized in last symbol of first slot in Frame
+	  int sync_pos_slot = (fp->samples_per_tti>>1) - fp->ofdm_symbol_size - fp->nb_prefix_samples;
+	  
+	  if (sync_pos2 >= sync_pos_slot)
+	    eNB->rx_offset = sync_pos2 - sync_pos_slot;
+	  else
+	    eNB->rx_offset = (fp->samples_per_tti*10) + sync_pos2 - sync_pos_slot;
+	}
+	else {
+	  
+	}
+
+	LOG_I(PHY,"Estimated sync_pos %d, peak_val %d => timing offset %d\n",sync_pos,peak_val,eNB->rx_offset);
+	
+
+      /*      if ((peak_val > 10000) && (sync_pos == -1)) {
+	//      if (sync_pos++ > 3) {
+	write_output("eNB_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
+	write_output("eNB_rx.m","rxs",(void*)eNB->common_vars.rxdata[0][0],fp->samples_per_tti*10,1,1);
+	exit(-1);
+	}*/
+      }
+    }
+
+    // release thread
+    pthread_mutex_lock(&eNB->proc.mutex_synch);
+    eNB->proc.instance_cnt_synch--;
+    pthread_mutex_unlock(&eNB->proc.mutex_synch);
+  } // oai_exit
+
+  lte_sync_time_free();
+
+}
+
+int wakeup_synch(PHY_VARS_eNB *eNB){
+
+  struct timespec wait;
+  
+  wait.tv_sec=0;
+  wait.tv_nsec=5000000L;
+
+  // wake up synch thread
+  // lock the synch mutex and make sure the thread is ready
+  if (pthread_mutex_timedlock(&eNB->proc.mutex_synch,&wait) != 0) {
+    LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB synch thread (IC %d)\n", eNB->proc.instance_cnt_synch );
+    exit_fun( "error locking mutex_synch" );
+    return(-1);
+  }
+  
+  ++eNB->proc.instance_cnt_synch;
+  
+  // the thread can now be woken up
+  if (pthread_cond_signal(&eNB->proc.cond_synch) != 0) {
+    LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB synch thread\n");
+    exit_fun( "ERROR pthread_cond_signal" );
+    return(-1);
+  }
+  
+  pthread_mutex_unlock( &eNB->proc.mutex_synch );
+
+  return(0);
+}
+
 /*!
  * \brief The Fronthaul thread of RRU/RAU/RCC/eNB
  * In the case of RRU/eNB, handles interface with external RF
@@ -1242,6 +1350,8 @@ static void* eNB_thread_prach( void* param ) {
   return &eNB_thread_prach_status;
 }
 
+
+
 static void* eNB_thread_single( void* param ) {
 
   static int eNB_thread_single_status;
@@ -1249,8 +1359,23 @@ static void* eNB_thread_single( void* param ) {
   eNB_proc_t *proc = (eNB_proc_t*)param;
   eNB_rxtx_proc_t *proc_rxtx = &proc->proc_rxtx[0];
   PHY_VARS_eNB *eNB = PHY_vars_eNB_g[0][proc->CC_id];
+  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+
+  void *rxp[2],*rxp2[2];
 
   int subframe=0, frame=0; 
+
+  int32_t dummy_rx[fp->nb_antennas_rx][fp->samples_per_tti] __attribute__((aligned(32)));
+
+  int ic;
+
+  int rxs;
+
+  int i;
+
+  // initialize the synchronization buffer to the common_vars.rxdata
+  for (int i=0;i<fp->nb_antennas_rx;i++)
+    rxp[i] = &eNB->common_vars.rxdata[0][i][0];
 
   // set default return value
   eNB_thread_single_status = 0;
@@ -1279,6 +1404,57 @@ static void* eNB_thread_single( void* param ) {
   proc->instance_cnt_asynch_rxtx=0;
   pthread_mutex_unlock(&proc->mutex_asynch_rxtx);
   pthread_cond_signal(&proc->cond_asynch_rxtx);
+
+
+
+  // if this is a slave eNB, try to synchronize on the DL frequency
+  if ((eNB->is_slave) &&
+      ((eNB->node_function >= NGFI_RRU_IF5))) {
+    // if FDD, switch RX on DL frequency
+    
+    double temp_freq1 = eNB->rfdevice.openair0_cfg->rx_freq[0];
+    double temp_freq2 = eNB->rfdevice.openair0_cfg->tx_freq[0];
+    for (i=0;i<4;i++) {
+      eNB->rfdevice.openair0_cfg->rx_freq[i] = eNB->rfdevice.openair0_cfg->tx_freq[i];
+      eNB->rfdevice.openair0_cfg->tx_freq[i] = temp_freq1;
+    }
+    eNB->rfdevice.trx_set_freq_func(&eNB->rfdevice,eNB->rfdevice.openair0_cfg,0);
+
+    while ((eNB->in_synch ==0)&&(!oai_exit)) {
+      // read in frame
+      rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
+					&(proc->timestamp_rx),
+					rxp,
+					fp->samples_per_tti*10,
+					fp->nb_antennas_rx);
+      // wakeup synchronization processing thread
+      wakeup_synch(eNB);
+      ic=0;
+      
+      while ((ic>=0)&&(!oai_exit)) {
+	// continuously read in frames, 1ms at a time, 
+	// until we are done with the synchronization procedure
+	
+	for (i=0; i<fp->nb_antennas_rx; i++)
+	  rxp2[i] = (void*)&dummy_rx[i][0];
+	for (i=0;i<10;i++)
+	  rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
+					    &(proc->timestamp_rx),
+					    rxp2,
+					    fp->samples_per_tti,
+					    fp->nb_antennas_rx);
+	pthread_mutex_lock(&eNB->proc.mutex_synch);
+	ic = eNB->proc.instance_cnt_synch;
+	pthread_mutex_unlock(&eNB->proc.mutex_synch);
+      } // ic>=0
+    } // in_synch==0
+    for (i=0;i<4;i++) {
+      eNB->rfdevice.openair0_cfg->rx_freq[i] = temp_freq1;
+      eNB->rfdevice.openair0_cfg->rx_freq[i] = temp_freq2;
+    }
+    eNB->rfdevice.trx_set_freq_func(&eNB->rfdevice,eNB->rfdevice.openair0_cfg,0);
+  } // if RRU and slave
+
 
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   while (!oai_exit) {
@@ -1334,7 +1510,7 @@ void init_eNB_proc(int inst) {
   PHY_VARS_eNB *eNB;
   eNB_proc_t *proc;
   eNB_rxtx_proc_t *proc_rxtx;
-  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_single=NULL,*attr_fep=NULL,*attr_td=NULL,*attr_te;
+  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_single=NULL,*attr_fep=NULL,*attr_td=NULL,*attr_te=NULL,*attr_synch=NULL;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     eNB = PHY_vars_eNB_g[inst][CC_id];
@@ -1348,7 +1524,8 @@ void init_eNB_proc(int inst) {
     proc->instance_cnt_FH          = -1;
     proc->instance_cnt_asynch_rxtx = -1;
     proc->CC_id = CC_id;    
-    
+    proc->instance_cnt_synch        =  -1;
+
     proc->first_rx=1;
     proc->first_tx=1;
 
@@ -1359,13 +1536,16 @@ void init_eNB_proc(int inst) {
 
     pthread_mutex_init( &proc->mutex_prach, NULL);
     pthread_mutex_init( &proc->mutex_asynch_rxtx, NULL);
+    pthread_mutex_init( &proc->mutex_synch,NULL);
 
     pthread_cond_init( &proc->cond_prach, NULL);
     pthread_cond_init( &proc->cond_FH, NULL);
     pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
+    pthread_cond_init( &proc->cond_synch,NULL);
 
     pthread_attr_init( &proc->attr_FH);
     pthread_attr_init( &proc->attr_prach);
+    pthread_attr_init( &proc->attr_synch);
     pthread_attr_init( &proc->attr_asynch_rxtx);
     pthread_attr_init( &proc->attr_single);
     pthread_attr_init( &proc->attr_fep);
@@ -1378,6 +1558,7 @@ void init_eNB_proc(int inst) {
     attr1       = &proc_rxtx[1].attr_rxtx;
     attr_FH     = &proc->attr_FH;
     attr_prach  = &proc->attr_prach;
+    attr_synch  = &proc->attr_synch;
     attr_asynch = &proc->attr_asynch_rxtx;
     attr_single = &proc->attr_single;
     attr_fep    = &proc->attr_fep;
@@ -1397,6 +1578,7 @@ void init_eNB_proc(int inst) {
       init_te_thread(eNB,attr_te);
     }
     pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, &eNB->proc );
+    pthread_create( &proc->pthread_synch, attr_synch, eNB_thread_synch, eNB);
     if ((eNB->node_timing == synch_to_other) ||
 	(eNB->node_function == NGFI_RRU_IF5) ||
 	(eNB->node_function == NGFI_RRU_IF4p5))
@@ -1619,7 +1801,7 @@ extern void eNB_fep_full(PHY_VARS_eNB *eNB);
 extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB);
 extern void do_prach(PHY_VARS_eNB *eNB);
 
-void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *eth_params,int single_thread_flag) {
+void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *eth_params,int single_thread_flag,int wait_for_sync) {
   
   int CC_id;
   int inst;
@@ -1634,6 +1816,9 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       eNB->abstraction_flag   = 0;
       eNB->single_thread_flag = single_thread_flag;
       eNB->ts_offset          = 0;
+      eNB->in_synch           = 0;
+      eNB->is_slave           = (wait_for_sync>0) ? 1 : 0;
+
       LOG_I(PHY,"Initializing eNB %d CC_id %d : (%s,%s)\n",inst,CC_id,eNB_functions[node_function[CC_id]],eNB_timing[node_timing[CC_id]]);
 
       switch (node_function[CC_id]) {
