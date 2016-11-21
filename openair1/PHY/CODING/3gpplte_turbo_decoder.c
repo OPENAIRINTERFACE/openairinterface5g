@@ -1058,7 +1058,7 @@ unsigned char phy_threegpplte_turbo_decoder_scalar(llr_t *y,
       break;
     }
 
-    if ((crc == oldcrc) && (crc!=0)) {
+    if (crc == oldcrc) {
       return(iteration_cnt);
     }
 
