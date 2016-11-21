@@ -654,11 +654,11 @@ void fh_if5_asynch_UL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   }
   else {
     if (proc->subframe_rx != *subframe) {
-      LOG_E(PHY,"subframe_rx %d is not what we expect %d\n",proc->subframe_rx,*subframe);
+      LOG_E(PHY,"fh_if5_asynch_UL: subframe_rx %d is not what we expect %d\n",proc->subframe_rx,*subframe);
       exit_fun("Exiting");
     }
     if (proc->frame_rx != *frame) {
-      LOG_E(PHY,"subframe_rx %d is not what we expect %d\n",proc->frame_rx,*frame);  
+      LOG_E(PHY,"fh_if5_asynch_UL: subframe_rx %d is not what we expect %d\n",proc->frame_rx,*frame);  
       exit_fun("Exiting");
     }
   }
@@ -688,11 +688,11 @@ void fh_if4p5_asynch_UL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     }
     else {
       if (proc->frame_rx != *frame) {
-	LOG_E(PHY,"frame_rx %d is not what we expect %d\n",proc->frame_rx,*frame);
+	LOG_E(PHY,"fh_if4p5_asynch_UL: frame_rx %d is not what we expect %d\n",proc->frame_rx,*frame);
 	exit_fun("Exiting");
       }
       if (proc->subframe_rx != *subframe) {
-	LOG_E(PHY,"subframe_rx %d is not what we expect %d\n",proc->subframe_rx,*subframe);
+	LOG_E(PHY,"fh_if4p5_asynch_UL: subframe_rx %d is not what we expect %d\n",proc->subframe_rx,*subframe);
 	exit_fun("Exiting");
       }
     }
@@ -728,11 +728,11 @@ void fh_if5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   }
   else {
     if (subframe_tx != *subframe) {
-      LOG_E(PHY,"subframe_tx %d is not what we expect %d\n",subframe_tx,*subframe);
+      LOG_E(PHY,"fh_if5_asynch_DL: subframe_tx %d is not what we expect %d\n",subframe_tx,*subframe);
       exit_fun("Exiting");
     }
     if (frame_tx != *frame) { 
-      LOG_E(PHY,"frame_tx %d is not what we expect %d\n",frame_tx,*frame);
+      LOG_E(PHY,"fh_if5_asynch_DL: frame_tx %d is not what we expect %d\n",frame_tx,*frame);
       exit_fun("Exiting");
     }
   }
@@ -760,11 +760,11 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     }
     else {
       if (frame_tx != *frame) {
-	LOG_E(PHY,"frame_tx %d is not what we expect %d\n",frame_tx,*frame);
+	LOG_E(PHY,"fh_if4p5_asynch_DL: frame_tx %d is not what we expect %d\n",frame_tx,*frame);
 	exit_fun("Exiting");
       }
       if (subframe_tx != *subframe) {
-	LOG_E(PHY,"subframe_tx %d is not what we expect %d\n",subframe_tx,*subframe);
+	LOG_E(PHY,"fh_if4p5_asynch_DL: subframe_tx %d is not what we expect %d\n",subframe_tx,*subframe);
 	exit_fun("Exiting");
       }
     }
@@ -882,6 +882,9 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 				    fp->samples_per_tti,
 				    fp->nb_antennas_rx);
 
+  if (rxs != fp->samples_per_tti)
+    printf("Asked for %d samples, got %d from USRP\n",fp->samples_per_tti,rxs);
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
  
   if (proc->first_rx == 1)
@@ -892,16 +895,16 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   // synchronize first reception to frame 0 subframe 0
 
   proc->timestamp_tx = proc->timestamp_rx+(4*fp->samples_per_tti);
-  //printf("trx_read <- USRP TS %llu (sf %d, f %d, first_rx %d)\n", proc->timestamp_rx,proc->subframe_rx,proc->frame_rx,proc->first_rx);  
+  //  printf("trx_read <- USRP TS %lu (offset %d sf %d, f %d, first_rx %d)\n", proc->timestamp_rx,eNB->ts_offset,proc->subframe_rx,proc->frame_rx,proc->first_rx);  
   
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
-      LOG_E(PHY,"Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->timestamp_rx,proc->subframe_rx,*subframe);
+      LOG_E(PHY,"rx_rf: Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->timestamp_rx,proc->subframe_rx,*subframe);
       exit_fun("Exiting");
     }
     
     if (proc->frame_rx != *frame) {
-      LOG_E(PHY,"Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->timestamp_rx,proc->frame_rx,*frame);
+      LOG_E(PHY,"rx_rf: Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->timestamp_rx,proc->frame_rx,*frame);
       exit_fun("Exiting");
     }
   } else {

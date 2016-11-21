@@ -587,7 +587,10 @@ extern "C" {
     //  s->usrp->set_tx_subdev_spec(tx_subdev);
 
     // lock mboard clocks
-    s->usrp->set_clock_source("internal");
+    if (openair0_cfg[0].clock_source == internal)
+      s->usrp->set_clock_source("internal");
+    else
+      s->usrp->set_clock_source("external");
     
     //Setting device type to USRP X300/X310 
     device->type=USRP_X300_DEV;
@@ -642,6 +645,12 @@ extern "C" {
     //    // lock mboard clocks
     //    s->usrp->set_clock_source("internal");
     // set master clock rate and sample rate for tx & rx for streaming
+
+    // lock mboard clocks
+    if (openair0_cfg[0].clock_source == internal)
+      s->usrp->set_clock_source("internal");
+    else
+      s->usrp->set_clock_source("external");
 
     device->type = USRP_B200_DEV;
 

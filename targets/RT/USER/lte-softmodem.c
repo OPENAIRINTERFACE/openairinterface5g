@@ -168,6 +168,7 @@ volatile int             oai_exit = 0;
 
 
 
+static clock_source_t clock_source = internal;
 
 static char              UE_flag=0;
 unsigned int                    mmapped_dma=0;
@@ -386,6 +387,7 @@ void help (void) {
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
   printf("  --mmapped-dma sets flag for improved EXMIMO UE performance\n");  
   printf("  --single-thread runs lte-softmodem in only one thread\n"); 
+  printf("  --external-clock tells hardware to use an external clock reference\n");
   printf("  -C Set the downlink frequency for all component carriers\n");
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
   printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
@@ -657,7 +659,7 @@ void *l2l1_task(void *arg)
 #endif
 
 
-
+ 
 
 static void get_options (int argc, char **argv)
 {
@@ -693,6 +695,7 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_PHYTEST,
     LONG_OPTION_MMAPPED_DMA,
     LONG_OPTION_SINGLE_THREAD,
+    LONG_OPTION_EXTERNAL_CLOCK,
 #if T_TRACER
     LONG_OPTION_T_PORT,
     LONG_OPTION_T_NOWAIT,
@@ -718,6 +721,7 @@ static void get_options (int argc, char **argv)
     {"phy-test", no_argument, NULL, LONG_OPTION_PHYTEST},
     {"mmapped-dma", no_argument, NULL, LONG_OPTION_MMAPPED_DMA},
     {"single-thread", no_argument, NULL, LONG_OPTION_SINGLE_THREAD},
+    {"external-clock", no_argument, NULL, LONG_OPTION_EXTERNAL_CLOCK},
 #if T_TRACER
     {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
     {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
@@ -818,7 +822,11 @@ static void get_options (int argc, char **argv)
     case LONG_OPTION_SINGLE_THREAD:
       single_thread_flag = 1;
       break;
-              
+
+    case LONG_OPTION_EXTERNAL_CLOCK:
+      clock_source = external;
+      break;
+
 #if T_TRACER
     case LONG_OPTION_T_PORT: {
       extern int T_port;
@@ -1325,6 +1333,7 @@ void init_openair0() {
 
     openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 
+    openair0_cfg[card].clock_source = clock_source;
 
     openair0_cfg[card].tx_num_channels=min(2,((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx));
     openair0_cfg[card].rx_num_channels=min(2,((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_rx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx));
