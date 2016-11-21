@@ -3619,11 +3619,6 @@ int main(int argc, char **argv)
 
           for (TB=0; TB<Kmimo; TB++){ // may be we ll have to swap CW
 
-           /* if (PHY_vars_UE->dlsch_ue[0][TB] == NULL){
-              printf("[DLSIM] PHY_vars_UE->dlsch_ue[0][TB] == NULL\n");
-              printf("HERE HERE HERE HERE\n");
-              continue;
-            }*/
 
               if (TB0_active == 0){
 #ifdef DEBUG_HARQ
@@ -4164,6 +4159,7 @@ int main(int argc, char **argv)
 #endif
               }
             }
+            if (rx_type==rx_SIC_dual_stream)
             TB++; // to terminate the loop over TB
           }
 

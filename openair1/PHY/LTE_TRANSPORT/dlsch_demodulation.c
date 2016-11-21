@@ -776,7 +776,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 
   switch (dlsch0_harq->Qm) {
   case 2 :
-    if ((rx_type==rx_standard) || (codeword_TB0 = 1)) {
+    if ((rx_type==rx_standard) || (codeword_TB0 == -1) || (codeword_TB1 == -1)) {
         dlsch_qpsk_llr(frame_parms,
                        lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,
                        lte_ue_pdsch_vars[eNB_id]->llr[0],
@@ -852,7 +852,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       }
     break;
   case 4 :
-    if ((rx_type==rx_standard ) || (codeword_TB0 = 1) ) {
+    if ((rx_type==rx_standard ) || (codeword_TB0 == -1) || (codeword_TB1 == -1)) {
       dlsch_16qam_llr(frame_parms,
                       lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,
                       lte_ue_pdsch_vars[eNB_id]->llr[0],
@@ -861,7 +861,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                       adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,4,subframe,symbol),
                       lte_ue_pdsch_vars[eNB_id]->llr128);
     }
-    else if ((rx_type >= rx_IC_single_stream) && (codeword_TB0 != -1))  {
+    else if (rx_type >= rx_IC_single_stream) {
       if (dlsch1_harq->Qm == 2) {
         dlsch_16qam_qpsk_llr(frame_parms,
                              lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,
@@ -935,7 +935,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     }
     break;
   case 6 :
-    if ((rx_type==rx_standard) || (codeword_TB0 == -1))  {
+    if ((rx_type==rx_standard) || (codeword_TB0 == -1) || (codeword_TB1 == -1))  {
       dlsch_64qam_llr(frame_parms,
                       lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,
                       lte_ue_pdsch_vars[eNB_id]->llr[0],
@@ -945,7 +945,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                       adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,6,subframe,symbol),
                       lte_ue_pdsch_vars[eNB_id]->llr128);
     }
-    else if ((rx_type >= rx_IC_single_stream) && (codeword_TB0 != -1)){
+    else if (rx_type >= rx_IC_single_stream) {
       if (dlsch1_harq->Qm == 2) {
         dlsch_64qam_qpsk_llr(frame_parms,
                              lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,
