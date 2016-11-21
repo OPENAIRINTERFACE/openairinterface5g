@@ -63,7 +63,7 @@
 
 exmimo_pci_interface_bot_virtual_t openair0_exmimo_pci[MAX_CARDS]; // contains userspace pointers for each card
 
-char *bigshm_top[MAX_CARDS] = INIT_ZEROS;
+char *bigshm_top[MAX_CARDS];
 
 int openair0_fd;
 int openair0_num_antennas[MAX_CARDS];
@@ -126,7 +126,8 @@ int openair0_open(void)
 
   //printf("bigshm_top_kvirtptr (MAX_CARDS %d): %p  %p  %p  %p\n", MAX_CARDS,bigshm_top_kvirtptr[0], bigshm_top_kvirtptr[1], bigshm_top_kvirtptr[2], bigshm_top_kvirtptr[3]);
 
-
+  for( card=0; card < MAX_CARDS; card++)
+    bigshm_top[card] = NULL;
 
   for( card=0; card < openair0_num_detected_cards; card++) {
     bigshm_top[card] = (char *)mmap( NULL,
@@ -530,6 +531,7 @@ int trx_exmimo_read(openair0_device *device, openair0_timestamp *ptimestamp, voi
     return(0);
   }
 
+  ret = pthread_mutex_lock(&exm->watchdog_mutex);
 
   switch (ret) {
   case EINVAL:
@@ -557,8 +559,6 @@ int trx_exmimo_read(openair0_device *device, openair0_timestamp *ptimestamp, voi
     return(0);
     break;
   }
-
-  ret = pthread_mutex_lock(&exm->watchdog_mutex);
 
   ts = exm->ts;
   if (exm->wait_first_read==1) {

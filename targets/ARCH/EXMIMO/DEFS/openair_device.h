@@ -24,9 +24,9 @@
 
 
 // Maximum number of concurrently supported cards
-//
-#define MAX_CARDS  16 
-#define INIT_ZEROS {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+// defined in openair_common_lib.h
+//#define MAX_CARDS  16 
+//#define INIT_ZEROS {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 
 /** PCIe subsystem configuration Space
