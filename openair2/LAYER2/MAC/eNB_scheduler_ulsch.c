@@ -880,7 +880,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 
             T(T_ENB_MAC_UE_UL_SCHEDULE, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP),
               T_INT(subframeP), T_INT(harq_pid), T_INT(mcs), T_INT(first_rb[CC_id]), T_INT(rb_table[rb_table_index]),
-              T_INT(TBS));
+              T_INT(TBS), T_INT(ndi));
 
 	    // bad indices : 20 (40 PRB), 21 (45 PRB), 22 (48 PRB)
             // increment for next UE allocation
