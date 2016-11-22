@@ -1226,23 +1226,23 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
       common_vars->txdataF_BF[eNB_id] = (int32_t **)malloc16(fp->nb_antennas_tx*sizeof(int32_t*));
 
       for (i=0; i<14; i++) {
-        common_vars->txdataF[eNB_id][i] = (int32_t*)malloc16_clear( fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
+        common_vars->txdataF[eNB_id][i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
 #ifdef DEBUG_PHY
         msg("[openair][LTE_PHY][INIT] lte_common_vars->txdataF[%d][%d] = %p (%d bytes)\n",
             eNB_id,i,common_vars->txdataF[eNB_id][i],
-            FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t));
+            fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t));
 #endif
       }
 
       for (i=0; i<fp->nb_antennas_tx; i++) {
-	common_vars->txdataF_BF[eNB_id][i] = (int32_t*)malloc16_clear( fp->ofdm_symbol_size*sizeof(int32_t) );
+	common_vars->txdataF_BF[eNB_id][i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t) );
 	if (eNB->node_function != NGFI_RCC_IF4p5)
-	  common_vars->txdata[eNB_id][i]  = (int32_t*)malloc16_clear( fp->samples_per_tti*10*sizeof(int32_t) );
+	  common_vars->txdata[eNB_id][i]  = (int32_t*)malloc16_clear(fp->samples_per_tti*10*sizeof(int32_t) );
 
 #ifdef DEBUG_PHY
         msg("[openair][LTE_PHY][INIT] lte_common_vars->txdataF_BF[%d][%d][%d] = %p (%d bytes)\n",
             eNB_id,i,j,common_vars->txdataF_BF[eNB_id][i][j],
-            OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
+            fp->ofdm_symbol_size*sizeof(int32_t)); 
         msg("[openair][LTE_PHY][INIT] lte_common_vars->txdata[%d][%d] = %p\n",eNB_id,i,common_vars->txdata[eNB_id][i]);
 #endif
       }
@@ -1256,7 +1256,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 #ifdef DEBUG_PUY
           msg("[openair][LTE_PHY][INIT] lte_common_vars->beam_weights[%d][%d][%d] = %p (%d bytes)\n",
               eNB_id,i,j,common_vars->beam_weights[eNB_id][i][j],
-              OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
+              fp->ofdm_symbol_size*sizeof(int32_t)); 
 #endif
         }
       }
