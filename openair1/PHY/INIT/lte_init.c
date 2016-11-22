@@ -29,7 +29,7 @@
 #include "LAYER2/MAC/extern.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
-//#define DEBUG_PHY
+#define DEBUG_PHY
 #include "assertions.h"
 #include <math.h>
 
@@ -1240,8 +1240,8 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 	  common_vars->txdata[eNB_id][i]  = (int32_t*)malloc16_clear(fp->samples_per_tti*10*sizeof(int32_t) );
 
 #ifdef DEBUG_PHY
-        msg("[openair][LTE_PHY][INIT] lte_common_vars->txdataF_BF[%d][%d][%d] = %p (%d bytes)\n",
-            eNB_id,i,j,common_vars->txdataF_BF[eNB_id][i][j],
+        msg("[openair][LTE_PHY][INIT] lte_common_vars->txdataF_BF[%d][%d] = %p (%d bytes)\n",
+            eNB_id,i,common_vars->txdataF_BF[eNB_id][i],
             fp->ofdm_symbol_size*sizeof(int32_t)); 
         msg("[openair][LTE_PHY][INIT] lte_common_vars->txdata[%d][%d] = %p\n",eNB_id,i,common_vars->txdata[eNB_id][i]);
 #endif

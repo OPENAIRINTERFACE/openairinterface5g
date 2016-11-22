@@ -2039,8 +2039,8 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
       		       P1_SHIFT,
       		       P2_SHIFT);
 
-        if ((mimo_mode == TM7) && (lprime>=0))
-	  mprime +=3+frame_parms->Ncp;
+          if ((mimo_mode == TM7) && (lprime>=0))
+            mprime +=3+frame_parms->Ncp;
 
       }
       else {
