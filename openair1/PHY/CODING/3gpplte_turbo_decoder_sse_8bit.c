@@ -486,7 +486,7 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
 
 #endif
 
-  if (frame_length > 6143) {
+  if (frame_length > 6144) {
     LOG_E(PHY,"compute_beta: frame_length %d\n",frame_length);
     return;
   }

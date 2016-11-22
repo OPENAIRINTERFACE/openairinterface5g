@@ -65,6 +65,14 @@ ID = ENB_PHY_PHICH
     DESC = eNodeB PHICH
     GROUP = ALL:PHY:ENB
     FORMAT = int,eNB_ID : int,frame : int,subframe : int,UE_id : int,rnti : int,harq_pid : int,NGROUP : int,NSF : int,ngroup : int,nseq : int,ACK : int,first_rb : int,n_DMRS
+ID = ENB_PHY_MSG3_ALLOCATION
+    DESC = eNodeB Msg3 allocation/reallocation
+    GROUP = ALL:PHY:ENB
+    FORMAT = int,eNB_ID : int,frame : int,subframe : int,UE_id : int,rnti : int,first_transmission : int,Msg3_frame : int,Msg3_subframe
+ID = ENB_PHY_INITIATE_RA_PROCEDURE
+    DESC = eNodeB initiates a random access procedure after detecting enough energy for one of the preambles
+    GROUP = ALL:PHY:ENB
+    FORMAT = int,eNB_ID : int,frame : int,subframe : int,UE_id : int,preamble : int,energy : int,delay
 
 #MAC logs
 ID = ENB_MAC_UE_DL_SDU
@@ -74,7 +82,7 @@ ID = ENB_MAC_UE_DL_SDU
 ID = ENB_MAC_UE_UL_SCHEDULE
     DESC = MAC uplink UE scheduling decision
     GROUP = ALL:MAC:ENB
-    FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : int,mcs : int,first_rb : int,nb_rb : int,TBS
+    FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : int,mcs : int,first_rb : int,nb_rb : int,TBS : int,ndi
 ID = ENB_MAC_UE_UL_SCHEDULE_RETRANSMISSION
     DESC = MAC uplink UE scheduling retransmission decision
     GROUP = ALL:MAC:ENB

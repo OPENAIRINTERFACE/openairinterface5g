@@ -1601,6 +1601,11 @@ int main( int argc, char **argv )
       PHY_vars_eNB_g[0][CC_id] = init_lte_eNB(frame_parms[CC_id],0,frame_parms[CC_id]->Nid_cell,abstraction_flag);
       PHY_vars_eNB_g[0][CC_id]->CC_id = CC_id;
 
+      PHY_vars_eNB_g[0][CC_id]->ue_dl_rb_alloc=0x1fff;
+      PHY_vars_eNB_g[0][CC_id]->target_ue_dl_mcs=target_dl_mcs;
+      PHY_vars_eNB_g[0][CC_id]->ue_ul_nb_rb=6;
+      PHY_vars_eNB_g[0][CC_id]->target_ue_ul_mcs=target_ul_mcs;
+
       if (phy_test==1) PHY_vars_eNB_g[0][CC_id]->mac_enabled = 0;
       else PHY_vars_eNB_g[0][CC_id]->mac_enabled = 1;
 

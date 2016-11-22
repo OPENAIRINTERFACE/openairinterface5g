@@ -977,6 +977,22 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
 		UE_id,
 		eNB->ulsch[(uint32_t)UE_id]->Msg3_frame,
 		eNB->ulsch[(uint32_t)UE_id]->Msg3_subframe);
+
+          /* TODO: get rid of this hack. The problem is that the eNodeB may
+           * sometimes wrongly generate PHICH because somewhere 'phich_active' was
+           * not reset to 0, due to an unidentified reason. When adding this
+           * resetting here the problem seems to disappear completely.
+           */
+          LOG_D(PHY, "hack: set phich_active to 0 for UE %d fsf %d %d all HARQs\n", UE_id, frame, subframe);
+          for (i = 0; i < 8; i++)
+            eNB->ulsch[(uint32_t)UE_id]->harq_processes[i]->phich_active = 0;
+
+          mac_xface->set_msg3_subframe(eNB->Mod_id, eNB->CC_id, frame, subframe, (uint16_t)crnti,
+                                       eNB->ulsch[UE_id]->Msg3_frame, eNB->ulsch[UE_id]->Msg3_subframe);
+
+          T(T_ENB_PHY_MSG3_ALLOCATION, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
+            T_INT(UE_id), T_INT((uint16_t)crnti), T_INT(1 /* 1 is for initial transmission*/),
+            T_INT(eNB->ulsch[UE_id]->Msg3_frame), T_INT(eNB->ulsch[UE_id]->Msg3_subframe));
 	}
 	if (ue_stats) ue_stats->total_TBS_MAC += dlsch_harq->TBS;
       }
@@ -1969,6 +1985,9 @@ void prach_procedures(PHY_VARS_eNB *eNB) {
             preamble_energy_max/10,
             preamble_energy_max%10,
             preamble_delay_list[preamble_max]);
+
+      T(T_ENB_PHY_INITIATE_RA_PROCEDURE, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id),
+        T_INT(preamble_max), T_INT(preamble_energy_max), T_INT(preamble_delay_list[preamble_max]));
 
       if (eNB->mac_enabled==1) {
         uint8_t update_TA=4;
@@ -3070,6 +3089,13 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
                                frame,
                                &eNB->ulsch[i]->Msg3_frame,
                                &eNB->ulsch[i]->Msg3_subframe);
+
+            mac_xface->set_msg3_subframe(eNB->Mod_id, eNB->CC_id, frame, subframe, eNB->ulsch[i]->rnti,
+                                         eNB->ulsch[i]->Msg3_frame, eNB->ulsch[i]->Msg3_subframe);
+
+            T(T_ENB_PHY_MSG3_ALLOCATION, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
+              T_INT(i), T_INT(eNB->ulsch[i]->rnti), T_INT(0 /* 0 is for retransmission*/),
+              T_INT(eNB->ulsch[i]->Msg3_frame), T_INT(eNB->ulsch[i]->Msg3_subframe));
           }
           LOG_D(PHY,"[eNB] Frame %d, Subframe %d: Msg3 in error, i = %d \n", frame,subframe,i);
         } // This is Msg3 error

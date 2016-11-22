@@ -246,6 +246,25 @@ unsigned short fill_rar(
 */
 void cancel_ra_proc(module_id_t module_idP,int CC_id,frame_t frameP, uint16_t preamble_index);
 
+/* \brief Function used by PHY to inform MAC that an uplink is scheduled
+          for Msg3 in given subframe. This is used so that the MAC
+          scheduler marks as busy the RBs used by the Msg3.
+@param Mod_id        Instance ID of eNB
+@param CC_id         CC ID of eNB
+@param frame         current frame
+@param subframe      current subframe
+@param rnti          UE rnti concerned
+@param Msg3_frame    frame where scheduling takes place
+@param Msg3_subframe subframe where scheduling takes place
+*/
+void set_msg3_subframe(module_id_t Mod_id,
+                       int CC_id,
+                       int frame,
+                       int subframe,
+                       int rnti,
+                       int Msg3_frame,
+                       int Msg3_subframe);
+
 /* \brief Function to indicate a received SDU on ULSCH.
 @param Mod_id Instance ID of eNB
 @param rnti RNTI of UE transmitting the SR
