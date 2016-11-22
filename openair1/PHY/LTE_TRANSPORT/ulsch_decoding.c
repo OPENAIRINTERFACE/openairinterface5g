@@ -1533,6 +1533,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   // CQI
 
   //  printf("before cqi c[%d] = %p\n",0,ulsch_harq->c[0]);
+  ulsch_harq->cqi_crc_status = 0;
   if (Q_CQI>0) {
     memset((void *)&dummy_w_cc[0],0,3*(ulsch_harq->Or1+8+32));
 
@@ -1555,9 +1556,6 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 
     if (extract_cqi_crc(o_flip,ulsch_harq->Or1) == (crc8(o_flip,ulsch_harq->Or1)>>24))
       ulsch_harq->cqi_crc_status = 1;
-    else
-      ulsch_harq->cqi_crc_status = 0;
-
 
     if (ulsch->harq_processes[harq_pid]->Or1<=32) {
       ulsch_harq->o[3] = o_flip[0] ;
