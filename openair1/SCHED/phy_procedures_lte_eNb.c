@@ -969,6 +969,15 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
 		eNB->ulsch[(uint32_t)UE_id]->Msg3_frame,
 		eNB->ulsch[(uint32_t)UE_id]->Msg3_subframe);
 
+          /* TODO: get rid of this hack. The problem is that the eNodeB may
+           * sometimes wrongly generate PHICH because somewhere 'phich_active' was
+           * not reset to 0, due to an unidentified reason. When adding this
+           * resetting here the problem seems to disappear completely.
+           */
+          LOG_D(PHY, "hack: set phich_active to 0 for UE %d fsf %d %d all HARQs\n", UE_id, frame, subframe);
+          for (i = 0; i < 8; i++)
+            eNB->ulsch[(uint32_t)UE_id]->harq_processes[i]->phich_active = 0;
+
           mac_xface->set_msg3_subframe(eNB->Mod_id, eNB->CC_id, frame, subframe, (uint16_t)crnti,
                                        eNB->ulsch[UE_id]->Msg3_frame, eNB->ulsch[UE_id]->Msg3_subframe);
 
