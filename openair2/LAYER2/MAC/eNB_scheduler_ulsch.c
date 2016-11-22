@@ -601,6 +601,29 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
   return(mac_header_ptr);
 }
 
+/* This function is called by PHY layer when it schedules some
+ * uplink for a random access message 3.
+ * The MAC scheduler has to skip the RBs used by this message 3
+ * (done below in schedule_ulsch).
+ */
+void set_msg3_subframe(module_id_t Mod_id,
+                       int CC_id,
+                       int frame,
+                       int subframe,
+                       int rnti,
+                       int Msg3_frame,
+                       int Msg3_subframe)
+{
+  eNB_MAC_INST *eNB=&eNB_mac_inst[Mod_id];
+  int i;
+  for (i=0; i<NB_RA_PROC_MAX; i++) {
+    if (eNB->common_channels[CC_id].RA_template[i].RA_active == TRUE &&
+        eNB->common_channels[CC_id].RA_template[i].rnti == rnti) {
+      eNB->common_channels[CC_id].RA_template[i].Msg3_subframe = Msg3_subframe;
+      break;
+    }
+  }
+}
 
 void schedule_ulsch(module_id_t module_idP, 
 		    frame_t frameP,
@@ -619,6 +642,7 @@ void schedule_ulsch(module_id_t module_idP,
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
+    //leave out first RB for PUCCH
     first_rb[CC_id] = 1;
 
     // UE data info;
@@ -637,9 +661,11 @@ void schedule_ulsch(module_id_t module_idP,
     for (i=0; i<NB_RA_PROC_MAX; i++) {
       if ((eNB->common_channels[CC_id].RA_template[i].RA_active == TRUE) &&
           (eNB->common_channels[CC_id].RA_template[i].generate_rar == 0) &&
+          (eNB->common_channels[CC_id].RA_template[i].generate_Msg4 == 0) &&
+          (eNB->common_channels[CC_id].RA_template[i].wait_ack_Msg4 == 0) &&
           (eNB->common_channels[CC_id].RA_template[i].Msg3_subframe == sched_subframe)) {
-	//leave out first RB for PUCCH
         first_rb[CC_id]++;
+        eNB->common_channels[CC_id].RA_template[i].Msg3_subframe = -1;
         break;
       }
     }

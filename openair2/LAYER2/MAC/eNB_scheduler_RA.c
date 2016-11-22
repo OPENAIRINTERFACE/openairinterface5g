@@ -259,7 +259,8 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 			   RA_template->RA_dci_fmt1,
 			   1);
 
-	    RA_template->Msg3_subframe=Msg3_subframe;
+            /* this will be updated when PHY calls set_msg3_subframe */
+	    RA_template->Msg3_subframe = -1;
 	  }
         } else if (RA_template->generate_Msg4 == 1) {
 
