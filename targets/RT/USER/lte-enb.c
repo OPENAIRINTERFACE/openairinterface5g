@@ -761,11 +761,13 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     else {
       if (frame_tx != *frame) {
 	LOG_E(PHY,"fh_if4p5_asynch_DL: frame_tx %d is not what we expect %d\n",frame_tx,*frame);
-	exit_fun("Exiting");
+	*frame = frame_tx;
+	//	exit_fun("Exiting");
       }
       if (subframe_tx != *subframe) {
 	LOG_E(PHY,"fh_if4p5_asynch_DL: subframe_tx %d is not what we expect %d\n",subframe_tx,*subframe);
-	exit_fun("Exiting");
+	*subframe = subframe_tx;
+	//	exit_fun("Exiting");
       }
     }
     if (packet_type == IF4p5_PDLFFT) {
@@ -1181,13 +1183,15 @@ void *eNB_thread_synch(void *arg) {
 
 	LOG_I(PHY,"Estimated sync_pos %d, peak_val %d => timing offset %d\n",sync_pos,peak_val,eNB->rx_offset);
 	
-
-      /*      if ((peak_val > 10000) && (sync_pos == -1)) {
+	/*
+	if ((peak_val > 300000) && (sync_pos > 0)) {
 	//      if (sync_pos++ > 3) {
 	write_output("eNB_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
 	write_output("eNB_rx.m","rxs",(void*)eNB->common_vars.rxdata[0][0],fp->samples_per_tti*10,1,1);
 	exit(-1);
-	}*/
+	}
+	*/
+	eNB->in_synch=1;
       }
     }
 
@@ -1448,9 +1452,16 @@ static void* eNB_thread_single( void* param ) {
 	pthread_mutex_unlock(&eNB->proc.mutex_synch);
       } // ic>=0
     } // in_synch==0
+    // read in rx_offset samples
+    LOG_I(PHY,"Resynchronizing by %d samples\n",eNB->rx_offset);
+    rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
+				      &(proc->timestamp_rx),
+				      rxp,
+				      eNB->rx_offset,
+				      fp->nb_antennas_rx);
     for (i=0;i<4;i++) {
       eNB->rfdevice.openair0_cfg->rx_freq[i] = temp_freq1;
-      eNB->rfdevice.openair0_cfg->rx_freq[i] = temp_freq2;
+      eNB->rfdevice.openair0_cfg->tx_freq[i] = temp_freq2;
     }
     eNB->rfdevice.trx_set_freq_func(&eNB->rfdevice,eNB->rfdevice.openair0_cfg,0);
   } // if RRU and slave
