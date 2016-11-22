@@ -754,16 +754,30 @@ int main(int argc, char **argv)
    SCM_A, SCM_B, SCM_C, SCM_D, EPA, EVA, ETU, Rayleigh8, Rayleigh1, Rayleigh1_corr, Rayleigh1_anticorr, Rice1, Rice8, Rayleigh1_orthogonal, Rayleigh1_orth_eff_ch_TM4_prec_real, Rayleigh1_orth_eff_ch_TM4_prec_imag, Rayleigh8_orth_eff_ch_TM4_prec_real, Rayleigh8_orth_eff_ch_TM4_prec_imag, TS_SHIFT);
   if(transmission_mode==5)
     sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_u%d_imod%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1,mcs_i,rx_type,i_mod);
-  else if (abstx == 1)
+  else if (abstx == 1){
     if (perfect_ce==1)
-   sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_pce_sh%d_rpmi%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2,interf_unaw_shift, tpmi_retr);
+      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_pce_sh%d_rpmi%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2,interf_unaw_shift, tpmi_retr);
     else
       sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_sh%d_rtpmi%d.csv",transmission_mode,rx_type,channel_model, n_frames, n_rx, num_rounds, mcs1, mcs2,interf_unaw_shift, tpmi_retr);
-  else //abstx=0
-    if (perfect_ce==1)
-      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d_rtpmi%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift, tpmi_retr);
-   else
-    sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d_pnort_rtpmi%d.csv",transmission_mode,rx_type,channel_model,n_frames,n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift, tpmi_retr);
+  }
+  else {//abstx=0
+    if (perfect_ce==1){
+      if (updated_csi==1){
+        sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d_up_rtpmi%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift, tpmi_retr);
+      }
+      else{
+          sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d_rtpmi%d.csv",transmission_mode,rx_type, channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift, tpmi_retr);
+      }
+    }
+    else{
+      if (updated_csi==1){
+        sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d_up_rtpmi%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift, tpmi_retr);
+      }
+      else{
+          sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d_rtpmi%d.csv",transmission_mode,rx_type, channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift, tpmi_retr);
+      }
+    }
+  }
 
   bler_fd = fopen(bler_fname,"w");
   if (bler_fd==NULL) {
@@ -2839,7 +2853,7 @@ int main(int argc, char **argv)
                 }
 
                 //Here need to add cases for TPMI 6 and TPMI 5 and check for both TB.
-                if (transmission_mode == 4 && ((((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 2) ||(((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 2))){
+                if (transmission_mode == 4 && ((((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 2) ||(((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 2)) && (TB0_active == 1)){
 #ifdef DEBUG_HARQ
                     printf ("[DLSIM] I am calling from the  eNode B 1\n");
 #endif
