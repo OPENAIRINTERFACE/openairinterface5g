@@ -159,8 +159,8 @@ typedef enum  {
 
 typedef enum {
   synch_to_ext_device=0,  // synch to RF or Ethernet device
-  synch_to_other          // synch to another source (timer, other CC_id)
-} eNB_timing_t;
+  synch_to_other          // synch to another source (timer, other RU)
+} RU_timing_t;
 
 typedef struct UE_SCAN_INFO_s {
   /// 10 best amplitudes (linear) for each pss signals
@@ -225,6 +225,57 @@ typedef struct {
   LTE_eNB_DLSCH_t *dlsch;
   int G;
 } te_params;
+
+typedef struct pc_proc_t_s {
+  /// timestamp received from HW
+  openair0_timestamp timestamp_rx;
+  /// timestamp to send to "slave rru"
+  openair0_timestamp timestamp_tx;
+  /// subframe to act upon for reception
+  int subframe_rx;
+  /// frame to act upon for reception
+  int frame_rx;
+  /// \brief Instance count for FH processing thread.
+  /// \internal This variable is protected by \ref mutex_FH.
+  int instance_cnt_FH;
+  /// \brief Instance count for rx processing thread.
+  /// \internal This variable is protected by \ref mutex_asynch_rxtx.
+  int instance_cnt_asynch_rxtx;
+  /// pthread structure for FH processing thread
+  pthread_t pthread_FH;
+  /// pthread structure for eNB single processing thread
+  pthread_t pthread_single;
+  /// pthread structure for asychronous RX/TX processing thread
+  pthread_t pthread_asynch_rxtx;
+  /// flag to indicate first RX acquisition
+  int first_rx;
+  /// flag to indicate first TX transmission
+  int first_tx;
+  /// pthread attributes for FH processing thread
+  pthread_attr_t attr_FH;
+  /// pthread attributes for single eNB processing thread
+  pthread_attr_t attr_single;
+  /// pthread attributes for asynchronous RX thread
+  pthread_attr_t attr_asynch_rxtx;
+  /// scheduling parameters for FH thread
+  struct sched_param sched_param_FH;
+  /// scheduling parameters for single eNB thread
+  struct sched_param sched_param_single;
+  /// scheduling parameters for asynch_rxtx thread
+  struct sched_param sched_param_asynch_rxtx;
+  /// condition variable for FH thread
+  pthread_cond_t cond_FH;
+  /// condition variable for asynch RX/TX thread
+  pthread_cond_t cond_asynch_rxtx;
+  /// mutex for FH
+  pthread_mutex_t mutex_FH;
+  /// mutex for asynch RX/TX thread
+  pthread_mutex_t mutex_asynch_rxtx;
+  /// number of slave threads
+  int                  num_slaves;
+  /// array of pointers to slaves
+  struct pc_proc_t_s           **slave_proc;
+} pc_proc_t;
 
 /// Context data structure for eNB subframe processing
 typedef struct eNB_proc_t_s {
@@ -412,14 +463,12 @@ typedef struct PHY_VARS_eNB_s {
   int                  abstraction_flag;
   openair0_timestamp   ts_offset;
   void                 (*do_prach)(struct PHY_VARS_eNB_s *eNB);
-  void                 (*fep)(struct PHY_VARS_eNB_s *eNB);
   int                  (*td)(struct PHY_VARS_eNB_s *eNB,int UE_id,int harq_pid,int llr8_flag);
   int                  (*te)(struct PHY_VARS_eNB_s *,uint8_t *,uint8_t,LTE_eNB_DLSCH_t *,int,uint8_t,time_stats_t *,time_stats_t *,time_stats_t *);
   void                 (*proc_uespec_rx)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc,const relaying_type_t r_type);
   void                 (*proc_tx)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type,PHY_VARS_RN *rn);
   void                 (*tx_fh)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc);
   void                 (*rx_fh)(struct PHY_VARS_eNB_s *eNB,int *frame, int *subframe);
-  int                  (*start_rf)(struct PHY_VARS_eNB_s *eNB);
   int                  (*start_if)(struct PHY_VARS_eNB_s *eNB);
   void                 (*fh_asynch)(struct PHY_VARS_eNB_s *eNB,int *frame, int *subframe);
   uint8_t              local_flag;
@@ -612,12 +661,6 @@ typedef struct PHY_VARS_eNB_s {
   int32_t pusch_stats_bsr[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
   
-  /// RF and Interface devices per CC
-  openair0_device rfdevice; 
-  openair0_device ifdevice;
-  /// Pointer for ifdevice buffer struct
-  if_buffer_t ifbuffer;
-
 } PHY_VARS_eNB;
 
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50)) msg
@@ -873,13 +916,69 @@ typedef struct {
 
   /// RF and Interface devices per CC
   openair0_device rfdevice; 
-
 } PHY_VARS_UE;
+
+typedef enum {
+  LOCAL_RF=0,
+  REMOTE_IF5=1,
+  REMOTE_IF4p5=2,
+  REMOTE_IF1pp=3,
+  MAX_RU_IF_TYPES=4
+} RU_if_in_t;
+
+typedef struct {
+
+  /// input interface
+  RU_if_in_t RU_if_in;
+  /// timing
+  RU_if_timing_t RU_if_timing;
+  /// number of RX paths on device
+  int nb_rx;
+  /// number of TX paths on device
+  int nb_tx;
+  /// Radio Unit device descriptor
+  openair0_device rudevice;
+  /// Pointer for ifdevice buffer struct
+  if_buffer_t ifbuffer;
+} RU_desc_t;
+
+typedef struct PRECODER_t_s{
+  /// pointer to RAN context governing this precoder
+  RAN_CONTEXT *RC;
+  /// function pointer to synchronous TX fronthaul function
+  void                 (*tx_fh)(PRECODER_t_s *pc);
+  /// function pointer to synchronous RX fronthaul function
+  void                 (*rx_fh)(PRECODER_t_s *pc,int *frame, int *subframe);
+  /// function pointer to asynchronous fronthaul interface
+  void                 (*fh_asynch)(struct PRECODER_t_s *pc,int *frame, int *subframe);
+  /// function pointer to initialization function for radio interface
+  int                  (*start_rf)(struct PRECODER_t_s *pc);
+  /// function pointer to RX front-end processing routine (DFTs/prefix removal or NULL)
+  void                 (*fep_rx)(struct PRECODER_t_s *pc);
+  /// function pointer to TX front-end processing routine (PRECODING and/or IDFTs and prefix removal or NULL)
+  void                 (*fep_tx)(struct PRECODER_t_s *pc);
+  /// RX and TX buffers for precoder output
+  RU_TIME              ru_time;
+} PRECODER_t;
+
+typedef struct {
+  /// Number of eNB instances in this node
+  int nb_inst;
+  /// Number of Component Carriers per instance in this node
+  int *nb_CC;
+  /// Number of radio units
+  int nb_RU;
+  /// eNB context variables
+  PHY_VARS_eNB **eNB;
+  /// RU descriptors
+  RU_desc_t *ru_desc;
+  /// Precoding descriptor per radio unit. This describes what each radio unit is supposed to do and contains the necessary functions for fronthaul interfaces
+  PRECODER_t *pc;
+} RAN_CONTEXT_t;
 
 void exit_fun(const char* s);
 
 static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
-
   if (pthread_mutex_lock(mutex) != 0) {
     LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
     exit_fun("nothing to add");

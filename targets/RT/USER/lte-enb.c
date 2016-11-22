@@ -1230,13 +1230,30 @@ static void* eNB_thread_prach( void* param ) {
   return &eNB_thread_prach_status;
 }
 
+static void *pc_thread(void* param) {
+
+  PRECODER *pc = (PRECODER_t*)param;
+
+  // Start IF device if any
+  if (eNB->start_if) 
+    if (eNB->start_if(eNB) != 0)
+      LOG_E(HW,"Could not start the IF device\n");
+
+  // Start RF device if any
+  if (eNB->start_rf)
+    if (eNB->start_rf(eNB) != 0)
+      LOG_E(HW,"Could not start the RF device\n");
+
+}
+
+
 static void* eNB_thread_single( void* param ) {
 
   static int eNB_thread_single_status;
 
   eNB_proc_t *proc = (eNB_proc_t*)param;
   eNB_rxtx_proc_t *proc_rxtx = &proc->proc_rxtx[0];
-  PHY_VARS_eNB *eNB = PHY_vars_eNB_g[0][proc->CC_id];
+  PHY_VARS_eNB *eNB = RC.eNB[0][proc->CC_id];
 
   int subframe=0, frame=0; 
 
@@ -1252,15 +1269,6 @@ static void* eNB_thread_single( void* param ) {
     wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
 #endif 
 
-  // Start IF device if any
-  if (eNB->start_if) 
-    if (eNB->start_if(eNB) != 0)
-      LOG_E(HW,"Could not start the IF device\n");
-
-  // Start RF device if any
-  if (eNB->start_rf)
-    if (eNB->start_rf(eNB) != 0)
-      LOG_E(HW,"Could not start the RF device\n");
 
   // wakeup asnych_rxtx thread because the devices are ready at this point
   pthread_mutex_lock(&proc->mutex_asynch_rxtx);
@@ -1606,6 +1614,183 @@ extern void eNB_fep_rru_if5(PHY_VARS_eNB *eNB);
 extern void eNB_fep_full(PHY_VARS_eNB *eNB);
 extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB);
 extern void do_prach(PHY_VARS_eNB *eNB);
+
+void init_RU(RAN_CONTEXT *rc,RU_if_in_t ru_if_in[], RU_if_timing_t ru_if_timing[], eth_params_t *eth_params) {
+  
+  int ru_id;
+
+  for (ru_id=0;ru_id<rc->nb_RU;ru_id++) {
+    ru = &rc.ru_desc[ru_id];
+    ru->RU_if_in[ru_id]     = ru_if_in[ru_id];
+    ru->RU_if_timing        = ru_if_timing[ru_id];
+    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s)\n",ru_id,ru_if_types[ru_if_in[ru_id]],eNB_timing[ru_timing[ru_id]]);
+    
+    switch (ru->RU_if_in[ru_id]) {
+    case REMOTE_IF5:
+      pc->fep                   = pc_fep_rru_if5;
+      eNB->rx_fh                = rx_rf;
+      eNB->start_rf             = start_rf;
+      eNB->start_if             = start_if;
+      eNB->fh_asynch            = fh_if5_asynch_DL;
+      ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
+      if (ret<0) {
+	printf("Exiting, cannot initialize rf device\n");
+	exit(-1);
+      }
+      eNB->rfdevice.host_type   = RRH_HOST;
+      eNB->ifdevice.host_type   = RRH_HOST;
+      ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
+      printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
+      if (ret<0) {
+	printf("Exiting, cannot initialize transport protocol\n");
+	exit(-1);
+      }
+      break;
+    case NGFI_RRU_IF4p5:
+      eNB->do_prach             = do_prach;
+      eNB->fep                  = eNB_fep_full;//(single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
+      eNB->td                   = NULL;
+      eNB->te                   = NULL;
+      eNB->proc_uespec_rx       = NULL;
+      eNB->proc_tx              = NULL;//proc_tx_rru_if4p5;
+      eNB->tx_fh                = NULL;
+      eNB->rx_fh                = rx_rf;
+      eNB->fh_asynch            = fh_if4p5_asynch_DL;
+      eNB->start_rf             = start_rf;
+      eNB->start_if             = start_if;
+      ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
+      if (ret<0) {
+	printf("Exiting, cannot initialize rf device\n");
+	exit(-1);
+      }
+      eNB->rfdevice.host_type   = RRH_HOST;
+      eNB->ifdevice.host_type   = RRH_HOST;
+      ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
+      printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
+      if (ret<0) {
+	printf("Exiting, cannot initialize transport protocol\n");
+	exit(-1);
+      }
+      
+      malloc_IF4p5_buffer(eNB);
+      
+      break;
+    case eNodeB_3GPP:
+      eNB->do_prach             = do_prach;
+      eNB->fep                  = eNB_fep_full;//(single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
+      eNB->td                   = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+      eNB->te                   = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
+      eNB->proc_uespec_rx       = phy_procedures_eNB_uespec_RX;
+      eNB->proc_tx              = proc_tx_full;
+      eNB->tx_fh                = NULL;
+      eNB->rx_fh                = rx_rf;
+      eNB->start_rf             = start_rf;
+      eNB->start_if             = NULL;
+      eNB->fh_asynch            = NULL;
+      ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
+      if (ret<0) {
+	printf("Exiting, cannot initialize rf device\n");
+	exit(-1);
+      }
+      eNB->rfdevice.host_type   = BBU_HOST;
+      eNB->ifdevice.host_type   = BBU_HOST;
+      break;
+    case eNodeB_3GPP_BBU:
+      eNB->do_prach       = do_prach;
+      eNB->fep            = eNB_fep_full;//(single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
+      eNB->td             = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+      eNB->te             = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
+      eNB->proc_uespec_rx = phy_procedures_eNB_uespec_RX;
+      eNB->proc_tx        = proc_tx_full;
+      if (eNB->node_timing == synch_to_other) {
+	eNB->tx_fh          = tx_fh_if5_mobipass;
+	eNB->rx_fh          = rx_fh_slave;
+	eNB->fh_asynch      = fh_if5_asynch_UL;
+	
+      }
+      else {
+	eNB->tx_fh          = tx_fh_if5;
+	eNB->rx_fh          = rx_fh_if5;
+	eNB->fh_asynch      = NULL;
+      }
+      
+      eNB->start_rf       = NULL;
+	eNB->start_if       = start_if;
+	eNB->rfdevice.host_type   = BBU_HOST;
+	
+	eNB->ifdevice.host_type   = BBU_HOST;
+
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
+        printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
+        if (ret<0) {
+          printf("Exiting, cannot initialize transport protocol\n");
+          exit(-1);
+        }
+	break;
+      case NGFI_RCC_IF4p5:
+	eNB->do_prach             = do_prach;
+	eNB->fep                  = NULL;
+	eNB->td                   = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+	eNB->te                   = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
+	eNB->proc_uespec_rx       = phy_procedures_eNB_uespec_RX;
+	eNB->proc_tx              = proc_tx_high;
+	eNB->tx_fh                = tx_fh_if4p5;
+	eNB->rx_fh                = rx_fh_if4p5;
+	eNB->start_rf             = NULL;
+	eNB->start_if             = start_if;
+        eNB->fh_asynch            = (eNB->node_timing == synch_to_other) ? fh_if4p5_asynch_UL : NULL;
+	eNB->rfdevice.host_type   = BBU_HOST;
+	eNB->ifdevice.host_type   = BBU_HOST;
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
+        printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
+        if (ret<0) {
+          printf("Exiting, cannot initialize transport protocol\n");
+          exit(-1);
+        }
+	malloc_IF4p5_buffer(eNB);
+
+	break;
+      case NGFI_RAU_IF4p5:
+	eNB->do_prach       = do_prach;
+	eNB->fep            = NULL;
+
+	eNB->td             = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+	eNB->te             = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
+	eNB->proc_uespec_rx = phy_procedures_eNB_uespec_RX;
+	eNB->proc_tx        = proc_tx_high;
+	eNB->tx_fh          = tx_fh_if4p5; 
+	eNB->rx_fh          = rx_fh_if4p5; 
+        eNB->fh_asynch      = (eNB->node_timing == synch_to_other) ? fh_if4p5_asynch_UL : NULL;
+	eNB->start_rf       = NULL;
+	eNB->start_if       = start_if;
+
+	eNB->rfdevice.host_type   = BBU_HOST;
+	eNB->ifdevice.host_type   = BBU_HOST;
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
+        printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
+        if (ret<0) {
+          printf("Exiting, cannot initialize transport protocol\n");
+          exit(-1);
+        }
+	break;	
+	malloc_IF4p5_buffer(eNB);
+
+      }
+    }
+
+    if (setup_eNB_buffers(PHY_vars_eNB_g[inst],&openair0_cfg[CC_id])!=0) {
+      printf("Exiting, cannot initialize eNodeB Buffers\n");
+      exit(-1);
+    }
+
+    init_eNB_proc(inst);
+  }
+
+  sleep(1);
+  LOG_D(HW,"[lte-softmodem.c] eNB threads created\n");
+  
+
+}
 
 void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *eth_params,int single_thread_flag) {
   

@@ -592,150 +592,83 @@ typedef enum {
   TM9_10=13
 } MIMO_mode_t;
 
+
 typedef struct {
-  /// \brief Holds the transmit data in time domain.
-  /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: tx antenna [0..nb_antennas_tx[
-  /// - third index:
-  int32_t **txdata[3];
-  /// \brief holds the transmit data in the frequency domain.
-  /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: tx antenna [0..nb_antennas_tx[
-  /// - third index: sample [0..]
-  int32_t **txdataF[3];
-  /// \brief Holds the received data in time domain.
-  /// Should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
-  /// - first index: sector id [0..2] (hard coded)
-  /// - second index: rx antenna [0..nb_antennas_rx[
-  /// - third index: sample [0..]
-  int32_t **rxdata[3];
+
+  int32_t **txdataF;
   /// \brief Holds the last subframe of received data in time domain after removal of 7.5kHz frequency offset.
-  /// - first index: secotr id [0..2] (hard coded)
-  /// - second index: rx antenna [0..nb_antennas_rx[
-  /// - third index: sample [0..samples_per_tti[
-  int32_t **rxdata_7_5kHz[3];
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: sample [0..samples_per_tti[
+  int32_t **rxdata_7_5kHz;
   /// \brief Holds the received data in the frequency domain.
-  /// - first index: sector id [0..2] (hard coded)
-  /// - second index: rx antenna [0..nb_antennas_rx[
-  /// - third index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
-  int32_t **rxdataF[3];
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
+  int32_t **rxdataF;
   /// \brief Holds output of the sync correlator.
-  /// - first index: sector id [0..2] (hard coded)
-  /// - second index: sample [0..samples_per_tti*10[
+  /// - first index: sample [0..samples_per_tti*10[
   uint32_t *sync_corr[3];
 } LTE_eNB_COMMON;
 
 typedef struct {
+  /// \brief Holds the transmit data in the frequency domain.
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
+  int32_t **txdata;
+  /// \brief Holds the receive data in the frequency domain.
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
+  int32_t **rxdata;
+} RU_TIME;
+
+typedef struct {
   /// \brief Hold the channel estimates in frequency domain based on SRS.
-  /// - first index: sector id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..ofdm_symbol_size[
-  int32_t **srs_ch_estimates[3];
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..ofdm_symbol_size[
+  int32_t **srs_ch_estimates;
   /// \brief Hold the channel estimates in time domain based on SRS.
-  /// - first index: sector id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..2*ofdm_symbol_size[
-  int32_t **srs_ch_estimates_time[3];
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..2*ofdm_symbol_size[
+  int32_t **srs_ch_estimates_time;
   /// \brief Holds the SRS for channel estimation at the RX.
-  /// - first index: ? [0..ofdm_symbol_size[
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..ofdm_symbol_size[
   int32_t *srs;
 } LTE_eNB_SRS;
 
 typedef struct {
   /// \brief Holds the received data in the frequency domain for the allocated RBs in repeated format.
-  /// - first index: sector id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..2*ofdm_symbol_size[
-  /// - third index (definition from phy_init_lte_eNB()): ? [0..24*N_RB_UL*frame_parms->symbols_per_tti[
-  /// \warning inconsistent third index definition
-  int32_t **rxdataF_ext[3];
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..2*ofdm_symbol_size[
+  int32_t **rxdataF_ext;
   /// \brief Holds the received data in the frequency domain for the allocated RBs in normal format.
-  /// - first index: sector id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index (definition from phy_init_lte_eNB()): ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **rxdataF_ext2[3];
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index (definition from phy_init_lte_eNB()): ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **rxdataF_ext2;
   /// \brief Hold the channel estimates in time domain based on DRS.
-  /// - first index: sector id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..4*ofdm_symbol_size[
-  int32_t **drs_ch_estimates_time[3];
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..4*ofdm_symbol_size[
+  int32_t **drs_ch_estimates_time;
   /// \brief Hold the channel estimates in frequency domain based on DRS.
-  /// - first index: sector id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **drs_ch_estimates[3];
-  /// \brief Hold the channel estimates for UE0 in case of Distributed Alamouti Scheme.
-  /// - first index: sector id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **drs_ch_estimates_0[3];
-  /// \brief Hold the channel estimates for UE1 in case of Distributed Almouti Scheme.
-  /// - first index: sector id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **drs_ch_estimates_1[3];
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **drs_ch_estimates;
   /// \brief Holds the compensated signal.
-  /// - first index: sector id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **rxdataF_comp[3];
-  /// \brief Hold the compensated data (y)*(h0*) in case of Distributed Alamouti Scheme.
-  /// - first index: sector id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **rxdataF_comp_0[3];
-  /// \brief Hold the compensated data (y*)*(h1) in case of Distributed Alamouti Scheme.
-  /// - first index: sector id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **rxdataF_comp_1[3];
-  /// \brief ?.
-  /// - first index: sector id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **ul_ch_mag[3];
-  /// \brief ?.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **ul_ch_magb[3];
-  /// \brief Hold the channel mag for UE0 in case of Distributed Alamouti Scheme.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **ul_ch_mag_0[3];
-  /// \brief Hold the channel magb for UE0 in case of Distributed Alamouti Scheme.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **ul_ch_magb_0[3];
-  /// \brief Hold the channel mag for UE1 in case of Distributed Alamouti Scheme.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **ul_ch_mag_1[3];
-  /// \brief Hold the channel magb for UE1 in case of Distributed Alamouti Scheme.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **ul_ch_magb_1[3];
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **rxdataF_comp;
+  /// \brief Magnitude of the UL channel estimates. Used for 2nd-bit level thresholds in LLR computation
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **ul_ch_mag;
+  /// \brief Magnitude of the UL channel estimates scaled for 3rd bit level thresholds in LLR computation
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **ul_ch_magb;
   /// measured RX power based on DRS
   int ulsch_power[2];
-  /// measured RX power based on DRS for UE0 in case of Distributed Alamouti Scheme
-  int ulsch_power_0[2];
-  /// measured RX power based on DRS for UE0 in case of Distributed Alamouti Scheme
-  int ulsch_power_1[2];
   /// \brief llr values.
   /// - first index: ? [0..1179743] (hard coded)
   int16_t *llr;
-#ifdef LOCALIZATION
-  /// number of active subcarrier for a specific UE
-  int32_t active_subcarrier;
-  /// subcarrier power in dBm
-  int32_t *subcarrier_power;
-#endif
 } LTE_eNB_PUSCH;
 
 typedef struct {
