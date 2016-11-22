@@ -1121,13 +1121,13 @@ static void get_options (int argc, char **argv)
         frame_parms[CC_id]->N_RB_DL             =  enb_properties->properties[i]->N_RB_DL[CC_id];
         frame_parms[CC_id]->N_RB_UL             =  enb_properties->properties[i]->N_RB_DL[CC_id];
         frame_parms[CC_id]->nb_antennas_tx      =  enb_properties->properties[i]->nb_antennas_tx[CC_id];
-        frame_parms[CC_id]->nb_antennas_tx_eNB  =  enb_properties->properties[i]->nb_antenna_ports[CC_id];
+        frame_parms[CC_id]->nb_antenna_ports_eNB  =  enb_properties->properties[i]->nb_antenna_ports[CC_id];
         frame_parms[CC_id]->nb_antennas_rx      =  enb_properties->properties[i]->nb_antennas_rx[CC_id];
 
 	frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_ConfigIndex = enb_properties->properties[i]->prach_config_index[CC_id];
 	frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset  = enb_properties->properties[i]->prach_freq_offset[CC_id];
 
-	frame_parms[CC_id]->mode1_flag         = (frame_parms[CC_id]->nb_antennas_tx_eNB == 1) ? 1 : 0;
+	frame_parms[CC_id]->mode1_flag         = (frame_parms[CC_id]->nb_antenna_ports_eNB == 1) ? 1 : 0;
 	frame_parms[CC_id]->threequarter_fs    = threequarter_fs;
 
         //} // j
@@ -1225,7 +1225,7 @@ void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
     frame_parms[CC_id]->Ncp_UL              = NORMAL;
     frame_parms[CC_id]->Nid_cell            = 0;
     frame_parms[CC_id]->num_MBSFN_config    = 0;
-    frame_parms[CC_id]->nb_antennas_tx_eNB  = 1;
+    frame_parms[CC_id]->nb_antenna_ports_eNB  = 1;
     frame_parms[CC_id]->nb_antennas_tx      = 1;
     frame_parms[CC_id]->nb_antennas_rx      = 1;
 
@@ -1524,7 +1524,7 @@ int main( int argc, char **argv )
     if (UE_flag==1) {
       frame_parms[CC_id]->nb_antennas_tx     = 1;
       frame_parms[CC_id]->nb_antennas_rx     = 1;
-      frame_parms[CC_id]->nb_antennas_tx_eNB = 1; //initial value overwritten by initial sync later
+      frame_parms[CC_id]->nb_antenna_ports_eNB = 1; //initial value overwritten by initial sync later
     }
 
     init_ul_hopping(frame_parms[CC_id]);
