@@ -2354,7 +2354,7 @@ void ue_pdsch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, int eNB_id, PDSC
       //TM7 UE specific channel estimation here!!!
       if (ue->transmission_mode[eNB_id]==7) {
         if (ue->frame_parms.Ncp==0) {
-          if ((m==3) || (m==6) || (m==8) || (m==11)) 
+          if ((m==3) || (m==6) || (m==9) || (m==12))
             //LOG_D(PHY,"[UE %d] dlsch->active in subframe %d => %d, l=%d\n",phy_vars_ue->Mod_id,subframe_rx,phy_vars_ue->dlsch_ue[eNB_id][0]->active, l);
             lte_dl_bf_channel_estimation(ue,eNB_id,0,subframe_rx*2+(m>6?1:0),5,m);
         } else {

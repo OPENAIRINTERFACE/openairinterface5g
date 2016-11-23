@@ -1808,26 +1808,6 @@ int main(int argc, char **argv)
 		 osf,
 		 perfect_ce);
 
-  /* Check if really needed */
-  /*cell_spec_bf_weights = eNB->common_vars.beam_weights[0][0];
-  for(aa=0;aa<n_tx_phy;aa++) {
-    for(re=0;re<frame_parms->ofdm_symbol_size;re++) {
-      if (n_tx_phy==1 || n_tx_phy==2)
-        cell_spec_bf_weights[aa][re] = 0x00007fff;
-      else if (n_tx_phy==4 || n_tx_phy==8)
-        cell_spec_bf_weights[aa][re] = 0x00007fff>>1;
-      else if (n_tx_phy==16)
-        cell_spec_bf_weights[aa][re] = 0x00007fff>>2;
-      else if (n_tx_phy==64)
-        cell_spec_bf_weights[aa][re] = 0x00007fff>>4;
-    }
-  } 
-
-  if (transmission_mode==7) {
-    lte_gold_ue_spec_port5(eNB->lte_gold_uespec_port5_table[0],Nid_cell,n_rnti);
-    lte_gold_ue_spec_port5(UE->lte_gold_uespec_port5_table,Nid_cell,n_rnti);
-  }*/
-
   eNB->mac_enabled=1;
   if (two_thread_flag == 0) {
     eNB->te = dlsch_encoding;

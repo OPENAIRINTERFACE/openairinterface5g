@@ -636,6 +636,7 @@ int main(int argc, char **argv)
 
   frame_parms = &eNB->frame_parms;
 
+  /*
   cell_spec_bf_weights = eNB->common_vars.beam_weights[0][0];
   for(aa=0;aa<n_tx_phy;aa++) {
     for(re=0;re<frame_parms->ofdm_symbol_size;re++) {
@@ -653,7 +654,7 @@ int main(int argc, char **argv)
   if (transmission_mode==7){
     lte_gold_ue_spec_port5(eNB->lte_gold_uespec_port5_table[0],Nid_cell,n_rnti);
     lte_gold_ue_spec_port5(UE->lte_gold_uespec_port5_table,Nid_cell,n_rnti);
-  }
+  }*/
 
     
   eNB_id_i = UE->n_connected_eNB;
