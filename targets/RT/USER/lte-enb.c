@@ -760,7 +760,7 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     else {
       if (frame_tx != *frame) {
 	LOG_E(PHY,"fh_if4p5_asynch_DL: frame_tx %d is not what we expect %d\n",frame_tx,*frame);
-	exit_fun("Exiting");
+	//	exit_fun("Exiting");
       }
       if (subframe_tx != *subframe) {
 	LOG_E(PHY,"fh_if4p5_asynch_DL: (frame %d) subframe_tx %d is not what we expect %d\n",frame_tx,subframe_tx,*subframe);
@@ -776,6 +776,8 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
       exit_fun("Exiting");
     }
   } while (proc->symbol_mask[*subframe] != symbol_mask_full);    
+
+  *frame = frame_tx;
 
   // intialize this to zero after we're done with the subframe
   proc->symbol_mask[*subframe] = 0;
