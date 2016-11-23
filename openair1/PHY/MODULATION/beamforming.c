@@ -61,18 +61,19 @@ int beam_precoding(int32_t **txdataF,
 
   // clear txdata_BF[aa][re] for each call of ue_spec_beamforming
   for(aa=0;aa<frame_parms->nb_antennas_tx;aa++)
-    memset(txdataF_BF[aa],0,4*(frame_parms->ofdm_symbol_size));
+    memset(txdataF_BF[aa],0,sizeof(int32_t)*(frame_parms->ofdm_symbol_size));
 
   for (re=0;re<frame_parms->ofdm_symbol_size;re++) {
     for (p=0; p<2; p++) {
       if (txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re]!=0) {
         for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
-          ((int16_t*)&txdataF_BF[aa][re])[0] = (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]*((int16_t*)&beam_weights[p][aa][re])[0])>>15);
+          ((int16_t*)&txdataF_BF[aa][re])[0] += (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]*((int16_t*)&beam_weights[p][aa][re])[0])>>15);
           ((int16_t*)&txdataF_BF[aa][re])[0] -= (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]*((int16_t*)&beam_weights[p][aa][re])[1])>>15);
-          ((int16_t*)&txdataF_BF[aa][re])[1] = (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]*((int16_t*)&beam_weights[p][aa][re])[1])>>15);
-          ((int16_t*)&txdataF_BF[aa][re])[1] += (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]*((int16_t*)&beam_weights[0][aa][re])[0])>>15);
+          ((int16_t*)&txdataF_BF[aa][re])[1] += (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]*((int16_t*)&beam_weights[p][aa][re])[1])>>15);
+          ((int16_t*)&txdataF_BF[aa][re])[1] += (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]*((int16_t*)&beam_weights[p][aa][re])[0])>>15);
 
-          /*printf("beamforming.c:txdata[%d][%d]=%d+j%d, beam_weights[%d][%d][%d]=%d+j%d,txdata_BF[%d][%d]=%d+j%d\n",
+	  /*
+          printf("beamforming.c:txdataF[%d][%d]=%d+j%d, beam_weights[%d][%d][%d]=%d+j%d,txdata_BF[%d][%d]=%d+j%d\n",
                  p,slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re,
                  ((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0],
                  ((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1],
@@ -80,7 +81,8 @@ int beam_precoding(int32_t **txdataF,
                  ((int16_t*)&beam_weights[p][aa][re])[0],((int16_t*)&beam_weights[p][aa][re])[1],
                  aa,re,
                  ((int16_t*)&txdataF_BF[aa][re])[0],
-                 ((int16_t*)&txdataF_BF[aa][re])[1]); */
+                 ((int16_t*)&txdataF_BF[aa][re])[1]); 
+	  */
         }
       
       } 

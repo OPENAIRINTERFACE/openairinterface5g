@@ -1251,12 +1251,13 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
         common_vars->beam_weights[eNB_id][i] = (int32_t **)malloc16_clear(fp->nb_antennas_tx*sizeof(int32_t*));
         for (j=0; j<fp->nb_antennas_tx; j++) {
           common_vars->beam_weights[eNB_id][i][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
-          for (re=0; re<fp->ofdm_symbol_size; re++) 
-            common_vars->beam_weights[eNB_id][i][j][re] = 0x00007fff; 
-#ifdef DEBUG_PUY
-          msg("[openair][LTE_PHY][INIT] lte_common_vars->beam_weights[%d][%d][%d] = %p (%d bytes)\n",
-              eNB_id,i,j,common_vars->beam_weights[eNB_id][i][j],
-              OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
+	  if (i==j) 
+	    for (re=0; re<fp->ofdm_symbol_size; re++) 
+	      common_vars->beam_weights[eNB_id][i][j][re] = 0x00007fff; 
+#ifdef DEBUG_PHY
+	  msg("[openair][LTE_PHY][INIT] lte_common_vars->beam_weights[%d][%d][%d] = %p (%d bytes)\n",
+	      eNB_id,i,j,common_vars->beam_weights[eNB_id][i][j],
+	      OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
 #endif
         }
       }
