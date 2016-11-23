@@ -40,6 +40,7 @@
 
 #include "PHY/defs.h"
 #include "PHY/TOOLS/alaw_lut.h"
+#include "PHY/extern.h"
 
 //#include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
@@ -47,7 +48,7 @@
 
 void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type, int k) {
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
-  int32_t **txdataF = eNB->common_vars.txdataF[0];
+  int32_t **txdataF = (eNB->CC_id==0) ? eNB->common_vars.txdataF[0] : PHY_vars_eNB_g[0][0]->common_vars.txdataF[0];
   int32_t **rxdataF = eNB->common_vars.rxdataF[0];
   int16_t **rxsigF = eNB->prach_vars.rxsigF;  
   void *tx_buffer = eNB->ifbuffer.tx;
@@ -61,7 +62,8 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
   IF4p5_header_t *packet_header=NULL;
   eth_state_t *eth = (eth_state_t*) (eNB->ifdevice.priv);
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
+  
+  if (eNB->CC_id==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
 
   if (packet_type == IF4p5_PDLFFT) {
     db_fulllength = 12*fp->N_RB_DL;
@@ -81,10 +83,10 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
     for (symbol_id=0; symbol_id<fp->symbols_per_tti; symbol_id++) {
       
       for (element_id=0; element_id<db_halflength; element_id++) {
-        i = (uint16_t*) &txdataF[0][blockoffsetF+element_id];
+        i = (uint16_t*) &txdataF[eNB->CC_id][blockoffsetF+element_id];
         data_block[element_id] = ((uint16_t) lin2alaw[*i]) | (lin2alaw[*(i+1)]<<8);
 
-        i = (uint16_t*) &txdataF[0][slotoffsetF+element_id];
+        i = (uint16_t*) &txdataF[eNB->CC_id][slotoffsetF+element_id];
         data_block[element_id+db_halflength] = ((uint16_t) lin2alaw[*i]) | (lin2alaw[*(i+1)]<<8);        
       }
 				 		
@@ -177,7 +179,7 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
     AssertFatal(1==0, "send_IF4p5 - Unknown packet_type %x", packet_type);     
   }
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );  
+  if (eNB->CC_id==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );  
   return;  		    
 }
 
@@ -194,7 +196,7 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
   int slotoffsetF=0, blockoffsetF=0; 
   eth_state_t *eth = (eth_state_t*) (eNB->ifdevice.priv);
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
+  if (eNB->CC_id==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
   
   if (eNB->node_function == NGFI_RRU_IF4p5) {
     db_fulllength = (12*fp->N_RB_DL); 
@@ -281,7 +283,7 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
     AssertFatal(1==0, "recv_IF4p5 - Unknown packet_type %x", *packet_type);            
   }
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );     
+  if (eNB->CC_id==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );     
   return;   
 }
 

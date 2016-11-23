@@ -242,6 +242,8 @@ typedef struct eNB_proc_t_s {
   int subframe_prach;
   /// frame to act upon for reception
   int frame_rx;
+  /// frame offset for secondary eNBs (to correct for frame asynchronism at startup)
+  int frame_offset;
   /// frame to act upon for PRACH
   int frame_prach;
   /// \internal This variable is protected by \ref mutex_fep.

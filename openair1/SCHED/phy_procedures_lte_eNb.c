@@ -1103,7 +1103,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   DCI_ALLOC_t *dci_alloc=(DCI_ALLOC_t *)NULL;
 
-  int offset = proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
+  int offset = eNB->CC_id;//proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
 
 #if defined(SMBV) 
   // counts number of allocations in subframe
@@ -2741,7 +2741,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB){
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   const int subframe     = proc->subframe_rx;
   const int frame        = proc->frame_rx;
-  int offset             = (eNB->single_thread_flag==1) ? 0 : (subframe&1);
+  int offset             = eNB->CC_id;//(eNB->single_thread_flag==1) ? 0 : (subframe&1);
 
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;
 
@@ -2775,7 +2775,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 
   const int subframe = proc->subframe_rx;
   const int frame    = proc->frame_rx;
-  int offset         = (proc == &eNB->proc.proc_rxtx[0]) ? 0 : 1;
+  int offset         = eNB->CC_id;//(proc == &eNB->proc.proc_rxtx[0]) ? 0 : 1;
 
 
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;

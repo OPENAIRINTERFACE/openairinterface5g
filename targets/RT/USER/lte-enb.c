@@ -419,7 +419,7 @@ void tx_fh_if5_mobipass(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 }
 
 void tx_fh_if4p5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {    
-  send_IF4p5(eNB,proc->frame_tx, proc->subframe_tx, IF4p5_PDLFFT, 0);
+  send_IF4p5(eNB,proc->frame_tx,proc->subframe_tx, IF4p5_PDLFFT, 0);
 }
 
 void proc_tx_high0(PHY_VARS_eNB *eNB,
@@ -427,7 +427,7 @@ void proc_tx_high0(PHY_VARS_eNB *eNB,
 		   relaying_type_t r_type,
 		   PHY_VARS_RN *rn) {
 
-  int offset = proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
+  int offset = eNB->CC_id;//proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
 
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_ENB+offset, proc->frame_tx );
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB+offset, proc->subframe_tx );
@@ -604,7 +604,8 @@ static void* eNB_thread_rxtx( void* param ) {
   
     if (oai_exit) break;
 
-    if (rxtx(eNB,proc,thread_name) < 0) break;
+    if (eNB->CC_id==0)
+      if (rxtx(eNB,proc,thread_name) < 0) break;
 
   } // while !oai_exit
 
@@ -854,7 +855,7 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     // prepare tx buffer pointers
 	
     for (i=0; i<fp->nb_antennas_tx; i++)
-      txp[i] = (void*)&eNB->common_vars.txdata[0][i][((proc->subframe_rx+tx_sfoffset)%10)*fp->samples_per_tti];
+      txp[i] = (void*)&eNB->common_vars.txdata[0][i][((proc->subframe_rx+tx_sfoffset)%10)*fp->samples_per_tti]; 
     
     txs = eNB->rfdevice.trx_write_func(&eNB->rfdevice,
 				       proc->timestamp_rx+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance,
@@ -981,6 +982,7 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
     recv_IF4p5(eNB, &proc->frame_rx, &proc->subframe_rx, &packet_type, &symbol_number);
+    proc->frame_rx = (proc->frame_rx + proc->frame_offset)&1023;
 
     if (packet_type == IF4p5_PULFFT) {
       symbol_mask = symbol_mask | (1<<symbol_number);
@@ -998,7 +1000,15 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
  
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
-      LOG_E(PHY,"rx_fh_if4p5: Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d,CCid %d)\n",proc->subframe_rx,*subframe,eNB->CC_id);
+      LOG_E(PHY,"rx_fh_if4p5, CC_id %d: Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d,CCid %d)\n",eNB->CC_id,proc->subframe_rx,*subframe,eNB->CC_id);
+      /*
+      if (proc->subframe_rx> *subframe) {
+	LOG_E(PHY,"rx_fh_if4p5, CC_id %d: this is ahead of time, so adjusting\n",eNB->CC_id);
+	*subframe = proc->subframe_rx;
+      }
+      else {
+	LOG_E(PHY,"rx_fh_ip4p5, CC_id %d: this is behind time, dropping\n");
+	}*/
       exit_fun("Exiting");
     }
     if (proc->frame_rx != *frame) {
@@ -1007,7 +1017,12 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     }
   } else {
     proc->first_rx = 0;
-    *frame = proc->frame_rx;
+    if (eNB->CC_id==0)
+      proc->frame_offset = 0;
+    else
+      proc->frame_offset = PHY_vars_eNB_g[0][0]->proc.frame_rx;
+
+    *frame = (proc->frame_rx + proc->frame_offset)&1023;
     *subframe = proc->subframe_rx;        
   }
   
@@ -1452,7 +1467,7 @@ static void* eNB_thread_single( void* param ) {
       eNB->rfdevice.openair0_cfg->rx_freq[i] = temp_freq1;
       eNB->rfdevice.openair0_cfg->rx_freq[i] = temp_freq2;
     }
-    eNB->rfdevice.trx_set_freq_func(&eNB->rfdevice,eNB->rfdevice.openair0_cfg,0);
+    eNB->rfdevice.trx_set_freq_func(&eNB->rfdevice,eNB->rfdevice.openair0_cfg,1);
   } // if RRU and slave
 
 
@@ -1528,6 +1543,7 @@ void init_eNB_proc(int inst) {
 
     proc->first_rx=1;
     proc->first_tx=1;
+    proc->frame_offset = 0;
 
     pthread_mutex_init( &proc_rxtx[0].mutex_rxtx, NULL);
     pthread_mutex_init( &proc_rxtx[1].mutex_rxtx, NULL);
