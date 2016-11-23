@@ -205,7 +205,7 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
     }
     //estimation and interpolation
 
-    if ((frame_parms->N_RB_DL&1) == 0)  // even number of RBs
+    if ((frame_parms->N_RB_DL&1) == 0) { // even number of RBs
       for (rb=0; rb<frame_parms->N_RB_DL; rb++) {
 
         if (rb < 32)
@@ -240,14 +240,13 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
                 ch[0] = (short)(((int)pil[0]*rxF[16] - (int)pil[1]*rxF[17])>>15);
                 ch[1] = (short)(((int)pil[0]*rxF[17] + (int)pil[1]*rxF[16])>>15);
                 multadd_real_vector_complex_scalar(fr,ch,dl_bf_ch,16);
+              } else {
+                msg("lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c):TM7 beamgforming channel estimation not supported for extented CP\n");
+                exit(-1);
               }
             } else {
-              msg("lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c):TM7 beamgforming channel estimation not supported for extented CP\n");
-              exit(-1);
+              msg("lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c): transmission mode not supported.\n");
             }
-          
-          } else {
-            msg("lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c): transmission mode not supported.\n");
           }
           nb_rb++;
         }
@@ -255,7 +254,7 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
         rxF+=24;
         dl_bf_ch+=24;
       }
-    else {  // Odd number of RBs
+    } else {  // Odd number of RBs
       for (rb=0; rb<frame_parms->N_RB_DL>>1; rb++) {
         skip_half=0;
 
