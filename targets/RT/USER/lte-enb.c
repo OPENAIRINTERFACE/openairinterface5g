@@ -744,11 +744,10 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   eNB_proc_t *proc       = &eNB->proc;
 
   uint16_t packet_type;
-  uint32_t symbol_number,symbol_mask,symbol_mask_full;
+  uint32_t symbol_number,symbol_mask_full;
   int subframe_tx,frame_tx;
 
   symbol_number = 0;
-  symbol_mask = 0;
   symbol_mask_full = (1<<fp->symbols_per_tti)-1;
 
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
@@ -765,21 +764,24 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 	//	exit_fun("Exiting");
       }
       if (subframe_tx != *subframe) {
-	LOG_E(PHY,"fh_if4p5_asynch_DL: subframe_tx %d is not what we expect %d\n",subframe_tx,*subframe);
-	*subframe = subframe_tx;
-	//	exit_fun("Exiting");
+	LOG_E(PHY,"fh_if4p5_asynch_DL: (frame %d) subframe_tx %d is not what we expect %d\n",frame_tx,subframe_tx,*subframe);
+	//*subframe = subframe_tx;
+	//exit_fun("Exiting");
       }
     }
     if (packet_type == IF4p5_PDLFFT) {
-      symbol_mask = symbol_mask | (1<<symbol_number);
+      proc->symbol_mask[subframe_tx] =proc->symbol_mask[subframe_tx] | (1<<symbol_number);
     }
     else {
       LOG_E(PHY,"Illegal IF4p5 packet type (should only be IF4p5_PDLFFT%d\n",packet_type);
       exit_fun("Exiting");
     }
-  } while (symbol_mask != symbol_mask_full);    
+  } while (proc->symbol_mask[*subframe] != symbol_mask_full);    
+
+  // intialize this to zero after we're done with the subframe
+  proc->symbol_mask[*subframe] = 0;
   
-  do_OFDM_mod_rt(subframe_tx, eNB);
+  do_OFDM_mod_rt(*subframe, eNB);
 } 
 
 /*!
@@ -1463,7 +1465,7 @@ static void* eNB_thread_single( void* param ) {
       eNB->rfdevice.openair0_cfg->rx_freq[i] = temp_freq1;
       eNB->rfdevice.openair0_cfg->tx_freq[i] = temp_freq2;
     }
-    eNB->rfdevice.trx_set_freq_func(&eNB->rfdevice,eNB->rfdevice.openair0_cfg,0);
+    eNB->rfdevice.trx_set_freq_func(&eNB->rfdevice,eNB->rfdevice.openair0_cfg,1);
   } // if RRU and slave
 
 
@@ -1539,6 +1541,8 @@ void init_eNB_proc(int inst) {
 
     proc->first_rx=1;
     proc->first_tx=1;
+
+    for (i=0;i<10;i++) proc->symbol_mask[i]=0;
 
     pthread_mutex_init( &proc_rxtx[0].mutex_rxtx, NULL);
     pthread_mutex_init( &proc_rxtx[1].mutex_rxtx, NULL);

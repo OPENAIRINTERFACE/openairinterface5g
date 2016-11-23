@@ -360,19 +360,34 @@ static bool is_equal(double a, double b)
   return std::fabs(a-b) < std::numeric_limits<double>::epsilon();
 }
 
-/*! \brief Set frequencies (TX/RX)
+void *freq_thread(void *arg) {
+  
+  openair0_device *device=(openair0_device *)arg;
+  usrp_state_t *s = (usrp_state_t*)device->priv;
+  
+  s->usrp->set_tx_freq(device->openair0_cfg[0].tx_freq[0]);
+  s->usrp->set_rx_freq(device->openair0_cfg[0].rx_freq[0]);
+}
+/*! \brief Set frequencies (TX/RX). Spawns a thread to handle the frequency change to not block the calling thread
  * \param device the hardware to use
  * \param openair0_cfg RF frontend parameters set by application
  * \param dummy dummy variable not used
  * \returns 0 in success 
  */
-int trx_usrp_set_freq(openair0_device* device, openair0_config_t *openair0_cfg, int dummy) {
+int trx_usrp_set_freq(openair0_device* device, openair0_config_t *openair0_cfg, int dont_block) {
 
   usrp_state_t *s = (usrp_state_t*)device->priv;
+  pthread_t f_thread;
 
   printf("Setting USRP TX Freq %f, RX Freq %f\n",openair0_cfg[0].tx_freq[0],openair0_cfg[0].rx_freq[0]);
-  s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[0]);
-  s->usrp->set_rx_freq(openair0_cfg[0].rx_freq[0]);
+
+  // spawn a thread to handle the frequency change to not block the calling thread
+  if (dont_block == 1)
+    pthread_create(&f_thread,NULL,freq_thread,(void*)device);
+  else {
+    s->usrp->set_tx_freq(device->openair0_cfg[0].tx_freq[0]);
+    s->usrp->set_rx_freq(device->openair0_cfg[0].rx_freq[0]);
+  }
 
   return(0);
   

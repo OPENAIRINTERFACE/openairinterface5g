@@ -229,7 +229,7 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
 
   *packet_type = packet_header->sub_type; 
 
-  //  printf("CC_id %d : frame %d, subframe %d\n",eNB->CC_id,*frame,*subframe);
+  //  LOG_I(PHY,"CC_id %d : frame %d, subframe %d\n",eNB->CC_id,*frame,*subframe);
 
   if (*packet_type == IF4p5_PDLFFT) {          
     *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
