@@ -756,6 +756,7 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
       *frame    = frame_tx;
       *subframe = subframe_tx;
       proc->first_tx = 0;
+      proc->frame_offset = frame_tx - proc->frame_tx;
     }
     else {
       if (frame_tx != *frame) {
@@ -778,6 +779,7 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   } while (proc->symbol_mask[*subframe] != symbol_mask_full);    
 
   *frame = frame_tx;
+
 
   // intialize this to zero after we're done with the subframe
   proc->symbol_mask[*subframe] = 0;
@@ -906,6 +908,9 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   }
   proc->frame_rx    = ((proc->timestamp_rx-eNB->ts_offset) / (fp->samples_per_tti*10))&1023;
   proc->subframe_rx = ((proc->timestamp_rx-eNB->ts_offset) / fp->samples_per_tti)%10;
+  proc->frame_rx    = (proc->frame_rx+proc->frame_offset)%1023;
+  proc->frame_tx    = proc->frame_rx;
+  if (proc->subframe_rx > 5) proc->frame_tx=(proc->frame_tx+1)%1023;
   // synchronize first reception to frame 0 subframe 0
 
   proc->timestamp_tx = proc->timestamp_rx+(4*fp->samples_per_tti);
@@ -916,8 +921,8 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
       LOG_E(PHY,"rx_rf: Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->timestamp_rx,proc->subframe_rx,*subframe);
       exit_fun("Exiting");
     }
-    
-    if (proc->frame_rx != *frame) {
+    int f2 = *frame+proc->frame_offset;    
+    if (proc->frame_rx != f2) {
       LOG_E(PHY,"rx_rf: Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->timestamp_rx,proc->frame_rx,*frame);
       exit_fun("Exiting");
     }
@@ -1495,7 +1500,7 @@ static void* eNB_thread_single( void* param ) {
     proc_rxtx->subframe_rx = proc->subframe_rx;
     proc_rxtx->frame_rx    = proc->frame_rx;
     proc_rxtx->subframe_tx = (proc->subframe_rx+4)%10;
-    proc_rxtx->frame_tx    = (proc->subframe_rx < 6) ? proc->frame_rx : (proc->frame_rx+1)&1023; 
+    proc_rxtx->frame_tx    = proc->frame_tx;
     proc_rxtx->timestamp_tx = proc->timestamp_tx;
 
     // At this point, all information for subframe has been received on FH interface
