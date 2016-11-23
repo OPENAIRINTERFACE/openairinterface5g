@@ -275,6 +275,8 @@ void fill_DCI(PHY_VARS_eNB *eNB,
     case 1:
 
     case 2:
+
+    case 7:
       if (common_flag == 0) {
 	
 	if (eNB->frame_parms.frame_type == TDD) {
@@ -1259,6 +1261,7 @@ int main(int argc, char **argv)
 
   int c;
   int k,i,aa;
+  int re;
 
   int s,Kr,Kr_bytes;
 
@@ -1275,8 +1278,10 @@ int main(int argc, char **argv)
   double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
 
 
-  uint8_t extended_prefix_flag=0,transmission_mode=1,n_tx=1,n_rx=2;
+  uint8_t extended_prefix_flag=0,transmission_mode=1,n_tx_port=1,n_tx_phy=1,n_rx=2;
   uint16_t Nid_cell=0;
+
+  int32_t **cell_spec_bf_weights;
 
   int eNB_id = 0;
   unsigned char mcs1=0,mcs2=0,mcs_i=0,dual_stream_UE = 0,awgn_flag=0,round;
@@ -1416,7 +1421,7 @@ int main(int argc, char **argv)
   //  num_layers = 1;
   perfect_ce = 0;
 
-  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:Pl:WXY")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:q:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:Pl:WXY")) != -1) {
     switch (c) {
     case 'a':
       awgn_flag = 1;
@@ -1617,7 +1622,7 @@ int main(int argc, char **argv)
       dual_stream_UE=1;
       UE->use_ia_receiver = 1;
 
-      if ((n_tx!=2) || (transmission_mode!=5)) {
+      if ((n_tx_port!=2) || (transmission_mode!=5)) {
         msg("IA receiver only supported for TM5!");
         exit(-1);
       }
@@ -1638,6 +1643,17 @@ int main(int argc, char **argv)
       print_perf=1;
       break;
 
+    case 'q':
+      n_tx_port=atoi(optarg);
+
+      if ((n_tx_port==0) || ((n_tx_port>2))) {
+        msg("Unsupported number of cell specific antennas ports %d\n",n_tx_port);
+        exit(-1);
+      }
+
+      break;
+
+
     case 'x':
       transmission_mode=atoi(optarg);
 
@@ -1646,25 +1662,37 @@ int main(int argc, char **argv)
           (transmission_mode!=3) &&
           (transmission_mode!=4) &&
           (transmission_mode!=5) &&
-          (transmission_mode!=6)) {
+          (transmission_mode!=6) &&
+          (transmission_mode!=7)) {
         msg("Unsupported transmission mode %d\n",transmission_mode);
         exit(-1);
       }
 
-      if (transmission_mode>1) {
-        n_tx = 2;
+      if (transmission_mode>1 && transmission_mode<7) {
+        n_tx_port = 2;
       }
 
       break;
 
     case 'y':
-      n_tx=atoi(optarg);
+      n_tx_phy=atoi(optarg);
 
-      if ((n_tx==0) || (n_tx>2)) {
-        msg("Unsupported number of tx antennas %d\n",n_tx);
+      if (n_tx_phy < n_tx_port) {
+        msg("n_tx_phy mush not be smaller than n_tx_port");
         exit(-1);
       }
 
+      if ((transmission_mode>1 && transmission_mode<7) && n_tx_port<2) {
+        msg("n_tx_port must be >1 for transmission_mode %d\n",transmission_mode);
+        exit(-1);
+      }
+
+      if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=8 && n_tx_phy!=16 && n_tx_phy!=64 && n_tx_phy!=128)) {
+        msg("Physical number of antennas not supported for TM7.\n");
+        exit(-1);
+      }
+
+      break;
       break;
 
     case 'X':
@@ -1693,7 +1721,7 @@ int main(int argc, char **argv)
 
     case 'h':
     default:
-      printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -p(extended prefix on) -m mcs1 -M mcs2 -n n_frames -s snr0 -x transmission mode (1,2,5,6) -y TXant -z RXant -I trch_file\n",argv[0]);
+      printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -p(extended prefix on) -m mcs1 -M mcs2 -n n_frames -s snr0 -x transmission mode (1,2,5,6,7) -y TXant -z RXant -I trch_file\n",argv[0]);
       printf("-h This message\n");
       printf("-a Use AWGN channel and not multipath\n");
       printf("-c Number of PDCCH symbols\n");
@@ -1708,7 +1736,8 @@ int main(int argc, char **argv)
       printf("-r ressource block allocation (see  section 7.1.6.3 in 36.213\n");
       printf("-g [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M')\n");
       printf("-F forgetting factor (0 new channel every trial, 1 channel constant\n");
-      printf("-x Transmission mode (1,2,6 for the moment)\n");
+      printf("-x Transmission mode (1,2,6,7 for the moment)\n");
+      printf("-q Number of TX antennas ports used in eNB\n");
       printf("-y Number of TX antennas used in eNB\n");
       printf("-z Number of RX antennas used in UE\n");
       printf("-t MCS of interfering UE\n");
@@ -1747,9 +1776,6 @@ int main(int argc, char **argv)
   } else
     NB_RB = 4;
 
-  if ((transmission_mode > 1) && (n_tx != 2))
-    printf("n_tx must be >1 for transmission_mode %d\n",transmission_mode);
-
   if (xforms==1) {
     fl_initialize (&argc, argv, NULL, 0, 0);
     form_ue = create_lte_phy_scope_ue();
@@ -1769,8 +1795,8 @@ int main(int argc, char **argv)
     printf("dual_stream_UE=%d\n", dual_stream_UE);
   }
 
-  lte_param_init(transmission_mode==1?1:2,
-		 n_tx,
+  lte_param_init(n_tx_port,
+		 n_tx_phy,
 		 n_rx,
 		 transmission_mode,
 		 extended_prefix_flag,
@@ -1781,6 +1807,26 @@ int main(int argc, char **argv)
 		 threequarter_fs,
 		 osf,
 		 perfect_ce);
+
+  /* Check if really needed */
+  /*cell_spec_bf_weights = eNB->common_vars.beam_weights[0][0];
+  for(aa=0;aa<n_tx_phy;aa++) {
+    for(re=0;re<frame_parms->ofdm_symbol_size;re++) {
+      if (n_tx_phy==1 || n_tx_phy==2)
+        cell_spec_bf_weights[aa][re] = 0x00007fff;
+      else if (n_tx_phy==4 || n_tx_phy==8)
+        cell_spec_bf_weights[aa][re] = 0x00007fff>>1;
+      else if (n_tx_phy==16)
+        cell_spec_bf_weights[aa][re] = 0x00007fff>>2;
+      else if (n_tx_phy==64)
+        cell_spec_bf_weights[aa][re] = 0x00007fff>>4;
+    }
+  } 
+
+  if (transmission_mode==7) {
+    lte_gold_ue_spec_port5(eNB->lte_gold_uespec_port5_table[0],Nid_cell,n_rnti);
+    lte_gold_ue_spec_port5(UE->lte_gold_uespec_port5_table,Nid_cell,n_rnti);
+  }*/
 
   eNB->mac_enabled=1;
   if (two_thread_flag == 0) {
@@ -1803,7 +1849,7 @@ int main(int argc, char **argv)
   printf("Setting mcs2 = %d\n",mcs2);
   printf("NPRB = %d\n",NB_RB);
   printf("n_frames = %d\n",n_frames);
-  printf("Transmission mode %d with %dx%d antenna configuration, Extended Prefix %d\n",transmission_mode,n_tx,n_rx,extended_prefix_flag);
+  printf("Transmission mode %d with %dx%d antenna configuration, Extended Prefix %d\n",transmission_mode,n_tx_phy,n_rx,extended_prefix_flag);
 
   snr1 = snr0+snr_int;
   printf("SNR0 %f, SNR1 %f\n",snr0,snr1);
@@ -1838,7 +1884,7 @@ int main(int argc, char **argv)
     //char dirname[FILENAME_MAX];
     //sprintf(dirname, "%s/SIMU/USER/pre-ci-logs-%s", getenv("OPENAIR_TARGETS"),hostname );
     sprintf(time_meas_fname,"time_meas_prb%d_mcs%d_anttx%d_antrx%d_pdcch%d_channel%s_tx%d.csv",
-            N_RB_DL,mcs1,n_tx,n_rx,num_pdcch_symbols,channel_model_input,transmission_mode);
+            N_RB_DL,mcs1,n_tx_phy,n_rx,num_pdcch_symbols,channel_model_input,transmission_mode);
     //mkdir(dirname,0777);
     time_meas_fd = fopen(time_meas_fname,"w");
     if (time_meas_fd==NULL) {
@@ -2364,6 +2410,7 @@ int main(int argc, char **argv)
 	    
 	    start_meas(&eNB->ofdm_mod_stats);
 	    
+            /*
 	    do_OFDM_mod_l(eNB->common_vars.txdataF[eNB_id],
 			  eNB->common_vars.txdata[eNB_id],
 			  (subframe*2),
@@ -2373,7 +2420,19 @@ int main(int argc, char **argv)
 			  eNB->common_vars.txdata[eNB_id],
 			  (subframe*2)+1,
 			  &eNB->frame_parms);
-	    
+	    */
+
+            do_OFDM_mod_symbol(&eNB->common_vars,
+                               eNB_id,
+                               (subframe*2),
+                               &eNB->frame_parms);
+
+            do_OFDM_mod_symbol(&eNB->common_vars,
+                               eNB_id,
+                               (subframe*2)+1,
+                               &eNB->frame_parms);
+
+
 	    stop_meas(&eNB->ofdm_mod_stats);
 	    
 	    // generate next subframe for channel estimation
@@ -2403,11 +2462,15 @@ int main(int argc, char **argv)
 	      
             if (n_frames==1) {
               printf("tx_lev = %d (%d dB)\n",tx_lev,tx_lev_dB);
-              write_output("txsig0.m","txs0", &eNB->common_vars.txdata[eNB_id][0][subframe* eNB->frame_parms.samples_per_tti],
 
-                           eNB->frame_parms.samples_per_tti,1,1);
-	      write_output("txsigF0.m","txsF0", &eNB->common_vars.txdataF[eNB_id][0][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],
-			   nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
+              write_output("txsig0.m","txs0", &eNB->common_vars.txdata[eNB_id][0][subframe* eNB->frame_parms.samples_per_tti], eNB->frame_parms.samples_per_tti,1,1);
+
+              if (transmission_mode<7) {
+	        write_output("txsigF0.m","txsF0", &eNB->common_vars.txdataF[eNB_id][0][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
+              } else if (transmission_mode == 7) {
+                write_output("txsigF0.m","txsF0", &eNB->common_vars.txdataF[eNB_id][5][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
+                write_output("txsigF0_BF.m","txsF0_BF", &eNB->common_vars.txdataF_BF[eNB_id][0][0],eNB->frame_parms.ofdm_symbol_size,1,1);
+              }
             }
 	  }
 

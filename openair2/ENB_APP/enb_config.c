@@ -1058,7 +1058,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
 
               enb_properties.properties[enb_properties_index]->nb_antennas_rx[j] = nb_antennas_rx;
 
-              if ((nb_antennas_rx <1) || (nb_antennas_rx > 4))
+              if ((nb_antennas_rx <1) || (nb_antennas_rx > 64))
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for nb_antennas_rx choice: 1..64 !\n",
                              lib_config_file_name_pP, i, nb_antennas_rx);
