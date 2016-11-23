@@ -1282,7 +1282,6 @@ int main(int argc, char **argv)
   uint16_t Nid_cell=0;
 
   int32_t **cell_spec_bf_weights;
-  int32_t *ue_spec_bf_weights;
 
   int eNB_id = 0;
   unsigned char mcs1=0,mcs2=0,mcs_i=0,dual_stream_UE = 0,awgn_flag=0,round;
@@ -2411,6 +2410,7 @@ int main(int argc, char **argv)
 	    
 	    start_meas(&eNB->ofdm_mod_stats);
 	    
+            /*
 	    do_OFDM_mod_l(eNB->common_vars.txdataF[eNB_id],
 			  eNB->common_vars.txdata[eNB_id],
 			  (subframe*2),
@@ -2420,7 +2420,19 @@ int main(int argc, char **argv)
 			  eNB->common_vars.txdata[eNB_id],
 			  (subframe*2)+1,
 			  &eNB->frame_parms);
-	    
+	    */
+
+            do_OFDM_mod_symbol(&eNB->common_vars,
+                               eNB_id,
+                               (subframe*2),
+                               &eNB->frame_parms);
+
+            do_OFDM_mod_symbol(&eNB->common_vars,
+                               eNB_id,
+                               (subframe*2)+1,
+                               &eNB->frame_parms);
+
+
 	    stop_meas(&eNB->ofdm_mod_stats);
 	    
 	    // generate next subframe for channel estimation
