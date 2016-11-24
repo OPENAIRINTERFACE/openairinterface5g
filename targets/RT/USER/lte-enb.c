@@ -908,9 +908,9 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   }
   proc->frame_rx    = ((proc->timestamp_rx-eNB->ts_offset) / (fp->samples_per_tti*10))&1023;
   proc->subframe_rx = ((proc->timestamp_rx-eNB->ts_offset) / fp->samples_per_tti)%10;
-  proc->frame_rx    = (proc->frame_rx+proc->frame_offset)%1023;
+  proc->frame_rx    = (proc->frame_rx+proc->frame_offset)&1023;
   proc->frame_tx    = proc->frame_rx;
-  if (proc->subframe_rx > 5) proc->frame_tx=(proc->frame_tx+1)%1023;
+  if (proc->subframe_rx > 5) proc->frame_tx=(proc->frame_tx+1)&1023;
   // synchronize first reception to frame 0 subframe 0
 
   proc->timestamp_tx = proc->timestamp_rx+(4*fp->samples_per_tti);
@@ -921,9 +921,9 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
       LOG_E(PHY,"rx_rf: Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->timestamp_rx,proc->subframe_rx,*subframe);
       exit_fun("Exiting");
     }
-    int f2 = *frame+proc->frame_offset;    
+    int f2 = (*frame+proc->frame_offset)&1023;    
     if (proc->frame_rx != f2) {
-      LOG_E(PHY,"rx_rf: Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->timestamp_rx,proc->frame_rx,*frame);
+      LOG_E(PHY,"rx_rf: Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->frame_rx %d frame %d, frame_offset %d, f2 %d)\n",proc->timestamp_rx,proc->frame_rx,*frame,proc->frame_offset,f2);
       exit_fun("Exiting");
     }
   } else {
