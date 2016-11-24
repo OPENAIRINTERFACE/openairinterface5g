@@ -128,6 +128,8 @@ extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
 extern int sync_var;
 
+extern transmission_mode;
+
 //pthread_t                       main_eNB_thread;
 
 time_stats_t softmodem_stats_mt; // main thread
@@ -467,8 +469,17 @@ void proc_tx_full(PHY_VARS_eNB *eNB,
   // if TX fronthaul go ahead 
   if (eNB->tx_fh) eNB->tx_fh(eNB,proc);
 
-
-
+  /*
+  if (proc->frame_tx>1000) {
+    write_output("/tmp/txsig0.m","txs0", &eNB->common_vars.txdata[eNB->Mod_id][0][0], eNB->frame_parms.samples_per_tti*10,1,1);
+    write_output("/tmp/txsigF0.m","txsF0", &eNB->common_vars.txdataF[eNB->Mod_id][0][0],eNB->frame_parms.symbols_per_tti*eNB->frame_parms.ofdm_symbol_size*10,1,1);
+    write_output("/tmp/txsig1.m","txs1", &eNB->common_vars.txdata[eNB->Mod_id][1][0], eNB->frame_parms.samples_per_tti*10,1,1);
+    write_output("/tmp/txsigF1.m","txsF1", &eNB->common_vars.txdataF[eNB->Mod_id][1][0],eNB->frame_parms.symbols_per_tti*eNB->frame_parms.ofdm_symbol_size*10,1,1);
+    if (transmission_mode == 7) 
+      write_output("/tmp/txsigF5.m","txsF5", &eNB->common_vars.txdataF[eNB->Mod_id][5][0],eNB->frame_parms.symbols_per_tti*eNB->frame_parms.ofdm_symbol_size*10,1,1);
+    exit_fun("");
+  }
+  */
 }
 
 void proc_tx_rru_if4p5(PHY_VARS_eNB *eNB,

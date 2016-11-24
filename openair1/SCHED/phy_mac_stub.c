@@ -63,6 +63,8 @@ void fill_dci(DCI_PDU *DCI_pdu,PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
   uint32_t bcch_pdu;
   uint64_t dlsch_pdu;
 
+  LOG_I(PHY,"frame %d, subframe %d, transmission_mode %d\n",proc->frame_tx,proc->subframe_tx,transmission_mode);
+
   DCI_pdu->Num_common_dci = 0;
   DCI_pdu->Num_ue_spec_dci=0;
 

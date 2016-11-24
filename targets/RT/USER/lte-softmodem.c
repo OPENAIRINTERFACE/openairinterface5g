@@ -234,7 +234,7 @@ uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
-//int transmission_mode=1;
+int transmission_mode=1;
 
 int16_t           glog_level         = LOG_INFO;
 int16_t           glog_verbosity     = LOG_MED;
@@ -1189,8 +1189,13 @@ static void get_options (int argc, char **argv)
         printf("Downlink frequency/ uplink offset of CC_id %d set to %ju/%d\n", CC_id,
                enb_properties->properties[i]->downlink_frequency[CC_id],
                enb_properties->properties[i]->uplink_frequency_offset[CC_id]);
+
       } // CC_id
     }// i
+
+    //this is needed for phy-test option
+    transmission_mode = enb_properties->properties[0]->ue_TransmissionMode[0]+1;
+
   } else if (UE_flag == 1) {
     if (conf_config_file_name != NULL) {
       
@@ -1363,7 +1368,7 @@ void init_openair0() {
 
 int main( int argc, char **argv )
 {
-  int i,aa;
+  int i,j,k,aa,re;
 #if defined (XFORMS)
   void *status;
 #endif
@@ -1606,6 +1611,17 @@ int main( int argc, char **argv )
       PHY_vars_eNB_g[0][CC_id]->ue_ul_nb_rb=6;
       PHY_vars_eNB_g[0][CC_id]->target_ue_ul_mcs=target_ul_mcs;
 
+      // initialization for phy-test
+      for (k=0;k<NUMBER_OF_UE_MAX;k++) {
+	PHY_vars_eNB_g[0][CC_id]->transmission_mode[k] = transmission_mode;
+	if (transmission_mode==7) 
+	  lte_gold_ue_spec_port5(PHY_vars_eNB_g[0][CC_id]->lte_gold_uespec_port5_table[k],frame_parms[CC_id]->Nid_cell,0x1235+k);
+      }
+      if ((transmission_mode==1) || (transmission_mode==7)) {
+	  for (j=0; j<frame_parms[CC_id]->nb_antennas_tx; j++) 
+	    for (re=0; re<frame_parms[CC_id]->ofdm_symbol_size; re++) 
+	      PHY_vars_eNB_g[0][CC_id]->common_vars.beam_weights[0][0][j][re] = 0x00007fff/frame_parms[CC_id]->nb_antennas_tx; 
+      }
       if (phy_test==1) PHY_vars_eNB_g[0][CC_id]->mac_enabled = 0;
       else PHY_vars_eNB_g[0][CC_id]->mac_enabled = 1;
 
