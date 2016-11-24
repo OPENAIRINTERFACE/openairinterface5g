@@ -71,6 +71,7 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
     slotoffsetF = (subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength - 1; 
 
+
     if (eth->flags == ETH_RAW_IF4p5_MODE) {
       packet_header = (IF4p5_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
       data_block = (uint16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t);
@@ -81,6 +82,7 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
     gen_IF4p5_dl_header(packet_header, frame, subframe);
 		    
     for (symbol_id=0; symbol_id<fp->symbols_per_tti; symbol_id++) {
+      if (eNB->CC_id==1) LOG_I(PHY,"DL_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,frame,subframe,symbol_id);
       
       for (element_id=0; element_id<db_halflength; element_id++) {
         i = (uint16_t*) &txdataF[eNB->CC_id][blockoffsetF+element_id];
@@ -231,7 +233,7 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
 
   *packet_type = packet_header->sub_type; 
 
-  //  printf("CC_id %d : frame %d, subframe %d\n",eNB->CC_id,*frame,*subframe);
+  //  LOG_I(PHY,"CC_id %d : frame %d, subframe %d\n",eNB->CC_id,*frame,*subframe);
 
   if (*packet_type == IF4p5_PDLFFT) {          
     *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
@@ -251,6 +253,8 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
 		        
   } else if (*packet_type == IF4p5_PULFFT) {         
     *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
+
+    if (eNB->CC_id==1) LOG_I(PHY,"UL_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,*frame,*subframe,*symbol_number);
 
     slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength - 1; 

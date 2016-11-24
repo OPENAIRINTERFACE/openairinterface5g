@@ -745,11 +745,10 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   eNB_proc_t *proc       = &eNB->proc;
 
   uint16_t packet_type;
-  uint32_t symbol_number,symbol_mask,symbol_mask_full;
+  uint32_t symbol_number,symbol_mask_full;
   int subframe_tx,frame_tx;
 
   symbol_number = 0;
-  symbol_mask = 0;
   symbol_mask_full = (1<<fp->symbols_per_tti)-1;
 
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
@@ -766,21 +765,24 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 	//	exit_fun("Exiting");
       }
       if (subframe_tx != *subframe) {
-	LOG_E(PHY,"fh_if4p5_asynch_DL: subframe_tx %d is not what we expect %d\n",subframe_tx,*subframe);
-	*subframe = subframe_tx;
-	//	exit_fun("Exiting");
+	LOG_E(PHY,"fh_if4p5_asynch_DL: (frame %d) subframe_tx %d is not what we expect %d\n",frame_tx,subframe_tx,*subframe);
+	//*subframe = subframe_tx;
+	//exit_fun("Exiting");
       }
     }
     if (packet_type == IF4p5_PDLFFT) {
-      symbol_mask = symbol_mask | (1<<symbol_number);
+      proc->symbol_mask[subframe_tx] =proc->symbol_mask[subframe_tx] | (1<<symbol_number);
     }
     else {
       LOG_E(PHY,"Illegal IF4p5 packet type (should only be IF4p5_PDLFFT%d\n",packet_type);
       exit_fun("Exiting");
     }
-  } while (symbol_mask != symbol_mask_full);    
+  } while (proc->symbol_mask[*subframe] != symbol_mask_full);    
+
+  // intialize this to zero after we're done with the subframe
+  proc->symbol_mask[*subframe] = 0;
   
-  do_OFDM_mod_rt(subframe_tx, eNB);
+  do_OFDM_mod_rt(*subframe, eNB);
 } 
 
 /*!
@@ -978,44 +980,43 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   uint32_t symbol_number=0;
   uint32_t symbol_mask, symbol_mask_full;
 
-  symbol_mask = 0;
   symbol_mask_full = (1<<fp->symbols_per_tti)-1;
-  prach_rx = 0;
 
+  prach_rx = (is_prach_subframe(fp, *frame, *subframe)>0) ? 1 : 0;                            
+  if (eNB->CC_id==1) LOG_I(PHY,"rx_fh_if4p5: frame %d, subframe %d\n",*frame,*subframe);
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
     recv_IF4p5(eNB, &proc->frame_rx, &proc->subframe_rx, &packet_type, &symbol_number);
-    proc->frame_rx = (proc->frame_rx + proc->frame_offset)&1023;
+
+    //proc->frame_rx = (proc->frame_rx + proc->frame_offset)&1023;
 
     if (packet_type == IF4p5_PULFFT) {
-      symbol_mask = symbol_mask | (1<<symbol_number);
-      prach_rx = (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)>0) ? 1 : 0;                            
+      proc->symbol_mask[proc->subframe_rx] = proc->symbol_mask[proc->subframe_rx] | (1<<symbol_number);
     } else if (packet_type == IF4p5_PRACH) {
       prach_rx = 0;
     }
 
-  } while( (symbol_mask != symbol_mask_full) || (prach_rx == 1));    
+    if (eNB->CC_id==1) LOG_I(PHY,"rx_fh_if4p5: symbol_mask[%d] %x, prach %d\n",*subframe,proc->symbol_mask[*subframe],prach_rx);
+
+  } while( (proc->symbol_mask[*subframe] != symbol_mask_full) || (prach_rx == 1));    
+  proc->symbol_mask[*subframe] = 0;
+  proc->symbol_mask[(9+*subframe)%10]= 0; // to handle a resynchronization event
+
+  if (eNB->CC_id==1) LOG_I(PHY,"Clearing symbol_mask[%d]\n",*subframe);
 
   //caculate timestamp_rx, timestamp_tx based on frame and subframe
-   proc->timestamp_rx = ((proc->frame_rx * 10)  + proc->subframe_rx ) * fp->samples_per_tti ;
-   proc->timestamp_tx = proc->timestamp_rx +  (4*fp->samples_per_tti);
- 
+  proc->timestamp_rx = ((proc->frame_rx * 10)  + proc->subframe_rx ) * fp->samples_per_tti ;
+  proc->timestamp_tx = proc->timestamp_rx +  (4*fp->samples_per_tti);
+  
  
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
       LOG_E(PHY,"rx_fh_if4p5, CC_id %d: Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d,CCid %d)\n",eNB->CC_id,proc->subframe_rx,*subframe,eNB->CC_id);
-      /*
-      if (proc->subframe_rx> *subframe) {
-	LOG_E(PHY,"rx_fh_if4p5, CC_id %d: this is ahead of time, so adjusting\n",eNB->CC_id);
-	*subframe = proc->subframe_rx;
-      }
-      else {
-	LOG_E(PHY,"rx_fh_ip4p5, CC_id %d: this is behind time, dropping\n");
-	}*/
-      exit_fun("Exiting");
     }
     if (proc->frame_rx != *frame) {
-      LOG_E(PHY,"rx_fh_if4p5: Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d,CCid %d)\n",proc->frame_rx,*frame,eNB->CC_id);
-      exit_fun("Exiting");
+      if (proc->frame_rx == proc->frame_offset) // This means that the RRU has adjusted its frame timing
+	proc->frame_offset = 0;
+      else 
+	LOG_E(PHY,"rx_fh_if4p5: Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d,CCid %d)\n",proc->frame_rx,*frame,eNB->CC_id);
     }
   } else {
     proc->first_rx = 0;
@@ -1024,11 +1025,13 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     else
       proc->frame_offset = PHY_vars_eNB_g[0][0]->proc.frame_rx;
 
-    *frame = (proc->frame_rx + proc->frame_offset)&1023;
+    *frame = proc->frame_rx;//(proc->frame_rx + proc->frame_offset)&1023;
     *subframe = proc->subframe_rx;        
   }
   
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
+
+
+  if (eNB->CC_id==0) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
   
 }
 
@@ -1495,7 +1498,7 @@ static void* eNB_thread_single( void* param ) {
       subframe++;
     }      
 
-    LOG_D(PHY,"eNB thread single %p (proc %p, CC_id %d), frame %d (%p), subframe %d (%p)\n",
+    if (eNB->CC_id==1) LOG_I(PHY,"eNB thread single %p (proc %p, CC_id %d), frame %d (%p), subframe %d (%p)\n",
 	  pthread_self(), proc, eNB->CC_id, frame,&frame,subframe,&subframe);
  
     // synchronization on FH interface, acquire signals/data and block
@@ -1509,6 +1512,8 @@ static void* eNB_thread_single( void* param ) {
     proc_rxtx->subframe_tx = (proc->subframe_rx+4)%10;
     proc_rxtx->frame_tx    = (proc->subframe_rx < 6) ? proc->frame_rx : (proc->frame_rx+1)&1023; 
     proc_rxtx->timestamp_tx = proc->timestamp_tx;
+    // adjust for timing offset between RRU
+    if (eNB->CC_id!=0) proc_rxtx->frame_tx = (proc_rxtx->frame_tx+proc->frame_offset)&1023;
 
     // At this point, all information for subframe has been received on FH interface
     // If this proc is to provide synchronization, do so
@@ -1555,6 +1560,8 @@ void init_eNB_proc(int inst) {
     proc->first_rx=1;
     proc->first_tx=1;
     proc->frame_offset = 0;
+
+    for (i=0;i<10;i++) proc->symbol_mask[i]=0;
 
     pthread_mutex_init( &proc_rxtx[0].mutex_rxtx, NULL);
     pthread_mutex_init( &proc_rxtx[1].mutex_rxtx, NULL);

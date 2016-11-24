@@ -238,10 +238,14 @@ typedef struct eNB_proc_t_s {
   openair0_timestamp timestamp_tx;
   /// subframe to act upon for reception
   int subframe_rx;
+  /// symbol mask for IF4p5 reception per subframe
+  uint32_t symbol_mask[10];
   /// subframe to act upon for PRACH
   int subframe_prach;
   /// frame to act upon for reception
   int frame_rx;
+  /// frame to act upon for transmission
+  int frame_tx;
   /// frame offset for secondary eNBs (to correct for frame asynchronism at startup)
   int frame_offset;
   /// frame to act upon for PRACH
