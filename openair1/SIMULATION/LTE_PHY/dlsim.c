@@ -1281,8 +1281,6 @@ int main(int argc, char **argv)
   uint8_t extended_prefix_flag=0,transmission_mode=1,n_tx_port=1,n_tx_phy=1,n_rx=2;
   uint16_t Nid_cell=0;
 
-  int32_t **cell_spec_bf_weights;
-
   int eNB_id = 0;
   unsigned char mcs1=0,mcs2=0,mcs_i=0,dual_stream_UE = 0,awgn_flag=0,round;
   unsigned char i_mod = 2;
@@ -1807,6 +1805,12 @@ int main(int argc, char **argv)
 		 threequarter_fs,
 		 osf,
 		 perfect_ce);
+
+  if ((transmission_mode==1) || (transmission_mode==7)) {
+    for (aa=0; aa<eNB->frame_parms.nb_antennas_tx; aa++) 
+     for (re=0; re<eNB->frame_parms.ofdm_symbol_size; re++) 
+       eNB->common_vars.beam_weights[0][0][aa][re] = 0x00007fff/eNB->frame_parms.nb_antennas_tx; 
+  }
 
   eNB->mac_enabled=1;
   if (two_thread_flag == 0) {

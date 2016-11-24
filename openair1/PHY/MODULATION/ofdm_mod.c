@@ -298,13 +298,12 @@ void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t ne
   //printf("Thread %d starting ... aa %d (%llu)\n",omp_get_thread_num(),aa,rdtsc());
   for (l=0; l<frame_parms->symbols_per_tti>>1; l++) {
   
-    //printf("do_OFDM_mod_l, slot=%d, l=%d, NUMBER_OF_OFDM_CARRIERS=%d,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES=%d\n",next_slot, l,NUMBER_OF_OFDM_CARRIERS,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
-
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_BEAM_PRECODING,1);
-    beam_precoding(txdataF,txdataF_BF,frame_parms,eNB_common_vars->beam_weights[eNB_id],next_slot,l);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_BEAM_PRECODING,0);
-
     for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+
+      //printf("do_OFDM_mod_l, slot=%d, l=%d, NUMBER_OF_OFDM_CARRIERS=%d,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES=%d\n",next_slot, l,NUMBER_OF_OFDM_CARRIERS,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_BEAM_PRECODING,1);
+      beam_precoding(txdataF,txdataF_BF,frame_parms,eNB_common_vars->beam_weights[eNB_id],next_slot,l,aa);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_BEAM_PRECODING,0);
 
       //PMCH case not implemented... 
 

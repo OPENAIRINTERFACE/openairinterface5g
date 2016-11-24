@@ -103,13 +103,15 @@ after beamforming
     @param beam_weights Beamforming weights applied on each
 antenna element and each carrier
     @param slot Slot number
-    @param symbol Symbol index on which to act*/
+    @param symbol Symbol index on which to act
+    @param aa physical antenna index*/
 int beam_precoding(int32_t **txdataF,
 	           int32_t **txdataF_BF,
                    LTE_DL_FRAME_PARMS *frame_parms,
 	           int32_t ***beam_weights,
                    int slot,
-                   int symbol);
+                   int symbol,
+                   int aa);
 
 int f_read(char *calibF_fname, int nb_ant, int nb_freq, int32_t **tdd_calib_coeffs);
 
