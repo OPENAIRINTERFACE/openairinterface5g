@@ -1386,11 +1386,20 @@ void rx_phich(PHY_VARS_UE *ue,
       //      ulsch->harq_processes[harq_pid]->Ndi = 0;
       ulsch->harq_processes[harq_pid]->round++;
       
-      if (ulsch->harq_processes[harq_pid]->round >= UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx)
+      if ( ulsch->harq_processes[harq_pid]->round >= (UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx - 1) )
       {
-          ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
-          ulsch->harq_processes[harq_pid]->round  = 0;
+          // this is last push re transmission
+          ulsch->harq_processes[harq_pid]->rvidx = rv_table[ulsch->harq_processes[harq_pid]->round&3];
+          ulsch->O_RI = 0;
+          ulsch->O    = 0;
+          ulsch->uci_format = HLC_subband_cqi_nopmi;
+
+          // disable phich decoding since it is the last retransmission
           ulsch->harq_processes[harq_pid]->status = IDLE;
+
+          //ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
+          //ulsch->harq_processes[harq_pid]->round  = 0;
+
           //LOG_I(PHY,"PUSCH MAX Retransmission acheived ==> flush harq buff (%d) \n",harq_pid);
           //LOG_I(PHY,"[HARQ-UL harqId: %d] PHICH NACK MAX RETRANS(%d) ==> subframe_scheduling_flag = %d round: %d\n", harq_pid, UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag, ulsch->harq_processes[harq_pid]->round);
       }

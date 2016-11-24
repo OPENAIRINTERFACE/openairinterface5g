@@ -424,9 +424,8 @@ void ulsch_modulation(int32_t **txdataF,
 
   Q_m = get_Qm_ul(ulsch->harq_processes[harq_pid]->mcs);
 
-  //G = (int)ulsch->harq_processes[harq_pid]->nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
+  G = (int)ulsch->harq_processes[harq_pid]->nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
 
-  G = ulsch->harq_processes[harq_pid]->G;
 
   // Mapping
   nsymb = (frame_parms->Ncp==0) ? 14:12;

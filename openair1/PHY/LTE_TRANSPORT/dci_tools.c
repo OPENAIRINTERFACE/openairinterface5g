@@ -6444,29 +6444,30 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
         //      UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx);
         //#endif
 
-
-        ulsch->harq_processes[harq_pid] = ulsch->harq_processes[8];
-        ulsch->harq_processes[harq_pid]->round++;
-        //LOG_I(PHY,"          Adaptative retransmission - copy temporary harq Process to current harq process. [harqId %d round %d] \n",harq_pid, ulsch->harq_processes[8]->round);
-
-
-        if (ulsch->harq_processes[harq_pid]->round >= UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx)
+        if (ulsch->harq_processes[harq_pid]->round > 0) // NACK detected on phich
         {
-            ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
-            ulsch->harq_processes[harq_pid]->round  = 0;
-            ulsch->harq_processes[harq_pid]->status = IDLE;
-            //LOG_I(PHY,"          PUSCH MAX Retransmission acheived ==> flush harq buff (%d) \n",harq_pid);
-            //LOG_I(PHY,"          [HARQ-UL harqId: %d] Adaptative retransmission NACK MAX RETRANS(%d) ==> subframe_scheduling_flag = %d round: %d\n", harq_pid, UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag, ulsch->harq_processes[harq_pid]->round);
-        }
-        else
-        {
-            // ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
-            uint8_t rv_table[4] = {0, 2, 3, 1};
-            ulsch->harq_processes[harq_pid]->rvidx = rv_table[ulsch->harq_processes[harq_pid]->round&3];
-            ulsch->O_RI = 0;
-            ulsch->O    = 0;
-            ulsch->uci_format = HLC_subband_cqi_nopmi;
-            //LOG_I(PHY,"          [HARQ-UL harqId: %d] Adaptative retransmission NACK ==> subframe_scheduling_flag = %d round: %d\n", harq_pid, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag,ulsch->harq_processes[harq_pid]->round);
+            // ulsch->harq_processes[harq_pid]->round++; already done on phich_rx
+            ulsch->harq_processes[harq_pid] = ulsch->harq_processes[8];
+            // LOG_I(PHY,"          Adaptative retransmission - copy temporary harq Process to current harq process. [harqId %d round %d] \n",harq_pid, ulsch->harq_processes[8]->round);
+
+            if (ulsch->harq_processes[harq_pid]->round >= UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx)
+            {
+                ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
+                ulsch->harq_processes[harq_pid]->round  = 0;
+                ulsch->harq_processes[harq_pid]->status = IDLE;
+                //LOG_I(PHY,"          PUSCH MAX Retransmission acheived ==> flush harq buff (%d) \n",harq_pid);
+                //LOG_I(PHY,"          [HARQ-UL harqId: %d] Adaptative retransmission NACK MAX RETRANS(%d) ==> subframe_scheduling_flag = %d round: %d\n", harq_pid, UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag, ulsch->harq_processes[harq_pid]->round);
+            }
+            else
+            {
+                // ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+                uint8_t rv_table[4] = {0, 2, 3, 1};
+                ulsch->harq_processes[harq_pid]->rvidx = rv_table[ulsch->harq_processes[harq_pid]->round&3];
+                ulsch->O_RI = 0;
+                ulsch->O    = 0;
+                ulsch->uci_format = HLC_subband_cqi_nopmi;
+                //LOG_I(PHY,"          [HARQ-UL harqId: %d] Adaptative retransmission NACK ==> subframe_scheduling_flag = %d round: %d\n", harq_pid, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag,ulsch->harq_processes[harq_pid]->round);
+            }
         }
 
       }
@@ -7087,7 +7088,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     // ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
 
-#ifdef DEBUG_DCI
+ #ifdef DEBUG_DCI 
+    printf("Format 0 DCI : ulsch (ue): AbsSubframe %d.%d\n",proc->frame_rx,subframe);
     printf("Format 0 DCI : ulsch (ue): NBRB        %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
     printf("Format 0 DCI :ulsch (ue): first_rb    %d\n",ulsch->harq_processes[harq_pid]->first_rb);
     printf("Format 0 DCI :ulsch (ue): rballoc     %d\n",rballoc);
@@ -7106,6 +7108,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     printf("Format 0 DCI :ulsch (ue): Nsymb_pusch   %d\n",ulsch->Nsymb_pusch);
     printf("Format 0 DCI :ulsch (ue): cshift        %d\n",ulsch->harq_processes[harq_pid]->n_DMRS2);
+    printf("Format 0 DCI :ulsch (ue): phich status  %d\n",ulsch->harq_processes[harq_pid]->status);
 #else
     UNUSED_VARIABLE(dai);
 #endif
