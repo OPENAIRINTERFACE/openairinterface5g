@@ -224,6 +224,25 @@ struct complex R_sqrt_22_orth_eff_ch_TM4_prec_imag_tap[16] = {{0.70711,0.0}, {0.
                                                         {0.0, 0.0}, {0.0,0.70711}, {0.0, 0.0}, {-0.70711,0.0}};
 struct complex *R_sqrt_22_orth_eff_ch_TM4_prec_imag[1]     = {R_sqrt_22_orth_eff_ch_TM4_prec_imag_tap};
 
+//Correlation matrix for EPA channel
+struct complex R_sqrt_22_EPA_low_tap[16] = {{1.0,0.0}, {0.0,0.0}, {0.0,0.0}, {0.0,0.0},
+                                            {0.0,0.0}, {1.0,0.0}, {0.0,0.0}, {0.0,0.0},
+                                            {0.0,0.0}, {0.0,0.0}, {1.0,0.0}, {0.0,0.0},
+                                            {0.0,0.0}, {0.0,0.0}, {0.0,0.0}, {1.0,0.0}};
+struct complex *R_sqrt_22_EPA_low[1]     = {R_sqrt_22_EPA_low_tap};
+
+struct complex R_sqrt_22_EPA_high_tap[16] = {{0.7179,0.0}, {0.4500,0.0}, {0.4500,0.0}, {0.2821,0.0},
+                                             {0.4500,0.0}, {0.7179,0.0}, {0.2821,0.0}, {0.4500,0.0},
+                                             {0.4500,0.0}, {0.2821,0.0}, {0.7179,0.0}, {0.4500,0.0},
+                                             {0.2821,0.0}, {0.4500,0.0}, {0.4500,0.0}, {0.7179,0.0}};
+struct complex *R_sqrt_22_EPA_high[1]     = {R_sqrt_22_EPA_high_tap};
+
+struct complex R_sqrt_22_EPA_medium_tap[16] = {{0.8375,0.0}, {0.5249,0.0}, {0.1286,0.0}, {0.0806,0.0},
+                                               {0.5249,0.0}, {0.8375,0.0}, {0.0806,0.0}, {0.1286,0.0},
+                                               {0.1286,0.0}, {0.0806,0.0}, {0.8375,0.0}, {0.5249,0.0},
+                                               {0.0806,0.0}, {0.1286,0.0}, {0.5249,0.0}, {0.8375,0.0}};
+struct complex *R_sqrt_22_EPA_medium[1]     = {R_sqrt_22_EPA_medium_tap};
+
 
 
 //Rayleigh1_orth_eff_ch_TM4
@@ -407,6 +426,140 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
         LOG_W(OCM,"correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
       }
     }
+    break;
+  case EPA_low:
+    chan_desc->nb_taps        = 7;
+    chan_desc->Td             = .410;
+    chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
+    sum_amps = 0;
+    chan_desc->amps           = (double*) malloc(chan_desc->nb_taps*sizeof(double));
+    for (i = 0; i<chan_desc->nb_taps; i++) {
+      chan_desc->amps[i]      = pow(10,.1*epa_amps_dB[i]);
+      sum_amps += chan_desc->amps[i];
+    }
+    for (i = 0; i<chan_desc->nb_taps; i++)
+      chan_desc->amps[i] /= sum_amps;
+    chan_desc->delays         = epa_delays;
+    chan_desc->ricean_factor  = 1;
+    chan_desc->aoa            = 0;
+    chan_desc->random_aoa     = 0;
+    chan_desc->ch             = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+    chan_desc->chF            = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+    chan_desc->a              = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex*));
+    for (i = 0; i<nb_tx*nb_rx; i++)
+      chan_desc->ch[i] = (struct complex*) malloc(chan_desc->channel_length * sizeof(struct complex));
+    for (i = 0; i<nb_tx*nb_rx; i++)
+      chan_desc->chF[i] = (struct complex*) malloc(1200 * sizeof(struct complex));
+    for (i = 0; i<chan_desc->nb_taps; i++)
+      chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
+    if (nb_tx==2 && nb_rx==2) {
+      chan_desc->R_sqrt  = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex**));
+      for (i = 0; i<chan_desc->nb_taps; i++)
+        chan_desc->R_sqrt[i] = R_sqrt_22_EPA_low[0];
+    }
+      else {
+      printf("Correlation matrices are implemented for 2 x 2 only");
+    }
+    /*else {
+      chan_desc->R_sqrt         = (struct complex**) malloc(6*sizeof(struct complex**));
+      for (i = 0; i<6; i++) {
+        chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
+        for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
+          chan_desc->R_sqrt[i][j].x = 1.0;
+          chan_desc->R_sqrt[i][j].y = 0.0;
+        }
+        LOG_W(OCM,"correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
+      }
+    }*/
+    break;
+  case EPA_high:
+    chan_desc->nb_taps        = 7;
+    chan_desc->Td             = .410;
+    chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
+    sum_amps = 0;
+    chan_desc->amps           = (double*) malloc(chan_desc->nb_taps*sizeof(double));
+    for (i = 0; i<chan_desc->nb_taps; i++) {
+      chan_desc->amps[i]      = pow(10,.1*epa_amps_dB[i]);
+      sum_amps += chan_desc->amps[i];
+    }
+    for (i = 0; i<chan_desc->nb_taps; i++)
+      chan_desc->amps[i] /= sum_amps;
+    chan_desc->delays         = epa_delays;
+    chan_desc->ricean_factor  = 1;
+    chan_desc->aoa            = 0;
+    chan_desc->random_aoa     = 0;
+    chan_desc->ch             = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+    chan_desc->chF            = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+    chan_desc->a              = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex*));
+    for (i = 0; i<nb_tx*nb_rx; i++)
+      chan_desc->ch[i] = (struct complex*) malloc(chan_desc->channel_length * sizeof(struct complex));
+    for (i = 0; i<nb_tx*nb_rx; i++)
+      chan_desc->chF[i] = (struct complex*) malloc(1200 * sizeof(struct complex));
+    for (i = 0; i<chan_desc->nb_taps; i++)
+      chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
+    if (nb_tx==2 && nb_rx==2) {
+      chan_desc->R_sqrt  = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex**));
+      for (i = 0; i<chan_desc->nb_taps; i++)
+        chan_desc->R_sqrt[i] = R_sqrt_22_EPA_high[0];
+    }
+    else {
+      printf("Correlation matrices are implemented for 2 x 2 only");
+    }
+    /*else {
+      chan_desc->R_sqrt         = (struct complex**) malloc(6*sizeof(struct complex**));
+      for (i = 0; i<6; i++) {
+        chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
+        for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
+          chan_desc->R_sqrt[i][j].x = 1.0;
+          chan_desc->R_sqrt[i][j].y = 0.0;
+        }
+        LOG_W(OCM,"correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
+      }
+    }*/
+    break;
+    case EPA_medium:
+    chan_desc->nb_taps        = 7;
+    chan_desc->Td             = .410;
+    chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
+    sum_amps = 0;
+    chan_desc->amps           = (double*) malloc(chan_desc->nb_taps*sizeof(double));
+    for (i = 0; i<chan_desc->nb_taps; i++) {
+      chan_desc->amps[i]      = pow(10,.1*epa_amps_dB[i]);
+      sum_amps += chan_desc->amps[i];
+    }
+    for (i = 0; i<chan_desc->nb_taps; i++)
+      chan_desc->amps[i] /= sum_amps;
+    chan_desc->delays         = epa_delays;
+    chan_desc->ricean_factor  = 1;
+    chan_desc->aoa            = 0;
+    chan_desc->random_aoa     = 0;
+    chan_desc->ch             = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+    chan_desc->chF            = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+    chan_desc->a              = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex*));
+    for (i = 0; i<nb_tx*nb_rx; i++)
+      chan_desc->ch[i] = (struct complex*) malloc(chan_desc->channel_length * sizeof(struct complex));
+    for (i = 0; i<nb_tx*nb_rx; i++)
+      chan_desc->chF[i] = (struct complex*) malloc(1200 * sizeof(struct complex));
+    for (i = 0; i<chan_desc->nb_taps; i++)
+      chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
+    if (nb_tx==2 && nb_rx==2) {
+      chan_desc->R_sqrt  = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex**));
+      for (i = 0; i<chan_desc->nb_taps; i++)
+        chan_desc->R_sqrt[i] = R_sqrt_22_EPA_medium[0];
+    } else {
+      printf("Correlation matrices are implemented for 2 x 2 only");
+    }
+    /*else {
+      chan_desc->R_sqrt         = (struct complex**) malloc(6*sizeof(struct complex**));
+      for (i = 0; i<6; i++) {
+        chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
+        for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
+          chan_desc->R_sqrt[i][j].x = 1.0;
+          chan_desc->R_sqrt[i][j].y = 0.0;
+        }
+        LOG_W(OCM,"correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
+      }
+    }*/
     break;
   case EVA:
     chan_desc->nb_taps        = 9;

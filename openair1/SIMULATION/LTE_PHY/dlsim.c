@@ -517,6 +517,15 @@ int main(int argc, char **argv)
       case 'U':
         channel_model = TS_SHIFT;
         break;
+      case 'V':
+        channel_model=EPA_low;
+        break;
+      case 'W':
+        channel_model=EPA_medium;
+        break;
+      case 'X':
+        channel_model=EPA_high;
+        break;
       default:
         msg("Unsupported channel model!\n");
         exit(-1);
@@ -618,7 +627,7 @@ int main(int argc, char **argv)
       printf("-s Starting SNR, runs from SNR to SNR+%.1fdB in steps of %.1fdB. If n_frames is 1 then just SNR is simulated and MATLAB/OCTAVE output is generated\n", snr_int, snr_step);
       printf("-f step size of SNR, default value is 1.\n");
       printf("-r resource block allocation (see  section 7.1.6.3 in 36.213\n");
-      printf("-g Channel model, possible values are 3GPP 25.814 SCM-A/B/C/D('A','B','C','D'), 36-101 EPA('E'), EVA ('F'),ETU('G'), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr('K'), Rice8('L'), Rice1('M'), AWGN('N'), Rayleigh1_orthogonal('P'), Rayleigh1_orth_eff_ch_TM4_prec_real ('Q'), Rayleigh1_orth_eff_ch_TM4_prec_imag ('R'), Rayleigh8_orth_eff_ch_TM4_prec_real ('S'),Rayleigh8_orth_eff_ch_TM4_prec_imag ('T')   \n");
+      printf("-g Channel model, possible values are 3GPP 25.814 SCM-A/B/C/D('A','B','C','D'), 36-101 EPA('E'), EVA ('F'),ETU('G'), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr('K'), Rice8('L'), Rice1('M'), AWGN('N'), Rayleigh1_orthogonal('P'), Rayleigh1_orth_eff_ch_TM4_prec_real ('Q'), Rayleigh1_orth_eff_ch_TM4_prec_imag ('R'), Rayleigh8_orth_eff_ch_TM4_prec_real ('S'),Rayleigh8_orth_eff_ch_TM4_prec_imag ('T'), EPA_low ('V'), EPA_medium ('W'), EPA_high ('X') \n");
       printf("-F forgetting factor (0 new channel every trial, 1 channel constant\n");
       printf("-x Transmission mode (1,2,6 for the moment)\n");
       printf("-y Number of TX antennas used in eNB\n");
