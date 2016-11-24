@@ -188,6 +188,7 @@ rrc_mac_config_req(
         else {
         	UE_mac_inst[Mod_idP].scheduling_info.LCGID[logicalChannelIdentity] = MAX_NUM_LCGID;
         }
+        UE_mac_inst[Mod_idP].scheduling_info.LCID_buffer_remain[logicalChannelIdentity] = 0;
       } else {
         LOG_E(MAC,"[CONFIG][UE %d] LCID %d NULL ul_SpecificParameters\n",Mod_idP,logicalChannelIdentity);
         mac_xface->macphy_exit("NULL ul_SpecificParameters");

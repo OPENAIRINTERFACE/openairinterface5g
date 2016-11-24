@@ -128,6 +128,7 @@ void ue_init_mac(module_id_t module_idP)
     }
 
     UE_mac_inst[module_idP].scheduling_info.LCID_status[i]=LCID_EMPTY;
+    UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[i] = 0;
   }
 
 #ifdef CBA
@@ -1504,6 +1505,7 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
     LOG_D(MAC,"[UE %d] TX Multiplex RLC PDU Got %d bytes for SRB2\n",module_idP,sdu_lengths[num_sdus]);
     //dcch_header_len +=2; // include dcch1
     UE_mac_inst[module_idP].scheduling_info.LCID_status[DCCH1] = LCID_EMPTY;
+    UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[DCCH1] -= sdu_lengths[num_sdus];
     /* Update BSR : substract transmitted data */
     if (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH1]] >= sdu_lengths[num_sdus]){
         UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH1]] -=  sdu_lengths[num_sdus];
@@ -1653,7 +1655,18 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
 
   if (bsr_ce_len) {
       //Print updated BSR when sent
-      LOG_D(MAC,"[UE %d] Frame %d Subframe %d TX BSR size=%d BSR0=%d BSR1=%d BSR2=%d BSR3=%d\n",module_idP,frameP,subframe,bsr_ce_len,
+      LOG_D(MAC,"[UE %d] Remaining Buffer after Tx frame%d subframe %d nb LCG =%d Bytes for LCG0=%d LCG1=%d LCG2=%d LCG3=%d BSR Trigger status =%d TBS=%d\n",
+                            module_idP,
+                            frameP,
+                            subframe,
+                            num_lcg_id_with_data,
+                            UE_mac_inst[module_idP].scheduling_info.BSR_bytes[0],
+                            UE_mac_inst[module_idP].scheduling_info.BSR_bytes[1],
+                            UE_mac_inst[module_idP].scheduling_info.BSR_bytes[2],
+                            UE_mac_inst[module_idP].scheduling_info.BSR_bytes[3],
+                            UE_mac_inst[module_idP].BSR_reporting_active, buflen);
+
+      LOG_D(MAC,"[UE %d] Frame %d Subframe %d TX BSR Regular or Periodic size=%d BSR0=%d BSR1=%d BSR2=%d BSR3=%d\n",module_idP,frameP,subframe,bsr_ce_len,
               UE_mac_inst[module_idP].scheduling_info.BSR[0],
               UE_mac_inst[module_idP].scheduling_info.BSR[1],
               UE_mac_inst[module_idP].scheduling_info.BSR[2],
@@ -2309,6 +2322,7 @@ boolean_t  update_bsr(module_id_t module_idP, frame_t frameP, sub_frame_t subfra
   uint8_t array_index = 0;
 
   // Reset All BSR Infos
+  lcid_bytes_in_buffer[0] = 0;
   for (lcid=DCCH; lcid < MAX_NUM_LCID; lcid++)
   {
 	  // Reset transmission status
@@ -2316,7 +2330,7 @@ boolean_t  update_bsr(module_id_t module_idP, frame_t frameP, sub_frame_t subfra
 	  UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid]=LCID_EMPTY;
   }
 
-  for (lcgid=0; lcid < MAX_NUM_LCGID; lcgid++)
+  for (lcgid=0; lcgid < MAX_NUM_LCGID; lcgid++)
   {
 	  // Reset Buffer Info
 	  UE_mac_inst[module_idP].scheduling_info.BSR[lcgid]=0;
@@ -2344,6 +2358,8 @@ boolean_t  update_bsr(module_id_t module_idP, frame_t frameP, sub_frame_t subfra
 
 		    if (rlc_status.bytes_in_buffer > 0)
 		    {
+		          LOG_D(MAC,"[UE %d] PDCCH Tick : LCID%d LCGID%d has data to transmit =%d bytes at frame %d subframe %d\n",
+		                              module_idP, lcid,lcgid,rlc_status.bytes_in_buffer,frameP,subframeP);
 
 		         UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] = LCID_NOT_EMPTY;
 		         //Update BSR_bytes and position in lcid_reordered_array only if Group is defined
@@ -2381,6 +2397,9 @@ boolean_t  update_bsr(module_id_t module_idP, frame_t frameP, sub_frame_t subfra
   // Check whether a regular BSR can be triggered according to the first cases in 36.321
   if (num_lcid_with_data)
   {
+          LOG_D(MAC,"[UE %d] PDCCH Tick at frame %d subframe %d: NumLCID with data=%d Reordered LCID0=%d LCID1=%d LCID2=%d\n",
+                            module_idP, frameP, subframeP,num_lcid_with_data,lcid_reordered_array[0],lcid_reordered_array[1],lcid_reordered_array[2]);
+
 	  for (array_index=0; array_index < num_lcid_with_data; array_index++)
 	  {
 		  lcid = lcid_reordered_array[array_index];
@@ -2395,8 +2414,8 @@ boolean_t  update_bsr(module_id_t module_idP, frame_t frameP, sub_frame_t subfra
 		  {
 			  bsr_regular_triggered = TRUE;
 
-		      LOG_D(MAC,"[UE %d] PDCCH Tick : MAC BSR Triggered LCID%d data become available at frame %d subframe %d\n",
-		                      module_idP, lcid,frameP, subframeP);
+		      LOG_D(MAC,"[UE %d] PDCCH Tick : MAC BSR Triggered LCID%d LCGID%d data become available at frame %d subframe %d\n",
+		                      module_idP, lcid,UE_mac_inst[module_idP].scheduling_info.LCGID[lcid],frameP, subframeP);
 
 			  break;
 		  }
@@ -2407,8 +2426,10 @@ boolean_t  update_bsr(module_id_t module_idP, frame_t frameP, sub_frame_t subfra
 	  {
 		  bsr_regular_triggered = TRUE;
 
-	      LOG_D(MAC,"[UE %d] PDCCH Tick : MAC BSR Triggered ReTxBSR Timer expiry at frame %d subframe %d\n",
-	                      module_idP, frameP, subframeP);
+		  if ((UE_mac_inst[module_idP].BSR_reporting_active & BSR_TRIGGER_REGULAR) == 0) {
+		        LOG_I(MAC,"[UE %d] PDCCH Tick : MAC BSR Triggered ReTxBSR Timer expiry at frame %d subframe %d\n",
+		                          module_idP, frameP, subframeP);
+		  }
 
 	  }
   }
