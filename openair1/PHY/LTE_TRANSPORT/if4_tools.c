@@ -123,7 +123,7 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
     gen_IF4p5_ul_header(packet_header, frame, subframe);
 
     for (symbol_id=0; symbol_id<fp->symbols_per_tti; symbol_id++) {			
-
+      LOG_I(PHY,"IF4p5_PULFFT: frame %d, subframe %d, symbol %d\n",frame,subframe,symbol_id);
       for (element_id=0; element_id<db_halflength; element_id++) {
         i = (uint16_t*) &rxdataF[0][blockoffsetF+element_id];
         data_block[element_id] = ((uint16_t) lin2alaw[*i]) | (lin2alaw[*(i+1)]<<8);
@@ -149,6 +149,7 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
     }		
   } else if (packet_type == IF4p5_PRACH) {
     // FIX: hard coded prach samples length
+    LOG_I(PHY,"IF4p5_PRACH: frame %d, subframe %d\n",frame,subframe);
     db_fulllength = 840*2;
     if (eth->flags == ETH_RAW_IF4p5_MODE) {
       packet_header = (IF4p5_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
@@ -233,10 +234,11 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
 
   *packet_type = packet_header->sub_type; 
 
-  //  LOG_I(PHY,"CC_id %d : frame %d, subframe %d\n",eNB->CC_id,*frame,*subframe);
 
   if (*packet_type == IF4p5_PDLFFT) {          
     *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
+
+    LOG_I(PHY,"DL_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,*frame,*subframe,*symbol_number);
 
     slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size) + (*subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength - 1; 
