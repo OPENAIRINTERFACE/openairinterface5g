@@ -575,6 +575,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   tags = testcase.findtext('tags',default='')
 
   RRHMachine = testcase.findtext('RRH',default='')
+  RRH_config_file = testcase.findtext('RRH_config_file',default='')
   RRH_compile_prog = testcase.findtext('RRH_compile_prog',default='')
   RRH_compile_prog_args = testcase.findtext('RRH_compile_prog_args',default='')
   RRH_pre_exec = testcase.findtext('RRH_pre_exec',default='')
@@ -710,6 +711,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
        task_RRH_compile = ' ( uname -a ; date \n'
        task_RRH_compile = task_RRH_compile + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
        task_RRH_compile = task_RRH_compile + 'env |grep OPENAIR  \n'
+       task_RRH_compile = task_RRH_compile + update_config_file(oai_RRH, RRH_config_file, logdirOAI5GRepo, '$OPENAIR_DIR/cmake_targets/autotests/tools/search_repl.py') + '\n'
        if RRH_compile_prog != "":
          task_RRH_compile  = task_RRH_compile +  ' ( ' + RRH_compile_prog + ' '+ RRH_compile_prog_args + ' ) > ' + logfile_compile_RRH + ' 2>&1 \n'
        task_RRH_compile =  task_RRH_compile + ' date ) > ' + logfile_task_RRH_compile_out + ' 2>&1  '
