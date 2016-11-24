@@ -150,7 +150,7 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
   } else if (packet_type == IF4p5_PRACH) {
     // FIX: hard coded prach samples length
     LOG_D(PHY,"IF4p5_PRACH: frame %d, subframe %d\n",frame,subframe);
-    db_fulllength = 840*2;
+    db_fulllength = PRACH_HARD_CODED_SIZE;
     if (eth->flags == ETH_RAW_IF4p5_MODE) {
       packet_header = (IF4p5_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
       data_block = (uint16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t);
