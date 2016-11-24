@@ -944,9 +944,18 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc) {
   
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)//this is the EXPRESS MIMO case
   ulsch_start = (ue->rx_offset+subframe_tx*frame_parms->samples_per_tti-
-		 ue->hw_timing_advance-
-		 ue->timing_advance-
-		 ue->N_TA_offset+5)%(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti);
+         ue->hw_timing_advance-
+         ue->timing_advance-
+         ue->N_TA_offset+5);
+  //LOG_E(PHY,"ul-signal [subframe: %d, ulsch_start %d]\n",subframe_tx, ulsch_start);
+
+  if(ulsch_start < 0)
+      ulsch_start = ulsch_start + (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti);
+
+  if (ulsch_start > (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti))
+      ulsch_start = ulsch_start % (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti);
+
+  //LOG_E(PHY,"ul-signal [subframe: %d, ulsch_start %d]\n",subframe_tx, ulsch_start);
 #else //this is the normal case
   ulsch_start = (frame_parms->samples_per_tti*subframe_tx)-ue->N_TA_offset; //-ue->timing_advance;
 #endif //else EXMIMO
@@ -1214,6 +1223,13 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
     
     // deactivate service request
     // ue->ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
+    LOG_D(PHY,"Generating PUSCH (Abssubframe: %d.%d): harq-Id: %d, round: %d, MaxReTrans: %d \n",frame_tx,subframe_tx,harq_pid,ue->ulsch[eNB_id]->harq_processes[harq_pid]->round,UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx);
+    if (ue->ulsch[eNB_id]->harq_processes[harq_pid]->round >= (UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx - 1))
+    {
+        LOG_D(PHY,"PUSCH MAX Retransmission acheived ==> send last pusch (%d) \n");
+        ue->ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
+        ue->ulsch[eNB_id]->harq_processes[harq_pid]->round  = 0;
+    }
     
     ack_status = get_ack(&ue->frame_parms,
 			 ue->dlsch[eNB_id][0]->harq_ack,
