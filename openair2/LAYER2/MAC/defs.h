@@ -133,6 +133,7 @@
 /*!\brief maximum value for channel quality indicator */
 #define MAX_CQI_VALUE  15
 
+//if value equal oxFFFF means counters are NOT active
 #define MAC_UE_BSR_TIMER_NOT_RUNNING   (0xFFFF)
 
 #define LCID_EMPTY 0
@@ -336,6 +337,12 @@ typedef struct {
 #define SHORT_BSR 29
 /*!\brief LCID of long BSR for ULSCH */
 #define LONG_BSR 30
+/*!\bitmaps for BSR Triggers */
+#define	BSR_TRIGGER_NONE		(0)			/* No BSR Trigger */
+#define	BSR_TRIGGER_REGULAR		(1)			/* For Regular and ReTxBSR Expiry Triggers */
+#define	BSR_TRIGGER_PERIODIC	(2)			/* For BSR Periodic Timer Expiry Trigger */
+#define	BSR_TRIGGER_PADDING		(4)			/* For Padding BSR Trigger */
+
 
 /*! \brief Downlink SCH PDU Structure */
 typedef struct {
@@ -947,10 +954,10 @@ typedef struct {
   uint8_t  BSR[MAX_NUM_LCGID]; // should be more for mesh topology
   /// keep the number of bytes in rlc buffer for each lcgid
   uint16_t  BSR_bytes[MAX_NUM_LCGID];
-#if 0 //calvin for BSR test,current buffer greater then previous one, or buffer from 0 to !0
   /// after multiplexing buffer remain for each lcid
   uint16_t  LCID_buffer_remain[MAX_NUM_LCID];
-#endif
+  /// sum of all lcid buffer size
+  uint16_t  All_lcid_buffer_size_lastTTI;
   /// buffer status for each lcid
   uint8_t  LCID_status[MAX_NUM_LCID];
   /// SR pending as defined in 36.321
@@ -1086,6 +1093,11 @@ typedef struct {
   uint8_t power_backoff_db[NUMBER_OF_eNB_MAX];
   /// BSR report falg management
   uint8_t BSR_reporting_active;
+  /// retxBSR-Timer expires flag
+  uint8_t retxBSRTimer_expires_flag;
+  /// periodBSR-Timer expires flag
+  uint8_t periodBSRTimer_expires_flag;
+
   /// MBSFN_Subframe Configuration
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8]; // FIXME replace 8 by MAX_MBSFN_AREA?
   /// number of subframe allocation pattern available for MBSFN sync area

@@ -69,7 +69,9 @@ void ue_mac_reset(module_id_t module_idP,uint8_t eNB_index)
   // cancel all pending SRs
   UE_mac_inst[module_idP].scheduling_info.SR_pending=0;
   UE_mac_inst[module_idP].scheduling_info.SR_COUNTER=0;
-  UE_mac_inst[module_idP].BSR_reporting_active=0;
+
+//Set BSR Trigger Bmp and remove timer flags
+  UE_mac_inst[module_idP].BSR_reporting_active = BSR_TRIGGER_NONE;
 
   // stop ongoing RACH procedure
 
@@ -179,8 +181,13 @@ rrc_mac_config_req(
       if (logicalChannelConfig->ul_SpecificParameters) {
         UE_mac_inst[Mod_idP].scheduling_info.bucket_size[logicalChannelIdentity]=logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate *
             logicalChannelConfig->ul_SpecificParameters->bucketSizeDuration; // set the max bucket size
-        UE_mac_inst[Mod_idP].scheduling_info.LCGID[logicalChannelIdentity]=*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
-        LOG_D(MAC,"[CONFIG][UE %d] LCID %d is attached to the LCGID %d\n",Mod_idP,logicalChannelIdentity,*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup);
+        if (logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup != NULL) {
+            UE_mac_inst[Mod_idP].scheduling_info.LCGID[logicalChannelIdentity]=*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
+            LOG_D(MAC,"[CONFIG][UE %d] LCID %d is attached to the LCGID %d\n",Mod_idP,logicalChannelIdentity,*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup);
+        }
+        else {
+        	UE_mac_inst[Mod_idP].scheduling_info.LCGID[logicalChannelIdentity] = MAX_NUM_LCGID;
+        }
       } else {
         LOG_E(MAC,"[CONFIG][UE %d] LCID %d NULL ul_SpecificParameters\n",Mod_idP,logicalChannelIdentity);
         mac_xface->macphy_exit("NULL ul_SpecificParameters");
@@ -247,13 +254,14 @@ rrc_mac_config_req(
 #endif
       UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_SF  = MAC_UE_BSR_TIMER_NOT_RUNNING;
       UE_mac_inst[Mod_idP].scheduling_info.retxBSR_SF     = MAC_UE_BSR_TIMER_NOT_RUNNING;
-      UE_mac_inst[Mod_idP].BSR_reporting_active = 0;
+
+       UE_mac_inst[Mod_idP].BSR_reporting_active = BSR_TRIGGER_NONE;
 
       LOG_D(MAC,"[UE %d]: periodic BSR %d (SF), retx BSR %d (SF)\n",
             Mod_idP,
             UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_SF,
             UE_mac_inst[Mod_idP].scheduling_info.retxBSR_SF);
-      
+
       UE_mac_inst[Mod_idP].scheduling_info.drx_config     = mac_MainConfig->drx_Config;
       UE_mac_inst[Mod_idP].scheduling_info.phr_config     = mac_MainConfig->phr_Config;
 

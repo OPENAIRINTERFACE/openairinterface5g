@@ -412,7 +412,12 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP, 
                                             (char *)&ulsch_buff[0]);
 
           LOG_D(MAC,"[UE %d] TX Got %d bytes for DCCH\n",module_idP,sdu_lengths[0]);
-          update_bsr(module_idP, frameP, eNB_indexP,DCCH,UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]);
+          update_bsr(module_idP, frameP, subframeP,eNB_indexP);
+	      UE_mac_inst[module_idP].scheduling_info.BSR[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]] =
+	    		  locate_BsrIndexByBufferSize(BSR_TABLE, BSR_TABLE_SIZE, UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]]);
+
+	      //TO DO: fill BSR infos in UL TBS
+
           //header_len +=2;
           UE_mac_inst[module_idP].RA_active                        = 1;
           UE_mac_inst[module_idP].RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
