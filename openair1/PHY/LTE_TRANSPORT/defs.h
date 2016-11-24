@@ -227,6 +227,11 @@ typedef struct {
   uint8_t control_only;
   /// Flag to indicate that this is a calibration ULSCH (i.e. no MAC SDU and filled with TDD calibration information)
   //  int calibration_flag;
+  /// Number of soft channel bits
+  uint32_t G;
+
+  // decode phich
+  uint8_t decode_phich;
 } LTE_UL_UE_HARQ_t;
 
 typedef struct {
@@ -278,7 +283,7 @@ typedef struct {
   /// SRS active flag
   uint8_t srs_active;
   /// Pointers to 8 HARQ processes for the ULSCH
-  LTE_UL_UE_HARQ_t *harq_processes[8];
+  LTE_UL_UE_HARQ_t *harq_processes[9];
   /// Pointer to CQI data
   uint8_t o[MAX_CQI_BYTES];
   /// Length of CQI data (bits)
@@ -362,12 +367,18 @@ typedef struct {
   uint8_t TPC;
   /// First Allocated RB
   uint16_t first_rb;
+  /// First Allocated RB - previous scheduling
+  /// This is needed for PHICH generation which
+  /// is done after a new scheduling
+  uint16_t previous_first_rb;
   /// Current Number of RBs
   uint16_t nb_rb;
   /// Transport block size
   uint32_t TBS;
   /// The payload + CRC size in bits
   uint32_t B;
+  /// Number of soft channel bits
+  uint32_t G;
   /// CQI CRC status
   uint8_t cqi_crc_status;
   /// Pointer to CQI data
@@ -444,6 +455,10 @@ typedef struct {
   uint8_t Nsymb_initial;
   /// n_DMRS  for cyclic shift of DMRS (36.213 Table 9.1.2-2)
   uint8_t n_DMRS;
+  /// n_DMRS  for cyclic shift of DMRS (36.213 Table 9.1.2-2) - previous scheduling
+  /// This is needed for PHICH generation which
+  /// is done after a new scheduling
+  uint8_t previous_n_DMRS;
   /// n_DMRS 2 for cyclic shift of DMRS (36.211 Table 5.5.1.1.-1)
   uint8_t n_DMRS2;
   /// Flag to indicate that this ULSCH is for calibration information sent from UE (i.e. no MAC SDU to pass up)

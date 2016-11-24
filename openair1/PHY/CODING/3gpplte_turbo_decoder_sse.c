@@ -2556,7 +2556,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
 
       stop_meas(intl2_stats);
 
-      if ((crc == oldcrc) && (crc!=0)) {
+      if (crc == oldcrc) {
         return(iteration_cnt);
       }
     }

@@ -1608,6 +1608,11 @@ int main( int argc, char **argv )
       PHY_vars_eNB_g[0][CC_id] = init_lte_eNB(frame_parms[CC_id],0,frame_parms[CC_id]->Nid_cell,abstraction_flag);
       PHY_vars_eNB_g[0][CC_id]->CC_id = CC_id;
 
+      PHY_vars_eNB_g[0][CC_id]->ue_dl_rb_alloc=0x1fff;
+      PHY_vars_eNB_g[0][CC_id]->target_ue_dl_mcs=target_dl_mcs;
+      PHY_vars_eNB_g[0][CC_id]->ue_ul_nb_rb=6;
+      PHY_vars_eNB_g[0][CC_id]->target_ue_ul_mcs=target_ul_mcs;
+
       if (phy_test==1) PHY_vars_eNB_g[0][CC_id]->mac_enabled = 0;
       else PHY_vars_eNB_g[0][CC_id]->mac_enabled = 1;
 
@@ -1802,11 +1807,19 @@ int main( int argc, char **argv )
 
 
   // start the main thread
-  if (UE_flag == 1) init_UE(1);
+  if (UE_flag == 1) {
+    init_UE(1);
+    number_of_cards = 1;
+    
+    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
+      PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
+    }
+  }
   else { 
     init_eNB(node_function,node_timing,1,eth_params,single_thread_flag);
-  // Sleep to allow all threads to setup
-
+    // Sleep to allow all threads to setup
+    
     number_of_cards = 1;
     
     for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {

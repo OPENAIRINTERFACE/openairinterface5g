@@ -1206,6 +1206,38 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
       eNB->dlsch[i][0]->subframe_tx[subframe] = 0;
   }
 
+  /* save old HARQ information needed for PHICH generation */
+  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+    if (eNB->ulsch[i]) {
+      /* Store first_rb and n_DMRS for correct PHICH generation below.
+       * For PHICH generation we need "old" values of last scheduling
+       * for this HARQ process. 'generate_eNB_dlsch_params' below will
+       * overwrite first_rb and n_DMRS and 'generate_phich_top', done
+       * after 'generate_eNB_dlsch_params', would use the "new" values
+       * instead of the "old" ones.
+       *
+       * This has been tested for FDD only, may be wrong for TDD.
+       *
+       * TODO: maybe we should restructure the code to be sure it
+       *       is done correctly. The main concern is if the code
+       *       changes and first_rb and n_DMRS are modified before
+       *       we reach here, then the PHICH processing will be wrong,
+       *       using wrong first_rb and n_DMRS values to compute
+       *       ngroup_PHICH and nseq_PHICH.
+       *
+       * TODO: check if that works with TDD.
+       */
+      if ((subframe_select(fp,ul_subframe)==SF_UL) ||
+          (fp->frame_type == FDD)) {
+        harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
+        eNB->ulsch[i]->harq_processes[harq_pid]->previous_first_rb =
+            eNB->ulsch[i]->harq_processes[harq_pid]->first_rb;
+        eNB->ulsch[i]->harq_processes[harq_pid]->previous_n_DMRS =
+            eNB->ulsch[i]->harq_processes[harq_pid]->n_DMRS;
+      }
+    }
+  }
+
 
   num_pdcch_symbols = DCI_pdu->num_pdcch_symbols;
   LOG_D(PHY,"num_pdcch_symbols %"PRIu8",(dci common %"PRIu8", dci uespec %"PRIu8"\n",num_pdcch_symbols,

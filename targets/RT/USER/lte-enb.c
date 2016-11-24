@@ -1305,7 +1305,7 @@ extern void init_te_thread(PHY_VARS_eNB *, pthread_attr_t *);
 
 void init_eNB_proc(int inst) {
   
-  int i;
+  int i=0;
   int CC_id;
   PHY_VARS_eNB *eNB;
   eNB_proc_t *proc;
