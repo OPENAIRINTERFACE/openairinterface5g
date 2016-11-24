@@ -3299,11 +3299,23 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     l2 = (ue->frame_parms.symbols_per_tti/2)-1;
   }
   
-  //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  // RX processing of symbols l=1...l2 (l=0 is done in last scheduling epoch)
-  //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  
+#if 1 // 2016-11-24 wilson fixed missing slot_fep on 1st ofdm symbol of the first DL subframe after UL
+  int prev_subframe_rx = (subframe_rx - 1)<0? 9: (subframe_rx - 1);
+  if (subframe_select(&ue->frame_parms,prev_subframe_rx) != SF_DL) {
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // RX processing of symbols l=0...l2
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    l=0;
+  } else {
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // RX processing of symbols l=1...l2 (l=0 is done in last scheduling epoch)
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    l=1;
+  }
+  for (; l<=l2; l++) {
+#else
   for (l=1; l<=l2; l++) {
+#endif
     if (abstraction_flag == 0) {
       start_meas(&ue->ofdm_demod_stats);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
@@ -3424,13 +3436,20 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
       ue_measurement_procedures(l-1,ue,proc,eNB_id,abstraction_flag,mode);
       
     } // for l=1..l2
-      // do first symbol of next subframe for channel estimation
-    slot_fep(ue,
-	     0,
-	     (2+(subframe_rx<<1))%20,
-	     ue->rx_offset,
-	     0,
-	     0);
+
+#if 1 // 2016-11-24 wilson fixed missing slot_fep on 1st ofdm symbol of the first DL subframe after UL
+    // do first symbol of next downlink subframe for channel estimation
+    int next_subframe_rx = (1+subframe_rx)%10;
+    if (subframe_select(&ue->frame_parms,next_subframe_rx) != SF_UL)
+#endif
+    {
+      slot_fep(ue,
+         0,
+         (next_subframe_rx<<1),
+         ue->rx_offset,
+         0,
+         0);
+    }
   } // not an S-subframe
 
   // run pbch procedures if subframe is 0
