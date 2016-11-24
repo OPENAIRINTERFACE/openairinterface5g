@@ -150,7 +150,8 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
   } else if (packet_type == IF4p5_PRACH) {
     // FIX: hard coded prach samples length
     LOG_D(PHY,"IF4p5_PRACH: frame %d, subframe %d\n",frame,subframe);
-    db_fulllength = PRACH_HARD_CODED_SIZE;
+    db_fulllength = PRACH_HARD_CODED_NUM_SAMPLES;
+    
     if (eth->flags == ETH_RAW_IF4p5_MODE) {
       packet_header = (IF4p5_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
       data_block = (uint16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t);
@@ -163,11 +164,11 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
     if (eth->flags == ETH_RAW_IF4p5_MODE) {
       memcpy((int16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t),
              (&rxsigF[0][k]), 
-             db_fulllength*sizeof(int16_t));
+             PRACH_BLOCK_SIZE_BYTES);
     } else {
       memcpy((int16_t*)(tx_buffer + sizeof_IF4p5_header_t),
              (&rxsigF[0][k]),
-             db_fulllength*sizeof(int16_t));
+             PRACH_BLOCK_SIZE_BYTES);
     }
 
     if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
@@ -273,16 +274,16 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
 		
   } else if (*packet_type == IF4p5_PRACH) {    
     // FIX: hard coded prach samples length
-    db_fulllength = 840*2;
+    db_fulllength = PRACH_HARD_CODED_NUM_SAMPLES;
 
     if (eth->flags == ETH_RAW_IF4p5_MODE) {		
       memcpy((&rxsigF[0][0]), 
              (int16_t*) (rx_buffer+MAC_HEADER_SIZE_BYTES+sizeof_IF4p5_header_t), 
-             db_fulllength*sizeof(int16_t));
+             PRACH_BLOCK_SIZE_BYTES);
     } else {
       memcpy((&rxsigF[0][0]),
              (int16_t*) (rx_buffer+sizeof_IF4p5_header_t),
-             db_fulllength*sizeof(int16_t));
+             PRACH_BLOCK_SIZE_BYTES);
     }
 
   } else {
