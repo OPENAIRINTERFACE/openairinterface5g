@@ -2420,7 +2420,7 @@ int main(int argc, char **argv)
 	  phy_procedures_UE_RX(UE,proc,0,0,normal_txrx,no_relay,NULL);
 
 	  if (UE->dlsch[0][0]->active == 0) {
-	    printf("DCI not received\n");
+	    //printf("DCI not received\n");
 	    /*
 	    write_output("pdcchF0_ext.m","pdcchF_ext", UE->pdcch_vars[eNB_id]->rxdataF_ext[0],2*3*UE->frame_parms.ofdm_symbol_size,1,1);
 	    write_output("pdcch00_ch0_ext.m","pdcch00_ch0_ext",UE->pdcch_vars[eNB_id]->dl_ch_estimates_ext[0],12*UE->frame_parms.N_RB_DL*3,1,1);
