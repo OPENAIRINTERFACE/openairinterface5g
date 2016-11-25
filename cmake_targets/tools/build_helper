@@ -164,6 +164,9 @@ compilations() {
 ############################################
 
 install_protobuf_from_source(){
+    protobuf_install_log=$OPENAIR_DIR/cmake_targets/log/protobuf_install_log.txt
+    echo_info "\nInstalling Google Protobuf from sources. The log file for Protobuf installation is here: $protobuf_install_log "
+    (
     cd /tmp
     echo "Downloading protobuf"
     rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
@@ -174,11 +177,14 @@ install_protobuf_from_source(){
     echo "Compiling protobuf"
     make -j`nproc`
     $SUDO make install
-    rm -rf /tmp/protobuf-2.6.1.tar.gz /tmp/protobuf-2.6.1
     $SUDO ldconfig
+    ) >& $protobuf_install_log
 }
 
 install_protobuf_c_from_source(){
+    protobuf_c_install_log=$OPENAIR_DIR/cmake_targets/log/protobuf_c_install_log.txt
+    echo_info "\nInstalling Google Protobuf_C from sources. The log file for Protobuf_C installation is here: $protobuf_c_install_log "
+    (
     cd /tmp
     echo "Downloading protobuf-c"
     rm -rf /tmp/protobuf-c
@@ -189,8 +195,8 @@ install_protobuf_c_from_source(){
     echo "Compiling protobuf-c"
     make -j`nproc`
     $SUDO make install
-    rm -rf /tmp/protobuf-c
     $SUDO ldconfig
+    ) >& $protobuf_c_install_log
 }
 
 check_install_usrp_uhd_driver(){
@@ -396,6 +402,7 @@ remove_nettle_from_source() {
     cd nettle-2.5/
     ./configure --disable-openssl --enable-shared --prefix=/usr 
     $SUDO make uninstall || true 
+    $SUDO ldconfig
     ) >& $nettle_uninstall_log
 }
 
@@ -419,6 +426,7 @@ remove_gnutls_from_source(){
     cd gnutls-3.1.23/
     ./configure --prefix=/usr
     $SUDO make uninstall || true
+    $SUDO ldconfig
     )>& $gnutls_uninstall_log
 }
 
@@ -433,6 +441,7 @@ install_asn1c_from_source(){
     make -j`nproc`
     $SUDO make install
     cd -
+    $SUDO ldconfig
     ) > $asn1_install_log 2>&1
 }
 
