@@ -360,6 +360,10 @@ typedef struct {
   uint8_t TPC;
   /// First Allocated RB
   uint16_t first_rb;
+  /// First Allocated RB - previous scheduling
+  /// This is needed for PHICH generation which
+  /// is done after a new scheduling
+  uint16_t previous_first_rb;
   /// Current Number of RBs
   uint16_t nb_rb;
   /// Transport block size
@@ -444,6 +448,10 @@ typedef struct {
   uint8_t Nsymb_initial;
   /// n_DMRS  for cyclic shift of DMRS (36.213 Table 9.1.2-2)
   uint8_t n_DMRS;
+  /// n_DMRS  for cyclic shift of DMRS (36.213 Table 9.1.2-2) - previous scheduling
+  /// This is needed for PHICH generation which
+  /// is done after a new scheduling
+  uint8_t previous_n_DMRS;
   /// n_DMRS 2 for cyclic shift of DMRS (36.211 Table 5.5.1.1.-1)
   uint8_t n_DMRS2;
   /// Flag to indicate that this ULSCH is for calibration information sent from UE (i.e. no MAC SDU to pass up)

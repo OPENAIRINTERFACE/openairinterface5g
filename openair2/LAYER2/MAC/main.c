@@ -454,6 +454,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
   mac_xface->fill_rar                  = fill_rar;
   mac_xface->initiate_ra_proc          = initiate_ra_proc;
   mac_xface->cancel_ra_proc            = cancel_ra_proc;
+  mac_xface->set_msg3_subframe         = set_msg3_subframe;
   mac_xface->SR_indication             = SR_indication;
   mac_xface->UL_failure_indication     = UL_failure_indication;
   mac_xface->rx_sdu                    = rx_sdu;

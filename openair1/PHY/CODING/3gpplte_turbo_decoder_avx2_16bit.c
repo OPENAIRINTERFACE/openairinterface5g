@@ -1375,7 +1375,7 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
       fprintf(fdavx2b,"oldcrc %x, crc %x, oldcrc_cw2 %x, crc_cw2 %x\n",oldcrc,crc,oldcrc_cw2,crc_cw2);
 #endif
 
-      if ((crc == oldcrc) && (crc!=0) && (crc_cw2 == oldcrc_cw2) && (crc_cw2!=0)) {
+      if (crc == oldcrc && crc_cw2 == oldcrc_cw2) {
         return(iteration_cnt);
       }
     }

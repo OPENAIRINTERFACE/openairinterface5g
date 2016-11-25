@@ -525,9 +525,9 @@ int main(int n, char **v)
   on_off(database, "ENB_PHY_PUCCH_1_ENERGY", is_on, 1);
   on_off(database, "ENB_PHY_PUCCH_1AB_IQ", is_on, 1);
 
-  on_off(database, "LEGACY_RRC_INFO", is_on, 1);
-  on_off(database, "LEGACY_RRC_ERROR", is_on, 1);
-  on_off(database, "LEGACY_RRC_WARNING", is_on, 1);
+  on_off(database, "LEGACY_GROUP_INFO", is_on, 1);
+  on_off(database, "LEGACY_GROUP_ERROR", is_on, 1);
+  on_off(database, "LEGACY_GROUP_WARNING", is_on, 1);
 
   view_add_log(eg.phyview, "ENB_PHY_DLSCH_UE_DCI", h, database, is_on);
   view_add_log(eg.phyview, "ENB_PHY_DLSCH_UE_ACK", h, database, is_on);
