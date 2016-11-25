@@ -50,6 +50,7 @@ void xy_plot_set_range(gui *gui, widget *this,
 void xy_plot_set_points(gui *gui, widget *this,
     int plot, int npoints, float *x, float *y);
 void xy_plot_get_dimensions(gui *gui, widget *this, int *width, int *height);
+void xy_plot_set_title(gui *gui, widget *this, char *label);
 
 void textlist_add(gui *gui, widget *this, const char *text, int position,
     int color);
