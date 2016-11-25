@@ -433,7 +433,14 @@ static void *UE_thread_synch(void *arg)
       if (initial_sync( UE, UE->mode ) == 0) {
 
         hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_tti;
-        LOG_I( HW, "Got synch: hw_slot_offset %d\n", hw_slot_offset );
+        LOG_I( HW, "Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %u, UL %u), UE_scan_carrier %d\n",
+          hw_slot_offset,
+          freq_offset,
+          UE->rx_total_gain_dB,
+          downlink_frequency[0][0]+freq_offset,
+          downlink_frequency[0][0]+uplink_frequency_offset[0][0]+freq_offset,
+          UE->UE_scan_carrier );
+
 	if (UE->UE_scan_carrier == 1) {
 
 	  UE->UE_scan_carrier = 0;
@@ -710,10 +717,21 @@ static void *UE_thread_rxn_txnp4(void *arg)
   while (sync_var<0)
     pthread_cond_wait(&sync_cond, &sync_mutex);
 
+#if 1 // 2016-11-23 wilson add pthread name to the logging
+#define THREAD_NAME_LEN 16
+  char threadname[THREAD_NAME_LEN];
+  ret = pthread_getname_np(proc->pthread_rxtx, threadname, THREAD_NAME_LEN);
+  if (ret != 0)
+  {
+   perror("pthread_getname_np : ");
+   exit_fun("Error getting thread name");
+  }
+#endif
+
   pthread_mutex_unlock(&sync_mutex);
   printf("unlocked sync_mutex, waiting (UE_thread_rxtx)\n");
 
-  printf("Starting UE RXN_TXNP4 thread\n");
+  printf("Starting UE RXN_TXNP4 thread (%s)\n", threadname);
 
   while (!oai_exit) {
     if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
@@ -739,10 +757,27 @@ static void *UE_thread_rxn_txnp4(void *arg)
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE+(proc->subframe_rx&1), proc->frame_rx );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_UE+(proc->subframe_tx&1), proc->frame_tx );
 
-    if ((subframe_select( &UE->frame_parms, proc->subframe_rx) == SF_DL) ||
-	(UE->frame_parms.frame_type == FDD) ||
-	(subframe_select( &UE->frame_parms, proc->subframe_rx ) == SF_S)) {
+    lte_subframe_t sf_type = subframe_select( &UE->frame_parms, proc->subframe_rx);
+    if ((sf_type == SF_DL) ||
+        (UE->frame_parms.frame_type == FDD) ||
+        (sf_type == SF_S)) {
     
+      if (UE->frame_parms.frame_type == TDD) {
+      LOG_D(PHY, "%s,TDD%d,%s: calling UE_RX\n",
+          threadname,
+          UE->frame_parms.tdd_config,
+          (sf_type==SF_DL? "SF_DL" :
+          (sf_type==SF_UL? "SF_UL" :
+          (sf_type==SF_S ? "SF_S"  : "UNKNOWN_SF_TYPE"))));
+      } else {
+        LOG_D(PHY, "%s,%s,%s: calling UE_RX\n",
+            threadname,
+            (UE->frame_parms.frame_type==FDD? "FDD":
+            (UE->frame_parms.frame_type==TDD? "TDD":"UNKNOWN_DUPLEX_MODE")),
+            (sf_type==SF_DL? "SF_DL" :
+            (sf_type==SF_UL? "SF_UL" :
+            (sf_type==SF_S ? "SF_S"  : "UNKNOWN_SF_TYPE"))));
+      }
       phy_procedures_UE_RX( UE, proc, 0, 0, UE->mode, no_relay, NULL );
     }
     
@@ -1122,6 +1157,7 @@ void *UE_thread(void *arg) {
 	      exit_fun("nothing to add");
 	      return &UE_thread_retval;
 	    }
+	    LOG_D(PHY, "firing up rxtx_thread[%d] at subframe %d\n", sf&1, sf);
 	  } else {
 	    LOG_E( PHY, "[SCHED][UE] UE RX thread busy (IC %d)!!\n", instance_cnt_rxtx);
 	    if (instance_cnt_rxtx > 2) {
