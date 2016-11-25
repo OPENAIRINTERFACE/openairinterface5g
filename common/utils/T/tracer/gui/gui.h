@@ -39,6 +39,7 @@ widget *new_space(gui *gui, int width, int height);
 widget *new_image(gui *gui, unsigned char *data, int length);
 
 void label_set_clickable(gui *gui, widget *label, int clickable);
+void label_set_text(gui *gui, widget *label, char *text);
 
 void container_set_child_growable(gui *_gui, widget *_this,
     widget *child, int growable);
