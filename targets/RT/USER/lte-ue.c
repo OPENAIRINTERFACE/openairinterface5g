@@ -717,7 +717,6 @@ static void *UE_thread_rxn_txnp4(void *arg)
   while (sync_var<0)
     pthread_cond_wait(&sync_cond, &sync_mutex);
 
-#if 1 // 2016-11-23 wilson add pthread name to the logging
 #define THREAD_NAME_LEN 16
   char threadname[THREAD_NAME_LEN];
   ret = pthread_getname_np(proc->pthread_rxtx, threadname, THREAD_NAME_LEN);
@@ -726,7 +725,6 @@ static void *UE_thread_rxn_txnp4(void *arg)
    perror("pthread_getname_np : ");
    exit_fun("Error getting thread name");
   }
-#endif
 
   pthread_mutex_unlock(&sync_mutex);
   printf("unlocked sync_mutex, waiting (UE_thread_rxtx)\n");
