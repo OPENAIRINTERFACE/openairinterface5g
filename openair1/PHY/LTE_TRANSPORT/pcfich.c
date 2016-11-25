@@ -34,7 +34,7 @@
 //uint16_t pcfich_reg[4];
 //uint8_t pcfich_first_reg_idx = 0;
 
-#define DEBUG_PCFICH
+//#define DEBUG_PCFICH
 
 void generate_pcfich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
 {
@@ -301,7 +301,7 @@ uint8_t rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
     }
 
 #ifdef DEBUG_PCFICH
-    LOG_I(PHY, "metric %d : %d\n",i,metric);
+    msg("metric %d : %d\n",i,metric);
 #endif
 
     if (metric > old_metric) {
@@ -311,7 +311,7 @@ uint8_t rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
 #ifdef DEBUG_PCFICH
-  LOG_I(PHY, "PCFICH detected for %d PDCCH symbols\n",num_pdcch_symbols);
+  msg("[PHY] PCFICH detected for %d PDCCH symbols\n",num_pdcch_symbols);
 #endif
   return(num_pdcch_symbols);
 }

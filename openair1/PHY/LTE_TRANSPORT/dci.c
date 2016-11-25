@@ -403,7 +403,7 @@ void pdcch_demapping(uint16_t *llr,uint16_t *wbar,LTE_DL_FRAME_PARMS *frame_parm
             for (i=0; i<4; i++) {
               wbar[mprime] = llr[tti_offset0+i];
 #ifdef DEBUG_DCI_DECODING
-              LOG_D(PHY,"PDCCH demapping mprime %d.%d <= llr %d (symbol %d re %d) -> (%d,%d)\n",mprime/4,i,tti_offset0+i,symbol_offset,re_offset0,*(char*)&wbar[mprime],*(1+(char*)&wbar[mprime]));
+              LOG_I(PHY,"PDCCH demapping mprime %d.%d <= llr %d (symbol %d re %d) -> (%d,%d)\n",mprime/4,i,tti_offset0+i,symbol_offset,re_offset0,*(char*)&wbar[mprime],*(1+(char*)&wbar[mprime]));
 #endif
               mprime++;
               re_offset0++;
@@ -419,7 +419,7 @@ void pdcch_demapping(uint16_t *llr,uint16_t *wbar,LTE_DL_FRAME_PARMS *frame_parm
             for (i=0; i<4; i++) {
               wbar[mprime] = llr[tti_offset+i];
 #ifdef DEBUG_DCI_DECODING
-              LOG_D(PHY,"PDCCH demapping mprime %d.%d <= llr %d (symbol %d re %d) -> (%d,%d)\n",mprime/4,i,tti_offset+i,symbol_offset,re_offset+i,*(char*)&wbar[mprime],*(1+(char*)&wbar[mprime]));
+              LOG_I(PHY,"PDCCH demapping mprime %d.%d <= llr %d (symbol %d re %d) -> (%d,%d)\n",mprime/4,i,tti_offset+i,symbol_offset,re_offset+i,*(char*)&wbar[mprime],*(1+(char*)&wbar[mprime]));
 #endif
               mprime++;
             }
@@ -2473,16 +2473,16 @@ void dci_decoding(uint8_t DCI_LENGTH,
 #ifdef DEBUG_DCI_DECODING
 
   for (i=0; i<16+DCI_LENGTH; i++)
-    LOG_D(PHY," DCI %d : (%d,%d,%d)\n",i,*(d_rx+96+(3*i)),*(d_rx+97+(3*i)),*(d_rx+98+(3*i)));
+    LOG_I(PHY," DCI %d : (%d,%d,%d)\n",i,*(d_rx+96+(3*i)),*(d_rx+97+(3*i)),*(d_rx+98+(3*i)));
 
 #endif
   memset(decoded_output,0,2+((16+DCI_LENGTH)>>3));
 
 #ifdef DEBUG_DCI_DECODING
-  LOG_D(PHY, "Before Viterbi\n");
+  printf("Before Viterbi\n");
 
   for (i=0; i<16+DCI_LENGTH; i++)
-    LOG_D(PHY, "%d : (%d,%d,%d)\n",i,*(d_rx+96+(3*i)),*(d_rx+97+(3*i)),*(d_rx+98+(3*i)));
+    printf("%d : (%d,%d,%d)\n",i,*(d_rx+96+(3*i)),*(d_rx+97+(3*i)),*(d_rx+98+(3*i)));
 
 #endif
   //debug_printf("Doing DCI Viterbi \n");
