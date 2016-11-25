@@ -41,7 +41,7 @@
 #include "common_lib.h"
 extern openair0_config_t openair0_cfg[];
 
-//#define DEBUG_INITIAL_SYNCH
+#define DEBUG_INITIAL_SYNCH
 
 int pbch_detection(PHY_VARS_UE *ue, runmode_t mode) 
 {

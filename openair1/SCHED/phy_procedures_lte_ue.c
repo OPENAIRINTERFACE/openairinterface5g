@@ -3279,7 +3279,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 
   
 #ifdef DEBUG_PHY_PROC
-  LOG_D(PHY,"[%s %d] Frame %d subframe %d: Doing phy_procedures_UE_RX (%d)\n",
+  LOG_I(PHY,"[%s %d] Frame %d subframe %d: Doing phy_procedures_UE_RX (-)\n",
 	(r_type == multicast_relay) ? "RN/UE" : "UE",
 	ue->Mod_id,frame_rx, subframe_rx);
 #endif
