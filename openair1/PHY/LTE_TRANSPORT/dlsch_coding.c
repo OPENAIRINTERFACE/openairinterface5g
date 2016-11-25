@@ -93,11 +93,11 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)
 #endif
 
         for (r=0; r<MAX_NUM_DLSCH_SEGMENTS; r++) {
-	  
+
 #ifdef DEBUG_DLSCH_FREE
           msg("Freeing dlsch process %d c[%d] (%p)\n",i,r,dlsch->harq_processes[i]->c[r]);
 #endif
-	  
+
           if (dlsch->harq_processes[i]->c[r]) {
             free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+768);
             dlsch->harq_processes[i]->c[r] = NULL;
@@ -106,17 +106,17 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)
             free16(dlsch->harq_processes[i]->d[r],(96+12+3+(3*6144)));
             dlsch->harq_processes[i]->d[r] = NULL;
           }
-        
+
 	}
 	free16(dlsch->harq_processes[i],sizeof(LTE_DL_eNB_HARQ_t));
 	dlsch->harq_processes[i] = NULL;
       }
     }
-    
+
     free16(dlsch,sizeof(LTE_eNB_DLSCH_t));
     dlsch = NULL;
     }
-  
+
 }
 
 LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_t Nsoft,unsigned char N_RB_DL, uint8_t abstraction_flag)
@@ -208,7 +208,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
 	    if (dlsch->harq_processes[i]->d[r])
 	      dlsch->harq_processes[i]->d[r][j] = LTE_NULL;
 	  }
-        
+
       }
 
       return(dlsch);
@@ -247,7 +247,7 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch)
 	  for (r=0; r<MAX_NUM_DLSCH_SEGMENTS; r++)
 	    if (dlsch->harq_processes[i]->d[r])
 	      dlsch->harq_processes[i]->d[r][j] = LTE_NULL;
-        
+
       }
     }
   }
@@ -408,6 +408,7 @@ int dlsch_encoding(unsigned char *a,
                                         nb_rb,
                                         m);                       // r
     stop_meas(rm_stats);
+    //printf("dlsch->harq_processes[harq_pid]->rvidx = %d\n", dlsch->harq_processes[harq_pid]->rvidx);
 #ifdef DEBUG_DLSCH_CODING
 
     if (r==dlsch->harq_processes[harq_pid]->C-1)

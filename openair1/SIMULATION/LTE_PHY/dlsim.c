@@ -187,7 +187,7 @@ int main(int argc, char **argv)
   unsigned int ret[2];
   unsigned int coded_bits_per_codeword[2],nsymb,dci_cnt,tbs[2];
 
-  unsigned int tx_lev=0, tx_lev_dB=0, round=0, trials, errs[2][4]={{0,0,0,0},{0,0,0,0}}, round_trials[2][4]={{0,0,0,0},{0,0,0,0}}, round_sic=0;
+  unsigned int tx_lev=0, tx_lev_dB=0, round=0, trials, errs[2][4]={{0,0,0,0},{0,0,0,0}}, round_trials[2][4]={{0,0,0,0},{0,0,0,0}}, decoded_in_sic[4]={0,0,0,0}, sic_attempt[4]={0,0,0,0}, round_sic=0;
   unsigned int dci_errors=0, dlsch_active=0, num_layers;
 
   int re_allocated;
@@ -795,8 +795,10 @@ int main(int argc, char **argv)
   }
   if ((transmission_mode != 3) && (transmission_mode != 4))
     fprintf(bler_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_st1; err0_st2 trials0; err1_st1; err1_st2; trials1; err2_st1; err2_st2; trials2; err3_st1; err3_st2; trials3; throug 0; throug 1; sum throug; dci_err\n");
+  else if (rx_type == rx_SIC_dual_stream)
+    fprintf(bler_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_tb0; err0_tb1; trials_tb0_r0; trials_tb1_r0; sic_att0; sic_suc0; err1_tb0; err1_tb1; trials_tb0_r1; trials_tb1_r1; sic_att1; sic_suc1; err2_tb0; err2_tb1; trials_tb0_r2; trials1_tb1_r2; sic_att2; sic_suc2; err3_tb0; err3_tb1; trials_tb0_r3; trials_tb1_r3; sic_att3; sic_suc3; th_tb0_r0; th_tb1_r0; th_sum_r0; th_tb0_r1; th_tb1_r1; th_sum_r1; th_tb0_r2; th_tb1_r2; th_sum_r2; th_tb0_r3; th_tb1_r3; th_sum_r3; tot_th\n");
   else
-    fprintf(bler_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_st1; err0_st2; trials0 r0; trials1 r0; err1_st1; err1_st2; trials0_r1; trials1_r1; err2_st1; err2_st2; trials0_r2; trials1_r2; err3_st1; err3_st2; trials0_r3; trials1_r3; th0_r0; th1_r0; th_sum_r0; th0_r1; th1_r1; th_sum_r1; th0_r2; th1_r2; th_sum_r2; th0_r3; th1_r3; th_sum_r3; tot_th\n");
+    fprintf(bler_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_tb0; err0_tb1; trials_tb0_r0; trials_tb1_r0; err1_tb0; err1_tb1; trials_tb0_r1; trials_tb1_r1; err2_tb0; err2_tb1; trials_tb0_r2; trials1_tb1_r2; err3_tb0; err3_tb1; trials_tb0_r3; trials_tb1_r3; th_tb0_r0; th_tb1_r0; th_sum_r0; th_tb0_r1; th_tb1_r1; th_sum_r1; th_tb0_r2; th_tb1_r2; th_sum_r2; th_tb0_r3; th_tb1_r3; th_sum_r3; tot_th\n");
 
 
   if (test_perf != 0) {
@@ -2011,6 +2013,8 @@ int main(int argc, char **argv)
       for (i=0; i<4; i++) {
         errs[0][i]=0; //CW_0
         errs[1][i]=0; //CW_1
+        decoded_in_sic[i]=0;
+        sic_attempt[i]=0;
 
         round_trials[0][i] = 0;  // CW_0
         round_trials[1][i] = 0;  // CW_1
@@ -3872,6 +3876,7 @@ int main(int argc, char **argv)
 
               //printf("\n CW 0 is decoded, i go for , round %d\n", round);
               //printf("\n ret[TB0] = %d  round %d\n", ret[TB], round);
+                sic_attempt[round]++;
 
                 for (round_sic = 0 ; round_sic < (round +1); round_sic++) {
 
@@ -3893,6 +3898,22 @@ int main(int argc, char **argv)
                 dlsch0_eNB_harq->TBS          = dlsch0_ue_harq->TBS;
                 dlsch0_eNB_harq->dl_power_off = dlsch0_ue_harq->dl_power_off;
                 dlsch0_eNB_harq->status       = dlsch0_ue_harq->status;
+                if (round_sic == 0){
+                  PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][1]->current_harq_pid]->rvidx        = 0;
+                  PHY_vars_UE->dlsch_ue[0][1]->harq_processes[PHY_vars_UE->dlsch_ue[0][1]->current_harq_pid]->rvidx=0;
+                }
+                  else if (round_sic == 1){
+                  PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][1]->current_harq_pid]->rvidx        = 1;
+                  PHY_vars_UE->dlsch_ue[0][1]->harq_processes[PHY_vars_UE->dlsch_ue[0][1]->current_harq_pid]->rvidx=1;
+                }
+                  else if (round_sic == 2){
+                  PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][1]->current_harq_pid]->rvidx        = 2;
+                  PHY_vars_UE->dlsch_ue[0][1]->harq_processes[PHY_vars_UE->dlsch_ue[0][1]->current_harq_pid]->rvidx=2;
+                }
+                  else{
+                  PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][1]->current_harq_pid]->rvidx        = 3;
+                  PHY_vars_UE->dlsch_ue[0][1]->harq_processes[PHY_vars_UE->dlsch_ue[0][1]->current_harq_pid]->rvidx=3;
+                }
 
                 PHY_vars_UE->dlsch_eNB[eNB_id]->active                   = PHY_vars_UE->dlsch_ue[eNB_id][0]->active;
                 PHY_vars_UE->dlsch_eNB[eNB_id]->rnti                     = PHY_vars_UE->dlsch_ue[eNB_id][0]->rnti;
@@ -3921,7 +3942,7 @@ int main(int argc, char **argv)
                 dlsch_scrambling(&PHY_vars_UE->lte_frame_parms,
                                  0,
                                  PHY_vars_UE->dlsch_eNB[eNB_id],
-                                 coded_bits_per_codeword[TB],
+                                 coded_bits_per_codeword[0],
                                  0,
                                  subframe<<1);
 
@@ -4051,6 +4072,7 @@ int main(int argc, char **argv)
                 stop_meas(&PHY_vars_UE->dlsch_unscrambling_stats);
 
                 start_meas(&PHY_vars_UE->dlsch_decoding_stats);
+
                 ret[1] = dlsch_decoding(PHY_vars_UE,
                                         PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[PHY_vars_UE->dlsch_ue[0][1]->harq_processes[PHY_vars_UE->dlsch_ue[0][1]->current_harq_pid]->codeword],
                                         &PHY_vars_UE->lte_frame_parms,
@@ -4068,6 +4090,7 @@ int main(int argc, char **argv)
                 //printf("ret TB 1 = %d round %d \n", ret[1], round);
 
                 if (ret[1] <= PHY_vars_UE->dlsch_ue[0][0]->max_turbo_iterations ) {
+                  decoded_in_sic[round]++;
                   round_sic = round+1; // to exit round_sic
 #ifdef DEBUG_HARQ
                   printf("[DLSIM] TB1 is decoded in SIC loop\n");
@@ -4378,6 +4401,8 @@ int main(int argc, char **argv)
 #ifdef DEBUG_HARQ
         printf("\n both failed round 0 = %d, both failed round 1 = %d, both failed round 2 = %d, both failed round 3 = %d\n", resend_both[0], resend_both[1], resend_both[2], resend_both[3]);
         printf(" one failed round 0  = %d, one failed round 1  = %d, one failed round 2  = %d, one failed round 3  = %d\n", resend_one[0], resend_one[1], resend_one[2], resend_one[3]);
+        printf(" sic attempt round 0  = %d, sic attempt round 1  = %d, sic attempt round 2  = %d, sic attempt round 3  = %d\n", sic_attempt[0], sic_attempt[1], sic_attempt[2], sic_attempt[3]);
+        printf(" decoded in sic round 0  = %d, decoded in sic round 1  = %d, decoded in sic round 2  = %d, decoded in sic round 3  = %d\n", decoded_in_sic[0], decoded_in_sic[1], decoded_in_sic[2], decoded_in_sic[3]);
 #endif
       // round_trials[0]: number of code word : goodput the protocol
       double table_tx[time_vector_tx.size];
@@ -4733,7 +4758,54 @@ int main(int argc, char **argv)
                 round_trials[0][3],
                 dci_errors);
       }
-      else {
+      else if ( rx_type== rx_SIC_dual_stream) {
+        fprintf(bler_fd,"%f;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
+                SNR,
+                mcs1,
+                mcs2,
+                tbs0_init,
+                tbs1_init,
+                rate0_init,
+                rate1_init,
+                errs[0][0],
+                errs[1][0],
+                round_trials[0][0],
+                round_trials[1][0],
+                sic_attempt[0],
+                decoded_in_sic[0],
+                errs[0][1],
+                errs[1][1],
+                round_trials[0][1],
+                round_trials[1][1],
+                sic_attempt[1],
+                decoded_in_sic[1],
+                errs[0][2],
+                errs[1][2],
+                round_trials[0][2],
+                round_trials[1][2],
+                sic_attempt[2],
+                decoded_in_sic[2],
+                errs[0][3],
+                errs[1][3],
+                round_trials[0][3],
+                round_trials[1][3],
+                sic_attempt[3],
+                decoded_in_sic[3],
+                thr_cw0[0],
+                thr_cw1[0],
+                thr_cw0[0]+thr_cw1[0],
+                thr_cw0[1],
+                thr_cw1[1],
+                thr_cw0[1]+thr_cw1[1],
+                thr_cw0[2],
+                thr_cw1[2],
+                thr_cw0[2]+thr_cw1[2],
+                thr_cw0[3],
+                thr_cw1[3],
+                thr_cw0[3]+thr_cw1[3],
+                thr_cw0[0]+thr_cw0[1]+thr_cw0[2]+thr_cw0[3]+thr_cw1[0]+thr_cw1[1]+thr_cw1[2]+ thr_cw1[3]);
+            }
+      else{
         fprintf(bler_fd,"%f;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
                 SNR,
                 mcs1,
@@ -4771,7 +4843,7 @@ int main(int argc, char **argv)
                 thr_cw1[3],
                 thr_cw0[3]+thr_cw1[3],
                 thr_cw0[0]+thr_cw0[1]+thr_cw0[2]+thr_cw0[3]+thr_cw1[0]+thr_cw1[1]+thr_cw1[2]+ thr_cw1[3]);
-            }
+      }
 
 
       if(abstx){ //ABSTRACTION
