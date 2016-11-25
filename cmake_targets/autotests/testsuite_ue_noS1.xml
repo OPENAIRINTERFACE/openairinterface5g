@@ -2,11 +2,11 @@
 
 <MachineList>imb182-desktop yanbo-M4HM87P-00</MachineList> <!-- ued-PRM-130 -->
  <NFSResultsShare>/mnt/sradio/TEST_RESULTS/</NFSResultsShare>
- <GitOAI5GRepo> https://gitlab.eurecom.fr/oai1B/openairinterface5g.git</GitOAI5GRepo> 
-  <!-- <GitOAI5GRepo>https://gitlab.eurecom.fr/oai/openairinterface5g.git</GitOAI5GRepo> -->
+  <!-- <GitOAI5GRepo> https://gitlab.eurecom.fr/oai1B/openairinterface5g.git</GitOAI5GRepo> -->
+ <GitOAI5GRepo>https://gitlab.eurecom.fr/oai/openairinterface5g.git</GitOAI5GRepo> -->
  <!--  <GitOAI5GRepo>git@gitlab.com:TCL_Communications/openairinterface5g.git</GitOAI5GRepo> -->
  <GitOpenair-cnRepo>https://gitlab.eurecom.fr/oai/openair-cn.git</GitOpenair-cnRepo> -->
- <GitOAI5GRepoBranch>develop1B</GitOAI5GRepoBranch>
+ <GitOAI5GRepoBranch>Enhancement-142-OAI_UE_autotest_framework</GitOAI5GRepoBranch>
  <!-- <GitOAI5GHeadVersion>9fbbd0678a236ea9e7878f83fe7327dd29b26854</GitOAI5GHeadVersion> -->
  <!-- <GitOAI5GHeadVersion>23822ea203e00f2100fa41c7ee3084ec55b884fe</GitOAI5GHeadVersion> --> 
  <GitOAI5GHeadVersion></GitOAI5GHeadVersion>
