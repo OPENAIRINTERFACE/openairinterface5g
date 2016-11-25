@@ -2190,6 +2190,8 @@ for testcase in testcaseList:
     #print "Machine list top level = " + ','.join(MachineList)
     if search_test_case_group(testcasename, testcasegroup, TestCaseExclusionList) == True:
       if testcaseclass == 'lte-softmodem' :
+        #First we wait for all the test cases in generic test case class to finish as they are running in parallel
+        threadListGlobal = wait_testcaseclass_generic_threads(threadListGlobal, Timeout_execution)
         eNBMachine = testcase.findtext('eNB',default='')
         UEMachine = testcase.findtext('UE',default='')
         EPCMachine = testcase.findtext('EPC',default='')
@@ -2200,7 +2202,6 @@ for testcase in testcaseList:
            print "One of the machines is not in the machine list"
            print "eNBMachine : " + eNBMachine + "UEMachine : " + UEMachine + "EPCMachine : " + EPCMachine + "MachineList : " + ','.join(MachineList)
         print "testcasename = " + testcasename + " class = " + testcaseclass
-        threadListGlobal = wait_testcaseclass_generic_threads(threadListGlobal, Timeout_execution)
         #cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
         handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, user, pw, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem, Timeout_cmd )
         
