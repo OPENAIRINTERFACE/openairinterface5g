@@ -1119,7 +1119,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
 #endif
 
-  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_DL)) return;
+  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
   if (do_meas==1) start_meas(&eNB->phy_proc_tx);

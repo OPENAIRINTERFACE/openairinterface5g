@@ -1339,12 +1339,6 @@ void init_openair0() {
       else
 	openair0_cfg[card].rx_freq[i]=0.0;
 
-      printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
-             card,i, openair0_cfg[card].tx_gain[i],
-             openair0_cfg[card].rx_gain[i],
-             openair0_cfg[card].tx_freq[i],
-             openair0_cfg[card].rx_freq[i]);
-      
       openair0_cfg[card].autocal[i] = 1;
       openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
       if (UE_flag == 0) {
@@ -1354,10 +1348,12 @@ void init_openair0() {
 	openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB - rx_gain_off;
       }
 
-
+      printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
+             card,i, openair0_cfg[card].tx_gain[i],
+             openair0_cfg[card].rx_gain[i],
+             openair0_cfg[card].tx_freq[i],
+             openair0_cfg[card].rx_freq[i]);
     }
-
-
   }
 }
 
