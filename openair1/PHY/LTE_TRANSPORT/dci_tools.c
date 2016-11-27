@@ -1558,6 +1558,9 @@ int generate_eNB_dlsch_params_from_dci(int frame,
       dlsch0_harq->codeword = 0;
       dlsch1=NULL;
       dlsch1_harq = NULL;
+#ifdef DEBUG_HARQ
+      printf("\n ENB: TB1 is deactivated, retransmit TB0 transmit in TM6\n");
+#endif
     }
     else if ((TB0_active==0) && TB1_active) {
       dlsch1=dlsch[1];
@@ -4945,6 +4948,9 @@ int generate_ue_dlsch_params_from_dci(int frame,
       dlsch0_harq->codeword = 0;
       dlsch1=NULL;
       dlsch1_harq = NULL;
+#ifdef DEBUG_HARQ
+      printf("[DCI UE]: TB1 is deactivated, retransmit TB0 transmit in TM6\n");
+#endif
     }
     else if ((TB0_active==0) && TB1_active) {
       dlsch1=dlsch[1];
@@ -5094,14 +5100,23 @@ int generate_ue_dlsch_params_from_dci(int frame,
             dlsch0_harq->mimo_mode   = PUSCH_PRECODING0;
             // pmi stored from ulsch allocation routine
             // we need to extract the first column of precoding matrix (which was computed assuming rank==2)
-            dlsch0_harq->pmi_alloc   = 0;//pmi_convert(frame_parms,dlsch0->pmi_alloc,0);
+            dlsch0_harq->pmi_alloc   = dlsch0->pmi_alloc;;//pmi_convert(frame_parms,dlsch0->pmi_alloc,0);
             //LOG_I(PHY,"XXX using PMI %x\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc));
+#ifdef DEBUG_HARQ
+            printf ("[DCI UE] I am calling from the UE side pmi_alloc_new = %d\n", dlsch0->pmi_alloc);
+#endif
           break;
           case 6:
             dlsch0_harq->mimo_mode   = PUSCH_PRECODING1;
             // we need to extract the second column of precoding matrix (which was computed assuming rank==2)
-            dlsch0_harq->pmi_alloc   = 0;//pmi_convert(frame_parms,dlsch0->pmi_alloc,1);
+            dlsch0_harq->pmi_alloc   = dlsch0->pmi_alloc;;//pmi_convert(frame_parms,dlsch0->pmi_alloc,1);
+#ifdef DEBUG_HARQ
+            printf ("[DCI UE] I am calling from the UE side pmi_alloc_new = %d\n", dlsch0->pmi_alloc);
+#endif
           break;
+#ifdef DEBUG_HARQ
+    printf("[DCI UE] harq0 MIMO mode = %d\n", dlsch0_harq->mimo_mode);
+#endif
           }
     } else {
         dlsch1_harq->dl_power_off = 1;
@@ -5144,10 +5159,10 @@ int generate_ue_dlsch_params_from_dci(int frame,
           return(-1);
           break;
         }
-    }
 #ifdef DEBUG_HARQ
     printf("[DCI UE] harq1 MIMO mode = %d\n", dlsch1_harq->mimo_mode);
 #endif
+    }
     //printf(" UE DCI harq0 MIMO mode = %d\n", dlsch0_harq->mimo_mode);
     if ((frame_parms->mode1_flag == 1) && (dlsch0_harq != NULL))
       dlsch0_harq->mimo_mode   = SISO;
@@ -5233,10 +5248,12 @@ int generate_ue_dlsch_params_from_dci(int frame,
           dlsch1->rnti = rnti;
     }
 #ifdef DEBUG_HARQ
-    if (dlsch0 != NULL)
+    if (dlsch0 != NULL && dlsch1 != NULL)
       printf("[DCI UE] dlsch0_harq status = %d, dlsch1_harq status = %d\n", dlsch0_harq->status, dlsch1_harq->status);
-    else
-      printf("[DCI UE] dlsch1_harq status = %d\n", dlsch1_harq->status);
+    else if (dlsch0 == NULL && dlsch1 != NULL)
+      printf("[DCI UE] dlsch0_harq NULL dlsch1_harq status = %d\n", dlsch1_harq->status);
+    else if (dlsch0 != NULL && dlsch1 == NULL)
+      printf("[DCI UE] dlsch1_harq NULL dlsch0_harq status = %d\n", dlsch0_harq->status);
 #endif
 
    break;
