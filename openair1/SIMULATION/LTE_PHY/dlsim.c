@@ -189,7 +189,7 @@ int main(int argc, char **argv)
 
   unsigned int tx_lev=0, tx_lev_dB=0, round=0, trials, errs[2][4]={{0,0,0,0},{0,0,0,0}}, round_trials[2][4]={{0,0,0,0},{0,0,0,0}}, decoded_in_sic[4]={0,0,0,0}, sic_attempt[4]={0,0,0,0}, round_sic=0;
   unsigned int dci_errors=0, dlsch_active=0, num_layers;
-  unsigned int resend_one[4]={0,0,0,0}, resend_both[4]={0,0,0,0};
+  unsigned int resend_one[4]={0,0,0,0}, resend_both[4]={0,0,0,0}, TB0_deact[4]={0,0,0,0}, TB1_deact[4]={0,0,0,0};
 
   int re_allocated;
   char fname[32],vname[32];
@@ -800,7 +800,7 @@ int main(int argc, char **argv)
   else if (rx_type == rx_SIC_dual_stream)
     fprintf(bler_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_tb0; err0_tb1; trials_tb0_r0; trials_tb1_r0; sic_att0; sic_suc0; ret_both0; ret_one0; err1_tb0; err1_tb1; trials_tb0_r1; trials_tb1_r1; sic_att1; sic_suc1; ret_both1; ret_one1; err2_tb0; err2_tb1; trials_tb0_r2; trials1_tb1_r2; sic_att2; sic_suc2; ret_both2; ret_one2; err3_tb0; err3_tb1; trials_tb0_r3; trials_tb1_r3; sic_att3; sic_suc3; th_tb0_r0; th_tb1_r0; th_sum_r0; th_tb0_r1; th_tb1_r1; th_sum_r1; th_tb0_r2; th_tb1_r2; th_sum_r2; th_tb0_r3; th_tb1_r3; th_sum_r3; tot_th\n");
   else
-    fprintf(bler_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_tb0; err0_tb1; trials_tb0_r0; trials_tb1_r0; err1_tb0; err1_tb1; trials_tb0_r1; trials_tb1_r1; err2_tb0; err2_tb1; trials_tb0_r2; trials1_tb1_r2; err3_tb0; err3_tb1; trials_tb0_r3; trials_tb1_r3; th_tb0_r0; th_tb1_r0; th_sum_r0; th_tb0_r1; th_tb1_r1; th_sum_r1; th_tb0_r2; th_tb1_r2; th_sum_r2; th_tb0_r3; th_tb1_r3; th_sum_r3; tot_th\n");
+    fprintf(bler_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_tb0; err0_tb1; trials_tb0_r0; trials_tb1_r0; deact_tb0_r0; deact_tb1_r0; err1_tb0; err1_tb1; trials_tb0_r1; trials_tb1_r1; deact_tb0_r1; deact_tb1_r1; err2_tb0; err2_tb1; trials_tb0_r2; trials1_tb1_r2; deact_tb0_r2; deact_tb1_r2; err3_tb0; err3_tb1; trials_tb0_r3; trials_tb1_r3; th_tb0_r0; th_tb1_r0; th_sum_r0; th_tb0_r1; th_tb1_r1; th_sum_r1; th_tb0_r2; th_tb1_r2; th_sum_r2; th_tb0_r3; th_tb1_r3; th_sum_r3; tot_th\n");
 
 
   if (test_perf != 0) {
@@ -2022,6 +2022,8 @@ int main(int argc, char **argv)
 
         round_trials[0][i] = 0;  // CW_0
         round_trials[1][i] = 0;  // CW_1
+        TB0_deact[i]=0;
+        TB1_deact[i]=0;
       }
       dci_errors=0;
 
@@ -4429,6 +4431,8 @@ int main(int argc, char **argv)
               resend_cw0_cw1=0;
               TB0_active=0;
               TB1_active=1;
+              if (rx_type == rx_IC_dual_stream)
+                TB0_deact[round]++;
               if(is_first_time) {
                 hold_rank1_precoder = 0;
                 is_first_time = false;
@@ -4448,6 +4452,8 @@ int main(int argc, char **argv)
               resend_cw0_cw1=0;
               TB0_active=1;
               TB1_active=0;
+              if (rx_type == rx_IC_dual_stream)
+                TB1_deact[round]++;
               if(is_first_time) {
                 hold_rank1_precoder = 0;
                 is_first_time = false;
@@ -4532,6 +4538,10 @@ int main(int argc, char **argv)
         if (rx_type == rx_SIC_dual_stream){
           printf(" sic attempt round 0  = %d, sic attempt round 1  = %d, sic attempt round 2  = %d, sic attempt round 3  = %d\n", sic_attempt[0], sic_attempt[1], sic_attempt[2], sic_attempt[3]);
           printf(" decoded in sic round 0  = %d, decoded in sic round 1  = %d, decoded in sic round 2  = %d, decoded in sic round 3  = %d\n", decoded_in_sic[0], decoded_in_sic[1], decoded_in_sic[2], decoded_in_sic[3]);
+        }
+        else if (rx_type == rx_IC_dual_stream){
+          printf(" TB0 deactiv round 0  = %d, TB0 deactiv round 1  = %d, TB0 deactiv round 2  = %d, TB0 deactiv round 3  = %d\n", TB0_deact[0], TB0_deact[1], TB0_deact[2], TB0_deact[3]);
+          printf(" TB1 deactiv round 0  = %d, TB1 deactiv round 1  = %d, TB1 deactiv round 2  = %d, TB1 deactiv round 3  = %d\n", TB1_deact[0], TB1_deact[1], TB1_deact[2], TB1_deact[3]);
         }
 #endif
       // round_trials[0]: number of code word : goodput the protocol
@@ -4942,7 +4952,7 @@ int main(int argc, char **argv)
                 thr_cw0[0]+thr_cw0[1]+thr_cw0[2]+thr_cw0[3]+thr_cw1[0]+thr_cw1[1]+thr_cw1[2]+ thr_cw1[3]);
             }
       else{
-        fprintf(bler_fd,"%f;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
+        fprintf(bler_fd,"%f;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
                 SNR,
                 mcs1,
                 mcs2,
@@ -4954,14 +4964,20 @@ int main(int argc, char **argv)
                 errs[1][0],
                 round_trials[0][0],
                 round_trials[1][0],
+                TB0_deact[0],
+                TB1_deact[0],
                 errs[0][1],
                 errs[1][1],
                 round_trials[0][1],
                 round_trials[1][1],
+                TB0_deact[1],
+                TB1_deact[1],
                 errs[0][2],
                 errs[1][2],
                 round_trials[0][2],
                 round_trials[1][2],
+                TB0_deact[2],
+                TB1_deact[2],
                 errs[0][3],
                 errs[1][3],
                 round_trials[0][3],
