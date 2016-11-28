@@ -133,11 +133,17 @@
 /*!\brief maximum value for channel quality indicator */
 #define MAX_CQI_VALUE  15
 
-//if value equal oxFFFF means counters are NOT active
+/*!\brief value for indicating BSR Timer is not running */
 #define MAC_UE_BSR_TIMER_NOT_RUNNING   (0xFFFF)
 
 #define LCID_EMPTY 0
 #define LCID_NOT_EMPTY 1
+
+/*!\brief minimum RLC PDU size to be transmitted = min RLC Status PDU or RLC UM PDU SN 5 bits */
+#define MIN_RLC_PDU_SIZE    (2)
+
+/*!\brief minimum MAC data needed for transmitting 1 min RLC PDU size + 1 byte MAC subHeader */
+#define MIN_MAC_HDR_RLC_SIZE    (1 + MIN_RLC_PDU_SIZE)
 
 /* 
  * eNB part 
