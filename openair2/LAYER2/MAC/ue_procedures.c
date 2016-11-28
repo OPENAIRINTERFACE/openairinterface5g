@@ -1729,7 +1729,7 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
      bsr_l->Buffer_size2 = UE_mac_inst[module_idP].scheduling_info.BSR[LCGID2];
      bsr_l->Buffer_size3 = UE_mac_inst[module_idP].scheduling_info.BSR[LCGID3];
 
-     LOG_I(MAC, "[UE %d] Frame %d BSR Trig=%d report long BSR (level LCGID0 %d,level LCGID1 %d,level LCGID2 %d,level LCGID3 %d)\n", module_idP,frameP,
+     LOG_I(MAC, "[UE %d] Frame %d subframe %d BSR Trig=%d report long BSR (level LCGID0 %d,level LCGID1 %d,level LCGID2 %d,level LCGID3 %d)\n", module_idP,frameP,subframe,
     	   UE_mac_inst[module_idP].BSR_reporting_active,
            UE_mac_inst[module_idP].scheduling_info.BSR[LCGID0],
            UE_mac_inst[module_idP].scheduling_info.BSR[LCGID1],
@@ -1744,8 +1744,8 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
     	 bsr_t->LCGID = lcg_id_bsr_trunc;
     	 bsr_t->Buffer_size = UE_mac_inst[module_idP].scheduling_info.BSR[lcg_id_bsr_trunc];
 
-         LOG_I(MAC,"[UE %d] Frame %d BSR Trig=%d report TRUNCATED BSR with level %d for LCGID %d\n",
-               module_idP, frameP, UE_mac_inst[module_idP].BSR_reporting_active, UE_mac_inst[module_idP].scheduling_info.BSR[lcg_id_bsr_trunc],lcg_id_bsr_trunc);
+         LOG_I(MAC,"[UE %d] Frame %d subframe %d BSR Trig=%d report TRUNCATED BSR with level %d for LCGID %d\n",
+               module_idP, frameP, subframe, UE_mac_inst[module_idP].BSR_reporting_active, UE_mac_inst[module_idP].scheduling_info.BSR[lcg_id_bsr_trunc],lcg_id_bsr_trunc);
 
      }
      else
@@ -1754,8 +1754,8 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
          bsr_s->LCGID = lcg_id_bsr_trunc;
          bsr_s->Buffer_size = UE_mac_inst[module_idP].scheduling_info.BSR[lcg_id_bsr_trunc];
 
-         LOG_I(MAC,"[UE %d] Frame %d BSR Trig=%d report SHORT BSR with level %d for LCGID %d\n",
-               module_idP, frameP, UE_mac_inst[module_idP].BSR_reporting_active, UE_mac_inst[module_idP].scheduling_info.BSR[lcg_id_bsr_trunc],lcg_id_bsr_trunc);
+         LOG_I(MAC,"[UE %d] Frame %d subframe %d BSR Trig=%d report SHORT BSR with level %d for LCGID %d\n",
+               module_idP, frameP, subframe, UE_mac_inst[module_idP].BSR_reporting_active, UE_mac_inst[module_idP].scheduling_info.BSR[lcg_id_bsr_trunc],lcg_id_bsr_trunc);
      }
    }
 
