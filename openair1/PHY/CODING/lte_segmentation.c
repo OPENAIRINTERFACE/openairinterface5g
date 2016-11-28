@@ -60,7 +60,7 @@ int lte_segmentation(unsigned char *input_buffer,
   }
 
   if ((*C)>MAX_NUM_DLSCH_SEGMENTS) {
-    msg("lte_segmentation.c: too many segments %d\n",*C);
+      LOG_E(PHY,"lte_segmentation.c: too many segments %d, B %d, L %d, Bprime %d\n",*C,B,L,Bprime);
     return(-1);
   }
 

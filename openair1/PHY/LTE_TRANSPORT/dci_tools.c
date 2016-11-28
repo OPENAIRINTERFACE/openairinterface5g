@@ -4456,6 +4456,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
       dlsch0_harq->status = ACTIVE;
       dlsch0_harq->DCINdi = ndi;
 
+      dlsch[0]->harq_ack[subframe].send_harq_status = 1;
       if (dlsch0_harq->first_tx==1) {
         LOG_D(PHY,"[PDSCH %x/%d] Format 1 DCI First TX: Clearing flag\n");
         dlsch0_harq->first_tx = 0;
@@ -5556,7 +5557,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
 #ifdef DEBUG_DCI
 
   if (dlsch[0] && (dlsch[0]->rnti != 0xffff)) {
-    printf("dci_format:%d \n",dci_format);
+    printf("dci_format:%d Abssubframe: %d.%d \n",dci_format,frame,subframe);
     printf("PDSCH dlsch0 UE: rnti     %x\n",dlsch[0]->rnti);
     printf("PDSCH dlsch0 UE: NBRB     %d\n",dlsch0_harq->nb_rb);
     printf("PDSCH dlsch0 UE: rballoc  %x\n",dlsch0_harq->rb_alloc_even[0]);
@@ -6231,12 +6232,21 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
   uint8_t harq_pid;
   uint8_t transmission_mode = ue->transmission_mode[eNB_id];
-  ANFBmode_t AckNackFBMode = ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
+  ANFBmode_t AckNackFBMode;
   LTE_UE_ULSCH_t *ulsch = ue->ulsch[eNB_id];
   //  LTE_UE_DLSCH_t **dlsch = ue->dlsch[0];
   PHY_MEASUREMENTS *meas = &ue->measurements;
   LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   //  uint32_t current_dlsch_cqi = ue->current_dlsch_cqi[eNB_id];
+
+  if(frame_parms->frame_type == TDD)
+  {
+      AckNackFBMode = ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
+  }
+  else
+  {
+      AckNackFBMode = 1; // 1: multiplexing for FDD
+  }
 
   uint32_t cqi_req;
   uint32_t dai=0;
