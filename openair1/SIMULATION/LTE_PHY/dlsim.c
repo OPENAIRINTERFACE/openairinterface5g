@@ -800,7 +800,7 @@ int main(int argc, char **argv)
   else if (rx_type == rx_SIC_dual_stream)
     fprintf(bler_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_tb0; err0_tb1; trials_tb0_r0; trials_tb1_r0; sic_att0; sic_suc0; ret_both0; ret_one0; err1_tb0; err1_tb1; trials_tb0_r1; trials_tb1_r1; sic_att1; sic_suc1; ret_both1; ret_one1; err2_tb0; err2_tb1; trials_tb0_r2; trials1_tb1_r2; sic_att2; sic_suc2; ret_both2; ret_one2; err3_tb0; err3_tb1; trials_tb0_r3; trials_tb1_r3; sic_att3; sic_suc3; th_tb0_r0; th_tb1_r0; th_sum_r0; th_tb0_r1; th_tb1_r1; th_sum_r1; th_tb0_r2; th_tb1_r2; th_sum_r2; th_tb0_r3; th_tb1_r3; th_sum_r3; tot_th\n");
   else
-    fprintf(bler_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_tb0; err0_tb1; trials_tb0_r0; trials_tb1_r0; deact_tb0_r0; deact_tb1_r0; err1_tb0; err1_tb1; trials_tb0_r1; trials_tb1_r1; deact_tb0_r1; deact_tb1_r1; err2_tb0; err2_tb1; trials_tb0_r2; trials1_tb1_r2; deact_tb0_r2; deact_tb1_r2; err3_tb0; err3_tb1; trials_tb0_r3; trials_tb1_r3; th_tb0_r0; th_tb1_r0; th_sum_r0; th_tb0_r1; th_tb1_r1; th_sum_r1; th_tb0_r2; th_tb1_r2; th_sum_r2; th_tb0_r3; th_tb1_r3; th_sum_r3; tot_th\n");
+    fprintf(bler_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_tb0; err0_tb1; trials_tb0_r0; trials_tb1_r0; deact_tb0_r0; deact_tb1_r0; ret_both0; ret_one0; err1_tb0; err1_tb1; trials_tb0_r1; trials_tb1_r1; deact_tb0_r1; deact_tb1_r1; ret_both1; ret_one1; err2_tb0; err2_tb1; trials_tb0_r2; trials1_tb1_r2; deact_tb0_r2; deact_tb1_r2; ret_both2; ret_one2; err3_tb0; err3_tb1; trials_tb0_r3; trials_tb1_r3; th_tb0_r0; th_tb1_r0; th_sum_r0; th_tb0_r1; th_tb1_r1; th_sum_r1; th_tb0_r2; th_tb1_r2; th_sum_r2; th_tb0_r3; th_tb1_r3; th_sum_r3; tot_th\n");
 
 
   if (test_perf != 0) {
@@ -4952,7 +4952,7 @@ int main(int argc, char **argv)
                 thr_cw0[0]+thr_cw0[1]+thr_cw0[2]+thr_cw0[3]+thr_cw1[0]+thr_cw1[1]+thr_cw1[2]+ thr_cw1[3]);
             }
       else{
-        fprintf(bler_fd,"%f;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
+        fprintf(bler_fd,"%f;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
                 SNR,
                 mcs1,
                 mcs2,
@@ -4966,18 +4966,24 @@ int main(int argc, char **argv)
                 round_trials[1][0],
                 TB0_deact[0],
                 TB1_deact[0],
+                resend_both[0],
+                resend_one[0],
                 errs[0][1],
                 errs[1][1],
                 round_trials[0][1],
                 round_trials[1][1],
                 TB0_deact[1],
                 TB1_deact[1],
+                resend_both[1],
+                resend_one[1],
                 errs[0][2],
                 errs[1][2],
                 round_trials[0][2],
                 round_trials[1][2],
                 TB0_deact[2],
                 TB1_deact[2],
+                resend_both[2],
+                resend_one[2],
                 errs[0][3],
                 errs[1][3],
                 round_trials[0][3],
