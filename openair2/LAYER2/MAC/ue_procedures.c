@@ -1162,50 +1162,67 @@ unsigned char generate_ulsch_header(uint8_t *mac_header,
     LOG_T(MAC,"[UE] sdu subheader %d (lcid %d, %d bytes)\n",i,sdu_lcids[i],sdu_lengths[i]);
 #endif
 
-    if ((first_element>0)) {
-      mac_header_ptr->E = 1;
-#ifdef DEBUG_HEADER_PARSING
-      LOG_D(MAC,"[UE] last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
-            ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->R,
-            ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E,
-            ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID);
-#endif
-      mac_header_ptr+=last_size;
-      //      printf("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
-    } else {
-      first_element=1;
-
+    if ((i == (num_sdus - 1)) && ((short_padding) || (post_padding == 0))) {
+        if (first_element>0) {
+            mac_header_ptr->E = 1;
+      #ifdef DEBUG_HEADER_PARSING
+            LOG_D(MAC,"[UE] last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
+                  ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->R,
+                  ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E,
+                  ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID);
+      #endif
+            mac_header_ptr+=last_size;
+        }
+        mac_header_ptr->R    = 0;
+        mac_header_ptr->E    = 0;
+        mac_header_ptr->LCID = sdu_lcids[i];
     }
+    else {
+        if ((first_element>0)) {
+          mac_header_ptr->E = 1;
+    #ifdef DEBUG_HEADER_PARSING
+          LOG_D(MAC,"[UE] last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
+                ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->R,
+                ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E,
+                ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID);
+    #endif
+          mac_header_ptr+=last_size;
+          //      printf("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
+        } else {
+          first_element=1;
 
-    if (sdu_lengths[i] < 128) {
-      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->R    = 0; // 3
-      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->E    = 0;
-      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F    = 0;
-      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->LCID = sdu_lcids[i];
-      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L    = (unsigned char)sdu_lengths[i];
-      last_size=2;
-#ifdef DEBUG_HEADER_PARSING
-      LOG_D(MAC,"[UE] short sdu\n");
-      LOG_T(MAC,"[UE] last subheader : %x (R%d,E%d,LCID%d,F%d,L%d)\n",
-            ((uint16_t*)mac_header_ptr)[0],
-            ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->R,
-            ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->E,
-            ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->LCID,
-            ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F,
-            ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L);
-#endif
-    } else {
-      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->R    = 0;
-      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->E    = 0;
-      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->F    = 1;
-      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->LCID = sdu_lcids[i];
-      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_MSB    = ((unsigned short) sdu_lengths[i]>>8)&0x7f;
-      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_LSB    = (unsigned short) sdu_lengths[i]&0xff;
-      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->padding  = 0x00;
-      last_size=3;
-#ifdef DEBUG_HEADER_PARSING
-      LOG_D(MAC,"[UE] long sdu\n");
-#endif
+        }
+
+        if (sdu_lengths[i] < 128) {
+          ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->R    = 0; // 3
+          ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->E    = 0;
+          ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F    = 0;
+          ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->LCID = sdu_lcids[i];
+          ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L    = (unsigned char)sdu_lengths[i];
+          last_size=2;
+    #ifdef DEBUG_HEADER_PARSING
+          LOG_D(MAC,"[UE] short sdu\n");
+          LOG_T(MAC,"[UE] last subheader : %x (R%d,E%d,LCID%d,F%d,L%d)\n",
+                ((uint16_t*)mac_header_ptr)[0],
+                ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->R,
+                ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->E,
+                ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->LCID,
+                ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F,
+                ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L);
+    #endif
+        } else {
+          ((SCH_SUBHEADER_LONG *)mac_header_ptr)->R    = 0;
+          ((SCH_SUBHEADER_LONG *)mac_header_ptr)->E    = 0;
+          ((SCH_SUBHEADER_LONG *)mac_header_ptr)->F    = 1;
+          ((SCH_SUBHEADER_LONG *)mac_header_ptr)->LCID = sdu_lcids[i];
+          ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_MSB    = ((unsigned short) sdu_lengths[i]>>8)&0x7f;
+          ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_LSB    = (unsigned short) sdu_lengths[i]&0xff;
+          ((SCH_SUBHEADER_LONG *)mac_header_ptr)->padding  = 0x00;
+          last_size=3;
+    #ifdef DEBUG_HEADER_PARSING
+          LOG_D(MAC,"[UE] long sdu\n");
+    #endif
+        }
     }
   }
 
@@ -1222,6 +1239,7 @@ unsigned char generate_ulsch_header(uint8_t *mac_header,
     mac_header_ptr++;
     //mac_header_ptr=last_size; // FIXME: should be ++
   }
+
 
   if ((ce_ptr-mac_header_control_elements) > 0) {
     memcpy((void*)mac_header_ptr,mac_header_control_elements,ce_ptr-mac_header_control_elements);
@@ -1249,7 +1267,7 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
   uint16_t buflen_remain = 0;
   uint8_t bsr_len=0,bsr_ce_len=0,bsr_header_len=0;
   uint8_t phr_header_len=0, phr_ce_len=0,phr_len=0;
-  uint8_t lcid=0;
+  uint8_t lcid=0,lcid_rlc_pdu_count=0;
   boolean_t is_lcid_processed = FALSE;
   uint16_t sdu_lengths[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
   uint8_t sdu_lcids[8]    = { 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -1384,12 +1402,13 @@ for (lcid=DCCH; lcid < DTCH ; lcid++) {
   if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY) {
 
       is_lcid_processed = FALSE;
+      lcid_rlc_pdu_count = 0;
 
       //Multiplex all available DCCH RLC PDUs considering to multiplex the last PDU each time for maximize the data
       //Adjust at the end of the loop
-      while ((!is_lcid_processed) && (bsr_len + phr_len + total_rlc_pdu_header_len + rlc_pdu_header_len_last + sdu_length_total + MIN_MAC_HDR_RLC_SIZE <= buflen)) {
+      while ((!is_lcid_processed) && (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + MIN_MAC_HDR_RLC_SIZE <= buflen)) {
 
-          buflen_remain = buflen - (bsr_len + phr_len + total_rlc_pdu_header_len + rlc_pdu_header_len_last + sdu_length_total + 1);
+          buflen_remain = buflen - (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + 1);
 
           rlc_status = mac_rlc_status_ind(module_idP,
                           UE_mac_inst[module_idP].crnti,
@@ -1400,8 +1419,8 @@ for (lcid=DCCH; lcid < DTCH ; lcid++) {
                                           lcid,
                                           buflen_remain);
 
-            AssertFatal ( UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] >=  rlc_status.bytes_in_buffer, "Inconsistent BO! for LCID=%d MAC=%d RLC=%d\n",
-                    lcid,UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid],rlc_status.bytes_in_buffer);
+          AssertFatal ( UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] >=  rlc_status.bytes_in_buffer, "Inconsistent BO! for LCID=%d MAC=%d RLC=%d RLC PDU nb=%d Frame %d Subrame %d\n",
+                  lcid,UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid],rlc_status.bytes_in_buffer,lcid_rlc_pdu_count,frameP,subframe);
 
           if (rlc_status.bytes_in_buffer > 0) {
 
@@ -1458,9 +1477,6 @@ for (lcid=DCCH; lcid < DTCH ; lcid++) {
 
           }
 
-          //Update total MAC Header size for RLC PDUs and save last one
-          total_rlc_pdu_header_len += rlc_pdu_header_len_last;
-
           if (buflen == (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + 1)) {
               //No more remaining TBS after this PDU
               //exit the function
@@ -1475,17 +1491,20 @@ for (lcid=DCCH; lcid < DTCH ; lcid++) {
                   rlc_pdu_header_len_last = 1;
                   is_lcid_processed = TRUE;
               }
-
-              //Update number of SDU
-              num_sdus ++;
           }
 
+          //Update number of SDU
+          num_sdus ++;
+
+          //Update total MAC Header size for RLC PDUs and save last one
+          total_rlc_pdu_header_len += rlc_pdu_header_len_last;
 
           } //end if (rlc_status.bytes_in_buffer > 0)
           else {
               // Switch to next LCID or exit the whole loop
               is_lcid_processed = TRUE;
           }
+          lcid_rlc_pdu_count ++;
    }
 
     UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] = LCID_EMPTY;
@@ -1499,12 +1518,13 @@ for (lcid=DTCH; lcid < MAX_NUM_LCID ; lcid++) {
 if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY) {
 
     is_lcid_processed = FALSE;
+    lcid_rlc_pdu_count = 0;
 
     //Multiplex all available DTCH RLC PDUs considering to multiplex the last PDU each time for maximize the data
     //Adjust at the end of the loop
-    while ((!is_lcid_processed) && (bsr_len + phr_len + total_rlc_pdu_header_len + rlc_pdu_header_len_last + sdu_length_total + MIN_MAC_HDR_RLC_SIZE <= buflen)) {
+    while ((!is_lcid_processed) && (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + MIN_MAC_HDR_RLC_SIZE <= buflen)) {
 
-        buflen_remain = buflen - (bsr_len + phr_len + total_rlc_pdu_header_len + rlc_pdu_header_len_last + sdu_length_total + 1);
+        buflen_remain = buflen - (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + 1);
 
         rlc_status = mac_rlc_status_ind(module_idP,
                         UE_mac_inst[module_idP].crnti,
@@ -1515,8 +1535,8 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
                                         lcid,
                                         buflen_remain);
 
-          AssertFatal ( UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] >=  rlc_status.bytes_in_buffer, "Inconsistent BO! for LCID=%d MAC=%d RLC=%d\n",
-                  lcid,UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid],rlc_status.bytes_in_buffer);
+          AssertFatal ( UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] >=  rlc_status.bytes_in_buffer, "Inconsistent BO! for LCID=%d MAC=%d RLC=%d RLC PDU nb=%d Frame %d Subrame %d\n",
+                  lcid,UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid],rlc_status.bytes_in_buffer,lcid_rlc_pdu_count,frameP,subframe);
 
         if (rlc_status.bytes_in_buffer > 0) {
 
@@ -1534,6 +1554,9 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
                            MBMS_FLAG_NO,
                                            lcid,
                                            (char *)&ulsch_buff[sdu_length_total]);
+
+        AssertFatal (sdu_lengths[num_sdus] < MAX_ULSCH_PAYLOAD_BYTES, "LCID=%d RLC PDU size = %d is too big\n",
+                lcid,sdu_lengths[num_sdus]);
 
 
           AssertFatal (UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] >= sdu_lengths[num_sdus], "LCID=%d RLC has segmented %d bytes but MAC has max=%d\n",
@@ -1573,9 +1596,6 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
 
         }
 
-        //Update total MAC Header size for RLC PDUs and save last one
-        total_rlc_pdu_header_len += rlc_pdu_header_len_last;
-
         if (buflen == (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + 1)) {
             //No more remaining TBS after this PDU
             //exit the function
@@ -1590,17 +1610,20 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
                 rlc_pdu_header_len_last = 1;
                 is_lcid_processed = TRUE;
             }
-
-            //Update number of SDU
-            num_sdus ++;
         }
 
+        //Update number of SDU
+        num_sdus ++;
+
+        //Update total MAC Header size for RLC PDUs and save last one
+        total_rlc_pdu_header_len += rlc_pdu_header_len_last;
 
         } //end if (rlc_status.bytes_in_buffer > 0)
         else {
             // Switch to next LCID or exit the whole loop
             is_lcid_processed = TRUE;
         }
+        lcid_rlc_pdu_count ++;
  }
 
   UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] = LCID_EMPTY;
@@ -1666,7 +1689,7 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
      -	else if the number of padding bits is equal to or larger than the size of the Long BSR plus its subheader, report Long BSR.
    */
   if (sdu_length_total) {
-      padding_len = buflen - (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + 1);
+      padding_len = buflen - (bsr_len + phr_len + total_rlc_pdu_header_len - rlc_pdu_header_len_last + sdu_length_total + 1);
   }
   else {
       padding_len = buflen - (bsr_len + phr_len);
@@ -1762,7 +1785,7 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
 // 1-bit padding or 2-bit padding  special padding subheader
 // Check for max padding size, ie MAC Hdr for last RLC PDU = 1
    if (sdu_length_total) {
-       padding_len = buflen - (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + 1);
+       padding_len = buflen - (bsr_len + phr_len + total_rlc_pdu_header_len - rlc_pdu_header_len_last + sdu_length_total + 1);
    }
    else {
        padding_len = buflen - (bsr_len + phr_len);
@@ -1774,12 +1797,11 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
     post_padding = 0;
     //update total MAC Hdr size for RLC data
     if (sdu_length_total) {
+        total_rlc_pdu_header_len = total_rlc_pdu_header_len - rlc_pdu_header_len_last + 1;
         rlc_pdu_header_len_last = 1;
-        total_rlc_pdu_header_len ++;
-    }
+   }
   }
   else if (sdu_length_total) {
-      total_rlc_pdu_header_len += rlc_pdu_header_len_last;
       post_padding = buflen - (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + 1);
       // If by adding MAC Hdr for last RLC PDU the padding is 0 then set MAC Hdr for last RLC PDU = 1 and compute 1 or 2 byte padding
       if (post_padding == 0) {
@@ -1824,8 +1846,10 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
   }
 
   // fill remainder of DLSCH with random data
-  for (j=0; j<(buflen-sdu_length_total-payload_offset); j++) {
-    ulsch_buffer[payload_offset+sdu_length_total+j] = (char)(taus()&0xff);
+  if (post_padding) {
+      for (j=0; j<(buflen-sdu_length_total-payload_offset); j++) {
+        ulsch_buffer[payload_offset+sdu_length_total+j] = (char)(taus()&0xff);
+      }
   }
   LOG_D(MAC,"[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n",
         module_idP,payload_offset, sdu_length_total);
@@ -2295,7 +2319,7 @@ boolean_t  update_bsr(module_id_t module_idP, frame_t frameP, sub_frame_t subfra
   uint8_t lcgid;
   uint8_t num_lcid_with_data = 0; // for LCID with data only if LCGID is defined
   uint16_t lcgid_buffer_remain[MAX_NUM_LCGID] = {0,0,0,0};
-  uint16_t lcid_bytes_in_buffer[MAX_NUM_LCID];
+  int32_t lcid_bytes_in_buffer[MAX_NUM_LCID];
   /* Array for ordering LCID with data per decreasing priority order */
   uint8_t lcid_reordered_array[MAX_NUM_LCID]=
   {MAX_NUM_LCID,MAX_NUM_LCID,MAX_NUM_LCID,MAX_NUM_LCID,MAX_NUM_LCID,MAX_NUM_LCID,MAX_NUM_LCID,MAX_NUM_LCID,MAX_NUM_LCID,MAX_NUM_LCID,MAX_NUM_LCID};

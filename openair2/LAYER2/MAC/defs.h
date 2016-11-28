@@ -959,9 +959,9 @@ typedef struct {
   /// buffer status for each lcgid
   uint8_t  BSR[MAX_NUM_LCGID]; // should be more for mesh topology
   /// keep the number of bytes in rlc buffer for each lcgid
-  uint16_t  BSR_bytes[MAX_NUM_LCGID];
+  int32_t  BSR_bytes[MAX_NUM_LCGID];
   /// after multiplexing buffer remain for each lcid
-  uint16_t  LCID_buffer_remain[MAX_NUM_LCID];
+  int32_t  LCID_buffer_remain[MAX_NUM_LCID];
   /// sum of all lcid buffer size
   uint16_t  All_lcid_buffer_size_lastTTI;
   /// buffer status for each lcid
