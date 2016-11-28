@@ -44,8 +44,9 @@
 #define BBU_LOCAL_RADIO_HEAD  0
 #define BBU_REMOTE_RADIO_HEAD 1
 
+#ifndef MAX_CARDS
 #define MAX_CARDS 8
-
+#endif
 
 typedef int64_t openair0_timestamp;
 typedef volatile int64_t openair0_vtimestamp;
