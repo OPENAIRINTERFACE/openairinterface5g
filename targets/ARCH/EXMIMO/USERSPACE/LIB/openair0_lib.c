@@ -883,10 +883,7 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
 
       if (openair0_cfg[card].rx_freq[ant]>0) {
         p_exmimo_config->rf.rf_mode[ant] += (RXEN + DMAMODE_RX + RXLPFNORM + RXLPFEN + rx_filter);
-
         p_exmimo_config->rf.rf_freq_rx[ant] = (unsigned int)openair0_cfg[card].rx_freq[ant];
-
-        printf("openair0 : programming card %d RX antenna %d (freq %u, gain %d)\n",card,ant,p_exmimo_config->rf.rf_freq_rx[ant],p_exmimo_config->rf.rx_gain[ant][0]);
 
         switch (openair0_cfg[card].rxg_mode[ant]) {
         default:
@@ -923,7 +920,12 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
 	  }
           break;
         }
-      } 
+        printf("openair0 : programming card %d RX antenna %d (freq %u, gain %d)\n",card,ant,p_exmimo_config->rf.rf_freq_rx[ant],p_exmimo_config->rf.rx_gain[ant][0]);
+
+      } else {
+        p_exmimo_config->rf.rf_mode[ant] = 0;
+        p_exmimo_config->rf.do_autocal[ant] = 0;
+      }
 
       p_exmimo_config->rf.rf_local[ant]   = rf_local[ant];
       p_exmimo_config->rf.rf_rxdc[ant]    = rf_rxdc[ant];

@@ -290,3 +290,22 @@ void xy_plot_get_dimensions(gui *_gui, widget *_this, int *width, int *height)
 
   gunlock(g);
 }
+
+void xy_plot_set_title(gui *_gui, widget *_this, char *label)
+{
+  struct gui *g = _gui;
+  struct xy_plot_widget *this = _this;
+
+  glock(g);
+
+  free(this->label);
+  this->label = strdup(label); if (this->label == NULL) OOM;
+  /* TODO: be sure calling X there is valid wrt "global model" (we are
+   * not in the "gui thread") */
+  x_text_get_dimensions(g->x, DEFAULT_FONT, label,
+      &this->label_width, &this->label_height, &this->label_baseline);
+
+  send_event(g, REPACK, this->common.id);
+
+  gunlock(g);
+}

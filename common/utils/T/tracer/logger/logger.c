@@ -1,5 +1,6 @@
 #include "logger.h"
 #include "logger_defs.h"
+#include "filter/filter.h"
 #include <stdlib.h>
 
 void logger_add_view(logger *_l, view *v)
@@ -13,5 +14,6 @@ void logger_add_view(logger *_l, view *v)
 void logger_set_filter(logger *_l, void *filter)
 {
   struct logger *l = _l;
+  free_filter(l->filter);
   l->filter = filter;
 }
