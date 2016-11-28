@@ -190,8 +190,12 @@ static void click(void *private, gui *g,
   if (w == e->prev_ue_button) { ue--; if (ue < 0) ue = 0; }
   if (w == e->next_ue_button) ue++;
 
-  if (ue != ed->ue) set_current_ue(g, ed, ue);
-  ed->ue = ue;
+  if (pthread_mutex_lock(&ed->lock)) abort();
+  if (ue != ed->ue) {
+    set_current_ue(g, ed, ue);
+    ed->ue = ue;
+  }
+  if (pthread_mutex_unlock(&ed->lock)) abort();
 }
 
 static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database,
@@ -745,7 +749,9 @@ restart:
     event e;
     e = get_event(enb_data.socket, v, database);
     if (e.type == -1) goto restart;
+    if (pthread_mutex_lock(&enb_data.lock)) abort();
     handle_event(h, e);
+    if (pthread_mutex_unlock(&enb_data.lock)) abort();
   }
 
   return 0;
