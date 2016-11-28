@@ -1050,7 +1050,6 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
 
 // This routine demodulates the PHICH and updates PUSCH/ULSCH parameters
 
-
 void rx_phich(PHY_VARS_UE *ue,
 	      UE_rxtx_proc_t *proc,
               uint8_t subframe,
@@ -1085,8 +1084,10 @@ void rx_phich(PHY_VARS_UE *ue,
   if (!ulsch)
     return;
 
+  LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX Status: %d \n",ue->Mod_id,harq_pid,proc->frame_rx,subframe, ulsch->harq_processes[harq_pid]->status);
+
   if (ulsch->harq_processes[harq_pid]->status == ACTIVE) {
-    LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX ACTIVE\n",ue->Mod_id,harq_pid,proc->frame_rx,subframe);
+     LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX ACTIVE\n",ue->Mod_id,harq_pid,proc->frame_rx,subframe);
     Ngroup_PHICH = (frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)/48;
 
     if (((frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)%48) > 0)

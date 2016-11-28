@@ -61,6 +61,9 @@ fifo_dump_emos_UE emos_dump_UE;
 # include "intertask_interface.h"
 #endif
 
+#include "PHY/defs.h"
+
+#include "PHY/CODING/extern.h"
 
 #define DLSCH_RB_ALLOC 0x1fbf  // skip DC RB (total 23/25 RBs)
 #define DLSCH_RB_ALLOC_12 0x0aaa  // skip DC RB (total 23/25 RBs)
@@ -1026,6 +1029,15 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc) {
     }
 #endif
 #endif
+    /*
+    only for debug
+    LOG_I(PHY,"ul-signal [subframe: %d, ulsch_start %d, TA: %d, rxOffset: %d, timing_advance: %d, hw_timing_advance: %d]\n",subframe_tx, ulsch_start, ue->N_TA_offset, ue->rx_offset, ue->timing_advance, ue->hw_timing_advance);
+    if( (crash == 1) && (subframe_tx == 0) )
+    {
+      LOG_E(PHY,"***** DUMP TX Signal [ulsch_start %d] *****\n",ulsch_start);
+      write_output("txBuff.m","txSignal",&ue->common_vars.txdata[aa][ulsch_start],frame_parms->samples_per_tti,1,1);
+    }
+    */
     
   } //nb_antennas_tx
   
@@ -1242,6 +1254,27 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
     
     
     
+
+    if (ack_status > 0) {
+
+      // check if we received a PDSCH at subframe_tx - 4
+      // ==> send ACK/NACK on PUSCH
+      if( (ue->dlsch[eNB_id][0]->harq_ack[proc->subframe_rx].send_harq_status) == 1)
+      {
+          ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK = 1;
+      }
+      else
+      {
+          ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK = 0;
+      }
+      LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating ACK (%d,%d) for %d bits on PUSCH\n",
+        Mod_id,
+        ue->ulsch[eNB_id]->rnti,
+        frame_tx,subframe_tx,
+        ue->ulsch[eNB_id]->o_ACK[0],ue->ulsch[eNB_id]->o_ACK[1],
+        ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK);
+    }
+
 #ifdef DEBUG_PHY_PROC
     LOG_D(PHY,
 	  "[UE  %d][PUSCH %d] Frame %d subframe %d Generating PUSCH : first_rb %d, nb_rb %d, round %d, mcs %d, rv %d, cyclic_shift %d (cyclic_shift_common %d,n_DMRS2 %d,n_PRS %d), ACK (%d,%d), O_ACK %d\n",
@@ -1259,15 +1292,6 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
 	  ue->ulsch[eNB_id]->o_ACK[0],ue->ulsch[eNB_id]->o_ACK[1],
 	  ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK);
 #endif
-    
-    if (ack_status > 0) {
-      LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating ACK (%d,%d) for %d bits on PUSCH\n",
-	    Mod_id,
-	    ue->ulsch[eNB_id]->rnti,
-	    frame_tx,subframe_tx,
-	    ue->ulsch[eNB_id]->o_ACK[0],ue->ulsch[eNB_id]->o_ACK[1],
-	    ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK);
-    }
     
     
     
@@ -1535,6 +1559,17 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     ACK/NACK and SR using the shortened PUCCH format. This shortened PUCCH format shall be used in a cell
     specific SRS subframe even if the UE does not transmit SRS in that subframe
   */
+
+  int harq_pid = subframe2harq_pid(&ue->frame_parms,
+                                   frame_tx,
+                                   subframe_tx);
+
+  if(ue->ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag)
+  {
+      LOG_D(PHY,"PUSCH is programmed on this subframe [pid %d] AbsSuframe %d.%d ==> Skip PUCCH transmission \n",harq_pid,frame_tx,subframe_tx);
+      return;
+  }
+
   uint8_t isShortenPucch = (pSoundingrs_ul_config_dedicated->srsCellSubframe && frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission);
 
   bundling_flag = ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
