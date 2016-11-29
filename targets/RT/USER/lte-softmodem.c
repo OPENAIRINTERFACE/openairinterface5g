@@ -1583,7 +1583,18 @@ int main( int argc, char **argv )
 
       UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
       UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
-      UE[CC_id]->N_TA_offset = 0;
+      
+      if (frame_parms[CC_id]->frame_type==FDD) {
+	UE[CC_id]->N_TA_offset = 0;
+      }
+      else {
+	if (frame_parms[CC_id]->N_RB_DL == 100)
+	  UE[CC_id]->N_TA_offset = 624;
+	else if (frame_parms[CC_id]->N_RB_DL == 50)
+	  UE[CC_id]->N_TA_offset = 624/2;
+	else if (frame_parms[CC_id]->N_RB_DL == 25)
+	  UE[CC_id]->N_TA_offset = 624/4;
+      }
 
     }
 
@@ -1623,8 +1634,17 @@ int main( int argc, char **argv )
 
       PHY_vars_eNB_g[0][CC_id]->rx_total_gain_dB = (int)rx_gain[CC_id][0];
 
-      PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 0;
-
+      if (frame_parms[CC_id]->frame_type==FDD) {
+	PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 0;
+      }
+      else {
+	if (frame_parms[CC_id]->N_RB_DL == 100)
+	  PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 624;
+	else if (frame_parms[CC_id]->N_RB_DL == 50)
+	  PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 624/2;
+	else if (frame_parms[CC_id]->N_RB_DL == 25)
+	  PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 624/4;
+      }
     }
 
 
