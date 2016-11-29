@@ -141,7 +141,7 @@ struct button_widget {
 
 struct label_widget {
   struct widget common;
-  const char *t;
+  char *t;
   int color;
   int width;         /* as given by the graphic's backend */
   int height;        /* as given by the graphic's backend */

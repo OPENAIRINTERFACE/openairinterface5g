@@ -39,6 +39,7 @@ widget *new_space(gui *gui, int width, int height);
 widget *new_image(gui *gui, unsigned char *data, int length);
 
 void label_set_clickable(gui *gui, widget *label, int clickable);
+void label_set_text(gui *gui, widget *label, char *text);
 
 void container_set_child_growable(gui *_gui, widget *_this,
     widget *child, int growable);
@@ -49,6 +50,7 @@ void xy_plot_set_range(gui *gui, widget *this,
 void xy_plot_set_points(gui *gui, widget *this,
     int plot, int npoints, float *x, float *y);
 void xy_plot_get_dimensions(gui *gui, widget *this, int *width, int *height);
+void xy_plot_set_title(gui *gui, widget *this, char *label);
 
 void textlist_add(gui *gui, widget *this, const char *text, int position,
     int color);
