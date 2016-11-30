@@ -32,6 +32,8 @@ typedef struct {
   widget *pucch1_energy_ue_xy_plot;
   widget *pucch_iq_ue_xy_plot;
   widget *dl_ul_harq_ue_label;
+  widget *dl_mcs_xy_plot;
+  widget *ul_mcs_xy_plot;
   logger *pusch_iq_ue_logger;
   logger *ul_estimate_ue_logger;
   logger *pucch1_energy_ue_threshold_logger;
@@ -44,6 +46,8 @@ typedef struct {
   logger *ul_dci_retransmission_logger[8];
   logger *ul_ack_logger[8];
   logger *ul_nack_logger[8];
+  logger *dl_mcs_logger;
+  logger *ul_mcs_logger;
 } enb_gui;
 
 typedef struct {
@@ -137,6 +141,10 @@ static void set_current_ue(gui *g, enb_data *e, int ue)
   xy_plot_set_title(g, e->e->pucch_iq_ue_xy_plot, s);
   sprintf(s, "DL/UL HARQ (x8) [UE %d]", ue);
   label_set_text(g, e->e->dl_ul_harq_ue_label, s);
+  sprintf(s, "DL MCS [UE %d]", ue);
+  xy_plot_set_title(g, e->e->dl_mcs_xy_plot, s);
+  sprintf(s, "UL MCS [UE %d]", ue);
+  xy_plot_set_title(g, e->e->ul_mcs_xy_plot, s);
 
   logger_set_filter(e->e->pusch_iq_ue_logger,
       filter_eq(
@@ -175,6 +183,14 @@ static void set_current_ue(gui *g, enb_data *e, int ue)
     logger_set_filter(e->e->ul_nack_logger[i],
         ticktime_filter(e->database, "ENB_PHY_ULSCH_UE_NACK", i, ue));
   }
+  logger_set_filter(e->e->dl_mcs_logger,
+      filter_eq(
+        filter_evarg(e->database, "ENB_PHY_DLSCH_UE_DCI", "UE_id"),
+        filter_int(ue)));
+  logger_set_filter(e->e->ul_mcs_logger,
+      filter_eq(
+        filter_evarg(e->database, "ENB_PHY_ULSCH_UE_DCI", "UE_id"),
+        filter_int(ue)));
 }
 
 static void click(void *private, gui *g,
@@ -308,6 +324,30 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database,
   v = new_view_xy(500, 10, g, w, new_color(g,"#000"), XY_LOOP_MODE);
   logger_add_view(l, v);
   e->pucch_iq_ue_logger = l;
+
+  /* UE x DL mcs */
+  line = new_container(g, HORIZONTAL);
+  widget_add_child(g, top_container, line, -1);
+  w = new_xy_plot(g, 128, 55, "", 20);
+  xy_plot_set_range(g, w, 0, 1024*10, -1, 29);
+  e->dl_mcs_xy_plot = w;
+  widget_add_child(g, line, w, -1);
+  l = new_ticked_ttilog(h, database, "ENB_PHY_DL_TICK", "frame", "subframe",
+      "ENB_PHY_DLSCH_UE_DCI", "mcs", 0, -1);
+  v = new_view_tti(10, g, w, new_color(g, "#0c0c72"));
+  logger_add_view(l, v);
+  e->dl_mcs_logger = l;
+
+  /* UE x UL mcs */
+  w = new_xy_plot(g, 128, 55, "", 20);
+  xy_plot_set_range(g, w, 0, 1024*10, -1, 29);
+  e->ul_mcs_xy_plot = w;
+  widget_add_child(g, line, w, -1);
+  l = new_ticked_ttilog(h, database, "ENB_PHY_DL_TICK", "frame", "subframe",
+      "ENB_PHY_ULSCH_UE_DCI", "mcs", 0, -1);
+  v = new_view_tti(10, g, w, new_color(g, "#0c0c72"));
+  logger_add_view(l, v);
+  e->ul_mcs_logger = l;
 
   /* downlink/uplink UE DCIs */
   widget_add_child(g, top_container,
