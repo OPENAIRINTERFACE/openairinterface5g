@@ -70,9 +70,9 @@ static void paint(gui *_gui, widget *_this)
  */
     char v[64];
     int vwidth, dummy;
-    float x = (k * ticstep - allocated_xmin) /
-              (allocated_xmax - allocated_xmin) *
-              (allocated_plot_width - 1);
+    int x = (k * ticstep - allocated_xmin) /
+            (allocated_xmax - allocated_xmin) *
+            (allocated_plot_width - 1);
     x_draw_line(g->x, g->xwin, FOREGROUND_COLOR,
         this->common.x + this->vrule_width + x,
         this->common.y + this->common.height - this->label_height * 2,
@@ -112,9 +112,9 @@ static void paint(gui *_gui, widget *_this)
   for (k = kmin; k <= kmax; k++) {
     char v[64];
     int vwidth, dummy;
-    float y = (k * ticstep - allocated_ymin) /
-              (allocated_ymax - allocated_ymin) *
-              (allocated_plot_height - 1);
+    int y = (k * ticstep - allocated_ymin) /
+            (allocated_ymax - allocated_ymin) *
+            (allocated_plot_height - 1);
     sprintf(v, "%g", k * ticstep);
     x_text_get_dimensions(g->x, DEFAULT_FONT, v, &vwidth, &dummy, &dummy);
     x_draw_line(g->x, g->xwin, FOREGROUND_COLOR,
