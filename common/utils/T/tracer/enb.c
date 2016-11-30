@@ -329,7 +329,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database,
   line = new_container(g, HORIZONTAL);
   widget_add_child(g, top_container, line, -1);
   w = new_xy_plot(g, 128, 55, "", 20);
-  xy_plot_set_range(g, w, 0, 1024*10, -1, 29);
+  xy_plot_set_range(g, w, 0, 1024*10, -2, 30);
   e->dl_mcs_xy_plot = w;
   widget_add_child(g, line, w, -1);
   l = new_ticked_ttilog(h, database, "ENB_PHY_DL_TICK", "frame", "subframe",
@@ -340,7 +340,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database,
 
   /* UE x UL mcs */
   w = new_xy_plot(g, 128, 55, "", 20);
-  xy_plot_set_range(g, w, 0, 1024*10, -1, 29);
+  xy_plot_set_range(g, w, 0, 1024*10, -2, 30);
   e->ul_mcs_xy_plot = w;
   widget_add_child(g, line, w, -1);
   l = new_ticked_ttilog(h, database, "ENB_PHY_DL_TICK", "frame", "subframe",
