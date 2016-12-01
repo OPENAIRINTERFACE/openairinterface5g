@@ -969,6 +969,8 @@ void rx_fh_if5(PHY_VARS_eNB *eNB,int *frame, int *subframe) {
     *frame = proc->frame_rx;
     *subframe = proc->subframe_rx;        
   }      
+
+  proc->timestamp_tx = proc->timestamp_rx +  (4*fp->samples_per_tti);
   
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
 
@@ -1504,7 +1506,8 @@ static void* eNB_thread_single( void* param ) {
       subframe++;
     }      
 
-    if (eNB->CC_id==1) LOG_I(PHY,"eNB thread single %p (proc %p, CC_id %d), frame %d (%p), subframe %d (%p)\n",
+    if (eNB->CC_id==1) 
+	LOG_I(PHY,"eNB thread single %p (proc %p, CC_id %d), frame %d (%p), subframe %d (%p)\n",
 	  pthread_self(), proc, eNB->CC_id, frame,&frame,subframe,&subframe);
  
     // synchronization on FH interface, acquire signals/data and block
