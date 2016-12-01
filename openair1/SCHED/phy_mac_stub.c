@@ -40,14 +40,21 @@
 #include "SCHED/phy_procedures_emos.h"
 #endif
 
+/* SYRTEM */
+uint8_t dci_ndi_toggle_even[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+uint8_t dci_ndi_toggle_odd[8]  = {0, 0, 0, 0, 0, 0, 0, 0};
+
 void fill_dci(DCI_PDU *DCI_pdu,PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 {
-
+/* SYRTEM */
+  uint8_t *dci_ndi_toggle_tmp = NULL;
+  uint8_t harq_pid_value      = 0;
+/* End of SYRTEM */
 
   //uint8_t cooperation_flag = eNB->cooperation_flag;
   uint8_t transmission_mode = eNB->transmission_mode[0];
 
-  uint32_t rballoc = 0x7FFF;
+  uint32_t rballoc = 0x1FFFF;
   //uint32_t rballoc2 = 0x000F;
 
   int subframe = proc->subframe_tx;
@@ -68,12 +75,14 @@ void fill_dci(DCI_PDU *DCI_pdu,PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 
   switch (subframe) {
   case 5:
-    DCI_pdu->Num_common_dci = 1;
-    DCI_pdu->dci_alloc[0].L          = 2;
-    DCI_pdu->dci_alloc[0].firstCCE   = 0;
-    DCI_pdu->dci_alloc[0].rnti       = SI_RNTI;
-    DCI_pdu->dci_alloc[0].format     = format1A;
-    DCI_pdu->dci_alloc[0].ra_flag    = 0;
+   if ( !(proc->frame_tx&1) ) // SI message on even frame only (SFN mod 2 == 0)
+   {
+	DCI_pdu->Num_common_dci = 1;
+	DCI_pdu->dci_alloc[0].L          = 2;
+	DCI_pdu->dci_alloc[0].firstCCE   = 0;
+	DCI_pdu->dci_alloc[0].rnti       = SI_RNTI;
+	DCI_pdu->dci_alloc[0].format     = format1A;
+	DCI_pdu->dci_alloc[0].ra_flag    = 0;
 
     switch (eNB->frame_parms.N_RB_DL) {
     case 6:
@@ -187,6 +196,12 @@ void fill_dci(DCI_PDU *DCI_pdu,PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
     }
     break; //subframe switch
 
+    }  // if ( !(proc->frame_tx&1) )
+    else // No SI message on odd frame (SFN mod 2 == 1)
+    {
+      /* warning: work around to send dlsch on subframe 5 odd frame !!! */
+      /* todo: clean up, espacially if subframe cases are added next !!! */
+    }
     /*
   case 6:
       DCI_pdu->Num_ue_spec_dci = 1;
@@ -225,14 +240,22 @@ void fill_dci(DCI_PDU *DCI_pdu,PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
         if (eNB->frame_parms.frame_type == FDD) {
           DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1_5MHz_FDD_t;
 
+          harq_pid_value = (  ((proc->frame_tx * 10) + subframe) % 8 );
+
+          if (!(subframe&1)) // even subframe
+            dci_ndi_toggle_tmp = &(dci_ndi_toggle_even[harq_pid_value]);
+          else // odd subframe
+            dci_ndi_toggle_tmp = &(dci_ndi_toggle_odd[harq_pid_value]);
+
           ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->rballoc          = rballoc; //computeRIV(25,10,3);
           ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->TPC              = 0;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->harq_pid         = subframe % 5;
+          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->harq_pid         = harq_pid_value;
           ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs              = eNB->target_ue_dl_mcs;
-          //((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs            = (unsigned char) ((eNB->frame%1024)%28);
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->ndi              = subframe / 5;
+          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->ndi              = (*dci_ndi_toggle_tmp);
           ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->rv               = 0;
           ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->rah              = 0;
+
+          (*dci_ndi_toggle_tmp) = ((*dci_ndi_toggle_tmp) + 1) & 1;
 
           memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&dlsch_pdu,sizeof(DCI1_5MHz_FDD_t));
 
@@ -296,36 +319,24 @@ void fill_dci(DCI_PDU *DCI_pdu,PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
         if (eNB->frame_parms.frame_type == FDD) {
           DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1_10MHz_FDD_t;
 
+          harq_pid_value = (  ((proc->frame_tx * 10) + subframe) % 8 );
+
+          if (!(subframe&1)) // even subframe
+            dci_ndi_toggle_tmp = &(dci_ndi_toggle_even[harq_pid_value]);
+          else // odd subframe
+            dci_ndi_toggle_tmp = &(dci_ndi_toggle_odd[harq_pid_value]);
+
           ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->rballoc          = rballoc; //computeRIV(50,10,3);
           ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->TPC              = 0;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->harq_pid         = subframe % 5;
+          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->harq_pid         = harq_pid_value;
           ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->mcs              = eNB->target_ue_dl_mcs;
-          //((DCI1_10MHz_FDD_t *)&dlsch_pdu)->mcs            = (unsigned char) ((eNB->frame%1024)%28);
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->ndi              = subframe / 5;
+          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->ndi              = (*dci_ndi_toggle_tmp);
           ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->rv               = 0;
           ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->rah              = 0;
+
+          (*dci_ndi_toggle_tmp) = ((*dci_ndi_toggle_tmp) + 1) & 1;
 
           memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&dlsch_pdu,sizeof(DCI1_10MHz_FDD_t));
-
-          /*
-          //user2
-          DCI_pdu->dci_alloc[1].dci_length = sizeof_DCI1_10MHz_TDD_t;
-          DCI_pdu->dci_alloc[1].L          = 2;
-          DCI_pdu->dci_alloc[1].rnti       = 0x1236;
-          DCI_pdu->dci_alloc[1].format     = format1;
-          DCI_pdu->dci_alloc[1].ra_flag    = 0;
-
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->rballoc          = rballoc2;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->TPC              = 0;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->dai              = 0;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->harq_pid         = 1;
-          //((DCI1_10MHz_FDD_t *)&dlsch_pdu)->mcs              = (unsigned char) ((eNB->proc[subframe].frame%1024)%28);
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->mcs              = eNB->target_ue_dl_mcs;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->ndi              = 1;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->rv               = 0;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->rah              = 0;
-          memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&((DCI1_10MHz_FDD_t *)&dlsch_pdu)->,sizeof(DCI1_10MHz_TDD_t));
-          */
         } else {
           DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1_10MHz_TDD_t;
 
