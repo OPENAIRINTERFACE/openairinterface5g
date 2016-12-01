@@ -717,7 +717,7 @@ void fh_if5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   openair0_timestamp timestamp_tx;
 
   recv_IF5(eNB, &timestamp_tx, *subframe, IF5_RRH_GW_DL); 
-      //      printf("Received subframe %d (TS %llu) from RCC\n",subframe_tx,timestamp_tx);
+  //printf("Received subframe %d (TS %llu) from RCC\n",subframe_tx,timestamp_tx);
 
   subframe_tx = (timestamp_tx/fp->samples_per_tti)%10;
   frame_tx    = (timestamp_tx/(fp->samples_per_tti*10))&1023;

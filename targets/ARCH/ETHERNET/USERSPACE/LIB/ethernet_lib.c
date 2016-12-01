@@ -101,6 +101,7 @@ int trx_eth_start(openair0_device *device) {
     printf("Setting ETHERNET to RAW_IF5_MODE\n");
     if (eth_socket_init_raw(device)!=0)   return -1;
   } else {
+    printf("Setting ETHERNET to UDP_IF5_MODE\n");
     if (eth_socket_init_udp(device)!=0)   return -1; 
     /* RRH gets openair0 device configuration - BBU sets openair0 device configuration*/
     if (device->host_type == BBU_HOST) {
