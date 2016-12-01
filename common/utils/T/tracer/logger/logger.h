@@ -11,9 +11,9 @@ logger *new_ttilog(void *event_handler, void *database,
     char *event_name, char *frame_varname, char *subframe_varname,
     char *data_varname, int convert_to_dB);
 logger *new_ticked_ttilog(void *event_handler, void *database,
-    char *tick_event_name,
-    char *event_name, char *frame_varname, char *subframe_varname,
-    char *data_varname, int convert_to_dB, float empty_value);
+    char *tick_event_name, char *frame_varname, char *subframe_varname,
+    char *event_name, char *data_varname,
+    int convert_to_dB, float empty_value);
 logger *new_timelog(void *event_handler, void *database, char *event_name);
 logger *new_ticklog(void *event_handler, void *database,
     char *event_name, char *frame_name, char *subframe_name);
