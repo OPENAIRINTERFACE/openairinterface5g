@@ -108,7 +108,7 @@ logger *new_ticked_ttilog(event_handler *h, void *database,
 
   f = get_format(database, event_id);
 
-  /* look for frame, subframe and data args */
+  /* look for frame and subframe */
   ret->tick_frame_arg = -1;
   ret->tick_subframe_arg = -1;
   for (i = 0; i < f.count; i++) {
@@ -143,7 +143,7 @@ logger *new_ticked_ttilog(event_handler *h, void *database,
 
   f = get_format(database, event_id);
 
-  /* look for frame and subframe */
+  /* look for frame, subframe and data args */
   ret->data_frame_arg = -1;
   ret->data_subframe_arg = -1;
   ret->data_arg = -1;
