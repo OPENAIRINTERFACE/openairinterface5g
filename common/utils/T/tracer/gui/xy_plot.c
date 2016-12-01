@@ -85,7 +85,7 @@ static void paint(gui *_gui, widget *_this)
         this->common.y + this->common.height - this->label_height * 2 +
             this->label_baseline,
         v);
-    LOGD("tic k %d val %g x %g\n", k, k * ticstep, x);
+    LOGD("tic k %d val %g x %d\n", k, k * ticstep, x);
   }
 
   /* vertical tics */
