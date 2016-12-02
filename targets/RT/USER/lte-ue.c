@@ -775,11 +775,18 @@ static void *UE_thread_rxn_txnp4(void *arg)
     }
 
     if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
-	(UE->frame_parms.frame_type == FDD) ||
-	(subframe_select( &UE->frame_parms, proc->subframe_tx ) == SF_S)) {
+	(UE->frame_parms.frame_type == FDD) ) {
 
       if (UE->mode != loop_through_memory) {
 	phy_procedures_UE_TX(UE,proc,0,0,UE->mode,no_relay);
+      }
+    }
+
+    if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_S) &&
+  (UE->frame_parms.frame_type == TDD)) {
+
+      if (UE->mode != loop_through_memory) {
+  phy_procedures_UE_S_TX(UE,0,0,no_relay);
       }
     }
 
