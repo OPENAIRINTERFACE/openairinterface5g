@@ -924,10 +924,11 @@ void *UE_thread(void *arg) {
 					   rxp,
 					   UE->frame_parms.samples_per_tti*10,
 					   UE->frame_parms.nb_antennas_rx);
-
+	  
 	  
 	  if (rxs!=UE->frame_parms.samples_per_tti*10) {
-	    exit_fun("problem in rx");
+	    LOG_E(PHY, "problem in rx 1! want #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti*10, rxs);
+	    exit_fun("problem in rx 1");
 	    return &UE_thread_retval;
 	  }
 	}
@@ -960,7 +961,8 @@ void *UE_thread(void *arg) {
 					     UE->frame_parms.nb_antennas_rx);
 
 	    if (rxs!=UE->frame_parms.samples_per_tti){
-	      exit_fun("problem in rx");
+	      LOG_E(PHY, "problem in rx 2! want #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti, rxs);
+	      exit_fun("problem in rx 2");
 	      return &UE_thread_retval;
 	    }
 
@@ -982,7 +984,8 @@ void *UE_thread(void *arg) {
 					     UE->rx_offset,
 					     UE->frame_parms.nb_antennas_rx);
 	    if (rxs != UE->rx_offset) {
-	      exit_fun("problem in rx");
+	      LOG_E(PHY, "problem in rx 3! want #samples=%d but got only %d!\n", UE->rx_offset, rxs);
+	      exit_fun("problem in rx 3!");
 	      return &UE_thread_retval;
 	    }
 	  }
@@ -996,6 +999,11 @@ void *UE_thread(void *arg) {
 					   (void**)rxdata,
 					   UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0,
 					   UE->frame_parms.nb_antennas_rx);
+    if (rxs != (UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0)) {
+      LOG_E(PHY, "problem in rx 4! want #samples=%d but got only %d!\n", UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0, rxs);
+      exit_fun("problem in rx 4!");
+      return &UE_thread_retval;
+    }
 	  slot_fep(UE,
 		   0,
 		   0,
@@ -1029,6 +1037,11 @@ void *UE_thread(void *arg) {
 					       UE->frame_parms.nb_antennas_rx);
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
+	      if (rxs != UE->frame_parms.samples_per_tti) {
+	        LOG_E(PHY, "problem in rx 5! want #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti, rxs);
+	        exit_fun("problem in rx 5!");
+	        return &UE_thread_retval;
+	      }
 	      
 	      // prepare tx buffer pointers
 	      for (i=0; i<UE->frame_parms.nb_antennas_tx; i++)
@@ -1046,6 +1059,10 @@ void *UE_thread(void *arg) {
 						1);
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS, rxs );
+        if (txs !=  UE->frame_parms.samples_per_tti) {
+           LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, UE->frame_parms.samples_per_tti);
+           exit_fun( "problem transmitting samples" );
+        }
 	    }
 	    
 	    else {
@@ -1057,6 +1074,11 @@ void *UE_thread(void *arg) {
 					       UE->frame_parms.nb_antennas_rx);
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
+        if (rxs != (UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0)) {
+          LOG_E(PHY, "problem in rx 6! want #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0, rxs);
+          exit_fun("problem in rx 6!");
+          return &UE_thread_retval;
+        }
 
 	      // prepare tx buffer pointers
 	      for (i=0; i<UE->frame_parms.nb_antennas_tx; i++)
@@ -1088,7 +1110,12 @@ void *UE_thread(void *arg) {
 					       UE->frame_parms.nb_antennas_rx);
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
-       rx_off_diff = 0;
+        if (rxs != (UE->frame_parms.ofdm_symbol_size + UE->frame_parms.nb_prefix_samples0 - rx_off_diff)) {
+          LOG_E(PHY, "problem in rx 7! want #samples=%d but got only %d! rx_off_diff=%d\n", UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0 - rx_off_diff, rxs, rx_off_diff);
+          exit_fun("problem in rx 7!");
+          return &UE_thread_retval;
+        }
+        rx_off_diff = 0;
 	    }
 	  }
 	  // operate on thread sf mod 2
