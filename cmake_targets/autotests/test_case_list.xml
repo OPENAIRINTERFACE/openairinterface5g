@@ -11,7 +11,7 @@
  <CleanUpAluLteBox>sudo -S -E /opt/ltebox/tools/stop_ltebox</CleanUpAluLteBox>
 <ExmimoRfStop>exmimo_pci=`lspci -m | grep Xilinx`; if [ -n "$exmimo_pci" ] ; then $OPENAIR_DIR/cmake_targets/build_oai -w EXMIMO -c; sudo -S -E $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2; fi; sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_huaweiE398_ue.py --reset-ue;  sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_sony_experia_m4_ue.py --stop-ue; uname -a; sudo -E dmesg</ExmimoRfStop>
  <Timeout_execution>36000</Timeout_execution>
- <TestCaseExclusionList>010141 0102+ 010301 010303 010304 010305 0104+ 015508 015511 015520 015523 015518 015519 015520 015521 015522 015523 015602 015605 015702 015705 015818 015819 015820 015821 015822 015823 016102 016105 016502 016505 017002 017005 018002 018005 018502 018505  025514 025517 025520 025523 025518 025519 025520 025521 025522 025523</TestCaseExclusionList>
+ <TestCaseExclusionList>010141 0102+ 010301 010303 010304 010305 0104+ 015508 015511 015520 015523 015518 015519 015520 015521 015522 015523 015602 015605 015818 015819 015820 015821 015822 015823 016102 016105 016502 016505 017002 017005 018002 018005 018502 018505  025514 025517 025520 025523 025518 025519 025520 025521 025522 025523</TestCaseExclusionList>
  <nruns_lte-softmodem>3</nruns_lte-softmodem>
  <MachineListGeneric>amerique mozart hutch starsky stevens calisson superserver </MachineListGeneric>
      <testCase id="010101" >
@@ -3387,7 +3387,7 @@
                      ETC/spgw.conf SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP     \"eth1\"
                      ETC/spgw.conf SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP      \"192.168.12.62/24\"
                      ETC/spgw.conf SGW_IPV4_PORT_FOR_S1U_S12_S4_UP         2152
-                     ETC/spgw.conf PGW_IPV4_ADDRESS_FOR_SGI              \"eth1\"
+                     ETC/spgw.conf PGW_INTERFACE_NAME_FOR_SGI              \"eth1\"
                      ETC/spgw.conf PGW_MASQUERADE_SGI                    \"yes\"
                      ETC/spgw.conf DEFAULT_DNS_IPV4_ADDRESS     \"192.168.12.100\" 
                      ETC/spgw.conf IPV4_LIST \"192.172.0.0/24\" </EPC_config_file>
@@ -3396,7 +3396,7 @@
     <HSS_compile_prog>sudo mkdir -p /usr/local/etc/oai/freeDiameter; sudo cp -vf $OPENAIRCN_DIR/ETC/hss.conf /usr/local/etc/oai ; sudo cp -vf $OPENAIRCN_DIR/ETC/hss_fd.conf /usr/local/etc/oai/freeDiameter ; $OPENAIRCN_DIR/SCRIPTS/check_hss_s6a_certificate /usr/local/etc/oai/freeDiameter/ nano.openair4G.eur;  $OPENAIRCN_DIR/SCRIPTS/build_hss -c </HSS_compile_prog>
     <HSS_compile_prog_args></HSS_compile_prog_args>
 c
-    <EPC_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo -E ifconfig eth0 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash </EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>sleep 10;$OPENAIRCN_DIR/TEST/autotests/tools/run_epc  </EPC_main_exec>
     <EPC_main_exec_args>  </EPC_main_exec_args>
@@ -3455,7 +3455,7 @@ c
     <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash </UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
+    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -u -c  192.172.0.1 -b 14Mbits/s      </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -3486,7 +3486,7 @@ c
                      ETC/spgw.conf SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP     \"eth1\"
                      ETC/spgw.conf SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP      \"192.168.12.62/24\"
                      ETC/spgw.conf SGW_IPV4_PORT_FOR_S1U_S12_S4_UP         2152
-                     ETC/spgw.conf PGW_IPV4_ADDRESS_FOR_SGI              \"eth1\"
+                     ETC/spgw.conf PGW_INTERFACE_NAME_FOR_SGI              \"eth1\"
                      ETC/spgw.conf PGW_MASQUERADE_SGI                    \"yes\"
                      ETC/spgw.conf DEFAULT_DNS_IPV4_ADDRESS     \"192.168.12.100\" 
                      ETC/spgw.conf IPV4_LIST \"192.172.0.0/24\" </EPC_config_file>
@@ -3554,9 +3554,9 @@ c
     <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash </UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
+    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -u -c  192.172.0.1 -b 10Mbits/s      </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -u -c  192.172.0.1 -b 28Mbits/s      </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -3585,7 +3585,7 @@ c
                      ETC/spgw.conf SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP     \"eth1\"
                      ETC/spgw.conf SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP      \"192.168.12.62/24\"
                      ETC/spgw.conf SGW_IPV4_PORT_FOR_S1U_S12_S4_UP         2152
-                     ETC/spgw.conf PGW_IPV4_ADDRESS_FOR_SGI              \"eth1\"
+                     ETC/spgw.conf PGW_INTERFACE_NAME_FOR_SGI              \"eth1\"
                      ETC/spgw.conf PGW_MASQUERADE_SGI                    \"yes\"
                      ETC/spgw.conf DEFAULT_DNS_IPV4_ADDRESS     \"192.168.12.100\" 
                      ETC/spgw.conf IPV4_LIST \"192.172.0.0/24\" </EPC_config_file>
@@ -3653,14 +3653,14 @@ c
     <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash </UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
+    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -f m -u </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=9Mbits/sec average=9Mbits/sec   </UE_search_expr_true>
-    <UE_search_expr_false></UE_search_expr_false>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
+    <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=5.0Mbits/sec average=4.0Mbits/sec   </UE_search_expr_true>
+    <UE_search_expr_false></UE_search_expr_false>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
     <EPC_config_file>ETC/hss.conf MYSQL_user \"root\"
@@ -3684,7 +3684,7 @@ c
                      ETC/spgw.conf SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP     \"eth1\"
                      ETC/spgw.conf SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP      \"192.168.12.62/24\"
                      ETC/spgw.conf SGW_IPV4_PORT_FOR_S1U_S12_S4_UP         2152
-                     ETC/spgw.conf PGW_IPV4_ADDRESS_FOR_SGI              \"eth1\"
+                     ETC/spgw.conf PGW_INTERFACE_NAME_FOR_SGI              \"eth1\"
                      ETC/spgw.conf PGW_MASQUERADE_SGI                    \"yes\"
                      ETC/spgw.conf DEFAULT_DNS_IPV4_ADDRESS     \"192.168.12.100\" 
                      ETC/spgw.conf IPV4_LIST \"192.172.0.0/24\" </EPC_config_file>
@@ -3752,14 +3752,14 @@ c
     <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash </UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
+    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -f m -u </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=9Mbits/sec average=9Mbits/sec   </UE_search_expr_true>
-    <UE_search_expr_false></UE_search_expr_false>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
+    <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=9.0Mbits/sec average=9.0Mbits/sec   </UE_search_expr_true>
+    <UE_search_expr_false></UE_search_expr_false>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
     <EPC_config_file>ETC/hss.conf MYSQL_user \"root\"
@@ -3783,7 +3783,7 @@ c
                      ETC/spgw.conf SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP     \"eth1\"
                      ETC/spgw.conf SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP      \"192.168.12.62/24\"
                      ETC/spgw.conf SGW_IPV4_PORT_FOR_S1U_S12_S4_UP         2152
-                     ETC/spgw.conf PGW_IPV4_ADDRESS_FOR_SGI              \"eth1\"
+                     ETC/spgw.conf PGW_INTERFACE_NAME_FOR_SGI              \"eth1\"
                      ETC/spgw.conf PGW_MASQUERADE_SGI                    \"yes\"
                      ETC/spgw.conf DEFAULT_DNS_IPV4_ADDRESS     \"192.168.12.100\" 
                      ETC/spgw.conf IPV4_LIST \"192.172.0.0/24\" </EPC_config_file>
@@ -3852,14 +3852,15 @@ c
     <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash </UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
+    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 10; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -f m -u </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=9Mbits/sec average=9Mbits/sec   </UE_search_expr_true>
-    <UE_search_expr_false></UE_search_expr_false>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
+    <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=9.0Mbits/sec average=9.0Mbits/sec   </UE_search_expr_true>
+    <UE_search_expr_false></UE_search_expr_false>
+
 
     <EPC_working_dir>/tmp</EPC_working_dir>
     <EPC_config_file>ETC/hss.conf MYSQL_user \"root\"
@@ -3883,7 +3884,7 @@ c
                      ETC/spgw.conf SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP     \"eth1\"
                      ETC/spgw.conf SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP      \"192.168.12.62/24\"
                      ETC/spgw.conf SGW_IPV4_PORT_FOR_S1U_S12_S4_UP         2152
-                     ETC/spgw.conf PGW_IPV4_ADDRESS_FOR_SGI              \"eth1\"
+                     ETC/spgw.conf PGW_INTERFACE_NAME_FOR_SGI              \"eth1\"
                      ETC/spgw.conf PGW_MASQUERADE_SGI                    \"yes\"
                      ETC/spgw.conf DEFAULT_DNS_IPV4_ADDRESS     \"192.168.12.100\" 
                      ETC/spgw.conf IPV4_LIST \"192.172.0.0/24\" </EPC_config_file>
@@ -10518,7 +10519,7 @@ c
                      ETC/spgw.conf SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP     \"eth1\"
                      ETC/spgw.conf SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP      \"192.168.12.62/24\"
                      ETC/spgw.conf SGW_IPV4_PORT_FOR_S1U_S12_S4_UP         2152
-                     ETC/spgw.conf PGW_IPV4_ADDRESS_FOR_SGI              \"eth1\"
+                     ETC/spgw.conf PGW_INTERFACE_NAME_FOR_SGI              \"eth1\"
                      ETC/spgw.conf PGW_MASQUERADE_SGI                    \"yes\"
                      ETC/spgw.conf DEFAULT_DNS_IPV4_ADDRESS     \"192.168.12.100\" 
                      ETC/spgw.conf IPV4_LIST \"192.172.0.0/24\" </EPC_config_file>
@@ -10618,7 +10619,7 @@ c
                      ETC/spgw.conf SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP     \"eth1\"
                      ETC/spgw.conf SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP      \"192.168.12.62/24\"
                      ETC/spgw.conf SGW_IPV4_PORT_FOR_S1U_S12_S4_UP         2152
-                     ETC/spgw.conf PGW_IPV4_ADDRESS_FOR_SGI              \"eth1\"
+                     ETC/spgw.conf PGW_INTERFACE_NAME_FOR_SGI            \"eth1\"
                      ETC/spgw.conf PGW_MASQUERADE_SGI                    \"yes\"
                      ETC/spgw.conf DEFAULT_DNS_IPV4_ADDRESS     \"192.168.12.100\" 
                      ETC/spgw.conf IPV4_LIST \"192.172.0.0/24\" </EPC_config_file>
@@ -10718,7 +10719,7 @@ c
                      ETC/spgw.conf SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP     \"eth1\"
                      ETC/spgw.conf SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP      \"192.168.12.62/24\"
                      ETC/spgw.conf SGW_IPV4_PORT_FOR_S1U_S12_S4_UP         2152
-                     ETC/spgw.conf PGW_IPV4_ADDRESS_FOR_SGI              \"eth1\"
+                     ETC/spgw.conf PGW_INTERFACE_NAME_FOR_SGI              \"eth1\"
                      ETC/spgw.conf PGW_MASQUERADE_SGI                    \"yes\"
                      ETC/spgw.conf DEFAULT_DNS_IPV4_ADDRESS     \"192.168.12.100\" 
                      ETC/spgw.conf IPV4_LIST \"192.172.0.0/24\" </EPC_config_file>
@@ -10818,7 +10819,7 @@ c
                      ETC/spgw.conf SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP     \"eth1\"
                      ETC/spgw.conf SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP      \"192.168.12.62/24\"
                      ETC/spgw.conf SGW_IPV4_PORT_FOR_S1U_S12_S4_UP         2152
-                     ETC/spgw.conf PGW_IPV4_ADDRESS_FOR_SGI              \"eth1\"
+                     ETC/spgw.conf PGW_INTERFACE_NAME_FOR_SGI             \"eth1\"
                      ETC/spgw.conf PGW_MASQUERADE_SGI                    \"yes\"
                      ETC/spgw.conf DEFAULT_DNS_IPV4_ADDRESS     \"192.168.12.100\" 
                      ETC/spgw.conf IPV4_LIST \"192.172.0.0/24\" </EPC_config_file>
@@ -10918,7 +10919,7 @@ c
                      ETC/spgw.conf SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP     \"eth1\"
                      ETC/spgw.conf SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP      \"192.168.12.62/24\"
                      ETC/spgw.conf SGW_IPV4_PORT_FOR_S1U_S12_S4_UP         2152
-                     ETC/spgw.conf PGW_IPV4_ADDRESS_FOR_SGI              \"eth1\"
+                     ETC/spgw.conf PGW_INTERFACE_NAME_FOR_SGI              \"eth1\"
                      ETC/spgw.conf PGW_MASQUERADE_SGI                    \"yes\"
                      ETC/spgw.conf DEFAULT_DNS_IPV4_ADDRESS     \"192.168.12.100\" 
                      ETC/spgw.conf IPV4_LIST \"192.172.0.0/24\" </EPC_config_file>
@@ -11019,7 +11020,7 @@ c
                      ETC/spgw.conf SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP     \"eth1\"
                      ETC/spgw.conf SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP      \"192.168.12.62/24\"
                      ETC/spgw.conf SGW_IPV4_PORT_FOR_S1U_S12_S4_UP         2152
-                     ETC/spgw.conf PGW_IPV4_ADDRESS_FOR_SGI              \"eth1\"
+                     ETC/spgw.conf PGW_INTERFACE_NAME_FOR_SGI            \"eth1\"
                      ETC/spgw.conf PGW_MASQUERADE_SGI                    \"yes\"
                      ETC/spgw.conf DEFAULT_DNS_IPV4_ADDRESS     \"192.168.12.100\" 
                      ETC/spgw.conf IPV4_LIST \"192.172.0.0/24\" </EPC_config_file>
