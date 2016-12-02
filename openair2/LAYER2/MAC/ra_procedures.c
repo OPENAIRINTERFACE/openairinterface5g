@@ -271,7 +271,7 @@ void Msg1_tx(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id
   UE_mac_inst[module_idP].RA_attempt_number++;
 
   if (opt_enabled) {
-    trace_pdu(0, NULL, 0, module_idP, 2, UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex,
+    trace_pdu(0, NULL, 0, module_idP, 0 , UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex,
         UE_mac_inst[module_idP].txFrame, UE_mac_inst[module_idP].txSubframe, 0, UE_mac_inst[module_idP].RA_attempt_number);
     LOG_D(OPT,"[UE %d][RAPROC] TX MSG1 Frame %d trace pdu for rnti %x  with size %d\n",
           module_idP, frameP, 1, UE_mac_inst[module_idP].RA_Msg3_size);

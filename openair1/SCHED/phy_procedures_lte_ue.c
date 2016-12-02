@@ -56,6 +56,7 @@ fifo_dump_emos_UE emos_dump_UE;
 #endif
 
 #include "UTIL/LOG/vcd_signal_dumper.h"
+#include "UTIL/OPT/opt.h"
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
@@ -2302,6 +2303,17 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uin
 
   if ((pbch_tx_ant>0) && (pbch_tx_ant<=4)) {
 
+    if (opt_enabled) {
+      static uint8_t dummy[3];
+      dummy[0] = ue->pbch_vars[eNB_id]->decoded_output[2];
+      dummy[1] = ue->pbch_vars[eNB_id]->decoded_output[1];
+      dummy[2] = ue->pbch_vars[eNB_id]->decoded_output[0];
+      trace_pdu(1, dummy, 3, ue->Mod_id, 0, 0,
+          frame_rx, subframe_rx, 0, 0);
+      LOG_D(OPT,"[UE %d][PBCH] Frame %d trace pdu for PBCH\n",
+          ue->Mod_id, subframe_rx);
+    }
+
     if (pbch_tx_ant>2) {
       LOG_W(PHY,"[openair][SCHED][SYNCH] PBCH decoding: pbch_tx_ant>2 not supported\n");
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_OUT);
@@ -2980,6 +2992,7 @@ void process_rar(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, int eNB_id, runmode_t mo
       timing_advance = mac_xface->ue_process_rar(ue->Mod_id,
 						 ue->CC_id,
 						 frame_rx,
+						 ue->prach_resources[eNB_id]->ra_RNTI,
 						 dlsch0->harq_processes[0]->b,
 						 &ue->pdcch_vars[eNB_id]->crnti,
 						 ue->prach_resources[eNB_id]->ra_PreambleIndex);

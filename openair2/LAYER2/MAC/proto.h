@@ -426,6 +426,9 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP,u
 
 /* \brief Function called by PHY to process the received RAR.  It checks that the preamble matches what was sent by the eNB and provides the timing advance and t-CRNTI.
 @param Mod_id Index of UE instance
+@param CC_id Index to a component carrier
+@param frame Frame index
+@param ra_rnti RA_RNTI value
 @param dlsch_buffer  Pointer to dlsch_buffer containing RAR PDU
 @param t_crnti Pointer to PHY variable containing the T_CRNTI
 @param preamble_index Preamble Index used by PHY to transmit the PRACH.  This should match the received RAR to trigger the rest of
@@ -437,6 +440,7 @@ ue_process_rar(
   const module_id_t module_idP,
   const int CC_id,
   const frame_t frameP,
+  const rnti_t ra_rnti,
   uint8_t * const dlsch_buffer,
   rnti_t * const t_crnti,
   const uint8_t preamble_index
