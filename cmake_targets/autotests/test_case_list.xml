@@ -10486,16 +10486,16 @@ c
     <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai --eNB --UE -w USRP -c -x  </UE_compile_prog>
     <UE_branch>develop1B</UE_branch>
     <UE_compile_prog_args></UE_compile_prog_args>
-    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash </UE_pre_exec>
+    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip; sudo rmmod oai_nw_drv</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -u -c  192.172.0.1 -b 7Mbits/s      </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 oai0 -u -c  192.172.0.1 -b 7Mbits/s      </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
-    <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
+    <UE_stop_script> </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
     <EPC_config_file>ETC/hss.conf MYSQL_user \"root\"
@@ -10528,7 +10528,7 @@ c
     <HSS_compile_prog>sudo mkdir -p /usr/local/etc/oai/freeDiameter; sudo cp -vf $OPENAIRCN_DIR/ETC/hss.conf /usr/local/etc/oai ; sudo cp -vf $OPENAIRCN_DIR/ETC/hss_fd.conf /usr/local/etc/oai/freeDiameter ; $OPENAIRCN_DIR/SCRIPTS/check_hss_s6a_certificate /usr/local/etc/oai/freeDiameter/ nano.openair4G.eur;  $OPENAIRCN_DIR/SCRIPTS/build_hss -c </HSS_compile_prog>
     <HSS_compile_prog_args></HSS_compile_prog_args>
 c
-    <EPC_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo -E ifconfig eth0 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>sleep 10;$OPENAIRCN_DIR/TEST/autotests/tools/run_epc  </EPC_main_exec>
     <EPC_main_exec_args>  </EPC_main_exec_args>
@@ -10553,7 +10553,7 @@ c
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_network_code \"93\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  N_RB_DL 50
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower -29
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.62\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
@@ -10571,7 +10571,7 @@ c
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
@@ -10583,26 +10583,26 @@ c
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
-    <UE_compile_prog></UE_compile_prog>
-    <UE_compile_prog_args></UE_compile_prog_args>
+    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai --eNB --UE -w USRP -c -x  </UE_compile_prog>
     <UE_branch>develop1B</UE_branch>
-    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash </UE_pre_exec>
+    <UE_compile_prog_args></UE_compile_prog_args>
+    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip; sudo rmmod oai_nw_drv</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
+    <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r50 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -u -c  192.172.0.1 -b 14Mbits/s      </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 oai0 -u -c  192.172.0.1 -b 14Mbits/s      </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
-    <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
+    <UE_stop_script> </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
     <EPC_config_file>ETC/hss.conf MYSQL_user \"root\"
                      ETC/hss.conf MYSQL_pass \"linux\"
                      ETC/hss.conf OPERATOR_key  \"1006020f0a478bf6b699f15c062e42b3\"
-                     ETC/mme.conf GUMMEI_LIST "{MCC=\"208\";MNC=\"92\";MME_GID=\"4\";MME_CODE=\"1\";}"
-                     ETC/mme.conf TAI_LIST "{MCC=\"208\";MNC=\"92\";TAC=\"1\";}" 
+                     ETC/mme.conf GUMMEI_LIST "{MCC=\"208\";MNC=\"93\";MME_GID=\"4\";MME_CODE=\"1\";}"
+                     ETC/mme.conf TAI_LIST "{MCC=\"208\";MNC=\"93\";TAC=\"1\";}" 
                      ETC/mme.conf  MME_INTERFACE_NAME_FOR_S1_MME \"eth1\"
                      ETC/mme.conf  MME_IPV4_ADDRESS_FOR_S1_MME  \"192.168.12.62/24\"
                      ETC/mme.conf  MME_INTERFACE_NAME_FOR_S11_MME   \"lo\"
@@ -10628,7 +10628,7 @@ c
     <HSS_compile_prog>sudo mkdir -p /usr/local/etc/oai/freeDiameter; sudo cp -vf $OPENAIRCN_DIR/ETC/hss.conf /usr/local/etc/oai ; sudo cp -vf $OPENAIRCN_DIR/ETC/hss_fd.conf /usr/local/etc/oai/freeDiameter ; $OPENAIRCN_DIR/SCRIPTS/check_hss_s6a_certificate /usr/local/etc/oai/freeDiameter/ nano.openair4G.eur;  $OPENAIRCN_DIR/SCRIPTS/build_hss -c </HSS_compile_prog>
     <HSS_compile_prog_args></HSS_compile_prog_args>
 c
-    <EPC_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo -E ifconfig eth0 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>sleep 10;$OPENAIRCN_DIR/TEST/autotests/tools/run_epc  </EPC_main_exec>
     <EPC_main_exec_args>  </EPC_main_exec_args>
@@ -10653,7 +10653,7 @@ c
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_network_code \"93\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  N_RB_DL 100
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower -32
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.62\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
@@ -10671,7 +10671,7 @@ c
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ;sudo -E  ifconfig eth0:3 192.170.0.2 up ; sudo -E ifconfig eth0:4 192.170.1.2 up; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf </eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
@@ -10683,26 +10683,26 @@ c
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
-    <UE_compile_prog></UE_compile_prog>
-    <UE_compile_prog_args></UE_compile_prog_args>
+    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai --eNB --UE -w USRP -c -x  </UE_compile_prog>
     <UE_branch>develop1B</UE_branch>
-    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash </UE_pre_exec>
+    <UE_compile_prog_args></UE_compile_prog_args>
+    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip; sudo rmmod oai_nw_drv</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
+    <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r100 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -u -c  192.172.0.1 -b 10Mbits/s      </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 oai0 -u -c  192.172.0.1 -b 28Mbits/s      </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
-    <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
+    <UE_stop_script> </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
     <EPC_config_file>ETC/hss.conf MYSQL_user \"root\"
                      ETC/hss.conf MYSQL_pass \"linux\"
                      ETC/hss.conf OPERATOR_key  \"1006020f0a478bf6b699f15c062e42b3\"
-                     ETC/mme.conf GUMMEI_LIST "{MCC=\"208\";MNC=\"92\";MME_GID=\"4\";MME_CODE=\"1\";}"
-                     ETC/mme.conf TAI_LIST "{MCC=\"208\";MNC=\"92\";TAC=\"1\";}" 
+                     ETC/mme.conf GUMMEI_LIST "{MCC=\"208\";MNC=\"93\";MME_GID=\"4\";MME_CODE=\"1\";}"
+                     ETC/mme.conf TAI_LIST "{MCC=\"208\";MNC=\"93\";TAC=\"1\";}" 
                      ETC/mme.conf  MME_INTERFACE_NAME_FOR_S1_MME \"eth1\"
                      ETC/mme.conf  MME_IPV4_ADDRESS_FOR_S1_MME  \"192.168.12.62/24\"
                      ETC/mme.conf  MME_INTERFACE_NAME_FOR_S11_MME   \"lo\"
@@ -10728,7 +10728,7 @@ c
     <HSS_compile_prog>sudo mkdir -p /usr/local/etc/oai/freeDiameter; sudo cp -vf $OPENAIRCN_DIR/ETC/hss.conf /usr/local/etc/oai ; sudo cp -vf $OPENAIRCN_DIR/ETC/hss_fd.conf /usr/local/etc/oai/freeDiameter ; $OPENAIRCN_DIR/SCRIPTS/check_hss_s6a_certificate /usr/local/etc/oai/freeDiameter/ nano.openair4G.eur;  $OPENAIRCN_DIR/SCRIPTS/build_hss -c </HSS_compile_prog>
     <HSS_compile_prog_args></HSS_compile_prog_args>
 c
-    <EPC_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo -E ifconfig eth0 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>sleep 10;$OPENAIRCN_DIR/TEST/autotests/tools/run_epc  </EPC_main_exec>
     <EPC_main_exec_args>  </EPC_main_exec_args>
@@ -10781,28 +10781,29 @@ c
     <eNB_search_expr_false></eNB_search_expr_false>
     <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
+
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
-    <UE_compile_prog></UE_compile_prog>
-    <UE_compile_prog_args></UE_compile_prog_args>
-    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash </UE_pre_exec>
-    <UE_pre_exec_args></UE_pre_exec_args>
+    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai --eNB --UE -w USRP -c -x  </UE_compile_prog>
     <UE_branch>develop1B</UE_branch>
-    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
+    <UE_compile_prog_args></UE_compile_prog_args>
+    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip; sudo rmmod oai_nw_drv</UE_pre_exec>
+    <UE_pre_exec_args></UE_pre_exec_args>
+    <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -f m -u </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -f m -u       </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=9Mbits/sec average=9Mbits/sec   </UE_search_expr_true>
+    <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=1Mbits/sec average=1Mbits/sec</UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
-    <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
+    <UE_stop_script> </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
     <EPC_config_file>ETC/hss.conf MYSQL_user \"root\"
                      ETC/hss.conf MYSQL_pass \"linux\"
                      ETC/hss.conf OPERATOR_key  \"1006020f0a478bf6b699f15c062e42b3\"
-                     ETC/mme.conf GUMMEI_LIST "{MCC=\"208\";MNC=\"92\";MME_GID=\"4\";MME_CODE=\"1\";}"
-                     ETC/mme.conf TAI_LIST "{MCC=\"208\";MNC=\"92\";TAC=\"1\";}" 
+                     ETC/mme.conf GUMMEI_LIST "{MCC=\"208\";MNC=\"93\";MME_GID=\"4\";MME_CODE=\"1\";}"
+                     ETC/mme.conf TAI_LIST "{MCC=\"208\";MNC=\"93\";TAC=\"1\";}" 
                      ETC/mme.conf  MME_INTERFACE_NAME_FOR_S1_MME \"eth1\"
                      ETC/mme.conf  MME_IPV4_ADDRESS_FOR_S1_MME  \"192.168.12.62/24\"
                      ETC/mme.conf  MME_INTERFACE_NAME_FOR_S11_MME   \"lo\"
@@ -10828,7 +10829,7 @@ c
     <HSS_compile_prog>sudo mkdir -p /usr/local/etc/oai/freeDiameter; sudo cp -vf $OPENAIRCN_DIR/ETC/hss.conf /usr/local/etc/oai ; sudo cp -vf $OPENAIRCN_DIR/ETC/hss_fd.conf /usr/local/etc/oai/freeDiameter ; $OPENAIRCN_DIR/SCRIPTS/check_hss_s6a_certificate /usr/local/etc/oai/freeDiameter/ nano.openair4G.eur;  $OPENAIRCN_DIR/SCRIPTS/build_hss -c </HSS_compile_prog>
     <HSS_compile_prog_args></HSS_compile_prog_args>
 c
-    <EPC_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo -E ifconfig eth0 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>sleep 10;$OPENAIRCN_DIR/TEST/autotests/tools/run_epc  </EPC_main_exec>
     <EPC_main_exec_args>  </EPC_main_exec_args>
@@ -10883,26 +10884,27 @@ c
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
-    <UE_compile_prog></UE_compile_prog>
-    <UE_compile_prog_args></UE_compile_prog_args>
+    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai --eNB --UE -w USRP -c -x  </UE_compile_prog>
     <UE_branch>develop1B</UE_branch>
-    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash </UE_pre_exec>
+    <UE_compile_prog_args></UE_compile_prog_args>
+    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip; sudo rmmod oai_nw_drv</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
+    <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r50 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -f m -u </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -f m -u       </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=9Mbits/sec average=9Mbits/sec   </UE_search_expr_true>
+    <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=1Mbits/sec average=1Mbits/sec</UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
-    <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
+    <UE_stop_script> </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
+
     <EPC_config_file>ETC/hss.conf MYSQL_user \"root\"
                      ETC/hss.conf MYSQL_pass \"linux\"
                      ETC/hss.conf OPERATOR_key  \"1006020f0a478bf6b699f15c062e42b3\"
-                     ETC/mme.conf GUMMEI_LIST "{MCC=\"208\";MNC=\"92\";MME_GID=\"4\";MME_CODE=\"1\";}"
-                     ETC/mme.conf TAI_LIST "{MCC=\"208\";MNC=\"92\";TAC=\"1\";}" 
+                     ETC/mme.conf GUMMEI_LIST "{MCC=\"208\";MNC=\"93\";MME_GID=\"4\";MME_CODE=\"1\";}"
+                     ETC/mme.conf TAI_LIST "{MCC=\"208\";MNC=\"93\";TAC=\"1\";}" 
                      ETC/mme.conf  MME_INTERFACE_NAME_FOR_S1_MME \"eth1\"
                      ETC/mme.conf  MME_IPV4_ADDRESS_FOR_S1_MME  \"192.168.12.62/24\"
                      ETC/mme.conf  MME_INTERFACE_NAME_FOR_S11_MME   \"lo\"
@@ -10927,9 +10929,9 @@ c
     <EPC_compile_prog_args></EPC_compile_prog_args>
     <HSS_compile_prog>sudo mkdir -p /usr/local/etc/oai/freeDiameter; sudo cp -vf $OPENAIRCN_DIR/ETC/hss.conf /usr/local/etc/oai ; sudo cp -vf $OPENAIRCN_DIR/ETC/hss_fd.conf /usr/local/etc/oai/freeDiameter ; $OPENAIRCN_DIR/SCRIPTS/check_hss_s6a_certificate /usr/local/etc/oai/freeDiameter/ nano.openair4G.eur;  $OPENAIRCN_DIR/SCRIPTS/build_hss -c </HSS_compile_prog>
     <HSS_compile_prog_args></HSS_compile_prog_args>
+c
+    <EPC_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</EPC_pre_exec>
 
-
-    <EPC_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo -E ifconfig eth0 add 192.172.0.1</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>sleep 10;$OPENAIRCN_DIR/TEST/autotests/tools/run_epc  </EPC_main_exec>
     <EPC_main_exec_args>  </EPC_main_exec_args>
@@ -10985,25 +10987,26 @@ c
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
-    <UE_compile_prog></UE_compile_prog>
+    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai --eNB --UE -w USRP -c -x  </UE_compile_prog>
+    <UE_branch>develop1B</UE_branch>
     <UE_compile_prog_args></UE_compile_prog_args>
-    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash </UE_pre_exec>
+    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip; sudo rmmod oai_nw_drv</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
+    <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r100 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -f m -u </UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -f m -u       </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=9Mbits/sec average=9Mbits/sec   </UE_search_expr_true>
+    <UE_search_expr_true>throughput_test min=0.0Mbits/sec max=1Mbits/sec average=1Mbits/sec</UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
     <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
-    <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue </UE_stop_script>
+    <UE_stop_script> </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
     <EPC_config_file>ETC/hss.conf MYSQL_user \"root\"
                      ETC/hss.conf MYSQL_pass \"linux\"
                      ETC/hss.conf OPERATOR_key  \"1006020f0a478bf6b699f15c062e42b3\"
-                     ETC/mme.conf GUMMEI_LIST "{MCC=\"208\";MNC=\"92\";MME_GID=\"4\";MME_CODE=\"1\";}"
-                     ETC/mme.conf TAI_LIST "{MCC=\"208\";MNC=\"92\";TAC=\"1\";}" 
+                     ETC/mme.conf GUMMEI_LIST "{MCC=\"208\";MNC=\"93\";MME_GID=\"4\";MME_CODE=\"1\";}"
+                     ETC/mme.conf TAI_LIST "{MCC=\"208\";MNC=\"93\";TAC=\"1\";}" 
                      ETC/mme.conf  MME_INTERFACE_NAME_FOR_S1_MME \"eth1\"
                      ETC/mme.conf  MME_IPV4_ADDRESS_FOR_S1_MME  \"192.168.12.62/24\"
                      ETC/mme.conf  MME_INTERFACE_NAME_FOR_S11_MME   \"lo\"
@@ -11029,7 +11032,8 @@ c
     <HSS_compile_prog>sudo mkdir -p /usr/local/etc/oai/freeDiameter; sudo cp -vf $OPENAIRCN_DIR/ETC/hss.conf /usr/local/etc/oai ; sudo cp -vf $OPENAIRCN_DIR/ETC/hss_fd.conf /usr/local/etc/oai/freeDiameter ; $OPENAIRCN_DIR/SCRIPTS/check_hss_s6a_certificate /usr/local/etc/oai/freeDiameter/ nano.openair4G.eur;  $OPENAIRCN_DIR/SCRIPTS/build_hss -c </HSS_compile_prog>
     <HSS_compile_prog_args></HSS_compile_prog_args>
 c
-    <EPC_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo -E ifconfig eth0 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</EPC_pre_exec>
+
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>sleep 10;$OPENAIRCN_DIR/TEST/autotests/tools/run_epc  </EPC_main_exec>
     <EPC_main_exec_args>  </EPC_main_exec_args>
