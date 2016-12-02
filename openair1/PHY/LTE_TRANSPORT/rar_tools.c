@@ -34,6 +34,7 @@
 #include "SCHED/extern.h"
 #include "LAYER2/MAC/defs.h"
 #include "SCHED/defs.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 
 #include "assertions.h"
 
@@ -170,6 +171,8 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *ue,
 				      UE_rxtx_proc_t *proc,
                                       unsigned char eNB_id )
 {
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_RAR,VCD_FUNCTION_IN);
 
   //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
   uint8_t transmission_mode = ue->transmission_mode[eNB_id];
@@ -315,6 +318,9 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *ue,
   msg("ulsch ra (UE): TPC      %d\n",ulsch->harq_processes[harq_pid]->TPC);
   msg("ulsch ra (UE): O        %d\n",ulsch->O);
   msg("ulsch ra (UE): ORI      %d\n",ulsch->O_RI);
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_RAR,VCD_FUNCTION_OUT);
+
   //#endif
   return(0);
 }

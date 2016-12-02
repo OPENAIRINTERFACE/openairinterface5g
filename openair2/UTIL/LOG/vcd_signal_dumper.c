@@ -174,6 +174,10 @@ const char* eurecomVariablesNames[] = {
   "ue0_SFN5",
   "ue0_SFN6",
   "ue0_SFN7",
+#if 1 // 2016-11-29 wilson debug thread busy crash
+  "ue0_trx_read_ns",
+  "ue0_trx_write_ns",
+#endif
 };
 
 const char* eurecomFunctionsNames[] = {
@@ -188,6 +192,19 @@ const char* eurecomFunctionsNames[] = {
   "ue_thread_synch",
   "ue_thread_rxtx0",
   "ue_thread_rxtx1",
+#if 1 // 2016-11-29 wilson debug thread busy crash
+  "trx_read_sf9",
+  "trx_write_sf9",
+  "ue_signal_cond_rxtx",
+  "ue_wait_cond_rxtx0",
+  "ue_wait_cond_rxtx1",
+  "ue_lock_mutex_rxtx_for_cond_wait0",
+  "ue_lock_mutex_rxtx_for_cond_wait1",
+  "ue_lock_mutex_rxtx_for_cnt_decrement0",
+  "ue_lock_mutex_rxtx_for_cnt_decrement1",
+  "ue_lock_mutex_rxtx_for_cnt_increment0",
+  "ue_lock_mutex_rxtx_for_cnt_increment1",
+#endif
 
  /* RRH signals  */ 
   "eNB_tx",
@@ -218,6 +235,13 @@ const char* eurecomFunctionsNames[] = {
   "phy_eNB_slot_fep",
   "phy_procedures_ue_tx",
   "phy_procedures_ue_rx",
+#if 1 // 2016-12-01 wilson debug long TX runtime in special subframe
+  "phy_procedures_ue_tx_ulsch_uespec",
+  "phy_procedures_ue_tx_pucch",
+  "phy_procedures_ue_tx_ulsch_common",
+  "phy_procedures_ue_tx_prach",
+  "phy_procedures_ue_tx_ulsch_rar",
+#endif
   "phy_procedures_eNB_lte",
   "phy_procedures_UE_lte",
   "pdsch_thread",
