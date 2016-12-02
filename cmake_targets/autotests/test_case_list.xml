@@ -10753,9 +10753,9 @@ c
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_network_code \"93\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  N_RB_DL 25
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower -26
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower -24
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.62\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  downlink_frequency 2660000000L
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  uplink_frequency_offset -120000000
@@ -10771,7 +10771,7 @@ c
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
@@ -10854,7 +10854,7 @@ c
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_network_code \"93\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  N_RB_DL 50
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower -29
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.62\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
@@ -10872,7 +10872,7 @@ c
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
@@ -10956,7 +10956,7 @@ c
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mobile_network_code \"93\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  N_RB_DL 100
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  pdsch_referenceSignalPower -32
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  mme_ip_address "ipv4=\"192.168.12.62\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
@@ -10974,9 +10974,8 @@ c
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <UE_branch>develop1B</UE_branch>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
