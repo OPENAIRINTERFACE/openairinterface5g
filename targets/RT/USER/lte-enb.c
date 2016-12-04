@@ -543,7 +543,8 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   // ****************************************
   // Common RX procedures subframe n
 
-  if (eNB->do_prach) eNB->do_prach(eNB,proc->frame_rx,proc->subframe_rx);
+  if ((eNB->do_prach)&&((eNB->node_function != NGFI_RCC_IF4p5)))
+    eNB->do_prach(eNB,proc->frame_rx,proc->subframe_rx);
   phy_procedures_eNB_common_RX(eNB);
   
   // UE-specific RX processing for subframe n
@@ -986,34 +987,32 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   eNB_proc_t *proc = &eNB->proc;
   int f,sf;
 
-  int prach_rx;
-
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask, symbol_mask_full;
 
   symbol_mask_full = (1<<fp->symbols_per_tti)-1;
 
-  prach_rx = (is_prach_subframe(fp, *frame, *subframe)>0) ? 1 : 0;                            
   if (eNB->CC_id==1) LOG_I(PHY,"rx_fh_if4p5: frame %d, subframe %d\n",*frame,*subframe);
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
     recv_IF4p5(eNB, &f, &sf, &packet_type, &symbol_number);
 
     //proc->frame_rx = (proc->frame_rx + proc->frame_offset)&1023;
     if (packet_type == IF4p5_PULFFT) {
+      LOG_D(PHY,"rx_fh:if4p5: frame %d, subframe %d, PULFFT symbol %d\n",f,sf,symbol_number);
       proc->subframe_rx = sf;
       proc->frame_rx = f;
 
       proc->symbol_mask[proc->subframe_rx] = proc->symbol_mask[proc->subframe_rx] | (1<<symbol_number);
     } else if (packet_type == IF4p5_PRACH) {
-      prach_rx = 0;
+      LOG_D(PHY,"rx_fh:if4p5: frame %d, subframe %d, PRACH\n",f,sf);
       // wakeup prach processing
       if (eNB->do_prach) eNB->do_prach(eNB,f,sf);
     }
 
-    if (eNB->CC_id==1) LOG_I(PHY,"rx_fh_if4p5: symbol_mask[%d] %x, prach %d\n",*subframe,proc->symbol_mask[*subframe],prach_rx);
+    if (eNB->CC_id==1) LOG_I(PHY,"rx_fh_if4p5: symbol_mask[%d] %x\n",*subframe,proc->symbol_mask[*subframe]);
 
-  } while( (proc->symbol_mask[*subframe] != symbol_mask_full) || (prach_rx == 1));    
+  } while(proc->symbol_mask[*subframe] != symbol_mask_full);    
   proc->symbol_mask[*subframe] = 0;
   proc->symbol_mask[(9+*subframe)%10]= 0; // to handle a resynchronization event
 
