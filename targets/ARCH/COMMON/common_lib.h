@@ -249,6 +249,8 @@ typedef struct {
 typedef struct {
   //! Tx buffer for if device
   void *tx;
+  //! Tx buffer (PRACH) for if device
+  void *tx_prach;
   //! Rx buffer for if device
   void *rx;
 } if_buffer_t;
