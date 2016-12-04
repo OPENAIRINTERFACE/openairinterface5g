@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file phy_procedures_lte_ue.c
  * \brief Implementation of UE procedures from 36.213 LTE specifications
@@ -335,7 +327,7 @@ void process_timing_advance_rar(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint16_t ti
 
 
 #ifdef DEBUG_PHY_PROC
-  LOG_I(PHY,"[UE %d] Frame %d, received (rar) timing_advance %d, HW timing advance %d\n",ue->Mod_id,proc->frame_rx, ue->timing_advance);
+  LOG_I(PHY,"[UE %d] AbsoluteSubFrame %d.%d, received (rar) timing_advance %d, HW timing advance %d\n",ue->Mod_id,proc->frame_rx, proc->subframe_rx, ue->timing_advance);
 #endif
 
 }
@@ -747,11 +739,12 @@ void ue_prach_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 	ue->prach_resources[eNB_id]->ra_PreambleIndex = 19;	      
       }
       
-      LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
+      LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
 	    ue->Mod_id,
 	    frame_tx,
 	    subframe_tx,
 	    ue->prach_resources[eNB_id]->ra_PreambleIndex,
+		ue->tx_power_dBm[subframe_tx],
 	    ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER,
 	    ue->prach_resources[eNB_id]->ra_TDD_map_index,
 	    ue->prach_resources[eNB_id]->ra_RNTI);
@@ -1156,7 +1149,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			    SR_payload);
 	    
     if (ue->mac_enabled == 1) {
-      Po_PUCCH = pucch_power_cntl(ue,proc,eNB_id,format);
+      Po_PUCCH = pucch_power_cntl(ue,proc,subframe_tx,eNB_id,format);
     } 
     else {
       Po_PUCCH = ue->tx_power_max_dBm;
@@ -1219,7 +1212,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   } else if (SR_payload==1) { // no ACK/NAK but SR is triggered by MAC
 	    
     if (ue->mac_enabled == 1) {
-      Po_PUCCH = pucch_power_cntl(ue,proc,eNB_id,pucch_format1);
+      Po_PUCCH = pucch_power_cntl(ue,proc,subframe_tx,eNB_id,pucch_format1);
     }
     else {
       Po_PUCCH = ue->tx_power_max_dBm;
@@ -1306,8 +1299,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
   }
   	  
   if (ue->UE_mode[eNB_id] == PUSCH) { // check if we need to use PUCCH 1a/1b
-  
-
+	  ue_pucch_procedures(ue,proc,eNB_id,abstraction_flag);
   } // UE_mode==PUSCH
 	
   	
@@ -1372,7 +1364,9 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
   if (abstraction_flag == 0) {
 	  
     if (ue->generate_ul_signal[eNB_id] == 1 )
+    {
       ulsch_common_procedures(ue,proc);
+    }
     else {  // no uplink so clear signal buffer instead
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)//this is the EXPRESS MIMO case
       ulsch_start = (ue->rx_offset+subframe_tx*frame_parms->samples_per_tti-

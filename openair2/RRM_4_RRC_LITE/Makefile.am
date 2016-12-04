@@ -1,8 +1,0 @@
-SUBDIRS = src
-
-EXTRA_DIST = README ChangeLog AUTHORS COPYING INSTALL NEWS
-
-
-
-rrm$(EXEEXT):
-	$(MAKE) -C src $@

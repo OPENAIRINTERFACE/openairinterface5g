@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 #ifndef S1AP_MESSAGES_TYPES_H_
 #define S1AP_MESSAGES_TYPES_H_
@@ -79,7 +71,7 @@
  * the key length is 32 bytes (256 bits)
  */
 #define SECURITY_KEY_LENGTH 32
-
+#ifndef OCP_FRAMEWORK
 typedef enum cell_type_e {
   CELL_MACRO_ENB,
   CELL_HOME_ENB
@@ -110,6 +102,7 @@ typedef enum cn_domain_s {
   CN_DOMAIN_PS = 1,
   CN_DOMAIN_CS = 2
 } cn_domain_t;
+#endif
 
 typedef struct net_ip_address_s {
   unsigned ipv4:1;
@@ -125,6 +118,7 @@ typedef struct ambr_s {
   bitrate_t br_dl;
 } ambr_t;
 
+#ifndef OCP_FRAMEWORK
 typedef enum priority_level_s {
   PRIORITY_LEVEL_SPARE       = 0,
   PRIORITY_LEVEL_HIGHEST     = 1,
@@ -143,6 +137,7 @@ typedef enum pre_emp_vulnerability_e {
   PRE_EMPTION_VULNERABILITY_DISABLED = 1,
   PRE_EMPTION_VULNERABILITY_MAX,
 } pre_emp_vulnerability_t;
+#endif
 
 typedef struct allocation_retention_priority_s {
   priority_level_t        priority_level;
