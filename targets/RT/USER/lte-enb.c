@@ -722,6 +722,9 @@ void fh_if5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   subframe_tx = (timestamp_tx/fp->samples_per_tti)%10;
   frame_tx    = (timestamp_tx/(fp->samples_per_tti*10))&1023;
 
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_ENB, frame_tx );
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB, subframe_tx );
+
   if (proc->first_tx != 0) {
     *subframe = subframe_tx;
     *frame    = frame_tx;
@@ -762,12 +765,12 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     else {
       if (frame_tx != *frame) {
 	LOG_E(PHY,"fh_if4p5_asynch_DL: frame_tx %d is not what we expect %d\n",frame_tx,*frame);
-	//	exit_fun("Exiting");
+	exit_fun("Exiting");
       }
       if (subframe_tx != *subframe) {
 	LOG_E(PHY,"fh_if4p5_asynch_DL: (frame %d) subframe_tx %d is not what we expect %d\n",frame_tx,subframe_tx,*subframe);
 	//*subframe = subframe_tx;
-	//exit_fun("Exiting");
+	exit_fun("Exiting");
       }
     }
     if (packet_type == IF4p5_PDLFFT) {
@@ -781,6 +784,9 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 
   *frame = frame_tx;
 
+
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_ENB, frame_tx );
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB, subframe_tx );
 
   // intialize this to zero after we're done with the subframe
   proc->symbol_mask[*subframe] = 0;
