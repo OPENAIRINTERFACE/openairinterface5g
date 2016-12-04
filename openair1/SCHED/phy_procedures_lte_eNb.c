@@ -1,32 +1,23 @@
-
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file phy_procedures_lte_eNB.c
  * \brief Implementation of eNB procedures from 36.213 LTE specifications
@@ -1925,7 +1916,7 @@ void prach_procedures(PHY_VARS_eNB *eNB) {
       eNB->UE_stats[(uint32_t)UE_id].UE_timing_offset = preamble_delay_list[preamble_max]&0x1FFF; //limit to 13 (=11+2) bits
 
       eNB->UE_stats[(uint32_t)UE_id].sector = 0;
-      LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure (UE_id %d) with preamble %d, energy %d.%d dB, delay %d\n",
+      LOG_I(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure (UE_id %d) with preamble %d, energy %d.%d dB, delay %d\n",
             eNB->Mod_id,
             eNB->CC_id,
             frame,
@@ -2692,17 +2683,17 @@ void eNB_fep_rru_if5(PHY_VARS_eNB *eNB) {
 
 }
 
-void do_prach(PHY_VARS_eNB *eNB) {
+void do_prach(PHY_VARS_eNB *eNB,int frame,int subframe) {
 
   eNB_proc_t *proc = &eNB->proc;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
   // check if we have to detect PRACH first
-  if (is_prach_subframe(fp,proc->frame_rx,proc->subframe_rx)>0) { 
+  if (is_prach_subframe(fp,frame,subframe)>0) { 
     /* accept some delay in processing - up to 5ms */
     int i;
     for (i = 0; i < 10 && proc->instance_cnt_prach == 0; i++) {
-      LOG_W(PHY,"[eNB] Frame %d Subframe %d, eNB PRACH thread busy (IC %d)!!\n", proc->frame_rx,proc->subframe_rx,proc->instance_cnt_prach);
+      LOG_W(PHY,"[eNB] Frame %d Subframe %d, eNB PRACH thread busy (IC %d)!!\n", frame,subframe,proc->instance_cnt_prach);
       usleep(500);
     }
     if (proc->instance_cnt_prach == 0) {
@@ -2719,8 +2710,8 @@ void do_prach(PHY_VARS_eNB *eNB) {
     
     ++proc->instance_cnt_prach;
     // set timing for prach thread
-    proc->frame_prach = proc->frame_rx;
-    proc->subframe_prach = proc->subframe_rx;
+    proc->frame_prach = frame;
+    proc->subframe_prach = subframe;
     
     // the thread can now be woken up
     if (pthread_cond_signal(&proc->cond_prach) != 0) {
@@ -2754,8 +2745,6 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB){
 
 
   if (eNB->fep) eNB->fep(eNB);
-
-  if (eNB->do_prach) eNB->do_prach(eNB);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON+offset, 0 );
 }

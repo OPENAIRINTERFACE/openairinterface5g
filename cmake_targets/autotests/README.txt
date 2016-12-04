@@ -1,5 +1,4 @@
 OAI Test PLAN
-#UNDER CONSTRUCTION. Not correct at the moment
 
 Obj.#   Case#   Test#	Description
 

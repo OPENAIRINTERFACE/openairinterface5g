@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should haeve received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file dlsim.c
  \brief Top-level DL simulator
@@ -130,7 +122,7 @@ void do_OFDM_mod_l(int32_t **txdataF, int32_t **txdata, uint16_t next_slot, LTE_
 }
 
 void DL_channel(PHY_VARS_eNB *eNB,PHY_VARS_UE *UE,int subframe,int awgn_flag,double SNR, int tx_lev,int hold_channel,int abstx, int num_rounds, int trials, int round, channel_desc_t *eNB2UE[4], 
-		double s_re[2][30720*2],double s_im[2][30720*2],double r_re[2][30720*2],double r_im[2][30720*2],FILE *csv_fd) {
+		double *s_re[2],double *s_im[2],double *r_re[2],double *r_im[2],FILE *csv_fd) {
 
   int i,u;
   int aa,aarx,aatx;
@@ -1267,7 +1259,12 @@ int main(int argc, char **argv)
   double snr_step=1,input_snr_step=1, snr_int=30;
 
   LTE_DL_FRAME_PARMS *frame_parms;
-  double s_re[2][30720*2],s_im[2][30720*2],r_re[2][30720*2],r_im[2][30720*2];
+  double s_re0[30720*2],s_im0[30720*2],r_re0[30720*2],r_im0[30720*2];
+  double s_re1[30720*2],s_im1[30720*2],r_re1[30720*2],r_im1[30720*2];
+  double *s_re[2]={s_re0,s_re1};
+  double *s_im[2]={s_im0,s_im1};
+  double *r_re[2]={r_re0,r_re1};
+  double *r_im[2]={r_im0,r_im1};
   double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
 
 
@@ -1380,7 +1377,6 @@ int main(int argc, char **argv)
   FILE *csv_fd=NULL;
   char csv_fname[32];
   int dci_flag=1;
-  int llr8_flag=1;
   int two_thread_flag=0;
   int DLSCH_RB_ALLOC;
 
@@ -1413,7 +1409,7 @@ int main(int argc, char **argv)
   //  num_layers = 1;
   perfect_ce = 0;
 
-  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:WXY")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:Pl:WXY")) != -1) {
     switch (c) {
     case 'a':
       awgn_flag = 1;
@@ -1477,10 +1473,6 @@ int main(int argc, char **argv)
       input_trch_file=1;
       break;
 
-    case 'L':
-      llr8_flag=1;
-      break;
-      
     case 'W':
       two_thread_flag = 1;
       break;

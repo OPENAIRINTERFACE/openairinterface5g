@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-   Contact Information
-   OpenAirInterface Admin: openair_admin@eurecom.fr
-   OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file lte-enb.c
  * \brief Top-level threads for eNodeB
@@ -159,6 +151,8 @@ static struct {
   volatile uint8_t phy_proc_CC_id;
 } sync_phy_proc;
 
+extern double cpuf;
+
 void exit_fun(const char* s);
 
 void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *,int,int);
@@ -190,10 +184,8 @@ static inline void thread_top_init(char *thread_name,
 
   if (sched_setattr(0, &attr, flags) < 0 ) {
     perror("[SCHED] eNB tx thread: sched_setattr failed\n");
-    exit_fun("Error setting deadline scheduler");
+    exit(1);
   }
-
-  LOG_I( HW, "[SCHED] eNB %s deadline thread started on CPU %d\n", thread_name,sched_getcpu() );
 
 #else //LOW_LATENCY
   int policy, s, j;
@@ -547,8 +539,11 @@ int wait_CCs(eNB_rxtx_proc_t *proc) {
 static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_name) {
 
   start_meas(&softmodem_stats_rxtx_sf);
+
   // ****************************************
   // Common RX procedures subframe n
+
+  if (eNB->do_prach) eNB->do_prach(eNB,proc->frame_rx,proc->subframe_rx);
   phy_procedures_eNB_common_RX(eNB);
   
   // UE-specific RX processing for subframe n
@@ -589,6 +584,7 @@ static void* eNB_thread_rxtx( void* param ) {
 
   // set default return value
   eNB_thread_rxtx_status = 0;
+
 
   sprintf(thread_name,"RXn_TXnp4_%d\n",&eNB->proc.proc_rxtx[0] == proc ? 0 : 1);
   thread_top_init(thread_name,1,850000L,1000000L,2000000L);
@@ -802,6 +798,7 @@ static void* eNB_thread_asynch_rxtx( void* param ) {
   PHY_VARS_eNB *eNB = PHY_vars_eNB_g[0][proc->CC_id];
 
 
+
   int subframe=0, frame=0; 
 
   thread_top_init("thread_asynch",1,870000L,1000000L,1000000L);
@@ -981,6 +978,7 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   eNB_proc_t *proc = &eNB->proc;
+  int f,sf;
 
   int prach_rx;
 
@@ -993,14 +991,18 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   prach_rx = (is_prach_subframe(fp, *frame, *subframe)>0) ? 1 : 0;                            
   if (eNB->CC_id==1) LOG_I(PHY,"rx_fh_if4p5: frame %d, subframe %d\n",*frame,*subframe);
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
-    recv_IF4p5(eNB, &proc->frame_rx, &proc->subframe_rx, &packet_type, &symbol_number);
+    recv_IF4p5(eNB, &f, &sf, &packet_type, &symbol_number);
 
     //proc->frame_rx = (proc->frame_rx + proc->frame_offset)&1023;
-
     if (packet_type == IF4p5_PULFFT) {
+      proc->subframe_rx = sf;
+      proc->frame_rx = f;
+
       proc->symbol_mask[proc->subframe_rx] = proc->symbol_mask[proc->subframe_rx] | (1<<symbol_number);
     } else if (packet_type == IF4p5_PRACH) {
       prach_rx = 0;
+      // wakeup prach processing
+      if (eNB->do_prach) eNB->do_prach(eNB,f,sf);
     }
 
     if (eNB->CC_id==1) LOG_I(PHY,"rx_fh_if4p5: symbol_mask[%d] %x, prach %d\n",*subframe,proc->symbol_mask[*subframe],prach_rx);
@@ -1555,7 +1557,9 @@ void init_eNB_proc(int inst) {
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     eNB = PHY_vars_eNB_g[inst][CC_id];
+#ifndef OCP_FRAMEWORK
     LOG_I(PHY,"Initializing eNB %d CC_id %d (%s,%s),\n",inst,CC_id,eNB_functions[eNB->node_function],eNB_timing[eNB->node_timing]);
+#endif
     proc = &eNB->proc;
 
     proc_rxtx = proc->proc_rxtx;
@@ -1626,6 +1630,8 @@ void init_eNB_proc(int inst) {
     if ((eNB->node_timing == synch_to_other) ||
 	(eNB->node_function == NGFI_RRU_IF5) ||
 	(eNB->node_function == NGFI_RRU_IF4p5))
+
+
       pthread_create( &proc->pthread_asynch_rxtx, attr_asynch, eNB_thread_asynch_rxtx, &eNB->proc );
 
     char name[16];
@@ -1843,7 +1849,7 @@ int start_rf(PHY_VARS_eNB *eNB) {
 extern void eNB_fep_rru_if5(PHY_VARS_eNB *eNB);
 extern void eNB_fep_full(PHY_VARS_eNB *eNB);
 extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB);
-extern void do_prach(PHY_VARS_eNB *eNB);
+extern void do_prach(PHY_VARS_eNB *eNB,int frame,int subframe);
 
 void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *eth_params,int single_thread_flag,int wait_for_sync) {
   
@@ -1863,7 +1869,10 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       eNB->in_synch           = 0;
       eNB->is_slave           = (wait_for_sync>0) ? 1 : 0;
 
+
+#ifndef OCP_FRAMEWORK
       LOG_I(PHY,"Initializing eNB %d CC_id %d : (%s,%s)\n",inst,CC_id,eNB_functions[node_function[CC_id]],eNB_timing[node_timing[CC_id]]);
+#endif
 
       switch (node_function[CC_id]) {
       case NGFI_RRU_IF5:
