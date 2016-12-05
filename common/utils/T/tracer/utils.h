@@ -3,6 +3,7 @@
 
 void new_thread(void *(*f)(void *), void *data);
 void sleepms(int ms);
+void bps(char *out, float v, char *suffix);
 
 /****************************************************************************/
 /* list                                                                     */
