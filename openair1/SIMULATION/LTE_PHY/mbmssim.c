@@ -238,6 +238,7 @@ int main(int argc, char **argv)
     n_tx=2;
 
   lte_param_init(n_tx,
+                 n_tx,
 		 n_rx,
 		 transmission_mode,
 		 extended_prefix_flag,
@@ -301,7 +302,7 @@ int main(int argc, char **argv)
                                 0);
 
   // Create transport channel structures for 2 transport blocks (MIMO)
-  eNB->dlsch_MCH = new_eNB_dlsch(1,8,Nsoft,N_RB_DL,0,&eNB->lte_frame_parms);
+  eNB->dlsch_MCH = new_eNB_dlsch(1,8,Nsoft,N_RB_DL,0,&eNB->frame_parms);
 
   if (!eNB->dlsch_MCH) {
     printf("Can't get eNB dlsch structures\n");
