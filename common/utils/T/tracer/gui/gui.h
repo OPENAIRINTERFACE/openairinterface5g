@@ -30,6 +30,7 @@ widget *new_toplevel_window(gui *gui, int width, int height, char *title);
 widget *new_container(gui *gui, int vertical);
 widget *new_positioner(gui *gui);
 widget *new_label(gui *gui, const char *text);
+widget *new_textarea(gui *gui, int width, int height, int maxsize);
 widget *new_xy_plot(gui *gui, int width, int height, char *label,
     int vruler_width);
 widget *new_textlist(gui *gui, int width, int nlines, int background_color);
@@ -40,6 +41,8 @@ widget *new_image(gui *gui, unsigned char *data, int length);
 
 void label_set_clickable(gui *gui, widget *label, int clickable);
 void label_set_text(gui *gui, widget *label, char *text);
+
+void textarea_set_text(gui *gui, widget *textarea, char *text);
 
 void container_set_child_growable(gui *_gui, widget *_this,
     widget *child, int growable);
