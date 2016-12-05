@@ -70,6 +70,8 @@
 #define DEBUG_HEADER_PARSING 1
 #define ENABLE_MAC_PAYLOAD_DEBUG 1
 
+extern uint8_t usim_test;
+
 /*
 #ifndef USER_MODE
 #define msg debug_msg
@@ -1408,6 +1410,13 @@ for (lcid=DCCH; lcid < DTCH ; lcid++) {
       //Adjust at the end of the loop
       while ((!is_lcid_processed) && (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + MIN_MAC_HDR_RLC_SIZE <= buflen)) {
 
+    	  // Workaround for issue in OAI eNB or EPC which are not able to process SRB2 message multiplexed with SRB1 on the same MAC PDU
+    	  if ((usim_test == 0) && (lcid == DCCH1) && (lcid_rlc_pdu_count == 0) && (num_sdus)) {
+
+    		  // Skip SRB2 multiplex if at least one SRB1 SDU is already multiplexed
+    		  break;
+    	  }
+
           buflen_remain = buflen - (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + 1);
 
           rlc_status = mac_rlc_status_ind(module_idP,
@@ -1419,8 +1428,21 @@ for (lcid=DCCH; lcid < DTCH ; lcid++) {
                                           lcid,
                                           buflen_remain);
 
+          // Workaround for BO issue in RLC AM ReTx : RLC BO can not be bigger than stored MAC BO
+          if (UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] <  rlc_status.bytes_in_buffer) {
+
+        	  LOG_I(MAC, "[UE %d] Frame %d Subframe%d: WARNING Inconsistent BO! for LCID=%d MAC=%d RLC=%d RLC PDU nb=%d\n",
+        	                          module_idP,frameP,subframe,
+									  lcid,UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid],rlc_status.bytes_in_buffer,lcid_rlc_pdu_count);
+
+        	  // Skip multiplexing for the LCID
+        	  break;
+          }
+
+          /*
           AssertFatal ( UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] >=  rlc_status.bytes_in_buffer, "Inconsistent BO! for LCID=%d MAC=%d RLC=%d RLC PDU nb=%d Frame %d Subrame %d\n",
                   lcid,UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid],rlc_status.bytes_in_buffer,lcid_rlc_pdu_count,frameP,subframe);
+                  */
 
           if (rlc_status.bytes_in_buffer > 0) {
 
@@ -1535,8 +1557,21 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
                                         lcid,
                                         buflen_remain);
 
-          AssertFatal ( UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] >=  rlc_status.bytes_in_buffer, "Inconsistent BO! for LCID=%d MAC=%d RLC=%d RLC PDU nb=%d Frame %d Subrame %d\n",
+        // Workaround for BO issue in RLC AM ReTx : RLC BO can not be bigger than stored MAC BO
+        if (UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] <  rlc_status.bytes_in_buffer) {
+
+      	  LOG_I(MAC, "[UE %d] Frame %d Subframe%d: WARNING Inconsistent BO! for LCID=%d MAC=%d RLC=%d RLC PDU nb=%d\n",
+      	                          module_idP,frameP,subframe,
+									  lcid,UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid],rlc_status.bytes_in_buffer,lcid_rlc_pdu_count);
+
+      	  // Skip multiplexing for the LCID
+      	  break;
+        }
+
+        /*
+        AssertFatal ( UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] >=  rlc_status.bytes_in_buffer, "Inconsistent BO! for LCID=%d MAC=%d RLC=%d RLC PDU nb=%d Frame %d Subrame %d\n",
                   lcid,UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid],rlc_status.bytes_in_buffer,lcid_rlc_pdu_count,frameP,subframe);
+        */
 
         if (rlc_status.bytes_in_buffer > 0) {
 
