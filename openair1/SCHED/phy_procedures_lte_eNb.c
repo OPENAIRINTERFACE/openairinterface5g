@@ -1124,7 +1124,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   int frame=proc->frame_tx;
   int subframe=proc->subframe_tx;
   //  uint16_t input_buffer_length;
-  uint32_t i,aa;
+  uint32_t i,j,aa;
   uint8_t harq_pid;
   DCI_PDU *DCI_pdu;
   DCI_PDU DCI_pdu_tmp;
@@ -1222,6 +1222,14 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
     fill_dci_emos(DCI_pdu,eNB);
 #else
     fill_dci(DCI_pdu,eNB,proc);
+    // clear previous allocation information for all UEs
+    for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+      if (eNB->dlsch[i][0]){
+        for (j=0; j<8; j++)
+          eNB->dlsch[i][0]->harq_processes[j]->round = 0;
+      }
+    }
+
 #endif
   }
 
