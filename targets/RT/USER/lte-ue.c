@@ -98,8 +98,8 @@ extern uint32_t          downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t           uplink_frequency_offset[MAX_NUM_CCs][4];
 extern int oai_exit;
 
-extern int32_t **rxdata;
-extern int32_t **txdata;
+int32_t **rxdata;
+int32_t **txdata;
 
 //extern unsigned int tx_forward_nsamps;
 //extern int tx_delay;
@@ -1628,14 +1628,14 @@ int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg)
     }
     
     /*
-      if (frame_parms->frame_type == TDD) {
+    if (frame_parms->frame_type == TDD) {
       if (frame_parms->N_RB_DL == 100)
-      N_TA_offset = 624;
-    else if (frame_parms->N_RB_DL == 50)
-    N_TA_offset = 624/2;
-    else if (frame_parms->N_RB_DL == 25)
-    N_TA_offset = 624/4;
-    }
+        N_TA_offset = 624;
+      else if (frame_parms->N_RB_DL == 50)
+        N_TA_offset = 624/2;
+      else if (frame_parms->N_RB_DL == 25)
+        N_TA_offset = 624/4;
+      }
     */
     
     // replace RX signal buffers with mmaped HW versions
@@ -1645,9 +1645,9 @@ int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg)
     for (i=0; i<frame_parms->nb_antennas_rx; i++) {
       printf( "Mapping UE CC_id %d, rx_ant %d, freq %u on card %d, chain %d\n", CC_id, i, downlink_frequency[CC_id][i], rf_map->card, rf_map->chain+i );
       free( phy_vars_ue[CC_id]->common_vars.rxdata[i] );
-    rxdata[i] = (int32_t*)malloc16_clear( 307200*sizeof(int32_t) );
-    phy_vars_ue[CC_id]->common_vars.rxdata[i] = rxdata[i]; // what about the "-N_TA_offset" ? // N_TA offset for TDD
-    printf("rxdata[%d] : %p\n",i,rxdata[i]);
+      rxdata[i] = (int32_t*)malloc16_clear( 307200*sizeof(int32_t) );
+      phy_vars_ue[CC_id]->common_vars.rxdata[i] = rxdata[i]; // what about the "-N_TA_offset" ? // N_TA offset for TDD
+      printf("rxdata[%d] : %p\n",i,rxdata[i]);
     }
     
     for (i=0; i<frame_parms->nb_antennas_tx; i++) {

@@ -779,7 +779,9 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
       
       T(T_ENB_PHY_DLSCH_UE_DCI, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id),
         T_INT(dci_alloc->rnti), T_INT(dci_alloc->format),
-        T_INT(eNB->dlsch[(int)UE_id][0]->current_harq_pid));
+        T_INT(eNB->dlsch[(int)UE_id][0]->current_harq_pid),
+        T_INT(eNB->dlsch[(int)UE_id][0]->harq_processes[eNB->dlsch[(int)UE_id][0]->current_harq_pid]->mcs),
+        T_INT(eNB->dlsch[(int)UE_id][0]->harq_processes[eNB->dlsch[(int)UE_id][0]->current_harq_pid]->TBS));
 
       eNB->dlsch[(uint8_t)UE_id][0]->nCCE[subframe] = dci_alloc->firstCCE;
       
@@ -873,8 +875,12 @@ void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
     eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
   
   T(T_ENB_PHY_ULSCH_UE_DCI, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id),
-    T_INT(dci_alloc->rnti), T_INT(harq_pid));
-
+    T_INT(dci_alloc->rnti), T_INT(harq_pid),
+    T_INT(eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->mcs),
+    T_INT(eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->round),
+    T_INT(eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->first_rb),
+    T_INT(eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->nb_rb),
+    T_INT(eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->TBS));
 }
 
 void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *dlsch, LTE_eNB_DLSCH_t *dlsch1,LTE_eNB_UE_stats *ue_stats,int ra_flag,int num_pdcch_symbols) {
@@ -1138,7 +1144,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
 #endif
 
-  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_DL)) return;
+  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
   if (do_meas==1) start_meas(&eNB->phy_proc_tx);

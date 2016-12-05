@@ -134,8 +134,8 @@ time_stats_t softmodem_stats_mt; // main thread
 time_stats_t softmodem_stats_hw; //  hw acquisition
 time_stats_t softmodem_stats_rxtx_sf; // total tx time
 time_stats_t softmodem_stats_rx_sf; // total rx time
-int32_t **rxdata;
-int32_t **txdata;
+//int32_t **rxdata;
+//int32_t **txdata;
 
 uint8_t seqno; //sequence number
 
@@ -302,12 +302,13 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB) {
                      6,
                      phy_vars_eNB->frame_parms.nb_prefix_samples,
                      CYCLIC_PREFIX);
-        PHY_ofdm_mod(&phy_vars_eNB->common_vars.txdataF[0][aa][slot_offset_F+slot_sizeF],
-                     dummy_tx_b+(phy_vars_eNB->frame_parms.samples_per_tti>>1),
-                     phy_vars_eNB->frame_parms.ofdm_symbol_size,
-                     6,
-                     phy_vars_eNB->frame_parms.nb_prefix_samples,
-                     CYCLIC_PREFIX);
+	if (subframe_select(&phy_vars_eNB->frame_parms,subframe) == SF_DL) 
+	  PHY_ofdm_mod(&phy_vars_eNB->common_vars.txdataF[0][aa][slot_offset_F+slot_sizeF],
+		       dummy_tx_b+(phy_vars_eNB->frame_parms.samples_per_tti>>1),
+		       phy_vars_eNB->frame_parms.ofdm_symbol_size,
+		       6,
+		       phy_vars_eNB->frame_parms.nb_prefix_samples,
+		       CYCLIC_PREFIX);
       } else {
         normal_prefix_mod(&phy_vars_eNB->common_vars.txdataF[0][aa][slot_offset_F],
                           dummy_tx_b,
@@ -385,7 +386,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB) {
        // turn on tx switch N_TA_offset before
        //LOG_D(HW,"subframe %d, time to switch to tx (N_TA_offset %d, slot_offset %d) \n",subframe,phy_vars_eNB->N_TA_offset,slot_offset);
        for (i=0; i<phy_vars_eNB->N_TA_offset; i++) {
-         tx_offset = (int)slot_offset+time_offset[aa]+i-phy_vars_eNB->N_TA_offset/2;
+         tx_offset = (int)slot_offset+time_offset[aa]+i-phy_vars_eNB->N_TA_offset;
          if (tx_offset<0)
            tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti;
 	 
@@ -468,8 +469,16 @@ void proc_tx_full(PHY_VARS_eNB *eNB,
   // if TX fronthaul go ahead 
   if (eNB->tx_fh) eNB->tx_fh(eNB,proc);
 
-
-
+  /*
+   if (proc->frame_tx>1000) {
+     write_output("/tmp/txsig0.m","txs0", &eNB->common_vars.txdata[eNB->Mod_id][0][0], eNB->frame_parms.samples_per_tti*10,1,1);
+     write_output("/tmp/txsigF0.m","txsF0", &eNB->common_vars.txdataF[eNB->Mod_id][0][0],eNB->frame_parms.symbols_per_tti*eNB->frame_parms.ofdm_symbol_size*10,1,1);
+     write_output("/tmp/txsig1.m","txs1", &eNB->common_vars.txdata[eNB->Mod_id][1][0], eNB->frame_parms.samples_per_tti*10,1,1);
+     write_output("/tmp/txsigF1.m","txsF1", &eNB->common_vars.txdataF[eNB->Mod_id][1][0],eNB->frame_parms.symbols_per_tti*eNB->frame_parms.ofdm_symbol_size*10,1,1);
+     //if (transmission_mode == 7) write_output("/tmp/txsigF5.m","txsF5", &eNB->common_vars.txdataF[eNB->Mod_id][5][0],eNB->frame_parms.symbols_per_tti*eNB->frame_parms.ofdm_symbol_size*10,1,1);
+     exit_fun("");
+   }
+   */
 }
 
 void proc_tx_rru_if4p5(PHY_VARS_eNB *eNB,
@@ -539,7 +548,8 @@ int wait_CCs(eNB_rxtx_proc_t *proc) {
 static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_name) {
 
   start_meas(&softmodem_stats_rxtx_sf);
-  // ****************************************
+
+// ****************************************
   // Common RX procedures subframe n
   phy_procedures_eNB_common_RX(eNB);
   
@@ -1477,7 +1487,7 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
   int i, CC_id;
   int j;
 
-  uint16_t N_TA_offset = 0;
+  //uint16_t N_TA_offset = 0;
 
   LTE_DL_FRAME_PARMS *frame_parms;
 
@@ -1490,6 +1500,7 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
       return(-1);
     }
 
+    /*
     if (frame_parms->frame_type == TDD) {
       if (frame_parms->N_RB_DL == 100)
         N_TA_offset = 624;
@@ -1498,7 +1509,7 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
       else if (frame_parms->N_RB_DL == 25)
         N_TA_offset = 624/4;
     }
-
+    */
  
 
     if (openair0_cfg[CC_id].mmapped_dma == 1) {
@@ -1508,11 +1519,8 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
 	printf("Mapping eNB CC_id %d, rx_ant %d\n",CC_id,i);
 	free(phy_vars_eNB[CC_id]->common_vars.rxdata[0][i]);
 	phy_vars_eNB[CC_id]->common_vars.rxdata[0][i] = openair0_cfg[CC_id].rxbase[i];
-	
-	
-	
+
 	printf("rxdata[%d] @ %p\n",i,phy_vars_eNB[CC_id]->common_vars.rxdata[0][i]);
-	
 	for (j=0; j<16; j++) {
 	  printf("rxbuffer %d: %x\n",j,phy_vars_eNB[CC_id]->common_vars.rxdata[0][i][j]);
 	  phy_vars_eNB[CC_id]->common_vars.rxdata[0][i][j] = 16-j;
@@ -1533,15 +1541,15 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
       }
     }
     else {  // not memory-mapped DMA 
-    
-
+      //nothing to do, everything already allocated in lte_init
+      /*
       rxdata = (int32_t**)malloc16(frame_parms->nb_antennas_rx*sizeof(int32_t*));
       txdata = (int32_t**)malloc16(frame_parms->nb_antennas_tx*sizeof(int32_t*));
       
       for (i=0; i<frame_parms->nb_antennas_rx; i++) {
 	free(phy_vars_eNB[CC_id]->common_vars.rxdata[0][i]);
 	rxdata[i] = (int32_t*)(32 + malloc16(32+frame_parms->samples_per_tti*10*sizeof(int32_t))); // FIXME broken memory allocation
-	phy_vars_eNB[CC_id]->common_vars.rxdata[0][i] = rxdata[i]-N_TA_offset; // N_TA offset for TDD         FIXME! N_TA_offset > 16 => access of unallocated memory
+	phy_vars_eNB[CC_id]->common_vars.rxdata[0][i] = rxdata[i]; //-N_TA_offset; // N_TA offset for TDD         FIXME! N_TA_offset > 16 => access of unallocated memory
 	memset(rxdata[i], 0, frame_parms->samples_per_tti*10*sizeof(int32_t));
 	printf("rxdata[%d] @ %p (%p) (N_TA_OFFSET %d)\n", i, phy_vars_eNB[CC_id]->common_vars.rxdata[0][i],rxdata[i],N_TA_offset);      
       }
@@ -1553,6 +1561,7 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
 	memset(txdata[i],0, frame_parms->samples_per_tti*10*sizeof(int32_t));
 	printf("txdata[%d] @ %p\n", i, phy_vars_eNB[CC_id]->common_vars.txdata[0][i]);
       }
+      */
     }
   }
 
