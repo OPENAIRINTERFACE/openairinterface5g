@@ -14,6 +14,10 @@ typedef void widget;
 
 #define DEFAULT_FONT 0
 
+/* tic type for XY plot */
+#define XY_PLOT_DEFAULT_TICK 0
+#define XY_PLOT_SCROLL_TICK  1
+
 /* key modifiers */
 #define KEY_SHIFT   (1<<0)
 #define KEY_CONTROL (1<<1)
@@ -54,6 +58,7 @@ void xy_plot_set_points(gui *gui, widget *this,
     int plot, int npoints, float *x, float *y);
 void xy_plot_get_dimensions(gui *gui, widget *this, int *width, int *height);
 void xy_plot_set_title(gui *gui, widget *this, char *label);
+void xy_plot_set_tick_type(gui *gui, widget *this, int type);
 
 void textlist_add(gui *gui, widget *this, const char *text, int position,
     int color);

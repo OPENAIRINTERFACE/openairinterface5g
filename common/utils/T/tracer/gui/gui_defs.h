@@ -117,6 +117,7 @@ struct xy_plot_widget {
   int wanted_height;
   struct xy_plot_plot *plots;
   int nplots;
+  int tick_type;
 };
 
 struct timeline_subline {
