@@ -1142,14 +1142,15 @@ void ue_prach_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     } else {
       UE_transport_info[ue->Mod_id][ue->CC_id].cntl.prach_flag=1;
       UE_transport_info[ue->Mod_id][ue->CC_id].cntl.prach_id=ue->prach_resources[eNB_id]->ra_PreambleIndex;
-      if (ue->mac_enabled==1){
-	mac_xface->Msg1_transmitted(ue->Mod_id,
-				    ue->CC_id,
-				    frame_tx,
-				    eNB_id);
-      }
     }
     
+    if (ue->mac_enabled==1){
+      mac_xface->Msg1_transmitted(ue->Mod_id,
+          ue->CC_id,
+          frame_tx,
+          eNB_id);
+    }
+
     LOG_D(PHY,"[UE  %d][RAPROC] Frame %d, subframe %d: Generating PRACH (eNB %d) preamble index %d for UL, TX power %d dBm (PL %d dB), l3msg \n",
 	  ue->Mod_id,frame_tx,subframe_tx,eNB_id,
 	  ue->prach_resources[eNB_id]->ra_PreambleIndex,
