@@ -228,7 +228,7 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
   LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
   LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
   int Q_m = get_Qm_ul(ulsch_harq->mcs);
-  int G = ulsch_harq->nb_rb * (12 * Q_m) * ulsch_harq->Nsymb_pusch;
+  int G = ulsch_harq->G;
   uint32_t E;
   uint32_t Gp,GpmodC,Nl=1;
   uint32_t C = ulsch_harq->C;
@@ -449,8 +449,8 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
   int16_t dummy_w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
   LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
   LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
-  int Q_m = get_Qm_ul(ulsch_harq->mcs);
-  int G = ulsch_harq->nb_rb * (12 * Q_m) * ulsch_harq->Nsymb_pusch;
+  //int Q_m = get_Qm_ul(ulsch_harq->mcs);
+  int G = ulsch_harq->G;
   unsigned int E;
   int Cby2;
 
@@ -657,8 +657,8 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
   int16_t dummy_w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
   LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
   LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
-  int Q_m = get_Qm_ul(ulsch_harq->mcs);
-  int G = ulsch_harq->nb_rb * (12 * Q_m) * ulsch_harq->Nsymb_pusch;
+  //int Q_m = get_Qm_ul(ulsch_harq->mcs);
+  int G = ulsch_harq->G;
   unsigned int E;
 
   uint8_t (*tc)(int16_t *y,
@@ -1036,6 +1036,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 #endif
 
   G = G - Q_RI - Q_CQI;
+  ulsch_harq->G = G;
 
   if ((int)G < 0) {
     LOG_E(PHY,"FATAL: ulsch_decoding.c G < 0 (%d) : Q_RI %d, Q_CQI %d\n",G,Q_RI,Q_CQI);
@@ -1532,6 +1533,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   // CQI
 
   //  printf("before cqi c[%d] = %p\n",0,ulsch_harq->c[0]);
+  ulsch_harq->cqi_crc_status = 0;
   if (Q_CQI>0) {
     memset((void *)&dummy_w_cc[0],0,3*(ulsch_harq->Or1+8+32));
 
@@ -1554,9 +1556,6 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 
     if (extract_cqi_crc(o_flip,ulsch_harq->Or1) == (crc8(o_flip,ulsch_harq->Or1)>>24))
       ulsch_harq->cqi_crc_status = 1;
-    else
-      ulsch_harq->cqi_crc_status = 0;
-
 
     if (ulsch->harq_processes[harq_pid]->Or1<=32) {
       ulsch_harq->o[3] = o_flip[0] ;

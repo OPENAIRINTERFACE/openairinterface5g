@@ -1612,7 +1612,7 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
       fprintf(fdsse4,"oldcrc %x, crc %x\n",oldcrc,crc);
 #endif
 
-      if ((crc == oldcrc) && (crc!=0)) {
+      if (crc == oldcrc) {
         return(iteration_cnt);
       }
     }
