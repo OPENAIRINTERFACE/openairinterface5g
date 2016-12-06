@@ -228,6 +228,10 @@ typedef struct Enb_properties_s {
   char               *enb_interface_name_for_S1_MME;
   in_addr_t           enb_ipv4_address_for_S1_MME;
 
+  char               *flexran_agent_interface_name;
+  in_addr_t           flexran_agent_ipv4_address;
+  tcp_udp_port_t      flexran_agent_port;
+  char               *flexran_agent_cache;
 
   /* Nb of RRH to connect to */
   uint8_t             nb_rrh_gw;

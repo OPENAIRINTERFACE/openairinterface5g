@@ -49,6 +49,10 @@
 #   include "gtpv1u_eNB_task.h"
 # endif
 
+#if defined(FLEXRAN_AGENT_SB_IF)
+#   include "flexran_agent.h"
+#endif
+
 extern unsigned char NB_eNB_INST;
 #endif
 
@@ -287,7 +291,7 @@ void *eNB_app_task(void *args_p)
 
   itti_mark_task_ready (TASK_ENB_APP);
 
-# if defined(ENABLE_USE_MME)
+  # if defined(ENABLE_ITTI)
 #   if defined(OAI_EMU)
   enb_nb =        oai_emulation.info.nb_enb_local;
   enb_id_start =  oai_emulation.info.first_enb_local;
@@ -297,7 +301,7 @@ void *eNB_app_task(void *args_p)
                "Last eNB index is greater or equal to maximum eNB index (%d/%d)!",
                enb_id_end, NUMBER_OF_eNB_MAX);
 #   endif
-# endif
+  # endif
 
   enb_properties_p = enb_config_get();
 
@@ -309,6 +313,14 @@ void *eNB_app_task(void *args_p)
     configure_phy(enb_id, enb_properties_p);
     configure_rrc(enb_id, enb_properties_p);
   }
+
+#if defined (FLEXRAN_AGENT_SB_IF)
+  
+  for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
+    printf("\n start enb agent %d\n", enb_id);
+    flexran_agent_start(enb_id, enb_properties_p);
+  }
+#endif 
 
 # if defined(ENABLE_USE_MME)
   /* Try to register each eNB */

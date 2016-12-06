@@ -75,6 +75,11 @@ uint8_t config_smbv = 0;
 char smbv_ip[16];
 #endif
 
+#if defined(FLEXRAN_AGENT_SB_IF)
+#   include "flexran_agent.h"
+#endif
+
+
 #include "oaisim_functions.h"
 
 #include "oaisim.h"
@@ -495,7 +500,6 @@ l2l1_task (void *args_p)
     xargv[0] = xname;
     fl_initialize (&xargc, xargv, NULL, 0, 0);
     eNB_inst = 0;
-    
     for (UE_inst = 0; UE_inst < NB_UE_INST; UE_inst++) {
       for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
 	// DL scope at UEs
@@ -875,6 +879,7 @@ l2l1_task (void *args_p)
                   update_otg_UE (UE_inst, oai_emulation.info.time_ms);
 
                   //Access layer
+		  //		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE_inst, ENB_FLAG_NO, NOT_A_RNTI, frame, next_slot>>1, 0);
 		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE_inst, 0, ENB_FLAG_NO, NOT_A_RNTI, frame % MAX_FRAME_NUMBER, next_slot);
                   pdcp_run (&ctxt);
 #endif
@@ -883,7 +888,7 @@ l2l1_task (void *args_p)
                        CC_id++) {
                     phy_procedures_UE_lte (
                       PHY_vars_UE_g[UE_inst][CC_id],
-                      0, abstraction_flag,
+		      0, abstraction_flag,
                       normal_txrx, no_relay,
                       NULL);
                   }
@@ -1295,6 +1300,10 @@ main (int argc, char **argv)
   smbv_init_config(smbv_fname, smbv_nframes);
   smbv_write_config_from_frame_parms(smbv_fname, &PHY_vars_eNB_g[0][0]->frame_parms);
 #endif
+
+  /* #if defined (FLEXRAN_AGENT_SB_IF)
+  flexran_agent_start();
+  #endif */ 
 
   // add events to future event list: Currently not used
   //oai_emulation.info.oeh_enabled = 1;
