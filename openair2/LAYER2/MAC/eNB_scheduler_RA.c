@@ -259,7 +259,8 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 			   RA_template->RA_dci_fmt1,
 			   1);
 
-	    RA_template->Msg3_subframe=Msg3_subframe;
+            /* this will be updated when PHY calls set_msg3_subframe */
+	    RA_template->Msg3_subframe = -1;
 	  }
         } else if (RA_template->generate_Msg4 == 1) {
 
@@ -663,7 +664,7 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 	LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Checking if Msg4 was acknowledged: \n",
 	      module_idP,CC_id,frameP,subframeP);
 	// Get candidate harq_pid from PHY
-	mac_xface->get_ue_active_harq_pid(module_idP,CC_id,RA_template->rnti,frameP,subframeP,&harq_pid,&round,0);
+	mac_xface->get_ue_active_harq_pid(module_idP,CC_id,RA_template->rnti,frameP,subframeP,&harq_pid,&round,openair_harq_RA);
 	
 	if (round>0) {
 	  //RA_template->wait_ack_Msg4++;

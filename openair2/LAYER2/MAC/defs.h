@@ -475,6 +475,13 @@ typedef struct {
   //
   uint32_t total_ulsch_pdus_rx;
   
+  
+  /// MAC agent-related stats
+  /// total number of scheduling decisions
+  int sched_decisions;
+  /// missed deadlines
+  int missed_deadlines;
+
 } eNB_STATS;
 /*! \brief eNB statistics for the connected UEs*/
 typedef struct {
@@ -614,6 +621,12 @@ typedef struct {
   boolean_t ul_active;
   /// Flag to indicate UE has been configured (ACK from RRCConnectionSetup received)
   boolean_t configured;
+
+  /// MCS from last scheduling
+  uint8_t mcs[8];
+
+  /// TPC from last scheduling
+  uint8_t oldTPC[8];
 
   // PHY interface info
 

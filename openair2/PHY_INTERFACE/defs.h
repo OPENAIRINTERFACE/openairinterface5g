@@ -72,6 +72,16 @@ typedef struct {
   /// cancel an ongoing RA procedure
   void (*cancel_ra_proc)(module_id_t Mod_id,int CC_id,frame_t frameP,uint16_t preamble);
 
+  /// Inform MAC layer that an uplink is scheduled for Msg3 in given subframe.
+  /// This is used so that the MAC scheduler marks as busy the RBs used by the Msg3.
+  void (*set_msg3_subframe)(module_id_t Mod_id,
+                            int CC_id,
+                            int frame,
+                            int subframe,
+                            int rnti,
+                            int Msg3_frame,
+                            int Msg3_subframe);
+
   /// Get DCI for current subframe from MAC
   DCI_PDU* (*get_dci_sdu)(module_id_t Mod_id,int CC_id,frame_t frameP,sub_frame_t subframe);
 

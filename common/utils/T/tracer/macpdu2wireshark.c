@@ -177,7 +177,7 @@ void usage(void)
   printf(
 "options:\n"
 "    -d <database file>        this option is mandatory\n"
-"    -in <dump file>           read events from this dump file\n"
+"    -i <dump file>            read events from this dump file\n"
 "    -ip <IP address>          send packets to this IP address (default %s)\n"
 "    -p <port>                 send packets to this port (default %d)\n",
   DEFAULT_IP,
@@ -205,7 +205,7 @@ int main(int n, char **v)
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
     if (!strcmp(v[i], "-d"))
       { if (i > n-2) usage(); database_filename = v[++i]; continue; }
-    if (!strcmp(v[i], "-in"))
+    if (!strcmp(v[i], "-i"))
       { if (i > n-2) usage(); input_filename = v[++i]; continue; }
     if (!strcmp(v[i], "-ip")) { if (i > n-2) usage(); ip = v[++i]; continue; }
     if (!strcmp(v[i], "-p")) {if(i>n-2)usage(); port=atoi(v[++i]); continue; }

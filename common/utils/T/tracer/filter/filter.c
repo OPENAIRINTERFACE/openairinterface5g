@@ -13,6 +13,7 @@ struct filter {
   } v;
 
   int (*eval)(struct filter *this, event e);
+  void (*free)(struct filter *this);
 };
 
 /****************************************************************************/
@@ -52,7 +53,23 @@ int eval_evarg(struct filter *f, event e)
 }
 
 /****************************************************************************/
-/*                     filter construction functions                        */
+/*                     free memory functions                                */
+/****************************************************************************/
+
+void free_op2(struct filter *f)
+{
+  free_filter(f->v.op2.a);
+  free_filter(f->v.op2.b);
+  free(f);
+}
+
+void free_noop(struct filter *f)
+{
+  free(f);
+}
+
+/****************************************************************************/
+/*                     filter construction/destruction functions            */
 /****************************************************************************/
 
 filter *filter_and(filter *a, filter *b)
@@ -60,6 +77,7 @@ filter *filter_and(filter *a, filter *b)
   struct filter *ret = calloc(1, sizeof(struct filter));
   if (ret == NULL) abort();
   ret->eval = eval_and;
+  ret->free = free_op2;
   ret->v.op2.a = a;
   ret->v.op2.b = b;
   return ret;
@@ -70,6 +88,7 @@ filter *filter_eq(filter *a, filter *b)
   struct filter *ret = calloc(1, sizeof(struct filter));
   if (ret == NULL) abort();
   ret->eval = eval_eq;
+  ret->free = free_op2;
   ret->v.op2.a = a;
   ret->v.op2.b = b;
   return ret;
@@ -80,6 +99,7 @@ filter *filter_int(int v)
   struct filter *ret = calloc(1, sizeof(struct filter));
   if (ret == NULL) abort();
   ret->eval = eval_int;
+  ret->free = free_noop;
   ret->v.v = v;
   return ret;
 }
@@ -97,6 +117,7 @@ filter *filter_evarg(void *database, char *event_name, char *varname)
   f = get_format(database, event_id);
 
   ret->eval = eval_evarg;
+  ret->free = free_noop;
   ret->v.evarg.event_type = event_id;
   ret->v.evarg.arg_index = -1;
 
@@ -112,6 +133,14 @@ filter *filter_evarg(void *database, char *event_name, char *varname)
   }
 
   return ret;
+}
+
+void free_filter(filter *_f)
+{
+  struct filter *f;
+  if (_f == NULL) return;
+  f = _f;
+  f->free(f);
 }
 
 /****************************************************************************/

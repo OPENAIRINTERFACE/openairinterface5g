@@ -1,0 +1,279 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="Header Files\liblfds700">
+      <UniqueIdentifier>{258be429-7dac-4999-b995-753aa2f0c505}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lfds700_freelist">
+      <UniqueIdentifier>{469abf8e-47d8-4678-bd66-7c7e65c5f52e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lfds700_ringbuffer">
+      <UniqueIdentifier>{62ee141b-2acb-4555-b016-7be20a57f2bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lfds700_stack">
+      <UniqueIdentifier>{19c73b0f-25e0-4166-9093-427f1dfb4f70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lfds700_queue">
+      <UniqueIdentifier>{00eb30fe-e638-4c2b-8ca1-1f09c4a0ed45}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lfds700_misc">
+      <UniqueIdentifier>{400ae4e9-2281-4549-b918-59d1a27a2d07}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lfds700_btree_addonly_unbalanced">
+      <UniqueIdentifier>{0b1fafc3-817b-4c18-8eb1-121884e3a29b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lfds700_hash_addonly">
+      <UniqueIdentifier>{bcbadc74-1748-4696-aad7-7fdbe5614624}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lfds700_list_addonly_ordered_singlylinked">
+      <UniqueIdentifier>{c45194af-7b41-4c28-bc0e-1095ec347664}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lfds700_queue_bounded_singleconsumer_singleproducer">
+      <UniqueIdentifier>{6250c4d5-ac8e-4c28-93de-0954c5bed1cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lfds700_list_addonly_singlylinked_unordered">
+      <UniqueIdentifier>{3ac93721-1d81-49e4-9581-dbc12ace5c0c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\inc\liblfds700.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\lfds700_freelist\lfds700_freelist_internal.h">
+      <Filter>Source Files\lfds700_freelist</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\lfds700_queue\lfds700_queue_internal.h">
+      <Filter>Source Files\lfds700_queue</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\lfds700_stack\lfds700_stack_internal.h">
+      <Filter>Source Files\lfds700_stack</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\liblfds700\lfds700_btree_addonly_unbalanced.h">
+      <Filter>Header Files\liblfds700</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\liblfds700\lfds700_freelist.h">
+      <Filter>Header Files\liblfds700</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\liblfds700\lfds700_hash_addonly.h">
+      <Filter>Header Files\liblfds700</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\liblfds700\lfds700_list_addonly_ordered_singlylinked.h">
+      <Filter>Header Files\liblfds700</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\liblfds700\lfds700_list_addonly_singlylinked_unordered.h">
+      <Filter>Header Files\liblfds700</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\liblfds700\lfds700_misc.h">
+      <Filter>Header Files\liblfds700</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\liblfds700\lfds700_porting_abstraction_layer_compiler.h">
+      <Filter>Header Files\liblfds700</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\liblfds700\lfds700_porting_abstraction_layer_operating_system.h">
+      <Filter>Header Files\liblfds700</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\liblfds700\lfds700_porting_abstraction_layer_processor.h">
+      <Filter>Header Files\liblfds700</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\liblfds700\lfds700_queue.h">
+      <Filter>Header Files\liblfds700</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\liblfds700\lfds700_queue_bounded_singleconsumer_singleproducer.h">
+      <Filter>Header Files\liblfds700</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\liblfds700\lfds700_ringbuffer.h">
+      <Filter>Header Files\liblfds700</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\liblfds700\lfds700_stack.h">
+      <Filter>Header Files\liblfds700</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\lfds700_hash_addonly\lfds700_hash_addonly_internal.h">
+      <Filter>Source Files\lfds700_hash_addonly</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\lfds700_misc\lfds700_misc_internal.h">
+      <Filter>Source Files\lfds700_misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\lfds700_btree_addonly_unbalanced\lfds700_btree_addonly_unbalanced_internal.h">
+      <Filter>Source Files\lfds700_btree_addonly_unbalanced</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\lfds700_ringbuffer\lfds700_ringbuffer_internal.h">
+      <Filter>Source Files\lfds700_ringbuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\lfds700_queue_bounded_singleconsumer_singleproducer\lfds700_queue_bounded_singleconsumer_singleproducer_internal.h">
+      <Filter>Source Files\lfds700_queue_bounded_singleconsumer_singleproducer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\lfds700_list_addonly_ordered_singlylinked\lfds700_list_addonly_ordered_singlylinked_internal.h">
+      <Filter>Source Files\lfds700_list_addonly_ordered_singlylinked</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\lfds700_list_addonly_singlylinked_unordered\lfds700_list_addonly_singlylinked_unordered_internal.h">
+      <Filter>Source Files\lfds700_list_addonly_singlylinked_unordered</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\lfds700_freelist\lfds700_freelist_cleanup.c">
+      <Filter>Source Files\lfds700_freelist</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_freelist\lfds700_freelist_init.c">
+      <Filter>Source Files\lfds700_freelist</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_freelist\lfds700_freelist_pop.c">
+      <Filter>Source Files\lfds700_freelist</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_freelist\lfds700_freelist_push.c">
+      <Filter>Source Files\lfds700_freelist</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_freelist\lfds700_freelist_query.c">
+      <Filter>Source Files\lfds700_freelist</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_queue\lfds700_queue_cleanup.c">
+      <Filter>Source Files\lfds700_queue</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_queue\lfds700_queue_dequeue.c">
+      <Filter>Source Files\lfds700_queue</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_queue\lfds700_queue_enqueue.c">
+      <Filter>Source Files\lfds700_queue</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_queue\lfds700_queue_init.c">
+      <Filter>Source Files\lfds700_queue</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_queue\lfds700_queue_query.c">
+      <Filter>Source Files\lfds700_queue</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_stack\lfds700_stack_cleanup.c">
+      <Filter>Source Files\lfds700_stack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_stack\lfds700_stack_init.c">
+      <Filter>Source Files\lfds700_stack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_stack\lfds700_stack_pop.c">
+      <Filter>Source Files\lfds700_stack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_stack\lfds700_stack_push.c">
+      <Filter>Source Files\lfds700_stack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_stack\lfds700_stack_query.c">
+      <Filter>Source Files\lfds700_stack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_hash_addonly\lfds700_hash_addonly_cleanup.c">
+      <Filter>Source Files\lfds700_hash_addonly</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_hash_addonly\lfds700_hash_addonly_get.c">
+      <Filter>Source Files\lfds700_hash_addonly</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_hash_addonly\lfds700_hash_addonly_init.c">
+      <Filter>Source Files\lfds700_hash_addonly</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_hash_addonly\lfds700_hash_addonly_insert.c">
+      <Filter>Source Files\lfds700_hash_addonly</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_hash_addonly\lfds700_hash_addonly_iterate.c">
+      <Filter>Source Files\lfds700_hash_addonly</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_hash_addonly\lfds700_hash_addonly_query.c">
+      <Filter>Source Files\lfds700_hash_addonly</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_misc\lfds700_misc_cleanup.c">
+      <Filter>Source Files\lfds700_misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_misc\lfds700_misc_globals.c">
+      <Filter>Source Files\lfds700_misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_misc\lfds700_misc_init.c">
+      <Filter>Source Files\lfds700_misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_misc\lfds700_misc_prng.c">
+      <Filter>Source Files\lfds700_misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_misc\lfds700_misc_query.c">
+      <Filter>Source Files\lfds700_misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_btree_addonly_unbalanced\lfds700_btree_addonly_unbalanced_cleanup.c">
+      <Filter>Source Files\lfds700_btree_addonly_unbalanced</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_btree_addonly_unbalanced\lfds700_btree_addonly_unbalanced_get.c">
+      <Filter>Source Files\lfds700_btree_addonly_unbalanced</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_btree_addonly_unbalanced\lfds700_btree_addonly_unbalanced_init.c">
+      <Filter>Source Files\lfds700_btree_addonly_unbalanced</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_btree_addonly_unbalanced\lfds700_btree_addonly_unbalanced_insert.c">
+      <Filter>Source Files\lfds700_btree_addonly_unbalanced</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_btree_addonly_unbalanced\lfds700_btree_addonly_unbalanced_query.c">
+      <Filter>Source Files\lfds700_btree_addonly_unbalanced</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_ringbuffer\lfds700_ringbuffer_cleanup.c">
+      <Filter>Source Files\lfds700_ringbuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_ringbuffer\lfds700_ringbuffer_init.c">
+      <Filter>Source Files\lfds700_ringbuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_ringbuffer\lfds700_ringbuffer_query.c">
+      <Filter>Source Files\lfds700_ringbuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_ringbuffer\lfds700_ringbuffer_read.c">
+      <Filter>Source Files\lfds700_ringbuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_ringbuffer\lfds700_ringbuffer_write.c">
+      <Filter>Source Files\lfds700_ringbuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_queue_bounded_singleconsumer_singleproducer\lfds700_queue_bounded_singleconsumer_singleproducer_cleanup.c">
+      <Filter>Source Files\lfds700_queue_bounded_singleconsumer_singleproducer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_queue_bounded_singleconsumer_singleproducer\lfds700_queue_bounded_singleconsumer_singleproducer_dequeue.c">
+      <Filter>Source Files\lfds700_queue_bounded_singleconsumer_singleproducer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_queue_bounded_singleconsumer_singleproducer\lfds700_queue_bounded_singleconsumer_singleproducer_enqueue.c">
+      <Filter>Source Files\lfds700_queue_bounded_singleconsumer_singleproducer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_queue_bounded_singleconsumer_singleproducer\lfds700_queue_bounded_singleconsumer_singleproducer_init.c">
+      <Filter>Source Files\lfds700_queue_bounded_singleconsumer_singleproducer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_queue_bounded_singleconsumer_singleproducer\lfds700_queue_bounded_singleconsumer_singleproducer_query.c">
+      <Filter>Source Files\lfds700_queue_bounded_singleconsumer_singleproducer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_list_addonly_ordered_singlylinked\lfds700_list_addonly_ordered_singlylinked_cleanup.c">
+      <Filter>Source Files\lfds700_list_addonly_ordered_singlylinked</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_list_addonly_ordered_singlylinked\lfds700_list_addonly_ordered_singlylinked_get.c">
+      <Filter>Source Files\lfds700_list_addonly_ordered_singlylinked</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_list_addonly_ordered_singlylinked\lfds700_list_addonly_ordered_singlylinked_init.c">
+      <Filter>Source Files\lfds700_list_addonly_ordered_singlylinked</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_list_addonly_ordered_singlylinked\lfds700_list_addonly_ordered_singlylinked_insert.c">
+      <Filter>Source Files\lfds700_list_addonly_ordered_singlylinked</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_list_addonly_ordered_singlylinked\lfds700_list_addonly_ordered_singlylinked_query.c">
+      <Filter>Source Files\lfds700_list_addonly_ordered_singlylinked</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_list_addonly_singlylinked_unordered\lfds700_list_addonly_singlylinked_unordered_cleanup.c">
+      <Filter>Source Files\lfds700_list_addonly_singlylinked_unordered</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_list_addonly_singlylinked_unordered\lfds700_list_addonly_singlylinked_unordered_get.c">
+      <Filter>Source Files\lfds700_list_addonly_singlylinked_unordered</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_list_addonly_singlylinked_unordered\lfds700_list_addonly_singlylinked_unordered_init.c">
+      <Filter>Source Files\lfds700_list_addonly_singlylinked_unordered</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_list_addonly_singlylinked_unordered\lfds700_list_addonly_singlylinked_unordered_insert.c">
+      <Filter>Source Files\lfds700_list_addonly_singlylinked_unordered</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\lfds700_list_addonly_singlylinked_unordered\lfds700_list_addonly_singlylinked_unordered_query.c">
+      <Filter>Source Files\lfds700_list_addonly_singlylinked_unordered</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
