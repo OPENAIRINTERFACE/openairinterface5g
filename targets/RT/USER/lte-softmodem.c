@@ -1594,8 +1594,16 @@ int main( int argc, char **argv )
 
       UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
       UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
-      UE[CC_id]->N_TA_offset = 0;
-
+      if (UE[CC_id]->frame_parms.frame_type == TDD) {
+        if (UE[CC_id]->frame_parms.N_RB_DL == 100)
+          UE[CC_id]->N_TA_offset = 624;
+        else if (UE[CC_id]->frame_parms.N_RB_DL == 50)
+          UE[CC_id]->N_TA_offset = 624/2;
+        else if (UE[CC_id]->frame_parms.N_RB_DL == 25)
+          UE[CC_id]->N_TA_offset = 624/4;
+      } else {
+        UE[CC_id]->N_TA_offset = 0;
+      }
     }
 
     //  printf("tx_max_power = %d -> amp %d\n",tx_max_power,get_tx_amp(tx_max_poHwer,tx_max_power));
