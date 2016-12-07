@@ -3299,7 +3299,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     l2 = (ue->frame_parms.symbols_per_tti/2)-1;
   }
   
-#if 1 // 2016-11-24 wilson fixed missing slot_fep on 1st ofdm symbol of the first DL subframe after UL
   int prev_subframe_rx = (subframe_rx - 1)<0? 9: (subframe_rx - 1);
   if (subframe_select(&ue->frame_parms,prev_subframe_rx) != SF_DL) {
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -3313,9 +3312,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     l=1;
   }
   for (; l<=l2; l++) {
-#else
-  for (l=1; l<=l2; l++) {
-#endif
     if (abstraction_flag == 0) {
       start_meas(&ue->ofdm_demod_stats);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
@@ -3437,11 +3433,9 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
       
     } // for l=1..l2
 
-#if 1 // 2016-11-24 wilson fixed missing slot_fep on 1st ofdm symbol of the first DL subframe after UL
     // do first symbol of next downlink subframe for channel estimation
     int next_subframe_rx = (1+subframe_rx)%10;
     if (subframe_select(&ue->frame_parms,next_subframe_rx) != SF_UL)
-#endif
     {
       slot_fep(ue,
          0,
