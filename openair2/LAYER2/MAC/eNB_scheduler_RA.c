@@ -664,7 +664,7 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 	LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Checking if Msg4 was acknowledged: \n",
 	      module_idP,CC_id,frameP,subframeP);
 	// Get candidate harq_pid from PHY
-	mac_xface->get_ue_active_harq_pid(module_idP,CC_id,RA_template->rnti,frameP,subframeP,&harq_pid,&round,0);
+	mac_xface->get_ue_active_harq_pid(module_idP,CC_id,RA_template->rnti,frameP,subframeP,&harq_pid,&round,openair_harq_RA);
 	
 	if (round>0) {
 	  //RA_template->wait_ack_Msg4++;

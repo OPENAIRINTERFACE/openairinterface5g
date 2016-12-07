@@ -35,6 +35,7 @@ source $THIS_SCRIPT_PATH/tools/build_helper
 
 MSC_GEN="False"
 XFORMS="True"
+FLEXRAN_AGENT_SB_IF="True"
 PRINT_STATS="False"
 VCD_TIMING="False"
 DEADLINE_SCHEDULER_FLAG_USER="False"
@@ -83,6 +84,8 @@ Options
    Makes the UE specific parts (ue_ip, usim, nvram) 
 --RRH
    Makes the RRH
+-a | --agent
+   Enables agent for software-defined control of the eNB
 -r | --3gpp-release
    default is Rel10,
    Rel8 limits the implementation to 3GPP Release 8 version
@@ -169,6 +172,10 @@ function main() {
             eNB=1
             echo_info "Will compile eNB"
             shift;;
+       -a | --agent)
+	    FLEXRAN_AGENT=1
+	    echo_info "Will compile eNB with agent support"
+	    shift;;
        --UE)
             UE=1
             echo_info "Will compile UE"
@@ -439,6 +446,9 @@ function main() {
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
+    if [ "$FLEXRAN_AGENT" = "1" ] ; then
+	echo "set ( FLEXRAN_AGENT_SB_IF $FLEXRAN_AGENT_SB_IF )"      >>  $cmake_file
+    fi
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
@@ -581,6 +591,9 @@ function main() {
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )" >>  $cmake_file
+    if [ "$FLEXRAN_AGENT" = "1" ] ; then
+	echo "set ( FLEXRAN_AGENT_SB_IF $FLEXRAN_AGENT_SB_IF )"      >>  $cmake_file
+    fi
     echo "set ( PRINT_STATS $PRINT_STATS )" >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
@@ -649,6 +662,9 @@ function main() {
     cp $DIR/oaisim_mme_build_oai/CMakeLists.template $cmake_file
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( XFORMS $XFORMS )" >>  $cmake_file
+    if [ "$FLEXRAN_AGENT" = "1" ] ; then
+	echo "set ( FLEXRAN_AGENT_SB_IF $FLEXRAN_AGENT_SB_IF )"      >>  $cmake_file
+    fi
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
     echo "set ( T_TRACER $T_TRACER )"        >>  $cmake_file
