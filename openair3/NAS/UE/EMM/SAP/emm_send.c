@@ -861,7 +861,6 @@ int emm_send_security_mode_complete(const emm_as_security_t *msg,
 	  emm_msg->presencemask |= SECURITY_MODE_COMPLETE_IMEISV_PRESENT;
 
 	  // 33 85 76 02 05 26 84 01 F1
-	  emm_msg->imeisv.imeisv;
 	  emm_msg->imeisv.imeisv.digit1         = 0x3;
 	  emm_msg->imeisv.imeisv.oddeven        = 0x0;
 	  emm_msg->imeisv.imeisv.typeofidentity = 0x3;
