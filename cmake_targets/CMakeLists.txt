@@ -644,7 +644,7 @@ add_boolean_option(ENABLE_USE_CPU_EXECUTION_TIME True "Add data in vcd traces: d
 add_boolean_option(ENABLE_VCD              True  "always true now, time measurements of proc calls and var displays")
 add_boolean_option(ENABLE_VCD_FIFO         True  "time measurements of proc calls and var displays sent to FIFO (one more thread)")
 add_boolean_option(HARD_RT                 False "???")
-add_boolean_option(LINUX                   True "used in weird memcpy() in pdcp.c ???")
+add_boolean_option(LINUX                   False "used in weird memcpy() in pdcp.c ???")
 add_boolean_option(LINUX_LIST              False "used only in lists.c: either use OAI implementation of lists or Linux one (should be True, but it is False")
 add_boolean_option(LOG_NO_THREAD           True  "Disable thread for log, seems always set to true")
 add_boolean_option(OPENAIR_LTE             True "Seems legacy: keep it to true")
@@ -727,7 +727,7 @@ add_boolean_option(TRACE_RLC_UM_TX_STATUS  False "TRACE for RLC UM, TO BE CHANGE
 ##########################
 # PDCP LAYER OPTIONS
 ##########################
-add_boolean_option(PDCP_USE_NETLINK            True "For eNB, PDCP communicate with a NETLINK socket if connected to network driver, else could use a RT-FIFO")
+add_boolean_option(PDCP_USE_NETLINK            False "For eNB, PDCP communicate with a NETLINK socket if connected to network driver, else could use a RT-FIFO")
 add_boolean_option(PDCP_USE_NETLINK_QUEUES     False "When PDCP_USE_NETLINK is true, incoming IP packets are stored in queues")
 add_boolean_option(LINK_ENB_PDCP_TO_IP_DRIVER  False "For eNB, PDCP communicate with a IP driver")
 add_boolean_option(LINK_ENB_PDCP_TO_GTPV1U     True  "For eNB, PDCP communicate with GTP-U protocol (eNB<->S-GW)")
