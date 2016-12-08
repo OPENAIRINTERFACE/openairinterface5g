@@ -483,7 +483,7 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *eNB)
       }
 
       if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated) {
-        if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated->present == SchedulingRequestConfig_PR_setup) {
+        if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated->present == SoundingRS_UL_ConfigDedicated_PR_setup) {
 
           eNB->soundingrs_ul_config_dedicated[UE_id].duration             = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.duration;
           eNB->soundingrs_ul_config_dedicated[UE_id].cyclicShift          = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift;
@@ -876,7 +876,7 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
     if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated) {
 
       phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id].srsConfigDedicatedSetup = 0;
-      if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated->present == SchedulingRequestConfig_PR_setup) {
+      if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated->present == SoundingRS_UL_ConfigDedicated_PR_setup) {
         phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id].srsConfigDedicatedSetup = 1;
         phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id].duration             = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.duration;
         phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id].cyclicShift          = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift;
