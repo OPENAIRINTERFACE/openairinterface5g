@@ -93,7 +93,7 @@ typedef struct imeisv_s{
   uint8_t  digit15:4;
   uint8_t  digit16:4;
 #define EVEN_PARITY 0
-#define ODD_PARITY  1
+#define IMEI_ODD_PARITY  0xf
        uint8_t parity:4;
 } imeisv_t;
 
@@ -119,7 +119,7 @@ typedef struct imeisv_s {
        uint8_t svn2:4;
        uint8_t svn1:4;
 #define EVEN_PARITY 0
-#define ODD_PARITY  1
+#define IMEI_ODD_PARITY  0xf
        uint8_t parity:4;
      } num;
 #define IMEISV_BCD8_SIZE   9

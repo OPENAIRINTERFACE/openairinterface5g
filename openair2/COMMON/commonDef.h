@@ -119,7 +119,7 @@ typedef struct {
       Byte_t digit14:4;
       Byte_t digit13:4;
 #define EVEN_PARITY 0
-#define ODD_PARITY  0xf
+#define ODD_PARITY  1
       Byte_t parity:4;
       Byte_t digit15:4;
     } num;

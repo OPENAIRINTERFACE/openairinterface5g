@@ -879,7 +879,7 @@ int emm_send_security_mode_complete(const emm_as_security_t *msg,
 	  emm_msg->imeisv.imeisv.digit14        = 0x3;
 	  emm_msg->imeisv.imeisv.digit15        = 0x0;
 	  emm_msg->imeisv.imeisv.digit16        = 0x0;
-	  emm_msg->imeisv.imeisv.parity         = ODD_PARITY;
+	  emm_msg->imeisv.imeisv.parity         = IMEI_ODD_PARITY;
 
 	  size += SECURITY_MODE_COMPLETE_MAXIMUM_LENGTH;
   }
