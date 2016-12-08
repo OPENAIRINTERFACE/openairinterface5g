@@ -1356,7 +1356,7 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
         // Trigger BSR Periodic
       UE_mac_inst[module_idP].BSR_reporting_active |= BSR_TRIGGER_PERIODIC;
 
-      LOG_I(MAC,"[UE %d] MAC BSR Triggered PeriodicBSR Timer expiry at frame%d subframe %d TBS=%d\n",
+      LOG_D(MAC,"[UE %d] MAC BSR Triggered PeriodicBSR Timer expiry at frame%d subframe %d TBS=%d\n",
                        module_idP, frameP, subframe, buflen);
 
     }

@@ -472,13 +472,15 @@ int emm_recv_security_mode_command(security_mode_command_msg *msg,
    * Message processing
    */
   /* Execute the security mode control procedure initiated by the network */
+  LOG_I(NAS,"Execute the security mode control procedure initiated by the network:  imeisvrequest %d\n",msg->imeisvrequest);
   rc = emm_proc_security_mode_command(
          msg->naskeysetidentifier.tsc != NAS_KEY_SET_IDENTIFIER_MAPPED,
          msg->naskeysetidentifier.naskeysetidentifier,
          msg->selectednassecurityalgorithms.typeofcipheringalgorithm,
          msg->selectednassecurityalgorithms.typeofintegrityalgorithm,
          msg->replayeduesecuritycapabilities.eea,
-         msg->replayeduesecuritycapabilities.eia);
+         msg->replayeduesecuritycapabilities.eia,
+		 msg->imeisvrequest & 0x7);
 
   LOG_FUNC_RETURN (rc);
 }
