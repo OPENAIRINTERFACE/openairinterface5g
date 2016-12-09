@@ -575,7 +575,7 @@ static int encode_imei_mobile_identity(ImeiMobileIdentity_t *imei, uint8_t *buff
 static int encode_imeisv_mobile_identity(ImeisvMobileIdentity_t *imeisv, uint8_t *buffer)
 {
   uint32_t encoded = 0;
-  LOG_I(NAS,"SECURITY MODE COMMAND COMPLETE: encode_imeisv_mobile_identity \n");
+  LOG_TRACE(INFO,"SECURITY MODE COMMAND COMPLETE: encode_imeisv_mobile_identity \n");
 
   *(buffer + encoded) = 0x00 | (imeisv->digit1 << 4) | (imeisv->oddeven << 3) |
                         (imeisv->typeofidentity);
