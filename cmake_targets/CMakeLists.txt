@@ -622,7 +622,7 @@ add_boolean_option(MESSAGE_CHART_GENERATOR False         "For generating sequenc
 add_boolean_option(MESSAGE_CHART_GENERATOR_RLC_MAC False "trace RLC-MAC exchanges in sequence diagrams")
 add_boolean_option(MESSAGE_CHART_GENERATOR_PHY     False "trace some PHY exchanges in sequence diagrams")
 
-add_boolean_option(ENB_AGENT                   True         "enable eNB agent to inteface with a SDN contrller")
+add_boolean_option(FLEXRAN_AGENT_SB_IF             False         "enable FlexRAN agent to inteface with a SDN controller")
 
 ########################
 # Include order
@@ -818,8 +818,10 @@ include_directories("${OPENAIR_DIR}/targets/ARCH/COMMON")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/USERSPACE/LIB/")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/DEFS")
 include_directories("${OPENAIR2_DIR}/ENB_APP")
+include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC")
 include_directories("${OPENAIR2_DIR}/UTIL/OSA")
 include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds6.1.1/liblfds611/inc")
+include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds7.0.0/liblfds700/inc")
 include_directories("${OPENAIR2_DIR}/UTIL/MEM")
 include_directories("${OPENAIR2_DIR}/UTIL/LISTS")
 include_directories("${OPENAIR2_DIR}/UTIL/FIFO")
@@ -838,6 +840,94 @@ include_directories("${OPENAIR_DIR}")
 
 # Utilities Library
 ################
+if (FLEXRAN_AGENT_SB_IF)
+  # set the version of protobuf messages, V3 not supported yet
+  add_list1_option(FLPT_VERSION V2 "FLPT MSG  protobuf  grammar version" V2 V3)
+  
+  if (${FLPT_VERSION} STREQUAL "V2")
+    set (FLPTDIR V2)
+  elseif (${FLPT_VERSION} STREQUAL "V3")
+    set (FLPTDIR V3)
+  endif(${FLPT_VERSION} STREQUAL "V2")
+  
+  set(FLPT_MSG_DIR ${OPENAIR2_DIR}/ENB_APP/MESSAGES/${FLPTDIR} )
+  set(FLPT_MSG_FILES
+    ${FLPT_MSG_DIR}/header.proto
+    ${FLPT_MSG_DIR}/flexran.proto
+    ${FLPT_MSG_DIR}/stats_common.proto
+    ${FLPT_MSG_DIR}/stats_messages.proto
+    ${FLPT_MSG_DIR}/time_common.proto
+    ${FLPT_MSG_DIR}/controller_commands.proto
+    ${FLPT_MSG_DIR}/mac_primitives.proto
+    ${FLPT_MSG_DIR}/config_messages.proto
+    ${FLPT_MSG_DIR}/config_common.proto
+    ${FLPT_MSG_DIR}/control_delegation.proto
+    )
+
+  set(FLPT_C_DIR ${protobuf_generated_dir}/${FLPTDIR})
+  #message("calling protoc_call=${protoc_call} FLPT_C_DIR=${FLPT_C_DIR} FLPT_MSG_FILES=${FLPT_MSG_FILES}")
+  execute_process(COMMAND ${protoc_call} ${FLPT_C_DIR} ${FLPT_MSG_DIR} ${FLPT_MSG_FILES})
+  file(GLOB FLPT_source ${FLPT_C_DIR}/*.c)
+  set(FLPT_OAI_generated
+    ${FLPT_C_DIR}/header.pb-c.c
+    ${FLPT_C_DIR}/flexran.pb-c.c
+    ${FLPT_C_DIR}/stats_common.pb-c.c
+    ${FLPT_C_DIR}/stats_messages.pb-c.c
+    ${FLPT_C_DIR}/time_common.pb-c.c
+    ${FLPT_C_DIR}/controller_commands.pb-c.c
+    ${FLPT_C_DIR}/mac_primitives.pb-c.c
+    ${FLPT_C_DIR}/config_messages.pb-c.c
+    ${FLPT_C_DIR}/config_common.pb-c.c
+    ${FLPT_C_DIR}/control_delegation.pb-c.c
+    )
+  
+  file(GLOB flpt_h ${FLPT_C_DIR}/*.h)
+  set(flpt_h ${flpt_h} )
+  
+  add_library(FLPT_MSG
+    ${FLPT_OAI_generated}
+    ${FLPT_source}
+    )
+  set(FLPT_MSG_LIB FLPT_MSG)
+  #message("prpt c dir is : ${FLPT_C_DIR}")
+  include_directories (${FLPT_C_DIR})
+
+  add_library(ASYNC_IF
+    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/socket_link.c
+    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/link_manager.c
+    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/message_queue.c
+    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/ringbuffer_queue.c
+    )
+  set(ASYNC_IF_LIB ASYNC_IF)
+  include_directories(${OPENAIR2_DIR}/UTIL/ASYNC_IF)
+
+ add_library(FLEXRAN_AGENT
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_handler.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_common.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_common_internal.c
+    ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_task_manager.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_net_comm.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_async.c
+    ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac_internal.c
+    )
+  set(FLEXRAN_AGENT_LIB FLEXRAN_AGENT)
+  #include_directories(${OPENAIR2_DIR}/ENB_APP)
+  
+  set(PROTOBUF_LIB "protobuf-c")
+  
+  FIND_PATH(LIBYAML_INCLUDE_DIR NAMES yaml.h)
+  FIND_LIBRARY(LIBYAML_LIBRARIES NAMES yaml libyaml)
+  
+  INCLUDE(FindPackageHandleStandardArgs)
+  FIND_PACKAGE_HANDLE_STANDARD_ARGS(Yaml DEFAULT_MSG LIBYAML_LIBRARIES LIBYAML_INCLUDE_DIR)
+  MARK_AS_ADVANCED(LIBYAML_INCLUDE_DIR LIBYAML_LIBRARIES)
+
+  #set(PROTOBUF_LIB "protobuf") #for Cpp
+endif()
+
+
 add_library(HASHTABLE
   ${OPENAIR_DIR}/common/utils/hashtable/hashtable.c
   ${OPENAIR_DIR}/common/utils/hashtable/obj_hashtable.c
@@ -1096,7 +1186,17 @@ set (MAC_SRC
   ${MAC_DIR}/eNB_scheduler_RA.c
   ${MAC_DIR}/pre_processor.c
   ${MAC_DIR}/config.c
-  )
+ )
+
+if (FLEXRAN_AGENT_SB_IF)
+
+set (MAC_SRC ${MAC_SRC}
+  ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue.c
+  ${MAC_DIR}/flexran_agent_scheduler_dataplane.c
+  ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue_remote.c
+)
+
+endif()
 
 set (ENB_APP_SRC
   ${OPENAIR2_DIR}/ENB_APP/enb_app.c
@@ -1108,6 +1208,14 @@ add_library(L2
   ${MAC_SRC}
   ${ENB_APP_SRC})
 #  ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
+
+if (FLEXRAN_AGENT_SB_IF)
+
+#Test for adding a shared library
+add_library(default_sched SHARED ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue.c)
+add_library(remote_sched SHARED ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue_remote.c)
+
+endif()
 
 # L3 Libs
 ##########################
@@ -1469,6 +1577,23 @@ add_library(LFDS
   ${lfds}/lfds611_abstraction/lfds611_abstraction_malloc.c
 )
 
+set(lfds7 ${OPENAIR2_DIR}/UTIL/LFDS/liblfds7.0.0/liblfds700/src/)
+file(GLOB lfds7_queue ${lfds7}/lfds700_queue/*.c)
+file(GLOB lfds7_ring ${lfds7}/lfds700_ringbuffer/*.c)
+file(GLOB lfds7_qbss ${lfds7}/lfds700_queue_bounded_singleconsumer_singleproducer/*.c)
+file(GLOB lfds7_stack ${lfds7}/lfds700_stack/*.c)
+file(GLOB lfds7_freelist ${lfds7}/lfds700_freelist/*.c)
+file(GLOB lfds7_btree ${lfds7}/lfds700_btree_addonly_unbalanced/*.c)
+file(GLOB lfds7_hash ${lfds7}/lfds700_hash_addonly/*.c)
+file(GLOB lfds7_ordered_list ${lfds7}/lfds700_list_addonly_ordered_singlylinked/*.c)
+file(GLOB lfds7_unordered_list ${lfds7}/lfds700_list_addonly_singlylinked_unordered/*.c)
+file(GLOB lfds7_misc ${lfds7}/lfds700_misc/*.c)
+
+include_directories(${lfds7})
+add_library(LFDS7
+  ${lfds7_queue} ${lfds7_ring} ${lfds7_qbss} ${lfds7_stack} ${lfds7_freelist} ${lfds7_btree} ${lfds7_hash} ${lfds7_ordered_list} ${lfds7_unordered_list} ${lfds7_misc}
+)
+
 # Simulation library
 ##########################
 add_library(SIMU
@@ -1645,11 +1770,11 @@ add_executable(lte-softmodem
 
 target_link_libraries (lte-softmodem -ldl
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} 
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
   -Wl,--end-group )
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ) 
+target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
 target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem ${T_LIB})
 
@@ -1679,11 +1804,11 @@ add_executable(lte-softmodem-nos1
   )
 target_link_libraries (lte-softmodem-nos1
   -Wl,--start-group
-  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} ${MIH_LIB}
+  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
   -Wl,--end-group )
 
 target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib}  ${option_TP_lib} ${XFORMS_LIBRARIES} )
+target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 ${T_LIB})
 
@@ -1824,15 +1949,19 @@ add_executable(oaisim_nos1
 target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim_nos1
   -Wl,--start-group
-  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
+  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
   -Wl,--end-group )
 
 target_link_libraries (oaisim_nos1 ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
-target_link_libraries (oaisim_nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES}  ${option_HW_lib}  ${option_TP_lib}
-  ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES})
+target_link_libraries (oaisim_nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES}  ${option_HW_lib} ${option_TP_lib}
+  ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
 #Force link with forms, regardless XFORMS option
 target_link_libraries (oaisim_nos1 forms)
+
+#message("protobuflib is  ${PROTOBUF_LIB}")
+
 target_link_libraries (oaisim_nos1 ${T_LIB})
+
 
 # Unitary tests for each piece of L1: example, mbmssim is MBMS L1 simulator
 #####################################
@@ -1845,7 +1974,8 @@ foreach(myExe dlsim ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syn
     ${T_SOURCE}
     )
   target_link_libraries (${myExe}
-    -Wl,--start-group SIMU UTIL SCHED_LIB PHY LFDS ${ITTI_LIB} -Wl,--end-group
+
+    -Wl,--start-group SIMU UTIL SCHED_LIB PHY LFDS ${ITTI_LIB} LFDS7 -Wl,--end-group
     pthread m rt ${CONFIG_LIBRARIES} ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${T_LIB}
     )
 endforeach(myExe)

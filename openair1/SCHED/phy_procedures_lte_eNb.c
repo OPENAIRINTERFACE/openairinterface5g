@@ -21,11 +21,11 @@
 
 /*! \file phy_procedures_lte_eNB.c
  * \brief Implementation of eNB procedures from 36.213 LTE specifications
- * \author R. Knopp, F. Kaltenberger, N. Nikaein
+ * \author R. Knopp, F. Kaltenberger, N. Nikaein, X. Foukas
  * \date 2011
  * \version 0.1
  * \company Eurecom
- * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr,navid.nikaein@eurecom.fr
+ * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr,navid.nikaein@eurecom.fr, x.foukas@sms.ed.ac.uk
  * \note
  * \warning
  */
@@ -59,6 +59,14 @@
 
 #if defined(ENABLE_ITTI)
 #   include "intertask_interface.h"
+#endif
+
+
+#if defined(FLEXRAN_AGENT_SB_IF)
+//Agent-related headers
+#include "ENB_APP/flexran_agent_extern.h"
+#include "ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac.h"
+#include "LAYER2/MAC/flexran_agent_mac_proto.h"
 #endif
 
 //#define DIAG_PHY
@@ -221,7 +229,7 @@ int8_t find_next_ue_index(PHY_VARS_eNB *eNB)
   return(-1);
 }
 
-int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16_t rnti, const int frame, const uint8_t subframe,uint8_t *harq_pid,uint8_t *round,const uint8_t ul_flag)
+int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16_t rnti, const int frame, const uint8_t subframe,uint8_t *harq_pid,uint8_t *round,const uint8_t harq_flag)
 {
   LTE_eNB_DLSCH_t *DLSCH_ptr;
   LTE_eNB_ULSCH_t *ULSCH_ptr;
@@ -235,8 +243,19 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
     return(-1);
   }
 
-  if (ul_flag == 0)  {// this is a DL request
+  if ((harq_flag == openair_harq_DL) || (harq_flag == openair_harq_RA))  {// this is a DL request
+
     DLSCH_ptr = PHY_vars_eNB_g[Mod_id][CC_id]->dlsch[(uint32_t)UE_id][0];
+
+    if (harq_flag == openair_harq_RA) {
+      if (DLSCH_ptr->harq_processes[0] != NULL) {
+	*harq_pid = 0;
+	*round = DLSCH_ptr->harq_processes[0]->round;
+	return 0;
+      } else {
+	return -1;
+      }
+    }
 
     /* let's go synchronous for the moment - maybe we can change at some point */
     i = (frame * 10 + subframe) % 8;
@@ -760,7 +779,9 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
       
       T(T_ENB_PHY_DLSCH_UE_DCI, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id),
         T_INT(dci_alloc->rnti), T_INT(dci_alloc->format),
-        T_INT(eNB->dlsch[(int)UE_id][0]->current_harq_pid));
+        T_INT(eNB->dlsch[(int)UE_id][0]->current_harq_pid),
+        T_INT(eNB->dlsch[(int)UE_id][0]->harq_processes[eNB->dlsch[(int)UE_id][0]->current_harq_pid]->mcs),
+        T_INT(eNB->dlsch[(int)UE_id][0]->harq_processes[eNB->dlsch[(int)UE_id][0]->current_harq_pid]->TBS));
 
       eNB->dlsch[(uint8_t)UE_id][0]->nCCE[subframe] = dci_alloc->firstCCE;
       
@@ -854,8 +875,12 @@ void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
     eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
   
   T(T_ENB_PHY_ULSCH_UE_DCI, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id),
-    T_INT(dci_alloc->rnti), T_INT(harq_pid));
-
+    T_INT(dci_alloc->rnti), T_INT(harq_pid),
+    T_INT(eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->mcs),
+    T_INT(eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->round),
+    T_INT(eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->first_rb),
+    T_INT(eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->nb_rb),
+    T_INT(eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->TBS));
 }
 
 void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *dlsch, LTE_eNB_DLSCH_t *dlsch1,LTE_eNB_UE_stats *ue_stats,int ra_flag,int num_pdcch_symbols) {
@@ -1119,7 +1144,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
 #endif
 
-  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_DL)) return;
+  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
   if (do_meas==1) start_meas(&eNB->phy_proc_tx);
@@ -1399,7 +1424,16 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
     
     eNB->dlsch_ra->active = 0;
   }
-  
+
+#if defined(FLEXRAN_AGENT_SB_IF)
+#ifndef DISABLE_SF_TRIGGER
+  //Send subframe trigger to the controller
+  if (mac_agent_registered[eNB->Mod_id]) {
+    agent_mac_xface[eNB->Mod_id]->flexran_agent_send_sf_trigger(eNB->Mod_id);
+  }
+#endif
+#endif
+
   // Now scan UE specific DLSCH
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++)
     {

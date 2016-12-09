@@ -763,7 +763,7 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
 				    frameP,subframeP,
 				    &ue_sched_ctl->harq_pid[CC_id],
 				    &ue_sched_ctl->round[CC_id],
-				    0);
+				    openair_harq_DL);
   if (ue_sched_ctl->ta_timer == 0) {
 
     // WE SHOULD PROTECT the eNB_UE_stats with a mutex here ...
@@ -1028,7 +1028,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       // This is the actual CC_id in the list
       CC_id = UE_list->ordered_ULCCids[n][UE_id];
 
-      mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,1);
+      mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL);
 
       if(round>0) {
         nb_allocated_rbs[CC_id][UE_id] = UE_list->UE_template[CC_id][UE_id].nb_rb_ul[harq_pid];
