@@ -1,5 +1,5 @@
 diff --git a/cmake_targets/CMakeLists.txt b/cmake_targets/CMakeLists.txt
-index 3169c6c..eaf5417 100644
+index 07d92a1..b6a02d1 100644
 --- a/cmake_targets/CMakeLists.txt
 +++ b/cmake_targets/CMakeLists.txt
 @@ -235,6 +235,7 @@ add_boolean_option(DEBUG_OMG           False "???")

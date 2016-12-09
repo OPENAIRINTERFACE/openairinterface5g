@@ -1,14 +1,12 @@
 diff --git a/openair1/SCHED/phy_procedures_lte_ue.c b/openair1/SCHED/phy_procedures_lte_ue.c
-index 3ed4c79..7185e5a 100644
+index 5dc629b..4d31ad3 100644
 --- a/openair1/SCHED/phy_procedures_lte_ue.c
 +++ b/openair1/SCHED/phy_procedures_lte_ue.c
-@@ -2748,7 +2748,25 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
- 	   0);
+@@ -3347,6 +3347,22 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
  
    // first slot has been processed (FFTs + Channel Estimation, PCFICH/PHICH/PDCCH)
-- 
-+
-+    /* SYRTEM */
+  
++   #if UE_AUTOTEST_TRACE
 +    if ( (frame_rx % 10 == 0) && (subframe_rx == 0)) {
 +      printf("AUTOTEST Metric : UE_FREQ_OFFSET = %d Hz (frame = %d) \n", ue->common_vars.freq_offset, frame_rx);
 +      printf("AUTOTEST Metric : UE_RX_OFFSET = %d (frame = %d) \n", ue->rx_offset, frame_rx);
@@ -21,11 +19,9 @@ index 3ed4c79..7185e5a 100644
 +        (double)ue->measurements.n0_power_tot_dBm+132.24,
 +        frame_rx);
 +     }
++  #endif
 +
-+
-+
-+
-+
++ 
    // do procedures for C-RNTI
    if (ue->dlsch[eNB_id][0]->active == 1) {
-     ue_pdsch_procedures(ue,
+     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);

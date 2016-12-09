@@ -1,8 +1,8 @@
 diff --git a/openair1/PHY/LTE_TRANSPORT/initial_sync.c b/openair1/PHY/LTE_TRANSPORT/initial_sync.c
-index 661fe96..782305d 100644
+index 663978e..b77cb1b 100644
 --- a/openair1/PHY/LTE_TRANSPORT/initial_sync.c
 +++ b/openair1/PHY/LTE_TRANSPORT/initial_sync.c
-@@ -469,6 +469,15 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
+@@ -476,6 +476,15 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
      //#endif
  
      if (ue->UE_scan_carrier == 0) {

@@ -2,22 +2,27 @@
 
 <MachineList>imb182-desktop yanbo-M4HM87P-00</MachineList> <!-- ued-PRM-130 -->
  <NFSResultsShare>/mnt/sradio/TEST_RESULTS/</NFSResultsShare>
-  <!-- <GitOAI5GRepo> https://gitlab.eurecom.fr/oai1B/openairinterface5g.git</GitOAI5GRepo> -->
- <GitOAI5GRepo>https://gitlab.eurecom.fr/oai/openairinterface5g.git</GitOAI5GRepo> -->
- <!--  <GitOAI5GRepo>git@gitlab.com:TCL_Communications/openairinterface5g.git</GitOAI5GRepo> -->
+ <GitOAI5GRepo> https://gitlab.eurecom.fr/oai1B/openairinterface5g.git</GitOAI5GRepo>
+ <!-- <GitOAI5GRepo>https://gitlab.eurecom.fr/oai/openairinterface5g.git</GitOAI5GRepo> -->
+ <!-- <GitOAI5GRepo>git@gitlab.com:TCL_Communications/openairinterface5g.git</GitOAI5GRepo> -->
  <GitOpenair-cnRepo>https://gitlab.eurecom.fr/oai/openair-cn.git</GitOpenair-cnRepo> -->
- <GitOAI5GRepoBranch>Enhancement-142-OAI_UE_autotest_framework</GitOAI5GRepoBranch>
- <!-- <GitOAI5GHeadVersion>9fbbd0678a236ea9e7878f83fe7327dd29b26854</GitOAI5GHeadVersion> -->
+ <GitOAI5GRepoBranch>develop1B</GitOAI5GRepoBranch>
+ <GitOAI5GHeadVersion>develop1B_integration_w49</GitOAI5GHeadVersion> -->
+ <!-- <GitOAI5GHeadVersion>425b6fd525d9c4b0b3c2357926bbac5685e4b1e5</GitOAI5GHeadVersion> -->
  <!-- <GitOAI5GHeadVersion>23822ea203e00f2100fa41c7ee3084ec55b884fe</GitOAI5GHeadVersion> --> 
  <GitOAI5GHeadVersion></GitOAI5GHeadVersion>
  <OAI5GPatchDir></OAI5GPatchDir>
 
- <!--
  <OAI5GPatchFile name="autotest_ue_cell_synch_event.patch"/>
- <OAI5GPatchFile name="autotest2.patch"/>
+ <OAI5GPatchFile name="autotest_ue_dlsch_bitrate_metric.patch"/>
  <OAI5GPatchFile name="autotest_ue_offsets_metric.patch"/>
  <OAI5GPatchFile name="build_oai.patch"/>
  <OAI5GPatchFile name="CmakeLists.patch"/>
+ 
+ <!--
+ <OAI5GPatchFile name="phy_test_dl_harq_reset.patch"/>
+ <OAI5GPatchFile name="phy_test__target_dl_mcs.patch"/>
+ <OAI5GPatchFile name="pdcp_fifo_netlink.patch"/>
 -->
 
  <GitOpenair-cnRepoBranch>develop</GitOpenair-cnRepoBranch>
@@ -30,11 +35,20 @@
  <MachineListGeneric>yanbo-M4HM87P-00</MachineListGeneric>
 
 
-<!-- USRP Testcases performances  030000 030030 030100 030900 030930 031000 031030 031600 031630 031700 031730 031800 031900 031930 032000 032100 032200 032300 032400 032500 032600 032700  032730 032800 036000 036100 036130 -->
+<!-- USRP Testcases performances  030000 030030 030100 030900 030930 031000 031030 031600 031630 031700 031730 031800 031900 031930 032000 032100 032200 032300 032400 032500 032600 032700 032710 032730 032740 032800 032810 032830 032840 032870 036000 036100 036130 036170 -->
 
 <!-- USRP Testcases performances  030000 030030  030900 030930 031000 031030 031600 031630 031700 031730 031900 031930 032700 032730 032800 036000 036100 036130 032740 032710 -->
 
 <!-- Stability 032740 032710 -->
+
+
+    <!-- USRP Band 7 5MHz SISO Iperf downlink performances : 030030 030930 031030 031630 031730 031930 032730 032830 -->
+
+
+
+
+<!-- PHY-TEST DOWNLINK PERFORMANCE -->
+
 
  <testCase id="030000" >
     <class>lte-softmodem-noS1</class>
@@ -62,7 +76,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -164,7 +178,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -271,7 +285,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -373,7 +387,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -475,7 +489,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -577,7 +591,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -679,7 +693,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -781,7 +795,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -884,7 +898,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -986,7 +1000,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -1088,7 +1102,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -1190,7 +1204,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -1292,7 +1306,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -1395,7 +1409,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -1497,7 +1511,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -1599,7 +1613,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -1665,57 +1679,6 @@
             unit_of_meas = "kbps"
             pass_fail_stat = "mean_value"
             min_limit = "11880"/>    
-    <UE_metric  id="UE_FREQ_OFFSET" 
-            description="UE downlink frequency channel offset"  
-            regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
-            unit_of_meas = "Hz"/> 
-    <UE_metric  id="UE_RX_OFFSET" 
-            description="UE downlink rx sample offset"  
-            regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
-            unit_of_meas = ""/> 
-    </testCase> 
-
-<testCase id="032800" >
-    <class>lte-softmodem-noS1</class>
-    <desc></desc>
-    <eNB>imb182-desktop</eNB>
-    <UE>yanbo-M4HM87P-00</UE>
-    <TimeOut_cmd>300</TimeOut_cmd>
-    <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file></eNB_config_file>
-    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
-    <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
-    <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
-    <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 28 --single-thread-disable --phy-test</eNB_main_exec_args>
-    <eNB_traffic_exec></eNB_traffic_exec>
-    <eNB_traffic_exec_args></eNB_traffic_exec_args>
-    <eNB_search_expr_true></eNB_search_expr_true>
-    <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
-
-    <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file></UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
-    <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
-    <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
-    <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec></UE_traffic_exec>
-    <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_search_expr_true></UE_search_expr_true>
-    <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
-    <tags>UE_USRP.NOS1.PHYTEST_PERF.BAND7.5MHZ.MCS28</tags>
-    <nruns>3</nruns><max_ntries>6</max_ntries>
-   <UE_metric  id="UE_DLSCH_BITRATE" 
-        description="UE downlink physical throughput"  
-        regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
-        unit_of_meas = "kbps"
-        pass_fail_stat = "mean_value"
-        min_limit = "13752"/>
     <UE_metric  id="UE_FREQ_OFFSET" 
             description="UE downlink frequency channel offset"  
             regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
@@ -1804,7 +1767,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -1907,7 +1870,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r50 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r50 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -2010,7 +1973,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r50 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r50 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec></UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -2089,54 +2052,6 @@
     </testCase> 
 
 
- <testCase id="030030" >
-    <class>lte-softmodem-noS1</class>
-    <desc></desc>
-    <eNB>imb182-desktop</eNB>
-    <UE>yanbo-M4HM87P-00</UE>
-    <TimeOut_cmd>300</TimeOut_cmd>
-    <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file></eNB_config_file>
-    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
-    <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
-    <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
-    <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 0 </eNB_main_exec_args>
-    <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1 -u -b 512K</eNB_traffic_exec>
-    <eNB_traffic_exec_args></eNB_traffic_exec_args>
-    <eNB_search_expr_true></eNB_search_expr_true>
-    <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
-
-    <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file></UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
-    <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
-    <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S</UE_main_exec>
-    <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
-    <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_search_expr_true>200</UE_search_expr_true>
-    <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
-    <tags>UE_USRP.NOS1.DATA_IPERF.BAND7.5MHZ.MCS00</tags>
-    <nruns>3</nruns><max_ntries>6</max_ntries>
-    <UE_metric  id="UE_DLSCH_BITRATE" 
-            description="UE downlink physical throughput"  
-            regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
-            unit_of_meas = "kbps"/> 
-    <UE_metric  id="UE_FREQ_OFFSET" 
-            description="UE downlink frequency channel offset"  
-            regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
-            unit_of_meas = "Hz"/> 
-    <UE_metric  id="UE_RX_OFFSET" 
-            description="UE downlink rx sample offset"  
-            regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
-            unit_of_meas = ""/> 
-    </testCase> 
 
  <testCase id="036130" >
     <class>lte-softmodem-noS1</class>
@@ -2152,7 +2067,7 @@
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpb210.conf -W -m 28 </eNB_main_exec_args>
-    <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1 -u -b 6M</eNB_traffic_exec>
+    <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1 -u -b 30M</eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
@@ -2164,7 +2079,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r50 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r50 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -2240,54 +2155,6 @@
             unit_of_meas = ""/> 
     </testCase> 
 
- <testCase id="030930" >
-    <class>lte-softmodem-noS1</class>
-    <desc></desc>
-    <eNB>imb182-desktop</eNB>
-    <UE>yanbo-M4HM87P-00</UE>
-    <TimeOut_cmd>300</TimeOut_cmd>
-    <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file></eNB_config_file>
-    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
-    <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
-    <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
-    <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 9 </eNB_main_exec_args>
-    <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1 -u -b 2M</eNB_traffic_exec>
-    <eNB_traffic_exec_args></eNB_traffic_exec_args>
-    <eNB_search_expr_true></eNB_search_expr_true>
-    <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
-
-    <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file></UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
-    <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
-    <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125 -S</UE_main_exec>
-    <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
-    <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_search_expr_true>200</UE_search_expr_true>
-    <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
-    <tags>UE_USRP.NOS1.DATA_IPERF.BAND7.5MHZ.MCS09</tags>
-    <nruns>3</nruns><max_ntries>6</max_ntries>
-    <UE_metric  id="UE_DLSCH_BITRATE" 
-            description="UE downlink physical throughput"  
-            regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
-            unit_of_meas = "kbps"/> 
-    <UE_metric  id="UE_FREQ_OFFSET" 
-            description="UE downlink frequency channel offset"  
-            regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
-            unit_of_meas = "Hz"/> 
-    <UE_metric  id="UE_RX_OFFSET" 
-            description="UE downlink rx sample offset"  
-            regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
-            unit_of_meas = ""/> 
-    </testCase> 
 
 
  <testCase id="030931" >
@@ -2339,55 +2206,6 @@
             unit_of_meas = ""/> 
     </testCase> 
 
-
- <testCase id="031030" >
-    <class>lte-softmodem-noS1</class>
-    <desc></desc>
-    <eNB>imb182-desktop</eNB>
-    <UE>yanbo-M4HM87P-00</UE>
-    <TimeOut_cmd>300</TimeOut_cmd>
-    <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file></eNB_config_file>
-    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
-    <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
-    <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
-    <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 10 </eNB_main_exec_args>
-    <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1 -u -b 2M</eNB_traffic_exec>
-    <eNB_traffic_exec_args></eNB_traffic_exec_args>
-    <eNB_search_expr_true></eNB_search_expr_true>
-    <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
-
-    <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file></UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
-    <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
-    <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S</UE_main_exec>
-    <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
-    <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_search_expr_true>200</UE_search_expr_true>
-    <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
-    <tags>UE_USRP.NOS1.DATA_IPERF.BAND7.5MHZ.MCS10</tags>
-    <nruns>3</nruns><max_ntries>6</max_ntries>
-    <UE_metric  id="UE_DLSCH_BITRATE" 
-            description="UE downlink physical throughput"  
-            regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
-            unit_of_meas = "kbps"/> 
-    <UE_metric  id="UE_FREQ_OFFSET" 
-            description="UE downlink frequency channel offset"  
-            regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
-            unit_of_meas = "Hz"/> 
-    <UE_metric  id="UE_RX_OFFSET" 
-            description="UE downlink rx sample offset"  
-            regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
-            unit_of_meas = ""/> 
-    </testCase> 
 
 
  <testCase id="031031" >
@@ -2441,54 +2259,6 @@
 
 
 
- <testCase id="031630" >
-    <class>lte-softmodem-noS1</class>
-    <desc></desc>
-    <eNB>imb182-desktop</eNB>
-    <UE>yanbo-M4HM87P-00</UE>
-    <TimeOut_cmd>300</TimeOut_cmd>
-    <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file></eNB_config_file>
-    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
-    <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
-    <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
-    <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 16 </eNB_main_exec_args>
-    <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1 -u -b 2M</eNB_traffic_exec>
-    <eNB_traffic_exec_args></eNB_traffic_exec_args>
-    <eNB_search_expr_true></eNB_search_expr_true>
-    <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
-
-    <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file></UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
-    <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
-    <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S</UE_main_exec>
-    <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
-    <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_search_expr_true>200</UE_search_expr_true>
-    <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
-    <tags>UE_USRP.NOS1.DATA_IPERF.BAND7.5MHZ.MCS16</tags>
-    <nruns>3</nruns><max_ntries>6</max_ntries>
-    <UE_metric  id="UE_DLSCH_BITRATE" 
-            description="UE downlink physical throughput"  
-            regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
-            unit_of_meas = "kbps"/> 
-    <UE_metric  id="UE_FREQ_OFFSET" 
-            description="UE downlink frequency channel offset"  
-            regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
-            unit_of_meas = "Hz"/> 
-    <UE_metric  id="UE_RX_OFFSET" 
-            description="UE downlink rx sample offset"  
-            regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
-            unit_of_meas = ""/> 
-    </testCase> 
 
 
  <testCase id="031631" >
@@ -2541,55 +2311,6 @@
     </testCase> 
 
 
-
- <testCase id="031730" >
-    <class>lte-softmodem-noS1</class>
-    <desc></desc>
-    <eNB>imb182-desktop</eNB>
-    <UE>yanbo-M4HM87P-00</UE>
-    <TimeOut_cmd>300</TimeOut_cmd>
-    <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file></eNB_config_file>
-    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
-    <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
-    <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
-    <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 17 </eNB_main_exec_args>
-    <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1 -u -b 2M</eNB_traffic_exec>
-    <eNB_traffic_exec_args></eNB_traffic_exec_args>
-    <eNB_search_expr_true></eNB_search_expr_true>
-    <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
-
-    <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file></UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
-    <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
-    <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S</UE_main_exec>
-    <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
-    <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_search_expr_true>200</UE_search_expr_true>
-    <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
-    <tags>UE_USRP.NOS1.DATA_IPERF.BAND7.5MHZ.MCS17</tags>
-    <nruns>3</nruns><max_ntries>6</max_ntries>
-    <UE_metric  id="UE_DLSCH_BITRATE" 
-            description="UE downlink physical throughput"  
-            regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
-            unit_of_meas = "kbps"/> 
-    <UE_metric  id="UE_FREQ_OFFSET" 
-            description="UE downlink frequency channel offset"  
-            regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
-            unit_of_meas = "Hz"/> 
-    <UE_metric  id="UE_RX_OFFSET" 
-            description="UE downlink rx sample offset"  
-            regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
-            unit_of_meas = ""/> 
-    </testCase> 
 
 
  <testCase id="031731" >
@@ -2645,54 +2366,6 @@
 
 
 
- <testCase id="031930" >
-    <class>lte-softmodem-noS1</class>
-    <desc></desc>
-    <eNB>imb182-desktop</eNB>
-    <UE>yanbo-M4HM87P-00</UE>
-    <TimeOut_cmd>300</TimeOut_cmd>
-    <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file></eNB_config_file>
-    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
-    <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
-    <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
-    <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 19 </eNB_main_exec_args>
-    <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1 -u -b 2M</eNB_traffic_exec>
-    <eNB_traffic_exec_args></eNB_traffic_exec_args>
-    <eNB_search_expr_true></eNB_search_expr_true>
-    <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
-
-    <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file></UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
-    <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
-    <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S</UE_main_exec>
-    <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
-    <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_search_expr_true>200</UE_search_expr_true>
-    <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
-    <tags>UE_USRP.NOS1.DATA_IPERF.BAND7.5MHZ.MCS19</tags>
-    <nruns>3</nruns><max_ntries>6</max_ntries>
-    <UE_metric  id="UE_DLSCH_BITRATE" 
-            description="UE downlink physical throughput"  
-            regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
-            unit_of_meas = "kbps"/> 
-    <UE_metric  id="UE_FREQ_OFFSET" 
-            description="UE downlink frequency channel offset"  
-            regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
-            unit_of_meas = "Hz"/> 
-    <UE_metric  id="UE_RX_OFFSET" 
-            description="UE downlink rx sample offset"  
-            regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
-            unit_of_meas = ""/> 
-    </testCase> 
 
 
  <testCase id="031931" >
@@ -2745,54 +2418,6 @@
     </testCase> 
 
 
- <testCase id="032730" >
-    <class>lte-softmodem-noS1</class>
-    <desc></desc>
-    <eNB>imb182-desktop</eNB>
-    <UE>yanbo-M4HM87P-00</UE>
-    <TimeOut_cmd>300</TimeOut_cmd>
-    <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file></eNB_config_file>
-    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
-    <eNB_compile_prog_args>-c -w USRP --eNB --noS1 </eNB_compile_prog_args>
-    <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
-    <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 27 </eNB_main_exec_args>
-    <eNB_traffic_exec>sleep 30;iperf -c 10.0.1.9 -i 1 -u -b 10M</eNB_traffic_exec>
-    <eNB_traffic_exec_args></eNB_traffic_exec_args>
-    <eNB_search_expr_true></eNB_search_expr_true>
-    <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
-
-    <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file></UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
-    <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
-    <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 5; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S </UE_main_exec>
-    <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
-    <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_search_expr_true>200</UE_search_expr_true>
-    <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
-    <tags>UE_USRP.NOS1.DATA_IPERF.BAND7.5MHZ.MCS27</tags>
-    <nruns>3</nruns><max_ntries>6</max_ntries>
-    <UE_metric  id="UE_DLSCH_BITRATE" 
-            description="UE downlink physical throughput"  
-            regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
-            unit_of_meas = "kbps"/> 
-    <UE_metric  id="UE_FREQ_OFFSET" 
-            description="UE downlink frequency channel offset"  
-            regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
-            unit_of_meas = "Hz"/> 
-    <UE_metric  id="UE_RX_OFFSET" 
-            description="UE downlink rx sample offset"  
-            regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
-            unit_of_meas = ""/> 
-    </testCase> 
 
 
  <testCase id="032740" >
@@ -2821,7 +2446,7 @@
     <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
     <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 -A 20 --ue-rxgain 125  -S</UE_main_exec>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S</UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -2893,6 +2518,697 @@
             regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
             unit_of_meas = ""/> 
     </testCase> 
+
+
+    <!-- USRP Band 7 5MHz SISO Iperf downlink performances -->
+    <!-- 030030 030930 031030 031630 031730 031930 032730 032830 -->
+
+    <testCase id="030030" >
+        <class>lte-softmodem-noS1</class>
+        <desc></desc>
+        <eNB>imb182-desktop</eNB>
+        <UE>yanbo-M4HM87P-00</UE>
+        <TimeOut_cmd>300</TimeOut_cmd>
+        <eNB_working_dir>/tmp</eNB_working_dir>
+        <eNB_config_file></eNB_config_file>
+        <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
+        <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
+        <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
+        <eNB_pre_exec_args></eNB_pre_exec_args>
+        <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
+        <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 0 </eNB_main_exec_args>
+        <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1 -u -b 512K</eNB_traffic_exec>
+        <eNB_traffic_exec_args></eNB_traffic_exec_args>
+        <eNB_search_expr_true></eNB_search_expr_true>
+        <eNB_search_expr_false></eNB_search_expr_false>
+        <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
+
+        <UE_working_dir>/tmp</UE_working_dir>
+        <UE_config_file></UE_config_file>
+        <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
+        <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
+        <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
+        <UE_pre_exec_args></UE_pre_exec_args>
+        <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S</UE_main_exec>
+        <UE_main_exec_args></UE_main_exec_args>
+        <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
+        <UE_traffic_exec_args></UE_traffic_exec_args>
+        <UE_search_expr_true>200</UE_search_expr_true>
+        <UE_search_expr_false></UE_search_expr_false>
+        <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
+        <tags>UE_USRP.NOS1.DATA_IPERF.BAND7.5MHZ.MCS00</tags>
+        <nruns>3</nruns><max_ntries>6</max_ntries>
+        <UE_metric  id="UE_DLSCH_BITRATE" 
+                description="UE downlink physical throughput"  
+                regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
+                unit_of_meas = "kbps"/> 
+        <UE_metric  id="UE_FREQ_OFFSET" 
+                description="UE downlink frequency channel offset"  
+                regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
+                unit_of_meas = "Hz"/> 
+        <UE_metric  id="UE_RX_OFFSET" 
+                description="UE downlink rx sample offset"  
+                regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
+                unit_of_meas = ""/> 
+    </testCase> 
+
+
+
+    <testCase id="030930" >
+        <class>lte-softmodem-noS1</class>
+        <desc></desc>
+        <eNB>imb182-desktop</eNB>
+        <UE>yanbo-M4HM87P-00</UE>
+        <TimeOut_cmd>300</TimeOut_cmd>
+        <eNB_working_dir>/tmp</eNB_working_dir>
+        <eNB_config_file></eNB_config_file>
+        <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
+        <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
+        <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
+        <eNB_pre_exec_args></eNB_pre_exec_args>
+        <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
+        <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 9 </eNB_main_exec_args>
+        <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1 -u -b 2M</eNB_traffic_exec>
+        <eNB_traffic_exec_args></eNB_traffic_exec_args>
+        <eNB_search_expr_true></eNB_search_expr_true>
+        <eNB_search_expr_false></eNB_search_expr_false>
+        <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
+
+        <UE_working_dir>/tmp</UE_working_dir>
+        <UE_config_file></UE_config_file>
+        <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
+        <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
+        <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
+        <UE_pre_exec_args></UE_pre_exec_args>
+        <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125 -S</UE_main_exec>
+        <UE_main_exec_args></UE_main_exec_args>
+        <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
+        <UE_traffic_exec_args></UE_traffic_exec_args>
+        <UE_search_expr_true>200</UE_search_expr_true>
+        <UE_search_expr_false></UE_search_expr_false>
+        <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
+        <tags>UE_USRP.NOS1.DATA_IPERF.BAND7.5MHZ.MCS09</tags>
+        <nruns>3</nruns><max_ntries>6</max_ntries>
+        <UE_metric  id="UE_DLSCH_BITRATE" 
+                description="UE downlink physical throughput"  
+                regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
+                unit_of_meas = "kbps"/> 
+        <UE_metric  id="UE_FREQ_OFFSET" 
+                description="UE downlink frequency channel offset"  
+                regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
+                unit_of_meas = "Hz"/> 
+        <UE_metric  id="UE_RX_OFFSET" 
+                description="UE downlink rx sample offset"  
+                regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
+                unit_of_meas = ""/> 
+    </testCase> 
+    
+    
+ <testCase id="031030" >
+    <class>lte-softmodem-noS1</class>
+    <desc></desc>
+    <eNB>imb182-desktop</eNB>
+    <UE>yanbo-M4HM87P-00</UE>
+    <TimeOut_cmd>300</TimeOut_cmd>
+    <eNB_working_dir>/tmp</eNB_working_dir>
+    <eNB_config_file></eNB_config_file>
+    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
+    <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
+    <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
+    <eNB_pre_exec_args></eNB_pre_exec_args>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 10 </eNB_main_exec_args>
+    <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1 -u -b 2M</eNB_traffic_exec>
+    <eNB_traffic_exec_args></eNB_traffic_exec_args>
+    <eNB_search_expr_true></eNB_search_expr_true>
+    <eNB_search_expr_false></eNB_search_expr_false>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
+
+    <UE_working_dir>/tmp</UE_working_dir>
+    <UE_config_file></UE_config_file>
+    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
+    <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
+    <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
+    <UE_pre_exec_args></UE_pre_exec_args>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S</UE_main_exec>
+    <UE_main_exec_args></UE_main_exec_args>
+    <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
+    <UE_traffic_exec_args></UE_traffic_exec_args>
+    <UE_search_expr_true>200</UE_search_expr_true>
+    <UE_search_expr_false></UE_search_expr_false>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
+    <tags>UE_USRP.NOS1.DATA_IPERF.BAND7.5MHZ.MCS10</tags>
+    <nruns>3</nruns><max_ntries>6</max_ntries>
+    <UE_metric  id="UE_DLSCH_BITRATE" 
+            description="UE downlink physical throughput"  
+            regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
+            unit_of_meas = "kbps"/> 
+    <UE_metric  id="UE_FREQ_OFFSET" 
+            description="UE downlink frequency channel offset"  
+            regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
+            unit_of_meas = "Hz"/> 
+    <UE_metric  id="UE_RX_OFFSET" 
+            description="UE downlink rx sample offset"  
+            regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
+            unit_of_meas = ""/> 
+    </testCase> 
+
+
+
+ <testCase id="031630" >
+    <class>lte-softmodem-noS1</class>
+    <desc></desc>
+    <eNB>imb182-desktop</eNB>
+    <UE>yanbo-M4HM87P-00</UE>
+    <TimeOut_cmd>300</TimeOut_cmd>
+    <eNB_working_dir>/tmp</eNB_working_dir>
+    <eNB_config_file></eNB_config_file>
+    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
+    <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
+    <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
+    <eNB_pre_exec_args></eNB_pre_exec_args>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 16 </eNB_main_exec_args>
+    <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1 -u -b 2M</eNB_traffic_exec>
+    <eNB_traffic_exec_args></eNB_traffic_exec_args>
+    <eNB_search_expr_true></eNB_search_expr_true>
+    <eNB_search_expr_false></eNB_search_expr_false>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
+
+    <UE_working_dir>/tmp</UE_working_dir>
+    <UE_config_file></UE_config_file>
+    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
+    <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
+    <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
+    <UE_pre_exec_args></UE_pre_exec_args>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S</UE_main_exec>
+    <UE_main_exec_args></UE_main_exec_args>
+    <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
+    <UE_traffic_exec_args></UE_traffic_exec_args>
+    <UE_search_expr_true>200</UE_search_expr_true>
+    <UE_search_expr_false></UE_search_expr_false>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
+    <tags>UE_USRP.NOS1.DATA_IPERF.BAND7.5MHZ.MCS16</tags>
+    <nruns>3</nruns><max_ntries>6</max_ntries>
+    <UE_metric  id="UE_DLSCH_BITRATE" 
+            description="UE downlink physical throughput"  
+            regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
+            unit_of_meas = "kbps"/> 
+    <UE_metric  id="UE_FREQ_OFFSET" 
+            description="UE downlink frequency channel offset"  
+            regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
+            unit_of_meas = "Hz"/> 
+    <UE_metric  id="UE_RX_OFFSET" 
+            description="UE downlink rx sample offset"  
+            regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
+            unit_of_meas = ""/> 
+    </testCase> 
+    
+    
+ <testCase id="031730" >
+    <class>lte-softmodem-noS1</class>
+    <desc></desc>
+    <eNB>imb182-desktop</eNB>
+    <UE>yanbo-M4HM87P-00</UE>
+    <TimeOut_cmd>300</TimeOut_cmd>
+    <eNB_working_dir>/tmp</eNB_working_dir>
+    <eNB_config_file></eNB_config_file>
+    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
+    <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
+    <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
+    <eNB_pre_exec_args></eNB_pre_exec_args>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 17 </eNB_main_exec_args>
+    <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1 -u -b 2M</eNB_traffic_exec>
+    <eNB_traffic_exec_args></eNB_traffic_exec_args>
+    <eNB_search_expr_true></eNB_search_expr_true>
+    <eNB_search_expr_false></eNB_search_expr_false>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
+
+    <UE_working_dir>/tmp</UE_working_dir>
+    <UE_config_file></UE_config_file>
+    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
+    <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
+    <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
+    <UE_pre_exec_args></UE_pre_exec_args>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S</UE_main_exec>
+    <UE_main_exec_args></UE_main_exec_args>
+    <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
+    <UE_traffic_exec_args></UE_traffic_exec_args>
+    <UE_search_expr_true>200</UE_search_expr_true>
+    <UE_search_expr_false></UE_search_expr_false>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
+    <tags>UE_USRP.NOS1.DATA_IPERF.BAND7.5MHZ.MCS17</tags>
+    <nruns>3</nruns><max_ntries>6</max_ntries>
+    <UE_metric  id="UE_DLSCH_BITRATE" 
+            description="UE downlink physical throughput"  
+            regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
+            unit_of_meas = "kbps"/> 
+    <UE_metric  id="UE_FREQ_OFFSET" 
+            description="UE downlink frequency channel offset"  
+            regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
+            unit_of_meas = "Hz"/> 
+    <UE_metric  id="UE_RX_OFFSET" 
+            description="UE downlink rx sample offset"  
+            regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
+            unit_of_meas = ""/> 
+    </testCase> 
+
+    
+     <testCase id="031930" >
+    <class>lte-softmodem-noS1</class>
+    <desc></desc>
+    <eNB>imb182-desktop</eNB>
+    <UE>yanbo-M4HM87P-00</UE>
+    <TimeOut_cmd>300</TimeOut_cmd>
+    <eNB_working_dir>/tmp</eNB_working_dir>
+    <eNB_config_file></eNB_config_file>
+    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
+    <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
+    <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
+    <eNB_pre_exec_args></eNB_pre_exec_args>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 19 </eNB_main_exec_args>
+    <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1 -u -b 2M</eNB_traffic_exec>
+    <eNB_traffic_exec_args></eNB_traffic_exec_args>
+    <eNB_search_expr_true></eNB_search_expr_true>
+    <eNB_search_expr_false></eNB_search_expr_false>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
+
+    <UE_working_dir>/tmp</UE_working_dir>
+    <UE_config_file></UE_config_file>
+    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
+    <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
+    <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
+    <UE_pre_exec_args></UE_pre_exec_args>
+    <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S</UE_main_exec>
+    <UE_main_exec_args></UE_main_exec_args>
+    <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
+    <UE_traffic_exec_args></UE_traffic_exec_args>
+    <UE_search_expr_true>200</UE_search_expr_true>
+    <UE_search_expr_false></UE_search_expr_false>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
+    <tags>UE_USRP.NOS1.DATA_IPERF.BAND7.5MHZ.MCS19</tags>
+    <nruns>3</nruns><max_ntries>6</max_ntries>
+    <UE_metric  id="UE_DLSCH_BITRATE" 
+            description="UE downlink physical throughput"  
+            regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
+            unit_of_meas = "kbps"/> 
+    <UE_metric  id="UE_FREQ_OFFSET" 
+            description="UE downlink frequency channel offset"  
+            regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
+            unit_of_meas = "Hz"/> 
+    <UE_metric  id="UE_RX_OFFSET" 
+            description="UE downlink rx sample offset"  
+            regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
+            unit_of_meas = ""/> 
+    </testCase> 
+    
+    
+     <testCase id="032730" >
+    <class>lte-softmodem-noS1</class>
+    <desc></desc>
+    <eNB>imb182-desktop</eNB>
+    <UE>yanbo-M4HM87P-00</UE>
+    <TimeOut_cmd>300</TimeOut_cmd>
+    <eNB_working_dir>/tmp</eNB_working_dir>
+    <eNB_config_file></eNB_config_file>
+    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
+    <eNB_compile_prog_args>-c -w USRP --eNB --noS1 </eNB_compile_prog_args>
+    <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
+    <eNB_pre_exec_args></eNB_pre_exec_args>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 27 </eNB_main_exec_args>
+    <eNB_traffic_exec>sleep 30;iperf -c 10.0.1.9 -i 1 -u -b 15M</eNB_traffic_exec>
+    <eNB_traffic_exec_args></eNB_traffic_exec_args>
+    <eNB_search_expr_true></eNB_search_expr_true>
+    <eNB_search_expr_false></eNB_search_expr_false>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
+
+    <UE_working_dir>/tmp</UE_working_dir>
+    <UE_config_file></UE_config_file>
+    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
+    <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
+    <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
+    <UE_pre_exec_args></UE_pre_exec_args>
+    <UE_main_exec>sleep 5; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S </UE_main_exec>
+    <UE_main_exec_args></UE_main_exec_args>
+    <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
+    <UE_traffic_exec_args></UE_traffic_exec_args>
+    <UE_search_expr_true>200</UE_search_expr_true>
+    <UE_search_expr_false></UE_search_expr_false>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
+    <tags>UE_USRP.NOS1.DATA_IPERF.BAND7.5MHZ.MCS27</tags>
+    <nruns>3</nruns><max_ntries>6</max_ntries>
+    <UE_metric  id="UE_DLSCH_BITRATE" 
+            description="UE downlink physical throughput"  
+            regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
+            unit_of_meas = "kbps"/> 
+    <UE_metric  id="UE_FREQ_OFFSET" 
+            description="UE downlink frequency channel offset"  
+            regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
+            unit_of_meas = "Hz"/> 
+    <UE_metric  id="UE_RX_OFFSET" 
+            description="UE downlink rx sample offset"  
+            regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
+            unit_of_meas = ""/> 
+    </testCase> 
+
+
+
+
+
+
+
+
+
+
+
+    <testCase id="032800" >
+        <class>lte-softmodem-noS1</class>
+        <desc></desc>
+        <eNB>imb182-desktop</eNB>
+        <UE>yanbo-M4HM87P-00</UE>
+        <TimeOut_cmd>300</TimeOut_cmd>
+        <eNB_working_dir>/tmp</eNB_working_dir>
+        <eNB_config_file></eNB_config_file>
+        <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
+        <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
+        <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
+        <eNB_pre_exec_args></eNB_pre_exec_args>
+        <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
+        <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 28 --single-thread-disable --phy-test</eNB_main_exec_args>
+        <eNB_traffic_exec></eNB_traffic_exec>
+        <eNB_traffic_exec_args></eNB_traffic_exec_args>
+        <eNB_search_expr_true></eNB_search_expr_true>
+        <eNB_search_expr_false></eNB_search_expr_false>
+        <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
+
+        <UE_working_dir>/tmp</UE_working_dir>
+        <UE_config_file></UE_config_file>
+        <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
+        <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
+        <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
+        <UE_pre_exec_args></UE_pre_exec_args>
+        <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+        <UE_main_exec_args></UE_main_exec_args>
+        <UE_traffic_exec></UE_traffic_exec>
+        <UE_traffic_exec_args></UE_traffic_exec_args>
+        <UE_search_expr_true></UE_search_expr_true>
+        <UE_search_expr_false></UE_search_expr_false>
+        <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
+        <UE_metric  id="UE_DLSCH_BITRATE" 
+            description="UE downlink physical throughput"  
+            regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
+            unit_of_meas = "kbps"
+            pass_fail_stat = "mean_value"
+            min_limit = "13752"/>
+        <UE_metric  id="UE_FREQ_OFFSET" 
+                description="UE downlink frequency channel offset"  
+                regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
+                unit_of_meas = "Hz"/> 
+        <UE_metric  id="UE_RX_OFFSET" 
+                description="UE downlink rx sample offset"  
+                regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
+                unit_of_meas = ""/> 
+        <tags>UE_USRP.NOS1.PHYTEST_PERF.BAND7.5MHZ.MCS28</tags>
+        <nruns>3</nruns><max_ntries>6</max_ntries>
+    </testCase> 
+
+    <testCase id="032810" >
+        <class>lte-softmodem-noS1</class>
+        <desc></desc>
+        <eNB>imb182-desktop</eNB>
+        <UE>yanbo-M4HM87P-00</UE>
+        <TimeOut_cmd>18000</TimeOut_cmd>
+        <eNB_working_dir>/tmp</eNB_working_dir>
+        <eNB_config_file></eNB_config_file>
+        <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
+        <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
+        <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
+        <eNB_pre_exec_args></eNB_pre_exec_args>
+        <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
+        <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 28 --single-thread-disable --phy-test</eNB_main_exec_args>
+        <eNB_traffic_exec></eNB_traffic_exec>
+        <eNB_traffic_exec_args></eNB_traffic_exec_args>
+        <eNB_search_expr_true></eNB_search_expr_true>
+        <eNB_search_expr_false></eNB_search_expr_false>
+        <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
+
+        <UE_working_dir>/tmp</UE_working_dir>
+        <UE_config_file></UE_config_file>
+        <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
+        <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
+        <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
+        <UE_pre_exec_args></UE_pre_exec_args>
+        <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S --phy-test</UE_main_exec>
+        <UE_main_exec_args></UE_main_exec_args>
+        <UE_traffic_exec></UE_traffic_exec>
+        <UE_traffic_exec_args></UE_traffic_exec_args>
+        <UE_search_expr_true></UE_search_expr_true>
+        <UE_search_expr_false></UE_search_expr_false>
+        <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
+        <UE_metric  id="UE_DLSCH_BITRATE" 
+                description="UE downlink physical throughput"  
+                regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
+                unit_of_meas = "kbps"
+                pass_fail_stat = "mean_value"
+                min_limit = "11880"/>    
+        <UE_metric  id="UE_FREQ_OFFSET" 
+                description="UE downlink frequency channel offset"  
+                regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
+                unit_of_meas = "Hz"/> 
+        <UE_metric  id="UE_RX_OFFSET" 
+                description="UE downlink rx sample offset"  
+                regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
+                unit_of_meas = ""/> 
+        <tags>UE_USRP.NOS1.PHYTEST_STAB.BAND7.5MHZ.MCS28</tags>
+        <nruns>1</nruns><max_ntries>6</max_ntries>
+    </testCase> 
+    
+
+    <testCase id="032830" >
+        <class>lte-softmodem-noS1</class>
+        <desc></desc>
+        <eNB>imb182-desktop</eNB>
+        <UE>yanbo-M4HM87P-00</UE>
+        <TimeOut_cmd>300</TimeOut_cmd>
+        <eNB_working_dir>/tmp</eNB_working_dir>
+        <eNB_config_file></eNB_config_file>
+        <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
+        <eNB_compile_prog_args>-c -w USRP --eNB --noS1 </eNB_compile_prog_args>
+        <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
+        <eNB_pre_exec_args></eNB_pre_exec_args>
+        <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
+        <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 28 </eNB_main_exec_args>
+        <eNB_traffic_exec>sleep 30;iperf -c 10.0.1.9 -i 1 -u -b 13700K</eNB_traffic_exec> <!-- PHY max TP 18.336Mbps -> 75% = 13.70Mbps -->
+        <eNB_traffic_exec_args></eNB_traffic_exec_args>
+        <eNB_search_expr_true></eNB_search_expr_true>
+        <eNB_search_expr_false></eNB_search_expr_false>
+        <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
+
+        <UE_working_dir>/tmp</UE_working_dir>
+        <UE_config_file></UE_config_file>
+        <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
+        <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
+        <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
+        <UE_pre_exec_args></UE_pre_exec_args>
+        <UE_main_exec>sleep 5; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125 -S </UE_main_exec>
+        <UE_main_exec_args></UE_main_exec_args>
+        <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
+        <UE_traffic_exec_args></UE_traffic_exec_args>
+        <UE_search_expr_true>200</UE_search_expr_true>
+        <UE_search_expr_false></UE_search_expr_false>
+        <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
+        <UE_metric  id="UE_DLSCH_BITRATE" 
+                description="UE downlink physical throughput"  
+                regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
+                unit_of_meas = "kbps"/> 
+        <UE_metric  id="UE_FREQ_OFFSET" 
+                description="UE downlink frequency channel offset"  
+                regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
+                unit_of_meas = "Hz"/> 
+        <UE_metric  id="UE_RX_OFFSET" 
+                description="UE downlink rx sample offset"  
+                regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
+                unit_of_meas = ""/> 
+        <UE_traffic_metric
+                mode="UDP"
+                duration_min="200"
+
+        />
+        <tags>UE_USRP.NOS1.DATA_IPERF_DL.BAND7.5MHZ.MCS28</tags>
+        <nruns>3</nruns><max_ntries>6</max_ntries>
+    </testCase> 
+
+
+    <testCase id="032840" >
+        <class>lte-softmodem-noS1</class>
+        <desc></desc>
+        <eNB>imb182-desktop</eNB>
+        <UE>yanbo-M4HM87P-00</UE>
+        <TimeOut_cmd>3600</TimeOut_cmd>
+        <tags>UE_USRP.NOS1.DATA_IPERF_STAB_DL.BAND7.5MHZ.MCS28</tags>
+        <nruns>1</nruns><max_ntries>6</max_ntries>
+
+        <eNB_working_dir>/tmp</eNB_working_dir>
+        <eNB_config_file></eNB_config_file>
+        <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
+        <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
+        <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
+        <eNB_pre_exec_args></eNB_pre_exec_args>
+        <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
+        <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 28 </eNB_main_exec_args>
+        <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1 -u -b 2M</eNB_traffic_exec>
+        <eNB_traffic_exec_args></eNB_traffic_exec_args>
+        <eNB_search_expr_true></eNB_search_expr_true>
+        <eNB_search_expr_false></eNB_search_expr_false>
+        <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
+
+        <UE_working_dir>/tmp</UE_working_dir>
+        <UE_config_file></UE_config_file>
+        <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
+        <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
+        <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
+        <UE_pre_exec_args></UE_pre_exec_args>
+        <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S</UE_main_exec>
+        <UE_main_exec_args></UE_main_exec_args>
+        <UE_traffic_exec>iperf -s -i 1 -u</UE_traffic_exec>
+        <UE_traffic_exec_args></UE_traffic_exec_args>
+        <UE_search_expr_true>2800</UE_search_expr_true>
+        <UE_search_expr_false></UE_search_expr_false>
+        <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
+        <UE_metric  id="UE_DLSCH_BITRATE" 
+                description="UE downlink physical throughput"  
+                regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
+                unit_of_meas = "kbps"/> 
+        <UE_metric  id="UE_FREQ_OFFSET" 
+                description="UE downlink frequency channel offset"  
+                regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
+                unit_of_meas = "Hz"/> 
+        <UE_metric  id="UE_RX_OFFSET" 
+                description="UE downlink rx sample offset"  
+                regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
+                unit_of_meas = ""/> 
+
+    </testCase> 
+
+
+
+    <testCase id="032870" >
+        <class>lte-softmodem-noS1</class>
+        <desc></desc>
+        <eNB>imb182-desktop</eNB>
+        <UE>yanbo-M4HM87P-00</UE>
+        <TimeOut_cmd>300</TimeOut_cmd>
+        <eNB_working_dir>/tmp</eNB_working_dir>
+        <eNB_config_file></eNB_config_file>
+        <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
+        <eNB_compile_prog_args>-c -w USRP --eNB --noS1 </eNB_compile_prog_args>
+        <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
+        <eNB_pre_exec_args></eNB_pre_exec_args>
+        <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
+        <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf -W -m 28 </eNB_main_exec_args>
+        <eNB_traffic_exec>sleep 30;iperf -c 10.0.1.9 -i 1</eNB_traffic_exec> <!-- PHY max TP 18.336Mbps -> 75% = 13.70Mbps -->
+        <eNB_traffic_exec_args></eNB_traffic_exec_args>
+        <eNB_search_expr_true></eNB_search_expr_true>
+        <eNB_search_expr_false></eNB_search_expr_false>
+        <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
+
+        <UE_working_dir>/tmp</UE_working_dir>
+        <UE_config_file></UE_config_file>
+        <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
+        <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
+        <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
+        <UE_pre_exec_args></UE_pre_exec_args>
+        <UE_main_exec>sleep 5; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125 -S </UE_main_exec>
+        <UE_main_exec_args></UE_main_exec_args>
+        <UE_traffic_exec>iperf -s -i 1</UE_traffic_exec>
+        <UE_traffic_exec_args></UE_traffic_exec_args>
+        <UE_search_expr_true>200</UE_search_expr_true>
+        <UE_search_expr_false></UE_search_expr_false>
+        <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
+        <UE_metric  id="UE_DLSCH_BITRATE" 
+                description="UE downlink physical throughput"  
+                regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
+                unit_of_meas = "kbps"/> 
+        <UE_metric  id="UE_FREQ_OFFSET" 
+                description="UE downlink frequency channel offset"  
+                regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
+                unit_of_meas = "Hz"/> 
+        <UE_metric  id="UE_RX_OFFSET" 
+                description="UE downlink rx sample offset"  
+                regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
+                unit_of_meas = ""/> 
+        <UE_traffic_metric
+                mode="TCP"
+                duration_min="200"
+                bandwidth_min="13.7"
+        />
+        <tags>UE_USRP.NOS1.DATA_IPERF_TCP_DL.BAND7.5MHZ.MCS28</tags>
+        <nruns>3</nruns><max_ntries>6</max_ntries>
+    </testCase> 
+
+
+    <testCase id="036170" >
+        <class>lte-softmodem-noS1</class>
+        <desc></desc>
+        <eNB>imb182-desktop</eNB>
+        <UE>yanbo-M4HM87P-00</UE>
+        <TimeOut_cmd>300</TimeOut_cmd>
+        <eNB_working_dir>/tmp</eNB_working_dir>
+        <eNB_config_file></eNB_config_file>
+        <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
+        <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
+        <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
+        <eNB_pre_exec_args></eNB_pre_exec_args>
+        <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
+        <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpb210.conf -W -m 28 </eNB_main_exec_args>
+        <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1</eNB_traffic_exec>
+        <eNB_traffic_exec_args></eNB_traffic_exec_args>
+        <eNB_search_expr_true></eNB_search_expr_true>
+        <eNB_search_expr_false></eNB_search_expr_false>
+        <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
+
+        <UE_working_dir>/tmp</UE_working_dir>
+        <UE_config_file></UE_config_file>
+        <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
+        <UE_compile_prog_args>-c --UE -w USRP --noS1 --eNB --ue-autotest-trace </UE_compile_prog_args>
+        <UE_pre_exec>source ./targets/bin/init_nas_nos1 UE</UE_pre_exec>
+        <UE_pre_exec_args></UE_pre_exec_args>
+        <UE_main_exec>sleep 20; ./cmake_targets/autotests/tools/run_gdb ./cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1 -U -C2660000000 -r50 --ue-scan-carrier --ue-txgain 85 -A 20 --ue-rxgain 125  -S</UE_main_exec>
+        <UE_main_exec_args></UE_main_exec_args>
+        <UE_traffic_exec>iperf -s -i 1</UE_traffic_exec>
+        <UE_traffic_exec_args></UE_traffic_exec_args>
+        <UE_search_expr_true>200</UE_search_expr_true>
+        <UE_search_expr_false></UE_search_expr_false>
+        <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
+        <tags>UE_USRP.NOS1.DATA_IPERF_TCP_DL.BAND7.10MHZ.MCS28</tags>
+        <nruns>3</nruns><max_ntries>6</max_ntries>
+        <UE_metric  id="UE_DLSCH_BITRATE" 
+                description="UE downlink physical throughput"  
+                regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
+                unit_of_meas = "kbps"/> 
+        <UE_metric  id="UE_FREQ_OFFSET" 
+                description="UE downlink frequency channel offset"  
+                regex='(UE_FREQ_OFFSET) =\s+(-?\d+) Hz.+frame = (\d+)\)' 
+                unit_of_meas = "Hz"/> 
+        <UE_metric  id="UE_RX_OFFSET" 
+                description="UE downlink rx sample offset"  
+                regex='(UE_RX_OFFSET) =\s+(-?\d+).+frame = (\d+)\)' 
+                unit_of_meas = ""/> 
+        <UE_traffic_metric
+                mode="TCP"
+                duration_min="200"
+                bandwidth_min="27.5"
+        />
+    </testCase> 
+
+
+
+
+
+
 
   </testCaseList>
 
