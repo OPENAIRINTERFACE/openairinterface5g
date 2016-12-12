@@ -1754,7 +1754,6 @@ int32_t rx_pdcch(LTE_UE_COMMON *common_vars,
   LOG_I(PHY,"subframe %d: pdcch log2_maxh = %d (%d,%d)\n",subframe,log2_maxh,avgP[0],avgs);
 #endif
 
-
   for (s=0; s<n_pdcch_symbols; s++) {
     pdcch_channel_compensation(pdcch_vars[eNB_id]->rxdataF_ext,
                                pdcch_vars[eNB_id]->dl_ch_estimates_ext,
@@ -1851,12 +1850,18 @@ int32_t rx_pdcch(LTE_UE_COMMON *common_vars,
       /*#ifdef DEBUG_PHY
       write_output("llr8_seq.m","llr8",&pdcch_vars[eNB_id]->llr[s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,4);
       #endif*/
+
 #ifdef MU_RECEIVER
     }
 
 #endif //MU_RECEIVER
 
   }
+
+  T(T_UE_PHY_PDCCH_IQ, T_INT(eNB_id), T_INT(0),
+    T_INT(-1), T_INT(subframe),
+    T_INT(0), T_BUFFER(pdcch_vars[eNB_id]->llr[0], frame_parms->N_RB_DL*12*n_pdcch_symbols* 4));
+
 
   // decode pcfich here
   n_pdcch_symbols = rx_pcfich(frame_parms,

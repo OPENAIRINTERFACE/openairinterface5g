@@ -629,6 +629,8 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
       harq_process->status = SCH_IDLE;
     }
 
+    T(T_UE_PHY_DLSCH_UE_NACK, T_INT(0), T_INT(-1), T_INT(subframe), T_INT(phy_vars_ue->Mod_id), T_INT(dlsch->rnti),
+                  T_INT(harq_pid));
     return((1+dlsch->max_turbo_iterations));
   } else {
     harq_process->status = SCH_IDLE;
@@ -640,6 +642,9 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     {
     LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for subframe %d (pid %d, round %d, TBS %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round,harq_process->TBS);
     }
+    T(T_UE_PHY_DLSCH_UE_ACK, T_INT(0), T_INT(-1), T_INT(subframe), T_INT(phy_vars_ue->Mod_id), T_INT(dlsch->rnti),
+                      T_INT(harq_pid));
+    //LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for subframe %d (pid %d, round %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round);
 
   }
 
