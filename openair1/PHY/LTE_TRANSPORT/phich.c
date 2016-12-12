@@ -1441,7 +1441,7 @@ void rx_phich(PHY_VARS_UE *ue,
     // rely only on DCI0 decoding and check if NDI has toggled
     //   save current harq_processes content in temporary struct
     //   harqId-8 corresponds to the temporary struct. In total we have 8 harq process(0 ..7) + 1 temporary harq process()
-    ulsch->harq_processes[8] = ulsch->harq_processes[harq_pid];
+    //ulsch->harq_processes[8] = ulsch->harq_processes[harq_pid];
 
     ulsch->harq_processes[harq_pid]->subframe_scheduling_flag =0;
     ulsch->harq_processes[harq_pid]->status = IDLE;
