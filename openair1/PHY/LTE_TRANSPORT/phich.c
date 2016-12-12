@@ -1381,13 +1381,13 @@ void rx_phich(PHY_VARS_UE *ue,
             HI16,
             nseq_PHICH,
             ngroup_PHICH,
-            UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx);
+            ulsch->Mlimit);
       //#endif
 
       //      ulsch->harq_processes[harq_pid]->Ndi = 0;
       ulsch->harq_processes[harq_pid]->round++;
       
-      if ( ulsch->harq_processes[harq_pid]->round >= (UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx - 1) )
+      if ( ulsch->harq_processes[harq_pid]->round >= (ulsch->Mlimit - 1) )
       {
           // this is last push re transmission
           ulsch->harq_processes[harq_pid]->rvidx = rv_table[ulsch->harq_processes[harq_pid]->round&3];
@@ -1402,7 +1402,7 @@ void rx_phich(PHY_VARS_UE *ue,
           //ulsch->harq_processes[harq_pid]->round  = 0;
 
           //LOG_I(PHY,"PUSCH MAX Retransmission acheived ==> flush harq buff (%d) \n",harq_pid);
-          //LOG_I(PHY,"[HARQ-UL harqId: %d] PHICH NACK MAX RETRANS(%d) ==> subframe_scheduling_flag = %d round: %d\n", harq_pid, UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag, ulsch->harq_processes[harq_pid]->round);
+          //LOG_I(PHY,"[HARQ-UL harqId: %d] PHICH NACK MAX RETRANS(%d) ==> subframe_scheduling_flag = %d round: %d\n", harq_pid, ulsch->Mlimit, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag, ulsch->harq_processes[harq_pid]->round);
       }
       else
       {

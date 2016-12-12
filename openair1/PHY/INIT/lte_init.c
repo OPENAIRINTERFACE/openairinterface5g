@@ -746,6 +746,14 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
 }
 #endif
 
+void phy_config_harq_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
+                        uint16_t max_harq_tx )
+{
+
+  PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
+  phy_vars_ue->ulsch[eNB_id]->Mlimit = max_harq_tx;
+}
+
 void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
                              struct PhysicalConfigDedicated *physicalConfigDedicated )
 {
