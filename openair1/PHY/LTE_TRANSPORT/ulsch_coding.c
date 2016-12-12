@@ -140,6 +140,8 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag)
   if (ulsch) {
     memset(ulsch,0,sizeof(LTE_UE_ULSCH_t));
 
+    ulsch->Mlimit = 4;
+
     for (i=0; i<8; i++) {
 
       ulsch->harq_processes[i] = (LTE_UL_UE_HARQ_t *)malloc16(sizeof(LTE_UL_UE_HARQ_t));
