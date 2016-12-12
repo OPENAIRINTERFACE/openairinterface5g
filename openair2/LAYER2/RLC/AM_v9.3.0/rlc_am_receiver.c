@@ -413,8 +413,9 @@ rlc_am_receive_process_data_pdu (
           rlc_am_rx_list_reassemble_rlc_sdus(ctxt_pP, rlc_pP);
         }
 
+        //FNA: fix check VrX out of receiving window
         if (rlc_pP->t_reordering.running) {
-          if ((rlc_pP->vr_x == rlc_pP->vr_r) || ((rlc_am_in_rx_window(ctxt_pP, rlc_pP, pdu_info_p->sn) == 0) && (rlc_pP->vr_x != rlc_pP->vr_mr))) {
+          if ((rlc_pP->vr_x == rlc_pP->vr_r) || ((rlc_am_in_rx_window(ctxt_pP, rlc_pP, rlc_pP->vr_x) == 0) && (rlc_pP->vr_x != rlc_pP->vr_mr))) {
             rlc_am_stop_and_reset_timer_reordering(ctxt_pP, rlc_pP);
           }
         }

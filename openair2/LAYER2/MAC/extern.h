@@ -47,6 +47,8 @@
 
 extern const uint32_t BSR_TABLE[BSR_TABLE_SIZE];
 //extern uint32_t EBSR_Level[63];
+extern const uint32_t Extended_BSR_TABLE[BSR_TABLE_SIZE];
+//extern uint32_t Extended_BSR_TABLE[63];  ----currently not used 
 
 extern UE_MAC_INST *UE_mac_inst;
 extern eNB_MAC_INST *eNB_mac_inst;

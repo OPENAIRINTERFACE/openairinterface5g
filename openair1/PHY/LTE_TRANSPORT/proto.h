@@ -1445,6 +1445,9 @@ int32_t generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
 					  uint8_t eNB_id);
 double sinr_eff_cqi_calc(PHY_VARS_UE *phy_vars_ue,
                          uint8_t eNB_id);
+
+uint8_t sinr2cqi(double sinr,uint8_t trans_mode);
+
 int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *PHY_vars_eNB,
 				       eNB_rxtx_proc_t *proc,
 				       void *dci_pdu,
@@ -1711,6 +1714,20 @@ void generate_pucch1x(int32_t **txdataF,
 		      uint8_t *payload,
 		      int16_t amp,
 		      uint8_t subframe);
+
+void generate_pucch2x(int32_t **txdataF,
+		      LTE_DL_FRAME_PARMS *fp,
+		      uint8_t ncs_cell[20][7],
+		      PUCCH_FMT_t fmt,
+		      PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+		      uint16_t n2_pucch,
+		      uint16_t *payload,
+		      int A,
+		      int B2,
+		      int16_t amp,
+		      uint8_t subframe,
+		      uint16_t rnti);
+
 
 void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
 			 UE_rxtx_proc_t *proc,

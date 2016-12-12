@@ -70,6 +70,9 @@ void ue_mac_reset(module_id_t module_idP,uint8_t eNB_index)
   UE_mac_inst[module_idP].scheduling_info.SR_pending=0;
   UE_mac_inst[module_idP].scheduling_info.SR_COUNTER=0;
 
+//Set BSR Trigger Bmp and remove timer flags
+  UE_mac_inst[module_idP].BSR_reporting_active = BSR_TRIGGER_NONE;
+
   // stop ongoing RACH procedure
 
   // discard explicitly signaled ra_PreambleIndex and ra_RACH_MaskIndex, if any
@@ -178,8 +181,14 @@ rrc_mac_config_req(
       if (logicalChannelConfig->ul_SpecificParameters) {
         UE_mac_inst[Mod_idP].scheduling_info.bucket_size[logicalChannelIdentity]=logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate *
             logicalChannelConfig->ul_SpecificParameters->bucketSizeDuration; // set the max bucket size
-        UE_mac_inst[Mod_idP].scheduling_info.LCGID[logicalChannelIdentity]=*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
-        LOG_D(MAC,"[CONFIG][UE %d] LCID %d is attached to the LCGID %d\n",Mod_idP,logicalChannelIdentity,*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup);
+        if (logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup != NULL) {
+            UE_mac_inst[Mod_idP].scheduling_info.LCGID[logicalChannelIdentity]=*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
+            LOG_D(MAC,"[CONFIG][UE %d] LCID %d is attached to the LCGID %d\n",Mod_idP,logicalChannelIdentity,*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup);
+        }
+        else {
+        	UE_mac_inst[Mod_idP].scheduling_info.LCGID[logicalChannelIdentity] = MAX_NUM_LCGID;
+        }
+        UE_mac_inst[Mod_idP].scheduling_info.LCID_buffer_remain[logicalChannelIdentity] = 0;
       } else {
         LOG_E(MAC,"[CONFIG][UE %d] LCID %d NULL ul_SpecificParameters\n",Mod_idP,logicalChannelIdentity);
         mac_xface->macphy_exit("NULL ul_SpecificParameters");
@@ -212,6 +221,7 @@ rrc_mac_config_req(
         } else {
           UE_mac_inst[Mod_idP].scheduling_info.maxHARQ_Tx     = (uint16_t) MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
         }
+        mac_xface->phy_config_harq_ue(Mod_idP,0,eNB_index,UE_mac_inst[Mod_idP].scheduling_info.maxHARQ_Tx);
 
         if (mac_MainConfig->ul_SCH_Config->retxBSR_Timer) {
           UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer     = (uint16_t) mac_MainConfig->ul_SCH_Config->retxBSR_Timer;
@@ -225,12 +235,34 @@ rrc_mac_config_req(
       if (mac_MainConfig->ext1 && mac_MainConfig->ext1->sr_ProhibitTimer_r9) {
         UE_mac_inst[Mod_idP].scheduling_info.sr_ProhibitTimer  = (uint16_t) *mac_MainConfig->ext1->sr_ProhibitTimer_r9;
       } else {
-        UE_mac_inst[Mod_idP].scheduling_info.sr_ProhibitTimer  = (uint16_t) 0;
+        UE_mac_inst[Mod_idP].scheduling_info.sr_ProhibitTimer  = 0;
       }
 
+      if (mac_MainConfig->ext2 && mac_MainConfig->ext2->mac_MainConfig_v1020) {
+        if (mac_MainConfig->ext2->mac_MainConfig_v1020->extendedBSR_Sizes_r10) {
+          UE_mac_inst[Mod_idP].scheduling_info.extendedBSR_Sizes_r10 = (uint16_t) *mac_MainConfig->ext2->mac_MainConfig_v1020->extendedBSR_Sizes_r10;
+        } else {
+          UE_mac_inst[Mod_idP].scheduling_info.extendedBSR_Sizes_r10 = (uint16_t)0;
+        }
+        if (mac_MainConfig->ext2->mac_MainConfig_v1020->extendedPHR_r10) {
+          UE_mac_inst[Mod_idP].scheduling_info.extendedPHR_r10 = (uint16_t) *mac_MainConfig->ext2->mac_MainConfig_v1020->extendedPHR_r10;
+        } else {
+          UE_mac_inst[Mod_idP].scheduling_info.extendedPHR_r10 = (uint16_t)0;
+        }
+      } else {
+        UE_mac_inst[Mod_idP].scheduling_info.extendedBSR_Sizes_r10 = (uint16_t)0;
+        UE_mac_inst[Mod_idP].scheduling_info.extendedPHR_r10 = (uint16_t)0;
+      }
 #endif
-      UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_SF  = get_sf_periodicBSRTimer(UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer);
-      UE_mac_inst[Mod_idP].scheduling_info.retxBSR_SF     = get_sf_retxBSRTimer(UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer);
+      UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_SF  = MAC_UE_BSR_TIMER_NOT_RUNNING;
+      UE_mac_inst[Mod_idP].scheduling_info.retxBSR_SF     = MAC_UE_BSR_TIMER_NOT_RUNNING;
+
+       UE_mac_inst[Mod_idP].BSR_reporting_active = BSR_TRIGGER_NONE;
+
+      LOG_D(MAC,"[UE %d]: periodic BSR %d (SF), retx BSR %d (SF)\n",
+            Mod_idP,
+            UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_SF,
+            UE_mac_inst[Mod_idP].scheduling_info.retxBSR_SF);
 
       UE_mac_inst[Mod_idP].scheduling_info.drx_config     = mac_MainConfig->drx_Config;
       UE_mac_inst[Mod_idP].scheduling_info.phr_config     = mac_MainConfig->phr_Config;
@@ -252,6 +284,7 @@ rrc_mac_config_req(
       UE_mac_inst[Mod_idP].scheduling_info.periodicPHR_SF =  get_sf_perioidicPHR_Timer(UE_mac_inst[Mod_idP].scheduling_info.periodicPHR_Timer);
       UE_mac_inst[Mod_idP].scheduling_info.prohibitPHR_SF =  get_sf_prohibitPHR_Timer(UE_mac_inst[Mod_idP].scheduling_info.prohibitPHR_Timer);
       UE_mac_inst[Mod_idP].scheduling_info.PathlossChange_db =  get_db_dl_PathlossChange(UE_mac_inst[Mod_idP].scheduling_info.PathlossChange);
+      UE_mac_inst[Mod_idP].PHR_reporting_active = 0;
       LOG_D(MAC,"[UE %d] config PHR (%d): periodic %d (SF) prohibit %d (SF)  pathlosschange %d (db) \n",
             Mod_idP,
             (mac_MainConfig->phr_Config)?mac_MainConfig->phr_Config->present:-1,

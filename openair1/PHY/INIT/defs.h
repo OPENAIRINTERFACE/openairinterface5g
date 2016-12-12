@@ -206,7 +206,19 @@ void phy_config_dedicated_ue(module_id_t Mod_id,
                              uint8_t CH_index,
                              struct PhysicalConfigDedicated *physicalConfigDedicated);
 
+/*!
+\fn void phy_config_harq_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t CH_index,
+               uint16_t max_harq_tx)
+\brief Configure UE UL max harq Tx.
+\details Invoked upon reception of RRCConnectionSetup or RRCConnectionReconfiguration from eNB.
+@param Mod_id Instance ID for eNB
+@param CC_id Component Carrier index
+@param CH_index Index of eNB for this configuration
+@param max_harq_tx max harq tx information
 
+ */
+void phy_config_harq_ue(module_id_t Mod_id,int CC_id,uint8_t CH_index,
+                           uint16_t max_harq_tx);
 /**
 \brief Configure UE MBSFN common parameters.
 \details Invoked upon reception of SIB13 from eNB.

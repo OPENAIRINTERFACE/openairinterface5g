@@ -476,7 +476,7 @@ static void init_MBMS(
 #   ifdef Rel10
                              , &(eNB_rrc_inst[enb_mod_idP].carrier[CC_id].mcch_message->pmch_InfoList_r9)
 #   endif
-                            );
+                             ,NULL);
 
     rrc_rlc_config_asn1_req(&ctxt,
                             NULL, // SRB_ToAddModList
@@ -2619,7 +2619,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH =
     CALLOC(1, sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH));
   physicalConfigDedicated2->cqi_ReportConfig = NULL;  //CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL; //CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
+  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
   physicalConfigDedicated2->antennaInfo = CALLOC(1, sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->schedulingRequestConfig =
     CALLOC(1, sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
@@ -3281,7 +3281,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 #ifdef Rel10
                            , (PMCH_InfoList_r9_t *) NULL
 #endif
-                          );
+                           ,NULL);
 
   rrc_rlc_config_asn1_req(&ctxt,
                           ue_context_pP->ue_context.SRB_configList,
@@ -3523,7 +3523,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 #ifdef Rel10
     , (PMCH_InfoList_r9_t *) NULL
 #endif
-  );
+    ,NULL);
   // Refresh SRBs/DRBs
   rrc_rlc_config_asn1_req(
     ctxt_pP,
@@ -3743,6 +3743,7 @@ rrc_eNB_generate_RRCConnectionSetup(
   eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size =
     do_RRCConnectionSetup(ctxt_pP,
                           ue_context_pP,
+                          CC_id,
                           (uint8_t*) eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.Payload,
 			  (fp->nb_antennas_tx_eNB==2)?2:1, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
                           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
@@ -4348,7 +4349,7 @@ rrc_eNB_decode_ccch(
 #   ifdef Rel10
                                , (PMCH_InfoList_r9_t *) NULL
 #   endif
-                              );
+                               ,NULL);
 
       rrc_rlc_config_asn1_req(ctxt_pP,
                               ue_context_p->ue_context.SRB_configList,

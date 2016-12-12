@@ -272,7 +272,7 @@ void Msg1_tx(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id
 
   if (opt_enabled) {
     trace_pdu(0, NULL, 0, module_idP, 2, UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex,
-              UE_mac_inst[module_idP].subframe, 0, UE_mac_inst[module_idP].RA_attempt_number);
+        UE_mac_inst[module_idP].frame, UE_mac_inst[module_idP].subframe, 0, UE_mac_inst[module_idP].RA_attempt_number);
     LOG_D(OPT,"[UE %d][RAPROC] TX MSG1 Frame %d trace pdu for rnti %x  with size %d\n",
           module_idP, frameP, 1, UE_mac_inst[module_idP].RA_Msg3_size);
   }
@@ -296,7 +296,7 @@ void Msg3_tx(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id
 
   if (opt_enabled) { // msg3
     trace_pdu(0, &UE_mac_inst[module_idP].CCCH_pdu.payload[0], UE_mac_inst[module_idP].RA_Msg3_size,
-              module_idP, 3, UE_mac_inst[module_idP].crnti, UE_mac_inst[module_idP].subframe, 0, 0);
+              module_idP, 3, UE_mac_inst[module_idP].crnti, UE_mac_inst[module_idP].frame, UE_mac_inst[module_idP].subframe, 0, 0);
     LOG_D(OPT,"[UE %d][RAPROC] MSG3 Frame %d trace pdu Preamble %d   with size %d\n",
           module_idP, frameP, UE_mac_inst[module_idP].crnti /*UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex*/, UE_mac_inst[module_idP].RA_Msg3_size);
   }
@@ -391,7 +391,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP, 
                                 1); //post_padding
           return(&UE_mac_inst[module_idP].RA_prach_resources);
 
-        } else if (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[DCCH] > 0) {
+        } else if (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]] > 0) {
           // This is for triggering a transmission on DCCH using PRACH (during handover, or sending SR for example)
           dcch_header_len = 2 + 2;  /// SHORT Subheader + C-RNTI control element
           rlc_status = mac_rlc_status_ind(module_idP,UE_mac_inst[module_idP].crnti, eNB_indexP,frameP,ENB_FLAG_NO,MBMS_FLAG_NO,
@@ -412,7 +412,12 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP, 
                                             (char *)&ulsch_buff[0]);
 
           LOG_D(MAC,"[UE %d] TX Got %d bytes for DCCH\n",module_idP,sdu_lengths[0]);
-          update_bsr(module_idP, frameP, eNB_indexP,DCCH,UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]);
+          update_bsr(module_idP, frameP, subframeP,eNB_indexP);
+	      UE_mac_inst[module_idP].scheduling_info.BSR[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]] =
+	    		  locate_BsrIndexByBufferSize(BSR_TABLE, BSR_TABLE_SIZE, UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]]);
+
+	      //TO DO: fill BSR infos in UL TBS
+
           //header_len +=2;
           UE_mac_inst[module_idP].RA_active                        = 1;
           UE_mac_inst[module_idP].RA_PREAMBLE_TRANSMISSION_COUNTER = 1;

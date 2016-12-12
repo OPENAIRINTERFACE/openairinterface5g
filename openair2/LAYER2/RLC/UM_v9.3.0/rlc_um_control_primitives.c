@@ -40,7 +40,8 @@ void config_req_rlc_um (
   const protocol_ctxt_t* const ctxt_pP,
   const srb_flag_t      srb_flagP,
   const rlc_um_info_t  * const config_um_pP,
-  const rb_id_t         rb_idP)
+  const rb_id_t           rb_idP,
+  const logical_chan_id_t chan_idP)
 {
   rlc_union_t     *rlc_union_p  = NULL;
   rlc_um_entity_t *rlc_p        = NULL;
@@ -61,7 +62,7 @@ void config_req_rlc_um (
     rlc_um_init(ctxt_pP, rlc_p);
 
     if (rlc_um_fsm_notify_event (ctxt_pP, rlc_p, RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_DATA_TRANSFER_READY_STATE_EVENT)) {
-      rlc_um_set_debug_infos(ctxt_pP, rlc_p, srb_flagP, rb_idP);
+      rlc_um_set_debug_infos(ctxt_pP, rlc_p, srb_flagP, rb_idP, chan_idP);
       rlc_um_configure(
         ctxt_pP,
         rlc_p,
@@ -87,7 +88,8 @@ void config_req_rlc_um_asn1 (
   const mbms_service_id_t   mbms_service_idP,
   const UL_UM_RLC_t       * const ul_rlc_pP,
   const DL_UM_RLC_t       * const dl_rlc_pP,
-  const rb_id_t             rb_idP)
+  const rb_id_t             rb_idP,
+  const logical_chan_id_t   chan_idP)
 {
   uint32_t         ul_sn_FieldLength   = 0;
   uint32_t         dl_sn_FieldLength   = 0;
@@ -135,7 +137,7 @@ void config_req_rlc_um_asn1 (
 
 
   if (rlc_um_fsm_notify_event (ctxt_pP, rlc_p, RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_DATA_TRANSFER_READY_STATE_EVENT)) {
-    rlc_um_set_debug_infos(ctxt_pP,rlc_p, srb_flagP, rb_idP);
+    rlc_um_set_debug_infos(ctxt_pP,rlc_p, srb_flagP, rb_idP, chan_idP);
 
     if (ul_rlc_pP != NULL) {
       switch (ul_rlc_pP->sn_FieldLength) {
@@ -416,14 +418,16 @@ void rlc_um_configure(
 void rlc_um_set_debug_infos(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_um_entity_t * const rlc_pP,
-  const srb_flag_t       srb_flagP,
-  const rb_id_t          rb_idP)
+  const srb_flag_t        srb_flagP,
+  const rb_id_t           rb_idP,
+  const logical_chan_id_t chan_idP) 
 {
   LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" [SET DEBUG INFOS] rb_id %d srb_flag %d\n",
         PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
         rb_idP,
         srb_flagP);
-  rlc_pP->rb_id         = rb_idP;
+  rlc_pP->rb_id      = rb_idP;
+  rlc_pP->channel_id = chan_idP;
 
   if (srb_flagP) {
     rlc_pP->is_data_plane = 0;

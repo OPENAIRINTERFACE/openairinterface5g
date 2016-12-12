@@ -442,6 +442,17 @@ int8_t pucch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t subframe,ui
  */
 void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t j, uint8_t abstraction_flag);
 
+/*! \brief This function implements the power control mechanism for SRS from 36.213.
+    @param phy_vars_ue PHY variables
+    @param proc Pointer to proc descriptor
+    @param eNB_id Index of eNB
+    @param j index of type of PUSCH (SPS, Normal, Msg3)
+    @returns Transmit power
+ */
+void srs_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t *pnb_rb_srs, uint8_t abstraction_flag);
+
+void get_cqipmiri_params(PHY_VARS_UE *ue,uint8_t eNB_id);
+
 int8_t get_PHR(uint8_t Mod_id, uint8_t CC_id, uint8_t eNB_index);
 
 #ifdef LOCALIZATION
@@ -456,6 +467,8 @@ int8_t get_PHR(uint8_t Mod_id, uint8_t CC_id, uint8_t eNB_index);
 double aggregate_eNB_UE_localization_stats(PHY_VARS_eNB *phy_vars_eNB, int8_t UE_id, frame_t frameP, sub_frame_t subframeP, int32_t UE_tx_power_dB);
 #endif
 LTE_eNB_UE_stats* get_UE_stats(uint8_t Mod_id, uint8_t CC_id,uint16_t rnti);
+
+
 
 LTE_DL_FRAME_PARMS *get_lte_frame_parms(module_id_t Mod_id, uint8_t CC_id);
 

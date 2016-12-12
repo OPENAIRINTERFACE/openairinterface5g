@@ -79,6 +79,8 @@ extern void *_emm_service_t3417_handler(void *);
 extern void *_emm_detach_t3421_handler(void *);
 extern void *_emm_tau_t3430_handler(void *);
 
+extern uint8_t usim_test;
+
 /****************************************************************************/
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
 /****************************************************************************/
@@ -233,7 +235,14 @@ int emm_proc_authentication_request(int native_ksi, int ksi,
        * of the core network by means of the received AUTN parameter and
        * request the USIM to compute RES, CK and IK for given RAND
        */
-      rc = usim_api_authenticate(rand, autn, &auts, &res, &ck, &ik);
+      if(usim_test == 0)
+      {
+        rc = usim_api_authenticate(rand, autn, &auts, &res, &ck, &ik);
+      }
+      else
+      {
+        rc = usim_api_authenticate_test(rand, autn, &auts, &res, &ck, &ik); // XOR algo for autentication on usim test mode
+      }
     }
 
     if (rc != RETURNok) {

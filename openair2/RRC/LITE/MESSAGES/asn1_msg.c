@@ -109,6 +109,7 @@ typedef struct xer_sprint_string_s {
 } xer_sprint_string_t;
 
 extern unsigned char NB_eNB_INST;
+extern uint8_t usim_test;
 
 uint16_t two_tier_hexagonal_cellIds[7] = {0,1,2,4,5,7,8};
 uint16_t two_tier_hexagonal_adjacent_cellIds[7][6] = {{1,2,4,5,7,8},    // CellId 0
@@ -1260,7 +1261,10 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uin
   rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.nonCriticalExtension=CALLOC(1,
       sizeof(*rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.nonCriticalExtension));
 
-  rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.selectedPLMN_Identity=2;
+  if(usim_test == 0)
+      rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.selectedPLMN_Identity= 2;
+  else
+      rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.selectedPLMN_Identity= 1;
 
   rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME =
     NULL;//calloc(1,sizeof(*rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME));
@@ -1384,6 +1388,7 @@ uint8_t
 do_RRCConnectionSetup(
   const protocol_ctxt_t*     const ctxt_pP,
   rrc_eNB_ue_context_t*      const ue_context_pP,
+  int                              CC_id,
   uint8_t*                   const buffer,
   const uint8_t                    transmission_mode,
   const uint8_t                    Transaction_id,
@@ -1488,7 +1493,10 @@ do_RRCConnectionSetup(
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH         = CALLOC(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH));
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH         = CALLOC(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH));
   physicalConfigDedicated2->cqi_ReportConfig              = CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL;//CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
+  if (enb_properties.properties[ctxt_pP->module_id]->srs_enable[CC_id])
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
+  else
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL;
   physicalConfigDedicated2->antennaInfo                   = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->schedulingRequestConfig       = CALLOC(1,sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
 #ifdef CBA
@@ -1574,19 +1582,19 @@ do_RRCConnectionSetup(
     */
 
   //soundingRS-UL-ConfigDedicated
-  /*
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->present = SoundingRS_UL_ConfigDedicated_PR_setup;
-  assign_enum(&physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth,
-        SoundingRS_UL_ConfigDedicated__setup__srs_Bandwidth_bw0);
-  assign_enum(&physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth,
-        SoundingRS_UL_ConfigDedicated__setup__srs_HoppingBandwidth_hbw0);
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition=0;
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.duration=1;
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=1;
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb=0;
-  assign_enum(&physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift,
-        SoundingRS_UL_ConfigDedicated__setup__cyclicShift_cs0);
-  */
+  if (enb_properties.properties[ctxt_pP->module_id]->srs_enable[CC_id]) {
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->present = SoundingRS_UL_ConfigDedicated_PR_setup;
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth =
+                                                             SoundingRS_UL_ConfigDedicated__setup__srs_Bandwidth_bw0;
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth =
+          SoundingRS_UL_ConfigDedicated__setup__srs_HoppingBandwidth_hbw0;
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition=0;
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.duration=1;
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=45;
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb=0;
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift=
+          SoundingRS_UL_ConfigDedicated__setup__cyclicShift_cs0;
+  }
 
 
   //AntennaInfoDedicated
@@ -2661,6 +2669,21 @@ OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname)
 
     // UE_EUTRA_Capability->measParameters.bandListEUTRA.list.count                         = 0;  // no measurements on other bands
     // UE_EUTRA_Capability->featureGroupIndicators  // null
+
+    // featureGroup is mandatory for CMW tests
+    // featureGroup is filled only for usim-test mode
+    BIT_STRING_t *bit_string;
+    uint32_t     featrG;
+    bit_string = CALLOC(1, sizeof(*bit_string));
+    featrG     = 0x04000800;
+    if(usim_test == 1)
+    {
+        bit_string->buf         = &featrG;
+        bit_string->size        = 4;
+        bit_string->bits_unused = 0;
+        UE_EUTRA_Capability->featureGroupIndicators = bit_string;
+    }
+
     // UE_EUTRA_Capability->interRAT_Parameters     // null
   } else {
 

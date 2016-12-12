@@ -142,6 +142,11 @@ typedef struct {
   uint8_t nCS_AN;
   /// Parameter: \f$N^{(1)}_\text{PUCCH}\f$ see TS 36.213 (10.1). \vr{[0..2047]}
   uint16_t n1PUCCH_AN;
+
+  /// group hopping sequence for DRS \note not part of offical UL-PUCCH_CONFIG_COMMON ASN1 specification.
+  uint8_t grouphop[20];
+  /// sequence hopping sequence for DRS \note not part of offical UL-PUCCH_CONFIG_COMMON ASN1 specification.
+  uint8_t seqhop[20];
 } PUCCH_CONFIG_COMMON;
 
 /// UL-ReferenceSignalsPUSCH from 36.331 RRC spec
@@ -315,6 +320,12 @@ typedef struct {
   uint16_t srs_ConfigIndex;
   /// Parameter: \f$n^\text{CS}_\text{SRS}\f$. See TS 36.211 (5.5.3.1). \vr{[0..7]} \note the specification sais it is an enumerated value.
   uint8_t cyclicShift;
+  // Parameter: ue srs subframe for internal implementation
+  uint8_t srsConfigDedicatedSetup;
+  // Parameter: cell srs subframe for internal implementation
+  uint8_t srsCellSubframe;
+  // Parameter: ue srs subframe for internal implementation
+  uint8_t srsUeSubframe;
 } SOUNDINGRS_UL_CONFIG_DEDICATED;
 
 /// UplinkPowerControlDedicated Information Element from 36.331 RRC spec
@@ -418,16 +429,20 @@ typedef struct {
 
 /// CQI-ReportPeriodic
 typedef struct {
-  /// Parameter: \f$n^{(2)}_\text{PUCCH}\f$, see TS 36.213 (7.2). \vr{[0..1185]}
-  uint16_t cqi_PUCCH_ResourceIndex;
+  /// Parameter: \f$n^{(2)}_\text{PUCCH}\f$, see TS 36.213 (7.2). \vr{[0..1185]}, -1 indicates inactivity
+  int16_t cqi_PUCCH_ResourceIndex;
   /// Parameter: CQI/PMI Periodicity and Offset Configuration Index \f$I_\text{CQI/PMI}\f$, see TS 36.213 (tables 7.2.2-1A and 7.2.2-1C). \vr{[0..1023]}
-  uint16_t cqi_PMI_ConfigIndex;
+  int16_t cqi_PMI_ConfigIndex;
   /// Parameter: K, see 36.213 (4.2.2). \vr{[1..4]}
   uint8_t K;
-  /// Parameter: RI Config Index \f$I_\text{RI}\f$, see TS 36.213 (7.2.2-1B). \vr{[0..1023]}
-  uint16_t ri_ConfigIndex;
+  /// Parameter: RI Config Index \f$I_\text{RI}\f$, see TS 36.213 (7.2.2-1B). \vr{[0..1023]}, -1 indicates inactivity
+  int16_t ri_ConfigIndex;
   /// Parameter: Simultaneous-AN-and-CQI, see TS 36.213 (10.1). \vr{[0..1]} 1 indicates that simultaneous transmission of ACK/NACK and CQI is allowed.
   uint8_t simultaneousAckNackAndCQI;
+  /// parameter computed from Tables 7.2.2-1A and 7.2.2-1C
+  uint16_t Npd;
+  /// parameter computed from Tables 7.2.2-1A and 7.2.2-1C
+  uint16_t N_OFFSET_CQI;
 } CQI_REPORTPERIODIC;
 
 /// Enumeration for parameter reporting mode \ref CQI_REPORT_CONFIG::cqi_ReportModeAperiodic.

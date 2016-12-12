@@ -462,6 +462,13 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
     }
   }
 
+  /* Consider this is a false detection if the offset is > 1000 Hz */
+  if( (abs(ue->common_vars.freq_offset) > 150) && (ret == 0) )
+  {
+	  ret=-1;
+	  LOG_E(HW,"Ignore MIB with high freq offset [%d Hz] estimation \n",ue->common_vars.freq_offset);
+  }
+
   if (ret==0) {  // PBCH found so indicate sync to higher layers and configure frame parameters
 
     //#ifdef DEBUG_INITIAL_SYNCH
