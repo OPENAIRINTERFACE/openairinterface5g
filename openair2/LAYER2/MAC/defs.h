@@ -1031,10 +1031,14 @@ typedef struct {
 /*!\brief Top level UE MAC structure */
 typedef struct {
   uint16_t Node_id;
-  /// frame counter
-  frame_t     frame;
-  /// subframe counter
-  sub_frame_t subframe;
+  /// RX frame counter
+  frame_t     rxFrame;
+  /// RX subframe counter
+  sub_frame_t rxSubframe;
+  /// TX frame counter
+  frame_t     txFrame;
+  /// TX subframe counter
+  sub_frame_t txSubframe;
   /// C-RNTI of UE
   uint16_t crnti;
   /// C-RNTI of UE before HO

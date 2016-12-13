@@ -82,7 +82,7 @@ int openair2_stats_read(char *buffer, char **my_buffer, off_t off, int length)
     // mod_id used for PDCP and RLC
     Mod_id = NB_eNB_INST + ue_id ;
 
-    len+=sprintf(&buffer[len],"UE TTI: %d\n",UE_mac_inst[ue_id].frame);
+    len+=sprintf(&buffer[len],"UE RX TTI: %d\n",UE_mac_inst[ue_id].rxFrame);
 
     for (enb_id= 0; enb_id <NB_SIG_CNX_UE; enb_id++) {
 

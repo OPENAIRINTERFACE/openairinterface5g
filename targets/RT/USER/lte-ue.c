@@ -786,11 +786,13 @@ static void *UE_thread_rxn_txnp4(void *arg)
     if (UE->mac_enabled==1) {
 
       ret = mac_xface->ue_scheduler(UE->Mod_id,
-				    proc->frame_tx,
-				    proc->subframe_rx,
-				    subframe_select(&UE->frame_parms,proc->subframe_tx),
-				    0,
-				    0/*FIXME CC_id*/);
+          proc->frame_rx,
+          proc->subframe_rx,
+          proc->frame_tx,
+          proc->subframe_tx,
+          subframe_select(&UE->frame_parms,proc->subframe_tx),
+          0,
+          0/*FIXME CC_id*/);
       
       if (ret == CONNECTION_LOST) {
 	LOG_E( PHY, "[UE %"PRIu8"] Frame %"PRIu32", subframe %u RRC Connection lost, returning to PRACH\n",
