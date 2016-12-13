@@ -2127,14 +2127,14 @@ ue_scheduler(
     }
 
   //Check whether Regular BSR is triggered
-  if (update_bsr(module_idP,frameP, subframeP,eNB_indexP) == TRUE) {
+  if (update_bsr(module_idP,txFrameP, txSubframeP,eNB_indexP) == TRUE) {
   // call SR procedure to generate pending SR and BSR for next PUCCH/PUSCH TxOp.  This should implement the procedures
   // outlined in Sections 5.4.4 an 5.4.5 of 36.321
     UE_mac_inst[module_idP].scheduling_info.SR_pending= 1;
     // Regular BSR trigger
     UE_mac_inst[module_idP].BSR_reporting_active |= BSR_TRIGGER_REGULAR;
     LOG_D(MAC,"[UE %d][BSR] Regular BSR Triggered Frame %d subframe %d SR for PUSCH is pending\n",
-          module_idP, frameP,subframeP);
+          module_idP, txFrameP,txSubframeP);
   }
 
   // UE has no valid phy config dedicated ||  no valid/released  SR
