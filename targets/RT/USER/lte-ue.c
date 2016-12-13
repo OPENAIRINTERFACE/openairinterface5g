@@ -732,6 +732,7 @@ static void *UE_thread_rxn_txnp4(void *arg)
   printf("Starting UE RXN_TXNP4 thread (%s)\n", threadname);
 
   while (!oai_exit) {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_COND_WAIT0+(proc->subframe_rx&1), 1 );
     if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
       LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RXTX\n" );
       exit_fun("nothing to add");
@@ -739,15 +740,18 @@ static void *UE_thread_rxn_txnp4(void *arg)
     }
 
     while (proc->instance_cnt_rxtx < 0) {
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_WAIT_COND_RXTX0+(proc->subframe_rx&1), 1 );
       // most of the time, the thread is waiting here
       pthread_cond_wait( &proc->cond_rxtx, &proc->mutex_rxtx );
     }
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_WAIT_COND_RXTX0+(proc->subframe_rx&1), 0 );
 
     if (pthread_mutex_unlock(&proc->mutex_rxtx) != 0) {
       LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE RXn_TXnp4\n" );
       exit_fun("nothing to add");
       return &UE_thread_rxtx_retval;
     }
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_COND_WAIT0+(proc->subframe_rx&1), 0 );
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_THREAD_RXTX0+(proc->subframe_rx&1), 1 );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_UE+(proc->subframe_rx&1), proc->subframe_rx );
@@ -804,17 +808,25 @@ static void *UE_thread_rxn_txnp4(void *arg)
     }
 
     if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
-	(UE->frame_parms.frame_type == FDD) ||
-	(subframe_select( &UE->frame_parms, proc->subframe_tx ) == SF_S)) {
+	(UE->frame_parms.frame_type == FDD) ) {
 
       if (UE->mode != loop_through_memory) {
 	phy_procedures_UE_TX(UE,proc,0,0,UE->mode,no_relay);
       }
     }
 
+    if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_S) &&
+  (UE->frame_parms.frame_type == TDD)) {
+
+      if (UE->mode != loop_through_memory) {
+  phy_procedures_UE_S_TX(UE,0,0,no_relay);
+      }
+    }
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_THREAD_RXTX0+(proc->subframe_rx&1), 0 );
 
     
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_CNT_DECREMENT0+(proc->subframe_rx&1), 1 );
     if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
       LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RXTX\n" );
       exit_fun("noting to add");
@@ -829,6 +841,7 @@ static void *UE_thread_rxn_txnp4(void *arg)
       exit_fun("noting to add");
       return &UE_thread_rxtx_retval;
     }
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_CNT_DECREMENT0+(proc->subframe_rx&1), 0 );
   }
   
   // thread finished
@@ -951,10 +964,11 @@ void *UE_thread(void *arg) {
 					   rxp,
 					   UE->frame_parms.samples_per_tti*10,
 					   UE->frame_parms.nb_antennas_rx);
-
+	  
 	  
 	  if (rxs!=UE->frame_parms.samples_per_tti*10) {
-	    exit_fun("problem in rx");
+	    LOG_E(PHY, "problem in rx 1! want #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti*10, rxs);
+	    exit_fun("problem in rx 1");
 	    return &UE_thread_retval;
 	  }
 	}
@@ -987,7 +1001,8 @@ void *UE_thread(void *arg) {
 					     UE->frame_parms.nb_antennas_rx);
 
 	    if (rxs!=UE->frame_parms.samples_per_tti){
-	      exit_fun("problem in rx");
+	      LOG_E(PHY, "problem in rx 2! want #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti, rxs);
+	      exit_fun("problem in rx 2");
 	      return &UE_thread_retval;
 	    }
 
@@ -1009,7 +1024,8 @@ void *UE_thread(void *arg) {
 					     UE->rx_offset,
 					     UE->frame_parms.nb_antennas_rx);
 	    if (rxs != UE->rx_offset) {
-	      exit_fun("problem in rx");
+	      LOG_E(PHY, "problem in rx 3! want #samples=%d but got only %d!\n", UE->rx_offset, rxs);
+	      exit_fun("problem in rx 3!");
 	      return &UE_thread_retval;
 	    }
 	  }
@@ -1023,6 +1039,11 @@ void *UE_thread(void *arg) {
 					   (void**)rxdata,
 					   UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0,
 					   UE->frame_parms.nb_antennas_rx);
+    if (rxs != (UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0)) {
+      LOG_E(PHY, "problem in rx 4! want #samples=%d but got only %d!\n", UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0, rxs);
+      exit_fun("problem in rx 4!");
+      return &UE_thread_retval;
+    }
 	  slot_fep(UE,
 		   0,
 		   0,
@@ -1046,20 +1067,27 @@ void *UE_thread(void *arg) {
 	  for (i=0; i<UE->frame_parms.nb_antennas_rx; i++) 
 	    rxp[i] = (void*)&rxdata[i][UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0+(sf*UE->frame_parms.samples_per_tti)];
 	  // grab signal for subframe
-	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
 	  if (UE->mode != loop_through_memory) {
 	    if (sf<9) {
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
 	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
 					       &timestamp,
 					       rxp,
 					       UE->frame_parms.samples_per_tti,
 					       UE->frame_parms.nb_antennas_rx);
-	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
-	      // prepare tx buffer pointers
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
+	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
+	      if (rxs != UE->frame_parms.samples_per_tti) {
+	        LOG_E(PHY, "problem in rx 5! want #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti, rxs);
+	        exit_fun("problem in rx 5!");
+	        return &UE_thread_retval;
+	      }
 	      
+	      // prepare tx buffer pointers
 	      for (i=0; i<UE->frame_parms.nb_antennas_tx; i++)
 		txp[i] = (void*)&UE->common_vars.txdata[i][((sf+2)%10)*UE->frame_parms.samples_per_tti];
 	      
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
 	      txs = UE->rfdevice.trx_write_func(&UE->rfdevice,
 						timestamp+
 						(2*UE->frame_parms.samples_per_tti) -
@@ -1069,27 +1097,34 @@ void *UE_thread(void *arg) {
 						UE->frame_parms.samples_per_tti,
 						UE->frame_parms.nb_antennas_tx,
 						1);
-              if (txs !=  UE->frame_parms.samples_per_tti) {
-                 LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, UE->frame_parms.samples_per_tti);
-                 exit_fun( "problem transmitting samples" );
-              }
-
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
-
+	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS, rxs );
+        if (txs !=  UE->frame_parms.samples_per_tti) {
+           LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, UE->frame_parms.samples_per_tti);
+           exit_fun( "problem transmitting samples" );
+        }
 	    }
 	    
 	    else {
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 1 );
 	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
 					       &timestamp,
 					       rxp,
 					       UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0,
 					       UE->frame_parms.nb_antennas_rx);
-	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 0 );
+	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
+        if (rxs != (UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0)) {
+          LOG_E(PHY, "problem in rx 6! want #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0, rxs);
+          exit_fun("problem in rx 6!");
+          return &UE_thread_retval;
+        }
+
 	      // prepare tx buffer pointers
-	      
 	      for (i=0; i<UE->frame_parms.nb_antennas_tx; i++)
 		txp[i] = (void*)&UE->common_vars.txdata[i][((sf+2)%10)*UE->frame_parms.samples_per_tti];
 	      
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_SF9, 1 );
 	      txs = UE->rfdevice.trx_write_func(&UE->rfdevice,
 						timestamp+
 						(2*UE->frame_parms.samples_per_tti) -
@@ -1099,25 +1134,34 @@ void *UE_thread(void *arg) {
 						UE->frame_parms.samples_per_tti - rx_off_diff,
 						UE->frame_parms.nb_antennas_tx,
 						1);
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_SF9, 0 );
+	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS, rxs );
               if (txs !=  UE->frame_parms.samples_per_tti - rx_off_diff) {
                  LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, UE->frame_parms.samples_per_tti-rx_off_diff);
                  exit_fun( "problem transmitting samples" );
               }
-	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
 
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 1 );
 	      // read in first symbol of next frame and adjust for timing drift
 	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
 					       &timestamp1,
 					       (void**)rxdata,
-					       UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0 - rx_off_diff,
+					       UE->frame_parms.ofdm_symbol_size + UE->frame_parms.nb_prefix_samples0 - rx_off_diff,
 					       UE->frame_parms.nb_antennas_rx);
-	      rx_off_diff = 0;
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 0 );
+	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
+        if (rxs != (UE->frame_parms.ofdm_symbol_size + UE->frame_parms.nb_prefix_samples0 - rx_off_diff)) {
+          LOG_E(PHY, "problem in rx 7! want #samples=%d but got only %d! rx_off_diff=%d\n", UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0 - rx_off_diff, rxs, rx_off_diff);
+          exit_fun("problem in rx 7!");
+          return &UE_thread_retval;
+        }
+        rx_off_diff = 0;
 	    }
 	  }
-	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 	  // operate on thread sf mod 2
 	  UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[sf&1];
 
+	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_CNT_INCREMENT0+(proc->subframe_rx&1), 1 );
 	  // lock mutex
 	  if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
 	    LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RX\n" );
@@ -1147,15 +1191,20 @@ void *UE_thread(void *arg) {
 	    exit_fun("nothing to add");
 	    return &UE_thread_retval;
 	  }
+	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_CNT_INCREMENT0+(proc->subframe_rx&1), 0 );
 
 
 	  if (instance_cnt_rxtx == 0) {
+	    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SIGNAL_COND_RXTX, 1 );
 	    if (pthread_cond_signal(&proc->cond_rxtx) != 0) {
 	      LOG_E( PHY, "[SCHED][UE] ERROR pthread_cond_signal for UE RX thread\n" );
 	      exit_fun("nothing to add");
 	      return &UE_thread_retval;
 	    }
 	    LOG_D(PHY, "firing up rxtx_thread[%d] at subframe %d\n", sf&1, sf);
+
+	    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SIGNAL_COND_RXTX, 0 );
+
 	  } else {
 	    LOG_E( PHY, "[SCHED][UE] UE RX thread busy (IC %d)!!\n", instance_cnt_rxtx);
 	    if (instance_cnt_rxtx > 2) {

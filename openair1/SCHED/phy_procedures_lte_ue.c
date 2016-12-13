@@ -942,6 +942,8 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc) {
   int dummy_tx_buffer[3840*4] __attribute__((aligned(16)));
 #endif
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_COMMON,VCD_FUNCTION_IN);
+
   start_meas(&ue->ofdm_mod_stats);
   nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
   
@@ -1043,7 +1045,7 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc) {
   
   stop_meas(&ue->ofdm_mod_stats);
 
-
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_COMMON,VCD_FUNCTION_OUT);
 
 }
 
@@ -1053,6 +1055,8 @@ void ue_prach_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   int subframe_tx = proc->subframe_tx;
   int prach_power;
   PRACH_RESOURCES_t prach_resources_local;
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
 
   ue->generate_prach=0;
 
@@ -1171,6 +1175,8 @@ void ue_prach_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   
   if (ue->prach_cnt==3)
     ue->generate_prach=0;
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_OUT);
 }
 
 void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag) {
@@ -1189,6 +1195,8 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
   int tx_amp;
   uint8_t ulsch_input_buffer[5477] __attribute__ ((aligned(32)));
   uint8_t access_mode;
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_UESPEC,VCD_FUNCTION_IN);
 
   // get harq_pid from subframe relationship
   harq_pid = subframe2harq_pid(&ue->frame_parms,
@@ -1218,8 +1226,8 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
     } else {
       
       if (harq_pid==255) {
-	LOG_E(PHY,"[UE%d] Frame %d ulsch_decoding.c: FATAL ERROR: illegal harq_pid, returning\n",
-	      Mod_id,frame_tx);
+	LOG_E(PHY,"[UE%d] Frame %d subframe %d ulsch_decoding.c: FATAL ERROR: illegal harq_pid, returning\n",
+	      Mod_id,frame_tx, subframe_tx);
 	mac_xface->macphy_exit("Error in ulsch_decoding");
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
 	stop_meas(&ue->phy_proc_tx);
@@ -1456,6 +1464,9 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
       ue->sr[subframe_tx]=0;
     }
   } // subframe_scheduling_flag==1
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_UESPEC,VCD_FUNCTION_OUT);
+
 }
 
 void ue_srs_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag)
@@ -1553,6 +1564,8 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   int tx_amp;
   int8_t Po_PUCCH;
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PUCCH,VCD_FUNCTION_IN);
+  
   SOUNDINGRS_UL_CONFIG_DEDICATED *pSoundingrs_ul_config_dedicated=&ue->soundingrs_ul_config_dedicated[eNB_id];
 
   // 36.213 8.2
@@ -1743,6 +1756,8 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     }
   } // SR_Payload==1
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PUCCH,VCD_FUNCTION_OUT);
+  
   // PUCCH 2x
 
   if (ue->generate_ul_signal[eNB_id] == 0) { // we have not generated ACK/NAK/SR in this subframe
