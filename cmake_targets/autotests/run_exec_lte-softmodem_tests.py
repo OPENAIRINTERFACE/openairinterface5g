@@ -552,7 +552,7 @@ def wait_testcaseclass_generic_threads(threadListGeneric, timeout = 1):
 # \param CleanupAluLteBox string that contains commands to stop ALU Bell Labs LTEBox (specified in test_case_list.xml)
 # \param ExmimoRfStop command to stop EXMIMO Card
 # \param nruns_lte-softmodem global parameter to override number of runs (nruns) within the test case
-def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, user, password, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem, timeout_cmd):
+def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, user, password, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem,  GitOAI5GRepoBranch,  GitOpenaircnRepoBranch,timeout_cmd):
   #We ignore the password sent to this function for secuirity reasons for password present in log files
   #It is recommended to add a line in /etc/sudoers that looks something like below. The line below will run sudo without password prompt
   # your_user_name ALL=(ALL:ALL) NOPASSWD: ALL
@@ -575,6 +575,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   tags = testcase.findtext('tags',default='')
 
   RRHMachine = testcase.findtext('RRH',default='')
+  RRH_config_file = testcase.findtext('RRH_config_file',default='')
   RRH_compile_prog = testcase.findtext('RRH_compile_prog',default='')
   RRH_compile_prog_args = testcase.findtext('RRH_compile_prog_args',default='')
   RRH_pre_exec = testcase.findtext('RRH_pre_exec',default='')
@@ -582,7 +583,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   RRH_main_exec = testcase.findtext('RRH_main_exec',default='')
   RRH_main_exec_args = testcase.findtext('RRH_main_exec_args',default='')
   RRH_terminate_missing_procs = testcase.findtext('RRH_terminate_missing_procs',default='False')
-
+  RRH_branch = testcase.findtext('RRH_branch',default=GitOAI5GRepoBranch)
 
   eNBMachine = testcase.findtext('eNB',default='')
   eNB_config_file = testcase.findtext('eNB_config_file',default='')
@@ -598,6 +599,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   eNB_search_expr_true = testcase.findtext('eNB_search_expr_true','')
   if re.compile('\w+').match(eNB_search_expr_true) != None:
       eNB_search_expr_true = eNB_search_expr_true + '  duration=' + str(timeout_cmd-90) + 's' 
+  eNB_branch = testcase.findtext('eNB_branch',default=GitOAI5GRepoBranch)
 
   UEMachine = testcase.findtext('UE',default='')
   UE_config_file = testcase.findtext('UE_config_file',default='')
@@ -614,6 +616,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   UE_stop_script =  testcase.findtext('UE_stop_script','')
   if re.compile('\w+').match(UE_search_expr_true) != None:
       UE_search_expr_true = UE_search_expr_true + '  duration=' + str(timeout_cmd-90) + 's'
+  UE_branch = testcase.findtext('UE_branch',default=GitOAI5GRepoBranch)
 
   EPCMachine = testcase.findtext('EPC',default='')
   EPC_config_file = testcase.findtext('EPC_config_file',default='')
@@ -632,6 +635,8 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   EPC_traffic_exec_args = testcase.findtext('EPC_traffic_exec_args',default='')
   EPC_terminate_missing_procs = testcase.findtext('EPC_terminate_missing_procs',default='False')
   EPC_search_expr_true = testcase.findtext('EPC_search_expr_true','')
+  EPC_branch = testcase.findtext('EPC_branch',default=GitOpenaircnRepoBranch)
+
   if re.compile('\w+').match(EPC_search_expr_true) != None:
      EPC_search_expr_true = EPC_search_expr_true + '  duration=' + str(timeout_cmd-90) + 's'
 
@@ -688,7 +693,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     logdir_local_testcase = logdir_local + '/cmake_targets/autotests/log/'+ testcasename + '/run_' + str(run)
     #Make the log directory of test case
     if RRHMachine != '':
-      cmd = 'rm -fr ' + logdir_RRH + ' ; mkdir -p ' + logdir_RRH
+      cmd = 'rm -fr ' + logdir_RRH + ' ; mkdir -p ' + logdir_RRH 
       result = oai_RRH.send_recv(cmd)
     cmd = 'rm -fr ' + logdir_eNB + ' ; mkdir -p ' + logdir_eNB
     result = oai_eNB.send_recv(cmd)
@@ -708,8 +713,10 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
        logfile_task_RRH_out = logdir_RRH + '/RRH_task_out' + '_' + str(run) + '_.log'
        logfile_task_RRH = logdir_local_testcase + '/RRH_task' + '_' + str(run) + '_.log'
        task_RRH_compile = ' ( uname -a ; date \n'
-       task_RRH_compile = task_RRH_compile + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
+       task_RRH_compile = task_RRH_compile + 'cd ' + logdirOAI5GRepo + '; git reset --hard HEAD ; git checkout ' + RRH_branch + ' ; source oaienv   \n' 
+       task_RRH_compile = task_RRH_compile + ' source cmake_targets/tools/build_helper \n'
        task_RRH_compile = task_RRH_compile + 'env |grep OPENAIR  \n'
+       task_RRH_compile = task_RRH_compile + update_config_file(oai_RRH, RRH_config_file, logdirOAI5GRepo, '$OPENAIR_DIR/cmake_targets/autotests/tools/search_repl.py') + '\n'
        if RRH_compile_prog != "":
          task_RRH_compile  = task_RRH_compile +  ' ( ' + RRH_compile_prog + ' '+ RRH_compile_prog_args + ' ) > ' + logfile_compile_RRH + ' 2>&1 \n'
        task_RRH_compile =  task_RRH_compile + ' date ) > ' + logfile_task_RRH_compile_out + ' 2>&1  '
@@ -747,7 +754,8 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     logfile_pcap_tmp_eNB = '/tmp/' + '/eNB_tshark' + '_' + str(run) + '_.pcap'
 
     task_eNB_compile = ' ( uname -a ; date \n'
-    task_eNB_compile = task_eNB_compile + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
+    task_eNB_compile = task_eNB_compile + 'cd ' + logdirOAI5GRepo + '; git reset --hard HEAD ; git checkout ' + eNB_branch + ' ; source oaienv   \n' 
+    task_eNB_compile = task_eNB_compile + ' source cmake_targets/tools/build_helper \n'
     task_eNB_compile = task_eNB_compile + 'env |grep OPENAIR  \n'
     task_eNB_compile = task_eNB_compile + update_config_file(oai_eNB, eNB_config_file, logdirOAI5GRepo, '$OPENAIR_DIR/cmake_targets/autotests/tools/search_repl.py') + '\n'
     if eNB_compile_prog != "":
@@ -797,8 +805,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
 
     task_UE_compile = ' ( uname -a ; date \n'
     task_UE_compile = task_UE_compile + 'array_exec_pid=()' + '\n'
-    task_UE_compile = task_UE_compile + 'cd ' + logdirOAI5GRepo + '\n'  
-    task_UE_compile = task_UE_compile + 'source oaienv \n'
+    task_UE_compile = task_UE_compile + 'cd ' + logdirOAI5GRepo + '; git reset --hard HEAD ; git checkout ' + UE_branch + ' ; source oaienv   \n' 
     task_UE_compile = task_UE_compile + 'source cmake_targets/tools/build_helper \n'
     task_UE_compile = task_UE_compile + 'env |grep OPENAIR  \n'
     task_UE_compile = task_UE_compile + update_config_file(oai_UE, UE_config_file, logdirOAI5GRepo, '$OPENAIR_DIR/cmake_targets/autotests/tools/search_repl.py') + '\n'
@@ -848,7 +855,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
 
     task_EPC_compile = ' ( uname -a ; date \n'
     task_EPC_compile = task_EPC_compile + 'array_exec_pid=()' + '\n'
-    task_EPC_compile = task_EPC_compile + 'cd ' + logdirOpenaircnRepo + ' ; source oaienv \n'
+    task_EPC_compile = task_EPC_compile + 'cd ' + logdirOpenaircnRepo + '; git reset --hard HEAD ; git checkout ' + EPC_branch + ' ; source oaienv   \n' 
     task_EPC_compile = task_EPC_compile + update_config_file(oai_EPC, EPC_config_file, logdirOpenaircnRepo, logdirOpenaircnRepo+'/TEST/autotests/tools/search_repl.py') + '\n'
     task_EPC_compile = task_EPC_compile +  'source BUILD/TOOLS/build_helper \n'
     if EPC_compile_prog != "":
@@ -2188,6 +2195,8 @@ for testcase in testcaseList:
     #print "Machine list top level = " + ','.join(MachineList)
     if search_test_case_group(testcasename, testcasegroup, TestCaseExclusionList) == True:
       if testcaseclass == 'lte-softmodem' :
+        #First we wait for all the test cases in generic test case class to finish as they are running in parallel
+        threadListGlobal = wait_testcaseclass_generic_threads(threadListGlobal, Timeout_execution)
         eNBMachine = testcase.findtext('eNB',default='')
         UEMachine = testcase.findtext('UE',default='')
         EPCMachine = testcase.findtext('EPC',default='')
@@ -2198,9 +2207,8 @@ for testcase in testcaseList:
            print "One of the machines is not in the machine list"
            print "eNBMachine : " + eNBMachine + "UEMachine : " + UEMachine + "EPCMachine : " + EPCMachine + "MachineList : " + ','.join(MachineList)
         print "testcasename = " + testcasename + " class = " + testcaseclass
-        threadListGlobal = wait_testcaseclass_generic_threads(threadListGlobal, Timeout_execution)
         #cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
-        handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, user, pw, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem, Timeout_cmd )
+        handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, user, pw, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem, GitOAI5GRepoBranch,  GitOpenaircnRepoBranch, Timeout_cmd )
         
         #The lines below are copied from below to trace the failure of some of the machines in test setup. These lines below need to be removed in long term
         print "Creating xml file for overall results..."

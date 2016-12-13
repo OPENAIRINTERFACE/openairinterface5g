@@ -70,6 +70,7 @@ void fill_dci(DCI_PDU *DCI_pdu,PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
   case 5:
     DCI_pdu->Num_common_dci = 1;
     DCI_pdu->dci_alloc[0].L          = 2;
+    DCI_pdu->dci_alloc[0].firstCCE   = 0;
     DCI_pdu->dci_alloc[0].rnti       = SI_RNTI;
     DCI_pdu->dci_alloc[0].format     = format1A;
     DCI_pdu->dci_alloc[0].ra_flag    = 0;
@@ -212,6 +213,7 @@ void fill_dci(DCI_PDU *DCI_pdu,PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
   case 7:
     DCI_pdu->Num_ue_spec_dci = 1;
     DCI_pdu->dci_alloc[0].L          = 2;
+    DCI_pdu->dci_alloc[0].firstCCE   = 0;
     DCI_pdu->dci_alloc[0].rnti       = 0x1235;
     DCI_pdu->dci_alloc[0].format     = format1;
     DCI_pdu->dci_alloc[0].ra_flag    = 0;

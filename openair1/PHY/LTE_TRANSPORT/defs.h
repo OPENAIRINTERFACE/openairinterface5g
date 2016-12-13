@@ -283,7 +283,7 @@ typedef struct {
   /// SRS active flag
   uint8_t srs_active;
   /// Pointers to 8 HARQ processes for the ULSCH
-  LTE_UL_UE_HARQ_t *harq_processes[9];
+  LTE_UL_UE_HARQ_t *harq_processes[8];
   /// Pointer to CQI data
   uint8_t o[MAX_CQI_BYTES];
   /// Length of CQI data (bits)
@@ -346,6 +346,8 @@ typedef struct {
   uint8_t num_cba_dci[10];
   /// allocated CBA RNTI
   uint16_t cba_rnti[4];//NUM_MAX_CBA_GROUP];
+  /// UL max-harq-retransmission
+  uint8_t Mlimit;
 } LTE_UE_ULSCH_t;
 
 typedef struct {

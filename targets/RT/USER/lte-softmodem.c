@@ -1346,12 +1346,6 @@ void init_openair0() {
       else
 	openair0_cfg[card].rx_freq[i]=0.0;
 
-      printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
-             card,i, openair0_cfg[card].tx_gain[i],
-             openair0_cfg[card].rx_gain[i],
-             openair0_cfg[card].tx_freq[i],
-             openair0_cfg[card].rx_freq[i]);
-      
       openair0_cfg[card].autocal[i] = 1;
       openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
       if (UE_flag == 0) {
@@ -1361,10 +1355,12 @@ void init_openair0() {
 	openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB - rx_gain_off;
       }
 
-
+      printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
+             card,i, openair0_cfg[card].tx_gain[i],
+             openair0_cfg[card].rx_gain[i],
+             openair0_cfg[card].tx_freq[i],
+             openair0_cfg[card].rx_freq[i]);
     }
-
-
   }
 }
 
@@ -1594,16 +1590,19 @@ int main( int argc, char **argv )
 
       UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
       UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
-      if (UE[CC_id]->frame_parms.frame_type == TDD) {
-        if (UE[CC_id]->frame_parms.N_RB_DL == 100)
-          UE[CC_id]->N_TA_offset = 624;
-        else if (UE[CC_id]->frame_parms.N_RB_DL == 50)
-          UE[CC_id]->N_TA_offset = 624/2;
-        else if (UE[CC_id]->frame_parms.N_RB_DL == 25)
-          UE[CC_id]->N_TA_offset = 624/4;
-      } else {
-        UE[CC_id]->N_TA_offset = 0;
+      
+      if (frame_parms[CC_id]->frame_type==FDD) {
+	UE[CC_id]->N_TA_offset = 0;
       }
+      else {
+	if (frame_parms[CC_id]->N_RB_DL == 100)
+	  UE[CC_id]->N_TA_offset = 624;
+	else if (frame_parms[CC_id]->N_RB_DL == 50)
+	  UE[CC_id]->N_TA_offset = 624/2;
+	else if (frame_parms[CC_id]->N_RB_DL == 25)
+	  UE[CC_id]->N_TA_offset = 624/4;
+      }
+
     }
 
     //  printf("tx_max_power = %d -> amp %d\n",tx_max_power,get_tx_amp(tx_max_poHwer,tx_max_power));

@@ -575,6 +575,8 @@ static int encode_imei_mobile_identity(ImeiMobileIdentity_t *imei, uint8_t *buff
 static int encode_imeisv_mobile_identity(ImeisvMobileIdentity_t *imeisv, uint8_t *buffer)
 {
   uint32_t encoded = 0;
+  LOG_TRACE(INFO,"SECURITY MODE COMMAND COMPLETE: encode_imeisv_mobile_identity \n");
+
   *(buffer + encoded) = 0x00 | (imeisv->digit1 << 4) | (imeisv->oddeven << 3) |
                         (imeisv->typeofidentity);
   encoded++;
@@ -590,12 +592,15 @@ static int encode_imeisv_mobile_identity(ImeisvMobileIdentity_t *imeisv, uint8_t
   encoded++;
   *(buffer + encoded) = 0x00 | (imeisv->digit13 << 4) | imeisv->digit12;
   encoded++;
+  *(buffer + encoded) = 0x00 | (imeisv->digit15 << 4) | imeisv->digit14;
+  encoded++;
+  *(buffer + encoded) = 0x00 | (imeisv->parity << 4) | imeisv->digit16;
 
-  if (imeisv->oddeven != MOBILE_IDENTITY_EVEN) {
-    *(buffer + encoded) = 0x00 | (imeisv->digit15 << 4) | imeisv->digit14;
-  } else {
-    *(buffer + encoded) = 0xf0 | imeisv->digit14;
-  }
+  //if (imeisv->oddeven != MOBILE_IDENTITY_EVEN) {
+  //  *(buffer + encoded) = 0x00 | (imeisv->digit15 << 4) | imeisv->digit14;
+  //} else {
+  //  *(buffer + encoded) = 0xf0 | imeisv->digit14;
+  //}
 
   encoded++;
   return encoded;

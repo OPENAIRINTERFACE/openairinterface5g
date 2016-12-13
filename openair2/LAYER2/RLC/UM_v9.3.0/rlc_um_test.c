@@ -471,9 +471,9 @@ void rlc_um_v9_3_0_test_exchange_pdus(rlc_um_entity_t *um_txP,
   memset(&mac_rlc_status_resp_tx, 0, sizeof(struct mac_status_resp));
   memset(&mac_rlc_status_resp_rx, 0, sizeof(struct mac_status_resp));
 
-  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, g_frame, 1, bytes_txP, tx_status);
+  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, g_frame, 1, bytes_txP, tx_status,ENB_FLAG_YES);
   data_request_tx        = rlc_um_mac_data_request(um_txP, g_frame);
-  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, g_frame, 0, bytes_rxP, tx_status);
+  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, g_frame, 0, bytes_rxP, tx_status,ENB_FLAG_YES);
   data_request_rx        = rlc_um_mac_data_request(um_rxP, g_frame);
 
 
@@ -517,9 +517,9 @@ void rlc_um_v9_3_0_test_exchange_delayed_pdus(rlc_um_entity_t *um_txP,
   memset(&mac_rlc_status_resp_tx, 0, sizeof(struct mac_status_resp));
   memset(&mac_rlc_status_resp_rx, 0, sizeof(struct mac_status_resp));
 
-  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, g_frame, 1, bytes_txP, tx_status);
+  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, g_frame, 1, bytes_txP, tx_status,ENB_FLAG_YES);
   data_request_tx        = rlc_um_mac_data_request(um_txP, g_frame);
-  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, g_frame, 0, bytes_rxP, tx_status);
+  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, g_frame, 0, bytes_rxP, tx_status,ENB_FLAG_YES);
   data_request_rx        = rlc_um_mac_data_request(um_rxP, g_frame);
 
 

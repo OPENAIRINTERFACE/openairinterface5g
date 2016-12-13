@@ -133,6 +133,7 @@ do_RRCConnectionReconfigurationComplete(
 PhysicalConfigDedicated IEs.  The latter does not enable periodic CQI reporting (PUCCH format 2/2a/2b) or SRS.
 @param ctxt_pP Running context
 @param ue_context_pP UE context
+@param CC_id         Component Carrier ID
 @param buffer Pointer to PER-encoded ASN.1 description of DL-CCCH-Message PDU
 @param transmission_mode Transmission mode for UE (1-9)
 @param UE_id UE index for this message
@@ -144,6 +145,7 @@ uint8_t
 do_RRCConnectionSetup(
   const protocol_ctxt_t*     const ctxt_pP,
   rrc_eNB_ue_context_t*      const ue_context_pP,
+  int                              CC_id,
   uint8_t*                   const buffer,
   const uint8_t                    transmission_mode,
   const uint8_t                    Transaction_id,

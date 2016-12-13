@@ -855,6 +855,34 @@ int emm_send_security_mode_complete(const emm_as_security_t *msg,
   /* Mandatory - Message type */
   emm_msg->messagetype = SECURITY_MODE_COMPLETE;
 
+  if(msg->imeisv_request)
+  {
+	  // configure imeisv param
+	  emm_msg->presencemask |= SECURITY_MODE_COMPLETE_IMEISV_PRESENT;
+
+	  // 33 85 76 02 05 26 84 01 F1
+	  emm_msg->imeisv.imeisv.digit1         = 0x3;
+	  emm_msg->imeisv.imeisv.oddeven        = 0x0;
+	  emm_msg->imeisv.imeisv.typeofidentity = 0x3;
+	  emm_msg->imeisv.imeisv.digit2         = 0x5;
+	  emm_msg->imeisv.imeisv.digit3         = 0x7;
+	  emm_msg->imeisv.imeisv.digit4         = 0x4;
+	  emm_msg->imeisv.imeisv.digit5         = 0x7;
+	  emm_msg->imeisv.imeisv.digit6         = 0x3;
+	  emm_msg->imeisv.imeisv.digit7         = 0x0;
+	  emm_msg->imeisv.imeisv.digit8         = 0x4;
+	  emm_msg->imeisv.imeisv.digit9         = 0x0;
+	  emm_msg->imeisv.imeisv.digit10        = 0x0;
+	  emm_msg->imeisv.imeisv.digit11        = 0x7;
+	  emm_msg->imeisv.imeisv.digit12        = 0x0;
+	  emm_msg->imeisv.imeisv.digit13        = 0x5;
+	  emm_msg->imeisv.imeisv.digit14        = 0x3;
+	  emm_msg->imeisv.imeisv.digit15        = 0x0;
+	  emm_msg->imeisv.imeisv.digit16        = 0x0;
+	  emm_msg->imeisv.imeisv.parity         = IMEI_ODD_PARITY;
+
+	  size += SECURITY_MODE_COMPLETE_MAXIMUM_LENGTH;
+  }
   LOG_FUNC_RETURN (size);
 }
 

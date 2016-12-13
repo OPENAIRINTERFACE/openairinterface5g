@@ -69,6 +69,11 @@ enum openair_SYNCH_STATUS {
   openair_SCHED_EXIT
 };
 
+enum openair_HARQ_TYPE {
+  openair_harq_DL = 0,
+  openair_harq_UL,
+  openair_harq_RA
+};
 
 #define DAQ_AGC_ON 1
 #define DAQ_AGC_OFF 0

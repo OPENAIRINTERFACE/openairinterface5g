@@ -81,3 +81,21 @@ void label_set_clickable(gui *_g, widget *_this, int clickable)
 
   gunlock(g);
 }
+
+void label_set_text(gui *_g, widget *_this, char *text)
+{
+  struct gui *g = _g;
+  struct label_widget *this = _this;
+
+  glock(g);
+
+  free(this->t);
+  this->t = strdup(text); if (this->t == NULL) OOM;
+
+  x_text_get_dimensions(g->x, DEFAULT_FONT, text,
+      &this->width, &this->height, &this->baseline);
+
+  send_event(g, REPACK, this->common.id);
+
+  gunlock(g);
+}

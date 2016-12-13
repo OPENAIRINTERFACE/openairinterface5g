@@ -406,7 +406,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
     break;
 
   case RLC_MODE_UM:
-    status_resp = rlc_um_mac_status_indication(&ctxt, &rlc_union_p->rlc.um, tb_sizeP, tx_status);
+    status_resp = rlc_um_mac_status_indication(&ctxt, &rlc_union_p->rlc.um, tb_sizeP, tx_status, enb_flagP);
     mac_rlc_status_resp.bytes_in_buffer                 = status_resp.buffer_occupancy_in_bytes;
     mac_rlc_status_resp.pdus_in_buffer                  = status_resp.buffer_occupancy_in_pdus;
     mac_rlc_status_resp.head_sdu_creation_time          = status_resp.head_sdu_creation_time;
