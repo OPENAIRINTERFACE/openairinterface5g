@@ -41,10 +41,24 @@ int decode_emergency_number_list(EmergencyNumberList *emergencynumberlist, uint8
   ielen = *(buffer + decoded);
   decoded++;
   CHECK_LENGTH_DECODER(len - decoded, ielen);
-  emergencynumberlist->lengthofemergency = *(buffer + decoded);
-  decoded++;
-  emergencynumberlist->emergencyservicecategoryvalue = *(buffer + decoded) & 0x1f;
-  decoded++;
+  int information_element_index = 0;
+  while ((decoded < ielen) && (information_element_index < EMERGENCY_NUMBER_LIST_MAX_NUMBER_INFORMATION)) {
+    emergencynumberlist->emergency_number_information[information_element_index].lengthofemergency = *(buffer + decoded);
+    decoded++;
+    emergencynumberlist->emergency_number_information[information_element_index].emergencyservicecategoryvalue = *(buffer + decoded) & 0x1f;
+    decoded++;
+    int remaining_len = emergencynumberlist->emergency_number_information[information_element_index].lengthofemergency - 1;
+    int digit_index = 0;
+    while (remaining_len > 0) {
+    	emergencynumberlist->emergency_number_information[information_element_index].bcd_digits[digit_index++] = *(buffer + decoded);
+        decoded++;
+        remaining_len --;
+    }
+    while (digit_index < EMERGENCY_NUMBER_LIST_MAX_2DIGITS) {
+    	emergencynumberlist->emergency_number_information[information_element_index].bcd_digits[digit_index++] = 0xFF;
+    }
+    information_element_index++;
+  }
 #if defined (NAS_DEBUG)
   dump_emergency_number_list_xml(emergencynumberlist, iei);
 #endif
@@ -67,11 +81,16 @@ int encode_emergency_number_list(EmergencyNumberList *emergencynumberlist, uint8
 
   lenPtr  = (buffer + encoded);
   encoded ++;
-  *(buffer + encoded) = emergencynumberlist->lengthofemergency;
-  encoded++;
-  *(buffer + encoded) = 0x00 |
-                        (emergencynumberlist->emergencyservicecategoryvalue & 0x1f);
-  encoded++;
+  for (  int ie_index = 0; ie_index < emergencynumberlist->num_emergency_elements; ie_index++) {
+	  *(buffer + encoded) = emergencynumberlist->emergency_number_information[ie_index].lengthofemergency;
+	  encoded++;
+	  *(buffer + encoded) = 0x00 |
+	                        (emergencynumberlist->emergency_number_information[ie_index].emergencyservicecategoryvalue & 0x1f);
+	  encoded++;
+	  for (int bcd2_index = 0; bcd2_index < (emergencynumberlist->emergency_number_information[ie_index].lengthofemergency - 1); bcd2_index++) {
+		  *(buffer + encoded) = emergencynumberlist->emergency_number_information[ie_index].bcd_digits[bcd2_index];
+	  }
+  }
   *lenPtr = encoded - 1 - ((iei > 0) ? 1 : 0);
   return encoded;
 }
@@ -83,9 +102,20 @@ void dump_emergency_number_list_xml(EmergencyNumberList *emergencynumberlist, ui
   if (iei > 0)
     /* Don't display IEI if = 0 */
     printf("    <IEI>0x%X</IEI>\n", iei);
-
-  printf("    <Length of emergency>%u</Length of emergency>\n", emergencynumberlist->lengthofemergency);
-  printf("    <Emergency service category value>%u</Emergency service category value>\n", emergencynumberlist->emergencyservicecategoryvalue);
+  for (  int ie_index = 0; ie_index < emergencynumberlist->num_emergency_elements; ie_index++) {
+	  printf("    <Length of emergency>%u</Length of emergency>\n", emergencynumberlist->emergency_number_information[ie_index].lengthofemergency);
+	  printf("    <Emergency service category value>%u</Emergency service category value>\n", emergencynumberlist->emergency_number_information[ie_index].emergencyservicecategoryvalue);
+	  for (int bcd2_index = 0; bcd2_index < (emergencynumberlist->emergency_number_information[ie_index].lengthofemergency - 1); bcd2_index++) {
+		  uint8_t bcd1 = emergencynumberlist->emergency_number_information[ie_index].bcd_digits[bcd2_index] & 0x0f;
+		  uint8_t bcd2 = (emergencynumberlist->emergency_number_information[ie_index].bcd_digits[bcd2_index] & 0xf0) >> 4;
+		  if (bcd1 < 10) {
+		    printf("    <BCD Digit%u>%u</BCD Digit%u>\n", (bcd2_index*2)+1, bcd1, (bcd2_index*2)+1);
+		    if (bcd2 < 10) {
+		    	printf("    <BCD Digit%u>%u</BCD Digit%u>\n", (bcd2_index*2)+2, bcd2, (bcd2_index*2)+2);
+		    }
+		  }
+	  }
+  }
   printf("</Emergency Number List>\n");
 }
 

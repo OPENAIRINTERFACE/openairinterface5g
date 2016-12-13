@@ -656,7 +656,7 @@ typedef struct {
   /// \brief Total gains with bypassed RF gain stage (ExpressMIMO2/Lime)
   uint32_t rx_gain_byp[4];
   /// \brief Current transmit power
-  int8_t tx_power_dBm[10];
+  int16_t tx_power_dBm[10];
   /// \brief Total number of REs in current transmission
   int tx_total_RE[10];
   /// \brief Maximum transmit power

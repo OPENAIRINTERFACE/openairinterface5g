@@ -186,7 +186,7 @@ protected_rlc_um( void     rlc_um_rx (const protocol_ctxt_t* const ctxt_pP, rlc_
 * \param[in]  tx_statusP                Transmission status given by MAC on previous MAC transmission of the PDU.
 * \return     The maximum number of bytes that can be served by RLC instance to MAC.
 */
-public_rlc_um(    struct mac_status_resp rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP, uint16_t tbs_sizeP, struct mac_status_ind tx_statusP);)
+public_rlc_um(    struct mac_status_resp rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP, uint16_t tbs_sizeP, struct mac_status_ind tx_statusP, const eNB_flag_t enb_flagP);)
 
 /*! \fn struct mac_data_req rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP)
 * \brief    Gives PDUs to lower layer MAC.

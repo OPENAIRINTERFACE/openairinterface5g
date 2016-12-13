@@ -391,7 +391,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP, 
                                 1); //post_padding
           return(&UE_mac_inst[module_idP].RA_prach_resources);
 
-        } else if (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[DCCH] > 0) {
+        } else if (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]] > 0) {
           // This is for triggering a transmission on DCCH using PRACH (during handover, or sending SR for example)
           dcch_header_len = 2 + 2;  /// SHORT Subheader + C-RNTI control element
           rlc_status = mac_rlc_status_ind(module_idP,UE_mac_inst[module_idP].crnti, eNB_indexP,frameP,ENB_FLAG_NO,MBMS_FLAG_NO,
@@ -412,7 +412,12 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP, 
                                             (char *)&ulsch_buff[0]);
 
           LOG_D(MAC,"[UE %d] TX Got %d bytes for DCCH\n",module_idP,sdu_lengths[0]);
-          update_bsr(module_idP, frameP, eNB_indexP,DCCH,UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]);
+          update_bsr(module_idP, frameP, subframeP,eNB_indexP);
+	      UE_mac_inst[module_idP].scheduling_info.BSR[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]] =
+	    		  locate_BsrIndexByBufferSize(BSR_TABLE, BSR_TABLE_SIZE, UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]]);
+
+	      //TO DO: fill BSR infos in UL TBS
+
           //header_len +=2;
           UE_mac_inst[module_idP].RA_active                        = 1;
           UE_mac_inst[module_idP].RA_PREAMBLE_TRANSMISSION_COUNTER = 1;

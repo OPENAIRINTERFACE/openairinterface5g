@@ -73,8 +73,63 @@ typedef struct {
   uint8_t  mbmssessionid;
 } TmgiMobileIdentity_t;
 
+typedef struct imeisv_s{
+  uint8_t  digit1:4;
+  uint8_t  oddeven:1;
+  uint8_t  typeofidentity:3;
+  uint8_t  digit2:4;
+  uint8_t  digit3:4;
+  uint8_t  digit4:4;
+  uint8_t  digit5:4;
+  uint8_t  digit6:4;
+  uint8_t  digit7:4;
+  uint8_t  digit8:4;
+  uint8_t  digit9:4;
+  uint8_t  digit10:4;
+  uint8_t  digit11:4;
+  uint8_t  digit12:4;
+  uint8_t  digit13:4;
+  uint8_t  digit14:4;
+  uint8_t  digit15:4;
+  uint8_t  digit16:4;
+#define EVEN_PARITY 0
+#define IMEI_ODD_PARITY  0xf
+       uint8_t parity:4;
+} imeisv_t;
+
+#if 0
+typedef struct imeisv_s {
+   uint8_t length;
+   union {
+     struct {
+       uint8_t tac2:4;
+       uint8_t tac1:4;
+       uint8_t tac4:4;
+       uint8_t tac3:4;
+       uint8_t tac6:4;
+       uint8_t tac5:4;
+       uint8_t tac8:4;
+       uint8_t tac7:4;
+       uint8_t snr2:4;
+       uint8_t snr1:4;
+       uint8_t snr4:4;
+       uint8_t snr3:4;
+       uint8_t snr6:4;
+       uint8_t snr5:4;
+       uint8_t svn2:4;
+       uint8_t svn1:4;
+#define EVEN_PARITY 0
+#define IMEI_ODD_PARITY  0xf
+       uint8_t parity:4;
+     } num;
+#define IMEISV_BCD8_SIZE   9
+     uint8_t value[IMEISV_BCD8_SIZE];
+   } u;
+} imeisv_t;
+#endif
+
 typedef ImsiMobileIdentity_t ImeiMobileIdentity_t;
-typedef ImsiMobileIdentity_t ImeisvMobileIdentity_t;
+typedef imeisv_t             ImeisvMobileIdentity_t;
 typedef ImsiMobileIdentity_t TmsiMobileIdentity_t;
 typedef ImsiMobileIdentity_t NoMobileIdentity_t;
 

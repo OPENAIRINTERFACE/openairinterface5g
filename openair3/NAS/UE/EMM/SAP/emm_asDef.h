@@ -120,6 +120,7 @@ typedef struct emm_as_security_s {
   uint8_t ucs2;
   uint8_t uia;        /* Replayed UMTS integrity algorithms   */
   uint8_t gea;        /* Replayed GPRS encryption algorithms   */
+  uint8_t imeisv_request;
   uint8_t umts_present;
   uint8_t gprs_present;
 

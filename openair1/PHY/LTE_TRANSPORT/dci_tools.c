@@ -6451,16 +6451,16 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
         //      ue->Mod_id,harq_pid,
         //      proc->frame_rx,
         //      subframe,
-        //      UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx);
+        //      ulsch->Mlimit);
         //#endif
-
+/*
         if (ulsch->harq_processes[harq_pid]->round > 0) // NACK detected on phich
         {
             // ulsch->harq_processes[harq_pid]->round++; already done on phich_rx
-            ulsch->harq_processes[harq_pid] = ulsch->harq_processes[8];
+            // ulsch->harq_processes[harq_pid] = ulsch->harq_processes[8];
             // LOG_I(PHY,"          Adaptative retransmission - copy temporary harq Process to current harq process. [harqId %d round %d] \n",harq_pid, ulsch->harq_processes[8]->round);
 
-            if (ulsch->harq_processes[harq_pid]->round >= UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx)
+            if (ulsch->harq_processes[harq_pid]->round >= ulsch->Mlimit) //UE_mac_inst[eNB_id].scheduling_info.maxHARQ_Tx)
             {
                 ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
                 ulsch->harq_processes[harq_pid]->round  = 0;
@@ -6479,7 +6479,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
                 //LOG_I(PHY,"          [HARQ-UL harqId: %d] Adaptative retransmission NACK ==> subframe_scheduling_flag = %d round: %d\n", harq_pid, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag,ulsch->harq_processes[harq_pid]->round);
             }
         }
-
+*/
       }
     }
 
