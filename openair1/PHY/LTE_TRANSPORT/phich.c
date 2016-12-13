@@ -1414,7 +1414,7 @@ void rx_phich(PHY_VARS_UE *ue,
           //LOG_I(PHY,"[HARQ-UL harqId: %d] PHICH NACK ==> subframe_scheduling_flag = %d round: %d\n", harq_pid, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag,ulsch->harq_processes[harq_pid]->round);
       }
     }
-    T(T_UE_PHY_ULSCH_UE_NACK, T_INT(ue->Mod_id), T_INT(proc->frame_rx), T_INT(subframe), T_INT(i), T_INT(ulsch->rnti),
+    T(T_UE_PHY_ULSCH_UE_NACK, T_INT(ue->Mod_id), T_INT(proc->frame_rx%1024), T_INT(subframe), T_INT(i), T_INT(ulsch->rnti),
       T_INT(harq_pid));
 
   } else {  //ACK
@@ -1450,7 +1450,7 @@ void rx_phich(PHY_VARS_UE *ue,
     // inform MAC?
     ue->ulsch_Msg3_active[eNB_id] = 0;
 
-    T(T_UE_PHY_ULSCH_UE_ACK, T_INT(ue->Mod_id), T_INT(proc->frame_rx), T_INT(subframe), T_INT(i), T_INT(ulsch->rnti),
+    T(T_UE_PHY_ULSCH_UE_ACK, T_INT(ue->Mod_id), T_INT(proc->frame_rx%1024), T_INT(subframe), T_INT(i), T_INT(ulsch->rnti),
       T_INT(harq_pid));
   }
 

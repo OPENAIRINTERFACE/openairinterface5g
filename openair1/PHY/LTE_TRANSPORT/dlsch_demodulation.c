@@ -829,7 +829,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
   T(T_UE_PHY_PDSCH_IQ, T_INT(eNB_id), T_INT(ue->Mod_id), T_INT(-1),
     T_INT(subframe), T_INT(nb_rb),
     T_INT(frame_parms->N_RB_UL), T_INT(frame_parms->symbols_per_tti),
-    T_BUFFER(pdsch_vars[eNB_id]->rxdataF_comp0[eNB_id][0],
+    T_BUFFER(&pdsch_vars[eNB_id]->rxdataF_comp0[eNB_id][0],
              2 * /* ulsch[UE_id]->harq_processes[harq_pid]->nb_rb */ frame_parms->N_RB_UL *12*frame_parms->symbols_per_tti*2));
 
   return(0);

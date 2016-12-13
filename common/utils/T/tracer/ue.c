@@ -228,8 +228,8 @@ static void ue_main_gui(ue_gui *e, gui *g, event_handler *h, void *database,
   logger *timelog;
   view *timeview;
   view *subview;
-  //widget *text;
-  //view *textview;
+  widget *text;
+  view *textview;
   int i;
   widget *w, *w2;
   view *v;
@@ -482,7 +482,7 @@ static void ue_main_gui(ue_gui *e, gui *g, event_handler *h, void *database,
     e->ul_nack_logger[i] = timelog;
   }
 
-#if 0
+#if 1
   /* phy/mac/rlc/pdcp/rrc textlog */
   line = new_container(g, HORIZONTAL);
   widget_add_child(g, top_container, line, -1);

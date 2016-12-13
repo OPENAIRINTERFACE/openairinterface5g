@@ -1860,7 +1860,7 @@ int32_t rx_pdcch(LTE_UE_COMMON *common_vars,
 
   T(T_UE_PHY_PDCCH_IQ, T_INT(eNB_id), T_INT(0),
     T_INT(-1), T_INT(subframe),
-    T_INT(0), T_BUFFER(pdcch_vars[eNB_id]->llr[0], frame_parms->N_RB_DL*12*n_pdcch_symbols* 4));
+    T_INT(0), T_BUFFER(pdcch_vars[eNB_id]->llr, frame_parms->N_RB_DL*12*n_pdcch_symbols* 4));
 
 
   // decode pcfich here

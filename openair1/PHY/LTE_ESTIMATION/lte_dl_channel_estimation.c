@@ -740,8 +740,8 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
 
 #if T_TRACER
         T(T_ENB_PHY_UL_CHANNEL_ESTIMATE, T_INT(eNB_id), T_INT(ue->Mod_id),
-          T_INT(ue->proc.proc_rxtx[(Ns>>1)&1].frame_rx), T_INT(ue->proc.proc_rxtx[(Ns>>1)&1].subframe_rx),
-          T_INT(0), T_BUFFER(ue->common_vars.dl_ch_estimates_time[eNB_offset][0][0], 512  * 4));
+          T_INT(ue->proc.proc_rxtx[(Ns>>1)&1].frame_rx%1024), T_INT(ue->proc.proc_rxtx[(Ns>>1)&1].subframe_rx),
+          T_INT(0), T_BUFFER(&ue->common_vars.dl_ch_estimates_time[eNB_offset][0][0], 512  * 4));
 #endif
 
   return(0);
