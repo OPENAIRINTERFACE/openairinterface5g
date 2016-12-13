@@ -32,8 +32,14 @@
 #define EMERGENCY_NUMBER_LIST_MAXIMUM_LENGTH 50
 
 typedef struct EmergencyNumberList_tag {
-  uint8_t  lengthofemergency;
-  uint8_t  emergencyservicecategoryvalue:5;
+  uint8_t  num_emergency_elements;
+  struct {
+    uint8_t  lengthofemergency;
+    uint8_t  emergencyservicecategoryvalue:5;
+#define EMERGENCY_NUMBER_LIST_MAX_2DIGITS 6
+    uint8_t  bcd_digits[EMERGENCY_NUMBER_LIST_MAX_2DIGITS]; // length to be fixed
+#define EMERGENCY_NUMBER_LIST_MAX_NUMBER_INFORMATION 2
+  } emergency_number_information[EMERGENCY_NUMBER_LIST_MAX_NUMBER_INFORMATION];
 } EmergencyNumberList;
 
 int encode_emergency_number_list(EmergencyNumberList *emergencynumberlist, uint8_t iei, uint8_t *buffer, uint32_t len);

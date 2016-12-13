@@ -341,6 +341,7 @@ rlc_am_get_pdus (
         if (pdu) {
           list_add_tail_eurecom (pdu, &rlc_pP->pdus_to_mac_layer);
           rlc_pP->status_requested = 0;
+          rlc_pP->status_buffer_occupancy = 0;
           rlc_am_start_timer_status_prohibit(ctxt_pP, rlc_pP);
           return;
         }

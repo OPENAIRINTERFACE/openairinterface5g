@@ -40,6 +40,7 @@ Description Defines the EPS Mobility Management procedure call manager,
 #include "emm_main.h"
 #include "nas_log.h"
 #include "emmData.h"
+#include "MobileIdentity.h"
 
 #include "memory.h"
 #include "usim_api.h"
@@ -919,7 +920,7 @@ static int _emm_main_get_imei(imei_t *imei, const char *imei_str)
   int len = strlen(imei_str);
 
   if (len % 2) {
-    imei->u.num.parity = ODD_PARITY;
+    imei->u.num.parity = IMEI_ODD_PARITY;
   } else {
     imei->u.num.parity = EVEN_PARITY;
   }

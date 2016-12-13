@@ -115,11 +115,13 @@ int dump_eNB_l2_stats(char *buffer, int length)
     for (CC_id=0 ; CC_id < MAX_NUM_CCs; CC_id++) {
       eNB->eNB_stats[CC_id].dlsch_bitrate= 0;
 
-      len += sprintf(&buffer[len],"eNB %d CC %d Frame %d: Active UEs %d, Available PRBs %d, nCCE %d \n",
+      len += sprintf(&buffer[len],"eNB %d CC %d Frame %d: Active UEs %d, Available PRBs %d, nCCE %d, Scheduling decisions %d, Missed Deadlines %d \n",
                      eNB_id, CC_id, eNB->frame,
                      eNB->eNB_stats[CC_id].num_dlactive_UEs,
                      eNB->eNB_stats[CC_id].available_prbs,
-                     eNB->eNB_stats[CC_id].available_ncces);
+                     eNB->eNB_stats[CC_id].available_ncces,
+		     eNB->eNB_stats[CC_id].sched_decisions,
+		     eNB->eNB_stats[CC_id].missed_deadlines);
       
       len += sprintf(&buffer[len],"BCCH , NB_TX_MAC = %d, transmitted bytes (TTI %d, total %d) MCS (TTI %d)\n",
 		     eNB->eNB_stats[CC_id].total_num_bcch_pdu,

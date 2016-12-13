@@ -86,8 +86,8 @@ int timer_handle_signal(siginfo_t *info)
   timer_p = (struct timer_elm_s *)info->si_ptr;
 
   // LG: To many traces for msc timer:
-  // TMR_DEBUG("Timer with id 0x%lx has expired\n", (long)timer_p->timer);
-
+  TMR_DEBUG("Timer with id 0x%lx has expired\n", (long)timer_p->timer);
+  
   task_id = timer_p->task_id;
   instance = timer_p->instance;
   message_p = itti_alloc_new_message(TASK_TIMER, TIMER_HAS_EXPIRED);
@@ -119,6 +119,10 @@ int timer_handle_signal(siginfo_t *info)
     free(message_p);
     return -1;
   }
+
+#if defined(ENB_AGENT_SB_IF)
+
+#endif 
 
   return 0;
 }

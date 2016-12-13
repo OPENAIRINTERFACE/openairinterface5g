@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <math.h>
 
 void new_thread(void *(*f)(void *), void *data)
 {
@@ -34,6 +35,16 @@ void sleepms(int ms)
 
   /* TODO: deal with EINTR */
   if (nanosleep(&t, NULL)) abort();
+}
+
+void bps(char *out, float v, char *suffix)
+{
+  static char *bps_unit[4] = { "", "k", "M", "G" };
+  int flog;
+  if (v < 1000) flog = 0; else flog = floor(floor(log10(v)) / 3);
+  if (flog > 3) flog = 3;
+  v /= pow(10, flog*3);
+  sprintf(out, "%g%s%s", round(v*100)/100, bps_unit[flog], suffix);
 }
 
 /****************************************************************************/

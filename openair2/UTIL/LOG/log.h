@@ -270,6 +270,7 @@ typedef enum {
   RAL_ENB,
   RAL_UE,
   ENB_APP,
+  FLEXRAN_AGENT,
   TMR,
   USIM,
   LOCALIZE,
