@@ -77,12 +77,14 @@ typedef volatile struct {
 * \param[in]  srb_flagP                 Flag to indicate signalling radio bearer (1) or data radio bearer (0).
 * \param[in]  config_umP                Configuration parameters for RLC UM instance.
 * \param[in]  rb_idP                    Radio bearer identifier.
+* \param[in]  chan_idP                  Transport channel identifier.
 */
 public_rlc_um_control_primitives(   void config_req_rlc_um (
                                       const protocol_ctxt_t* const ctxt_pP,
                                       const srb_flag_t srb_flagP,
                                       const rlc_um_info_t * const config_umP,
-                                      const rb_id_t rb_idP);)
+                                      const rb_id_t rb_idP,
+                                      const logical_chan_id_t chan_idP);) 
 
 /*! \fn void config_req_rlc_um_asn1 (
  *     const protocol_ctxt_t* const ctxt_pP,
@@ -102,6 +104,7 @@ public_rlc_um_control_primitives(   void config_req_rlc_um (
 * \param[in]  ul_rlc_pP                 Configuration parameters for RLC UM UL instance.
 * \param[in]  dl_rlc_pP                 Configuration parameters for RLC UM DL instance.
 * \param[in]  rb_idP                    Radio bearer identifier.
+* \param[in]  chan_idP                  Transport channel identifier.
 */
 public_rlc_um_control_primitives(   void config_req_rlc_um_asn1 (
                                       const protocol_ctxt_t* const ctxt_pP,
@@ -111,7 +114,8 @@ public_rlc_um_control_primitives(   void config_req_rlc_um_asn1 (
                                       const mbms_service_id_t  mbms_service_idP,
                                       const UL_UM_RLC_t       * const ul_rlc_pP,
                                       const DL_UM_RLC_t       * const dl_rlc_pP,
-                                      const rb_id_t            rb_idP);)
+                                      const rb_id_t            rb_idP,
+                                      const logical_chan_id_t  chan_idP);)
 
 /*! \fn void rlc_um_init (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP)
 * \brief    Initialize a RLC UM protocol instance, initialize all variables, lists, allocate buffers for making this instance ready to be configured with protocol configuration parameters. After this initialization the RLC UM protocol instance will be in RLC_NULL_STATE state.
@@ -169,13 +173,15 @@ protected_rlc_um_control_primitives(void rlc_um_configure(
 * \brief    Set debug informations for a RLC UM protocol instance, these informations are only for trace purpose.
 * \param[in]  ctxtP                     Running context.
 * \param[in]  rlc_pP                    RLC UM protocol instance pointer.
-* \param[in]  rb_idP                    Radio bearer identifier.
 * \param[in]  srb_flagP                 Flag to indicate signalling radio bearer (1) or data radio bearer (0).
+* \param[in]  rb_idP                    Radio bearer identifier.
+* \param[in]  chan_idP                  Transport channel identifier.
 */
 protected_rlc_um_control_primitives(void rlc_um_set_debug_infos(
                                       const protocol_ctxt_t* const ctxt_pP,
                                       rlc_um_entity_t * const rlc_pP,
                                       const srb_flag_t srb_flagP,
-                                      const rb_id_t rb_idP);)
+                                      const rb_id_t rb_idP,
+                                      const logical_chan_id_t chan_idP);) 
 /** @} */
 #    endif

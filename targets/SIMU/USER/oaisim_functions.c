@@ -1276,7 +1276,7 @@ void init_openair1(void)
   for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       
-      PHY_vars_UE_g[UE_id][CC_id]->tx_power_max_dBm=23;
+      PHY_vars_UE_g[UE_id][CC_id]->tx_power_max_dBm=10;
       
       PHY_vars_UE_g[UE_id][CC_id]->rx_total_gain_dB=100;
 
@@ -1518,7 +1518,7 @@ void update_ocm()
           //calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,0);
           UE2eNB[UE_id][eNB_id][CC_id]->path_loss_dB = eNB2UE[eNB_id][UE_id][CC_id]->path_loss_dB;
           //    if (frame % 50 == 0)
-          LOG_I(OCM,"Path loss (CCid %d) between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
+          LOG_D(OCM,"Path loss (CCid %d) between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
                 CC_id,eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
                 eNB2UE[eNB_id][UE_id][CC_id]->path_loss_dB, eNB2UE[eNB_id][UE_id][CC_id]->aoa);
           //double dx, dy, distance;

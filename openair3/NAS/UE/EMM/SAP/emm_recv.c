@@ -137,8 +137,15 @@ int emm_recv_attach_accept(attach_accept_msg *msg, int *emm_cause)
   /*
    * Message checking
    */
-  if (msg->tailist.typeoflist !=
-      TRACKING_AREA_IDENTITY_LIST_ONE_PLMN_CONSECUTIVE_TACS) {
+  // supported cases:
+  // typeoflist = 1 Or
+  // typeoflist = 0 and numberofelements = 1 (ie numberofelements equal to zero see 3gpp 24.301 9.9.3.33.1)
+  LOG_TRACE(DEBUG,"attach accept type of list: %d, number of element: %d\n",msg->tailist.typeoflist, msg->tailist.numberofelements);
+  if (!( (msg->tailist.typeoflist == TRACKING_AREA_IDENTITY_LIST_ONE_PLMN_CONSECUTIVE_TACS) ||
+         ((msg->tailist.typeoflist == 0) && ( msg->tailist.numberofelements == 0))
+       )
+     )
+  {
     /* Only list of TACs belonging to one PLMN with consecutive
      * TAC values is supported */
     *emm_cause = EMM_CAUSE_IE_NOT_IMPLEMENTED;
@@ -465,13 +472,15 @@ int emm_recv_security_mode_command(security_mode_command_msg *msg,
    * Message processing
    */
   /* Execute the security mode control procedure initiated by the network */
+  LOG_TRACE(INFO,"Execute the security mode control procedure initiated by the network:  imeisvrequest %d\n",msg->imeisvrequest);
   rc = emm_proc_security_mode_command(
          msg->naskeysetidentifier.tsc != NAS_KEY_SET_IDENTIFIER_MAPPED,
          msg->naskeysetidentifier.naskeysetidentifier,
          msg->selectednassecurityalgorithms.typeofcipheringalgorithm,
          msg->selectednassecurityalgorithms.typeofintegrityalgorithm,
          msg->replayeduesecuritycapabilities.eea,
-         msg->replayeduesecuritycapabilities.eia);
+         msg->replayeduesecuritycapabilities.eia,
+		 msg->imeisvrequest & 0x7);
 
   LOG_FUNC_RETURN (rc);
 }

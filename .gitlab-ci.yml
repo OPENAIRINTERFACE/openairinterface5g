@@ -34,4 +34,5 @@ job1:
    - sshpass -p "$OAI_PASS" rsync -az -e "ssh -o StrictHostKeyChecking=no "  --rsync-path="mkdir -p $NFS_TEST_RESULTS_DIR && rsync" $OPENAIR_DIR/cmake_targets/autotests/log $OAI_USER@localhost:$NFS_TEST_RESULTS_DIR
    - sshpass -p "$OAI_PASS" rsync -az -e "ssh -o StrictHostKeyChecking=no "  --rsync-path="mkdir -p $EXTERNAL_SHARE_DIR && rsync" $OPENAIR_DIR/cmake_targets/autotests/log $OAI_USER@localhost:$EXTERNAL_SHARE_DIR
    - cat $OPENAIR_DIR/cmake_targets/autotests/log/results_autotests.xml
-  when: manual  
+  only:
+   - triggers

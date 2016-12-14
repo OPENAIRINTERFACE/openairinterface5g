@@ -227,6 +227,11 @@ typedef struct {
   uint8_t control_only;
   /// Flag to indicate that this is a calibration ULSCH (i.e. no MAC SDU and filled with TDD calibration information)
   //  int calibration_flag;
+  /// Number of soft channel bits
+  uint32_t G;
+
+  // decode phich
+  uint8_t decode_phich;
 } LTE_UL_UE_HARQ_t;
 
 typedef struct {
@@ -333,12 +338,16 @@ typedef struct {
   int16_t Po_PUSCH;
   /// PHR - current power headroom (based on last PUSCH transmission)
   int16_t PHR;
+  /// Po_SRS - target output power for SRS
+  int16_t Po_SRS;
   /// num active cba group
   uint8_t num_active_cba_groups;
   /// num dci found for cba
   uint8_t num_cba_dci[10];
   /// allocated CBA RNTI
   uint16_t cba_rnti[4];//NUM_MAX_CBA_GROUP];
+  /// UL max-harq-retransmission
+  uint8_t Mlimit;
 } LTE_UE_ULSCH_t;
 
 typedef struct {

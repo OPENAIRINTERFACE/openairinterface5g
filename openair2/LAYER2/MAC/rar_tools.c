@@ -118,7 +118,7 @@ unsigned short fill_rar(
 
   if (opt_enabled) {
     trace_pdu(1, dlsch_buffer, input_buffer_length, module_idP, 2, 1,
-              eNB_mac_inst[module_idP].subframe, 0, 0);
+        eNB_mac_inst[module_idP].frame, eNB_mac_inst[module_idP].subframe, 0, 0);
     LOG_D(OPT,"[eNB %d][RAPROC] CC_id %d RAR Frame %d trace pdu for rnti %x and  rapid %d size %d\n",
           module_idP, CC_id, frameP, eNB_mac_inst[module_idP].common_channels[CC_id].RA_template[ra_idx].rnti,
           rarh->RAPID, input_buffer_length);

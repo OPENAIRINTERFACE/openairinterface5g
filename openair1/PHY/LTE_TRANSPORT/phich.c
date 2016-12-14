@@ -34,6 +34,10 @@
 #include "PHY/extern.h"
 #include "SCHED/defs.h"
 #include "defs.h"
+
+#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/defs.h"
+
 #ifndef USER_MODE
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #endif
@@ -1046,7 +1050,6 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
 
 // This routine demodulates the PHICH and updates PUSCH/ULSCH parameters
 
-
 void rx_phich(PHY_VARS_UE *ue,
 	      UE_rxtx_proc_t *proc,
               uint8_t subframe,
@@ -1081,8 +1084,10 @@ void rx_phich(PHY_VARS_UE *ue,
   if (!ulsch)
     return;
 
+  LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX Status: %d \n",ue->Mod_id,harq_pid,proc->frame_rx,subframe, ulsch->harq_processes[harq_pid]->status);
+
   if (ulsch->harq_processes[harq_pid]->status == ACTIVE) {
-    LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX ACTIVE\n",ue->Mod_id,harq_pid,proc->frame_rx,subframe);
+     LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX ACTIVE\n",ue->Mod_id,harq_pid,proc->frame_rx,subframe);
     Ngroup_PHICH = (frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)/48;
 
     if (((frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)%48) > 0)
@@ -1375,15 +1380,39 @@ void rx_phich(PHY_VARS_UE *ue,
             subframe,
             HI16,
             nseq_PHICH,
-            ngroup_PHICH);
+            ngroup_PHICH,
+            ulsch->Mlimit);
       //#endif
-      ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+
       //      ulsch->harq_processes[harq_pid]->Ndi = 0;
       ulsch->harq_processes[harq_pid]->round++;
-      ulsch->harq_processes[harq_pid]->rvidx = rv_table[ulsch->harq_processes[harq_pid]->round&3];
-      ulsch->O_RI = 0;
-      ulsch->O    = 0;
-      ulsch->uci_format = HLC_subband_cqi_nopmi;
+      
+      if ( ulsch->harq_processes[harq_pid]->round >= (ulsch->Mlimit - 1) )
+      {
+          // this is last push re transmission
+          ulsch->harq_processes[harq_pid]->rvidx = rv_table[ulsch->harq_processes[harq_pid]->round&3];
+          ulsch->O_RI = 0;
+          ulsch->O    = 0;
+          ulsch->uci_format = HLC_subband_cqi_nopmi;
+
+          // disable phich decoding since it is the last retransmission
+          ulsch->harq_processes[harq_pid]->status = IDLE;
+
+          //ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
+          //ulsch->harq_processes[harq_pid]->round  = 0;
+
+          //LOG_I(PHY,"PUSCH MAX Retransmission acheived ==> flush harq buff (%d) \n",harq_pid);
+          //LOG_I(PHY,"[HARQ-UL harqId: %d] PHICH NACK MAX RETRANS(%d) ==> subframe_scheduling_flag = %d round: %d\n", harq_pid, ulsch->Mlimit, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag, ulsch->harq_processes[harq_pid]->round);
+      }
+      else
+      {
+          // ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+          ulsch->harq_processes[harq_pid]->rvidx = rv_table[ulsch->harq_processes[harq_pid]->round&3];
+          ulsch->O_RI = 0;
+          ulsch->O    = 0;
+          ulsch->uci_format = HLC_subband_cqi_nopmi;
+          //LOG_I(PHY,"[HARQ-UL harqId: %d] PHICH NACK ==> subframe_scheduling_flag = %d round: %d\n", harq_pid, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag,ulsch->harq_processes[harq_pid]->round);
+      }
     }
 
 
@@ -1405,11 +1434,22 @@ void rx_phich(PHY_VARS_UE *ue,
       //#endif
     }
 
+   // LOG_I(PHY,"[HARQ-UL harqId: %d] subframe_scheduling_flag = %d \n",harq_pid, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag);
+
+    // Incase of adaptive retransmission, PHICH is always decoded as ACK (at least with OAI-eNB)
+    // Workaround:
+    // rely only on DCI0 decoding and check if NDI has toggled
+    //   save current harq_processes content in temporary struct
+    //   harqId-8 corresponds to the temporary struct. In total we have 8 harq process(0 ..7) + 1 temporary harq process()
+    //ulsch->harq_processes[8] = ulsch->harq_processes[harq_pid];
+
     ulsch->harq_processes[harq_pid]->subframe_scheduling_flag =0;
     ulsch->harq_processes[harq_pid]->status = IDLE;
     ulsch->harq_processes[harq_pid]->round  = 0;
     // inform MAC?
     ue->ulsch_Msg3_active[eNB_id] = 0;
+
+   //LOG_I(PHY,"[HARQ-UL harqId: %d] PHICH ACK ==> subframe_scheduling_flag = %d round: %d\n", harq_pid, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag, ulsch->harq_processes[harq_pid]->round);
   }
 
 }

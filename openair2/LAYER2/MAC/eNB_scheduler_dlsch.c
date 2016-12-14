@@ -1106,7 +1106,7 @@ schedule_ue_spec(
           if (opt_enabled == 1) {
             trace_pdu(1, (uint8_t *)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
                       TBS, module_idP, 3, UE_RNTI(module_idP,UE_id),
-                      eNB->subframe,0,0);
+                      eNB->frame, eNB->subframe,0,0);
             LOG_D(OPT,"[eNB %d][DLSCH] CC_id %d Frame %d  rnti %x  with size %d\n",
                   module_idP, CC_id, frameP, UE_RNTI(module_idP,UE_id), TBS);
           }

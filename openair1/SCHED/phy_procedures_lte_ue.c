@@ -61,6 +61,9 @@ fifo_dump_emos_UE emos_dump_UE;
 # include "intertask_interface.h"
 #endif
 
+#include "PHY/defs.h"
+
+#include "PHY/CODING/extern.h"
 
 #define DLSCH_RB_ALLOC 0x1fbf  // skip DC RB (total 23/25 RBs)
 #define DLSCH_RB_ALLOC_12 0x0aaa  // skip DC RB (total 23/25 RBs)
@@ -377,6 +380,345 @@ uint8_t is_SR_TXOp(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id)
   return(0);
 }
 
+uint8_t is_cqi_TXOp(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id)
+{
+  int subframe = proc->subframe_tx;
+  int frame    = proc->frame_tx;
+  CQI_REPORTPERIODIC *cqirep = &ue->cqi_report_config[eNB_id].CQI_ReportPeriodic;
+
+  //LOG_I(PHY,"[UE %d][CRNTI %x] AbsSubFrame %d.%d Checking for CQI TXOp (cqi_ConfigIndex %d) isCQIOp %d\n",
+  //      ue->Mod_id,ue->pdcch_vars[eNB_id]->crnti,frame,subframe,
+  //      cqirep->cqi_PMI_ConfigIndex,
+  //      (((10*frame + subframe) % cqirep->Npd) == cqirep->N_OFFSET_CQI));
+
+  if (((10*frame + subframe) % cqirep->Npd) == cqirep->N_OFFSET_CQI)
+    return(1);
+  else
+    return(0);
+}
+uint8_t is_ri_TXOp(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id)
+{
+
+
+  int subframe = proc->subframe_tx;
+  int frame    = proc->frame_tx;
+  CQI_REPORTPERIODIC *cqirep = &ue->cqi_report_config[eNB_id].CQI_ReportPeriodic;
+  int log2Mri = cqirep->ri_ConfigIndex/161;
+  int N_OFFSET_RI = cqirep->ri_ConfigIndex % 161;
+
+  //LOG_I(PHY,"[UE %d][CRNTI %x] AbsSubFrame %d.%d Checking for RI TXOp (ri_ConfigIndex %d) isRIOp %d\n",
+  //      ue->Mod_id,ue->pdcch_vars[eNB_id]->crnti,frame,subframe,
+  //      cqirep->ri_ConfigIndex,
+  //      (((10*frame + subframe + cqirep->N_OFFSET_CQI - N_OFFSET_RI) % (cqirep->Npd<<log2Mri)) == 0));
+
+  if (((10*frame + subframe + cqirep->N_OFFSET_CQI - N_OFFSET_RI) % (cqirep->Npd<<log2Mri)) == 0)
+    return(1);
+  else
+    return(0);
+}
+
+void compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset)
+{
+    if(TDD == frameType)
+    {
+        if(isrs<10)
+        {
+            mac_xface->macphy_exit("2 ms SRS periodicity not supported");
+        }
+
+        if((isrs>9)&&(isrs<15))
+        {
+            *psrsPeriodicity=5;
+            *psrsOffset=isrs-10;
+        }
+        if((isrs>14)&&(isrs<25))
+        {
+            *psrsPeriodicity=10;
+            *psrsOffset=isrs-15;
+        }
+        if((isrs>24)&&(isrs<45))
+        {
+            *psrsPeriodicity=20;
+            *psrsOffset=isrs-25;
+        }
+        if((isrs>44)&&(isrs<85))
+        {
+            *psrsPeriodicity=40;
+            *psrsOffset=isrs-45;
+        }
+        if((isrs>84)&&(isrs<165))
+        {
+            *psrsPeriodicity=80;
+            *psrsOffset=isrs-85;
+        }
+        if((isrs>164)&&(isrs<325))
+        {
+            *psrsPeriodicity=160;
+            *psrsOffset=isrs-165;
+        }
+        if((isrs>324)&&(isrs<645))
+        {
+            *psrsPeriodicity=320;
+            *psrsOffset=isrs-325;
+        }
+
+        if(isrs>644)
+        {
+            mac_xface->macphy_exit("Isrs out of range");
+        }
+
+    }
+    else
+    {
+        if(isrs<2)
+        {
+            *psrsPeriodicity=2;
+            *psrsOffset=isrs;
+        }
+        if((isrs>1)&&(isrs<7))
+        {
+            *psrsPeriodicity=5;
+            *psrsOffset=isrs-2;
+        }
+        if((isrs>6)&&(isrs<17))
+        {
+            *psrsPeriodicity=10;
+            *psrsOffset=isrs-7;
+        }
+        if((isrs>16)&&(isrs<37))
+        {
+            *psrsPeriodicity=20;
+            *psrsOffset=isrs-17;
+        }
+        if((isrs>36)&&(isrs<77))
+        {
+            *psrsPeriodicity=40;
+            *psrsOffset=isrs-37;
+        }
+        if((isrs>76)&&(isrs<157))
+        {
+            *psrsPeriodicity=80;
+            *psrsOffset=isrs-77;
+        }
+        if((isrs>156)&&(isrs<317))
+        {
+            *psrsPeriodicity=160;
+            *psrsOffset=isrs-157;
+        }
+        if((isrs>316)&&(isrs<637))
+        {
+            *psrsPeriodicity=320;
+            *psrsOffset=isrs-317;
+        }
+        if(isrs>636)
+        {
+            mac_xface->macphy_exit("Isrs out of range");
+        }
+    }
+}
+
+void ue_compute_srs_occasion(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id)
+{
+    LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+    int frame_tx    = proc->frame_tx;
+    int subframe_tx = proc->subframe_tx;
+    uint8_t isSubframeSRS   = 0; // SRS Cell Occasion
+
+    uint8_t is_pucch2_subframe = 0;
+    uint8_t is_sr_an_subframe  = 0;
+
+    SOUNDINGRS_UL_CONFIG_DEDICATED *pSoundingrs_ul_config_dedicated=&ue->soundingrs_ul_config_dedicated[eNB_id];
+
+  // check for SRS opportunity
+  pSoundingrs_ul_config_dedicated->srsUeSubframe   = 0;
+  pSoundingrs_ul_config_dedicated->srsCellSubframe = 0;
+
+  ue->ulsch[eNB_id]->srs_active   = 0;
+  ue->ulsch[eNB_id]->Nsymb_pusch  = 12-(frame_parms->Ncp<<1)- ue->ulsch[eNB_id]->srs_active;
+  if(frame_parms->soundingrs_ul_config_common.enabled_flag)
+  {
+
+      LOG_D(PHY," SRS SUBFRAMECONFIG: %d, Isrs: %d \n", frame_parms->soundingrs_ul_config_common.srs_SubframeConfig, pSoundingrs_ul_config_dedicated->srs_ConfigIndex);
+
+      uint8_t  TSFC;
+      uint16_t deltaTSFC; // bitmap
+      uint8_t  srs_SubframeConfig;
+      uint16_t srsPeriodicity;
+      uint16_t srsOffset;
+
+      // table resuming TSFC (Period) and deltaSFC (offset)
+      const uint16_t deltaTSFCTabType1[15][2] = { {1,1},{1,2},{2,2},{1,5},{2,5},{4,5},{8,5},{3,5},{12,5},{1,10},{2,10},{4,10},{8,10},{351,10},{383,10} };      // Table 5.5.3.3-2 3GPP 36.211 FDD
+      const uint16_t deltaTSFCTabType2[14][2] = { {2,5},{6,5},{10,5},{18,5},{14,5},{22,5},{26,5},{30,5},{70,10},{74,10},{194,10},{326,10},{586,10},{210,10} }; // Table 5.5.3.3-2 3GPP 36.211 TDD
+
+      srs_SubframeConfig = frame_parms->soundingrs_ul_config_common.srs_SubframeConfig;
+      if (FDD == frame_parms->frame_type)
+      {
+          // srs_SubframeConfig =< 14
+          deltaTSFC = deltaTSFCTabType1[srs_SubframeConfig][0];
+          TSFC      = deltaTSFCTabType1[srs_SubframeConfig][1];
+      }
+      else
+      {
+          // srs_SubframeConfig =< 13
+          deltaTSFC = deltaTSFCTabType2[srs_SubframeConfig][0];
+          TSFC      = deltaTSFCTabType2[srs_SubframeConfig][1];
+      }
+
+      // Sounding reference signal subframes are the subframes satisfying ns/2 mod TSFC (- deltaTSFC
+      uint16_t tmp = (subframe_tx %  TSFC);
+      if((1<<tmp) & deltaTSFC)
+      {
+          // This is a Sounding reference signal subframes
+          isSubframeSRS = 1;
+          pSoundingrs_ul_config_dedicated->srsCellSubframe  = 1;
+      }
+      LOG_D(PHY," ISTDD: %d, TSFC: %d, deltaTSFC: %d, AbsSubframeTX: %d.%d, srsCellSubframe: %d \n", frame_parms->frame_type, TSFC, deltaTSFC, frame_tx, subframe_tx, pSoundingrs_ul_config_dedicated->srsCellSubframe);
+      LOG_D(PHY," SrsDedicatedSetup: %d \n",pSoundingrs_ul_config_dedicated->srsConfigDedicatedSetup);
+      if(pSoundingrs_ul_config_dedicated->srsConfigDedicatedSetup)
+      {
+          compute_srs_pos(frame_parms->frame_type, pSoundingrs_ul_config_dedicated->srs_ConfigIndex, &srsPeriodicity, &srsOffset);
+
+          LOG_D(PHY," srsPeriodicity: %d srsOffset: %d isSubframeSRS %d \n",srsPeriodicity,srsOffset,isSubframeSRS);
+
+          // transmit SRS if the four following constraints are respected:
+          // - UE is configured to transmit SRS
+          // - SRS are configured in current subframe
+          // - UE is configured to send SRS in this subframe
+
+          // 36.213 8.2
+          // 1- A UE shall not transmit SRS whenever SRS and PUCCH format 2/2a/2b transmissions happen to coincide in the same subframe
+          // 2- A UE shall not transmit SRS whenever SRS transmit
+          //    on and PUCCH transmission carrying ACK/NACK and/or
+          //    positive SR happen to coincide in the same subframe if the parameter
+          //    Simultaneous-AN-and-SRS is FALSE
+
+          // check PUCCH format 2/2a/2b transmissions
+          is_pucch2_subframe = is_cqi_TXOp(ue,proc,eNB_id) && (ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex>0);
+          is_pucch2_subframe = (is_ri_TXOp(ue,proc,eNB_id) && (ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0)) || is_pucch2_subframe;
+
+          // check ACK/SR transmission
+          if(frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission == FALSE)
+          {
+              if(is_SR_TXOp(ue,proc,eNB_id))
+              {
+                  uint32_t SR_payload = 0;
+                  if (ue->mac_enabled==1)
+                  {
+                      int Mod_id = ue->Mod_id;
+                      int CC_id = ue->CC_id;
+                      SR_payload = mac_xface->ue_get_SR(Mod_id,
+                              CC_id,
+                              frame_tx,
+                              eNB_id,
+                              ue->pdcch_vars[eNB_id]->crnti,
+                              subframe_tx); // subframe used for meas gap
+
+                      if (SR_payload > 0)
+                          is_sr_an_subframe = 1;
+                  }
+              }
+
+              uint8_t pucch_ack_payload[2];
+              if (get_ack(&ue->frame_parms,
+                      ue->dlsch[eNB_id][0]->harq_ack,
+                      subframe_tx,pucch_ack_payload) > 0)
+              {
+                  is_sr_an_subframe = 1;
+              }
+          }
+
+          // check SRS UE opportunity
+          if( isSubframeSRS  &&
+                  (((10*frame_tx+subframe_tx) % srsPeriodicity) == srsOffset)
+          )
+          {
+              if ((is_pucch2_subframe == 0) && (is_sr_an_subframe == 0))
+              {
+                  pSoundingrs_ul_config_dedicated->srsUeSubframe = 1;
+                  ue->ulsch[eNB_id]->srs_active   = 1;
+                  ue->ulsch[eNB_id]->Nsymb_pusch  = 12-(frame_parms->Ncp<<1)- ue->ulsch[eNB_id]->srs_active;
+              }
+              else
+              {
+                  LOG_I(PHY,"DROP UE-SRS-TX for this subframe %d.%d: collision with PUCCH2 or SR/AN: PUCCH2-occasion: %d, SR-AN-occasion[simSRS-SR-AN %d]: %d  \n", frame_tx, subframe_tx, is_pucch2_subframe, frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission, is_sr_an_subframe);
+              }
+          }
+      }
+      LOG_D(PHY," srsCellSubframe: %d, srsUeSubframe: %d, Nsymb-pusch: %d \n", pSoundingrs_ul_config_dedicated->srsCellSubframe, pSoundingrs_ul_config_dedicated->srsUeSubframe, ue->ulsch[eNB_id]->Nsymb_pusch);
+  }
+}
+
+void get_cqipmiri_params(PHY_VARS_UE *ue,uint8_t eNB_id)
+{
+
+  CQI_REPORTPERIODIC *cqirep = &ue->cqi_report_config[eNB_id].CQI_ReportPeriodic;
+  int cqi_PMI_ConfigIndex = cqirep->cqi_PMI_ConfigIndex;
+
+  if (ue->frame_parms.frame_type == FDD) {
+    if (cqi_PMI_ConfigIndex <= 1) {        // 2 ms CQI_PMI period
+      cqirep->Npd = 2;
+      cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex;
+    } else if (cqi_PMI_ConfigIndex <= 6) { // 5 ms CQI_PMI period
+      cqirep->Npd = 5;
+      cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-2;
+    } else if (cqi_PMI_ConfigIndex <=16) { // 10ms CQI_PMI period
+      cqirep->Npd = 10;
+      cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-7;
+    } else if (cqi_PMI_ConfigIndex <= 36) { // 20 ms CQI_PMI period
+      cqirep->Npd = 20;
+      cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-17;
+    } else if (cqi_PMI_ConfigIndex <= 76) { // 40 ms CQI_PMI period
+      cqirep->Npd = 40;
+      cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-37;
+    } else if (cqi_PMI_ConfigIndex <= 156) { // 80 ms CQI_PMI period
+      cqirep->Npd = 80;
+      cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-77;
+    } else if (cqi_PMI_ConfigIndex <= 316) { // 160 ms CQI_PMI period
+      cqirep->Npd = 160;
+      cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-157;
+    }
+    else if (cqi_PMI_ConfigIndex > 317) {
+      
+      if (cqi_PMI_ConfigIndex <= 349) { // 32 ms CQI_PMI period
+	cqirep->Npd = 32;
+      cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-318;
+      }
+      else if (cqi_PMI_ConfigIndex <= 413) { // 64 ms CQI_PMI period
+	cqirep->Npd = 64;
+	cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-350;
+      }
+      else if (cqi_PMI_ConfigIndex <= 541) { // 128 ms CQI_PMI period
+	cqirep->Npd = 128;
+	cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-414;
+      }  
+    }
+  }
+  else { // TDD
+   if (cqi_PMI_ConfigIndex == 0) {        // all UL subframes
+     cqirep->Npd = 1;
+     cqirep->N_OFFSET_CQI = 0;
+   } else if (cqi_PMI_ConfigIndex <= 6) { // 5 ms CQI_PMI period
+     cqirep->Npd = 5;
+     cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-1;
+   } else if (cqi_PMI_ConfigIndex <=16) { // 10ms CQI_PMI period
+     cqirep->Npd = 10;
+     cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-6;
+   } else if (cqi_PMI_ConfigIndex <= 36) { // 20 ms CQI_PMI period
+     cqirep->Npd = 20;
+     cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-16;
+   } else if (cqi_PMI_ConfigIndex <= 76) { // 40 ms CQI_PMI period
+     cqirep->Npd = 40;
+     cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-36;
+   } else if (cqi_PMI_ConfigIndex <= 156) { // 80 ms CQI_PMI period
+     cqirep->Npd = 80;
+     cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-76;
+   } else if (cqi_PMI_ConfigIndex <= 316) { // 160 ms CQI_PMI period
+     cqirep->Npd = 160;
+     cqirep->N_OFFSET_CQI = cqi_PMI_ConfigIndex-156;
+   }
+  }
+}
+
 uint16_t get_n1_pucch(PHY_VARS_UE *ue,
 		      UE_rxtx_proc_t *proc,
                       uint8_t eNB_id,
@@ -605,9 +947,18 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc) {
   
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)//this is the EXPRESS MIMO case
   ulsch_start = (ue->rx_offset+subframe_tx*frame_parms->samples_per_tti-
-		 ue->hw_timing_advance-
-		 ue->timing_advance-
-		 ue->N_TA_offset+5)%(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti);
+         ue->hw_timing_advance-
+         ue->timing_advance-
+         ue->N_TA_offset+5);
+  //LOG_E(PHY,"ul-signal [subframe: %d, ulsch_start %d]\n",subframe_tx, ulsch_start);
+
+  if(ulsch_start < 0)
+      ulsch_start = ulsch_start + (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti);
+
+  if (ulsch_start > (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti))
+      ulsch_start = ulsch_start % (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti);
+
+  //LOG_E(PHY,"ul-signal [subframe: %d, ulsch_start %d]\n",subframe_tx, ulsch_start);
 #else //this is the normal case
   ulsch_start = (frame_parms->samples_per_tti*subframe_tx)-ue->N_TA_offset; //-ue->timing_advance;
 #endif //else EXMIMO
@@ -678,6 +1029,15 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc) {
     }
 #endif
 #endif
+    /*
+    only for debug
+    LOG_I(PHY,"ul-signal [subframe: %d, ulsch_start %d, TA: %d, rxOffset: %d, timing_advance: %d, hw_timing_advance: %d]\n",subframe_tx, ulsch_start, ue->N_TA_offset, ue->rx_offset, ue->timing_advance, ue->hw_timing_advance);
+    if( (crash == 1) && (subframe_tx == 0) )
+    {
+      LOG_E(PHY,"***** DUMP TX Signal [ulsch_start %d] *****\n",ulsch_start);
+      write_output("txBuff.m","txSignal",&ue->common_vars.txdata[aa][ulsch_start],frame_parms->samples_per_tti,1,1);
+    }
+    */
     
   } //nb_antennas_tx
   
@@ -874,7 +1234,14 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
     ue->generate_ul_signal[eNB_id] = 1;
     
     // deactivate service request
-    ue->ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
+    // ue->ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
+    LOG_D(PHY,"Generating PUSCH (Abssubframe: %d.%d): harq-Id: %d, round: %d, MaxReTrans: %d \n",frame_tx,subframe_tx,harq_pid,ue->ulsch[eNB_id]->harq_processes[harq_pid]->round,ue->ulsch[eNB_id]->Mlimit);
+    if (ue->ulsch[eNB_id]->harq_processes[harq_pid]->round >= (ue->ulsch[eNB_id]->Mlimit - 1))
+    {
+        LOG_D(PHY,"PUSCH MAX Retransmission acheived ==> send last pusch (%d) \n");
+        ue->ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
+        ue->ulsch[eNB_id]->harq_processes[harq_pid]->round  = 0;
+    }
     
     ack_status = get_ack(&ue->frame_parms,
 			 ue->dlsch[eNB_id][0]->harq_ack,
@@ -887,6 +1254,27 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
     
     
     
+
+    if (ack_status > 0) {
+
+      // check if we received a PDSCH at subframe_tx - 4
+      // ==> send ACK/NACK on PUSCH
+      if( (ue->dlsch[eNB_id][0]->harq_ack[proc->subframe_rx].send_harq_status) == 1)
+      {
+          ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK = 1;
+      }
+      else
+      {
+          ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK = 0;
+      }
+      LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating ACK (%d,%d) for %d bits on PUSCH\n",
+        Mod_id,
+        ue->ulsch[eNB_id]->rnti,
+        frame_tx,subframe_tx,
+        ue->ulsch[eNB_id]->o_ACK[0],ue->ulsch[eNB_id]->o_ACK[1],
+        ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK);
+    }
+
 #ifdef DEBUG_PHY_PROC
     LOG_D(PHY,
 	  "[UE  %d][PUSCH %d] Frame %d subframe %d Generating PUSCH : first_rb %d, nb_rb %d, round %d, mcs %d, rv %d, cyclic_shift %d (cyclic_shift_common %d,n_DMRS2 %d,n_PRS %d), ACK (%d,%d), O_ACK %d\n",
@@ -904,15 +1292,6 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
 	  ue->ulsch[eNB_id]->o_ACK[0],ue->ulsch[eNB_id]->o_ACK[1],
 	  ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK);
 #endif
-    
-    if (ack_status > 0) {
-      LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating ACK (%d,%d) for %d bits on PUSCH\n",
-	    Mod_id,
-	    ue->ulsch[eNB_id]->rnti,
-	    frame_tx,subframe_tx,
-	    ue->ulsch[eNB_id]->o_ACK[0],ue->ulsch[eNB_id]->o_ACK[1],
-	    ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK);
-    }
     
     
     
@@ -1078,15 +1457,93 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
   } // subframe_scheduling_flag==1
 }
 
+void ue_srs_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag)
+{
+
+  //LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  //int8_t  frame_tx    = proc->frame_tx;
+  int8_t  subframe_tx = proc->subframe_tx;
+  int16_t tx_amp;
+  int16_t Po_SRS;
+  uint8_t nb_rb_srs;
+
+  SOUNDINGRS_UL_CONFIG_DEDICATED *pSoundingrs_ul_config_dedicated=&ue->soundingrs_ul_config_dedicated[eNB_id];
+  uint8_t isSrsTxOccasion = pSoundingrs_ul_config_dedicated->srsUeSubframe;
+
+  if(isSrsTxOccasion)
+  {
+    ue->generate_ul_signal[eNB_id] = 1;
+    if (ue->mac_enabled==1)
+    {
+      srs_power_cntl(ue,proc,eNB_id, (uint8_t*)(&nb_rb_srs), abstraction_flag);
+      Po_SRS = ue->ulsch[eNB_id]->Po_SRS;
+    }
+    else
+    {
+      Po_SRS = ue->tx_power_max_dBm;
+    }
+
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
+    if (ue->mac_enabled==1)
+    {
+    tx_amp = get_tx_amp(Po_SRS,
+                        ue->tx_power_max_dBm,
+                        ue->frame_parms.N_RB_UL,
+                        nb_rb_srs);
+    }
+    else
+    {
+        tx_amp = AMP;
+    }
+#else
+      tx_amp = AMP;
+#endif
+    LOG_D(PHY,"SRS PROC; TX_MAX_POWER %d, Po_SRS %d, NB_RB_UL %d, NB_RB_SRS %d TX_AMPL %d\n",ue->tx_power_max_dBm,
+            Po_SRS,
+            ue->frame_parms.N_RB_UL,
+            nb_rb_srs,
+            tx_amp);
+
+    generate_srs_tx(ue, eNB_id, tx_amp, subframe_tx);
+  }
+}
+
+int16_t get_pucch2_cqi(PHY_VARS_UE *ue,int eNB_id,int *len) {
+
+  if ((ue->transmission_mode[eNB_id]<4)||
+      (ue->transmission_mode[eNB_id]==7)) { // Mode 1-0 feedback
+    // 4-bit CQI message
+    *len=4;
+    return(sinr2cqi((double)ue->measurements.wideband_cqi_avg[eNB_id],
+		    ue->transmission_mode[eNB_id]));
+  }
+  else { // Mode 1-1 feedback, later
+    *len=0;
+    // 2-antenna ports RI=1, 6 bits (2 PMI, 4 CQI)
+
+    // 2-antenna ports RI=2, 8 bits (1 PMI, 7 CQI/DIFF CQI)
+    return(0);
+  }
+}
+
+
+int16_t get_pucch2_ri(PHY_VARS_UE *ue,int eNB_id) {
+
+  return(1);
+}
 
 void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag) {
 
 
   uint8_t pucch_ack_payload[2];
-  uint8_t n1_pucch;
+  uint8_t n1_pucch,n2_pucch;
   ANFBmode_t bundling_flag;
   PUCCH_FMT_t format;
+
   uint8_t SR_payload;
+  uint16_t CQI_payload;
+  uint16_t RI_payload;
+
   LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   int frame_tx=proc->frame_tx;
   int subframe_tx=proc->subframe_tx;
@@ -1094,6 +1551,26 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   int CC_id = ue->CC_id;
   int tx_amp;
   int8_t Po_PUCCH;
+
+  SOUNDINGRS_UL_CONFIG_DEDICATED *pSoundingrs_ul_config_dedicated=&ue->soundingrs_ul_config_dedicated[eNB_id];
+
+  // 36.213 8.2
+  /*if ackNackSRS_SimultaneousTransmission ==  TRUE and in the cell specific SRS subframes UE shall transmit
+    ACK/NACK and SR using the shortened PUCCH format. This shortened PUCCH format shall be used in a cell
+    specific SRS subframe even if the UE does not transmit SRS in that subframe
+  */
+
+  int harq_pid = subframe2harq_pid(&ue->frame_parms,
+                                   frame_tx,
+                                   subframe_tx);
+
+  if(ue->ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag)
+  {
+      LOG_D(PHY,"PUSCH is programmed on this subframe [pid %d] AbsSuframe %d.%d ==> Skip PUCCH transmission \n",harq_pid,frame_tx,subframe_tx);
+      return;
+  }
+
+  uint8_t isShortenPucch = (pSoundingrs_ul_config_dedicated->srsCellSubframe && frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission);
 
   bundling_flag = ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
   
@@ -1167,19 +1644,23 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 #endif
 	    
     if (SR_payload>0) {
-      LOG_D(PHY,"[UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 1a/1b payload %d,%d (with SR for PUSCH), n1_pucch %d, Po_PUCCH, amp %d\n",
+      LOG_D(PHY,"[UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 1a/1b payload %d,%d (with SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH, amp %d\n",
 	    Mod_id,
 	    ue->dlsch[eNB_id][0]->rnti,
+		frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission,
+	    isShortenPucch,
 	    frame_tx, subframe_tx,
 	    pucch_ack_payload[0],pucch_ack_payload[1],
 	    ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex,
 	    Po_PUCCH,
 	    tx_amp);
     } else {
-      LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating PUCCH 1a/1b, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d, amp %d\n",
+      LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating PUCCH 1a/1b, an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d, amp %d\n",
 	    Mod_id,
 	    ue->dlsch[eNB_id][0]->rnti,
 	    frame_tx, subframe_tx,
+		frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission,
+	    isShortenPucch,
 	    n1_pucch,pucch_ack_payload[0],pucch_ack_payload[1],SR_payload,
 	    Po_PUCCH,
 	    tx_amp);
@@ -1193,7 +1674,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 		       format,
 		       &ue->pucch_config_dedicated[eNB_id],
 		       n1_pucch,
-		       1,  // shortened format
+		       isShortenPucch,  // shortened format
 		       pucch_ack_payload,
 		       tx_amp,
 		       subframe_tx);
@@ -1210,7 +1691,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 #endif
     }
   } else if (SR_payload==1) { // no ACK/NAK but SR is triggered by MAC
-	    
+
     if (ue->mac_enabled == 1) {
       Po_PUCCH = pucch_power_cntl(ue,proc,subframe_tx,eNB_id,pucch_format1);
     }
@@ -1228,10 +1709,12 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 #else
     tx_amp = AMP;
 #endif
-    LOG_D(PHY,"[UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 1 (SR for PUSCH), n1_pucch %d, Po_PUCCH %d\n",
+    LOG_D(PHY,"[UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 1 (SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d\n",
 	  Mod_id,
 	  ue->dlsch[eNB_id][0]->rnti,
 	  frame_tx, subframe_tx,
+	  frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission,
+	  isShortenPucch,
 	  ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex,
 	  Po_PUCCH);
 	    
@@ -1243,7 +1726,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 		       pucch_format1,
 		       &ue->pucch_config_dedicated[eNB_id],
 		       ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex,
-		       1,  // shortened format
+		       isShortenPucch,  // shortened format
 		       pucch_ack_payload,  // this is ignored anyway, we just need a pointer
 		       tx_amp,
 		       subframe_tx);
@@ -1258,6 +1741,111 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 
     }
   } // SR_Payload==1
+
+  // PUCCH 2x
+
+  if (ue->generate_ul_signal[eNB_id] == 0) { // we have not generated ACK/NAK/SR in this subframe
+
+    n2_pucch = ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PUCCH_ResourceIndex;
+    // only use format2 for now, i.e. now ACK/NAK - CQI multiplexing
+    format = pucch_format2;
+
+    // Periodic CQI report
+    if ((ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex>0)&&
+	(is_cqi_TXOp(ue,proc,eNB_id)==1)){
+
+      if (ue->mac_enabled == 1) {
+	Po_PUCCH = pucch_power_cntl(ue,proc,subframe_tx,eNB_id,format);
+      }
+      else {
+	Po_PUCCH = ue->tx_power_max_dBm;
+      }
+      ue->tx_power_dBm[subframe_tx] = Po_PUCCH;
+      ue->tx_total_RE[subframe_tx] = 12;
+      
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
+      tx_amp =  get_tx_amp(Po_PUCCH,
+			   ue->tx_power_max_dBm,
+			   ue->frame_parms.N_RB_UL,
+			   1);
+#else
+      tx_amp = AMP;
+#endif
+      LOG_D(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2 (CQI), n2_pucch %d, Po_PUCCH %d, isShortenPucch %d, amp %d\n",
+	    Mod_id,
+	    ue->dlsch[eNB_id][0]->rnti,
+	    frame_tx, subframe_tx,
+	    n2_pucch,
+	    Po_PUCCH,
+	    isShortenPucch,
+	    tx_amp);
+      
+      int len;
+      // get the payload : < 12 bits, returned in len
+      CQI_payload = get_pucch2_cqi(ue,eNB_id,&len);
+      generate_pucch2x(ue->common_vars.txdataF,
+		       &ue->frame_parms,
+		       ue->ncs_cell,
+		       format,
+		       &ue->pucch_config_dedicated[eNB_id],
+		       n2_pucch,
+		       &CQI_payload,
+		       len,          // A
+		       0,            // B2 not needed
+		       tx_amp,
+		       subframe_tx,
+		       ue->pdcch_vars[eNB_id]->crnti);
+
+      ue->generate_ul_signal[eNB_id] = 1;
+    }
+    // Periodic RI report
+    else if ((ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0) &&
+	     (is_ri_TXOp(ue,proc,eNB_id)==1)){
+
+      if (ue->mac_enabled == 1) {
+	Po_PUCCH = pucch_power_cntl(ue,proc,subframe_tx,eNB_id,format);
+      }
+      else {
+	Po_PUCCH = ue->tx_power_max_dBm;
+      }
+      ue->tx_power_dBm[subframe_tx] = Po_PUCCH;
+      ue->tx_total_RE[subframe_tx] = 12;
+      
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
+      tx_amp =  get_tx_amp(Po_PUCCH,
+			   ue->tx_power_max_dBm,
+			   ue->frame_parms.N_RB_UL,
+			   1);
+#else
+      tx_amp = AMP;
+#endif
+      LOG_D(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2 (RI), n2_pucch %d, Po_PUCCH %d, isShortenPucch %d, amp %d\n",
+	    Mod_id,
+	    ue->dlsch[eNB_id][0]->rnti,
+	    frame_tx, subframe_tx,
+	    n2_pucch,
+	    Po_PUCCH,
+	    isShortenPucch,
+	    tx_amp);
+
+      RI_payload = get_pucch2_ri(ue,eNB_id);
+
+      generate_pucch2x(ue->common_vars.txdataF,
+		       &ue->frame_parms,
+		       ue->ncs_cell,
+		       format,
+		       &ue->pucch_config_dedicated[eNB_id],
+		       n2_pucch,
+		       &RI_payload,
+		       1,            // A
+		       0,            // B2 not needed
+		       tx_amp,
+		       subframe_tx,
+		       ue->pdcch_vars[eNB_id]->crnti);
+      
+      ue->generate_ul_signal[eNB_id] = 1;
+    }
+  }
 }
 
 void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,runmode_t mode,relaying_type_t r_type) {
@@ -1293,13 +1881,18 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
   }
       
   if (ue->UE_mode[eNB_id] != PRACH) {
+    // check cell srs subframe and ue srs subframe. This has an impact on pusch encoding
+    ue_compute_srs_occasion(ue,proc,eNB_id);
 
     ue_ulsch_uespec_procedures(ue,proc,eNB_id,abstraction_flag);
 
   }
   	  
-  if (ue->UE_mode[eNB_id] == PUSCH) { // check if we need to use PUCCH 1a/1b
-	  ue_pucch_procedures(ue,proc,eNB_id,abstraction_flag);
+  if (ue->UE_mode[eNB_id] == PUSCH) {
+      // check if we need to use PUCCH 1a/1b
+      ue_pucch_procedures(ue,proc,eNB_id,abstraction_flag);
+      // check if we need to use SRS
+      ue_srs_procedures(ue,proc,eNB_id,abstraction_flag);
   } // UE_mode==PUSCH
 	
   	
@@ -2037,7 +2630,7 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
       if (generate_ue_dlsch_params_from_dci(frame_rx,
 					    subframe_rx,
 					    (void *)&dci_alloc_rx[i].dci_pdu,
-					    SI_RNTI,
+						P_RNTI,
 					    dci_alloc_rx[i].format,
 					    &ue->dlsch_SI[eNB_id],
 					    &ue->frame_parms,
@@ -2530,7 +3123,7 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
 			   subframe_rx,
 			   harq_pid,
 			   pdsch==PDSCH?1:0,
-			   dlsch0->harq_processes[harq_pid]->nb_rb>10?1:0);
+			   dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
       stop_meas(&ue->dlsch_decoding_stats);
     }
 	
@@ -2547,22 +3140,27 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
     if (ret == (1+dlsch0->max_turbo_iterations)) {
       *dlsch_errors=*dlsch_errors+1;
       
-
+      if(dlsch0->rnti != 0xffff)
+      {
       LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d DLSCH in error (rv %d,mcs %d,TBS %d)\n",
 	    ue->Mod_id,dlsch0->rnti,
 	    harq_pid,frame_rx,subframe_rx,
 	    dlsch0->harq_processes[harq_pid]->rvidx,
 	    dlsch0->harq_processes[harq_pid]->mcs,
 	    dlsch0->harq_processes[harq_pid]->TBS);
+      }
       
 
     } else {
+        if(dlsch0->rnti != 0xffff)
+        {
       LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: Received DLSCH (rv %d,mcs %d,TBS %d)\n",
 	    ue->Mod_id,dlsch0->rnti,
 	    harq_pid,frame_rx,subframe_rx,
 	    dlsch0->harq_processes[harq_pid]->rvidx,
 	    dlsch0->harq_processes[harq_pid]->mcs,
 	    dlsch0->harq_processes[harq_pid]->TBS);
+        }
 
 #ifdef DEBUG_DLSCH
       int j;
@@ -2751,6 +3349,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
  
   // do procedures for C-RNTI
   if (ue->dlsch[eNB_id][0]->active == 1) {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
     ue_pdsch_procedures(ue,
 			proc,
 			eNB_id,
@@ -2760,9 +3359,11 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			ue->pdcch_vars[eNB_id]->num_pdcch_symbols,
 			ue->frame_parms.symbols_per_tti>>1,
 			abstraction_flag);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
   }
   // do procedures for SI-RNTI
   if ((ue->dlsch_SI[eNB_id]) && (ue->dlsch_SI[eNB_id]->active == 1)) {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_IN);
     ue_pdsch_procedures(ue,
 			proc,
 			eNB_id,
@@ -2772,10 +3373,12 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			ue->pdcch_vars[eNB_id]->num_pdcch_symbols,
 			ue->frame_parms.symbols_per_tti>>1,
 			abstraction_flag);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_OUT);
   }
 
   // do procedures for SI-RNTI
   if ((ue->dlsch_p[eNB_id]) && (ue->dlsch_p[eNB_id]->active == 1)) {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_P, VCD_FUNCTION_IN);
     ue_pdsch_procedures(ue,
 			proc,
 			eNB_id,
@@ -2785,10 +3388,12 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			ue->pdcch_vars[eNB_id]->num_pdcch_symbols,
 			ue->frame_parms.symbols_per_tti>>1,
 			abstraction_flag);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_P, VCD_FUNCTION_OUT);
   }
 
   // do procedures for RA-RNTI
   if ((ue->dlsch_ra[eNB_id]) && (ue->dlsch_ra[eNB_id]->active == 1)) {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_IN);
     ue_pdsch_procedures(ue,
 			proc,
 			eNB_id,
@@ -2798,6 +3403,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			ue->pdcch_vars[eNB_id]->num_pdcch_symbols,
 			ue->frame_parms.symbols_per_tti>>1,
 			abstraction_flag);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_OUT);
   }    
   
   if (subframe_select(&ue->frame_parms,subframe_rx) != SF_S) {  // do front-end processing for second slot, and first symbol of next subframe
@@ -2833,6 +3439,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
    
   // do procedures for C-RNTI
   if (ue->dlsch[eNB_id][0]->active == 1) {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
     ue_pdsch_procedures(ue,
 			proc,
 			eNB_id,
@@ -2851,7 +3458,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			&ue->dlsch_errors[eNB_id],
 			mode,
 			abstraction_flag);
-      
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
 
   }
   else {

@@ -32,6 +32,7 @@
 #define RRC_UE_C
 
 #include "assertions.h"
+#include "hashtable.h"
 #include "asn1_conversions.h"
 #include "defs.h"
 #include "PHY/TOOLS/dB_routines.h"
@@ -101,6 +102,15 @@ extern void *bigphys_malloc(int);
 
 extern int8_t dB_fixed2(uint32_t x,uint32_t y);
 
+extern void pdcp_config_set_security(
+  const protocol_ctxt_t* const  ctxt_pP,
+  pdcp_t         * const pdcp_pP,
+  const rb_id_t         rb_idP,
+  const uint16_t        lc_idP,
+  const uint8_t         security_modeP,
+  uint8_t        * const kRRCenc,
+  uint8_t        * const kRRCint,
+  uint8_t        * const  kUPenc);
 
 // internal prototypes
 
@@ -807,6 +817,7 @@ rrc_ue_process_measConfig(
       }
     }
 
+    LOG_I(RRC,"call rrc_mac_config_req \n");
     rrc_mac_config_req(ctxt_pP->module_id,0,ENB_FLAG_NO,0,eNB_index,
                        (RadioResourceConfigCommonSIB_t *)NULL,
                        (struct PhysicalConfigDedicated *)NULL,
@@ -953,6 +964,199 @@ rrc_ue_process_measConfig(
   }
 }
 
+
+void
+rrc_ue_update_radioResourceConfigDedicated(RadioResourceConfigDedicated_t* radioResourceConfigDedicated,
+        const protocol_ctxt_t* const ctxt_pP,
+        uint8_t eNB_index)
+{
+    PhysicalConfigDedicated_t* physicalConfigDedicated2 = NULL;
+
+    physicalConfigDedicated2 = CALLOC(1,sizeof(*physicalConfigDedicated2));
+    physicalConfigDedicated2->pdsch_ConfigDedicated         = CALLOC(1,sizeof(*physicalConfigDedicated2->pdsch_ConfigDedicated));
+    physicalConfigDedicated2->pusch_ConfigDedicated         = CALLOC(1,sizeof(*physicalConfigDedicated2->pusch_ConfigDedicated));
+    physicalConfigDedicated2->pucch_ConfigDedicated         = CALLOC(1,sizeof(*physicalConfigDedicated2->pucch_ConfigDedicated));
+    physicalConfigDedicated2->cqi_ReportConfig              = CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
+    physicalConfigDedicated2->schedulingRequestConfig       = CALLOC(1,sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
+    physicalConfigDedicated2->antennaInfo                   = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
+
+    physicalConfigDedicated2->uplinkPowerControlDedicated   = CALLOC(1,sizeof(*physicalConfigDedicated2->uplinkPowerControlDedicated));
+    physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH         = CALLOC(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH));
+    physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH         = CALLOC(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH));
+
+    // Update pdsch_ConfigDedicated
+    if(radioResourceConfigDedicated->physicalConfigDedicated->pdsch_ConfigDedicated != NULL)
+    {
+        LOG_I(RRC,"Update pdsch_ConfigDedicated config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pdsch_ConfigDedicated == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pdsch_ConfigDedicated = CALLOC(1,sizeof(PDSCH_ConfigDedicated_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pdsch_ConfigDedicated,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->pdsch_ConfigDedicated,
+                sizeof(physicalConfigDedicated2->pdsch_ConfigDedicated));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for pdsch_ConfigDedicated\n");
+    }
+
+    // Update pusch_ConfigDedicated
+    if(radioResourceConfigDedicated->physicalConfigDedicated->pusch_ConfigDedicated != NULL)
+    {
+        LOG_I(RRC,"Update pusch_ConfigDedicated config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pusch_ConfigDedicated == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pusch_ConfigDedicated = CALLOC(1,sizeof(PUSCH_ConfigDedicated_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pusch_ConfigDedicated,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->pusch_ConfigDedicated,
+                sizeof(physicalConfigDedicated2->pusch_ConfigDedicated));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for pusch_ConfigDedicated\n");
+    }
+
+    // Update pucch_ConfigDedicated
+    if(radioResourceConfigDedicated->physicalConfigDedicated->pucch_ConfigDedicated != NULL)
+    {
+        LOG_I(RRC,"Update pucch_ConfigDedicated config \n");
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pucch_ConfigDedicated == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pucch_ConfigDedicated = CALLOC(1,sizeof(PUCCH_ConfigDedicated_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->pucch_ConfigDedicated,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->pucch_ConfigDedicated,
+                sizeof(physicalConfigDedicated2->pucch_ConfigDedicated));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for pucch_ConfigDedicated\n");
+    }
+
+    // Update cqi_ReportConfig
+    if(radioResourceConfigDedicated->physicalConfigDedicated->cqi_ReportConfig != NULL)
+    {
+        LOG_I(RRC,"Update cqi_ReportConfig config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig = CALLOC(1,sizeof(CQI_ReportConfig_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->cqi_ReportConfig,
+                sizeof(physicalConfigDedicated2->cqi_ReportConfig));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for cqi_ReportConfig\n");
+    }
+
+    // Update schedulingRequestConfig
+    if(radioResourceConfigDedicated->physicalConfigDedicated->schedulingRequestConfig != NULL)
+    {
+        LOG_I(RRC,"Update schedulingRequestConfig config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->schedulingRequestConfig == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->schedulingRequestConfig = CALLOC(1,sizeof(SchedulingRequestConfig_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->schedulingRequestConfig,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->schedulingRequestConfig,
+                sizeof(physicalConfigDedicated2->schedulingRequestConfig));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for schedulingRequestConfig\n");
+    }
+
+    // Update soundingRS_UL_ConfigDedicated
+    if(radioResourceConfigDedicated->physicalConfigDedicated->soundingRS_UL_ConfigDedicated != NULL)
+    {
+        LOG_I(RRC,"Update soundingRS_UL_ConfigDedicated config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->soundingRS_UL_ConfigDedicated == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->soundingRS_UL_ConfigDedicated = CALLOC(1,sizeof(SoundingRS_UL_ConfigDedicated_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->soundingRS_UL_ConfigDedicated,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->soundingRS_UL_ConfigDedicated,
+                sizeof(physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for soundingRS_UL_ConfigDedicated\n");
+    }
+
+    // Update antennaInfo
+    if(radioResourceConfigDedicated->physicalConfigDedicated->antennaInfo != NULL)
+    {
+        LOG_I(RRC,"Update antennaInfo config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->antennaInfo == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->antennaInfo = CALLOC(1,sizeof(struct PhysicalConfigDedicated__antennaInfo));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->antennaInfo,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->antennaInfo,
+                sizeof(physicalConfigDedicated2->antennaInfo));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for antennaInfo\n");
+    }
+
+
+    // Update uplinkPowerControlDedicated
+    if(radioResourceConfigDedicated->physicalConfigDedicated->uplinkPowerControlDedicated != NULL)
+    {
+        LOG_I(RRC,"Update uplinkPowerControlDedicated config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->uplinkPowerControlDedicated == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->uplinkPowerControlDedicated = CALLOC(1,sizeof(UplinkPowerControlDedicated_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->uplinkPowerControlDedicated,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->uplinkPowerControlDedicated,
+                sizeof(physicalConfigDedicated2->uplinkPowerControlDedicated));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for uplinkPowerControlDedicated\n");
+    }
+
+    // Update tpc_PDCCH_ConfigPUCCH
+    if(radioResourceConfigDedicated->physicalConfigDedicated->tpc_PDCCH_ConfigPUCCH != NULL)
+    {
+        LOG_I(RRC,"Update tpc_PDCCH_ConfigPUCCH config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->tpc_PDCCH_ConfigPUCCH == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->tpc_PDCCH_ConfigPUCCH = CALLOC(1,sizeof(TPC_PDCCH_Config_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->tpc_PDCCH_ConfigPUCCH,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->tpc_PDCCH_ConfigPUCCH,
+                sizeof(physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH));
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for tpc_PDCCH_ConfigPUCCH\n");
+    }
+
+    // Update tpc_PDCCH_ConfigPUSCH
+    if(radioResourceConfigDedicated->physicalConfigDedicated->tpc_PDCCH_ConfigPUSCH != NULL)
+    {
+        LOG_I(RRC,"Update tpc_PDCCH_ConfigPUSCH config \n");
+
+        if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->tpc_PDCCH_ConfigPUSCH == NULL)
+            UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->tpc_PDCCH_ConfigPUSCH = CALLOC(1,sizeof(TPC_PDCCH_Config_t));
+
+        memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->tpc_PDCCH_ConfigPUSCH,
+                (char*)radioResourceConfigDedicated->physicalConfigDedicated->tpc_PDCCH_ConfigPUSCH,
+                sizeof(physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH));
+
+    }
+    else
+    {
+        LOG_I(RRC,"Keep old config for tpc_PDCCH_ConfigPUSCH\n");
+    }
+
+}
 //-----------------------------------------------------------------------------
 void
 rrc_ue_process_radioResourceConfigDedicated(
@@ -973,11 +1177,17 @@ rrc_ue_process_radioResourceConfigDedicated(
 
   // Save physicalConfigDedicated if present
   if (radioResourceConfigDedicated->physicalConfigDedicated) {
+    LOG_I(RRC,"Save physicalConfigDedicated if present \n");
+
     if (UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]) {
+#if 1
+        rrc_ue_update_radioResourceConfigDedicated(radioResourceConfigDedicated, ctxt_pP, eNB_index);
+#else
       memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index],(char*)radioResourceConfigDedicated->physicalConfigDedicated,
              sizeof(struct PhysicalConfigDedicated));
-
+#endif
     } else {
+      LOG_I(RRC,"Init physicalConfigDedicated UE_rrc_inst to radioResourceConfigDedicated->physicalConfigDedicated\n");
       UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index] = radioResourceConfigDedicated->physicalConfigDedicated;
     }
   }
@@ -1054,7 +1264,7 @@ rrc_ue_process_radioResourceConfigDedicated(
 #ifdef Rel10
                              ,(PMCH_InfoList_r9_t *)NULL
 #endif
-                            );
+                             ,NULL);
 
     // Refresh SRBs
     rrc_rlc_config_asn1_req(ctxt_pP,
@@ -1095,7 +1305,7 @@ rrc_ue_process_radioResourceConfigDedicated(
             SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
           }
 
-          LOG_D(RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB1 eNB %d) --->][MAC_UE][MOD %02d][]\n",
+          LOG_I(RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB1 eNB %d) --->][MAC_UE][MOD %02d][]\n",
                 ctxt_pP->frame, ctxt_pP->module_id, eNB_index, ctxt_pP->module_id);
           rrc_mac_config_req(ctxt_pP->module_id,0,ENB_FLAG_NO,0,eNB_index,
                              (RadioResourceConfigCommonSIB_t *)NULL,
@@ -1150,7 +1360,7 @@ rrc_ue_process_radioResourceConfigDedicated(
             SRB2_logicalChannelConfig = &SRB2_logicalChannelConfig_defaultValue;
           }
 
-          LOG_D(RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB2 eNB %d) --->][MAC_UE][MOD %02d][]\n",
+          LOG_I(RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB2 eNB %d) --->][MAC_UE][MOD %02d][]\n",
                 ctxt_pP->frame,
                 ctxt_pP->module_id,
                 eNB_index,
@@ -1194,6 +1404,15 @@ rrc_ue_process_radioResourceConfigDedicated(
 
   // Establish DRBs if present
   if (radioResourceConfigDedicated->drb_ToAddModList) {
+
+    if ( (UE_rrc_inst[ctxt_pP->module_id].defaultDRB == NULL) &&
+         (radioResourceConfigDedicated->drb_ToAddModList->list.count >= 1) ) {
+        // configure the first DRB ID as the default DRB ID
+        UE_rrc_inst[ctxt_pP->module_id].defaultDRB = malloc(sizeof(rb_id_t));
+        *UE_rrc_inst[ctxt_pP->module_id].defaultDRB = radioResourceConfigDedicated->drb_ToAddModList->list.array[0]->drb_Identity;
+        LOG_I(RRC,"[UE %d] default DRB = %d\n",ctxt_pP->module_id, *UE_rrc_inst[ctxt_pP->module_id].defaultDRB);
+      }
+
     uint8_t *kUPenc = NULL;
 
 #if defined(ENABLE_SECURITY)
@@ -1225,7 +1444,7 @@ rrc_ue_process_radioResourceConfigDedicated(
 #ifdef Rel10
                              ,(PMCH_InfoList_r9_t *)NULL
 #endif
-                            );
+                             , UE_rrc_inst[ctxt_pP->module_id].defaultDRB);
 
     // Refresh DRBs
     rrc_rlc_config_asn1_req(ctxt_pP,
@@ -1248,7 +1467,7 @@ rrc_ue_process_radioResourceConfigDedicated(
         UE_rrc_inst[ctxt_pP->module_id].DRB_config[eNB_index][DRB_id] = radioResourceConfigDedicated->drb_ToAddModList->list.array[i];
         rrc_ue_establish_drb(ctxt_pP->module_id,ctxt_pP->frame,eNB_index,radioResourceConfigDedicated->drb_ToAddModList->list.array[i]);
         // MAC/PHY Configuration
-        LOG_D(RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][]\n",
+        LOG_I(RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][]\n",
               ctxt_pP->frame, ctxt_pP->module_id,
               radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->drb_Identity,
               eNB_index,
@@ -1385,6 +1604,62 @@ rrc_ue_process_securityModeCommand(
   } else {
     ul_dcch_msg.message.choice.c1.present = UL_DCCH_MessageType__c1_PR_securityModeFailure;
   }
+
+
+#if defined(ENABLE_SECURITY)
+  uint8_t *kRRCenc = NULL;
+  uint8_t *kUPenc = NULL;
+  uint8_t *kRRCint = NULL;
+  pdcp_t *pdcp_p = NULL;
+  hash_key_t key = HASHTABLE_NOT_A_KEY_VALUE;
+  hashtable_rc_t h_rc;
+
+  key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti,
+      ctxt_pP->enb_flag, DCCH, SRB_FLAG_YES);
+  h_rc = hashtable_get(pdcp_coll_p, key, (void**) &pdcp_p);
+
+  if (h_rc == HASH_TABLE_OK) {
+    LOG_D(RRC, "PDCP_COLL_KEY_VALUE() returns valid key = %d\n", key);
+
+    LOG_D(RRC, "driving kRRCenc, kRRCint and kUPenc from KeNB="
+        "%02x%02x%02x%02x"
+        "%02x%02x%02x%02x"
+        "%02x%02x%02x%02x"
+        "%02x%02x%02x%02x"
+        "%02x%02x%02x%02x"
+        "%02x%02x%02x%02x"
+        "%02x%02x%02x%02x"
+        "%02x%02x%02x%02x\n",
+        UE_rrc_inst[ctxt_pP->module_id].kenb[0],  UE_rrc_inst[ctxt_pP->module_id].kenb[1],  UE_rrc_inst[ctxt_pP->module_id].kenb[2],  UE_rrc_inst[ctxt_pP->module_id].kenb[3],
+        UE_rrc_inst[ctxt_pP->module_id].kenb[4],  UE_rrc_inst[ctxt_pP->module_id].kenb[5],  UE_rrc_inst[ctxt_pP->module_id].kenb[6],  UE_rrc_inst[ctxt_pP->module_id].kenb[7],
+        UE_rrc_inst[ctxt_pP->module_id].kenb[8],  UE_rrc_inst[ctxt_pP->module_id].kenb[9],  UE_rrc_inst[ctxt_pP->module_id].kenb[10], UE_rrc_inst[ctxt_pP->module_id].kenb[11],
+        UE_rrc_inst[ctxt_pP->module_id].kenb[12], UE_rrc_inst[ctxt_pP->module_id].kenb[13], UE_rrc_inst[ctxt_pP->module_id].kenb[14], UE_rrc_inst[ctxt_pP->module_id].kenb[15],
+        UE_rrc_inst[ctxt_pP->module_id].kenb[16], UE_rrc_inst[ctxt_pP->module_id].kenb[17], UE_rrc_inst[ctxt_pP->module_id].kenb[18], UE_rrc_inst[ctxt_pP->module_id].kenb[19],
+        UE_rrc_inst[ctxt_pP->module_id].kenb[20], UE_rrc_inst[ctxt_pP->module_id].kenb[21], UE_rrc_inst[ctxt_pP->module_id].kenb[22], UE_rrc_inst[ctxt_pP->module_id].kenb[23],
+        UE_rrc_inst[ctxt_pP->module_id].kenb[24], UE_rrc_inst[ctxt_pP->module_id].kenb[25], UE_rrc_inst[ctxt_pP->module_id].kenb[26], UE_rrc_inst[ctxt_pP->module_id].kenb[27],
+        UE_rrc_inst[ctxt_pP->module_id].kenb[28], UE_rrc_inst[ctxt_pP->module_id].kenb[29], UE_rrc_inst[ctxt_pP->module_id].kenb[30], UE_rrc_inst[ctxt_pP->module_id].kenb[31]);
+
+    derive_key_rrc_enc(UE_rrc_inst[ctxt_pP->module_id].ciphering_algorithm,
+        UE_rrc_inst[ctxt_pP->module_id].kenb, &kRRCenc);
+    derive_key_rrc_int(UE_rrc_inst[ctxt_pP->module_id].integrity_algorithm,
+        UE_rrc_inst[ctxt_pP->module_id].kenb, &kRRCint);
+    derive_key_up_enc(UE_rrc_inst[ctxt_pP->module_id].ciphering_algorithm,
+        UE_rrc_inst[ctxt_pP->module_id].kenb, &kUPenc);
+
+    if (securityMode != 0xff) {
+      pdcp_config_set_security(ctxt_pP, pdcp_p, 0, 0,
+          UE_rrc_inst[ctxt_pP->module_id].ciphering_algorithm
+              | (UE_rrc_inst[ctxt_pP->module_id].integrity_algorithm << 4),
+          kRRCenc, kRRCint, kUPenc);
+    } else {
+      LOG_W(RRC, "skipped pdcp_config_set_security() as securityMode == 0x%02x",
+          securityMode);
+    }
+  } else {
+    LOG_W(RRC, "Could not get PDCP instance where key=0x%\n", key);
+  }
+
+#endif //#if defined(ENABLE_SECURITY)
 
   if (securityModeCommand->criticalExtensions.present == SecurityModeCommand__criticalExtensions_PR_c1) {
     if (securityModeCommand->criticalExtensions.choice.c1.present == SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8) {
@@ -1719,7 +1994,7 @@ rrc_ue_process_mobilityControlInfo(
   #ifdef Rel10
          ,NULL
   #endif
-         );
+         ,NULL);
 
   rrc_rlc_config_asn1_req(NB_eNB_INST+ue_mod_idP, frameP,0,eNB_index,
         NULL,// SRB_ToAddModList
@@ -1728,7 +2003,7 @@ rrc_ue_process_mobilityControlInfo(
   #ifdef Rel10
         ,NULL
   #endif
-        );
+        ,NULL);
    */
 
 
@@ -1750,7 +2025,7 @@ rrc_ue_process_mobilityControlInfo(
   UE_rrc_inst[ue_mod_idP].DRB_config[eNB_index][0] = NULL;
    */
   //Synchronisation to DL of target cell
-  LOG_D(RRC,
+  LOG_I(RRC,
         "HO: Reset PDCP and RLC for configured RBs.. \n[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB2 eNB %d) --->][MAC_UE][MOD %02d][]\n",
         ctxt_pP->frame, ctxt_pP->module_id, eNB_index, ctxt_pP->module_id);
 
@@ -2610,7 +2885,7 @@ static int decode_SIB1( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_
 
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIperiod     = siPeriod_int[sib1->schedulingInfoList.list.array[0]->si_Periodicity];
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIwindowsize = siWindowLength_int[sib1->si_WindowLength];
-  LOG_D( RRC, "[FRAME unknown][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB1 params eNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
+  LOG_I( RRC, "[FRAME unknown][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB1 params eNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
          ctxt_pP->module_id, eNB_index, ctxt_pP->module_id );
 
   rrc_mac_config_req(ctxt_pP->module_id, 0, ENB_FLAG_NO, 0, eNB_index,
@@ -3424,7 +3699,7 @@ static int decode_SI( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_in
 	LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB13 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
 	dump_sib13( UE_rrc_inst[ctxt_pP->module_id].sib13[eNB_index] );
 	// adding here function to store necessary parameters for using in decode_MCCH_Message + maybe transfer to PHY layer
-	LOG_D( RRC, "[FRAME %05"PRIu32"][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB13 params eNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
+	LOG_I( RRC, "[FRAME %05"PRIu32"][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB13 params eNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
 	       ctxt_pP->frame, ctxt_pP->module_id, eNB_index, ctxt_pP->module_id);
 	rrc_mac_config_req(ctxt_pP->module_id,0,ENB_FLAG_NO,0,eNB_index,
 			   (RadioResourceConfigCommonSIB_t *)NULL,
@@ -3881,7 +4156,7 @@ static void decode_MBSFNAreaConfiguration( module_id_t ue_mod_idP, uint8_t eNB_i
 {
   protocol_ctxt_t               ctxt;
 
-  LOG_D(RRC,"[UE %d] Frame %d : Number of MCH(s) in the MBSFN Sync Area %d  is %d\n",
+  LOG_I(RRC,"[UE %d] Frame %d : Number of MCH(s) in the MBSFN Sync Area %d  is %d\n",
         ue_mod_idP, frameP, mbsfn_sync_area, UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index]->pmch_InfoList_r9.list.count);
   //  store to MAC/PHY necessary parameters for receiving MTCHs
   rrc_mac_config_req(ue_mod_idP,0,ENB_FLAG_NO,0,eNB_index,
@@ -3933,7 +4208,7 @@ static void decode_MBSFNAreaConfiguration( module_id_t ue_mod_idP, uint8_t eNB_i
 #ifdef Rel10
                            ,&(UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index]->pmch_InfoList_r9)
 #endif
-                          );
+                           ,NULL);
 
   rrc_rlc_config_asn1_req(&ctxt,
                           NULL,// SRB_ToAddModList
@@ -4090,6 +4365,30 @@ void *rrc_ue_task( void *args_p )
 
 # if defined(ENABLE_USE_MME)
 
+    case NAS_KENB_REFRESH_REQ:
+        memcpy((void*)UE_rrc_inst[ue_mod_id].kenb, (void*)NAS_KENB_REFRESH_REQ(msg_p).kenb, sizeof(UE_rrc_inst[ue_mod_id].kenb));
+
+        LOG_D(RRC, "[UE %d] Received %s: refreshed RRC::KeNB = "
+            "%02x%02x%02x%02x"
+            "%02x%02x%02x%02x"
+            "%02x%02x%02x%02x"
+            "%02x%02x%02x%02x"
+            "%02x%02x%02x%02x"
+            "%02x%02x%02x%02x"
+            "%02x%02x%02x%02x"
+            "%02x%02x%02x%02x\n",
+            ue_mod_id, msg_name,
+            UE_rrc_inst[ue_mod_id].kenb[0],  UE_rrc_inst[ue_mod_id].kenb[1],  UE_rrc_inst[ue_mod_id].kenb[2],  UE_rrc_inst[ue_mod_id].kenb[3],
+            UE_rrc_inst[ue_mod_id].kenb[4],  UE_rrc_inst[ue_mod_id].kenb[5],  UE_rrc_inst[ue_mod_id].kenb[6],  UE_rrc_inst[ue_mod_id].kenb[7],
+            UE_rrc_inst[ue_mod_id].kenb[8],  UE_rrc_inst[ue_mod_id].kenb[9],  UE_rrc_inst[ue_mod_id].kenb[10], UE_rrc_inst[ue_mod_id].kenb[11],
+            UE_rrc_inst[ue_mod_id].kenb[12], UE_rrc_inst[ue_mod_id].kenb[13], UE_rrc_inst[ue_mod_id].kenb[14], UE_rrc_inst[ue_mod_id].kenb[15],
+            UE_rrc_inst[ue_mod_id].kenb[16], UE_rrc_inst[ue_mod_id].kenb[17], UE_rrc_inst[ue_mod_id].kenb[18], UE_rrc_inst[ue_mod_id].kenb[19],
+            UE_rrc_inst[ue_mod_id].kenb[20], UE_rrc_inst[ue_mod_id].kenb[21], UE_rrc_inst[ue_mod_id].kenb[22], UE_rrc_inst[ue_mod_id].kenb[23],
+            UE_rrc_inst[ue_mod_id].kenb[24], UE_rrc_inst[ue_mod_id].kenb[25], UE_rrc_inst[ue_mod_id].kenb[26], UE_rrc_inst[ue_mod_id].kenb[27],
+            UE_rrc_inst[ue_mod_id].kenb[28], UE_rrc_inst[ue_mod_id].kenb[29], UE_rrc_inst[ue_mod_id].kenb[30], UE_rrc_inst[ue_mod_id].kenb[31]);
+
+      break;
+
       /* NAS messages */
     case NAS_CELL_SELECTION_REQ:
       ue_mod_id = 0; /* TODO force ue_mod_id to first UE, NAS UE not virtualized yet */
@@ -4202,12 +4501,26 @@ void *rrc_ue_task( void *args_p )
 
       /* Transfer data to PDCP */
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, ENB_FLAG_NO, UE_rrc_inst[ue_mod_id].Info[0].rnti, 0, 0,0);
-      rrc_data_req (&ctxt,
-		    DCCH,
-		    rrc_mui++,
-		    SDU_CONFIRM_NO,
-		    length, buffer,
-		    PDCP_TRANSMISSION_MODE_CONTROL);
+
+      // check if SRB2 is created, if yes request data_req on DCCH1 (SRB2) 
+      if(UE_rrc_inst[ue_mod_id].SRB2_config[0] == NULL)
+      {
+          rrc_data_req (&ctxt,
+                  DCCH,
+                  rrc_mui++,
+                  SDU_CONFIRM_NO,
+                  length, buffer,
+                  PDCP_TRANSMISSION_MODE_CONTROL);
+      }
+      else
+      {
+          rrc_data_req (&ctxt,
+                  DCCH1,
+                  rrc_mui++,
+                  SDU_CONFIRM_NO,
+                  length, buffer,
+                  PDCP_TRANSMISSION_MODE_CONTROL);
+      }
       break;
     }
       

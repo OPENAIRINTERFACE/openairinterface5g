@@ -185,6 +185,9 @@ typedef struct {
   void (*phy_config_dedicated_ue)(module_id_t Mod_id,int CC_id,uint8_t CH_index,
                                   struct PhysicalConfigDedicated *physicalConfigDedicated);
 
+  /// PHY-Config-harq UE
+  void (*phy_config_harq_ue)(module_id_t Mod_id,int CC_id,uint8_t CH_index,
+                             uint16_t max_harq_tx);
   /// Configure Common PHY parameters from SIB1
   void (*phy_config_sib1_ue)(module_id_t Mod_id,int CC_id,uint8_t CH_index,
                              TDD_Config_t *tdd_config,

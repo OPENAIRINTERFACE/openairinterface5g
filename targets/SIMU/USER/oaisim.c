@@ -127,6 +127,8 @@ char smbv_ip[16];
 //#define K                      2             /* averaging coefficient */
 //#define TARGET_SF_TIME_NS      1000000       /* 1ms = 1000000 ns */
 
+uint8_t usim_test = 0;
+
 frame_t frame = 0;
 char stats_buffer[16384];
 channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs];

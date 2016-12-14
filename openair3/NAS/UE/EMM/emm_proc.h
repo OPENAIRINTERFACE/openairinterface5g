@@ -174,7 +174,7 @@ int emm_proc_authentication_delete(void);
  * --------------------------------------------------------------------------
  */
 int emm_proc_security_mode_command(int native_ksi, int ksi, int seea, int seia,
-                                   int reea, int reia);
+                                   int reea, int reia,int imeisv_request);
 
 /*
  *---------------------------------------------------------------------------

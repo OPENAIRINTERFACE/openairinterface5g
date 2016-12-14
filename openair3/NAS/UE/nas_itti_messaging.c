@@ -180,6 +180,39 @@ int nas_itti_protected_msg(const char *buffer, const nas_message_t *msg, const i
 
 extern unsigned char NB_eNB_INST;
 
+int nas_itti_kenb_refresh_req(const Byte_t kenb[32])
+{
+  MessageDef *message_p;
+
+  message_p = itti_alloc_new_message(TASK_NAS_UE, NAS_KENB_REFRESH_REQ);
+
+  memcpy(NAS_KENB_REFRESH_REQ(message_p).kenb, kenb, sizeof(NAS_KENB_REFRESH_REQ(message_p).kenb));
+
+  MSC_LOG_TX_MESSAGE(
+      MSC_NAS_UE,
+      MSC_RRC_UE,
+      NULL,0,
+      "0 NAS_KENB_REFRESH_REQ KeNB "
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x",
+      kenb[0],  kenb[1],  kenb[2],  kenb[3],
+      kenb[4],  kenb[5],  kenb[6],  kenb[7],
+      kenb[8],  kenb[9],  kenb[10], kenb[11],
+      kenb[12], kenb[13], kenb[14], kenb[15],
+      kenb[16], kenb[17], kenb[18], kenb[19],
+      kenb[20], kenb[21], kenb[22], kenb[23],
+      kenb[24], kenb[25], kenb[26], kenb[27],
+      kenb[28], kenb[29], kenb[30], kenb[31]);
+
+  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + 0 /* TODO to be virtualized */, message_p);
+}
+
 int nas_itti_cell_info_req(const plmn_t plmnID, const Byte_t rat)
 {
   MessageDef *message_p;
