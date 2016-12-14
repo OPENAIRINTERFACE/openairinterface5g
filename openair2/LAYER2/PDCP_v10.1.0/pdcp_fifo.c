@@ -424,18 +424,22 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
   return 0;
 # else /* PDCP_USE_NETLINK_QUEUES*/
   int              len = 1;
+  int  msg_len;
   rb_id_t          rab_id  = 0;
-
-  while (len > 0) {
+  int rlc_data_req_flag = 3;
+ 
+  while ((len > 0) && (rlc_data_req_flag !=0))  {
     len = recvmsg(nas_sock_fd, &nas_msg_rx, 0);
 
     if (len<=0) {
       // nothing in pdcp NAS socket
       //LOG_D(PDCP, "[PDCP][NETLINK] Nothing in socket, length %d \n", len);
     } else {
+    
+      msg_len = len;
       for (nas_nlh_rx = (struct nlmsghdr *) nl_rx_buf;
-           NLMSG_OK (nas_nlh_rx, len);
-           nas_nlh_rx = NLMSG_NEXT (nas_nlh_rx, len)) {
+           NLMSG_OK (nas_nlh_rx, msg_len);
+           nas_nlh_rx = NLMSG_NEXT (nas_nlh_rx, msg_len)) {
 
         if (nas_nlh_rx->nlmsg_type == NLMSG_DONE) {
           LOG_D(PDCP, "[PDCP][NETLINK] RX NLMSG_DONE\n");
@@ -493,7 +497,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
           ctxt.enb_flag      = ctxt_cpy.enb_flag;
 
 #ifdef PDCP_DEBUG
-          LOG_D(PDCP, "[PDCP][NETLINK] pdcp_read_header_g.rb_id = %d\n", pdcp_read_header_g.rb_id);
+          LOG_I(PDCP, "[PDCP][NETLINK] pdcp_read_header_g.rb_id = %d\n", pdcp_read_header_g.rb_id);
 #endif
 
           if (ctxt_cpy.enb_flag) {
