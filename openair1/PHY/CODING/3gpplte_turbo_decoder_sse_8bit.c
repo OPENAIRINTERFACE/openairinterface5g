@@ -972,11 +972,6 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
   } else
     n2 = n;
 
-   if(n2<256)
-    {
-        printf("phy_threegpplte_turbo_decoder8 : frame length < 256\n");
-        return 255;
-    }
 
   for (iind=0; iind < 188 && f1f2mat[iind].nb_bits != n; iind++);
 
