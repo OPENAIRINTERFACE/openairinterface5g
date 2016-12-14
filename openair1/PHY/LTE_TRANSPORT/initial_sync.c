@@ -476,6 +476,15 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
     //#endif
 
     if (ue->UE_scan_carrier == 0) {
+
+    #if UE_AUTOTEST_TRACE
+      LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %d \n",
+              ue->Mod_id,
+              ue->proc.proc_rxtx[0].frame_rx,
+              ue->rx_offset,
+              ue->common_vars.freq_offset );
+    #endif
+
       if (ue->mac_enabled==1) {
 	LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
 	//mac_resynch();

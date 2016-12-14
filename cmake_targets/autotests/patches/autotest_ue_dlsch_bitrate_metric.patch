@@ -1,0 +1,18 @@
+diff --git a/openair1/SCHED/phy_procedures_lte_ue.c b/openair1/SCHED/phy_procedures_lte_ue.c
+index 5dc629b..353a049 100644
+--- a/openair1/SCHED/phy_procedures_lte_ue.c
++++ b/openair1/SCHED/phy_procedures_lte_ue.c
+@@ -3551,6 +3551,13 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
+     LOG_D(PHY,"[UE %d] Calculating bitrate Frame %d: total_TBS = %d, total_TBS_last = %d, bitrate %f kbits\n",
+ 	  ue->Mod_id,frame_rx,ue->total_TBS[eNB_id],
+ 	  ue->total_TBS_last[eNB_id],(float) ue->bitrate[eNB_id]/1000.0);
++
++  #if UE_AUTOTEST_TRACE
++    if ((frame_rx % 100 == 0)) {
++      LOG_I(PHY,"[UE  %d] AUTOTEST Metric : UE_DLSCH_BITRATE = %5.2f kbps (frame = %d) \n", ue->Mod_id, (float) ue->bitrate[eNB_id]/1000.0, frame_rx);
++    }
++  #endif
++
+   }
+ 
+ 
