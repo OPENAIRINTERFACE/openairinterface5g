@@ -212,6 +212,13 @@ void prach_procedures(PHY_VARS_eNB *eNB);
 
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
+/*! \brief Function to compute which type of DCIs to detect in the given subframe
+  @param frame_parms Pointer to DL frame parameter descriptor
+  @param subframe Subframe index
+  @returns DCI detetion mode type (no DCIs, uplink DCIs, downlink DCIs, both uplink and downlink DCIs)
+ */
+dci_detect_mode_t dci_detect_mode_select(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
+
 /*! \brief Function to compute subframe type as a function of Frame type and TDD Configuration (implements Table 4.2.2 from 36.211, p.11 from version 8.6) and subframe index.  Same as subframe_select, except that it uses the Mod_id and is provided as a service to the MAC scheduler.
   @param Mod_id Index of eNB
   @param CC_id Component Carrier Index

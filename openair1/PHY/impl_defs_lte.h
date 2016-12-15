@@ -1059,6 +1059,14 @@ typedef enum {
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 
+typedef enum {
+  /// do not detect any DCIs in the current subframe
+  NO_DCI = 0x0,
+  /// detect only downlink DCIs in the current subframe
+  UL_DCI = 0x1,
+  /// detect only uplink DCIs in the current subframe
+  DL_DCI = 0x2,
+  /// detect both uplink and downlink DCIs in the current subframe
+  UL_DL_DCI = 0x3} dci_detect_mode_t;
+
 #endif
-
-
