@@ -394,7 +394,7 @@ void lte_param_init(  unsigned char transmission_mode,
   lte_frame_parms->Nid_cell           = Nid_cell;
   lte_frame_parms->nushift            = Nid_cell%6;
   lte_frame_parms->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
-  lte_frame_parms->nb_antennas_tx_eNB = (transmission_mode == 1) ? 1 : 2;
+  lte_frame_parms->nb_antenna_ports_eNB = (transmission_mode == 1) ? 1 : 2;
   lte_frame_parms->nb_antennas_rx     = (transmission_mode == 1) ? 1 : 2;
   lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
   lte_frame_parms->phich_config_common.phich_resource = oneSixth;

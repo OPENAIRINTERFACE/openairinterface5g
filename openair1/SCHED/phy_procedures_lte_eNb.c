@@ -690,7 +690,8 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 				       SI_RNTI,
 				       0,
 				       P_RNTI,
-				       eNB->UE_stats[0].DL_pmi_single);
+				       eNB->UE_stats[0].DL_pmi_single,
+				       0);
     
     
     eNB->dlsch_SI->nCCE[subframe] = dci_alloc->firstCCE;
@@ -723,7 +724,8 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 				       SI_RNTI,
 				       dci_alloc->rnti,
 				       P_RNTI,
-				       eNB->UE_stats[0].DL_pmi_single);
+				       eNB->UE_stats[0].DL_pmi_single,
+				       0);
     
     
     eNB->dlsch_ra->nCCE[subframe] = dci_alloc->firstCCE;
@@ -772,7 +774,8 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 					 SI_RNTI,
 					 0,
 					 P_RNTI,
-					 eNB->UE_stats[(uint8_t)UE_id].DL_pmi_single);
+					 eNB->UE_stats[(uint8_t)UE_id].DL_pmi_single,
+					 eNB->transmission_mode[(uint8_t)UE_id]<7?0:eNB->transmission_mode[(uint8_t)UE_id]);
       LOG_D(PHY,"[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d subframe %d: Generated dlsch params\n",
 	    eNB->Mod_id,dci_alloc->rnti,eNB->dlsch[(uint8_t)UE_id][0]->current_harq_pid,frame,subframe);
       
@@ -905,7 +908,10 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
 	      dlsch_harq->rb_alloc,
 	      get_Qm(dlsch_harq->mcs),
 	      dlsch_harq->Nl,
-	      num_pdcch_symbols,frame,subframe),
+	      num_pdcch_symbols,
+	      frame,
+	      subframe,
+	      dlsch_harq->mimo_mode==TM7?7:0),
 	dlsch_harq->nb_rb,
 	dlsch_harq->mcs,
 	pmi2hex_2Ar1(dlsch_harq->pmi_alloc),
@@ -924,7 +930,10 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
 			   dlsch_harq->rb_alloc,
 			   get_Qm(dlsch_harq->mcs),
 			   dlsch_harq->Nl,
-			   num_pdcch_symbols,frame,subframe),
+			   num_pdcch_symbols,
+			   frame,
+			   subframe,
+			   dlsch_harq->mimo_mode==TM7?7:0),
 		     dlsch_harq->nb_rb,
 		     dlsch_harq->mcs,
 		     pmi2hex_2Ar1(dlsch_harq->pmi_alloc),
@@ -1081,7 +1090,9 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
 			   dlsch_harq->rb_alloc,
 			   get_Qm(dlsch_harq->mcs),
 			   dlsch_harq->Nl,
-			   num_pdcch_symbols,frame,subframe),
+			   num_pdcch_symbols,
+			   frame,subframe,
+			   0),
 		     0,
 		     subframe<<1);
     stop_meas(&eNB->dlsch_scrambling_stats);
@@ -1089,10 +1100,10 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
     start_meas(&eNB->dlsch_modulation_stats);
 
 
-    dlsch_modulation(eNB->common_vars.txdataF[0],
+    dlsch_modulation(eNB,
+		     eNB->common_vars.txdataF[0],
 		     AMP,
 		     subframe,
-		     fp,
 		     num_pdcch_symbols,
 		     dlsch,
 		     dlsch1);
@@ -1184,7 +1195,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   // clear the transmit data array for the current subframe
   if (eNB->abstraction_flag==0) {
-    for (aa=0; aa<fp->nb_antennas_tx_eNB; aa++) {      
+    for (aa=0; aa<fp->nb_antenna_ports_eNB; aa++) {      
       memset(&eNB->common_vars.txdataF[0][aa][subframe*fp->ofdm_symbol_size*(fp->symbols_per_tti)],
              0,fp->ofdm_symbol_size*(fp->symbols_per_tti)*sizeof(int32_t));
     }

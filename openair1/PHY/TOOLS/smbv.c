@@ -119,7 +119,7 @@ int smbv_write_config_from_frame_parms(const char* fname, LTE_DL_FRAME_PARMS *fr
   fprintf(f_ptr, "BB:EUTR:TDD:SPSC %d\n",frame_parms->tdd_config_S);
 
   // MIMO
-  fprintf(f_ptr, "BB:EUTR:DL:MIMO:CONF TX%d\n",frame_parms->nb_antennas_tx_eNB);
+  fprintf(f_ptr, "BB:EUTR:DL:MIMO:CONF TX%d\n",frame_parms->nb_antenna_ports_eNB);
   fprintf(f_ptr, "BB:EUTR:DL:MIMO:ANTA ANT1\n");
   fprintf(f_ptr, "BB:EUTR:DL:MIMO:ANTB NONE\n");
 

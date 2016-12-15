@@ -128,6 +128,8 @@ extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
 extern int sync_var;
 
+extern transmission_mode;
+
 //pthread_t                       main_eNB_thread;
 
 time_stats_t softmodem_stats_mt; // main thread
@@ -273,27 +275,43 @@ static inline void wait_sync(char *thread_name) {
 
 }
 
-void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB) {
-     
-  unsigned int aa,slot_offset, slot_offset_F;
-  int dummy_tx_b[7680*4] __attribute__((aligned(32)));
-  int i,j, tx_offset;
-  int slot_sizeF = (phy_vars_eNB->frame_parms.ofdm_symbol_size)*
-                   ((phy_vars_eNB->frame_parms.Ncp==1) ? 6 : 7);
-  int len,len2;
-  int16_t *txdata;
-//  int CC_id = phy_vars_eNB->proc.CC_id;
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_SFGEN , 1 );
+void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
+{
 
-  slot_offset_F = (subframe<<1)*slot_sizeF;
+  unsigned int aa,slot_offset;
+  //int dummy_tx_b[7680*4] __attribute__((aligned(32)));
+  int i, tx_offset;
+  //int slot_sizeF = (phy_vars_eNB->frame_parms.ofdm_symbol_size)* ((phy_vars_eNB->frame_parms.Ncp==1) ? 6 : 7);
+  int len;
+  //int slot_offset_F = (subframe<<1)*slot_sizeF;
 
   slot_offset = subframe*phy_vars_eNB->frame_parms.samples_per_tti;
 
+  
   if ((subframe_select(&phy_vars_eNB->frame_parms,subframe)==SF_DL)||
       ((subframe_select(&phy_vars_eNB->frame_parms,subframe)==SF_S))) {
     //    LOG_D(HW,"Frame %d: Generating slot %d\n",frame,next_slot);
 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_OFDM_MODULATION,1);
+
+    do_OFDM_mod_symbol(&phy_vars_eNB->common_vars,
+                  0,
+                  subframe<<1,
+                  &phy_vars_eNB->frame_parms);
+ 
+    // if S-subframe generate first slot only 
+    if (subframe_select(&phy_vars_eNB->frame_parms,subframe) == SF_DL) {
+      do_OFDM_mod_symbol(&phy_vars_eNB->common_vars,
+                    0,
+                    1+(subframe<<1),
+                    &phy_vars_eNB->frame_parms);
+    }
+
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_OFDM_MODULATION,0);
+    
+
+/*
     for (aa=0; aa<phy_vars_eNB->frame_parms.nb_antennas_tx; aa++) {
       if (phy_vars_eNB->frame_parms.Ncp == EXTENDED) {
         PHY_ofdm_mod(&phy_vars_eNB->common_vars.txdataF[0][aa][slot_offset_F],
@@ -315,13 +333,15 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB) {
                           7,
                           &(phy_vars_eNB->frame_parms));
 	// if S-subframe generate first slot only
-	if (subframe_select(&phy_vars_eNB->frame_parms,subframe) == SF_DL) 
+	if (subframe_select(&phy_vars_eNB->frame_parms,subframe) == SF_DL)
 	  normal_prefix_mod(&phy_vars_eNB->common_vars.txdataF[0][aa][slot_offset_F+slot_sizeF],
 			    dummy_tx_b+(phy_vars_eNB->frame_parms.samples_per_tti>>1),
 			    7,
 			    &(phy_vars_eNB->frame_parms));
       }
+    } */
 
+    for (aa=0; aa<phy_vars_eNB->frame_parms.nb_antennas_tx; aa++) {
       // if S-subframe generate first slot only
       if (subframe_select(&phy_vars_eNB->frame_parms,subframe) == SF_S)
 	len = phy_vars_eNB->frame_parms.samples_per_tti>>1;
@@ -334,55 +354,36 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB) {
 	dummy_tx_b[i+2] = 0xff00;
 	dummy_tx_b[i+3] = 0xff000000;
 	}*/
-      
-      if (slot_offset+time_offset[aa]<0) {
-	txdata = (int16_t*)&phy_vars_eNB->common_vars.txdata[0][aa][(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti)+tx_offset];
-        len2 = -(slot_offset+time_offset[aa]);
-	len2 = (len2>len) ? len : len2;
-	for (i=0; i<(len2<<1); i++) {
-	  txdata[i] = ((int16_t*)dummy_tx_b)[i]<<openair0_cfg[0].iq_txshift;
-	}
-	if (len2<len) {
-	  txdata = (int16_t*)&phy_vars_eNB->common_vars.txdata[0][aa][0];
-	  for (j=0; i<(len<<1); i++,j++) {
-	    txdata[j++] = ((int16_t*)dummy_tx_b)[i]<<openair0_cfg[0].iq_txshift;
-	  }
-	}
-      }  
-      else if ((slot_offset+time_offset[aa]+len)>(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti)) {
-	tx_offset = (int)slot_offset+time_offset[aa];
-	txdata = (int16_t*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset];
-	len2 = -tx_offset+LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti;
-	for (i=0; i<(len2<<1); i++) {
-	  txdata[i] = ((int16_t*)dummy_tx_b)[i]<<openair0_cfg[0].iq_txshift;
-	}
-	txdata = (int16_t*)&phy_vars_eNB->common_vars.txdata[0][aa][0];
-	for (j=0; i<(len<<1); i++,j++) {
-	  txdata[j++] = ((int16_t*)dummy_tx_b)[i]<<openair0_cfg[0].iq_txshift;
-	}
-      }
-      else {
-	tx_offset = (int)slot_offset+time_offset[aa];
-	txdata = (int16_t*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset];
+      for (i=0; i<len; i++) {
+        tx_offset = (int)slot_offset+time_offset[aa]+i;
 
-	for (i=0; i<(len<<1); i++) {
-	  txdata[i] = ((int16_t*)dummy_tx_b)[i]<<openair0_cfg[0].iq_txshift;
-	}
-      }
-      
+	
+        if (tx_offset<0)
+          tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti;
+
+        if (tx_offset>=(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti))
+          tx_offset -= LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti;
+
+/*	((short*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset])[0] = ((short*)dummy_tx_b)[2*i]<<openair0_cfg[0].iq_txshift;
+	
+	((short*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset])[1] = ((short*)dummy_tx_b)[2*i+1]<<openair0_cfg[0].iq_txshift; */
+
+	((short*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset])[0] = ((short*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset])[0]<<openair0_cfg[0].iq_txshift;
+	
+	((short*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset])[1] = ((short*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset])[1]<<openair0_cfg[0].iq_txshift;
+     }
      // if S-subframe switch to RX in second subframe
-      /*
      if (subframe_select(&phy_vars_eNB->frame_parms,subframe) == SF_S) {
        for (i=0; i<len; i++) {
 	 phy_vars_eNB->common_vars.txdata[0][aa][tx_offset++] = 0x00010001;
        }
      }
-      */
+
      if ((((phy_vars_eNB->frame_parms.tdd_config==0) ||
-	   (phy_vars_eNB->frame_parms.tdd_config==1) ||
-	   (phy_vars_eNB->frame_parms.tdd_config==2) ||
-	   (phy_vars_eNB->frame_parms.tdd_config==6)) && 
-	   (subframe==0)) || (subframe==5)) {
+	  (phy_vars_eNB->frame_parms.tdd_config==1) ||
+	  (phy_vars_eNB->frame_parms.tdd_config==2) ||
+	  (phy_vars_eNB->frame_parms.tdd_config==6)) && 
+	  (subframe==0)) || (subframe==5)) {
        // turn on tx switch N_TA_offset before
        //LOG_D(HW,"subframe %d, time to switch to tx (N_TA_offset %d, slot_offset %d) \n",subframe,phy_vars_eNB->N_TA_offset,slot_offset);
        for (i=0; i<phy_vars_eNB->N_TA_offset; i++) {
@@ -390,16 +391,16 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB) {
          if (tx_offset<0)
            tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti;
 	 
-         if (tx_offset>=(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti))
-           tx_offset -= LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti;
+	 if (tx_offset>=(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti))
+	   tx_offset -= LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti;
 	 
-         phy_vars_eNB->common_vars.txdata[0][aa][tx_offset] = 0x00000000;
+	 phy_vars_eNB->common_vars.txdata[0][aa][tx_offset] = 0x00000000;
        }
      }
     }
   }
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_SFGEN , 0 );
 }
+
 
 void tx_fh_if5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, proc->timestamp_tx&0xffffffff );
@@ -470,15 +471,16 @@ void proc_tx_full(PHY_VARS_eNB *eNB,
   if (eNB->tx_fh) eNB->tx_fh(eNB,proc);
 
   /*
-   if (proc->frame_tx>1000) {
-     write_output("/tmp/txsig0.m","txs0", &eNB->common_vars.txdata[eNB->Mod_id][0][0], eNB->frame_parms.samples_per_tti*10,1,1);
-     write_output("/tmp/txsigF0.m","txsF0", &eNB->common_vars.txdataF[eNB->Mod_id][0][0],eNB->frame_parms.symbols_per_tti*eNB->frame_parms.ofdm_symbol_size*10,1,1);
-     write_output("/tmp/txsig1.m","txs1", &eNB->common_vars.txdata[eNB->Mod_id][1][0], eNB->frame_parms.samples_per_tti*10,1,1);
-     write_output("/tmp/txsigF1.m","txsF1", &eNB->common_vars.txdataF[eNB->Mod_id][1][0],eNB->frame_parms.symbols_per_tti*eNB->frame_parms.ofdm_symbol_size*10,1,1);
-     //if (transmission_mode == 7) write_output("/tmp/txsigF5.m","txsF5", &eNB->common_vars.txdataF[eNB->Mod_id][5][0],eNB->frame_parms.symbols_per_tti*eNB->frame_parms.ofdm_symbol_size*10,1,1);
-     exit_fun("");
-   }
-   */
+  if (proc->frame_tx>1000) {
+    write_output("/tmp/txsig0.m","txs0", &eNB->common_vars.txdata[eNB->Mod_id][0][0], eNB->frame_parms.samples_per_tti*10,1,1);
+    write_output("/tmp/txsigF0.m","txsF0", &eNB->common_vars.txdataF[eNB->Mod_id][0][0],eNB->frame_parms.symbols_per_tti*eNB->frame_parms.ofdm_symbol_size*10,1,1);
+    write_output("/tmp/txsig1.m","txs1", &eNB->common_vars.txdata[eNB->Mod_id][1][0], eNB->frame_parms.samples_per_tti*10,1,1);
+    write_output("/tmp/txsigF1.m","txsF1", &eNB->common_vars.txdataF[eNB->Mod_id][1][0],eNB->frame_parms.symbols_per_tti*eNB->frame_parms.ofdm_symbol_size*10,1,1);
+    if (transmission_mode == 7) 
+      write_output("/tmp/txsigF5.m","txsF5", &eNB->common_vars.txdataF[eNB->Mod_id][5][0],eNB->frame_parms.symbols_per_tti*eNB->frame_parms.ofdm_symbol_size*10,1,1);
+    exit_fun("");
+  }
+  */
 }
 
 void proc_tx_rru_if4p5(PHY_VARS_eNB *eNB,
@@ -1484,8 +1486,8 @@ void kill_eNB_proc(int inst) {
    antennas are mapped to successive RF chains on the same card. */
 int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg) {
 
-  int i, CC_id;
-  int j;
+  int i,j; 
+  int CC_id,card,ant;
 
   //uint16_t N_TA_offset = 0;
 
@@ -1516,10 +1518,12 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
     // replace RX signal buffers with mmaped HW versions
       
       for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-	printf("Mapping eNB CC_id %d, rx_ant %d\n",CC_id,i);
+	card = i/4;
+	ant = i%4;
+	printf("Mapping eNB CC_id %d, rx_ant %d, on card %d, chain %d\n",CC_id,i,phy_vars_eNB[CC_id]->rf_map.card+card, phy_vars_eNB[CC_id]->rf_map.chain+ant);
 	free(phy_vars_eNB[CC_id]->common_vars.rxdata[0][i]);
-	phy_vars_eNB[CC_id]->common_vars.rxdata[0][i] = openair0_cfg[CC_id].rxbase[i];
-
+	phy_vars_eNB[CC_id]->common_vars.rxdata[0][i] = openair0_cfg[phy_vars_eNB[CC_id]->rf_map.card+card].rxbase[phy_vars_eNB[CC_id]->rf_map.chain+ant];
+	
 	printf("rxdata[%d] @ %p\n",i,phy_vars_eNB[CC_id]->common_vars.rxdata[0][i]);
 	for (j=0; j<16; j++) {
 	  printf("rxbuffer %d: %x\n",j,phy_vars_eNB[CC_id]->common_vars.rxdata[0][i][j]);
@@ -1528,9 +1532,11 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
       }
       
       for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-	printf("Mapping eNB CC_id %d, tx_ant %d\n",CC_id,i);
+	card = i/4;
+	ant = i%4;
+	printf("Mapping eNB CC_id %d, tx_ant %d, on card %d, chain %d\n",CC_id,i,phy_vars_eNB[CC_id]->rf_map.card+card, phy_vars_eNB[CC_id]->rf_map.chain+ant);
 	free(phy_vars_eNB[CC_id]->common_vars.txdata[0][i]);
-	phy_vars_eNB[CC_id]->common_vars.txdata[0][i] = openair0_cfg[CC_id].txbase[i];//(int32_t*) openair0_exmimo_pci[rf_map[CC_id].card].dac_head[rf_map[CC_id].chain+i];
+	phy_vars_eNB[CC_id]->common_vars.txdata[0][i] = openair0_cfg[phy_vars_eNB[CC_id]->rf_map.card+card].txbase[phy_vars_eNB[CC_id]->rf_map.chain+ant];
 	
 	printf("txdata[%d] @ %p\n",i,phy_vars_eNB[CC_id]->common_vars.txdata[0][i]);
 	

@@ -119,6 +119,7 @@ endmacro(add_list_string_option)
 ####################################################
 # compilation flags
 #############################################
+#set(CMAKE_BUILD_TYPE "Debug")
 if (CMAKE_BUILD_TYPE STREQUAL "")
    set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
@@ -476,7 +477,7 @@ include_directories ("${X2AP_DIR}")
 # Hardware dependant options
 ###################################
 add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4")
-add_list1_option(NB_ANTENNAS_TX "2" "Number of antennas in transmission" "1" "2" "4")
+add_list1_option(NB_ANTENNAS_TX "4" "Number of antennas in transmission" "1" "2" "4")
 add_list1_option(NB_ANTENNAS_TXRX "2" "Number of antennas in ????" "1" "2" "4")
 
 add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "EXMIMO" "OAI_USRP" "OAI_BLADERF" "CPRIGW" "OAI_LMSSDR")
@@ -1070,11 +1071,14 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep_mbsfn.c
   ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep_ul.c
   ${OPENAIR1_DIR}/PHY/MODULATION/ul_7_5_kHz.c
+  ${OPENAIR1_DIR}/PHY/MODULATION/beamforming.c
+  ${OPENAIR1_DIR}/PHY/MODULATION/compute_bf_weights.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/freq_equalization.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_sync_time.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_sync_timefreq.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_adjust_sync.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.c
+  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_dl_bf_channel_estimation.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_dl_mbsfn_channel_estimation.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ul_channel_estimation.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_est_freq_offset.c
@@ -1967,7 +1971,7 @@ target_link_libraries (oaisim_nos1 ${T_LIB})
 # Unitary tests for each piece of L1: example, mbmssim is MBMS L1 simulator
 #####################################
 
-foreach(myExe dlsim ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
+foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
   add_executable(${myExe}
     ${OPENAIR_BIN_DIR}/messages_xml.h
     ${OPENAIR1_DIR}/SIMULATION/LTE_PHY/${myExe}.c
@@ -2049,6 +2053,7 @@ if (${T_TRACER})
   add_dependencies(oaisim generate_T)
   add_dependencies(oaisim_nos1 generate_T)
   add_dependencies(dlsim generate_T)
+  add_dependencies(dlsim_tm7 generate_T)
   add_dependencies(ulsim generate_T)
   add_dependencies(pbchsim generate_T)
   add_dependencies(scansim generate_T)

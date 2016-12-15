@@ -335,7 +335,7 @@ function main() {
   #By default: EXMIMO: enable
   if [ "$FORCE_DEADLINE_SCHEDULER_FLAG_USER" = "" ]; then
      if [ "$HW" = "EXMIMO" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="False"
+        DEADLINE_SCHEDULER_FLAG_USER="True"
      elif [ "$HW" = "ETHERNET" ] ; then 
         DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "OAI_USRP" ] ; then 

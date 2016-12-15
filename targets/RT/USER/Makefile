@@ -193,7 +193,7 @@ CFLAGS += -DHARD_RT
 endif
 
 ifeq ($(EMOS),1)
-CFLAGS += -D_FILE_OFFSET_BITS=64 -DEMOS #-DEMOS_CHANNEL
+CFLAGS += -D_FILE_OFFSET_BITS=64 #-DEMOS -DEMOS_CHANNEL
 LDFLAGS += -lgps
 endif
 
@@ -320,6 +320,7 @@ drivers:
 #	cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make clean && make
 	cd $(OPENAIR_TARGETS)/ARCH/EXMIMO/DRIVER/eurecom && make clean && make 
 	cd $(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT && make clean && make 
+	cp $(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT/updatefw $(OPENAIR_TARGETS)/bin/.
 
 run: condtest
 	rtai-load condtest --verbose

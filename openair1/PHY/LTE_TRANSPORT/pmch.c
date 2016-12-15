@@ -305,7 +305,7 @@ void generate_mch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t *a)
               eNB->frame_parms.N_RB_DL,
               eNB->dlsch_MCH->harq_processes[0]->rb_alloc,
               get_Qm(eNB->dlsch_MCH->harq_processes[0]->mcs),1,
-              2,proc->frame_tx,subframe);
+              2,proc->frame_tx,subframe,0);
 
     generate_mbsfn_pilot(eNB,proc,
                          eNB->common_vars.txdataF[0],

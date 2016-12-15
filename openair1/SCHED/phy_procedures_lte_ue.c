@@ -93,7 +93,9 @@ void dump_dlsch(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subf
                                   ue->dlsch[eNB_id][0]->harq_processes[harq_pid]->Qm,
                                   ue->dlsch[eNB_id][0]->harq_processes[harq_pid]->Nl,
                                   ue->pdcch_vars[eNB_id]->num_pdcch_symbols,
-                                  proc->frame_rx,subframe);
+                                  proc->frame_rx,
+				  subframe,
+				  ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id]);
 
   write_output("rxsigF0.m","rxsF0", ue->common_vars.rxdataF[0],2*nsymb*ue->frame_parms.ofdm_symbol_size,2,1);
   write_output("rxsigF0_ext.m","rxsF0_ext", ue->pdsch_vars[0]->rxdataF_ext[0],2*nsymb*ue->frame_parms.ofdm_symbol_size,1,1);
@@ -122,7 +124,9 @@ void dump_dlsch_SI(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t s
                                   2,
                                   1,
                                   ue->pdcch_vars[eNB_id]->num_pdcch_symbols,
-                                  proc->frame_rx,subframe);
+                                  proc->frame_rx,
+				  subframe,
+				  0);
   LOG_D(PHY,"[UE %d] Dumping dlsch_SI : ofdm_symbol_size %d, nsymb %d, nb_rb %d, mcs %d, nb_rb %d, num_pdcch_symbols %d,G %d\n",
         ue->Mod_id,
 	ue->frame_parms.ofdm_symbol_size,
@@ -228,7 +232,9 @@ void dump_dlsch_ra(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t s
                                   2,
                                   1,
                                   ue->pdcch_vars[eNB_id]->num_pdcch_symbols,
-                                  proc->frame_rx,subframe);
+                                  proc->frame_rx,
+				  subframe,
+				  0);
   LOG_D(PHY,"[UE %d] Dumping dlsch_ra : nb_rb %d, mcs %d, nb_rb %d, num_pdcch_symbols %d,G %d\n",
         ue->Mod_id,
         ue->dlsch_ra[eNB_id]->harq_processes[0]->nb_rb,
@@ -2593,7 +2599,8 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 					     ue->pdsch_config_dedicated,
 					     SI_RNTI,
 					     0,
-					     P_RNTI)==0)) {
+					     P_RNTI,
+					     ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id])==0)) {
 
 	ue->dlsch_received[eNB_id]++;
 	
@@ -2636,7 +2643,8 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 					    ue->pdsch_config_dedicated,
 					    SI_RNTI,
 					    0,
-					    P_RNTI)==0) {
+					    P_RNTI,
+					    ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id])==0) {
 
 	ue->dlsch_SI_received[eNB_id]++;
  
@@ -2665,7 +2673,8 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 					    ue->pdsch_config_dedicated,
 					    SI_RNTI,
 					    0,
-					    P_RNTI)==0) {
+					    P_RNTI,
+					    ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id])==0) {
 
 	ue->dlsch_p_received[eNB_id]++;
  
@@ -2699,7 +2708,8 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 					    ue->pdsch_config_dedicated,
 					    SI_RNTI,
 					    ue->prach_resources[eNB_id]->ra_RNTI,
-					    P_RNTI)==0) {
+					    P_RNTI,
+					    ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id])==0) {
 
 	ue->dlsch_ra_received[eNB_id]++;
 
@@ -2848,7 +2858,9 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
 						       ue->dlsch_MCH[0]->harq_processes[0]->Qm,
 						       1,
 						       2,
-						       frame_rx,subframe_rx);
+						       frame_rx,
+						       subframe_rx,
+						       0);
 	
 	dlsch_unscrambling(&ue->frame_parms,1,ue->dlsch_MCH[0],
 			   ue->dlsch_MCH[0]->harq_processes[0]->G,
@@ -2959,7 +2971,18 @@ void ue_pdsch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, int eNB_id, PDSC
 	eNB_id_i = eNB_id+1;
 	i_mod = 0;
       }
-      
+
+      //TM7 UE specific channel estimation here!!!
+      if (ue->transmission_mode[eNB_id]==7) {
+        if (ue->frame_parms.Ncp==0) {
+          if ((m==3) || (m==6) || (m==9) || (m==12))
+            //LOG_D(PHY,"[UE %d] dlsch->active in subframe %d => %d, l=%d\n",phy_vars_ue->Mod_id,subframe_rx,phy_vars_ue->dlsch_ue[eNB_id][0]->active, l);
+            lte_dl_bf_channel_estimation(ue,eNB_id,0,subframe_rx*2+(m>6?1:0),5,m);
+        } else {
+          LOG_E(PHY,"[UE %d]Beamforming channel estimation not supported yet for TM7 extented CP.\n",ue->Mod_id);
+        }
+      }
+     
       if ((m==s0) && (m<4))
 	first_symbol_flag = 1;
       else
@@ -3132,7 +3155,9 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
 						  dlsch0->harq_processes[harq_pid]->Qm,
 						  dlsch0->harq_processes[harq_pid]->Nl,
 						  ue->pdcch_vars[eNB_id]->num_pdcch_symbols,
-						  frame_rx,subframe_rx);
+						  frame_rx,
+						  subframe_rx,
+						  ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id]);
       start_meas(&ue->dlsch_unscrambling_stats);
       dlsch_unscrambling(&ue->frame_parms,
 			 0,

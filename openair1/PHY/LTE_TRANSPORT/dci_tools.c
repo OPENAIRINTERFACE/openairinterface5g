@@ -865,7 +865,8 @@ int generate_eNB_dlsch_params_from_dci(int frame,
                                        uint16_t si_rnti,
                                        uint16_t ra_rnti,
                                        uint16_t p_rnti,
-                                       uint16_t DL_pmi_single)
+                                       uint16_t DL_pmi_single,
+				       uint8_t beamforming_mode)
 {
 
   uint8_t harq_pid = UINT8_MAX;
@@ -1233,7 +1234,13 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
     dlsch0_harq->Nl          = 1;
     //    dlsch[0]->layer_index = 0;
-    dlsch0_harq->mimo_mode   = (frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI;
+    if (beamforming_mode == 0)
+      dlsch0_harq->mimo_mode = (frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI;
+    else if (beamforming_mode == 7)
+      dlsch0_harq->mimo_mode = TM7;
+    else
+      LOG_E(PHY,"Invalid beamforming mode %dL\n", beamforming_mode);
+      
     dlsch0_harq->dl_power_off = 1;
     /*
       if (dlsch[0]->harq_processes[harq_pid]->first_tx == 1) {
@@ -2682,7 +2689,7 @@ int generate_eNB_dlsch_params_from_dci(int frame,
   // compute DL power control parameters
   computeRhoA_eNB(pdsch_config_dedicated, dlsch[0],dlsch0_harq->dl_power_off);
 
-  computeRhoB_eNB(pdsch_config_dedicated,&(frame_parms->pdsch_config_common),frame_parms->nb_antennas_tx_eNB,dlsch[0],dlsch0_harq->dl_power_off);
+  computeRhoB_eNB(pdsch_config_dedicated,&(frame_parms->pdsch_config_common),frame_parms->nb_antenna_ports_eNB,dlsch[0],dlsch0_harq->dl_power_off);
 
   return(0);
 }
@@ -3448,7 +3455,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci)
 
     if ((frame_parms->frame_type == TDD) &&
         (frame_parms->tdd_config>0)) {
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         switch(frame_parms->N_RB_DL) {
         case 6:
           LOG_D(PHY,"DCI format2A 2 antennas (FDD 1.5 MHz), rnti %x (%x): rb_alloc %x, mcs1 %d, mcs2 %d, harq_pid %d, ndi1 %d, ndi2 %d, RV1 %d, RV2 %d, TPC %d, dai %d, tbswap %d\n",
@@ -3527,7 +3534,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci)
           DevParam (frame_parms->N_RB_DL, 0, 0);
           break;
         }
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         switch(frame_parms->N_RB_DL) {
         case 6:
           LOG_D(PHY,"DCI format2A 4 antennas (TDD 1.5 MHz), rnti %x (%llx): rb_alloc %x, mcs1 %d, mcs2 %d, harq_pid %d, ndi1 %d, ndi2 %d, RV1 %d, RV2 %d, TPC %d, dai %d, tbswap %d, tpmi %d\n",
@@ -3612,7 +3619,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci)
         }
       }
     } else if (frame_parms->frame_type == FDD) {
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         switch(frame_parms->N_RB_DL) {
         case 6:
           LOG_D(PHY,"DCI format2A 2 antennas (FDD, 1.5 MHz), rnti %x (%x):  rb_alloc %x, mcs1 %d, mcs2 %d, harq_pid %d, ndi1 %d, ndi2 %d, RV1 %d, RV2 %d, tb_swap %d, TPC %d\n",
@@ -3686,7 +3693,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci)
           DevParam (frame_parms->N_RB_DL, 0, 0);
           break;
         }
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         switch(frame_parms->N_RB_DL) {
 
         case 6:
@@ -3810,7 +3817,8 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                       PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
                                       uint16_t si_rnti,
                                       uint16_t ra_rnti,
-                                      uint16_t p_rnti)
+                                      uint16_t p_rnti,
+                                      uint8_t beamforming_mode)
 {
 
   uint8_t harq_pid=0;
@@ -4127,6 +4135,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     dlsch0_harq->rvidx = rv;
     dlsch0_harq->Nl = 1;
     //    dlsch[0]->layer_index = 0;
+
     dlsch0_harq->mimo_mode = frame_parms->mode1_flag == 1 ?SISO : ALAMOUTI;
     dlsch0_harq->dl_power_off = 1; //no power offset
 
@@ -4503,7 +4512,13 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
     dlsch[0]->rnti = rnti;
 
-    dlsch0_harq->mimo_mode   = (frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI;
+    if (beamforming_mode == 0)
+      dlsch0_harq->mimo_mode   = (frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI;
+    else if (beamforming_mode == 7)
+      dlsch0_harq->mimo_mode   = TM7;
+    else
+      LOG_E(PHY,"Not supported beamforming mode %d\n",beamforming_mode);
+       
 
     dlsch0 = dlsch[0];
 
@@ -4513,7 +4528,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     switch (frame_parms->N_RB_DL) {
 
     case 6:
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         if (frame_type == TDD) {
           mcs1      = ((DCI2_1_5MHz_2A_TDD_t *)dci_pdu)->mcs1;
           mcs2      = ((DCI2_1_5MHz_2A_TDD_t *)dci_pdu)->mcs2;
@@ -4533,7 +4548,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
           tbswap    = ((DCI2_1_5MHz_2A_FDD_t *)dci_pdu)->tb_swap;
           tpmi      = ((DCI2_1_5MHz_2A_FDD_t *)dci_pdu)->tpmi;
         }
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         if (frame_type == TDD) {
           mcs1      = ((DCI2_1_5MHz_4A_TDD_t *)dci_pdu)->mcs1;
           mcs2      = ((DCI2_1_5MHz_4A_TDD_t *)dci_pdu)->mcs2;
@@ -4554,13 +4569,13 @@ int generate_ue_dlsch_params_from_dci(int frame,
           tpmi      = ((DCI2_1_5MHz_4A_FDD_t *)dci_pdu)->tpmi;
         }
       } else {
-        LOG_E(PHY,"UE: subframe %d Format2 DCI: unsupported number of TX antennas %d\n",subframe,frame_parms->nb_antennas_tx_eNB);
+        LOG_E(PHY,"UE: subframe %d Format2 DCI: unsupported number of TX antennas %d\n",subframe,frame_parms->nb_antenna_ports_eNB);
       }
 
       break;
 
     case 25:
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         if (frame_type == TDD) {
           mcs1      = ((DCI2_5MHz_2A_TDD_t *)dci_pdu)->mcs1;
           mcs2      = ((DCI2_5MHz_2A_TDD_t *)dci_pdu)->mcs2;
@@ -4582,7 +4597,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
           tbswap    = ((DCI2_5MHz_2A_FDD_t *)dci_pdu)->tb_swap;
           tpmi      = ((DCI2_5MHz_2A_FDD_t *)dci_pdu)->tpmi;
         }
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         if (frame_type == TDD) {
           mcs1      = ((DCI2_5MHz_4A_TDD_t *)dci_pdu)->mcs1;
           mcs2      = ((DCI2_5MHz_4A_TDD_t *)dci_pdu)->mcs2;
@@ -4605,13 +4620,13 @@ int generate_ue_dlsch_params_from_dci(int frame,
           tpmi      = ((DCI2_5MHz_4A_FDD_t *)dci_pdu)->tpmi;
         }
       } else {
-        LOG_E(PHY,"UE: Format2 DCI: unsupported number of TX antennas %d\n",frame_parms->nb_antennas_tx_eNB);
+        LOG_E(PHY,"UE: Format2 DCI: unsupported number of TX antennas %d\n",frame_parms->nb_antenna_ports_eNB);
       }
 
       break;
 
     case 50:
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         if (frame_type == TDD) {
           mcs1      = ((DCI2_10MHz_2A_TDD_t *)dci_pdu)->mcs1;
           mcs2      = ((DCI2_10MHz_2A_TDD_t *)dci_pdu)->mcs2;
@@ -4633,7 +4648,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
           tbswap    = ((DCI2_10MHz_2A_FDD_t *)dci_pdu)->tb_swap;
           tpmi      = ((DCI2_10MHz_2A_FDD_t *)dci_pdu)->tpmi;
         }
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         if (frame_type == TDD) {
           mcs1      = ((DCI2_10MHz_4A_TDD_t *)dci_pdu)->mcs1;
           mcs2      = ((DCI2_10MHz_4A_TDD_t *)dci_pdu)->mcs2;
@@ -4656,13 +4671,13 @@ int generate_ue_dlsch_params_from_dci(int frame,
           tpmi      = ((DCI2_10MHz_4A_FDD_t *)dci_pdu)->tpmi;
         }
       } else {
-        LOG_E(PHY,"UE: Format2A DCI: unsupported number of TX antennas %d\n",frame_parms->nb_antennas_tx_eNB);
+        LOG_E(PHY,"UE: Format2A DCI: unsupported number of TX antennas %d\n",frame_parms->nb_antenna_ports_eNB);
       }
 
       break;
 
     case 100:
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         if (frame_type == TDD) {
           mcs1      = ((DCI2_20MHz_2A_TDD_t *)dci_pdu)->mcs1;
           mcs2      = ((DCI2_20MHz_2A_TDD_t *)dci_pdu)->mcs2;
@@ -4684,7 +4699,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
           tbswap    = ((DCI2_20MHz_2A_FDD_t *)dci_pdu)->tb_swap;
           tpmi      = ((DCI2_20MHz_2A_FDD_t *)dci_pdu)->tpmi;
         }
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         if (frame_type == TDD) {
           mcs1      = ((DCI2_20MHz_4A_TDD_t *)dci_pdu)->mcs1;
           mcs2      = ((DCI2_20MHz_4A_TDD_t *)dci_pdu)->mcs2;
@@ -4707,7 +4722,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
           tpmi      = ((DCI2_20MHz_4A_FDD_t *)dci_pdu)->tpmi;
         }
       } else {
-        LOG_E(PHY,"UE: Format2A DCI: unsupported number of TX antennas %d\n",frame_parms->nb_antennas_tx_eNB);
+        LOG_E(PHY,"UE: Format2A DCI: unsupported number of TX antennas %d\n",frame_parms->nb_antenna_ports_eNB);
       }
 
       break;
@@ -4902,7 +4917,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     switch (frame_parms->N_RB_DL) {
 
     case 6:
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         if (frame_type == TDD) {
           mcs1      = ((DCI2A_1_5MHz_2A_TDD_t *)dci_pdu)->mcs1;
           mcs2      = ((DCI2A_1_5MHz_2A_TDD_t *)dci_pdu)->mcs2;
@@ -4924,7 +4939,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
           harq_pid  = ((DCI2A_1_5MHz_2A_FDD_t *)dci_pdu)->harq_pid;
           tbswap    = ((DCI2A_1_5MHz_2A_FDD_t *)dci_pdu)->tb_swap;
         }
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         if (frame_type == TDD) {
           mcs1      = ((DCI2A_1_5MHz_4A_TDD_t *)dci_pdu)->mcs1;
           mcs2      = ((DCI2A_1_5MHz_4A_TDD_t *)dci_pdu)->mcs2;
@@ -4949,13 +4964,13 @@ int generate_ue_dlsch_params_from_dci(int frame,
           tpmi      = ((DCI2A_1_5MHz_4A_FDD_t *)dci_pdu)->tpmi;
         }
       } else {
-        LOG_E(PHY,"eNB: subframe %d UE %x, Format2A DCI: unsupported number of TX antennas %d\n",subframe,rnti,frame_parms->nb_antennas_tx_eNB);
+        LOG_E(PHY,"eNB: subframe %d UE %x, Format2A DCI: unsupported number of TX antennas %d\n",subframe,rnti,frame_parms->nb_antenna_ports_eNB);
       }
 
       break;
 
     case 25:
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         if (frame_type == TDD) {
           mcs1      = ((DCI2A_5MHz_2A_TDD_t *)dci_pdu)->mcs1;
           mcs2      = ((DCI2A_5MHz_2A_TDD_t *)dci_pdu)->mcs2;
@@ -4979,7 +4994,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
           harq_pid  = ((DCI2A_5MHz_2A_FDD_t *)dci_pdu)->harq_pid;
           tbswap    = ((DCI2A_5MHz_2A_FDD_t *)dci_pdu)->tb_swap;
         }
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         if (frame_type == TDD) {
           mcs1      = ((DCI2A_5MHz_4A_TDD_t *)dci_pdu)->mcs1;
           mcs2      = ((DCI2A_5MHz_4A_TDD_t *)dci_pdu)->mcs2;
@@ -5006,13 +5021,13 @@ int generate_ue_dlsch_params_from_dci(int frame,
           tpmi      = ((DCI2A_5MHz_4A_FDD_t *)dci_pdu)->tpmi;
         }
       } else {
-        LOG_E(PHY,"eNB: subframe %d UE %x, Format2A DCI: unsupported number of TX antennas %d\n",subframe,rnti,frame_parms->nb_antennas_tx_eNB);
+        LOG_E(PHY,"eNB: subframe %d UE %x, Format2A DCI: unsupported number of TX antennas %d\n",subframe,rnti,frame_parms->nb_antenna_ports_eNB);
       }
 
       break;
 
     case 50:
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         if (frame_type == TDD) {
           mcs1      = ((DCI2A_10MHz_2A_TDD_t *)dci_pdu)->mcs1;
           mcs2      = ((DCI2A_10MHz_2A_TDD_t *)dci_pdu)->mcs2;
@@ -5036,7 +5051,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
           harq_pid  = ((DCI2A_10MHz_2A_FDD_t *)dci_pdu)->harq_pid;
           tbswap    = ((DCI2A_10MHz_2A_FDD_t *)dci_pdu)->tb_swap;
         }
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         if (frame_type == TDD) {
           mcs1      = ((DCI2A_10MHz_4A_TDD_t *)dci_pdu)->mcs1;
           mcs2      = ((DCI2A_10MHz_4A_TDD_t *)dci_pdu)->mcs2;
@@ -5063,13 +5078,13 @@ int generate_ue_dlsch_params_from_dci(int frame,
           tpmi      = ((DCI2A_10MHz_4A_FDD_t *)dci_pdu)->tpmi;
         }
       } else {
-        LOG_E(PHY,"eNB: subframe %d UE %x, Format2A DCI: unsupported number of TX antennas %d\n",subframe,rnti,frame_parms->nb_antennas_tx_eNB);
+        LOG_E(PHY,"eNB: subframe %d UE %x, Format2A DCI: unsupported number of TX antennas %d\n",subframe,rnti,frame_parms->nb_antenna_ports_eNB);
       }
 
       break;
 
     case 100:
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         if (frame_type == TDD) {
           mcs1      = ((DCI2A_20MHz_2A_TDD_t *)dci_pdu)->mcs1;
           mcs2      = ((DCI2A_20MHz_2A_TDD_t *)dci_pdu)->mcs2;
@@ -5093,7 +5108,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
           harq_pid  = ((DCI2A_20MHz_2A_FDD_t *)dci_pdu)->harq_pid;
           tbswap    = ((DCI2A_20MHz_2A_FDD_t *)dci_pdu)->tb_swap;
         }
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         if (frame_type == TDD) {
           mcs1      = ((DCI2A_20MHz_4A_TDD_t *)dci_pdu)->mcs1;
           mcs2      = ((DCI2A_20MHz_4A_TDD_t *)dci_pdu)->mcs2;
@@ -5120,7 +5135,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
           tpmi    = ((DCI2A_20MHz_4A_FDD_t *)dci_pdu)->tpmi;
         }
       } else {
-        LOG_E(PHY,"eNB: subframe %d UE %x, Format2A DCI: unsupported number of TX antennas %d\n",subframe,rnti,frame_parms->nb_antennas_tx_eNB);
+        LOG_E(PHY,"eNB: subframe %d UE %x, Format2A DCI: unsupported number of TX antennas %d\n",subframe,rnti,frame_parms->nb_antenna_ports_eNB);
       }
 
       break;
@@ -5263,7 +5278,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
       }
     }
 
-    if (frame_parms->nb_antennas_tx_eNB == 2) {
+    if (frame_parms->nb_antenna_ports_eNB == 2) {
       dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][dlsch0_harq->nb_rb-1];
       dlsch1_harq->TBS         = TBStable[get_I_TBS(dlsch1_harq->mcs)][dlsch0_harq->nb_rb-1];
 
@@ -5278,7 +5293,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
         dlsch0_harq->mimo_mode   = ALAMOUTI;
         dlsch1_harq->mimo_mode   = ALAMOUTI;
       }
-    } else if (frame_parms->nb_antennas_tx_eNB == 4) { // 4 antenna case
+    } else if (frame_parms->nb_antenna_ports_eNB == 4) { // 4 antenna case
       if ((dlsch0->active==1) && (dlsch1->active==1)) {
         switch (tpmi) {
         case 0: // one layer per transport block
@@ -5362,7 +5377,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
         }
       }
     } else {
-      LOG_E(PHY,"Illegal number of antennas for eNB %d\n",frame_parms->nb_antennas_tx_eNB);
+      LOG_E(PHY,"Illegal number of antennas for eNB %d\n",frame_parms->nb_antenna_ports_eNB);
     }
 
     if (mcs1 <= 28)
@@ -5575,7 +5590,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
   // compute DL power control parameters
   computeRhoA_UE(pdsch_config_dedicated, dlsch[0],dlsch0_harq->dl_power_off);
 
-  computeRhoB_UE(pdsch_config_dedicated,&(frame_parms->pdsch_config_common),frame_parms->nb_antennas_tx_eNB,dlsch[0],dlsch0_harq->dl_power_off);
+  computeRhoB_UE(pdsch_config_dedicated,&(frame_parms->pdsch_config_common),frame_parms->nb_antenna_ports_eNB,dlsch[0],dlsch0_harq->dl_power_off);
 
   return(0);
 }
@@ -7791,7 +7806,7 @@ double sinr_eff_cqi_calc(PHY_VARS_UE *ue, uint8_t eNB_id)
   switch(transmission_mode) {
   case 1:
     for (count=0; count<frame_parms->N_RB_DL*12; count++) {
-      for(a_tx=0; a_tx<frame_parms->nb_antennas_tx_eNB; a_tx++) {
+      for(a_tx=0; a_tx<frame_parms->nb_antenna_ports_eNB; a_tx++) {
         for (a_rx=0; a_rx<frame_parms->nb_antennas_rx; a_rx++) {
           s_dB[count] = 10*log10(pow(((int16_t *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(LTE_CE_FILTER_LENGTH)*2],2) + pow(((int16_t *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(LTE_CE_FILTER_LENGTH)*2],
                                  2)) - meas->n0_power_avg_dB;
@@ -7805,7 +7820,7 @@ double sinr_eff_cqi_calc(PHY_VARS_UE *ue, uint8_t eNB_id)
     for (count=0; count<frame_parms->N_RB_DL*12; count++) {
       abs_channel=0;
 
-      for(a_tx=0; a_tx<frame_parms->nb_antennas_tx_eNB; a_tx++) {
+      for(a_tx=0; a_tx<frame_parms->nb_antenna_ports_eNB; a_tx++) {
         for (a_rx=0; a_rx<frame_parms->nb_antennas_rx; a_rx++) {
           abs_channel += (pow(((int16_t *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(LTE_CE_FILTER_LENGTH)*2],2) + pow(((int16_t *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(LTE_CE_FILTER_LENGTH)*2],2));
         }
@@ -7825,7 +7840,7 @@ double sinr_eff_cqi_calc(PHY_VARS_UE *ue, uint8_t eNB_id)
       qq = (q>>(((count/12)>>2)<<1))&3;
 
       //printf("pmi_alloc %d: rb %d, pmi %d\n",q,count/12,qq);
-      for(a_tx=0; a_tx<frame_parms->nb_antennas_tx_eNB; a_tx++) {
+      for(a_tx=0; a_tx<frame_parms->nb_antenna_ports_eNB; a_tx++) {
         for (a_rx=0; a_rx<frame_parms->nb_antennas_rx; a_rx++) {
           switch(qq) {
           case 0:
@@ -7907,7 +7922,7 @@ double sinr_eff_cqi_calc(PHY_VARS_UE *ue, uint8_t eNB_id)
       qq = (q>>(((count/12)>>2)<<1))&3;
 
       //printf("pmi_alloc %d: rb %d, pmi %d\n",q,count/12,qq);
-      for(a_tx=0; a_tx<frame_parms->nb_antennas_tx_eNB; a_tx++) {
+      for(a_tx=0; a_tx<frame_parms->nb_antenna_ports_eNB; a_tx++) {
         for (a_rx=0; a_rx<frame_parms->nb_antennas_rx; a_rx++) {
           switch(qq) {
           case 0:

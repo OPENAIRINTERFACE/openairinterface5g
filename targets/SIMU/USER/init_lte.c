@@ -44,7 +44,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
                            uint8_t abstraction_flag)
 {
 
-  int i,j;
+  int i,j,layer,aa,re;
   PHY_VARS_eNB* PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
   memset(PHY_vars_eNB,0,sizeof(PHY_VARS_eNB));
   PHY_vars_eNB->Mod_id=eNB_id;
@@ -64,7 +64,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     for (j=0; j<2; j++) {
-      PHY_vars_eNB->dlsch[i][j] = new_eNB_dlsch(1,8,NSOFT,frame_parms->N_RB_DL,abstraction_flag);
+      PHY_vars_eNB->dlsch[i][j] = new_eNB_dlsch(1,8,NSOFT,frame_parms->N_RB_DL,abstraction_flag,frame_parms);
 
       if (!PHY_vars_eNB->dlsch[i][j]) {
         LOG_E(PHY,"Can't get eNB dlsch structures for UE %d \n", i);
@@ -84,7 +84,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 
     // this is the transmission mode for the signalling channels
     // this will be overwritten with the real transmission mode by the RRC once the UE is connected
-    PHY_vars_eNB->transmission_mode[i] = frame_parms->nb_antennas_tx_eNB==1 ? 1 : 2;
+    PHY_vars_eNB->transmission_mode[i] = frame_parms->nb_antenna_ports_eNB==1 ? 1 : 2;
 #ifdef LOCALIZATION
     PHY_vars_eNB->ulsch[1+i]->aggregation_period_ms = 5000; // 5000 milliseconds // could be given as an argument (TBD))
     struct timeval ts;
@@ -116,11 +116,11 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     exit(-1);
   }
 
-  PHY_vars_eNB->dlsch_SI  = new_eNB_dlsch(1,8,NSOFT,frame_parms->N_RB_DL, abstraction_flag);
+  PHY_vars_eNB->dlsch_SI  = new_eNB_dlsch(1,8,NSOFT,frame_parms->N_RB_DL, abstraction_flag, frame_parms);
   LOG_D(PHY,"eNB %d : SI %p\n",eNB_id,PHY_vars_eNB->dlsch_SI);
-  PHY_vars_eNB->dlsch_ra  = new_eNB_dlsch(1,8,NSOFT,frame_parms->N_RB_DL, abstraction_flag);
+  PHY_vars_eNB->dlsch_ra  = new_eNB_dlsch(1,8,NSOFT,frame_parms->N_RB_DL, abstraction_flag, frame_parms);
   LOG_D(PHY,"eNB %d : RA %p\n",eNB_id,PHY_vars_eNB->dlsch_ra);
-  PHY_vars_eNB->dlsch_MCH = new_eNB_dlsch(1,8,NSOFT,frame_parms->N_RB_DL, 0);
+  PHY_vars_eNB->dlsch_MCH = new_eNB_dlsch(1,8,NSOFT,frame_parms->N_RB_DL, 0, frame_parms);
   LOG_D(PHY,"eNB %d : MCH %p\n",eNB_id,PHY_vars_eNB->dlsch_MCH);
 
 
@@ -178,7 +178,7 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
     PHY_vars_UE->dlsch_SI[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
     PHY_vars_UE->dlsch_ra[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
 
-    PHY_vars_UE->transmission_mode[i] = frame_parms->nb_antennas_tx_eNB==1 ? 1 : 2;
+    PHY_vars_UE->transmission_mode[i] = frame_parms->nb_antenna_ports_eNB==1 ? 1 : 2;
   }
 
   PHY_vars_UE->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
@@ -248,8 +248,8 @@ void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
     (frame_parms[CC_id])->nushift            = (Nid_cell%6);
     (frame_parms[CC_id])->nb_antennas_tx     = nb_antennas_tx;
     (frame_parms[CC_id])->nb_antennas_rx     = nb_antennas_rx;
-    (frame_parms[CC_id])->nb_antennas_tx_eNB = nb_antenna_ports;
-    (frame_parms[CC_id])->mode1_flag          = (frame_parms[CC_id])->nb_antennas_tx_eNB==1 ? 1 : 0;
+    (frame_parms[CC_id])->nb_antenna_ports_eNB = nb_antenna_ports;
+    (frame_parms[CC_id])->mode1_flag           = (frame_parms[CC_id])->nb_antenna_ports_eNB==1 ? 1 : 0;
 
     init_frame_parms(frame_parms[CC_id],1);
 
@@ -286,8 +286,6 @@ void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       (frame_parms[CC_id])->nb_antennas_tx     = 1;
       (frame_parms[CC_id])->nb_antennas_rx     = nb_antennas_rx_ue;
-
-
       PHY_vars_UE_g[UE_id][CC_id] = init_lte_UE(frame_parms[CC_id], UE_id,abstraction_flag);
       PHY_vars_UE_g[UE_id][CC_id]->Mod_id=UE_id;
       PHY_vars_UE_g[UE_id][CC_id]->CC_id=CC_id;

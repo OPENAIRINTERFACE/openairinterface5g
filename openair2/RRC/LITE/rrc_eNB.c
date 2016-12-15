@@ -3745,7 +3745,7 @@ rrc_eNB_generate_RRCConnectionSetup(
                           ue_context_pP,
                           CC_id,
                           (uint8_t*) eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.Payload,
-			  (fp->nb_antennas_tx_eNB==2)?2:1, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
+			  (fp->nb_antenna_ports_eNB==2)?2:1, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
                           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
                           fp,
                           SRB_configList,

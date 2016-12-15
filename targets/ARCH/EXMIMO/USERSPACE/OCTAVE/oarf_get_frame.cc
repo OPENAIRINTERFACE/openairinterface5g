@@ -171,7 +171,7 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame")
     printf("Info : Only resampling_factor of channel 0 is taken into account for copying received frame for all the other chains\n");
 
     
-    ComplexMatrix dx (FRAME_LENGTH_COMPLEX_SAMPLES*4, numant*openair0_num_detected_cards);
+    ComplexMatrix dx (FRAME_LENGTH_COMPLEX_SAMPLES*4, MAX_ANTENNAS*openair0_num_detected_cards);
     /*
     // set the tx buffer to 0x00010001 to put switch in rx mode
     for (aa=0; aa<numant; aa++) 
@@ -185,14 +185,14 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame")
   
     for (j=0; j<openair0_num_detected_cards;j++)
     {
-      for (i=0; i<numant; i++)
+      for (i=0; i<MAX_ANTENNAS; i++)
       {
           //if ( numant == openair0_num_antennas[j] )
               rx_sig[i+(j*MAX_ANTENNAS)] = (short*) openair0_exmimo_pci[ j ].adc_head[ i ];
           //else
           //    rx_sig[i+(j*MAX_ANTENNAS)] = (short*) openair0_exmimo_pci[ i / (int)openair0_num_antennas[0] ].adc_head[i % openair0_num_antennas[0]];
             
-         // printf("Card %i adc_head[%i] = %p \n",j, i, rx_sig[i+(j*MAX_ANTENNAS)]);
+          //  printf("Card %i adc_head[%i] = %p \n",j, i, rx_sig[i+(j*MAX_ANTENNAS)]);
       }
     }
 
@@ -201,8 +201,8 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame")
         openair0_get_frame(card);
 
   for (j=0; j<openair0_num_detected_cards;j++)
-    for (i=0; i<frame_length_samples[j]; i++)
-        for (aa=0; aa<numant; aa++)
+    for (i=0; i<frame_length_samples[j]; i++) 
+        for (aa=0; aa<MAX_ANTENNAS; aa++) 
             dx(i, aa+j*MAX_ANTENNAS) = Complex( rx_sig[aa+j*MAX_ANTENNAS][i*2], rx_sig[aa+j*MAX_ANTENNAS][i*2+1] );
     
     openair0_close();

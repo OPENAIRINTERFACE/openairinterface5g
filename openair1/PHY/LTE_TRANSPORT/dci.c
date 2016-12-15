@@ -66,7 +66,7 @@ uint32_t check_phich_reg(LTE_DL_FRAME_PARMS *frame_parms,uint32_t kprime,uint8_t
 
   // compute REG based on symbol
   if ((lprime == 0)||
-      ((lprime==1)&&(frame_parms->nb_antennas_tx_eNB == 4)))
+      ((lprime==1)&&(frame_parms->nb_antenna_ports_eNB == 4)))
     mprime = kprime/6;
   else
     mprime = kprime>>2;
@@ -293,7 +293,7 @@ void pdcch_interleaving(LTE_DL_FRAME_PARMS *frame_parms,int32_t **z, int32_t **w
     for (row=0; row<RCC; row++) {
       //printf("col %d, index %d, row %d\n",col,index,row);
       if (index>=ND) {
-        for (a=0; a<frame_parms->nb_antennas_tx_eNB; a++) {
+        for (a=0; a<frame_parms->nb_antenna_ports_eNB; a++) {
           //printf("a %d k %d\n",a,k);
 
           wptr = &wtemp[a][k<<2];
@@ -317,7 +317,7 @@ void pdcch_interleaving(LTE_DL_FRAME_PARMS *frame_parms,int32_t **z, int32_t **w
   // permutation
   for (i=0; i<Mquad; i++) {
 
-    for (a=0; a<frame_parms->nb_antennas_tx_eNB; a++) {
+    for (a=0; a<frame_parms->nb_antenna_ports_eNB; a++) {
 
       //wptr  = &wtemp[a][i<<2];
       //wptr2 = &wbar[a][((i+frame_parms->Nid_cell)%Mquad)<<2];
@@ -409,7 +409,7 @@ void pdcch_demapping(uint16_t *llr,uint16_t *wbar,LTE_DL_FRAME_PARMS *frame_parm
               re_offset0++;
             }
           }
-        } else if ((lprime==1)&&(frame_parms->nb_antennas_tx_eNB == 4)) {
+        } else if ((lprime==1)&&(frame_parms->nb_antenna_ports_eNB == 4)) {
           // LATER!!!!
         } else { // no pilots in this symbol
           kprime_mod12 = kprime%12;
@@ -647,7 +647,7 @@ void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
   int16x8_t *dl_ch128;
   int32x4_t *avg128P;
 #endif
-  for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++)
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++)
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       //clear average level
 #if defined(__x86_64__) || defined(__i386__)
@@ -825,7 +825,7 @@ void pdcch_detection_mrc_i(LTE_DL_FRAME_PARMS *frame_parms,
   int32_t i;
 
   if (frame_parms->nb_antennas_rx>1) {
-    for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++) {
+    for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
       //if (frame_parms->mode1_flag && (aatx>0)) break;
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -1391,8 +1391,8 @@ void pdcch_channel_compensation(int32_t **rxdataF_ext,
   if (symbol==0)
     pilots=1;
 
-  for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++) {
-    //if (frame_parms->mode1_flag && aatx>0) break; //if mode1_flag is set then there is only one stream to extract, independent of nb_antennas_tx_eNB
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
+    //if (frame_parms->mode1_flag && aatx>0) break; //if mode1_flag is set then there is only one stream to extract, independent of nb_antenna_ports_eNB
 
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
@@ -1598,7 +1598,7 @@ void pdcch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
   int32_t i;
 
   if (frame_parms->nb_antennas_rx>1) {
-    for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++) {
+    for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
 #if defined(__x86_64__) || defined(__i386__)
       rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];
       rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];
@@ -1719,7 +1719,7 @@ int32_t rx_pdcch(LTE_UE_COMMON *common_vars,
                                high_speed_flag,
                                frame_parms);
 #endif //MU_RECEIVER
-    } else if (frame_parms->nb_antennas_tx_eNB>1) {
+    } else if (frame_parms->nb_antenna_ports_eNB>1) {
       pdcch_extract_rbs_dual(common_vars->rxdataF,
                              common_vars->dl_ch_estimates[eNB_id],
                              pdcch_vars[eNB_id]->rxdataF_ext,
@@ -1745,7 +1745,7 @@ int32_t rx_pdcch(LTE_UE_COMMON *common_vars,
 
   avgs = 0;
 
-  for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++)
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++)
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
       avgs = cmax(avgs,avgP[(aarx<<1)+aatx]);
 
@@ -1986,10 +1986,10 @@ uint8_t get_num_pdcch_symbols(uint8_t num_dci,
   //if ((9*numCCE) <= (frame_parms->N_RB_DL*2))
   if (numCCE <= get_nCCE(1, frame_parms, get_mi(frame_parms, subframe)))
     return(cmax(1,nCCEmin));
-  //else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx_eNB==4) ? 4 : 5)))
+  //else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antenna_ports_eNB==4) ? 4 : 5)))
   else if (numCCE <= get_nCCE(2, frame_parms, get_mi(frame_parms, subframe)))
     return(cmax(2,nCCEmin));
-  //else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx_eNB==4) ? 7 : 8)))
+  //else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antenna_ports_eNB==4) ? 7 : 8)))
   else if (numCCE <= get_nCCE(3, frame_parms, get_mi(frame_parms, subframe)))
     return(cmax(3,nCCEmin));
   else if (frame_parms->N_RB_DL<=10) {
@@ -1999,10 +1999,10 @@ uint8_t get_num_pdcch_symbols(uint8_t num_dci,
              get_nCCE(2, frame_parms, get_mi(frame_parms, subframe)),
              get_nCCE(3, frame_parms, get_mi(frame_parms, subframe)));
 
-      if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx_eNB==4) ? 10 : 11)))
+      if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antenna_ports_eNB==4) ? 10 : 11)))
         return(4);
     } else { // extended CP
-      if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx_eNB==4) ? 9 : 10)))
+      if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antenna_ports_eNB==4) ? 9 : 10)))
         return(4);
     }
   }
@@ -2247,7 +2247,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
         // Copy REG to TX buffer
 
         if ((lprime == 0)||
-            ((lprime==1)&&(frame_parms->nb_antennas_tx_eNB == 4))) {
+            ((lprime==1)&&(frame_parms->nb_antenna_ports_eNB == 4))) {
           // first symbol, or second symbol+4 TX antennas skip pilots
 
           kprime_mod12 = kprime%12;
@@ -2259,7 +2259,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
               if ((i!=(nushiftmod3))&&(i!=(nushiftmod3+3))) {
                 txdataF[0][tti_offset+i] = wbar[0][mprime];
 
-                if (frame_parms->nb_antennas_tx_eNB > 1)
+                if (frame_parms->nb_antenna_ports_eNB > 1)
                   txdataF[1][tti_offset+i] = wbar[1][mprime];
 
 #ifdef DEBUG_DCI_ENCODING
@@ -2279,7 +2279,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
               for (i=0; i<4; i++) {
                 txdataF[0][tti_offset+i] = wbar[0][mprime];
 
-                if (frame_parms->nb_antennas_tx_eNB > 1)
+                if (frame_parms->nb_antenna_ports_eNB > 1)
                   txdataF[1][tti_offset+i] = wbar[1][mprime];
 
 #ifdef DEBUG_DCI_ENCODING
@@ -2290,7 +2290,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
             } else {
               txdataF[0][tti_offset+0] = wbar[0][mprime];
 
-              if (frame_parms->nb_antennas_tx_eNB > 1)
+              if (frame_parms->nb_antenna_ports_eNB > 1)
                 txdataF[1][tti_offset+0] = wbar[1][mprime];
 
 #ifdef DEBUG_DCI_ENCODING
@@ -2299,7 +2299,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
               mprime++;
               txdataF[0][tti_offset+1] = wbar[0][mprime];
 
-              if (frame_parms->nb_antennas_tx_eNB > 1)
+              if (frame_parms->nb_antenna_ports_eNB > 1)
                 txdataF[1][tti_offset+1] = wbar[1][mprime];
 
 #ifdef DEBUG_DCI_ENCODING
@@ -2308,7 +2308,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
               mprime++;
               txdataF[0][tti_offset-frame_parms->ofdm_symbol_size+3] = wbar[0][mprime];
 
-              if (frame_parms->nb_antennas_tx_eNB > 1)
+              if (frame_parms->nb_antenna_ports_eNB > 1)
                 txdataF[1][tti_offset-frame_parms->ofdm_symbol_size+3] = wbar[1][mprime];
 
 #ifdef DEBUG_DCI_ENCODING
@@ -2318,7 +2318,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
               mprime++;
               txdataF[0][tti_offset-frame_parms->ofdm_symbol_size+4] = wbar[0][mprime];
 
-              if (frame_parms->nb_antennas_tx_eNB > 1)
+              if (frame_parms->nb_antenna_ports_eNB > 1)
                 txdataF[1][tti_offset-frame_parms->ofdm_symbol_size+4] = wbar[1][mprime];
 
 #ifdef DEBUG_DCI_ENCODING
@@ -2936,12 +2936,12 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       format1_size_bits  = sizeof_DCI1_1_5MHz_TDD_t;
       format1_size_bytes = sizeof(DCI1_1_5MHz_TDD_t);
 
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         format2_size_bits  = sizeof_DCI2_1_5MHz_2A_TDD_t;
         format2_size_bytes = sizeof(DCI2_1_5MHz_2A_TDD_t);
         format2A_size_bits  = sizeof_DCI2A_1_5MHz_2A_TDD_t;
         format2A_size_bytes = sizeof(DCI2A_1_5MHz_2A_TDD_t);
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         format2_size_bits  = sizeof_DCI2_1_5MHz_4A_TDD_t;
         format2_size_bytes = sizeof(DCI2_1_5MHz_4A_TDD_t);
         format2A_size_bits  = sizeof_DCI2A_1_5MHz_4A_TDD_t;
@@ -2957,12 +2957,12 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       format1_size_bits  = sizeof_DCI1_1_5MHz_FDD_t;
       format1_size_bytes = sizeof(DCI1_1_5MHz_FDD_t);
 
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         format2_size_bits  = sizeof_DCI2_1_5MHz_2A_FDD_t;
         format2_size_bytes = sizeof(DCI2_1_5MHz_2A_FDD_t);
         format2A_size_bits  = sizeof_DCI2A_1_5MHz_2A_FDD_t;
         format2A_size_bytes = sizeof(DCI2A_1_5MHz_2A_FDD_t);
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         format2_size_bits  = sizeof_DCI2_1_5MHz_4A_FDD_t;
         format2_size_bytes = sizeof(DCI2_1_5MHz_4A_FDD_t);
         format2A_size_bits  = sizeof_DCI2A_1_5MHz_4A_FDD_t;
@@ -2984,12 +2984,12 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       format1_size_bits  = sizeof_DCI1_5MHz_TDD_t;
       format1_size_bytes = sizeof(DCI1_5MHz_TDD_t);
 
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         format2_size_bits  = sizeof_DCI2_5MHz_2A_TDD_t;
         format2_size_bytes = sizeof(DCI2_5MHz_2A_TDD_t);
         format2A_size_bits  = sizeof_DCI2A_5MHz_2A_TDD_t;
         format2A_size_bytes = sizeof(DCI2A_5MHz_2A_TDD_t);
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         format2_size_bits  = sizeof_DCI2_5MHz_4A_TDD_t;
         format2_size_bytes = sizeof(DCI2_5MHz_4A_TDD_t);
         format2A_size_bits  = sizeof_DCI2A_5MHz_4A_TDD_t;
@@ -3005,12 +3005,12 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       format1_size_bits  = sizeof_DCI1_5MHz_FDD_t;
       format1_size_bytes = sizeof(DCI1_5MHz_FDD_t);
 
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         format2_size_bits  = sizeof_DCI2_5MHz_2A_FDD_t;
         format2_size_bytes = sizeof(DCI2_5MHz_2A_FDD_t);
         format2A_size_bits  = sizeof_DCI2A_5MHz_2A_FDD_t;
         format2A_size_bytes = sizeof(DCI2A_5MHz_2A_FDD_t);
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         format2_size_bits  = sizeof_DCI2_5MHz_4A_FDD_t;
         format2_size_bytes = sizeof(DCI2_5MHz_4A_FDD_t);
         format2A_size_bits  = sizeof_DCI2A_5MHz_4A_FDD_t;
@@ -3031,12 +3031,12 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       format1_size_bits  = sizeof_DCI1_10MHz_TDD_t;
       format1_size_bytes = sizeof(DCI1_10MHz_TDD_t);
 
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         format2_size_bits  = sizeof_DCI2_10MHz_2A_TDD_t;
         format2_size_bytes = sizeof(DCI2_10MHz_2A_TDD_t);
         format2A_size_bits  = sizeof_DCI2A_10MHz_2A_TDD_t;
         format2A_size_bytes = sizeof(DCI2A_10MHz_2A_TDD_t);
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         format2_size_bits  = sizeof_DCI2_10MHz_4A_TDD_t;
         format2_size_bytes = sizeof(DCI2_10MHz_4A_TDD_t);
         format2A_size_bits  = sizeof_DCI2A_10MHz_4A_TDD_t;
@@ -3052,12 +3052,12 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       format1_size_bits  = sizeof_DCI1_10MHz_FDD_t;
       format1_size_bytes = sizeof(DCI1_10MHz_FDD_t);
 
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         format2_size_bits  = sizeof_DCI2_10MHz_2A_FDD_t;
         format2_size_bytes = sizeof(DCI2_10MHz_2A_FDD_t);
         format2A_size_bits  = sizeof_DCI2A_10MHz_2A_FDD_t;
         format2A_size_bytes = sizeof(DCI2A_10MHz_2A_FDD_t);
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         format2_size_bits  = sizeof_DCI2_10MHz_4A_FDD_t;
         format2_size_bytes = sizeof(DCI2_10MHz_4A_FDD_t);
         format2A_size_bits  = sizeof_DCI2A_10MHz_4A_FDD_t;
@@ -3078,12 +3078,12 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       format1_size_bits  = sizeof_DCI1_20MHz_TDD_t;
       format1_size_bytes = sizeof(DCI1_20MHz_TDD_t);
 
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         format2_size_bits  = sizeof_DCI2_20MHz_2A_TDD_t;
         format2_size_bytes = sizeof(DCI2_20MHz_2A_TDD_t);
         format2A_size_bits  = sizeof_DCI2A_20MHz_2A_TDD_t;
         format2A_size_bytes = sizeof(DCI2A_20MHz_2A_TDD_t);
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         format2_size_bits  = sizeof_DCI2_20MHz_4A_TDD_t;
         format2_size_bytes = sizeof(DCI2_20MHz_4A_TDD_t);
         format2A_size_bits  = sizeof_DCI2A_20MHz_4A_TDD_t;
@@ -3099,12 +3099,12 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       format1_size_bits  = sizeof_DCI1_20MHz_FDD_t;
       format1_size_bytes = sizeof(DCI1_20MHz_FDD_t);
 
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         format2_size_bits  = sizeof_DCI2_20MHz_2A_FDD_t;
         format2_size_bytes = sizeof(DCI2_20MHz_2A_FDD_t);
         format2A_size_bits  = sizeof_DCI2A_20MHz_2A_FDD_t;
         format2A_size_bytes = sizeof(DCI2A_20MHz_2A_FDD_t);
-      } else if (frame_parms->nb_antennas_tx_eNB == 4) {
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
         format2_size_bits  = sizeof_DCI2_20MHz_4A_FDD_t;
         format2_size_bytes = sizeof(DCI2_20MHz_4A_FDD_t);
         format2A_size_bits  = sizeof_DCI2A_20MHz_4A_FDD_t;
@@ -3368,7 +3368,7 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
 
 
   // These are for CRNTI based on transmission mode
-  if (tmode < 3) {
+  if ((tmode < 3) || (tmode == 7)) {
     // Now check UE_SPEC format 1 search spaces at aggregation 1
     old_dci_cnt=dci_cnt;
     dci_decoding_procedure0(pdcch_vars,0,subframe,
@@ -3737,7 +3737,7 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
                             &CCEmap1,
                             &CCEmap2);
     //#endif
-  } else if (tmode >=5) { // This is MU-MIMO
+  } else if ((tmode==5) || (tmode==6)) { // This is MU-MIMO
 
     // Now check UE_SPEC format 1E_2A_M10PRB search spaces aggregation 1
 #ifdef DEBUG_DCI_DECODING

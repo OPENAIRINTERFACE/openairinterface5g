@@ -542,12 +542,12 @@ typedef struct {
   uint32_t samples_per_tti;
   /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
   uint16_t symbols_per_tti;
-  /// Number of Transmit antennas in node
+  /// Number of Physical transmit antennas in node
   uint8_t nb_antennas_tx;
   /// Number of Receive antennas in node
   uint8_t nb_antennas_rx;
-  /// Number of Transmit antennas in eNodeB
-  uint8_t nb_antennas_tx_eNB;
+  /// Number of Logical transmit antenna ports in eNodeB
+  uint8_t nb_antenna_ports_eNB;
   /// PRACH_CONFIG
   PRACH_CONFIG_COMMON prach_config_common;
   /// PUCCH Config Common (from 36-331 RRC spec)
@@ -601,9 +601,19 @@ typedef enum {
   DUALSTREAM_UNIFORM_PRECODING1=9,
   DUALSTREAM_UNIFORM_PRECODINGj=10,
   DUALSTREAM_PUSCH_PRECODING=11,
-  TM8=12,
-  TM9_10=13
+  TM7=12,
+  TM8=13,
+  TM9_10=14
 } MIMO_mode_t;
+
+typedef enum {
+  /// MRT
+  MRT=0,
+  /// ZF
+  ZF=1,
+  /// MMSE
+  MMSE=2
+} PRECODE_TYPE_t;
 
 typedef struct {
   /// \brief Holds the transmit data in time domain.
@@ -613,11 +623,17 @@ typedef struct {
   /// - third index:
   int32_t **txdata[3];
   /// \brief holds the transmit data in the frequency domain.
-  /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
+  /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER. //?
+  /// - first index: eNB id [0..2] (hard coded)
+  /// - second index: tx antenna [0..14[ where 14 is the total supported antenna ports.
+  /// - third index: sample [0..]
+  int32_t **txdataF[3];
+  /// \brief holds the transmit data after beamforming in the frequency domain.
+  /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER. //?
   /// - first index: eNB id [0..2] (hard coded)
   /// - second index: tx antenna [0..nb_antennas_tx[
   /// - third index: sample [0..]
-  int32_t **txdataF[3];
+  int32_t **txdataF_BF[3];
   /// \brief Holds the received data in time domain.
   /// Should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
   /// - first index: sector id [0..2] (hard coded)
@@ -638,6 +654,17 @@ typedef struct {
   /// - first index: sector id [0..2] (hard coded)
   /// - second index: sample [0..samples_per_tti*10[
   uint32_t *sync_corr[3];
+  /// \brief Holds the beamforming weights
+  /// - first index: eNB id [0..2] (hard coded)
+  /// - second index: eNB antenna port index (hard coded)
+  /// - third index: tx antenna [0..nb_antennas_tx[
+  /// - fourth index: sample [0..]
+  int32_t **beam_weights[3][15];
+  /// \brief Holds the tdd reciprocity calibration coefficients 
+  /// - first index: eNB id [0..2] (hard coded) 
+  /// - second index: tx antenna [0..nb_antennas_tx[
+  /// - third index: frequency [0..]
+  int32_t **tdd_calib_coeffs[3];
 } LTE_eNB_COMMON;
 
 typedef struct {
@@ -798,6 +825,10 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **rxdataF_ext;
+  /// \brief Received frequency-domain ue specific pilots.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: ? [0..12*N_RB_DL[
+  int32_t **rxdataF_uespec_pilots;
   /// \brief Received frequency-domain signal after extraction and channel compensation.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
@@ -811,6 +842,14 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_estimates_ext;
+  /// \brief Downlink beamforming channel estimates in frequency domain.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
+  int32_t **dl_bf_ch_estimates;
+  /// \brief Downlink beamforming channel estimates.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: ? [0..168*N_RB_DL[
+  int32_t **dl_bf_ch_estimates_ext;
   /// \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
@@ -1014,13 +1053,13 @@ typedef struct {
   /// first index: ? [0..1023] (hard coded)
   int16_t *prachF;
   /// \brief ?.
-  /// first index: rx antenna [0..3] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
+  /// first index: rx antenna [0..63] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
   /// second index: ? [0..ofdm_symbol_size*12[
-  int16_t *rxsigF[4];
+  int16_t *rxsigF[64];
   /// \brief local buffer to compute prach_ifft (necessary in case of multiple CCs)
-  /// first index: rx antenna [0..3] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
+  /// first index: rx antenna [0..63] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
   /// second index: ? [0..2047] (hard coded)
-  int16_t *prach_ifft[4];
+  int16_t *prach_ifft[64];
 } LTE_eNB_PRACH;
 
 typedef struct {

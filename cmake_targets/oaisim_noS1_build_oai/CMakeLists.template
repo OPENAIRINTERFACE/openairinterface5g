@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 
-set (  CMAKE_BUILD_TYPE "RelWithDebInfo" )
 set (  ADDR_CONF False )
 set (  DEBUG_OMG False )
 set (  DISABLE_XER_PRINT False )

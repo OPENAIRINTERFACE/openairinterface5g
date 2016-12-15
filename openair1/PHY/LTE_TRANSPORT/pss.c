@@ -72,12 +72,12 @@ int generate_pss(int32_t **txdataF,
     return(-1);
   }
 
-  a = (frame_parms->nb_antennas_tx == 1) ? amp: (amp*ONE_OVER_SQRT2_Q15)>>15;
+  a = (frame_parms->nb_antenna_ports_eNB == 1) ? amp: (amp*ONE_OVER_SQRT2_Q15)>>15;
   //printf("[PSS] amp=%d, a=%d\n",amp,a);
 
   Nsymb = (frame_parms->Ncp==NORMAL)?14:12;
 
-  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+  for (aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
     //  aa = 0;
 
     // The PSS occupies the inner 6 RBs, which start at
