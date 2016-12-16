@@ -303,7 +303,7 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	if (opt_enabled == 1) {
 	  trace_pdu(1, (uint8_t *)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
 		    TBS, mod_id, 3, UE_RNTI(mod_id, UE_id),
-		    eNB->subframe,0,0);
+		    eNB->frame, eNB->subframe,0,0);
 	  LOG_D(OPT,"[eNB %d][DLSCH] CC_id %d Frame %d  rnti %x  with size %d\n",
 		mod_id, CC_id, frame, UE_RNTI(mod_id,UE_id), TBS);
 	}
