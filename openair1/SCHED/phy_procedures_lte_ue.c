@@ -66,6 +66,8 @@ fifo_dump_emos_UE emos_dump_UE;
 
 #include "PHY/CODING/extern.h"
 
+#include "T.h"
+
 #define DLSCH_RB_ALLOC 0x1fbf  // skip DC RB (total 23/25 RBs)
 #define DLSCH_RB_ALLOC_12 0x0aaa  // skip DC RB (total 23/25 RBs)
 
@@ -2484,6 +2486,7 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
     rx_pdcch(&ue->common_vars,
 	     ue->pdcch_vars,
 	     &ue->frame_parms,
+	     proc->frame_rx,
 	     subframe_rx,
 	     eNB_id,
 	     (ue->frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
@@ -2604,11 +2607,12 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 					     P_RNTI,
 					     ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id])==0)) {
 
-          T(T_UE_PHY_DLSCH_UE_DCI, T_INT(eNB_id), T_INT(frame_rx%1024), T_INT(subframe_rx), T_INT(ue->Mod_id),
+
+          /*T(T_UE_PHY_DLSCH_UE_DCI, T_INT(eNB_id), T_INT(frame_rx%1024), T_INT(subframe_rx), T_INT(ue->Mod_id),
                   T_INT(dci_alloc_rx[i].rnti), T_INT(dci_alloc_rx[i].format),
                   T_INT(ue->dlsch[eNB_id][0]->current_harq_pid),
                   T_INT(ue->dlsch[eNB_id][0]->harq_processes[ue->dlsch[eNB_id][0]->current_harq_pid]->mcs),
-                  T_INT(ue->dlsch[eNB_id][0]->harq_processes[ue->dlsch[eNB_id][0]->current_harq_pid]->TBS));
+                  T_INT(ue->dlsch[eNB_id][0]->harq_processes[ue->dlsch[eNB_id][0]->current_harq_pid]->TBS));*/
 
 	ue->dlsch_received[eNB_id]++;
 	
@@ -2750,11 +2754,8 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 					     eNB_id,
 					     0)==0)) {
 
-#ifdef DEBUG_PHY_PROC
-	LOG_D(PHY,"[UE  %d] Generate UE ULSCH C_RNTI format 0 (subframe %d)\n",ue->Mod_id,subframe_rx);
-#endif
-
-	LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+#if T_TRACER
+    LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
     uint8_t harq_pid = subframe2harq_pid(frame_parms,
                                  pdcch_alloc2ul_frame(frame_parms,proc->frame_rx,proc->subframe_rx),
                                  pdcch_alloc2ul_subframe(frame_parms,proc->subframe_rx));
@@ -2766,6 +2767,10 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
       T_INT(ue->ulsch[eNB_id]->harq_processes[harq_pid]->first_rb),
       T_INT(ue->ulsch[eNB_id]->harq_processes[harq_pid]->nb_rb),
       T_INT(ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS));
+#endif
+#ifdef DEBUG_PHY_PROC
+	LOG_D(PHY,"[UE  %d] Generate UE ULSCH C_RNTI format 0 (subframe %d)\n",ue->Mod_id,subframe_rx);
+#endif
 
       }
     } else if( (dci_alloc_rx[i].rnti == ue->ulsch[eNB_id]->cba_rnti[0]) &&
@@ -3015,6 +3020,7 @@ void ue_pdsch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, int eNB_id, PDSC
 	       pdsch,
 	       eNB_id,
 	       eNB_id_i,
+	       proc->frame_rx,
 	       subframe_rx,  // subframe,
 	       m,
 	       first_symbol_flag,

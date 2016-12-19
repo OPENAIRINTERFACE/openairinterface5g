@@ -5585,6 +5585,16 @@ int generate_ue_dlsch_params_from_dci(int frame,
   }
 
 #endif
+#if T_TRACER
+  if( (dlsch[0]->rnti != si_rnti) && (dlsch[0]->rnti != ra_rnti) && (dlsch[0]->rnti != p_rnti))
+  {
+  T(T_UE_PHY_DLSCH_UE_DCI, T_INT(0), T_INT(frame%1024), T_INT(subframe), T_INT(0),
+          T_INT(dlsch[0]->rnti), T_INT(dci_format),
+          T_INT(harq_pid),
+          T_INT(dlsch0_harq->mcs),
+          T_INT(dlsch0_harq->TBS));
+  }
+#endif
   dlsch[0]->active=1;
 
   // compute DL power control parameters

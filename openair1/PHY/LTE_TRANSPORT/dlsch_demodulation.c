@@ -35,7 +35,7 @@
 #include "defs.h"
 #include "extern.h"
 #include "PHY/sse_intrin.h"
-
+#include "T.h"
 
 #ifndef USER_MODE
 #define NOCYGWIN_STATIC static
@@ -74,6 +74,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
              PDSCH_t type,
              unsigned char eNB_id,
              unsigned char eNB_id_i, //if this == ue->n_connected_eNB, we assume MU interference
+             uint32_t frame,
              uint8_t subframe,
              unsigned char symbol,
              unsigned char first_symbol_flag,
@@ -297,6 +298,13 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
     //  avgs = cmax(avgs,avg[(aarx<<1)+aatx]);
 
+#if T_TRACER
+    if (type == PDSCH)
+    {
+      T(T_UE_PHY_PDSCH_ENERGY, T_INT(eNB_id),  T_INT(0), T_INT(frame%1024), T_INT(subframe),
+                               T_INT(avg[0]), T_INT(avg[1]),    T_INT(avg[2]),             T_INT(avg[3]));
+    }
+#endif
 
     pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2)+1;
     // + log2_approx(frame_parms->nb_antenna_ports_eNB-1) //-1 because log2_approx counts the number of bits
@@ -826,11 +834,13 @@ int rx_pdsch(PHY_VARS_UE *ue,
     break;
   }
 
-  T(T_UE_PHY_PDSCH_IQ, T_INT(eNB_id), T_INT(ue->Mod_id), T_INT(-1),
+#if T_TRACER
+  T(T_UE_PHY_PDSCH_IQ, T_INT(eNB_id), T_INT(ue->Mod_id), T_INT(frame%1024),
     T_INT(subframe), T_INT(nb_rb),
     T_INT(frame_parms->N_RB_UL), T_INT(frame_parms->symbols_per_tti),
     T_BUFFER(&pdsch_vars[eNB_id]->rxdataF_comp0[eNB_id][0],
              2 * /* ulsch[UE_id]->harq_processes[harq_pid]->nb_rb */ frame_parms->N_RB_UL *12*frame_parms->symbols_per_tti*2));
+#endif
 
   return(0);
 }

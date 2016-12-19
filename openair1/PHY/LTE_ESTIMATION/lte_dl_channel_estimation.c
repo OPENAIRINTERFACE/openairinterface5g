@@ -25,6 +25,7 @@
 #include "defs.h"
 #include "PHY/defs.h"
 #include "filt96_32.h"
+#include "T.h"
 //#define DEBUG_CH
 
 int lte_dl_channel_estimation(PHY_VARS_UE *ue,
@@ -739,7 +740,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
     }
 
 #if T_TRACER
-        T(T_ENB_PHY_UL_CHANNEL_ESTIMATE, T_INT(eNB_id), T_INT(ue->Mod_id),
+        T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(eNB_id), T_INT(ue->Mod_id),
           T_INT(ue->proc.proc_rxtx[(Ns>>1)&1].frame_rx%1024), T_INT(ue->proc.proc_rxtx[(Ns>>1)&1].subframe_rx),
           T_INT(0), T_BUFFER(&ue->common_vars.dl_ch_estimates_time[eNB_offset][0][0], 512  * 4));
 #endif
