@@ -308,6 +308,7 @@ int main(int argc, char **argv)
     n_tx=2;
 
   lte_param_init(n_tx,
+                 n_tx,
 		 n_rx,
 		 transmission_mode,
 		 extended_prefix_flag,

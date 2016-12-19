@@ -59,10 +59,10 @@ int generate_sss(int32_t **txdataF,
 
   Nsymb = (frame_parms->Ncp==NORMAL)?14:12;
   k = frame_parms->ofdm_symbol_size-3*12+5;
-  a = (frame_parms->nb_antennas_tx == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
+  a = (frame_parms->nb_antenna_ports_eNB == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
 
   for (i=0; i<62; i++) {
-    for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+    for (aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
 
       ((int16_t*)txdataF[aa])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
                                  symbol*frame_parms->ofdm_symbol_size + k)] =

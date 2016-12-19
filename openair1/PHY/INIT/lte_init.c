@@ -46,13 +46,12 @@ void phy_config_mib(LTE_DL_FRAME_PARMS *fp,
                     uint8_t p_eNB,
                     PHICH_CONFIG_COMMON *phich_config)
 {
-
   fp->N_RB_DL                            = N_RB_DL;
   fp->Nid_cell                           = Nid_cell;
   fp->nushift                            = Nid_cell%6;
   fp->Ncp                                = Ncp;
   fp->frame_type                         = frame_type;
-  fp->nb_antennas_tx_eNB                 = p_eNB;
+  fp->nb_antenna_ports_eNB               = p_eNB;
   fp->phich_config_common.phich_resource = phich_config->phich_resource;
   fp->phich_config_common.phich_duration = phich_config->phich_duration;
 }
@@ -684,6 +683,7 @@ void phy_config_dedicated_eNB(uint8_t Mod_id,
 	eNB->transmission_mode[UE_id] = 6;
 	break;
       case AntennaInfoDedicated__transmissionMode_tm7:
+        lte_gold_ue_spec_port5(eNB->lte_gold_uespec_port5_table[0],eNB->frame_parms.Nid_cell,rnti);
 	eNB->transmission_mode[UE_id] = 7;
 	break;
       default:
@@ -835,7 +835,6 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
     if (physicalConfigDedicated->antennaInfo) {
       phy_vars_ue->transmission_mode[eNB_id] = 1+(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode);
       LOG_D(PHY,"Transmission Mode %d\n",phy_vars_ue->transmission_mode[eNB_id]);
-      LOG_D(PHY,"\n");
       switch(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode) {
       case AntennaInfoDedicated__transmissionMode_tm1:
 	phy_vars_ue->transmission_mode[eNB_id] = 1;
@@ -856,6 +855,7 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
 	phy_vars_ue->transmission_mode[eNB_id] = 6;
 	break;
       case AntennaInfoDedicated__transmissionMode_tm7:
+        lte_gold_ue_spec_port5(phy_vars_ue->lte_gold_uespec_port5_table, phy_vars_ue->frame_parms.Nid_cell, phy_vars_ue->pdcch_vars[eNB_id]->crnti);
 	phy_vars_ue->transmission_mode[eNB_id] = 7;
 	break;
       default:
@@ -1018,14 +1018,17 @@ void phy_init_lte_ue__PDSCH( LTE_UE_PDSCH* const pdsch, const LTE_DL_FRAME_PARMS
   pdsch->llr128_2ndstream = (int16_t**)malloc16_clear( sizeof(int16_t*) );
   // FIXME! no further allocation for (int16_t*)pdsch->llr128 !!! expect SIGSEGV
 
-  pdsch->rxdataF_ext         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-  pdsch->rxdataF_comp0       = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-  pdsch->rho                 = (int32_t**)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t*) );
-  pdsch->dl_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-  pdsch->dl_ch_rho_ext       = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-  pdsch->dl_ch_rho2_ext       = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-  pdsch->dl_ch_mag0          = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-  pdsch->dl_ch_magb0         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->rxdataF_ext            = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->rxdataF_uespec_pilots  = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->rxdataF_comp0          = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->rho                    = (int32_t**)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t*) );
+  pdsch->dl_ch_estimates_ext    = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->dl_bf_ch_estimates     = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->dl_bf_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->dl_ch_rho_ext          = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->dl_ch_rho2_ext         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->dl_ch_mag0             = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->dl_ch_magb0            = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
 
   // the allocated memory size is fixed:
   AssertFatal( fp->nb_antennas_rx <= 2, "nb_antennas_rx > 2" );
@@ -1036,13 +1039,16 @@ void phy_init_lte_ue__PDSCH( LTE_UE_PDSCH* const pdsch, const LTE_DL_FRAME_PARMS
     for (int j=0; j<4; j++) { //fp->nb_antennas_tx; j++)
       const int idx = (j<<1)+i;
       const size_t num = 7*2*fp->N_RB_DL*12;
-      pdsch->rxdataF_ext[idx]         = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-      pdsch->rxdataF_comp0[idx]       = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-      pdsch->dl_ch_estimates_ext[idx] = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-      pdsch->dl_ch_rho_ext[idx]       = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-      pdsch->dl_ch_rho2_ext[idx]       = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-      pdsch->dl_ch_mag0[idx]          = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-      pdsch->dl_ch_magb0[idx]         = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->rxdataF_ext[idx]             = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->rxdataF_uespec_pilots[idx]   = (int32_t*)malloc16_clear( sizeof(int32_t) * fp->N_RB_DL*12);
+      pdsch->rxdataF_comp0[idx]           = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->dl_ch_estimates_ext[idx]     = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->dl_bf_ch_estimates[idx]      = (int32_t*)malloc16_clear( sizeof(int32_t) * fp->ofdm_symbol_size*7*2);
+      pdsch->dl_bf_ch_estimates_ext[idx]  = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->dl_ch_rho_ext[idx]           = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->dl_ch_rho2_ext[idx]          = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->dl_ch_mag0[idx]              = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->dl_ch_magb0[idx]             = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
     }
   }
 }
@@ -1257,6 +1263,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   LTE_eNB_SRS* const srs_vars       = eNB->srs_vars;
   LTE_eNB_PRACH* const prach_vars   = &eNB->prach_vars;
   int i, j, eNB_id, UE_id; 
+  int re;
 
   eNB->total_dlsch_bitrate = 0;
   eNB->total_transmitted_bits = 0;
@@ -1283,9 +1290,9 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
       eNB->physicalConfigDedicated[UE_id] = NULL;
     }
     
-    eNB->first_run_I0_measurements =
-      1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
+    eNB->first_run_I0_measurements = 1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
   }
+
   //  for (eNB_id=0; eNB_id<3; eNB_id++) {
   {
     eNB_id=0;
@@ -1293,39 +1300,72 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
       
       // TX vars
       if (eNB->node_function != NGFI_RCC_IF4p5)
-	common_vars->txdata[eNB_id]  = (int32_t**)malloc16( fp->nb_antennas_tx*sizeof(int32_t*) );
-      common_vars->txdataF[eNB_id] = (int32_t **)malloc16( fp->nb_antennas_tx*sizeof(int32_t*) );
-      
-      for (i=0; i<fp->nb_antennas_tx; i++) {
-	if (eNB->node_function != NGFI_RCC_IF4p5)
-	  common_vars->txdata[eNB_id][i]  = (int32_t*)malloc16_clear( fp->samples_per_tti*10*sizeof(int32_t) );
-	common_vars->txdataF[eNB_id][i] = (int32_t*)malloc16_clear( fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
+	common_vars->txdata[eNB_id]  = (int32_t**)malloc16(fp->nb_antennas_tx*sizeof(int32_t*));
+      common_vars->txdataF[eNB_id] = (int32_t **)malloc16(NB_ANTENNA_PORTS_ENB*sizeof(int32_t*));
+      common_vars->txdataF_BF[eNB_id] = (int32_t **)malloc16(fp->nb_antennas_tx*sizeof(int32_t*));
+
+      for (i=0; i<14; i++) {
+        common_vars->txdataF[eNB_id][i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
 #ifdef DEBUG_PHY
-	printf("[openair][LTE_PHY][INIT] common_vars->txdata[%d][%d] = %p\n",eNB_id,i,common_vars->txdata[eNB_id][i]);
-	printf("[openair][LTE_PHY][INIT] common_vars->txdataF[%d][%d] = %p (%d bytes)\n",
-	    eNB_id,i,common_vars->txdataF[eNB_id][i],
-	    fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t));
+        msg("[openair][LTE_PHY][INIT] lte_common_vars->txdataF[%d][%d] = %p (%d bytes)\n",
+            eNB_id,i,common_vars->txdataF[eNB_id][i],
+            fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t));
+#endif
+      }
+
+      for (i=0; i<fp->nb_antennas_tx; i++) {
+	common_vars->txdataF_BF[eNB_id][i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t) );
+	if (eNB->node_function != NGFI_RCC_IF4p5)
+	  common_vars->txdata[eNB_id][i]  = (int32_t*)malloc16_clear(fp->samples_per_tti*10*sizeof(int32_t) );
+
+#ifdef DEBUG_PHY
+        msg("[openair][LTE_PHY][INIT] lte_common_vars->txdataF_BF[%d][%d] = %p (%d bytes)\n",
+            eNB_id,i,common_vars->txdataF_BF[eNB_id][i],
+            fp->ofdm_symbol_size*sizeof(int32_t)); 
+        msg("[openair][LTE_PHY][INIT] lte_common_vars->txdata[%d][%d] = %p\n",eNB_id,i,common_vars->txdata[eNB_id][i]);
 #endif
       }
       
+      for (i=0; i<14; i++) { // 14 is the total number of antenna ports
+        common_vars->beam_weights[eNB_id][i] = (int32_t **)malloc16_clear(fp->nb_antennas_tx*sizeof(int32_t*));
+        for (j=0; j<fp->nb_antennas_tx; j++) {
+          common_vars->beam_weights[eNB_id][i][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
+	  // antenna ports 0-3 are mapped on antennas 0-3
+	  // antenna port 4 is mapped on antenna 0
+	  // antenna ports 5-14 are mapped on all antennas 
+	  if (((i<4) && (i==j)) || ((i==4) && (j==0))) {
+	    for (re=0; re<fp->ofdm_symbol_size; re++) 
+	      common_vars->beam_weights[eNB_id][i][j][re] = 0x00007fff; 
+	  }
+	  else if (i>4) {
+	    for (re=0; re<fp->ofdm_symbol_size; re++) 
+	      common_vars->beam_weights[eNB_id][i][j][re] = 0x00007fff/fp->nb_antennas_tx; 
+	  }  
+#ifdef DEBUG_PHY
+	  msg("[openair][LTE_PHY][INIT] lte_common_vars->beam_weights[%d][%d][%d] = %p (%d bytes)\n",
+	      eNB_id,i,j,common_vars->beam_weights[eNB_id][i][j],
+              fp->ofdm_symbol_size*sizeof(int32_t)); 
+#endif
+        }
+      }
+
       // RX vars
       if (eNB->node_function != NGFI_RCC_IF4p5) {
-	common_vars->rxdata[eNB_id]        = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	common_vars->rxdata_7_5kHz[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	common_vars->rxdata[eNB_id]        = (int32_t**)malloc16(fp->nb_antennas_rx*sizeof(int32_t*) );
+	common_vars->rxdata_7_5kHz[eNB_id] = (int32_t**)malloc16(fp->nb_antennas_rx*sizeof(int32_t*) );
       }
-      common_vars->rxdataF[eNB_id]       = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-      
+      common_vars->rxdataF[eNB_id]       = (int32_t**)malloc16(fp->nb_antennas_rx*sizeof(int32_t*) );
+
       for (i=0; i<fp->nb_antennas_rx; i++) {
 	if (eNB->node_function != NGFI_RCC_IF4p5) {
 	  common_vars->rxdata[eNB_id][i] = (int32_t*)malloc16_clear( fp->samples_per_tti*10*sizeof(int32_t) );
 	  common_vars->rxdata_7_5kHz[eNB_id][i] = (int32_t*)malloc16_clear( fp->samples_per_tti*sizeof(int32_t) );
-	}
-	
-	common_vars->rxdataF[eNB_id][i] = (int32_t*)malloc16_clear(sizeof(int32_t)*(fp->ofdm_symbol_size*fp->symbols_per_tti) );
 #ifdef DEBUG_PHY
-	printf("[openair][LTE_PHY][INIT] common_vars->rxdata[%d][%d] = %p\n",eNB_id,i,common_vars->rxdata[eNB_id][i]);
-	printf("[openair][LTE_PHY][INIT] common_vars->rxdata_7_5kHz[%d][%d] = %p\n",eNB_id,i,common_vars->rxdata_7_5kHz[eNB_id][i]);
+	  printf("[openair][LTE_PHY][INIT] common_vars->rxdata[%d][%d] = %p\n",eNB_id,i,common_vars->rxdata[eNB_id][i]);
+	  printf("[openair][LTE_PHY][INIT] common_vars->rxdata_7_5kHz[%d][%d] = %p\n",eNB_id,i,common_vars->rxdata_7_5kHz[eNB_id][i]);
 #endif
+	}
+        common_vars->rxdataF[eNB_id][i] = (int32_t*)malloc16_clear(sizeof(int32_t)*(fp->ofdm_symbol_size*fp->symbols_per_tti) );
       }
       
       if (eNB->node_function != NGFI_RRU_IF4p5) {
@@ -1465,5 +1505,5 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   } // node_function != NGFI_RRU_IF4p5
 
   return (0);
-}
 
+}

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>OAI5G UE Autotest Report</title>
+    <script type="text/javascript">
+    function showhide(id) {
+      var e = document.getElementById(id);
+     e.style.display = (e.style.display == 'block') ? 'none' : 'block';
+    }
+</script>
+</head>
+<style>
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+    padding: 5px;
+}
+</style>
+<body>
+<center>
+<h2>OAI5G UE Autotest Report</h2>
+</center>
+
+<p>
+  <table border>
+    <caption>Test session configuration</caption>
+    <tr><td>Start time</td><td>{{test_session_start_time}}</td></tr>
+    <tr><td>Stop time</td><td>{{test_session_stop_time}}</td></tr>
+    <tr><td>Duration</td><td>{{test_session_duration}}</td></tr>    
+    <tr><td>MTC host</td><td>{{mtc_host}}</td></tr>
+    <tr><td>User</td><td>{{user}}</td></tr>
+    <tr><td>Password</td><td>{{password}}</td></tr>
+  </table>
+</p>
+
+
+<h3>Test Setup</h3>
+To be complete
+
+<br></br>
+<h3>UE phy-test performances tests results</h3>
+<h4>Objectives</h4>
+<p>Checks that OAI UE can achieve at least 75 percent of the theoretical throughput.</p>
+<p>Tests are done for all MCS (0 to 28) for 5MHz and 10MHz bandwidth.</p>
+<h4>Results</h4>
+
+<table>
+<TR><TH>ID</TH><TH>TAG</TH><TH>VERDICT</TH><TH>NB RUNS</TH><TH>PASS</TH><TH>FAILED</TH><TH>INCON</TH><TH>SKIPPED</TH><TH>SEG FAULT</TH><TH>TC Timeout</TH><TH>Start</TH><TH>Stop</TH><TH>Duration</TH><TH>Details</TH></TR>
+{% for result in test_results|sort(attribute='testcase_name') %}
+<TR>
+   <TD >{{result.testcase_name}}</TD>
+   <TD align="right">{{result.tags}}</TD>
+   {% if result.testcase_verdict == "PASS" %}
+      <TD align="center" style="background-color:green">{{result.testcase_verdict}}</TD>
+   {% elif result.testcase_verdict == "FAIL" %}
+      <TD align="center" style="background-color:red">{{result.testcase_verdict}}</TD>
+   {% else %}
+      <TD align="center" style="background-color:orange">{{result.testcase_verdict}}</TD>
+   {% endif %}
+   <TD align='center'>{{result.nruns}}</TD>
+   <TD align='center'>{{result.nb_run_pass}}</TD>
+   <TD align='center'>{{result.nb_run_failed}}</TD>
+   <TD align='center'>{{result.nb_run_inc}}</TD>  
+   <TD align='center'>{{result.nb_run_skip}}</TD>  
+   <TD align='center'>{{result.nb_seg_fault}}</TD>  
+   <TD >{{result.testcase_timeout}}</TD>
+   <TD >{{result.testcase_time_start.strftime('%Y-%m-%d %H:%M:%S')}}</TD>
+   <TD >{{result.testcase_time_stop.strftime('%Y-%m-%d %H:%M:%S')}}</TD>
+   <TD >{{result.testcase_duration}}</TD>
+   <TD ><a href="{{ result.testcase_name }}/{{ result.testcase_name }}_report.html">{{ result.testcase_name }}_report.html</a></TD>  
+</TR>
+{% endfor %}
+</table>
+
+
+<br></br>
+<h3>UE phy-test stability tests results</h3>
+<h4>Objectives</h4>
+<p>To be complete</p>
+<h4>Results</h4>
+To be complete
+
+</table>
+</body>
+</html>
+

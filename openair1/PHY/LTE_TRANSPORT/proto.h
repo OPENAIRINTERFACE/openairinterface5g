@@ -48,7 +48,7 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch);
 
 void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch);
 
-/** \fn new_eNB_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t abstraction_flag)
+/** \fn new_eNB_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t abstraction_flag, LTE_DL_FRAME_PARMS* frame_parms)
     \brief This function allocates structures for a particular DLSCH at eNB
     @returns Pointer to DLSCH to be removed
     @param Kmimo Kmimo factor from 36-212/36-213
@@ -56,8 +56,9 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch);
     @param Nsoft Soft-LLR buffer size from UE-Category
     @params N_RB_DL total number of resource blocks (determine the operating BW)
     @param abstraction_flag Flag to indicate abstracted interface
+    @param frame_parms Pointer to frame descriptor structure
 */
-LTE_eNB_DLSCH_t *new_eNB_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t N_RB_DL, uint8_t abstraction_flag);
+LTE_eNB_DLSCH_t *new_eNB_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t N_RB_DL, uint8_t abstraction_flag, LTE_DL_FRAME_PARMS* frame_parms);
 
 /** \fn free_ue_dlsch(LTE_UE_DLSCH_t *dlsch)
     \brief This function frees memory allocated for a particular DLSCH at UE
@@ -191,11 +192,50 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     \param re_allocated pointer to allocation counter
     \param skip_dc offset for positive RBs
     \param skip_half indicate that first or second half of RB must be skipped for PBCH/PSS/SSS
+    \param ue_spec_rs UE specific RS indicator 
+    \param nb_antennas_tx_phy Physical antenna elements which can be different with antenna port number, especially in beamforming case
     \param use2ndpilots Set to use the pilots from antenna port 1 for PDSCH
     \param frame_parms Frame parameter descriptor
 */
 
-int32_t allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
+// Functions below implement 36-211
+
+/** \fn allocate_REs_in_RB(int32_t **txdataF,
+    uint32_t *jj,
+    uint32_t *jj2,
+    uint16_t re_offset,
+    uint32_t symbol_offset,
+    LTE_DL_eNB_HARQ_t *dlsch0_harq,
+    LTE_DL_eNB_HARQ_t *dlsch1_harq,
+    uint8_t pilots,
+    int16_t amp,
+    int16_t *qam_table_s,
+    uint32_t *re_allocated,
+    uint8_t skip_dc,
+    uint8_t skip_half,
+    uint8_t use2ndpilots,
+    LTE_DL_FRAME_PARMS *frame_parms);
+
+    \brief Fills RB with data
+    \param txdataF pointer to output data (frequency domain signal)
+    \param jj index to output (from CW 1)
+    \param jj index to output (from CW 2)
+    \param re_offset index of the first RE of the RB
+    \param symbol_offset index to the OFDM symbol
+    \param dlsch0_harq Pointer to Transport block 0 HARQ structure
+    \param dlsch0_harq Pointer to Transport block 1 HARQ structure
+    \param pilots =1 if symbol_offset is an OFDM symbol that contains pilots, 0 otherwise
+    \param amp Amplitude for symbols
+    \param qam_table_s0 pointer to scaled QAM table for Transport Block 0 (by rho_a or rho_b)
+    \param qam_table_s1 pointer to scaled QAM table for Transport Block 1 (by rho_a or rho_b)
+    \param re_allocated pointer to allocation counter
+    \param skip_dc offset for positive RBs
+    \param skip_half indicate that first or second half of RB must be skipped for PBCH/PSS/SSS
+    \param use2ndpilots Set to use the pilots from antenna port 1 for PDSCH
+    \param frame_parms Frame parameter descriptor
+*/
+
+int32_t allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
                            int32_t **txdataF,
                            uint32_t *jj,
                            uint32_t *jj2,
@@ -211,6 +251,9 @@ int32_t allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
                            uint32_t *re_allocated,
                            uint8_t skip_dc,
                            uint8_t skip_half,
+			   uint8_t lprime,
+			   uint8_t mprime,
+			   uint8_t Ns,
 			   int *P1_SHIFT,
 			   int *P2_SHIFT);
 
@@ -230,12 +273,11 @@ int32_t allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
     @param num_pdcch_symbols Number of PDCCH symbols in this subframe
     @param dlsch0 Pointer to Transport Block 0 DLSCH descriptor for this allocation
     @param dlsch1 Pointer to Transport Block 0 DLSCH descriptor for this allocation
-
 */
-int32_t dlsch_modulation(int32_t **txdataF,
+int32_t dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
+                         int32_t **txdataF,
                          int16_t amp,
                          uint32_t sub_frame_offset,
-                         LTE_DL_FRAME_PARMS *frame_parms,
                          uint8_t num_pdcch_symbols,
                          LTE_eNB_DLSCH_t *dlsch0,
                          LTE_eNB_DLSCH_t *dlsch1);
@@ -328,6 +370,13 @@ int32_t generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
                              eNB_rxtx_proc_t *proc,
 			     int32_t **txdataF,
                              int16_t amp);
+
+void generate_ue_spec_pilots(PHY_VARS_eNB *phy_vars_eNB,
+                             uint8_t UE_id,
+                             int32_t **txdataF,
+                             int16_t amp,
+                             uint16_t Ntti,
+		             uint8_t beamforming_mode);
 
 int32_t generate_pss(int32_t **txdataF,
                      int16_t amp,
@@ -714,6 +763,7 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     @param nb_rb number of RBs for this allocation
     @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
     @param llr128p pointer to pointer to symbol in dlsch_llr
+    @param beamforming_mode beamforming mode
 */
 int32_t dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
                        int32_t **rxdataF_comp,
@@ -722,7 +772,8 @@ int32_t dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
                        uint8_t first_symbol_flag,
                        uint16_t nb_rb,
                        uint16_t pbch_pss_sss_adj,
-                       int16_t **llr128p);
+                       int16_t **llr128p,
+                       uint8_t beamforming_mode);
 
 /**
    \brief This function generates log-likelihood ratios (decoder input) for single-stream 16QAM received waveforms
@@ -735,6 +786,7 @@ int32_t dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
    @param nb_rb number of RBs for this allocation
    @param pbch_pss_sss_adjust  Adjustment factor in RE for PBCH/PSS/SSS allocations
    @param llr128p pointer to pointer to symbol in dlsch_llr
+   @param beamforming_mode beamforming mode
 */
 
 void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
@@ -745,7 +797,8 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
                      uint16_t pbch_pss_sss_adjust,
-                     int16_t **llr128p);
+                     int16_t **llr128p,
+                     uint8_t beamforming_mode);
 
 /**
    \brief This function generates log-likelihood ratios (decoder input) for single-stream 16QAM received waveforms
@@ -758,6 +811,7 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
    @param first_symbol_flag
    @param nb_rb number of RBs for this allocation
    @param pbch_pss_sss_adjust PBCH/PSS/SSS RE adjustment (in REs)
+   @param beamforming_mode beamforming mode
 */
 void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      int32_t **rxdataF_comp,
@@ -768,7 +822,8 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
                      uint16_t pbch_pss_sss_adjust,
-                     short **llr_save);
+                     int16_t **llr_save,
+                     uint8_t beamforming_mode);
 
 /** \fn dlsch_siso(LTE_DL_FRAME_PARMS *frame_parms,
     int32_t **rxdataF_comp,
@@ -939,6 +994,37 @@ uint16_t dlsch_extract_rbs_dual(int32_t **rxdataF,
                                 uint32_t high_speed_flag,
                                 LTE_DL_FRAME_PARMS *frame_parms);
 
+/** \fn dlsch_extract_rbs_TM7(int32_t **rxdataF,
+    int32_t **dl_bf_ch_estimates,
+    int32_t **rxdataF_ext,
+    int32_t **dl_bf_ch_estimates_ext,
+    uint32_t *rb_alloc,
+    uint8_t symbol,
+    uint8_t subframe,
+    uint32_t high_speed_flag,
+    LTE_DL_FRAME_PARMS *frame_parms)
+    \brief This function extracts the received resource blocks, both channel estimates and data symbols,
+    for the current allocation and for single antenna eNB transmission.
+    @param rxdataF Raw FFT output of received signal
+    @param dl_bf_ch_estimates Beamforming channel estimates of current slot
+    @param rxdataF_ext FFT output for RBs in this allocation
+    @param dl_bf_ch_estimates_ext Beamforming channel estimates for RBs in this allocation
+    @param rb_alloc RB allocation vector
+    @param symbol Symbol to extract
+    @param subframe Subframe number
+    @param high_speed_flag
+    @param frame_parms Pointer to frame descriptor
+*/
+uint16_t dlsch_extract_rbs_TM7(int32_t **rxdataF,
+                               int32_t **dl_bf_ch_estimates,
+                               int32_t **rxdataF_ext,
+                               int32_t **dl_bf_ch_estimates_ext,
+                               uint32_t *rb_alloc,
+                               uint8_t symbol,
+                               uint8_t subframe,
+                               uint32_t high_speed_flag,
+                               LTE_DL_FRAME_PARMS *frame_parms);
+
 /** \brief This function performs channel compensation (matched filtering) on the received RBs for this allocation.  In addition, it computes the squared-magnitude of the channel with weightings for 16QAM/64QAM detection as well as dual-stream detection (cross-correlation)
     @param rxdataF_ext Frequency-domain received signal in RBs to be demodulated
     @param dl_ch_estimates_ext Frequency-domain channel estimates in RBs to be demodulated
@@ -1028,6 +1114,12 @@ void dlsch_channel_level_TM56(int32_t **dl_ch_estimates_ext,
                               int32_t *avg,
                               uint8_t symbol_mod,
                               uint16_t nb_rb);
+
+void dlsch_channel_level_TM7(int32_t **dl_bf_ch_estimates_ext,
+                         LTE_DL_FRAME_PARMS *frame_parms,
+                         int32_t *avg,
+                         uint8_t pilots_flag,
+                         uint16_t nb_rb);
 
 void dlsch_scale_channel(int32_t **dl_ch_estimates_ext,
                          LTE_DL_FRAME_PARMS *frame_parms,
@@ -1293,7 +1385,7 @@ uint8_t get_transmission_mode(module_id_t Mod_id, uint8_t CC_id, rnti_t rnti);
 */
 uint32_t conv_nprb(uint8_t ra_header,uint32_t rb_alloc,int N_RB_DL);
 
-int get_G(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint8_t mod_order,uint8_t Nl,uint8_t num_pdcch_symbols,int frame,uint8_t subframe);
+int get_G(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint8_t mod_order,uint8_t Nl,uint8_t num_pdcch_symbols,int frame,uint8_t subframe, uint8_t beamforming_mode);
 
 int adjust_G(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe);
 int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe,uint8_t symbol);
@@ -1406,7 +1498,8 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                       PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
                                       uint16_t si_rnti,
                                       uint16_t ra_rnti,
-                                      uint16_t p_rnti);
+                                      uint16_t p_rnti,
+                                      uint8_t beamforming_mode);
 
 int32_t generate_eNB_dlsch_params_from_dci(int frame,
     uint8_t subframe,
@@ -1419,7 +1512,8 @@ int32_t generate_eNB_dlsch_params_from_dci(int frame,
     uint16_t si_rnti,
     uint16_t ra_rnti,
     uint16_t p_rnti,
-    uint16_t DL_pmi_single);
+    uint16_t DL_pmi_single,
+    uint8_t beamforming_mode);
 
 int32_t generate_eNB_ulsch_params_from_rar(uint8_t *rar_pdu,
     frame_t frame,
@@ -1636,7 +1730,7 @@ uint8_t phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t s
     @param subframe Subframe of received/transmitted PHICH
     @returns frame of PUSCH transmission
 */
-uint8_t phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,frame_t frame,uint8_t subframe);;
+uint8_t phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,frame_t frame,uint8_t subframe);
 
 void print_CQI(void *o,UCI_format_t uci_format,uint8_t eNB_id,int N_RB_DL);
 
@@ -1837,6 +1931,8 @@ void init_scrambling_lut(void);
 int is_pmch_subframe(frame_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parms);
 
 uint8_t is_not_pilot(uint8_t pilots, uint8_t re, uint8_t nushift, uint8_t use2ndpilots);
+
+uint8_t is_not_UEspecRS(int8_t lprime, uint8_t re, uint8_t nushift, uint8_t Ncp, uint8_t beamforming_mode);
 
 uint32_t dlsch_decoding_abstraction(double *dlsch_MIPB,
                                     LTE_DL_FRAME_PARMS *lte_frame_parms,

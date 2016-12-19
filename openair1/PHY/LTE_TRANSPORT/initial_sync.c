@@ -152,7 +152,7 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode)
 
   if (pbch_decoded) {
 
-    frame_parms->nb_antennas_tx_eNB = pbch_tx_ant;
+    frame_parms->nb_antenna_ports_eNB = pbch_tx_ant;
 
     // set initial transmission mode to 1 or 2 depending on number of detected TX antennas
     frame_parms->mode1_flag = (pbch_tx_ant==1);
@@ -476,6 +476,15 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
     //#endif
 
     if (ue->UE_scan_carrier == 0) {
+
+    #if UE_AUTOTEST_TRACE
+      LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %d \n",
+              ue->Mod_id,
+              ue->proc.proc_rxtx[0].frame_rx,
+              ue->rx_offset,
+              ue->common_vars.freq_offset );
+    #endif
+
       if (ue->mac_enabled==1) {
 	LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
 	//mac_resynch();
@@ -513,7 +522,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
 	  ue->frame_parms.N_RB_DL,
 	  ue->frame_parms.phich_config_common.phich_duration,
 	  phich_string[ue->frame_parms.phich_config_common.phich_resource],
-	  ue->frame_parms.nb_antennas_tx_eNB);
+	  ue->frame_parms.nb_antenna_ports_eNB);
 
 #if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
     LOG_I(PHY,"[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",

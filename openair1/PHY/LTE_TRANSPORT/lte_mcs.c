@@ -325,11 +325,8 @@ int adjust_G(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_orde
   return(0);
 }
 
-int get_G(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint8_t mod_order,uint8_t Nl,uint8_t num_pdcch_symbols,int frame,uint8_t subframe)
+int get_G(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint8_t mod_order,uint8_t Nl,uint8_t num_pdcch_symbols,int frame,uint8_t subframe,uint8_t beamforming_mode)
 {
-
-
-
   int G_adj;
 
   if (is_pmch_subframe(frame,subframe,frame_parms) == 0) {
@@ -340,9 +337,11 @@ int get_G(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint
       // PDDDPDD PDDDPDD - 13 PDSCH symbols, 10 full, 3 w/ pilots = 10*12 + 3*8
       // PCDDPDD PDDDPDD - 12 PDSCH symbols, 9 full, 3 w/ pilots = 9*12 + 3*8
       // PCCDPDD PDDDPDD - 11 PDSCH symbols, 8 full, 3 w/pilots = 8*12 + 3*8
-      if (frame_parms->mode1_flag==0) // SISO
+      if (beamforming_mode==0 && frame_parms->mode1_flag==0) 
         return((((int)nb_rb * mod_order * ((11-num_pdcch_symbols)*12 + 3*8)) - G_adj)*Nl);
-      else
+      else if(beamforming_mode==7)
+        return(((int)nb_rb * mod_order * ((7-num_pdcch_symbols)*12 + 3*10 + 4*9)) - G_adj);
+      else //SISO
         return(((int)nb_rb * mod_order * ((11-num_pdcch_symbols)*12 + 3*10)) - G_adj);
     } else {
       // PDDPDD PDDPDD - 11 PDSCH symbols, 8 full, 3 w/ pilots = 8*12 + 3*8
@@ -350,7 +349,9 @@ int get_G(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint
       // PCCPDD PDDPDD - 9 PDSCH symbols, 6 full, 3 w/pilots = 6*12 + 3*8
       if (frame_parms->mode1_flag==0)
         return((((int)nb_rb * mod_order * ((9-num_pdcch_symbols)*12 + 3*8)) - G_adj)*Nl);
-      else
+      else if(beamforming_mode==7)
+        return(((int)nb_rb * mod_order * ((5-num_pdcch_symbols)*12 + 3*8 + 4*9)) - G_adj);
+      else //SISO
         return(((int)nb_rb * mod_order * ((9-num_pdcch_symbols)*12 + 3*10)) - G_adj);
     }
   } else { // This is an MBSFN subframe

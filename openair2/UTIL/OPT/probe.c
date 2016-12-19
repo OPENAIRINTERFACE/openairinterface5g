@@ -304,19 +304,25 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
     frameBuffer[frameOffset++] = retx;
   }
 
-#ifdef WIRESHARK_DEV
+//#ifdef WIRESHARK_DEV
 
   /* Relating to out-of-band events */
   /* N.B. dissector will only look to these fields if length is 0... */
   if (pdu_buffer_size==0) {
     switch (oob_event) {
     case ltemac_send_preamble :
-      LOG_D(OPT,"oob event %d %d\n",ltemac_send_preamble );
+      LOG_D(OPT,"oob ltemac_send_preamble event %02x."
+          //"%02x."
+          "%02x.%02x\n",
+          MAC_LTE_OOB_EVENT_TAG,
+          //ltemac_send_preamble,
+          rnti,
+          oob_event_value);
       //frameBuffer[frameOffset++]=0;
       //frameBuffer[frameOffset++]=0;
       //frameBuffer[frameOffset++]=0;
       frameBuffer[frameOffset++] = MAC_LTE_OOB_EVENT_TAG;
-      frameBuffer[frameOffset++]=ltemac_send_preamble;
+      //frameBuffer[frameOffset++]=ltemac_send_preamble;
       frameBuffer[frameOffset++]=rnti; // is the preamble
       frameBuffer[frameOffset++]=oob_event_value;
       break;
@@ -329,12 +335,12 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
 
     case ltemac_sr_failure:
     default:
-      LOG_D(OPT,"not implemeneted yet\n");
+      LOG_W(OPT,"not implemeneted yet\n");
       break;
     }
   }
 
-#endif
+//#endif
   /***************************************/
   /* Now write the MAC PDU               */
   frameBuffer[frameOffset++] = MAC_LTE_PAYLOAD_TAG;
