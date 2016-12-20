@@ -205,8 +205,8 @@ unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb
   int gain_dB = power_dBm - power_max_dBm;
   double gain_lin;
 
-  if (gain_dB < -20)
-    return(AMP/10);
+  //if (gain_dB < -20)
+  //  return(AMP/10);
 
   gain_lin = pow(10,.1*gain_dB);
   if ((nb_rb >0) && (nb_rb <= N_RB_UL)) {
@@ -1569,7 +1569,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   int Mod_id = ue->Mod_id;
   int CC_id = ue->CC_id;
   int tx_amp;
-  int8_t Po_PUCCH;
+  int16_t Po_PUCCH;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PUCCH,VCD_FUNCTION_IN);
   
