@@ -1285,6 +1285,22 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
       {
           ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK = 0;
       }
+
+#if T_TRACER
+    if(ue->ulsch[eNB_id]->o_ACK[0])
+    {
+    	LOG_I(PHY,"PUSCH ACK\n");
+        T(T_UE_PHY_DLSCH_UE_ACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(Mod_id), T_INT(ue->dlsch[eNB_id][0]->rnti),
+                      T_INT(ue->dlsch[eNB_id][0]->current_harq_pid));
+    }
+    else
+    {
+    	LOG_I(PHY,"PUSCH NACK\n");
+        T(T_UE_PHY_DLSCH_UE_NACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(Mod_id), T_INT(ue->dlsch[eNB_id][0]->rnti),
+                      T_INT(ue->dlsch[eNB_id][0]->current_harq_pid));
+    }
+#endif
+
       LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating ACK (%d,%d) for %d bits on PUSCH\n",
         Mod_id,
         ue->ulsch[eNB_id]->rnti,
@@ -1445,6 +1461,10 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
 			  nb_rb);
 #else
       tx_amp = AMP;
+#endif
+#if T_TRACER
+      T(T_UE_PHY_PUSCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
+                    T_INT(tx_amp));
 #endif
       LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d, generating PUSCH, Po_PUSCH: %d dBm (max %d dBm), amp %d\n",
 	    Mod_id,harq_pid,frame_tx,subframe_tx,ue->tx_power_dBm[subframe_tx],ue->tx_power_max_dBm, tx_amp);
@@ -1665,7 +1685,10 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 #else
     tx_amp = AMP;
 #endif
-	    
+#if T_TRACER
+      T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
+                    T_INT(tx_amp));
+#endif
     if (SR_payload>0) {
       LOG_D(PHY,"[UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 1a/1b payload %d,%d (with SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH, amp %d\n",
 	    Mod_id,
@@ -1688,6 +1711,21 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 	    Po_PUCCH,
 	    tx_amp);
     }
+
+#if T_TRACER
+    if(pucch_ack_payload[0])
+    {
+    	LOG_I(PHY,"PUCCH ACK\n");
+        T(T_UE_PHY_DLSCH_UE_ACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(Mod_id), T_INT(ue->dlsch[eNB_id][0]->rnti),
+                      T_INT(ue->dlsch[eNB_id][0]->current_harq_pid));
+    }
+    else
+    {
+    	LOG_I(PHY,"PUCCH NACK\n");
+        T(T_UE_PHY_DLSCH_UE_NACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(Mod_id), T_INT(ue->dlsch[eNB_id][0]->rnti),
+                      T_INT(ue->dlsch[eNB_id][0]->current_harq_pid));
+    }
+#endif
 	    
     if (abstraction_flag == 0) {
 	      
@@ -1731,6 +1769,10 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			 1);
 #else
     tx_amp = AMP;
+#endif
+#if T_TRACER
+      T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
+                    T_INT(tx_amp));
 #endif
     LOG_D(PHY,"[UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 1 (SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d\n",
 	  Mod_id,
@@ -1796,6 +1838,10 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 #else
       tx_amp = AMP;
 #endif
+#if T_TRACER
+      T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
+                    T_INT(tx_amp));
+#endif
       LOG_D(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2 (CQI), n2_pucch %d, Po_PUCCH %d, isShortenPucch %d, amp %d\n",
 	    Mod_id,
 	    ue->dlsch[eNB_id][0]->rnti,
@@ -1835,7 +1881,10 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
       }
       ue->tx_power_dBm[subframe_tx] = Po_PUCCH;
       ue->tx_total_RE[subframe_tx] = 12;
-      
+#if T_TRACER
+      T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
+                    T_INT(tx_amp));
+#endif
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
       tx_amp =  get_tx_amp(Po_PUCCH,
 			   ue->tx_power_max_dBm,
@@ -1887,7 +1936,9 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX,VCD_FUNCTION_IN);
 
+#if T_TRACER
   T(T_UE_PHY_UL_TICK, T_INT(ue->Mod_id), T_INT(frame_tx%1024), T_INT(subframe_tx));
+#endif
 
   ue->generate_ul_signal[eNB_id] = 0;
 
@@ -2046,7 +2097,7 @@ void phy_procedures_UE_S_TX(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t abstraction_f
   }
 }
 
-void ue_measurement_procedures(uint16_t l, PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uint8_t eNB_id,uint8_t abstraction_flag,runmode_t mode)
+void ue_measurement_procedures(uint16_t l, PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uint8_t eNB_id,uint8_t slot,uint8_t abstraction_flag,runmode_t mode)
 {
   
   LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
@@ -2070,6 +2121,13 @@ void ue_measurement_procedures(uint16_t l, PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,
 			  0,
 			  1);
     }
+#if T_TRACER
+    if(slot == 0)
+      T(T_UE_PHY_MEAS, T_INT(eNB_id),  T_INT(ue->Mod_id), T_INT(proc->frame_rx%1024), T_INT(proc->subframe_rx),
+                             T_INT((int)(10*log10(ue->measurements.rsrp[0])-ue->rx_total_gain_dB)),
+                             T_INT((int)ue->measurements.rx_rssi_dBm[0]),
+                             T_INT((int)(ue->measurements.rx_power_avg_dB[0] - ue->measurements.n0_power_avg_dB)));
+#endif
   }
 
   if (l==(6-ue->frame_parms.Ncp)) {
@@ -3339,7 +3397,9 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
 
+#if T_TRACER
   T(T_UE_PHY_DL_TICK, T_INT(ue->Mod_id), T_INT(frame_rx%1024), T_INT(subframe_rx));
+#endif
 
   T(T_UE_PHY_INPUT_SIGNAL, T_INT(ue->Mod_id), T_INT(frame_rx%1024), T_INT(subframe_rx), T_INT(0),
     T_BUFFER(&ue->common_vars.rxdata[0][subframe_rx*ue->frame_parms.samples_per_tti],
@@ -3411,7 +3471,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
       stop_meas(&ue->ofdm_demod_stats);
     }
     
-    ue_measurement_procedures(l-1,ue,proc,eNB_id,abstraction_flag,mode);
+    ue_measurement_procedures(l-1,ue,proc,eNB_id,0,abstraction_flag,mode);
     if ((l==pilot1) ||
 	((pmch_flag==1)&(l==l2)))  {
       LOG_D(PHY,"[UE  %d] Frame %d: Calling pdcch procedures (eNB %d)\n",ue->Mod_id,frame_rx,eNB_id);
@@ -3424,7 +3484,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     }
     
   } // for l=1..l2
-  ue_measurement_procedures(l-1,ue,proc,eNB_id,abstraction_flag,mode);  
+  //ue_measurement_procedures(l-1,ue,proc,eNB_id,abstraction_flag,mode);
   
     // If this is PMCH, call procedures and return
   if (pmch_flag == 1) {
@@ -3515,7 +3575,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 	stop_meas(&ue->ofdm_demod_stats);
       }
       
-      ue_measurement_procedures(l-1,ue,proc,eNB_id,abstraction_flag,mode);
+      ue_measurement_procedures(l-1,ue,proc,eNB_id,1,abstraction_flag,mode);
       
     } // for l=1..l2
 

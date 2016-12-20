@@ -3406,6 +3406,7 @@ PMI_FEEDBACK:
                                  PDSCH,
                                  eNB_id,
                                  eNB_id_i,
+                                 0, // frame
                                  subframe,
                                  m,
                                  (m==UE->pdcch_vars[0]->num_pdcch_symbols)?1:0,
@@ -3431,6 +3432,7 @@ PMI_FEEDBACK:
                                  PDSCH,
                                  eNB_id,
                                  eNB_id_i,
+                                 0, // frame
                                  subframe,
                                  m,
                                  0,
@@ -3456,6 +3458,7 @@ PMI_FEEDBACK:
                                  PDSCH,
                                  eNB_id,
                                  eNB_id_i,
+                                 0, // frame
                                  subframe,
                                  m,
                                  0,
