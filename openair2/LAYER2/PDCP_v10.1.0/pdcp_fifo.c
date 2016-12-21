@@ -128,7 +128,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
         ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size);
 
       list_remove_head (&pdcp_sdu_list);
-      free_mem_block (sdu_p);
+      free_mem_block (sdu_p, __func__);
       cont = 1;
       pdcp_nb_sdu_sent += 1;
       sdu_p = list_get_head (&pdcp_sdu_list);
@@ -244,7 +244,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
                     ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id);
 
               list_remove_head (&pdcp_sdu_list);
-              free_mem_block (sdu_p);
+              free_mem_block (sdu_p, __func__);
               cont = 1;
               pdcp_nb_sdu_sent += 1;
               sdu_p = list_get_head (&pdcp_sdu_list);
@@ -272,7 +272,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
         if (!pdcp_output_sdu_bytes_to_write) {     // OK finish with this SDU
           //PRINT_RB_SEND_OUTPUT_SDU ("[PDCP] RADIO->IP SEND SDU\n");
           list_remove_head (&pdcp_sdu_list);
-          free_mem_block (sdu_p);
+          free_mem_block (sdu_p, __func__);
           cont = 1;
           pdcp_nb_sdu_sent += 1;
           sdu_p = list_get_head (&pdcp_sdu_list);

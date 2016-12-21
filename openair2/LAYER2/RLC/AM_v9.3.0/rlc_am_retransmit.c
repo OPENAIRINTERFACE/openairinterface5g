@@ -143,7 +143,7 @@ void rlc_am_ack_pdu (
 
   if ((rlc_pP->pdu_retrans_buffer[snP].flags.ack == 0) && (mb_p != NULL)) {
     //if (mb_pP != NULL) {
-    free_mem_block(mb_p);
+    free_mem_block(mb_p, __func__);
     rlc_pP->pdu_retrans_buffer[snP].mem_block = NULL;
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[ACK-PDU] ACK PDU SN %05d previous retx_count %d \n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
@@ -235,7 +235,7 @@ void rlc_am_ack_pdu (
           snP);
 
     if (mb_p != NULL) {
-      free_mem_block(mb_p);
+      free_mem_block(mb_p, __func__);
       rlc_pP->pdu_retrans_buffer[snP].mem_block = NULL;
     }
 
@@ -275,7 +275,7 @@ mem_block_t* rlc_am_retransmit_get_copy (
     rlc_am_tx_data_pdu_management_t *pdu_mngt = &rlc_pP->pdu_retrans_buffer[snP % RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE];
 
     int size             = pdu_mngt->header_and_payload_size + sizeof(struct mac_tb_req);
-    mem_block_t* mb_copy = get_free_mem_block(size);
+    mem_block_t* mb_copy = get_free_mem_block(size, __func__);
     memcpy(mb_copy->data, mb_original_p->data, size);
 
     rlc_am_pdu_sn_10_t *pdu_p                         = (rlc_am_pdu_sn_10_t*) (&mb_copy->data[sizeof(struct mac_tb_req)]);
@@ -343,7 +343,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(
   mem_block_t*           mb_original_p     = rlc_pP->pdu_retrans_buffer[snP].mem_block;
 
   if (mb_original_p != NULL) {
-    mem_block_t*           mb_sub_segment_p  = get_free_mem_block(*sizeP + sizeof(struct mac_tb_req));
+    mem_block_t*           mb_sub_segment_p  = get_free_mem_block(*sizeP + sizeof(struct mac_tb_req), __func__);
     rlc_am_pdu_sn_10_t*    pdu_original_p    = (rlc_am_pdu_sn_10_t*) (&mb_original_p->data[sizeof(struct mac_tb_req)]);
     rlc_am_pdu_sn_10_t*    pdu_sub_segment_p = (rlc_am_pdu_sn_10_t*) (&mb_sub_segment_p->data[sizeof(struct mac_tb_req)]);
     rlc_am_pdu_info_t      pdu_info;

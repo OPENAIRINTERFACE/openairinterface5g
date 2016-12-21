@@ -544,7 +544,7 @@ rlc_um_try_reassembly(
             __FILE__,
             __LINE__);
 #endif
-      free_mem_block(rlc_pP->dar_buffer[sn]);
+      free_mem_block(rlc_pP->dar_buffer[sn], __func__);
       rlc_pP->dar_buffer[sn] = NULL;
     } else {
       rlc_pP->last_reassemblied_missing_sn = sn;
@@ -957,7 +957,7 @@ rlc_um_receive_process_dar (
   } else if (rlc_pP->rx_sn_length == 5) {
     sn = pdu_pP->b1 & 0x1F;
   } else {
-    free_mem_block(pdu_mem_pP);
+    free_mem_block(pdu_mem_pP, __func__);
   }
 
   RLC_UM_MUTEX_LOCK(&rlc_pP->lock_dar_buffer, ctxt_pP, rlc_pP);
@@ -982,7 +982,7 @@ rlc_um_receive_process_dar (
 #endif
     rlc_pP->stat_rx_data_pdu_out_of_window   += 1;
     rlc_pP->stat_rx_data_bytes_out_of_window += tb_sizeP;
-    free_mem_block(pdu_mem_pP);
+    free_mem_block(pdu_mem_pP, __func__);
     pdu_mem_pP = NULL;
     RLC_UM_MUTEX_UNLOCK(&rlc_pP->lock_dar_buffer);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_UM_RECEIVE_PROCESS_DAR, VCD_FUNCTION_OUT);
@@ -1001,7 +1001,7 @@ rlc_um_receive_process_dar (
       //discard the PDU
       rlc_pP->stat_rx_data_pdus_duplicate  += 1;
       rlc_pP->stat_rx_data_bytes_duplicate += tb_sizeP;
-      free_mem_block(pdu_mem_pP);
+      free_mem_block(pdu_mem_pP, __func__);
       pdu_mem_pP = NULL;
       RLC_UM_MUTEX_UNLOCK(&rlc_pP->lock_dar_buffer);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_UM_RECEIVE_PROCESS_DAR, VCD_FUNCTION_OUT);
@@ -1017,7 +1017,7 @@ rlc_um_receive_process_dar (
           sn);
 #endif
     mem_block_t *pdu = rlc_um_remove_pdu_from_dar_buffer(ctxt_pP, rlc_pP, sn);
-    free_mem_block(pdu);
+    free_mem_block(pdu, __func__);
   }
 
   rlc_um_store_pdu_in_dar_buffer(ctxt_pP, rlc_pP, pdu_mem_pP, sn);
