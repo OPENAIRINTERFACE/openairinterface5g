@@ -41,6 +41,7 @@ extern int otg_enabled;
 #include "pdcp_primitives.h"
 
 #ifdef USER_MODE
+#include <pthread.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -90,6 +91,21 @@ extern Packet_OTG_List_t *otg_pdcp_buffer;
 #  include "gtpv1u_eNB_task.h"
 #endif
 
+/* Prevent de-queueing the same PDCP SDU from the queue twice
+ * by multiple threads. This has happened in TDD when thread-odd
+ * is flushing a PDCP SDU after UE_RX() processing; whereas
+ * thread-even is at a special-subframe, skips the UE_RX() process
+ * and goes straight to the PDCP SDU flushing. The 2nd flushing
+ * dequeues the same SDU again causing unexpected behavior.
+ *
+ * comment out the MACRO below to disable this protection
+ */
+#define PDCP_SDU_FLUSH_LOCK
+
+#ifdef PDCP_SDU_FLUSH_LOCK
+static pthread_mutex_t mtex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
 pdcp_data_req_header_t pdcp_read_header_g;
 
 //-----------------------------------------------------------------------------
@@ -97,21 +113,13 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
 {
   //-----------------------------------------------------------------------------
 
-  mem_block_t     *sdu_p            = list_get_head (&pdcp_sdu_list);
-  int              bytes_wrote      = 0;
-  int              pdcp_nb_sdu_sent = 0;
-  uint8_t          cont             = 1;
-#if defined(LINK_ENB_PDCP_TO_GTPV1U)
-  //MessageDef      *message_p        = NULL;
-#endif
-
-#if defined(PDCP_USE_NETLINK) && defined(LINUX)
+//#if defined(PDCP_USE_NETLINK) && defined(LINUX)
   int ret = 0;
-#endif
+//#endif
 
 #ifdef DEBUG_PDCP_FIFO_FLUSH_SDU
 #define THREAD_NAME_LEN 16
-  char threadname[THREAD_NAME_LEN];
+  static char threadname[THREAD_NAME_LEN];
   ret = pthread_getname_np(pthread_self(), threadname, THREAD_NAME_LEN);
   if (ret != 0)
   {
@@ -119,6 +127,34 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
    exit_fun("Error getting thread name");
   }
 #undef THREAD_NAME_LEN
+#endif
+
+#ifdef PDCP_SDU_FLUSH_LOCK
+  ret = pthread_mutex_trylock(&mtex);
+  if (ret == EBUSY) {
+#ifdef DEBUG_PDCP_FIFO_FLUSH_SDU
+    LOG_W(PDCP, "[%s] at SFN/SF=%d/%d wait for PDCP FIFO to be unlocked\n",
+        threadname, ctxt_pP->frame, ctxt_pP->subframe);
+#endif
+    if (pthread_mutex_lock(&mtex)) {
+      exit_fun("PDCP_SDU_FLUSH_LOCK lock error!");
+    }
+#ifdef DEBUG_PDCP_FIFO_FLUSH_SDU
+    LOG_I(PDCP, "[%s] at SFN/SF=%d/%d PDCP FIFO is unlocked\n",
+        threadname, ctxt_pP->frame, ctxt_pP->subframe);
+#endif
+  } else if (ret != 0) {
+    exit_fun("PDCP_SDU_FLUSH_LOCK trylock error!");
+  }
+
+#endif
+
+  mem_block_t     *sdu_p            = list_get_head (&pdcp_sdu_list);
+  int              bytes_wrote      = 0;
+  int              pdcp_nb_sdu_sent = 0;
+  uint8_t          cont             = 1;
+#if defined(LINK_ENB_PDCP_TO_GTPV1U)
+  //MessageDef      *message_p        = NULL;
 #endif
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_FLUSH, 1 );
@@ -331,6 +367,10 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
   }
 
 #endif  //PDCP_USE_RT_FIFO
+
+#ifdef PDCP_SDU_FLUSH_LOCK
+  if (pthread_mutex_unlock(&mtex)) exit_fun("PDCP_SDU_FLUSH_LOCK unlock error!");
+#endif
 
   return pdcp_nb_sdu_sent;
 }
