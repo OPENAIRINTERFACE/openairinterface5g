@@ -732,7 +732,7 @@ static void *UE_thread_rxn_txnp4(void *arg)
   printf("Starting UE RXN_TXNP4 thread (%s)\n", threadname);
 
   while (!oai_exit) {
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_COND_WAIT0+(proc->subframe_rx&1), 1 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_COND_WAIT0+(proc->proc_id), 1 );
     if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
       LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RXTX\n" );
       exit_fun("nothing to add");
@@ -740,24 +740,24 @@ static void *UE_thread_rxn_txnp4(void *arg)
     }
 
     while (proc->instance_cnt_rxtx < 0) {
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_WAIT_COND_RXTX0+(proc->subframe_rx&1), 1 );
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_WAIT_COND_RXTX0+(proc->proc_id), 1 );
       // most of the time, the thread is waiting here
       pthread_cond_wait( &proc->cond_rxtx, &proc->mutex_rxtx );
     }
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_WAIT_COND_RXTX0+(proc->subframe_rx&1), 0 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_WAIT_COND_RXTX0+(proc->proc_id), 0 );
 
     if (pthread_mutex_unlock(&proc->mutex_rxtx) != 0) {
       LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE RXn_TXnp4\n" );
       exit_fun("nothing to add");
       return &UE_thread_rxtx_retval;
     }
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_COND_WAIT0+(proc->subframe_rx&1), 0 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_COND_WAIT0+(proc->proc_id), 0 );
 
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_THREAD_RXTX0+(proc->subframe_rx&1), 1 );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_UE+(proc->subframe_rx&1), proc->subframe_rx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_UE+(proc->subframe_tx&1), proc->subframe_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE+(proc->subframe_rx&1), proc->frame_rx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_UE+(proc->subframe_tx&1), proc->frame_tx );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_THREAD_RXTX0+(proc->proc_id), 1 );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_UE+(proc->proc_id), proc->subframe_rx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_UE+(proc->proc_id), proc->subframe_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE+(proc->proc_id), proc->frame_rx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_UE+(proc->proc_id), proc->frame_tx );
 
     lte_subframe_t sf_type = subframe_select( &UE->frame_parms, proc->subframe_rx);
     if ((sf_type == SF_DL) ||
@@ -825,10 +825,10 @@ static void *UE_thread_rxn_txnp4(void *arg)
       }
     }
 
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_THREAD_RXTX0+(proc->subframe_rx&1), 0 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_THREAD_RXTX0+(proc->proc_id), 0 );
 
     
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_CNT_DECREMENT0+(proc->subframe_rx&1), 1 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_CNT_DECREMENT0+(proc->proc_id), 1 );
     if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
       LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RXTX\n" );
       exit_fun("noting to add");
@@ -843,7 +843,7 @@ static void *UE_thread_rxn_txnp4(void *arg)
       exit_fun("noting to add");
       return &UE_thread_rxtx_retval;
     }
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_CNT_DECREMENT0+(proc->subframe_rx&1), 0 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_CNT_DECREMENT0+(proc->proc_id), 0 );
   }
   
   // thread finished
@@ -1166,9 +1166,10 @@ void *UE_thread(void *arg) {
 	    }
 	  }
 	  // operate on thread sf mod 2
-	  UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[sf&1];
+	  uint8_t proc_select = sf&1;
+	  UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[proc_select];
 
-	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_CNT_INCREMENT0+(proc->subframe_rx&1), 1 );
+	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_CNT_INCREMENT0+proc_select, 1 );
 	  // lock mutex
 	  if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
 	    LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RX\n" );
@@ -1199,19 +1200,19 @@ void *UE_thread(void *arg) {
 	    exit_fun("nothing to add");
 	    return &UE_thread_retval;
 	  }
-	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_CNT_INCREMENT0+(proc->subframe_rx&1), 0 );
+	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_CNT_INCREMENT0+proc_select, 0 );
 
 
 	  if (instance_cnt_rxtx == 0) {
-	    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SIGNAL_COND_RXTX0+(proc->subframe_rx&1), 1 );
+	    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SIGNAL_COND_RXTX0+proc_select, 1 );
 	    if (pthread_cond_signal(&proc->cond_rxtx) != 0) {
 	      LOG_E( PHY, "[SCHED][UE] ERROR pthread_cond_signal for UE RX thread\n" );
 	      exit_fun("nothing to add");
 	      return &UE_thread_retval;
 	    }
-	    LOG_D(PHY, "firing up rxtx_thread[%d] at subframe %d\n", sf&1, sf);
+	    LOG_D(PHY, "firing up rxtx_thread[%d] at subframe %d\n", proc_select, sf);
 
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SIGNAL_COND_RXTX0+(proc->subframe_rx&1), 0 );
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SIGNAL_COND_RXTX0+proc_select, 0 );
 
 	  } else {
 	    LOG_E( PHY, "[SCHED][UE] UE RX thread busy (IC %d)!!\n", instance_cnt_rxtx);
@@ -1659,6 +1660,8 @@ void init_UE_threads(int inst)
   // the threads are not yet active, therefore access is allowed without locking
   UE->proc.proc_rxtx[0].instance_cnt_rxtx = -1;
   UE->proc.proc_rxtx[1].instance_cnt_rxtx = -1;
+  UE->proc.proc_rxtx[0].proc_id = 0;
+  UE->proc.proc_rxtx[1].proc_id = 1;
   UE->proc.instance_cnt_synch = -1;
   pthread_mutex_init(&UE->proc.proc_rxtx[0].mutex_rxtx,NULL);
   pthread_mutex_init(&UE->proc.proc_rxtx[1].mutex_rxtx,NULL);
@@ -1667,9 +1670,9 @@ void init_UE_threads(int inst)
   pthread_cond_init(&UE->proc.proc_rxtx[1].cond_rxtx,NULL);
   pthread_cond_init(&UE->proc.cond_synch,NULL);
   pthread_create(&UE->proc.proc_rxtx[0].pthread_rxtx,NULL,UE_thread_rxn_txnp4,(void*)&UE->proc.proc_rxtx[0]);
-  pthread_setname_np( UE->proc.proc_rxtx[0].pthread_rxtx, "UE_thread_rxn_txnp4_even" );
+  pthread_setname_np( UE->proc.proc_rxtx[0].pthread_rxtx, "rxn_txnp4_even" );
   pthread_create(&UE->proc.proc_rxtx[1].pthread_rxtx,NULL,UE_thread_rxn_txnp4,(void*)&UE->proc.proc_rxtx[1]);
-  pthread_setname_np( UE->proc.proc_rxtx[1].pthread_rxtx, "UE_thread_rxn_txnp4_odd" );
+  pthread_setname_np( UE->proc.proc_rxtx[1].pthread_rxtx, "rxn_txnp4_odd" );
   pthread_create(&UE->proc.pthread_synch,NULL,UE_thread_synch,(void*)UE);
   pthread_setname_np( UE->proc.pthread_synch, "UE_thread_synch" );
 }
