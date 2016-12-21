@@ -873,7 +873,7 @@ void *UE_thread(void *arg) {
   static int UE_thread_retval;
   PHY_VARS_UE *UE = PHY_vars_UE_g[0][0];
   //  int tx_enabled = 0;
-  unsigned int rxs,txs;
+  uint32_t rxs=0,txs=0;
   int dummy_rx[UE->frame_parms.nb_antennas_rx][UE->frame_parms.samples_per_tti] __attribute__((aligned(32)));
   openair0_timestamp timestamp,timestamp1;
   void* rxp[2], *txp[2];
@@ -1100,7 +1100,7 @@ void *UE_thread(void *arg) {
 						UE->frame_parms.nb_antennas_tx,
 						1);
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
-	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS, rxs );
+	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS, txs );
         if (txs !=  UE->frame_parms.samples_per_tti) {
            LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, UE->frame_parms.samples_per_tti);
            exit_fun( "problem transmitting samples" );
@@ -1137,7 +1137,7 @@ void *UE_thread(void *arg) {
 						UE->frame_parms.nb_antennas_tx,
 						1);
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_SF9, 0 );
-	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS, rxs );
+	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS, txs );
               if (txs !=  UE->frame_parms.samples_per_tti - rx_off_diff) {
                  LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, UE->frame_parms.samples_per_tti-rx_off_diff);
                  exit_fun( "problem transmitting samples" );
@@ -1197,7 +1197,7 @@ void *UE_thread(void *arg) {
 
 
 	  if (instance_cnt_rxtx == 0) {
-	    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SIGNAL_COND_RXTX, 1 );
+	    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SIGNAL_COND_RXTX0+(proc->subframe_rx&1), 1 );
 	    if (pthread_cond_signal(&proc->cond_rxtx) != 0) {
 	      LOG_E( PHY, "[SCHED][UE] ERROR pthread_cond_signal for UE RX thread\n" );
 	      exit_fun("nothing to add");
@@ -1205,7 +1205,7 @@ void *UE_thread(void *arg) {
 	    }
 	    LOG_D(PHY, "firing up rxtx_thread[%d] at subframe %d\n", sf&1, sf);
 
-	    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SIGNAL_COND_RXTX, 0 );
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SIGNAL_COND_RXTX0+(proc->subframe_rx&1), 0 );
 
 	  } else {
 	    LOG_E( PHY, "[SCHED][UE] UE RX thread busy (IC %d)!!\n", instance_cnt_rxtx);
