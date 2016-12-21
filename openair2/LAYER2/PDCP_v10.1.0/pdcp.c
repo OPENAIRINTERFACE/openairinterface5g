@@ -28,6 +28,8 @@
  */
 
 #define PDCP_C
+//#define DEBUG_PDCP_FIFO_FLUSH_SDU
+
 #ifndef USER_MODE
 #include <rtai_fifos.h>
 #endif
@@ -806,6 +808,7 @@ pdcp_data_ind(
        */
       memset(new_sdu_p->data, 0, sizeof (pdcp_data_ind_header_t));
       ((pdcp_data_ind_header_t *) new_sdu_p->data)->data_size = sdu_buffer_sizeP - payload_offset;
+      AssertFatal((sdu_buffer_sizeP - payload_offset >= 0), "invalid PDCP SDU size!");
 
       // Here there is no virtualization possible
       // set ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst for IP layer here
@@ -820,6 +823,11 @@ pdcp_data_ind(
         ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id - oai_emulation.info.first_enb_local;
 #endif
       }
+#ifdef DEBUG_PDCP_FIFO_FLUSH_SDU
+      static uint32_t pdcp_inst = 0;
+      ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst = pdcp_inst++;
+      LOG_D(PDCP, "inst=%d size=%d\n", ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst, ((pdcp_data_ind_header_t *) new_sdu_p->data)->data_size);
+#endif
 
       memcpy(&new_sdu_p->data[sizeof (pdcp_data_ind_header_t)], \
              &sdu_buffer_pP->data[payload_offset], \

@@ -31,6 +31,7 @@
 
 #define PDCP_FIFO_C
 #define PDCP_DEBUG 1
+//#define DEBUG_PDCP_FIFO_FLUSH_SDU
 
 #ifndef OAI_EMU
 extern int otg_enabled;
@@ -108,11 +109,30 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
   int ret = 0;
 #endif
 
+#ifdef DEBUG_PDCP_FIFO_FLUSH_SDU
+#define THREAD_NAME_LEN 16
+  char threadname[THREAD_NAME_LEN];
+  ret = pthread_getname_np(pthread_self(), threadname, THREAD_NAME_LEN);
+  if (ret != 0)
+  {
+   perror("pthread_getname_np : ");
+   exit_fun("Error getting thread name");
+  }
+#undef THREAD_NAME_LEN
+#endif
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_FLUSH, 1 );
   while (sdu_p && cont) {
 
+#ifdef DEBUG_PDCP_FIFO_FLUSH_SDU
+    LOG_D(PDCP, "[%s] SFN/SF=%d/%d inst=%d size=%d\n",
+        threadname, ctxt_pP->frame, ctxt_pP->subframe,
+        ((pdcp_data_ind_header_t*) sdu_p->data)->inst,
+        ((pdcp_data_ind_header_t *) sdu_p->data)->data_size);
+#else
 #if ! defined(OAI_EMU)
     ((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
+#endif
 #endif
 
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
@@ -177,6 +197,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
 
         if (!pdcp_output_header_bytes_to_write) { // continue with sdu
           pdcp_output_sdu_bytes_to_write = ((pdcp_data_ind_header_t *) sdu_p->data)->data_size;
+          AssertFatal(pdcp_output_sdu_bytes_to_write >= 0, "invalid data_size!");
 
 #ifdef PDCP_USE_RT_FIFO
           bytes_wrote = rtf_put (PDCP2PDCP_USE_RT_FIFO, &(sdu->data[sizeof (pdcp_data_ind_header_t)]), pdcp_output_sdu_bytes_to_write);
@@ -248,13 +269,18 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
               cont = 1;
               pdcp_nb_sdu_sent += 1;
               sdu_p = list_get_head (&pdcp_sdu_list);
+            } else {
+              LOG_D(PDCP, "1 skip free_mem_block: pdcp_output_sdu_bytes_to_write = %d\n", pdcp_output_sdu_bytes_to_write);
+              AssertFatal(pdcp_output_sdu_bytes_to_write > 0, "pdcp_output_sdu_bytes_to_write cannot be negative!");
             }
           } else {
-            LOG_W(PDCP, "RADIO->IP SEND SDU CONGESTION!\n");
+            LOG_W(PDCP, "2: RADIO->IP SEND SDU CONGESTION!\n");
           }
         } else {
-          LOG_W(PDCP, "RADIO->IP SEND SDU CONGESTION!\n");
+          LOG_W(PDCP, "3: RADIO->IP SEND SDU CONGESTION!\n");
         }
+      } else {
+        LOG_D(PDCP, "4 skip free_mem_block: bytes_wrote = %d\n", bytes_wrote);
       }
     } else {
       // continue writing sdu
@@ -277,7 +303,11 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
           pdcp_nb_sdu_sent += 1;
           sdu_p = list_get_head (&pdcp_sdu_list);
           // LOG_D(PDCP, "rb sent a sdu from rab\n");
+        } else {
+          LOG_D(PDCP, "5 skip free_mem_block: pdcp_output_sdu_bytes_to_write = %d\n", pdcp_output_sdu_bytes_to_write);
         }
+      } else {
+        LOG_D(PDCP, "6 skip free_mem_block: bytes_wrote = %d\n", bytes_wrote);
       }
     }
   }

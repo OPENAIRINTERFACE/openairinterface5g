@@ -273,6 +273,7 @@ rlc_um_try_reassembly(
               __LINE__);
 #endif
       }
+      AssertFatal(size >= 0, "invalid size!");
 
       if (e == RLC_E_FIXED_PART_DATA_FIELD_FOLLOW) {
         switch (fi) {
