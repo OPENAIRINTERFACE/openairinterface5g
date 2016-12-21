@@ -969,7 +969,7 @@ void *UE_thread(void *arg) {
 	  
 	  
 	  if (rxs!=UE->frame_parms.samples_per_tti*10) {
-	    LOG_E(PHY, "problem in rx 1! want #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti*10, rxs);
+	    LOG_E(PHY, "problem in rx 1! expect #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti*10, rxs);
 	    exit_fun("problem in rx 1");
 	    return &UE_thread_retval;
 	  }
@@ -1003,7 +1003,7 @@ void *UE_thread(void *arg) {
 					     UE->frame_parms.nb_antennas_rx);
 
 	    if (rxs!=UE->frame_parms.samples_per_tti){
-	      LOG_E(PHY, "problem in rx 2! want #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti, rxs);
+	      LOG_E(PHY, "problem in rx 2! expect #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti, rxs);
 	      exit_fun("problem in rx 2");
 	      return &UE_thread_retval;
 	    }
@@ -1026,7 +1026,7 @@ void *UE_thread(void *arg) {
 					     UE->rx_offset,
 					     UE->frame_parms.nb_antennas_rx);
 	    if (rxs != UE->rx_offset) {
-	      LOG_E(PHY, "problem in rx 3! want #samples=%d but got only %d!\n", UE->rx_offset, rxs);
+	      LOG_E(PHY, "problem in rx 3! expect #samples=%d but got only %d!\n", UE->rx_offset, rxs);
 	      exit_fun("problem in rx 3!");
 	      return &UE_thread_retval;
 	    }
@@ -1042,7 +1042,7 @@ void *UE_thread(void *arg) {
 					   UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0,
 					   UE->frame_parms.nb_antennas_rx);
     if (rxs != (UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0)) {
-      LOG_E(PHY, "problem in rx 4! want #samples=%d but got only %d!\n", UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0, rxs);
+      LOG_E(PHY, "problem in rx 4! expect #samples=%d but got only %d!\n", UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0, rxs);
       exit_fun("problem in rx 4!");
       return &UE_thread_retval;
     }
@@ -1080,7 +1080,7 @@ void *UE_thread(void *arg) {
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
 	      if (rxs != UE->frame_parms.samples_per_tti) {
-	        LOG_E(PHY, "problem in rx 5! want #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti, rxs);
+	        LOG_E(PHY, "problem in rx 5! expect #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti, rxs);
 	        exit_fun("problem in rx 5!");
 	        return &UE_thread_retval;
 	      }
@@ -1117,7 +1117,7 @@ void *UE_thread(void *arg) {
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
         if (rxs != (UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0)) {
-          LOG_E(PHY, "problem in rx 6! want #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0, rxs);
+          LOG_E(PHY, "problem in rx 6! expect #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0, rxs);
           exit_fun("problem in rx 6!");
           return &UE_thread_retval;
         }
@@ -1153,7 +1153,7 @@ void *UE_thread(void *arg) {
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
         if (rxs != (UE->frame_parms.ofdm_symbol_size + UE->frame_parms.nb_prefix_samples0 - rx_off_diff)) {
-          LOG_E(PHY, "problem in rx 7! want #samples=%d but got only %d! rx_off_diff=%d\n", UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0 - rx_off_diff, rxs, rx_off_diff);
+          LOG_E(PHY, "problem in rx 7! expect #samples=%d but got only %d! rx_off_diff=%d\n", UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0 - rx_off_diff, rxs, rx_off_diff);
           exit_fun("problem in rx 7!");
           return &UE_thread_retval;
         }
