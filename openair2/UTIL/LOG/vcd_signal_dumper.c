@@ -174,8 +174,12 @@ const char* eurecomVariablesNames[] = {
   "ue0_SFN5",
   "ue0_SFN6",
   "ue0_SFN7",
+  "ue_pdcp_flush_size",
+  "ue_pdcp_flush_err",
   "ue0_trx_read_ns",
   "ue0_trx_write_ns",
+  "ue0_trx_read_ns_missing",
+  "ue0_trx_write_ns_missing"
 };
 
 const char* eurecomFunctionsNames[] = {
@@ -339,6 +343,10 @@ const char* eurecomFunctionsNames[] = {
   "pdcp_data_ind",
   "pdcp_apply_security",
   "pdcp_validate_security",
+  "pdcp_fifo_read",
+  "pdcp_fifo_read_buffer",
+  "pdcp_fifo_flush",
+  "pdcp_fifo_flush_buffer",
   /* RRC signals  */
   "rrc_rx_tx",
   "rrc_mac_config_req",

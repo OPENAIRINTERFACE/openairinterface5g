@@ -59,6 +59,7 @@ extern int otg_enabled;
 #include "UTIL/LOG/log.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/FIFO/pad_list.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 #include "platform_constants.h"
 #include "msc.h"
 
@@ -107,6 +108,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
   int ret = 0;
 #endif
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_FLUSH, 1 );
   while (sdu_p && cont) {
 
 #if ! defined(OAI_EMU)
@@ -184,7 +186,11 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
 #ifdef LINUX
           memcpy(NLMSG_DATA(nas_nlh_tx)+sizeof(pdcp_data_ind_header_t), &(sdu_p->data[sizeof (pdcp_data_ind_header_t)]), pdcp_output_sdu_bytes_to_write);
           nas_nlh_tx->nlmsg_len += pdcp_output_sdu_bytes_to_write;
+          VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE_PDCP_FLUSH_SIZE, pdcp_output_sdu_bytes_to_write);
+          VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_FLUSH_BUFFER, 1 );
           ret = sendmsg(nas_sock_fd,&nas_msg_tx,0);
+          VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_FLUSH_BUFFER, 0 );
+          VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE_PDCP_FLUSH_ERR, ret );
 
           if (ret<0) {
             LOG_E(PDCP, "[PDCP_FIFOS] sendmsg returns %d (errno: %d)\n", ret, errno);
@@ -275,6 +281,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
       }
     }
   }
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_FLUSH, 0 );
 
 #ifdef PDCP_USE_RT_FIFO
 
@@ -429,7 +436,10 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
   int rlc_data_req_flag = 3;
  
   while ((len > 0) && (rlc_data_req_flag !=0))  {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ, 1 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 1 );
     len = recvmsg(nas_sock_fd, &nas_msg_rx, 0);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 0 );
 
     if (len<=0) {
       // nothing in pdcp NAS socket
@@ -707,6 +717,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
         }
       }
     }
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ, 0 );
   }
 
   return len;

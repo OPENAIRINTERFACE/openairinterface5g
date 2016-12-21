@@ -1079,6 +1079,7 @@ void *UE_thread(void *arg) {
 					       UE->frame_parms.nb_antennas_rx);
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
+	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS_MISSING, UE->frame_parms.samples_per_tti - rxs);
 	      if (rxs != UE->frame_parms.samples_per_tti) {
 	        LOG_E(PHY, "problem in rx 5! expect #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti, rxs);
 	        exit_fun("problem in rx 5!");
@@ -1101,10 +1102,12 @@ void *UE_thread(void *arg) {
 						1);
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS, txs );
+	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS_MISSING, UE->frame_parms.samples_per_tti - txs);
         if (txs !=  UE->frame_parms.samples_per_tti) {
            LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, UE->frame_parms.samples_per_tti);
            exit_fun( "problem transmitting samples" );
         }
+	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS_MISSING, UE->frame_parms.samples_per_tti - txs);
 	    }
 	    
 	    else {
@@ -1116,6 +1119,7 @@ void *UE_thread(void *arg) {
 					       UE->frame_parms.nb_antennas_rx);
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
+	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS_MISSING, (UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0) - rxs);
         if (rxs != (UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0)) {
           LOG_E(PHY, "problem in rx 6! expect #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0, rxs);
           exit_fun("problem in rx 6!");
@@ -1138,6 +1142,7 @@ void *UE_thread(void *arg) {
 						1);
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_SF9, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS, txs );
+	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS_MISSING, (UE->frame_parms.samples_per_tti - rx_off_diff) - txs);
               if (txs !=  UE->frame_parms.samples_per_tti - rx_off_diff) {
                  LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, UE->frame_parms.samples_per_tti-rx_off_diff);
                  exit_fun( "problem transmitting samples" );
@@ -1172,6 +1177,7 @@ void *UE_thread(void *arg) {
 	  }
 	  // increment instance count and change proc subframe/frame variables
 	  int instance_cnt_rxtx = ++proc->instance_cnt_rxtx;
+	  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE_INST_CNT_RX, proc->instance_cnt_rxtx);
 	  if(sf == 0)
 	  {
 	     UE->proc.proc_rxtx[0].frame_rx++;
