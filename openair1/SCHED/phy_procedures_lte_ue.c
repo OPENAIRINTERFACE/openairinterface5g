@@ -205,9 +205,6 @@ unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb
   int gain_dB = power_dBm - power_max_dBm;
   double gain_lin;
 
-  //if (gain_dB < -20)
-  //  return(AMP/10);
-
   gain_lin = pow(10,.1*gain_dB);
   if ((nb_rb >0) && (nb_rb <= N_RB_UL)) {
     return((int)(AMP*sqrt(gain_lin*N_RB_UL/(double)nb_rb)));
@@ -934,7 +931,7 @@ uint16_t get_n1_pucch(PHY_VARS_UE *ue,
 */
 #endif
 
-void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc) {
+void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, uint8_t empty_subframe) {
 
   int aa;
   LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
@@ -971,6 +968,37 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc) {
 #else //this is the normal case
   ulsch_start = (frame_parms->samples_per_tti*subframe_tx)-ue->N_TA_offset; //-ue->timing_advance;
 #endif //else EXMIMO
+
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
+  if (empty_subframe)
+  {
+//#if 1
+      overflow = ulsch_start - 9*frame_parms->samples_per_tti;
+      for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+
+          memset(&ue->common_vars.txdata[aa][ulsch_start],0,4*cmin(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,ulsch_start+frame_parms->samples_per_tti));
+
+          if (overflow> 0)
+              memset(&ue->common_vars.txdata[aa][0],0,4*overflow);
+      }
+/*#else
+      overflow = ulsch_start - 9*frame_parms->samples_per_tti;
+      for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+          for (k=ulsch_start; k<cmin(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,ulsch_start+frame_parms->samples_per_tti); k++) {
+              ((short*)ue->common_vars.txdata[aa])[2*k] = 0;
+              ((short*)ue->common_vars.txdata[aa])[2*k+1] = 0;
+          }
+
+          for (k=0; k<overflow; k++) {
+              ((short*)ue->common_vars.txdata[aa])[2*k] = 0;
+              ((short*)ue->common_vars.txdata[aa])[2*k+1] = 0;
+          }
+      }
+#endif*/
+      return;
+  }
+#endif
+
   if ((frame_tx%100) == 0)
     LOG_D(PHY,"[UE %d] Frame %d, subframe %d: ulsch_start = %d (rxoff %d, HW TA %d, timing advance %d, TA_offset %d\n",
 	  ue->Mod_id,frame_tx,subframe_tx,
@@ -1978,25 +2006,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
 
   	
   if (abstraction_flag == 0) {
-	  
-    if (ue->generate_ul_signal[eNB_id] == 1 )
-    {
-      ulsch_common_procedures(ue,proc);
-    }
-    else {  // no uplink so clear signal buffer instead
-#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)//this is the EXPRESS MIMO case
-      ulsch_start = (ue->rx_offset+subframe_tx*frame_parms->samples_per_tti-
-		     ue->hw_timing_advance-
-		     ue->timing_advance-
-		     ue->N_TA_offset+5)%(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti);
-#else //this is the normal case
-      ulsch_start = (frame_parms->samples_per_tti*subframe_tx)-ue->N_TA_offset; //-ue->timing_advance;
-#endif //else EXMIMO
-      for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-	memset(&ue->common_vars.txdata[aa][ulsch_start],0,frame_parms->samples_per_tti<<2);
-      }
-    }
-
+    ulsch_common_procedures(ue,proc, (ue->generate_ul_signal[eNB_id] == 0));
   } // mode != PRACH
     
       
@@ -2601,6 +2611,15 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 					     0,
 					     P_RNTI,
 					     ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id])==0)) {
+
+          // update TPC for PUCCH
+          if((dci_alloc_rx[i].format == format1)   ||
+              (dci_alloc_rx[i].format == format1A) ||
+              (dci_alloc_rx[i].format == format2)  ||
+              (dci_alloc_rx[i].format == format2A))
+          {
+            ue->dlsch[eNB_id][0]->g_pucch += ue->dlsch[eNB_id][0]->harq_processes[ue->dlsch[eNB_id][0]->current_harq_pid]->delta_PUCCH;
+          }
 
 	ue->dlsch_received[eNB_id]++;
 	

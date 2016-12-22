@@ -34,10 +34,10 @@
 #include "PHY/LTE_TRANSPORT/proto.h"
 #include "PHY/extern.h"
 
-int8_t pucch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t subframe,uint8_t eNB_id,PUCCH_FMT_t pucch_fmt)
+int16_t pucch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t subframe,uint8_t eNB_id,PUCCH_FMT_t pucch_fmt)
 {
 
-  int8_t Po_PUCCH;
+  int16_t Po_PUCCH;
   //uint8_t harq_pid;
 
   // P_pucch =  P_opucch+ PL + h(nCQI,nHARQ) + delta_pucchF(pucch_fmt) + g(i))

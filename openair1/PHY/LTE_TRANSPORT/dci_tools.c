@@ -3885,7 +3885,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
         dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
         NPRB = RIV2nb_rb_LUT6[rballoc];
         dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
-	dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
       }
 
       if (vrb_type == LOCALIZED) {
@@ -3941,7 +3940,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
         dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
         NPRB = RIV2nb_rb_LUT25[rballoc];
         dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
-	dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
       }
 
       if (vrb_type == LOCALIZED) {
@@ -3994,7 +3992,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
         dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
         NPRB = RIV2nb_rb_LUT50[rballoc];
         dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
-	dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
       }
 
       if (vrb_type == LOCALIZED) {
@@ -4061,7 +4058,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
         dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
         NPRB = RIV2nb_rb_LUT100[rballoc];
         dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
-	dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
       }
 
       if (vrb_type == LOCALIZED) {
@@ -4111,6 +4107,17 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
     if (NPRB==0) {
       LOG_E(PHY,"Format 1A: NPRB=0\n");
+      return(-1);
+    }
+
+    if((mcs>28) && ( (dlsch0_harq->round == 0) || (rnti==si_rnti) || (rnti==p_rnti) || (rnti==ra_rnti) ))
+    {
+      // DCI false detection
+      return(-1);
+    }
+    if((rv!=0) && (dlsch0_harq->round == 0) && (rnti != si_rnti) && (rnti != p_rnti) && (rnti != ra_rnti))
+    {
+      // DCI false detection
       return(-1);
     }
 
@@ -4164,7 +4171,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     if(dlsch0_harq->round)
     {
 	// compare old TBS to new TBS
-    	if(dlsch0_harq->TBS != TBStable[get_I_TBS(mcs)][NPRB-1])
+    	if((mcs<29) && (dlsch0_harq->TBS != TBStable[get_I_TBS(mcs)][NPRB-1]))
     	{
     		// this is an eNB issue
     		// retransmisison but old and new TBS are different !!!
@@ -4174,12 +4181,17 @@ int generate_ue_dlsch_params_from_dci(int frame,
     	}
     }
 
-    dlsch0_harq->mcs = mcs;
+    if(mcs<29)
+    {
+      dlsch0_harq->mcs = mcs;
+    }
+
     if ((rnti==si_rnti) || (rnti==p_rnti) || (rnti==ra_rnti)) {
       dlsch0_harq->TBS = TBStable[mcs][NPRB-1];
       dlsch0_harq->Qm  = 2;
     }
     else {
+    if(mcs < 29)
       dlsch0_harq->TBS = TBStable[get_I_TBS(mcs)][NPRB-1];
       dlsch0_harq->Qm  = get_Qm(mcs);
     }
@@ -4410,14 +4422,27 @@ int generate_ue_dlsch_params_from_dci(int frame,
       break;
     }
 
+    dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
+
     if (harq_pid>=8) {
       LOG_E(PHY,"Format 1: harq_pid >= 8\n");
       return(-1);
     }
 
-    dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
+    if((mcs>28) && (dlsch0_harq->round == 0) )
+    {
+      // DCI false detection
+      return(-1);
+    }
+
+    if((rv!=0) && (dlsch0_harq->round == 0) )
+    {
+      // DCI false detection
+      return(-1);
+    }
+
+
     dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
-    dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
 
     dlsch[0]->current_harq_pid = harq_pid;
     dlsch[0]->harq_ack[subframe].harq_id = harq_pid;
@@ -4441,9 +4466,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
       return(-1);
     }
 
-    //    printf("NPRB %d\n",NPRB);
-    dlsch0_harq->delta_PUCCH     = delta_PUCCH_lut[TPC&3];
-    dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
 
     if (TPC!=1)
       LOG_D(PHY,"format1 TPC %d, dlsch0_harq->delta_PUCCH %d\n",TPC,dlsch0_harq->delta_PUCCH);
@@ -4470,16 +4492,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
         LOG_D(PHY,"[PDSCH %x/%d] Format 1 DCI First TX: Clearing flag\n");
         dlsch0_harq->first_tx = 0;
       }
-    } else if (dlsch0_harq->status == SCH_IDLE) { // we got an Ndi = 0 for a previously decoded process,
-      // this happens if either another harq process in the same
-      // is NAK or an ACK was not received
-
-      dlsch[0]->harq_ack[subframe].ack              = 1;
-      dlsch[0]->harq_ack[subframe].harq_id          = harq_pid;
-      dlsch[0]->harq_ack[subframe].send_harq_status = 1;
-      dlsch[0]->active = 0;
-      //     printf("Got NDI=0 for correctly decoded SDU (harq_pid %d) subframe %d\n",harq_pid,subframe);
-      return(0);
     }
 
     dlsch0_harq->mcs         = mcs;
@@ -4776,7 +4788,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
     dlsch0_harq->mcs       = mcs1;
 
     dlsch0_harq->delta_PUCCH     = delta_PUCCH_lut[TPC&3];
-    dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
     /*
       if (dlsch0_harq->mcs>20) {
       printf("dci_tools.c: mcs > 20 disabled for now (asked %d)\n",dlsch0_harq->mcs);
@@ -5196,9 +5207,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
     //    printf("NPRB %d\n",NPRB);
     dlsch0_harq->delta_PUCCH     = delta_PUCCH_lut[TPC&3];
-    dlsch0->g_pucch += delta_PUCCH_lut[TPC&3];
     dlsch1_harq->delta_PUCCH     = delta_PUCCH_lut[TPC&3];
-    dlsch1->g_pucch += delta_PUCCH_lut[TPC&3];
 
     dlsch0_harq->mcs     = mcs1;
     dlsch1_harq->mcs     = mcs2;
@@ -5449,7 +5458,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
     dlsch0_harq->mcs             = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs;
     dlsch0_harq->delta_PUCCH     = delta_PUCCH_lut[((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->TPC&3];
-    dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
 
 
 
@@ -5572,11 +5580,14 @@ int generate_ue_dlsch_params_from_dci(int frame,
 #ifdef DEBUG_DCI
 
   if (dlsch[0] && (dlsch[0]->rnti != 0xffff)) {
-    printf("dci_format:%d Abssubframe: %d.%d \n",dci_format,frame,subframe);
+    printf("dci_format:%d Abssubframe: %d.%d \n",dci_format,frame%1024,subframe);
     printf("PDSCH dlsch0 UE: rnti     %x\n",dlsch[0]->rnti);
     printf("PDSCH dlsch0 UE: NBRB     %d\n",dlsch0_harq->nb_rb);
     printf("PDSCH dlsch0 UE: rballoc  %x\n",dlsch0_harq->rb_alloc_even[0]);
     printf("PDSCH dlsch0 UE: harq_pid %d\n",harq_pid);
+    printf("PDSCH dlsch0 UE: tpc      %d\n",TPC);
+    printf("PDSCH dlsch0 UE: g        %d\n",dlsch[0]->g_pucch);
+    printf("PDSCH dlsch0 UE: round    %d\n",dlsch0_harq->round);
     printf("PDSCH dlsch0 UE: DCINdi   %d\n",dlsch0_harq->DCINdi);
     printf("PDSCH dlsch0 UE: rvidx    %d\n",dlsch0_harq->rvidx);
     printf("PDSCH dlsch0 UE: TBS      %d\n",dlsch0_harq->TBS);
