@@ -75,6 +75,8 @@
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 
+#include "T.h"
+
 #define FRAME_PERIOD    100000000ULL
 #define DAQ_PERIOD      66667ULL
 
@@ -1182,6 +1184,9 @@ void *UE_thread(void *arg) {
 	  proc->frame_tx = proc->frame_rx + ((proc->subframe_rx>5)?1:0);
 	  proc->timestamp_tx = timestamp+(4*UE->frame_parms.samples_per_tti)-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
 
+#if T_TRACER
+	  T(T_UE_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx%1024), T_INT(proc->subframe_rx));
+#endif
 	  /*
 	  if (sf != (timestamp/UE->frame_parms.samples_per_tti)%10) {
 	    LOG_E(PHY,"steady-state UE_thread error : frame_rx %d, subframe_rx %d, frame_tx %d, subframe_tx %d, rx subframe %d\n",proc->frame_rx,proc->subframe_rx,proc->frame_tx,proc->subframe_tx,(timestamp/UE->frame_parms.samples_per_tti)%10);

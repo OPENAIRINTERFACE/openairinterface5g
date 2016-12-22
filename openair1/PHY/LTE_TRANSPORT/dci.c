@@ -41,6 +41,7 @@
 #include "PHY/sse_intrin.h"
 
 #include "assertions.h" 
+#include "T.h"
 
 //#define DEBUG_DCI_ENCODING 1
 //#define DEBUG_DCI_DECODING 1
@@ -1684,6 +1685,7 @@ int32_t avgP[4];
 int32_t rx_pdcch(LTE_UE_COMMON *common_vars,
                  LTE_UE_PDCCH **pdcch_vars,
                  LTE_DL_FRAME_PARMS *frame_parms,
+                 uint32_t frame,
                  uint8_t subframe,
                  uint8_t eNB_id,
                  MIMO_mode_t mimo_mode,
@@ -1754,7 +1756,10 @@ int32_t rx_pdcch(LTE_UE_COMMON *common_vars,
   LOG_I(PHY,"subframe %d: pdcch log2_maxh = %d (%d,%d)\n",subframe,log2_maxh,avgP[0],avgs);
 #endif
 
-
+#if T_TRACER
+  T(T_UE_PHY_PDCCH_ENERGY, T_INT(eNB_id),  T_INT(0), T_INT(frame%1024), T_INT(subframe),
+                           T_INT(avgP[0]), T_INT(avgP[1]),    T_INT(avgP[2]),             T_INT(avgP[3]));
+#endif
   for (s=0; s<n_pdcch_symbols; s++) {
     pdcch_channel_compensation(pdcch_vars[eNB_id]->rxdataF_ext,
                                pdcch_vars[eNB_id]->dl_ch_estimates_ext,
@@ -1851,12 +1856,19 @@ int32_t rx_pdcch(LTE_UE_COMMON *common_vars,
       /*#ifdef DEBUG_PHY
       write_output("llr8_seq.m","llr8",&pdcch_vars[eNB_id]->llr[s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,4);
       #endif*/
+
 #ifdef MU_RECEIVER
     }
 
 #endif //MU_RECEIVER
 
   }
+
+#if T_TRACER
+  T(T_UE_PHY_PDCCH_IQ, T_INT(frame_parms->N_RB_DL), T_INT(frame_parms->N_RB_DL),
+    T_INT(n_pdcch_symbols),
+    T_BUFFER(pdcch_vars[eNB_id]->rxdataF_comp, frame_parms->N_RB_DL*12*n_pdcch_symbols* 4));
+#endif
 
   // decode pcfich here
   n_pdcch_symbols = rx_pcfich(frame_parms,
