@@ -271,14 +271,18 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     printk("[openair][IOCTL] : openair_DUMP_CONFIG(%d):  exmimo_pci_kvirt[%d].exmimo_config_ptr = %p (phys %08x)\n",
            (int)arg, (int)arg, exmimo_pci_kvirt[(int)arg].exmimo_config_ptr, p_exmimo_pci_phys[(int)arg]->exmimo_config_ptr);
 
-    /*printk("EXMIMO_CONFIG: freq0 %d Hz, freq1 %d Hz, freqtx0 %d Hz, freqtx1 %d Hz, \nRX gain0 %d dB, RX Gain1 %d dB\n",
+    printk("[openair][IOCTL]: EXMIMO_CONFIG: freq0 %u Hz, freq1 %u Hz, freqtx0 %u Hz, freqtx1 %u Hz, \nRX gain0 %d dB, RX Gain1 %d dB, autocal (%d,%d,%d,%d)\n",
                 exmimo_pci_kvirt[(int)arg].exmimo_config_ptr->rf.rf_freq_rx[0],
                 exmimo_pci_kvirt[(int)arg].exmimo_config_ptr->rf.rf_freq_rx[1],
                 exmimo_pci_kvirt[(int)arg].exmimo_config_ptr->rf.rf_freq_tx[0],
                 exmimo_pci_kvirt[(int)arg].exmimo_config_ptr->rf.rf_freq_tx[1],
                 exmimo_pci_kvirt[(int)arg].exmimo_config_ptr->rf.rx_gain[0][0],
-                exmimo_pci_kvirt[(int)arg].exmimo_config_ptr->rf.rx_gain[1][0]);
-    */
+                exmimo_pci_kvirt[(int)arg].exmimo_config_ptr->rf.rx_gain[1][0],
+                exmimo_pci_kvirt[(int)arg].exmimo_config_ptr->rf.do_autocal[0],
+		exmimo_pci_kvirt[(int)arg].exmimo_config_ptr->rf.do_autocal[1],
+                exmimo_pci_kvirt[(int)arg].exmimo_config_ptr->rf.do_autocal[2],
+                exmimo_pci_kvirt[(int)arg].exmimo_config_ptr->rf.do_autocal[3]);
+    
 
     exmimo_send_pccmd((int)arg, EXMIMO_CONFIG);
 

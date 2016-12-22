@@ -93,7 +93,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_SDU,1);
   if (opt_enabled == 1) {
-    trace_pdu(0, sduP,sdu_lenP, 0, 3, rntiP,subframeP, 0,0);
+    trace_pdu(0, sduP,sdu_lenP, 0, 3, rntiP, frameP, subframeP, 0,0);
     LOG_D(OPT,"[eNB %d][ULSCH] Frame %d  rnti %x  with size %d\n",
     		  enb_mod_idP, frameP, rntiP, sdu_lenP);
   }
@@ -781,7 +781,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
         UE_template   = &UE_list->UE_template[CC_id][UE_id];
         UE_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
 
-        if (mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,1) == -1 ) {
+        if (mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL) == -1 ) {
           LOG_W(MAC,"[eNB %d] Scheduler Frame %d, subframeP %d: candidate harq_pid from PHY for UE %d CC %d RNTI %x\n",
                 module_idP,frameP,subframeP, UE_id, CC_id, rnti);
           continue;

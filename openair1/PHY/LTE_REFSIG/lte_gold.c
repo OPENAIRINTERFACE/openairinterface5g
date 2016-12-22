@@ -131,6 +131,44 @@ void lte_gold_ue_spec(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_uespec_t
   }
 }
 
+void lte_gold_ue_spec_port5(uint32_t lte_gold_uespec_port5_table[20][38],uint16_t Nid_cell, uint16_t n_rnti)
+{
+
+  unsigned char ns;
+  unsigned int n,x1,x2;
+
+
+  for (ns=0; ns<20; ns++) {
+
+    x2 = ((((ns>>1)+1)*((Nid_cell<<1)+1))<<16) + n_rnti;
+    //x2 = frame_parms->Ncp + (Nid_cell<<1) + (1+(Nid_cell<<1))*(1 + (3*l) + (7*(1+ns))); //cinit
+    //n = 0
+    //printf("cinit (ns %d, l %d) => %d\n",ns,l,x2);
+    x1 = 1+ (1<<31);
+    x2=x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
+
+    //skip first 50 double words (1600 bits)
+    //printf("n=0 : x1 %x, x2 %x\n",x1,x2);
+    for (n=1; n<50; n++) {
+      x1 = (x1>>1) ^ (x1>>4);
+      x1 = x1 ^ (x1<<31) ^ (x1<<28);
+      x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
+      x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
+      //printf("x1 : %x, x2 : %x\n",x1,x2);
+    }
+
+    for (n=0; n<38; n++) {
+      x1 = (x1>>1) ^ (x1>>4);
+      x1 = x1 ^ (x1<<31) ^ (x1<<28);
+      x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
+      x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
+      lte_gold_uespec_port5_table[ns][n] = x1^x2;
+      //printf("n=%d : c %x\n",n,x1^x2);
+    }
+
+  }
+}
+
 /*! \brief gold sequenquence generator
 \param x1
 \param x2 this should be set to c_init if reset=1

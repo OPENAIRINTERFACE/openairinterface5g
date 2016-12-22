@@ -118,7 +118,7 @@ unsigned short fill_rar(
 
   if (opt_enabled) {
     trace_pdu(1, dlsch_buffer, input_buffer_length, module_idP, 2, 1,
-              eNB_mac_inst[module_idP].subframe, 0, 0);
+        eNB_mac_inst[module_idP].frame, eNB_mac_inst[module_idP].subframe, 0, 0);
     LOG_D(OPT,"[eNB %d][RAPROC] CC_id %d RAR Frame %d trace pdu for rnti %x and  rapid %d size %d\n",
           module_idP, CC_id, frameP, eNB_mac_inst[module_idP].common_channels[CC_id].RA_template[ra_idx].rnti,
           rarh->RAPID, input_buffer_length);
@@ -133,6 +133,7 @@ ue_process_rar(
   const module_id_t module_idP,
   const int CC_id,
   const frame_t frameP,
+  const rnti_t ra_rnti,
   uint8_t* const dlsch_buffer,
   rnti_t* const t_crnti,
   const uint8_t preamble_index
@@ -168,6 +169,12 @@ ue_process_rar(
   LOG_D(MAC,"[UE %d][RAPROC] rar->t_crnti %x\n",module_idP,(uint16_t)rar[5]+(rar[4]<<8));
 #endif
 
+  if (opt_enabled) {
+    LOG_D(OPT,"[UE %d][RAPROC] CC_id %d RAR Frame %d trace pdu for ra-RNTI %x\n",
+          module_idP, CC_id, frameP, ra_rnti);
+    trace_pdu(1, (uint8_t*)rarh, 7, module_idP, 2, ra_rnti,
+        UE_mac_inst[module_idP].rxFrame, UE_mac_inst[module_idP].rxSubframe, 0, 0);
+  }
 
   if (preamble_index == rarh->RAPID) {
     *t_crnti = (uint16_t)rar[5]+(rar[4]<<8);//rar->t_crnti;

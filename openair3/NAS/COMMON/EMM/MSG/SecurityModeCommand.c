@@ -72,6 +72,8 @@ int decode_security_mode_command(security_mode_command_msg *security_mode_comman
       decoded += decoded_result;
       /* Set corresponding mask to 1 in presencemask */
       security_mode_command->presencemask |= SECURITY_MODE_COMMAND_IMEISV_REQUEST_PRESENT;
+      LOG_TRACE(INFO," SECURITY MODE COMMAND: IMEISV_REQUEST: %d \n",security_mode_command->imeisvrequest);
+
       break;
 
     case SECURITY_MODE_COMMAND_REPLAYED_NONCEUE_IEI:

@@ -454,9 +454,6 @@ typedef struct PHY_VARS_eNB_s {
   LTE_eNB_COMMON       common_vars;
   LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PBCH         pbch;
-  /// \brief ?.
-  /// - first index: UE [0..NUMBER_OF_UE_MAX[ (hard coded)
-  /// - second index: UE [0..NUMBER_OF_UE_MAX[
   LTE_eNB_PUSCH       *pusch_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PRACH        prach_vars;
   LTE_eNB_DLSCH_t     *dlsch[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
@@ -468,6 +465,9 @@ typedef struct PHY_VARS_eNB_s {
 
   /// cell-specific reference symbols
   uint32_t         lte_gold_table[20][2][14];
+
+  /// UE-specific reference symbols (p=5), TM 7
+  uint32_t         lte_gold_uespec_port5_table[NUMBER_OF_UE_MAX][20][38];
 
   /// UE-specific reference symbols (p=7...14), TM 8/9/10
   uint32_t         lte_gold_uespec_table[2][20][2][21];
@@ -679,7 +679,7 @@ typedef struct {
   /// \brief Total gains with bypassed RF gain stage (ExpressMIMO2/Lime)
   uint32_t rx_gain_byp[4];
   /// \brief Current transmit power
-  int8_t tx_power_dBm[10];
+  int16_t tx_power_dBm[10];
   /// \brief Total number of REs in current transmission
   int tx_total_RE[10];
   /// \brief Maximum transmit power
@@ -729,8 +729,11 @@ typedef struct {
   /// cell-specific reference symbols
   uint32_t lte_gold_table[7][20][2][14];
 
+  /// UE-specific reference symbols (p=5), TM 7
+  uint32_t lte_gold_uespec_port5_table[20][38];
+
   /// ue-specific reference symbols
-  uint32_t         lte_gold_uespec_table[2][20][2][21];
+  uint32_t lte_gold_uespec_table[2][20][2][21];
 
   /// mbsfn reference symbols
   uint32_t lte_gold_mbsfn_table[10][3][42];

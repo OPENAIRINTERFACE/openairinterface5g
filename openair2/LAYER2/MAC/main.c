@@ -527,6 +527,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
 
   mac_xface->phy_config_dedicated_eNB    = phy_config_dedicated_eNB;
   mac_xface->phy_config_dedicated_ue     = phy_config_dedicated_ue;
+  mac_xface->phy_config_harq_ue          = phy_config_harq_ue;
 
   mac_xface->get_lte_frame_parms        = get_lte_frame_parms;
   mac_xface->get_mu_mimo_mode           = get_mu_mimo_mode;

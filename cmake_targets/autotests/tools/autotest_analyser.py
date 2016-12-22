@@ -35,12 +35,15 @@ import getopt
 import sys
 from subprocess import call
 
+import encoder
+
+sys.path.append(os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/tools/'))
 
 
 #test_cases = ('030001', '030901', '031001', '031601', '031701', '031801', '031901', '032001', '032101', '032201', '032301', '032501', '032601', '032801')
-test_cases = ('030030' , '030030' ) 
+test_cases = ('032800' , '032730' ) 
 
-nb_run = 3
+nb_run = 2
 
 def error_opt(msg):
     print("Option error: " + msg)
@@ -58,12 +61,25 @@ def main(args):
 
 
 
+	# metric = {}
+	# metric['id'] 			= 'UE_DLSCH_BITRATE'
+	# metric['description'] 	= 'UE downlink physical throughput'	
+	# metric['regex'] 		= '(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)'
+	# metric['unit_of_meas']	= 'kbps'
+	# metric['min_limit']		= 14668.8
+
+
+#AUTOTEST Metric : RRC Measurments RSRP[0]=-97.60 dBm/RE, RSSI=-72.83 dBm, RSRQ[0] 9.03 dB, N0 -125 dBm/RE, NF 7.2 dB (frame = 4490)
+
 	metric = {}
-	metric['id'] 			= 'UE_DLSCH_BITRATE'
-	metric['description'] 	= 'UE downlink physical throughput'	
-	metric['regex'] 		= '(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)'
+	metric['id'] 		= 'UE_DL_RRC_MEAS'
+	metric['description'] 	= 'UE downlink RRC Measurments'	
+	metric['nb_metric']	= 5
+#	metric['regex'] 	= 'AUTOTEST Metric : RRC Measurments (RSRP\[0\])=(-?\d+\.?\d*)\s+(.+),\s+(RSRQ\[0\])=(-?\d+\.?\d*)\s+(.+),,\s+(N0)=(-?\d+\.?\d*)\s+(.+),,\s+(NF)=(-?\d+\.?\d*)\s+(.+)\s+\(frame = (\d+)\) '
+	metric['regex'] 	= 'AUTOTEST Metric : RRC Measurments (RSRP\[0\])=(-?\d+\.?\d*)\s+(.+)\,\s+(RSSI)=(-?\d+\.?\d*)\s+(.+)\,\s+(RSRQ\[0\])=(-?\d+\.?\d*)\s+(.+)\,\s+(N0)=(-?\d+\.?\d*)\s+(.+)\,\s+(NF)=(-?\d+\.?\d*)\s+(.+)\s+\(frame = (\d+)\)'
 	metric['unit_of_meas']	= 'kbps'
 	metric['min_limit']		= 14668.8
+
 
 
 #report_path = log_path+'/report/'
@@ -74,58 +90,44 @@ def main(args):
 
 #return(0)
 
+	test_results = []
+
 	for test_case in test_cases:
 
-#		print test_case
-		if test_case == '030001':
-			metric['min_limit']		= 500.0
-		if test_case == '030901':
-			metric['min_limit']		= 640.0
-		if test_case == '031001':
-			metric['min_limit']		= 3200.0
-		if test_case == '031601':
-			metric['min_limit']		= 5920.0
-		if test_case == '031701':
-			metric['min_limit']		= 6000.0
-		if test_case == '031801':
-			metric['min_limit']		= 6200.0
-		if test_case == '031901':
-			metric['min_limit']		= 7000.0
-		if test_case == '032001':
-			metric['min_limit']		= 7800.0
-		if test_case == '032101':
-			metric['min_limit']		= 8000.0
-		if test_case == '032201':
-			metric['min_limit']		= 9000.0
-		if test_case == '032301':
-			metric['min_limit']		= 10000.0
-		if test_case == '032501':
-			metric['min_limit']		= 11000.0
-		if test_case == '032601':
-			metric['min_limit']		= 12000.0
-		if test_case == '032801':
-			metric['min_limit']		= 12500.0
-
-		if test_case == '035201':
-			metric['min_limit']		= 14668.8
-		if test_case == '036001':
-			metric['min_limit']		= 25363.2
-
-
-
 		for i in range(0, nb_run):
-			fname = 'log//'+test_case+'/run_'+str(i)+'/UE_exec_'+str(i)+'_.log'
+			fname = '..//log//'+test_case+'/run_'+str(i)+'/UE_exec_'+str(i)+'_.log'
 			args = {'metric' : metric,
 					'file' : fname }
 
-			cell_synch_status = analyser.check_cell_synchro(fname)
-			if cell_synch_status == 'CELL_SYNCH':
-			  print '!!!!!!!!!!!!!!  Cell synchronized !!!!!!!!!!!'
-			  metric_checks_flag = 0
-			else :
-			  print '!!!!!!!!!!!!!!  Cell NOT  NOT synchronized !!!!!!!!!!!'
+			# cell_synch_status = analyser.check_cell_synchro(fname)
+			# if cell_synch_status == 'CELL_SYNCH':
+			#   print '!!!!!!!!!!!!!!  Cell synchronized !!!!!!!!!!!'
+			#   metric_checks_flag = 0
+			# else :
+			#   print '!!!!!!!!!!!!!!  Cell NOT  NOT synchronized !!!!!!!!!!!'
 	
-#			metric_extracted = analyser.do_extract_metrics(args)
+#			metrics_extracted = analyser.do_extract_metrics_new(args)
+
+
+			# de-xmlfy test report
+			xml_file = '..//log//'+test_case+'/test.'+test_case+'_ng.xml'
+			print xml_file
+
+		# 	test_result =
+
+
+  # 			test_results.append(test_result)
+
+  # xmlFile = logdir_local_testcase + '/test.' + testcasename + '.xml'
+  # xml="\n<testcase classname=\'"+ testcaseclass +  "\' name=\'" + testcasename + "."+tags +  "\' Run_result=\'" + test_result_string + "\' time=\'" + str(duration) + " s \' RESULT=\'" + testcase_verdict + "\'></testcase> \n"
+  # write_file(xmlFile, xml, mode="w")
+
+  # xmlFile_ng = logdir_local_testcase + '/test.' + testcasename + '_ng.xml'
+  # xml_ng = xmlify(test_result, wrap=testcasename, indent="  ")
+  # write_file(xmlFile_ng, xml_ng, mode="w")
+
+
+
 
 #			print "min       = "+ str( metric_extracted['metric_min'] )
 #			print "min_index = "+ str( metric_extracted['metric_min_index'] )
@@ -143,16 +145,27 @@ def main(args):
 #			print fname
 #			analyser.do_img_metrics(metric, metric_extracted, fname)
 
-#			fname = 'log//'+test_case+'/run_'+str(i)+'/UE_traffic_'+str(i)+'_.log'
+			# fname = 'log//'+test_case+'/run_'+str(i)+'/UE_traffic_'+str(i)+'_.log'
 			
-#			args = {'file' : fname }
+			# args = {'file' : fname }
 
-#			traffic_metrics = analyser.do_extract_traffic_metrics(args)
+			# traffic_metrics = analyser.do_extract_traffic_metrics(args)
 
-#			fname= 'report/iperf_'+test_case+'_'+str(i)+'.png'
+			# fname= 'report/iperf_'+test_case+'_'+str(i)+'.png'
 			
-#			print fname
-#			analyser.do_img_traffic(traffic_metrics, fname)
+			# print fname
+			# analyser.do_img_traffic(traffic_metrics, fname)
+
+
+	for test_result in test_results:
+	  cmd = 'mkdir -p ' + report_dir + '/'+ test_result['testcase_name']
+	  result = os.system(cmd)
+
+	  report_file = report_dir + '/'+ test_result['testcase_name'] + '/'+ test_result['testcase_name']+ '_report.html'
+
+	  analyser.create_test_report_detailed_html(test_result, report_file )
+
+	  print test_result
 
 
 

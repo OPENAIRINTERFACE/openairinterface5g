@@ -76,8 +76,11 @@ int encode_security_mode_complete(security_mode_complete_msg *security_mode_comp
   /* Checking IEI and pointer */
   CHECK_PDU_POINTER_AND_LENGTH_ENCODER(buffer, SECURITY_MODE_COMPLETE_MINIMUM_LENGTH, len);
 
+  LOG_TRACE(INFO,"SECURITY MODE COMMAND COMPLETE:  presencemask: %d \n",security_mode_complete->presencemask);
+
   if ((security_mode_complete->presencemask & SECURITY_MODE_COMPLETE_IMEISV_PRESENT)
       == SECURITY_MODE_COMPLETE_IMEISV_PRESENT) {
+	  LOG_TRACE(INFO,"SECURITY MODE COMMAND COMPLETE: encode imeisv \n");
     if ((encode_result =
            encode_mobile_identity(&security_mode_complete->imeisv,
                                   SECURITY_MODE_COMPLETE_IMEISV_IEI, buffer + encoded, len -
@@ -87,7 +90,7 @@ int encode_security_mode_complete(security_mode_complete_msg *security_mode_comp
     else
       encoded += encode_result;
   }
-
+  LOG_TRACE(INFO,"SECURITY MODE COMMAND COMPLETE done !!! \n");
   return encoded;
 }
 

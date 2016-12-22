@@ -73,13 +73,14 @@ typedef volatile struct rlc_tm_info_s {
 * \param[in]  srb_flagP                 Flag to indicate SRB (1) or DRB (0)
 * \param[in]  config_tmP                Configuration parameters for RLC TM instance.
 * \param[in]  rb_idP                    Radio bearer identifier.
-* \param[in]  srb_flagP                 Flag to indicate signalling radio bearer (1) or data radio bearer (0).
+* \param[in]  chan_idP                  Transport channel identifier.
 */
 public_rlc_tm_init(   void config_req_rlc_tm (
                         const protocol_ctxt_t* const  ctxt_pP,
                         const srb_flag_t  srb_flagP,
                         const rlc_tm_info_t * const config_tmP,
-                        const rb_id_t     rb_idP);)
+                        const rb_id_t     rb_idP,
+                        const logical_chan_id_t chan_idP);) 
 
 /*! \fn void rlc_tm_init (const protocol_ctxt_t* const  ctxt_pP, rlc_tm_entity_t * const rlcP)
 * \brief    Initialize a RLC TM protocol instance, initialize all variables, lists, allocate buffers for making this instance ready to be configured with protocol configuration parameters. After this initialization the RLC TM protocol instance will be in RLC_NULL_STATE state.
@@ -120,11 +121,14 @@ protected_rlc_tm_init(void rlc_tm_configure(
 * \param[in]  rlcP                      RLC TM protocol instance pointer.
 * \param[in]  srb_flagP                 Flag to indicate signalling radio bearer (1) or data radio bearer (0).
 * \param[in]  rb_idP                    Radio bearer identifier.
+* \param[in]  chan_idP                  Transport channel identifier
 */
 protected_rlc_tm_init(void rlc_tm_set_debug_infos(
                         const protocol_ctxt_t* const  ctxt_pP,
                         rlc_tm_entity_t * const       rlcP,
                         const srb_flag_t              srb_flagP,
-                        const rb_id_t                 rb_idP);)
+                        const rb_id_t                 rb_idP,
+                        const logical_chan_id_t chan_idP);)
+
 /** @} */
 #    endif

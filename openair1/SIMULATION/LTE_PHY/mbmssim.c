@@ -238,6 +238,7 @@ int main(int argc, char **argv)
     n_tx=2;
 
   lte_param_init(n_tx,
+                 n_tx,
 		 n_rx,
 		 transmission_mode,
 		 extended_prefix_flag,
@@ -301,7 +302,7 @@ int main(int argc, char **argv)
                                 0);
 
   // Create transport channel structures for 2 transport blocks (MIMO)
-  eNB->dlsch_MCH = new_eNB_dlsch(1,8,Nsoft,N_RB_DL,0);
+  eNB->dlsch_MCH = new_eNB_dlsch(1,8,Nsoft,N_RB_DL,0,&eNB->frame_parms);
 
   if (!eNB->dlsch_MCH) {
     printf("Can't get eNB dlsch structures\n");
@@ -475,11 +476,11 @@ int main(int argc, char **argv)
       }
 
       UE->dlsch_MCH[0]->harq_processes[0]->G = get_G(&UE->frame_parms,
-          UE->dlsch_MCH[0]->harq_processes[0]->nb_rb,
-          UE->dlsch_MCH[0]->harq_processes[0]->rb_alloc_even,
-          get_Qm(UE->dlsch_MCH[0]->harq_processes[0]->mcs),
-          1,2,
-          UE->proc.proc_rxtx[0].frame_tx,subframe);
+						     UE->dlsch_MCH[0]->harq_processes[0]->nb_rb,
+						     UE->dlsch_MCH[0]->harq_processes[0]->rb_alloc_even,
+						     get_Qm(UE->dlsch_MCH[0]->harq_processes[0]->mcs),
+						     1,2,
+						     UE->proc.proc_rxtx[0].frame_tx,subframe,0);
       UE->dlsch_MCH[0]->harq_processes[0]->Qm = get_Qm(UE->dlsch_MCH[0]->harq_processes[0]->mcs);
 
       dlsch_unscrambling(&UE->frame_parms,1,UE->dlsch_MCH[0],

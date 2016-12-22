@@ -88,7 +88,7 @@ int8_t pucch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t subframe,ui
   }
 
   if (pucch_fmt!=pucch_format1) {
-    LOG_I(PHY,"[UE  %d][PDSCH %x] frame %d, subframe %d: Po_PUCCH %d dBm : Po_NOMINAL_PUCCH %d dBm, PL %d dB, g_pucch %d dB\n",
+    LOG_D(PHY,"[UE  %d][PDSCH %x] frame %d, subframe %d: Po_PUCCH %d dBm : Po_NOMINAL_PUCCH %d dBm, PL %d dB, g_pucch %d dB\n",
           ue->Mod_id,
           ue->dlsch[eNB_id][0]->rnti,proc->frame_tx,subframe,
           Po_PUCCH,
@@ -96,7 +96,7 @@ int8_t pucch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t subframe,ui
           get_PL(ue->Mod_id,ue->CC_id,eNB_id),
           ue->dlsch[eNB_id][0]->g_pucch);
   } else {
-    LOG_I(PHY,"[UE  %d][SR %x] frame %d, subframe %d: Po_PUCCH %d dBm : Po_NOMINAL_PUCCH %d dBm, PL %d dB g_pucch %d dB\n",
+    LOG_D(PHY,"[UE  %d][SR %x] frame %d, subframe %d: Po_PUCCH %d dBm : Po_NOMINAL_PUCCH %d dBm, PL %d dB g_pucch %d dB\n",
           ue->Mod_id,
           ue->dlsch[eNB_id][0]->rnti,proc->frame_tx,subframe,
           Po_PUCCH,

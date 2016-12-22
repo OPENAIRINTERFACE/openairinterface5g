@@ -21,11 +21,11 @@
 
 /*! \file phy_procedures_lte_eNB.c
  * \brief Implementation of eNB procedures from 36.213 LTE specifications
- * \author R. Knopp, F. Kaltenberger, N. Nikaein
+ * \author R. Knopp, F. Kaltenberger, N. Nikaein, X. Foukas
  * \date 2011
  * \version 0.1
  * \company Eurecom
- * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr,navid.nikaein@eurecom.fr
+ * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr,navid.nikaein@eurecom.fr, x.foukas@sms.ed.ac.uk
  * \note
  * \warning
  */
@@ -59,6 +59,14 @@
 
 #if defined(ENABLE_ITTI)
 #   include "intertask_interface.h"
+#endif
+
+
+#if defined(FLEXRAN_AGENT_SB_IF)
+//Agent-related headers
+#include "ENB_APP/flexran_agent_extern.h"
+#include "ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac.h"
+#include "LAYER2/MAC/flexran_agent_mac_proto.h"
 #endif
 
 //#define DIAG_PHY
@@ -221,7 +229,7 @@ int8_t find_next_ue_index(PHY_VARS_eNB *eNB)
   return(-1);
 }
 
-int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16_t rnti, const int frame, const uint8_t subframe,uint8_t *harq_pid,uint8_t *round,const uint8_t ul_flag)
+int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16_t rnti, const int frame, const uint8_t subframe,uint8_t *harq_pid,uint8_t *round,const uint8_t harq_flag)
 {
   LTE_eNB_DLSCH_t *DLSCH_ptr;
   LTE_eNB_ULSCH_t *ULSCH_ptr;
@@ -235,8 +243,19 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
     return(-1);
   }
 
-  if (ul_flag == 0)  {// this is a DL request
+  if ((harq_flag == openair_harq_DL) || (harq_flag == openair_harq_RA))  {// this is a DL request
+
     DLSCH_ptr = PHY_vars_eNB_g[Mod_id][CC_id]->dlsch[(uint32_t)UE_id][0];
+
+    if (harq_flag == openair_harq_RA) {
+      if (DLSCH_ptr->harq_processes[0] != NULL) {
+	*harq_pid = 0;
+	*round = DLSCH_ptr->harq_processes[0]->round;
+	return 0;
+      } else {
+	return -1;
+      }
+    }
 
     /* let's go synchronous for the moment - maybe we can change at some point */
     i = (frame * 10 + subframe) % 8;
@@ -671,7 +690,8 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 				       SI_RNTI,
 				       0,
 				       P_RNTI,
-				       eNB->UE_stats[0].DL_pmi_single);
+				       eNB->UE_stats[0].DL_pmi_single,
+				       0);
     
     
     eNB->dlsch_SI->nCCE[subframe] = dci_alloc->firstCCE;
@@ -704,7 +724,8 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 				       SI_RNTI,
 				       dci_alloc->rnti,
 				       P_RNTI,
-				       eNB->UE_stats[0].DL_pmi_single);
+				       eNB->UE_stats[0].DL_pmi_single,
+				       0);
     
     
     eNB->dlsch_ra->nCCE[subframe] = dci_alloc->firstCCE;
@@ -753,7 +774,8 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 					 SI_RNTI,
 					 0,
 					 P_RNTI,
-					 eNB->UE_stats[(uint8_t)UE_id].DL_pmi_single);
+					 eNB->UE_stats[(uint8_t)UE_id].DL_pmi_single,
+					 eNB->transmission_mode[(uint8_t)UE_id]<7?0:eNB->transmission_mode[(uint8_t)UE_id]);
       LOG_D(PHY,"[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d subframe %d: Generated dlsch params\n",
 	    eNB->Mod_id,dci_alloc->rnti,eNB->dlsch[(uint8_t)UE_id][0]->current_harq_pid,frame,subframe);
       
@@ -886,7 +908,10 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
 	      dlsch_harq->rb_alloc,
 	      get_Qm(dlsch_harq->mcs),
 	      dlsch_harq->Nl,
-	      num_pdcch_symbols,frame,subframe),
+	      num_pdcch_symbols,
+	      frame,
+	      subframe,
+	      dlsch_harq->mimo_mode==TM7?7:0),
 	dlsch_harq->nb_rb,
 	dlsch_harq->mcs,
 	pmi2hex_2Ar1(dlsch_harq->pmi_alloc),
@@ -905,7 +930,10 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
 			   dlsch_harq->rb_alloc,
 			   get_Qm(dlsch_harq->mcs),
 			   dlsch_harq->Nl,
-			   num_pdcch_symbols,frame,subframe),
+			   num_pdcch_symbols,
+			   frame,
+			   subframe,
+			   dlsch_harq->mimo_mode==TM7?7:0),
 		     dlsch_harq->nb_rb,
 		     dlsch_harq->mcs,
 		     pmi2hex_2Ar1(dlsch_harq->pmi_alloc),
@@ -1062,7 +1090,9 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
 			   dlsch_harq->rb_alloc,
 			   get_Qm(dlsch_harq->mcs),
 			   dlsch_harq->Nl,
-			   num_pdcch_symbols,frame,subframe),
+			   num_pdcch_symbols,
+			   frame,subframe,
+			   0),
 		     0,
 		     subframe<<1);
     stop_meas(&eNB->dlsch_scrambling_stats);
@@ -1070,10 +1100,10 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
     start_meas(&eNB->dlsch_modulation_stats);
 
 
-    dlsch_modulation(eNB->common_vars.txdataF[0],
+    dlsch_modulation(eNB,
+		     eNB->common_vars.txdataF[0],
 		     AMP,
 		     subframe,
-		     fp,
 		     num_pdcch_symbols,
 		     dlsch,
 		     dlsch1);
@@ -1105,7 +1135,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   int frame=proc->frame_tx;
   int subframe=proc->subframe_tx;
   //  uint16_t input_buffer_length;
-  uint32_t i,aa;
+  uint32_t i,j,aa;
   uint8_t harq_pid;
   DCI_PDU *DCI_pdu;
   DCI_PDU DCI_pdu_tmp;
@@ -1165,7 +1195,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   // clear the transmit data array for the current subframe
   if (eNB->abstraction_flag==0) {
-    for (aa=0; aa<fp->nb_antennas_tx_eNB; aa++) {      
+    for (aa=0; aa<fp->nb_antenna_ports_eNB; aa++) {      
       memset(&eNB->common_vars.txdataF[0][aa][subframe*fp->ofdm_symbol_size*(fp->symbols_per_tti)],
              0,fp->ofdm_symbol_size*(fp->symbols_per_tti)*sizeof(int32_t));
     }
@@ -1203,6 +1233,14 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
     fill_dci_emos(DCI_pdu,eNB);
 #else
     fill_dci(DCI_pdu,eNB,proc);
+    // clear previous allocation information for all UEs
+    for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+      if (eNB->dlsch[i][0]){
+        for (j=0; j<8; j++)
+          eNB->dlsch[i][0]->harq_processes[j]->round = 0;
+      }
+    }
+
 #endif
   }
 
@@ -1405,7 +1443,16 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
     
     eNB->dlsch_ra->active = 0;
   }
-  
+
+#if defined(FLEXRAN_AGENT_SB_IF)
+#ifndef DISABLE_SF_TRIGGER
+  //Send subframe trigger to the controller
+  if (mac_agent_registered[eNB->Mod_id]) {
+    agent_mac_xface[eNB->Mod_id]->flexran_agent_send_sf_trigger(eNB->Mod_id);
+  }
+#endif
+#endif
+
   // Now scan UE specific DLSCH
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++)
     {

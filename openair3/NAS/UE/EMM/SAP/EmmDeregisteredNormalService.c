@@ -55,6 +55,7 @@ Description Implements the EPS Mobility Management procedures executed
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
 /****************************************************************************/
+extern uint8_t usim_test;
 
 /****************************************************************************/
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
@@ -109,7 +110,14 @@ int EmmDeregisteredNormalService(const emm_reg_t *evt)
     /*
      * Initiate the attach procedure for EPS services
      */
-    rc = emm_proc_attach(EMM_ATTACH_TYPE_EPS);
+    if(usim_test == 0)
+    {
+      rc = emm_proc_attach(EMM_ATTACH_TYPE_EPS);
+    }
+    else
+    {
+      rc = emm_proc_attach(EMM_ATTACH_TYPE_IMSI); // CMW500 IMSI initial attach expected
+    }
     break;
 
   case _EMMREG_ATTACH_REQ:

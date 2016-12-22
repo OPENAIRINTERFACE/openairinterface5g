@@ -55,6 +55,8 @@ TASK_DEF(TASK_X2AP,     TASK_PRIORITY_MED,          200)
 TASK_DEF(TASK_SCTP,     TASK_PRIORITY_MED,          200)
 ///   eNB APP task
 TASK_DEF(TASK_ENB_APP,  TASK_PRIORITY_MED,          200)
+///   eNB Agent task
+TASK_DEF(TASK_FLEXRAN_AGENT,  TASK_PRIORITY_MED,          200)
 
 // UE tasks and sub-tasks:
 //// Layer 2 and Layer 1 sub-tasks

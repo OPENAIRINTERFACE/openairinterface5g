@@ -206,7 +206,19 @@ void phy_config_dedicated_ue(module_id_t Mod_id,
                              uint8_t CH_index,
                              struct PhysicalConfigDedicated *physicalConfigDedicated);
 
+/*!
+\fn void phy_config_harq_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t CH_index,
+               uint16_t max_harq_tx)
+\brief Configure UE UL max harq Tx.
+\details Invoked upon reception of RRCConnectionSetup or RRCConnectionReconfiguration from eNB.
+@param Mod_id Instance ID for eNB
+@param CC_id Component Carrier index
+@param CH_index Index of eNB for this configuration
+@param max_harq_tx max harq tx information
 
+ */
+void phy_config_harq_ue(module_id_t Mod_id,int CC_id,uint8_t CH_index,
+                           uint16_t max_harq_tx);
 /**
 \brief Configure UE MBSFN common parameters.
 \details Invoked upon reception of SIB13 from eNB.
@@ -292,7 +304,8 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms);
 
 //void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parm, PHY_FRAMING *phy_framing);
 
-void lte_param_init(unsigned char N_tx, 
+void lte_param_init(unsigned char N_tx_port_eNB,
+		    unsigned char N_tx, 
 		    unsigned char N_rx,
 		    unsigned char transmission_mode,
 		    uint8_t extended_prefix_flag,
@@ -327,7 +340,8 @@ void phy_cleanup(void);
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf);
 void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms);
 
-void lte_param_init(unsigned char N_tx, 
+void lte_param_init(unsigned char N_tx_port_eNB, 
+                    unsigned char N_tx_phy,
 		    unsigned char N_rx,
 		    unsigned char transmission_mode,
 		    uint8_t extended_prefix_flag,
@@ -338,7 +352,6 @@ void lte_param_init(unsigned char N_tx,
 		    uint8_t threequarter_fs,
                     uint8_t osf,
 		    uint32_t perfect_ce);
-
 /** @} */
 #endif
 

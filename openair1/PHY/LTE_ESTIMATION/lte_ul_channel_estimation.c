@@ -78,7 +78,7 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
   int16_t ul_ch_estimates_re,ul_ch_estimates_im;
   int32_t rx_power_correction;
 
-  //uint8_t nb_antennas_rx = frame_parms->nb_antennas_tx_eNB;
+  //uint8_t nb_antennas_rx = frame_parms->nb_antenna_ports_eNB;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
   uint8_t cyclic_shift;
 
@@ -679,7 +679,7 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 
   int T_SFC,aa;
   int N_symb,symbol;
-  uint8_t nb_antennas_rx = frame_parms->nb_antennas_tx_eNB;
+  uint8_t nb_antennas_rx = frame_parms->nb_antenna_ports_eNB;
 #ifdef DEBUG_SRS
   char fname[40], vname[40];
 #endif
