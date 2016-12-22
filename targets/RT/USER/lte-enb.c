@@ -643,7 +643,7 @@ static void wait_system_ready (char *message, volatile int *start_flag) {
 #endif
 
 
-// asynchronous UL with IF4p5 (RCC,RAU,eNodeB_BBU)
+// asynchronous UL with IF5 (RCC,RAU,eNodeB_BBU)
 void fh_if5_asynch_UL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 
   eNB_proc_t *proc       = &eNB->proc;
@@ -964,8 +964,8 @@ void rx_fh_if5(PHY_VARS_eNB *eNB,int *frame, int *subframe) {
 
   recv_IF5(eNB, &proc->timestamp_rx, *subframe, IF5_RRH_GW_UL); 
 
-  proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
-  proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
+  proc->frame_rx    = (proc->timestamp_rx-eNB / (fp->samples_per_tti*10))&1023;
+  proc->subframe_rx = (proc->timestamp_rx-eNB / fp->samples_per_tti)%10;
   
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
@@ -982,6 +982,8 @@ void rx_fh_if5(PHY_VARS_eNB *eNB,int *frame, int *subframe) {
     *frame = proc->frame_rx;
     *subframe = proc->subframe_rx;        
   }      
+
+
 
   proc->timestamp_tx = proc->timestamp_rx +  (4*fp->samples_per_tti);
   
