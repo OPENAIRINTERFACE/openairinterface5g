@@ -53,6 +53,26 @@
 extern "C" {
 #endif
 
+  extern double cpuf;
+  static inline unsigned long long rdtsc(void) {
+    unsigned long long a, d;
+    __asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
+    return (d<<32) | a;
+  }
+  static inline unsigned long long checkT(int timeout, char * file, int line) {
+    static unsigned long long __thread last=0;
+    unsigned long long cur=rdtsc();
+    int microCycles=(int)(cpuf*1000);
+    int duration=(int)((cur-last)/microCycles);
+    if ( last!=0 && duration > timeout )
+      printf("%s:%d lte-ue delay %d (exceed %d)\n", file, line,
+	     duration, timeout);
+    last=cur;
+    return cur;
+  }
+
+#define check(a) checkT(a,__FILE__,__LINE__)
+  
 /** @defgroup _LOG LOG Generator
  * @{*/
 /* @}*/
