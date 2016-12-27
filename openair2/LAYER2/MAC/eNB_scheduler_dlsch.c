@@ -814,15 +814,15 @@ schedule_ue_spec(
           if (rlc_status.bytes_in_buffer > 0) {  // There is DCCH to transmit
             LOG_D(MAC,"[eNB %d] Frame %d, DL-DCCH->DLSCH CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
                   module_idP,frameP,CC_id,TBS-header_len_dcch);
-            sdu_lengths[0] += mac_rlc_data_req(
-                                module_idP,
-                                rnti,
-				module_idP,
-                                frameP,
-                                ENB_FLAG_YES,
-                                MBMS_FLAG_NO,
-                                DCCH,
-                                (char *)&dlsch_buffer[sdu_lengths[0]]);
+            sdu_lengths[0] = mac_rlc_data_req(
+					      module_idP,
+					      rnti,
+					      module_idP,
+					      frameP,
+					      ENB_FLAG_YES,
+					      MBMS_FLAG_NO,
+					      DCCH,
+					      (char *)&dlsch_buffer[0]);
 
             T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
               T_INT(harq_pid), T_INT(DCCH), T_INT(sdu_lengths[0]));
@@ -847,7 +847,7 @@ schedule_ue_spec(
             sdu_length_total = 0;
           }
         }
-
+	
         // check for DCCH1 and update header information (assume 2 byte sub-header)
         if (TBS-ta_len-header_len_dcch-sdu_length_total > 0 ) {
           rlc_status = mac_rlc_status_ind(
@@ -860,9 +860,10 @@ schedule_ue_spec(
                          DCCH+1,
                          (TBS-ta_len-header_len_dcch-sdu_length_total)); // transport block set size less allocations for timing advance and
           // DCCH SDU
+	  sdu_lengths[num_sdus] = 0;
 
           if (rlc_status.bytes_in_buffer > 0) {
-            LOG_D(MAC,"[eNB %d], Frame %d, DCCH1->DLSCH, CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
+            LOG_I(MAC,"[eNB %d], Frame %d, DCCH1->DLSCH, CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
                   module_idP,frameP,CC_id,TBS-header_len_dcch-sdu_length_total);
             sdu_lengths[num_sdus] += mac_rlc_data_req(
                                        module_idP,
@@ -872,7 +873,7 @@ schedule_ue_spec(
                                        ENB_FLAG_YES,
                                        MBMS_FLAG_NO,
                                        DCCH+1,
-                                       (char *)&dlsch_buffer[sdu_lengths[num_sdus]]);
+                                       (char *)&dlsch_buffer[sdu_length_total]);
 
             T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
               T_INT(harq_pid), T_INT(DCCH+1), T_INT(sdu_lengths[num_sdus]));

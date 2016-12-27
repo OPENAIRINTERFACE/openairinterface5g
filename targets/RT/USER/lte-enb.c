@@ -966,8 +966,8 @@ void rx_fh_if5(PHY_VARS_eNB *eNB,int *frame, int *subframe) {
 
   recv_IF5(eNB, &proc->timestamp_rx, *subframe, IF5_RRH_GW_UL); 
 
-  proc->frame_rx    = (proc->timestamp_rx-eNB / (fp->samples_per_tti*10))&1023;
-  proc->subframe_rx = (proc->timestamp_rx-eNB / fp->samples_per_tti)%10;
+  proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
+  proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
   
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
