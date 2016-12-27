@@ -27,59 +27,8 @@
 * \warning This component can be runned only in user-space
 * @ingroup routing
 */
-#ifndef __LOG_IF_H__
-#    define __LOG_IF_H__
 
-
-/*--- INCLUDES ---------------------------------------------------------------*/
-#    include "log.h"
-/*----------------------------------------------------------------------------*/
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#    ifdef COMPONENT_LOG
-#        ifdef COMPONENT_LOG_IF
-#            define private_log_if(x) x
-#            define friend_log_if(x) x
-#            define public_log_if(x) x
-#        else
-#            define private_log_if(x)
-#            define friend_log_if(x) extern x
-#            define public_log_if(x) extern x
-#        endif
-#    else
-#        define private_log_if(x)
-#        define friend_log_if(x)
-#        define public_log_if(x) extern x
-#    endif
-
-/** @defgroup _log_if Interfaces of LOG
- * @{*/
-
-//public_log_if( log_t *g_log;)
-
-public_log_if( int logInit (void);)
-public_log_if( void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...);)
-public_log_if( void logRecord(const char *file, const char *func, int line,int comp, int level, const char *format, ...);)
-public_log_if( int set_comp_log(int component, int level, int verbosity, int interval);)
-public_log_if( int  set_log(int component, int level, int interval);)
-public_log_if( void set_glog(int level, int verbosity);)
-public_log_if( void set_log_syslog(int enable);)
-public_log_if( void set_log_onlinelog(int enable);)
-public_log_if( void set_log_filelog(int enable);)
-public_log_if( void set_component_filelog(int comp);)
-public_log_if( int  map_str_to_int(mapping *map, const char *str);)
-public_log_if( char *map_int_to_str(mapping *map, int val);)
-public_log_if( void logClean (void); )
-public_log_if( int is_newline( char *str, int size);)
-public_log_if( void *log_thread_function(void * list);)
-
-/* @}*/
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
-
+// LTS: kept this file for compatibility
+// this file was probably a trial to separate internal functions and external ones
+// but it has never been finished, most source code include directly log.h (not log_if.h)
+#include "log.h"

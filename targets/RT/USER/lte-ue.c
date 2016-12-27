@@ -75,101 +75,6 @@
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 
-
-#define DEBUG_REALTIME 1
-#if DEBUG_REALTIME
-
-typedef struct latency_stat {
-    uint64_t		counter;
-    uint64_t		stat1100;
-    uint64_t		stat1200;
-    uint64_t		stat1500;
-    uint64_t		stat2000;
-    uint64_t		stat3000;
-} latency_stat_t;
-
-static inline void saif_meas(int frame_rx) {
-    static latency_stat_t __thread latency_stat;
-    static struct timespec __thread last= {0};
-    struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &now);
-    if ( last.tv_sec )  {
-        uint64_t diffTime =  ((uint64_t)now.tv_sec *1000 *1000 *1000 + now.tv_nsec) -
-                             ((uint64_t)last.tv_sec *1000 *1000 *1000 + last.tv_nsec);
-        diffTime/=1000;
-        latency_stat.counter++;
-        if ( diffTime >= 1100 ) {
-            if (diffTime  < 1200 )
-                latency_stat.stat1100++;
-            else if ( diffTime < 1500 )
-                latency_stat.stat1200++;
-            else if ( diffTime < 2000 )
-                latency_stat.stat1500++;
-            else if ( diffTime < 3000 )
-                latency_stat.stat2000++;
-            else
-                latency_stat.stat3000++;
-        }
-        if ( diffTime>=1100 || latency_stat.counter%20000==0 ) {
-            time_t current=time(NULL);
-            LOG_W(HW,
-                  "%.2f delay=%llu Period stats %2.6f%% below 100µs\ncumul of events: 1100=%ld 1200=%ld 1500=%ld 2000=%ld >3000=%ld - (frame_rx=%d) - %s",
-                  now.tv_sec+(double)now.tv_nsec/1e9,
-                  diffTime,
-                  (latency_stat.counter-latency_stat.stat1100-latency_stat.stat1200-
-                   latency_stat.stat1500-latency_stat.stat2000-latency_stat.stat3000)/
-                  (float)latency_stat.counter *100,
-                  latency_stat.stat1100, latency_stat.stat1200,
-                  latency_stat.stat1500, latency_stat.stat2000,
-                  latency_stat.stat3000,
-                  frame_rx, ctime(&current));
-            fflush(stdout);
-        }
-
-    }
-    last=now;
-}
-
-typedef struct m {
-    unsigned long long iterations;
-    unsigned long long sum;
-    unsigned long long maxArray[11];
-} Meas;
-
-
-void printMeas(char * txt, Meas *M, int period) {
-    if (M->iterations%period == 0 ) {
-        char txt2[512];
-        sprintf(txt2,"%s avg=%llu, iterations=%llu, max=%llu/%llu/%llu/%llu/%llu/%llu/%llu/%llu/%llu/%llu\n",
-                txt, M->sum/M->iterations,M->iterations,
-                M->maxArray[1],M->maxArray[2], M->maxArray[3],M->maxArray[4],
-                M->maxArray[5], M->maxArray[6],M->maxArray[7], M->maxArray[8],M->maxArray[9],M->maxArray[10]);
-        LOG_W(PHY,txt2);
-    }
-}
-
-int cmpint(const void* a, const void* b) {
-    unsigned long long* aa=(unsigned long long*)a;
-    unsigned long long* bb=(unsigned long long*)b;
-    return (int)(*aa-*bb);
-}
-
-void updateTimes(unsigned long long start, Meas *M, int period, char * txt) {
-    unsigned long long end=rdtsc();
-    long long diff=(end-start)/(cpuf*1000);
-    M->maxArray[0]=diff;
-    M->sum+=diff;
-    M->iterations++;
-    qsort(M->maxArray, 11, sizeof(unsigned long long), cmpint);
-    printMeas(txt,M,period);
-}
-
-#else
-#define check(a) do {} while (0)
-#define saif_meas(a) do {} while (0)
-#define update_max_times(a,b) do {} while (0)
-#define print_meas(a,b) do {} while (0)
-#endif
 /* End of Changed by SYRTEM */
 
 #define FRAME_PERIOD    100000000ULL
@@ -742,9 +647,10 @@ static void *UE_thread_rxn_txnp4(void *arg) {
         instance_cnt_rxtx=proc->subframe_rx;
         AssertFatal(pthread_mutex_unlock(&proc->mutex_rxtx) ==0,"");
 
-        static __thread Meas t2= {0}, t3= {0};
-        unsigned long long current=rdtsc();
-        updateTimes(proc->gotIQs, &t2, 10000, "saif: Delay to wake up UE_Thread_Rx (case 2)");
+        initRefTimes(t2);
+        initRefTimes(t3);
+        pickTime(current);
+        updateTimes(proc->gotIQs, &t2, 10000, "Delay to wake up UE_Thread_Rx (case 2)");
 
         // Process Rx data for one sub-frame
         lte_subframe_t sf_type = subframe_select( &UE->frame_parms, proc->subframe_rx);
@@ -812,7 +718,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
                 (UE->frame_parms.frame_type == TDD))
             if (UE->mode != loop_through_memory)
                 phy_procedures_UE_S_TX(UE,0,0,no_relay);
-        updateTimes(current, &t3, 10000, "saif: Delay to process sub-frame (case 3)");
+        updateTimes(current, &t3, 10000, "Delay to process sub-frame (case 3)");
 
     }
 
@@ -1002,15 +908,15 @@ void *UE_thread(void *arg) {
                         if ( first_symbols <0 )
                             LOG_E(PHY,"can't compensate: diff =%d\n", first_symbols);
                     }
-                    unsigned long long gotIQs=rdtsc();
+                    pickTime(gotIQs);
                     // operate on thread sf mod 2
                     AssertFatal(pthread_mutex_lock(&proc->mutex_rxtx) ==0,"");
                     if(sub_frame == 0) {
                         UE->proc.proc_rxtx[0].frame_rx++;
                         UE->proc.proc_rxtx[1].frame_rx++;
                     }
-                    UE->proc.proc_rxtx[0].gotIQs=gotIQs;
-                    UE->proc.proc_rxtx[1].gotIQs=gotIQs;
+                    UE->proc.proc_rxtx[0].gotIQs=readTime(gotIQs);
+                    UE->proc.proc_rxtx[1].gotIQs=readTime(gotIQs);
                     proc->subframe_rx=sub_frame;
                     proc->subframe_tx=(sub_frame+4)%10;
                     proc->frame_tx = proc->frame_rx + (proc->subframe_rx>5?1:0);
@@ -1020,12 +926,10 @@ void *UE_thread(void *arg) {
 
                     AssertFatal (pthread_cond_signal(&proc->cond_rxtx) ==0 ,"");
                     AssertFatal(pthread_mutex_unlock(&proc->mutex_rxtx) ==0,"");
-                    static __thread Meas t1= {0};
-                    static unsigned long long lastTime=0;
-                    if ( lastTime != 0 )
-                        updateTimes(lastTime, &t1, 20000, "saif: Delay between two IQ acquisitions (case 1)");
-                    lastTime=rdtsc();
-                    saif_meas(proc->frame_rx);
+                    initRefTimes(t1);
+                    initStaticTime(lastTime);
+                    updateTimes(lastTime, &t1, 20000, "Delay between two IQ acquisitions (case 1)");
+                    pickStaticTime(lastTime);
 
                 } else {
                     printf("Processing subframe %d",proc->subframe_rx);
