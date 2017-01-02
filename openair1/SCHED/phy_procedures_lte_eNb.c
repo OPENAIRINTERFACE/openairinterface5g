@@ -2813,7 +2813,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB){
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   const int subframe     = proc->subframe_rx;
   const int frame        = proc->frame_rx;
-  int offset             = eNB->CC_id;//(eNB->single_thread_flag==1) ? 0 : (subframe&1);
+  int offset             = (eNB->single_thread_flag==0) ? 0 : (subframe&1);
 
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;
 

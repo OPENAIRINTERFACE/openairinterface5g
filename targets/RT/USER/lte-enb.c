@@ -421,7 +421,7 @@ void proc_tx_high0(PHY_VARS_eNB *eNB,
 		   relaying_type_t r_type,
 		   PHY_VARS_RN *rn) {
 
-  int offset = eNB->CC_id;//proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
+  int offset = proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
 
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_ENB+offset, proc->frame_tx );
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB+offset, proc->subframe_tx );
@@ -1013,10 +1013,8 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     //proc->frame_rx = (proc->frame_rx + proc->frame_offset)&1023;
     if (packet_type == IF4p5_PULFFT) {
       LOG_D(PHY,"rx_fh:if4p5: frame %d, subframe %d, PULFFT symbol %d\n",f,sf,symbol_number);
-      proc->subframe_rx = sf;
-      proc->frame_rx = f;
 
-      proc->symbol_mask[proc->subframe_rx] = proc->symbol_mask[proc->subframe_rx] | (1<<symbol_number);
+      proc->symbol_mask[sf] = proc->symbol_mask[sf] | (1<<symbol_number);
     } else if (packet_type == IF4p5_PRACH) {
       LOG_D(PHY,"rx_fh:if4p5: frame %d, subframe %d, PRACH\n",f,sf);
       // wakeup prach processing
@@ -1026,6 +1024,9 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     if (eNB->CC_id==1) LOG_I(PHY,"rx_fh_if4p5: symbol_mask[%d] %x\n",*subframe,proc->symbol_mask[*subframe]);
 
   } while(proc->symbol_mask[*subframe] != symbol_mask_full);    
+  proc->subframe_rx = *subframe;
+  proc->frame_rx = *frame;
+
   proc->symbol_mask[*subframe] = 0;
   proc->symbol_mask[(9+*subframe)%10]= 0; // to handle a resynchronization event
 
