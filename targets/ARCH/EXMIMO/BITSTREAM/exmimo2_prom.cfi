@@ -1,11 +1,11 @@
-# PROMGEN: Xilinx Prom Generator P.20131013
-# Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+# PROMGEN: Xilinx Prom Generator O.76xd
+# Copyright (c) 1995-2011 Xilinx, Inc.  All rights reserved.
 
-SOFTWARE_VERSION P.20131013
-DATE             6/16/2015 - 16:10
-SOURCE          /homes/maatalla/openair/openair0/express-mimo2/backup_houssem/express-mimo2/grlib-gpl-1.1.0-b4113/designs/express-mimo2/exmimo2_prom.mcs
+SOFTWARE_VERSION O.76xd
+DATE             1/ 3/2017 - 11:49
+SOURCE          /homes/kaltenbe/Devel/openair/openairinterface5g/targets/ARCH/EXMIMO/BITSTREAM/exmimo2_prom.mcs
 DEVICE          8192K
 DATA_WIDTH      4
 FILL_DATA       0xFF
-SIGNATURE       0x41521D58
+SIGNATURE       0x416AB633
 START_ADDRESS   0x00000000 END_ADDRESS 0x00406577 DIRECTION_UP   "express-mimo2.bit" 6slx150tfgg900
