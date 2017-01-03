@@ -642,7 +642,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
         AssertFatal(pthread_mutex_lock(&proc->mutex_rxtx) ==0,"");
         pthread_cond_wait( &proc->cond_rxtx, &proc->mutex_rxtx );
         if ( (instance_cnt_rxtx+proc->sub_frame_step)%10 != proc->subframe_rx &&  instance_cnt_rxtx!=-1 )
-            LOG_W(PHY,"REAL TIME NOT MATCHED: missed a sub-frame: expecting %d, got %d\n",
+            LOG_W(PHY,"REAL TIME NOT MATCHED: missed a sub-frame: expecting %lld, got %d\n",
                   (instance_cnt_rxtx+proc->sub_frame_step)%10, proc->subframe_rx);
         instance_cnt_rxtx=proc->subframe_rx;
         AssertFatal(pthread_mutex_unlock(&proc->mutex_rxtx) ==0,"");
