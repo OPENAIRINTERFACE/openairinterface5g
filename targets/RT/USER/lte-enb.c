@@ -286,7 +286,8 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB) {
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_SFGEN , 1 );
 
-  slot_offset_F = (subframe<<1)*slot_sizeF;
+  // compute subframe modulo-2
+  slot_offset_F = ((subframe&1)<<1)*slot_sizeF;
 
   slot_offset = subframe*phy_vars_eNB->frame_parms.samples_per_tti;
 
@@ -554,7 +555,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
 
   if ((eNB->do_prach)&&((eNB->node_function != NGFI_RCC_IF4p5)))
     eNB->do_prach(eNB,proc->frame_rx,proc->subframe_rx);
-  phy_procedures_eNB_common_RX(eNB);
+  phy_procedures_eNB_common_RX(eNB,proc);
   
   // UE-specific RX processing for subframe n
   if (eNB->proc_uespec_rx) eNB->proc_uespec_rx(eNB, proc, no_relay );
@@ -864,7 +865,7 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   unsigned int rxs,txs;
   int i;
   int tx_sfoffset = 3;//(eNB->single_thread_flag == 1) ? 3 : 3;
-  openair0_timestamp old_ts;
+  openair0_timestamp ts,old_ts;
 
   if (proc->first_rx==0) {
     
@@ -878,7 +879,7 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
       txp[i] = (void*)&eNB->common_vars.txdata[0][i][((proc->subframe_rx+tx_sfoffset)%10)*fp->samples_per_tti]; 
     
     txs = eNB->rfdevice.trx_write_func(&eNB->rfdevice,
-				       proc->timestamp_rx+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance,
+				       proc->timestamp_rx+eNB->ts_offset+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance,
 				       txp,
 				       fp->samples_per_tti,
 				       fp->nb_antennas_tx,
@@ -902,26 +903,32 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   old_ts = proc->timestamp_rx;
 
   rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
-				    &(proc->timestamp_rx),
+				    &ts,
 				    rxp,
 				    fp->samples_per_tti,
 				    fp->nb_antennas_rx);
+
+  proc->timestamp_rx = ts-eNB->ts_offset;
 
   if (rxs != fp->samples_per_tti)
     LOG_E(PHY,"rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_tti,rxs);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
  
-  if (proc->first_rx == 1)
+  if (proc->first_rx == 1) {
     eNB->ts_offset = proc->timestamp_rx;
+    proc->timestamp_rx=0;
+  }
   else {
+
     if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
       LOG_I(PHY,"rx_rf: rfdevice timing drift of %d samples\n",proc->timestamp_rx - old_ts - fp->samples_per_tti);
       eNB->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
+      proc->timestamp_rx = ts-eNB->ts_offset;
     }
   }
-  proc->frame_rx    = ((proc->timestamp_rx-eNB->ts_offset) / (fp->samples_per_tti*10))&1023;
-  proc->subframe_rx = ((proc->timestamp_rx-eNB->ts_offset) / fp->samples_per_tti)%10;
+  proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
+  proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
   proc->frame_rx    = (proc->frame_rx+proc->frame_offset)&1023;
   proc->frame_tx    = proc->frame_rx;
   if (proc->subframe_rx > 5) proc->frame_tx=(proc->frame_tx+1)&1023;
@@ -1860,8 +1867,8 @@ int start_rf(PHY_VARS_eNB *eNB) {
 }
 
 extern void eNB_fep_rru_if5(PHY_VARS_eNB *eNB);
-extern void eNB_fep_full(PHY_VARS_eNB *eNB);
-extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB);
+extern void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc);
+extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc);
 extern void do_prach(PHY_VARS_eNB *eNB,int frame,int subframe);
 
 void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *eth_params,int single_thread_flag,int wait_for_sync) {
@@ -1933,6 +1940,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
         }
 	eNB->rfdevice.host_type   = RRH_HOST;
 	eNB->ifdevice.host_type   = RRH_HOST;
+	printf("loading transport interface ...\n");
         ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
 	printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
         if (ret<0) {

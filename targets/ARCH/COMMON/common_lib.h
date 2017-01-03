@@ -247,8 +247,8 @@ typedef struct {
 
 
 typedef struct {
-  //! Tx buffer for if device
-  void *tx;
+  //! Tx buffer for if device, keep one per subframe now to allow multithreading
+  void *tx[10];
   //! Tx buffer (PRACH) for if device
   void *tx_prach;
   //! Rx buffer for if device
