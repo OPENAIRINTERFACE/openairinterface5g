@@ -82,6 +82,8 @@ void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRA
 
 void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms);
 
+void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms,int do_precoding);
+
 void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,uint8_t subframe);
 
 void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,int32_t*txdata,uint8_t subframe);
@@ -91,6 +93,32 @@ void init_prach625(LTE_DL_FRAME_PARMS *frame_parms);
 void remove_625_Hz(PHY_VARS_eNB *phy_vars_eNB,int16_t *prach);
 
 void apply_625_Hz(PHY_VARS_UE *phy_vars_ue,int16_t *prach);
+
+/** \brief This function performs beamforming precoding for common
+ * data
+    @param txdataF Table of pointers for frequency-domain TX signals
+    @param txdataF_BF Table of pointers for frequency-domain TX signals
+    @param frame_parms Frame descriptor structure
+after beamforming
+    @param beam_weights Beamforming weights applied on each
+antenna element and each carrier
+    @param slot Slot number
+    @param symbol Symbol index on which to act
+    @param aa physical antenna index*/
+int beam_precoding(int32_t **txdataF,
+	           int32_t **txdataF_BF,
+                   LTE_DL_FRAME_PARMS *frame_parms,
+	           int32_t ***beam_weights,
+                   int slot,
+                   int symbol,
+                   int aa);
+
+int f_read(char *calibF_fname, int nb_ant, int nb_freq, int32_t **tdd_calib_coeffs);
+
+int estimate_DLCSI_from_ULCSI(int32_t **calib_dl_ch_estimates, int32_t **ul_ch_estimates, int32_t **tdd_calib_coeffs, int nb_ant, int nb_freq);
+
+int compute_BF_weights(int32_t **beam_weights, int32_t **calib_dl_ch_estimates, PRECODE_TYPE_t precode_type, int nb_ant, int nb_freq);
+
 
 #endif
 /** @}*/

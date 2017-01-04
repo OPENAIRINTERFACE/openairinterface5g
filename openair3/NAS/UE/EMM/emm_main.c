@@ -40,6 +40,7 @@ Description Defines the EPS Mobility Management procedure call manager,
 #include "emm_main.h"
 #include "nas_log.h"
 #include "emmData.h"
+#include "MobileIdentity.h"
 
 #include "memory.h"
 #include "usim_api.h"
@@ -52,6 +53,7 @@ Description Defines the EPS Mobility Management procedure call manager,
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
 /****************************************************************************/
+extern uint8_t usim_test;
 
 /****************************************************************************/
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
@@ -159,6 +161,7 @@ void emm_main_initialize(emm_indication_callback_t cb, const char *imei)
   /*
    * Get USIM application data
    */
+  _usim_data.usimtestmode = usim_test;
   if ( usim_api_read(&_usim_data) != RETURNok ) {
     /* The USIM application may not be present or not valid */
     LOG_TRACE(WARNING, "EMM-MAIN  - Failed to read USIM application data");
@@ -917,7 +920,7 @@ static int _emm_main_get_imei(imei_t *imei, const char *imei_str)
   int len = strlen(imei_str);
 
   if (len % 2) {
-    imei->u.num.parity = ODD_PARITY;
+    imei->u.num.parity = IMEI_ODD_PARITY;
   } else {
     imei->u.num.parity = EVEN_PARITY;
   }

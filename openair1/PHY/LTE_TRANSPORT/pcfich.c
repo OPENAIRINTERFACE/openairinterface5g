@@ -208,7 +208,7 @@ void generate_pcfich(uint8_t num_pdcch_symbols,
       if ((i!=nushiftmod3)&&(i!=(nushiftmod3+3))) {
         txdataF[0][symbol_offset+reg_offset+i] = pcfich_d[0][m];
 
-        if (frame_parms->nb_antennas_tx_eNB>1)
+        if (frame_parms->nb_antenna_ports_eNB>1)
           txdataF[1][symbol_offset+reg_offset+i] = pcfich_d[1][m];
 
         m++;

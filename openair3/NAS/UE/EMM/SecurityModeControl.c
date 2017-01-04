@@ -65,6 +65,10 @@ Description Defines the security mode control EMM procedure executed by the
 #include "secu_defs.h"
 #include "msc.h"
 
+#if  defined(NAS_BUILT_IN_UE)
+#include "nas_itti_messaging.h"
+#endif
+
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
 /****************************************************************************/
@@ -142,7 +146,7 @@ static void _security_release(emm_security_context_t *ctx);
  **                                                                        **
  ***************************************************************************/
 int emm_proc_security_mode_command(int native_ksi, int ksi,
-                                   int seea, int seia, int reea, int reia)
+                                   int seea, int seia, int reea, int reia, int imeisv_request)
 {
   LOG_FUNC_IN;
 
@@ -286,7 +290,9 @@ int emm_proc_security_mode_command(int native_ksi, int ksi,
 
       _emm_data.security->selected_algorithms.encryption = seea;
       _emm_data.security->selected_algorithms.integrity  = seia;
-
+#if  defined(NAS_BUILT_IN_UE)
+      nas_itti_kenb_refresh_req(_security_data.kenb.value);
+#endif
     }
     /*
      * NAS security mode command not accepted by the UE
@@ -323,6 +329,7 @@ int emm_proc_security_mode_command(int native_ksi, int ksi,
   emm_sap.u.emm_as.u.security.guti = _emm_data.guti;
   emm_sap.u.emm_as.u.security.ueid = 0;
   emm_sap.u.emm_as.u.security.msgType = EMM_AS_MSG_TYPE_SMC;
+  emm_sap.u.emm_as.u.security.imeisv_request = imeisv_request;
   emm_sap.u.emm_as.u.security.emm_cause = emm_cause;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.security.sctx,

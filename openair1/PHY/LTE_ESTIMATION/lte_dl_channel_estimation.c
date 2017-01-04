@@ -35,9 +35,6 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
                               unsigned char l,
                               unsigned char symbol)
 {
-
-
-
   int pilot[2][200] __attribute__((aligned(16)));
   unsigned char nu,aarx;
   unsigned short k;
@@ -735,7 +732,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
 
   // do ifft of channel estimate
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)
-    for (p=0; p<ue->frame_parms.nb_antennas_tx_eNB; p++) {
+    for (p=0; p<ue->frame_parms.nb_antenna_ports_eNB; p++) {
       if (ue->common_vars.dl_ch_estimates[eNB_offset][(p<<1)+aarx])
         idft((int16_t*) &ue->common_vars.dl_ch_estimates[eNB_offset][(p<<1)+aarx][8],
              (int16_t*) ue->common_vars.dl_ch_estimates_time[eNB_offset][(p<<1)+aarx],1);

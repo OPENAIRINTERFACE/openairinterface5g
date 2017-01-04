@@ -220,6 +220,7 @@ int main (int argc, const char* argv[])
     usim_data.imsi.u.num.digit13 = 3;
     usim_data.imsi.u.num.digit14 = 4;
     usim_data.imsi.u.num.digit15 = 0xF;
+    usim_data.usimtestmode = 1; // set usim in test mode in order to get the CMW500 K key
 #endif
     /*
      * Ciphering and Integrity Keys

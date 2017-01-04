@@ -111,12 +111,14 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)
   
 }
 
-LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_t Nsoft,unsigned char N_RB_DL, uint8_t abstraction_flag)
+LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_t Nsoft,unsigned char N_RB_DL, uint8_t abstraction_flag, LTE_DL_FRAME_PARMS* frame_parms)
 {
 
   LTE_eNB_DLSCH_t *dlsch;
-  unsigned char exit_flag = 0,i,j,r;
+  unsigned char exit_flag = 0,i,j,r,aa,layer;
+  int re;
   unsigned char bw_scaling =1;
+  uint8_t nb_antennas_tx = frame_parms->nb_antennas_tx;
 
   switch (N_RB_DL) {
   case 6:
@@ -144,6 +146,23 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
     dlsch->Mdlharq = Mdlharq;
     dlsch->Mlimit = 4;
     dlsch->Nsoft = Nsoft;
+
+    for (layer=0; layer<4; layer++) {
+      dlsch->ue_spec_bf_weights[layer] = (int32_t**)malloc16(frame_parms->nb_antennas_tx*sizeof(int32_t*));
+  
+       for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+         dlsch->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
+         for (re=0;re<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; re++) {
+           dlsch->ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
+         }
+       }
+     }
+
+     dlsch->calib_dl_ch_estimates = (int32_t**)malloc16(frame_parms->nb_antennas_tx*sizeof(int32_t*));
+     for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+       dlsch->calib_dl_ch_estimates[aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
+       
+     }
 
     for (i=0; i<10; i++)
       dlsch->harq_ids[i] = Mdlharq;
@@ -189,7 +208,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
         exit_flag=3;
       }
     }
-
+    
     if (exit_flag==0) {
       for (i=0; i<Mdlharq; i++) {
         dlsch->harq_processes[i]->round=0;
@@ -379,7 +398,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
 
   A = dlsch->harq_processes[harq_pid]->TBS; //6228
   mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
-  G = get_G(frame_parms,nb_rb,dlsch->harq_processes[harq_pid]->rb_alloc,mod_order,dlsch->harq_processes[harq_pid]->Nl,num_pdcch_symbols,frame,subframe);
+  G = get_G(frame_parms,nb_rb,dlsch->harq_processes[harq_pid]->rb_alloc,mod_order,dlsch->harq_processes[harq_pid]->Nl,num_pdcch_symbols,frame,subframe,dlsch->harq_processes[harq_pid]->mimo_mode==TM7?7:0);
 
 
   if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
@@ -557,6 +576,7 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
   unsigned char mod_order;
   unsigned int Kr=0,Kr_bytes,r,r_offset=0;
   unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
+  uint8_t beamforming_mode=0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
@@ -564,7 +584,13 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
   // printf("Encoder: A: %d\n",A);
   mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
 
-  G = get_G(frame_parms,nb_rb,dlsch->harq_processes[harq_pid]->rb_alloc,mod_order,dlsch->harq_processes[harq_pid]->Nl,num_pdcch_symbols,frame,subframe);
+  if(dlsch->harq_processes[harq_pid]->mimo_mode == TM7)
+    beamforming_mode = 7;
+  else if(dlsch->harq_processes[harq_pid]->mimo_mode == TM8)
+    beamforming_mode = 8;
+  else if(dlsch->harq_processes[harq_pid]->mimo_mode == TM9_10)
+    beamforming_mode = 9;
+  G = get_G(frame_parms,nb_rb,dlsch->harq_processes[harq_pid]->rb_alloc,mod_order,dlsch->harq_processes[harq_pid]->Nl,num_pdcch_symbols,frame,subframe,beamforming_mode);
 
 
   //  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet

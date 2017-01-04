@@ -42,6 +42,8 @@ void generate_grouphop(LTE_DL_FRAME_PARMS *frame_parms)
   // This is from Section 5.5.1.3
   uint32_t fss_pusch = frame_parms->Nid_cell + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
 
+  uint32_t fss_pucch = frame_parms->Nid_cell;
+
   x2 = frame_parms->Nid_cell/30;
 #ifdef DEBUG_GROUPHOP
   printf("[PHY] GroupHop:");
@@ -49,7 +51,10 @@ void generate_grouphop(LTE_DL_FRAME_PARMS *frame_parms)
 
   for (ns=0; ns<20; ns++) {
     if (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled == 0)
+    {
       frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[ns] = fss_pusch%30;
+      frame_parms->pucch_config_common.grouphop[ns]                          = fss_pucch%30;
+    }
     else {
       if ((ns&3) == 0) {
         s = lte_gold_generic(&x1,&x2,reset);
@@ -57,6 +62,7 @@ void generate_grouphop(LTE_DL_FRAME_PARMS *frame_parms)
       }
 
       frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[ns] = (((uint8_t*)&s)[ns&3]+fss_pusch)%30;
+      frame_parms->pucch_config_common.grouphop[ns]                          = (((uint8_t*)&s)[ns&3]+fss_pucch)%30;
     }
 
 #ifdef DEBUG_GROUPHOP

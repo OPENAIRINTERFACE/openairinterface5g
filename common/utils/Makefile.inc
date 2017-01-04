@@ -5,14 +5,14 @@ linux := $(shell if [ `uname` = "Linux" ] ; then echo "1" ; else echo "0" ; fi)
 
 
 CFLAGS += -std=gnu99 
-#CFLAGS += -Wall -g -ggdb -Wstrict-prototypes -fno-strict-aliasing 
+CFLAGS += -Wall -g -ggdb -Wstrict-prototypes -fno-strict-aliasing 
 
 # Need to force this option because default kernel module builder is wrong
 CFLAGS += $(call cc-option,-mpreferred-stack-boundary=4)
 
 #For performance, if some option doesn't exist in all gcc versions, use $(call cc-option,MY_OPTION)
-CFLAGS += -O2
-CFLAGS +=  -funroll-loops 
+#CFLAGS += -O2
+#CFLAGS +=  -funroll-loops 
 CFLAGS += -Wno-packed-bitfield-compat 
 
 # This is the minimum CPU faetures for OAI

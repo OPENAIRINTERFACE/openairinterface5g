@@ -446,7 +446,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
   // signal measurements
   for (eNB_id=0; eNB_id<ue->n_connected_eNB; eNB_id++) {
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-      for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++) {
+      for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
         ue->measurements.rx_spatial_power[eNB_id][aatx][aarx] =
           (signal_energy_nodc(&ue->common_vars.dl_ch_estimates[eNB_id][(aatx<<1) + aarx][0],
                               (N_RB_DL*12)));

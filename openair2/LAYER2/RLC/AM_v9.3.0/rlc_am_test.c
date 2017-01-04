@@ -698,8 +698,8 @@ void rlc_am_v9_3_0_test_tx_rx()
 
   rlc_am_init(&g_am_tx, g_frame);
   rlc_am_init(&g_am_rx, g_frame);
-  rlc_am_set_debug_infos(&g_am_tx, g_frame, 0, 0, 0, 1);
-  rlc_am_set_debug_infos(&g_am_rx, g_frame, 1, 1, 1, 1);
+  rlc_am_set_debug_infos(&g_am_tx, g_frame, 0, 0, 0, 1, 1 /* LC-id = DRB-id */);
+  rlc_am_set_debug_infos(&g_am_rx, g_frame, 1, 1, 1, 1, 1 /* LC-id = DRB-id */);
 
   rlc_am_configure(&g_am_tx, g_frame, max_retx_threshold, poll_pdu, poll_byte, t_poll_retransmit, t_reordering, t_status_prohibit);
   rlc_am_configure(&g_am_rx, g_frame, max_retx_threshold, poll_pdu, poll_byte, t_poll_retransmit, t_reordering, t_status_prohibit);

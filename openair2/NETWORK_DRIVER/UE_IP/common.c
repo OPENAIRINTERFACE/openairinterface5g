@@ -99,7 +99,8 @@ ue_ip_common_class_wireless2ip(
   hard_header_len = ue_ip_dev[instP]->hard_header_len;
 
   skb_set_mac_header(skb_p, 0);
-
+  skb_set_network_header(skb_p, hard_header_len);
+skb_p->mark = rb_idP;
   //printk("[NAC_COMMIN_RECEIVE]: Packet Type %d (%d,%d)",skb_p->pkt_type,PACKET_HOST,PACKET_BROADCAST);
   skb_p->pkt_type = PACKET_HOST;
 
@@ -344,7 +345,7 @@ void ue_ip_common_wireless2ip(struct nlmsghdr *nlh_pP)
 
   ue_ip_common_class_wireless2ip(pdcph_p->data_size,
                                  (unsigned char *)NLMSG_DATA(nlh_pP) + UE_IP_PDCPH_SIZE,
-                                 pdcph_p->inst,
+                                 1, //pdcph_p->inst,
                                  pdcph_p->rb_id);
 
 }

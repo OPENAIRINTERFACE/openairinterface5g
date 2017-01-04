@@ -426,7 +426,7 @@ rlc_um_rx (const protocol_ctxt_t* const ctxt_pP, void *argP, struct mac_data_ind
 
 //-----------------------------------------------------------------------------
 struct mac_status_resp
-rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP, uint16_t tbs_sizeP, struct mac_status_ind tx_statusP)
+rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP, uint16_t tbs_sizeP, struct mac_status_ind tx_statusP,const eNB_flag_t enb_flagP)
 {
   struct mac_status_resp status_resp;
   uint16_t  sdu_size = 0;
@@ -434,6 +434,7 @@ rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP
   int32_t diff_time=0;
   rlc_um_entity_t   *rlc_p = NULL;
   mem_block_t       *mb_p = NULL;
+  unsigned int       max_li_overhead = 0;
 
   status_resp.buffer_occupancy_in_pdus         = 0;
   status_resp.buffer_occupancy_in_bytes        = 0;
@@ -453,7 +454,20 @@ rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP
 
     if ((status_resp.buffer_occupancy_in_bytes > 0) && ((mb_p = list_get_head(&rlc_p->input_sdus)) != NULL)) {
 
-      status_resp.buffer_occupancy_in_bytes += rlc_p->tx_header_min_length_in_bytes;
+        //Fix on full Header size
+        if (enb_flagP == ENB_FLAG_NO)
+        {
+            // compute Length Indicator overhead to inform MAC of maximum full RLC PDU size according to stored SDUs
+            // For UE scheduler
+            // Could be useful for eNB: to be checked
+            if (rlc_p->input_sdus.nb_elements <= 1) {
+                max_li_overhead = 0;
+            } else {
+                unsigned int       num_li = rlc_p->input_sdus.nb_elements - 1;
+                max_li_overhead = num_li + (num_li >> 1) + (num_li & 1);
+            }
+        }
+      status_resp.buffer_occupancy_in_bytes += (rlc_p->tx_header_min_length_in_bytes + max_li_overhead);
       status_resp.buffer_occupancy_in_pdus = rlc_p->input_sdus.nb_elements;
 
       diff_time =   ctxt_pP->frame - ((struct rlc_um_tx_sdu_management *)mb_p->data)->sdu_creation_time;

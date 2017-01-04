@@ -132,7 +132,7 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
                                         symbol_id,
                                         &tx_buffer,
                                         db_fulllength,
-      			                            1,
+					1,
                                         IF4p5_PULFFT)) < 0) {
         perror("ETHERNET write for IF4p5_PULFFT\n");
       }
@@ -234,7 +234,7 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
 
     LOG_D(PHY,"DL_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,*frame,*subframe,*symbol_number);
 
-    slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size) + ((*subframe)&1)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
+    slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size) + (*subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength - 1; 
         
     for (element_id=0; element_id<db_halflength; element_id++) {

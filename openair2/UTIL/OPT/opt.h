@@ -81,7 +81,7 @@ extern char in_path[100];
 */
 
 void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
-               int ueid, int rntiType, int rnti, uint8_t subframe,
+               int ueid, int rntiType, int rnti, uint16_t sysFrame, uint8_t subframe,
                int oob_event, int oob_event_value);
 
 int init_opt(char *path, char *ip, char *port, radio_type_t radio_type_p);

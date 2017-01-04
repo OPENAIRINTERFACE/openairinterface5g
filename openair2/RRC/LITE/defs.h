@@ -173,7 +173,7 @@ typedef enum HO_STATE_e {
 #define PAYLOAD_SIZE_MAX 1024
 #define RRC_BUF_SIZE 255
 #define UNDEF_SECURITY_MODE 0xff
-#define NO_SECURITY_MODE 0x33
+#define NO_SECURITY_MODE 0x20
 
 #define CBA_OFFSET        0xfff4
 // #define NUM_MAX_CBA_GROUP 4 // in the platform_constants
@@ -498,6 +498,7 @@ typedef struct UE_RRC_INST_s {
   struct SRB_ToAddMod             *SRB1_config[NB_CNX_UE];
   struct SRB_ToAddMod             *SRB2_config[NB_CNX_UE];
   struct DRB_ToAddMod             *DRB_config[NB_CNX_UE][8];
+  rb_id_t                         *defaultDRB; // remember the ID of the default DRB
   MeasObjectToAddMod_t            *MeasObj[NB_CNX_UE][MAX_MEAS_OBJ];
   struct ReportConfigToAddMod     *ReportConfig[NB_CNX_UE][MAX_MEAS_CONFIG];
   struct QuantityConfig           *QuantityConfig[NB_CNX_UE];

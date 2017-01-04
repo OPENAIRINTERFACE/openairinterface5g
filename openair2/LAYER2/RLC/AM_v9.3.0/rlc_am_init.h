@@ -105,13 +105,15 @@ public_rlc_am_init( void rlc_am_configure(const protocol_ctxt_t* const ctxtP,
                     const uint32_t t_reorderingP,
                     const uint32_t t_status_prohibitP);)
 
+
 /*! \fn void rlc_am_set_debug_infos(const protocol_ctxt_t* const ctxtP, rlc_am_entity_t * const rlc_pP, const srb_flag_t srb_flagP, const rb_id_t rb_idP)
 * \brief    Set informations that will be displayed in traces, helping the debug process.
 * \param[in]  ctxtP                     Running context.
 * \param[in]  rlc_pP                    RLC AM protocol instance pointer.
 * \param[in]  srb_flagP                 Flag to indicate signalling radio bearer (1) or data radio bearer (0).
 * \param[in]  rb_idP                    Radio bearer identifier.
+* \param[in]  chan_idP                  Transport channel identifier.
 */
-public_rlc_am_init( void rlc_am_set_debug_infos(const protocol_ctxt_t* const ctxtP, rlc_am_entity_t * const rlc_pP, const srb_flag_t srb_flagP, const rb_id_t rb_idP);)
+public_rlc_am_init( void rlc_am_set_debug_infos(const protocol_ctxt_t* const ctxtP, rlc_am_entity_t * const rlc_pP, const srb_flag_t srb_flagP, const rb_id_t rb_idP, const logical_chan_id_t chan_idP);)
 /** @} */
 #endif

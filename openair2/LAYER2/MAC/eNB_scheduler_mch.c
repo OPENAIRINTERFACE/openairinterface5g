@@ -621,7 +621,7 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
     if (opt_enabled ==1 ) {
       trace_pdu(1, (uint8_t *)eNB_mac_inst[module_idP].common_channels[CC_id].MCH_pdu.payload,
                 TBS, module_idP, 6, 0xffff,  // M_RNTI = 6 in wirehsark
-                eNB_mac_inst[module_idP].subframe,0,0);
+                eNB_mac_inst[module_idP].frame, eNB_mac_inst[module_idP].subframe,0,0);
       LOG_D(OPT,"[eNB %d][MCH] CC_id %d Frame %d : MAC PDU with size %d\n",
             module_idP, CC_id, frameP, TBS);
     }

@@ -20,7 +20,7 @@
  */
 
 /*! \file ulsim.c
- \brief Top-level DL simulator
+ \brief Top-level UL simulator
  \author R. Knopp
  \date 2011 - 2014
  \version 0.1
@@ -554,6 +554,7 @@ int main(int argc, char **argv)
   }
 
   lte_param_init(1,
+                 1, 
 		 n_rx,
 		 1,
 		 extended_prefix_flag,
@@ -679,7 +680,7 @@ int main(int argc, char **argv)
   }
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0; i<2; i++) {
-    eNB->dlsch[0][i] = new_eNB_dlsch(1,8,1827072,N_RB_DL,0);
+    eNB->dlsch[0][i] = new_eNB_dlsch(1,8,1827072,N_RB_DL,0,&eNB->frame_parms);
     UE->dlsch[0][i]  = new_ue_dlsch(1,8,1827072,MAX_TURBO_ITERATIONS,N_RB_DL,0);
 
     if (!eNB->dlsch[0][i]) {

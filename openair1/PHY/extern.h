@@ -117,5 +117,17 @@ extern char eNB_timing[2][20];
 extern int16_t unscrambling_lut[65536*16];
 extern uint8_t scrambling_lut[65536*16];
 
+extern unsigned short msrsb_6_40[8][4];
+extern unsigned short msrsb_41_60[8][4];
+extern unsigned short msrsb_61_80[8][4];
+extern unsigned short msrsb_81_110[8][4];
+extern unsigned short Nb_6_40[8][4];
+extern unsigned short Nb_41_60[8][4];
+extern unsigned short Nb_61_80[8][4];
+extern unsigned short Nb_81_110[8][4];
+
+extern uint16_t hundred_times_log10_NPRB[100];
+extern uint8_t alpha_lut[8];
+
 #endif /*__PHY_EXTERN_H__ */
 

@@ -262,7 +262,18 @@ public_rlc(logical_chan_id_t    rlc_mbms_rbid2lcid_eNB[NUMBER_OF_eNB_MAX][NB_RB_
     (((hash_key_t)(rNTI))   << 8)  | \
     (((hash_key_t)(iS_eNB)) << 24) | \
     (((hash_key_t)(rB_iD))  << 25) | \
-    (((hash_key_t)(iS_sRB)) << 33))
+    (((hash_key_t)(iS_sRB)) << 33) | \
+    (((hash_key_t)(0x05))   << 34))
+
+// index to the same RLC entity as RLC_COLL_KEY_VALUE(), but using LC_id instead
+// the hidden last key indicates if this is a hash-key with RB_id (0x05) or LC_id (0x0a)
+#define RLC_COLL_KEY_LCID_VALUE(eNB_iD, rNTI, iS_eNB, lC_iD, iS_sRB) \
+   ((hash_key_t)eNB_iD             | \
+    (((hash_key_t)(rNTI))   << 8)  | \
+    (((hash_key_t)(iS_eNB)) << 24) | \
+    (((hash_key_t)(lC_iD))  << 25) | \
+    (((hash_key_t)(iS_sRB)) << 33) | \
+    (((hash_key_t)(0x0a))   << 34))
 
 // service id max val is maxServiceCount = 16 (asn1_constants.h)
 

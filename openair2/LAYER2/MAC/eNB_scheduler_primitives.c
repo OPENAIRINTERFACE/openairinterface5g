@@ -146,7 +146,7 @@ rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP)
     return (rnti);
   }
 
-  LOG_E(MAC,"[eNB %d] Couldn't find RNTI for UE %d\n",mod_idP,ue_idP);
+  LOG_D(MAC,"[eNB %d] Couldn't find RNTI for UE %d\n",mod_idP,ue_idP);
   //display_backtrace();
   return(NOT_A_RNTI);
 }
@@ -1006,7 +1006,7 @@ void dump_CCE_table(int *CCE_table,const int nCCE,const unsigned short rnti,cons
   for (i=0;i<nCCE;i++) {
     printf("%1d.",CCE_table[i]);
     if ((i&7) == 7)
-      printf("\n CCE %d: ", i);
+      printf("\n CCE %d: ",i);
   }
 
   Yk = (unsigned int)rnti;

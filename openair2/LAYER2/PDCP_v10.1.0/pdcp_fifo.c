@@ -67,6 +67,7 @@ extern int otg_enabled;
 #ifdef PDCP_USE_NETLINK
 #include <sys/socket.h>
 #include <linux/netlink.h>
+#include "NETWORK_DRIVER/UE_IP/constant.h"
 
 extern char nl_rx_buf[NL_MAX_PAYLOAD];
 extern struct sockaddr_nl nas_src_addr, nas_dest_addr;
@@ -186,7 +187,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
           ret = sendmsg(nas_sock_fd,&nas_msg_tx,0);
 
           if (ret<0) {
-            LOG_D(PDCP, "[PDCP_FIFOS] sendmsg returns %d (errno: %d)\n", ret, errno);
+            LOG_E(PDCP, "[PDCP_FIFOS] sendmsg returns %d (errno: %d)\n", ret, errno);
       	    MSC_LOG_TX_MESSAGE_FAILED(
       	      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
       	      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_IP_ENB:MSC_IP_UE,
@@ -423,18 +424,22 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
   return 0;
 # else /* PDCP_USE_NETLINK_QUEUES*/
   int              len = 1;
+  int  msg_len;
   rb_id_t          rab_id  = 0;
-
-  while (len > 0) {
+  int rlc_data_req_flag = 3;
+ 
+  while ((len > 0) && (rlc_data_req_flag !=0))  {
     len = recvmsg(nas_sock_fd, &nas_msg_rx, 0);
 
     if (len<=0) {
       // nothing in pdcp NAS socket
       //LOG_D(PDCP, "[PDCP][NETLINK] Nothing in socket, length %d \n", len);
     } else {
+    
+      msg_len = len;
       for (nas_nlh_rx = (struct nlmsghdr *) nl_rx_buf;
-           NLMSG_OK (nas_nlh_rx, len);
-           nas_nlh_rx = NLMSG_NEXT (nas_nlh_rx, len)) {
+           NLMSG_OK (nas_nlh_rx, msg_len);
+           nas_nlh_rx = NLMSG_NEXT (nas_nlh_rx, msg_len)) {
 
         if (nas_nlh_rx->nlmsg_type == NLMSG_DONE) {
           LOG_D(PDCP, "[PDCP][NETLINK] RX NLMSG_DONE\n");
@@ -490,6 +495,10 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 //#warning "TO DO CORRCT VALUES FOR ue mod id, enb mod id"
           ctxt.frame         = ctxt_cpy.frame;
           ctxt.enb_flag      = ctxt_cpy.enb_flag;
+
+#ifdef PDCP_DEBUG
+          LOG_I(PDCP, "[PDCP][NETLINK] pdcp_read_header_g.rb_id = %d\n", pdcp_read_header_g.rb_id);
+#endif
 
           if (ctxt_cpy.enb_flag) {
             ctxt.module_id = 0;
@@ -586,11 +595,21 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
             }
           } else { // enb_flag
             if (rab_id != 0) {
-              rab_id = rab_id % maxDRB;
-              key = PDCP_COLL_KEY_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
-              h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
+              if (rab_id == UE_IP_DEFAULT_RAB_ID) {
+                LOG_D(PDCP, "PDCP_COLL_KEY_DEFAULT_DRB_VALUE(module_id=%d, rnti=%x, enb_flag=%d)\n",
+                    ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
+                key = PDCP_COLL_KEY_DEFAULT_DRB_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
+                h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
+              } else {
+                rab_id = rab_id % maxDRB;
+                LOG_D(PDCP, "PDCP_COLL_KEY_VALUE(module_id=%d, rnti=%x, enb_flag=%d, rab_id=%d, SRB_FLAG=%d)\n",
+                    ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
+                key = PDCP_COLL_KEY_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
+                h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
+              }
 
               if (h_rc == HASH_TABLE_OK) {
+                rab_id = pdcp_p->rb_id;
 #ifdef PDCP_DEBUG
                 LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n",
                       ctxt.frame,

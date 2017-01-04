@@ -246,10 +246,11 @@ rlc_am_set_debug_infos(
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t *const        rlc_pP,
   const srb_flag_t              srb_flagP,
-  const rb_id_t                 rb_idP)
+  const rb_id_t                 rb_idP,
+  const logical_chan_id_t       chan_idP) 
 {
-
   rlc_pP->rb_id         = rb_idP;
+  rlc_pP->channel_id    = chan_idP;
 
   if (srb_flagP) {
     rlc_pP->is_data_plane = 0;

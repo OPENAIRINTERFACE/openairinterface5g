@@ -325,7 +325,7 @@ int main(int argc, char **argv)
   if (transmission_mode>=2)
     n_tx=2;
 
-  lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,frame_type,Nid_cell,3,N_RB_DL,0,osf,0);
+  lte_param_init(n_tx, n_tx,n_rx,transmission_mode,extended_prefix_flag,frame_type,Nid_cell,3,N_RB_DL,0,osf,0);
 
   eNB1 = malloc(sizeof(PHY_VARS_eNB));
   eNB2 = malloc(sizeof(PHY_VARS_eNB));
