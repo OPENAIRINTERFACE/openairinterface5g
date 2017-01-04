@@ -88,7 +88,7 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode)
   
   if (ue->frame_parms.frame_type == TDD) {
     ue_rrc_measurements(ue,
-			1,
+			2,
 			0);
   }
   else {
