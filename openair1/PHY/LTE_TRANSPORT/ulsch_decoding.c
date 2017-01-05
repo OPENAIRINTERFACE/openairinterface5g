@@ -1440,7 +1440,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
       
       j2+=Q_m;
     }
-
+    /* To be improved according to alignment of j2
 #if defined(__x86_64__)||defined(__i386__)
 #ifndef __AVX2__
     for (iprime=0; iprime<G;iprime+=8,j2+=8)
@@ -1452,9 +1452,24 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 #elif defined(__arm__)
     for (iprime=0; iprime<G;iprime+=8,j2+=8)
       *((int16x8_t *)&ulsch_harq->e[iprime]) = *((int16x8_t *)&y[j2]);
-#endif 
+#endif
+    */
+    int16_t *yp,*ep;
+    for (iprime=0,yp=&y[j2],ep=&ulsch_harq->e[0]; 
+	 iprime<G;
+	 iprime+=8,j2+=8,ep+=8,yp+=8) {
+      ep[0] = yp[0];
+      ep[1] = yp[1];
+      ep[2] = yp[2];
+      ep[3] = yp[3];
+      ep[4] = yp[4];
+      ep[5] = yp[5];
+      ep[6] = yp[6];
+      ep[7] = yp[7];
+    }
   }
-
+    
+   
   stop_meas(&eNB->ulsch_demultiplexing_stats);
 
   //  printf("after ACKNAK2 c[%d] = %p (iprime %d, G %d)\n",0,ulsch_harq->c[0],iprime,G);
