@@ -2670,7 +2670,7 @@ void init_te_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_te) {
 }
 
 
-void eNB_fep_full_2thread(PHY_VARS_eNB *eNB) {
+void eNB_fep_full_2thread(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc_rxtx) {
 
   eNB_proc_t *proc = &eNB->proc;
 
@@ -2716,28 +2716,27 @@ void eNB_fep_full_2thread(PHY_VARS_eNB *eNB) {
 
 
 
-void eNB_fep_full(PHY_VARS_eNB *eNB) {
+void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc_rxtx) {
 
-  eNB_proc_t *proc = &eNB->proc;
   int l;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,1);
   start_meas(&eNB->ofdm_demod_stats);
-  remove_7_5_kHz(eNB,proc->subframe_rx<<1);
-  remove_7_5_kHz(eNB,1+(proc->subframe_rx<<1));
+  remove_7_5_kHz(eNB,proc_rxtx->subframe_rx<<1);
+  remove_7_5_kHz(eNB,1+(proc_rxtx->subframe_rx<<1));
   for (l=0; l<fp->symbols_per_tti/2; l++) {
     slot_fep_ul(fp,
 		&eNB->common_vars,
 		l,
-		proc->subframe_rx<<1,
+		(proc_rxtx->subframe_rx)<<1,
 		0,
 		0
 		);
     slot_fep_ul(fp,
 		&eNB->common_vars,
 		l,
-		1+(proc->subframe_rx<<1),
+		1+((proc_rxtx->subframe_rx)<<1),
 		0,
 		0
 		);
@@ -2748,11 +2747,11 @@ void eNB_fep_full(PHY_VARS_eNB *eNB) {
   
   if (eNB->node_function == NGFI_RRU_IF4p5) {
     /// **** send_IF4 of rxdataF to RCC (no prach now) **** ///
-    send_IF4p5(eNB, proc->frame_rx, proc->subframe_rx, IF4p5_PULFFT, 0);
+    send_IF4p5(eNB, proc_rxtx->frame_rx, proc_rxtx->subframe_rx, IF4p5_PULFFT, 0);
   }    
 }
 
-void eNB_fep_rru_if5(PHY_VARS_eNB *eNB) {
+void eNB_fep_rru_if5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc_rxtx) {
 
   eNB_proc_t *proc=&eNB->proc;
   uint8_t seqno=0;
@@ -2806,14 +2805,14 @@ void do_prach(PHY_VARS_eNB *eNB,int frame,int subframe) {
 
 }
 
-void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB){
+void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc){
 
 
-  eNB_proc_t *proc       = &eNB->proc;
+  //  eNB_proc_t *proc       = &eNB->proc;
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   const int subframe     = proc->subframe_rx;
   const int frame        = proc->frame_rx;
-  int offset             = (eNB->single_thread_flag==0) ? 0 : (subframe&1);
+  int offset             = (eNB->single_thread_flag==1) ? 0 : (subframe&1);
 
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;
 
@@ -2825,7 +2824,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB){
   LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_common_RX(%d)\n",eNB->Mod_id,frame,subframe);
 
 
-  if (eNB->fep) eNB->fep(eNB);
+  if (eNB->fep) eNB->fep(eNB,proc);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON+offset, 0 );
 }

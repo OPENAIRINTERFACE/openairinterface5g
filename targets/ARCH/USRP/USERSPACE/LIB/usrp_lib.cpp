@@ -759,7 +759,10 @@ extern "C" {
 
   // create tx & rx streamer
   uhd::stream_args_t stream_args_rx("sc16", "sc16");
-  //stream_args_rx.args["spp"] = str(boost::format("%d") % 2048);//(openair0_cfg[0].rx_num_channels*openair0_cfg[0].samples_per_packet));
+  int samples=openair0_cfg[0].sample_rate;
+  samples/=24000;
+  //  stream_args_rx.args["spp"] = str(boost::format("%d") % samples);
+
   for (i = 0; i<openair0_cfg[0].rx_num_channels; i++)
     stream_args_rx.channels.push_back(i);
   s->rx_stream = s->usrp->get_rx_stream(stream_args_rx);

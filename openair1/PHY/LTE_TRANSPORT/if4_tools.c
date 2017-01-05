@@ -43,7 +43,7 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
   int32_t **txdataF      = (eNB->CC_id==0) ? eNB->common_vars.txdataF[0] : PHY_vars_eNB_g[0][0]->common_vars.txdataF[0];
   int32_t **rxdataF      = eNB->common_vars.rxdataF[0];
   int16_t **rxsigF       = eNB->prach_vars.rxsigF;  
-  void *tx_buffer        = eNB->ifbuffer.tx;
+  void *tx_buffer        = eNB->ifbuffer.tx[subframe&1];
   void *tx_buffer_prach  = eNB->ifbuffer.tx_prach;
       
   uint16_t symbol_id=0, element_id=0;
@@ -132,7 +132,7 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
                                         symbol_id,
                                         &tx_buffer,
                                         db_fulllength,
-      			                            1,
+					1,
                                         IF4p5_PULFFT)) < 0) {
         perror("ETHERNET write for IF4p5_PULFFT\n");
       }
@@ -333,12 +333,16 @@ void gen_IF4p5_prach_header(IF4p5_header_t *prach_packet, int frame, int subfram
 void malloc_IF4p5_buffer(PHY_VARS_eNB *eNB) {
   // Keep the size large enough 
   eth_state_t *eth = (eth_state_t*) (eNB->ifdevice.priv);
+  int i;
+
   if (eth->flags == ETH_RAW_IF4p5_MODE) {
-    eNB->ifbuffer.tx       = malloc(RAW_IF4p5_PRACH_SIZE_BYTES);
+    for (i=0;i<10;i++)
+      eNB->ifbuffer.tx[i]       = malloc(RAW_IF4p5_PRACH_SIZE_BYTES);
     eNB->ifbuffer.tx_prach = malloc(RAW_IF4p5_PRACH_SIZE_BYTES);
     eNB->ifbuffer.rx       = malloc(RAW_IF4p5_PRACH_SIZE_BYTES); 
-  } else {     
-    eNB->ifbuffer.tx       = malloc(UDP_IF4p5_PRACH_SIZE_BYTES);
+  } else {
+    for (i=0;i<10;i++)
+      eNB->ifbuffer.tx[i]       = malloc(UDP_IF4p5_PRACH_SIZE_BYTES);
     eNB->ifbuffer.tx_prach = malloc(UDP_IF4p5_PRACH_SIZE_BYTES);
     eNB->ifbuffer.rx       = malloc(UDP_IF4p5_PRACH_SIZE_BYTES);
   }

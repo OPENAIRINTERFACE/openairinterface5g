@@ -1634,14 +1634,11 @@ int main( int argc, char **argv )
     PHY_vars_eNB_g[0] = malloc(sizeof(PHY_VARS_eNB*));
 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      PHY_vars_eNB_g[0][CC_id] = init_lte_eNB(frame_parms[CC_id],0,frame_parms[CC_id]->Nid_cell,abstraction_flag);
-      PHY_vars_eNB_g[0][CC_id]->CC_id = CC_id;
-
+      PHY_vars_eNB_g[0][CC_id] = init_lte_eNB(frame_parms[CC_id],0,frame_parms[CC_id]->Nid_cell,node_function[CC_id],abstraction_flag);
       PHY_vars_eNB_g[0][CC_id]->ue_dl_rb_alloc=0x1fff;
       PHY_vars_eNB_g[0][CC_id]->target_ue_dl_mcs=target_dl_mcs;
       PHY_vars_eNB_g[0][CC_id]->ue_ul_nb_rb=6;
       PHY_vars_eNB_g[0][CC_id]->target_ue_ul_mcs=target_ul_mcs;
-
       // initialization for phy-test
       for (k=0;k<NUMBER_OF_UE_MAX;k++) {
 	PHY_vars_eNB_g[0][CC_id]->transmission_mode[k] = transmission_mode;
@@ -1653,31 +1650,31 @@ int main( int argc, char **argv )
 	    for (re=0; re<frame_parms[CC_id]->ofdm_symbol_size; re++) 
 	      PHY_vars_eNB_g[0][CC_id]->common_vars.beam_weights[0][0][j][re] = 0x00007fff/frame_parms[CC_id]->nb_antennas_tx; 
       }
+
       if (phy_test==1) PHY_vars_eNB_g[0][CC_id]->mac_enabled = 0;
       else PHY_vars_eNB_g[0][CC_id]->mac_enabled = 1;
-
+      
       if (PHY_vars_eNB_g[0][CC_id]->mac_enabled == 0) { //set default parameters for testing mode
 	for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-	  PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
-	  PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
-	  PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
-	  
-	  PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = i;
-	  PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_ConfigIndex = 7+(i%3);
-	  PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;
+	    PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
+	    PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
+	    PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
+	    
+	    PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = i;
+	    PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_ConfigIndex = 7+(i%3);
+	    PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;
 	}
       }
-
+      
       compute_prach_seq(&PHY_vars_eNB_g[0][CC_id]->frame_parms.prach_config_common,
-                        PHY_vars_eNB_g[0][CC_id]->frame_parms.frame_type,
-                        PHY_vars_eNB_g[0][CC_id]->X_u);
-
+			PHY_vars_eNB_g[0][CC_id]->frame_parms.frame_type,
+			PHY_vars_eNB_g[0][CC_id]->X_u);
+    
+      
       PHY_vars_eNB_g[0][CC_id]->rx_total_gain_dB = (int)rx_gain[CC_id][0];
-
       PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 0;
-
     }
-
+  
 
     NB_eNB_INST=1;
     NB_INST=1;
@@ -1857,6 +1854,7 @@ int main( int argc, char **argv )
     }
   }
   else { 
+    printf("Initializing eNB threads\n");
     init_eNB(node_function,node_timing,1,eth_params,single_thread_flag,wait_for_sync);
 
     number_of_cards = 1;
