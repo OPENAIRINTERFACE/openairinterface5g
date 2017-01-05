@@ -288,13 +288,13 @@ void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t ne
 void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms,int do_precoding)
 {
 
-  int aa, l, slot_offset;
-  int32_t **txdataF = eNB_common_vars->txdataF[eNB_id];
-  int32_t **txdataF_BF = (do_precoding==1)?eNB_common_vars->txdataF_BF[eNB_id]:txdataF;
-  int32_t **txdata = eNB_common_vars->txdata[eNB_id];
+  int aa, l, slot_offset, slot_offsetF;
+  int32_t **txdataF    = eNB_common_vars->txdataF[eNB_id];
+  int32_t **txdataF_BF = eNB_common_vars->txdataF_BF[eNB_id];
+  int32_t **txdata     = eNB_common_vars->txdata[eNB_id];
 
-  slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
-
+  slot_offset  = (next_slot)*(frame_parms->samples_per_tti>>1);
+  slot_offsetF = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==EXTENDED) ? 6 : 7);
   //printf("Thread %d starting ... aa %d (%llu)\n",omp_get_thread_num(),aa,rdtsc());
   for (l=0; l<frame_parms->symbols_per_tti>>1; l++) {
   
@@ -307,8 +307,8 @@ void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t ne
 
       //PMCH case not implemented... 
 
-      if (frame_parms->Ncp == 1)
-        PHY_ofdm_mod(txdataF_BF[aa],         // input
+      if (frame_parms->Ncp == EXTENDED)
+        PHY_ofdm_mod((do_precoding == 1)?txdataF_BF[aa]:&txdataF[aa][slot_offsetF+l*frame_parms->ofdm_symbol_size],         // input
                      &txdata[aa][slot_offset+l*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],            // output
                      frame_parms->ofdm_symbol_size,       
                      1,                                   // number of symbols
@@ -316,7 +316,7 @@ void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t ne
                      CYCLIC_PREFIX);
       else {
         if (l==0) {
-          PHY_ofdm_mod(txdataF_BF[aa],        // input
+          PHY_ofdm_mod((do_precoding==1)?txdataF_BF[aa]:&txdataF[aa][slot_offsetF+l*frame_parms->ofdm_symbol_size],        // input
                        &txdata[aa][slot_offset],           // output
                        frame_parms->ofdm_symbol_size,      
                        1,                                  // number of symbols
@@ -324,7 +324,7 @@ void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t ne
                        CYCLIC_PREFIX);
            
         } else {
-          PHY_ofdm_mod(txdataF_BF[aa],        // input
+	  PHY_ofdm_mod((do_precoding==1)?txdataF_BF[aa]:&txdataF[aa][slot_offsetF+l*frame_parms->ofdm_symbol_size],        // input
                        &txdata[aa][slot_offset+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(l-1)*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],           // output
                        frame_parms->ofdm_symbol_size,      
                        1,                                  // number of symbols

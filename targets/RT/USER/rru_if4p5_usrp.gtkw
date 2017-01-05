@@ -1,10 +1,10 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Tue Jan  3 00:00:25 2017
+[*] Thu Jan  5 06:19:58 2017
 [*]
 [dumpfile] "/tmp/openair_dump_eNB.vcd"
-[dumpfile_mtime] "Mon Jan  2 23:59:11 2017"
-[dumpfile_size] 93728
+[dumpfile_mtime] "Thu Jan  5 06:09:13 2017"
+[dumpfile_size] 24570356
 [savefile] "/home/uprru1/oai/openairinterface5g/targets/RT/USER/rru_if4p5_usrp.gtkw"
 [timestart] 23491157000
 [size] 1301 716
@@ -39,7 +39,7 @@ variables.subframe_number_RX1_eNB[63:0]
 variables.frame_number_TX1_eNB[63:0]
 variables.subframe_number_TX1_eNB[63:0]
 @28
-functions.phy_enb_sfgen
+functions.phy_eNB_ofdm_mod_l
 functions.phy_eNB_slot_fep
 functions.phy_enb_prach_rx
 [pattern_trace] 1
