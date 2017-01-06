@@ -1198,6 +1198,33 @@ int32_t rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
                  MIMO_mode_t mimo_mode,
                  uint32_t high_speed_flag,
                  uint8_t is_secondary_ue);
+
+/*! \brief Extract PSS and SSS resource elements
+  @param phy_vars_ue Pointer to UE variables
+  @param[out] pss_ext contain the PSS signals after the extraction
+  @param[out] sss_ext contain the SSS signals after the extraction
+  @returns 0 on success
+*/
+int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
+                    int32_t pss_ext[4][72],
+                    int32_t sss_ext[4][72]);
+
+/*! \brief Extract only PSS resource elements
+  @param phy_vars_ue Pointer to UE variables
+  @param[out] pss_ext contain the PSS signals after the extraction
+  @returns 0 on success
+*/
+int pss_only_extract(PHY_VARS_UE *phy_vars_ue,
+                    int32_t pss_ext[4][72]);
+
+/*! \brief Extract only SSS resource elements
+  @param phy_vars_ue Pointer to UE variables
+  @param[out] sss_ext contain the SSS signals after the extraction
+  @returns 0 on success
+*/
+int sss_only_extract(PHY_VARS_UE *phy_vars_ue,
+                    int32_t sss_ext[4][72]);
+
 /*! \brief Performs detection of SSS to find cell ID and other framing parameters (FDD/TDD, normal/extended prefix)
   @param phy_vars_ue Pointer to UE variables
   @param tot_metric Pointer to variable containing maximum metric under framing hypothesis (to be compared to other hypotheses

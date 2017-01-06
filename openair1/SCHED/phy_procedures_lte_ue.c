@@ -2220,7 +2220,11 @@ void phy_procedures_UE_S_TX(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t abstraction_f
   }
 }
 
-void ue_measurement_procedures(uint16_t l, PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uint8_t eNB_id,uint8_t slot,uint8_t abstraction_flag,runmode_t mode)
+void ue_measurement_procedures(
+    uint16_t l,    // symbol index of each slot [0..6]
+    PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uint8_t eNB_id,
+    uint16_t slot, // slot index of each radio frame [0..19]    
+    uint8_t abstraction_flag,runmode_t mode)
 {
   
   LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
@@ -2263,7 +2267,7 @@ void ue_measurement_procedures(uint16_t l, PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_RRC_MEASUREMENTS, VCD_FUNCTION_IN);
     ue_rrc_measurements(ue,
-			subframe_rx,
+			slot,
 			abstraction_flag);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_RRC_MEASUREMENTS, VCD_FUNCTION_OUT);
 
@@ -3616,7 +3620,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
       stop_meas(&ue->ofdm_demod_stats);
     }
     
-    ue_measurement_procedures(l-1,ue,proc,eNB_id,0,abstraction_flag,mode);
+    ue_measurement_procedures(l-1,ue,proc,eNB_id,(subframe_rx<<1),abstraction_flag,mode);
     if ((l==pilot1) ||
 	((pmch_flag==1)&(l==l2)))  {
       LOG_D(PHY,"[UE  %d] Frame %d: Calling pdcch procedures (eNB %d)\n",ue->Mod_id,frame_rx,eNB_id);
@@ -3629,7 +3633,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     }
     
   } // for l=1..l2
-  //ue_measurement_procedures(l-1,ue,proc,eNB_id,abstraction_flag,mode);
+  ue_measurement_procedures(l-1,ue,proc,eNB_id,(subframe_rx<<1),abstraction_flag,mode); 
   
     // If this is PMCH, call procedures and return
   if (pmch_flag == 1) {
@@ -3720,7 +3724,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 	stop_meas(&ue->ofdm_demod_stats);
       }
       
-      ue_measurement_procedures(l-1,ue,proc,eNB_id,1,abstraction_flag,mode);
+      ue_measurement_procedures(l-1,ue,proc,eNB_id,1+(subframe_rx<<1),abstraction_flag,mode);
       
     } // for l=1..l2
 

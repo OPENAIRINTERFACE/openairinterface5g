@@ -5945,36 +5945,38 @@ uint8_t sinr2cqi(double sinr,uint8_t trans_mode)
 {
   // int flag_LA=0;
 
+  uint8_t retValue = 0;
+
   if(flag_LA==0) {
     // Ideal Channel Estimation
     if (sinr<=-4.89)
-      return(0);
+      retValue = (0);
     else if (sinr < -3.53)
-      return(3);
+      retValue = (3);
     else if (sinr <= -1.93)
-      return(4);
+      retValue = (4);
     else if (sinr <= -0.43)
-      return(5);
+      retValue = (5);
     else if (sinr <= 1.11)
-      return(6);
+      retValue = (6);
     else if (sinr <= 3.26)
-      return(7);
-    else if (sinr <= 5)
-      return(8);
-    else if (sinr <= 7)
-      return(9);
-    else if (sinr <= 9)
-      return(10);
-    else if (sinr <= 11)
-      return(11);
-    else if (sinr <= 13)
-      return(12);
+      retValue = (7);
+    else if (sinr <= 5.0)
+      retValue = (8);
+    else if (sinr <= 7.0)
+      retValue = (9);
+    else if (sinr <= 9.0)
+      retValue = (10);
+    else if (sinr <= 11.0)
+      retValue = (11);
+    else if (sinr <= 13.0)
+      retValue = (12);
     else if (sinr <= 15.5)
-      return(13);
+      retValue = (13);
     else if (sinr <= 17.5)
-      return(14);
-    else if (sinr > 19.5)
-      return(15);
+      retValue = (14);
+    else
+      retValue = (15);
   } else {
     int h=0;
     int trans_mode_tmp;
@@ -5988,11 +5990,12 @@ uint8_t sinr2cqi(double sinr,uint8_t trans_mode)
 
     for(h=0; h<16; h++) {
       if(sinr<=sinr_to_cqi[trans_mode_tmp][h])
-        return(h);
+        retValue = (h);
     }
   }
 
-  return(0);
+  LOG_D(PHY, "sinr=%f trans_mode=%d cqi=%d\n", sinr, trans_mode, retValue);
+  return retValue;
 }
 //uint32_t fill_subband_cqi(PHY_MEASUREMENTS *meas,uint8_t eNB_id) {
 //

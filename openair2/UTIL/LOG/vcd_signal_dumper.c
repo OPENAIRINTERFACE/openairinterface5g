@@ -288,6 +288,9 @@ const char* eurecomFunctionsNames[] = {
   "phy_ue_generate_prach",
   "phy_ue_ulsch_modulation",
   "phy_ue_ulsch_encoding",
+#if 1 // add for debugging losing PDSCH immediately before and after reporting CQI
+  "phy_ue_ulsch_encoding_fill_cqi",
+#endif
   "phy_ue_ulsch_scrambling",
   "phy_eNB_dlsch_modulation",
   "phy_eNB_dlsch_encoding",
