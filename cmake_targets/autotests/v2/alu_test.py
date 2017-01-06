@@ -254,8 +254,8 @@ class alu_test:
                 not self.task_hss.alive() or
                 not self.task_ue.alive()):
             log("ERROR: unexpected task exited, test failed, kill all")
-            if task_traffic_epc.alive():
-                task_traffic_epc.kill()
+            if task_traffic_client.alive():
+                task_traffic_client.kill()
             if self.task_enb.alive():
                 self.task_enb.kill()
             if self.task_ue.alive():
