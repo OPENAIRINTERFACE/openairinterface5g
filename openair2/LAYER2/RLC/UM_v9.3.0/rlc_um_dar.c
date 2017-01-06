@@ -130,6 +130,7 @@ int rlc_um_read_length_indicators(unsigned char**data_ppP, rlc_um_e_li_t* e_liP,
   unsigned int e2  = 0;
   unsigned int li2 = 0;
   *num_li_pP = 0;
+  int pdu_size = *data_size_pP;
 
   while ((continue_loop)) {
     //msg("[RLC_UM] e_liP->b1 = %02X\n", e_liP->b1);
@@ -147,13 +148,39 @@ int rlc_um_read_length_indicators(unsigned char**data_ppP, rlc_um_e_li_t* e_liP,
       *data_size_pP = *data_size_pP - li2 - 1;
       *num_li_pP = *num_li_pP +1;
 
+      if (!(*data_size_pP >= 0)) LOG_E(RLC, "Invalid data_size=%d! (pdu_size=%d loop=%d e1=%d e2=%d li2=%d e_liP=%02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x)\n",
+          *data_size_pP, pdu_size, continue_loop, e1, e2, li2,
+          (e_liP-(continue_loop-1)+0)->b1,
+          (e_liP-(continue_loop-1)+0)->b2,
+          (e_liP-(continue_loop-1)+0)->b3,
+          (e_liP-(continue_loop-1)+1)->b1,
+          (e_liP-(continue_loop-1)+1)->b2,
+          (e_liP-(continue_loop-1)+1)->b3,
+          (e_liP-(continue_loop-1)+2)->b1,
+          (e_liP-(continue_loop-1)+2)->b2,
+          (e_liP-(continue_loop-1)+2)->b3);
+      // AssertFatal(*data_size_pP >= 0, "Invalid data_size!");
+
       if (e2 == 0) {
         continue_loop = 0;
       } else {
         e_liP++;
+        continue_loop++;
       }
     } else {
+      if (!(*data_size_pP >= 0)) LOG_E(RLC, "Invalid data_size=%d! (pdu_size=%d loop=%d e1=%d li1=%d e_liP=%02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x)\n",
+          *data_size_pP, pdu_size, continue_loop, e1, li1,
+          (e_liP-(continue_loop-1)+0)->b1,
+          (e_liP-(continue_loop-1)+0)->b2,
+          (e_liP-(continue_loop-1)+0)->b3,
+          (e_liP-(continue_loop-1)+1)->b1,
+          (e_liP-(continue_loop-1)+1)->b2,
+          (e_liP-(continue_loop-1)+1)->b3,
+          (e_liP-(continue_loop-1)+2)->b1,
+          (e_liP-(continue_loop-1)+2)->b2,
+          (e_liP-(continue_loop-1)+2)->b3);
       continue_loop = 0;
+      // AssertFatal(*data_size_pP >= 0, "Invalid data_size!");
     }
 
     if (*num_li_pP >= RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU) {
@@ -162,7 +189,15 @@ int rlc_um_read_length_indicators(unsigned char**data_ppP, rlc_um_e_li_t* e_liP,
   }
 
   *data_ppP = *data_ppP + (((*num_li_pP*3) +1) >> 1);
-  return 0;
+  if (*data_size_pP > 0) {
+    return 0;
+  } else if (*data_size_pP == 0) {
+    LOG_W(RLC, "Last RLC SDU size is zero!\n");
+    return -1;
+  } else {
+    LOG_W(RLC, "Last RLC SDU size is negative %d!\n", *data_size_pP);
+    return -1;
+  }
 }
 //-----------------------------------------------------------------------------
 void
@@ -274,6 +309,8 @@ rlc_um_try_reassembly(
 #endif
       }
       AssertFatal(size >= 0, "invalid size!");
+      AssertFatal((e==0) || (e==1), "invalid e!");
+      AssertFatal((fi >= 0) && (fi <= 3), "invalid fi!");
 
       if (e == RLC_E_FIXED_PART_DATA_FIELD_FOLLOW) {
         switch (fi) {
@@ -363,8 +400,9 @@ rlc_um_try_reassembly(
           break;
 
         default:
-          AssertFatal( 0 , PROTOCOL_RLC_UM_CTXT_FMT" TRY REASSEMBLY SHOULD NOT GO HERE (%s:%u)\n",
+          AssertFatal( 0 , PROTOCOL_RLC_UM_CTXT_FMT" fi=%d! TRY REASSEMBLY SHOULD NOT GO HERE (%s:%u)\n",
                        PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
+                       fi,
                        __FILE__,
                        __LINE__);
         }
@@ -505,8 +543,9 @@ rlc_um_try_reassembly(
               // data_p is already ok, done by last loop above
               rlc_um_reassembly (ctxt_pP, rlc_pP, data_p, size);
             } else {
-              AssertFatal( 0 !=0, PROTOCOL_RLC_UM_CTXT_FMT" SHOULD NOT GO HERE (%s:%u)\n",
+              AssertFatal( 0 !=0, PROTOCOL_RLC_UM_CTXT_FMT" size=%d! SHOULD NOT GO HERE (%s:%u)\n",
                            PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
+                           size,
                            __FILE__,
                            __LINE__);
               //rlc_pP->stat_rx_data_pdu_dropped += 1;
@@ -535,6 +574,12 @@ rlc_um_try_reassembly(
                          __LINE__);
 #endif
           }
+        } else {
+          rlc_pP->stat_rx_data_pdu_dropped += 1;
+          rlc_pP->stat_rx_data_bytes_dropped += tb_ind_p->size;
+          rlc_pP->reassembly_missing_sn_detected = 1;
+
+          LOG_W(RLC, "[SN %d] Bad RLC header! Discard this RLC PDU\n", sn, size);
         }
       }
 
