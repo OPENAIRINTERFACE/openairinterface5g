@@ -132,7 +132,7 @@ void pdcp_rlc_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct mac_dat
       *tx_packetsP = *tx_packetsP + 1;
 
       if (*drop_countP == 0) {
-        tb_dst  = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_size);
+        tb_dst  = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_size, __func__);
 
         if (tb_dst != NULL) {
           ((struct mac_tb_ind *) (tb_dst->data))->first_bit        = 0;
@@ -156,7 +156,7 @@ void pdcp_rlc_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct mac_dat
         *dropped_tx_packetsP = *dropped_tx_packetsP + 1;
       }
 
-      free_mem_block(tb_src);
+      free_mem_block(tb_src, __func__);
 
       if (data_indP->no_tb > 0) {
         printf("[RLC-LOOP] Exchange %d TBs\n",data_indP->no_tb);

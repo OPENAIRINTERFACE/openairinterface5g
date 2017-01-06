@@ -98,7 +98,7 @@ extern UE_MAC_INST *UE_mac_inst;
 extern void *bigphys_malloc(int);
 #endif
 
-#define XER_PRINT
+//#define XER_PRINT
 
 extern int8_t dB_fixed2(uint32_t x,uint32_t y);
 

@@ -53,6 +53,8 @@ Description Defines the layer 3 messages supported by the NAS sublayer
 #include "secu_defs.h"
 #include "emmData.h"
 
+//#define DEBUG_NAS_MESSAGE
+
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
 /****************************************************************************/
@@ -1312,6 +1314,7 @@ static uint32_t _nas_message_get_mac(
               (direction == SECU_DIRECTION_UPLINK) ? emm_security_context->ul_count.seq_num:emm_security_context->dl_count.seq_num,
               count);
 
+#ifdef DEBUG_NAS_MESSAGE
     fprintf(stderr, "\n[NAS]\t");
 
     for (i=0; i < length; i++) {
@@ -1331,6 +1334,7 @@ static uint32_t _nas_message_get_mac(
 
     fprintf(stderr, "\n");
     fflush(stderr);
+#endif
 
     stream_cipher.key        = emm_security_context->knas_int.value;
     stream_cipher.key_length = AUTH_KNAS_INT_SIZE;

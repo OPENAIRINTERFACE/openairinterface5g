@@ -57,7 +57,7 @@ struct mac_data_ind mac_rlc_deserialize_tb (
   list_init(&data_ind.data, NULL);
 
   while (num_tbP > 0) {
-    tb_p = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_sizeP);
+    tb_p = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_sizeP, __func__);
 
     if (tb_p != NULL) {
       ((struct mac_tb_ind *) (tb_p->data))->first_bit = 0;
@@ -110,7 +110,7 @@ tbs_size_t mac_rlc_serialize_tb (char* buffer_pP, list_t transport_blocksP)
 #endif
       memcpy(&buffer_pP[tbs_size], &((struct mac_tb_req *) (tb_p->data))->data_ptr[0], tb_size);
       tbs_size = tbs_size + tb_size;
-      free_mem_block(tb_p);
+      free_mem_block(tb_p, __func__);
     }
   }
 

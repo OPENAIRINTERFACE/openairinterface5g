@@ -347,6 +347,8 @@ typedef struct eNB_proc_t_s {
 
 /// Context data structure for RX/TX portion of subframe processing
 typedef struct {
+  /// index of the current UE RX/TX proc
+  int                  proc_id;
   /// Component Carrier index
   uint8_t              CC_id;
   /// timestamp transmitted to HW

@@ -1638,6 +1638,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   if(ue->ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag)
   {
       LOG_D(PHY,"PUSCH is programmed on this subframe [pid %d] AbsSuframe %d.%d ==> Skip PUCCH transmission \n",harq_pid,frame_tx,subframe_tx);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PUCCH,VCD_FUNCTION_OUT);
       return;
   }
 
@@ -1948,6 +1949,9 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
       ue->generate_ul_signal[eNB_id] = 1;
     }
   }
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PUCCH,VCD_FUNCTION_OUT);
+
 }
 
 void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,runmode_t mode,relaying_type_t r_type) {
