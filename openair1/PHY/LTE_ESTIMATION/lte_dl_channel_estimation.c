@@ -44,12 +44,14 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
   int ch_offset,symbol_offset;
   //  unsigned int n;
   //  int i;
+  static int interpolateS11S12 = 1;
 
   uint16_t Nid_cell = (eNB_offset == 0) ? ue->frame_parms.Nid_cell : ue->measurements.adj_cell_id[eNB_offset-1];
 
   uint8_t nushift,pilot1,pilot2,pilot3;
-  int **dl_ch_estimates=ue->common_vars.dl_ch_estimates[eNB_offset];
-  int **rxdataF=ue->common_vars.rxdataF;
+  int **dl_ch_estimates         =ue->common_vars.common_vars_rx_data_per_thread[(Ns>>1)&0x1].dl_ch_estimates[eNB_offset];
+  int **dl_ch_estimates_previous=ue->common_vars.common_vars_rx_data_per_thread[((Ns>>1)+1)&0x1].dl_ch_estimates[eNB_offset];
+  int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[(Ns>>1)&0x1].rxdataF;
 
   if (ue->frame_parms.Ncp == 0) {  // normal prefix
     pilot1 = 4;
@@ -638,13 +640,19 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
         if (symbol == 0) {
           //      printf("Interpolating %d->0\n",4-ue->frame_parms.Ncp);
           //      dl_ch_prev = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][(4-ue->frame_parms.Ncp)*(ue->frame_parms.ofdm_symbol_size)];
-          dl_ch_prev = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][pilot3*(ue->frame_parms.ofdm_symbol_size)];
+          if(((Ns>>1)!=0) || ( ((Ns>>1)==0) && interpolateS11S12))
+          {
+              //LOG_D(PHY,"Interpolate s11-->s0 to get s12 and s13  Ns %d \n", Ns);
+              dl_ch_prev = (int16_t *)&dl_ch_estimates_previous[(p<<1)+aarx][pilot3*(ue->frame_parms.ofdm_symbol_size)];
 
-          multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
-          multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
+              multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
+              multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
 
-          multadd_complex_vector_real_scalar(dl_ch_prev,10923,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),1,ue->frame_parms.ofdm_symbol_size);
-          multadd_complex_vector_real_scalar(dl_ch,21845,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),0,ue->frame_parms.ofdm_symbol_size);
+              multadd_complex_vector_real_scalar(dl_ch_prev,10923,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),1,ue->frame_parms.ofdm_symbol_size);
+              multadd_complex_vector_real_scalar(dl_ch,21845,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),0,ue->frame_parms.ofdm_symbol_size);
+          }
+
+          interpolateS11S12 = 1;
         } // this is 1/3,2/3 combination for pilots spaced by 3 symbols
         else if (symbol == pilot1) {
           dl_ch_prev = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][0];
@@ -693,46 +701,38 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
             multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)<<1),1,ue->frame_parms.ofdm_symbol_size);
             multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),0,ue->frame_parms.ofdm_symbol_size);
           } // pilot spacing 3 symbols (1/3,2/3 combination)
-#if 0
-          //LOG_E(PHY,"Interpolate s7--s11 s12 s13 pilot 3 Ns %d l %d symbol %d \n", Ns, l, symbol);
-    	  int16_t *dlChEst_ofdm11 = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][pilot3*(ue->frame_parms.ofdm_symbol_size)];
-          int16_t *dlChEst_ofdm7  = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][pilot2*(ue->frame_parms.ofdm_symbol_size)];
 
-      	// interpolate ofdm s12: 4/5*ofdms11 + 1/5*ofdms7 4/5 q1.15 26214 1/5 q1.15 6554
-      	int16_t *dlChEst_ofdm12 = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][12*ue->frame_parms.ofdm_symbol_size];
-      	for(int i=0; i<(2*ue->frame_parms.ofdm_symbol_size); i++)
-      	{
-      		int32_t tmp_mult = 0;
-      		tmp_mult = ((int32_t)dlChEst_ofdm11[i] * 26214 + (int32_t)dlChEst_ofdm7[i] * 6554);
+          if((ue->rx_offset_diff !=0) && ((Ns>>1) == 9))
+          {
+              //LOG_D(PHY,"Extrapolate s7-->s11 to get s12 and s13 Ns %d\n", Ns);
+              interpolateS11S12 = 0;
+              //LOG_E(PHY,"Interpolate s7--s11 s12 s13 pilot 3 Ns %d l %d symbol %d \n", Ns, l, symbol);
+              int16_t *dlChEst_ofdm11 = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][pilot3*(ue->frame_parms.ofdm_symbol_size)];
+              int16_t *dlChEst_ofdm7  = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][pilot2*(ue->frame_parms.ofdm_symbol_size)];
 
-      		tmp_mult = tmp_mult >> 15;
-      		dlChEst_ofdm12[i] = tmp_mult;
-      		/*
-      		if((i==0))
-      		{
-      			LOG_I(PHY,"interpolate dlchest11_0 using: dlchest11 %d+%di dlchest7 %d+%di\n",dlChEst_ofdm11[0],dlChEst_ofdm11[1],dlChEst_ofdm7[0],dlChEst_ofdm7[1]);
-      			LOG_I(PHY,"interpolate dlchest11_1 using: dlchest11 %d+%di dlchest7 %d+%di\n",dlChEst_ofdm11[2],dlChEst_ofdm11[3],dlChEst_ofdm7[2],dlChEst_ofdm7[3]);
-      			LOG_I(PHY,"interpolate dlchest11_2 using: dlchest11 %d+%di dlchest7 %d+%di\n",dlChEst_ofdm11[4],dlChEst_ofdm11[5],dlChEst_ofdm7[4],dlChEst_ofdm7[5]);
-      		}*/
-      	}
+              // interpolate ofdm s12: 5/4*ofdms11 + -1/4*ofdms7 5/4 q1.15 40960 -1/4 q1.15 8192
+              int16_t *dlChEst_ofdm12 = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][12*ue->frame_parms.ofdm_symbol_size];
+              for(int i=0; i<(2*ue->frame_parms.ofdm_symbol_size); i++)
+              {
+                  int64_t tmp_mult = 0;
+                  tmp_mult = ((int64_t)dlChEst_ofdm11[i] * 40960 - (int64_t)dlChEst_ofdm7[i] * 8192);
 
-      	// interpolate ofdm s13: 2/3*ofdms11 + 1/3*ofdms7 2/3 q1.15 21845 1/3 q1.15 10923
-      	int16_t *dlChEst_ofdm13 = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][13*ue->frame_parms.ofdm_symbol_size];
-      	for(int i=0; i<(2*ue->frame_parms.ofdm_symbol_size); i++)
-      	{
-      		int32_t tmp_mult = 0;
-      		tmp_mult = ((int32_t)dlChEst_ofdm11[i] * 21845 + (int32_t)dlChEst_ofdm7[i] * 10923);
+                  tmp_mult = tmp_mult >> 15;
+                  dlChEst_ofdm12[i] = tmp_mult;
+              }
 
-      		tmp_mult = tmp_mult >> 15;
-      		dlChEst_ofdm13[i] = tmp_mult;
-      		/*if((i==0))
-      		{
-      			LOG_I(PHY,"interpolate dlchest11_0 using: dlchest11 %d+%di dlchest7 %d+%di\n",dlChEst_ofdm11[0],dlChEst_ofdm11[1],dlChEst_ofdm7[0],dlChEst_ofdm7[1]);
-      			LOG_I(PHY,"interpolate dlchest11_1 using: dlchest11 %d+%di dlchest7 %d+%di\n",dlChEst_ofdm11[2],dlChEst_ofdm11[3],dlChEst_ofdm7[2],dlChEst_ofdm7[3]);
-      			LOG_I(PHY,"interpolate dlchest11_2 using: dlchest11 %d+%di dlchest7 %d+%di\n",dlChEst_ofdm11[4],dlChEst_ofdm11[5],dlChEst_ofdm7[4],dlChEst_ofdm7[5]);
-      		}*/
-      	}
-#endif
+              // interpolate ofdm s13: 3/2*ofdms11 + -1/2*ofdms7 3/2 q1.15 49152 1/2 q1.15 16384
+              int16_t *dlChEst_ofdm13 = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][13*ue->frame_parms.ofdm_symbol_size];
+              for(int i=0; i<(2*ue->frame_parms.ofdm_symbol_size); i++)
+              {
+                  int64_t tmp_mult = 0;
+                  tmp_mult = ((int64_t)dlChEst_ofdm11[i] * 49152 - (int64_t)dlChEst_ofdm7[i] * 16384);
+
+                  tmp_mult = tmp_mult >> 15;
+                  dlChEst_ofdm13[i] = tmp_mult;
+              }
+          }
+
         }
 
       }
@@ -774,15 +774,15 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
   // do ifft of channel estimate
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)
     for (p=0; p<ue->frame_parms.nb_antenna_ports_eNB; p++) {
-      if (ue->common_vars.dl_ch_estimates[eNB_offset][(p<<1)+aarx])
-        idft((int16_t*) &ue->common_vars.dl_ch_estimates[eNB_offset][(p<<1)+aarx][8],
-             (int16_t*) ue->common_vars.dl_ch_estimates_time[eNB_offset][(p<<1)+aarx],1);
+      if (ue->common_vars.common_vars_rx_data_per_thread[(Ns>>1)&0x1].dl_ch_estimates[eNB_offset][(p<<1)+aarx])
+        idft((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[(Ns>>1)&0x1].dl_ch_estimates[eNB_offset][(p<<1)+aarx][8],
+             (int16_t*) ue->common_vars.common_vars_rx_data_per_thread[(Ns>>1)&0x1].dl_ch_estimates_time[eNB_offset][(p<<1)+aarx],1);
     }
 
 #if T_TRACER
         T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(eNB_id), T_INT(ue->Mod_id),
           T_INT(ue->proc.proc_rxtx[(Ns>>1)&1].frame_rx%1024), T_INT(ue->proc.proc_rxtx[(Ns>>1)&1].subframe_rx),
-          T_INT(0), T_BUFFER(&ue->common_vars.dl_ch_estimates_time[eNB_offset][0][0], 512  * 4));
+          T_INT(0), T_BUFFER(&ue->common_vars.common_vars_rx_data_per_thread[(Ns>>1)&0x1].dl_ch_estimates_time[eNB_offset][0][0], 512  * 4));
 #endif
 
   return(0);

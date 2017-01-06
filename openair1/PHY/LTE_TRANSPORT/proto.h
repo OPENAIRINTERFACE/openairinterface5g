@@ -1570,7 +1570,8 @@ int32_t generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
 					  UE_rxtx_proc_t *proc,
 					  uint8_t eNB_id);
 double sinr_eff_cqi_calc(PHY_VARS_UE *phy_vars_ue,
-                         uint8_t eNB_id);
+                         uint8_t eNB_id,
+						 uint8_t subframe);
 
 uint8_t sinr2cqi(double sinr,uint8_t trans_mode);
 
