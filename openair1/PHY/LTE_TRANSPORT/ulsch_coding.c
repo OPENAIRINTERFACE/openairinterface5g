@@ -469,6 +469,16 @@ uint32_t ulsch_encoding(uint8_t *a,
   Q_ACK = Qprime * Q_m;
   Qprime_ACK = Qprime;
 
+  LOG_D(PHY,"UE (%x/%d) O_ACK %d, Mcs_initial %d, Nsymb_initial %d, beta_offset_harqack*8 %d, sum Kr %d, Qprime_ACK %d, Q_ACK %d\n",
+      rnti, harq_pid,
+      ulsch->harq_processes[harq_pid]->O_ACK,
+      ulsch->harq_processes[harq_pid]->Msc_initial,
+      ulsch->harq_processes[harq_pid]->Nsymb_initial,
+      ulsch->beta_offset_harqack_times8,
+      sumKr,
+      Qprime_ACK,
+      Q_ACK);
+
   // Compute Q_cqi, assume O>11, p. 26 36-212
   if (control_only_flag == 0) {
 

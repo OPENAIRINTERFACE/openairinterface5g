@@ -1138,6 +1138,7 @@ void dlsch_scale_channel(int32_t **dl_ch_estimates_ext,
     @param dlsch_llr Pointer to LLR values computed by dlsch_demodulation
     @param lte_frame_parms Pointer to frame descriptor
     @param dlsch Pointer to DLSCH descriptor
+    @param frame Frame number
     @param subframe Subframe number
     @param num_pdcch_symbols Number of PDCCH symbols
     @param is_crnti indicates if PDSCH belongs to a CRNTI (necessary for parallelizing decoding threads)
@@ -1149,6 +1150,7 @@ uint32_t dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
                         LTE_DL_FRAME_PARMS *lte_frame_parms,
                         LTE_UE_DLSCH_t *dlsch,
                         LTE_DL_UE_HARQ_t *harq_process,
+                        uint8_t frame,
                         uint8_t subframe,
                         uint8_t harq_pid,
                         uint8_t is_crnti,
@@ -1499,7 +1501,8 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                       uint16_t si_rnti,
                                       uint16_t ra_rnti,
                                       uint16_t p_rnti,
-                                      uint8_t beamforming_mode);
+                                      uint8_t beamforming_mode,
+                                      uint16_t tc_rnti);
 
 int32_t generate_eNB_dlsch_params_from_dci(int frame,
     uint8_t subframe,

@@ -333,6 +333,7 @@ ue_send_sdu(
   module_id_t module_idP,
 	    uint8_t CC_id,
 	    frame_t frameP,
+        sub_frame_t subframeP,
 	    uint8_t* sdu,
 	    uint16_t sdu_len,
   uint8_t eNB_index
@@ -451,7 +452,7 @@ ue_send_sdu(
 #endif
       mac_rrc_data_ind(module_idP,
                        CC_id,
-                       frameP,0, // unknown subframe
+                       frameP,subframeP,
                        UE_mac_inst[module_idP].crnti,
                        CCCH,
                        (uint8_t*)payload_ptr,
