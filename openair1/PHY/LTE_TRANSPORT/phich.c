@@ -142,125 +142,134 @@ unsigned char subframe2_ul_harq(LTE_DL_FRAME_PARMS *frame_parms,unsigned char su
 
 uint8_t phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,frame_t frame,uint8_t subframe)
 {
+  uint8_t pusch_frame = 255;
   if (frame_parms->frame_type == FDD) {
-    return((subframe<4) ? (frame - 1) : frame);
+    pusch_frame = ((subframe<4) ? (frame - 1) : frame);
   } else {
     // Note this is not true, but it doesn't matter, the frame number is irrelevant for TDD!
-    return(frame);
+    pusch_frame = (frame);
   }
+
+  LOG_D(PHY, "frame %d subframe %d: PUSCH frame = %d\n", frame, subframe, pusch_frame);
+  return pusch_frame;
 }
 
 uint8_t phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe)
 {
+  uint8_t pusch_subframe = 255;
 
   if (frame_parms->frame_type == FDD)
-    return(subframe<4 ? (subframe+6) : (subframe-4));
+    pusch_subframe = (subframe<4 ? (subframe+6) : (subframe-4));
 
   switch (frame_parms->tdd_config) {
   case 0:
     if (subframe == 0)
-      return(3);
+      pusch_subframe = (3);
     else if (subframe == 5) {
-      return (8);
+      pusch_subframe = (8);
     } else if (subframe == 6)
-      return (2);
+      pusch_subframe = (2);
     else if (subframe == 1)
-      return (7);
+      pusch_subframe = (7);
     else {
       LOG_E(PHY, "phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
             subframe,frame_parms->tdd_config);
-      return(0);
+      pusch_subframe = (0);
     }
 
     break;
 
   case 1:
     if (subframe == 6)
-      return(2);
+      pusch_subframe = (2);
     else if (subframe == 9)
-      return (3);
+      pusch_subframe = (3);
     else if (subframe == 1)
-      return (7);
+      pusch_subframe = (7);
     else if (subframe == 4)
-      return (8);
+      pusch_subframe = (8);
     else {
       LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
             subframe,frame_parms->tdd_config);
-      return(0);
+      pusch_subframe = (0);
     }
 
     break;
 
   case 2:
     if (subframe == 8)
-      return(2);
+      pusch_subframe = (2);
     else if (subframe == 3)
-      return (7);
+      pusch_subframe = (7);
     else {
       LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
             subframe,frame_parms->tdd_config);
-      return(0);
+      pusch_subframe = (0);
     }
 
     break;
 
   case 3:
     if ( (subframe == 8) || (subframe == 9) ) {
-      return(subframe-6);
+      pusch_subframe = (subframe-6);
     } else if (subframe==0)
-      return(4);
+      pusch_subframe = (4);
     else {
       LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
             subframe,frame_parms->tdd_config);
-      return(0);
+      pusch_subframe = (0);
     }
 
     break;
 
   case 4:
     if ( (subframe == 8) || (subframe == 9) ) {
-      return(subframe-6);
+      pusch_subframe = (subframe-6);
     } else {
       LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
             subframe,frame_parms->tdd_config);
-      return(0);
+      pusch_subframe = (0);
     }
 
     break;
 
   case 5:
     if (subframe == 8) {
-      return(2);
+      pusch_subframe = (2);
     } else {
       LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
             subframe,frame_parms->tdd_config);
-      return(0);
+      pusch_subframe = (0);
     }
 
     break;
 
   case 6:
     if (subframe == 6) {
-      return(2);
+      pusch_subframe = (2);
     } else if (subframe == 9) {
-      return(3);
+      pusch_subframe = (3);
     } else if (subframe == 0) {
-      return(4);
+      pusch_subframe = (4);
     } else if (subframe == 1) {
-      return(7);
+      pusch_subframe = (7);
     } else if (subframe == 5) {
-      return(8);
+      pusch_subframe = (8);
     } else {
       LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
             subframe,frame_parms->tdd_config);
-      return(0);
+      pusch_subframe = (0);
     }
 
     break;
 
+  default:
+    LOG_E(PHY, "no implementation for TDD UL/DL-config = %d!\n", frame_parms->tdd_config);
+    pusch_subframe = (0);
   }
 
-  return(0);
+  LOG_D(PHY, "subframe  %d: PUSCH subframe = %d\n", subframe, pusch_subframe);
+  return pusch_subframe;
 }
 
 int check_pcfich(LTE_DL_FRAME_PARMS *frame_parms,uint16_t reg)

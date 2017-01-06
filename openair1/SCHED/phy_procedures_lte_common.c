@@ -518,6 +518,34 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
   }
 }
 
+dci_detect_mode_t dci_detect_mode_select(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe)
+{
+  dci_detect_mode_t ret = 0;
+
+  static dci_detect_mode_t Table_8_2_3gpp_36_213[][10] = {
+     //subf0    , subf1     , subf2 , subf3         , subf4     , subf5     , subf6     , subf7 , subf8     , subf9
+      {UL_DL_DCI, UL_DL_DCI , NO_DCI    , NO_DCI    , NO_DCI    , UL_DL_DCI , UL_DL_DCI , NO_DCI, NO_DCI    , NO_DCI    },  // tdd0
+      {DL_DCI   , UL_DL_DCI , NO_DCI    , NO_DCI    , UL_DL_DCI , DL_DCI    , UL_DL_DCI , NO_DCI, NO_DCI    , UL_DL_DCI },  // tdd1
+      {DL_DCI   , DL_DCI    , NO_DCI    , UL_DL_DCI , DL_DCI    , DL_DCI    , DL_DCI    , NO_DCI, UL_DL_DCI , DL_DCI    },  // tdd2
+      {UL_DL_DCI, DL_DCI    , NO_DCI    , NO_DCI    , NO_DCI    , DL_DCI    , DL_DCI    , DL_DCI, UL_DL_DCI , UL_DL_DCI },  // tdd3
+      {DL_DCI   , DL_DCI    , NO_DCI    , NO_DCI    , DL_DCI    , DL_DCI    , DL_DCI    , DL_DCI, UL_DL_DCI , UL_DL_DCI },  // tdd4
+      {DL_DCI   , DL_DCI    , NO_DCI    , DL_DCI    , DL_DCI    , DL_DCI    , DL_DCI    , DL_DCI, UL_DL_DCI , DL_DCI    },  // tdd5
+      {UL_DL_DCI, UL_DL_DCI , NO_DCI    , NO_DCI    , NO_DCI    , UL_DL_DCI , UL_DL_DCI , NO_DCI, NO_DCI    , UL_DL_DCI }}; // tdd6
+
+
+  DevAssert(subframe>=0 && subframe<=9);
+  DevAssert((frame_parms->tdd_config)>=0 && (frame_parms->tdd_config)<=6);
+
+  if (frame_parms->frame_type == FDD) {
+    ret = UL_DL_DCI;
+  } else {
+    ret = Table_8_2_3gpp_36_213[frame_parms->tdd_config][subframe];
+  }
+
+  LOG_D(PHY, "subframe %d: detect UL_DCI=%d, detect DL_DCI=%d\n", subframe, (ret & UL_DCI)>0, (ret & DL_DCI)>0);
+  return ret;
+}
+
 lte_subframe_t get_subframe_direction(uint8_t Mod_id,uint8_t CC_id,uint8_t subframe)
 {
 
