@@ -675,12 +675,16 @@ typedef struct {
 typedef struct {
   /// HARQ process id
   uint8_t harq_id;
-  /// ACK bits (after decoding)
+  /// ACK bits (after decoding) 0:NACK / 1:ACK / 2:DTX
   uint8_t ack;
   /// send status (for PUCCH)
   uint8_t send_harq_status;
   /// nCCE (for PUCCH)
   uint8_t nCCE;
+  /// DAI value detected from DCI1/1a/1b/1d/2/2a/2b/2c. 0xff indicates not touched
+  uint8_t vDAI_DL;
+  /// DAI value detected from DCI0/4. 0xff indicates not touched
+  uint8_t vDAI_UL;
 } harq_status_t;
 
 typedef struct {

@@ -1656,6 +1656,7 @@ int main(int argc, char **argv)
                                    PHY_vars_UE[UE_idx]->lte_ue_pdsch_vars[0]->llr[0],
                                    &PHY_vars_UE[UE_idx]->lte_frame_parms,
                                    PHY_vars_UE[UE_idx]->dlsch_ue[0][0],
+                                   frame,
                                    subframe,
                                    0,
                                    PHY_vars_UE[UE_idx]->lte_ue_pdcch_vars[0]->num_pdcch_symbols);

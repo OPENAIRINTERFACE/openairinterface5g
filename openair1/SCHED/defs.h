@@ -307,6 +307,18 @@ uint8_t pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n);
 */
 uint8_t get_ack(LTE_DL_FRAME_PARMS *frame_parms,harq_status_t *harq_ack,uint8_t subframe,uint8_t *o_ACK);
 
+/*! \brief Reset ACK/NACK information
+  @param frame_parms Pointer to DL frame parameter descriptor
+  @param harq_ack Pointer to dlsch_ue harq_ack status descriptor
+  @param subframe Subframe for UE transmission (n in 36.213)
+  @param o_ACK Pointer to ACK/NAK payload for PUCCH/PUSCH
+  @returns status indicator for PUCCH/PUSCH transmission
+*/
+uint8_t reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
+                harq_status_t *harq_ack,
+                unsigned char subframe,
+                unsigned char *o_ACK);
+
 /*! \brief Compute UL ACK subframe from DL subframe. This is used to retrieve corresponding DLSCH HARQ pid at eNB upon reception of ACK/NAK information on PUCCH/PUSCH.  Derived from Table 10.1-1 in 36.213 (p. 69 in version 8.6)
   @param frame_parms Pointer to DL frame parameter descriptor
   @param subframe Subframe for UE transmission (n in 36.213)
@@ -373,6 +385,7 @@ subframe n-4 which is acknowledged in subframe n (for FDD) according to n1_pucch
 TDD, this routine computes the complex procedure described in Section 10.1 of 36.213 (through tables 10.1-1,10.1-2)
 @param phy_vars_ue Pointer to UE variables
 @param proc Pointer to RXn-TXnp4 proc information
+@param harq_ack Pointer to dlsch_ue harq_ack status descriptor
 @param eNB_id Index of eNB
 @param b Pointer to PUCCH payload (b[0],b[1])
 @param SR 1 means there's a positive SR in parallel to ACK/NAK
@@ -380,6 +393,7 @@ TDD, this routine computes the complex procedure described in Section 10.1 of 36
 */
 uint16_t get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
 		      UE_rxtx_proc_t *proc,
+                      harq_status_t *harq_ack,
                       uint8_t eNB_id,
                       uint8_t *b,
                       uint8_t SR);

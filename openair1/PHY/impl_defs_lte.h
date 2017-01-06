@@ -994,6 +994,8 @@ typedef struct {
   uint8_t num_pdcch_symbols;
   /// Allocated CRNTI for UE
   uint16_t crnti;
+  /// 1: the allocated crnti is Temporary C-RNTI / 0: otherwise
+  uint8_t crnti_is_temporary;
   /// Total number of PDU errors (diagnostic mode)
   uint32_t dci_errors;
   /// Total number of PDU received
