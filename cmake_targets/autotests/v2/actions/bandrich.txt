@@ -1,0 +1,112 @@
+To get /dev/bandrich (so that you don't need to look for which /dev/ttyUSBx
+is used by your dongle, and always use /dev/bandrich), add a udev file:
+
+    /etc/udev/rules.d/bandrich.rules
+
+containing one line:
+
+    SUBSYSTEM=="tty", ENV{ID_VENDOR_ID}=="1a8d", ENV{ID_MODEL_ID}=="100d", ENV{ID_SERIAL_SHORT}=="357473040068155", ENV{ID_USB_INTERFACE_NUM}=="02", SYMLINK+="bandrich", MODE="0666"
+
+Change vendor_id/model_id/serial/interface num to match yours.
+Use lsusb -v to find values. For interface num, I'm not sure.
+It corresponds to /dev/ttyUSBx (the x). I did:
+
+    cat /dev/ttyUSBx
+
+in one terminal, and:
+
+    echo -e "AT\r" > /dev/ttyUSBx
+
+in another one. And I took a number for which the first terminal displayed:
+
+    AT
+    OK
+
+"02" (/dev/ttyUSB2) worked for me.
+Here, I get, as result of lsusb -v:
+
+    [SNIP]
+    Bus 003 Device 009: ID 1a8d:100d BandRich, Inc. 4G LTE adapter
+    Device Descriptor:
+      bLength                18
+      bDescriptorType         1
+      bcdUSB               2.00
+      bDeviceClass            0 (Defined at Interface level)
+      bDeviceSubClass         0 
+      bDeviceProtocol         0 
+      bMaxPacketSize0        64
+      idVendor           0x1a8d BandRich, Inc.
+      idProduct          0x100d 4G LTE adapter
+      bcdDevice            0.00
+      iManufacturer          10 BandRich, Inc.
+      iProduct                9 BandLuxe HSPA-LTE Adapter
+      iSerial                11 357473040068155
+    [SNIP]
+
+You can also run:
+
+    udevadm monitor
+
+and unplug/replug the dongle. It will print some information.
+
+The command:
+
+    udevadm info --export-db
+
+is also important to get the right identifier to put in ENV{}. (It also
+gives the correct value.)
+
+Here is extracted what I have for my dongle:
+
+    P: /devices/pci0000:00/0000:00:1a.0/usb3/3-1/3-1.2/3-1.2:1.2/ttyUSB2/tty/ttyUSB2
+    N: ttyUSB2
+    S: bandrich
+    S: serial/by-id/usb-BandRich__Inc._BandLuxe_HSPA-LTE_Adapter_357473040068155-if02-port0
+    S: serial/by-path/pci-0000:00:1a.0-usb-0:1.2:1.2-port0
+    E: DEVLINKS=/dev/bandrich /dev/serial/by-id/usb-BandRich__Inc._BandLuxe_HSPA-LTE_Adapter_357473040068155-if02-port0 /dev/serial/by-path/pci-0000:00:1a.0-usb-0:1.2:1.2-port0
+    E: DEVNAME=/dev/ttyUSB2
+    E: DEVPATH=/devices/pci0000:00/0000:00:1a.0/usb3/3-1/3-1.2/3-1.2:1.2/ttyUSB2/tty/ttyUSB2
+    E: ID_BUS=usb
+    E: ID_MM_CANDIDATE=1
+    E: ID_MODEL=BandLuxe_HSPA-LTE_Adapter
+    E: ID_MODEL_ENC=BandLuxe\x20HSPA-LTE\x20Adapter
+    E: ID_MODEL_FROM_DATABASE=4G LTE adapter
+    E: ID_MODEL_ID=100d
+    E: ID_PATH=pci-0000:00:1a.0-usb-0:1.2:1.2
+    E: ID_PATH_TAG=pci-0000_00_1a_0-usb-0_1_2_1_2
+    E: ID_REVISION=0000
+    E: ID_SERIAL=BandRich__Inc._BandLuxe_HSPA-LTE_Adapter_357473040068155
+    E: ID_SERIAL_SHORT=357473040068155
+    E: ID_TYPE=generic
+    E: ID_USB_DRIVER=option
+    E: ID_USB_INTERFACES=:ffffff:020600:0a0000:080650:
+    E: ID_USB_INTERFACE_NUM=02
+    E: ID_VENDOR=BandRich__Inc.
+    E: ID_VENDOR_ENC=BandRich\x2c\x20Inc.
+    E: ID_VENDOR_FROM_DATABASE=BandRich, Inc.
+    E: ID_VENDOR_ID=1a8d
+    E: MAJOR=188
+    E: MINOR=2
+    E: SUBSYSTEM=tty
+    E: USEC_INITIALIZED=672068596
+
+Note: you need to unplyg/replug your dongle for /dev/bandrich to appear.
+
+Note: the mode 0666 is for everyone to access the dongle (no need for
+      root privileges). If you prefer you can set it to 0600 (only root)
+      or 0660 (root and group).
+
+Then you need to configure pppd, to get correct 'route' information when
+you run wvdial.
+
+The file /etc/ppp/peers/wvdial should have the following content:
+
+    noauth
+    name wvdial
+    usepeerdns
+    defaultroute
+    replacedefaultroute
+
+The file wvdial.bandrich.conf has been created by copying some information
+found on the Internet. Its content may not be fully correct. Adapt to your
+situation. It seems to work here.
