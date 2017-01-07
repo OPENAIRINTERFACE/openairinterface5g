@@ -1270,12 +1270,6 @@ int generate_eNB_dlsch_params_from_dci(int frame,
       dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][NPRB-1];
 
     }
-    else
-    {
-    	LOG_E(PHY,"DL Received HarqReTx round=%d mcs=%d rballoc=%d rv=%d \n",
-    			dlsch0_harq->round,mcs,rballoc,rv);
-    }
-
 
     dlsch[0]->current_harq_pid = harq_pid;
     dlsch[0]->harq_ids[subframe] = harq_pid;
