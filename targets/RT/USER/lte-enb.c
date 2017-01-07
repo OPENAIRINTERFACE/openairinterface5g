@@ -1964,7 +1964,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 
 	break;
       case eNodeB_3GPP:
-	eNB->do_precoding         = 1;
+	eNB->do_precoding         = (eNB->frame_parms.nb_antenna_ports_eNB==1) ? 0 : 1;
 	eNB->do_prach             = do_prach;
 	eNB->fep                  = eNB_fep_full;//(single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
 	eNB->td                   = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
@@ -1985,27 +1985,27 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->ifdevice.host_type   = BBU_HOST;
 	break;
       case eNodeB_3GPP_BBU:
-	eNB->do_precoding   = 1;
-	eNB->do_prach       = do_prach;
-	eNB->fep            = eNB_fep_full;//(single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
-	eNB->td             = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
-	eNB->te             = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
-	eNB->proc_uespec_rx = phy_procedures_eNB_uespec_RX;
-	eNB->proc_tx        = proc_tx_full;
+	eNB->do_precoding         = (eNB->frame_parms.nb_antenna_ports_eNB==1) ? 0 : 1;
+	eNB->do_prach             = do_prach;
+	eNB->fep                  = eNB_fep_full;//(single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
+	eNB->td                   = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+	eNB->te                   = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
+	eNB->proc_uespec_rx       = phy_procedures_eNB_uespec_RX;
+	eNB->proc_tx              = proc_tx_full;
         if (eNB->node_timing == synch_to_other) {
-           eNB->tx_fh          = tx_fh_if5_mobipass;
-           eNB->rx_fh          = rx_fh_slave;
-           eNB->fh_asynch      = fh_if5_asynch_UL;
+           eNB->tx_fh             = tx_fh_if5_mobipass;
+           eNB->rx_fh             = rx_fh_slave;
+           eNB->fh_asynch         = fh_if5_asynch_UL;
 
         }
         else {
-           eNB->tx_fh          = tx_fh_if5;
-           eNB->rx_fh          = rx_fh_if5;
-           eNB->fh_asynch      = NULL;
+           eNB->tx_fh             = tx_fh_if5;
+           eNB->rx_fh             = rx_fh_if5;
+           eNB->fh_asynch         = NULL;
         }
 
-	eNB->start_rf       = NULL;
-	eNB->start_if       = start_if;
+	eNB->start_rf             = NULL;
+	eNB->start_if             = start_if;
 	eNB->rfdevice.host_type   = BBU_HOST;
 
 	eNB->ifdevice.host_type   = BBU_HOST;

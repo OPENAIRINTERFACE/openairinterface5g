@@ -2032,8 +2032,8 @@ void prach_procedures(PHY_VARS_eNB *eNB) {
         T_INT(preamble_max), T_INT(preamble_energy_max), T_INT(preamble_delay_list[preamble_max]));
 
       if (eNB->mac_enabled==1) {
-        uint8_t update_TA=4;
-
+        uint8_t update_TA  = 4;
+	uint8_t update_TA2 = 1;
         switch (fp->N_RB_DL) {
         case 6:
           update_TA = 16;
@@ -2047,8 +2047,11 @@ void prach_procedures(PHY_VARS_eNB *eNB) {
           update_TA = 2;
           break;
 
+	case 75:
+	  update_TA  = 3;
+	  update_TA2 = 2;
         case 100:
-          update_TA = 1;
+          update_TA  = 1;
           break;
         }
 
@@ -2056,7 +2059,7 @@ void prach_procedures(PHY_VARS_eNB *eNB) {
 				    eNB->CC_id,
 				    frame,
 				    preamble_max,
-				    preamble_delay_list[preamble_max]*update_TA,
+				    preamble_delay_list[preamble_max]*update_TA/update_TA2,
 				    0,subframe,0);
       }      
 
