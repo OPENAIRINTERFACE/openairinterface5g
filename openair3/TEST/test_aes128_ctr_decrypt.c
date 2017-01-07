@@ -31,6 +31,7 @@
 #include <nettle/nettle-meta.h>
 #include <nettle/aes.h>
 #include <nettle/ctr.h>
+#include <nettle/bignum.h>
 
 static
 void test_uncipher_ctr(const struct nettle_cipher *cipher, const uint8_t *key,
@@ -41,7 +42,7 @@ void test_uncipher_ctr(const struct nettle_cipher *cipher, const uint8_t *key,
   uint8_t *data = malloc(length);
   uint8_t *ctr = malloc(cipher->block_size);
 
-#if NETTLE_VERSION_MAJOR < 3
+#if !defined(NETTLE_VERSION_MAJOR) || NETTLE_VERSION_MAJOR < 3
   cipher->set_encrypt_key(ctx, key_length,  key);
 #else
   cipher->set_encrypt_key(ctx,  key);
