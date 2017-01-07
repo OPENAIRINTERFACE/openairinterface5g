@@ -37,6 +37,8 @@
  * @{
  */
 #include <lime/LimeSuite.h>
+#include <lime/LMS7002M.h>
+#include <lime/LMS7002M_RegistersMap.h>
 #include "common_lib.h"
 
 lms_device_t* lms_device;
@@ -46,8 +48,7 @@ lms_stream_t tx_stream;
 #define RXDCLENGTH 4096
 #define NUMBUFF 32
 
-int16_t cos_fsover8[8]  = {2047,   1447,      0,  -1448,  -2047,  -1448,     0,   1447};
-int16_t cos_3fsover8[8] = {2047,  -1448,      0,   1447,  -2047,   1447,     0,  -1448};
+using namespace lime;
 
 extern "C"
 {
@@ -145,7 +146,9 @@ int trx_lms_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) 
     gv = 0;   
   }   
   printf("[LMS] Setting 7002M G_PGA_RBB to %d\n", (int16_t)gv);   
-  lms7->Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB),(int16_t)gv);
+  LMS7002M lms7;
+  lms7.SetConnection(lms7.GetConnection());
+  lms7.Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB),(int16_t)gv);
 
 
   return(0);
