@@ -132,7 +132,21 @@ void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index) {
 int trx_lms_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) {
 
   LMS_SetNormalizedGain(lms_device, LMS_CH_TX, 0, openair0_cfg[0].tx_gain[0]/100.0);
-  LMS_SetNormalizedGain(lms_device, LMS_CH_RX, 0, openair0_cfg[0].rx_gain[0]/openair0_cfg[0].rx_gain_offset[0]);
+
+  // RX gains, use low-level setting
+
+  double gv = openair0_cfg[0].rx_gain[0] - openair0_cfg[0].rx_gain_offset[0];   
+  if (gv > 31) {     
+    printf("RX Gain 0 too high, reduce by %f dB\n",gv-31);     
+    gv = 31;   
+  }   
+  if (gv < 0) {     
+    printf("RX Gain 0 too low, increase by %f dB\n",-gv);     
+    gv = 0;   
+  }   
+  printf("[LMS] Setting 7002M G_PGA_RBB to %d\n", (int16_t)gv);   
+  lms7->Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB),(int16_t)gv);
+
 
   return(0);
 }
@@ -275,7 +289,7 @@ int trx_lms_set_freq(openair0_device* device, openair0_config_t *openair0_cfg,in
 
 // 31 = 19 dB => 105 dB total gain @ 2.6 GHz
 /*! \brief calibration table for LMSSDR */
-rx_gain_calib_table_t calib_table_sodera[] = {
+rx_gain_calib_table_t calib_table_lmssdr[] = {
   {3500000000.0,70.0},
   {2660000000.0,80.0},
   {2300000000.0,80.0},
@@ -360,7 +374,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg){
     break;
   }
 
-  openair0_cfg[0].rx_gain_calib_table = calib_table_sodera;
+  openair0_cfg[0].rx_gain_calib_table = calib_table_lmssdr;
   set_rx_gain_offset(openair0_cfg,0);
 
   device->Mod_id           = 1;

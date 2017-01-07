@@ -1,6 +1,7 @@
 clear all
 close all
 addpath([getenv('OPENAIR_TARGETS') '/ARCH/EXMIMO/USERSPACE/OCTAVE']);
+addpath([getenv('OPENAIR_DIR') '/cmake_targets/lte_build_oai/build']);
 
 %% -------- ExpressMIMO2 configuration --------
 limeparms;

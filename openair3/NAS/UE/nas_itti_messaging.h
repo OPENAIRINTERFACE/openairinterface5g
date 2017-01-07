@@ -47,6 +47,9 @@ int nas_itti_protected_msg(
 
 
 # if defined(NAS_BUILT_IN_UE)
+
+int nas_itti_kenb_refresh_req(const Byte_t kenb[32]);
+
 int nas_itti_cell_info_req(const plmn_t plmnID, const Byte_t rat);
 
 int nas_itti_nas_establish_req(as_cause_t cause, as_call_type_t type, as_stmsi_t s_tmsi, plmn_t plmnID, Byte_t *data_pP, uint32_t lengthP);

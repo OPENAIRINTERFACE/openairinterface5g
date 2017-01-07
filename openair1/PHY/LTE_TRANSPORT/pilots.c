@@ -62,7 +62,7 @@ void generate_pilots(PHY_VARS_eNB *eNB,
     //    printf("tti %d : offset %d (slot %d)\n",tti,tti_offset,slot_offset);
     //Generate Pilots
 
-    //antenna 0 symbol 0 slot 0
+    //antenna port 0 symbol 0 slot 0
     lte_dl_cell_spec(eNB,&txdataF[0][tti_offset],
                      amp,
                      slot_offset,
@@ -71,7 +71,7 @@ void generate_pilots(PHY_VARS_eNB *eNB,
 
 
     //    printf("tti %d : second_pilot offset %d \n",tti,tti_offset+(second_pilot*samples_per_symbol));
-    //antenna 0 symbol 3/4 slot 0
+    //antenna port 0 symbol 3/4 slot 0
     lte_dl_cell_spec(eNB,&txdataF[0][tti_offset+(second_pilot*samples_per_symbol)],
                      amp,
                      slot_offset,
@@ -79,7 +79,7 @@ void generate_pilots(PHY_VARS_eNB *eNB,
                      0);
 
     //    printf("tti %d : third_pilot offset %d \n",tti,tti_offset+((Nsymb>>1)*samples_per_symbol));
-    //antenna 0 symbol 0 slot 1
+    //antenna port 0 symbol 0 slot 1
     lte_dl_cell_spec(eNB,&txdataF[0][tti_offset+((Nsymb>>1)*samples_per_symbol)],
                      amp,
                      1+slot_offset,
@@ -87,7 +87,7 @@ void generate_pilots(PHY_VARS_eNB *eNB,
                      0);
 
     //    printf("tti %d : third_pilot offset %d \n",tti,tti_offset+(((Nsymb>>1)+second_pilot)*samples_per_symbol));
-    //antenna 0 symbol 3/4 slot 1
+    //antenna port 0 symbol 3/4 slot 1
     lte_dl_cell_spec(eNB,&txdataF[0][tti_offset+(((Nsymb>>1)+second_pilot)*samples_per_symbol)],
                      amp,
                      1+slot_offset,
@@ -95,66 +95,35 @@ void generate_pilots(PHY_VARS_eNB *eNB,
                      0);
 
 
-    if (frame_parms->nb_antennas_tx > 1) {
-      if (frame_parms->mode1_flag) {
-        // antenna 1 symbol 0 slot 0
-        lte_dl_cell_spec(eNB,&txdataF[1][tti_offset],
-                         amp,
-                         slot_offset,
-                         0,
-                         0);
+    if (frame_parms->nb_antenna_ports_eNB > 1) {
 
-        // antenna 1 symbol 3 slot 0
-        lte_dl_cell_spec(eNB,&txdataF[1][tti_offset+(second_pilot*samples_per_symbol)],
-                         amp,
-                         slot_offset,
-                         1,
-                         0);
-
-        //antenna 1 symbol 0 slot 1
-        lte_dl_cell_spec(eNB,&txdataF[1][tti_offset+(Nsymb>>1)*samples_per_symbol],
-                         amp,
-                         1+slot_offset,
-                         0,
-                         0);
-
-        // antenna 1 symbol 3 slot 1
-        lte_dl_cell_spec(eNB,&txdataF[1][tti_offset+(((Nsymb>>1)+second_pilot)*samples_per_symbol)],
-                         amp,
-                         1+slot_offset,
-                         1,
-                         0);
-
-      } else {
-
-        // antenna 1 symbol 0 slot 0
+        // antenna port 1 symbol 0 slot 0
         lte_dl_cell_spec(eNB,&txdataF[1][tti_offset],
                          amp,
                          slot_offset,
                          0,
                          1);
 
-        // antenna 1 symbol 3 slot 0
+        // antenna port 1 symbol 3 slot 0
         lte_dl_cell_spec(eNB,&txdataF[1][tti_offset+(second_pilot*samples_per_symbol)],
                          amp,
                          slot_offset,
                          1,
                          1);
 
-        //antenna 1 symbol 0 slot 1
+        //antenna port 1 symbol 0 slot 1
         lte_dl_cell_spec(eNB,&txdataF[1][tti_offset+(Nsymb>>1)*samples_per_symbol],
                          amp,
                          1+slot_offset,
                          0,
                          1);
 
-        // antenna 1 symbol 3 slot 1
+        // antenna port 1 symbol 3 slot 1
         lte_dl_cell_spec(eNB,&txdataF[1][tti_offset+(((Nsymb>>1)+second_pilot)*samples_per_symbol)],
                          amp,
                          1+slot_offset,
                          1,
                          1);
-      }
     }
   }
 }
@@ -185,7 +154,7 @@ int generate_pilots_slot(PHY_VARS_eNB *eNB,
   //    printf("tti %d : offset %d (slot %d)\n",tti,tti_offset,slot_offset);
   //Generate Pilots
 
-  //antenna 0 symbol 0 slot 0
+  //antenna port 0 symbol 0 slot 0
   lte_dl_cell_spec(eNB,
                    &txdataF[0][slot_offset],
                    amp,
@@ -204,44 +173,24 @@ int generate_pilots_slot(PHY_VARS_eNB *eNB,
                      0);
   }
 
-  if (frame_parms->nb_antennas_tx > 1) {
-    if (frame_parms->mode1_flag) {
-      // antenna 1 symbol 0 slot 0
+  if (frame_parms->nb_antenna_ports_eNB > 1) {
+
+    // antenna port 1 symbol 0 slot 0
+    lte_dl_cell_spec(eNB,
+                     &txdataF[1][slot_offset],
+                     amp,
+                     slot,
+                     0,
+                     1);
+
+    if (first_pilot_only == 0) {
+      // antenna port 1 symbol 3 slot 0
       lte_dl_cell_spec(eNB,
-                       &txdataF[1][slot_offset],
+                       &txdataF[1][slot_offset+(second_pilot*samples_per_symbol)],
                        amp,
                        slot,
-                       0,
-                       0);
-
-      if (first_pilot_only==0) {
-        // antenna 1 symbol 3 slot 0
-        lte_dl_cell_spec(eNB,
-                         &txdataF[1][slot_offset+(second_pilot*samples_per_symbol)],
-                         amp,
-                         slot,
-                         1,
-                         0);
-      }
-    } else {
-
-      // antenna 1 symbol 0 slot 0
-      lte_dl_cell_spec(eNB,
-                       &txdataF[1][slot_offset],
-                       amp,
-                       slot,
-                       0,
+                       1,
                        1);
-
-      if (first_pilot_only == 0) {
-        // antenna 1 symbol 3 slot 0
-        lte_dl_cell_spec(eNB,
-                         &txdataF[1][slot_offset+(second_pilot*samples_per_symbol)],
-                         amp,
-                         slot,
-                         1,
-                         1);
-      }
     }
   }
 

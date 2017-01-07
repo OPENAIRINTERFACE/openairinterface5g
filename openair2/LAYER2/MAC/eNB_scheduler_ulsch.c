@@ -93,7 +93,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_SDU,1);
   if (opt_enabled == 1) {
-    trace_pdu(0, sduP,sdu_lenP, 0, 3, rntiP,subframeP, 0,0);
+    trace_pdu(0, sduP,sdu_lenP, 0, 3, rntiP, frameP, subframeP, 0,0);
     LOG_D(OPT,"[eNB %d][ULSCH] Frame %d  rnti %x  with size %d\n",
     		  enb_mod_idP, frameP, rntiP, sdu_lenP);
   }
@@ -601,6 +601,29 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
   return(mac_header_ptr);
 }
 
+/* This function is called by PHY layer when it schedules some
+ * uplink for a random access message 3.
+ * The MAC scheduler has to skip the RBs used by this message 3
+ * (done below in schedule_ulsch).
+ */
+void set_msg3_subframe(module_id_t Mod_id,
+                       int CC_id,
+                       int frame,
+                       int subframe,
+                       int rnti,
+                       int Msg3_frame,
+                       int Msg3_subframe)
+{
+  eNB_MAC_INST *eNB=&eNB_mac_inst[Mod_id];
+  int i;
+  for (i=0; i<NB_RA_PROC_MAX; i++) {
+    if (eNB->common_channels[CC_id].RA_template[i].RA_active == TRUE &&
+        eNB->common_channels[CC_id].RA_template[i].rnti == rnti) {
+      eNB->common_channels[CC_id].RA_template[i].Msg3_subframe = Msg3_subframe;
+      break;
+    }
+  }
+}
 
 void schedule_ulsch(module_id_t module_idP, 
 		    frame_t frameP,
@@ -619,6 +642,7 @@ void schedule_ulsch(module_id_t module_idP,
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
+    //leave out first RB for PUCCH
     first_rb[CC_id] = 1;
 
     // UE data info;
@@ -637,9 +661,11 @@ void schedule_ulsch(module_id_t module_idP,
     for (i=0; i<NB_RA_PROC_MAX; i++) {
       if ((eNB->common_channels[CC_id].RA_template[i].RA_active == TRUE) &&
           (eNB->common_channels[CC_id].RA_template[i].generate_rar == 0) &&
+          (eNB->common_channels[CC_id].RA_template[i].generate_Msg4 == 0) &&
+          (eNB->common_channels[CC_id].RA_template[i].wait_ack_Msg4 == 0) &&
           (eNB->common_channels[CC_id].RA_template[i].Msg3_subframe == sched_subframe)) {
-	//leave out first RB for PUCCH
         first_rb[CC_id]++;
+        eNB->common_channels[CC_id].RA_template[i].Msg3_subframe = -1;
         break;
       }
     }
@@ -755,7 +781,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
         UE_template   = &UE_list->UE_template[CC_id][UE_id];
         UE_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
 
-        if (mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,1) == -1 ) {
+        if (mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL) == -1 ) {
           LOG_W(MAC,"[eNB %d] Scheduler Frame %d, subframeP %d: candidate harq_pid from PHY for UE %d CC %d RNTI %x\n",
                 module_idP,frameP,subframeP, UE_id, CC_id, rnti);
           continue;
@@ -828,9 +854,6 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	    UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power=target_rx_power;
 	    UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1=UE_template->pre_assigned_mcs_ul;
             mcs = UE_template->pre_assigned_mcs_ul;//cmin (UE_template->pre_assigned_mcs_ul, openair_daq_vars.target_ue_ul_mcs); // adjust, based on user-defined MCS
-	    if ((cqi_req==1) && (mcs>19)) {
-		mcs=19;
-	    }
             if (UE_template->pre_allocated_rb_table_index_ul >=0) {
               rb_table_index=UE_template->pre_allocated_rb_table_index_ul;
             } else {
@@ -857,7 +880,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 
             T(T_ENB_MAC_UE_UL_SCHEDULE, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP),
               T_INT(subframeP), T_INT(harq_pid), T_INT(mcs), T_INT(first_rb[CC_id]), T_INT(rb_table[rb_table_index]),
-              T_INT(TBS));
+              T_INT(TBS), T_INT(ndi));
 
 	    // bad indices : 20 (40 PRB), 21 (45 PRB), 22 (48 PRB)
             // increment for next UE allocation

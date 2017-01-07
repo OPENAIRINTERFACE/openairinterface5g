@@ -720,7 +720,7 @@ void get_simulation_options(int argc, char *argv[])
       oai_emulation.info.transmission_mode[0] = atoi (optarg);
 
       if ((oai_emulation.info.transmission_mode[0] != 1) &&  (oai_emulation.info.transmission_mode[0] != 2) && (oai_emulation.info.transmission_mode[0] != 3)
-          && (oai_emulation.info.transmission_mode[0] != 5) && (oai_emulation.info.transmission_mode[0] != 6)) {
+          && (oai_emulation.info.transmission_mode[0] != 5) && (oai_emulation.info.transmission_mode[0] != 6) && (oai_emulation.info.transmission_mode[0] !=7)) {
         printf("Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode[0]);
         exit(-1);
       }
@@ -1194,12 +1194,12 @@ void init_openair1(void)
         PHY_vars_eNB_g[eNB_id][CC_id]->pusch_config_dedicated[UE_id].betaOffset_ACK_Index = beta_ACK;
         PHY_vars_eNB_g[eNB_id][CC_id]->pusch_config_dedicated[UE_id].betaOffset_RI_Index  = beta_RI;
         PHY_vars_eNB_g[eNB_id][CC_id]->pusch_config_dedicated[UE_id].betaOffset_CQI_Index = beta_CQI;
-        PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.pdsch_config_common.p_b = (frame_parms[CC_id]->nb_antennas_tx_eNB>1) ? 1 : 0; // rho_A = rho_B
+        PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.pdsch_config_common.p_b = (frame_parms[CC_id]->nb_antenna_ports_eNB>1) ? 1 : 0; // rho_A = rho_B
 
         PHY_vars_UE_g[UE_id][CC_id]->pusch_config_dedicated[eNB_id].betaOffset_ACK_Index = beta_ACK;
         PHY_vars_UE_g[UE_id][CC_id]->pusch_config_dedicated[eNB_id].betaOffset_RI_Index  = beta_RI;
         PHY_vars_UE_g[UE_id][CC_id]->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index = beta_CQI;
-        PHY_vars_UE_g[UE_id][CC_id]->frame_parms.pdsch_config_common.p_b = (frame_parms[CC_id]->nb_antennas_tx_eNB>1) ? 1 : 0; // rho_A = rho_B
+        PHY_vars_UE_g[UE_id][CC_id]->frame_parms.pdsch_config_common.p_b = (frame_parms[CC_id]->nb_antenna_ports_eNB>1) ? 1 : 0; // rho_A = rho_B
       }
     }
   }
@@ -1276,7 +1276,7 @@ void init_openair1(void)
   for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       
-      PHY_vars_UE_g[UE_id][CC_id]->tx_power_max_dBm=23;
+      PHY_vars_UE_g[UE_id][CC_id]->tx_power_max_dBm=10;
       
       PHY_vars_UE_g[UE_id][CC_id]->rx_total_gain_dB=100;
 
@@ -1518,7 +1518,7 @@ void update_ocm()
           //calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,0);
           UE2eNB[UE_id][eNB_id][CC_id]->path_loss_dB = eNB2UE[eNB_id][UE_id][CC_id]->path_loss_dB;
           //    if (frame % 50 == 0)
-          LOG_I(OCM,"Path loss (CCid %d) between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
+          LOG_D(OCM,"Path loss (CCid %d) between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
                 CC_id,eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
                 eNB2UE[eNB_id][UE_id][CC_id]->path_loss_dB, eNB2UE[eNB_id][UE_id][CC_id]->aoa);
           //double dx, dy, distance;
@@ -1577,12 +1577,10 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
       // generate traffic if the ue is rrc reconfigured state
       //if ((rrc_state=mac_eNB_get_rrc_status(enb_module_idP, dst_id)) > 2 /*RRC_CONNECTED*/ ) {
       if (mac_eNB_get_rrc_status(enb_module_idP, oai_emulation.info.eNB_ue_module_id_to_rnti[enb_module_idP][dst_id]) > 2 ){ 
-	
 	if_times += 1;
 	
         for (app_id=0; app_id<MAX_NUM_APPLICATION; app_id++) {
           otg_pkt = malloc (sizeof(Packet_otg_elt_t));
-
 
           (otg_pkt->otg_pkt).sdu_buffer = (uint8_t*) packet_gen(enb_module_idP, dst_id + NB_eNB_INST, app_id, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
 
@@ -1710,6 +1708,7 @@ void update_otg_UE(module_id_t ue_mod_idP, unsigned int ctime)
 {
 #if defined(USER_MODE) && defined(OAI_EMU)
 
+  int app_id;
   if (oai_emulation.info.otg_enabled ==1 ) {
     module_id_t dst_id, src_id; //dst_id = eNB_index
     module_id_t module_id = ue_mod_idP+NB_eNB_INST;
@@ -1719,31 +1718,33 @@ void update_otg_UE(module_id_t ue_mod_idP, unsigned int ctime)
     for (dst_id=0; dst_id<NB_SIG_CNX_UE; dst_id++) {
       // only consider the first attached eNB
       if (mac_UE_get_rrc_status(ue_mod_idP, dst_id ) > 2 /*RRC_CONNECTED*/) {
-        Packet_otg_elt_t *otg_pkt = malloc (sizeof(Packet_otg_elt_t));
-
-        if (otg_pkt!=NULL)
-          memset(otg_pkt,0,sizeof(Packet_otg_elt_t));
-        else {
-          LOG_E(OTG,"not enough memory\n");
-          exit(-1);
-        }// Manage to add this packet to the tail of your list
-
-        (otg_pkt->otg_pkt).sdu_buffer = (uint8_t*) packet_gen(src_id, dst_id, 0, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
-
-        if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
-          (otg_pkt->otg_pkt).rb_id     = DTCH-2;
-          (otg_pkt->otg_pkt).module_id = module_id;
-          (otg_pkt->otg_pkt).dst_id    = dst_id;
-          (otg_pkt->otg_pkt).is_ue     = 1;
-          //Adding the packet to the OTG-PDCP buffer
-          (otg_pkt->otg_pkt).mode      = PDCP_TRANSMISSION_MODE_DATA;
-          pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[module_id]));
-          LOG_I(EMU, "[UE %d] ADD pkt to OTG buffer with size %d for dst %d on rb_id %d \n",
-                (otg_pkt->otg_pkt).module_id, otg_pkt->otg_pkt.sdu_buffer_size, (otg_pkt->otg_pkt).dst_id,(otg_pkt->otg_pkt).rb_id);
-        } else {
-          free(otg_pkt);
-          otg_pkt=NULL;
-        }
+        for (app_id=0; app_id<MAX_NUM_APPLICATION; app_id++) {
+	  Packet_otg_elt_t *otg_pkt = malloc (sizeof(Packet_otg_elt_t));
+	  
+	  if (otg_pkt!=NULL)
+	    memset(otg_pkt,0,sizeof(Packet_otg_elt_t));
+	  else {
+	    LOG_E(OTG,"not enough memory\n");
+	    exit(-1);
+	  }// Manage to add this packet to the tail of your list
+	  
+	  (otg_pkt->otg_pkt).sdu_buffer = (uint8_t*) packet_gen(src_id, dst_id, app_id, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
+	  
+	  if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
+	    (otg_pkt->otg_pkt).rb_id     = DTCH-2;
+	    (otg_pkt->otg_pkt).module_id = module_id;
+	    (otg_pkt->otg_pkt).dst_id    = dst_id;
+	    (otg_pkt->otg_pkt).is_ue     = 1;
+	    //Adding the packet to the OTG-PDCP buffer
+	    (otg_pkt->otg_pkt).mode      = PDCP_TRANSMISSION_MODE_DATA;
+	    pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[module_id]));
+	    LOG_I(EMU, "[UE %d] ADD pkt to OTG buffer with size %d for dst %d on rb_id %d \n",
+		  (otg_pkt->otg_pkt).module_id, otg_pkt->otg_pkt.sdu_buffer_size, (otg_pkt->otg_pkt).dst_id,(otg_pkt->otg_pkt).rb_id);
+	  } else {
+	    free(otg_pkt);
+	    otg_pkt=NULL;
+	  }
+	}
       }
     }
   }

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>OAI5G UE test case report</title>
+    <script type="text/javascript">
+    function showhide(id) {
+      var e = document.getElementById(id);
+     e.style.display = (e.style.display == 'block') ? 'none' : 'block';
+    }
+</script>
+</head>
+<style>
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+    padding: 5px;
+}
+</style>
+<body>
+<center>
+<h2>OAI5G UE test case report details</h2>
+</center>
+
+<h3>Test Case description</h3>
+<p>
+  <table border>
+
+    <tr><td>ID</td><td>{{testcase_name}}</td></tr>
+    <tr><td>TAG</td><td>{{tags}}</td></tr>
+    <tr><td>class</td><td>{{testcaseclass}}</td></tr>
+    <tr><td>description</td><td></td></tr>
+    <tr><td>timeout</td><td>{{testcase_timeout}}</td></tr>
+    <tr><td>number of runs</td><td>{{nruns}}</td></tr>
+    <tr><td>eNB machine</td><td>{{testcase_eNBMachine}}</td></tr>
+    <tr><td>UE machine</td><td>{{testcase_UEMachine}}</td></tr>
+
+  </table>
+</p>
+
+
+<h3>Test Case execution</h3>
+<p>
+  <table border>
+
+    <tr><td>testcase_time_start</td><td>{{testcase_time_start}}</td></tr>
+    <tr><td>testcase_time_stop</td><td>{{testcase_time_stop}}</td></tr>
+    <tr><td>testcase_duration</td><td>{{testcase_duration}}</td></tr>
+    <tr><td>Nb runs</td><td>{{nruns}}</td></tr>
+    <tr><td>Nb PASS</td><td>{{nb_run_pass}}</td></tr>
+    <tr><td>Nb FAILED</td><td>{{nb_run_failed}}</td></tr>
+    <tr><td>Nb INCONCLUSIVE</td><td>{{nb_run_inc}}</td></tr>
+    <tr>
+    <td>testcase_verdict</td>
+     {% if testcase_verdict == "PASS" %}
+        <TD align="center" style="background-color:green">{{testcase_verdict}}</TD>
+     {% elif testcase_verdict == "FAIL" %}
+        <TD align="center" style="background-color:red">{{testcase_verdict}}</TD>
+     {% else %}
+        <TD align="center" style="background-color:orange">{{testcase_verdict}}</TD>
+     {% endif %}
+    </tr>
+    <tr><td>Nb Seg Fault</td><td>{{nb_seg_fault}}</td></tr>
+
+  </table>
+</p>
+
+
+
+<h3>Test Case runs results</h3>
+
+{% for run_results in runs_results|sort(attribute='run_id') %}
+<h4>RUN {{run_results.run_id}} </h4>
+	<table border>
+		<tr><td>run_start_time </td><td>{{run_results.run_start_time}}</td></tr>
+    <tr><td>run_stop_time</td><td>{{run_results.run_stop_time}}</td></tr>
+    <tr><td>run_duration</td><td>{{run_results.run_duration}}</td></tr>
+		<tr>
+      <td>run_verdict</td>
+       {% if run_results.run_verdict == "PASS" %}
+          <TD align="center" style="background-color:green">{{run_results.run_verdict}}</TD>
+       {% elif run_results.run_verdict == "FAIL" %}
+          <TD align="center" style="background-color:red">{{run_results.run_verdict}}</TD>
+       {% else %}
+          <TD align="center" style="background-color:orange">{{run_results.run_verdict}}</TD>
+       {% endif %}
+    </tr>
+    <tr><td>Seg Fault Satus</td>
+      {% if run_results.ue_seg_fault_status == "NO_SEG_FAULT" %}
+        <TD align="center" style="background-color:green">{{run_results.ue_seg_fault_status}}</TD>
+      {% elif run_results.ue_seg_fault_status == "SEG_FAULT" %}
+        <TD align="center" style="background-color:red">{{run_results.ue_seg_fault_status}}</TD>
+      {% else %}
+          <TD align="center" style="background-color:orange">unknown</TD>
+       {% endif %}
+    </tr>
+	</table>
+
+	{% for run_metrics in run_results.runs_metrics %}
+	<br></br>
+	<table border>
+    <tr><td>metric_id</td><td>{{run_metrics.metric_id}}</td></tr>
+    <tr><td>Description</td><td>{{run_metrics.metric_desc}}</td></tr>
+    <tr><td>Unit of measure</td><td>{{run_metrics.metric_uom}}</td></tr>    
+		<tr><td>metric_min</td><td>{{run_metrics.metric_min}}</td></tr>
+		<tr><td>metric_max</td><td>{{run_metrics.metric_max}}</td></tr>
+		<tr><td>metric_mean</td><td>{{run_metrics.metric_mean}}</td></tr>
+		<tr><td>metric_median</td><td>{{run_metrics.metric_median}}</td></tr>
+    <tr><td colspan="2"></td></tr>
+    {% if run_metrics.pass_fail_stat is defined %}
+      <tr><td>Pass/fail stat</td><td>{{run_metrics.pass_fail_stat}}</td></tr>
+    {% endif %}
+    {% if run_metrics.pass_fail_min_limit is defined %}
+       <tr><td>Pass/fail min limit</td><td>{{run_metrics.pass_fail_min_limit}}</td></tr>
+    {% endif %}
+    {% if run_metrics.pass_fail_max_limit is defined %}
+      <tr><td>Pass/fail max limit</td><td>{{run_metrics.pass_fail_max_limit}}</td></tr>    
+    {% endif %}
+    <tr><td colspan="2"></td></tr>
+		<tr><td>metric_fig</td><td><IMG src={{run_metrics.metric_fig}}></td></tr>
+	</table>
+
+	{% endfor %}
+
+  {% if run_results.run_traffic.traffic_count != 0 %}
+  <br></br>
+  <table border>
+    <TR><TH>Iperf metric</TH><TH>min</TH><TH>max</TH><TH>mean</TH><TH>median</TH><TR>
+    <TR><td>Bandwidth </td><td>{{run_results.run_traffic.bw_min}}</td><td>{{run_results.run_traffic.bw_max}}</td><td>{{run_results.run_traffic.bw_mean}}</td><td>{{run_results.run_traffic.bw_median}}</td><TR>
+    <TR><td>Jitter</td><td>{{run_results.run_traffic.jitter_min}}</td><td>{{run_results.run_traffic.jitter_max}}</td><td>{{run_results.run_traffic.jitter_mean}}</td><td>{{run_results.run_traffic.jitter_median}}</td><TR>
+    <TR><td>Loss rate</td><td>{{run_results.run_traffic.rl_min}}</td><td>{{run_results.run_traffic.rl_max}}</td><td>{{run_results.run_traffic.rl_mean}}</td><td>{{run_results.run_traffic.rl_median}}</td><TR> 
+    <TR><td colspan="5"></td></TR>
+    <TR><td>Iperf duration</td><td>{{run_results.run_traffic.iperf_duration}}</td><td></td><td>Pass/Fail criteria (min duration)</td><td>{{run_results.run_traffic.dur_pass_fail_crit}}</td><TR> 
+    <TR><td colspan="5"></td></TR>
+    <tr><td>traffic_fig</td><td colspan="4"><IMG src={{run_results.run_traffic.traffic_fig}}></td></tr>
+  </table>
+  {% endif %}
+
+{% endfor %}
+
+</body>
+</html>

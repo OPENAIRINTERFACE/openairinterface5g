@@ -163,6 +163,42 @@ compilations() {
 # External packages installers
 ############################################
 
+install_protobuf_from_source(){
+    protobuf_install_log=$OPENAIR_DIR/cmake_targets/log/protobuf_install_log.txt
+    echo_info "\nInstalling Google Protobuf from sources. The log file for Protobuf installation is here: $protobuf_install_log "
+    (
+    cd /tmp
+    echo "Downloading protobuf"
+    rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
+    wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
+    tar -xzvf protobuf-2.6.1.tar.gz
+    cd protobuf-2.6.1/
+    ./configure
+    echo "Compiling protobuf"
+    make -j`nproc`
+    $SUDO make install
+    $SUDO ldconfig
+    ) >& $protobuf_install_log
+}
+
+install_protobuf_c_from_source(){
+    protobuf_c_install_log=$OPENAIR_DIR/cmake_targets/log/protobuf_c_install_log.txt
+    echo_info "\nInstalling Google Protobuf_C from sources. The log file for Protobuf_C installation is here: $protobuf_c_install_log "
+    (
+    cd /tmp
+    echo "Downloading protobuf-c"
+    rm -rf /tmp/protobuf-c
+    git clone https://github.com/protobuf-c/protobuf-c.git
+    cd protobuf-c
+    ./autogen.sh
+    ./configure
+    echo "Compiling protobuf-c"
+    make -j`nproc`
+    $SUDO make install
+    $SUDO ldconfig
+    ) >& $protobuf_c_install_log
+}
+
 check_install_usrp_uhd_driver(){
         #first we remove old installation
         $SUDO apt-get remove -y uhd || true
@@ -223,13 +259,15 @@ check_install_additional_tools (){
         android-tools-adb \
 	wvdial \
         python-numpy \
-    sshpass \
-    nscd \
-    bc \
-    ntp
+        sshpass \
+        nscd \
+        bc \
+        ntp \
+        python-scipy \
+        python-matplotlib
 
     $SUDO pip install paramiko
-    $SUDO pip install pyroute2
+    $SUDO pip install pyroute2 colorama
     $SUDO rm -fr /opt/ssh
     $SUDO GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/ssh.git /opt/ssh
     
@@ -322,6 +360,7 @@ check_install_oai_software() {
 	xmlstarlet \
 	python-pip \
 	pydb \
+	libyaml-dev \
 	wget
 
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
@@ -335,6 +374,10 @@ check_install_oai_software() {
     $SUDO apt-get install -y libgnutls-dev
     
     install_asn1c_from_source
+    $SUDO rm -fr /opt/ssh
+    $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
+    install_protobuf_from_source
+    install_protobuf_c_from_source
 }
 
 ### Remove Nettle installation which was done from sources
@@ -359,6 +402,7 @@ remove_nettle_from_source() {
     cd nettle-2.5/
     ./configure --disable-openssl --enable-shared --prefix=/usr 
     $SUDO make uninstall || true 
+    $SUDO ldconfig
     ) >& $nettle_uninstall_log
 }
 
@@ -382,6 +426,7 @@ remove_gnutls_from_source(){
     cd gnutls-3.1.23/
     ./configure --prefix=/usr
     $SUDO make uninstall || true
+    $SUDO ldconfig
     )>& $gnutls_uninstall_log
 }
 
@@ -396,6 +441,7 @@ install_asn1c_from_source(){
     make -j`nproc`
     $SUDO make install
     cd -
+    $SUDO ldconfig
     ) > $asn1_install_log 2>&1
 }
 

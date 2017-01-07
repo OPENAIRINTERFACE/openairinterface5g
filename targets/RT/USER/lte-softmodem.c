@@ -204,6 +204,7 @@ char   rf_config_file[1024];
 
 int chain_offset=0;
 int phy_test = 0;
+uint8_t usim_test = 0;
 
 
 char ref[128] = "internal";
@@ -234,7 +235,7 @@ uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
-//int transmission_mode=1;
+int transmission_mode=1;
 
 int16_t           glog_level         = LOG_INFO;
 int16_t           glog_verbosity     = LOG_MED;
@@ -378,6 +379,7 @@ void help (void) {
   printf("  --ue-scan_carrier set UE to scan around carrier\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
   printf("  --mmapped-dma sets flag for improved EXMIMO UE performance\n");  
+  printf("  --usim-test use XOR autentication algo in case of test usim mode\n"); 
   printf("  --single-thread-disable. Disables single-thread mode in lte-softmodem\n"); 
   printf("  -C Set the downlink frequency for all component carriers\n");
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
@@ -685,6 +687,7 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_DUMP_FRAME,
     LONG_OPTION_LOOPMEMORY,
     LONG_OPTION_PHYTEST,
+    LONG_OPTION_USIMTEST,
     LONG_OPTION_MMAPPED_DMA,
     LONG_OPTION_SINGLE_THREAD_DISABLE,
 #if T_TRACER
@@ -711,6 +714,7 @@ static void get_options (int argc, char **argv)
     {"ue-dump-frame", no_argument, NULL, LONG_OPTION_DUMP_FRAME},
     {"loop-memory", required_argument, NULL, LONG_OPTION_LOOPMEMORY},
     {"phy-test", no_argument, NULL, LONG_OPTION_PHYTEST},
+    {"usim-test", no_argument, NULL, LONG_OPTION_USIMTEST},
     {"mmapped-dma", no_argument, NULL, LONG_OPTION_MMAPPED_DMA},
     {"single-thread-disable", no_argument, NULL, LONG_OPTION_SINGLE_THREAD_DISABLE},
 #if T_TRACER
@@ -810,6 +814,9 @@ static void get_options (int argc, char **argv)
       phy_test = 1;
       break;
 
+    case LONG_OPTION_USIMTEST:
+        usim_test = 1;
+      break;
     case LONG_OPTION_MMAPPED_DMA:
       mmapped_dma = 1;
       break;
@@ -1121,13 +1128,13 @@ static void get_options (int argc, char **argv)
         frame_parms[CC_id]->N_RB_DL             =  enb_properties->properties[i]->N_RB_DL[CC_id];
         frame_parms[CC_id]->N_RB_UL             =  enb_properties->properties[i]->N_RB_DL[CC_id];
         frame_parms[CC_id]->nb_antennas_tx      =  enb_properties->properties[i]->nb_antennas_tx[CC_id];
-        frame_parms[CC_id]->nb_antennas_tx_eNB  =  enb_properties->properties[i]->nb_antenna_ports[CC_id];
+        frame_parms[CC_id]->nb_antenna_ports_eNB  =  enb_properties->properties[i]->nb_antenna_ports[CC_id];
         frame_parms[CC_id]->nb_antennas_rx      =  enb_properties->properties[i]->nb_antennas_rx[CC_id];
 
 	frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_ConfigIndex = enb_properties->properties[i]->prach_config_index[CC_id];
 	frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset  = enb_properties->properties[i]->prach_freq_offset[CC_id];
 
-	frame_parms[CC_id]->mode1_flag         = (frame_parms[CC_id]->nb_antennas_tx_eNB == 1) ? 1 : 0;
+	frame_parms[CC_id]->mode1_flag         = (frame_parms[CC_id]->nb_antenna_ports_eNB == 1) ? 1 : 0;
 	frame_parms[CC_id]->threequarter_fs    = threequarter_fs;
 
         //} // j
@@ -1189,8 +1196,13 @@ static void get_options (int argc, char **argv)
         printf("Downlink frequency/ uplink offset of CC_id %d set to %ju/%d\n", CC_id,
                enb_properties->properties[i]->downlink_frequency[CC_id],
                enb_properties->properties[i]->uplink_frequency_offset[CC_id]);
+
       } // CC_id
     }// i
+
+    //this is needed for phy-test option
+    transmission_mode = enb_properties->properties[0]->ue_TransmissionMode[0]+1;
+
   } else if (UE_flag == 1) {
     if (conf_config_file_name != NULL) {
       
@@ -1225,7 +1237,7 @@ void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
     frame_parms[CC_id]->Ncp_UL              = NORMAL;
     frame_parms[CC_id]->Nid_cell            = 0;
     frame_parms[CC_id]->num_MBSFN_config    = 0;
-    frame_parms[CC_id]->nb_antennas_tx_eNB  = 1;
+    frame_parms[CC_id]->nb_antenna_ports_eNB  = 1;
     frame_parms[CC_id]->nb_antennas_tx      = 1;
     frame_parms[CC_id]->nb_antennas_rx      = 1;
 
@@ -1339,12 +1351,6 @@ void init_openair0() {
       else
 	openair0_cfg[card].rx_freq[i]=0.0;
 
-      printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
-             card,i, openair0_cfg[card].tx_gain[i],
-             openair0_cfg[card].rx_gain[i],
-             openair0_cfg[card].tx_freq[i],
-             openair0_cfg[card].rx_freq[i]);
-      
       openair0_cfg[card].autocal[i] = 1;
       openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
       if (UE_flag == 0) {
@@ -1355,15 +1361,18 @@ void init_openair0() {
       }
 
       openair0_cfg[card].configFilename = rf_config_file;
+      printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
+             card,i, openair0_cfg[card].tx_gain[i],
+             openair0_cfg[card].rx_gain[i],
+             openair0_cfg[card].tx_freq[i],
+             openair0_cfg[card].rx_freq[i]);
     }
-
-
   }
 }
 
 int main( int argc, char **argv )
 {
-  int i,aa;
+  int i,j,k,aa,re;
 #if defined (XFORMS)
   void *status;
 #endif
@@ -1524,7 +1533,7 @@ int main( int argc, char **argv )
     if (UE_flag==1) {
       frame_parms[CC_id]->nb_antennas_tx     = 1;
       frame_parms[CC_id]->nb_antennas_rx     = 1;
-      frame_parms[CC_id]->nb_antennas_tx_eNB = 1; //initial value overwritten by initial sync later
+      frame_parms[CC_id]->nb_antenna_ports_eNB = 1; //initial value overwritten by initial sync later
     }
 
     init_ul_hopping(frame_parms[CC_id]);
@@ -1587,7 +1596,18 @@ int main( int argc, char **argv )
 
       UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
       UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
-      UE[CC_id]->N_TA_offset = 0;
+      
+      if (frame_parms[CC_id]->frame_type==FDD) {
+	UE[CC_id]->N_TA_offset = 0;
+      }
+      else {
+	if (frame_parms[CC_id]->N_RB_DL == 100)
+	  UE[CC_id]->N_TA_offset = 624;
+	else if (frame_parms[CC_id]->N_RB_DL == 50)
+	  UE[CC_id]->N_TA_offset = 624/2;
+	else if (frame_parms[CC_id]->N_RB_DL == 25)
+	  UE[CC_id]->N_TA_offset = 624/4;
+      }
 
     }
 
@@ -1601,6 +1621,22 @@ int main( int argc, char **argv )
       PHY_vars_eNB_g[0][CC_id] = init_lte_eNB(frame_parms[CC_id],0,frame_parms[CC_id]->Nid_cell,abstraction_flag);
       PHY_vars_eNB_g[0][CC_id]->CC_id = CC_id;
 
+      PHY_vars_eNB_g[0][CC_id]->ue_dl_rb_alloc=0x1fff;
+      PHY_vars_eNB_g[0][CC_id]->target_ue_dl_mcs=target_dl_mcs;
+      PHY_vars_eNB_g[0][CC_id]->ue_ul_nb_rb=6;
+      PHY_vars_eNB_g[0][CC_id]->target_ue_ul_mcs=target_ul_mcs;
+
+      // initialization for phy-test
+      for (k=0;k<NUMBER_OF_UE_MAX;k++) {
+	PHY_vars_eNB_g[0][CC_id]->transmission_mode[k] = transmission_mode;
+	if (transmission_mode==7) 
+	  lte_gold_ue_spec_port5(PHY_vars_eNB_g[0][CC_id]->lte_gold_uespec_port5_table[k],frame_parms[CC_id]->Nid_cell,0x1235+k);
+      }
+      if ((transmission_mode==1) || (transmission_mode==7)) {
+	  for (j=0; j<frame_parms[CC_id]->nb_antennas_tx; j++) 
+	    for (re=0; re<frame_parms[CC_id]->ofdm_symbol_size; re++) 
+	      PHY_vars_eNB_g[0][CC_id]->common_vars.beam_weights[0][0][j][re] = 0x00007fff/frame_parms[CC_id]->nb_antennas_tx; 
+      }
       if (phy_test==1) PHY_vars_eNB_g[0][CC_id]->mac_enabled = 0;
       else PHY_vars_eNB_g[0][CC_id]->mac_enabled = 1;
 
@@ -1795,11 +1831,19 @@ int main( int argc, char **argv )
 
 
   // start the main thread
-  if (UE_flag == 1) init_UE(1);
+  if (UE_flag == 1) {
+    init_UE(1);
+    number_of_cards = 1;
+    
+    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
+      PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
+    }
+  }
   else { 
     init_eNB(node_function,node_timing,1,eth_params,single_thread_flag);
-  // Sleep to allow all threads to setup
-
+    // Sleep to allow all threads to setup
+    
     number_of_cards = 1;
     
     for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {

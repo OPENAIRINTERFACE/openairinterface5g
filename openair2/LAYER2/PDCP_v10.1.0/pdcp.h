@@ -271,6 +271,7 @@ public_pdcp(void rrc_pdcp_config_req (
 * \param[in]  kRRCenc           RRC encryption key
 * \param[in]  kRRCint           RRC integrity key
 * \param[in]  kUPenc            User-Plane encryption key
+* \param[in]  defaultDRB        Default DRB ID
 * \return     A status about the processing, OK or error code.
 */
 public_pdcp(
@@ -286,6 +287,7 @@ public_pdcp(
 #ifdef Rel10
     ,PMCH_InfoList_r9_t  *pmch_InfoList_r9
 #endif
+    ,rb_id_t                 *const defaultDRB 
   ));
 
 /*! \fn boolean_t pdcp_config_req_asn1 (const protocol_ctxt_t* const ctxt_pP, srb_flag_t srb_flagP, uint32_t  action, rb_id_t rb_id, uint8_t rb_sn, uint8_t rb_report, uint16_t header_compression_profile, uint8_t security_mode)
@@ -459,12 +461,25 @@ protected_pdcp(unsigned char          pdcp_input_sdu_buffer[MAX_IP_PACKET_SIZE];
 protected_pdcp(sdu_size_t             pdcp_input_index_header;)
 protected_pdcp(sdu_size_t             pdcp_input_sdu_size_read;)
 protected_pdcp(sdu_size_t             pdcp_input_sdu_remaining_size_to_read;)
+
 #define PDCP_COLL_KEY_VALUE(mODULE_iD, rNTI, iS_eNB, rB_iD, iS_sRB) \
    ((hash_key_t)mODULE_iD          | \
     (((hash_key_t)(rNTI))   << 8)  | \
     (((hash_key_t)(iS_eNB)) << 24) | \
     (((hash_key_t)(rB_iD))  << 25) | \
-    (((hash_key_t)(iS_sRB)) << 33))
+    (((hash_key_t)(iS_sRB)) << 33) | \
+    (((hash_key_t)(0x55))   << 34))
+
+// hash key to the same PDCP as indexed by PDCP_COLL_KEY_VALUE(... rB_iD, iS_sRB=0) where rB_iD
+// is the default DRB ID. The hidden code 0x55 indicates the key is indexed by (rB_iD,is_sRB)
+// whereas the hidden code 0xaa indicates the key is for default DRB only
+#define PDCP_COLL_KEY_DEFAULT_DRB_VALUE(mODULE_iD, rNTI, iS_eNB) \
+    ((hash_key_t)mODULE_iD          | \
+     (((hash_key_t)(rNTI))   << 8)  | \
+     (((hash_key_t)(iS_eNB)) << 24) | \
+     (((hash_key_t)(0xff))   << 25) | \
+     (((hash_key_t)(0x00))   << 33) | \
+     (((hash_key_t)(0xaa))   << 34))
 
 // service id max val is maxServiceCount = 16 (asn1_constants.h)
 

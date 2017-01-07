@@ -72,6 +72,7 @@ Description Implements the API used by the NAS layer to read/write
 #define USIM_API_K_SIZE         16
 //#define USIM_API_K_VALUE        "fec86ba6eb707ed08905757b1bb44b8f"
 #define USIM_API_K_VALUE        "8BAF473F2F8FD09487CCCBD7097C6862"
+#define TEST_USIM_API_K_VALUE   "000102030405060708090a0b0c0d0e0f" // CMW500 K key
 
 static uint8_t _usim_api_k[USIM_API_K_SIZE];
 
@@ -136,7 +137,14 @@ int usim_api_read(usim_data_t* data)
   }
 
   /* initialize the subscriber authentication security key */
-  _usim_api_hex_string_to_hex_value(_usim_api_k, USIM_API_K_VALUE, USIM_API_K_SIZE);
+  if(data->usimtestmode == 0)
+  {
+    _usim_api_hex_string_to_hex_value(_usim_api_k, USIM_API_K_VALUE, USIM_API_K_SIZE);
+  }
+  else
+  {
+    _usim_api_hex_string_to_hex_value(_usim_api_k, TEST_USIM_API_K_VALUE, USIM_API_K_SIZE);
+  }
 
   free(path);
   LOG_FUNC_RETURN (RETURNok);
@@ -178,6 +186,189 @@ int usim_api_write(const usim_data_t* data)
   }
 
   free(path);
+  LOG_FUNC_RETURN (RETURNok);
+}
+
+/****************************************************************************
+ **                                                                        **
+ ** Name:        usim_api_authenticate_test()                              **
+ **                                                                        **
+ ** Description: Performs mutual authentication of the USIM to the network,**
+ **              checking whether authentication token AUTN can be accep-  **
+ **              ted. If so, returns an authentication response RES and    **
+ **              the ciphering and integrity keys.                         **
+ **              In case of synch failure, returns a re-synchronization    **
+ **              token AUTS.                                               **
+ **                                                                        **
+ **              Key Generation for Test USIM based on 34.108              **
+ **                                                                        **
+ **              Authentication and key generating function algorithms are **
+ **              specified in 3GPP TS 35.206.                              **
+ **                                                                        **
+ ** Inputs:      rand_pP:          Random challenge number                    **
+ **              autn_pP:          Authentication token                       **
+ **                             AUTN = (SQN xor AK) || AMF || MAC          **
+ **                                         48          16     64 bits     **
+ **              Others:        Security key                               **
+ **                                                                        **
+ ** Outputs:     auts_pP:          Re-synchronization token                   **
+ **              res_pP:           Authentication response                    **
+ **              ck_pP:            Ciphering key                              **
+ **              ik_pP             Integrity key                              **
+ **                                                                        **
+ **              Return:        RETURNerror, RETURNok                      **
+ **              Others:        None                                       **
+ **                                                                        **
+ ***************************************************************************/
+int usim_api_authenticate_test(const OctetString* rand_pP, const OctetString* autn_pP,
+                               OctetString* auts_pP, OctetString* res_pP,
+                               OctetString* ck_pP, OctetString* ik_pP)
+{
+  LOG_FUNC_IN;
+
+  int rc;
+  int i;
+
+  LOG_TRACE(INFO, "USIM-API  - rand :%s",dump_octet_string(rand_pP));
+  LOG_TRACE(INFO, "USIM-API  - autn :%s",dump_octet_string(autn_pP));
+
+  //step1: XDOUT = RAND xor K
+  //       RES = XDOUT
+  for (i=0; i<USIM_API_K_SIZE; i++)
+  {
+      res_pP->value[i] = rand_pP->value[i] ^ _usim_api_k[i];
+  }
+
+  //step2: res = f2(xdout,n)
+  //       ck  = f3(xdout)
+  //       ik  = f4(xdout)
+  //       ak  = f5(xdout)
+  u8 ak[USIM_API_AK_SIZE];
+  for (i=0; i<15; i++)
+  {
+      ck_pP->value[i] = res_pP->value[i+1];
+  }
+  ck_pP->value[15] = res_pP->value[0];
+
+  for (i=0; i<14; i++)
+  {
+      ik_pP->value[i] = res_pP->value[i+2];
+  }
+  ik_pP->value[14] = res_pP->value[0];
+  ik_pP->value[15] = res_pP->value[1];
+
+  for (i=0; i<USIM_API_AK_SIZE; i++)
+  {
+      ak[i] = res_pP->value[i+3];
+  }
+  LOG_TRACE(INFO, "USIM-API  - res(f2)  :%s",dump_octet_string(res_pP));
+  LOG_TRACE(INFO, "USIM-API  - ck(f3)   :%s",dump_octet_string(ck_pP));
+  LOG_TRACE(INFO, "USIM-API  - ik(f4)   :%s",dump_octet_string(ik_pP));
+  LOG_TRACE(INFO, "USIM-API  - ak(f5)   : %02X%02X%02X%02X%02X%02X",
+            ak[0],ak[1],ak[2],ak[3],ak[4],ak[5]);
+
+  //step3: concatenate SQN with AMP SQN||AMF
+  //       SQN = AUTN xor ak
+  u8 sqn[USIM_API_SQN_SIZE];
+  for (i = 0; i < USIM_API_SQN_SIZE; i++) {
+    sqn[i] = autn_pP->value[i] ^ ak[i];
+  }
+  LOG_TRACE(INFO, "USIM-API  - Retrieved SQN %02X%02X%02X%02X%02X%02X",
+            sqn[0],sqn[1],sqn[2],sqn[3],sqn[4],sqn[5]);
+  LOG_TRACE(INFO, "USIM-API  - Retrieved AMF %02X%02X",
+            autn_pP->value[USIM_API_SQN_SIZE],autn_pP->value[USIM_API_SQN_SIZE+1]);
+
+#define USIM_API_XMAC_SIZE 8
+  u8 cdout[USIM_API_XMAC_SIZE];
+  for (i = 0; i < USIM_API_XMAC_SIZE; i++)
+  {
+    if(i < USIM_API_SQN_SIZE)
+    {
+        cdout[i] = sqn[i];
+    }
+    else
+    {
+        cdout[i] = autn_pP->value[i];
+    }
+  }
+  LOG_TRACE(INFO, "USIM-API  - Retrieved CDOUT %02X%02X%02X%02X%02X%02X%02X%02X",
+          cdout[0],cdout[1],cdout[2],cdout[3],cdout[4],cdout[5],cdout[6],cdout[7]);
+
+  //step4:calculate XMAC from cdout and xdout
+  u8 xmac[USIM_API_XMAC_SIZE];
+  for(i = 0; i < USIM_API_XMAC_SIZE; i++)
+  {
+      xmac[i] = res_pP->value[i] ^ cdout[i];
+  }
+  LOG_TRACE(INFO,
+            "USIM-API  - Computed XMAC %02X%02X%02X%02X%02X%02X%02X%02X",
+            xmac[0],xmac[1],xmac[2],xmac[3],
+            xmac[4],xmac[5],xmac[6],xmac[7]);
+
+  /* Compare the XMAC with the MAC included in AUTN */
+#define USIM_API_AMF_SIZE 2
+
+  if ( memcmp(xmac, &autn_pP->value[USIM_API_SQN_SIZE + USIM_API_AMF_SIZE],
+              USIM_API_XMAC_SIZE) != 0 ) {
+    LOG_TRACE(INFO,
+              "USIM-API  - Comparing the XMAC with the MAC included in AUTN Failed");
+    rc = RETURNerror;
+    //LOG_FUNC_RETURN (RETURNerror);
+  } else {
+    LOG_TRACE(INFO,
+              "USIM-API  - Comparing the XMAC with the MAC included in AUTN Succeeded");
+    /* Verify that the received sequence number SQN is in the correct range */
+    rc = _usim_api_check_sqn(*(uint32_t*)(sqn), sqn[USIM_API_SQN_SIZE - 1]);
+  }
+
+
+  if (rc != RETURNok) {
+    /* Synchronisation failure; compute the AUTS parameter */
+
+    /* Concealed value of the counter SQNms in the USIM:
+     * Conc(SQNMS) = SQNMS ⊕ f5*K(RAND) */
+    f5star(_usim_api_k, rand_pP->value, ak);
+
+
+    u8 sqn_ms[USIM_API_SQNMS_SIZE];
+    memset(sqn_ms, 0, USIM_API_SQNMS_SIZE);
+
+    //#define USIM_API_SQN_MS_SIZE  3
+    printf("_usim_api_data.sqn_ms %p\n",_usim_api_data.sqn_ms);
+    for (i = 0; i < USIM_API_SQNMS_SIZE; i++) {
+      //#warning "LG:BUG HERE TODO"
+      printf("i %d:  ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i] %d\n",i, ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i]);
+      sqn_ms[USIM_API_SQNMS_SIZE - i] =
+        ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i];
+    }
+
+    u8 sqnms[USIM_API_SQNMS_SIZE];
+
+    for (i = 0; i < USIM_API_SQNMS_SIZE; i++) {
+      sqnms[i] = sqn_ms[i] ^ ak[i];
+    }
+
+    LOG_TRACE(DEBUG, "USIM-API  - SQNms %02X%02X%02X%02X%02X%02X",
+              sqnms[0],sqnms[1],sqnms[2],sqnms[3],sqnms[4],sqnms[5]);
+
+    /* Synchronisation message authentication code:
+     * MACS = f1*K(SQNMS || RAND || AMF) */
+#define USIM_API_MACS_SIZE USIM_API_XMAC_SIZE
+    u8 macs[USIM_API_MACS_SIZE];
+    f1star(_usim_api_k, rand_pP->value, sqn_ms,
+           &rand_pP->value[USIM_API_SQN_SIZE], macs);
+    LOG_TRACE(DEBUG, "USIM-API  - MACS %02X%02X%02X%02X%02X%02X%02X%02X",
+              macs[0],macs[1],macs[2],macs[3],
+              macs[4],macs[5],macs[6],macs[7]);
+
+    /* Synchronisation authentication token:
+     * AUTS = Conc(SQNMS) || MACS */
+    memcpy(&auts_pP->value[0], sqnms, USIM_API_SQNMS_SIZE);
+    memcpy(&auts_pP->value[USIM_API_SQNMS_SIZE], macs, USIM_API_MACS_SIZE);
+    auts_pP->length = USIM_API_SQNMS_SIZE + USIM_API_MACS_SIZE;
+    LOG_FUNC_RETURN (RETURNerror);
+  }
+
   LOG_FUNC_RETURN (RETURNok);
 }
 

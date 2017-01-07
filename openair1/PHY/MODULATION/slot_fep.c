@@ -47,6 +47,11 @@ int slot_fep(PHY_VARS_UE *ue,
   unsigned int frame_length_samples = frame_parms->samples_per_tti * 10;
   unsigned int rx_offset;
 
+  /*LTE_UE_DLSCH_t **dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id];
+  unsigned char harq_pid = dlsch_ue[0]->current_harq_pid; 
+  LTE_DL_UE_HARQ_t *dlsch0_harq = dlsch_ue[0]->harq_processes[harq_pid];
+  int uespec_pilot[9][1200];*/
+
   void (*dft)(int16_t *,int16_t *, int);
   int tmp_dft_in[2048] __attribute__ ((aligned (32)));  // This is for misalignment issues for 6 and 15 PRBs
 
@@ -175,7 +180,7 @@ int slot_fep(PHY_VARS_UE *ue,
 
   if (ue->perfect_ce == 0) {
     if ((l==0) || (l==(4-frame_parms->Ncp))) {
-      for (aa=0; aa<frame_parms->nb_antennas_tx_eNB; aa++) {
+      for (aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
 
 #ifdef DEBUG_FEP
         printf("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
@@ -215,6 +220,7 @@ int slot_fep(PHY_VARS_UE *ue,
 
       }
     }
+
   }
 
 #ifdef DEBUG_FEP

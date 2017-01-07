@@ -72,6 +72,16 @@ typedef struct {
   /// cancel an ongoing RA procedure
   void (*cancel_ra_proc)(module_id_t Mod_id,int CC_id,frame_t frameP,uint16_t preamble);
 
+  /// Inform MAC layer that an uplink is scheduled for Msg3 in given subframe.
+  /// This is used so that the MAC scheduler marks as busy the RBs used by the Msg3.
+  void (*set_msg3_subframe)(module_id_t Mod_id,
+                            int CC_id,
+                            int frame,
+                            int subframe,
+                            int rnti,
+                            int Msg3_frame,
+                            int Msg3_subframe);
+
   /// Get DCI for current subframe from MAC
   DCI_PDU* (*get_dci_sdu)(module_id_t Mod_id,int CC_id,frame_t frameP,sub_frame_t subframe);
 
@@ -160,7 +170,7 @@ typedef struct {
   PRACH_RESOURCES_t* (*ue_get_rach)(module_id_t Mod_id,int CC_id,frame_t frameP,uint8_t Msg3_flag,sub_frame_t subframe);
 
   /// Process Random-Access Response
-  uint16_t (*ue_process_rar)(module_id_t Mod_id,int CC_id,frame_t frameP,uint8_t *dlsch_buffer,uint16_t *t_crnti,uint8_t preamble_index);
+  uint16_t (*ue_process_rar)(module_id_t Mod_id,int CC_id,frame_t frameP, uint16_t ra_rnti, uint8_t *dlsch_buffer, uint16_t *t_crnti,uint8_t preamble_index);
 
   /// Get SR payload (0,1) from UE MAC
   uint32_t (*ue_get_SR)(module_id_t Mod_id,int CC_id,frame_t frameP,uint8_t eNB_id,rnti_t rnti,sub_frame_t subframe);
@@ -169,12 +179,15 @@ typedef struct {
   void (*dl_phy_sync_success) (module_id_t Mod_id,frame_t frameP, uint8_t CH_index,uint8_t first_sync);
 
   /// Only calls the PDCP for now
-  UE_L2_STATE_t (*ue_scheduler)(module_id_t Mod_id, frame_t frameP,sub_frame_t subframe, lte_subframe_t direction, uint8_t eNB_id, int CC_id);
+  UE_L2_STATE_t (*ue_scheduler)(module_id_t Mod_id, frame_t rxFrameP,sub_frame_t rxSubframe, frame_t txFrameP,sub_frame_t txSubframe, lte_subframe_t direction, uint8_t eNB_id, int CC_id);
 
   /// PHY-Config-Dedicated UE
   void (*phy_config_dedicated_ue)(module_id_t Mod_id,int CC_id,uint8_t CH_index,
                                   struct PhysicalConfigDedicated *physicalConfigDedicated);
 
+  /// PHY-Config-harq UE
+  void (*phy_config_harq_ue)(module_id_t Mod_id,int CC_id,uint8_t CH_index,
+                             uint16_t max_harq_tx);
   /// Configure Common PHY parameters from SIB1
   void (*phy_config_sib1_ue)(module_id_t Mod_id,int CC_id,uint8_t CH_index,
                              TDD_Config_t *tdd_config,

@@ -53,6 +53,7 @@ rlc_am_get_buffer_occupancy_in_bytes (
   uint32_t header_overhead;
 
   // priority of control trafic
+  rlc_pP->status_buffer_occupancy = 0;
   if (rlc_pP->status_requested) {
     if (rlc_pP->t_status_prohibit.running == 0) {
 #if TRACE_RLC_AM_BO
@@ -64,7 +65,7 @@ rlc_am_get_buffer_occupancy_in_bytes (
       }
 
 #endif
-      return ((15  +  rlc_pP->num_nack_sn*(10+1)  +  rlc_pP->num_nack_so*(15+15+1) + 7) >> 3);
+      rlc_pP->status_buffer_occupancy = ((15  +  rlc_pP->num_nack_sn*(10+1)  +  rlc_pP->num_nack_so*(15+15+1) + 7) >> 3);
     }
   }
 
@@ -113,7 +114,8 @@ config_req_rlc_am (
   const protocol_ctxt_t* const ctxt_pP,
   const srb_flag_t             srb_flagP,
   rlc_am_info_t  * const       config_am_pP,
-  const rb_id_t                rb_idP
+  const rb_id_t                rb_idP,
+  const logical_chan_id_t      chan_idP 
 )
 {
   rlc_union_t       *rlc_union_p = NULL;
@@ -135,7 +137,7 @@ config_req_rlc_am (
           config_am_pP->t_reordering,
           config_am_pP->t_status_prohibit);
     rlc_am_init(ctxt_pP, l_rlc_p);
-    rlc_am_set_debug_infos(ctxt_pP, l_rlc_p, srb_flagP, rb_idP);
+    rlc_am_set_debug_infos(ctxt_pP, l_rlc_p, srb_flagP, rb_idP, chan_idP);
     rlc_am_configure(ctxt_pP, l_rlc_p,
                      config_am_pP->max_retx_threshold,
                      config_am_pP->poll_pdu,
@@ -160,7 +162,8 @@ void config_req_rlc_am_asn1 (
   const protocol_ctxt_t* const         ctxt_pP,
   const srb_flag_t                     srb_flagP,
   const struct RLC_Config__am  * const config_am_pP,
-  const rb_id_t                        rb_idP)
+  const rb_id_t                        rb_idP,
+  const logical_chan_id_t              chan_idP)
 {
   rlc_union_t     *rlc_union_p   = NULL;
   rlc_am_entity_t *l_rlc_p         = NULL;
@@ -201,7 +204,7 @@ void config_req_rlc_am_asn1 (
             t_StatusProhibit_tab[config_am_pP->dl_AM_RLC.t_StatusProhibit]);
 
       rlc_am_init(ctxt_pP, l_rlc_p);
-      rlc_am_set_debug_infos(ctxt_pP, l_rlc_p, srb_flagP, rb_idP);
+      rlc_am_set_debug_infos(ctxt_pP, l_rlc_p, srb_flagP, rb_idP, chan_idP);
       rlc_am_configure(ctxt_pP, l_rlc_p,
                        maxRetxThreshold_tab[config_am_pP->ul_AM_RLC.maxRetxThreshold],
                        pollPDU_tab[config_am_pP->ul_AM_RLC.pollPDU],
@@ -338,6 +341,7 @@ rlc_am_get_pdus (
         if (pdu) {
           list_add_tail_eurecom (pdu, &rlc_pP->pdus_to_mac_layer);
           rlc_pP->status_requested = 0;
+          rlc_pP->status_buffer_occupancy = 0;
           rlc_am_start_timer_status_prohibit(ctxt_pP, rlc_pP);
           return;
         }

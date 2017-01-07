@@ -93,6 +93,9 @@
 
 #include "SIMULATION/TOOLS/defs.h" // for taus
 
+#if defined(FLEXRAN_AGENT_SB_IF)
+#include "flexran_agent_extern.h"
+#endif
 #define XER_PRINT
 
 #ifdef PHY_EMUL
@@ -473,7 +476,7 @@ static void init_MBMS(
 #   ifdef Rel10
                              , &(eNB_rrc_inst[enb_mod_idP].carrier[CC_id].mcch_message->pmch_InfoList_r9)
 #   endif
-                            );
+                             ,NULL);
 
     rrc_rlc_config_asn1_req(&ctxt,
                             NULL, // SRB_ToAddModList
@@ -644,6 +647,9 @@ void rrc_eNB_emulation_notify_ue_module_id(
 
   // find enb_module_id
   for (enb_module_id = 0; enb_module_id < NUMBER_OF_eNB_MAX; enb_module_id++) {
+    if(enb_module_id>0){ /*FIX LATER*/
+      return;
+    }
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
       if (eNB_rrc_inst[enb_module_id].carrier[CC_id].sib1 != NULL) {
         if (
@@ -652,7 +658,6 @@ void rrc_eNB_emulation_notify_ue_module_id(
           (eNB_rrc_inst[enb_module_id].carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[2] == cell_identity_byte2P) &&
           (eNB_rrc_inst[enb_module_id].carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[3] == cell_identity_byte3P)
         ) {
-          oai_emulation.info.eNB_ue_module_id_to_rnti[enb_module_id][ue_module_idP] = rntiP;
           ue_context_p = rrc_eNB_get_ue_context(
                            &eNB_rrc_inst[enb_module_id],
                            rntiP
@@ -662,10 +667,11 @@ void rrc_eNB_emulation_notify_ue_module_id(
             oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[enb_module_id][ue_context_p->local_uid] = ue_module_idP;
           }
 
-          return;
+          //return;
         }
       }
     }
+    oai_emulation.info.eNB_ue_module_id_to_rnti[enb_module_id][ue_module_idP] = rntiP;
   }
 
   AssertFatal(enb_module_id == NUMBER_OF_eNB_MAX,
@@ -2613,7 +2619,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH =
     CALLOC(1, sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH));
   physicalConfigDedicated2->cqi_ReportConfig = NULL;  //CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL; //CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
+  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
   physicalConfigDedicated2->antennaInfo = CALLOC(1, sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->schedulingRequestConfig =
     CALLOC(1, sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
@@ -3275,7 +3281,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 #ifdef Rel10
                            , (PMCH_InfoList_r9_t *) NULL
 #endif
-                          );
+                           ,NULL);
 
   rrc_rlc_config_asn1_req(&ctxt,
                           ue_context_pP->ue_context.SRB_configList,
@@ -3517,7 +3523,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 #ifdef Rel10
     , (PMCH_InfoList_r9_t *) NULL
 #endif
-  );
+    ,NULL);
   // Refresh SRBs/DRBs
   rrc_rlc_config_asn1_req(
     ctxt_pP,
@@ -3737,8 +3743,9 @@ rrc_eNB_generate_RRCConnectionSetup(
   eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size =
     do_RRCConnectionSetup(ctxt_pP,
                           ue_context_pP,
+                          CC_id,
                           (uint8_t*) eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.Payload,
-			  (fp->nb_antennas_tx_eNB==2)?2:1, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
+			  (fp->nb_antenna_ports_eNB==2)?2:1, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
                           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
                           fp,
                           SRB_configList,
@@ -4342,7 +4349,7 @@ rrc_eNB_decode_ccch(
 #   ifdef Rel10
                                , (PMCH_InfoList_r9_t *) NULL
 #   endif
-                              );
+                               ,NULL);
 
       rrc_rlc_config_asn1_req(ctxt_pP,
                               ue_context_p->ue_context.SRB_configList,
@@ -4535,7 +4542,16 @@ rrc_eNB_decode_dcch(
 	rrc_eNB_process_RRCConnectionReconfigurationComplete(
           ctxt_pP,
           ue_context_p,
-          ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
+	  ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
+
+#if defined(FLEXRAN_AGENT_SB_IF)
+	//WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
+	if (mac_agent_registered[ctxt_pP->module_id]) {
+	  agent_mac_xface[ctxt_pP->eNB_index]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
+										ue_context_p->ue_id_rnti,
+										PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_UPDATED);
+	}
+#endif
       }
 #if defined(ENABLE_ITTI)
 #   if defined(ENABLE_USE_MME)
@@ -4631,6 +4647,15 @@ rrc_eNB_decode_dcch(
           ue_context_p->ue_context.Status = RRC_CONNECTED;
           LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_CONNECTED \n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+	  
+#if defined(FLEXRAN_AGENT_SB_IF)
+	  //WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
+	  if (mac_agent_registered[ctxt_pP->module_id]) {
+	    agent_mac_xface[ctxt_pP->eNB_index]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
+										  ue_context_p->ue_id_rnti,
+										  PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_ACTIVATED);
+	  }
+#endif
         }
       }
 

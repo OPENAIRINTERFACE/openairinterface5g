@@ -230,7 +230,7 @@ int opt_create_listener_socket(char *ip_address, uint16_t port)
  */
 /* Add framing header to MAC PDU and send. */
 static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
-                      guint16 rnti, guint16 ueid, guint16 subframeNumber,
+                      guint16 rnti, guint16 ueid, guint16 sfnSf,
                       guint8 isPredefinedData, guint8 retx, guint8 crcStatus,
                       guint8 oob_event, guint8 oob_event_value,
                       uint8_t *pdu_buffer, unsigned int pdu_buffer_size)
@@ -278,7 +278,7 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
 
   /* Subframe number */
   frameBuffer[frameOffset++] = MAC_LTE_SUBFRAME_TAG;
-  tmp16 = htons(subframeNumber); // frame counter : this will give an expert info as wireshark expects SF and not F
+  tmp16 = htons(sfnSf); // frame counter : this will give an expert info as wireshark expects SF and not F
   memcpy(frameBuffer+frameOffset, &tmp16, 2);
   frameOffset += 2;
 
@@ -287,7 +287,7 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
   
 #ifdef WIRESHARK_DEV
   frameOffset += 2;
-  tmp16 = htons(subframeNumber); // subframe
+  tmp16 = htons(sfnSf); // subframe
   memcpy(frameBuffer+frameOffset, &tmp16, 2);
   frameOffset += 2;
 #endif
@@ -304,19 +304,25 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
     frameBuffer[frameOffset++] = retx;
   }
 
-#ifdef WIRESHARK_DEV
+//#ifdef WIRESHARK_DEV
 
   /* Relating to out-of-band events */
   /* N.B. dissector will only look to these fields if length is 0... */
   if (pdu_buffer_size==0) {
     switch (oob_event) {
     case ltemac_send_preamble :
-      LOG_D(OPT,"oob event %d %d\n",ltemac_send_preamble );
+      LOG_D(OPT,"oob ltemac_send_preamble event %02x."
+          //"%02x."
+          "%02x.%02x\n",
+          MAC_LTE_OOB_EVENT_TAG,
+          //ltemac_send_preamble,
+          rnti,
+          oob_event_value);
       //frameBuffer[frameOffset++]=0;
       //frameBuffer[frameOffset++]=0;
       //frameBuffer[frameOffset++]=0;
       frameBuffer[frameOffset++] = MAC_LTE_OOB_EVENT_TAG;
-      frameBuffer[frameOffset++]=ltemac_send_preamble;
+      //frameBuffer[frameOffset++]=ltemac_send_preamble;
       frameBuffer[frameOffset++]=rnti; // is the preamble
       frameBuffer[frameOffset++]=oob_event_value;
       break;
@@ -329,12 +335,12 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
 
     case ltemac_sr_failure:
     default:
-      LOG_D(OPT,"not implemeneted yet\n");
+      LOG_W(OPT,"not implemeneted yet\n");
       break;
     }
   }
 
-#endif
+//#endif
   /***************************************/
   /* Now write the MAC PDU               */
   frameBuffer[frameOffset++] = MAC_LTE_PAYLOAD_TAG;
@@ -428,7 +434,7 @@ static int MAC_LTE_PCAP_WritePDU(MAC_Context_Info_t *context,
 
 /* Remote serveraddress (where Wireshark is running) */
 void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
-               int ueid, int rntiType, int rnti, uint8_t subframe, int oob_event,
+               int ueid, int rntiType, int rnti, uint16_t sysFrameNumber, uint8_t subFrameNumber, int oob_event,
                int oob_event_value)
 {
   MAC_Context_Info_t pdu_context;
@@ -441,7 +447,7 @@ void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
 
     SendFrame(radio_type,
               (direction == DIRECTION_DOWNLINK) ? DIRECTION_DOWNLINK : DIRECTION_UPLINK,
-              rntiType, rnti, ueid, subframe,
+              rntiType, rnti, ueid, (sysFrameNumber<<4) + subFrameNumber,
               1, 0, 1,  //guint8 isPredefinedData, guint8 retx, guint8 crcStatus
               oob_event,oob_event_value,
               pdu_buffer, pdu_buffer_size);
@@ -460,8 +466,8 @@ void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
     pdu_context.ueid = ueid;
     pdu_context.isRetx = 0;
     pdu_context.crcStatusOK =1;
-    pdu_context.sysFrameNumber = subframe;
-    pdu_context.subFrameNumber = 0;
+    pdu_context.sysFrameNumber = sysFrameNumber;
+    pdu_context.subFrameNumber = subFrameNumber;
     pdu_context.subframesSinceCaptureStart = subframesSinceCaptureStart++;
     MAC_LTE_PCAP_WritePDU( &pdu_context, pdu_buffer, pdu_buffer_size);
     break;

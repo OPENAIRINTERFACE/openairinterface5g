@@ -28,6 +28,7 @@
  */
 #ifndef __LAYER2_MAC_PROTO_H__
 #define __LAYER2_MAC_PROTO_H__
+
 /** \addtogroup _mac
  *  @{
  */
@@ -120,6 +121,7 @@ void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,i
 @param mbsfn_flag  Indicates that MCH/MCCH is in this subframe
 */
 void schedule_ue_spec(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
+
 
 /** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
     @param Mod_id Module id of UE
@@ -245,6 +247,25 @@ unsigned short fill_rar(
 @param preamble_index index of the received RA request.
 */
 void cancel_ra_proc(module_id_t module_idP,int CC_id,frame_t frameP, uint16_t preamble_index);
+
+/* \brief Function used by PHY to inform MAC that an uplink is scheduled
+          for Msg3 in given subframe. This is used so that the MAC
+          scheduler marks as busy the RBs used by the Msg3.
+@param Mod_id        Instance ID of eNB
+@param CC_id         CC ID of eNB
+@param frame         current frame
+@param subframe      current subframe
+@param rnti          UE rnti concerned
+@param Msg3_frame    frame where scheduling takes place
+@param Msg3_subframe subframe where scheduling takes place
+*/
+void set_msg3_subframe(module_id_t Mod_id,
+                       int CC_id,
+                       int frame,
+                       int subframe,
+                       int rnti,
+                       int Msg3_frame,
+                       int Msg3_subframe);
 
 /* \brief Function to indicate a received SDU on ULSCH.
 @param Mod_id Instance ID of eNB
@@ -426,6 +447,9 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP,u
 
 /* \brief Function called by PHY to process the received RAR.  It checks that the preamble matches what was sent by the eNB and provides the timing advance and t-CRNTI.
 @param Mod_id Index of UE instance
+@param CC_id Index to a component carrier
+@param frame Frame index
+@param ra_rnti RA_RNTI value
 @param dlsch_buffer  Pointer to dlsch_buffer containing RAR PDU
 @param t_crnti Pointer to PHY variable containing the T_CRNTI
 @param preamble_index Preamble Index used by PHY to transmit the PRACH.  This should match the received RAR to trigger the rest of
@@ -437,6 +461,7 @@ ue_process_rar(
   const module_id_t module_idP,
   const int CC_id,
   const frame_t frameP,
+  const rnti_t ra_rnti,
   uint8_t * const dlsch_buffer,
   rnti_t * const t_crnti,
   const uint8_t preamble_index
@@ -515,15 +540,20 @@ void adjust_bsr_info(int buffer_occupancy, uint16_t TBS, UE_TEMPLATE *UE_templat
 /*! \fn  UE_L2_state_t ue_scheduler(const module_id_t module_idP,const frame_t frameP, const sub_frame_t subframe, const lte_subframe_t direction,const uint8_t eNB_index)
    \brief UE scheduler where all the ue background tasks are done.  This function performs the following:  1) Trigger PDCP every 5ms 2) Call RRC for link status return to PHY3) Perform SR/BSR procedures for scheduling feedback 4) Perform PHR procedures.
 \param[in] module_idP instance of the UE
-\param[in] subframe t the subframe number
+\param[in] rxFrame the RX frame number
+\param[in] rxSubframe the RX subframe number
+\param[in] txFrame the TX frame number
+\param[in] txSubframe the TX subframe number
 \param[in] direction  subframe direction
 \param[in] eNB_index  instance of eNB
 @returns L2 state (CONNETION_OK or CONNECTION_LOST or PHY_RESYNCH)
 */
 UE_L2_STATE_t ue_scheduler(
   const module_id_t module_idP,
-  const frame_t frameP,
-  const sub_frame_t subframe,
+  const frame_t rxFrameP,
+  const sub_frame_t rxSubframe,
+  const frame_t txFrameP,
+  const sub_frame_t txSubframe,
   const lte_subframe_t direction,
   const uint8_t eNB_index,
   const int CC_id);
@@ -537,21 +567,6 @@ UE_L2_STATE_t ue_scheduler(
 \param[out] access(1) or postpone (0)
 */
 int cba_access(module_id_t module_idP,frame_t frameP,sub_frame_t subframe, uint8_t eNB_index,uint16_t buflen);
-
-/*! \fn  int get_bsr_lcgid (module_id_t module_idP);
-\brief determine the lcgid for the bsr
-\param[in] Mod_id instance of the UE
-\param[out] lcgid
-*/
-int get_bsr_lcgid (module_id_t module_idP);
-
-/*! \fn  uint8_t get_bsr_len (module_id_t module_idP,uint16_t bufflen);
-\brief determine whether the bsr is short or long assuming that the MAC pdu is built
-\param[in] Mod_id instance of the UE
-\param[in] bufflen size of phy transport block
-\param[out] bsr_len size of bsr control element
-*/
-uint8_t get_bsr_len (module_id_t module_idP, uint16_t buflen);
 
 /*! \fn  BSR_SHORT *  get_bsr_short(module_id_t module_idP, uint8_t bsr_len)
 \brief get short bsr level
@@ -569,22 +584,21 @@ BSR_SHORT *get_bsr_short(module_id_t module_idP, uint8_t bsr_len);
 */
 BSR_LONG * get_bsr_long(module_id_t module_idP, uint8_t bsr_len);
 
-/*! \fn  boolean_t update_bsr(module_id_t module_idP, frame_t frameP, uint8_t lcid)
+/*! \fn  boolean_t update_bsr(module_id_t module_idP, frame_t frameP,sub_frame_t subframeP)
    \brief get the rlc stats and update the bsr level for each lcid
 \param[in] Mod_id instance of the UE
 \param[in] frame Frame index
-\param[in] lcid logical channel identifier
 */
-boolean_t update_bsr(module_id_t module_idP, frame_t frameP, eNB_index_t eNB_index, uint8_t lcid, uint8_t lcgid);
+boolean_t update_bsr(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP,eNB_index_t eNB_index);
 
-/*! \fn  locate (int *table, int size, int value)
+/*! \fn  locate_BsrIndexByBufferSize (int *table, int size, int value)
    \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table.
 \param[in] *table Pointer to BSR table
 \param[in] size Size of the table
 \param[in] value Value of the buffer
 \return the index in the BSR_LEVEL table
 */
-uint8_t locate (const uint32_t *table, int size, int value);
+uint8_t locate_BsrIndexByBufferSize (const uint32_t *table, int size, int value);
 
 
 /*! \fn  int get_sf_periodicBSRTimer(uint8_t periodicBSR_Timer)

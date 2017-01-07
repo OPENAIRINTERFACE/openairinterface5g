@@ -188,10 +188,11 @@ int decode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint
 
     default:
       errorCodeDecoder = TLV_DECODE_UNEXPECTED_IEI;
+      LOG_TRACE(WARNING, "DECODE_UNEXPECTED_IEI %x (4 bits)", ieiDecoded);
       return TLV_DECODE_UNEXPECTED_IEI;
     }
   }
-
+  LOG_TRACE(WARNING, "DECODED %d\n", decoded);
   return decoded;
 }
 

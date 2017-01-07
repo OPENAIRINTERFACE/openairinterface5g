@@ -116,6 +116,12 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
                               uint8_t l,
                               uint8_t symbol);
 
+int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
+                                 module_id_t eNB_id,
+                                 uint8_t eNB_offset,
+                                 uint8_t Ns,
+                                 uint8_t p,
+                                 uint8_t symbol);
 
 int lte_dl_msbfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
                                     module_id_t eNB_id,

@@ -249,7 +249,12 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     tc = phy_threegpplte_turbo_decoder16;
   }
   else
-    tc = phy_threegpplte_turbo_decoder8;
+  {
+	  AssertFatal (harq_process->TBS >= 256 , "Mismatch flag nbRB=%d TBS=%d mcs=%d Qm=%d RIV=%d round=%d \n",
+			  harq_process->nb_rb, harq_process->TBS,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
+	    tc = phy_threegpplte_turbo_decoder8;
+  }
+
 
   //  nb_rb = dlsch->nb_rb;
 
@@ -448,6 +453,11 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 #if 1
     if (err_flag == 0) {
 
+    	if (llr8_flag) {
+    		AssertFatal (Kr >= 256, "turbo algo issue Kr=%d cb_cnt=%d C=%d nbRB=%d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d\n",
+    				Kr,r,harq_process->C,harq_process->nb_rb,A,harq_process->TBS,harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
+    	}
+
       start_meas(dlsch_turbo_decoding_stats);
       ret = tc
             (&harq_process->d[r][96],
@@ -609,7 +619,11 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     harq_process->errors[harq_process->round]++;
     harq_process->round++;
 
-    //    LOG_D(PHY,"[UE %d] DLSCH: Setting NACK for subframe %d (pid %d, round %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round);
+
+    if(is_crnti)
+    {
+    LOG_D(PHY,"[UE %d] DLSCH: Setting NACK for subframe %d (pid %d, round %d, TBS %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round,harq_process->TBS);
+    }
     //    printf("Rate: [UE %d] DLSCH: Setting NACK for subframe %d (pid %d, round %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round);
     if (harq_process->round >= dlsch->Mdlharq) {
       harq_process->status = SCH_IDLE;
@@ -622,7 +636,10 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     dlsch->harq_ack[subframe].ack = 1;
     dlsch->harq_ack[subframe].harq_id = harq_pid;
     dlsch->harq_ack[subframe].send_harq_status = 1;
-    LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for subframe %d (pid %d, round %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round);
+    if(is_crnti)
+    {
+    LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for subframe %d (pid %d, round %d, TBS %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round,harq_process->TBS);
+    }
 
   }
 
