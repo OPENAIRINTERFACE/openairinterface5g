@@ -116,13 +116,15 @@ int rotate_cpx_vector(int16_t *x,
   @param y        - output     in the format  |Re0 Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
   @param N        - the size f the vectors (this function does N cpx mpy. WARNING: N>=4;
   @param output_shift  - shift to be applied to generate output
+  @param madd - if not zero result is added to output
 */
 
 int mult_cpx_conj_vector(int16_t *x1,
                          int16_t *x2,
                          int16_t *y,
                          uint32_t N,
-                         int output_shift);
+                         int output_shift,
+			 int madd);
 
 // lte_dfts.c
 void init_fft(uint16_t size,

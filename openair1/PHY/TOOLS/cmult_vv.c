@@ -41,7 +41,8 @@ int mult_cpx_conj_vector(int16_t *x1,
                          int16_t *x2,
                          int16_t *y,
                          uint32_t N,
-                         int output_shift)
+                         int output_shift,
+			 int madd)
 {
   // Multiply elementwise the complex conjugate of x1 with x2. 
   // x1       - input 1    in the format  |Re0 Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
@@ -55,6 +56,8 @@ int mult_cpx_conj_vector(int16_t *x1,
   // N        - the size f the vectors (this function does N cpx mpy. WARNING: N>=4;
   //
   // output_shift  - shift to be applied to generate output
+  //
+  // madd - add the output to y
 
   uint32_t i;                 // loop counter
 
@@ -88,7 +91,11 @@ int mult_cpx_conj_vector(int16_t *x1,
     tmp_im = _mm_srai_epi32(tmp_im,output_shift);
     tmpy0  = _mm_unpacklo_epi32(tmp_re,tmp_im);
     tmpy1  = _mm_unpackhi_epi32(tmp_re,tmp_im);
-    *y_128 = _mm_packs_epi32(tmpy0,tmpy1);
+    if (madd==0) 
+      *y_128 = _mm_packs_epi32(tmpy0,tmpy1);
+    else
+      *y_128 += _mm_packs_epi32(tmpy0,tmpy1);
+
 #elif defined(__arm__)
 
     tmp_re  = vmull_s16(((simdshort_q15_t *)x1_128)[0], ((simdshort_q15_t*)x2_128)[0]);
@@ -110,7 +117,10 @@ int mult_cpx_conj_vector(int16_t *x1,
     tmp_re = vqshlq_s32(tmp_re,shift);
     tmp_im = vqshlq_s32(tmp_im,shift);
     tmpy   = vzip_s16(vmovn_s32(tmp_re),vmovn_s32(tmp_im));
-    *y_128 = vcombine_s16(tmpy.val[0],tmpy.val[1]);
+    if (madd==0)
+      *y_128 = vcombine_s16(tmpy.val[0],tmpy.val[1]);
+    else
+      *y_128 += vcombine_s16(tmpy.val[0],tmpy.val[1]);
 #endif
     x1_128++;
     x2_128++;

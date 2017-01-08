@@ -1304,7 +1304,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
       common_vars->txdataF[eNB_id] = (int32_t **)malloc16(NB_ANTENNA_PORTS_ENB*sizeof(int32_t*));
       common_vars->txdataF_BF[eNB_id] = (int32_t **)malloc16(fp->nb_antennas_tx*sizeof(int32_t*));
 
-      for (i=0; i<14; i++) {
+      for (i=0; i<NB_ANTENNA_PORTS_ENB; i++) {
         common_vars->txdataF[eNB_id][i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
 #ifdef DEBUG_PHY
         msg("[openair][LTE_PHY][INIT] lte_common_vars->txdataF[%d][%d] = %p (%d bytes)\n",
@@ -1326,7 +1326,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 #endif
       }
       
-      for (i=0; i<14; i++) { // 14 is the total number of antenna ports
+      for (i=0; i<NB_ANTENNA_PORTS_ENB; i++) { 
         common_vars->beam_weights[eNB_id][i] = (int32_t **)malloc16_clear(fp->nb_antennas_tx*sizeof(int32_t*));
         for (j=0; j<fp->nb_antennas_tx; j++) {
           common_vars->beam_weights[eNB_id][i][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
