@@ -349,6 +349,36 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database,
   logger_add_view(l, v);
   e->ul_mcs_logger = l;
 
+  /* UE x DL PHY (truly: DCI) throughput */
+  col = new_container(g, VERTICAL);
+  widget_add_child(g, line, col, -1);
+  w = new_xy_plot(g, 70, 10, "DL PHY [0]", 35);
+  w2 = new_textarea(g, 70, 11, 64);
+  xy_plot_set_range(g, w, 0, 1000, 0, 100000);
+  xy_plot_set_tick_type(g, w, XY_PLOT_SCROLL_TICK);
+  widget_add_child(g, col, w2, -1);
+  widget_add_child(g, col, w, -1);
+  container_set_child_growable(g, col, w, 1);
+  l = new_throughputlog(h, database, "ENB_PHY_DL_TICK", "frame", "subframe",
+      "ENB_PHY_DLSCH_UE_DCI", "TBS");
+  v = new_view_scrolltti(10, g, w, new_color(g, "#0c0c72"), w2);
+  logger_add_view(l, v);
+
+  /* UE x UL PHY (truly: DCI) throughput */
+  col = new_container(g, VERTICAL);
+  widget_add_child(g, line, col, -1);
+  w = new_xy_plot(g, 70, 10, "UL PHY [0]", 35);
+  w2 = new_textarea(g, 70, 11, 64);
+  xy_plot_set_range(g, w, 0, 1000, 0, 100000);
+  xy_plot_set_tick_type(g, w, XY_PLOT_SCROLL_TICK);
+  widget_add_child(g, col, w2, -1);
+  widget_add_child(g, col, w, -1);
+  container_set_child_growable(g, col, w, 1);
+  l = new_throughputlog(h, database, "ENB_PHY_DL_TICK", "frame", "subframe",
+      "ENB_PHY_ULSCH_UE_DCI", "TBS");
+  v = new_view_scrolltti(10, g, w, new_color(g, "#0c0c72"), w2);
+  logger_add_view(l, v);
+
   /* downlink/uplink UE DCIs */
   widget_add_child(g, top_container,
       new_label(g,"DL/UL TICK/DCI/ACK/NACK [all UEs]"), -1);
