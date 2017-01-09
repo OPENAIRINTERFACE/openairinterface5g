@@ -159,7 +159,7 @@ uint8_t phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t s
   uint8_t pusch_subframe = 255;
 
   if (frame_parms->frame_type == FDD)
-    pusch_subframe = (subframe<4 ? (subframe+6) : (subframe-4));
+    return subframe < 4 ? subframe + 6 : subframe - 4;
 
   switch (frame_parms->tdd_config) {
   case 0:
