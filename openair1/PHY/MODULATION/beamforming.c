@@ -65,11 +65,11 @@ int beam_precoding(int32_t **txdataF,
 
   for (p=0; p<14; p++) {
     if (p==0 || p==1 || p==5) {
-      mult_cpx_conj_vector((int16_t*)beam_weights[p][aa], (int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size], (int16_t*)txdataF_BF[aa], frame_parms->ofdm_symbol_size, 15, 1);
-      //multadd_cpx_vector((int16_t*)txdataF[p],(int16_t*)beam_weights[p][aa], (int16_t*)txdataF_BF[aa], 0, frame_parms->ofdm_symbol_size, 15);
+      multadd_cpx_vector((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size],(int16_t*)beam_weights[p][aa], (int16_t*)txdataF_BF[aa], 0, frame_parms->ofdm_symbol_size, 15);
+      //mult_cpx_conj_vector((int16_t*)beam_weights[p][aa], (int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size], (int16_t*)txdataF_BF[aa], frame_parms->ofdm_symbol_size, 15, 1);
 
-      /*
-      for (re=0;re<frame_parms->ofdm_symbol_size;re++) {
+      // if check version
+      /*for (re=0;re<frame_parms->ofdm_symbol_size;re++) {
         if (txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re]!=0) {
           ((int16_t*)&txdataF_BF[aa][re])[0] += (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]*((int16_t*)&beam_weights[p][aa][re])[0])>>15);
           ((int16_t*)&txdataF_BF[aa][re])[0] -= (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]*((int16_t*)&beam_weights[p][aa][re])[1])>>15);
@@ -86,8 +86,7 @@ int beam_precoding(int32_t **txdataF,
                    ((int16_t*)&txdataF_BF[aa][re])[0],
                    ((int16_t*)&txdataF_BF[aa][re])[1]);
         }
-      }
-      */ 
+      }*/
     }
   }
   return 0;
