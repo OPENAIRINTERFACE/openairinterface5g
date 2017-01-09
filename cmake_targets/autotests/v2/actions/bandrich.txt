@@ -1,29 +1,47 @@
-To get /dev/bandrich (so that you don't need to look for which /dev/ttyUSBx
-is used by your dongle, and always use /dev/bandrich), add a udev file:
+The configuration for the bandrich in the test setup is a bit hackish.
+
+Here come some notes explaining what we do here.
+
+To get /dev/bandrich.data and /dev/bandrich.control (so that you don't need
+to look for which /dev/ttyUSBx are used by your dongle, and always use
+the same files, no matter what), add a udev file:
 
     /etc/udev/rules.d/bandrich.rules
 
-containing one line:
+containing lines:
 
-    SUBSYSTEM=="tty", ENV{ID_VENDOR_ID}=="1a8d", ENV{ID_MODEL_ID}=="100d", ENV{ID_SERIAL_SHORT}=="357473040068155", ENV{ID_USB_INTERFACE_NUM}=="02", SYMLINK+="bandrich", MODE="0666"
+    SUBSYSTEM=="tty", ENV{ID_VENDOR_ID}=="1a8d", ENV{ID_MODEL_ID}=="100d", ENV{ID_SERIAL_SHORT}=="357473040068155", ENV{ID_USB_INTERFACE_NUM}=="00", SYMLINK+="bandrich.data", MODE="0666"
+    SUBSYSTEM=="tty", ENV{ID_VENDOR_ID}=="1a8d", ENV{ID_MODEL_ID}=="100d", ENV{ID_SERIAL_SHORT}=="357473040068155", ENV{ID_USB_INTERFACE_NUM}=="02", SYMLINK+="bandrich.control", MODE="0666"
 
 Change vendor_id/model_id/serial/interface num to match yours.
-Use lsusb -v to find values. For interface num, I'm not sure.
-It corresponds to /dev/ttyUSBx (the x). I did:
+Use lsusb -v to find values.
 
-    cat /dev/ttyUSBx
+At first we used /dev/ttyUSB2 linked to /dev/bandrich for both data (in
+the wvdial configuration file) and control (in the python code, opening
+/dev/bandrich the standard unix way and read and write into it, with no
+special libusb commands).
 
-in one terminal, and:
+But it turned out that using /dev/ttyUSB2 for data gives bad throughput
+results. We tested downlink UDP at 15Mb/s but the maximum throughput for
+a 5MHz cell was around 13, and we had a lot of packets lost at the iperf's
+UDP level. Radio was looking fine (all packets acked correctly), so it was
+not a radio problem. The dongle in a windows machine was working fine,
+15Mbs/s. Using the wvdial configuration file from test setup v1 gave also
+good results. The only difference was the use of /dev/ttyUSB0 instead of
+/dev/ttyUSB2. Using /dev/ttyUSB0 solved the throughput issue.
 
-    echo -e "AT\r" > /dev/ttyUSBx
+But using /dev/ttyUSB0 for control in the pyton code did not work. The
+output was incorrect.
 
-in another one. And I took a number for which the first terminal displayed:
+So we decided to have /dev/bandrich.data linked to /dev/ttyUSB0 for data
+(wvdial) and /dev/bandrich.control linked to /dev/ttyUSB2 for control
+(in python code).
 
-    AT
-    OK
+It may not be the correct way to go, but it seems to do the trick so far.
 
-"02" (/dev/ttyUSB2) worked for me.
-Here, I get, as result of lsusb -v:
+Your device may need some other solution.
+
+Here, we get, as result of lsusb -v:
 
     [SNIP]
     Bus 003 Device 009: ID 1a8d:100d BandRich, Inc. 4G LTE adapter
@@ -56,7 +74,7 @@ The command:
 is also important to get the right identifier to put in ENV{}. (It also
 gives the correct value.)
 
-Here is extracted what I have for my dongle:
+Here is extracted what we have for our dongle:
 
     P: /devices/pci0000:00/0000:00:1a.0/usb3/3-1/3-1.2/3-1.2:1.2/ttyUSB2/tty/ttyUSB2
     N: ttyUSB2
@@ -90,7 +108,13 @@ Here is extracted what I have for my dongle:
     E: SUBSYSTEM=tty
     E: USEC_INITIALIZED=672068596
 
-Note: you need to unplyg/replug your dongle for /dev/bandrich to appear.
+You can also run:
+
+    udevadm info -a -p /sys/bus/usb-serial/devices/ttyUSB0
+    udevadm info -a -p /sys/bus/usb-serial/devices/ttyUSB2
+
+Note: after creating the udev files, you need to unplug/replug your
+dongle for /dev/bandrich.data and /dev/bandrich.control to appear.
 
 Note: the mode 0666 is for everyone to access the dongle (no need for
       root privileges). If you prefer you can set it to 0600 (only root)

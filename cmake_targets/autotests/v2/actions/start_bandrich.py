@@ -3,7 +3,7 @@ import time
 from modem import quit, Modem
 
 try:
-    modem = Modem("/dev/bandrich")
+    modem = Modem("/dev/bandrich.control")
 
     #test that modem is there
     print "INFO: check modem's presence"
