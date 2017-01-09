@@ -243,7 +243,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   }
 
   if (dlsch->harq_ack[subframe].ack != 2) {
-    LOG_W(PHY, "[UE %d] DLSCH @ SF%d : ACK bit is %d instead of DTX even before PDSCH is decoded!\n",
+    LOG_D(PHY, "[UE %d] DLSCH @ SF%d : ACK bit is %d instead of DTX even before PDSCH is decoded!\n",
         phy_vars_ue->Mod_id, subframe, dlsch->harq_ack[subframe].ack);
   }
 
