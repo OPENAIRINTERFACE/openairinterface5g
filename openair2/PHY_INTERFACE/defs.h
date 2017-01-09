@@ -152,7 +152,7 @@ typedef struct {
   void (*ue_decode_p)(module_id_t Mod_id,int CC_id,frame_t frameP, uint8_t CH_index, void *pdu, uint16_t len);
 
   /// Send a received DLSCH sdu to MAC
-  void (*ue_send_sdu)(module_id_t Mod_id,uint8_t CC_id,frame_t frameP,uint8_t *sdu,uint16_t sdu_len,uint8_t CH_index);
+  void (*ue_send_sdu)(module_id_t Mod_id,uint8_t CC_id,frame_t frameP,sub_frame_t subframe,uint8_t *sdu,uint16_t sdu_len,uint8_t CH_index);
 
 #ifdef Rel10
   /// Send a received MCH sdu to MAC

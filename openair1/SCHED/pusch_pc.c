@@ -103,13 +103,13 @@ int16_t get_hundred_times_delta_IF_mac(module_id_t module_idP, uint8_t CC_id, rn
 int16_t get_hundred_times_delta_IF(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t harq_pid)
 {
 
-  uint32_t Nre = ue->ulsch[eNB_id]->harq_processes[harq_pid]->Nsymb_initial *
+  uint32_t Nre = 2*ue->ulsch[eNB_id]->harq_processes[harq_pid]->Nsymb_initial *
                  ue->ulsch[eNB_id]->harq_processes[harq_pid]->nb_rb*12;
 
   if (Nre==0)
     return(0);
 
-  uint32_t MPR_x100 = 100*ue->ulsch[eNB_id]->harq_processes[harq_pid]->sumKr/Nre;
+  uint32_t MPR_x100 = 100*ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS/Nre;
   // Note: MPR=is the effective spectral efficiency of the PUSCH
   // FK 20140908 sumKr is only set after the ulsch_encoding
 
@@ -137,7 +137,7 @@ void pusch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_
                                        proc->subframe_tx);
 
   uint8_t nb_rb = ue->ulsch[eNB_id]->harq_processes[harq_pid]->nb_rb;
-  int8_t PL;
+  int16_t PL;
 
 
   // P_pusch = 10*log10(nb_rb + P_opusch(j)+ alpha(u)*PL + delta_TF(i) + f(i))
@@ -174,8 +174,8 @@ void pusch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_
     else if (ue->ulsch[eNB_id]->PHR > 40)
       ue->ulsch[eNB_id]->PHR = 40;
 
-    LOG_D(PHY,"[UE  %d][PUSCH %d] frame %d, subframe %d: Po_PUSCH %d dBm : tx power %d, Po_NOMINAL_PUSCH %d,log10(NPRB) %f,PHR %d, PL %d, alpha*PL %f,delta_IF %f,f_pusch %d\n",
-          ue->Mod_id,harq_pid,proc->frame_tx,proc->subframe_tx,
+    LOG_D(PHY,"[UE  %d][PUSCH %d] AbsSubframe %d.%d: nb_rb: %d, Po_PUSCH %d dBm : tx power %d, Po_NOMINAL_PUSCH %d,log10(NPRB) %f,PHR %d, PL %d, alpha*PL %f,delta_IF %f,f_pusch %d\n",
+          ue->Mod_id,harq_pid,proc->frame_tx,proc->subframe_tx,nb_rb,
           ue->ulsch[eNB_id]->Po_PUSCH,
           ue->tx_power_max_dBm,
           ue->frame_parms.ul_power_control_config_common.p0_NominalPUSCH,

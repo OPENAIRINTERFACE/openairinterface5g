@@ -334,13 +334,13 @@ rlc_um_cleanup (
   list_free (&rlc_pP->pdus_from_mac_layer);
 
   if ((rlc_pP->output_sdu_in_construction)) {
-    free_mem_block (rlc_pP->output_sdu_in_construction);
+    free_mem_block (rlc_pP->output_sdu_in_construction, __func__);
   }
 
   if (rlc_pP->dar_buffer) {
     for (index = 0; index < 1024; index++) {
       if (rlc_pP->dar_buffer[index]) {
-        free_mem_block (rlc_pP->dar_buffer[index]);
+        free_mem_block (rlc_pP->dar_buffer[index], __func__);
       }
     }
 

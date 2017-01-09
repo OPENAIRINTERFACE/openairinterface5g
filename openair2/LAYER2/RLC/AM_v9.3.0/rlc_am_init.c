@@ -152,7 +152,7 @@ rlc_am_cleanup(
 
 
   if (rlc_pP->output_sdu_in_construction != NULL) {
-    free_mem_block(rlc_pP->output_sdu_in_construction);
+    free_mem_block(rlc_pP->output_sdu_in_construction, __func__);
     rlc_pP->output_sdu_in_construction = NULL;
   }
 
@@ -161,7 +161,7 @@ rlc_am_cleanup(
   if (rlc_pP->input_sdus != NULL) {
     for (i=0; i < RLC_AM_SDU_CONTROL_BUFFER_SIZE; i++) {
       if (rlc_pP->input_sdus[i].mem_block != NULL) {
-        free_mem_block(rlc_pP->input_sdus[i].mem_block);
+        free_mem_block(rlc_pP->input_sdus[i].mem_block, __func__);
         rlc_pP->input_sdus[i].mem_block = NULL;
       }
     }
@@ -175,7 +175,7 @@ rlc_am_cleanup(
   if (rlc_pP->pdu_retrans_buffer != NULL) {
     for (i=0; i < RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE; i++) {
       if (rlc_pP->pdu_retrans_buffer[i].mem_block != NULL) {
-        free_mem_block(rlc_pP->pdu_retrans_buffer[i].mem_block);
+        free_mem_block(rlc_pP->pdu_retrans_buffer[i].mem_block, __func__);
         rlc_pP->pdu_retrans_buffer[i].mem_block = NULL;
       }
     }
