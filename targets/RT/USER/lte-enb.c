@@ -128,7 +128,7 @@ extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
 extern int sync_var;
 
-extern transmission_mode;
+extern int transmission_mode;
 
 //pthread_t                       main_eNB_thread;
 
