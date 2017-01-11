@@ -2058,7 +2058,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
   
 
   LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
-  int32_t ulsch_start=0;
+  //int32_t ulsch_start=0;
   int subframe_tx = proc->subframe_tx;
   int frame_tx = proc->frame_tx;
   unsigned int aa;

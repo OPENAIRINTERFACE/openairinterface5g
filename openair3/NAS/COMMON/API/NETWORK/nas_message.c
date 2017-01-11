@@ -1296,7 +1296,9 @@ static uint32_t _nas_message_get_mac(
     uint32_t            count;
     uint32_t           *mac32;
 
+#ifdef DEBUG_NAS_MESSAGE
     int i,bytes = 0;
+#endif
 
     if (direction == SECU_DIRECTION_UPLINK) {
       count = 0x00000000 ||
