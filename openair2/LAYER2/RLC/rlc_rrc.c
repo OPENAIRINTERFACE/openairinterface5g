@@ -786,7 +786,7 @@ rlc_op_status_t rrc_rlc_data_req     (
   //-----------------------------------------------------------------------------
   mem_block_t*   sdu;
 
-  sdu = get_free_mem_block(sdu_sizeP);
+  sdu = get_free_mem_block(sdu_sizeP, __func__);
 
   if (sdu != NULL) {
     memcpy (sdu->data, sduP, sdu_sizeP);

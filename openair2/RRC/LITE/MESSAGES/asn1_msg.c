@@ -775,7 +775,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 #endif
 
   // SRS Config
-  if (configuration->srs_enable[CC_id]) {
+  if (frame_parms->soundingrs_ul_config_common.enabled_flag) {
     (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present
       = SoundingRS_UL_ConfigCommon_PR_setup;
     (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_BandwidthConfig
@@ -1493,7 +1493,7 @@ do_RRCConnectionSetup(
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH         = CALLOC(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH));
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH         = CALLOC(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH));
   physicalConfigDedicated2->cqi_ReportConfig              = CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
-  if (enb_properties.properties[ctxt_pP->module_id]->srs_enable[CC_id])
+  if (frame_parms->soundingrs_ul_config_common.enabled_flag)
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
   else
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL;
@@ -1582,7 +1582,7 @@ do_RRCConnectionSetup(
     */
 
   //soundingRS-UL-ConfigDedicated
-  if (enb_properties.properties[ctxt_pP->module_id]->srs_enable[CC_id]) {
+  if (frame_parms->soundingrs_ul_config_common.enabled_flag) {
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->present = SoundingRS_UL_ConfigDedicated_PR_setup;
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth =
                                                              SoundingRS_UL_ConfigDedicated__setup__srs_Bandwidth_bw0;

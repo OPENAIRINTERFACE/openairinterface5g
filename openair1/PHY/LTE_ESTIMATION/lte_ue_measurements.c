@@ -32,7 +32,8 @@
 #define k1 ((long long int) 1000)
 #define k2 ((long long int) (1024-k1))
 
-//#define DEBUG_MEAS
+//#define DEBUG_MEAS_RRC
+//#define DEBUG_MEAS_UE
 
 #ifdef USER_MODE
 void print_shorts(char *s,short *x)
@@ -165,23 +166,30 @@ int8_t set_RSRQ_filtered(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index,float rs
 }
 
 void ue_rrc_measurements(PHY_VARS_UE *ue,
-                         uint8_t subframe,
-                         uint8_t abstraction_flag)
+    uint8_t slot,
+    uint8_t abstraction_flag)
 {
 
-  int aarx,rb;
+  uint8_t subframe = slot>>1;
+  int aarx,rb,n;
   int16_t *rxF,*rxF_pss,*rxF_sss;
 
   uint16_t Nid_cell = ue->frame_parms.Nid_cell;
   uint8_t eNB_offset,nu,l,nushift,k;
   uint16_t off;
 
+  uint8_t isPss; // indicate if this is a slot for extracting PSS
+  uint8_t isSss; // indicate if this is a slot for extracting SSS
+  int32_t pss_ext[4][72]; // contain the extracted 6*12 REs for mapping the PSS
+  int32_t sss_ext[4][72]; // contain the extracted 6*12 REs for mapping the SSS
+  int32_t (*xss_ext)[72]; // point to either pss_ext or sss_ext for common calculation
+  int16_t *re,*im; // real and imag part of each 32-bit xss_ext[][] value
 
   for (eNB_offset = 0; eNB_offset<1+ue->measurements.n_adj_cells; eNB_offset++) {
 
     if (eNB_offset==0) {
       ue->measurements.rssi = 0;
-      ue->measurements.n0_power_tot = 0;
+      //ue->measurements.n0_power_tot = 0;
 
       if (abstraction_flag == 0) {
         if ((ue->frame_parms.frame_type == FDD) &&
@@ -225,16 +233,66 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 	      //              ue->measurements.n0_power[aarx] += (((int32_t)rxF_pss[-64]*rxF_pss[-64])+((int32_t)rxF_pss[-63]*rxF_pss[-63]));
 	      //	      printf("pssm32 %d\n",ue->measurements.n0_power[aarx]);
               ue->measurements.n0_power_dB[aarx] = (unsigned short) dB_fixed(ue->measurements.n0_power[aarx]/12);
-              ue->measurements.n0_power_tot +=  ue->measurements.n0_power[aarx];
+              ue->measurements.n0_power_tot /*+=*/ = ue->measurements.n0_power[aarx];
             }
 
 	    ue->measurements.n0_power_tot_dB = (unsigned short) dB_fixed(ue->measurements.n0_power_tot/(12*aarx));
 	    ue->measurements.n0_power_tot_dBm = ue->measurements.n0_power_tot_dB - ue->rx_total_gain_dB - dB_fixed(ue->frame_parms.ofdm_symbol_size);
-	  }
+          } else {
+            LOG_E(PHY, "Not yet implemented: noise power calculation when prefix length = EXTENDED\n");
+          }
         }
-	else if ((ue->frame_parms.frame_type == TDD) &&
-		 (subframe == 0)) {  // TDD SSS, compute noise in DTX REs
+        else if ((ue->frame_parms.frame_type == TDD) &&
+            ((slot == 2) || (slot == 12) || (slot == 1) || (slot == 11))) {  // TDD PSS/SSS, compute noise in DTX REs // 2016-09-29 wilson fix incorrect noise power calculation
 
+#if 1 // fixing REs extraction in noise power calculation
+
+          // check if this slot has a PSS or SSS sequence
+          if ((slot == 2) || (slot == 12)) {
+            isPss = 1;
+          } else {
+            isPss = 0;
+          }
+          if ((slot == 1) || (slot == 11)) {
+            isSss = 1;
+          } else {
+            isSss = 0;
+          }
+
+          if (isPss) {
+            pss_only_extract(ue, pss_ext);
+            xss_ext = pss_ext;
+          }
+
+          if (isSss) {
+            sss_only_extract(ue, sss_ext);
+            xss_ext = sss_ext;
+          }
+
+          // calculate noise power
+          int num_tot=0; // number of REs totally used in calculating noise power
+          for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
+
+            int num_per_rx=0; // number of REs used in caluclaing noise power for this RX antenna
+            ue->measurements.n0_power[aarx] = 0;
+            for (n=2; n<70; n++) { // skip the 2 REs next to PDSCH, i.e. n={0,1,70,71}
+              if (n==5) {n=67;}
+
+              re = (int16_t*)(&(xss_ext[aarx][n]));
+              im = re+1;
+              ue->measurements.n0_power[aarx] += (*re)*(*re) + (*im)*(*im);
+              num_per_rx++;
+              num_tot++;
+            }
+
+            ue->measurements.n0_power_dB[aarx] = (unsigned short) dB_fixed(ue->measurements.n0_power[aarx]/(num_per_rx));
+            ue->measurements.n0_power_tot /*+=*/ =  ue->measurements.n0_power[aarx];
+          }
+
+          ue->measurements.n0_power_tot_dB = (unsigned short) dB_fixed(ue->measurements.n0_power_tot/(num_tot));
+          ue->measurements.n0_power_tot_dBm = ue->measurements.n0_power_tot_dB - ue->rx_total_gain_dB - dB_fixed(ue->frame_parms.ofdm_symbol_size);
+
+#else
           if (ue->frame_parms.Ncp==NORMAL) {
             for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
@@ -263,8 +321,9 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 	    ue->measurements.n0_power_tot_dBm = ue->measurements.n0_power_tot_dB - ue->rx_total_gain_dB - dB_fixed(ue->frame_parms.ofdm_symbol_size);
 	      
 	    
-	  }
-	}
+          }
+#endif
+        }
       }
     }
     // recompute nushift with eNB_offset corresponding to adjacent eNB on which to perform channel estimation
@@ -286,7 +345,7 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 
       for (l=0,nu=0; l<=(4-ue->frame_parms.Ncp); l+=(4-ue->frame_parms.Ncp),nu=3) {
         k = (nu + nushift)%6;
-#ifdef DEBUG_MEAS
+#ifdef DEBUG_MEAS_RRC
         LOG_I(PHY,"[UE %d] Frame %d subframe %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, nushift %d, eNB_offset %d, k %d, l %d)\n",ue->Mod_id,ue->proc.proc_rxtx[subframe&1].frame_rx,subframe,Nid_cell,nushift,
               eNB_offset,k,l);
 #endif
@@ -364,7 +423,7 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 
     }
 
-#ifdef DEBUG_MEAS
+#ifdef DEBUG_MEAS_RRC
 
     //    if (slot == 0) {
 
@@ -498,10 +557,14 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
     ue->measurements.wideband_cqi_tot[eNB_id] = dB_fixed2(ue->measurements.rx_power_tot[eNB_id],ue->measurements.n0_power_tot);
     ue->measurements.wideband_cqi_avg[eNB_id] = dB_fixed2(ue->measurements.rx_power_avg[eNB_id],ue->measurements.n0_power_avg);
     ue->measurements.rx_rssi_dBm[eNB_id] = ue->measurements.rx_power_avg_dB[eNB_id] - ue->rx_total_gain_dB;
-#ifdef DEBUG_MEAS
-    LOG_I(PHY,"[eNB %d] lte_ue_measurements: RSSI %d dBm, RSSI (digital) %d dB\n",
-          eNB_id,ue->measurements.rx_rssi_dBm[eNB_id],
-          ue->measurements.rx_power_avg_dB[eNB_id]);
+#ifdef DEBUG_MEAS_UE
+      LOG_D(PHY,"[eNB %d] RSSI %d dBm, RSSI (digital) %d dB, WBandCQI %d dB, rxPwrAvg %d, n0PwrAvg %d\n",
+            eNB_id,
+            ue->measurements.rx_rssi_dBm[eNB_id],
+            ue->measurements.rx_power_avg_dB[eNB_id],
+            ue->measurements.wideband_cqi_avg[eNB_id],
+            ue->measurements.rx_power_avg[eNB_id],
+            ue->measurements.n0_power_avg);
 #endif
   }
 

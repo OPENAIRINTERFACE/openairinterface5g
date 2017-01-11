@@ -346,7 +346,7 @@ rlc_am_receive_process_data_pdu (
       if (rlc_am_rx_list_insert_pdu(ctxt_pP, rlc_pP,tb_pP) < 0) {
         rlc_pP->stat_rx_data_pdu_dropped     += 1;
         rlc_pP->stat_rx_data_bytes_dropped   += tb_size_in_bytesP;
-        free_mem_block (tb_pP);
+        free_mem_block (tb_pP, __func__);
         LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  PDU DISCARDED, STATUS REQUESTED:\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
         rlc_pP->status_requested = 1;
@@ -437,12 +437,12 @@ rlc_am_receive_process_data_pdu (
     } else {
       rlc_pP->stat_rx_data_pdu_out_of_window     += 1;
       rlc_pP->stat_rx_data_bytes_out_of_window   += tb_size_in_bytesP;
-      free_mem_block (tb_pP);
+      free_mem_block (tb_pP, __func__);
       LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  PDU OUT OF RX WINDOW, DISCARDED, STATUS REQUESTED:\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
       rlc_pP->status_requested = 1;
     }
   } else {
-    free_mem_block (tb_pP);
+    free_mem_block (tb_pP, __func__);
   }
 }

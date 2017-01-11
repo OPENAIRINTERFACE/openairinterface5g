@@ -159,6 +159,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
                          LTE_DL_FRAME_PARMS *frame_parms,
                          LTE_UE_DLSCH_t *dlsch,
                          LTE_DL_UE_HARQ_t *harq_process,
+                         uint8_t frame,
                          uint8_t subframe,
                          uint8_t harq_pid,
                          uint8_t is_crnti,
@@ -239,6 +240,11 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   if (subframe>9) {
     printf("dlsch_decoding.c: Illegal subframe index %d\n",subframe);
     return(dlsch->max_turbo_iterations);
+  }
+
+  if (dlsch->harq_ack[subframe].ack != 2) {
+    LOG_D(PHY, "[UE %d] DLSCH @ SF%d : ACK bit is %d instead of DTX even before PDSCH is decoded!\n",
+        phy_vars_ue->Mod_id, subframe, dlsch->harq_ack[subframe].ack);
   }
 
   if (llr8_flag == 0) {
@@ -609,10 +615,20 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
       //printf("CRC failed, segment %d\n",r);
       err_flag = 1;
     }
-
   }
 
+  int32_t frame_rx_prev = frame;
+  int32_t subframe_rx_prev = subframe - 1;
+  if (subframe_rx_prev < 0) {
+    frame_rx_prev--;
+    subframe_rx_prev += 10;
+  }
+  frame_rx_prev = frame_rx_prev%1024;
+
   if (err_flag == 1) {
+    LOG_D(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, round %d, subframe %d)\n",
+        phy_vars_ue->Mod_id, frame_rx_prev, subframe_rx_prev, harq_pid, harq_process->round, subframe);
+
     dlsch->harq_ack[subframe].ack = 0;
     dlsch->harq_ack[subframe].harq_id = harq_pid;
     dlsch->harq_ack[subframe].send_harq_status = 1;
@@ -631,6 +647,9 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 
     return((1+dlsch->max_turbo_iterations));
   } else {
+    LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for SFN/SF %d/%d (pid %d, round %d, subframe %d)\n",
+        phy_vars_ue->Mod_id, frame_rx_prev, subframe_rx_prev, harq_pid, harq_process->round, subframe);
+
     harq_process->status = SCH_IDLE;
     harq_process->round  = 0;
     dlsch->harq_ack[subframe].ack = 1;
@@ -640,6 +659,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     {
     LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for subframe %d (pid %d, round %d, TBS %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round,harq_process->TBS);
     }
+    //LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for subframe %d (pid %d, round %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round);
 
   }
 

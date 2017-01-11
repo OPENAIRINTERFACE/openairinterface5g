@@ -69,7 +69,7 @@ rlc_um_reassembly (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
 
   if (rlc_pP->output_sdu_in_construction == NULL) {
     //    msg("[RLC_UM_LITE] Getting mem_block ...\n");
-    rlc_pP->output_sdu_in_construction = get_free_mem_block (sdu_max_size);
+    rlc_pP->output_sdu_in_construction = get_free_mem_block (sdu_max_size, __func__);
     rlc_pP->output_sdu_size_to_write = 0;
   }
 

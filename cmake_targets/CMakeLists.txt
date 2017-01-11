@@ -1679,7 +1679,7 @@ endif()
 # Atlas is required by some packages, but not found in pkg-config
 if(EXISTS "/usr/include/atlas/cblas.h")
   include_directories("/usr/include/atlas")
-  list(APPEND ATLAS_LIBRARIES lapack cblas atlas)
+  list(APPEND ATLAS_LIBRARIES cblas atlas lapack)
 else()
   message("No Blas/Atlas libs found, some targets will fail")
 endif()

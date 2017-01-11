@@ -320,90 +320,152 @@ unsigned char ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char s
 }
 
 // This function implements table 10.1-1 of 36-213, p. 69
-uint8_t get_ack(LTE_DL_FRAME_PARMS *frame_parms,
+// return the number 'Nbundled'
+uint8_t get_reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
                 harq_status_t *harq_ack,
                 unsigned char subframe,
-                unsigned char *o_ACK)
+                unsigned char *o_ACK,
+                uint8_t do_reset) // 1 to reset ACK/NACK status : 0 otherwise
 {
-
-
   uint8_t status=0;
-  uint8_t subframe_dl;
+  uint8_t subframe_ul=0xff, subframe_dl0=0xff, subframe_dl1=0xff;
 
   //  printf("get_ack: SF %d\n",subframe);
   if (frame_parms->frame_type == FDD) {
     if (subframe < 4)
-      subframe_dl = subframe + 6;
+      subframe_dl0 = subframe + 6;
     else
-      subframe_dl = subframe - 4;
+      subframe_dl0 = subframe - 4;
 
-    o_ACK[0] = harq_ack[subframe_dl].ack;
-    status = harq_ack[subframe_dl].send_harq_status;
+    o_ACK[0] = harq_ack[subframe_dl0].ack;
+    status = harq_ack[subframe_dl0].send_harq_status;
     //printf("get_ack: Getting ACK/NAK for PDSCH (subframe %d) => %d\n",subframe_dl,o_ACK[0]);
   } else {
     switch (frame_parms->tdd_config) {
     case 1:
-      if (subframe == 2) {  // ACK subframes 5 (forget 6)
-        o_ACK[0] = harq_ack[5].ack;
-        status = harq_ack[5].send_harq_status;
+      if (subframe == 2) {  // ACK subframes 5,6
+        subframe_ul  = 6;
+        subframe_dl0 = 5;
+        subframe_dl1 = 6;
       } else if (subframe == 3) { // ACK subframe 9
-        o_ACK[0] = harq_ack[9].ack;
-        status = harq_ack[9].send_harq_status;
+        subframe_ul  = 9;
+        subframe_dl0 = 9;
+        subframe_dl1 = 0xff;
       } else if (subframe == 4) { // nothing
-        status = 0;
-      } else if (subframe == 7) { // ACK subframes 0 (forget 1)
-        o_ACK[0] = harq_ack[0].ack;
-        status = harq_ack[0].send_harq_status;
+        subframe_ul  = 0xff;
+        subframe_dl0 = 0xff; // invalid subframe number indicates ACK/NACK is not needed
+        subframe_dl1 = 0xff;
+      } else if (subframe == 7) { // ACK subframes 0,1
+        subframe_ul  = 1;
+        subframe_dl0 = 0;
+        subframe_dl1 = 1;
       } else if (subframe == 8) { // ACK subframes 4
-        o_ACK[0] = harq_ack[4].ack;
-        status = harq_ack[4].send_harq_status;
+        subframe_ul  = 4;
+        subframe_dl0 = 4;
+        subframe_dl1 = 0xff;
       } else {
         LOG_E(PHY,"phy_procedures_lte.c: get_ack, illegal subframe %d for tdd_config %d\n",
               subframe,frame_parms->tdd_config);
         return(0);
       }
 
+      // report ACK/NACK status
+      o_ACK[0] = 1;
+      status = 0;
+      if ((subframe_dl0 < 10) && (harq_ack[subframe_dl0].send_harq_status)) {
+        o_ACK[0] &= harq_ack[subframe_dl0].ack;
+        status = harq_ack[subframe_dl0].send_harq_status;
+      }
+      if ((subframe_dl1 < 10) && (harq_ack[subframe_dl1].send_harq_status)) {
+        o_ACK[0] &= harq_ack[subframe_dl1].ack;
+        status = harq_ack[subframe_dl1].send_harq_status;
+      }
+      // report status = Nbundled
+      if (!status) {
+        o_ACK[0] = 0;
+      } else {
+        if (harq_ack[subframe_ul].vDAI_UL < 0xff) {
+          status = harq_ack[subframe_ul].vDAI_UL;
+        }
+      }
+
+      if (!do_reset && (subframe_ul < 10)) {
+        if ((subframe_dl0 < 10) && (subframe_dl1 < 10)) {
+          LOG_D(PHY,"ul-sf#%d vDAI_UL[sf#%d]=%d Nbundled=%d: dlsf#%d ACK=%d harq_status=%d vDAI_DL=%d, dlsf#%d ACK=%d harq_status=%d vDAI_DL=%d, o_ACK[0]=%d status=%d\n",
+              subframe, subframe_ul, harq_ack[subframe_ul].vDAI_UL, status,
+              subframe_dl0, harq_ack[subframe_dl0].ack, harq_ack[subframe_dl0].send_harq_status, harq_ack[subframe_dl0].vDAI_DL,
+              subframe_dl1, harq_ack[subframe_dl1].ack, harq_ack[subframe_dl1].send_harq_status, harq_ack[subframe_dl1].vDAI_DL,
+              o_ACK[0], status);
+        } else if (subframe_dl0 < 10) {
+          LOG_D(PHY,"ul-sf#%d vDAI_UL[sf#%d]=%d Nbundled=%d: dlsf#%d ACK=%d status=%d vDAI_DL=%d, o_ACK[0]=%d status=%d\n",
+              subframe, subframe_ul, harq_ack[subframe_ul].vDAI_UL, status,
+              subframe_dl0, harq_ack[subframe_dl0].ack, harq_ack[subframe_dl0].send_harq_status, harq_ack[subframe_dl0].vDAI_DL,
+              o_ACK[0], status);
+        }else if (subframe_dl1 < 10) {
+          LOG_D(PHY,"ul-sf#%d vDAI_UL[sf#%d]=%d Nbundled=%d: dlsf#%d ACK=%d status=%d vDAI_DL=%d, o_ACK[0]=%d status=%d\n",
+              subframe, subframe_ul, harq_ack[subframe_ul].vDAI_UL, status,
+              subframe_dl1, harq_ack[subframe_dl1].ack, harq_ack[subframe_dl1].send_harq_status, harq_ack[subframe_dl1].vDAI_DL,
+              o_ACK[0], status);
+        }
+      }
+
+      // reset ACK/NACK status
+      if (do_reset) {
+        LOG_D(PHY,"ul-sf#%d ACK/NACK status resetting @ dci0-sf#%d, dci1x/2x-sf#%d, dci1x/2x-sf#%d\n", subframe, subframe_ul, subframe_dl0, subframe_dl1);
+        if (subframe_ul < 10) {
+          harq_ack[subframe_ul].vDAI_UL = 0xff;
+        }
+        if (subframe_dl0 < 10) {
+          harq_ack[subframe_dl0].vDAI_DL = 0xff;
+          harq_ack[subframe_dl0].ack = 2;
+          harq_ack[subframe_dl0].send_harq_status = 0;
+        }
+        if (subframe_dl1 < 10) {
+          harq_ack[subframe_dl1].vDAI_DL = 0xff;
+          harq_ack[subframe_dl1].ack = 2;
+          harq_ack[subframe_dl1].send_harq_status = 0;
+        }
+      }
+
       break;
 
     case 3:
       if (subframe == 2) {  // ACK subframes 5 and 6
-        if (harq_ack[5].send_harq_status == 1) {
-          o_ACK[0] = harq_ack[5].ack;
-
-          if (harq_ack[6].send_harq_status == 1)
-            o_ACK[1] = harq_ack[6].ack;
-        } else if (harq_ack[6].send_harq_status == 1)
-          o_ACK[0] = harq_ack[6].ack;
-
-        status = harq_ack[5].send_harq_status + (harq_ack[6].send_harq_status<<1);
+        subframe_dl0 = 5;
+        subframe_dl1 = 6;
         //printf("Subframe 2, TDD config 3: harq_ack[5] = %d (%d),harq_ack[6] = %d (%d)\n",harq_ack[5].ack,harq_ack[5].send_harq_status,harq_ack[6].ack,harq_ack[6].send_harq_status);
       } else if (subframe == 3) { // ACK subframes 7 and 8
-        if (harq_ack[7].send_harq_status == 1) {
-          o_ACK[0] = harq_ack[7].ack;
-
-          if (harq_ack[8].send_harq_status == 1)
-            o_ACK[1] = harq_ack[8].ack;
-        } else if (harq_ack[8].send_harq_status == 1)
-          o_ACK[0] = harq_ack[8].ack;
-
-        status = harq_ack[7].send_harq_status + (harq_ack[8].send_harq_status<<1);
+        subframe_dl0 = 7;
+        subframe_dl1 = 8;
         //printf("Subframe 3, TDD config 3: harq_ack[7] = %d,harq_ack[8] = %d\n",harq_ack[7].ack,harq_ack[8].ack);
         //printf("status %d : o_ACK (%d,%d)\n", status,o_ACK[0],o_ACK[1]);
       } else if (subframe == 4) { // ACK subframes 9 and 0
-        if (harq_ack[9].send_harq_status == 1) {
-          o_ACK[0] = harq_ack[9].ack;
-
-          if (harq_ack[0].send_harq_status == 1)
-            o_ACK[1] = harq_ack[0].ack;
-        } else if (harq_ack[0].send_harq_status == 1)
-          o_ACK[0] = harq_ack[0].ack;
-
-        status = harq_ack[9].send_harq_status + (harq_ack[0].send_harq_status<<1);
+        subframe_dl0 = 9;
+        subframe_dl1 = 0;
         //printf("Subframe 4, TDD config 3: harq_ack[9] = %d,harq_ack[0] = %d\n",harq_ack[9].ack,harq_ack[0].ack);
       } else {
         LOG_E(PHY,"phy_procedures_lte.c: get_ack, illegal subframe %d for tdd_config %d\n",
               subframe,frame_parms->tdd_config);
         return(0);
+      }
+
+      // report ACK/NACK status
+      if (harq_ack[subframe_dl0].send_harq_status == 1) {
+        o_ACK[0] = harq_ack[subframe_dl0].ack;
+
+        if (harq_ack[subframe_dl1].send_harq_status == 1)
+          o_ACK[1] = harq_ack[subframe_dl1].ack;
+      } else if (harq_ack[subframe_dl1].send_harq_status == 1)
+        o_ACK[0] = harq_ack[subframe_dl1].ack;
+
+      status = harq_ack[subframe_dl0].send_harq_status + (harq_ack[subframe_dl1].send_harq_status<<1);
+
+      if (do_reset) {
+        // reset ACK/NACK status
+        harq_ack[subframe_dl0].ack = 2;
+        harq_ack[subframe_dl1].ack = 2;
+        harq_ack[subframe_dl0].send_harq_status = 0;
+        harq_ack[subframe_dl1].send_harq_status = 0;
       }
 
       break;
@@ -415,6 +477,24 @@ uint8_t get_ack(LTE_DL_FRAME_PARMS *frame_parms,
 
   return(status);
 }
+
+uint8_t get_ack(LTE_DL_FRAME_PARMS *frame_parms,
+                harq_status_t *harq_ack,
+                unsigned char subframe,
+                unsigned char *o_ACK)
+{
+  return get_reset_ack(frame_parms, harq_ack, subframe, o_ACK, 0);
+}
+
+uint8_t reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
+                harq_status_t *harq_ack,
+                unsigned char subframe,
+                unsigned char *o_ACK)
+{
+  return get_reset_ack(frame_parms, harq_ack, subframe, o_ACK, 1);
+}
+
+
 
 uint8_t Np6[4]= {0,1,3,5};
 uint8_t Np15[4]= {0,3,8,13};
@@ -516,6 +596,34 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
     return(255);
 
   }
+}
+
+dci_detect_mode_t dci_detect_mode_select(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe)
+{
+  dci_detect_mode_t ret = 0;
+
+  static dci_detect_mode_t Table_8_2_3gpp_36_213[][10] = {
+     //subf0    , subf1     , subf2 , subf3         , subf4     , subf5     , subf6     , subf7 , subf8     , subf9
+      {UL_DL_DCI, UL_DL_DCI , NO_DCI    , NO_DCI    , NO_DCI    , UL_DL_DCI , UL_DL_DCI , NO_DCI, NO_DCI    , NO_DCI    },  // tdd0
+      {DL_DCI   , UL_DL_DCI , NO_DCI    , NO_DCI    , UL_DL_DCI , DL_DCI    , UL_DL_DCI , NO_DCI, NO_DCI    , UL_DL_DCI },  // tdd1
+      {DL_DCI   , DL_DCI    , NO_DCI    , UL_DL_DCI , DL_DCI    , DL_DCI    , DL_DCI    , NO_DCI, UL_DL_DCI , DL_DCI    },  // tdd2
+      {UL_DL_DCI, DL_DCI    , NO_DCI    , NO_DCI    , NO_DCI    , DL_DCI    , DL_DCI    , DL_DCI, UL_DL_DCI , UL_DL_DCI },  // tdd3
+      {DL_DCI   , DL_DCI    , NO_DCI    , NO_DCI    , DL_DCI    , DL_DCI    , DL_DCI    , DL_DCI, UL_DL_DCI , UL_DL_DCI },  // tdd4
+      {DL_DCI   , DL_DCI    , NO_DCI    , DL_DCI    , DL_DCI    , DL_DCI    , DL_DCI    , DL_DCI, UL_DL_DCI , DL_DCI    },  // tdd5
+      {UL_DL_DCI, UL_DL_DCI , NO_DCI    , NO_DCI    , NO_DCI    , UL_DL_DCI , UL_DL_DCI , NO_DCI, NO_DCI    , UL_DL_DCI }}; // tdd6
+
+
+  DevAssert(subframe>=0 && subframe<=9);
+  DevAssert((frame_parms->tdd_config)>=0 && (frame_parms->tdd_config)<=6);
+
+  if (frame_parms->frame_type == FDD) {
+    ret = UL_DL_DCI;
+  } else {
+    ret = Table_8_2_3gpp_36_213[frame_parms->tdd_config][subframe];
+  }
+
+  LOG_D(PHY, "subframe %d: detect UL_DCI=%d, detect DL_DCI=%d\n", subframe, (ret & UL_DCI)>0, (ret & DL_DCI)>0);
+  return ret;
 }
 
 lte_subframe_t get_subframe_direction(uint8_t Mod_id,uint8_t CC_id,uint8_t subframe)

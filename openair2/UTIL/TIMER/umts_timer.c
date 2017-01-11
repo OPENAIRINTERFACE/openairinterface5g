@@ -54,7 +54,7 @@ umts_timer_check_time_out (list2_t * atimer_listP, uint32_t current_frame_tick_m
 
       mem_unit = list2_remove_head (atimer_listP);
       (*(timer->proc)) (timer->protocol, timer->timer_id);
-      free_mem_block (mem_unit);
+      free_mem_block (mem_unit, __func__);
 
       mem_unit = atimer_listP->head;
     } else {
@@ -74,7 +74,7 @@ umts_timer_delete_timer (list2_t * atimer_listP, void *timer_idP)
   while ((mem_unit)) {
     if (((struct timer_unit *) (mem_unit->data))->timer_id == timer_idP) {
       list2_remove_element (mem_unit, atimer_listP);
-      free_mem_block (mem_unit);
+      free_mem_block (mem_unit, __func__);
       return;
     }
 
@@ -93,7 +93,7 @@ umts_add_timer_list_up (list2_t * atimer_listP, void (*procP) (void *, void *), 
   int32_t             remaining_time;
   uint8_t              inserted = 0;
 
-  mb = get_free_mem_block (sizeof (struct timer_unit));
+  mb = get_free_mem_block (sizeof (struct timer_unit), __func__);
   ((struct timer_unit *) (mb->data))->proc = procP;
   ((struct timer_unit *) (mb->data))->protocol = protocolP;
   ((struct timer_unit *) (mb->data))->timer_id = timer_idP;
@@ -166,7 +166,7 @@ umts_stop_all_timers_except (list2_t * atimer_listP, void (*procP) (void *, void
       mem_unit_to_delete = mem_unit;
       mem_unit = mem_unit->next;
       list2_remove_element (mem_unit_to_delete, atimer_listP);
-      free_mem_block (mem_unit_to_delete);
+      free_mem_block (mem_unit_to_delete, __func__);
     } else {
       mem_unit = mem_unit->next;
     }

@@ -28,6 +28,8 @@
  */
 
 #define PDCP_C
+//#define DEBUG_PDCP_FIFO_FLUSH_SDU
+
 #ifndef USER_MODE
 #include <rtai_fifos.h>
 #endif
@@ -160,7 +162,7 @@ boolean_t pdcp_data_req(
 
   if (modeP == PDCP_TRANSMISSION_MODE_TRANSPARENT) {
     LOG_D(PDCP, " [TM] Asking for a new mem_block of size %d\n",sdu_buffer_sizeP);
-    pdcp_pdu_p = get_free_mem_block(sdu_buffer_sizeP);
+    pdcp_pdu_p = get_free_mem_block(sdu_buffer_sizeP, __func__);
 
     if (pdcp_pdu_p != NULL) {
       memcpy(&pdcp_pdu_p->data[0], sdu_buffer_pP, sdu_buffer_sizeP);
@@ -201,7 +203,7 @@ boolean_t pdcp_data_req(
     /*
      * Allocate a new block for the new PDU (i.e. PDU header and SDU payload)
      */
-    pdcp_pdu_p = get_free_mem_block(pdcp_pdu_size);
+    pdcp_pdu_p = get_free_mem_block(pdcp_pdu_size, __func__);
 
     if (pdcp_pdu_p != NULL) {
       /*
@@ -260,7 +262,7 @@ boolean_t pdcp_data_req(
               PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_p),
               current_sn);
 
-        free_mem_block(pdcp_pdu_p);
+        free_mem_block(pdcp_pdu_p, __func__);
 
         if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
           stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].data_req);
@@ -510,7 +512,7 @@ pdcp_data_ind(
             PROTOCOL_CTXT_FMT"Could not get PDCP instance key 0x%"PRIx64"\n",
             PROTOCOL_CTXT_ARGS(ctxt_pP),
             key);
-      free_mem_block(sdu_buffer_pP);
+      free_mem_block(sdu_buffer_pP, __func__);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_IND,VCD_FUNCTION_OUT);
       return FALSE;
     }
@@ -567,7 +569,7 @@ pdcp_data_ind(
             PROTOCOL_PDCP_CTXT_FMT"Incoming (from RLC) SDU is short of size (size:%d)! Ignoring...\n",
             PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
             sdu_buffer_sizeP);
-      free_mem_block(sdu_buffer_pP);
+      free_mem_block(sdu_buffer_pP, __func__);
 
       if (ctxt_pP->enb_flag) {
         stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].data_ind);
@@ -598,7 +600,7 @@ pdcp_data_ind(
        */
 #if 0
       LOG_D(PDCP, "Ignoring PDU...\n");
-      free_mem_block(sdu_buffer);
+      free_mem_block(sdu_buffer, __func__);
       return FALSE;
 #else
       //LOG_W(PDCP, "Delivering out-of-order SDU to upper layer...\n");
@@ -645,9 +647,9 @@ pdcp_data_ind(
 		   rb_id,
 		   sdu_buffer_sizeP - pdcp_header_len - pdcp_tailer_len,
 		   (uint8_t*)&sdu_buffer_pP->data[pdcp_header_len]);
-      free_mem_block(sdu_buffer_pP);
+      free_mem_block(sdu_buffer_pP, __func__);
 
-      // free_mem_block(new_sdu);
+      // free_mem_block(new_sdu, __func__);
       if (ctxt_pP->enb_flag) {
         stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].data_ind);
       } else {
@@ -722,7 +724,7 @@ pdcp_data_ind(
           ctime,
           (const char*)(&sdu_buffer_pP->data[payload_offset]),
                    sdu_buffer_sizeP - payload_offset ) == 0 ) {
-      free_mem_block(sdu_buffer_pP);
+      free_mem_block(sdu_buffer_pP, __func__);
 
       if (ctxt_pP->enb_flag) {
         stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].data_ind);
@@ -739,7 +741,7 @@ pdcp_data_ind(
 
   if (otg_enabled==1) {
     LOG_D(OTG,"Discarding received packed\n");
-    free_mem_block(sdu_buffer_pP);
+    free_mem_block(sdu_buffer_pP, __func__);
 
     if (ctxt_pP->enb_flag) {
       stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].data_ind);
@@ -794,7 +796,7 @@ pdcp_data_ind(
 #endif
 
   if (FALSE == packet_forwarded) {
-    new_sdu_p = get_free_mem_block(sdu_buffer_sizeP - payload_offset + sizeof (pdcp_data_ind_header_t));
+    new_sdu_p = get_free_mem_block(sdu_buffer_sizeP - payload_offset + sizeof (pdcp_data_ind_header_t), __func__);
 
     if (new_sdu_p) {
       if (pdcp_p->rlc_mode == RLC_MODE_AM ) {
@@ -806,6 +808,7 @@ pdcp_data_ind(
        */
       memset(new_sdu_p->data, 0, sizeof (pdcp_data_ind_header_t));
       ((pdcp_data_ind_header_t *) new_sdu_p->data)->data_size = sdu_buffer_sizeP - payload_offset;
+      AssertFatal((sdu_buffer_sizeP - payload_offset >= 0), "invalid PDCP SDU size!");
 
       // Here there is no virtualization possible
       // set ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst for IP layer here
@@ -820,6 +823,11 @@ pdcp_data_ind(
         ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id - oai_emulation.info.first_enb_local;
 #endif
       }
+#ifdef DEBUG_PDCP_FIFO_FLUSH_SDU
+      static uint32_t pdcp_inst = 0;
+      ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst = pdcp_inst++;
+      LOG_D(PDCP, "inst=%d size=%d\n", ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst, ((pdcp_data_ind_header_t *) new_sdu_p->data)->data_size);
+#endif
 
       memcpy(&new_sdu_p->data[sizeof (pdcp_data_ind_header_t)], \
              &sdu_buffer_pP->data[payload_offset], \
@@ -856,7 +864,7 @@ pdcp_data_ind(
 
 #endif
 
-  free_mem_block(sdu_buffer_pP);
+  free_mem_block(sdu_buffer_pP, __func__);
 
   if (ctxt_pP->enb_flag) {
     stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].data_ind);

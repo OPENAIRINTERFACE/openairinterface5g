@@ -44,7 +44,7 @@ rlc_um_test_send_sdu     (rlc_um_entity_t* rlcP,  uint32_t frame, unsigned int s
 
   switch (sdu_typeP) {
   case RLC_UM_TEST_SDU_TYPE_TCPIP:
-    sdu_mem = get_free_mem_block (strlen(tcip_sdu)+ 1 + sizeof (struct rlc_um_data_req_alloc));
+    sdu_mem = get_free_mem_block (strlen(tcip_sdu)+ 1 + sizeof (struct rlc_um_data_req_alloc), __func__);
 
     if (sdu_mem != NULL) {
       memset (sdu_mem->data, 0, sizeof (struct rlc_um_data_req_alloc));
@@ -59,7 +59,7 @@ rlc_um_test_send_sdu     (rlc_um_entity_t* rlcP,  uint32_t frame, unsigned int s
     break;
 
   case RLC_UM_TEST_SDU_TYPE_VOIP:
-    sdu_mem = get_free_mem_block (strlen(voip_sdu)+ 1 + sizeof (struct rlc_um_data_req_alloc));
+    sdu_mem = get_free_mem_block (strlen(voip_sdu)+ 1 + sizeof (struct rlc_um_data_req_alloc), __func__);
 
     if (sdu_mem != NULL) {
       memset (sdu_mem->data, 0, sizeof (struct rlc_um_data_req_alloc));
@@ -74,7 +74,7 @@ rlc_um_test_send_sdu     (rlc_um_entity_t* rlcP,  uint32_t frame, unsigned int s
     break;
 
   case RLC_UM_TEST_SDU_TYPE_SMALL:
-    sdu_mem = get_free_mem_block (strlen(very_small_sdu)+ 1 + sizeof (struct rlc_um_data_req_alloc));
+    sdu_mem = get_free_mem_block (strlen(very_small_sdu)+ 1 + sizeof (struct rlc_um_data_req_alloc), __func__);
 
     if (sdu_mem != NULL) {
       memset (sdu_mem->data, 0, sizeof (struct rlc_um_data_req_alloc));
