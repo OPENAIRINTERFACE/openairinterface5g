@@ -234,7 +234,7 @@ uint32_t ulsch_encoding(uint8_t *a,
   PHY_MEASUREMENTS *meas = &ue->measurements;
   LTE_UE_ULSCH_t *ulsch=ue->ulsch[eNB_id];
   LTE_UE_DLSCH_t **dlsch = ue->dlsch[eNB_id];
-  uint16_t rnti;
+  uint16_t rnti = 0xffff;
 
   if (!ulsch) {
     LOG_E(PHY,"Null ulsch ptr %p\n",ulsch);
