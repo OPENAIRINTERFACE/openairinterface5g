@@ -1393,7 +1393,7 @@ void rx_phich(PHY_VARS_UE *ue,
       }
     } else {
       //#ifdef DEBUG_PHICH
-      LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH, received NAK (%d) nseq %d, ngroup %d\n",
+      LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH, received NAK (%d) nseq %d, ngroup %d (Mlimit %d)\n",
             ue->Mod_id,harq_pid,
             proc->frame_rx,
             subframe,

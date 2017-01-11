@@ -523,7 +523,7 @@ int nas_message_encode(
       /* Compute the NAS message authentication code */
       LOG_TRACE(DEBUG,
                 "offset %d = %d - %d, hdr encode = %d, length = %d bytes = %d",
-                offset, size, sizeof(uint8_t),
+                offset, size, (int)sizeof(uint8_t),
                 size, length, bytes);
       uint32_t mac = _nas_message_get_mac(
                        buffer + offset,

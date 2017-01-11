@@ -115,7 +115,7 @@ rrc_eNB_S1AP_get_ue_ids(
 		    		               (hash_key_t)eNB_ue_s1ap_id,
 		    		               result2);
             if (h_rc != HASH_TABLE_OK) {
-              LOG_E(S1AP, "[eNB %u] Error while hashtable_insert in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %u\n",
+              LOG_E(S1AP, "[eNB %ld] Error while hashtable_insert in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32"\n",
 		    		  rrc_instance_pP - eNB_rrc_inst, eNB_ue_s1ap_id);
             }
 		  }
@@ -308,7 +308,7 @@ rrc_eNB_process_security(
     changed = TRUE;
   }
 
-  LOG_I (RRC, "[eNB %d][UE %x] Selected security algorithms (%x): %x, %x, %s\n",
+  LOG_I (RRC, "[eNB %d][UE %x] Selected security algorithms (%p): %x, %x, %s\n",
          ctxt_pP->module_id,
          ue_context_pP->ue_context.rnti,
          security_capabilities_pP,
@@ -1008,7 +1008,7 @@ int rrc_eNB_process_S1AP_UE_CTXT_MODIFICATION_REQ(MessageDef *msg_p, const char 
     /* Can not associate this message to an UE index, send a failure to S1AP and discard it! */
     MessageDef *msg_fail_p;
 
-    LOG_W(RRC, "[eNB %d] In S1AP_UE_CTXT_MODIFICATION_REQ: unknown UE from eNB_ue_s1ap_id (%d) for eNB %d\n", instance, eNB_ue_s1ap_id);
+    LOG_W(RRC, "[eNB %d] In S1AP_UE_CTXT_MODIFICATION_REQ: unknown UE from eNB_ue_s1ap_id (%d)\n", instance, eNB_ue_s1ap_id);
 
     msg_fail_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_UE_CTXT_MODIFICATION_FAIL);
     S1AP_UE_CTXT_MODIFICATION_FAIL (msg_fail_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;

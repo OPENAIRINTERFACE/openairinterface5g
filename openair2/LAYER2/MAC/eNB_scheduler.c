@@ -253,7 +253,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 	// check threshold
 	if (UE_list->UE_sched_ctrl[i].ul_failure_timer > 200) {
 	  // inform RRC of failure and clear timer
-	  LOG_I(MAC,"UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",i,rnti,UE_list->UE_sched_ctrl[i].ul_failure_timer);
+	  LOG_I(MAC,"UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",i,rnti);
 	  mac_eNB_rrc_ul_failure(module_idP,CC_id,frameP,subframeP,rnti);
 	  UE_list->UE_sched_ctrl[i].ul_failure_timer=0;
 	  UE_list->UE_sched_ctrl[i].ul_out_of_sync=1;

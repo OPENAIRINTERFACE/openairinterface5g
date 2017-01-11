@@ -190,7 +190,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag)
       return(ulsch);
   }
 
-  LOG_E(PHY,"new_ue_ulsch exit flag, size of  %d ,   %d\n",exit_flag, sizeof(LTE_UE_ULSCH_t));
+  LOG_E(PHY,"new_ue_ulsch exit flag, size of  %d ,   %zu\n",exit_flag, sizeof(LTE_UE_ULSCH_t));
   free_ue_ulsch(ulsch);
   return(NULL);
 

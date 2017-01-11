@@ -183,14 +183,14 @@ rrc_mac_config_req(
             logicalChannelConfig->ul_SpecificParameters->bucketSizeDuration; // set the max bucket size
         if (logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup != NULL) {
             UE_mac_inst[Mod_idP].scheduling_info.LCGID[logicalChannelIdentity]=*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
-            LOG_D(MAC,"[CONFIG][UE %d] LCID %d is attached to the LCGID %d\n",Mod_idP,logicalChannelIdentity,*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup);
+            LOG_D(MAC,"[CONFIG][UE %d] LCID %ld is attached to the LCGID %ld\n",Mod_idP,logicalChannelIdentity,*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup);
         }
         else {
         	UE_mac_inst[Mod_idP].scheduling_info.LCGID[logicalChannelIdentity] = MAX_NUM_LCGID;
         }
         UE_mac_inst[Mod_idP].scheduling_info.LCID_buffer_remain[logicalChannelIdentity] = 0;
       } else {
-        LOG_E(MAC,"[CONFIG][UE %d] LCID %d NULL ul_SpecificParameters\n",Mod_idP,logicalChannelIdentity);
+        LOG_E(MAC,"[CONFIG][UE %d] LCID %ld NULL ul_SpecificParameters\n",Mod_idP,logicalChannelIdentity);
         mac_xface->macphy_exit("NULL ul_SpecificParameters");
       }
     }

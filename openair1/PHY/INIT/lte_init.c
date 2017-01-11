@@ -211,7 +211,7 @@ void phy_config_sib2_eNB(uint8_t Mod_id,
       if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) {
         fp->MBSFN_config[i].fourFrames_flag = 0;
         fp->MBSFN_config[i].mbsfn_SubframeConfig = mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]; // 6-bit subframe configuration
-        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i,
+        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %d\n", i,
               fp->MBSFN_config[i].mbsfn_SubframeConfig);
       } else if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) { // 24-bit subframe configuration
         fp->MBSFN_config[i].fourFrames_flag = 1;
@@ -220,7 +220,7 @@ void phy_config_sib2_eNB(uint8_t Mod_id,
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]<<16);
 
-        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i,
+        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %d\n", i,
               fp->MBSFN_config[i].mbsfn_SubframeConfig);
       }
     }
@@ -331,7 +331,7 @@ void phy_config_sib2_ue(uint8_t Mod_id,int CC_id,
       if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) {
         fp->MBSFN_config[i].fourFrames_flag = 0;
         fp->MBSFN_config[i].mbsfn_SubframeConfig = mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]; // 6-bit subframe configuration
-        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i,
+        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %d\n", i,
               fp->MBSFN_config[i].mbsfn_SubframeConfig);
       } else if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) { // 24-bit subframe configuration
         fp->MBSFN_config[i].fourFrames_flag = 1;
@@ -340,7 +340,7 @@ void phy_config_sib2_ue(uint8_t Mod_id,int CC_id,
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]<<16);
 
-        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i,
+        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %d\n", i,
               fp->MBSFN_config[i].mbsfn_SubframeConfig);
       }
     }
@@ -357,7 +357,7 @@ void phy_config_sib13_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,int mbsfn_Area_
   LTE_DL_FRAME_PARMS *fp = &PHY_vars_UE_g[Mod_id][CC_id]->frame_parms;
 
 
-  LOG_I(PHY,"[UE%d] Applying MBSFN_Area_id %d for index %d\n",Mod_id,mbsfn_AreaId_r9,mbsfn_Area_idx);
+  LOG_I(PHY,"[UE%d] Applying MBSFN_Area_id %ld for index %d\n",Mod_id,mbsfn_AreaId_r9,mbsfn_Area_idx);
 
   if (mbsfn_Area_idx == 0) {
     fp->Nid_cell_mbsfn = (uint16_t)mbsfn_AreaId_r9;
@@ -376,7 +376,7 @@ void phy_config_sib13_eNB(uint8_t Mod_id,int CC_id,int mbsfn_Area_idx,
   LTE_DL_FRAME_PARMS *fp = &PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms;
 
 
-  LOG_I(PHY,"[eNB%d] Applying MBSFN_Area_id %d for index %d\n",Mod_id,mbsfn_AreaId_r9,mbsfn_Area_idx);
+  LOG_I(PHY,"[eNB%d] Applying MBSFN_Area_id %ld for index %d\n",Mod_id,mbsfn_AreaId_r9,mbsfn_Area_idx);
 
   if (mbsfn_Area_idx == 0) {
     fp->Nid_cell_mbsfn = (uint16_t)mbsfn_AreaId_r9;
@@ -398,7 +398,7 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *eNB)
     physicalConfigDedicated = eNB->physicalConfigDedicated[UE_id];
 
     if (physicalConfigDedicated != NULL) {
-      LOG_I(PHY,"[eNB %d] Frame %d: Sent physicalConfigDedicated=%p for UE %d\n",eNB->Mod_id,physicalConfigDedicated,UE_id);
+      LOG_I(PHY,"[eNB %d] Sent physicalConfigDedicated=%p for UE %d\n",eNB->Mod_id,physicalConfigDedicated,UE_id);
       LOG_D(PHY,"------------------------------------------------------------------------\n");
 
       if (physicalConfigDedicated->pdsch_ConfigDedicated) {
@@ -653,7 +653,7 @@ void phy_config_dedicated_eNB(uint8_t Mod_id,
   int8_t UE_id = find_ue(rnti,eNB);
 
   if (UE_id == -1) {
-    LOG_E( PHY, "[eNB %"PRIu8"] find_ue() returns -1\n");
+    LOG_E( PHY, "[eNB %"PRIu8"] find_ue() returns -1\n", Mod_id);
     return;
   }
 
@@ -725,13 +725,13 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
 
   if ((dl_CarrierFreq_r10>=36000) && (dl_CarrierFreq_r10<=36199)) {
     carrier_freq_local = 1900000000 + (dl_CarrierFreq_r10-36000)*100000; //band 33 from 3GPP 36.101 v 10.9 Table 5.7.3-1
-    LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %d) for UE %d\n",Mod_id,/*eNB->frame*/0,CC_id,carrier_freq_local,dl_CarrierFreq_r10,UE_id);
+    LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %ld) for UE %d\n",Mod_id,/*eNB->frame*/0,CC_id,carrier_freq_local,dl_CarrierFreq_r10,UE_id);
   } else if ((dl_CarrierFreq_r10>=6150) && (dl_CarrierFreq_r10<=6449)) {
     carrier_freq_local = 832000000 + (dl_CarrierFreq_r10-6150)*100000; //band 20 from 3GPP 36.101 v 10.9 Table 5.7.3-1
     // this is actually for the UL only, but we use it for DL too, since there is no TDD mode for this band
-    LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %d) for UE %d\n",Mod_id,/*eNB->frame*/0,CC_id,carrier_freq_local,dl_CarrierFreq_r10,UE_id);
+    LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %ld) for UE %d\n",Mod_id,/*eNB->frame*/0,CC_id,carrier_freq_local,dl_CarrierFreq_r10,UE_id);
   } else {
-    LOG_E(PHY,"[eNB %d] Frame %d: ARFCN %d of SCell %d for UE %d not supported\n",Mod_id,/*eNB->frame*/0,dl_CarrierFreq_r10,CC_id,UE_id);
+    LOG_E(PHY,"[eNB %d] Frame %d: ARFCN %ld of SCell %d for UE %d not supported\n",Mod_id,/*eNB->frame*/0,dl_CarrierFreq_r10,CC_id,UE_id);
   }
 
   if (physicalConfigDedicatedSCell_r10) {

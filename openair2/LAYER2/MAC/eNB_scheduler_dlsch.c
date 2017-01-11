@@ -1651,7 +1651,10 @@ fill_DLSCH_dci(
           break;
 
         case 3:
-          LOG_D(MAC,"[eNB %d] CC_id %d Adding Format 2A UE %d spec DCI for %d PRBS (rb alloc: %x) \n",
+          /* TODO: fix log, what is 'rb alloc'? */
+          /*LOG_D(MAC,"[eNB %d] CC_id %d Adding Format 2A UE %d spec DCI for %d PRBS (rb alloc: %x) \n",
+                module_idP, CC_id, UE_id, nb_rb);*/
+          LOG_D(MAC,"[eNB %d] CC_id %d Adding Format 2A UE %d spec DCI for %d PRBS\n",
                 module_idP, CC_id, UE_id, nb_rb);
 
           if (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.frame_type == TDD) {
