@@ -807,8 +807,7 @@ int emm_proc_plmn_selection_end(int found, tac_t tac, ci_t ci, AcT_t rat)
     if (is_forbidden) {
       /* The selected cell is known not to be able to provide normal
        * service */
-      LOG_TRACE(INFO, "EMM-IDLE  - UE may camp on this acceptable cell ",
-                "for limited services");
+      LOG_TRACE(INFO, "EMM-IDLE  - UE may camp on this acceptable cell for limited services");
 
       /* Save the index of the first forbidden PLMN */
       if (_emm_plmn_list.fplmn < 0) {
@@ -819,8 +818,7 @@ int emm_proc_plmn_selection_end(int found, tac_t tac, ci_t ci, AcT_t rat)
     } else {
       /* A suitable cell has been found and the PLMN or tracking area
        * is not in the forbidden list */
-      LOG_TRACE(INFO, "EMM-IDLE  - UE may camp on this suitable cell ",
-                "for normal services");
+      LOG_TRACE(INFO, "EMM-IDLE  - UE may camp on this suitable cell for normal services");
       _emm_plmn_list.fplmn = -1;
       _emm_plmn_list.param[index].stat = NET_OPER_CURRENT;
       emm_sap.primitive = EMMREG_REGISTER_CNF;
@@ -905,7 +903,10 @@ int emm_proc_plmn_selection_end(int found, tac_t tac, ci_t ci, AcT_t rat)
    * Or terminate the PLMN selection procedure
    */
   if (!select_next_plmn) {
-    if (!(_emm_plmn_list.fplmn) < 0) { // FIXME this comparison makes no sense (bool < 0)
+    /* TODO: be sure of this fix */
+    LOG_TRACE(WARNING, "%s:%d:%s: be sure!!\n", __FILE__, __LINE__, __FUNCTION__);
+    //if (!(_emm_plmn_list.fplmn) < 0) { // FIXME this comparison makes no sense (bool < 0)
+    if (!(_emm_plmn_list.fplmn < 0)) { // FIXME this comparison makes no sense (bool < 0)
       /* There were one or more PLMNs which were available and allowable,
        * but an LR failure made registration on those PLMNs unsuccessful
        * or an entry in any of the forbidden area lists prevented a

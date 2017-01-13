@@ -118,7 +118,6 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
   unsigned char exit_flag = 0,i,j,r,aa,layer;
   int re;
   unsigned char bw_scaling =1;
-  uint8_t nb_antennas_tx = frame_parms->nb_antennas_tx;
 
   switch (N_RB_DL) {
   case 6:

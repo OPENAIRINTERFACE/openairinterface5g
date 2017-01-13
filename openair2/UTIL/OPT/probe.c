@@ -159,7 +159,7 @@ static void *opt_listener_thread(void *arg)
       pthread_exit(NULL);
     } else {
       /* Normal read -> discard PDU */
-      LOG_D(OPT, "Incoming data received from: %s:%u with length %d\n",
+      LOG_D(OPT, "Incoming data received from: %s:%u with length %zd\n",
             inet_ntoa(opt_listener.address.sin_addr),
             ntohs(opt_listener.address.sin_port), ret);
     }
@@ -198,7 +198,9 @@ int opt_create_listener_socket(char *ip_address, uint16_t port)
   ret = bind(opt_listener.sd, (struct sockaddr*) &opt_listener.address, sizeof(opt_listener.address));
 
   if (ret != 0) {
-    LOG_E(OPT, "Failed to bind socket to (%s:%u): %s\n", strerror(errno));
+    LOG_E(OPT, "Failed to bind socket to (%s:%u): %s\n",
+          inet_ntoa(opt_listener.address.sin_addr),
+          ntohs(opt_listener.address.sin_port), strerror(errno));
     opt_type = OPT_NONE;
     close(opt_listener.sd);
     opt_listener.sd = -1;
@@ -358,7 +360,7 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
                      (const struct sockaddr *)&g_serv_addr, sizeof(g_serv_addr));
 
   if (bytesSent != frameOffset) {
-    LOG_W(OPT, "sendto() failed (not a thread-safe func)- expected %d bytes, got %d (errno=%d)\n",
+    LOG_W(OPT, "sendto() failed (not a thread-safe func)- expected %d bytes, got %ld (errno=%d)\n",
           frameOffset, bytesSent, errno);
     //exit(1);
   }

@@ -257,7 +257,7 @@ boolean_t pdcp_data_req(
        * Validate incoming sequence number, there might be a problem with PDCP initialization
        */
       if (current_sn > pdcp_calculate_max_seq_num_for_given_size(pdcp_p->seq_num_size)) {
-        LOG_E(PDCP, PROTOCOL_PDCP_CTXT_FMT" Generated sequence number (%lu) is greater than a sequence number could ever be!\n"\
+        LOG_E(PDCP, PROTOCOL_PDCP_CTXT_FMT" Generated sequence number (%"PRIu16") is greater than a sequence number could ever be!\n"\
               "There must be a problem with PDCP initialization, ignoring this PDU...\n",
               PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_p),
               current_sn);
@@ -836,7 +836,7 @@ pdcp_data_ind(
 
       /* Print octets of incoming data in hexadecimal form */
       LOG_D(PDCP, "Following content has been received from RLC (%d,%d)(PDCP header has already been removed):\n",
-            sdu_buffer_sizeP  - payload_offset + sizeof(pdcp_data_ind_header_t),
+            sdu_buffer_sizeP  - payload_offset + (int)sizeof(pdcp_data_ind_header_t),
             sdu_buffer_sizeP  - payload_offset);
       //util_print_hex_octets(PDCP, &new_sdu_p->data[sizeof (pdcp_data_ind_header_t)], sdu_buffer_sizeP - payload_offset);
       //util_flush_hex_octets(PDCP, &new_sdu_p->data[sizeof (pdcp_data_ind_header_t)], sdu_buffer_sizeP - payload_offset);
@@ -1214,7 +1214,7 @@ rrc_pdcp_config_asn1_req (
       }
 
       if (lc_id == 1 || lc_id == 2) {
-        LOG_E(RLC, PROTOCOL_CTXT_FMT" logicalChannelIdentity = %d is invalid in RRC message when adding DRB!\n", PROTOCOL_CTXT_ARGS(ctxt_pP), lc_id);
+        LOG_E(RLC, PROTOCOL_CTXT_FMT" logicalChannelIdentity = %ld is invalid in RRC message when adding DRB!\n", PROTOCOL_CTXT_ARGS(ctxt_pP), lc_id);
         continue;
       }
 
@@ -1312,7 +1312,7 @@ rrc_pdcp_config_asn1_req (
           break;
 
         default:
-          LOG_W(PDCP,"[MOD_id %u/%u][RB %u] unknown drb_toaddmod->PDCP_Config->headerCompression->present \n",
+          LOG_W(PDCP,PROTOCOL_PDCP_CTXT_FMT"[RB %ld] unknown drb_toaddmod->PDCP_Config->headerCompression->present \n",
                 PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_p), drb_id);
           break;
         }
@@ -1345,7 +1345,7 @@ rrc_pdcp_config_asn1_req (
       h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
 
       if (h_rc != HASH_TABLE_OK) {
-        LOG_E(PDCP, PROTOCOL_CTXT_FMT" PDCP REMOVE FAILED drb_id %u\n",
+        LOG_E(PDCP, PROTOCOL_CTXT_FMT" PDCP REMOVE FAILED drb_id %ld\n",
               PROTOCOL_CTXT_ARGS(ctxt_pP),
               drb_id);
         continue;
@@ -1749,7 +1749,7 @@ rrc_pdcp_config_req (
             pdcp_p->cipheringAlgorithm,
             pdcp_p->integrityProtAlgorithm );
     } else {
-        LOG_W(PDCP,"[%s %d] bad security mode %d", security_modeP);
+        LOG_W(PDCP,PROTOCOL_PDCP_CTXT_FMT" bad security mode %d", PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_p), security_modeP);
     }
 
     break;

@@ -788,7 +788,7 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 
       eNB->dlsch[(uint8_t)UE_id][0]->nCCE[subframe] = dci_alloc->firstCCE;
       
-      LOG_D(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resource for ue DCI (PDSCH %"PRIx16")  => %"PRIu8"/%u\n",eNB->Mod_id,frame,subframe,
+      LOG_D(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resource for ue DCI (PDSCH %"PRIx16")  => %"PRIu8"\n",eNB->Mod_id,frame,subframe,
 	    dci_alloc->rnti,eNB->dlsch[(uint8_t)UE_id][0]->nCCE[subframe]);
       
 #if defined(SMBV) 
@@ -900,7 +900,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
   int i;
 
   LOG_D(PHY,
-	"[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", G %d, nb_rb %"PRIu16", mcs %"PRIu8", pmi_alloc %"PRIx16", rv %"PRIu8" (round %"PRIu8")\n",
+	"[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", G %d, nb_rb %"PRIu16", mcs %"PRIu8", pmi_alloc %"PRIx64", rv %"PRIu8" (round %"PRIu8")\n",
 	eNB->Mod_id, dlsch->rnti,harq_pid,
 	frame, subframe, input_buffer_length,
 	get_G(fp,
@@ -2784,7 +2784,7 @@ void do_prach(PHY_VARS_eNB *eNB) {
     
     // wake up thread for PRACH RX
     if (pthread_mutex_lock(&proc->mutex_prach) != 0) {
-      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB PRACH thread %d (IC %d)\n", proc->instance_cnt_prach );
+      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB PRACH thread %d (IC %d)\n", proc->thread_index, proc->instance_cnt_prach);
       exit_fun( "error locking mutex_prach" );
       return;
     }
