@@ -875,29 +875,33 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     // Transmit TX buffer based on timestamp from RX
     //    printf("trx_write -> USRP TS %llu (sf %d)\n", (proc->timestamp_rx+(3*fp->samples_per_tti)),(proc->subframe_rx+2)%10);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_rx+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance)&0xffffffff );
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers
 	
-    for (i=0; i<fp->nb_antennas_tx; i++)
-      txp[i] = (void*)&eNB->common_vars.txdata[0][i][((proc->subframe_rx+tx_sfoffset)%10)*fp->samples_per_tti]; 
-    
-    txs = eNB->rfdevice.trx_write_func(&eNB->rfdevice,
-				       proc->timestamp_rx+eNB->ts_offset+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance,
-				       txp,
-				       fp->samples_per_tti,
-				       fp->nb_antennas_tx,
-				       1);
-    
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
-    
-    
-    
-    if (txs !=  fp->samples_per_tti) {
-      LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, fp->samples_per_tti);
-      exit_fun( "problem transmitting samples" );
-    }	
+    if ((subframe_select(fp,proc->subframe_rx+tx_sfoffset) == SF_DL) ||
+	(subframe_select(fp,proc->subframe_rx+tx_sfoffset) == SF_S)) {
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+
+      for (i=0; i<fp->nb_antennas_tx; i++)
+	txp[i] = (void*)&eNB->common_vars.txdata[0][i][((proc->subframe_rx+tx_sfoffset)%10)*fp->samples_per_tti]; 
+      
+      txs = eNB->rfdevice.trx_write_func(&eNB->rfdevice,
+					 proc->timestamp_rx+eNB->ts_offset+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance,
+					 txp,
+					 fp->samples_per_tti,
+					 fp->nb_antennas_tx,
+					 1);
+      
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
+      
+      
+      
+      if (txs !=  fp->samples_per_tti) {
+	LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, fp->samples_per_tti);
+	exit_fun( "problem transmitting samples" );
+      }	
+    }
   }
-  
+
   for (i=0; i<fp->nb_antennas_rx; i++)
     rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][*subframe*fp->samples_per_tti];
   

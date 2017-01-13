@@ -198,6 +198,8 @@ int trx_eth_write_raw_IF4p5(openair0_device *device, openair0_timestamp timestam
     packet_size = RAW_IF4p5_PDLFFT_SIZE_BYTES(nblocks);    
   } else if (flags == IF4p5_PULFFT) {
     packet_size = RAW_IF4p5_PULFFT_SIZE_BYTES(nblocks);    
+  } else if (flags == IF4p5_PULTICK) {
+    packet_size = RAW_IF4p5_PULTICK_SIZE_BYTES;    
   } else if (flags == IF5_MOBIPASS) {
     packet_size = RAW_IF5_MOBIPASS_SIZE_BYTES;
   } else {
