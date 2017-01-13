@@ -1365,6 +1365,7 @@ void init_openair0() {
              openair0_cfg[card].rx_gain[i],
              openair0_cfg[card].tx_freq[i],
              openair0_cfg[card].rx_freq[i]);
+      openair0_cfg[card].configFilename = rf_config_file;
     }
   }
 }
