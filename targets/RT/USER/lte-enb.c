@@ -128,7 +128,7 @@ extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
 extern int sync_var;
 
-extern transmission_mode;
+extern int transmission_mode;
 
 //pthread_t                       main_eNB_thread;
 
@@ -1014,7 +1014,7 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 
   uint16_t packet_type;
   uint32_t symbol_number=0;
-  uint32_t symbol_mask, symbol_mask_full;
+  uint32_t symbol_mask_full;
 
   symbol_mask_full = (1<<fp->symbols_per_tti)-1;
 
@@ -1262,6 +1262,7 @@ void *eNB_thread_synch(void *arg) {
 
   lte_sync_time_free();
 
+  return NULL;
 }
 
 int wakeup_synch(PHY_VARS_eNB *eNB){
@@ -1490,6 +1491,10 @@ static void* eNB_thread_single( void* param ) {
 					rxp,
 					fp->samples_per_tti*10,
 					fp->nb_antennas_rx);
+
+      if (rxs != (fp->samples_per_tti*10))
+	exit_fun("Problem receiving samples\n");
+
       // wakeup synchronization processing thread
       wakeup_synch(eNB);
       ic=0;
@@ -1506,6 +1511,9 @@ static void* eNB_thread_single( void* param ) {
 					    rxp2,
 					    fp->samples_per_tti,
 					    fp->nb_antennas_rx);
+	if (rxs != fp->samples_per_tti)
+	  exit_fun( "problem receiving samples" );
+
 	pthread_mutex_lock(&eNB->proc.mutex_synch);
 	ic = eNB->proc.instance_cnt_synch;
 	pthread_mutex_unlock(&eNB->proc.mutex_synch);
@@ -1518,6 +1526,9 @@ static void* eNB_thread_single( void* param ) {
 				      rxp,
 				      eNB->rx_offset,
 				      fp->nb_antennas_rx);
+    if (rxs != eNB->rx_offset)
+      exit_fun( "problem receiving samples" );
+
     for (i=0;i<4;i++) {
       eNB->rfdevice.openair0_cfg->rx_freq[i] = temp_freq1;
       eNB->rfdevice.openair0_cfg->tx_freq[i] = temp_freq2;
@@ -1880,7 +1891,7 @@ int start_rf(PHY_VARS_eNB *eNB) {
   return(eNB->rfdevice.trx_start_func(&eNB->rfdevice));
 }
 
-extern void eNB_fep_rru_if5(PHY_VARS_eNB *eNB);
+extern void eNB_fep_rru_if5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc);
 extern void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc);
 extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc);
 extern void do_prach(PHY_VARS_eNB *eNB,int frame,int subframe);
@@ -1968,7 +1979,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 
 	break;
       case eNodeB_3GPP:
-	eNB->do_precoding         = 1;
+	eNB->do_precoding         = (eNB->frame_parms.nb_antennas_tx==1) ? 0 : 1;
 	eNB->do_prach             = do_prach;
 	eNB->fep                  = eNB_fep_full;//(single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
 	eNB->td                   = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
@@ -1989,27 +2000,27 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->ifdevice.host_type   = BBU_HOST;
 	break;
       case eNodeB_3GPP_BBU:
-	eNB->do_precoding   = 1;
-	eNB->do_prach       = do_prach;
-	eNB->fep            = eNB_fep_full;//(single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
-	eNB->td             = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
-	eNB->te             = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
-	eNB->proc_uespec_rx = phy_procedures_eNB_uespec_RX;
-	eNB->proc_tx        = proc_tx_full;
+	eNB->do_precoding         = (eNB->frame_parms.nb_antennas_tx==1) ? 0 : 1;
+	eNB->do_prach             = do_prach;
+	eNB->fep                  = eNB_fep_full;//(single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
+	eNB->td                   = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+	eNB->te                   = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
+	eNB->proc_uespec_rx       = phy_procedures_eNB_uespec_RX;
+	eNB->proc_tx              = proc_tx_full;
         if (eNB->node_timing == synch_to_other) {
-           eNB->tx_fh          = tx_fh_if5_mobipass;
-           eNB->rx_fh          = rx_fh_slave;
-           eNB->fh_asynch      = fh_if5_asynch_UL;
+           eNB->tx_fh             = tx_fh_if5_mobipass;
+           eNB->rx_fh             = rx_fh_slave;
+           eNB->fh_asynch         = fh_if5_asynch_UL;
 
         }
         else {
-           eNB->tx_fh          = tx_fh_if5;
-           eNB->rx_fh          = rx_fh_if5;
-           eNB->fh_asynch      = NULL;
+           eNB->tx_fh             = tx_fh_if5;
+           eNB->rx_fh             = rx_fh_if5;
+           eNB->fh_asynch         = NULL;
         }
 
-	eNB->start_rf       = NULL;
-	eNB->start_if       = start_if;
+	eNB->start_rf             = NULL;
+	eNB->start_if             = start_if;
 	eNB->rfdevice.host_type   = BBU_HOST;
 
 	eNB->ifdevice.host_type   = BBU_HOST;
