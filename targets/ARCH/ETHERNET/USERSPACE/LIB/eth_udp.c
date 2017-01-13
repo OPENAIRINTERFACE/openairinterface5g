@@ -206,6 +206,8 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
     packet_size = UDP_IF4p5_PDLFFT_SIZE_BYTES(nblocks);    
   } else if (flags == IF4p5_PULFFT) {
     packet_size = UDP_IF4p5_PULFFT_SIZE_BYTES(nblocks); 
+  } else if (flags == IF4p5_PULTICK) {
+    packet_size = UDP_IF4p5_PULTICK_SIZE_BYTES; 
   } else if (flags == IF4p5_PRACH) {  
     packet_size = UDP_IF4p5_PRACH_SIZE_BYTES;   
   } else {

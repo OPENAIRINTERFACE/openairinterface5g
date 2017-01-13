@@ -181,6 +181,16 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
     s->tx_md.has_time_spec = true;
   else
     s->tx_md.has_time_spec = false;
+
+  if (device->openair0_cfg[0].tx_freq[0] == device->openair0_cfg[0].rx_freq[0]) {
+    // for TDD each write should be considered as a burst to trigger the switch on GPIO
+    s->tx_md.start_of_burst = true;
+    s->tx_md.end_of_burst = true;
+  }
+  else {
+    s->tx_md.start_of_burst = false;
+    s->tx_md.end_of_burst = false;
+  }
   
   if (cc>1) {
     std::vector<void *> buff_ptrs;
@@ -190,7 +200,7 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
   else
     ret = (int)s->tx_stream->send(buff[0], nsamps, s->tx_md,1e-3);
 
-  s->tx_md.start_of_burst = false;
+
 
   if (ret != nsamps) {
     printf("[xmit] tx samples %d != %d\n",ret,nsamps);
