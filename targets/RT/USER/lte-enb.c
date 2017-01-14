@@ -768,8 +768,18 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   int subframe_tx,frame_tx;
 
   symbol_number = 0;
-  symbol_mask_full = (1<<fp->symbols_per_tti)-1;
+  symbol_mask_full = (subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti)-1;
 
+  // correct for TDD
+  if (fp->frame_type == TDD) {
+    while (subframe_select(fp,*subframe) == SF_UL) {
+      *subframe=*subframe+1;
+      if (*subframe==10) {
+	*subframe=0;
+	*frame=*frame+1;
+      }
+    }
+  }
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
     recv_IF4p5(eNB, &frame_tx, &subframe_tx, &packet_type, &symbol_number);
     if (proc->first_tx != 0) {
@@ -1033,6 +1043,8 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
       LOG_D(PHY,"rx_fh:if4p5: frame %d, subframe %d, PULFFT symbol %d\n",f,sf,symbol_number);
 
       proc->symbol_mask[sf] = proc->symbol_mask[sf] | (1<<symbol_number);
+    } else if (packet_type == IF4p5_PULTICK) {
+      break;
     } else if (packet_type == IF4p5_PRACH) {
       LOG_D(PHY,"rx_fh:if4p5: frame %d, subframe %d, PRACH\n",f,sf);
       // wakeup prach processing

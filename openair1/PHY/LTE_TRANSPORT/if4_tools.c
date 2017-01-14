@@ -33,6 +33,7 @@
 #include "PHY/defs.h"
 #include "PHY/TOOLS/alaw_lut.h"
 #include "PHY/extern.h"
+#include "SCHED/defs.h"
 
 //#include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
@@ -54,11 +55,14 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
 
   IF4p5_header_t *packet_header=NULL;
   eth_state_t *eth = (eth_state_t*) (eNB->ifdevice.priv);
-
+  int nsym = fp->symbols_per_tti;
   
   if (eNB->CC_id==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
 
   if (packet_type == IF4p5_PDLFFT) {
+    if (subframe_select(fp,subframe)==SF_S)
+      nsym=fp->dl_symbols_in_S_subframe;
+
     db_fulllength = 12*fp->N_RB_DL;
     db_halflength = (db_fulllength)>>1;
     slotoffsetF = (subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
@@ -74,7 +78,7 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
     }    
     gen_IF4p5_dl_header(packet_header, frame, subframe);
 		    
-    for (symbol_id=0; symbol_id<fp->symbols_per_tti; symbol_id++) {
+    for (symbol_id=0; symbol_id<nsym; symbol_id++) {
       if (eNB->CC_id==1) LOG_I(PHY,"DL_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,frame,subframe,symbol_id);
       
       for (element_id=0; element_id<db_halflength; element_id++) {
@@ -107,6 +111,12 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
     slotoffsetF = 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength - 1; 
 
+    if (subframe_select(fp,subframe)==SF_S) {
+      nsym=fp->ul_symbols_in_S_subframe;
+      slotoffsetF  += (fp->ofdm_symbol_size*(fp->symbols_per_tti-nsym));
+      blockoffsetF += (fp->ofdm_symbol_size*(fp->symbols_per_tti-nsym));
+    }
+
     if (eth->flags == ETH_RAW_IF4p5_MODE) {
       packet_header = (IF4p5_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
       data_block = (uint16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t);
@@ -117,7 +127,7 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
     gen_IF4p5_ul_header(packet_header, packet_type, frame, subframe);
 
     if (packet_type == IF4p5_PULFFT) {
-      for (symbol_id=0; symbol_id<fp->symbols_per_tti; symbol_id++) {			
+      for (symbol_id=fp->symbols_per_tti-nsym; symbol_id<fp->symbols_per_tti; symbol_id++) {			
 	LOG_D(PHY,"IF4p5_PULFFT: frame %d, subframe %d, symbol %d\n",frame,subframe,symbol_id);
 	for (element_id=0; element_id<db_halflength; element_id++) {
 	  i = (uint16_t*) &rxdataF[0][blockoffsetF+element_id];
@@ -293,6 +303,7 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
              (int16_t*) (rx_buffer+sizeof_IF4p5_header_t),
              PRACH_BLOCK_SIZE_BYTES);
     }
+  } else if (*packet_type == IF4p5_PULTICK) {
 
   } else {
     AssertFatal(1==0, "recv_IF4p5 - Unknown packet_type %x", *packet_type);            
