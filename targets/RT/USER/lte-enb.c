@@ -406,16 +406,22 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 
 void tx_fh_if5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, proc->timestamp_tx&0xffffffff );
-  send_IF5(eNB, proc->timestamp_tx, proc->subframe_tx, &seqno, IF5_RRH_GW_DL);
+  if ((eNB->frame_parms.frame_type==TDD) &&
+      (subframe_select(&eNB->frame_parms,proc->subframe_tx) != SF_UL))    
+    send_IF5(eNB, proc->timestamp_tx, proc->subframe_tx, &seqno, IF5_RRH_GW_DL);
 }
 
 void tx_fh_if5_mobipass(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, proc->timestamp_tx&0xffffffff );
-  send_IF5(eNB, proc->timestamp_tx, proc->subframe_tx, &seqno, IF5_MOBIPASS); 
+  if ((eNB->frame_parms.frame_type==TDD) &&
+      (subframe_select(&eNB->frame_parms,proc->subframe_tx) != SF_UL))    
+    send_IF5(eNB, proc->timestamp_tx, proc->subframe_tx, &seqno, IF5_MOBIPASS); 
 }
 
-void tx_fh_if4p5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {    
-  send_IF4p5(eNB,proc->frame_tx,proc->subframe_tx, IF4p5_PDLFFT, 0);
+void tx_fh_if4p5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
+  if ((eNB->frame_parms.frame_type==TDD) &&
+      (subframe_select(&eNB->frame_parms,proc->subframe_tx) != SF_UL))    
+    send_IF4p5(eNB,proc->frame_tx,proc->subframe_tx, IF4p5_PDLFFT, 0);
 }
 
 void proc_tx_high0(PHY_VARS_eNB *eNB,
@@ -762,8 +768,18 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   int subframe_tx,frame_tx;
 
   symbol_number = 0;
-  symbol_mask_full = (1<<fp->symbols_per_tti)-1;
+  symbol_mask_full = (subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti)-1;
 
+  // correct for TDD
+  if (fp->frame_type == TDD) {
+    while (subframe_select(fp,*subframe) == SF_UL) {
+      *subframe=*subframe+1;
+      if (*subframe==10) {
+	*subframe=0;
+	*frame=*frame+1;
+      }
+    }
+  }
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
     recv_IF4p5(eNB, &frame_tx, &subframe_tx, &packet_type, &symbol_number);
     if (proc->first_tx != 0) {
@@ -1016,7 +1032,10 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   uint32_t symbol_number=0;
   uint32_t symbol_mask_full;
 
-  symbol_mask_full = (1<<fp->symbols_per_tti)-1;
+  if ((fp->frame_type == TDD) && (subframe_select(fp,*subframe)==SF_S))
+    symbol_mask_full = (1<<fp->ul_symbols_in_S_subframe)-1;
+  else 
+    symbol_mask_full = (1<<fp->symbols_per_tti)-1;
 
   if (eNB->CC_id==1) LOG_I(PHY,"rx_fh_if4p5: frame %d, subframe %d\n",*frame,*subframe);
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
@@ -1027,15 +1046,13 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
       LOG_D(PHY,"rx_fh_if4p5: frame %d, subframe %d, PULFFT symbol %d\n",f,sf,symbol_number);
 
       proc->symbol_mask[sf] = proc->symbol_mask[sf] | (1<<symbol_number);
-    } 
-    else if (packet_type == IF4p5_PULTICK) {
+    } else if (packet_type == IF4p5_PULTICK) {
       if (f!=*frame)
 	LOG_E(PHY,"rx_fh_if4p5: PULTICK received frame %d != expected %d\n",f,*frame);
       if (sf!=*subframe)
 	LOG_E(PHY,"rx_fh_if4p5: PULTICK received subframe %d != expected %d\n",sf,*subframe);
       break;
-    }
-    else if (packet_type == IF4p5_PRACH) {
+    } else if (packet_type == IF4p5_PRACH) {
       LOG_D(PHY,"rx_fh:if4p5: frame %d, subframe %d, PRACH\n",f,sf);
       // wakeup prach processing
       if (eNB->do_prach) eNB->do_prach(eNB,f,sf);
