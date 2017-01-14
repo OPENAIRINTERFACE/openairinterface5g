@@ -2817,7 +2817,14 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc){
   const int frame        = proc->frame_rx;
   int offset             = (eNB->single_thread_flag==1) ? 0 : (subframe&1);
 
-  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;
+  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) {
+
+    if (eNB->node_function == NGFI_RRU_IF4p5) {
+      /// **** in TDD during DL send_IF4 of ULTICK to RCC **** ///
+      send_IF4p5(eNB, proc->frame_rx, proc->subframe_rx, IF4p5_PULTICK, 0);
+    }    
+    return;
+  }
 
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_ENB+offset, proc->frame_rx );
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_ENB+offset, proc->subframe_rx );

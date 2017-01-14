@@ -1024,10 +1024,18 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 
     //proc->frame_rx = (proc->frame_rx + proc->frame_offset)&1023;
     if (packet_type == IF4p5_PULFFT) {
-      LOG_D(PHY,"rx_fh:if4p5: frame %d, subframe %d, PULFFT symbol %d\n",f,sf,symbol_number);
+      LOG_D(PHY,"rx_fh_if4p5: frame %d, subframe %d, PULFFT symbol %d\n",f,sf,symbol_number);
 
       proc->symbol_mask[sf] = proc->symbol_mask[sf] | (1<<symbol_number);
-    } else if (packet_type == IF4p5_PRACH) {
+    } 
+    else if (packet_type == IF4p5_PULTICK) {
+      if (f!=*frame)
+	LOG_E(PHY,"rx_fh_if4p5: PULTICK received frame %d != expected %d\n",f,*frame);
+      if (sf!=*subframe)
+	LOG_E(PHY,"rx_fh_if4p5: PULTICK received subframe %d != expected %d\n",sf,*subframe);
+      break;
+    }
+    else if (packet_type == IF4p5_PRACH) {
       LOG_D(PHY,"rx_fh:if4p5: frame %d, subframe %d, PRACH\n",f,sf);
       // wakeup prach processing
       if (eNB->do_prach) eNB->do_prach(eNB,f,sf);
