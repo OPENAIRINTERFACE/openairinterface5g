@@ -768,7 +768,7 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   int subframe_tx,frame_tx;
 
   symbol_number = 0;
-  symbol_mask_full = (subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti)-1;
+
 
   // correct for TDD
   if (fp->frame_type == TDD) {
@@ -780,6 +780,7 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
       }
     }
   }
+  symbol_mask_full = ((subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti))-1;
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
     recv_IF4p5(eNB, &frame_tx, &subframe_tx, &packet_type, &symbol_number);
     if (proc->first_tx != 0) {
@@ -1047,10 +1048,11 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 
       proc->symbol_mask[sf] = proc->symbol_mask[sf] | (1<<symbol_number);
     } else if (packet_type == IF4p5_PULTICK) {
-      if (f!=*frame)
+    
+      if ((proc->first_rx==0) && (f!=*frame))
 	LOG_E(PHY,"rx_fh_if4p5: PULTICK received frame %d != expected %d\n",f,*frame);
-      if (sf!=*subframe)
-	LOG_E(PHY,"rx_fh_if4p5: PULTICK received subframe %d != expected %d\n",sf,*subframe);
+      if ((proc->first_rx==0) && (sf!=*subframe))
+	LOG_E(PHY,"rx_fh_if4p5: PULTICK received subframe %d != expected %d (first_rx %d)\n",sf,*subframe,proc->first_rx);
       break;
     } else if (packet_type == IF4p5_PRACH) {
       LOG_D(PHY,"rx_fh:if4p5: frame %d, subframe %d, PRACH\n",f,sf);
@@ -1061,8 +1063,9 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     if (eNB->CC_id==1) LOG_I(PHY,"rx_fh_if4p5: symbol_mask[%d] %x\n",*subframe,proc->symbol_mask[*subframe]);
 
   } while(proc->symbol_mask[*subframe] != symbol_mask_full);    
-  proc->subframe_rx = *subframe;
-  proc->frame_rx = *frame;
+
+  proc->subframe_rx = sf;
+  proc->frame_rx    = f;
 
   proc->symbol_mask[*subframe] = 0;
   proc->symbol_mask[(9+*subframe)%10]= 0; // to handle a resynchronization event
