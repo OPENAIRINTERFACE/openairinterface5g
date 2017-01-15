@@ -899,26 +899,48 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     //    printf("trx_write -> USRP TS %llu (sf %d)\n", (proc->timestamp_rx+(3*fp->samples_per_tti)),(proc->subframe_rx+2)%10);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_rx+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance)&0xffffffff );
     // prepare tx buffer pointers
-	
-    if ((subframe_select(fp,proc->subframe_rx+tx_sfoffset) == SF_DL) ||
-	(subframe_select(fp,proc->subframe_rx+tx_sfoffset) == SF_S)) {
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+
+    lte_subframe_t SF_type     = subframe_select(fp,(proc->subframe_rx+tx_sfoffset)%10);
+    lte_subframe_t prevSF_type = subframe_select(fp,(proc->subframe_rx+tx_sfoffset+9)%10);
+    lte_subframe_t nextSF_type = subframe_select(fp,(proc->subframe_rx+tx_sfoffset+1)%10);
+    if ((SF_type == SF_DL) ||
+	(SF_type == SF_S)) {
 
       for (i=0; i<fp->nb_antennas_tx; i++)
 	txp[i] = (void*)&eNB->common_vars.txdata[0][i][((proc->subframe_rx+tx_sfoffset)%10)*fp->samples_per_tti]; 
-      
+
+      int siglen=fp->samples_per_tti,flags=1;
+
+      if (SF_type == SF_S) {
+	siglen = fp->dl_symbols_in_S_subframe*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
+	flags=3; // end of burst
+      }
+      if ((fp->frame_type == TDD) &&
+	  (SF_type == SF_DL)&&
+	  (prevSF_type == SF_UL) &&
+	  (nextSF_type == SF_DL))
+	flags = 2; // start of burst
+
+      if ((fp->frame_type == TDD) &&
+	  (SF_type == SF_DL)&&
+	  (prevSF_type == SF_UL) &&
+	  (nextSF_type == SF_UL))
+	flags = 4; // start of burst and end of burst (only one DL SF between two UL)
+     
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_WRITE_FLAGS,flags); 
       txs = eNB->rfdevice.trx_write_func(&eNB->rfdevice,
 					 proc->timestamp_rx+eNB->ts_offset+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance,
 					 txp,
-					 fp->samples_per_tti,
+					 siglen,
 					 fp->nb_antennas_tx,
-					 1);
+					 flags);
       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
       
       
       
-      if (txs !=  fp->samples_per_tti) {
+      if (txs !=  siglen) {
 	LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, fp->samples_per_tti);
 	exit_fun( "problem transmitting samples" );
       }	

@@ -177,17 +177,24 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
   s->tx_md.time_spec = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
 
   
-  if(flags)
+  if(flags>0)
     s->tx_md.has_time_spec = true;
   else
     s->tx_md.has_time_spec = false;
 
-  if (device->openair0_cfg[0].tx_freq[0] == device->openair0_cfg[0].rx_freq[0]) {
-    // for TDD each write should be considered as a burst to trigger the switch on GPIO
+  if (flags == 2) { // start of burst
+    s->tx_md.start_of_burst = true;
+    s->tx_md.end_of_burst = false;
+  }
+  else if (flags == 3) { // end of burst
+    s->tx_md.start_of_burst = false;
+    s->tx_md.end_of_burst = true;
+  }
+  else if (flags == 4) { // start and end
     s->tx_md.start_of_burst = true;
     s->tx_md.end_of_burst = true;
   }
-  else {
+  else if (flags==1) { // middle of burst
     s->tx_md.start_of_burst = false;
     s->tx_md.end_of_burst = false;
   }

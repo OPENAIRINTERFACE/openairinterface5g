@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Thu Jan  5 06:19:58 2017
+[*] Sun Jan 15 07:26:50 2017
 [*]
 [dumpfile] "/tmp/openair_dump_eNB.vcd"
-[dumpfile_mtime] "Thu Jan  5 06:09:13 2017"
-[dumpfile_size] 24570356
+[dumpfile_mtime] "Sun Jan 15 07:04:19 2017"
+[dumpfile_size] 18140627
 [savefile] "/home/uprru1/oai/openairinterface5g/targets/RT/USER/rru_if4p5_usrp.gtkw"
-[timestart] 23491157000
+[timestart] 29977510000
 [size] 1301 716
 [pos] 309 0
-*-19.793451 29983948856 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-21.793451 29983948856 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 284
 [signals_width] 262
 [sst_expanded] 1
@@ -17,6 +17,9 @@
 @28
 functions.trx_read
 functions.trx_write
+@25
+variables.trx_write_flags[63:0]
+@28
 functions.trx_write_if
 functions.send_if4
 functions.trx_read_if

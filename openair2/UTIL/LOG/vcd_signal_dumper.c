@@ -98,6 +98,7 @@ const char* eurecomVariablesNames[] = {
   "rxcnt",
   "trx_ts",
   "trx_tst",
+  "trx_write_flags",
   "tx_ts",
   "rx_ts",
   "hw_cnt_rx",
