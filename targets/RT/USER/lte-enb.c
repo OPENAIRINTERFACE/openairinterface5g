@@ -769,6 +769,7 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 
   symbol_number = 0;
 
+  LOG_D(PHY,"fh_asynch_DL_IF4p5: in, frame %d, subframe %d\n",*frame,*subframe);
 
   // correct for TDD
   if (fp->frame_type == TDD) {
@@ -780,6 +781,9 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
       }
     }
   }
+
+  LOG_D(PHY,"fh_asynch_DL_IF4p5: after TDD correction, frame %d, subframe %d\n",*frame,*subframe);
+
   symbol_mask_full = ((subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti))-1;
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
     recv_IF4p5(eNB, &frame_tx, &subframe_tx, &packet_type, &symbol_number);
@@ -788,6 +792,8 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
       *subframe = subframe_tx;
       proc->first_tx = 0;
       proc->frame_offset = frame_tx - proc->frame_tx;
+      symbol_mask_full = ((subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti))-1;
+
     }
     else {
       if (frame_tx != *frame) {
