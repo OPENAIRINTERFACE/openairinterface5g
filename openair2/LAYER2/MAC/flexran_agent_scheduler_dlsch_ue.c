@@ -125,7 +125,7 @@ flexran_schedule_ue_spec_default(mid_t   mod_id,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,VCD_FUNCTION_IN);
 
   //weight = get_ue_weight(module_idP,UE_id);
-  aggregation = 2; // set to the maximum aggregation level
+  aggregation = 2; 
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     min_rb_unit[CC_id] = get_min_rb_unit(mod_id, CC_id);
@@ -177,7 +177,11 @@ flexran_schedule_ue_spec_default(mid_t   mod_id,
         //  mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
         continue;
       }
-
+      
+      aggregation = get_aggregation(get_bw_index(mod_id,CC_id), 
+				    flexran_get_ue_wcqi(mod_id, UE_id),
+				    format1);
+      
       if ((ue_sched_ctl->pre_nb_available_rbs[CC_id] == 0) ||  // no RBs allocated 
 	  CCE_allocation_infeasible(mod_id, CC_id, 0, subframe, aggregation, rnti)) {
         LOG_D(MAC,"[eNB %d] Frame %d : no RB allocated for UE %d on CC_id %d: continue \n",
@@ -290,7 +294,6 @@ flexran_schedule_ue_spec_default(mid_t   mod_id,
 	  }
 
 	  nb_available_rb -= nb_rb;
-	  aggregation = process_ue_cqi(mod_id, UE_id);
 	  
 	  PHY_vars_eNB_g[mod_id][CC_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = nb_rb;
 	  PHY_vars_eNB_g[mod_id][CC_id]->mu_mimo_mode[UE_id].dl_pow_off = ue_sched_ctl->dl_pow_off[CC_id];
@@ -489,7 +492,9 @@ flexran_schedule_ue_spec_default(mid_t   mod_id,
 	  dci_tbs = TBS;
 	  mcs = mcs_tmp;
 
-	  aggregation = process_ue_cqi(mod_id,UE_id);
+	  aggregation = get_aggregation(get_bw_index(mod_id,CC_id), 
+				    flexran_get_ue_wcqi(mod_id, UE_id),
+				    format1);
 	  dl_dci->has_aggr_level = 1;
 	  dl_dci->aggr_level = aggregation;
 	  

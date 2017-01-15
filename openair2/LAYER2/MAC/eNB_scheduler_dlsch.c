@@ -461,7 +461,7 @@ schedule_ue_spec(
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,VCD_FUNCTION_IN);
 
   //weight = get_ue_weight(module_idP,UE_id);
-  aggregation = 1; // set to the maximum aggregation level
+  aggregation = 2; 
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     min_rb_unit[CC_id]=get_min_rb_unit(module_idP,CC_id);
@@ -518,7 +518,11 @@ schedule_ue_spec(
         //  mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
         continue_flag=1;
       }
-
+      
+      aggregation = get_aggregation(get_bw_index(module_idP,CC_id), 
+				    eNB_UE_stats->DL_cqi[0],
+				    format1);
+      
       if ((ue_sched_ctl->pre_nb_available_rbs[CC_id] == 0) ||  // no RBs allocated 
 	  CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,aggregation,rnti)
 	  ) {
@@ -628,9 +632,6 @@ schedule_ue_spec(
           }
 
           nb_available_rb -= nb_rb;
-          aggregation = process_ue_cqi(module_idP,UE_id);
-
-
           PHY_vars_eNB_g[module_idP][CC_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = nb_rb;
           PHY_vars_eNB_g[module_idP][CC_id]->mu_mimo_mode[UE_id].dl_pow_off = ue_sched_ctl->dl_pow_off[CC_id];
 
@@ -1118,8 +1119,7 @@ schedule_ue_spec(
           T(T_ENB_MAC_UE_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
             T_INT(harq_pid), T_BUFFER(UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0], TBS));
 
-          aggregation = process_ue_cqi(module_idP,UE_id);
-          UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid] = nb_rb;
+	  UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid] = nb_rb;
 
           add_ue_dlsch_info(module_idP,
                             CC_id,
@@ -1517,7 +1517,8 @@ fill_DLSCH_dci(
   eNB_MAC_INST *eNB  =&eNB_mac_inst[module_idP];
   UE_list_t    *UE_list = &eNB->UE_list;
   //RA_TEMPLATE  *RA_template;
-
+  LTE_eNB_UE_stats  *eNB_UE_stats   = NULL;
+  
   start_meas(&eNB->fill_DLSCH_dci);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_FILL_DLSCH_DCI,VCD_FUNCTION_IN);
 
@@ -1544,6 +1545,7 @@ fill_DLSCH_dci(
         nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
 
         DLSCH_dci = (void *)UE_list->UE_template[CC_id][UE_id].DLSCH_DCI[harq_pid];
+	eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
 
 
         /// Synchronizing rballoc with rballoc_sub
@@ -1643,7 +1645,7 @@ fill_DLSCH_dci(
                           DLSCH_dci,
                           rnti,
                           size_bytes,
-                          process_ue_cqi (module_idP,UE_id),//aggregation,
+                          get_aggregation(get_bw_index(module_idP,CC_id),eNB_UE_stats->DL_cqi[0],format1),
                           size_bits,
                           format1,
                           0);
@@ -1736,8 +1738,8 @@ fill_DLSCH_dci(
                           DLSCH_dci,
                           rnti,
                           size_bytes,
-                          process_ue_cqi (module_idP,UE_id),//aggregation,
-                          size_bits,
+			  get_aggregation(get_bw_index(module_idP,CC_id),eNB_UE_stats->DL_cqi[0],format2A),
+			  size_bits,
                           format2A,
                           0);
 
