@@ -153,11 +153,24 @@ void assign_rbs_required (module_id_t Mod_id,
   UE_list_t        *UE_list = &eNB_mac_inst[Mod_id].UE_list;
   //  UE_TEMPLATE           *UE_template;
   LTE_DL_FRAME_PARMS   *frame_parms[MAX_NUM_CCs];
+  int skip_ue;
 
   // clear rb allocations across all CC_ids
   for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
     pCCid = UE_PCCID(Mod_id,UE_id);
     rnti = UE_list->UE_template[pCCid][UE_id].rnti;
+
+    /* skip UE not present in PHY (for any of its active CCs) */
+    skip_ue = 0;
+    for (n=0; n<UE_list->numactiveCCs[UE_id]; n++) {
+      CC_id = UE_list->ordered_CCids[n][UE_id];
+      if (mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti) == NULL) {
+        skip_ue = 1;
+        break;
+      }
+    }
+    if (skip_ue == 1)
+      continue;
 
     //update CQI information across component carriers
     for (n=0; n<UE_list->numactiveCCs[UE_id]; n++) {
@@ -262,7 +275,7 @@ int maxround(module_id_t Mod_id,uint16_t rnti,int frame,sub_frame_t subframe,uin
 }
 
 // This function scans all CC_ids for a particular UE to find the maximum DL CQI
-
+// it returns -1 if the UE is not found in PHY layer (get_eNB_UE_stats gives NULL)
 int maxcqi(module_id_t Mod_id,int32_t UE_id)
 {
 
@@ -276,8 +289,9 @@ int maxcqi(module_id_t Mod_id,int32_t UE_id)
     eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,UE_RNTI(Mod_id,UE_id));
 
     if (eNB_UE_stats==NULL) {
-      mac_xface->macphy_exit("maxcqi: could not get eNB_UE_stats\n");
-      return 0; // not reached
+      /* the UE may have been removed in the PHY layer, don't exit */
+      //mac_xface->macphy_exit("maxcqi: could not get eNB_UE_stats\n");
+      return -1;
     }
 
     if (eNB_UE_stats->DL_cqi[0] > CQI) {
@@ -329,7 +343,13 @@ void sort_UEs (module_id_t Mod_idP,
       round2  = maxround(Mod_idP,rnti2,frameP,subframeP,0);  //mac_xface->get_ue_active_harq_pid(Mod_id,rnti2,subframe,&harq_pid2,&round2,0);
       pCC_id2 = UE_PCCID(Mod_idP,UE_id2);
 
-      if(round2 > round1) { // Check first if one of the UEs has an active HARQ process which needs service and swap order
+      /* if 2nd UE is not in PHY, do nothing */
+      if (cqi2 == -1)
+        continue;
+      /* if 1st UE is not in PHY, swap with 2nd UE */
+      if (cqi1 == -1) {
+        swap_UEs(UE_list,UE_id1,UE_id2,0);
+      } else if(round2 > round1) { // Check first if one of the UEs has an active HARQ process which needs service and swap order
         swap_UEs(UE_list,UE_id1,UE_id2,0);
       } else if (round2 == round1) {
         // RK->NN : I guess this is for fairness in the scheduling. This doesn't make sense unless all UEs have the same configuration of logical channels.  This should be done on the sum of all information that has to be sent.  And still it wouldn't ensure fairness.  It should be based on throughput seen by each UE or maybe using the head_sdu_creation_time, i.e. swap UEs if one is waiting longer for service.
@@ -758,6 +778,8 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   int sf05_upper=-1,sf05_lower=-1;
 #endif
   LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
+  if (eNB_UE_stats == NULL) return;
+
   // initialize harq_pid and round
   mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,
 				    frameP,subframeP,

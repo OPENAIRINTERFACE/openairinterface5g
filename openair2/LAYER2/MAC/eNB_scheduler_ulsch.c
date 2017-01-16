@@ -751,21 +751,26 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
       continue;
     }
 
+    /* let's drop the UE if get_eNB_UE_stats returns NULL when calling it with any of the UE's active UL CCs */
+    /* TODO: refine? */
+    drop_ue = 0;
+    for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
+      CC_id = UE_list->ordered_ULCCids[n][UE_id];
+      if (mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti) == NULL) {
+        LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: no PHY context\n", module_idP,frameP,subframeP,UE_id,rnti,CC_id);
+        drop_ue = 1;
+        break;
+      }
+    }
+    if (drop_ue == 1)
+      continue;
+
     // loop over all active UL CC_ids for this UE
     for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
       // This is the actual CC_id in the list
       CC_id = UE_list->ordered_ULCCids[n][UE_id];
       frame_parms = mac_xface->get_lte_frame_parms(module_idP,CC_id);
       eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
-
-      if (eNB_UE_stats==NULL) {
-        LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: no PHY context\n", module_idP,frameP,subframeP,UE_id,rnti,CC_id);
-	drop_ue=1;
-        continue; // mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
-      }
-
-      if (drop_ue==1)
-	continue;
 
       if (CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,aggregation,rnti)) {
         LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: not enough nCCE\n", module_idP,frameP,subframeP,UE_id,rnti,CC_id);
