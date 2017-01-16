@@ -523,7 +523,7 @@ int nas_message_encode(
       /* Compute the NAS message authentication code */
       LOG_TRACE(DEBUG,
                 "offset %d = %d - %d, hdr encode = %d, length = %d bytes = %d",
-                offset, size, sizeof(uint8_t),
+                offset, size, (int)sizeof(uint8_t),
                 size, length, bytes);
       uint32_t mac = _nas_message_get_mac(
                        buffer + offset,
@@ -992,12 +992,12 @@ static int _nas_message_decrypt(
 
     case NAS_SECURITY_ALGORITHMS_EEA1: {
       if (direction == SECU_DIRECTION_UPLINK) {
-        count = 0x00000000 ||
-                ((emm_security_context->ul_count.overflow && 0x0000FFFF) << 8) ||
+        count = 0x00000000 |
+                ((emm_security_context->ul_count.overflow & 0x0000FFFF) << 8) |
                 (emm_security_context->ul_count.seq_num & 0x000000FF);
       } else {
-        count = 0x00000000 ||
-                ((emm_security_context->dl_count.overflow && 0x0000FFFF) << 8) ||
+        count = 0x00000000 |
+                ((emm_security_context->dl_count.overflow & 0x0000FFFF) << 8) |
                 (emm_security_context->dl_count.seq_num & 0x000000FF);
       }
 
@@ -1026,12 +1026,12 @@ static int _nas_message_decrypt(
 
     case NAS_SECURITY_ALGORITHMS_EEA2: {
       if (direction == SECU_DIRECTION_UPLINK) {
-        count = 0x00000000 ||
-                ((emm_security_context->ul_count.overflow && 0x0000FFFF) << 8) ||
+        count = 0x00000000 |
+                ((emm_security_context->ul_count.overflow & 0x0000FFFF) << 8) |
                 (emm_security_context->ul_count.seq_num & 0x000000FF);
       } else {
-        count = 0x00000000 ||
-                ((emm_security_context->dl_count.overflow && 0x0000FFFF) << 8) ||
+        count = 0x00000000 |
+                ((emm_security_context->dl_count.overflow & 0x0000FFFF) << 8) |
                 (emm_security_context->dl_count.seq_num & 0x000000FF);
       }
 
@@ -1154,12 +1154,12 @@ static int _nas_message_encrypt(
 
     case NAS_SECURITY_ALGORITHMS_EEA1: {
       if (direction == SECU_DIRECTION_UPLINK) {
-        count = 0x00000000 ||
-                ((emm_security_context->ul_count.overflow && 0x0000FFFF) << 8) ||
+        count = 0x00000000 |
+                ((emm_security_context->ul_count.overflow & 0x0000FFFF) << 8) |
                 (emm_security_context->ul_count.seq_num & 0x000000FF);
       } else {
-        count = 0x00000000 ||
-                ((emm_security_context->dl_count.overflow && 0x0000FFFF) << 8) ||
+        count = 0x00000000 |
+                ((emm_security_context->dl_count.overflow & 0x0000FFFF) << 8) |
                 (emm_security_context->dl_count.seq_num & 0x000000FF);
       }
 
@@ -1185,12 +1185,12 @@ static int _nas_message_encrypt(
 
     case NAS_SECURITY_ALGORITHMS_EEA2: {
       if (direction == SECU_DIRECTION_UPLINK) {
-        count = 0x00000000 ||
-                ((emm_security_context->ul_count.overflow && 0x0000FFFF) << 8) ||
+        count = 0x00000000 |
+                ((emm_security_context->ul_count.overflow & 0x0000FFFF) << 8) |
                 (emm_security_context->ul_count.seq_num & 0x000000FF);
       } else {
-        count = 0x00000000 ||
-                ((emm_security_context->dl_count.overflow && 0x0000FFFF) << 8) ||
+        count = 0x00000000 |
+                ((emm_security_context->dl_count.overflow & 0x0000FFFF) << 8) |
                 (emm_security_context->dl_count.seq_num & 0x000000FF);
       }
 
@@ -1296,15 +1296,17 @@ static uint32_t _nas_message_get_mac(
     uint32_t            count;
     uint32_t           *mac32;
 
+#ifdef DEBUG_NAS_MESSAGE
     int i,bytes = 0;
+#endif
 
     if (direction == SECU_DIRECTION_UPLINK) {
-      count = 0x00000000 ||
-              ((emm_security_context->ul_count.overflow && 0x0000FFFF) << 8) ||
+      count = 0x00000000 |
+              ((emm_security_context->ul_count.overflow & 0x0000FFFF) << 8) |
               (emm_security_context->ul_count.seq_num & 0x000000FF);
     } else {
-      count = 0x00000000 ||
-              ((emm_security_context->dl_count.overflow && 0x0000FFFF) << 8) ||
+      count = 0x00000000 |
+              ((emm_security_context->dl_count.overflow & 0x0000FFFF) << 8) |
               (emm_security_context->dl_count.seq_num & 0x000000FF);
     }
 
@@ -1367,12 +1369,12 @@ static uint32_t _nas_message_get_mac(
     uint32_t           *mac32;
 
     if (direction == SECU_DIRECTION_UPLINK) {
-      count = 0x00000000 ||
-              ((emm_security_context->ul_count.overflow && 0x0000FFFF) << 8) ||
+      count = 0x00000000 |
+              ((emm_security_context->ul_count.overflow & 0x0000FFFF) << 8) |
               (emm_security_context->ul_count.seq_num & 0x000000FF);
     } else {
-      count = 0x00000000 ||
-              ((emm_security_context->dl_count.overflow && 0x0000FFFF) << 8) ||
+      count = 0x00000000 |
+              ((emm_security_context->dl_count.overflow & 0x0000FFFF) << 8) |
               (emm_security_context->dl_count.seq_num & 0x000000FF);
     }
 

@@ -960,7 +960,7 @@ void *UE_thread(void *arg) {
       if (instance_cnt_synch < 0) {  // we can invoke the synch
 	// grab 10 ms of signal and wakeup synch thread
 	for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
-	  rxp[i] = (void*)&rxdata[i][0];
+	  rxp[i] = (void*)&UE->common_vars.rxdata[i][0];
       
 	if (UE->mode != loop_through_memory) {
 	  rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
@@ -1024,7 +1024,7 @@ void *UE_thread(void *arg) {
 	    LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
 	    rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
 					     &timestamp,
-					     (void**)rxdata,
+					     (void**)UE->common_vars.rxdata,
 					     UE->rx_offset,
 					     UE->frame_parms.nb_antennas_rx);
 	    if (rxs != UE->rx_offset) {
@@ -1040,7 +1040,7 @@ void *UE_thread(void *arg) {
 	  // read in first symbol
 	  rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
 					   &timestamp,
-					   (void**)rxdata,
+					   (void**)UE->common_vars.rxdata,
 					   UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0,
 					   UE->frame_parms.nb_antennas_rx);
     if (rxs != (UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0)) {
@@ -1069,7 +1069,7 @@ void *UE_thread(void *arg) {
 	
 	for (int sf=0;sf<10;sf++) {
 	  for (i=0; i<UE->frame_parms.nb_antennas_rx; i++) 
-	    rxp[i] = (void*)&rxdata[i][UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0+(sf*UE->frame_parms.samples_per_tti)];
+	    rxp[i] = (void*)&UE->common_vars.rxdata[i][UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0+(sf*UE->frame_parms.samples_per_tti)];
 	  // grab signal for subframe
 	  if (UE->mode != loop_through_memory) {
 	    if (sf<9) {
@@ -1154,7 +1154,7 @@ void *UE_thread(void *arg) {
 	      // read in first symbol of next frame and adjust for timing drift
 	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
 					       &timestamp1,
-					       (void**)rxdata,
+					       (void**)UE->common_vars.rxdata,
 					       UE->frame_parms.ofdm_symbol_size + UE->frame_parms.nb_prefix_samples0 - rx_off_diff,
 					       UE->frame_parms.nb_antennas_rx);
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 0 );

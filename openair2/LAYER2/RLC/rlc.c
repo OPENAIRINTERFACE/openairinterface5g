@@ -71,7 +71,7 @@ void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char* dataP, con
         LOG_T(componentP, " |\n");
       }
 
-      LOG_T(componentP, " %04d |", octet_index);
+      LOG_T(componentP, " %04lu |", octet_index);
     }
 
     /*

@@ -579,7 +579,7 @@ rlc_um_try_reassembly(
           rlc_pP->stat_rx_data_bytes_dropped += tb_ind_p->size;
           rlc_pP->reassembly_missing_sn_detected = 1;
 
-          LOG_W(RLC, "[SN %d] Bad RLC header! Discard this RLC PDU\n", sn, size);
+          LOG_W(RLC, "[SN %d] Bad RLC header! Discard this RLC PDU (size=%d)\n", sn, size);
         }
       }
 
@@ -664,7 +664,7 @@ rlc_um_start_timer_reordering(
         rlc_pP->t_reordering.ms_time_out);
 #endif
   } else {
-    LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T-REORDERING] NOT STARTED, CAUSE CONFIGURED 0 ms\n",
+    LOG_T(RLC, PROTOCOL_RLC_UM_CTXT_FMT"[T-REORDERING] NOT STARTED, CAUSE CONFIGURED 0 ms\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP));
   }
 }

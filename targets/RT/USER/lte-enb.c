@@ -128,7 +128,7 @@ extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
 extern int sync_var;
 
-extern transmission_mode;
+extern int transmission_mode;
 
 //pthread_t                       main_eNB_thread;
 
@@ -689,7 +689,7 @@ void fh_if4p5_asynch_UL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     if (proc->first_rx != 0) {
       *frame = proc->frame_rx;
       *subframe = proc->subframe_rx;
-      proc->first_rx = 0;
+      proc->first_rx--;
     }
     else {
       if (proc->frame_rx != *frame) {
@@ -893,7 +893,7 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
   proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
   proc->timestamp_tx = proc->timestamp_rx+(4*fp->samples_per_tti);
-  //  printf("trx_read <- USRP TS %llu (sf %d, first_rx %d)\n", proc->timestamp_rx,proc->subframe_rx,proc->first_rx);  
+  //printf("trx_read <- RX TS %llu (sf %d, first_rx %d)\n", proc->timestamp_rx,proc->subframe_rx,proc->first_rx);  
   
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
@@ -906,7 +906,7 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
       exit_fun("Exiting");
     }
   } else {
-    proc->first_rx = 0;
+    proc->first_rx--;
     *frame = proc->frame_rx;
     *subframe = proc->subframe_rx;        
   }
@@ -934,16 +934,16 @@ void rx_fh_if5(PHY_VARS_eNB *eNB,int *frame, int *subframe) {
   
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
-      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
+      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,*subframe);
       exit_fun("Exiting");
     }
     
     if (proc->frame_rx != *frame) {
-      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
+      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,*frame);
       exit_fun("Exiting");
     }
   } else {
-    proc->first_rx = 0;
+    proc->first_rx--;
     *frame = proc->frame_rx;
     *subframe = proc->subframe_rx;        
   }      
@@ -995,7 +995,7 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
       exit_fun("Exiting");
     }
   } else {
-    proc->first_rx = 0;
+    proc->first_rx--;
     *frame = proc->frame_rx;
     *subframe = proc->subframe_rx;        
   }
@@ -1083,7 +1083,9 @@ void wakeup_slaves(eNB_proc_t *proc) {
     // wake up slave FH thread
     // lock the FH mutex and make sure the thread is ready
     if (pthread_mutex_timedlock(&slave_proc->mutex_FH,&wait) != 0) {
-      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB CCid %d slave CCid %d (IC %d)\n",proc->CC_id,slave_proc->CC_id);
+      /* TODO: fix this log, what is 'IC'? */
+      /*LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB CCid %d slave CCid %d (IC %d)\n",proc->CC_id,slave_proc->CC_id);*/
+      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB CCid %d slave CCid %d\n",proc->CC_id,slave_proc->CC_id);
       exit_fun( "error locking mutex_rxtx" );
       break;
     }
@@ -1339,7 +1341,7 @@ void init_eNB_proc(int inst) {
     proc->instance_cnt_asynch_rxtx = -1;
     proc->CC_id = CC_id;    
     
-    proc->first_rx=1;
+    proc->first_rx=4;
     proc->first_tx=1;
 
     pthread_mutex_init( &proc_rxtx[0].mutex_rxtx, NULL);

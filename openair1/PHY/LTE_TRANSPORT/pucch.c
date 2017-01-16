@@ -555,6 +555,7 @@ void generate_pucch2x(int32_t **txdataF,
   N_UL_symb = (fp->Ncp==0) ? 7 : 6;
   data_ind  = 0;
   zptr      = z;
+  nprime    = 0;
   for (ns=(subframe<<1),u=u0,v=v0; ns<(2+(subframe<<1)); ns++,u=u1,v=v1) {
 
     if ((ns&1) == 0)

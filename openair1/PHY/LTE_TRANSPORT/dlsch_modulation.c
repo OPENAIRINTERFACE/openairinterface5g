@@ -595,7 +595,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 
   int use2ndpilots = (frame_parms->mode1_flag==1)?1:0;
 
-  uint32_t tti_offset,aa;
+  uint32_t tti_offset; //,aa;
   uint8_t re;
   uint8_t qam64_table_offset_re = 0;
   uint8_t qam64_table_offset_im = 0;

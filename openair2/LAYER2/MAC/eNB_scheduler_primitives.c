@@ -791,7 +791,8 @@ int get_min_rb_unit(module_id_t module_id, uint8_t CC_id)
 
   default:
     min_rb_unit=2;
-    LOG_W(MAC,"[eNB %d] N_DL_RB %d unknown for CC_id %d, setting min_rb_unit to 2\n", module_id, CC_id);
+    LOG_W(MAC,"[eNB %d] N_DL_RB %d unknown for CC_id %d, setting min_rb_unit to 2\n",
+          module_id, frame_parms->N_RB_DL, CC_id);
     break;
   }
 
