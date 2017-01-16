@@ -1091,7 +1091,7 @@ int main(int argc, char **argv)
           rx_pdcch(&UE->common_vars,
                    UE->pdcch_vars,
                    &UE->frame_parms,
-                   0 /*frame*/,
+                   trial,
                    subframe,
                    0,
                    (UE->frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,

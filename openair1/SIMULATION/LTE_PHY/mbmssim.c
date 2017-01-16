@@ -492,7 +492,7 @@ int main(int argc, char **argv)
                            &UE->frame_parms,
                            UE->dlsch_MCH[0],
                            UE->dlsch_MCH[0]->harq_processes[0],
-                           0 /*frame*/,
+                           trials,
                            subframe,
                            0,0,0);
 
