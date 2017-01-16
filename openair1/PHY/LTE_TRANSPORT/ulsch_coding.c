@@ -190,7 +190,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag)
       return(ulsch);
   }
 
-  LOG_E(PHY,"new_ue_ulsch exit flag, size of  %d ,   %d\n",exit_flag, sizeof(LTE_UE_ULSCH_t));
+  LOG_E(PHY,"new_ue_ulsch exit flag, size of  %d ,   %zu\n",exit_flag, sizeof(LTE_UE_ULSCH_t));
   free_ue_ulsch(ulsch);
   return(NULL);
 
@@ -234,7 +234,7 @@ uint32_t ulsch_encoding(uint8_t *a,
   PHY_MEASUREMENTS *meas = &ue->measurements;
   LTE_UE_ULSCH_t *ulsch=ue->ulsch[eNB_id];
   LTE_UE_DLSCH_t **dlsch = ue->dlsch[eNB_id];
-  uint16_t rnti;
+  uint16_t rnti = 0xffff;
 
   if (!ulsch) {
     LOG_E(PHY,"Null ulsch ptr %p\n",ulsch);

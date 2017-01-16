@@ -1365,6 +1365,7 @@ void init_openair0() {
              openair0_cfg[card].rx_gain[i],
              openair0_cfg[card].tx_freq[i],
              openair0_cfg[card].rx_freq[i]);
+      openair0_cfg[card].configFilename = rf_config_file;
     }
   }
 }
@@ -1657,7 +1658,17 @@ int main( int argc, char **argv )
 
       PHY_vars_eNB_g[0][CC_id]->rx_total_gain_dB = (int)rx_gain[CC_id][0];
 
-      PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 0;
+      if (frame_parms[CC_id]->frame_type==FDD) {
+       PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 0;
+      }
+      else {
+       if (frame_parms[CC_id]->N_RB_DL == 100)
+         PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 624;
+       else if (frame_parms[CC_id]->N_RB_DL == 50)
+         PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 624/2;
+       else if (frame_parms[CC_id]->N_RB_DL == 25)
+         PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 624/4;
+      }
 
     }
 

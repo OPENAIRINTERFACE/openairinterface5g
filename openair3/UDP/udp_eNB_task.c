@@ -379,7 +379,7 @@ void *udp_eNB_task(void *args_p)
                           sizeof(struct sockaddr_in));
 
         if (bytes_written != udp_data_req_p->buffer_length) {
-          LOG_E(UDP_, "There was an error while writing to socket %u rc %d"
+          LOG_E(UDP_, "There was an error while writing to socket %d rc %zd"
                 "(%d:%s) May be normal if GTPU kernel module loaded on same host (may NF_DROP IP packet)\n",
                 udp_sd, bytes_written, errno, strerror(errno));
         }

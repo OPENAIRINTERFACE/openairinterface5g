@@ -37,11 +37,6 @@ set (OPENAIR_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY})
 
 project (OpenAirInterface)
 
-#add_definitions("-DEMIT_ASN_DEBUG=1")
-add_subdirectory(${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms7002m lms7002m)
-add_subdirectory(${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lmsSDR lmsSDR)
-add_subdirectory(${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/Si5351C Si5351C)
-
 ###########################################
 # macros to define options as there is numerous options in oai
 ################################################
@@ -512,7 +507,7 @@ set(HWLIB_BLADERF_SOURCE
 add_library(oai_bladerfdevif MODULE ${HWLIB_BLADERF_SOURCE} )
 
 include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/")
-set (option_HWLMSSDRLIB_lib "-l LMS_SDR -l LMS7002M -l Si5351C")
+
 set(HWLIB_LMSSDR_SOURCE 
   ${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms_lib.cpp
   )
@@ -559,16 +554,12 @@ elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
 
 elseif (${RF_BOARD} STREQUAL "OAI_LMSSDR")
   include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB")
-  include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lmsSDR")
-  include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms7002m")
-  include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/Si5351C")
-  include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lmsSDR/LMS_StreamBoard")
   LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
   LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/lmsSDR")
   LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/lms7002m")
   LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/Si5351C")
   set(HW_SOURCE ${HW_SOURCE} ${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms_lib.cpp)
-  set(option_HW_lib "-lLMS_SDR -lLMS7002M -lSi5351C -rdynamic -ldl")
+  set(option_HW_lib "-lLimeSuite -rdynamic -ldl")
 
 elseif (${RF_BOARD} STREQUAL "CPRIGW")
   set(HW_SOURCE ${HW_SOURCE}
@@ -1844,14 +1835,6 @@ Message("-- option_HW_lib=${option_HW_lib}")
 Message("-- HW_SOURCE=${HW_SOURCE}")
 Message("-- option_TP_lib=${option_TP_lib}")
 Message("-- TRANSPORT_SOURCE=${TRANSPORT_SOURCE}")
-
-if (${RF_BOARD} STREQUAL "OAI_LMSSDR")
-  add_dependencies(lte-softmodem LMS7002M LMS_SDR Si5351C)
-  add_dependencies(lte-softmodem-nos1 LMS7002M LMS_SDR Si5351C)
-  add_dependencies(rrh_gw LMS7002M LMS_SDR Si5351C)
-endif (${RF_BOARD} STREQUAL "OAI_LMSSDR")
-
-
 
 # USIM process
 #################

@@ -121,7 +121,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
     break;
 
   default:
-    LOG_E(PHY,"[UE %d][FATAL] Frame %d subframe %d: Unknown PDSCH format %d\n",ue->proc.proc_rxtx[0].frame_rx,subframe,type);
+    LOG_E(PHY,"[UE][FATAL] Frame %d subframe %d: Unknown PDSCH format %d\n",ue->proc.proc_rxtx[0].frame_rx,subframe,type);
     return(-1);
     break;
   }
