@@ -61,9 +61,9 @@ static void *link_manager_sender_thread(void *_manager)
 
   return NULL;
 
-error:
-  LOG_E(MAC, "%s: error\n", __FUNCTION__);
-  return NULL;
+  //error:
+  //LOG_E(MAC, "%s: error\n", __FUNCTION__);
+  //return NULL;
 }
 
 /* that thread receives messages from the link and puts them in the queue */
@@ -118,7 +118,6 @@ link_manager_t *create_link_manager(
   // Make the async interface threads real-time
   //#ifndef LOWLATENCY
   struct sched_param sched_param_recv_thread;
-  struct sched_param sched_param_send_thread;
 
   sched_param_recv_thread.sched_priority = sched_get_priority_max(SCHED_RR) - 1;
   pthread_attr_setschedparam(&attr, &sched_param_recv_thread);

@@ -46,17 +46,17 @@ void flexran_schedule_ue_spec_default(mid_t mod_id, uint32_t frame, uint32_t sub
  * Data plane function for applying the DL decisions of the scheduler
  */
 void flexran_apply_dl_scheduling_decisions(mid_t mod_id, uint32_t frame, uint32_t subframe, int *mbsfn_flag,
-					   const Protocol__FlexranMessage *dl_scheduling_info);
+					   Protocol__FlexranMessage *dl_scheduling_info);
 
 /*
  * Data plane function for applying the UE specific DL decisions of the scheduler
  */
 void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id, uint32_t frame, uint32_t subframe, int *mbsfn_flag,
-						uint32_t n_dl_ue_data, const Protocol__FlexDlData **dl_ue_data);
+						uint32_t n_dl_ue_data, Protocol__FlexDlData **dl_ue_data);
 
 /*
  * Data plane function for filling the DCI structure
  */
-void flexran_fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti, const Protocol__FlexDlDci *dl_dci);
+void flexran_fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti, Protocol__FlexDlDci *dl_dci);
 
 #endif
