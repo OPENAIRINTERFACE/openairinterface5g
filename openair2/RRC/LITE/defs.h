@@ -102,6 +102,14 @@
 # include "intertask_interface.h"
 #endif
 
+/* TODO: be sure this include is correct.
+ * It solves a problem of compilation of the RRH GW,
+ * issue #186.
+ */
+#if !defined(ENABLE_ITTI)
+# include "as_message.h"
+#endif
+
 #if defined(ENABLE_USE_MME)
 # include "commonDef.h"
 #endif

@@ -131,7 +131,7 @@ do {                                                                            
 do {                                                                            \
     nas_log_func_indent -= 2;                                                   \
     LOG_D(NAS, " %s:%d %*sLeaving %s(rc = %ld)\n", __FILE__, __LINE__, nas_log_func_indent, "",           \
-          __FUNCTION__, (long) rETURNcODE);                                     \
+          __FUNCTION__, (long) (rETURNcODE));                                     \
     return (rETURNcODE);                                                        \
 } while (0)
 
@@ -146,7 +146,7 @@ extern int nas_log_func_indent;
 # define LOG_FUNC_RETURN(rETURNcODE)                                            \
 do {                                                                           \
     LOG_TRACE(FUNC_OUT, "Leaving %s(rc = %ld)", __FUNCTION__,                  \
-    (long) rETURNcODE);                                                        \
+    (long) (rETURNcODE));                                                        \
     return (rETURNcODE);                                                       \
 } while(0)
 

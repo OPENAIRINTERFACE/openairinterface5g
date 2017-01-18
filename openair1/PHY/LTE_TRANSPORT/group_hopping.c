@@ -118,7 +118,8 @@ void generate_nPRS(LTE_DL_FRAME_PARMS *frame_parms)
   uint16_t next = 0;
   uint8_t ns=0;
 
-  uint32_t fss_pusch = frame_parms->Nid_cell + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
+  uint32_t fss_pucch = (frame_parms->Nid_cell) % 30;
+  uint32_t fss_pusch = (fss_pucch + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH) % 30;
 
   x2 = (32*(uint32_t)(frame_parms->Nid_cell/30)) + fss_pusch;
 #ifdef DEBUG_GROUPHOP

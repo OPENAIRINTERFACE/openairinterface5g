@@ -5,7 +5,7 @@ CFLAGS=-Wall -g -pthread -DT_TRACER -I.
 
 LIBS=-lX11 -lm -lpng -lXft
 
-all: record replay extract_config textlog enb vcd macpdu2wireshark
+all: record replay extract_config textlog enb ue vcd macpdu2wireshark
 
 record: utils.o record.o database.o config.o
 	$(CC) $(CFLAGS) -o record $^ $(LIBS)
@@ -25,6 +25,11 @@ enb: utils.o enb.o database.o event.o handler.o config.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a \
          filter/filter.a
 	$(CC) $(CFLAGS) -o enb $^ $(LIBS)
+
+ue: utils.o ue.o database.o event.o handler.o config.o \
+         event_selector.o view/view.a gui/gui.a logger/logger.a \
+         filter/filter.a
+	$(CC) $(CFLAGS) -o ue $^ $(LIBS)
 
 vcd: utils.o vcd.o database.o event.o handler.o config.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a \

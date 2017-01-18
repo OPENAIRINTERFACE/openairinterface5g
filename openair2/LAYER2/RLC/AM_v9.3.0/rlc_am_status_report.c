@@ -370,7 +370,7 @@ rlc_am_receive_process_control_pdu(
 
   *first_byte_ppP = (uint8_t*)((uint64_t)*first_byte_ppP + initial_pdu_size - *tb_size_in_bytes_pP);
 
-  free_mem_block(tb_pP);
+  free_mem_block(tb_pP, __func__);
   rlc_am_tx_buffer_display(ctxt_pP, rlc_pP, NULL);
 }
 //-----------------------------------------------------------------------------
@@ -730,7 +730,7 @@ end_push_nack:
         __LINE__,
         pdu_size);
 #endif
-  tb_p = get_free_mem_block(sizeof(struct mac_tb_req) + pdu_size);
+  tb_p = get_free_mem_block(sizeof(struct mac_tb_req) + pdu_size, __func__);
   memset(tb_p->data, 0, sizeof(struct mac_tb_req) + pdu_size);
   //estimation only ((struct mac_tb_req*)(tb_p->data))->tb_size  = pdu_size;
   ((struct mac_tb_req*)(tb_p->data))->data_ptr         = (uint8_t*)&(tb_p->data[sizeof(struct mac_tb_req)]);

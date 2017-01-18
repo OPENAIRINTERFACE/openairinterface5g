@@ -115,7 +115,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
 #endif
       }
 
-      if (!(pdu_mem_p = get_free_mem_block (data_pdu_size + sizeof(struct mac_tb_req)))) {
+      if (!(pdu_mem_p = get_free_mem_block (data_pdu_size + sizeof(struct mac_tb_req), __func__))) {
 #if TRACE_RLC_UM_SEGMENT
         LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" ERROR COULD NOT GET NEW PDU, EXIT\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP));
@@ -291,7 +291,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
         // free SDU
         rlc_pP->buffer_occupancy -= sdu_mngt_p->sdu_remaining_size;
         sdu_in_buffer = list_remove_head(&rlc_pP->input_sdus);
-        free_mem_block (sdu_in_buffer);
+        free_mem_block (sdu_in_buffer, __func__);
         sdu_in_buffer = list_get_head(&rlc_pP->input_sdus);
         sdu_mngt_p    = NULL;
 
@@ -356,7 +356,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
         // free SDU
         rlc_pP->buffer_occupancy -= sdu_mngt_p->sdu_remaining_size;
         sdu_in_buffer = list_remove_head(&rlc_pP->input_sdus);
-        free_mem_block (sdu_in_buffer);
+        free_mem_block (sdu_in_buffer, __func__);
         sdu_in_buffer = list_get_head(&rlc_pP->input_sdus);
         sdu_mngt_p    = NULL;
 
@@ -380,7 +380,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
         // free SDU
         rlc_pP->buffer_occupancy -= sdu_mngt_p->sdu_remaining_size;
         sdu_in_buffer = list_remove_head(&rlc_pP->input_sdus);
-        free_mem_block (sdu_in_buffer);
+        free_mem_block (sdu_in_buffer, __func__);
         sdu_in_buffer = list_get_head(&rlc_pP->input_sdus);
         sdu_mngt_p    = NULL;
 
@@ -503,7 +503,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
 #endif
       }
 
-      if (!(pdu_mem_p = get_free_mem_block (data_pdu_size + sizeof(struct mac_tb_req)))) {
+      if (!(pdu_mem_p = get_free_mem_block (data_pdu_size + sizeof(struct mac_tb_req), __func__))) {
 #if TRACE_RLC_UM_SEGMENT
         LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" ERROR COULD NOT GET NEW PDU, EXIT\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP));
@@ -679,7 +679,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
         // free SDU
         rlc_pP->buffer_occupancy -= sdu_mngt_p->sdu_remaining_size;
         sdu_in_buffer = list_remove_head(&rlc_pP->input_sdus);
-        free_mem_block (sdu_in_buffer);
+        free_mem_block (sdu_in_buffer, __func__);
         sdu_in_buffer = list_get_head(&rlc_pP->input_sdus);
         sdu_mngt_p    = NULL;
 
@@ -743,7 +743,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
         // free SDU
         rlc_pP->buffer_occupancy -= sdu_mngt_p->sdu_remaining_size;
         sdu_in_buffer = list_remove_head(&rlc_pP->input_sdus);
-        free_mem_block (sdu_in_buffer);
+        free_mem_block (sdu_in_buffer, __func__);
         sdu_in_buffer = list_get_head(&rlc_pP->input_sdus);
         sdu_mngt_p    = NULL;
 
@@ -765,7 +765,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
         // free SDU
         rlc_pP->buffer_occupancy -= sdu_mngt_p->sdu_remaining_size;
         sdu_in_buffer = list_remove_head(&rlc_pP->input_sdus);
-        free_mem_block (sdu_in_buffer);
+        free_mem_block (sdu_in_buffer, __func__);
         sdu_in_buffer = list_get_head(&rlc_pP->input_sdus);
         sdu_mngt_p    = NULL;
       }

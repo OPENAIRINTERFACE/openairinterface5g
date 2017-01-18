@@ -62,7 +62,6 @@ rlc_am_rx_list_insert_pdu(
               if (pdu_info_previous_cursor_p->sn == pdu_info_p->sn) {
                 if (pdu_info_p->rf != pdu_info_previous_cursor_p->rf) {
                   LOG_N(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[INSERT PDU] LINE %d RX PDU SN %04d WRONG RF -> DROPPED (vr(mr) < vr(r) and sn >= vr(r))\n",
-                        ctxt_pP->frame,
                         PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
                         __LINE__,
                         pdu_info_p->sn);

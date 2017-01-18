@@ -150,7 +150,7 @@ void config_req_rlc_um_asn1 (
         break;
 
       default:
-        LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID UL sn_FieldLength %d, RLC NOT CONFIGURED\n",
+        LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID UL sn_FieldLength %ld, RLC NOT CONFIGURED\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
               rlc_p->rb_id,
               ul_rlc_pP->sn_FieldLength);
@@ -178,7 +178,7 @@ void config_req_rlc_um_asn1 (
         break;
 
       default:
-        LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID DL sn_FieldLength %d, RLC NOT CONFIGURED\n",
+        LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID DL sn_FieldLength %ld, RLC NOT CONFIGURED\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
               rlc_p->rb_id,
               dl_rlc_pP->sn_FieldLength);
@@ -197,7 +197,7 @@ void config_req_rlc_um_asn1 (
       if (dl_rlc_pP->t_Reordering<T_Reordering_spare1) {
         t_Reordering = t_Reordering_tab[dl_rlc_pP->t_Reordering];
       } else {
-        LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID T_Reordering %d, RLC NOT CONFIGURED\n",
+        LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID T_Reordering %ld, RLC NOT CONFIGURED\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
               rlc_p->rb_id,
               dl_rlc_pP->t_Reordering);
@@ -334,13 +334,13 @@ rlc_um_cleanup (
   list_free (&rlc_pP->pdus_from_mac_layer);
 
   if ((rlc_pP->output_sdu_in_construction)) {
-    free_mem_block (rlc_pP->output_sdu_in_construction);
+    free_mem_block (rlc_pP->output_sdu_in_construction, __func__);
   }
 
   if (rlc_pP->dar_buffer) {
     for (index = 0; index < 1024; index++) {
       if (rlc_pP->dar_buffer[index]) {
-        free_mem_block (rlc_pP->dar_buffer[index]);
+        free_mem_block (rlc_pP->dar_buffer[index], __func__);
       }
     }
 

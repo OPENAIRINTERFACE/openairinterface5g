@@ -161,7 +161,7 @@ pool_buffer_clean (void *arg)
 }
 //-----------------------------------------------------------------------------
 void
-free_mem_block (mem_block_t * leP)
+free_mem_block (mem_block_t * leP, __func__)
 {
   //-----------------------------------------------------------------------------
 
@@ -171,10 +171,10 @@ free_mem_block (mem_block_t * leP)
   }
 
 #ifdef DEBUG_MEM_MNGT_FREE
-  msg ("[MEM_MNGT][FREE] free_mem_block() %p pool: %d\n", leP, leP->pool_id);
+  msg ("[MEM_MNGT][FREE] free_mem_block() %p pool: %d\n", leP, leP->pool_id, __func__);
 #endif
 #ifdef DEBUG_MEM_MNGT_ALLOC
-  check_free_mem_block (leP);
+  check_free_mem_block (leP, __func__);
 #endif
 
   if (leP->pool_id <= MEM_MNGT_POOL_ID_COPY) {
@@ -184,14 +184,14 @@ free_mem_block (mem_block_t * leP)
 #endif
     leP = NULL;                 // this prevent from freeing the block twice
   } else {
-    msg ("[MEM_MNGT][FREE] ERROR free_mem_block() unknown pool_id : %d\n", leP->pool_id);
+    msg ("[MEM_MNGT][FREE] ERROR free_mem_block() unknown pool_id : %d\n", leP->pool_id, __func__);
   }
 }
 
 
 //-----------------------------------------------------------------------------
 mem_block_t      *
-get_free_mem_block (uint16_t sizeP)
+get_free_mem_block (uint16_t sizeP, __func__)
 {
   //-----------------------------------------------------------------------------
   mem_block_t      *le = NULL;
@@ -414,7 +414,7 @@ check_mem_area (void *arg)
 
 //-----------------------------------------------------------------------------
 void
-check_free_mem_block (mem_block_t * leP)
+check_free_mem_block (mem_block_t * leP, __func__)
 {
   //-----------------------------------------------------------------------------
   int             block_index;

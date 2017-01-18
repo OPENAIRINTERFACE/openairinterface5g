@@ -288,9 +288,13 @@ int s1ap_eNB_handle_nas_downlink(const uint32_t               assoc_id,
       downlink_NAS_transport_p->eNB_UE_S1AP_ID,
       downlink_NAS_transport_p->mme_ue_s1ap_id);
 
-    S1AP_ERROR("[SCTP %d] Received NAS downlink message for non existing UE context eNB_UE_S1AP_ID: 0x%"PRIx32" %u\n",
+    /* TODO: fix this log - the original version is suspicious (twice downlink_NAS_transport_p->eNB_UE_S1AP_ID?) */
+    /*S1AP_ERROR("[SCTP %d] Received NAS downlink message for non existing UE context eNB_UE_S1AP_ID: 0x%"PRIx32" %u\n",
                assoc_id,
                downlink_NAS_transport_p->eNB_UE_S1AP_ID,
+               downlink_NAS_transport_p->eNB_UE_S1AP_ID);*/
+    S1AP_ERROR("[SCTP %d] Received NAS downlink message for non existing UE context eNB_UE_S1AP_ID: 0x%lx\n",
+               assoc_id,
                downlink_NAS_transport_p->eNB_UE_S1AP_ID);
     return -1;
   }
@@ -311,7 +315,7 @@ int s1ap_eNB_handle_nas_downlink(const uint32_t               assoc_id,
   } else {
     /* We already have a mme ue s1ap id check the received is the same */
     if (ue_desc_p->mme_ue_s1ap_id != downlink_NAS_transport_p->mme_ue_s1ap_id) {
-      S1AP_ERROR("[SCTP %d] Mismatch in MME UE S1AP ID (0x%"PRIx32" != 0x%"PRIx32")\n",
+      S1AP_ERROR("[SCTP %d] Mismatch in MME UE S1AP ID (0x%lx != 0x%"PRIx32"\n",
                  assoc_id,
                  downlink_NAS_transport_p->mme_ue_s1ap_id,
                  ue_desc_p->mme_ue_s1ap_id
@@ -579,7 +583,7 @@ int s1ap_eNB_initial_ctxt_resp(
     new_item->transportLayerAddress.size = initial_ctxt_resp_p->e_rabs[i].eNB_addr.length;
     new_item->transportLayerAddress.bits_unused = 0;
 
-    S1AP_DEBUG("initial_ctxt_resp_p: e_rab ID %d, enb_addr %d.%d.%d.%d, SIZE %d \n", 
+    S1AP_DEBUG("initial_ctxt_resp_p: e_rab ID %ld, enb_addr %d.%d.%d.%d, SIZE %d \n", 
 	      new_item->e_RAB_ID,
 	      new_item->transportLayerAddress.buf[0],
 	      new_item->transportLayerAddress.buf[1],
@@ -778,7 +782,7 @@ int s1ap_eNB_e_rab_setup_resp(instance_t instance,
     new_item->transportLayerAddress.size = e_rab_setup_resp_p->e_rabs[i].eNB_addr.length;
     new_item->transportLayerAddress.bits_unused = 0;
     
-    S1AP_DEBUG("e_rab_setup_resp: e_rab ID %d, teid %u, enb_addr %d.%d.%d.%d, SIZE %d\n", 
+    S1AP_DEBUG("e_rab_setup_resp: e_rab ID %ld, teid %u, enb_addr %d.%d.%d.%d, SIZE %d\n", 
 	       new_item->e_RAB_ID,
 	       e_rab_setup_resp_p->e_rabs[i].gtp_teid,
 	       new_item->transportLayerAddress.buf[0],
