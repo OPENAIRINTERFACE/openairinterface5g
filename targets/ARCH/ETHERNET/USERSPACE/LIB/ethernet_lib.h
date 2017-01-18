@@ -230,6 +230,7 @@ int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, voi
 int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
 int trx_eth_write_raw_IF4p5(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
 int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
+int trx_eth_read_raw_IF5_mobipass(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
 int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
 int trx_eth_read_udp_IF4p5(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
 int eth_get_dev_conf_raw(openair0_device *device);

@@ -759,6 +759,10 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
 #endif
   LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
   // initialize harq_pid and round
+
+  if (eNB_UE_stats == NULL)
+    return;
+
   mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,
 				    frameP,subframeP,
 				    &ue_sched_ctl->harq_pid[CC_id],

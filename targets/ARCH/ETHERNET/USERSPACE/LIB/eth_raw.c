@@ -21,7 +21,7 @@
 
 /*! \file ethernet_lib.c 
  * \brief API to stream I/Q samples over standard ethernet
- * \author  add alcatel Katerina Trilyraki, Navid Nikaein, Pedro Dinis, Lucio Ferreira, Raymond Knopp
+ * \author  add alcatel Katerina Trilyraki, Navid Nikaein, Pedro Dinis, Lucio Ferreira, Raymond Knopp, Tien-Thinh Nguyen
  * \date 2015
  * \version 0.2
  * \company Eurecom
@@ -45,7 +45,7 @@
 #include "common_lib.h"
 #include "ethernet_lib.h"
 
-#define DEBUG 0
+//#define DEBUG 0
 
 //struct sockaddr_ll dest_addr[MAX_INST];
 //struct sockaddr_ll local_addr[MAX_INST];
@@ -93,7 +93,11 @@ int eth_socket_init_raw(openair0_device *device) {
   eth->local_addr_ll.sll_family   = AF_PACKET;
   eth->local_addr_ll.sll_ifindex  = eth->if_index.ifr_ifindex;
   /* hear traffic from specific protocol*/
-  eth->local_addr_ll.sll_protocol = htons((short)device->openair0_cfg->my_port);
+  if (eth->flags == ETH_RAW_IF5_MOBIPASS) {
+     eth->local_addr_ll.sll_protocol = htons(0xbffe);
+  } else{ 
+     eth->local_addr_ll.sll_protocol = htons((short)device->openair0_cfg->my_port);
+  }
   eth->local_addr_ll.sll_halen    = ETH_ALEN;
   eth->local_addr_ll.sll_pkttype  = PACKET_OTHERHOST;
   eth->addr_len = sizeof(struct sockaddr_ll);
@@ -349,6 +353,78 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
   return(bytes_received);
 }
 
+
+int trx_eth_read_raw_IF5_mobipass(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc) {
+  // Read nblocks info from packet itself
+  
+  int nblocks = nsamps;
+  int bytes_received=0;
+  eth_state_t *eth = (eth_state_t*)device->priv;
+
+ ssize_t packet_size =  28; //MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t ;
+//   ssize_t packet_size =  MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + 640*sizeof(int16_t);
+ 
+  bytes_received = recv(eth->sockfd,
+                        buff[0],
+                        packet_size,
+                        MSG_PEEK);
+
+  if (bytes_received ==-1) {
+          eth->num_rx_errors++;
+          perror("[MOBIPASS]ETHERNET IF5 READ (header): ");
+          exit(-1);
+  }
+
+  IF5_mobipass_header_t *test_header = (IF5_mobipass_header_t*)((uint8_t *)buff[0] + MAC_HEADER_SIZE_BYTES);
+  *timestamp = test_header->time_stamp;
+  packet_size =  MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + 640*sizeof(int16_t);
+
+  while(bytes_received < packet_size) {
+    bytes_received = recv(eth->sockfd,
+                          buff[0],
+                          packet_size,
+                          0);
+    if (bytes_received ==-1) {
+      eth->num_rx_errors++;
+      perror("[MOBIPASS] ETHERNET IF5 READ (payload): ");
+      exit(-1);
+    } else {
+      eth->rx_actual_nsamps = bytes_received>>1;
+      eth->rx_count++;
+    }
+  }
+ 
+  eth->rx_nsamps = nsamps;
+  return(bytes_received);
+
+
+/* 
+  if (bytes_received > 0) { 
+    while(bytes_received < packet_size) {
+      bytes_received = recv(eth->sockfd,
+                          buff[0],
+                          packet_size,
+                          0);
+      if (bytes_received ==-1) {
+        eth->num_rx_errors++;
+        perror("ETHERNET IF5_MOBIPASS READ (payload): ");
+        exit(-1);
+      } else {
+        eth->rx_actual_nsamps = bytes_received>>1;
+        eth->rx_count++;
+      }
+   }
+   if (bytes_received == packet_size){
+     IF5_mobipass_header_t *test_header = (IF5_mobipass_header_t*)((uint8_t *)buff[0] + MAC_HEADER_SIZE_BYTES);
+     *timestamp = test_header->time_stamp;
+   }
+
+   eth->rx_nsamps = nsamps;
+ }
+
+  return(bytes_received);
+*/
+}
 
 
 int eth_set_dev_conf_raw(openair0_device *device) {

@@ -87,6 +87,8 @@ int trx_eth_start(openair0_device *device) {
   } else if (eth->flags == ETH_RAW_IF5_MOBIPASS) {
     printf("Setting ETHERNET to RAW_IF5_MODE\n");
     if (eth_socket_init_raw(device)!=0)   return -1;
+    if(ethernet_tune (device,RCV_TIMEOUT,999999)!=0)  return -1;
+
   } else {
     printf("Setting ETHERNET to UDP_IF5_MODE\n");
     if (eth_socket_init_udp(device)!=0)   return -1;
@@ -363,7 +365,7 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
     device->trx_read_func    = trx_eth_read_udp_IF4p5;     
   } else if (eth->flags == ETH_RAW_IF5_MOBIPASS) {
     device->trx_write_func   = trx_eth_write_raw_IF4p5;
-    device->trx_read_func    = trx_eth_read_raw_IF4p5;     
+    device->trx_read_func    = trx_eth_read_raw_IF5_mobipass;   
   } else {
     //device->trx_write_func   = trx_eth_write_udp_IF4p5;
     //device->trx_read_func    = trx_eth_read_udp_IF4p5;     

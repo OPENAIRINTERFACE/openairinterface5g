@@ -279,6 +279,7 @@ static inline void wait_sync(char *thread_name) {
 void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 {
 
+  int CC_id = phy_vars_eNB->proc.CC_id;
   unsigned int aa,slot_offset;
   //int dummy_tx_b[7680*4] __attribute__((aligned(32)));
   int i, tx_offset;
@@ -370,9 +371,9 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 	
 	((short*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset])[1] = ((short*)dummy_tx_b)[2*i+1]<<openair0_cfg[0].iq_txshift; */
 
-	((short*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset])[0] = ((short*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset])[0]<<openair0_cfg[0].iq_txshift;
+	((short*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset])[0] = ((short*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset])[0]<<openair0_cfg[CC_id].iq_txshift;
 	
-	((short*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset])[1] = ((short*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset])[1]<<openair0_cfg[0].iq_txshift;
+	((short*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset])[1] = ((short*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset])[1]<<openair0_cfg[CC_id].iq_txshift;
      }
      // if S-subframe switch to RX in second subframe
      if (subframe_select(&phy_vars_eNB->frame_parms,subframe) == SF_S) {
@@ -662,26 +663,37 @@ void fh_if5_asynch_UL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   eNB_proc_t *proc       = &eNB->proc;
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
 
-  recv_IF5(eNB, &proc->timestamp_rx, *subframe, IF5_RRH_GW_UL); 
+  recv_IF5(eNB, &proc->timestamp_rx, *subframe, IF5_MOBIPASS); 
 
-  proc->subframe_rx = (proc->timestamp_rx/fp->samples_per_tti)%10;
-  proc->frame_rx    = (proc->timestamp_rx/(10*fp->samples_per_tti))&1023;
-
-  if (proc->first_rx != 0) {
-    proc->first_rx = 0;
+  int offset_mobipass = 40120;
+  pthread_mutex_lock(&proc->mutex_asynch_rxtx);
+  proc->subframe_rx = ((proc->timestamp_rx-offset_mobipass)/fp->samples_per_tti)%10;
+  proc->frame_rx    = ((proc->timestamp_rx-offset_mobipass)/(fp->samples_per_tti*10))&1023;
+  
+  if (proc->first_rx == 1) {
+    proc->first_rx =2;
     *subframe = proc->subframe_rx;
     *frame    = proc->frame_rx; 
+    LOG_E(PHY,"[Mobipass]timestamp_rx:%llu, frame_rx %d, subframe: %d\n",proc->timestamp_rx,proc->frame_rx,proc->subframe_rx);
   }
   else {
     if (proc->subframe_rx != *subframe) {
-      LOG_E(PHY,"fh_if5_asynch_UL: subframe_rx %d is not what we expect %d\n",proc->subframe_rx,*subframe);
-      exit_fun("Exiting");
+        proc->first_rx++;
+       LOG_E(PHY,"[Mobipass]timestamp:%llu, subframe_rx %d is not what we expect %d, first_rx:%d\n",proc->timestamp_rx, proc->subframe_rx,*subframe, proc->first_rx);
+      //exit_fun("Exiting");
     }
     if (proc->frame_rx != *frame) {
-      LOG_E(PHY,"fh_if5_asynch_UL: subframe_rx %d is not what we expect %d\n",proc->frame_rx,*frame);  
-      exit_fun("Exiting");
+        proc->first_rx++;
+       LOG_E(PHY,"[Mobipass]timestamp:%llu, frame_rx %d is not what we expect %d, first_rx:%d\n",proc->timestamp_rx,proc->frame_rx,*frame, proc->first_rx);  
+     // exit_fun("Exiting");
     }
+    // temporary solution
+      *subframe = proc->subframe_rx;
+      *frame    = proc->frame_rx;
   }
+
+  pthread_mutex_unlock(&proc->mutex_asynch_rxtx);
+
 } // eNodeB_3GPP_BBU 
 
 // asynchronous UL with IF4p5 (RCC,RAU,eNodeB_BBU)
@@ -1218,11 +1230,16 @@ void wakeup_slaves(eNB_proc_t *proc) {
       exit_fun( "error locking mutex_rxtx" );
       break;
     }
-    
+   
+    while (slave_proc->instance_cnt_FH == 0) {
+     // LOG_W( PHY,"[eNB] Frame:%d , eNB rx_fh_slave thread busy!! (cnt_FH %i)\n", proc->frame_rx,slave_proc->instance_cnt_FH );
+      usleep(500);
+    } 
+
     int cnt_slave            = ++slave_proc->instance_cnt_FH;
     slave_proc->frame_rx     = proc->frame_rx;
     slave_proc->subframe_rx  = proc->subframe_rx;
-    slave_proc->timestamp_rx = proc->timestamp_rx;
+    //slave_proc->timestamp_rx = proc->timestamp_rx;
     slave_proc->timestamp_tx = proc->timestamp_tx; 
 
     pthread_mutex_unlock( &slave_proc->mutex_FH );
@@ -1483,6 +1500,7 @@ static void* eNB_thread_single( void* param ) {
   eNB_rxtx_proc_t *proc_rxtx = &proc->proc_rxtx[0];
   PHY_VARS_eNB *eNB = PHY_vars_eNB_g[0][proc->CC_id];
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+  eNB->CC_id =  proc->CC_id;
 
   void *rxp[2],*rxp2[2];
 
@@ -1610,7 +1628,7 @@ static void* eNB_thread_single( void* param ) {
     }      
 
     if (eNB->CC_id==1) 
-	LOG_I(PHY,"eNB thread single %p (proc %p, CC_id %d), frame %d (%p), subframe %d (%p)\n",
+	LOG_D(PHY,"eNB thread single %p (proc %p, CC_id %d), frame %d (%p), subframe %d (%p)\n",
 	  pthread_self(), proc, eNB->CC_id, frame,&frame,subframe,&subframe);
  
     // synchronization on FH interface, acquire signals/data and block
@@ -1751,7 +1769,7 @@ void init_eNB_proc(int inst) {
   }
 
   //for multiple CCs: setup master and slaves
-  /*
+ /* 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     eNB = PHY_vars_eNB_g[inst][CC_id];
 
@@ -1764,8 +1782,8 @@ void init_eNB_proc(int inst) {
         if (i >= CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i+1]->proc);
       }
     }
-    }*/
-
+    }
+*/
 
   /* setup PHY proc TX sync mechanism */
   pthread_mutex_init(&sync_phy_proc.mutex_phy_proc_tx, NULL);
@@ -2144,7 +2162,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       }
     }
 
-    if (setup_eNB_buffers(PHY_vars_eNB_g[inst],&openair0_cfg[0])!=0) {
+    if (setup_eNB_buffers(PHY_vars_eNB_g[inst],&openair0_cfg[CC_id])!=0) {
       printf("Exiting, cannot initialize eNodeB Buffers\n");
       exit(-1);
     }
