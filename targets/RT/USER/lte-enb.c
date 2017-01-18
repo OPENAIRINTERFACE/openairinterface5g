@@ -296,16 +296,18 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_OFDM_MODULATION,1);
 
     do_OFDM_mod_symbol(&phy_vars_eNB->common_vars,
-                  0,
-                  subframe<<1,
-                  &phy_vars_eNB->frame_parms);
+		       0,
+		       subframe<<1,
+		       &phy_vars_eNB->frame_parms,
+		       &phy_vars_eNB->do_precoding);
  
     // if S-subframe generate first slot only 
     if (subframe_select(&phy_vars_eNB->frame_parms,subframe) == SF_DL) {
       do_OFDM_mod_symbol(&phy_vars_eNB->common_vars,
-                    0,
-                    1+(subframe<<1),
-                    &phy_vars_eNB->frame_parms);
+			 0,
+			 1+(subframe<<1),
+			 &phy_vars_eNB->frame_parms,
+			 &phy_vars_eNB->do_precoding);
     }
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_OFDM_MODULATION,0);
@@ -1637,6 +1639,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       case NGFI_RRU_IF5:
 	eNB->do_prach             = NULL;
 	eNB->fep                  = eNB_fep_rru_if5;
+	eNB->do_precoding         = 0;
 	eNB->td                   = NULL;
 	eNB->te                   = NULL;
 	eNB->proc_uespec_rx       = NULL;
@@ -1661,6 +1664,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
         }
 	break;
       case NGFI_RRU_IF4p5:
+	eNB->do_precoding         = 0;
 	eNB->do_prach             = do_prach;
 	eNB->fep                  = eNB_fep_full;//(single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
 	eNB->td                   = NULL;
@@ -1690,6 +1694,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 
 	break;
       case eNodeB_3GPP:
+	eNB->do_precoding         = eNB->frame_parms.nb_antennas_tx==eNB->frame_parms.nb_antenna_ports_eNB;
 	eNB->do_prach             = do_prach;
 	eNB->fep                  = eNB_fep_full;//(single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
 	eNB->td                   = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
@@ -1710,6 +1715,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->ifdevice.host_type   = BBU_HOST;
 	break;
       case eNodeB_3GPP_BBU:
+	eNB->do_precoding   = eNB->frame_parms.nb_antennas_tx==eNB->frame_parms.nb_antenna_ports_eNB;
 	eNB->do_prach       = do_prach;
 	eNB->fep            = eNB_fep_full;//(single_thread_flag==1) ? eNB_fep_full_2thread : eNB_fep_full;
 	eNB->td             = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
@@ -1742,6 +1748,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
         }
 	break;
       case NGFI_RCC_IF4p5:
+	eNB->do_precoding         = 0;
 	eNB->do_prach             = do_prach;
 	eNB->fep                  = NULL;
 	eNB->td                   = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
@@ -1765,6 +1772,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 
 	break;
       case NGFI_RAU_IF4p5:
+	eNB->do_precoding   = 0;
 	eNB->do_prach       = do_prach;
 	eNB->fep            = NULL;
 

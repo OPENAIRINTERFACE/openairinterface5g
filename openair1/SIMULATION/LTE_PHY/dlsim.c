@@ -2409,12 +2409,14 @@ int main(int argc, char **argv)
             do_OFDM_mod_symbol(&eNB->common_vars,
                                eNB_id,
                                (subframe*2),
-                               &eNB->frame_parms);
+                               &eNB->frame_parms,
+			       eNB->do_precoding);
 
             do_OFDM_mod_symbol(&eNB->common_vars,
                                eNB_id,
                                (subframe*2)+1,
-                               &eNB->frame_parms);
+                               &eNB->frame_parms,
+			       eNB->do_precoding);
 
 
 	    stop_meas(&eNB->ofdm_mod_stats);
