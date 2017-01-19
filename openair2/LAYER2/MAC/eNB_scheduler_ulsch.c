@@ -762,8 +762,25 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
         break;
       }
     }
-    if (drop_ue == 1)
+    if (drop_ue == 1) {
+      /* TODO: this is a hack. Sometimes the UE has no PHY context but
+       * is still present in the MAC with 'ul_failure_timer' = 0 and
+       * 'ul_out_of_sync' = 0. It seems wrong and the UE stays there forever. Let's
+       * start an UL out of sync procedure in this case.
+       * The root cause of this problem has to be found and corrected.
+       * In the meantime, this hack...
+       */
+      if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer == 0 &&
+          UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 0) {
+        LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: UE in weird state, let's put it 'out of sync'\n",
+              module_idP,frameP,subframeP,UE_id,rnti,CC_id);
+        // inform RRC of failure and clear timer
+        mac_eNB_rrc_ul_failure(module_idP,CC_id,frameP,subframeP,rnti);
+        UE_list->UE_sched_ctrl[UE_id].ul_failure_timer=0;
+        UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync=1;
+      }
       continue;
+    }
 
     // loop over all active UL CC_ids for this UE
     for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
