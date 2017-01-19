@@ -288,7 +288,6 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 
   slot_offset = subframe*phy_vars_eNB->frame_parms.samples_per_tti;
 
-  
   if ((subframe_select(&phy_vars_eNB->frame_parms,subframe)==SF_DL)||
       ((subframe_select(&phy_vars_eNB->frame_parms,subframe)==SF_S))) {
     //    LOG_D(HW,"Frame %d: Generating slot %d\n",frame,next_slot);
@@ -299,7 +298,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 		       0,
 		       subframe<<1,
 		       &phy_vars_eNB->frame_parms,
-		       &phy_vars_eNB->do_precoding);
+		       phy_vars_eNB->do_precoding);
  
     // if S-subframe generate first slot only 
     if (subframe_select(&phy_vars_eNB->frame_parms,subframe) == SF_DL) {
@@ -307,7 +306,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 			 0,
 			 1+(subframe<<1),
 			 &phy_vars_eNB->frame_parms,
-			 &phy_vars_eNB->do_precoding);
+			 phy_vars_eNB->do_precoding);
     }
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_OFDM_MODULATION,0);
