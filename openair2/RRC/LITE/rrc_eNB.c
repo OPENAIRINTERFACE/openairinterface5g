@@ -96,7 +96,7 @@
 #if defined(FLEXRAN_AGENT_SB_IF)
 #include "flexran_agent_extern.h"
 #endif
-#define XER_PRINT
+//#define XER_PRINT
 
 #ifdef PHY_EMUL
 extern EMULATION_VARS              *Emul_vars;
@@ -4786,6 +4786,7 @@ rrc_eNB_decode_dcch(
 #ifdef XER_PRINT
       xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void *)ul_dcch_msg);
 #endif
+      LOG_I(RRC, "got UE capabilities for UE %x\n", ctxt_pP->rnti);
       dec_rval = uper_decode(NULL,
                              &asn_DEF_UE_EUTRA_Capability,
                              (void **)&UE_EUTRA_Capability,
@@ -4796,7 +4797,7 @@ rrc_eNB_decode_dcch(
                              choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.
                              array[0]->ueCapabilityRAT_Container.size, 0, 0);
       //#ifdef XER_PRINT
-      xer_fprint(stdout, &asn_DEF_UE_EUTRA_Capability, (void *)UE_EUTRA_Capability);
+      //xer_fprint(stdout, &asn_DEF_UE_EUTRA_Capability, (void *)UE_EUTRA_Capability);
       //#endif
 
 #if defined(ENABLE_USE_MME)
