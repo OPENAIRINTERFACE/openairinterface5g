@@ -474,7 +474,7 @@ rlc_am_send_status_pdu(
     pdu_info_cursor_p       = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
     sn_cursor             = pdu_info_cursor_p->sn;
 
-    while (rlc_am_in_rx_window(ctxt_pP, rlc_pP, sn_cursor) == 0) {
+    while (!(RLC_AM_SN_IN_WINDOW(sn_cursor, rlc_pP->vr_r))) {
       cursor_p                = cursor_p->next;
       previous_sn_cursor    = sn_cursor;
 

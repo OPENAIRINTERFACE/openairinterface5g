@@ -182,7 +182,8 @@ typedef struct rlc_am_entity_s {
   rlc_sn_t          first_retrans_pdu_sn;       /*!< \brief Lowest sequence number of PDU to be retransmitted. */
   list_t            segmentation_pdu_list;      /*!< \brief List of "freshly" segmented PDUs. */
 
-  boolean_t         status_requested;             /*!< \brief Status requested by peer. */
+  uint8_t           status_requested;             /*!< \brief Status bitmap requested by peer. */
+  rlc_sn_t		    sn_status_triggered_delayed;   /*!< \brief SN of the last received poll for which Status is delayed until SN is out of Rx Window. */
   frame_t           last_frame_status_indication; /*!< \brief The last frame number a  MAC status indication has been received by RLC. */
   //-----------------------------
   // buffer occupancy measurements sent to MAC

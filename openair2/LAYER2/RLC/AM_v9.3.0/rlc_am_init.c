@@ -74,9 +74,10 @@ rlc_am_init(
     // RX state variables
     //rlc_pP->vr_r    = 0;
     rlc_pP->vr_mr   = rlc_pP->vr_r + RLC_AM_WINDOW_SIZE;
-    //rlc_pP->vr_x    = 0;
+    rlc_pP->vr_x    = RLC_SN_UNDEFINED;
     //rlc_pP->vr_ms   = 0;
     //rlc_pP->vr_h    = 0;
+    rlc_pP->sn_status_triggered_delayed = RLC_SN_UNDEFINED;
 
     rlc_pP->last_frame_status_indication = 123456; // any value > 1
     rlc_pP->first_retrans_pdu_sn         = -1;
@@ -128,9 +129,11 @@ rlc_am_reestablish(
   // RX state variables
   rlc_pP->vr_r    = 0;
   rlc_pP->vr_mr   = rlc_pP->vr_r + RLC_AM_WINDOW_SIZE;
-  rlc_pP->vr_x    = 0;
+  rlc_pP->vr_x    = RLC_SN_UNDEFINED;
   rlc_pP->vr_ms   = 0;
   rlc_pP->vr_h    = 0;
+  rlc_pP->sn_status_triggered_delayed = RLC_SN_UNDEFINED;
+  rlc_pP->status_requested	= RLC_AM_STATUS_NOT_TRIGGERED;
 
   rlc_pP->last_frame_status_indication = 123456; // any value > 1
   rlc_pP->first_retrans_pdu_sn         = -1;

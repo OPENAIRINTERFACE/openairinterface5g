@@ -236,6 +236,28 @@ typedef struct rlc_am_rx_pdu_management {
   uint8_t              all_segments_received; /*!< \brief Is all segments of PDU SN have been received. */
 } rlc_am_rx_pdu_management_t;
 /** @} */
+
+typedef enum rlc_am_rx_pdu_status
+{
+    /** PDU okay. */
+    RLC_AM_DATA_PDU_STATUS_OK                     = 0,
+    /** SN outside RX window */
+	RLC_AM_DATA_PDU_STATUS_SN_OUTSIDE_WINDOW      = 1,
+    /** SN already available */
+	RLC_AM_DATA_PDU_STATUS_SN_DUPLICATE           = 2,
+    /** SN already available */
+	RLC_AM_DATA_PDU_STATUS_AM_SEGMENT_DUPLICATE   = 3,
+    /** Buffer full */
+	RLC_AM_DATA_PDU_STATUS_BUFFER_FULL            = 4,
+    /** Header Error (LI,SO...) */
+	RLC_AM_DATA_PDU_STATUS_HEADER_ERROR           = 5,
+    /** Unknown bearer */
+	RLC_AM_DATA_PDU_STATUS_INVALID_BEARER         = 6,
+    /** RLC in wrong state */
+	RLC_AM_DATA_PDU_STATUS_WRONG_STATE            = 7
+
+} rlc_am_rx_pdu_status_t;
+
 /*! \cond PRIVATE */
 //-----------------------------------------------------------------------------
 //  interlayers optimizations

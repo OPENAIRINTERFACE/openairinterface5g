@@ -49,6 +49,10 @@ rlc_am_rx_list_insert_pdu(
   cursor_p = rlc_pP->receiver_buffer.head;
   // it is assumed this pdu is in rx window
 
+  //TODO : check for duplicate
+  // should be rewrite
+  /* look for previous SN */
+
   if (cursor_p) {
     if (rlc_pP->vr_mr < rlc_pP->vr_r) {
       if (pdu_info_p->sn >= rlc_pP->vr_r) {
