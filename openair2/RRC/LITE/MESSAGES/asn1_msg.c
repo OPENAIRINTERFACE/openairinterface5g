@@ -99,7 +99,7 @@ int errno;
 # endif
 #endif
 
-#define XER_PRINT
+//#define XER_PRINT
 
 extern Enb_properties_array_t enb_properties;
 typedef struct xer_sprint_string_s {
