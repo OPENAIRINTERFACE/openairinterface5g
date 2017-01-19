@@ -1096,7 +1096,7 @@ try_again:
                 1<<DCI_pdu->dci_alloc[j].L,
                 nCCE,nCCE_max,DCI_pdu->num_pdcch_symbols);
         }
-	dump_CCE_table(CCE_table,nCCE_max,subframeP,dci_alloc->rnti,dci_alloc->L);
+	//dump_CCE_table(CCE_table,nCCE_max,subframeP,dci_alloc->rnti,dci_alloc->L);
 
         goto failed;
       }
