@@ -4191,9 +4191,11 @@ rrc_eNB_decode_ccch(
              * the current one must be removed from MAC/PHY (zombie UE)
              */
             if ((ue_context_p = rrc_eNB_ue_context_random_exist(ctxt_pP, random_value))) {
-//#warning "TODO: random_exist: remove UE from MAC/PHY (how?)"
-	      //              AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");
+              LOG_W(RRC, "new UE rnti %x (coming with random value) is already there as UE %x, removing %x from MAC/PHY\n",
+                    ctxt_pP->rnti, ue_context_p->ue_context.rnti, ctxt_pP->rnti);
+	      rrc_mac_remove_ue(ctxt_pP->module_id, ctxt_pP->rnti);
               ue_context_p = NULL;
+              return 0;
             } else {
               ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
             }
@@ -4204,9 +4206,8 @@ rrc_eNB_decode_ccch(
             m_tmsi_t   m_tmsi   = BIT_STRING_to_uint32(&s_TMSI.m_TMSI);
             random_value = (((uint64_t)mme_code) << 32) | m_tmsi;
             if ((ue_context_p = rrc_eNB_ue_context_stmsi_exist(ctxt_pP, mme_code, m_tmsi))) {
-
-		//#warning "TODO: stmsi_exist: remove UE from MAC/PHY (how?)"
 	      LOG_I(RRC," S-TMSI exists, ue_context_p %p, old rnti %x => %x\n",ue_context_p,ue_context_p->ue_context.rnti,ctxt_pP->rnti);
+	      rrc_mac_remove_ue(ctxt_pP->module_id, ue_context_p->ue_context.rnti);
 	      stmsi_received=1;
               /* replace rnti in the context */
               /* for that, remove the context from the RB tree */
@@ -4218,8 +4219,6 @@ rrc_eNB_decode_ccch(
               /* reset timers */
               ue_context_p->ue_context.ul_failure_timer = 0;
               ue_context_p->ue_context.ue_release_timer = 0;
-	      //   AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");
-	      //              ue_context_p = NULL;
             } else {
 	      LOG_I(RRC," S-TMSI doesn't exist, setting Initialue_identity_s_TMSI.m_tmsi to %p => %x\n",ue_context_p,m_tmsi);
               ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, NOT_A_RANDOM_UE_IDENTITY);
@@ -4230,7 +4229,8 @@ rrc_eNB_decode_ccch(
 	        ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code = mme_code;
 	        ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi = m_tmsi;
               } else {
-                break;
+                /* TODO: do we have to break here? */
+                //break;
               }
             }
 
