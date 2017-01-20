@@ -747,7 +747,8 @@ void initiate_ra_proc(module_id_t module_idP, int CC_id,frame_t frameP, uint16_t
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC,0);
 
   for (i=0; i<NB_RA_PROC_MAX; i++) {
-    if (RA_template[i].RA_active==FALSE) {
+    if (RA_template[i].RA_active==FALSE &&
+        RA_template[i].wait_ack_Msg4 == 0) {
       RA_template[i].RA_active=TRUE;
       RA_template[i].generate_rar=1;
       RA_template[i].generate_Msg4=0;
