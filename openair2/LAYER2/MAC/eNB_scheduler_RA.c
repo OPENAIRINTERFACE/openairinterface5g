@@ -749,13 +749,24 @@ void initiate_ra_proc(module_id_t module_idP, int CC_id,frame_t frameP, uint16_t
   for (i=0; i<NB_RA_PROC_MAX; i++) {
     if (RA_template[i].RA_active==FALSE &&
         RA_template[i].wait_ack_Msg4 == 0) {
+      int loop = 0;
       RA_template[i].RA_active=TRUE;
       RA_template[i].generate_rar=1;
       RA_template[i].generate_Msg4=0;
       RA_template[i].wait_ack_Msg4=0;
       RA_template[i].timing_offset=timing_offset;
-      // Put in random rnti (to be replaced with proper procedure!!)
-      RA_template[i].rnti = taus();
+      /* TODO: find better procedure to allocate RNTI */
+      do {
+        RA_template[i].rnti = taus();
+        loop++;
+      } while (loop != 100 &&
+               /* TODO: this is not correct, the rnti may be in use without
+                * being in the MAC yet. To be refined.
+                */
+               !(find_UE_id(module_idP, RA_template[i].rnti) == -1 &&
+                 /* 1024 and 60000 arbirarily chosen, not coming from standard */
+                 RA_template[i].rnti >= 1024 && RA_template[i].rnti < 60000));
+      if (loop == 100) { printf("%s:%d:%s: FATAL ERROR! contact the authors\n", __FILE__, __LINE__, __FUNCTION__); abort(); }
       RA_template[i].RA_rnti = 1+subframeP+(10*f_id);
       RA_template[i].preamble_index = preamble_index;
       LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Activating RAR generation for process %d, rnti %x, RA_active %d\n",
