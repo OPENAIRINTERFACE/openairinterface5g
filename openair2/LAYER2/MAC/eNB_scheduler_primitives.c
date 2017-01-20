@@ -107,18 +107,17 @@ DCI_PDU *get_dci_sdu(module_id_t module_idP, int CC_id,frame_t frameP, sub_frame
 int find_UE_id(module_id_t mod_idP, rnti_t rntiP)
 //------------------------------------------------------------------------------
 {
-
   int UE_id;
   UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
 
-  for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
+  for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+    if (UE_list->active[UE_id] != TRUE) continue;
     if (UE_list->UE_template[UE_PCCID(mod_idP,UE_id)][UE_id].rnti==rntiP) {
       return(UE_id);
     }
   }
 
   return(-1);
-
 }
 
 //------------------------------------------------------------------------------
@@ -235,21 +234,16 @@ void dump_ue_list(UE_list_t *listP, int ul_flag)
 int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP)
 {
   int UE_id;
-  int j;
+  int i, j;
 
   UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
 
   LOG_D(MAC,"[eNB %d, CC_id %d] Adding UE with rnti %x (next avail %d, num_UEs %d)\n",mod_idP,cc_idP,rntiP,UE_list->avail,UE_list->num_UEs);
   dump_ue_list(UE_list,0);
 
-  if (UE_list->avail>=0) {
-    UE_id = UE_list->avail;
-    AssertFatal( UE_id < NUMBER_OF_UE_MAX, "BAD UE_id %u > NUMBER_OF_UE_MAX",UE_id );
-    UE_list->avail = UE_list->next[UE_list->avail];
-    UE_list->next[UE_id] = UE_list->head;
-    UE_list->next_ul[UE_id] = UE_list->head_ul;
-    UE_list->head = UE_id;
-    UE_list->head_ul = UE_id;
+  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+    if (UE_list->active[i] == TRUE) continue;
+    UE_id = i;
     UE_list->UE_template[cc_idP][UE_id].rnti       = rntiP;
     UE_list->UE_template[cc_idP][UE_id].configured = FALSE;
     UE_list->numactiveCCs[UE_id]                   = 1;
@@ -282,17 +276,14 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP)
 int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP) 
 //------------------------------------------------------------------------------
 {
-
-  int prev,i, ret=-1;
-
-
+  int i;
   UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
   int UE_id = find_UE_id(mod_idP,rntiP);
   int pCC_id;
 
   if (UE_id == -1) {
     LOG_W(MAC,"rrc_mac_remove_ue: UE %x not found\n", rntiP);
-    mac_phy_remove_ue(mod_idP,rntiP);
+    mac_phy_remove_ue(mod_idP, rntiP);
     return 0;
   }
 
@@ -300,6 +291,9 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
 
   LOG_I(MAC,"Removing UE %d from Primary CC_id %d (rnti %x)\n",UE_id,pCC_id, rntiP);
   dump_ue_list(UE_list,0);
+
+  UE_list->active[UE_id] = FALSE;
+  UE_list->num_UEs--;
 
   // clear all remaining pending transmissions
   UE_list->UE_template[pCC_id][UE_id].bsr_info[LCGID0]  = 0;
@@ -314,50 +308,6 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
   eNB_ulsch_info[mod_idP][pCC_id][UE_id].status                      = S_UL_NONE;
   eNB_dlsch_info[mod_idP][pCC_id][UE_id].rnti                        = NOT_A_RNTI;
   eNB_dlsch_info[mod_idP][pCC_id][UE_id].status                      = S_DL_NONE;
-
-  prev = UE_list->head;
-
-  for (i=UE_list->head; i>=0; i=UE_list->next[i]) {
-    if (i == UE_id) {
-      // link prev to next in Active list
-      if (i==UE_list->head) {
-        UE_list->head = UE_list->next[i];
-      } else {
-        UE_list->next[prev] = UE_list->next[i];
-      }
-
-      // add UE id (i)to available
-      UE_list->next[i] = UE_list->avail;
-      UE_list->avail = i;
-      UE_list->active[i] = FALSE;
-      UE_list->num_UEs--;
-      ret=0;
-      break;
-    }
-
-    prev=i;
-  }
-
-  // do the same for UL
-  prev = UE_list->head_ul;
-
-  for (i=UE_list->head_ul; i>=0; i=UE_list->next_ul[i]) {
-    if (i == UE_id) {
-      // link prev to next in Active list
-      if (i==UE_list->head_ul) {
-        UE_list->head_ul = UE_list->next_ul[i];
-      } else {
-        UE_list->next_ul[prev] = UE_list->next_ul[i];
-      }
-
-      // add UE id (i)to available
-      UE_list->next_ul[i] = UE_list->avail;
-      ret = 0;
-      break;
-    }
-
-    prev=i;
-  }
 
   mac_phy_remove_ue(mod_idP,rntiP);
 
@@ -376,15 +326,8 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
       //break;
     }
   }
-  if (ret == 0) {
-    return (0);
-  }
 
-  LOG_E(MAC,"error in mac_remove_ue(), could not find previous to %d in UE_list, should never happen, Dumping UE list\n",UE_id);
-  dump_ue_list(UE_list,0);
-  mac_xface->macphy_exit("mac_remove_ue: Problem in UE_list");
-  return(-1);
-
+  return 0;
 }
 
 
