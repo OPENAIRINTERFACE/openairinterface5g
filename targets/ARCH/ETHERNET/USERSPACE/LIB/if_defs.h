@@ -56,15 +56,19 @@
 
 // Packet sizes for IF4p5 interface format
 #define DATA_BLOCK_SIZE_BYTES(scaled_nblocks) (sizeof(uint16_t)*scaled_nblocks)
-#define PRACH_BLOCK_SIZE_BYTES (sizeof(int16_t)*839*2)  // FIX hard coded prach size (uncompressed)
+#define PRACH_HARD_CODED_NUM_SAMPLES (839*2)
+#define PRACH_BLOCK_SIZE_BYTES (sizeof(int16_t)*PRACH_HARD_CODED_NUM_SAMPLES)  // FIX hard coded prach size
  
 #define RAW_IF4p5_PDLFFT_SIZE_BYTES(nblocks) (MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t + DATA_BLOCK_SIZE_BYTES(nblocks))  
 #define RAW_IF4p5_PULFFT_SIZE_BYTES(nblocks) (MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t + DATA_BLOCK_SIZE_BYTES(nblocks))  
+#define RAW_IF4p5_PULTICK_SIZE_BYTES (MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t)  
 #define RAW_IF4p5_PRACH_SIZE_BYTES (MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t + PRACH_BLOCK_SIZE_BYTES)
 #define UDP_IF4p5_PDLFFT_SIZE_BYTES(nblocks) (sizeof_IF4p5_header_t + DATA_BLOCK_SIZE_BYTES(nblocks))  
 #define UDP_IF4p5_PULFFT_SIZE_BYTES(nblocks) (sizeof_IF4p5_header_t + DATA_BLOCK_SIZE_BYTES(nblocks))  
+#define UDP_IF4p5_PULTICK_SIZE_BYTES (sizeof_IF4p5_header_t)  
 #define UDP_IF4p5_PRACH_SIZE_BYTES (sizeof_IF4p5_header_t + PRACH_BLOCK_SIZE_BYTES)
 
 // Mobipass packet sizes
 #define RAW_IF5_MOBIPASS_BLOCK_SIZE_BYTES 1280
 #define RAW_IF5_MOBIPASS_SIZE_BYTES (MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + RAW_IF5_MOBIPASS_BLOCK_SIZE_BYTES)
+#define PAYLOAD_MOBIPASS_NUM_SAMPLES  640

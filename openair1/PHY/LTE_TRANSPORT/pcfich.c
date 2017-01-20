@@ -191,7 +191,7 @@ void generate_pcfich(uint8_t num_pdcch_symbols,
   // mapping
   nsymb = (frame_parms->Ncp==0) ? 14:12;
 
-  symbol_offset = (uint32_t)frame_parms->ofdm_symbol_size*((subframe*nsymb));
+  symbol_offset = (uint32_t)frame_parms->ofdm_symbol_size*(subframe*nsymb);
   re_offset = frame_parms->first_carrier_offset;
 
   // loop over 4 quadruplets and lookup REGs

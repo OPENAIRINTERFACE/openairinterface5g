@@ -25,6 +25,7 @@
 PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
                            uint8_t eNB_id,
                            uint8_t Nid_cell,
+			   eNB_func_t node_function,
                            uint8_t abstraction_flag);
 
 PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
