@@ -243,6 +243,7 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP)
 
   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
     if (UE_list->active[i] == TRUE) continue;
+printf("MAC: new UE id %d rnti %x\n", i, rntiP);
     UE_id = i;
     UE_list->UE_template[cc_idP][UE_id].rnti       = rntiP;
     UE_list->UE_template[cc_idP][UE_id].configured = FALSE;
@@ -267,6 +268,7 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP)
     return(UE_id);
   }
 
+printf("MAC: cannot add new UE for rnti %x\n", rntiP);
   LOG_E(MAC,"error in add_new_ue(), could not find space in UE_list, Dumping UE list\n");
   dump_ue_list(UE_list,0);
   return(-1);
@@ -282,6 +284,7 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
   int pCC_id;
 
   if (UE_id == -1) {
+printf("MAC: cannot remove UE rnti %x\n", rntiP);
     LOG_W(MAC,"rrc_mac_remove_ue: UE %x not found\n", rntiP);
     mac_phy_remove_ue(mod_idP, rntiP);
     return 0;
@@ -289,6 +292,7 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
 
   pCC_id = UE_PCCID(mod_idP,UE_id);
 
+printf("MAC: remove UE %d rnti %x\n", UE_id, rntiP);
   LOG_I(MAC,"Removing UE %d from Primary CC_id %d (rnti %x)\n",UE_id,pCC_id, rntiP);
   dump_ue_list(UE_list,0);
 
