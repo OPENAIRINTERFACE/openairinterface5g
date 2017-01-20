@@ -1360,12 +1360,12 @@ void init_openair0() {
 	openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB - rx_gain_off;
       }
 
+      openair0_cfg[card].configFilename = rf_config_file;
       printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
              card,i, openair0_cfg[card].tx_gain[i],
              openair0_cfg[card].rx_gain[i],
              openair0_cfg[card].tx_freq[i],
              openair0_cfg[card].rx_freq[i]);
-      openair0_cfg[card].configFilename = rf_config_file;
     }
   }
 }
