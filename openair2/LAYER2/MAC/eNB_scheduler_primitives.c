@@ -288,13 +288,15 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
 
   UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
   int UE_id = find_UE_id(mod_idP,rntiP);
-  int pCC_id = UE_PCCID(mod_idP,UE_id);
+  int pCC_id;
 
   if (UE_id == -1) {
     LOG_W(MAC,"rrc_mac_remove_ue: UE %x not found\n", rntiP);
     mac_phy_remove_ue(mod_idP,rntiP);
     return 0;
   }
+
+  pCC_id = UE_PCCID(mod_idP,UE_id);
 
   LOG_I(MAC,"Removing UE %d from Primary CC_id %d (rnti %x)\n",UE_id,pCC_id, rntiP);
   dump_ue_list(UE_list,0);
