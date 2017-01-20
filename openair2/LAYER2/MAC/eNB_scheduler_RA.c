@@ -73,7 +73,7 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
   unsigned char i,harq_pid,round;
   int16_t rrc_sdu_length;
   unsigned char lcid,offset;
-  module_id_t UE_id= UE_INDEX_INVALID;
+  int UE_id = -1;
   unsigned short TBsize = -1;
   unsigned short msg4_padding,msg4_post_padding,msg4_header;
   uint8_t *vrb_map;
@@ -266,6 +266,7 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 
           // check for Msg4 Message
           UE_id = find_UE_id(module_idP,RA_template->rnti);
+          if (UE_id == -1) { printf("%s:%d:%s: FATAL ERROR\n", __FILE__, __LINE__, __FUNCTION__); abort(); }
 
           if (Is_rrc_registered == 1) {
 
