@@ -552,7 +552,7 @@ typedef struct {
   uint8_t nb_antennas_tx;
   /// Number of Receive antennas in node
   uint8_t nb_antennas_rx;
-  /// Number of Logical transmit antenna ports in eNodeB
+  /// Number of common transmit antenna ports in eNodeB (1 or 2)
   uint8_t nb_antenna_ports_eNB;
   /// PRACH_CONFIG
   PRACH_CONFIG_COMMON prach_config_common;

@@ -684,6 +684,7 @@ void phy_config_dedicated_eNB(uint8_t Mod_id,
 	break;
       case AntennaInfoDedicated__transmissionMode_tm7:
         lte_gold_ue_spec_port5(eNB->lte_gold_uespec_port5_table[0],eNB->frame_parms.Nid_cell,rnti);
+	eNB->do_precoding = 1;
 	eNB->transmission_mode[UE_id] = 7;
 	break;
       default:
@@ -1327,7 +1328,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 #endif
       }
       
-      for (i=0; i<14; i++) { // 14 is the total number of antenna ports
+      for (i=0; i<NB_ANTENNA_PORTS_ENB; i++) { 
         common_vars->beam_weights[eNB_id][i] = (int32_t **)malloc16_clear(fp->nb_antennas_tx*sizeof(int32_t*));
         for (j=0; j<fp->nb_antennas_tx; j++) {
           common_vars->beam_weights[eNB_id][i][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
