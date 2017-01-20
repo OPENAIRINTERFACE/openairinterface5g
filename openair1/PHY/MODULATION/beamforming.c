@@ -115,9 +115,9 @@ int beam_precoding(int32_t **txdataF,
         }
       }*/
 >>>>>>> enhancement-192-beamforming
-#endif
 
     }
   }
+#endif
   return 0;
 }
