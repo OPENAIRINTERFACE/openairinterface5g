@@ -30,6 +30,8 @@
 #include "log.h"
 #include "flexran_agent.h"
 #include "flexran_agent_mac_defs.h"
+#include "flexran_agent_mac.h"
+#include "flexran_agent_mac_internal.h"
 
 #include "flexran_agent_extern.h"
 
@@ -37,6 +39,8 @@
 
 #include "flexran_agent_net_comm.h"
 #include "flexran_agent_async.h"
+
+#include <arpa/inet.h>
 
 //#define TEST_TIMER
 
@@ -64,11 +68,10 @@ void *flexran_agent_task(void *args){
   void *data;
   int size;
   err_code_t err_code;
-  int                   priority;
+  int                   priority = 0;
 
   MessageDef                     *msg_p           = NULL;
   const char                     *msg_name        = NULL;
-  instance_t                      instance;
   int                             result;
   struct flexran_agent_timer_element_s * elem = NULL;
 
@@ -79,7 +82,6 @@ void *flexran_agent_task(void *args){
     itti_receive_msg (TASK_FLEXRAN_AGENT, &msg_p);
     DevAssert(msg_p != NULL);
     msg_name = ITTI_MSG_NAME (msg_p);
-    instance = ITTI_MSG_INSTANCE (msg_p);
 
     switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:
@@ -212,9 +214,8 @@ int flexran_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properti
     strcpy(local_cache, DEFAULT_FLEXRAN_AGENT_CACHE);
   }
   
-  if (enb_properties->properties[mod_id]->flexran_agent_ipv4_address != NULL) {
-    strncpy(in_ip, enb_properties->properties[mod_id]->flexran_agent_ipv4_address, sizeof(in_ip) );
-    in_ip[sizeof(in_ip) - 1] = 0; // terminate string
+  if (enb_properties->properties[mod_id]->flexran_agent_ipv4_address != 0) {
+    inet_ntop(AF_INET, &(enb_properties->properties[mod_id]->flexran_agent_ipv4_address), in_ip, INET_ADDRSTRLEN);
   } else {
     strcpy(in_ip, DEFAULT_FLEXRAN_AGENT_IPv4_ADDRESS ); 
   }
@@ -237,7 +238,7 @@ int flexran_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properti
     channel_container_init = 1;
   }
   /*Create the async channel info*/
-  flexran_agent_instance_t *channel_info = flexran_agent_async_channel_info(mod_id, in_ip, in_port);
+  flexran_agent_async_channel_t *channel_info = flexran_agent_async_channel_info(mod_id, in_ip, in_port);
 
   /*Create a channel using the async channel info*/
   channel_id = flexran_agent_create_channel((void *) channel_info, 

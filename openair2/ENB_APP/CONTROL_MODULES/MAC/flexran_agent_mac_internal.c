@@ -29,6 +29,7 @@
 #include <string.h>
 #include <dlfcn.h>
 
+#include "flexran_agent_common_internal.h"
 #include "flexran_agent_mac_internal.h"
 
 Protocol__FlexranMessage * flexran_agent_generate_diff_mac_stats_report(Protocol__FlexranMessage *new_message,
@@ -48,11 +49,6 @@ Protocol__FlexranMessage * flexran_agent_generate_diff_mac_stats_report(Protocol
   
   old_report = old_message->stats_reply_msg;
   new_report = new_message->stats_reply_msg;
-
-  /*Flags to designate changes in various levels of the message*/
-  int stats_had_changes = 0;
-  int ue_had_change = 0;
-  int cell_had_change = 0;
 
   /*See how many and which UE reports should be included in the final stats message*/
   int n_ue_report = 0;
@@ -101,23 +97,6 @@ Protocol__FlexranMessage * flexran_agent_generate_diff_mac_stats_report(Protocol
     }
     cell_found = 0;
   }
-
-  /*TODO: create the reply message based on the findings*/
-  /*Create ue report list*/
-  if (n_ue_report > 0) {
-    ue_report = malloc(sizeof(Protocol__FlexUeStatsReport *));
-    for (i = 0; i<n_ue_report; i++) {
-      ue_report[i] = tmp_ue_report[i];
-    }
-  }
-
-  /*Create cell report list*/
-  if (n_cell_report > 0) {
-    cell_report = malloc(sizeof(Protocol__FlexCellStatsReport *));
-    for (i = 0; i<n_cell_report; i++) {
-      cell_report[i] = tmp_cell_report[i];
-    }
-  }
   
   if (n_cell_report > 0 || n_ue_report > 0) {
     /*Create header*/
@@ -128,11 +107,30 @@ Protocol__FlexranMessage * flexran_agent_generate_diff_mac_stats_report(Protocol
     }
     stats_reply_msg = malloc(sizeof(Protocol__FlexStatsReply));
     protocol__flex_stats_reply__init(stats_reply_msg);
+
     stats_reply_msg->header = header;
+    
+    /*TODO: create the reply message based on the findings*/
+    /*Create ue report list*/
     stats_reply_msg->n_ue_report = n_ue_report;
-    stats_reply_msg->ue_report = ue_report;
+    if (n_ue_report > 0) {
+      ue_report = malloc(sizeof(Protocol__FlexUeStatsReport *));
+      for (i = 0; i<n_ue_report; i++) {
+	ue_report[i] = tmp_ue_report[i];
+      }
+      stats_reply_msg->ue_report = ue_report;
+    }
+    
+    /*Create cell report list*/
     stats_reply_msg->n_cell_report = n_cell_report;
-    stats_reply_msg->cell_report = cell_report;
+    if (n_cell_report > 0) {
+      cell_report = malloc(sizeof(Protocol__FlexCellStatsReport *));
+      for (i = 0; i<n_cell_report; i++) {
+	cell_report[i] = tmp_cell_report[i];
+      }
+      stats_reply_msg->cell_report = cell_report;
+    }
+
     msg = malloc(sizeof(Protocol__FlexranMessage));
     if(msg == NULL)
       goto error;
@@ -270,7 +268,7 @@ Protocol__FlexUlCqiReport * copy_ul_cqi_report(Protocol__FlexUlCqiReport * origi
   ul_report = malloc(sizeof(Protocol__FlexUlCqi *) * full_ul_report->n_cqi_meas);
   if(ul_report == NULL)
     goto error;
-  for(i = 0; i++; i < full_ul_report->n_cqi_meas) {
+  for(i = 0; i < full_ul_report->n_cqi_meas; i++) {
     ul_report[i] = malloc(sizeof(Protocol__FlexUlCqi));
     if(ul_report[i] == NULL)
       goto error;
@@ -597,22 +595,22 @@ int parse_mac_config(mid_t mod_id, yaml_parser_t *parser) {
 	goto error;
       }
       // Check the types of subsystems offered and handle their values accordingly
-      if (strcmp(event.data.scalar.value, "dl_scheduler") == 0) {
+      if (strcmp((char *) event.data.scalar.value, "dl_scheduler") == 0) {
 	LOG_D(ENB_APP, "This is for the dl_scheduler subsystem\n");
 	// Call the proper handler
 	if (parse_dl_scheduler_config(mod_id, parser) == -1) {
 	  LOG_D(ENB_APP, "An error occured\n");
 	  goto error;
 	}
-      } else if (strcmp(event.data.scalar.value, "ul_scheduler") == 0) {
+      } else if (strcmp((char *) event.data.scalar.value, "ul_scheduler") == 0) {
 	// Call the proper handler
 	LOG_D(ENB_APP, "This is for the ul_scheduler subsystem\n");
 	goto error;
 	// TODO
-      } else if (strcmp(event.data.scalar.value, "ra_scheduler") == 0) {
+      } else if (strcmp((char *) event.data.scalar.value, "ra_scheduler") == 0) {
 	// Call the proper handler
 	// TODO
-      } else if (strcmp(event.data.scalar.value, "page_scheduler") == 0) {
+      } else if (strcmp((char *) event.data.scalar.value, "page_scheduler") == 0) {
 	// Call the proper handler
 	// TODO
       } else {
@@ -665,20 +663,20 @@ int parse_dl_scheduler_config(mid_t mod_id, yaml_parser_t *parser) {
 	goto error;
       }
       // Check what key needs to be set
-      if (strcmp(event.data.scalar.value, "behavior") == 0) {
+      if (strcmp((char *) event.data.scalar.value, "behavior") == 0) {
 	LOG_I(ENB_APP, "Time to set the behavior attribute\n");
 	yaml_event_delete(&event);
 	if (!yaml_parser_parse(parser, &event)) {
 	  goto error;
 	}
 	if (event.type == YAML_SCALAR_EVENT) {
-	  if (load_dl_scheduler_function(mod_id, event.data.scalar.value) == -1) {
+	  if (load_dl_scheduler_function(mod_id, (char *) event.data.scalar.value) == -1) {
 	    goto error;
 	  } 
 	} else {
 	  goto error;
 	}
-      } else if (strcmp(event.data.scalar.value, "parameters") == 0) {
+      } else if (strcmp((char *) event.data.scalar.value, "parameters") == 0) {
 	LOG_D(ENB_APP, "Now it is time to set the parameters for this subsystem\n");
 	if (parse_dl_scheduler_parameters(mod_id, parser) == -1) {
 	  goto error;
@@ -731,7 +729,7 @@ int parse_dl_scheduler_parameters(mid_t mod_id, yaml_parser_t *parser) {
       if (mac_agent_registered[mod_id]) {
 	LOG_D(ENB_APP, "Setting parameter %s\n", event.data.scalar.value);
 	param = dlsym(agent_mac_xface[mod_id]->dl_scheduler_loaded_lib,
-		      event.data.scalar.value);
+		      (char *) event.data.scalar.value);
 	if (param == NULL) {
 	  goto error;
 	}
