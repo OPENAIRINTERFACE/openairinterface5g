@@ -763,6 +763,8 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
       }
     }
     if (drop_ue == 1) {
+/* we can't come here, ulsch_scheduler_pre_processor won't put in the list a UE with no PHY context */
+abort();
       /* TODO: this is a hack. Sometimes the UE has no PHY context but
        * is still present in the MAC with 'ul_failure_timer' = 0 and
        * 'ul_out_of_sync' = 0. It seems wrong and the UE stays there forever. Let's
