@@ -2002,7 +2002,6 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->do_prach             = NULL;
 	eNB->do_precoding         = 0;
 	eNB->fep                  = eNB_fep_rru_if5;
-	eNB->do_precoding         = 0;
 	eNB->td                   = NULL;
 	eNB->te                   = NULL;
 	eNB->proc_uespec_rx       = NULL;

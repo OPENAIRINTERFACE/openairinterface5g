@@ -1306,13 +1306,15 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
       common_vars->txdataF_BF[eNB_id] = (int32_t **)malloc16(fp->nb_antennas_tx*sizeof(int32_t*));
 
       if (eNB->node_function != NGFI_RRU_IF5) {
-	for (i=0; i<((eNB->do_precoding==0)?fp->nb_antennas_tx:14); i++) {
-	  common_vars->txdataF[eNB_id][i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
+	for (i=0; i<NB_ANTENNA_PORTS_ENB; i++) {
+	  if (i<fp->nb_antenna_ports_eNB || i==5) {
+	    common_vars->txdataF[eNB_id][i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
 #ifdef DEBUG_PHY
-	  printf("[openair][LTE_PHY][INIT] common_vars->txdataF[%d][%d] = %p (%lu bytes)\n",
-	      eNB_id,i,common_vars->txdataF[eNB_id][i],
-	      fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t));
+	    printf("[openair][LTE_PHY][INIT] common_vars->txdataF[%d][%d] = %p (%lu bytes)\n",
+		   eNB_id,i,common_vars->txdataF[eNB_id][i],
+		   fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t));
 #endif
+	  }
 	}
       }
       for (i=0; i<fp->nb_antennas_tx; i++) {
@@ -1328,27 +1330,29 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 #endif
       }
       
-      for (i=0; i<NB_ANTENNA_PORTS_ENB; i++) { 
-        common_vars->beam_weights[eNB_id][i] = (int32_t **)malloc16_clear(fp->nb_antennas_tx*sizeof(int32_t*));
-        for (j=0; j<fp->nb_antennas_tx; j++) {
-          common_vars->beam_weights[eNB_id][i][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
-	  // antenna ports 0-3 are mapped on antennas 0-3
-	  // antenna port 4 is mapped on antenna 0
-	  // antenna ports 5-14 are mapped on all antennas 
-	  if (((i<4) && (i==j)) || ((i==4) && (j==0))) {
-	    for (re=0; re<fp->ofdm_symbol_size; re++) 
-	      common_vars->beam_weights[eNB_id][i][j][re] = 0x00007fff; 
-	  }
-	  else if (i>4) {
-	    for (re=0; re<fp->ofdm_symbol_size; re++) 
-	      common_vars->beam_weights[eNB_id][i][j][re] = 0x00007fff/fp->nb_antennas_tx; 
-	  }  
+      for (i=0; i<NB_ANTENNA_PORTS_ENB; i++) {
+	if (i<fp->nb_antenna_ports_eNB || i==5) {
+	  common_vars->beam_weights[eNB_id][i] = (int32_t **)malloc16_clear(fp->nb_antennas_tx*sizeof(int32_t*));
+	  for (j=0; j<fp->nb_antennas_tx; j++) {
+	    common_vars->beam_weights[eNB_id][i][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
+	    // antenna ports 0-3 are mapped on antennas 0-3
+	    // antenna port 4 is mapped on antenna 0
+	    // antenna ports 5-14 are mapped on all antennas 
+	    if (((i<4) && (i==j)) || ((i==4) && (j==0))) {
+	      for (re=0; re<fp->ofdm_symbol_size; re++) 
+		common_vars->beam_weights[eNB_id][i][j][re] = 0x00007fff; 
+	    }
+	    else if (i>4) {
+	      for (re=0; re<fp->ofdm_symbol_size; re++) 
+		common_vars->beam_weights[eNB_id][i][j][re] = 0x00007fff/fp->nb_antennas_tx; 
+	    }  
 #ifdef DEBUG_PHY
-	  msg("[openair][LTE_PHY][INIT] lte_common_vars->beam_weights[%d][%d][%d] = %p (%d bytes)\n",
-	      eNB_id,i,j,common_vars->beam_weights[eNB_id][i][j],
-              fp->ofdm_symbol_size*sizeof(int32_t)); 
+	    msg("[openair][LTE_PHY][INIT] lte_common_vars->beam_weights[%d][%d][%d] = %p (%d bytes)\n",
+		eNB_id,i,j,common_vars->beam_weights[eNB_id][i][j],
+		fp->ofdm_symbol_size*sizeof(int32_t)); 
 #endif
-        }
+	  }
+	}
       }
 
       // RX vars
