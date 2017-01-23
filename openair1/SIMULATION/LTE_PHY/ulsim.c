@@ -1175,7 +1175,7 @@ int main(int argc, char **argv)
 	  eNB->td  = (parallel_flag == 1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
 	  eNB->do_prach = NULL;
 
-	  phy_procedures_eNB_common_RX(eNB);
+	  phy_procedures_eNB_common_RX(eNB,proc_rxtx);
 	  phy_procedures_eNB_uespec_RX(eNB,proc_rxtx,no_relay);
 
 

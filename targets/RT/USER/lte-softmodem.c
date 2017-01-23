@@ -112,7 +112,7 @@ extern int netlink_init(void);
 
 // In lte-enb.c
 extern int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg);
-extern void init_eNB(eNB_func_t *, eNB_timing_t *,int,eth_params_t *,int);
+extern void init_eNB(eNB_func_t *, eNB_timing_t *,int,eth_params_t *,int,int);
 extern void stop_eNB(int);
 extern void kill_eNB_proc(void);
 
@@ -160,6 +160,9 @@ volatile int             oai_exit = 0;
 
 
 
+static clock_source_t clock_source = internal;
+
+static wait_for_sync = 0;
 
 static char              UE_flag=0;
 unsigned int                    mmapped_dma=0;
@@ -379,6 +382,7 @@ void help (void) {
   printf("  --ue-scan_carrier set UE to scan around carrier\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
   printf("  --mmapped-dma sets flag for improved EXMIMO UE performance\n");  
+  printf("  --external-clock tells hardware to use an external clock reference\n");
   printf("  --usim-test use XOR autentication algo in case of test usim mode\n"); 
   printf("  --single-thread-disable. Disables single-thread mode in lte-softmodem\n"); 
   printf("  -C Set the downlink frequency for all component carriers\n");
@@ -652,7 +656,7 @@ void *l2l1_task(void *arg)
 #endif
 
 
-
+ 
 
 static void get_options (int argc, char **argv)
 {
@@ -689,6 +693,8 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_PHYTEST,
     LONG_OPTION_USIMTEST,
     LONG_OPTION_MMAPPED_DMA,
+    LONG_OPTION_EXTERNAL_CLOCK,
+    LONG_OPTION_WAIT_FOR_SYNC,
     LONG_OPTION_SINGLE_THREAD_DISABLE,
 #if T_TRACER
     LONG_OPTION_T_PORT,
@@ -716,6 +722,8 @@ static void get_options (int argc, char **argv)
     {"phy-test", no_argument, NULL, LONG_OPTION_PHYTEST},
     {"usim-test", no_argument, NULL, LONG_OPTION_USIMTEST},
     {"mmapped-dma", no_argument, NULL, LONG_OPTION_MMAPPED_DMA},
+    {"external-clock", no_argument, NULL, LONG_OPTION_EXTERNAL_CLOCK},
+    {"wait-for-sync", no_argument, NULL, LONG_OPTION_WAIT_FOR_SYNC},
     {"single-thread-disable", no_argument, NULL, LONG_OPTION_SINGLE_THREAD_DISABLE},
 #if T_TRACER
     {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
@@ -824,7 +832,15 @@ static void get_options (int argc, char **argv)
     case LONG_OPTION_SINGLE_THREAD_DISABLE:
       single_thread_flag = 0;
       break;
-              
+
+    case LONG_OPTION_EXTERNAL_CLOCK:
+      clock_source = external;
+      break;
+
+    case LONG_OPTION_WAIT_FOR_SYNC:
+      wait_for_sync = 1;
+      break;
+
 #if T_TRACER
     case LONG_OPTION_T_PORT: {
       extern int T_port;
@@ -1335,6 +1351,7 @@ void init_openair0() {
 
     openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 
+    openair0_cfg[card].clock_source = clock_source;
 
     openair0_cfg[card].tx_num_channels=min(2,((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx));
     openair0_cfg[card].rx_num_channels=min(2,((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_rx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx));
@@ -1360,12 +1377,12 @@ void init_openair0() {
 	openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB - rx_gain_off;
       }
 
+      openair0_cfg[card].configFilename = rf_config_file;
       printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
              card,i, openair0_cfg[card].tx_gain[i],
              openair0_cfg[card].rx_gain[i],
              openair0_cfg[card].tx_freq[i],
              openair0_cfg[card].rx_freq[i]);
-      openair0_cfg[card].configFilename = rf_config_file;
     }
   }
 }
@@ -1618,14 +1635,11 @@ int main( int argc, char **argv )
     PHY_vars_eNB_g[0] = malloc(sizeof(PHY_VARS_eNB*));
 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      PHY_vars_eNB_g[0][CC_id] = init_lte_eNB(frame_parms[CC_id],0,frame_parms[CC_id]->Nid_cell,abstraction_flag);
-      PHY_vars_eNB_g[0][CC_id]->CC_id = CC_id;
-
+      PHY_vars_eNB_g[0][CC_id] = init_lte_eNB(frame_parms[CC_id],0,frame_parms[CC_id]->Nid_cell,node_function[CC_id],abstraction_flag);
       PHY_vars_eNB_g[0][CC_id]->ue_dl_rb_alloc=0x1fff;
       PHY_vars_eNB_g[0][CC_id]->target_ue_dl_mcs=target_dl_mcs;
       PHY_vars_eNB_g[0][CC_id]->ue_ul_nb_rb=6;
       PHY_vars_eNB_g[0][CC_id]->target_ue_ul_mcs=target_ul_mcs;
-
       // initialization for phy-test
       for (k=0;k<NUMBER_OF_UE_MAX;k++) {
 	PHY_vars_eNB_g[0][CC_id]->transmission_mode[k] = transmission_mode;
@@ -1637,41 +1651,43 @@ int main( int argc, char **argv )
 	    for (re=0; re<frame_parms[CC_id]->ofdm_symbol_size; re++) 
 	      PHY_vars_eNB_g[0][CC_id]->common_vars.beam_weights[0][0][j][re] = 0x00007fff/frame_parms[CC_id]->nb_antennas_tx; 
       }
+
       if (phy_test==1) PHY_vars_eNB_g[0][CC_id]->mac_enabled = 0;
       else PHY_vars_eNB_g[0][CC_id]->mac_enabled = 1;
-
+      
       if (PHY_vars_eNB_g[0][CC_id]->mac_enabled == 0) { //set default parameters for testing mode
 	for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-	  PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
-	  PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
-	  PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
-	  
-	  PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = i;
-	  PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_ConfigIndex = 7+(i%3);
-	  PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;
+	    PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
+	    PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
+	    PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
+	    
+	    PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = i;
+	    PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_ConfigIndex = 7+(i%3);
+	    PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;
 	}
       }
-
+      
       compute_prach_seq(&PHY_vars_eNB_g[0][CC_id]->frame_parms.prach_config_common,
-                        PHY_vars_eNB_g[0][CC_id]->frame_parms.frame_type,
-                        PHY_vars_eNB_g[0][CC_id]->X_u);
-
+			PHY_vars_eNB_g[0][CC_id]->frame_parms.frame_type,
+			PHY_vars_eNB_g[0][CC_id]->X_u);
+    
+      
       PHY_vars_eNB_g[0][CC_id]->rx_total_gain_dB = (int)rx_gain[CC_id][0];
 
       if (frame_parms[CC_id]->frame_type==FDD) {
-       PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 0;
+        PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 0;
       }
       else {
-       if (frame_parms[CC_id]->N_RB_DL == 100)
-         PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 624;
-       else if (frame_parms[CC_id]->N_RB_DL == 50)
-         PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 624/2;
-       else if (frame_parms[CC_id]->N_RB_DL == 25)
-         PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 624/4;
+        if (frame_parms[CC_id]->N_RB_DL == 100)
+          PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 624;
+        else if (frame_parms[CC_id]->N_RB_DL == 50)
+          PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 624/2;
+        else if (frame_parms[CC_id]->N_RB_DL == 25)
+          PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 624/4;
       }
 
     }
-
+  
 
     NB_eNB_INST=1;
     NB_INST=1;
@@ -1851,9 +1867,9 @@ int main( int argc, char **argv )
     }
   }
   else { 
-    init_eNB(node_function,node_timing,1,eth_params,single_thread_flag);
-    // Sleep to allow all threads to setup
-    
+    printf("Initializing eNB threads\n");
+    init_eNB(node_function,node_timing,1,eth_params,single_thread_flag,wait_for_sync);
+
     number_of_cards = 1;
     
     for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {

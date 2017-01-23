@@ -135,6 +135,14 @@ typedef struct {
   double offset;
 } rx_gain_calib_table_t;
 
+/*! \brief Clock source types */
+typedef enum {
+  //! This tells the underlying hardware to use the internal reference
+  internal=0,
+  //! This tells the underlying hardware to use the external reference
+  external=1
+} clock_source_t;
+
 /*! \brief RF frontend parameters set by application */
 typedef struct {
   //! Module ID for this configuration
@@ -187,6 +195,8 @@ typedef struct {
   double rx_bw;
   //! TX bandwidth in Hz
   double tx_bw;
+  //! clock source 
+  clock_source_t clock_source;
   //! Auto calibration flag
   int autocal[4];
   //! rf devices work with x bits iqs when oai have its own iq format
@@ -238,8 +248,10 @@ typedef struct {
 
 
 typedef struct {
-  //! Tx buffer for if device
-  void *tx;
+  //! Tx buffer for if device, keep one per subframe now to allow multithreading
+  void *tx[10];
+  //! Tx buffer (PRACH) for if device
+  void *tx_prach;
   //! Rx buffer for if device
   void *rx;
 } if_buffer_t;

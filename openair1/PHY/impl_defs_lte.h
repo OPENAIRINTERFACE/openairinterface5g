@@ -504,6 +504,8 @@ typedef struct {
   uint8_t tdd_config;
   /// TDD S-subframe configuration (0-9)
   uint8_t tdd_config_S;
+  /// srs extra symbol flag for TDD
+  uint8_t srsX;
   /// indicates if node is a UE (NODE=2) or eNB (PRIMARY_CH=0).
   uint8_t node_id;
   /// Frequency index of CBMIMO1 card
@@ -542,11 +544,15 @@ typedef struct {
   uint32_t samples_per_tti;
   /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
   uint16_t symbols_per_tti;
+  /// Number of OFDM symbols in DL portion of S-subframe
+  uint16_t dl_symbols_in_S_subframe;
+  /// Number of SC-FDMA symbols in UL portion of S-subframe
+  uint16_t ul_symbols_in_S_subframe;
   /// Number of Physical transmit antennas in node
   uint8_t nb_antennas_tx;
   /// Number of Receive antennas in node
   uint8_t nb_antennas_rx;
-  /// Number of Logical transmit antenna ports in eNodeB
+  /// Number of common transmit antenna ports in eNodeB (1 or 2)
   uint8_t nb_antenna_ports_eNB;
   /// PRACH_CONFIG
   PRACH_CONFIG_COMMON prach_config_common;

@@ -1812,6 +1812,11 @@ int main(int argc, char **argv)
        eNB->common_vars.beam_weights[0][0][aa][re] = 0x00007fff/eNB->frame_parms.nb_antennas_tx; 
   }
 
+  if (transmission_mode<7)
+     eNB->do_precoding=0;
+  else
+     eNB->do_precoding=1;
+
   eNB->mac_enabled=1;
   if (two_thread_flag == 0) {
     eNB->te = dlsch_encoding;
@@ -2409,12 +2414,14 @@ int main(int argc, char **argv)
             do_OFDM_mod_symbol(&eNB->common_vars,
                                eNB_id,
                                (subframe*2),
-                               &eNB->frame_parms);
+                               &eNB->frame_parms,
+			       eNB->do_precoding);
 
             do_OFDM_mod_symbol(&eNB->common_vars,
                                eNB_id,
                                (subframe*2)+1,
-                               &eNB->frame_parms);
+                               &eNB->frame_parms,
+			       eNB->do_precoding);
 
 
 	    stop_meas(&eNB->ofdm_mod_stats);

@@ -37,6 +37,8 @@
  * @{
  */
 #include <lime/LimeSuite.h>
+#include <lime/LMS7002M.h>
+#include <lime/LMS7002M_RegistersMap.h>
 #include "common_lib.h"
 
 lms_device_t* lms_device;
@@ -46,8 +48,7 @@ lms_stream_t tx_stream;
 #define RXDCLENGTH 4096
 #define NUMBUFF 32
 
-int16_t cos_fsover8[8]  = {2047,   1447,      0,  -1448,  -2047,  -1448,     0,   1447};
-int16_t cos_3fsover8[8] = {2047,  -1448,      0,   1447,  -2047,   1447,     0,  -1448};
+using namespace lime;
 
 extern "C"
 {
@@ -131,18 +132,24 @@ void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index) {
  */
 int trx_lms_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) {
 
- /* double gv = openair0_cfg[0].rx_gain[0] - openair0_cfg[0].rx_gain_offset[0];
+  LMS_SetNormalizedGain(lms_device, LMS_CH_TX, 0, openair0_cfg[0].tx_gain[0]/100.0);
 
-  if (gv > 31) {
-    printf("RX Gain 0 too high, reduce by %f dB\n",gv-31);
-    gv = 31;
-  }
-  if (gv < 0) {
-    printf("RX Gain 0 too low, increase by %f dB\n",-gv);
-    gv = 0;
-  }
-  printf("[LMS] Setting 7002M G_PGA_RBB to %d\n", (uint16_t)gv);
-  LMS_WriteParam(lms_device,LMS7param(G_PGA_RBB),(uint16_t)gv);*/
+  // RX gains, use low-level setting
+
+  double gv = openair0_cfg[0].rx_gain[0] - openair0_cfg[0].rx_gain_offset[0];   
+  if (gv > 31) {     
+    printf("RX Gain 0 too high, reduce by %f dB\n",gv-31);     
+    gv = 31;   
+  }   
+  if (gv < 0) {     
+    printf("RX Gain 0 too low, increase by %f dB\n",-gv);     
+    gv = 0;   
+  }   
+  printf("[LMS] Setting 7002M G_PGA_RBB to %d\n", (int16_t)gv);   
+  LMS7002M lms7;
+  lms7.SetConnection(lms7.GetConnection());
+  lms7.Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB),(int16_t)gv);
+
 
   return(0);
 }
@@ -205,14 +212,12 @@ int trx_lms_start(openair0_device *device){
     }
     printf("Set TX frequency %f MHz\n",device->openair0_cfg[0].tx_freq[0]/1e6);
 
-    printf("Override antenna settings to: RX1_W, TXA_2");
-    LMS_SetAntenna(lms_device, LMS_CH_RX, 0, 3);
+    printf("Override antenna settings to: RX1_H, TXA_2");
+    LMS_SetAntenna(lms_device, LMS_CH_RX, 0, 1);
     LMS_SetAntenna(lms_device, LMS_CH_TX, 0, 2);
 
-    trx_lms_set_gains(device, device->openair0_cfg);
-    /*LMS_SetNormalizedGain(lms_device, LMS_CH_TX, 0, 0.175);
-    LMS_SetNormalizedGain(lms_device, LMS_CH_RX, 0, 0.65);*/
 
+    
     for (int i = 0; i< device->openair0_cfg->rx_num_channels; i++)
     {
         if (LMS_SetLPFBW(lms_device,LMS_CH_RX,i,device->openair0_cfg->rx_bw)!=0)
@@ -239,6 +244,9 @@ int trx_lms_start(openair0_device *device){
     tx_stream.throughputVsLatency = 0.1;
     tx_stream.dataFmt = lms_stream_t::LMS_FMT_I12;
     tx_stream.isTx = true;
+
+    trx_lms_set_gains(device, device->openair0_cfg);
+
     if (LMS_SetupStream(lms_device, &tx_stream)!=0)
         printf("TX stream setup failed %s\n",LMS_GetLastErrorMessage());
 
@@ -284,7 +292,7 @@ int trx_lms_set_freq(openair0_device* device, openair0_config_t *openair0_cfg,in
 
 // 31 = 19 dB => 105 dB total gain @ 2.6 GHz
 /*! \brief calibration table for LMSSDR */
-rx_gain_calib_table_t calib_table_sodera[] = {
+rx_gain_calib_table_t calib_table_lmssdr[] = {
   {3500000000.0,70.0},
   {2660000000.0,80.0},
   {2300000000.0,80.0},
@@ -369,7 +377,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg){
     break;
   }
 
-  openair0_cfg[0].rx_gain_calib_table = calib_table_sodera;
+  openair0_cfg[0].rx_gain_calib_table = calib_table_lmssdr;
   set_rx_gain_offset(openair0_cfg,0);
 
   device->Mod_id           = 1;
