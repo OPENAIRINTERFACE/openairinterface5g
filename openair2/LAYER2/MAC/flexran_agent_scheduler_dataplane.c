@@ -99,8 +99,8 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
   uint16_t              nb_rb;
   uint16_t              TBS,j,sdu_lengths[11],rnti,padding=0,post_padding=0;
   unsigned char         dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
-  unsigned char         round            = 0;
-  unsigned char         harq_pid         = 0;
+  uint8_t         round            = 0;
+  uint8_t         harq_pid         = 0;
   //  LTE_DL_FRAME_PARMS   *frame_parms[MAX_NUM_CCs];
   LTE_eNB_UE_stats     *eNB_UE_stats     = NULL;
   uint16_t              sdu_length_total = 0;
@@ -147,7 +147,7 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
       
       if (dl_data->n_ce_bitmap > 0) {
 	//Check if there is TA command and set the length appropriately
-	ta_len = (dl_data->ce_bitmap[0] & PROTOCOL__FLEX_CE_TYPE__FLPCET_TA) ? 1 : 0; 
+	ta_len = (dl_data->ce_bitmap[0] & PROTOCOL__FLEX_CE_TYPE__FLPCET_TA) ? 2 : 0; 
       }
       
       num_sdus = 0;
@@ -157,12 +157,14 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	// Reset the measurement
 	ue_sched_ctl->ta_timer = 20;
 	eNB_UE_stats->timing_advance_update = 0;
-	header_len = ta_len;
-	last_sdu_header_len = ta_len;
+	//	header_len = ta_len;
+	//last_sdu_header_len = ta_len;
       }
 
       n_lc = dl_data->n_rlc_pdu;
       // Go through each one of the channel commands and create SDUs
+      header_len = 0;
+      last_sdu_header_len = 0;
       for (i = 0; i < n_lc; i++) {
 	lcid = dl_data->rlc_pdu[i]->rlc_pdu_tb[0]->logical_channel_id;
 	rlc_size = dl_data->rlc_pdu[i]->rlc_pdu_tb[0]->size;
@@ -200,14 +202,14 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	  
 	    if (rlc_status.bytes_in_buffer > 0) {
 	      
-	      sdu_lengths[i] += mac_rlc_data_req(mod_id,
-						 rnti,
-						 mod_id,
-						 frame,
-						 ENB_FLAG_YES,
-						 MBMS_FLAG_NO,
-						 lcid,
-						 (char *)&dlsch_buffer[sdu_length_total]);
+	      sdu_lengths[i] = mac_rlc_data_req(mod_id,
+						rnti,
+						mod_id,
+						frame,
+						ENB_FLAG_YES,
+						MBMS_FLAG_NO,
+						lcid,
+						(char *)&dlsch_buffer[sdu_length_total]);
 	      
 	      LOG_D(MAC,"[eNB %d][LCID %d] CC_id %d Got %d bytes from RLC\n",mod_id, lcid, CC_id, sdu_lengths[i]);
 	      sdu_length_total += sdu_lengths[i];
@@ -216,7 +218,7 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	      UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[lcid] += 1;
 	      UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[lcid] += sdu_lengths[i];
 	      
-	      if (sdu_lengths[i] <= 128) {
+	      if (sdu_lengths[i] < 128) {
 		header_len += 2;
 		last_sdu_header_len = 2;
 	      } else {
@@ -230,34 +232,31 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
       } // SDU creation end
       
       
-      if (((sdu_length_total + header_len) > 0)) {
-
-	//	header_len_tmp = header_len;
+      if (((sdu_length_total + header_len + ta_len) > 0)) {
+	
+	header_len_tmp = header_len;
 	
 	// If we have only a single SDU, header length becomes 1
-	if ((num_sdus + ta_len) == 1) {
+	if ((num_sdus) == 1) {
 	  //if (header_len == 2 || header_len == 3) {
 	  header_len = 1;
 	} else {
 	  header_len = (header_len - last_sdu_header_len) + 1;
 	}
 	
-	// there is a payload
-	if (((sdu_length_total + header_len) > 0)) {
-	  // If we need a 1 or 2 bit padding or no padding at all
-	  if ((TBS - header_len - sdu_length_total - ta_len) <= 2
-	      || (TBS - header_len - sdu_length_total - ta_len) > TBS) { //protect from overflow
-	    padding = (TBS - header_len - sdu_length_total - ta_len);
-	    post_padding = 0;
-	  } else { // The last sdu needs to have a length field, since we add padding
-	    padding = 0;
-	    header_len = header_len_tmp;	    
-	    post_padding = TBS - sdu_length_total - header_len - ta_len - 1; // 1 is for the postpadding header
-	  }
+	// If we need a 1 or 2 bit padding or no padding at all
+	if ((TBS - header_len - sdu_length_total - ta_len) <= 2
+	    || (TBS - header_len - sdu_length_total - ta_len) > TBS) { //protect from overflow
+	  padding = (TBS - header_len - sdu_length_total - ta_len);
+	  post_padding = 0;
+	} else { // The last sdu needs to have a length field, since we add padding
+	  padding = 0;
+	  header_len = header_len_tmp;
+	  post_padding = TBS - sdu_length_total - header_len - ta_len; // 1 is for the postpadding header
 	}
 	
 	ta_update = (ta_len > 0) ? ue_sched_ctl->ta_update : 0;
-
+	
 	// If there is nothing to schedule, just leave
 	if ((sdu_length_total) <= 0) { 
 	  return;
@@ -319,6 +318,8 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	  nb_rb += get_min_rb_unit(mod_id, CC_id);
 	  stats_tbs = mac_xface->get_TBS_DL(dl_dci->mcs[0], nb_rb);
 	}
+
+	//	LOG_I(FLEXRAN_AGENT, "The MCS was %d\n", dl_dci->mcs[0]);
 	
 	UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used = nb_rb;
 	UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used += nb_rb;
@@ -345,8 +346,8 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
       //UE_list->eNB_UE_stats[CC_id][UE_id].ncce_used_retx=nCCECC_id];
     }
 
-    UE_list->UE_template[CC_id][UE_id].oldNDI[dl_dci->harq_process] = dl_dci->ndi[0];
-    eNB_UE_stats->dlsch_mcs1 = dl_dci->mcs[0];
+    //    UE_list->UE_template[CC_id][UE_id].oldNDI[dl_dci->harq_process] = dl_dci->ndi[0];
+    //    eNB_UE_stats->dlsch_mcs1 = dl_dci->mcs[0];
 
     //Fill the proper DCI of OAI
     flexran_fill_oai_dci(mod_id, CC_id, rnti, dl_dci);

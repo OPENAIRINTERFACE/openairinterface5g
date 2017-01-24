@@ -553,7 +553,11 @@ int flexran_get_ue_phr (mid_t mod_id, mid_t ue_id) {
 }
 
 int flexran_get_ue_wcqi (mid_t mod_id, mid_t ue_id) {
-  return ((UE_list_t *)enb_ue[mod_id])->eNB_UE_stats[UE_PCCID(mod_id,ue_id)][ue_id].dl_cqi;
+  LTE_eNB_UE_stats     *eNB_UE_stats     = NULL;
+  eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id, 0, UE_RNTI(mod_id, ue_id));
+  return eNB_UE_stats->DL_cqi[0];
+
+  //  return ((UE_list_t *)enb_ue[mod_id])->eNB_UE_stats[UE_PCCID(mod_id,ue_id)][ue_id].dl_cqi;
 }
 
 int flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id) {
@@ -680,8 +684,13 @@ int flexran_get_tpc(mid_t mod_id, mid_t ue_id) {
 	return tpc;
 }
 
-int flexran_get_harq(const mid_t mod_id, const uint8_t CC_id, const mid_t ue_id, const int frame, const uint8_t subframe, 
-		     unsigned char *id, unsigned char *round)	{ //flag_id_status = 0 then id, else status
+int flexran_get_harq(const mid_t mod_id, 
+		     const uint8_t CC_id, 
+		     const mid_t ue_id, 
+		     const int frame, 
+		     const uint8_t subframe, 
+		     uint8_t *id, 
+		     uint8_t *round)	{ //flag_id_status = 0 then id, else status
 	/*TODO: Add int TB in function parameters to get the status of the second TB. This can be done to by editing in
 	 * get_ue_active_harq_pid function in line 272 file: phy_procedures_lte_eNB.c to add
 	 * DLSCH_ptr = PHY_vars_eNB_g[Mod_id][CC_id]->dlsch_eNB[(uint32_t)UE_id][1];*/
