@@ -199,7 +199,7 @@ void phy_procedures_eNB_S_TX(PHY_VARS_eNB *phy_vars_eNB,relaying_type_t r_type);
 */
 void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type);
 
-/*! \brief Scheduling for eNB PRACH RX procedures 
+/*! \brief Scheduling for eNB PRACH RX procedures
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param proc Pointer to RXn-TXnp4 proc information
 */
@@ -477,7 +477,7 @@ int get_ue_active_harq_pid(uint8_t Mod_id,uint8_t CC_id,uint16_t rnti,int frame,
 void dump_dlsch(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe,uint8_t harq_pid);
 void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe);
 void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe);
-void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword,int round);
+void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword,int round, unsigned char harq_pid);
 
 /*@}*/
 
