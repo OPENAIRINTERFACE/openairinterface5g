@@ -693,6 +693,46 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
             multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)<<1),1,ue->frame_parms.ofdm_symbol_size);
             multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),0,ue->frame_parms.ofdm_symbol_size);
           } // pilot spacing 3 symbols (1/3,2/3 combination)
+#if 0
+          //LOG_E(PHY,"Interpolate s7--s11 s12 s13 pilot 3 Ns %d l %d symbol %d \n", Ns, l, symbol);
+    	  int16_t *dlChEst_ofdm11 = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][pilot3*(ue->frame_parms.ofdm_symbol_size)];
+          int16_t *dlChEst_ofdm7  = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][pilot2*(ue->frame_parms.ofdm_symbol_size)];
+
+      	// interpolate ofdm s12: 4/5*ofdms11 + 1/5*ofdms7 4/5 q1.15 26214 1/5 q1.15 6554
+      	int16_t *dlChEst_ofdm12 = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][12*ue->frame_parms.ofdm_symbol_size];
+      	for(int i=0; i<(2*ue->frame_parms.ofdm_symbol_size); i++)
+      	{
+      		int32_t tmp_mult = 0;
+      		tmp_mult = ((int32_t)dlChEst_ofdm11[i] * 26214 + (int32_t)dlChEst_ofdm7[i] * 6554);
+
+      		tmp_mult = tmp_mult >> 15;
+      		dlChEst_ofdm12[i] = tmp_mult;
+      		/*
+      		if((i==0))
+      		{
+      			LOG_I(PHY,"interpolate dlchest11_0 using: dlchest11 %d+%di dlchest7 %d+%di\n",dlChEst_ofdm11[0],dlChEst_ofdm11[1],dlChEst_ofdm7[0],dlChEst_ofdm7[1]);
+      			LOG_I(PHY,"interpolate dlchest11_1 using: dlchest11 %d+%di dlchest7 %d+%di\n",dlChEst_ofdm11[2],dlChEst_ofdm11[3],dlChEst_ofdm7[2],dlChEst_ofdm7[3]);
+      			LOG_I(PHY,"interpolate dlchest11_2 using: dlchest11 %d+%di dlchest7 %d+%di\n",dlChEst_ofdm11[4],dlChEst_ofdm11[5],dlChEst_ofdm7[4],dlChEst_ofdm7[5]);
+      		}*/
+      	}
+
+      	// interpolate ofdm s13: 2/3*ofdms11 + 1/3*ofdms7 2/3 q1.15 21845 1/3 q1.15 10923
+      	int16_t *dlChEst_ofdm13 = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][13*ue->frame_parms.ofdm_symbol_size];
+      	for(int i=0; i<(2*ue->frame_parms.ofdm_symbol_size); i++)
+      	{
+      		int32_t tmp_mult = 0;
+      		tmp_mult = ((int32_t)dlChEst_ofdm11[i] * 21845 + (int32_t)dlChEst_ofdm7[i] * 10923);
+
+      		tmp_mult = tmp_mult >> 15;
+      		dlChEst_ofdm13[i] = tmp_mult;
+      		/*if((i==0))
+      		{
+      			LOG_I(PHY,"interpolate dlchest11_0 using: dlchest11 %d+%di dlchest7 %d+%di\n",dlChEst_ofdm11[0],dlChEst_ofdm11[1],dlChEst_ofdm7[0],dlChEst_ofdm7[1]);
+      			LOG_I(PHY,"interpolate dlchest11_1 using: dlchest11 %d+%di dlchest7 %d+%di\n",dlChEst_ofdm11[2],dlChEst_ofdm11[3],dlChEst_ofdm7[2],dlChEst_ofdm7[3]);
+      			LOG_I(PHY,"interpolate dlchest11_2 using: dlchest11 %d+%di dlchest7 %d+%di\n",dlChEst_ofdm11[4],dlChEst_ofdm11[5],dlChEst_ofdm7[4],dlChEst_ofdm7[5]);
+      		}*/
+      	}
+#endif
         }
 
       }

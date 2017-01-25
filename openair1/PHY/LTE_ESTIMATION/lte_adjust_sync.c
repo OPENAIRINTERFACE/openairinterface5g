@@ -74,13 +74,14 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   else
     max_pos_fil = ((max_pos_fil * coef) + (max_pos * ncoef)) >> 15;
 
+  max_pos_fil = max_pos;
 
   diff = max_pos_fil - frame_parms->nb_prefix_samples/8;
 
-  if ( diff > SYNCH_HYST )
-    ue->rx_offset++;
-  else if (diff < -SYNCH_HYST)
-    ue->rx_offset--;
+  if ( abs(diff) < SYNCH_HYST )
+	ue->rx_offset = 0;
+  else
+    ue->rx_offset = diff;
 
   if ( ue->rx_offset < 0 )
     ue->rx_offset += FRAME_LENGTH_COMPLEX_SAMPLES;

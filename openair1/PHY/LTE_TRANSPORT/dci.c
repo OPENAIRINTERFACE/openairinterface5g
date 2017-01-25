@@ -1752,9 +1752,9 @@ int32_t rx_pdcch(LTE_UE_COMMON *common_vars,
       avgs = cmax(avgs,avgP[(aarx<<1)+aatx]);
 
   log2_maxh = (log2_approx(avgs)/2) + 5;  //+frame_parms->nb_antennas_rx;
-#ifdef DEBUG_PHY
+//#ifdef DEBUG_PHY
   LOG_I(PHY,"subframe %d: pdcch log2_maxh = %d (%d,%d)\n",subframe,log2_maxh,avgP[0],avgs);
-#endif
+//#endif
 
 #if T_TRACER
   T(T_UE_PHY_PDCCH_ENERGY, T_INT(eNB_id),  T_INT(0), T_INT(frame%1024), T_INT(subframe),

@@ -124,6 +124,7 @@ static inline void* malloc16_clear( size_t size )
 #include "PHY/TOOLS/defs.h"
 #include "platform_types.h"
 
+//#define OPENAIR_LTE
 #ifdef OPENAIR_LTE
 
 #include "PHY/LTE_TRANSPORT/defs.h"
@@ -798,6 +799,7 @@ typedef struct {
   uint8_t               prach_PreambleIndex;
   //  uint8_t               prach_timer;
   int              rx_offset; /// Timing offset
+  int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
   int              timing_advance; ///timing advance signalled from eNB
   int              hw_timing_advance;
   int              N_TA_offset; ///timing offset used in TDD

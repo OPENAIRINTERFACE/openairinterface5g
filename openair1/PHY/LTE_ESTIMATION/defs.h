@@ -34,7 +34,7 @@
  */
 
 /*!\brief Timing drift hysterisis in samples*/
-#define SYNCH_HYST 1
+#define SYNCH_HYST 2
 
 /*!
 \brief This function is used for time-frequency scanning prior to complete cell search.  It scans

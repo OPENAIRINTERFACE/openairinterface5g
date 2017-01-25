@@ -1152,18 +1152,37 @@ void *UE_thread(void *arg) {
 
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 1 );
 	      // read in first symbol of next frame and adjust for timing drift
+          for (i=0; i<UE->frame_parms.nb_antennas_rx; i++)
+          {
+            rxp[i] = (void*)&UE->common_vars.rxdata[i][0];
+          }
+
 	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
 					       &timestamp1,
-					       (void**)UE->common_vars.rxdata,
-					       UE->frame_parms.ofdm_symbol_size + UE->frame_parms.nb_prefix_samples0 - rx_off_diff,
+						   rxp,
+					       UE->frame_parms.nb_prefix_samples0 - rx_off_diff,
 					       UE->frame_parms.nb_antennas_rx);
+
+	      for (i=0; i<UE->frame_parms.nb_antennas_rx; i++)
+	      {
+	        rxp[i] = (void*)&UE->common_vars.rxdata[i][UE->frame_parms.nb_prefix_samples0];
+	      }
+
+	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
+					       &timestamp1,
+						   rxp,
+					       UE->frame_parms.ofdm_symbol_size,
+					       UE->frame_parms.nb_antennas_rx);
+
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
-        if (rxs != (UE->frame_parms.ofdm_symbol_size + UE->frame_parms.nb_prefix_samples0 - rx_off_diff)) {
+        if (rxs != (UE->frame_parms.ofdm_symbol_size)) {
           LOG_E(PHY, "problem in rx 7! expect #samples=%d but got only %d! rx_off_diff=%d\n", UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0 - rx_off_diff, rxs, rx_off_diff);
           exit_fun("problem in rx 7!");
           return &UE_thread_retval;
         }
+        UE->rx_offset_diff = rx_off_diff;
+        LOG_E(PHY,"SET rx_off_diff to %d\n",UE->rx_offset_diff);
         rx_off_diff = 0;
 	    }
 	  }
@@ -1232,21 +1251,26 @@ void *UE_thread(void *arg) {
 	    getchar();
 	  }
 	}// for sf=0..10
+
+	  uint8_t proc_select = 9&1;
+	  UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[proc_select];
+
 	if ((UE->rx_offset<(5*UE->frame_parms.samples_per_tti)) &&
-	    (UE->rx_offset > RX_OFF_MIN) && 
+	    (UE->rx_offset > 0) &&
 	    (rx_correction_timer == 0)) {
-	  rx_off_diff = -UE->rx_offset + RX_OFF_MIN;
-	  LOG_D(PHY,"UE->rx_offset %d > %d, diff %d\n",UE->rx_offset,RX_OFF_MIN,rx_off_diff);
+	  rx_off_diff = -1 ;
+	  LOG_I(PHY,"AbsSubframe %d.%d UE->rx_offset %d > %d, diff %d\n",proc->frame_rx,proc->subframe_rx,UE->rx_offset,0,rx_off_diff);
 	  rx_correction_timer = 5;
 	} else if ((UE->rx_offset>(5*UE->frame_parms.samples_per_tti)) && 
-		   (UE->rx_offset < ((10*UE->frame_parms.samples_per_tti)-RX_OFF_MIN)) &&
+		   (UE->rx_offset < ((10*UE->frame_parms.samples_per_tti))) &&
 		   (rx_correction_timer == 0)) {   // moving to the left so drop rx_off_diff samples
-	  rx_off_diff = 10*UE->frame_parms.samples_per_tti - RX_OFF_MIN - UE->rx_offset;
-	  LOG_D(PHY,"UE->rx_offset %d < %d, diff %d\n",UE->rx_offset,10*UE->frame_parms.samples_per_tti-RX_OFF_MIN,rx_off_diff);
+	  rx_off_diff = 1;
+	  LOG_I(PHY,"AbsSubframe %d.%d UE->rx_offset %d < %d, diff %d\n",proc->frame_rx,proc->subframe_rx,UE->rx_offset,10*UE->frame_parms.samples_per_tti,rx_off_diff);
 	  
 	  rx_correction_timer = 5;
 	}
-	
+	//rx_off_diff = 0;
+
 	if (rx_correction_timer>0)
 	  rx_correction_timer--;
       } // start_rx_stream==1

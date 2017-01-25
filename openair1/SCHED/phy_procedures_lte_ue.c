@@ -1359,7 +1359,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
     }
 
     if (isBad) {
-      LOG_D(PHY,"Skip PUSCH generation!\n");
+      LOG_I(PHY,"Skip PUSCH generation!\n");
       ue->ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
     }
   }
@@ -1369,7 +1369,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
     
     // deactivate service request
     // ue->ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
-    LOG_D(PHY,"Generating PUSCH (Abssubframe: %d.%d): harq-Id: %d, round: %d, MaxReTrans: %d \n",frame_tx,subframe_tx,harq_pid,ue->ulsch[eNB_id]->harq_processes[harq_pid]->round,ue->ulsch[eNB_id]->Mlimit);
+    LOG_I(PHY,"Generating PUSCH (Abssubframe: %d.%d): harq-Id: %d, round: %d, MaxReTrans: %d \n",frame_tx%1024,subframe_tx,harq_pid,ue->ulsch[eNB_id]->harq_processes[harq_pid]->round,ue->ulsch[eNB_id]->Mlimit);
     if (ue->ulsch[eNB_id]->harq_processes[harq_pid]->round >= (ue->ulsch[eNB_id]->Mlimit - 1))
     {
         LOG_D(PHY,"PUSCH MAX Retransmission achieved ==> send last pusch\n");
@@ -1689,7 +1689,7 @@ int16_t get_pucch2_ri(PHY_VARS_UE *ue,int eNB_id) {
 
   return(1);
 }
-
+int count0=0;
 void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag) {
 
 
@@ -1815,7 +1815,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
                     T_INT(tx_amp),T_INT(ue->dlsch[eNB_id][0]->g_pucch),T_INT(get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
 #endif
     if (SR_payload>0) {
-      LOG_D(PHY,"[UE  %d][SR %x] Frame %d subframe %d Generating PUCCH %s payload %d,%d (with SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d, amp %d\n",
+      LOG_I(PHY,"[UE  %d][SR %x] AbsSubFrame %d.%d Generating PUCCH %s payload %d,%d (with SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d, amp %d\n",
 	    Mod_id,
 	    ue->dlsch[eNB_id][0]->rnti,
                   frame_tx % 1024, subframe_tx,
@@ -1828,10 +1828,10 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 	    Po_PUCCH,
 	    tx_amp);
     } else {
-      LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating PUCCH %s, an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d, amp %d\n",
+      LOG_I(PHY,"[UE  %d][PDSCH %x] AbsSubFrame %d.%d rx_offset_diff: %d, Generating PUCCH %s, an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d, amp %d\n",
 	    Mod_id,
 	    ue->dlsch[eNB_id][0]->rnti,
-	                frame_tx, subframe_tx,
+	                frame_tx, subframe_tx,ue->rx_offset_diff,
                   (format == pucch_format1a? "1a": (
                    format == pucch_format1b? "1b" : "??")),
 		frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission,
@@ -1855,7 +1855,32 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
                       T_INT(ue->dlsch[eNB_id][0]->current_harq_pid));
     }
 #endif
-	    
+
+#if 1
+    if ((pucch_ack_payload[0] == 0) && (proc->subframe_tx==4) && (ue->rx_offset_diff != 0))
+    	count0++;
+    if(count0 > 5)
+    {
+    	LOG_E(PHY,"Signal drop !!! ==> dump received signal AbsSubframe %d.%d rx_offset %d \n",proc->frame_rx,proc->subframe_rx, ue->rx_offset);
+
+        write_output("rxData.m","rxData",&ue->common_vars.rxdata[0][0],(10*frame_parms->samples_per_tti)+2048,1,1);
+
+        //write_output("rxDataF.m","rxDataF",&ue->common_vars.rxdataF[0][0],frame_parms->ofdm_symbol_size * 14,1,1);
+    	if(proc->subframe_rx & 0x1)
+    	{
+          write_output("dlChEstOdd.m","dlChEst",&ue->common_vars.dl_ch_estimates[0][0][0],frame_parms->symbols_per_tti * (frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH),1,1);
+    	}
+    	else
+    	{
+    	  write_output("dlChEstEven.m","dlChEst",&ue->common_vars.dl_ch_estimates[0][0][0],frame_parms->symbols_per_tti * (frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH),1,1);
+    	}
+        //write_output("rxdataF_ext.m","rxdataF_ext",&ue->pdsch_vars[eNB_id]->rxdataF_ext[0][0],frame_parms->N_RB_DL*12*14,1,1);
+        //write_output("dlChEst_ext.m","dlChEst_ext",&ue->pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0],frame_parms->N_RB_DL*12*14,1,1);
+
+
+        AssertFatal(0," ");
+    }
+#endif
     if (abstraction_flag == 0) {
 	      
       generate_pucch1x(ue->common_vars.txdataF,
@@ -2278,7 +2303,7 @@ void ue_measurement_procedures(
 
   }
 
-  if ((subframe_rx==0) && (l==(4-frame_parms->Ncp))) {
+  if ((subframe_rx==0) && (slot == 0) && (l==(4-frame_parms->Ncp))) {
 
     // AGC
 
