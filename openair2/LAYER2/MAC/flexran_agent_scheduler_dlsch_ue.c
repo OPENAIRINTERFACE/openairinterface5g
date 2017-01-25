@@ -137,8 +137,9 @@ void _store_dlsch_buffer (module_id_t Mod_id,
   UE_list_t             *UE_list = &eNB_mac_inst[Mod_id].UE_list;
   UE_TEMPLATE           *UE_template;
 
-  for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
- 
+  for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+    if (UE_list->active[UE_id] != TRUE) continue;
+    
     if (flexran_slice_member(UE_id, slice_id) == 0)
       continue;
     
@@ -221,13 +222,18 @@ void _assign_rbs_required (module_id_t Mod_id,
   //  UE_TEMPLATE           *UE_template;
 
   // clear rb allocations across all CC_ids
-  for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
+  for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+    if (UE_list->active[UE_id] != TRUE) continue;
     
     if (flexran_slice_member(UE_id, slice_id) == 0)
       continue;
     
     pCCid = UE_PCCID(Mod_id,UE_id);
     rnti = UE_list->UE_template[pCCid][UE_id].rnti;
+
+    /* skip UE not present in PHY (for any of its active CCs) */
+    if (!phy_stats_exist(Mod_id, rnti))
+      continue;
 
     //update CQI information across component carriers
     for (n=0; n<UE_list->numactiveCCs[UE_id]; n++) {
@@ -288,115 +294,6 @@ void _assign_rbs_required (module_id_t Mod_id,
 
         LOG_D(MAC,"[eNB %d][SLICE %d] Frame %d: UE %d on CC %d: RB unit %d,  nb_required RB %d (TBS %d, mcs %d)\n",
               Mod_id, slice_id,frameP,UE_id, CC_id,  min_rb_unit[CC_id], nb_rbs_required[CC_id][UE_id], TBS, cqi_to_mcs[flexran_get_ue_wcqi(Mod_id, UE_id)]);
-      }
-    }
-  }
-}
-
-// This function scans all CC_ids for a particular UE to find the maximum round index of its HARQ processes
-int _maxround(module_id_t Mod_id,uint16_t rnti,int frame,sub_frame_t subframe,uint8_t ul_flag )
-{
-
-  uint8_t round,round_max=0,UE_id;
-  int CC_id;
-  UE_list_t *UE_list = &eNB_mac_inst[Mod_id].UE_list;
-
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-
-    UE_id = find_UE_id(Mod_id,rnti);
-    round    = UE_list->UE_sched_ctrl[UE_id].round[CC_id];
-    if (round > round_max) {
-      round_max = round;
-    }
-  }
-
-  return round_max;
-}
-
-// This function scans all CC_ids for a particular UE to find the maximum DL CQI
-int _maxcqi(module_id_t Mod_id,int32_t UE_id)
-{
-
-  LTE_eNB_UE_stats *eNB_UE_stats = NULL;
-  UE_list_t *UE_list = &eNB_mac_inst[Mod_id].UE_list;
-  int CC_id,n;
-  int CQI = 0;
-
-  for (n=0; n<UE_list->numactiveCCs[UE_id]; n++) {
-    CC_id = UE_list->ordered_CCids[n][UE_id];
-    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,UE_RNTI(Mod_id,UE_id));
-
-    if (eNB_UE_stats==NULL) {
-      mac_xface->macphy_exit("maxcqi: could not get eNB_UE_stats\n");
-      return 0; // not reached
-    }
-
-    if (eNB_UE_stats->DL_cqi[0] > CQI) {
-      CQI = eNB_UE_stats->DL_cqi[0];
-    }
-  }
-
-  return(CQI);
-}
-
-
-// This fuction sorts the UE in order their dlsch buffer and CQI
-void _sort_UEs (module_id_t Mod_idP,
-               int         frameP,
-               sub_frame_t subframeP)
-{
-
-
-  int               UE_id1,UE_id2;
-  int               pCC_id1,pCC_id2;
-  int               cqi1,cqi2,round1,round2;
-  int               i=0,ii=0;//,j=0;
-  rnti_t            rnti1,rnti2;
-
-  UE_list_t *UE_list = &eNB_mac_inst[Mod_idP].UE_list;
-
-  for (i=UE_list->head; i>=0; i=UE_list->next[i]) {
-
-    for(ii=UE_list->next[i]; ii>=0; ii=UE_list->next[ii]) {
-
-      UE_id1  = i;
-      rnti1 = UE_RNTI(Mod_idP,UE_id1);
-      if(rnti1 == NOT_A_RNTI)
-	continue;
-      if (UE_list->UE_sched_ctrl[UE_id1].ul_out_of_sync == 1)
-	continue;
-      pCC_id1 = UE_PCCID(Mod_idP,UE_id1);
-      cqi1    = _maxcqi(Mod_idP,UE_id1); //
-      round1  = _maxround(Mod_idP,rnti1,frameP,subframeP,0);
-
-      UE_id2 = ii;
-      rnti2 = UE_RNTI(Mod_idP,UE_id2);
-      if(rnti2 == NOT_A_RNTI)
-        continue;
-      if (UE_list->UE_sched_ctrl[UE_id2].ul_out_of_sync == 1)
-	continue;
-      cqi2    = _maxcqi(Mod_idP,UE_id2);
-      round2  = _maxround(Mod_idP,rnti2,frameP,subframeP,0);  //mac_xface->get_ue_active_harq_pid(Mod_id,rnti2,subframe,&harq_pid2,&round2,0);
-      pCC_id2 = UE_PCCID(Mod_idP,UE_id2);
-
-      if(round2 > round1) { // Check first if one of the UEs has an active HARQ process which needs service and swap order
-        swap_UEs(UE_list,UE_id1,UE_id2,0);
-      } else if (round2 == round1) {
-        // RK->NN : I guess this is for fairness in the scheduling. This doesn't make sense unless all UEs have the same configuration of logical channels.  This should be done on the sum of all information that has to be sent.  And still it wouldn't ensure fairness.  It should be based on throughput seen by each UE or maybe using the head_sdu_creation_time, i.e. swap UEs if one is waiting longer for service.
-
-        // first check the buffer status for SRB1 and SRB2
-        if ( (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[1] + UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[2]) <
-             (UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[1] + UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[2])   ) {
-          swap_UEs(UE_list,UE_id1,UE_id2,0);
-        } else if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_head_sdu_creation_time_max <
-                   UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_head_sdu_creation_time_max   ) {
-          swap_UEs(UE_list,UE_id1,UE_id2,0);
-        } else if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_total <
-                   UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_total   ) {
-          swap_UEs(UE_list,UE_id1,UE_id2,0);
-        } else if (cqi1 < cqi2) {
-          swap_UEs(UE_list,UE_id1,UE_id2,0);
-        }
       }
     }
   }
@@ -575,7 +472,9 @@ void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
     
     min_rb_unit[CC_id]=get_min_rb_unit(Mod_id,CC_id);
     
-    for (i=UE_list->head; i>=0; i=UE_list->next[i]) {
+    for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+      if (UE_list->active[i] != TRUE) continue;
+
       UE_id = i;
       // Initialize scheduling information for all active UEs
       
@@ -603,24 +502,24 @@ void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
   _assign_rbs_required (Mod_id,slice_id, frameP,subframeP,nb_rbs_required,nb_rbs_allowed_slice,min_rb_unit);
 
   // Sorts the user on the basis of dlsch logical channel buffer and CQI
-  _sort_UEs (Mod_id,frameP,subframeP);
+  sort_UEs (Mod_id,frameP,subframeP);
 
   total_ue_count = 0;
 
   // loop over all active UEs
-  for (i=UE_list->head; i>=0; i=UE_list->next[i]) {
+  for (i=UE_list->head; i>=0; i=UE_list->next[i]) { 
     rnti = flexran_get_ue_crnti(Mod_id, i);
     if(rnti == NOT_A_RNTI)
       continue;
     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
       continue;
+
     UE_id = i;
     
     if (flexran_slice_member(UE_id, slice_id) == 0)
       continue;
     
-    // if there is no available harq_process, skip the UE
-    if (UE_list->UE_sched_ctrl[UE_id].harq_pid[CC_id]<0)
+    if (!phy_stats_exist(Mod_id, rnti))
       continue;
 
     for (ii=0; ii < UE_num_active_CC(UE_list,UE_id); ii++) {
@@ -628,6 +527,10 @@ void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
       ue_sched_ctl->max_allowed_rbs[CC_id]=nb_rbs_allowed_slice[CC_id][slice_id];
       flexran_get_harq(Mod_id, CC_id, UE_id, frameP, subframeP, &harq_pid, &round);
+
+      // if there is no available harq_process, skip the UE
+      if (UE_list->UE_sched_ctrl[UE_id].harq_pid[CC_id]<0)
+        continue;
 
       average_rbs_per_user[CC_id]=0;
 
@@ -670,6 +573,15 @@ void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
   for(i=UE_list->head; i>=0; i=UE_list->next[i]) {
     rnti = UE_RNTI(Mod_id,i);
    
+    if(rnti == NOT_A_RNTI)
+      continue;
+
+    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+      continue;
+
+    if (!phy_stats_exist(Mod_id, rnti))
+      continue;
+
     if (flexran_slice_member(i, slice_id) == 0)
       continue;
     
@@ -734,8 +646,12 @@ void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
           // LOG_D(MAC,"UE %d rnti 0x\n", UE_id, rnti );
           if(rnti == NOT_A_RNTI)
             continue;
+
 	  if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
 	    continue;
+
+	  if (!phy_stats_exist(Mod_id, rnti))
+            continue;
 
           transmission_mode = mac_xface->get_transmission_mode(Mod_id,CC_id,rnti);
           //rrc_status = mac_eNB_get_rrc_status(Mod_id,rnti);
@@ -1061,11 +977,15 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
   uint32_t ndi;
   
   flexran_agent_mac_create_empty_dl_config(mod_id, dl_info);
+
+#if 0
   
   if (UE_list->head==-1) {
     return;
   }
   
+#endif
+
   start_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,VCD_FUNCTION_IN);
 
@@ -1107,8 +1027,9 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
 
     if (mbsfn_flag[CC_id]>0)
       continue;
-
+    
     for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
+  
       rnti = flexran_get_ue_crnti(mod_id, UE_id);
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 
@@ -1118,12 +1039,6 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
       if (rnti==NOT_A_RNTI) {
         LOG_D(MAC,"Cannot find rnti for UE_id %d (num_UEs %d)\n", UE_id,UE_list->num_UEs);
         // mac_xface->macphy_exit("Cannot find rnti for UE_id");
-        continue;
-      }
-
-      if (flexran_get_ue_crnti(mod_id, UE_id) == NOT_A_RNTI) {
-        LOG_D(MAC,"[eNB] Cannot find UE\n");
-        //  mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
         continue;
       }
 
