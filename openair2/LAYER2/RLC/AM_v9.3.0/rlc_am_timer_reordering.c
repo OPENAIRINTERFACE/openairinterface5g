@@ -70,6 +70,8 @@ rlc_am_check_timer_reordering(
                              PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP));
 #endif
 
+      AssertFatal (rlc_pP->vr_x != RLC_SN_UNDEFINED, "RLC AM TReordering Expiry vrX not defined LcId=%d\n", rlc_pP->channel_id);
+
       rlc_pP->t_reordering.running   = 0;
       rlc_pP->t_reordering.timed_out = 1;
       rlc_pP->stat_timer_reordering_timed_out += 1;
@@ -77,38 +79,54 @@ rlc_am_check_timer_reordering(
       rlc_am_pdu_info_t* pdu_info;
       mem_block_t*       cursor;
       cursor    =  rlc_pP->receiver_buffer.head;
+      rlc_usn_t vr_ms_new = rlc_pP->vr_x;
 
-      if (cursor) {
-        do {
-          pdu_info =  &((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info;
+      AssertFatal (cursor != NULL, "RLC AM TReordering Expiry Rx PDU list empty LcId=%d\n", rlc_pP->channel_id);
 
-          // NOT VERY SURE ABOUT THAT, THINK ABOUT IT
-          rlc_pP->vr_ms = (pdu_info->sn + 1) & RLC_AM_SN_MASK;
+      while ((cursor != NULL) && (vr_ms_new != rlc_pP->vr_h)) {
+		  pdu_info =  &((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info;
 
-          if (rlc_am_sn_gte_vr_x(ctxt_pP, rlc_pP, pdu_info->sn)) {
-            if (((rlc_am_rx_pdu_management_t*)(cursor->data))->all_segments_received == 0) {
-              rlc_pP->vr_ms = pdu_info->sn;
-              break;
-            }
-          }
 
-          cursor = cursor->next;
-        } while (cursor != NULL);
+		  // First find an element with SN greater or equal than vrX
+		  if (RLC_AM_DIFF_SN(pdu_info->sn,rlc_pP->vr_r) >= RLC_AM_DIFF_SN(rlc_pP->vr_x,rlc_pP->vr_r)) {
+			if (((rlc_am_rx_pdu_management_t*)(cursor->data))->all_segments_received == 0) {
+				// Stop at first found discontinuity
+				// vr_ms_new holds SN following the latest in sequence fully received PDU >= old vrX
+			  break;
+			}
+			else {
+				vr_ms_new = RLC_AM_NEXT_SN(vr_ms_new);
+			}
 
-        LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T-REORDERING] TIME-OUT UPDATED VR(MS) %04d\n",
-              PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-              rlc_pP->vr_ms);
+		  }
+		  cursor = cursor->next;
       }
 
-      if (rlc_am_sn_gt_vr_ms(ctxt_pP, rlc_pP, rlc_pP->vr_h)) {
+	  /* Update vr_ms */
+	  rlc_pP->vr_ms = vr_ms_new;
+
+
+	LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T-REORDERING] TIME-OUT UPDATED VR(MS) %04d\n",
+		  PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
+		  rlc_pP->vr_ms);
+
+	  /* if new vrMS is lower than vrH, update vrX and restart timerReordering */
+      if (rlc_pP->vr_ms != rlc_pP->vr_h) {
         rlc_pP->vr_x = rlc_pP->vr_h;
         rlc_pP->t_reordering.ms_time_out = PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP) + rlc_pP->t_reordering.ms_duration;
+
+
         LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T-REORDERING] TIME-OUT, RESTARTED T-REORDERING, UPDATED VR(X) to VR(R) %04d\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
               rlc_pP->vr_x);
       }
 
-      rlc_pP->status_requested = 1;
+      /* Trigger a STATUS report */
+      RLC_AM_SET_STATUS(rlc_pP->status_requested,RLC_AM_STATUS_TRIGGERED_T_REORDERING);
+      // Clear Delay flag if it was setup as it is useless due to Status PDU to be sent for TReordering expiry
+      RLC_AM_CLEAR_STATUS(rlc_pP->status_requested,RLC_AM_STATUS_TRIGGERED_DELAYED);
+      rlc_pP->sn_status_triggered_delayed = RLC_SN_UNDEFINED;
+
     }
   }
 }

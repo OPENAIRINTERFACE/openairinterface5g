@@ -70,6 +70,8 @@ rlc_am_check_timer_status_prohibit(
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
         //#warning         TO DO rlc_am_check_timer_status_prohibit
         rlc_am_stop_and_reset_timer_status_prohibit(ctxt_pP, rlc_pP);
+        /* Clear StatusProhibit flag */
+        RLC_AM_CLEAR_STATUS(rlc_pP->status_requested,RLC_AM_STATUS_PROHIBIT);
         //rlc_pP->t_status_prohibit.frame_time_out = ctxt_pP->frame + rlc_pP->t_status_prohibit.time_out;
       }
     }

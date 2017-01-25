@@ -72,6 +72,22 @@
 #    define RLC_AM_MAX_HOLES_REPORT_PER_PDU       16
 /** @} */
 
+/* Common to Data and Status PDU */
+#define RLC_AM_SN_BITS                         10
+#define RLC_AM_PDU_D_C_BITS                	   1
+#define RLC_AM_PDU_E_BITS                	   1
+
+/* STATUS PDU */
+#define RLC_AM_STATUS_PDU_CPT_STATUS           0
+
+#define RLC_AM_STATUS_PDU_CPT_OFFSET           4
+#define RLC_AM_STATUS_PDU_CPT_LENGTH           3
+
+#define RLC_AM_STATUS_PDU_ACK_SN_OFFSET        2
+
+#define RLC_AM_STATUS_PDU_SO_LENGTH            15
+
+#define RLC_AM_STATUS_PDU_SO_END_ALL_BYTES     0x7FFF
 
 /* MACRO DEFINITIONS */
 #define RLC_AM_NEXT_SN(sn)         (((sn)+1) & ((RLC_AM_SN_MODULO)-1))
@@ -93,6 +109,7 @@
 #define RLC_AM_STATUS_TRIGGERED_T_REORDERING      0x02    /* Status Report is triggered by Timer Reordering Expiry */
 #define RLC_AM_STATUS_TRIGGERED_DELAYED           0x10    /* Status is delayed until SN(receivedPoll) < VR(MS) */
 #define RLC_AM_STATUS_PROHIBIT                    0x20    /* TimerStatusProhibit still running */
+#define RLC_AM_STATUS_NO_TX_MASK				  (RLC_AM_STATUS_PROHIBIT | RLC_AM_STATUS_TRIGGERED_DELAYED)
 
 /* Status triggered (bit 5-7) will be concatenated with Poll triggered (bit 0-4) for RLCdec. RLC_AM_STATUS_TRIGGERED_DELAYED is not recorded. */
 #define RLC_AM_SET_STATUS(x,event)     (RLC_SET_EVENT(x,event))

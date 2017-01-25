@@ -323,7 +323,8 @@ rlc_am_get_pdus (
   case RLC_DATA_TRANSFER_READY_STATE:
 
     // TRY TO SEND CONTROL PDU FIRST
-    if ((rlc_pP->nb_bytes_requested_by_mac > 2) && (rlc_pP->status_requested)) {
+    if ((rlc_pP->nb_bytes_requested_by_mac >= 2) &&
+    		((rlc_pP->status_requested) && !(rlc_pP->status_requested & RLC_AM_STATUS_NO_TX_MASK))) {
       // When STATUS reporting has been triggered, the receiving side of an AM RLC entity shall:
       // - if t-StatusProhibit is not running:
       //     - at the first transmission opportunity indicated by lower layer, construct a STATUS PDU and deliver it to lower layer;
@@ -334,22 +335,23 @@ rlc_am_get_pdus (
       //
       // When a STATUS PDU has been delivered to lower layer, the receiving side of an AM RLC entity shall:
       //     - start t-StatusProhibit.
-      if (rlc_pP->t_status_prohibit.running == 0) {
-        rlc_am_send_status_pdu(ctxt_pP, rlc_pP);
-        mem_block_t* pdu = list_remove_head(&rlc_pP->control_pdu_list);
 
-        if (pdu) {
+      rlc_am_send_status_pdu(ctxt_pP, rlc_pP);
+      mem_block_t* pdu = list_remove_head(&rlc_pP->control_pdu_list);
+
+      if (pdu) {
           list_add_tail_eurecom (pdu, &rlc_pP->pdus_to_mac_layer);
-          rlc_pP->status_requested = 0;
+          RLC_AM_CLEAR_ALL_STATUS(rlc_pP->status_requested);
           rlc_pP->status_buffer_occupancy = 0;
           rlc_am_start_timer_status_prohibit(ctxt_pP, rlc_pP);
+          RLC_AM_SET_STATUS(rlc_pP->status_requested,RLC_AM_STATUS_PROHIBIT);
           return;
         }
-      } else {
-        LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" DELAYED SENT STATUS PDU BECAUSE T-STATUS-PROHIBIT RUNNING (TIME-OUT %u)\n",
-              PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-              rlc_pP->t_status_prohibit.ms_time_out);
       }
+      else {
+              LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" DELAYED SENT STATUS PDU (Available MAC Data %u)(T-PROHIBIT %u) (DELAY FLAG %u)\n",
+                    PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
+					rlc_pP->nb_bytes_requested_by_mac,rlc_pP->t_status_prohibit.ms_time_out,(rlc_pP->status_requested & RLC_AM_STATUS_TRIGGERED_DELAYED));
     }
 
     /*while ((rlc_pP->nb_bytes_requested_by_mac > 0) && (stay_on_this_list)) {
