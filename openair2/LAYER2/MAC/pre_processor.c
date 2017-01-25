@@ -29,6 +29,9 @@
 
  */
 
+#define _GNU_SOURCE
+#include <stdlib.h>
+
 #include "assertions.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"
@@ -62,6 +65,17 @@
   #endif
 */
 
+/* this function checks that get_eNB_UE_stats returns
+ * a non-NULL pointer for all CCs for a given UE
+ */
+static int phy_stats_exist(module_id_t Mod_id, int rnti)
+{
+  int CC_id;
+  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
+    if (mac_xface->get_eNB_UE_stats(Mod_id, CC_id, rnti) == NULL)
+      return 0;
+  return 1;
+}
 
 // This function stores the downlink buffer for all the logical channels
 void store_dlsch_buffer (module_id_t Mod_id,
@@ -75,7 +89,8 @@ void store_dlsch_buffer (module_id_t Mod_id,
   UE_list_t             *UE_list = &eNB_mac_inst[Mod_id].UE_list;
   UE_TEMPLATE           *UE_template;
 
-  for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
+  for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+    if (UE_list->active[UE_id] != TRUE) continue;
 
     UE_template = &UE_list->UE_template[UE_PCCID(Mod_id,UE_id)][UE_id];
 
@@ -155,9 +170,15 @@ void assign_rbs_required (module_id_t Mod_id,
   LTE_DL_FRAME_PARMS   *frame_parms[MAX_NUM_CCs];
 
   // clear rb allocations across all CC_ids
-  for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
+  for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+    if (UE_list->active[UE_id] != TRUE) continue;
+
     pCCid = UE_PCCID(Mod_id,UE_id);
     rnti = UE_list->UE_template[pCCid][UE_id].rnti;
+
+    /* skip UE not present in PHY (for any of its active CCs) */
+    if (!phy_stats_exist(Mod_id, rnti))
+      continue;
 
     //update CQI information across component carriers
     for (n=0; n<UE_list->numactiveCCs[UE_id]; n++) {
@@ -262,7 +283,7 @@ int maxround(module_id_t Mod_id,uint16_t rnti,int frame,sub_frame_t subframe,uin
 }
 
 // This function scans all CC_ids for a particular UE to find the maximum DL CQI
-
+// it returns -1 if the UE is not found in PHY layer (get_eNB_UE_stats gives NULL)
 int maxcqi(module_id_t Mod_id,int32_t UE_id)
 {
 
@@ -276,8 +297,9 @@ int maxcqi(module_id_t Mod_id,int32_t UE_id)
     eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,UE_RNTI(Mod_id,UE_id));
 
     if (eNB_UE_stats==NULL) {
-      mac_xface->macphy_exit("maxcqi: could not get eNB_UE_stats\n");
-      return 0; // not reached
+      /* the UE may have been removed in the PHY layer, don't exit */
+      //mac_xface->macphy_exit("maxcqi: could not get eNB_UE_stats\n");
+      return -1;
     }
 
     if (eNB_UE_stats->DL_cqi[0] > CQI) {
@@ -288,13 +310,124 @@ int maxcqi(module_id_t Mod_id,int32_t UE_id)
   return(CQI);
 }
 
+struct sort_ue_dl_params {
+  int Mod_idP;
+  int frameP;
+  int subframeP;
+};
 
+static int ue_dl_compare(const void *_a, const void *_b, void *_params)
+{
+  struct sort_ue_dl_params *params = _params;
+  UE_list_t *UE_list = &eNB_mac_inst[params->Mod_idP].UE_list;
+
+  int UE_id1 = *(const int *)_a;
+  int UE_id2 = *(const int *)_b;
+
+  int rnti1  = UE_RNTI(params->Mod_idP, UE_id1);
+  int pCC_id1 = UE_PCCID(params->Mod_idP, UE_id1);
+  int round1 = maxround(params->Mod_idP, rnti1, params->frameP, params->subframeP, 1);
+
+  int rnti2  = UE_RNTI(params->Mod_idP, UE_id2);
+  int pCC_id2 = UE_PCCID(params->Mod_idP, UE_id2);
+  int round2 = maxround(params->Mod_idP, rnti2, params->frameP, params->subframeP, 1);
+
+  int cqi1 = maxcqi(params->Mod_idP, UE_id1);
+  int cqi2 = maxcqi(params->Mod_idP, UE_id2);
+
+  if (round1 > round2) return -1;
+  if (round1 < round2) return 1;
+
+  if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[1] + UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[2] >
+      UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[1] + UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[2])
+    return -1;
+  if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[1] + UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[2] <
+      UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[1] + UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[2])
+    return 1;
+
+  if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_head_sdu_creation_time_max >
+      UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_head_sdu_creation_time_max)
+    return -1;
+  if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_head_sdu_creation_time_max <
+      UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_head_sdu_creation_time_max)
+    return 1;
+
+  if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_total >
+      UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_total)
+    return -1;
+  if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_total <
+      UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_total)
+    return 1;
+
+  if (cqi1 > cqi2) return -1;
+  if (cqi1 < cqi2) return 1;
+
+  return 0;
+#if 0
+  /* The above order derives from the following.  */
+      if(round2 > round1) { // Check first if one of the UEs has an active HARQ process which needs service and swap order
+        swap_UEs(UE_list,UE_id1,UE_id2,0);
+      } else if (round2 == round1) {
+        // RK->NN : I guess this is for fairness in the scheduling. This doesn't make sense unless all UEs have the same configuration of logical channels.  This should be done on the sum of all information that has to be sent.  And still it wouldn't ensure fairness.  It should be based on throughput seen by each UE or maybe using the head_sdu_creation_time, i.e. swap UEs if one is waiting longer for service.
+        //  for(j=0;j<MAX_NUM_LCID;j++){
+        //    if (eNB_mac_inst[Mod_id][pCC_id1].UE_template[UE_id1].dl_buffer_info[j] <
+        //      eNB_mac_inst[Mod_id][pCC_id2].UE_template[UE_id2].dl_buffer_info[j]){
+
+        // first check the buffer status for SRB1 and SRB2
+
+        if ( (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[1] + UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[2]) <
+             (UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[1] + UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[2])   ) {
+          swap_UEs(UE_list,UE_id1,UE_id2,0);
+        } else if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_head_sdu_creation_time_max <
+                   UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_head_sdu_creation_time_max   ) {
+          swap_UEs(UE_list,UE_id1,UE_id2,0);
+        } else if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_total <
+                   UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_total   ) {
+          swap_UEs(UE_list,UE_id1,UE_id2,0);
+        } else if (cqi1 < cqi2) {
+          swap_UEs(UE_list,UE_id1,UE_id2,0);
+        }
+      }
+#endif
+}
 
 // This fuction sorts the UE in order their dlsch buffer and CQI
 void sort_UEs (module_id_t Mod_idP,
                int         frameP,
                sub_frame_t subframeP)
 {
+  int               i;
+  int               list[NUMBER_OF_UE_MAX];
+  int               list_size = 0;
+  int               rnti;
+  struct sort_ue_dl_params params = { Mod_idP, frameP, subframeP };
+
+  UE_list_t *UE_list = &eNB_mac_inst[Mod_idP].UE_list;
+
+  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+    rnti = UE_RNTI(Mod_idP, i);
+    if (rnti == NOT_A_RNTI)
+      continue;
+    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+      continue;
+    if (!phy_stats_exist(Mod_idP, rnti))
+      continue;
+    list[list_size] = i;
+    list_size++;
+  }
+
+  qsort_r(list, list_size, sizeof(int), ue_dl_compare, &params);
+
+  if (list_size) {
+    for (i = 0; i < list_size-1; i++)
+      UE_list->next[list[i]] = list[i+1];
+    UE_list->next[list[list_size-1]] = -1;
+    UE_list->head = list[0];
+  } else {
+    UE_list->head = -1;
+  }
+
+#if 0
 
 
   int               UE_id1,UE_id2;
@@ -315,6 +448,8 @@ void sort_UEs (module_id_t Mod_idP,
 	continue;
       if (UE_list->UE_sched_ctrl[UE_id1].ul_out_of_sync == 1)
 	continue;
+      if (!phy_stats_exist(Mod_idP, rnti1))
+        continue;
       pCC_id1 = UE_PCCID(Mod_idP,UE_id1);
       cqi1    = maxcqi(Mod_idP,UE_id1); //
       round1  = maxround(Mod_idP,rnti1,frameP,subframeP,0);
@@ -325,6 +460,8 @@ void sort_UEs (module_id_t Mod_idP,
         continue;
       if (UE_list->UE_sched_ctrl[UE_id2].ul_out_of_sync == 1)
 	continue;
+      if (!phy_stats_exist(Mod_idP, rnti2))
+        continue;
       cqi2    = maxcqi(Mod_idP,UE_id2);
       round2  = maxround(Mod_idP,rnti2,frameP,subframeP,0);  //mac_xface->get_ue_active_harq_pid(Mod_id,rnti2,subframe,&harq_pid2,&round2,0);
       pCC_id2 = UE_PCCID(Mod_idP,UE_id2);
@@ -354,6 +491,7 @@ void sort_UEs (module_id_t Mod_idP,
       }
     }
   }
+#endif
 }
 
 
@@ -407,7 +545,9 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 
     min_rb_unit[CC_id]=get_min_rb_unit(Mod_id,CC_id);
 
-    for (i=UE_list->head; i>=0; i=UE_list->next[i]) {
+    for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+      if (UE_list->active[i] != TRUE) continue;
+
       UE_id = i;
       // Initialize scheduling information for all active UEs
       
@@ -453,17 +593,19 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
       continue;
     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
       continue;
-    UE_id = i;
-
-    // if there is no available harq_process, skip the UE
-    if (UE_list->UE_sched_ctrl[UE_id].harq_pid[CC_id]<0)
+    if (!phy_stats_exist(Mod_id, rnti))
       continue;
+    UE_id = i;
 
     for (ii=0; ii<UE_num_active_CC(UE_list,UE_id); ii++) {
       CC_id = UE_list->ordered_CCids[ii][UE_id];
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
       harq_pid = ue_sched_ctl->harq_pid[CC_id];
       round    = ue_sched_ctl->round[CC_id];
+
+      // if there is no available harq_process, skip the UE
+      if (UE_list->UE_sched_ctrl[UE_id].harq_pid[CC_id]<0)
+        continue;
 
       average_rbs_per_user[CC_id]=0;
 
@@ -505,6 +647,13 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
   // extend nb_rbs_required to capture per LCID RB required
   for(i=UE_list->head; i>=0; i=UE_list->next[i]) {
     rnti = UE_RNTI(Mod_id,i);
+
+    if(rnti == NOT_A_RNTI)
+      continue;
+    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+      continue;
+    if (!phy_stats_exist(Mod_id, rnti))
+      continue;
 
     for (ii=0; ii<UE_num_active_CC(UE_list,i); ii++) {
       CC_id = UE_list->ordered_CCids[ii][i];
@@ -564,6 +713,8 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
             continue;
 	  if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
 	    continue;
+          if (!phy_stats_exist(Mod_id, rnti))
+            continue;
 
           transmission_mode = mac_xface->get_transmission_mode(Mod_id,CC_id,rnti);
 	  //          mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,frameP,subframeP,&harq_pid,&round,0);
@@ -610,6 +761,8 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
                     continue;
 		  if (UE_list->UE_sched_ctrl[UE_id2].ul_out_of_sync == 1)
 		    continue;
+                  if (!phy_stats_exist(Mod_idP, rnti2))
+                    continue;
 
                   eNB_UE_stats2 = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti2);
                   //mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti2,frameP,subframeP,&harq_pid2,&round2,0);
@@ -758,7 +911,13 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   int sf05_upper=-1,sf05_lower=-1;
 #endif
   LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
+  if (eNB_UE_stats == NULL) return;
+
   // initialize harq_pid and round
+
+  if (eNB_UE_stats == NULL)
+    return;
+
   mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,
 				    frameP,subframeP,
 				    &ue_sched_ctl->harq_pid[CC_id],
@@ -791,7 +950,10 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
       break;
       
     case 100:
-      ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/16;
+      if (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.threequarter_fs == 0)
+	ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/16;
+      else
+	ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/12;
       break;
     }
     // clear the update in case PHY does not have a new measurement after timer expiry
@@ -971,6 +1133,9 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
       continue;
 
+    if (!phy_stats_exist(module_idP, rnti))
+      continue;
+
     UE_id = i;
 
     for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
@@ -1021,6 +1186,8 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       continue;
     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
       continue;
+    if (!phy_stats_exist(module_idP, rnti))
+      continue;
 
     UE_id = i;
 
@@ -1051,6 +1218,8 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
         continue;
       if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
 	continue;
+      if (!phy_stats_exist(module_idP, rnti))
+        continue;
 
       UE_id = i;
 
@@ -1108,13 +1277,16 @@ void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfra
   LTE_DL_FRAME_PARMS   *frame_parms;
 
 
-  for (i=UE_list->head_ul; i>=0; i=UE_list->next_ul[i]) {
+  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+    if (UE_list->active[i] != TRUE) continue;
 
     rnti = UE_RNTI(module_idP,i);
 
     if (rnti==NOT_A_RNTI)
       continue;
     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+      continue;
+    if (!phy_stats_exist(module_idP, rnti))
       continue;
 
     if (UE_list->UE_sched_ctrl[i].phr_received == 1)
@@ -1199,10 +1371,103 @@ void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfra
   }
 }
 
+struct sort_ue_ul_params {
+  int module_idP;
+  int frameP;
+  int subframeP;
+};
+
+static int ue_ul_compare(const void *_a, const void *_b, void *_params)
+{
+  struct sort_ue_ul_params *params = _params;
+  UE_list_t *UE_list = &eNB_mac_inst[params->module_idP].UE_list;
+
+  int UE_id1 = *(const int *)_a;
+  int UE_id2 = *(const int *)_b;
+
+  int rnti1  = UE_RNTI(params->module_idP, UE_id1);
+  int pCCid1 = UE_PCCID(params->module_idP, UE_id1);
+  int round1 = maxround(params->module_idP, rnti1, params->frameP, params->subframeP, 1);
+
+  int rnti2  = UE_RNTI(params->module_idP, UE_id2);
+  int pCCid2 = UE_PCCID(params->module_idP, UE_id2);
+  int round2 = maxround(params->module_idP, rnti2, params->frameP, params->subframeP, 1);
+
+  if (round1 > round2) return -1;
+  if (round1 < round2) return 1;
+
+  if (UE_list->UE_template[pCCid1][UE_id1].ul_buffer_info[LCGID0] > UE_list->UE_template[pCCid2][UE_id2].ul_buffer_info[LCGID0])
+    return -1;
+  if (UE_list->UE_template[pCCid1][UE_id1].ul_buffer_info[LCGID0] < UE_list->UE_template[pCCid2][UE_id2].ul_buffer_info[LCGID0])
+    return 1;
+
+  if (UE_list->UE_template[pCCid1][UE_id1].ul_total_buffer > UE_list->UE_template[pCCid2][UE_id2].ul_total_buffer)
+    return -1;
+  if (UE_list->UE_template[pCCid1][UE_id1].ul_total_buffer < UE_list->UE_template[pCCid2][UE_id2].ul_total_buffer)
+    return 1;
+
+  if (UE_list->UE_template[pCCid1][UE_id1].pre_assigned_mcs_ul > UE_list->UE_template[pCCid2][UE_id2].pre_assigned_mcs_ul)
+    return -1;
+  if (UE_list->UE_template[pCCid1][UE_id1].pre_assigned_mcs_ul < UE_list->UE_template[pCCid2][UE_id2].pre_assigned_mcs_ul)
+    return 1;
+
+  return 0;
+
+#if 0
+  /* The above order derives from the following.
+   * The last case is not handled: "if (UE_list->UE_template[pCCid2][UE_id2].ul_total_buffer > 0 )"
+   * I don't think it makes a big difference.
+   */
+      if(round2 > round1) {
+        swap_UEs(UE_list,UE_id1,UE_id2,1);
+      } else if (round2 == round1) {
+        if (UE_list->UE_template[pCCid1][UE_id1].ul_buffer_info[LCGID0] < UE_list->UE_template[pCCid2][UE_id2].ul_buffer_info[LCGID0]) {
+          swap_UEs(UE_list,UE_id1,UE_id2,1);
+        } else if (UE_list->UE_template[pCCid1][UE_id1].ul_total_buffer <  UE_list->UE_template[pCCid2][UE_id2].ul_total_buffer) {
+          swap_UEs(UE_list,UE_id1,UE_id2,1);
+        } else if (UE_list->UE_template[pCCid1][UE_id1].pre_assigned_mcs_ul <  UE_list->UE_template[pCCid2][UE_id2].pre_assigned_mcs_ul) {
+          if (UE_list->UE_template[pCCid2][UE_id2].ul_total_buffer > 0 ) {
+            swap_UEs(UE_list,UE_id1,UE_id2,1);
+          }
+        }
+      }
+#endif
+}
 
 void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP)
 {
+  int               i;
+  int               list[NUMBER_OF_UE_MAX];
+  int               list_size = 0;
+  int               rnti;
+  struct sort_ue_ul_params params = { module_idP, frameP, subframeP };
 
+  UE_list_t *UE_list = &eNB_mac_inst[module_idP].UE_list;
+
+  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+    rnti = UE_RNTI(module_idP, i);
+    if (rnti == NOT_A_RNTI)
+      continue;
+    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+      continue;
+    if (!phy_stats_exist(module_idP, rnti))
+      continue;
+    list[list_size] = i;
+    list_size++;
+  }
+
+  qsort_r(list, list_size, sizeof(int), ue_ul_compare, &params);
+
+  if (list_size) {
+    for (i = 0; i < list_size-1; i++)
+      UE_list->next_ul[list[i]] = list[i+1];
+    UE_list->next_ul[list[list_size-1]] = -1;
+    UE_list->head_ul = list[0];
+  } else {
+    UE_list->head_ul = -1;
+  }
+
+#if 0
   int               UE_id1,UE_id2;
   int               pCCid1,pCCid2;
   int               round1,round2;
@@ -1224,6 +1489,8 @@ void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP)
 	continue;
       if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
 	continue;
+      if (!phy_stats_exist(module_idP, rnti1))
+        continue;
 
       pCCid1 = UE_PCCID(module_idP,UE_id1);
       round1  = maxround(module_idP,rnti1,frameP,subframeP,1);
@@ -1235,6 +1502,8 @@ void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP)
         continue;
       if (UE_list->UE_sched_ctrl[UE_id2].ul_out_of_sync == 1)
 	continue;
+      if (!phy_stats_exist(module_idP, rnti2))
+        continue;
 
       pCCid2 = UE_PCCID(module_idP,UE_id2);
       round2  = maxround(module_idP,rnti2,frameP,subframeP,1);
@@ -1254,4 +1523,5 @@ void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP)
       }
     }
   }
+#endif
 }

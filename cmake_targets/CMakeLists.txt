@@ -554,6 +554,8 @@ elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
 
 elseif (${RF_BOARD} STREQUAL "OAI_LMSSDR")
   include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB")
+  include_directories("/usr/local/include/lime")
+  include_directories("/usr/include/lime")
   LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
   LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/lmsSDR")
   LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/lms7002m")

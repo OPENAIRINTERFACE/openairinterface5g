@@ -182,7 +182,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *pr
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param abstraction_flag Indicator of PHY abstraction
 */
-void phy_procedures_eNB_common_RX(PHY_VARS_eNB *phy_vars_eNB);
+void phy_procedures_eNB_common_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc);
 
 /*! \brief Scheduling for eNB TX procedures in TDD S-subframes.
   @param phy_vars_eNB Pointer to eNB variables on which to act

@@ -82,7 +82,7 @@ void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRA
 
 void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms);
 
-void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms);
+void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms,int do_precoding);
 
 void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,uint8_t subframe);
 

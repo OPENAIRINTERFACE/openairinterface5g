@@ -195,10 +195,14 @@ rrc_mac_config_req(
       }
     }
     else {
-      if (logicalChannelConfig)
-	UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity] = *logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
-      else
-	UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity] = 0;
+      if (UE_id == -1) {
+        LOG_E(MAC,"%s:%d:%s: ERROR, UE_id == -1\n", __FILE__, __LINE__, __FUNCTION__);
+      } else {
+        if (logicalChannelConfig)
+	  UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity] = *logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
+        else
+	  UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity] = 0;
+      }
     }
   }
 
@@ -296,7 +300,10 @@ rrc_mac_config_req(
 
   if (physicalConfigDedicated != NULL) {
     if (eNB_flagP==1) {
-      mac_xface->phy_config_dedicated_eNB(Mod_idP, CC_idP, UE_RNTI(Mod_idP, UE_id), physicalConfigDedicated);
+      if (UE_id == -1)
+        LOG_E(MAC,"%s:%d:%s: ERROR, UE_id == -1\n", __FILE__, __LINE__, __FUNCTION__);
+      else
+        mac_xface->phy_config_dedicated_eNB(Mod_idP, CC_idP, UE_RNTI(Mod_idP, UE_id), physicalConfigDedicated);
     } else {
       mac_xface->phy_config_dedicated_ue(Mod_idP,0,eNB_index,physicalConfigDedicated);
       UE_mac_inst[Mod_idP].physicalConfigDedicated=physicalConfigDedicated; // for SR proc
@@ -308,7 +315,10 @@ rrc_mac_config_req(
   if (sCellToAddMod_r10 != NULL) {
 
     if (eNB_flagP==1) {
-      mac_xface->phy_config_dedicated_scell_eNB(Mod_idP,UE_RNTI(Mod_idP,UE_id),sCellToAddMod_r10,1);
+      if (UE_id == -1)
+        LOG_E(MAC,"%s:%d:%s: ERROR, UE_id == -1\n", __FILE__, __LINE__, __FUNCTION__);
+      else
+        mac_xface->phy_config_dedicated_scell_eNB(Mod_idP,UE_RNTI(Mod_idP,UE_id),sCellToAddMod_r10,1);
     } else {
 
 	//#warning "phy_config_dedicated_scell_ue is empty"
