@@ -3946,14 +3946,14 @@ n(tikz_fname,"w");
             write_output(fname,vname, &UE->common_vars.rxdata[0][0],10*UE->frame_parms.samples_per_tti,1,1);
             sprintf(fname,"rxsigF0_r%d.m",round);
             sprintf(vname,"rxs0F_r%d",round);
-            write_output(fname,vname, &UE->common_vars.rxdataF[0][0],2*UE->frame_parms.ofdm_symbol_size*nsymb,2,1);
+            write_output(fname,vname, &UE->common_vars.rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
             if (UE->frame_parms.nb_antennas_rx>1) {
               sprintf(fname,"rxsig1_r%d.m",round);
               sprintf(vname,"rxs1_r%d",round);
               write_output(fname,vname, UE->common_vars.rxdata[1],UE->frame_parms.samples_per_tti,1,1);
               sprintf(fname,"rxsig1F_r%d.m",round);
               sprintf(vname,"rxs1F_r%d",round);
-              write_output(fname,vname, UE->common_vars.rxdataF[1],2*UE->frame_parms.ofdm_symbol_size*nsymb,2,1);
+              write_output(fname,vname, UE->common_vars.rxdataF[1],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
             }
 
             //channel
