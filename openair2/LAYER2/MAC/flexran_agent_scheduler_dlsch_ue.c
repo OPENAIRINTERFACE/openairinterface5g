@@ -104,8 +104,8 @@ float total_slice_percentage = 0;
 int slice_maxmcs[MAX_NUM_SLICES] = {28, 28, 28, 28};
 int slice_maxmcs_current[MAX_NUM_SLICES] = {28, 28, 28, 28};
 
-int update_dl_scheduler[MAX_NUM_SLICES] = {1, 0, 0, 0};
-int update_dl_scheduler_current[MAX_NUM_SLICES] = {1, 0, 0, 0};
+int update_dl_scheduler[MAX_NUM_SLICES] = {1, 1, 1, 1};
+int update_dl_scheduler_current[MAX_NUM_SLICES] = {1, 1, 1, 1};
 
 // name of available scheduler
 char *dl_scheduler_type[MAX_NUM_SLICES] = {"flexran_schedule_ue_spec_embb",
@@ -976,8 +976,6 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
   uint8_t ue_has_transmission = 0;
   uint32_t ndi;
   
-  flexran_agent_mac_create_empty_dl_config(mod_id, dl_info);
-
 #if 0
   
   if (UE_list->head==-1) {
@@ -990,7 +988,7 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,VCD_FUNCTION_IN);
 
   //weight = get_ue_weight(module_idP,UE_id);
-  aggregation = 1; // set to the maximum aggregation level
+  aggregation = 2; // set to the maximum aggregation level
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     min_rb_unit[CC_id] = get_min_rb_unit(mod_id, CC_id);
