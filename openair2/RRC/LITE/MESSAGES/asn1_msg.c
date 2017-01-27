@@ -1505,7 +1505,10 @@ do_RRCConnectionSetup(
   // PDSCH
   //assign_enum(&physicalConfigDedicated2->pdsch_ConfigDedicated->p_a,
   //        PDSCH_ConfigDedicated__p_a_dB0);
-  physicalConfigDedicated2->pdsch_ConfigDedicated->p_a=   PDSCH_ConfigDedicated__p_a_dB0;
+  if (frame_parms->nb_antenna_ports_eNB==2)
+    physicalConfigDedicated2->pdsch_ConfigDedicated->p_a=   PDSCH_ConfigDedicated__p_a_dB_3;
+  else
+    physicalConfigDedicated2->pdsch_ConfigDedicated->p_a=   PDSCH_ConfigDedicated__p_a_dB0;
 
   // PUCCH
   physicalConfigDedicated2->pucch_ConfigDedicated->ackNackRepetition.present=PUCCH_ConfigDedicated__ackNackRepetition_PR_release;

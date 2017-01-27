@@ -1265,7 +1265,11 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
   ue->sinr_CQI_dB = (double*) malloc16_clear( fp->N_RB_DL*12*sizeof(double) );
 
   ue->init_averaging = 1;
-  ue->pdsch_config_dedicated->p_a = dB0; // default value until overwritten by RRCConnectionReconfiguration
+  // default value until overwritten by RRCConnectionReconfiguration
+  if (fp->nb_antenna_ports_eNB==2)
+    ue->pdsch_config_dedicated->p_a = dBm3; 
+  else
+    ue->pdsch_config_dedicated->p_a = dB0; 
 
   // set channel estimation to do linear interpolation in time
   ue->high_speed_flag = 1;
@@ -1552,8 +1556,12 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 
     for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++)
       eNB->UE_stats_ptr[UE_id] = &eNB->UE_stats[UE_id];
-
-    eNB->pdsch_config_dedicated->p_a = dB0; //defaul value until overwritten by RRCConnectionReconfiguration
+    
+    //defaul value until overwritten by RRCConnectionReconfiguration
+    if (fp->nb_antenna_ports_eNB==2)
+      eNB->pdsch_config_dedicated->p_a = dBm3; 
+    else
+      eNB->pdsch_config_dedicated->p_a = dB0; 
 
     init_prach_tables(839);
   } // node_function != NGFI_RRU_IF4p5

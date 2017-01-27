@@ -686,7 +686,7 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 				       dci_alloc->format,
 				       &eNB->dlsch_SI,
 				       fp,
-				       eNB->pdsch_config_dedicated,
+				       NULL,
 				       SI_RNTI,
 				       0,
 				       P_RNTI,
@@ -720,7 +720,7 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 				       dci_alloc->format,
 				       &eNB->dlsch_ra,
 				       fp,
-				       eNB->pdsch_config_dedicated,
+				       NULL,
 				       SI_RNTI,
 				       dci_alloc->rnti,
 				       P_RNTI,
@@ -770,7 +770,7 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 					 dci_alloc->format,
 					 eNB->dlsch[(uint8_t)UE_id],
 					 fp,
-					 eNB->pdsch_config_dedicated,
+					 &eNB->pdsch_config_dedicated[UE_id],
 					 SI_RNTI,
 					 0,
 					 P_RNTI,
@@ -1486,7 +1486,13 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 			 0);
     }
 
-
+  /*
+  if (frame>=10 && subframe>=9) {
+    write_output("/tmp/txsigF0.m","txsF0", &eNB->common_vars.txdataF[0][0][0],120*eNB->frame_parms.ofdm_symbol_size,1,1);
+    write_output("/tmp/txsigF1.m","txsF1", &eNB->common_vars.txdataF[0][0][0],120*eNB->frame_parms.ofdm_symbol_size,1,1);
+    abort();
+  }
+  */
 
 #ifdef EMOS
   phy_procedures_emos_eNB_TX(subframe, eNB);

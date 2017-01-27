@@ -814,11 +814,12 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
           ((int16_t*)&tmp_sample2)[1] = (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
           *jj=*jj+1;
 
+	  //gain_lin_QPSK (=amp/sqrt(2)) is already contains the power offset from rho_a/rho_b, so here we do not need divide by sqrt(2) anymore
           // normalization for 2 tx antennas
-          ((int16_t*)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_SQRT2_Q15)>>15);
-          ((int16_t*)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_SQRT2_Q15)>>15);
-          ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]*ONE_OVER_SQRT2_Q15)>>15);
-          ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_SQRT2_Q15)>>15);
+          ((int16_t*)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]));
+          ((int16_t*)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]));
+          ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]));
+          ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]));
 
         break;
 
@@ -843,11 +844,11 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
             qam16_table_offset_im+=1;
           *jj=*jj+1;
 
-          ((int16_t *)&txdataF[0][tti_offset])[0]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
-          ((int16_t *)&txdataF[0][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
-
-    //((int16_t *)&txdataF[0][tti_offset])[0]+=(qam_table_s0[qam16_table_offset_re]*ONE_OVER_SQRT2_Q15)>>15;
-    //((int16_t *)&txdataF[0][tti_offset])[1]+=(qam_table_s0[qam16_table_offset_im]*ONE_OVER_SQRT2_Q15)>>15;
+          //((int16_t *)&txdataF[0][tti_offset])[0]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
+          //((int16_t *)&txdataF[0][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+	  //gain_lin_QPSK (=amp/sqrt(2)) is already contains the power offset from rho_a/rho_b, so here we do not need divide by sqrt(2) anymore
+	  ((int16_t *)&txdataF[0][tti_offset])[0]+=(qam_table_s0[qam16_table_offset_re]);
+	  ((int16_t *)&txdataF[0][tti_offset])[1]+=(qam_table_s0[qam16_table_offset_im]);
 
           // Antenna 1 position n Real part -> -x1*
 
@@ -869,8 +870,11 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
             qam16_table_offset_im+=1;
           *jj=*jj+1;
 
-          ((int16_t *)&txdataF[1][tti_offset])[0]+=-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
-          ((int16_t *)&txdataF[1][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+          //((int16_t *)&txdataF[1][tti_offset])[0]+=-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
+          //((int16_t *)&txdataF[1][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+	  //qam_table_s0 already contains the power offset from rho_a/rho_b, so here we do not need divide by sqrt(2) anymore
+	  ((int16_t *)&txdataF[1][tti_offset])[0]+=-(qam_table_s0[qam16_table_offset_re]);
+	  ((int16_t *)&txdataF[1][tti_offset])[1]+=(qam_table_s0[qam16_table_offset_im]);
 
          //((int16_t *)&txdataF[1][tti_offset])[0]+=-qam_table_s0[qam16_table_offset_re];
          //((int16_t *)&txdataF[1][tti_offset])[1]+=qam_table_s0[qam16_table_offset_im];
@@ -904,8 +908,10 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 
           //((int16_t *)&txdataF[0][tti_offset])[0]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
           //((int16_t *)&txdataF[0][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
-          ((int16_t *)&txdataF[0][tti_offset])[0]+=(qam_table_s0[qam64_table_offset_re]*ONE_OVER_SQRT2_Q15)>>15;
-          ((int16_t *)&txdataF[0][tti_offset])[1]+=(qam_table_s0[qam64_table_offset_im]*ONE_OVER_SQRT2_Q15)>>15;
+	  //qam_table_s0 already contains the power offset from rho_a/rho_b, so here we do not need divide by sqrt(2) anymore
+	  ((int16_t *)&txdataF[0][tti_offset])[0]+=(qam_table_s0[qam64_table_offset_re]);
+	  ((int16_t *)&txdataF[0][tti_offset])[1]+=(qam_table_s0[qam64_table_offset_im]);
+
 
           // Antenna 1 => -x1*
           qam64_table_offset_re = 0;
@@ -931,8 +937,10 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 
           //((int16_t *)&txdataF[1][tti_offset])[0]+=-(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
           //((int16_t *)&txdataF[1][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
-         ((int16_t *)&txdataF[1][tti_offset])[0]+=-qam_table_s0[qam64_table_offset_re];
-         ((int16_t *)&txdataF[1][tti_offset])[1]+=qam_table_s0[qam64_table_offset_im];
+	  //qam_table_s0 already contains the power offset from rho_a/rho_b, so here we do not need divide by sqrt(2) anymore
+	  ((int16_t *)&txdataF[1][tti_offset])[0]+=-(qam_table_s0[qam64_table_offset_re]);
+	  ((int16_t *)&txdataF[1][tti_offset])[1]+=(qam_table_s0[qam64_table_offset_im]);
+
 
           break;
         }

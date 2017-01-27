@@ -35,7 +35,10 @@ double pa_values[8]={-6.0,-4.77,-3.0,-1.77,0.0,1.0,2.0,3.0}; //reported by highe
 
 double get_pa_dB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated)
 {
-  return(pa_values[pdsch_config_dedicated->p_a]);
+  if (pdsch_config_dedicated)
+    return(pa_values[ pdsch_config_dedicated->p_a]);
+  else
+    return(0.0);
 }
 
 double computeRhoA_eNB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
@@ -43,7 +46,7 @@ double computeRhoA_eNB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
   double rho_a_dB;
   double sqrt_rho_a_lin;
 
-  rho_a_dB = pa_values[ pdsch_config_dedicated->p_a];
+  rho_a_dB = get_pa_dB(pdsch_config_dedicated);
 
   if(!dl_power_off) //if dl_power_offset is 0, this is for MU-interference, TM5
     rho_a_dB-=10*log10(2);
@@ -99,7 +102,7 @@ double computeRhoA_UE(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
   double rho_a_dB;
   double sqrt_rho_a_lin;
 
-  rho_a_dB = pa_values[ pdsch_config_dedicated->p_a];
+  rho_a_dB = get_pa_dB(pdsch_config_dedicated);
 
   if(!dl_power_off)
     rho_a_dB-=10*log10(2);
