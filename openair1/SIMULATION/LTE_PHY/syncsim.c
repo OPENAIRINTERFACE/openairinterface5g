@@ -1739,7 +1739,7 @@ int main(int argc, char **argv)
                                       PHY_vars_UE[0]->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
                                       0);
 
-      dump_dlsch2(PHY_vars_UE[0],0,coded_bits_per_codeword);
+      dump_dlsch2(PHY_vars_UE[0],0,0,coded_bits_per_codeword);
 
     }
   } else {
