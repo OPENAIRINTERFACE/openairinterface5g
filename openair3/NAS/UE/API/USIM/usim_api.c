@@ -150,7 +150,8 @@ int usim_api_write(const char *filename, const usim_data_t* data)
  **              Others:        None                                       **
  **                                                                        **
  ***************************************************************************/
-int usim_api_authenticate_test(const OctetString* rand_pP, const OctetString* autn_pP,
+int usim_api_authenticate_test(usim_data_t *usim_data,
+                               const OctetString* rand_pP, const OctetString* autn_pP,
                                OctetString* auts_pP, OctetString* res_pP,
                                OctetString* ck_pP, OctetString* ik_pP)
 {
@@ -166,7 +167,7 @@ int usim_api_authenticate_test(const OctetString* rand_pP, const OctetString* au
   //       RES = XDOUT
   for (i=0; i<USIM_API_K_SIZE; i++)
   {
-      res_pP->value[i] = rand_pP->value[i] ^ _usim_api_k[i];
+      res_pP->value[i] = rand_pP->value[i] ^ usim_data->keys.usim_api_k[i];
   }
 
   //step2: res = f2(xdout,n)
@@ -257,19 +258,19 @@ int usim_api_authenticate_test(const OctetString* rand_pP, const OctetString* au
 
     /* Concealed value of the counter SQNms in the USIM:
      * Conc(SQNMS) = SQNMS ⊕ f5*K(RAND) */
-    f5star(_usim_api_k, rand_pP->value, ak);
+    f5star(usim_data->keys.usim_api_k, rand_pP->value, ak, usim_data->keys.opc);
 
 
     u8 sqn_ms[USIM_API_SQNMS_SIZE];
     memset(sqn_ms, 0, USIM_API_SQNMS_SIZE);
 
     //#define USIM_API_SQN_MS_SIZE  3
-    printf("_usim_api_data.sqn_ms %p\n",_usim_api_data.sqn_ms);
+    printf("usim_data->usim_sqn_data.sqn_ms %p\n", usim_data->usim_sqn_data.sqn_ms);
     for (i = 0; i < USIM_API_SQNMS_SIZE; i++) {
       //#warning "LG:BUG HERE TODO"
-      printf("i %d:  ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i] %d\n",i, ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i]);
+      printf("i %d:  ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - i] %d\n",i, ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - i]);
       sqn_ms[USIM_API_SQNMS_SIZE - i] =
-        ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i];
+        ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - i];
     }
 
     u8 sqnms[USIM_API_SQNMS_SIZE];
@@ -285,8 +286,8 @@ int usim_api_authenticate_test(const OctetString* rand_pP, const OctetString* au
      * MACS = f1*K(SQNMS || RAND || AMF) */
 #define USIM_API_MACS_SIZE USIM_API_XMAC_SIZE
     u8 macs[USIM_API_MACS_SIZE];
-    f1star(_usim_api_k, rand_pP->value, sqn_ms,
-           &rand_pP->value[USIM_API_SQN_SIZE], macs);
+    f1star(usim_data->keys.usim_api_k, rand_pP->value, sqn_ms,
+           &rand_pP->value[USIM_API_SQN_SIZE], macs, usim_data->keys.opc);
     LOG_TRACE(DEBUG, "USIM-API  - MACS %02X%02X%02X%02X%02X%02X%02X%02X",
               macs[0],macs[1],macs[2],macs[3],
               macs[4],macs[5],macs[6],macs[7]);

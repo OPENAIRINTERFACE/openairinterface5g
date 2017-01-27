@@ -366,7 +366,6 @@ typedef struct {
   /* usim test mode */
   uint8_t usimtestmode;
   usim_sqn_data_t usim_sqn_data;
->>>>>>> UE/API: rename _usim_api_data to usim_sqn_data and move it to usim_data
 } usim_data_t;
 
 /****************************************************************************/
@@ -384,7 +383,8 @@ int usim_api_write(const char *filename, const usim_data_t* data);
 int usim_api_authenticate(usim_data_t *usim_data, const OctetString* rand_pP, const OctetString* autn_pP,
                           OctetString* auts, OctetString* res,
                           OctetString* ck, OctetString* ik);
-int usim_api_authenticate_test(const OctetString* rand, const OctetString* autn,
+int usim_api_authenticate_test(usim_data_t *usim_data,
+                               const OctetString* rand, const OctetString* autn,
                                OctetString* auts, OctetString* res,
                                OctetString* ck, OctetString* ik);
 
