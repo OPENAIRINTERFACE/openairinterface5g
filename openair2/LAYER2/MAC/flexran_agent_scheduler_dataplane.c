@@ -97,7 +97,7 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
   unsigned char         header_len = 0, header_len_tmp = 0;
   unsigned char         sdu_lcids[11],offset,num_sdus=0;
   uint16_t              nb_rb;
-  uint16_t              TBS,j,sdu_lengths[11],rnti,padding=0,post_padding=0;
+  uint16_t              TBS, sdu_lengths[11],rnti,padding=0,post_padding=0;
   unsigned char         dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
   uint8_t         round            = 0;
   uint8_t         harq_pid         = 0;
@@ -112,17 +112,16 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 
   int last_sdu_header_len = 0;
 
-  int i;
+  int i, j;
 
   Protocol__FlexDlData *dl_data;
   Protocol__FlexDlDci *dl_dci;
 
   uint32_t rlc_size, n_lc, lcid;
   
-  
   // For each UE-related command
   for (i = 0; i < n_dl_ue_data; i++) {
-      
+    
     dl_data = dl_ue_data[i];
     dl_dci = dl_data->dl_dci;
 
@@ -165,9 +164,9 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
       // Go through each one of the channel commands and create SDUs
       header_len = 0;
       last_sdu_header_len = 0;
-      for (i = 0; i < n_lc; i++) {
-	lcid = dl_data->rlc_pdu[i]->rlc_pdu_tb[0]->logical_channel_id;
-	rlc_size = dl_data->rlc_pdu[i]->rlc_pdu_tb[0]->size;
+      for (j = 0; j < n_lc; j++) {
+	lcid = dl_data->rlc_pdu[j]->rlc_pdu_tb[0]->logical_channel_id;
+	rlc_size = dl_data->rlc_pdu[j]->rlc_pdu_tb[0]->size;
 	LOG_D(MAC,"[TEST] [eNB %d] Frame %d, LCID %d, CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
 	      mod_id, frame, lcid, CC_id, rlc_size);
 	if (rlc_size > 0) {
@@ -196,13 +195,13 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 					    lcid,
 					    rlc_size); // transport block set size
 	  
-	    sdu_lengths[i] = 0;
+	    sdu_lengths[j] = 0;
 	  
 	    LOG_D(MAC, "[TEST] RLC can give %d bytes for LCID %d during second call\n", rlc_status.bytes_in_buffer, lcid);
 	  
 	    if (rlc_status.bytes_in_buffer > 0) {
 	      
-	      sdu_lengths[i] = mac_rlc_data_req(mod_id,
+	      sdu_lengths[j] = mac_rlc_data_req(mod_id,
 						rnti,
 						mod_id,
 						frame,
@@ -211,14 +210,14 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 						lcid,
 						(char *)&dlsch_buffer[sdu_length_total]);
 	      
-	      LOG_D(MAC,"[eNB %d][LCID %d] CC_id %d Got %d bytes from RLC\n",mod_id, lcid, CC_id, sdu_lengths[i]);
-	      sdu_length_total += sdu_lengths[i];
-	      sdu_lcids[i] = lcid;
+	      LOG_D(MAC,"[eNB %d][LCID %d] CC_id %d Got %d bytes from RLC\n",mod_id, lcid, CC_id, sdu_lengths[j]);
+	      sdu_length_total += sdu_lengths[j];
+	      sdu_lcids[j] = lcid;
 	      
 	      UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[lcid] += 1;
-	      UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[lcid] += sdu_lengths[i];
+	      UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[lcid] += sdu_lengths[j];
 	      
-	      if (sdu_lengths[i] < 128) {
+	      if (sdu_lengths[j] < 128) {
 		header_len += 2;
 		last_sdu_header_len = 2;
 	      } else {
@@ -259,7 +258,7 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	
 	// If there is nothing to schedule, just leave
 	if ((sdu_length_total) <= 0) { 
-	  return;
+	  continue;
 	}
 	
 	offset = generate_dlsch_header((unsigned char*)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
@@ -271,6 +270,8 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 				       NULL,                                  // contention res id
 				       padding,
 				       post_padding);
+
+	
 	
 #ifdef DEBUG_eNB_SCHEDULER
 	LOG_T(MAC,"[eNB %d] First 16 bytes of DLSCH : \n");
@@ -288,7 +289,7 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	// fill remainder of DLSCH with random data
 	for (j=0; j<(TBS-sdu_length_total-offset); j++) {
 	  UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset+sdu_length_total+j] = (char)(taus()&0xff);
-          }
+	}
 	
 	//eNB_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset+sdu_lengths[0]+j] = (char)(taus()&0xff);
 	if (opt_enabled == 1) {
