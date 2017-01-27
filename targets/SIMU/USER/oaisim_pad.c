@@ -859,13 +859,13 @@ void run(int argc, char *argv[])
         && (abstraction_flag == 0) && (oai_emulation.info.n_frames == 1)) {
 
       write_output ("dlchan0.m", "dlch0",
-                    &(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),
+                    &(PHY_vars_UE_g[0]->lte_ue_common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][0][0]),
                     (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
       write_output ("dlchan1.m", "dlch1",
-                    &(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[1][0][0]),
+                    &(PHY_vars_UE_g[0]->lte_ue_common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[1][0][0]),
                     (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
       write_output ("dlchan2.m", "dlch2",
-                    &(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[2][0][0]),
+                    &(PHY_vars_UE_g[0]->lte_ue_common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[2][0][0]),
                     (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
       write_output ("pbch_rxF_comp0.m", "pbch_comp0",
                     PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0], 6 * 12 * 4, 1, 1);
