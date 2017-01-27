@@ -1827,7 +1827,19 @@ target_link_libraries (oaisim_nos1 ${T_LIB})
 # Unitary tests for each piece of L1: example, mbmssim is MBMS L1 simulator
 #####################################
 
-foreach(myExe dlsim dlsim_tm4 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
+#special case for dlim TM4, which uses its own version of phy_scope code
+add_executable(dlsim_tm4
+  ${OPENAIR_BIN_DIR}/messages_xml.h
+  ${OPENAIR1_DIR}/SIMULATION/LTE_PHY/dlsim_tm4.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/lte_phy_scope_tm4.c
+  ${T_SOURCE}
+  )
+target_link_libraries (dlsim_tm4
+  -Wl,--start-group SIMU UTIL SCHED_LIB PHY LFDS ${ITTI_LIB} -Wl,--end-group
+  pthread m rt ${CONFIG_LIBRARIES} ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${T_LIB}
+  )
+
+foreach(myExe dlsim ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
   add_executable(${myExe}
     ${OPENAIR_BIN_DIR}/messages_xml.h
     ${OPENAIR1_DIR}/SIMULATION/LTE_PHY/${myExe}.c

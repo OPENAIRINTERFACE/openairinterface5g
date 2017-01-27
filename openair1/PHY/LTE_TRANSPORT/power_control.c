@@ -34,9 +34,9 @@
 double ratioPB[2][4]={{ 1.0,4.0/5.0,3.0/5.0,2.0/5.0},
           { 5.0/4.0,1.0,3.0/4.0,1.0/2.0}};
 */
-					  
+
 double ratioPB[2][4]={{ 0.00000,  -0.96910,  -2.21849,  -3.97940}, //in db
-		      { 0.96910,   0.00000,  -1.24939,  -3.01030}};
+                      { 0.96910,   0.00000,  -1.24939,  -3.01030}};
 
 double pa_values[8]={-6.0,-4.77,-3.0,-1.77,0.0,1.0,2.0,3.0}; //reported by higher layers
 
@@ -45,21 +45,21 @@ double get_pa_dB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated)
   return(pa_values[pdsch_config_dedicated->p_a]);
 }
 
-double computeRhoA_eNB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,  
-                       LTE_eNB_DLSCH_t *dlsch_eNB,int dl_power_off, uint8_t n_antenna_port){		    	
+double computeRhoA_eNB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
+                       LTE_eNB_DLSCH_t *dlsch_eNB, int dl_power_off, uint8_t n_antenna_port){
   double rho_a_dB;
   double sqrt_rho_a_lin;
 
   rho_a_dB = pa_values[ pdsch_config_dedicated->p_a];
-	
+
   if(!dl_power_off) //if dl_power_offset is 0, this is for MU-interference, TM5
     rho_a_dB-=10*log10(2);
-  
+
   if(n_antenna_port==4) // see TS 36.213 Section 5.2
     rho_a_dB=+10*log10(2);
-	
-  sqrt_rho_a_lin= pow(10,(0.05*rho_a_dB));	
-	
+
+  sqrt_rho_a_lin= pow(10,(0.05*rho_a_dB));
+
   dlsch_eNB->sqrt_rho_a= (short) (sqrt_rho_a_lin*pow(2,13));
 
 #if DEBUG_PC
@@ -78,9 +78,9 @@ double computeRhoB_eNB(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
 
   double rho_a_dB, rho_b_dB;
   double sqrt_rho_b_lin;
-	
+
   rho_a_dB= computeRhoA_eNB(pdsch_config_dedicated,dlsch_eNB,dl_power_off, n_antenna_port);
-	
+
   if(n_antenna_port>1)
     rho_b_dB= ratioPB[1][pdsch_config_common->p_b] + rho_a_dB;
   else
@@ -99,24 +99,24 @@ double computeRhoB_eNB(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
 
 double computeRhoA_UE(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
                       LTE_UE_DLSCH_t *dlsch_ue,
-                      unsigned char dl_power_off, 
-		      uint8_t n_antenna_port
- 		    ){		    	
-    
+                      unsigned char dl_power_off,
+                      uint8_t n_antenna_port
+                    ){
+
   double rho_a_dB;
   double sqrt_rho_a_lin;
 
   rho_a_dB = pa_values[ pdsch_config_dedicated->p_a];
-	
-  if(!dl_power_off) 
-    rho_a_dB-=10*log10(2); 
+
+  if(!dl_power_off)
+    rho_a_dB-=10*log10(2);
   //if dl_power_offset is 0, this is for MU-interference, TM5. But in practice UE may assume 16 or 64QAM TM4 as multiuser
-  
+
    if(n_antenna_port==4) // see TS 36.213 Section 5.2
     rho_a_dB=+10*log10(2);
-	
-  sqrt_rho_a_lin= pow(10,(0.05*rho_a_dB));	
-	
+
+  sqrt_rho_a_lin= pow(10,(0.05*rho_a_dB));
+
   dlsch_ue->sqrt_rho_a= (short) (sqrt_rho_a_lin*pow(2,13));
 
 #ifdef DEBUG_PC
@@ -135,9 +135,9 @@ double computeRhoB_UE(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
 
   double rho_a_dB, rho_b_dB;
   double sqrt_rho_b_lin;
-	
+
   rho_a_dB= computeRhoA_UE(pdsch_config_dedicated,dlsch_ue,dl_power_off, n_antenna_port);
-	
+
   if(n_antenna_port>1)
     rho_b_dB= ratioPB[1][pdsch_config_common->p_b] + rho_a_dB;
   else

@@ -183,6 +183,9 @@ typedef enum {
   Rayleigh8_orth_eff_ch_TM4_prec_real,
   Rayleigh8_orth_eff_ch_TM4_prec_imag,
   TS_SHIFT,
+  EPA_low,
+  EPA_medium,
+  EPA_high,
 } SCM_t;
 
 /**
