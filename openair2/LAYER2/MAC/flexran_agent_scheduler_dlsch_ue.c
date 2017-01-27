@@ -988,7 +988,7 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,VCD_FUNCTION_IN);
 
   //weight = get_ue_weight(module_idP,UE_id);
-  aggregation = 2; // set to the maximum aggregation level
+  aggregation = 1; // set to the maximum aggregation level
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     min_rb_unit[CC_id] = get_min_rb_unit(mod_id, CC_id);
