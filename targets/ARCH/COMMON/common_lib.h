@@ -362,6 +362,9 @@ struct openair0_device_t {
    */
   int (*trx_set_gains_func)(openair0_device* device, openair0_config_t *openair0_cfg);
 
+  /*! \brief Indicator that device is running
+   */
+  int trx_started;
 };
 
 /* type of device init function, implemented in shared lib */

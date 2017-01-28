@@ -137,6 +137,8 @@ static int trx_usrp_start(openair0_device *device)
   s->tx_count = 0;
   s->rx_timestamp = 0;
 
+  device->trx_started=1;
+  
   return 0;
 }
 /*! \brief Terminate operation of the USRP transceiver -- free all associated resources 
@@ -152,7 +154,7 @@ static void trx_usrp_end(openair0_device *device)
   s->tx_md.end_of_burst = true;
   s->tx_stream->send("", 0, s->tx_md);
   s->tx_md.end_of_burst = false;
-  
+  device->trx_started=0;
 }
 
 /*! \brief Called to send samples to the USRP RF target
@@ -453,6 +455,7 @@ int trx_usrp_set_gains(openair0_device* device,
  * \param card refers to the hardware index to use
  */
 int trx_usrp_stop(openair0_device* device) {
+  device->trx_started=0;
   return(0);
 }
 
