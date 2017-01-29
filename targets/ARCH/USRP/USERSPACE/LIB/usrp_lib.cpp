@@ -88,6 +88,12 @@ typedef struct
   //! Sampling rate
   double sample_rate;
 
+  //! rx RF frequency
+  double rx_RFfreq;
+  
+  //! tx RF frequency
+  double tx_RFfreq;
+
   //! time offset between transmiter timestamp and receiver timestamp;
   double tdiff;
 
@@ -390,14 +396,45 @@ int trx_usrp_set_freq(openair0_device* device, openair0_config_t *openair0_cfg, 
   usrp_state_t *s = (usrp_state_t*)device->priv;
   pthread_t f_thread;
 
-  printf("Setting USRP TX Freq %f, RX Freq %f\n",openair0_cfg[0].tx_freq[0],openair0_cfg[0].rx_freq[0]);
+  double rx_off,tx_off;
 
+  
+  if (fabs(s->rx_RFfreq-openair0_cfg[0].rx_freq[0])<1e6) {
+    // induce use of digital tuning
+    rx_off     = s->rx_RFfreq-openair0_cfg[0].rx_freq[0];
+  }
+  else { // allow UHD to select the frequnecy
+    rx_off     = 0;
+    s->rx_RFfreq = openair0_cfg[0].rx_freq[0];
+  }
+
+  if (fabs(s->tx_RFfreq-openair0_cfg[0].tx_freq[0])<1e6) {
+    // induce use of digital tuning
+    tx_off     = s->tx_RFfreq-openair0_cfg[0].tx_freq[0];
+  }
+  else { // allow UHD to select the frequnecy
+    tx_off     = 0;
+    s->tx_RFfreq = openair0_cfg[0].tx_freq[0];
+  }  
+    
+  printf("Setting USRP TX Freq %f (%f), RX Freq %f (%f)\n",s->tx_RFfreq,tx_off,s->rx_RFfreq,rx_off);
+
+  
   // spawn a thread to handle the frequency change to not block the calling thread
   if (dont_block == 1)
     pthread_create(&f_thread,NULL,freq_thread,(void*)device);
   else {
-    s->usrp->set_tx_freq(device->openair0_cfg[0].tx_freq[0]);
-    s->usrp->set_rx_freq(device->openair0_cfg[0].rx_freq[0]);
+    uhd::tune_request_t treq_rx(s->rx_RFfreq+rx_off);
+    treq_rx.rf_freq_policy = uhd::tune_request_t::POLICY_MANUAL;
+    treq_rx.rf_freq = s->rx_RFfreq;
+    s->usrp->set_rx_freq(treq_rx);
+
+      
+    uhd::tune_request_t treq_tx(s->tx_RFfreq+tx_off);
+    treq_tx.rf_freq_policy = uhd::tune_request_t::POLICY_MANUAL;
+    treq_tx.rf_freq = s->tx_RFfreq;
+    s->usrp->set_tx_freq(treq_tx);    
+    
   }
 
   return(0);

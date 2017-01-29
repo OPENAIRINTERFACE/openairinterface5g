@@ -489,7 +489,7 @@ static void *UE_thread_synch(void *arg)
 
 	  //UE->rfdevice.trx_stop_func(&UE->rfdevice);	  
 	  //	  sleep(1);
-	  //	  init_frame_parms(&UE->frame_parms,1);
+	  init_frame_parms(&UE->frame_parms,1);
 	  //	  if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) { 
 	  //	    LOG_E(HW,"Could not start the device\n");
 	  //	    oai_exit=1;
