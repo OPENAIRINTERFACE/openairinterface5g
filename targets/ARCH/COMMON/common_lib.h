@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-   Contact Information
-   OpenAirInterface Admin: openair_admin@eurecom.fr
-   OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /*! \file common_lib.h 
  * \brief common APIs for different RF frontend device 
  * \author HongliangXU, Navid Nikaein
@@ -51,8 +44,9 @@
 #define BBU_LOCAL_RADIO_HEAD  0
 #define BBU_REMOTE_RADIO_HEAD 1
 
+#ifndef MAX_CARDS
 #define MAX_CARDS 8
-
+#endif
 
 typedef int64_t openair0_timestamp;
 typedef volatile int64_t openair0_vtimestamp;
@@ -72,10 +66,13 @@ typedef enum {
   max_gain=0,med_gain,byp_gain
 } rx_gain_t;
 
+#if OCP_FRAMEWORK
+#include <enums.h>
+#else
 typedef enum {
   duplex_mode_TDD=1,duplex_mode_FDD=0
 } duplex_mode_t;
-
+#endif
 
 
 /** @addtogroup _GENERIC_PHY_RF_INTERFACE_
@@ -83,6 +80,9 @@ typedef enum {
  */
 /*!\brief RF device types
  */
+#ifdef OCP_FRAMEWORK
+#include <enums.h>
+#else
 typedef enum {
   MIN_RF_DEV_TYPE = 0,
   /*!\brief device is ExpressMIMO */
@@ -100,6 +100,7 @@ typedef enum {
   MAX_RF_DEV_TYPE
 
 } dev_type_t;
+#endif
 
 /*!\brief transport protocol types
  */
@@ -133,6 +134,14 @@ typedef struct {
   //! Offset to be applied to RX gain
   double offset;
 } rx_gain_calib_table_t;
+
+/*! \brief Clock source types */
+typedef enum {
+  //! This tells the underlying hardware to use the internal reference
+  internal=0,
+  //! This tells the underlying hardware to use the external reference
+  external=1
+} clock_source_t;
 
 /*! \brief RF frontend parameters set by application */
 typedef struct {
@@ -186,6 +195,8 @@ typedef struct {
   double rx_bw;
   //! TX bandwidth in Hz
   double tx_bw;
+  //! clock source 
+  clock_source_t clock_source;
   //! Auto calibration flag
   int autocal[4];
   //! rf devices work with x bits iqs when oai have its own iq format
@@ -237,8 +248,10 @@ typedef struct {
 
 
 typedef struct {
-  //! Tx buffer for if device
-  void *tx;
+  //! Tx buffer for if device, keep one per subframe now to allow multithreading
+  void *tx[10];
+  //! Tx buffer (PRACH) for if device
+  void *tx_prach;
   //! Rx buffer for if device
   void *rx;
 } if_buffer_t;

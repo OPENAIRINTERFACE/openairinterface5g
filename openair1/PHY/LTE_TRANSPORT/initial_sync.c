@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_TRANSPORT/initial_sync.c
 * \brief Routines for initial UE synchronization procedure (PSS,SSS,PBCH and frame format detection)
@@ -96,7 +88,7 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode)
   
   if (ue->frame_parms.frame_type == TDD) {
     ue_rrc_measurements(ue,
-			1,
+			2,
 			0);
   }
   else {
@@ -160,7 +152,7 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode)
 
   if (pbch_decoded) {
 
-    frame_parms->nb_antennas_tx_eNB = pbch_tx_ant;
+    frame_parms->nb_antenna_ports_eNB = pbch_tx_ant;
 
     // set initial transmission mode to 1 or 2 depending on number of detected TX antennas
     frame_parms->mode1_flag = (pbch_tx_ant==1);
@@ -470,6 +462,13 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
     }
   }
 
+  /* Consider this is a false detection if the offset is > 1000 Hz */
+  if( (abs(ue->common_vars.freq_offset) > 150) && (ret == 0) )
+  {
+	  ret=-1;
+	  LOG_E(HW,"Ignore MIB with high freq offset [%d Hz] estimation \n",ue->common_vars.freq_offset);
+  }
+
   if (ret==0) {  // PBCH found so indicate sync to higher layers and configure frame parameters
 
     //#ifdef DEBUG_INITIAL_SYNCH
@@ -477,6 +476,15 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
     //#endif
 
     if (ue->UE_scan_carrier == 0) {
+
+    #if UE_AUTOTEST_TRACE
+      LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %d \n",
+              ue->Mod_id,
+              ue->proc.proc_rxtx[0].frame_rx,
+              ue->rx_offset,
+              ue->common_vars.freq_offset );
+    #endif
+
       if (ue->mac_enabled==1) {
 	LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
 	//mac_resynch();
@@ -514,7 +522,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
 	  ue->frame_parms.N_RB_DL,
 	  ue->frame_parms.phich_config_common.phich_duration,
 	  phich_string[ue->frame_parms.phich_config_common.phich_resource],
-	  ue->frame_parms.nb_antennas_tx_eNB);
+	  ue->frame_parms.nb_antenna_ports_eNB);
 
 #if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
     LOG_I(PHY,"[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",

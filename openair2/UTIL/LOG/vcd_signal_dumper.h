@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file vcd_signal_dumper.h
  * \brief Output functions call to VCD file which is readable by gtkwave.
@@ -78,6 +70,7 @@ typedef enum {
   VCD_SIGNAL_DUMPER_VARIABLES_RXCNT,
   VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS,
   VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST,
+  VCD_SIGNAL_DUMPER_VARIABLES_TRX_WRITE_FLAGS,
   VCD_SIGNAL_DUMPER_VARIABLES_TX_TS,
   VCD_SIGNAL_DUMPER_VARIABLES_RX_TS,
   VCD_SIGNAL_DUMPER_VARIABLES_RX_HWCNT,
@@ -154,6 +147,12 @@ typedef enum {
   VCD_SIGNAL_DUMPER_VARIABLES_UE0_SFN5,
   VCD_SIGNAL_DUMPER_VARIABLES_UE0_SFN6,
   VCD_SIGNAL_DUMPER_VARIABLES_UE0_SFN7,
+  VCD_SIGNAL_DUMPER_VARIABLES_UE_PDCP_FLUSH_SIZE,
+  VCD_SIGNAL_DUMPER_VARIABLES_UE_PDCP_FLUSH_ERR,
+  VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS,
+  VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS,
+  VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS_MISSING,
+  VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS_MISSING,
   VCD_SIGNAL_DUMPER_VARIABLES_LAST,
   VCD_SIGNAL_DUMPER_VARIABLES_END = VCD_SIGNAL_DUMPER_VARIABLES_LAST,
 } vcd_signal_dump_variables;
@@ -170,6 +169,18 @@ typedef enum {
   VCD_SIGNAL_DUMPER_FUNCTIONS_UE_THREAD_SYNCH,
   VCD_SIGNAL_DUMPER_FUNCTIONS_UE_THREAD_RXTX0,
   VCD_SIGNAL_DUMPER_FUNCTIONS_UE_THREAD_RXTX1,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_SF9,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SIGNAL_COND_RXTX0,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SIGNAL_COND_RXTX1,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_UE_WAIT_COND_RXTX0,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_UE_WAIT_COND_RXTX1,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_COND_WAIT0,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_COND_WAIT1,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_CNT_DECREMENT0,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_CNT_DECREMENT1,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_CNT_INCREMENT0,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_UE_LOCK_MUTEX_RXTX_FOR_CNT_INCREMENT1,
 
   /* RRH signals  */ 
   VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_TX,
@@ -200,6 +211,11 @@ typedef enum {
   VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,
   VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX,
   VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_UESPEC,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PUCCH,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_COMMON,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_RAR,
   VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_LTE,
   VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_LTE,
   VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_THREAD,
@@ -222,6 +238,10 @@ typedef enum {
   VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH,
   VCD_SIGNAL_DUMPER_FUNCTIONS_DCI_DECODING,
   VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PHICH,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_P,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA,
   VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_UE_CONFIG_SIB2,
   VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_CONFIG_SIB1_ENB,
   VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_CONFIG_SIB2_ENB,
@@ -243,11 +263,16 @@ typedef enum {
   VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GENERATE_PRACH,
   VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ULSCH_MODULATION,
   VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ULSCH_ENCODING,
+#if 1 // add for debugging losing PDSCH immediately before and after reporting CQI
+  VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ULSCH_ENCODING_FILL_CQI,
+#endif
   VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ULSCH_SCRAMBLING,
   VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_MODULATION,
   VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING,
   VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING_W,
   VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_SCRAMBLING,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_BEAM_PRECODING,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_OFDM_MODULATION,
 
   /* MAC signals  */
   VCD_SIGNAL_DUMPER_FUNCTIONS_MACPHY_INIT,
@@ -295,6 +320,10 @@ typedef enum {
   VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_IND,
   VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_APPLY_SECURITY,
   VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_VALIDATE_SECURITY,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_FLUSH,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_FLUSH_BUFFER,
 
   /* RRC signals  */
   VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,

@@ -1,0 +1,2 @@
+echo $EXEC $EXEC_ARGS
+$EXEC $EXEC_ARGS

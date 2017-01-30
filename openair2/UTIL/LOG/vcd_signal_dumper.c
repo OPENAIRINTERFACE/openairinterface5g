@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file vcd_signal_dumper.c
  * \brief Dump functions calls and variables to VCD file. Use GTKWave to display this file.
@@ -106,6 +98,7 @@ const char* eurecomVariablesNames[] = {
   "rxcnt",
   "trx_ts",
   "trx_tst",
+  "trx_write_flags",
   "tx_ts",
   "rx_ts",
   "hw_cnt_rx",
@@ -182,6 +175,12 @@ const char* eurecomVariablesNames[] = {
   "ue0_SFN5",
   "ue0_SFN6",
   "ue0_SFN7",
+  "ue_pdcp_flush_size",
+  "ue_pdcp_flush_err",
+  "ue0_trx_read_ns",
+  "ue0_trx_write_ns",
+  "ue0_trx_read_ns_missing",
+  "ue0_trx_write_ns_missing"
 };
 
 const char* eurecomFunctionsNames[] = {
@@ -196,6 +195,18 @@ const char* eurecomFunctionsNames[] = {
   "ue_thread_synch",
   "ue_thread_rxtx0",
   "ue_thread_rxtx1",
+  "trx_read_sf9",
+  "trx_write_sf9",
+  "ue_signal_cond_rxtx0",
+  "ue_signal_cond_rxtx1",
+  "ue_wait_cond_rxtx0",
+  "ue_wait_cond_rxtx1",
+  "ue_lock_mutex_rxtx_for_cond_wait0",
+  "ue_lock_mutex_rxtx_for_cond_wait1",
+  "ue_lock_mutex_rxtx_for_cnt_decrement0",
+  "ue_lock_mutex_rxtx_for_cnt_decrement1",
+  "ue_lock_mutex_rxtx_for_cnt_increment0",
+  "ue_lock_mutex_rxtx_for_cnt_increment1",
 
  /* RRH signals  */ 
   "eNB_tx",
@@ -226,6 +237,11 @@ const char* eurecomFunctionsNames[] = {
   "phy_eNB_slot_fep",
   "phy_procedures_ue_tx",
   "phy_procedures_ue_rx",
+  "phy_procedures_ue_tx_ulsch_uespec",
+  "phy_procedures_ue_tx_pucch",
+  "phy_procedures_ue_tx_ulsch_common",
+  "phy_procedures_ue_tx_prach",
+  "phy_procedures_ue_tx_ulsch_rar",
   "phy_procedures_eNB_lte",
   "phy_procedures_UE_lte",
   "pdsch_thread",
@@ -248,6 +264,10 @@ const char* eurecomFunctionsNames[] = {
   "rx_pdcch",
   "dci_decoding",
   "rx_phich",
+  "pdsch_procedures",
+  "pdsch_procedures_si",
+  "pdsch_procedures_p",
+  "pdsch_procedures_ra",
   "phy_ue_config_sib2",
   "macxface_phy_config_sib1_eNB",
   "macxface_phy_config_sib2_eNB",
@@ -269,11 +289,16 @@ const char* eurecomFunctionsNames[] = {
   "phy_ue_generate_prach",
   "phy_ue_ulsch_modulation",
   "phy_ue_ulsch_encoding",
+#if 1 // add for debugging losing PDSCH immediately before and after reporting CQI
+  "phy_ue_ulsch_encoding_fill_cqi",
+#endif
   "phy_ue_ulsch_scrambling",
   "phy_eNB_dlsch_modulation",
   "phy_eNB_dlsch_encoding",
   "phy_eNB_dlsch_encoding_w",
   "phy_eNB_dlsch_scrambling",
+  "phy_eNB_beam_precoding",
+  "phy_eNB_ofdm_mod_l",
 
   /* MAC  signals  */
   "macxface_macphy_init",
@@ -322,6 +347,10 @@ const char* eurecomFunctionsNames[] = {
   "pdcp_data_ind",
   "pdcp_apply_security",
   "pdcp_validate_security",
+  "pdcp_fifo_read",
+  "pdcp_fifo_read_buffer",
+  "pdcp_fifo_flush",
+  "pdcp_fifo_flush_buffer",
   /* RRC signals  */
   "rrc_rx_tx",
   "rrc_mac_config_req",

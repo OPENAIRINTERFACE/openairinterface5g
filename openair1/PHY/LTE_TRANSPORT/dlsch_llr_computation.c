@@ -1,35 +1,27 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_TRANSPORT/dlsch_llr_computation.c
  * \brief Top-level routines for LLR computation of the PDSCH physical channel from 36-211, V8.6 2009-03
- * \author R. Knopp, F. Kaltenberger,A. Bhamri, S. Aubert, S. Wagner
+ * \author R. Knopp, F. Kaltenberger,A. Bhamri, S. Aubert, S. Wagner, X Jiang
  * \date 2011
  * \version 0.1
  * \company Eurecom
@@ -641,7 +633,8 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
                    uint8_t first_symbol_flag,
                    uint16_t nb_rb,
                    uint16_t pbch_pss_sss_adjust,
-                   int16_t **llr32p)
+                   int16_t **llr32p,
+		   uint8_t beamforming_mode)
 {
 
   uint32_t *rxF = (uint32_t*)&rxdataF_comp[0][((int32_t)symbol*frame_parms->N_RB_DL*12)];
@@ -666,16 +659,20 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
       len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
+  } else if((beamforming_mode==7) && (frame_parms->Ncp==0) && (symbol==3 || symbol==6 || symbol==9 || symbol==12)){
+      len = (nb_rb*9) - (3*pbch_pss_sss_adjust/4);
+  } else if((beamforming_mode==7) && (frame_parms->Ncp==1) && (symbol==4 || symbol==7 || symbol==10)){
+      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
   } else {
     len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
 
 
-  //  printf("dlsch_qpsk_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
- //printf("ll32p=%p , dlsch_llr=%p, symbol=%d, flag=%d \n", llr32, dlsch_llr, symbol, first_symbol_flag);
+  //printf("dlsch_qpsk_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
+  //printf("ll32p=%p , dlsch_llr=%p, symbol=%d, flag=%d \n", llr32, dlsch_llr, symbol, first_symbol_flag);
   for (i=0; i<len; i++) {
     *llr32 = *rxF;
-    //    printf("llr %d : (%d,%d)\n",i,((int16_t*)llr32)[0],((int16_t*)llr32)[1]);
+     //printf("llr %d : (%d,%d)\n",i,((int16_t*)llr32)[0],((int16_t*)llr32)[1]);
     rxF++;
     llr32++;
   }
@@ -715,26 +712,26 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
   for (symbol=num_pdcch_symbols; symbol<nsymb; symbol++) {
     uint16_t *rxF = (uint16_t*)(&rxdataF_comp[0][((int16_t)symbol*frame_parms->N_RB_DL*12)]);
     int16_t *rho_1=(int16_t*)(&rho_i[0][((int16_t)symbol*frame_parms->N_RB_DL*12)]);
-    sic_data = (uint16_t*)&sic_buffer[0][((int16_t)len_acc)]; 
+    sic_data = (uint16_t*)&sic_buffer[0][((int16_t)len_acc)];
 
     symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
 
- 
+
 
       if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) //pilots=1
-        amp_tmp=dlsch0->sqrt_rho_b;                                   
+        amp_tmp=dlsch0->sqrt_rho_b;
       else //pilots=0
         amp_tmp=dlsch0->sqrt_rho_a;
 
-        if (mod_order_0==6) 
+        if (mod_order_0==6)
          amp_tmp=amp_tmp<<1; // to compensate for >> 1 shift in modulation
-    
-    
+
+
     pbch_pss_sss_adjust=adjust_G2(frame_parms,&rb_alloc,2,subframe,symbol);
 
   // printf("amp_tmp=%d\n", amp_tmp);
-    
+
     if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
       if (frame_parms->mode1_flag==0)
         len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
@@ -743,20 +740,20 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
     } else {
       len = (nb_rb*12) - pbch_pss_sss_adjust;
     }
-   
+
    //  printf("dlsch_qpsk_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
 
     len_acc+=len; //accumulated length; this is done because in sic_buffer we have only data symbols
- 
+
     multadd_complex_vector_real_scalar((int16_t *)sic_data,
                                        amp_tmp,
                                        (int16_t *)rho_amp_x0, //this is in Q13
                                        1,
                                        len);
-    
-     
+
+
  //   printf ("Got x0*rho_a\n");
-   
+
     mult_cpx_vector((int16_t *)rho_1, //Q15
                     (int16_t *)rho_amp_x0, //Q13
                     (int16_t*)rho_rho_amp_x0,
@@ -764,22 +761,22 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                     13);
   /*  write_output("rho_for_multipl.m","rho_for_multipl", rho_1,len,1,
      symbol==num_pdcch_symbols ? 15 :
-     symbol==nsymb-1 ? 14 : 13); 
+     symbol==nsymb-1 ? 14 : 13);
 
     write_output("rho_rho_in_llr.m","rho2", rho_rho_amp_x0,len,1,
      symbol==num_pdcch_symbols ? 15 :
      symbol==nsymb-1 ? 14 : 13);
  //   printf ("Computed  rho*rho_a*x0\n");*/
-  
-    
+
+
     //rho_rho_amp_x0_512 = (int16_t)((512*(int16_t *)rho_rho_amp_x0)>>15);
-   
-    
+
+
     sub_cpx_vector16((int16_t *)rxF,
                      (int16_t *)rho_rho_amp_x0,
                      //(int16_t *)clean_x1,
                      (int16_t *)rxF,
-                     len*2); 
+                     len*2);
 
   //  write_output("rxFdata_comp1_after.m","rxF_a", rxF,len,1,1);
    // write_output("clean_x1.m","x1", clean_x1,len,1,1);
@@ -787,21 +784,21 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
       /*  write_output("clean_x1.m","x1", clean_x1,len,1,
      symbol==num_pdcch_symbols ? 15 :
      symbol==nsymb-1 ? 14 : 13);
-  
+
   write_output("rxF_comp1.m","rxF_1_comp", rxF,len,1,
      symbol==num_pdcch_symbols ? 15 :
      symbol==nsymb-1 ? 14 : 13);*/
 
   //  printf("dlsch_qpsk_llr_SIC: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
 
- 
+
     //this is for QPSK only!!!
     for (i=0; i<len*2; i++) {
       *llr16 =rxF[i]; //clean_x1[i];//(int16_t *)rxF[i];//clean_x1[i]; //(int16_t *)rxF[i];//; //rxF[i];
       //printf("llr %d : (%d,%d)\n",i,((int16_t*)llr32)[0],((int16_t*)llr32)[1]);
       llr16++;
     }
-    
+
   }
 
  // printf("dlsch_qpsk_llr_SIC: acc_len=%d\n",len_acc);
@@ -822,7 +819,8 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
                      uint16_t pbch_pss_sss_adjust,
-                     int16_t **llr32p)
+                     int16_t **llr32p,
+                     uint8_t beamforming_mode)
 {
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -865,11 +863,15 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     if (frame_parms->mode1_flag==0)
-      len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
+      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
-      len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
+      len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
+  } else if((beamforming_mode==7) && (frame_parms->Ncp==0) && (symbol==3 || symbol==6 || symbol==9 || symbol==12)){
+      len = (nb_rb*9) - (3*pbch_pss_sss_adjust/4);
+  } else if((beamforming_mode==7) && (frame_parms->Ncp==1) && (symbol==4 || symbol==7 || symbol==10)){
+      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
   } else {
-    len = nb_rb*12 - pbch_pss_sss_adjust;
+    len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
 
   // update output pointer according to number of REs in this symbol (<<2 because 4 bits per RE)
@@ -969,48 +971,48 @@ void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
     uint16_t *rxF = (uint16_t*)(&rxdataF_comp[0][((int16_t)symbol*frame_parms->N_RB_DL*12)]);
     int16_t *rho_1=(int16_t*)(&rho_i[0][((int16_t)symbol*frame_parms->N_RB_DL*12)]);
     ch_mag = (__m128i*)(&dl_ch_mag[0][((int16_t)symbol*frame_parms->N_RB_DL*12)]);
-    sic_data = (uint16_t*)(&sic_buffer[0][((int16_t)len_acc)]); 
-    
+    sic_data = (uint16_t*)(&sic_buffer[0][((int16_t)len_acc)]);
+
     symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-    pbch_pss_sss_adjust=adjust_G2(frame_parms,&rb_alloc,4,subframe,symbol); 
-    
-  
+    pbch_pss_sss_adjust=adjust_G2(frame_parms,&rb_alloc,4,subframe,symbol);
+
+
       if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
 
-        amp_tmp=dlsch0->sqrt_rho_b;   
+        amp_tmp=dlsch0->sqrt_rho_b;
           if (frame_parms->mode1_flag==0)
             len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
           else
             len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
       } else {
-  
+
         amp_tmp=dlsch0->sqrt_rho_a;
         len = nb_rb*12 - pbch_pss_sss_adjust;
       }
 
-      if (mod_order_0==6) 
+      if (mod_order_0==6)
         amp_tmp=amp_tmp<<1; // to compensate for >> 1 shift in modulation
-  
+
     len_acc+=len;
-  
+
     multadd_complex_vector_real_scalar((int16_t *)sic_data,
                                        amp_tmp,
                                        (int16_t *)rho_amp_x0, //this is in Q13
                                        1,
                                        len);
-    
+
      mult_cpx_vector((int16_t *)rho_1, //Q15
                     (int16_t *)rho_amp_x0, //Q13
                     (int16_t*)rho_rho_amp_x0,
                     len,
                     13);
-     
+
      sub_cpx_vector16((int16_t *)rxF,
                       (int16_t *)rho_rho_amp_x0,
                       //(int16_t *)clean_x1,
                       (int16_t *)rxF,
-                      len*2); 
+                      len*2);
 
     len_mod4 = len&3;
     len>>=2;  // length in quad words (4 REs)
@@ -1059,7 +1061,8 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
                      uint16_t pbch_pss_sss_adjust,
-                     int16_t **llr_save)
+                     int16_t **llr_save,
+                     uint8_t beamforming_mode)
 {
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *rxF = (__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
@@ -1089,11 +1092,15 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     if (frame_parms->mode1_flag==0)
-      len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
+      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
-      len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
+      len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
+  } else if((beamforming_mode==7) && (frame_parms->Ncp==0) && (symbol==3 || symbol==6 || symbol==9 || symbol==12)){
+      len = (nb_rb*9) - (3*pbch_pss_sss_adjust/4);
+  } else if((beamforming_mode==7) && (frame_parms->Ncp==1) && (symbol==4 || symbol==7 || symbol==10)){
+      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
   } else {
-    len = nb_rb*12 - pbch_pss_sss_adjust;
+    len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
 
   llr2 = llr;
@@ -1226,7 +1233,7 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
   unsigned char len_mod4=0;
   uint16_t *llr2;
   __m128i *ch_mag,*ch_magb;
-  
+
   nsymb = (frame_parms->Ncp==0) ? 14:12;
 
   for (symbol=num_pdcch_symbols; symbol<nsymb; symbol++) {
@@ -1234,12 +1241,12 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
     int16_t *rho_1=(int16_t*)(&rho_i[0][((int16_t)symbol*frame_parms->N_RB_DL*12)]);
     ch_mag = (__m128i*)(&dl_ch_mag[0][((int16_t)symbol*frame_parms->N_RB_DL*12)]);
     ch_magb = (__m128i*)(&dl_ch_magb[0][((int16_t)symbol*frame_parms->N_RB_DL*12)]);
-    sic_data = (uint16_t*)(&sic_buffer[0][((int16_t)len_acc)]); 
- 
+    sic_data = (uint16_t*)(&sic_buffer[0][((int16_t)len_acc)]);
+
     symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-    pbch_pss_sss_adjust=adjust_G2(frame_parms,&rb_alloc,6,subframe,symbol); 
-    
+    pbch_pss_sss_adjust=adjust_G2(frame_parms,&rb_alloc,6,subframe,symbol);
+
     if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
 
       amp_tmp = dlsch0->sqrt_rho_b;
@@ -1253,23 +1260,23 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
           len = nb_rb*12 - pbch_pss_sss_adjust;
       }
 
-      if (mod_order_0==6) 
+      if (mod_order_0==6)
         amp_tmp=amp_tmp<<1; // to compensate for >> 1 shift in modulation
-  
+
     len_acc+=len;
-  
+
     multadd_complex_vector_real_scalar((int16_t *)sic_data,
                                         amp_tmp,
                                         (int16_t *)rho_amp_x0, //this is in Q13
                                         1,
                                         len);
-    
+
      mult_cpx_vector((int16_t *)rho_1, //Q15
                     (int16_t *)rho_amp_x0, //Q13
                     (int16_t*)rho_rho_amp_x0,
                     len,
                     13);
-     
+
      sub_cpx_vector16((int16_t *)rxF,
                       (int16_t *)rho_rho_amp_x0,
                       //(int16_t *)clean_x1,
@@ -1282,11 +1289,11 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
   len_mod4 =len&3;
   len2=len>>2;  // length in quad words (4 REs)
   len2+=(len_mod4?0:1);
-  
-   
+
+
 
   for (i=0; i<len2; i++) {
-    
+
     __m128i *x1 = (__m128i*)rxF;
     xmm1 = _mm_abs_epi16(x1[i]);
     xmm1 = _mm_subs_epi16(ch_mag[i],xmm1);
@@ -2273,7 +2280,7 @@ void qam16_qpsk(short *stream0_in,
   __m128i  y0i_over_sqrt10;
   __m128i  y0r_three_over_sqrt10;
   __m128i  y0i_three_over_sqrt10;
-  
+
   __m128i ch_mag_des;
   __m128i ch_mag_over_10;
   __m128i ch_mag_over_2;
@@ -3334,7 +3341,7 @@ void qam16_qam64(int16_t *stream0_in,
   __m128i *ch_mag_128i      = (__m128i *)ch_mag;
   __m128i *ch_mag_128i_i    = (__m128i *)ch_mag_i;
 
-  
+
   __m128i ONE_OVER_SQRT_2 = _mm_set1_epi16(23170); // round(1/sqrt(2)*2^15)
   __m128i ONE_OVER_SQRT_10 = _mm_set1_epi16(20724); // round(1/sqrt(10)*2^16)
   __m128i THREE_OVER_SQRT_10 = _mm_set1_epi16(31086); // round(3/sqrt(10)*2^15)
@@ -4046,7 +4053,7 @@ void qam64_qpsk(int16_t *stream0_in,
 #elif defined(__arm__)
 
 #endif
-  
+
   int i,j;
 
   for (i=0; i<length>>2; i+=2) {
@@ -5570,7 +5577,7 @@ void qam64_qam16(short *stream0_in,
   __m128i  y0i_three_over_sqrt_21;
   __m128i  y0i_five_over_sqrt_21;
   __m128i  y0i_seven_over_sqrt_21;
-  
+
 #elif defined(__arm__)
 
 #endif
@@ -7119,7 +7126,7 @@ void qam64_qam64(short *stream0_in,
   __m128i  y0i_seven_over_sqrt_21;
   __m128i ch_mag_int_with_sigma2;
   __m128i two_ch_mag_int_with_sigma2;
-  __m128i three_ch_mag_int_with_sigma2;  
+  __m128i three_ch_mag_int_with_sigma2;
 #elif defined(__arm__)
 
 #endif

@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY_INTERFACE/defs.h
 * \brief mac phy interface primitives
@@ -79,6 +71,16 @@ typedef struct {
 
   /// cancel an ongoing RA procedure
   void (*cancel_ra_proc)(module_id_t Mod_id,int CC_id,frame_t frameP,uint16_t preamble);
+
+  /// Inform MAC layer that an uplink is scheduled for Msg3 in given subframe.
+  /// This is used so that the MAC scheduler marks as busy the RBs used by the Msg3.
+  void (*set_msg3_subframe)(module_id_t Mod_id,
+                            int CC_id,
+                            int frame,
+                            int subframe,
+                            int rnti,
+                            int Msg3_frame,
+                            int Msg3_subframe);
 
   /// Get DCI for current subframe from MAC
   DCI_PDU* (*get_dci_sdu)(module_id_t Mod_id,int CC_id,frame_t frameP,sub_frame_t subframe);
@@ -150,7 +152,7 @@ typedef struct {
   void (*ue_decode_p)(module_id_t Mod_id,int CC_id,frame_t frameP, uint8_t CH_index, void *pdu, uint16_t len);
 
   /// Send a received DLSCH sdu to MAC
-  void (*ue_send_sdu)(module_id_t Mod_id,uint8_t CC_id,frame_t frameP,uint8_t *sdu,uint16_t sdu_len,uint8_t CH_index);
+  void (*ue_send_sdu)(module_id_t Mod_id,uint8_t CC_id,frame_t frameP,sub_frame_t subframe,uint8_t *sdu,uint16_t sdu_len,uint8_t CH_index);
 
 #ifdef Rel10
   /// Send a received MCH sdu to MAC
@@ -168,7 +170,7 @@ typedef struct {
   PRACH_RESOURCES_t* (*ue_get_rach)(module_id_t Mod_id,int CC_id,frame_t frameP,uint8_t Msg3_flag,sub_frame_t subframe);
 
   /// Process Random-Access Response
-  uint16_t (*ue_process_rar)(module_id_t Mod_id,int CC_id,frame_t frameP,uint8_t *dlsch_buffer,uint16_t *t_crnti,uint8_t preamble_index);
+  uint16_t (*ue_process_rar)(module_id_t Mod_id,int CC_id,frame_t frameP, uint16_t ra_rnti, uint8_t *dlsch_buffer, uint16_t *t_crnti,uint8_t preamble_index);
 
   /// Get SR payload (0,1) from UE MAC
   uint32_t (*ue_get_SR)(module_id_t Mod_id,int CC_id,frame_t frameP,uint8_t eNB_id,rnti_t rnti,sub_frame_t subframe);
@@ -177,12 +179,15 @@ typedef struct {
   void (*dl_phy_sync_success) (module_id_t Mod_id,frame_t frameP, uint8_t CH_index,uint8_t first_sync);
 
   /// Only calls the PDCP for now
-  UE_L2_STATE_t (*ue_scheduler)(module_id_t Mod_id, frame_t frameP,sub_frame_t subframe, lte_subframe_t direction, uint8_t eNB_id, int CC_id);
+  UE_L2_STATE_t (*ue_scheduler)(module_id_t Mod_id, frame_t rxFrameP,sub_frame_t rxSubframe, frame_t txFrameP,sub_frame_t txSubframe, lte_subframe_t direction, uint8_t eNB_id, int CC_id);
 
   /// PHY-Config-Dedicated UE
   void (*phy_config_dedicated_ue)(module_id_t Mod_id,int CC_id,uint8_t CH_index,
                                   struct PhysicalConfigDedicated *physicalConfigDedicated);
 
+  /// PHY-Config-harq UE
+  void (*phy_config_harq_ue)(module_id_t Mod_id,int CC_id,uint8_t CH_index,
+                             uint16_t max_harq_tx);
   /// Configure Common PHY parameters from SIB1
   void (*phy_config_sib1_ue)(module_id_t Mod_id,int CC_id,uint8_t CH_index,
                              TDD_Config_t *tdd_config,

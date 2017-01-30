@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_TRANSPORT/ulsch_coding.c
 * \brief Top-level routines for coding the ULSCH transport channel as described in 36.212 V8.6 2009-03
@@ -148,6 +140,8 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag)
   if (ulsch) {
     memset(ulsch,0,sizeof(LTE_UE_ULSCH_t));
 
+    ulsch->Mlimit = 4;
+
     for (i=0; i<8; i++) {
 
       ulsch->harq_processes[i] = (LTE_UL_UE_HARQ_t *)malloc16(sizeof(LTE_UL_UE_HARQ_t));
@@ -196,7 +190,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag)
       return(ulsch);
   }
 
-  LOG_E(PHY,"new_ue_ulsch exit flag, size of  %d ,   %d\n",exit_flag, sizeof(LTE_UE_ULSCH_t));
+  LOG_E(PHY,"new_ue_ulsch exit flag, size of  %d ,   %zu\n",exit_flag, sizeof(LTE_UE_ULSCH_t));
   free_ue_ulsch(ulsch);
   return(NULL);
 
@@ -240,7 +234,7 @@ uint32_t ulsch_encoding(uint8_t *a,
   PHY_MEASUREMENTS *meas = &ue->measurements;
   LTE_UE_ULSCH_t *ulsch=ue->ulsch[eNB_id];
   LTE_UE_DLSCH_t **dlsch = ue->dlsch[eNB_id];
-  uint16_t rnti;
+  uint16_t rnti = 0xffff;
 
   if (!ulsch) {
     LOG_E(PHY,"Null ulsch ptr %p\n",ulsch);
@@ -266,6 +260,7 @@ uint32_t ulsch_encoding(uint8_t *a,
 
   // fill CQI/PMI information
   if (ulsch->O>0) {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ULSCH_ENCODING_FILL_CQI, VCD_FUNCTION_IN);
     rnti = ue->pdcch_vars[eNB_id]->crnti;
     fill_CQI(ulsch,meas,0,harq_pid,ue->frame_parms.N_RB_DL,rnti, tmode,ue->sinr_eff);
 
@@ -277,6 +272,7 @@ uint32_t ulsch_encoding(uint8_t *a,
       //LOG_I(PHY,"XXX saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
       dlsch[0]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
     }
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ULSCH_ENCODING_FILL_CQI, VCD_FUNCTION_OUT);
   }
 
   if (ulsch->O<=32) {
@@ -475,6 +471,16 @@ uint32_t ulsch_encoding(uint8_t *a,
   Q_ACK = Qprime * Q_m;
   Qprime_ACK = Qprime;
 
+  LOG_D(PHY,"UE (%x/%d) O_ACK %d, Mcs_initial %d, Nsymb_initial %d, beta_offset_harqack*8 %d, sum Kr %d, Qprime_ACK %d, Q_ACK %d\n",
+      rnti, harq_pid,
+      ulsch->harq_processes[harq_pid]->O_ACK,
+      ulsch->harq_processes[harq_pid]->Msc_initial,
+      ulsch->harq_processes[harq_pid]->Nsymb_initial,
+      ulsch->beta_offset_harqack_times8,
+      sumKr,
+      Qprime_ACK,
+      Q_ACK);
+
   // Compute Q_cqi, assume O>11, p. 26 36-212
   if (control_only_flag == 0) {
 
@@ -506,6 +512,21 @@ uint32_t ulsch_encoding(uint8_t *a,
 
 
     G = G - Q_RI - Q_CQI;
+    ulsch->harq_processes[harq_pid]->G = G;
+
+/*
+    LOG_I(PHY,"ULSCH Encoding G %d, Q_RI %d (O_RI%d, Msc_initial %d, Nsymb_initial%d, beta_offset_ri_times8 %d), Q_CQI %d, Q_ACK %d \n",G,Q_RI,ulsch->O_RI,ulsch->harq_processes[harq_pid]->Msc_initial,ulsch->harq_processes[harq_pid]->Nsymb_initial,ulsch->beta_offset_ri_times8,Q_CQI,Q_ACK);
+
+    LOG_I(PHY,"ULSCH Encoding (Nid_cell %d, rnti %x): harq_pid %d round %d, RV %d, mcs %d, O_RI %d, O_ACK %d, G %d\n",
+          frame_parms->Nid_cell,ulsch->rnti,
+          harq_pid,
+          ulsch->harq_processes[harq_pid]->round,
+          ulsch->harq_processes[harq_pid]->rvidx,
+          ulsch->harq_processes[harq_pid]->mcs,
+          ulsch->O_RI,
+          ulsch->harq_processes[harq_pid]->O_ACK,
+          G);
+*/
 
     if ((int)G < 0) {
       LOG_E(PHY,"FATAL: ulsch_coding.c G < 0 (%d) : Q_RI %d, Q_CQI %d, O %d, betaCQI_times8 %d)\n",G,Q_RI,Q_CQI,ulsch->O,ulsch->beta_offset_cqi_times8);

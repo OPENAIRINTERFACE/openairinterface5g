@@ -14,6 +14,10 @@ typedef void widget;
 
 #define DEFAULT_FONT 0
 
+/* tic type for XY plot */
+#define XY_PLOT_DEFAULT_TICK 0
+#define XY_PLOT_SCROLL_TICK  1
+
 /* key modifiers */
 #define KEY_SHIFT   (1<<0)
 #define KEY_CONTROL (1<<1)
@@ -30,6 +34,7 @@ widget *new_toplevel_window(gui *gui, int width, int height, char *title);
 widget *new_container(gui *gui, int vertical);
 widget *new_positioner(gui *gui);
 widget *new_label(gui *gui, const char *text);
+widget *new_textarea(gui *gui, int width, int height, int maxsize);
 widget *new_xy_plot(gui *gui, int width, int height, char *label,
     int vruler_width);
 widget *new_textlist(gui *gui, int width, int nlines, int background_color);
@@ -39,6 +44,9 @@ widget *new_space(gui *gui, int width, int height);
 widget *new_image(gui *gui, unsigned char *data, int length);
 
 void label_set_clickable(gui *gui, widget *label, int clickable);
+void label_set_text(gui *gui, widget *label, char *text);
+
+void textarea_set_text(gui *gui, widget *textarea, char *text);
 
 void container_set_child_growable(gui *_gui, widget *_this,
     widget *child, int growable);
@@ -49,6 +57,8 @@ void xy_plot_set_range(gui *gui, widget *this,
 void xy_plot_set_points(gui *gui, widget *this,
     int plot, int npoints, float *x, float *y);
 void xy_plot_get_dimensions(gui *gui, widget *this, int *width, int *height);
+void xy_plot_set_title(gui *gui, widget *this, char *label);
+void xy_plot_set_tick_type(gui *gui, widget *this, int type);
 
 void textlist_add(gui *gui, widget *this, const char *text, int position,
     int color);

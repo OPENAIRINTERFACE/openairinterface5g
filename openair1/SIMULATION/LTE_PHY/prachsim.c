@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
@@ -104,13 +97,15 @@ int main(int argc, char **argv)
   double delay_avg=0;
   double ue_speed = 0;
   int NCS_config = 1,rootSequenceIndex=0;
+  int threequarter_fs = 0;
+
   logInit();
 
   number_of_cards = 1;
 
 
 
-  while ((c = getopt (argc, argv, "hHaA:Cr:p:g:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:")) != -1) {
+  while ((c = getopt (argc, argv, "hHaA:Cr:p:g:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:E")) != -1) {
     switch (c) {
     case 'a':
       printf("Running AWGN simulation\n");
@@ -180,6 +175,10 @@ int main(int argc, char **argv)
         exit(-1);
       }
 
+      break;
+
+    case 'E':
+      threequarter_fs=1;
       break;
 
     case 'n':
@@ -309,6 +308,7 @@ int main(int argc, char **argv)
     n_tx=2;
 
   lte_param_init(n_tx,
+                 n_tx,
 		 n_rx,
 		 transmission_mode,
 		 extended_prefix_flag,
@@ -316,7 +316,7 @@ int main(int argc, char **argv)
 		 Nid_cell,
 		 3,
 		 N_RB_DL,
-		 0,
+		 threequarter_fs,
 		 osf,
 		 0);
 
@@ -395,8 +395,9 @@ int main(int argc, char **argv)
   eNB->frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag=hs_flag;
   eNB->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
 
-  eNB->node_function = eNodeB_3GPP;
-  eNB->proc.subframe_rx = subframe;
+  eNB->node_function       = eNodeB_3GPP;
+  eNB->proc.subframe_rx    = subframe;
+  eNB->proc.subframe_prach = subframe;
 
   /* N_ZC not used later, so prach_fmt is also useless, don't set */
   //prach_fmt = get_prach_fmt(eNB->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
@@ -530,7 +531,7 @@ int main(int argc, char **argv)
           write_output("rxsig0.m","rxs0",
                        &eNB->common_vars.rxdata[0][0][subframe*frame_parms->samples_per_tti],
                        frame_parms->samples_per_tti,1,1);
-          write_output("rxsigF0.m","rxsF0", &eNB->common_vars.rxdataF[0][0][0],512*nsymb*2,2,1);
+          write_output("rxsigF0.m","rxsF0", eNB->prach_vars.rxsigF[0],6144,1,1);
           write_output("prach_preamble.m","prachp",&eNB->X_u[0],839,1,1);
         }
       }

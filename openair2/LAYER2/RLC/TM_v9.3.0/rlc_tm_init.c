@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #define RLC_TM_MODULE 1
 #define RLC_TM_INIT_C 1
 //-----------------------------------------------------------------------------
@@ -36,7 +29,8 @@ void config_req_rlc_tm (
   const protocol_ctxt_t* const  ctxt_pP,
   const srb_flag_t  srb_flagP,
   const rlc_tm_info_t * const config_tmP,
-  const rb_id_t     rb_idP
+  const rb_id_t rb_idP,
+  const logical_chan_id_t chan_idP
 )
 {
   rlc_union_t     *rlc_union_p  = NULL;
@@ -55,7 +49,7 @@ void config_req_rlc_tm (
 
     rlc_tm_init(ctxt_pP, rlc_p);
     rlc_p->protocol_state = RLC_DATA_TRANSFER_READY_STATE;
-    rlc_tm_set_debug_infos(ctxt_pP, rlc_p, rb_idP, srb_flagP);
+    rlc_tm_set_debug_infos(ctxt_pP, rlc_p, srb_flagP, rb_idP, chan_idP);
     rlc_tm_configure(ctxt_pP, rlc_p, config_tmP->is_uplink_downlink);
   } else {
     LOG_E(RLC, PROTOCOL_RLC_TM_CTXT_FMT" CONFIG_REQ RB %u RLC NOT FOUND\n",
@@ -88,7 +82,7 @@ void rlc_tm_init (
   rlcP->size_input_sdus_buffer = 16;
 
   if ((rlcP->input_sdus_alloc == NULL) && (rlcP->size_input_sdus_buffer > 0)) {
-    rlcP->input_sdus_alloc = get_free_mem_block (rlcP->size_input_sdus_buffer * sizeof (void *));
+    rlcP->input_sdus_alloc = get_free_mem_block (rlcP->size_input_sdus_buffer * sizeof (void *), __func__);
     rlcP->input_sdus = (mem_block_t **) (rlcP->input_sdus_alloc->data);
     memset (rlcP->input_sdus, 0, rlcP->size_input_sdus_buffer * sizeof (void *));
   }
@@ -120,17 +114,17 @@ rlc_tm_cleanup (
   if (rlcP->input_sdus_alloc) {
     for (index = 0; index < rlcP->size_input_sdus_buffer; index++) {
       if (rlcP->input_sdus[index]) {
-        free_mem_block (rlcP->input_sdus[index]);
+        free_mem_block (rlcP->input_sdus[index], __func__);
       }
     }
 
-    free_mem_block (rlcP->input_sdus_alloc);
+    free_mem_block (rlcP->input_sdus_alloc, __func__);
     rlcP->input_sdus_alloc = NULL;
   }
 
   // RX SIDE
   if ((rlcP->output_sdu_in_construction)) {
-    free_mem_block (rlcP->output_sdu_in_construction);
+    free_mem_block (rlcP->output_sdu_in_construction, __func__);
   }
 
   memset(rlcP, 0, sizeof(rlc_tm_entity_t));
@@ -151,9 +145,11 @@ void rlc_tm_set_debug_infos(
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_tm_entity_t * const rlcP,
   const srb_flag_t  srb_flagP,
-  const rb_id_t     rb_idP)
+  const rb_id_t     rb_idP,
+  const logical_chan_id_t chan_idP) 
 {
-  rlcP->rb_id     = rb_idP;
+  rlcP->rb_id      = rb_idP;
+  rlcP->channel_id = chan_idP;
 
   if (srb_flagP) {
     rlcP->is_data_plane = 0;

@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #define RLC_UM_MODULE 1
 #define RLC_UM_SEGMENT_C 1
 //-----------------------------------------------------------------------------
@@ -122,7 +115,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
 #endif
       }
 
-      if (!(pdu_mem_p = get_free_mem_block (data_pdu_size + sizeof(struct mac_tb_req)))) {
+      if (!(pdu_mem_p = get_free_mem_block (data_pdu_size + sizeof(struct mac_tb_req), __func__))) {
 #if TRACE_RLC_UM_SEGMENT
         LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" ERROR COULD NOT GET NEW PDU, EXIT\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP));
@@ -298,7 +291,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
         // free SDU
         rlc_pP->buffer_occupancy -= sdu_mngt_p->sdu_remaining_size;
         sdu_in_buffer = list_remove_head(&rlc_pP->input_sdus);
-        free_mem_block (sdu_in_buffer);
+        free_mem_block (sdu_in_buffer, __func__);
         sdu_in_buffer = list_get_head(&rlc_pP->input_sdus);
         sdu_mngt_p    = NULL;
 
@@ -363,7 +356,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
         // free SDU
         rlc_pP->buffer_occupancy -= sdu_mngt_p->sdu_remaining_size;
         sdu_in_buffer = list_remove_head(&rlc_pP->input_sdus);
-        free_mem_block (sdu_in_buffer);
+        free_mem_block (sdu_in_buffer, __func__);
         sdu_in_buffer = list_get_head(&rlc_pP->input_sdus);
         sdu_mngt_p    = NULL;
 
@@ -387,7 +380,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
         // free SDU
         rlc_pP->buffer_occupancy -= sdu_mngt_p->sdu_remaining_size;
         sdu_in_buffer = list_remove_head(&rlc_pP->input_sdus);
-        free_mem_block (sdu_in_buffer);
+        free_mem_block (sdu_in_buffer, __func__);
         sdu_in_buffer = list_get_head(&rlc_pP->input_sdus);
         sdu_mngt_p    = NULL;
 
@@ -510,7 +503,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
 #endif
       }
 
-      if (!(pdu_mem_p = get_free_mem_block (data_pdu_size + sizeof(struct mac_tb_req)))) {
+      if (!(pdu_mem_p = get_free_mem_block (data_pdu_size + sizeof(struct mac_tb_req), __func__))) {
 #if TRACE_RLC_UM_SEGMENT
         LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" ERROR COULD NOT GET NEW PDU, EXIT\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP));
@@ -686,7 +679,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
         // free SDU
         rlc_pP->buffer_occupancy -= sdu_mngt_p->sdu_remaining_size;
         sdu_in_buffer = list_remove_head(&rlc_pP->input_sdus);
-        free_mem_block (sdu_in_buffer);
+        free_mem_block (sdu_in_buffer, __func__);
         sdu_in_buffer = list_get_head(&rlc_pP->input_sdus);
         sdu_mngt_p    = NULL;
 
@@ -750,7 +743,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
         // free SDU
         rlc_pP->buffer_occupancy -= sdu_mngt_p->sdu_remaining_size;
         sdu_in_buffer = list_remove_head(&rlc_pP->input_sdus);
-        free_mem_block (sdu_in_buffer);
+        free_mem_block (sdu_in_buffer, __func__);
         sdu_in_buffer = list_get_head(&rlc_pP->input_sdus);
         sdu_mngt_p    = NULL;
 
@@ -772,7 +765,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
         // free SDU
         rlc_pP->buffer_occupancy -= sdu_mngt_p->sdu_remaining_size;
         sdu_in_buffer = list_remove_head(&rlc_pP->input_sdus);
-        free_mem_block (sdu_in_buffer);
+        free_mem_block (sdu_in_buffer, __func__);
         sdu_in_buffer = list_get_head(&rlc_pP->input_sdus);
         sdu_mngt_p    = NULL;
       }

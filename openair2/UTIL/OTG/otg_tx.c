@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file otg_tx.c
  * \brief function containing the OTG TX traffic generation functions
@@ -270,13 +262,14 @@ unsigned char *packet_gen(
   char *header=NULL;
   int header_size = 0;
 
-
+  //LOG_I(OTG,"Src: %d - Dest: %d - before exit\n",src_instance,dst_instance);
   // check if the app is configured
   if (app >= g_otg->application_idx[src_instance][dst_instance]) {
+    //LOG_I(OTG,"Src: %d - Dest: %d - no packet to generate - no application\n",src_instance,dst_instance);
     return NULL;
   }
 
-  LOG_T(OTG,"[src %d] [dst %d ][APP %d] current time  %d\n",src_instance,  dst_instance, app, ctime);
+  //LOG_I(OTG,"[src %d] [dst %d ][APP %d] current time  %d\n",src_instance,  dst_instance, app, ctime);
 
   *pkt_size=0;
   init_packet_gen(src_instance, dst_instance,ctime);
@@ -312,10 +305,10 @@ unsigned char *packet_gen(
       otg_info->tx_num_pkt[src_instance][dst_instance][otg_info->traffic_type[src_instance][dst_instance]]+=1;
 
       if (size!=strlen(payload))
-        LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq_num %d packet: |%s|%s| \n",
+        LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %zu, seq_num %d packet: |%s|%s| \n",
               src_instance, dst_instance, flag,   size, strlen(payload), seq_num, header, payload);
       else
-        LOG_D(OTG,"[%d][%d] 0x %x][m2m Aggre %d][Flow %d][Type %d/%s] TX INFO pkt at time %d Size= [payload %d] [Total %d] with seq num %d, state=%d : |%s|%s| \n",
+        LOG_D(OTG,"[%d][%d] 0x %x][m2m Aggre %d][Flow %d][Type %d/%s] TX INFO pkt at time %d Size= [payload %d] [Total %zu] with seq num %d, state=%d : |%s|%s| \n",
               src_instance, dst_instance, flag,
               otg_info->m2m_aggregation[src_instance][dst_instance],
               otg_info->flow_id[src_instance][dst_instance],
@@ -342,7 +335,7 @@ unsigned char *packet_gen(
       otg_info->seq_num_background[src_instance][dst_instance]+=1;
 
       if (otg_info->size_background[src_instance][dst_instance]!=strlen(payload))
-        LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq num %d, packet |%s|%s| \n",
+        LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %zu, seq num %d, packet |%s|%s| \n",
               src_instance,
               dst_instance,
               flag,
@@ -352,7 +345,7 @@ unsigned char *packet_gen(
               header,
               payload);
       else
-        LOG_D(OTG,"[%d][%d][%s][0x %x] TX INFO pkt at time %d size is %d with seq num %d, state=%d : |%s|%s| \n",
+        LOG_D(OTG,"[%d][%d][0x %x][%d] TX INFO pkt at time %s size is %d with seq num %d, state=%d : |%s|%s| \n",
               src_instance,
               dst_instance,
               flag,
@@ -466,10 +459,10 @@ unsigned char *packet_gen_multicast(
             otg_multicast_info->tx_num_bytes[src_instance][dst_instance][app]);
 
       if (size!=strlen(payload))
-        LOG_E(OTG,"[src %d][dst %d] The expected packet size does not match the payload size : size %d, strlen %d \n",
+        LOG_E(OTG,"[src %d][dst %d] The expected packet size does not match the payload size : size %d, strlen %zu \n",
               src_instance, dst_instance, size, strlen(payload));
       else {
-        LOG_I(OTG,"[src %d][dst %d]TX INFO pkt at time %d Size= [payload %d] [Total %d] with seq num %d: |%s|%s| \n",
+        LOG_I(OTG,"[src %d][dst %d]TX INFO pkt at time %d Size= [payload %d] [Total %zu] with seq num %d: |%s|%s| \n",
               src_instance,
               dst_instance,
               ctime,
@@ -845,7 +838,7 @@ unsigned int header_size(const int hdr_size)
   if (hdr_size>(sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t)))
     size-=(sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t));
   else
-    LOG_W(OTG,"OTG Header not included inside packet header (OTG header:%d, Header%d)\n", hdr_size, sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t) );
+    LOG_W(OTG,"OTG Header not included inside packet header (OTG header:%d, Header%zu)\n", hdr_size, sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t) );
 
   return(size);
 
@@ -1218,7 +1211,7 @@ void init_predef_traffic(
           break;
 
         case M2M_TRAFFIC : /* example of M2M traffic  */
-          LOG_I(OTG," M2M_TRAFFIC, src = %d, dst = %d \n", i, j, g_otg->application_type[i][j][k]);
+          LOG_I(OTG," M2M_TRAFFIC, src = %d, dst = %d, application type = %d\n", i, j, g_otg->application_type[i][j][k]);
           g_otg->trans_proto[i][j][k] = TCP;
           g_otg->ip_v[i][j][k] = IPV4;
           g_otg->pu_size_pkts[i][j][k]=50;
@@ -2022,7 +2015,7 @@ void state_management(
                 && (otg_info->state_transition_prob[src_instance][dst_instance][application]<=1))
                && (otg_info->c_holding_time_off[src_instance][dst_instance]>=g_otg->holding_time_off_pe[src_instance][dst_instance])) {
         otg_info->state[src_instance][dst_instance][application]=PE_STATE;
-        LOG_I(OTG,"[%d][%d][Appli id %d][Agg Level=%d] NEW STATE:: OFF-->PE \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance]);
+        LOG_I(OTG,"[%d][%d][Appli id %d][Agg Level=%d] NEW STATE:: OFF-->PE \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
         otg_info->state_transition_prob[src_instance][dst_instance][application]=uniform_dist(0,1);
 
       } else {

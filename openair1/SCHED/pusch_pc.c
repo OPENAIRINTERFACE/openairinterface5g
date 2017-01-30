@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file pusch_pc.c
  * \brief Implementation of UE PUSCH Power Control procedures from 36.213 LTE specifications (Section
@@ -111,13 +103,13 @@ int16_t get_hundred_times_delta_IF_mac(module_id_t module_idP, uint8_t CC_id, rn
 int16_t get_hundred_times_delta_IF(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t harq_pid)
 {
 
-  uint32_t Nre = ue->ulsch[eNB_id]->harq_processes[harq_pid]->Nsymb_initial *
+  uint32_t Nre = 2*ue->ulsch[eNB_id]->harq_processes[harq_pid]->Nsymb_initial *
                  ue->ulsch[eNB_id]->harq_processes[harq_pid]->nb_rb*12;
 
   if (Nre==0)
     return(0);
 
-  uint32_t MPR_x100 = 100*ue->ulsch[eNB_id]->harq_processes[harq_pid]->sumKr/Nre;
+  uint32_t MPR_x100 = 100*ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS/Nre;
   // Note: MPR=is the effective spectral efficiency of the PUSCH
   // FK 20140908 sumKr is only set after the ulsch_encoding
 
@@ -145,7 +137,7 @@ void pusch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_
                                        proc->subframe_tx);
 
   uint8_t nb_rb = ue->ulsch[eNB_id]->harq_processes[harq_pid]->nb_rb;
-  int8_t PL;
+  int16_t PL;
 
 
   // P_pusch = 10*log10(nb_rb + P_opusch(j)+ alpha(u)*PL + delta_TF(i) + f(i))
@@ -182,8 +174,8 @@ void pusch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_
     else if (ue->ulsch[eNB_id]->PHR > 40)
       ue->ulsch[eNB_id]->PHR = 40;
 
-    LOG_D(PHY,"[UE  %d][PUSCH %d] frame %d, subframe %d: Po_PUSCH %d dBm : tx power %d, Po_NOMINAL_PUSCH %d,log10(NPRB) %f,PHR %d, PL %d, alpha*PL %f,delta_IF %f,f_pusch %d\n",
-          ue->Mod_id,harq_pid,proc->frame_tx,proc->subframe_tx,
+    LOG_D(PHY,"[UE  %d][PUSCH %d] AbsSubframe %d.%d: nb_rb: %d, Po_PUSCH %d dBm : tx power %d, Po_NOMINAL_PUSCH %d,log10(NPRB) %f,PHR %d, PL %d, alpha*PL %f,delta_IF %f,f_pusch %d\n",
+          ue->Mod_id,harq_pid,proc->frame_tx,proc->subframe_tx,nb_rb,
           ue->ulsch[eNB_id]->Po_PUSCH,
           ue->tx_power_max_dBm,
           ue->frame_parms.ul_power_control_config_common.p0_NominalPUSCH,

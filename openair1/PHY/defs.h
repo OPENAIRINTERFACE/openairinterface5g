@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/defs.h
  \brief Top-level defines and structure definitions
@@ -53,6 +45,11 @@
 # define msg mexPrintf
 #else
 # ifdef OPENAIR2
+#   if ENABLE_RAL
+#     include "collection/hashtable/hashtable.h"
+#     include "COMMON/ral_messages_types.h"
+#     include "UTIL/queue.h"
+#   endif
 #   include "log.h"
 #   define msg(aRGS...) LOG_D(PHY, ##aRGS)
 # else
@@ -127,6 +124,8 @@ static inline void* malloc16_clear( size_t size )
 #include "PHY/TOOLS/defs.h"
 #include "platform_types.h"
 
+#ifdef OPENAIR_LTE
+
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include <pthread.h>
 
@@ -138,6 +137,9 @@ static inline void* malloc16_clear( size_t size )
 
 #define NB_BANDS_MAX 8
 
+#ifdef OCP_FRAMEWORK
+#include <enums.h>
+#else
 typedef enum {normal_txrx=0,rx_calib_ue=1,rx_calib_ue_med=2,rx_calib_ue_byp=3,debug_prach=4,no_L2_connect=5,calib_prach_tx=6,rx_dump_frame=7,loop_through_memory=8} runmode_t;
 
 enum transmission_access_mode {
@@ -161,6 +163,7 @@ typedef enum {
   synch_to_ext_device=0,  // synch to RF or Ethernet device
   synch_to_other          // synch to another source (timer, other CC_id)
 } eNB_timing_t;
+#endif
 
 typedef struct UE_SCAN_INFO_s {
   /// 10 best amplitudes (linear) for each pss signals
@@ -234,12 +237,20 @@ typedef struct eNB_proc_t_s {
   int thread_index;
   /// timestamp received from HW
   openair0_timestamp timestamp_rx;
+  /// timestamp to send to "slave rru"
+  openair0_timestamp timestamp_tx;
   /// subframe to act upon for reception
   int subframe_rx;
+  /// symbol mask for IF4p5 reception per subframe
+  uint32_t symbol_mask[10];
   /// subframe to act upon for PRACH
   int subframe_prach;
   /// frame to act upon for reception
   int frame_rx;
+  /// frame to act upon for transmission
+  int frame_tx;
+  /// frame offset for secondary eNBs (to correct for frame asynchronism at startup)
+  int frame_offset;
   /// frame to act upon for PRACH
   int frame_prach;
   /// \internal This variable is protected by \ref mutex_fep.
@@ -254,6 +265,8 @@ typedef struct eNB_proc_t_s {
   /// \brief Instance count for rx processing thread.
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
+  // instance count for over-the-air eNB synchronization
+  int instance_cnt_synch;
   /// \internal This variable is protected by \ref mutex_asynch_rxtx.
   int instance_cnt_asynch_rxtx;
   /// pthread structure for FH processing thread
@@ -278,6 +291,8 @@ typedef struct eNB_proc_t_s {
   pthread_attr_t attr_single;
   /// pthread attributes for prach processing thread
   pthread_attr_t attr_prach;
+  /// pthread attributes for over-the-air synch thread
+  pthread_attr_t attr_synch;
   /// pthread attributes for asynchronous RX thread
   pthread_attr_t attr_asynch_rxtx;
   /// scheduling parameters for parallel fep thread
@@ -292,6 +307,8 @@ typedef struct eNB_proc_t_s {
   struct sched_param sched_param_single;
   /// scheduling parameters for prach thread
   struct sched_param sched_param_prach;
+  /// scheduling parameters for over-the-air synchronization thread
+  struct sched_param sched_param_synch;
   /// scheduling parameters for asynch_rxtx thread
   struct sched_param sched_param_asynch_rxtx;
   /// pthread structure for parallel fep thread
@@ -302,6 +319,8 @@ typedef struct eNB_proc_t_s {
   pthread_t pthread_te;
   /// pthread structure for PRACH thread
   pthread_t pthread_prach;
+  /// pthread structure for eNB synch thread
+  pthread_t pthread_synch;
   /// condition variable for parallel fep thread
   pthread_cond_t cond_fep;
   /// condition variable for parallel turbo-decoder thread
@@ -312,6 +331,8 @@ typedef struct eNB_proc_t_s {
   pthread_cond_t cond_FH;
   /// condition variable for PRACH processing thread;
   pthread_cond_t cond_prach;
+  // condition variable for over-the-air eNB synchronization
+  pthread_cond_t cond_synch;
   /// condition variable for asynch RX/TX thread
   pthread_cond_t cond_asynch_rxtx;
   /// mutex for parallel fep thread
@@ -324,6 +345,8 @@ typedef struct eNB_proc_t_s {
   pthread_mutex_t mutex_FH;
   /// mutex for PRACH thread
   pthread_mutex_t mutex_prach;
+  // mutex for over-the-air eNB synchronization
+  pthread_mutex_t mutex_synch;
   /// mutex for asynch RX/TX thread
   pthread_mutex_t mutex_asynch_rxtx;
   /// parameters for turbo-decoding worker thread
@@ -341,6 +364,8 @@ typedef struct eNB_proc_t_s {
 
 /// Context data structure for RX/TX portion of subframe processing
 typedef struct {
+  /// index of the current UE RX/TX proc
+  int                  proc_id;
   /// Component Carrier index
   uint8_t              CC_id;
   /// timestamp transmitted to HW
@@ -408,8 +433,15 @@ typedef struct PHY_VARS_eNB_s {
   int                  single_thread_flag;
   openair0_rf_map      rf_map;
   int                  abstraction_flag;
-  void                 (*do_prach)(struct PHY_VARS_eNB_s *eNB);
-  void                 (*fep)(struct PHY_VARS_eNB_s *eNB);
+  openair0_timestamp   ts_offset;
+  // indicator for synchronization state of eNB
+  int                  in_synch;
+  // indicator for master/slave (RRU)
+  int                  is_slave;
+  // indicator for precoding function (eNB,3GPP_eNB_BBU)
+  int                  do_precoding;
+  void                 (*do_prach)(struct PHY_VARS_eNB_s *eNB,int frame,int subframe);
+  void                 (*fep)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc);
   int                  (*td)(struct PHY_VARS_eNB_s *eNB,int UE_id,int harq_pid,int llr8_flag);
   int                  (*te)(struct PHY_VARS_eNB_s *,uint8_t *,uint8_t,LTE_eNB_DLSCH_t *,int,uint8_t,time_stats_t *,time_stats_t *,time_stats_t *);
   void                 (*proc_uespec_rx)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc,const relaying_type_t r_type);
@@ -426,9 +458,6 @@ typedef struct PHY_VARS_eNB_s {
   LTE_eNB_COMMON       common_vars;
   LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PBCH         pbch;
-  /// \brief ?.
-  /// - first index: UE [0..NUMBER_OF_UE_MAX[ (hard coded)
-  /// - second index: UE [0..NUMBER_OF_UE_MAX[
   LTE_eNB_PUSCH       *pusch_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PRACH        prach_vars;
   LTE_eNB_DLSCH_t     *dlsch[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
@@ -440,6 +469,9 @@ typedef struct PHY_VARS_eNB_s {
 
   /// cell-specific reference symbols
   uint32_t         lte_gold_table[20][2][14];
+
+  /// UE-specific reference symbols (p=5), TM 7
+  uint32_t         lte_gold_uespec_port5_table[NUMBER_OF_UE_MAX][20][38];
 
   /// UE-specific reference symbols (p=7...14), TM 8/9/10
   uint32_t         lte_gold_uespec_table[2][20][2][21];
@@ -651,7 +683,7 @@ typedef struct {
   /// \brief Total gains with bypassed RF gain stage (ExpressMIMO2/Lime)
   uint32_t rx_gain_byp[4];
   /// \brief Current transmit power
-  int8_t tx_power_dBm[10];
+  int16_t tx_power_dBm[10];
   /// \brief Total number of REs in current transmission
   int tx_total_RE[10];
   /// \brief Maximum transmit power
@@ -701,8 +733,11 @@ typedef struct {
   /// cell-specific reference symbols
   uint32_t lte_gold_table[7][20][2][14];
 
+  /// UE-specific reference symbols (p=5), TM 7
+  uint32_t lte_gold_uespec_port5_table[20][38];
+
   /// ue-specific reference symbols
-  uint32_t         lte_gold_uespec_table[2][20][2][21];
+  uint32_t lte_gold_uespec_table[2][20][2][21];
 
   /// mbsfn reference symbols
   uint32_t lte_gold_mbsfn_table[10][3][42];
@@ -956,5 +991,5 @@ static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *
 #include "PHY/LTE_ESTIMATION/defs.h"
 
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
-
+#endif
 #endif //  __PHY_DEFS__H__

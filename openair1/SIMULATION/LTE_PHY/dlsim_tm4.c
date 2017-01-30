@@ -158,7 +158,7 @@ int main(int argc, char **argv)
   double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
   double iqim=0.0;
 
-  uint8_t extended_prefix_flag=0,transmission_mode=1,n_tx=1,n_rx=1;
+  uint8_t extended_prefix_flag=0,transmission_mode=1,n_tx_port=1, n_tx_phy=1, n_rx=1;
   uint16_t Nid_cell=0;
 
   int8_t eNB_id = 0, eNB_id_i = 1;
@@ -538,28 +538,6 @@ int main(int argc, char **argv)
         exit(-1);
       }
       break;
-      case 'x':
-      transmission_mode=atoi(optarg);
-      if ((transmission_mode!=1) &&
-          (transmission_mode!=2) &&
-          (transmission_mode!=3) &&
-          (transmission_mode!=4) &&
-          (transmission_mode!=5) &&
-          (transmission_mode!=6)) {
-        msg("Unsupported transmission mode %d\n",transmission_mode);
-        exit(-1);
-      }
-      if (transmission_mode>1) {
-        n_tx = 2;
-      }
-      break;
-      case 'y':
-      n_tx=atoi(optarg);
-      if ((n_tx==0) || (n_tx>2)) {
-        msg("Unsupported number of tx antennas %d\n",n_tx);
-        exit(-1);
-      }
-      break;
       case 'z':
       n_rx=atoi(optarg);
       if ((n_rx==0) || (n_rx>2)) {
@@ -594,6 +572,48 @@ int main(int argc, char **argv)
       case 'P':
         print_perf=1;
         break;
+      case 'q':
+        n_tx_port=atoi(optarg);
+
+        if ((n_tx_port==0) || ((n_tx_port>2))) {
+          msg("Unsupported number of cell specific antennas ports %d\n",n_tx_port);
+        exit(-1);
+      }
+      break;
+      case 'x':
+        transmission_mode=atoi(optarg);
+          if ((transmission_mode!=1) &&
+              (transmission_mode!=2) &&
+              (transmission_mode!=3) &&
+              (transmission_mode!=4) &&
+              (transmission_mode!=5) &&
+              (transmission_mode!=6)) {
+            msg("Unsupported transmission mode %d\n",transmission_mode);
+            exit(-1);
+          }
+          if (transmission_mode>1 && transmission_mode<7) {
+            n_tx_port = 2;
+          }
+      break;
+      case 'y':
+        n_tx_phy=atoi(optarg);
+
+        if (n_tx_phy < n_tx_port) {
+          msg("n_tx_phy mush not be smaller than n_tx_port");
+          exit(-1);
+        }
+
+        if ((transmission_mode>1 && transmission_mode<7) && n_tx_port<2) {
+          msg("n_tx_port must be >1 for transmission_mode %d\n",transmission_mode);
+          exit(-1);
+        }
+
+        if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=8 && n_tx_phy!=16 && n_tx_phy!=64 && n_tx_phy!=128)) {
+          msg("Physical number of antennas not supported for TM7.\n");
+          exit(-1);
+        }
+
+      break;
       case 'X':
         xforms = 1;
         break;
@@ -677,11 +697,6 @@ int main(int argc, char **argv)
 
   NB_RB=conv_nprb(0,DLSCH_RB_ALLOC,N_RB_DL);
 
-  if ((transmission_mode > 1) && (n_tx != 2)) {
-
-    printf("n_tx must be >1 for transmission_mode %d\n",transmission_mode);
-    exit(-1);
-  }
 
   if (((transmission_mode==1) || (transmission_mode==2)) && (rx_type != rx_standard)) {
     printf("only standard rx available for TM1 and TM2\n");
@@ -718,24 +733,25 @@ int main(int argc, char **argv)
   else
     eNB_id_i = eNB_id;
 
-  lte_param_init(n_tx,
-                 n_rx,
-                 transmission_mode,
-                 extended_prefix_flag,
-                 frame_type,
-                 Nid_cell,
-                 tdd_config,
-                 N_RB_DL,
-                 threequarter_fs,
-                 osf,
-                 perfect_ce);
+  lte_param_init(n_tx_port,
+     n_tx_phy,
+     n_rx,
+     transmission_mode,
+     extended_prefix_flag,
+     frame_type,
+     Nid_cell,
+     tdd_config,
+     N_RB_DL,
+     threequarter_fs,
+     osf,
+     perfect_ce);
 
 
   printf("Setting mcs1 = %d\n",mcs1);
   printf("Setting mcs2 = %d\n",mcs2);
   printf("NPRB = %d\n",NB_RB);
   printf("n_frames = %d\n",n_frames);
-  printf("Transmission mode %d with %dx%d antenna configuration, Extended Prefix %d\n",transmission_mode,n_tx,n_rx,extended_prefix_flag);
+  printf("Transmission mode %d with %dx%d antenna configuration, Extended Prefix %d\n",transmission_mode,n_tx_phy,n_rx,extended_prefix_flag);
   printf("Using receiver type %d\n", rx_type);
   printf("TM1 shift %d\n", interf_unaw_shift);
   //printf("Using I_UA rec shift layer 1  %d\n", interf_unaw_shift0);
@@ -819,7 +835,7 @@ int main(int argc, char **argv)
     //char dirname[FILENAME_MAX];
     //sprintf(dirname, "%s/SIMU/USER/pre-ci-logs-%s", getenv("OPENAIR_TARGETS"),hostname );
     sprintf(time_meas_fname,"time_meas_prb%d_mcs%d_anttx%d_antrx%d_pdcch%d_channel%s_tx%d.csv",
-            N_RB_DL,mcs1,n_tx,n_rx,num_pdcch_symbols,channel_model_input,transmission_mode);
+            N_RB_DL,mcs1,n_tx_phy,n_rx,num_pdcch_symbols,channel_model_input,transmission_mode);
     //mkdir(dirname,0777);
     time_meas_fd = fopen(time_meas_fname,"w");
     if (time_meas_fd==NULL) {
@@ -959,7 +975,7 @@ int main(int argc, char **argv)
   for (k=0; k<n_users; k++) {
     // Create transport channel structures for 2 transport blocks (MIMO)
     for (i=0; i<2; i++) { //i is a CW
-      eNB->dlsch[k][i] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0);
+      eNB->dlsch[k][i] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0, &eNB->frame_parms);
 
       if (!eNB->dlsch[k][i]) {
 
@@ -984,7 +1000,7 @@ int main(int argc, char **argv)
   }
 
   // structure for SIC at UE
-  UE->dlsch_eNB[0] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0);
+  UE->dlsch_eNB[0] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0, &eNB->frame_parms);
 
   if (DLSCH_alloc_pdu2_1E[0].tpmi == 5) {
 
@@ -1139,7 +1155,8 @@ int main(int argc, char **argv)
                      SI_RNTI,
                      0,
                      P_RNTI,
-                     eNB->UE_stats[0].DL_pmi_single);
+                     eNB->UE_stats[0].DL_pmi_single,
+                     transmission_mode>=7?transmission_mode:0);
           num_dci++;
           num_ue_spec_dci++;
         }
@@ -1273,7 +1290,8 @@ int main(int argc, char **argv)
                      SI_RNTI,
                      0,
                      P_RNTI,
-                     eNB->UE_stats[0].DL_pmi_single);
+                     eNB->UE_stats[0].DL_pmi_single,
+                     transmission_mode>=7?transmission_mode:0);
 
           num_common_dci++;
           num_dci++;
@@ -1435,7 +1453,8 @@ int main(int argc, char **argv)
                      SI_RNTI,
                      0,
                      P_RNTI,
-                     eNB->UE_stats[0].DL_pmi_single);
+                     eNB->UE_stats[0].DL_pmi_single,
+                     transmission_mode>=7?transmission_mode:0);
 
           num_dci++;
           num_ue_spec_dci++;
@@ -1571,7 +1590,8 @@ int main(int argc, char **argv)
                      SI_RNTI,
                      0,
                      P_RNTI,
-                     eNB->UE_stats[0].DL_pmi_single);
+                     eNB->UE_stats[0].DL_pmi_single,
+                     transmission_mode>=7?transmission_mode:0);
 
           num_common_dci++;
           num_dci++;
@@ -1764,7 +1784,8 @@ int main(int argc, char **argv)
                      SI_RNTI,
                      0,
                      P_RNTI,
-                     eNB->UE_stats[0].DL_pmi_single);
+                     eNB->UE_stats[0].DL_pmi_single,
+                     transmission_mode>=7?transmission_mode:0);
 
           num_dci++;
           num_ue_spec_dci++;
@@ -1900,7 +1921,8 @@ int main(int argc, char **argv)
                        SI_RNTI,
                        0,
                        P_RNTI,
-                       eNB->UE_stats[0].DL_pmi_single);
+                       eNB->UE_stats[0].DL_pmi_single,
+                       transmission_mode>=7?transmission_mode:0);
 
           num_common_dci++;
           num_dci++;
@@ -1928,7 +1950,8 @@ int main(int argc, char **argv)
                                            SI_RNTI,
                                            0,
                                            P_RNTI,
-                                           eNB->UE_stats[k].DL_pmi_single);
+                                           eNB->UE_stats[k].DL_pmi_single,
+                                           transmission_mode>=7?transmission_mode:0);
 
         dump_dci(&eNB->frame_parms,&dci_alloc[num_dci]);
         num_ue_spec_dci++;
@@ -2609,7 +2632,8 @@ int main(int argc, char **argv)
                                                          SI_RNTI,
                                                          0,
                                                          P_RNTI,
-                                                         UE->dlsch[0][1]->pmi_alloc
+                                                         UE->dlsch[0][1]->pmi_alloc,
+                                                         transmission_mode>=7?transmission_mode:0
                                                          );
                       break;
                     case 50:
@@ -2836,7 +2860,8 @@ int main(int argc, char **argv)
                                                          SI_RNTI,
                                                          0,
                                                          P_RNTI,
-                                                         UE->dlsch[0][1]->pmi_alloc
+                                                         UE->dlsch[0][1]->pmi_alloc,
+                                                         transmission_mode>=7?transmission_mode:0
                                                          );
                       break;
                     case 50:
@@ -2944,7 +2969,8 @@ int main(int argc, char **argv)
                                                 get_Qm(eNB->dlsch[k][TB]->harq_processes[0]->mcs),
                                                 eNB->dlsch[k][TB]->harq_processes[0]->Nl,
                                                 num_pdcch_symbols,
-                                                0,subframe);
+                                                0,subframe,
+                                                transmission_mode>=7?transmission_mode:0);
       #ifdef TBS_FIX   // This is for MESH operation!!!
                 tbs[TB] = (double)3*TBStable[get_I_TBS(eNB->dlsch[k][TB]->harq_processes[0]->mcs)][eNB->dlsch[k][TB]->nb_rb-1]/4;
       #else
@@ -3097,10 +3123,10 @@ int main(int argc, char **argv)
               }
 
               start_meas(&eNB->dlsch_modulation_stats);
-              re_allocated = dlsch_modulation(eNB->common_vars.txdataF[eNB_id],
+              re_allocated = dlsch_modulation(eNB,
+                                              eNB->common_vars.txdataF[eNB_id],
                                               AMP,
                                               subframe,
-                                              &eNB->frame_parms,
                                               num_pdcch_symbols,
                                               ((TB0_active == 1)? eNB->dlsch[k][0]: NULL),
                                               ((TB1_active == 1)? eNB->dlsch[k][1]: NULL));
@@ -3467,14 +3493,15 @@ int main(int argc, char **argv)
                   UE->UE_mode[0] = PUSCH;
                   start_meas(&UE->dlsch_rx_pdcch_stats);
 
-                  rx_pdcch(&UE->common_vars,
+                   rx_pdcch(&UE->common_vars,
                            UE->pdcch_vars,
                            &UE->frame_parms,
+                           trials,
                            subframe,
                            0,
                            (UE->frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
                            UE->high_speed_flag,
-                           0);
+                           UE->is_secondary_ue);
 
                   stop_meas(&UE->dlsch_rx_pdcch_stats);
                   // overwrite number of pdcch symbols
@@ -3520,7 +3547,9 @@ int main(int argc, char **argv)
                                                            UE->pdsch_config_dedicated,
                                                            SI_RNTI,
                                                            0,
-                                                           P_RNTI)==0)) {
+                                                           P_RNTI,
+                                                           transmission_mode<7?0:transmission_mode,
+                                                           UE->pdcch_vars[0]->crnti_is_temporary? UE->pdcch_vars[0]->crnti: 0)==0)) {
                       dump_dci(&UE->frame_parms,&dci_alloc_rx[i]);
                       coded_bits_per_codeword[0]= get_G(&eNB->frame_parms,
                                                       UE->dlsch[0][0]->harq_processes[UE->dlsch[0][0]->current_harq_pid]->nb_rb,
@@ -3529,7 +3558,8 @@ int main(int argc, char **argv)
                                                       UE->dlsch[0][0]->harq_processes[UE->dlsch[0][0]->current_harq_pid]->Nl,
                                                       UE->pdcch_vars[0]->num_pdcch_symbols,
                                                       0,
-                                                      subframe);
+                                                      subframe,
+                                                      transmission_mode>=7?transmission_mode:0);
                       if (transmission_mode == 3 || transmission_mode == 4) {
                         coded_bits_per_codeword[1]= get_G(&eNB->frame_parms,
                                                       UE->dlsch[0][1]->harq_processes[UE->dlsch[0][0]->current_harq_pid]->nb_rb,
@@ -3538,7 +3568,8 @@ int main(int argc, char **argv)
                                                       UE->dlsch[0][1]->harq_processes[UE->dlsch[0][0]->current_harq_pid]->Nl,
                                                       UE->pdcch_vars[1]->num_pdcch_symbols,
                                                       0,
-                                                      subframe);
+                                                      subframe,
+                                                      transmission_mode>=7?transmission_mode:0);
                       }
                       /*
                       rate = (double)dlsch_tbs25[get_I_TBS(UE->dlsch[0][0]->harq_processes[UE->dlsch[0][0]->current_harq_pid]->mcs)][UE->dlsch[0][0]->nb_rb-1]/(coded_bits_per_codeword);
@@ -3585,7 +3616,9 @@ int main(int argc, char **argv)
                                                           UE->pdsch_config_dedicated,
                                                           SI_RNTI,
                                                           0,
-                                                          P_RNTI);
+                                                          P_RNTI,
+                                                          transmission_mode<7?0:transmission_mode,
+                                                          UE->pdcch_vars[0]->crnti_is_temporary? UE->pdcch_vars[0]->crnti: 0);
                         break;
                       case 3:
 
@@ -3601,7 +3634,9 @@ int main(int argc, char **argv)
                                                           UE->pdsch_config_dedicated,
                                                           SI_RNTI,
                                                           0,
-                                                          P_RNTI);
+                                                          P_RNTI,
+                                                          transmission_mode<7?0:transmission_mode,
+                                                          UE->pdcch_vars[0]->crnti_is_temporary? UE->pdcch_vars[0]->crnti: 0);
                         //printf("Rate: TM3 (after) round %d (%d) first_tx %d\n",round,UE->dlsch[0][0]->harq_processes[0]->round,UE->dlsch[0][0]->harq_processes[0]->first_tx);
                         break;
                       case 4:
@@ -3615,7 +3650,9 @@ int main(int argc, char **argv)
                                                           UE->pdsch_config_dedicated,
                                                           SI_RNTI,
                                                           0,
-                                                          P_RNTI);
+                                                          P_RNTI,
+                                                          transmission_mode<7?0:transmission_mode,
+                                                          UE->pdcch_vars[0]->crnti_is_temporary? UE->pdcch_vars[0]->crnti: 0);
 
                         break;
                       case 5:
@@ -3630,7 +3667,9 @@ int main(int argc, char **argv)
                                                           UE->pdsch_config_dedicated,
                                                           SI_RNTI,
                                                           0,
-                                                          P_RNTI);
+                                                          P_RNTI,
+                                                          transmission_mode<7?0:transmission_mode,
+                                                          UE->pdcch_vars[0]->crnti_is_temporary? UE->pdcch_vars[0]->crnti: 0);
                         break;
                       }
                       dlsch_active = 1;
@@ -3661,6 +3700,7 @@ int main(int argc, char **argv)
                                  PDSCH,
                                  eNB_id,
                                  eNB_id_i,
+                                 0,
                                  subframe,
                                  m,
                                  (m==UE->pdcch_vars[0]->num_pdcch_symbols)?1:0,
@@ -3681,6 +3721,7 @@ int main(int argc, char **argv)
                              PDSCH,
                              eNB_id,
                              eNB_id_i,
+                             0,
                              subframe,
                              m,
                              0,
@@ -3701,6 +3742,7 @@ int main(int argc, char **argv)
                                  PDSCH,
                                  eNB_id,
                                  eNB_id_i,
+                                 0,
                                  subframe,
                                  m,
                                  0,
@@ -3758,7 +3800,8 @@ int main(int argc, char **argv)
                                             get_Qm(eNB->dlsch[0][TB]->harq_processes[0]->mcs),
                                             eNB->dlsch[0][TB]->harq_processes[0]->Nl,
                                             num_pdcch_symbols,
-                                            0,subframe);
+                                            0,subframe,
+                                            transmission_mode>=7?transmission_mode:0);
 
             UE->dlsch[0][TB]->harq_processes[UE->dlsch[0][TB]->current_harq_pid]->G = coded_bits_per_codeword[TB];
             UE->dlsch[0][TB]->harq_processes[UE->dlsch[0][TB]->current_harq_pid]->Qm = get_Qm(eNB->dlsch[0][TB]->harq_processes[0]->mcs);
@@ -3817,6 +3860,7 @@ int main(int argc, char **argv)
                                      &UE->frame_parms,
                                      UE->dlsch[0][TB],
                                      UE->dlsch[0][TB]->harq_processes[UE->dlsch[0][TB]->current_harq_pid],
+                                     0,
                                     subframe,
                                     UE->dlsch[0][TB]->current_harq_pid,
                                     1,llr8_flag);
@@ -4032,7 +4076,8 @@ int main(int argc, char **argv)
                                                 UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch_eNB[eNB_id]->current_harq_pid]->Nl,
                                                 num_pdcch_symbols,
                                                 0,
-                                                subframe);
+                                                subframe,
+                                                transmission_mode>=7?transmission_mode:0);
 
                 dlsch_scrambling(&UE->frame_parms,
                                  0,
@@ -4118,7 +4163,8 @@ int main(int argc, char **argv)
                                                     eNB->dlsch[0][1]->harq_processes[0]->Nl,
                                                     num_pdcch_symbols,
                                                     0,
-                                                    subframe);
+                                                    subframe,
+                                                    transmission_mode>=7?transmission_mode:0);
 
                   UE->dlsch[0][1]->harq_processes[UE->dlsch[0][1]->current_harq_pid]->G = coded_bits_per_codeword[1];
                   UE->dlsch[0][1]->harq_processes[UE->dlsch[0][1]->current_harq_pid]->Qm = get_Qm(eNB->dlsch[0][1]->harq_processes[0]->mcs);
@@ -4173,6 +4219,7 @@ int main(int argc, char **argv)
                                         &UE->frame_parms,
                                         UE->dlsch[0][1],
                                         UE->dlsch[0][1]->harq_processes[UE->dlsch[0][1]->current_harq_pid],
+                                        0,
                                         subframe,
                                         UE->dlsch[0][1]->current_harq_pid,
                                         1,llr8_flag);

@@ -1,33 +1,43 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #include "defs.h"
 #include "log.h"
+
+uint16_t dl_S_table_normal[10]={3,9,10,11,12,3,9,10,11,6};
+uint16_t dl_S_table_extended[10]={3,8,9,10,3,8,9,5,0,0};
+
+void set_S_config(LTE_DL_FRAME_PARMS *fp) {
+
+  int X = fp->srsX;
+
+  fp->ul_symbols_in_S_subframe=(1+X);
+
+  if ((fp->Ncp==EXTENDED) && (fp->tdd_config_S>7))
+    AssertFatal(1==0,"Illegal S subframe configuration for Extended Prefix mode\n");
+
+  fp->dl_symbols_in_S_subframe = (fp->Ncp==NORMAL)?dl_S_table_normal[fp->tdd_config_S] : dl_S_table_extended[fp->tdd_config_S];
+
+  
+}
 
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf)
 {
@@ -36,7 +46,7 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf)
 
   LOG_I(PHY,"Initializing frame parms for N_RB_DL %d, Ncp %d, osf %d\n",frame_parms->N_RB_DL,frame_parms->Ncp,osf);
 
-  if (frame_parms->Ncp==1) {
+  if (frame_parms->Ncp==EXTENDED) {
     frame_parms->nb_prefix_samples0=512;
     frame_parms->nb_prefix_samples = 512;
     frame_parms->symbols_per_tti = 12;
@@ -44,7 +54,9 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf)
     frame_parms->nb_prefix_samples0 = 160;
     frame_parms->nb_prefix_samples = 144;
     frame_parms->symbols_per_tti = 14;
+      
   }
+
 
   switch(osf) {
   case 1:
@@ -174,6 +186,8 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf)
 
   printf("lte_parms.c: Setting N_RB_DL to %d, ofdm_symbol_size %d\n",frame_parms->N_RB_DL, frame_parms->ofdm_symbol_size);
 
+  if (frame_parms->frame_type == TDD) set_S_config(frame_parms);
+
   //  frame_parms->tdd_config=3;
   return(0);
 }
@@ -191,7 +205,7 @@ void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms)
   printf("frame_parms->tdd_config=%d\n",frame_parms->tdd_config);
   printf("frame_parms->tdd_config_S=%d\n",frame_parms->tdd_config_S);
   printf("frame_parms->mode1_flag=%d\n",frame_parms->mode1_flag);
-  printf("frame_parms->nb_antennas_tx_eNB(nb_antenna_ports)=%d\n",frame_parms->nb_antennas_tx_eNB);
+  printf("frame_parms->nb_antenna_ports_eNB=%d\n",frame_parms->nb_antenna_ports_eNB);
   printf("frame_parms->nb_antennas_tx=%d\n",frame_parms->nb_antennas_tx);
   printf("frame_parms->nb_antennas_rx=%d\n",frame_parms->nb_antennas_rx);
   printf("frame_parms->ofdm_symbol_size=%d\n",frame_parms->ofdm_symbol_size);

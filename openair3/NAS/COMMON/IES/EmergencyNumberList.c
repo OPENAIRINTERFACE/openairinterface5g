@@ -1,31 +1,24 @@
 /*
- * Copyright (c) 2015, EURECOM (www.eurecom.fr)
- * All rights reserved.
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ *      http://www.openairinterface.org/?page_id=698
  *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * The views and conclusions contained in the software and documentation are those
- * of the authors and should not be interpreted as representing official policies,
- * either expressed or implied, of the FreeBSD Project.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
  */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -48,10 +41,24 @@ int decode_emergency_number_list(EmergencyNumberList *emergencynumberlist, uint8
   ielen = *(buffer + decoded);
   decoded++;
   CHECK_LENGTH_DECODER(len - decoded, ielen);
-  emergencynumberlist->lengthofemergency = *(buffer + decoded);
-  decoded++;
-  emergencynumberlist->emergencyservicecategoryvalue = *(buffer + decoded) & 0x1f;
-  decoded++;
+  int information_element_index = 0;
+  while ((decoded < ielen) && (information_element_index < EMERGENCY_NUMBER_LIST_MAX_NUMBER_INFORMATION)) {
+    emergencynumberlist->emergency_number_information[information_element_index].lengthofemergency = *(buffer + decoded);
+    decoded++;
+    emergencynumberlist->emergency_number_information[information_element_index].emergencyservicecategoryvalue = *(buffer + decoded) & 0x1f;
+    decoded++;
+    int remaining_len = emergencynumberlist->emergency_number_information[information_element_index].lengthofemergency - 1;
+    int digit_index = 0;
+    while (remaining_len > 0) {
+    	emergencynumberlist->emergency_number_information[information_element_index].bcd_digits[digit_index++] = *(buffer + decoded);
+        decoded++;
+        remaining_len --;
+    }
+    while (digit_index < EMERGENCY_NUMBER_LIST_MAX_2DIGITS) {
+    	emergencynumberlist->emergency_number_information[information_element_index].bcd_digits[digit_index++] = 0xFF;
+    }
+    information_element_index++;
+  }
 #if defined (NAS_DEBUG)
   dump_emergency_number_list_xml(emergencynumberlist, iei);
 #endif
@@ -74,11 +81,16 @@ int encode_emergency_number_list(EmergencyNumberList *emergencynumberlist, uint8
 
   lenPtr  = (buffer + encoded);
   encoded ++;
-  *(buffer + encoded) = emergencynumberlist->lengthofemergency;
-  encoded++;
-  *(buffer + encoded) = 0x00 |
-                        (emergencynumberlist->emergencyservicecategoryvalue & 0x1f);
-  encoded++;
+  for (  int ie_index = 0; ie_index < emergencynumberlist->num_emergency_elements; ie_index++) {
+	  *(buffer + encoded) = emergencynumberlist->emergency_number_information[ie_index].lengthofemergency;
+	  encoded++;
+	  *(buffer + encoded) = 0x00 |
+	                        (emergencynumberlist->emergency_number_information[ie_index].emergencyservicecategoryvalue & 0x1f);
+	  encoded++;
+	  for (int bcd2_index = 0; bcd2_index < (emergencynumberlist->emergency_number_information[ie_index].lengthofemergency - 1); bcd2_index++) {
+		  *(buffer + encoded) = emergencynumberlist->emergency_number_information[ie_index].bcd_digits[bcd2_index];
+	  }
+  }
   *lenPtr = encoded - 1 - ((iei > 0) ? 1 : 0);
   return encoded;
 }
@@ -90,9 +102,20 @@ void dump_emergency_number_list_xml(EmergencyNumberList *emergencynumberlist, ui
   if (iei > 0)
     /* Don't display IEI if = 0 */
     printf("    <IEI>0x%X</IEI>\n", iei);
-
-  printf("    <Length of emergency>%u</Length of emergency>\n", emergencynumberlist->lengthofemergency);
-  printf("    <Emergency service category value>%u</Emergency service category value>\n", emergencynumberlist->emergencyservicecategoryvalue);
+  for (  int ie_index = 0; ie_index < emergencynumberlist->num_emergency_elements; ie_index++) {
+	  printf("    <Length of emergency>%u</Length of emergency>\n", emergencynumberlist->emergency_number_information[ie_index].lengthofemergency);
+	  printf("    <Emergency service category value>%u</Emergency service category value>\n", emergencynumberlist->emergency_number_information[ie_index].emergencyservicecategoryvalue);
+	  for (int bcd2_index = 0; bcd2_index < (emergencynumberlist->emergency_number_information[ie_index].lengthofemergency - 1); bcd2_index++) {
+		  uint8_t bcd1 = emergencynumberlist->emergency_number_information[ie_index].bcd_digits[bcd2_index] & 0x0f;
+		  uint8_t bcd2 = (emergencynumberlist->emergency_number_information[ie_index].bcd_digits[bcd2_index] & 0xf0) >> 4;
+		  if (bcd1 < 10) {
+		    printf("    <BCD Digit%u>%u</BCD Digit%u>\n", (bcd2_index*2)+1, bcd1, (bcd2_index*2)+1);
+		    if (bcd2 < 10) {
+		    	printf("    <BCD Digit%u>%u</BCD Digit%u>\n", (bcd2_index*2)+2, bcd2, (bcd2_index*2)+2);
+		    }
+		  }
+	  }
+  }
   printf("</Emergency Number List>\n");
 }
 

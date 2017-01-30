@@ -1,31 +1,24 @@
-/*******************************************************************************
- OpenAirInterface
- Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
- OpenAirInterface is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
-
- OpenAirInterface is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with OpenAirInterface.The full GNU General Public License is
- included in this distribution in the file called "COPYING". If not,
- see <http://www.gnu.org/licenses/>.
-
- Contact Information
- OpenAirInterface Admin: openair_admin@eurecom.fr
- OpenAirInterface Tech : openair_tech@eurecom.fr
- OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
- Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /*! \file oaisim.c
  * \brief oaisim top level
  * \author Navid Nikaein 
@@ -82,6 +75,11 @@ uint8_t config_smbv = 0;
 char smbv_ip[16];
 #endif
 
+#if defined(FLEXRAN_AGENT_SB_IF)
+#   include "flexran_agent.h"
+#endif
+
+
 #include "oaisim_functions.h"
 
 #include "oaisim.h"
@@ -128,6 +126,8 @@ char smbv_ip[16];
 //#define SLEEP_STEP_US          100           /*  = 0.01ms could be adaptive, should be as a number of UE */
 //#define K                      2             /* averaging coefficient */
 //#define TARGET_SF_TIME_NS      1000000       /* 1ms = 1000000 ns */
+
+uint8_t usim_test = 0;
 
 frame_t frame = 0;
 char stats_buffer[16384];
@@ -211,6 +211,8 @@ sigh (void *arg);
 #endif
 void
 oai_shutdown (void);
+
+void reset_opp_meas_oaisim (void);
 
 void
 help (void)
@@ -444,9 +446,6 @@ static Data_Flow_Unit omv_data;
 #endif //ALU
 static module_id_t UE_inst = 0;
 static module_id_t eNB_inst = 0;
-#ifdef Rel10
-static module_id_t RN_id = 0;
-#endif
 
 Packet_OTG_List_t *otg_pdcp_buffer;
 
@@ -470,13 +469,8 @@ l2l1_task (void *args_p)
   // Framing variables
   int32_t sf;
 
-#ifdef Rel10
-  relaying_type_t r_type = no_relay; // no relaying
-#endif
-  
   char fname[64], vname[64];
 
-  protocol_ctxt_t  ctxt;
   //#ifdef XFORMS
   // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
   // at eNB 0, an UL scope for every UE
@@ -508,7 +502,6 @@ l2l1_task (void *args_p)
     xargv[0] = xname;
     fl_initialize (&xargc, xargv, NULL, 0, 0);
     eNB_inst = 0;
-    
     for (UE_inst = 0; UE_inst < NB_UE_INST; UE_inst++) {
       for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
 	// DL scope at UEs
@@ -888,6 +881,7 @@ l2l1_task (void *args_p)
                   update_otg_UE (UE_inst, oai_emulation.info.time_ms);
 
                   //Access layer
+		  //		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE_inst, ENB_FLAG_NO, NOT_A_RNTI, frame, next_slot>>1, 0);
 		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE_inst, 0, ENB_FLAG_NO, NOT_A_RNTI, frame % MAX_FRAME_NUMBER, next_slot);
                   pdcp_run (&ctxt);
 #endif
@@ -896,7 +890,7 @@ l2l1_task (void *args_p)
                        CC_id++) {
                     phy_procedures_UE_lte (
                       PHY_vars_UE_g[UE_inst][CC_id],
-                      0, abstraction_flag,
+		      0, abstraction_flag,
                       normal_txrx, no_relay,
                       NULL);
                   }
@@ -1308,6 +1302,10 @@ main (int argc, char **argv)
   smbv_init_config(smbv_fname, smbv_nframes);
   smbv_write_config_from_frame_parms(smbv_fname, &PHY_vars_eNB_g[0][0]->frame_parms);
 #endif
+
+  /* #if defined (FLEXRAN_AGENT_SB_IF)
+  flexran_agent_start();
+  #endif */ 
 
   // add events to future event list: Currently not used
   //oai_emulation.info.oeh_enabled = 1;

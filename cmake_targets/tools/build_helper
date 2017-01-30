@@ -1,33 +1,24 @@
- ################################################################################
-#
-# Copyright (c) 2015, EURECOM (www.eurecom.fr)
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# The views and conclusions contained in the software and documentation are those
-# of the authors and should not be interpreted as representing official policies,
-# either expressed or implied, of the FreeBSD Project.
-#
-################################################################################
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+
 # file build_helper
 # brief
 # authors Laurent Thomas, Lionel GAUTHIER
@@ -172,56 +163,41 @@ compilations() {
 # External packages installers
 ############################################
 
-install_nettle_from_source() {
-    nettle_install_log=$OPENAIR_DIR/cmake_targets/log/nettle_install_log.txt
-    echo_info "\nInstalling Nettle. The log file for nettle installation is here: $nettle_install_log "
+install_protobuf_from_source(){
+    protobuf_install_log=$OPENAIR_DIR/cmake_targets/log/protobuf_install_log.txt
+    echo_info "\nInstalling Google Protobuf from sources. The log file for Protobuf installation is here: $protobuf_install_log "
     (
     cd /tmp
-    echo "Downloading nettle archive"
-    $SUDO rm -rf /tmp/nettle-2.5.tar.gz* /tmp/nettle-2.5
-    wget http://ftp.nluug.nl/gnu/nettle/nettle-2.5.tar.gz
-    if [ $? -ne 0 ]; then
-      wget ftp://ftp.lysator.liu.se/pub/security/lsh/nettle-2.5.tar.gz
-    fi
-    if [ ! -f nettle-2.5.tar.gz ]; then
-      echo_error "Could not download nettle source files"
-      cd -
-      return
-    fi
-    tar -xzf nettle-2.5.tar.gz
-    cd nettle-2.5/
-    ./configure --disable-openssl --enable-shared --prefix=/usr 
-    echo "Compiling nettle"
+    echo "Downloading protobuf"
+    rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
+    wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
+    tar -xzvf protobuf-2.6.1.tar.gz
+    cd protobuf-2.6.1/
+    ./configure
+    echo "Compiling protobuf"
     make -j`nproc`
-    make check 
-    $SUDO make install 
-    ) >& $nettle_install_log
+    $SUDO make install
+    $SUDO ldconfig
+    ) >& $protobuf_install_log
 }
 
-install_gnutls_from_source(){
-    gnutls_install_log=$OPENAIR_DIR/cmake_targets/log/gnutls_install_log.txt
-    echo_info "\nInstalling Gnutls. The log file for Gnutls installation is here: $gnutls_install_log "
+install_protobuf_c_from_source(){
+    protobuf_c_install_log=$OPENAIR_DIR/cmake_targets/log/protobuf_c_install_log.txt
+    echo_info "\nInstalling Google Protobuf_C from sources. The log file for Protobuf_C installation is here: $protobuf_c_install_log "
     (
-    cd /tmp 
-    echo "Downloading gnutls archive"
-    $SUDO rm -rf /tmp/gnutls-3.1.23.tar.xz* /tmp/gnutls-3.1.23
-    wget http://mirrors.dotsrc.org/gcrypt/gnutls/v3.1/gnutls-3.1.23.tar.xz || \
-      wget ftp://ftp.gnutls.org/gcrypt/gnutls/v3.1/gnutls-3.1.23.tar.xz
-    if [ ! -f gnutls-3.1.23.tar.xz ]; then
-      echo_error "Could not download gnutls source files"
-      cd -
-      return
-    fi
-    tar -xJf gnutls-3.1.23.tar.xz
-    cd gnutls-3.1.23/
-    ./configure --prefix=/usr
-    echo "Compiling gnutls"
+    cd /tmp
+    echo "Downloading protobuf-c"
+    rm -rf /tmp/protobuf-c
+    git clone https://github.com/protobuf-c/protobuf-c.git
+    cd protobuf-c
+    ./autogen.sh
+    ./configure
+    echo "Compiling protobuf-c"
     make -j`nproc`
-    $SUDO make install 
-    )>& $gnutls_install_log
+    $SUDO make install
+    $SUDO ldconfig
+    ) >& $protobuf_c_install_log
 }
-
-
 
 check_install_usrp_uhd_driver(){
         #first we remove old installation
@@ -283,13 +259,15 @@ check_install_additional_tools (){
         android-tools-adb \
 	wvdial \
         python-numpy \
-    sshpass \
-    nscd \
-    bc \
-    ntp
+        sshpass \
+        nscd \
+        bc \
+        ntp \
+        python-scipy \
+        python-matplotlib
 
     $SUDO pip install paramiko
-    $SUDO pip install pyroute2
+    $SUDO pip install pyroute2 colorama
     $SUDO rm -fr /opt/ssh
     $SUDO GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/ssh.git /opt/ssh
     
@@ -382,18 +360,74 @@ check_install_oai_software() {
 	xmlstarlet \
 	python-pip \
 	pydb \
+	libyaml-dev \
 	wget
 
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
     
-    #Sometimes linux headers are not available in apt-get if kernel is custom or new
-    $SUDO apt-get install linux-headers-`uname -r` || true
-    # First we remove gnutls/nettle installation and then install from sources
-    $SUDO apt-get remove -y libgnutls-dev nettle-dev nettle-bin
-    install_nettle_from_source
-    install_gnutls_from_source
+    #Remove old gnutls/nettle installation that was done from sources
+    remove_nettle_from_source
+    
+    $SUDO apt-get install -y nettle-dev nettle-bin
+    remove_gnutls_from_source
 
+    $SUDO apt-get install -y libgnutls-dev
+    
     install_asn1c_from_source
+    $SUDO rm -fr /opt/ssh
+    $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
+    install_protobuf_from_source
+    install_protobuf_c_from_source
+}
+
+### Remove Nettle installation which was done from sources
+remove_nettle_from_source() {
+    nettle_uninstall_log=$OPENAIR_DIR/cmake_targets/log/nettle_uninstall_log.txt
+    echo_info "\nUn-Installing Nettle from sources. The log file for nettle un-installation is here: $nettle_uninstall_log "
+    (
+    $SUDO apt-get remove -y nettle-dev nettle-bin 
+    cd /tmp
+    echo "Downloading nettle archive"
+    $SUDO rm -rf /tmp/nettle-2.5.tar.gz* /tmp/nettle-2.5
+    wget https://ftp.gnu.org/gnu/nettle/nettle-2.5.tar.gz
+    if [ $? -ne 0 ]; then
+      wget ftp://ftp.lysator.liu.se/pub/security/lsh/nettle-2.5.tar.gz
+    fi
+    if [ ! -f nettle-2.5.tar.gz ]; then
+      echo_error "Could not download nettle source files"
+      cd -
+      return
+    fi
+    tar -xzf nettle-2.5.tar.gz
+    cd nettle-2.5/
+    ./configure --disable-openssl --enable-shared --prefix=/usr 
+    $SUDO make uninstall || true 
+    $SUDO ldconfig
+    ) >& $nettle_uninstall_log
+}
+
+### Remove Gnutls from source
+remove_gnutls_from_source(){
+    gnutls_uninstall_log=$OPENAIR_DIR/cmake_targets/log/gnutls_uninstall_log.txt
+    echo_info "\nUn-Installing Gnutls. The log file for Gnutls un-installation is here: $gnutls_uninstall_log "
+    (
+    $SUDO apt-get remove -y libgnutls-dev
+    cd /tmp 
+    echo "Downloading gnutls archive"
+    $SUDO rm -rf /tmp/gnutls-3.1.23.tar.xz* /tmp/gnutls-3.1.23
+    wget http://mirrors.dotsrc.org/gcrypt/gnutls/v3.1/gnutls-3.1.23.tar.xz || \
+      wget ftp://ftp.gnutls.org/gcrypt/gnutls/v3.1/gnutls-3.1.23.tar.xz
+    if [ ! -f gnutls-3.1.23.tar.xz ]; then
+      echo_error "Could not download gnutls source files"
+      cd -
+      return
+    fi
+    tar -xJf gnutls-3.1.23.tar.xz
+    cd gnutls-3.1.23/
+    ./configure --prefix=/usr
+    $SUDO make uninstall || true
+    $SUDO ldconfig
+    )>& $gnutls_uninstall_log
 }
 
 install_asn1c_from_source(){
@@ -401,12 +435,13 @@ install_asn1c_from_source(){
     echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_log "
     (
     $SUDO rm -rf /tmp/asn1c
-    git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
+    GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
     cd /tmp/asn1c
     ./configure
     make -j`nproc`
     $SUDO make install
     cd -
+    $SUDO ldconfig
     ) > $asn1_install_log 2>&1
 }
 

@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "PHY/sse_intrin.h"
@@ -85,7 +78,7 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
   int16_t ul_ch_estimates_re,ul_ch_estimates_im;
   int32_t rx_power_correction;
 
-  //uint8_t nb_antennas_rx = frame_parms->nb_antennas_tx_eNB;
+  //uint8_t nb_antennas_rx = frame_parms->nb_antenna_ports_eNB;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
   uint8_t cyclic_shift;
 
@@ -686,7 +679,7 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 
   int T_SFC,aa;
   int N_symb,symbol;
-  uint8_t nb_antennas_rx = frame_parms->nb_antennas_tx_eNB;
+  uint8_t nb_antennas_rx = frame_parms->nb_antenna_ports_eNB;
 #ifdef DEBUG_SRS
   char fname[40], vname[40];
 #endif
@@ -727,10 +720,11 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
       //write_output("eNB_srs.m","srs_eNB",common_vars->srs,(frame_parms->ofdm_symbol_size),1,1);
 
       mult_cpx_conj_vector((int16_t*) &common_vars->rxdataF[eNB_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
-                      (int16_t*) srs_vars->srs,
-                      (int16_t*) srs_vars->srs_ch_estimates[eNB_id][aa],
-                      frame_parms->ofdm_symbol_size,
-                      15);
+			   (int16_t*) srs_vars->srs,
+			   (int16_t*) srs_vars->srs_ch_estimates[eNB_id][aa],
+			   frame_parms->ofdm_symbol_size,
+			   15,
+			   0);
 
       //msg("SRS channel estimation cmult out\n");
 #ifdef USER_MODE

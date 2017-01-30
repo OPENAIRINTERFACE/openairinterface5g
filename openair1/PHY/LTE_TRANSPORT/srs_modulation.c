@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_TRANSPORT/srs_modulation.c
 * \brief Top-level routines for generating sounding reference signal (SRS) V8.6 2009-03
@@ -137,18 +129,27 @@ int32_t generate_srs_tx(PHY_VARS_UE *ue,
 
   LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated=&ue->soundingrs_ul_config_dedicated[eNB_id];
-  int32_t *txdataF = ue->common_vars.txdataF[0];
+  int32_t **txdataF = ue->common_vars.txdataF;
   uint16_t msrsb=0,Nb=0,nb,b,msrs0=0,k,Msc_RS,Msc_RS_idx,carrier_pos,symbol_offset;
   uint16_t *Msc_idx_ptr;
   int32_t k0;
-  uint32_t T_SFC;
-  uint32_t subframe_offset;
+  //uint32_t subframe_offset;
   uint8_t Bsrs  = soundingrs_ul_config_dedicated->srs_Bandwidth;
   uint8_t Csrs  = frame_parms->soundingrs_ul_config_common.srs_BandwidthConfig;
   uint8_t Ssrs  = frame_parms->soundingrs_ul_config_common.srs_SubframeConfig;
   uint8_t n_RRC = soundingrs_ul_config_dedicated->freqDomainPosition;
   uint8_t kTC   = soundingrs_ul_config_dedicated->transmissionComb;
 
+  // u is the PUCCH sequence-group number defined in Section 5.5.1.3
+  // ν is the base sequence number defined in Section 5.5.1.4
+  uint32_t u=frame_parms->pucch_config_common.grouphop[1+(subframe<<1)];;
+  uint32_t v=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
+
+  LOG_D(PHY,"SRS root sequence: u %d, v %d\n",u,v);
+  LOG_D(PHY,"CommonSrsConfig:    Csrs %d, Ssrs %d, AnSrsSimultan %d \n",Csrs,Ssrs,frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission);
+  LOG_D(PHY,"DedicatedSrsConfig: Bsrs %d, bhop %d, nRRC %d, Isrs %d, kTC %d, n_SRS %d\n",Bsrs,soundingrs_ul_config_dedicated->srs_HoppingBandwidth,n_RRC
+                                                                                       ,soundingrs_ul_config_dedicated->srs_ConfigIndex,kTC
+                                                                                       ,soundingrs_ul_config_dedicated->cyclicShift);
 
   if (frame_parms->N_RB_UL < 41) {
     msrs0 = msrsb_6_40[Csrs][0];
@@ -169,7 +170,7 @@ int32_t generate_srs_tx(PHY_VARS_UE *ue,
   }
 
   Msc_RS = msrsb * 6;
-  k0 = (((frame_parms->N_RB_UL>>1)-(msrs0>>1))*12) + kTC;
+  k0 = ( ( (int16_t)(frame_parms->N_RB_UL>>1) - (int16_t)(msrs0>>1) ) * 12 ) + kTC;
   nb  = (4*n_RRC/msrsb)%Nb;
 
   for (b=0; b<=Bsrs; b++) {
@@ -208,52 +209,31 @@ int32_t generate_srs_tx(PHY_VARS_UE *ue,
   msg("generate_srs_tx: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
 #endif
 
-  T_SFC = (Ssrs<=7 ? 5 : 10);
+    carrier_pos = (frame_parms->first_carrier_offset + k0);
+    if (carrier_pos>frame_parms->ofdm_symbol_size) {
+        carrier_pos -= frame_parms->ofdm_symbol_size;
+    }
+    uint16_t nsymb = (frame_parms->Ncp==0) ? 14:12;
+    symbol_offset = (int)frame_parms->ofdm_symbol_size*((subframe*nsymb)+(nsymb-1));
 
-  if ((1<<(subframe%T_SFC))&transmission_offset_tdd[Ssrs]) {
-
-#ifndef IFFT_FPGA_UE
-    carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
     //msg("carrier_pos = %d\n",carrier_pos);
+    //subframe_offset = subframe*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size;
+    //symbol_offset = subframe_offset+(frame_parms->symbols_per_tti-1)*frame_parms->ofdm_symbol_size;
 
-    subframe_offset = subframe*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size;
-    symbol_offset = subframe_offset+(frame_parms->symbols_per_tti-1)*frame_parms->ofdm_symbol_size;
+    int32_t *txptr;
+    txptr = &txdataF[0][symbol_offset];
 
     for (k=0; k<Msc_RS; k++) {
-      ((short*) txdataF)[2*(symbol_offset + carrier_pos)]   = (short) (((int32_t) amp * (int32_t) ul_ref_sigs[0][0][Msc_RS_idx][k<<1])>>15);
-      ((short*) txdataF)[2*(symbol_offset + carrier_pos)+1] = (short) (((int32_t) amp * (int32_t) ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1])>>15);
-      carrier_pos+=2;
+      int32_t real = ((int32_t) amp * (int32_t) ul_ref_sigs[u][v][Msc_RS_idx][k<<1])     >> 15;
+      int32_t imag = ((int32_t) amp * (int32_t) ul_ref_sigs[u][v][Msc_RS_idx][(k<<1)+1]) >> 15;
+      txptr[carrier_pos] = (real&0xFFFF) + ((imag<<16)&0xFFFF0000);
+
+
+      carrier_pos = carrier_pos+2;
 
       if (carrier_pos >= frame_parms->ofdm_symbol_size)
-        carrier_pos=1;
+        carrier_pos=carrier_pos-frame_parms->ofdm_symbol_size;
     }
-
-#else
-    carrier_pos = (frame_parms->N_RB_UL*12/2 + k0) % (frame_parms->N_RB_UL*12);
-    //msg("carrier_pos = %d\n",carrier_pos);
-
-    subframe_offset = subframe*frame_parms->symbols_per_tti*frame_parms->N_RB_UL*12;
-    symbol_offset = subframe_offset+(frame_parms->symbols_per_tti-1)*frame_parms->N_RB_UL*12;
-
-    for (k=0; k<Msc_RS; k++) {
-      if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] >= 0))
-        txdataF[symbol_offset+carrier_pos] = (int32_t) 4;
-      else if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] < 0))
-        txdataF[symbol_offset+carrier_pos] = (int32_t) 2;
-      else if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] >= 0))
-        txdataF[symbol_offset+carrier_pos] = (int32_t) 3;
-      else if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] < 0))
-        txdataF[symbol_offset+carrier_pos] = (int32_t) 1;
-
-      carrier_pos+=2;
-
-      if (carrier_pos >= frame_parms->N_RB_UL*12)
-        carrier_pos=0;
-    }
-
-#endif
-    //  write_output("srs_txF.m","srstxF",&txdataF[symbol_offset],512,1,1);
-  }
 
   return(0);
 }
