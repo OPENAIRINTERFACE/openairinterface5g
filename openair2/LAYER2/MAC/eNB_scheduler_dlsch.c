@@ -442,7 +442,7 @@ schedule_ue_spec(
   //  unsigned char         rballoc_sub_UE[MAX_NUM_CCs][NUMBER_OF_UE_MAX][N_RBG_MAX];
   //  uint16_t              pre_nb_available_rbs[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   int                   mcs;
-  uint16_t              min_rb_unit[MAX_NUM_CCs];
+  int              min_rb_unit[MAX_NUM_CCs];
   eNB_MAC_INST         *eNB      = &eNB_mac_inst[module_idP];
   UE_list_t            *UE_list  = &eNB->UE_list;
   LTE_DL_FRAME_PARMS   *frame_parms[MAX_NUM_CCs];
@@ -453,9 +453,11 @@ schedule_ue_spec(
   UE_sched_ctrl           *ue_sched_ctl;
   int i;
 
+#if 0
   if (UE_list->head==-1) {
     return;
   }
+#endif
 
   start_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,VCD_FUNCTION_IN);

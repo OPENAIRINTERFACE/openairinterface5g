@@ -34,6 +34,7 @@
 void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
                       PHY_VARS_UE *ue,
                       unsigned char eNB_id,
+					  uint8_t subframe,
                       unsigned char clear,
                       short coef)
 {
@@ -48,7 +49,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   ncoef = 32767 - coef;
 
 #ifdef DEBUG_PHY
-  LOG_D(PHY,"frame %d: rx_offset (before) = %d\n",ue->proc.proc_rxtx[0].frame_rx,ue->rx_offset);
+  LOG_D(PHY,"AbsSubframe %d.%d: rx_offset (before) = %d\n",ue->proc.proc_rxtx[0].frame_rx%1024,subframe,ue->rx_offset);
 #endif //DEBUG_PHY
 
 
@@ -57,8 +58,8 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
     temp = 0;
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-      Re = ((int16_t*)ue->common_vars.dl_ch_estimates_time[eNB_id][aa])[(i<<2)];
-      Im = ((int16_t*)ue->common_vars.dl_ch_estimates_time[eNB_id][aa])[1+(i<<2)];
+      Re = ((int16_t*)ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates_time[eNB_id][aa])[(i<<2)];
+      Im = ((int16_t*)ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates_time[eNB_id][aa])[1+(i<<2)];
       temp += (Re*Re/2) + (Im*Im/2);
     }
 
@@ -74,13 +75,15 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   else
     max_pos_fil = ((max_pos_fil * coef) + (max_pos * ncoef)) >> 15;
 
+  // do not filter to have proactive timing adjustment
+  max_pos_fil = max_pos;
 
-  diff = max_pos_fil - frame_parms->nb_prefix_samples/8;
+  diff = max_pos_fil - (frame_parms->nb_prefix_samples>>3);
 
-  if ( diff > SYNCH_HYST )
-    ue->rx_offset++;
-  else if (diff < -SYNCH_HYST)
-    ue->rx_offset--;
+  if ( abs(diff) < SYNCH_HYST )
+	ue->rx_offset = 0;
+  else
+    ue->rx_offset = diff;
 
   if ( ue->rx_offset < 0 )
     ue->rx_offset += FRAME_LENGTH_COMPLEX_SAMPLES;
@@ -91,8 +94,8 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 #ifdef DEBUG_PHY
-  LOG_D(PHY,"frame %d: rx_offset (after) = %d : max_pos = %d,max_pos_fil = %d (peak %d)\n",
-        ue->proc.proc_rxtx[0].frame_rx,ue->rx_offset,max_pos,max_pos_fil,temp);
+  LOG_D(PHY,"AbsSubframe %d.%d: rx_offset (after) = %d : max_pos = %d,max_pos_fil = %d (peak %d) target_pos %d \n",
+        ue->proc.proc_rxtx[0].frame_rx,subframe,ue->rx_offset,max_pos,max_pos_fil,temp,(frame_parms->nb_prefix_samples>>3));
 #endif //DEBUG_PHY
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_OUT);

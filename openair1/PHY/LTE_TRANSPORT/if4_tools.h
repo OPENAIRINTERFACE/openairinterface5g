@@ -37,6 +37,7 @@
 #define IF4p5_PULFFT 0x0019 
 #define IF4p5_PDLFFT 0x0020
 #define IF4p5_PRACH 0x0021
+#define IF4p5_PULTICK 0x0022
 
 struct IF4p5_header {  
   /// Type
@@ -55,7 +56,7 @@ typedef struct IF4p5_header IF4p5_header_t;
 
 void gen_IF4p5_dl_header(IF4p5_header_t*, int, int);
 
-void gen_IF4p5_ul_header(IF4p5_header_t*, int, int);
+void gen_IF4p5_ul_header(IF4p5_header_t*, uint16_t, int, int);
 
 void gen_IF4p5_prach_header(IF4p5_header_t*, int, int);
 

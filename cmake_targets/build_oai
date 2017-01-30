@@ -661,9 +661,9 @@ function main() {
 	    CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
 
 	#oai_nw_drv
-	compilations \
-	    $oaisim_build_dir oai_nw_drv \
-	    CMakeFiles/oai_nw_drv/oai_nw_drv.ko $dbin/oai_nw_drv.ko
+	#compilations \
+	#    $oaisim_build_dir oai_nw_drv \
+	#    CMakeFiles/oai_nw_drv/oai_nw_drv.ko $dbin/oai_nw_drv.ko
     fi
 
     cmake_file=$DIR/oaisim_mme_build_oai/CMakeLists.txt

@@ -177,10 +177,27 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
   s->tx_md.time_spec = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
 
   
-  if(flags)
+  if(flags>0)
     s->tx_md.has_time_spec = true;
   else
     s->tx_md.has_time_spec = false;
+
+  if (flags == 2) { // start of burst
+    s->tx_md.start_of_burst = true;
+    s->tx_md.end_of_burst = false;
+  }
+  else if (flags == 3) { // end of burst
+    s->tx_md.start_of_burst = false;
+    s->tx_md.end_of_burst = true;
+  }
+  else if (flags == 4) { // start and end
+    s->tx_md.start_of_burst = true;
+    s->tx_md.end_of_burst = true;
+  }
+  else if (flags==1) { // middle of burst
+    s->tx_md.start_of_burst = false;
+    s->tx_md.end_of_burst = false;
+  }
   
   if (cc>1) {
     std::vector<void *> buff_ptrs;
@@ -190,7 +207,7 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
   else
     ret = (int)s->tx_stream->send(buff[0], nsamps, s->tx_md,1e-3);
 
-  s->tx_md.start_of_burst = false;
+
 
   if (ret != nsamps) {
     printf("[xmit] tx samples %d != %d\n",ret,nsamps);
@@ -352,19 +369,34 @@ static bool is_equal(double a, double b)
   return std::fabs(a-b) < std::numeric_limits<double>::epsilon();
 }
 
-/*! \brief Set frequencies (TX/RX)
+void *freq_thread(void *arg) {
+  
+  openair0_device *device=(openair0_device *)arg;
+  usrp_state_t *s = (usrp_state_t*)device->priv;
+  
+  s->usrp->set_tx_freq(device->openair0_cfg[0].tx_freq[0]);
+  s->usrp->set_rx_freq(device->openair0_cfg[0].rx_freq[0]);
+}
+/*! \brief Set frequencies (TX/RX). Spawns a thread to handle the frequency change to not block the calling thread
  * \param device the hardware to use
  * \param openair0_cfg RF frontend parameters set by application
  * \param dummy dummy variable not used
  * \returns 0 in success 
  */
-int trx_usrp_set_freq(openair0_device* device, openair0_config_t *openair0_cfg, int dummy) {
+int trx_usrp_set_freq(openair0_device* device, openair0_config_t *openair0_cfg, int dont_block) {
 
   usrp_state_t *s = (usrp_state_t*)device->priv;
+  pthread_t f_thread;
 
   printf("Setting USRP TX Freq %f, RX Freq %f\n",openair0_cfg[0].tx_freq[0],openair0_cfg[0].rx_freq[0]);
-  s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[0]);
-  s->usrp->set_rx_freq(openair0_cfg[0].rx_freq[0]);
+
+  // spawn a thread to handle the frequency change to not block the calling thread
+  if (dont_block == 1)
+    pthread_create(&f_thread,NULL,freq_thread,(void*)device);
+  else {
+    s->usrp->set_tx_freq(device->openair0_cfg[0].tx_freq[0]);
+    s->usrp->set_rx_freq(device->openair0_cfg[0].rx_freq[0]);
+  }
 
   return(0);
   
@@ -579,7 +611,10 @@ extern "C" {
     //  s->usrp->set_tx_subdev_spec(tx_subdev);
 
     // lock mboard clocks
-    s->usrp->set_clock_source("internal");
+    if (openair0_cfg[0].clock_source == internal)
+      s->usrp->set_clock_source("internal");
+    else
+      s->usrp->set_clock_source("external");
     
     //Setting device type to USRP X300/X310 
     device->type=USRP_X300_DEV;
@@ -634,6 +669,12 @@ extern "C" {
     //    // lock mboard clocks
     //    s->usrp->set_clock_source("internal");
     // set master clock rate and sample rate for tx & rx for streaming
+
+    // lock mboard clocks
+    if (openair0_cfg[0].clock_source == internal)
+      s->usrp->set_clock_source("internal");
+    else
+      s->usrp->set_clock_source("external");
 
     device->type = USRP_B200_DEV;
 
@@ -735,7 +776,10 @@ extern "C" {
 
   // create tx & rx streamer
   uhd::stream_args_t stream_args_rx("sc16", "sc16");
-  //stream_args_rx.args["spp"] = str(boost::format("%d") % 2048);//(openair0_cfg[0].rx_num_channels*openair0_cfg[0].samples_per_packet));
+  int samples=openair0_cfg[0].sample_rate;
+  samples/=24000;
+  //  stream_args_rx.args["spp"] = str(boost::format("%d") % samples);
+
   for (i = 0; i<openair0_cfg[0].rx_num_channels; i++)
     stream_args_rx.channels.push_back(i);
   s->rx_stream = s->usrp->get_rx_stream(stream_args_rx);

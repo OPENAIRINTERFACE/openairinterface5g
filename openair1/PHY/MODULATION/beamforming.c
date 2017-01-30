@@ -63,28 +63,30 @@ int beam_precoding(int32_t **txdataF,
   // clear txdata_BF[aa][re] for each call of ue_spec_beamforming
   memset(txdataF_BF[aa],0,sizeof(int32_t)*(frame_parms->ofdm_symbol_size));
 
-  for (p=0; p<14; p++) {
-    //if (p==0 || p==1 || p==5 || p>7)
-    //  mult_cpx_conj_vector((int16_t*)txdataF[p], (int16_t*)beam_weights[p][aa], (int16_t*)txdataF_BF[aa], frame_parms->ofdm_symbol_size, 15);
-    for (re=0;re<frame_parms->ofdm_symbol_size;re++) {
-      if ((p==0 || p==1 || p==5 || p>=7) && txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re]!=0) {
-        ((int16_t*)&txdataF_BF[aa][re])[0] += (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]*((int16_t*)&beam_weights[p][aa][re])[0])>>15);
-        ((int16_t*)&txdataF_BF[aa][re])[0] -= (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]*((int16_t*)&beam_weights[p][aa][re])[1])>>15);
-        ((int16_t*)&txdataF_BF[aa][re])[1] += (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]*((int16_t*)&beam_weights[p][aa][re])[1])>>15);
-        ((int16_t*)&txdataF_BF[aa][re])[1] += (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]*((int16_t*)&beam_weights[p][aa][re])[0])>>15);
+  for (p=0; p<NB_ANTENNA_PORTS_ENB; p++) {
+    if (p<frame_parms->nb_antenna_ports_eNB || p==5) {
+      multadd_cpx_vector((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size],(int16_t*)beam_weights[p][aa], (int16_t*)txdataF_BF[aa], 0, frame_parms->ofdm_symbol_size, 15);
+      //mult_cpx_conj_vector((int16_t*)beam_weights[p][aa], (int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size], (int16_t*)txdataF_BF[aa], frame_parms->ofdm_symbol_size, 15, 1);
 
-	  /*
-          printf("beamforming.c:txdataF[%d][%d]=%d+j%d, beam_weights[%d][%d][%d]=%d+j%d,txdata_BF[%d][%d]=%d+j%d\n",
-                 p,slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re,
-                 ((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0],
-                 ((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1],
-                 p,aa,re,
-                 ((int16_t*)&beam_weights[p][aa][re])[0],((int16_t*)&beam_weights[p][aa][re])[1],
-                 aa,re,
-                 ((int16_t*)&txdataF_BF[aa][re])[0],
-                 ((int16_t*)&txdataF_BF[aa][re])[1]); 
-	  */
-      } 
+      // if check version
+      /*for (re=0;re<frame_parms->ofdm_symbol_size;re++) {
+        if (txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re]!=0) {
+          ((int16_t*)&txdataF_BF[aa][re])[0] += (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]*((int16_t*)&beam_weights[p][aa][re])[0])>>15);
+          ((int16_t*)&txdataF_BF[aa][re])[0] -= (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]*((int16_t*)&beam_weights[p][aa][re])[1])>>15);
+          ((int16_t*)&txdataF_BF[aa][re])[1] += (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]*((int16_t*)&beam_weights[p][aa][re])[1])>>15);
+          ((int16_t*)&txdataF_BF[aa][re])[1] += (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]*((int16_t*)&beam_weights[p][aa][re])[0])>>15);
+
+            printf("beamforming.c:txdataF[%d][%d]=%d+j%d, beam_weights[%d][%d][%d]=%d+j%d,txdata_BF[%d][%d]=%d+j%d\n",
+                   p,slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re,
+                   ((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0],
+                   ((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1],
+                   p,aa,re,
+                   ((int16_t*)&beam_weights[p][aa][re])[0],((int16_t*)&beam_weights[p][aa][re])[1],
+                   aa,re,
+                   ((int16_t*)&txdataF_BF[aa][re])[0],
+                   ((int16_t*)&txdataF_BF[aa][re])[1]);
+        }
+      }*/
     }
   }
   return 0;

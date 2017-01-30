@@ -1812,6 +1812,11 @@ int main(int argc, char **argv)
        eNB->common_vars.beam_weights[0][0][aa][re] = 0x00007fff/eNB->frame_parms.nb_antennas_tx; 
   }
 
+  if (transmission_mode<7)
+     eNB->do_precoding=0;
+  else
+     eNB->do_precoding=1;
+
   eNB->mac_enabled=1;
   if (two_thread_flag == 0) {
     eNB->te = dlsch_encoding;
@@ -2409,12 +2414,14 @@ int main(int argc, char **argv)
             do_OFDM_mod_symbol(&eNB->common_vars,
                                eNB_id,
                                (subframe*2),
-                               &eNB->frame_parms);
+                               &eNB->frame_parms,
+			       eNB->do_precoding);
 
             do_OFDM_mod_symbol(&eNB->common_vars,
                                eNB_id,
                                (subframe*2)+1,
-                               &eNB->frame_parms);
+                               &eNB->frame_parms,
+			       eNB->do_precoding);
 
 
 	    stop_meas(&eNB->ofdm_mod_stats);
@@ -2502,34 +2509,34 @@ int main(int argc, char **argv)
 	    
 	    //common vars
 	    write_output("rxsig0.m","rxs0", &UE->common_vars.rxdata[0][0],10*UE->frame_parms.samples_per_tti,1,1);
-	    write_output("rxsigF0.m","rxsF0", &UE->common_vars.rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
+	    write_output("rxsigF0.m","rxsF0", &UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 	    
 	    if (UE->frame_parms.nb_antennas_rx>1) {
 	      write_output("rxsig1.m","rxs1", UE->common_vars.rxdata[1],UE->frame_parms.samples_per_tti,1,1);
-	      write_output("rxsigF1.m","rxsF1", UE->common_vars.rxdataF[1],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
+	      write_output("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[1],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 	    }
 	    
 	    write_output("dlsch00_r0.m","dl00_r0",
-			 &(UE->common_vars.dl_ch_estimates[eNB_id][0][0]),
+			 &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][0][0]),
 			 UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 	    
 	    if (UE->frame_parms.nb_antennas_rx>1)
 	      write_output("dlsch01_r0.m","dl01_r0",
-			   &(UE->common_vars.dl_ch_estimates[eNB_id][1][0]),
+			   &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][1][0]),
 			   UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 	    
 	    if (eNB->frame_parms.nb_antennas_tx>1)
 	      write_output("dlsch10_r0.m","dl10_r0",
-			   &(UE->common_vars.dl_ch_estimates[eNB_id][2][0]),
+			   &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2][0]),
 			   UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 	    
 	    if ((UE->frame_parms.nb_antennas_rx>1) && (eNB->frame_parms.nb_antennas_tx>1))
 	      write_output("dlsch11_r0.m","dl11_r0",
-			   &(UE->common_vars.dl_ch_estimates[eNB_id][3][0]),
+			   &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][3][0]),
 			   UE->frame_parms.ofdm_symbol_size*nsymb/2,1,1);
 	    
 	    //pdsch_vars
-	    dump_dlsch2(UE,eNB_id,coded_bits_per_codeword,round);
+	    dump_dlsch2(UE,eNB_id,subframe,coded_bits_per_codeword,round);
 	    //dump_dlsch2(UE,eNB_id_i,coded_bits_per_codeword);
 	    write_output("dlsch_e.m","e",eNB->dlsch[0][0]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
 	    
@@ -2587,7 +2594,7 @@ int main(int argc, char **argv)
               write_output(fname,vname, &UE->common_vars.rxdata[0][0],10*UE->frame_parms.samples_per_tti,1,1);
               sprintf(fname,"rxsigF0_r%d.m",round);
               sprintf(vname,"rxs0F_r%d",round);
-              write_output(fname,vname, &UE->common_vars.rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
+              write_output(fname,vname, &UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 	     
               if (UE->frame_parms.nb_antennas_rx>1) {
                 sprintf(fname,"rxsig1_r%d.m",round);
@@ -2595,20 +2602,20 @@ int main(int argc, char **argv)
                 write_output(fname,vname, UE->common_vars.rxdata[1],UE->frame_parms.samples_per_tti,1,1);
                 sprintf(fname,"rxsigF1_r%d.m",round);
                 sprintf(vname,"rxs1F_r%d.m",round);
-                write_output(fname,vname, UE->common_vars.rxdataF[1],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
+                write_output(fname,vname, UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[1],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
               }
 
               sprintf(fname,"dlsch00_r%d.m",round);
               sprintf(vname,"dl00_r%d",round);
               write_output(fname,vname,
-                           &(UE->common_vars.dl_ch_estimates[eNB_id][0][0]),
+                           &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][0][0]),
                            UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
               if (UE->frame_parms.nb_antennas_rx>1) {
                 sprintf(fname,"dlsch01_r%d.m",round);
                 sprintf(vname,"dl01_r%d",round);
                 write_output(fname,vname,
-                             &(UE->common_vars.dl_ch_estimates[eNB_id][1][0]),
+                             &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][1][0]),
                              UE->frame_parms.ofdm_symbol_size*nsymb/2,1,1);
               }
 
@@ -2616,7 +2623,7 @@ int main(int argc, char **argv)
                 sprintf(fname,"dlsch10_r%d.m",round);
                 sprintf(vname,"dl10_r%d",round);
                 write_output(fname,vname,
-                             &(UE->common_vars.dl_ch_estimates[eNB_id][2][0]),
+                             &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2][0]),
                              UE->frame_parms.ofdm_symbol_size*nsymb/2,1,1);
               }
 
@@ -2624,12 +2631,12 @@ int main(int argc, char **argv)
                 sprintf(fname,"dlsch11_r%d.m",round);
                 sprintf(vname,"dl11_r%d",round);
                 write_output(fname,vname,
-                             &(UE->common_vars.dl_ch_estimates[eNB_id][3][0]),
+                             &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][3][0]),
                              UE->frame_parms.ofdm_symbol_size*nsymb/2,1,1);
               }
 
               //pdsch_vars
-              dump_dlsch2(UE,eNB_id,coded_bits_per_codeword,round);
+              dump_dlsch2(UE,eNB_id,subframe,coded_bits_per_codeword,round);
               
               //write_output("dlsch_e.m","e",eNB->dlsch[0][0]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
               //write_output("dlsch_ber_bit.m","ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);

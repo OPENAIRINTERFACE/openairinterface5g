@@ -559,6 +559,15 @@ rlc_am_mac_status_indication (
   status_resp.head_sdu_is_segmented            = 0;
   status_resp.rlc_info.rlc_protocol_state = rlc->protocol_state;
 
+  /* TODO: remove this hack. Problem is: there is a race.
+   * UE comes. SRB2 is configured via message to RRC.
+   * At some point the RLC AM is created but not configured yet.
+   * At this moment (I think) MAC calls mac_rlc_status_ind
+   * which calls this function. But the init was not finished yet
+   * and we have a crash below when testing mem_block != NULL.
+   */
+  if (rlc->input_sdus == NULL) return status_resp;
+
   if (rlc->last_frame_status_indication != ctxt_pP->frame) {
     rlc_am_check_timer_poll_retransmit(ctxt_pP, rlc);
     rlc_am_check_timer_reordering(ctxt_pP, rlc);
