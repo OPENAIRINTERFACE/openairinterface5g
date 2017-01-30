@@ -1184,11 +1184,12 @@ void ue_prach_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 	ue->prach_resources[eNB_id]->ra_PreambleIndex = 19;	      
       }
       
-      LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
+      LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d,PL %d,  P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
 	    ue->Mod_id,
 	    frame_tx,
 	    subframe_tx,
 	    ue->prach_resources[eNB_id]->ra_PreambleIndex,
+		get_PL(ue->Mod_id,ue->CC_id,eNB_id),
 		ue->tx_power_dBm[subframe_tx],
 	    ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER,
 	    ue->prach_resources[eNB_id]->ra_TDD_map_index,
@@ -1377,7 +1378,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
         ue->ulsch[eNB_id]->harq_processes[harq_pid]->round  = 0;
     }
     
-    ack_status = get_ack(&ue->frame_parms,
+    ack_status = reset_ack(&ue->frame_parms,
 			 ue->dlsch[eNB_id][0]->harq_ack,
 			 subframe_tx,
 			 ue->ulsch[eNB_id]->o_ACK);
@@ -1710,6 +1711,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   int tx_amp;
   int16_t Po_PUCCH;
   uint8_t ack_status=0;
+  uint8_t ack_sr_generated = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PUCCH,VCD_FUNCTION_IN);
   
@@ -1781,7 +1783,8 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     // we need to transmit ACK/NAK in this subframe
 	    
     ue->generate_ul_signal[eNB_id] = 1;
-	    
+    ack_sr_generated = 1;
+
     if ((frame_parms->frame_type == TDD) && (SR_payload>0)) {
       format = pucch_format1b;
     }
@@ -1882,6 +1885,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     }
   } else if (SR_payload==1) { // no ACK/NAK but SR is triggered by MAC
 
+	ack_sr_generated = 1;
     if (ue->mac_enabled == 1) {
       Po_PUCCH = pucch_power_cntl(ue,proc,subframe_tx,eNB_id,pucch_format1);
     }
@@ -1940,7 +1944,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   
   // PUCCH 2x
 
-  if (ue->generate_ul_signal[eNB_id] == 0) { // we have not generated ACK/NAK/SR in this subframe
+  if (ack_sr_generated == 0) { // we have not generated ACK/NAK/SR in this subframe
 
     n2_pucch = ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PUCCH_ResourceIndex;
     // only use format2 for now, i.e. now ACK/NAK - CQI multiplexing
@@ -1971,14 +1975,6 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
       T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
                     T_INT(tx_amp),T_INT(ue->dlsch[eNB_id][0]->g_pucch),T_INT(get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
 #endif
-      LOG_D(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2 (CQI), n2_pucch %d, Po_PUCCH %d, isShortenPucch %d, amp %d\n",
-	    Mod_id,
-	    ue->dlsch[eNB_id][0]->rnti,
-	    frame_tx, subframe_tx,
-	    n2_pucch,
-	    Po_PUCCH,
-	    isShortenPucch,
-	    tx_amp);
       
       int len;
       // get the payload : < 12 bits, returned in len
@@ -1997,6 +1993,16 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 		       ue->pdcch_vars[eNB_id]->crnti);
 
       ue->generate_ul_signal[eNB_id] = 1;
+
+      LOG_D(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2 (CQI %d), n2_pucch %d, Po_PUCCH %d, isShortenPucch %d, amp %d\n",
+	    Mod_id,
+	    ue->dlsch[eNB_id][0]->rnti,
+	    frame_tx, subframe_tx,CQI_payload,
+	    n2_pucch,
+	    Po_PUCCH,
+	    isShortenPucch,
+	    tx_amp);
+
     }
     // Periodic RI report
     else if ((ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0) &&
