@@ -932,6 +932,7 @@ int main(int argc, char **argv)
             lte_ue_measurements(UE,
                                 0,
                                 1,
+                                0,
                                 0);
             /*
              if (trial%100 == 0) {
@@ -963,7 +964,7 @@ int main(int argc, char **argv)
             //sprintf(vname,"dl_ch00_%d",l);
             //write_output(fname,vname,&(common_vars->dl_ch_estimates[0][frame_parms->ofdm_symbol_size*(l%6)]),frame_parms->ofdm_symbol_size,1,1);
 
-            lte_est_freq_offset(UE->common_vars.dl_ch_estimates[0],
+            lte_est_freq_offset(UE->common_vars.common_vars_rx_data_per_thread[/*subframe*/0&0x1].dl_ch_estimates[0],
                                 &UE->frame_parms,
                                 l,
                                 &freq_offset,
@@ -1051,13 +1052,13 @@ int main(int argc, char **argv)
 
   if (n_frames==1) {
 
-    write_output("H00.m","h00",&(UE->common_vars.dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
+    write_output("H00.m","h00",&(UE->common_vars.common_vars_rx_data_per_thread[/*subframe*/0&0x1].dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
 
     if (n_tx==2)
-      write_output("H10.m","h10",&(UE->common_vars.dl_ch_estimates[0][2][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
+      write_output("H10.m","h10",&(UE->common_vars.common_vars_rx_data_per_thread[/*subframe*/0&0x1].dl_ch_estimates[0][2][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
 
     write_output("rxsig0.m","rxs0", UE->common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-    write_output("rxsigF0.m","rxsF0", UE->common_vars.rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);
+    write_output("rxsigF0.m","rxsF0", UE->common_vars.common_vars_rx_data_per_thread[/*subframe*/0&0x1].rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);
     write_output("PBCH_rxF0_ext.m","pbch0_ext",UE->pbch_vars[0]->rxdataF_ext[0],12*4*6,1,1);
     write_output("PBCH_rxF0_comp.m","pbch0_comp",UE->pbch_vars[0]->rxdataF_comp[0],12*4*6,1,1);
     write_output("PBCH_rxF_llr.m","pbch_llr",UE->pbch_vars[0]->llr,(frame_parms->Ncp==0) ? 1920 : 1728,1,4);

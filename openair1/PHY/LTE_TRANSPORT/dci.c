@@ -1705,16 +1705,16 @@ int32_t rx_pdcch(LTE_UE_COMMON *common_vars,
 
   for (s=0; s<n_pdcch_symbols; s++) {
     if (is_secondary_ue == 1) {
-      pdcch_extract_rbs_single(common_vars->rxdataF,
-                               common_vars->dl_ch_estimates[eNB_id+1], //add 1 to eNB_id to compensate for the shifted B/F'd pilots from the SeNB
+      pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[subframe&0x1].rxdataF,
+                               common_vars->common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id+1], //add 1 to eNB_id to compensate for the shifted B/F'd pilots from the SeNB
                                pdcch_vars[eNB_id]->rxdataF_ext,
                                pdcch_vars[eNB_id]->dl_ch_estimates_ext,
                                s,
                                high_speed_flag,
                                frame_parms);
 #ifdef MU_RECEIVER
-      pdcch_extract_rbs_single(common_vars->rxdataF,
-                               common_vars->dl_ch_estimates[eNB_id_i - 1],//subtract 1 to eNB_id_i to compensate for the non-shifted pilots from the PeNB
+      pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[subframe&0x1].rxdataF,
+                               common_vars->common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id_i - 1],//subtract 1 to eNB_id_i to compensate for the non-shifted pilots from the PeNB
                                pdcch_vars[eNB_id_i]->rxdataF_ext,//shift by two to simulate transmission from a second antenna
                                pdcch_vars[eNB_id_i]->dl_ch_estimates_ext,//shift by two to simulate transmission from a second antenna
                                s,
@@ -1722,16 +1722,16 @@ int32_t rx_pdcch(LTE_UE_COMMON *common_vars,
                                frame_parms);
 #endif //MU_RECEIVER
     } else if (frame_parms->nb_antenna_ports_eNB>1) {
-      pdcch_extract_rbs_dual(common_vars->rxdataF,
-                             common_vars->dl_ch_estimates[eNB_id],
+      pdcch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[subframe&0x1].rxdataF,
+                             common_vars->common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id],
                              pdcch_vars[eNB_id]->rxdataF_ext,
                              pdcch_vars[eNB_id]->dl_ch_estimates_ext,
                              s,
                              high_speed_flag,
                              frame_parms);
     } else {
-      pdcch_extract_rbs_single(common_vars->rxdataF,
-                               common_vars->dl_ch_estimates[eNB_id],
+      pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[subframe&0x1].rxdataF,
+                               common_vars->common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id],
                                pdcch_vars[eNB_id]->rxdataF_ext,
                                pdcch_vars[eNB_id]->dl_ch_estimates_ext,
                                s,

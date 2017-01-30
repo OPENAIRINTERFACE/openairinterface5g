@@ -900,8 +900,8 @@ uint16_t rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 #ifdef DEBUG_PBCH
     msg("[PBCH] starting extract\n");
 #endif
-    pbch_extract(lte_ue_common_vars->rxdataF,
-                 lte_ue_common_vars->dl_ch_estimates[eNB_id],
+    pbch_extract(lte_ue_common_vars->common_vars_rx_data_per_thread[0].rxdataF,
+                 lte_ue_common_vars->common_vars_rx_data_per_thread[0].dl_ch_estimates[eNB_id],
                  lte_ue_pbch_vars->rxdataF_ext,
                  lte_ue_pbch_vars->dl_ch_estimates_ext,
                  symbol,

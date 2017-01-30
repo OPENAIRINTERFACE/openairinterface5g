@@ -197,9 +197,8 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 
           if (ue->frame_parms.Ncp==NORMAL) {
             for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
-
-	      rxF_sss = (int16_t *)&ue->common_vars.rxdataF[aarx][(5*ue->frame_parms.ofdm_symbol_size)];
-	      rxF_pss = (int16_t *)&ue->common_vars.rxdataF[aarx][(6*ue->frame_parms.ofdm_symbol_size)];
+	      rxF_sss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[aarx][(5*ue->frame_parms.ofdm_symbol_size)];
+	      rxF_pss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[aarx][(6*ue->frame_parms.ofdm_symbol_size)];
 	      
 
               //-ve spectrum from SSS
@@ -224,7 +223,7 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
               ue->measurements.n0_power[aarx] += (((int32_t)rxF_pss[2+66]*rxF_pss[2+66])+((int32_t)rxF_pss[2+65]*rxF_pss[2+65]));
 	      //              ue->measurements.n0_power[aarx] += (((int32_t)rxF_pss[2+64]*rxF_pss[2+64])+((int32_t)rxF_pss[2+63]*rxF_pss[2+63]));
 	      //	      printf("pss32 %d\n",ue->measurements.n0_power[aarx]);              //-ve spectrum from PSS
-              rxF_pss = (int16_t *)&ue->common_vars.rxdataF[aarx][(7*ue->frame_parms.ofdm_symbol_size)];
+              rxF_pss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[aarx][(7*ue->frame_parms.ofdm_symbol_size)];
 	      //              ue->measurements.n0_power[aarx] += (((int32_t)rxF_pss[-72]*rxF_pss[-72])+((int32_t)rxF_pss[-71]*rxF_pss[-71]));
 	      //	      printf("pssm36 %d\n",ue->measurements.n0_power[aarx]);
               ue->measurements.n0_power[aarx] += (((int32_t)rxF_pss[-70]*rxF_pss[-70])+((int32_t)rxF_pss[-69]*rxF_pss[-69]));
@@ -296,10 +295,10 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
           if (ue->frame_parms.Ncp==NORMAL) {
             for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
-	      rxF_sss = (int16_t *)&ue->common_vars.rxdataF[aarx][(6*ue->frame_parms.ofdm_symbol_size)];
+	      rxF_sss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[aarx][(6*ue->frame_parms.ofdm_symbol_size)];
 	      // note this is a dummy pointer, the pss is not really there!
 	      // in FDD the pss is in the symbol after the sss, but not in TDD
-	      rxF_pss = (int16_t *)&ue->common_vars.rxdataF[aarx][(7*ue->frame_parms.ofdm_symbol_size)];
+	      rxF_pss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[aarx][(7*ue->frame_parms.ofdm_symbol_size)];
 	      
 	      //-ve spectrum from SSS
 	      //              ue->measurements.n0_power[aarx] = (((int32_t)rxF_pss[-72]*rxF_pss[-72])+((int32_t)rxF_pss[-71]*rxF_pss[-71]));
@@ -351,7 +350,7 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 #endif
 
         for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
-          rxF = (int16_t *)&ue->common_vars.rxdataF[aarx][(l*ue->frame_parms.ofdm_symbol_size)];
+          rxF = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[aarx][(l*ue->frame_parms.ofdm_symbol_size)];
           off  = (ue->frame_parms.first_carrier_offset+k)<<1;
 
           if (l==(4-ue->frame_parms.Ncp)) {
@@ -457,7 +456,8 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 void lte_ue_measurements(PHY_VARS_UE *ue,
                          unsigned int subframe_offset,
                          unsigned char N0_symbol,
-                         unsigned char abstraction_flag)
+                         unsigned char abstraction_flag,
+						 uint8_t subframe)
 {
 
 
@@ -507,7 +507,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
         ue->measurements.rx_spatial_power[eNB_id][aatx][aarx] =
-          (signal_energy_nodc(&ue->common_vars.dl_ch_estimates[eNB_id][(aatx<<1) + aarx][0],
+          (signal_energy_nodc(&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][(aatx<<1) + aarx][0],
                               (N_RB_DL*12)));
         //- ue->measurements.n0_power[aarx];
 
@@ -575,8 +575,8 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
       // cqi/pmi information
 
       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-        dl_ch0    = &ue->common_vars.dl_ch_estimates[eNB_id][aarx][4];
-        dl_ch1    = &ue->common_vars.dl_ch_estimates[eNB_id][2+aarx][4];
+        dl_ch0    = &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][aarx][4];
+        dl_ch1    = &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2+aarx][4];
 
         for (subband=0; subband<nb_subbands; subband++) {
 
@@ -630,13 +630,13 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
 #if defined(__x86_64__) || defined(__i386__)
        __m128i pmi128_re,pmi128_im,mmtmpPMI0,mmtmpPMI1 /* ,mmtmpPMI2,mmtmpPMI3 */ ;
 
-        dl_ch0_128    = (__m128i *)&ue->common_vars.dl_ch_estimates[eNB_id][aarx][4];
-        dl_ch1_128    = (__m128i *)&ue->common_vars.dl_ch_estimates[eNB_id][2+aarx][4];
+        dl_ch0_128    = (__m128i *)&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][aarx][4];
+        dl_ch1_128    = (__m128i *)&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2+aarx][4];
 #elif defined(__arm__)
         int32x4_t pmi128_re,pmi128_im,mmtmpPMI0,mmtmpPMI1,mmtmpPMI0b,mmtmpPMI1b;
 
-        dl_ch0_128    = (int16x8_t *)&ue->common_vars.dl_ch_estimates[eNB_id][aarx][4];
-        dl_ch1_128    = (int16x8_t *)&ue->common_vars.dl_ch_estimates[eNB_id][2+aarx][4];
+        dl_ch0_128    = (int16x8_t *)&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][aarx][4];
+        dl_ch1_128    = (int16x8_t *)&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2+aarx][4];
 
 #endif
         for (subband=0; subband<nb_subbands; subband++) {
@@ -694,7 +694,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
     else {
       // cqi information only for mode 1
       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-        dl_ch0    = &ue->common_vars.dl_ch_estimates[eNB_id][aarx][4];
+        dl_ch0    = &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][aarx][4];
 
         for (subband=0; subband<7; subband++) {
 
