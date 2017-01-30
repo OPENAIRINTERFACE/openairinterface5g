@@ -83,7 +83,7 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode)
   lte_ue_measurements(ue,
 		      ue->rx_offset,
 		      0,
-		      0);
+		      0,0);
   
   
   if (ue->frame_parms.frame_type == TDD) {

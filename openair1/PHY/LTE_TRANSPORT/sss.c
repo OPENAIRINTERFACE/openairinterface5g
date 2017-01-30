@@ -163,7 +163,7 @@ int _do_pss_sss_extract(PHY_VARS_UE *ue,
   int rx_offset = frame_parms->ofdm_symbol_size-3*12;
   uint8_t pss_symb,sss_symb;
 
-  int32_t **rxdataF =  ue->common_vars.rxdataF;
+  int32_t **rxdataF =  ue->common_vars.common_vars_rx_data_per_thread[0].rxdataF;
 
   if (frame_parms->frame_type == FDD) {
     pss_symb = 6-frame_parms->Ncp;

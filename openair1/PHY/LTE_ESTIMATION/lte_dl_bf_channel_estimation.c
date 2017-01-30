@@ -70,9 +70,9 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   else
     rballoc = dlsch0_harq->rb_alloc_even;
 
-  rxdataF = phy_vars_ue->common_vars.rxdataF;
+  rxdataF = phy_vars_ue->common_vars.common_vars_rx_data_per_thread[(Ns>>1)&0x1].rxdataF;
 
-  dl_bf_ch_estimates = phy_vars_ue->pdsch_vars[eNB_id]->dl_bf_ch_estimates;
+  dl_bf_ch_estimates = phy_vars_ue->pdsch_vars[(Ns>>1)&0x1][eNB_id]->dl_bf_ch_estimates;
   beamforming_mode   = phy_vars_ue->transmission_mode[eNB_id]>6 ? phy_vars_ue->transmission_mode[eNB_id] : 0;
 
   if (phy_vars_ue->high_speed_flag == 0) // use second channel estimate position for temporary storage
