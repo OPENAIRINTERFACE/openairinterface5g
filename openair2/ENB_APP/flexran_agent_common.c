@@ -716,43 +716,43 @@ int flexran_get_harq(const mid_t mod_id,
 }
 
 int flexran_get_p0_pucch_dbm(mid_t mod_id, mid_t ue_id, int CC_id) {
-	LTE_eNB_UE_stats *eNB_UE_stats = NULL;
-	uint32_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-
-	eNB_UE_stats =  mac_xface->get_eNB_UE_stats(mod_id, CC_id, rnti);
-	
-	if (eNB_UE_stats == NULL) {
-	  return -1;
-	}
-	
-	if(eNB_UE_stats->Po_PUCCH_update == 1) {
-		return eNB_UE_stats->Po_PUCCH_dBm;
-	}
-	else
-		return -1;
+  LTE_eNB_UE_stats *eNB_UE_stats = NULL;
+  uint32_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+  
+  eNB_UE_stats =  mac_xface->get_eNB_UE_stats(mod_id, CC_id, rnti);
+  
+  if (eNB_UE_stats == NULL) {
+    return -1;
+  }
+  
+  //	if(eNB_UE_stats->Po_PUCCH_update == 1) {
+  return eNB_UE_stats->Po_PUCCH_dBm;
+  //}
+  //else
+  //  return -1;
 }
 
 int flexran_get_p0_nominal_pucch(mid_t mod_id, int CC_id) {
-	int32_t pucch_rx_received = mac_xface->get_target_pucch_rx_power(mod_id, CC_id);
-	return pucch_rx_received;
+  int32_t pucch_rx_received = mac_xface->get_target_pucch_rx_power(mod_id, CC_id);
+  return pucch_rx_received;
 }
 
 int flexran_get_p0_pucch_status(mid_t mod_id, mid_t ue_id, int CC_id) {
-        LTE_eNB_UE_stats *eNB_UE_stats = NULL;
-	uint32_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-
-	eNB_UE_stats =  mac_xface->get_eNB_UE_stats(mod_id, CC_id, rnti);
-	return eNB_UE_stats->Po_PUCCH_update;
+  LTE_eNB_UE_stats *eNB_UE_stats = NULL;
+  uint32_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+  
+  eNB_UE_stats =  mac_xface->get_eNB_UE_stats(mod_id, CC_id, rnti);
+  return eNB_UE_stats->Po_PUCCH_update;
 }
 
 int flexran_update_p0_pucch(mid_t mod_id, mid_t ue_id, int CC_id) {
-          LTE_eNB_UE_stats *eNB_UE_stats = NULL;
-	uint32_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-
-	eNB_UE_stats =  mac_xface->get_eNB_UE_stats(mod_id, CC_id, rnti);
-	eNB_UE_stats->Po_PUCCH_update = 0;
-
-	return 0;
+  LTE_eNB_UE_stats *eNB_UE_stats = NULL;
+  uint32_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+  
+  eNB_UE_stats =  mac_xface->get_eNB_UE_stats(mod_id, CC_id, rnti);
+  eNB_UE_stats->Po_PUCCH_update = 0;
+  
+  return 0;
 }
 
 

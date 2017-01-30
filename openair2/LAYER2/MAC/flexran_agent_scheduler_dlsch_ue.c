@@ -1390,21 +1390,17 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
 
 	  // do PUCCH power control
           // this is the normalized RX power
-	  //normalized_rx_power = flexran_get_p0_pucch_dbm(mod_id,UE_id, CC_id); //eNB_UE_stats->Po_PUCCH_dBm; 
-	  //	  target_rx_power = flexran_get_p0_nominal_pucch(mod_id, CC_id) + 10; //mac_xface->get_target_pucch_rx_power(mod_id, CC_id) + 10;
-	  eNB_UE_stats =  mac_xface->get_eNB_UE_stats(mod_id, CC_id,rnti);
-	  normalized_rx_power = eNB_UE_stats->Po_PUCCH_dBm; 
-	  target_rx_power = mac_xface->get_target_pucch_rx_power(mod_id,CC_id) + 20;
-
+	  normalized_rx_power = flexran_get_p0_pucch_dbm(mod_id,UE_id, CC_id); //eNB_UE_stats->Po_PUCCH_dBm; 
+	  target_rx_power = flexran_get_p0_nominal_pucch(mod_id, CC_id) + 20; //mac_xface->get_target_pucch_rx_power(mod_id, CC_id) + 20;
 	  // this assumes accumulated tpc
 	  // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
 	  int32_t framex10psubframe = UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame*10+UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe;
 
 	  if (((framex10psubframe+10)<=(frame*10+subframe)) || //normal case
 	      ((framex10psubframe>(frame*10+subframe)) && (((10240-framex10psubframe+frame*10+subframe)>=10)))) //frame wrap-around
-	    if (eNB_UE_stats->Po_PUCCH_update == 1){//flexran_get_p0_pucch_status(mod_id, UE_id, CC_id) == 1) {
-	      //	      flexran_update_p0_pucch(mod_id, UE_id, CC_id);
-	      eNB_UE_stats->Po_PUCCH_update = 0;
+	    if (flexran_get_p0_pucch_status(mod_id, UE_id, CC_id) == 1) {
+  	      flexran_update_p0_pucch(mod_id, UE_id, CC_id);
+
 
 	      UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame = frame;
 	      UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe = subframe;
