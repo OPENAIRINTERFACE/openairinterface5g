@@ -166,6 +166,7 @@ message flex_ul_cqi_report {
 message flex_pucch_dbm {
 	optional int32 p0_pucch_dbm = 1;
 	optional uint32 serv_cell_index = 2;
+	optional uint32 p0_pucch_updated = 3;
 }
 
 //

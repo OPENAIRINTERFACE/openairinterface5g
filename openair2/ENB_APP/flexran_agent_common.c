@@ -516,15 +516,14 @@ uint16_t flexran_get_future_sfn_sf (mid_t mod_id, int ahead_of_time) {
   subframe = (sub_frame_t) flexran_get_current_subframe(mod_id);
 
   subframe = ((subframe + ahead_of_time) % 10);
-
-  int full_frames_ahead = ((ahead_of_time / 10) % 10);
   
-  frame = frame + full_frames_ahead;
-
   if (subframe < flexran_get_current_subframe(mod_id)) {
-    frame++;
+    frame = (frame + 1) % 1024;
   }
-
+  
+  int additional_frames = ahead_of_time / 10;
+  frame = (frame + additional_frames) % 1024;
+  
   frame_mask = ((1<<12) - 1);
   sf_mask = ((1<<4) - 1);
   sfn_sf = (subframe & sf_mask) | ((frame & frame_mask) << 4);

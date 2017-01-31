@@ -657,6 +657,8 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 	      full_ul_report->pucch_dbm[j]->p0_pucch_dbm = flexran_get_p0_pucch_dbm(enb_id,i,j);
 	      full_ul_report->pucch_dbm[j]->has_p0_pucch_dbm = 1;
 	    }
+	    full_ul_report->pucch_dbm[j]->has_p0_pucch_updated = 1;
+	    full_ul_report->pucch_dbm[j]->p0_pucch_updated = flexran_get_p0_pucch_status(enb_id, i, j);
 	  }
 
 	  //Add full UL CQI report to the UE report
@@ -943,14 +945,13 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
   subframe = (sub_frame_t) flexran_get_current_subframe(mod_id);
 
   subframe = ((subframe + ahead_of_time) % 10);
-
-  int full_frames_ahead = ((ahead_of_time / 10) % 10);
   
-  frame = frame + full_frames_ahead;
-
   if (subframe < flexran_get_current_subframe(mod_id)) {
-    frame++;
+    frame = (frame + 1) % 1024;
   }
+
+  int additional_frames = ahead_of_time / 10;
+  frame = (frame + additional_frames) % 1024;
 
   sf_trigger_msg->header = header;
   sf_trigger_msg->has_sfn_sf = 1;
@@ -976,8 +977,8 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
       dl_info[i]->rnti = flexran_get_ue_crnti(mod_id, i);
       dl_info[i]->has_rnti = 1;
       /*Fill in the right id of this round's HARQ process for this UE*/
-      unsigned char harq_id;
-      unsigned char harq_status;
+      uint8_t harq_id;
+      uint8_t harq_status;
       flexran_get_harq(mod_id, UE_PCCID(mod_id,i), i, frame, subframe, &harq_id, &harq_status);
       dl_info[i]->harq_process_id = harq_id;
       dl_info[i]->has_harq_process_id = 1;
@@ -985,11 +986,13 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
       dl_info[i]->n_harq_status = 2;
       dl_info[i]->harq_status = malloc(sizeof(uint32_t) * dl_info[i]->n_harq_status);
       for (j = 0; j < dl_info[i]->n_harq_status; j++) {
+	dl_info[i]->harq_status[j] = harq_status;
 	// TODO: This should be different per TB
-	if(harq_status == 0)
+	if(harq_status == 0) {
 	  dl_info[i]->harq_status[j] = PROTOCOL__FLEX_HARQ_STATUS__FLHS_ACK;
-	else if (harq_status > 0)
+	} else {
 	  dl_info[i]->harq_status[j] = PROTOCOL__FLEX_HARQ_STATUS__FLHS_NACK;
+	}
       }
       /*Fill in the serving cell index for this UE */
       dl_info[i]->serv_cell_index = UE_PCCID(mod_id,i);
