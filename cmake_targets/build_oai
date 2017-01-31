@@ -465,6 +465,11 @@ function main() {
     echo "set (CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"      >>$cmake_file
     echo "set ( T_TRACER $T_TRACER )"              >>  $cmake_file
     echo "set (UE_AUTOTEST_TRACE $UE_AUTOTEST_TRACE)"        >>  $cmake_file
+    if [ "$UE" = 1 -a "$NOS1" = "0" ] ; then
+     echo_info "Compiling UE S1 build : enabling Linux and NETLINK"
+     echo "set (LINUX True )"              >>  $cmake_file
+     echo "set (PDCP_USE_NETLINK True )"   >>  $cmake_file
+    fi
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     cd  $DIR/$lte_build_dir/build
     cmake ..
