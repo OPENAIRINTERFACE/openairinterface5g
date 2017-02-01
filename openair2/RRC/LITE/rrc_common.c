@@ -484,7 +484,8 @@ rrc_rx_tx(
       if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T304_cnt == 0) {
         UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T304_active = 0;
         UE_rrc_inst[ctxt_pP->module_id].HandoverInfoUe.measFlag = 1;
-        LOG_E(RRC,"[UE %d] Handover failure..initiating connection re-establishment procedure... \n");
+        LOG_E(RRC,"[UE %d] Handover failure..initiating connection re-establishment procedure... \n",
+              ctxt_pP->module_id);
         //Implement 36.331, section 5.3.5.6 here
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
         return(RRC_Handover_failed);

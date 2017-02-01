@@ -54,11 +54,11 @@ rlc_am_init(
     //        rlc_pP->pdu_retrans_buffer       = calloc(1, (uint16_t)((unsigned int)RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*(unsigned int)sizeof(rlc_am_tx_data_pdu_management_t)));
     rlc_pP->pdu_retrans_buffer       = calloc(1, (uint32_t)((unsigned int)RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*(unsigned int)sizeof(
                                          rlc_am_tx_data_pdu_management_t)));
-    LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[AM INIT] input_sdus[] = %p  element size=%d\n",
+    LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[AM INIT] input_sdus[] = %p  element size=%zu\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           rlc_pP->input_sdus,
           sizeof(rlc_am_tx_sdu_management_t));
-    LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[AM INIT] pdu_retrans_buffer[] = %p element size=%d\n",
+    LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[AM INIT] pdu_retrans_buffer[] = %p element size=%zu\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           rlc_pP->pdu_retrans_buffer,
           sizeof(rlc_am_tx_data_pdu_management_t));
@@ -152,7 +152,7 @@ rlc_am_cleanup(
 
 
   if (rlc_pP->output_sdu_in_construction != NULL) {
-    free_mem_block(rlc_pP->output_sdu_in_construction);
+    free_mem_block(rlc_pP->output_sdu_in_construction, __func__);
     rlc_pP->output_sdu_in_construction = NULL;
   }
 
@@ -161,7 +161,7 @@ rlc_am_cleanup(
   if (rlc_pP->input_sdus != NULL) {
     for (i=0; i < RLC_AM_SDU_CONTROL_BUFFER_SIZE; i++) {
       if (rlc_pP->input_sdus[i].mem_block != NULL) {
-        free_mem_block(rlc_pP->input_sdus[i].mem_block);
+        free_mem_block(rlc_pP->input_sdus[i].mem_block, __func__);
         rlc_pP->input_sdus[i].mem_block = NULL;
       }
     }
@@ -175,7 +175,7 @@ rlc_am_cleanup(
   if (rlc_pP->pdu_retrans_buffer != NULL) {
     for (i=0; i < RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE; i++) {
       if (rlc_pP->pdu_retrans_buffer[i].mem_block != NULL) {
-        free_mem_block(rlc_pP->pdu_retrans_buffer[i].mem_block);
+        free_mem_block(rlc_pP->pdu_retrans_buffer[i].mem_block, __func__);
         rlc_pP->pdu_retrans_buffer[i].mem_block = NULL;
       }
     }

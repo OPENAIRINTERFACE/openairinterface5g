@@ -145,6 +145,9 @@
 /*!\brief minimum MAC data needed for transmitting 1 min RLC PDU size + 1 byte MAC subHeader */
 #define MIN_MAC_HDR_RLC_SIZE    (1 + MIN_RLC_PDU_SIZE)
 
+/*!\brief maximum number of slices / groups */
+#define MAX_NUM_SLICES 4 
+
 /* 
  * eNB part 
  */ 

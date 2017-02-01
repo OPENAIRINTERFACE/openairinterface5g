@@ -1490,6 +1490,7 @@ int main(int argc, char **argv)
             rx_pdcch(&PHY_vars_UE[UE_idx]->lte_ue_common_vars,
                      PHY_vars_UE[UE_idx]->lte_ue_pdcch_vars,
                      &PHY_vars_UE[UE_idx]->lte_frame_parms,
+                     frame,
                      subframe,
                      0,
                      (PHY_vars_UE[UE_idx]->lte_frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
@@ -1534,6 +1535,7 @@ int main(int argc, char **argv)
                          PDSCH,
                          0,
                          1,
+                         frame,
                          subframe,  // subframe,
                          l,  // symbol
                          (l==PHY_vars_UE[UE_idx]->lte_ue_pdcch_vars[0]->num_pdcch_symbols)?1:0,   // first_symbol_flag
@@ -1564,6 +1566,7 @@ int main(int argc, char **argv)
                          PDSCH,
                          0,
                          1,
+                         frame,
                          subframe,  // subframe,
                          l,  // symbol
                          0,   // first_symbol_flag
@@ -1588,6 +1591,7 @@ int main(int argc, char **argv)
                          PDSCH,
                          0,
                          1,
+                         frame,
                          subframe,  // subframe,
                          l,  // symbol
                          0,   // first_symbol_flag
@@ -1618,6 +1622,7 @@ int main(int argc, char **argv)
                          PDSCH,
                          0,
                          1,
+                         frame,
                          subframe,  // subframe,
                          l,  // symbol
                          0,   // first_symbol_flag
@@ -1651,6 +1656,7 @@ int main(int argc, char **argv)
                                    PHY_vars_UE[UE_idx]->lte_ue_pdsch_vars[0]->llr[0],
                                    &PHY_vars_UE[UE_idx]->lte_frame_parms,
                                    PHY_vars_UE[UE_idx]->dlsch_ue[0][0],
+                                   frame,
                                    subframe,
                                    0,
                                    PHY_vars_UE[UE_idx]->lte_ue_pdcch_vars[0]->num_pdcch_symbols);
@@ -1677,9 +1683,9 @@ int main(int argc, char **argv)
                     frame_parms,
                     PHY_vars_UE[0]->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
                     (int16_t**)PHY_vars_UE[0]->lte_ue_common_vars.dl_ch_estimates_time,
-                    (int16_t**)PHY_vars_UE[0]->lte_ue_common_vars.dl_ch_estimates[0],
+                    (int16_t**)PHY_vars_UE[0]->lte_ue_common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0],
                     (int16_t**)PHY_vars_UE[0]->lte_ue_common_vars.rxdata,
-                    (int16_t**)PHY_vars_UE[0]->lte_ue_common_vars.rxdataF,
+                    (int16_t**)PHY_vars_UE[0]->lte_ue_common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF,
                     (int16_t*)PHY_vars_UE[0]->lte_ue_pdcch_vars[0]->rxdataF_comp[0],
                     (int16_t*)PHY_vars_UE[0]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
                     (int16_t*)PHY_vars_UE[0]->lte_ue_pdsch_vars[1]->rxdataF_comp[0],
@@ -1693,9 +1699,9 @@ int main(int argc, char **argv)
                       frame_parms,
                       PHY_vars_UE[1]->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
                       (int16_t**)PHY_vars_UE[1]->lte_ue_common_vars.dl_ch_estimates_time,
-                      (int16_t**)PHY_vars_UE[1]->lte_ue_common_vars.dl_ch_estimates[0],
+                      (int16_t**)PHY_vars_UE[1]->lte_ue_common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0],
                       (int16_t**)PHY_vars_UE[1]->lte_ue_common_vars.rxdata,
-                      (int16_t**)PHY_vars_UE[1]->lte_ue_common_vars.rxdataF,
+                      (int16_t**)PHY_vars_UE[1]->lte_ue_common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF,
                       (int16_t*)PHY_vars_UE[1]->lte_ue_pdcch_vars[0]->rxdataF_comp[0],
                       (int16_t*)PHY_vars_UE[1]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
                       (int16_t*)PHY_vars_UE[1]->lte_ue_pdsch_vars[3]->rxdataF_comp[0],
@@ -1712,10 +1718,10 @@ int main(int argc, char **argv)
 
     if (n_frames==1) {
 
-      write_output("H00.m","h00",&(PHY_vars_UE[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size),1,1);
+      write_output("H00.m","h00",&(PHY_vars_UE[0]->lte_ue_common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size),1,1);
 
       if (n_tx==2)
-        write_output("H10.m","h10",&(PHY_vars_UE[0]->lte_ue_common_vars.dl_ch_estimates[0][2][0]),((frame_parms->Ncp==0)?7:6)*(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size),1,1);
+        write_output("H10.m","h10",&(PHY_vars_UE[0]->lte_ue_common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][2][0]),((frame_parms->Ncp==0)?7:6)*(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size),1,1);
 
       write_output("rxsig0.m","rxs0", PHY_vars_UE[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("rxsigF0.m","rxsF0", PHY_vars_UE[0]->lte_ue_common_vars.rxdataF[0],NUMBER_OF_OFDM_CARRIERS*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*nsymb,2,1);
@@ -1733,7 +1739,7 @@ int main(int argc, char **argv)
                                       PHY_vars_UE[0]->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
                                       0);
 
-      dump_dlsch2(PHY_vars_UE[0],0,coded_bits_per_codeword);
+      dump_dlsch2(PHY_vars_UE[0],0,0,coded_bits_per_codeword);
 
     }
   } else {

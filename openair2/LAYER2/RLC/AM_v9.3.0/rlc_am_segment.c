@@ -197,7 +197,7 @@ void rlc_am_segment_10 (
               data_pdu_size);
       }
 
-      if (!(pdu_mem_p = get_free_mem_block (data_pdu_size + sizeof(struct mac_tb_req)))) {
+      if (!(pdu_mem_p = get_free_mem_block (data_pdu_size + sizeof(struct mac_tb_req), __func__))) {
         LOG_C(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] ERROR COULD NOT GET NEW PDU, EXIT\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
         RLC_AM_MUTEX_UNLOCK(&rlc_pP->lock_input_sdus);
@@ -366,7 +366,7 @@ void rlc_am_segment_10 (
         // free SDU
         rlc_pP->sdu_buffer_occupancy -= sdu_mngt_p->sdu_remaining_size;
         rlc_am_free_in_sdu_data(ctxt_pP, rlc_pP, rlc_pP->current_sdu_index);
-        //free_mem_block (rlc_pP->input_sdus[rlc_pP->current_sdu_index]);
+        //free_mem_block (rlc_pP->input_sdus[rlc_pP->current_sdu_index], __func__);
         //rlc_pP->input_sdus[rlc_pP->current_sdu_index] = NULL;
         //rlc_pP->nb_sdu -= 1;
         rlc_pP->current_sdu_index = (rlc_pP->current_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
@@ -445,7 +445,7 @@ void rlc_am_segment_10 (
           sdu_mngt_p->sdu_remaining_size = 0;
 
           rlc_am_free_in_sdu_data(ctxt_pP, rlc_pP, rlc_pP->current_sdu_index);
-          //free_mem_block (rlc_pP->input_sdus[rlc_pP->current_sdu_index]);
+          //free_mem_block (rlc_pP->input_sdus[rlc_pP->current_sdu_index], __func__);
           //rlc_pP->input_sdus[rlc_pP->current_sdu_index] = NULL;
           //rlc_pP->nb_sdu -= 1;
           rlc_pP->current_sdu_index = (rlc_pP->current_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;

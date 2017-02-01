@@ -182,7 +182,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *pr
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param abstraction_flag Indicator of PHY abstraction
 */
-void phy_procedures_eNB_common_RX(PHY_VARS_eNB *phy_vars_eNB);
+void phy_procedures_eNB_common_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc);
 
 /*! \brief Scheduling for eNB TX procedures in TDD S-subframes.
   @param phy_vars_eNB Pointer to eNB variables on which to act
@@ -211,6 +211,13 @@ void prach_procedures(PHY_VARS_eNB *eNB);
 
 
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
+
+/*! \brief Function to compute which type of DCIs to detect in the given subframe
+  @param frame_parms Pointer to DL frame parameter descriptor
+  @param subframe Subframe index
+  @returns DCI detetion mode type (no DCIs, uplink DCIs, downlink DCIs, both uplink and downlink DCIs)
+ */
+dci_detect_mode_t dci_detect_mode_select(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
 /*! \brief Function to compute subframe type as a function of Frame type and TDD Configuration (implements Table 4.2.2 from 36.211, p.11 from version 8.6) and subframe index.  Same as subframe_select, except that it uses the Mod_id and is provided as a service to the MAC scheduler.
   @param Mod_id Index of eNB
@@ -300,6 +307,18 @@ uint8_t pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n);
 */
 uint8_t get_ack(LTE_DL_FRAME_PARMS *frame_parms,harq_status_t *harq_ack,uint8_t subframe,uint8_t *o_ACK);
 
+/*! \brief Reset ACK/NACK information
+  @param frame_parms Pointer to DL frame parameter descriptor
+  @param harq_ack Pointer to dlsch_ue harq_ack status descriptor
+  @param subframe Subframe for UE transmission (n in 36.213)
+  @param o_ACK Pointer to ACK/NAK payload for PUCCH/PUSCH
+  @returns status indicator for PUCCH/PUSCH transmission
+*/
+uint8_t reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
+                harq_status_t *harq_ack,
+                unsigned char subframe,
+                unsigned char *o_ACK);
+
 /*! \brief Compute UL ACK subframe from DL subframe. This is used to retrieve corresponding DLSCH HARQ pid at eNB upon reception of ACK/NAK information on PUCCH/PUSCH.  Derived from Table 10.1-1 in 36.213 (p. 69 in version 8.6)
   @param frame_parms Pointer to DL frame parameter descriptor
   @param subframe Subframe for UE transmission (n in 36.213)
@@ -366,6 +385,7 @@ subframe n-4 which is acknowledged in subframe n (for FDD) according to n1_pucch
 TDD, this routine computes the complex procedure described in Section 10.1 of 36.213 (through tables 10.1-1,10.1-2)
 @param phy_vars_ue Pointer to UE variables
 @param proc Pointer to RXn-TXnp4 proc information
+@param harq_ack Pointer to dlsch_ue harq_ack status descriptor
 @param eNB_id Index of eNB
 @param b Pointer to PUCCH payload (b[0],b[1])
 @param SR 1 means there's a positive SR in parallel to ACK/NAK
@@ -373,6 +393,7 @@ TDD, this routine computes the complex procedure described in Section 10.1 of 36
 */
 uint16_t get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
 		      UE_rxtx_proc_t *proc,
+                      harq_status_t *harq_ack,
                       uint8_t eNB_id,
                       uint8_t *b,
                       uint8_t SR);
@@ -431,7 +452,7 @@ UE_MODE_t get_ue_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
     @param pucch_fmt Format of PUCCH that is being transmitted
     @returns Transmit power
  */
-int8_t pucch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t subframe,uint8_t eNB_id,PUCCH_FMT_t pucch_fmt);
+int16_t pucch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t subframe,uint8_t eNB_id,PUCCH_FMT_t pucch_fmt);
 
 /*! \brief This function implements the power control mechanism for PUCCH from 36.213.
     @param phy_vars_ue PHY variables
@@ -488,7 +509,7 @@ int get_ue_active_harq_pid(uint8_t Mod_id,uint8_t CC_id,uint16_t rnti,int frame,
 void dump_dlsch(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe,uint8_t harq_pid);
 void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe);
 void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe);
-void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword,int round);
+void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe, uint16_t coded_bits_per_codeword,int round);
 
 /*@}*/
 

@@ -256,6 +256,7 @@ int test_logmap8(LTE_eNB_DLSCH_t *dlsch_eNB,
                          &PHY_vars_UE->lte_frame_parms,
                          PHY_vars_UE->dlsch_ue[0][0],
                          PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid],
+                         frame,
                          subframe,
                          PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid,
                          num_pdcch_symbols,1);

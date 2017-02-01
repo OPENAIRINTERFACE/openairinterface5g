@@ -99,7 +99,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   int           result;
 #endif
   DCI_PDU *DCI_pdu[MAX_NUM_CCs];
-  int CC_id,i,next_i;
+  int CC_id,i; //,next_i;
   UE_list_t *UE_list=&eNB_mac_inst[module_idP].UE_list;
   rnti_t rnti;
   void         *DLSCH_dci=NULL;
@@ -121,17 +121,27 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     memset(eNB_mac_inst[module_idP].common_channels[CC_id].vrb_map,0,100);
   }
 
-  // refresh UE list based on UEs dropped by PHY in previous subframe
-  i = UE_list->head;
+  // clear DCI and BCCH contents before scheduling
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    DCI_pdu[CC_id]->Num_common_dci  = 0;
+    DCI_pdu[CC_id]->Num_ue_spec_dci = 0;
+#ifdef Rel10
+    eNB_mac_inst[module_idP].common_channels[CC_id].mcch_active =0;
+#endif
+    eNB_mac_inst[module_idP].frame    = frameP;
+    eNB_mac_inst[module_idP].subframe = subframeP;
+  }
 
-  while (i>=0) {
+  // refresh UE list based on UEs dropped by PHY in previous subframe
+  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+    if (UE_list->active[i] != TRUE) continue;
+
     rnti = UE_RNTI(module_idP, i);
     CC_id = UE_PCCID(module_idP, i);
     if ((frameP==0)&&(subframeP==0))
-      LOG_I(MAC,"UE  rnti %x : %s\n", rnti, 
-	    UE_list->UE_sched_ctrl[i].ul_out_of_sync==0 ? "in synch" : "out of sync");
-
-    next_i= UE_list->next[i];
+      LOG_I(MAC,"UE  rnti %x : %s, PHR %d dB\n", rnti, 
+	    UE_list->UE_sched_ctrl[i].ul_out_of_sync==0 ? "in synch" : "out of sync",
+	    UE_list->UE_template[CC_id][i].phr_info);
 
     PHY_vars_eNB_g[module_idP][CC_id]->pusch_stats_bsr[i][(frameP*10)+subframeP]=-63;
     if (i==UE_list->head)
@@ -253,15 +263,13 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 	// check threshold
 	if (UE_list->UE_sched_ctrl[i].ul_failure_timer > 200) {
 	  // inform RRC of failure and clear timer
-	  LOG_I(MAC,"UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",i,rnti,UE_list->UE_sched_ctrl[i].ul_failure_timer);
+	  LOG_I(MAC,"UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",i,rnti);
 	  mac_eNB_rrc_ul_failure(module_idP,CC_id,frameP,subframeP,rnti);
 	  UE_list->UE_sched_ctrl[i].ul_failure_timer=0;
 	  UE_list->UE_sched_ctrl[i].ul_out_of_sync=1;
 	}
       }
     } // ul_failure_timer>0
-    
-    i = next_i;
   }
 
 #if defined(ENABLE_ITTI)
@@ -318,22 +326,6 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
 #endif
 
-  // clear DCI and BCCH contents before scheduling
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    DCI_pdu[CC_id]->Num_common_dci  = 0;
-    DCI_pdu[CC_id]->Num_ue_spec_dci = 0;
-
-
-#ifdef Rel10
-    eNB_mac_inst[module_idP].common_channels[CC_id].mcch_active =0;
-#endif
-
-    eNB_mac_inst[module_idP].frame    = frameP;
-    eNB_mac_inst[module_idP].subframe = subframeP;
-
-
-  }
-  
 /* #ifndef DISABLE_SF_TRIGGER */
 /*   //Send subframe trigger to the controller */
 /*   if (mac_agent_registered[module_idP]) { */

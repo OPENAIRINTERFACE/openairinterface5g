@@ -199,7 +199,11 @@ display_node_list (node_list * node_vector)
     //use a python script to postprocess the positions, check the
 
     // support: view node mobility of one node during the entire simulation OR only one snapshot
-    LOG_F(OMG,"%d; %.3f; %.3f; %.3f\n",
+    /* TODO: this LOG_F generates a warning, below is a fix that removes a %.3f, maybe it's not the correct fix */
+    /*LOG_F(OMG,"%d; %.3f; %.3f; %.3f\n",
+          tmp->node->id,
+          tmp->node->x_pos, tmp->node->y_pos);*/
+    LOG_F(OMG,"%d; %.3f; %.3f\n",
           tmp->node->id,
           tmp->node->x_pos, tmp->node->y_pos);
 

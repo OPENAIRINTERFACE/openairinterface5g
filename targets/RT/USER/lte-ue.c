@@ -75,7 +75,7 @@
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 
-/* End of Changed by SYRTEM */
+#include "T.h"
 
 #define FRAME_PERIOD    100000000ULL
 #define DAQ_PERIOD      66667ULL
@@ -86,7 +86,6 @@ typedef enum {
     si=2
 } sync_mode_t;
 
-
 void init_UE_threads(int nb_inst);
 void *UE_thread(void *arg);
 void init_UE(int nb_inst);
@@ -94,6 +93,7 @@ void init_UE(int nb_inst);
 extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
 extern int sync_var;
+
 
 extern openair0_config_t openair0_cfg[MAX_CARDS];
 extern uint32_t          downlink_frequency[MAX_NUM_CCs][4];
@@ -642,7 +642,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
         AssertFatal(pthread_mutex_lock(&proc->mutex_rxtx) ==0,"");
         pthread_cond_wait( &proc->cond_rxtx, &proc->mutex_rxtx );
         if ( (instance_cnt_rxtx+proc->sub_frame_step)%10 != proc->subframe_rx &&  instance_cnt_rxtx!=-1 )
-            LOG_W(PHY,"REAL TIME NOT MATCHED: missed a sub-frame: expecting %d, got %d\n",
+            LOG_W(PHY,"REAL TIME NOT MATCHED: missed a sub-frame: expecting %lld, got %d\n",
                   (instance_cnt_rxtx+proc->sub_frame_step)%10, proc->subframe_rx);
         instance_cnt_rxtx=proc->subframe_rx;
         AssertFatal(pthread_mutex_unlock(&proc->mutex_rxtx) ==0,"");
@@ -775,7 +775,7 @@ void *UE_thread(void *arg) {
             if (instance_cnt_synch < 0) {  // we can invoke the synch
                 // grab 10 ms of signal and wakeup synch thread
                 for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
-                    rxp[i] = (void*)&rxdata[i][0];
+	  rxp[i] = (void*)&UE->common_vars.rxdata[i][0];
 
                 if (UE->mode != loop_through_memory)
                     AssertFatal( UE->frame_parms.samples_per_tti*10 ==
@@ -821,7 +821,7 @@ void *UE_thread(void *arg) {
                         AssertFatal(UE->rx_offset ==
                                     UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                                &timestamp,
-                                                               (void**)rxdata,
+					     (void**)UE->common_vars.rxdata,
                                                                UE->rx_offset,
                                                                UE->frame_parms.nb_antennas_rx),"");
                     }
@@ -833,8 +833,8 @@ void *UE_thread(void *arg) {
                     AssertFatal (UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0 ==
                                  UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                             &timestamp,
-                                                            (void**)rxdata,
-                                                            UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0,
+					   (void**)UE->common_vars.rxdata,
+					   UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0,
                                                             UE->frame_parms.nb_antennas_rx),"");
                     slot_fep(UE,0, 0, 0, 0, 0);
                 } //UE->mode != loop_through_memory
@@ -848,7 +848,7 @@ void *UE_thread(void *arg) {
 
                 if (UE->mode != loop_through_memory) {
                     for (i=0; i<UE->frame_parms.nb_antennas_rx; i++)
-                        rxp[i] = (void*)&rxdata[i][UE->frame_parms.ofdm_symbol_size+
+                        rxp[i] = (void*)&UE->common_vars.rxdata[i][UE->frame_parms.ofdm_symbol_size+
                                                    UE->frame_parms.nb_prefix_samples0+
                                                    sub_frame*UE->frame_parms.samples_per_tti];
                     for (i=0; i<UE->frame_parms.nb_antennas_tx; i++)
@@ -902,7 +902,7 @@ void *UE_thread(void *arg) {
                             AssertFatal(first_symbols ==
                                         UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                                    &timestamp1,
-                                                                   (void**)rxdata,
+                                                                   (void**)UE->common_vars.rxdata,
                                                                    first_symbols,
                                                                    UE->frame_parms.nb_antennas_rx),"");
                         if ( first_symbols <0 )
@@ -935,6 +935,30 @@ void *UE_thread(void *arg) {
                     printf("Processing subframe %d",proc->subframe_rx);
                     getchar();
                 }
+		/*
+	}// for sf=0..10
+
+	  uint8_t proc_select = 9&1;
+	  UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[proc_select];
+
+	if ((UE->rx_offset<(5*UE->frame_parms.samples_per_tti)) &&
+	    (UE->rx_offset > 0) &&
+	    (rx_correction_timer == 0)) {
+	  rx_off_diff = -1 ;
+	  LOG_D(PHY,"AbsSubframe %d.%d UE->rx_offset %d > %d, diff %d\n",proc->frame_rx,proc->subframe_rx,UE->rx_offset,0,rx_off_diff);
+	  rx_correction_timer = 5;
+	} else if ((UE->rx_offset>(5*UE->frame_parms.samples_per_tti)) && 
+		   (UE->rx_offset < ((10*UE->frame_parms.samples_per_tti))) &&
+		   (rx_correction_timer == 0)) {   // moving to the left so drop rx_off_diff samples
+	  rx_off_diff = 1;
+	  LOG_D(PHY,"AbsSubframe %d.%d UE->rx_offset %d < %d, diff %d\n",proc->frame_rx,proc->subframe_rx,UE->rx_offset,10*UE->frame_parms.samples_per_tti,rx_off_diff);
+	  
+	  rx_correction_timer = 5;
+	}
+	
+	if (rx_correction_timer>0)
+	  rx_correction_timer--;
+	  */
             } // start_rx_stream==1
         } // UE->is_synchronized==1
 

@@ -146,9 +146,10 @@ int pss_ch_est(PHY_VARS_UE *ue,
 }
 
 
-int pss_sss_extract(PHY_VARS_UE *ue,
+int _do_pss_sss_extract(PHY_VARS_UE *ue,
                     int32_t pss_ext[4][72],
-                    int32_t sss_ext[4][72])
+                    int32_t sss_ext[4][72],
+                    uint8_t doPss, uint8_t doSss) // add flag to indicate extracting only PSS, only SSS, or both
 {
 
 
@@ -162,7 +163,7 @@ int pss_sss_extract(PHY_VARS_UE *ue,
   int rx_offset = frame_parms->ofdm_symbol_size-3*12;
   uint8_t pss_symb,sss_symb;
 
-  int32_t **rxdataF =  ue->common_vars.rxdataF;
+  int32_t **rxdataF =  ue->common_vars.common_vars_rx_data_per_thread[0].rxdataF;
 
   if (frame_parms->frame_type == FDD) {
     pss_symb = 6-frame_parms->Ncp;
@@ -191,8 +192,8 @@ int pss_sss_extract(PHY_VARS_UE *ue,
       }
 
       for (i=0; i<12; i++) {
-        pss_rxF_ext[i]=pss_rxF[i];
-        sss_rxF_ext[i]=sss_rxF[i];
+        if (doPss) {pss_rxF_ext[i]=pss_rxF[i];}
+        if (doSss) {sss_rxF_ext[i]=sss_rxF[i];}
       }
 
       pss_rxF+=12;
@@ -204,6 +205,28 @@ int pss_sss_extract(PHY_VARS_UE *ue,
   }
 
   return(0);
+}
+
+int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
+                    int32_t pss_ext[4][72],
+                    int32_t sss_ext[4][72])
+{
+  return _do_pss_sss_extract(phy_vars_ue, pss_ext, sss_ext, 1 /* doPss */, 1 /* doSss */);
+}
+
+int pss_only_extract(PHY_VARS_UE *phy_vars_ue,
+                    int32_t pss_ext[4][72])
+{
+  static int32_t dummy[4][72];
+  return _do_pss_sss_extract(phy_vars_ue, pss_ext, dummy, 1 /* doPss */, 0 /* doSss */);
+}
+
+
+int sss_only_extract(PHY_VARS_UE *phy_vars_ue,
+                    int32_t sss_ext[4][72])
+{
+  static int32_t dummy[4][72];
+  return _do_pss_sss_extract(phy_vars_ue, dummy, sss_ext, 0 /* doPss */, 1 /* doSss */);
 }
 
 

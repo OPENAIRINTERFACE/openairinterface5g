@@ -223,7 +223,7 @@ void config_req_rlc_am_asn1 (
         PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, l_rlc_p));
 
       LOG_D(RLC,
-            PROTOCOL_RLC_AM_CTXT_FMT"ILLEGAL CONFIG_REQ (max_retx_threshold=%d poll_pdu=%d poll_byte=%d t_poll_retransmit=%d t_reord=%d t_status_prohibit=%d), RLC-AM NOT CONFIGURED\n",
+            PROTOCOL_RLC_AM_CTXT_FMT"ILLEGAL CONFIG_REQ (max_retx_threshold=%ld poll_pdu=%ld poll_byte=%ld t_poll_retransmit=%ld t_reord=%ld t_status_prohibit=%ld), RLC-AM NOT CONFIGURED\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,l_rlc_p),
             config_am_pP->ul_AM_RLC.maxRetxThreshold,
             config_am_pP->ul_AM_RLC.pollPDU,
@@ -523,7 +523,7 @@ rlc_am_rx (
   switch (rlc->protocol_state) {
 
   case RLC_NULL_STATE:
-    LOG_N(RLC, PROTOCOL_RLC_AM_CTXT_FMT" ERROR MAC_DATA_IND IN RLC_NULL_STATE\n", arg_pP);
+    LOG_N(RLC, PROTOCOL_RLC_AM_CTXT_FMT" ERROR MAC_DATA_IND IN RLC_NULL_STATE\n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP, rlc));
     list_free (&data_indP.data);
     break;
 
@@ -532,7 +532,7 @@ rlc_am_rx (
     break;
 
   default:
-    LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" TX UNKNOWN PROTOCOL STATE 0x%02X\n", rlc, rlc->protocol_state);
+    LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" TX UNKNOWN PROTOCOL STATE 0x%02X\n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP, rlc), rlc->protocol_state);
   }
 }
 
@@ -556,6 +556,15 @@ rlc_am_mac_status_indication (
   status_resp.head_sdu_creation_time           = 0;
   status_resp.head_sdu_is_segmented            = 0;
   status_resp.rlc_info.rlc_protocol_state = rlc->protocol_state;
+
+  /* TODO: remove this hack. Problem is: there is a race.
+   * UE comes. SRB2 is configured via message to RRC.
+   * At some point the RLC AM is created but not configured yet.
+   * At this moment (I think) MAC calls mac_rlc_status_ind
+   * which calls this function. But the init was not finished yet
+   * and we have a crash below when testing mem_block != NULL.
+   */
+  if (rlc->input_sdus == NULL) return status_resp;
 
   if (rlc->last_frame_status_indication != ctxt_pP->frame) {
     rlc_am_check_timer_poll_retransmit(ctxt_pP, rlc);
@@ -1280,7 +1289,7 @@ rlc_am_data_req (
           l_rlc_p->input_sdus[l_rlc_p->next_sdu_index].mem_block, l_rlc_p->input_sdus[l_rlc_p->next_sdu_index].flags.segmented);
     l_rlc_p->stat_tx_pdcp_sdu_discarded   += 1;
     l_rlc_p->stat_tx_pdcp_bytes_discarded += ((struct rlc_am_data_req *) (sdu_pP->data))->data_size;
-    free_mem_block (sdu_pP);
+    free_mem_block (sdu_pP, __func__);
 #if STOP_ON_IP_TRAFFIC_OVERLOAD
     AssertFatal(0, PROTOCOL_RLC_AM_CTXT_FMT" RLC_AM_DATA_REQ size %d Bytes, SDU DROPPED, INPUT BUFFER OVERFLOW NB SDU %d current_sdu_index=%d next_sdu_index=%d \n",
                 PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,l_rlc_p),

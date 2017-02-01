@@ -190,7 +190,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag)
       return(ulsch);
   }
 
-  LOG_E(PHY,"new_ue_ulsch exit flag, size of  %d ,   %d\n",exit_flag, sizeof(LTE_UE_ULSCH_t));
+  LOG_E(PHY,"new_ue_ulsch exit flag, size of  %d ,   %zu\n",exit_flag, sizeof(LTE_UE_ULSCH_t));
   free_ue_ulsch(ulsch);
   return(NULL);
 
@@ -234,7 +234,7 @@ uint32_t ulsch_encoding(uint8_t *a,
   PHY_MEASUREMENTS *meas = &ue->measurements;
   LTE_UE_ULSCH_t *ulsch=ue->ulsch[eNB_id];
   LTE_UE_DLSCH_t **dlsch = ue->dlsch[eNB_id];
-  uint16_t rnti;
+  uint16_t rnti = 0xffff;
 
   if (!ulsch) {
     LOG_E(PHY,"Null ulsch ptr %p\n",ulsch);
@@ -260,6 +260,7 @@ uint32_t ulsch_encoding(uint8_t *a,
 
   // fill CQI/PMI information
   if (ulsch->O>0) {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ULSCH_ENCODING_FILL_CQI, VCD_FUNCTION_IN);
     rnti = ue->pdcch_vars[eNB_id]->crnti;
     fill_CQI(ulsch,meas,0,harq_pid,ue->frame_parms.N_RB_DL,rnti, tmode,ue->sinr_eff);
 
@@ -271,6 +272,7 @@ uint32_t ulsch_encoding(uint8_t *a,
       //LOG_I(PHY,"XXX saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
       dlsch[0]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
     }
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ULSCH_ENCODING_FILL_CQI, VCD_FUNCTION_OUT);
   }
 
   if (ulsch->O<=32) {
@@ -468,6 +470,16 @@ uint32_t ulsch_encoding(uint8_t *a,
 
   Q_ACK = Qprime * Q_m;
   Qprime_ACK = Qprime;
+
+  LOG_D(PHY,"UE (%x/%d) O_ACK %d, Mcs_initial %d, Nsymb_initial %d, beta_offset_harqack*8 %d, sum Kr %d, Qprime_ACK %d, Q_ACK %d\n",
+      rnti, harq_pid,
+      ulsch->harq_processes[harq_pid]->O_ACK,
+      ulsch->harq_processes[harq_pid]->Msc_initial,
+      ulsch->harq_processes[harq_pid]->Nsymb_initial,
+      ulsch->beta_offset_harqack_times8,
+      sumKr,
+      Qprime_ACK,
+      Q_ACK);
 
   // Compute Q_cqi, assume O>11, p. 26 36-212
   if (control_only_flag == 0) {

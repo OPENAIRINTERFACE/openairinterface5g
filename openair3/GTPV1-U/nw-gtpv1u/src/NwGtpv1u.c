@@ -410,7 +410,7 @@ nwGtpv1uDestroyTunnelEndPoint( NwGtpv1uStackT *thiz,
   NwGtpv1uTunnelEndPointT *pRemovedTeid;
 
   if(pUlpReq->apiInfo.destroyTunnelEndPointInfo.hStackSessionHandle) {
-    GTPU_DEBUG(  "Destroying Tunnel end-point '%x'",
+    GTPU_DEBUG(  "Destroying Tunnel end-point '%lx'",
                  pUlpReq->apiInfo.destroyTunnelEndPointInfo.hStackSessionHandle);
     pRemovedTeid = RB_REMOVE(NwGtpv1uTunnelEndPointIdentifierMap, &(thiz->teidMap),
                              (NwGtpv1uTunnelEndPointT *)(
@@ -423,7 +423,7 @@ nwGtpv1uDestroyTunnelEndPoint( NwGtpv1uStackT *thiz,
                                     (NwGtpv1uTunnelEndPointT *)
                                     pUlpReq->apiInfo.destroyTunnelEndPointInfo.hStackSessionHandle);
   } else {
-    GTPU_WARNING("Non-existent Tunnel end-point handle '%x'",
+    GTPU_WARNING("Non-existent Tunnel end-point handle '%lx'",
                  pUlpReq->apiInfo.destroyTunnelEndPointInfo.hStackSessionHandle);
   }
 

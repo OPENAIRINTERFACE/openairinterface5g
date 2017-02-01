@@ -1138,6 +1138,7 @@ void dlsch_scale_channel(int32_t **dl_ch_estimates_ext,
     @param dlsch_llr Pointer to LLR values computed by dlsch_demodulation
     @param lte_frame_parms Pointer to frame descriptor
     @param dlsch Pointer to DLSCH descriptor
+    @param frame Frame number
     @param subframe Subframe number
     @param num_pdcch_symbols Number of PDCCH symbols
     @param is_crnti indicates if PDSCH belongs to a CRNTI (necessary for parallelizing decoding threads)
@@ -1149,6 +1150,7 @@ uint32_t dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
                         LTE_DL_FRAME_PARMS *lte_frame_parms,
                         LTE_UE_DLSCH_t *dlsch,
                         LTE_DL_UE_HARQ_t *harq_process,
+                        uint8_t frame,
                         uint8_t subframe,
                         uint8_t harq_pid,
                         uint8_t is_crnti,
@@ -1179,6 +1181,7 @@ int32_t rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                  PDSCH_t type,
                  uint8_t eNB_id,
                  uint8_t eNB_id_i,
+                 uint32_t frame,
                  uint8_t subframe,
                  uint8_t symbol,
                  uint8_t first_symbol_flag,
@@ -1189,11 +1192,39 @@ int32_t rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 int32_t rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
                  LTE_UE_PDCCH **lte_ue_pdcch_vars,
                  LTE_DL_FRAME_PARMS *frame_parms,
+                 uint32_t frame,
                  uint8_t subframe,
                  uint8_t eNB_id,
                  MIMO_mode_t mimo_mode,
                  uint32_t high_speed_flag,
                  uint8_t is_secondary_ue);
+
+/*! \brief Extract PSS and SSS resource elements
+  @param phy_vars_ue Pointer to UE variables
+  @param[out] pss_ext contain the PSS signals after the extraction
+  @param[out] sss_ext contain the SSS signals after the extraction
+  @returns 0 on success
+*/
+int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
+                    int32_t pss_ext[4][72],
+                    int32_t sss_ext[4][72]);
+
+/*! \brief Extract only PSS resource elements
+  @param phy_vars_ue Pointer to UE variables
+  @param[out] pss_ext contain the PSS signals after the extraction
+  @returns 0 on success
+*/
+int pss_only_extract(PHY_VARS_UE *phy_vars_ue,
+                    int32_t pss_ext[4][72]);
+
+/*! \brief Extract only SSS resource elements
+  @param phy_vars_ue Pointer to UE variables
+  @param[out] sss_ext contain the SSS signals after the extraction
+  @returns 0 on success
+*/
+int sss_only_extract(PHY_VARS_UE *phy_vars_ue,
+                    int32_t sss_ext[4][72]);
+
 /*! \brief Performs detection of SSS to find cell ID and other framing parameters (FDD/TDD, normal/extended prefix)
   @param phy_vars_ue Pointer to UE variables
   @param tot_metric Pointer to variable containing maximum metric under framing hypothesis (to be compared to other hypotheses
@@ -1499,7 +1530,8 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                       uint16_t si_rnti,
                                       uint16_t ra_rnti,
                                       uint16_t p_rnti,
-                                      uint8_t beamforming_mode);
+                                      uint8_t beamforming_mode,
+                                      uint16_t tc_rnti);
 
 int32_t generate_eNB_dlsch_params_from_dci(int frame,
     uint8_t subframe,
@@ -1538,7 +1570,8 @@ int32_t generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
 					  UE_rxtx_proc_t *proc,
 					  uint8_t eNB_id);
 double sinr_eff_cqi_calc(PHY_VARS_UE *phy_vars_ue,
-                         uint8_t eNB_id);
+                         uint8_t eNB_id,
+						 uint8_t subframe);
 
 uint8_t sinr2cqi(double sinr,uint8_t trans_mode);
 

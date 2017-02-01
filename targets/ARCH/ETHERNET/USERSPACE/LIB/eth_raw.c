@@ -21,7 +21,7 @@
 
 /*! \file ethernet_lib.c 
  * \brief API to stream I/Q samples over standard ethernet
- * \author  add alcatel Katerina Trilyraki, Navid Nikaein, Pedro Dinis, Lucio Ferreira, Raymond Knopp
+ * \author  add alcatel Katerina Trilyraki, Navid Nikaein, Pedro Dinis, Lucio Ferreira, Raymond Knopp, Tien-Thinh Nguyen
  * \date 2015
  * \version 0.2
  * \company Eurecom
@@ -45,18 +45,16 @@
 #include "common_lib.h"
 #include "ethernet_lib.h"
 
-#define DEBUG 0
+//#define DEBUG 0
 
-struct sockaddr_ll dest_addr[MAX_INST];
-struct sockaddr_ll local_addr[MAX_INST];
-int addr_len[MAX_INST];
-struct ifreq if_index[MAX_INST];
+//struct sockaddr_ll dest_addr[MAX_INST];
+//struct sockaddr_ll local_addr[MAX_INST];
+//int addr_len[MAX_INST];
+//struct ifreq if_index[MAX_INST];
 
 int eth_socket_init_raw(openair0_device *device) {
  
-  int i = 0;
   eth_state_t *eth = (eth_state_t*)device->priv;
-  int Mod_id = device->Mod_id;
   const char *local_mac, *remote_mac;
   int sock_dom=0;
   int sock_type=0;
@@ -78,30 +76,33 @@ int eth_socket_init_raw(openair0_device *device) {
   sock_dom=AF_PACKET;
   sock_type=SOCK_RAW;
   sock_proto=IPPROTO_RAW;
-  if ((eth->sockfd[Mod_id] = socket(sock_dom, sock_type, sock_proto)) == -1) {
+  if ((eth->sockfd = socket(sock_dom, sock_type, sock_proto)) == -1) {
     perror("ETHERNET: Error opening RAW socket");
     exit(0);
   }
   
   /* initialize destination address */
-  for (i=0; i< MAX_INST; i++) {
-    bzero((void *)&(local_addr[i]), sizeof(struct sockaddr_ll));
-    bzero((void *)&(if_index[i]), sizeof(struct ifreq)); 
-  }
+  bzero((void *)&(eth->local_addr_ll), sizeof(struct sockaddr_ll));
+  bzero((void *)&(eth->if_index), sizeof(struct ifreq)); 
+  
   /* Get the index of the interface to send on */
-  strcpy(if_index[Mod_id].ifr_name,eth->if_name[Mod_id]);
-  if (ioctl(eth->sockfd[Mod_id], SIOCGIFINDEX, &(if_index[Mod_id])) < 0)
+  strcpy(eth->if_index.ifr_name,eth->if_name);
+  if (ioctl(eth->sockfd, SIOCGIFINDEX, &(eth->if_index)) < 0)
     perror("SIOCGIFINDEX");
    
-  local_addr[Mod_id].sll_family   = AF_PACKET;
-  local_addr[Mod_id].sll_ifindex  = if_index[Mod_id].ifr_ifindex;
+  eth->local_addr_ll.sll_family   = AF_PACKET;
+  eth->local_addr_ll.sll_ifindex  = eth->if_index.ifr_ifindex;
   /* hear traffic from specific protocol*/
-  local_addr[Mod_id].sll_protocol = htons((short)device->openair0_cfg->my_port);
-  local_addr[Mod_id].sll_halen    = ETH_ALEN;
-  local_addr[Mod_id].sll_pkttype  = PACKET_OTHERHOST;
-  addr_len[Mod_id] = sizeof(struct sockaddr_ll);
+  if (eth->flags == ETH_RAW_IF5_MOBIPASS) {
+     eth->local_addr_ll.sll_protocol = htons(0xbffe);
+  } else{ 
+     eth->local_addr_ll.sll_protocol = htons((short)device->openair0_cfg->my_port);
+  }
+  eth->local_addr_ll.sll_halen    = ETH_ALEN;
+  eth->local_addr_ll.sll_pkttype  = PACKET_OTHERHOST;
+  eth->addr_len = sizeof(struct sockaddr_ll);
   
- if (bind(eth->sockfd[Mod_id],(struct sockaddr *)&local_addr[Mod_id],addr_len[Mod_id])<0) {
+ if (bind(eth->sockfd,(struct sockaddr *)&eth->local_addr_ll,eth->addr_len)<0) {
    perror("ETHERNET: Cannot bind to socket");
    exit(0);
  }
@@ -114,7 +115,7 @@ int eth_socket_init_raw(openair0_device *device) {
  } else {
    eth->eh.ether_type = htons((short)device->openair0_cfg->my_port);
  } 
- printf("[%s] binding mod_%d to hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"),Mod_id,eth->eh.ether_shost[0],eth->eh.ether_shost[1],eth->eh.ether_shost[2],eth->eh.ether_shost[3],eth->eh.ether_shost[4],eth->eh.ether_shost[5]);
+ printf("[%s] binding to hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"),eth->eh.ether_shost[0],eth->eh.ether_shost[1],eth->eh.ether_shost[2],eth->eh.ether_shost[3],eth->eh.ether_shost[4],eth->eh.ether_shost[5]);
  
  return 0;
 }
@@ -124,7 +125,6 @@ int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, voi
   
   int bytes_sent=0;
   eth_state_t *eth = (eth_state_t*)device->priv;
-  int Mod_id = device->Mod_id;
   int sendto_flag =0;
   int i=0;
   //sendto_flag|=flags;
@@ -157,7 +157,7 @@ int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, voi
 	     bytes_sent);
 #endif
       /* Send packet */
-      bytes_sent += send(eth->sockfd[Mod_id],
+      bytes_sent += send(eth->sockfd,
 			   buff2, 
 			   RAW_PACKET_SIZE_BYTES(nsamps),
 			   sendto_flag);
@@ -195,7 +195,6 @@ int trx_eth_write_raw_IF4p5(openair0_device *device, openair0_timestamp timestam
   int bytes_sent = 0;
   
   eth_state_t *eth = (eth_state_t*)device->priv;
-  int Mod_id = device->Mod_id;  
   
   ssize_t packet_size;
   
@@ -203,6 +202,8 @@ int trx_eth_write_raw_IF4p5(openair0_device *device, openair0_timestamp timestam
     packet_size = RAW_IF4p5_PDLFFT_SIZE_BYTES(nblocks);    
   } else if (flags == IF4p5_PULFFT) {
     packet_size = RAW_IF4p5_PULFFT_SIZE_BYTES(nblocks);    
+  } else if (flags == IF4p5_PULTICK) {
+    packet_size = RAW_IF4p5_PULTICK_SIZE_BYTES;    
   } else if (flags == IF5_MOBIPASS) {
     packet_size = RAW_IF5_MOBIPASS_SIZE_BYTES;
   } else {
@@ -214,7 +215,7 @@ int trx_eth_write_raw_IF4p5(openair0_device *device, openair0_timestamp timestam
   memcpy(buff[0], (void*)&eth->eh, MAC_HEADER_SIZE_BYTES);	
 
 
-  bytes_sent = send(eth->sockfd[Mod_id],
+  bytes_sent = send(eth->sockfd,
                     buff[0], 
                     packet_size,
                     0);
@@ -238,7 +239,6 @@ int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, voi
   int bytes_received=0;
   int i=0;
   eth_state_t *eth = (eth_state_t*)device->priv;
-  int Mod_id = device->Mod_id;
   int rcvfrom_flag =0;
   
   eth->rx_nsamps=nsamps;
@@ -256,7 +256,7 @@ int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, voi
       bytes_received=0;
       
       while(bytes_received < RAW_PACKET_SIZE_BYTES(nsamps)) {
-	bytes_received +=recv(eth->sockfd[Mod_id],
+	bytes_received +=recv(eth->sockfd,
 			      buff2,
 			      RAW_PACKET_SIZE_BYTES(nsamps),
 			      rcvfrom_flag);
@@ -300,13 +300,15 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
   int nblocks = nsamps;  
   int bytes_received=0;
   eth_state_t *eth = (eth_state_t*)device->priv;
-  int Mod_id = device->Mod_id;
   
   ssize_t packet_size = MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t;      
   IF4p5_header_t *test_header = (IF4p5_header_t*)(buff[0] + MAC_HEADER_SIZE_BYTES);
 
+#ifdef DEBUG
+  printf("Reading from device %p, eth %p, sockfd %d\n",device,eth,eth->sockfd);
+#endif
 
-  bytes_received = recv(eth->sockfd[Mod_id],
+  bytes_received = recv(eth->sockfd,
                         buff[0],
                         packet_size,
                         MSG_PEEK);                        
@@ -315,7 +317,12 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
 	  perror("ETHERNET IF4p5 READ (header): ");
 	  exit(-1);	
   }
- 
+#ifdef DEBUG
+  for (int i=0;i<packet_size;i++)
+    printf("%2x.",((uint8_t*)buff[0])[i]);
+  printf("\n");
+#endif
+		
   *timestamp = test_header->sub_type; 
   
   if (test_header->sub_type == IF4p5_PDLFFT) {
@@ -328,7 +335,7 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
   
   
   while(bytes_received < packet_size) {
-    bytes_received = recv(eth->sockfd[Mod_id],
+    bytes_received = recv(eth->sockfd,
                           buff[0],
                           packet_size,
                           0);
@@ -347,10 +354,81 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
 }
 
 
+int trx_eth_read_raw_IF5_mobipass(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc) {
+  // Read nblocks info from packet itself
+  
+  int nblocks = nsamps;
+  int bytes_received=0;
+  eth_state_t *eth = (eth_state_t*)device->priv;
+
+ ssize_t packet_size =  28; //MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t ;
+//   ssize_t packet_size =  MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + 640*sizeof(int16_t);
+ 
+  bytes_received = recv(eth->sockfd,
+                        buff[0],
+                        packet_size,
+                        MSG_PEEK);
+
+  if (bytes_received ==-1) {
+          eth->num_rx_errors++;
+          perror("[MOBIPASS]ETHERNET IF5 READ (header): ");
+          exit(-1);
+  }
+
+  IF5_mobipass_header_t *test_header = (IF5_mobipass_header_t*)((uint8_t *)buff[0] + MAC_HEADER_SIZE_BYTES);
+  *timestamp = test_header->time_stamp;
+  packet_size =  MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + 640*sizeof(int16_t);
+
+  while(bytes_received < packet_size) {
+    bytes_received = recv(eth->sockfd,
+                          buff[0],
+                          packet_size,
+                          0);
+    if (bytes_received ==-1) {
+      eth->num_rx_errors++;
+      perror("[MOBIPASS] ETHERNET IF5 READ (payload): ");
+      exit(-1);
+    } else {
+      eth->rx_actual_nsamps = bytes_received>>1;
+      eth->rx_count++;
+    }
+  }
+ 
+  eth->rx_nsamps = nsamps;
+  return(bytes_received);
+
+
+/* 
+  if (bytes_received > 0) { 
+    while(bytes_received < packet_size) {
+      bytes_received = recv(eth->sockfd,
+                          buff[0],
+                          packet_size,
+                          0);
+      if (bytes_received ==-1) {
+        eth->num_rx_errors++;
+        perror("ETHERNET IF5_MOBIPASS READ (payload): ");
+        exit(-1);
+      } else {
+        eth->rx_actual_nsamps = bytes_received>>1;
+        eth->rx_count++;
+      }
+   }
+   if (bytes_received == packet_size){
+     IF5_mobipass_header_t *test_header = (IF5_mobipass_header_t*)((uint8_t *)buff[0] + MAC_HEADER_SIZE_BYTES);
+     *timestamp = test_header->time_stamp;
+   }
+
+   eth->rx_nsamps = nsamps;
+ }
+
+  return(bytes_received);
+*/
+}
+
 
 int eth_set_dev_conf_raw(openair0_device *device) {
 
-  int 	       Mod_id = device->Mod_id;
   eth_state_t *eth = (eth_state_t*)device->priv;
   void 	      *msg;
   ssize_t      msg_len;
@@ -366,7 +444,7 @@ int eth_set_dev_conf_raw(openair0_device *device) {
   memcpy(msg,(void*)&eth->eh,MAC_HEADER_SIZE_BYTES);	
   memcpy((msg+MAC_HEADER_SIZE_BYTES),(void*)device->openair0_cfg,sizeof(openair0_config_t));
  	  
-  if (send(eth->sockfd[Mod_id],
+  if (send(eth->sockfd,
 	     msg,
 	     msg_len,
 	     0)==-1) {
@@ -382,7 +460,6 @@ int eth_set_dev_conf_raw(openair0_device *device) {
 int eth_set_dev_conf_raw_IF4p5(openair0_device *device) {  
   // use for cc_id info
 
-  int 	       Mod_id = device->Mod_id;
   eth_state_t *eth = (eth_state_t*)device->priv;
   void 	      *msg;
   ssize_t      msg_len;
@@ -398,7 +475,7 @@ int eth_set_dev_conf_raw_IF4p5(openair0_device *device) {
   memcpy(msg,(void*)&eth->eh,MAC_HEADER_SIZE_BYTES);	
   memcpy((msg+MAC_HEADER_SIZE_BYTES),(void*)device->openair0_cfg,sizeof(openair0_config_t));
  	  
-  if (send(eth->sockfd[Mod_id],
+  if (send(eth->sockfd,
 	     msg,
 	     msg_len,
 	     0)==-1) {
@@ -413,7 +490,6 @@ int eth_set_dev_conf_raw_IF4p5(openair0_device *device) {
 int eth_get_dev_conf_raw(openair0_device *device) {
 
   eth_state_t   *eth = (eth_state_t*)device->priv;
-  int 		Mod_id = device->Mod_id;
   void 		*msg;
   ssize_t	msg_len;
   
@@ -421,7 +497,7 @@ int eth_get_dev_conf_raw(openair0_device *device) {
   msg_len = MAC_HEADER_SIZE_BYTES + sizeof(openair0_config_t);
   
   /* RRH receives from BBU openair0_config_t */
-  if (recv(eth->sockfd[Mod_id],
+  if (recv(eth->sockfd,
 	   msg,
 	   msg_len,
 	   0)==-1) {
@@ -433,7 +509,7 @@ int eth_get_dev_conf_raw(openair0_device *device) {
   memcpy(eth->eh.ether_dhost,(msg+ETH_ALEN),ETH_ALEN);	
   //memcpy((void*)&device->openair0_cfg,(msg + MAC_HEADER_SIZE_BYTES), sizeof(openair0_config_t));
   device->openair0_cfg=(openair0_config_t *)(msg + MAC_HEADER_SIZE_BYTES);
-  printf("[%s] binding mod_%d to hardware address %x:%x:%x:%x:%x:%x           hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"),Mod_id,eth->eh.ether_shost[0],eth->eh.ether_shost[1],eth->eh.ether_shost[2],eth->eh.ether_shost[3],eth->eh.ether_shost[4],eth->eh.ether_shost[5],eth->eh.ether_dhost[0],eth->eh.ether_dhost[1],eth->eh.ether_dhost[2],eth->eh.ether_dhost[3],eth->eh.ether_dhost[4],eth->eh.ether_dhost[5]);
+  printf("[%s] binding mod to hardware address %x:%x:%x:%x:%x:%x           hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"),eth->eh.ether_shost[0],eth->eh.ether_shost[1],eth->eh.ether_shost[2],eth->eh.ether_shost[3],eth->eh.ether_shost[4],eth->eh.ether_shost[5],eth->eh.ether_dhost[0],eth->eh.ether_dhost[1],eth->eh.ether_dhost[2],eth->eh.ether_dhost[3],eth->eh.ether_dhost[4],eth->eh.ether_dhost[5]);
  	  
   return 0;
 }
@@ -443,7 +519,6 @@ int eth_get_dev_conf_raw_IF4p5(openair0_device *device) {
   // use for cc_id info
 
   eth_state_t   *eth = (eth_state_t*)device->priv;
-  int 		Mod_id = device->Mod_id;
   void 		*msg;
   ssize_t	msg_len;
   
@@ -451,7 +526,7 @@ int eth_get_dev_conf_raw_IF4p5(openair0_device *device) {
   msg_len = MAC_HEADER_SIZE_BYTES + sizeof(openair0_config_t);
   
   /* RRH receives from BBU openair0_config_t */
-  if (recv(eth->sockfd[Mod_id],
+  if (recv(eth->sockfd,
 	   msg,
 	   msg_len,
 	   0)==-1) {
@@ -463,7 +538,7 @@ int eth_get_dev_conf_raw_IF4p5(openair0_device *device) {
   memcpy(eth->eh.ether_dhost,(msg+ETH_ALEN),ETH_ALEN);	
   //memcpy((void*)&device->openair0_cfg,(msg + MAC_HEADER_SIZE_BYTES), sizeof(openair0_config_t));
   //device->openair0_cfg=(openair0_config_t *)(msg + MAC_HEADER_SIZE_BYTES);
-  printf("[%s] binding mod_%d to hardware address %x:%x:%x:%x:%x:%x           hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"),Mod_id,eth->eh.ether_shost[0],eth->eh.ether_shost[1],eth->eh.ether_shost[2],eth->eh.ether_shost[3],eth->eh.ether_shost[4],eth->eh.ether_shost[5],eth->eh.ether_dhost[0],eth->eh.ether_dhost[1],eth->eh.ether_dhost[2],eth->eh.ether_dhost[3],eth->eh.ether_dhost[4],eth->eh.ether_dhost[5]);
+  printf("[%s] binding mod to hardware address %x:%x:%x:%x:%x:%x           hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"),eth->eh.ether_shost[0],eth->eh.ether_shost[1],eth->eh.ether_shost[2],eth->eh.ether_shost[3],eth->eh.ether_shost[4],eth->eh.ether_shost[5],eth->eh.ether_dhost[0],eth->eh.ether_dhost[1],eth->eh.ether_dhost[2],eth->eh.ether_dhost[3],eth->eh.ether_dhost[4],eth->eh.ether_dhost[5]);
  	  
   return 0;
 }

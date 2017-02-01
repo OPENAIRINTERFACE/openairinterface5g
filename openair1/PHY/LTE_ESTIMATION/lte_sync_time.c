@@ -510,14 +510,15 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
 
   // perform a time domain correlation using the oversampled sync sequence
 
-  unsigned int n, ar, peak_val, peak_pos, mean_val;
+  unsigned int n, ar, peak_val, peak_pos;
+  uint64_t mean_val;
   int result;
   short *primary_synch_time;
   int eNB_id = frame_parms->Nid_cell%3;
 
   // msg("[SYNC TIME] Calling sync_time_eNB(%p,%p,%d,%d)\n",rxdata,frame_parms,eNB_id,length);
   if (sync_corr_eNB == NULL) {
-    msg("[SYNC TIME] sync_corr_eNB not yet allocated! Exiting.\n");
+    LOG_E(PHY,"[SYNC TIME] sync_corr_eNB not yet allocated! Exiting.\n");
     return(-1);
   }
 
@@ -535,7 +536,7 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
     break;
 
   default:
-    msg("[SYNC TIME] Illegal eNB_id!\n");
+    LOG_E(PHY,"[SYNC TIME] Illegal eNB_id!\n");
     return (-1);
   }
 
@@ -567,7 +568,7 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
        peak_val);
     }
     */
-    mean_val += (sync_corr_eNB[n]>>10);
+    mean_val += sync_corr_eNB[n];
 
     if (sync_corr_eNB[n]>peak_val) {
       peak_val = sync_corr_eNB[n];
@@ -575,17 +576,15 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
     }
   }
 
+  mean_val/=length;
+
   *peak_val_out = peak_val;
 
-  if (peak_val <= (40*mean_val)) {
-#ifdef DEBUG_PHY
-    msg("[SYNC TIME] No peak found (%u,%u,%u,%u)\n",peak_pos,peak_val,mean_val,40*mean_val);
-#endif
+  if (peak_val <= (40*(uint32_t)mean_val)) {
+    LOG_D(PHY,"[SYNC TIME] No peak found (%u,%u,%u,%u)\n",peak_pos,peak_val,mean_val,40*mean_val);
     return(-1);
   } else {
-#ifdef DEBUG_PHY
-    msg("[SYNC TIME] Peak found at pos %u, val = %u, mean_val = %u\n",peak_pos,peak_val,mean_val);
-#endif
+    LOG_D(PHY,"[SYNC TIME] Peak found at pos %u, val = %u, mean_val = %u\n",peak_pos,peak_val,mean_val);
     return(peak_pos);
   }
 

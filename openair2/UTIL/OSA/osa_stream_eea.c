@@ -27,6 +27,7 @@
 #include <nettle/nettle-meta.h>
 #include <nettle/aes.h>
 #include <nettle/ctr.h>
+#include <nettle/bignum.h>
 
 #include "UTIL/LOG/log.h"
 

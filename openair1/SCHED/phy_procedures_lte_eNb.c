@@ -788,7 +788,7 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 
       eNB->dlsch[(uint8_t)UE_id][0]->nCCE[subframe] = dci_alloc->firstCCE;
       
-      LOG_D(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resource for ue DCI (PDSCH %"PRIx16")  => %"PRIu8"/%u\n",eNB->Mod_id,frame,subframe,
+      LOG_D(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resource for ue DCI (PDSCH %"PRIx16")  => %"PRIu8"\n",eNB->Mod_id,frame,subframe,
 	    dci_alloc->rnti,eNB->dlsch[(uint8_t)UE_id][0]->nCCE[subframe]);
       
 #if defined(SMBV) 
@@ -900,7 +900,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
   int i;
 
   LOG_D(PHY,
-	"[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", G %d, nb_rb %"PRIu16", mcs %"PRIu8", pmi_alloc %"PRIx16", rv %"PRIu8" (round %"PRIu8")\n",
+	"[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", G %d, nb_rb %"PRIu16", mcs %"PRIu8", pmi_alloc %"PRIx64", rv %"PRIu8" (round %"PRIu8")\n",
 	eNB->Mod_id, dlsch->rnti,harq_pid,
 	frame, subframe, input_buffer_length,
 	get_G(fp,
@@ -1146,7 +1146,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   DCI_ALLOC_t *dci_alloc=(DCI_ALLOC_t *)NULL;
 
-  int offset = proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
+  int offset = eNB->CC_id;//proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
 
 #if defined(SMBV) 
   // counts number of allocations in subframe
@@ -2032,8 +2032,8 @@ void prach_procedures(PHY_VARS_eNB *eNB) {
         T_INT(preamble_max), T_INT(preamble_energy_max), T_INT(preamble_delay_list[preamble_max]));
 
       if (eNB->mac_enabled==1) {
-        uint8_t update_TA=4;
-
+        uint8_t update_TA  = 4;
+	uint8_t update_TA2 = 1;
         switch (fp->N_RB_DL) {
         case 6:
           update_TA = 16;
@@ -2047,8 +2047,11 @@ void prach_procedures(PHY_VARS_eNB *eNB) {
           update_TA = 2;
           break;
 
+	case 75:
+	  update_TA  = 3;
+	  update_TA2 = 2;
         case 100:
-          update_TA = 1;
+          update_TA  = 1;
           break;
         }
 
@@ -2056,7 +2059,7 @@ void prach_procedures(PHY_VARS_eNB *eNB) {
 				    eNB->CC_id,
 				    frame,
 				    preamble_max,
-				    preamble_delay_list[preamble_max]*update_TA,
+				    preamble_delay_list[preamble_max]*update_TA/update_TA2,
 				    0,subframe,0);
       }      
 
@@ -2670,7 +2673,7 @@ void init_te_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_te) {
 }
 
 
-void eNB_fep_full_2thread(PHY_VARS_eNB *eNB) {
+void eNB_fep_full_2thread(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc_rxtx) {
 
   eNB_proc_t *proc = &eNB->proc;
 
@@ -2716,28 +2719,27 @@ void eNB_fep_full_2thread(PHY_VARS_eNB *eNB) {
 
 
 
-void eNB_fep_full(PHY_VARS_eNB *eNB) {
+void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc_rxtx) {
 
-  eNB_proc_t *proc = &eNB->proc;
   int l;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,1);
   start_meas(&eNB->ofdm_demod_stats);
-  remove_7_5_kHz(eNB,proc->subframe_rx<<1);
-  remove_7_5_kHz(eNB,1+(proc->subframe_rx<<1));
+  remove_7_5_kHz(eNB,proc_rxtx->subframe_rx<<1);
+  remove_7_5_kHz(eNB,1+(proc_rxtx->subframe_rx<<1));
   for (l=0; l<fp->symbols_per_tti/2; l++) {
     slot_fep_ul(fp,
 		&eNB->common_vars,
 		l,
-		proc->subframe_rx<<1,
+		(proc_rxtx->subframe_rx)<<1,
 		0,
 		0
 		);
     slot_fep_ul(fp,
 		&eNB->common_vars,
 		l,
-		1+(proc->subframe_rx<<1),
+		1+((proc_rxtx->subframe_rx)<<1),
 		0,
 		0
 		);
@@ -2748,11 +2750,11 @@ void eNB_fep_full(PHY_VARS_eNB *eNB) {
   
   if (eNB->node_function == NGFI_RRU_IF4p5) {
     /// **** send_IF4 of rxdataF to RCC (no prach now) **** ///
-    send_IF4p5(eNB, proc->frame_rx, proc->subframe_rx, IF4p5_PULFFT, 0);
+    send_IF4p5(eNB, proc_rxtx->frame_rx, proc_rxtx->subframe_rx, IF4p5_PULFFT, 0);
   }    
 }
 
-void eNB_fep_rru_if5(PHY_VARS_eNB *eNB) {
+void eNB_fep_rru_if5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc_rxtx) {
 
   eNB_proc_t *proc=&eNB->proc;
   uint8_t seqno=0;
@@ -2764,17 +2766,17 @@ void eNB_fep_rru_if5(PHY_VARS_eNB *eNB) {
 
 }
 
-void do_prach(PHY_VARS_eNB *eNB) {
+void do_prach(PHY_VARS_eNB *eNB,int frame,int subframe) {
 
   eNB_proc_t *proc = &eNB->proc;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
   // check if we have to detect PRACH first
-  if (is_prach_subframe(fp,proc->frame_rx,proc->subframe_rx)>0) { 
+  if (is_prach_subframe(fp,frame,subframe)>0) { 
     /* accept some delay in processing - up to 5ms */
     int i;
     for (i = 0; i < 10 && proc->instance_cnt_prach == 0; i++) {
-      LOG_W(PHY,"[eNB] Frame %d Subframe %d, eNB PRACH thread busy (IC %d)!!\n", proc->frame_rx,proc->subframe_rx,proc->instance_cnt_prach);
+      LOG_W(PHY,"[eNB] Frame %d Subframe %d, eNB PRACH thread busy (IC %d)!!\n", frame,subframe,proc->instance_cnt_prach);
       usleep(500);
     }
     if (proc->instance_cnt_prach == 0) {
@@ -2784,15 +2786,15 @@ void do_prach(PHY_VARS_eNB *eNB) {
     
     // wake up thread for PRACH RX
     if (pthread_mutex_lock(&proc->mutex_prach) != 0) {
-      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB PRACH thread %d (IC %d)\n", proc->instance_cnt_prach );
+      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB PRACH thread %d (IC %d)\n", proc->thread_index, proc->instance_cnt_prach);
       exit_fun( "error locking mutex_prach" );
       return;
     }
     
     ++proc->instance_cnt_prach;
     // set timing for prach thread
-    proc->frame_prach = proc->frame_rx;
-    proc->subframe_prach = proc->subframe_rx;
+    proc->frame_prach = frame;
+    proc->subframe_prach = subframe;
     
     // the thread can now be woken up
     if (pthread_cond_signal(&proc->cond_prach) != 0) {
@@ -2806,28 +2808,34 @@ void do_prach(PHY_VARS_eNB *eNB) {
 
 }
 
-void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB){
+void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc){
 
 
-  eNB_proc_t *proc       = &eNB->proc;
+  //  eNB_proc_t *proc       = &eNB->proc;
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   const int subframe     = proc->subframe_rx;
   const int frame        = proc->frame_rx;
   int offset             = (eNB->single_thread_flag==1) ? 0 : (subframe&1);
 
-  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;
-
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_ENB+offset, proc->frame_rx );
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_ENB+offset, proc->subframe_rx );
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON+offset, 1 );
-  
+
+  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) {
+
+    if (eNB->node_function == NGFI_RRU_IF4p5) {
+      /// **** in TDD during DL send_IF4 of ULTICK to RCC **** ///
+      send_IF4p5(eNB, proc->frame_rx, proc->subframe_rx, IF4p5_PULTICK, 0);
+    }    
+    return;
+  }
+
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON+offset, 1 ); 
   start_meas(&eNB->phy_proc_rx);
   LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_common_RX(%d)\n",eNB->Mod_id,frame,subframe);
 
 
-  if (eNB->fep) eNB->fep(eNB);
-
-  if (eNB->do_prach) eNB->do_prach(eNB);
+  if (eNB->fep) eNB->fep(eNB,proc);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON+offset, 0 );
 }
@@ -2847,7 +2855,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 
   const int subframe = proc->subframe_rx;
   const int frame    = proc->frame_rx;
-  int offset         = (proc == &eNB->proc.proc_rxtx[0]) ? 0 : 1;
+  int offset         = eNB->CC_id;//(proc == &eNB->proc.proc_rxtx[0]) ? 0 : 1;
 
 
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;

@@ -71,7 +71,7 @@ void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char* dataP, con
         LOG_T(componentP, " |\n");
       }
 
-      LOG_T(componentP, " %04d |", octet_index);
+      LOG_T(componentP, " %04lu |", octet_index);
     }
 
     /*
@@ -413,7 +413,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 
     switch (rlc_mode) {
     case RLC_MODE_NONE:
-      free_mem_block(sdu_pP);
+      free_mem_block(sdu_pP, __func__);
       LOG_E(RLC, PROTOCOL_CTXT_FMT" Received RLC_MODE_NONE as rlc_type for rb_id %u\n",
             PROTOCOL_CTXT_ARGS(ctxt_pP),
             rb_idP);
@@ -424,7 +424,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 #ifdef DEBUG_RLC_DATA_REQ
       msg("RLC_MODE_AM\n");
 #endif
-      new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_am_data_req_alloc));
+      new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_am_data_req_alloc), __func__);
 
       if (new_sdu_p != NULL) {
         // PROCESS OF COMPRESSION HERE:
@@ -435,7 +435,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
         ((struct rlc_am_data_req *) (new_sdu_p->data))->conf = confirmP;
         ((struct rlc_am_data_req *) (new_sdu_p->data))->mui  = muiP;
         ((struct rlc_am_data_req *) (new_sdu_p->data))->data_offset = sizeof (struct rlc_am_data_req_alloc);
-        free_mem_block(sdu_pP);
+        free_mem_block(sdu_pP, __func__);
         rlc_am_data_req(ctxt_pP, &rlc_union_p->rlc.am, new_sdu_p);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
         return RLC_OP_STATUS_OK;
@@ -447,7 +447,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
       break;
 
     case RLC_MODE_UM:
-      new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_um_data_req_alloc));
+      new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_um_data_req_alloc), __func__);
 
       if (new_sdu_p != NULL) {
         // PROCESS OF COMPRESSION HERE:
@@ -456,11 +456,11 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 
         ((struct rlc_um_data_req *) (new_sdu_p->data))->data_size = sdu_sizeP;
         ((struct rlc_um_data_req *) (new_sdu_p->data))->data_offset = sizeof (struct rlc_um_data_req_alloc);
-        free_mem_block(sdu_pP);
+        free_mem_block(sdu_pP, __func__);
 
         rlc_um_data_req(ctxt_pP, &rlc_union_p->rlc.um, new_sdu_p);
 
-        //free_mem_block(new_sdu);
+        //free_mem_block(new_sdu, __func__);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
         return RLC_OP_STATUS_OK;
       } else {
@@ -471,7 +471,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
       break;
 
     case RLC_MODE_TM:
-      new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_tm_data_req_alloc));
+      new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_tm_data_req_alloc), __func__);
 
       if (new_sdu_p != NULL) {
         // PROCESS OF COMPRESSION HERE:
@@ -480,7 +480,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 
         ((struct rlc_tm_data_req *) (new_sdu_p->data))->data_size = sdu_sizeP;
         ((struct rlc_tm_data_req *) (new_sdu_p->data))->data_offset = sizeof (struct rlc_tm_data_req_alloc);
-        free_mem_block(sdu_pP);
+        free_mem_block(sdu_pP, __func__);
         rlc_tm_data_req(ctxt_pP, &rlc_union_p->rlc.tm, new_sdu_p);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
         return RLC_OP_STATUS_OK;
@@ -493,7 +493,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
       break;
 
     default:
-      free_mem_block(sdu_pP);
+      free_mem_block(sdu_pP, __func__);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
       return RLC_OP_STATUS_INTERNAL_ERROR;
 
@@ -505,7 +505,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
     if (sdu_pP != NULL) {
       if (sdu_sizeP > 0) {
         LOG_I(RLC,"received a packet with size %d for MBMS \n", sdu_sizeP);
-        new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_um_data_req_alloc));
+        new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_um_data_req_alloc), __func__);
 
         if (new_sdu_p != NULL) {
           // PROCESS OF COMPRESSION HERE:
@@ -513,10 +513,10 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
           memcpy (&new_sdu_p->data[sizeof (struct rlc_um_data_req_alloc)], &sdu_pP->data[0], sdu_sizeP);
           ((struct rlc_um_data_req *) (new_sdu_p->data))->data_size = sdu_sizeP;
           ((struct rlc_um_data_req *) (new_sdu_p->data))->data_offset = sizeof (struct rlc_um_data_req_alloc);
-          free_mem_block(sdu_pP);
+          free_mem_block(sdu_pP, __func__);
           rlc_um_data_req(ctxt_pP, &rlc_union_p->rlc.um, new_sdu_p);
 
-          //free_mem_block(new_sdu);
+          //free_mem_block(new_sdu, __func__);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
           return RLC_OP_STATUS_OK;
         } else {
@@ -537,7 +537,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
   }
   else  /* MBMS_flag != 0 */
   {
-    free_mem_block(sdu_pP);
+    free_mem_block(sdu_pP, __func__);
     LOG_E(RLC, "MBMS_flag != 0 while Rel10 is not defined...\n");
     //handle_event(ERROR,"FILE %s FONCTION rlc_data_req() LINE %s : parameter module_id out of bounds :%d\n", __FILE__, __LINE__, module_idP);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);

@@ -13,7 +13,7 @@
  <Timeout_execution>36000</Timeout_execution>
  <TestCaseExclusionList>010141 0102+ 010301 010303 010304 010305 0104+ 015508 015511 015520 015523 015518 015519 015520 015521 015522 015523 015602 015605 015818 015819 015820 015821 015822 015823 016102 016105 016502 016505 017002 017005 018002 018005 018502 018505  025514 025517 025520 025523 025518 025519 025520 025521 025522 025523</TestCaseExclusionList>
  <nruns_lte-softmodem>3</nruns_lte-softmodem>
- <MachineListGeneric>amerique mozart hutch starsky stevens calisson superserver </MachineListGeneric>
+ <MachineListGeneric>nano mozart hutch starsky stevens calisson superserver </MachineListGeneric>
      <testCase id="010101" >
      <class>compilation</class>
      <desc>Build oaisim.Rel8</desc>

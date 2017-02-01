@@ -504,6 +504,8 @@ typedef struct {
   uint8_t tdd_config;
   /// TDD S-subframe configuration (0-9)
   uint8_t tdd_config_S;
+  /// srs extra symbol flag for TDD
+  uint8_t srsX;
   /// indicates if node is a UE (NODE=2) or eNB (PRIMARY_CH=0).
   uint8_t node_id;
   /// Frequency index of CBMIMO1 card
@@ -542,11 +544,15 @@ typedef struct {
   uint32_t samples_per_tti;
   /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
   uint16_t symbols_per_tti;
+  /// Number of OFDM symbols in DL portion of S-subframe
+  uint16_t dl_symbols_in_S_subframe;
+  /// Number of SC-FDMA symbols in UL portion of S-subframe
+  uint16_t ul_symbols_in_S_subframe;
   /// Number of Physical transmit antennas in node
   uint8_t nb_antennas_tx;
   /// Number of Receive antennas in node
   uint8_t nb_antennas_rx;
-  /// Number of Logical transmit antenna ports in eNodeB
+  /// Number of common transmit antenna ports in eNodeB (1 or 2)
   uint8_t nb_antenna_ports_eNB;
   /// PRACH_CONFIG
   PRACH_CONFIG_COMMON prach_config_common;
@@ -779,6 +785,26 @@ typedef struct {
 } LTE_eNB_PUSCH;
 
 typedef struct {
+
+	  /// \brief Holds the received data in the frequency domain.
+	  /// - first index: rx antenna [0..nb_antennas_rx[
+	  /// - second index: symbol [0..28*ofdm_symbol_size[
+	  int32_t **rxdataF;
+
+	  /// \brief Hold the channel estimates in frequency domain.
+	  /// - first index: eNB id [0..6] (hard coded)
+	  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+	  /// - third index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
+	  int32_t **dl_ch_estimates[7];
+
+	  /// \brief Hold the channel estimates in time domain (used for tracking).
+	  /// - first index: eNB id [0..6] (hard coded)
+	  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+	  /// - third index: samples? [0..2*ofdm_symbol_size[
+	  int32_t **dl_ch_estimates_time[7];
+}LTE_UE_COMMON_PER_THREAD;
+
+typedef struct {
   /// \brief Holds the transmit data in time domain.
   /// For IFFT_FPGA this points to the same memory as PHY_vars->tx_vars[a].TX_DMA_BUFFER.
   /// - first index: tx antenna [0..nb_antennas_tx[
@@ -789,29 +815,15 @@ typedef struct {
   /// - first index: tx antenna [0..nb_antennas_tx[
   /// - second index: sample [0..FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX[
   int32_t **txdataF;
+
   /// \brief Holds the received data in time domain.
   /// Should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: sample [0..FRAME_LENGTH_COMPLEX_SAMPLES+2048[
   int32_t **rxdata;
-  /// \brief Holds the received data in the frequency domain.
-  /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: symbol [0..28*ofdm_symbol_size[
-  int32_t **rxdataF;
-  /// \brief ?.
-  /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: ? [0..20*ofdm_symbol_size*symbols_per_tti[
-  int32_t **rxdataF2;
-  /// \brief Hold the channel estimates in frequency domain.
-  /// - first index: eNB id [0..6] (hard coded)
-  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - third index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
-  int32_t **dl_ch_estimates[7];
-  /// \brief Hold the channel estimates in time domain (used for tracking).
-  /// - first index: eNB id [0..6] (hard coded)
-  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - third index: samples? [0..2*ofdm_symbol_size[
-  int32_t **dl_ch_estimates_time[7];
+
+  LTE_UE_COMMON_PER_THREAD common_vars_rx_data_per_thread[2];
+
   /// holds output of the sync correlator
   int32_t *sync_corr;
   /// estimated frequency offset (in radians) for all subcarriers
@@ -994,6 +1006,8 @@ typedef struct {
   uint8_t num_pdcch_symbols;
   /// Allocated CRNTI for UE
   uint16_t crnti;
+  /// 1: the allocated crnti is Temporary C-RNTI / 0: otherwise
+  uint8_t crnti_is_temporary;
   /// Total number of PDU errors (diagnostic mode)
   uint32_t dci_errors;
   /// Total number of PDU received
@@ -1098,6 +1112,14 @@ typedef enum {
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 
+typedef enum {
+  /// do not detect any DCIs in the current subframe
+  NO_DCI = 0x0,
+  /// detect only downlink DCIs in the current subframe
+  UL_DCI = 0x1,
+  /// detect only uplink DCIs in the current subframe
+  DL_DCI = 0x2,
+  /// detect both uplink and downlink DCIs in the current subframe
+  UL_DL_DCI = 0x3} dci_detect_mode_t;
+
 #endif
-
-

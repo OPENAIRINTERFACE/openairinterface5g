@@ -42,7 +42,7 @@ void rlc_am_free_in_sdu(
 {
   if (index_in_bufferP <= RLC_AM_SDU_CONTROL_BUFFER_SIZE) {
     if (rlcP->input_sdus[index_in_bufferP].mem_block != NULL) {
-      free_mem_block(rlcP->input_sdus[index_in_bufferP].mem_block);
+      free_mem_block(rlcP->input_sdus[index_in_bufferP].mem_block, __func__);
       rlcP->input_sdus[index_in_bufferP].mem_block = NULL;
       rlcP->nb_sdu_no_segmented -= 1;
       rlcP->input_sdus[index_in_bufferP].sdu_remaining_size = 0;
@@ -81,7 +81,7 @@ rlc_am_free_in_sdu_data(
 {
   if (index_in_bufferP <= RLC_AM_SDU_CONTROL_BUFFER_SIZE) {
     if (rlcP->input_sdus[index_in_bufferP].mem_block != NULL) {
-      free_mem_block(rlcP->input_sdus[index_in_bufferP].mem_block);
+      free_mem_block(rlcP->input_sdus[index_in_bufferP].mem_block, __func__);
       rlcP->input_sdus[index_in_bufferP].mem_block = NULL;
       rlcP->input_sdus[index_in_bufferP].sdu_remaining_size = 0;
       rlcP->nb_sdu_no_segmented -= 1;

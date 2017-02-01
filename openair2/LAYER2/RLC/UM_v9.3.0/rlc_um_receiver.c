@@ -83,7 +83,7 @@ rlc_um_display_rx_window(
         LOG_T(RLC, "\n");
       }
 
-      LOG_T(RLC, "%s%s| %04d |", RLC_FG_COLOR_DEFAULT, RLC_NORMAL_VIDEO, sn);
+      LOG_T(RLC, "%s%s| %04lu |", RLC_FG_COLOR_DEFAULT, RLC_NORMAL_VIDEO, sn);
     }
 
     strcpy(color, RLC_FG_COLOR_DEFAULT);

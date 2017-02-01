@@ -447,8 +447,8 @@ int main(int argc, char **argv)
 	    for(aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
 	      for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 		for (i=0; i<frame_parms->N_RB_DL*12; i++) {
-		  ((int16_t *) UE->common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
-		  ((int16_t *) UE->common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
+		  ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[k][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
+		  ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
 		}
 	      }
 	    }
@@ -492,6 +492,7 @@ int main(int argc, char **argv)
                            &UE->frame_parms,
                            UE->dlsch_MCH[0],
                            UE->dlsch_MCH[0]->harq_processes[0],
+                           trials,
                            subframe,
                            0,0,0);
 

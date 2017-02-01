@@ -189,7 +189,7 @@ unsigned char *parse_header(unsigned char *mac_header,
       }
 
 #ifdef DEBUG_HEADER_PARSING
-      LOG_D(MAC,"[UE] sdu %d lcid %d length %d (offset now %d)\n",
+      LOG_D(MAC,"[UE] sdu %d lcid %d length %d (offset now %ld)\n",
             num_sdus,lcid,length,mac_header_ptr-mac_header);
 #endif
       rx_lcids[num_sdus] = lcid;
@@ -229,7 +229,7 @@ unsigned char *parse_header(unsigned char *mac_header,
       }
 
 #ifdef DEBUG_HEADER_PARSING
-      LOG_D(MAC,"[UE] ce %d lcid %d (offset now %d)\n",num_ces,lcid,mac_header_ptr-mac_header);
+      LOG_D(MAC,"[UE] ce %d lcid %d (offset now %ld)\n",num_ces,lcid,mac_header_ptr-mac_header);
 #endif
     }
   }
@@ -333,6 +333,7 @@ ue_send_sdu(
   module_id_t module_idP,
 	    uint8_t CC_id,
 	    frame_t frameP,
+        sub_frame_t subframeP,
 	    uint8_t* sdu,
 	    uint16_t sdu_len,
   uint8_t eNB_index
@@ -365,7 +366,7 @@ ue_send_sdu(
 #endif
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-  LOG_T(MAC,"[eNB %d] First 32 bytes of DLSCH : \n");
+  LOG_T(MAC,"[UE %d] First 32 bytes of DLSCH : \n", module_idP);
 
   for (i=0; i<32; i++) {
     LOG_T(MAC,"%x.",sdu[i]);
@@ -385,7 +386,7 @@ ue_send_sdu(
             module_idP,frameP,payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4],payload_ptr[5]);
 
       if (UE_mac_inst[module_idP].RA_active == 1) {
-        LOG_I(MAC,"[UE %d][RAPROC] Frame %d : Clearing RA_active flag\n");
+        LOG_I(MAC,"[UE %d][RAPROC] Frame %d : Clearing RA_active flag\n", module_idP, frameP);
         UE_mac_inst[module_idP].RA_active=0;
         // check if RA procedure has finished completely (no contention)
         tx_sdu = &UE_mac_inst[module_idP].CCCH_pdu.payload[3];
@@ -401,7 +402,7 @@ ue_send_sdu(
             return;
           }
 
-        LOG_I(MAC,"[UE %d][RAPROC] Frame %d : Clearing contention resolution timer\n");
+        LOG_I(MAC,"[UE %d][RAPROC] Frame %d : Clearing contention resolution timer\n", module_idP, frameP);
         UE_mac_inst[module_idP].RA_contention_resolution_timer_active = 0;
         mac_xface->ra_succeeded(module_idP,CC_id,eNB_index);
       }
@@ -451,7 +452,7 @@ ue_send_sdu(
 #endif
       mac_rrc_data_ind(module_idP,
                        CC_id,
-                       frameP,0, // unknown subframe
+                       frameP,subframeP,
                        UE_mac_inst[module_idP].crnti,
                        CCCH,
                        (uint8_t*)payload_ptr,
@@ -741,7 +742,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
     mcch_period = 32<<(UE_mac_inst[module_idP].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
 
     LOG_D(MAC,
-          "[UE %d] Frame %d subframe %d: Checking MBSFN Sync Area %d/%d with SF allocation %d/%d for MCCH and MTCH (mbsfn period %d, mcch period %d,mac sched period (%d,%d))\n",
+          "[UE %d] Frame %d subframe %d: Checking MBSFN Sync Area %d/%d with SF allocation %d/%d for MCCH and MTCH (mbsfn period %d, mcch period %d,mac sched period (%d,%ld))\n",
           module_idP,frameP, subframe,i,UE_mac_inst[module_idP].num_active_mbsfn_area,
           j,UE_mac_inst[module_idP].num_sf_allocation_pattern,mbsfn_period,mcch_period,
           mch_scheduling_period,UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->radioframeAllocationOffset);
@@ -1053,7 +1054,7 @@ unsigned char generate_ulsch_header(uint8_t *mac_header,
     last_size=1;
     *((POWER_HEADROOM_CMD *)ce_ptr)=(*power_headroom);
     ce_ptr+=sizeof(POWER_HEADROOM_CMD);
-    LOG_D(MAC, "phr header size %d\n",sizeof(POWER_HEADROOM_CMD));
+    LOG_D(MAC, "phr header size %zu\n",sizeof(POWER_HEADROOM_CMD));
   }
 
   if (crnti) {
@@ -1249,7 +1250,7 @@ unsigned char generate_ulsch_header(uint8_t *mac_header,
   }
 
 #ifdef DEBUG_HEADER_PARSING
-  LOG_T(MAC," [UE %d] header : ", crnti);
+  LOG_T(MAC," [UE] header : ");
 
   for (i=0; i<((unsigned char*)mac_header_ptr - mac_header); i++) {
     LOG_T(MAC,"%2x.",mac_header[i]);
@@ -1886,8 +1887,7 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
         ulsch_buffer[payload_offset+sdu_length_total+j] = (char)(taus()&0xff);
       }
   }
-  LOG_D(MAC,"[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n",
-        module_idP,payload_offset, sdu_length_total);
+  LOG_D(MAC,"[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n", module_idP);
   UE_mac_inst[module_idP].scheduling_info.SR_pending=0;
   UE_mac_inst[module_idP].scheduling_info.SR_COUNTER=0;
 
@@ -1900,7 +1900,7 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
 	  // Reset ReTx BSR Timer
 	  UE_mac_inst[module_idP].scheduling_info.retxBSR_SF = get_sf_retxBSRTimer(UE_mac_inst[module_idP].scheduling_info.retxBSR_Timer);
 
-	  LOG_D(MAC,"[UE %d] MAC ReTx BSR Timer Reset =%d\n",
+	  LOG_D(MAC,"[UE %d] MAC ReTx BSR Timer Reset =%d\n", module_idP,
 			  UE_mac_inst[module_idP].scheduling_info.retxBSR_SF);
 
 	  // Reset Periodic Timer except when BSR is truncated
@@ -1909,7 +1909,7 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
 		  UE_mac_inst[module_idP].scheduling_info.periodicBSR_SF = get_sf_periodicBSRTimer(UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer);
 
 		  LOG_D(MAC,"[UE %d] MAC Periodic BSR Timer Reset =%d\n",
-				  UE_mac_inst[module_idP].scheduling_info.periodicBSR_SF);
+		        module_idP, UE_mac_inst[module_idP].scheduling_info.periodicBSR_SF);
 
 	  }
 
@@ -1922,7 +1922,7 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
   
   if (opt_enabled) {
     trace_pdu(0, ulsch_buffer, buflen, module_idP, 3, UE_mac_inst[module_idP].crnti, UE_mac_inst[module_idP].txFrame, UE_mac_inst[module_idP].txSubframe, 0, 0);
-    LOG_D(OPT,"[UE %d][ULSCH] Frame %d trace pdu for rnti %x  with size %d\n",
+    LOG_D(OPT,"[UE %d][ULSCH] Frame %d subframe %d trace pdu for rnti %x  with size %d\n",
           module_idP, UE_mac_inst[module_idP].txFrame, UE_mac_inst[module_idP].txSubframe, UE_mac_inst[module_idP].crnti, buflen);
   }
 }
@@ -2064,7 +2064,7 @@ ue_scheduler(
       //return(RRC_OK);
     }
 
-    LOG_I(MAC,"Frame %d: Contention resolution timer %d/%d\n",txFrameP,UE_mac_inst[module_idP].RA_contention_resolution_cnt,
+    LOG_I(MAC,"Frame %d: Contention resolution timer %d/%ld\n",txFrameP,UE_mac_inst[module_idP].RA_contention_resolution_cnt,
           ((1+rach_ConfigCommon->ra_SupervisionInfo.mac_ContentionResolutionTimer)<<3));
 
     UE_mac_inst[module_idP].RA_contention_resolution_cnt++;

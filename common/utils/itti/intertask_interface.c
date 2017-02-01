@@ -81,13 +81,13 @@
 #define ITTI_DEBUG_ISSUES           (1<<5)
 #define ITTI_DEBUG_MP_STATISTICS    (1<<6)
 
-const int itti_debug = ITTI_DEBUG_ISSUES | ITTI_DEBUG_MP_STATISTICS;
+const int itti_debug = (ITTI_DEBUG_ISSUES | ITTI_DEBUG_MP_STATISTICS);
 
 /* Don't flush if using RTAI */
 #ifdef RTAI
 # define ITTI_DEBUG(m, x, args...)  do { if ((m) & itti_debug) rt_log_debug (x, ##args); } while(0);
 #else
-# define ITTI_DEBUG(m, x, args...)  do { if ((m) & itti_debug) fprintf(stdout, "[ITTI][D]"x, ##args); fflush (stdout); } while(0);
+# define ITTI_DEBUG(m, x, args...)  do { if ((m) & itti_debug) {fprintf(stdout, "[ITTI][D]"x, ##args); fflush (stdout);} } while(0);
 #endif
 #define ITTI_ERROR(x, args...)      do { fprintf(stdout, "[ITTI][E]"x, ##args); fflush (stdout); } while(0);
 

@@ -130,6 +130,7 @@ int rlc_um_read_length_indicators(unsigned char**data_ppP, rlc_um_e_li_t* e_liP,
   unsigned int e2  = 0;
   unsigned int li2 = 0;
   *num_li_pP = 0;
+  int pdu_size = *data_size_pP;
 
   while ((continue_loop)) {
     //msg("[RLC_UM] e_liP->b1 = %02X\n", e_liP->b1);
@@ -147,13 +148,39 @@ int rlc_um_read_length_indicators(unsigned char**data_ppP, rlc_um_e_li_t* e_liP,
       *data_size_pP = *data_size_pP - li2 - 1;
       *num_li_pP = *num_li_pP +1;
 
+      if (!(*data_size_pP >= 0)) LOG_E(RLC, "Invalid data_size=%d! (pdu_size=%d loop=%d e1=%d e2=%d li2=%d e_liP=%02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x)\n",
+          *data_size_pP, pdu_size, continue_loop, e1, e2, li2,
+          (e_liP-(continue_loop-1)+0)->b1,
+          (e_liP-(continue_loop-1)+0)->b2,
+          (e_liP-(continue_loop-1)+0)->b3,
+          (e_liP-(continue_loop-1)+1)->b1,
+          (e_liP-(continue_loop-1)+1)->b2,
+          (e_liP-(continue_loop-1)+1)->b3,
+          (e_liP-(continue_loop-1)+2)->b1,
+          (e_liP-(continue_loop-1)+2)->b2,
+          (e_liP-(continue_loop-1)+2)->b3);
+      // AssertFatal(*data_size_pP >= 0, "Invalid data_size!");
+
       if (e2 == 0) {
         continue_loop = 0;
       } else {
         e_liP++;
+        continue_loop++;
       }
     } else {
+      if (!(*data_size_pP >= 0)) LOG_E(RLC, "Invalid data_size=%d! (pdu_size=%d loop=%d e1=%d li1=%d e_liP=%02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x)\n",
+          *data_size_pP, pdu_size, continue_loop, e1, li1,
+          (e_liP-(continue_loop-1)+0)->b1,
+          (e_liP-(continue_loop-1)+0)->b2,
+          (e_liP-(continue_loop-1)+0)->b3,
+          (e_liP-(continue_loop-1)+1)->b1,
+          (e_liP-(continue_loop-1)+1)->b2,
+          (e_liP-(continue_loop-1)+1)->b3,
+          (e_liP-(continue_loop-1)+2)->b1,
+          (e_liP-(continue_loop-1)+2)->b2,
+          (e_liP-(continue_loop-1)+2)->b3);
       continue_loop = 0;
+      // AssertFatal(*data_size_pP >= 0, "Invalid data_size!");
     }
 
     if (*num_li_pP >= RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU) {
@@ -162,7 +189,15 @@ int rlc_um_read_length_indicators(unsigned char**data_ppP, rlc_um_e_li_t* e_liP,
   }
 
   *data_ppP = *data_ppP + (((*num_li_pP*3) +1) >> 1);
-  return 0;
+  if (*data_size_pP > 0) {
+    return 0;
+  } else if (*data_size_pP == 0) {
+    LOG_W(RLC, "Last RLC SDU size is zero!\n");
+    return -1;
+  } else {
+    LOG_W(RLC, "Last RLC SDU size is negative %d!\n", *data_size_pP);
+    return -1;
+  }
 }
 //-----------------------------------------------------------------------------
 void
@@ -273,6 +308,9 @@ rlc_um_try_reassembly(
               __LINE__);
 #endif
       }
+      AssertFatal(size >= 0, "invalid size!");
+      AssertFatal((e==0) || (e==1), "invalid e!");
+      AssertFatal((fi >= 0) && (fi <= 3), "invalid fi!");
 
       if (e == RLC_E_FIXED_PART_DATA_FIELD_FOLLOW) {
         switch (fi) {
@@ -362,8 +400,9 @@ rlc_um_try_reassembly(
           break;
 
         default:
-          AssertFatal( 0 , PROTOCOL_RLC_UM_CTXT_FMT" TRY REASSEMBLY SHOULD NOT GO HERE (%s:%u)\n",
+          AssertFatal( 0 , PROTOCOL_RLC_UM_CTXT_FMT" fi=%d! TRY REASSEMBLY SHOULD NOT GO HERE (%s:%u)\n",
                        PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
+                       fi,
                        __FILE__,
                        __LINE__);
         }
@@ -504,8 +543,9 @@ rlc_um_try_reassembly(
               // data_p is already ok, done by last loop above
               rlc_um_reassembly (ctxt_pP, rlc_pP, data_p, size);
             } else {
-              AssertFatal( 0 !=0, PROTOCOL_RLC_UM_CTXT_FMT" SHOULD NOT GO HERE (%s:%u)\n",
+              AssertFatal( 0 !=0, PROTOCOL_RLC_UM_CTXT_FMT" size=%d! SHOULD NOT GO HERE (%s:%u)\n",
                            PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
+                           size,
                            __FILE__,
                            __LINE__);
               //rlc_pP->stat_rx_data_pdu_dropped += 1;
@@ -534,6 +574,12 @@ rlc_um_try_reassembly(
                          __LINE__);
 #endif
           }
+        } else {
+          rlc_pP->stat_rx_data_pdu_dropped += 1;
+          rlc_pP->stat_rx_data_bytes_dropped += tb_ind_p->size;
+          rlc_pP->reassembly_missing_sn_detected = 1;
+
+          LOG_W(RLC, "[SN %d] Bad RLC header! Discard this RLC PDU (size=%d)\n", sn, size);
         }
       }
 
@@ -544,7 +590,7 @@ rlc_um_try_reassembly(
             __FILE__,
             __LINE__);
 #endif
-      free_mem_block(rlc_pP->dar_buffer[sn]);
+      free_mem_block(rlc_pP->dar_buffer[sn], __func__);
       rlc_pP->dar_buffer[sn] = NULL;
     } else {
       rlc_pP->last_reassemblied_missing_sn = sn;
@@ -618,7 +664,7 @@ rlc_um_start_timer_reordering(
         rlc_pP->t_reordering.ms_time_out);
 #endif
   } else {
-    LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T-REORDERING] NOT STARTED, CAUSE CONFIGURED 0 ms\n",
+    LOG_T(RLC, PROTOCOL_RLC_UM_CTXT_FMT"[T-REORDERING] NOT STARTED, CAUSE CONFIGURED 0 ms\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP));
   }
 }
@@ -957,7 +1003,7 @@ rlc_um_receive_process_dar (
   } else if (rlc_pP->rx_sn_length == 5) {
     sn = pdu_pP->b1 & 0x1F;
   } else {
-    free_mem_block(pdu_mem_pP);
+    free_mem_block(pdu_mem_pP, __func__);
   }
 
   RLC_UM_MUTEX_LOCK(&rlc_pP->lock_dar_buffer, ctxt_pP, rlc_pP);
@@ -982,7 +1028,7 @@ rlc_um_receive_process_dar (
 #endif
     rlc_pP->stat_rx_data_pdu_out_of_window   += 1;
     rlc_pP->stat_rx_data_bytes_out_of_window += tb_sizeP;
-    free_mem_block(pdu_mem_pP);
+    free_mem_block(pdu_mem_pP, __func__);
     pdu_mem_pP = NULL;
     RLC_UM_MUTEX_UNLOCK(&rlc_pP->lock_dar_buffer);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_UM_RECEIVE_PROCESS_DAR, VCD_FUNCTION_OUT);
@@ -1001,7 +1047,7 @@ rlc_um_receive_process_dar (
       //discard the PDU
       rlc_pP->stat_rx_data_pdus_duplicate  += 1;
       rlc_pP->stat_rx_data_bytes_duplicate += tb_sizeP;
-      free_mem_block(pdu_mem_pP);
+      free_mem_block(pdu_mem_pP, __func__);
       pdu_mem_pP = NULL;
       RLC_UM_MUTEX_UNLOCK(&rlc_pP->lock_dar_buffer);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_UM_RECEIVE_PROCESS_DAR, VCD_FUNCTION_OUT);
@@ -1017,7 +1063,7 @@ rlc_um_receive_process_dar (
           sn);
 #endif
     mem_block_t *pdu = rlc_um_remove_pdu_from_dar_buffer(ctxt_pP, rlc_pP, sn);
-    free_mem_block(pdu);
+    free_mem_block(pdu, __func__);
   }
 
   rlc_um_store_pdu_in_dar_buffer(ctxt_pP, rlc_pP, pdu_mem_pP, sn);

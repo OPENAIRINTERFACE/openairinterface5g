@@ -99,7 +99,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
       rb_id = srb2add_listP->list.array[cnt]->srb_Identity;
       lc_id = rb_id;
 
-      LOG_D(RLC, "Adding SRB %d, rb_id %d\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
+      LOG_D(RLC, "Adding SRB %ld, rb_id %d\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
       srb_toaddmod_p = srb2add_listP->list.array[cnt];
 
       if (srb_toaddmod_p->rlc_Config) {
@@ -259,7 +259,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
         continue;
       }
 
-      LOG_D(RLC, "Adding DRB %d, lc_id %d\n",drb_id,lc_id);
+      LOG_D(RLC, "Adding DRB %ld, lc_id %d\n",drb_id,lc_id);
 
 
       if (drb_toaddmod_p->rlc_Config) {
@@ -325,7 +325,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
           break;
 
         default:
-          LOG_W(RLC, PROTOCOL_CTXT_FMT"[RB %u] unknown drb_toaddmod_p->rlc_Config->present \n",
+          LOG_W(RLC, PROTOCOL_CTXT_FMT"[RB %ld] unknown drb_toaddmod_p->rlc_Config->present \n",
                 PROTOCOL_CTXT_ARGS(ctxt_pP),
                 drb_id);
         }
@@ -786,7 +786,7 @@ rlc_op_status_t rrc_rlc_data_req     (
   //-----------------------------------------------------------------------------
   mem_block_t*   sdu;
 
-  sdu = get_free_mem_block(sdu_sizeP);
+  sdu = get_free_mem_block(sdu_sizeP, __func__);
 
   if (sdu != NULL) {
     memcpy (sdu->data, sduP, sdu_sizeP);

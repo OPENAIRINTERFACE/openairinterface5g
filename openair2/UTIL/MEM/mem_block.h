@@ -55,8 +55,8 @@ typedef struct mem_block_t {
 
 public_mem_block(void        *pool_buffer_init (void);)
 public_mem_block(void        *pool_buffer_clean (void *arg);)
-public_mem_block(void         free_mem_block (mem_block_t * leP);)
-public_mem_block(mem_block_t* get_free_mem_block (uint32_t sizeP);)
+public_mem_block(void         free_mem_block (mem_block_t * leP, const char* caller);)
+public_mem_block(mem_block_t* get_free_mem_block (uint32_t sizeP, const char* caller);)
 public_mem_block(mem_block_t *get_free_copy_mem_block (void);)
 public_mem_block(mem_block_t *get_free_copy_mem_block_up (void);)
 public_mem_block(mem_block_t *copy_mem_block (mem_block_t * leP, mem_block_t * destP);)

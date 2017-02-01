@@ -75,7 +75,7 @@ list2_free (list2_t * listP)
   mem_block_t      *le;
 
   while ((le = list2_remove_head (listP))) {
-    free_mem_block (le);
+    free_mem_block (le, __func__);
   }
 }
 

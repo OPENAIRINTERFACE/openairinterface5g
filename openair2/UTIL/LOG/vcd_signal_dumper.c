@@ -98,6 +98,7 @@ const char* eurecomVariablesNames[] = {
   "rxcnt",
   "trx_ts",
   "trx_tst",
+  "trx_write_flags",
   "tx_ts",
   "rx_ts",
   "hw_cnt_rx",
@@ -174,8 +175,12 @@ const char* eurecomVariablesNames[] = {
   "ue0_SFN5",
   "ue0_SFN6",
   "ue0_SFN7",
+  "ue_pdcp_flush_size",
+  "ue_pdcp_flush_err",
   "ue0_trx_read_ns",
   "ue0_trx_write_ns",
+  "ue0_trx_read_ns_missing",
+  "ue0_trx_write_ns_missing"
 };
 
 const char* eurecomFunctionsNames[] = {
@@ -192,7 +197,8 @@ const char* eurecomFunctionsNames[] = {
   "ue_thread_rxtx1",
   "trx_read_sf9",
   "trx_write_sf9",
-  "ue_signal_cond_rxtx",
+  "ue_signal_cond_rxtx0",
+  "ue_signal_cond_rxtx1",
   "ue_wait_cond_rxtx0",
   "ue_wait_cond_rxtx1",
   "ue_lock_mutex_rxtx_for_cond_wait0",
@@ -283,6 +289,9 @@ const char* eurecomFunctionsNames[] = {
   "phy_ue_generate_prach",
   "phy_ue_ulsch_modulation",
   "phy_ue_ulsch_encoding",
+#if 1 // add for debugging losing PDSCH immediately before and after reporting CQI
+  "phy_ue_ulsch_encoding_fill_cqi",
+#endif
   "phy_ue_ulsch_scrambling",
   "phy_eNB_dlsch_modulation",
   "phy_eNB_dlsch_encoding",
@@ -338,6 +347,10 @@ const char* eurecomFunctionsNames[] = {
   "pdcp_data_ind",
   "pdcp_apply_security",
   "pdcp_validate_security",
+  "pdcp_fifo_read",
+  "pdcp_fifo_read_buffer",
+  "pdcp_fifo_flush",
+  "pdcp_fifo_flush_buffer",
   /* RRC signals  */
   "rrc_rx_tx",
   "rrc_mac_config_req",

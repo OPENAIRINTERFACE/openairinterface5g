@@ -62,7 +62,7 @@ void util_print_hex_octets(comp_name_t component, unsigned char* data, unsigned 
      */
     if (octet_index != 0 && (octet_index + 1) % 16 == 0) {
       LOG_T(component, " |\n");
-      LOG_T(component, " %03d |", octet_index);
+      LOG_T(component, " %03lu |", octet_index);
     }
   }
 

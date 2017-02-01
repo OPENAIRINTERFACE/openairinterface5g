@@ -333,7 +333,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
 
           if (UE_id < 0) {
             memcpy(&eNB->common_channels[CC_idP].RA_template[ii].cont_res_id[0],payload_ptr,6);
-            LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d CCCH: Received Msg3: length %d, offset %d\n",
+            LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d CCCH: Received Msg3: length %d, offset %ld\n",
                   enb_mod_idP,CC_idP,frameP,rx_lengths[i],payload_ptr-sduP);
 
             if ((UE_id=add_new_ue(enb_mod_idP,CC_idP,eNB->common_channels[CC_idP].RA_template[ii].rnti,harq_pidP)) == -1 ) {
@@ -343,7 +343,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
               LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Added user with rnti %x => UE %d\n",
                     enb_mod_idP,CC_idP,frameP,eNB->common_channels[CC_idP].RA_template[ii].rnti,UE_id);
           } else {
-            LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d CCCH: Received Msg3 from already registered UE %d: length %d, offset %d\n",
+            LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d CCCH: Received Msg3 from already registered UE %d: length %d, offset %ld\n",
                   enb_mod_idP,CC_idP,frameP,UE_id,rx_lengths[i],payload_ptr-sduP);
 	    // kill RA procedure
           }
@@ -433,7 +433,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
 	
 	if (UE_id != -1) {
 	  // adjust buffer occupancy of the correponding logical channel group
-	  LOG_D(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d, removing from LCGID %d, %d\n",
+	  LOG_D(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d, removing from LCGID %ld, %d\n",
 		enb_mod_idP,CC_idP,frameP, rx_lengths[i], UE_id,rx_lcids[i],
 		UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]],
 		UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]]);
@@ -568,7 +568,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
         }
       }
 
-      LOG_D(MAC,"[eNB] sdu %d lcid %d tb_length %d length %d (offset now %d)\n",
+      LOG_D(MAC,"[eNB] sdu %d lcid %d tb_length %d length %d (offset now %ld)\n",
             num_sdus,lcid,tb_length, length,mac_header_ptr-mac_header);
       rx_lcids[num_sdus] = lcid;
       rx_lengths[num_sdus] = length;
@@ -751,21 +751,45 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
       continue;
     }
 
+    /* let's drop the UE if get_eNB_UE_stats returns NULL when calling it with any of the UE's active UL CCs */
+    /* TODO: refine? */
+    drop_ue = 0;
+    for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
+      CC_id = UE_list->ordered_ULCCids[n][UE_id];
+      if (mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti) == NULL) {
+        LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: no PHY context\n", module_idP,frameP,subframeP,UE_id,rnti,CC_id);
+        drop_ue = 1;
+        break;
+      }
+    }
+    if (drop_ue == 1) {
+/* we can't come here, ulsch_scheduler_pre_processor won't put in the list a UE with no PHY context */
+abort();
+      /* TODO: this is a hack. Sometimes the UE has no PHY context but
+       * is still present in the MAC with 'ul_failure_timer' = 0 and
+       * 'ul_out_of_sync' = 0. It seems wrong and the UE stays there forever. Let's
+       * start an UL out of sync procedure in this case.
+       * The root cause of this problem has to be found and corrected.
+       * In the meantime, this hack...
+       */
+      if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer == 0 &&
+          UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 0) {
+        LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: UE in weird state, let's put it 'out of sync'\n",
+              module_idP,frameP,subframeP,UE_id,rnti,CC_id);
+        // inform RRC of failure and clear timer
+        mac_eNB_rrc_ul_failure(module_idP,CC_id,frameP,subframeP,rnti);
+        UE_list->UE_sched_ctrl[UE_id].ul_failure_timer=0;
+        UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync=1;
+      }
+      continue;
+    }
+
     // loop over all active UL CC_ids for this UE
     for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
       // This is the actual CC_id in the list
       CC_id = UE_list->ordered_ULCCids[n][UE_id];
       frame_parms = mac_xface->get_lte_frame_parms(module_idP,CC_id);
       eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
-
-      if (eNB_UE_stats==NULL) {
-        LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: no PHY context\n", module_idP,frameP,subframeP,UE_id,rnti,CC_id);
-	drop_ue=1;
-        continue; // mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
-      }
-
-      if (drop_ue==1)
-	continue;
 
       if (CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,aggregation,rnti)) {
         LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: not enough nCCE\n", module_idP,frameP,subframeP,UE_id,rnti,CC_id);
@@ -882,6 +906,12 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
               T_INT(subframeP), T_INT(harq_pid), T_INT(mcs), T_INT(first_rb[CC_id]), T_INT(rb_table[rb_table_index]),
               T_INT(TBS), T_INT(ndi));
 
+	    if (mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED)
+	      LOG_I(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",
+		    module_idP,harq_pid,rnti,CC_id,frameP,subframeP,UE_id,mcs,
+		    first_rb[CC_id],rb_table[rb_table_index],
+		    rb_table_index,TBS,harq_pid);
+
 	    // bad indices : 20 (40 PRB), 21 (45 PRB), 22 (48 PRB)
             // increment for next UE allocation
             first_rb[CC_id]+=rb_table[rb_table_index];
@@ -890,12 +920,6 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	    UE_sched_ctrl->ul_scheduled |= (1<<harq_pid);
 	    if (UE_id == UE_list->head)
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_SCHEDULED,UE_sched_ctrl->ul_scheduled);
-
-	    if (mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED)
-	      LOG_I(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",
-		    module_idP,harq_pid,rnti,CC_id,frameP,subframeP,UE_id,mcs,
-		    first_rb[CC_id],rb_table[rb_table_index],
-		    rb_table_index,TBS,harq_pid);
 
 	    // adjust total UL buffer status by TBS, wait for UL sdus to do final update
 	    LOG_D(MAC,"[eNB %d] CC_id %d UE %d/%x : adjusting ul_total_buffer, old %d, TBS %d\n", module_idP,CC_id,UE_id,rnti,UE_template->ul_total_buffer,TBS);
