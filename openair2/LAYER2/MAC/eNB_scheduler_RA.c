@@ -73,7 +73,7 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
   unsigned char i,harq_pid,round;
   int16_t rrc_sdu_length;
   unsigned char lcid,offset;
-  module_id_t UE_id= UE_INDEX_INVALID;
+  int UE_id = -1;
   unsigned short TBsize = -1;
   unsigned short msg4_padding,msg4_post_padding,msg4_header;
   uint8_t *vrb_map;
@@ -266,6 +266,7 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 
           // check for Msg4 Message
           UE_id = find_UE_id(module_idP,RA_template->rnti);
+          if (UE_id == -1) { printf("%s:%d:%s: FATAL ERROR\n", __FILE__, __LINE__, __FUNCTION__); abort(); }
 
           if (Is_rrc_registered == 1) {
 
@@ -709,7 +710,10 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 			    RA_template->RA_dci_size_bits2,
 			    RA_template->RA_dci_fmt2,
 			    0);
+printf("MAC: msg4 retransmission for rnti %x (round %d) fsf %d/%d\n", RA_template->rnti, round, frameP, subframeP);
 	  }
+else
+printf("MAC: msg4 retransmission for rnti %x (round %d) fsf %d/%d CCE allocation failed!\n", RA_template->rnti, round, frameP, subframeP);
 	  LOG_W(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Msg4 not acknowledged, adding ue specific dci (rnti %x) for RA (Msg4 Retransmission)\n",
 		module_idP,CC_id,frameP,subframeP,RA_template->rnti);
 	} else {
@@ -718,6 +722,7 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 		  remove UE instance across all the layers: mac_xface->cancel_RA();
 		  }
 	  */
+printf("MAC: msg4 acknowledged for rnti %x fsf %d/%d, let's configure it\n", RA_template->rnti, frameP, subframeP);
 	  LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d : Msg4 acknowledged\n",module_idP,CC_id,frameP,subframeP);
 	  RA_template->wait_ack_Msg4=0;
 	  RA_template->RA_active=FALSE;
@@ -746,14 +751,26 @@ void initiate_ra_proc(module_id_t module_idP, int CC_id,frame_t frameP, uint16_t
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC,0);
 
   for (i=0; i<NB_RA_PROC_MAX; i++) {
-    if (RA_template[i].RA_active==FALSE) {
+    if (RA_template[i].RA_active==FALSE &&
+        RA_template[i].wait_ack_Msg4 == 0) {
+      int loop = 0;
       RA_template[i].RA_active=TRUE;
       RA_template[i].generate_rar=1;
       RA_template[i].generate_Msg4=0;
       RA_template[i].wait_ack_Msg4=0;
       RA_template[i].timing_offset=timing_offset;
-      // Put in random rnti (to be replaced with proper procedure!!)
-      RA_template[i].rnti = taus();
+      /* TODO: find better procedure to allocate RNTI */
+      do {
+        RA_template[i].rnti = taus();
+        loop++;
+      } while (loop != 100 &&
+               /* TODO: this is not correct, the rnti may be in use without
+                * being in the MAC yet. To be refined.
+                */
+               !(find_UE_id(module_idP, RA_template[i].rnti) == -1 &&
+                 /* 1024 and 60000 arbirarily chosen, not coming from standard */
+                 RA_template[i].rnti >= 1024 && RA_template[i].rnti < 60000));
+      if (loop == 100) { printf("%s:%d:%s: FATAL ERROR! contact the authors\n", __FILE__, __LINE__, __FUNCTION__); abort(); }
       RA_template[i].RA_rnti = 1+subframeP+(10*f_id);
       RA_template[i].preamble_index = preamble_index;
       LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Activating RAR generation for process %d, rnti %x, RA_active %d\n",
@@ -763,6 +780,8 @@ void initiate_ra_proc(module_id_t module_idP, int CC_id,frame_t frameP, uint16_t
       return;
     }
   }
+
+  LOG_E(MAC,"[eNB %d][RAPROC] FAILURE: CC_id %d Frame %d Initiating RA procedure for preamble index %d\n",module_idP,CC_id,frameP,preamble_index);
 }
 
 void cancel_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, rnti_t rnti)

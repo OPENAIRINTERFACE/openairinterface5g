@@ -38,13 +38,12 @@ int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy
   yaml_event_t event;
 
   int done = 0;
-  int mapping_started = 0;
 
   LOG_I(ENB_APP, "Time to apply a new policy \n");
 
   yaml_parser_initialize(&parser);
 
-  yaml_parser_set_input_string(&parser, policy, strlen(policy));
+  yaml_parser_set_input_string(&parser, (unsigned char *) policy, strlen(policy));
 
   while (!done) {
     if (!yaml_parser_parse(&parser, &event))
@@ -52,39 +51,40 @@ int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy
  
     switch (event.type) {
     case YAML_STREAM_START_EVENT:
+      break;
     case YAML_STREAM_END_EVENT:
+      break;
     case YAML_DOCUMENT_START_EVENT:
+      break;
     case YAML_DOCUMENT_END_EVENT:
       break;
     case YAML_MAPPING_START_EVENT:
-      mapping_started = 1;
       break;
     case YAML_MAPPING_END_EVENT:
-      mapping_started = 0;
       break;
     case YAML_SCALAR_EVENT:
       // Check the system name and call the proper handler
-      if (strcmp(event.data.scalar.value, "mac") == 0) {
+      if (strcmp((char *) event.data.scalar.value, "mac") == 0) {
 	LOG_D(ENB_APP, "This is intended for the mac system\n");
 	// Call the mac handler
 	if (parse_mac_config(mod_id, &parser) == -1) {
 	  goto error;
 	}
-      } else if (strcmp(event.data.scalar.value, "rlc") == 0) {
+      } else if (strcmp((char *) event.data.scalar.value, "rlc") == 0) {
 	// Call the RLC handler
 	LOG_D(ENB_APP, "This is intended for the rlc system\n");
 	// TODO : Just skip it for now
 	if (skip_system_section(&parser) == -1) {
 	  goto error;
 	}
-      } else if (strcmp(event.data.scalar.value, "pdcp") == 0) {
+      } else if (strcmp((char *) event.data.scalar.value, "pdcp") == 0) {
 	// Call the PDCP handler
 	LOG_D(ENB_APP, "This is intended for the pdcp system\n");
 	// TODO : Just skip it for now
 	if (skip_system_section(&parser) == -1) {
 	  goto error;
 	}
-      } else if (strcmp(event.data.scalar.value, "rrc") == 0) {
+      } else if (strcmp((char *) event.data.scalar.value, "rrc") == 0) {
 	// Call the RRC handler
 	LOG_D(ENB_APP, "This is intended for the rrc system\n");
 	// TODO : Just skip it for now
@@ -159,8 +159,9 @@ int skip_system_section(yaml_parser_t *parser) {
       if (skip_subsystem_section(parser) == -1) {
 	goto error;
       }
+    default:
+      break;
     }
-    
     done = (event.type == YAML_SEQUENCE_END_EVENT);
 
     yaml_event_delete(&event);
@@ -199,7 +200,7 @@ int skip_subsystem_section(yaml_parser_t *parser) {
 	goto error;
       }
       // Check what key needs to be set
-      if (strcmp(event.data.scalar.value, "behavior") == 0) {
+      if (strcmp((char *) event.data.scalar.value, "behavior") == 0) {
 	LOG_D(ENB_APP, "Skipping the behavior attribute\n");
 	yaml_event_delete(&event);
 	if (!yaml_parser_parse(parser, &event)) {
@@ -210,7 +211,7 @@ int skip_subsystem_section(yaml_parser_t *parser) {
 	} else {
 	  goto error;
 	}
-      } else if (strcmp(event.data.scalar.value, "parameters") == 0) {
+      } else if (strcmp((char *) event.data.scalar.value, "parameters") == 0) {
 	LOG_D(ENB_APP, "Skipping the parameters for this subsystem\n");
 	if (skip_subsystem_parameters_config(parser) == -1) {
 	  goto error;
@@ -234,8 +235,6 @@ int skip_subsystem_section(yaml_parser_t *parser) {
 
 int skip_subsystem_parameters_config(yaml_parser_t *parser) {
   yaml_event_t event;
-  
-  void *param;
   
   int done = 0;
   int mapping_started = 0;
@@ -299,10 +298,10 @@ int skip_parameter_modification(yaml_parser_t *parser) {
       is_array = 1;
       break;
     case YAML_SCALAR_EVENT:
-      if ((strcmp(event.data.scalar.tag, YAML_INT_TAG) == 0) ||
-	  (strcmp(event.data.scalar.tag, YAML_FLOAT_TAG) == 0) ||
-	  (strcmp(event.data.scalar.tag, YAML_STR_TAG) == 0) ||
-	  (strcmp(event.data.scalar.tag, YAML_BOOL_TAG) == 0)) {
+      if ((strcmp((char *) event.data.scalar.tag, YAML_INT_TAG) == 0) ||
+	  (strcmp((char *) event.data.scalar.tag, YAML_FLOAT_TAG) == 0) ||
+	  (strcmp((char *) event.data.scalar.tag, YAML_STR_TAG) == 0) ||
+	  (strcmp((char *) event.data.scalar.tag, YAML_BOOL_TAG) == 0)) {
 	// Do nothing
       } else {
 	// No other type is supported at the moment, so it should be considered an error
@@ -351,14 +350,14 @@ int apply_parameter_modification(void *parameter, yaml_parser_t *parser) {
       is_array = 1;
       break;
     case YAML_SCALAR_EVENT:
-      if (strcmp(event.data.scalar.tag, YAML_INT_TAG) == 0) {
-	((int *) parameter)[i] = strtol(event.data.scalar.value, &endptr, 10);
-      } else if (strcmp(event.data.scalar.tag, YAML_FLOAT_TAG) == 0) {
-	((float *) parameter)[i] = strtof(event.data.scalar.value, &endptr);
-      } else if (strcmp(event.data.scalar.tag, YAML_STR_TAG) == 0) {
-	strncpy(&((char *) parameter)[i], event.data.scalar.value, event.data.scalar.length);
-      } else if (strcmp(event.data.scalar.tag, YAML_BOOL_TAG) == 0) {
-	if (strcmp(event.data.scalar.value, "true") == 0) {
+      if (strcmp((char *) event.data.scalar.tag, YAML_INT_TAG) == 0) {
+	((int *) parameter)[i] = strtol((char *) event.data.scalar.value, &endptr, 10);
+      } else if (strcmp((char *) event.data.scalar.tag, YAML_FLOAT_TAG) == 0) {
+	((float *) parameter)[i] = strtof((char *) event.data.scalar.value, &endptr);
+      } else if (strcmp((char *) event.data.scalar.tag, YAML_STR_TAG) == 0) {
+	strncpy(&((char *) parameter)[i], (char *) event.data.scalar.value, event.data.scalar.length);
+      } else if (strcmp((char *) event.data.scalar.tag, YAML_BOOL_TAG) == 0) {
+	if (strcmp((char *) event.data.scalar.value, "true") == 0) {
 	  ((int *) parameter)[i] = 1;
 	} else {
 	  ((int *) parameter)[i] = 0;

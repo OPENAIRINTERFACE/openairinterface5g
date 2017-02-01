@@ -177,7 +177,7 @@
 #define DMA_BLKS_PER_SLOT    (SLOT_LENGTH_BYTES/2048)                    // Number of DMA blocks per slot
 #define SLOT_TIME_NS         (SLOT_LENGTH_SAMPLES*(1e3)/7.68)            // slot time in ns
 
-#define NB_ANTENNA_PORTS_ENB  14                                         // total number of eNB antenna ports
+#define NB_ANTENNA_PORTS_ENB  6                                         // total number of eNB antenna ports
 
 #ifdef EXMIMO
 #define TARGET_RX_POWER 55    // Target digital power for the AGC

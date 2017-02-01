@@ -1393,13 +1393,13 @@ void rx_phich(PHY_VARS_UE *ue,
       }
     } else {
       //#ifdef DEBUG_PHICH
-      LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH, received NAK (%d) nseq %d, ngroup %d\n",
+      LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH, received NAK (%d) nseq %d, ngroup %d (Mlimit %d)\n",
             ue->Mod_id,harq_pid,
-            proc->frame_rx,
+            proc->frame_rx%1024,
             subframe,
             HI16,
             nseq_PHICH,
-            ngroup_PHICH,
+            ngroup_PHICH,ulsch->harq_processes[harq_pid]->round+1,
             ulsch->Mlimit);
       //#endif
 
@@ -1450,7 +1450,7 @@ void rx_phich(PHY_VARS_UE *ue,
       //#ifdef PHICH_DEBUG
       LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH, received ACK (%d) nseq %d, ngroup %d\n\n",
             ue->Mod_id,harq_pid,
-            proc->frame_rx,
+            proc->frame_rx%1024,
             subframe, HI16,
             nseq_PHICH,ngroup_PHICH);
       //#endif

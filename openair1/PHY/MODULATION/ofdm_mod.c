@@ -145,7 +145,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 #else
     // on AVX2 need 256-bit alignment
     idft((int16_t *)&input[i*fftsize],
-         (fftsize<=512) ? (int16_t *)temp : (int16_t *)&output[(i*fftsize) + ((1+i)*nb_prefix_samples)],
+         (int16_t *)temp,
          1);
 
 #endif
@@ -163,8 +163,6 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
 #ifndef __AVX2__
       if (fftsize==128) 
-#else
-      if (fftsize<=512) 
 #endif
       {
         for (j=0; j<fftsize ; j++) {
@@ -285,16 +283,16 @@ void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t ne
 }
 
 // OFDM modulation for each symbol
-void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms)
+void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms,int do_precoding)
 {
 
-  int aa, l, slot_offset;
-  int32_t **txdataF = eNB_common_vars->txdataF[eNB_id];
+  int aa, l, slot_offset, slot_offsetF;
+  int32_t **txdataF    = eNB_common_vars->txdataF[eNB_id];
   int32_t **txdataF_BF = eNB_common_vars->txdataF_BF[eNB_id];
-  int32_t **txdata = eNB_common_vars->txdata[eNB_id];
+  int32_t **txdata     = eNB_common_vars->txdata[eNB_id];
 
-  slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
-
+  slot_offset  = (next_slot)*(frame_parms->samples_per_tti>>1);
+  slot_offsetF = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==EXTENDED) ? 6 : 7);
   //printf("Thread %d starting ... aa %d (%llu)\n",omp_get_thread_num(),aa,rdtsc());
   for (l=0; l<frame_parms->symbols_per_tti>>1; l++) {
   
@@ -302,13 +300,13 @@ void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t ne
 
       //printf("do_OFDM_mod_l, slot=%d, l=%d, NUMBER_OF_OFDM_CARRIERS=%d,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES=%d\n",next_slot, l,NUMBER_OF_OFDM_CARRIERS,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_BEAM_PRECODING,1);
-      beam_precoding(txdataF,txdataF_BF,frame_parms,eNB_common_vars->beam_weights[eNB_id],next_slot,l,aa);
+      if (do_precoding==1) beam_precoding(txdataF,txdataF_BF,frame_parms,eNB_common_vars->beam_weights[eNB_id],next_slot,l,aa);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_BEAM_PRECODING,0);
 
       //PMCH case not implemented... 
 
-      if (frame_parms->Ncp == 1)
-        PHY_ofdm_mod(txdataF_BF[aa],         // input
+      if (frame_parms->Ncp == EXTENDED)
+        PHY_ofdm_mod((do_precoding == 1)?txdataF_BF[aa]:&txdataF[aa][slot_offsetF+l*frame_parms->ofdm_symbol_size],         // input
                      &txdata[aa][slot_offset+l*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],            // output
                      frame_parms->ofdm_symbol_size,       
                      1,                                   // number of symbols
@@ -316,7 +314,7 @@ void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t ne
                      CYCLIC_PREFIX);
       else {
         if (l==0) {
-          PHY_ofdm_mod(txdataF_BF[aa],        // input
+          PHY_ofdm_mod((do_precoding==1)?txdataF_BF[aa]:&txdataF[aa][slot_offsetF+l*frame_parms->ofdm_symbol_size],        // input
                        &txdata[aa][slot_offset],           // output
                        frame_parms->ofdm_symbol_size,      
                        1,                                  // number of symbols
@@ -324,7 +322,7 @@ void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t ne
                        CYCLIC_PREFIX);
            
         } else {
-          PHY_ofdm_mod(txdataF_BF[aa],        // input
+	  PHY_ofdm_mod((do_precoding==1)?txdataF_BF[aa]:&txdataF[aa][slot_offsetF+l*frame_parms->ofdm_symbol_size],        // input
                        &txdata[aa][slot_offset+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(l-1)*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],           // output
                        frame_parms->ofdm_symbol_size,      
                        1,                                  // number of symbols

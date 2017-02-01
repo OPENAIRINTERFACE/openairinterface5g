@@ -72,7 +72,7 @@ int flexran_agent_deserialize_message(void *data, int size, Protocol__FlexranMes
 /* Serialize message and then destroy the input flexran msg. Should be called when protocol
    message is created dynamically */
 void * flexran_agent_pack_message(Protocol__FlexranMessage *msg, 
-			      uint32_t * size);
+			      int * size);
 
 /* Calls destructor of the given message */
 err_code_t flexran_agent_destroy_flexran_message(Protocol__FlexranMessage *msg);
@@ -271,7 +271,7 @@ int flexran_get_tpc(mid_t mod_id, mid_t ue_id);
    a designated frame and subframe. Returns 0 for success. The id and the 
    status of the HARQ process are stored in id and status respectively */
 int flexran_get_harq(const mid_t mod_id, const uint8_t CC_id, const mid_t ue_id,
-		     const int frame, const uint8_t subframe, int *id, int *round);
+		     const int frame, const uint8_t subframe, unsigned char *id, unsigned char *round);
 
 /* Uplink power control management*/
 int flexran_get_p0_pucch_dbm(mid_t mod_id, mid_t ue_id, int CC_id);

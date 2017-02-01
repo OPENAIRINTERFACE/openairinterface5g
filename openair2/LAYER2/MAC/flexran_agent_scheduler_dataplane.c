@@ -56,12 +56,11 @@
 
 #include "SIMULATION/TOOLS/defs.h" // for taus
 
-
 void flexran_apply_dl_scheduling_decisions(mid_t mod_id,
 					   uint32_t frame,
 					   uint32_t subframe,
 					   int *mbsfn_flag,
-					   const Protocol__FlexranMessage *dl_scheduling_info) {
+					   Protocol__FlexranMessage *dl_scheduling_info) {
 
   Protocol__FlexDlMacConfig *mac_config = dl_scheduling_info->dl_mac_config_msg;
 
@@ -89,33 +88,26 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 						uint32_t subframe,
 						int *mbsfn_flag,
 						uint32_t n_dl_ue_data,
-						const Protocol__FlexDlData **dl_ue_data) {
+						Protocol__FlexDlData **dl_ue_data) {
 
   uint8_t               CC_id;
   int                   UE_id;
-  int                   N_RBG[MAX_NUM_CCs];
-  unsigned char         aggregation;
   mac_rlc_status_resp_t rlc_status;
   unsigned char         ta_len=0;
   unsigned char         header_len = 0, header_len_tmp = 0;
   unsigned char         sdu_lcids[11],offset,num_sdus=0;
-  uint16_t              nb_rb,nb_rb_temp,total_nb_available_rb[MAX_NUM_CCs],nb_available_rb;
+  uint16_t              nb_rb;
   uint16_t              TBS,j,sdu_lengths[11],rnti,padding=0,post_padding=0;
   unsigned char         dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
   unsigned char         round            = 0;
   unsigned char         harq_pid         = 0;
-  
+  //  LTE_DL_FRAME_PARMS   *frame_parms[MAX_NUM_CCs];
   LTE_eNB_UE_stats     *eNB_UE_stats     = NULL;
   uint16_t              sdu_length_total = 0;
-  int                   mcs;
-  uint16_t              min_rb_unit[MAX_NUM_CCs];
   short                 ta_update        = 0;
   eNB_MAC_INST         *eNB      = &eNB_mac_inst[mod_id];
   UE_list_t            *UE_list  = &eNB->UE_list;
-  LTE_DL_FRAME_PARMS   *frame_parms[MAX_NUM_CCs];
-  int32_t                 normalized_rx_power, target_rx_power;
-  int32_t                 tpc=1;
-  static int32_t          tpc_accumulated=0;
+  //  static int32_t          tpc_accumulated=0;
   UE_sched_ctrl           *ue_sched_ctl;
 
   int last_sdu_header_len = 0;
@@ -135,7 +127,7 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
     dl_dci = dl_data->dl_dci;
 
     CC_id = dl_data->serv_cell_index;
-    frame_parms[CC_id] = mac_xface->get_lte_frame_parms(mod_id, CC_id);
+    //    frame_parms[CC_id] = mac_xface->get_lte_frame_parms(mod_id, CC_id);
     
     rnti = dl_data->rnti;
     UE_id = find_ue(rnti, PHY_vars_eNB_g[mod_id][CC_id]);
@@ -357,20 +349,19 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
     eNB_UE_stats->dlsch_mcs1 = dl_dci->mcs[0];
 
     //Fill the proper DCI of OAI
-    fill_oai_dci(mod_id, CC_id, rnti, dl_dci);
+    flexran_fill_oai_dci(mod_id, CC_id, rnti, dl_dci);
   }
 }
-
-void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
-		  const Protocol__FlexDlDci *dl_dci) {
+void flexran_fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
+		  Protocol__FlexDlDci *dl_dci) {
 
   void         *DLSCH_dci        = NULL;
   DCI_PDU      *DCI_pdu;
 
-  unsigned char         round            = 0;
   unsigned char         harq_pid         = 0;
+  //  unsigned char round = 0;
   LTE_DL_FRAME_PARMS   *frame_parms[MAX_NUM_CCs];
-  int           size_bits, size_bytes;
+  int           size_bits = 0, size_bytes = 0;
   eNB_MAC_INST         *eNB      = &eNB_mac_inst[mod_id];
   UE_list_t            *UE_list  = &eNB->UE_list;
   LTE_eNB_UE_stats *eNB_UE_stats = NULL;
@@ -380,7 +371,7 @@ void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
   uint32_t format;
 
   harq_pid = dl_dci->harq_process;
-  round = dl_dci->rv[0];
+  //  round = dl_dci->rv[0];
   
   // Note this code is for a specific DCI format
   DLSCH_dci = (void *)UE_list->UE_template[CC_id][UE_id].DLSCH_DCI[harq_pid];

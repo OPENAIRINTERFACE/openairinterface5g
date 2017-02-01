@@ -1185,9 +1185,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
     break;
   }
 
-  if (eNB->frame_parms.threequarter_fs == 1)
-    Ncp=(Ncp*3)>>2;
-
+  // Adjust CP length based on UL bandwidth
   switch (eNB->frame_parms.N_RB_UL) {
   case 6:
     Ncp>>=4;
@@ -1207,6 +1205,11 @@ void rx_prach(PHY_VARS_eNB *eNB,
 
   case 75:
     Ncp=(Ncp*3)>>2;
+    break;
+
+  case 100:
+    if (eNB->frame_parms.threequarter_fs == 1)
+      Ncp=(Ncp*3)>>2;
     break;
   }
 

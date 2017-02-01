@@ -442,7 +442,7 @@ schedule_ue_spec(
   //  unsigned char         rballoc_sub_UE[MAX_NUM_CCs][NUMBER_OF_UE_MAX][N_RBG_MAX];
   //  uint16_t              pre_nb_available_rbs[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   int                   mcs;
-  uint16_t              min_rb_unit[MAX_NUM_CCs];
+  int              min_rb_unit[MAX_NUM_CCs];
   eNB_MAC_INST         *eNB      = &eNB_mac_inst[module_idP];
   UE_list_t            *UE_list  = &eNB->UE_list;
   LTE_DL_FRAME_PARMS   *frame_parms[MAX_NUM_CCs];
@@ -453,9 +453,11 @@ schedule_ue_spec(
   UE_sched_ctrl           *ue_sched_ctl;
   int i;
 
+#if 0
   if (UE_list->head==-1) {
     return;
   }
+#endif
 
   start_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,VCD_FUNCTION_IN);
@@ -519,9 +521,23 @@ schedule_ue_spec(
         continue_flag=1;
       }
       
-      aggregation = get_aggregation(get_bw_index(module_idP,CC_id), 
-				    eNB_UE_stats->DL_cqi[0],
-				    format1);
+      switch(mac_xface->get_transmission_mode(module_idP,CC_id,rnti)){
+      case 1:
+      case 2:
+      case 7:
+	aggregation = get_aggregation(get_bw_index(module_idP,CC_id), 
+				      eNB_UE_stats->DL_cqi[0],
+				      format1);
+	break;
+      case 3:
+	aggregation = get_aggregation(get_bw_index(module_idP,CC_id), 
+				      eNB_UE_stats->DL_cqi[0],
+				      format2A);
+	break;
+      default:
+	LOG_W(MAC,"Unsupported transmission mode %d\n", mac_xface->get_transmission_mode(module_idP,CC_id,rnti));
+	aggregation = 2;
+      }
       
       if ((ue_sched_ctl->pre_nb_available_rbs[CC_id] == 0) ||  // no RBs allocated 
 	  CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,aggregation,rnti)
@@ -1653,7 +1669,10 @@ fill_DLSCH_dci(
           break;
 
         case 3:
-          LOG_D(MAC,"[eNB %d] CC_id %d Adding Format 2A UE %d spec DCI for %d PRBS (rb alloc: %x) \n",
+          /* TODO: fix log, what is 'rb alloc'? */
+          /*LOG_D(MAC,"[eNB %d] CC_id %d Adding Format 2A UE %d spec DCI for %d PRBS (rb alloc: %x) \n",
+                module_idP, CC_id, UE_id, nb_rb);*/
+          LOG_D(MAC,"[eNB %d] CC_id %d Adding Format 2A UE %d spec DCI for %d PRBS\n",
                 module_idP, CC_id, UE_id, nb_rb);
 
           if (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.frame_type == TDD) {

@@ -216,7 +216,7 @@ void average_total_jitter(void)
     }
   }
 
-  LOG_I(OTG,"average_jitter_dl %d average_jitter_ul %lf \n",otg_info->average_jitter_dl,otg_info->average_jitter_ul  );
+  LOG_I(OTG,"average_jitter_dl %lf average_jitter_ul %lf \n",otg_info->average_jitter_dl,otg_info->average_jitter_ul  );
   //  otg_info->average_jitter_dl/= (float)NB_UE_INST;
   // otg_info->average_jitter_ul/= (float)NB_UE_INST;
 }

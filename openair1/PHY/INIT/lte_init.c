@@ -29,7 +29,7 @@
 #include "LAYER2/MAC/extern.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
-//#define DEBUG_PHY
+#define DEBUG_PHY
 #include "assertions.h"
 #include <math.h>
 
@@ -211,7 +211,7 @@ void phy_config_sib2_eNB(uint8_t Mod_id,
       if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) {
         fp->MBSFN_config[i].fourFrames_flag = 0;
         fp->MBSFN_config[i].mbsfn_SubframeConfig = mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]; // 6-bit subframe configuration
-        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i,
+        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %d\n", i,
               fp->MBSFN_config[i].mbsfn_SubframeConfig);
       } else if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) { // 24-bit subframe configuration
         fp->MBSFN_config[i].fourFrames_flag = 1;
@@ -220,7 +220,7 @@ void phy_config_sib2_eNB(uint8_t Mod_id,
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]<<16);
 
-        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i,
+        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %d\n", i,
               fp->MBSFN_config[i].mbsfn_SubframeConfig);
       }
     }
@@ -331,7 +331,7 @@ void phy_config_sib2_ue(uint8_t Mod_id,int CC_id,
       if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) {
         fp->MBSFN_config[i].fourFrames_flag = 0;
         fp->MBSFN_config[i].mbsfn_SubframeConfig = mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]; // 6-bit subframe configuration
-        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i,
+        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %d\n", i,
               fp->MBSFN_config[i].mbsfn_SubframeConfig);
       } else if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) { // 24-bit subframe configuration
         fp->MBSFN_config[i].fourFrames_flag = 1;
@@ -340,7 +340,7 @@ void phy_config_sib2_ue(uint8_t Mod_id,int CC_id,
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]<<16);
 
-        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i,
+        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %d\n", i,
               fp->MBSFN_config[i].mbsfn_SubframeConfig);
       }
     }
@@ -357,7 +357,7 @@ void phy_config_sib13_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,int mbsfn_Area_
   LTE_DL_FRAME_PARMS *fp = &PHY_vars_UE_g[Mod_id][CC_id]->frame_parms;
 
 
-  LOG_I(PHY,"[UE%d] Applying MBSFN_Area_id %d for index %d\n",Mod_id,mbsfn_AreaId_r9,mbsfn_Area_idx);
+  LOG_I(PHY,"[UE%d] Applying MBSFN_Area_id %ld for index %d\n",Mod_id,mbsfn_AreaId_r9,mbsfn_Area_idx);
 
   if (mbsfn_Area_idx == 0) {
     fp->Nid_cell_mbsfn = (uint16_t)mbsfn_AreaId_r9;
@@ -376,7 +376,7 @@ void phy_config_sib13_eNB(uint8_t Mod_id,int CC_id,int mbsfn_Area_idx,
   LTE_DL_FRAME_PARMS *fp = &PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms;
 
 
-  LOG_I(PHY,"[eNB%d] Applying MBSFN_Area_id %d for index %d\n",Mod_id,mbsfn_AreaId_r9,mbsfn_Area_idx);
+  LOG_I(PHY,"[eNB%d] Applying MBSFN_Area_id %ld for index %d\n",Mod_id,mbsfn_AreaId_r9,mbsfn_Area_idx);
 
   if (mbsfn_Area_idx == 0) {
     fp->Nid_cell_mbsfn = (uint16_t)mbsfn_AreaId_r9;
@@ -398,7 +398,7 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *eNB)
     physicalConfigDedicated = eNB->physicalConfigDedicated[UE_id];
 
     if (physicalConfigDedicated != NULL) {
-      LOG_I(PHY,"[eNB %d] Frame %d: Sent physicalConfigDedicated=%p for UE %d\n",eNB->Mod_id,physicalConfigDedicated,UE_id);
+      LOG_I(PHY,"[eNB %d] Sent physicalConfigDedicated=%p for UE %d\n",eNB->Mod_id,physicalConfigDedicated,UE_id);
       LOG_D(PHY,"------------------------------------------------------------------------\n");
 
       if (physicalConfigDedicated->pdsch_ConfigDedicated) {
@@ -653,7 +653,7 @@ void phy_config_dedicated_eNB(uint8_t Mod_id,
   int8_t UE_id = find_ue(rnti,eNB);
 
   if (UE_id == -1) {
-    LOG_E( PHY, "[eNB %"PRIu8"] find_ue() returns -1\n");
+    LOG_E( PHY, "[eNB %"PRIu8"] find_ue() returns -1\n", Mod_id);
     return;
   }
 
@@ -684,6 +684,7 @@ void phy_config_dedicated_eNB(uint8_t Mod_id,
 	break;
       case AntennaInfoDedicated__transmissionMode_tm7:
         lte_gold_ue_spec_port5(eNB->lte_gold_uespec_port5_table[0],eNB->frame_parms.Nid_cell,rnti);
+	eNB->do_precoding = 1;
 	eNB->transmission_mode[UE_id] = 7;
 	break;
       default:
@@ -725,13 +726,13 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
 
   if ((dl_CarrierFreq_r10>=36000) && (dl_CarrierFreq_r10<=36199)) {
     carrier_freq_local = 1900000000 + (dl_CarrierFreq_r10-36000)*100000; //band 33 from 3GPP 36.101 v 10.9 Table 5.7.3-1
-    LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %d) for UE %d\n",Mod_id,/*eNB->frame*/0,CC_id,carrier_freq_local,dl_CarrierFreq_r10,UE_id);
+    LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %ld) for UE %d\n",Mod_id,/*eNB->frame*/0,CC_id,carrier_freq_local,dl_CarrierFreq_r10,UE_id);
   } else if ((dl_CarrierFreq_r10>=6150) && (dl_CarrierFreq_r10<=6449)) {
     carrier_freq_local = 832000000 + (dl_CarrierFreq_r10-6150)*100000; //band 20 from 3GPP 36.101 v 10.9 Table 5.7.3-1
     // this is actually for the UL only, but we use it for DL too, since there is no TDD mode for this band
-    LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %d) for UE %d\n",Mod_id,/*eNB->frame*/0,CC_id,carrier_freq_local,dl_CarrierFreq_r10,UE_id);
+    LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %ld) for UE %d\n",Mod_id,/*eNB->frame*/0,CC_id,carrier_freq_local,dl_CarrierFreq_r10,UE_id);
   } else {
-    LOG_E(PHY,"[eNB %d] Frame %d: ARFCN %d of SCell %d for UE %d not supported\n",Mod_id,/*eNB->frame*/0,dl_CarrierFreq_r10,CC_id,UE_id);
+    LOG_E(PHY,"[eNB %d] Frame %d: ARFCN %ld of SCell %d for UE %d not supported\n",Mod_id,/*eNB->frame*/0,dl_CarrierFreq_r10,CC_id,UE_id);
   }
 
   if (physicalConfigDedicatedSCell_r10) {
@@ -1062,7 +1063,8 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
   // create shortcuts
   LTE_DL_FRAME_PARMS* const fp            = &ue->frame_parms;
   LTE_UE_COMMON* const common_vars        = &ue->common_vars;
-  LTE_UE_PDSCH** const pdsch_vars         = ue->pdsch_vars;
+  LTE_UE_PDSCH** const pdsch_vars_th0     = ue->pdsch_vars[0];
+  LTE_UE_PDSCH** const pdsch_vars_th1     = ue->pdsch_vars[1];
   LTE_UE_PDSCH** const pdsch_vars_SI      = ue->pdsch_vars_SI;
   LTE_UE_PDSCH** const pdsch_vars_ra      = ue->pdsch_vars_ra;
   LTE_UE_PDSCH** const pdsch_vars_mch     = ue->pdsch_vars_MCH;
@@ -1115,32 +1117,37 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
     // init RX buffers
 
     common_vars->rxdata   = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-    common_vars->rxdataF  = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-    common_vars->rxdataF2 = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+    common_vars->common_vars_rx_data_per_thread[0].rxdataF  = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+    common_vars->common_vars_rx_data_per_thread[1].rxdataF  = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
 
     for (i=0; i<fp->nb_antennas_rx; i++) {
       common_vars->rxdata[i] = (int32_t*) malloc16_clear( (fp->samples_per_tti*10+2048)*sizeof(int32_t) );
-      common_vars->rxdataF[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->ofdm_symbol_size*14) );
-      common_vars->rxdataF2[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->ofdm_symbol_size*fp->symbols_per_tti*10) );
+      common_vars->common_vars_rx_data_per_thread[0].rxdataF[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->ofdm_symbol_size*14) );
+      common_vars->common_vars_rx_data_per_thread[1].rxdataF[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->ofdm_symbol_size*14) );
     }
   }
 
   // Channel estimates
   for (eNB_id=0; eNB_id<7; eNB_id++) {
-    common_vars->dl_ch_estimates[eNB_id]      = (int32_t**)malloc16_clear(8*sizeof(int32_t*));
-    common_vars->dl_ch_estimates_time[eNB_id] = (int32_t**)malloc16_clear(8*sizeof(int32_t*));
+    common_vars->common_vars_rx_data_per_thread[0].dl_ch_estimates[eNB_id]      = (int32_t**)malloc16_clear(8*sizeof(int32_t*));
+    common_vars->common_vars_rx_data_per_thread[1].dl_ch_estimates[eNB_id]      = (int32_t**)malloc16_clear(8*sizeof(int32_t*));
+    common_vars->common_vars_rx_data_per_thread[0].dl_ch_estimates_time[eNB_id] = (int32_t**)malloc16_clear(8*sizeof(int32_t*));
+    common_vars->common_vars_rx_data_per_thread[1].dl_ch_estimates_time[eNB_id] = (int32_t**)malloc16_clear(8*sizeof(int32_t*));
 
     for (i=0; i<fp->nb_antennas_rx; i++)
       for (j=0; j<4; j++) {
         int idx = (j<<1) + i;
-        common_vars->dl_ch_estimates[eNB_id][idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->symbols_per_tti*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH) );
-        common_vars->dl_ch_estimates_time[eNB_id][idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2 );
+        common_vars->common_vars_rx_data_per_thread[0].dl_ch_estimates[eNB_id][idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->symbols_per_tti*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH) );
+        common_vars->common_vars_rx_data_per_thread[1].dl_ch_estimates[eNB_id][idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->symbols_per_tti*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH) );
+        common_vars->common_vars_rx_data_per_thread[0].dl_ch_estimates_time[eNB_id][idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2 );
+        common_vars->common_vars_rx_data_per_thread[1].dl_ch_estimates_time[eNB_id][idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2 );
       }
   }
 
   // DLSCH
   for (eNB_id=0; eNB_id<ue->n_connected_eNB; eNB_id++) {
-    pdsch_vars[eNB_id]     = (LTE_UE_PDSCH *)malloc16_clear(sizeof(LTE_UE_PDSCH));
+    pdsch_vars_th0[eNB_id]     = (LTE_UE_PDSCH *)malloc16_clear(sizeof(LTE_UE_PDSCH));
+    pdsch_vars_th1[eNB_id]     = (LTE_UE_PDSCH *)malloc16_clear(sizeof(LTE_UE_PDSCH));
     pdsch_vars_SI[eNB_id]  = (LTE_UE_PDSCH *)malloc16_clear(sizeof(LTE_UE_PDSCH));
     pdsch_vars_ra[eNB_id]  = (LTE_UE_PDSCH *)malloc16_clear(sizeof(LTE_UE_PDSCH));
     pdsch_vars_mch[eNB_id] = (LTE_UE_PDSCH *)malloc16_clear(sizeof(LTE_UE_PDSCH));
@@ -1149,25 +1156,43 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
     pbch_vars[eNB_id]      = (LTE_UE_PBCH *)malloc16_clear(sizeof(LTE_UE_PBCH));
 
     if (abstraction_flag == 0) {
-      phy_init_lte_ue__PDSCH( pdsch_vars[eNB_id], fp );
+      phy_init_lte_ue__PDSCH( pdsch_vars_th0[eNB_id], fp );
+      phy_init_lte_ue__PDSCH( pdsch_vars_th1[eNB_id], fp );
 
-      pdsch_vars[eNB_id]->llr_shifts   = (uint8_t*)malloc16_clear(7*2*fp->N_RB_DL*12);
-      pdsch_vars[eNB_id]->llr_shifts_p = pdsch_vars[eNB_id]->llr_shifts;
-      pdsch_vars[eNB_id]->dl_ch_mag1   = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-      pdsch_vars[eNB_id]->dl_ch_magb1  = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-      pdsch_vars[eNB_id]->llr[1]       = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
+      // thread 0
+      pdsch_vars_th0[eNB_id]->llr_shifts   = (uint8_t*)malloc16_clear(7*2*fp->N_RB_DL*12);
+      pdsch_vars_th0[eNB_id]->llr_shifts_p = pdsch_vars_th0[eNB_id]->llr_shifts;
+      pdsch_vars_th0[eNB_id]->dl_ch_mag1   = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdsch_vars_th0[eNB_id]->dl_ch_magb1  = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdsch_vars_th0[eNB_id]->llr[1]       = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
 
       for (k=0; k<8; k++)
-        pdsch_vars[eNB_id]->rxdataF_comp1[k] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+        pdsch_vars_th0[eNB_id]->rxdataF_comp1[k] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+
+      // thread 1
+      pdsch_vars_th1[eNB_id]->llr_shifts   = (uint8_t*)malloc16_clear(7*2*fp->N_RB_DL*12);
+      pdsch_vars_th1[eNB_id]->llr_shifts_p = pdsch_vars_th1[eNB_id]->llr_shifts;
+      pdsch_vars_th1[eNB_id]->dl_ch_mag1   = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdsch_vars_th1[eNB_id]->dl_ch_magb1  = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdsch_vars_th1[eNB_id]->llr[1]       = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
+
+      for (k=0; k<8; k++)
+        pdsch_vars_th1[eNB_id]->rxdataF_comp1[k] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
 
       for (i=0; i<fp->nb_antennas_rx; i++)
         for (j=0; j<4; j++) {
           int idx = (j<<1)+i;
-          pdsch_vars[eNB_id]->dl_ch_mag1[idx]  = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
-          pdsch_vars[eNB_id]->dl_ch_magb1[idx] = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
+          pdsch_vars_th0[eNB_id]->dl_ch_mag1[idx]  = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
+          pdsch_vars_th0[eNB_id]->dl_ch_magb1[idx] = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
+
+          pdsch_vars_th1[eNB_id]->dl_ch_mag1[idx]  = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
+          pdsch_vars_th1[eNB_id]->dl_ch_magb1[idx] = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
 
           for (k=0; k<8; k++)
-            pdsch_vars[eNB_id]->rxdataF_comp1[idx][k] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->N_RB_DL*12*14) );
+          {
+            pdsch_vars_th0[eNB_id]->rxdataF_comp1[idx][k] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->N_RB_DL*12*14) );
+            pdsch_vars_th1[eNB_id]->rxdataF_comp1[idx][k] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->N_RB_DL*12*14) );
+          }
         }
 
       phy_init_lte_ue__PDSCH( pdsch_vars_SI[eNB_id], fp );
@@ -1224,14 +1249,17 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
 
   // initialization for the last instance of pdsch_vars (used for MU-MIMO)
 
-  pdsch_vars[eNB_id]     = (LTE_UE_PDSCH *)malloc16_clear( sizeof(LTE_UE_PDSCH) );
+  pdsch_vars_th0[eNB_id]     = (LTE_UE_PDSCH *)malloc16_clear( sizeof(LTE_UE_PDSCH) );
+  pdsch_vars_th1[eNB_id]     = (LTE_UE_PDSCH *)malloc16_clear( sizeof(LTE_UE_PDSCH) );
   pdsch_vars_SI[eNB_id]  = (LTE_UE_PDSCH *)malloc16_clear( sizeof(LTE_UE_PDSCH) );
   pdsch_vars_ra[eNB_id]  = (LTE_UE_PDSCH *)malloc16_clear( sizeof(LTE_UE_PDSCH) );
 
   if (abstraction_flag == 0) {
-    phy_init_lte_ue__PDSCH( pdsch_vars[eNB_id], fp );
-    pdsch_vars[eNB_id]->llr[1] = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
+    phy_init_lte_ue__PDSCH( pdsch_vars_th0[eNB_id], fp );
+    pdsch_vars_th0[eNB_id]->llr[1] = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
 
+    phy_init_lte_ue__PDSCH( pdsch_vars_th1[eNB_id], fp );
+    pdsch_vars_th1[eNB_id]->llr[1] = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
   } else { //abstraction == 1
     ue->sinr_dB = (double*) malloc16_clear( fp->N_RB_DL*12*sizeof(double) );
   }
@@ -1304,49 +1332,54 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
       common_vars->txdataF[eNB_id] = (int32_t **)malloc16(NB_ANTENNA_PORTS_ENB*sizeof(int32_t*));
       common_vars->txdataF_BF[eNB_id] = (int32_t **)malloc16(fp->nb_antennas_tx*sizeof(int32_t*));
 
-      for (i=0; i<14; i++) {
-        common_vars->txdataF[eNB_id][i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
+      if (eNB->node_function != NGFI_RRU_IF5) {
+	for (i=0; i<NB_ANTENNA_PORTS_ENB; i++) {
+	  if (i<fp->nb_antenna_ports_eNB || i==5) {
+	    common_vars->txdataF[eNB_id][i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
 #ifdef DEBUG_PHY
-        msg("[openair][LTE_PHY][INIT] lte_common_vars->txdataF[%d][%d] = %p (%d bytes)\n",
-            eNB_id,i,common_vars->txdataF[eNB_id][i],
-            fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t));
+	    printf("[openair][LTE_PHY][INIT] common_vars->txdataF[%d][%d] = %p (%lu bytes)\n",
+		   eNB_id,i,common_vars->txdataF[eNB_id][i],
+		   fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t));
 #endif
+	  }
+	}
       }
-
       for (i=0; i<fp->nb_antennas_tx; i++) {
 	common_vars->txdataF_BF[eNB_id][i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t) );
 	if (eNB->node_function != NGFI_RCC_IF4p5)
-	  common_vars->txdata[eNB_id][i]  = (int32_t*)malloc16_clear(fp->samples_per_tti*10*sizeof(int32_t) );
+
+	  // Allocate 10 subframes of I/Q TX signal data (time) if not
+	  common_vars->txdata[eNB_id][i]  = (int32_t*)malloc16_clear( fp->samples_per_tti*10*sizeof(int32_t) );
 
 #ifdef DEBUG_PHY
-        msg("[openair][LTE_PHY][INIT] lte_common_vars->txdataF_BF[%d][%d] = %p (%d bytes)\n",
-            eNB_id,i,common_vars->txdataF_BF[eNB_id][i],
-            fp->ofdm_symbol_size*sizeof(int32_t)); 
-        msg("[openair][LTE_PHY][INIT] lte_common_vars->txdata[%d][%d] = %p\n",eNB_id,i,common_vars->txdata[eNB_id][i]);
+	printf("[openair][LTE_PHY][INIT] common_vars->txdata[%d][%d] = %p (%lu bytes)\n",eNB_id,i,common_vars->txdata[eNB_id][i],
+	       fp->samples_per_tti*10*sizeof(int32_t));
 #endif
       }
       
-      for (i=0; i<14; i++) { // 14 is the total number of antenna ports
-        common_vars->beam_weights[eNB_id][i] = (int32_t **)malloc16_clear(fp->nb_antennas_tx*sizeof(int32_t*));
-        for (j=0; j<fp->nb_antennas_tx; j++) {
-          common_vars->beam_weights[eNB_id][i][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
-	  // antenna ports 0-3 are mapped on antennas 0-3
-	  // antenna port 4 is mapped on antenna 0
-	  // antenna ports 5-14 are mapped on all antennas 
-	  if (((i<4) && (i==j)) || ((i==4) && (j==0))) {
-	    for (re=0; re<fp->ofdm_symbol_size; re++) 
-	      common_vars->beam_weights[eNB_id][i][j][re] = 0x00007fff; 
-	  }
-	  else if (i>4) {
-	    for (re=0; re<fp->ofdm_symbol_size; re++) 
-	      common_vars->beam_weights[eNB_id][i][j][re] = 0x00007fff/fp->nb_antennas_tx; 
-	  }  
+      for (i=0; i<NB_ANTENNA_PORTS_ENB; i++) {
+	if (i<fp->nb_antenna_ports_eNB || i==5) {
+	  common_vars->beam_weights[eNB_id][i] = (int32_t **)malloc16_clear(fp->nb_antennas_tx*sizeof(int32_t*));
+	  for (j=0; j<fp->nb_antennas_tx; j++) {
+	    common_vars->beam_weights[eNB_id][i][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
+	    // antenna ports 0-3 are mapped on antennas 0-3
+	    // antenna port 4 is mapped on antenna 0
+	    // antenna ports 5-14 are mapped on all antennas 
+	    if (((i<4) && (i==j)) || ((i==4) && (j==0))) {
+	      for (re=0; re<fp->ofdm_symbol_size; re++) 
+		common_vars->beam_weights[eNB_id][i][j][re] = 0x00007fff; 
+	    }
+	    else if (i>4) {
+	      for (re=0; re<fp->ofdm_symbol_size; re++) 
+		common_vars->beam_weights[eNB_id][i][j][re] = 0x00007fff/fp->nb_antennas_tx; 
+	    }  
 #ifdef DEBUG_PHY
-	  msg("[openair][LTE_PHY][INIT] lte_common_vars->beam_weights[%d][%d][%d] = %p (%d bytes)\n",
-	      eNB_id,i,j,common_vars->beam_weights[eNB_id][i][j],
-              fp->ofdm_symbol_size*sizeof(int32_t)); 
+	    msg("[openair][LTE_PHY][INIT] lte_common_vars->beam_weights[%d][%d][%d] = %p (%d bytes)\n",
+		eNB_id,i,j,common_vars->beam_weights[eNB_id][i][j],
+		fp->ofdm_symbol_size*sizeof(int32_t)); 
 #endif
-        }
+	  }
+	}
       }
 
       // RX vars
@@ -1358,17 +1391,25 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 
       for (i=0; i<fp->nb_antennas_rx; i++) {
 	if (eNB->node_function != NGFI_RCC_IF4p5) {
+	  // allocate 2 subframes of I/Q signal data (time) if not an RCC (no time-domain signals)
 	  common_vars->rxdata[eNB_id][i] = (int32_t*)malloc16_clear( fp->samples_per_tti*10*sizeof(int32_t) );
-	  common_vars->rxdata_7_5kHz[eNB_id][i] = (int32_t*)malloc16_clear( fp->samples_per_tti*sizeof(int32_t) );
-#ifdef DEBUG_PHY
-	  printf("[openair][LTE_PHY][INIT] common_vars->rxdata[%d][%d] = %p\n",eNB_id,i,common_vars->rxdata[eNB_id][i]);
-	  printf("[openair][LTE_PHY][INIT] common_vars->rxdata_7_5kHz[%d][%d] = %p\n",eNB_id,i,common_vars->rxdata_7_5kHz[eNB_id][i]);
-#endif
+
+	  if (eNB->node_function != NGFI_RRU_IF5)
+	    // allocate 2 subframes of I/Q signal data (time, 7.5 kHz offset)
+	    common_vars->rxdata_7_5kHz[eNB_id][i] = (int32_t*)malloc16_clear( 2*fp->samples_per_tti*2*sizeof(int32_t) );
 	}
+	if (eNB->node_function != NGFI_RRU_IF5)
+	  // allocate 2 subframes of I/Q signal data (frequency)
+	  common_vars->rxdataF[eNB_id][i] = (int32_t*)malloc16_clear(sizeof(int32_t)*(2*fp->ofdm_symbol_size*fp->symbols_per_tti) );
+#ifdef DEBUG_PHY
+	printf("[openair][LTE_PHY][INIT] common_vars->rxdata[%d][%d] = %p (%lu bytes)\n",eNB_id,i,common_vars->rxdata[eNB_id][i],fp->samples_per_tti*10*sizeof(int32_t));
+	if (eNB->node_function != NGFI_RRU_IF5)
+	  printf("[openair][LTE_PHY][INIT] common_vars->rxdata_7_5kHz[%d][%d] = %p (%lu bytes)\n",eNB_id,i,common_vars->rxdata_7_5kHz[eNB_id][i],fp->samples_per_tti*2*sizeof(int32_t));
+#endif
         common_vars->rxdataF[eNB_id][i] = (int32_t*)malloc16_clear(sizeof(int32_t)*(fp->ofdm_symbol_size*fp->symbols_per_tti) );
       }
       
-      if (eNB->node_function != NGFI_RRU_IF4p5) {
+      if ((eNB->node_function != NGFI_RRU_IF4p5)&&(eNB->node_function != NGFI_RRU_IF5)) {
 	// Channel estimates for SRS
 	for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
 	  
@@ -1383,7 +1424,8 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 	
 	common_vars->sync_corr[eNB_id] = (uint32_t*)malloc16_clear( LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(uint32_t)*fp->samples_per_tti );
       }
-    } else { //UPLINK abstraction = 1
+    } // abstraction_flag = 0
+    else { //UPLINK abstraction = 1
       eNB->sinr_dB = (double*) malloc16_clear( fp->N_RB_DL*12*sizeof(double) );
     }
   } //eNB_id
@@ -1391,7 +1433,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   
   
   if (abstraction_flag==0) {
-    if (eNB->node_function != NGFI_RRU_IF4p5) {
+    if ((eNB->node_function != NGFI_RRU_IF4p5)&&(eNB->node_function != NGFI_RRU_IF5)) {
       generate_ul_ref_sigs_rx();
       
       // SRS
@@ -1405,7 +1447,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   
   // ULSCH VARS, skip if NFGI_RRU_IF4
   
-  if (eNB->node_function!=NGFI_RRU_IF4p5)
+  if ((eNB->node_function!=NGFI_RRU_IF4p5)&&(eNB->node_function != NGFI_RRU_IF5))
     prach_vars->prachF = (int16_t*)malloc16_clear( 1024*2*sizeof(int16_t) );
   
   /* number of elements of an array X is computed as sizeof(X) / sizeof(X[0]) */
@@ -1418,7 +1460,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 #endif
   }
   
-  if (eNB->node_function != NGFI_RRU_IF4p5) {
+  if ((eNB->node_function != NGFI_RRU_IF4p5)&&(eNB->node_function != NGFI_RRU_IF5)) {
     AssertFatal(fp->nb_antennas_rx <= sizeof(prach_vars->prach_ifft) / sizeof(prach_vars->prach_ifft[0]),
 		"nb_antennas_rx too large");
     for (i=0; i<fp->nb_antennas_rx; i++) {

@@ -720,10 +720,11 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
       //write_output("eNB_srs.m","srs_eNB",common_vars->srs,(frame_parms->ofdm_symbol_size),1,1);
 
       mult_cpx_conj_vector((int16_t*) &common_vars->rxdataF[eNB_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
-                      (int16_t*) srs_vars->srs,
-                      (int16_t*) srs_vars->srs_ch_estimates[eNB_id][aa],
-                      frame_parms->ofdm_symbol_size,
-                      15);
+			   (int16_t*) srs_vars->srs,
+			   (int16_t*) srs_vars->srs_ch_estimates[eNB_id][aa],
+			   frame_parms->ofdm_symbol_size,
+			   15,
+			   0);
 
       //msg("SRS channel estimation cmult out\n");
 #ifdef USER_MODE

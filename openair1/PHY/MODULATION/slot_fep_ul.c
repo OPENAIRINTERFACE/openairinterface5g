@@ -79,10 +79,10 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 
   if (no_prefix) {
     //    subframe_offset = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_tti * (Ns>>1);
-    slot_offset = frame_parms->ofdm_symbol_size * (frame_parms->symbols_per_tti>>1) * (Ns%2);
+    slot_offset = frame_parms->ofdm_symbol_size * (frame_parms->symbols_per_tti>>1) * (Ns&1);
   } else {
     //    subframe_offset = frame_parms->samples_per_tti * (Ns>>1);
-    slot_offset = (frame_parms->samples_per_tti>>1) * (Ns%2);
+    slot_offset = (frame_parms->samples_per_tti>>1) * (Ns&1);
   }
 
   if (l<0 || l>=7-frame_parms->Ncp) {
@@ -108,18 +108,22 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
            1
          );
     } else {
+      
       rx_offset += (frame_parms->ofdm_symbol_size+nb_prefix_samples)*l;
+      /* should never happen for eNB
       if(rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
       {
         memcpy((void *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][frame_length_samples],
                (void *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][0],
                frame_parms->ofdm_symbol_size*sizeof(int));
       }
+      */
 
-      if( (rx_offset & 7) != 0){
+      // check for 256-bit alignment of input buffer and do DFT directly, else do via intermediate buffer
+      if( (rx_offset & 15) != 0){
         memcpy((void *)&tmp_dft_in,
-        		(void *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][(rx_offset % frame_length_samples)],
-				frame_parms->ofdm_symbol_size*sizeof(int));
+	       (void *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][(rx_offset % frame_length_samples)],
+	       frame_parms->ofdm_symbol_size*sizeof(int));
         dft( (short *) tmp_dft_in,
              (short*)  &eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],
              1
