@@ -1394,14 +1394,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
 
       // check if we received a PDSCH at subframe_tx - 4
       // ==> send ACK/NACK on PUSCH
-      if( (ue->dlsch[eNB_id][0]->harq_ack[proc->subframe_rx].send_harq_status) == 1)
-      {
-          ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK = 1;
-      }
-      else
-      {
-          ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK = 0;
-      }
+      ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK =  ack_status;
 
 #if T_TRACER
     if(ue->ulsch[eNB_id]->o_ACK[0])
