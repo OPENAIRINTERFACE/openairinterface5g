@@ -449,7 +449,6 @@ static void *UE_thread_synch(void *arg)
 	  // rerun with new cell parameters and frequency-offset
 	  for (i=0;i<openair0_cfg[UE->rf_map.card].rx_num_channels;i++) {
 	    openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
-	    LOG_I(PHY,"freq_offset %d\n",freq_offset);
 		if (freq_offset >= 0)
 	    {
 	        openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] += UE->common_vars.freq_offset;
