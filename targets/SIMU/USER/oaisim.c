@@ -1043,19 +1043,19 @@ l2l1_task (void *args_p)
 	  
 	  write_output ("dlchan0.m",
 			"dlch0",
-			&(PHY_vars_UE_g[0][0]->common_vars.dl_ch_estimates[0][0][0]),
+			&(PHY_vars_UE_g[0][0]->common_vars.common_vars_rx_data_per_thread[0].dl_ch_estimates[0][0][0]),
 			(6
 			 * (PHY_vars_UE_g[0][0]->frame_parms.ofdm_symbol_size)),
 			1, 1);
 	  write_output ("dlchan1.m",
 			"dlch1",
-			&(PHY_vars_UE_g[0][0]->common_vars.dl_ch_estimates[1][0][0]),
+			&(PHY_vars_UE_g[0][0]->common_vars.common_vars_rx_data_per_thread[0].dl_ch_estimates[1][0][0]),
 			(6
 			 * (PHY_vars_UE_g[0][0]->frame_parms.ofdm_symbol_size)),
 			1, 1);
 	  write_output ("dlchan2.m",
 			"dlch2",
-			&(PHY_vars_UE_g[0][0]->common_vars.dl_ch_estimates[2][0][0]),
+			&(PHY_vars_UE_g[0][0]->common_vars.common_vars_rx_data_per_thread[0].dl_ch_estimates[2][0][0]),
 			(6
 			 * (PHY_vars_UE_g[0][0]->frame_parms.ofdm_symbol_size)),
 			1, 1);

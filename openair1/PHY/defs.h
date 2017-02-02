@@ -702,7 +702,7 @@ typedef struct {
   LTE_DL_FRAME_PARMS  frame_parms_before_ho;
   LTE_UE_COMMON    common_vars;
 
-  LTE_UE_PDSCH     *pdsch_vars[NUMBER_OF_CONNECTED_eNB_MAX+1];
+  LTE_UE_PDSCH     *pdsch_vars[2][NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH_FLP *pdsch_vars_flp[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_ra[NUMBER_OF_CONNECTED_eNB_MAX+1];
@@ -799,6 +799,7 @@ typedef struct {
   uint8_t               prach_PreambleIndex;
   //  uint8_t               prach_timer;
   int              rx_offset; /// Timing offset
+  int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
   int              timing_advance; ///timing advance signalled from eNB
   int              hw_timing_advance;
   int              N_TA_offset; ///timing offset used in TDD
