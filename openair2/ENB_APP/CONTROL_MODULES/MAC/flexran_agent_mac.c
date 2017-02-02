@@ -923,8 +923,12 @@ int flexran_agent_mac_destroy_sr_info(Protocol__FlexranMessage *msg) {
 
 int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
   Protocol__FlexHeader *header;
-  int i,j;
+  int i, j, UE_id;
+  
+  int available_harq[NUMBER_OF_UE_MAX];
+  
   const int xid = *((int *)params);
+
 
   Protocol__FlexSfTrigger *sf_trigger_msg;
   sf_trigger_msg = malloc(sizeof(Protocol__FlexSfTrigger));
@@ -939,7 +943,11 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
   frame_t frame;
   sub_frame_t subframe;
 
-  int ahead_of_time = 1;
+  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+    available_harq[i] = -1;
+  }
+
+  int ahead_of_time = 0;
   
   frame = (frame_t) flexran_get_current_system_frame_num(mod_id);
   subframe = (sub_frame_t) flexran_get_current_subframe(mod_id);
@@ -957,10 +965,24 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
   sf_trigger_msg->has_sfn_sf = 1;
   sf_trigger_msg->sfn_sf = flexran_get_future_sfn_sf(mod_id, 1);
 
+  sf_trigger_msg->n_dl_info = 0;
+
+  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+    for (j = 0; j < 8; j++) {
+      if (harq_pid_updated[i][j] == 1) {
+	available_harq[i] = j;
+	sf_trigger_msg->n_dl_info++;
+	break;
+      }
+    }
+  }
+
+  //  LOG_I(FLEXRAN_AGENT, "Sending subframe trigger for frame %d and subframe %d\n", flexran_get_current_frame(mod_id), (flexran_get_current_subframe(mod_id) + 1) % 10);
+
   /*TODO: Fill in the number of dl HARQ related info, based on the number of currently
    *transmitting UEs
    */
-  sf_trigger_msg->n_dl_info = flexran_get_num_ues(mod_id);
+  //  sf_trigger_msg->n_dl_info = flexran_get_num_ues(mod_id);
 
   Protocol__FlexDlInfo **dl_info = NULL;
 
@@ -968,8 +990,14 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
     dl_info = malloc(sizeof(Protocol__FlexDlInfo *) * sf_trigger_msg->n_dl_info);
     if(dl_info == NULL)
       goto error;
+    i = -1;
     //Fill the status of the current HARQ process for each UE
-    for(i = 0; i < sf_trigger_msg->n_dl_info; i++) {
+    for(UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+      if (available_harq[UE_id] < 0) {
+	continue;
+      } else {
+	i++;
+      }
       dl_info[i] = malloc(sizeof(Protocol__FlexDlInfo));
       if(dl_info[i] == NULL)
 	goto error;
@@ -977,22 +1005,24 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
       dl_info[i]->rnti = flexran_get_ue_crnti(mod_id, i);
       dl_info[i]->has_rnti = 1;
       /*Fill in the right id of this round's HARQ process for this UE*/
-      uint8_t harq_id;
-      uint8_t harq_status;
-      flexran_get_harq(mod_id, UE_PCCID(mod_id,i), i, frame, subframe, &harq_id, &harq_status);
-      dl_info[i]->harq_process_id = harq_id;
+      //      uint8_t harq_id;
+      //uint8_t harq_status;
+      //      flexran_get_harq(mod_id, UE_PCCID(mod_id,i), i, frame, subframe, &harq_id, &harq_status);
+      
+      
+      dl_info[i]->harq_process_id = available_harq[UE_id];
+      harq_pid_updated[UE_id][available_harq[UE_id]] = 0;
       dl_info[i]->has_harq_process_id = 1;
       /* Fill in the status of the HARQ process (2 TBs)*/
       dl_info[i]->n_harq_status = 2;
       dl_info[i]->harq_status = malloc(sizeof(uint32_t) * dl_info[i]->n_harq_status);
       for (j = 0; j < dl_info[i]->n_harq_status; j++) {
-	dl_info[i]->harq_status[j] = harq_status;
+	dl_info[i]->harq_status[j] = harq_pid_round[UE_id][available_harq[UE_id]];
 	// TODO: This should be different per TB
-	if(harq_status == 0) {
-	  dl_info[i]->harq_status[j] = PROTOCOL__FLEX_HARQ_STATUS__FLHS_ACK;
-	} else {
-	  dl_info[i]->harq_status[j] = PROTOCOL__FLEX_HARQ_STATUS__FLHS_NACK;
-	}
+      }
+      //      LOG_I(FLEXRAN_AGENT, "Sending subframe trigger for frame %d and subframe %d and harq %d (round %d)\n", flexran_get_current_frame(mod_id), (flexran_get_current_subframe(mod_id) + 1) % 10, dl_info[i]->harq_process_id, dl_info[i]->harq_status[0]);
+      if(dl_info[i]->harq_status[0] > 0) {
+	//	LOG_I(FLEXRAN_AGENT, "[Frame %d][Subframe %d]Need to make a retransmission for harq %d (round %d)\n", flexran_get_current_frame(mod_id), flexran_get_current_subframe(mod_id), dl_info[i]->harq_process_id, dl_info[i]->harq_status[0]);
       }
       /*Fill in the serving cell index for this UE */
       dl_info[i]->serv_cell_index = UE_PCCID(mod_id,i);
@@ -1237,12 +1267,18 @@ int flexran_agent_mac_handle_dl_mac_config(mid_t mod_id, const void *params, Pro
 }
 
 void flexran_agent_init_mac_agent(mid_t mod_id) {
+  int i, j;
   lfds700_misc_library_init_valid_on_current_logical_core();
   lfds700_misc_prng_init(&ps[mod_id]);
   int num_elements = RINGBUFFER_SIZE + 1;
   //Allow RINGBUFFER_SIZE messages to be stored in the ringbuffer at any time
   dl_mac_config_array[mod_id] = malloc( sizeof(struct lfds700_ringbuffer_element) *  num_elements);
   lfds700_ringbuffer_init_valid_on_current_logical_core( &ringbuffer_state[mod_id], dl_mac_config_array[mod_id], num_elements, &ps[mod_id], NULL );
+  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+    for (j = 0; j < 8; j++) {
+      harq_pid_updated[i][j] = 0;
+    }
+  }
 }
 
 /***********************************************

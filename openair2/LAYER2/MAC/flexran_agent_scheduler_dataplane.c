@@ -53,6 +53,7 @@
 
 #include "header.pb-c.h"
 #include "flexran.pb-c.h"
+#include "flexran_agent_extern.h"
 
 #include "SIMULATION/TOOLS/defs.h" // for taus
 
@@ -137,6 +138,9 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
     round = dl_dci->rv[0];
     harq_pid = dl_dci->harq_process;
     
+    //LOG_I(FLEXRAN_AGENT, "[Frame %d][Subframe %d] Scheduling harq %d\n", frame, subframe, harq_pid);
+    //    LOG_I(FLEXRAN_AGENT, "[Frame %d][Subframe %d]Now scheduling harq_pid %d (round %d)\n", frame, subframe, harq_pid, round);
+
     // If this is a new transmission
     if (round == 0) {
       // First we have to deal with the creation of the PDU based on the message instructions
@@ -258,8 +262,12 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	
 	// If there is nothing to schedule, just leave
 	if ((sdu_length_total) <= 0) { 
+	  harq_pid_updated[UE_id][harq_pid] = 1;
+	  harq_pid_round[UE_id][harq_pid] = 0;
 	  continue;
 	}
+
+	//	LOG_I(FLEXRAN_AGENT, "[Frame %d][Subframe %d] TBS is %d and bytes are %d\n", frame, subframe, TBS, sdu_length_total);
 	
 	offset = generate_dlsch_header((unsigned char*)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
 				       num_sdus,              //num_sdus
@@ -338,7 +346,6 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
       }
     } else {
       // No need to create anything apart of DCI in case of retransmission
-      
       /*TODO: Must add these */
       //      eNB_UE_stats->dlsch_trials[round]++;
       //UE_list->eNB_UE_stats[CC_id][UE_id].num_retransmission+=1;
