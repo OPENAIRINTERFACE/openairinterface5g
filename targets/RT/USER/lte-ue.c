@@ -110,6 +110,8 @@ extern int rx_input_level_dBm;
 extern uint8_t exit_missed_slots;
 extern uint64_t num_missed_slots; // counter for the number of missed slots
 
+extern int oaisim_flag;
+
 extern void exit_fun(const char* s);
 
 #define KHz (1000UL)
@@ -180,9 +182,11 @@ void init_UE(int nb_inst) {
     sleep(1);
     UE = PHY_vars_UE_g[inst][0];
 
-    ret = openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]);
-    if (ret !=0){
-       exit_fun("Error loading device library");
+    if (oaisim_flag == 0) {
+      ret = openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]);
+      if (ret !=0){
+	exit_fun("Error loading device library");
+      }
     }
     UE->rfdevice.host_type = BBU_HOST;
     //    UE->rfdevice.type      = NONE_DEV;

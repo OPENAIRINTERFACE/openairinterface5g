@@ -130,6 +130,8 @@ extern int sync_var;
 
 extern int transmission_mode;
 
+extern int oaisim_flag;
+
 //pthread_t                       main_eNB_thread;
 
 time_stats_t softmodem_stats_mt; // main thread
@@ -1986,6 +1988,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       eNB = PHY_vars_eNB_g[inst][CC_id]; 
       eNB->node_function      = node_function[CC_id];
       eNB->node_timing        = node_timing[CC_id];
+      eNB->eth_params         = eth_params+CC_id;
       eNB->abstraction_flag   = 0;
       eNB->single_thread_flag = single_thread_flag;
       eNB->ts_offset          = 0;
@@ -2011,14 +2014,16 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->start_rf             = start_rf;
 	eNB->start_if             = start_if;
 	eNB->fh_asynch            = fh_if5_asynch_DL;
-	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
-        if (ret<0) {
-          printf("Exiting, cannot initialize rf device\n");
-          exit(-1);
-        }
+	if (oaisim_flag == 0) {
+	  ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
+	  if (ret<0) {
+	    printf("Exiting, cannot initialize rf device\n");
+	    exit(-1);
+	  }
+	}
 	eNB->rfdevice.host_type   = RRH_HOST;
 	eNB->ifdevice.host_type   = RRH_HOST;
-        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], eNB->eth_params);
 	printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
         if (ret<0) {
           printf("Exiting, cannot initialize transport protocol\n");
@@ -2038,15 +2043,17 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->fh_asynch            = fh_if4p5_asynch_DL;
 	eNB->start_rf             = start_rf;
 	eNB->start_if             = start_if;
-	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
-        if (ret<0) {
-          printf("Exiting, cannot initialize rf device\n");
-          exit(-1);
-        }
+	if (oaisim_flag == 0) {
+	  ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
+	  if (ret<0) {
+	    printf("Exiting, cannot initialize rf device\n");
+	    exit(-1);
+	  }
+	}
 	eNB->rfdevice.host_type   = RRH_HOST;
 	eNB->ifdevice.host_type   = RRH_HOST;
 	printf("loading transport interface ...\n");
-        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], eNB->eth_params);
 	printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
         if (ret<0) {
           printf("Exiting, cannot initialize transport protocol\n");
@@ -2103,7 +2110,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 
 	eNB->ifdevice.host_type   = BBU_HOST;
 
-        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], eNB->eth_params);
         printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
         if (ret<0) {
           printf("Exiting, cannot initialize transport protocol\n");
@@ -2125,7 +2132,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
         eNB->fh_asynch            = (eNB->node_timing == synch_to_other) ? fh_if4p5_asynch_UL : NULL;
 	eNB->rfdevice.host_type   = BBU_HOST;
 	eNB->ifdevice.host_type   = BBU_HOST;
-        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], eNB->eth_params);
         printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
         if (ret<0) {
           printf("Exiting, cannot initialize transport protocol\n");
@@ -2151,7 +2158,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 
 	eNB->rfdevice.host_type   = BBU_HOST;
 	eNB->ifdevice.host_type   = BBU_HOST;
-        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], eNB->eth_params);
         printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
         if (ret<0) {
           printf("Exiting, cannot initialize transport protocol\n");

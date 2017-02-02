@@ -1286,7 +1286,25 @@ main (int argc, char **argv)
 
   init_openair2 ();
 
+  init_openair0();
+
   init_ocm ();
+
+#if defined(ENABLE_ITTI)
+  // Handle signals until all tasks are terminated
+
+  // Note: Cannot handle both RRU/RAU and eNB at the same time, if the first "eNB" is an RRU/RAU, no NAS
+  if (oai_emulation.info.node_function[0] < NGFI_RAU_IF4p5) { 
+    if (create_tasks(oai_emulation.info.nb_enb_local, 
+		     oai_emulation.info.nb_ue_local) < 0) 
+      exit(-1); // need a softer mode
+  }
+  else {
+    if (create_tasks(0, 
+		     oai_emulation.info.nb_ue_local) < 0) 
+      exit(-1); // need a softer mode
+  }
+#endif
   
   // wait for all threads to startup 
   sleep(3);
@@ -1327,12 +1345,8 @@ main (int argc, char **argv)
 
 #if defined(ENABLE_ITTI)
 
-  // Handle signals until all tasks are terminated
-  if (create_tasks(oai_emulation.info.nb_enb_local, oai_emulation.info.nb_ue_local) >= 0) {
-    itti_wait_tasks_end();
-  } else {
-    exit(-1); // need a softer mode
-  }
+  itti_wait_tasks_end();
+
 
 #else
 

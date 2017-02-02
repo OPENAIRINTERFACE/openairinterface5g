@@ -97,7 +97,7 @@ int trx_eth_start(openair0_device *device) {
       if(eth_set_dev_conf_udp(device)!=0)  return -1;
     } else {
       if(eth_get_dev_conf_udp(device)!=0)  return -1;
-      }
+    }
   }
   /* apply additional configuration */
   if(ethernet_tune (device, SND_BUF_SIZE,2000000000)!=0)  return -1;

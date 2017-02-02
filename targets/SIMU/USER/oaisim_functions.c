@@ -77,6 +77,9 @@
 # include "s1ap_eNB.h"
 #endif
 
+#include "../../ARCH/COMMON/common_lib.h"
+#include "../../ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
+
 #ifdef SMBV
 extern uint8_t config_smbv;
 extern char smbv_ip[16];
@@ -87,6 +90,8 @@ extern char smbv_ip[16];
 #define SLEEP_STEP_US       100 //  = 0.01ms could be adaptive, should be as a number of UE
 #define K 2                  // averaging coefficient
 #define TARGET_SF_TIME_NS 1000000       // 1ms = 1000000 ns
+
+#define min(a,b) ((a)<(b)?(a):(b))
 
 int           otg_times             = 0;
 int           if_times              = 0;
@@ -170,11 +175,14 @@ extern int xforms;
 extern uint32_t          downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t           uplink_frequency_offset[MAX_NUM_CCs][4];
 
-void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst);
+eth_params_t *eth_params;
+
+void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *,int,int);
 void stop_eNB(int nb_inst);
 
 const Enb_properties_array_t *enb_properties;
 
+int oaisim_flag=1;
 
 void get_simulation_options(int argc, char *argv[])
 {
@@ -786,7 +794,33 @@ void get_simulation_options(int argc, char *argv[])
     AssertFatal (oai_emulation.info.nb_enb_local <= enb_properties->number,
                  "Number of eNB is greater than eNB defined in configuration file %s (%d/%d)!",
                  conf_config_file_name, oai_emulation.info.nb_enb_local, enb_properties->number);
+
+    eth_params = (eth_params_t*)malloc(enb_properties->properties[0]->nb_rrh_gw * sizeof(eth_params_t));
+    memset(eth_params, 0, enb_properties->properties[0]->nb_rrh_gw * sizeof(eth_params_t));
     
+    for (int j=0; j<enb_properties->properties[0]->nb_rrh_gw; j++) {
+      
+      if (enb_properties->properties[0]->rrh_gw_config[j].active == 1 ) {
+	//	local_remote_radio = BBU_REMOTE_RADIO_HEAD;
+	(eth_params+j)->local_if_name             = enb_properties->properties[0]->rrh_gw_config[j].rrh_gw_if_name;
+	(eth_params+j)->my_addr                   = enb_properties->properties[0]->rrh_gw_config[j].local_address;
+	(eth_params+j)->my_port                   = enb_properties->properties[0]->rrh_gw_config[j].local_port;
+	(eth_params+j)->remote_addr               = enb_properties->properties[0]->rrh_gw_config[j].remote_address;
+	(eth_params+j)->remote_port               = enb_properties->properties[0]->rrh_gw_config[j].remote_port;
+        
+	if (enb_properties->properties[0]->rrh_gw_config[j].raw == 1) {
+	  (eth_params+j)->transp_preference       = ETH_RAW_MODE; 
+	} else if (enb_properties->properties[0]->rrh_gw_config[j].rawif4p5 == 1) {
+	  (eth_params+j)->transp_preference       = ETH_RAW_IF4p5_MODE;             
+	} else if (enb_properties->properties[0]->rrh_gw_config[j].udpif4p5 == 1) {
+	  (eth_params+j)->transp_preference       = ETH_UDP_IF4p5_MODE;             
+	} else if (enb_properties->properties[0]->rrh_gw_config[j].rawif5_mobipass == 1) {
+	  (eth_params+j)->transp_preference       = ETH_RAW_IF5_MOBIPASS;             
+	} else {
+	  (eth_params+j)->transp_preference       = ETH_UDP_MODE;	 
+	}
+      }
+    }
     /* Update some simulation parameters */
     oai_emulation.info.frame_type[0]           = enb_properties->properties[0]->frame_type[0];
     oai_emulation.info.tdd_config[0]           = enb_properties->properties[0]->tdd_config[0];
@@ -1126,6 +1160,85 @@ int UE_trx_write(openair0_device *device,openair0_timestamp timestamp, void **bu
   return(nsamps);
 }
 
+void init_openair0(void);
+
+openair0_config_t openair0_cfg[MAX_CARDS];
+
+void init_openair0() {
+
+  int card;
+  int i;
+
+  for (card=0; card<MAX_CARDS; card++) {
+
+    openair0_cfg[card].configFilename = NULL;
+
+    if(frame_parms[0]->N_RB_DL == 100) {
+      if (frame_parms[0]->threequarter_fs) {
+	openair0_cfg[card].sample_rate=23.04e6;
+	openair0_cfg[card].samples_per_frame = 230400; 
+	openair0_cfg[card].tx_bw = 10e6;
+	openair0_cfg[card].rx_bw = 10e6;
+      }
+      else {
+	openair0_cfg[card].sample_rate=30.72e6;
+	openair0_cfg[card].samples_per_frame = 307200; 
+	openair0_cfg[card].tx_bw = 10e6;
+	openair0_cfg[card].rx_bw = 10e6;
+      }
+    } else if(frame_parms[0]->N_RB_DL == 50) {
+      openair0_cfg[card].sample_rate=15.36e6;
+      openair0_cfg[card].samples_per_frame = 153600;
+      openair0_cfg[card].tx_bw = 5e6;
+      openair0_cfg[card].rx_bw = 5e6;
+    } else if (frame_parms[0]->N_RB_DL == 25) {
+      openair0_cfg[card].sample_rate=7.68e6;
+      openair0_cfg[card].samples_per_frame = 76800;
+      openair0_cfg[card].tx_bw = 2.5e6;
+      openair0_cfg[card].rx_bw = 2.5e6;
+    } else if (frame_parms[0]->N_RB_DL == 6) {
+      openair0_cfg[card].sample_rate=1.92e6;
+      openair0_cfg[card].samples_per_frame = 19200;
+      openair0_cfg[card].tx_bw = 1.5e6;
+      openair0_cfg[card].rx_bw = 1.5e6;
+    }
+
+    if (frame_parms[0]->frame_type==TDD)
+      openair0_cfg[card].duplex_mode = duplex_mode_TDD;
+    else //FDD
+      openair0_cfg[card].duplex_mode = duplex_mode_FDD;
+
+    
+    openair0_cfg[card].remote_addr    = (eth_params+card)->remote_addr;
+    openair0_cfg[card].remote_port    = (eth_params+card)->remote_port;
+    openair0_cfg[card].my_addr        = (eth_params+card)->my_addr;
+    openair0_cfg[card].my_port        = (eth_params+card)->my_port;    
+     
+    
+    printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
+           PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx,
+           PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_rx);
+    openair0_cfg[card].Mod_id = 0;
+
+
+
+    openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
+    openair0_cfg[card].tx_num_channels=min(2,PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx);
+    openair0_cfg[card].rx_num_channels=min(2,PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_rx);
+
+    for (i=0; i<4; i++) {
+
+      openair0_cfg[card].rx_gain[i] = PHY_vars_eNB_g[0][0]->rx_total_gain_dB;
+      
+      printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
+             card,i, openair0_cfg[card].tx_gain[i],
+             openair0_cfg[card].rx_gain[i],
+             openair0_cfg[card].tx_freq[i],
+             openair0_cfg[card].rx_freq[i]);
+    }
+  }
+}
+
 void init_devices(void){
 
   module_id_t UE_id, eNB_id;
@@ -1270,7 +1383,7 @@ void init_openair1(void)
 
   init_devices ();
 
-  init_eNB(oai_emulation.info.node_function,oai_emulation.info.node_timing,NB_eNB_INST);
+  init_eNB(oai_emulation.info.node_function,oai_emulation.info.node_timing,NB_eNB_INST,eth_params,1,0);
 
   // init_ue_status();
   for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
@@ -1820,6 +1933,7 @@ void init_time()
   td_avg        = TARGET_SF_TIME_NS;
 }
 
+/*
 int openair0_transport_load(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t * eth_params) {
 
 	return(0);
@@ -1831,3 +1945,4 @@ int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cf
 
 	return(0);
 }
+*/
