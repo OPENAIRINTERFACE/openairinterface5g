@@ -2107,6 +2107,10 @@ int main(int argc, char **argv)
     UE->dlsch[0][i]->rnti   = n_rnti;
   }
 
+    UE->dlsch_SI[0]  = new_ue_dlsch(1,1,Nsoft,MAX_TURBO_ITERATIONS,N_RB_DL,0);
+    UE->dlsch_ra[0]  = new_ue_dlsch(1,1,Nsoft,MAX_TURBO_ITERATIONS,N_RB_DL,0);
+
+
   // structure for SIC at UE
   UE->dlsch_eNB[0] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0,&eNB->frame_parms);
 
