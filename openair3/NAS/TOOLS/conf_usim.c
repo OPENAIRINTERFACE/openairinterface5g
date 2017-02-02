@@ -287,11 +287,14 @@ void gen_usim_data(usim_data_conf_t *u, usim_data_t *usim_data,
 	usim_data->nasconfig.Timer_T3245_Behaviour.length = 1;
 	usim_data->nasconfig.Timer_T3245_Behaviour.value[0] = 0x00;
 
-	/* initialize the subscriber authentication security key */
-	hex_string_to_hex_value(usim_data->keys.usim_api_k,
-			u->usim_api_k, USIM_API_K_SIZE);
-	hex_string_to_hex_value(usim_data->keys.opc, u->opc,
-	OPC_SIZE);
+        /* initialize the subscriber authentication security key */
+        if (hex_string_to_hex_value(usim_data->keys.usim_api_k,
+                                    u->usim_api_k, USIM_API_K_SIZE) == -1 ||
+            hex_string_to_hex_value(usim_data->keys.opc,
+                                    u->opc, OPC_SIZE) == -1) {
+          fprintf(stderr, "fix your configuration file\n");
+          exit(1);
+        }
 }
 
 bool write_usim_data(const char *directory, int user_id, usim_data_t *usim_data){

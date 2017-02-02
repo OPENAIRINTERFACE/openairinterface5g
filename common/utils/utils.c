@@ -32,12 +32,17 @@ void *malloc_or_fail(size_t size) {
  **              Others:        None                                       **
  **                                                                        **
  ** Outputs:     None                                                      **
- **              Return:        Converted value                            **
+ **              Return:        Converted value (-1 on error)              **
  **              Others:        None                                       **
  **                                                                        **
  ***************************************************************************/
-uint8_t hex_char_to_hex_value (char c)
+int hex_char_to_hex_value (char c)
 {
+  if (!((c >= 'a' && c <= 'f') ||
+        (c >= 'A' && c <= 'F') ||
+        (c >= '0' && c <= '9')))
+    return -1;
+
   if (c >= 'A') {
     /* Remove case bit */
     c &= ~('a' ^ 'A');
@@ -60,17 +65,32 @@ uint8_t hex_char_to_hex_value (char c)
  **              Others:        None                                       **
  **                                                                        **
  ** Outputs:     hex_value:     Converted value                            **
- **              Return:        None                                       **
+ **              Return:        0 on success, -1 on error                  **
  **              Others:        None                                       **
  **                                                                        **
  ***************************************************************************/
-void hex_string_to_hex_value (uint8_t *hex_value, const char *hex_string, int size)
+int hex_string_to_hex_value (uint8_t *hex_value, const char *hex_string, int size)
 {
   int i;
 
-  for (i=0; i < size; i++) {
-    hex_value[i] = (hex_char_to_hex_value(hex_string[2 * i]) << 4) | hex_char_to_hex_value(hex_string[2 * i + 1]);
+  if (strlen(hex_string) != size*2) {
+    fprintf(stderr, "the string '%s' should be of length %d\n", hex_string, size*2);
+    return -1;
   }
+
+  for (i=0; i < size; i++) {
+    int a = hex_char_to_hex_value(hex_string[2 * i]);
+    int b = hex_char_to_hex_value(hex_string[2 * i + 1]);
+    if (a == -1 || b == -1) goto error;
+    hex_value[i] = (a << 4) | b;
+  }
+  return 0;
+
+error:
+  fprintf(stderr, "the string '%s' is not a valid hexadecimal string\n", hex_string);
+  for (i=0; i < size; i++)
+    hex_value[i] = 0;
+  return -1;
 }
 
 char *itoa(int i) {
