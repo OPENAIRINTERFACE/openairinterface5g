@@ -74,7 +74,7 @@ bool parse_config_file(const char *output_dir, const char *conf_filename, int ou
         gen_usim_data(&usim_data_conf, &usim_data, &user_plmns, networks);
 
         gen_emm_data(&emm_data, usim_data_conf.hplmn, usim_data_conf.msin,
-                     user_plmns.equivalents_home.size, networks);
+                     &user_plmns.equivalents_home, networks);
 
         if ( output_flags & OUTPUT_UEDATA ) {
             write_user_data(output_dir, i, &user_data);
