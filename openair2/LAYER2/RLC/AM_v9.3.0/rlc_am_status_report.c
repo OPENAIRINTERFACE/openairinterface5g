@@ -309,8 +309,6 @@ rlc_am_receive_process_control_pdu(
     assert(rlc_pP->control_pdu_info.num_nack < RLC_AM_MAX_NACK_IN_STATUS_PDU);
 
     if (rlc_am_in_tx_window(ctxt_pP, rlc_pP, ack_sn) > 0) {
-      rlc_pP->num_nack_so = 0;
-      rlc_pP->num_nack_sn = 0;
 
       if (rlc_pP->control_pdu_info.num_nack == 0) {
         while (sn_cursor != ack_sn) {
@@ -462,7 +460,6 @@ rlc_am_send_status_pdu(
   mem_block_t                  *tb_p                  = NULL;
   sdu_size_t                    pdu_size              = 0;
   boolean_t						status_report_completed	= false;
-  boolean_t						lsf_received		  = false;
   boolean_t						segment_loop_end	  = false;
 
   memset(&control_pdu_info, 0, sizeof(rlc_am_control_pdu_info_t));
@@ -479,30 +476,20 @@ rlc_am_send_status_pdu(
 
 	  control_pdu_info.ack_sn = rlc_pP->vr_ms;
 	  status_report_completed = true;
+#if TRACE_RLC_AM_STATUS_CREATION
+          LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d ALL ACK WITH ACK_SN %04d\n",
+                PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
+                __LINE__,
+				rlc_pP->vr_ms);
+#endif
   }
-  else if (cursor_p != NULL) {
+  else if ((cursor_p != NULL) && ((nb_bits_transmitted + RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1)) <= nb_bits_to_transmit)) {
 
     pdu_info_cursor_p       = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
     sn_cursor             = pdu_info_cursor_p->sn;
 
-    // Not very clear why this is needed
-    // commenting
-#if 0
-    while (!(RLC_AM_SN_IN_WINDOW(sn_cursor, rlc_pP->vr_r))) {
-      cursor_p                = cursor_p->next;
-      previous_sn_cursor    = sn_cursor;
-
-      pdu_info_cursor_p       = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
-      sn_cursor             = pdu_info_cursor_p->sn;
-#if TRACE_RLC_AM_STATUS_CREATION
-      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d FIND VR(R) <= SN sn_cursor %04d -> %04d\n",
-            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-            __LINE__,
-            previous_sn_cursor,
-            sn_cursor);
-#endif
-    }
-#endif
+    /* Set E1 bit for the presence of first NACK_SN/E1/E2 */
+    control_pdu_info.e1 = 1;
 
     // 12 bits = size of NACK_SN field + E1, E2 bits
     // 42 bits = size of NACK_SN field + SO_START, SO_END fields, E1, E2 bits
@@ -512,20 +499,17 @@ rlc_am_send_status_pdu(
       pdu_info_cursor_p       = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
       sn_cursor             = pdu_info_cursor_p->sn;
       all_segments_received = ((rlc_am_rx_pdu_management_t*)(cursor_p->data))->all_segments_received;
-      // E1 bit is set at the end
 
       /* First fill NACK_SN with each missing PDU between current sn_nack and sn_cursor */
       while ((sn_nack != sn_cursor) && (sn_nack != rlc_pP->vr_ms)) {
     	  if (nb_bits_transmitted + RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) <= nb_bits_to_transmit) {
     		  /* Fill NACK_SN infos */
-    		  if (control_pdu_info.num_nack) {
-    			  /* Set E1 of previous NACK_SN */
-    			  control_pdu_info.nack_list[control_pdu_info.num_nack - 1].e1  = 1;
-    		  }
               control_pdu_info.nack_list[control_pdu_info.num_nack].nack_sn   = sn_nack;
               control_pdu_info.nack_list[control_pdu_info.num_nack].so_start  = 0;
               control_pdu_info.nack_list[control_pdu_info.num_nack].so_end    = RLC_AM_STATUS_PDU_SO_END_ALL_BYTES;
               control_pdu_info.nack_list[control_pdu_info.num_nack].e2        = 0;
+              /* Set E1 for next NACK_SN. The last one will be cleared */
+              control_pdu_info.nack_list[control_pdu_info.num_nack].e1  = 1;
               control_pdu_info.num_nack += 1;
               nb_bits_to_transmit += (RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1));
 #if TRACE_RLC_AM_STATUS_CREATION
@@ -541,45 +525,52 @@ rlc_am_send_status_pdu(
     		  /* latest value of sn_nack shall be used as ACK_SN */
     		  control_pdu_info.ack_sn = sn_nack;
     		  status_report_completed = true;
+#if TRACE_RLC_AM_STATUS_CREATION
+          LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d NOT ENOUGH TBS STOP WITH ACK_SN %04d\n",
+                PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
+                __LINE__,
+				sn_nack);
+#endif
     		  break;
     	  }
       }
 
       /* Now process all Segments of sn_cursor if PDU not fully received */
-      if ((!status_report_completed) && (all_segments_received == 0) && (sn_nack != rlc_pP->vr_ms)) {
+      if ((!status_report_completed) && (all_segments_received == 0) && (sn_cursor != rlc_pP->vr_ms)) {
     	  AssertFatal (sn_nack == sn_cursor, "RLC AM Tx Status PDU Data sn_nack=%d and sn_cursor=%d should be equal LcId=%d\n",sn_nack,sn_cursor, rlc_pP->channel_id);
 
     	  /* First ensure there is enough TBS for at least 1 SOStart/SOEnd, else break */
     	  if ((nb_bits_transmitted + RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1)) <= nb_bits_to_transmit) {
-			  /* Set E1 of previous NACK_SN */
-    		  if (control_pdu_info.num_nack) {
-    			  control_pdu_info.nack_list[control_pdu_info.num_nack - 1].e1  = 1;
-    		  }
     		  /* Init loop flags */
-    		  lsf_received = false;
-    		  segment_loop_end	  = false;
+              /* Check lsf */
+    		  segment_loop_end = (pdu_info_cursor_p->lsf == 1);
 
     		  /* Init first SO Start according to first segment */
     		  if (pdu_info_cursor_p->so) {
-    			  waited_so = 0;
     			  /* Fill the first SO */
                   control_pdu_info.nack_list[control_pdu_info.num_nack].nack_sn   = sn_cursor;
                   control_pdu_info.nack_list[control_pdu_info.num_nack].so_start  = 0;
                   control_pdu_info.nack_list[control_pdu_info.num_nack].so_end    = pdu_info_cursor_p->so - 1;
                   control_pdu_info.nack_list[control_pdu_info.num_nack].e2        = 1;
+                  /* Set E1 for next NACK_SN. The last one will be cleared */
+                  control_pdu_info.nack_list[control_pdu_info.num_nack].e1  = 1;
                   control_pdu_info.num_nack += 1;
                   nb_bits_transmitted += (RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1));
 #if TRACE_RLC_AM_STATUS_CREATION
             LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING NACK %04d SO START %05d SO END %05d\n",
                   PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
                   __LINE__,
-                  previous_sn_cursor,
-                  waited_so,
-                  0x7FFF);
+				  sn_cursor,
+                  0,
+				  pdu_info_cursor_p->so - 1);
 #endif
                   waited_so = pdu_info_cursor_p->so + pdu_info_cursor_p->payload_size;
                   /* Go to next segment */
                   cursor_p = cursor_p->next;
+                  if (cursor_p != NULL)
+                  {
+	                  pdu_info_cursor_p     = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+                  }
     		  }
     		  else {
         		  waited_so = pdu_info_cursor_p->payload_size;
@@ -587,79 +578,73 @@ rlc_am_send_status_pdu(
 
     		  /* Find the first discontinuity and then fill SOStart/SOEnd */
     		  while (!segment_loop_end) {
-    			  if (cursor_p != NULL) {
+    			  if ((cursor_p != NULL) && (pdu_info_cursor_p->sn == sn_cursor)) {
 
-        		      pdu_info_cursor_p       = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+					  /* PDU segment is for the same SN*/
+					  /* Check lsf */
+					  segment_loop_end = (pdu_info_cursor_p->lsf == 1);
 
-        		      if (pdu_info_cursor_p->sn == sn_cursor) {
-            		      /* PDU segment is for the same SN*/
-            			  if (waited_so < pdu_info_cursor_p->so) {
-            				  /* SO is greater than previous received portion : gap identified to fill */
-            				  if ((nb_bits_transmitted + RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1)) <= nb_bits_to_transmit) {
-            					  /* Set E1 of previous NACK_SN */
-            		    		  if (control_pdu_info.num_nack) {
-            		    			  control_pdu_info.nack_list[control_pdu_info.num_nack - 1].e1  = 1;
-            		    		  }
+					  if (waited_so < pdu_info_cursor_p->so) {
+						  /* SO is greater than previous received portion : gap identified to fill */
+						  if ((nb_bits_transmitted + RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1)) <= nb_bits_to_transmit) {
+							  control_pdu_info.nack_list[control_pdu_info.num_nack].nack_sn   = sn_cursor;
+							  control_pdu_info.nack_list[control_pdu_info.num_nack].so_start  = waited_so;
+							  control_pdu_info.nack_list[control_pdu_info.num_nack].so_end    = pdu_info_cursor_p->so;
+							  control_pdu_info.nack_list[control_pdu_info.num_nack].e2        = 1;
+							  /* Set E1 for next NACK_SN. The last one will be cleared */
+							  control_pdu_info.nack_list[control_pdu_info.num_nack].e1  = 1;
+							  control_pdu_info.num_nack += 1;
+							  nb_bits_transmitted += (RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1));
+#if TRACE_RLC_AM_STATUS_CREATION
+		LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING NACK %04d SO START %05d SO END %05d\n",
+			  PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
+			  __LINE__,
+			  sn_cursor,
+			  waited_so,
+			  pdu_info_cursor_p->so);
+#endif
+						  }
+						  else {
+							  /* Not enough resources to set a SOStart/SEnd, then set ACK_SN to current NACK_SN and stop Status PDU build */
+							  control_pdu_info.ack_sn = sn_cursor;
+							  status_report_completed = true;
+							  segment_loop_end = true;
+							  break;
+						  }
+					  }
+					  else {
+						  /* contiguous segment: only update waited_so */
+						  /* Assuming so and payload_size updated according to duplication removal done at reception ... */
+						  waited_so += pdu_info_cursor_p->payload_size;
+					  }
 
-        	                      control_pdu_info.nack_list[control_pdu_info.num_nack].nack_sn   = sn_cursor;
-        	                      control_pdu_info.nack_list[control_pdu_info.num_nack].so_start  = waited_so;
-        	                      control_pdu_info.nack_list[control_pdu_info.num_nack].so_end    = pdu_info_cursor_p->so;
-        	                      control_pdu_info.nack_list[control_pdu_info.num_nack].e2        = 1;
-        	                      control_pdu_info.num_nack += 1;
-        	                      nb_bits_transmitted += (RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1));
-            				  }
-            				  else {
-            		    		  /* Not enough resources to set a SOStart/SEnd, then set ACK_SN to current NACK_SN and stop Status PDU build */
-            		    		  control_pdu_info.ack_sn = sn_cursor;
-            		    		  status_report_completed = true;
-            		    		  segment_loop_end = true;
-            		    		  break;
-            				  }
+					  /* Go to next received PDU or PDU Segment */
+					  cursor_p = cursor_p->next;
+	                  if (cursor_p != NULL)
+	                  {
+		                  pdu_info_cursor_p     = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+	                  }
 
-            			  }
-            			  else {
-            				  /* Assuming so and payload_size updated according to duplication removal done at reception ... */
-            				  waited_so += pdu_info_cursor_p->payload_size;
-            			  }
-
-        		      } //end if (pdu_info_cursor_p->sn == sn_cursor)
-        		      else if (!lsf_received) {
-        		    	  /* We just switched to next SN, fill last gap if not end received */
-        		    	  if ((nb_bits_transmitted + RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1)) <= nb_bits_to_transmit) {
-        	   		    	  /* Set E1 of previously received NACK */
-        	    		    	  control_pdu_info.nack_list[control_pdu_info.num_nack - 1].e1  = 1;
-        	                      control_pdu_info.nack_list[control_pdu_info.num_nack].nack_sn   = sn_cursor;
-        	                      control_pdu_info.nack_list[control_pdu_info.num_nack].so_start  = waited_so;
-        	                      control_pdu_info.nack_list[control_pdu_info.num_nack].so_end    = RLC_AM_STATUS_PDU_SO_END_ALL_BYTES;
-        	                      control_pdu_info.nack_list[control_pdu_info.num_nack].e2        = 1;
-        	                      control_pdu_info.num_nack += 1;
-        	                      nb_bits_transmitted += (RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1));
-        		    	  }
-        		    	  else {
-        		    		  /* Not enough resources to set a SOStart/SEnd, then set ACK_SN to current NACK_SN and stop Status PDU build */
-        		    		  control_pdu_info.ack_sn = sn_cursor;
-        		    		  status_report_completed = true;
-        		    	  }
-
-        		    	  segment_loop_end = true;
-        		    	  continue; //in order not to go to next cursor
-        		      } // end if (!lsf_received)
-
-        			  /* Go to next received PDU or PDU Segment */
-        			  cursor_p = cursor_p->next;
-
-    			  } //end if (cursor_p != NULL)
-    			  else if (!lsf_received) {
-    				  /* Previous PDU segment was the last one and had lsf indication : fill the latest gap */
+    			  } //end if (cursor_p != NULL) && (pdu_info_cursor_p->sn == sn_cursor)
+    			  else {
+    				  /* Previous PDU segment was the last one and did not have lsf indication : fill the latest gap */
     		    	  if ((nb_bits_transmitted + RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1)) <= nb_bits_to_transmit) {
-    	   		    	  /* Set E1 of previously received NACK */
-    	    		    	  control_pdu_info.nack_list[control_pdu_info.num_nack - 1].e1  = 1;
     	                      control_pdu_info.nack_list[control_pdu_info.num_nack].nack_sn   = sn_cursor;
     	                      control_pdu_info.nack_list[control_pdu_info.num_nack].so_start  = waited_so;
     	                      control_pdu_info.nack_list[control_pdu_info.num_nack].so_end    = RLC_AM_STATUS_PDU_SO_END_ALL_BYTES;
     	                      control_pdu_info.nack_list[control_pdu_info.num_nack].e2        = 1;
+    	                      /* Set E1 for next NACK_SN. The last one will be cleared */
+    	                      control_pdu_info.nack_list[control_pdu_info.num_nack].e1  = 1;
     	                      control_pdu_info.num_nack += 1;
     	                      nb_bits_transmitted += (RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1));
+#if TRACE_RLC_AM_STATUS_CREATION
+            LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING LAST NACK %04d SO START %05d SO END %05d\n",
+                  PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
+                  __LINE__,
+				  sn_cursor,
+				  waited_so,
+				  RLC_AM_STATUS_PDU_SO_END_ALL_BYTES);
+#endif
      		    	  }
     		    	  else {
     		    		  /* Not enough resources to set a SOStart/SEnd, then set ACK_SN to current NACK_SN and stop Status PDU build */
@@ -677,16 +662,23 @@ rlc_am_send_status_pdu(
     		  control_pdu_info.ack_sn = sn_nack;
     		  status_report_completed = true;
     	  }
-      }
-
-      /* Increment sn_nack except if sn_nack = vrMS and if current SN was not fully received */
-      if ((sn_nack != rlc_pP->vr_ms) && (all_segments_received)) {
-    	  sn_nack = RLC_AM_NEXT_SN(sn_nack);
+      } // end while on all PDU segments of sn_cursor
+      else {
+    	  /* Go to next received PDU or PDU segment if sn_cursor is fully received */
     	  cursor_p = cursor_p->next;
       }
 
+      /* Increment sn_nack except if sn_nack = vrMS and if current SN was not fully received */
+      if (sn_nack != rlc_pP->vr_ms) {
+    	  sn_nack = RLC_AM_NEXT_SN(sn_cursor);
+      }
 
-    }
+
+    } // End main while NACK_SN
+
+    /* Clear E1 of last nack_sn entry */
+	AssertFatal (control_pdu_info.num_nack, "RLC AM Tx Status PDU Data Error no NACK_SN LcId=%d\n",rlc_pP->channel_id);
+    control_pdu_info.nack_list[control_pdu_info.num_nack - 1].e1  = 0;
 
     /* Set ACK_SN unless it was set before */
     if (!status_report_completed){
@@ -694,12 +686,8 @@ rlc_am_send_status_pdu(
     	control_pdu_info.ack_sn = sn_nack;
     }
 
-    if (control_pdu_info.num_nack) {
-    	control_pdu_info.e1 = 1;
-    }
-
-
   } else {
+	/* reception buffer empty or not enough TBS for filling at least 1 NACK_SN + E1 + E2 */
     control_pdu_info.ack_sn = rlc_pP->vr_r;
 #if TRACE_RLC_AM_STATUS_CREATION
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING ACK %04d  = VR(R)\n",

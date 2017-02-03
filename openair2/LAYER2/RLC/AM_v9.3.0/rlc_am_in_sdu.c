@@ -56,6 +56,8 @@ void rlc_am_free_in_sdu(
       rlcP->current_sdu_index = (rlcP->current_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
     }
 
+    // TODO : this loop is useless as UL SDUs are transmitted and acknowledged in sequence
+    // even with PDCP UL SDU discard functionality
     while ((rlcP->current_sdu_index != rlcP->next_sdu_index) &&
            (rlcP->input_sdus[rlcP->current_sdu_index].flags.transmitted_successfully == 1)) {
       rlcP->current_sdu_index = (rlcP->current_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;

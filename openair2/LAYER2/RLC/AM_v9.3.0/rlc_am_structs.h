@@ -88,9 +88,12 @@ typedef struct rlc_am_tx_sdu_management {
 * \brief Structure containing PDU variables related to its retransmission.
 */
 typedef struct pdu_management_flags {
+  uint8_t transmitted:1;            /*!< \brief Boolean telling that this PDU is not empty and has been at least transmitted once. */
   uint8_t ack:1;            /*!< \brief Boolean telling that this PDU has been acknowledged. */
+  uint8_t nack:1;            /*!< \brief Boolean telling that this PDU has been acknowledged negatively. */
   uint8_t retransmit:1;       /*!< \brief Boolean telling a retransmission is scheduled for this PDU. */
-  uint8_t dummy:6;            /*!< \brief Free bits. */
+  uint8_t max_retransmit:1;       /*!< \brief Boolean telling max retransmission has been hit for this PDU. */
+  uint8_t dummy:3;            /*!< \brief Free bits. */
 } pdu_management_flags_t;
 
 

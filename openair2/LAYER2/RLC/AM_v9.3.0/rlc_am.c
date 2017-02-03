@@ -45,6 +45,109 @@
 
 //-----------------------------------------------------------------------------
 uint32_t
+rlc_am_get_status_pdu_buffer_occupancy(
+  rlc_am_entity_t * const      rlc_pP){
+
+	//Compute Max Status PDU size according to what has been received and not received in the window [vrR vrMS[
+
+    // minimum header size in bits to be transmitted: D/C + CPT + ACK_SN + E1
+	uint32_t                    nb_bits_to_transmit	  = RLC_AM_PDU_D_C_BITS + RLC_AM_STATUS_PDU_CPT_LENGTH + RLC_AM_SN_BITS + RLC_AM_PDU_E_BITS;
+	mem_block_t                  *cursor_p              = rlc_pP->receiver_buffer.head;
+    rlc_am_pdu_info_t            *pdu_info_cursor_p     = NULL;
+    int                           waited_so             = 0;
+
+	rlc_sn_t sn_cursor = rlc_pP->vr_r;
+	rlc_sn_t sn_prev = rlc_pP->vr_r;
+	rlc_sn_t sn_end = rlc_pP->vr_ms;
+	boolean_t	segment_loop_end	  = false;
+
+
+	if (sn_prev != sn_end)
+	{
+		while ((RLC_AM_DIFF_SN(sn_prev,rlc_pP->vr_r) < RLC_AM_DIFF_SN(sn_end,rlc_pP->vr_r)) && (cursor_p != NULL))
+		{
+			pdu_info_cursor_p     = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+			sn_cursor             = pdu_info_cursor_p->sn;
+
+			// Add holes between sn_prev and sn_cursor
+			while ((sn_prev != sn_cursor) && (sn_prev != sn_end))
+			{
+				  /* Add 1 NACK_SN + E1 + E2 */
+				  nb_bits_to_transmit += (RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1));
+				  sn_prev = RLC_AM_NEXT_SN(sn_prev);
+			} //end while (sn_prev != sn_cursor)
+
+			/* Handle case sn_cursor is partially received */
+			/* Each gap will add NACK_SN + E1 + E2 + SOStart + SOEnd */
+			if ((((rlc_am_rx_pdu_management_t*)(cursor_p->data))->all_segments_received == 0) && (RLC_AM_DIFF_SN(sn_cursor,rlc_pP->vr_r) < RLC_AM_DIFF_SN(sn_end,rlc_pP->vr_r)))
+			{
+                 /* Check lsf */
+				  segment_loop_end = (pdu_info_cursor_p->lsf == 1);
+
+	    		  /* Fill for [0 SO[ if SO not null */
+	    		  if (pdu_info_cursor_p->so) {
+	    			  nb_bits_to_transmit += (RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1));
+	                  waited_so = pdu_info_cursor_p->so + pdu_info_cursor_p->payload_size;
+	                  /* Go to next segment */
+	                  cursor_p = cursor_p->next;
+	                  if (cursor_p != NULL)
+	                  {
+		                  pdu_info_cursor_p     = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+	                  }
+	    		  }
+	    		  else {
+	        		  waited_so = pdu_info_cursor_p->payload_size;
+	    		  }
+
+	    		  /* Fill following gaps if any */
+	    		  while (!segment_loop_end)
+	    		  {
+	    			  if ((cursor_p != NULL) && (pdu_info_cursor_p->sn == sn_cursor))
+	    			  {
+		                  /* Check lsf */
+	    				  segment_loop_end = (pdu_info_cursor_p->lsf == 1);
+
+            			  if (waited_so < pdu_info_cursor_p->so) {
+    	                      nb_bits_to_transmit += (RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1));
+            			  }
+            			  else {
+            				  /* contiguous segment: only update waited_so */
+            				  /* Assuming so and payload_size updated according to duplication removal done at reception ... */
+            				  waited_so += pdu_info_cursor_p->payload_size;
+            			  }
+
+            			  /* Go to next received PDU or PDU Segment */
+            			  cursor_p = cursor_p->next;
+    	                  if (cursor_p != NULL)
+    	                  {
+    		                  pdu_info_cursor_p     = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+    	                  }
+	    			  }
+	    			  else
+	    			  {
+	    				  /* Fill last gap assuming LSF is not received */
+	    				  nb_bits_to_transmit += (RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1));
+	    				  segment_loop_end = true;
+	    			  }
+	    		  } // end while (!segment_loop_end)
+			} // end if segments
+			else
+			{
+				 /* Go to next received PDU or PDU Segment */
+				 cursor_p = cursor_p->next;
+			}
+
+			sn_prev = RLC_AM_NEXT_SN(sn_cursor);
+		}
+	} // end if (sn_prev != sn_end)
+
+	// round up to the greatest byte
+	return ((nb_bits_to_transmit + 7) >> 3);
+
+}
+
+//-----------------------------------------------------------------------------
+uint32_t
 rlc_am_get_buffer_occupancy_in_bytes (
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP)
@@ -54,26 +157,24 @@ rlc_am_get_buffer_occupancy_in_bytes (
 
   // priority of control trafic
   rlc_pP->status_buffer_occupancy = 0;
-  if (rlc_pP->status_requested) {
-    if (rlc_pP->t_status_prohibit.running == 0) {
+  if ((rlc_pP->status_requested) && !(rlc_pP->status_requested & RLC_AM_STATUS_NO_TX_MASK)) {
+      rlc_pP->status_buffer_occupancy = rlc_am_get_status_pdu_buffer_occupancy(rlc_pP);
 #if TRACE_RLC_AM_BO
 
-      if (((15  +  rlc_pP->num_nack_sn*(10+1)  +  rlc_pP->num_nack_so*(15+15+1) + 7) >> 3) > 0) {
-        LOG_D(RLC, PROTOCOL_CTXT_FMT RB_AM_FMT" BO : CONTROL PDU %d bytes \n",
-              PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-              ((15  +  rlc_pP->num_nack_sn*(10+1)  +  rlc_pP->num_nack_so*(15+15+1) + 7) >> 3));
-      }
+      LOG_D(RLC, PROTOCOL_CTXT_FMT RB_AM_FMT" BO : CONTROL PDU %d bytes \n",
+            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
+			rlc_pP->status_buffer_occupancy);
 
 #endif
-      rlc_pP->status_buffer_occupancy = ((15  +  rlc_pP->num_nack_sn*(10+1)  +  rlc_pP->num_nack_so*(15+15+1) + 7) >> 3);
-    }
   }
 
   // data traffic
   if (rlc_pP->nb_sdu_no_segmented <= 1) {
     max_li_overhead = 0;
   } else {
-    max_li_overhead = (((rlc_pP->nb_sdu_no_segmented - 1) * 3) / 2) + ((rlc_pP->nb_sdu_no_segmented - 1) % 2);
+  	/* This computation assumes there is no SDU with size greater than 2047 bytes, otherwise a new PDU must be built except for LI15 configuration from Rel12*/
+	  uint32_t num_li = rlc_pP->nb_sdu_no_segmented - 1;
+      max_li_overhead = num_li + (num_li >> 1) + (num_li & 1);
   }
 
   if (rlc_pP->sdu_buffer_occupancy == 0) {
@@ -372,6 +473,7 @@ rlc_am_get_pdus (
         }
     }*/
     // THEN TRY TO SEND RETRANS PDU
+    // BUG FIX : they can be PDU to ReTx due to received NACK or 1 PDU (SN = vtS - 1) to ReTx due TPoll Expiry if Buffer Occupancy is null
     if (rlc_pP->first_retrans_pdu_sn >= 0) {
       rlc_am_tx_data_pdu_management_t* tx_data_pdu_management;
 

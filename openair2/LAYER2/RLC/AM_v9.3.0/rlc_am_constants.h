@@ -72,10 +72,52 @@
 #    define RLC_AM_MAX_HOLES_REPORT_PER_PDU       16
 /** @} */
 
+#define	RLC_AM_POLL_PDU_INFINITE				0xFFFF
+#define	RLC_AM_POLL_BYTE_INFINITE				0xFFFFFFFF
+
+/* MACRO DEFINITIONS */
+
+#define RLC_AM_NEXT_SN(sn)         (((sn)+1) & ((RLC_AM_SN_MODULO)-1))
+#define RLC_AM_PREV_SN(sn)         (((sn)+(RLC_AM_SN_MODULO)-1) & ((RLC_AM_SN_MODULO)-1))
+
+#define RLC_DIFF_SN(sn,snref,modulus)  ((sn+(modulus)-snref) & ((modulus)-1))
+#define RLC_SN_IN_WINDOW(sn,snref,modulus)  ((RLC_DIFF_SN(sn,snref,modulus)) < ((modulus) >> 1))
+
+#define RLC_AM_DIFF_SN(sn,snref)       (RLC_DIFF_SN(sn,snref,RLC_AM_SN_MODULO))
+#define RLC_AM_SN_IN_WINDOW(sn,snref)  (RLC_SN_IN_WINDOW(sn,snref,RLC_AM_SN_MODULO))
+
+#define RLC_SET_BIT(x,offset)      ((x) |= (1 << (offset)))
+#define RLC_GET_BIT(x,offset)      (((x) & (1 << (offset))) >> (offset))
+#define RLC_CLEAR_BIT(x,offset)    ((x) &= ~(1 << (offset)))
+
+#define RLC_SET_EVENT(x,event)         ((x) |= (event))
+#define RLC_GET_EVENT(x,event)         ((x) & (event))
+#define RLC_CLEAR_EVENT(x,event)       ((x) &= (~(event)))
+
 /* Common to Data and Status PDU */
-#define RLC_AM_SN_BITS                         10
-#define RLC_AM_PDU_D_C_BITS                	   1
-#define RLC_AM_PDU_E_BITS                	   1
+#define RLC_AM_SN_BITS				10
+#define RLC_AM_PDU_D_C_BITS          1
+#define RLC_AM_PDU_E_BITS            1
+#define RLC_AM_PDU_FI_BITS           2
+#define RLC_AM_PDU_POLL_BITS         1
+#define RLC_AM_PDU_RF_BITS           1
+
+
+#define EURL_AM_PDU_LSF_BITS                1
+
+
+/* AM Data PDU */
+#define RLC_AM_PDU_E_OFFSET                2
+#define RLC_AM_PDU_FI_OFFSET               (RLC_AM_PDU_E_OFFSET + RLC_AM_PDU_E_BITS)
+#define RLC_AM_PDU_POLL_OFFSET             (RLC_AM_PDU_FI_OFFSET + RLC_AM_PDU_FI_BITS)
+#define RLC_AM_PDU_RF_OFFSET               (RLC_AM_PDU_POLL_OFFSET + RLC_AM_PDU_POLL_BITS)
+#define RLC_AM_PDU_D_C_OFFSET              (RLC_AM_PDU_RF_OFFSET + RLC_AM_PDU_RF_BITS)
+
+#define RLC_AM_PDU_SET_E(px)      	(RLC_SET_BIT((px),RLC_AM_PDU_E_OFFSET))
+#define RLC_AM_PDU_SET_D_C(px)      (RLC_SET_BIT((px),RLC_AM_PDU_D_C_OFFSET))
+#define RLC_AM_PDU_SET_RF(px)       (RLC_SET_BIT((px),RLC_AM_PDU_RF_OFFSET))
+#define RLC_AM_PDU_SET_POLL(px)     (RLC_SET_BIT((px),RLC_AM_PDU_POLL_OFFSET))
+#define RLC_AM_PDU_CLEAR_POLL(px)   (RLC_CLEAR_BIT((px),RLC_AM_PDU_POLL_OFFSET))
 
 /* STATUS PDU */
 #define RLC_AM_STATUS_PDU_CPT_STATUS           0
@@ -89,19 +131,6 @@
 
 #define RLC_AM_STATUS_PDU_SO_END_ALL_BYTES     0x7FFF
 
-/* MACRO DEFINITIONS */
-#define RLC_AM_NEXT_SN(sn)         (((sn)+1) & ((RLC_AM_SN_MODULO)-1))
-#define RLC_AM_PREV_SN(sn)         (((sn)+(RLC_AM_SN_MODULO)-1) & ((RLC_AM_SN_MODULO)-1))
-
-#define RLC_DIFF_SN(sn,snref,modulus)  ((sn+(modulus)-snref) & ((modulus)-1))
-#define RLC_SN_IN_WINDOW(sn,snref,modulus)  ((RLC_DIFF_SN(sn,snref,modulus)) < ((modulus) >> 1))
-
-#define RLC_AM_DIFF_SN(sn,snref)       (RLC_DIFF_SN(sn,snref,RLC_AM_SN_MODULO))
-#define RLC_AM_SN_IN_WINDOW(sn,snref)  (RLC_SN_IN_WINDOW(sn,snref,RLC_AM_SN_MODULO))
-
-#define RLC_SET_EVENT(x,event)         ((x) |= (event))
-#define RLC_GET_EVENT(x,event)         ((x) & (event))
-#define RLC_CLEAR_EVENT(x,event)       ((x) &= (~(event)))
 
 /* Uplink STATUS PDU trigger events */
 #define RLC_AM_STATUS_NOT_TRIGGERED               0

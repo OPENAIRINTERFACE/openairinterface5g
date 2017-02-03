@@ -55,7 +55,6 @@ void rlc_am_nack_pdu (
   int          sdu_index;
 
   if (mb_p != NULL) {
-    rlc_pP->num_nack_sn += 1;
     assert(so_startP <= so_endP);
 
     //-----------------------------------------
@@ -67,10 +66,6 @@ void rlc_am_nack_pdu (
     if (rlc_pP->pdu_retrans_buffer[snP].last_nack_time != ctxt_pP->frame) {
       rlc_pP->pdu_retrans_buffer[snP].last_nack_time = ctxt_pP->frame;
       rlc_am_clear_holes(ctxt_pP, rlc_pP, snP);
-    }
-
-    if (!((so_startP == 0) && (so_endP == 0x7FFF))) {
-      rlc_pP->num_nack_so += 1;
     }
 
     rlc_am_add_hole(ctxt_pP, rlc_pP, snP, so_startP, so_endP);
@@ -283,7 +278,7 @@ mem_block_t* rlc_am_retransmit_get_copy (
 
     pdu_mngt->flags.retransmit = 0;
 
-    rlc_am_pdu_polling(ctxt_pP, rlc_pP, pdu_p, pdu_mngt->payload_size);
+    rlc_am_pdu_polling(ctxt_pP, rlc_pP, pdu_p, pdu_mngt->payload_size,false);
     return mb_copy;
   } else {
     return NULL;
@@ -745,7 +740,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(
       return NULL;
     }
 
-    rlc_am_pdu_polling(ctxt_pP, rlc_pP, pdu_sub_segment_p, test_pdu_copy_size);
+    rlc_am_pdu_polling(ctxt_pP, rlc_pP, pdu_sub_segment_p, test_pdu_copy_size,false);
     return mb_sub_segment_p;
   } else {
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[RE-SEGMENT] RE-SEND DATA PDU SN %04d BUT NO PDU AVAILABLE -> RETURN NULL\n",
@@ -843,10 +838,12 @@ void rlc_am_retransmit_any_pdu(
         // no need for update rlc_pP->nb_bytes_requested_by_mac
         pdu_p = rlc_am_retransmit_get_copy(ctxt_pP, rlc_pP, sn);
         pdu_sn_10_p = (rlc_am_pdu_sn_10_t*) (&pdu_p->data[sizeof(struct mac_tb_req)]);
-        rlc_am_pdu_polling(ctxt_pP, rlc_pP, pdu_sn_10_p, rlc_pP->pdu_retrans_buffer[sn].header_and_payload_size);
-        pdu_sn_10_p->b1 = pdu_sn_10_p->b1 | 0x20;
-        rlc_pP->c_pdu_without_poll     = 0;
-        rlc_pP->c_byte_without_poll    = 0;
+        rlc_am_pdu_polling(ctxt_pP, rlc_pP, pdu_sn_10_p, rlc_pP->pdu_retrans_buffer[sn].header_and_payload_size,false);
+        //BugFix: polling is checked and done in function above !
+        //pdu_sn_10_p->b1 = pdu_sn_10_p->b1 | 0x20;
+        //BugFix : pdu_without_poll and byte_without_poll are reset only if a Poll is transmitted
+        //rlc_pP->c_pdu_without_poll     = 0;
+        //rlc_pP->c_byte_without_poll    = 0;
         //rlc_pP->poll_sn = (rlc_pP->vt_s -1) & RLC_AM_SN_MASK;
         rlc_am_start_timer_poll_retransmit(ctxt_pP, rlc_pP);
         rlc_pP->stat_tx_data_pdu                   += 1;
@@ -877,7 +874,7 @@ void rlc_am_retransmit_any_pdu(
       rlc_am_nack_pdu (ctxt_pP, rlc_pP, found_pdu_sn, 0, 0x7FFF);
       pdu_p = rlc_am_retransmit_get_subsegment(ctxt_pP, rlc_pP, found_pdu_sn, &rlc_pP->nb_bytes_requested_by_mac);
       pdu_sn_10_p = (rlc_am_pdu_sn_10_t*) (&pdu_p->data[sizeof(struct mac_tb_req)]);
-      rlc_am_pdu_polling(ctxt_pP, rlc_pP, pdu_sn_10_p, rlc_pP->pdu_retrans_buffer[found_pdu_sn].header_and_payload_size);
+      rlc_am_pdu_polling(ctxt_pP, rlc_pP, pdu_sn_10_p, rlc_pP->pdu_retrans_buffer[found_pdu_sn].header_and_payload_size,false);
       pdu_sn_10_p->b1 = pdu_sn_10_p->b1 | 0x20;
       rlc_pP->c_pdu_without_poll     = 0;
       rlc_pP->c_byte_without_poll    = 0;

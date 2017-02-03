@@ -39,7 +39,8 @@ void rlc_am_pdu_polling (
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t *const rlc_pP,
   rlc_am_pdu_sn_10_t *const pdu_pP,
-  const int16_t payload_sizeP)
+  const int16_t payload_sizeP,
+  boolean_t is_new_pdu)
 {
   // 5.2.2 Polling
   // An AM RLC entity can poll its peer AM RLC entity in order to trigger STATUS reporting at the peer AM RLC entity.
@@ -68,41 +69,50 @@ void rlc_am_pdu_polling (
   //         - start t-PollRetransmit;
   //     - else:
   //         - restart t-PollRetransmit;
-  rlc_pP->c_pdu_without_poll     += 1;
-  rlc_pP->c_byte_without_poll    += payload_sizeP;
+
+  if (is_new_pdu) {
+	  if (rlc_pP->poll_pdu != RLC_AM_POLL_PDU_INFINITE) {
+		  rlc_pP->c_pdu_without_poll     += 1;
+	  }
+
+	  if (rlc_pP->poll_byte != RLC_AM_POLL_BYTE_INFINITE) {
+		  rlc_pP->c_byte_without_poll    += payload_sizeP;
+	  }
+  }
 
   if (
-    (rlc_pP->c_pdu_without_poll >= rlc_pP->poll_pdu) ||
-    (rlc_pP->c_byte_without_poll >= rlc_pP->poll_byte) ||
+    ((is_new_pdu) && ((rlc_pP->c_pdu_without_poll >= rlc_pP->poll_pdu) ||
+    (rlc_pP->c_byte_without_poll >= rlc_pP->poll_byte))) ||
     ((rlc_pP->sdu_buffer_occupancy == 0) && (rlc_pP->retrans_num_bytes_to_retransmit == 0)) ||
     (rlc_pP->vt_s == rlc_pP->vt_ms) ||
-    (rlc_pP->force_poll == TRUE)
+    (rlc_pP->force_poll == true)
   ) {
-	rlc_pP->force_poll = FALSE;
+	rlc_pP->force_poll = false;
 
-    if (rlc_pP->c_pdu_without_poll >= rlc_pP->poll_pdu) {
+    if ((is_new_pdu) && (rlc_pP->c_pdu_without_poll >= rlc_pP->poll_pdu)) {
       LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[POLL] SET POLL BECAUSE TX NUM PDU THRESHOLD %d  HAS BEEN REACHED\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
             rlc_pP->poll_pdu);
-    } else
-    if (rlc_pP->c_byte_without_poll >= rlc_pP->poll_byte) {
+    }
+    if ((is_new_pdu) && (rlc_pP->c_byte_without_poll >= rlc_pP->poll_byte)) {
       LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[POLL] SET POLL BECAUSE TX NUM BYTES THRESHOLD %d  HAS BEEN REACHED\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
             rlc_pP->poll_byte);
-    } else
+    }
     if ((rlc_pP->sdu_buffer_occupancy == 0) && (rlc_pP->retrans_num_bytes_to_retransmit == 0)) {
       LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[POLL] SET POLL BECAUSE TX BUFFERS ARE EMPTY\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
-    } else
+    }
     if (rlc_pP->vt_s == rlc_pP->vt_ms) {
       LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[POLL] SET POLL BECAUSE OF WINDOW STALLING\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
     }
 
-    pdu_pP->b1 = pdu_pP->b1 | 0x20;
+    RLC_AM_PDU_SET_POLL(pdu_pP->b1);
     rlc_pP->c_pdu_without_poll     = 0;
     rlc_pP->c_byte_without_poll    = 0;
 
+    // vt_s shall have been updated before in case of new transmission
     rlc_pP->poll_sn = (rlc_pP->vt_s -1) & RLC_AM_SN_MASK;
     //optimisation if (!rlc_pP->t_poll_retransmit.running) {
     rlc_am_start_timer_poll_retransmit(ctxt_pP, rlc_pP);
@@ -110,7 +120,8 @@ void rlc_am_pdu_polling (
     //optimisation     rlc_pP->t_poll_retransmit.frame_time_out = ctxt_pP->frame + rlc_pP->t_poll_retransmit.time_out;
     //optimisation }
   } else {
-    pdu_pP->b1 = pdu_pP->b1 & 0xDF;
+	  // Not sure this is necessary
+	RLC_AM_PDU_CLEAR_POLL(pdu_pP->b1);
   }
 }
 //-----------------------------------------------------------------------------
@@ -178,7 +189,9 @@ void rlc_am_segment_10 (
       if (rlc_pP->nb_sdu_no_segmented <= 1) {
         max_li_overhead = 0;
       } else {
-        max_li_overhead = (((rlc_pP->nb_sdu_no_segmented - 1) * 3) / 2) + ((rlc_pP->nb_sdu_no_segmented - 1) % 2);
+    	/* This computation assumes there is no SDU with size greater than 2047 bytes, otherwise a new PDU must be built except for LI15 configuration from Rel12*/
+    	test_num_li = rlc_pP->nb_sdu_no_segmented - 1;
+        max_li_overhead = test_num_li + (test_num_li >> 1) + (test_num_li & 1);
       }
 
       LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] max_li_overhead %d\n",
@@ -485,11 +498,11 @@ void rlc_am_segment_10 (
       fi = fi + 1;
     }
 
-    pdu_p->b1 = pdu_p->b1 | (fi << 3);
+    pdu_p->b1 = pdu_p->b1 | (fi << RLC_AM_PDU_FI_OFFSET);
 
     // set fist e bit
     if (fill_num_li > 0) {
-      pdu_p->b1 = pdu_p->b1 | 0x04;
+    	RLC_AM_PDU_SET_E(pdu_p->b1);
     }
 
     LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] SEND PDU SN %04d  SIZE %d BYTES PAYLOAD SIZE %d BYTES\n",
@@ -501,8 +514,9 @@ void rlc_am_segment_10 (
     rlc_pP->stat_tx_data_pdu   += 1;
     rlc_pP->stat_tx_data_bytes += (data_pdu_size - pdu_remaining_size);
 
-    //pdu_p->sn = rlc_pP->vt_s;
-    pdu_p->b1 = pdu_p->b1 | 0x80; // DATA/CONTROL field is DATA PDU
+    // set DATA/CONTROL field is DATA PDU(1)
+    RLC_AM_PDU_SET_D_C(pdu_p->b1);
+    // set sn = rlc_pP->vt_s;
     pdu_p->b1 = pdu_p->b1 | (rlc_pP->vt_s >> 8);
     pdu_p->b2 = rlc_pP->vt_s & 0xFF;
     rlc_pP->vt_s = (rlc_pP->vt_s+1) & RLC_AM_SN_MASK;
@@ -511,13 +525,14 @@ void rlc_am_segment_10 (
     pdu_tb_req_p->tb_size         = data_pdu_size - pdu_remaining_size;
 //#warning "why 3000: changed to RLC_SDU_MAX_SIZE "
     assert(pdu_tb_req_p->tb_size < RLC_SDU_MAX_SIZE );
-    rlc_am_pdu_polling(ctxt_pP, rlc_pP, pdu_p, pdu_mngt_p->payload_size);
+    rlc_am_pdu_polling(ctxt_pP, rlc_pP, pdu_p, pdu_mngt_p->payload_size,true);
 
     //list_add_tail_eurecom (pdu_mem_p, &rlc_pP->segmentation_pdu_list);
     pdu_mngt_p->mem_block  = pdu_mem_p;
     pdu_mngt_p->first_byte = (unsigned char*)pdu_p;
     pdu_mngt_p->header_and_payload_size  = data_pdu_size - pdu_remaining_size;
     pdu_mngt_p->retx_count = -1;
+    pdu_mngt_p->flags.transmitted = 1;
 
     rlc_pP->retrans_num_pdus  += 1;
     rlc_pP->retrans_num_bytes += pdu_mngt_p->header_and_payload_size;
