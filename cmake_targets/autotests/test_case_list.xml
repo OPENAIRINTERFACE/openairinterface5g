@@ -62,8 +62,7 @@
      <compile_prog_args>--oaisim -r Rel10 --noS1  -c </compile_prog_args>
      <compile_prog_out>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1
                        $OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/rb_tool
-                       $OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko
-                       $OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/CMakeFiles/oai_nw_drv/oai_nw_drv.ko</compile_prog_out>
+                       $OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko</compile_prog_out>
      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -10486,7 +10485,7 @@ c
     <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai --eNB --UE -w USRP -c -x  </UE_compile_prog>
     <UE_branch>develop1B</UE_branch>
     <UE_compile_prog_args></UE_compile_prog_args>
-    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip; sudo rmmod oai_nw_drv</UE_pre_exec>
+    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
@@ -10586,7 +10585,7 @@ c
     <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai --eNB --UE -w USRP -c -x  </UE_compile_prog>
     <UE_branch>develop1B</UE_branch>
     <UE_compile_prog_args></UE_compile_prog_args>
-    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip; sudo rmmod oai_nw_drv</UE_pre_exec>
+    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r50 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
@@ -10686,7 +10685,7 @@ c
     <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai --eNB --UE -w USRP -c -x  </UE_compile_prog>
     <UE_branch>develop1B</UE_branch>
     <UE_compile_prog_args></UE_compile_prog_args>
-    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip; sudo rmmod oai_nw_drv</UE_pre_exec>
+    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r100 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
@@ -10787,7 +10786,7 @@ c
     <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai --eNB --UE -w USRP -c -x  </UE_compile_prog>
     <UE_branch>develop1B</UE_branch>
     <UE_compile_prog_args></UE_compile_prog_args>
-    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip; sudo rmmod oai_nw_drv</UE_pre_exec>
+    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
@@ -10887,7 +10886,7 @@ c
     <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai --eNB --UE -w USRP -c -x  </UE_compile_prog>
     <UE_branch>develop1B</UE_branch>
     <UE_compile_prog_args></UE_compile_prog_args>
-    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip; sudo rmmod oai_nw_drv</UE_pre_exec>
+    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r50 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
@@ -10989,7 +10988,7 @@ c
     <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai --eNB --UE -w USRP -c -x  </UE_compile_prog>
     <UE_branch>develop1B</UE_branch>
     <UE_compile_prog_args></UE_compile_prog_args>
-    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip; sudo rmmod oai_nw_drv</UE_pre_exec>
+    <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r100 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
