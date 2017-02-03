@@ -152,27 +152,20 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	//Check if there is TA command and set the length appropriately
 	ta_len = (dl_data->ce_bitmap[0] & PROTOCOL__FLEX_CE_TYPE__FLPCET_TA) ? 2 : 0; 
       }
-      
+
       num_sdus = 0;
       sdu_length_total = 0;
-
-      if (ta_len > 0) {
-	// Reset the measurement
-	ue_sched_ctl->ta_timer = 20;
-	eNB_UE_stats->timing_advance_update = 0;
-	//	header_len = ta_len;
-	//last_sdu_header_len = ta_len;
-      }
 
       n_lc = dl_data->n_rlc_pdu;
       // Go through each one of the channel commands and create SDUs
       header_len = 0;
       last_sdu_header_len = 0;
       for (j = 0; j < n_lc; j++) {
+	sdu_lengths[j] = 0;
 	lcid = dl_data->rlc_pdu[j]->rlc_pdu_tb[0]->logical_channel_id;
 	rlc_size = dl_data->rlc_pdu[j]->rlc_pdu_tb[0]->size;
-	LOG_D(MAC,"[TEST] [eNB %d] Frame %d, LCID %d, CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
-	      mod_id, frame, lcid, CC_id, rlc_size);
+	LOG_D(MAC,"[TEST] [eNB %d] [Frame %d] [Subframe %d], LCID %d, CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
+	      mod_id, frame, subframe, lcid, CC_id, rlc_size);
 	if (rlc_size > 0) {
 	  
 	  rlc_status = mac_rlc_status_ind(mod_id,
@@ -186,9 +179,13 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 
 	  if (rlc_status.bytes_in_buffer > 0) {
 
-	    if (rlc_size <= 2) {
-	      rlc_size = 3;
+	    if (rlc_status.bytes_in_buffer < rlc_size) {
+	      rlc_size = rlc_status.bytes_in_buffer;
 	    }
+
+	    if (rlc_size <= 2) { 
+	      rlc_size = 3; 
+	    } 
 
 	    rlc_status = mac_rlc_status_ind(mod_id,
 					    rnti,
@@ -198,8 +195,6 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 					    MBMS_FLAG_NO,
 					    lcid,
 					    rlc_size); // transport block set size
-	  
-	    sdu_lengths[j] = 0;
 	  
 	    LOG_D(MAC, "[TEST] RLC can give %d bytes for LCID %d during second call\n", rlc_status.bytes_in_buffer, lcid);
 	  
@@ -257,9 +252,16 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	  header_len = header_len_tmp;
 	  post_padding = TBS - sdu_length_total - header_len - ta_len; // 1 is for the postpadding header
 	}
-	
-	ta_update = (ta_len > 0) ? ue_sched_ctl->ta_update : 0;
-	
+		
+	if (ta_len > 0) {
+	  // Reset the measurement
+	  ta_update = flexran_get_TA(mod_id, UE_id, CC_id);
+	  ue_sched_ctl->ta_timer = 20;
+	  eNB_UE_stats->timing_advance_update = 0;
+	} else {
+	  ta_update = 0;
+	}
+
 	// If there is nothing to schedule, just leave
 	if ((sdu_length_total) <= 0) { 
 	  harq_pid_updated[UE_id][harq_pid] = 1;
@@ -280,6 +282,8 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 				       post_padding);
 
 	
+
+
 	
 #ifdef DEBUG_eNB_SCHEDULER
 	LOG_T(MAC,"[eNB %d] First 16 bytes of DLSCH : \n");
@@ -343,6 +347,11 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	
 	//eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[eNB_UE_stats->DL_cqi[0]];
 	//eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
+      } else {
+	LOG_D(FLEXRAN_AGENT, "No need to schedule a dci after all. Just drop it\n");
+	harq_pid_updated[UE_id][harq_pid] = 1;
+	harq_pid_round[UE_id][harq_pid] = 0;
+	continue;
       }
     } else {
       // No need to create anything apart of DCI in case of retransmission

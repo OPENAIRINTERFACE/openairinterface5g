@@ -1192,7 +1192,7 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
         // check first for RLC data on DCCH
         // add the length for  all the control elements (timing adv, drx, etc) : header + payload
 
-	ta_len = (ue_sched_ctl->ta_update!=0) ? 2 : 0;
+	ta_len = (ue_sched_ctl->ta_update != 0) ? 2 : 0;
 	
 	dl_data[num_ues_added]->n_ce_bitmap = 2;
 	dl_data[num_ues_added]->ce_bitmap = (uint32_t *) calloc(2, sizeof(uint32_t));
@@ -1400,7 +1400,6 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
 	      ((framex10psubframe>(frame*10+subframe)) && (((10240-framex10psubframe+frame*10+subframe)>=10)))) //frame wrap-around
 	    if (flexran_get_p0_pucch_status(mod_id, UE_id, CC_id) == 1) {
   	      flexran_update_p0_pucch(mod_id, UE_id, CC_id);
-
 
 	      UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame = frame;
 	      UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe = subframe;

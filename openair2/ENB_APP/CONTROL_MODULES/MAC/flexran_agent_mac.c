@@ -443,11 +443,11 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 	  if (rlc_reports[j] == NULL)
 	    goto error;
 	  protocol__flex_rlc_bsr__init(rlc_reports[j]);
-	  rlc_reports[j]->lc_id = j+1;
+	  rlc_reports[j]->lc_id = j + 1;
 	  rlc_reports[j]->has_lc_id = 1;
-	  rlc_reports[j]->tx_queue_size = flexran_get_tx_queue_size(enb_id,i,j+1);
+	  rlc_reports[j]->tx_queue_size = flexran_get_tx_queue_size(enb_id,i,j + 1);
 	  rlc_reports[j]->has_tx_queue_size = 1;
-
+	  
 	  //TODO:Set tx queue head of line delay in ms
 	  rlc_reports[j]->tx_queue_hol_delay = 100;
 	  rlc_reports[j]->has_tx_queue_hol_delay = 0;
@@ -963,7 +963,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
 
   sf_trigger_msg->header = header;
   sf_trigger_msg->has_sfn_sf = 1;
-  sf_trigger_msg->sfn_sf = flexran_get_future_sfn_sf(mod_id, 1);
+  sf_trigger_msg->sfn_sf = flexran_get_future_sfn_sf(mod_id, 3);
 
   sf_trigger_msg->n_dl_info = 0;
 
