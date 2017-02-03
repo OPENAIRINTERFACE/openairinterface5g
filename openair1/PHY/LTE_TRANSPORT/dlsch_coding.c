@@ -85,11 +85,11 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)
 #endif
 
         for (r=0; r<MAX_NUM_DLSCH_SEGMENTS; r++) {
-
+	  
 #ifdef DEBUG_DLSCH_FREE
           printf("Freeing dlsch process %d c[%d] (%p)\n",i,r,dlsch->harq_processes[i]->c[r]);
 #endif
-
+	  
           if (dlsch->harq_processes[i]->c[r]) {
             free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+768);
             dlsch->harq_processes[i]->c[r] = NULL;
@@ -98,17 +98,17 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)
             free16(dlsch->harq_processes[i]->d[r],(96+12+3+(3*6144)));
             dlsch->harq_processes[i]->d[r] = NULL;
           }
-
+        
 	}
 	free16(dlsch->harq_processes[i],sizeof(LTE_DL_eNB_HARQ_t));
 	dlsch->harq_processes[i] = NULL;
       }
     }
-
+    
     free16(dlsch,sizeof(LTE_eNB_DLSCH_t));
     dlsch = NULL;
     }
-
+  
 }
 
 LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_t Nsoft,unsigned char N_RB_DL, uint8_t abstraction_flag, LTE_DL_FRAME_PARMS* frame_parms)
@@ -218,7 +218,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
 	    if (dlsch->harq_processes[i]->d[r])
 	      dlsch->harq_processes[i]->d[r][j] = LTE_NULL;
 	  }
-
+        
       }
 
       return(dlsch);
@@ -257,7 +257,7 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch)
 	  for (r=0; r<MAX_NUM_DLSCH_SEGMENTS; r++)
 	    if (dlsch->harq_processes[i]->d[r])
 	      dlsch->harq_processes[i]->d[r][j] = LTE_NULL;
-
+        
       }
     }
   }
@@ -553,8 +553,8 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
   return(0);
 }
 
-int dlsch_encoding(unsigned char *a,
-		   LTE_DL_FRAME_PARMS *frame_parms,
+int dlsch_encoding(PHY_VARS_eNB *eNB,
+		   unsigned char *a,
                    uint8_t num_pdcch_symbols,
                    LTE_eNB_DLSCH_t *dlsch,
                    int frame,
@@ -568,6 +568,7 @@ int dlsch_encoding(unsigned char *a,
   unsigned int crc=1;
   unsigned short iind;
 
+  LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
   unsigned char harq_pid = dlsch->current_harq_pid;
   unsigned short nb_rb = dlsch->harq_processes[harq_pid]->nb_rb;
   unsigned int A;
@@ -602,7 +603,7 @@ int dlsch_encoding(unsigned char *a,
     printf("\n");
     */
     // Add 24-bit crc (polynomial A) to payload
-    crc = crc24a(a, //input bits for computation, A is a size of a
+    crc = crc24a(a,
                  A)>>8;
     a[A>>3] = ((uint8_t*)&crc)[2];
     a[1+(A>>3)] = ((uint8_t*)&crc)[1];
@@ -613,15 +614,15 @@ int dlsch_encoding(unsigned char *a,
     //    dlsch->harq_processes[harq_pid]->b = a;
     memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+4);
 
-    if (lte_segmentation(dlsch->harq_processes[harq_pid]->b, // bits after CRC attachement
-                         dlsch->harq_processes[harq_pid]->c, // output from segmentation
-                         dlsch->harq_processes[harq_pid]->B, //size of B=L+A
-                         &dlsch->harq_processes[harq_pid]->C, //number of codeblocks
-                         &dlsch->harq_processes[harq_pid]->Cplus, //Number of segments of size K+
-                         &dlsch->harq_processes[harq_pid]->Cminus,//Number of segments of size K_
-                         &dlsch->harq_processes[harq_pid]->Kplus, //First segmentation size
-                         &dlsch->harq_processes[harq_pid]->Kminus, //Second segmentation size
-                         &dlsch->harq_processes[harq_pid]->F)<0) //Number of filler bits
+    if (lte_segmentation(dlsch->harq_processes[harq_pid]->b,
+                         dlsch->harq_processes[harq_pid]->c,
+                         dlsch->harq_processes[harq_pid]->B,
+                         &dlsch->harq_processes[harq_pid]->C,
+                         &dlsch->harq_processes[harq_pid]->Cplus,
+                         &dlsch->harq_processes[harq_pid]->Cminus,
+                         &dlsch->harq_processes[harq_pid]->Kplus,
+                         &dlsch->harq_processes[harq_pid]->Kminus,
+                         &dlsch->harq_processes[harq_pid]->F)<0)
       return(-1);
 
     for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
@@ -703,7 +704,7 @@ int dlsch_encoding(unsigned char *a,
     r_offset += lte_rate_matching_turbo(dlsch->harq_processes[harq_pid]->RTC[r],
                                         G,  //G
                                         dlsch->harq_processes[harq_pid]->w[r],
-                                        dlsch->harq_processes[harq_pid]->e+r_offset, // sequence of bits for transmission
+                                        dlsch->harq_processes[harq_pid]->e+r_offset,
                                         dlsch->harq_processes[harq_pid]->C, // C
                                         dlsch->Nsoft,                    // Nsoft,
                                         dlsch->Mdlharq,
@@ -715,7 +716,6 @@ int dlsch_encoding(unsigned char *a,
                                         nb_rb,
                                         m);                       // r
     stop_meas(rm_stats);
-    //printf("dlsch->harq_processes[harq_pid]->rvidx = %d\n", dlsch->harq_processes[harq_pid]->rvidx);
 #ifdef DEBUG_DLSCH_CODING
 
     if (r==dlsch->harq_processes[harq_pid]->C-1)
