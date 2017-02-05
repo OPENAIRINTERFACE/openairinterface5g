@@ -185,6 +185,9 @@ int flexran_get_ue_wcqi (mid_t mod_id, mid_t ue_id);
 /* Get the transmission queue size for a UE with a channel_id logical channel id */
 int flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id);
 
+/* Get the head of line delay for a UE with a channel_id logical channel id */
+int flexran_get_hol_delay(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id);
+
 /* Check the status of the timing advance for a UE */
 short flexran_get_TA(mid_t mod_id, mid_t ue_id, int CC_id);
 

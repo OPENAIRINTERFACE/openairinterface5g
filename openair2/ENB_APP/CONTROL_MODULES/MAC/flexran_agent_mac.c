@@ -449,8 +449,8 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 	  rlc_reports[j]->has_tx_queue_size = 1;
 	  
 	  //TODO:Set tx queue head of line delay in ms
-	  rlc_reports[j]->tx_queue_hol_delay = 100;
-	  rlc_reports[j]->has_tx_queue_hol_delay = 0;
+	  rlc_reports[j]->tx_queue_hol_delay = flexran_get_hol_delay(enb_id, i, j+1);
+	  rlc_reports[j]->has_tx_queue_hol_delay = 1;
 	  //TODO:Set retransmission queue size in bytes
 	  rlc_reports[j]->retransmission_queue_size = 10;
 	  rlc_reports[j]->has_retransmission_queue_size = 0;
@@ -976,6 +976,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
       }
     }
   }
+  
 
   //  LOG_I(FLEXRAN_AGENT, "Sending subframe trigger for frame %d and subframe %d\n", flexran_get_current_frame(mod_id), (flexran_get_current_subframe(mod_id) + 1) % 10);
 
@@ -1002,7 +1003,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
       if(dl_info[i] == NULL)
 	goto error;
       protocol__flex_dl_info__init(dl_info[i]);
-      dl_info[i]->rnti = flexran_get_ue_crnti(mod_id, i);
+      dl_info[i]->rnti = flexran_get_ue_crnti(mod_id, UE_id);
       dl_info[i]->has_rnti = 1;
       /*Fill in the right id of this round's HARQ process for this UE*/
       //      uint8_t harq_id;
