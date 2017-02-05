@@ -55,6 +55,8 @@
 #include "flexran.pb-c.h"
 #include "flexran_agent_extern.h"
 
+#include "flexran_agent_common.h"
+
 #include "SIMULATION/TOOLS/defs.h" // for taus
 
 void flexran_apply_dl_scheduling_decisions(mid_t mod_id,

@@ -576,7 +576,6 @@ int flexran_get_hol_delay(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_i
 short flexran_get_TA(mid_t mod_id, mid_t ue_id, int CC_id) {
   
   UE_list_t *UE_list=&eNB_mac_inst[mod_id].UE_list;
-  UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[ue_id];
   int rnti;
 
   rnti = flexran_get_ue_crnti(mod_id, ue_id);
@@ -610,9 +609,6 @@ void flexran_update_TA(mid_t mod_id, mid_t ue_id, int CC_id) {
   UE_list_t *UE_list=&eNB_mac_inst[mod_id].UE_list;
   UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[ue_id];
 
-  int rnti;
-  
-  rnti = flexran_get_ue_crnti(mod_id, ue_id);
   if (ue_sched_ctl->ta_timer == 0) {
     
     // WE SHOULD PROTECT the eNB_UE_stats with a mutex here ...                                                                         
@@ -631,7 +627,6 @@ void flexran_update_TA(mid_t mod_id, mid_t ue_id, int CC_id) {
 int flexran_get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id,int CC_id) {
   
   UE_list_t			*UE_list      = &eNB_mac_inst[mod_id].UE_list;
-  UE_sched_ctrl			*ue_sched_ctl = &UE_list->UE_sched_ctrl[ue_id];
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id,CC_id,rnti);
