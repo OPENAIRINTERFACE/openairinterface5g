@@ -1929,6 +1929,7 @@ add_executable(oaisim_nos1
   ${OPENAIR_TARGETS}/SIMU/USER/oaisim_functions.c
   ${OPENAIR_TARGETS}/SIMU/USER/event_handler.c
   ${OPENAIR_TARGETS}/SIMU/USER/oaisim.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c

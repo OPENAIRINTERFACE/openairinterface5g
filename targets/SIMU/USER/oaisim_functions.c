@@ -831,6 +831,7 @@ void get_simulation_options(int argc, char *argv[])
     oai_emulation.info.node_timing[0]          = enb_properties->properties[0]->cc_node_timing[0];
     downlink_frequency[0][0]                   = enb_properties->properties[0]->downlink_frequency[0];
     uplink_frequency_offset[0][0]              = enb_properties->properties[0]->uplink_frequency_offset[0];
+    oai_emulation.info.N_RB_DL[0]              = enb_properties->properties[0]->N_RB_DL[0];
   }
 
   free(conf_config_file_name);
@@ -1042,7 +1043,7 @@ int eNB_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void *
 
   *ptimestamp = last_eNB_rx_timestamp[eNB_id][CC_id];
 
-  LOG_D(PHY,"eNB_trx_read nsamps %d TS(%llu,%llu) => subframe %d\n",nsamps,
+  LOG_D(EMU,"eNB_trx_read nsamps %d TS(%llu,%llu) => subframe %d\n",nsamps,
         (unsigned long long)current_eNB_rx_timestamp[eNB_id][CC_id],
         (unsigned long long)last_eNB_rx_timestamp[eNB_id][CC_id],
 	(*ptimestamp/PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti)%10);
@@ -1051,7 +1052,7 @@ int eNB_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void *
   while (sample_count<nsamps) {
     while (current_eNB_rx_timestamp[eNB_id][CC_id]<
 	   (nsamps+last_eNB_rx_timestamp[eNB_id][CC_id])) {
-      LOG_D(EMU,"eNB: current TS %llu, last TS %llu, sleeping\n",current_eNB_rx_timestamp[eNB_id][CC_id],last_eNB_rx_timestamp[eNB_id][CC_id]);
+      //      LOG_D(EMU,"eNB: current TS %llu, last TS %llu, sleeping\n",current_eNB_rx_timestamp[eNB_id][CC_id],last_eNB_rx_timestamp[eNB_id][CC_id]);
       usleep(500);
     }
 
@@ -1061,7 +1062,7 @@ int eNB_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void *
     pthread_mutex_unlock(&subframe_mutex); 
     
     subframe = (last_eNB_rx_timestamp[eNB_id][CC_id]/PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti)%10;
-    LOG_D(PHY,"eNB_trx_read generating UL subframe %d (Ts %llu, current TS %llu)\n",
+    LOG_D(EMU,"eNB_trx_read generating UL subframe %d (Ts %llu, current TS %llu)\n",
 	  subframe,(unsigned long long)*ptimestamp,
 	  (unsigned long long)current_eNB_rx_timestamp[eNB_id][CC_id]);
     
@@ -1107,12 +1108,12 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
   while (sample_count<nsamps) {
     while (current_UE_rx_timestamp[UE_id][CC_id] < 
 	   (last_UE_rx_timestamp[UE_id][CC_id]+read_size)) {
-      LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+      //LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
 
       usleep(500);
     }
 
-    LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+    //    LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
       
     // tell top-level we are busy 
     pthread_mutex_lock(&subframe_mutex);
@@ -1291,7 +1292,7 @@ void init_openair1(void)
 		   oai_emulation.info.tdd_config_S[CC_id],
 		   oai_emulation.info.extended_prefix_flag[CC_id],
                    oai_emulation.info.N_RB_DL[CC_id], 
-		   Nid_cell, 
+		   enb_properties->properties[0]->Nid_cell[CC_id], 
 		   cooperation_flag, 
 		   enb_properties->properties[0]->nb_antenna_ports[CC_id], 
 		   abstraction_flag,
@@ -1299,6 +1300,11 @@ void init_openair1(void)
 		   enb_properties->properties[0]->nb_antennas_tx[CC_id],
 		   nb_antennas_rx_ue,
 		   oai_emulation.info.eMBMS_active_state);
+
+    // This is for IF4p5 RRU, gets done by RRC configuration of eNB
+    PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex = enb_properties->properties[0]->prach_config_index[CC_id];
+    PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset  = enb_properties->properties[0]->prach_freq_offset[CC_id];
+
   }
 
   for (eNB_id=0; eNB_id<NB_eNB_INST; eNB_id++) {

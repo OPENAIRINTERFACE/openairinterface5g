@@ -2076,10 +2076,12 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->start_rf             = start_rf;
 	eNB->start_if             = NULL;
         eNB->fh_asynch            = NULL;
-	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
-        if (ret<0) {
-          printf("Exiting, cannot initialize rf device\n");
-          exit(-1);
+        if (oaisim_flag == 0) {
+  	  ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
+          if (ret<0) {
+            printf("Exiting, cannot initialize rf device\n");
+            exit(-1);
+          }
         }
 	eNB->rfdevice.host_type   = BBU_HOST;
 	eNB->ifdevice.host_type   = BBU_HOST;
