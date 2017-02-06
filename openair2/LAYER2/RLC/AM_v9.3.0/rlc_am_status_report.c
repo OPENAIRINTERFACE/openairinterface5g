@@ -511,7 +511,7 @@ rlc_am_send_status_pdu(
               /* Set E1 for next NACK_SN. The last one will be cleared */
               control_pdu_info.nack_list[control_pdu_info.num_nack].e1  = 1;
               control_pdu_info.num_nack += 1;
-              nb_bits_to_transmit += (RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1));
+              nb_bits_transmitted += (RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1));
 #if TRACE_RLC_AM_STATUS_CREATION
           LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING NACK %04d\n",
                 PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
