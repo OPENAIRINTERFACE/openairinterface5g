@@ -445,7 +445,6 @@ rlc_am_get_pdus (
           RLC_AM_CLEAR_ALL_STATUS(rlc_pP->status_requested);
           rlc_pP->status_buffer_occupancy = 0;
           rlc_am_start_timer_status_prohibit(ctxt_pP, rlc_pP);
-          RLC_AM_SET_STATUS(rlc_pP->status_requested,RLC_AM_STATUS_PROHIBIT);
           return;
         }
       }
