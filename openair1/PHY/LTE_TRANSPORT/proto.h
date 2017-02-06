@@ -121,6 +121,18 @@ int32_t dlsch_encoding(PHY_VARS_eNB *eNB,
                        time_stats_t *te_stats,
                        time_stats_t *i_stats);
 
+int32_t dlsch_encoding_SIC(PHY_VARS_UE *ue,
+                       uint8_t *a,
+                       uint8_t num_pdcch_symbols,
+                       LTE_eNB_DLSCH_t *dlsch,
+                       int frame,
+                       uint8_t subframe,
+                       time_stats_t *rm_stats,
+                       time_stats_t *te_stats,
+                       time_stats_t *i_stats);
+
+
+
 /** \fn dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
     uint8_t *input_buffer,
     uint8_t num_pdcch_symbols,

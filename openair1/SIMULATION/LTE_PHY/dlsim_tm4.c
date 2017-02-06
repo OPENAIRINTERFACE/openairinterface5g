@@ -3089,11 +3089,12 @@ int main(int argc, char **argv)
             }
 
                 start_meas(&eNB->dlsch_encoding_stats);
-                if (dlsch_encoding(((TB==0) ? input_buffer0[k] : input_buffer1[k]),
-                                   &eNB->frame_parms,
+                if (dlsch_encoding(eNB,
+                                   (TB==0) ? input_buffer0[k] : input_buffer1[k],
                                    num_pdcch_symbols,
                                    eNB->dlsch[k][TB],
-                                   0,subframe,
+                                   0,
+                                   subframe,
                                    &eNB->dlsch_rate_matching_stats,
                                    &eNB->dlsch_turbo_encoding_stats,
                                    &eNB->dlsch_interleaving_stats)<0)
@@ -4058,8 +4059,8 @@ int main(int argc, char **argv)
                 UE->dlsch_eNB[eNB_id]->rnti                     = UE->dlsch[eNB_id][0]->rnti;
                 UE->dlsch_eNB[eNB_id]->current_harq_pid         = UE->dlsch[eNB_id][0]->current_harq_pid;
 
-                dlsch_encoding(input_buffer0[0], //UE->dlsch[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->b,
-                               &UE->frame_parms,
+                dlsch_encoding_SIC(UE,
+                               input_buffer0[0], //UE->dlsch[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->b,,
                                num_pdcch_symbols,
                                UE->dlsch_eNB[eNB_id],
                                0,
