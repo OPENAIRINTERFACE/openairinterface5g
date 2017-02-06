@@ -111,8 +111,8 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag);
     @param i_stats Time statistics for interleaving
     @returns status
 */
-int32_t dlsch_encoding(uint8_t *a,
-		       LTE_DL_FRAME_PARMS *frame_parms,
+int32_t dlsch_encoding(PHY_VARS_eNB *eNB,
+		       uint8_t *a,
                        uint8_t num_pdcch_symbols,
                        LTE_eNB_DLSCH_t *dlsch,
                        int frame,
