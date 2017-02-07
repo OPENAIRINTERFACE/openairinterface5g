@@ -233,8 +233,9 @@ void DL_channel(PHY_VARS_eNB *eNB,PHY_VARS_UE *UE,int subframe,int awgn_flag,dou
   }
 
   //AWGN
-  // This is the SNR on the PDSCH for OFDM symbols without pilots -> rho_A
-  sigma2_dB = 10*log10((double)tx_lev) +10*log10((double)eNB->frame_parms.ofdm_symbol_size/(double)(eNB->frame_parms.N_RB_DL*12)) - SNR - get_pa_dB(eNB->pdsch_config_dedicated);
+  // tx_lev is the average energy over the whole subframe
+  // but SNR should be better defined wrt the energy in the reference symbols
+  sigma2_dB = 10*log10((double)tx_lev) +10*log10((double)eNB->frame_parms.ofdm_symbol_size/(double)(eNB->frame_parms.N_RB_DL*12)) - SNR;
   sigma2 = pow(10,sigma2_dB/10);
 
   for (i=0; i<2*UE->frame_parms.samples_per_tti; i++) {
