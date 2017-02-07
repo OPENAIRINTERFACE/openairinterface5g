@@ -117,8 +117,8 @@ typedef struct rlc_am_tx_data_pdu_management {
   sdu_size_t       nack_so_stop;  /*!< \brief Highest NACK stop segment offset, must be set to data_size if global NACK */
 
   int8_t           nb_sdus;       /*!< \brief Number of sdu having segments in this pdu. */
-  int8_t
-  retx_count;    /*!< \brief Counts the number of retransmissions of an AMD PDU (see subclause 5.2.1). There is one RETX_COUNT counter per PDU that needs to be retransmitted. there is one VT(DAT) for each PDU and it is incremented each time the PDU is transmitted. */
+  int8_t           retx_count;    /*!< \brief Counts the number of already occurred retransmissions of an AMD PDU (see subclause 5.2.1). */
+  int8_t           retx_count_next;    /*!< \brief Counts the number of already occurred retransmissions plus the latest pending one. */
 
   pdu_management_flags_t  flags; /*!< \brief PDU variables related to its retransmission. */
 } rlc_am_tx_data_pdu_management_t;

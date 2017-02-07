@@ -50,7 +50,7 @@ void rlc_am_nack_pdu (
   //         - indicate to upper layers that max retransmission has been reached.
 
 
-  mem_block_t* mb_p         = rlc_pP->pdu_retrans_buffer[snP].mem_block;
+  mem_block_t* mb_p         = rlc_pP->tx_data_pdu_buffer[snP].mem_block;
   int          pdu_sdu_index;
   int          sdu_index;
 
@@ -63,8 +63,8 @@ void rlc_am_nack_pdu (
     // increasing order among calls refering to only one status PDU
     //  and among time
     //-----------------------------------------
-    if (rlc_pP->pdu_retrans_buffer[snP].last_nack_time != ctxt_pP->frame) {
-      rlc_pP->pdu_retrans_buffer[snP].last_nack_time = ctxt_pP->frame;
+    if (rlc_pP->tx_data_pdu_buffer[snP].last_nack_time != ctxt_pP->frame) {
+      rlc_pP->tx_data_pdu_buffer[snP].last_nack_time = ctxt_pP->frame;
       rlc_am_clear_holes(ctxt_pP, rlc_pP, snP);
     }
 
@@ -79,21 +79,22 @@ void rlc_am_nack_pdu (
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[NACK-PDU] NACK PDU SN %04d previous retx_count %d  1ST_RETRANS_PDU %04d\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           snP,
-          rlc_pP->pdu_retrans_buffer[snP].retx_count,
+          rlc_pP->tx_data_pdu_buffer[snP].retx_count,
           rlc_pP->first_retrans_pdu_sn);
 
-    rlc_pP->pdu_retrans_buffer[snP].flags.retransmit = 1;
+    rlc_pP->tx_data_pdu_buffer[snP].flags.retransmit = 1;
 
-    if (rlc_pP->pdu_retrans_buffer[snP].retx_count == -1) {
-      rlc_pP->pdu_retrans_buffer[snP].retx_count = 0;
-      rlc_pP->retrans_num_bytes_to_retransmit += rlc_pP->pdu_retrans_buffer[snP].header_and_payload_size;
-    } else {
-      rlc_pP->pdu_retrans_buffer[snP].retx_count += 1;
+    /* TODO : before incrementing retx_count_next, this must be a new occurrence of retransmission */
+    if (rlc_pP->tx_data_pdu_buffer[snP].retx_count == rlc_pP->tx_data_pdu_buffer[snP].retx_count_next){
+    	rlc_pP->tx_data_pdu_buffer[snP].retx_count_next ++;
+    	rlc_pP->retrans_num_bytes_to_retransmit += rlc_pP->tx_data_pdu_buffer[snP].header_and_payload_size;
     }
 
-    if (rlc_pP->pdu_retrans_buffer[snP].retx_count >= rlc_pP->max_retx_threshold) {
-      for (pdu_sdu_index = 0; pdu_sdu_index < rlc_pP->pdu_retrans_buffer[snP].nb_sdus; pdu_sdu_index++) {
-        sdu_index = rlc_pP->pdu_retrans_buffer[snP].sdus_index[pdu_sdu_index];
+    /* TODO: Move this part in UL SCH processing */
+#if 0
+    if (rlc_pP->tx_data_pdu_buffer[snP].retx_count >= rlc_pP->max_retx_threshold) {
+      for (pdu_sdu_index = 0; pdu_sdu_index < rlc_pP->tx_data_pdu_buffer[snP].nb_sdus; pdu_sdu_index++) {
+        sdu_index = rlc_pP->tx_data_pdu_buffer[snP].sdus_index[pdu_sdu_index];
         assert(pdu_sdu_index < RLC_AM_MAX_SDU_IN_PDU);
         assert(sdu_index < RLC_AM_SDU_CONTROL_BUFFER_SIZE);
         rlc_pP->input_sdus[sdu_index].nb_pdus_ack += 1;
@@ -117,6 +118,7 @@ void rlc_am_nack_pdu (
         }
       }
     }
+#endif
   } else {
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[NACK-PDU] ERROR NACK MISSING PDU SN %05d\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
@@ -130,29 +132,27 @@ void rlc_am_ack_pdu (
   rlc_am_entity_t *const rlc_pP,
   const rlc_sn_t snP)
 {
-  mem_block_t* mb_p         = rlc_pP->pdu_retrans_buffer[snP].mem_block;
+  mem_block_t* mb_p         = rlc_pP->tx_data_pdu_buffer[snP].mem_block;
   int          pdu_sdu_index;
   int          sdu_index;
 
-  rlc_pP->pdu_retrans_buffer[snP].flags.retransmit = 0;
+  rlc_pP->tx_data_pdu_buffer[snP].flags.retransmit = 0;
 
-  if ((rlc_pP->pdu_retrans_buffer[snP].flags.ack == 0) && (mb_p != NULL)) {
+  if ((rlc_pP->tx_data_pdu_buffer[snP].flags.ack == 0) && (mb_p != NULL)) {
     //if (mb_pP != NULL) {
     free_mem_block(mb_p, __func__);
-    rlc_pP->pdu_retrans_buffer[snP].mem_block = NULL;
+    rlc_pP->tx_data_pdu_buffer[snP].mem_block = NULL;
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[ACK-PDU] ACK PDU SN %05d previous retx_count %d \n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           snP,
-          rlc_pP->pdu_retrans_buffer[snP].retx_count);
-    rlc_pP->retrans_num_pdus  -= 1;
-    rlc_pP->retrans_num_bytes -= rlc_pP->pdu_retrans_buffer[snP].header_and_payload_size;
+          rlc_pP->tx_data_pdu_buffer[snP].retx_count);
 
-    if (rlc_pP->pdu_retrans_buffer[snP].retx_count >= 0) {
-      rlc_pP->retrans_num_bytes_to_retransmit -= rlc_pP->pdu_retrans_buffer[snP].header_and_payload_size;
+    if (rlc_pP->tx_data_pdu_buffer[snP].retx_count >= 0) {
+      rlc_pP->retrans_num_bytes_to_retransmit -= rlc_pP->tx_data_pdu_buffer[snP].header_and_payload_size;
     }
 
-    for (pdu_sdu_index = 0; pdu_sdu_index < rlc_pP->pdu_retrans_buffer[snP].nb_sdus; pdu_sdu_index++) {
-      sdu_index = rlc_pP->pdu_retrans_buffer[snP].sdus_index[pdu_sdu_index];
+    for (pdu_sdu_index = 0; pdu_sdu_index < rlc_pP->tx_data_pdu_buffer[snP].nb_sdus; pdu_sdu_index++) {
+      sdu_index = rlc_pP->tx_data_pdu_buffer[snP].sdus_index[pdu_sdu_index];
       assert(sdu_index >= 0);
       assert(sdu_index < RLC_AM_SDU_CONTROL_BUFFER_SIZE);
       rlc_pP->input_sdus[sdu_index].nb_pdus_ack += 1;
@@ -182,19 +182,19 @@ void rlc_am_ack_pdu (
     // This state variable holds the value of the SN of the next AMD PDU for which a positive acknowledgment is to be
     // received in-sequence, and it serves as the lower edge of the transmitting window. It is initially set to 0, and is updated
     // whenever the AM RLC entity receives a positive acknowledgment for an AMD PDU with SN = VT(A).
-    rlc_pP->pdu_retrans_buffer[snP].flags.ack = 1;
+    rlc_pP->tx_data_pdu_buffer[snP].flags.ack = 1;
 
     if (snP == rlc_pP->vt_a) {
-      //rlc_pP->pdu_retrans_buffer[snP].flags.ack = 1;
+      //rlc_pP->tx_data_pdu_buffer[snP].flags.ack = 1;
       do {
-        memset(&rlc_pP->pdu_retrans_buffer[rlc_pP->vt_a], 0, sizeof(rlc_am_tx_data_pdu_management_t));
+        memset(&rlc_pP->tx_data_pdu_buffer[rlc_pP->vt_a], 0, sizeof(rlc_am_tx_data_pdu_management_t));
 
         if (rlc_pP->vt_a == rlc_pP->first_retrans_pdu_sn) {
           rlc_pP->first_retrans_pdu_sn = (rlc_pP->vt_a  + 1) & RLC_AM_SN_MASK;
         }
 
         rlc_pP->vt_a = (rlc_pP->vt_a  + 1) & RLC_AM_SN_MASK;
-      } while ((rlc_pP->pdu_retrans_buffer[rlc_pP->vt_a].flags.ack == 1) && (rlc_pP->vt_a != rlc_pP->vt_s));
+      } while ((rlc_pP->tx_data_pdu_buffer[rlc_pP->vt_a].flags.ack == 1) && (rlc_pP->vt_a != rlc_pP->vt_s));
 
 
       rlc_pP->vt_ms   = (rlc_pP->vt_a + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
@@ -209,7 +209,7 @@ void rlc_am_ack_pdu (
       do {
         rlc_pP->first_retrans_pdu_sn = (rlc_pP->first_retrans_pdu_sn  + 1) & RLC_AM_SN_MASK;
 
-        if (rlc_pP->pdu_retrans_buffer[rlc_pP->first_retrans_pdu_sn].retx_count >= 0) {
+        if (rlc_pP->tx_data_pdu_buffer[rlc_pP->first_retrans_pdu_sn].retx_count >= 0) {
           LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[ACK-PDU] UPDATED  first_retrans_pdu_sn -> %04d\n",
                 PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
                 rlc_pP->first_retrans_pdu_sn);
@@ -231,21 +231,21 @@ void rlc_am_ack_pdu (
 
     if (mb_p != NULL) {
       free_mem_block(mb_p, __func__);
-      rlc_pP->pdu_retrans_buffer[snP].mem_block = NULL;
+      rlc_pP->tx_data_pdu_buffer[snP].mem_block = NULL;
     }
 
-    if (rlc_pP->pdu_retrans_buffer[snP].flags.ack > 0) {
+    if (rlc_pP->tx_data_pdu_buffer[snP].flags.ack > 0) {
       if (snP == rlc_pP->vt_a) {
-        //rlc_pP->pdu_retrans_buffer[snP].flags.ack = 1;
+        //rlc_pP->tx_data_pdu_buffer[snP].flags.ack = 1;
         do {
-          memset(&rlc_pP->pdu_retrans_buffer[rlc_pP->vt_a], 0, sizeof(rlc_am_tx_data_pdu_management_t));
+          memset(&rlc_pP->tx_data_pdu_buffer[rlc_pP->vt_a], 0, sizeof(rlc_am_tx_data_pdu_management_t));
 
           if (rlc_pP->vt_a == rlc_pP->first_retrans_pdu_sn) {
             rlc_pP->first_retrans_pdu_sn = (rlc_pP->vt_a  + 1) & RLC_AM_SN_MASK;
           }
 
           rlc_pP->vt_a = (rlc_pP->vt_a  + 1) & RLC_AM_SN_MASK;
-        } while ((rlc_pP->pdu_retrans_buffer[rlc_pP->vt_a].flags.ack == 1) && (rlc_pP->vt_a != rlc_pP->vt_s));
+        } while ((rlc_pP->tx_data_pdu_buffer[rlc_pP->vt_a].flags.ack == 1) && (rlc_pP->vt_a != rlc_pP->vt_s));
 
         rlc_pP->vt_ms   = (rlc_pP->vt_a + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
         LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[ACK-PDU] UPDATED VT(A) %04d VT(MS) %04d  VT(S) %04d\n",
@@ -263,11 +263,11 @@ mem_block_t* rlc_am_retransmit_get_copy (
   rlc_am_entity_t *const rlc_pP,
   const rlc_sn_t snP)
 {
-  mem_block_t* mb_original_p = rlc_pP->pdu_retrans_buffer[snP].mem_block;
+  mem_block_t* mb_original_p = rlc_pP->tx_data_pdu_buffer[snP].mem_block;
 
   if (mb_original_p != NULL) {
 
-    rlc_am_tx_data_pdu_management_t *pdu_mngt = &rlc_pP->pdu_retrans_buffer[snP % RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE];
+    rlc_am_tx_data_pdu_management_t *pdu_mngt = &rlc_pP->tx_data_pdu_buffer[snP % RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE];
 
     int size             = pdu_mngt->header_and_payload_size + sizeof(struct mac_tb_req);
     mem_block_t* mb_copy = get_free_mem_block(size, __func__);
@@ -335,7 +335,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(
   //    - set the header of the new AMD PDU segment in accordance with the description in sub clause 6.;
   //    - set the P field according to sub clause 5.2.2.
 
-  mem_block_t*           mb_original_p     = rlc_pP->pdu_retrans_buffer[snP].mem_block;
+  mem_block_t*           mb_original_p     = rlc_pP->tx_data_pdu_buffer[snP].mem_block;
 
   if (mb_original_p != NULL) {
     mem_block_t*           mb_sub_segment_p  = get_free_mem_block(*sizeP + sizeof(struct mac_tb_req), __func__);
@@ -348,10 +348,10 @@ mem_block_t* rlc_am_retransmit_get_subsegment(
 
     ((struct mac_tb_req*)(mb_sub_segment_p->data))->data_ptr         = (uint8_t*)&(mb_sub_segment_p->data[sizeof(struct mac_tb_req)]);
 
-    if (rlc_am_get_data_pdu_infos(ctxt_pP, rlc_pP, pdu_original_p, rlc_pP->pdu_retrans_buffer[snP].header_and_payload_size, &pdu_info) >= 0) {
+    if (rlc_am_get_data_pdu_infos(ctxt_pP, rlc_pP, pdu_original_p, rlc_pP->tx_data_pdu_buffer[snP].header_and_payload_size, &pdu_info) >= 0) {
       int li_index = 0;
-      int start_offset       = rlc_pP->pdu_retrans_buffer[snP].nack_so_start;
-      int stop_offset        = rlc_pP->pdu_retrans_buffer[snP].nack_so_stop;
+      int start_offset       = rlc_pP->tx_data_pdu_buffer[snP].nack_so_start;
+      int stop_offset        = rlc_pP->tx_data_pdu_buffer[snP].nack_so_stop;
 
       LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[RE-SEGMENT] ORIGINAL PDU SN %04d:\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
@@ -361,8 +361,8 @@ mem_block_t* rlc_am_retransmit_get_subsegment(
       // all 15 bits set to 1 (indicate that the missing portion of the AMD PDU includes all bytes
       // to the last byte of the AMD PDU)
       if (stop_offset == 0x7FFF) {
-        rlc_pP->pdu_retrans_buffer[snP].nack_so_stop = rlc_pP->pdu_retrans_buffer[snP].payload_size - 1;
-        stop_offset = rlc_pP->pdu_retrans_buffer[snP].nack_so_stop;
+        rlc_pP->tx_data_pdu_buffer[snP].nack_so_stop = rlc_pP->tx_data_pdu_buffer[snP].payload_size - 1;
+        stop_offset = rlc_pP->tx_data_pdu_buffer[snP].nack_so_stop;
         LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[RE-SEGMENT] UPDATED RETRANS PDU SN %04d nack_so_stop FROM 0x7FFF to %05d\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
               snP,
@@ -622,7 +622,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
         test_pdu_copy_size = max_copy_payload_size;
 
-        if ((stop_offset ==  (start_offset + max_copy_payload_size - 1)) && (stop_offset == rlc_pP->pdu_retrans_buffer[snP].payload_size - 1)) {
+        if ((stop_offset ==  (start_offset + max_copy_payload_size - 1)) && (stop_offset == rlc_pP->tx_data_pdu_buffer[snP].payload_size - 1)) {
           not_test_fi = (not_test_fi & 0x2) | (not_fi_original & 0x1);  // set b0 idendical to the b0 of the non segmented PDU
         } else {
           not_test_fi = not_test_fi & 0x2;  // clear b0 because no SDU ending in this PDU
@@ -630,7 +630,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(
       }
 
       //---------------------------------------------------------------
-      /*if (stop_offset == (rlc_pP->pdu_retrans_buffer[snP].payload_size - 1)) {
+      /*if (stop_offset == (rlc_pP->tx_data_pdu_buffer[snP].payload_size - 1)) {
               test_fi = (test_fi & 0x02) | (fi_original & 0x01);
       }*/
       //---------------------------------------------------------------
@@ -687,16 +687,16 @@ mem_block_t* rlc_am_retransmit_get_subsegment(
       // copy payload to retransmit
       //---------------------------------------------------------------
       memcpy(fill_payload_p,
-             &rlc_pP->pdu_retrans_buffer[snP].payload[start_offset],
+             &rlc_pP->tx_data_pdu_buffer[snP].payload[start_offset],
              test_pdu_copy_size);
 
       ((struct mac_tb_req*)(mb_sub_segment_p->data))->tb_size  = (tb_size_t)(((uint64_t)fill_payload_p)+ test_pdu_copy_size) - ((uint64_t)(&pdu_sub_segment_p->b1));
 
       // set LSF
-      if ((test_pdu_copy_size + start_offset) == rlc_pP->pdu_retrans_buffer[snP].payload_size) {
+      if ((test_pdu_copy_size + start_offset) == rlc_pP->tx_data_pdu_buffer[snP].payload_size) {
         pdu_sub_segment_p->data[0] = pdu_sub_segment_p->data[0] | 0x80;
 
-        rlc_pP->pdu_retrans_buffer[snP].flags.retransmit = 0;
+        rlc_pP->tx_data_pdu_buffer[snP].flags.retransmit = 0;
 
         LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[RE-SEGMENT] RE-SEND DATA PDU SN %04d SO %d %d BYTES PAYLOAD %d BYTES LSF!\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
@@ -723,15 +723,15 @@ mem_block_t* rlc_am_retransmit_get_subsegment(
       // update nack_so_start
       //---------------------------------------------------------------
       rlc_am_remove_hole(ctxt_pP, rlc_pP, snP, start_offset, test_pdu_copy_size+start_offset - 1);
-      //rlc_pP->pdu_retrans_buffer[snP].nack_so_start = rlc_pP->pdu_retrans_buffer[snP].nack_so_start + test_pdu_copy_size;
+      //rlc_pP->tx_data_pdu_buffer[snP].nack_so_start = rlc_pP->tx_data_pdu_buffer[snP].nack_so_start + test_pdu_copy_size;
       LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[RE-SEGMENT] RE-SEND DATA PDU SN %04d NOW nack_so_start %d nack_so_stop %d\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
             snP,
-            rlc_pP->pdu_retrans_buffer[snP].nack_so_start,
-            rlc_pP->pdu_retrans_buffer[snP].nack_so_stop);
-      /*if (rlc_pP->pdu_retrans_buffer[snP].nack_so_start == rlc_pP->pdu_retrans_buffer[snP].nack_so_stop) {
-          rlc_pP->pdu_retrans_buffer[snP].nack_so_start = 0;
-          rlc_pP->pdu_retrans_buffer[snP].nack_so_stop  = 0x7FFF;
+            rlc_pP->tx_data_pdu_buffer[snP].nack_so_start,
+            rlc_pP->tx_data_pdu_buffer[snP].nack_so_stop);
+      /*if (rlc_pP->tx_data_pdu_buffer[snP].nack_so_start == rlc_pP->tx_data_pdu_buffer[snP].nack_so_stop) {
+          rlc_pP->tx_data_pdu_buffer[snP].nack_so_start = 0;
+          rlc_pP->tx_data_pdu_buffer[snP].nack_so_stop  = 0x7FFF;
       }*/
     } else {
       LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[RE-SEGMENT] COULD NOT GET INFO FOR DATA PDU SN %04d -> RETURN NULL\n",
@@ -773,25 +773,25 @@ void rlc_am_tx_buffer_display (
   }
 
   while (rlc_pP->vt_s != sn) {
-    if (rlc_pP->pdu_retrans_buffer[sn].mem_block) {
+    if (rlc_pP->tx_data_pdu_buffer[sn].mem_block) {
       if ((loop % 1) == 0) {
         LOG_D(RLC, "\nTX SN:\t");
       }
 
-      if (rlc_pP->pdu_retrans_buffer[sn].flags.retransmit) {
-        LOG_D(RLC, "%04d %d/%d Bytes (NACK RTX:%02d ",sn, rlc_pP->pdu_retrans_buffer[sn].header_and_payload_size, rlc_pP->pdu_retrans_buffer[sn].payload_size,
-              rlc_pP->pdu_retrans_buffer[sn].retx_count);
+      if (rlc_pP->tx_data_pdu_buffer[sn].flags.retransmit) {
+        LOG_D(RLC, "%04d %d/%d Bytes (NACK RTX:%02d ",sn, rlc_pP->tx_data_pdu_buffer[sn].header_and_payload_size, rlc_pP->tx_data_pdu_buffer[sn].payload_size,
+              rlc_pP->tx_data_pdu_buffer[sn].retx_count);
       } else {
-        LOG_D(RLC, "%04d %d/%d Bytes (RTX:%02d ",sn, rlc_pP->pdu_retrans_buffer[sn].header_and_payload_size, rlc_pP->pdu_retrans_buffer[sn].payload_size,
-              rlc_pP->pdu_retrans_buffer[sn].retx_count);
+        LOG_D(RLC, "%04d %d/%d Bytes (RTX:%02d ",sn, rlc_pP->tx_data_pdu_buffer[sn].header_and_payload_size, rlc_pP->tx_data_pdu_buffer[sn].payload_size,
+              rlc_pP->tx_data_pdu_buffer[sn].retx_count);
       }
 
-      if (rlc_pP->pdu_retrans_buffer[sn].num_holes == 0) {
-        LOG_D(RLC, "SO:%04d->%04d)\t", rlc_pP->pdu_retrans_buffer[sn].nack_so_start, rlc_pP->pdu_retrans_buffer[sn].nack_so_stop);
+      if (rlc_pP->tx_data_pdu_buffer[sn].num_holes == 0) {
+        LOG_D(RLC, "SO:%04d->%04d)\t", rlc_pP->tx_data_pdu_buffer[sn].nack_so_start, rlc_pP->tx_data_pdu_buffer[sn].nack_so_stop);
       } else {
-        for (i=0; i<rlc_pP->pdu_retrans_buffer[sn].num_holes; i++) {
+        for (i=0; i<rlc_pP->tx_data_pdu_buffer[sn].num_holes; i++) {
           assert(i < RLC_AM_MAX_HOLES_REPORT_PER_PDU);
-          LOG_D(RLC, "SO:%04d->%04d)\t", rlc_pP->pdu_retrans_buffer[sn].hole_so_start[i], rlc_pP->pdu_retrans_buffer[sn].hole_so_stop[i]);
+          LOG_D(RLC, "SO:%04d->%04d)\t", rlc_pP->tx_data_pdu_buffer[sn].hole_so_start[i], rlc_pP->tx_data_pdu_buffer[sn].hole_so_stop[i]);
         }
       }
 
@@ -819,13 +819,13 @@ void rlc_am_retransmit_any_pdu(
         PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
 
   while (sn != sn_end) {
-    if (rlc_pP->pdu_retrans_buffer[sn].mem_block != NULL) {
+    if (rlc_pP->tx_data_pdu_buffer[sn].mem_block != NULL) {
       if (!found_pdu) {
         found_pdu = 1;
         found_pdu_sn = sn;
       }
 
-      if (rlc_pP->pdu_retrans_buffer[sn].header_and_payload_size <= rlc_pP->nb_bytes_requested_by_mac) {
+      if (rlc_pP->tx_data_pdu_buffer[sn].header_and_payload_size <= rlc_pP->nb_bytes_requested_by_mac) {
         LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[FORCE-TRAFFIC] RE-SEND DATA PDU SN %04d\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sn);
@@ -838,7 +838,7 @@ void rlc_am_retransmit_any_pdu(
         // no need for update rlc_pP->nb_bytes_requested_by_mac
         pdu_p = rlc_am_retransmit_get_copy(ctxt_pP, rlc_pP, sn);
         pdu_sn_10_p = (rlc_am_pdu_sn_10_t*) (&pdu_p->data[sizeof(struct mac_tb_req)]);
-        rlc_am_pdu_polling(ctxt_pP, rlc_pP, pdu_sn_10_p, rlc_pP->pdu_retrans_buffer[sn].header_and_payload_size,false);
+        rlc_am_pdu_polling(ctxt_pP, rlc_pP, pdu_sn_10_p, rlc_pP->tx_data_pdu_buffer[sn].header_and_payload_size,false);
         //BugFix: polling is checked and done in function above !
         //pdu_sn_10_p->b1 = pdu_sn_10_p->b1 | 0x20;
         //BugFix : pdu_without_poll and byte_without_poll are reset only if a Poll is transmitted
@@ -874,7 +874,7 @@ void rlc_am_retransmit_any_pdu(
       rlc_am_nack_pdu (ctxt_pP, rlc_pP, found_pdu_sn, 0, 0x7FFF);
       pdu_p = rlc_am_retransmit_get_subsegment(ctxt_pP, rlc_pP, found_pdu_sn, &rlc_pP->nb_bytes_requested_by_mac);
       pdu_sn_10_p = (rlc_am_pdu_sn_10_t*) (&pdu_p->data[sizeof(struct mac_tb_req)]);
-      rlc_am_pdu_polling(ctxt_pP, rlc_pP, pdu_sn_10_p, rlc_pP->pdu_retrans_buffer[found_pdu_sn].header_and_payload_size,false);
+      rlc_am_pdu_polling(ctxt_pP, rlc_pP, pdu_sn_10_p, rlc_pP->tx_data_pdu_buffer[found_pdu_sn].header_and_payload_size,false);
       pdu_sn_10_p->b1 = pdu_sn_10_p->b1 | 0x20;
       rlc_pP->c_pdu_without_poll     = 0;
       rlc_pP->c_byte_without_poll    = 0;

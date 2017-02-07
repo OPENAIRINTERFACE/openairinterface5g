@@ -223,7 +223,7 @@ void rlc_am_segment_10 (
       pdu_remaining_size = data_pdu_size - RLC_AM_HEADER_MIN_SIZE;
       pdu_p        = (rlc_am_pdu_sn_10_t*) (&pdu_mem_p->data[sizeof(struct mac_tb_req)]);
       pdu_tb_req_p = (struct mac_tb_req*) (pdu_mem_p->data);
-      pdu_mngt_p   = &rlc_pP->pdu_retrans_buffer[rlc_pP->vt_s % RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE];
+      pdu_mngt_p   = &rlc_pP->tx_data_pdu_buffer[rlc_pP->vt_s % RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE];
       memset(pdu_mngt_p, 0, sizeof (rlc_am_tx_data_pdu_management_t));
 
       memset (pdu_mem_p->data, 0, sizeof (rlc_am_pdu_sn_10_t)+sizeof(struct mac_tb_req));
@@ -531,11 +531,10 @@ void rlc_am_segment_10 (
     pdu_mngt_p->mem_block  = pdu_mem_p;
     pdu_mngt_p->first_byte = (unsigned char*)pdu_p;
     pdu_mngt_p->header_and_payload_size  = data_pdu_size - pdu_remaining_size;
-    pdu_mngt_p->retx_count = -1;
+    pdu_mngt_p->retx_count = 0;
+    pdu_mngt_p->retx_count_next = 0;
     pdu_mngt_p->flags.transmitted = 1;
 
-    rlc_pP->retrans_num_pdus  += 1;
-    rlc_pP->retrans_num_bytes += pdu_mngt_p->header_and_payload_size;
 
     pdu_p = NULL;
     pdu_mem_p = NULL;

@@ -74,9 +74,8 @@ typedef struct rlc_am_entity_s {
   signed int      current_sdu_index;                  /*!< \brief Current SDU index in input_sdus array to be segmented which is not segmented or partially segmented. */
 
 
-  rlc_am_tx_data_pdu_management_t *pdu_retrans_buffer;       /*!< \brief Retransmission buffer. */
+  rlc_am_tx_data_pdu_management_t *tx_data_pdu_buffer;       /*!< \brief Transmission PDU data buffer. Used also for retransmissions */
   signed int      retrans_num_pdus;                          /*!< \brief Number of PDUs in the retransmission buffer. */
-  signed int      retrans_num_bytes;                         /*!< \brief Number of bytes in the retransmission buffer. */
   signed int      retrans_num_bytes_to_retransmit;           /*!< \brief Number of bytes in the retransmission buffer to be retransmitted. */
   boolean_t       force_poll;                                /*!< \brief force poll due to t_poll_retransmit time-out. */
 
