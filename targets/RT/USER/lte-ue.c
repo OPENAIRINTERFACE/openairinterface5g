@@ -86,7 +86,7 @@ typedef enum {
     si=2
 } sync_mode_t;
 
-void init_UE_threads(int nb_inst);
+void init_UE_threads(PHY_VARS_UE *UE);
 void *UE_thread(void *arg);
 void init_UE(int nb_inst);
 
@@ -204,28 +204,21 @@ void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_
     while (sync_var<0)
         pthread_cond_wait(&sync_cond, &sync_mutex);
     pthread_mutex_unlock(&sync_mutex);
-    printf("starting %s\n",name);
+    printf("started %s as PID: %ld\n",name, gettid());
 }
 
 void init_UE(int nb_inst) {
 
-    PHY_VARS_UE *UE;
-
-    for (int inst=0; inst<nb_inst; inst++) {
-        printf("Intializing UE Threads for instance %d ...\n",inst);
-        init_UE_threads(inst);
-        sleep(1);
-        UE = PHY_vars_UE_g[inst][0];
-
-        AssertFatal(0== openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "");
-
-        UE->rfdevice.host_type = BBU_HOST;
+    for (long long inst=0; inst<nb_inst; inst++) {
         //    UE->rfdevice.type      = NONE_DEV;
-        AssertFatal(0 == pthread_create(&UE->proc.pthread_ue, &UE->proc.attr_ue, UE_thread, NULL), "");
-        pthread_setname_np( UE->proc.pthread_ue, "main UE" );
+        PHY_VARS_UE *UE = PHY_vars_UE_g[inst][0];
+        AssertFatal(0 == pthread_create(&UE->proc.pthread_ue,
+                                        &UE->proc.attr_ue,
+                                        UE_thread,
+                                        (void*)UE), "");
     }
 
-    printf("UE threads created\n");
+    printf("UE threads created by %ld\n", gettid());
 #ifdef USE_MME
     while (start_UE == 0) {
         sleep(1);
@@ -465,7 +458,11 @@ static void *UE_thread_synch(void *arg) {
                     // rerun with new cell parameters and frequency-offset
                     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
                         openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
-                        openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] -= UE->common_vars.freq_offset;
+                        if (freq_offset >= 0) {
+                            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] += UE->common_vars.freq_offset;
+                        } else {
+                            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] -= UE->common_vars.freq_offset;
+                        }
                         openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] =  openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i]+uplink_frequency_offset[CC_id][i];
                         downlink_frequency[CC_id][i] = openair0_cfg[CC_id].rx_freq[i];
                         freq_offset=0;
@@ -629,13 +626,13 @@ static void *UE_thread_rxn_txnp4(void *arg) {
     static long long __thread instance_cnt_rxtx=-1;
     proc->subframe_rx=proc->sub_frame_start;
 
-    char threadName[256]= {0};
-    sprintf(threadName,"UE_thread_rxn_txnp4_%d",proc->sub_frame_start);
+    char threadname[256]= {0};
+    sprintf(threadname,"UE_proc_%d",proc->sub_frame_start);
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(proc->sub_frame_start+1, &cpuset);
     init_thread(900000,1000000 , 40, &cpuset,//sched_get_priority_max(SCHED_FIFO)-1,
-                threadName);
+                threadname);
 
     while (!oai_exit) {
         // Wait Rx data to process are available
@@ -660,14 +657,14 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 
             if (UE->frame_parms.frame_type == TDD) {
                 LOG_D(PHY, "%s,TDD%d,%s: calling UE_RX\n",
-                      threadName,
+                      threadname,
                       UE->frame_parms.tdd_config,
                       (sf_type==SF_DL? "SF_DL" :
                        (sf_type==SF_UL? "SF_UL" :
                         (sf_type==SF_S ? "SF_S"  : "UNKNOWN_SF_TYPE"))));
             } else {
                 LOG_D(PHY, "%s,%s,%s: calling UE_RX\n",
-                      threadName,
+                      threadname,
                       (UE->frame_parms.frame_type==FDD? "FDD":
                        (UE->frame_parms.frame_type==TDD? "TDD":"UNKNOWN_DUPLEX_MODE")),
                       (sf_type==SF_DL? "SF_DL" :
@@ -742,7 +739,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 
 void *UE_thread(void *arg) {
 
-    PHY_VARS_UE *UE = PHY_vars_UE_g[0][0];
+    PHY_VARS_UE *UE = (PHY_VARS_UE *) arg;
     //  int tx_enabled = 0;
     int dummy_rx[UE->frame_parms.nb_antennas_rx][UE->frame_parms.samples_per_tti] __attribute__((aligned(32)));
     openair0_timestamp timestamp,timestamp1;
@@ -756,6 +753,11 @@ void *UE_thread(void *arg) {
     init_thread(100000, 500000, 40, &cpuset, //sched_get_priority_max(SCHED_FIFO),
                 "main UE");
 
+    AssertFatal(0== openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "");
+    UE->rfdevice.host_type = BBU_HOST;
+    sleep(1);
+    init_UE_threads(UE);
+
 #ifdef NAS_UE
     MessageDef *message_p;
     message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
@@ -763,7 +765,7 @@ void *UE_thread(void *arg) {
 #endif
 
     int sub_frame=-1;
-    int cumulated_shift=0;
+    //int cumulated_shift=0;
     while (!oai_exit) {
 
         if (UE->is_synchronized == 0) {
@@ -775,7 +777,7 @@ void *UE_thread(void *arg) {
             if (instance_cnt_synch < 0) {  // we can invoke the synch
                 // grab 10 ms of signal and wakeup synch thread
                 for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
-	  rxp[i] = (void*)&UE->common_vars.rxdata[i][0];
+                    rxp[i] = (void*)&UE->common_vars.rxdata[i][0];
 
                 if (UE->mode != loop_through_memory)
                     AssertFatal( UE->frame_parms.samples_per_tti*10 ==
@@ -821,7 +823,7 @@ void *UE_thread(void *arg) {
                         AssertFatal(UE->rx_offset ==
                                     UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                                &timestamp,
-					     (void**)UE->common_vars.rxdata,
+                                                               (void**)UE->common_vars.rxdata,
                                                                UE->rx_offset,
                                                                UE->frame_parms.nb_antennas_rx),"");
                     }
@@ -833,8 +835,8 @@ void *UE_thread(void *arg) {
                     AssertFatal (UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0 ==
                                  UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                             &timestamp,
-					   (void**)UE->common_vars.rxdata,
-					   UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0,
+                                                            (void**)UE->common_vars.rxdata,
+                                                            UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0,
                                                             UE->frame_parms.nb_antennas_rx),"");
                     slot_fep(UE,0, 0, 0, 0, 0);
                 } //UE->mode != loop_through_memory
@@ -849,8 +851,8 @@ void *UE_thread(void *arg) {
                 if (UE->mode != loop_through_memory) {
                     for (i=0; i<UE->frame_parms.nb_antennas_rx; i++)
                         rxp[i] = (void*)&UE->common_vars.rxdata[i][UE->frame_parms.ofdm_symbol_size+
-                                                   UE->frame_parms.nb_prefix_samples0+
-                                                   sub_frame*UE->frame_parms.samples_per_tti];
+                                 UE->frame_parms.nb_prefix_samples0+
+                                 sub_frame*UE->frame_parms.samples_per_tti];
                     for (i=0; i<UE->frame_parms.nb_antennas_tx; i++)
                         txp[i] = (void*)&UE->common_vars.txdata[i][((sub_frame+2)%10)*UE->frame_parms.samples_per_tti];
 
@@ -859,20 +861,28 @@ void *UE_thread(void *arg) {
                         readBlockSize=UE->frame_parms.samples_per_tti;
                         writeBlockSize=UE->frame_parms.samples_per_tti;
                     } else {
-                        int rx_off_diff;
-                        if ( UE->rx_offset< 5*UE->frame_parms.samples_per_tti )
-                            rx_off_diff = -UE->rx_offset;
-                        else   // moving to the left so drop rx_off_diff samples
-                            rx_off_diff = 10*UE->frame_parms.samples_per_tti - RX_OFF_MIN - UE->rx_offset;
-                        cumulated_shift+=rx_off_diff;
-                        if ( rx_off_diff > 10 )
-                            LOG_E (PHY,"HUGE shift %d, cumul %d\n", rx_off_diff, cumulated_shift);
-                        static __thread int printed_cumul=0;
-                        if ( abs(cumulated_shift/1000) > printed_cumul ) {
-                            LOG_W(PHY,"Shifted for 1000 samples: cumul %d\n", cumulated_shift);
-                            printed_cumul=abs(cumulated_shift/1000);
+                        static int rx_correction_timer=5;
+                        static int rx_off_diff =0;
+                        if ((UE->rx_offset<(5*UE->frame_parms.samples_per_tti)) &&
+                                (UE->rx_offset > 0) &&
+                                (rx_correction_timer == 0)) {
+                            rx_off_diff = -1 ;
+                            LOG_D(PHY,"AbsSubframe %d.%d UE->rx_offset %d > %d, diff %d\n",
+                                  proc->frame_rx,proc->subframe_rx,UE->rx_offset,0,rx_off_diff);
+                            rx_correction_timer = 5;
+                        } else if ((UE->rx_offset>(5*UE->frame_parms.samples_per_tti)) &&
+                                   (UE->rx_offset < ((10*UE->frame_parms.samples_per_tti))) &&
+                                   (rx_correction_timer == 0)) {   // moving to the left so drop rx_off_diff samples
+                            rx_off_diff = 1;
+                            LOG_D(PHY,"AbsSubframe %d.%d UE->rx_offset %d < %d, diff %d\n",
+                                  proc->frame_rx,proc->subframe_rx,UE->rx_offset,10*UE->frame_parms.samples_per_tti,rx_off_diff);
+                            rx_correction_timer = 5;
                         }
-
+                        if (rx_correction_timer>0)
+                            rx_correction_timer--;
+                        UE->rx_offset_diff = rx_off_diff;
+                        LOG_D(PHY,"SET rx_off_diff to %d\n",UE->rx_offset_diff);
+                        rx_off_diff = 0;
                         readBlockSize=UE->frame_parms.samples_per_tti-
                                       UE->frame_parms.ofdm_symbol_size-
                                       UE->frame_parms.nb_prefix_samples0;
@@ -935,30 +945,6 @@ void *UE_thread(void *arg) {
                     printf("Processing subframe %d",proc->subframe_rx);
                     getchar();
                 }
-		/*
-	}// for sf=0..10
-
-	  uint8_t proc_select = 9&1;
-	  UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[proc_select];
-
-	if ((UE->rx_offset<(5*UE->frame_parms.samples_per_tti)) &&
-	    (UE->rx_offset > 0) &&
-	    (rx_correction_timer == 0)) {
-	  rx_off_diff = -1 ;
-	  LOG_D(PHY,"AbsSubframe %d.%d UE->rx_offset %d > %d, diff %d\n",proc->frame_rx,proc->subframe_rx,UE->rx_offset,0,rx_off_diff);
-	  rx_correction_timer = 5;
-	} else if ((UE->rx_offset>(5*UE->frame_parms.samples_per_tti)) && 
-		   (UE->rx_offset < ((10*UE->frame_parms.samples_per_tti))) &&
-		   (rx_correction_timer == 0)) {   // moving to the left so drop rx_off_diff samples
-	  rx_off_diff = 1;
-	  LOG_D(PHY,"AbsSubframe %d.%d UE->rx_offset %d < %d, diff %d\n",proc->frame_rx,proc->subframe_rx,UE->rx_offset,10*UE->frame_parms.samples_per_tti,rx_off_diff);
-	  
-	  rx_correction_timer = 5;
-	}
-	
-	if (rx_correction_timer>0)
-	  rx_correction_timer--;
-	  */
             } // start_rx_stream==1
         } // UE->is_synchronized==1
 
@@ -974,14 +960,13 @@ void *UE_thread(void *arg) {
  * - UE_thread_synch
  * and the locking between them.
  */
-void init_UE_threads(int inst) {
-    PHY_VARS_UE *UE;
-
-    UE = PHY_vars_UE_g[inst][0];
+void init_UE_threads(PHY_VARS_UE *UE) {
 
     pthread_attr_init (&UE->proc.attr_ue);
     pthread_attr_setstacksize(&UE->proc.attr_ue,8192);//5*PTHREAD_STACK_MIN);
 
+    pthread_mutex_init(&UE->proc.mutex_synch,NULL);
+    pthread_cond_init(&UE->proc.cond_synch,NULL);
 
     // the threads are not yet active, therefore access is allowed without locking
     int nb_threads=2;
@@ -992,8 +977,6 @@ void init_UE_threads(int inst) {
         UE->proc.proc_rxtx[i].sub_frame_step=nb_threads;
         pthread_create(&UE->proc.proc_rxtx[i].pthread_rxtx,NULL,UE_thread_rxn_txnp4,(void*)&UE->proc.proc_rxtx[i]);
     }
-    pthread_mutex_init(&UE->proc.mutex_synch,NULL);
-    pthread_cond_init(&UE->proc.cond_synch,NULL);
     pthread_create(&UE->proc.pthread_synch,NULL,UE_thread_synch,(void*)UE);
 
 }

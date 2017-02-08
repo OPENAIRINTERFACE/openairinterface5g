@@ -46,6 +46,8 @@
 #include <time.h>
 #include <stdint.h>
 #include <inttypes.h>
+#define _GNU_SOURCE
+#include <pthread.h>
 #else
 #include "rtai_fifos.h"
 #endif
