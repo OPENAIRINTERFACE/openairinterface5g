@@ -1207,7 +1207,8 @@ int32_t rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 */
 int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
                     int32_t pss_ext[4][72],
-                    int32_t sss_ext[4][72]);
+                    int32_t sss_ext[4][72],
+					uint8_t subframe);
 
 /*! \brief Extract only PSS resource elements
   @param phy_vars_ue Pointer to UE variables
