@@ -1109,7 +1109,7 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
 
     for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
       rnti = flexran_get_ue_crnti(mod_id, UE_id);
-      eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
+      eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id,CC_id,rnti);
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
       
       if (eNB_UE_stats==NULL) {
@@ -1133,21 +1133,21 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
         continue;
       }
       
-      switch(mac_xface->get_transmission_mode(mod_idP,CC_id,rnti)){
+      switch(mac_xface->get_transmission_mode(mod_id,CC_id,rnti)){
       case 1:
       case 2:
       case 7:
-	aggregation = get_aggregation(get_bw_index(module_idP,CC_id), 
+	aggregation = get_aggregation(get_bw_index(mod_id,CC_id), 
 				      eNB_UE_stats->DL_cqi[0],
 				      format1);
 	break;
       case 3:
-	aggregation = get_aggregation(get_bw_index(module_idP,CC_id), 
+	aggregation = get_aggregation(get_bw_index(mod_id,CC_id), 
 				      eNB_UE_stats->DL_cqi[0],
 				      format2A);
 	break;
       default:
-	LOG_W(MAC,"Unsupported transmission mode %d\n", mac_xface->get_transmission_mode(module_idP,CC_id,rnti));
+	LOG_W(MAC,"Unsupported transmission mode %d\n", mac_xface->get_transmission_mode(mod_id,CC_id,rnti));
 	aggregation = 2;
       }
      
