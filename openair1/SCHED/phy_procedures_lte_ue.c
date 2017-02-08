@@ -2971,17 +2971,14 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 #endif
 
       }
-    } else if( (dci_alloc_rx[i].rnti == ue->ulsch[eNB_id]->cba_rnti[0]) &&
+    } 
+    /*    else if( (dci_alloc_rx[i].rnti == ue->ulsch[eNB_id]->cba_rnti[0]) &&
 	       (dci_alloc_rx[i].format == format0)) {
       // UE could belong to more than one CBA group
       // ue->Mod_id%ue->ulsch[eNB_id]->num_active_cba_groups]
 #ifdef DEBUG_PHY_PROC
       LOG_D(PHY,"[UE  %d][PUSCH] Frame %d subframe %d: Found cba rnti %x, format 0, dci_cnt %d\n",
 	    ue->Mod_id,frame_rx,subframe_rx,dci_alloc_rx[i].rnti,i);
-      /*
-	if (((frame_rx%100) == 0) || (frame_rx < 20))
-	dump_dci(&ue->frame_parms, &dci_alloc_rx[i]);
-      */
 #endif
 
       ue->ulsch_no_allocation_counter[eNB_id] = 0;
@@ -3005,9 +3002,8 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 	LOG_D(PHY,"[UE  %d] Generate UE ULSCH CBA_RNTI format 0 (subframe %d)\n",ue->Mod_id,subframe_rx);
 #endif
 	ue->ulsch[eNB_id]->num_cba_dci[(subframe_rx+4)%10]++;
-      }
-    }
-
+	}
+    */
     else {
 #ifdef DEBUG_PHY_PROC
       LOG_D(PHY,"[UE  %d] frame %d, subframe %d: received DCI %d with RNTI=%x (C-RNTI:%x, CBA_RNTI %x) and format %d!\n",ue->Mod_id,frame_rx,subframe_rx,i,dci_alloc_rx[i].rnti,
