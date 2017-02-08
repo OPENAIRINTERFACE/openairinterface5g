@@ -523,29 +523,8 @@ void generate_pucch2x(int32_t **txdataF,
   pucch2x_modulation(btilde,d,amp);
 
   // add extra symbol for 2a/2b
-  d[20]=0;
-  d[21]=0;
-  if (fmt==pucch_format2a)
-    d[20] = (B2 == 0) ? amp : -amp;
-  else if (fmt==pucch_format2b) {
-    switch (B2) {
-    case 0:
-      d[20] = amp;
-      break;
-    case 1:
-      d[21] = -amp;
-      break;
-    case 2:
-      d[21] = amp;
-      break;
-    case 3:
-      d[20] = -amp;
-      break;
-    default:
-      AssertFatal(1==0,"Illegal modulation symbol %d for PUCCH %s\n",B2,pucch_format_string[fmt]);
-      break;
-    }
-  }
+
+
 
 
 #ifdef DEBUG_PUCCH_TX
@@ -584,10 +563,47 @@ void generate_pucch2x(int32_t **txdataF,
               //LOG_I(PHY,"slot %d ofdm# %d ==> d[%d,%d] \n",ns,l,data_ind,n);
           }
           else {
-              ((int16_t *)&zptr[n])[0] = ((int32_t)amp*ref_re>>15);
-              ((int16_t *)&zptr[n])[1] = ((int32_t)amp*ref_im>>15);
-              //LOG_I(PHY,"slot %d ofdm# %d ==> dmrs[%d] \n",ns,l,n);
-          }
+	    if (l==1){
+	      ((int16_t *)&zptr[n])[0] = ((int32_t)amp*ref_re>>15);
+	      ((int16_t *)&zptr[n])[1] = ((int32_t)amp*ref_im>>15);
+	    }
+	    else if (fmt==pucch_format2a) {
+	      d[20]=amp;
+	      d[21]=amp;
+	      if (B2 == 0) {
+		((int16_t *)&zptr[n])[0] = ((int32_t)amp*ref_re>>15);
+		((int16_t *)&zptr[n])[1] = ((int32_t)amp*ref_im>>15);
+	      }
+	      else {
+		((int16_t *)&zptr[n])[0] = -((int32_t)amp*ref_re>>15);
+		((int16_t *)&zptr[n])[1] = -((int32_t)amp*ref_im>>15);
+	      }
+	      //LOG_I(PHY,"slot %d ofdm# %d ==> dmrs[%d] \n",ns,l,n);
+	    }
+	    else if (fmt==pucch_format2b) {
+	      switch (B2) {
+	      case 0: // 1
+		((int16_t *)&zptr[n])[0] = ((int32_t)amp*ref_re>>15);
+		((int16_t *)&zptr[n])[1] = ((int32_t)amp*ref_im>>15);
+		break;
+	      case 1: // -j
+		((int16_t *)&zptr[n])[1] = ((int32_t)amp*ref_re>>15);
+		((int16_t *)&zptr[n])[0] = -((int32_t)amp*ref_im>>15);
+		break;
+	      case 2: // -1
+		((int16_t *)&zptr[n])[0] = -((int32_t)amp*ref_re>>15);
+		((int16_t *)&zptr[n])[1] = -((int32_t)amp*ref_im>>15);
+		break;
+	      case 3: // j
+		((int16_t *)&zptr[n])[1] = -((int32_t)amp*ref_re>>15);
+		((int16_t *)&zptr[n])[0] = ((int32_t)amp*ref_im>>15);
+		break;
+	      default:
+		AssertFatal(1==0,"Illegal modulation symbol %d for PUCCH %s\n",B2,pucch_format_string[fmt]);
+		break;
+	      }
+	    }// fmt==pucch_format2b
+          }// l==1 || l==5
           alpha_ind = (alpha_ind + n_cs)%12;
       } // n
       zptr+=12;
