@@ -3316,8 +3316,9 @@ int main(int argc, char **argv)
         }
 
         //AWGN
-        // This is the SNR on the PDSCH for OFDM symbols without pilots -> rho_A
-        sigma2_dB = 10*log10((double)tx_lev) +10*log10((double)eNB->frame_parms.ofdm_symbol_size/(double)(NB_RB*12)) - SNR - get_pa_dB(eNB->pdsch_config_dedicated);
+	// tx_lev is the average energy over the whole subframe
+	// but SNR should be better defined wrt the energy in the reference symbols
+	sigma2_dB = 10*log10((double)tx_lev) +10*log10((double)eNB->frame_parms.ofdm_symbol_size/(double)(eNB->frame_parms.N_RB_DL*12)) - SNR;
         sigma2 = pow(10,sigma2_dB/10);
         if (n_frames==1)
           printf("Sigma2 %f (sigma2_dB %f,%f,%f )\n",sigma2,sigma2_dB,10*log10((double)eNB->frame_parms.ofdm_symbol_size/(double)(NB_RB*12)),get_pa_dB(eNB->pdsch_config_dedicated));
