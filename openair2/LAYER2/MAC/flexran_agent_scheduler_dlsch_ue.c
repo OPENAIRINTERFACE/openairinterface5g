@@ -1133,7 +1133,7 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
         continue;
       }
       
-      switch(mac_xface->get_transmission_mode(module_idP,CC_id,rnti)){
+      switch(mac_xface->get_transmission_mode(mod_idP,CC_id,rnti)){
       case 1:
       case 2:
       case 7:
