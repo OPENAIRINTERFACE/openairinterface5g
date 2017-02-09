@@ -764,23 +764,6 @@ l2l1_task (void *args_p)
 	  current_UE_rx_timestamp[UE_inst][CC_id] += PHY_vars_UE_g[UE_inst][CC_id]->frame_parms.samples_per_tti;
         }
 
-
-	if (oai_emulation.info.cli_start_enb[eNB_inst] != 0) {
-	  T(T_ENB_MASTER_TICK, T_INT(eNB_inst), T_INT(frame % 1024), T_INT(slot/2));
-	  /*
-	  LOG_D(EMU,
-		"PHY procedures eNB %d for frame %d, slot %d (subframe TX %d, RX %d) TDD %d/%d Nid_cell %d\n",
-		eNB_inst,
-		frame%MAX_FRAME_NUMBER,
-		2*sf,
-		PHY_vars_eNB_g[eNB_inst][0]->proc[slot >> 1].subframe_tx,
-		PHY_vars_eNB_g[eNB_inst][0]->proc[slot >> 1].subframe_rx,
-		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.frame_type,
-		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.tdd_config,
-		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.Nid_cell);
-	  */
-	}
-
         for (eNB_inst = oai_emulation.info.first_enb_local;
              (eNB_inst
               < (oai_emulation.info.first_enb_local
