@@ -192,8 +192,10 @@ void init_UE(int nb_inst) {
       LOG_D(HW,"[lte-softmodem.c] Could not allocate UE_thread, error %d\n",error_code);
       return;
     } else {
+      char name[128];
+      sprintf(name, "main UE %d", inst);
       LOG_D(HW, "[lte-softmodem.c] Allocate UE_thread successful\n" );
-      pthread_setname_np( UE->proc.pthread_ue, "main UE" );
+      pthread_setname_np(UE->proc.pthread_ue, name);
     }
   }
 
@@ -1661,6 +1663,7 @@ void *UE_thread_old(void *arg)
 void init_UE_threads(int inst)
 {
   struct rx_tx_thread_data *rtd;
+  char name[128];
   PHY_VARS_UE *UE;
 
   UE = PHY_vars_UE_g[inst][0];
@@ -1690,15 +1693,18 @@ void init_UE_threads(int inst)
   rtd->UE = PHY_vars_UE_g[inst][UE->proc.proc_rxtx[0].CC_id];
   rtd->proc = &UE->proc.proc_rxtx[0];
   pthread_create(&UE->proc.proc_rxtx[0].pthread_rxtx,NULL,UE_thread_rxn_txnp4,rtd);//(void*)&UE->proc.proc_rxtx[0]);
-  pthread_setname_np( UE->proc.proc_rxtx[0].pthread_rxtx, "rxn_txnp4_even" );
+  sprintf(name, "rxn_txnp4_even UE %d", inst);
+  pthread_setname_np(UE->proc.proc_rxtx[0].pthread_rxtx, name);
   rtd = calloc(1, sizeof(struct rx_tx_thread_data));
   if (rtd == NULL) abort();
   rtd->UE = PHY_vars_UE_g[inst][UE->proc.proc_rxtx[1].CC_id];
   rtd->proc = &UE->proc.proc_rxtx[1];
   pthread_create(&UE->proc.proc_rxtx[1].pthread_rxtx,NULL,UE_thread_rxn_txnp4,rtd);//(void*)&UE->proc.proc_rxtx[1]);
-  pthread_setname_np( UE->proc.proc_rxtx[1].pthread_rxtx, "rxn_txnp4_odd" );
+  sprintf(name, "rxn_txnp4_odd UE %d", inst);
+  pthread_setname_np(UE->proc.proc_rxtx[1].pthread_rxtx, name);
   pthread_create(&UE->proc.pthread_synch,NULL,UE_thread_synch,(void*)UE);
-  pthread_setname_np( UE->proc.pthread_synch, "UE_thread_synch" );
+  sprintf(name, "UE_thread_synch UE %d", inst);
+  pthread_setname_np(UE->proc.pthread_synch, name);
 }
 
 
