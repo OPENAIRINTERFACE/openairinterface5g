@@ -589,6 +589,7 @@ l2l1_task (void *args_p)
       switch (ITTI_MSG_ID(message_p)) {
       case INITIALIZE_MESSAGE:
         l2l1_state = L2L1_RUNNING;
+        start_eNB = 1;
         break;
 
       case ACTIVATE_MESSAGE:
@@ -1276,6 +1277,11 @@ main (int argc, char **argv)
 
   init_ocm ();
   
+#if defined(ENABLE_ITTI)
+  if (create_tasks(oai_emulation.info.nb_enb_local, oai_emulation.info.nb_ue_local) < 0)
+    exit(1);
+#endif
+
   // wait for all threads to startup 
   sleep(3);
   printf("Sending sync to all threads\n");
@@ -1316,11 +1322,7 @@ main (int argc, char **argv)
 #if defined(ENABLE_ITTI)
 
   // Handle signals until all tasks are terminated
-  if (create_tasks(oai_emulation.info.nb_enb_local, oai_emulation.info.nb_ue_local) >= 0) {
-    itti_wait_tasks_end();
-  } else {
-    exit(-1); // need a softer mode
-  }
+  itti_wait_tasks_end();
 
 #else
 
