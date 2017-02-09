@@ -150,7 +150,11 @@ void *nas_ue_task(void *args_p)
       msg_name = ITTI_MSG_NAME (msg_p);
       instance = ITTI_MSG_INSTANCE (msg_p);
       Mod_id = instance - NB_eNB_INST;
-      if (instance == INSTANCE_DEFAULT) abort();
+      if (instance == INSTANCE_DEFAULT) {
+        printf("%s:%d: FATAL: instance is INSTANCE_DEFAULT, should not happen.\n",
+               __FILE__, __LINE__);
+        abort();
+      }
       nas_user_t *user = &users->item[Mod_id];
 
       switch (ITTI_MSG_ID(msg_p)) {
