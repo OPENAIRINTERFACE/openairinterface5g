@@ -771,7 +771,6 @@ l2l1_task (void *args_p)
              eNB_inst++) {
           if (oai_emulation.info.cli_start_enb[eNB_inst] != 0) {
         
-	    T(T_ENB_MASTER_TICK, T_INT(eNB_inst), T_INT(frame % 1024), T_INT(sf));
 	    /*
 	    LOG_D(EMU,
 		  "PHY procedures eNB %d for frame %d, subframe %d TDD %d/%d Nid_cell %d\n",
