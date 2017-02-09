@@ -1295,7 +1295,8 @@ int32_t rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 */
 int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
                     int32_t pss_ext[4][72],
-                    int32_t sss_ext[4][72]);
+                    int32_t sss_ext[4][72],
+					uint8_t subframe);
 
 /*! \brief Extract only PSS resource elements
   @param phy_vars_ue Pointer to UE variables
@@ -1658,7 +1659,8 @@ int32_t generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
 					  UE_rxtx_proc_t *proc,
 					  uint8_t eNB_id);
 double sinr_eff_cqi_calc(PHY_VARS_UE *phy_vars_ue,
-                         uint8_t eNB_id);
+                         uint8_t eNB_id,
+						 uint8_t subframe);
 
 uint8_t sinr2cqi(double sinr,uint8_t trans_mode);
 

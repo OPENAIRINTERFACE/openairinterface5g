@@ -34,7 +34,7 @@
  */
 
 /*!\brief Timing drift hysterisis in samples*/
-#define SYNCH_HYST 1
+#define SYNCH_HYST 2
 
 /*!
 \brief This function is used for time-frequency scanning prior to complete cell search.  It scans
@@ -180,6 +180,7 @@ This function computes the time domain channel response, finds the peak and adju
 void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
                       PHY_VARS_UE *phy_vars_ue,
                       module_id_t eNb_id,
+					  uint8_t subframe,
                       unsigned char clear,
                       short coef);
 
@@ -187,7 +188,8 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
                          unsigned int subframe_offset,
                          unsigned char N0_symbol,
-                         unsigned char abstraction_flag);
+                         unsigned char abstraction_flag,
+						 uint8_t subframe);
 
 //! \brief This function performance RSRP/RSCP measurements
 void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,

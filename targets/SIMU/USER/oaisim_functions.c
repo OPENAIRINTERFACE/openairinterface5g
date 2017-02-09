@@ -450,6 +450,8 @@ void get_simulation_options(int argc, char *argv[])
 
     case 'a':
       abstraction_flag = 1;
+      printf("FATAL: -a flag not functional for the moment.\nWe are working on fixing the abstraction mode.\n");
+      exit(1);
       break;
 
     case 'A':

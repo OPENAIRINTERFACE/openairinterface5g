@@ -3407,9 +3407,9 @@ int main(int argc, char **argv)
                     for(aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
                       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
                         for (i=0; i<frame_parms->N_RB_DL*12; i++) {
-                          ((int16_t *) UE->common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=
+                          ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[k][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=
                           (int16_t)(eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
-                          ((int16_t *) UE->common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=
+                          ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=
                           (int16_t)(eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
                         }
                       }
@@ -3418,21 +3418,21 @@ int main(int argc, char **argv)
               }else {
                 if (transmission_mode==4) {
                   for (i=0; i<frame_parms->N_RB_DL*12; i++) {
-                    ((int16_t *) UE->common_vars.dl_ch_estimates[0][0])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
-                    ((int16_t *) UE->common_vars.dl_ch_estimates[0][0])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;
-                    ((int16_t *) UE->common_vars.dl_ch_estimates[0][1])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
-                    ((int16_t *) UE->common_vars.dl_ch_estimates[0][1])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;
-                    ((int16_t *) UE->common_vars.dl_ch_estimates[0][2])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
-                    ((int16_t *) UE->common_vars.dl_ch_estimates[0][2])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;
-                    ((int16_t *) UE->common_vars.dl_ch_estimates[0][3])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=-(short)(AMP);
-                    ((int16_t *) UE->common_vars.dl_ch_estimates[0][3])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;
+                    ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][0])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
+                    ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][0])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;
+                    ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][1])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
+                    ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][1])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;
+                    ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][2])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
+                    ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][2])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;
+                    ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][3])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=-(short)(AMP);
+                    ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][3])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;
                   }
                 } else {
                     for(aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
                       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
                         for (i=0; i<frame_parms->N_RB_DL*12; i++) {
-                          ((int16_t *) UE->common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
-                          ((int16_t *) UE->common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
+                          ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
+                          ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
                         }
                        }
                     }
@@ -3444,7 +3444,8 @@ int main(int argc, char **argv)
                 lte_ue_measurements(UE,
                                     subframe*UE->frame_parms.samples_per_tti,
                                     1,
-                                    0);
+                                    0,
+                                    subframe);
                 //printf ("Trial %d, Measurements are done \n", trials);
                       /*
                         debug_msg("RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
@@ -3767,7 +3768,7 @@ int main(int argc, char **argv)
             if (trials==0 && round==0 && transmission_mode>=4){
               for (iii=0; iii<NB_RB; iii++){
                 //fprintf(csv_fd, "%d, %d", (UE->pdsch_vars[eNB_id]->pmi_ext[iii]),(UE->pdsch_vars[eNB_id_i]->pmi_ext[iii]));
-                fprintf(csv_fd,"%x,",(UE->pdsch_vars[eNB_id]->pmi_ext[iii]));
+                fprintf(csv_fd,"%x,",(UE->pdsch_vars[subframe&0x1][eNB_id]->pmi_ext[iii]));
                 //printf("%x ",(UE->pdsch_vars[eNB_id]->pmi_ext[iii]));
               }
             }
@@ -3819,7 +3820,7 @@ int main(int argc, char **argv)
 
               sprintf(fname,"dlsch%d_rxF_r%d_cw%d_llr.m",eNB_id,round, TB);
               sprintf(vname,"dl%d_r%d_cw%d_llr",eNB_id,round, TB);
-              write_output(fname,vname, UE->pdsch_vars[0]->llr[UE->dlsch[0][TB]->harq_processes[UE->dlsch[0][TB]->current_harq_pid]->codeword],coded_bits_per_codeword[TB],1,0);
+              write_output(fname,vname, UE->pdsch_vars[subframe&0x1][0]->llr[UE->dlsch[0][TB]->harq_processes[UE->dlsch[0][TB]->current_harq_pid]->codeword],coded_bits_per_codeword[TB],1,0);
               sprintf(fname,"dlsch_cw%d_e.m", TB);
               sprintf(vname,"dlschcw%d_e", TB);
               write_output(fname, vname,eNB->dlsch[0][TB]->harq_processes[0]->e,coded_bits_per_codeword[TB],1,4);
@@ -3827,7 +3828,7 @@ int main(int argc, char **argv)
               printf("trials=%d\n", trials);
 
               for (i=0;i<coded_bits_per_codeword[TB];i++)
-                if (eNB->dlsch[0][TB]->harq_processes[0]->e[i] != (UE->pdsch_vars[0]->llr[UE->dlsch[0][TB]->harq_processes[UE->dlsch[0][TB]->current_harq_pid]->codeword][i]<0)) {
+                if (eNB->dlsch[0][TB]->harq_processes[0]->e[i] != (UE->pdsch_vars[subframe&0x1][0]->llr[UE->dlsch[0][TB]->harq_processes[UE->dlsch[0][TB]->current_harq_pid]->codeword][i]<0)) {
                   uncoded_ber_bit[i] = 1;
                   uncoded_ber++;
                 }
@@ -3851,14 +3852,14 @@ int main(int argc, char **argv)
                                0,
                                UE->dlsch[0][TB],
                                coded_bits_per_codeword[TB],
-                               UE->pdsch_vars[eNB_id]->llr[UE->dlsch[0][TB]->harq_processes[UE->dlsch[0][TB]->current_harq_pid]->codeword],
+                               UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[0][TB]->harq_processes[UE->dlsch[0][TB]->current_harq_pid]->codeword],
                                TB,
                                subframe<<1);
             stop_meas(&UE->dlsch_unscrambling_stats);
 
             start_meas(&UE->dlsch_decoding_stats);
             ret[TB] = dlsch_decoding(UE,
-                                     UE->pdsch_vars[eNB_id]->llr[UE->dlsch[0][TB]->harq_processes[UE->dlsch[0][TB]->current_harq_pid]->codeword],
+                                     UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[0][TB]->harq_processes[UE->dlsch[0][TB]->current_harq_pid]->codeword],
                                      &UE->frame_parms,
                                      UE->dlsch[0][TB],
                                      UE->dlsch[0][TB]->harq_processes[UE->dlsch[0][TB]->current_harq_pid],
@@ -4106,10 +4107,10 @@ int main(int argc, char **argv)
                   case 2:
 
                     dlsch_qpsk_llr_SIC(&UE->frame_parms,
-                                       UE->pdsch_vars[eNB_id]->rxdataF_comp1[UE->dlsch[0][0]->current_harq_pid][round_sic],
+                                       UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[0][0]->current_harq_pid][round_sic],
                                        sic_buffer,
-                                       UE->pdsch_vars[eNB_id]->dl_ch_rho_ext[UE->dlsch[0][0]->current_harq_pid][round_sic],
-                                       UE->pdsch_vars[eNB_id]->llr[UE->dlsch[0][1]->harq_processes[UE->dlsch[0][1]->current_harq_pid]->codeword],
+                                       UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[0][0]->current_harq_pid][round_sic],
+                                       UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[0][1]->harq_processes[UE->dlsch[0][1]->current_harq_pid]->codeword],
                                        num_pdcch_symbols,
                                        dlsch0_eNB_harq->nb_rb,
                                        subframe,
@@ -4121,12 +4122,12 @@ int main(int argc, char **argv)
                   case 4:
 
                     dlsch_16qam_llr_SIC(&UE->frame_parms,
-                                        UE->pdsch_vars[eNB_id]->rxdataF_comp1[UE->dlsch[0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[0][0]->current_harq_pid][round_sic],
                                         sic_buffer,
-                                        UE->pdsch_vars[eNB_id]->dl_ch_rho_ext[UE->dlsch[0][0]->current_harq_pid][round_sic],
-                                        UE->pdsch_vars[eNB_id]->llr[UE->dlsch[0][1]->harq_processes[UE->dlsch[0][1]->current_harq_pid]->codeword],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[0][1]->harq_processes[UE->dlsch[0][1]->current_harq_pid]->codeword],
                                         num_pdcch_symbols,
-                                        UE->pdsch_vars[eNB_id]->dl_ch_mag1[UE->dlsch[0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_mag1[UE->dlsch[0][0]->current_harq_pid][round_sic],
                                         dlsch0_eNB_harq->nb_rb,
                                         subframe,
                                         dlsch0_eNB_harq->rb_alloc[0],
@@ -4135,13 +4136,13 @@ int main(int argc, char **argv)
                   break;
                   case 6:
                     dlsch_64qam_llr_SIC(&UE->frame_parms,
-                                        UE->pdsch_vars[eNB_id]->rxdataF_comp1[UE->dlsch[0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[0][0]->current_harq_pid][round_sic],
                                         sic_buffer,
-                                        UE->pdsch_vars[eNB_id]->dl_ch_rho_ext[UE->dlsch[0][0]->current_harq_pid][round_sic],
-                                        UE->pdsch_vars[eNB_id]->llr[UE->dlsch[0][1]->harq_processes[UE->dlsch[0][1]->current_harq_pid]->codeword],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[0][1]->harq_processes[UE->dlsch[0][1]->current_harq_pid]->codeword],
                                         num_pdcch_symbols,
-                                        UE->pdsch_vars[eNB_id]->dl_ch_mag1[UE->dlsch[0][0]->current_harq_pid][round_sic],
-                                        UE->pdsch_vars[eNB_id]->dl_ch_magb1[UE->dlsch[0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_mag1[UE->dlsch[0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_magb1[UE->dlsch[0][0]->current_harq_pid][round_sic],
                                         dlsch0_eNB_harq->nb_rb,
                                         subframe,
                                         dlsch0_eNB_harq->rb_alloc[0],
@@ -4180,14 +4181,14 @@ int main(int argc, char **argv)
                     AssertFatal(uncoded_ber_bit, "uncoded_ber_bit==NULL");
                     sprintf(fname,"dlsch%d_rxF_r%d_cw%d_llr.m",eNB_id,round,1);
                     sprintf(vname,"dl%d_r%d_cw%d_llr",eNB_id,round, 1);
-                    write_output(fname,vname, UE->pdsch_vars[0]->llr[1],coded_bits_per_codeword[1],1,0);
+                    write_output(fname,vname, UE->pdsch_vars[subframe&0x1][0]->llr[1],coded_bits_per_codeword[1],1,0);
                     sprintf(fname,"dlsch_cw%d_e.m", 1);
                     sprintf(vname,"dlschcw%d_e", 1);
                     write_output(fname, vname,eNB->dlsch[0][1]->harq_processes[0]->e,coded_bits_per_codeword[1],1,4);
                     uncoded_ber=0;
                     printf("trials=%d\n", trials);
                     for (i=0;i<coded_bits_per_codeword[1];i++)
-                    if (eNB->dlsch[0][1]->harq_processes[0]->e[i] != (UE->pdsch_vars[0]->llr[UE->dlsch[0][1]->harq_processes[UE->dlsch[0][1]->current_harq_pid]->codeword][i]<0)) {
+                    if (eNB->dlsch[0][1]->harq_processes[0]->e[i] != (UE->pdsch_vars[subframe&0x1][0]->llr[UE->dlsch[0][1]->harq_processes[UE->dlsch[0][1]->current_harq_pid]->codeword][i]<0)) {
                       uncoded_ber_bit[i] = 1;
                       uncoded_ber++;
                     }
@@ -4209,7 +4210,7 @@ int main(int argc, char **argv)
                                    0,
                                    UE->dlsch[0][1],
                                    coded_bits_per_codeword[1],
-                                   UE->pdsch_vars[eNB_id]->llr[UE->dlsch[0][1]->harq_processes[UE->dlsch[0][1]->current_harq_pid]->codeword],
+                                   UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[0][1]->harq_processes[UE->dlsch[0][1]->current_harq_pid]->codeword],
                                    1,
                                    subframe<<1);
                 stop_meas(&UE->dlsch_unscrambling_stats);
@@ -4217,7 +4218,7 @@ int main(int argc, char **argv)
                 start_meas(&UE->dlsch_decoding_stats);
 
                 ret[1] = dlsch_decoding(UE,
-                                        UE->pdsch_vars[eNB_id]->llr[UE->dlsch[0][1]->harq_processes[UE->dlsch[0][1]->current_harq_pid]->codeword],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[0][1]->harq_processes[UE->dlsch[0][1]->current_harq_pid]->codeword],
                                         &UE->frame_parms,
                                         UE->dlsch[0][1],
                                         UE->dlsch[0][1]->harq_processes[UE->dlsch[0][1]->current_harq_pid],
@@ -4363,14 +4364,14 @@ int main(int argc, char **argv)
             write_output(fname,vname, &UE->common_vars.rxdata[0][0],10*UE->frame_parms.samples_per_tti,1,1);
             sprintf(fname,"rxsigF0_r%d.m",round);
             sprintf(vname,"rxs0F_r%d",round);
-            write_output(fname,vname, &UE->common_vars.rxdataF[0][0],2*UE->frame_parms.ofdm_symbol_size*nsymb,2,1);
+            write_output(fname,vname, &UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[0][0],2*UE->frame_parms.ofdm_symbol_size*nsymb,2,1);
             if (UE->frame_parms.nb_antennas_rx>1) {
               sprintf(fname,"rxsig1_r%d.m",round);
               sprintf(vname,"rxs1_r%d",round);
               write_output(fname,vname, UE->common_vars.rxdata[1],UE->frame_parms.samples_per_tti,1,1);
               sprintf(fname,"rxsig1F_r%d.m",round);
               sprintf(vname,"rxs1F_r%d",round);
-              write_output(fname,vname, UE->common_vars.rxdataF[1],2*UE->frame_parms.ofdm_symbol_size*nsymb,2,1);
+              write_output(fname,vname, UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[1],2*UE->frame_parms.ofdm_symbol_size*nsymb,2,1);
             }
 
             //channel
@@ -4392,27 +4393,27 @@ int main(int argc, char **argv)
             sprintf(fname,"dlsch00_r%d.m",round);
             sprintf(vname,"dl00_r%d",round);
             write_output(fname,vname,
-              &(UE->common_vars.dl_ch_estimates[eNB_id][0][0]),
+              &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][0][0]),
              UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
             if (UE->frame_parms.nb_antennas_rx>1) {
               sprintf(fname,"dlsch01_r%d.m",round);
               sprintf(vname,"dl01_r%d",round);
               write_output(fname,vname,
-               &(UE->common_vars.dl_ch_estimates[eNB_id][1][0]),
+               &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][1][0]),
                UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
             }
             if (eNB->frame_parms.nb_antennas_tx>1) {
               sprintf(fname,"dlsch10_r%d.m",round);
               sprintf(vname,"dl10_r%d",round);
               write_output(fname,vname,
-               &(UE->common_vars.dl_ch_estimates[eNB_id][2][0]),
+               &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2][0]),
                UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
             }
             if ((UE->frame_parms.nb_antennas_rx>1) && (eNB->frame_parms.nb_antennas_tx>1)) {
               sprintf(fname,"dlsch11_r%d.m",round);
               sprintf(vname,"dl11_r%d",round);
               write_output(fname,vname,
-               &(UE->common_vars.dl_ch_estimates[eNB_id][3][0]),
+               &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][3][0]),
                UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
             }
             //pdsch_vars
