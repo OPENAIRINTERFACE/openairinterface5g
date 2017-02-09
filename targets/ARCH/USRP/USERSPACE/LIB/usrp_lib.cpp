@@ -469,7 +469,7 @@ extern "C" {
          * \param openair0_cfg RF frontend parameters set by application
          */
     int device_init(openair0_device* device, openair0_config_t *openair0_cfg) {
-        //uhd::set_thread_priority_safe(1.0);
+        uhd::set_thread_priority_safe(1.0);
         usrp_state_t *s = (usrp_state_t*)calloc(sizeof(usrp_state_t),1);
         // Initialize USRP device
         device->openair0_cfg = openair0_cfg;
