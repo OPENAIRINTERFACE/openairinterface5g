@@ -418,9 +418,9 @@ function main() {
 
   if [ "$oaisim" = "1" ] ; then
       #to be discussed
-      # there is no RF device and no transport protocol 
+      # there is no RF device  transport protocol 
       HW="None" 
-      TP="None"
+      TP="ETHERNET"
       
       if [ "$XFORMS" == "True" ] ; then 
 	  PRINT_STATS="True"
@@ -671,6 +671,15 @@ function main() {
 	#    CMakeFiles/oai_nw_drv/oai_nw_drv.ko $dbin/oai_nw_drv.ko
     fi
 
+    if [ "$TP" == "ETHERNET" ] ; then
+	compilations \
+	    $oaisim_build_dir oai_eth_transpro \
+	    liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
+	ln -s liboai_eth_transpro.so liboai_transpro.so
+	ln -s $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
+	echo_info "liboai_transpro.so is linked with ETHERNET library"	 
+    fi
+      
     cmake_file=$DIR/oaisim_mme_build_oai/CMakeLists.txt
     cp $DIR/oaisim_mme_build_oai/CMakeLists.template $cmake_file
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file

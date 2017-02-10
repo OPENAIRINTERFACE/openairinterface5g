@@ -430,6 +430,7 @@ typedef struct PHY_VARS_eNB_s {
   eNB_proc_t           proc;
   eNB_func_t           node_function;
   eNB_timing_t         node_timing;
+  eth_params_t         *eth_params;
   int                  single_thread_flag;
   openair0_rf_map      rf_map;
   int                  abstraction_flag;
