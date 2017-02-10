@@ -185,8 +185,14 @@ int flexran_get_ue_wcqi (mid_t mod_id, mid_t ue_id);
 /* Get the transmission queue size for a UE with a channel_id logical channel id */
 int flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id);
 
+/* Get the head of line delay for a UE with a channel_id logical channel id */
+int flexran_get_hol_delay(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id);
+
+/* Check the status of the timing advance for a UE */
+short flexran_get_TA(mid_t mod_id, mid_t ue_id, int CC_id);
+
 /* Update the timing advance status (find out whether a timing advance command is required) */
-int flexran_update_TA(mid_t mod_id, mid_t ue_id, int CC_id);
+void flexran_update_TA(mid_t mod_id, mid_t ue_id, int CC_id);
 
 /* Return timing advance MAC control element for a designated cell and UE */
 int flexran_get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id, int CC_id);

@@ -68,7 +68,7 @@
 /* this function checks that get_eNB_UE_stats returns
  * a non-NULL pointer for all CCs for a given UE
  */
-static int phy_stats_exist(module_id_t Mod_id, int rnti)
+int phy_stats_exist(module_id_t Mod_id, int rnti)
 {
   int CC_id;
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
