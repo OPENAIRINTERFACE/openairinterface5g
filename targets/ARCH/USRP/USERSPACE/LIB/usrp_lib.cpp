@@ -662,14 +662,18 @@ extern "C" {
         // create tx & rx streamer
         uhd::stream_args_t stream_args_rx("sc16", "sc16");
         int samples=openair0_cfg[0].sample_rate;
-        //while ( samples > s->rx_stream->get_max_num_samps())
-        samples/=24000;
-        stream_args_rx.args["spp"] = str(boost::format("%d") % samples );
+	int max=s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps();
+        samples/=10000;
+	LOG_I(PHY,"RF board max packet size %u, size for 100µs jitter %d \n", max, samples);
+	if ( samples < max )
+	  stream_args_rx.args["spp"] = str(boost::format("%d") % samples );
+	LOG_I(PHY,"rx_max_num_samps %u\n",
+	      s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps());
+
         for (int i = 0; i<openair0_cfg[0].rx_num_channels; i++)
             stream_args_rx.channels.push_back(i);
         s->rx_stream = s->usrp->get_rx_stream(stream_args_rx);
-        LOG_I(PHY,"rx_max_num_samps %u\n",s->rx_stream->get_max_num_samps());
-
+	
         uhd::stream_args_t stream_args_tx("sc16", "sc16");
         for (int i = 0; i<openair0_cfg[0].tx_num_channels; i++)
             stream_args_tx.channels.push_back(i);
