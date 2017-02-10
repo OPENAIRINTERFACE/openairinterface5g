@@ -3154,6 +3154,10 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
             eNB->UE_stats[i].ulsch_errors[harq_pid]++;
             eNB->UE_stats[i].ulsch_consecutive_errors++;
 
+	   /*if (eNB->ulsch[i]->harq_processes[harq_pid]->nb_rb > 20) {
+		dump_ulsch(eNB,proc,i);
+	 	exit(-1);
+           }*/
 	    // indicate error to MAC
 	    if (eNB->mac_enabled == 1)
 	      mac_xface->rx_sdu(eNB->Mod_id,

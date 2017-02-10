@@ -1135,7 +1135,6 @@ void rx_prach(PHY_VARS_eNB *eNB,
 
   int en;
 
-
   for (aa=0; aa<nb_ant_rx; aa++) {
     prach[aa] = (int16_t*)&eNB->common_vars.rxdata[0][aa][subframe*eNB->frame_parms.samples_per_tti-eNB->N_TA_offset];
   }
@@ -1336,6 +1335,9 @@ void rx_prach(PHY_VARS_eNB *eNB,
     /// **** send_IF4 of rxsigF to RCC **** ///    
     send_IF4p5(eNB, eNB->proc.frame_prach, eNB->proc.subframe_prach, IF4p5_PRACH, k);
 
+#if 0
+    /* TODO: resolv this conflict (there should be no printf anyway, so no big deal) */
+<<<<<<< HEAD
     /*
     en = dB_fixed(signal_energy(&rxsigF[0][k],840));
     printf("Sending PRACH, k %d,n_ra_prb %d, N_RB_UL %d,  en %d\n",k,n_ra_prb,eNB->frame_parms.N_RB_UL,en);
@@ -1345,6 +1347,13 @@ void rx_prach(PHY_VARS_eNB *eNB,
       exit(-1);
     }
     */
+
+=======
+        en = dB_fixed(signal_energy(&rxsigF[0][k],840));
+        if (en>60)
+          printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
+>>>>>>> origin/fix-if4p5
+#endif
 
     return;
   } else if (eNB->node_function == NGFI_RCC_IF4p5) {
@@ -1363,6 +1372,9 @@ void rx_prach(PHY_VARS_eNB *eNB,
             (&rxsigF[0][0]),
             839*2*sizeof(int16_t));
 
+#if 0
+    /* TODO: resolv this conflict (there should be no printf anyway, so no big deal) */
+<<<<<<< HEAD
     /*
     en = dB_fixed(signal_energy(&rxsigF[0][k],840));
     printf("Receiving PRACH, k %d,n_ra_prb %d, N_RB_UL %d,  en %d\n",k,n_ra_prb,eNB->frame_parms.N_RB_UL,en);
@@ -1372,6 +1384,14 @@ void rx_prach(PHY_VARS_eNB *eNB,
       exit(-1);
     }
     */
+=======
+    en = dB_fixed(signal_energy(&rxsigF[0][k],840));
+        /*if (en>60)
+    printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);*/
+
+>>>>>>> origin/fix-if4p5
+#endif
+
   }
   
   // in case of RCC and prach received rx_thread wakes up prach
