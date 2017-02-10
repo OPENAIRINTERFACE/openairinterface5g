@@ -132,26 +132,37 @@ void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index) {
  */
 int trx_lms_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) {
 
+  int ret=0;
+
+  double rxg_ratio = openair0_cfg[0].rx_gain[0]/openair0_cfg[0].rx_gain_offset[0];
+  if (rxg_ratio > 1) {
+    printf("[LMS] Reduce RX Gain 0 by %f dB\n",openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0]);
+    ret = -1;
+    rxg_ratio = 1;
+  }
+  
   LMS_SetNormalizedGain(lms_device, LMS_CH_TX, 0, openair0_cfg[0].tx_gain[0]/100.0);
-
+  LMS_SetNormalizedGain(lms_device, LMS_CH_RX, 0, .8*rxg_ratio); 
+  /*
   // RX gains, use low-level setting
-
   double gv = openair0_cfg[0].rx_gain[0] - openair0_cfg[0].rx_gain_offset[0];   
   if (gv > 31) {     
     printf("RX Gain 0 too high, reduce by %f dB\n",gv-31);     
-    gv = 31;   
+    gv = 31;
+    ret=-1;
   }   
   if (gv < 0) {     
     printf("RX Gain 0 too low, increase by %f dB\n",-gv);     
-    gv = 0;   
+    gv = 0;
+    ret=-1;
   }   
   printf("[LMS] Setting 7002M G_PGA_RBB to %d\n", (int16_t)gv);   
   LMS7002M lms7;
   lms7.SetConnection(lms7.GetConnection());
   lms7.Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB),(int16_t)gv);
+  */
 
-
-  return(0);
+  return(ret);
 }
 
 /*! \brief Start LMSSDR
@@ -163,7 +174,8 @@ int trx_lms_start(openair0_device *device){
     lms_info_str_t list[16]={0};
 
     int n= LMS_GetDeviceList(list);
-
+    int ret;
+    
     if (n <= 0) {
         fprintf(stderr, "No LimeSDR board found: %s\n", n < 0?LMS_GetLastErrorMessage():"");
         return -1;
@@ -212,9 +224,9 @@ int trx_lms_start(openair0_device *device){
     }
     printf("Set TX frequency %f MHz\n",device->openair0_cfg[0].tx_freq[0]/1e6);
 
-    printf("Override antenna settings to: RX1_H, TXA_2");
-    LMS_SetAntenna(lms_device, LMS_CH_RX, 0, 1);
-    LMS_SetAntenna(lms_device, LMS_CH_TX, 0, 2);
+    //    printf("Override antenna settings to: RX1_H, TXA_2");
+    //    LMS_SetAntenna(lms_device, LMS_CH_RX, 0, 1);
+    //   LMS_SetAntenna(lms_device, LMS_CH_TX, 0, 2);
 
 
     
@@ -245,7 +257,7 @@ int trx_lms_start(openair0_device *device){
     tx_stream.dataFmt = lms_stream_t::LMS_FMT_I12;
     tx_stream.isTx = true;
 
-    trx_lms_set_gains(device, device->openair0_cfg);
+    if ((ret = trx_lms_set_gains(device, device->openair0_cfg))<0) return(-1);
 
     if (LMS_SetupStream(lms_device, &tx_stream)!=0)
         printf("TX stream setup failed %s\n",LMS_GetLastErrorMessage());
@@ -259,6 +271,7 @@ int trx_lms_start(openair0_device *device){
         printf("Failed to start TX stream %s\n",LMS_GetLastErrorMessage());
     if (LMS_StartStream(&tx_stream)!=0)
         printf("Failed to start Rx stream %s\n",LMS_GetLastErrorMessage());
+    device->trx_started=1;
     return 0;
 }
 
@@ -272,6 +285,7 @@ int trx_lms_stop(openair0_device *device) {
     LMS_DestroyStream(lms_device,&rx_stream);
     LMS_DestroyStream(lms_device,&tx_stream);
     LMS_Close(lms_device);
+    device->trx_started=0;
 }
 
 /*! \brief Set frequencies (TX/RX)
@@ -292,14 +306,22 @@ int trx_lms_set_freq(openair0_device* device, openair0_config_t *openair0_cfg,in
 
 // 31 = 19 dB => 105 dB total gain @ 2.6 GHz
 /*! \brief calibration table for LMSSDR */
-rx_gain_calib_table_t calib_table_lmssdr[] = {
-  {3500000000.0,70.0},
-  {2660000000.0,80.0},
-  {2300000000.0,80.0},
-  {1880000000.0,74.0},  // on W PAD
-  {816000000.0,76.0},   // on W PAD
+// V1.2 board
+rx_gain_calib_table_t calib_table_lmssdr_1v2[] = {
+  {3500000000.0,44.0},  // on L PAD
+  {2660000000.0,62.0},  // on L PAD
+  {2300000000.0,62.0},  // on L PAD
+  {1880000000.0,64.0},  // on L PAD
+  {816000000.0,79.0},   // on W PAD
   {-1,0}};
-
+// V1.4 board
+rx_gain_calib_table_t calib_table_lmssdr[] = {
+  {3500000000.0,97.0},  // on H PAD
+  {2660000000.0,110.0},  // on H PAD
+  {2300000000.0,106.0},  // on H PAD
+  {1880000000.0,106.0},  // on H PAD
+  {816000000.0,102.0},   // on W PAD
+  {-1,0}};
 
 
 
@@ -332,7 +354,7 @@ int trx_lms_reset_stats(openair0_device* device) {
  */
 void trx_lms_end(openair0_device *device) {
 
-
+  device->trx_started=0;
 }
 
 extern "C" {

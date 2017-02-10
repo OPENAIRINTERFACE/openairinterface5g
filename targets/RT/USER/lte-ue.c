@@ -372,13 +372,14 @@ static void *UE_thread_synch(void *arg)
   while (sync_var<0)
     pthread_cond_wait(&sync_cond, &sync_mutex);
 
-  pthread_mutex_unlock(&sync_mutex);
-  printf("Started device, unlocked sync_mutex (UE_sync_thread)\n");
 
   if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) { 
     LOG_E(HW,"Could not start the device\n");
     oai_exit=1;
   }
+
+  pthread_mutex_unlock(&sync_mutex);
+  printf("Started device, unlocked sync_mutex (UE_sync_thread)\n");
 
   while (oai_exit==0) {
 
@@ -496,13 +497,14 @@ static void *UE_thread_synch(void *arg)
 	
 	  UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
 	  //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
-	  UE->rfdevice.trx_stop_func(&UE->rfdevice);	  
-	  sleep(1);
+
+	  //UE->rfdevice.trx_stop_func(&UE->rfdevice);	  
+	  //	  sleep(1);
 	  init_frame_parms(&UE->frame_parms,1);
-	  if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) { 
-	    LOG_E(HW,"Could not start the device\n");
-	    oai_exit=1;
-	  }
+	  //	  if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) { 
+	  //	    LOG_E(HW,"Could not start the device\n");
+	  //	    oai_exit=1;
+	  //	  }
 	}
 	else {
 	  UE->is_synchronized = 1;
@@ -950,6 +952,9 @@ void *UE_thread(void *arg) {
   itti_send_msg_to_task (TASK_NAS_UE, INSTANCE_DEFAULT, message_p);
 #endif 
 
+  while (UE->rfdevice.trx_started==0)
+    usleep(500);
+  
   while (!oai_exit) {
     
     if (UE->is_synchronized == 0) {
