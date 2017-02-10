@@ -1125,7 +1125,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
   int fft_size,log2_ifft_size;
   uint8_t nb_ant_rx = 1; //eNB->frame_parms.nb_antennas_rx;
 
-  //  int en;
+  int en;
 
   for (aa=0; aa<nb_ant_rx; aa++) {
     prach[aa] = (int16_t*)&eNB->common_vars.rxdata[0][aa][subframe*eNB->frame_parms.samples_per_tti-eNB->N_TA_offset];
@@ -1327,9 +1327,9 @@ void rx_prach(PHY_VARS_eNB *eNB,
     /// **** send_IF4 of rxsigF to RCC **** ///    
     send_IF4p5(eNB, eNB->proc.frame_prach, eNB->proc.subframe_prach, IF4p5_PRACH, k);
 
-    //    en = dB_fixed(signal_energy(&rxsigF[0][k],840));
-    //    if (en>60)
-    //      printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
+        en = dB_fixed(signal_energy(&rxsigF[0][k],840));
+        if (en>60)
+          printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
     return;
   } else if (eNB->node_function == NGFI_RCC_IF4p5) {
     k = (12*n_ra_prb) - 6*eNB->frame_parms.N_RB_UL;
@@ -1347,9 +1347,9 @@ void rx_prach(PHY_VARS_eNB *eNB,
             (&rxsigF[0][0]),
             839*2*sizeof(int16_t));
 
-    //en = dB_fixed(signal_energy(&rxsigF[0][k],840));
-    //    if (en>60)
-    //printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
+    en = dB_fixed(signal_energy(&rxsigF[0][k],840));
+        /*if (en>60)
+    printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);*/
 
   }
   
