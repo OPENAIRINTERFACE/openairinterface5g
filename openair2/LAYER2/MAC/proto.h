@@ -320,7 +320,7 @@ rnti_t      UE_RNTI           (module_id_t module_idP, int UE_id);
 int         UE_PCCID          (module_id_t module_idP, int UE_id);
 uint8_t     find_active_UEs   (module_id_t module_idP);
 boolean_t   is_UE_active      (module_id_t module_idP, int UE_id);
-uint8_t     process_ue_cqi    (module_id_t module_idP, int UE_id);
+uint8_t     get_aggregation   (uint8_t bw_index, uint8_t cqi, uint8_t dci_fmt);
 
 int8_t find_active_UEs_with_traffic(module_id_t module_idP);
 
@@ -531,7 +531,7 @@ int UE_PCCID(module_id_t mod_idP,int ue_idP);
 rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP);
 
 
-void ulsch_scheduler_pre_processor(module_id_t module_idP, int frameP, sub_frame_t subframeP, uint16_t *first_rb, uint8_t  aggregattion);
+void ulsch_scheduler_pre_processor(module_id_t module_idP, int frameP, sub_frame_t subframeP, uint16_t *first_rb);
 void store_ulsch_buffer(module_id_t module_idP, int frameP, sub_frame_t subframeP);
 void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP);
 void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subframeP,uint16_t *first_rb);
@@ -695,6 +695,8 @@ void add_common_dci(DCI_PDU *DCI_pdu,
 uint32_t allocate_prbs_sub(int nb_rb, uint8_t *rballoc);
 
 void update_ul_dci(module_id_t module_idP,uint8_t CC_id,rnti_t rnti,uint8_t dai);
+
+int get_bw_index(module_id_t module_id, uint8_t CC_id);
 
 int get_min_rb_unit(module_id_t module_idP, uint8_t CC_id);
 

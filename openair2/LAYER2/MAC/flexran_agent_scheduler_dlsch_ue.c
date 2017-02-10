@@ -1042,6 +1042,7 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
   int32_t                 tpc = 1;
   static int32_t          tpc_accumulated=0;
   UE_sched_ctrl           *ue_sched_ctl;
+  LTE_eNB_UE_stats     *eNB_UE_stats     = NULL;
 
   Protocol__FlexDlData *dl_data[NUM_MAX_UE];
   int num_ues_added = 0;
@@ -1108,8 +1109,15 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
 
     for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
       rnti = flexran_get_ue_crnti(mod_id, UE_id);
+      eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id,CC_id,rnti);
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-
+      
+      if (eNB_UE_stats==NULL) {
+	LOG_D(MAC,"[eNB] Cannot find eNB_UE_stats\n");
+        //  mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
+	continue;
+      }
+      
       if (flexran_slice_member(UE_id, slice_id) == 0)
       	continue;
       
@@ -1124,7 +1132,25 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
         //  mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
         continue;
       }
-
+      
+      switch(mac_xface->get_transmission_mode(mod_id,CC_id,rnti)){
+      case 1:
+      case 2:
+      case 7:
+	aggregation = get_aggregation(get_bw_index(mod_id,CC_id), 
+				      eNB_UE_stats->DL_cqi[0],
+				      format1);
+	break;
+      case 3:
+	aggregation = get_aggregation(get_bw_index(mod_id,CC_id), 
+				      eNB_UE_stats->DL_cqi[0],
+				      format2A);
+	break;
+      default:
+	LOG_W(MAC,"Unsupported transmission mode %d\n", mac_xface->get_transmission_mode(mod_id,CC_id,rnti));
+	aggregation = 2;
+      }
+     
       if ((ue_sched_ctl->pre_nb_available_rbs[CC_id] == 0) ||  // no RBs allocated 
 	  CCE_allocation_infeasible(mod_id, CC_id, 0, subframe, aggregation, rnti)) {
         LOG_D(MAC,"[eNB %d] Frame %d : no RB allocated for UE %d on CC_id %d: continue \n",
@@ -1237,8 +1263,6 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
 	  }
 
 	  nb_available_rb -= nb_rb;
-	  aggregation = process_ue_cqi(mod_id, UE_id);
-	  
 	  PHY_vars_eNB_g[mod_id][CC_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = nb_rb;
 	  PHY_vars_eNB_g[mod_id][CC_id]->mu_mimo_mode[UE_id].dl_pow_off = ue_sched_ctl->dl_pow_off[CC_id];
 	  
@@ -1435,7 +1459,6 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
 	  dci_tbs = TBS;
 	  mcs = mcs_tmp;
 
-	  aggregation = process_ue_cqi(mod_id,UE_id);
 	  dl_dci->has_aggr_level = 1;
 	  dl_dci->aggr_level = aggregation;
 	  

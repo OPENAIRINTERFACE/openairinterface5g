@@ -1081,8 +1081,7 @@ void dlsch_scheduler_pre_processor_allocate (module_id_t   Mod_id,
 void ulsch_scheduler_pre_processor(module_id_t module_idP,
                                    int frameP,
                                    sub_frame_t subframeP,
-                                   uint16_t *first_rb,
-                                   uint8_t aggregation)
+                                   uint16_t *first_rb)
 {
 
   int16_t            i;
