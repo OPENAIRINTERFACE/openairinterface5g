@@ -4712,8 +4712,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
       }
     }
 
-    dlsch0_harq->mcs         = mcs;
-
     // this a retransmission
     if(dlsch0_harq->round)
     {
@@ -4728,16 +4726,24 @@ int generate_ue_dlsch_params_from_dci(int frame,
         }
     }
 
-    dlsch0_harq->TBS         = TBStable[get_I_TBS(mcs)][NPRB-1];
-    if (mcs <= 28)
-      dlsch0_harq->Qm          = get_Qm(mcs);
-    else if (mcs<=31)
-      dlsch0_harq->Qm          = (mcs-28)<<1;
-    else
-      LOG_E(PHY,"invalid mcs %d\n",mcs);
     //    printf("test: MCS %d, NPRB %d, TBS %d\n",mcs,NPRB,dlsch0_harq->TBS);
 
     dlsch[0]->active = 1;
+
+    if (dlsch0_harq->round == 0) {
+      dlsch0_harq->status = ACTIVE;
+      //            printf("Setting DLSCH process %d to ACTIVE\n",harq_pid);
+      // MCS and TBS don't change across HARQ rounds
+      dlsch0_harq->mcs         = mcs;
+      dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][NPRB-1];
+
+      if (mcs <= 28)
+        dlsch0_harq->Qm          = get_Qm(mcs);
+      else if (mcs<=31)
+        dlsch0_harq->Qm          = (mcs-28)<<1;
+      else
+        LOG_E(PHY,"invalid mcs %d\n",mcs);
+    }
 
     dlsch[0]->rnti = rnti;
 
