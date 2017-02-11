@@ -4736,7 +4736,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
     else
       LOG_E(PHY,"invalid mcs %d\n",mcs);
     //    printf("test: MCS %d, NPRB %d, TBS %d\n",mcs,NPRB,dlsch0_harq->TBS);
-    dlsch[0]->current_harq_pid = harq_pid;
 
     dlsch[0]->active = 1;
 
