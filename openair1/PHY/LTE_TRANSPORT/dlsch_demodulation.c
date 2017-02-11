@@ -163,6 +163,10 @@ int rx_pdsch(PHY_VARS_UE *ue,
       dlsch1_harq = NULL;
       codeword_TB0 = -1;
     }
+    else {
+      LOG_E(PHY,"[UE][FATAL] Frame %d subframe %d: no active DLSCH\n",ue->proc.proc_rxtx[0].frame_rx,subframe);
+      return(-1);
+    }
     beamforming_mode  = ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id];
     break;
 
