@@ -4637,12 +4637,12 @@ int generate_ue_dlsch_params_from_dci(int frame,
       break;
     }
 
-    dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
-
     if (harq_pid>=8) {
       LOG_E(PHY,"Format 1: harq_pid=%d >= 8\n", harq_pid);
       return(-1);
     }
+
+    dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
     if((mcs>28) && (dlsch0_harq->round == 0) )
     {
