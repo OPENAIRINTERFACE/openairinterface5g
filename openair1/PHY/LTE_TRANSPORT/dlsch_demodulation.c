@@ -107,7 +107,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
   unsigned char aatx,aarx;
 
-  unsigned short nb_rb, round;
+  unsigned short nb_rb = 0, round;
   int avgs, rb;
   LTE_DL_UE_HARQ_t *dlsch0_harq,*dlsch1_harq = 0;
 
