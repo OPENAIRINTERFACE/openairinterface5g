@@ -28,6 +28,7 @@
 #include "TLVEncoder.h"
 #include "TLVDecoder.h"
 #include "AttachAccept.h"
+#include "assertions.h"
 
 int decode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint32_t len)
 {
@@ -59,7 +60,7 @@ int decode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint
     decoded += decoded_result;
 
   /* Decoding optional fields */
-  while(len - decoded > 0) {
+  while(((int32_t)len - (int32_t)decoded) > 0) {
     uint8_t ieiDecoded = *(buffer + decoded);
 
     /* Type | value iei are below 0x80 so just return the first 4 bits */
@@ -189,6 +190,7 @@ int decode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint
     default:
       errorCodeDecoder = TLV_DECODE_UNEXPECTED_IEI;
       LOG_TRACE(WARNING, "DECODE_UNEXPECTED_IEI %x (4 bits)", ieiDecoded);
+      AssertFatal(0, " ");
       return TLV_DECODE_UNEXPECTED_IEI;
     }
   }
