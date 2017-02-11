@@ -4329,6 +4329,9 @@ int generate_ue_dlsch_params_from_dci(int frame,
     dlsch0_harq->first_tx,
     dlsch0_harq->status,
     dlsch0_harq->round);
+
+    dlsch[0]->active = 1;
+
     if ((ndi!=dlsch0_harq->DCINdi)||  // DCI has been toggled or this is the first transmission
 
         (dlsch0_harq->first_tx==1)) {
@@ -4403,6 +4406,10 @@ int generate_ue_dlsch_params_from_dci(int frame,
     }
     dlsch[0]->rnti = rnti;
     dlsch0 = dlsch[0];
+
+    if (dlsch0_harq->round == 0)
+      dlsch0_harq->status = ACTIVE;
+
     //printf("Format 1A: harq_pid %d, nb_rb %d, round %d\n",harq_pid,dlsch0_harq->nb_rb,dlsch0_harq->round);
     break;
 
@@ -4648,7 +4655,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
       // DCI false detection
       return(-1);
     }
-
 
     dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
 
