@@ -209,6 +209,8 @@ int chain_offset=0;
 int phy_test = 0;
 uint8_t usim_test = 0;
 
+uint8_t nb_antenna_tx = 1;
+uint8_t nb_antenna_rx = 1;
 
 char ref[128] = "internal";
 char channels[128] = "0";
@@ -379,6 +381,7 @@ void help (void) {
   printf("  --ue-rxgain set UE RX gain\n");
   printf("  --ue-rxgain-off external UE amplifier offset\n");
   printf("  --ue-txgain set UE TX gain\n");
+  printf("  --ue-nb-ant-rx  set UE number of rx antennas ");
   printf("  --ue-scan_carrier set UE to scan around carrier\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
   printf("  --mmapped-dma sets flag for improved EXMIMO UE performance\n");  
@@ -686,6 +689,8 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_RXGAIN,
 	LONG_OPTION_RXGAINOFF,
     LONG_OPTION_TXGAIN,
+	LONG_OPTION_NBRXANT,
+	LONG_OPTION_NBTXANT,
     LONG_OPTION_SCANCARRIER,
     LONG_OPTION_MAXPOWER,
     LONG_OPTION_DUMP_FRAME,
@@ -714,7 +719,9 @@ static void get_options (int argc, char **argv)
     {"calib-prach-tx",   no_argument,        NULL, LONG_OPTION_CALIB_PRACH_TX},
     {"ue-rxgain",   required_argument,  NULL, LONG_OPTION_RXGAIN},
 	{"ue-rxgain-off",   required_argument,  NULL, LONG_OPTION_RXGAINOFF},
-    {"ue-txgain",   required_argument,  NULL, LONG_OPTION_TXGAIN},
+    {"ue-txgain",    required_argument,  NULL, LONG_OPTION_TXGAIN},
+	{"ue-nb-ant-rx", required_argument,  NULL, LONG_OPTION_NBRXANT},
+	{"ue-nb-ant-tx", required_argument,  NULL, LONG_OPTION_NBTXANT},
     {"ue-scan-carrier",   no_argument,  NULL, LONG_OPTION_SCANCARRIER},
     {"ue-max-power",   required_argument,  NULL, LONG_OPTION_MAXPOWER},
     {"ue-dump-frame", no_argument, NULL, LONG_OPTION_DUMP_FRAME},
@@ -802,7 +809,12 @@ static void get_options (int argc, char **argv)
         tx_gain[0][i] = atof(optarg);
 
       break;
-
+    case LONG_OPTION_NBRXANT:
+    	nb_antenna_rx = atof(optarg);
+    	break;
+    case LONG_OPTION_NBTXANT:
+    	nb_antenna_tx = atof(optarg);
+    	break;
     case LONG_OPTION_SCANCARRIER:
       UE_scan_carrier=1;
 
@@ -1353,7 +1365,7 @@ void init_openair0() {
 
     openair0_cfg[card].clock_source = clock_source;
 
-    openair0_cfg[card].tx_num_channels=min(2,((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx));
+    openair0_cfg[card].tx_num_channels=min(2,((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx));
     openair0_cfg[card].rx_num_channels=min(2,((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_rx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx));
 
     for (i=0; i<4; i++) {
@@ -1548,9 +1560,11 @@ int main( int argc, char **argv )
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
     if (UE_flag==1) {
-      frame_parms[CC_id]->nb_antennas_tx     = 1;
-      frame_parms[CC_id]->nb_antennas_rx     = 1;
+      frame_parms[CC_id]->nb_antennas_tx     = nb_antenna_tx;
+      frame_parms[CC_id]->nb_antennas_rx     = nb_antenna_rx;
       frame_parms[CC_id]->nb_antenna_ports_eNB = 1; //initial value overwritten by initial sync later
+
+      LOG_I(PHY,"Set nb_rx_antenna %d , nb_tx_antenna %d \n",frame_parms[CC_id]->nb_antennas_rx, frame_parms[CC_id]->nb_antennas_tx);
     }
 
     init_ul_hopping(frame_parms[CC_id]);

@@ -1375,11 +1375,7 @@ void rx_phich(PHY_VARS_UE *ue,
             HI16,
             nseq_PHICH,
             ngroup_PHICH);
-      get_Msg3_alloc_ret(&ue->frame_parms,
-                         subframe,
-                         proc->frame_rx,
-                         &ue->ulsch_Msg3_frame[eNB_id],
-                         &ue->ulsch_Msg3_subframe[eNB_id]);
+
       ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
       //      ulsch->harq_processes[harq_pid]->Ndi = 0;
       ulsch->harq_processes[harq_pid]->round++;
