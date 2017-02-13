@@ -233,7 +233,7 @@ class ExecutionThread(threading.Thread):
         for arg in args.splitlines():
             i = i+1
             runenv2 = list(runenv)
-            runenv2.append('OPENAIR_TARGET=/tmp/oai_test_setup/oai/targets')
+            runenv2.append('OPENAIR_TARGETS=/tmp/oai_test_setup/oai/targets')
             runenv2.append('EXEC="'
                              + test.findtext('main_exec')
                              + '"')

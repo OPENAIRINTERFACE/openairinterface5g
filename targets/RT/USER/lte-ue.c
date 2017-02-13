@@ -450,7 +450,14 @@ static void *UE_thread_synch(void *arg)
 	  // rerun with new cell parameters and frequency-offset
 	  for (i=0;i<openair0_cfg[UE->rf_map.card].rx_num_channels;i++) {
 	    openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
-	    openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] -= UE->common_vars.freq_offset;
+		if (freq_offset >= 0)
+	    {
+	        openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] += UE->common_vars.freq_offset;
+	    }
+	    else
+	    {
+	        openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] -= UE->common_vars.freq_offset;
+	    }
 	    openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] =  openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i]+uplink_frequency_offset[CC_id][i];
 	    downlink_frequency[CC_id][i] = openair0_cfg[CC_id].rx_freq[i];
 	    freq_offset=0;	    
@@ -858,8 +865,8 @@ static void *UE_thread_rxn_txnp4(void *arg)
 
 
 
-#define RX_OFF_MAX 10
-#define RX_OFF_MIN 5
+#define RX_OFF_MAX 23
+#define RX_OFF_MIN 0
 #define RX_OFF_MID ((RX_OFF_MAX+RX_OFF_MIN)/2)
 
 /*!
@@ -1038,6 +1045,7 @@ void *UE_thread(void *arg) {
 	      return &UE_thread_retval;
 	    }
 	  }
+	  LOG_D(PHY,"Set rx_offset to 0 \n");
 	  UE->rx_offset=0;
 	  UE->proc.proc_rxtx[0].frame_rx++;
 	  UE->proc.proc_rxtx[1].frame_rx++;
@@ -1084,6 +1092,8 @@ void *UE_thread(void *arg) {
 					       rxp,
 					       UE->frame_parms.samples_per_tti,
 					       UE->frame_parms.nb_antennas_rx);
+	      LOG_D(PHY,"grab signal for subframe %d offset %d Nbsamples %d \n", sf, UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0+(sf*UE->frame_parms.samples_per_tti),
+	    		  UE->frame_parms.samples_per_tti);
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS_MISSING, UE->frame_parms.samples_per_tti - rxs);
@@ -1124,6 +1134,9 @@ void *UE_thread(void *arg) {
 					       rxp,
 					       UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0,
 					       UE->frame_parms.nb_antennas_rx);
+
+	      LOG_D(PHY,"grab signal for subframe %d offset %d Nbsamples %d \n", sf, UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0+(sf*UE->frame_parms.samples_per_tti),
+	    		  UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0);
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS_MISSING, (UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0) - rxs);
@@ -1157,18 +1170,37 @@ void *UE_thread(void *arg) {
 
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 1 );
 	      // read in first symbol of next frame and adjust for timing drift
+          for (i=0; i<UE->frame_parms.nb_antennas_rx; i++)
+          {
+            rxp[i] = (void*)&UE->common_vars.rxdata[i][0];
+          }
+
 	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
 					       &timestamp1,
-					       (void**)UE->common_vars.rxdata,
-					       UE->frame_parms.ofdm_symbol_size + UE->frame_parms.nb_prefix_samples0 - rx_off_diff,
+						   rxp,
+					       UE->frame_parms.nb_prefix_samples0 - rx_off_diff,
 					       UE->frame_parms.nb_antennas_rx);
+
+	      for (i=0; i<UE->frame_parms.nb_antennas_rx; i++)
+	      {
+	        rxp[i] = (void*)&UE->common_vars.rxdata[i][UE->frame_parms.nb_prefix_samples0];
+	      }
+
+	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
+					       &timestamp1,
+						   rxp,
+					       UE->frame_parms.ofdm_symbol_size,
+					       UE->frame_parms.nb_antennas_rx);
+
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
-        if (rxs != (UE->frame_parms.ofdm_symbol_size + UE->frame_parms.nb_prefix_samples0 - rx_off_diff)) {
+        if (rxs != (UE->frame_parms.ofdm_symbol_size)) {
           LOG_E(PHY, "problem in rx 7! expect #samples=%d but got only %d! rx_off_diff=%d\n", UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0 - rx_off_diff, rxs, rx_off_diff);
           exit_fun("problem in rx 7!");
           return &UE_thread_retval;
         }
+        UE->rx_offset_diff = rx_off_diff;
+        LOG_D(PHY,"SET rx_off_diff to %d\n",UE->rx_offset_diff);
         rx_off_diff = 0;
 	    }
 	  }
@@ -1237,17 +1269,21 @@ void *UE_thread(void *arg) {
 	    getchar();
 	  }
 	}// for sf=0..10
+
+	  uint8_t proc_select = 9&1;
+	  UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[proc_select];
+
 	if ((UE->rx_offset<(5*UE->frame_parms.samples_per_tti)) &&
-	    (UE->rx_offset > RX_OFF_MIN) && 
+	    (UE->rx_offset > 0) &&
 	    (rx_correction_timer == 0)) {
-	  rx_off_diff = -UE->rx_offset + RX_OFF_MIN;
-	  LOG_D(PHY,"UE->rx_offset %d > %d, diff %d\n",UE->rx_offset,RX_OFF_MIN,rx_off_diff);
+	  rx_off_diff = -1 ;
+	  LOG_D(PHY,"AbsSubframe %d.%d UE->rx_offset %d > %d, diff %d\n",proc->frame_rx,proc->subframe_rx,UE->rx_offset,0,rx_off_diff);
 	  rx_correction_timer = 5;
 	} else if ((UE->rx_offset>(5*UE->frame_parms.samples_per_tti)) && 
-		   (UE->rx_offset < ((10*UE->frame_parms.samples_per_tti)-RX_OFF_MIN)) &&
+		   (UE->rx_offset < ((10*UE->frame_parms.samples_per_tti))) &&
 		   (rx_correction_timer == 0)) {   // moving to the left so drop rx_off_diff samples
-	  rx_off_diff = 10*UE->frame_parms.samples_per_tti - RX_OFF_MIN - UE->rx_offset;
-	  LOG_D(PHY,"UE->rx_offset %d < %d, diff %d\n",UE->rx_offset,10*UE->frame_parms.samples_per_tti-RX_OFF_MIN,rx_off_diff);
+	  rx_off_diff = 1;
+	  LOG_D(PHY,"AbsSubframe %d.%d UE->rx_offset %d < %d, diff %d\n",proc->frame_rx,proc->subframe_rx,UE->rx_offset,10*UE->frame_parms.samples_per_tti,rx_off_diff);
 	  
 	  rx_correction_timer = 5;
 	}

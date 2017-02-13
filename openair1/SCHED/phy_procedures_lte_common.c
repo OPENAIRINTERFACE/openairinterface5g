@@ -339,6 +339,9 @@ uint8_t get_reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
 
     o_ACK[0] = harq_ack[subframe_dl0].ack;
     status = harq_ack[subframe_dl0].send_harq_status;
+
+    if(do_reset)
+    	harq_ack[subframe_dl0].send_harq_status = 0;
     //printf("get_ack: Getting ACK/NAK for PDSCH (subframe %d) => %d\n",subframe_dl,o_ACK[0]);
   } else {
     switch (frame_parms->tdd_config) {
