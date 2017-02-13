@@ -4703,7 +4703,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
         (dlsch0_harq->first_tx==1)) {
       //    printf("Rate: setting round to zero (ndi %d, DCINdi %d,first_tx %d)\n",ndi,dlsch0_harq->DCINdi,dlsch0_harq->first_tx);
       dlsch0_harq->round=0;
-      dlsch0_harq->status = ACTIVE;
       dlsch0_harq->DCINdi = ndi;
 
       dlsch[0]->harq_ack[subframe].send_harq_status = 1;
