@@ -4530,7 +4530,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
     dlsch0_harq->mimo_mode = frame_parms->mode1_flag == 1 ?SISO : ALAMOUTI;
     dlsch0_harq->dl_power_off = 1; //no power offset
 
-    // Needs to be checked
     dlsch0_harq->codeword=0;
 
     LOG_D(PHY,"UE (%x/%d): Subframe %d Format1C DCI: harq_status %d, round %d\n",
@@ -4691,7 +4690,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
     dlsch0_harq->dl_power_off = 1; //no power offset
 
-    // Needs to be checked
     dlsch0_harq->codeword=0;
 
     LOG_D(PHY,"UE (%x/%d): Subframe %d Format1 DCI: ndi %d, old_ndi %d (first tx %d) harq_status %d\n",dlsch[0]->rnti,harq_pid,subframe,ndi,dlsch0_harq->DCINdi,
