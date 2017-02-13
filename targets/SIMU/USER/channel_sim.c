@@ -327,8 +327,8 @@ void do_DL_sig(channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX][MAX_N
 	eNB_output_mask[UE_id]=0;
       
 
-	double *r_re_p[2] = {r_re_DL[eNB_id][0],r_re_DL[eNB_id][1]};
-	double *r_im_p[2] = {r_im_DL[eNB_id][0],r_im_DL[eNB_id][1]};
+	double *r_re_p[2] = {r_re_DL[UE_id][0],r_re_DL[UE_id][1]};
+	double *r_im_p[2] = {r_im_DL[UE_id][0],r_im_DL[UE_id][1]};
 
 #ifdef DEBUG_SIM
 	rx_pwr = signal_energy_fp(r_re_p,r_im_p,nb_antennas_rx,frame_parms->ofdm_symbol_size,sf_offset)/(12.0*frame_parms->N_RB_DL);
