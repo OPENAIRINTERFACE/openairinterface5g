@@ -4001,6 +4001,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     break;
 
   case format1A:
+    if (!dlsch[0]) return -1;
 
     switch (frame_parms->N_RB_DL) {
     case 6:
@@ -4414,6 +4415,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     break;
 
   case format1C:
+    if (!dlsch[0]) return -1;
 
     harq_pid = 0;
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
@@ -4549,6 +4551,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     break;
 
   case format1:
+    if (!dlsch[0]) return -1;
 
     switch (frame_parms->N_RB_DL) {
     case 6:
@@ -5868,6 +5871,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     break;
 
   case format1E_2A_M10PRB:
+    if (!dlsch[0]) return -1;
 
     harq_pid  = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->harq_pid;
 
