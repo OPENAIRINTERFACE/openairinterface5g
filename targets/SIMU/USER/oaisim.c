@@ -457,7 +457,8 @@ l2l1_task_state_t l2l1_state = L2L1_WAITTING;
 
 extern openair0_timestamp current_eNB_rx_timestamp[NUMBER_OF_eNB_MAX][MAX_NUM_CCs];
 extern openair0_timestamp current_UE_rx_timestamp[NUMBER_OF_UE_MAX][MAX_NUM_CCs];
-
+extern openair0_timestamp last_eNB_rx_timestamp[NUMBER_OF_eNB_MAX][MAX_NUM_CCs];
+extern openair0_timestamp last_UE_rx_timestamp[NUMBER_OF_UE_MAX][MAX_NUM_CCs];
 
 /*------------------------------------------------------------------------------*/
 void *
@@ -731,26 +732,28 @@ l2l1_task (void *args_p)
 
 	clear_eNB_transport_info (oai_emulation.info.nb_enb_local);
 
-        CC_id=0;
         int all_done=0;
         while (all_done==0) {
-          pthread_mutex_lock(&subframe_mutex);
-          int subframe_eNB_mask_local = subframe_eNB_mask;
-          int subframe_UE_mask_local  = subframe_UE_mask;
-          pthread_mutex_unlock(&subframe_mutex);
-          LOG_D(EMU,"Frame %d, Subframe %d: Checking masks %x,%x\n",frame,sf,subframe_eNB_mask,subframe_UE_mask);
-          if ((subframe_eNB_mask_local == ((1<<NB_eNB_INST)-1)) &&
-              (subframe_UE_mask_local == ((1<<NB_UE_INST)-1)))
-             all_done=1;
-          else
+          int i;
+          all_done = 1;
+          for (i = oai_emulation.info.first_enb_local;
+               i < oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local;
+               i++)
+            for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
+              if (last_eNB_rx_timestamp[i][CC_id] != current_eNB_rx_timestamp[i][CC_id]) {
+                all_done = 0;
+                break;
+              }
+          if (all_done == 1)
+            for (i = 0; i < NB_UE_INST; i++)
+              for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
+                if (last_UE_rx_timestamp[i][CC_id] != current_UE_rx_timestamp[i][CC_id]) {
+                  all_done = 0;
+                  break;
+                }
+          if (all_done == 0)
 	    usleep(500);
         }
-
-        //clear subframe masks for next round
-        pthread_mutex_lock(&subframe_mutex);
-        subframe_eNB_mask=0;
-        subframe_UE_mask=0;
-        pthread_mutex_unlock(&subframe_mutex);
 
         // increment timestamps
         for (eNB_inst = oai_emulation.info.first_enb_local;
@@ -758,11 +761,12 @@ l2l1_task (void *args_p)
               < (oai_emulation.info.first_enb_local
                  + oai_emulation.info.nb_enb_local));
              eNB_inst++) {
-	  
-	  current_eNB_rx_timestamp[eNB_inst][CC_id] += PHY_vars_eNB_g[eNB_inst][CC_id]->frame_parms.samples_per_tti;
+          for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
+            current_eNB_rx_timestamp[eNB_inst][CC_id] += PHY_vars_eNB_g[eNB_inst][CC_id]->frame_parms.samples_per_tti;
         }
         for (UE_inst = 0; UE_inst<NB_UE_INST;UE_inst++) {
-	  current_UE_rx_timestamp[UE_inst][CC_id] += PHY_vars_UE_g[UE_inst][CC_id]->frame_parms.samples_per_tti;
+          for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
+            current_UE_rx_timestamp[UE_inst][CC_id] += PHY_vars_UE_g[UE_inst][CC_id]->frame_parms.samples_per_tti;
         }
 
         for (eNB_inst = oai_emulation.info.first_enb_local;

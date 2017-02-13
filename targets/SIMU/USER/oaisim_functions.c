@@ -998,13 +998,15 @@ int UE_trx_set_gains(openair0_device *device, openair0_config_t *openair0_cfg) {
 extern pthread_mutex_t subframe_mutex;
 extern int subframe_eNB_mask,subframe_UE_mask;
 
-int eNB_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
-
+int eNB_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc)
+{
+  int ret = nsamps;
   int eNB_id = device->Mod_id;
   int CC_id  = device->CC_id;
 
   int subframe;
-  int sample_count=0;
+  int read_samples, max_samples;
+  openair0_timestamp last = last_eNB_rx_timestamp[eNB_id][CC_id];
 
   *ptimestamp = last_eNB_rx_timestamp[eNB_id][CC_id];
 
@@ -1014,49 +1016,55 @@ int eNB_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void *
 	(*ptimestamp/PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti)%10);
   // if we're at a subframe boundary generate UL signals for this eNB
 
-  while (sample_count<nsamps) {
-    while (current_eNB_rx_timestamp[eNB_id][CC_id]<
-	   (nsamps+last_eNB_rx_timestamp[eNB_id][CC_id])) {
+  while (nsamps) {
+    while (current_eNB_rx_timestamp[eNB_id][CC_id] == last) {
       LOG_D(EMU,"eNB: current TS %llu, last TS %llu, sleeping\n",current_eNB_rx_timestamp[eNB_id][CC_id],last_eNB_rx_timestamp[eNB_id][CC_id]);
       usleep(500);
     }
 
-    // tell top-level we are busy
-    pthread_mutex_lock(&subframe_mutex);
-    subframe_eNB_mask|=(1<<eNB_id);
-    pthread_mutex_unlock(&subframe_mutex); 
+    read_samples = nsamps;
+    max_samples = current_eNB_rx_timestamp[eNB_id][CC_id]-last;
+    if (read_samples > max_samples)
+      read_samples = max_samples;
+
+    last += read_samples;
+    nsamps -= read_samples;
+
+    if (current_eNB_rx_timestamp[eNB_id][CC_id] == last) {
+      subframe = (last/PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti)%10;
+      //subframe = (subframe+9) % 10;
+
+      LOG_D(PHY,"eNB_trx_read generating UL subframe %d (Ts %llu, current TS %llu)\n",
+            subframe,(unsigned long long)*ptimestamp,
+            (unsigned long long)current_eNB_rx_timestamp[eNB_id][CC_id]);
     
-    subframe = (last_eNB_rx_timestamp[eNB_id][CC_id]/PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti)%10;
-    LOG_D(PHY,"eNB_trx_read generating UL subframe %d (Ts %llu, current TS %llu)\n",
-	  subframe,(unsigned long long)*ptimestamp,
-	  (unsigned long long)current_eNB_rx_timestamp[eNB_id][CC_id]);
-    
-    do_UL_sig(UE2eNB,
-	      enb_data,
-	      ue_data,
-	      subframe,
-	      0,  // abstraction_flag
-	      &PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms,
-	      0,  // frame is only used for abstraction
-	      eNB_id,
-	      CC_id);
-  
-    last_eNB_rx_timestamp[eNB_id][CC_id] += PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti;
-    sample_count += PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti;
+      do_UL_sig(UE2eNB,
+                enb_data,
+                ue_data,
+                subframe,
+                0,  // abstraction_flag
+                &PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms,
+                0,  // frame is only used for abstraction
+                eNB_id,
+                CC_id);
+
+      last_eNB_rx_timestamp[eNB_id][CC_id] = last;
+    }
   }
   
+  last_eNB_rx_timestamp[eNB_id][CC_id] = last;
 
-
-  return(nsamps);
+  return ret;
 }
 
-int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
-
+int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc)
+{
+  int ret = nsamps;
   int UE_id = device->Mod_id;
   int CC_id  = device->CC_id;
   int subframe;
-  int sample_count=0;
-  int read_size;
+  int read_samples, max_samples;
+  openair0_timestamp last = last_UE_rx_timestamp[UE_id][CC_id];
 
   *ptimestamp = last_UE_rx_timestamp[UE_id][CC_id];
 
@@ -1065,14 +1073,19 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
         (unsigned long long)last_UE_rx_timestamp[UE_id][CC_id],
 	cc);
 
-  if (nsamps < PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)
-    read_size = nsamps;
-  else
-    read_size = PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti;
-
-  while (sample_count<nsamps) {
-    while (current_UE_rx_timestamp[UE_id][CC_id] < 
-	   (last_UE_rx_timestamp[UE_id][CC_id]+read_size)) {
+  while (nsamps) {
+    /* wait for all processing to be finished */
+    while (1) {
+      PHY_VARS_UE *UE = PHY_vars_UE_g[UE_id][0];
+      int ready = 1;
+      int i;
+      for (i = 0; i < 2; i++)
+        if (UE->proc.proc_rxtx[i].instance_cnt_rxtx >= 0) ready = 0;
+      if (UE->proc.instance_cnt_synch >= 0) ready = 0;
+      if (ready) break;
+      usleep(500);
+    }
+    while (current_UE_rx_timestamp[UE_id][CC_id] == last) {
       LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
 
       usleep(500);
@@ -1080,40 +1093,39 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 
     LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
       
-    // tell top-level we are busy 
-    pthread_mutex_lock(&subframe_mutex);
-    subframe_UE_mask|=(1<<UE_id);
-    pthread_mutex_unlock(&subframe_mutex);
+    read_samples = nsamps;
+    max_samples = current_UE_rx_timestamp[UE_id][CC_id]-last;
+    if (read_samples > max_samples)
+      read_samples = max_samples;
 
+    last += read_samples;
+    nsamps -= read_samples;
 
-    // otherwise we have one subframe here so generate the received signal
-    subframe = (last_UE_rx_timestamp[UE_id][CC_id]/PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)%10;
-    if ((last_UE_rx_timestamp[UE_id][CC_id]%PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti) > 0)
-      subframe++;
+    if (current_UE_rx_timestamp[UE_id][CC_id] == last) {
+      // we have one subframe here so generate the received signal
+      subframe = (last/PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)%10;
+      //subframe = (subframe+9) % 10;
 
-    last_UE_rx_timestamp[UE_id][CC_id] += read_size;
-    sample_count += read_size;
- 
-    if (subframe > 9) 
-      return(nsamps);
+      LOG_D(PHY,"UE_trx_read generating DL subframe %d (Ts %llu, current TS %llu)\n",
+            subframe,(unsigned long long)*ptimestamp,
+            (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id]);
 
-    LOG_D(PHY,"UE_trx_read generating DL subframe %d (Ts %llu, current TS %llu)\n",
-	  subframe,(unsigned long long)*ptimestamp,
-	  (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id]);    
-    do_DL_sig(eNB2UE,
-	      enb_data,
-	      ue_data,
-	      subframe,
-	      0, //abstraction_flag,
-	      &PHY_vars_UE_g[UE_id][CC_id]->frame_parms,
-	      UE_id,
-	      CC_id);
+      do_DL_sig(eNB2UE,
+                enb_data,
+                ue_data,
+                subframe,
+                0, //abstraction_flag,
+                &PHY_vars_UE_g[UE_id][CC_id]->frame_parms,
+                UE_id,
+                CC_id);
 
-
+      last_UE_rx_timestamp[UE_id][CC_id] = last;
+    }
   }
 
+  last_UE_rx_timestamp[UE_id][CC_id] = last;
 
-  return(nsamps);
+  return ret;
 }
 
 int eNB_trx_write(openair0_device *device,openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
