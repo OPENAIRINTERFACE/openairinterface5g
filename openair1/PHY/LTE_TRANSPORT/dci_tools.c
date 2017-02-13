@@ -4043,7 +4043,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
         NPRB = RIV2nb_rb_LUT6[rballoc];
         dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
-        dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
 
       }
 
@@ -4101,9 +4100,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
         dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
         NPRB = RIV2nb_rb_LUT25[rballoc];
         dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
-
-        dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
-
       }
 
       if (vrb_type == LOCALIZED) {
@@ -4157,9 +4153,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
         dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
         NPRB = RIV2nb_rb_LUT50[rballoc];
         dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
-
-        dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
-
       }
 
       if (vrb_type == LOCALIZED) {
@@ -4227,9 +4220,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
         dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
         NPRB = RIV2nb_rb_LUT100[rballoc];
         dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
-
-        dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
-
       }
 
       if (vrb_type == LOCALIZED) {
@@ -5153,12 +5143,10 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
     if (dlsch0_harq != NULL) {
       dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
-      dlsch0->g_pucch += delta_PUCCH_lut[TPC&3];
     }
 
     if (dlsch1_harq != NULL) {
       dlsch1_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
-      dlsch1->g_pucch += delta_PUCCH_lut[TPC&3];
     }
 
     // assume one layer per codeword (2 antenna port case)
