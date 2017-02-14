@@ -124,6 +124,7 @@ int logInit (void)
 #endif
   }
 
+
 #if ! defined(CN_BUILD)
   g_log->log_component[PHY].name = "PHY";
   g_log->log_component[PHY].level = LOG_EMERG;

@@ -307,7 +307,7 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
     Ngroup_PHICH<<=1;
   }
 
-  //#ifdef DEBUG_PHICH
+  #ifdef DEBUG_PHICH
   printf("Ngroup_PHICH %d (phich_config_common.phich_resource %d,phich_config_common.phich_duration %s, NidCell %d,Ncp %d, frame_type %d), smallest pcfich REG %d, n0 %d, n1 %d (first PHICH REG %d)\n",
 	 ((frame_parms->Ncp == NORMAL)?Ngroup_PHICH:(Ngroup_PHICH>>1)),
 	 frame_parms->phich_config_common.phich_resource,
@@ -317,7 +317,7 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
 	 n0,
 	 n1,
 	 ((frame_parms->Nid_cell))%n0);
-  //#endif
+  #endif
 
   // This is the algorithm from Section 6.9.3 in 36-211, it works only for normal PHICH duration for now ...
 
@@ -371,9 +371,9 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
       if (frame_parms->phich_reg[mprime][2]>=pcfich_reg[(frame_parms->pcfich_first_reg_idx+3)&3])
         frame_parms->phich_reg[mprime][2]++;
       
-      //#ifdef DEBUG_PHICH
+      #ifdef DEBUG_PHICH
       printf("phich_reg :%d => %d,%d,%d\n",mprime,frame_parms->phich_reg[mprime][0],frame_parms->phich_reg[mprime][1],frame_parms->phich_reg[mprime][2]);
-      //#endif
+      #endif
     } else { // extended PHICH duration
       frame_parms->phich_reg[mprime<<1][0] = (frame_parms->Nid_cell + mprime)%n0;
       frame_parms->phich_reg[1+(mprime<<1)][0] = (frame_parms->Nid_cell + mprime)%n0;
