@@ -62,6 +62,7 @@
 #endif //PHY_EMUL
 
 #include "SCHED/defs.h"
+/* TODO: this abstraction_flag here is very hackish - find a proper solution */
 extern uint8_t abstraction_flag;
 void dl_phy_sync_success(module_id_t   module_idP,
                          frame_t       frameP,
