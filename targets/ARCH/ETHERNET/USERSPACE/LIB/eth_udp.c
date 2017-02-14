@@ -197,6 +197,7 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
 
   int nblocks = nsamps;  
   int bytes_sent = 0;
+
   
   eth_state_t *eth = (eth_state_t*)device->priv;
   
@@ -216,7 +217,6 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
   }
    
   eth->tx_nsamps = nblocks;
-  
   bytes_sent = sendto(eth->sockfd,
 		      buff[0], 
 		      packet_size,
@@ -245,6 +245,8 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
   //sendto_flag|=flags;
   eth->tx_nsamps=nsamps;
 
+ 
+
   for (i=0;i<cc;i++) {	
     /* buff[i] points to the position in tx buffer where the payload to be sent is
        buff2 points to the position in tx buffer where the packet header will be placed */
@@ -264,7 +266,8 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
     *(uint16_t *)(buff2 + sizeof(uint16_t)) = 1+(i<<1);
     *(openair0_timestamp *)(buff2 + sizeof(int32_t)) = timestamp;
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TX_SEQ_NUM, pck_seq_num);
-
+    
+    
     while(bytes_sent < UDP_PACKET_SIZE_BYTES(nsamps)) {
 #if DEBUG   
       printf("------- TX ------: buff2 current position=%d remaining_bytes=%d  bytes_sent=%d \n",

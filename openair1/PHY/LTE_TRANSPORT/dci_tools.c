@@ -3831,6 +3831,8 @@ int generate_ue_dlsch_params_from_dci(int frame,
   LTE_UE_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
   LTE_DL_UE_HARQ_t *dlsch0_harq,*dlsch1_harq;
 
+  if (!dlsch[0]) return -1;
+
 #ifdef DEBUG_DCI
   LOG_D(PHY,"dci_tools.c: Filling ue dlsch params -> rnti %x, SFN/SF %d/%d, dci_format %s\n",
       rnti,
@@ -7395,8 +7397,8 @@ int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *eNB,
     rb_alloc = rballoc;
 
     if (rb_alloc>RIV_max) {
-      LOG_E(PHY,"Format 0: rb_alloc > RIV_max\n");
-      mac_xface->macphy_exit("Format 0: rb_alloc > RIV_max\n");
+      LOG_E(PHY,"Format 0: rb_alloc (%d) > RIV_max (%d)\n",rb_alloc,RIV_max);
+      mac_xface->macphy_exit("Format 0: error");
       return(-1);
     }
 

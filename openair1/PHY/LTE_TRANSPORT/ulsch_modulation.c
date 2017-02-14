@@ -415,7 +415,7 @@ void ulsch_modulation(int32_t **txdataF,
     return;
   }
 
-  if (first_rb >25 ) {
+  if (first_rb > frame_parms->N_RB_UL) {
     printf("ulsch_modulation.c: Frame %d, Subframe %d Illegal first_rb %d\n",frame,subframe,first_rb);
     return;
   }
