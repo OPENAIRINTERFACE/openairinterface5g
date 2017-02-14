@@ -181,11 +181,41 @@ uint8_t find_active_UEs(module_id_t module_idP,int CC_id){
 */
 
 
-// get aggregatiob form phy for a give UE
-unsigned char process_ue_cqi (module_id_t module_idP, int ue_idP)
+// get aggregation (L) form phy for a give UE
+unsigned char get_aggregation (uint8_t bw_index, uint8_t cqi, uint8_t dci_fmt)
 {
-  unsigned char aggregation=1;
-  // check the MCS and SNR and set the aggregation accordingly
+  unsigned char aggregation=3;
+  
+  switch (dci_fmt){
+    
+  case format0:
+    aggregation = cqi2fmt0_agg[bw_index][cqi];
+    break;
+  case format1:
+  case format1A:
+  case format1B:
+  case format1D:
+    aggregation = cqi2fmt1x_agg[bw_index][cqi]; 
+    break;
+  case format2:
+  case format2A:
+  case format2B:
+  case format2C:
+  case format2D:
+    aggregation = cqi2fmt2x_agg[bw_index][cqi]; 
+    break;
+  case format1C:
+  case format1E_2A_M10PRB:
+  case format3:
+  case format3A:
+  case format4:
+  default:
+    LOG_W(MAC,"unsupported DCI format %d\n",dci_fmt);
+  }
+
+   LOG_D(MAC,"Aggregation level %d (cqi %d, bw_index %d, format %d)\n", 
+   	1<<aggregation, cqi,bw_index,dci_fmt);
+   
   return aggregation;
 }
 #ifdef CBA
@@ -714,6 +744,38 @@ uint32_t allocate_prbs(int UE_id,unsigned char nb_rb, uint32_t *rballoc)
   return(rballoc_dci);
 }
 
+int get_bw_index(module_id_t module_id, uint8_t CC_id)
+{
+
+  int bw_index=0;
+  LTE_DL_FRAME_PARMS* frame_parms = mac_xface->get_lte_frame_parms(module_id,CC_id);
+
+  switch (frame_parms->N_RB_DL) {
+  case 6: // 1.4 MHz
+    bw_index=0;
+    break;
+
+  case 25: // 5HMz
+    bw_index=1;
+    break;
+
+  case 50: // 10HMz
+    bw_index=2;
+    break;
+
+  case 100: // 20HMz
+    bw_index=3;
+    break;
+
+  default:
+    bw_index=1;
+    LOG_W(MAC,"[eNB %d] N_DL_RB %d unknown for CC_id %d, setting bw_index to 1\n", module_id, CC_id);
+    break;
+  }
+
+  return bw_index;
+}
+
 int get_min_rb_unit(module_id_t module_id, uint8_t CC_id)
 {
 
@@ -1044,8 +1106,7 @@ try_again:
                 1<<DCI_pdu->dci_alloc[j].L,
                 nCCE,nCCE_max,DCI_pdu->num_pdcch_symbols);
         }
-	//dump_CCE_table(CCE_table,nCCE_max,subframeP,dci_alloc->rnti,dci_alloc->L);
-
+	//dump_CCE_table(CCE_table,nCCE_max,subframeP,dci_alloc->rnti,1<<dci_alloc->L);
         goto failed;
       }
       DCI_pdu->num_pdcch_symbols++;

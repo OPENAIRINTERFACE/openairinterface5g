@@ -574,7 +574,8 @@ l2l1_task (void *args_p)
   itti_mark_task_ready (TASK_L2L1);
   LOG_I(EMU, "TASK_L2L1 is READY\n");
 
-  if (oai_emulation.info.nb_enb_local > 0) {
+  if ((oai_emulation.info.nb_enb_local > 0) && 
+      (oai_emulation.info.node_function[0] < NGFI_RAU_IF4p5)) {
     /* Wait for the initialize message */
     do {
       if (message_p != NULL) {
@@ -706,6 +707,8 @@ l2l1_task (void *args_p)
     update_ocm ();
 
     for (sf = 0; sf < 10; sf++) {
+      LOG_D(EMU,"************************* Subframe %d\n",sf);
+
       start_meas (&oaisim_stats_f);
 
       wait_for_slot_isr ();
@@ -742,7 +745,7 @@ l2l1_task (void *args_p)
               (subframe_UE_mask_local == ((1<<NB_UE_INST)-1)))
              all_done=1;
           else
-	    usleep(500);
+	    usleep(1500);
         }
 
         //clear subframe masks for next round
@@ -1001,7 +1004,8 @@ l2l1_task (void *args_p)
 	    do_DL_sig (r_re0,
 		       r_im0,
 		       r_re,
-		       r_im,
+		       r_im,n
+
 		       s_re,
 		       s_im,
 		       eNB2UE,
@@ -1074,7 +1078,7 @@ l2l1_task (void *args_p)
 
 
     }
-  
+    /*
     if ((frame >= 10) && (frame <= 11) && (abstraction_flag == 0)
 #ifdef PROC
 	&&(Channel_Flag==0)
@@ -1121,6 +1125,7 @@ l2l1_task (void *args_p)
 		    * 10,
 		    1, 1);
     }
+    */
     
     //#ifdef XFORMS
     if (xforms==1) {

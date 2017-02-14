@@ -104,6 +104,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   rnti_t rnti;
   void         *DLSCH_dci=NULL;
   int size_bits=0,size_bytes=0;
+  
+  LTE_eNB_UE_stats  *eNB_UE_stats   = NULL;
 
 #if defined(FLEXRAN_AGENT_SB_IF)
   Protocol__FlexranMessage *msg;
@@ -150,9 +152,9 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     eNB_mac_inst[module_idP].UE_list.UE_sched_ctrl[i].ul_inactivity_timer++;
 
     eNB_mac_inst[module_idP].UE_list.UE_sched_ctrl[i].cqi_req_timer++;
-    
+    eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
 
-    if (mac_xface->get_eNB_UE_stats(module_idP, CC_id, rnti)==NULL) {
+    if (eNB_UE_stats==NULL) {
 	//mac_remove_ue(module_idP, i, frameP, subframeP);
       //Inform the controller about the UE deactivation. Should be moved to RRC agent in the future
 #if defined(FLEXRAN_AGENT_SB_IF)
@@ -247,8 +249,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 	  add_ue_spec_dci(DCI_pdu[CC_id],
 			  DLSCH_dci,
 			  rnti,
-			    size_bytes,
-			  process_ue_cqi (module_idP,i),//aggregation,
+			  size_bytes,
+			  get_aggregation(get_bw_index(module_idP,CC_id),eNB_UE_stats->DL_cqi[0],format1A),
 			  size_bits,
 			  format1A,
 			  0);

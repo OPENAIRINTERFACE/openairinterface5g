@@ -68,7 +68,7 @@
 /* this function checks that get_eNB_UE_stats returns
  * a non-NULL pointer for all CCs for a given UE
  */
-static int phy_stats_exist(module_id_t Mod_id, int rnti)
+int phy_stats_exist(module_id_t Mod_id, int rnti)
 {
   int CC_id;
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
@@ -1081,8 +1081,7 @@ void dlsch_scheduler_pre_processor_allocate (module_id_t   Mod_id,
 void ulsch_scheduler_pre_processor(module_id_t module_idP,
                                    int frameP,
                                    sub_frame_t subframeP,
-                                   uint16_t *first_rb,
-                                   uint8_t aggregation)
+                                   uint16_t *first_rb)
 {
 
   int16_t            i;

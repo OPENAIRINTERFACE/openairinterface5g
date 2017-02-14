@@ -55,6 +55,36 @@ const uint32_t Extended_BSR_TABLE[BSR_TABLE_SIZE] = {0,10,13,16,19,23,29,35,43,5
                                                      1067031,1312097,1613447,1984009,2439678,3000000,
                                                      6000000};
 
+//#define MAX_SIZE_OF_AGG3   576 
+//#define MAX_SIZE_OF_AGG2   288
+//#define MAX_SIZE_OF_AGG1   144
+//#define MAX_SIZE_OF_AGG0   72
+
+/*
+ * If the CQI is low, then scheduler will use a higher aggregation level and lower aggregation level otherwise
+ * this is also dependent to transmission mode, where an offset could be defined
+ */
+// the follwoing three tables are calibrated for TXMODE 1 and 2
+const uint8_t cqi2fmt0_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE]= { 
+  {3, 3, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0}, // 1.4_DCI0_CRC_Size= 37 bits
+  //{3, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0}, // 5_DCI0_CRC_SIZE = 41
+  {3, 3, 3, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0}, // 5_DCI0_CRC_SIZE = 41
+  {3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0}, // 10_DCI0_CRC_SIZE = 43
+  {3, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0}   // 20_DCI0_CRC_SIZE = 44
+};
+const uint8_t cqi2fmt1x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE]= { 
+  {3, 3, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0}, // 1.4_DCI0_CRC_Size < 38 bits
+  {3, 3, 3, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0}, // 5_DCI0_CRC_SIZE  < 43
+  {3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0}, // 10_DCI0_CRC_SIZE  < 47
+  {3, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0}   // 20_DCI0_CRC_SIZE  < 55
+};
+const uint8_t cqi2fmt2x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE]= { 
+  {3, 3, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0}, // 1.4_DCI0_CRC_Size= 47 bits
+  {3, 3, 3, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0}, // 5_DCI0_CRC_SIZE = 55
+  {3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0}, // 10_DCI0_CRC_SIZE = 59
+  {3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0}   // 20_DCI0_CRC_SIZE = 64
+};
+
 //uint32_t EBSR_Level[63]={0,10,13,16,19,23,29,35,43,53,65,80,98,120,147,181};
 
 MAC_xface *mac_xface;

@@ -172,7 +172,7 @@ Protocol__FlexranMessage* flexran_agent_process_timeout(long timer_id, void* tim
   struct flexran_agent_timer_element_s *found = get_timer_entry(timer_id);
  
   if (found == NULL ) goto error;
-  LOG_I(FLEXRAN_AGENT, "Found the entry (%p): timer_id is 0x%lx  0x%lx\n", found, timer_id, found->timer_id);
+  LOG_D(FLEXRAN_AGENT, "Found the entry (%p): timer_id is 0x%lx  0x%lx\n", found, timer_id, found->timer_id);
   
   if (timer_args == NULL)
     LOG_W(FLEXRAN_AGENT,"null timer args\n");

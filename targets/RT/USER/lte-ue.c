@@ -1176,7 +1176,7 @@ void *UE_thread(void *arg) {
 
 	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
 					       &timestamp1,
-						   rxp,
+					       rxp,
 					       UE->frame_parms.nb_prefix_samples0 - rx_off_diff,
 					       UE->frame_parms.nb_antennas_rx);
 
@@ -1269,26 +1269,28 @@ void *UE_thread(void *arg) {
 	  }
 	}// for sf=0..10
 
-	  uint8_t proc_select = 9&1;
-	  UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[proc_select];
+	uint8_t proc_select = 9&1;
+	UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[proc_select];
 
-	if ((UE->rx_offset<(5*UE->frame_parms.samples_per_tti)) &&
-	    (UE->rx_offset > 0) &&
-	    (rx_correction_timer == 0)) {
-	  rx_off_diff = -1 ;
-	  LOG_D(PHY,"AbsSubframe %d.%d UE->rx_offset %d > %d, diff %d\n",proc->frame_rx,proc->subframe_rx,UE->rx_offset,0,rx_off_diff);
-	  rx_correction_timer = 5;
-	} else if ((UE->rx_offset>(5*UE->frame_parms.samples_per_tti)) && 
-		   (UE->rx_offset < ((10*UE->frame_parms.samples_per_tti))) &&
-		   (rx_correction_timer == 0)) {   // moving to the left so drop rx_off_diff samples
-	  rx_off_diff = 1;
-	  LOG_D(PHY,"AbsSubframe %d.%d UE->rx_offset %d < %d, diff %d\n",proc->frame_rx,proc->subframe_rx,UE->rx_offset,10*UE->frame_parms.samples_per_tti,rx_off_diff);
+	if (UE->no_timing_correction == 0) {
+	  if ((UE->rx_offset<(5*UE->frame_parms.samples_per_tti)) &&
+	      (UE->rx_offset > 0) &&
+	      (rx_correction_timer == 0)) {
+	    rx_off_diff = -1 ;
+	    LOG_D(PHY,"AbsSubframe %d.%d UE->rx_offset %d > %d, diff %d\n",proc->frame_rx,proc->subframe_rx,UE->rx_offset,0,rx_off_diff);
+	    rx_correction_timer = 5;
+	  } else if ((UE->rx_offset>(5*UE->frame_parms.samples_per_tti)) && 
+		     (UE->rx_offset < ((10*UE->frame_parms.samples_per_tti))) &&
+		     (rx_correction_timer == 0)) {   // moving to the left so drop rx_off_diff samples
+	    rx_off_diff = 1;
+	    LOG_D(PHY,"AbsSubframe %d.%d UE->rx_offset %d < %d, diff %d\n",proc->frame_rx,proc->subframe_rx,UE->rx_offset,10*UE->frame_parms.samples_per_tti,rx_off_diff);
+	    
+	    rx_correction_timer = 5;
+	  }
 	  
-	  rx_correction_timer = 5;
+	  if (rx_correction_timer>0)
+	    rx_correction_timer--;
 	}
-	
-	if (rx_correction_timer>0)
-	  rx_correction_timer--;
       } // start_rx_stream==1
     } // UE->is_synchronized==1
       

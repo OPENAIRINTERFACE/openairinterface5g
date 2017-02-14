@@ -2188,11 +2188,12 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
              subframe_tx,
              ue->ulsch[eNB_id]->o_ACK);
 
-  reset_ack(&ue->frame_parms,
-             ue->dlsch_SI[eNB_id]->harq_ack,
-             subframe_tx,
-             ue->ulsch[eNB_id]->o_ACK);
-
+  if (ue->dlsch_SI[eNB_id])
+    reset_ack(&ue->frame_parms,
+	      ue->dlsch_SI[eNB_id]->harq_ack,
+	      subframe_tx,
+	      ue->ulsch[eNB_id]->o_ACK);
+  
       
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
   stop_meas(&ue->phy_proc_tx);
@@ -2605,19 +2606,19 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uin
 #endif
 
   } else { 
-    /*
+    
     LOG_E(PHY,"[UE %d] frame %d, subframe %d, Error decoding PBCH!\n",
 	  ue->Mod_id,frame_rx, subframe_rx);
-
+    /*
     LOG_I(PHY,"[UE %d] rx_offset %d\n",ue->Mod_id,ue->rx_offset);
 
 
     write_output("rxsig0.m","rxs0", ue->common_vars.rxdata[0],ue->frame_parms.samples_per_tti,1,1);
 
-    write_output("H00.m","h00",&(ue->common_vars.dl_ch_estimates[0][0][0]),((ue->frame_parms.Ncp==0)?7:6)*(ue->frame_parms.ofdm_symbol_size),1,1);
-    write_output("H10.m","h10",&(ue->common_vars.dl_ch_estimates[0][2][0]),((ue->frame_parms.Ncp==0)?7:6)*(ue->frame_parms.ofdm_symbol_size),1,1);
+    write_output("H00.m","h00",&(ue->common_vars.common_vars_rx_data_per_thread[0].dl_ch_estimates[0][0][0]),((ue->frame_parms.Ncp==0)?7:6)*(ue->frame_parms.ofdm_symbol_size),1,1);
+    write_output("H10.m","h10",&(ue->common_vars.common_vars_rx_data_per_thread[0].dl_ch_estimates[0][2][0]),((ue->frame_parms.Ncp==0)?7:6)*(ue->frame_parms.ofdm_symbol_size),1,1);
 
-    write_output("rxsigF0.m","rxsF0", ue->common_vars.rxdataF[0],8*ue->frame_parms.ofdm_symbol_size,1,1);
+    write_output("rxsigF0.m","rxsF0", ue->common_vars.common_vars_rx_data_per_thread[0].rxdataF[0],8*ue->frame_parms.ofdm_symbol_size,1,1);
     write_output("PBCH_rxF0_ext.m","pbch0_ext",ue->pbch_vars[0]->rxdataF_ext[0],12*4*6,1,1);
     write_output("PBCH_rxF0_comp.m","pbch0_comp",ue->pbch_vars[0]->rxdataF_comp[0],12*4*6,1,1);
     write_output("PBCH_rxF_llr.m","pbch_llr",ue->pbch_vars[0]->llr,(ue->frame_parms.Ncp==0) ? 1920 : 1728,1,4);
@@ -2969,17 +2970,14 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 #endif
 
       }
-    } else if( (dci_alloc_rx[i].rnti == ue->ulsch[eNB_id]->cba_rnti[0]) &&
+    } 
+    /*    else if( (dci_alloc_rx[i].rnti == ue->ulsch[eNB_id]->cba_rnti[0]) &&
 	       (dci_alloc_rx[i].format == format0)) {
       // UE could belong to more than one CBA group
       // ue->Mod_id%ue->ulsch[eNB_id]->num_active_cba_groups]
 #ifdef DEBUG_PHY_PROC
       LOG_D(PHY,"[UE  %d][PUSCH] Frame %d subframe %d: Found cba rnti %x, format 0, dci_cnt %d\n",
 	    ue->Mod_id,frame_rx,subframe_rx,dci_alloc_rx[i].rnti,i);
-      /*
-	if (((frame_rx%100) == 0) || (frame_rx < 20))
-	dump_dci(&ue->frame_parms, &dci_alloc_rx[i]);
-      */
 #endif
 
       ue->ulsch_no_allocation_counter[eNB_id] = 0;
@@ -3003,9 +3001,8 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 	LOG_D(PHY,"[UE  %d] Generate UE ULSCH CBA_RNTI format 0 (subframe %d)\n",ue->Mod_id,subframe_rx);
 #endif
 	ue->ulsch[eNB_id]->num_cba_dci[(subframe_rx+4)%10]++;
-      }
-    }
-
+	}
+    */
     else {
 #ifdef DEBUG_PHY_PROC
       LOG_D(PHY,"[UE  %d] frame %d, subframe %d: received DCI %d with RNTI=%x (C-RNTI:%x, CBA_RNTI %x) and format %d!\n",ue->Mod_id,frame_rx,subframe_rx,i,dci_alloc_rx[i].rnti,
