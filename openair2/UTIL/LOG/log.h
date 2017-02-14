@@ -370,10 +370,10 @@ static inline uint64_t checkTCPU(int timeout, char * file, int line) {
     double microCycles=(double)(cpuf*1000);
     int duration=(int)((cur-last)/microCycles);
     if ( last!=0 && duration > timeout ) {
-      struct timespec ts;
-      clock_gettime(CLOCK_MONOTONIC, &ts);
-      printf("%.3f %s:%d lte-ue delay %d (exceed %d), CPU for this period: %.2f\n", ts.tv_sec+ts.tv_nsec/(1000*1000*1000.0), file, line,
-               duration, timeout, (CPUTime-lastCPUTime)/1000.0 );
+      //struct timespec ts;
+      //clock_gettime(CLOCK_MONOTONIC, &ts);
+      printf("%s:%d lte-ue delay %d (exceed %d), CPU for this period: %lld\n", file, line,
+               duration, timeout, (long long)CPUTime-lastCPUTime );
     }
     last=cur;
     lastCPUTime=CPUTime;
