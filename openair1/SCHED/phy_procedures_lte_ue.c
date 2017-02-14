@@ -986,8 +986,8 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, uint8_t empt
   int subframe_tx = proc->subframe_tx;
   int frame_tx = proc->frame_tx;
   int ulsch_start;
-#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
   int overflow=0;
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
   int k,l;
   int dummy_tx_buffer[3840*4] __attribute__((aligned(16)));
 #endif
@@ -1015,14 +1015,15 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, uint8_t empt
   ulsch_start = (frame_parms->samples_per_tti*subframe_tx)-ue->N_TA_offset; //-ue->timing_advance;
 #endif //else EXMIMO
 
-#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
+//#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
   if (empty_subframe)
   {
 //#if 1
       overflow = ulsch_start - 9*frame_parms->samples_per_tti;
       for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
 
-          memset(&ue->common_vars.txdata[aa][ulsch_start],0,4*cmin(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,ulsch_start+frame_parms->samples_per_tti));
+          //memset(&ue->common_vars.txdata[aa][ulsch_start],0,4*cmin(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,ulsch_start+frame_parms->samples_per_tti));
+          memset(&ue->common_vars.txdata[aa][ulsch_start],0,4*cmin(frame_parms->samples_per_tti-overflow,frame_parms->samples_per_tti));
 
           if (overflow> 0)
               memset(&ue->common_vars.txdata[aa][0],0,4*overflow);
@@ -1043,7 +1044,7 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, uint8_t empt
 #endif*/
       return;
   }
-#endif
+//#endif
 
   if ((frame_tx%100) == 0)
     LOG_D(PHY,"[UE %d] Frame %d, subframe %d: ulsch_start = %d (rxoff %d, HW TA %d, timing advance %d, TA_offset %d\n",
