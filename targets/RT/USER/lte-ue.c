@@ -528,11 +528,9 @@ static void *UE_thread_rxn_txnp4(void *arg) {
         initRefTimes(t3);
         pickTime(current);
         updateTimes(proc->gotIQs, &t2, 10000, "Delay to wake up UE_Thread_Rx (case 2)");
-      check(2200);
 
         // Process Rx data for one sub-frame
         lte_subframe_t sf_type = subframe_select( &UE->frame_parms, proc->subframe_rx);
-      check(100);
         if ((sf_type == SF_DL) ||
                 (UE->frame_parms.frame_type == FDD) ||
                 (sf_type == SF_S)) {
@@ -555,7 +553,6 @@ static void *UE_thread_rxn_txnp4(void *arg) {
             }
             phy_procedures_UE_RX( UE, proc, 0, 0, UE->mode, no_relay, NULL );
         }
-        check(900);
         if (UE->mac_enabled==1) {
 
             ret = mac_xface->ue_scheduler(UE->Mod_id,
@@ -585,7 +582,6 @@ static void *UE_thread_rxn_txnp4(void *arg) {
                        UE->Mod_id, proc->frame_rx, proc->subframe_tx,txt );
             }
         }
-	check(350);
         // Prepare the future Tx data
 
         if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
@@ -599,7 +595,6 @@ static void *UE_thread_rxn_txnp4(void *arg) {
             if (UE->mode != loop_through_memory)
                 phy_procedures_UE_S_TX(UE,0,0,no_relay);
         updateTimes(current, &t3, 10000, "Delay to process sub-frame (case 3)");
-       check(300);
 
     }
 

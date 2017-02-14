@@ -266,9 +266,6 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
     s->rx_count += nsamps;
     s->rx_timestamp = s->rx_md.time_spec.to_ticks(s->sample_rate);
     *ptimestamp = s->rx_timestamp;
-#ifdef DEBUG_USRP
-    check(50);
-#endif
     return samples_received;
 }
 
