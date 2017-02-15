@@ -271,6 +271,9 @@ void *nas_ue_task(void *args_p)
       }
     }
   }
+
+  free(users);
+  return NULL;
 }
 
 nas_user_t *find_user_from_fd(nas_user_container_t *users, int fd) {
