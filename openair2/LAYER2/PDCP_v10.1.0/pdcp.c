@@ -816,6 +816,9 @@ pdcp_data_ind(
         ((pdcp_data_ind_header_t *) new_sdu_p->data)->rb_id = rb_id;
 #if defined(OAI_EMU)
         ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id + oai_emulation.info.nb_enb_local - oai_emulation.info.first_ue_local;
+#else
+        /* TODO: inst is 1 for the UE or do we keep 0? Seems to be 1 but not sure */
+        ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = 1;
 #endif
       } else {
         ((pdcp_data_ind_header_t*) new_sdu_p->data)->rb_id = rb_id + (ctxt_pP->module_id * maxDRB);
