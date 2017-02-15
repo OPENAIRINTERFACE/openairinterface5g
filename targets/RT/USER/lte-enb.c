@@ -2170,11 +2170,11 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	malloc_IF4p5_buffer(eNB);
 
       }
-    }
 
-    if (setup_eNB_buffers(PHY_vars_eNB_g[inst],&openair0_cfg[CC_id])!=0) {
-      printf("Exiting, cannot initialize eNodeB Buffers\n");
-      exit(-1);
+      if (setup_eNB_buffers(PHY_vars_eNB_g[inst],&openair0_cfg[CC_id])!=0) {
+	printf("Exiting, cannot initialize eNodeB Buffers\n");
+	exit(-1);
+      }
     }
 
     init_eNB_proc(inst);
