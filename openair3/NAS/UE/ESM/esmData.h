@@ -204,13 +204,8 @@ typedef esm_data_context_t esm_data_t;
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-// FIXME prototype and buffer allocation
-extern char ip_addr_str[100];
-
-extern char *esm_data_get_ipv4_addr(const OctetString *ip_addr);
-
-extern char *esm_data_get_ipv6_addr(const OctetString *ip_addr);
-
-extern char *esm_data_get_ipv4v6_addr(const OctetString *ip_addr);
+char *esm_data_get_ipv4_addr(const OctetString *ip_addr, char *ret);
+char *esm_data_get_ipv6_addr(const OctetString *ip_addr, char *ret);
+char *esm_data_get_ipv4v6_addr(const OctetString *ip_addr, char *ret);
 
 #endif /* __ESMDATA_H__*/

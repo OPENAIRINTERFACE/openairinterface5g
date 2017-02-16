@@ -357,6 +357,7 @@ int esm_proc_pdn_connectivity_accept(nas_user_t *user, int pti, esm_proc_pdn_typ
   int     rc;
   int     pid = RETURNerror;
   char    apn_first_char[4];
+  char    str[128];
 
   if (isprint(apn->value[0])) {
     apn_first_char[0] = '\0';
@@ -366,9 +367,9 @@ int esm_proc_pdn_connectivity_accept(nas_user_t *user, int pti, esm_proc_pdn_typ
 
   LOG_TRACE(INFO, "ESM-PROC  - PDN connectivity accepted by the network "
             "(pti=%d) APN = %s\"%s\", IP address = %s", pti, apn_first_char, isprint(apn->value[0]) ? &apn->value[0] : &apn->value[1],
-            (pdn_type == ESM_PDN_TYPE_IPV4)? esm_data_get_ipv4_addr(pdn_addr) :
-            (pdn_type == ESM_PDN_TYPE_IPV6)? esm_data_get_ipv6_addr(pdn_addr) :
-            esm_data_get_ipv4v6_addr(pdn_addr));
+            (pdn_type == ESM_PDN_TYPE_IPV4)? esm_data_get_ipv4_addr(pdn_addr, str) :
+            (pdn_type == ESM_PDN_TYPE_IPV6)? esm_data_get_ipv6_addr(pdn_addr, str) :
+            esm_data_get_ipv4v6_addr(pdn_addr, str));
 
   /* Stop T3482 timer if running */
   esm_pt_stop_timer(esm_pt_data, pti);
