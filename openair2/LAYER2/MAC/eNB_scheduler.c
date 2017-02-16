@@ -383,10 +383,10 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
     if (mac_xface->frame_parms->frame_type == FDD) {  //FDD
       schedule_ulsch(module_idP,frameP,cooperation_flag,0,4);//,calibration_flag);
-    } else if  ((mac_xface->frame_parms->tdd_config == TDD) || //TDD
+    } else if  ((mac_xface->frame_parms->tdd_config == 0) || //TDD
                 (mac_xface->frame_parms->tdd_config == 3) ||
                 (mac_xface->frame_parms->tdd_config == 6)) {
-      //schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,4);//,calibration_flag);
+      schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,4);//,calibration_flag);
     }
 #ifndef FLEXRAN_AGENT_SB_IF
     schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
