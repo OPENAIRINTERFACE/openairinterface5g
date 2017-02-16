@@ -57,7 +57,6 @@ typedef struct rlc_am_entity_s {
   boolean_t         is_data_plane;                      /*!< \brief To know if the RLC belongs to a data radio bearer or a signalling radio bearer, for statistics and trace purpose. */
 
   rlc_buffer_occupancy_t sdu_buffer_occupancy;               /*!< \brief Number of bytes of unsegmented SDUs. */
-  rlc_buffer_occupancy_t retransmission_buffer_occupancy;    /*!< \brief Number of bytes of PDUs in retransmission buffer waiting for a ACK. */
   rlc_buffer_occupancy_t status_buffer_occupancy;            /*!< \brief Number of bytes of control PDUs waiting for transmission. */
 
   rlc_am_control_pdu_info_t  control_pdu_info;
@@ -76,7 +75,7 @@ typedef struct rlc_am_entity_s {
 
   rlc_am_tx_data_pdu_management_t *tx_data_pdu_buffer;       /*!< \brief Transmission PDU data buffer. Used also for retransmissions */
   signed int      retrans_num_pdus;                          /*!< \brief Number of PDUs in the retransmission buffer. */
-  signed int      retrans_num_bytes_to_retransmit;           /*!< \brief Number of bytes in the retransmission buffer to be retransmitted. */
+  signed int      retrans_num_bytes_to_retransmit;           /*!< \brief Number of bytes in the retransmission buffer to be retransmitted. Only payload is taken into account */
   boolean_t       force_poll;                                /*!< \brief force poll due to t_poll_retransmit time-out. */
 
   //---------------------------------------------------------------------
@@ -181,7 +180,7 @@ typedef struct rlc_am_entity_s {
 
   uint8_t           status_requested;             /*!< \brief Status bitmap requested by peer. */
   rlc_sn_t		    sn_status_triggered_delayed;   /*!< \brief SN of the last received poll for which Status is delayed until SN is out of Rx Window. */
-  frame_t           last_frame_status_indication; /*!< \brief The last frame number a  MAC status indication has been received by RLC. */
+  uint32_t          last_absolute_subframe_status_indication; /*!< \brief The last absolute subframe number a  MAC status indication has been received by RLC. */
   //-----------------------------
   // buffer occupancy measurements sent to MAC
   //-----------------------------

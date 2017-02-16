@@ -125,6 +125,7 @@ tbs_size_t mac_rlc_data_req(
   const eNB_flag_t        enb_flagP,
   const MBMS_flag_t       MBMS_flagP,
   const logical_chan_id_t channel_idP,
+  const tb_size_t         tb_sizeP,
   char             *buffer_pP)
 {
   //-----------------------------------------------------------------------------
@@ -189,12 +190,14 @@ tbs_size_t mac_rlc_data_req(
     break;
 
   case RLC_MODE_AM:
-    data_request = rlc_am_mac_data_request(&ctxt, &rlc_union_p->rlc.am);
+    if (!enb_flagP) rlc_am_set_nb_bytes_requested_by_mac(&rlc_union_p->rlc.am,tb_sizeP);
+	data_request = rlc_am_mac_data_request(&ctxt, &rlc_union_p->rlc.am);
     ret_tb_size =mac_rlc_serialize_tb(buffer_pP, data_request.data);
     break;
 
   case RLC_MODE_UM:
-    data_request = rlc_um_mac_data_request(&ctxt, &rlc_union_p->rlc.um);
+	if (!enb_flagP) rlc_um_set_nb_bytes_requested_by_mac(&rlc_union_p->rlc.um,tb_sizeP);
+	data_request = rlc_um_mac_data_request(&ctxt, &rlc_union_p->rlc.um);
     ret_tb_size = mac_rlc_serialize_tb(buffer_pP, data_request.data);
     break;
 
@@ -320,6 +323,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   const rnti_t            rntiP,
   const eNB_index_t       eNB_index,
   const frame_t           frameP,
+  const sub_frame_t 	  subframeP,
   const eNB_flag_t        enb_flagP,
   const MBMS_flag_t       MBMS_flagP,
   const logical_chan_id_t channel_idP,
@@ -337,7 +341,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   srb_flag_t             srb_flag    = (channel_idP <= 2) ? SRB_FLAG_YES : SRB_FLAG_NO;
   protocol_ctxt_t     ctxt;
 
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, enb_flagP, rntiP, frameP, 0, eNB_index);
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, enb_flagP, rntiP, frameP, subframeP, eNB_index);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MAC_RLC_STATUS_IND,VCD_FUNCTION_IN);
   memset (&mac_rlc_status_resp, 0, sizeof(mac_rlc_status_resp_t));
@@ -429,4 +433,66 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MAC_RLC_STATUS_IND,VCD_FUNCTION_OUT);
   return mac_rlc_status_resp;
 }
+
+//-----------------------------------------------------------------------------
+rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
+  const module_id_t       module_idP,
+  const rnti_t            rntiP,
+  const eNB_index_t       eNB_index,
+  const frame_t           frameP,
+  const sub_frame_t 	  subframeP,
+  const eNB_flag_t        enb_flagP,
+  const logical_chan_id_t channel_idP)
+{
+  //-----------------------------------------------------------------------------
+  rlc_buffer_occupancy_t  mac_rlc_buffer_occupancy_resp = 0;
+  rlc_mode_t             rlc_mode    = RLC_MODE_NONE;
+  rlc_union_t           *rlc_union_p = NULL;
+  hash_key_t             key         = HASHTABLE_NOT_A_KEY_VALUE;
+  hashtable_rc_t         h_rc;
+  srb_flag_t             srb_flag    = (channel_idP <= 2) ? SRB_FLAG_YES : SRB_FLAG_NO;
+  protocol_ctxt_t     ctxt;
+
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, enb_flagP, rntiP, frameP, 0, eNB_index);
+
+  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MAC_RLC_GET_BUFFER_OCCUPANCY_IND,VCD_FUNCTION_IN);
+
+
+  /* Assumptions : for UE only */
+  /* At each TTI, Buffer Occupancy is first computed in mac_rlc_status_ind called by MAC ue_scheduler() function */
+  /* Then this function is called during MAC multiplexing ue_get_sdu(), and it may be call several times for the same bearer if it is in AM mode and there are several PDU types to transmit */
+  AssertFatal(enb_flagP == FALSE,"RLC Tx mac_rlc_get_buffer_occupancy_ind function is not implemented for eNB LcId=%d\n", channel_idP);
+
+
+  key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);
+
+
+  h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
+
+  if (h_rc == HASH_TABLE_OK) {
+    rlc_mode = rlc_union_p->mode;
+  } else {
+    rlc_mode = RLC_MODE_NONE;
+    //LOG_W(RLC , "[%s] RLC not configured rb id %u lcid %u module %u!\n", __FUNCTION__, rb_id, channel_idP, ue_module_idP);
+    //LOG_D(RLC , "[%s] RLC not configured rb id %u lcid %u module %u!\n", __FUNCTION__, rb_id, channel_idP, ue_module_idP);
+  }
+
+  switch (rlc_mode) {
+   case RLC_MODE_AM:
+    mac_rlc_buffer_occupancy_resp = rlc_am_get_buffer_occupancy_in_bytes(&ctxt, &rlc_union_p->rlc.am);
+    break;
+
+  case RLC_MODE_UM:
+	mac_rlc_buffer_occupancy_resp = rlc_um_get_buffer_occupancy(&rlc_union_p->rlc.um);
+    break;
+
+  default:
+	  mac_rlc_buffer_occupancy_resp                 = 0 ;
+  }
+
+  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MAC_RLC_GET_BUFFER_OCCUPANCY_IND,VCD_FUNCTION_OUT);
+
+  return mac_rlc_buffer_occupancy_resp;
+}
+
 

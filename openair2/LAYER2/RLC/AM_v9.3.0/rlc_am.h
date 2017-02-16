@@ -277,6 +277,13 @@ protected_rlc_am( void     rlc_am_rx (const protocol_ctxt_t* const ctxtP,void * 
 */
 public_rlc_am(    struct mac_status_resp rlc_am_mac_status_indication (const protocol_ctxt_t* const ctxtP, void * const rlc_pP, uint16_t tbs_sizeP, struct mac_status_ind tx_statusP);)
 
+/*! \fn void rlc_am_set_nb_bytes_requested_by_mac (void * const            rlc_pP,const tb_size_t         tb_sizeP)
+* \brief    Set available TBS for RLC Tx just before am_mac_data_request. Used for UE only.
+* \param[in]  rlc_pP           RLC AM protocol instance pointer.
+* \param[in]  tb_sizeP         Available Tx Transport Block size in bytes.
+*/
+public_rlc_am(		void rlc_am_set_nb_bytes_requested_by_mac (void * const            rlc_pP,const tb_size_t         tb_sizeP);)
+
 /*! \fn struct mac_data_req rlc_am_mac_data_request (const protocol_ctxt_t* const ctxtP,void * const rlc_pP)
 * \brief    Gives PDUs to lower layer MAC.
 * \param[in]  ctxt_pP          Running context.
@@ -292,6 +299,13 @@ public_rlc_am(    struct mac_data_req rlc_am_mac_data_request (const protocol_ct
 * \param[in]  data_indP        PDUs from MAC.
 */
 public_rlc_am(    void     rlc_am_mac_data_indication (const protocol_ctxt_t* const ctxtP,void * const rlc_pP, struct mac_data_ind data_indP);)
+
+/*! \fn uint32_t rlc_am_get_buffer_occupancy_in_bytes (const protocol_ctxt_t* const ctxt_pP, rlc_am_entity_t * const      rlc_pP)
+* \brief   Get Tx Buffer Occupancy.
+* \param[in]  ctxt_pP          Running context.
+* \param[in]  rlc_pP           RLC AM protocol instance pointer.
+*/
+public_rlc_am(    uint32_t rlc_am_get_buffer_occupancy_in_bytes (const protocol_ctxt_t* const ctxt_pP, rlc_am_entity_t * const      rlc_pP);)
 
 /*! \fn void     rlc_am_data_req (const protocol_ctxt_t* const ctxtP,void * const rlc_pP, mem_block_t *sduP)
 * \brief    Interface with higher layers, buffer higher layer SDUS for transmission.

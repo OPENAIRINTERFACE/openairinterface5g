@@ -308,14 +308,12 @@ rlc_am_receive_process_control_pdu(
     assert(ack_sn < RLC_AM_SN_MODULO);
     assert(rlc_pP->control_pdu_info.num_nack < RLC_AM_MAX_NACK_IN_STATUS_PDU);
 
-    if (rlc_am_in_tx_window(ctxt_pP, rlc_pP, ack_sn) > 0) {
-
+    /* Nv1495998 : ackSn can be equal to current vtA only in case the status pdu contains a list of nack_sn with same value = vtA with SOStart/SOEnd */
+    /* and meaning the report is not complete due to not enough ressources to fill all SOStart/SOEnd of this NACK_SN */
+    if (RLC_AM_DIFF_SN(rlc_pP->vt_s,rlc_pP->vt_a) >= RLC_AM_DIFF_SN(ack_sn,rlc_pP->vt_a))
+    {
       if (rlc_pP->control_pdu_info.num_nack == 0) {
         while (sn_cursor != ack_sn) {
-          if (sn_cursor == rlc_pP->poll_sn) {
-            rlc_am_stop_and_reset_timer_poll_retransmit(ctxt_pP, rlc_pP);
-          }
-
           rlc_am_ack_pdu(ctxt_pP, rlc_pP, sn_cursor);
           sn_cursor = (sn_cursor + 1)  & RLC_AM_SN_MASK;
         }
@@ -324,10 +322,6 @@ rlc_am_receive_process_control_pdu(
         nack_sn   = rlc_pP->control_pdu_info.nack_list[nack_index].nack_sn;
 
         while (sn_cursor != ack_sn) {
-          if (sn_cursor == rlc_pP->poll_sn) {
-            rlc_am_stop_and_reset_timer_poll_retransmit(ctxt_pP, rlc_pP);
-          }
-
           if (sn_cursor != nack_sn) {
             rlc_am_ack_pdu(ctxt_pP,
                            rlc_pP,
@@ -357,6 +351,16 @@ rlc_am_receive_process_control_pdu(
           }
         }
       }
+
+      /* Check for Stopping TpollReTx */
+      if ((rlc_pP->poll_sn != RLC_SN_UNDEFINED) &&
+          (RLC_AM_DIFF_SN(ack_sn,rlc_pP->vt_a) > RLC_AM_DIFF_SN(rlc_pP->poll_sn,rlc_pP->vt_a))) {
+        rlc_am_stop_and_reset_timer_poll_retransmit(ctxt_pP, rlc_pP);
+        rlc_pP->poll_sn = RLC_SN_UNDEFINED;
+      }
+
+      /* Update vtA */
+
     } else {
       LOG_N(RLC, PROTOCOL_RLC_AM_CTXT_FMT" WARNING CONTROL PDU ACK SN OUT OF WINDOW\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));

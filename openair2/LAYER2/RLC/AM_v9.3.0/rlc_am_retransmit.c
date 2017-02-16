@@ -51,8 +51,8 @@ void rlc_am_nack_pdu (
 
 
   mem_block_t* mb_p         = rlc_pP->tx_data_pdu_buffer[snP].mem_block;
-  int          pdu_sdu_index;
-  int          sdu_index;
+  //int          pdu_sdu_index;
+  //int          sdu_index;
 
   if (mb_p != NULL) {
     assert(so_startP <= so_endP);
@@ -84,10 +84,10 @@ void rlc_am_nack_pdu (
 
     rlc_pP->tx_data_pdu_buffer[snP].flags.retransmit = 1;
 
-    /* TODO : before incrementing retx_count_next, this must be a new occurrence of retransmission */
+    /* TODO : before incrementing retx_count_next, one have to check this must be a new occurrence of retransmission */
     if (rlc_pP->tx_data_pdu_buffer[snP].retx_count == rlc_pP->tx_data_pdu_buffer[snP].retx_count_next){
     	rlc_pP->tx_data_pdu_buffer[snP].retx_count_next ++;
-    	rlc_pP->retrans_num_bytes_to_retransmit += rlc_pP->tx_data_pdu_buffer[snP].header_and_payload_size;
+    	rlc_pP->retrans_num_bytes_to_retransmit += rlc_pP->tx_data_pdu_buffer[snP].payload_size;
     }
 
     /* TODO: Move this part in UL SCH processing */
@@ -148,7 +148,7 @@ void rlc_am_ack_pdu (
           rlc_pP->tx_data_pdu_buffer[snP].retx_count);
 
     if (rlc_pP->tx_data_pdu_buffer[snP].retx_count >= 0) {
-      rlc_pP->retrans_num_bytes_to_retransmit -= rlc_pP->tx_data_pdu_buffer[snP].header_and_payload_size;
+      rlc_pP->retrans_num_bytes_to_retransmit -= rlc_pP->tx_data_pdu_buffer[snP].payload_size;
     }
 
     for (pdu_sdu_index = 0; pdu_sdu_index < rlc_pP->tx_data_pdu_buffer[snP].nb_sdus; pdu_sdu_index++) {
@@ -845,7 +845,6 @@ void rlc_am_retransmit_any_pdu(
         //rlc_pP->c_pdu_without_poll     = 0;
         //rlc_pP->c_byte_without_poll    = 0;
         //rlc_pP->poll_sn = (rlc_pP->vt_s -1) & RLC_AM_SN_MASK;
-        rlc_am_start_timer_poll_retransmit(ctxt_pP, rlc_pP);
         rlc_pP->stat_tx_data_pdu                   += 1;
         rlc_pP->stat_tx_retransmit_pdu             += 1;
         rlc_pP->stat_tx_data_bytes                 += ((struct mac_tb_req*)(pdu_p->data))->tb_size;
@@ -879,7 +878,6 @@ void rlc_am_retransmit_any_pdu(
       rlc_pP->c_pdu_without_poll     = 0;
       rlc_pP->c_byte_without_poll    = 0;
       //rlc_pP->poll_sn = (rlc_pP->vt_s -1) & RLC_AM_SN_MASK;
-      rlc_am_start_timer_poll_retransmit(ctxt_pP, rlc_pP);
       rlc_pP->stat_tx_data_pdu                   += 1;
       rlc_pP->stat_tx_retransmit_pdu             += 1;
       rlc_pP->stat_tx_data_bytes                 += ((struct mac_tb_req*)(pdu_p->data))->tb_size;

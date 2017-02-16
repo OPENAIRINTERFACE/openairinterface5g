@@ -79,7 +79,7 @@ rlc_am_init(
     //rlc_pP->vr_h    = 0;
     rlc_pP->sn_status_triggered_delayed = RLC_SN_UNDEFINED;
 
-    rlc_pP->last_frame_status_indication = 123456; // any value > 1
+    rlc_pP->last_absolute_subframe_status_indication = 0xFFFFFFFF; // any value > 1
     rlc_pP->first_retrans_pdu_sn         = -1;
 
     rlc_pP->initialized                  = TRUE;
@@ -135,7 +135,7 @@ rlc_am_reestablish(
   rlc_pP->sn_status_triggered_delayed = RLC_SN_UNDEFINED;
   rlc_pP->status_requested	= RLC_AM_STATUS_NOT_TRIGGERED;
 
-  rlc_pP->last_frame_status_indication = 123456; // any value > 1
+  rlc_pP->last_absolute_subframe_status_indication = 0xFFFFFFFF; // any value > 1
   rlc_pP->first_retrans_pdu_sn         = -1;
 
   rlc_pP->initialized                  = TRUE;

@@ -186,9 +186,9 @@ rlc_am_get_buffer_occupancy_in_bytes (
 
 #if TRACE_RLC_AM_BO
 
-  if ((rlc_pP->status_buffer_occupancy + rlc_pP->retransmission_buffer_occupancy + rlc_pP->sdu_buffer_occupancy + max_li_overhead + header_overhead) > 0) {
+  if ((rlc_pP->status_buffer_occupancy + rlc_pP->retrans_num_bytes_to_retransmit + rlc_pP->sdu_buffer_occupancy + max_li_overhead + header_overhead) > 0) {
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" BO : STATUS  BUFFER %d bytes \n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP), rlc_pP->status_buffer_occupancy);
-    LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" BO : RETRANS BUFFER %d bytes \n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP), rlc_pP->retransmission_buffer_occupancy);
+    LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" BO : RETRANS BUFFER %d bytes \n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP), rlc_pP->retrans_num_bytes_to_retransmit);
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" BO : SDU     BUFFER %d bytes + li_overhead %d bytes header_overhead %d bytes (nb sdu not segmented %d)\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           rlc_pP->sdu_buffer_occupancy,
@@ -669,13 +669,13 @@ rlc_am_mac_status_indication (
    */
   if (rlc->input_sdus == NULL) return status_resp;
 
-  if (rlc->last_frame_status_indication != ctxt_pP->frame) {
+  if (rlc->last_absolute_subframe_status_indication != (PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP))) {
     rlc_am_check_timer_poll_retransmit(ctxt_pP, rlc);
     rlc_am_check_timer_reordering(ctxt_pP, rlc);
     rlc_am_check_timer_status_prohibit(ctxt_pP, rlc);
   }
 
-  rlc->last_frame_status_indication = ctxt_pP->frame;
+  rlc->last_absolute_subframe_status_indication = PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP);
 
   rlc->nb_bytes_requested_by_mac = tb_sizeP;
 
@@ -701,31 +701,14 @@ rlc_am_mac_status_indication (
     }
 
   } else {
-	  if (rlc_am_is_timer_poll_retransmit_timed_out(ctxt_pP, rlc)) {
-		  if ((status_resp.buffer_occupancy_in_bytes == 0) && (rlc->input_sdus[rlc->current_sdu_index].mem_block == NULL) && (rlc->nb_sdu > 0)) {
-			  // force BO to be > 0
-			  rlc_sn_t             sn           = (rlc->vt_s - 1) & RLC_AM_SN_MASK;
-			  rlc_sn_t             sn_end       = (rlc->vt_a - 1) & RLC_AM_SN_MASK;
-
-              /* Look for the first retransmittable PDU starting from vtS - 1 */
-			  while (sn != sn_end) {
-				AssertFatal (rlc->tx_data_pdu_buffer[sn].mem_block != NULL, "RLC AM Tpoll Retx expiry sn=%d is empty vtA=%d vtS=%d LcId=%d\n",
-						sn, rlc->vt_a,rlc->vt_s,rlc->channel_id);
-			    if ((rlc->tx_data_pdu_buffer[sn].flags.ack == 0) && (rlc->tx_data_pdu_buffer[sn].flags.max_retransmit == 0)) {
-			    	rlc->retrans_num_bytes_to_retransmit = rlc->tx_data_pdu_buffer[sn].header_and_payload_size;
-			    	rlc->tx_data_pdu_buffer[sn].flags.retransmit = 1;
-				    status_resp.buffer_occupancy_in_bytes = rlc->tx_data_pdu_buffer[sn].header_and_payload_size;
-				    status_resp.buffer_occupancy_in_pdus  = rlc->nb_sdu;
-				    status_resp.head_sdu_remaining_size_to_send  = status_resp.buffer_occupancy_in_bytes;
-				    // TODO head_sdu_is_segmented
-				  break;
-			    }
-			    else
-			    {
-			    	sn = RLC_AM_PREV_SN(sn);
-			    }
-			  }
-		  }
+	  /* Not so many possibilities ... */
+	  /* either buffer_occupancy_in_bytes = 0 and that's it */
+	  /* or we have segmented all received SDUs and buffer occupancy is then made of retransmissions and/or status pdu pending */
+	  /* then consider only retransmission buffer for the specific BO values used by eNB scheduler (not used up to now...) */
+	  if (rlc->retrans_num_bytes_to_retransmit) {
+		  status_resp.buffer_occupancy_in_pdus = rlc->retrans_num_pdus;
+		  status_resp.head_sdu_remaining_size_to_send = rlc->retrans_num_bytes_to_retransmit;
+		  status_resp.head_sdu_is_segmented = 1;
 	  }
   }
 #if MESSAGE_CHART_GENERATOR_RLC_MAC
@@ -770,6 +753,17 @@ rlc_am_mac_status_indication (
 #endif
   return status_resp;
 }
+
+//-----------------------------------------------------------------------------
+void
+rlc_am_set_nb_bytes_requested_by_mac (
+  void * const            rlc_pP,
+  const tb_size_t         tb_sizeP
+)
+{
+	((rlc_am_entity_t *) rlc_pP)->nb_bytes_requested_by_mac = tb_sizeP;
+}
+
 //-----------------------------------------------------------------------------
 struct mac_data_req
 rlc_am_mac_data_request (

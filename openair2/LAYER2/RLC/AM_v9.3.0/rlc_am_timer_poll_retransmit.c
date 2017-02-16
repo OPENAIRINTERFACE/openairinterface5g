@@ -77,10 +77,32 @@ rlc_am_check_timer_poll_retransmit(
       LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T_POLL_RETRANSMIT] TIME-OUT\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
 
+      /* Check for any retransmittable PDU if Buffer Occupancy empty or window stall */
+	  if (((rlc_pP->sdu_buffer_occupancy == 0) && (rlc_pP->retrans_num_bytes_to_retransmit == 0)) ||
+			    (rlc_pP->vt_s == rlc_pP->vt_ms)) {
+		  // force BO to be > 0
+		  rlc_sn_t             sn           = RLC_AM_PREV_SN(rlc_pP->vt_s);
+		  rlc_sn_t             sn_end       = RLC_AM_PREV_SN(rlc_pP->vt_a);
+
+          /* Look for the first retransmittable PDU starting from vtS - 1 */
+		  while (sn != sn_end) {
+			AssertFatal (rlc_pP->tx_data_pdu_buffer[sn].mem_block != NULL, "RLC AM Tpoll Retx expiry sn=%d is empty vtA=%d vtS=%d LcId=%d\n",
+					sn, rlc_pP->vt_a,rlc_pP->vt_s,rlc_pP->channel_id);
+		    if ((rlc_pP->tx_data_pdu_buffer[sn].flags.ack == 0) && (rlc_pP->tx_data_pdu_buffer[sn].flags.max_retransmit == 0)) {
+		    	rlc_pP->tx_data_pdu_buffer[sn].flags.retransmit = 1;
+		    	rlc_pP->retrans_num_pdus += 1;
+		    	rlc_pP->retrans_num_bytes_to_retransmit += rlc_pP->tx_data_pdu_buffer[sn].payload_size;
+		    }
+		    else
+		    {
+		    	sn = RLC_AM_PREV_SN(sn);
+		    }
+		  }
+	  }
+
 
       rlc_pP->force_poll= TRUE;
-      //#warning         TO DO rlc_am_check_timer_poll_retransmit
-      rlc_pP->t_poll_retransmit.ms_time_out = PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP) + rlc_pP->t_poll_retransmit.ms_duration;
+      //BugFix : new ms_time_out is computed when next poll is transmitter
     }
   }
 }
@@ -119,9 +141,9 @@ rlc_am_start_timer_poll_retransmit(
   rlc_am_entity_t * const      rlc_pP
 )
 {
-  rlc_pP->t_poll_retransmit.timed_out       = 0;
+  /* Stop timer if it was previously running */
+  rlc_am_stop_and_reset_timer_poll_retransmit(ctxt_pP,rlc_pP);
 
-  if (rlc_pP->t_poll_retransmit.running == 0) {
     if (rlc_pP->t_poll_retransmit.ms_duration > 0) {
       rlc_pP->t_poll_retransmit.running         = 1;
       rlc_pP->t_poll_retransmit.ms_time_out     = PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP) + rlc_pP->t_poll_retransmit.ms_duration;
@@ -138,14 +160,7 @@ rlc_am_start_timer_poll_retransmit(
     LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T_POLL_RETRANSMIT] NOT STARTED, CAUSE CONFIGURED 0 ms\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
     }
-  } else {
-#if MESSAGE_CHART_GENERATOR_RLC_MAC
-      MSC_LOG_EVENT((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
-                             "0 "PROTOCOL_RLC_AM_MSC_FMT" t_poll_retransmit not restarted (TO %u ms)",\
-                             PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP), rlc_pP->t_poll_retransmit.ms_time_out);
-#endif
 
-  }
 }
 //-----------------------------------------------------------------------------
 void

@@ -821,6 +821,7 @@ schedule_ue_spec(
                          rnti,
 			 module_idP,
                          frameP,
+						 subframeP,
                          ENB_FLAG_YES,
                          MBMS_FLAG_NO,
                          DCCH,
@@ -839,6 +840,7 @@ schedule_ue_spec(
 					      ENB_FLAG_YES,
 					      MBMS_FLAG_NO,
 					      DCCH,
+						  TBS, //not used
 					      (char *)&dlsch_buffer[0]);
 
             T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
@@ -872,6 +874,7 @@ schedule_ue_spec(
                          rnti,
 			 module_idP,
                          frameP,
+						 subframeP,
                          ENB_FLAG_YES,
                          MBMS_FLAG_NO,
                          DCCH+1,
@@ -890,6 +893,7 @@ schedule_ue_spec(
                                        ENB_FLAG_YES,
                                        MBMS_FLAG_NO,
                                        DCCH+1,
+									   TBS, //not used
                                        (char *)&dlsch_buffer[sdu_length_total]);
 
             T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
@@ -932,6 +936,7 @@ schedule_ue_spec(
 					    rnti,
 					    module_idP,
 					    frameP,
+						subframeP,
 					    ENB_FLAG_YES,
 					    MBMS_FLAG_NO,
 					    lcid,
@@ -949,6 +954,7 @@ schedule_ue_spec(
 						       ENB_FLAG_YES,
 						       MBMS_FLAG_NO,
 						       lcid,
+							   TBS,	//not used
 						       (char*)&dlsch_buffer[sdu_length_total]);
 	      T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
               T_INT(harq_pid), T_INT(lcid), T_INT(sdu_lengths[num_sdus]));

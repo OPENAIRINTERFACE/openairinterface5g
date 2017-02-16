@@ -41,17 +41,23 @@ void rlc_am_free_in_sdu(
   const unsigned int            index_in_bufferP)
 {
   if (index_in_bufferP <= RLC_AM_SDU_CONTROL_BUFFER_SIZE) {
+	/* BugFix:  SDU shall have been already freed during initial PDU segmentation or concatenation !! */
+	  AssertFatal(rlcP->input_sdus[index_in_bufferP].mem_block == NULL, "RLC AM Tx SDU Conf: Data Part is not empty index=%d LcId=%d\n",
+				index_in_bufferP,rlcP->channel_id);
+	/*
     if (rlcP->input_sdus[index_in_bufferP].mem_block != NULL) {
       free_mem_block(rlcP->input_sdus[index_in_bufferP].mem_block, __func__);
       rlcP->input_sdus[index_in_bufferP].mem_block = NULL;
       rlcP->nb_sdu_no_segmented -= 1;
       rlcP->input_sdus[index_in_bufferP].sdu_remaining_size = 0;
     }
+    */
 
     rlcP->nb_sdu -= 1;
     memset(&rlcP->input_sdus[index_in_bufferP], 0, sizeof(rlc_am_tx_sdu_management_t));
     rlcP->input_sdus[index_in_bufferP].flags.transmitted_successfully = 1;
 
+    // TODO : understand why. This should not happen
     if (rlcP->current_sdu_index == index_in_bufferP) {
       rlcP->current_sdu_index = (rlcP->current_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
     }

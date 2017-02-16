@@ -521,6 +521,16 @@ rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP
 }
 
 //-----------------------------------------------------------------------------
+void
+rlc_um_set_nb_bytes_requested_by_mac (
+  void *				rlc_pP,
+  const tb_size_t		tb_sizeP
+)
+{
+	((rlc_um_entity_t *) rlc_pP)->nb_bytes_requested_by_mac = tb_sizeP;
+}
+
+//-----------------------------------------------------------------------------
 struct mac_data_req
 rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP)
 {

@@ -110,6 +110,7 @@ typedef struct rlc_am_tx_data_pdu_management {
   sdu_size_t       hole_so_start  [RLC_AM_MAX_HOLES_REPORT_PER_PDU]; /*!< \brief Array containing the start segment offsets for marking a hole (negative acknowledged area) in the PDU. */
   sdu_size_t       hole_so_stop   [RLC_AM_MAX_HOLES_REPORT_PER_PDU]; /*!< \brief Array containing the stop segment offsets for marking a hole (negative acknowledged area) in the PDU. */
   uint8_t          num_holes;                         /*!< \brief Number of registereg holes in hole_so_start[], hole_so_stop[]. */
+  uint8_t          retx_hole_index;                   /*!< \brief Next index of registered holes to retransmit. */
   sdu_size_t       header_and_payload_size;           /*!< \brief Size of the PDU in bytes, including header and payload. */
   sdu_size_t       payload_size;                      /*!< \brief Size of the PDU payload in bytes. */
   rlc_sn_t         sn;                                /*!< \brief Sequence number of the PDU. */
