@@ -119,8 +119,9 @@ void fill_channel_desc(channel_desc_t *chan_desc,
   else {
     chan_desc->R_sqrt = (struct complex**) calloc(nb_taps,sizeof(struct complex*));
     for (i = 0; i<nb_taps; i++) {
-        chan_desc->R_sqrt[i]    = (struct complex*) calloc(nb_tx*nb_rx*nb_tx*nb_rx,sizeof(struct complex));
+        //chan_desc->R_sqrt[i]    = (struct complex*) calloc(nb_tx*nb_rx*nb_tx*nb_rx,sizeof(struct complex));
         //chan_desc->R_sqrt = (struct complex*)&R_sqrt[i][0];
+        /* all chan_desc share the same R_sqrt, coming from caller */
         chan_desc->R_sqrt[i] = R_sqrt[0];
         }
   }
