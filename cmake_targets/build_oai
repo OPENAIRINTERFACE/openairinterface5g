@@ -57,17 +57,20 @@ CMAKE_BUILD_TYPE=""
 UE_AUTOTEST_TRACE="False"
 trap handle_ctrl_c INT
 
+gen_nvram_path=$OPENAIR_DIR/targets/bin
+conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
+
 function print_help() {
-  echo_info '
+  echo_info "
 This program installs OpenAirInterface Software
 You should have ubuntu 14.xx, updated, and the Linux kernel >= 3.14
 Options
 -h
    This help
 -c | --clean
-   Erase all files to make a rebuild from start"
+   Erase all files to make a rebuild from start
 -C | --clean-all
-   Erase all files made by previous compilations, installations"
+   Erase all files made by previous compilations, installations
 --clean-kernel
    Erase previously installed features in kernel: iptables, drivers, ...
 -I | --install-external-packages
@@ -82,7 +85,11 @@ Options
 --eNB
    Makes the LTE softmodem
 --UE
-   Makes the UE specific parts (ue_ip, usim, nvram) 
+   Makes the UE specific parts (ue_ip, usim, nvram) from the given configuration file
+--UE-conf-nvram [configuration file]
+   Specify conf_nvram_path (default \"$conf_nvram_path\")
+--UE-gen-nvram [output path]
+   Specify gen_nvram_path (default \"$gen_nvram_path\")
 --RRH
    Makes the RRH
 -a | --agent
@@ -97,7 +104,7 @@ Options
    ETHERNET , None
    Adds this trasport protocol support in compilation
 --oaisim
-   Makes the oaisim simulator. Hardware will be defaulted to "None".
+   Makes the oaisim simulator. Hardware will be defaulted to \"None\".
 --phy_simulators
    Makes the unitary tests Layer 1 simulators
 --core_simulators
@@ -140,11 +147,12 @@ Usage (first build):
 Usage (Regular):
  oaisim : ./build_oai --oaisim -x 
  Eurecom EXMIMO + OAI ENB : ./build_oai --eNB -x 
- NI/ETTUS B201  + OAI ENB : ./build_oai --eNB -x -w USRP'
+ NI/ETTUS B201  + OAI ENB : ./build_oai --eNB -x -w USRP"
 }
 
 
 function main() {
+
   until [ -z "$1" ]
   do
     case "$1" in
@@ -183,6 +191,12 @@ function main() {
             UE=1
             echo_info "Will compile UE"
             shift;;
+       --UE-conf-nvram)
+            conf_nvram_path=$(readlink -f "$1")
+            shift 2;;
+        --UE-gen-nvram)
+            gen_nvram_path=$(readlink -f $2)
+            shift 2;;
        --RRH)
             RRH=1
             echo_info "Will compile RRH"
@@ -517,15 +531,17 @@ function main() {
     compilations \
       nas_sim_tools nvram \
       nvram $dbin/nvram
+    compilations \
+        nas_sim_tools conf2uedata \
+        conf2uedata $dbin/conf2uedata
 
     # generate USIM data
-    if [ -f $dbin/nvram ]; then
-      install_nas_tools $dbin $dconf
+    if [ -f $dbin/conf2uedata ]; then
+      install_nas_tools $conf_nvram_path $gen_nvram_path
       echo_info "Copying UE specific part to $DIR/$lte_build_dir/build"
-      cp -Rvf $dbin/.ue_emm.nvram $DIR/$lte_build_dir/build
-      cp -Rvf $dbin/.ue.nvram $DIR/$lte_build_dir/build
-      cp -Rvf $dbin/.usim.nvram $DIR/$lte_build_dir/build
-
+      cp -Rvf $dbin/.ue_emm.nvram0 $DIR/$lte_build_dir/build
+      cp -Rvf $dbin/.ue.nvram0 $DIR/$lte_build_dir/build
+      cp -Rvf $dbin/.usim.nvram0 $DIR/$lte_build_dir/build
     else
       echo_warning "not generated UE NAS files: binaries not found"
     fi
@@ -647,10 +663,13 @@ function main() {
 	compilations \
 	    nas_sim_tools nvram \
 	    nvram $dbin/nvram
+	compilations \
+        nas_sim_tools conf2uedata \
+        conf2uedata $dbin/conf2uedata
 
 	# generate USIM data
-	if [ -f $dbin/nvram ]; then
-	    install_nas_tools $dbin $dconf
+	if [ -f $dbin/conf2uedata ]; then
+	    install_nas_tools $conf_nvram_path $gen_nvram_path
 	else
 	    echo_warning "not generated UE NAS files: binaries not found"
 	fi

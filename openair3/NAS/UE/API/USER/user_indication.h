@@ -43,6 +43,7 @@ Description Defines functions which allow the user application to register
 
 #include "commonDef.h"
 #include "networkDef.h"
+#include "user_api_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -101,7 +102,7 @@ typedef struct {
 /*
  * Type of procedure executed upon receiving registered notification
  */
-typedef int (*user_ind_callback_t) (unsigned char, const void*, size_t);
+typedef int (*user_ind_callback_t) (user_api_id_t *user_api_id, unsigned char, const void*, size_t);
 
 /****************************************************************************/
 /************************  G L O B A L    T Y P E S  ************************/
@@ -117,6 +118,6 @@ typedef int (*user_ind_callback_t) (unsigned char, const void*, size_t);
 
 int user_ind_register(user_ind_t ind, unsigned char id, user_ind_callback_t cb);
 int user_ind_deregister(user_ind_t ind);
-int user_ind_notify(user_ind_t ind, const void* data, size_t size);
+int user_ind_notify(user_api_id_t *user_api_id, user_ind_t ind, const void* data, size_t size);
 
 #endif /* __USER_IND_H__*/

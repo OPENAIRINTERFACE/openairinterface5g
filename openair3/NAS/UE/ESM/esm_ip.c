@@ -22,8 +22,10 @@
 #include "emmData.h"
 #include "esmData.h"
 
+// FIXME don't work for reentrant calls
 char ip_addr_str[100];
 
+// FIXME can't be extern and inline at same time !
 inline char *esm_data_get_ipv4_addr(const OctetString *ip_addr)
 {
   if (ip_addr->length > 0) {

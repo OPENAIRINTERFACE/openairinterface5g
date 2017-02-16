@@ -33,12 +33,12 @@
 #ifndef __OTG_DEFS_H__
 # define __OTG_DEFS_H__
 
-
+/* \brief To define the NUMBER_OF_eNB_MAX and NUMBER_OF_UE_MAX */
 #if STANDALONE==1
-# define NUMBER_OF_eNB_MAX 3
-# define NUMBER_OF_UE_MAX 3
+	#include "openairinterface5g_limits.h"
 #else
-#include "PHY/impl_defs_top.h" /* \brief To define the NUMBER_OF_eNB_MAX and NUMBER_OF_UE_MAX */
+	// impl_defs_top.h includes openairinterface5g_limits.h
+	#include "PHY/impl_defs_top.h"
 #endif
 
 #include "otg_config.h"

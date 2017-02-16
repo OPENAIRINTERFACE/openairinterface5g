@@ -41,11 +41,13 @@ Description Implements the API used by the NAS layer to read/write
 
 #include "usim_api.h"
 #include "nas_log.h"
+#include "utils.h"
 #include "memory.h"
 #include <stdio.h>
 #include "aka_functions.h"
 #include <string.h> // memcpy, memset
 #include <stdlib.h> // malloc, free
+#include <stdio.h>
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -55,46 +57,6 @@ Description Implements the API used by the NAS layer to read/write
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
 /****************************************************************************/
 
-/*
- * The name of the file where are stored data of the USIM application
- */
-#define USIM_API_NVRAM_FILENAME ".usim.nvram"
-
-/*
- * The name of the environment variable which defines the directory
- * where the USIM application file is located
- */
-#define USIM_API_NVRAM_DIRNAME  "USIM_DIR"
-
-/*
- * Subscriber authentication security key
- */
-#define USIM_API_K_SIZE         16
-//#define USIM_API_K_VALUE        "fec86ba6eb707ed08905757b1bb44b8f"
-#define USIM_API_K_VALUE        "8BAF473F2F8FD09487CCCBD7097C6862"
-#define TEST_USIM_API_K_VALUE   "000102030405060708090a0b0c0d0e0f" // CMW500 K key
-
-static uint8_t _usim_api_k[USIM_API_K_SIZE];
-
-
-/*
- * List of last used Sequence Numbers SQN
- */
-#define USIM_API_AK_SIZE 6
-#define USIM_API_SQN_SIZE USIM_API_AK_SIZE
-#define USIM_API_SQNMS_SIZE USIM_API_SQN_SIZE
-
-static struct _usim_api_data_s {
-  /* Highest sequence number the USIM has ever accepted */
-  uint8_t sqn_ms[USIM_API_SQNMS_SIZE];
-  /* List of the last used sequence numbers   */
-#define USIM_API_SQN_LIST_SIZE  32
-  uint8_t n_sqns;
-  uint32_t sqn[USIM_API_SQN_LIST_SIZE];
-} _usim_api_data;
-
-static uint8_t _usim_api_hex_char_to_hex_value (char c);
-static void _usim_api_hex_string_to_hex_value (uint8_t *hex_value, const char *hex_string, int size);
 static int _usim_api_check_sqn(uint32_t seq, uint8_t ind);
 
 /****************************************************************************/
@@ -115,38 +77,17 @@ static int _usim_api_check_sqn(uint32_t seq, uint8_t ind);
  **              Others:        None                                       **
  **                                                                        **
  ***************************************************************************/
-int usim_api_read(usim_data_t* data)
+int usim_api_read(const char *filename, usim_data_t* data)
 {
   LOG_FUNC_IN;
 
-  /* Get USIM application pathname */
-  char* path = memory_get_path(USIM_API_NVRAM_DIRNAME,
-                               USIM_API_NVRAM_FILENAME);
-
-  if (path == NULL) {
-    LOG_TRACE(ERROR, "USIM-API  - Failed to get USIM pathname");
-    LOG_FUNC_RETURN (RETURNerror);
-  }
-
   /* Read USIM application data */
-  if (memory_read(path, data, sizeof(usim_data_t)) != RETURNok) {
+  if (memory_read(filename, data, sizeof(usim_data_t)) != RETURNok) {
     LOG_TRACE(ERROR, "USIM-API  - %s file is either not valid "
-              "or not present", path);
-    free(path);
+              "or not present", filename);
     LOG_FUNC_RETURN (RETURNerror);
   }
 
-  /* initialize the subscriber authentication security key */
-  if(data->usimtestmode == 0)
-  {
-    _usim_api_hex_string_to_hex_value(_usim_api_k, USIM_API_K_VALUE, USIM_API_K_SIZE);
-  }
-  else
-  {
-    _usim_api_hex_string_to_hex_value(_usim_api_k, TEST_USIM_API_K_VALUE, USIM_API_K_SIZE);
-  }
-
-  free(path);
   LOG_FUNC_RETURN (RETURNok);
 }
 
@@ -164,28 +105,17 @@ int usim_api_read(usim_data_t* data)
  **              Others:        None                                       **
  **                                                                        **
  ***************************************************************************/
-int usim_api_write(const usim_data_t* data)
+int usim_api_write(const char *filename, const usim_data_t* data)
 {
   LOG_FUNC_IN;
 
-  /* Get USIM application pathname */
-  char* path = memory_get_path(USIM_API_NVRAM_DIRNAME,
-                               USIM_API_NVRAM_FILENAME);
-
-  if (path == NULL) {
-    LOG_TRACE(ERROR, "USIM-API  - Failed to get USIM pathname");
-    LOG_FUNC_RETURN (RETURNerror);
-  }
-
   /* Write USIM application data */
-  if (memory_write(path, data, sizeof(usim_data_t)) != RETURNok) {
+  if (memory_write(filename, data, sizeof(usim_data_t)) != RETURNok) {
 
-    LOG_TRACE(ERROR, "USIM-API  - Unable to write USIM file %s", path);
-    free(path);
+    LOG_TRACE(ERROR, "USIM-API  - Unable to write USIM file %s", filename);
     LOG_FUNC_RETURN (RETURNerror);
   }
 
-  free(path);
   LOG_FUNC_RETURN (RETURNok);
 }
 
@@ -220,7 +150,8 @@ int usim_api_write(const usim_data_t* data)
  **              Others:        None                                       **
  **                                                                        **
  ***************************************************************************/
-int usim_api_authenticate_test(const OctetString* rand_pP, const OctetString* autn_pP,
+int usim_api_authenticate_test(usim_data_t *usim_data,
+                               const OctetString* rand_pP, const OctetString* autn_pP,
                                OctetString* auts_pP, OctetString* res_pP,
                                OctetString* ck_pP, OctetString* ik_pP)
 {
@@ -236,7 +167,7 @@ int usim_api_authenticate_test(const OctetString* rand_pP, const OctetString* au
   //       RES = XDOUT
   for (i=0; i<USIM_API_K_SIZE; i++)
   {
-      res_pP->value[i] = rand_pP->value[i] ^ _usim_api_k[i];
+      res_pP->value[i] = rand_pP->value[i] ^ usim_data->keys.usim_api_k[i];
   }
 
   //step2: res = f2(xdout,n)
@@ -327,19 +258,19 @@ int usim_api_authenticate_test(const OctetString* rand_pP, const OctetString* au
 
     /* Concealed value of the counter SQNms in the USIM:
      * Conc(SQNMS) = SQNMS ⊕ f5*K(RAND) */
-    f5star(_usim_api_k, rand_pP->value, ak);
+    f5star(usim_data->keys.usim_api_k, rand_pP->value, ak, usim_data->keys.opc);
 
 
     u8 sqn_ms[USIM_API_SQNMS_SIZE];
     memset(sqn_ms, 0, USIM_API_SQNMS_SIZE);
 
     //#define USIM_API_SQN_MS_SIZE  3
-    printf("_usim_api_data.sqn_ms %p\n",_usim_api_data.sqn_ms);
+    printf("usim_data->usim_sqn_data.sqn_ms %p\n", usim_data->usim_sqn_data.sqn_ms);
     for (i = 0; i < USIM_API_SQNMS_SIZE; i++) {
       //#warning "LG:BUG HERE TODO"
-      printf("i %d:  ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i] %d\n",i, ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i]);
+      printf("i %d:  ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - i] %d\n",i, ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - i]);
       sqn_ms[USIM_API_SQNMS_SIZE - i] =
-        ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i];
+        ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - i];
     }
 
     u8 sqnms[USIM_API_SQNMS_SIZE];
@@ -355,8 +286,8 @@ int usim_api_authenticate_test(const OctetString* rand_pP, const OctetString* au
      * MACS = f1*K(SQNMS || RAND || AMF) */
 #define USIM_API_MACS_SIZE USIM_API_XMAC_SIZE
     u8 macs[USIM_API_MACS_SIZE];
-    f1star(_usim_api_k, rand_pP->value, sqn_ms,
-           &rand_pP->value[USIM_API_SQN_SIZE], macs);
+    f1star(usim_data->keys.usim_api_k, rand_pP->value, sqn_ms,
+           &rand_pP->value[USIM_API_SQN_SIZE], macs, usim_data->keys.opc);
     LOG_TRACE(DEBUG, "USIM-API  - MACS %02X%02X%02X%02X%02X%02X%02X%02X",
               macs[0],macs[1],macs[2],macs[3],
               macs[4],macs[5],macs[6],macs[7]);
@@ -392,7 +323,6 @@ int usim_api_authenticate_test(const OctetString* rand_pP, const OctetString* au
  **              autn_pP:          Authentication token                       **
  **                             AUTN = (SQN xor AK) || AMF || MAC          **
  **                                         48          16     64 bits     **
- **              Others:        Security key                               **
  **                                                                        **
  ** Outputs:     auts_pP:          Re-synchronization token                   **
  **              res_pP:           Authentication response                    **
@@ -403,7 +333,7 @@ int usim_api_authenticate_test(const OctetString* rand_pP, const OctetString* au
  **              Others:        None                                       **
  **                                                                        **
  ***************************************************************************/
-int usim_api_authenticate(const OctetString* rand_pP, const OctetString* autn_pP,
+int usim_api_authenticate(usim_data_t *usim_data, const OctetString* rand_pP, const OctetString* autn_pP,
                           OctetString* auts_pP, OctetString* res_pP,
                           OctetString* ck_pP, OctetString* ik_pP)
 {
@@ -421,8 +351,8 @@ int usim_api_authenticate(const OctetString* rand_pP, const OctetString* autn_pP
   /* Compute the anonymity key AK = f5K (RAND) */
 
   u8 ak[USIM_API_AK_SIZE];
-  f2345(_usim_api_k, rand_pP->value,
-        res_pP->value, ck_pP->value, ik_pP->value, ak);
+  f2345(usim_data->keys.usim_api_k, rand_pP->value,
+        res_pP->value, ck_pP->value, ik_pP->value, ak, usim_data->keys.opc);
   LOG_TRACE(INFO, "USIM-API  - res(f2)  :%s",dump_octet_string(res_pP));
   LOG_TRACE(INFO, "USIM-API  - ck(f3)   :%s",dump_octet_string(ck_pP));
   LOG_TRACE(INFO, "USIM-API  - ik(f4)   :%s",dump_octet_string(ik_pP));
@@ -443,7 +373,7 @@ int usim_api_authenticate(const OctetString* rand_pP, const OctetString* autn_pP
   /* Compute XMAC = f1K (SQN || RAND || AMF) */
 #define USIM_API_XMAC_SIZE 8
   u8 xmac[USIM_API_XMAC_SIZE];
-  f1(_usim_api_k, rand_pP->value, sqn, &autn_pP->value[USIM_API_SQN_SIZE], xmac);
+  f1(usim_data->keys.usim_api_k, rand_pP->value, sqn, &autn_pP->value[USIM_API_SQN_SIZE], xmac, usim_data->keys.opc);
   LOG_TRACE(DEBUG,
             "USIM-API  - Computed XMAC %02X%02X%02X%02X%02X%02X%02X%02X",
             xmac[0],xmac[1],xmac[2],xmac[3],
@@ -471,19 +401,19 @@ int usim_api_authenticate(const OctetString* rand_pP, const OctetString* autn_pP
 
     /* Concealed value of the counter SQNms in the USIM:
      * Conc(SQNMS) = SQNMS ⊕ f5*K(RAND) */
-    f5star(_usim_api_k, rand_pP->value, ak);
+    f5star(usim_data->keys.usim_api_k, rand_pP->value, ak, usim_data->keys.opc);
 
 
     u8 sqn_ms[USIM_API_SQNMS_SIZE];
     memset(sqn_ms, 0, USIM_API_SQNMS_SIZE);
 
     //#define USIM_API_SQN_MS_SIZE  3
-    printf("_usim_api_data.sqn_ms %p\n",_usim_api_data.sqn_ms);
+    printf("usim_data->usim_sqn.sqn_ms %p\n",usim_data->usim_sqn_data.sqn_ms);
     for (i = 0; i < USIM_API_SQNMS_SIZE; i++) {
       //#warning "LG:BUG HERE TODO"
-      printf("i %d:  ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i] %d\n",i, ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i]);
+      printf("i %d:  ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - i] %d\n",i, ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - i]);
       sqn_ms[USIM_API_SQNMS_SIZE - i] =
-        ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i];
+        ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - i];
     }
 
     u8 sqnms[USIM_API_SQNMS_SIZE];
@@ -499,8 +429,8 @@ int usim_api_authenticate(const OctetString* rand_pP, const OctetString* autn_pP
      * MACS = f1*K(SQNMS || RAND || AMF) */
 #define USIM_API_MACS_SIZE USIM_API_XMAC_SIZE
     u8 macs[USIM_API_MACS_SIZE];
-    f1star(_usim_api_k, rand_pP->value, sqn_ms,
-           &rand_pP->value[USIM_API_SQN_SIZE], macs);
+    f1star(usim_data->keys.usim_api_k, rand_pP->value, sqn_ms,
+           &rand_pP->value[USIM_API_SQN_SIZE], macs, usim_data->keys.opc);
     LOG_TRACE(DEBUG, "USIM-API  - MACS %02X%02X%02X%02X%02X%02X%02X%02X",
               macs[0],macs[1],macs[2],macs[3],
               macs[4],macs[5],macs[6],macs[7]);
@@ -519,57 +449,6 @@ int usim_api_authenticate(const OctetString* rand_pP, const OctetString* autn_pP
 /****************************************************************************/
 /*********************  L O C A L    F U N C T I O N S  *********************/
 /****************************************************************************/
-
-/****************************************************************************
- **                                                                        **
- ** Name:        _usim_api_hex_char_to_hex_value()                         **
- **                                                                        **
- ** Description: Converts an hexadecimal ASCII coded digit into its value. **
- **                                                                        **
- ** Inputs:      c:             A char holding the ASCII coded value       **
- **              Others:        None                                       **
- **                                                                        **
- ** Outputs:     None                                                      **
- **              Return:        Converted value                            **
- **              Others:        None                                       **
- **                                                                        **
- ***************************************************************************/
-static uint8_t _usim_api_hex_char_to_hex_value (char c)
-{
-  if (c >= 'A') {
-    /* Remove case bit */
-    c &= ~('a' ^ 'A');
-
-    return (c - 'A' + 10);
-  } else {
-    return (c - '0');
-  }
-}
-
-/****************************************************************************
- **                                                                        **
- ** Name:        _usim_api_hex_string_to_hex_value()                       **
- **                                                                        **
- ** Description: Converts an hexadecimal ASCII coded string into its value.**
- **                                                                        **
- ** Inputs:      hex_value:     A pointer to the location to store the     **
- **                             conversion result                          **
- **              size:          The size of hex_value in bytes             **
- **              Others:        None                                       **
- **                                                                        **
- ** Outputs:     hex_value:     Converted value                            **
- **              Return:        None                                       **
- **              Others:        None                                       **
- **                                                                        **
- ***************************************************************************/
-static void _usim_api_hex_string_to_hex_value (uint8_t *hex_value, const char *hex_string, int size)
-{
-  int i;
-
-  for (i=0; i < size; i++) {
-    hex_value[i] = (_usim_api_hex_char_to_hex_value(hex_string[2 * i]) << 4) | _usim_api_hex_char_to_hex_value(hex_string[2 * i + 1]);
-  }
-}
 
 /****************************************************************************
  **                                                                        **

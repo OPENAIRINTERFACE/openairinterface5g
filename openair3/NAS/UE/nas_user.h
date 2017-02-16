@@ -40,6 +40,9 @@ Description NAS procedure functions triggered by the user
 
 #include "commonDef.h"
 #include "networkDef.h"
+#include "emm_main.h"
+#include "esm_ebr.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -57,13 +60,13 @@ Description NAS procedure functions triggered by the user
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-void nas_user_initialize(emm_indication_callback_t emm_cb,
+void nas_user_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
                          esm_indication_callback_t esm_cb, const char *version);
 
-int nas_user_receive_and_process(int * fd, char *message);
+int nas_user_receive_and_process(nas_user_t *user, char *message);
 
-int nas_user_process_data(const void *data);
+int nas_user_process_data(nas_user_t *user, const void *data);
 
-const void *nas_user_get_data(void);
+const void *nas_user_get_data(nas_user_t *nas_user);
 
 #endif /* __NAS_USER_H__*/

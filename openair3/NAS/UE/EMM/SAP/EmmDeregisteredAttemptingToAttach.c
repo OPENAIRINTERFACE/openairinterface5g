@@ -79,13 +79,13 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmDeregisteredAttemptingToAttach(const emm_reg_t *evt)
+int EmmDeregisteredAttemptingToAttach(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNerror;
 
-  assert(emm_fsm_get_status() == EMM_DEREGISTERED_ATTEMPTING_TO_ATTACH);
+  assert(emm_fsm_get_status(user) == EMM_DEREGISTERED_ATTEMPTING_TO_ATTACH);
 
   switch (evt->primitive) {
   case _EMMREG_ATTACH_INIT:
@@ -97,14 +97,14 @@ int EmmDeregisteredAttemptingToAttach(const emm_reg_t *evt)
 
     /* Move to the corresponding initial EMM state */
     if (evt->u.attach.is_emergency) {
-      rc = emm_fsm_set_status(EMM_DEREGISTERED_LIMITED_SERVICE);
+      rc = emm_fsm_set_status(user, EMM_DEREGISTERED_LIMITED_SERVICE);
     } else {
-      rc = emm_fsm_set_status(EMM_DEREGISTERED_NORMAL_SERVICE);
+      rc = emm_fsm_set_status(user, EMM_DEREGISTERED_NORMAL_SERVICE);
     }
 
     if (rc != RETURNerror) {
       /* Restart the attach procedure */
-      rc = emm_proc_attach_restart();
+      rc = emm_proc_attach_restart(user);
     }
 
     break;
@@ -113,14 +113,14 @@ int EmmDeregisteredAttemptingToAttach(const emm_reg_t *evt)
     /*
      * Data successfully delivered to the network
      */
-    rc = emm_proc_lowerlayer_success();
+    rc = emm_proc_lowerlayer_success(user->lowerlayer_data);
     break;
 
   case _EMMREG_LOWERLAYER_FAILURE:
     /*
      * Data failed to be delivered to the network
      */
-    rc = emm_proc_lowerlayer_failure(FALSE);
+    rc = emm_proc_lowerlayer_failure(user->lowerlayer_data, FALSE);
     break;
 
   default:

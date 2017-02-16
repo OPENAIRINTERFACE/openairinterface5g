@@ -247,12 +247,6 @@ function main()
   if [ $? -ne 0 ]; then
     echo "200 lte " >> /etc/iproute2/rt_tables
   fi
-  ip rule add fwmark 1 table lte 
-  ifconfig oip1 up
-  ip route add default dev oip1 table lte
-  # the actual IP address depends on the EPC/MME config file for address pool
-  ip route add from 192.188.0.0/24 table lte
-  ip route add to 192.188.0.0/24 table lte
 
   exe_arguments="$exe_arguments -s15 -AAWGN -y1 -b1 -u1 -Q0"
     

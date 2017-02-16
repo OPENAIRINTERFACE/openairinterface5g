@@ -289,6 +289,11 @@ char uecap_xer[1024],uecap_xer_in=0;
 
 int oaisim_flag=0;
 
+/* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
+ * this is very hackish - find a proper solution
+ */
+uint8_t abstraction_flag=0;
+
 /*---------------------BMC: timespec helpers -----------------------------*/
 
 struct timespec min_diff_time = { .tv_sec = 0, .tv_nsec = 0 };

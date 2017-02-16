@@ -190,26 +190,28 @@ void init_UE(int nb_inst) {
     }
     UE->rfdevice.host_type = BBU_HOST;
     //    UE->rfdevice.type      = NONE_DEV;
-    error_code = pthread_create(&UE->proc.pthread_ue, &UE->proc.attr_ue, UE_thread, NULL);
+    error_code = pthread_create(&UE->proc.pthread_ue, &UE->proc.attr_ue, UE_thread, UE);
     
     if (error_code!= 0) {
       LOG_D(HW,"[lte-softmodem.c] Could not allocate UE_thread, error %d\n",error_code);
       return;
     } else {
+      char name[128];
+      sprintf(name, "main UE %d", inst);
       LOG_D(HW, "[lte-softmodem.c] Allocate UE_thread successful\n" );
-      pthread_setname_np( UE->proc.pthread_ue, "main UE" );
+      pthread_setname_np(UE->proc.pthread_ue, name);
     }
   }
 
   printf("UE threads created\n");
-#ifdef USE_MME
-  
+#if 0
+#if defined(ENABLE_USE_MME)
+  extern volatile int start_UE;
   while (start_UE == 0) {
     sleep(1);
   }
-  
 #endif
-  
+#endif
 }
 
 /*!
@@ -611,6 +613,14 @@ static void *UE_thread_synch(void *arg)
 }
 
 
+/* this structure is used to pass both UE phy vars and
+ * proc to the function UE_thread_rxn_txnp4
+ */
+struct rx_tx_thread_data {
+  PHY_VARS_UE    *UE;
+  UE_rxtx_proc_t *proc;
+};
+
 
 /*!
  * \brief This is the UE thread for RX subframe n and TX subframe n+4.
@@ -623,9 +633,10 @@ static void *UE_thread_synch(void *arg)
 static void *UE_thread_rxn_txnp4(void *arg)
 {
   static int UE_thread_rxtx_retval;
-  UE_rxtx_proc_t *proc = (UE_rxtx_proc_t *)arg;
+  struct rx_tx_thread_data *rtd = arg;
+  UE_rxtx_proc_t *proc = rtd->proc;
+  PHY_VARS_UE    *UE   = rtd->UE;
   int ret;
-  PHY_VARS_UE *UE=PHY_vars_UE_g[0][proc->CC_id];
   proc->instance_cnt_rxtx=-1;
 
 
@@ -861,6 +872,7 @@ static void *UE_thread_rxn_txnp4(void *arg)
   }
   
   // thread finished
+  free(arg);
   return &UE_thread_rxtx_retval;
 }
 
@@ -885,7 +897,7 @@ static void *UE_thread_rxn_txnp4(void *arg)
 void *UE_thread(void *arg) {
 
   static int UE_thread_retval;
-  PHY_VARS_UE *UE = PHY_vars_UE_g[0][0];
+  PHY_VARS_UE *UE = arg; //PHY_vars_UE_g[0][0];
   //  int tx_enabled = 0;
   uint32_t rxs=0,txs=0;
   int dummy_rx[UE->frame_parms.nb_antennas_rx][UE->frame_parms.samples_per_tti] __attribute__((aligned(32)));
@@ -948,7 +960,7 @@ void *UE_thread(void *arg) {
 
 #ifdef NAS_UE
   message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
-  itti_send_msg_to_task (TASK_NAS_UE, INSTANCE_DEFAULT, message_p);
+  itti_send_msg_to_task (TASK_NAS_UE, UE->Mod_id + NB_eNB_INST, message_p);
 #endif 
 
   while (!oai_exit) {
@@ -1693,8 +1705,10 @@ void *UE_thread_old(void *arg)
  */
 void init_UE_threads(int inst)
 {
+  struct rx_tx_thread_data *rtd;
+  char name[128];
   PHY_VARS_UE *UE;
- 
+
   UE = PHY_vars_UE_g[inst][0];
 
   pthread_attr_init (&UE->proc.attr_ue);
@@ -1717,12 +1731,23 @@ void init_UE_threads(int inst)
   pthread_cond_init(&UE->proc.proc_rxtx[0].cond_rxtx,NULL);
   pthread_cond_init(&UE->proc.proc_rxtx[1].cond_rxtx,NULL);
   pthread_cond_init(&UE->proc.cond_synch,NULL);
-  pthread_create(&UE->proc.proc_rxtx[0].pthread_rxtx,NULL,UE_thread_rxn_txnp4,(void*)&UE->proc.proc_rxtx[0]);
-  pthread_setname_np( UE->proc.proc_rxtx[0].pthread_rxtx, "rxn_txnp4_even" );
-  pthread_create(&UE->proc.proc_rxtx[1].pthread_rxtx,NULL,UE_thread_rxn_txnp4,(void*)&UE->proc.proc_rxtx[1]);
-  pthread_setname_np( UE->proc.proc_rxtx[1].pthread_rxtx, "rxn_txnp4_odd" );
+  rtd = calloc(1, sizeof(struct rx_tx_thread_data));
+  if (rtd == NULL) abort();
+  rtd->UE = PHY_vars_UE_g[inst][UE->proc.proc_rxtx[0].CC_id];
+  rtd->proc = &UE->proc.proc_rxtx[0];
+  pthread_create(&UE->proc.proc_rxtx[0].pthread_rxtx,NULL,UE_thread_rxn_txnp4,rtd);//(void*)&UE->proc.proc_rxtx[0]);
+  sprintf(name, "rxn_txnp4_even UE %d", inst);
+  pthread_setname_np(UE->proc.proc_rxtx[0].pthread_rxtx, name);
+  rtd = calloc(1, sizeof(struct rx_tx_thread_data));
+  if (rtd == NULL) abort();
+  rtd->UE = PHY_vars_UE_g[inst][UE->proc.proc_rxtx[1].CC_id];
+  rtd->proc = &UE->proc.proc_rxtx[1];
+  pthread_create(&UE->proc.proc_rxtx[1].pthread_rxtx,NULL,UE_thread_rxn_txnp4,rtd);//(void*)&UE->proc.proc_rxtx[1]);
+  sprintf(name, "rxn_txnp4_odd UE %d", inst);
+  pthread_setname_np(UE->proc.proc_rxtx[1].pthread_rxtx, name);
   pthread_create(&UE->proc.pthread_synch,NULL,UE_thread_synch,(void*)UE);
-  pthread_setname_np( UE->proc.pthread_synch, "UE_thread_synch" );
+  sprintf(name, "UE_thread_synch UE %d", inst);
+  pthread_setname_np(UE->proc.pthread_synch, name);
 }
 
 
