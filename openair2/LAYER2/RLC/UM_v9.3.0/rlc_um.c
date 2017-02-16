@@ -434,7 +434,6 @@ rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP
   int32_t diff_time=0;
   rlc_um_entity_t   *rlc_p = NULL;
   mem_block_t       *mb_p = NULL;
-  unsigned int       max_li_overhead = 0;
 
   status_resp.buffer_occupancy_in_pdus         = 0;
   status_resp.buffer_occupancy_in_bytes        = 0;
@@ -454,20 +453,11 @@ rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP
 
     if ((status_resp.buffer_occupancy_in_bytes > 0) && ((mb_p = list_get_head(&rlc_p->input_sdus)) != NULL)) {
 
-        //Fix on full Header size
-        if (enb_flagP == ENB_FLAG_NO)
-        {
-            // compute Length Indicator overhead to inform MAC of maximum full RLC PDU size according to stored SDUs
-            // For UE scheduler
-            // Could be useful for eNB: to be checked
-            if (rlc_p->input_sdus.nb_elements <= 1) {
-                max_li_overhead = 0;
-            } else {
-                unsigned int       num_li = rlc_p->input_sdus.nb_elements - 1;
-                max_li_overhead = num_li + (num_li >> 1) + (num_li & 1);
-            }
-        }
-      status_resp.buffer_occupancy_in_bytes += (rlc_p->tx_header_min_length_in_bytes + max_li_overhead);
+      if (enb_flagP == ENB_FLAG_YES) {
+    	  /* For eNB: add minimum RLC UM header size for the scheduler */
+    	  /* For UE : RLC header part is not taken into account for BSR reporting (cf 36.321) */
+          status_resp.buffer_occupancy_in_bytes += rlc_p->tx_header_min_length_in_bytes;
+      }
       status_resp.buffer_occupancy_in_pdus = rlc_p->input_sdus.nb_elements;
 
       diff_time =   ctxt_pP->frame - ((struct rlc_um_tx_sdu_management *)mb_p->data)->sdu_creation_time;
@@ -532,7 +522,7 @@ rlc_um_set_nb_bytes_requested_by_mac (
 
 //-----------------------------------------------------------------------------
 struct mac_data_req
-rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP)
+rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP,const eNB_flag_t  enb_flagP)
 {
   struct mac_data_req data_req;
   int16_t               tb_size_in_bytes;
@@ -554,10 +544,13 @@ rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP)
   list_add_list (&l_rlc_p->pdus_to_mac_layer, &data_req.data);
 
 
-  data_req.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy (l_rlc_p);
+  if (enb_flagP) {
+	  // redundant in UE MAC Tx processing and not used in eNB scheduler ...
+	  data_req.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy (l_rlc_p);
 
-  if (data_req.buffer_occupancy_in_bytes > 0) {
-    data_req.buffer_occupancy_in_bytes += l_rlc_p->tx_header_min_length_in_bytes;
+	  if (data_req.buffer_occupancy_in_bytes > 0) {
+	    data_req.buffer_occupancy_in_bytes += l_rlc_p->tx_header_min_length_in_bytes;
+	  }
   }
 
   data_req.rlc_info.rlc_protocol_state = l_rlc_p->protocol_state;

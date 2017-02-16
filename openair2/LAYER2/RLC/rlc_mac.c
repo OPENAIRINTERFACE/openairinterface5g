@@ -191,13 +191,13 @@ tbs_size_t mac_rlc_data_req(
 
   case RLC_MODE_AM:
     if (!enb_flagP) rlc_am_set_nb_bytes_requested_by_mac(&rlc_union_p->rlc.am,tb_sizeP);
-	data_request = rlc_am_mac_data_request(&ctxt, &rlc_union_p->rlc.am);
+	data_request = rlc_am_mac_data_request(&ctxt, &rlc_union_p->rlc.am,enb_flagP);
     ret_tb_size =mac_rlc_serialize_tb(buffer_pP, data_request.data);
     break;
 
   case RLC_MODE_UM:
 	if (!enb_flagP) rlc_um_set_nb_bytes_requested_by_mac(&rlc_union_p->rlc.um,tb_sizeP);
-	data_request = rlc_um_mac_data_request(&ctxt, &rlc_union_p->rlc.um);
+	data_request = rlc_um_mac_data_request(&ctxt, &rlc_union_p->rlc.um,enb_flagP);
     ret_tb_size = mac_rlc_serialize_tb(buffer_pP, data_request.data);
     break;
 
@@ -401,7 +401,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
     break;
 
   case RLC_MODE_AM:
-    status_resp = rlc_am_mac_status_indication(&ctxt, &rlc_union_p->rlc.am, tb_sizeP, tx_status);
+    status_resp = rlc_am_mac_status_indication(&ctxt, &rlc_union_p->rlc.am, tb_sizeP, tx_status,enb_flagP);
     mac_rlc_status_resp.bytes_in_buffer                 = status_resp.buffer_occupancy_in_bytes;
     mac_rlc_status_resp.head_sdu_creation_time          = status_resp.head_sdu_creation_time;
     mac_rlc_status_resp.head_sdu_remaining_size_to_send = status_resp.head_sdu_remaining_size_to_send;

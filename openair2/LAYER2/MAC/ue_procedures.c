@@ -2265,7 +2265,7 @@ boolean_t  update_bsr(module_id_t module_idP, frame_t frameP, sub_frame_t subfra
 
 		    rlc_status = mac_rlc_status_ind(module_idP, UE_mac_inst[module_idP].crnti,eNB_index,frameP,subframeP,ENB_FLAG_NO,MBMS_FLAG_NO,
 		                                    lcid,
-		                                    0);
+		                                    0xFFFF); //TBS is not used in RLC at this step, set a special value for debug
 
 		    lcid_bytes_in_buffer[lcid] = rlc_status.bytes_in_buffer;
 

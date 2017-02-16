@@ -195,13 +195,14 @@ public_rlc_um(    struct mac_status_resp rlc_um_mac_status_indication (const pro
 */
 public_rlc_um(   void     rlc_um_set_nb_bytes_requested_by_mac (rlc_um_entity_t * const rlc_pP, const tb_size_t		tb_sizeP);)
 
-/*! \fn struct mac_data_req rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP)
+/*! \fn struct mac_data_req rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP,const eNB_flag_t  enb_flagP)
 * \brief    Gives PDUs to lower layer MAC.
 * \param[in]  ctxt_pP                   Running context.
 * \param[in]  rlc_pP                    RLC UM protocol instance pointer.
+* \param[in]  enb_flagP                 eNB or UE flag.
 * \return     A PDU of the previously requested number of bytes, and the updated maximum number of bytes that can be served by RLC instance to MAC for next RLC transmission.
 */
-public_rlc_um(    struct mac_data_req rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP);)
+public_rlc_um(    struct mac_data_req rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP,const eNB_flag_t  enb_flagP);)
 
 
 /*! \fn void     rlc_um_mac_data_indication (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP,struct mac_data_ind data_indP)

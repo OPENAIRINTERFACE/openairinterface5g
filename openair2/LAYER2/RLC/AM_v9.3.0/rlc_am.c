@@ -152,9 +152,6 @@ rlc_am_get_buffer_occupancy_in_bytes (
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP)
 {
-  uint32_t max_li_overhead;
-  uint32_t header_overhead;
-
   // priority of control trafic
   rlc_pP->status_buffer_occupancy = 0;
   if ((rlc_pP->status_requested) && !(rlc_pP->status_requested & RLC_AM_STATUS_NO_TX_MASK)) {
@@ -168,21 +165,6 @@ rlc_am_get_buffer_occupancy_in_bytes (
 #endif
   }
 
-  // data traffic
-  if (rlc_pP->nb_sdu_no_segmented <= 1) {
-    max_li_overhead = 0;
-  } else {
-  	/* This computation assumes there is no SDU with size greater than 2047 bytes, otherwise a new PDU must be built except for LI15 configuration from Rel12*/
-	  uint32_t num_li = rlc_pP->nb_sdu_no_segmented - 1;
-      max_li_overhead = num_li + (num_li >> 1) + (num_li & 1);
-  }
-
-  if (rlc_pP->sdu_buffer_occupancy == 0) {
-    header_overhead = 0;
-  } else {
-    header_overhead = 2;
-  }
-
 
 #if TRACE_RLC_AM_BO
 
@@ -192,13 +174,13 @@ rlc_am_get_buffer_occupancy_in_bytes (
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" BO : SDU     BUFFER %d bytes + li_overhead %d bytes header_overhead %d bytes (nb sdu not segmented %d)\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           rlc_pP->sdu_buffer_occupancy,
-          max_li_overhead,
-          header_overhead,
+          0,
+          0,
           rlc_pP->nb_sdu_no_segmented);
   }
 
 #endif
-  return rlc_pP->status_buffer_occupancy + rlc_pP->retrans_num_bytes_to_retransmit + rlc_pP->sdu_buffer_occupancy + max_li_overhead + header_overhead;
+  return rlc_pP->status_buffer_occupancy + rlc_pP->retrans_num_bytes_to_retransmit + rlc_pP->sdu_buffer_occupancy;
 }
 //-----------------------------------------------------------------------------
 void
@@ -645,7 +627,8 @@ rlc_am_mac_status_indication (
   const protocol_ctxt_t* const ctxt_pP,
   void * const                 rlc_pP,
   const uint16_t               tb_sizeP,
-  struct mac_status_ind        tx_statusP)
+  struct mac_status_ind        tx_statusP,
+  const eNB_flag_t enb_flagP)
 {
   struct mac_status_resp  status_resp;
   uint16_t  sdu_size = 0;
@@ -680,6 +663,26 @@ rlc_am_mac_status_indication (
   rlc->nb_bytes_requested_by_mac = tb_sizeP;
 
   status_resp.buffer_occupancy_in_bytes = rlc_am_get_buffer_occupancy_in_bytes(ctxt_pP, rlc);
+
+  // For eNB scheduler : Add Max RLC header size for new PDU
+  // For UE : do not add RLC header part to be compliant with BSR definition in 36.321
+  if (enb_flagP == ENB_FLAG_YES) {
+	  uint32_t max_li_overhead = 0;
+	  uint32_t header_overhead = 0;
+
+	   if (rlc->nb_sdu_no_segmented > 1) {
+	   	/* This computation assumes there is no SDU with size greater than 2047 bytes, otherwise a new PDU must be built except for LI15 configuration from Rel12*/
+	 	  uint32_t num_li = rlc->nb_sdu_no_segmented - 1;
+	       max_li_overhead = num_li + (num_li >> 1) + (num_li & 1);
+	   }
+
+	   if (rlc->sdu_buffer_occupancy > 0) {
+	     header_overhead = 2;
+	   }
+
+	   status_resp.buffer_occupancy_in_bytes += (header_overhead + max_li_overhead);
+  }
+
 
   if ((rlc->input_sdus[rlc->current_sdu_index].mem_block != NULL) && (status_resp.buffer_occupancy_in_bytes)) {
 
@@ -768,7 +771,8 @@ rlc_am_set_nb_bytes_requested_by_mac (
 struct mac_data_req
 rlc_am_mac_data_request (
   const protocol_ctxt_t* const ctxt_pP,
-  void * const                 rlc_pP
+  void * const                 rlc_pP,
+  const eNB_flag_t        enb_flagP
 )
 {
   struct mac_data_req data_req;
@@ -806,7 +810,10 @@ rlc_am_mac_data_request (
           data_req.data.nb_elements);
   }
 
-  data_req.buffer_occupancy_in_bytes   = rlc_am_get_buffer_occupancy_in_bytes(ctxt_pP, l_rlc_p);
+  if (enb_flagP) {
+	  // redundant in UE MAC Tx processing and not used in eNB ...
+	  data_req.buffer_occupancy_in_bytes   = rlc_am_get_buffer_occupancy_in_bytes(ctxt_pP, l_rlc_p);
+  }
   data_req.rlc_info.rlc_protocol_state = l_rlc_p->protocol_state;
 
 #if TRACE_RLC_AM_PDU || MESSAGE_CHART_GENERATOR
