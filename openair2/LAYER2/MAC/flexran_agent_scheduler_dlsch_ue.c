@@ -104,8 +104,8 @@ float total_slice_percentage = 0;
 int slice_maxmcs[MAX_NUM_SLICES] = {28, 28, 28, 28};
 int slice_maxmcs_current[MAX_NUM_SLICES] = {28, 28, 28, 28};
 
-int update_dl_scheduler[MAX_NUM_SLICES] = {1, 0, 0, 0};
-int update_dl_scheduler_current[MAX_NUM_SLICES] = {1, 0, 0, 0};
+int update_dl_scheduler[MAX_NUM_SLICES] = {1, 1, 1, 1};
+int update_dl_scheduler_current[MAX_NUM_SLICES] = {1, 1, 1, 1};
 
 // name of available scheduler
 char *dl_scheduler_type[MAX_NUM_SLICES] = {"flexran_schedule_ue_spec_embb",
@@ -137,8 +137,9 @@ void _store_dlsch_buffer (module_id_t Mod_id,
   UE_list_t             *UE_list = &eNB_mac_inst[Mod_id].UE_list;
   UE_TEMPLATE           *UE_template;
 
-  for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
- 
+  for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+    if (UE_list->active[UE_id] != TRUE) continue;
+    
     if (flexran_slice_member(UE_id, slice_id) == 0)
       continue;
     
@@ -221,7 +222,8 @@ void _assign_rbs_required (module_id_t Mod_id,
   //  UE_TEMPLATE           *UE_template;
 
   // clear rb allocations across all CC_ids
-  for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
+  for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+    if (UE_list->active[UE_id] != TRUE) continue;
     
     if (flexran_slice_member(UE_id, slice_id) == 0)
       continue;
@@ -229,11 +231,15 @@ void _assign_rbs_required (module_id_t Mod_id,
     pCCid = UE_PCCID(Mod_id,UE_id);
     rnti = UE_list->UE_template[pCCid][UE_id].rnti;
 
+    /* skip UE not present in PHY (for any of its active CCs) */
+    if (!phy_stats_exist(Mod_id, rnti))
+      continue;
+
     //update CQI information across component carriers
     for (n=0; n<UE_list->numactiveCCs[UE_id]; n++) {
       CC_id = UE_list->ordered_CCids[n][UE_id];
       eNB_UE_stats[CC_id] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
-      eNB_UE_stats[CC_id]->dlsch_mcs1=cqi_to_mcs[flexran_get_ue_wcqi(Mod_id, UE_id)];
+      eNB_UE_stats[CC_id]->dlsch_mcs1 = cqi_to_mcs[flexran_get_ue_wcqi(Mod_id, UE_id)];
     }
 
     // provide the list of CCs sorted according to MCS
@@ -260,143 +266,34 @@ void _assign_rbs_required (module_id_t Mod_id,
         CC_id = UE_list->ordered_CCids[i][UE_id];
 	eNB_UE_stats[CC_id] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
 
-        if (eNB_UE_stats[CC_id]->dlsch_mcs1==0) {
+        if (cqi_to_mcs[flexran_get_ue_wcqi(Mod_id, UE_id)] == 0) {//eNB_UE_stats[CC_id]->dlsch_mcs1==0) {
           nb_rbs_required[CC_id][UE_id] = 4;  // don't let the TBS get too small
         } else {
           nb_rbs_required[CC_id][UE_id] = min_rb_unit[CC_id];
         }
 
-        TBS = mac_xface->get_TBS_DL(eNB_UE_stats[CC_id]->dlsch_mcs1,nb_rbs_required[CC_id][UE_id]);
+        TBS = mac_xface->get_TBS_DL(cqi_to_mcs[flexran_get_ue_wcqi(Mod_id, UE_id)], nb_rbs_required[CC_id][UE_id]);
 	nb_rbs_allowed_slice[CC_id][slice_id] = flexran_nb_rbs_allowed_slice(slice_percentage[slice_id],
 									     flexran_get_N_RB_DL(Mod_id, CC_id));
         LOG_D(MAC,"[preprocessor] start RB assignement for UE %d CC_id %d dl buffer %d (RB unit %d, MCS %d, TBS %d) \n",
               UE_id, CC_id, UE_list->UE_template[pCCid][UE_id].dl_buffer_total,
-              nb_rbs_required[CC_id][UE_id],eNB_UE_stats[CC_id]->dlsch_mcs1,TBS);
+              nb_rbs_required[CC_id][UE_id], flexran_get_ue_wcqi(Mod_id, UE_id), TBS);
 
         /* calculating required number of RBs for each UE */
         while (TBS < UE_list->UE_template[pCCid][UE_id].dl_buffer_total)  {
           nb_rbs_required[CC_id][UE_id] += min_rb_unit[CC_id];
 
           if (nb_rbs_required[CC_id][UE_id] > nb_rbs_allowed_slice[CC_id][slice_id]) {
-            TBS = mac_xface->get_TBS_DL(eNB_UE_stats[CC_id]->dlsch_mcs1, nb_rbs_allowed_slice[CC_id][slice_id]);
+            TBS = mac_xface->get_TBS_DL(flexran_get_ue_wcqi(Mod_id, UE_id), nb_rbs_allowed_slice[CC_id][slice_id]);
             nb_rbs_required[CC_id][UE_id] = nb_rbs_allowed_slice[CC_id][slice_id];
             break;
           }
 
-          TBS = mac_xface->get_TBS_DL(eNB_UE_stats[CC_id]->dlsch_mcs1,nb_rbs_required[CC_id][UE_id]);
+          TBS = mac_xface->get_TBS_DL(cqi_to_mcs[flexran_get_ue_wcqi(Mod_id, UE_id)], nb_rbs_required[CC_id][UE_id]);
         } // end of while
 
         LOG_D(MAC,"[eNB %d][SLICE %d] Frame %d: UE %d on CC %d: RB unit %d,  nb_required RB %d (TBS %d, mcs %d)\n",
-              Mod_id, slice_id,frameP,UE_id, CC_id,  min_rb_unit[CC_id], nb_rbs_required[CC_id][UE_id], TBS, eNB_UE_stats[CC_id]->dlsch_mcs1);
-      }
-    }
-  }
-}
-
-// This function scans all CC_ids for a particular UE to find the maximum round index of its HARQ processes
-int _maxround(module_id_t Mod_id,uint16_t rnti,int frame,sub_frame_t subframe,uint8_t ul_flag )
-{
-
-  uint8_t round,round_max=0,UE_id;
-  int CC_id;
-  UE_list_t *UE_list = &eNB_mac_inst[Mod_id].UE_list;
-
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-
-    UE_id = find_UE_id(Mod_id,rnti);
-    round    = UE_list->UE_sched_ctrl[UE_id].round[CC_id];
-    if (round > round_max) {
-      round_max = round;
-    }
-  }
-
-  return round_max;
-}
-
-// This function scans all CC_ids for a particular UE to find the maximum DL CQI
-int _maxcqi(module_id_t Mod_id,int32_t UE_id)
-{
-
-  LTE_eNB_UE_stats *eNB_UE_stats = NULL;
-  UE_list_t *UE_list = &eNB_mac_inst[Mod_id].UE_list;
-  int CC_id,n;
-  int CQI = 0;
-
-  for (n=0; n<UE_list->numactiveCCs[UE_id]; n++) {
-    CC_id = UE_list->ordered_CCids[n][UE_id];
-    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,UE_RNTI(Mod_id,UE_id));
-
-    if (eNB_UE_stats==NULL) {
-      mac_xface->macphy_exit("maxcqi: could not get eNB_UE_stats\n");
-      return 0; // not reached
-    }
-
-    if (eNB_UE_stats->DL_cqi[0] > CQI) {
-      CQI = eNB_UE_stats->DL_cqi[0];
-    }
-  }
-
-  return(CQI);
-}
-
-
-// This fuction sorts the UE in order their dlsch buffer and CQI
-void _sort_UEs (module_id_t Mod_idP,
-               int         frameP,
-               sub_frame_t subframeP)
-{
-
-
-  int               UE_id1,UE_id2;
-  int               pCC_id1,pCC_id2;
-  int               cqi1,cqi2,round1,round2;
-  int               i=0,ii=0;//,j=0;
-  rnti_t            rnti1,rnti2;
-
-  UE_list_t *UE_list = &eNB_mac_inst[Mod_idP].UE_list;
-
-  for (i=UE_list->head; i>=0; i=UE_list->next[i]) {
-
-    for(ii=UE_list->next[i]; ii>=0; ii=UE_list->next[ii]) {
-
-      UE_id1  = i;
-      rnti1 = UE_RNTI(Mod_idP,UE_id1);
-      if(rnti1 == NOT_A_RNTI)
-	continue;
-      if (UE_list->UE_sched_ctrl[UE_id1].ul_out_of_sync == 1)
-	continue;
-      pCC_id1 = UE_PCCID(Mod_idP,UE_id1);
-      cqi1    = _maxcqi(Mod_idP,UE_id1); //
-      round1  = _maxround(Mod_idP,rnti1,frameP,subframeP,0);
-
-      UE_id2 = ii;
-      rnti2 = UE_RNTI(Mod_idP,UE_id2);
-      if(rnti2 == NOT_A_RNTI)
-        continue;
-      if (UE_list->UE_sched_ctrl[UE_id2].ul_out_of_sync == 1)
-	continue;
-      cqi2    = _maxcqi(Mod_idP,UE_id2);
-      round2  = _maxround(Mod_idP,rnti2,frameP,subframeP,0);  //mac_xface->get_ue_active_harq_pid(Mod_id,rnti2,subframe,&harq_pid2,&round2,0);
-      pCC_id2 = UE_PCCID(Mod_idP,UE_id2);
-
-      if(round2 > round1) { // Check first if one of the UEs has an active HARQ process which needs service and swap order
-        swap_UEs(UE_list,UE_id1,UE_id2,0);
-      } else if (round2 == round1) {
-        // RK->NN : I guess this is for fairness in the scheduling. This doesn't make sense unless all UEs have the same configuration of logical channels.  This should be done on the sum of all information that has to be sent.  And still it wouldn't ensure fairness.  It should be based on throughput seen by each UE or maybe using the head_sdu_creation_time, i.e. swap UEs if one is waiting longer for service.
-
-        // first check the buffer status for SRB1 and SRB2
-        if ( (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[1] + UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[2]) <
-             (UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[1] + UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[2])   ) {
-          swap_UEs(UE_list,UE_id1,UE_id2,0);
-        } else if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_head_sdu_creation_time_max <
-                   UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_head_sdu_creation_time_max   ) {
-          swap_UEs(UE_list,UE_id1,UE_id2,0);
-        } else if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_total <
-                   UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_total   ) {
-          swap_UEs(UE_list,UE_id1,UE_id2,0);
-        } else if (cqi1 < cqi2) {
-          swap_UEs(UE_list,UE_id1,UE_id2,0);
-        }
+              Mod_id, slice_id,frameP,UE_id, CC_id,  min_rb_unit[CC_id], nb_rbs_required[CC_id][UE_id], TBS, cqi_to_mcs[flexran_get_ue_wcqi(Mod_id, UE_id)]);
       }
     }
   }
@@ -543,10 +440,11 @@ void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 				     int           *mbsfn_flag)
 {
 
-  unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX], harq_pid=0, total_ue_count;
+  unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX], total_ue_count;
   unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX];
   int                     UE_id, i;
-  unsigned char round = 0;
+  uint8_t round = 0;
+  uint8_t harq_pid = 0;
   uint16_t                ii,j;
   uint16_t                nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   uint16_t                nb_rbs_allowed_slice[MAX_NUM_CCs][MAX_NUM_SLICES];
@@ -574,7 +472,9 @@ void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
     
     min_rb_unit[CC_id]=get_min_rb_unit(Mod_id,CC_id);
     
-    for (i=UE_list->head; i>=0; i=UE_list->next[i]) {
+    for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+      if (UE_list->active[i] != TRUE) continue;
+
       UE_id = i;
       // Initialize scheduling information for all active UEs
       
@@ -602,24 +502,24 @@ void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
   _assign_rbs_required (Mod_id,slice_id, frameP,subframeP,nb_rbs_required,nb_rbs_allowed_slice,min_rb_unit);
 
   // Sorts the user on the basis of dlsch logical channel buffer and CQI
-  _sort_UEs (Mod_id,frameP,subframeP);
+  sort_UEs (Mod_id,frameP,subframeP);
 
   total_ue_count = 0;
 
   // loop over all active UEs
-  for (i=UE_list->head; i>=0; i=UE_list->next[i]) {
+  for (i=UE_list->head; i>=0; i=UE_list->next[i]) { 
     rnti = flexran_get_ue_crnti(Mod_id, i);
     if(rnti == NOT_A_RNTI)
       continue;
     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
       continue;
+
     UE_id = i;
     
     if (flexran_slice_member(UE_id, slice_id) == 0)
       continue;
     
-    // if there is no available harq_process, skip the UE
-    if (UE_list->UE_sched_ctrl[UE_id].harq_pid[CC_id]<0)
+    if (!phy_stats_exist(Mod_id, rnti))
       continue;
 
     for (ii=0; ii < UE_num_active_CC(UE_list,UE_id); ii++) {
@@ -627,6 +527,10 @@ void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
       ue_sched_ctl->max_allowed_rbs[CC_id]=nb_rbs_allowed_slice[CC_id][slice_id];
       flexran_get_harq(Mod_id, CC_id, UE_id, frameP, subframeP, &harq_pid, &round);
+
+      // if there is no available harq_process, skip the UE
+      if (UE_list->UE_sched_ctrl[UE_id].harq_pid[CC_id]<0)
+        continue;
 
       average_rbs_per_user[CC_id]=0;
 
@@ -669,6 +573,15 @@ void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
   for(i=UE_list->head; i>=0; i=UE_list->next[i]) {
     rnti = UE_RNTI(Mod_id,i);
    
+    if(rnti == NOT_A_RNTI)
+      continue;
+
+    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+      continue;
+
+    if (!phy_stats_exist(Mod_id, rnti))
+      continue;
+
     if (flexran_slice_member(i, slice_id) == 0)
       continue;
     
@@ -733,8 +646,12 @@ void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
           // LOG_D(MAC,"UE %d rnti 0x\n", UE_id, rnti );
           if(rnti == NOT_A_RNTI)
             continue;
+
 	  if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
 	    continue;
+
+	  if (!phy_stats_exist(Mod_id, rnti))
+            continue;
 
           transmission_mode = mac_xface->get_transmission_mode(Mod_id,CC_id,rnti);
           //rrc_status = mac_eNB_get_rrc_status(Mod_id,rnti);
@@ -1027,11 +944,11 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
   int                   N_RBG[MAX_NUM_CCs];
   unsigned char         aggregation;
   mac_rlc_status_resp_t rlc_status;
-  unsigned char         header_len = 0, ta_len = 0;
+  unsigned char         header_len = 0, header_len_last = 0, ta_len = 0;
   uint16_t              nb_rb, nb_rb_temp, total_nb_available_rb[MAX_NUM_CCs], nb_available_rb;
   uint16_t              TBS, j, rnti;
-  unsigned char         round            = 0;
-  unsigned char         harq_pid         = 0;
+  uint8_t         round            = 0;
+  uint8_t         harq_pid         = 0;
   uint16_t              sdu_length_total = 0;
   int                   mcs, mcs_tmp;
   uint16_t              min_rb_unit[MAX_NUM_CCs];
@@ -1042,7 +959,7 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
   int32_t                 tpc = 1;
   static int32_t          tpc_accumulated=0;
   UE_sched_ctrl           *ue_sched_ctl;
-
+  LTE_eNB_UE_stats     *eNB_UE_stats     = NULL;
   Protocol__FlexDlData *dl_data[NUM_MAX_UE];
   int num_ues_added = 0;
   int channels_added = 0;
@@ -1058,17 +975,19 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
   uint8_t ue_has_transmission = 0;
   uint32_t ndi;
   
-  flexran_agent_mac_create_empty_dl_config(mod_id, dl_info);
+#if 0
   
   if (UE_list->head==-1) {
     return;
   }
   
+#endif
+
   start_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,VCD_FUNCTION_IN);
 
   //weight = get_ue_weight(module_idP,UE_id);
-  aggregation = 2; // set to the maximum aggregation level
+  aggregation = 1; // set to the maximum aggregation level
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     min_rb_unit[CC_id] = get_min_rb_unit(mod_id, CC_id);
@@ -1105,11 +1024,19 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
 
     if (mbsfn_flag[CC_id]>0)
       continue;
-
+    
     for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
+  
       rnti = flexran_get_ue_crnti(mod_id, UE_id);
+      eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id,CC_id,rnti);
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-
+      
+      if (eNB_UE_stats==NULL) {
+	LOG_D(MAC,"[eNB] Cannot find eNB_UE_stats\n");
+        //  mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
+	continue;
+      }
+      
       if (flexran_slice_member(UE_id, slice_id) == 0)
       	continue;
       
@@ -1119,12 +1046,24 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
         continue;
       }
 
-      if (flexran_get_ue_crnti(mod_id, UE_id) == NOT_A_RNTI) {
-        LOG_D(MAC,"[eNB] Cannot find UE\n");
-        //  mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
-        continue;
+      switch(mac_xface->get_transmission_mode(mod_id,CC_id,rnti)){
+      case 1:
+      case 2:
+      case 7:
+	aggregation = get_aggregation(get_bw_index(mod_id,CC_id), 
+				      eNB_UE_stats->DL_cqi[0],
+				      format1);
+	break;
+      case 3:
+	aggregation = get_aggregation(get_bw_index(mod_id,CC_id), 
+				      eNB_UE_stats->DL_cqi[0],
+				      format2A);
+	break;
+      default:
+	LOG_W(MAC,"Unsupported transmission mode %d\n", mac_xface->get_transmission_mode(mod_id,CC_id,rnti));
+	aggregation = 2;
       }
-
+     
       if ((ue_sched_ctl->pre_nb_available_rbs[CC_id] == 0) ||  // no RBs allocated 
 	  CCE_allocation_infeasible(mod_id, CC_id, 0, subframe, aggregation, rnti)) {
         LOG_D(MAC,"[eNB %d] Frame %d : no RB allocated for UE %d on CC_id %d: continue \n",
@@ -1160,6 +1099,7 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
       flexran_get_harq(mod_id, CC_id, UE_id, frame, subframe, &harq_pid, &round);
       sdu_length_total=0;
       mcs = cqi_to_mcs[flexran_get_ue_wcqi(mod_id, UE_id)];
+      //      LOG_I(FLEXRAN_AGENT, "The MCS is %d\n", mcs);
       mcs = cmin(mcs,flexran_slice_maxmcs(slice_id));
 #ifdef EXMIMO
 
@@ -1192,8 +1132,9 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
       dl_dci->harq_process = harq_pid;
       
       /* process retransmission  */
-
       if (round > 0) {
+
+	LOG_D(FLEXRAN_AGENT, "There was a retransmission just now and the round was %d\n", round);
 
 	if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
 	  UE_list->UE_template[CC_id][UE_id].DAI++;
@@ -1237,8 +1178,6 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
 	  }
 
 	  nb_available_rb -= nb_rb;
-	  aggregation = process_ue_cqi(mod_id, UE_id);
-	  
 	  PHY_vars_eNB_g[mod_id][CC_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = nb_rb;
 	  PHY_vars_eNB_g[mod_id][CC_id]->mu_mimo_mode[UE_id].dl_pow_off = ue_sched_ctl->dl_pow_off[CC_id];
 	  
@@ -1267,15 +1206,16 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
         //TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0]<<1,nb_available_rb);
         TBS = mac_xface->get_TBS_DL(mcs, nb_available_rb);
 	dci_tbs = TBS;
-
+	LOG_D(FLEXRAN_AGENT, "TBS is %d\n", TBS);
+	
         // check first for RLC data on DCCH
         // add the length for  all the control elements (timing adv, drx, etc) : header + payload
 
-	ta_len = (ue_sched_ctl->ta_update!=0) ? 2 : 0;
+	ta_len = (ue_sched_ctl->ta_update != 0) ? 2 : 0;
 	
 	dl_data[num_ues_added]->n_ce_bitmap = 2;
-	dl_data[num_ues_added]->ce_bitmap = (uint32_t *) malloc(sizeof(uint32_t) * 2);
-	
+	dl_data[num_ues_added]->ce_bitmap = (uint32_t *) calloc(2, sizeof(uint32_t));
+
 	if (ta_len > 0) {
 	  ce_flags |= PROTOCOL__FLEX_CE_TYPE__FLPCET_TA;
 	}
@@ -1288,9 +1228,11 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
 
 	// TODO : Need to prioritize DRBs
 	// Loop through the UE logical channels (DCCH, DCCH1, DTCH for now)
+	header_len = 0;
+	header_len_last = 0;
+	sdu_length_total = 0;
 	for (j = 1; j < NB_RB_MAX; j++) {
-	  header_len+=3;
-
+	  header_len += 3;
 	  // Need to see if we have space for data from this channel
 	  if (dci_tbs - ta_len - header_len - sdu_length_total > 0) {
 	     LOG_D(MAC, "[TEST]Requested %d bytes from RLC buffer on channel %d during first call\n", dci_tbs-ta_len-header_len);
@@ -1302,15 +1244,19 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
 					     ENB_FLAG_YES,
 					     MBMS_FLAG_NO,
 					     j,
-					     (dci_tbs-ta_len-header_len)); // transport block set size
+					     (dci_tbs - ta_len - header_len - sdu_length_total)); // transport block set size
 
 	     //If data are available in channel j
 	     if (rlc_status.bytes_in_buffer > 0) {
 	       LOG_D(MAC, "[TEST]Have %d bytes in DCCH buffer during first call\n", rlc_status.bytes_in_buffer);
 	       //Fill in as much as possible
-	       data_to_request = cmin(dci_tbs-ta_len-header_len, rlc_status.bytes_in_buffer);
+	       data_to_request = cmin(dci_tbs - ta_len - header_len - sdu_length_total, rlc_status.bytes_in_buffer);
+	       LOG_D(FLEXRAN_AGENT, "Will request %d bytes from channel %d\n", data_to_request, j);
 	       if (data_to_request < 128) { //The header will be one byte less
 		 header_len--;
+		 header_len_last = 2;
+	       } else {
+		 header_len_last = 3;
 	       }
 	       /* if (j == 1 || j == 2) {
 		  data_to_request+=0; 
@@ -1350,17 +1296,29 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
 	  dl_data[num_ues_added]->rlc_pdu[i] = rlc_pdus[i];
 	}
 	
+	if (header_len == 0) {
+	  LOG_D(FLEXRAN_AGENT, "Header was empty\n");
+	  header_len_last = 0;
+	} 
+	
 	// there is a payload
-        if (( dl_data[num_ues_added]->n_rlc_pdu > 0)) {
+        if ((dl_data[num_ues_added]->n_rlc_pdu > 0)) {
 	  // Now compute number of required RBs for total sdu length
           // Assume RAH format 2
           // adjust  header lengths
-
-	  if (header_len == 2 || header_len == 3) { //Only one SDU, remove length field
-	    header_len = 1;
-	  } else { //Remove length field from the last SDU
-	    header_len--;
+	  LOG_D(FLEXRAN_AGENT, "We have %d bytes to transfer\n", sdu_length_total);
+	  if (header_len != 0) {
+	    LOG_D(FLEXRAN_AGENT, "Header length was %d ", header_len);
+	    header_len_last--;
+	    header_len -= header_len_last;
+	    LOG_D(FLEXRAN_AGENT, "so we resized it to %d\n", header_len);
 	  }
+	  
+	  /* if (header_len == 2 || header_len == 3) { //Only one SDU, remove length field */
+	  /*   header_len = 1; */
+	  /* } else { //Remove length field from the last SDU */
+	  /*   header_len--; */
+	  /* } */
 
 	  mcs_tmp = mcs;
 	  if (mcs_tmp == 0) {
@@ -1434,8 +1392,8 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
 
 	  dci_tbs = TBS;
 	  mcs = mcs_tmp;
-
-	  aggregation = process_ue_cqi(mod_id,UE_id);
+	  LOG_D(FLEXRAN_AGENT, "Final mcs was %d\n", mcs); 
+	  
 	  dl_dci->has_aggr_level = 1;
 	  dl_dci->aggr_level = aggregation;
 	  
@@ -1451,8 +1409,7 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
 	  // do PUCCH power control
           // this is the normalized RX power
 	  normalized_rx_power = flexran_get_p0_pucch_dbm(mod_id,UE_id, CC_id); //eNB_UE_stats->Po_PUCCH_dBm; 
-	  target_rx_power = flexran_get_p0_nominal_pucch(mod_id, CC_id) + 10; //mac_xface->get_target_pucch_rx_power(mod_id, CC_id) + 10;
-
+	  target_rx_power = flexran_get_p0_nominal_pucch(mod_id, CC_id) + 20; //mac_xface->get_target_pucch_rx_power(mod_id, CC_id) + 20;
 	  // this assumes accumulated tpc
 	  // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
 	  int32_t framex10psubframe = UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame*10+UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe;
@@ -1460,8 +1417,8 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
 	  if (((framex10psubframe+10)<=(frame*10+subframe)) || //normal case
 	      ((framex10psubframe>(frame*10+subframe)) && (((10240-framex10psubframe+frame*10+subframe)>=10)))) //frame wrap-around
 	    if (flexran_get_p0_pucch_status(mod_id, UE_id, CC_id) == 1) {
-	      flexran_update_p0_pucch(mod_id, UE_id, CC_id);
-	      
+  	      flexran_update_p0_pucch(mod_id, UE_id, CC_id);
+
 	      UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame = frame;
 	      UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe = subframe;
 	      if (normalized_rx_power>(target_rx_power+1)) {

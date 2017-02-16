@@ -29,29 +29,10 @@
  * \note
  * \warning
  */
-#define _GNU_SOURCE
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sched.h>
-#include <linux/sched.h>
-#include <signal.h>
-#include <execinfo.h>
-#include <getopt.h>
-#include <syscall.h>
-#include <sys/sysinfo.h>
+#include "lte-softmodem.h"
 
 #include "rt_wrapper.h"
-#include "assertions.h"
-#include "PHY/types.h"
 
-#include "PHY/defs.h"
 #ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
 #include "RRC/LITE/extern.h"
@@ -60,8 +41,6 @@
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
-
-#include "../../ARCH/COMMON/common_lib.h"
 
 #include "PHY/extern.h"
 #include "SCHED/extern.h"
@@ -91,30 +70,11 @@ void init_UE_threads(PHY_VARS_UE *UE);
 void *UE_thread(void *arg);
 void init_UE(int nb_inst);
 
-extern pthread_cond_t sync_cond;
-extern pthread_mutex_t sync_mutex;
-extern int sync_var;
-
-
-extern openair0_config_t openair0_cfg[MAX_CARDS];
-extern uint32_t          downlink_frequency[MAX_NUM_CCs][4];
-extern int32_t           uplink_frequency_offset[MAX_NUM_CCs][4];
-extern int oai_exit;
-
 int32_t **rxdata;
 int32_t **txdata;
 
-//extern unsigned int tx_forward_nsamps;
-//extern int tx_delay;
-
-extern int rx_input_level_dBm;
-extern uint8_t exit_missed_slots;
-extern uint64_t num_missed_slots; // counter for the number of missed slots
-
-extern void exit_fun(const char* s);
-
 #define KHz (1000UL)
-#define MHz (1000 * KHz)
+#define MHz (1000*KHz)
 
 typedef struct eutra_band_s {
     int16_t band;
@@ -186,7 +146,7 @@ void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_
     }
 
 #else
-    if (cpuset!=NULL)
+    if (CPU_COUNT(cpuset) > 0)
         AssertFatal( 0 == pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), cpuset), "");
     struct sched_param sp;
     sp.sched_priority = sched_fifo;
@@ -246,7 +206,8 @@ static void *UE_thread_synch(void *arg) {
 
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
-    CPU_SET(3, &cpuset);
+    if ( threads.iq != -1 )
+        CPU_SET(threads.iq, &cpuset);
     // this thread priority must be lower that the main acquisition thread
     init_thread(100000, 500000, FIFO_PRIORITY-1, &cpuset,
                 "sync UE");
@@ -510,7 +471,10 @@ static void *UE_thread_rxn_txnp4(void *arg) {
     sprintf(threadname,"UE_proc_%d",proc->sub_frame_start);
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
-    CPU_SET(proc->sub_frame_start+1, &cpuset);
+    if ( (proc->sub_frame_start+1)%2 == 0 && threads.even != -1 )
+        CPU_SET(threads.even, &cpuset);
+    if ( (proc->sub_frame_start+1)%2 == 1 && threads.odd != -1 )
+        CPU_SET(threads.odd, &cpuset);
     init_thread(900000,1000000 , FIFO_PRIORITY-1, &cpuset,
                 threadname);
 
@@ -624,12 +588,14 @@ void *UE_thread(void *arg) {
 
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
-    CPU_SET(3, &cpuset);
+    if ( threads.iq != -1 )
+        CPU_SET(threads.iq, &cpuset);
     init_thread(100000, 500000, FIFO_PRIORITY, &cpuset,
-                "main UE");
-
-    AssertFatal(0== openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "");
+                "UHD Threads");
+    if (oaisim_flag == 0)
+        AssertFatal(0== openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "");
     UE->rfdevice.host_type = BBU_HOST;
+    pthread_setname_np( pthread_self(), "Main UE" );
     init_UE_threads(UE);
 
 #ifdef NAS_UE

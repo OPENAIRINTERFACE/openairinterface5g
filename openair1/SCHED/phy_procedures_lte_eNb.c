@@ -92,6 +92,9 @@ extern uint16_t hundred_times_log10_NPRB[100];
 unsigned int max_peak_val;
 int max_sync_pos;
 
+int harq_pid_updated[NUMBER_OF_UE_MAX][8] = {{0}};
+int harq_pid_round[NUMBER_OF_UE_MAX][8] = {{0}};
+
 //DCI_ALLOC_t dci_alloc[8];
 
 #ifdef EMOS
@@ -1444,15 +1447,6 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
     eNB->dlsch_ra->active = 0;
   }
 
-#if defined(FLEXRAN_AGENT_SB_IF)
-#ifndef DISABLE_SF_TRIGGER
-  //Send subframe trigger to the controller
-  if (mac_agent_registered[eNB->Mod_id]) {
-    agent_mac_xface[eNB->Mod_id]->flexran_agent_send_sf_trigger(eNB->Mod_id);
-  }
-#endif
-#endif
-
   // Now scan UE specific DLSCH
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++)
     {
@@ -1552,7 +1546,6 @@ void process_HARQ_feedback(uint8_t UE_id,
   int frame = proc->frame_rx;
   int subframe = proc->subframe_rx;
   int harq_pid = subframe2harq_pid( fp,frame,subframe);
-
 
   if (fp->frame_type == FDD) { //FDD
     subframe_m4 = (subframe<4) ? subframe+6 : subframe-4;
@@ -1681,6 +1674,7 @@ void process_HARQ_feedback(uint8_t UE_id,
         mp = m;
 
       dl_harq_pid[m]     = dlsch->harq_ids[dl_subframe];
+      harq_pid_updated[UE_id][dl_harq_pid[m]] = 1;
 
       if ((pucch_sel != 2)&&(pusch_flag == 0)) { // multiplexing
         if ((SR_payload == 1)&&(all_ACKed == 1))
@@ -1768,7 +1762,7 @@ void process_HARQ_feedback(uint8_t UE_id,
               eNB->dlsch[(uint8_t)UE_id][0]->harq_processes[dl_harq_pid[m]]->TBS;
             */
           }
-
+	 
           // Do fine-grain rate-adaptation for DLSCH
           if (ue_stats->dlsch_NAK_round0 > dlsch->error_threshold) {
             if (ue_stats->dlsch_mcs_offset == 1)
@@ -1781,7 +1775,7 @@ void process_HARQ_feedback(uint8_t UE_id,
           LOG_D(PHY,"[process_HARQ_feedback] Frame %d Setting round to %d for pid %d (subframe %d)\n",frame,
                 dlsch_harq_proc->round,dl_harq_pid[m],subframe);
 #endif
-
+	  harq_pid_round[UE_id][dl_harq_pid[m]] = dlsch_harq_proc->round;
           // Clear NAK stats and adjust mcs offset
           // after measurement window timer expires
           if (ue_stats->dlsch_sliding_cnt == dlsch->ra_window_size) {
@@ -1800,8 +1794,6 @@ void process_HARQ_feedback(uint8_t UE_id,
             ue_stats->dlsch_NAK_round0 = 0;
             ue_stats->dlsch_sliding_cnt = 0;
           }
-
-
         }
       }
     }
@@ -2751,6 +2743,7 @@ void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc_rxtx) {
   
   if (eNB->node_function == NGFI_RRU_IF4p5) {
     /// **** send_IF4 of rxdataF to RCC (no prach now) **** ///
+    LOG_D(PHY,"send_IF4p5 (PULFFT): frame %d, subframe %d\n",proc_rxtx->frame_rx,proc_rxtx->subframe_rx);
     send_IF4p5(eNB, proc_rxtx->frame_rx, proc_rxtx->subframe_rx, IF4p5_PULFFT, 0);
   }    
 }
@@ -3071,12 +3064,15 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
         LOG_D(PHY,"[eNB][PUSCH %d] Increasing to round %d\n",harq_pid,eNB->ulsch[i]->harq_processes[harq_pid]->round);
 
         if (eNB->ulsch[i]->Msg3_flag == 1) {
+
           LOG_D(PHY,"[eNB %d/%d][RAPROC] frame %d, subframe %d, UE %d: Error receiving ULSCH (Msg3), round %d/%d\n",
                 eNB->Mod_id,
                 eNB->CC_id,
                 frame,subframe, i,
                 eNB->ulsch[i]->harq_processes[harq_pid]->round-1,
                 fp->maxHARQ_Msg3Tx-1);
+	  /*dump_ulsch(eNB,proc,i);
+	    exit(-1);*/
 
 	  LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d RNTI %x RX power (%d,%d) RSSI (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d\n",
 		eNB->Mod_id,harq_pid,
@@ -3159,6 +3155,10 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
             eNB->UE_stats[i].ulsch_errors[harq_pid]++;
             eNB->UE_stats[i].ulsch_consecutive_errors++;
 
+	   /*if (eNB->ulsch[i]->harq_processes[harq_pid]->nb_rb > 20) {
+		dump_ulsch(eNB,proc,i);
+	 	exit(-1);
+           }*/
 	    // indicate error to MAC
 	    if (eNB->mac_enabled == 1)
 	      mac_xface->rx_sdu(eNB->Mod_id,
@@ -3423,12 +3423,19 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
   }
 
 #endif
-
-
   //}
 
 #ifdef EMOS
   phy_procedures_emos_eNB_RX(subframe,eNB);
+#endif
+
+#if defined(FLEXRAN_AGENT_SB_IF)
+#ifndef DISABLE_SF_TRIGGER
+  //Send subframe trigger to the controller
+  if (mac_agent_registered[eNB->Mod_id]) {
+    agent_mac_xface[eNB->Mod_id]->flexran_agent_send_sf_trigger(eNB->Mod_id);
+  }
+#endif
 #endif
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC+offset, 0 );

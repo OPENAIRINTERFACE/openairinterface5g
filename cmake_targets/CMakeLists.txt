@@ -1871,6 +1871,7 @@ add_executable(oaisim
   ${OPENAIR_TARGETS}/SIMU/USER/oaisim_functions.c
   ${OPENAIR_TARGETS}/SIMU/USER/event_handler.c
   ${OPENAIR_TARGETS}/SIMU/USER/oaisim.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
@@ -1885,7 +1886,7 @@ add_executable(oaisim
 
 target_include_directories(oaisim PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim
-  -Wl,--start-group
+  -Wl,-ldl,--start-group
   RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} LIB_NAS_UE SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
   -Wl,--end-group )
 
@@ -1916,6 +1917,7 @@ add_executable(oaisim_nos1
   ${OPENAIR_TARGETS}/SIMU/USER/oaisim_functions.c
   ${OPENAIR_TARGETS}/SIMU/USER/event_handler.c
   ${OPENAIR_TARGETS}/SIMU/USER/oaisim.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c

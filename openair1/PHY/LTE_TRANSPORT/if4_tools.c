@@ -108,8 +108,8 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
 	     (packet_type == IF4p5_PULTICK)){
     db_fulllength = 12*fp->N_RB_UL;
     db_halflength = (db_fulllength)>>1;
-    slotoffsetF = 1;
-    blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength - 1; 
+    slotoffsetF = 0;
+    blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
 
     if (subframe_select(fp,subframe)==SF_S) {
       nsym=fp->ul_symbols_in_S_subframe;
@@ -131,10 +131,12 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
 	LOG_D(PHY,"IF4p5_PULFFT: frame %d, subframe %d, symbol %d\n",frame,subframe,symbol_id);
 	for (element_id=0; element_id<db_halflength; element_id++) {
 	  i = (uint16_t*) &rxdataF[0][blockoffsetF+element_id];
-	  data_block[element_id] = ((uint16_t) lin2alaw[*i]) | (lin2alaw[*(i+1)]<<8);
+	  data_block[element_id] = ((uint16_t) lin2alaw[*i]) | ((uint16_t)(lin2alaw[*(i+1)]<<8));
 	  
 	  i = (uint16_t*) &rxdataF[0][slotoffsetF+element_id];
-	  data_block[element_id+db_halflength] = ((uint16_t) lin2alaw[*i]) | (lin2alaw[*(i+1)]<<8);        
+	  data_block[element_id+db_halflength] = ((uint16_t) lin2alaw[*i]) | ((uint16_t)(lin2alaw[*(i+1)]<<8));
+	  //if (element_id==0) LOG_I(PHY,"send_if4p5: symbol %d rxdata0 = (%d,%d)\n",symbol_id,*i,*(i+1));
+		
 	}
        	
 	packet_header->frame_status &= ~(0x000f<<26);
@@ -235,7 +237,7 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
                                   0) < 0) {
     perror("ETHERNET read");
   }
-
+  
   if (eth->flags == ETH_RAW_IF4p5_MODE) {
     packet_header = (IF4p5_header_t*) (rx_buffer+MAC_HEADER_SIZE_BYTES);
     data_block = (uint16_t*) (rx_buffer+MAC_HEADER_SIZE_BYTES+sizeof_IF4p5_header_t);
@@ -250,7 +252,6 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
   *subframe = ((packet_header->frame_status)>>22)&0x000f;
 
   *packet_type = packet_header->sub_type; 
-
 
   if (*packet_type == IF4p5_PDLFFT) {          
     *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
@@ -273,10 +274,10 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
   } else if (*packet_type == IF4p5_PULFFT) {         
     *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
 
-    if (eNB->CC_id==1) LOG_I(PHY,"UL_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,*frame,*subframe,*symbol_number);
+    if (eNB->CC_id==0) LOG_D(PHY,"UL_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,*frame,*subframe,*symbol_number);
 
-    slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size) + 1;
-    blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength - 1; 
+    slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size);
+    blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
     
     for (element_id=0; element_id<db_halflength; element_id++) {
       i = (uint16_t*) &rxdataF[0][blockoffsetF+element_id];
@@ -286,9 +287,12 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
       i = (uint16_t*) &rxdataF[0][slotoffsetF+element_id];
       *i = alaw2lin[ (data_block[element_id+db_halflength] & 0xff) ]; 
       *(i+1) = alaw2lin[ (data_block[element_id+db_halflength]>>8) ];
+
+	//if (element_id==0) LOG_I(PHY,"recv_if4p5: symbol %d rxdata0 = (%u,%u)\n",*symbol_number,*i,*(i+1));
     }
 		
-  } else if (*packet_type == IF4p5_PRACH) {    
+  } else if (*packet_type == IF4p5_PRACH) {  
+     LOG_D(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,*frame,*subframe);  
     if (eNB->CC_id==1) LOG_I(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,*frame,*subframe);
 
     // FIX: hard coded prach samples length

@@ -729,8 +729,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
   ulsch_scheduler_pre_processor(module_idP,
                                 frameP,
                                 subframeP,
-                                first_rb,
-                                aggregation);
+                                first_rb);
 
   //  LOG_I(MAC,"exiting ulsch preprocesor\n");
 
@@ -791,13 +790,18 @@ abort();
       frame_parms = mac_xface->get_lte_frame_parms(module_idP,CC_id);
       eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
 
+      aggregation=get_aggregation(get_bw_index(module_idP,CC_id), 
+				  eNB_UE_stats->DL_cqi[0],
+				  format0);
+      
       if (CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,aggregation,rnti)) {
         LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: not enough nCCE\n", module_idP,frameP,subframeP,UE_id,rnti,CC_id);
         continue; // break;
+      } else{
+	LOG_D(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d mode %s: aggregation level %d\n", 
+	      module_idP,frameP,subframeP,UE_id,rnti,CC_id, mode_string[eNB_UE_stats->mode], 1<<aggregation);
       }
 
-
-      //      printf("UE %d/%x is feasible, mode %s\n",UE_id,rnti,mode_string[eNB_UE_stats->mode]);
 
       if (eNB_UE_stats->mode == PUSCH) { // ue has a ulsch channel
 
@@ -824,7 +828,6 @@ abort();
 		UE_sched_ctrl->ul_failure_timer);
           // reset the scheduling request
           UE_template->ul_SR = 0;
-          aggregation = process_ue_cqi(module_idP,UE_id); 
           status = mac_eNB_get_rrc_status(module_idP,rnti);
 	  if (status < RRC_CONNECTED)
 	    cqi_req = 0;
