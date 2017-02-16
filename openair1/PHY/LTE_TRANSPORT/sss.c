@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_TRANSPORT/sss.c
 * \brief Top-level routines for generating and decoding the secondary synchronization signal (SSS) V8.6 2009-03
@@ -67,10 +59,10 @@ int generate_sss(int32_t **txdataF,
 
   Nsymb = (frame_parms->Ncp==NORMAL)?14:12;
   k = frame_parms->ofdm_symbol_size-3*12+5;
-  a = (frame_parms->nb_antennas_tx == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
+  a = (frame_parms->nb_antenna_ports_eNB == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
 
   for (i=0; i<62; i++) {
-    for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+    for (aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
 
       ((int16_t*)txdataF[aa])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
                                  symbol*frame_parms->ofdm_symbol_size + k)] =
@@ -154,9 +146,11 @@ int pss_ch_est(PHY_VARS_UE *ue,
 }
 
 
-int pss_sss_extract(PHY_VARS_UE *ue,
+int _do_pss_sss_extract(PHY_VARS_UE *ue,
                     int32_t pss_ext[4][72],
-                    int32_t sss_ext[4][72])
+                    int32_t sss_ext[4][72],
+                    uint8_t doPss, uint8_t doSss,
+					uint8_t subframe) // add flag to indicate extracting only PSS, only SSS, or both
 {
 
 
@@ -170,37 +164,57 @@ int pss_sss_extract(PHY_VARS_UE *ue,
   int rx_offset = frame_parms->ofdm_symbol_size-3*12;
   uint8_t pss_symb,sss_symb;
 
-  int32_t **rxdataF =  ue->common_vars.rxdataF;
-
-  if (frame_parms->frame_type == FDD) {
-    pss_symb = 6-frame_parms->Ncp;
-    sss_symb = pss_symb-1;
-  } else {
-    pss_symb = 2;
-    sss_symb = frame_parms->symbols_per_tti-1;
-  }
+  int32_t **rxdataF;
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
+	  if (frame_parms->frame_type == FDD) {
+	    pss_symb = 6-frame_parms->Ncp;
+	    sss_symb = pss_symb-1;
+
+	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe&0x1)].rxdataF;
+	    pss_rxF  =  &rxdataF[aarx][(rx_offset + (pss_symb*(frame_parms->ofdm_symbol_size)))];
+	    sss_rxF  =  &rxdataF[aarx][(rx_offset + (sss_symb*(frame_parms->ofdm_symbol_size)))];
+
+	  } else {
+	    pss_symb = 2;
+	    sss_symb = frame_parms->symbols_per_tti-1;
+
+	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe&0x1)].rxdataF;
+	    sss_rxF  =  &rxdataF[aarx][(rx_offset + (sss_symb*(frame_parms->ofdm_symbol_size)))];
+
+	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[((subframe+1)&0x1)].rxdataF;
+	    pss_rxF  =  &rxdataF[aarx][(rx_offset + (pss_symb*(frame_parms->ofdm_symbol_size)))];
+
+	  }
     //printf("extract_rbs: symbol_mod=%d, rx_offset=%d, ch_offset=%d\n",symbol_mod,
     //   (rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2,
     //   LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size)));
 
-    pss_rxF        = &rxdataF[aarx][(rx_offset + (pss_symb*(frame_parms->ofdm_symbol_size)))];
-    sss_rxF        = &rxdataF[aarx][(rx_offset + (sss_symb*(frame_parms->ofdm_symbol_size)))];
     pss_rxF_ext    = &pss_ext[aarx][0];
     sss_rxF_ext    = &sss_ext[aarx][0];
 
     for (rb=0; rb<nb_rb; rb++) {
       // skip DC carrier
       if (rb==3) {
-        sss_rxF       = &rxdataF[aarx][(1 + (sss_symb*(frame_parms->ofdm_symbol_size)))];
-        pss_rxF       = &rxdataF[aarx][(1 + (pss_symb*(frame_parms->ofdm_symbol_size)))];
+        if(frame_parms->frame_type == FDD)
+        {
+          sss_rxF       = &rxdataF[aarx][(1 + (sss_symb*(frame_parms->ofdm_symbol_size)))];
+          pss_rxF       = &rxdataF[aarx][(1 + (pss_symb*(frame_parms->ofdm_symbol_size)))];
+        }
+        else
+        {
+    	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe&0x1)].rxdataF;
+    	    sss_rxF  =  &rxdataF[aarx][(1 + (sss_symb*(frame_parms->ofdm_symbol_size)))];
+
+    	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[((subframe+1)&0x1)].rxdataF;
+    	    pss_rxF  =  &rxdataF[aarx][(1 + (pss_symb*(frame_parms->ofdm_symbol_size)))];
+        }
       }
 
       for (i=0; i<12; i++) {
-        pss_rxF_ext[i]=pss_rxF[i];
-        sss_rxF_ext[i]=sss_rxF[i];
+        if (doPss) {pss_rxF_ext[i]=pss_rxF[i];}
+        if (doSss) {sss_rxF_ext[i]=sss_rxF[i];}
       }
 
       pss_rxF+=12;
@@ -212,6 +226,29 @@ int pss_sss_extract(PHY_VARS_UE *ue,
   }
 
   return(0);
+}
+
+int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
+                    int32_t pss_ext[4][72],
+                    int32_t sss_ext[4][72],
+					uint8_t subframe)
+{
+  return _do_pss_sss_extract(phy_vars_ue, pss_ext, sss_ext, 1 /* doPss */, 1 /* doSss */, subframe);
+}
+
+int pss_only_extract(PHY_VARS_UE *phy_vars_ue,
+                    int32_t pss_ext[4][72])
+{
+  static int32_t dummy[4][72];
+  return _do_pss_sss_extract(phy_vars_ue, pss_ext, dummy, 1 /* doPss */, 0 /* doSss */, 0);
+}
+
+
+int sss_only_extract(PHY_VARS_UE *phy_vars_ue,
+                    int32_t sss_ext[4][72])
+{
+  static int32_t dummy[4][72];
+  return _do_pss_sss_extract(phy_vars_ue, dummy, sss_ext, 0 /* doPss */, 1 /* doSss */, 0);
 }
 
 
@@ -280,10 +317,10 @@ int rx_sss(PHY_VARS_UE *ue,int32_t *tot_metric,uint8_t *flip_max,uint8_t *phase_
              0,
 	     1);
   }
-
+  // pss sss extract for subframe 0
   pss_sss_extract(ue,
                   pss_ext,
-                  sss0_ext);
+                  sss0_ext,0);
   /*
   write_output("rxsig0.m","rxs0",&ue->common_vars.rxdata[0][0],ue->frame_parms.samples_per_tti,1,1);
   write_output("rxdataF0.m","rxF0",&ue->common_vars.rxdataF[0][0],2*14*ue->frame_parms.ofdm_symbol_size,2,1);
@@ -331,9 +368,10 @@ int rx_sss(PHY_VARS_UE *ue,int32_t *tot_metric,uint8_t *flip_max,uint8_t *phase_
 	     1);
   }
 
+  // pss sss extract for subframe 5
   pss_sss_extract(ue,
                   pss_ext,
-                  sss5_ext);
+                  sss5_ext,5);
 
   //  write_output("sss5_ext0.m","sss5ext0",sss5_ext,72,1,1);
   // get conjugated channel estimate from PSS (symbol 6), H* = R* \cdot PSS

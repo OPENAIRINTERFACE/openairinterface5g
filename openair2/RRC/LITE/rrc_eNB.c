@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file rrc_eNB.c
  * \brief rrc procedures for eNB
@@ -101,7 +93,10 @@
 
 #include "SIMULATION/TOOLS/defs.h" // for taus
 
-#define XER_PRINT
+#if defined(FLEXRAN_AGENT_SB_IF)
+#include "flexran_agent_extern.h"
+#endif
+//#define XER_PRINT
 
 #ifdef PHY_EMUL
 extern EMULATION_VARS              *Emul_vars;
@@ -309,14 +304,14 @@ init_SI(
 
       //   SIB13
       for (i = 0; i < eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.count; i++) {
-        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" SIB13 contents for MBSFN sync area %d/2 (partial)\n",
+        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" SIB13 contents for MBSFN sync area %d/%d (partial)\n",
               PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
               i,
               eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.count);
-        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" MCCH Repetition Period: %d (just index number, not real value)\n",
+        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" MCCH Repetition Period: %ld (just index number, not real value)\n",
               PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
               eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
-        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" MCCH Offset: %d\n",
+        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" MCCH Offset: %ld\n",
               PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
               eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_Offset_r9);
       }
@@ -399,7 +394,7 @@ init_MCCH(
             eNB_rrc_inst[enb_mod_idP].carrier[CC_id].MCCH_MESSAGE[sync_area],
             sync_area);
       LOG_D(RRC, "[eNB %d] MCCH_MESSAGE  contents for Sync Area %d (partial)\n", enb_mod_idP, sync_area);
-      LOG_D(RRC, "[eNB %d] CommonSF_AllocPeriod_r9 %d\n", enb_mod_idP,
+      LOG_D(RRC, "[eNB %d] CommonSF_AllocPeriod_r9 %ld\n", enb_mod_idP,
             eNB_rrc_inst[enb_mod_idP].carrier[CC_id].mcch_message->commonSF_AllocPeriod_r9);
       LOG_D(RRC,
             "[eNB %d] CommonSF_Alloc_r9.list.count (number of MBSFN Subframe Pattern) %d\n",
@@ -481,7 +476,7 @@ static void init_MBMS(
 #   ifdef Rel10
                              , &(eNB_rrc_inst[enb_mod_idP].carrier[CC_id].mcch_message->pmch_InfoList_r9)
 #   endif
-                            );
+                             ,NULL);
 
     rrc_rlc_config_asn1_req(&ctxt,
                             NULL, // SRB_ToAddModList
@@ -603,7 +598,7 @@ rrc_eNB_get_next_free_ue_context(
     RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(eNB_rrc_inst[ctxt_pP->module_id].rrc_ue_head)) {
       if (ue_context_p->ue_context.random_ue_identity == ue_identityP) {
         LOG_D(RRC,
-              PROTOCOL_RRC_CTXT_UE_FMT" Cannot create new UE context, already exist rand UE id 0x%x, uid %u\n",
+              PROTOCOL_RRC_CTXT_UE_FMT" Cannot create new UE context, already exist rand UE id 0x%"PRIx64", uid %u\n",
               PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
               ue_identityP,
               ue_context_p->local_uid);
@@ -652,6 +647,9 @@ void rrc_eNB_emulation_notify_ue_module_id(
 
   // find enb_module_id
   for (enb_module_id = 0; enb_module_id < NUMBER_OF_eNB_MAX; enb_module_id++) {
+    if(enb_module_id>0){ /*FIX LATER*/
+      return;
+    }
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
       if (eNB_rrc_inst[enb_module_id].carrier[CC_id].sib1 != NULL) {
         if (
@@ -660,7 +658,6 @@ void rrc_eNB_emulation_notify_ue_module_id(
           (eNB_rrc_inst[enb_module_id].carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[2] == cell_identity_byte2P) &&
           (eNB_rrc_inst[enb_module_id].carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[3] == cell_identity_byte3P)
         ) {
-          oai_emulation.info.eNB_ue_module_id_to_rnti[enb_module_id][ue_module_idP] = rntiP;
           ue_context_p = rrc_eNB_get_ue_context(
                            &eNB_rrc_inst[enb_module_id],
                            rntiP
@@ -670,10 +667,11 @@ void rrc_eNB_emulation_notify_ue_module_id(
             oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[enb_module_id][ue_context_p->local_uid] = ue_module_idP;
           }
 
-          return;
+          //return;
         }
       }
     }
+    oai_emulation.info.eNB_ue_module_id_to_rnti[enb_module_id][ue_module_idP] = rntiP;
   }
 
   AssertFatal(enb_module_id == NUMBER_OF_eNB_MAX,
@@ -692,7 +690,7 @@ rrc_eNB_free_mem_UE_context(
 {
   int i;
   LOG_T(RRC,
-        PROTOCOL_RRC_CTXT_UE_FMT" Clearing UE context 0x%x (free internal structs)\n",
+        PROTOCOL_RRC_CTXT_UE_FMT" Clearing UE context 0x%p (free internal structs)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
         ue_context_pP);
 #ifdef Rel10
@@ -1312,7 +1310,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
     ASN_SEQUENCE_ADD(&(*DRB_configList2)->list, DRB_config);
     //ue_context_pP->ue_context.DRB_configList2[drb_identity_index] = &(*DRB_configList);
     
-    LOG_I(RRC,"EPS ID %d, DRB ID %d (index %d), QCI %d, priority %d, LCID %d LCGID %d \n",
+    LOG_I(RRC,"EPS ID %ld, DRB ID %ld (index %d), QCI %d, priority %ld, LCID %ld LCGID %ld \n",
 	  *DRB_config->eps_BearerIdentity,
 	  DRB_config->drb_Identity, i,
 	  ue_context_pP->ue_context.e_rab[i].param.qos.qci,
@@ -1705,7 +1703,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
   if (*physicalConfigDedicated) {
     if ((*physicalConfigDedicated)->antennaInfo) {
       (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.transmissionMode = rrc_inst->configuration.ue_TransmissionMode[0];
-      LOG_D(RRC,"Setting transmission mode to %d+1\n",rrc_inst->configuration.ue_TransmissionMode[0]);
+      LOG_D(RRC,"Setting transmission mode to %ld+1\n",rrc_inst->configuration.ue_TransmissionMode[0]);
       if (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm3) {
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
 	  CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
@@ -2267,8 +2265,8 @@ rrc_eNB_process_MeasurementReport(
   }
 
 #ifdef Rel10
-  LOG_I(RRC, "RSRP of Source %d\n", measResults2->measResultPCell.rsrpResult);
-  LOG_I(RRC, "RSRQ of Source %d\n", measResults2->measResultPCell.rsrqResult);
+  LOG_I(RRC, "RSRP of Source %ld\n", measResults2->measResultPCell.rsrpResult);
+  LOG_I(RRC, "RSRQ of Source %ld\n", measResults2->measResultPCell.rsrqResult);
 #else
   LOG_I(RRC, "RSRP of Source %d\n", measResults2->measResultServCell.rsrpResult);
   LOG_I(RRC, "RSRQ of Source %d\n", measResults2->measResultServCell.rsrqResult);
@@ -2370,7 +2368,7 @@ rrc_eNB_generate_HandoverPreparationInformation(
       ue_context_target_p->ue_id_rnti      = ue_context_pP->ue_context.rnti;             // LG: should not be the same
       ue_context_target_p->ue_context.rnti = ue_context_target_p->ue_id_rnti; // idem
       LOG_N(RRC,
-            "[eNB %d] Frame %d : Emulate sending HandoverPreparationInformation msg from eNB source %d to eNB target %d: source UE_id %x target UE_id %x source_modId: %d target_modId: %d\n",
+            "[eNB %d] Frame %d : Emulate sending HandoverPreparationInformation msg from eNB source %d to eNB target %ld: source UE_id %x target UE_id %x source_modId: %d target_modId: %d\n",
             ctxt_pP->module_id,
             ctxt_pP->frame,
             eNB_rrc_inst[ctxt_pP->module_id].carrier[0] /* CROUX TBC */.physCellId,
@@ -2397,7 +2395,7 @@ rrc_eNB_generate_HandoverPreparationInformation(
       ue_context_target_p->ue_context.handover_info->ueid_t  = ue_context_target_p->ue_context.rnti;
 
     } else {
-      LOG_E(RRC, "\nError in obtaining free UE id in target eNB %l for handover \n", targetPhyId);
+      LOG_E(RRC, "\nError in obtaining free UE id in target eNB %ld for handover \n", targetPhyId);
     }
 
   } else {
@@ -2621,7 +2619,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH =
     CALLOC(1, sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH));
   physicalConfigDedicated2->cqi_ReportConfig = NULL;  //CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL; //CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
+  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
   physicalConfigDedicated2->antennaInfo = CALLOC(1, sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->schedulingRequestConfig =
     CALLOC(1, sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
@@ -3162,7 +3160,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   memset((void *)mobilityInfo, 0, sizeof(*mobilityInfo));
   mobilityInfo->targetPhysCellId =
     (PhysCellId_t) two_tier_hexagonal_cellIds[ue_context_pP->ue_context.handover_info->modid_t];
-  LOG_D(RRC, "[eNB %d] Frame %d: handover preparation: targetPhysCellId: %d mod_id: %d ue: %x \n",
+  LOG_D(RRC, "[eNB %d] Frame %d: handover preparation: targetPhysCellId: %ld mod_id: %d ue: %x \n",
         ctxt_pP->module_id,
         ctxt_pP->frame,
         mobilityInfo->targetPhysCellId,
@@ -3256,7 +3254,8 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
      (void *)rrc_inst->sps_Config[ue_mod_idP],
      sizeof(SPS_Config_t));
    */
-  LOG_I(RRC, "[eNB %d] Frame %d: adding new UE\n");
+  LOG_I(RRC, "[eNB %d] Frame %d: adding new UE\n",
+        ctxt_pP->module_id, ctxt_pP->frame);
   //Idx = (ue_mod_idP * NB_RB_MAX) + DCCH;
   Idx = DCCH;
   // SRB1
@@ -3283,7 +3282,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 #ifdef Rel10
                            , (PMCH_InfoList_r9_t *) NULL
 #endif
-                          );
+                           ,NULL);
 
   rrc_rlc_config_asn1_req(&ctxt,
                           ue_context_pP->ue_context.SRB_configList,
@@ -3525,7 +3524,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 #ifdef Rel10
     , (PMCH_InfoList_r9_t *) NULL
 #endif
-  );
+    ,NULL);
   // Refresh SRBs/DRBs
   rrc_rlc_config_asn1_req(
     ctxt_pP,
@@ -3551,9 +3550,10 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 		ctxt_pP->frame,
 		ue_context_pP->ue_context.primaryCC_id);
       } else {
-	LOG_W(RRC,"[eNB %d] Frame  %d CC %d : invalide SRB identity %d\n",
+	LOG_W(RRC,"[eNB %d] Frame  %d CC %d : invalide SRB identity %ld\n",
 	      ctxt_pP->module_id,
 	      ctxt_pP->frame,
+              ue_context_pP->ue_context.primaryCC_id,
 	      SRB_configList->list.array[i]->srb_Identity);
       }
     }
@@ -3745,8 +3745,9 @@ rrc_eNB_generate_RRCConnectionSetup(
   eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size =
     do_RRCConnectionSetup(ctxt_pP,
                           ue_context_pP,
+                          CC_id,
                           (uint8_t*) eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.Payload,
-			  (fp->nb_antennas_tx_eNB==2)?2:1, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
+			  (fp->nb_antenna_ports_eNB==2)?2:1, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
                           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
                           fp,
                           SRB_configList,
@@ -3875,6 +3876,12 @@ openair_rrc_eNB_init(
         PROTOCOL_RRC_CTXT_FMT" Init...\n",
         PROTOCOL_RRC_CTXT_ARGS(&ctxt));
 
+#if OCP_FRAMEWORK
+while ( eNB_rrc_inst == NULL ) {
+  LOG_E(RRC, "eNB_rrc_inst not yet initialized, waiting 1 second\n");
+  sleep(1);
+}
+#endif 
   AssertFatal(eNB_rrc_inst != NULL, "eNB_rrc_inst not initialized!");
   AssertFatal(NUMBER_OF_UE_MAX < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
 
@@ -4184,9 +4191,11 @@ rrc_eNB_decode_ccch(
              * the current one must be removed from MAC/PHY (zombie UE)
              */
             if ((ue_context_p = rrc_eNB_ue_context_random_exist(ctxt_pP, random_value))) {
-//#warning "TODO: random_exist: remove UE from MAC/PHY (how?)"
-	      //              AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");
+              LOG_W(RRC, "new UE rnti %x (coming with random value) is already there as UE %x, removing %x from MAC/PHY\n",
+                    ctxt_pP->rnti, ue_context_p->ue_context.rnti, ctxt_pP->rnti);
+	      rrc_mac_remove_ue(ctxt_pP->module_id, ctxt_pP->rnti);
               ue_context_p = NULL;
+              return 0;
             } else {
               ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
             }
@@ -4197,9 +4206,8 @@ rrc_eNB_decode_ccch(
             m_tmsi_t   m_tmsi   = BIT_STRING_to_uint32(&s_TMSI.m_TMSI);
             random_value = (((uint64_t)mme_code) << 32) | m_tmsi;
             if ((ue_context_p = rrc_eNB_ue_context_stmsi_exist(ctxt_pP, mme_code, m_tmsi))) {
-
-		//#warning "TODO: stmsi_exist: remove UE from MAC/PHY (how?)"
 	      LOG_I(RRC," S-TMSI exists, ue_context_p %p, old rnti %x => %x\n",ue_context_p,ue_context_p->ue_context.rnti,ctxt_pP->rnti);
+	      rrc_mac_remove_ue(ctxt_pP->module_id, ue_context_p->ue_context.rnti);
 	      stmsi_received=1;
               /* replace rnti in the context */
               /* for that, remove the context from the RB tree */
@@ -4211,10 +4219,8 @@ rrc_eNB_decode_ccch(
               /* reset timers */
               ue_context_p->ue_context.ul_failure_timer = 0;
               ue_context_p->ue_context.ue_release_timer = 0;
-	      //   AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");
-	      //              ue_context_p = NULL;
             } else {
-	      LOG_I(RRC," S-TMSI doesn't exist, setting Initialue_identity_s_TMSI.m_tmsi to %x => %x\n",ue_context_p,m_tmsi);
+	      LOG_I(RRC," S-TMSI doesn't exist, setting Initialue_identity_s_TMSI.m_tmsi to %p => %x\n",ue_context_p,m_tmsi);
               ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, NOT_A_RANDOM_UE_IDENTITY);
               if (ue_context_p == NULL)
                 LOG_E(RRC, "%s:%d:%s: rrc_eNB_get_next_free_ue_context returned NULL\n", __FILE__, __LINE__, __FUNCTION__);
@@ -4223,7 +4229,8 @@ rrc_eNB_decode_ccch(
 	        ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code = mme_code;
 	        ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi = m_tmsi;
               } else {
-                break;
+                /* TODO: do we have to break here? */
+                //break;
               }
             }
 
@@ -4251,7 +4258,7 @@ rrc_eNB_decode_ccch(
 
         }
         LOG_D(RRC,
-              PROTOCOL_RRC_CTXT_UE_FMT" UE context: %X\n",
+              PROTOCOL_RRC_CTXT_UE_FMT" UE context: %p\n",
               PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
               ue_context_p);
 
@@ -4261,14 +4268,14 @@ rrc_eNB_decode_ccch(
 #if defined(ENABLE_ITTI)
           ue_context_p->ue_context.establishment_cause = rrcConnectionRequest->establishmentCause;
 	  if (stmsi_received==0)
-	    LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Accept new connection from UE random UE identity (0x%" PRIx64 ") MME code %u TMSI %u cause %u\n",
+	    LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Accept new connection from UE random UE identity (0x%" PRIx64 ") MME code %u TMSI %u cause %ld\n",
 		  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
 		  ue_context_p->ue_context.random_ue_identity,
 		  ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code,
 		  ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
 		  ue_context_p->ue_context.establishment_cause);
 	  else
-	    LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Accept new connection from UE  MME code %u TMSI %u cause %u\n",
+	    LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Accept new connection from UE  MME code %u TMSI %u cause %ld\n",
 		  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
 		  ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code,
 		  ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
@@ -4344,7 +4351,7 @@ rrc_eNB_decode_ccch(
 #   ifdef Rel10
                                , (PMCH_InfoList_r9_t *) NULL
 #   endif
-                              );
+                               ,NULL);
 
       rrc_rlc_config_asn1_req(ctxt_pP,
                               ue_context_p->ue_context.SRB_configList,
@@ -4458,7 +4465,7 @@ rrc_eNB_decode_dcch(
   }
 
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-    LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Failed to decode UL-DCCH (%d bytes)\n",
+    LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Failed to decode UL-DCCH (%zu bytes)\n",
           PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
           dec_rval.consumed);
     return -1;
@@ -4525,19 +4532,28 @@ rrc_eNB_decode_dcch(
         if (ue_context_p->ue_context.Status == RRC_RECONFIGURED){
 	  dedicated_DRB = 1;
 	  LOG_I(RRC,
-		PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %d)\n",
+		PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld)\n",
 		PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
 	}else {
 	  dedicated_DRB = 0;
 	  ue_context_p->ue_context.Status = RRC_RECONFIGURED;
 	  LOG_I(RRC,
-		PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (default DRB, xid %d)\n",
+		PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (default DRB, xid %ld)\n",
 		PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
 	}
 	rrc_eNB_process_RRCConnectionReconfigurationComplete(
           ctxt_pP,
           ue_context_p,
-          ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
+	  ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
+
+#if defined(FLEXRAN_AGENT_SB_IF)
+	//WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
+	if (mac_agent_registered[ctxt_pP->module_id]) {
+	  agent_mac_xface[ctxt_pP->eNB_index]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
+										ue_context_p->ue_id_rnti,
+										PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_UPDATED);
+	}
+#endif
       }
 #if defined(ENABLE_ITTI)
 #   if defined(ENABLE_USE_MME)
@@ -4633,6 +4649,15 @@ rrc_eNB_decode_dcch(
           ue_context_p->ue_context.Status = RRC_CONNECTED;
           LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_CONNECTED \n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+	  
+#if defined(FLEXRAN_AGENT_SB_IF)
+	  //WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
+	  if (mac_agent_registered[ctxt_pP->module_id]) {
+	    agent_mac_xface[ctxt_pP->eNB_index]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
+										  ue_context_p->ue_id_rnti,
+										  PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_ACTIVATED);
+	  }
+#endif
         }
       }
 
@@ -4761,6 +4786,7 @@ rrc_eNB_decode_dcch(
 #ifdef XER_PRINT
       xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void *)ul_dcch_msg);
 #endif
+      LOG_I(RRC, "got UE capabilities for UE %x\n", ctxt_pP->rnti);
       dec_rval = uper_decode(NULL,
                              &asn_DEF_UE_EUTRA_Capability,
                              (void **)&UE_EUTRA_Capability,
@@ -4771,7 +4797,7 @@ rrc_eNB_decode_dcch(
                              choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.
                              array[0]->ueCapabilityRAT_Container.size, 0, 0);
       //#ifdef XER_PRINT
-      xer_fprint(stdout, &asn_DEF_UE_EUTRA_Capability, (void *)UE_EUTRA_Capability);
+      //xer_fprint(stdout, &asn_DEF_UE_EUTRA_Capability, (void *)UE_EUTRA_Capability);
       //#endif
 
 #if defined(ENABLE_USE_MME)

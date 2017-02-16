@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-   Contact Information
-   OpenAirInterface Admin: openair_admin@eurecom.fr
-   OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /*! \file ethernet_lib.c 
  * \brief API to stream I/Q samples over standard ethernet
  * \author  add alcatel Katerina Trilyraki, Navid Nikaein, Pedro Dinis, Lucio Ferreira, Raymond Knopp
@@ -204,6 +197,7 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
 
   int nblocks = nsamps;  
   int bytes_sent = 0;
+
   
   eth_state_t *eth = (eth_state_t*)device->priv;
   
@@ -213,6 +207,8 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
     packet_size = UDP_IF4p5_PDLFFT_SIZE_BYTES(nblocks);    
   } else if (flags == IF4p5_PULFFT) {
     packet_size = UDP_IF4p5_PULFFT_SIZE_BYTES(nblocks); 
+  } else if (flags == IF4p5_PULTICK) {
+    packet_size = UDP_IF4p5_PULTICK_SIZE_BYTES; 
   } else if (flags == IF4p5_PRACH) {  
     packet_size = UDP_IF4p5_PRACH_SIZE_BYTES;   
   } else {
@@ -221,7 +217,6 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
   }
    
   eth->tx_nsamps = nblocks;
-  
   bytes_sent = sendto(eth->sockfd,
 		      buff[0], 
 		      packet_size,
@@ -250,6 +245,8 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
   //sendto_flag|=flags;
   eth->tx_nsamps=nsamps;
 
+ 
+
   for (i=0;i<cc;i++) {	
     /* buff[i] points to the position in tx buffer where the payload to be sent is
        buff2 points to the position in tx buffer where the packet header will be placed */
@@ -269,7 +266,8 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
     *(uint16_t *)(buff2 + sizeof(uint16_t)) = 1+(i<<1);
     *(openair0_timestamp *)(buff2 + sizeof(int32_t)) = timestamp;
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TX_SEQ_NUM, pck_seq_num);
-
+    
+    
     while(bytes_sent < UDP_PACKET_SIZE_BYTES(nsamps)) {
 #if DEBUG   
       printf("------- TX ------: buff2 current position=%d remaining_bytes=%d  bytes_sent=%d \n",

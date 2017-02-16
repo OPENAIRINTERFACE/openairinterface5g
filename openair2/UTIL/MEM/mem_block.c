@@ -1,32 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
-
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /***************************************************************************
                           mem_block.c  -  description
@@ -64,7 +55,7 @@ static pthread_mutex_t mtex = PTHREAD_MUTEX_INITIALIZER;
 //#define DEBUG_MEM_MNGT_ALLOC
 //-----------------------------------------------------------------------------
 #if defined(USER_MODE) && defined(DEBUG_MEM_MNGT_ALLOC)
-uint32_t             counters[11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+uint32_t             counters[14] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 #endif
 //-----------------------------------------------------------------------------
 /*
@@ -182,7 +173,7 @@ pool_buffer_clean (void *arg)
 }
 //-----------------------------------------------------------------------------
 void
-free_mem_block (mem_block_t * leP)
+free_mem_block (mem_block_t * leP, const char* caller)
 {
   //-----------------------------------------------------------------------------
 
@@ -206,6 +197,11 @@ free_mem_block (mem_block_t * leP)
     list_add_tail_eurecom (leP, &mem_block_var.mem_lists[leP->pool_id]);
 #ifdef DEBUG_MEM_MNGT_ALLOC
     counters[leP->pool_id] -= 1;
+    msg ("[%s][MEM_MNGT][INFO] after pool[%2d] freed: counters = {%2d %2d %2d %2d %2d %2d %2d %2d %2d %2d %2d %2d}\n",
+        caller, leP->pool_id,
+        counters[0],counters[1],counters[2],counters[3],counters[4],
+        counters[5],counters[6],counters[7],counters[8],counters[9],
+        counters[10],counters[11]);
 #endif
     leP = NULL;                 // this prevent from freeing the block twice
   } else {
@@ -219,7 +215,7 @@ free_mem_block (mem_block_t * leP)
 
 //-----------------------------------------------------------------------------
 mem_block_t      *
-get_free_mem_block (uint32_t sizeP)
+get_free_mem_block (uint32_t sizeP, const char* caller)
 {
   //-----------------------------------------------------------------------------
   mem_block_t      *le = NULL;
@@ -251,10 +247,18 @@ get_free_mem_block (uint32_t sizeP)
     if ((le = list_remove_head (&mem_block_var.mem_lists[pool_selected]))) {
 #ifdef DEBUG_MEM_MNGT_ALLOC
       counters[pool_selected] += 1;
+      msg ("[%s][MEM_MNGT][INFO] after pool[%2d] allocated: counters = {%2d %2d %2d %2d %2d %2d %2d %2d %2d %2d %2d %2d}\n",
+          caller,
+          pool_selected,
+          counters[0],counters[1],counters[2],counters[3],counters[4],
+          counters[5],counters[6],counters[7],counters[8],counters[9],
+          counters[10],counters[11]);
 #endif
 #ifdef DEBUG_MEM_MNGT_ALLOC_SIZE
       msg ("[MEM_MNGT][INFO] ALLOC MEM_BLOCK SIZE %d bytes pool %d (%p)\n", sizeP, pool_selected,le);
 #endif
+
+      AssertFatal(le->pool_id == pool_selected, "Unexpected pool ID!");
 
 #ifdef MEMBLOCK_BIG_LOCK
   if (pthread_mutex_unlock(&mtex)) abort();
@@ -272,6 +276,7 @@ get_free_mem_block (uint32_t sizeP)
 #endif
   } while (pool_selected++ < 12);
 
+  LOG_E(PHY, "[MEM_MNGT][ERROR][FATAL] failed allocating MEM_BLOCK size %d byes (pool_selected=%d size=%d)\n", sizeP, pool_selected, size);
   display_mem_load();
   mac_xface->macphy_exit("[MEM_MNGT][ERROR][FATAL] get_free_mem_block failed");
 
@@ -296,6 +301,13 @@ get_free_copy_mem_block (void)
   if ((le = list_remove_head (&mem_block_var.mem_lists[MEM_MNGT_POOL_ID_COPY]))) {
 #ifdef DEBUG_MEM_MNGT_ALLOC_SIZE
     msg ("[MEM_MNGT][INFO] ALLOC COPY MEM BLOCK (%p)\n",le);
+#endif
+#ifdef DEBUG_MEM_MNGT_ALLOC
+      counters[MEM_MNGT_POOL_ID_COPY] += 1;
+      msg ("[MEM_MNGT][INFO] pool counters = {%2d %2d %2d %2d %2d %2d %2d %2d %2d %2d %2d %2d}\n",
+          counters[0],counters[1],counters[2],counters[3],counters[4],
+          counters[5],counters[6],counters[7],counters[8],counters[9],
+          counters[10],counters[11]);
 #endif
     return le;
   } else {

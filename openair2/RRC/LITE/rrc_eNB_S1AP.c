@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2016 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /*! \file rrc_eNB_S1AP.c
  * \brief rrc S1AP procedures for eNB
  * \author Navid Nikaein, Laurent Winckel, Sebastien ROUX, and Lionel GAUTHIER
@@ -122,7 +115,7 @@ rrc_eNB_S1AP_get_ue_ids(
 		    		               (hash_key_t)eNB_ue_s1ap_id,
 		    		               result2);
             if (h_rc != HASH_TABLE_OK) {
-              LOG_E(S1AP, "[eNB %u] Error while hashtable_insert in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %u\n",
+              LOG_E(S1AP, "[eNB %ld] Error while hashtable_insert in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32"\n",
 		    		  rrc_instance_pP - eNB_rrc_inst, eNB_ue_s1ap_id);
             }
 		  }
@@ -315,7 +308,7 @@ rrc_eNB_process_security(
     changed = TRUE;
   }
 
-  LOG_I (RRC, "[eNB %d][UE %x] Selected security algorithms (%x): %x, %x, %s\n",
+  LOG_I (RRC, "[eNB %d][UE %x] Selected security algorithms (%p): %x, %x, %s\n",
          ctxt_pP->module_id,
          ue_context_pP->ue_context.rnti,
          security_capabilities_pP,
@@ -781,8 +774,8 @@ rrc_eNB_process_S1AP_DOWNLINK_NAS(
   ue_initial_id = S1AP_DOWNLINK_NAS (msg_p).ue_initial_id;
   eNB_ue_s1ap_id = S1AP_DOWNLINK_NAS (msg_p).eNB_ue_s1ap_id;
   ue_context_p = rrc_eNB_get_ue_context_from_s1ap_ids(instance, ue_initial_id, eNB_ue_s1ap_id);
-  srb_id = ue_context_p->ue_context.Srb2.Srb_info.Srb_id;
-  
+
+
   LOG_I(RRC, "[eNB %d] Received %s: ue_initial_id %d, eNB_ue_s1ap_id %d\n",
         instance,
         msg_name,
@@ -828,6 +821,9 @@ rrc_eNB_process_S1AP_DOWNLINK_NAS(
     return (-1);
   } else {
     PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
+
+    srb_id = ue_context_p->ue_context.Srb2.Srb_info.Srb_id;
+  
 
     /* Is it the first income from S1AP ? */
     if (ue_context_p->ue_context.eNB_ue_s1ap_id == 0) {
@@ -1012,7 +1008,7 @@ int rrc_eNB_process_S1AP_UE_CTXT_MODIFICATION_REQ(MessageDef *msg_p, const char 
     /* Can not associate this message to an UE index, send a failure to S1AP and discard it! */
     MessageDef *msg_fail_p;
 
-    LOG_W(RRC, "[eNB %d] In S1AP_UE_CTXT_MODIFICATION_REQ: unknown UE from eNB_ue_s1ap_id (%d) for eNB %d\n", instance, eNB_ue_s1ap_id);
+    LOG_W(RRC, "[eNB %d] In S1AP_UE_CTXT_MODIFICATION_REQ: unknown UE from eNB_ue_s1ap_id (%d)\n", instance, eNB_ue_s1ap_id);
 
     msg_fail_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_UE_CTXT_MODIFICATION_FAIL);
     S1AP_UE_CTXT_MODIFICATION_FAIL (msg_fail_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;

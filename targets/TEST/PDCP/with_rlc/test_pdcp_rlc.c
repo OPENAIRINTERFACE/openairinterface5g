@@ -1,3 +1,24 @@
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
 #define PDCP_C
 #include <string.h>
 #include <math.h>
@@ -111,7 +132,7 @@ void pdcp_rlc_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct mac_dat
       *tx_packetsP = *tx_packetsP + 1;
 
       if (*drop_countP == 0) {
-        tb_dst  = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_size);
+        tb_dst  = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_size, __func__);
 
         if (tb_dst != NULL) {
           ((struct mac_tb_ind *) (tb_dst->data))->first_bit        = 0;
@@ -135,7 +156,7 @@ void pdcp_rlc_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct mac_dat
         *dropped_tx_packetsP = *dropped_tx_packetsP + 1;
       }
 
-      free_mem_block(tb_src);
+      free_mem_block(tb_src, __func__);
 
       if (data_indP->no_tb > 0) {
         printf("[RLC-LOOP] Exchange %d TBs\n",data_indP->no_tb);
@@ -167,9 +188,9 @@ void pdcp_rlc_test_exchange_pdus(rlc_um_entity_t *um_txP,
   memset(&mac_rlc_status_resp_tx, 0, sizeof(struct mac_status_resp));
   memset(&mac_rlc_status_resp_rx, 0, sizeof(struct mac_status_resp));
 
-  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, bytes_txP, tx_status);
+  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, bytes_txP, tx_status, ENB_FLAG_YES);
   data_request_tx        = rlc_um_mac_data_request(um_txP);
-  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, bytes_rxP, tx_status);
+  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, bytes_rxP, tx_status, ENB_FLAG_YES);
   data_request_rx        = rlc_um_mac_data_request(um_rxP);
 
 

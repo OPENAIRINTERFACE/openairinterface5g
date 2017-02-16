@@ -1,31 +1,24 @@
 /*
- * Copyright (c) 2015, EURECOM (www.eurecom.fr)
- * All rights reserved.
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ *      http://www.openairinterface.org/?page_id=698
  *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * The views and conclusions contained in the software and documentation are those
- * of the authors and should not be interpreted as representing official policies,
- * either expressed or implied, of the FreeBSD Project.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
  */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -80,8 +73,63 @@ typedef struct {
   uint8_t  mbmssessionid;
 } TmgiMobileIdentity_t;
 
+typedef struct imeisv_s{
+  uint8_t  digit1:4;
+  uint8_t  oddeven:1;
+  uint8_t  typeofidentity:3;
+  uint8_t  digit2:4;
+  uint8_t  digit3:4;
+  uint8_t  digit4:4;
+  uint8_t  digit5:4;
+  uint8_t  digit6:4;
+  uint8_t  digit7:4;
+  uint8_t  digit8:4;
+  uint8_t  digit9:4;
+  uint8_t  digit10:4;
+  uint8_t  digit11:4;
+  uint8_t  digit12:4;
+  uint8_t  digit13:4;
+  uint8_t  digit14:4;
+  uint8_t  digit15:4;
+  uint8_t  digit16:4;
+#define EVEN_PARITY 0
+#define IMEI_ODD_PARITY  0xf
+       uint8_t parity:4;
+} imeisv_t;
+
+#if 0
+typedef struct imeisv_s {
+   uint8_t length;
+   union {
+     struct {
+       uint8_t tac2:4;
+       uint8_t tac1:4;
+       uint8_t tac4:4;
+       uint8_t tac3:4;
+       uint8_t tac6:4;
+       uint8_t tac5:4;
+       uint8_t tac8:4;
+       uint8_t tac7:4;
+       uint8_t snr2:4;
+       uint8_t snr1:4;
+       uint8_t snr4:4;
+       uint8_t snr3:4;
+       uint8_t snr6:4;
+       uint8_t snr5:4;
+       uint8_t svn2:4;
+       uint8_t svn1:4;
+#define EVEN_PARITY 0
+#define IMEI_ODD_PARITY  0xf
+       uint8_t parity:4;
+     } num;
+#define IMEISV_BCD8_SIZE   9
+     uint8_t value[IMEISV_BCD8_SIZE];
+   } u;
+} imeisv_t;
+#endif
+
 typedef ImsiMobileIdentity_t ImeiMobileIdentity_t;
-typedef ImsiMobileIdentity_t ImeisvMobileIdentity_t;
+typedef imeisv_t             ImeisvMobileIdentity_t;
 typedef ImsiMobileIdentity_t TmsiMobileIdentity_t;
 typedef ImsiMobileIdentity_t NoMobileIdentity_t;
 

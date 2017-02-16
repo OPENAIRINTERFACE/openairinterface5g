@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #define RLC_AM_MODULE 1
 #define RLC_AM_RETRANSMIT_C 1
 //-----------------------------------------------------------------------------
@@ -150,7 +143,7 @@ void rlc_am_ack_pdu (
 
   if ((rlc_pP->pdu_retrans_buffer[snP].flags.ack == 0) && (mb_p != NULL)) {
     //if (mb_pP != NULL) {
-    free_mem_block(mb_p);
+    free_mem_block(mb_p, __func__);
     rlc_pP->pdu_retrans_buffer[snP].mem_block = NULL;
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[ACK-PDU] ACK PDU SN %05d previous retx_count %d \n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
@@ -242,7 +235,7 @@ void rlc_am_ack_pdu (
           snP);
 
     if (mb_p != NULL) {
-      free_mem_block(mb_p);
+      free_mem_block(mb_p, __func__);
       rlc_pP->pdu_retrans_buffer[snP].mem_block = NULL;
     }
 
@@ -282,7 +275,7 @@ mem_block_t* rlc_am_retransmit_get_copy (
     rlc_am_tx_data_pdu_management_t *pdu_mngt = &rlc_pP->pdu_retrans_buffer[snP % RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE];
 
     int size             = pdu_mngt->header_and_payload_size + sizeof(struct mac_tb_req);
-    mem_block_t* mb_copy = get_free_mem_block(size);
+    mem_block_t* mb_copy = get_free_mem_block(size, __func__);
     memcpy(mb_copy->data, mb_original_p->data, size);
 
     rlc_am_pdu_sn_10_t *pdu_p                         = (rlc_am_pdu_sn_10_t*) (&mb_copy->data[sizeof(struct mac_tb_req)]);
@@ -350,7 +343,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(
   mem_block_t*           mb_original_p     = rlc_pP->pdu_retrans_buffer[snP].mem_block;
 
   if (mb_original_p != NULL) {
-    mem_block_t*           mb_sub_segment_p  = get_free_mem_block(*sizeP + sizeof(struct mac_tb_req));
+    mem_block_t*           mb_sub_segment_p  = get_free_mem_block(*sizeP + sizeof(struct mac_tb_req), __func__);
     rlc_am_pdu_sn_10_t*    pdu_original_p    = (rlc_am_pdu_sn_10_t*) (&mb_original_p->data[sizeof(struct mac_tb_req)]);
     rlc_am_pdu_sn_10_t*    pdu_sub_segment_p = (rlc_am_pdu_sn_10_t*) (&mb_sub_segment_p->data[sizeof(struct mac_tb_req)]);
     rlc_am_pdu_info_t      pdu_info;
@@ -653,7 +646,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(
       // fill the segment pdu_p with Lis and data
       //---------------------------------------------------------------
       LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[RE-SEGMENT] fill the segment pdu_p with Lis and data, test_num_li %d\n",
-            test_num_li);
+            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP), test_num_li);
 
       if (test_num_li > 0) {
         pdu_sub_segment_p->b1 = pdu_sub_segment_p->b1 | 0x04; // set E bit
@@ -685,12 +678,12 @@ mem_block_t* rlc_am_retransmit_get_subsegment(
             *sizeP               = *sizeP - 1;
           }
 
-          LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[RB %u][RE-SEGMENT] ADD LI %d\n",
+          LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[RE-SEGMENT] ADD LI %d\n",
                 PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
                 test_li_list[fill_num_li]);
         }
       } else {
-        LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[RB %u][RE-SEGMENT] ADD NO LI\n",
+        LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[RE-SEGMENT] ADD NO LI\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
         fill_payload_p = (uint8_t*)e_li_sub_segment;
       }

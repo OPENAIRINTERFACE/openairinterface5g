@@ -1,37 +1,19 @@
 job1:
   script:
-   - echo $PWD
-   - echo $USER
-   - echo $OAI_USER
-   - echo $OAI_EXTRA_ARGS
-   - echo $NFS_SHARE_DIR
-   - echo $EXTERNAL_SHARE_DIR
-   - echo $SHELL
-   - echo $OAI_TEST_CASE_GROUP
-   - echo $MACHINELIST
-   - echo $MACHINELISTGENERIC
-   - git rev-parse --abbrev-ref HEAD
-   - git_repo=`git config --get remote.origin.url`
-   - git_head=`git rev-parse HEAD`
-   - echo $git_head
-   - tmp=`git show-ref --head | grep $git_head`
-   - tmp=(${tmp///// })
-   - git_branch=${tmp[@]:(-1)}
-   - echo $git_branch
-   - source oaienv
-   - echo $OPENAIR_DIR
-   - NFS_TEST_RESULTS_DIR=$NFS_SHARE_DIR/$git_branch/$git_head
-   - EXTERNAL_SHARE_RESULTS_DIR=$EXTERNAL_SHARE_DIR/$git_branch/$git_head
-   - echo $NFS_TEST_RESULTS_DIR
-   - echo $EXTERNAL_SHARE_RESULTS_DIR
-   - echo $NRUNS_LTE_SOFTMODEM
-   - echo $TIMEOUT_CMD
-   - mkdir -p $OPENAIR_DIR/cmake_targets/autotests/log
-   - python $OPENAIR_DIR/cmake_targets/autotests/run_exec_lte-softmodem_tests.py -c -5GRepo $git_repo -MachineList "$MACHINELIST" -MachineListGeneric "$MACHINELISTGENERIC"  -5GRepoHeadVersion $git_head -n $NFS_SHARE_DIR -u $OAI_USER -p $OAI_PASS  $OAI_EXTRA_ARGS -g "$OAI_TEST_CASE_GROUP">& $OPENAIR_DIR/cmake_targets/autotests/python_autotest_cleanup.log
-   - python $OPENAIR_DIR/cmake_targets/autotests/run_exec_lte-softmodem_tests.py -r -5GRepo $git_repo -MachineList "$MACHINELIST" -MachineListGeneric "$MACHINELISTGENERIC" -5GRepoHeadVersion $git_head -n $NFS_SHARE_DIR -u $OAI_USER -p $OAI_PASS `echo $OAI_EXTRA_ARGS` -g "$OAI_TEST_CASE_GROUP" --nrun_lte_softmodem $NRUNS_LTE_SOFTMODEM --timeout_cmd $TIMEOUT_CMD >& $OPENAIR_DIR/cmake_targets/autotests/python_autotest.log
-   - mv $OPENAIR_DIR/cmake_targets/autotests/python_autotest.log $OPENAIR_DIR/cmake_targets/autotests/log/python_autotest.log
-   - mv $OPENAIR_DIR/cmake_targets/autotests/python_autotest_cleanup.log $OPENAIR_DIR/cmake_targets/autotests/log/python_autotest_cleanup.log
-   - sshpass -p "$OAI_PASS" rsync -az -e "ssh -o StrictHostKeyChecking=no "  --rsync-path="mkdir -p $NFS_TEST_RESULTS_DIR && rsync" $OPENAIR_DIR/cmake_targets/autotests/log $OAI_USER@localhost:$NFS_TEST_RESULTS_DIR
-   - sshpass -p "$OAI_PASS" rsync -az -e "ssh -o StrictHostKeyChecking=no "  --rsync-path="mkdir -p $EXTERNAL_SHARE_DIR && rsync" $OPENAIR_DIR/cmake_targets/autotests/log $OAI_USER@localhost:$EXTERNAL_SHARE_DIR
-   - cat $OPENAIR_DIR/cmake_targets/autotests/log/results_autotests.xml
-  when: manual  
+    - date
+    - pwd
+    - echo $OAI_USER
+    - echo $OAI_PASS
+    - echo $OAI_TEST_CASE_GROUP
+    - echo $MACHINELIST
+    - echo $MACHINELISTGENERIC
+    - echo $RESULT_DIR
+    - echo $NRUNS_LTE_SOFTMODEM
+    - source oaienv
+    - rm -rf cmake_targets/autotests/log
+    - mkdir cmake_targets/autotests/log
+    - cd cmake_targets/autotests/v2
+    - python main.py
+    - date
+  only:
+    - triggers

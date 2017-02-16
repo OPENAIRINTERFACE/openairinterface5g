@@ -12,4 +12,6 @@ filter *filter_evarg(void *database, char *event_name, char *varname);
 
 int filter_eval(filter *f, event e);
 
+void free_filter(filter *f);
+
 #endif /* _FILTER_H_ */

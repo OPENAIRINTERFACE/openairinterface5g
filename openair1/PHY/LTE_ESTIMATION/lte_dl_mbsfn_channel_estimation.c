@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #ifdef USER_MODE
 #include <string.h>
 #endif
@@ -51,8 +44,8 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
   //  unsigned int n;
   //  int i;
 
-  int **dl_ch_estimates=ue->common_vars.dl_ch_estimates[0];
-  int **rxdataF=ue->common_vars.rxdataF;
+  int **dl_ch_estimates=ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0];
+  int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF;
 
   ch_offset     = (l*(ue->frame_parms.ofdm_symbol_size));
   symbol_offset = ch_offset;//phy_vars_ue->lte_frame_parms.ofdm_symbol_size*l;
@@ -741,31 +734,31 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
 
   // do ifft of channel estimate
   for (aa=0; aa<ue->frame_parms.nb_antennas_rx*ue->frame_parms.nb_antennas_tx; aa++) {
-    if (ue->common_vars.dl_ch_estimates[eNB_offset][aa]) {
+    if (ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_offset][aa]) {
       switch (ue->frame_parms.N_RB_DL) {
       case 6:
-	idft128((int16_t*) &ue->common_vars.dl_ch_estimates[eNB_offset][aa][8],
-		(int16_t*) ue->common_vars.dl_ch_estimates_time[eNB_offset][aa],
+	idft128((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_offset][aa][8],
+		(int16_t*) ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates_time[eNB_offset][aa],
 		1);
 	break;
       case 25:
-	idft512((int16_t*) &ue->common_vars.dl_ch_estimates[eNB_offset][aa][8],
-		(int16_t*) ue->common_vars.dl_ch_estimates_time[eNB_offset][aa],
+	idft512((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_offset][aa][8],
+		(int16_t*) ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates_time[eNB_offset][aa],
 		1);
 	break;
       case 50:
-	idft1024((int16_t*) &ue->common_vars.dl_ch_estimates[eNB_offset][aa][8],
-		(int16_t*) ue->common_vars.dl_ch_estimates_time[eNB_offset][aa],
+	idft1024((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_offset][aa][8],
+		(int16_t*) ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates_time[eNB_offset][aa],
 		1);
 	break;
       case 75:
-	idft1536((int16_t*) &ue->common_vars.dl_ch_estimates[eNB_offset][aa][8],
-		 (int16_t*) ue->common_vars.dl_ch_estimates_time[eNB_offset][aa],
+	idft1536((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_offset][aa][8],
+		 (int16_t*) ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates_time[eNB_offset][aa],
 		 1);
 	break;
       case 100:
-	idft2048((int16_t*) &ue->common_vars.dl_ch_estimates[eNB_offset][aa][8],
-		(int16_t*) ue->common_vars.dl_ch_estimates_time[eNB_offset][aa],
+	idft2048((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_offset][aa][8],
+		(int16_t*) ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates_time[eNB_offset][aa],
 		1);
 	break;
       default:

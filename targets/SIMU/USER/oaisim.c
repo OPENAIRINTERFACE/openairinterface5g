@@ -1,31 +1,24 @@
-/*******************************************************************************
- OpenAirInterface
- Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
- OpenAirInterface is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
-
- OpenAirInterface is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with OpenAirInterface.The full GNU General Public License is
- included in this distribution in the file called "COPYING". If not,
- see <http://www.gnu.org/licenses/>.
-
- Contact Information
- OpenAirInterface Admin: openair_admin@eurecom.fr
- OpenAirInterface Tech : openair_tech@eurecom.fr
- OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
- Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /*! \file oaisim.c
  * \brief oaisim top level
  * \author Navid Nikaein 
@@ -82,6 +75,11 @@ uint8_t config_smbv = 0;
 char smbv_ip[16];
 #endif
 
+#if defined(FLEXRAN_AGENT_SB_IF)
+#   include "flexran_agent.h"
+#endif
+
+
 #include "oaisim_functions.h"
 
 #include "oaisim.h"
@@ -128,6 +126,8 @@ char smbv_ip[16];
 //#define SLEEP_STEP_US          100           /*  = 0.01ms could be adaptive, should be as a number of UE */
 //#define K                      2             /* averaging coefficient */
 //#define TARGET_SF_TIME_NS      1000000       /* 1ms = 1000000 ns */
+
+uint8_t usim_test = 0;
 
 frame_t frame = 0;
 char stats_buffer[16384];
@@ -502,7 +502,6 @@ l2l1_task (void *args_p)
     xargv[0] = xname;
     fl_initialize (&xargc, xargv, NULL, 0, 0);
     eNB_inst = 0;
-    
     for (UE_inst = 0; UE_inst < NB_UE_INST; UE_inst++) {
       for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
 	// DL scope at UEs
@@ -575,7 +574,8 @@ l2l1_task (void *args_p)
   itti_mark_task_ready (TASK_L2L1);
   LOG_I(EMU, "TASK_L2L1 is READY\n");
 
-  if (oai_emulation.info.nb_enb_local > 0) {
+  if ((oai_emulation.info.nb_enb_local > 0) && 
+      (oai_emulation.info.node_function[0] < NGFI_RAU_IF4p5)) {
     /* Wait for the initialize message */
     do {
       if (message_p != NULL) {
@@ -707,6 +707,8 @@ l2l1_task (void *args_p)
     update_ocm ();
 
     for (sf = 0; sf < 10; sf++) {
+      LOG_D(EMU,"************************* Subframe %d\n",sf);
+
       start_meas (&oaisim_stats_f);
 
       wait_for_slot_isr ();
@@ -743,7 +745,7 @@ l2l1_task (void *args_p)
               (subframe_UE_mask_local == ((1<<NB_UE_INST)-1)))
              all_done=1;
           else
-	    usleep(500);
+	    usleep(1500);
         }
 
         //clear subframe masks for next round
@@ -882,6 +884,7 @@ l2l1_task (void *args_p)
                   update_otg_UE (UE_inst, oai_emulation.info.time_ms);
 
                   //Access layer
+		  //		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE_inst, ENB_FLAG_NO, NOT_A_RNTI, frame, next_slot>>1, 0);
 		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE_inst, 0, ENB_FLAG_NO, NOT_A_RNTI, frame % MAX_FRAME_NUMBER, next_slot);
                   pdcp_run (&ctxt);
 #endif
@@ -890,7 +893,7 @@ l2l1_task (void *args_p)
                        CC_id++) {
                     phy_procedures_UE_lte (
                       PHY_vars_UE_g[UE_inst][CC_id],
-                      0, abstraction_flag,
+		      0, abstraction_flag,
                       normal_txrx, no_relay,
                       NULL);
                   }
@@ -1001,7 +1004,8 @@ l2l1_task (void *args_p)
 	    do_DL_sig (r_re0,
 		       r_im0,
 		       r_re,
-		       r_im,
+		       r_im,n
+
 		       s_re,
 		       s_im,
 		       eNB2UE,
@@ -1043,19 +1047,19 @@ l2l1_task (void *args_p)
 	  
 	  write_output ("dlchan0.m",
 			"dlch0",
-			&(PHY_vars_UE_g[0][0]->common_vars.dl_ch_estimates[0][0][0]),
+			&(PHY_vars_UE_g[0][0]->common_vars.common_vars_rx_data_per_thread[0].dl_ch_estimates[0][0][0]),
 			(6
 			 * (PHY_vars_UE_g[0][0]->frame_parms.ofdm_symbol_size)),
 			1, 1);
 	  write_output ("dlchan1.m",
 			"dlch1",
-			&(PHY_vars_UE_g[0][0]->common_vars.dl_ch_estimates[1][0][0]),
+			&(PHY_vars_UE_g[0][0]->common_vars.common_vars_rx_data_per_thread[0].dl_ch_estimates[1][0][0]),
 			(6
 			 * (PHY_vars_UE_g[0][0]->frame_parms.ofdm_symbol_size)),
 			1, 1);
 	  write_output ("dlchan2.m",
 			"dlch2",
-			&(PHY_vars_UE_g[0][0]->common_vars.dl_ch_estimates[2][0][0]),
+			&(PHY_vars_UE_g[0][0]->common_vars.common_vars_rx_data_per_thread[0].dl_ch_estimates[2][0][0]),
 			(6
 			 * (PHY_vars_UE_g[0][0]->frame_parms.ofdm_symbol_size)),
 			1, 1);
@@ -1074,7 +1078,7 @@ l2l1_task (void *args_p)
 
 
     }
-  
+    /*
     if ((frame >= 10) && (frame <= 11) && (abstraction_flag == 0)
 #ifdef PROC
 	&&(Channel_Flag==0)
@@ -1121,6 +1125,7 @@ l2l1_task (void *args_p)
 		    * 10,
 		    1, 1);
     }
+    */
     
     //#ifdef XFORMS
     if (xforms==1) {
@@ -1286,7 +1291,25 @@ main (int argc, char **argv)
 
   init_openair2 ();
 
+  init_openair0();
+
   init_ocm ();
+
+#if defined(ENABLE_ITTI)
+  // Handle signals until all tasks are terminated
+
+  // Note: Cannot handle both RRU/RAU and eNB at the same time, if the first "eNB" is an RRU/RAU, no NAS
+  if (oai_emulation.info.node_function[0] < NGFI_RAU_IF4p5) { 
+    if (create_tasks(oai_emulation.info.nb_enb_local, 
+		     oai_emulation.info.nb_ue_local) < 0) 
+      exit(-1); // need a softer mode
+  }
+  else {
+    if (create_tasks(0, 
+		     oai_emulation.info.nb_ue_local) < 0) 
+      exit(-1); // need a softer mode
+  }
+#endif
   
   // wait for all threads to startup 
   sleep(3);
@@ -1302,6 +1325,10 @@ main (int argc, char **argv)
   smbv_init_config(smbv_fname, smbv_nframes);
   smbv_write_config_from_frame_parms(smbv_fname, &PHY_vars_eNB_g[0][0]->frame_parms);
 #endif
+
+  /* #if defined (FLEXRAN_AGENT_SB_IF)
+  flexran_agent_start();
+  #endif */ 
 
   // add events to future event list: Currently not used
   //oai_emulation.info.oeh_enabled = 1;
@@ -1323,12 +1350,8 @@ main (int argc, char **argv)
 
 #if defined(ENABLE_ITTI)
 
-  // Handle signals until all tasks are terminated
-  if (create_tasks(oai_emulation.info.nb_enb_local, oai_emulation.info.nb_ue_local) >= 0) {
-    itti_wait_tasks_end();
-  } else {
-    exit(-1); // need a softer mode
-  }
+  itti_wait_tasks_end();
+
 
 #else
 

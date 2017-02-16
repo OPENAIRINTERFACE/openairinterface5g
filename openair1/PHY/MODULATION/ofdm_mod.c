@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /*
 * @defgroup _PHY_MODULATION_
 * @ingroup _physical_layer_ref_implementation_
@@ -38,6 +31,7 @@ This section deals with basic functions for OFDM Modulation.
 
 #include "PHY/defs.h"
 #include "UTIL/LOG/log.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 
 //static short temp2[2048*4] __attribute__((aligned(16)));
 
@@ -151,7 +145,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 #else
     // on AVX2 need 256-bit alignment
     idft((int16_t *)&input[i*fftsize],
-         (fftsize<=512) ? (int16_t *)temp : (int16_t *)&output[(i*fftsize) + ((1+i)*nb_prefix_samples)],
+         (int16_t *)temp,
          1);
 
 #endif
@@ -169,8 +163,6 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
 #ifndef __AVX2__
       if (fftsize==128) 
-#else
-      if (fftsize<=512) 
 #endif
       {
         for (j=0; j<fftsize ; j++) {
@@ -290,4 +282,58 @@ void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t ne
 
 }
 
-/** @} */
+// OFDM modulation for each symbol
+void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms,int do_precoding)
+{
+
+  int aa, l, slot_offset, slot_offsetF;
+  int32_t **txdataF    = eNB_common_vars->txdataF[eNB_id];
+  int32_t **txdataF_BF = eNB_common_vars->txdataF_BF[eNB_id];
+  int32_t **txdata     = eNB_common_vars->txdata[eNB_id];
+
+  slot_offset  = (next_slot)*(frame_parms->samples_per_tti>>1);
+  slot_offsetF = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==EXTENDED) ? 6 : 7);
+  //printf("Thread %d starting ... aa %d (%llu)\n",omp_get_thread_num(),aa,rdtsc());
+  for (l=0; l<frame_parms->symbols_per_tti>>1; l++) {
+  
+    for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+
+      //printf("do_OFDM_mod_l, slot=%d, l=%d, NUMBER_OF_OFDM_CARRIERS=%d,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES=%d\n",next_slot, l,NUMBER_OF_OFDM_CARRIERS,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_BEAM_PRECODING,1);
+      if (do_precoding==1) beam_precoding(txdataF,txdataF_BF,frame_parms,eNB_common_vars->beam_weights[eNB_id],next_slot,l,aa);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_BEAM_PRECODING,0);
+
+      //PMCH case not implemented... 
+
+      if (frame_parms->Ncp == EXTENDED)
+        PHY_ofdm_mod((do_precoding == 1)?txdataF_BF[aa]:&txdataF[aa][slot_offsetF+l*frame_parms->ofdm_symbol_size],         // input
+                     &txdata[aa][slot_offset+l*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],            // output
+                     frame_parms->ofdm_symbol_size,       
+                     1,                                   // number of symbols
+                     frame_parms->nb_prefix_samples,      // number of prefix samples
+                     CYCLIC_PREFIX);
+      else {
+        if (l==0) {
+          PHY_ofdm_mod((do_precoding==1)?txdataF_BF[aa]:&txdataF[aa][slot_offsetF+l*frame_parms->ofdm_symbol_size],        // input
+                       &txdata[aa][slot_offset],           // output
+                       frame_parms->ofdm_symbol_size,      
+                       1,                                  // number of symbols
+                       frame_parms->nb_prefix_samples0,    // number of prefix samples
+                       CYCLIC_PREFIX);
+           
+        } else {
+	  PHY_ofdm_mod((do_precoding==1)?txdataF_BF[aa]:&txdataF[aa][slot_offsetF+l*frame_parms->ofdm_symbol_size],        // input
+                       &txdata[aa][slot_offset+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(l-1)*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],           // output
+                       frame_parms->ofdm_symbol_size,      
+                       1,                                  // number of symbols
+                       frame_parms->nb_prefix_samples,     // number of prefix samples
+                       CYCLIC_PREFIX);
+
+          /* printf("txdata[%d][%d]=%d\n",aa,slot_offset+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(l-1)*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,txdata[aa][slot_offset+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(l-1)*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES]);
+ * */
+        }
+      }
+    }
+  }
+
+}

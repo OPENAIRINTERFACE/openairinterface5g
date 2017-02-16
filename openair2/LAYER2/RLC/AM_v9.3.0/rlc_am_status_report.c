@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #define RLC_AM_MODULE 1
 #define RLC_AM_STATUS_REPORT_C 1
 //-----------------------------------------------------------------------------
@@ -377,7 +370,7 @@ rlc_am_receive_process_control_pdu(
 
   *first_byte_ppP = (uint8_t*)((uint64_t)*first_byte_ppP + initial_pdu_size - *tb_size_in_bytes_pP);
 
-  free_mem_block(tb_pP);
+  free_mem_block(tb_pP, __func__);
   rlc_am_tx_buffer_display(ctxt_pP, rlc_pP, NULL);
 }
 //-----------------------------------------------------------------------------
@@ -737,7 +730,7 @@ end_push_nack:
         __LINE__,
         pdu_size);
 #endif
-  tb_p = get_free_mem_block(sizeof(struct mac_tb_req) + pdu_size);
+  tb_p = get_free_mem_block(sizeof(struct mac_tb_req) + pdu_size, __func__);
   memset(tb_p->data, 0, sizeof(struct mac_tb_req) + pdu_size);
   //estimation only ((struct mac_tb_req*)(tb_p->data))->tb_size  = pdu_size;
   ((struct mac_tb_req*)(tb_p->data))->data_ptr         = (uint8_t*)&(tb_p->data[sizeof(struct mac_tb_req)]);

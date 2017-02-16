@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
@@ -332,7 +325,7 @@ int main(int argc, char **argv)
   if (transmission_mode>=2)
     n_tx=2;
 
-  lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,frame_type,Nid_cell,3,N_RB_DL,0,osf,0);
+  lte_param_init(n_tx, n_tx,n_rx,transmission_mode,extended_prefix_flag,frame_type,Nid_cell,3,N_RB_DL,0,osf,0);
 
   eNB1 = malloc(sizeof(PHY_VARS_eNB));
   eNB2 = malloc(sizeof(PHY_VARS_eNB));
@@ -939,6 +932,7 @@ int main(int argc, char **argv)
             lte_ue_measurements(UE,
                                 0,
                                 1,
+                                0,
                                 0);
             /*
              if (trial%100 == 0) {
@@ -970,7 +964,7 @@ int main(int argc, char **argv)
             //sprintf(vname,"dl_ch00_%d",l);
             //write_output(fname,vname,&(common_vars->dl_ch_estimates[0][frame_parms->ofdm_symbol_size*(l%6)]),frame_parms->ofdm_symbol_size,1,1);
 
-            lte_est_freq_offset(UE->common_vars.dl_ch_estimates[0],
+            lte_est_freq_offset(UE->common_vars.common_vars_rx_data_per_thread[/*subframe*/0&0x1].dl_ch_estimates[0],
                                 &UE->frame_parms,
                                 l,
                                 &freq_offset,
@@ -1058,13 +1052,13 @@ int main(int argc, char **argv)
 
   if (n_frames==1) {
 
-    write_output("H00.m","h00",&(UE->common_vars.dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
+    write_output("H00.m","h00",&(UE->common_vars.common_vars_rx_data_per_thread[/*subframe*/0&0x1].dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
 
     if (n_tx==2)
-      write_output("H10.m","h10",&(UE->common_vars.dl_ch_estimates[0][2][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
+      write_output("H10.m","h10",&(UE->common_vars.common_vars_rx_data_per_thread[/*subframe*/0&0x1].dl_ch_estimates[0][2][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
 
     write_output("rxsig0.m","rxs0", UE->common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-    write_output("rxsigF0.m","rxsF0", UE->common_vars.rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);
+    write_output("rxsigF0.m","rxsF0", UE->common_vars.common_vars_rx_data_per_thread[/*subframe*/0&0x1].rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);
     write_output("PBCH_rxF0_ext.m","pbch0_ext",UE->pbch_vars[0]->rxdataF_ext[0],12*4*6,1,1);
     write_output("PBCH_rxF0_comp.m","pbch0_comp",UE->pbch_vars[0]->rxdataF_comp[0],12*4*6,1,1);
     write_output("PBCH_rxF_llr.m","pbch_llr",UE->pbch_vars[0]->llr,(frame_parms->Ncp==0) ? 1920 : 1728,1,4);

@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /***************************************************************************
                           umts_timer.c  -  description
@@ -62,7 +54,7 @@ umts_timer_check_time_out (list2_t * atimer_listP, uint32_t current_frame_tick_m
 
       mem_unit = list2_remove_head (atimer_listP);
       (*(timer->proc)) (timer->protocol, timer->timer_id);
-      free_mem_block (mem_unit);
+      free_mem_block (mem_unit, __func__);
 
       mem_unit = atimer_listP->head;
     } else {
@@ -82,7 +74,7 @@ umts_timer_delete_timer (list2_t * atimer_listP, void *timer_idP)
   while ((mem_unit)) {
     if (((struct timer_unit *) (mem_unit->data))->timer_id == timer_idP) {
       list2_remove_element (mem_unit, atimer_listP);
-      free_mem_block (mem_unit);
+      free_mem_block (mem_unit, __func__);
       return;
     }
 
@@ -101,7 +93,7 @@ umts_add_timer_list_up (list2_t * atimer_listP, void (*procP) (void *, void *), 
   int32_t             remaining_time;
   uint8_t              inserted = 0;
 
-  mb = get_free_mem_block (sizeof (struct timer_unit));
+  mb = get_free_mem_block (sizeof (struct timer_unit), __func__);
   ((struct timer_unit *) (mb->data))->proc = procP;
   ((struct timer_unit *) (mb->data))->protocol = protocolP;
   ((struct timer_unit *) (mb->data))->timer_id = timer_idP;
@@ -174,7 +166,7 @@ umts_stop_all_timers_except (list2_t * atimer_listP, void (*procP) (void *, void
       mem_unit_to_delete = mem_unit;
       mem_unit = mem_unit->next;
       list2_remove_element (mem_unit_to_delete, atimer_listP);
-      free_mem_block (mem_unit_to_delete);
+      free_mem_block (mem_unit_to_delete, __func__);
     } else {
       mem_unit = mem_unit->next;
     }

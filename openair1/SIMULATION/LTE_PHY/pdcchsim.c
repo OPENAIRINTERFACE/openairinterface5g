@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
@@ -701,6 +694,7 @@ int main(int argc, char **argv)
     n_tx=2;
 
   lte_param_init(n_tx,
+                 n_tx,
                  n_rx,
                  transmission_mode,
                  extended_prefix_flag,
@@ -744,7 +738,7 @@ int main(int argc, char **argv)
          subframe,NUMBER_OF_OFDM_CARRIERS,
          eNB->frame_parms.Ncp,eNB->frame_parms.samples_per_tti,nsymb);
 
-  eNB2UE = new_channel_desc_scm(eNB->frame_parms.nb_antennas_tx_eNB,
+  eNB2UE = new_channel_desc_scm(eNB->frame_parms.nb_antennas_tx,
                                 UE->frame_parms.nb_antennas_rx,
                                 channel_model,
 				N_RB2sampling_rate(eNB->frame_parms.N_RB_DL),
@@ -819,7 +813,7 @@ int main(int argc, char **argv)
     for (trial=0; trial<n_frames; trial++) {
       
       //    printf("DCI (SF %d): txdataF %p (0 %p)\n",subframe,&eNB->common_vars.txdataF[eNb_id][aa][512*14*subframe],&eNB->common_vars.txdataF[eNb_id][aa][0]);
-      for (aa=0; aa<eNB->frame_parms.nb_antennas_tx_eNB; aa++) {
+      for (aa=0; aa<eNB->frame_parms.nb_antennas_tx; aa++) {
         memset(&eNB->common_vars.txdataF[eNb_id][aa][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t));
 
       }
@@ -958,15 +952,14 @@ int main(int argc, char **argv)
         if (n_frames==1) {
           write_output("txsigF0.m","txsF0", eNB->common_vars.txdataF[eNb_id][0],4*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
-          if (eNB->frame_parms.nb_antennas_tx_eNB > 1)
+          if (eNB->frame_parms.nb_antenna_ports_eNB > 1)
             write_output("txsigF1.m","txsF1", eNB->common_vars.txdataF[eNb_id][1],4*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX,1,1);
         }
 
         tx_lev = 0;
 
 
-
-        for (aa=0; aa<eNB->frame_parms.nb_antennas_tx_eNB; aa++) {
+        for (aa=0; aa<eNB->frame_parms.nb_antenna_ports_eNB; aa++) {
           if (eNB->frame_parms.Ncp == 1)
             PHY_ofdm_mod(&eNB->common_vars.txdataF[eNb_id][aa][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],        // input,
                          &txdata[aa][subframe*eNB->frame_parms.samples_per_tti],         // output
@@ -989,7 +982,7 @@ int main(int argc, char **argv)
       }
 
       for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
-        for (aa=0; aa<eNB->frame_parms.nb_antennas_tx_eNB; aa++) {
+        for (aa=0; aa<eNB->frame_parms.nb_antenna_ports_eNB; aa++) {
           if (awgn_flag == 0) {
             s_re[aa][i] = ((double)(((short *)txdata[aa]))[(2*subframe*UE->frame_parms.samples_per_tti) + (i<<1)]);
             s_im[aa][i] = ((double)(((short *)txdata[aa]))[(2*subframe*UE->frame_parms.samples_per_tti) + (i<<1)+1]);
@@ -1067,20 +1060,20 @@ int main(int argc, char **argv)
               for(aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
                 for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
                   for (i=0; i<frame_parms->N_RB_DL*12; i++) {
-                    ((int16_t *) UE->common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(
+                    ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[k][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(
                           eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
-                    ((int16_t *) UE->common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(
+                    ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(
                           eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
                   }
                 }
               }
             }
           } else {
-            for(aa=0; aa<frame_parms->nb_antennas_tx_eNB; aa++) {
+            for(aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
               for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
                 for (i=0; i<frame_parms->N_RB_DL*12; i++) {
-                  ((int16_t *) UE->common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
-                  ((int16_t *) UE->common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
+                  ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
+                  ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
                 }
               }
             }
@@ -1098,6 +1091,7 @@ int main(int argc, char **argv)
           rx_pdcch(&UE->common_vars,
                    UE->pdcch_vars,
                    &UE->frame_parms,
+                   trial,
                    subframe,
                    0,
                    (UE->frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
@@ -1218,17 +1212,17 @@ int main(int argc, char **argv)
       write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
     write_output("rxsig0.m","rxs0", UE->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
-    write_output("rxsigF0.m","rxsF0", UE->common_vars.rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);
+    write_output("rxsigF0.m","rxsF0", UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);
 
     if (n_rx>1) {
       write_output("rxsig1.m","rxs1", UE->common_vars.rxdata[1],10*frame_parms->samples_per_tti,1,1);
-      write_output("rxsigF1.m","rxsF1", UE->common_vars.rxdataF[1],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);
+      write_output("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[1],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);
     }
 
-    write_output("H00.m","h00",&(UE->common_vars.dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
+    write_output("H00.m","h00",&(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
 
     if (n_tx==2)
-      write_output("H10.m","h10",&(UE->common_vars.dl_ch_estimates[0][2][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
+      write_output("H10.m","h10",&(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][2][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
 
     write_output("pdcch_rxF_ext0.m","pdcch_rxF_ext0",UE->pdcch_vars[eNb_id]->rxdataF_ext[0],3*12*UE->frame_parms.N_RB_DL,1,1);
     write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",UE->pdcch_vars[eNb_id]->rxdataF_comp[0],4*12*UE->frame_parms.N_RB_DL,1,1);

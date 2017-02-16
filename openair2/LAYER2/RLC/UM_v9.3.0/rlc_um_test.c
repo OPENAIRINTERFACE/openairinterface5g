@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #define RLC_UM_MODULE
 #define RLC_C
 #define RLC_UM_TEST_C
@@ -195,8 +188,8 @@ void rlc_um_v9_3_0_test_windows_10()
   rlc_um_init(&um1);
   rlc_um_init(&um2);
 
-  rlc_um_set_debug_infos(&um1, g_frame, 0, 0, 0, 1);
-  rlc_um_set_debug_infos(&um2, g_frame, 1, 1, 1, 1);
+  rlc_um_set_debug_infos(&um1, g_frame, 0, 0, 0, 1, 1 /*LC-id = RAB-id*/);
+  rlc_um_set_debug_infos(&um2, g_frame, 1, 1, 1, 1, 1 /*LC-id = RAB-id*/);
 
   rlc_um_configure(&um1, g_frame, timer_reordering, sn_field_length, sn_field_length, is_mXch);
   rlc_um_configure(&um2, g_frame, timer_reordering, sn_field_length, sn_field_length, is_mXch);
@@ -249,8 +242,8 @@ void rlc_um_v9_3_0_test_windows_5()
   rlc_um_init(&um1);
   rlc_um_init(&um2);
 
-  rlc_um_set_debug_infos(&um1, g_frame, 0, 0, 0, 1);
-  rlc_um_set_debug_infos(&um2, g_frame, 1, 1, 1, 1);
+  rlc_um_set_debug_infos(&um1, g_frame, 0, 0, 0, 1, 1 /* LC-id = DRB-id */);
+  rlc_um_set_debug_infos(&um2, g_frame, 1, 1, 1, 1, 1 /* LC-id = DRB-id */);
 
   rlc_um_configure(&um1, g_frame, timer_reordering, sn_field_length, sn_field_length, is_mXch);
   rlc_um_configure(&um2, g_frame, timer_reordering, sn_field_length, sn_field_length, is_mXch);
@@ -308,7 +301,7 @@ void rlc_um_v9_3_0_test_send_sdu(rlc_um_entity_t *um_txP, int sdu_indexP)
 //-----------------------------------------------------------------------------
 {
   mem_block_t *sdu;
-  sdu = get_free_mem_block (strlen(g_sdus[sdu_indexP]) + 1 + sizeof (struct rlc_um_data_req_alloc));
+  sdu = get_free_mem_block (strlen(g_sdus[sdu_indexP]) + 1 + sizeof (struct rlc_um_data_req_alloc), __func__);
 
   if (sdu != NULL) {
     // PROCESS OF COMPRESSION HERE:
@@ -412,12 +405,12 @@ void rlc_um_v9_3_0_test_mac_rlc_loop (struct mac_data_ind* data_indP,  struct ma
       *tx_packetsP = *tx_packetsP + 1;
 
       if (*drop_countP == 0) {
-        tb_dst  = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_size);
+        tb_dst  = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_size, __func__);
         memset(tb_dst->data, 0, sizeof (mac_rlc_max_rx_header_size_t) + tb_size);
 
         if (tb_dst != NULL) {
           //printf("[RLC-LOOP] Testing tb_dst (1)\n");
-          check_free_mem_block(tb_dst);
+          check_free_mem_block(tb_dst, __func__);
           tb_dst->next = NULL;
           ((struct mac_tb_ind *) (tb_dst->data))->first_bit        = 0;
           ((struct mac_tb_ind *) (tb_dst->data))->data_ptr         = &tb_dst->data[sizeof (mac_rlc_max_rx_header_size_t)];
@@ -431,7 +424,7 @@ void rlc_um_v9_3_0_test_mac_rlc_loop (struct mac_data_ind* data_indP,  struct ma
           list_add_tail_eurecom(tb_dst, &data_indP->data);
           data_indP->no_tb  += 1;
           //printf("[RLC-LOOP] Testing tb_dst (2)\n");
-          check_free_mem_block(tb_dst);
+          check_free_mem_block(tb_dst, __func__);
         } else {
           printf("Out of memory error\n");
           exit(-1);
@@ -444,9 +437,9 @@ void rlc_um_v9_3_0_test_mac_rlc_loop (struct mac_data_ind* data_indP,  struct ma
 
 
       //printf("[RLC-LOOP] Testing tb_src\n");
-      check_free_mem_block(tb_src);
+      check_free_mem_block(tb_src, __func__);
 
-      free_mem_block(tb_src);
+      free_mem_block(tb_src, __func__);
 
       if (data_indP->no_tb > 0) {
         printf("[RLC-LOOP] Exchange %d TBs\n",data_indP->no_tb);
@@ -478,9 +471,9 @@ void rlc_um_v9_3_0_test_exchange_pdus(rlc_um_entity_t *um_txP,
   memset(&mac_rlc_status_resp_tx, 0, sizeof(struct mac_status_resp));
   memset(&mac_rlc_status_resp_rx, 0, sizeof(struct mac_status_resp));
 
-  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, g_frame, 1, bytes_txP, tx_status);
+  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, g_frame, 1, bytes_txP, tx_status,ENB_FLAG_YES);
   data_request_tx        = rlc_um_mac_data_request(um_txP, g_frame);
-  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, g_frame, 0, bytes_rxP, tx_status);
+  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, g_frame, 0, bytes_rxP, tx_status,ENB_FLAG_YES);
   data_request_rx        = rlc_um_mac_data_request(um_rxP, g_frame);
 
 
@@ -524,9 +517,9 @@ void rlc_um_v9_3_0_test_exchange_delayed_pdus(rlc_um_entity_t *um_txP,
   memset(&mac_rlc_status_resp_tx, 0, sizeof(struct mac_status_resp));
   memset(&mac_rlc_status_resp_rx, 0, sizeof(struct mac_status_resp));
 
-  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, g_frame, 1, bytes_txP, tx_status);
+  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, g_frame, 1, bytes_txP, tx_status,ENB_FLAG_YES);
   data_request_tx        = rlc_um_mac_data_request(um_txP, g_frame);
-  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, g_frame, 0, bytes_rxP, tx_status);
+  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, g_frame, 0, bytes_rxP, tx_status,ENB_FLAG_YES);
   data_request_rx        = rlc_um_mac_data_request(um_rxP, g_frame);
 
 
@@ -585,13 +578,13 @@ void rlc_um_v9_3_0_test_data_ind (module_id_t module_idP, rb_id_t rb_idP, sdu_si
 
         assert(g_send_sdu_ids[g_send_id_read_index[rb_idP]][rb_idP^1] == i);
         g_send_id_read_index[rb_idP] += 1;
-        free_mem_block(sduP);
+        free_mem_block(sduP, __func__);
         return;
       }
     }
 
     printf("[FRAME %05d][RLC][MOD %d][RB %d] RX UNKNOWN SDU %04d bytes\n",g_frame,module_idP, rb_idP,  sizeP);
-    free_mem_block(sduP);
+    free_mem_block(sduP, __func__);
     assert(1==2);
   } else {
     for (i = 0; i < 37; i++) {
@@ -599,13 +592,13 @@ void rlc_um_v9_3_0_test_data_ind (module_id_t module_idP, rb_id_t rb_idP, sdu_si
         printf("[FRAME %05d][RLC][MOD %02d][RB %02d] RX SDU %d %04d bytes\n",g_frame,module_idP, rb_idP, i, sizeP);
         assert(TEST_MAX_SEND_SDU > g_send_id_read_index[rb_idP]);
         g_send_id_read_index[rb_idP] += 1;
-        free_mem_block(sduP);
+        free_mem_block(sduP, __func__);
         return;
       }
     }
 
     printf("[FRAME %05d][RLC][MOD %d][RB %d] RX UNKNOWN SDU %04d bytes\n",g_frame,module_idP, rb_idP,  sizeP);
-    free_mem_block(sduP);
+    free_mem_block(sduP, __func__);
     return;
   }
 }
@@ -621,8 +614,8 @@ void rlc_um_v9_3_0_test_reordering(uint32_t sn_field_lengthP)
   um_info.is_mXch          = 0;
 
   srand (0);
-  config_req_rlc_um (&um_tx, 0,0,0, &um_info, 0, SIGNALLING_RADIO_BEARER);
-  config_req_rlc_um (&um_rx, 0,1,1, &um_info, 1, SIGNALLING_RADIO_BEARER);
+  config_req_rlc_um (&um_tx, 0,0,0, &um_info, 0, SIGNALLING_RADIO_BEARER, SIGNALLING_RADIO_BEARER /*LC-id = DRB-id*/);
+  config_req_rlc_um (&um_rx, 0,1,1, &um_info, 1, SIGNALLING_RADIO_BEARER, SIGNALLING_RADIO_BEARER /*LC-id = DRB-id*/);
 
   rlc_um_display_rx_window(&um_tx);
 
@@ -743,8 +736,8 @@ void rlc_um_v9_3_0_test_tx_rx_10(void)
   um_info.is_mXch          = 0;
 
   srand (0);
-  config_req_rlc_um (&um_tx, 0,0,0, &um_info, 0, SIGNALLING_RADIO_BEARER);
-  config_req_rlc_um (&um_rx, 0,1,1, &um_info, 1, SIGNALLING_RADIO_BEARER);
+  config_req_rlc_um (&um_tx, 0,0,0, &um_info, 0, SIGNALLING_RADIO_BEARER, SIGNALLING_RADIO_BEARER /*LC-id = DRB-id*/);
+  config_req_rlc_um (&um_rx, 0,1,1, &um_info, 1, SIGNALLING_RADIO_BEARER, SIGNALLING_RADIO_BEARER /*LC-id = DRB-id*/);
 
   rlc_um_display_rx_window(&um_tx);
 
@@ -1072,8 +1065,8 @@ void rlc_um_v9_3_0_test_tx_rx_5(void)
   um_info.is_mXch          = 0;
 
   srand (0);
-  config_req_rlc_um (&um_tx, 0,0,0, &um_info, 0, SIGNALLING_RADIO_BEARER);
-  config_req_rlc_um (&um_rx, 0,1,1, &um_info, 1, SIGNALLING_RADIO_BEARER);
+  config_req_rlc_um (&um_tx, 0,0,0, &um_info, 0, SIGNALLING_RADIO_BEARER, SIGNALLING_RADIO_BEARER /*LC-id = DRB-id*/);
+  config_req_rlc_um (&um_rx, 0,1,1, &um_info, 1, SIGNALLING_RADIO_BEARER, SIGNALLING_RADIO_BEARER /*LC-id = DRB-id*/);
 
   rlc_um_display_rx_window(&um_tx);
 

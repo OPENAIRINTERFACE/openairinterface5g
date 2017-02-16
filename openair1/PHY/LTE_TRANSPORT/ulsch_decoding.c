@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
- 
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_TRANSPORT/ulsch_decoding.c
 * \brief Top-level routines for decoding  the ULSCH transport channel from 36.212 V8.6 2009-03
@@ -236,7 +228,7 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
   LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
   LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
   int Q_m = get_Qm_ul(ulsch_harq->mcs);
-  int G = ulsch_harq->nb_rb * (12 * Q_m) * ulsch_harq->Nsymb_pusch;
+  int G = ulsch_harq->G;
   uint32_t E;
   uint32_t Gp,GpmodC,Nl=1;
   uint32_t C = ulsch_harq->C;
@@ -457,8 +449,8 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
   int16_t dummy_w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
   LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
   LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
-  int Q_m = get_Qm_ul(ulsch_harq->mcs);
-  int G = ulsch_harq->nb_rb * (12 * Q_m) * ulsch_harq->Nsymb_pusch;
+  //int Q_m = get_Qm_ul(ulsch_harq->mcs);
+  int G = ulsch_harq->G;
   unsigned int E;
   int Cby2;
 
@@ -665,8 +657,8 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
   int16_t dummy_w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
   LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
   LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
-  int Q_m = get_Qm_ul(ulsch_harq->mcs);
-  int G = ulsch_harq->nb_rb * (12 * Q_m) * ulsch_harq->Nsymb_pusch;
+  //int Q_m = get_Qm_ul(ulsch_harq->mcs);
+  int G = ulsch_harq->G;
   unsigned int E;
 
   uint8_t (*tc)(int16_t *y,
@@ -880,7 +872,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   int16_t ys,c;
   uint32_t wACK_idx;
   uint8_t dummy_w_cc[3*(MAX_CQI_BITS+8+32)];
-  int16_t y[6*14*1200];
+  int16_t y[6*14*1200] __attribute__((aligned(32)));
   uint8_t ytag[14*1200];
   //  uint8_t ytag2[6*14*1200],*ytag2_ptr;
   int16_t cseq[6*14*1200];
@@ -1044,6 +1036,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 #endif
 
   G = G - Q_RI - Q_CQI;
+  ulsch_harq->G = G;
 
   if ((int)G < 0) {
     LOG_E(PHY,"FATAL: ulsch_decoding.c G < 0 (%d) : Q_RI %d, Q_CQI %d\n",G,Q_RI,Q_CQI);
@@ -1447,9 +1440,9 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
       
       j2+=Q_m;
     }
-
+    /* To be improved according to alignment of j2
 #if defined(__x86_64__)||defined(__i386__)
-#ifndef __AVX2
+#ifndef __AVX2__
     for (iprime=0; iprime<G;iprime+=8,j2+=8)
       *((__m128i *)&ulsch_harq->e[iprime]) = *((__m128i *)&y[j2]);
 #else
@@ -1459,9 +1452,24 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 #elif defined(__arm__)
     for (iprime=0; iprime<G;iprime+=8,j2+=8)
       *((int16x8_t *)&ulsch_harq->e[iprime]) = *((int16x8_t *)&y[j2]);
-#endif 
+#endif
+    */
+    int16_t *yp,*ep;
+    for (iprime=0,yp=&y[j2],ep=&ulsch_harq->e[0]; 
+	 iprime<G;
+	 iprime+=8,j2+=8,ep+=8,yp+=8) {
+      ep[0] = yp[0];
+      ep[1] = yp[1];
+      ep[2] = yp[2];
+      ep[3] = yp[3];
+      ep[4] = yp[4];
+      ep[5] = yp[5];
+      ep[6] = yp[6];
+      ep[7] = yp[7];
+    }
   }
-
+    
+   
   stop_meas(&eNB->ulsch_demultiplexing_stats);
 
   //  printf("after ACKNAK2 c[%d] = %p (iprime %d, G %d)\n",0,ulsch_harq->c[0],iprime,G);
@@ -1540,6 +1548,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   // CQI
 
   //  printf("before cqi c[%d] = %p\n",0,ulsch_harq->c[0]);
+  ulsch_harq->cqi_crc_status = 0;
   if (Q_CQI>0) {
     memset((void *)&dummy_w_cc[0],0,3*(ulsch_harq->Or1+8+32));
 
@@ -1562,9 +1571,6 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 
     if (extract_cqi_crc(o_flip,ulsch_harq->Or1) == (crc8(o_flip,ulsch_harq->Or1)>>24))
       ulsch_harq->cqi_crc_status = 1;
-    else
-      ulsch_harq->cqi_crc_status = 0;
-
 
     if (ulsch->harq_processes[harq_pid]->Or1<=32) {
       ulsch_harq->o[3] = o_flip[0] ;

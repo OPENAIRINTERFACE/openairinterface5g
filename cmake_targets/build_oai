@@ -1,34 +1,25 @@
 #!/bin/bash
-################################################################################
-#
-# Copyright (c) 2015, EURECOM (www.eurecom.fr)
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# The views and conclusions contained in the software and documentation are those
-# of the authors and should not be interpreted as representing official policies,
-# either expressed or implied, of the FreeBSD Project.
-#
-################################################################################
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+
 # file build_oai
 # brief OAI automated build tool that can be used to install, compile, run OAI.
 # author  Navid Nikaein, Lionel GAUTHIER, Laurent Thomas
@@ -44,6 +35,7 @@ source $THIS_SCRIPT_PATH/tools/build_helper
 
 MSC_GEN="False"
 XFORMS="True"
+FLEXRAN_AGENT_SB_IF="True"
 PRINT_STATS="False"
 VCD_TIMING="False"
 DEADLINE_SCHEDULER_FLAG_USER="False"
@@ -62,6 +54,7 @@ BUILD_DOXYGEN=0
 T_TRACER="False"
 DISABLE_HARDWARE_DEPENDENCY="False"
 CMAKE_BUILD_TYPE=""
+UE_AUTOTEST_TRACE="False"
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -92,6 +85,8 @@ Options
    Makes the UE specific parts (ue_ip, usim, nvram) 
 --RRH
    Makes the RRH
+-a | --agent
+   Enables agent for software-defined control of the eNB
 -r | --3gpp-release
    default is Rel10,
    Rel8 limits the implementation to 3GPP Release 8 version
@@ -136,6 +131,8 @@ Options
    Enables the T tracer.
 --disable-hardware-dependency
    Disable HW dependency during installation
+--ue-autotest-trace
+    Enable specific traces for UE autotest framework
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I  --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I  --eNB -x --install-system-files
@@ -178,6 +175,10 @@ function main() {
             eNB=1
             echo_info "Will compile eNB"
             shift;;
+       -a | --agent)
+	    FLEXRAN_AGENT=1
+	    echo_info "Will compile eNB with agent support"
+	    shift;;
        --UE)
             UE=1
             echo_info "Will compile UE"
@@ -287,6 +288,10 @@ function main() {
             echo_info "Disabling hardware dependency for compiling software"
             DISABLE_HARDWARE_DEPENDENCY="True"
             shift 1;;
+        --ue-autotest-trace)
+            UE_AUTOTEST_TRACE="True"
+            echo_info "Enabling autotest specific trace for UE"
+            shift 1;;
         -h | --help)
             print_help
             exit 1;;
@@ -330,7 +335,7 @@ function main() {
   #By default: EXMIMO: enable
   if [ "$FORCE_DEADLINE_SCHEDULER_FLAG_USER" = "" ]; then
      if [ "$HW" = "EXMIMO" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="False"
+        DEADLINE_SCHEDULER_FLAG_USER="True"
      elif [ "$HW" = "ETHERNET" ] ; then 
         DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "OAI_USRP" ] ; then 
@@ -413,9 +418,9 @@ function main() {
 
   if [ "$oaisim" = "1" ] ; then
       #to be discussed
-      # there is no RF device and no transport protocol 
+      # there is no RF device  transport protocol 
       HW="None" 
-      TP="None"
+      TP="ETHERNET"
       
       if [ "$XFORMS" == "True" ] ; then 
 	  PRINT_STATS="True"
@@ -448,6 +453,9 @@ function main() {
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
+    if [ "$FLEXRAN_AGENT" = "1" ] ; then
+	echo "set ( FLEXRAN_AGENT_SB_IF $FLEXRAN_AGENT_SB_IF )"      >>  $cmake_file
+    fi
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
@@ -456,6 +464,12 @@ function main() {
     echo "set (DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )"    >>$cmake_file
     echo "set (CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"      >>$cmake_file
     echo "set ( T_TRACER $T_TRACER )"              >>  $cmake_file
+    echo "set (UE_AUTOTEST_TRACE $UE_AUTOTEST_TRACE)"        >>  $cmake_file
+    if [ "$UE" = 1 -a "$NOS1" = "0" ] ; then
+     echo_info "Compiling UE S1 build : enabling Linux and NETLINK"
+     echo "set (LINUX True )"              >>  $cmake_file
+     echo "set (PDCP_USE_NETLINK True )"   >>  $cmake_file
+    fi
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     cd  $DIR/$lte_build_dir/build
     cmake ..
@@ -561,6 +575,7 @@ function main() {
     compilations \
 	  $lte_build_dir updatefw \
 	  updatefw $dbin/updatefw
+    echo_info "Compiling oarf tools. The logfile for compilation is here: $dlog/oarf.txt"
     make -C $OPENAIR_DIR/cmake_targets/$lte_build_dir/build oarf > $dlog/oarf.txt 2>&1
     cp $OPENAIR_DIR/cmake_targets/$lte_build_dir/build/*.oct $dbin
     if [ -s $dbin/oarf_config_exmimo.oct ] ; then
@@ -589,6 +604,9 @@ function main() {
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )" >>  $cmake_file
+    if [ "$FLEXRAN_AGENT" = "1" ] ; then
+	echo "set ( FLEXRAN_AGENT_SB_IF $FLEXRAN_AGENT_SB_IF )"      >>  $cmake_file
+    fi
     echo "set ( PRINT_STATS $PRINT_STATS )" >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
@@ -648,15 +666,27 @@ function main() {
 	    CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
 
 	#oai_nw_drv
-	compilations \
-	    $oaisim_build_dir oai_nw_drv \
-	    CMakeFiles/oai_nw_drv/oai_nw_drv.ko $dbin/oai_nw_drv.ko
+	#compilations \
+	#    $oaisim_build_dir oai_nw_drv \
+	#    CMakeFiles/oai_nw_drv/oai_nw_drv.ko $dbin/oai_nw_drv.ko
     fi
 
+    if [ "$TP" == "ETHERNET" ] ; then
+	compilations \
+	    $oaisim_build_dir oai_eth_transpro \
+	    liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
+	ln -s liboai_eth_transpro.so liboai_transpro.so
+	ln -s $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
+	echo_info "liboai_transpro.so is linked with ETHERNET library"	 
+    fi
+      
     cmake_file=$DIR/oaisim_mme_build_oai/CMakeLists.txt
     cp $DIR/oaisim_mme_build_oai/CMakeLists.template $cmake_file
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( XFORMS $XFORMS )" >>  $cmake_file
+    if [ "$FLEXRAN_AGENT" = "1" ] ; then
+	echo "set ( FLEXRAN_AGENT_SB_IF $FLEXRAN_AGENT_SB_IF )"      >>  $cmake_file
+    fi
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
     echo "set ( T_TRACER $T_TRACER )"        >>  $cmake_file

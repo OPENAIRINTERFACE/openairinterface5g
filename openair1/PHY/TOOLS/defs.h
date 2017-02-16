@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #ifndef __PHY_TOOLS_DEFS__H__
 #define __PHY_TOOLS_DEFS__H__
 
@@ -123,13 +116,34 @@ int rotate_cpx_vector(int16_t *x,
   @param y        - output     in the format  |Re0 Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
   @param N        - the size f the vectors (this function does N cpx mpy. WARNING: N>=4;
   @param output_shift  - shift to be applied to generate output
+  @param madd - if not zero result is added to output
 */
 
 int mult_cpx_conj_vector(int16_t *x1,
                          int16_t *x2,
                          int16_t *y,
                          uint32_t N,
-                         int output_shift);
+                         int output_shift,
+			 int madd);
+
+/*!
+  Element-wise multiplication and accumulation of two complex vectors x1 and x2.
+  @param x1       - input 1    in the format  |Re0 Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
+              We assume x1 with a dinamic of 15 bit maximum
+  @param x2       - input 2    in the format  |Re0 Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
+              We assume x2 with a dinamic of 14 bit maximum
+  @param y        - output     in the format  |Re0 Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
+  @param zero_flag Set output (y) to zero prior to accumulation
+  @param N        - the size f the vectors (this function does N cpx mpy. WARNING: N>=4;
+  @param output_shift  - shift to be applied to generate output
+*/
+
+int multadd_cpx_vector(int16_t *x1,
+                    int16_t *x2,
+                    int16_t *y,
+                    uint8_t zero_flag,
+                    uint32_t N,
+		       int output_shift);
 
 // lte_dfts.c
 void init_fft(uint16_t size,

@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /*
    file: lte_est_freq_offset.c
    author (c): florian.kaltenberger@eurecom.fr
@@ -109,7 +102,7 @@ int lte_est_freq_offset(int **dl_ch_estimates,
 {
 
   int ch_offset, omega, dl_ch_shift;
-  struct complex16 *omega_cpx;
+  struct complex16 omega_cpx;
   double phase_offset;
   int freq_offset_est;
   unsigned char aa;
@@ -149,9 +142,8 @@ int lte_est_freq_offset(int **dl_ch_estimates,
     //    printf("Computing freq_offset\n");
     omega = dot_product(dl_ch,dl_ch_prev,(frame_parms->N_RB_DL/2 - 1)*12,dl_ch_shift);
     //omega = dot_product(dl_ch,dl_ch_prev,frame_parms->ofdm_symbol_size,15);
-    omega_cpx = (struct complex16*) &omega;
-
-    //    printf("omega (%d,%d)\n",omega_cpx->r,omega_cpx->i);
+    omega_cpx.r = ((struct complex16*) &omega)->r;
+    omega_cpx.i = ((struct complex16*) &omega)->i;
 
     dl_ch = (int16_t *)&dl_ch_estimates[aa][(((frame_parms->N_RB_DL/2) + 1)*12) + ch_offset];
 
@@ -162,10 +154,12 @@ int lte_est_freq_offset(int **dl_ch_estimates,
 
     // calculate omega = angle(conj(dl_ch)*dl_ch_prev))
     omega = dot_product(dl_ch,dl_ch_prev,((frame_parms->N_RB_DL/2) - 1)*12,dl_ch_shift);
-    omega_cpx->r += ((struct complex16*) &omega)->r;
-    omega_cpx->i += ((struct complex16*) &omega)->i;
+
+    omega_cpx.r += ((struct complex16*) &omega)->r;
+    omega_cpx.i += ((struct complex16*) &omega)->i;
+
     //    phase_offset += atan2((double)omega_cpx->i,(double)omega_cpx->r);
-    phase_offset += atan2((double)omega_cpx->i,(double)omega_cpx->r);
+    phase_offset += atan2((double)omega_cpx.i,(double)omega_cpx.r);
     //    LOG_I(PHY,"omega (%d,%d) -> %f\n",omega_cpx->r,omega_cpx->i,phase_offset);
   }
 

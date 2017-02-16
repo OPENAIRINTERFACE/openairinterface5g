@@ -1,31 +1,24 @@
 /*
- * Copyright (c) 2015, EURECOM (www.eurecom.fr)
- * All rights reserved.
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ *      http://www.openairinterface.org/?page_id=698
  *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * The views and conclusions contained in the software and documentation are those
- * of the authors and should not be interpreted as representing official policies,
- * either expressed or implied, of the FreeBSD Project.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
  */
+
 /*****************************************************************************
 
 Source    nas_message.h
@@ -59,6 +52,8 @@ Description Defines the layer 3 messages supported by the NAS sublayer
 #endif
 #include "secu_defs.h"
 #include "emmData.h"
+
+//#define DEBUG_NAS_MESSAGE
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -528,7 +523,7 @@ int nas_message_encode(
       /* Compute the NAS message authentication code */
       LOG_TRACE(DEBUG,
                 "offset %d = %d - %d, hdr encode = %d, length = %d bytes = %d",
-                offset, size, sizeof(uint8_t),
+                offset, size, (int)sizeof(uint8_t),
                 size, length, bytes);
       uint32_t mac = _nas_message_get_mac(
                        buffer + offset,
@@ -997,12 +992,12 @@ static int _nas_message_decrypt(
 
     case NAS_SECURITY_ALGORITHMS_EEA1: {
       if (direction == SECU_DIRECTION_UPLINK) {
-        count = 0x00000000 ||
-                ((emm_security_context->ul_count.overflow && 0x0000FFFF) << 8) ||
+        count = 0x00000000 |
+                ((emm_security_context->ul_count.overflow & 0x0000FFFF) << 8) |
                 (emm_security_context->ul_count.seq_num & 0x000000FF);
       } else {
-        count = 0x00000000 ||
-                ((emm_security_context->dl_count.overflow && 0x0000FFFF) << 8) ||
+        count = 0x00000000 |
+                ((emm_security_context->dl_count.overflow & 0x0000FFFF) << 8) |
                 (emm_security_context->dl_count.seq_num & 0x000000FF);
       }
 
@@ -1031,12 +1026,12 @@ static int _nas_message_decrypt(
 
     case NAS_SECURITY_ALGORITHMS_EEA2: {
       if (direction == SECU_DIRECTION_UPLINK) {
-        count = 0x00000000 ||
-                ((emm_security_context->ul_count.overflow && 0x0000FFFF) << 8) ||
+        count = 0x00000000 |
+                ((emm_security_context->ul_count.overflow & 0x0000FFFF) << 8) |
                 (emm_security_context->ul_count.seq_num & 0x000000FF);
       } else {
-        count = 0x00000000 ||
-                ((emm_security_context->dl_count.overflow && 0x0000FFFF) << 8) ||
+        count = 0x00000000 |
+                ((emm_security_context->dl_count.overflow & 0x0000FFFF) << 8) |
                 (emm_security_context->dl_count.seq_num & 0x000000FF);
       }
 
@@ -1159,12 +1154,12 @@ static int _nas_message_encrypt(
 
     case NAS_SECURITY_ALGORITHMS_EEA1: {
       if (direction == SECU_DIRECTION_UPLINK) {
-        count = 0x00000000 ||
-                ((emm_security_context->ul_count.overflow && 0x0000FFFF) << 8) ||
+        count = 0x00000000 |
+                ((emm_security_context->ul_count.overflow & 0x0000FFFF) << 8) |
                 (emm_security_context->ul_count.seq_num & 0x000000FF);
       } else {
-        count = 0x00000000 ||
-                ((emm_security_context->dl_count.overflow && 0x0000FFFF) << 8) ||
+        count = 0x00000000 |
+                ((emm_security_context->dl_count.overflow & 0x0000FFFF) << 8) |
                 (emm_security_context->dl_count.seq_num & 0x000000FF);
       }
 
@@ -1190,12 +1185,12 @@ static int _nas_message_encrypt(
 
     case NAS_SECURITY_ALGORITHMS_EEA2: {
       if (direction == SECU_DIRECTION_UPLINK) {
-        count = 0x00000000 ||
-                ((emm_security_context->ul_count.overflow && 0x0000FFFF) << 8) ||
+        count = 0x00000000 |
+                ((emm_security_context->ul_count.overflow & 0x0000FFFF) << 8) |
                 (emm_security_context->ul_count.seq_num & 0x000000FF);
       } else {
-        count = 0x00000000 ||
-                ((emm_security_context->dl_count.overflow && 0x0000FFFF) << 8) ||
+        count = 0x00000000 |
+                ((emm_security_context->dl_count.overflow & 0x0000FFFF) << 8) |
                 (emm_security_context->dl_count.seq_num & 0x000000FF);
       }
 
@@ -1301,15 +1296,17 @@ static uint32_t _nas_message_get_mac(
     uint32_t            count;
     uint32_t           *mac32;
 
+#ifdef DEBUG_NAS_MESSAGE
     int i,bytes = 0;
+#endif
 
     if (direction == SECU_DIRECTION_UPLINK) {
-      count = 0x00000000 ||
-              ((emm_security_context->ul_count.overflow && 0x0000FFFF) << 8) ||
+      count = 0x00000000 |
+              ((emm_security_context->ul_count.overflow & 0x0000FFFF) << 8) |
               (emm_security_context->ul_count.seq_num & 0x000000FF);
     } else {
-      count = 0x00000000 ||
-              ((emm_security_context->dl_count.overflow && 0x0000FFFF) << 8) ||
+      count = 0x00000000 |
+              ((emm_security_context->dl_count.overflow & 0x0000FFFF) << 8) |
               (emm_security_context->dl_count.seq_num & 0x000000FF);
     }
 
@@ -1319,6 +1316,7 @@ static uint32_t _nas_message_get_mac(
               (direction == SECU_DIRECTION_UPLINK) ? emm_security_context->ul_count.seq_num:emm_security_context->dl_count.seq_num,
               count);
 
+#ifdef DEBUG_NAS_MESSAGE
     fprintf(stderr, "\n[NAS]\t");
 
     for (i=0; i < length; i++) {
@@ -1338,6 +1336,7 @@ static uint32_t _nas_message_get_mac(
 
     fprintf(stderr, "\n");
     fflush(stderr);
+#endif
 
     stream_cipher.key        = emm_security_context->knas_int.value;
     stream_cipher.key_length = AUTH_KNAS_INT_SIZE;
@@ -1370,12 +1369,12 @@ static uint32_t _nas_message_get_mac(
     uint32_t           *mac32;
 
     if (direction == SECU_DIRECTION_UPLINK) {
-      count = 0x00000000 ||
-              ((emm_security_context->ul_count.overflow && 0x0000FFFF) << 8) ||
+      count = 0x00000000 |
+              ((emm_security_context->ul_count.overflow & 0x0000FFFF) << 8) |
               (emm_security_context->ul_count.seq_num & 0x000000FF);
     } else {
-      count = 0x00000000 ||
-              ((emm_security_context->dl_count.overflow && 0x0000FFFF) << 8) ||
+      count = 0x00000000 |
+              ((emm_security_context->dl_count.overflow & 0x0000FFFF) << 8) |
               (emm_security_context->dl_count.seq_num & 0x000000FF);
     }
 

@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #define RLC_AM_MODULE 1
 #define RLC_AM_C 1
 //-----------------------------------------------------------------------------
@@ -60,6 +53,7 @@ rlc_am_get_buffer_occupancy_in_bytes (
   uint32_t header_overhead;
 
   // priority of control trafic
+  rlc_pP->status_buffer_occupancy = 0;
   if (rlc_pP->status_requested) {
     if (rlc_pP->t_status_prohibit.running == 0) {
 #if TRACE_RLC_AM_BO
@@ -71,7 +65,7 @@ rlc_am_get_buffer_occupancy_in_bytes (
       }
 
 #endif
-      return ((15  +  rlc_pP->num_nack_sn*(10+1)  +  rlc_pP->num_nack_so*(15+15+1) + 7) >> 3);
+      rlc_pP->status_buffer_occupancy = ((15  +  rlc_pP->num_nack_sn*(10+1)  +  rlc_pP->num_nack_so*(15+15+1) + 7) >> 3);
     }
   }
 
@@ -120,7 +114,8 @@ config_req_rlc_am (
   const protocol_ctxt_t* const ctxt_pP,
   const srb_flag_t             srb_flagP,
   rlc_am_info_t  * const       config_am_pP,
-  const rb_id_t                rb_idP
+  const rb_id_t                rb_idP,
+  const logical_chan_id_t      chan_idP 
 )
 {
   rlc_union_t       *rlc_union_p = NULL;
@@ -142,7 +137,7 @@ config_req_rlc_am (
           config_am_pP->t_reordering,
           config_am_pP->t_status_prohibit);
     rlc_am_init(ctxt_pP, l_rlc_p);
-    rlc_am_set_debug_infos(ctxt_pP, l_rlc_p, srb_flagP, rb_idP);
+    rlc_am_set_debug_infos(ctxt_pP, l_rlc_p, srb_flagP, rb_idP, chan_idP);
     rlc_am_configure(ctxt_pP, l_rlc_p,
                      config_am_pP->max_retx_threshold,
                      config_am_pP->poll_pdu,
@@ -167,7 +162,8 @@ void config_req_rlc_am_asn1 (
   const protocol_ctxt_t* const         ctxt_pP,
   const srb_flag_t                     srb_flagP,
   const struct RLC_Config__am  * const config_am_pP,
-  const rb_id_t                        rb_idP)
+  const rb_id_t                        rb_idP,
+  const logical_chan_id_t              chan_idP)
 {
   rlc_union_t     *rlc_union_p   = NULL;
   rlc_am_entity_t *l_rlc_p         = NULL;
@@ -208,7 +204,7 @@ void config_req_rlc_am_asn1 (
             t_StatusProhibit_tab[config_am_pP->dl_AM_RLC.t_StatusProhibit]);
 
       rlc_am_init(ctxt_pP, l_rlc_p);
-      rlc_am_set_debug_infos(ctxt_pP, l_rlc_p, srb_flagP, rb_idP);
+      rlc_am_set_debug_infos(ctxt_pP, l_rlc_p, srb_flagP, rb_idP, chan_idP);
       rlc_am_configure(ctxt_pP, l_rlc_p,
                        maxRetxThreshold_tab[config_am_pP->ul_AM_RLC.maxRetxThreshold],
                        pollPDU_tab[config_am_pP->ul_AM_RLC.pollPDU],
@@ -227,7 +223,7 @@ void config_req_rlc_am_asn1 (
         PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, l_rlc_p));
 
       LOG_D(RLC,
-            PROTOCOL_RLC_AM_CTXT_FMT"ILLEGAL CONFIG_REQ (max_retx_threshold=%d poll_pdu=%d poll_byte=%d t_poll_retransmit=%d t_reord=%d t_status_prohibit=%d), RLC-AM NOT CONFIGURED\n",
+            PROTOCOL_RLC_AM_CTXT_FMT"ILLEGAL CONFIG_REQ (max_retx_threshold=%ld poll_pdu=%ld poll_byte=%ld t_poll_retransmit=%ld t_reord=%ld t_status_prohibit=%ld), RLC-AM NOT CONFIGURED\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,l_rlc_p),
             config_am_pP->ul_AM_RLC.maxRetxThreshold,
             config_am_pP->ul_AM_RLC.pollPDU,
@@ -345,6 +341,7 @@ rlc_am_get_pdus (
         if (pdu) {
           list_add_tail_eurecom (pdu, &rlc_pP->pdus_to_mac_layer);
           rlc_pP->status_requested = 0;
+          rlc_pP->status_buffer_occupancy = 0;
           rlc_am_start_timer_status_prohibit(ctxt_pP, rlc_pP);
           return;
         }
@@ -526,7 +523,7 @@ rlc_am_rx (
   switch (rlc->protocol_state) {
 
   case RLC_NULL_STATE:
-    LOG_N(RLC, PROTOCOL_RLC_AM_CTXT_FMT" ERROR MAC_DATA_IND IN RLC_NULL_STATE\n", arg_pP);
+    LOG_N(RLC, PROTOCOL_RLC_AM_CTXT_FMT" ERROR MAC_DATA_IND IN RLC_NULL_STATE\n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP, rlc));
     list_free (&data_indP.data);
     break;
 
@@ -535,7 +532,7 @@ rlc_am_rx (
     break;
 
   default:
-    LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" TX UNKNOWN PROTOCOL STATE 0x%02X\n", rlc, rlc->protocol_state);
+    LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" TX UNKNOWN PROTOCOL STATE 0x%02X\n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP, rlc), rlc->protocol_state);
   }
 }
 
@@ -559,6 +556,15 @@ rlc_am_mac_status_indication (
   status_resp.head_sdu_creation_time           = 0;
   status_resp.head_sdu_is_segmented            = 0;
   status_resp.rlc_info.rlc_protocol_state = rlc->protocol_state;
+
+  /* TODO: remove this hack. Problem is: there is a race.
+   * UE comes. SRB2 is configured via message to RRC.
+   * At some point the RLC AM is created but not configured yet.
+   * At this moment (I think) MAC calls mac_rlc_status_ind
+   * which calls this function. But the init was not finished yet
+   * and we have a crash below when testing mem_block != NULL.
+   */
+  if (rlc->input_sdus == NULL) return status_resp;
 
   if (rlc->last_frame_status_indication != ctxt_pP->frame) {
     rlc_am_check_timer_poll_retransmit(ctxt_pP, rlc);
@@ -1283,7 +1289,7 @@ rlc_am_data_req (
           l_rlc_p->input_sdus[l_rlc_p->next_sdu_index].mem_block, l_rlc_p->input_sdus[l_rlc_p->next_sdu_index].flags.segmented);
     l_rlc_p->stat_tx_pdcp_sdu_discarded   += 1;
     l_rlc_p->stat_tx_pdcp_bytes_discarded += ((struct rlc_am_data_req *) (sdu_pP->data))->data_size;
-    free_mem_block (sdu_pP);
+    free_mem_block (sdu_pP, __func__);
 #if STOP_ON_IP_TRAFFIC_OVERLOAD
     AssertFatal(0, PROTOCOL_RLC_AM_CTXT_FMT" RLC_AM_DATA_REQ size %d Bytes, SDU DROPPED, INPUT BUFFER OVERFLOW NB SDU %d current_sdu_index=%d next_sdu_index=%d \n",
                 PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,l_rlc_p),
