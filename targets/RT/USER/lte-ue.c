@@ -625,7 +625,9 @@ void *UE_thread(void *arg) {
                                                             rxp,
                                                             UE->frame_parms.samples_per_tti*10,
                                                             UE->frame_parms.nb_antennas_rx), "");
+		AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
                 instance_cnt_synch = ++UE->proc.instance_cnt_synch;
+		AssertFatal ( 0== pthread_mutex_unlock(&UE->proc.mutex_synch), "");
                 if (instance_cnt_synch == 0) {
                     AssertFatal( 0 == pthread_cond_signal(&UE->proc.cond_synch), "");
                 } else {
