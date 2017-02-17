@@ -418,6 +418,7 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
 
 extern int oai_exit;
 void *td_thread(void *param) {
+  pthread_setname_np( pthread_self(), "td processing");
   PHY_VARS_eNB *eNB = ((td_params*)param)->eNB;
   eNB_proc_t *proc  = &eNB->proc;
 

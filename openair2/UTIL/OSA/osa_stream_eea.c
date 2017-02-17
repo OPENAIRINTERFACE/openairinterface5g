@@ -27,6 +27,7 @@
 #include <nettle/nettle-meta.h>
 #include <nettle/aes.h>
 #include <nettle/ctr.h>
+#include <nettle/bignum.h>
 
 #include "UTIL/LOG/log.h"
 
@@ -191,7 +192,7 @@ int stream_encrypt_eea2(stream_cipher_t *stream_cipher, uint8_t **out)
   }
 #endif
 
-#if NETTLE_VERSION_MAJOR < 3
+#if !defined(NETTLE_VERSION_MAJOR) || NETTLE_VERSION_MAJOR < 3
   nettle_aes128.set_encrypt_key(ctx, stream_cipher->key_length,
                                 stream_cipher->key);
 #else

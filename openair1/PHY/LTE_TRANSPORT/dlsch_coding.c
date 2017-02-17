@@ -40,6 +40,8 @@
 #include "SCHED/defs.h"
 #include "defs.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
+#include "UTIL/LOG/log.h"
+#include <syscall.h>
 
 //#define DEBUG_DLSCH_CODING
 //#define DEBUG_DLSCH_FREE 1
@@ -347,6 +349,8 @@ int dlsch_encoding_2threads0(te_params *tep) {
 
 extern int oai_exit;
 void *te_thread(void *param) {
+  pthread_setname_np( pthread_self(),"te processing");
+  LOG_I(PHY,"thread te created id=%ld", syscall(__NR_gettid));
 
   eNB_proc_t *proc = &((te_params *)param)->eNB->proc;
   while (!oai_exit) {

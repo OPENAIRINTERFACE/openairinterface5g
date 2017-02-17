@@ -2603,6 +2603,7 @@ extern int oai_exit;
 
 static void *fep_thread(void *param) {
 
+  pthread_setname_np( pthread_self(), "UEfep");
   PHY_VARS_eNB *eNB = (PHY_VARS_eNB *)param;
   eNB_proc_t *proc  = &eNB->proc;
   while (!oai_exit) {

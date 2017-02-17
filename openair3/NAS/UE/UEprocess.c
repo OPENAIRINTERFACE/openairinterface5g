@@ -224,6 +224,7 @@ static void *_nas_user_mngr(void *args)
 {
   LOG_FUNC_IN;
 
+  pthread_setname_np( pthread_self(), "nas_user_mngr");
   int exit_loop = FALSE;
 
   int *fd = (int *) args;

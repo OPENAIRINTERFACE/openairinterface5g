@@ -32,6 +32,7 @@
 #ifndef __PHY_DEFS__H__
 #define __PHY_DEFS__H__
 
+#define _GNU_SOURCE 
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
@@ -391,6 +392,9 @@ typedef struct {
   pthread_mutex_t mutex_rxtx;
   /// scheduling parameters for RXn-TXnp4 thread
   struct sched_param sched_param_rxtx;
+  int sub_frame_start;
+  int sub_frame_step;
+  unsigned long long gotIQs;
 } UE_rxtx_proc_t;
 
 /// Context data structure for eNB subframe processing
