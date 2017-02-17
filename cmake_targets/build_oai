@@ -694,8 +694,8 @@ function main() {
 	compilations \
 	    $oaisim_build_dir oai_eth_transpro \
 	    liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
-	ln -s liboai_eth_transpro.so liboai_transpro.so
-	ln -s $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
+	ln -sf liboai_eth_transpro.so liboai_transpro.so
+	ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
 	echo_info "liboai_transpro.so is linked with ETHERNET library"	 
     fi
       
@@ -782,8 +782,8 @@ function main() {
 		      liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
 	      fi
 
-	      ln -s liboai_usrpdevif.so liboai_device.so
-	      ln -s $dbin/liboai_usrpdevif.so.$REL $dbin/liboai_device.so
+	      ln -sf liboai_usrpdevif.so liboai_device.so
+	      ln -sf $dbin/liboai_usrpdevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to USRP device library"        
 	  elif [ "$HW" == "OAI_BLADERF" ] ; then
 	      if [ -f "/usr/include/libbladeRF.h" ] ; then
@@ -792,8 +792,8 @@ function main() {
 		      liboai_bladerfdevif.so $dbin/liboai_bladerfdevif.so.$REL
 	      fi
 
-	      ln -s liboai_bladerfdevif.so liboai_device.so
-	      ln -s $dbin/liboai_bladerfdevif.so.$REL $dbin/liboai_device.so
+	      ln -sf liboai_bladerfdevif.so liboai_device.so
+	      ln -sf $dbin/liboai_bladerfdevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to BLADERF device library"	 
 	  elif [ "$HW" == "OAI_LMSSDR" ] ; then
 #	      if [ -f "/usr/include/libbladeRF.h" ] ; then
@@ -802,8 +802,8 @@ function main() {
 		      liboai_lmssdrdevif.so $dbin/liboai_lmssdrdevif.so.$REL
 #	      fi
 
-	      ln -s liboai_lmssdrdevif.so liboai_device.so
-	      ln -s $dbin/liboai_lmssdrdevif.so.$REL $dbin/liboai_device.so
+	      ln -sf liboai_lmssdrdevif.so liboai_device.so
+	      ln -sf $dbin/liboai_lmssdrdevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to LMSSDR device library"	 
 	  else 
 	      echo_info "liboai_device.so is not linked to any device library"	    
@@ -819,8 +819,8 @@ function main() {
 	      compilations \
 		  $build_dir oai_eth_transpro \
 		  liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
-	      ln -s liboai_eth_transpro.so liboai_transpro.so
-	      ln -s $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
+	      ln -sf liboai_eth_transpro.so liboai_transpro.so
+	      ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
 	      echo_info "liboai_transpro.so is linked with ETHERNET library"	 
 	  fi      
       fi
