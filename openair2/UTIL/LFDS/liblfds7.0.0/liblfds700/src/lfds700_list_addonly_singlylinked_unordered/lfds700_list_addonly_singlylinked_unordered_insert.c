@@ -154,7 +154,6 @@ void lfds700_list_asu_insert_at_end( struct lfds700_list_asu_state *lasus,
 
 
 /****************************************************************************/
-#pragma warning( disable : 4100 )
 
 void lfds700_list_asu_insert_after_element( struct lfds700_list_asu_state *lasus,
                                             struct lfds700_list_asu_element *lasue,
@@ -189,5 +188,4 @@ void lfds700_list_asu_insert_after_element( struct lfds700_list_asu_state *lasus
   return;
 }
 
-#pragma warning( default : 4100 )
 
