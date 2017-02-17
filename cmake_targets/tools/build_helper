@@ -216,7 +216,11 @@ install_usrp_uhd_driver() {
         # We move uhd-host apart because it depends on linux kernel version
         # On newer kernels, it fails to install
         $SUDO apt-get -y install uhd-host
-        $SUDO uhd_images_downloader 
+        if [ -z $1 ]; then
+          $SUDO uhd_images_downloader
+        else
+          $SUDO uhd_images_downloader -i $1
+        fi
 }
 
 check_install_bladerf_driver(){

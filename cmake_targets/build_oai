@@ -292,6 +292,10 @@ function main() {
             UE_AUTOTEST_TRACE="True"
             echo_info "Enabling autotest specific trace for UE"
             shift 1;;
+        --uhd-images-dir)
+            UHD_IMAGES_DIR=$2
+            echo_info "Downloading UHD images in the indicated location"
+            shift 2;;
         -h | --help)
             print_help
             exit 1;;
@@ -362,6 +366,10 @@ function main() {
   echo_info "Flags for Deadline scheduler: $DEADLINE_SCHEDULER_FLAG_USER"
   echo_info "Flags for CPU Affinity: $CPU_AFFINITY_FLAG_USER"
 
+  if [ -n "$UHD_IMAGES_DIR" ] && [ -z "$INSTALL_EXTERNAL" ]; then
+    echo_error "UHD images download settings will not be applied without -I present"
+    exit
+  fi
   ############################################
   # setting and printing OAI envs, we should check here
   ############################################
@@ -399,7 +407,7 @@ function main() {
       echo_info "installing packages for USRP support"
       check_install_usrp_uhd_driver
       if [ ! "$DISABLE_HARDWARE_DEPENDENCY" == "True" ]; then
-        install_usrp_uhd_driver
+        install_usrp_uhd_driver $UHD_IMAGES_DIR
       fi
     fi 
     if [ "$HW" == "OAI_BLADERF" ] ; then
