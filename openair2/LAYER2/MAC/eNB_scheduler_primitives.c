@@ -769,7 +769,7 @@ int get_bw_index(module_id_t module_id, uint8_t CC_id)
 
   default:
     bw_index=1;
-    LOG_W(MAC,"[eNB %d] N_DL_RB %d unknown for CC_id %d, setting bw_index to 1\n", module_id, CC_id);
+    LOG_W(MAC,"[eNB %d] N_DL_RB %d unknown for CC_id %d, setting bw_index to 1\n", module_id, frame_parms->N_RB_DL, CC_id);
     break;
   }
 

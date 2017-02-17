@@ -292,8 +292,8 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
     }
 		
   } else if (*packet_type == IF4p5_PRACH) {  
-     LOG_D(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,*frame,*subframe);  
-    if (eNB->CC_id==1) LOG_I(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,*frame,*subframe);
+     LOG_D(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d\n",eNB->CC_id,*frame,*subframe);
+    if (eNB->CC_id==1) LOG_I(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d\n",eNB->CC_id,*frame,*subframe);
 
     // FIX: hard coded prach samples length
     db_fulllength = PRACH_HARD_CODED_NUM_SAMPLES;

@@ -1103,8 +1103,8 @@ rrc_ue_update_radioResourceConfigDedicated(RadioResourceConfigDedicated_t* radio
         UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->antennaInfo->choice.explicitValue.ue_TransmitAntennaSelection =
         		radioResourceConfigDedicated->physicalConfigDedicated->antennaInfo->choice.explicitValue.ue_TransmitAntennaSelection;
 
-        LOG_I(PHY,"New Transmission Mode %d \n",radioResourceConfigDedicated->physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode);
-        LOG_I(PHY,"Configured Transmission Mode %d \n",UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->antennaInfo->choice.explicitValue.transmissionMode);
+        LOG_I(PHY,"New Transmission Mode %ld \n",radioResourceConfigDedicated->physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode);
+        LOG_I(PHY,"Configured Transmission Mode %ld \n",UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->antennaInfo->choice.explicitValue.transmissionMode);
 
     }
     else

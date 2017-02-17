@@ -675,17 +675,17 @@ void fh_if5_asynch_UL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     proc->first_rx =2;
     *subframe = proc->subframe_rx;
     *frame    = proc->frame_rx; 
-    LOG_E(PHY,"[Mobipass]timestamp_rx:%llu, frame_rx %d, subframe: %d\n",proc->timestamp_rx,proc->frame_rx,proc->subframe_rx);
+    LOG_E(PHY,"[Mobipass]timestamp_rx:%"PRId64", frame_rx %d, subframe: %d\n",proc->timestamp_rx,proc->frame_rx,proc->subframe_rx);
   }
   else {
     if (proc->subframe_rx != *subframe) {
         proc->first_rx++;
-       LOG_E(PHY,"[Mobipass]timestamp:%llu, subframe_rx %d is not what we expect %d, first_rx:%d\n",proc->timestamp_rx, proc->subframe_rx,*subframe, proc->first_rx);
+       LOG_E(PHY,"[Mobipass]timestamp:%"PRId64", subframe_rx %d is not what we expect %d, first_rx:%d\n",proc->timestamp_rx, proc->subframe_rx,*subframe, proc->first_rx);
       //exit_fun("Exiting");
     }
     if (proc->frame_rx != *frame) {
         proc->first_rx++;
-       LOG_E(PHY,"[Mobipass]timestamp:%llu, frame_rx %d is not what we expect %d, first_rx:%d\n",proc->timestamp_rx,proc->frame_rx,*frame, proc->first_rx);  
+       LOG_E(PHY,"[Mobipass]timestamp:%"PRId64", frame_rx %d is not what we expect %d, first_rx:%d\n",proc->timestamp_rx,proc->frame_rx,*frame, proc->first_rx);  
      // exit_fun("Exiting");
     }
     // temporary solution
@@ -990,7 +990,7 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   else {
 
     if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
-      LOG_I(PHY,"rx_rf: rfdevice timing drift of %d samples\n",proc->timestamp_rx - old_ts - fp->samples_per_tti);
+      LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples\n",proc->timestamp_rx - old_ts - fp->samples_per_tti);
       eNB->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
       proc->timestamp_rx = ts-eNB->ts_offset;
     }
@@ -1007,12 +1007,12 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
-      LOG_E(PHY,"rx_rf: Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->timestamp_rx,proc->subframe_rx,*subframe);
+      LOG_E(PHY,"rx_rf: Received Timestamp (%"PRId64") doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->timestamp_rx,proc->subframe_rx,*subframe);
       exit_fun("Exiting");
     }
     int f2 = (*frame+proc->frame_offset)&1023;    
     if (proc->frame_rx != f2) {
-      LOG_E(PHY,"rx_rf: Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->frame_rx %d frame %d, frame_offset %d, f2 %d)\n",proc->timestamp_rx,proc->frame_rx,*frame,proc->frame_offset,f2);
+      LOG_E(PHY,"rx_rf: Received Timestamp (%"PRId64") doesn't correspond to the time we think it is (proc->frame_rx %d frame %d, frame_offset %d, f2 %d)\n",proc->timestamp_rx,proc->frame_rx,*frame,proc->frame_offset,f2);
       exit_fun("Exiting");
     }
   } else {
@@ -1631,8 +1631,8 @@ static void* eNB_thread_single( void* param ) {
     }      
 
     if (eNB->CC_id==1) 
-	LOG_D(PHY,"eNB thread single %p (proc %p, CC_id %d), frame %d (%p), subframe %d (%p)\n",
-	  pthread_self(), proc, eNB->CC_id, frame,&frame,subframe,&subframe);
+	LOG_D(PHY,"eNB thread single (proc %p, CC_id %d), frame %d (%p), subframe %d (%p)\n",
+	  proc, eNB->CC_id, frame,&frame,subframe,&subframe);
  
     // synchronization on FH interface, acquire signals/data and block
     if (eNB->rx_fh) eNB->rx_fh(eNB,&frame,&subframe);

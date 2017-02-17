@@ -1411,7 +1411,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
                 common_vars->beam_weights[eNB_id][i][j][re] = 0x00007fff/fp->nb_antennas_tx;
             }
 #ifdef DEBUG_PHY
-            msg("[openair][LTE_PHY][INIT] lte_common_vars->beam_weights[%d][%d][%d] = %p (%d bytes)\n",
+            msg("[openair][LTE_PHY][INIT] lte_common_vars->beam_weights[%d][%d][%d] = %p (%zu bytes)\n",
                 eNB_id,i,j,common_vars->beam_weights[eNB_id][i][j],
                 fp->ofdm_symbol_size*sizeof(int32_t));
 #endif

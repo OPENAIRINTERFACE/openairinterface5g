@@ -72,7 +72,7 @@ void nas_user_api_id_initialize(nas_user_t *user) {
   user->user_api_id = user_api_id;
   char *port = make_port_str_from_ueid(NAS_PARSER_DEFAULT_USER_PORT_NUMBER, user->ueid);
   if ( port == NULL ) {
-      LOG_E(NAS, "[UE %d] can't get port from ueid %d !", user->ueid);
+      LOG_E(NAS, "[UE %d] can't get port from ueid!", user->ueid);
       exit (EXIT_FAILURE);
   }
   if (user_api_initialize (user_api_id, NAS_PARSER_DEFAULT_USER_HOSTNAME, port, NULL,
@@ -106,7 +106,7 @@ void *nas_ue_task(void *args_p)
     /* Get USIM data application filename */
     user->usim_data_store = memory_get_path_from_ueid(USIM_API_NVRAM_DIRNAME, USIM_API_NVRAM_FILENAME, user->ueid);
     if ( user->usim_data_store == NULL ) {
-      LOG_E(NAS, "[UE %d] - Failed to get USIM data application filename", user->ueid, user->ueid);
+      LOG_E(NAS, "[UE %d] - Failed to get USIM data application filename", user->ueid);
       exit(EXIT_FAILURE);
     }
 
