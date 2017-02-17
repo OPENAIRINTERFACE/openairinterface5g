@@ -115,8 +115,8 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
 	     (packet_type == IF4p5_PULTICK)){
     db_fulllength = 12*fp->N_RB_UL;
     db_halflength = (db_fulllength)>>1;
-    slotoffsetF = 1;
-    blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength - 1; 
+    slotoffsetF = 0;
+    blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
 
     if (subframe_select(fp,subframe)==SF_S) {
       nsym=fp->ul_symbols_in_S_subframe;
@@ -249,7 +249,6 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
     perror("ETHERNET read");
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 0 );
-
   if (eth->flags == ETH_RAW_IF4p5_MODE) {
     packet_header = (IF4p5_header_t*) (rx_buffer+MAC_HEADER_SIZE_BYTES);
     data_block = (uint16_t*) (rx_buffer+MAC_HEADER_SIZE_BYTES+sizeof_IF4p5_header_t);
@@ -264,7 +263,6 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
   *subframe = ((packet_header->frame_status)>>22)&0x000f;
 
   *packet_type = packet_header->sub_type; 
-
 
   if (*packet_type == IF4p5_PDLFFT) {          
     *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
@@ -289,10 +287,10 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
     *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RECV_IF4_SYMBOL, *symbol_number );
     if (eNB->CC_id==0) LOG_D(PHY,"UL_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,*frame,*subframe,*symbol_number);
-
     slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size);
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_DECOMPR_IF, 1 );  
+    if (eNB->CC_id==0) LOG_D(PHY,"UL_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,*frame,*subframe,*symbol_number);
     for (element_id=0; element_id<db_halflength; element_id++) {
       i = (uint16_t*) &rxdataF[0][blockoffsetF+element_id];
       *i = alaw2lin_if4p5[ (data_block[element_id] & 0xff) ]; 

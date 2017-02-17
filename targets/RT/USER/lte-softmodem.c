@@ -285,7 +285,7 @@ double cpuf;
 
 char uecap_xer[1024],uecap_xer_in=0;
 
-
+int oaisim_flag=0;
 
 /*---------------------BMC: timespec helpers -----------------------------*/
 

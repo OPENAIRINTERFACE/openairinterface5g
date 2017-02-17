@@ -197,6 +197,7 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
 
   int nblocks = nsamps;  
   int bytes_sent = 0;
+
   
   eth_state_t *eth = (eth_state_t*)device->priv;
   
@@ -216,7 +217,6 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
   }
    
   eth->tx_nsamps = nblocks;
-  
   bytes_sent = sendto(eth->sockfd,
 		      buff[0], 
 		      packet_size,
@@ -244,6 +244,8 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
   int i=0;
   //sendto_flag|=flags;
   eth->tx_nsamps=nsamps;
+
+ 
 
   for (i=0;i<cc;i++) {	
     /* buff[i] points to the position in tx buffer where the payload to be sent is
