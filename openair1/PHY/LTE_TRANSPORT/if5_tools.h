@@ -59,3 +59,5 @@ typedef struct IF5_mobipass_header IF5_mobipass_header_t;
 void send_IF5(PHY_VARS_eNB*, openair0_timestamp, int, uint8_t*, uint16_t);
 
 void recv_IF5(PHY_VARS_eNB*, openair0_timestamp*, int, uint16_t);
+
+void malloc_IF5_buffer(PHY_VARS_eNB*);

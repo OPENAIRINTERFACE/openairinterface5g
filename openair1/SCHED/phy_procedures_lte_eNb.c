@@ -78,7 +78,8 @@
 void exit_fun(const char* s);
 
 extern int exit_openair;
-
+struct timespec start_fh, start_fh_prev;
+int start_fh_sf, start_fh_prev_sf;
 // Fix per CC openair rf/if device update
 // extern openair0_device openair0;
 
@@ -2751,6 +2752,10 @@ void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc_rxtx) {
     /// **** send_IF4 of rxdataF to RCC (no prach now) **** ///
     LOG_D(PHY,"send_IF4p5 (PULFFT): frame %d, subframe %d\n",proc_rxtx->frame_rx,proc_rxtx->subframe_rx);
     send_IF4p5(eNB, proc_rxtx->frame_rx, proc_rxtx->subframe_rx, IF4p5_PULFFT, 0);
+    start_fh_prev = start_fh;
+    start_fh_prev_sf = start_fh_sf;
+    clock_gettime( CLOCK_MONOTONIC, &start_fh);
+    start_fh_sf = proc_rxtx->subframe_rx;
   }    
 }
 
@@ -2762,6 +2767,10 @@ void eNB_fep_rru_if5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc_rxtx) {
   /// **** send_IF5 of rxdata to BBU **** ///       
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 1 );  
   send_IF5(eNB, proc->timestamp_rx, proc->subframe_rx, &seqno, IF5_RRH_GW_UL);
+  start_fh_prev = start_fh;
+  start_fh_prev_sf = start_fh_sf;
+  clock_gettime( CLOCK_MONOTONIC, &start_fh);
+  start_fh_sf = proc->subframe_rx;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 0 );          
 
 }

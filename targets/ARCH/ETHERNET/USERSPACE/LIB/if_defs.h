@@ -49,6 +49,9 @@
 
 // COMMOM HEADER LENGTHS
 
+#define NO_COMPRESS      0       
+#define ALAW_COMPRESS    1
+
 #define UDP_HEADER_SIZE_BYTES	8
 #define IPV4_HEADER_SIZE_BYTES	60	// This is the maximum IPv4 header length
 
@@ -58,6 +61,10 @@
 #define PAYLOAD_SIZE_BYTES(nsamps) (nsamps<<2)
 #define UDP_PACKET_SIZE_BYTES(nsamps) (APP_HEADER_SIZE_BYTES + PAYLOAD_SIZE_BYTES(nsamps))
 #define RAW_PACKET_SIZE_BYTES(nsamps) (APP_HEADER_SIZE_BYTES + MAC_HEADER_SIZE_BYTES + PAYLOAD_SIZE_BYTES(nsamps))
+
+#define PAYLOAD_SIZE_BYTES_ALAW(nsamps) (nsamps<<1)
+#define UDP_PACKET_SIZE_BYTES_ALAW(nsamps) (APP_HEADER_SIZE_BYTES + PAYLOAD_SIZE_BYTES_ALAW(nsamps))
+#define RAW_PACKET_SIZE_BYTES_ALAW(nsamps) (APP_HEADER_SIZE_BYTES + MAC_HEADER_SIZE_BYTES + PAYLOAD_SIZE_BYTES_ALAW(nsamps))
 
 // Packet sizes for IF4p5 interface format
 #define DATA_BLOCK_SIZE_BYTES(scaled_nblocks) (sizeof(uint16_t)*scaled_nblocks)
