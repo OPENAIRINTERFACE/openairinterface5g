@@ -189,12 +189,14 @@ void init_UE(int nb_inst) {
     }
 
     printf("UE threads created by %ld\n", gettid());
-#ifdef USE_MME
+#if 0
+#if defined(ENABLE_USE_MME)
+    extern volatile int start_UE;
     while (start_UE == 0) {
         sleep(1);
     }
 #endif
-
+#endif
 }
 
 /*!
