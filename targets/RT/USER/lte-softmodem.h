@@ -67,11 +67,7 @@ extern volatile int             start_eNB;
 extern volatile int             start_UE;
 #endif
 
-typedef struct threads_s {
-    int iq;
-    int odd;
-    int even;
-} threads_t;
+#include "threads_t.h"
 extern threads_t threads;
 
 extern void exit_fun(const char* s);

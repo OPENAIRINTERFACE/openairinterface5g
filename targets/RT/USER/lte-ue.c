@@ -124,10 +124,6 @@ static const eutra_band_t eutra_bands[] = {
     {44, 703    * MHz, 803    * MHz, 703    * MHz, 803    * MHz, TDD},
 };
 
-pthread_t                       main_ue_thread;
-pthread_attr_t                  attr_UE_thread;
-struct sched_param              sched_param_UE_thread;
-
 void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_t *cpuset, char * name) {
 
 #ifdef DEADLINE_SCHEDULER
@@ -177,24 +173,25 @@ void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_
     printf("started %s as PID: %ld\n",name, gettid());
 }
 
-void init_UE(int nb_inst) {
+void init_UE(int nb_inst)
+{
+  int inst;
+  for (inst=0; inst < nb_inst; inst++) {
+    //    UE->rfdevice.type      = NONE_DEV;
+    PHY_VARS_UE *UE = PHY_vars_UE_g[inst][0];
+    AssertFatal(0 == pthread_create(&UE->proc.pthread_ue,
+                                    &UE->proc.attr_ue,
+                                    UE_thread,
+                                    (void*)UE), "");
+  }
 
-    for (long long inst=0; inst<nb_inst; inst++) {
-        //    UE->rfdevice.type      = NONE_DEV;
-        PHY_VARS_UE *UE = PHY_vars_UE_g[inst][0];
-        AssertFatal(0 == pthread_create(&UE->proc.pthread_ue,
-                                        &UE->proc.attr_ue,
-                                        UE_thread,
-                                        (void*)UE), "");
-    }
-
-    printf("UE threads created by %ld\n", gettid());
+  printf("UE threads created by %ld\n", gettid());
 #if 0
 #if defined(ENABLE_USE_MME)
-    extern volatile int start_UE;
-    while (start_UE == 0) {
-        sleep(1);
-    }
+  extern volatile int start_UE;
+  while (start_UE == 0) {
+    sleep(1);
+  }
 #endif
 #endif
 }
@@ -214,14 +211,15 @@ static void *UE_thread_synch(void *arg) {
     sync_mode_t sync_mode = pbch;
     int CC_id = UE->CC_id;
     int freq_offset=0;
+    char threadname[128];
 
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     if ( threads.iq != -1 )
         CPU_SET(threads.iq, &cpuset);
     // this thread priority must be lower that the main acquisition thread
-    init_thread(100000, 500000, FIFO_PRIORITY-1, &cpuset,
-                "sync UE");
+    sprintf(threadname, "sync UE %d\n", UE->Mod_id);
+    init_thread(100000, 500000, FIFO_PRIORITY-1, &cpuset, threadname);
 
     UE->is_synchronized = 0;
 
@@ -460,6 +458,13 @@ static void *UE_thread_synch(void *arg) {
 }
 
 
+/* this structure is used to pass both UE phy vars and
+ * proc to the function UE_thread_rxn_txnp4
+ */
+struct rx_tx_thread_data {
+  PHY_VARS_UE    *UE;
+  UE_rxtx_proc_t *proc;
+};
 
 /*!
  * \brief This is the UE thread for RX subframe n and TX subframe n+4.
@@ -471,15 +476,16 @@ static void *UE_thread_synch(void *arg) {
 
 static void *UE_thread_rxn_txnp4(void *arg) {
     static __thread int UE_thread_rxtx_retval;
-    UE_rxtx_proc_t *proc = (UE_rxtx_proc_t *)arg;
+    struct rx_tx_thread_data *rtd = arg;
+    UE_rxtx_proc_t *proc = rtd->proc;
+    PHY_VARS_UE    *UE   = rtd->UE;
     int ret;
-    PHY_VARS_UE *UE=PHY_vars_UE_g[0][proc->CC_id];
 
-    static long long __thread instance_cnt_rxtx=-1;
+    proc->instance_cnt_rxtx=-1;
     proc->subframe_rx=proc->sub_frame_start;
 
-    char threadname[256]= {0};
-    sprintf(threadname,"UE_proc_%d",proc->sub_frame_start);
+    char threadname[256];
+    sprintf(threadname,"UE_%d_proc_%d", UE->Mod_id, proc->sub_frame_start);
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     if ( (proc->sub_frame_start+1)%2 == 0 && threads.even != -1 )
@@ -490,14 +496,18 @@ static void *UE_thread_rxn_txnp4(void *arg) {
                 threadname);
 
     while (!oai_exit) {
-        // Wait Rx data to process are available
-        AssertFatal(pthread_mutex_lock(&proc->mutex_rxtx) ==0,"");
-        pthread_cond_wait( &proc->cond_rxtx, &proc->mutex_rxtx );
-        if ( (instance_cnt_rxtx+proc->sub_frame_step)%10 != proc->subframe_rx &&  instance_cnt_rxtx!=-1 )
-            LOG_W(PHY,"REAL TIME NOT MATCHED: missed a sub-frame: expecting %lld, got %d\n",
-                  (instance_cnt_rxtx+proc->sub_frame_step)%10, proc->subframe_rx);
-        instance_cnt_rxtx=proc->subframe_rx;
-        AssertFatal(pthread_mutex_unlock(&proc->mutex_rxtx) ==0,"");
+        if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
+          LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RXTX\n" );
+          exit_fun("nothing to add");
+        }
+        while (proc->instance_cnt_rxtx < 0) {
+          // most of the time, the thread is waiting here
+          pthread_cond_wait( &proc->cond_rxtx, &proc->mutex_rxtx );
+        }
+        if (pthread_mutex_unlock(&proc->mutex_rxtx) != 0) {
+          LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE RXn_TXnp4\n" );
+          exit_fun("nothing to add");
+        }
 
         initRefTimes(t2);
         initRefTimes(t3);
@@ -571,9 +581,19 @@ static void *UE_thread_rxn_txnp4(void *arg) {
                 phy_procedures_UE_S_TX(UE,0,0,no_relay);
         updateTimes(current, &t3, 10000, "Delay to process sub-frame (case 3)");
 
+        if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
+          LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RXTX\n" );
+          exit_fun("noting to add");
+        }
+        proc->instance_cnt_rxtx--;
+        if (pthread_mutex_unlock(&proc->mutex_rxtx) != 0) {
+          LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE RXTX\n" );
+          exit_fun("noting to add");
+        }
     }
 
 // thread finished
+    free(arg);
     return &UE_thread_rxtx_retval;
 }
 
@@ -596,6 +616,7 @@ void *UE_thread(void *arg) {
     void* rxp[NB_ANTENNAS_RX], *txp[NB_ANTENNAS_TX];
     int start_rx_stream = 0;
     int i;
+    char threadname[128];
 
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
@@ -606,13 +627,14 @@ void *UE_thread(void *arg) {
     if (oaisim_flag == 0)
         AssertFatal(0== openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "");
     UE->rfdevice.host_type = BBU_HOST;
-    pthread_setname_np( pthread_self(), "Main UE" );
+    sprintf(threadname, "Main UE %d", UE->Mod_id);
+    pthread_setname_np(pthread_self(), threadname);
     init_UE_threads(UE);
 
 #ifdef NAS_UE
     MessageDef *message_p;
     message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
-    itti_send_msg_to_task (TASK_NAS_UE, INSTANCE_DEFAULT, message_p);
+    itti_send_msg_to_task (TASK_NAS_UE, UE->Mod_id + NB_eNB_INST, message_p);
 #endif
 
     int sub_frame=-1;
@@ -638,13 +660,13 @@ void *UE_thread(void *arg) {
                                                             UE->frame_parms.nb_antennas_rx), "");
 		AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
                 instance_cnt_synch = ++UE->proc.instance_cnt_synch;
-		AssertFatal ( 0== pthread_mutex_unlock(&UE->proc.mutex_synch), "");
                 if (instance_cnt_synch == 0) {
                     AssertFatal( 0 == pthread_cond_signal(&UE->proc.cond_synch), "");
                 } else {
                     LOG_E( PHY, "[SCHED][UE] UE sync thread busy!!\n" );
                     exit_fun("nothing to add");
                 }
+		AssertFatal ( 0== pthread_mutex_unlock(&UE->proc.mutex_synch), "");
             } else {
                 // grab 10 ms of signal into dummy buffer
                 if (UE->mode != loop_through_memory) {
@@ -770,6 +792,18 @@ void *UE_thread(void *arg) {
                                          (4*UE->frame_parms.samples_per_tti)-
                                          UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
 
+                    proc->instance_cnt_rxtx++;
+                    if (proc->instance_cnt_rxtx == 0) {
+                      if (pthread_cond_signal(&proc->cond_rxtx) != 0) {
+                        LOG_E( PHY, "[SCHED][UE %d] ERROR pthread_cond_signal for UE RX thread\n", UE->Mod_id);
+                        exit_fun("nothing to add");
+                      }
+                    } else {
+                      LOG_E( PHY, "[SCHED][UE %d] UE RX thread busy (IC %d)!!\n", UE->Mod_id, proc->instance_cnt_rxtx);
+                      if (proc->instance_cnt_rxtx > 2)
+                        exit_fun("instance_cnt_rxtx > 2");
+                    }
+
                     AssertFatal (pthread_cond_signal(&proc->cond_rxtx) ==0 ,"");
                     AssertFatal(pthread_mutex_unlock(&proc->mutex_rxtx) ==0,"");
                     initRefTimes(t1);
@@ -797,6 +831,7 @@ void *UE_thread(void *arg) {
  * and the locking between them.
  */
 void init_UE_threads(PHY_VARS_UE *UE) {
+    struct rx_tx_thread_data *rtd;
 
     pthread_attr_init (&UE->proc.attr_ue);
     pthread_attr_setstacksize(&UE->proc.attr_ue,8192);//5*PTHREAD_STACK_MIN);
@@ -807,11 +842,15 @@ void init_UE_threads(PHY_VARS_UE *UE) {
     // the threads are not yet active, therefore access is allowed without locking
     int nb_threads=2;
     for (int i=0; i<nb_threads; i++) {
+        rtd = calloc(1, sizeof(struct rx_tx_thread_data));
+        if (rtd == NULL) abort();
+        rtd->UE = UE;
+        rtd->proc = &UE->proc.proc_rxtx[i];
         pthread_mutex_init(&UE->proc.proc_rxtx[i].mutex_rxtx,NULL);
         pthread_cond_init(&UE->proc.proc_rxtx[i].cond_rxtx,NULL);
         UE->proc.proc_rxtx[i].sub_frame_start=i;
         UE->proc.proc_rxtx[i].sub_frame_step=nb_threads;
-        pthread_create(&UE->proc.proc_rxtx[i].pthread_rxtx,NULL,UE_thread_rxn_txnp4,(void*)&UE->proc.proc_rxtx[i]);
+        pthread_create(&UE->proc.proc_rxtx[i].pthread_rxtx, NULL, UE_thread_rxn_txnp4, rtd);
     }
     pthread_create(&UE->proc.pthread_synch,NULL,UE_thread_synch,(void*)UE);
 
