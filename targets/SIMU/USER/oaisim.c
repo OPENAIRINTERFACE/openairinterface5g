@@ -1291,8 +1291,6 @@ main (int argc, char **argv)
   init_ocm ();
 
 #if defined(ENABLE_ITTI)
-  // Handle signals until all tasks are terminated
-
   // Note: Cannot handle both RRU/RAU and eNB at the same time, if the first "eNB" is an RRU/RAU, no NAS
   if (oai_emulation.info.node_function[0] < NGFI_RAU_IF4p5) { 
     if (create_tasks(oai_emulation.info.nb_enb_local, 
