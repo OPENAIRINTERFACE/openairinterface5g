@@ -181,6 +181,10 @@ const char* eurecomVariablesNames[] = {
   "ue0_trx_write_ns",
   "ue0_trx_read_ns_missing",
   "ue0_trx_write_ns_missing"
+  "send_if4_symbol",
+  "recv_if4_symbol",
+  "send_if5_pkt_id",
+  "recv_if5_pkt_id"
 };
 
 const char* eurecomFunctionsNames[] = {
@@ -375,7 +379,10 @@ const char* eurecomFunctionsNames[] = {
   "send_if4",
   "recv_if4",
   "send_if5",
-  "recv_if5"  
+  "recv_if5",
+
+  "compress_if",
+  "decompress_if"
 };
 
 struct vcd_module_s vcd_modules[VCD_SIGNAL_DUMPER_MODULE_END] = {
