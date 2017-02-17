@@ -1588,6 +1588,7 @@ schedule_ue_spec(
             }
 
             break;
+            */
             /*
             // disabled for now as this needs to be done properly
           case 5:
