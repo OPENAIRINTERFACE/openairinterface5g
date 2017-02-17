@@ -165,6 +165,7 @@ void nas_user_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
   int rc = memory_read(user->user_nvdata_store, user->nas_user_nvdata, sizeof(user_nvdata_t));
   if (rc != RETURNok) {
     LOG_TRACE(ERROR, "USR-MAIN  - Failed to read %s", user->nas_user_nvdata);
+    abort();
   }
 
   user->nas_user_context = calloc_or_fail(sizeof(nas_user_context_t));
