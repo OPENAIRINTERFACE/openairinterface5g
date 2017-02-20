@@ -33,6 +33,8 @@
 #include "PHY/defs.h"
 #include "PHY/TOOLS/alaw_lut.h"
 
+#include "time_utils.h"
+
 //#include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
@@ -83,7 +85,7 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
           }  
         }
         clock_gettime( CLOCK_MONOTONIC, &end_comp);
-        LOG_D(HW,"[SF %d] Compress_Time: %d\n",subframe,clock_difftime_ns(start_comp, end_comp));
+        LOG_D(HW,"[SF %d] Compress_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 0 );
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 1 );
         clock_gettime( CLOCK_MONOTONIC, &start_comp);
@@ -94,7 +96,7 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
                                      fp->nb_antennas_tx,
                                      0);
         clock_gettime( CLOCK_MONOTONIC, &end_comp);
-        LOG_D(HW,"[SF %d] IF_Write_Time: %d\n",subframe,clock_difftime_ns(start_comp, end_comp));
+        LOG_D(HW,"[SF %d] IF_Write_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 0 );
       }
     } else if (eth->compression == NO_COMPRESS) {
@@ -112,7 +114,7 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
                                      fp->nb_antennas_tx,
                                      0);
         clock_gettime( CLOCK_MONOTONIC, &end_comp);
-        LOG_D(HW,"[SF %d] IF_Write_Time: %d\n",subframe,clock_difftime_ns(start_comp, end_comp));
+        LOG_D(HW,"[SF %d] IF_Write_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 0 );  
         for (i=0; i < fp->nb_antennas_tx; i++)
           txp[i] += spp_eth;
@@ -140,7 +142,7 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
           }
         }
         clock_gettime( CLOCK_MONOTONIC, &end_comp);
-        LOG_D(HW,"[SF %d] Compress_Time: %d\n",subframe,clock_difftime_ns(start_comp, end_comp));
+        LOG_D(HW,"[SF %d] Compress_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 0 );
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 1 );
         clock_gettime( CLOCK_MONOTONIC, &start_comp);
@@ -151,7 +153,7 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
                                      fp->nb_antennas_rx,
                                      0);
         clock_gettime( CLOCK_MONOTONIC, &end_comp);
-        LOG_D(HW,"[SF %d] IF_Write_Time: %d\n",subframe,clock_difftime_ns(start_comp, end_comp));
+        LOG_D(HW,"[SF %d] IF_Write_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 0 );
       }
     } else if (eth->compression == NO_COMPRESS) {
@@ -169,7 +171,7 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
                                      fp->nb_antennas_rx,
                                      0);
         clock_gettime( CLOCK_MONOTONIC, &end_comp);
-        LOG_D(HW,"[SF %d] IF_Write_Time: %d\n",subframe,clock_difftime_ns(start_comp, end_comp));
+        LOG_D(HW,"[SF %d] IF_Write_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 0 );            
         for (i=0; i < fp->nb_antennas_rx; i++)
           rxp[i] += spp_eth;
@@ -291,7 +293,7 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
                                     fp->nb_antennas_tx);
 
         clock_gettime( CLOCK_MONOTONIC, &end_decomp);
-        LOG_D(HW,"[SF %d] IF_Read_Time: %d\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
+        LOG_D(HW,"[SF %d] IF_Read_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 0 );
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_DECOMPR_IF, 1 );
         clock_gettime( CLOCK_MONOTONIC, &start_decomp);
@@ -303,7 +305,7 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
           }
         }
         clock_gettime( CLOCK_MONOTONIC, &end_decomp);
-        LOG_D(HW,"[SF %d] Decomperss_Time: %d\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
+        LOG_D(HW,"[SF %d] Decomperss_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_DECOMPR_IF, 0 );
       }
     } else if (eth->compression == NO_COMPRESS) {
@@ -320,7 +322,7 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
                                     spp_eth,
                                     fp->nb_antennas_tx);
         clock_gettime( CLOCK_MONOTONIC, &end_decomp);
-        LOG_D(HW,"[SF %d] IF_Read_Time: %d\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
+        LOG_D(HW,"[SF %d] IF_Read_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 0 );  
         for (i=0; i < fp->nb_antennas_tx; i++)
           txp[i] += spp_eth;
@@ -346,7 +348,7 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
                                     spp_eth,
                                     fp->nb_antennas_rx);
         clock_gettime( CLOCK_MONOTONIC, &end_decomp);
-        LOG_D(HW,"[SF %d] IF_Read_Time: %d\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
+        LOG_D(HW,"[SF %d] IF_Read_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 0 );
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_DECOMPR_IF, 1 );
         clock_gettime( CLOCK_MONOTONIC, &start_decomp);
@@ -358,7 +360,7 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
           }
         }
         clock_gettime( CLOCK_MONOTONIC, &end_decomp);
-        LOG_D(HW,"[SF %d] Decomperss_Time: %d\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
+        LOG_D(HW,"[SF %d] Decomperss_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_DECOMPR_IF, 0 );
       }
     } else if (eth->compression == NO_COMPRESS) {
@@ -375,7 +377,7 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
                                     spp_eth,
                                     fp->nb_antennas_rx);
         clock_gettime( CLOCK_MONOTONIC, &end_decomp);
-        LOG_D(HW,"[SF %d] IF_Read_Time: %d\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
+        LOG_D(HW,"[SF %d] IF_Read_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 0 );            
         for (i=0; i < fp->nb_antennas_rx; i++)
           rxp[i] += spp_eth;

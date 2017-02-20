@@ -45,6 +45,8 @@
 #include <sys/sysinfo.h>
 #include "rt_wrapper.h"
 
+#include "time_utils.h"
+
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "assertions.h"
@@ -170,21 +172,6 @@ extern struct timespec start_fh, start_fh_prev;
 extern int start_fh_sf, start_fh_prev_sf;
 struct timespec end_fh;
 int end_fh_sf;
-int clock_difftime_ns(struct timespec start, struct timespec end)
-{
-    struct timespec temp;
-    int temp_ns;
-
-    if ((end.tv_nsec-start.tv_nsec)<0) {
-        temp.tv_sec = end.tv_sec-start.tv_sec-1;
-        temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
-    } else {
-        temp.tv_sec = end.tv_sec-start.tv_sec;
-        temp.tv_nsec = end.tv_nsec-start.tv_nsec;
-    }
-    temp_ns = (temp.tv_sec) * 1000000000 + (temp.tv_nsec);
-    return temp_ns;
-}
 
 static inline void thread_top_init(char *thread_name,
 				   int affinity,
@@ -776,7 +763,7 @@ void fh_if5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   clock_gettime( CLOCK_MONOTONIC, &end_fh);
   end_fh_sf = *subframe;
   recv_if_count = recv_if_count + 1;
-  LOG_D(HW,"[From SF %d to SF %d] RTT_FH: %d\n", start_fh_prev_sf, end_fh_sf, clock_difftime_ns(start_fh_prev, end_fh));
+  LOG_D(HW,"[From SF %d to SF %d] RTT_FH: %"PRId64"\n", start_fh_prev_sf, end_fh_sf, clock_difftime_ns(start_fh_prev, end_fh));
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 0 );
 
@@ -985,8 +972,8 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
       end_rf_ts = proc->timestamp_rx+eNB->ts_offset+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance;
       if (recv_if_count != 0 ) {
         recv_if_count = recv_if_count-1;
-        LOG_D(HW,"[From Timestamp %d to Timestamp %d] RTT_RF: %d; RTT_RF\n", start_rf_prev_ts, end_rf_ts, clock_difftime_ns(start_rf_prev, end_rf));
-        LOG_D(HW,"[From Timestamp %d to Timestamp %d] RTT_RF: %d; RTT_RF\n",start_rf_prev2_ts, end_rf_ts, clock_difftime_ns(start_rf_prev2, end_rf));
+        LOG_D(HW,"[From Timestamp %d to Timestamp %d] RTT_RF: %"PRId64"; RTT_RF\n", start_rf_prev_ts, end_rf_ts, clock_difftime_ns(start_rf_prev, end_rf));
+        LOG_D(HW,"[From Timestamp %d to Timestamp %d] RTT_RF: %"PRId64"; RTT_RF\n",start_rf_prev2_ts, end_rf_ts, clock_difftime_ns(start_rf_prev2, end_rf));
       }
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
       
