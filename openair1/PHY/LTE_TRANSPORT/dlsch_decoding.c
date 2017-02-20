@@ -37,7 +37,7 @@
 #include "SCHED/extern.h"
 #include "SIMULATION/TOOLS/defs.h"
 //#define DEBUG_DLSCH_DECODING
- 
+
 
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch)
 {
@@ -343,7 +343,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 
   for (r=0; r<harq_process->C; r++) {
 
-    
+
     // Get Turbo interleaver parameters
     if (r<harq_process->Cminus)
       Kr = harq_process->Kminus;
@@ -387,7 +387,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
           harq_process->round);
 #endif
 
-
+//printf("dlsch->harq_processes[harq_pid]->rvidx = %d\n", dlsch->harq_processes[harq_pid]->rvidx);
     if (lte_rate_matching_turbo_rx(harq_process->RTC[r],
                                    G,
                                    harq_process->w[r],
@@ -486,7 +486,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
       stop_meas(dlsch_turbo_decoding_stats);
     }
 #else
-    if ((harq_process->C == 1) ||  
+    if ((harq_process->C == 1) ||
 	((r==harq_process->C-1) && (skipped_last==0))) { // last segment with odd number of segments
 
       start_meas(dlsch_turbo_decoding_stats);
@@ -518,7 +518,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
       }
       else {
 	skipped_last=0;
-	
+
 	if (Kr_last == Kr) { // decode 2 code segments with AVX2 version
 #ifdef DEBUG_DLSCH_DECODING
 	  printf("single decoding segment %d (%p)\n",r-1,&harq_process->d[r-1][96]);
@@ -565,7 +565,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 
 	     exit(-1);*/
 	  stop_meas(dlsch_turbo_decoding_stats);
-	} 
+	}
 	else { // Kr_last != Kr
 	  start_meas(dlsch_turbo_decoding_stats);
 	  ret = tc
@@ -585,7 +585,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
              &phy_vars_ue->dlsch_tc_intl1_stats,
              &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
 	  stop_meas(dlsch_turbo_decoding_stats);
-	  
+
 	  start_meas(dlsch_turbo_decoding_stats);
 	  ret = tc
             (&harq_process->d[r][96],
@@ -604,7 +604,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
              &phy_vars_ue->dlsch_tc_intl1_stats,
              &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
 	  stop_meas(dlsch_turbo_decoding_stats);
-	  
+
 	}
       }
     }
@@ -747,7 +747,7 @@ int dlsch_abstraction_EESM(double* sinr_dB, uint8_t TM, uint32_t rb_alloc[4], ui
 
   bler = interp(sinr_eff,&sinr_bler_map[mcs][0][0],&sinr_bler_map[mcs][1][0],table_length[mcs]);
 
-#ifdef USER_MODE // need to be adapted for the emulation in the kernel space 
+#ifdef USER_MODE // need to be adapted for the emulation in the kernel space
 
   if (uniformrandom() < bler) {
     LOG_I(OCM,"abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f, TM %d)\n",mcs,sinr_eff,bler, TM);
@@ -830,7 +830,7 @@ int dlsch_abstraction_MIESM(double* sinr_dB,uint8_t TM, uint32_t rb_alloc[4], ui
 
   bler = interp(sinr_eff,&sinr_bler_map[mcs][0][0],&sinr_bler_map[mcs][1][0],table_length[mcs]);
 
-#ifdef USER_MODE // need to be adapted for the emulation in the kernel space 
+#ifdef USER_MODE // need to be adapted for the emulation in the kernel space
 
   if (uniformrandom() < bler) {
     LOG_N(OCM,"abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);

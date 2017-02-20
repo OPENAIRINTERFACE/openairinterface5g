@@ -197,9 +197,9 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 
           if (ue->frame_parms.Ncp==NORMAL) {
             for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
+
 	      rxF_sss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[aarx][(5*ue->frame_parms.ofdm_symbol_size)];
 	      rxF_pss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[aarx][(6*ue->frame_parms.ofdm_symbol_size)];
-	      
 
               //-ve spectrum from SSS
 	      //	      printf("slot %d: SSS DTX: %d,%d, non-DTX %d,%d\n",slot,rxF_pss[-72],rxF_pss[-71],rxF_pss[-36],rxF_pss[-35]);
@@ -298,8 +298,9 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 	      rxF_sss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[aarx][(6*ue->frame_parms.ofdm_symbol_size)];
 	      // note this is a dummy pointer, the pss is not really there!
 	      // in FDD the pss is in the symbol after the sss, but not in TDD
+
 	      rxF_pss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[aarx][(7*ue->frame_parms.ofdm_symbol_size)];
-	      
+
 	      //-ve spectrum from SSS
 	      //              ue->measurements.n0_power[aarx] = (((int32_t)rxF_pss[-72]*rxF_pss[-72])+((int32_t)rxF_pss[-71]*rxF_pss[-71]));
               ue->measurements.n0_power[aarx] = (((int32_t)rxF_pss[-70]*rxF_pss[-70])+((int32_t)rxF_pss[-69]*rxF_pss[-69]));
@@ -312,14 +313,14 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 	      ue->measurements.n0_power[aarx] += (((int32_t)rxF_sss[2+68]*rxF_sss[2+68])+((int32_t)rxF_sss[2+67]*rxF_sss[2+67]));
 	      ue->measurements.n0_power[aarx] += (((int32_t)rxF_sss[2+66]*rxF_sss[2+66])+((int32_t)rxF_sss[2+65]*rxF_sss[2+65]));
 	      //	      ue->measurements.n0_power[aarx] += (((int32_t)rxF_sss[2+64]*rxF_sss[2+64])+((int32_t)rxF_sss[2+63]*rxF_sss[2+63]));
-	      
+
 	      ue->measurements.n0_power_dB[aarx] = (unsigned short) dB_fixed(ue->measurements.n0_power[aarx]/(6));
-	      ue->measurements.n0_power_tot +=  ue->measurements.n0_power[aarx];	  
-	    }	      
+	      ue->measurements.n0_power_tot +=  ue->measurements.n0_power[aarx];
+	    }
 	    ue->measurements.n0_power_tot_dB = (unsigned short) dB_fixed(ue->measurements.n0_power_tot/(6*aarx));
 	    ue->measurements.n0_power_tot_dBm = ue->measurements.n0_power_tot_dB - ue->rx_total_gain_dB - dB_fixed(ue->frame_parms.ofdm_symbol_size);
-	      
-	    
+
+
           }
 #endif
         }
@@ -363,7 +364,7 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 	      //	      if ((ue->frame_rx&0x3ff) == 0)
 	      //                printf("rb %d, off %d : %d\n",rb,off,((rxF[off]*rxF[off])+(rxF[off+1]*rxF[off+1])));
 
-              
+
               off+=12;
 
               if (off>=(ue->frame_parms.ofdm_symbol_size<<1))
@@ -474,6 +475,14 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
   LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   int nb_subbands,subband_size,last_subband_size;
   int N_RB_DL = frame_parms->N_RB_DL;
+  ue->measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;
+
+    if (ue->transmission_mode[eNB_id]!=4)
+     ue->measurements.rank[eNB_id] = 0;
+    else
+    ue->measurements.rank[eNB_id] = 1;
+  //  printf ("tx mode %d\n", ue->transmission_mode[eNB_id]);
+  //  printf ("rank %d\n", ue->PHY_measurements.rank[eNB_id]);
 
   switch (N_RB_DL) {
   case 6:
@@ -625,6 +634,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
       }
 
       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+	//printf("aarx=%d", aarx);
         // skip the first 4 RE due to interpolation filter length of 5 (not possible to skip 5 due to 128i alignment, must be multiple of 128bit)
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -644,9 +654,11 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
 
           // pmi
 #if defined(__x86_64__) || defined(__i386__)
-          pmi128_re = _mm_setzero_si128();
-          pmi128_im = _mm_setzero_si128();
+
+	  pmi128_re = _mm_xor_si128(pmi128_re,pmi128_re);
+          pmi128_im = _mm_xor_si128(pmi128_im,pmi128_im);
 #elif defined(__arm__)
+
           pmi128_re = vdupq_n_s32(0);
 	  pmi128_im = vdupq_n_s32(0);
 #endif
@@ -659,18 +671,52 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
 
           for (i=0; i<limit; i++) {
 
+#if defined(__x86_64__) || defined(__i386__)
+	      mmtmpPMI0 = _mm_xor_si128(mmtmpPMI0,mmtmpPMI0);
+              mmtmpPMI1 = _mm_xor_si128(mmtmpPMI1,mmtmpPMI1);
+
             // For each RE in subband perform ch0 * conj(ch1)
             // multiply by conjugated channel
-#if defined(__x86_64__) || defined(__i386__)
-            mmtmpPMI1 = _mm_shufflelo_epi16(dl_ch1_128[0],_MM_SHUFFLE(2,3,0,1));//_MM_SHUFFLE(2,3,0,1)
-            mmtmpPMI1 = _mm_shufflehi_epi16(mmtmpPMI1,_MM_SHUFFLE(2,3,0,1));
-            mmtmpPMI1 = _mm_sign_epi16(mmtmpPMI1,*(__m128i*)&conjugate[0]);
-            mmtmpPMI1 = _mm_madd_epi16(mmtmpPMI1,dl_ch0_128[0]);
-            // mmtmpPMI1 contains imag part of 4 consecutive outputs (32-bit)
+		//  print_ints("ch0",&dl_ch0_128[0]);
+		//  print_ints("ch1",&dl_ch1_128[0]);
 
+	    mmtmpPMI0 = _mm_madd_epi16(dl_ch0_128[0],dl_ch1_128[0]);
+	         //  print_ints("re",&mmtmpPMI0);
+            mmtmpPMI1 = _mm_shufflelo_epi16(dl_ch1_128[0],_MM_SHUFFLE(2,3,0,1));
+              //  print_ints("_mm_shufflelo_epi16",&mmtmpPMI1);
+            mmtmpPMI1 = _mm_shufflehi_epi16(mmtmpPMI1,_MM_SHUFFLE(2,3,0,1));
+	        //  print_ints("_mm_shufflehi_epi16",&mmtmpPMI1);
+            mmtmpPMI1 = _mm_sign_epi16(mmtmpPMI1,*(__m128i*)&conjugate[0]);
+	       //  print_ints("_mm_sign_epi16",&mmtmpPMI1);
+            mmtmpPMI1 = _mm_madd_epi16(mmtmpPMI1,dl_ch0_128[0]);
+	       //   print_ints("mm_madd_epi16",&mmtmpPMI1);
+            // mmtmpPMI1 contains imag part of 4 consecutive outputs (32-bit)
             pmi128_re = _mm_add_epi32(pmi128_re,mmtmpPMI0);
+	     //   print_ints(" pmi128_re 0",&pmi128_re);
             pmi128_im = _mm_add_epi32(pmi128_im,mmtmpPMI1);
+	       //   print_ints(" pmi128_im 0 ",&pmi128_im);
+
+	  /*  mmtmpPMI0 = _mm_xor_si128(mmtmpPMI0,mmtmpPMI0);
+            mmtmpPMI1 = _mm_xor_si128(mmtmpPMI1,mmtmpPMI1);
+
+	    mmtmpPMI0 = _mm_madd_epi16(dl_ch0_128[1],dl_ch1_128[1]);
+	         //  print_ints("re",&mmtmpPMI0);
+            mmtmpPMI1 = _mm_shufflelo_epi16(dl_ch1_128[1],_MM_SHUFFLE(2,3,0,1));
+              //  print_ints("_mm_shufflelo_epi16",&mmtmpPMI1);
+            mmtmpPMI1 = _mm_shufflehi_epi16(mmtmpPMI1,_MM_SHUFFLE(2,3,0,1));
+	        //  print_ints("_mm_shufflehi_epi16",&mmtmpPMI1);
+            mmtmpPMI1 = _mm_sign_epi16(mmtmpPMI1,*(__m128i*)&conjugate);
+	       //  print_ints("_mm_sign_epi16",&mmtmpPMI1);
+            mmtmpPMI1 = _mm_madd_epi16(mmtmpPMI1,dl_ch0_128[1]);
+	       //   print_ints("mm_madd_epi16",&mmtmpPMI1);
+            // mmtmpPMI1 contains imag part of 4 consecutive outputs (32-bit)
+            pmi128_re = _mm_add_epi32(pmi128_re,mmtmpPMI0);
+	        //  print_ints(" pmi128_re 1",&pmi128_re);
+            pmi128_im = _mm_add_epi32(pmi128_im,mmtmpPMI1);
+	    //print_ints(" pmi128_im 1 ",&pmi128_im);*/
+
 #elif defined(__arm__)
+
             mmtmpPMI0 = vmull_s16(((int16x4_t*)dl_ch0_128)[0], ((int16x4_t*)dl_ch1_128)[0]);
             mmtmpPMI1 = vmull_s16(((int16x4_t*)dl_ch0_128)[1], ((int16x4_t*)dl_ch1_128)[1]);
             pmi128_re = vqaddq_s32(pmi128_re,vcombine_s32(vpadd_s32(vget_low_s32(mmtmpPMI0),vget_high_s32(mmtmpPMI0)),vpadd_s32(vget_low_s32(mmtmpPMI1),vget_high_s32(mmtmpPMI1))));
@@ -730,7 +776,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
       }
     }
 
-    ue->measurements.rank[eNB_id] = 0;
+    //ue->measurements.rank[eNB_id] = 0;
 
     for (i=0; i<nb_subbands; i++) {
       ue->measurements.selected_rx_antennas[eNB_id][i] = 0;

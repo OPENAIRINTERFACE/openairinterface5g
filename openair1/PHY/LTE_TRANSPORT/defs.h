@@ -79,11 +79,17 @@
 #if !defined(C_RNTI)
 #define C_RNTI   (rnti_t)0x1234
 #endif
-
-#define PMI_2A_11 0
+// These are the codebook indexes according to Table 6.3.4.2.3-1 of 36.211
+//1 layer
+#define PMI_2A_11  0
 #define PMI_2A_1m1 1
-#define PMI_2A_1j 2
+#define PMI_2A_1j  2
 #define PMI_2A_1mj 3
+//2 layers
+#define PMI_2A_R1_10 0
+#define PMI_2A_R1_11 1
+#define PMI_2A_R1_1j 2
+
 
 typedef enum {
   SCH_IDLE,
@@ -158,6 +164,8 @@ typedef struct {
   uint8_t Nlayers;
   /// First layer for this PSCH transmission
   uint8_t first_layer;
+   /// codeword this transport block is mapped to
+  uint8_t codeword;
 } LTE_DL_eNB_HARQ_t;
 
 typedef struct {
@@ -584,6 +592,8 @@ typedef struct {
   uint32_t trials[8];
   /// error statistics per round
   uint32_t errors[8];
+  /// codeword this transport block is mapped to
+  uint8_t codeword;
 } LTE_DL_UE_HARQ_t;
 
 typedef struct {
@@ -753,6 +763,13 @@ typedef enum {
   PDSCH1,
   PMCH
 } PDSCH_t;
+
+typedef enum {
+  rx_standard=0,
+  rx_IC_single_stream,
+  rx_IC_dual_stream,
+  rx_SIC_dual_stream
+} RX_type_t;
 
 typedef enum {
   pucch_format1=0,

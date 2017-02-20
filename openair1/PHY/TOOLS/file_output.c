@@ -36,9 +36,9 @@ int write_output(const char *fname,const char *vname,void *data,int length,int d
   printf("Writing %d elements of type %d to %s\n",length,format,fname);
 
 
-  if (format == 10 || format ==11 || format == 12 ) {
+  if (format == 10 || format ==11 || format == 12 || format == 13 || format == 14) {
     fp = fopen(fname,"a+");
-  } else if (format != 10 && format !=11  && format != 12 ) {
+  } else if (format != 10 && format !=11  && format != 12 && format != 13 && format != 14) {
     fp = fopen(fname,"w+");
   }
 
@@ -49,7 +49,7 @@ int write_output(const char *fname,const char *vname,void *data,int length,int d
     return(-1);
   }
 
-  if (format != 10 && format !=11  && format != 12 )
+  if (format != 10 && format !=11  && format != 12 && format != 13 && format != 14)
     fprintf(fp,"%s = [",vname);
 
 
@@ -63,7 +63,9 @@ int write_output(const char *fname,const char *vname,void *data,int length,int d
     break;
 
   case 1:  // complex 16-bit
-
+  case 13:
+  case 14:
+  case 15:
 
     for (i=0; i<length<<1; i+=(2*dec)) {
       fprintf(fp,"%d + j*(%d)\n",((short *)data)[i],((short *)data)[i+1]);
@@ -165,14 +167,13 @@ int write_output(const char *fname,const char *vname,void *data,int length,int d
     fprintf(fp,"%d \n",((unsigned char *)&data)[0]);
     break;
 
-
   }
 
-  if (format != 10 && format !=11 && format !=12 ) {
+  if (format != 10 && format !=11 && format !=12 && format != 13 && format != 15) {
     fprintf(fp,"];\n");
     fclose(fp);
     return(0);
-  } else if (format == 10 || format ==11 || format == 12 ) {
+  } else if (format == 10 || format ==11 || format == 12 || format == 13 || format == 15) {
     fclose(fp);
     return(0);
   }

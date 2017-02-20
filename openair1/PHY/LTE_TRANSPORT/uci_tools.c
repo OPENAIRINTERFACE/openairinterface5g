@@ -168,6 +168,7 @@ void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats, uint8_
   //unsigned char rank;
   //UCI_format fmt;
   //uint8_t N_RB_DL = 25;
+  uint8_t i;
   LOG_D(PHY,"[eNB][UCI] N_RB_DL %d uci format %d\n", N_RB_DL,uci_format);
 
   switch(N_RB_DL) {
@@ -275,6 +276,11 @@ void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats, uint8_
         stats->DL_cqi[1] = 24;
 
       stats->DL_pmi_dual   = ((wideband_cqi_rank2_2A_5MHz *)o)->pmi;
+      //this translates the 2-layer PMI into a single layer PMI for the first codeword
+      //the PMI for the second codeword will be stats->DL_pmi_single^0x1555
+      stats->DL_pmi_single = 0;
+      for (i=0;i<7;i++)
+	stats->DL_pmi_single = stats->DL_pmi_single | (((stats->DL_pmi_dual&(1<i))>>i)*2)<<2*i;  
       break;
 
     case HLC_subband_cqi_nopmi:

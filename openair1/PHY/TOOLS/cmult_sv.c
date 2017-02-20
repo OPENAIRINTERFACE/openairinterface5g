@@ -59,18 +59,23 @@ void multadd_complex_vector_real_scalar(int16_t *x,
 
   if (zero_flag == 1)
     for (n=0; n<N>>2; n++) {
+     // print_shorts("x_128[n]=", &x_128[n]);
+     // print_shorts("alpha_128", &alpha_128);
       y_128[n] = mulhi_int16(x_128[n],alpha_128);
+     // print_shorts("y_128[n]=", &y_128[n]);
     }
 
   else
     for (n=0; n<N>>2; n++) {
       y_128[n] = adds_int16(y_128[n],mulhi_int16(x_128[n],alpha_128));
     }
-
+ 
   _mm_empty();
   _m_empty();
 
 }
+
+
 void multadd_real_vector_complex_scalar(int16_t *x,
                                         int16_t *alpha,
                                         int16_t *y,
@@ -380,6 +385,7 @@ int rotate_cpx_vector(int16_t *x,
     m3 = _mm_sra_epi32(m3,shift);        // shift right by shift in order to  compensate for the input amplitude
 
     y_128[0] = _mm_packs_epi32(m2,m3);        // pack in 16bit integers with saturation [re im re im re im re im]
+    //print_ints("y_128[0]=", &y_128[0]);
 #elif defined(__arm__)
 
   ab_re0 = vmull_s16(((int16x4_t*)xd)[0],((int16x4_t*)&bconj)[0]);

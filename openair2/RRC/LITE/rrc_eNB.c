@@ -3432,7 +3432,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 )
 //-----------------------------------------------------------------------------
 {
-  int                                 i;
+  int                                 i, drb_id;
 #ifdef PDCP_USE_NETLINK
   int                                 oip_ifup = 0;
   int                                 dest_ip_offset = 0;
@@ -3564,6 +3564,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   if (DRB_configList != NULL) {
     for (i = 0; i < DRB_configList->list.count; i++) {  // num max DRB (11-3-8)
       if (DRB_configList->list.array[i]) {
+	drb_id = (int)DRB_configList->list.array[i]->drb_Identity;
         LOG_I(RRC,
               "[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE rnti %x, reconfiguring DRB %d/LCID %d\n",
               ctxt_pP->module_id,
@@ -3580,7 +3581,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
               (int)DRB_configList->list.array[i]->drb_Identity,
               (int)*DRB_configList->list.array[i]->logicalChannelIdentity);
 
-        if (ue_context_pP->ue_context.DRB_active[i] == 0) {
+        if (ue_context_pP->ue_context.DRB_active[drb_id] == 0) {
           /*
              rrc_pdcp_config_req (ctxt_pP->module_id, frameP, 1, CONFIG_ACTION_ADD,
              (ue_mod_idP * NB_RB_MAX) + *DRB_configList->list.array[i]->logicalChannelIdentity,UNDEF_SECURITY_MODE);
@@ -3588,7 +3589,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
              (ue_mod_idP * NB_RB_MAX) + (int)*eNB_rrc_inst[ctxt_pP->module_id].DRB_config[ue_mod_idP][i]->logicalChannelIdentity,
              RADIO_ACCESS_BEARER,Rlc_info_um);
            */
-          ue_context_pP->ue_context.DRB_active[i] = 1;
+          ue_context_pP->ue_context.DRB_active[drb_id] = 1;
 
           LOG_D(RRC,
                 "[eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",
@@ -3673,7 +3674,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 
         } else {        // remove LCHAN from MAC/PHY
 
-          if (ue_context_pP->ue_context.DRB_active[i] == 1) {
+          if (ue_context_pP->ue_context.DRB_active[drb_id] == 1) {
             // DRB has just been removed so remove RLC + PDCP for DRB
             /*      rrc_pdcp_config_req (ctxt_pP->module_id, frameP, 1, CONFIG_ACTION_REMOVE,
                (ue_mod_idP * NB_RB_MAX) + DRB2LCHAN[i],UNDEF_SECURITY_MODE);
@@ -3687,7 +3688,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
               Rlc_info_um);
           }
 
-          ue_context_pP->ue_context.DRB_active[i] = 0;
+          ue_context_pP->ue_context.DRB_active[drb_id] = 0;
           LOG_D(RRC,
                 PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (DRB) ---> MAC_eNB\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));

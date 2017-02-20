@@ -167,7 +167,8 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
         ((pdcp_data_ind_header_t *) sdu_p->data)->data_size);
 #else
 #if ! defined(OAI_EMU)
-    ((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
+    /* TODO: do we have to reset to 0 or not? not for a scenario with 1 UE at least */
+//    ((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
 #endif
 #endif
 
@@ -571,7 +572,8 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                   pdcp_read_header_g.inst - oai_emulation.info.nb_enb_local+ NB_eNB_INST + oai_emulation.info.first_ue_local :
                   pdcp_read_header_g.inst +  oai_emulation.info.first_enb_local;*/
 #else // OAI_EMU
-          pdcp_read_header_g.inst = 0;
+          /* TODO: do we have to reset to 0 or not? not for a scenario with 1 UE at least */
+//          pdcp_read_header_g.inst = 0;
 //#warning "TO DO CORRCT VALUES FOR ue mod id, enb mod id"
           ctxt.frame         = ctxt_cpy.frame;
           ctxt.enb_flag      = ctxt_cpy.enb_flag;

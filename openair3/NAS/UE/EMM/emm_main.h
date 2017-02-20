@@ -41,6 +41,7 @@ Description Defines the EPS Mobility Management procedure call manager,
 
 #include "commonDef.h"
 #include "networkDef.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -50,6 +51,15 @@ Description Defines the EPS Mobility Management procedure call manager,
 /************************  G L O B A L    T Y P E S  ************************/
 /****************************************************************************/
 
+/*
+ * User notification callback, executed whenever a change of data with
+ * respect of network information (e.g. network registration and/or
+ * location change, new PLMN becomes available) is notified by the
+ * EPS Mobility Management sublayer
+ */
+typedef int (*emm_indication_callback_t) (user_api_id_t *user_api_id, Stat_t, tac_t, ci_t, AcT_t,
+    const char*, size_t);
+
 /****************************************************************************/
 /********************  G L O B A L    V A R I A B L E S  ********************/
 /****************************************************************************/
@@ -58,34 +68,34 @@ Description Defines the EPS Mobility Management procedure call manager,
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-void emm_main_initialize(emm_indication_callback_t cb, const char *imei);
+void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const char *imei);
 
-void emm_main_cleanup(void);
+void emm_main_cleanup(nas_user_t *user);
 
 
 /* User's getter of UE's identity */
-const imsi_t *emm_main_get_imsi(void);
+const imsi_t *emm_main_get_imsi(emm_data_t *emm_data);
 
 /* User's getter of the subscriber dialing number */
-const msisdn_t *emm_main_get_msisdn(void);
+const msisdn_t *emm_main_get_msisdn(nas_user_t *user);
 
 /* User's getter/setter for network selection */
-int emm_main_set_plmn_selection_mode(int mode, int format,
+int emm_main_set_plmn_selection_mode(nas_user_t *user, int mode, int format,
                                      const network_plmn_t *plmn, int rat);
-int emm_main_get_plmn_selection_mode(void);
-int emm_main_get_plmn_list(const char **plist);
-const char *emm_main_get_selected_plmn(network_plmn_t *plmn, int format);
+int emm_main_get_plmn_selection_mode(emm_data_t *emm_data);
+int emm_main_get_plmn_list(emm_plmn_list_t *emm_plmn_list, emm_data_t *emm_data, const char **plist);
+const char *emm_main_get_selected_plmn(emm_plmn_list_t *emm_plmn_list, emm_data_t *emm_data, network_plmn_t *plmn, int format);
 
 /* User's getter for network registration */
-Stat_t emm_main_get_plmn_status(void);
-tac_t emm_main_get_plmn_tac(void);
-ci_t emm_main_get_plmn_ci(void);
-AcT_t emm_main_get_plmn_rat(void);
-const char *emm_main_get_registered_plmn(network_plmn_t *plmn, int format);
+Stat_t emm_main_get_plmn_status(emm_data_t *emm_data);
+tac_t emm_main_get_plmn_tac(emm_data_t *emm_data);
+ci_t emm_main_get_plmn_ci(emm_data_t *emm_data);
+AcT_t emm_main_get_plmn_rat(emm_data_t *emm_data);
+const char *emm_main_get_registered_plmn(emm_plmn_list_t *emm_plmn_list, emm_data_t *emm_data, network_plmn_t *plmn, int format);
 
 /* User's getter for network attachment */
-int emm_main_is_attached(void);
-int emm_main_is_emergency(void);
+int emm_main_is_attached(emm_data_t *emm_data);
+int emm_main_is_emergency(emm_data_t *emm_data);
 
 
 #endif /* __EMM_MAIN_H__*/

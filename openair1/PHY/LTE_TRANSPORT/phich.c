@@ -307,7 +307,7 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
     Ngroup_PHICH<<=1;
   }
 
-  //#ifdef DEBUG_PHICH
+  #ifdef DEBUG_PHICH
   printf("Ngroup_PHICH %d (phich_config_common.phich_resource %d,phich_config_common.phich_duration %s, NidCell %d,Ncp %d, frame_type %d), smallest pcfich REG %d, n0 %d, n1 %d (first PHICH REG %d)\n",
 	 ((frame_parms->Ncp == NORMAL)?Ngroup_PHICH:(Ngroup_PHICH>>1)),
 	 frame_parms->phich_config_common.phich_resource,
@@ -317,7 +317,7 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
 	 n0,
 	 n1,
 	 ((frame_parms->Nid_cell))%n0);
-  //#endif
+  #endif
 
   // This is the algorithm from Section 6.9.3 in 36-211, it works only for normal PHICH duration for now ...
 
@@ -371,9 +371,9 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
       if (frame_parms->phich_reg[mprime][2]>=pcfich_reg[(frame_parms->pcfich_first_reg_idx+3)&3])
         frame_parms->phich_reg[mprime][2]++;
       
-      //#ifdef DEBUG_PHICH
+      #ifdef DEBUG_PHICH
       printf("phich_reg :%d => %d,%d,%d\n",mprime,frame_parms->phich_reg[mprime][0],frame_parms->phich_reg[mprime][1],frame_parms->phich_reg[mprime][2]);
-      //#endif
+      #endif
     } else { // extended PHICH duration
       frame_parms->phich_reg[mprime<<1][0] = (frame_parms->Nid_cell + mprime)%n0;
       frame_parms->phich_reg[1+(mprime<<1)][0] = (frame_parms->Nid_cell + mprime)%n0;
@@ -1375,11 +1375,7 @@ void rx_phich(PHY_VARS_UE *ue,
             HI16,
             nseq_PHICH,
             ngroup_PHICH);
-      get_Msg3_alloc_ret(&ue->frame_parms,
-                         subframe,
-                         proc->frame_rx,
-                         &ue->ulsch_Msg3_frame[eNB_id],
-                         &ue->ulsch_Msg3_subframe[eNB_id]);
+
       ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
       //      ulsch->harq_processes[harq_pid]->Ndi = 0;
       ulsch->harq_processes[harq_pid]->round++;
@@ -1393,7 +1389,7 @@ void rx_phich(PHY_VARS_UE *ue,
       }
     } else {
       //#ifdef DEBUG_PHICH
-      LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH, received NAK (%d) nseq %d, ngroup %d (Mlimit %d)\n",
+      LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH, received NAK (%d) nseq %d, ngroup %d round %d (Mlimit %d)\n",
             ue->Mod_id,harq_pid,
             proc->frame_rx%1024,
             subframe,

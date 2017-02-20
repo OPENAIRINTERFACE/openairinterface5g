@@ -125,7 +125,7 @@ int emm_recv_status(unsigned int ueid, emm_status_msg *msg, int *emm_cause)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_recv_attach_accept(attach_accept_msg *msg, int *emm_cause)
+int emm_recv_attach_accept(nas_user_t *user, attach_accept_msg *msg, int *emm_cause)
 {
   LOG_FUNC_IN;
 
@@ -224,7 +224,7 @@ int emm_recv_attach_accept(attach_accept_msg *msg, int *emm_cause)
   }
 
   /* Execute attach procedure accepted by the network */
-  rc = emm_proc_attach_accept(T3412, T3402, T3423, n_tais, tai, pguti,
+  rc = emm_proc_attach_accept(user, T3412, T3402, T3423, n_tais, tai, pguti,
                               n_eplmns, &eplmn,
                               &msg->esmmessagecontainer.esmmessagecontainercontents);
 
@@ -245,7 +245,7 @@ int emm_recv_attach_accept(attach_accept_msg *msg, int *emm_cause)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_recv_attach_reject(attach_reject_msg *msg, int *emm_cause)
+int emm_recv_attach_reject(nas_user_t *user, attach_reject_msg *msg, int *emm_cause)
 {
   LOG_FUNC_IN;
 
@@ -275,11 +275,11 @@ int emm_recv_attach_reject(attach_reject_msg *msg, int *emm_cause)
    */
   if (msg->presencemask & ATTACH_REJECT_ESM_MESSAGE_CONTAINER_PRESENT) {
     /* Execute attach procedure rejected by the network */
-    rc = emm_proc_attach_reject(msg->emmcause,
+    rc = emm_proc_attach_reject(user, msg->emmcause,
                                 &msg->esmmessagecontainer.esmmessagecontainercontents);
   } else {
     /* Execute attach procedure rejected by the network */
-    rc = emm_proc_attach_reject(msg->emmcause, NULL);
+    rc = emm_proc_attach_reject(user, msg->emmcause, NULL);
   }
 
   LOG_FUNC_RETURN (rc);
@@ -299,7 +299,7 @@ int emm_recv_attach_reject(attach_reject_msg *msg, int *emm_cause)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_recv_detach_accept(detach_accept_msg *msg, int *emm_cause)
+int emm_recv_detach_accept(nas_user_t *user, detach_accept_msg *msg, int *emm_cause)
 {
   LOG_FUNC_IN;
 
@@ -311,7 +311,7 @@ int emm_recv_detach_accept(detach_accept_msg *msg, int *emm_cause)
    * Message processing
    */
   /* Execute the UE initiated detach procedure completion by the UE */
-  rc = emm_proc_detach_accept();
+  rc = emm_proc_detach_accept(user);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -330,7 +330,7 @@ int emm_recv_detach_accept(detach_accept_msg *msg, int *emm_cause)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_recv_identity_request(identity_request_msg *msg, int *emm_cause)
+int emm_recv_identity_request(nas_user_t *user, identity_request_msg *msg, int *emm_cause)
 {
   LOG_FUNC_IN;
 
@@ -358,7 +358,7 @@ int emm_recv_identity_request(identity_request_msg *msg, int *emm_cause)
   }
 
   /* Execute the identification procedure initiated by the network */
-  rc = emm_proc_identification_request(type);
+  rc = emm_proc_identification_request(user, type);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -377,7 +377,7 @@ int emm_recv_identity_request(identity_request_msg *msg, int *emm_cause)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_recv_authentication_request(authentication_request_msg *msg,
+int emm_recv_authentication_request(nas_user_t *user, authentication_request_msg *msg,
                                     int *emm_cause)
 {
   LOG_FUNC_IN;
@@ -404,7 +404,7 @@ int emm_recv_authentication_request(authentication_request_msg *msg,
    * Message processing
    */
   /* Execute the authentication procedure initiated by the network */
-  rc = emm_proc_authentication_request(
+  rc = emm_proc_authentication_request(user,
          msg->naskeysetidentifierasme.tsc != NAS_KEY_SET_IDENTIFIER_MAPPED,
          msg->naskeysetidentifierasme.naskeysetidentifier,
          &msg->authenticationparameterrand.rand,
@@ -427,7 +427,7 @@ int emm_recv_authentication_request(authentication_request_msg *msg,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_recv_authentication_reject(authentication_reject_msg *msg,
+int emm_recv_authentication_reject(nas_user_t *user, authentication_reject_msg *msg,
                                    int *emm_cause)
 {
   LOG_FUNC_IN;
@@ -440,7 +440,7 @@ int emm_recv_authentication_reject(authentication_reject_msg *msg,
    * Message processing
    */
   /* Execute the authentication procedure not accepted by the network */
-  rc = emm_proc_authentication_reject();
+  rc = emm_proc_authentication_reject(user);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -459,7 +459,7 @@ int emm_recv_authentication_reject(authentication_reject_msg *msg,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_recv_security_mode_command(security_mode_command_msg *msg,
+int emm_recv_security_mode_command(nas_user_t *user, security_mode_command_msg *msg,
                                    int *emm_cause)
 {
   LOG_FUNC_IN;
@@ -473,7 +473,7 @@ int emm_recv_security_mode_command(security_mode_command_msg *msg,
    */
   /* Execute the security mode control procedure initiated by the network */
   LOG_TRACE(INFO,"Execute the security mode control procedure initiated by the network:  imeisvrequest %d\n",msg->imeisvrequest);
-  rc = emm_proc_security_mode_command(
+  rc = emm_proc_security_mode_command(user,
          msg->naskeysetidentifier.tsc != NAS_KEY_SET_IDENTIFIER_MAPPED,
          msg->naskeysetidentifier.naskeysetidentifier,
          msg->selectednassecurityalgorithms.typeofcipheringalgorithm,

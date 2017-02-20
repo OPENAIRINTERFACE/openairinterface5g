@@ -1095,6 +1095,17 @@ rrc_ue_update_radioResourceConfigDedicated(RadioResourceConfigDedicated_t* radio
         memcpy((char*)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->antennaInfo,
                 (char*)radioResourceConfigDedicated->physicalConfigDedicated->antennaInfo,
                 sizeof(physicalConfigDedicated2->antennaInfo));
+
+        UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->antennaInfo->choice.explicitValue.transmissionMode =
+        		radioResourceConfigDedicated->physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode;
+        UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->antennaInfo->choice.explicitValue.codebookSubsetRestriction =
+        		radioResourceConfigDedicated->physicalConfigDedicated->antennaInfo->choice.explicitValue.codebookSubsetRestriction;
+        UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->antennaInfo->choice.explicitValue.ue_TransmitAntennaSelection =
+        		radioResourceConfigDedicated->physicalConfigDedicated->antennaInfo->choice.explicitValue.ue_TransmitAntennaSelection;
+
+        LOG_I(PHY,"New Transmission Mode %ld \n",radioResourceConfigDedicated->physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode);
+        LOG_I(PHY,"Configured Transmission Mode %ld \n",UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->antennaInfo->choice.explicitValue.transmissionMode);
+
     }
     else
     {
@@ -3131,13 +3142,13 @@ static void dump_sib2( SystemInformationBlockType2_t *sib2 )
            sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig );
     LOG_I( RRC, "radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission : %d\n",
            sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission );
-#if 0
-    /* TODO: test this - commented for the moment */
-    if (sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts)
-      LOG_I( RRC, "radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts                        : %ld\n",
-             /* TODO: check that it's okay to access [0] */
-             sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts[0] );
-#endif
+
+    if(sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts)
+    {
+    LOG_I( RRC, "radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts                        : %ld\n",
+           /* TODO: check that it's okay to access [0] */
+           sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts[0] );
+    }
   }
 
   // uplinkPowerControlCommon
@@ -4395,7 +4406,6 @@ void *rrc_ue_task( void *args_p )
 
       /* NAS messages */
     case NAS_CELL_SELECTION_REQ:
-      ue_mod_id = 0; /* TODO force ue_mod_id to first UE, NAS UE not virtualized yet */
 
       LOG_D(RRC, "[UE %d] Received %s: state %d, plmnID (%d%d%d.%d%d%d), rat %x\n", ue_mod_id, msg_name, rrc_get_state(ue_mod_id),
             NAS_CELL_SELECTION_REQ (msg_p).plmnID.MCCdigit1,
@@ -4696,7 +4706,6 @@ void *rrc_ue_task( void *args_p )
       break;
 
     case RRC_RAL_CONNECTION_RELEASE_REQ:
-      ue_mod_id = 0; /* TODO force ue_mod_id to first UE, NAS UE not virtualized yet */
       LOG_D(RRC, "[UE %d] Received %s\n", ue_mod_id, msg_name);
       break;
 #endif

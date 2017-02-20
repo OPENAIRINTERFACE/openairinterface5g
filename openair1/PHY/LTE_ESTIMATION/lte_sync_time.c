@@ -581,10 +581,10 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
   *peak_val_out = peak_val;
 
   if (peak_val <= (40*(uint32_t)mean_val)) {
-    LOG_D(PHY,"[SYNC TIME] No peak found (%u,%u,%u,%u)\n",peak_pos,peak_val,mean_val,40*mean_val);
+    LOG_D(PHY,"[SYNC TIME] No peak found (%u,%u,%"PRIu64",%"PRIu64")\n",peak_pos,peak_val,mean_val,40*mean_val);
     return(-1);
   } else {
-    LOG_D(PHY,"[SYNC TIME] Peak found at pos %u, val = %u, mean_val = %u\n",peak_pos,peak_val,mean_val);
+    LOG_D(PHY,"[SYNC TIME] Peak found at pos %u, val = %u, mean_val = %"PRIu64"\n",peak_pos,peak_val,mean_val);
     return(peak_pos);
   }
 
