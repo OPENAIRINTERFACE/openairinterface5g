@@ -135,7 +135,7 @@ void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_
         attr.sched_deadline = sched_deadline;
         attr.sched_period   = 0;
         AssertFatal(sched_setattr(0, &attr, 0) == 0,
-                    "[SCHED] %s thread: sched_setattr failed %s \n", name, perror(errno));
+                    "[SCHED] %s thread: sched_setattr failed %s \n", name, strerror(errno));
         LOG_I(HW,"[SCHED][eNB] %s deadline thread %lu started on CPU %d\n",
               name, (unsigned long)gettid(), sched_getcpu());
     }
