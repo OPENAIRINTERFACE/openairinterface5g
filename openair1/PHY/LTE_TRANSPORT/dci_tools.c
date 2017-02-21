@@ -4225,37 +4225,39 @@ int generate_ue_dlsch_params_from_dci(int frame,
       }
 
       if (vrb_type == LOCALIZED) {
-  dlsch0_harq->rb_alloc_even[0] = localRIV2alloc_LUT50_0[rballoc];
-  dlsch0_harq->rb_alloc_even[1] = localRIV2alloc_LUT50_1[rballoc];
-  dlsch0_harq->rb_alloc_even[2] = localRIV2alloc_LUT100_2[rballoc];
-  dlsch0_harq->rb_alloc_even[3] = localRIV2alloc_LUT100_3[rballoc];
-  dlsch0_harq->rb_alloc_odd[0]  = localRIV2alloc_LUT50_0[rballoc];
-  dlsch0_harq->rb_alloc_odd[1]  = localRIV2alloc_LUT50_1[rballoc];
-  dlsch0_harq->rb_alloc_odd[2]  = localRIV2alloc_LUT100_2[rballoc];
-  dlsch0_harq->rb_alloc_odd[3]  = localRIV2alloc_LUT100_3[rballoc];
-      } else {
-  if ((rballoc&(1<<10)) == 0) { //Gap 1
-    rballoc = rballoc&(~(1<<12));
-    dlsch0_harq->rb_alloc_even[0] = distRIV2alloc_gap0_even_LUT50_0[rballoc];
-    dlsch0_harq->rb_alloc_even[1] = distRIV2alloc_gap0_even_LUT50_1[rballoc];
-    dlsch0_harq->rb_alloc_even[2] = distRIV2alloc_gap0_even_LUT100_2[rballoc];
-    dlsch0_harq->rb_alloc_even[3] = distRIV2alloc_gap0_even_LUT100_3[rballoc];
-    dlsch0_harq->rb_alloc_odd[0]  = distRIV2alloc_gap0_odd_LUT50_0[rballoc];
-    dlsch0_harq->rb_alloc_odd[1]  = distRIV2alloc_gap0_odd_LUT50_1[rballoc];
-    dlsch0_harq->rb_alloc_odd[2]  = distRIV2alloc_gap0_odd_LUT100_2[rballoc];
-    dlsch0_harq->rb_alloc_odd[3]  = distRIV2alloc_gap0_odd_LUT100_3[rballoc];
-  }
-  else { //Gap 2
-    rballoc = rballoc&(~(1<<12));
-    dlsch0_harq->rb_alloc_even[0] = distRIV2alloc_gap1_even_LUT50_0[rballoc];
-    dlsch0_harq->rb_alloc_even[1] = distRIV2alloc_gap1_even_LUT50_1[rballoc];
-    dlsch0_harq->rb_alloc_even[2] = distRIV2alloc_gap1_even_LUT100_2[rballoc];
-    dlsch0_harq->rb_alloc_even[3] = distRIV2alloc_gap1_even_LUT100_3[rballoc];
-    dlsch0_harq->rb_alloc_odd[0]  = distRIV2alloc_gap1_odd_LUT50_0[rballoc];
-    dlsch0_harq->rb_alloc_odd[1]  = distRIV2alloc_gap1_odd_LUT50_1[rballoc];
-    dlsch0_harq->rb_alloc_odd[2]  = distRIV2alloc_gap1_odd_LUT100_2[rballoc];
-    dlsch0_harq->rb_alloc_odd[3]  = distRIV2alloc_gap1_odd_LUT100_3[rballoc];
-  }
+
+    	  	dlsch0_harq->rb_alloc_even[0] = localRIV2alloc_LUT100_0[rballoc];
+    	  	dlsch0_harq->rb_alloc_even[1] = localRIV2alloc_LUT100_1[rballoc];
+    	  	dlsch0_harq->rb_alloc_even[2] = localRIV2alloc_LUT100_2[rballoc];
+    	  	dlsch0_harq->rb_alloc_even[3] = localRIV2alloc_LUT100_3[rballoc];
+    	  	dlsch0_harq->rb_alloc_odd[0]  = localRIV2alloc_LUT100_0[rballoc];
+    	  	dlsch0_harq->rb_alloc_odd[1]  = localRIV2alloc_LUT100_1[rballoc];
+    	  	dlsch0_harq->rb_alloc_odd[2]  = localRIV2alloc_LUT100_2[rballoc];
+    	  	dlsch0_harq->rb_alloc_odd[3]  = localRIV2alloc_LUT100_3[rballoc];
+      }
+      else {
+    	  	if ((rballoc&(1<<10)) == 0) { //Gap 1
+    	  	  rballoc = rballoc&(~(1<<12));
+    	  	  dlsch0_harq->rb_alloc_even[0] = distRIV2alloc_gap0_even_LUT100_0[rballoc];
+    	  	  dlsch0_harq->rb_alloc_even[1] = distRIV2alloc_gap0_even_LUT100_1[rballoc];
+    	  	  dlsch0_harq->rb_alloc_even[2] = distRIV2alloc_gap0_even_LUT100_2[rballoc];
+    	  	  dlsch0_harq->rb_alloc_even[3] = distRIV2alloc_gap0_even_LUT100_3[rballoc];
+    	  	  dlsch0_harq->rb_alloc_odd[0]  = distRIV2alloc_gap0_odd_LUT100_0[rballoc];
+    	  	  dlsch0_harq->rb_alloc_odd[1]  = distRIV2alloc_gap0_odd_LUT100_1[rballoc];
+    	  	  dlsch0_harq->rb_alloc_odd[2]  = distRIV2alloc_gap0_odd_LUT100_2[rballoc];
+    	  	  dlsch0_harq->rb_alloc_odd[3]  = distRIV2alloc_gap0_odd_LUT100_3[rballoc];
+    	  	}
+    	  	else { //Gap 2
+    	  	  rballoc = rballoc&(~(1<<12));
+    	  	  dlsch0_harq->rb_alloc_even[0] = distRIV2alloc_gap1_even_LUT100_0[rballoc];
+    	  	  dlsch0_harq->rb_alloc_even[1] = distRIV2alloc_gap1_even_LUT100_1[rballoc];
+    	  	  dlsch0_harq->rb_alloc_even[2] = distRIV2alloc_gap1_even_LUT100_2[rballoc];
+    	  	  dlsch0_harq->rb_alloc_even[3] = distRIV2alloc_gap1_even_LUT100_3[rballoc];
+    	  	  dlsch0_harq->rb_alloc_odd[0]  = distRIV2alloc_gap1_odd_LUT100_0[rballoc];
+    	  	  dlsch0_harq->rb_alloc_odd[1]  = distRIV2alloc_gap1_odd_LUT100_1[rballoc];
+    	  	  dlsch0_harq->rb_alloc_odd[2]  = distRIV2alloc_gap1_odd_LUT100_2[rballoc];
+    	  	  dlsch0_harq->rb_alloc_odd[3]  = distRIV2alloc_gap1_odd_LUT100_3[rballoc];
+    	  	}
       }
       dlsch0_harq->vrb_type    = vrb_type;
 
