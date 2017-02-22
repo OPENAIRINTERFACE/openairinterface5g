@@ -56,6 +56,9 @@
 /** PDU minimal header size in bytes. */
 #    define RLC_AM_HEADER_MIN_SIZE                2
 
+/** PDU Segment minimal header size in bytes = PDU header + SOStart + SOEnd. */
+#    define RLC_AM_PDU_SEGMENT_HEADER_MIN_SIZE    4
+
 /** If we want to send a segment of a PDU, then the min transport block size requested by MAC should be this amount. */
 #    define RLC_AM_MIN_SEGMENT_SIZE_REQUEST       8
 
@@ -77,8 +80,8 @@
 
 /* MACRO DEFINITIONS */
 
-#define RLC_AM_NEXT_SN(sn)         (((sn)+1) & ((RLC_AM_SN_MODULO)-1))
-#define RLC_AM_PREV_SN(sn)         (((sn)+(RLC_AM_SN_MODULO)-1) & ((RLC_AM_SN_MODULO)-1))
+#define RLC_AM_NEXT_SN(sn)         (((sn)+1) & (RLC_AM_SN_MASK))
+#define RLC_AM_PREV_SN(sn)         (((sn)+(RLC_AM_SN_MODULO)-1) & (RLC_AM_SN_MASK))
 
 #define RLC_DIFF_SN(sn,snref,modulus)  ((sn+(modulus)-snref) & ((modulus)-1))
 #define RLC_SN_IN_WINDOW(sn,snref,modulus)  ((RLC_DIFF_SN(sn,snref,modulus)) < ((modulus) >> 1))
@@ -103,7 +106,8 @@
 #define RLC_AM_PDU_RF_BITS           1
 
 
-#define EURL_AM_PDU_LSF_BITS                1
+#define RLC_AM_LI_BITS				11
+#define RLC_AM_LI_MASK				0x7FF
 
 
 /* AM Data PDU */
@@ -113,11 +117,27 @@
 #define RLC_AM_PDU_RF_OFFSET               (RLC_AM_PDU_POLL_OFFSET + RLC_AM_PDU_POLL_BITS)
 #define RLC_AM_PDU_D_C_OFFSET              (RLC_AM_PDU_RF_OFFSET + RLC_AM_PDU_RF_BITS)
 
+#define RLC_AM_PDU_GET_FI_START(px)       (RLC_GET_BIT((px),RLC_AM_PDU_FI_OFFSET + 1))
+#define RLC_AM_PDU_GET_FI_END(px)       (RLC_GET_BIT((px),RLC_AM_PDU_FI_OFFSET))
+
+#define RLC_AM_PDU_GET_LI(x,offset)       (((x) >> (offset)) & RLC_AM_LI_MASK)
+#define RLC_AM_PDU_SET_LI(x,li,offset)       ((x) |= (((li) & RLC_AM_LI_MASK) << (offset)))
+
 #define RLC_AM_PDU_SET_E(px)      	(RLC_SET_BIT((px),RLC_AM_PDU_E_OFFSET))
 #define RLC_AM_PDU_SET_D_C(px)      (RLC_SET_BIT((px),RLC_AM_PDU_D_C_OFFSET))
 #define RLC_AM_PDU_SET_RF(px)       (RLC_SET_BIT((px),RLC_AM_PDU_RF_OFFSET))
 #define RLC_AM_PDU_SET_POLL(px)     (RLC_SET_BIT((px),RLC_AM_PDU_POLL_OFFSET))
 #define RLC_AM_PDU_CLEAR_POLL(px)   (RLC_CLEAR_BIT((px),RLC_AM_PDU_POLL_OFFSET))
+
+#define RLC_AM_PDU_SEGMENT_SO_LENGTH       15
+#define RLC_AM_PDU_SEGMENT_SO_BYTES        2
+#define RLC_AM_PDU_SEGMENT_SO_OFFSET       0
+#define RLC_AM_PDU_LSF_OFFSET              (RLC_AM_PDU_SEGMENT_SO_OFFSET + RLC_AM_PDU_SEGMENT_SO_LENGTH)
+
+#define RLC_AM_PDU_SET_LSF(px)      	(RLC_SET_BIT((px),RLC_AM_PDU_LSF_OFFSET))
+
+#define RLC_AM_HEADER_LI_LENGTH(li)          ((li) + ((li)>>1) + ((li)&1))
+#define RLC_AM_PDU_SEGMENT_HEADER_SIZE(numLis) (RLC_AM_PDU_SEGMENT_HEADER_MIN_SIZE + RLC_AM_HEADER_LI_LENGTH(numLis))
 
 /* STATUS PDU */
 #define RLC_AM_STATUS_PDU_CPT_STATUS           0

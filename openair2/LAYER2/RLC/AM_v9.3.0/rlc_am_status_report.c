@@ -268,6 +268,14 @@ rlc_am_receive_process_control_pdu(
 {
   rlc_am_pdu_sn_10_t *rlc_am_pdu_sn_10_p = (rlc_am_pdu_sn_10_t*)*first_byte_ppP;
   sdu_size_t          initial_pdu_size   = *tb_size_in_bytes_pP;
+  rlc_sn_t        ack_sn    = rlc_pP->control_pdu_info.ack_sn;
+  rlc_sn_t        sn_cursor = rlc_pP->vt_a;
+  rlc_sn_t		vt_a_new  = rlc_pP->vt_a;
+  rlc_sn_t		sn_data_cnf;
+  rlc_sn_t        nack_sn,prev_nack_sn;
+  sdu_size_t		data_cnf_so_stop = 0x7FFF;
+  unsigned int nack_index;
+  boolean_t status = TRUE;
 
   if (rlc_am_get_control_pdu_infos(rlc_am_pdu_sn_10_p, tb_size_in_bytes_pP, &rlc_pP->control_pdu_info) >= 0) {
 
@@ -280,10 +288,6 @@ rlc_am_receive_process_control_pdu(
           rlc_pP->control_pdu_info.ack_sn);
     rlc_am_display_control_pdu_infos(&rlc_pP->control_pdu_info);
 
-    rlc_sn_t        ack_sn    = rlc_pP->control_pdu_info.ack_sn;
-    rlc_sn_t        sn_cursor = rlc_pP->vt_a;
-    rlc_sn_t        nack_sn;
-    unsigned int nack_index;
 
     // 5.2.1 Retransmission
     //
@@ -308,50 +312,89 @@ rlc_am_receive_process_control_pdu(
     assert(ack_sn < RLC_AM_SN_MODULO);
     assert(rlc_pP->control_pdu_info.num_nack < RLC_AM_MAX_NACK_IN_STATUS_PDU);
 
-    /* Nv1495998 : ackSn can be equal to current vtA only in case the status pdu contains a list of nack_sn with same value = vtA with SOStart/SOEnd */
+    /* Note : ackSn can be equal to current vtA only in case the status pdu contains a list of nack_sn with same value = vtA with SOStart/SOEnd */
     /* and meaning the report is not complete due to not enough ressources to fill all SOStart/SOEnd of this NACK_SN */
     if (RLC_AM_DIFF_SN(rlc_pP->vt_s,rlc_pP->vt_a) >= RLC_AM_DIFF_SN(ack_sn,rlc_pP->vt_a))
     {
       if (rlc_pP->control_pdu_info.num_nack == 0) {
         while (sn_cursor != ack_sn) {
           rlc_am_ack_pdu(ctxt_pP, rlc_pP, sn_cursor);
-          sn_cursor = (sn_cursor + 1)  & RLC_AM_SN_MASK;
+          sn_cursor = RLC_AM_NEXT_SN(sn_cursor);
         }
+
+        vt_a_new = ack_sn;
+        sn_data_cnf = RLC_AM_PREV_SN(vt_a_new);
       } else {
         nack_index = 0;
         nack_sn   = rlc_pP->control_pdu_info.nack_list[nack_index].nack_sn;
+        prev_nack_sn = 0x3FFF;
 
-        while (sn_cursor != ack_sn) {
+        while (sn_cursor != nack_sn) {
+            rlc_am_ack_pdu(ctxt_pP, rlc_pP, sn_cursor);
+            sn_cursor = RLC_AM_NEXT_SN(sn_cursor);
+        }
+
+        vt_a_new = nack_sn;
+
+        // catch DataCfn
+        rlc_am_tx_data_pdu_management_t *tx_data_pdu_buffer_p = &rlc_pP->tx_data_pdu_buffer[nack_sn];
+        if (tx_data_pdu_buffer_p->retx_payload_size == tx_data_pdu_buffer_p->payload_size) {
+        	sn_data_cnf   = RLC_AM_PREV_SN(nack_sn);
+        }
+        else if (tx_data_pdu_buffer_p->nack_so_start != 0) {
+        	sn_data_cnf       = nack_sn;
+        	data_cnf_so_stop    = tx_data_pdu_buffer_p->nack_so_start - 1;
+        }
+        else {
+        	sn_data_cnf       = RLC_AM_PREV_SN(nack_sn);
+        }
+
+
+        while ((sn_cursor != ack_sn) && (status)) {
           if (sn_cursor != nack_sn) {
             rlc_am_ack_pdu(ctxt_pP,
                            rlc_pP,
                            sn_cursor);
           } else {
-            rlc_am_nack_pdu (ctxt_pP,
+        	status = rlc_am_nack_pdu (ctxt_pP,
                              rlc_pP,
-                             sn_cursor,
+							 nack_sn,
+							 prev_nack_sn,
                              rlc_pP->control_pdu_info.nack_list[nack_index].so_start,
                              rlc_pP->control_pdu_info.nack_list[nack_index].so_end);
 
             nack_index = nack_index + 1;
+            prev_nack_sn = nack_sn;
 
-            if (nack_index == rlc_pP->control_pdu_info.num_nack) {
-              nack_sn = 0xFFFF; // value never reached by sn
-            } else {
-              nack_sn = rlc_pP->control_pdu_info.nack_list[nack_index].nack_sn;
+            if (nack_index < rlc_pP->control_pdu_info.num_nack) {
+               nack_sn = rlc_pP->control_pdu_info.nack_list[nack_index].nack_sn;
+            }
+            else if (nack_sn != ack_sn) {
+            	/* general case*/
+            	nack_sn = ack_sn;
+            }
+            else {
+            	/*specific case when the sender did not have enough TBS to fill all SOStart SOEnd for this NACK_SN */
+            	break;
             }
           }
-
-          if ((nack_index <  rlc_pP->control_pdu_info.num_nack) && (nack_index > 0)) {
-            if (rlc_pP->control_pdu_info.nack_list[nack_index].nack_sn != rlc_pP->control_pdu_info.nack_list[nack_index-1].nack_sn) {
-              sn_cursor = (sn_cursor + 1)  & RLC_AM_SN_MASK;
-            }
-          } else {
-            sn_cursor = (sn_cursor + 1)  & RLC_AM_SN_MASK;
-          }
+          sn_cursor = (sn_cursor + 1)  & RLC_AM_SN_MASK;
         }
       }
 
+
+    } else {
+      LOG_N(RLC, PROTOCOL_RLC_AM_CTXT_FMT" WARNING CONTROL PDU ACK SN OUT OF WINDOW\n",
+            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
+      status = FALSE;
+    }
+  } else {
+    LOG_W(RLC, PROTOCOL_RLC_AM_CTXT_FMT" ERROR IN DECODING CONTROL PDU\n",
+          PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
+    status = FALSE;
+  }
+
+  if (status) {
       /* Check for Stopping TpollReTx */
       if ((rlc_pP->poll_sn != RLC_SN_UNDEFINED) &&
           (RLC_AM_DIFF_SN(ack_sn,rlc_pP->vt_a) > RLC_AM_DIFF_SN(rlc_pP->poll_sn,rlc_pP->vt_a))) {
@@ -359,15 +402,23 @@ rlc_am_receive_process_control_pdu(
         rlc_pP->poll_sn = RLC_SN_UNDEFINED;
       }
 
-      /* Update vtA */
+      //TODO : this part does not cover all cases of Data Cnf and move it at the end of Status PDU processing
+      sn_cursor = rlc_pP->vt_a;
 
-    } else {
-      LOG_N(RLC, PROTOCOL_RLC_AM_CTXT_FMT" WARNING CONTROL PDU ACK SN OUT OF WINDOW\n",
-            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
-    }
-  } else {
-    LOG_W(RLC, PROTOCOL_RLC_AM_CTXT_FMT" ERROR IN DECODING CONTROL PDU\n",
-          PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
+      /* Handle all acked PDU up to and excluding sn_data_cnf */
+      while (sn_cursor != sn_data_cnf) {
+    	  rlc_am_pdu_sdu_data_cnf(ctxt_pP,rlc_pP,sn_cursor);
+    	  sn_cursor = RLC_AM_NEXT_SN(sn_cursor);
+      }
+
+      // Handle last SN. TO DO : case of PDU partially ACKED with SDU to be data conf
+      if (data_cnf_so_stop == 0x7FFF) {
+    	  rlc_am_pdu_sdu_data_cnf(ctxt_pP,rlc_pP,sn_data_cnf);
+      }
+
+      /* Update vtA and vtMS */
+      rlc_pP->vt_a = vt_a_new;
+      rlc_pP->vt_ms = (rlc_pP->vt_a + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
   }
 
   *first_byte_ppP = (uint8_t*)((uint64_t)*first_byte_ppP + initial_pdu_size - *tb_size_in_bytes_pP);

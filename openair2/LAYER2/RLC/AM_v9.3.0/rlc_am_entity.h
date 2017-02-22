@@ -175,7 +175,6 @@ typedef struct rlc_am_entity_s {
   sdu_size_t        nb_bytes_requested_by_mac;  /*!< \brief Number of remaining bytes available for transmission of any RLC PDU indicated by lower layer */
   list_t            pdus_to_mac_layer;          /*!< \brief PDUs buffered for transmission to MAC layer. */
   list_t            control_pdu_list;           /*!< \brief Control PDUs buffered for transmission to MAC layer. */
-  rlc_sn_t          first_retrans_pdu_sn;       /*!< \brief Lowest sequence number of PDU to be retransmitted. */
   list_t            segmentation_pdu_list;      /*!< \brief List of "freshly" segmented PDUs. */
 
   uint8_t           status_requested;             /*!< \brief Status bitmap requested by peer. */

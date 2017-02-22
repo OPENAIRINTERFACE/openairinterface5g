@@ -108,3 +108,41 @@ rlc_am_in_sdu_is_empty(
 
   return 0;
 }
+
+// called when PDU is ACKED
+//-----------------------------------------------------------------------------
+void
+rlc_am_pdu_sdu_data_cnf(
+  const protocol_ctxt_t* const ctxt_pP,
+  rlc_am_entity_t* const       rlc_pP,
+  const rlc_sn_t           snP)
+{
+	  int          pdu_sdu_index;
+	  int          sdu_index;
+
+      for (pdu_sdu_index = 0; pdu_sdu_index < rlc_pP->tx_data_pdu_buffer[snP].nb_sdus; pdu_sdu_index++) {
+        sdu_index = rlc_pP->tx_data_pdu_buffer[snP].sdus_index[pdu_sdu_index];
+        assert(sdu_index >= 0);
+        assert(sdu_index < RLC_AM_SDU_CONTROL_BUFFER_SIZE);
+        rlc_pP->input_sdus[sdu_index].nb_pdus_ack += 1;
+
+        if ((rlc_pP->input_sdus[sdu_index].nb_pdus_ack == rlc_pP->input_sdus[sdu_index].nb_pdus) &&
+            (rlc_pP->input_sdus[sdu_index].sdu_remaining_size == 0)) {
+  #if TEST_RLC_AM
+          rlc_am_v9_3_0_test_data_conf (
+            rlc_pP->module_id,
+            rlc_pP->rb_id,
+            rlc_pP->input_sdus[sdu_index].mui,
+            RLC_SDU_CONFIRM_YES);
+  #else
+          rlc_data_conf(
+            ctxt_pP,
+            rlc_pP->rb_id,
+            rlc_pP->input_sdus[sdu_index].mui,
+            RLC_SDU_CONFIRM_YES,
+            rlc_pP->is_data_plane);
+  #endif
+          rlc_am_free_in_sdu(ctxt_pP, rlc_pP, sdu_index);
+        }
+      }
+}

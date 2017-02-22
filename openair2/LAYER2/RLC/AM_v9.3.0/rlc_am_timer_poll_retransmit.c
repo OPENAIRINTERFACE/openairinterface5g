@@ -90,8 +90,12 @@ rlc_am_check_timer_poll_retransmit(
 					sn, rlc_pP->vt_a,rlc_pP->vt_s,rlc_pP->channel_id);
 		    if ((rlc_pP->tx_data_pdu_buffer[sn].flags.ack == 0) && (rlc_pP->tx_data_pdu_buffer[sn].flags.max_retransmit == 0)) {
 		    	rlc_pP->tx_data_pdu_buffer[sn].flags.retransmit = 1;
+		    	if (rlc_pP->tx_data_pdu_buffer[sn].retx_count == rlc_pP->tx_data_pdu_buffer[sn].retx_count_next) {
+		    		rlc_pP->tx_data_pdu_buffer[sn].retx_count_next ++;
+		    	}
 		    	rlc_pP->retrans_num_pdus += 1;
 		    	rlc_pP->retrans_num_bytes_to_retransmit += rlc_pP->tx_data_pdu_buffer[sn].payload_size;
+		    	break;
 		    }
 		    else
 		    {

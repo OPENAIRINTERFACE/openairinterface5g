@@ -113,14 +113,14 @@ void rlc_am_pdu_polling (
     rlc_pP->c_byte_without_poll    = 0;
 
     // vt_s shall have been updated before in case of new transmission
-    rlc_pP->poll_sn = (rlc_pP->vt_s -1) & RLC_AM_SN_MASK;
+    rlc_pP->poll_sn = RLC_AM_PREV_SN(rlc_pP->vt_s);
     //optimisation if (!rlc_pP->t_poll_retransmit.running) {
     rlc_am_start_timer_poll_retransmit(ctxt_pP, rlc_pP);
     //optimisation } else {
     //optimisation     rlc_pP->t_poll_retransmit.frame_time_out = ctxt_pP->frame + rlc_pP->t_poll_retransmit.time_out;
     //optimisation }
   } else {
-	  // Not sure this is necessary
+	  // Need to clear poll bit as it may be a copy(retransmission case) of the original RLC PDU which was containing a poll
 	RLC_AM_PDU_CLEAR_POLL(pdu_pP->b1);
   }
 }
@@ -533,16 +533,19 @@ void rlc_am_segment_10 (
     pdu_mngt_p->header_and_payload_size  = data_pdu_size - pdu_remaining_size;
     pdu_mngt_p->retx_count = 0;
     pdu_mngt_p->retx_count_next = 0;
+    pdu_mngt_p->flags.retransmit = 0;
     pdu_mngt_p->flags.transmitted = 1;
 
 
+    //TBC: What for resetting local pointers at the end ??
     pdu_p = NULL;
     pdu_mem_p = NULL;
 
     //nb_bytes_to_transmit = nb_bytes_to_transmit - data_pdu_size;
     nb_bytes_to_transmit = 0; // 1 PDU only
 
-    mem_block_t* copy = rlc_am_retransmit_get_copy (ctxt_pP, rlc_pP, (rlc_pP->vt_s-1) & RLC_AM_SN_MASK);
+    /* We need to copy the PDU to pass to MAC in order to keep it in the buffer for potential retransmissions */
+    mem_block_t* copy = rlc_am_retransmit_get_copy (ctxt_pP, rlc_pP, RLC_AM_PREV_SN(rlc_pP->vt_s));
     list_add_tail_eurecom (copy, &rlc_pP->segmentation_pdu_list);
 
   }

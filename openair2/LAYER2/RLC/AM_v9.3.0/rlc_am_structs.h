@@ -113,9 +113,10 @@ typedef struct rlc_am_tx_data_pdu_management {
   uint8_t          retx_hole_index;                   /*!< \brief Next index of registered holes to retransmit. */
   sdu_size_t       header_and_payload_size;           /*!< \brief Size of the PDU in bytes, including header and payload. */
   sdu_size_t       payload_size;                      /*!< \brief Size of the PDU payload in bytes. */
+  sdu_size_t	   retx_payload_size;				  /*!< \brief Size of the PDU payload to be retransmitted in bytes including all Segment portions. */
   rlc_sn_t         sn;                                /*!< \brief Sequence number of the PDU. */
   sdu_size_t       nack_so_start; /*!< \brief Lowest NACK start segment offset, must be set to 0 if global NACK. */
-  sdu_size_t       nack_so_stop;  /*!< \brief Highest NACK stop segment offset, must be set to data_size if global NACK */
+  sdu_size_t       nack_so_stop;  /*!< \brief Highest NACK stop segment offset, must be set to data_size - 1 if global NACK */
 
   int8_t           nb_sdus;       /*!< \brief Number of sdu having segments in this pdu. */
   int8_t           retx_count;    /*!< \brief Counts the number of already occurred retransmissions of an AMD PDU (see subclause 5.2.1). */
