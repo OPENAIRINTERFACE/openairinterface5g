@@ -120,8 +120,8 @@ rlc_am_pdu_sdu_data_cnf(
 	  int          pdu_sdu_index;
 	  int          sdu_index;
 
-      for (pdu_sdu_index = 0; pdu_sdu_index < rlc_pP->tx_data_pdu_buffer[snP].nb_sdus; pdu_sdu_index++) {
-        sdu_index = rlc_pP->tx_data_pdu_buffer[snP].sdus_index[pdu_sdu_index];
+      for (pdu_sdu_index = 0; pdu_sdu_index < rlc_pP->tx_data_pdu_buffer[snP % RLC_AM_WINDOW_SIZE].nb_sdus; pdu_sdu_index++) {
+        sdu_index = rlc_pP->tx_data_pdu_buffer[snP % RLC_AM_WINDOW_SIZE].sdus_index[pdu_sdu_index];
         assert(sdu_index >= 0);
         assert(sdu_index < RLC_AM_SDU_CONTROL_BUFFER_SIZE);
         rlc_pP->input_sdus[sdu_index].nb_pdus_ack += 1;

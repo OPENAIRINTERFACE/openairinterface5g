@@ -83,18 +83,20 @@ rlc_am_check_timer_poll_retransmit(
 		  // force BO to be > 0
 		  rlc_sn_t             sn           = RLC_AM_PREV_SN(rlc_pP->vt_s);
 		  rlc_sn_t             sn_end       = RLC_AM_PREV_SN(rlc_pP->vt_a);
+		  rlc_am_tx_data_pdu_management_t *tx_data_pdu_buffer_p;
 
           /* Look for the first retransmittable PDU starting from vtS - 1 */
 		  while (sn != sn_end) {
-			AssertFatal (rlc_pP->tx_data_pdu_buffer[sn].mem_block != NULL, "RLC AM Tpoll Retx expiry sn=%d is empty vtA=%d vtS=%d LcId=%d\n",
+			tx_data_pdu_buffer_p = &rlc_pP->tx_data_pdu_buffer[sn % RLC_AM_WINDOW_SIZE];
+			AssertFatal (tx_data_pdu_buffer_p->mem_block != NULL, "RLC AM Tpoll Retx expiry sn=%d is empty vtA=%d vtS=%d LcId=%d\n",
 					sn, rlc_pP->vt_a,rlc_pP->vt_s,rlc_pP->channel_id);
-		    if ((rlc_pP->tx_data_pdu_buffer[sn].flags.ack == 0) && (rlc_pP->tx_data_pdu_buffer[sn].flags.max_retransmit == 0)) {
-		    	rlc_pP->tx_data_pdu_buffer[sn].flags.retransmit = 1;
-		    	if (rlc_pP->tx_data_pdu_buffer[sn].retx_count == rlc_pP->tx_data_pdu_buffer[sn].retx_count_next) {
-		    		rlc_pP->tx_data_pdu_buffer[sn].retx_count_next ++;
+		    if ((tx_data_pdu_buffer_p->flags.ack == 0) && (tx_data_pdu_buffer_p->flags.max_retransmit == 0)) {
+		    	tx_data_pdu_buffer_p->flags.retransmit = 1;
+		    	if (tx_data_pdu_buffer_p->retx_count == tx_data_pdu_buffer_p->retx_count_next) {
+		    		tx_data_pdu_buffer_p->retx_count_next ++;
 		    	}
 		    	rlc_pP->retrans_num_pdus += 1;
-		    	rlc_pP->retrans_num_bytes_to_retransmit += rlc_pP->tx_data_pdu_buffer[sn].payload_size;
+		    	rlc_pP->retrans_num_bytes_to_retransmit += tx_data_pdu_buffer_p->payload_size;
 		    	break;
 		    }
 		    else

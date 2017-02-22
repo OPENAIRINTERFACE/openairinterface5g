@@ -19,6 +19,7 @@
  *      contact@openairinterface.org
  */
 
+#if 0
 #define RLC_AM_MODULE 1
 #define RLC_AM_SEGMENT_HOLES_C 1
 //-----------------------------------------------------------------------------
@@ -315,3 +316,4 @@ void rlc_am_add_hole (
   assert(rlc_pP->tx_data_pdu_buffer[snP].num_holes < RLC_AM_MAX_HOLES_REPORT_PER_PDU);
   assert(rlc_pP->tx_data_pdu_buffer[snP].nack_so_start < rlc_pP->tx_data_pdu_buffer[snP].payload_size);
 }
+#endif

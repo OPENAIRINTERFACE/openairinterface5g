@@ -51,8 +51,8 @@ boolean_t rlc_am_nack_pdu (
   //         - indicate to upper layers that max retransmission has been reached.
 
 
-  mem_block_t* mb_p         = rlc_pP->tx_data_pdu_buffer[snP].mem_block;
-  rlc_am_tx_data_pdu_management_t *tx_data_pdu_buffer_p = &rlc_pP->tx_data_pdu_buffer[snP];
+  mem_block_t* mb_p         = rlc_pP->tx_data_pdu_buffer[snP % RLC_AM_WINDOW_SIZE].mem_block;
+  rlc_am_tx_data_pdu_management_t *tx_data_pdu_buffer_p = &rlc_pP->tx_data_pdu_buffer[snP % RLC_AM_WINDOW_SIZE];
   //int          pdu_sdu_index;
   //int          sdu_index;
   boolean_t status = TRUE;
@@ -208,23 +208,24 @@ void rlc_am_ack_pdu (
   rlc_am_entity_t *const rlc_pP,
   const rlc_sn_t snP)
 {
-  mem_block_t* mb_p         = rlc_pP->tx_data_pdu_buffer[snP].mem_block;
+  mem_block_t* mb_p         = rlc_pP->tx_data_pdu_buffer[snP % RLC_AM_WINDOW_SIZE].mem_block;
+  rlc_am_tx_data_pdu_management_t *tx_data_pdu_buffer = &rlc_pP->tx_data_pdu_buffer[snP % RLC_AM_WINDOW_SIZE];
 
-  rlc_pP->tx_data_pdu_buffer[snP].flags.retransmit = 0;
+  tx_data_pdu_buffer->flags.retransmit = 0;
 
-  if ((rlc_pP->tx_data_pdu_buffer[snP].flags.ack == 0) && (mb_p != NULL)) {
+  if ((tx_data_pdu_buffer->flags.ack == 0) && (mb_p != NULL)) {
     //if (mb_pP != NULL) {
     free_mem_block(mb_p, __func__);
-    rlc_pP->tx_data_pdu_buffer[snP].mem_block = NULL;
+    tx_data_pdu_buffer->mem_block = NULL;
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[ACK-PDU] ACK PDU SN %05d previous retx_count %d \n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           snP,
-          rlc_pP->tx_data_pdu_buffer[snP].retx_count);
+		  tx_data_pdu_buffer->retx_count);
 
-    if (rlc_pP->tx_data_pdu_buffer[snP].retx_payload_size) {
-      rlc_pP->retrans_num_bytes_to_retransmit -= rlc_pP->tx_data_pdu_buffer[snP].retx_payload_size;
-      rlc_pP->tx_data_pdu_buffer[snP].retx_payload_size = 0;
-      rlc_pP->tx_data_pdu_buffer[snP].num_holes = 0;
+    if (tx_data_pdu_buffer->retx_payload_size) {
+      rlc_pP->retrans_num_bytes_to_retransmit -= tx_data_pdu_buffer->retx_payload_size;
+      tx_data_pdu_buffer->retx_payload_size = 0;
+      tx_data_pdu_buffer->num_holes = 0;
       rlc_pP->retrans_num_pdus --;
     }
 
@@ -235,12 +236,12 @@ void rlc_am_ack_pdu (
 
     if (mb_p != NULL) {
       free_mem_block(mb_p, __func__);
-      rlc_pP->tx_data_pdu_buffer[snP].mem_block = NULL;
+      tx_data_pdu_buffer->mem_block = NULL;
     }
   }
-  rlc_pP->tx_data_pdu_buffer[snP].flags.ack = 1;
-  rlc_pP->tx_data_pdu_buffer[snP].flags.transmitted = 0;
-  rlc_pP->tx_data_pdu_buffer[snP].flags.retransmit = 0;
+  tx_data_pdu_buffer->flags.ack = 1;
+  tx_data_pdu_buffer->flags.transmitted = 0;
+  tx_data_pdu_buffer->flags.retransmit = 0;
 
 }
 //-----------------------------------------------------------------------------
@@ -249,12 +250,12 @@ mem_block_t* rlc_am_retransmit_get_copy (
   rlc_am_entity_t *const rlc_pP,
   const rlc_sn_t snP)
 {
-  mem_block_t* mb_original_p = rlc_pP->tx_data_pdu_buffer[snP].mem_block;
+  mem_block_t* mb_original_p = rlc_pP->tx_data_pdu_buffer[snP % RLC_AM_WINDOW_SIZE].mem_block;
 
   AssertFatal (mb_original_p != NULL, "RLC AM PDU Copy Error: Empty block sn=%d vtA=%d vtS=%d LcId=%d !\n",
 		  snP,rlc_pP->vt_a,rlc_pP->vt_s,rlc_pP->channel_id);
 
-  rlc_am_tx_data_pdu_management_t *pdu_mngt = &rlc_pP->tx_data_pdu_buffer[snP % RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE];
+  rlc_am_tx_data_pdu_management_t *pdu_mngt = &rlc_pP->tx_data_pdu_buffer[snP % RLC_AM_WINDOW_SIZE];
 
   /* We need to allocate a new buffer and copy to it because header content may change for Polling bit */
   int size             = pdu_mngt->header_and_payload_size + sizeof(struct mac_tb_req);
@@ -1061,6 +1062,7 @@ void rlc_am_tx_buffer_display (
 {
   rlc_sn_t       sn = rlc_pP->vt_a;
   int            i, loop = 0;
+  rlc_am_tx_data_pdu_management_t *tx_data_pdu_buffer_p;
 
   if (message_pP) {
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" Retransmission buffer %s VT(A)=%04d VT(S)=%04d:",
@@ -1076,25 +1078,26 @@ void rlc_am_tx_buffer_display (
   }
 
   while (rlc_pP->vt_s != sn) {
-    if (rlc_pP->tx_data_pdu_buffer[sn].mem_block) {
+	  tx_data_pdu_buffer_p = &rlc_pP->tx_data_pdu_buffer[sn % RLC_AM_WINDOW_SIZE];
+    if (tx_data_pdu_buffer_p->mem_block) {
       if ((loop % 1) == 0) {
         LOG_D(RLC, "\nTX SN:\t");
       }
 
-      if (rlc_pP->tx_data_pdu_buffer[sn].flags.retransmit) {
-        LOG_D(RLC, "%04d %d/%d Bytes (NACK RTX:%02d ",sn, rlc_pP->tx_data_pdu_buffer[sn].header_and_payload_size, rlc_pP->tx_data_pdu_buffer[sn].payload_size,
-              rlc_pP->tx_data_pdu_buffer[sn].retx_count);
+      if (tx_data_pdu_buffer_p->flags.retransmit) {
+        LOG_D(RLC, "%04d %d/%d Bytes (NACK RTX:%02d ",sn, tx_data_pdu_buffer_p->header_and_payload_size, tx_data_pdu_buffer_p->payload_size,
+        		tx_data_pdu_buffer_p->retx_count);
       } else {
-        LOG_D(RLC, "%04d %d/%d Bytes (RTX:%02d ",sn, rlc_pP->tx_data_pdu_buffer[sn].header_and_payload_size, rlc_pP->tx_data_pdu_buffer[sn].payload_size,
-              rlc_pP->tx_data_pdu_buffer[sn].retx_count);
+        LOG_D(RLC, "%04d %d/%d Bytes (RTX:%02d ",sn, tx_data_pdu_buffer_p->header_and_payload_size, tx_data_pdu_buffer_p->payload_size,
+        		tx_data_pdu_buffer_p->retx_count);
       }
 
-      if (rlc_pP->tx_data_pdu_buffer[sn].num_holes == 0) {
-        LOG_D(RLC, "SO:%04d->%04d)\t", rlc_pP->tx_data_pdu_buffer[sn].nack_so_start, rlc_pP->tx_data_pdu_buffer[sn].nack_so_stop);
+      if (tx_data_pdu_buffer_p->num_holes == 0) {
+        LOG_D(RLC, "SO:%04d->%04d)\t", tx_data_pdu_buffer_p->nack_so_start, tx_data_pdu_buffer_p->nack_so_stop);
       } else {
-        for (i=0; i<rlc_pP->tx_data_pdu_buffer[sn].num_holes; i++) {
+        for (i=0; i<tx_data_pdu_buffer_p->num_holes; i++) {
           assert(i < RLC_AM_MAX_HOLES_REPORT_PER_PDU);
-          LOG_D(RLC, "SO:%04d->%04d)\t", rlc_pP->tx_data_pdu_buffer[sn].hole_so_start[i], rlc_pP->tx_data_pdu_buffer[sn].hole_so_stop[i]);
+          LOG_D(RLC, "SO:%04d->%04d)\t", tx_data_pdu_buffer_p->hole_so_start[i], tx_data_pdu_buffer_p->hole_so_stop[i]);
         }
       }
 

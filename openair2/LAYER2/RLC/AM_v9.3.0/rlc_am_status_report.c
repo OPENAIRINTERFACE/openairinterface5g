@@ -268,7 +268,7 @@ rlc_am_receive_process_control_pdu(
 {
   rlc_am_pdu_sn_10_t *rlc_am_pdu_sn_10_p = (rlc_am_pdu_sn_10_t*)*first_byte_ppP;
   sdu_size_t          initial_pdu_size   = *tb_size_in_bytes_pP;
-  rlc_sn_t        ack_sn    = rlc_pP->control_pdu_info.ack_sn;
+  rlc_sn_t        ack_sn    = RLC_AM_NEXT_SN(rlc_pP->vt_a);
   rlc_sn_t        sn_cursor = rlc_pP->vt_a;
   rlc_sn_t		vt_a_new  = rlc_pP->vt_a;
   rlc_sn_t		sn_data_cnf;
@@ -288,7 +288,7 @@ rlc_am_receive_process_control_pdu(
           rlc_pP->control_pdu_info.ack_sn);
     rlc_am_display_control_pdu_infos(&rlc_pP->control_pdu_info);
 
-
+    ack_sn    = rlc_pP->control_pdu_info.ack_sn;
     // 5.2.1 Retransmission
     //
     // The transmitting side of an AM RLC entity can receive a negative acknowledgement (notification of reception failure
@@ -337,7 +337,7 @@ rlc_am_receive_process_control_pdu(
         vt_a_new = nack_sn;
 
         // catch DataCfn
-        rlc_am_tx_data_pdu_management_t *tx_data_pdu_buffer_p = &rlc_pP->tx_data_pdu_buffer[nack_sn];
+        rlc_am_tx_data_pdu_management_t *tx_data_pdu_buffer_p = &rlc_pP->tx_data_pdu_buffer[nack_sn % RLC_AM_WINDOW_SIZE];
         if (tx_data_pdu_buffer_p->retx_payload_size == tx_data_pdu_buffer_p->payload_size) {
         	sn_data_cnf   = RLC_AM_PREV_SN(nack_sn);
         }

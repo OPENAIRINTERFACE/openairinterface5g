@@ -175,9 +175,9 @@ rlc_am_cleanup(
 
   if (rlc_pP->tx_data_pdu_buffer != NULL) {
     for (i=0; i < RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE; i++) {
-      if (rlc_pP->tx_data_pdu_buffer[i].mem_block != NULL) {
-        free_mem_block(rlc_pP->tx_data_pdu_buffer[i].mem_block, __func__);
-        rlc_pP->tx_data_pdu_buffer[i].mem_block = NULL;
+      if (rlc_pP->tx_data_pdu_buffer[i % RLC_AM_WINDOW_SIZE].mem_block != NULL) {
+        free_mem_block(rlc_pP->tx_data_pdu_buffer[i % RLC_AM_WINDOW_SIZE].mem_block, __func__);
+        rlc_pP->tx_data_pdu_buffer[i % RLC_AM_WINDOW_SIZE].mem_block = NULL;
       }
     }
 
