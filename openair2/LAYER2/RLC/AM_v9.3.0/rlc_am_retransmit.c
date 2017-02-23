@@ -352,6 +352,7 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 	{
 		/* Step 1 */
 		/* Find the SDU index in the original PDU containing retx_so_start */
+		uint16_t temp_read = ((*pdu_original_header_p) << 8) | (*(pdu_original_header_p + 1));
 		sdu_size_t sdu_size = 0;
 		sdu_size_t data_size = 0;
 		sdu_size_t header_segment_length = RLC_AM_PDU_SEGMENT_HEADER_MIN_SIZE;
@@ -361,7 +362,7 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 
 
 		/* Read first LI */
-		sdu_size = RLC_AM_PDU_GET_LI(*pdu_original_header_p + *(pdu_original_header_p + 1),li_bit_offset);
+		sdu_size = RLC_AM_PDU_GET_LI(temp_read,li_bit_offset);
 		pdu_original_header_p += li_jump_offset;
 		li_bit_offset ^= 0x4;
 		li_jump_offset ^= 0x3;
@@ -372,7 +373,8 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 			sdu_index ++;
 			if (sdu_index < pdu_mngt->nb_sdus)
 			{
-				sdu_size = RLC_AM_PDU_GET_LI(*pdu_original_header_p + *(pdu_original_header_p + 1),li_bit_offset);
+				temp_read = ((*pdu_original_header_p) << 8) | (*(pdu_original_header_p + 1));
+				sdu_size = RLC_AM_PDU_GET_LI(temp_read,li_bit_offset);
 				pdu_original_header_p += li_jump_offset;
 				li_bit_offset ^= 0x4;
 				li_jump_offset ^= 0x3;
@@ -389,7 +391,8 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 			/* there must be at least one SDU more */
 			AssertFatal (sdu_index < pdu_mngt->nb_sdus, "RLC AM PDU Segment Error: sdu_index=%d nb_sdus=%d sn=%d LcId=%d !\n",
 					sdu_index,pdu_mngt->nb_sdus,sn,rlc_pP->channel_id);
-			sdu_size = RLC_AM_PDU_GET_LI(*pdu_original_header_p + *(pdu_original_header_p + 1),li_bit_offset);
+			temp_read = ((*pdu_original_header_p) << 8) | (*(pdu_original_header_p + 1));
+			sdu_size = RLC_AM_PDU_GET_LI(temp_read,li_bit_offset);
 			pdu_original_header_p += li_jump_offset;
 			li_bit_offset ^= 0x4;
 			li_jump_offset ^= 0x3;
@@ -405,7 +408,8 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 			sdu_segment_index ++;
 			if (sdu_index < pdu_mngt->nb_sdus)
 			{
-				sdu_size = RLC_AM_PDU_GET_LI(*pdu_original_header_p + *(pdu_original_header_p + 1),li_bit_offset);
+				temp_read = ((*pdu_original_header_p) << 8) | (*(pdu_original_header_p + 1));
+				sdu_size = RLC_AM_PDU_GET_LI(temp_read,li_bit_offset);
 				pdu_original_header_p += li_jump_offset;
 				li_bit_offset ^= 0x4;
 				li_jump_offset ^= 0x3;
@@ -578,7 +582,7 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 				li_bit_offset ^= 0x4;
 				li_jump_offset ^= 0x3;
 
-				temp = ((*pdu_segment_header_p) << 8) + *(pdu_segment_header_p + 1);
+				temp = ((*pdu_segment_header_p) << 8) | (*(pdu_segment_header_p + 1));
 				index ++;
 			}
 		}
