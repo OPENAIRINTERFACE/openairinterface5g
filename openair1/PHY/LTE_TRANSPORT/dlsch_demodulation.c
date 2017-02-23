@@ -2090,7 +2090,6 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
   unsigned char aarx=0,symbol_mod,pilots=0;
   int precoded_signal_strength0=0,precoded_signal_strength1=0;
   int rx_power_correction;
-  int output_shift;
 
   int **rxdataF_ext           = pdsch_vars->rxdataF_ext;
   int **dl_ch_estimates_ext   = pdsch_vars->dl_ch_estimates_ext;
@@ -3153,7 +3152,6 @@ void dlsch_detection_mrc_TM34(LTE_DL_FRAME_PARMS *frame_parms,
                               unsigned short nb_rb,
                               unsigned char dual_stream_UE) {
 
-  unsigned char aatx;
   int i;
   __m128i *rxdataF_comp128_0,*rxdataF_comp128_1,*rxdataF_comp128_i0,*rxdataF_comp128_i1,*dl_ch_mag128_0,*dl_ch_mag128_1,*dl_ch_mag128_0b,*dl_ch_mag128_1b,*rho128_0,*rho128_1,*rho128_i0,*rho128_i1,*dl_ch_mag128_i0,*dl_ch_mag128_i1,*dl_ch_mag128_i0b,*dl_ch_mag128_i1b;
 
