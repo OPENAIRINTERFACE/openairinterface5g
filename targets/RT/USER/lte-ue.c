@@ -674,12 +674,11 @@ void *UE_thread(void *arg) {
                         rxp[i] = (void*)&dummy_rx[i][0];
                     for (int sf=0; sf<10; sf++)
                         //	    printf("Reading dummy sf %d\n",sf);
-                        AssertFatal ( UE->frame_parms.samples_per_tti ==
-                                      UE->rfdevice.trx_read_func(&UE->rfdevice,
+                          UE->rfdevice.trx_read_func(&UE->rfdevice,
                                               &timestamp,
                                               rxp,
                                               UE->frame_parms.samples_per_tti,
-                                              UE->frame_parms.nb_antennas_rx), "");
+                                              UE->frame_parms.nb_antennas_rx);
                 }
             }
 
