@@ -4756,7 +4756,6 @@ void extract_dci2A_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, uint8_t nb
     pdci_info_extarcted->tpmi     = tpmi;
 }
 
-#define DEBUG_DL_DECODING
 int check_dci_format1_1a_coherency(DCI_format_t dci_format,
         uint8_t N_RB_DL,
         uint16_t rnti,
@@ -4776,7 +4775,19 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
     uint8_t  rah       = pdci_info_extarcted->rah;
 
     uint8_t  NPRB    = 0;
-    uint32_t RIV_max = 0;
+    long long int RIV_max = 0;
+
+#ifdef DEBUG_DCI
+    LOG_I(PHY,"[DCI-FORMAT-1-1A] dci_format %d\n", dci_format);
+    LOG_I(PHY,"[DCI-FORMAT-1-1A] rnti       %x\n",  rnti);
+    LOG_I(PHY,"[DCI-FORMAT-1-1A] harq_pid   %d\n", harq_pid);
+    LOG_I(PHY,"[DCI-FORMAT-1-1A] rah        %d\n", rah);
+    LOG_I(PHY,"[DCI-FORMAT-1-1A] rballoc    %x\n", rballoc);
+    LOG_I(PHY,"[DCI-FORMAT-1-1A] mcs1       %d\n", mcs1);
+    LOG_I(PHY,"[DCI-FORMAT-1-1A] rv1        %d\n", rv1);
+    LOG_I(PHY,"[DCI-FORMAT-1-1A] ndi1       %d\n", ndi1);
+    LOG_I(PHY,"[DCI-FORMAT-1-1A] TPC        %d\n", TPC);
+#endif
 
     // I- check dci content minimum coherency
     if( ((rnti==si_rnti) || (rnti==p_rnti) || (rnti==ra_rnti)) && harq_pid > 0)
@@ -4835,19 +4846,31 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
         switch (N_RB_DL) {
         case 6:
             NPRB     = RIV2nb_rb_LUT6[rballoc];//NPRB;
-            RIV_max  = RIV_max6;
+            if(rah)
+              RIV_max  = RIV_max6;
+            else
+              RIV_max  = 0x3F;
             break;
         case 25:
             NPRB     = RIV2nb_rb_LUT25[rballoc];//NPRB;
-            RIV_max  = RIV_max25;
+            if(rah)
+              RIV_max  = RIV_max25;
+            else
+              RIV_max  = 0x1FFF;
             break;
         case 50:
             NPRB     = RIV2nb_rb_LUT50[rballoc];//NPRB;
-            RIV_max  = RIV_max50;
+            if(rah)
+              RIV_max  = RIV_max50;
+            else
+              RIV_max  = 0x1FFFF;
             break;
         case 100:
             NPRB     = RIV2nb_rb_LUT100[rballoc];//NPRB;
-            RIV_max  = RIV_max100;
+            if(rah)
+              RIV_max  = RIV_max100;
+            else
+              RIV_max  =  0x1FFFFFF;
             break;
         }
     }
@@ -5871,6 +5894,9 @@ int generate_ue_dlsch_params_from_dci(int frame,
     case format1A:
     {
       // extract dci infomation
+#ifdef DEBUG_DCI
+      LOG_I(PHY,"[DCI-FORMAT-1A] AbsSubframe %d.%d extarct dci info \n", frame, subframe);
+#endif
       extract_dci1A_info(frame_parms->N_RB_DL,
                          frame_type,
                          dci_pdu,
@@ -5881,7 +5907,9 @@ int generate_ue_dlsch_params_from_dci(int frame,
       dlsch0 = dlsch[0];
       dlsch0->active = 0;
       dlsch0_harq   = dlsch[0]->harq_processes[dci_info_extarcted.harq_pid];
-
+#ifdef DEBUG_DCI
+      LOG_I(PHY,"[DCI-FORMAT-1A] AbsSubframe %d.%d check dci coherency \n", frame, subframe);
+#endif
       status = check_dci_format1_1a_coherency(format1A,
                                               frame_parms->N_RB_DL,
                                               rnti,
@@ -5895,6 +5923,9 @@ int generate_ue_dlsch_params_from_dci(int frame,
         return(-1);
 
       // dci is correct ==> update internal structure and prepare dl decoding
+#ifdef DEBUG_DCI
+      LOG_I(PHY,"[DCI-FORMAT-1A] AbsSubframe %d.%d prepare dl decoding \n", frame, subframe);
+#endif
       prepare_dl_decoding_format1_1A(format1A,
                                      frame_parms->N_RB_DL,
                                      &dci_info_extarcted,
@@ -5963,6 +5994,9 @@ int generate_ue_dlsch_params_from_dci(int frame,
     case format1:
     {
       // extract dci infomation
+#ifdef DEBUG_DCI
+      LOG_I(PHY,"[DCI-FORMAT-1] AbsSubframe %d.%d extarct dci info \n", frame, subframe);
+#endif
       extract_dci1_info(frame_parms->N_RB_DL,
                          frame_type,
                          dci_pdu,
@@ -5973,6 +6007,9 @@ int generate_ue_dlsch_params_from_dci(int frame,
       dlsch0->active = 0;
       dlsch0_harq = dlsch[0]->harq_processes[dci_info_extarcted.harq_pid];
 
+#ifdef DEBUG_DCI
+      LOG_I(PHY,"[DCI-FORMAT-1] AbsSubframe %d.%d check dci coherency \n", frame, subframe);
+#endif
       status = check_dci_format1_1a_coherency(format1,
                                               frame_parms->N_RB_DL,
                                               rnti,
@@ -5986,6 +6023,9 @@ int generate_ue_dlsch_params_from_dci(int frame,
         return(-1);
 
       // dci is correct ==> update internal structure and prepare dl decoding
+#ifdef DEBUG_DCI
+      LOG_I(PHY,"[DCI-FORMAT-1] AbsSubframe %d.%d prepare dl decoding \n", frame, subframe);
+#endif
       prepare_dl_decoding_format1_1A(format1,
                                      frame_parms->N_RB_DL,
                                      &dci_info_extarcted,
