@@ -62,24 +62,27 @@
 #endif //PHY_EMUL
 
 #include "SCHED/defs.h"
-
+/* TODO: this abstraction_flag here is very hackish - find a proper solution */
+extern uint8_t abstraction_flag;
 void dl_phy_sync_success(module_id_t   module_idP,
                          frame_t       frameP,
                          unsigned char eNB_index,
                          uint8_t            first_sync)   //init as MR
 {
   LOG_D(MAC,"[UE %d] Frame %d: PHY Sync to eNB_index %d successful \n", module_idP, frameP, eNB_index);
-#if ! defined(ENABLE_USE_MME)
+#if defined(ENABLE_USE_MME)
+  int mme_enabled=1;
+#else
+  int mme_enabled=0;
+#endif
 
-  if (first_sync==1) {
+  if (first_sync==1 && !(mme_enabled==1 && abstraction_flag==0)) {
     layer2_init_UE(module_idP);
     openair_rrc_ue_init(module_idP,eNB_index);
   } else
-#endif
   {
     rrc_in_sync_ind(module_idP,frameP,eNB_index);
   }
-
 }
 
 void mrbch_phy_sync_failure(module_id_t module_idP, frame_t frameP, uint8_t free_eNB_index) //init as CH

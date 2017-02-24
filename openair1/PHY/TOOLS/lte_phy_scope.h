@@ -46,18 +46,21 @@ typedef struct {
 } FD_lte_phy_scope_enb;
 
 typedef struct {
-  FL_FORM   * lte_phy_scope_ue;
-  FL_OBJECT * rxsig_t;
-  FL_OBJECT * chest_f;
-  FL_OBJECT * chest_t;
-  FL_OBJECT * pbch_comp;
-  FL_OBJECT * pbch_llr;
-  FL_OBJECT * pdcch_comp;
-  FL_OBJECT * pdcch_llr;
-  FL_OBJECT * pdsch_comp;
-  FL_OBJECT * pdsch_llr;
-  FL_OBJECT * pdsch_tput;
-  FL_OBJECT * button_0;
+    FL_FORM   * lte_phy_scope_ue;
+    FL_OBJECT * rxsig_t;
+    FL_OBJECT * chest_f;
+    FL_OBJECT * chest_t;
+    FL_OBJECT * pbch_comp;
+    FL_OBJECT * pbch_llr;
+    FL_OBJECT * pdcch_comp;
+    FL_OBJECT * pdcch_llr;
+    FL_OBJECT * pdsch_comp;
+    FL_OBJECT * pdsch_llr;
+    FL_OBJECT * pdsch_comp1;
+    FL_OBJECT * pdsch_llr1;
+    FL_OBJECT * pdsch_tput;
+    FL_OBJECT * button_0;
+
 } FD_lte_phy_scope_ue;
 
 FD_lte_phy_scope_enb * create_lte_phy_scope_enb( void );
@@ -72,9 +75,6 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
                   int eNB_id,
                   int UE_id,
                   uint8_t subframe);
-
-
-
 
 
 

@@ -49,6 +49,7 @@ Description Defines the detach related EMM procedure executed by the
 #include "nas_timer.h"
 
 #include "emmData.h"
+#include "emm_timers.h"
 
 #include "emm_sap.h"
 #include "esm_sap.h"
@@ -75,29 +76,11 @@ static const char *_emm_detach_type_str[] = {
  *      Internal data handled by the detach procedure in the UE
  * --------------------------------------------------------------------------
  */
-/*
- * Timer handlers
- */
-void *_emm_detach_t3421_handler(void *);
 
 /*
  * Abnormal case detach procedures
  */
-static int _emm_detach_abort(emm_proc_detach_type_t type);
-
-/*
- * Internal data used for detach procedure
- */
-static struct {
-#define EMM_DETACH_COUNTER_MAX  5
-  unsigned int count;      /* Counter used to limit the number of
-                  * subsequently detach attempts    */
-  int switch_off;      /* UE switch-off indicator     */
-  emm_proc_detach_type_t type; /* Type of the detach procedure
-                  * currently in progress       */
-} _emm_detach_data = {0, FALSE, EMM_DETACH_TYPE_RESERVED};
-
-
+static int _emm_detach_abort(nas_user_t *user, emm_proc_detach_type_t type);
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
@@ -124,34 +107,34 @@ static struct {
  ** Inputs:  type:      Type of the requested detach               **
  **      switch_off:    Indicates whether the detach is required   **
  **             because the UE is switched off or not      **
- **      Others:    _emm_data                                  **
+ **      Others:    user->emm_data->                                 **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _emm_detach_data                           **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_detach(emm_proc_detach_type_t type, int switch_off)
+int emm_proc_detach(nas_user_t *user, emm_proc_detach_type_t type, int switch_off)
 {
   LOG_FUNC_IN;
 
   emm_sap_t emm_sap;
   emm_as_data_t *emm_as = &emm_sap.u.emm_as.u.data;
+  emm_detach_data_t *emm_detach_data = user->emm_data->emm_detach_data;
   int rc;
 
   LOG_TRACE(INFO, "EMM-PROC  - Initiate EPS detach type = %s (%d)",
             _emm_detach_type_str[type], type);
 
   /* Initialize the detach procedure internal data */
-  _emm_detach_data.count = 0;
-  _emm_detach_data.switch_off = switch_off;
-  _emm_detach_data.type = type;
+  emm_detach_data->count = 0;
+  emm_detach_data->switch_off = switch_off;
+  emm_detach_data->type = type;
 
   /* Setup EMM procedure handler to be executed upon receiving
    * lower layer notification */
-  rc = emm_proc_lowerlayer_initialize(emm_proc_detach_request,
+  rc = emm_proc_lowerlayer_initialize(user->lowerlayer_data, emm_proc_detach_request,
                                       emm_proc_detach_failure,
-                                      emm_proc_detach_release, NULL);
+                                      emm_proc_detach_release, user);
 
   if (rc != RETURNok) {
     LOG_TRACE(WARNING, "Failed to initialize EMM procedure handler");
@@ -167,17 +150,17 @@ int emm_proc_detach(emm_proc_detach_type_t type, int switch_off)
   /* Set the switch-off indicator */
   emm_as->switch_off = switch_off;
   /* Set the EPS mobile identity */
-  emm_as->guti = _emm_data.guti;
-  emm_as->ueid = 0;
+  emm_as->guti = user->emm_data->guti;
+  emm_as->ueid = user->ueid;
   /* Setup EPS NAS security data */
-  emm_as_set_security_data(&emm_as->sctx, _emm_data.security, FALSE, TRUE);
+  emm_as_set_security_data(&emm_as->sctx, user->emm_data->security, FALSE, TRUE);
 
   /*
    * Notify EMM-AS SAP that Detach Request message has to
    * be sent to the network
    */
   emm_sap.primitive = EMMAS_DATA_REQ;
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN(rc);
 }
@@ -202,21 +185,24 @@ int emm_proc_detach_request(void *args)
 {
   LOG_FUNC_IN;
 
+  nas_user_t *user = args;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
+  emm_detach_data_t *emm_detach_data = user->emm_data->emm_detach_data;
   emm_sap_t emm_sap;
   int rc;
 
-  if ( !_emm_detach_data.switch_off ) {
+  if ( !emm_detach_data->switch_off ) {
     /* Start T3421 timer */
-    T3421.id = nas_timer_start(T3421.sec, _emm_detach_t3421_handler, NULL);
+    emm_timers->T3421.id = nas_timer_start(emm_timers->T3421.sec, emm_detach_t3421_handler, user);
     LOG_TRACE(INFO, "EMM-PROC  - Timer T3421 (%d) expires in %ld seconds",
-              T3421.id, T3421.sec);
+              emm_timers->T3421.id, emm_timers->T3421.sec);
   }
 
   /*
    * Notify EMM that Detach Request has been sent to the network
    */
   emm_sap.primitive = EMMREG_DETACH_REQ;
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN(rc);
 }
@@ -243,19 +229,21 @@ int emm_proc_detach_request(void *args)
  **      Others:    T3421                                      **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_detach_accept(void)
+int emm_proc_detach_accept(void* args)
 {
   LOG_FUNC_IN;
 
+  nas_user_t *user=args;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
   int rc;
 
   LOG_TRACE(INFO, "EMM-PROC  - UE initiated detach procedure completion");
 
   /* Reset EMM procedure handler */
-  (void) emm_proc_lowerlayer_initialize(NULL, NULL, NULL, NULL);
+  (void) emm_proc_lowerlayer_initialize(user->lowerlayer_data, NULL, NULL, NULL, NULL);
 
   /* Stop timer T3421 */
-  T3421.id = nas_timer_stop(T3421.id);
+  emm_timers->T3421.id = nas_timer_stop(emm_timers->T3421.id);
 
   /*
    * Notify ESM that all EPS bearer contexts have to be locally deactivated
@@ -263,7 +251,7 @@ int emm_proc_detach_accept(void)
   esm_sap_t esm_sap;
   esm_sap.primitive = ESM_EPS_BEARER_CONTEXT_DEACTIVATE_REQ;
   esm_sap.data.eps_bearer_context_deactivate.ebi = ESM_SAP_ALL_EBI;
-  rc = esm_sap_send(&esm_sap);
+  rc = esm_sap_send(user, &esm_sap);
 
   /*
    * XXX - Upon receiving notification from ESM that all EPS bearer
@@ -285,7 +273,6 @@ int emm_proc_detach_accept(void)
  **                                                                        **
  ** Inputs:  is_initial:    Not used                                   **
  **          args:      Not used                                   **
- **      Others:    _emm_detach_data                           **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
@@ -296,23 +283,26 @@ int emm_proc_detach_failure(int is_initial, void *args)
 {
   LOG_FUNC_IN;
 
+  nas_user_t *user = args;
+  emm_detach_data_t *emm_detach_data = user->emm_data->emm_detach_data;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
   emm_sap_t emm_sap;
   int rc;
 
   LOG_TRACE(WARNING, "EMM-PROC  - Network detach failure");
 
   /* Reset EMM procedure handler */
-  (void) emm_proc_lowerlayer_initialize(NULL, NULL, NULL, NULL);
+  (void) emm_proc_lowerlayer_initialize(user->lowerlayer_data, NULL, NULL, NULL, NULL);
 
   /* Stop timer T3421 */
-  T3421.id = nas_timer_stop(T3421.id);
+  emm_timers->T3421.id = nas_timer_stop(emm_timers->T3421.id);
 
   /*
    * Notify EMM that detach procedure has to be restarted
    */
   emm_sap.primitive = EMMREG_DETACH_INIT;
-  emm_sap.u.emm_reg.u.detach.switch_off = _emm_detach_data.switch_off;
-  rc = emm_sap_send(&emm_sap);
+  emm_sap.u.emm_reg.u.detach.switch_off = emm_detach_data->switch_off;
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN(rc);
 }
@@ -329,7 +319,6 @@ int emm_proc_detach_failure(int is_initial, void *args)
  **      The  detach procedure shall be aborted.                   **
  **                                                                        **
  ** Inputs:  args:      not used                                   **
- **      Others:    _emm_detach_data                           **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
@@ -342,8 +331,10 @@ int emm_proc_detach_release(void *args)
 
   LOG_TRACE(WARNING, "EMM-PROC  - NAS signalling connection released");
 
+  nas_user_t *user = args;
+  emm_detach_data_t *emm_detach_data = user->emm_data->emm_detach_data;
   /* Abort the detach procedure */
-  int rc = _emm_detach_abort(_emm_detach_data.type);
+  int rc = _emm_detach_abort(user, emm_detach_data->type);
 
   LOG_FUNC_RETURN(rc);
 }
@@ -368,50 +359,52 @@ int emm_proc_detach_release(void *args)
  **              3GPP TS 24.301, section 5.5.2.2.4 case c                  **
  **      On the first four expiries of the timer, the UE shall re- **
  **      transmit the DETACH REQUEST message and shall reset and   **
- **      restart timer T3421. On the fifth expiry of timer T3421,  **
+ **      restart timer emm_timers->T3421. On the fifth expiry of timer T3421,  **
  **      the detach procedure shall be aborted.                    **
  **                                                                        **
  ** Inputs:  args:      handler parameters                         **
- **      Others:    _emm_detach_data                           **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    None                                       **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-void *_emm_detach_t3421_handler(void *args)
+void *emm_detach_t3421_handler(void *args)
 {
   LOG_FUNC_IN;
 
+  nas_user_t *user = args;
+  emm_detach_data_t *emm_detach_data = user->emm_data->emm_detach_data;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
   int rc;
 
   /* Increment the retransmission counter */
-  _emm_detach_data.count += 1;
+  emm_detach_data->count += 1;
 
   LOG_TRACE(WARNING, "EMM-PROC  - T3421 timer expired, "
-            "retransmission counter = %d", _emm_detach_data.count);
+            "retransmission counter = %d", emm_detach_data->count);
 
-  if (_emm_detach_data.count < EMM_DETACH_COUNTER_MAX) {
+  if (emm_detach_data->count < EMM_DETACH_COUNTER_MAX) {
     /* Retransmit the Detach Request message */
     emm_sap_t emm_sap;
     emm_as_data_t *emm_as = &emm_sap.u.emm_as.u.data;
 
     /* Stop timer T3421 */
-    T3421.id = nas_timer_stop(T3421.id);
+    emm_timers->T3421.id = nas_timer_stop(emm_timers->T3421.id);
 
     /* Setup NAS information message to transfer */
     emm_as->NASinfo = EMM_AS_NAS_INFO_DETACH;
     emm_as->NASmsg.length = 0;
     emm_as->NASmsg.value = NULL;
     /* Set the detach type */
-    emm_as->type = _emm_detach_data.type;
+    emm_as->type = emm_detach_data->type;
     /* Set the switch-off indicator */
-    emm_as->switch_off = _emm_detach_data.switch_off;
+    emm_as->switch_off = emm_detach_data->switch_off;
     /* Set the EPS mobile identity */
-    emm_as->guti = _emm_data.guti;
-    emm_as->ueid = 0;
+    emm_as->guti = user->emm_data->guti;
+    emm_as->ueid = user->ueid;
     /* Setup EPS NAS security data */
-    emm_as_set_security_data(&emm_as->sctx, _emm_data.security,
+    emm_as_set_security_data(&emm_as->sctx, user->emm_data->security,
                              FALSE, TRUE);
 
     /*
@@ -419,17 +412,17 @@ void *_emm_detach_t3421_handler(void *args)
      * be sent to the network
      */
     emm_sap.primitive = EMMAS_DATA_REQ;
-    rc = emm_sap_send(&emm_sap);
+    rc = emm_sap_send(user, &emm_sap);
 
     if (rc != RETURNerror) {
       /* Start T3421 timer */
-      T3421.id = nas_timer_start(T3421.sec, _emm_detach_t3421_handler, NULL);
+      emm_timers->T3421.id = nas_timer_start(emm_timers->T3421.sec, emm_detach_t3421_handler, user);
       LOG_TRACE(INFO, "EMM-PROC  - Timer T3421 (%d) expires in %ld "
-                "seconds", T3421.id, T3421.sec);
+                "seconds", emm_timers->T3421.id, emm_timers->T3421.sec);
     }
   } else {
     /* Abort the detach procedure */
-    rc = _emm_detach_abort(_emm_detach_data.type);
+    rc = _emm_detach_abort(user, emm_detach_data->type);
   }
 
   LOG_FUNC_RETURN(NULL);
@@ -448,34 +441,34 @@ void *_emm_detach_t3421_handler(void *args)
  ** Description: Aborts the detach procedure                               **
  **                                                                        **
  ** Inputs:  type:      not used                                   **
- **      Others:    _emm_detach_data                           **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
  **      Others:    T3421                                      **
  **                                                                        **
  ***************************************************************************/
-static int _emm_detach_abort(emm_proc_detach_type_t type)
+static int _emm_detach_abort(nas_user_t *user, emm_proc_detach_type_t type)
 {
   LOG_FUNC_IN;
 
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
   emm_sap_t emm_sap;
   int rc ;
 
   LOG_TRACE(WARNING, "EMM-PROC  - Abort the detach procedure");
 
   /* Reset EMM procedure handler */
-  (void) emm_proc_lowerlayer_initialize(NULL, NULL, NULL, NULL);
+  emm_proc_lowerlayer_initialize(user->lowerlayer_data, NULL, NULL, NULL, NULL);
 
   /* Stop timer T3421 */
-  T3421.id = nas_timer_stop(T3421.id);
+  emm_timers->T3421.id = nas_timer_stop(emm_timers->T3421.id);
 
   /*
    * Notify EMM that detach procedure failed
    */
   emm_sap.primitive = EMMREG_DETACH_FAILED;
   emm_sap.u.emm_reg.u.detach.type = type;
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }

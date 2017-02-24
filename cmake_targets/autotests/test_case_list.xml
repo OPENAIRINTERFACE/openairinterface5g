@@ -994,6 +994,43 @@
       <nruns>3</nruns>
     </testCase>
 
+    <testCase id="015110">
+      <class>execution</class>
+      <desc>dlsim_tm4 test cases (Test 1: 10 MHz, R2.FDD (MCS 5), EVA5, -1dB), 
+      (Test 5: 1.4 MHz, R4.FDD (MCS 4), EVA5, 0dB (70%)),
+      (Test 6, 10 MHz, R3.FDD (MCS 15), EVA5, 6.7dB (70%)),
+      (Test 6b, 5 MHz, R3-1.FDD (MCS 15), EVA5, 6.7dB (70%)),
+      (Test 7, 5 MHz, R3-1.FDD (MCS 15), EVA5, 6.7dB (30%)),
+      (Test 7b, 5 MHz, R3-1.FDD (MCS 15), ETU70, 1.4 dB (30%)),
+      (Test 10, 5 MHz, R6.FDD (MCS 25), EVA5, 17.4 dB (70%)),
+      (Test 10b, 5 MHz, R6-1.FDD (MCS 24,18 PRB), EVA5, 17.5dB (70%)),
+      (Test 11, 10 MHz, R7.FDD (MCS 25), EVA5, 17.7dB (70%))
+      (TM2 Test 1 10 MHz, R.11 FDD (MCS 14), EVA5, 6.8 dB (70%)),
+      (TM2 Test 1b 20 MHz, R.11-2 FDD (MCS 13), EVA5, 5.9 dB (70%)),
+       </desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/dlsim_tm4</main_exec>
+      <main_exec_args> -m5 -gF -s-1 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
+                       -m4 -gF -s0 -w1.0 -f.2 -n500 -B6 -c4 -z2 -O70
+                       -m15 -gF -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
+                       -m14 -gF -s6.7 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O70
+                       -m15 -gG -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O30
+                       -m14 -gG -s1.4 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O30
+                       -m25 -gF -s17.4 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O70
+                       -m25 -gF -s17.5 -w1.0 -f.2 -n500 -B25 -c3 -z2 -r1022 -O70
+                       -m26 -gF -s17.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
+		       -m14 -gF -s6.8  -w1.0 -f.2 -n500 -B50 -c2 -x2 -y2 -z2 -O70
+                       -m13 -gF -s5.9  -w1.0 -f.2 -n500 -B25 -c3 -x2 -y2 -z2 -O70</main_exec_args>
+      <tags>dlsim_tm4.test1 dlsim_tm4.test5 dlsim_tm4.test6 dlsim_tm4.test6b dlsim_tm4.test7 dlsim_tm4.test7b dlsim_tm4.test10 dlsim_tm4.test10b dlsim_tm4.test11 dlsim_tm4.TM2_test1 dlsim_tm4.TM2_test1b</tags>
+      <search_expr_true>"passed"</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase>
+
   <testCase id="015500" >
     <class>lte-softmodem</class>
     <desc></desc>

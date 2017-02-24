@@ -108,7 +108,7 @@ void emm_esm_initialize(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_esm_send(const emm_esm_t *msg)
+int emm_esm_send(nas_user_t *user, const emm_esm_t *msg)
 {
   LOG_FUNC_IN;
 
@@ -123,7 +123,7 @@ int emm_esm_send(const emm_esm_t *msg)
   case _EMMESM_ESTABLISH_REQ:
     /* ESM requests EMM to initiate an attach procedure before
      * requesting subsequent connectivity to additional PDNs */
-    rc = emm_proc_attach_restart();
+    rc = emm_proc_attach_restart(user);
     break;
 
   case _EMMESM_ESTABLISH_CNF:
@@ -134,11 +134,11 @@ int emm_esm_send(const emm_esm_t *msg)
       if (msg->u.establish.is_emergency) {
         /* Consider the UE attached for emergency bearer services
          * only */
-        rc = emm_proc_attach_set_emergency();
+        rc = emm_proc_attach_set_emergency(user->emm_data);
       }
     } else {
       /* Consider the UE locally detached from the network */
-      rc = emm_proc_attach_set_detach();
+      rc = emm_proc_attach_set_detach(user);
     }
 
     break;
@@ -149,7 +149,7 @@ int emm_esm_send(const emm_esm_t *msg)
 
   case _EMMESM_UNITDATA_REQ:
     /* ESM requests EMM to transfer ESM data unit to lower layer */
-    rc = lowerlayer_data_req(msg->ueid, &msg->u.data.msg);
+    rc = lowerlayer_data_req(user, &msg->u.data.msg);
     break;
 
   default:

@@ -197,7 +197,7 @@ void phy_procedures_eNB_S_TX(PHY_VARS_eNB *phy_vars_eNB,relaying_type_t r_type);
 */
 void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type);
 
-/*! \brief Scheduling for eNB PRACH RX procedures 
+/*! \brief Scheduling for eNB PRACH RX procedures
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param proc Pointer to RXn-TXnp4 proc information
 */
@@ -305,7 +305,7 @@ uint8_t pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n);
   @param o_ACK Pointer to ACK/NAK payload for PUCCH/PUSCH
   @returns status indicator for PUCCH/PUSCH transmission
 */
-uint8_t get_ack(LTE_DL_FRAME_PARMS *frame_parms,harq_status_t *harq_ack,uint8_t subframe,uint8_t *o_ACK);
+uint8_t get_ack(LTE_DL_FRAME_PARMS *frame_parms,harq_status_t *harq_ack,uint8_t subframe,uint8_t *o_ACK, uint8_t cw_idx);
 
 /*! \brief Reset ACK/NACK information
   @param frame_parms Pointer to DL frame parameter descriptor
@@ -317,7 +317,8 @@ uint8_t get_ack(LTE_DL_FRAME_PARMS *frame_parms,harq_status_t *harq_ack,uint8_t 
 uint8_t reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
                 harq_status_t *harq_ack,
                 unsigned char subframe,
-                unsigned char *o_ACK);
+                unsigned char *o_ACK,
+                uint8_t cw_idx);
 
 /*! \brief Compute UL ACK subframe from DL subframe. This is used to retrieve corresponding DLSCH HARQ pid at eNB upon reception of ACK/NAK information on PUCCH/PUSCH.  Derived from Table 10.1-1 in 36.213 (p. 69 in version 8.6)
   @param frame_parms Pointer to DL frame parameter descriptor
@@ -509,7 +510,9 @@ int get_ue_active_harq_pid(uint8_t Mod_id,uint8_t CC_id,uint16_t rnti,int frame,
 void dump_dlsch(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe,uint8_t harq_pid);
 void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe);
 void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe);
+
 void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe, uint16_t coded_bits_per_codeword,int round);
+
 
 /*@}*/
 

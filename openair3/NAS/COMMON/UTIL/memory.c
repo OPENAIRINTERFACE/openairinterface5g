@@ -103,6 +103,30 @@ char* memory_get_path(const char* dirname, const char* filename)
   return data_filename;
 }
 
+char* memory_get_path_from_ueid(const char* dirname, const char* filename, int ueid)
+{
+  /* Get non-volatile data directory */
+  const char* path = getenv(dirname);
+  char buffer[2048];
+
+  if (path == NULL) {
+    path = getenv(DEFAULT_NAS_PATH);
+  }
+
+  if (path == NULL) {
+    LOG_TRACE(WARNING, "MEMORY  - %s and %s environment variables are not defined trying local directory", dirname, DEFAULT_NAS_PATH);
+    path = ".";
+  }
+
+  /* Append non-volatile data file name */
+  if ( snprintf(buffer, sizeof(buffer), "%s/%s%d", path, filename, ueid) < 0 ) {
+    return NULL;
+  }
+
+  return strdup(buffer);
+}
+
+
 /****************************************************************************
  **                                                                        **
  ** Name:  memory_read()                                             **

@@ -41,6 +41,7 @@ Description Defines the ESM Service Access Points at which the EPS
 #define __ESM_SAP_H__
 
 #include "esm_sapDef.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -60,6 +61,6 @@ Description Defines the ESM Service Access Points at which the EPS
 
 void esm_sap_initialize(void);
 
-int esm_sap_send(esm_sap_t *msg);
+int esm_sap_send(nas_user_t *user, esm_sap_t *msg);
 
 #endif /* __ESM_SAP_H__*/

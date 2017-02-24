@@ -19,6 +19,7 @@
  *      contact@openairinterface.org
  */
 
+#include "openairinterface5g_limits.h"
 #ifndef _UE_IP_CST
 #define _UE_IP_CST
 
@@ -51,7 +52,7 @@
 
 
 
-#define UE_IP_NB_INSTANCES_MAX       8
+#define UE_IP_NB_INSTANCES_MAX       NUMBER_OF_UE_MAX
 
 
 #endif

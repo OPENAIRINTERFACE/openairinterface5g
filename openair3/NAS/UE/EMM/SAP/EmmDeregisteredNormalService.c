@@ -84,24 +84,24 @@ extern uint8_t usim_test;
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmDeregisteredNormalService(const emm_reg_t *evt)
+int EmmDeregisteredNormalService(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNerror;
 
-  assert(emm_fsm_get_status() == EMM_DEREGISTERED_NORMAL_SERVICE);
+  assert(emm_fsm_get_status(user) == EMM_DEREGISTERED_NORMAL_SERVICE);
 
   switch (evt->primitive) {
   case _EMMREG_REGISTER_REQ:
     /*
      * The user manually re-selected a PLMN to register to
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_PLMN_SEARCH);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_PLMN_SEARCH);
 
     if (rc != RETURNerror) {
       /* Process the network registration request */
-      rc = emm_fsm_process(evt);
+      rc = emm_fsm_process(user, evt);
     }
 
     break;
@@ -112,11 +112,11 @@ int EmmDeregisteredNormalService(const emm_reg_t *evt)
      */
     if(usim_test == 0)
     {
-      rc = emm_proc_attach(EMM_ATTACH_TYPE_EPS);
+      rc = emm_proc_attach(user, EMM_ATTACH_TYPE_EPS);
     }
     else
     {
-      rc = emm_proc_attach(EMM_ATTACH_TYPE_IMSI); // CMW500 IMSI initial attach expected
+      rc = emm_proc_attach(user, EMM_ATTACH_TYPE_IMSI); // CMW500 IMSI initial attach expected
     }
     break;
 
@@ -126,7 +126,7 @@ int EmmDeregisteredNormalService(const emm_reg_t *evt)
      * message successfully delivered to the network);
      * enter state EMM-REGISTERED-INITIATED
      */
-    rc = emm_fsm_set_status(EMM_REGISTERED_INITIATED);
+    rc = emm_fsm_set_status(user, EMM_REGISTERED_INITIATED);
     break;
 
   case _EMMREG_LOWERLAYER_SUCCESS:
@@ -134,21 +134,21 @@ int EmmDeregisteredNormalService(const emm_reg_t *evt)
      * Initial NAS message has been successfully delivered
      * to the network
      */
-    rc = emm_proc_lowerlayer_success();
+    rc = emm_proc_lowerlayer_success(user->lowerlayer_data);
     break;
 
   case _EMMREG_LOWERLAYER_FAILURE:
     /*
      * Initial NAS message failed to be delivered to the network
      */
-    rc = emm_proc_lowerlayer_failure(TRUE);
+    rc = emm_proc_lowerlayer_failure(user->lowerlayer_data, TRUE);
     break;
 
   case _EMMREG_LOWERLAYER_RELEASE:
     /*
      * NAS signalling connection has been released
      */
-    rc = emm_proc_lowerlayer_release();
+    rc = emm_proc_lowerlayer_release(user->lowerlayer_data);
     break;
 
   case _EMMREG_ATTACH_CNF:
@@ -157,7 +157,7 @@ int EmmDeregisteredNormalService(const emm_reg_t *evt)
      * context activated;
      * enter state EMM-REGISTERED.
      */
-    rc = emm_fsm_set_status(EMM_REGISTERED);
+    rc = emm_fsm_set_status(user, EMM_REGISTERED);
     break;
 
   default:

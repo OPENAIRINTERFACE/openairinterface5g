@@ -181,7 +181,9 @@ extern uint16_t Nid_cell;
 
 extern LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs];
 
-
+double cpuf;
+#include "threads_t.h"
+threads_t threads= {-1,-1,-1};
 
 //#ifdef XFORMS
 int otg_enabled;
@@ -457,7 +459,8 @@ l2l1_task_state_t l2l1_state = L2L1_WAITTING;
 
 extern openair0_timestamp current_eNB_rx_timestamp[NUMBER_OF_eNB_MAX][MAX_NUM_CCs];
 extern openair0_timestamp current_UE_rx_timestamp[NUMBER_OF_UE_MAX][MAX_NUM_CCs];
-
+extern openair0_timestamp last_eNB_rx_timestamp[NUMBER_OF_eNB_MAX][MAX_NUM_CCs];
+extern openair0_timestamp last_UE_rx_timestamp[NUMBER_OF_UE_MAX][MAX_NUM_CCs];
 
 /*------------------------------------------------------------------------------*/
 void *
@@ -590,6 +593,7 @@ l2l1_task (void *args_p)
       switch (ITTI_MSG_ID(message_p)) {
       case INITIALIZE_MESSAGE:
         l2l1_state = L2L1_RUNNING;
+        start_eNB = 1;
         break;
 
       case ACTIVATE_MESSAGE:
@@ -733,26 +737,28 @@ l2l1_task (void *args_p)
 
 	clear_eNB_transport_info (oai_emulation.info.nb_enb_local);
 
-        CC_id=0;
         int all_done=0;
         while (all_done==0) {
-          pthread_mutex_lock(&subframe_mutex);
-          int subframe_eNB_mask_local = subframe_eNB_mask;
-          int subframe_UE_mask_local  = subframe_UE_mask;
-          pthread_mutex_unlock(&subframe_mutex);
-          LOG_D(EMU,"Frame %d, Subframe %d: Checking masks %x,%x\n",frame,sf,subframe_eNB_mask,subframe_UE_mask);
-          if ((subframe_eNB_mask_local == ((1<<NB_eNB_INST)-1)) &&
-              (subframe_UE_mask_local == ((1<<NB_UE_INST)-1)))
-             all_done=1;
-          else
-	    usleep(1500);
+          int i;
+          all_done = 1;
+          for (i = oai_emulation.info.first_enb_local;
+               i < oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local;
+               i++)
+            for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
+              if (last_eNB_rx_timestamp[i][CC_id] != current_eNB_rx_timestamp[i][CC_id]) {
+                all_done = 0;
+                break;
+              }
+          if (all_done == 1)
+            for (i = 0; i < NB_UE_INST; i++)
+              for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
+                if (last_UE_rx_timestamp[i][CC_id] != current_UE_rx_timestamp[i][CC_id]) {
+                  all_done = 0;
+                  break;
+                }
+          if (all_done == 0)
+	    usleep(500);
         }
-
-        //clear subframe masks for next round
-        pthread_mutex_lock(&subframe_mutex);
-        subframe_eNB_mask=0;
-        subframe_UE_mask=0;
-        pthread_mutex_unlock(&subframe_mutex);
 
         // increment timestamps
         for (eNB_inst = oai_emulation.info.first_enb_local;
@@ -760,29 +766,13 @@ l2l1_task (void *args_p)
               < (oai_emulation.info.first_enb_local
                  + oai_emulation.info.nb_enb_local));
              eNB_inst++) {
-	  
-	  current_eNB_rx_timestamp[eNB_inst][CC_id] += PHY_vars_eNB_g[eNB_inst][CC_id]->frame_parms.samples_per_tti;
+          for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
+            current_eNB_rx_timestamp[eNB_inst][CC_id] += PHY_vars_eNB_g[eNB_inst][CC_id]->frame_parms.samples_per_tti;
         }
         for (UE_inst = 0; UE_inst<NB_UE_INST;UE_inst++) {
-	  current_UE_rx_timestamp[UE_inst][CC_id] += PHY_vars_UE_g[UE_inst][CC_id]->frame_parms.samples_per_tti;
+          for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
+            current_UE_rx_timestamp[UE_inst][CC_id] += PHY_vars_UE_g[UE_inst][CC_id]->frame_parms.samples_per_tti;
         }
-
-
-	if (oai_emulation.info.cli_start_enb[eNB_inst] != 0) {
-	  T(T_ENB_MASTER_TICK, T_INT(eNB_inst), T_INT(frame % 1024), T_INT(slot/2));
-	  /*
-	  LOG_D(EMU,
-		"PHY procedures eNB %d for frame %d, slot %d (subframe TX %d, RX %d) TDD %d/%d Nid_cell %d\n",
-		eNB_inst,
-		frame%MAX_FRAME_NUMBER,
-		2*sf,
-		PHY_vars_eNB_g[eNB_inst][0]->proc[slot >> 1].subframe_tx,
-		PHY_vars_eNB_g[eNB_inst][0]->proc[slot >> 1].subframe_rx,
-		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.frame_type,
-		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.tdd_config,
-		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.Nid_cell);
-	  */
-	}
 
         for (eNB_inst = oai_emulation.info.first_enb_local;
              (eNB_inst
@@ -791,7 +781,6 @@ l2l1_task (void *args_p)
              eNB_inst++) {
           if (oai_emulation.info.cli_start_enb[eNB_inst] != 0) {
         
-	    T(T_ENB_MASTER_TICK, T_INT(eNB_inst), T_INT(frame % 1024), T_INT(sf));
 	    /*
 	    LOG_D(EMU,
 		  "PHY procedures eNB %d for frame %d, subframe %d TDD %d/%d Nid_cell %d\n",
@@ -1223,6 +1212,12 @@ main (int argc, char **argv)
   //Default values if not changed by the user in get_simulation_options();
   pdcp_period = 1;
   omg_period = 1;
+  //Clean ip rule table
+  for(int i =0; i<NUMBER_OF_UE_MAX; i++){
+      char command_line[100];
+      sprintf(command_line, "while ip rule del table %d; do true; done",i+201);
+      system(command_line);
+  }
   // start thread for log gen
   log_thread_init ();
 
@@ -1296,8 +1291,6 @@ main (int argc, char **argv)
   init_ocm ();
 
 #if defined(ENABLE_ITTI)
-  // Handle signals until all tasks are terminated
-
   // Note: Cannot handle both RRU/RAU and eNB at the same time, if the first "eNB" is an RRU/RAU, no NAS
   if (oai_emulation.info.node_function[0] < NGFI_RAU_IF4p5) { 
     if (create_tasks(oai_emulation.info.nb_enb_local, 
@@ -1350,8 +1343,8 @@ main (int argc, char **argv)
 
 #if defined(ENABLE_ITTI)
 
+  // Handle signals until all tasks are terminated
   itti_wait_tasks_end();
-
 
 #else
 

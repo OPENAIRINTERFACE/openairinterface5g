@@ -78,7 +78,8 @@
 void exit_fun(const char* s);
 
 extern int exit_openair;
-
+struct timespec start_fh, start_fh_prev;
+int start_fh_sf, start_fh_prev_sf;
 // Fix per CC openair rf/if device update
 // extern openair0_device openair0;
 
@@ -689,7 +690,7 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 				       dci_alloc->format,
 				       &eNB->dlsch_SI,
 				       fp,
-				       eNB->pdsch_config_dedicated,
+				       NULL,
 				       SI_RNTI,
 				       0,
 				       P_RNTI,
@@ -723,7 +724,7 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 				       dci_alloc->format,
 				       &eNB->dlsch_ra,
 				       fp,
-				       eNB->pdsch_config_dedicated,
+				       NULL,
 				       SI_RNTI,
 				       dci_alloc->rnti,
 				       P_RNTI,
@@ -773,7 +774,7 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 					 dci_alloc->format,
 					 eNB->dlsch[(uint8_t)UE_id],
 					 fp,
-					 eNB->pdsch_config_dedicated,
+					 &eNB->pdsch_config_dedicated[UE_id],
 					 SI_RNTI,
 					 0,
 					 P_RNTI,
@@ -1480,7 +1481,13 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 			 0);
     }
 
-
+  /*
+  if (frame>=10 && subframe>=9) {
+    write_output("/tmp/txsigF0.m","txsF0", &eNB->common_vars.txdataF[0][0][0],120*eNB->frame_parms.ofdm_symbol_size,1,1);
+    write_output("/tmp/txsigF1.m","txsF1", &eNB->common_vars.txdataF[0][0][0],120*eNB->frame_parms.ofdm_symbol_size,1,1);
+    abort();
+  }
+  */
 
 #ifdef EMOS
   phy_procedures_emos_eNB_TX(subframe, eNB);
@@ -2597,6 +2604,7 @@ extern int oai_exit;
 
 static void *fep_thread(void *param) {
 
+  pthread_setname_np( pthread_self(), "UEfep");
   PHY_VARS_eNB *eNB = (PHY_VARS_eNB *)param;
   eNB_proc_t *proc  = &eNB->proc;
   while (!oai_exit) {
@@ -2744,6 +2752,10 @@ void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc_rxtx) {
     /// **** send_IF4 of rxdataF to RCC (no prach now) **** ///
     LOG_D(PHY,"send_IF4p5 (PULFFT): frame %d, subframe %d\n",proc_rxtx->frame_rx,proc_rxtx->subframe_rx);
     send_IF4p5(eNB, proc_rxtx->frame_rx, proc_rxtx->subframe_rx, IF4p5_PULFFT, 0);
+    start_fh_prev = start_fh;
+    start_fh_prev_sf = start_fh_sf;
+    clock_gettime( CLOCK_MONOTONIC, &start_fh);
+    start_fh_sf = proc_rxtx->subframe_rx;
   }    
 }
 
@@ -2755,6 +2767,10 @@ void eNB_fep_rru_if5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc_rxtx) {
   /// **** send_IF5 of rxdata to BBU **** ///       
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 1 );  
   send_IF5(eNB, proc->timestamp_rx, proc->subframe_rx, &seqno, IF5_RRH_GW_UL);
+  start_fh_prev = start_fh;
+  start_fh_prev_sf = start_fh_sf;
+  clock_gettime( CLOCK_MONOTONIC, &start_fh);
+  start_fh_sf = proc->subframe_rx;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 0 );          
 
 }
@@ -3473,3 +3489,4 @@ int phy_procedures_RN_eNB_TX(unsigned char last_slot, unsigned char next_slot, r
   return do_proc;
 }
 #endif
+
