@@ -408,7 +408,7 @@ static inline void printMeas(char * txt, Meas *M, int period) {
                 M->iterations,
                 M->maxArray[1],M->maxArray[2], M->maxArray[3],M->maxArray[4], M->maxArray[5], 
                 M->maxArray[6],M->maxArray[7], M->maxArray[8],M->maxArray[9],M->maxArray[10]);
-        LOG_W(PHY,txt2);
+        LOG_W(PHY,"%s",txt2);
     }
 }
 
