@@ -299,7 +299,6 @@ int32_t dlsch_modulation_SIC(int32_t **sic_buffer,
                          LTE_DL_FRAME_PARMS *frame_parms,
                          uint8_t num_pdcch_symbols,
                          LTE_eNB_DLSCH_t *dlsch0,
-                         LTE_eNB_DLSCH_t *dlsch1,
                          int G);
 /*
   \brief This function is the top-level routine for generation of the sub-frame signal (frequency-domain) for MCH.

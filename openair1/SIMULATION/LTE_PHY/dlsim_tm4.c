@@ -193,7 +193,7 @@ int main(int argc, char **argv)
   unsigned int coded_bits_per_codeword[2],nsymb,dci_cnt,tbs[2];
 
   unsigned int tx_lev=0, tx_lev_dB=0, round=0, trials, errs[2][4]={{0,0,0,0},{0,0,0,0}}, round_trials[2][4]={{0,0,0,0},{0,0,0,0}}, decoded_in_sic[4]={0,0,0,0}, sic_attempt[4]={0,0,0,0}, round_sic=0;
-  unsigned int dci_errors=0, dlsch_active=0, num_layers;
+  unsigned int dci_errors=0, dlsch_active=0;
   unsigned int resend_one[4]={0,0,0,0}, resend_both[4]={0,0,0,0}, TB0_deact[4]={0,0,0,0}, TB1_deact[4]={0,0,0,0};
 
   int re_allocated;
@@ -4094,14 +4094,15 @@ int main(int argc, char **argv)
                                                     &UE->frame_parms,
                                                     num_pdcch_symbols,
                                                     &UE->dlsch_eNB[0][0],
-                                                    NULL,
                                                     coded_bits_per_codeword[0]);
 
                // write_output("sic_buffer.m","sic", *sic_buffer,re_allocated,1,1);
                // write_output("rxdataF_comp1.m","rxF_comp1", *UE->pdsch_vars[eNB_id]->rxdataF_comp1[UE->dlsch[0][0]->current_harq_pid][round],14*12*25,1,1);
                // write_output("rxdataF_rho.m","rho", *UE->pdsch_vars[eNB_id]->dl_ch_rho_ext[UE->dlsch[0][0]->current_harq_pid][round],14*12*25,1,1);
 
+
                 switch  (get_Qm(eNB->dlsch[0][1]->harq_processes[0]->mcs)){
+
 
 
                   case 2:
