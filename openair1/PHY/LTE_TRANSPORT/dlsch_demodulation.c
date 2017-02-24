@@ -107,7 +107,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
   unsigned char aatx,aarx;
 
-  unsigned short nb_rb, round;
+  unsigned short nb_rb = 0, round;
   int avgs, rb;
   LTE_DL_UE_HARQ_t *dlsch0_harq,*dlsch1_harq = 0;
 
@@ -162,6 +162,10 @@ int rx_pdsch(PHY_VARS_UE *ue,
       dlsch0_harq = dlsch[1]->harq_processes[harq_pid];
       dlsch1_harq = NULL;
       codeword_TB0 = -1;
+    }
+    else {
+      LOG_E(PHY,"[UE][FATAL] Frame %d subframe %d: no active DLSCH\n",ue->proc.proc_rxtx[0].frame_rx,subframe);
+      return(-1);
     }
     beamforming_mode  = ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id];
     break;
@@ -1552,8 +1556,11 @@ void prec2A_TM56_128(unsigned char pmi,__m128i *ch0,__m128i *ch1)
 #elif defined(__arm__)
 void prec2A_TM56_128(unsigned char pmi,__m128i *ch0,__m128i *ch1) {
 
-  __m128i amp;
-  amp = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
+  // sqrt(2) is already taken into account in computation sqrt_rho_a, sqrt_rho_b,
+  //so removed it
+
+  //__m128i amp;
+  //amp = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
 
   switch (pmi) {
 
@@ -1583,8 +1590,8 @@ void prec2A_TM56_128(unsigned char pmi,__m128i *ch0,__m128i *ch1) {
     break;
   }
 
-  ch0[0] = _mm_mulhi_epi16(ch0[0],amp);
-  ch0[0] = _mm_slli_epi16(ch0[0],1);
+  //ch0[0] = _mm_mulhi_epi16(ch0[0],amp);
+  //ch0[0] = _mm_slli_epi16(ch0[0],1);
 
   _mm_empty();
   _m_empty();
@@ -1598,10 +1605,12 @@ short TM3_prec[8]__attribute__((aligned(16))) = {1,1,-1,-1,1,1,-1,-1} ;
 
 void prec2A_TM3_128(__m128i *ch0,__m128i *ch1) {
 
-  //  __m128i amp = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
+  __m128i amp = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
 
   __m128i tmp0,tmp1;
 
+  // sqrt(2) is already taken into account in computation sqrt_rho_a, sqrt_rho_b,
+  //so divide by 2 is replaced by divide by sqrt(2).
 
   //  print_shorts("prec2A_TM3 ch0 (before):",ch0);
   //  print_shorts("prec2A_TM3 ch1 (before):",ch1);
@@ -1617,9 +1626,13 @@ void prec2A_TM3_128(__m128i *ch0,__m128i *ch1) {
   //  print_shorts("prec2A_TM3 ch0 (mid):",&tmp0);
   //  print_shorts("prec2A_TM3 ch1 (mid):",ch1);
 
+  ch0[0] = _mm_mulhi_epi16(ch0[0],amp);
+  ch0[0] = _mm_slli_epi16(ch0[0],1);
+  ch1[0] = _mm_mulhi_epi16(ch1[0],amp);
+  ch1[0] = _mm_slli_epi16(ch1[0],1);
 
-  ch0[0] = _mm_srai_epi16(ch0[0],1);
-  ch1[0] = _mm_srai_epi16(ch1[0],1);
+  // ch0[0] = _mm_srai_epi16(ch0[0],1);
+  // ch1[0] = _mm_srai_epi16(ch1[0],1);
 
   //  print_shorts("prec2A_TM3 ch0 (after):",ch0);
   //  print_shorts("prec2A_TM3 ch1 (after):",ch1);
@@ -1633,9 +1646,12 @@ void prec2A_TM3_128(__m128i *ch0,__m128i *ch1) {
 
 void prec2A_TM4_128(int pmi,__m128i *ch0,__m128i *ch1) {
 
+// sqrt(2) is already taken into account in computation sqrt_rho_a, sqrt_rho_b,
+//so divide by 2 is replaced by divide by sqrt(2).
+
  // printf ("demod pmi=%d\n", pmi);
-  // __m128i amp;
-  // amp = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
+ __m128i amp;
+ amp = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
   __m128i tmp0,tmp1;
 
  // print_shorts("prec2A_TM4 ch0 (before):",ch0);
@@ -1659,14 +1675,14 @@ void prec2A_TM4_128(int pmi,__m128i *ch0,__m128i *ch1) {
   //print_shorts("prec2A_TM4 ch0 (middle):",ch0);
   //print_shorts("prec2A_TM4 ch1 (middle):",ch1);
 
-  //ch0[0] = _mm_mulhi_epi16(ch0[0],amp);
-  //ch0[0] = _mm_slli_epi16(ch0[0],1);
-  //ch1[0] = _mm_mulhi_epi16(ch1[0],amp);
-  //ch1[0] = _mm_slli_epi16(ch1[0],1);
+  ch0[0] = _mm_mulhi_epi16(ch0[0],amp);
+  ch0[0] = _mm_slli_epi16(ch0[0],1);
+  ch1[0] = _mm_mulhi_epi16(ch1[0],amp);
+  ch1[0] = _mm_slli_epi16(ch1[0],1);
 
 
-  ch0[0] = _mm_srai_epi16(ch0[0],1); //divide by 2
-  ch1[0] = _mm_srai_epi16(ch1[0],1); //divide by 2
+ // ch0[0] = _mm_srai_epi16(ch0[0],1); //divide by 2
+ // ch1[0] = _mm_srai_epi16(ch1[0],1); //divide by 2
   //print_shorts("prec2A_TM4 ch0 (end):",ch0);
   //print_shorts("prec2A_TM4 ch1 (end):",ch1);
   _mm_empty();
@@ -2086,7 +2102,6 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
   unsigned char aarx=0,symbol_mod,pilots=0;
   int precoded_signal_strength0=0,precoded_signal_strength1=0;
   int rx_power_correction;
-  int output_shift;
 
   int **rxdataF_ext           = pdsch_vars->rxdataF_ext;
   int **dl_ch_estimates_ext   = pdsch_vars->dl_ch_estimates_ext;
@@ -3149,7 +3164,6 @@ void dlsch_detection_mrc_TM34(LTE_DL_FRAME_PARMS *frame_parms,
                               unsigned short nb_rb,
                               unsigned char dual_stream_UE) {
 
-  unsigned char aatx;
   int i;
   __m128i *rxdataF_comp128_0,*rxdataF_comp128_1,*rxdataF_comp128_i0,*rxdataF_comp128_i1,*dl_ch_mag128_0,*dl_ch_mag128_1,*dl_ch_mag128_0b,*dl_ch_mag128_1b,*rho128_0,*rho128_1,*rho128_i0,*rho128_i1,*dl_ch_mag128_i0,*dl_ch_mag128_i1,*dl_ch_mag128_i0b,*dl_ch_mag128_i1b;
 
@@ -3806,7 +3820,7 @@ void dlsch_channel_level_TM7(int **dl_bf_ch_estimates_ext,
 
 #endif
 }
-
+//#define ONE_OVER_2_Q15 16384
 void dlsch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
                     int **rxdataF_comp,
                     int **dl_ch_mag,
@@ -3825,8 +3839,8 @@ void dlsch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
   uint8_t pilots = ((symbol_mod==0)||(symbol_mod==(4-frame_parms->Ncp))) ? 1 : 0;
   rxF0_128 = (__m128i*) &rxdataF_comp[0][jj];
 
-  //amp = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
   //amp = _mm_set1_epi16(ONE_OVER_2_Q15);
+
 
   //    printf("Doing alamouti!\n");
   rxF0     = (short*)&rxdataF_comp[0][jj];  //tx antenna 0  h0*y
@@ -3863,29 +3877,33 @@ void dlsch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
     ch_mag0b[1] = _mm_adds_epi16(ch_mag0b[1],ch_mag1b[1]);
 
     // account for 1/sqrt(2) scaling at transmission
-    /*
-    ch_mag0[0] = _mm_srai_epi16(ch_mag0[0],1);
-    ch_mag0[1] = _mm_srai_epi16(ch_mag0[1],1);
-    ch_mag0b[0] = _mm_srai_epi16(ch_mag0b[0],1);
-    ch_mag0b[1] = _mm_srai_epi16(ch_mag0b[1],1);
+    //ch_mag0[0] = _mm_srai_epi16(ch_mag0[0],1);
+    //ch_mag0[1] = _mm_srai_epi16(ch_mag0[1],1);
+    //ch_mag0b[0] = _mm_srai_epi16(ch_mag0b[0],1);
+    //ch_mag0b[1] = _mm_srai_epi16(ch_mag0b[1],1);
 
-    rxF0_128[0] = _mm_mulhi_epi16(rxF0_128[0],amp);
-    rxF0_128[0] = _mm_slli_epi16(rxF0_128[0],1);
-    rxF0_128[1] = _mm_mulhi_epi16(rxF0_128[1],amp);
-    rxF0_128[1] = _mm_slli_epi16(rxF0_128[1],1);
-    */
+    //rxF0_128[0] = _mm_mulhi_epi16(rxF0_128[0],amp);
+    //rxF0_128[0] = _mm_slli_epi16(rxF0_128[0],1);
+    //rxF0_128[1] = _mm_mulhi_epi16(rxF0_128[1],amp);
+    //rxF0_128[1] = _mm_slli_epi16(rxF0_128[1],1);
+
+    //rxF0_128[0] = _mm_srai_epi16(rxF0_128[0],1);
+    //rxF0_128[1] = _mm_srai_epi16(rxF0_128[1],1);
+
+
 
     if (pilots==0) {
       ch_mag0[2] = _mm_adds_epi16(ch_mag0[2],ch_mag1[2]);
       ch_mag0b[2] = _mm_adds_epi16(ch_mag0b[2],ch_mag1b[2]);
 
-      /*
-      ch_mag0[2] = _mm_srai_epi16(ch_mag0[2],1);
-      ch_mag0b[2] = _mm_srai_epi16(ch_mag0b[2],1);
+      //ch_mag0[2] = _mm_srai_epi16(ch_mag0[2],1);
+      //ch_mag0b[2] = _mm_srai_epi16(ch_mag0b[2],1);
 
-      rxF0_128[2] = _mm_mulhi_epi16(rxF0_128[2],amp);
-      rxF0_128[2] = _mm_slli_epi16(rxF0_128[2],1);
-      */
+      //rxF0_128[2] = _mm_mulhi_epi16(rxF0_128[2],amp);
+      //rxF0_128[2] = _mm_slli_epi16(rxF0_128[2],1);
+
+      //rxF0_128[2] = _mm_srai_epi16(rxF0_128[2],1);
+
 
       ch_mag0+=3;
       ch_mag1+=3;
