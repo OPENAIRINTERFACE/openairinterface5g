@@ -37,6 +37,9 @@
 #include "extern.h"
 #include "PHY/sse_intrin.h"
 
+//#define DEBUG_LLR_SIC
+
+
 int16_t zero[8] __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0};
 int16_t ones[8] __attribute__ ((aligned(16))) = {0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff};
 #if defined(__x86_64__) || defined(__i386__)
@@ -634,7 +637,7 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
                    uint16_t nb_rb,
                    uint16_t pbch_pss_sss_adjust,
                    int16_t **llr32p,
-		   uint8_t beamforming_mode)
+                   uint8_t beamforming_mode)
 {
 
   uint32_t *rxF = (uint32_t*)&rxdataF_comp[0][((int32_t)symbol*frame_parms->N_RB_DL*12)];
@@ -702,7 +705,6 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
   uint16_t *llr16=(uint16_t*)dlsch_llr;
   int i, len,  nsymb;
   uint8_t symbol, symbol_mod;
-  //uint8_t pilots;
   int len_acc=0;
   uint16_t *sic_data;
   uint16_t pbch_pss_sss_adjust;
@@ -719,18 +721,16 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 
-      if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) //pilots=1
-        amp_tmp=dlsch0->sqrt_rho_b;
-      else //pilots=0
-        amp_tmp=dlsch0->sqrt_rho_a;
+    if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) //pilots=1
+      amp_tmp=0x1fff;//dlsch0->sqrt_rho_b; already taken into account
+    else //pilots=0
+      amp_tmp=0x1fff;//1.5*dlsch0->sqrt_rho_a; already taken into account
 
-        if (mod_order_0==6)
-         amp_tmp=amp_tmp<<1; // to compensate for >> 1 shift in modulation
+    if (mod_order_0==6)
+      amp_tmp=amp_tmp<<1; // to compensate for >> 1 shift in modulation to avoid overflow
 
 
     pbch_pss_sss_adjust=adjust_G2(frame_parms,&rb_alloc,2,subframe,symbol);
-
-  // printf("amp_tmp=%d\n", amp_tmp);
 
     if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
       if (frame_parms->mode1_flag==0)
@@ -751,26 +751,21 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                                        1,
                                        len);
 
-
- //   printf ("Got x0*rho_a\n");
-
     mult_cpx_vector((int16_t *)rho_1, //Q15
                     (int16_t *)rho_amp_x0, //Q13
                     (int16_t*)rho_rho_amp_x0,
                     len,
                     13);
-  /*  write_output("rho_for_multipl.m","rho_for_multipl", rho_1,len,1,
+
+#ifdef DEBUG_LLR_SIC
+    write_output("rho_for_multipl.m","rho_for_m", rho_1,len,1,
      symbol==num_pdcch_symbols ? 15 :
      symbol==nsymb-1 ? 14 : 13);
 
     write_output("rho_rho_in_llr.m","rho2", rho_rho_amp_x0,len,1,
      symbol==num_pdcch_symbols ? 15 :
      symbol==nsymb-1 ? 14 : 13);
- //   printf ("Computed  rho*rho_a*x0\n");*/
-
-
-    //rho_rho_amp_x0_512 = (int16_t)((512*(int16_t *)rho_rho_amp_x0)>>15);
-
+#endif
 
     sub_cpx_vector16((int16_t *)rxF,
                      (int16_t *)rho_rho_amp_x0,
@@ -778,23 +773,16 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                      (int16_t *)rxF,
                      len*2);
 
-  //  write_output("rxFdata_comp1_after.m","rxF_a", rxF,len,1,1);
-   // write_output("clean_x1.m","x1", clean_x1,len,1,1);
-  //  printf ("Interference removed \n");
-      /*  write_output("clean_x1.m","x1", clean_x1,len,1,
-     symbol==num_pdcch_symbols ? 15 :
-     symbol==nsymb-1 ? 14 : 13);
-
-  write_output("rxF_comp1.m","rxF_1_comp", rxF,len,1,
-     symbol==num_pdcch_symbols ? 15 :
-     symbol==nsymb-1 ? 14 : 13);*/
-
-  //  printf("dlsch_qpsk_llr_SIC: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
-
+#ifdef DEBUG_LLR_SIC
+    write_output("rxFdata_comp1_after.m","rxF_a", rxF,len,1,1);
+    write_output("rxF_comp1.m","rxF_1_comp", rxF,len,1,
+                 symbol==num_pdcch_symbols ? 15 :
+                 symbol==nsymb-1 ? 14 : 13);
+#endif
 
     //this is for QPSK only!!!
     for (i=0; i<len*2; i++) {
-      *llr16 =rxF[i]; //clean_x1[i];//(int16_t *)rxF[i];//clean_x1[i]; //(int16_t *)rxF[i];//; //rxF[i];
+      *llr16 =rxF[i];
       //printf("llr %d : (%d,%d)\n",i,((int16_t*)llr32)[0],((int16_t*)llr32)[1]);
       llr16++;
     }
@@ -958,7 +946,6 @@ void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
   uint32_t *llr32=(uint32_t*)dlsch_llr;
   int i, len,  nsymb;
   uint8_t symbol, symbol_mod;
-  //uint8_t pilots;
   int len_acc=0;
   uint16_t *sic_data;
   uint16_t pbch_pss_sss_adjust;
@@ -977,22 +964,19 @@ void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
 
     pbch_pss_sss_adjust=adjust_G2(frame_parms,&rb_alloc,4,subframe,symbol);
 
+    if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
+      amp_tmp=0x1fff;//dlsch0->sqrt_rho_b; already taken into account
+      if (frame_parms->mode1_flag==0)
+        len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
+      else
+        len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
+    } else {
+      amp_tmp=0x1fff;;//dlsch0->sqrt_rho_a; already taken into account
+      len = nb_rb*12 - pbch_pss_sss_adjust;
+    }
 
-      if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-
-        amp_tmp=dlsch0->sqrt_rho_b;
-          if (frame_parms->mode1_flag==0)
-            len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
-          else
-            len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
-      } else {
-
-        amp_tmp=dlsch0->sqrt_rho_a;
-        len = nb_rb*12 - pbch_pss_sss_adjust;
-      }
-
-      if (mod_order_0==6)
-        amp_tmp=amp_tmp<<1; // to compensate for >> 1 shift in modulation
+    if (mod_order_0==6)
+      amp_tmp=amp_tmp<<1; // to compensate for >> 1 shift in modulation
 
     len_acc+=len;
 
@@ -1248,20 +1232,18 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
     pbch_pss_sss_adjust=adjust_G2(frame_parms,&rb_alloc,6,subframe,symbol);
 
     if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-
-      amp_tmp = dlsch0->sqrt_rho_b;
-          if (frame_parms->mode1_flag==0)
-            len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
-          else
-            len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
+      amp_tmp = 0x1fff;//dlsch0->sqrt_rho_b; already taken into account
+      if (frame_parms->mode1_flag==0)
+        len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
+      else
+        len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
       } else {
-
-          amp_tmp = dlsch0->sqrt_rho_a;
-          len = nb_rb*12 - pbch_pss_sss_adjust;
+        amp_tmp = 0x1fff; //dlsch0->sqrt_rho_a; already taken into account
+        len = nb_rb*12 - pbch_pss_sss_adjust;
       }
 
-      if (mod_order_0==6)
-        amp_tmp=amp_tmp<<1; // to compensate for >> 1 shift in modulation
+    if (mod_order_0==6)
+      amp_tmp=amp_tmp<<1; // to compensate for >> 1 shift in modulation
 
     len_acc+=len;
 
@@ -1271,93 +1253,93 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                                         1,
                                         len);
 
-     mult_cpx_vector((int16_t *)rho_1, //Q15
+    mult_cpx_vector((int16_t *)rho_1, //Q15
                     (int16_t *)rho_amp_x0, //Q13
                     (int16_t*)rho_rho_amp_x0,
                     len,
                     13);
 
-     sub_cpx_vector16((int16_t *)rxF,
+    sub_cpx_vector16((int16_t *)rxF,
                       (int16_t *)rho_rho_amp_x0,
                       //(int16_t *)clean_x1,
                       (int16_t *)rxF,
                       len*2);
 
-  llr2 = llr32;
-  llr32 += (len*6);
+    llr2 = llr32;
+    llr32 += (len*6);
 
-  len_mod4 =len&3;
-  len2=len>>2;  // length in quad words (4 REs)
-  len2+=(len_mod4?0:1);
-
-
-
-  for (i=0; i<len2; i++) {
-
-    __m128i *x1 = (__m128i*)rxF;
-    xmm1 = _mm_abs_epi16(x1[i]);
-    xmm1 = _mm_subs_epi16(ch_mag[i],xmm1);
-    xmm2 = _mm_abs_epi16(xmm1);
-    xmm2 = _mm_subs_epi16(ch_magb[i],xmm2);
-
-    // loop over all LLRs in quad word (24 coded bits)
-    /*
-      for (j=0;j<8;j+=2) {
-      llr2[0] = ((short *)&rxF[i])[j];
-      llr2[1] = ((short *)&rxF[i])[j+1];
-      llr2[2] = ((short *)&xmm1)[j];
-      llr2[3] = ((short *)&xmm1)[j+1];
-      llr2[4] = ((short *)&xmm2)[j];
-      llr2[5] = ((short *)&xmm2)[j+1];
-
-     llr2+=6;
-      }
-    */
-    llr2[0] = ((short *)&x1[i])[0];
-    llr2[1] = ((short *)&x1[i])[1];
-    llr2[2] = _mm_extract_epi16(xmm1,0);
-    llr2[3] = _mm_extract_epi16(xmm1,1);//((short *)&xmm1)[j+1];
-    llr2[4] = _mm_extract_epi16(xmm2,0);//((short *)&xmm2)[j];
-    llr2[5] = _mm_extract_epi16(xmm2,1);//((short *)&xmm2)[j+1];
+    len_mod4 =len&3;
+    len2=len>>2;  // length in quad words (4 REs)
+    len2+=(len_mod4?0:1);
 
 
-    llr2+=6;
-    llr2[0] = ((short *)&x1[i])[2];
-    llr2[1] = ((short *)&x1[i])[3];
 
-    llr2[2] = _mm_extract_epi16(xmm1,2);
-    llr2[3] = _mm_extract_epi16(xmm1,3);//((short *)&xmm1)[j+1];
-    llr2[4] = _mm_extract_epi16(xmm2,2);//((short *)&xmm2)[j];
-    llr2[5] = _mm_extract_epi16(xmm2,3);//((short *)&xmm2)[j+1];
+    for (i=0; i<len2; i++) {
 
-    llr2+=6;
-    llr2[0] = ((short *)&x1[i])[4];
-    llr2[1] = ((short *)&x1[i])[5];
+      __m128i *x1 = (__m128i*)rxF;
+      xmm1 = _mm_abs_epi16(x1[i]);
+      xmm1 = _mm_subs_epi16(ch_mag[i],xmm1);
+      xmm2 = _mm_abs_epi16(xmm1);
+      xmm2 = _mm_subs_epi16(ch_magb[i],xmm2);
 
-    llr2[2] = _mm_extract_epi16(xmm1,4);
-    llr2[3] = _mm_extract_epi16(xmm1,5);//((short *)&xmm1)[j+1];
-    llr2[4] = _mm_extract_epi16(xmm2,4);//((short *)&xmm2)[j];
-    llr2[5] = _mm_extract_epi16(xmm2,5);//((short *)&xmm2)[j+1];
+      // loop over all LLRs in quad word (24 coded bits)
+      /*
+        for (j=0;j<8;j+=2) {
+        llr2[0] = ((short *)&rxF[i])[j];
+        llr2[1] = ((short *)&rxF[i])[j+1];
+        llr2[2] = ((short *)&xmm1)[j];
+        llr2[3] = ((short *)&xmm1)[j+1];
+        llr2[4] = ((short *)&xmm2)[j];
+        llr2[5] = ((short *)&xmm2)[j+1];
 
-    llr2+=6;
-    llr2[0] = ((short *)&x1[i])[6];
-    llr2[1] = ((short *)&x1[i])[7];
+       llr2+=6;
+        }
+      */
+      llr2[0] = ((short *)&x1[i])[0];
+      llr2[1] = ((short *)&x1[i])[1];
+      llr2[2] = _mm_extract_epi16(xmm1,0);
+      llr2[3] = _mm_extract_epi16(xmm1,1);//((short *)&xmm1)[j+1];
+      llr2[4] = _mm_extract_epi16(xmm2,0);//((short *)&xmm2)[j];
+      llr2[5] = _mm_extract_epi16(xmm2,1);//((short *)&xmm2)[j+1];
 
-    llr2[2] = _mm_extract_epi16(xmm1,6);
-    llr2[3] = _mm_extract_epi16(xmm1,7);//((short *)&xmm1)[j+1];
-    llr2[4] = _mm_extract_epi16(xmm2,6);//((short *)&xmm2)[j];
-    llr2[5] = _mm_extract_epi16(xmm2,7);//((short *)&xmm2)[j+1];
 
-    llr2+=6;
+      llr2+=6;
+      llr2[0] = ((short *)&x1[i])[2];
+      llr2[1] = ((short *)&x1[i])[3];
 
-  }
+      llr2[2] = _mm_extract_epi16(xmm1,2);
+      llr2[3] = _mm_extract_epi16(xmm1,3);//((short *)&xmm1)[j+1];
+      llr2[4] = _mm_extract_epi16(xmm2,2);//((short *)&xmm2)[j];
+      llr2[5] = _mm_extract_epi16(xmm2,3);//((short *)&xmm2)[j+1];
+
+      llr2+=6;
+      llr2[0] = ((short *)&x1[i])[4];
+      llr2[1] = ((short *)&x1[i])[5];
+
+      llr2[2] = _mm_extract_epi16(xmm1,4);
+      llr2[3] = _mm_extract_epi16(xmm1,5);//((short *)&xmm1)[j+1];
+      llr2[4] = _mm_extract_epi16(xmm2,4);//((short *)&xmm2)[j];
+      llr2[5] = _mm_extract_epi16(xmm2,5);//((short *)&xmm2)[j+1];
+
+      llr2+=6;
+      llr2[0] = ((short *)&x1[i])[6];
+      llr2[1] = ((short *)&x1[i])[7];
+
+      llr2[2] = _mm_extract_epi16(xmm1,6);
+      llr2[3] = _mm_extract_epi16(xmm1,7);//((short *)&xmm1)[j+1];
+      llr2[4] = _mm_extract_epi16(xmm2,6);//((short *)&xmm2)[j];
+      llr2[5] = _mm_extract_epi16(xmm2,7);//((short *)&xmm2)[j+1];
+
+      llr2+=6;
+
+    }
 
  // *llr_save = llr;
 
   _mm_empty();
   _m_empty();
 
-}
+  }
 }
 //#endif
 //==============================================================================================
