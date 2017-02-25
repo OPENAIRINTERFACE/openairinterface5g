@@ -3972,6 +3972,8 @@ int generate_ue_dlsch_params_from_dci(int frame,
   LTE_UE_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
   LTE_DL_UE_HARQ_t *dlsch0_harq=NULL,*dlsch1_harq=NULL;
 
+  if (!dlsch[0]) return -1;
+
 #ifdef DEBUG_DCI
   LOG_D(PHY,"dci_tools.c: Filling ue dlsch params -> rnti %x, SFN/SF %d/%d, dci_format %s\n",
       rnti,
@@ -4001,6 +4003,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     break;
 
   case format1A:
+    if (!dlsch[0]) return -1;
 
     switch (frame_parms->N_RB_DL) {
     case 6:
@@ -4042,7 +4045,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
         NPRB = RIV2nb_rb_LUT6[rballoc];
         dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
-        dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
 
       }
 
@@ -4100,9 +4102,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
         dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
         NPRB = RIV2nb_rb_LUT25[rballoc];
         dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
-
-        dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
-
       }
 
       if (vrb_type == LOCALIZED) {
@@ -4156,9 +4155,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
         dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
         NPRB = RIV2nb_rb_LUT50[rballoc];
         dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
-
-        dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
-
       }
 
       if (vrb_type == LOCALIZED) {
@@ -4226,9 +4222,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
         dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
         NPRB = RIV2nb_rb_LUT100[rballoc];
         dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
-
-        dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
-
       }
 
       if (vrb_type == LOCALIZED) {
@@ -4329,6 +4322,9 @@ int generate_ue_dlsch_params_from_dci(int frame,
     dlsch0_harq->first_tx,
     dlsch0_harq->status,
     dlsch0_harq->round);
+
+    dlsch[0]->active = 1;
+
     if ((ndi!=dlsch0_harq->DCINdi)||  // DCI has been toggled or this is the first transmission
 
         (dlsch0_harq->first_tx==1)) {
@@ -4403,10 +4399,15 @@ int generate_ue_dlsch_params_from_dci(int frame,
     }
     dlsch[0]->rnti = rnti;
     dlsch0 = dlsch[0];
+
+    if (dlsch0_harq->round == 0)
+      dlsch0_harq->status = ACTIVE;
+
     //printf("Format 1A: harq_pid %d, nb_rb %d, round %d\n",harq_pid,dlsch0_harq->nb_rb,dlsch0_harq->round);
     break;
 
   case format1C:
+    if (!dlsch[0]) return -1;
 
     harq_pid = 0;
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
@@ -4523,7 +4524,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
     dlsch0_harq->mimo_mode = frame_parms->mode1_flag == 1 ?SISO : ALAMOUTI;
     dlsch0_harq->dl_power_off = 1; //no power offset
 
-    // Needs to be checked
     dlsch0_harq->codeword=0;
 
     LOG_D(PHY,"UE (%x/%d): Subframe %d Format1C DCI: harq_status %d, round %d\n",
@@ -4543,6 +4543,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     break;
 
   case format1:
+    if (!dlsch[0]) return -1;
 
     switch (frame_parms->N_RB_DL) {
     case 6:
@@ -4630,12 +4631,12 @@ int generate_ue_dlsch_params_from_dci(int frame,
       break;
     }
 
-    dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
-
     if (harq_pid>=8) {
       LOG_E(PHY,"Format 1: harq_pid=%d >= 8\n", harq_pid);
       return(-1);
     }
+
+    dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
     if((mcs>28) && (dlsch0_harq->round == 0) )
     {
@@ -4648,7 +4649,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
       // DCI false detection
       return(-1);
     }
-
 
     dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
 
@@ -4685,7 +4685,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
     dlsch0_harq->dl_power_off = 1; //no power offset
 
-    // Needs to be checked
     dlsch0_harq->codeword=0;
 
     LOG_D(PHY,"UE (%x/%d): Subframe %d Format1 DCI: ndi %d, old_ndi %d (first tx %d) harq_status %d\n",dlsch[0]->rnti,harq_pid,subframe,ndi,dlsch0_harq->DCINdi,
@@ -4696,7 +4695,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
         (dlsch0_harq->first_tx==1)) {
       //    printf("Rate: setting round to zero (ndi %d, DCINdi %d,first_tx %d)\n",ndi,dlsch0_harq->DCINdi,dlsch0_harq->first_tx);
       dlsch0_harq->round=0;
-      dlsch0_harq->status = ACTIVE;
       dlsch0_harq->DCINdi = ndi;
 
       dlsch[0]->harq_ack[subframe].send_harq_status = 1;
@@ -4705,8 +4703,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
         dlsch0_harq->first_tx = 0;
       }
     }
-
-    dlsch0_harq->mcs         = mcs;
 
     // this a retransmission
     if(dlsch0_harq->round)
@@ -4722,17 +4718,24 @@ int generate_ue_dlsch_params_from_dci(int frame,
         }
     }
 
-    dlsch0_harq->TBS         = TBStable[get_I_TBS(mcs)][NPRB-1];
-    if (mcs <= 28)
-      dlsch0_harq->Qm          = get_Qm(mcs);
-    else if (mcs<=31)
-      dlsch0_harq->Qm          = (mcs-28)<<1;
-    else
-      LOG_E(PHY,"invalid mcs %d\n",mcs);
     //    printf("test: MCS %d, NPRB %d, TBS %d\n",mcs,NPRB,dlsch0_harq->TBS);
-    dlsch[0]->current_harq_pid = harq_pid;
 
     dlsch[0]->active = 1;
+
+    if (dlsch0_harq->round == 0) {
+      dlsch0_harq->status = ACTIVE;
+      //            printf("Setting DLSCH process %d to ACTIVE\n",harq_pid);
+      // MCS and TBS don't change across HARQ rounds
+      dlsch0_harq->mcs         = mcs;
+      dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][NPRB-1];
+
+      if (mcs <= 28)
+        dlsch0_harq->Qm          = get_Qm(mcs);
+      else if (mcs<=31)
+        dlsch0_harq->Qm          = (mcs-28)<<1;
+      else
+        LOG_E(PHY,"invalid mcs %d\n",mcs);
+    }
 
     dlsch[0]->rnti = rnti;
 
@@ -5142,12 +5145,10 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
     if (dlsch0_harq != NULL) {
       dlsch0_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
-      dlsch0->g_pucch += delta_PUCCH_lut[TPC&3];
     }
 
     if (dlsch1_harq != NULL) {
       dlsch1_harq->delta_PUCCH = delta_PUCCH_lut[TPC&3];
-      dlsch1->g_pucch += delta_PUCCH_lut[TPC&3];
     }
 
     // assume one layer per codeword (2 antenna port case)
@@ -5859,6 +5860,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     break;
 
   case format1E_2A_M10PRB:
+    if (!dlsch[0]) return -1;
 
     harq_pid  = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->harq_pid;
 
@@ -7920,8 +7922,8 @@ int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *eNB,
     rb_alloc = rballoc;
 
     if (rb_alloc>RIV_max) {
-      LOG_E(PHY,"Format 0: rb_alloc > RIV_max\n");
-      mac_xface->macphy_exit("Format 0: rb_alloc > RIV_max\n");
+      LOG_E(PHY,"Format 0: rb_alloc (%d) > RIV_max (%d)\n",rb_alloc,RIV_max);
+      mac_xface->macphy_exit("Format 0: error");
       return(-1);
     }
 

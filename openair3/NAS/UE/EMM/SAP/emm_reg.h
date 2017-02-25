@@ -42,6 +42,7 @@ Description Defines the EMMREG Service Access Point that provides
 #define __EMM_REG_H__
 
 #include "emm_regDef.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -59,8 +60,8 @@ Description Defines the EMMREG Service Access Point that provides
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-void emm_reg_initialize(void);
+void emm_reg_initialize(nas_user_t *user);
 
-int emm_reg_send(const emm_reg_t *msg);
+int emm_reg_send(nas_user_t *user, const emm_reg_t *msg);
 
 #endif /* __EMM_REG_H__*/

@@ -74,46 +74,13 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmRegisteredPlmnSearch(const emm_reg_t *evt)
+int EmmRegisteredPlmnSearch(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
-  assert(emm_fsm_get_status() == EMM_REGISTERED_PLMN_SEARCH);
+  assert(emm_fsm_get_status(user) == EMM_REGISTERED_PLMN_SEARCH);
 
   /* TODO */
 
   LOG_FUNC_RETURN (RETURNok);
 }
-
-#if 0
-/****************************************************************************
- **                                                                        **
- ** Name:    EmmRegisteredPlmnSearch_xxx()                             **
- **                                                                        **
- ** Description: Procedure executed when xxx                               **
- **      while the EMM-SAP is in EMM-REGISTERED.PLMN-SEARCH state. **
- **                                                                        **
- ** Inputs:  evt:       The received EMM-SAP event                 **
- **      Others:    emm_fsm_status                             **
- **                                                                        **
- ** Outputs:     None                                                      **
- **      Return:    RETURNok, RETURNerror                      **
- **      Others:    emm_fsm_status                             **
- **                                                                        **
- ***************************************************************************/
-int EmmRegisteredPlmnSearch_xxx(const emm_reg_t *evt)
-{
-  LOG_FUNC_IN;
-
-  assert(emm_fsm_get_status() == EMM_REGISTERED_PLMN_SEARCH);
-
-  /* TODO */
-
-  LOG_FUNC_RETURN (RETURNok);
-}
-#endif
-
-/****************************************************************************/
-/*********************  L O C A L    F U N C T I O N S  *********************/
-/****************************************************************************/
-

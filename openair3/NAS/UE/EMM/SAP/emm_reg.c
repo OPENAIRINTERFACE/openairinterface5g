@@ -73,12 +73,12 @@ Description Defines the EMMREG Service Access Point that provides
  **      Others:    NONE                                       **
  **                                                                        **
  ***************************************************************************/
-void emm_reg_initialize(void)
+void emm_reg_initialize(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
   /* Initialize the EMM state machine */
-  emm_fsm_initialize();
+  user->emm_fsm_status = emm_fsm_initialize();
 
   LOG_FUNC_OUT;
 }
@@ -97,7 +97,7 @@ void emm_reg_initialize(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_reg_send(const emm_reg_t *msg)
+int emm_reg_send(nas_user_t *user, const emm_reg_t *msg)
 {
   LOG_FUNC_IN;
 
@@ -111,7 +111,7 @@ int emm_reg_send(const emm_reg_t *msg)
   (void)primitive;
 
   /* Execute the EMM procedure */
-  rc = emm_fsm_process(msg);
+  rc = emm_fsm_process(user, msg);
 
   LOG_FUNC_RETURN (rc);
 }

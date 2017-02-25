@@ -74,11 +74,11 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmRegisteredNormalService(const emm_reg_t *evt)
+int EmmRegisteredNormalService(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
-  assert(emm_fsm_get_status() == EMM_REGISTERED_NORMAL_SERVICE);
+  assert(emm_fsm_get_status(user) == EMM_REGISTERED_NORMAL_SERVICE);
 
   /* TODO */
 

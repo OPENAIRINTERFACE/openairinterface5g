@@ -645,6 +645,12 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 
 #else //normal case (simulation)
   prach_start = subframe*ue->frame_parms.samples_per_tti-ue->N_TA_offset;
+  LOG_D(PHY,"[UE %d] prach_start %d, rx_offset %d, hw_timing_advance %d, N_TA_offset %d\n", ue->Mod_id,
+    prach_start,
+    ue->rx_offset,
+    ue->hw_timing_advance,
+    ue->N_TA_offset);
+  
 #endif
 
 
@@ -1074,6 +1080,8 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 #ifdef PRACH_DEBUG
   write_output("prach_txF0.m","prachtxF0",prachF,prach_len-Ncp,1,1);
   write_output("prach_tx0.m","prachtx0",prach+(Ncp<<1),prach_len-Ncp,1,1);
+  write_output("txsig.m","txs",(int16_t*)(&ue->common_vars.txdata[0][0]),2*ue->frame_parms.samples_per_tti,1,1);
+  exit(-1);
 #endif
 
   return signal_energy( (int*)prach, 256 );
@@ -1125,7 +1133,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
   int fft_size,log2_ifft_size;
   uint8_t nb_ant_rx = 1; //eNB->frame_parms.nb_antennas_rx;
 
-  //  int en;
+  int en;
 
   for (aa=0; aa<nb_ant_rx; aa++) {
     prach[aa] = (int16_t*)&eNB->common_vars.rxdata[0][aa][subframe*eNB->frame_parms.samples_per_tti-eNB->N_TA_offset];
@@ -1327,9 +1335,26 @@ void rx_prach(PHY_VARS_eNB *eNB,
     /// **** send_IF4 of rxsigF to RCC **** ///    
     send_IF4p5(eNB, eNB->proc.frame_prach, eNB->proc.subframe_prach, IF4p5_PRACH, k);
 
-    //    en = dB_fixed(signal_energy(&rxsigF[0][k],840));
-    //    if (en>60)
-    //      printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
+#if 0
+    /* TODO: resolv this conflict (there should be no printf anyway, so no big deal) */
+<<<<<<< HEAD
+    /*
+    en = dB_fixed(signal_energy(&rxsigF[0][k],840));
+    printf("Sending PRACH, k %d,n_ra_prb %d, N_RB_UL %d,  en %d\n",k,n_ra_prb,eNB->frame_parms.N_RB_UL,en);
+    if (en>60) {
+      printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
+      write_output("prach_rx0.m","prach_rx0",(int16_t*)&rxsigF[0][k],839,1,1);
+      exit(-1);
+    }
+    */
+
+=======
+        en = dB_fixed(signal_energy(&rxsigF[0][k],840));
+        if (en>60)
+          printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
+>>>>>>> origin/fix-if4p5
+#endif
+
     return;
   } else if (eNB->node_function == NGFI_RCC_IF4p5) {
     k = (12*n_ra_prb) - 6*eNB->frame_parms.N_RB_UL;
@@ -1347,9 +1372,25 @@ void rx_prach(PHY_VARS_eNB *eNB,
             (&rxsigF[0][0]),
             839*2*sizeof(int16_t));
 
-    //en = dB_fixed(signal_energy(&rxsigF[0][k],840));
-    //    if (en>60)
-    //printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
+#if 0
+    /* TODO: resolv this conflict (there should be no printf anyway, so no big deal) */
+<<<<<<< HEAD
+    /*
+    en = dB_fixed(signal_energy(&rxsigF[0][k],840));
+    printf("Receiving PRACH, k %d,n_ra_prb %d, N_RB_UL %d,  en %d\n",k,n_ra_prb,eNB->frame_parms.N_RB_UL,en);
+    if (en>60) {
+      printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
+      write_output("prach_rx0.m","prach_rx0",(int16_t*)&rxsigF[0][k],839,1,1);
+      exit(-1);
+    }
+    */
+=======
+    en = dB_fixed(signal_energy(&rxsigF[0][k],840));
+        /*if (en>60)
+    printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);*/
+
+>>>>>>> origin/fix-if4p5
+#endif
 
   }
   
@@ -1523,7 +1564,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
 
 #ifdef PRACH_DEBUG
 
-      //      if (en>40) {
+      if (en>40) {
 	k = (12*n_ra_prb) - 6*eNB->frame_parms.N_RB_UL;
 	
 	if (k<0)
@@ -1537,7 +1578,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
 	write_output("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
 	write_output("prach_ifft0.m","prach_t0",prach_ifft[0],1024,1,1);
 	exit(-1);
-	//      }
+      }
 #endif
     } // new dft
     
@@ -1551,7 +1592,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
       for (aa=0; aa<nb_ant_rx; aa++) {
 	lev += (int32_t)prach_ifft[aa][(preamble_shift2+i)<<1]*prach_ifft[aa][(preamble_shift2+i)<<1] + (int32_t)prach_ifft[aa][1+((preamble_shift2+i)<<1)]*prach_ifft[aa][1+((preamble_shift2+i)<<1)];
       }
-      
+     
       levdB = dB_fixed_times10(lev);
       
       if (levdB>preamble_energy_list[preamble_index] ) {
@@ -1559,12 +1600,12 @@ void rx_prach(PHY_VARS_eNB *eNB,
 	preamble_delay_list[preamble_index]   = (i*fft_size)>>log2_ifft_size;
       }
     }
-    
 #ifdef PRACH_DEBUG
     LOG_D(PHY,"[RAPROC] Preamble %d => %d dB, %d (shift %d (%d), NCS2 %d(%d), Ncp %d)\n",preamble_index,preamble_energy_list[preamble_index],preamble_delay_list[preamble_index],preamble_shift2,
 	  preamble_shift, NCS2,NCS,Ncp);
-#endif
     //  exit(-1);
+#endif
+
   }// preamble_index
   
   stop_meas(&eNB->rx_prach);

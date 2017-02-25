@@ -41,16 +41,24 @@
 #include <netinet/ether.h>
 #include <unistd.h>
 #include <errno.h>
+#include <linux/sysctl.h>
+#include <sys/sysctl.h>
 
 #include "common_lib.h"
 #include "ethernet_lib.h"
+
+
+int num_devices_eth = 0;
+struct sockaddr_in dest_addr[MAX_INST];
+int dest_addr_len[MAX_INST];
+
 
 int trx_eth_start(openair0_device *device) {
 
   eth_state_t *eth = (eth_state_t*)device->priv;
   
   /* initialize socket */
-  if (eth->flags == ETH_RAW_MODE) {
+  if (eth->flags == ETH_RAW_MODE) {     
     printf("Setting ETHERNET to ETH_RAW_IF5_MODE\n");
     if (eth_socket_init_raw(device)!=0)   return -1;
     /* RRH gets openair0 device configuration - BBU sets openair0 device configuration*/
@@ -60,10 +68,14 @@ int trx_eth_start(openair0_device *device) {
       if(eth_get_dev_conf_raw(device)!=0)  return -1;
     }
     /* adjust MTU wrt number of samples per packet */
-    if(ethernet_tune (device,MTU_SIZE,RAW_PACKET_SIZE_BYTES(device->openair0_cfg->samples_per_packet))!=0)  return -1;
+    if(eth->compression == ALAW_COMPRESS) {
+      if(ethernet_tune (device,MTU_SIZE,RAW_PACKET_SIZE_BYTES_ALAW(device->openair0_cfg->samples_per_packet))!=0)  return -1;
+    } else {
+      if(ethernet_tune (device,MTU_SIZE,RAW_PACKET_SIZE_BYTES(device->openair0_cfg->samples_per_packet))!=0)  return -1;
+    }
     if(ethernet_tune (device,RCV_TIMEOUT,999999)!=0)  return -1;
   } else if (eth->flags == ETH_RAW_IF4p5_MODE) {
-    
+
     printf("Setting ETHERNET to ETH_RAW_IF4p5_MODE\n");
     if (eth_socket_init_raw(device)!=0)   return -1;
     /* RRH gets openair0 device configuration - BBU sets openair0 device configuration*/
@@ -74,16 +86,22 @@ int trx_eth_start(openair0_device *device) {
     }
     /* adjust MTU wrt number of samples per packet */
     if(ethernet_tune (device,MTU_SIZE,RAW_IF4p5_PRACH_SIZE_BYTES)!=0)  return -1;
-    
+
     if(ethernet_tune (device,RCV_TIMEOUT,999999)!=0)  return -1;
   } else if (eth->flags == ETH_UDP_IF4p5_MODE) {
     printf("Setting ETHERNET to UDP_IF4p5_MODE\n");
-    if (eth_socket_init_udp(device)!=0)   return -1;
+    if (eth_socket_init_udp(device)!=0)   return -1; 
     if (device->host_type == BBU_HOST) {
       if(eth_set_dev_conf_udp(device)!=0)  return -1;
     } else {
       if(eth_get_dev_conf_udp(device)!=0)  return -1;
     }
+
+    /* adjust MTU wrt number of samples per packet */
+    /*if(ethernet_tune (device,MTU_SIZE,UDP_IF4p5_PRACH_SIZE_BYTES)!=0)  return -1;
+    
+    if(ethernet_tune (device,RCV_TIMEOUT,999999)!=0)  return -1;*/
+
   } else if (eth->flags == ETH_RAW_IF5_MOBIPASS) {
     printf("Setting ETHERNET to RAW_IF5_MODE\n");
     if (eth_socket_init_raw(device)!=0)   return -1;
@@ -97,12 +115,19 @@ int trx_eth_start(openair0_device *device) {
       if(eth_set_dev_conf_udp(device)!=0)  return -1;
     } else {
       if(eth_get_dev_conf_udp(device)!=0)  return -1;
-      }
+    }
+
+    /* adjust MTU wrt number of samples per packet */
+    if(ethernet_tune (device,MTU_SIZE,UDP_IF4p5_PRACH_SIZE_BYTES)!=0)  return -1;
+    
+    if(ethernet_tune (device,RCV_TIMEOUT,999999)!=0)  return -1;
   }
   /* apply additional configuration */
   if(ethernet_tune (device, SND_BUF_SIZE,2000000000)!=0)  return -1;
   if(ethernet_tune (device, RCV_BUF_SIZE,2000000000)!=0)  return -1;
-  
+  if(ethernet_tune (device, KERNEL_SND_BUF_MAX_SIZE, 200000000)!=0)  return -1;
+  if(ethernet_tune (device, KERNEL_RCV_BUF_MAX_SIZE, 200000000)!=0)  return -1;
+
   return 0;
 }
 
@@ -183,10 +208,12 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
   eth_state_t *eth = (eth_state_t*)device->priv;
   struct timeval timeout;
   struct ifreq ifr;   
-  char system_cmd[256]; 
-  //  char* if_name=DEFAULT_IF;
-  //  struct in_addr ia;
-  //  struct if_nameindex *ids;
+  char system_cmd[256];
+  int rname[] = { CTL_NET, NET_CORE, NET_CORE_RMEM_MAX };
+  int wname[] = { CTL_NET, NET_CORE, NET_CORE_WMEM_MAX };
+  int namelen=3;
+  int newval[1];
+  int newlen=sizeof(newval);
   int ret=0;
   //  int i=0;
   
@@ -309,7 +336,25 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
       perror("[ETHERNET] Can't set ring parameters\n");
     }
     break;
-
+  case KERNEL_RCV_BUF_MAX_SIZE:
+    newval[0] = value;
+    ret=sysctl(rname, namelen, NULL, 0, newval, newlen);
+    if (ret) {
+      fprintf(stderr,"[ETHERNET] Error using sysctl():%s\n",strerror(errno));
+    } else{
+      printf("[ETHERNET] Kernel network receive buffer max size is set to %u\n",newval[0]);
+    }
+    break;
+  case KERNEL_SND_BUF_MAX_SIZE:
+    newval[0] = value;
+    ret=sysctl(wname, namelen, NULL, 0, newval, newlen);
+    if (ret) {
+      fprintf(stderr,"[ETHERNET] Error using sysctl():%s\n",strerror(errno));
+    } else{
+      printf("[ETHERNET] Kernel network send buffer max size is set to %u\n",newval[0]);
+    }
+    break;
+    
   default:
     break;
   }
@@ -336,6 +381,15 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
   } else {
     printf("transport_init: Unknown transport preference %d - default to RAW", eth_params->transp_preference);
     eth->flags = ETH_RAW_MODE;
+  }
+
+  if (eth_params->if_compress == 0) {
+    eth->compression = NO_COMPRESS;
+  } else if (eth_params->if_compress == 1) {
+    eth->compression = ALAW_COMPRESS;
+  } else {
+    printf("transport_init: Unknown compression scheme %d - default to ALAW", eth_params->if_compress);
+    eth->compression = ALAW_COMPRESS;
   }
   
   printf("[ETHERNET]: Initializing openair0_device for %s ...\n", ((device->host_type == BBU_HOST) ? "BBU": "RRH"));

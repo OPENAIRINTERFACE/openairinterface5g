@@ -639,7 +639,7 @@ void ue_compute_srs_occasion(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id
               uint8_t pucch_ack_payload[2];
               if (get_ack(&ue->frame_parms,
                       ue->dlsch[eNB_id][0]->harq_ack,
-                      subframe_tx,pucch_ack_payload) > 0)
+                      subframe_tx,pucch_ack_payload,0) > 0)
               {
                   is_sr_an_subframe = 1;
               }
@@ -737,6 +737,60 @@ void get_cqipmiri_params(PHY_VARS_UE *ue,uint8_t eNB_id)
   }
 }
 
+PUCCH_FMT_t get_pucch_format(lte_frame_type_t frame_type,
+                             lte_prefix_type_t cyclic_prefix_type,
+                             uint8_t SR_payload,
+                             uint8_t nb_cw,
+                             uint8_t cqi_status,
+                             uint8_t ri_status)
+{
+  if((cqi_status == 0) && (ri_status==0))
+  {
+      // PUCCH Format 1 1a 1b
+      // 1- SR only ==> PUCCH format 1
+      // 2- 1bit Ack/Nack with/without SR  ==> PUCCH format 1a
+      // 3- 2bits Ack/Nack with/without SR ==> PUCCH format 1b
+      if(nb_cw == 1)
+      {
+          return pucch_format1a;
+      }
+      if(nb_cw == 2)
+      {
+          return pucch_format1b;
+      }
+      if(SR_payload == 1)
+      {
+          return pucch_format1;
+      }
+  }
+  else
+  {
+      // PUCCH Format 2 2a 2b
+      // 1- CQI only or RI only  ==> PUCCH format 2
+      // 2- CQI or RI + 1bit Ack/Nack for normal CP  ==> PUCCH format 2a
+      // 3- CQI or RI + 2bits Ack/Nack for normal CP ==> PUCCH format 2b
+      // 4- CQI or RI + Ack/Nack for extended CP ==> PUCCH format 2
+      if(nb_cw == 0)
+      {
+          return pucch_format2;
+      }
+      if(cyclic_prefix_type == NORMAL)
+      {
+          if(nb_cw == 1)
+          {
+              return pucch_format2a;
+          }
+          if(nb_cw == 2)
+          {
+              return pucch_format2b;
+          }
+      }
+      else
+      {
+          return pucch_format2;
+      }
+  }
+}
 uint16_t get_n1_pucch(PHY_VARS_UE *ue,
 		      UE_rxtx_proc_t *proc,
                       harq_status_t *harq_ack,
@@ -986,8 +1040,8 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, uint8_t empt
   int subframe_tx = proc->subframe_tx;
   int frame_tx = proc->frame_tx;
   int ulsch_start;
-#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
   int overflow=0;
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
   int k,l;
   int dummy_tx_buffer[3840*4] __attribute__((aligned(16)));
 #endif
@@ -1015,14 +1069,15 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, uint8_t empt
   ulsch_start = (frame_parms->samples_per_tti*subframe_tx)-ue->N_TA_offset; //-ue->timing_advance;
 #endif //else EXMIMO
 
-#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
+//#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
   if (empty_subframe)
   {
 //#if 1
       overflow = ulsch_start - 9*frame_parms->samples_per_tti;
       for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
 
-          memset(&ue->common_vars.txdata[aa][ulsch_start],0,4*cmin(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,ulsch_start+frame_parms->samples_per_tti));
+          memset(&ue->common_vars.txdata[aa][ulsch_start],0,
+                 4*cmin(frame_parms->samples_per_tti-overflow,frame_parms->samples_per_tti));
 
           if (overflow> 0)
               memset(&ue->common_vars.txdata[aa][0],0,4*overflow);
@@ -1043,7 +1098,7 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, uint8_t empt
 #endif*/
       return;
   }
-#endif
+//#endif
 
   if ((frame_tx%100) == 0)
     LOG_D(PHY,"[UE %d] Frame %d, subframe %d: ulsch_start = %d (rxoff %d, HW TA %d, timing advance %d, TA_offset %d\n",
@@ -1381,7 +1436,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
     ack_status = reset_ack(&ue->frame_parms,
 			 ue->dlsch[eNB_id][0]->harq_ack,
 			 subframe_tx,
-			 ue->ulsch[eNB_id]->o_ACK);
+			 ue->ulsch[eNB_id]->o_ACK,0);
     Nbundled = ack_status;
     first_rb = ue->ulsch[eNB_id]->harq_processes[harq_pid]->first_rb;
     nb_rb = ue->ulsch[eNB_id]->harq_processes[harq_pid]->nb_rb;
@@ -1394,7 +1449,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
 
       // check if we received a PDSCH at subframe_tx - 4
       // ==> send ACK/NACK on PUSCH
-      ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK =  ack_status;
+      ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK = 1;
 
 #if T_TRACER
     if(ue->ulsch[eNB_id]->o_ACK[0])
@@ -1411,7 +1466,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
     }
 #endif
 
-      LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating ACK (%d,%d) for %d bits on PUSCH\n",
+      LOG_D(PHY,"[UE  %d][PDSCH %x] AbsSubFrame %d.%d Generating ACK (%d,%d) for %d bits on PUSCH\n",
         Mod_id,
         ue->ulsch[eNB_id]->rnti,
         frame_tx,subframe_tx,
@@ -1421,7 +1476,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
 
 #ifdef DEBUG_PHY_PROC
         LOG_D(PHY,
-              "[UE  %d][PUSCH %d] Frame %d subframe %d Generating PUSCH : first_rb %d, nb_rb %d, round %d, mcs %d, rv %d, cyclic_shift %d (cyclic_shift_common %d,n_DMRS2 %d,n_PRS %d), ACK (%d,%d), O_ACK %d, bundling %d\n",
+              "[UE  %d][PUSCH %d] AbsSubframe %d.%d Generating PUSCH : first_rb %d, nb_rb %d, round %d, mcs %d, rv %d, cyclic_shift %d (cyclic_shift_common %d,n_DMRS2 %d,n_PRS %d), ACK (%d,%d), O_ACK %d, bundling %d\n",
 	  Mod_id,harq_pid,frame_tx,subframe_tx,
 	  first_rb,nb_rb,
 	  ue->ulsch[eNB_id]->harq_processes[harq_pid]->round,
@@ -1684,17 +1739,79 @@ int16_t get_pucch2_ri(PHY_VARS_UE *ue,int eNB_id) {
   return(1);
 }
 
+
+void get_pucch_param(PHY_VARS_UE    *ue,
+                     UE_rxtx_proc_t *proc,
+                     uint8_t        *ack_payload,
+                     PUCCH_FMT_t    format,
+                     uint8_t        eNB_id,
+                     uint8_t        SR,
+                     uint8_t        cqi_report,
+                     uint16_t       *pucch_resource,
+                     uint8_t        *pucch_payload,
+                     uint16_t       *plength)
+{
+
+    switch (format) {
+    case pucch_format1:
+    {
+        pucch_resource[0] = ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex;
+        pucch_payload[0]  = 0; // payload is ignored in case of format1
+        pucch_payload[1]  = 0; // payload is ignored in case of format1
+    }
+    break;
+
+    case pucch_format1a:
+    case pucch_format1b:
+    {
+        pucch_resource[0] = get_n1_pucch(ue,
+                                         proc,
+                                         ue->dlsch[eNB_id][0]->harq_ack,
+                                         eNB_id,
+                                         ack_payload,
+                                         SR);
+        pucch_payload[0]  = ack_payload[0];
+        //pucch_payload[1]  = ack_payload[1];
+        pucch_payload[1]  = 1;
+    }
+    break;
+
+    case pucch_format2:
+    {
+        pucch_resource[0]    = ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PUCCH_ResourceIndex;
+        if(cqi_report)
+        {
+            pucch_payload[0] = get_pucch2_cqi(ue,eNB_id,plength);
+        }
+        else
+        {
+            *plength = 1;
+            pucch_payload[0] = get_pucch2_ri(ue,eNB_id);
+        }
+    }
+    break;
+
+    case pucch_format2a:
+    case pucch_format2b:
+        LOG_E(PHY,"NO Resource available for PUCCH 2a/2b \n");
+    break;
+    }
+}
+
 void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag) {
 
 
-  uint8_t pucch_ack_payload[2];
-  uint8_t n1_pucch,n2_pucch;
+  uint8_t  pucch_ack_payload[2];
+  uint8_t  n1_pucch,n2_pucch;
+  uint16_t pucch_resource;
   ANFBmode_t bundling_flag;
   PUCCH_FMT_t format;
 
-  uint8_t SR_payload;
+  uint8_t  SR_payload;
   uint16_t CQI_payload;
   uint16_t RI_payload;
+  uint8_t  pucch_payload[2];
+  uint16_t len;
 
   LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   int frame_tx=proc->frame_tx;
@@ -1704,6 +1821,11 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   int tx_amp;
   int16_t Po_PUCCH;
   uint8_t ack_status=0;
+  uint8_t ack_status_cw0=0;
+  uint8_t ack_status_cw1=0;
+  uint8_t nb_cw=0;
+  uint8_t cqi_status=0;
+  uint8_t ri_status=0;
   uint8_t ack_sr_generated = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PUCCH,VCD_FUNCTION_IN);
@@ -1741,312 +1863,255 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     LOG_D(PHY,"[UE] PUCCH 1b\n");
   }
   
-  // Check for SR and do ACK/NACK accordingly
-  if (is_SR_TXOp(ue,proc,eNB_id)==1) {
-    LOG_D(PHY,"[UE %d][SR %x] Frame %d subframe %d: got SR_TXOp, Checking for SR for PUSCH from MAC\n",
-	  Mod_id,ue->pdcch_vars[eNB_id]->crnti,frame_tx,subframe_tx);
-    
-    if (ue->mac_enabled==1) {
-      SR_payload = mac_xface->ue_get_SR(Mod_id,
-					CC_id,
-					frame_tx,
-					eNB_id,
-					ue->pdcch_vars[eNB_id]->crnti,
-					subframe_tx); // subframe used for meas gap
-    }
-    else {
-      SR_payload = 1;
-    }
-	    
-    if (SR_payload>0) {
-      ue->generate_ul_signal[eNB_id] = 1;
-      LOG_D(PHY,"[UE %d][SR %x] Frame %d subframe %d got the SR for PUSCH is %d\n",
-	    Mod_id,ue->pdcch_vars[eNB_id]->crnti,frame_tx,subframe_tx,SR_payload);
-    } else {
-      ue->sr[subframe_tx]=0;
-    }
-  } else {
-    SR_payload=0;
+  // Part - I
+  // Collect feedback that should be transmitted at this subframe
+  // - SR
+  // - ACK/NACK
+  // - CQI
+  // - RI
+
+  SR_payload = 0;
+  if (is_SR_TXOp(ue,proc,eNB_id)==1)
+  {
+      if (ue->mac_enabled==1) {
+          SR_payload = mac_xface->ue_get_SR(Mod_id,
+                  CC_id,
+                  frame_tx,
+                  eNB_id,
+                  ue->pdcch_vars[eNB_id]->crnti,
+                  subframe_tx); // subframe used for meas gap
+      }
+      else {
+          SR_payload = 1;
+      }
   }
-        	  
-  ack_status = get_ack(&ue->frame_parms,
-      ue->dlsch[eNB_id][0]->harq_ack,
-      subframe_tx,pucch_ack_payload);
-  if (ack_status > 0) {
-    // we need to transmit ACK/NAK in this subframe
-	    
-    ue->generate_ul_signal[eNB_id] = 1;
-    ack_sr_generated = 1;
 
-    if ((frame_parms->frame_type == TDD) && (SR_payload>0)) {
-      format = pucch_format1b;
-    }
+  ack_status_cw0 = reset_ack(&ue->frame_parms,
+                       ue->dlsch[eNB_id][0]->harq_ack,
+                       subframe_tx,
+                       pucch_ack_payload,
+                       0);
 
-    n1_pucch = get_n1_pucch(ue,
-        proc,
-        ue->dlsch[eNB_id][0]->harq_ack,
-        eNB_id,
-        pucch_ack_payload,
-        SR_payload);
-	    
-    if (ue->mac_enabled == 1) {
-      Po_PUCCH = pucch_power_cntl(ue,proc,subframe_tx,eNB_id,format);
-    } 
-    else {
-      Po_PUCCH = ue->tx_power_max_dBm;
-    }
-    ue->tx_power_dBm[subframe_tx] = Po_PUCCH;
-    ue->tx_total_RE[subframe_tx] = 12;
-	    
+  ack_status_cw1 = reset_ack(&ue->frame_parms,
+                       ue->dlsch[eNB_id][1]->harq_ack,
+                       subframe_tx,
+                       pucch_ack_payload,
+                       1);
+
+  nb_cw = ack_status_cw0 + ack_status_cw1;
+
+  cqi_status = ((ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex>0)&&
+      (is_cqi_TXOp(ue,proc,eNB_id)==1));
+
+  ri_status = ((ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0) &&
+           (is_ri_TXOp(ue,proc,eNB_id)==1));
+
+  // Part - II
+  // if nothing to report ==> exit function
+  if( (nb_cw==0) && (SR_payload==0) && (cqi_status==0) && (ri_status==0))
+  {
+      LOG_D(PHY,"PUCCH No feedback AbsSubframe %d.%d SR_payload %d nb_cw %d pucch_ack_payload[0] %d pucch_ack_payload[1] %d cqi_status %d Return \n",
+            frame_tx%1024, subframe_tx, SR_payload, nb_cw, pucch_ack_payload[0], pucch_ack_payload[1], cqi_status);
+      return;
+  }
+
+  // Part - III
+  // Decide which PUCCH format should be used if needed
+  format = get_pucch_format(frame_parms->frame_type,
+                            frame_parms->Ncp,
+                            SR_payload,
+                            nb_cw,
+                            cqi_status,
+                            ri_status);
+  // Determine PUCCH resources and payload: mandatory for pucch encoding
+  get_pucch_param(ue,
+                  proc,
+                  pucch_ack_payload,
+                  format,
+                  eNB_id,
+                  SR_payload,
+                  cqi_status,
+                  &pucch_resource,
+                  &pucch_payload,
+                  &len);
+
+  LOG_D(PHY,"PUCCH feedback AbsSubframe %d.%d SR %d NbCW %d AckNack %d.%d CQI %d RI %d format %d pucch_resource %d pucch_payload %d %d \n", frame_tx, subframe_tx, SR_payload, nb_cw, pucch_ack_payload[0], pucch_ack_payload[1], cqi_status, ri_status, format, pucch_resource,pucch_payload[0],pucch_payload[1]);
+
+
+  // Part - IV
+  // Generate PUCCH signal
+  ue->generate_ul_signal[eNB_id] = 1;
+
+  switch (format) {
+  case pucch_format1:
+  case pucch_format1a:
+  case pucch_format1b:
+  {
+      if (ue->mac_enabled == 1) {
+          Po_PUCCH = pucch_power_cntl(ue,proc,subframe_tx,eNB_id,format);
+      }
+      else {
+          Po_PUCCH = ue->tx_power_max_dBm;
+      }
+      ue->tx_power_dBm[subframe_tx] = Po_PUCCH;
+      ue->tx_total_RE[subframe_tx] = 12;
+
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
-    tx_amp = get_tx_amp(Po_PUCCH,
-			ue->tx_power_max_dBm,
-			ue->frame_parms.N_RB_UL,
-			1);
+      tx_amp = get_tx_amp(Po_PUCCH,
+              ue->tx_power_max_dBm,
+              ue->frame_parms.N_RB_UL,
+              1);
 #else
-    tx_amp = AMP;
+      tx_amp = AMP;
 #endif
 #if T_TRACER
       T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
-                    T_INT(tx_amp),T_INT(ue->dlsch[eNB_id][0]->g_pucch),T_INT(get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
+              T_INT(tx_amp),T_INT(ue->dlsch[eNB_id][0]->g_pucch),T_INT(get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
 #endif
-    if (SR_payload>0) {
-      LOG_D(PHY,"[UE  %d][SR %x] AbsSubFrame %d.%d Generating PUCCH %s payload %d,%d (with SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d, amp %d\n",
-	    Mod_id,
-	    ue->dlsch[eNB_id][0]->rnti,
-                  frame_tx % 1024, subframe_tx,
-                  (format == pucch_format1a? "1a": (
-                   format == pucch_format1b? "1b" : "??")),               
-	    pucch_ack_payload[0],pucch_ack_payload[1],
-		frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission,
-	    isShortenPucch,    	    
-	    ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex,
-	    Po_PUCCH,
-	    tx_amp);
-    } else {
-      LOG_D(PHY,"[UE  %d][PDSCH %x] AbsSubFrame %d.%d rx_offset_diff: %d, Generating PUCCH %s, an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d, amp %d\n",
-	    Mod_id,
-	    ue->dlsch[eNB_id][0]->rnti,
-	                frame_tx, subframe_tx,ue->rx_offset_diff,
-                  (format == pucch_format1a? "1a": (
-                   format == pucch_format1b? "1b" : "??")),
-		frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission,
-	    isShortenPucch,
-	    n1_pucch,pucch_ack_payload[0],pucch_ack_payload[1],SR_payload,
-	    Po_PUCCH,
-	    tx_amp);
-    }
+      if(format == pucch_format1)
+      {
+          LOG_D(PHY,"[UE  %d][SR %x] AbsSubframe %d.%d Generating PUCCH 1 (SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d\n",
+                  Mod_id,
+                  ue->dlsch[eNB_id][0]->rnti,
+                  frame_tx, subframe_tx,
+                  frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission,
+                  isShortenPucch,
+                  ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex,
+                  Po_PUCCH);
+      }
+      else
+      {
+          if (SR_payload>0) {
+              LOG_D(PHY,"[UE  %d][SR %x] AbsSubFrame %d.%d Generating PUCCH %s payload %d,%d (with SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d, amp %d\n",
+                      Mod_id,
+                      ue->dlsch[eNB_id][0]->rnti,
+                      frame_tx % 1024, subframe_tx,
+                      (format == pucch_format1a? "1a": (
+                              format == pucch_format1b? "1b" : "??")),
+                              pucch_ack_payload[0],pucch_ack_payload[1],
+                              frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission,
+                              isShortenPucch,
+                              pucch_resource,
+                              Po_PUCCH,
+                              tx_amp);
+          } else {
+              LOG_D(PHY,"[UE  %d][PDSCH %x] AbsSubFrame %d.%d rx_offset_diff: %d, Generating PUCCH %s, an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d, amp %d\n",
+                      Mod_id,
+                      ue->dlsch[eNB_id][0]->rnti,
+                      frame_tx%1024, subframe_tx,ue->rx_offset_diff,
+                      (format == pucch_format1a? "1a": (
+                              format == pucch_format1b? "1b" : "??")),
+                              frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission,
+                              isShortenPucch,
+                              pucch_resource,pucch_payload[0],pucch_payload[1],SR_payload,
+                              Po_PUCCH,
+                              tx_amp);
+          }
+      }
 
 #if T_TRACER
-    if(pucch_ack_payload[0])
-    {
-    	LOG_I(PHY,"PUCCH ACK\n");
-        T(T_UE_PHY_DLSCH_UE_ACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(Mod_id), T_INT(ue->dlsch[eNB_id][0]->rnti),
-                      T_INT(ue->dlsch[eNB_id][0]->current_harq_pid));
-    }
-    else
-    {
-    	LOG_I(PHY,"PUCCH NACK\n");
-        T(T_UE_PHY_DLSCH_UE_NACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(Mod_id), T_INT(ue->dlsch[eNB_id][0]->rnti),
-                      T_INT(ue->dlsch[eNB_id][0]->current_harq_pid));
-    }
+      if(pucch_payload[0])
+      {
+          T(T_UE_PHY_DLSCH_UE_ACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(Mod_id), T_INT(ue->dlsch[eNB_id][0]->rnti),
+                  T_INT(ue->dlsch[eNB_id][0]->current_harq_pid));
+      }
+      else
+      {
+          T(T_UE_PHY_DLSCH_UE_NACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(Mod_id), T_INT(ue->dlsch[eNB_id][0]->rnti),
+                  T_INT(ue->dlsch[eNB_id][0]->current_harq_pid));
+      }
 #endif
-	    
-    if (abstraction_flag == 0) {
-	      
-      generate_pucch1x(ue->common_vars.txdataF,
-		       &ue->frame_parms,
-		       ue->ncs_cell,
-		       format,
-		       &ue->pucch_config_dedicated[eNB_id],
-		       n1_pucch,
-		       isShortenPucch,  // shortened format
-		       pucch_ack_payload,
-		       tx_amp,
-		       subframe_tx);
-	      
-    } else {
+
+      if (abstraction_flag == 0) {
+
+          generate_pucch1x(ue->common_vars.txdataF,
+                  &ue->frame_parms,
+                  ue->ncs_cell,
+                  format,
+                  &ue->pucch_config_dedicated[eNB_id],
+                  pucch_resource,
+                  isShortenPucch,  // shortened format
+                  pucch_payload,
+                  tx_amp,
+                  subframe_tx);
+
+      } else {
 #ifdef PHY_ABSTRACTION
-      LOG_D(PHY,"Calling generate_pucch_emul ... (ACK %d %d, SR %d)\n",pucch_ack_payload[0],pucch_ack_payload[1],SR_payload);
-      generate_pucch_emul(ue,
-			  proc,
-			  format,
-			  ue->frame_parms.pucch_config_common.nCS_AN,
-			  pucch_ack_payload,
-			  SR_payload);
+          LOG_D(PHY,"Calling generate_pucch_emul ... (ACK %d %d, SR %d)\n",pucch_ack_payload[0],pucch_ack_payload[1],SR_payload);
+          generate_pucch_emul(ue,
+                  proc,
+                  format,
+                  ue->frame_parms.pucch_config_common.nCS_AN,
+                  pucch_payload,
+                  SR_payload);
 #endif
-    }
-  } else if (SR_payload==1) { // no ACK/NAK but SR is triggered by MAC
+      }
+  }
+  break;
 
-	ack_sr_generated = 1;
-    if (ue->mac_enabled == 1) {
-      Po_PUCCH = pucch_power_cntl(ue,proc,subframe_tx,eNB_id,pucch_format1);
-    }
-    else {
-      Po_PUCCH = ue->tx_power_max_dBm;
-    }
-    ue->tx_power_dBm[subframe_tx] = Po_PUCCH;
-    ue->tx_total_RE[subframe_tx] = 12;
-	    
-#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
-    tx_amp =  get_tx_amp(Po_PUCCH,
-			 ue->tx_power_max_dBm,
-			 ue->frame_parms.N_RB_UL,
-			 1);
-#else
-    tx_amp = AMP;
-#endif
-#if T_TRACER
-    T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
-                  T_INT(tx_amp),T_INT(ue->dlsch[eNB_id][0]->g_pucch),T_INT(get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
-#endif
-    LOG_D(PHY,"[UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 1 (SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d\n",
-	  Mod_id,
-	  ue->dlsch[eNB_id][0]->rnti,
-	  frame_tx, subframe_tx,
-	  frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission,
-	  isShortenPucch,
-	  ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex,
-	  Po_PUCCH);
-	    
-    if (abstraction_flag == 0) {
-	      
-      generate_pucch1x(ue->common_vars.txdataF,
-		       &ue->frame_parms,
-		       ue->ncs_cell,
-		       pucch_format1,
-		       &ue->pucch_config_dedicated[eNB_id],
-		       ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex,
-		       isShortenPucch,  // shortened format
-		       pucch_ack_payload,  // this is ignored anyway, we just need a pointer
-		       tx_amp,
-		       subframe_tx);
-    } else {
-      LOG_D(PHY,"Calling generate_pucch_emul ...\n");
-      generate_pucch_emul(ue,
-			  proc,
-			  pucch_format1,
-			  ue->frame_parms.pucch_config_common.nCS_AN,
-			  pucch_ack_payload,
-			  SR_payload);
 
-    }
-  } // SR_Payload==1
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PUCCH,VCD_FUNCTION_OUT);
-  
-  // PUCCH 2x
-
-  if (ack_sr_generated == 0) { // we have not generated ACK/NAK/SR in this subframe
-
-    n2_pucch = ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PUCCH_ResourceIndex;
-    // only use format2 for now, i.e. now ACK/NAK - CQI multiplexing
-    format = pucch_format2;
-
-    // Periodic CQI report
-    if ((ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex>0)&&
-	(is_cqi_TXOp(ue,proc,eNB_id)==1)){
-
+  case pucch_format2:
+  {
       if (ue->mac_enabled == 1) {
-	Po_PUCCH = pucch_power_cntl(ue,proc,subframe_tx,eNB_id,format);
+          Po_PUCCH = pucch_power_cntl(ue,proc,subframe_tx,eNB_id,format);
       }
       else {
-	Po_PUCCH = ue->tx_power_max_dBm;
+          Po_PUCCH = ue->tx_power_max_dBm;
       }
       ue->tx_power_dBm[subframe_tx] = Po_PUCCH;
       ue->tx_total_RE[subframe_tx] = 12;
-      
+
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
       tx_amp =  get_tx_amp(Po_PUCCH,
-			   ue->tx_power_max_dBm,
-			   ue->frame_parms.N_RB_UL,
-			   1);
+              ue->tx_power_max_dBm,
+              ue->frame_parms.N_RB_UL,
+              1);
 #else
       tx_amp = AMP;
 #endif
 #if T_TRACER
       T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
-                    T_INT(tx_amp),T_INT(ue->dlsch[eNB_id][0]->g_pucch),T_INT(get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
+              T_INT(tx_amp),T_INT(ue->dlsch[eNB_id][0]->g_pucch),T_INT(get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
 #endif
-      
-      int len;
-      // get the payload : < 12 bits, returned in len
-      CQI_payload = get_pucch2_cqi(ue,eNB_id,&len);
-      generate_pucch2x(ue->common_vars.txdataF,
-		       &ue->frame_parms,
-		       ue->ncs_cell,
-		       format,
-		       &ue->pucch_config_dedicated[eNB_id],
-		       n2_pucch,
-		       &CQI_payload,
-		       len,          // A
-		       0,            // B2 not needed
-		       tx_amp,
-		       subframe_tx,
-		       ue->pdcch_vars[eNB_id]->crnti);
 
-      ue->generate_ul_signal[eNB_id] = 1;
-
-      LOG_D(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2 (CQI %d), n2_pucch %d, Po_PUCCH %d, isShortenPucch %d, amp %d\n",
-	    Mod_id,
-	    ue->dlsch[eNB_id][0]->rnti,
-	    frame_tx, subframe_tx,CQI_payload,
-	    n2_pucch,
-	    Po_PUCCH,
-	    isShortenPucch,
-	    tx_amp);
-
-    }
-    // Periodic RI report
-    else if ((ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0) &&
-	     (is_ri_TXOp(ue,proc,eNB_id)==1)){
-
-      if (ue->mac_enabled == 1) {
-	Po_PUCCH = pucch_power_cntl(ue,proc,subframe_tx,eNB_id,format);
-      }
-      else {
-	Po_PUCCH = ue->tx_power_max_dBm;
-      }
-      ue->tx_power_dBm[subframe_tx] = Po_PUCCH;
-      ue->tx_total_RE[subframe_tx] = 12;
-#if T_TRACER
-      T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
-                    T_INT(tx_amp),T_INT(ue->dlsch[eNB_id][0]->g_pucch),T_INT(get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
-#endif
-#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
-      tx_amp =  get_tx_amp(Po_PUCCH,
-			   ue->tx_power_max_dBm,
-			   ue->frame_parms.N_RB_UL,
-			   1);
-#else
-      tx_amp = AMP;
-#endif
-      LOG_D(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2 (RI), n2_pucch %d, Po_PUCCH %d, isShortenPucch %d, amp %d\n",
-	    Mod_id,
-	    ue->dlsch[eNB_id][0]->rnti,
-	    frame_tx, subframe_tx,
-	    n2_pucch,
-	    Po_PUCCH,
-	    isShortenPucch,
-	    tx_amp);
-
-      RI_payload = get_pucch2_ri(ue,eNB_id);
+      LOG_D(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2 (RI or CQI), n2_pucch %d, Po_PUCCH %d, isShortenPucch %d, amp %d\n",
+              Mod_id,
+              ue->dlsch[eNB_id][0]->rnti,
+              frame_tx%1024, subframe_tx,
+              n2_pucch,
+              Po_PUCCH,
+              isShortenPucch,
+              tx_amp);
 
       generate_pucch2x(ue->common_vars.txdataF,
-		       &ue->frame_parms,
-		       ue->ncs_cell,
-		       format,
-		       &ue->pucch_config_dedicated[eNB_id],
-		       n2_pucch,
-		       &RI_payload,
-		       1,            // A
-		       0,            // B2 not needed
-		       tx_amp,
-		       subframe_tx,
-		       ue->pdcch_vars[eNB_id]->crnti);
-      
-      ue->generate_ul_signal[eNB_id] = 1;
-    }
+              &ue->frame_parms,
+              ue->ncs_cell,
+              format,
+              &ue->pucch_config_dedicated[eNB_id],
+              pucch_resource,
+              pucch_payload,
+              len,          // A
+              0,            // B2 not needed
+              tx_amp,
+              subframe_tx,
+              ue->pdcch_vars[eNB_id]->crnti);
+  }
+  break;
+
+  case pucch_format2a:
+      LOG_I(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2a (RI or CQI) Ack/Nack 1bit \n",
+              Mod_id,
+              ue->dlsch[eNB_id][0]->rnti,
+              frame_tx%1024, subframe_tx);
+      break;
+  case pucch_format2b:
+      LOG_I(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2b (RI or CQI) Ack/Nack 2bits\n",
+              Mod_id,
+              ue->dlsch[eNB_id][0]->rnti,
+              frame_tx%1024, subframe_tx);
+      break;
+  default:
+      break;
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PUCCH,VCD_FUNCTION_OUT);
@@ -2186,12 +2251,12 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
   reset_ack(&ue->frame_parms,
              ue->dlsch[eNB_id][0]->harq_ack,
              subframe_tx,
-             ue->ulsch[eNB_id]->o_ACK);
+             ue->ulsch[eNB_id]->o_ACK,0);
 
   reset_ack(&ue->frame_parms,
              ue->dlsch_SI[eNB_id]->harq_ack,
              subframe_tx,
-             ue->ulsch[eNB_id]->o_ACK);
+             ue->ulsch[eNB_id]->o_ACK,0);
 
       
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
@@ -2770,9 +2835,9 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 	(dci_alloc_rx[i].format != format0)) {
       
 
-      LOG_D(PHY,"[UE  %d][DCI][PDSCH %x] frame %d, subframe %d: format %d, num_pdcch_symbols %d, nCCE %d, total CCEs %d\n",
+      LOG_D(PHY,"[UE  %d][DCI][PDSCH %x] AbsSubframe %d.%d: format %d, num_pdcch_symbols %d, nCCE %d, total CCEs %d\n",
 	    ue->Mod_id,dci_alloc_rx[i].rnti,
-	    frame_rx,subframe_rx,
+	    frame_rx%1024,subframe_rx,
 	    dci_alloc_rx[i].format,
 	    ue->pdcch_vars[eNB_id]->num_pdcch_symbols,
 	    ue->pdcch_vars[eNB_id]->nCCE[subframe_rx],
@@ -2801,8 +2866,10 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
           // update TPC for PUCCH
           if((dci_alloc_rx[i].format == format1)   ||
               (dci_alloc_rx[i].format == format1A) ||
+              (dci_alloc_rx[i].format == format1B) ||
               (dci_alloc_rx[i].format == format2)  ||
-              (dci_alloc_rx[i].format == format2A))
+              (dci_alloc_rx[i].format == format2A) ||
+              (dci_alloc_rx[i].format == format2B))
           {
             ue->dlsch[eNB_id][0]->g_pucch += ue->dlsch[eNB_id][0]->harq_processes[ue->dlsch[eNB_id][0]->current_harq_pid]->delta_PUCCH;
           }

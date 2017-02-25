@@ -18,9 +18,9 @@ EURECOM-NAS directory should contain following files:
 
 EURECOM-NAS
 |-- bin
-|   |-- .ue.nvram
-|   |-- .ue_emm.nvram
-|   |-- .usim.nvram
+|   |-- .ue.nvram0
+|   |-- .ue_emm.nvram0
+|   |-- .usim.nvram0
 |   |-- NetworkProcess
 |   |-- UEprocess
 |   `-- UserProcess
@@ -57,10 +57,10 @@ UE for testing purpose.
 When starting up, UEprocess reads configuration data from .nvram binary
 files used as UE's non-volatile memory.
 
-.usim.nvram contains data stored into the USIM
-.ue.nvram contains data related to the UE identification (IMEI,
+.usim.nvram0 contains data stored into the USIM
+.ue.nvram0 contains data related to the UE identification (IMEI,
 manufacturer, model, PIN code)
-.ue_emm.nvram contains data related to EPS Mobility Management (IMSI, last
+.ue_emm.nvram0 contains data related to EPS Mobility Management (IMSI, last
 registered PLMN)
 
 --------------------------------------------------------------------------------

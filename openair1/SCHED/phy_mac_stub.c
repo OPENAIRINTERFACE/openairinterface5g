@@ -455,6 +455,151 @@ void fill_dci(DCI_PDU *DCI_pdu,PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 
         break;
       }
+
+
+    
+
+    DCI_pdu->dci_alloc[1].L          = 2;
+    DCI_pdu->dci_alloc[1].rnti       = 0x1235;
+    DCI_pdu->dci_alloc[1].format     = format0;
+    DCI_pdu->dci_alloc[1].ra_flag    = 0;
+
+    if (eNB->frame_parms.frame_type == FDD) {
+      switch (eNB->frame_parms.N_RB_DL) {
+      case 6:
+	((DCI0_1_5MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->type    = 0;
+	((DCI0_1_5MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->hopping = 0;
+	((DCI0_1_5MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->rballoc = computeRIV(6,1,4);
+	((DCI0_1_5MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->mcs     = eNB->target_ue_ul_mcs;
+	((DCI0_1_5MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->ndi     = proc->frame_tx&1;
+	((DCI0_1_5MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->TPC     = 0;
+	((DCI0_1_5MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cshift  = 0;
+	((DCI0_1_5MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cqi_req = 1;
+	break;
+	/*      case 15:
+	((DCI0_3MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->type    = 0;
+	((DCI0_3MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->hopping = 0;
+	((DCI0_3MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->rballoc = computeRIV(25,2,eNB->ue_ul_nb_rb);
+	((DCI0_3MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->mcs     = eNB->target_ue_ul_mcs;
+	((DCI0_3MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->ndi     = proc->frame_tx&1;
+	((DCI0_3MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->TPC     = 0;
+	((DCI0_3MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cshift  = 0;
+	((DCI0_3MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->dai     = 0;
+	((DCI0_3MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cqi_req = 1;
+	break;*/
+      case 25:
+	((DCI0_5MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->type    = 0;
+	((DCI0_5MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->hopping = 0;
+	((DCI0_5MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->rballoc = computeRIV(25,1,20);
+	printf("rballoc %d\n",((DCI0_5MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->rballoc);
+	((DCI0_5MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->mcs     = eNB->target_ue_ul_mcs;
+	((DCI0_5MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->ndi     = proc->frame_tx&1;
+	((DCI0_5MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->TPC     = 0;
+	((DCI0_5MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cshift  = 0;
+	((DCI0_5MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cqi_req = 1;
+	break;
+      case 50:
+	((DCI0_10MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->type    = 0;
+	((DCI0_10MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->hopping = 0;
+	((DCI0_10MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->rballoc = computeRIV(50,1,48);
+	((DCI0_10MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->mcs     = eNB->target_ue_ul_mcs;
+	((DCI0_10MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->ndi     = proc->frame_tx&1;
+	((DCI0_10MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->TPC     = 0;
+	((DCI0_10MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cshift  = 0;
+	((DCI0_10MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cqi_req = 1;
+	break;
+	/*      case 75:
+	((DCI0_15MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->type    = 0;
+	((DCI0_15MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->hopping = 0;
+	((DCI0_15MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->rballoc = computeRIV(25,2,eNB->ue_ul_nb_rb);
+	((DCI0_15MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->mcs     = eNB->target_ue_ul_mcs;
+	((DCI0_15MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->ndi     = proc->frame_tx&1;
+	((DCI0_15MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->TPC     = 0;
+	((DCI0_15MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cshift  = 0;
+	((DCI0_15MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cqi_req = 1;
+	break;*/
+      case 100:
+	((DCI0_20MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->type    = 0;
+	((DCI0_20MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->hopping = 0;
+	((DCI0_20MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->rballoc = computeRIV(100,1,96);
+	((DCI0_20MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->mcs     = eNB->target_ue_ul_mcs;
+	((DCI0_20MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->ndi     = proc->frame_tx&1;
+	((DCI0_20MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->TPC     = 0;
+	((DCI0_20MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cshift  = 0;
+	((DCI0_20MHz_FDD_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cqi_req = 1;
+	break;
+      }
+    }
+    else {
+      switch (eNB->frame_parms.N_RB_DL==6) {
+      case 6:
+	((DCI0_1_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->type    = 0;
+	((DCI0_1_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->hopping = 0;
+	((DCI0_1_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->rballoc = computeRIV(6,1,5);
+	((DCI0_1_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->mcs     = eNB->target_ue_ul_mcs;
+	((DCI0_1_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->ndi     = proc->frame_tx&1;
+	((DCI0_1_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->TPC     = 0;
+	((DCI0_1_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cshift  = 0;
+	((DCI0_1_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->dai     = 0;
+	((DCI0_1_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cqi_req = 1;
+	break;
+	/*      case 15:
+	((DCI0_3MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->type    = 0;
+	((DCI0_3MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->hopping = 0;
+	((DCI0_3MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->rballoc = computeRIV(25,2,eNB->ue_ul_nb_rb);
+	((DCI0_3MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->mcs     = eNB->target_ue_ul_mcs;
+	((DCI0_3MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->ndi     = proc->frame_tx&1;
+	((DCI0_3MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->TPC     = 0;
+	((DCI0_3MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cshift  = 0;
+	((DCI0_3MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->dai     = 0;
+	((DCI0_3MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cqi_req = 1;
+	break;*/
+      case 25:
+	((DCI0_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->type    = 0;
+	((DCI0_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->hopping = 0;
+	((DCI0_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->rballoc = computeRIV(25,2,20);
+	((DCI0_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->mcs     = eNB->target_ue_ul_mcs;
+	((DCI0_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->ndi     = proc->frame_tx&1;
+	((DCI0_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->TPC     = 0;
+	((DCI0_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cshift  = 0;
+	((DCI0_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->dai     = 0;
+	((DCI0_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cqi_req = 1;
+	break;
+      case 50:
+	((DCI0_10MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->type    = 0;
+	((DCI0_10MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->hopping = 0;
+	((DCI0_10MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->rballoc = computeRIV(50,1,48);
+	((DCI0_10MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->mcs     = eNB->target_ue_ul_mcs;
+	((DCI0_10MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->ndi     = proc->frame_tx&1;
+	((DCI0_10MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->TPC     = 0;
+	((DCI0_10MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cshift  = 0;
+	((DCI0_10MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->dai     = 0;
+	((DCI0_10MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cqi_req = 1;
+	break;
+	/*      case 75:
+	((DCI0_15MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->type    = 0;
+	((DCI0_15MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->hopping = 0;
+	((DCI0_15MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->rballoc = computeRIV(25,2,eNB->ue_ul_nb_rb);
+	((DCI0_15MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->mcs     = eNB->target_ue_ul_mcs;
+	((DCI0_15MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->ndi     = proc->frame_tx&1;
+	((DCI0_15MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->TPC     = 0;
+	((DCI0_15MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cshift  = 0;
+	((DCI0_15MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->dai     = 0;
+	((DCI0_15MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cqi_req = 1;
+	break;*/
+      case 100:
+	((DCI0_20MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->type    = 0;
+	((DCI0_20MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->hopping = 0;
+	((DCI0_20MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->rballoc = computeRIV(100,1,96);
+	((DCI0_20MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->mcs     = eNB->target_ue_ul_mcs;
+	((DCI0_20MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->ndi     = proc->frame_tx&1;
+	((DCI0_20MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->TPC     = 0;
+	((DCI0_20MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cshift  = 0;
+	((DCI0_20MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->dai     = 0;
+	((DCI0_20MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->cqi_req = 1;
+	break;
+      }
+    }
     } else if (transmission_mode==4) {
       DCI_pdu->Num_ue_spec_dci = 1;
       // user 1
@@ -543,32 +688,8 @@ void fill_dci(DCI_PDU *DCI_pdu,PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
       memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
       break;
     */
-    /*
-  case 9:
-    DCI_pdu->Num_ue_spec_dci = 1;
+    
 
-    //user 1
-    if (eNB->frame_parms.frame_type == FDD)
-      DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI0_5MHz_FDD_t ;
-    else
-      DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_1_6_t ;
-
-    DCI_pdu->dci_alloc[0].L          = 2;
-    DCI_pdu->dci_alloc[0].rnti       = 0x1235;
-    DCI_pdu->dci_alloc[0].format     = format0;
-    DCI_pdu->dci_alloc[0].ra_flag    = 0;
-
-    UL_alloc_pdu.type    = 0;
-    UL_alloc_pdu.hopping = 0;
-    UL_alloc_pdu.rballoc = computeRIV(25,2,eNB->ue_ul_nb_rb);
-    UL_alloc_pdu.mcs     = eNB->target_ue_ul_mcs;
-    UL_alloc_pdu.ndi     = proc->frame_tx&1;
-    UL_alloc_pdu.TPC     = 0;
-    UL_alloc_pdu.cshift  = 0;
-    UL_alloc_pdu.dai     = 0;
-    UL_alloc_pdu.cqi_req = 1;
-    memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD_1_6_t));
-    */
     // user 2
     /*
     DCI_pdu->dci_alloc[1].dci_length = sizeof_DCI0_5MHz_TDD_1_6_t ;
@@ -593,11 +714,8 @@ void fill_dci(DCI_PDU *DCI_pdu,PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
     UL_alloc_pdu.dai     = 0;
     UL_alloc_pdu.cqi_req = 1;
     memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD_1_6_t));
-    break;
+ 
     */
-
-    /*default:
-      break;*/
   }
 
   /*

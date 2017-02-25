@@ -78,13 +78,13 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmDeregisteredInitiated(const emm_reg_t *evt)
+int EmmDeregisteredInitiated(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNerror;
 
-  assert(emm_fsm_get_status() == EMM_DEREGISTERED_INITIATED);
+  assert(emm_fsm_get_status(user) == EMM_DEREGISTERED_INITIATED);
 
   switch (evt->primitive) {
 
@@ -94,7 +94,7 @@ int EmmDeregisteredInitiated(const emm_reg_t *evt)
      * bearer contexts have been deactivated as UE initiated
      * detach procedure successfully completed)
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED);
     break;
 
   case _EMMREG_DETACH_FAILED:
@@ -103,9 +103,9 @@ int EmmDeregisteredInitiated(const emm_reg_t *evt)
      * The detach procedure failed
      */
     if (evt->u.detach.type == EMM_DETACH_TYPE_IMSI) {
-      rc = emm_fsm_set_status(EMM_REGISTERED_NORMAL_SERVICE);
+      rc = emm_fsm_set_status(user, EMM_REGISTERED_NORMAL_SERVICE);
     } else {
-      rc = emm_fsm_set_status(EMM_DEREGISTERED);
+      rc = emm_fsm_set_status(user, EMM_DEREGISTERED);
     }
 
     break;
@@ -123,7 +123,8 @@ int EmmDeregisteredInitiated(const emm_reg_t *evt)
      * Lower layer failure or release of the NAS signalling connection
      * before the Detach Accept is received
      */
-    rc = emm_proc_lowerlayer_release();
+    // FIXME review
+    rc = emm_proc_lowerlayer_release(user->lowerlayer_data);
     break;
 
   default:

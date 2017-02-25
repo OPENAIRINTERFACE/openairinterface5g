@@ -171,7 +171,7 @@ install_protobuf_from_source(){
     echo "Downloading protobuf"
     rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
     wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
-    tar -xzvf protobuf-2.6.1.tar.gz
+    tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner 
     cd protobuf-2.6.1/
     ./configure
     echo "Compiling protobuf"
@@ -208,15 +208,19 @@ check_install_usrp_uhd_driver(){
         #The new USRP repository
         $SUDO add-apt-repository ppa:ettusresearch/uhd -y
         $SUDO apt-get update
-        $SUDO apt-get -y install  python python-tk libboost-all-dev libusb-1.0-0-dev
-        $SUDO apt-get -y install libuhd-dev libuhd003 uhd-host
+        $SUDO apt-get -y --allow-unauthenticated install  python python-tk libboost-all-dev libusb-1.0-0-dev
+        $SUDO apt-get -y --allow-unauthenticated install libuhd-dev libuhd003 uhd-host
 }
 
 install_usrp_uhd_driver() {
         # We move uhd-host apart because it depends on linux kernel version
         # On newer kernels, it fails to install
         $SUDO apt-get -y install uhd-host
-        $SUDO uhd_images_downloader 
+        if [ -z $1 ]; then
+          $SUDO uhd_images_downloader
+        else
+          $SUDO uhd_images_downloader -i $1
+        fi
 }
 
 check_install_bladerf_driver(){
@@ -224,9 +228,9 @@ check_install_bladerf_driver(){
 		$SUDO add-apt-repository -y ppa:bladerf/bladerf
 		$SUDO apt-get update
 	fi
-	$SUDO apt-get install -y bladerf libbladerf-dev
-	$SUDO apt-get install -y bladerf-firmware-fx3
-	$SUDO apt-get install -y bladerf-fpga-hostedx40	
+	$SUDO apt-get install -y--allow-unauthenticated  bladerf libbladerf-dev
+	$SUDO apt-get install -y --allow-unauthenticated bladerf-firmware-fx3
+	$SUDO apt-get install -y --allow-unauthenticated bladerf-fpga-hostedx40	
 }
 
 flash_firmware_bladerf() {
@@ -450,19 +454,18 @@ install_asn1c_from_source(){
 ################################################
 
 install_nas_tools() {
-  cd $1
-  if [ ! -f .ue.nvram ]; then
+  if [ ! -f .ue.nvram0 ]; then
     echo_success "generate .ue_emm.nvram .ue.nvram"
-    ./nvram --gen
+    ./nvram --gen -c $1 -o $2
   else
-    [ ./nvram -nt .ue.nvram  -o ./nvram -nt .ue_emm.nvram ] && ./nvram --gen
+    [ ./nvram -nt .ue.nvram0 -o ./nvram -nt .ue_emm.nvram0 ] && ./nvram --gen -c $1 -o $2
   fi
 
-  if [ ! -f .usim.nvram ]; then
+  if [ ! -f .usim.nvram0 ]; then
     echo_success "generate .usim.nvram"
-    ./usim --gen
+    ./usim --gen -c $1 -o $2
   else
-    [ ./usim -nt .usim.nvram ] && ./usim --gen
+    [ ./usim -nt .usim.nvram0 ] && ./usim --gen -c $1 -o $2
   fi
 
 }

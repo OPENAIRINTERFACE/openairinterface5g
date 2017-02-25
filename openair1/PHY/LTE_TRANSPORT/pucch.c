@@ -473,7 +473,7 @@ void generate_pucch2x(int32_t **txdataF,
 		      PUCCH_FMT_t fmt,
 		      PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
 		      uint16_t n2_pucch,
-		      uint16_t *payload,
+		      uint8_t *payload,
 		      int A,
 		      int B2,
 		      int16_t amp,
@@ -573,7 +573,8 @@ void generate_pucch2x(int32_t **txdataF,
       n_cs = (ncs_cell[ns][l]+nprime)%12;
 
       alpha_ind = 0;
-      for (n=0; n<12; n++) {
+      for (n=0; n<12; n++)
+      {
           // this is r_uv^alpha(n)
           ref_re = (int16_t)(((int32_t)alpha_re[alpha_ind] * ul_ref_sigs[u][v][0][n<<1] - (int32_t)alpha_im[alpha_ind] * ul_ref_sigs[u][v][0][1+(n<<1)])>>15);
           ref_im = (int16_t)(((int32_t)alpha_re[alpha_ind] * ul_ref_sigs[u][v][0][1+(n<<1)] + (int32_t)alpha_im[alpha_ind] * ul_ref_sigs[u][v][0][n<<1])>>15);
@@ -584,11 +585,25 @@ void generate_pucch2x(int32_t **txdataF,
               //LOG_I(PHY,"slot %d ofdm# %d ==> d[%d,%d] \n",ns,l,data_ind,n);
           }
           else {
-              ((int16_t *)&zptr[n])[0] = ((int32_t)amp*ref_re>>15);
-              ((int16_t *)&zptr[n])[1] = ((int32_t)amp*ref_im>>15);
-              //LOG_I(PHY,"slot %d ofdm# %d ==> dmrs[%d] \n",ns,l,n);
-          }
-          alpha_ind = (alpha_ind + n_cs)%12;
+              if ((l==1) || ( (l==5) && (fmt==pucch_format2) ))
+              {
+                  ((int16_t *)&zptr[n])[0] = ((int32_t)amp*ref_re>>15);
+                  ((int16_t *)&zptr[n])[1] = ((int32_t)amp*ref_im>>15);
+              }
+              // l == 5 && pucch format 2a
+              else if (fmt==pucch_format2a)
+              {
+                  ((int16_t *)&zptr[n])[0] = ((int32_t)d[20]*ref_re>>15);
+                  ((int16_t *)&zptr[n])[1] = ((int32_t)d[21]*ref_im>>15);
+              }
+              // l == 5 && pucch format 2b
+              else if (fmt==pucch_format2b)
+              {
+                  ((int16_t *)&zptr[n])[0] = ((int32_t)d[20]*ref_re>>15);
+                  ((int16_t *)&zptr[n])[1] = ((int32_t)d[21]*ref_im>>15);
+              }
+          } // l==1 || l==5
+      alpha_ind = (alpha_ind + n_cs)%12;
       } // n
       zptr+=12;
 

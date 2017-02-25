@@ -325,6 +325,7 @@ uint8_t get_reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
                 harq_status_t *harq_ack,
                 unsigned char subframe,
                 unsigned char *o_ACK,
+                uint8_t cw_idx,
                 uint8_t do_reset) // 1 to reset ACK/NACK status : 0 otherwise
 {
   uint8_t status=0;
@@ -337,7 +338,7 @@ uint8_t get_reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
     else
       subframe_dl0 = subframe - 4;
 
-    o_ACK[0] = harq_ack[subframe_dl0].ack;
+    o_ACK[cw_idx] = harq_ack[subframe_dl0].ack;
     status = harq_ack[subframe_dl0].send_harq_status;
 
     if(do_reset)
@@ -484,17 +485,19 @@ uint8_t get_reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
 uint8_t get_ack(LTE_DL_FRAME_PARMS *frame_parms,
                 harq_status_t *harq_ack,
                 unsigned char subframe,
-                unsigned char *o_ACK)
+                unsigned char *o_ACK,
+                uint8_t cw_idx)
 {
-  return get_reset_ack(frame_parms, harq_ack, subframe, o_ACK, 0);
+  return get_reset_ack(frame_parms, harq_ack, subframe, o_ACK, cw_idx, 0);
 }
 
 uint8_t reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
                 harq_status_t *harq_ack,
                 unsigned char subframe,
-                unsigned char *o_ACK)
+                unsigned char *o_ACK,
+                uint8_t cw_idx)
 {
-  return get_reset_ack(frame_parms, harq_ack, subframe, o_ACK, 1);
+  return get_reset_ack(frame_parms, harq_ack, subframe, o_ACK, cw_idx, 1);
 }
 
 

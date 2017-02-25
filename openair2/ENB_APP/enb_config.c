@@ -208,6 +208,7 @@
 #define ENB_CONFIG_STRING_RRH_GW_IQ_TXSHIFT               "iq_txshift"
 #define ENB_CONFIG_STRING_RRH_GW_TX_SAMPLE_ADVANCE        "tx_sample_advance"
 #define ENB_CONFIG_STRING_RRH_GW_TX_SCHEDULING_ADVANCE    "tx_scheduling_advance"
+#define ENB_CONFIG_STRING_RRH_GW_IF_COMPRESSION           "if_compression"
 
 #define ENB_CONFIG_STRING_ASN1_VERBOSITY                   "Asn1_verbosity"
 #define ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE              "none"
@@ -338,6 +339,7 @@ void enb_config_display(void)
 	} else {
 	  printf( "\tRF target  :           \tNONE:\n");
 	}
+    printf( "\tif_compression :         \t%s Compression:\n",(enb_properties.properties[i]->rrh_gw_config[j].if_compress == 1)? "ALAW" : "None");
       }
     }
 
@@ -657,6 +659,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
   char*             ipv6                          = NULL;
   char*             active                        = NULL;
   char*             preference                    = NULL;
+  char*             if_compression                = NULL;
 
   char*             tr_preference                 = NULL;
   char*             rf_preference                 = NULL;
@@ -2327,81 +2330,91 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
 	  // RRH Config 
 	  setting_rrh_gws = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_RRH_GW_CONFIG);
 	  if ( setting_rrh_gws != NULL) {
-          num_rrh_gw     = config_setting_length(setting_rrh_gws);
-          enb_properties.properties[enb_properties_index]->nb_rrh_gw = 0;
+	    num_rrh_gw     = config_setting_length(setting_rrh_gws);
+	    enb_properties.properties[enb_properties_index]->nb_rrh_gw = 0;
 
-          for (j = 0; j < num_rrh_gw; j++) {
-            setting_rrh_gw = config_setting_get_elem(setting_rrh_gws, j);
-
-            if (  !(
-                   config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_LOCAL_IF_NAME, (const char **)&if_name)
-		   && config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_LOCAL_ADDRESS, (const char **)&ipv4)
-                   && config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_REMOTE_ADDRESS , (const char **)&ipv4_remote)
-                   && config_setting_lookup_int(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_LOCAL_PORT, &local_port)
-                   && config_setting_lookup_int(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_REMOTE_PORT, &remote_port)
-                   && config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_ACTIVE, (const char **)&active)
-		   && config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_TRANSPORT_PREFERENCE, (const char **)&tr_preference)
-		   && config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_RF_TARGET_PREFERENCE, (const char **)&rf_preference)
-		   && config_setting_lookup_int(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_IQ_TXSHIFT, &iq_txshift) 
-		   && config_setting_lookup_int(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_TX_SAMPLE_ADVANCE, &tx_sample_advance)
-		   && config_setting_lookup_int(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_TX_SCHEDULING_ADVANCE, &tx_scheduling_advance)
-                 )
-              ) {
-              AssertFatal (0,
-                           "Failed to parse eNB configuration file %s, %u th enb %u the RRH GW address !\n",
-                           lib_config_file_name_pP, i, j);
-              continue; // FIXME will prevent segfaults below, not sure what happens at function exit...
-            }
-
-            enb_properties.properties[enb_properties_index]->nb_rrh_gw += 1;
-
-            enb_properties.properties[enb_properties_index]->rrh_gw_config[j].rrh_gw_if_name = strdup(if_name);
-            enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_address  = strdup(ipv4);
-            enb_properties.properties[enb_properties_index]->rrh_gw_config[j].remote_address = strdup(ipv4_remote);
-	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_port = local_port;
-	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].remote_port = remote_port;
-	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].iq_txshift = iq_txshift;
-	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].tx_sample_advance = tx_sample_advance;
-	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].tx_scheduling_advance= tx_scheduling_advance;
-
-            if (strcmp(active, "yes") == 0) {
-              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].active = 1;
-            } 
-
-            if (strcmp(tr_preference, "udp") == 0) {
-              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].udp = 1;
-            } else if (strcmp(tr_preference, "raw") == 0) {
-              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].raw = 1;
-            } else if (strcmp(tr_preference, "udp_if4p5") == 0) {
-              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].udpif4p5 = 1; 
-            } else if (strcmp(tr_preference, "raw_if4p5") == 0) {
-              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].rawif4p5 = 1;
-            } else if (strcmp(tr_preference, "raw_if5_mobipass") == 0) {
-              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].rawif5_mobipass = 1;
-            } else {//if (strcmp(preference, "no") == 0) 
-              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].udp = 1;
-	      enb_properties.properties[enb_properties_index]->rrh_gw_config[j].raw = 1;
-            }
-
-	    if (strcmp(rf_preference, "exmimo") == 0) {
-              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].exmimo = 1;
-            } else if (strcmp(rf_preference, "usrp_b200") == 0) {
-              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].usrp_b200 = 1;
-	    } else if (strcmp(rf_preference, "usrp_x300") == 0) {
-              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].usrp_x300 = 1;
-            } else if (strcmp(rf_preference, "bladerf") == 0) {
-              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].bladerf = 1;
-	    } else if (strcmp(rf_preference, "bladerf") == 0) {
-              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].lmssdr = 1;	      
-            } else {//if (strcmp(preference, "no") == 0) 
-              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].exmimo = 1;
-              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].usrp_b200 = 1;
-              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].usrp_x300 = 1;
-              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].bladerf = 1;    
-              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].lmssdr = 1;    
-
-            }
-          }
+	    for (j = 0; j < num_rrh_gw; j++) {
+	      setting_rrh_gw = config_setting_get_elem(setting_rrh_gws, j);
+	      
+	      if (  !(
+		      config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_LOCAL_IF_NAME, (const char **)&if_name)
+		      && config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_LOCAL_ADDRESS, (const char **)&ipv4)
+		      && config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_REMOTE_ADDRESS , (const char **)&ipv4_remote)
+		      && config_setting_lookup_int(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_LOCAL_PORT, &local_port)
+		      && config_setting_lookup_int(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_REMOTE_PORT, &remote_port)
+		      && config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_ACTIVE, (const char **)&active)
+		      && config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_TRANSPORT_PREFERENCE, (const char **)&tr_preference)
+		      && config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_RF_TARGET_PREFERENCE, (const char **)&rf_preference)
+		      && config_setting_lookup_int(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_IQ_TXSHIFT, &iq_txshift) 
+		      && config_setting_lookup_int(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_TX_SAMPLE_ADVANCE, &tx_sample_advance)
+		      && config_setting_lookup_int(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_TX_SCHEDULING_ADVANCE, &tx_scheduling_advance)
+		      && config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_IF_COMPRESSION, (const char **)&if_compression)
+		      )
+		    ) {
+		AssertFatal (0,
+			     "Failed to parse eNB configuration file %s, %u th enb %u the RRH GW address !\n",
+			     lib_config_file_name_pP, i, j);
+		continue; // FIXME will prevent segfaults below, not sure what happens at function exit...
+	      }
+	      
+	      enb_properties.properties[enb_properties_index]->nb_rrh_gw += 1;
+	      
+	      enb_properties.properties[enb_properties_index]->rrh_gw_config[j].rrh_gw_if_name = strdup(if_name);
+	      enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_address  = strdup(ipv4);
+	      enb_properties.properties[enb_properties_index]->rrh_gw_config[j].remote_address = strdup(ipv4_remote);
+	      enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_port = local_port;
+	      enb_properties.properties[enb_properties_index]->rrh_gw_config[j].remote_port = remote_port;
+	      enb_properties.properties[enb_properties_index]->rrh_gw_config[j].iq_txshift = iq_txshift;
+	      enb_properties.properties[enb_properties_index]->rrh_gw_config[j].tx_sample_advance = tx_sample_advance;
+	      enb_properties.properties[enb_properties_index]->rrh_gw_config[j].tx_scheduling_advance= tx_scheduling_advance;
+	      
+	      if (strcmp(active, "yes") == 0) {
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].active = 1;
+	      } 
+	      
+	      if (strcmp(tr_preference, "udp") == 0) {
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].udp = 1;
+	      } else if (strcmp(tr_preference, "raw") == 0) {
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].raw = 1;
+	      } else if (strcmp(tr_preference, "udp_if4p5") == 0) {
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].udpif4p5 = 1; 
+	      } else if (strcmp(tr_preference, "raw_if4p5") == 0) {
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].rawif4p5 = 1;
+	      } else if (strcmp(tr_preference, "raw_if5_mobipass") == 0) {
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].rawif5_mobipass = 1;
+	      } else {//if (strcmp(preference, "no") == 0) 
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].udp = 1;
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].raw = 1;
+	      }
+	      
+	      if (strcmp(rf_preference, "exmimo") == 0) {
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].exmimo = 1;
+	      } else if (strcmp(rf_preference, "usrp_b200") == 0) {
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].usrp_b200 = 1;
+	      } else if (strcmp(rf_preference, "usrp_x300") == 0) {
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].usrp_x300 = 1;
+	      } else if (strcmp(rf_preference, "bladerf") == 0) {
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].bladerf = 1;
+	      } else if (strcmp(rf_preference, "lmsdr") == 0) {
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].lmssdr = 1;	      
+	      } else {//if (strcmp(preference, "no") == 0) 
+	      
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].exmimo = 1;
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].usrp_b200 = 1;
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].usrp_x300 = 1;
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].bladerf = 1;    
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].lmssdr = 1;    
+		
+	      }
+	      
+	      if (strcmp(if_compression, "alaw") == 0) {
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].if_compress = 1;
+	      } else if (strcmp(if_compression, "none") == 0) {
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].if_compress = 0;
+	      } else { 
+		enb_properties.properties[enb_properties_index]->rrh_gw_config[j].if_compress = 0;
+	      }
+	    } 
 	  } else {
 	    enb_properties.properties[enb_properties_index]->nb_rrh_gw = 0;	    
             enb_properties.properties[enb_properties_index]->rrh_gw_config[j].rrh_gw_if_name = "none";
@@ -2420,8 +2433,9 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
 	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].usrp_x300 = 0;
 	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].bladerf = 0;
 	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].lmssdr = 0;
+            enb_properties.properties[enb_properties_index]->rrh_gw_config[j].if_compress = 0;
 	  }
-
+	  
           // SCTP SETTING
           enb_properties.properties[enb_properties_index]->sctp_out_streams = SCTP_OUT_STREAMS;
           enb_properties.properties[enb_properties_index]->sctp_in_streams  = SCTP_IN_STREAMS;

@@ -46,6 +46,7 @@
 #include "nas_user.h"
 #include "nas_network.h"
 #include "nas_parser.h"
+#include "user_defs.h"
 
 #include <stdlib.h> // exit
 #include <poll.h>   // poll
@@ -69,9 +70,12 @@ static void *_nas_network_mngr(void *);
 static int _nas_set_signal_handler(int signal, void (handler)(int));
 static void _nas_signal_handler(int signal);
 
-static void _nas_clean(int usr_fd, int net_fd);
+static void _nas_clean(user_api_id_t *user_api_id, int net_fd);
 
 uint8_t usim_test = 0;
+// FIXME user must be set up with right itti message instance
+// FIXME allocate user and initialize its fields
+nas_user_t *user = NULL;
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
@@ -80,6 +84,8 @@ uint8_t usim_test = 0;
 /****************************************************************************/
 int main(int argc, const char *argv[])
 {
+  // FIXME allocate and put it in user
+  user_api_id_t *user_api_id = NULL;
   /*
    * Get the command line options
    */
@@ -108,19 +114,19 @@ int main(int argc, const char *argv[])
   /*
    * Initialize the User interface
    */
-  if (user_api_initialize (uhost, uport, devpath, devparams) != RETURNok) {
+  if (user_api_initialize (user_api_id, uhost, uport, devpath, devparams) != RETURNok) {
     LOG_TRACE (ERROR, "UE-MAIN   - user_api_initialize() failed");
     exit (EXIT_FAILURE);
   }
 
-  int user_fd = user_api_get_fd ();
+  int user_fd = user_api_get_fd (user_api_id);
 
   /*
    * Initialize the Network interface
    */
   if (network_api_initialize (nhost, nport) != RETURNok) {
     LOG_TRACE (ERROR, "UE-MAIN   - network_api_initialize() failed");
-    user_api_close (user_fd);
+    user_api_close (user_api_id);
     exit (EXIT_FAILURE);
   }
 
@@ -129,7 +135,7 @@ int main(int argc, const char *argv[])
   /*
    * Initialize the NAS contexts
    */
-  nas_user_initialize (&user_api_emm_callback, &user_api_esm_callback,
+  nas_user_initialize (user, &user_api_emm_callback, &user_api_esm_callback,
                        FIRMWARE_VERSION);
   nas_network_initialize ();
 
@@ -157,7 +163,7 @@ int main(int argc, const char *argv[])
   if (pthread_create (&user_mngr, &attr, _nas_user_mngr, &user_fd) != 0) {
     LOG_TRACE (ERROR, "UE-MAIN   - "
                "Failed to create the user management thread");
-    user_api_close (user_fd);
+    user_api_close (user_api_id);
     network_api_close (network_fd);
     exit (EXIT_FAILURE);
   }
@@ -171,7 +177,7 @@ int main(int argc, const char *argv[])
                       &network_fd) != 0) {
     LOG_TRACE (ERROR, "UE-MAIN   - "
                "Failed to create the network management thread");
-    user_api_close (user_fd);
+    user_api_close (user_api_id);
     network_api_close (network_fd);
     exit (EXIT_FAILURE);
   }
@@ -184,12 +190,12 @@ int main(int argc, const char *argv[])
    */
   while ((user_fd != -1) && (network_fd != -1)) {
     poll (NULL, 0, NAS_SLEEP_TIMEOUT);
-    user_fd = user_api_get_fd ();
+    user_fd = user_api_get_fd (user_api_id);
     network_fd = network_api_get_fd ();
   }
 
   /* Termination cleanup */
-  _nas_clean (user_fd, network_fd);
+  _nas_clean (user_api_id, network_fd);
 
   LOG_TRACE
   (WARNING, "UE-MAIN   - NAS main process exited");
@@ -218,6 +224,7 @@ static void *_nas_user_mngr(void *args)
 {
   LOG_FUNC_IN;
 
+  pthread_setname_np( pthread_self(), "nas_user_mngr");
   int exit_loop = FALSE;
 
   int *fd = (int *) args;
@@ -226,11 +233,11 @@ static void *_nas_user_mngr(void *args)
 
   /* User receiving loop */
   while (!exit_loop) {
-    exit_loop = nas_user_receive_and_process(fd, NULL);
+    exit_loop = nas_user_receive_and_process(user, NULL);
   }
 
   /* Close the connection to the user application layer */
-  user_api_close (*fd);
+  user_api_close (user->user_api_id);
   LOG_TRACE (WARNING, "UE-MAIN   - "
              "The user connection endpoint manager exited");
 
@@ -291,7 +298,7 @@ static void *_nas_network_mngr(void *args)
     }
 
     /* Process the network data message */
-    ret_code = nas_network_process_data (network_message_id,
+    ret_code = nas_network_process_data (user, network_message_id,
                                          network_api_get_data ());
 
     if (ret_code != RETURNok) {
@@ -379,7 +386,8 @@ static void _nas_signal_handler(int signal)
   LOG_FUNC_IN;
 
   LOG_TRACE (WARNING, "UE-MAIN   - Signal %d received", signal);
-  _nas_clean (user_api_get_fd (), network_api_get_fd ());
+  // FIXME acces to global
+  _nas_clean (user->user_api_id, network_api_get_fd ());
   exit (EXIT_SUCCESS);
 
   LOG_FUNC_OUT
@@ -400,17 +408,19 @@ static void _nas_signal_handler(int signal)
  **          Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static void _nas_clean(int usr_fd, int net_fd)
+static void _nas_clean(user_api_id_t *user_api_id, int net_fd)
 {
   LOG_FUNC_IN;
 
   LOG_TRACE (INFO, "UE-MAIN   - Perform EMM and ESM cleanup");
-  nas_network_cleanup ();
+  // FIXME nas_network_cleanup depends on nas_user_t
+  // Why this program should interfere like that with oaisim ?
+  //nas_network_cleanup ();
 
   LOG_TRACE (INFO, "UE-MAIN   - "
              "Closing user connection %d and network connection %d",
-             usr_fd, net_fd);
-  user_api_close (usr_fd);
+             user_api_get_fd (user_api_id), net_fd);
+  user_api_close (user_api_id);
   network_api_close (net_fd);
 
   LOG_FUNC_OUT

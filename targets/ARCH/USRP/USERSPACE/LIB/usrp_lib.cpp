@@ -40,10 +40,12 @@
 #include <time.h>
 #include "UTIL/LOG/log_extern.h"
 #include "common_lib.h"
+#include "assertions.h"
+
 #ifdef __SSE4_1__
 #  include <smmintrin.h>
 #endif
- 
+
 #ifdef __AVX2__
 #  include <immintrin.h>
 #endif
@@ -56,180 +58,133 @@
  * @{
  */
 
-/*! \brief USRP Configuration */ 
-typedef struct
-{
+/*! \brief USRP Configuration */
+typedef struct {
 
-  // --------------------------------
-  // variables for USRP configuration
-  // --------------------------------
-  //! USRP device pointer
-  uhd::usrp::multi_usrp::sptr usrp;
-  //uhd::usrp::multi_usrp::sptr rx_usrp;
-  
-  //create a send streamer and a receive streamer
-  //! USRP TX Stream
-  uhd::tx_streamer::sptr tx_stream;
-  //! USRP RX Stream
-  uhd::rx_streamer::sptr rx_stream;
+    // --------------------------------
+    // variables for USRP configuration
+    // --------------------------------
+    //! USRP device pointer
+    uhd::usrp::multi_usrp::sptr usrp;
 
-  //! USRP TX Metadata
-  uhd::tx_metadata_t tx_md;
-  //! USRP RX Metadata
-  uhd::rx_metadata_t rx_md;
+    //create a send streamer and a receive streamer
+    //! USRP TX Stream
+    uhd::tx_streamer::sptr tx_stream;
+    //! USRP RX Stream
+    uhd::rx_streamer::sptr rx_stream;
 
-  //! USRP Timestamp Information
-  uhd::time_spec_t tm_spec;
+    //! USRP TX Metadata
+    uhd::tx_metadata_t tx_md;
+    //! USRP RX Metadata
+    uhd::rx_metadata_t rx_md;
 
-  //setup variables and allocate buffer
-  //! USRP Metadata
-  uhd::async_metadata_t async_md;
+    //! Sampling rate
+    double sample_rate;
 
-  //! Sampling rate
-  double sample_rate;
+    //! TX forward samples. We use usrp_time_offset to get this value
+    int tx_forward_nsamps; //166 for 20Mhz
 
-  //! time offset between transmiter timestamp and receiver timestamp;
-  double tdiff;
-
-  //! TX forward samples. We use usrp_time_offset to get this value
-  int tx_forward_nsamps; //166 for 20Mhz
-
-
-  // --------------------------------
-  // Debug and output control
-  // --------------------------------
-  //! Number of underflows
-  int num_underflows;
-  //! Number of overflows
-  int num_overflows;
-  
-  //! Number of sequential errors
-  int num_seq_errors;
-  //! tx count
-  int64_t tx_count;
-  //! rx count
-  int64_t rx_count;
-  //! timestamp of RX packet
-  openair0_timestamp rx_timestamp;
+    // --------------------------------
+    // Debug and output control
+    // --------------------------------
+    int num_underflows;
+    int num_overflows;
+    int num_seq_errors;
+    int64_t tx_count;
+    int64_t rx_count;
+    //! timestamp of RX packet
+    openair0_timestamp rx_timestamp;
 
 } usrp_state_t;
+
+
 
 /*! \brief Called to start the USRP transceiver. Return 0 if OK, < 0 if error
     @param device pointer to the device structure specific to the RF hardware target
 */
-static int trx_usrp_start(openair0_device *device)
-{
-  usrp_state_t *s = (usrp_state_t*)device->priv;
+static int trx_usrp_start(openair0_device *device) {
 
-  // init recv and send streaming
-  uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-  cmd.time_spec = s->usrp->get_time_now() + uhd::time_spec_t(0.05);
-  cmd.stream_now = false; // start at constant delay
-  s->rx_stream->issue_stream_cmd(cmd);
+    usrp_state_t *s = (usrp_state_t*)device->priv;
 
-  s->tx_md.time_spec = cmd.time_spec + uhd::time_spec_t(1-(double)s->tx_forward_nsamps/s->sample_rate);
-  s->tx_md.has_time_spec = true;
-  s->tx_md.start_of_burst = true;
-  s->tx_md.end_of_burst = false;
+    // init recv and send streaming
+    uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+    cmd.time_spec = s->usrp->get_time_now() + uhd::time_spec_t(0.05);
+    cmd.stream_now = false; // start at constant delay
+    s->rx_stream->issue_stream_cmd(cmd);
 
+    s->tx_md.time_spec = cmd.time_spec + uhd::time_spec_t(1-(double)s->tx_forward_nsamps/s->sample_rate);
+    s->tx_md.has_time_spec = true;
+    s->tx_md.start_of_burst = true;
+    s->tx_md.end_of_burst = false;
 
-  s->rx_count = 0;
-  s->tx_count = 0;
-  s->rx_timestamp = 0;
-
-  return 0;
+    s->rx_count = 0;
+    s->tx_count = 0;
+    s->rx_timestamp = 0;
+    return 0;
 }
-/*! \brief Terminate operation of the USRP transceiver -- free all associated resources 
+/*! \brief Terminate operation of the USRP transceiver -- free all associated resources
  * \param device the hardware to use
  */
-static void trx_usrp_end(openair0_device *device)
-{
-  usrp_state_t *s = (usrp_state_t*)device->priv;
+static void trx_usrp_end(openair0_device *device) {
+    usrp_state_t *s = (usrp_state_t*)device->priv;
 
-  s->rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
+    s->rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
+    //send a mini EOB packet
+    s->tx_md.end_of_burst = true;
+    s->tx_stream->send("", 0, s->tx_md);
+    s->tx_md.end_of_burst = false;
 
-  //send a mini EOB packet
-  s->tx_md.end_of_burst = true;
-  s->tx_stream->send("", 0, s->tx_md);
-  s->tx_md.end_of_burst = false;
-  
 }
 
 /*! \brief Called to send samples to the USRP RF target
       @param device pointer to the device structure specific to the RF hardware target
-      @param timestamp The timestamp at whicch the first sample MUST be sent 
+      @param timestamp The timestamp at whicch the first sample MUST be sent
       @param buff Buffer which holds the samples
       @param nsamps number of samples to be sent
       @param antenna_id index of the antenna if the device has multiple anteannas
       @param flags flags must be set to TRUE if timestamp parameter needs to be applied
-*/ 
-static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags)
-{
-   static long long int loop=0;
-   static long time_min=0, time_max=0, time_avg=0;
-   struct timespec tp_start, tp_end;
-   long time_diff;
-   clock_gettime(CLOCK_MONOTONIC_RAW, &tp_start);
+*/
+static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
+    int ret=0;
+    usrp_state_t *s = (usrp_state_t*)device->priv;
 
-  int ret=0, ret_i=0;
-  usrp_state_t *s = (usrp_state_t*)device->priv;
+    s->tx_md.time_spec = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
+    s->tx_md.has_time_spec = flags;
 
-  s->tx_md.time_spec = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
 
-  
-  if(flags>0)
-    s->tx_md.has_time_spec = true;
-  else
-    s->tx_md.has_time_spec = false;
+    if(flags>0)
+        s->tx_md.has_time_spec = true;
+    else
+        s->tx_md.has_time_spec = false;
 
-  if (flags == 2) { // start of burst
-    s->tx_md.start_of_burst = true;
-    s->tx_md.end_of_burst = false;
-  }
-  else if (flags == 3) { // end of burst
-    s->tx_md.start_of_burst = false;
-    s->tx_md.end_of_burst = true;
-  }
-  else if (flags == 4) { // start and end
-    s->tx_md.start_of_burst = true;
-    s->tx_md.end_of_burst = true;
-  }
-  else if (flags==1) { // middle of burst
-    s->tx_md.start_of_burst = false;
-    s->tx_md.end_of_burst = false;
-  }
-  
-  if (cc>1) {
-    std::vector<void *> buff_ptrs;
-    for (int i=0;i<cc;i++) buff_ptrs.push_back(buff[i]);
-    ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md,1e-3);
-  }
-  else
-    ret = (int)s->tx_stream->send(buff[0], nsamps, s->tx_md,1e-3);
+    if (flags == 2) { // start of burst
+        s->tx_md.start_of_burst = true;
+        s->tx_md.end_of_burst = false;
+    } else if (flags == 3) { // end of burst
+        s->tx_md.start_of_burst = false;
+        s->tx_md.end_of_burst = true;
+    } else if (flags == 4) { // start and end
+        s->tx_md.start_of_burst = true;
+        s->tx_md.end_of_burst = true;
+    } else if (flags==1) { // middle of burst
+        s->tx_md.start_of_burst = false;
+        s->tx_md.end_of_burst = false;
+    }
+
+    if (cc>1) {
+        std::vector<void *> buff_ptrs;
+        for (int i=0; i<cc; i++)
+            buff_ptrs.push_back(buff[i]);
+        ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md,1e-3);
+    } else
+        ret = (int)s->tx_stream->send(buff[0], nsamps, s->tx_md,1e-3);
 
 
 
-  if (ret != nsamps) {
-    printf("[xmit] tx samples %d != %d\n",ret,nsamps);
-  }
+    if (ret != nsamps)
+        LOG_E(PHY,"[xmit] tx samples %d != %d\n",ret,nsamps);
 
-  clock_gettime(CLOCK_MONOTONIC_RAW, &tp_end);
-  time_diff = (tp_end.tv_sec - tp_start.tv_sec) *1E09  + (tp_end.tv_nsec - tp_start.tv_nsec);
-  if  (time_min==0 ||loop==1 || time_min > time_diff)
-    time_min=time_diff;
-  if  (time_max==0 ||loop==1 || time_max < time_diff)
-    time_max=time_diff;
-  if (time_avg ==0 ||loop==1)
-    time_avg= time_diff;
-  else
-    time_avg=(time_diff+time_avg) /2.0;
-
-  /*   //prints statics of uhd every 10 seconds
-   if ( loop % (10 * ((int)device->openair0_cfg[0].sample_rate /(int)nsamps )) ==0)
-     LOG_I(HW,"usrp_write: min(ns)=%d, max(ns)=%d, avg(ns)=%d\n", (int)time_min, (int)time_max,(int)time_avg);
-  */
-   loop++;
-  return ret;
+    return ret;
 }
 
 /*! \brief Receive samples from hardware.
@@ -243,621 +198,535 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
  * \param antenna_id Index of antenna for which to receive samples
  * \returns the number of sample read
 */
-static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc)
-{
-   static long long int loop=0;
-   static long time_min=0, time_max=0, time_avg=0;
-   struct timespec tp_start, tp_end;
-   long time_diff;
-   clock_gettime(CLOCK_MONOTONIC_RAW, &tp_start);
-   usrp_state_t *s = (usrp_state_t*)device->priv;
-   int samples_received=0,i,j;
-   int nsamps2;  // aligned to upper 32 or 16 byte boundary
+static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
+    usrp_state_t *s = (usrp_state_t*)device->priv;
+    int samples_received=0,i,j;
+    int nsamps2;  // aligned to upper 32 or 16 byte boundary
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
-   nsamps2 = (nsamps+7)>>3;
-   __m256i buff_tmp[2][nsamps2];
+    nsamps2 = (nsamps+7)>>3;
+    __m256i buff_tmp[2][nsamps2];
 #else
-   nsamps2 = (nsamps+3)>>2;
-   __m128i buff_tmp[2][nsamps2];
+    nsamps2 = (nsamps+3)>>2;
+    __m128i buff_tmp[2][nsamps2];
 #endif
 #elif defined(__arm__)
-   nsamps2 = (nsamps+3)>>2;
-   int16x8_t buff_tmp[2][nsamps2];
+    nsamps2 = (nsamps+3)>>2;
+    int16x8_t buff_tmp[2][nsamps2];
 #endif
 
-
-  if (device->type == USRP_B200_DEV) {  
-    if (cc>1) {
-    // receive multiple channels (e.g. RF A and RF B)
-      std::vector<void *> buff_ptrs;
- 
-      for (int i=0;i<cc;i++) buff_ptrs.push_back(buff_tmp[i]);
-      samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
-    } else {
-    // receive a single channel (e.g. from connector RF A)
-      samples_received = s->rx_stream->recv(buff_tmp[0], nsamps, s->rx_md);
-    }
-
-  // bring RX data into 12 LSBs for softmodem RX
-    for (int i=0;i<cc;i++) {
-      for (int j=0; j<nsamps2; j++) {      
+    if (device->type == USRP_B200_DEV) {
+        if (cc>1) {
+            // receive multiple channels (e.g. RF A and RF B)
+            std::vector<void *> buff_ptrs;
+            for (int i=0; i<cc; i++) buff_ptrs.push_back(buff_tmp[i]);
+            samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
+        } else {
+            // receive a single channel (e.g. from connector RF A)
+            samples_received=0;
+            while (samples_received != nsamps) {
+                samples_received += s->rx_stream->recv(buff_tmp[0]+samples_received,
+                                                       nsamps-samples_received, s->rx_md);
+                if (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE)
+                    break;
+            }
+        }
+        // bring RX data into 12 LSBs for softmodem RX
+        for (int i=0; i<cc; i++) {
+            for (int j=0; j<nsamps2; j++) {
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
-        ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],4);
+                ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],4);
 #else
-        ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],4);
+                ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],4);
 #endif
 #elif defined(__arm__)
-        ((int16x8_t*)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],4);
+                ((int16x8_t*)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],4);
 #endif
-      }
+            }
+        }
+    } else if (device->type == USRP_X300_DEV) {
+        if (cc>1) {
+            // receive multiple channels (e.g. RF A and RF B)
+            std::vector<void *> buff_ptrs;
+
+            for (int i=0; i<cc; i++) buff_ptrs.push_back(buff[i]);
+            samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
+        } else {
+            // receive a single channel (e.g. from connector RF A)
+            samples_received = s->rx_stream->recv(buff[0], nsamps, s->rx_md);
+        }
     }
-  } else if (device->type == USRP_X300_DEV) {
-    if (cc>1) { 
-    // receive multiple channels (e.g. RF A and RF B)
-      std::vector<void *> buff_ptrs;
- 
-      for (int i=0;i<cc;i++) buff_ptrs.push_back(buff[i]);
-      samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
-    } else {
-    // receive a single channel (e.g. from connector RF A)
-      samples_received = s->rx_stream->recv(buff[0], nsamps, s->rx_md);
-    }
-  }
+    if (samples_received < nsamps)
+        LOG_E(PHY,"[recv] received %d samples out of %d\n",samples_received,nsamps);
 
-  if (samples_received < nsamps) {
-    printf("[recv] received %d samples out of %d\n",samples_received,nsamps);
-    
-  }
+    if ( s->rx_md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE)
+        LOG_E(PHY,s->rx_md.to_pp_string(true).c_str());
 
-  //handle the error code
-  switch(s->rx_md.error_code){
-  case uhd::rx_metadata_t::ERROR_CODE_NONE:
-    break;
-  case uhd::rx_metadata_t::ERROR_CODE_OVERFLOW:
-    printf("[recv] USRP RX OVERFLOW!\n");
-    s->num_overflows++;
-    break;
-  case uhd::rx_metadata_t::ERROR_CODE_TIMEOUT:
-    printf("[recv] USRP RX TIMEOUT!\n");
-    break;
-  default:
-    printf("[recv] Unexpected error on RX, Error code: 0x%x\n",s->rx_md.error_code);
-    break;
-  }
-  s->rx_count += nsamps;
-  s->rx_timestamp = s->rx_md.time_spec.to_ticks(s->sample_rate);
-  *ptimestamp = s->rx_timestamp;
-
-  clock_gettime(CLOCK_MONOTONIC_RAW, &tp_end);
-  time_diff = (tp_end.tv_sec - tp_start.tv_sec) *1E09  + (tp_end.tv_nsec - tp_start.tv_nsec);
-  if  (time_min==0 ||loop==1 || time_min > time_diff)
-    time_min=time_diff;
-  if  (time_max==0 ||loop==1 || time_max < time_diff)
-    time_max=time_diff;
-  if (time_avg ==0 ||loop==1)
-    time_avg= time_diff;
-  else
-    time_avg=(time_diff+time_avg) /2.0;
-  /*
-  //prints statics of uhd every 10 seconds
-  if ( loop % (10 * ((int)device->openair0_cfg[0].sample_rate /(int)nsamps )) ==0)
-     LOG_I(HW,"usrp_read: min(ns)=%d, max(ns)=%d, avg(ns)=%d\n", (int)time_min, (int)time_max,(int)time_avg);
-
-     loop++;*/
-  return samples_received;
+    s->rx_count += nsamps;
+    s->rx_timestamp = s->rx_md.time_spec.to_ticks(s->sample_rate);
+    *ptimestamp = s->rx_timestamp;
+    return samples_received;
 }
-
-/*! \brief Get current timestamp of USRP
- * \param device the hardware to use
-*/
-openair0_timestamp get_usrp_time(openair0_device *device) 
-{
- 
-  usrp_state_t *s = (usrp_state_t*)device->priv;
-  
-  return s->usrp->get_time_now().to_ticks(s->sample_rate);
-} 
 
 /*! \brief Compares two variables within precision
  * \param a first variable
  * \param b second variable
 */
-static bool is_equal(double a, double b)
-{
-  return std::fabs(a-b) < std::numeric_limits<double>::epsilon();
+static bool is_equal(double a, double b) {
+    return std::fabs(a-b) < std::numeric_limits<double>::epsilon();
 }
 
 void *freq_thread(void *arg) {
-  
-  openair0_device *device=(openair0_device *)arg;
-  usrp_state_t *s = (usrp_state_t*)device->priv;
-  
-  s->usrp->set_tx_freq(device->openair0_cfg[0].tx_freq[0]);
-  s->usrp->set_rx_freq(device->openair0_cfg[0].rx_freq[0]);
+
+    openair0_device *device=(openair0_device *)arg;
+    usrp_state_t *s = (usrp_state_t*)device->priv;
+
+    s->usrp->set_tx_freq(device->openair0_cfg[0].tx_freq[0]);
+    s->usrp->set_rx_freq(device->openair0_cfg[0].rx_freq[0]);
 }
 /*! \brief Set frequencies (TX/RX). Spawns a thread to handle the frequency change to not block the calling thread
  * \param device the hardware to use
  * \param openair0_cfg RF frontend parameters set by application
  * \param dummy dummy variable not used
- * \returns 0 in success 
+ * \returns 0 in success
  */
 int trx_usrp_set_freq(openair0_device* device, openair0_config_t *openair0_cfg, int dont_block) {
 
-  usrp_state_t *s = (usrp_state_t*)device->priv;
-  pthread_t f_thread;
+    usrp_state_t *s = (usrp_state_t*)device->priv;
+    pthread_t f_thread;
 
-  printf("Setting USRP TX Freq %f, RX Freq %f\n",openair0_cfg[0].tx_freq[0],openair0_cfg[0].rx_freq[0]);
+    printf("Setting USRP TX Freq %f, RX Freq %f\n",openair0_cfg[0].tx_freq[0],openair0_cfg[0].rx_freq[0]);
 
-  // spawn a thread to handle the frequency change to not block the calling thread
-  if (dont_block == 1)
-    pthread_create(&f_thread,NULL,freq_thread,(void*)device);
-  else {
-    s->usrp->set_tx_freq(device->openair0_cfg[0].tx_freq[0]);
-    s->usrp->set_rx_freq(device->openair0_cfg[0].rx_freq[0]);
-  }
+    // spawn a thread to handle the frequency change to not block the calling thread
+    if (dont_block == 1)
+        pthread_create(&f_thread,NULL,freq_thread,(void*)device);
+    else {
+        s->usrp->set_tx_freq(device->openair0_cfg[0].tx_freq[0]);
+        s->usrp->set_rx_freq(device->openair0_cfg[0].rx_freq[0]);
+    }
 
-  return(0);
-  
+    return(0);
+
 }
 
-/*! \brief Set RX frequencies 
+/*! \brief Set RX frequencies
  * \param device the hardware to use
  * \param openair0_cfg RF frontend parameters set by application
- * \returns 0 in success 
+ * \returns 0 in success
  */
 int openair0_set_rx_frequencies(openair0_device* device, openair0_config_t *openair0_cfg) {
 
-  usrp_state_t *s = (usrp_state_t*)device->priv;
-  static int first_call=1;
-  static double rf_freq,diff;
+    usrp_state_t *s = (usrp_state_t*)device->priv;
+    static int first_call=1;
+    static double rf_freq,diff;
 
-  uhd::tune_request_t rx_tune_req(openair0_cfg[0].rx_freq[0]);
+    uhd::tune_request_t rx_tune_req(openair0_cfg[0].rx_freq[0]);
 
-  rx_tune_req.rf_freq_policy = uhd::tune_request_t::POLICY_MANUAL;
-  rx_tune_req.rf_freq = openair0_cfg[0].rx_freq[0];
-  rf_freq=openair0_cfg[0].rx_freq[0];
-  s->usrp->set_rx_freq(rx_tune_req);
+    rx_tune_req.rf_freq_policy = uhd::tune_request_t::POLICY_MANUAL;
+    rx_tune_req.rf_freq = openair0_cfg[0].rx_freq[0];
+    rf_freq=openair0_cfg[0].rx_freq[0];
+    s->usrp->set_rx_freq(rx_tune_req);
 
-  return(0);
-  
+    return(0);
+
 }
 
 /*! \brief Set Gains (TX/RX)
  * \param device the hardware to use
  * \param openair0_cfg RF frontend parameters set by application
- * \returns 0 in success 
+ * \returns 0 in success
  */
-int trx_usrp_set_gains(openair0_device* device, 
-		       openair0_config_t *openair0_cfg) {
+int trx_usrp_set_gains(openair0_device* device,
+                       openair0_config_t *openair0_cfg) {
 
-  usrp_state_t *s = (usrp_state_t*)device->priv;
+    usrp_state_t *s = (usrp_state_t*)device->priv;
 
-  s->usrp->set_tx_gain(openair0_cfg[0].tx_gain[0]);
-  ::uhd::gain_range_t gain_range = s->usrp->get_rx_gain_range(0);
-  // limit to maximum gain
-  if (openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0] > gain_range.stop()) {
-    
-    printf("RX Gain 0 too high, reduce by %f dB\n",
-	   openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0] - gain_range.stop());	   
-    exit(-1);
-  }
-  s->usrp->set_rx_gain(openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0]);
-  printf("Setting USRP RX gain to %f (rx_gain %f,gain_range.stop() %f)\n", openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0],openair0_cfg[0].rx_gain[0],gain_range.stop());
+    s->usrp->set_tx_gain(openair0_cfg[0].tx_gain[0]);
+    ::uhd::gain_range_t gain_range = s->usrp->get_rx_gain_range(0);
+    // limit to maximum gain
+    if (openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0] > gain_range.stop()) {
+        LOG_E(PHY,"RX Gain 0 too high, reduce by %f dB\n",
+              openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0] - gain_range.stop());
+        exit(-1);
+    }
+    s->usrp->set_rx_gain(openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0]);
+    LOG_I(PHY,"Setting USRP RX gain to %f (rx_gain %f,gain_range.stop() %f)\n",
+          openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0],
+          openair0_cfg[0].rx_gain[0],gain_range.stop());
 
-  return(0);
+    return(0);
 }
 
 /*! \brief Stop USRP
  * \param card refers to the hardware index to use
  */
 int trx_usrp_stop(openair0_device* device) {
-  return(0);
+    return(0);
 }
 
 /*! \brief USRPB210 RX calibration table */
 rx_gain_calib_table_t calib_table_b210[] = {
-  {3500000000.0,44.0},
-  {2660000000.0,49.0},
-  {2300000000.0,50.0},
-  {1880000000.0,53.0},
-  {816000000.0,58.0},
-  {-1,0}};
+    {3500000000.0,44.0},
+    {2660000000.0,49.0},
+    {2300000000.0,50.0},
+    {1880000000.0,53.0},
+    {816000000.0,58.0},
+    {-1,0}
+};
 
 /*! \brief USRPB210 RX calibration table */
 rx_gain_calib_table_t calib_table_b210_38[] = {
-  {3500000000.0,44.0},
-  {2660000000.0,49.8},
-  {2300000000.0,51.0},
-  {1880000000.0,53.0},
-  {816000000.0,57.0},
-  {-1,0}};
+    {3500000000.0,44.0},
+    {2660000000.0,49.8},
+    {2300000000.0,51.0},
+    {1880000000.0,53.0},
+    {816000000.0,57.0},
+    {-1,0}
+};
 
 /*! \brief USRPx310 RX calibration table */
 rx_gain_calib_table_t calib_table_x310[] = {
-  {3500000000.0,77.0},
-  {2660000000.0,81.0},
-  {2300000000.0,81.0},
-  {1880000000.0,82.0},
-  {816000000.0,85.0},
-  {-1,0}};
+    {3500000000.0,77.0},
+    {2660000000.0,81.0},
+    {2300000000.0,81.0},
+    {1880000000.0,82.0},
+    {816000000.0,85.0},
+    {-1,0}
+};
 
-/*! \brief Set RX gain offset 
+/*! \brief Set RX gain offset
  * \param openair0_cfg RF frontend parameters set by application
  * \param chain_index RF chain to apply settings to
- * \returns 0 in success 
+ * \returns 0 in success
  */
 void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index,int bw_gain_adjust) {
 
-  int i=0;
-  // loop through calibration table to find best adjustment factor for RX frequency
-  double min_diff = 6e9,diff,gain_adj=0.0;
-  if (bw_gain_adjust==1) {
-    switch ((int)openair0_cfg[0].sample_rate) {
-    case 30720000:      
-      break;
-    case 23040000:
-      gain_adj=1.25;
-      break;
-    case 15360000:
-      gain_adj=3.0;
-      break;
-    case 7680000:
-      gain_adj=6.0;
-      break;
-    case 3840000:
-      gain_adj=9.0;
-      break;
-    case 1920000:
-      gain_adj=12.0;
-      break;
-    default:
-      printf("unknown sampling rate %d\n",(int)openair0_cfg[0].sample_rate);
-      exit(-1);
-      break;
+    int i=0;
+    // loop through calibration table to find best adjustment factor for RX frequency
+    double min_diff = 6e9,diff,gain_adj=0.0;
+    if (bw_gain_adjust==1) {
+        switch ((int)openair0_cfg[0].sample_rate) {
+        case 30720000:
+            break;
+        case 23040000:
+            gain_adj=1.25;
+            break;
+        case 15360000:
+            gain_adj=3.0;
+            break;
+        case 7680000:
+            gain_adj=6.0;
+            break;
+        case 3840000:
+            gain_adj=9.0;
+            break;
+        case 1920000:
+            gain_adj=12.0;
+            break;
+        default:
+            LOG_E(PHY,"unknown sampling rate %d\n",(int)openair0_cfg[0].sample_rate);
+            exit(-1);
+            break;
+        }
     }
-  }
-  while (openair0_cfg->rx_gain_calib_table[i].freq>0) {
-    diff = fabs(openair0_cfg->rx_freq[chain_index] - openair0_cfg->rx_gain_calib_table[i].freq);
-    printf("cal %d: freq %f, offset %f, diff %f\n",
-	   i,
-	   openair0_cfg->rx_gain_calib_table[i].freq,
-	   openair0_cfg->rx_gain_calib_table[i].offset,diff);
-    if (min_diff > diff) {
-      min_diff = diff;
-      openair0_cfg->rx_gain_offset[chain_index] = openair0_cfg->rx_gain_calib_table[i].offset+gain_adj;
+    while (openair0_cfg->rx_gain_calib_table[i].freq>0) {
+        diff = fabs(openair0_cfg->rx_freq[chain_index] - openair0_cfg->rx_gain_calib_table[i].freq);
+        LOG_I(PHY,"cal %d: freq %f, offset %f, diff %f\n",
+              i,
+              openair0_cfg->rx_gain_calib_table[i].freq,
+              openair0_cfg->rx_gain_calib_table[i].offset,diff);
+        if (min_diff > diff) {
+            min_diff = diff;
+            openair0_cfg->rx_gain_offset[chain_index] = openair0_cfg->rx_gain_calib_table[i].offset+gain_adj;
+        }
+        i++;
     }
-    i++;
-  }
-  
 }
 
-/*! \brief print the USRP statistics  
+/*! \brief print the USRP statistics
 * \param device the hardware to use
 * \returns  0 on success
 */
 int trx_usrp_get_stats(openair0_device* device) {
-
-  return(0);
-
+    return(0);
 }
 
-/*! \brief Reset the USRP statistics  
-* \param device the hardware to use
-* \returns  0 on success
-*/
+/*! \brief Reset the USRP statistics
+ * \param device the hardware to use
+ * \returns  0 on success
+ */
 int trx_usrp_reset_stats(openair0_device* device) {
-
-  return(0);
-
+    return(0);
 }
-
-
 
 extern "C" {
-/*! \brief Initialize Openair USRP target. It returns 0 if OK
-* \param device the hardware to use
-* \param openair0_cfg RF frontend parameters set by application
-*/
-  int device_init(openair0_device* device, openair0_config_t *openair0_cfg) {
-    
-    uhd::set_thread_priority_safe(1.0);
-    usrp_state_t *s = (usrp_state_t*)malloc(sizeof(usrp_state_t));
-    memset(s, 0, sizeof(usrp_state_t));
-    
-    // Initialize USRP device
+    /*! \brief Initialize Openair USRP target. It returns 0 if OK
+    * \param device the hardware to use
+         * \param openair0_cfg RF frontend parameters set by application
+         */
+    int device_init(openair0_device* device, openair0_config_t *openair0_cfg) {
+        uhd::set_thread_priority_safe(1.0);
+        usrp_state_t *s = (usrp_state_t*)calloc(sizeof(usrp_state_t),1);
+        // Initialize USRP device
+        device->openair0_cfg = openair0_cfg;
 
-  device->openair0_cfg = openair0_cfg;
+        std::string args = "type=b200";
+        uhd::device_addrs_t device_adds = uhd::device::find(args);
 
-  std::string args = "type=b200";
+        int vers=0,subvers=0,subsubvers=0;
+        int bw_gain_adjust=0;
 
+        sscanf(uhd::get_version_string().c_str(),"%d.%d.%d",&vers,&subvers,&subsubvers);
+        LOG_I(PHY,"Checking for USRPs : UHD %s (%d.%d.%d)\n",
+              uhd::get_version_string().c_str(),vers,subvers,subsubvers);
 
-  uhd::device_addrs_t device_adds = uhd::device::find(args);
-  size_t i;
-  
-  int vers=0,subvers=0,subsubvers=0;
-  int bw_gain_adjust=0;
+        if(device_adds.size() == 0)  {
+            double usrp_master_clock = 184.32e6;
+            std::string args = "type=x300";
 
-  sscanf(uhd::get_version_string().c_str(),"%d.%d.%d",&vers,&subvers,&subsubvers);
+            // workaround for an api problem, master clock has to be set with the constructor not via set_master_clock_rate
+            args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
 
-  printf("Checking for USRPs : UHD %s (%d.%d.%d)\n",uhd::get_version_string().c_str(),vers,subvers,subsubvers);
-  
-  if(device_adds.size() == 0)
-  {
-    double usrp_master_clock = 184.32e6;
-
-    std::string args = "type=x300";
-    
-    // workaround for an api problem, master clock has to be set with the constructor not via set_master_clock_rate
-    args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
-    
 //    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=4096, recv_frame_size=4096";
-    
-    uhd::device_addrs_t device_adds = uhd::device::find(args);
 
-    if(device_adds.size() == 0)
-    {
-      std::cerr<<"No USRP Device Found. " << std::endl;
-      free(s);
-      return -1;
+            //    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=4096, recv_frame_size=4096";
+            uhd::device_addrs_t device_adds = uhd::device::find(args);
 
-    }
+            if(device_adds.size() == 0) {
+                std::cerr<<"No USRP Device Found. " << std::endl;
+                free(s);
+                return -1;
+            }
+            LOG_I(PHY,"Found USRP X300\n");
+            s->usrp = uhd::usrp::multi_usrp::make(args);
+            // lock mboard clocks
+            if (openair0_cfg[0].clock_source == internal)
+                s->usrp->set_clock_source("internal");
+            else
+                s->usrp->set_clock_source("external");
 
+            //Setting device type to USRP X300/X310
+            device->type=USRP_X300_DEV;
 
-    printf("Found USRP X300\n");
-    s->usrp = uhd::usrp::multi_usrp::make(args);
-    //  s->usrp->set_rx_subdev_spec(rx_subdev);
-    //  s->usrp->set_tx_subdev_spec(tx_subdev);
+            // this is not working yet, master clock has to be set via constructor
+            // set master clock rate and sample rate for tx & rx for streaming
+            //s->usrp->set_master_clock_rate(usrp_master_clock);
 
-    // lock mboard clocks
-    if (openair0_cfg[0].clock_source == internal)
-      s->usrp->set_clock_source("internal");
-    else
-      s->usrp->set_clock_source("external");
-    
-    //Setting device type to USRP X300/X310 
-    device->type=USRP_X300_DEV;
+            openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
 
-    // this is not working yet, master clock has to be set via constructor
-    // set master clock rate and sample rate for tx & rx for streaming
-    //s->usrp->set_master_clock_rate(usrp_master_clock);
+            switch ((int)openair0_cfg[0].sample_rate) {
+            case 30720000:
+                // from usrp_time_offset
+                //openair0_cfg[0].samples_per_packet    = 2048;
+                openair0_cfg[0].tx_sample_advance     = 15;
+                openair0_cfg[0].tx_bw                 = 20e6;
+                openair0_cfg[0].rx_bw                 = 20e6;
+                break;
+            case 15360000:
+                //openair0_cfg[0].samples_per_packet    = 2048;
+                openair0_cfg[0].tx_sample_advance     = 45;
+                openair0_cfg[0].tx_bw                 = 10e6;
+                openair0_cfg[0].rx_bw                 = 10e6;
+                break;
+            case 7680000:
+                //openair0_cfg[0].samples_per_packet    = 2048;
+                openair0_cfg[0].tx_sample_advance     = 50;
+                openair0_cfg[0].tx_bw                 = 5e6;
+                openair0_cfg[0].rx_bw                 = 5e6;
+                break;
+            case 1920000:
+                //openair0_cfg[0].samples_per_packet    = 2048;
+                openair0_cfg[0].tx_sample_advance     = 50;
+                openair0_cfg[0].tx_bw                 = 1.25e6;
+                openair0_cfg[0].rx_bw                 = 1.25e6;
+                break;
+            default:
+                LOG_E(PHY,"Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
+                exit(-1);
+                break;
+            }
 
-    openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
-    
-    switch ((int)openair0_cfg[0].sample_rate) {
-    case 30720000:
-            // from usrp_time_offset
-      //openair0_cfg[0].samples_per_packet    = 2048;
-      openair0_cfg[0].tx_sample_advance     = 15;
-      openair0_cfg[0].tx_bw                 = 20e6;
-      openair0_cfg[0].rx_bw                 = 20e6;
-      break;
-    case 15360000:
-      //openair0_cfg[0].samples_per_packet    = 2048;
-      openair0_cfg[0].tx_sample_advance     = 45;
-      openair0_cfg[0].tx_bw                 = 10e6;
-      openair0_cfg[0].rx_bw                 = 10e6;
-      break;
-    case 7680000:
-      //openair0_cfg[0].samples_per_packet    = 2048;
-      openair0_cfg[0].tx_sample_advance     = 50;
-      openair0_cfg[0].tx_bw                 = 5e6;
-      openair0_cfg[0].rx_bw                 = 5e6;
-      break;
-    case 1920000:
-      //openair0_cfg[0].samples_per_packet    = 2048;
-      openair0_cfg[0].tx_sample_advance     = 50;
-      openair0_cfg[0].tx_bw                 = 1.25e6;
-      openair0_cfg[0].rx_bw                 = 1.25e6;
-      break;
-    default:
-      printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
-      exit(-1);
-      break;
-    }
+        } else {
+            LOG_I(PHY,"Found USRP B200\n");
+            args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=15360, recv_frame_size=15360" ;
+            s->usrp = uhd::usrp::multi_usrp::make(args);
 
-  } else {
-    printf("Found USRP B200");
-    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=15360, recv_frame_size=15360" ; 
-    s->usrp = uhd::usrp::multi_usrp::make(args);
+            //  s->usrp->set_rx_subdev_spec(rx_subdev);
+            //  s->usrp->set_tx_subdev_spec(tx_subdev);
 
-    //  s->usrp->set_rx_subdev_spec(rx_subdev);
-    //  s->usrp->set_tx_subdev_spec(tx_subdev);
-    
-    // do not explicitly set the clock to "internal", because this will disable the gpsdo
-    //    // lock mboard clocks
-    //    s->usrp->set_clock_source("internal");
-    // set master clock rate and sample rate for tx & rx for streaming
+            // do not explicitly set the clock to "internal", because this will disable the gpsdo
+            //    // lock mboard clocks
+            //    s->usrp->set_clock_source("internal");
+            // set master clock rate and sample rate for tx & rx for streaming
 
-    // lock mboard clocks
-    if (openair0_cfg[0].clock_source == internal)
-      s->usrp->set_clock_source("internal");
-    else
-      s->usrp->set_clock_source("external");
+            // lock mboard clocks
+            if (openair0_cfg[0].clock_source == internal)
+                s->usrp->set_clock_source("internal");
+            else
+                s->usrp->set_clock_source("external");
 
-    device->type = USRP_B200_DEV;
+            device->type = USRP_B200_DEV;
+            if ((vers == 3) && (subvers == 9) && (subsubvers>=2)) {
+                openair0_cfg[0].rx_gain_calib_table = calib_table_b210;
+                bw_gain_adjust=0;
+            } else {
+                openair0_cfg[0].rx_gain_calib_table = calib_table_b210_38;
+                bw_gain_adjust=1;
+            }
 
+            switch ((int)openair0_cfg[0].sample_rate) {
+            case 30720000:
+                s->usrp->set_master_clock_rate(30.72e6);
+                //openair0_cfg[0].samples_per_packet    = 1024;
+                openair0_cfg[0].tx_sample_advance     = 115;
+                openair0_cfg[0].tx_bw                 = 20e6;
+                openair0_cfg[0].rx_bw                 = 20e6;
+                break;
+            case 23040000:
+                s->usrp->set_master_clock_rate(23.04e6); //to be checked
+                //openair0_cfg[0].samples_per_packet    = 1024;
+                openair0_cfg[0].tx_sample_advance     = 113;
+                openair0_cfg[0].tx_bw                 = 20e6;
+                openair0_cfg[0].rx_bw                 = 20e6;
+                break;
+            case 15360000:
+                s->usrp->set_master_clock_rate(30.72e06);
+                //openair0_cfg[0].samples_per_packet    = 1024;
+                openair0_cfg[0].tx_sample_advance     = 103;
+                openair0_cfg[0].tx_bw                 = 20e6;
+                openair0_cfg[0].rx_bw                 = 20e6;
+                break;
+            case 7680000:
+                s->usrp->set_master_clock_rate(30.72e6);
+                //openair0_cfg[0].samples_per_packet    = 1024;
+                openair0_cfg[0].tx_sample_advance     = 80;
+                openair0_cfg[0].tx_bw                 = 20e6;
+                openair0_cfg[0].rx_bw                 = 20e6;
+                break;
+            case 1920000:
+                s->usrp->set_master_clock_rate(30.72e6);
+                //openair0_cfg[0].samples_per_packet    = 1024;
+                openair0_cfg[0].tx_sample_advance     = 40;
+                openair0_cfg[0].tx_bw                 = 20e6;
+                openair0_cfg[0].rx_bw                 = 20e6;
+                break;
+            default:
+                LOG_E(PHY,"Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
+                exit(-1);
+                break;
+            }
+        }
 
-    if ((vers == 3) && (subvers == 9) && (subsubvers>=2)) {
-      openair0_cfg[0].rx_gain_calib_table = calib_table_b210;
-      bw_gain_adjust=0;
-    }
-    else {
-      openair0_cfg[0].rx_gain_calib_table = calib_table_b210_38;
-      bw_gain_adjust=1;
-    }
+        /* device specific */
+        //openair0_cfg[0].txlaunch_wait = 1;//manage when TX processing is triggered
+        //openair0_cfg[0].txlaunch_wait_slotcount = 1; //manage when TX processing is triggered
+        openair0_cfg[0].iq_txshift = 4;//shift
+        openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
 
-    switch ((int)openair0_cfg[0].sample_rate) {
-    case 30720000:
-      s->usrp->set_master_clock_rate(30.72e6);
-      //openair0_cfg[0].samples_per_packet    = 1024;
-      openair0_cfg[0].tx_sample_advance     = 115;
-      openair0_cfg[0].tx_bw                 = 20e6;
-      openair0_cfg[0].rx_bw                 = 20e6;
-      break;
-    case 23040000:
-      s->usrp->set_master_clock_rate(23.04e6); //to be checked
-      //openair0_cfg[0].samples_per_packet    = 1024;
-      openair0_cfg[0].tx_sample_advance     = 113;
-      openair0_cfg[0].tx_bw                 = 20e6;
-      openair0_cfg[0].rx_bw                 = 20e6;
-      break;
-    case 15360000:
-      s->usrp->set_master_clock_rate(30.72e06);
-      //openair0_cfg[0].samples_per_packet    = 1024;
-      openair0_cfg[0].tx_sample_advance     = 103; 
-      openair0_cfg[0].tx_bw                 = 20e6;
-      openair0_cfg[0].rx_bw                 = 20e6;
-      break;
-    case 7680000:
-      s->usrp->set_master_clock_rate(30.72e6);
-      //openair0_cfg[0].samples_per_packet    = 1024;
-      openair0_cfg[0].tx_sample_advance     = 80;
-      openair0_cfg[0].tx_bw                 = 20e6;
-      openair0_cfg[0].rx_bw                 = 20e6;
-      break;
-    case 1920000:
-      s->usrp->set_master_clock_rate(30.72e6);
-      //openair0_cfg[0].samples_per_packet    = 1024;
-      openair0_cfg[0].tx_sample_advance     = 40;
-      openair0_cfg[0].tx_bw                 = 20e6;
-      openair0_cfg[0].rx_bw                 = 20e6;
-      break;
-    default:
-      printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
-      exit(-1);
-      break;
-    }
-  }
+        for(int i=0; i<s->usrp->get_rx_num_channels(); i++) {
+            if (i<openair0_cfg[0].rx_num_channels) {
+                s->usrp->set_rx_rate(openair0_cfg[0].sample_rate,i);
+                s->usrp->set_rx_freq(openair0_cfg[0].rx_freq[i],i);
+                set_rx_gain_offset(&openair0_cfg[0],i,bw_gain_adjust);
 
-  /* device specific */
-  //openair0_cfg[0].txlaunch_wait = 1;//manage when TX processing is triggered
-  //openair0_cfg[0].txlaunch_wait_slotcount = 1; //manage when TX processing is triggered
-  openair0_cfg[0].iq_txshift = 4;//shift
-  openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
-  
-  for(i=0;i<s->usrp->get_rx_num_channels();i++) {
-    if (i<openair0_cfg[0].rx_num_channels) {
-      s->usrp->set_rx_rate(openair0_cfg[0].sample_rate,i);
-      //s->usrp->set_rx_bandwidth(openair0_cfg[0].rx_bw,i);
-      //printf("Setting rx freq/gain on channel %lu/%lu : BW %f (readback %f)\n",i,s->usrp->get_rx_num_channels(),openair0_cfg[0].rx_bw/1e6,s->usrp->get_rx_bandwidth(i)/1e6);
-      s->usrp->set_rx_freq(openair0_cfg[0].rx_freq[i],i);
-      set_rx_gain_offset(&openair0_cfg[0],i,bw_gain_adjust);
+                ::uhd::gain_range_t gain_range = s->usrp->get_rx_gain_range(i);
+                // limit to maximum gain
+                AssertFatal( openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i] <= gain_range.stop(),
+                             "RX Gain too high, lower by %f dB\n",
+                             openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i] - gain_range.stop());
+                s->usrp->set_rx_gain(openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i],i);
+                LOG_I(PHY,"RX Gain %d %f (%f) => %f (max %f)\n",i,
+                      openair0_cfg[0].rx_gain[i],openair0_cfg[0].rx_gain_offset[i],
+                      openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i],gain_range.stop());
+            }
+        }
+        for(int i=0; i<s->usrp->get_tx_num_channels(); i++) {
+            if (i<openair0_cfg[0].tx_num_channels) {
+                s->usrp->set_tx_rate(openair0_cfg[0].sample_rate,i);
+                s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[i],i);
+                s->usrp->set_tx_gain(openair0_cfg[0].tx_gain[i],i);
+            }
+        }
 
-      ::uhd::gain_range_t gain_range = s->usrp->get_rx_gain_range(i);
-      // limit to maximum gain
-      if (openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i] > gain_range.stop()) {
+        //s->usrp->set_clock_source("external");
+        //s->usrp->set_time_source("external");
+
+        // display USRP settings
+        LOG_I(PHY,"Actual master clock: %fMHz...\n",s->usrp->get_master_clock_rate()/1e6);
+        sleep(1);
+
+        // create tx & rx streamer
+        uhd::stream_args_t stream_args_rx("sc16", "sc16");
+        int samples=openair0_cfg[0].sample_rate;
+	int max=s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps();
+        samples/=10000;
+	LOG_I(PHY,"RF board max packet size %u, size for 100µs jitter %d \n", max, samples);
+	if ( samples < max )
+	  stream_args_rx.args["spp"] = str(boost::format("%d") % samples );
+	LOG_I(PHY,"rx_max_num_samps %u\n",
+	      s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps());
+
+        for (int i = 0; i<openair0_cfg[0].rx_num_channels; i++)
+            stream_args_rx.channels.push_back(i);
+        s->rx_stream = s->usrp->get_rx_stream(stream_args_rx);
 	
-        printf("RX Gain %lu too high, lower by %f dB\n",i,openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i] - gain_range.stop());
-	exit(-1);
-      }
-      s->usrp->set_rx_gain(openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i],i);
-      printf("RX Gain %lu %f (%f) => %f (max %f)\n",i,
-	     openair0_cfg[0].rx_gain[i],openair0_cfg[0].rx_gain_offset[i],
-	     openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i],gain_range.stop());
+        uhd::stream_args_t stream_args_tx("sc16", "sc16");
+        for (int i = 0; i<openair0_cfg[0].tx_num_channels; i++)
+            stream_args_tx.channels.push_back(i);
+        s->tx_stream = s->usrp->get_tx_stream(stream_args_tx);
+
+        /* Setting TX/RX BW after streamers are created due to USRP calibration issue */
+        for(int i=0; i<s->usrp->get_tx_num_channels() && i<openair0_cfg[0].tx_num_channels; i++)
+            s->usrp->set_tx_bandwidth(openair0_cfg[0].tx_bw,i);
+
+        for(int i=0; i<s->usrp->get_rx_num_channels() && i<openair0_cfg[0].rx_num_channels; i++)
+            s->usrp->set_rx_bandwidth(openair0_cfg[0].rx_bw,i);
+
+        s->usrp->set_time_now(uhd::time_spec_t(0.0));
+
+        for (int i=0; i<openair0_cfg[0].rx_num_channels; i++) {
+            LOG_I(PHY,"RX Channel %d\n",i);
+            LOG_I(PHY,"  Actual RX sample rate: %fMSps...\n",s->usrp->get_rx_rate(i)/1e6);
+            LOG_I(PHY,"  Actual RX frequency: %fGHz...\n", s->usrp->get_rx_freq(i)/1e9);
+            LOG_I(PHY,"  Actual RX gain: %f...\n", s->usrp->get_rx_gain(i));
+            LOG_I(PHY,"  Actual RX bandwidth: %fM...\n", s->usrp->get_rx_bandwidth(i)/1e6);
+            LOG_I(PHY,"  Actual RX antenna: %s...\n", s->usrp->get_rx_antenna(i).c_str());
+        }
+
+        for (int i=0; i<openair0_cfg[0].tx_num_channels; i++) {
+            LOG_I(PHY,"TX Channel %d\n",i);
+            LOG_I(PHY,"  Actual TX sample rate: %fMSps...\n", s->usrp->get_tx_rate(i)/1e6);
+            LOG_I(PHY,"  Actual TX frequency: %fGHz...\n", s->usrp->get_tx_freq(i)/1e9);
+            LOG_I(PHY,"  Actual TX gain: %f...\n", s->usrp->get_tx_gain(i));
+            LOG_I(PHY,"  Actual TX bandwidth: %fM...\n", s->usrp->get_tx_bandwidth(i)/1e6);
+            LOG_I(PHY,"  Actual TX antenna: %s...\n", s->usrp->get_tx_antenna(i).c_str());
+        }
+
+        LOG_I(PHY,"Device timestamp: %f...\n", s->usrp->get_time_now().get_real_secs());
+
+        device->priv = s;
+        device->trx_start_func = trx_usrp_start;
+        device->trx_write_func = trx_usrp_write;
+        device->trx_read_func  = trx_usrp_read;
+        device->trx_get_stats_func = trx_usrp_get_stats;
+        device->trx_reset_stats_func = trx_usrp_reset_stats;
+        device->trx_end_func   = trx_usrp_end;
+        device->trx_stop_func  = trx_usrp_stop;
+        device->trx_set_freq_func = trx_usrp_set_freq;
+        device->trx_set_gains_func   = trx_usrp_set_gains;
+        device->openair0_cfg = openair0_cfg;
+
+        s->sample_rate = openair0_cfg[0].sample_rate;
+        // TODO:
+        // init tx_forward_nsamps based usrp_time_offset ex
+        if(is_equal(s->sample_rate, (double)30.72e6))
+            s->tx_forward_nsamps  = 176;
+        if(is_equal(s->sample_rate, (double)15.36e6))
+            s->tx_forward_nsamps = 90;
+        if(is_equal(s->sample_rate, (double)7.68e6))
+            s->tx_forward_nsamps = 50;
+        return 0;
     }
-  }
-  for(i=0;i<s->usrp->get_tx_num_channels();i++) {
-    if (i<openair0_cfg[0].tx_num_channels) {
-      s->usrp->set_tx_rate(openair0_cfg[0].sample_rate,i);
-      //s->usrp->set_tx_bandwidth(openair0_cfg[0].tx_bw,i);
-      //printf("Setting tx freq/gain on channel %lu/%lu: BW %f (readback %f)\n",i,s->usrp->get_tx_num_channels(),openair0_cfg[0].tx_bw/1e6,s->usrp->get_tx_bandwidth(i)/1e6);
-      s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[i],i);
-      s->usrp->set_tx_gain(openair0_cfg[0].tx_gain[i],i);
-    }
-  }
-
-
-  // display USRP settings
-  std::cout << boost::format("Actual master clock: %fMHz...") % (s->usrp->get_master_clock_rate()/1e6) << std::endl;
-  
-  sleep(1);
-
-  // create tx & rx streamer
-  uhd::stream_args_t stream_args_rx("sc16", "sc16");
-  int samples=openair0_cfg[0].sample_rate;
-  samples/=24000;
-  //  stream_args_rx.args["spp"] = str(boost::format("%d") % samples);
-
-  for (i = 0; i<openair0_cfg[0].rx_num_channels; i++)
-    stream_args_rx.channels.push_back(i);
-  s->rx_stream = s->usrp->get_rx_stream(stream_args_rx);
-  std::cout << boost::format("rx_max_num_samps %u") % (s->rx_stream->get_max_num_samps()) << std::endl;
-  //openair0_cfg[0].samples_per_packet = s->rx_stream->get_max_num_samps();
-
-  uhd::stream_args_t stream_args_tx("sc16", "sc16");
-  //stream_args_tx.args["spp"] = str(boost::format("%d") % 2048);//(openair0_cfg[0].tx_num_channels*openair0_cfg[0].samples_per_packet));
-  for (i = 0; i<openair0_cfg[0].tx_num_channels; i++)
-      stream_args_tx.channels.push_back(i);
-  s->tx_stream = s->usrp->get_tx_stream(stream_args_tx);
-  std::cout << boost::format("tx_max_num_samps %u") % (s->tx_stream->get_max_num_samps()) << std::endl;
-
-
- /* Setting TX/RX BW after streamers are created due to USRP calibration issue */
-  for(i=0;i<s->usrp->get_tx_num_channels();i++) {
-    if (i<openair0_cfg[0].tx_num_channels) {
-      s->usrp->set_tx_bandwidth(openair0_cfg[0].tx_bw,i);
-      printf("Setting tx freq/gain on channel %lu/%lu: BW %f (readback %f)\n",i,s->usrp->get_tx_num_channels(),openair0_cfg[0].tx_bw/1e6,s->usrp->get_tx_bandwidth(i)/1e6);
-    }
-  }
-  for(i=0;i<s->usrp->get_rx_num_channels();i++) {
-    if (i<openair0_cfg[0].rx_num_channels) {
-      s->usrp->set_rx_bandwidth(openair0_cfg[0].rx_bw,i);
-      printf("Setting rx freq/gain on channel %lu/%lu : BW %f (readback %f)\n",i,s->usrp->get_rx_num_channels(),openair0_cfg[0].rx_bw/1e6,s->usrp->get_rx_bandwidth(i)/1e6);
-    }
-  }
-
-  s->usrp->set_time_now(uhd::time_spec_t(0.0));
- 
-
-  for (i=0;i<openair0_cfg[0].rx_num_channels;i++) {
-    if (i<openair0_cfg[0].rx_num_channels) {
-      printf("RX Channel %lu\n",i);
-      std::cout << boost::format("Actual RX sample rate: %fMSps...") % (s->usrp->get_rx_rate(i)/1e6) << std::endl;
-      std::cout << boost::format("Actual RX frequency: %fGHz...") % (s->usrp->get_rx_freq(i)/1e9) << std::endl;
-      std::cout << boost::format("Actual RX gain: %f...") % (s->usrp->get_rx_gain(i)) << std::endl;
-      std::cout << boost::format("Actual RX bandwidth: %fM...") % (s->usrp->get_rx_bandwidth(i)/1e6) << std::endl;
-      std::cout << boost::format("Actual RX antenna: %s...") % (s->usrp->get_rx_antenna(i)) << std::endl;
-    }
-  }
-
-  for (i=0;i<openair0_cfg[0].tx_num_channels;i++) {
-
-    if (i<openair0_cfg[0].tx_num_channels) { 
-      printf("TX Channel %lu\n",i);
-      std::cout << std::endl<<boost::format("Actual TX sample rate: %fMSps...") % (s->usrp->get_tx_rate(i)/1e6) << std::endl;
-      std::cout << boost::format("Actual TX frequency: %fGHz...") % (s->usrp->get_tx_freq(i)/1e9) << std::endl;
-      std::cout << boost::format("Actual TX gain: %f...") % (s->usrp->get_tx_gain(i)) << std::endl;
-      std::cout << boost::format("Actual TX bandwidth: %fM...") % (s->usrp->get_tx_bandwidth(i)/1e6) << std::endl;
-      std::cout << boost::format("Actual TX antenna: %s...") % (s->usrp->get_tx_antenna(i)) << std::endl;
-    }
-  }
-
-  std::cout << boost::format("Device timestamp: %f...") % (s->usrp->get_time_now().get_real_secs()) << std::endl;
-
-  device->priv = s;
-  device->trx_start_func = trx_usrp_start;
-  device->trx_write_func = trx_usrp_write;
-  device->trx_read_func  = trx_usrp_read;
-  device->trx_get_stats_func = trx_usrp_get_stats;
-  device->trx_reset_stats_func = trx_usrp_reset_stats;
-  device->trx_end_func   = trx_usrp_end;
-  device->trx_stop_func  = trx_usrp_stop;
-  device->trx_set_freq_func = trx_usrp_set_freq;
-  device->trx_set_gains_func   = trx_usrp_set_gains;
-  device->openair0_cfg = openair0_cfg;
-
-  s->sample_rate = openair0_cfg[0].sample_rate;
-  // TODO:
-  // init tx_forward_nsamps based usrp_time_offset ex
-  if(is_equal(s->sample_rate, (double)30.72e6))
-    s->tx_forward_nsamps  = 176;
-  if(is_equal(s->sample_rate, (double)15.36e6))
-    s->tx_forward_nsamps = 90;
-  if(is_equal(s->sample_rate, (double)7.68e6))
-    s->tx_forward_nsamps = 50;
-  return 0;
-  }
 }
 /*@}*/

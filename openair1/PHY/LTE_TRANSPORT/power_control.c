@@ -148,5 +148,3 @@ double computeRhoB_UE(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
 #endif
   return(rho_b_dB);
 }
-
-

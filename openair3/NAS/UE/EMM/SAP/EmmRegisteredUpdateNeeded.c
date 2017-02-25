@@ -80,11 +80,11 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmRegisteredUpdateNeeded(const emm_reg_t *evt)
+int EmmRegisteredUpdateNeeded(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
-  assert(emm_fsm_get_status() == EMM_REGISTERED_UPDATE_NEEDED);
+  assert(emm_fsm_get_status(user) == EMM_REGISTERED_UPDATE_NEEDED);
 
   /* TODO */
 

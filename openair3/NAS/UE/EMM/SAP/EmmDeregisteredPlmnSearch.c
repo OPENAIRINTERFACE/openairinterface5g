@@ -82,27 +82,29 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmDeregisteredPlmnSearch(const emm_reg_t *evt)
+int EmmDeregisteredPlmnSearch(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
+  emm_data_t *emm_data = user->emm_data;
+  user_api_id_t *user_api_id = user->user_api_id;
 
   int rc = RETURNerror;
 
-  assert(emm_fsm_get_status() == EMM_DEREGISTERED_PLMN_SEARCH);
+  assert(emm_fsm_get_status(user) == EMM_DEREGISTERED_PLMN_SEARCH);
 
   switch (evt->primitive) {
   case _EMMREG_NO_CELL:
     /*
      * No suitable cell of the selected PLMN has been found to camp on
      */
-    rc = emm_proc_registration_notify(NET_REG_STATE_DENIED);
+    rc = emm_proc_registration_notify(user_api_id, emm_data, NET_REG_STATE_DENIED);
 
     if (rc != RETURNok) {
       LOG_TRACE(WARNING, "EMM-FSM   - "
                 "Failed to notify registration update");
     }
 
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_NO_CELL_AVAILABLE);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_NO_CELL_AVAILABLE);
     break;
 
   case _EMMREG_REGISTER_REQ:
@@ -112,7 +114,7 @@ int EmmDeregisteredPlmnSearch(const emm_reg_t *evt)
      * may be selected either automatically or manually.
      * Or the user manually re-selected a PLMN to register to.
      */
-    rc = emm_proc_registration_notify(NET_REG_STATE_ON);
+    rc = emm_proc_registration_notify(user_api_id, emm_data, NET_REG_STATE_ON);
 
     if (rc != RETURNok) {
       LOG_TRACE(WARNING, "EMM-FSM   - "
@@ -122,7 +124,7 @@ int EmmDeregisteredPlmnSearch(const emm_reg_t *evt)
     /*
      * Perform network selection procedure
      */
-    rc = emm_proc_plmn_selection(evt->u.regist.index);
+    rc = emm_proc_plmn_selection(user, evt->u.regist.index);
     break;
 
   case _EMMREG_REGISTER_REJ:
@@ -130,14 +132,14 @@ int EmmDeregisteredPlmnSearch(const emm_reg_t *evt)
      * The selected cell is known not to be able to provide normal
      * service
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_LIMITED_SERVICE);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_LIMITED_SERVICE);
     break;
 
   case _EMMREG_REGISTER_CNF:
     /*
      * A suitable cell of the selected PLMN has been found to camp on
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_NORMAL_SERVICE);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_NORMAL_SERVICE);
     break;
 
   default:
