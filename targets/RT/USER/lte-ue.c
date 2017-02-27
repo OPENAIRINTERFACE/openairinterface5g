@@ -674,12 +674,11 @@ void *UE_thread(void *arg) {
                         rxp[i] = (void*)&dummy_rx[i][0];
                     for (int sf=0; sf<10; sf++)
                         //	    printf("Reading dummy sf %d\n",sf);
-                        AssertFatal ( UE->frame_parms.samples_per_tti ==
-                                      UE->rfdevice.trx_read_func(&UE->rfdevice,
+                          UE->rfdevice.trx_read_func(&UE->rfdevice,
                                               &timestamp,
                                               rxp,
                                               UE->frame_parms.samples_per_tti,
-                                              UE->frame_parms.nb_antennas_rx), "");
+                                              UE->frame_parms.nb_antennas_rx);
                 }
             }
 
@@ -731,6 +730,9 @@ void *UE_thread(void *arg) {
                         readBlockSize=UE->frame_parms.samples_per_tti;
                         writeBlockSize=UE->frame_parms.samples_per_tti;
                     } else {
+                        // set TO compensation to zero
+                        UE->rx_offset_diff = 0;
+                        // compute TO compensation that should be applied for this frame
                         if ( UE->rx_offset < 5*UE->frame_parms.samples_per_tti  &&
                                 UE->rx_offset > 0 )
                             UE->rx_offset_diff = -1 ;
@@ -738,7 +740,7 @@ void *UE_thread(void *arg) {
                                 UE->rx_offset < 10*UE->frame_parms.samples_per_tti )
                             UE->rx_offset_diff = 1;
 
-                        LOG_D(PHY,"SET rx_off_diff to %d\n",UE->rx_offset_diff);
+                        LOG_D(PHY,"AbsSubframe %d.%d SET rx_off_diff to %d rx_offset %d \n",proc->frame_rx,sub_frame,UE->rx_offset_diff,UE->rx_offset);
                         readBlockSize=UE->frame_parms.samples_per_tti -
                                       UE->frame_parms.ofdm_symbol_size -
                                       UE->frame_parms.nb_prefix_samples0 -

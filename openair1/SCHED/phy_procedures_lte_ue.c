@@ -364,7 +364,7 @@ void process_timing_advance(uint8_t Mod_id,uint8_t CC_id,int16_t timing_advance)
   PHY_vars_UE_g[Mod_id][CC_id]->timing_advance = PHY_vars_UE_g[Mod_id][CC_id]->timing_advance+timing_advance*4; //this is for 25RB only!!!
 
 
-  LOG_I(PHY,"[UE %d] Got timing advance %d from MAC, new value %d\n",Mod_id, timing_advance, PHY_vars_UE_g[Mod_id][CC_id]->timing_advance);
+  LOG_D(PHY,"[UE %d] Got timing advance %d from MAC, new value %d\n",Mod_id, timing_advance, PHY_vars_UE_g[Mod_id][CC_id]->timing_advance);
 
 
 }
@@ -1043,7 +1043,7 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, uint8_t empt
   int overflow=0;
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
   int k,l;
-  int dummy_tx_buffer[3840*4] __attribute__((aligned(16)));
+  int dummy_tx_buffer[frame_parms->samples_per_tti] __attribute__((aligned(16)));
 #endif
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_COMMON,VCD_FUNCTION_IN);
@@ -1076,11 +1076,15 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, uint8_t empt
       overflow = ulsch_start - 9*frame_parms->samples_per_tti;
       for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
 
-          memset(&ue->common_vars.txdata[aa][ulsch_start],0,
-                 4*cmin(frame_parms->samples_per_tti-overflow,frame_parms->samples_per_tti));
-
-          if (overflow> 0)
-              memset(&ue->common_vars.txdata[aa][0],0,4*overflow);
+          if (overflow > 0)
+		 {
+			 memset(&ue->common_vars.txdata[aa][ulsch_start],0,4*(frame_parms->samples_per_tti-overflow));
+			 memset(&ue->common_vars.txdata[aa][0],0,4*overflow);
+		 }
+		 else
+		 {
+			 memset(&ue->common_vars.txdata[aa][ulsch_start],0,4*frame_parms->samples_per_tti);
+		 }
       }
 /*#else
       overflow = ulsch_start - 9*frame_parms->samples_per_tti;
@@ -1469,7 +1473,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
       LOG_D(PHY,"[UE  %d][PDSCH %x] AbsSubFrame %d.%d Generating ACK (%d,%d) for %d bits on PUSCH\n",
         Mod_id,
         ue->ulsch[eNB_id]->rnti,
-        frame_tx,subframe_tx,
+        frame_tx%1024,subframe_tx,
         ue->ulsch[eNB_id]->o_ACK[0],ue->ulsch[eNB_id]->o_ACK[1],
         ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK);
     }
@@ -1632,8 +1636,8 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
       T(T_UE_PHY_PUSCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
                     T_INT(tx_amp),T_INT(ue->ulsch[eNB_id]->f_pusch),T_INT(get_PL(Mod_id,0,eNB_id)),T_INT(nb_rb));
 #endif
-      LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d, generating PUSCH, Po_PUSCH: %d dBm (max %d dBm), amp %d\n",
-	    Mod_id,harq_pid,frame_tx,subframe_tx,ue->tx_power_dBm[subframe_tx],ue->tx_power_max_dBm, tx_amp);
+      LOG_D(PHY,"[UE  %d][PUSCH %d] AbsSubFrame %d.%d, generating PUSCH, Po_PUSCH: %d dBm (max %d dBm), amp %d\n",
+	    Mod_id,harq_pid,frame_tx%1024,subframe_tx,ue->tx_power_dBm[subframe_tx],ue->tx_power_max_dBm, tx_amp);
       start_meas(&ue->ulsch_modulation_stats);
       ulsch_modulation(ue->common_vars.txdataF,
 		       tx_amp,
@@ -1935,7 +1939,8 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
                   &pucch_payload,
                   &len);
 
-  LOG_D(PHY,"PUCCH feedback AbsSubframe %d.%d SR %d NbCW %d AckNack %d.%d CQI %d RI %d format %d pucch_resource %d pucch_payload %d %d \n", frame_tx, subframe_tx, SR_payload, nb_cw, pucch_ack_payload[0], pucch_ack_payload[1], cqi_status, ri_status, format, pucch_resource,pucch_payload[0],pucch_payload[1]);
+  LOG_D(PHY,"PUCCH feedback AbsSubframe %d.%d SR %d NbCW %d AckNack %d.%d CQI %d RI %d format %d pucch_resource %d pucch_payload %d %d \n",
+		  frame_tx%1024, subframe_tx, SR_payload, nb_cw, pucch_ack_payload[0], pucch_ack_payload[1], cqi_status, ri_status, format, pucch_resource,pucch_payload[0],pucch_payload[1]);
 
 
   // Part - IV
