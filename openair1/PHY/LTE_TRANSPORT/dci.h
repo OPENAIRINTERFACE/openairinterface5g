@@ -2969,3 +2969,53 @@ struct DCI0A_20_MHz {
 #define sizeof_DCI0A_20MHz 17
 
 #define MAX_DCI_SIZE_BITS 45
+
+struct DCI_INFO_EXTRACTED {
+    /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
+    uint8_t type;
+    /// Resource Allocation Header
+    uint8_t rah;
+    /// HARQ Process
+    uint8_t harq_pid;
+    /// CQI Request
+    uint8_t cqi_req;
+    /// SRS Request
+    uint8_t srs_req;
+    /// Power Control
+    uint8_t TPC;
+    /// Localized/Distributed VRB
+    uint8_t vrb_type;
+    /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
+    uint32_t rballoc;
+    // Applicable only when vrb_type = 1
+    uint8_t Ngap;
+    /// Cyclic shift
+    uint8_t cshift;
+    /// Hopping flag
+    uint8_t hopping;
+    /// Downlink Assignment Index
+    uint8_t dai;
+    /// DAI (TDD)
+    uint8_t ulindex;
+
+    /// TB swap
+    uint8_t tb_swap;
+    /// TPMI information for precoding
+    uint8_t tpmi;
+    /// Redundancy version 2
+    uint8_t rv2;
+    /// New Data Indicator 2
+    uint8_t ndi2;
+    /// Modulation and Coding Scheme and Redundancy Version 2
+    uint8_t mcs2;
+    /// Redundancy version 1
+    uint8_t rv1;
+    /// New Data Indicator 1
+    uint8_t ndi1;
+    /// Modulation and Coding Scheme and Redundancy Version 1
+    uint8_t mcs1;
+
+    /// Scrambling ID
+    uint64_t ap_si_nl_id:3;
+};
+typedef struct DCI_INFO_EXTRACTED DCI_INFO_EXTRACTED_t;

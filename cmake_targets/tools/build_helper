@@ -136,6 +136,20 @@ clean_all_files() {
 # Compilers
 ###################################
 
+#check_warnings:
+#    print error message if the compilation had warnings
+#argument:
+#    $1: log file
+check_warnings() {
+  #we look for 'warning:' in the compilation log file
+  #this is how gcc starts a warning
+  #this is not perfect, we may get false positive
+  warning_count=`grep "warning:" "$1"|wc -l`
+  if [ $warning_count -gt 0 ]; then
+    echo_error "WARNING: $warning_count warnings. See $1"
+  fi
+}
+
 compilations() {
   cd $OPENAIR_DIR/cmake_targets/$1/build
   set +e
@@ -153,6 +167,7 @@ compilations() {
   if [ -s $3 ] ; then
      cp $3 $4
      echo_success "$2 compiled"
+     check_warnings "$dlog/$2.$REL.txt"
   else
      echo_error "$2 compilation failed"
      exit 1
