@@ -51,10 +51,10 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   int uespec_pilot[300];
 
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->frame_parms;
-  LTE_UE_DLSCH_t **dlsch_ue       = phy_vars_ue->dlsch[eNB_id];
+  LTE_UE_DLSCH_t **dlsch_ue       = phy_vars_ue->dlsch[(Ns>>1)&0x1][eNB_id];
   LTE_DL_UE_HARQ_t *dlsch0_harq; 
 
-  harq_pid    = dlsch_ue[0]->current_harq_pid; 
+  harq_pid    = dlsch_ue[0]->current_harq_pid;
   dlsch0_harq = dlsch_ue[0]->harq_processes[harq_pid];
 
   if (((frame_parms->Ncp == NORMAL) && (symbol>=7)) ||

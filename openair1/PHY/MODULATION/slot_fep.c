@@ -48,7 +48,7 @@ int slot_fep(PHY_VARS_UE *ue,
   unsigned int rx_offset;
 
   /*LTE_UE_DLSCH_t **dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id];
-  unsigned char harq_pid = dlsch_ue[0]->current_harq_pid; 
+  unsigned char harq_pid = dlsch_ue[0]->current_harq_pid;
   LTE_DL_UE_HARQ_t *dlsch0_harq = dlsch_ue[0]->harq_processes[harq_pid];
   int uespec_pilot[9][1200];*/
 
