@@ -4682,9 +4682,18 @@ int main(int argc, char **argv)
       if (transmission_mode == 3 || transmission_mode == 4) {
         // FOR CW0
         thr_cw0[0] = rate0_init*get_Qm(eNB->dlsch[0][0]->harq_processes[0]->mcs)*(1-((double)errs[0][0]/(double)round_trials[0][0]));
-        thr_cw0[1] = (rate0_init*get_Qm(eNB->dlsch[0][0]->harq_processes[0]->mcs)/2)*(((double)errs[0][0] - (double)errs[0][1])/(double)round_trials[0][0]);
-        thr_cw0[2] = (rate0_init*get_Qm(eNB->dlsch[0][0]->harq_processes[0]->mcs)/3)*(((double)errs[0][1] - (double)errs[0][2])/(double)round_trials[0][0]);
-        thr_cw0[3] = (rate0_init*get_Qm(eNB->dlsch[0][0]->harq_processes[0]->mcs)/4)*(((double)errs[0][2] - (double)errs[0][3])/(double)round_trials[0][0]);
+        if (num_rounds > 1)
+          thr_cw0[1] = (rate0_init*get_Qm(eNB->dlsch[0][0]->harq_processes[0]->mcs)/2)*(((double)errs[0][0] - (double)errs[0][1])/(double)round_trials[0][0]);
+        else
+          thr_cw0[1]=0;
+        if (num_rounds > 2)
+          thr_cw0[2] = (rate0_init*get_Qm(eNB->dlsch[0][0]->harq_processes[0]->mcs)/3)*(((double)errs[0][1] - (double)errs[0][2])/(double)round_trials[0][0]);
+        else
+          thr_cw0[2]=0;
+        if (num_rounds > 3)
+          thr_cw0[3] = (rate0_init*get_Qm(eNB->dlsch[0][0]->harq_processes[0]->mcs)/4)*(((double)errs[0][2] - (double)errs[0][3])/(double)round_trials[0][0]);
+        else
+          thr_cw0[3]=0;
         thr_cw0_tot = (double)thr_cw0[0]+(double)thr_cw0[1]+(double)thr_cw0[2]+(double)thr_cw0[3];
 #ifdef PRINT_THROUGHPUT
         printf("rate  %f \n", rate0_init);
@@ -4701,9 +4710,18 @@ int main(int argc, char **argv)
 #endif
 
         thr_cw1[0] = rate1_init*get_Qm(eNB->dlsch[0][1]->harq_processes[0]->mcs)*(1-((double)errs[1][0]/(double)round_trials[1][0]));
-        thr_cw1[1] = (rate1_init*get_Qm(eNB->dlsch[0][1]->harq_processes[0]->mcs)/2)*(((double)errs[1][0] - (double)errs[1][1])/(double)round_trials[1][0]);
-        thr_cw1[2] = (rate1_init*get_Qm(eNB->dlsch[0][1]->harq_processes[0]->mcs)/3)*(((double)errs[1][1] - (double)errs[1][2])/(double)round_trials[1][0]);
-        thr_cw1[3] = (rate1_init*get_Qm(eNB->dlsch[0][1]->harq_processes[0]->mcs)/4)*(((double)errs[1][2] - (double)errs[1][3])/(double)round_trials[1][0]);
+        if (num_rounds > 1)
+          thr_cw1[1] = (rate1_init*get_Qm(eNB->dlsch[0][1]->harq_processes[0]->mcs)/2)*(((double)errs[1][0] - (double)errs[1][1])/(double)round_trials[1][0]);
+        else
+          thr_cw1[1] = 0;
+        if (num_rounds > 2)
+          thr_cw1[2] = (rate1_init*get_Qm(eNB->dlsch[0][1]->harq_processes[0]->mcs)/3)*(((double)errs[1][1] - (double)errs[1][2])/(double)round_trials[1][0]);
+        else
+          thr_cw1[2] = 0;
+        if (num_rounds > 3)
+          thr_cw1[3] = (rate1_init*get_Qm(eNB->dlsch[0][1]->harq_processes[0]->mcs)/4)*(((double)errs[1][2] - (double)errs[1][3])/(double)round_trials[1][0]);
+        else
+          thr_cw1[3]=0;
         thr_cw1_tot = (double)thr_cw1[0]+(double)thr_cw1[1]+(double)thr_cw1[2]+(double)thr_cw1[3];
 #ifdef PRINT_THROUGHPUT
         printf("Throughput cw1 sum =  %f \n", thr_cw1_tot);
