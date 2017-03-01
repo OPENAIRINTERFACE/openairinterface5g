@@ -166,7 +166,7 @@ int main(int argc, char **argv)
   RX_type_t rx_type=rx_standard;
   unsigned char  cur_harq_pid;
   int hold_rank1_precoder=0;
-  int tpmi_retr=2;
+  int tpmi_retr=0;
   bool  is_first_time;
   int updated_csi = 0;
 
@@ -781,9 +781,9 @@ int main(int argc, char **argv)
     sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_u%d_imod%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1,mcs_i,rx_type,i_mod);
   else if (abstx == 1){
     if (perfect_ce==1)
-      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_pce_sh%d_rpmi%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2,interf_unaw_shift, tpmi_retr);
+      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_pce_sh%d_rpmi%d_n.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2,interf_unaw_shift, tpmi_retr);
     else
-      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_sh%d_rtpmi%d.csv",transmission_mode,rx_type,channel_model, n_frames, n_rx, num_rounds, mcs1, mcs2,interf_unaw_shift, tpmi_retr);
+      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_sh%d_rtpmi%d_n.csv",transmission_mode,rx_type,channel_model, n_frames, n_rx, num_rounds, mcs1, mcs2,interf_unaw_shift, tpmi_retr);
   }
   else {//abstx=0
     if (perfect_ce==1){
@@ -799,7 +799,7 @@ int main(int argc, char **argv)
         sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d_up_rtpmi%d_n.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift, tpmi_retr);
       }
       else{
-          sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d_rtpmi%d_n.csv",transmission_mode,rx_type, channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift, tpmi_retr);
+          sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d_rtpmi%csv",transmission_mode,rx_type, channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift, tpmi_retr);
       }
     }
   }
@@ -5237,10 +5237,10 @@ int main(int argc, char **argv)
   printf("[continue] effective rate : %f  (%2.1f%%,%f)): increase snr \n",rate[0]*effective_rate, 100*effective_rate, rate[0]);
       }
   if (abstx == 1) {
-    if ((rx_type==rx_IC_dual_stream) || (rx_type==rx_standard)) {
+    if ((rx_type==rx_IC_dual_stream) || (rx_type==rx_SIC_dual_stream)) {
 
-      if (((double)errs[0][0]/(round_trials[0][0]))<1e-2 && ((double)errs[1][0]/(round_trials[1][0]))<1e-2)
-      if (((double)errs[0][0]/(round_trials[0][0]))<1e-2 && ((double)errs[1][0]/(round_trials[1][0]))<1e-2)
+      if ((((double)errs[0][0]/(round_trials[0][0]))<1e-2) && (((double)errs[1][0]/(round_trials[1][0]))<1e-2))
+      if ((((double)errs[0][0]/(round_trials[0][0]))<1e-2) && (((double)errs[1][0]/(round_trials[1][0]))<1e-2))
       break;
     }
     else{
@@ -5251,8 +5251,8 @@ int main(int argc, char **argv)
   }
   else {
 
-     if ((rx_type==rx_IC_dual_stream) || (rx_type==rx_standard) || (rx_type==rx_SIC_dual_stream)) {
-      if (((double)errs[0][0]/(round_trials[0][0]))<1e-3 && ((double)errs[1][0]/(round_trials[1][0]))<1e-3)
+     if ((rx_type==rx_IC_dual_stream) || (rx_type==rx_SIC_dual_stream)) {
+      if ((((double)errs[0][0]/(round_trials[0][0]))<1e-3) && (((double)errs[1][0]/(round_trials[1][0]))<1e-3))
       break;
     }
     else{
