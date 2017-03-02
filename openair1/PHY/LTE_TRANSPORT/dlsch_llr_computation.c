@@ -697,7 +697,6 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
 
   int16_t rho_amp_x0[2*frame_parms->N_RB_DL*12];
   int16_t rho_rho_amp_x0[2*frame_parms->N_RB_DL*12];
-  int16_t clean_x1[2*frame_parms->N_RB_DL*12];
   uint16_t amp_tmp;
   uint16_t *llr16=(uint16_t*)dlsch_llr;
   int i, len,  nsymb;
@@ -953,7 +952,6 @@ void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
 {
   int16_t rho_amp_x0[2*frame_parms->N_RB_DL*12];
   int16_t rho_rho_amp_x0[2*frame_parms->N_RB_DL*12];
-  int16_t clean_x1[2*frame_parms->N_RB_DL*12];
   uint16_t amp_tmp;
   uint32_t *llr32=(uint32_t*)dlsch_llr;
   int i, len,  nsymb;
@@ -1222,7 +1220,6 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
 {
   int16_t rho_amp_x0[2*frame_parms->N_RB_DL*12];
   int16_t rho_rho_amp_x0[2*frame_parms->N_RB_DL*12];
-  int16_t clean_x1[2*frame_parms->N_RB_DL*12];
   uint16_t amp_tmp;
   uint16_t *llr32=(uint16_t*)dlsch_llr;
   int i, len,  nsymb, len2;

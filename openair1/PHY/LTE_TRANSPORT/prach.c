@@ -1133,7 +1133,6 @@ void rx_prach(PHY_VARS_eNB *eNB,
   int fft_size,log2_ifft_size;
   uint8_t nb_ant_rx = 1; //eNB->frame_parms.nb_antennas_rx;
 
-  int en;
 
   for (aa=0; aa<nb_ant_rx; aa++) {
     prach[aa] = (int16_t*)&eNB->common_vars.rxdata[0][aa][subframe*eNB->frame_parms.samples_per_tti-eNB->N_TA_offset];
