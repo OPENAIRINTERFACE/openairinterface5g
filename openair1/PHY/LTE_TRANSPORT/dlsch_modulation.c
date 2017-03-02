@@ -1338,10 +1338,10 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
           ((int16_t *)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_SQRT2_Q15)>>15);
           ((int16_t *)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_SQRT2_Q15)>>15);
 
-          if (frame_parms->nb_antenna_ports_eNB == 2) {
-            layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index);
-            ((int16_t*)&txdataF[1][tti_offset])[0] += ((int16_t*)&tmp_sample2)[0];
-            ((int16_t*)&txdataF[1][tti_offset])[1] += ((int16_t*)&tmp_sample2)[1];
+          if (frame_parms->nb_antennas_tx == 2) {
+            layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index0);
+            ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]*ONE_OVER_SQRT2_Q15)>>15);
+            ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_SQRT2_Q15)>>15);
           }
 
           break;

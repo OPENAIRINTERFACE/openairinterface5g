@@ -3163,7 +3163,7 @@ int main(int argc, char **argv)
                           (subframe*2)+2,
                           &eNB->frame_parms);
 
-            if (n_frames==2) {
+            if (n_frames==1) {
               write_output("txsigF0.m","txsF0", &eNB->common_vars.txdataF[eNB_id][0][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
               if (eNB->frame_parms.nb_antennas_tx>1)
                 write_output("txsigF1.m","txsF1", &eNB->common_vars.txdataF[eNB_id][1][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
@@ -3177,7 +3177,7 @@ int main(int argc, char **argv)
             }
             tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 
-            if (n_frames==2) {
+            if (n_frames==1) {
               write_output("txsigF0.m","txsF0", &eNB->common_vars.txdataF[eNB_id][0][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
               if (eNB->frame_parms.nb_antennas_tx>1)
                 write_output("txsigF1.m","txsF1", &eNB->common_vars.txdataF[eNB_id][1][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
