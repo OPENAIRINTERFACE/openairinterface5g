@@ -335,8 +335,8 @@ rlc_am_receive_process_data_pdu (
       if (pdu_status != RLC_AM_DATA_PDU_STATUS_OK) {
         rlc_pP->stat_rx_data_pdu_dropped     += 1;
         rlc_pP->stat_rx_data_bytes_dropped   += tb_size_in_bytesP;
-        LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  PDU DISCARDED, STATUS REQUESTED:\n",
-              PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
+        LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  PDU DISCARDED CAUSE=%d SN=%d\n",
+              PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_status,pdu_info_p->sn);
 #if RLC_STOP_ON_LOST_PDU
         AssertFatal( 0 == 1,
                      PROTOCOL_RLC_AM_CTXT_FMT" LOST PDU DETECTED\n",
@@ -443,8 +443,8 @@ rlc_am_receive_process_data_pdu (
       rlc_pP->stat_rx_data_pdu_out_of_window     += 1;
       rlc_pP->stat_rx_data_bytes_out_of_window   += tb_size_in_bytesP;
       pdu_status = RLC_AM_DATA_PDU_STATUS_SN_OUTSIDE_WINDOW;
-      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  PDU OUT OF RX WINDOW, DISCARDED, STATUS REQUESTED:\n",
-            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
+      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  PDU OUT OF RX WINDOW, DISCARDED, SN=%d\n",
+            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_info_p->sn);
     }
 
       /* 3) Check for triggering a Tx Status PDU if a poll is received or if a pending status was delayed */
@@ -495,6 +495,8 @@ rlc_am_receive_process_data_pdu (
 
   } else {
 	  pdu_status = RLC_AM_DATA_PDU_STATUS_HEADER_ERROR;
+      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  PDU DISCARDED BAD HEADER FORMAT SN=%d\n",
+            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_info_p->sn);
   }
 
   if (pdu_status != RLC_AM_DATA_PDU_STATUS_OK) {
