@@ -233,12 +233,24 @@ typedef struct rlc_am_timer {
 * @{
 */
 
+typedef enum rlc_am_rx_segment_reassemble_info
+{
+    /** No Reassembly scheduled */
+    RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_NO           = 0,
+    /** Reassembly scheduled */
+	RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_PENDING      = 1,
+    /** Reassembly done */
+	RLC_AM_RX_PDU_SEGMENT_REASSEMBLED             = 2
+
+} rlc_am_rx_segment_reassemble_info_t;
+
 /*! \struct  rlc_am_rx_pdu_management_t
 * \brief Structure for storing decoded informations from the header of a AMD PDU or AMD PDU segment and information on reassembly.
 */
 typedef struct rlc_am_rx_pdu_management {
   rlc_am_pdu_info_t pdu_info; /*!< \brief Field for storing decoded informations from the header of a AMD PDU or AMD PDU segment. */
   uint8_t              all_segments_received; /*!< \brief Is all segments of PDU SN have been received. */
+  rlc_am_rx_segment_reassemble_info_t			   segment_reassembled; /*!< \brief if the segment for SN=vrR is reassembled but not discarded yet. */
 } rlc_am_rx_pdu_management_t;
 /** @} */
 

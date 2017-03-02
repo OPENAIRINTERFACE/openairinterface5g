@@ -31,6 +31,7 @@
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
 
+
 //-----------------------------------------------------------------------------
 signed int
 rlc_am_get_data_pdu_infos(
@@ -330,7 +331,8 @@ rlc_am_receive_process_data_pdu (
             rlc_pP->vr_ms,
             rlc_pP->vr_x);
 
-      if (rlc_am_rx_list_insert_pdu(ctxt_pP, rlc_pP,tb_pP) < 0) {
+      pdu_status = rlc_am_rx_list_check_duplicate_insert_pdu(ctxt_pP, rlc_pP,tb_pP);
+      if (pdu_status != RLC_AM_DATA_PDU_STATUS_OK) {
         rlc_pP->stat_rx_data_pdu_dropped     += 1;
         rlc_pP->stat_rx_data_bytes_dropped   += tb_size_in_bytesP;
         LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  PDU DISCARDED, STATUS REQUESTED:\n",
@@ -398,7 +400,7 @@ rlc_am_receive_process_data_pdu (
             rlc_pP->vr_mr = (rlc_pP->vr_r + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
           }
 
-          reassemble = true;
+          reassemble = rlc_am_rx_check_vr_reassemble(ctxt_pP, rlc_pP);
           //TODO : optimization : check whether a reassembly is needed by looking at LI, FI, SO, etc...
 
         }
@@ -446,7 +448,7 @@ rlc_am_receive_process_data_pdu (
     }
 
       /* 3) Check for triggering a Tx Status PDU if a poll is received or if a pending status was delayed */
-      if (pdu_info_p->p) {
+      if ((pdu_info_p->p) && (pdu_status < RLC_AM_DATA_PDU_STATUS_BUFFER_FULL)) {
         LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  POLL BIT SET, STATUS REQUESTED:\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
 
