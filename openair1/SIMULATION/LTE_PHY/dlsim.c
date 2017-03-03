@@ -2543,7 +2543,7 @@ int main(int argc, char **argv)
 
 	    //pdsch_vars
 
-	    dump_dlsch2(UE,eNB_id,subframe,coded_bits_per_codeword,round);
+	    dump_dlsch2(UE,eNB_id,subframe,coded_bits_per_codeword,round, UE->dlsch[0][0]->current_harq_pid);
 
 	    write_output("dlsch_e.m","e",eNB->dlsch[0][0]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
 
@@ -2644,7 +2644,7 @@ int main(int argc, char **argv)
               }
 
               //pdsch_vars
-      dump_dlsch2(UE,eNB_id,subframe,coded_bits_per_codeword,round);
+              dump_dlsch2(UE,eNB_id,subframe,coded_bits_per_codeword,round, UE->dlsch[0][0]->current_harq_pid);
 
 
               //write_output("dlsch_e.m","e",eNB->dlsch[0][0]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
