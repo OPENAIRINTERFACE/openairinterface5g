@@ -93,9 +93,12 @@ rlc_am_check_timer_reordering(
       }
 
       /* Now find a SN for which either no PDU is received or partially received */
-      while ((cursor != NULL) && (pdu_info->sn == vr_ms_new) && (((rlc_am_rx_pdu_management_t*)(cursor->data))->all_segments_received > 0)) {
+      while ((cursor != NULL) && (vr_ms_new != rlc_pP->vr_h) && (pdu_info->sn == vr_ms_new) && (((rlc_am_rx_pdu_management_t*)(cursor->data))->all_segments_received > 0)) {
+    	  /* Increment vrMS if the PDU is fully received or if this is the last PDU segment */
+    	  if ((pdu_info->rf == 0) || (pdu_info->lsf == 1)) {
+        	  vr_ms_new = RLC_AM_NEXT_SN(vr_ms_new);
+    	  }
     	  cursor = cursor->next;
-    	  vr_ms_new = RLC_AM_NEXT_SN(vr_ms_new);
     	  if (cursor != NULL) {
     		  pdu_info =  &((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info;
     	  }
