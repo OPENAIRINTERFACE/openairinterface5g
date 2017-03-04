@@ -83,23 +83,22 @@ rlc_am_check_timer_reordering(
 
       AssertFatal (cursor != NULL, "RLC AM TReordering Expiry Rx PDU list empty LcId=%d\n", rlc_pP->channel_id);
 
-      while ((cursor != NULL) && (vr_ms_new != rlc_pP->vr_h)) {
-		  pdu_info =  &((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info;
+      /* go to memblock up to vrX*/
+      pdu_info =  &((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info;
+      while ((cursor != NULL) && (RLC_AM_DIFF_SN(pdu_info->sn,rlc_pP->vr_r) < RLC_AM_DIFF_SN(vr_ms_new,rlc_pP->vr_r))) {
+    	  cursor = cursor->next;
+    	  if (cursor != NULL) {
+    		  pdu_info =  &((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info;
+    	  }
+      }
 
-
-		  // First find an element with SN greater or equal than vrX
-		  if (RLC_AM_DIFF_SN(pdu_info->sn,rlc_pP->vr_r) >= RLC_AM_DIFF_SN(rlc_pP->vr_x,rlc_pP->vr_r)) {
-			if (((rlc_am_rx_pdu_management_t*)(cursor->data))->all_segments_received == 0) {
-				// Stop at first found discontinuity
-				// vr_ms_new holds SN following the latest in sequence fully received PDU >= old vrX
-			  break;
-			}
-			else {
-				vr_ms_new = RLC_AM_NEXT_SN(vr_ms_new);
-			}
-
-		  }
-		  cursor = cursor->next;
+      /* Now find a SN for which either no PDU is received or partially received */
+      while ((cursor != NULL) && (pdu_info->sn == vr_ms_new) && (((rlc_am_rx_pdu_management_t*)(cursor->data))->all_segments_received > 0)) {
+    	  cursor = cursor->next;
+    	  vr_ms_new = RLC_AM_NEXT_SN(vr_ms_new);
+    	  if (cursor != NULL) {
+    		  pdu_info =  &((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info;
+    	  }
       }
 
 	  /* Update vr_ms */
