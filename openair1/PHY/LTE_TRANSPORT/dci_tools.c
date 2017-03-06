@@ -4478,7 +4478,7 @@ void extract_dci2_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, uint8_t nb_
 
     pdci_info_extarcted->rah      = rah;
     pdci_info_extarcted->mcs1     = mcs1;
-    pdci_info_extarcted->mcs1     = mcs2;
+    pdci_info_extarcted->mcs2     = mcs2;
     pdci_info_extarcted->rv1      = rv1;
     pdci_info_extarcted->rv2      = rv2;
     pdci_info_extarcted->harq_pid = harq_pid;
@@ -4978,7 +4978,7 @@ int check_dci_format2_2a_coherency(DCI_format_t dci_format,
 {
     uint8_t  rah  = pdci_info_extarcted->rah;
     uint8_t  mcs1 = pdci_info_extarcted->mcs1;
-    uint8_t  mcs2 = pdci_info_extarcted->mcs1;
+    uint8_t  mcs2 = pdci_info_extarcted->mcs2;
     uint8_t  rv1  = pdci_info_extarcted->rv1;
     uint8_t  rv2  = pdci_info_extarcted->rv2;
     uint8_t  harq_pid = pdci_info_extarcted->harq_pid;
@@ -5615,7 +5615,7 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
 
     uint8_t  rah  = pdci_info_extarcted->rah;
     uint8_t  mcs1 = pdci_info_extarcted->mcs1;
-    uint8_t  mcs2 = pdci_info_extarcted->mcs1;
+    uint8_t  mcs2 = pdci_info_extarcted->mcs2;
     uint8_t  rv1  = pdci_info_extarcted->rv1;
     uint8_t  rv2  = pdci_info_extarcted->rv2;
     uint8_t  harq_pid = pdci_info_extarcted->harq_pid;
@@ -5642,9 +5642,9 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
         TB1_active=0;
       }
 
-  //#ifdef DEBUG_HARQ
+#ifdef DEBUG_HARQ
       printf("[DCI UE]: TB0 status %d , TB1 status %d\n", TB0_active, TB1_active);
-  //#endif
+#endif
 
         dlsch0_harq->mcs      = mcs1;
         dlsch1_harq->mcs      = mcs2;
@@ -5682,21 +5682,23 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
       if (TB0_active==0) {
         dlsch0_harq->status = SCH_IDLE;
         pdlsch0->active     = 0;
-  //#ifdef DEBUG_HARQ
+#ifdef DEBUG_HARQ
         printf("[DCI UE]: TB0 is deactivated, retransmit TB1 transmit in TM6\n");
-  //#endif
+#endif
       }
 
       if (TB1_active==0) {
         dlsch1_harq->status = SCH_IDLE;
         pdlsch1->active     = 0;
-  //#ifdef DEBUG_HARQ
+#ifdef DEBUG_HARQ
         printf("[DCI UE]: TB1 is deactivated, retransmit TB0 transmit in TM6\n");
-  //#endif
+#endif
       }
 
 
+#ifdef DEBUG_HARQ
       printf("[DCI UE]: dlsch0_harq status %d , dlsch1_harq status %d\n", dlsch0_harq->status, dlsch1_harq->status);
+#endif
 
       // compute resource allocation
       if (TB0_active == 1){
@@ -5824,7 +5826,9 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
             dlsch1_harq->Qm = (mcs2-28)<<1;
       }
 
+#ifdef DEBUG_HARQ
       printf("[DCI UE]: dlsch0_harq status %d , dlsch1_harq status %d\n", dlsch0_harq->status, dlsch1_harq->status);
+#endif
 
   #ifdef DEBUG_HARQ
       if (dlsch0 != NULL && dlsch1 != NULL)

@@ -1081,6 +1081,7 @@ static void get_options (int argc, char **argv) {
                     } else {
                         (eth_params+j)->rf_preference          = 0;
                     }
+                    (eth_params+j)->if_compress               = enb_properties->properties[i]->rrh_gw_config[j].if_compress;
                 } else {
                     local_remote_radio = BBU_LOCAL_RADIO_HEAD;
                 }

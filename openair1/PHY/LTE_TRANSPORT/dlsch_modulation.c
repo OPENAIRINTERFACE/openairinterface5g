@@ -585,8 +585,8 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 
   int first_layer0; //= dlsch0_harq->first_layer;
   int Nlayers0; //  = dlsch0_harq->Nlayers;
-  uint8_t mod_order0; // = get_Qm(dlsch0_harq->mcs);
-  uint8_t mod_order1; //=2;
+  uint8_t mod_order0=0; // = get_Qm(dlsch0_harq->mcs);
+  uint8_t mod_order1=0; //=2;
   uint8_t precoder_index0,precoder_index1;
 
   uint8_t *x1=NULL;
@@ -1136,13 +1136,24 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
           *jj = *jj + 1;
 
           //normalization for 2 tx antennas
-          ((int16_t*)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_SQRT2_Q15)>>15);
+          /*((int16_t*)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_SQRT2_Q15)>>15);
           ((int16_t*)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_SQRT2_Q15)>>15);
 
           if (frame_parms->nb_antenna_ports_eNB == 2) {
             layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index);
             ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]*ONE_OVER_SQRT2_Q15)>>15);
             ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_SQRT2_Q15)>>15);
+          }*/
+
+          // We remove ONE_OVER_SQRT2_Q15 that was coming from precoder, as now it applied in computation sqrt_rho_a, sqrt_rho_b, same in the receiver in precoder function
+
+          ((int16_t*)&txdataF[0][tti_offset])[0] += ((int16_t*)&tmp_sample1)[0];
+          ((int16_t*)&txdataF[0][tti_offset])[1] += ((int16_t*)&tmp_sample1)[1];
+
+          if (frame_parms->nb_antenna_ports_eNB == 2) {
+            layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index);
+            ((int16_t*)&txdataF[1][tti_offset])[0] += ((int16_t*)&tmp_sample2)[0];
+            ((int16_t*)&txdataF[1][tti_offset])[1] += ((int16_t*)&tmp_sample2)[1];
           }
 
           break;
@@ -1171,13 +1182,13 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
            ((int16_t*)&tmp_sample1)[0] = (int16_t)((qam_table_s0[qam16_table_offset_re]));
            ((int16_t*)&tmp_sample1)[1] = (int16_t)((qam_table_s0[qam16_table_offset_im]));
 
-           ((int16_t *)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_SQRT2_Q15)>>15);
-           ((int16_t *)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_SQRT2_Q15)>>15);
+           ((int16_t *)&txdataF[0][tti_offset])[0] += ((int16_t*)&tmp_sample1)[0];
+           ((int16_t *)&txdataF[0][tti_offset])[1] += ((int16_t*)&tmp_sample1)[1];
 
           if (frame_parms->nb_antennas_tx == 2) {
             layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index);
-            ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]*ONE_OVER_SQRT2_Q15)>>15);
-            ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_SQRT2_Q15)>>15);
+            ((int16_t*)&txdataF[1][tti_offset])[0] += ((int16_t*)&tmp_sample2)[0];
+            ((int16_t*)&txdataF[1][tti_offset])[1] += ((int16_t*)&tmp_sample2)[1];
           }
 
           break;
@@ -1208,13 +1219,13 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
           ((int16_t*)&tmp_sample1)[0] = (int16_t)((qam_table_s0[qam64_table_offset_re]));
           ((int16_t*)&tmp_sample1)[1] = (int16_t)((qam_table_s0[qam64_table_offset_im]));
 
-          ((int16_t *)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_SQRT2_Q15)>>15);
-          ((int16_t *)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_SQRT2_Q15)>>15);
+          ((int16_t *)&txdataF[0][tti_offset])[0] += ((int16_t*)&tmp_sample1)[0];
+          ((int16_t *)&txdataF[0][tti_offset])[1] += ((int16_t*)&tmp_sample1)[1];
 
           if (frame_parms->nb_antenna_ports_eNB == 2) {
             layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index);
-            ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]*ONE_OVER_SQRT2_Q15)>>15);
-            ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_SQRT2_Q15)>>15);
+            ((int16_t*)&txdataF[1][tti_offset])[0] += ((int16_t*)&tmp_sample2)[0];
+            ((int16_t*)&txdataF[1][tti_offset])[1] += ((int16_t*)&tmp_sample2)[1];
           }
 
           break;
@@ -1246,15 +1257,18 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
           *jj = *jj + 1;
 
           //normalization for 2 tx antennas
-          ((int16_t*)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_2_Q15)>>15);
-          ((int16_t*)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_2_Q15)>>15);
+          // We remove ONE_OVER_2_Q15 that was coming from precoder,
+          //as now it applied in computation sqrt_rho_a, sqrt_rho_b, same in the receiver in precoder function
+          //ONE_OVER_SQRT2_Q15 remains from it
+          ((int16_t*)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_SQRT2_Q15)>>15);
+          ((int16_t*)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_SQRT2_Q15)>>15);
 
           //printf("%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
 
           if (frame_parms->nb_antenna_ports_eNB == 2) {
             layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index0);
-            ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]*ONE_OVER_2_Q15)>>15);
-            ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_2_Q15)>>15);
+            ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]*ONE_OVER_SQRT2_Q15)>>15);
+            ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_SQRT2_Q15)>>15);
           }
 
         break;
@@ -1280,13 +1294,17 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 
            ((int16_t*)&tmp_sample1)[0] = (int16_t)((qam_table_s0[qam16_table_offset_re]));
            ((int16_t*)&tmp_sample1)[1] = (int16_t)((qam_table_s0[qam16_table_offset_im]));
-           ((int16_t *)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_2_Q15)>>15);
-           ((int16_t *)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_2_Q15)>>15);
+
+           // We remove ONE_OVER_2_Q15 that was coming from precoder,
+           //as now it applied in computation sqrt_rho_a, sqrt_rho_b, same in the receiver in precoder function
+           //ONE_OVER_SQRT2_Q15 remains from it
+           ((int16_t *)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_SQRT2_Q15)>>15);
+           ((int16_t *)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_SQRT2_Q15)>>15);
 
           if (frame_parms->nb_antenna_ports_eNB == 2) {
             layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index0);
-            ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]*ONE_OVER_2_Q15)>>15);
-            ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_2_Q15)>>15);
+            ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]*ONE_OVER_SQRT2_Q15)>>15);
+            ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_SQRT2_Q15)>>15);
           }
 
           break;
@@ -1317,13 +1335,13 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 
           ((int16_t*)&tmp_sample1)[0] = (int16_t)((qam_table_s0[qam64_table_offset_re]));
           ((int16_t*)&tmp_sample1)[1] = (int16_t)((qam_table_s0[qam64_table_offset_im]));
-          ((int16_t *)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_2_Q15)>>15);
-          ((int16_t *)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_2_Q15)>>15);
+          ((int16_t *)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_SQRT2_Q15)>>15);
+          ((int16_t *)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_SQRT2_Q15)>>15);
 
-          if (frame_parms->nb_antenna_ports_eNB == 2) {
-            layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index);
-            ((int16_t*)&txdataF[1][tti_offset])[0] += ((int16_t*)&tmp_sample2)[0];
-            ((int16_t*)&txdataF[1][tti_offset])[1] += ((int16_t*)&tmp_sample2)[1];
+          if (frame_parms->nb_antennas_tx == 2) {
+            layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index0);
+            ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]*ONE_OVER_SQRT2_Q15)>>15);
+            ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_SQRT2_Q15)>>15);
           }
 
           break;
@@ -1340,13 +1358,13 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
             *jj2 = *jj2 + 1;
 
             //normalization for 2 tx antennas
-            ((int16_t*)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_2_Q15)>>15);
-            ((int16_t*)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_2_Q15)>>15);
+            ((int16_t*)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_SQRT2_Q15)>>15);
+            ((int16_t*)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_SQRT2_Q15)>>15);
 
             if (frame_parms->nb_antenna_ports_eNB== 2) {
               layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index1);
-              ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]*ONE_OVER_2_Q15)>>15);
-              ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_2_Q15)>>15);
+              ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]*ONE_OVER_SQRT2_Q15)>>15);
+              ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_SQRT2_Q15)>>15);
             }
 
             break;
@@ -1373,13 +1391,13 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 
              ((int16_t*)&tmp_sample1)[0] = (int16_t)((qam_table_s1[qam16_table_offset_re]));
              ((int16_t*)&tmp_sample1)[1] = (int16_t)((qam_table_s1[qam16_table_offset_im]));
-             ((int16_t *)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_2_Q15)>>15);
-             ((int16_t *)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_2_Q15)>>15);
+             ((int16_t *)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_SQRT2_Q15)>>15);
+             ((int16_t *)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_SQRT2_Q15)>>15);
 
             if (frame_parms->nb_antenna_ports_eNB == 2) {
               layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index1);
-              ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]*ONE_OVER_2_Q15)>>15);
-              ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_2_Q15)>>15);
+              ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]*ONE_OVER_SQRT2_Q15)>>15);
+              ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_SQRT2_Q15)>>15);
             }
 
             break;
@@ -1409,13 +1427,13 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 
             ((int16_t*)&tmp_sample1)[0] = (int16_t)((qam_table_s1[qam64_table_offset_re]));
             ((int16_t*)&tmp_sample1)[1] = (int16_t)((qam_table_s1[qam64_table_offset_im]));
-            ((int16_t *)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_2_Q15)>>15);
-            ((int16_t *)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_2_Q15)>>15);
+            ((int16_t *)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_SQRT2_Q15)>>15);
+            ((int16_t *)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_SQRT2_Q15)>>15);
 
             if (frame_parms->nb_antenna_ports_eNB == 2) {
               layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index1);
-              ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]*ONE_OVER_2_Q15)>>15);
-              ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_2_Q15)>>15);
+              ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]*ONE_OVER_SQRT2_Q15)>>15);
+              ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_SQRT2_Q15)>>15);
             }
 
             break;
@@ -2402,17 +2420,12 @@ int dlsch_modulation_SIC(int32_t **sic_buffer,
                          LTE_DL_FRAME_PARMS *frame_parms,
                          uint8_t num_pdcch_symbols,
                          LTE_eNB_DLSCH_t *dlsch0,
-                         LTE_eNB_DLSCH_t *dlsch1,
                          int G)
 {
 
-  uint8_t nsymb;
   uint8_t harq_pid = dlsch0->current_harq_pid;
   LTE_DL_eNB_HARQ_t *dlsch0_harq = dlsch0->harq_processes[harq_pid];
-  LTE_DL_eNB_HARQ_t *dlsch1_harq; //= dlsch1->harq_processes[harq_pid];
   uint32_t i,jj,re_allocated=0;
-  uint16_t l,rb,re_offset, amp;
-  uint32_t *rb_alloc = dlsch0_harq->rb_alloc;
   uint8_t mod_order0 = get_Qm(dlsch0_harq->mcs);
   uint8_t *x0  = dlsch0_harq->e;
   uint8_t qam64_table_offset_re = 0;
@@ -2427,9 +2440,7 @@ int dlsch_modulation_SIC(int32_t **sic_buffer,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_MODULATION, VCD_FUNCTION_IN);
 
-  amp=1; //we do full scale here for SIC
   gain_lin_QPSK = (int16_t)((ONE_OVER_SQRT2_Q15));
-  //printf("gain=%d\n", gain_lin_QPSK);
 
   jj = 0;
   i = 0;
@@ -2439,8 +2450,6 @@ int dlsch_modulation_SIC(int32_t **sic_buffer,
 
     switch (mod_order0) {
     case 2:  //QPSK
-      /* TODO: handle more than 1 antenna */
-      //printf("%d(%d) : %d,%d => ",tti_offset,*jj,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
 
       ((int16_t*)&sic_buffer[0][i])[0] = (x0[jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I //b_i
 
