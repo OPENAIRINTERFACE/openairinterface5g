@@ -151,6 +151,8 @@ uint8_t usim_test = 0;
 uint8_t nb_antenna_tx = 1;
 uint8_t nb_antenna_rx = 1;
 
+int16_t dlsch_demod_shift = 0;
+
 char ref[128] = "internal";
 char channels[128] = "0";
 
@@ -635,6 +637,7 @@ static void get_options (int argc, char **argv) {
         LONG_OPTION_THREADIQ,
         LONG_OPTION_THREADODDSUBFRAME,
         LONG_OPTION_THREADEVENSUBFRAME,
+        LONG_OPTION_DEMOD_SHIFT,
 #if T_TRACER
         LONG_OPTION_T_PORT,
         LONG_OPTION_T_NOWAIT,
@@ -670,6 +673,7 @@ static void get_options (int argc, char **argv) {
         {"threadIQ",  required_argument, NULL, LONG_OPTION_THREADIQ},
         {"threadOddSubframe",  required_argument, NULL, LONG_OPTION_THREADODDSUBFRAME},
         {"threadEvenSubframe",  required_argument, NULL, LONG_OPTION_THREADEVENSUBFRAME},
+        {"dlsch-demod-shift", required_argument,  NULL, LONG_OPTION_DEMOD_SHIFT},
 #if T_TRACER
         {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
         {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
@@ -800,7 +804,9 @@ static void get_options (int argc, char **argv) {
     case LONG_OPTION_THREADEVENSUBFRAME:
        threads.even=atoi(optarg);
        break;
-
+    case LONG_OPTION_DEMOD_SHIFT:
+        dlsch_demod_shift = atof(optarg);
+        break;
 #if T_TRACER
         case LONG_OPTION_T_PORT: {
             extern int T_port;

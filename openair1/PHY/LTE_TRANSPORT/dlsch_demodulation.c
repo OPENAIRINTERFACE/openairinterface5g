@@ -42,6 +42,7 @@
 #define NOCYGWIN_STATIC
 #endif
 
+extern int16_t dlsch_demod_shift;
 //#define DEBUG_HARQ
 
 //#undef LOG_D
@@ -402,8 +403,8 @@ int rx_pdsch(PHY_VARS_UE *ue,
       LOG_D(PHY,"Channel Level TM34  avg_0 %d, avg_1 %d, rx_type %d, rx_standard %d, interf_unaw_shift %d \n", avg_0[0],
               avg_1[0], rx_type, rx_standard, interf_unaw_shift);
         if (rx_type>rx_standard) {
-          avg_0[0] = (log2_approx(avg_0[0])/2) - 5 + 2 ;//+ 2;
-          avg_1[0] = (log2_approx(avg_1[0])/2) - 5 + 2 ;//+ 2;
+          avg_0[0] = (log2_approx(avg_0[0])/2) + dlsch_demod_shift;// + 2 ;//+ 4;
+          avg_1[0] = (log2_approx(avg_1[0])/2) + dlsch_demod_shift;// + 2 ;//+ 4;
           pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg_0[0],0);
           pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg_1[0],0);
           //printf("TM4 I-A log2_maxh0 = %d\n", pdsch_vars[eNB_id]->log2_maxh0);
@@ -1067,9 +1068,9 @@ int rx_pdsch(PHY_VARS_UE *ue,
       write_output("dl_ch_estimates_ext10.m", "dl_ch_estimates_ext10", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][0],14*frame_parms->N_RB_DL*12,1,1);
       write_output("dl_ch_estimates_ext11.m", "dl_ch_estimates_ext11", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[3][0],14*frame_parms->N_RB_DL*12,1,1);
       write_output("rxdataF_comp00.m","rxdataF_comp00",              &pdsch_vars[eNB_id]->rxdataF_comp0[0][0],14*frame_parms->N_RB_DL*12,1,1);
-      write_output("rxdataF_comp01.m","rxdataF_comp01",              &pdsch_vars[eNB_id]->rxdataF_comp0[0][0],14*frame_parms->N_RB_DL*12,1,1);
-      write_output("rxdataF_comp10.m","rxdataF_comp10",              &pdsch_vars[eNB_id]->rxdataF_comp0[0][0],14*frame_parms->N_RB_DL*12,1,1);
-      write_output("rxdataF_comp11.m","rxdataF_comp11",              &pdsch_vars[eNB_id]->rxdataF_comp0[0][0],14*frame_parms->N_RB_DL*12,1,1);
+      write_output("rxdataF_comp01.m","rxdataF_comp01",              &pdsch_vars[eNB_id]->rxdataF_comp0[1][0],14*frame_parms->N_RB_DL*12,1,1);
+      write_output("rxdataF_comp10.m","rxdataF_comp10",              &pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][0][0],14*frame_parms->N_RB_DL*12,1,1);
+      write_output("rxdataF_comp11.m","rxdataF_comp11",              &pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][1][0],14*frame_parms->N_RB_DL*12,1,1);
 #endif
       write_output("llr0.m","llr0",  &pdsch_vars[eNB_id]->llr[0][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
       write_output("llr1.m","llr1",  &pdsch_vars[eNB_id]->llr[1][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
@@ -1666,9 +1667,8 @@ void prec2A_TM3_128(__m128i *ch0,__m128i *ch1) {
 
   __m128i tmp0,tmp1;
 
-  // sqrt(2) is already taken into account in computation sqrt_rho_a, sqrt_rho_b,
-  //so divide by 2 is replaced by divide by sqrt(2).
 
+//_mm_mulhi_epi16
   //  print_shorts("prec2A_TM3 ch0 (before):",ch0);
   //  print_shorts("prec2A_TM3 ch1 (before):",ch1);
 
@@ -1679,6 +1679,11 @@ void prec2A_TM3_128(__m128i *ch0,__m128i *ch1) {
   ch0[0] = _mm_adds_epi16(ch0[0],tmp1);
   ch1[0] = _mm_subs_epi16(tmp0,tmp1);
 
+  ch0[0] = _mm_mulhi_epi16(ch0[0],amp);
+  ch0[0] = _mm_slli_epi16(ch0[0],1);
+
+  ch1[0] = _mm_mulhi_epi16(ch1[0],amp);
+  ch1[0] = _mm_slli_epi16(ch1[0],1);
 
   //  print_shorts("prec2A_TM3 ch0 (mid):",&tmp0);
   //  print_shorts("prec2A_TM3 ch1 (mid):",ch1);
@@ -1688,8 +1693,8 @@ void prec2A_TM3_128(__m128i *ch0,__m128i *ch1) {
   ch1[0] = _mm_mulhi_epi16(ch1[0],amp);
   ch1[0] = _mm_slli_epi16(ch1[0],1);
 
-  // ch0[0] = _mm_srai_epi16(ch0[0],1);
-  // ch1[0] = _mm_srai_epi16(ch1[0],1);
+  //ch0[0] = _mm_srai_epi16(ch0[0],1);
+  //ch1[0] = _mm_srai_epi16(ch1[0],1);
 
   //  print_shorts("prec2A_TM3 ch0 (after):",ch0);
   //  print_shorts("prec2A_TM3 ch1 (after):",ch1);
