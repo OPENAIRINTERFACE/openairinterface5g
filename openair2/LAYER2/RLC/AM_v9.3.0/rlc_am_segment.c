@@ -535,6 +535,7 @@ void rlc_am_segment_10 (
     pdu_mngt_p->retx_count_next = 0;
     pdu_mngt_p->flags.retransmit = 0;
     pdu_mngt_p->flags.transmitted = 1;
+    pdu_mngt_p->sn = RLC_AM_PREV_SN(rlc_pP->vt_s);
 
 
     //TBC: What for resetting local pointers at the end ??
