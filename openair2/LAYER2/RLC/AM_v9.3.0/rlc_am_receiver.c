@@ -323,8 +323,9 @@ rlc_am_receive_process_data_pdu (
 
       if (RLC_AM_SN_IN_WINDOW(pdu_info_p->sn, rlc_pP->vr_r)) {
 
-      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU] VR(R) %04d VR(H) %04d VR(MR) %04d VR(MS) %04d VR(X) %04d\n",
+      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SN=%04d] VR(R) %04d VR(H) %04d VR(MR) %04d VR(MS) %04d VR(X) %04d\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
+            pdu_info_p->sn,
             rlc_pP->vr_r,
             rlc_pP->vr_h,
             rlc_pP->vr_mr,
@@ -433,12 +434,15 @@ rlc_am_receive_process_data_pdu (
         }
       }
 
-      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU] VR(R) %04d VR(H) %04d  VR(MS) %04d  VR(MR) %04d\n",
+      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SN=%04d] NEW VR(R) %04d VR(H) %04d  VR(MS) %04d  VR(MR) %04d VR(X) %04d reassemble=%d\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
+            pdu_info_p->sn,
             rlc_pP->vr_r,
             rlc_pP->vr_h,
             rlc_pP->vr_ms,
-            rlc_pP->vr_mr);
+            rlc_pP->vr_mr,
+            rlc_pP->vr_x,
+            reassemble);
     } else {
       rlc_pP->stat_rx_data_pdu_out_of_window     += 1;
       rlc_pP->stat_rx_data_bytes_out_of_window   += tb_size_in_bytesP;
