@@ -92,11 +92,14 @@ rlc_am_check_timer_poll_retransmit(
 					sn, rlc_pP->vt_a,rlc_pP->vt_s,rlc_pP->channel_id);
 		    if ((tx_data_pdu_buffer_p->flags.ack == 0) && (tx_data_pdu_buffer_p->flags.max_retransmit == 0)) {
 		    	tx_data_pdu_buffer_p->flags.retransmit = 1;
+		    	tx_data_pdu_buffer_p->retx_payload_size = tx_data_pdu_buffer_p->payload_size;
 		    	if (tx_data_pdu_buffer_p->retx_count == tx_data_pdu_buffer_p->retx_count_next) {
 		    		tx_data_pdu_buffer_p->retx_count_next ++;
 		    	}
 		    	rlc_pP->retrans_num_pdus += 1;
 		    	rlc_pP->retrans_num_bytes_to_retransmit += tx_data_pdu_buffer_p->payload_size;
+		        LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T_POLL_RETRANSMIT] TIME-OUT PUT SN=%d in ReTx Buffer\n",
+		              PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),tx_data_pdu_buffer_p->sn);
 		    	break;
 		    }
 		    else
