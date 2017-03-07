@@ -320,9 +320,20 @@ rlc_am_rx_pdu_status_t rlc_am_rx_list_handle_pdu_segment(
 	  // First case : cursor_p is NULL or its SN is different from the received one, it means the SN is received for the first time
 	  // Insert PDU after previous_cursor_p
 	  if ((cursor_p == NULL) || (pdu_info_cursor_p->sn != pdu_rx_info_p->sn)) {
-		  LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SEGMENT]  STORE FIRST PDU SEGMENT FOR SN=%d\n",
-		  	              PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_rx_info_p->sn);
-		  list2_insert_after_element(tb_pP, previous_cursor_p, &rlc_pP->receiver_buffer);
+        rlc_usn_t sn_prev = pdu_info_previous_cursor_p->sn;
+          if (RLC_AM_DIFF_SN(sn_prev,rlc_pP->vr_r) < RLC_AM_DIFF_SN(pdu_rx_info_p->sn,rlc_pP->vr_r)) {
+                LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SEGMENT SN=%d] PDU SEGMENT INSERTED AFTER PDU SN=%d\n",
+                            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_rx_info_p->sn,
+                            sn_prev);
+              list2_insert_after_element(tb_pP, previous_cursor_p, &rlc_pP->receiver_buffer);
+          }
+          else { /* SN of head of Rx PDU list is higher than received PDU SN */
+              LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SEGMENT SN=%d] PDU SEGMENT INSERTED BEFORE PDU SN=%d\n",
+                            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_rx_info_p->sn,
+                            pdu_info_cursor_p->sn);
+              list2_insert_before_element(tb_pP, cursor_p, &rlc_pP->receiver_buffer);
+          }
+
 		  return RLC_AM_DATA_PDU_STATUS_OK;
 	  }
 
