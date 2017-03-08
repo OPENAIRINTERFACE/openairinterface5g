@@ -948,6 +948,11 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
   // fill cqi parameters for periodic CQI reporting
   get_cqipmiri_params(phy_vars_ue,eNB_id);
 
+  // disable MIB SIB decoding once we are on connected mode
+  LOG_I(PHY,"Disabling SIB MIB decoding \n");
+  phy_vars_ue->decode_SIB = 0;
+  phy_vars_ue->decode_MIB = 0;
+
 }
 
 void  phy_config_cba_rnti (module_id_t Mod_id,int CC_id,eNB_flag_t eNB_flag, uint8_t index, rnti_t cba_rnti, uint8_t cba_group_id, uint8_t num_active_cba_groups)
@@ -1305,6 +1310,10 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
   // set channel estimation to do linear interpolation in time
   ue->high_speed_flag = 1;
   ue->ch_est_alpha    = 24576;
+
+  // enable MIB/SIB decoding by default
+  ue->decode_MIB = 1;
+  ue->decode_SIB = 1;
 
   init_prach_tables(839);
 

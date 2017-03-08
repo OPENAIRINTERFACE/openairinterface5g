@@ -364,12 +364,18 @@ int rx_pdsch(PHY_VARS_UE *ue,
                       symbol,
                       nb_rb);
 
-  if ((dlsch0_harq->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) && (rx_type==rx_IC_single_stream) && (eNB_id_i==ue->n_connected_eNB) && (dlsch0_harq->dl_power_off==0))  // TM5 two-user
+  if ((dlsch0_harq->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) &&
+      (rx_type==rx_IC_single_stream) &&
+      (eNB_id_i==ue->n_connected_eNB) &&
+      (dlsch0_harq->dl_power_off==0)
+     )  // TM5 two-user
+  {
     dlsch_scale_channel(pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
                         frame_parms,
                         dlsch,
                         symbol,
                         nb_rb);
+  }
 
   if (first_symbol_flag==1) {
     if (beamforming_mode==0){

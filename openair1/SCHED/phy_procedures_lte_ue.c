@@ -2082,7 +2082,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
               T_INT(tx_amp),T_INT(ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->g_pucch),T_INT(get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
 #endif
 
-      LOG_I(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2 (RI or CQI), n2_pucch %d, Po_PUCCH %d, isShortenPucch %d, amp %d\n",
+      LOG_D(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2 (RI or CQI), n2_pucch %d, Po_PUCCH %d, isShortenPucch %d, amp %d\n",
               Mod_id,
               ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->rnti,
               frame_tx%1024, subframe_tx,
@@ -3520,10 +3520,10 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
 			   dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
       stop_meas(&ue->dlsch_decoding_stats);
 
-      printf(" --> Unscrambling for CW0 %5.3f\n",
-              (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
-      printf(" --> Turbo Decoding for CW0 %5.3f\n",
-              (ue->dlsch_decoding_stats.p_time)/(cpuf*1000.0));
+      //printf(" --> Unscrambling for CW0 %5.3f\n",
+      //        (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
+      //printf(" --> Turbo Decoding for CW0 %5.3f\n",
+      //        (ue->dlsch_decoding_stats.p_time)/(cpuf*1000.0));
 
       if(is_cw1_active)
       {
@@ -3568,10 +3568,10 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
                   dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
           stop_meas(&ue->dlsch_decoding_stats);
 
-          printf(" --> Unscrambling for CW1 %5.3f\n",
-                  (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
-          printf(" --> Turbo Decoding for CW1 %5.3f\n",
-                  (ue->dlsch_decoding_stats.p_time)/(cpuf*1000.0));
+          //printf(" --> Unscrambling for CW1 %5.3f\n",
+          //        (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
+          //printf(" --> Turbo Decoding for CW1 %5.3f\n",
+          //        (ue->dlsch_decoding_stats.p_time)/(cpuf*1000.0));
       }
     }
 	
@@ -3591,7 +3591,7 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
       
       if(dlsch0->rnti != 0xffff)
       {
-      LOG_I(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d DLSCH CW0 in error (rv %d,mcs %d,TBS %d)\n",
+      LOG_I(PHY,"[UE  %d][PDSCH %x/%d] AbsSubframe %d.%d : DLSCH CW0 in error (rv %d,mcs %d,TBS %d)\n",
 	    ue->Mod_id,dlsch0->rnti,
 	    harq_pid,frame_rx,subframe_rx,
 	    dlsch0->harq_processes[harq_pid]->rvidx,
@@ -3603,7 +3603,7 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
     } else {
         if(dlsch0->rnti != 0xffff)
         {
-      LOG_I(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: Received DLSCH CW0 (rv %d,mcs %d,TBS %d)\n",
+      LOG_I(PHY,"[UE  %d][PDSCH %x/%d] AbsSubframe %d.%d : Received DLSCH CW0 (rv %d,mcs %d,TBS %d)\n",
 	    ue->Mod_id,dlsch0->rnti,
 	    harq_pid,frame_rx,subframe_rx,
 	    dlsch0->harq_processes[harq_pid]->rvidx,
@@ -3857,7 +3857,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 
   // first slot has been processed (FFTs + Channel Estimation, PCFICH/PHICH/PDCCH)
   stop_meas(&ue->generic_stat);
-  printf("[SFN %d] Slot0: FFT + Channel Estimate + PCFICH/PHICH/PDCCH %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
+  //printf("[SFN %d] Slot0: FFT + Channel Estimate + PCFICH/PHICH/PDCCH %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
 
   start_meas(&ue->generic_stat);
   // do procedures for C-RNTI
@@ -3952,11 +3952,13 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   } // not an S-subframe
 
   stop_meas(&ue->generic_stat);
-  printf("[SFN %d] Slot1: FFT + Channel Estimate + Pdsch Proc Slot0 %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
+  //printf("[SFN %d] Slot1: FFT + Channel Estimate + Pdsch Proc Slot0 %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
 
   // run pbch procedures if subframe is 0
-  if (subframe_rx == 0)
+  if ( (subframe_rx == 0) && (ue->decode_MIB == 1))
+  {
     ue_pbch_procedures(eNB_id,ue,proc,abstraction_flag);
+  }
    
   // do procedures for C-RNTI
   if (ue->dlsch[subframe_rx&0x1][eNB_id][0]->active == 1) {
@@ -3984,8 +3986,8 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			mode,
 			abstraction_flag);
     stop_meas(&ue->dlsch_procedures_stat);
-    printf("[SFN %d] Slot1:       Pdsch Proc %5.2f\n",subframe_rx,ue->pdsch_procedures_stat.p_time/(cpuf*1000.0));
-    printf("[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",subframe_rx,ue->dlsch_procedures_stat.p_time/(cpuf*1000.0));
+    //printf("[SFN %d] Slot1:       Pdsch Proc %5.2f\n",subframe_rx,ue->pdsch_procedures_stat.p_time/(cpuf*1000.0));
+    //printf("[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",subframe_rx,ue->dlsch_procedures_stat.p_time/(cpuf*1000.0));
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
 

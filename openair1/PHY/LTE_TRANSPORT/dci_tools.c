@@ -4763,6 +4763,8 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
         uint16_t si_rnti,
         uint16_t ra_rnti,
         uint16_t p_rnti,
+        uint32_t frame,
+        uint8_t  subframe,
         DCI_INFO_EXTRACTED_t *pdci_info_extarcted,
         LTE_DL_UE_HARQ_t *pdlsch0_harq)
 {
@@ -4779,17 +4781,17 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
     uint8_t  NPRB    = 0;
     long long int RIV_max = 0;
 
-#ifdef DEBUG_DCI
-    LOG_I(PHY,"[DCI-FORMAT-1-1A] dci_format %d\n", dci_format);
+//#ifdef DEBUG_DCI
+    LOG_I(PHY,"[DCI-FORMAT-1-1A] AbsSubframe %d.%d dci_format %d\n", frame, subframe, dci_format);
     LOG_I(PHY,"[DCI-FORMAT-1-1A] rnti       %x\n",  rnti);
     LOG_I(PHY,"[DCI-FORMAT-1-1A] harq_pid   %d\n", harq_pid);
-    LOG_I(PHY,"[DCI-FORMAT-1-1A] rah        %d\n", rah);
-    LOG_I(PHY,"[DCI-FORMAT-1-1A] rballoc    %x\n", rballoc);
-    LOG_I(PHY,"[DCI-FORMAT-1-1A] mcs1       %d\n", mcs1);
-    LOG_I(PHY,"[DCI-FORMAT-1-1A] rv1        %d\n", rv1);
-    LOG_I(PHY,"[DCI-FORMAT-1-1A] ndi1       %d\n", ndi1);
-    LOG_I(PHY,"[DCI-FORMAT-1-1A] TPC        %d\n", TPC);
-#endif
+  //  LOG_I(PHY,"[DCI-FORMAT-1-1A] rah        %d\n", rah);
+   // LOG_I(PHY,"[DCI-FORMAT-1-1A] rballoc    %x\n", rballoc);
+   // LOG_I(PHY,"[DCI-FORMAT-1-1A] mcs1       %d\n", mcs1);
+   // LOG_I(PHY,"[DCI-FORMAT-1-1A] rv1        %d\n", rv1);
+   // LOG_I(PHY,"[DCI-FORMAT-1-1A] ndi1       %d\n", ndi1);
+   // LOG_I(PHY,"[DCI-FORMAT-1-1A] TPC        %d\n", TPC);
+//#endif
 
     // I- check dci content minimum coherency
     if( ((rnti==si_rnti) || (rnti==p_rnti) || (rnti==ra_rnti)) && harq_pid > 0)
@@ -5002,10 +5004,10 @@ int check_dci_format2_2a_coherency(DCI_format_t dci_format,
     LOG_I(PHY, "extarcted dci - mcs2       %d \n", mcs2);
     LOG_I(PHY, "extarcted dci - rv1        %d \n", rv1);
     LOG_I(PHY, "extarcted dci - rv2        %d \n", rv2);
-    LOG_I(PHY, "extarcted dci - ndi1       %d \n", ndi1);
-    LOG_I(PHY, "extarcted dci - ndi2       %d \n", ndi2);
+    //LOG_I(PHY, "extarcted dci - ndi1       %d \n", ndi1);
+    //LOG_I(PHY, "extarcted dci - ndi2       %d \n", ndi2);
     LOG_I(PHY, "extarcted dci - rballoc    %x \n", rballoc);
-    LOG_I(PHY, "extarcted dci - harq pif   %d \n", harq_pid);
+    LOG_I(PHY, "extarcted dci - harq pid   %d \n", harq_pid);
     LOG_I(PHY, "extarcted dci - round0     %d \n", pdlsch0_harq->round);
     LOG_I(PHY, "extarcted dci - round1     %d \n", pdlsch1_harq->round);
 #endif
@@ -5818,12 +5820,24 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
          }
         }
 
-          dlsch0_harq->TBS = TBStable[get_I_TBS(dlsch0_harq->mcs)][dlsch0_harq->nb_rb-1];
-          //if(dlsch0_harq->Nl == 2)
-            //dlsch0_harq->TBS = TBStable[get_I_TBS(dlsch0_harq->mcs)][(dlsch0_harq->nb_rb<<1)-1];
-          if (mcs1 <= 28)
+        // if Imcs in [29..31] TBS is assumed to be as determined from DCI transported in the latest
+        // PDCCH for the same trasport block using Imcs in [0 .. 28]
+        if(dlsch0_harq->mcs <= 28)
+        {
+            dlsch0_harq->TBS = TBStable[get_I_TBS(dlsch0_harq->mcs)][dlsch0_harq->nb_rb-1];
+            LOG_D(PHY,"[UE] DLSCH: New TBS CW0 subframe %d (pid %d, round %d) TBS %d \n",
+                       subframe,harq_pid,dlsch0_harq->round, dlsch0_harq->TBS);
+        }
+        else
+        {
+            LOG_D(PHY,"[UE] DLSCH: Keep the same TBS CW0 subframe %d (pid %d, round %d) TBS %d \n",
+                       subframe,harq_pid,dlsch0_harq->round, dlsch0_harq->TBS);
+        }
+        //if(dlsch0_harq->Nl == 2)
+        //dlsch0_harq->TBS = TBStable[get_I_TBS(dlsch0_harq->mcs)][(dlsch0_harq->nb_rb<<1)-1];
+        if (mcs1 <= 28)
             dlsch0_harq->Qm = get_Qm(mcs1);
-          else if (mcs1<=31)
+        else if (mcs1<=31)
             dlsch0_harq->Qm = (mcs1-28)<<1;
       }
 
@@ -5849,13 +5863,22 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
 #endif
         }
 
-          dlsch1_harq->TBS = TBStable[get_I_TBS(dlsch1_harq->mcs)][dlsch1_harq->nb_rb-1];
-          //if(dlsch0_harq->Nl == 2)
-            //dlsch0_harq->TBS = TBStable[get_I_TBS(dlsch0_harq->mcs)][(dlsch0_harq->nb_rb<<1)-1];
-
-          if (mcs2 <= 28)
+        // if Imcs in [29..31] TBS is assumed to be as determined from DCI transported in the latest
+        // PDCCH for the same trasport block using Imcs in [0 .. 28]
+        if(dlsch1_harq->mcs <= 28)
+        {
+            dlsch1_harq->TBS = TBStable[get_I_TBS(dlsch1_harq->mcs)][dlsch1_harq->nb_rb-1];
+            LOG_D(PHY,"[UE] DLSCH: New TBS CW1 subframe %d (pid %d, round %d) TBS %d \n",
+                       subframe,harq_pid,dlsch1_harq->round, dlsch1_harq->TBS);
+        }
+        else
+        {
+            LOG_D(PHY,"[UE] DLSCH: Keep the same TBS CW1 subframe %d (pid %d, round %d) TBS %d \n",
+                       subframe,harq_pid,dlsch1_harq->round, dlsch1_harq->TBS);
+        }
+        if (mcs2 <= 28)
             dlsch1_harq->Qm = get_Qm(mcs2);
-          else if (mcs1<=31)
+        else if (mcs1<=31)
             dlsch1_harq->Qm = (mcs2-28)<<1;
       }
 
@@ -5953,7 +5976,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                               tc_rnti,
                                               si_rnti,
                                               ra_rnti,
-                                              p_rnti,
+                                              p_rnti,frame,subframe,
                                               &dci_info_extarcted,
                                               dlsch0_harq);
       if(status == 0)
@@ -6053,7 +6076,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                               tc_rnti,
                                               si_rnti,
                                               ra_rnti,
-                                              p_rnti,
+                                              p_rnti,frame,subframe,
                                               &dci_info_extarcted,
                                               dlsch0_harq);
       if(status == 0)
@@ -6133,7 +6156,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     case format2A:
     {
     // extract dci infomation
-        //LOG_I(PHY,"[DCI-format2] AbsSubframe %d.%d extract dci infomation \n", frame%1024, subframe);
+    //LOG_I(PHY,"[DCI-format2] AbsSubframe %d.%d extract dci infomation \n", frame%1024, subframe);
     extract_dci2A_info(frame_parms->N_RB_DL,
                        frame_type,
                        frame_parms->nb_antenna_ports_eNB,
