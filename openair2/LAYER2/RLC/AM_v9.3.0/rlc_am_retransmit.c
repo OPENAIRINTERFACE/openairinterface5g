@@ -352,13 +352,13 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 	{
 		/* Step 1 */
 		/* Find the SDU index in the original PDU containing retx_so_start */
-		uint16_t temp_read = ((*pdu_original_header_p) << 8) | (*(pdu_original_header_p + 1));
 		sdu_size_t sdu_size = 0;
 		sdu_size_t data_size = 0;
 		sdu_size_t header_segment_length = RLC_AM_PDU_SEGMENT_HEADER_MIN_SIZE;
 		pdu_original_header_p = pdu_mngt->first_byte + 2;
 		li_bit_offset = 4; /* toggle between 0 and 4 */
 		li_jump_offset = 1; /* toggle between 1 and 2 */
+		uint16_t temp_read = ((*pdu_original_header_p) << 8) | (*(pdu_original_header_p + 1));
 
 
 		/* Read first LI */
