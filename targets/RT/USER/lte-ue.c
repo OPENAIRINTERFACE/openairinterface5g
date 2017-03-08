@@ -574,7 +574,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
         }
 
         stop_meas(&UE->generic_stat);
-            printf("mac_xface->ue_scheduler %5.2f \n",UE->generic_stat.p_time/(cpuf*1000.0));
+            //printf("mac_xface->ue_scheduler %5.2f \n",UE->generic_stat.p_time/(cpuf*1000.0));
 
         // Prepare the future Tx data
 

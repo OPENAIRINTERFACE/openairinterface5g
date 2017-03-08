@@ -1537,7 +1537,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
 	  mac_xface->macphy_exit("Error in ulsch_coding");
 	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
 	  stop_meas(&ue->phy_proc_tx);
-	  printf("------FULL TX PROC : %5.2f ------\n",ue->phy_proc_tx.p_time/(cpuf*1000.0));
+	  //printf("------FULL TX PROC : %5.2f ------\n",ue->phy_proc_tx.p_time/(cpuf*1000.0));
 	  return;
 	}
       }
@@ -3591,7 +3591,7 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
       
       if(dlsch0->rnti != 0xffff)
       {
-      LOG_I(PHY,"[UE  %d][PDSCH %x/%d] AbsSubframe %d.%d : DLSCH CW0 in error (rv %d,mcs %d,TBS %d)\n",
+      LOG_D(PHY,"[UE  %d][PDSCH %x/%d] AbsSubframe %d.%d : DLSCH CW0 in error (rv %d,mcs %d,TBS %d)\n",
 	    ue->Mod_id,dlsch0->rnti,
 	    harq_pid,frame_rx,subframe_rx,
 	    dlsch0->harq_processes[harq_pid]->rvidx,
@@ -3603,7 +3603,7 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
     } else {
         if(dlsch0->rnti != 0xffff)
         {
-      LOG_I(PHY,"[UE  %d][PDSCH %x/%d] AbsSubframe %d.%d : Received DLSCH CW0 (rv %d,mcs %d,TBS %d)\n",
+      LOG_D(PHY,"[UE  %d][PDSCH %x/%d] AbsSubframe %d.%d : Received DLSCH CW0 (rv %d,mcs %d,TBS %d)\n",
 	    ue->Mod_id,dlsch0->rnti,
 	    harq_pid,frame_rx,subframe_rx,
 	    dlsch0->harq_processes[harq_pid]->rvidx,
@@ -3672,7 +3672,7 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
     if(is_cw1_active)
     {
         if (ret1 == (1+dlsch0->max_turbo_iterations)) {
-            LOG_I(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d DLSCH CW1 in error (rv %d,mcs %d,TBS %d)\n",
+            LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d DLSCH CW1 in error (rv %d,mcs %d,TBS %d)\n",
                     ue->Mod_id,dlsch0->rnti,
                     harq_pid,frame_rx,subframe_rx,
                     dlsch0->harq_processes[harq_pid]->rvidx,
@@ -3680,7 +3680,7 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
                     dlsch0->harq_processes[harq_pid]->TBS);
 
         } else {
-            LOG_I(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: Received DLSCH CW1 (rv %d,mcs %d,TBS %d)\n",
+            LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: Received DLSCH CW1 (rv %d,mcs %d,TBS %d)\n",
                     ue->Mod_id,dlsch0->rnti,
                     harq_pid,frame_rx,subframe_rx,
                     dlsch0->harq_processes[harq_pid]->rvidx,
@@ -4100,7 +4100,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
   stop_meas(&ue->phy_proc_rx[subframe_rx&0x1]);
 
-  printf("------FULL RX PROC [SFN %d]: %5.2f ------\n",subframe_rx,ue->phy_proc_rx[subframe_rx&0x1].p_time/(cpuf*1000.0));
+  //printf("------FULL RX PROC [SFN %d]: %5.2f ------\n",subframe_rx,ue->phy_proc_rx[subframe_rx&0x1].p_time/(cpuf*1000.0));
 
   return (0);
 }
