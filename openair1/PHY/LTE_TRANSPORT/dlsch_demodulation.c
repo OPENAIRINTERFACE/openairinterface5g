@@ -1661,8 +1661,7 @@ void prec2A_TM3_128(__m128i *ch0,__m128i *ch1) {
 
   __m128i tmp0,tmp1;
 
-
-//_mm_mulhi_epi16
+  //_mm_mulhi_epi16
   //  print_shorts("prec2A_TM3 ch0 (before):",ch0);
   //  print_shorts("prec2A_TM3 ch1 (before):",ch1);
 

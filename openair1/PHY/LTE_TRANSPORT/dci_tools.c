@@ -5710,9 +5710,9 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
       if (TB0_active==0) {
         dlsch0_harq->status = SCH_IDLE;
         pdlsch0->active     = 0;
-#ifdef DEBUG_HARQ
+  #ifdef DEBUG_HARQ
         printf("[DCI UE]: TB0 is deactivated, retransmit TB1 transmit in TM6\n");
-#endif
+  #endif
       }
 
       if (TB1_active==0) {
