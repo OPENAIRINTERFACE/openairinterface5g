@@ -1556,8 +1556,11 @@ void prec2A_TM56_128(unsigned char pmi,__m128i *ch0,__m128i *ch1)
 #elif defined(__arm__)
 void prec2A_TM56_128(unsigned char pmi,__m128i *ch0,__m128i *ch1) {
 
-  __m128i amp;
-  amp = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
+  // sqrt(2) is already taken into account in computation sqrt_rho_a, sqrt_rho_b,
+  //so removed it
+
+  //__m128i amp;
+  //amp = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
 
   switch (pmi) {
 
@@ -1587,8 +1590,8 @@ void prec2A_TM56_128(unsigned char pmi,__m128i *ch0,__m128i *ch1) {
     break;
   }
 
-  ch0[0] = _mm_mulhi_epi16(ch0[0],amp);
-  ch0[0] = _mm_slli_epi16(ch0[0],1);
+  //ch0[0] = _mm_mulhi_epi16(ch0[0],amp);
+  //ch0[0] = _mm_slli_epi16(ch0[0],1);
 
   _mm_empty();
   _m_empty();
@@ -1602,10 +1605,12 @@ short TM3_prec[8]__attribute__((aligned(16))) = {1,1,-1,-1,1,1,-1,-1} ;
 
 void prec2A_TM3_128(__m128i *ch0,__m128i *ch1) {
 
-  //  __m128i amp = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
+  __m128i amp = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
 
   __m128i tmp0,tmp1;
 
+  // sqrt(2) is already taken into account in computation sqrt_rho_a, sqrt_rho_b,
+  //so divide by 2 is replaced by divide by sqrt(2).
 
   //  print_shorts("prec2A_TM3 ch0 (before):",ch0);
   //  print_shorts("prec2A_TM3 ch1 (before):",ch1);
@@ -1621,9 +1626,13 @@ void prec2A_TM3_128(__m128i *ch0,__m128i *ch1) {
   //  print_shorts("prec2A_TM3 ch0 (mid):",&tmp0);
   //  print_shorts("prec2A_TM3 ch1 (mid):",ch1);
 
+  ch0[0] = _mm_mulhi_epi16(ch0[0],amp);
+  ch0[0] = _mm_slli_epi16(ch0[0],1);
+  ch1[0] = _mm_mulhi_epi16(ch1[0],amp);
+  ch1[0] = _mm_slli_epi16(ch1[0],1);
 
-  ch0[0] = _mm_srai_epi16(ch0[0],1);
-  ch1[0] = _mm_srai_epi16(ch1[0],1);
+  // ch0[0] = _mm_srai_epi16(ch0[0],1);
+  // ch1[0] = _mm_srai_epi16(ch1[0],1);
 
   //  print_shorts("prec2A_TM3 ch0 (after):",ch0);
   //  print_shorts("prec2A_TM3 ch1 (after):",ch1);
@@ -1637,9 +1646,12 @@ void prec2A_TM3_128(__m128i *ch0,__m128i *ch1) {
 
 void prec2A_TM4_128(int pmi,__m128i *ch0,__m128i *ch1) {
 
+// sqrt(2) is already taken into account in computation sqrt_rho_a, sqrt_rho_b,
+//so divide by 2 is replaced by divide by sqrt(2).
+
  // printf ("demod pmi=%d\n", pmi);
-  // __m128i amp;
-  // amp = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
+ __m128i amp;
+ amp = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
   __m128i tmp0,tmp1;
 
  // print_shorts("prec2A_TM4 ch0 (before):",ch0);
@@ -1663,14 +1675,14 @@ void prec2A_TM4_128(int pmi,__m128i *ch0,__m128i *ch1) {
   //print_shorts("prec2A_TM4 ch0 (middle):",ch0);
   //print_shorts("prec2A_TM4 ch1 (middle):",ch1);
 
-  //ch0[0] = _mm_mulhi_epi16(ch0[0],amp);
-  //ch0[0] = _mm_slli_epi16(ch0[0],1);
-  //ch1[0] = _mm_mulhi_epi16(ch1[0],amp);
-  //ch1[0] = _mm_slli_epi16(ch1[0],1);
+  ch0[0] = _mm_mulhi_epi16(ch0[0],amp);
+  ch0[0] = _mm_slli_epi16(ch0[0],1);
+  ch1[0] = _mm_mulhi_epi16(ch1[0],amp);
+  ch1[0] = _mm_slli_epi16(ch1[0],1);
 
 
-  ch0[0] = _mm_srai_epi16(ch0[0],1); //divide by 2
-  ch1[0] = _mm_srai_epi16(ch1[0],1); //divide by 2
+ // ch0[0] = _mm_srai_epi16(ch0[0],1); //divide by 2
+ // ch1[0] = _mm_srai_epi16(ch1[0],1); //divide by 2
   //print_shorts("prec2A_TM4 ch0 (end):",ch0);
   //print_shorts("prec2A_TM4 ch1 (end):",ch1);
   _mm_empty();
@@ -5801,7 +5813,7 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
 #ifdef USER_MODE
 
 
-void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t subframe,uint16_t coded_bits_per_codeword,int round)
+void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t subframe,uint16_t coded_bits_per_codeword,int round,  unsigned char harq_pid)
 {
   unsigned int nsymb = (ue->frame_parms.Ncp == 0) ? 14 : 12;
   char fname[32],vname[32];
@@ -5862,12 +5874,12 @@ void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t subframe,uint16_t coded_
   sprintf(fname,"dlsch%d_r%d_rho.m",eNB_id,round);
   sprintf(vname,"dl_rho_r%d_%d",eNB_id,round);
 
-  write_output(fname,vname,ue->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[round][0],12*N_RB_DL*nsymb,1,1);
+  write_output(fname,vname,ue->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[harq_pid][round][0],12*N_RB_DL*nsymb,1,1);
 
   sprintf(fname,"dlsch%d_r%d_rho2.m",eNB_id,round);
   sprintf(vname,"dl_rho2_r%d_%d",eNB_id,round);
 
-  write_output(fname,vname,ue->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[0],12*N_RB_DL*nsymb,1,1);
+  write_output(fname,vname,ue->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho2_ext[0],12*N_RB_DL*nsymb,1,1);
 
   sprintf(fname,"dlsch%d_rxF_r%d_comp0.m",eNB_id,round);
   sprintf(vname,"dl%d_rxF_r%d_comp0",eNB_id,round);
@@ -5875,7 +5887,7 @@ void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t subframe,uint16_t coded_
   if (ue->frame_parms.nb_antenna_ports_eNB == 2) {
     sprintf(fname,"dlsch%d_rxF_r%d_comp1.m",eNB_id,round);
     sprintf(vname,"dl%d_rxF_r%d_comp1",eNB_id,round);
-    write_output(fname,vname,ue->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[0][round],12*N_RB_DL*nsymb,1,1);
+    write_output(fname,vname,ue->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[harq_pid][round][0],12*N_RB_DL*nsymb,1,1);
   }
 
   sprintf(fname,"dlsch%d_rxF_r%d_llr.m",eNB_id,round);

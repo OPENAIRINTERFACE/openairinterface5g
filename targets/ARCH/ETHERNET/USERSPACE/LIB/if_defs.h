@@ -68,7 +68,7 @@
 
 // Packet sizes for IF4p5 interface format
 #define DATA_BLOCK_SIZE_BYTES(scaled_nblocks) (sizeof(uint16_t)*scaled_nblocks)
-#define PRACH_HARD_CODED_NUM_SAMPLES (839*4)
+#define PRACH_HARD_CODED_NUM_SAMPLES (839*2)
 #define PRACH_BLOCK_SIZE_BYTES (sizeof(int16_t)*PRACH_HARD_CODED_NUM_SAMPLES)  // FIX hard coded prach size
  
 #define RAW_IF4p5_PDLFFT_SIZE_BYTES(nblocks) (MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t + DATA_BLOCK_SIZE_BYTES(nblocks))  
