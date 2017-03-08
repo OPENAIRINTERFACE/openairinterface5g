@@ -1682,10 +1682,10 @@ void prec2A_TM3_128(__m128i *ch0,__m128i *ch1) {
   //  print_shorts("prec2A_TM3 ch0 (mid):",&tmp0);
   //  print_shorts("prec2A_TM3 ch1 (mid):",ch1);
 
-  ch0[0] = _mm_mulhi_epi16(ch0[0],amp);
-  ch0[0] = _mm_slli_epi16(ch0[0],1);
-  ch1[0] = _mm_mulhi_epi16(ch1[0],amp);
-  ch1[0] = _mm_slli_epi16(ch1[0],1);
+  //ch0[0] = _mm_mulhi_epi16(ch0[0],amp);
+  //ch0[0] = _mm_slli_epi16(ch0[0],1);
+  //ch1[0] = _mm_mulhi_epi16(ch1[0],amp);
+  //ch1[0] = _mm_slli_epi16(ch1[0],1);
 
   //ch0[0] = _mm_srai_epi16(ch0[0],1);
   //ch1[0] = _mm_srai_epi16(ch1[0],1);
