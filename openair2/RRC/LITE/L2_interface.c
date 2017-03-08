@@ -199,7 +199,7 @@ mac_rrc_data_req(
           int sdu_size = sizeof(RRC_MAC_CCCH_DATA_REQ (message_p).sdu);
 
           if (ccch_size > sdu_size) {
-            LOG_E(RRC, "SDU larger than CCCH SDU buffer size0 (%d, %d)", ccch_size, sdu_size);
+            LOG_E(RRC, "SDU larger than CCCH SDU buffer size (%d, %d)", ccch_size, sdu_size);
             ccch_size = sdu_size;
           }
 
@@ -297,7 +297,7 @@ mac_rrc_data_req(
         int sdu_size = sizeof(RRC_MAC_CCCH_DATA_REQ (message_p).sdu);
 
         if (ccch_size > sdu_size) {
-          LOG_E(RRC, "SDU larger than CCCH SDU buffer size1 (%d, %d)", ccch_size, sdu_size);
+          LOG_E(RRC, "SDU larger than CCCH SDU buffer size (%d, %d)", ccch_size, sdu_size);
           ccch_size = sdu_size;
         }
 
@@ -403,7 +403,7 @@ mac_rrc_data_ind(
           int msg_sdu_size = CCCH_SDU_SIZE;
 
           if (sdu_lenP > msg_sdu_size) {
-            LOG_E(RRC, "SDU larger than CCCH SDU buffer size2 (%d, %d)", sdu_size, msg_sdu_size);
+            LOG_E(RRC, "SDU larger than CCCH SDU buffer size (%d, %d)", sdu_size, msg_sdu_size);
             sdu_size = msg_sdu_size;
           } else {
             sdu_size =  sdu_lenP;
@@ -471,7 +471,7 @@ mac_rrc_data_ind(
       int msg_sdu_size = sizeof(RRC_MAC_CCCH_DATA_IND (message_p).sdu);
 
       if (sdu_lenP > msg_sdu_size) {
-        LOG_E(RRC, "SDU larger than CCCH SDU buffer size3 (%d, %d)", sdu_lenP, msg_sdu_size);
+        LOG_E(RRC, "SDU larger than CCCH SDU buffer size (%d, %d)", sdu_lenP, msg_sdu_size);
         sdu_size = msg_sdu_size;
       } else {
         sdu_size = sdu_lenP;

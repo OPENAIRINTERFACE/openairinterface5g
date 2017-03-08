@@ -612,12 +612,12 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
              &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
 	  stop_meas(dlsch_turbo_decoding_stats);
 
-	  printf("Segmentation: C %d r %d, dlsch_rate_unmatching_stats %5.3f dlsch_deinterleaving_stats %5.3f  dlsch_turbo_decoding_stats %5.3f \n",
+	  /*printf("Segmentation: C %d r %d, dlsch_rate_unmatching_stats %5.3f dlsch_deinterleaving_stats %5.3f  dlsch_turbo_decoding_stats %5.3f \n",
               harq_process->C,
               r,
               dlsch_rate_unmatching_stats->p_time/(cpuf*1000.0),
               dlsch_deinterleaving_stats->p_time/(cpuf*1000.0),
-              dlsch_turbo_decoding_stats->p_time/(cpuf*1000.0));
+              dlsch_turbo_decoding_stats->p_time/(cpuf*1000.0));*/
 
 	}
       }

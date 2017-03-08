@@ -122,7 +122,6 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
 
 
-
   switch (type) {
   case SI_PDSCH:
     pdsch_vars = &ue->pdsch_vars_SI[eNB_id];
@@ -233,9 +232,6 @@ int rx_pdsch(PHY_VARS_UE *ue,
       return(-1);
     }
   }
-
-  //LOG_I(PHY,"[rx_pdsch %d] AbsSubframe %d.%d symbol %d rxType %d beamformingMode %d, antennaPorts %d, eNB_id_i %d, n_connected_eNB %d\n",
-  //        harq_pid, frame,subframe, symbol,rx_type, beamforming_mode, frame_parms->nb_antenna_ports_eNB,eNB_id_i,ue->n_connected_eNB);
 
   if (frame_parms->nb_antenna_ports_eNB>1 && beamforming_mode==0) {
 #ifdef DEBUG_DLSCH_MOD
@@ -396,7 +392,6 @@ int rx_pdsch(PHY_VARS_UE *ue,
            ((dlsch0_harq->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
             (dlsch0_harq->mimo_mode <=DUALSTREAM_PUSCH_PRECODING)))
      {
-      //LOG_I(PHY,"Channel Level TM34 !!!!!!!! \n");
       dlsch_channel_level_TM34(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                                  frame_parms,
                                  pdsch_vars[eNB_id]->pmi_ext,
@@ -530,7 +525,6 @@ int rx_pdsch(PHY_VARS_UE *ue,
     }
   } else if ((dlsch0_harq->mimo_mode == LARGE_CDD) || ((dlsch0_harq->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
             (dlsch0_harq->mimo_mode <=DUALSTREAM_PUSCH_PRECODING))){
-      //LOG_I(PHY,"channel compensation TM34 !!!!!!!!!!!!!!!!!\n");
       dlsch_channel_compensation_TM34(frame_parms,
                                      pdsch_vars[eNB_id],
                                      measurements,
@@ -683,7 +677,6 @@ int rx_pdsch(PHY_VARS_UE *ue,
         ((dlsch0_harq->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
          (dlsch0_harq->mimo_mode <=DUALSTREAM_PUSCH_PRECODING))){  // TM3 or TM4
       if (frame_parms->nb_antenna_ports_eNB == 2) {
-          //LOG_I(PHY,"MRC Detection TM34 !!!!!!!!!\n");
         dlsch_detection_mrc_TM34(frame_parms,
                                  pdsch_vars[eNB_id],
                                  harq_pid,
@@ -744,10 +737,6 @@ int rx_pdsch(PHY_VARS_UE *ue,
     dl_ch_mag_ptr = pdsch_vars[eNB_id_i]->dl_ch_mag0;
     //i_mod should have been passed as a parameter
   }
-
-  //LOG_I(PHY,"compute LLRs rx_type dual ? %d rx_standard %d codeword_TB0 %d codeword_TB1 %d\n", rx_type==rx_IC_dual_stream, rx_standard, codeword_TB0, codeword_TB1);
-  //if (rx_type >= rx_IC_single_stream)
-    //LOG_I(PHY,"LLR0 Qm ? %d LLR1 Qm \n", dlsch0_harq->Qm, dlsch1_harq->Qm);
 
   switch (dlsch0_harq->Qm) {
   case 2 :
@@ -830,7 +819,6 @@ int rx_pdsch(PHY_VARS_UE *ue,
       }
     break;
   case 4 :
-
     if ((rx_type==rx_standard ) || (codeword_TB0 == -1) || (codeword_TB1 == -1)) {
       dlsch_16qam_llr(frame_parms,
                       pdsch_vars[eNB_id]->rxdataF_comp0,
@@ -1004,7 +992,6 @@ int rx_pdsch(PHY_VARS_UE *ue,
     return(-1);
     break;
   }
-
   if (dlsch1_harq) {
   switch (get_Qm(dlsch1_harq->mcs)) {
   case 2 :
@@ -1050,6 +1037,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
   }
   }
 
+// Please keep it: useful for debugging
 #if 0
   if( (symbol == 13) && (dlsch0_harq->mimo_mode == 2) )
   {

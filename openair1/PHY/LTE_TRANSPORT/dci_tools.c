@@ -4781,17 +4781,17 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
     uint8_t  NPRB    = 0;
     long long int RIV_max = 0;
 
-//#ifdef DEBUG_DCI
+#ifdef DEBUG_DCI
     LOG_I(PHY,"[DCI-FORMAT-1-1A] AbsSubframe %d.%d dci_format %d\n", frame, subframe, dci_format);
     LOG_I(PHY,"[DCI-FORMAT-1-1A] rnti       %x\n",  rnti);
     LOG_I(PHY,"[DCI-FORMAT-1-1A] harq_pid   %d\n", harq_pid);
-  //  LOG_I(PHY,"[DCI-FORMAT-1-1A] rah        %d\n", rah);
-   // LOG_I(PHY,"[DCI-FORMAT-1-1A] rballoc    %x\n", rballoc);
-   // LOG_I(PHY,"[DCI-FORMAT-1-1A] mcs1       %d\n", mcs1);
-   // LOG_I(PHY,"[DCI-FORMAT-1-1A] rv1        %d\n", rv1);
-   // LOG_I(PHY,"[DCI-FORMAT-1-1A] ndi1       %d\n", ndi1);
-   // LOG_I(PHY,"[DCI-FORMAT-1-1A] TPC        %d\n", TPC);
-//#endif
+    LOG_I(PHY,"[DCI-FORMAT-1-1A] rah        %d\n", rah);
+    LOG_I(PHY,"[DCI-FORMAT-1-1A] rballoc    %x\n", rballoc);
+    LOG_I(PHY,"[DCI-FORMAT-1-1A] mcs1       %d\n", mcs1);
+    LOG_I(PHY,"[DCI-FORMAT-1-1A] rv1        %d\n", rv1);
+    LOG_I(PHY,"[DCI-FORMAT-1-1A] ndi1       %d\n", ndi1);
+    LOG_I(PHY,"[DCI-FORMAT-1-1A] TPC        %d\n", TPC);
+#endif
 
     // I- check dci content minimum coherency
     if( ((rnti==si_rnti) || (rnti==p_rnti) || (rnti==ra_rnti)) && harq_pid > 0)
