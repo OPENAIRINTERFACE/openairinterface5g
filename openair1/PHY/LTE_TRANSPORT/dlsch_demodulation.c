@@ -3356,7 +3356,7 @@ ch_amp = ((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
 //compute average channel_level on each (TX,RX) antenna pair
 void dlsch_channel_level(int **dl_ch_estimates_ext,
                          LTE_DL_FRAME_PARMS *frame_parms,
-                         int *avg,
+                         int32_t *avg,
                          uint8_t symbol,
                          unsigned short nb_rb)
 {
@@ -3365,9 +3365,15 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 
   short rb;
   unsigned char aatx,aarx,nre=12,symbol_mod;
-  __m128i *dl_ch128, avg128D;
+  __m128i *dl_ch128, avg128D, coeff128;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
+
+  float one_over_nb_re = 0;
+  one_over_nb_re = 1/(nb_rb *12);
+  int16_t one_over_nb_re_q1_15 = (int16_t)(one_over_nb_re * (float)(1<<15) );
+  coeff128 = _mm_set_epi16(one_over_nb_re_q1_15,one_over_nb_re_q1_15,one_over_nb_re_q1_15,one_over_nb_re_q1_15,
+                            one_over_nb_re_q1_15,one_over_nb_re_q1_15,one_over_nb_re_q1_15,one_over_nb_re_q1_15);
 
   for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++)
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
@@ -3380,8 +3386,9 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
       for (rb=0;rb<nb_rb;rb++) {
         //      printf("rb %d : ",rb);
         //      print_shorts("ch",&dl_ch128[0]);
-        avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
-        avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[1],dl_ch128[1]));
+        avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[0],_mm_srai_epi16(_mm_mulhi_epi16(dl_ch128[0], coeff128),15)));
+        avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[1],_mm_srai_epi16(_mm_mulhi_epi16(dl_ch128[1], coeff128),15)));
+
         if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0)) {
           dl_ch128+=2;
         }
@@ -3405,10 +3412,10 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
       else
         nre=12;
 
-      avg[(aatx<<1)+aarx] = (((int*)&avg128D)[0] +
-                             ((int*)&avg128D)[1] +
-                             ((int*)&avg128D)[2] +
-                             ((int*)&avg128D)[3])/(nb_rb*nre);
+      avg[(aatx<<1)+aarx] =(((int32_t*)&avg128D)[0] +
+                            ((int32_t*)&avg128D)[1] +
+                            ((int32_t*)&avg128D)[2] +
+                            ((int32_t*)&avg128D)[3]);
 
                 //  printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
     }
