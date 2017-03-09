@@ -169,6 +169,37 @@ int add_cpx_vector32(short *x,
   return(0);
 }
 
+int32_t sub_cpx_vector16(int16_t *x,
+                     int16_t *y,
+                     int16_t *z,
+                     uint32_t N)
+{
+  unsigned int i;                 // loop counter
+
+  __m128i *x_128;
+  __m128i *y_128;
+  __m128i *z_128;
+
+  x_128 = (__m128i *)&x[0];
+  y_128 = (__m128i *)&y[0];
+  z_128 = (__m128i *)&z[0];
+
+ for(i=0; i<(N>>3); i++) {
+    z_128[0] = _mm_subs_epi16(x_128[0],y_128[0]);
+
+    x_128++;
+    y_128++;
+    z_128++;
+
+  }
+
+  _mm_empty();
+  _m_empty();
+  return(0);
+}
+
+
+
 int add_real_vector64(short *x,
                       short* y,
                       short *z,

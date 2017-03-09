@@ -45,6 +45,8 @@
 #include <sys/sysinfo.h>
 #include "rt_wrapper.h"
 
+#include "time_utils.h"
+
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "assertions.h"
@@ -130,6 +132,8 @@ extern int sync_var;
 
 extern int transmission_mode;
 
+extern int oaisim_flag;
+
 //pthread_t                       main_eNB_thread;
 
 time_stats_t softmodem_stats_mt; // main thread
@@ -160,6 +164,14 @@ void exit_fun(const char* s);
 void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *,int,int);
 void stop_eNB(int nb_inst);
 
+
+static int recv_if_count = 0;
+struct timespec start_rf_new, start_rf_prev, start_rf_prev2, end_rf;
+openair0_timestamp start_rf_new_ts, start_rf_prev_ts, start_rf_prev2_ts, end_rf_ts;
+extern struct timespec start_fh, start_fh_prev;
+extern int start_fh_sf, start_fh_prev_sf;
+struct timespec end_fh;
+int end_fh_sf;
 
 static inline void thread_top_init(char *thread_name,
 				   int affinity,
@@ -401,6 +413,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
      }
     }
   }
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_SFGEN , 0 );
 }
 
 
@@ -673,17 +686,17 @@ void fh_if5_asynch_UL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     proc->first_rx =2;
     *subframe = proc->subframe_rx;
     *frame    = proc->frame_rx; 
-    LOG_E(PHY,"[Mobipass]timestamp_rx:%llu, frame_rx %d, subframe: %d\n",proc->timestamp_rx,proc->frame_rx,proc->subframe_rx);
+    LOG_E(PHY,"[Mobipass]timestamp_rx:%"PRId64", frame_rx %d, subframe: %d\n",proc->timestamp_rx,proc->frame_rx,proc->subframe_rx);
   }
   else {
     if (proc->subframe_rx != *subframe) {
         proc->first_rx++;
-       LOG_E(PHY,"[Mobipass]timestamp:%llu, subframe_rx %d is not what we expect %d, first_rx:%d\n",proc->timestamp_rx, proc->subframe_rx,*subframe, proc->first_rx);
+       LOG_E(PHY,"[Mobipass]timestamp:%"PRId64", subframe_rx %d is not what we expect %d, first_rx:%d\n",proc->timestamp_rx, proc->subframe_rx,*subframe, proc->first_rx);
       //exit_fun("Exiting");
     }
     if (proc->frame_rx != *frame) {
         proc->first_rx++;
-       LOG_E(PHY,"[Mobipass]timestamp:%llu, frame_rx %d is not what we expect %d, first_rx:%d\n",proc->timestamp_rx,proc->frame_rx,*frame, proc->first_rx);  
+       LOG_E(PHY,"[Mobipass]timestamp:%"PRId64", frame_rx %d is not what we expect %d, first_rx:%d\n",proc->timestamp_rx,proc->frame_rx,*frame, proc->first_rx);  
      // exit_fun("Exiting");
     }
     // temporary solution
@@ -747,13 +760,18 @@ void fh_if5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   openair0_timestamp timestamp_tx;
 
   recv_IF5(eNB, &timestamp_tx, *subframe, IF5_RRH_GW_DL); 
-  //printf("Received subframe %d (TS %llu) from RCC\n",subframe_tx,timestamp_tx);
+  clock_gettime( CLOCK_MONOTONIC, &end_fh);
+  end_fh_sf = *subframe;
+  recv_if_count = recv_if_count + 1;
+  LOG_D(HW,"[From SF %d to SF %d] RTT_FH: %"PRId64"\n", start_fh_prev_sf, end_fh_sf, clock_difftime_ns(start_fh_prev, end_fh));
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 0 );
 
   subframe_tx = (timestamp_tx/fp->samples_per_tti)%10;
   frame_tx    = (timestamp_tx/(fp->samples_per_tti*10))&1023;
 
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_ENB, frame_tx );
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB, subframe_tx );
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB, subframe_tx ); 
 
   if (proc->first_tx != 0) {
     *subframe = subframe_tx;
@@ -828,7 +846,7 @@ void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
       exit_fun("Exiting");
     }
   } while (proc->symbol_mask[*subframe] != symbol_mask_full);    
-
+  
   *frame = frame_tx;
 
 
@@ -912,6 +930,7 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
     // Transmit TX buffer based on timestamp from RX
     //    printf("trx_write -> USRP TS %llu (sf %d)\n", (proc->timestamp_rx+(3*fp->samples_per_tti)),(proc->subframe_rx+2)%10);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_rx+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance)&0xffffffff );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers
 
     lte_subframe_t SF_type     = subframe_select(fp,(proc->subframe_rx+tx_sfoffset)%10);
@@ -949,7 +968,13 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 					 siglen,
 					 fp->nb_antennas_tx,
 					 flags);
-      
+      clock_gettime( CLOCK_MONOTONIC, &end_rf);    
+      end_rf_ts = proc->timestamp_rx+eNB->ts_offset+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance;
+      if (recv_if_count != 0 ) {
+        recv_if_count = recv_if_count-1;
+        LOG_D(HW,"[From Timestamp %d to Timestamp %d] RTT_RF: %"PRId64"; RTT_RF\n", start_rf_prev_ts, end_rf_ts, clock_difftime_ns(start_rf_prev, end_rf));
+        LOG_D(HW,"[From Timestamp %d to Timestamp %d] RTT_RF: %"PRId64"; RTT_RF\n",start_rf_prev2_ts, end_rf_ts, clock_difftime_ns(start_rf_prev2, end_rf));
+      }
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
       
       
@@ -973,6 +998,13 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 				    rxp,
 				    fp->samples_per_tti,
 				    fp->nb_antennas_rx);
+  start_rf_prev2= start_rf_prev;
+  start_rf_prev2_ts= start_rf_prev_ts; 
+  start_rf_prev = start_rf_new;
+  start_rf_prev_ts = start_rf_new_ts;
+  clock_gettime( CLOCK_MONOTONIC, &start_rf_new);
+  start_rf_new_ts = ts;
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 
   proc->timestamp_rx = ts-eNB->ts_offset;
 
@@ -988,7 +1020,7 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   else {
 
     if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
-      LOG_I(PHY,"rx_rf: rfdevice timing drift of %d samples\n",proc->timestamp_rx - old_ts - fp->samples_per_tti);
+      LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples\n",proc->timestamp_rx - old_ts - fp->samples_per_tti);
       eNB->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
       proc->timestamp_rx = ts-eNB->ts_offset;
     }
@@ -1005,12 +1037,12 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
-      LOG_E(PHY,"rx_rf: Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->timestamp_rx,proc->subframe_rx,*subframe);
+      LOG_E(PHY,"rx_rf: Received Timestamp (%"PRId64") doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->timestamp_rx,proc->subframe_rx,*subframe);
       exit_fun("Exiting");
     }
     int f2 = (*frame+proc->frame_offset)&1023;    
     if (proc->frame_rx != f2) {
-      LOG_E(PHY,"rx_rf: Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->frame_rx %d frame %d, frame_offset %d, f2 %d)\n",proc->timestamp_rx,proc->frame_rx,*frame,proc->frame_offset,f2);
+      LOG_E(PHY,"rx_rf: Received Timestamp (%"PRId64") doesn't correspond to the time we think it is (proc->frame_rx %d frame %d, frame_offset %d, f2 %d)\n",proc->timestamp_rx,proc->frame_rx,*frame,proc->frame_offset,f2);
       exit_fun("Exiting");
     }
   } else {
@@ -1629,8 +1661,8 @@ static void* eNB_thread_single( void* param ) {
     }      
 
     if (eNB->CC_id==1) 
-	LOG_D(PHY,"eNB thread single %p (proc %p, CC_id %d), frame %d (%p), subframe %d (%p)\n",
-	  pthread_self(), proc, eNB->CC_id, frame,&frame,subframe,&subframe);
+	LOG_D(PHY,"eNB thread single (proc %p, CC_id %d), frame %d (%p), subframe %d (%p)\n",
+	  proc, eNB->CC_id, frame,&frame,subframe,&subframe);
  
     // synchronization on FH interface, acquire signals/data and block
     if (eNB->rx_fh) eNB->rx_fh(eNB,&frame,&subframe);
@@ -1986,6 +2018,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       eNB = PHY_vars_eNB_g[inst][CC_id]; 
       eNB->node_function      = node_function[CC_id];
       eNB->node_timing        = node_timing[CC_id];
+      eNB->eth_params         = eth_params+CC_id;
       eNB->abstraction_flag   = 0;
       eNB->single_thread_flag = single_thread_flag;
       eNB->ts_offset          = 0;
@@ -2011,14 +2044,16 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->start_rf             = start_rf;
 	eNB->start_if             = start_if;
 	eNB->fh_asynch            = fh_if5_asynch_DL;
-	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
-        if (ret<0) {
-          printf("Exiting, cannot initialize rf device\n");
-          exit(-1);
-        }
+	if (oaisim_flag == 0) {
+	  ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
+	  if (ret<0) {
+	    printf("Exiting, cannot initialize rf device\n");
+	    exit(-1);
+	  }
+	}
 	eNB->rfdevice.host_type   = RRH_HOST;
 	eNB->ifdevice.host_type   = RRH_HOST;
-        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], eNB->eth_params);
 	printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
         if (ret<0) {
           printf("Exiting, cannot initialize transport protocol\n");
@@ -2038,15 +2073,17 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->fh_asynch            = fh_if4p5_asynch_DL;
 	eNB->start_rf             = start_rf;
 	eNB->start_if             = start_if;
-	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
-        if (ret<0) {
-          printf("Exiting, cannot initialize rf device\n");
-          exit(-1);
-        }
+	if (oaisim_flag == 0) {
+	  ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
+	  if (ret<0) {
+	    printf("Exiting, cannot initialize rf device\n");
+	    exit(-1);
+	  }
+	}
 	eNB->rfdevice.host_type   = RRH_HOST;
 	eNB->ifdevice.host_type   = RRH_HOST;
 	printf("loading transport interface ...\n");
-        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], eNB->eth_params);
 	printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
         if (ret<0) {
           printf("Exiting, cannot initialize transport protocol\n");
@@ -2069,10 +2106,12 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->start_rf             = start_rf;
 	eNB->start_if             = NULL;
         eNB->fh_asynch            = NULL;
-	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
-        if (ret<0) {
-          printf("Exiting, cannot initialize rf device\n");
-          exit(-1);
+        if (oaisim_flag == 0) {
+  	  ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[CC_id]);
+          if (ret<0) {
+            printf("Exiting, cannot initialize rf device\n");
+            exit(-1);
+          }
         }
 	eNB->rfdevice.host_type   = BBU_HOST;
 	eNB->ifdevice.host_type   = BBU_HOST;
@@ -2103,7 +2142,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 
 	eNB->ifdevice.host_type   = BBU_HOST;
 
-        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], eNB->eth_params);
         printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
         if (ret<0) {
           printf("Exiting, cannot initialize transport protocol\n");
@@ -2125,7 +2164,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
         eNB->fh_asynch            = (eNB->node_timing == synch_to_other) ? fh_if4p5_asynch_UL : NULL;
 	eNB->rfdevice.host_type   = BBU_HOST;
 	eNB->ifdevice.host_type   = BBU_HOST;
-        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], eNB->eth_params);
         printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
         if (ret<0) {
           printf("Exiting, cannot initialize transport protocol\n");
@@ -2151,7 +2190,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 
 	eNB->rfdevice.host_type   = BBU_HOST;
 	eNB->ifdevice.host_type   = BBU_HOST;
-        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], (eth_params+CC_id));
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[CC_id], eNB->eth_params);
         printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
         if (ret<0) {
           printf("Exiting, cannot initialize transport protocol\n");
@@ -2161,11 +2200,11 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	malloc_IF4p5_buffer(eNB);
 
       }
-    }
 
-    if (setup_eNB_buffers(PHY_vars_eNB_g[inst],&openair0_cfg[CC_id])!=0) {
-      printf("Exiting, cannot initialize eNodeB Buffers\n");
-      exit(-1);
+      if (setup_eNB_buffers(PHY_vars_eNB_g[inst],&openair0_cfg[CC_id])!=0) {
+	printf("Exiting, cannot initialize eNodeB Buffers\n");
+	exit(-1);
+      }
     }
 
     init_eNB_proc(inst);

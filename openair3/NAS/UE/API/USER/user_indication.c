@@ -146,7 +146,7 @@ int user_ind_deregister(user_ind_t ind)
  **    Others:  None                                       **
  **                                                                        **
  ***************************************************************************/
-int user_ind_notify(user_ind_t ind, const void* data, size_t size)
+int user_ind_notify(user_api_id_t *user_api_id, user_ind_t ind, const void* data, size_t size)
 {
   LOG_FUNC_IN;
 
@@ -158,7 +158,7 @@ int user_ind_notify(user_ind_t ind, const void* data, size_t size)
       user_ind_callback_t notify = _user_ind_handler.callback[ind];
 
       if (notify != NULL) {
-        rc = (*notify)(_user_ind_handler.id, data, size);
+        rc = (*notify)(user_api_id, _user_ind_handler.id, data, size);
       }
     } else {
       /* Silently discard not registered notification */

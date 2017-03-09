@@ -131,19 +131,6 @@ void _assign_rbs_required (module_id_t Mod_id,
 			   uint16_t    nb_rbs_allowed_slice[MAX_NUM_CCs][MAX_NUM_SLICES], 
 			   int         min_rb_unit[MAX_NUM_CCs]);
 
-int _maxround(module_id_t Mod_id,
-	      uint16_t rnti,
-	      int frame,
-	      sub_frame_t subframe,
-	      uint8_t ul_flag );
-
-int _maxcqi(module_id_t Mod_id,
-	    int32_t UE_id);
-
-void _sort_UEs (module_id_t Mod_idP,
-		int         frameP,
-		sub_frame_t subframeP);
-
 void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 				     int           slice_id,
 				     frame_t       frameP,

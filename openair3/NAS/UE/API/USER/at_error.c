@@ -49,6 +49,7 @@ Description Defines error codes returned when execution of AT command
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
 /****************************************************************************/
 
+// FIXME put this in .h
 extern int at_response_format_v1;
 
 /*

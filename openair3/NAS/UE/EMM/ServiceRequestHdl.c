@@ -68,11 +68,6 @@ Description Defines the service request EMM procedure executed by the
  * --------------------------------------------------------------------------
  */
 /*
- * Timer handlers
- */
-void *_emm_service_t3417_handler(void *);
-
-/*
  * --------------------------------------------------------------------------
  *  Internal data handled by the service request procedure in the MME
  * --------------------------------------------------------------------------
@@ -109,14 +104,16 @@ void *_emm_service_t3417_handler(void *);
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-void *_emm_service_t3417_handler(void *args)
+void *emm_service_t3417_handler(void *args)
 {
   LOG_FUNC_IN;
+  nas_user_t *user = args;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
 
   LOG_TRACE(WARNING, "EMM-PROC  - T3417 timer expired");
 
   /* Stop timer T3417 */
-  T3417.id = nas_timer_stop(T3417.id);
+  emm_timers->T3417.id = nas_timer_stop(emm_timers->T3417.id);
 
   LOG_FUNC_RETURN(NULL);
 }

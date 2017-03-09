@@ -48,6 +48,23 @@ Description Implements the API used by the NAS layer to read/write
 /*********************  G L O B A L    C O N S T A N T S  *******************/
 /****************************************************************************/
 
+/*
+ * Subscriber authentication security key
+ */
+#define USIM_API_K_SIZE         16
+#define USIM_API_K_VALUE        "fec86ba6eb707ed08905757b1bb44b8f"
+
+/*
+ * The name of the file where are stored data of the USIM application
+ */
+#define USIM_API_NVRAM_FILENAME ".usim.nvram"
+
+/*
+ * The name of the environment variable which defines the directory
+ * where the USIM application file is located
+ */
+#define USIM_API_NVRAM_DIRNAME  "USIM_DIR"
+
 /****************************************************************************/
 /************************  G L O B A L    T Y P E S  ************************/
 /****************************************************************************/
@@ -106,7 +123,26 @@ typedef struct {
   /* Integrity key  */
 #define USIM_IK_SIZE  16
   Byte_t ik[USIM_IK_SIZE];
+  uint8_t usim_api_k[USIM_API_K_SIZE];
+  uint8_t opc[16];
 } usim_keys_t;
+
+/*
+ * List of last used Sequence Numbers SQN
+ */
+#define USIM_API_AK_SIZE 6
+#define USIM_API_SQN_SIZE USIM_API_AK_SIZE
+#define USIM_API_SQNMS_SIZE USIM_API_SQN_SIZE
+
+typedef struct {
+  /* Highest sequence number the USIM has ever accepted */
+  uint8_t sqn_ms[USIM_API_SQNMS_SIZE];
+  /* List of the last used sequence numbers   */
+#define USIM_API_SQN_LIST_SIZE  32
+  uint8_t n_sqns;
+  uint32_t sqn[USIM_API_SQN_LIST_SIZE];
+} usim_sqn_data_t;
+
 
 /*
  * EPS NAS Security Context
@@ -329,6 +365,7 @@ typedef struct {
   usim_nasconfig_t nasconfig;
   /* usim test mode */
   uint8_t usimtestmode;
+  usim_sqn_data_t usim_sqn_data;
 } usim_data_t;
 
 /****************************************************************************/
@@ -339,14 +376,15 @@ typedef struct {
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-int usim_api_read(usim_data_t* data);
+int usim_api_read(const char *filename, usim_data_t* data);
 
-int usim_api_write(const usim_data_t* data);
+int usim_api_write(const char *filename, const usim_data_t* data);
 
-int usim_api_authenticate(const OctetString* rand, const OctetString* autn,
+int usim_api_authenticate(usim_data_t *usim_data, const OctetString* rand_pP, const OctetString* autn_pP,
                           OctetString* auts, OctetString* res,
                           OctetString* ck, OctetString* ik);
-int usim_api_authenticate_test(const OctetString* rand, const OctetString* autn,
+int usim_api_authenticate_test(usim_data_t *usim_data,
+                               const OctetString* rand, const OctetString* autn,
                                OctetString* auts, OctetString* res,
                                OctetString* ck, OctetString* ik);
 

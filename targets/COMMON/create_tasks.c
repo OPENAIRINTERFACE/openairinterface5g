@@ -85,7 +85,10 @@ int create_tasks(uint32_t enb_nb, uint32_t ue_nb)
 
 #      if defined(NAS_BUILT_IN_UE)
       if (ue_nb > 0) {
-        if (itti_create_task (TASK_NAS_UE, nas_ue_task, NULL) < 0) {
+        nas_user_container_t *users = calloc(1, sizeof(*users));
+        if (users == NULL) abort();
+        users->count = ue_nb;
+        if (itti_create_task (TASK_NAS_UE, nas_ue_task, users) < 0) {
           LOG_E(NAS, "Create task for NAS UE failed\n");
           return -1;
         }

@@ -81,13 +81,13 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmRegistered(const emm_reg_t *evt)
+int EmmRegistered(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNerror;
 
-  assert(emm_fsm_get_status() == EMM_REGISTERED);
+  assert(emm_fsm_get_status(user) == EMM_REGISTERED);
 
 
   switch (evt->primitive) {
@@ -96,7 +96,7 @@ int EmmRegistered(const emm_reg_t *evt)
     /*
      * Initiate detach procedure for EPS services
      */
-    rc = emm_proc_detach(EMM_DETACH_TYPE_EPS, evt->u.detach.switch_off);
+    rc = emm_proc_detach(user, EMM_DETACH_TYPE_EPS, evt->u.detach.switch_off);
     break;
 
   case _EMMREG_DETACH_REQ:
@@ -105,7 +105,7 @@ int EmmRegistered(const emm_reg_t *evt)
      * message successfully delivered to the network);
      * enter state EMM-DEREGISTERED-INITIATED
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_INITIATED);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_INITIATED);
     break;
 
   case _EMMREG_DETACH_CNF:
@@ -113,7 +113,7 @@ int EmmRegistered(const emm_reg_t *evt)
      * The UE implicitly detached from the network (all EPS
      * bearer contexts may have been deactivated)
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED);
     break;
 
   case _EMMREG_TAU_REQ:
@@ -136,21 +136,21 @@ int EmmRegistered(const emm_reg_t *evt)
     /*
      * Data transfer message has been successfully delivered
      */
-    rc = emm_proc_lowerlayer_success();
+    rc = emm_proc_lowerlayer_success(user->lowerlayer_data);
     break;
 
   case _EMMREG_LOWERLAYER_FAILURE:
     /*
      * Data transfer message failed to be delivered
      */
-    rc = emm_proc_lowerlayer_failure(FALSE);
+    rc = emm_proc_lowerlayer_failure(user->lowerlayer_data, FALSE);
     break;
 
   case _EMMREG_LOWERLAYER_RELEASE:
     /*
      * NAS signalling connection has been released
      */
-    rc = emm_proc_lowerlayer_release();
+    rc = emm_proc_lowerlayer_release(user->lowerlayer_data);
     break;
 
   default:

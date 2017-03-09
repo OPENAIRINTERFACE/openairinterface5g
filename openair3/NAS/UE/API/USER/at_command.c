@@ -54,6 +54,7 @@ Description Defines the ATtention (AT) command set supported by the NAS
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
 /****************************************************************************/
 
+// FIXME Put this in .h
 extern int at_response_format_v1;
 extern int at_error_code_suppression_q1;
 extern at_error_format_t at_error_format;
@@ -278,6 +279,7 @@ int at_command_decode(const char* buffer, int length, at_command_t* at_command)
   char* buf = strdup(buffer+2);
   char* cmd = strtok(buf, ";");
 
+  // FIXME check overflow
   for (i=0; cmd && (rc != RETURNerror); i++) {
     rc = ParseString(cmd, &at_command[i]);
     cmd = strtok(NULL, ";");

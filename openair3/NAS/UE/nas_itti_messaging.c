@@ -213,7 +213,7 @@ int nas_itti_kenb_refresh_req(const Byte_t kenb[32])
   return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + 0 /* TODO to be virtualized */, message_p);
 }
 
-int nas_itti_cell_info_req(const plmn_t plmnID, const Byte_t rat)
+int nas_itti_cell_info_req(const plmn_t plmnID, const Byte_t rat, int user_id)
 {
   MessageDef *message_p;
 
@@ -230,10 +230,10 @@ int nas_itti_cell_info_req(const plmn_t plmnID, const Byte_t rat)
   	  plmnID.MCCdigit1, plmnID.MCCdigit2, plmnID.MCCdigit3,
   	  plmnID.MNCdigit1, plmnID.MNCdigit2, plmnID.MNCdigit3);
 
-  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + 0 /* TODO to be virtualized */, message_p);
+  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + user_id, message_p);
 }
 
-int nas_itti_nas_establish_req(as_cause_t cause, as_call_type_t type, as_stmsi_t s_tmsi, plmn_t plmnID, Byte_t *data, uint32_t length)
+int nas_itti_nas_establish_req(as_cause_t cause, as_call_type_t type, as_stmsi_t s_tmsi, plmn_t plmnID, Byte_t *data, uint32_t length, int user_id)
 {
   MessageDef *message_p;
 
@@ -255,10 +255,10 @@ int nas_itti_nas_establish_req(as_cause_t cause, as_call_type_t type, as_stmsi_t
   	     plmnID.MCCdigit1, plmnID.MCCdigit2, plmnID.MCCdigit3,
   	     plmnID.MNCdigit1, plmnID.MNCdigit2, plmnID.MNCdigit3);
 
-  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + 0 /* TODO to be virtualized */, message_p);
+  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + user_id, message_p);
 }
 
-int nas_itti_ul_data_req(const uint32_t ue_id, void *const data, const uint32_t length)
+int nas_itti_ul_data_req(const uint32_t ue_id, void *const data, const uint32_t length, int user_id)
 {
   MessageDef *message_p;
 
@@ -268,10 +268,10 @@ int nas_itti_ul_data_req(const uint32_t ue_id, void *const data, const uint32_t 
   NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = data;
   NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = length;
 
-  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + 0 /* TODO to be virtualized */, message_p);
+  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + user_id, message_p);
 }
 
-int nas_itti_rab_establish_rsp(const as_stmsi_t s_tmsi, const as_rab_id_t rabID, const nas_error_code_t errCode)
+int nas_itti_rab_establish_rsp(const as_stmsi_t s_tmsi, const as_rab_id_t rabID, const nas_error_code_t errCode, int user_id)
 {
   MessageDef *message_p;
 
@@ -287,5 +287,5 @@ int nas_itti_rab_establish_rsp(const as_stmsi_t s_tmsi, const as_rab_id_t rabID,
   	      NULL,0,
   	     "0 NAS_RAB_ESTABLI_RSP MME code %u m-TMSI %u rb id %u status %u",
   	     s_tmsi.MMEcode, s_tmsi.m_tmsi,rabID, errCode );
-  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + 0 /* TODO to be virtualized */, message_p);
+  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + user_id, message_p);
 }

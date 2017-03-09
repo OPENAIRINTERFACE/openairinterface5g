@@ -78,11 +78,11 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmDeregisteredNoImsi(const emm_reg_t *evt)
+int EmmDeregisteredNoImsi(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
-  assert(emm_fsm_get_status() == EMM_DEREGISTERED_NO_IMSI);
+  assert(emm_fsm_get_status(user) == EMM_DEREGISTERED_NO_IMSI);
 
   LOG_TRACE(ERROR, "EMM-FSM   - USIM is not present or not valid");
 

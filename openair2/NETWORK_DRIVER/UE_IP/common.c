@@ -345,7 +345,7 @@ void ue_ip_common_wireless2ip(struct nlmsghdr *nlh_pP)
 
   ue_ip_common_class_wireless2ip(pdcph_p->data_size,
                                  (unsigned char *)NLMSG_DATA(nlh_pP) + UE_IP_PDCPH_SIZE,
-                                 1, //pdcph_p->inst,
+                                 pdcph_p->inst,
                                  pdcph_p->rb_id);
 
 }

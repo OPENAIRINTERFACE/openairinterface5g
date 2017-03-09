@@ -464,6 +464,9 @@ int emm_msg_encode(EMM_msg *msg, uint8_t *buffer, uint32_t len)
 #endif
   }
 
+  if (encode_result < 0)
+    LOG_FUNC_RETURN (encode_result);
+
   LOG_FUNC_RETURN (header_result + encode_result);
 }
 

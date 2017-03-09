@@ -197,6 +197,7 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
 
   int nblocks = nsamps;  
   int bytes_sent = 0;
+
   
   eth_state_t *eth = (eth_state_t*)device->priv;
   
@@ -216,7 +217,6 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
   }
    
   eth->tx_nsamps = nblocks;
-  
   bytes_sent = sendto(eth->sockfd,
 		      buff[0], 
 		      packet_size,
@@ -245,6 +245,8 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
   //sendto_flag|=flags;
   eth->tx_nsamps=nsamps;
 
+ 
+
   for (i=0;i<cc;i++) {	
     /* buff[i] points to the position in tx buffer where the payload to be sent is
        buff2 points to the position in tx buffer where the packet header will be placed */
@@ -260,22 +262,30 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
     // eth->pck_header.seq_num = pck_seq_num;
     //eth->pck_header.antenna_id = 1+(i<<1);
     //eth->pck_header.timestamp = timestamp;
-    *(uint16_t *)buff2 = pck_seq_num;
+    *(uint16_t *)buff2 = eth->pck_seq_num;
     *(uint16_t *)(buff2 + sizeof(uint16_t)) = 1+(i<<1);
     *(openair0_timestamp *)(buff2 + sizeof(int32_t)) = timestamp;
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TX_SEQ_NUM, pck_seq_num);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TX_SEQ_NUM, eth->pck_seq_num);
+    
+    int sent_byte;
+    if (eth->compression == ALAW_COMPRESS) {
+      sent_byte = UDP_PACKET_SIZE_BYTES_ALAW(nsamps);
+    } else {
+      sent_byte = UDP_PACKET_SIZE_BYTES(nsamps);
+    }
 
-    while(bytes_sent < UDP_PACKET_SIZE_BYTES(nsamps)) {
+    //while(bytes_sent < sent_byte) {
+    //printf("eth->pck_seq_num: %d\n", eth->pck_seq_num);
 #if DEBUG   
       printf("------- TX ------: buff2 current position=%d remaining_bytes=%d  bytes_sent=%d \n",
 	     (void *)(buff2+bytes_sent), 
-	     UDP_PACKET_SIZE_BYTES(nsamps) - bytes_sent,
+	     sent_byte - bytes_sent,
 	     bytes_sent);
 #endif
       /* Send packet */
       bytes_sent += sendto(eth->sockfd,
 			   buff2, 
-                           UDP_PACKET_SIZE_BYTES(nsamps),
+                           sent_byte,
 			   sendto_flag,
 			   (struct sockaddr*)&eth->dest_addr,
 			   eth->addr_len);
@@ -291,14 +301,15 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
 	   *(int16_t *)(buff2 + sizeof(int16_t)),
 	   *(openair0_timestamp *)(buff2 + sizeof(int32_t)),
 	   bytes_sent);
-    dump_packet((device->host_type == BBU_HOST)? "BBU":"RRH", buff2, UDP_PACKET_SIZE_BYTES(nsamps), TX_FLAG);
+    dump_packet((device->host_type == BBU_HOST)? "BBU":"RRH", buff2, sent_byte, TX_FLAG);
 #endif
     eth->tx_actual_nsamps=bytes_sent>>2;
     eth->tx_count++;
-    pck_seq_num++;
-    if ( pck_seq_num > MAX_PACKET_SEQ_NUM(nsamps,device->openair0_cfg->samples_per_frame) )  pck_seq_num = 1;
+    eth->pck_seq_num++;
+    if ( eth->pck_seq_num > MAX_PACKET_SEQ_NUM(nsamps,device->openair0_cfg->samples_per_frame) )  eth->pck_seq_num = 1;
       }
-    }              
+    //}
+                  
       /* tx buffer values restored */  
       *(int32_t *)buff2 = temp0;
       *(openair0_timestamp *)(buff2 + sizeof(int32_t)) = temp1;
@@ -332,19 +343,24 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
     
     bytes_received=0;
     block_cnt=0;
+    int receive_bytes;
+    if (eth->compression == ALAW_COMPRESS) {
+      receive_bytes = UDP_PACKET_SIZE_BYTES_ALAW(nsamps);
+    } else {
+      receive_bytes = UDP_PACKET_SIZE_BYTES(nsamps);
+    }
     
-    
-    while(bytes_received < UDP_PACKET_SIZE_BYTES(nsamps)) {
+    while(bytes_received < receive_bytes) {
     again:
 #if DEBUG   
 	   printf("------- RX------: buff2 current position=%d remaining_bytes=%d  bytes_recv=%d \n",
 		  (void *)(buff2+bytes_received),
-		  UDP_PACKET_SIZE_BYTES(nsamps) - bytes_received,
+		  receive_bytes - bytes_received,
 		  bytes_received);
 #endif
       bytes_received +=recvfrom(eth->sockfd,
 				buff2,
-	                        UDP_PACKET_SIZE_BYTES(nsamps),
+	                        receive_bytes,
 				rcvfrom_flag,
 				(struct sockaddr *)&eth->dest_addr,
 				(socklen_t *)&eth->addr_len);
@@ -379,28 +395,29 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
 		  *(int16_t *)(buff2 + sizeof(int16_t)),
 		  *(openair0_timestamp *)(buff2 + sizeof(int32_t)),
 		  bytes_received);
-	   dump_packet((device->host_type == BBU_HOST)? "BBU":"RRH", buff2, UDP_PACKET_SIZE_BYTES(nsamps),RX_FLAG);	  
+	   dump_packet((device->host_type == BBU_HOST)? "BBU":"RRH", buff2, receive_bytes, RX_FLAG);	  
 #endif  
 	   
 	   /* store the timestamp value from packet's header */
 	   *timestamp =  *(openair0_timestamp *)(buff2 + sizeof(int32_t));
 	   /* store the sequence number of the previous packet received */    
-	   if (pck_seq_num_cur == 0) {
-	     pck_seq_num_prev = *(uint16_t *)buff2;
+	   if (eth->pck_seq_num_cur == 0) {
+	     eth->pck_seq_num_prev = *(uint16_t *)buff2;
 	   } else {
-	     pck_seq_num_prev = pck_seq_num_cur;
+	     eth->pck_seq_num_prev = eth->pck_seq_num_cur;
 	   }
 	   /* get the packet sequence number from packet's header */
-	   pck_seq_num_cur = *(uint16_t *)buff2;
-	   //printf("cur=%d prev=%d buff=%d\n",pck_seq_num_cur,pck_seq_num_prev,*(uint16_t *)(buff2));
-	   if ( ( pck_seq_num_cur != (pck_seq_num_prev + 1) ) && !((pck_seq_num_prev==MAX_PACKET_SEQ_NUM(nsamps,device->openair0_cfg->samples_per_frame)) && (pck_seq_num_cur==1 )) && !((pck_seq_num_prev==1) && (pck_seq_num_cur==1))) {
-	     printf("out of order packet received1! %d|%d|%d\n",pck_seq_num_cur,pck_seq_num_prev,(int)*timestamp);
+	   eth->pck_seq_num_cur = *(uint16_t *)buff2;
+	   if ( ( eth->pck_seq_num_cur != (eth->pck_seq_num_prev + 1) ) && !((eth->pck_seq_num_prev==MAX_PACKET_SEQ_NUM(nsamps,device->openair0_cfg->samples_per_frame)) && (eth->pck_seq_num_cur==1 )) && !((eth->pck_seq_num_prev==1) && (eth->pck_seq_num_cur==1))) {	     
+	     //#if DEBUG
+	     printf("Out of order packet received: current_packet=%d previous_packet=%d timestamp=%llu\n",eth->pck_seq_num_cur,eth->pck_seq_num_prev,*timestamp);
+	     //#endif
 	   }
-	   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RX_SEQ_NUM,pck_seq_num_cur);
-	   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RX_SEQ_NUM_PRV,pck_seq_num_prev);
+	   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RX_SEQ_NUM,eth->pck_seq_num_cur);
+	   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RX_SEQ_NUM_PRV,eth->pck_seq_num_prev);
 						    eth->rx_actual_nsamps=bytes_received>>2;
 						    eth->rx_count++;
-						    }	 
+      }	 
 	     
       }
       /* tx buffer values restored */  

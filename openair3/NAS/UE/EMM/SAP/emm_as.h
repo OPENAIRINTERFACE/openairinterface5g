@@ -41,6 +41,7 @@ Description Defines the EMMAS Service Access Point that provides
 #define __EMM_AS_H__
 
 #include "emm_asDef.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -58,8 +59,8 @@ Description Defines the EMMAS Service Access Point that provides
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-void emm_as_initialize(void);
+void emm_as_initialize(nas_user_t *user);
 
-int emm_as_send(const emm_as_t *msg);
+int emm_as_send(nas_user_t *user, const emm_as_t *msg);
 
 #endif /* __EMM_AS_H__*/

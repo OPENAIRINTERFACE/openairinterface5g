@@ -85,6 +85,7 @@ typedef struct rrh_gw_config_s {
   uint8_t   udpif4p5;
   uint8_t   rawif4p5;
   uint8_t   rawif5_mobipass;
+  uint8_t   if_compress;
   int tx_scheduling_advance;
   int tx_sample_advance;
   int iq_txshift;

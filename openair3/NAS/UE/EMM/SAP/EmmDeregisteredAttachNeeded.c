@@ -47,6 +47,7 @@ Description Implements the EPS Mobility Management procedures executed
 #include "emm_fsm.h"
 #include "commonDef.h"
 #include "nas_log.h"
+#include "user_defs.h"
 
 #include <assert.h>
 
@@ -77,11 +78,11 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmDeregisteredAttachNeeded(const emm_reg_t *evt)
+int EmmDeregisteredAttachNeeded(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
-  assert(emm_fsm_get_status() == EMM_DEREGISTERED_ATTACH_NEEDED);
+  assert(emm_fsm_get_status(user) == EMM_DEREGISTERED_ATTACH_NEEDED);
 
   /* TODO */
 

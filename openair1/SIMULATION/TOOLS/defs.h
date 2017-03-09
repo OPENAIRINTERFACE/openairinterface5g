@@ -169,7 +169,16 @@ typedef enum {
   Rice1,
   Rice1_corr,
   Rice1_anticorr,
-  AWGN
+  AWGN,
+  Rayleigh1_orthogonal,
+  Rayleigh1_orth_eff_ch_TM4_prec_real,
+  Rayleigh1_orth_eff_ch_TM4_prec_imag,
+  Rayleigh8_orth_eff_ch_TM4_prec_real,
+  Rayleigh8_orth_eff_ch_TM4_prec_imag,
+  TS_SHIFT,
+  EPA_low,
+  EPA_medium,
+  EPA_high,
 } SCM_t;
 
 /**

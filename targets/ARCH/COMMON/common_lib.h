@@ -242,6 +242,8 @@ typedef struct {
   uint8_t iq_txshift;
   //! transport type preference  (RAW/UDP)
   uint8_t transp_preference;
+  //! compression enable (0: No comp/ 1: A-LAW)
+  uint8_t if_compress;
   //! radio front end preference (EXMIMO,USRP, BALDERF,LMSSDR)
   uint8_t rf_preference;
 } eth_params_t;
@@ -362,9 +364,6 @@ struct openair0_device_t {
    */
   int (*trx_set_gains_func)(openair0_device* device, openair0_config_t *openair0_cfg);
 
-  /*! \brief Indicator that device is running
-   */
-  int trx_started;
 };
 
 /* type of device init function, implemented in shared lib */
