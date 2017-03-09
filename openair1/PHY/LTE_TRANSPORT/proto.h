@@ -704,6 +704,22 @@ void qam64_qam16(short *stream0_in,
                  short *rho01,
                  int length);
 
+/** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream 64QAM/16QAM reception.
+    @param stream0_in Input from channel compensated (MR combined) stream 0
+    @param stream1_in Input from channel compensated (MR combined) stream 1
+    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param ch_mag_i Input from scaled channel magnitude square of h0'*g1
+    @param stream0_out Output from LLR unit for stream0
+    @param rho01 Cross-correlation between channels (MR combined)
+    @param length in complex channel outputs*/
+void qam64_qam16_avx2(short *stream0_in,
+                      short *stream1_in,
+                      short *ch_mag,
+                      short *ch_mag_i,
+                      short *stream0_out,
+                      short *rho01,
+                      int length);
+
 /** \brief This function perform LLR computation for dual-stream (64QAM/16QAM) transmission.
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
@@ -745,6 +761,22 @@ void qam64_qam64(short *stream0_in,
                  short *stream0_out,
                  short *rho01,
                  int length);
+
+/** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream 64QAM/64QAM reception.
+    @param stream0_in Input from channel compensated (MR combined) stream 0
+    @param stream1_in Input from channel compensated (MR combined) stream 1
+    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param ch_mag_i Input from scaled channel magnitude square of h0'*g1
+    @param stream0_out Output from LLR unit for stream0
+    @param rho01 Cross-correlation between channels (MR combined)
+    @param length in complex channel outputs*/
+void qam64_qam64_avx2(int32_t *stream0_in,
+                      int32_t *stream1_in,
+                      int32_t *ch_mag,
+                      int32_t *ch_mag_i,
+                      int16_t *stream0_out,
+                      int32_t *rho01,
+                      int length);
 
 /** \brief This function perform LLR computation for dual-stream (64QAM/64QAM) transmission.
     @param frame_parms Frame descriptor structure
