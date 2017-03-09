@@ -134,15 +134,15 @@ int trx_lms_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) 
 
   int ret=0;
 
-  double rxg_ratio = openair0_cfg[0].rx_gain[0]/openair0_cfg[0].rx_gain_offset[0];
-  if (rxg_ratio > 1) {
-    printf("[LMS] Reduce RX Gain 0 by %f dB\n",openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0]);
+  //  double rxg_ratio = openair0_cfg[0].rx_gain[0]/openair0_cfg[0].rx_gain_offset[0];
+  if (openair0_cfg->rx_gain[0] > 70+openair0_cfg->rx_gain_offset[0]) {
+    printf("[LMS] Reduce RX Gain 0 by %f dB\n",openair0_cfg->rx_gain[0]-openair0_cfg->rx_gain_offset[0]-70);
     ret = -1;
-    rxg_ratio = 1;
+    //    rxg_ratio = 1;
   }
   
-  LMS_SetNormalizedGain(lms_device, LMS_CH_TX, 0, openair0_cfg[0].tx_gain[0]/100.0);
-  LMS_SetNormalizedGain(lms_device, LMS_CH_RX, 0, .8*rxg_ratio); 
+  LMS_SetGaindB(lms_device, LMS_CH_TX, 0, openair0_cfg->tx_gain[0]);
+  LMS_SetGaindB(lms_device, LMS_CH_RX, 0, openair0_cfg->rx_gain[0]-openair0_cfg->rx_gain_offset[0]); 
   /*
   // RX gains, use low-level setting
   double gv = openair0_cfg[0].rx_gain[0] - openair0_cfg[0].rx_gain_offset[0];   
@@ -309,18 +309,18 @@ int trx_lms_set_freq(openair0_device* device, openair0_config_t *openair0_cfg,in
 // V1.2 board
 rx_gain_calib_table_t calib_table_lmssdr_1v2[] = {
   {3500000000.0,44.0},  // on L PAD
-  {2660000000.0,62.0},  // on L PAD
-  {2300000000.0,62.0},  // on L PAD
-  {1880000000.0,64.0},  // on L PAD
+  {2660000000.0,55.0},  // on L PAD
+  {2300000000.0,54.0},  // on L PAD
+  {1880000000.0,54.0},  // on L PAD
   {816000000.0,79.0},   // on W PAD
   {-1,0}};
 // V1.4 board
 rx_gain_calib_table_t calib_table_lmssdr[] = {
-  {3500000000.0,97.0},  // on H PAD
-  {2660000000.0,110.0},  // on H PAD
-  {2300000000.0,106.0},  // on H PAD
-  {1880000000.0,106.0},  // on H PAD
-  {816000000.0,116.0},   // on W PAD
+  {3500000000.0,44.0},  // on H PAD
+  {2660000000.0,55.0},  // on H PAD
+  {2300000000.0,54.0},  // on H PAD
+  {1880000000.0,54.0},  // on H PAD
+  {816000000.0,79.0},   // on L PAD
   {-1,0}};
 
 
