@@ -1477,7 +1477,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
     }
 #endif
 
-      LOG_I(PHY,"[UE  %d][PDSCH %x] AbsSubFrame %d.%d Generating ACK (%d,%d) for %d bits on PUSCH\n",
+      LOG_D(PHY,"[UE  %d][PDSCH %x] AbsSubFrame %d.%d Generating ACK (%d,%d) for %d bits on PUSCH\n",
         Mod_id,
         ue->ulsch[eNB_id]->rnti,
         frame_tx,subframe_tx,
