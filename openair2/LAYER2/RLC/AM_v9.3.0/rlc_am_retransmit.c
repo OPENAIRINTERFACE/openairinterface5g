@@ -314,6 +314,10 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 	retx_so_start = pdu_mngt->hole_so_start[pdu_mngt->retx_hole_index];
 	retx_so_stop = pdu_mngt->hole_so_stop[pdu_mngt->retx_hole_index];
 
+	AssertFatal (retx_so_start <= retx_so_stop,
+			"RLC AM Tx PDU Segment Data SO Error: retx_so_start=%d retx_so_stop=%d sn=%d LcId=%d!\n",
+			retx_so_start,retx_so_stop,sn,rlc_pP->channel_id);
+
 	/* Init FI to the same value as original PDU */
 	fi_start = (!(RLC_AM_PDU_GET_FI_START(*(pdu_mngt->first_byte))));
 	fi_end = (!(RLC_AM_PDU_GET_FI_END(*(pdu_mngt->first_byte))));
@@ -328,6 +332,11 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 		}
 
 		*payload_sizeP = retx_so_stop - retx_so_start + 1;
+
+		AssertFatal (retx_so_stop <= pdu_mngt->payload_size - 1,
+				"RLC AM Tx PDU Segment Data Error noLI: retx_so_stop=%d OriginalPDUDataLength=%d SOStart=%d SegmentLength=%d sn=%d LcId=%d !\n",
+				retx_so_stop,pdu_mngt->payload_size,retx_so_start,*payload_sizeP,sn,rlc_pP->channel_id);
+
 		mem_pdu_segment_p = get_free_mem_block((*payload_sizeP + RLC_AM_PDU_SEGMENT_HEADER_MIN_SIZE + sizeof(struct mac_tb_req)), __func__);
 		pdu_segment_header_p        = &mem_pdu_segment_p->data[sizeof(struct mac_tb_req)];
 
@@ -354,6 +363,7 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 		/* Find the SDU index in the original PDU containing retx_so_start */
 		sdu_size_t sdu_size = 0;
 		sdu_size_t data_size = 0;
+		*payload_sizeP = 0;
 		sdu_size_t header_segment_length = RLC_AM_PDU_SEGMENT_HEADER_MIN_SIZE;
 		pdu_original_header_p = pdu_mngt->first_byte + 2;
 		li_bit_offset = 4; /* toggle between 0 and 4 */
@@ -368,29 +378,10 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 		li_jump_offset ^= 0x3;
 		data_size += sdu_size;
 
-		while ((data_size - 1 < retx_so_start) && (sdu_index < pdu_mngt->nb_sdus))
+		/* Loop on all original LIs */
+		while ((data_size < retx_so_start + 1) && (sdu_index + 1 < pdu_mngt->nb_sdus - 1))
 		{
 			sdu_index ++;
-			if (sdu_index < pdu_mngt->nb_sdus)
-			{
-				temp_read = ((*pdu_original_header_p) << 8) | (*(pdu_original_header_p + 1));
-				sdu_size = RLC_AM_PDU_GET_LI(temp_read,li_bit_offset);
-				pdu_original_header_p += li_jump_offset;
-				li_bit_offset ^= 0x4;
-				li_jump_offset ^= 0x3;
-				data_size += sdu_size;
-			}
-		}
-
-		/* Set FI Start if retx_so_start = cumulated data size */
-		if (retx_so_start == data_size)
-		{
-			fi_start = TRUE;
-			/* jump to next SDU */
-			sdu_index ++;
-			/* there must be at least one SDU more */
-			AssertFatal (sdu_index < pdu_mngt->nb_sdus, "RLC AM PDU Segment Error: sdu_index=%d nb_sdus=%d sn=%d LcId=%d !\n",
-					sdu_index,pdu_mngt->nb_sdus,sn,rlc_pP->channel_id);
 			temp_read = ((*pdu_original_header_p) << 8) | (*(pdu_original_header_p + 1));
 			sdu_size = RLC_AM_PDU_GET_LI(temp_read,li_bit_offset);
 			pdu_original_header_p += li_jump_offset;
@@ -398,15 +389,25 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 			li_jump_offset ^= 0x3;
 			data_size += sdu_size;
 		}
-		/* Set first SDU portion of the segment */
-		sdus_segment_size[0] = data_size - retx_so_start;
 
-		/* Now look for the end */
-		while ((data_size - 1 < retx_so_stop) && (sdu_index < pdu_mngt->nb_sdus))
+		/* if retx_so_start is still not included then set data_size with full original PDU data size */
+		/* Set fi_start to FALSE in this case */
+		if ((data_size < retx_so_start + 1) && (sdu_index == pdu_mngt->nb_sdus - 1))
 		{
+			data_size = pdu_mngt->payload_size;
+			fi_start = FALSE;
+
+		}
+		else if (retx_so_start == data_size)
+		{
+			/* Set FI Start if retx_so_start = cumulated data size */
+			fi_start = TRUE;
+			/* jump to next SDU */
 			sdu_index ++;
-			sdu_segment_index ++;
-			if (sdu_index < pdu_mngt->nb_sdus)
+			/* there must be at least one SDU more */
+			AssertFatal (sdu_index < pdu_mngt->nb_sdus, "RLC AM Tx PDU Segment Error: sdu_index=%d nb_sdus=%d sn=%d LcId=%d !\n",
+					sdu_index,pdu_mngt->nb_sdus,sn,rlc_pP->channel_id);
+			if (sdu_index < pdu_mngt->nb_sdus - 1)
 			{
 				temp_read = ((*pdu_original_header_p) << 8) | (*(pdu_original_header_p + 1));
 				sdu_size = RLC_AM_PDU_GET_LI(temp_read,li_bit_offset);
@@ -414,68 +415,131 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 				li_bit_offset ^= 0x4;
 				li_jump_offset ^= 0x3;
 				data_size += sdu_size;
-				sdus_segment_size[sdu_segment_index] = sdu_size;
-			}
-		}
-
-		/* Set FI End if retx_so_stop = cumulated data size */
-		if (retx_so_stop == data_size - 1)
-		{
-			fi_end = TRUE;
-		}
-		/* Set last SDU portion of the segment even if it will be out of LI */
-		if (sdu_segment_index)
-		{
-			sdus_segment_size[sdu_segment_index] = retx_so_stop - (data_size - sdu_size) + 1;
-		}
-		else
-		{
-			sdus_segment_size[0] = retx_so_stop - retx_so_start + 1;
-		}
-
-		/* Set number of LIs in the segment */
-		num_LIs_pdu_segment = sdu_segment_index;
-
-		/* Memory allocation taking into account available TBS */
-		/* Compute Header Length and Data Length */
-		/* Init Segment Payload data size */
-		*payload_sizeP = sdus_segment_size[0];
-
-		/* Bound to available TBS taking into account min PDU segment header*/
-		if (*payload_sizeP + RLC_AM_PDU_SEGMENT_HEADER_MIN_SIZE > rlc_pP->nb_bytes_requested_by_mac)
-		{
-			*payload_sizeP = rlc_pP->nb_bytes_requested_by_mac - RLC_AM_PDU_SEGMENT_HEADER_MIN_SIZE;
-		}
-
-		sdu_segment_index = 1;
-		while ((sdu_segment_index < num_LIs_pdu_segment + 1) && (rlc_pP->nb_bytes_requested_by_mac > *payload_sizeP + RLC_AM_PDU_SEGMENT_HEADER_SIZE(sdu_segment_index)))
-		{
-			/* Add next sdu_segment_index to data part */
-			if (RLC_AM_PDU_SEGMENT_HEADER_SIZE(sdu_segment_index) + sdus_segment_size[sdu_segment_index] < rlc_pP->nb_bytes_requested_by_mac)
-			{
-				(*payload_sizeP) += sdus_segment_size[sdu_segment_index];
 			}
 			else
 			{
-				/* bound to available TBS size */
-				(*payload_sizeP) += (rlc_pP->nb_bytes_requested_by_mac - RLC_AM_PDU_SEGMENT_HEADER_SIZE(sdu_segment_index));
-				sdus_segment_size[sdu_segment_index] = rlc_pP->nb_bytes_requested_by_mac - RLC_AM_PDU_SEGMENT_HEADER_SIZE(sdu_segment_index);
+				/* It was the last LI, then set data_size to full original PDU size */
+				data_size = pdu_mngt->payload_size;
 			}
-			header_segment_length = RLC_AM_PDU_SEGMENT_HEADER_SIZE(sdu_segment_index);
-			sdu_segment_index ++;
+		}
+		else if (retx_so_start != 0)
+		{
+			/* in all other cases set fi_start to FALSE if it SO Start is not 0 */
+			fi_start = FALSE;
 		}
 
-		num_LIs_pdu_segment = sdu_segment_index - 1;
+		/* Set first SDU portion of the segment */
+		sdus_segment_size[0] = data_size - retx_so_start;
+
+		/* Check if so end is in the first SDU portion */
+		if (sdus_segment_size[0] > retx_so_stop - retx_so_start + 1)
+		{
+			sdus_segment_size[0] = retx_so_stop - retx_so_start + 1;
+			*payload_sizeP = sdus_segment_size[0];
+			num_LIs_pdu_segment = 0;
+		}
+
+		/* Bound first SDU segment to available TBS if necessary */
+		if (sdus_segment_size[0] + RLC_AM_PDU_SEGMENT_HEADER_MIN_SIZE >= rlc_pP->nb_bytes_requested_by_mac)
+		{
+			sdus_segment_size[0] = rlc_pP->nb_bytes_requested_by_mac - RLC_AM_PDU_SEGMENT_HEADER_MIN_SIZE;
+			*payload_sizeP = sdus_segment_size[0];
+			num_LIs_pdu_segment = 0;
+		}
+
+
+		/* Now look for the end if it was not set previously */
+		if (*payload_sizeP == 0)
+		{
+			sdu_index ++;
+			sdu_segment_index ++;
+			while (sdu_index < pdu_mngt->nb_sdus)
+			{
+				if (sdu_index < pdu_mngt->nb_sdus - 1)
+				{
+					temp_read = ((*pdu_original_header_p) << 8) | (*(pdu_original_header_p + 1));
+					sdu_size = RLC_AM_PDU_GET_LI(temp_read,li_bit_offset);
+					pdu_original_header_p += li_jump_offset;
+					li_bit_offset ^= 0x4;
+					li_jump_offset ^= 0x3;
+					data_size += sdu_size;
+				}
+				else
+				{
+					sdu_size = pdu_mngt->payload_size - data_size;
+					data_size = pdu_mngt->payload_size;
+				}
+
+				if (data_size >= retx_so_stop + 1)
+				{
+					sdus_segment_size[sdu_segment_index] = retx_so_stop - (data_size - sdu_size) + 1;
+					break;
+				}
+
+				sdus_segment_size[sdu_segment_index] = sdu_size;
+				sdu_index ++;
+				sdu_segment_index ++;
+			}
+
+
+			/* Set number of LIs in the segment */
+			num_LIs_pdu_segment = sdu_segment_index;
+
+			AssertFatal (num_LIs_pdu_segment <=  pdu_mngt->nb_sdus - 1, "RLC AM Tx PDU Segment Data Error: nbLISegment=%d nbLIPDU=%d sn=%d LcId=%d !\n",
+					num_LIs_pdu_segment,pdu_mngt->nb_sdus - 1,sn,rlc_pP->channel_id);
+
+			/* Bound to available TBS taking into account min PDU segment header*/
+			sdu_segment_index = 0;
+			while ((sdu_segment_index < num_LIs_pdu_segment + 1) && (rlc_pP->nb_bytes_requested_by_mac > *payload_sizeP + RLC_AM_PDU_SEGMENT_HEADER_SIZE(sdu_segment_index)))
+			{
+				/* Add next sdu_segment_index to data part */
+				if (RLC_AM_PDU_SEGMENT_HEADER_SIZE(sdu_segment_index) + sdus_segment_size[sdu_segment_index] <= rlc_pP->nb_bytes_requested_by_mac)
+				{
+					(*payload_sizeP) += sdus_segment_size[sdu_segment_index];
+				}
+				else
+				{
+					/* bound to available TBS size */
+					(*payload_sizeP) += (rlc_pP->nb_bytes_requested_by_mac - RLC_AM_PDU_SEGMENT_HEADER_SIZE(sdu_segment_index));
+					sdus_segment_size[sdu_segment_index] = rlc_pP->nb_bytes_requested_by_mac - RLC_AM_PDU_SEGMENT_HEADER_SIZE(sdu_segment_index);
+				}
+				header_segment_length = RLC_AM_PDU_SEGMENT_HEADER_SIZE(sdu_segment_index);
+				sdu_segment_index ++;
+			}
+
+			num_LIs_pdu_segment = sdu_segment_index - 1;
+		}
+
+
+		/* update retx_so_stop */
+		retx_so_stop = retx_so_start + (*payload_sizeP) - 1;
+
+		AssertFatal (retx_so_stop <= pdu_mngt->payload_size - 1,
+				"RLC AM Tx PDU Segment Data Error: retx_so_stop=%d OriginalPDUDataLength=%d SOStart=%d SegmentLength=%d numLISegment=%d sn=%d LcId=%d !\n",
+				retx_so_stop,pdu_mngt->payload_size,retx_so_start,*payload_sizeP,num_LIs_pdu_segment,sn,rlc_pP->channel_id);
+
+		/* init FI End to FALSE if retx_so_stop is not end of PDU */
+		if (retx_so_stop != pdu_mngt->payload_size - 1)
+		{
+			fi_end = FALSE;
+		}
 
 		/* Check consistency between sdus_segment_size and payload_sizeP */
+		/* And Set FI End if retx_so_stop = cumulated data size and this is not last SDU */
 		data_size = 0;
 		for (int i = 0; i < num_LIs_pdu_segment + 1; i++)
 		{
 			data_size += sdus_segment_size[i];
+			if ((retx_so_stop == data_size - 1) && (i < num_LIs_pdu_segment))
+			{
+				fi_end = TRUE;
+			}
 		}
 
 		AssertFatal (data_size == *payload_sizeP, "RLC AM PDU Segment Data Error: SduSum=%d Data=%d sn=%d LcId=%d !\n",
 				data_size,*payload_sizeP,sn,rlc_pP->channel_id);
+
+
 
 		/* Allocation */
 		AssertFatal (header_segment_length + *payload_sizeP <= pdu_mngt->header_and_payload_size + 2, "RLC AM PDU Segment Error: Hdr=%d Data=%d Original Hdr+Data =%d sn=%d LcId=%d !\n",
@@ -521,27 +585,22 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 		pdu_segment_header_p        = &mem_pdu_segment_p->data[sizeof(struct mac_tb_req)];
 
 		/* Content is supposed to be init with 0 so with FIStart=FIEnd=TRUE */
-		/* copy first two bytes from original: D/C + RF + FI + E+ SN*/
-		*pdu_segment_header_p = *(pdu_mngt->first_byte);
-		*(pdu_segment_header_p + 1) = *(pdu_mngt->first_byte + 1);
-
-		/* Set Segmentation Flag */
+		RLC_AM_PDU_SET_D_C(*pdu_segment_header_p);
 		RLC_AM_PDU_SET_RF(*pdu_segment_header_p);
-		/* clear polling */
-		RLC_AM_PDU_CLEAR_POLL(*pdu_segment_header_p);
 		/* Change FI */
 		if (!fi_start)
 		{
 			// Set to not starting
 			(*pdu_segment_header_p) |= (1 << (RLC_AM_PDU_FI_OFFSET + 1));
-
 		}
 		if (!fi_end)
 		{
 			// Set to not starting
 			(*pdu_segment_header_p) |= (1 << (RLC_AM_PDU_FI_OFFSET));
-
 		}
+		/* Set SN */
+		(*pdu_segment_header_p) |= ((sn >> 8) & 0x3);
+		(*(pdu_segment_header_p + 1)) |= (sn & 0xFF);
 
 		/* Segment Offset */
 		header_so_part = retx_so_start;
