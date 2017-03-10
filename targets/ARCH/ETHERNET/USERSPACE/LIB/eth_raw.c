@@ -148,7 +148,7 @@ int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, voi
   
     int sent_byte;
     
-    if (eth->compression = ALAW_COMPRESS) {
+    if (eth->compression == ALAW_COMPRESS) {
       sent_byte = RAW_PACKET_SIZE_BYTES_ALAW(nsamps);
     } else {
       sent_byte = RAW_PACKET_SIZE_BYTES(nsamps);
