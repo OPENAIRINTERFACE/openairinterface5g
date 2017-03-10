@@ -255,6 +255,32 @@ Obj.#   Case#   Test#	Description
 01      85      04      Band 7 FDD 10MHz DL Throughput for 300 sec for 1TX/1RX
 01      85      05      Band 7 FDD 20MHz DL Throughput for 300 sec for 1TX/1RX
 
+01      86              lte-softmodem tests with USRP B210 RF as eNB and ALU EPC w/ Huawei e3276 COTS UE for 1TX/1RX (TM1), 2TX/2RX (TM2)
+01      86      00      Band 38 TDD 5MHz UL Throughput (UDP) for 300 sec for 1TX/1RX
+01      86      01      Band 38 TDD 10MHz UL Throughput (UDP) for 300 sec for 1TX/1RX
+01      86      02      Band 38 TDD 20MHz UL Throughput (UDP) for 300 sec for 1TX/1RX
+01      86      03      Band 38 TDD 5MHz DL Throughput (UDP) for 300 sec for 1TX/1RX
+01      86      04      Band 38 TDD 10MHz DL Throughput (UDP) for 300 sec for 1TX/1RX
+01      86      05      Band 38 TDD 20MHz DL Throughput (UDP) for 300 sec for 1TX/1RX
+01      86      06      Band 38 TDD 5MHz UL Throughput (UDP) for 300 sec for 2TX/2RX (TM2)
+01      86      07      Band 38 TDD 10MHz UL Throughput (UDP) for 300 sec for 2TX/2RX (TM2)
+01      86      08      Band 38 TDD 20MHz UL Throughput (UDP) for 300 sec for 2TX/2RX (TM2)
+01      86      09      Band 38 TDD 5MHz DL Throughput (UDP) for 300 sec for 2TX/2RX (TM2)
+01      86      10      Band 38 TDD 10MHz DL Throughput (UDP) for 300 sec for 2TX/2RX (TM2)
+01      86      11      Band 38 TDD 20MHz DL Throughput (UDP) for 300 sec for 2TX/2RX (TM2)
+01      86      12      Band 38 TDD 5MHz UL Throughput (TCP) for 300 sec for 1TX/1RX
+01      86      13      Band 38 TDD 10MHz UL Throughput (TCP) for 300 sec for 1TX/1RX
+01      86      14      Band 38 TDD 20MHz UL Throughput (TCP) for 300 sec for 1TX/1RX
+01      86      15      Band 38 TDD 5MHz DL Throughput (TCP) for 300 sec for 1TX/1RX
+01      86      16      Band 38 TDD 10MHz DL Throughput (TCP) for 300 sec for 1TX/1RX
+01      86      17      Band 38 TDD 20MHz DL Throughput (TCP) for 300 sec for 1TX/1RX
+01      86      18      Band 38 TDD 5MHz UL Throughput (TCP) for 300 sec for 2TX/2RX  (TM2)
+01      86      19      Band 38 TDD 10MHz UL Throughput (TCP) for 300 sec for 2TX/2RX (TM2)
+01      86      20      Band 38 TDD 20MHz UL Throughput (TCP) for 300 sec for 2TX/2RX (TM2)
+01      86      21      Band 38 TDD 5MHz DL Throughput (TCP) for 300 sec for 2TX/2RX (TM2)
+01      86      22      Band 38 TDD 10MHz DL Throughput (TCP) for 300 sec for 2TX/2RX (TM2)
+01      86      23      Band 38 TDD 20MHz DL Throughput (TCP) for 300 sec for 2TX/2RX (TM2)
+
 02      55              lte-softmodem tests with USRP B210 RF as eNB and ALU EPC w/ Sony Experia M4 COTS UE for 1TX/1RX and 2TX/2RX (TM2)
 02      55      00      Band 7 FDD 5MHz UL Throughput (UDP) for 300 sec for 1TX/1RX
 02      55      01      Band 7 FDD 10MHz UL Throughput (UDP) for 300 sec for 1TX/1RX
