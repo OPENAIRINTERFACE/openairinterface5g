@@ -102,7 +102,7 @@ class alu_test:
     # compile_enb
     ##########################################################################
     def compile_enb(self, build_arguments):
-        log("INFO: ALU test: compile softmodem")
+        log("INFO: ALU test: compile softmodem on " + self.enb_machine)
         envcomp = list(self.env)
         envcomp.append('BUILD_ARGUMENTS="' + build_arguments + '"')
         #we don't care about BUILD_OUTPUT but required (TODO: change that)
@@ -163,24 +163,24 @@ class alu_test:
             #os._exit(1)
 
     ##########################################################################
-    # start_bandrich_ue
+    # start_ue
     ##########################################################################
-    def start_bandrich_ue(self):
-        log("INFO: ALU test: start bandrich UE")
-        self.task_ue = Task("actions/start_bandrich.bash",
-                "start_bandrich",
+    def start_ue(self, ue):
+        log("INFO: ALU test: start " + ue + " UE")
+        self.task_ue = Task("actions/start_" + ue + ".bash",
+                "start_" + ue,
                 self.ue_machine,
                 self.oai_user,
                 self.oai_password,
                 self.env,
-                self.logdir + "/start_bandrich." + self.ue_machine,
+                self.logdir + "/start_" + ue + "." + self.ue_machine,
                 event=self.event)
         self.task_ue.waitlog("local  IP address", event=self.event)
         self.event.wait()
 
         #at this point one task has died or we have the line in the log
         if self.task_ue.waitlog_state != WAITLOG_SUCCESS:
-            log("ERROR: ALU test: bandrich UE did not connect")
+            log("ERROR: ALU test: " + ue + " UE did not connect")
             raise TestFailed()
 
         self.event.clear()
@@ -191,21 +191,21 @@ class alu_test:
             log("ERROR: ALU test: eNB, HSS or UE task died")
             raise TestFailed()
 
-        #get bandrich UE IP
+        #get UE IP
         l = open(self.task_ue.logfile, "r").read()
-        self.bandrich_ue_ip = re.search("local  IP address (.*)\n", l) \
-                                .groups()[0]
-        log("INFO: ALU test: bandrich UE IP address: " + self.bandrich_ue_ip)
+        self.ue_ip = re.search("local  IP address (.*)\n", l) \
+                       .groups()[0]
+        log("INFO: ALU test: " + ue + " UE IP address: " + self.ue_ip)
 
     ##########################################################################
-    # stop_bandrich_ue
+    # stop_ue
     ##########################################################################
-    def stop_bandrich_ue(self):
-        log("INFO: ALU test: stop bandrich UE")
+    def stop_ue(self, ue):
+        log("INFO: ALU test: stop " + ue + " UE")
         self.task_ue.sendnow("%c" % 3)
         ret = self.task_ue.wait()
         if ret != 0:
-            log("ERROR: ALU test: task bandrich UE failed")
+            log("ERROR: ALU test: task " + ue + " UE failed")
             #not sure if we have to quit here or not
             #os._exit(1)
 
@@ -286,47 +286,47 @@ class alu_test:
     ##########################################################################
     # dl_tcp
     ##########################################################################
-    def dl_tcp(self):
-        self._do_traffic("bandrich downlink TCP",
-                         "server_tcp", self.ue_machine, self.bandrich_ue_ip,
+    def dl_tcp(self, ue):
+        self._do_traffic(ue + " downlink TCP",
+                         "server_tcp", self.ue_machine, self.ue_ip,
                          "client_tcp", self.epc_machine,
                          "Server listening on TCP port 5001",
-                         "bandrich_downlink_tcp_server",
-                         "bandrich_downlink_tcp_client")
+                         ue + "_downlink_tcp_server",
+                         ue + "_downlink_tcp_client")
 
     ##########################################################################
     # ul_tcp
     ##########################################################################
-    def ul_tcp(self):
-        self._do_traffic("bandrich uplink TCP",
+    def ul_tcp(self, ue):
+        self._do_traffic(ue + " uplink TCP",
                          "server_tcp", self.epc_machine, "192.172.0.1",
                          "client_tcp", self.ue_machine,
                          "Server listening on TCP port 5001",
-                         "bandrich_uplink_tcp_server",
-                         "bandrich_uplink_tcp_client")
+                         ue + "_uplink_tcp_server",
+                         ue + "_uplink_tcp_client")
 
     ##########################################################################
     # dl_udp
     ##########################################################################
-    def dl_udp(self, bandwidth):
-        self._do_traffic("bandrich downlink UDP",
-                         "server_udp", self.ue_machine, self.bandrich_ue_ip,
+    def dl_udp(self, ue, bandwidth):
+        self._do_traffic(ue + " downlink UDP",
+                         "server_udp", self.ue_machine, self.ue_ip,
                          "client_udp", self.epc_machine,
                          "Server listening on UDP port 5001",
-                         "bandrich_downlink_udp_server",
-                         "bandrich_downlink_udp_client",
+                         ue + "_downlink_udp_server",
+                         ue + "_downlink_udp_client",
                          udp_bandwidth=bandwidth)
 
     ##########################################################################
     # ul_udp
     ##########################################################################
-    def ul_udp(self, bandwidth):
-        self._do_traffic("bandrich uplink UDP",
+    def ul_udp(self, ue, bandwidth):
+        self._do_traffic(ue + " uplink UDP",
                          "server_udp", self.epc_machine, "192.172.0.1",
                          "client_udp", self.ue_machine,
                          "Server listening on UDP port 5001",
-                         "bandrich_uplink_udp_server",
-                         "bandrich_uplink_udp_client",
+                         ue + "_uplink_udp_server",
+                         ue + "_uplink_udp_client",
                          udp_bandwidth=bandwidth)
 
 ##############################################################################
@@ -337,19 +337,33 @@ def run_b210_alu(tests, openair_dir, oai_user, oai_password, env):
     if not do_tests(tests['b210']['alu']):
         return
 
-    #compile eNB
+    #compile eNB (two cases: one for FDD and one for TDD)
 
-    alu = alu_test(epc='amerique', enb='hutch', ue='stevens',
-                   openair=openair_dir,
-                   user=oai_user, password=oai_password,
-                   log_subdir='enb_tests/b210_alu/compile_enb',
-                   env=env)
+    if do_tests(tests['b210']['alu']['fdd']):
+        alu = alu_test(epc='amerique', enb='hutch', ue='stevens',
+                       openair=openair_dir,
+                       user=oai_user, password=oai_password,
+                       log_subdir='enb_tests/b210_alu/compile_enb_fdd',
+                       env=env)
 
-    try:
-        alu.compile_enb("--eNB -w USRP -x -c --disable-cpu-affinity")
-    except BaseException, e:
-        log("ERROR: ALU test failed: eNB compilation failed: " + str(e))
-        return
+        try:
+            alu.compile_enb("--eNB -w USRP -x -c --disable-cpu-affinity")
+        except BaseException, e:
+            log("ERROR: ALU test failed: eNB compilation failed: " + str(e))
+            return
+
+    if do_tests(tests['b210']['alu']['tdd']):
+        alu = alu_test(epc='amerique', enb='calisson', ue='mozart',
+                       openair=openair_dir,
+                       user=oai_user, password=oai_password,
+                       log_subdir='enb_tests/b210_alu/compile_enb_tdd',
+                       env=env)
+
+        try:
+            alu.compile_enb("--eNB -w USRP -x -c --disable-cpu-affinity")
+        except BaseException, e:
+            log("ERROR: ALU test failed: eNB compilation failed: " + str(e))
+            return
 
     #run tests
 
@@ -361,29 +375,38 @@ def run_b210_alu(tests, openair_dir, oai_user, oai_password, env):
                          "10" : "15M",
                          "20" : "15M" }
 
-    for bw in ('5', '10', '20'):
-        if do_tests(tests['b210']['alu'][bw]):
-            log("INFO: ALU test: run tests for bandwidth " + bw + " MHz")
-            ctest = tests['b210']['alu'][bw]
-            alu = alu_test(epc='amerique', enb='hutch', ue='stevens',
-                           openair=openair_dir,
-                           user=oai_user, password=oai_password,
-                           log_subdir='enb_tests/b210_alu/' + bw,
-                           env=env)
-            try:
-                alu.start_epc()
-                alu.start_enb("enb.band7.tm1.usrpb210." + bw + "MHz.conf")
-                if do_tests(ctest['bandrich']):
-                    alu.start_bandrich_ue()
-                    if do_tests(ctest['bandrich']['tcp']['dl']): alu.dl_tcp()
-                    if do_tests(ctest['bandrich']['tcp']['ul']): alu.ul_tcp()
-                    if do_tests(ctest['bandrich']['udp']['dl']):
-                        alu.dl_udp(udp_dl_bandwidth[bw])
-                    if do_tests(ctest['bandrich']['udp']['ul']):
-                        alu.ul_udp(udp_ul_bandwidth[bw])
-                    alu.stop_bandrich_ue()
-                alu.stop_enb()
-                alu.stop_epc()
-            except BaseException, e:
-                log("ERROR: ALU test failed: " + str(e))
-                alu.finish()
+    ue_machine = { "fdd" : "stevens",
+                   "tdd" : "mozart" }
+
+    enb_machine = { "fdd" : "hutch",
+                    "tdd" : "calisson" }
+
+    band = { "fdd" : "7",
+             "tdd" : "38" }
+
+    for mode in ('fdd', 'tdd'):
+        for bw in ('5', '10', '20'):
+            if do_tests(tests['b210']['alu'][mode][bw]):
+                log("INFO: ALU test: run tests for bandwidth " + bw + " MHz")
+                ctest = tests['b210']['alu'][mode][bw]
+                alu = alu_test(epc='amerique', enb=enb_machine[mode], ue=ue_machine[mode],
+                               openair=openair_dir,
+                               user=oai_user, password=oai_password,
+                               log_subdir='enb_tests/b210_alu/' + mode + "/" + bw,
+                               env=env)
+                try:
+                    alu.start_epc()
+                    alu.start_enb("enb.band" + band[mode] + ".tm1.usrpb210." + mode + "." + bw + "MHz.conf")
+                    for ue in ('bandrich', '3276'):
+                        if ue in ctest and do_tests(ctest[ue]):
+                            alu.start_ue(ue)
+                            if do_tests(ctest[ue]['tcp']['dl']): alu.dl_tcp(ue)
+                            if do_tests(ctest[ue]['tcp']['ul']): alu.ul_tcp(ue)
+                            if do_tests(ctest[ue]['udp']['dl']): alu.dl_udp(ue, udp_dl_bandwidth[bw])
+                            if do_tests(ctest[ue]['udp']['ul']): alu.ul_udp(ue, udp_ul_bandwidth[bw])
+                            alu.stop_ue(ue)
+                    alu.stop_enb()
+                    alu.stop_epc()
+                except BaseException, e:
+                    log("ERROR: ALU test failed: " + str(e))
+                    alu.finish()
