@@ -429,7 +429,7 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
     //    if (slot == 0) {
 
       if (eNB_offset == 0)
-        printf("[UE %d] Frame %d, subframe %d RRC Measurements => rssi %3.1f dBm (digital: %3.1f dB, gain %d), N0 %d dBm\n",ue->Mod_id,
+       LOG_I(PHY,"[UE %d] Frame %d, subframe %d RRC Measurements => rssi %3.1f dBm (digital: %3.1f dB, gain %d), N0 %d dBm\n",ue->Mod_id,
               ue->proc.proc_rxtx[subframe&1].frame_rx,subframe,10*log10(ue->measurements.rssi)-ue->rx_total_gain_dB,
               10*log10(ue->measurements.rssi),
               ue->rx_total_gain_dB,
@@ -586,7 +586,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
     ue->measurements.wideband_cqi_avg[eNB_id] = dB_fixed2(ue->measurements.rx_power_avg[eNB_id],ue->measurements.n0_power_avg);
     ue->measurements.rx_rssi_dBm[eNB_id] = ue->measurements.rx_power_avg_dB[eNB_id] - ue->rx_total_gain_dB;
 #ifdef DEBUG_MEAS_UE
-     printf("[eNB %d] RSSI %d dBm, RSSI (digital) %d dB, WBandCQI %d dB, rxPwrAvg %d, n0PwrAvg %d\n",
+    LOG_I(PHY,"[eNB %d] RSSI %d dBm, RSSI (digital) %d dB, WBandCQI %d dB, rxPwrAvg %d, n0PwrAvg %d\n",
             eNB_id,
             ue->measurements.rx_rssi_dBm[eNB_id],
             ue->measurements.rx_power_avg_dB[eNB_id],
