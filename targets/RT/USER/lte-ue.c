@@ -267,7 +267,7 @@ static void *UE_thread_synch(void *arg) {
         }
     }
 
-    AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
+    //    AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
 
     while (oai_exit==0) {
         AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
@@ -366,13 +366,13 @@ static void *UE_thread_synch(void *arg) {
 
                     UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
                     //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
-                    UE->rfdevice.trx_stop_func(&UE->rfdevice);
+                    //UE->rfdevice.trx_stop_func(&UE->rfdevice);
                     sleep(1);
                     init_frame_parms(&UE->frame_parms,1);
-                    if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
+                    /*if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
                         LOG_E(HW,"Could not start the device\n");
                         oai_exit=1;
-                    }
+                    }*/
                 } else {
                     AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
                     UE->is_synchronized = 1;
@@ -639,6 +639,7 @@ void *UE_thread(void *arg) {
 
     int sub_frame=-1;
     //int cumulated_shift=0;
+    AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
     while (!oai_exit) {
         AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
         int instance_cnt_synch = UE->proc.instance_cnt_synch;
