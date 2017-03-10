@@ -307,8 +307,6 @@ void phy_procedures_emos_eNB_TX(unsigned char subframe, PHY_VARS_eNB *eNB)
 }
 #endif
 
-
-
 void phy_procedures_eNB_S_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type)
 {
   UNUSED(r_type);
@@ -824,6 +822,9 @@ void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   int frame = proc->frame_tx;
   int subframe = proc->subframe_tx;
+  uint16_t srsPeriodicity;
+  uint16_t srsOffset;
+  uint16_t do_srs=0;
 
   LOG_D(PHY,
 	"[eNB %"PRIu8"][PUSCH %"PRIu8"] Frame %d subframe %d UL Frame %"PRIu32", UL Subframe %"PRIu8", Generated ULSCH (format0) DCI (rnti %"PRIx16", dci %"PRIx8"), aggregation %d\n",
@@ -839,6 +840,12 @@ void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 	dci_alloc->dci_pdu[0],
 	1<<dci_alloc->L);
   
+  if (is_srs_occasion_common(fp,frame,subframe)) {
+    compute_srs_pos(fp->frame_type, eNB->physicalConfigDedicated[UE_id]->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex, &srsPeriodicity, &srsOffset);
+    if ((((10*frame+subframe) % srsPeriodicity) == srsOffset))
+      do_srs = 1;
+  }
+
   generate_eNB_ulsch_params_from_dci(eNB,
 				     proc,
 				     &dci_alloc->dci_pdu[0],
@@ -849,7 +856,7 @@ void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 				     0,
 				     P_RNTI,
 				     CBA_RNTI,
-				     0);  // do_srs
+				     do_srs);  // do_srs
   
   LOG_T(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resources for UE spec DCI (PUSCH %"PRIx16") => %d\n",
 	eNB->Mod_id,frame,subframe,dci_alloc->rnti,
@@ -1344,7 +1351,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   // Apply physicalConfigDedicated if needed
   // This is for UEs that have received this IE, which changes these DL and UL configuration, we apply after a delay for the eNodeB UL parameters
   phy_config_dedicated_eNB_step2(eNB);
-  
+
   // Now loop again over the DCIs for UL configuration
   for (i=0; i<DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci ; i++) {
     dci_alloc = &DCI_pdu->dci_alloc[i];
@@ -2083,6 +2090,9 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
   PUCCH_FMT_t format;
   const int subframe = proc->subframe_rx;
   const int frame = proc->frame_rx;
+  uint16_t srsPeriodicity;
+  uint16_t srsOffset;
+  uint16_t do_srs=0;
 
   if ((eNB->dlsch[UE_id][0]) &&
       (eNB->dlsch[UE_id][0]->rnti>0) &&
@@ -2091,6 +2101,14 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
     // check SR availability
     do_SR = is_SR_subframe(eNB,proc,UE_id);
     //      do_SR = 0;
+
+    // check if there is SRS and we have to use shortened format
+    // TODO: check for exceptions in transmission of SRS together with ACK/NACK
+    if (is_srs_occasion_common(fp,frame,subframe)) {
+      compute_srs_pos(fp->frame_type, eNB->physicalConfigDedicated[UE_id]->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex, &srsPeriodicity, &srsOffset);
+      if ((((10*frame+subframe) % srsPeriodicity) == srsOffset))
+	do_srs = 1;
+    }
 
     // Now ACK/NAK
     // First check subframe_tx flag for earlier subframes
@@ -2150,7 +2168,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
                                 UE_id,
                                 eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex,
                                 0, // n2_pucch
-                                0, // shortened format, should be use_srs flag, later
+                                do_srs, // shortened format
                                 &SR_payload,
                                 frame,
                                 subframe,
@@ -2190,7 +2208,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
                              UE_id,
                              (uint16_t)n1_pucch0,
                              0, //n2_pucch
-                             0, // shortened format
+                             do_srs, // shortened format
                              pucch_payload0,
                              frame,
                              subframe,
@@ -2220,7 +2238,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
                              UE_id,
                              eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex,
                              0, //n2_pucch
-                             0, // shortened format
+                             do_srs, // shortened format
                              pucch_payload0,
                              frame,
                              subframe,
@@ -2281,7 +2299,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
                                UE_id,
                                eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex,
                                0, //n2_pucch
-                               0, // shortened format
+                               do_srs, // shortened format
                                pucch_payload0,
                                frame,
                                subframe,
@@ -2313,7 +2331,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
                                  UE_id,
                                  (uint16_t)n1_pucch0,
                                  0, // n2_pucch
-                                 0, // shortened format
+				 do_srs, // shortened format
                                  pucch_payload0,
                                  frame,
                                  subframe,
@@ -2338,7 +2356,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
                                  UE_id,
                                  (uint16_t)n1_pucch1,
                                  0, //n2_pucch
-                                 0, // shortened format
+                                 do_srs, // shortened format
                                  pucch_payload1,
                                  frame,
                                  subframe,
@@ -2885,8 +2903,6 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
   eNB->rb_mask_ul[1]=0;
   eNB->rb_mask_ul[2]=0;
   eNB->rb_mask_ul[3]=0;
-
-
 
   // Check for active processes in current subframe
   harq_pid = subframe2harq_pid(fp,

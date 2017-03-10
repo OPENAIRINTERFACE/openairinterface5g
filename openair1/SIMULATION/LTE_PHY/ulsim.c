@@ -632,12 +632,14 @@ int main(int argc, char **argv)
 
   UE->pdcch_vars[0]->crnti = 14;
 
+  UE->frame_parms.soundingrs_ul_config_common.enabled_flag = srs_flag;
   UE->frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
   UE->frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
   UE->soundingrs_ul_config_dedicated[eNB_id].srs_Bandwidth = 0;
   UE->soundingrs_ul_config_dedicated[eNB_id].transmissionComb = 0;
   UE->soundingrs_ul_config_dedicated[eNB_id].freqDomainPosition = 0;
 
+  eNB->frame_parms.soundingrs_ul_config_common.enabled_flag = srs_flag;
   eNB->frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
   eNB->frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
 
