@@ -213,7 +213,7 @@ Obj.#   Case#   Test#	Description
 01      63      04      Band 7 FDD 10MHz DL Throughput for 300 sec for 1TX/1RX
 01      63      05      Band 7 FDD 20MHz DL Throughput for 300 sec for 1TX/1RX
 
-01      65      00      lte-softmodem tests with BladeRF RF as eNB and ALU EPC w/ Bandrich COTS UE for 1TX/1RX
+01      65              lte-softmodem tests with BladeRF RF as eNB and ALU EPC w/ Bandrich COTS UE for 1TX/1RX
 01      65      00      Band 7 FDD 5MHz UL Throughput for 300 sec for 1TX/1RX
 01      65      01      Band 7 FDD 10MHz UL Throughput for 300 sec for 1TX/1RX
 01      65      02      Band 7 FDD 20MHz UL Throughput for 300 sec for 1TX/1RX
@@ -222,7 +222,7 @@ Obj.#   Case#   Test#	Description
 01      65      05      Band 7 FDD 20MHz DL Throughput for 300 sec for 1TX/1RX
 
 
-01      70      00      lte-softmodem tests with SoDeRa RF as eNB and ALU EPC w/ Bandrich COTS UE for TX/1RX
+01      70              lte-softmodem tests with SoDeRa RF as eNB and ALU EPC w/ Bandrich COTS UE for TX/1RX
 01      70      00      Band 7 FDD 5MHz UL Throughput for 300 sec for 1TX/1RX
 01      70      01      Band 7 FDD 10MHz UL Throughput for 300 sec for 1TX/1RX
 01      70      02      Band 7 FDD 20MHz UL Throughput for 300 sec for 1TX/1RX
@@ -231,7 +231,7 @@ Obj.#   Case#   Test#	Description
 01      70      05      Band 7 FDD 20MHz DL Throughput for 300 sec for 1TX/1RX
 
 
-01      75      00      lte-softmodem + RRU (NGFI IF4P5, RAW) tests with B210 RF as eNB and ALU EPC w/ Bandrich COTS UE for TX/1RX
+01      75              lte-softmodem + RRU (NGFI IF4P5, RAW) tests with B210 RF as eNB and ALU EPC w/ Bandrich COTS UE for TX/1RX
 01      75      00      Band 7 FDD 5MHz UL Throughput for 300 sec for 1TX/1RX
 01      75      01      Band 7 FDD 10MHz UL Throughput for 300 sec for 1TX/1RX
 01      75      02      Band 7 FDD 20MHz UL Throughput for 300 sec for 1TX/1RX
@@ -239,7 +239,7 @@ Obj.#   Case#   Test#	Description
 01      75      04      Band 7 FDD 10MHz DL Throughput for 300 sec for 1TX/1RX
 01      75      05      Band 7 FDD 20MHz DL Throughput for 300 sec for 1TX/1RX
 
-01      80      00      lte-softmodem + RRU (NGFI) tests with BladeRF RF as eNB and ALU EPC w/ Bandrich COTS UE for TX/1RX
+01      80              lte-softmodem + RRU (NGFI) tests with BladeRF RF as eNB and ALU EPC w/ Bandrich COTS UE for TX/1RX
 01      80      00      Band 7 FDD 5MHz UL Throughput for 300 sec for 1TX/1RX
 01      80      01      Band 7 FDD 10MHz UL Throughput for 300 sec for 1TX/1RX
 01      80      02      Band 7 FDD 20MHz UL Throughput for 300 sec for 1TX/1RX
@@ -247,7 +247,7 @@ Obj.#   Case#   Test#	Description
 01      80      04      Band 7 FDD 10MHz DL Throughput for 300 sec for 1TX/1RX
 01      80      05      Band 7 FDD 20MHz DL Throughput for 300 sec for 1TX/1RX
 
-01      85      00      lte-softmodem + RRU (NGFI) tests with USRP X310 RF as eNB and ALU EPC w/ Bandrich COTS UE for TX/1RX
+01      85              lte-softmodem + RRU (NGFI) tests with USRP X310 RF as eNB and ALU EPC w/ Bandrich COTS UE for TX/1RX
 01      85      00      Band 7 FDD 5MHz UL Throughput for 300 sec for 1TX/1RX
 01      85      01      Band 7 FDD 10MHz UL Throughput for 300 sec for 1TX/1RX
 01      85      02      Band 7 FDD 20MHz UL Throughput for 300 sec for 1TX/1RX
