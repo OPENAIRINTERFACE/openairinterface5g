@@ -837,7 +837,7 @@ uint8_t rank_estimation_tm3_tm4 (int *dl_ch_estimates_00, // please respect the 
                                  unsigned short nb_rb) {
 
   int i=0;
-  int rank=1;
+  int rank=0;
   int N_RB=nb_rb;
   int *ch00_rank, *ch01_rank, *ch10_rank, *ch11_rank;
 
@@ -1027,7 +1027,7 @@ uint8_t rank_estimation_tm3_tm4 (int *dl_ch_estimates_00, // please respect the 
   }
 
   if (count >= 6*N_RB) // conditional number is lower 10dB in half on more Res Blocks
-    rank=2;
+    rank=1;
 
 #ifdef DEBUG_RANK_EST
     printf(" rank = %d \n", rank);
