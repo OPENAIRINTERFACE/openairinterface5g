@@ -3308,12 +3308,22 @@ int main(int argc, char **argv)
         }
 
         //AWGN
-	// tx_lev is the average energy over the whole subframe
-	// but SNR should be better defined wrt the energy in the reference symbols
-	sigma2_dB = 10*log10((double)tx_lev) +10*log10((double)eNB->frame_parms.ofdm_symbol_size/(double)(eNB->frame_parms.N_RB_DL*12)) - SNR;
+  // tx_lev is the average energy over the whole subframe
+  // but SNR should be better defined wrt the energy in the reference symbols
+  sigma2_dB = 10*log10((double)tx_lev) +10*log10((double)eNB->frame_parms.ofdm_symbol_size/(double)(eNB->frame_parms.N_RB_DL*12)) - SNR;
         sigma2 = pow(10,sigma2_dB/10);
         if (n_frames==1)
           printf("Sigma2 %f (sigma2_dB %f,%f,%f )\n",sigma2,sigma2_dB,10*log10((double)eNB->frame_parms.ofdm_symbol_size/(double)(NB_RB*12)),get_pa_dB(eNB->pdsch_config_dedicated));
+
+        for (i=0; i<10*frame_parms->samples_per_tti; i++) {
+          for (aa=0;aa<eNB->frame_parms.nb_antennas_rx;aa++) {
+            //printf("s_re[0][%d]=> %f , r_re[0][%d]=> %f\n",i,s_re[aa][i],i,r_re[aa][i]);
+            ((short*) UE->common_vars.rxdata[aa])[2*i] =
+              (short) (sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+            ((short*) UE->common_vars.rxdata[aa])[2*i+1] =
+              (short) (sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+          }
+        }
 
         for (i=0; i<2*frame_parms->samples_per_tti; i++) {
           for (aa=0;aa<eNB->frame_parms.nb_antennas_rx;aa++) {
@@ -3433,6 +3443,9 @@ int main(int argc, char **argv)
               }
 
               if ((Ns==((2*subframe))) && (l==0)) {
+                ue_rrc_measurements(UE,
+                                    0,
+                                    0);
                 lte_ue_measurements(UE,
                                     subframe*UE->frame_parms.samples_per_tti,
                                     1,
