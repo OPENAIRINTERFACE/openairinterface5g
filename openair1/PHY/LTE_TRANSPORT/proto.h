@@ -1185,11 +1185,11 @@ void numer(int32_t *Hh_h_00_sq,
            int32_t *num_fin,
            unsigned short nb_rb);
 
-uint8_t rank_estimation_tm4(int *dl_ch_estimates_00,
-                            int *dl_ch_estimates_01,
-                            int *dl_ch_estimates_10,
-                            int *dl_ch_estimates_11,
-                            unsigned short nb_rb);
+uint8_t rank_estimation_tm3_tm4(int *dl_ch_estimates_00,
+                                int *dl_ch_estimates_01,
+                                int *dl_ch_estimates_10,
+                                int *dl_ch_estimates_11,
+                                unsigned short nb_rb);
 
 void dlsch_channel_compensation_TM56(int **rxdataF_ext,
                                      int **dl_ch_estimates_ext,

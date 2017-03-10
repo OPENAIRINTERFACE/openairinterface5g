@@ -479,7 +479,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
   int N_RB_DL = frame_parms->N_RB_DL;
 
 
-  int rank_tm4;
+  int rank_tm3_tm4;
 
 
   ue->measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;
@@ -551,16 +551,17 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
   } //eNB_id
 
 
-
-  rank_tm4 = rank_estimation_tm4(&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][0][4],
-                                 &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2][4],
-                                 &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][1][4],
-                                 &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][3][4],
-                                 N_RB_DL);
+  if (ue->transmission_mode[eNB_id]==4 || ue->transmission_mode[eNB_id]==3){
+    rank_tm3_tm4 = rank_estimation_tm3_tm4(&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][0][4],
+                                           &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2][4],
+                                           &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][1][4],
+                                           &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][3][4],
+                                           N_RB_DL);
 
 #ifdef DEBUG_RANK_EST
-  printf("rank tm4 %d\n", rank_tm4);
+  printf("rank tm3 or tm4 %d\n", rank_tm4);
 #endif
+  }
 
   // filter to remove jitter
   if (ue->init_averaging == 0) {
@@ -829,11 +830,11 @@ void lte_ue_measurements_emul(PHY_VARS_UE *ue,uint8_t subframe,uint8_t eNB_id)
 
 //We write a function that takes complement conjugate of the complex channel estimate ch0 and multiplies it with another complex channel estimate ch1 and stores the result in ch0conj_ch1.
 
-uint8_t rank_estimation_tm4(int *dl_ch_estimates_00, // please respect the order of channel estimates
-                            int *dl_ch_estimates_01,
-                            int *dl_ch_estimates_10,
-                            int *dl_ch_estimates_11,
-                            unsigned short nb_rb) {
+uint8_t rank_estimation_tm3_tm4 (int *dl_ch_estimates_00, // please respect the order of channel estimates
+                                 int *dl_ch_estimates_01,
+                                 int *dl_ch_estimates_10,
+                                 int *dl_ch_estimates_11,
+                                 unsigned short nb_rb) {
 
   int i=0;
   int rank=1;
