@@ -483,7 +483,8 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *eNB)
 
       if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated) {
         if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated->present == SoundingRS_UL_ConfigDedicated_PR_setup) {
-
+	  
+	  eNB->soundingrs_ul_config_dedicated[UE_id].srsConfigDedicatedSetup = 1;
           eNB->soundingrs_ul_config_dedicated[UE_id].duration             = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.duration;
           eNB->soundingrs_ul_config_dedicated[UE_id].cyclicShift          = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift;
           eNB->soundingrs_ul_config_dedicated[UE_id].freqDomainPosition   = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition;

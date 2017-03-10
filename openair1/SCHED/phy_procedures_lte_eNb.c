@@ -822,9 +822,11 @@ void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   int frame = proc->frame_tx;
   int subframe = proc->subframe_tx;
-  uint16_t srsPeriodicity;
-  uint16_t srsOffset;
+  uint16_t srsPeriodicity=0;
+  uint16_t srsOffset=0;
+  uint16_t srsConfigIndex=0;
   uint16_t do_srs=0;
+  uint16_t is_srs_pos=0;
 
   LOG_D(PHY,
 	"[eNB %"PRIu8"][PUSCH %"PRIu8"] Frame %d subframe %d UL Frame %"PRIu32", UL Subframe %"PRIu8", Generated ULSCH (format0) DCI (rnti %"PRIx16", dci %"PRIx8"), aggregation %d\n",
@@ -840,11 +842,18 @@ void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 	dci_alloc->dci_pdu[0],
 	1<<dci_alloc->L);
   
-  if (is_srs_occasion_common(fp,frame,subframe)) {
-    compute_srs_pos(fp->frame_type, eNB->physicalConfigDedicated[UE_id]->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex, &srsPeriodicity, &srsOffset);
-    if ((((10*frame+subframe) % srsPeriodicity) == srsOffset))
+  is_srs_pos = is_srs_occasion_common(fp,pdcch_alloc2ul_frame(fp,frame,subframe),pdcch_alloc2ul_subframe(fp,subframe));
+  if (is_srs_pos && eNB->soundingrs_ul_config_dedicated[UE_id].srsConfigDedicatedSetup) {
+    srsConfigIndex = eNB->soundingrs_ul_config_dedicated[UE_id].srs_ConfigIndex;
+    compute_srs_pos(fp->frame_type, srsConfigIndex, &srsPeriodicity, &srsOffset);
+    if ((((10*pdcch_alloc2ul_frame(fp,frame,subframe)+pdcch_alloc2ul_subframe(fp,subframe)) % srsPeriodicity) == srsOffset)) {
       do_srs = 1;
+    }
   }
+
+      LOG_D(PHY,"frame %d (%d), subframe %d (%d), UE_id %d: is_srs_pos %d, do_SRS %d, index %d, period %d, offset %d \n",
+	    frame,pdcch_alloc2ul_frame(fp,frame,subframe),subframe,pdcch_alloc2ul_subframe(fp,subframe),
+	    UE_id,is_srs_pos,do_srs,srsConfigIndex,srsPeriodicity,srsOffset);
 
   generate_eNB_ulsch_params_from_dci(eNB,
 				     proc,
@@ -2093,6 +2102,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
   uint16_t srsPeriodicity;
   uint16_t srsOffset;
   uint16_t do_srs=0;
+  uint16_t is_srs_pos=0;
 
   if ((eNB->dlsch[UE_id][0]) &&
       (eNB->dlsch[UE_id][0]->rnti>0) &&
@@ -2104,10 +2114,12 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
 
     // check if there is SRS and we have to use shortened format
     // TODO: check for exceptions in transmission of SRS together with ACK/NACK
-    if (is_srs_occasion_common(fp,frame,subframe)) {
-      compute_srs_pos(fp->frame_type, eNB->physicalConfigDedicated[UE_id]->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex, &srsPeriodicity, &srsOffset);
-      if ((((10*frame+subframe) % srsPeriodicity) == srsOffset))
+    is_srs_pos = is_srs_occasion_common(fp,pdcch_alloc2ul_frame(fp,frame,subframe),pdcch_alloc2ul_subframe(fp,subframe));
+    if (is_srs_pos && eNB->soundingrs_ul_config_dedicated[UE_id].srsConfigDedicatedSetup ) {
+      compute_srs_pos(fp->frame_type, eNB->soundingrs_ul_config_dedicated[UE_id].srs_ConfigIndex, &srsPeriodicity, &srsOffset);
+      if ((((10*pdcch_alloc2ul_frame(fp,frame,subframe)+pdcch_alloc2ul_subframe(fp,subframe)) % srsPeriodicity) == srsOffset)) {
 	do_srs = 1;
+      }
     }
 
     // Now ACK/NAK
