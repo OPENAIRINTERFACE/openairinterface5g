@@ -34,7 +34,7 @@
 
 #define DEBUG_MEAS_RRC
 #define DEBUG_MEAS_UE
-//#define DEBUG_RANK_EST
+#define DEBUG_RANK_EST
 
 #ifdef USER_MODE
 void print_shorts(char *s,short *x)
@@ -551,7 +551,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
   } //eNB_id
 
 
-  if (ue->transmission_mode[eNB_id]==4 || ue->transmission_mode[eNB_id]==3){
+  if (ue->transmission_mode[0]==4 || ue->transmission_mode[0]==3){
     rank_tm3_tm4 = rank_estimation_tm3_tm4(&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][0][4],
                                            &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2][4],
                                            &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][1][4],
@@ -1012,8 +1012,8 @@ uint8_t rank_estimation_tm3_tm4 (int *dl_ch_estimates_00, // please respect the 
 
   for (i=1; i<12*N_RB; i++)
   {
-    denum_db[i]=2*dB_fixed(determ_fin[i]);
-    numer_db[i]=2*dB_fixed(numer_fin[i]);
+    denum_db[i]=dB_fixed(determ_fin[i]);
+    numer_db[i]=dB_fixed(numer_fin[i]);
     cond_db[i]=(numer_db[i]-denum_db[i]);
     if (cond_db[i] < 11)
       count++;
