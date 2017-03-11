@@ -34,7 +34,7 @@
 
 #define DEBUG_MEAS_RRC
 #define DEBUG_MEAS_UE
-#define DEBUG_RANK_EST
+//#define DEBUG_RANK_EST
 
 #ifdef USER_MODE
 void print_shorts(char *s,short *x)
@@ -550,7 +550,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
 
   } //eNB_id
 
-
+  eNB_id=0;
   if (ue->transmission_mode[0]==4 || ue->transmission_mode[0]==3){
     rank_tm3_tm4 = rank_estimation_tm3_tm4(&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][0][4],
                                            &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2][4],
@@ -1112,7 +1112,7 @@ void construct_HhH_elements(int *ch0conj_ch0, //00_00
 
   for (rb=0; rb<3*nb_rb; rb++) {
 
-    after_mf_00_128[0] =_mm_adds_epi16(_mm_srai_epi16(ch0conj_ch0_128[0],1),_mm_srai_epi16(ch3conj_ch3_128[0],1));// _mm_adds_epi32(ch0conj_ch0_128[0], ch3conj_ch3_128[0]); //00_00 + 10_10
+    after_mf_00_128[0] =_mm_adds_epi16(ch0conj_ch0_128[0],ch3conj_ch3_128[0]);// _mm_adds_epi32(ch0conj_ch0_128[0], ch3conj_ch3_128[0]); //00_00 + 10_10
     after_mf_11_128[0] =_mm_adds_epi16(ch1conj_ch1_128[0], ch2conj_ch2_128[0]); //01_01 + 11_11
     after_mf_01_128[0] =_mm_adds_epi16(ch0conj_ch1_128[0], ch2conj_ch3_128[0]);//00_01 + 10_11
     after_mf_10_128[0] =_mm_adds_epi16(ch1conj_ch0_128[0], ch3conj_ch2_128[0]);//01_00 + 11_10
