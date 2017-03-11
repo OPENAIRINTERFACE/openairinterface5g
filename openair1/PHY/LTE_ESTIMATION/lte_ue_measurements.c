@@ -559,7 +559,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
                                            N_RB_DL);
 
 #ifdef DEBUG_RANK_EST
-  printf("rank tm3 or tm4 %d\n", rank_tm4);
+  printf("rank tm3 or tm4 %d\n", rank_tm3_tm4);
 #endif
   }
 
@@ -828,13 +828,12 @@ void lte_ue_measurements_emul(PHY_VARS_UE *ue,uint8_t subframe,uint8_t eNB_id)
 }
 
 
-//We write a function that takes complement conjugate of the complex channel estimate ch0 and multiplies it with another complex channel estimate ch1 and stores the result in ch0conj_ch1.
-
 uint8_t rank_estimation_tm3_tm4 (int *dl_ch_estimates_00, // please respect the order of channel estimates
                                  int *dl_ch_estimates_01,
                                  int *dl_ch_estimates_10,
                                  int *dl_ch_estimates_11,
-                                 unsigned short nb_rb) {
+                                 unsigned short nb_rb)
+{
 
   int i=0;
   int rank=0;
@@ -1013,8 +1012,8 @@ uint8_t rank_estimation_tm3_tm4 (int *dl_ch_estimates_00, // please respect the 
 
   for (i=1; i<12*N_RB; i++)
   {
-    denum_db[i]=dB_fixed(determ_fin[i]);
-    numer_db[i]=dB_fixed(numer_fin[i]);
+    denum_db[i]=2*dB_fixed(determ_fin[i]);
+    numer_db[i]=2*dB_fixed(numer_fin[i]);
     cond_db[i]=(numer_db[i]-denum_db[i]);
     if (cond_db[i] < 11)
       count++;
