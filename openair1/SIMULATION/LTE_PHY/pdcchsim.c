@@ -1085,11 +1085,11 @@ int main(int argc, char **argv)
           //      write_output("H00.m","h00",&(UE->common_vars.dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
 
           // do PDCCH procedures here
-          UE->pdcch_vars[0]->crnti = n_rnti;
+          UE->pdcch_vars[0][0]->crnti = n_rnti;
 
           //    printf("Doing RX : num_pdcch_symbols at TX %d\n",num_pdcch_symbols);
           rx_pdcch(&UE->common_vars,
-                   UE->pdcch_vars,
+                   UE->pdcch_vars[0],
                    &UE->frame_parms,
                    trial,
                    subframe,
@@ -1118,7 +1118,7 @@ int main(int argc, char **argv)
           dl_rx=0;
 
           if (n_frames==1)  {
-            numCCE = get_nCCE(UE->pdcch_vars[0]->num_pdcch_symbols, &UE->frame_parms, get_mi(&UE->frame_parms,subframe));
+            numCCE = get_nCCE(UE->pdcch_vars[0][0]->num_pdcch_symbols, &UE->frame_parms, get_mi(&UE->frame_parms,subframe));
 
             for (i = 0; i < dci_cnt; i++)
               printf("dci %d: rnti 0x%x, format %d, L %d, nCCE %d/%d dci_length %d\n",i, dci_alloc_rx[i].rnti, dci_alloc_rx[i].format,
@@ -1167,7 +1167,7 @@ int main(int argc, char **argv)
             //   exit(-1);
           }
 
-          if (UE->pdcch_vars[0]->num_pdcch_symbols != num_pdcch_symbols)
+          if (UE->pdcch_vars[0][0]->num_pdcch_symbols != num_pdcch_symbols)
             n_errors_cfi++;
 
           /*
@@ -1224,9 +1224,9 @@ int main(int argc, char **argv)
     if (n_tx==2)
       write_output("H10.m","h10",&(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][2][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
 
-    write_output("pdcch_rxF_ext0.m","pdcch_rxF_ext0",UE->pdcch_vars[eNb_id]->rxdataF_ext[0],3*12*UE->frame_parms.N_RB_DL,1,1);
-    write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",UE->pdcch_vars[eNb_id]->rxdataF_comp[0],4*12*UE->frame_parms.N_RB_DL,1,1);
-    write_output("pdcch_rxF_llr.m","pdcch_llr",UE->pdcch_vars[eNb_id]->llr,2400,1,4);
+    write_output("pdcch_rxF_ext0.m","pdcch_rxF_ext0",UE->pdcch_vars[0][eNb_id]->rxdataF_ext[0],3*12*UE->frame_parms.N_RB_DL,1,1);
+    write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",UE->pdcch_vars[0][eNb_id]->rxdataF_comp[0],4*12*UE->frame_parms.N_RB_DL,1,1);
+    write_output("pdcch_rxF_llr.m","pdcch_llr",UE->pdcch_vars[0][eNb_id]->llr,2400,1,4);
   }
 
   lte_sync_time_free();

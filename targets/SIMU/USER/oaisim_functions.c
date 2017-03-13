@@ -1428,7 +1428,7 @@ void init_openair1(void)
       else
 	PHY_vars_UE_g[UE_id][CC_id]->mac_enabled=1;
 
-      PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[0]->crnti = 0x1235 + UE_id;
+      PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[0][0]->crnti = 0x1235 + UE_id;
       PHY_vars_UE_g[UE_id][CC_id]->current_dlsch_cqi[0] = 10;
 
       LOG_I(EMU, "UE %d mode is initialized to %d\n", UE_id, PHY_vars_UE_g[UE_id][CC_id]->UE_mode[0] );

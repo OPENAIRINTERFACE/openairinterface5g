@@ -525,8 +525,8 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     }
   }
 
-  if (phy_vars_ue->pdcch_vars[eNB_id]!=NULL) {
-    num_pdcch_symbols = phy_vars_ue->pdcch_vars[eNB_id]->num_pdcch_symbols;
+  if (phy_vars_ue->pdcch_vars[subframe&0x1][eNB_id]!=NULL) {
+    num_pdcch_symbols = phy_vars_ue->pdcch_vars[subframe&0x1][eNB_id]->num_pdcch_symbols;
   }
 
   //    coded_bits_per_codeword = frame_parms->N_RB_DL*12*get_Qm(mcs)*(frame_parms->symbols_per_tti);
@@ -563,8 +563,8 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   chest_f = (int16_t**) phy_vars_ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id];
   pbch_llr = (int8_t*) phy_vars_ue->pbch_vars[eNB_id]->llr;
   pbch_comp = (int16_t*) phy_vars_ue->pbch_vars[eNB_id]->rxdataF_comp[0];
-  pdcch_llr = (int8_t*) phy_vars_ue->pdcch_vars[eNB_id]->llr;
-  pdcch_comp = (int16_t*) phy_vars_ue->pdcch_vars[eNB_id]->rxdataF_comp[0];
+  pdcch_llr = (int8_t*) phy_vars_ue->pdcch_vars[subframe&0x1][eNB_id]->llr;
+  pdcch_comp = (int16_t*) phy_vars_ue->pdcch_vars[subframe&0x1][eNB_id]->rxdataF_comp[0];
   pdsch_llr = (int16_t*) phy_vars_ue->pdsch_vars[subframe&0x1][eNB_id]->llr[0]; // stream 0
   //    pdsch_llr = (int16_t*) phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id]->llr[0]; // stream 0
   pdsch_comp = (int16_t*) phy_vars_ue->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp0[0];

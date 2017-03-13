@@ -286,7 +286,7 @@ int esm_ebr_context_create(
              LOG_TRACE(INFO, "ESM-PROC  - executing %s ",
                        command_line);
 
-             if (system(command_line)) ; /* TODO: what to do? */
+             //if (system(command_line)) ; /* TODO: what to do? */
 
              break;
 
