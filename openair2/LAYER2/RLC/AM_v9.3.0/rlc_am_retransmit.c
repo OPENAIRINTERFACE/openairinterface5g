@@ -314,9 +314,9 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 	retx_so_start = pdu_mngt->hole_so_start[pdu_mngt->retx_hole_index];
 	retx_so_stop = pdu_mngt->hole_so_stop[pdu_mngt->retx_hole_index];
 
-	AssertFatal (retx_so_start <= retx_so_stop,
-			"RLC AM Tx PDU Segment Data SO Error: retx_so_start=%d retx_so_stop=%d sn=%d LcId=%d!\n",
-			retx_so_start,retx_so_stop,sn,rlc_pP->channel_id);
+	AssertFatal ((retx_so_start <= retx_so_stop) && (retx_so_stop - retx_so_start + 1 < pdu_mngt->payload_size),
+			"RLC AM Tx PDU Segment Data SO Error: retx_so_start=%d retx_so_stop=%d OriginalPDUDataLength=%d sn=%d LcId=%d!\n",
+			retx_so_start,retx_so_stop,pdu_mngt->payload_size,sn,rlc_pP->channel_id);
 
 	/* Init FI to the same value as original PDU */
 	fi_start = (!(RLC_AM_PDU_GET_FI_START(*(pdu_mngt->first_byte))));
@@ -333,12 +333,10 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 
 		*payload_sizeP = retx_so_stop - retx_so_start + 1;
 
-		AssertFatal (retx_so_stop <= pdu_mngt->payload_size - 1,
-				"RLC AM Tx PDU Segment Data Error noLI: retx_so_stop=%d OriginalPDUDataLength=%d SOStart=%d SegmentLength=%d sn=%d LcId=%d !\n",
-				retx_so_stop,pdu_mngt->payload_size,retx_so_start,*payload_sizeP,sn,rlc_pP->channel_id);
-
 		mem_pdu_segment_p = get_free_mem_block((*payload_sizeP + RLC_AM_PDU_SEGMENT_HEADER_MIN_SIZE + sizeof(struct mac_tb_req)), __func__);
-		pdu_segment_header_p        = &mem_pdu_segment_p->data[sizeof(struct mac_tb_req)];
+		pdu_segment_header_p        = (uint8_t *)&mem_pdu_segment_p->data[sizeof(struct mac_tb_req)];
+		((struct mac_tb_req*)(mem_pdu_segment_p->data))->data_ptr = pdu_segment_header_p;
+		((struct mac_tb_req*)(mem_pdu_segment_p->data))->tb_size = RLC_AM_PDU_SEGMENT_HEADER_MIN_SIZE + *payload_sizeP;
 
 		/* clear all PDU segment */
 		memset(pdu_segment_header_p, 0, *payload_sizeP + RLC_AM_PDU_SEGMENT_HEADER_MIN_SIZE);
@@ -545,7 +543,9 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 		AssertFatal (header_segment_length + *payload_sizeP <= pdu_mngt->header_and_payload_size + 2, "RLC AM PDU Segment Error: Hdr=%d Data=%d Original Hdr+Data =%d sn=%d LcId=%d !\n",
 				header_segment_length,*payload_sizeP,pdu_mngt->header_and_payload_size,sn,rlc_pP->channel_id);
 		mem_pdu_segment_p = get_free_mem_block((*payload_sizeP + header_segment_length + sizeof(struct mac_tb_req)), __func__);
-		pdu_segment_header_p        = &mem_pdu_segment_p->data[sizeof(struct mac_tb_req)];
+		pdu_segment_header_p        = (uint8_t *)&mem_pdu_segment_p->data[sizeof(struct mac_tb_req)];
+		((struct mac_tb_req*)(mem_pdu_segment_p->data))->data_ptr = pdu_segment_header_p;
+		((struct mac_tb_req*)(mem_pdu_segment_p->data))->tb_size = header_segment_length + *payload_sizeP;
 
 		/* clear all PDU segment */
 		memset(pdu_segment_header_p, 0, *payload_sizeP + header_segment_length);
@@ -580,9 +580,6 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 			pdu_mngt->hole_so_start[pdu_mngt->retx_hole_index] += (*payload_sizeP);
 			pdu_mngt->nack_so_start = pdu_mngt->hole_so_start[pdu_mngt->retx_hole_index];
 		}
-
-		/* Set Fixed part of AM PDU Segment Header */
-		pdu_segment_header_p        = &mem_pdu_segment_p->data[sizeof(struct mac_tb_req)];
 
 		/* Content is supposed to be init with 0 so with FIStart=FIEnd=TRUE */
 		RLC_AM_PDU_SET_D_C(*pdu_segment_header_p);
@@ -645,7 +642,12 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 				index ++;
 			}
 		}
-
+	}
+	else
+	{
+		LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[RE-SEGMENT] OUT OF MEMORY PDU SN %04d\n",
+		              PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
+					  sn);
 	}
 
 	return mem_pdu_segment_p;
