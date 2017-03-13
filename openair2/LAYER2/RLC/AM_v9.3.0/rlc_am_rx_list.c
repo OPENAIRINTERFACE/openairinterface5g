@@ -176,7 +176,7 @@ mem_block_t * create_new_segment_from_pdu(
 	if (new_segment_p != NULL) {
 		pdu_new_segment_info_p	= &((rlc_am_rx_pdu_management_t*)(new_segment_p->data))->pdu_info;
 		rlc_am_rx_pdu_management_t * pdu_cursor_mgnt_p = (rlc_am_rx_pdu_management_t *) (new_segment_p->data);
-		uint8_t   *pdu_segment_header_p        	= &(new_segment_p->data[sizeof (mac_rlc_max_rx_header_size_t)]);
+		uint8_t   *pdu_segment_header_p        	= (uint8_t *)&(new_segment_p->data[sizeof (mac_rlc_max_rx_header_size_t)]);
 
 		pdu_cursor_mgnt_p->segment_reassembled	= RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_NO; //to be updated after if SN = vrR
 
