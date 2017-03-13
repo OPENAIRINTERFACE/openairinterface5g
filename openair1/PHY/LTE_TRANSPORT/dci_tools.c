@@ -1270,7 +1270,6 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
     if (dlsch0_harq->round == 0) {
       dlsch0_harq->status = ACTIVE;
-      //            printf("Setting DLSCH process %d to ACTIVE\n",harq_pid);
       // MCS and TBS don't change across HARQ rounds
       dlsch0_harq->mcs         = mcs;
       dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][NPRB-1];
@@ -2829,8 +2828,6 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
 int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci)
 {
-
-
   switch (dci->format) {
 
   case format0:   // This is an UL SCH allocation so nothing here, inform MAC
@@ -5182,14 +5179,14 @@ void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,
     else //CRNTI
     {
         // DCI has been toggled or this is the first transmission
-        if (ndi1!=pdlsch0_harq->DCINdi)
+        if ((ndi1!=pdlsch0_harq->DCINdi) || (pdlsch0_harq->first_tx==1))
         {
             pdlsch0_harq->round    = 0;
             pdlsch0_harq->first_tx = 1;
             pdlsch0_harq->status   = ACTIVE;
         }
 
-        if( ((ndi1 == pdlsch0_harq->DCINdi) && (pdlsch0_harq->round == 0)) ||
+        if( ((ndi1 == pdlsch0_harq->DCINdi) && (pdlsch0_harq->round == 0) && (pdlsch0_harq->first_tx!=1)) ||
             ((rv1  != 0) && (pdlsch0_harq->round == 0))
           )
         {
