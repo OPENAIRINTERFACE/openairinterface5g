@@ -88,16 +88,17 @@ rlc_am_get_status_pdu_buffer_occupancy(
 	    		  if (pdu_info_cursor_p->so) {
 	    			  nb_bits_to_transmit += (RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1));
 	                  waited_so = pdu_info_cursor_p->so + pdu_info_cursor_p->payload_size;
-	                  /* Go to next segment */
-	                  cursor_p = cursor_p->next;
-	                  if (cursor_p != NULL)
-	                  {
-		                  pdu_info_cursor_p     = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
-	                  }
 	    		  }
 	    		  else {
 	        		  waited_so = pdu_info_cursor_p->payload_size;
 	    		  }
+
+                  /* Go to next segment */
+                  cursor_p = cursor_p->next;
+                  if (cursor_p != NULL)
+                  {
+                      pdu_info_cursor_p     = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+                  }
 
 	    		  /* Fill following gaps if any */
 	    		  while (!segment_loop_end)

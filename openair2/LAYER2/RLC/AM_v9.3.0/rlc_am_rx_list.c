@@ -464,8 +464,8 @@ rlc_am_rx_pdu_status_t rlc_am_rx_list_handle_pdu_segment(
 	  // remove duplicate at the begining, only valid if the segment is to be inserted after a PDU segment of the same SN
 	  if (previous_cursor_p != NULL) {
 		  pdu_info_previous_cursor_p = &((rlc_am_rx_pdu_management_t*)(previous_cursor_p->data))->pdu_info;
-		  if (pdu_info_previous_cursor_p->sn == pdu_rx_info_p->sn) {
-			  so_start_segment += (pdu_info_previous_cursor_p->so + pdu_info_previous_cursor_p->payload_size - pdu_rx_info_p->so);
+		  if ((pdu_info_previous_cursor_p->sn == pdu_rx_info_p->sn) && (so_start_segment < pdu_info_previous_cursor_p->so + pdu_info_previous_cursor_p->payload_size)) {
+			  so_start_segment += (pdu_info_previous_cursor_p->so + pdu_info_previous_cursor_p->payload_size - so_start_segment);
 		  }
 	  }
 
@@ -512,9 +512,16 @@ rlc_am_rx_pdu_status_t rlc_am_rx_list_handle_pdu_segment(
 	  else
 	  {
 		  if (previous_cursor_p != NULL) {
+		      pdu_info_previous_cursor_p = &((rlc_am_rx_pdu_management_t*)(previous_cursor_p->data))->pdu_info;
+              LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SEGMENT SN=%d NOT EMPTY] PDU SEGMENT INSERTED AFTER PDU SN=%d\n",
+                          PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_rx_info_p->sn,
+                          pdu_info_previous_cursor_p->sn);
 			  list2_insert_after_element(tb_pP, previous_cursor_p, &rlc_pP->receiver_buffer);
 		  }
 		  else {
+              LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SEGMENT SN=%d NOT EMPTY] PDU SEGMENT INSERTED BEFORE PDU SN=%d\n",
+                            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_rx_info_p->sn,
+                            pdu_rx_info_p->sn);
 			  list2_insert_before_element(tb_pP, rlc_pP->receiver_buffer.head, &rlc_pP->receiver_buffer);
 		  }
 
@@ -1330,10 +1337,19 @@ rlc_am_rx_list_reassemble_rlc_sdus(
     else if (rlc_am_rx_pdu_management_p->segment_reassembled == RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_PENDING) {
     	rlc_am_rx_pdu_management_p->segment_reassembled = RLC_AM_RX_PDU_SEGMENT_REASSEMBLED;
 
-        cursor_p = list2_remove_head(&rlc_pP->receiver_buffer);
         rlc_am_reassemble_pdu(ctxt_pP, rlc_pP, cursor_p,FALSE);
         rlc_am_rx_old_pdu_management = rlc_am_rx_pdu_management_p;
-        cursor_p = list2_get_head(&rlc_pP->receiver_buffer);
+        cursor_p = cursor_p->next;
+
+        if (cursor_p == NULL) {
+          return;
+        }
+
+        rlc_am_rx_pdu_management_p = ((rlc_am_rx_pdu_management_t*)(cursor_p->data));
+    }
+    else if (rlc_am_rx_pdu_management_p->segment_reassembled == RLC_AM_RX_PDU_SEGMENT_REASSEMBLED) {
+        rlc_am_rx_old_pdu_management = rlc_am_rx_pdu_management_p;
+        cursor_p = cursor_p->next;
 
         if (cursor_p == NULL) {
           return;
@@ -1354,9 +1370,8 @@ rlc_am_rx_list_reassemble_rlc_sdus(
       return;
     }
 
-  } while ((rlc_am_rx_pdu_management_p->pdu_info.sn == ((rlc_am_rx_old_pdu_management->pdu_info.sn + 1) & RLC_AM_SN_MASK))
-           || ((rlc_am_rx_pdu_management_p->pdu_info.sn == rlc_am_rx_old_pdu_management->pdu_info.sn) && (
-        		   (rlc_am_rx_pdu_management_p->all_segments_received > 0) || (rlc_am_rx_pdu_management_p->segment_reassembled == RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_PENDING))));
+  } while (((rlc_am_rx_pdu_management_p->pdu_info.sn == ((rlc_am_rx_old_pdu_management->pdu_info.sn + 1) & RLC_AM_SN_MASK)) && (rlc_am_rx_old_pdu_management->all_segments_received > 0))
+           || ((rlc_am_rx_pdu_management_p->pdu_info.sn == rlc_am_rx_old_pdu_management->pdu_info.sn) && (rlc_am_rx_pdu_management_p->segment_reassembled != RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_NO)));
 }
 //-----------------------------------------------------------------------------
 mem_block_t *

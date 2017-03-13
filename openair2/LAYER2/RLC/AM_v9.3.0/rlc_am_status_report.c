@@ -620,16 +620,17 @@ rlc_am_send_status_pdu(
 				  pdu_info_cursor_p->so - 1);
 #endif
                   waited_so = pdu_info_cursor_p->so + pdu_info_cursor_p->payload_size;
-                  /* Go to next segment */
-                  cursor_p = cursor_p->next;
-                  if (cursor_p != NULL)
-                  {
-	                  pdu_info_cursor_p     = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
-                  }
     		  }
     		  else {
         		  waited_so = pdu_info_cursor_p->payload_size;
     		  }
+
+              /* Go to next segment */
+              cursor_p = cursor_p->next;
+              if (cursor_p != NULL)
+              {
+                  pdu_info_cursor_p     = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+              }
 
     		  /* Find the first discontinuity and then fill SOStart/SOEnd */
     		  while (!segment_loop_end) {
@@ -644,7 +645,7 @@ rlc_am_send_status_pdu(
 						  if ((nb_bits_transmitted + RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1)) <= nb_bits_to_transmit) {
 							  control_pdu_info.nack_list[control_pdu_info.num_nack].nack_sn   = sn_cursor;
 							  control_pdu_info.nack_list[control_pdu_info.num_nack].so_start  = waited_so;
-							  control_pdu_info.nack_list[control_pdu_info.num_nack].so_end    = pdu_info_cursor_p->so;
+							  control_pdu_info.nack_list[control_pdu_info.num_nack].so_end    = pdu_info_cursor_p->so - 1;
 							  control_pdu_info.nack_list[control_pdu_info.num_nack].e2        = 1;
 							  /* Set E1 for next NACK_SN. The last one will be cleared */
 							  control_pdu_info.nack_list[control_pdu_info.num_nack].e1  = 1;
@@ -732,7 +733,7 @@ rlc_am_send_status_pdu(
     } // End main while NACK_SN
 
     /* Clear E1 of last nack_sn entry */
-	AssertFatal (control_pdu_info.num_nack, "RLC AM Tx Status PDU Data Error no NACK_SN LcId=%d\n",rlc_pP->channel_id);
+	AssertFatal ((control_pdu_info.num_nack) || (all_segments_received == 0), "RLC AM Tx Status PDU Data Error no NACK_SN LcId=%d\n",rlc_pP->channel_id);
     control_pdu_info.nack_list[control_pdu_info.num_nack - 1].e1  = 0;
 
     /* Set ACK_SN unless it was set before */
