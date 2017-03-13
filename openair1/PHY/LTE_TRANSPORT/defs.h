@@ -708,7 +708,7 @@ typedef struct {
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
-  /// Current HARQ process id
+  /// Current HARQ process id threadRx Odd and threadRx Even
   uint8_t current_harq_pid;
   /// Current subband antenna selection
   uint32_t antenna_alloc;

@@ -233,7 +233,7 @@ uint32_t ulsch_encoding(uint8_t *a,
   LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   PHY_MEASUREMENTS *meas = &ue->measurements;
   LTE_UE_ULSCH_t *ulsch=ue->ulsch[eNB_id];
-  LTE_UE_DLSCH_t **dlsch = ue->dlsch[eNB_id];
+  LTE_UE_DLSCH_t **dlsch = ue->dlsch[0][eNB_id];
   uint16_t rnti = 0xffff;
 
   if (!ulsch) {
@@ -966,7 +966,7 @@ int ulsch_encoding_emul(uint8_t *ulsch_buffer,
 {
 
   LTE_UE_ULSCH_t *ulsch = ue->ulsch[eNB_id];
-  LTE_UE_DLSCH_t **dlsch = ue->dlsch[eNB_id];
+  LTE_UE_DLSCH_t **dlsch = ue->dlsch[0][eNB_id];
   PHY_MEASUREMENTS *meas = &ue->measurements;
   uint8_t tmode = ue->transmission_mode[eNB_id];
   uint16_t rnti=ue->pdcch_vars[eNB_id]->crnti;
