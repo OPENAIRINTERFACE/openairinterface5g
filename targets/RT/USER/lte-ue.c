@@ -56,6 +56,8 @@
 
 #include "T.h"
 
+extern double cpuf;
+
 #define FRAME_PERIOD    100000000ULL
 #define DAQ_PERIOD      66667ULL
 #define FIFO_PRIORITY   40
@@ -538,6 +540,9 @@ static void *UE_thread_rxn_txnp4(void *arg) {
             }
             phy_procedures_UE_RX( UE, proc, 0, 0, UE->mode, no_relay, NULL );
         }
+
+        start_meas(&UE->generic_stat);
+
         if (UE->mac_enabled==1) {
 
             ret = mac_xface->ue_scheduler(UE->Mod_id,
@@ -567,6 +572,9 @@ static void *UE_thread_rxn_txnp4(void *arg) {
                        UE->Mod_id, proc->frame_rx, proc->subframe_tx,txt );
             }
         }
+
+        stop_meas(&UE->generic_stat);
+
         // Prepare the future Tx data
 
         if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||

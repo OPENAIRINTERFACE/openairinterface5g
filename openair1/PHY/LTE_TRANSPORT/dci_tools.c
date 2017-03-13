@@ -4763,22 +4763,26 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
         uint16_t si_rnti,
         uint16_t ra_rnti,
         uint16_t p_rnti,
+        uint32_t frame,
+        uint8_t  subframe,
         DCI_INFO_EXTRACTED_t *pdci_info_extarcted,
         LTE_DL_UE_HARQ_t *pdlsch0_harq)
 {
     uint8_t  harq_pid  = pdci_info_extarcted->harq_pid;
     uint32_t rballoc   = pdci_info_extarcted->rballoc;
     uint8_t  mcs1      = pdci_info_extarcted->mcs1;
-    uint8_t  rv1       = pdci_info_extarcted->rv1;
-    uint8_t  ndi1      = pdci_info_extarcted->ndi1;
     uint8_t  TPC       = pdci_info_extarcted->TPC;
     uint8_t  rah       = pdci_info_extarcted->rah;
+#ifdef DEBUG_DCI
+    uint8_t  rv1       = pdci_info_extarcted->rv1;
+    uint8_t  ndi1      = pdci_info_extarcted->ndi1;
+#endif
 
     uint8_t  NPRB    = 0;
     long long int RIV_max = 0;
 
 #ifdef DEBUG_DCI
-    LOG_I(PHY,"[DCI-FORMAT-1-1A] dci_format %d\n", dci_format);
+    LOG_I(PHY,"[DCI-FORMAT-1-1A] AbsSubframe %d.%d dci_format %d\n", frame, subframe, dci_format);
     LOG_I(PHY,"[DCI-FORMAT-1-1A] rnti       %x\n",  rnti);
     LOG_I(PHY,"[DCI-FORMAT-1-1A] harq_pid   %d\n", harq_pid);
     LOG_I(PHY,"[DCI-FORMAT-1-1A] rah        %d\n", rah);
@@ -4983,24 +4987,30 @@ int check_dci_format2_2a_coherency(DCI_format_t dci_format,
     uint8_t  rv2  = pdci_info_extarcted->rv2;
     uint8_t  harq_pid = pdci_info_extarcted->harq_pid;
     uint32_t rballoc  = pdci_info_extarcted->rballoc;
+
+#ifdef DEBUG_DCI
     uint8_t  ndi1     = pdci_info_extarcted->ndi1;
     uint8_t  ndi2     = pdci_info_extarcted->ndi2;
+#endif
 
     uint8_t  NPRB    = 0;
     long long RIV_max = 0;
 
+#ifdef DEBUG_DCI
     LOG_I(PHY, "extarcted dci - dci_format %d \n", dci_format);
+    LOG_I(PHY, "extarcted dci - rnti       %d \n", rnti);
     LOG_I(PHY, "extarcted dci - rah        %d \n", rah);
     LOG_I(PHY, "extarcted dci - mcs1       %d \n", mcs1);
     LOG_I(PHY, "extarcted dci - mcs2       %d \n", mcs2);
     LOG_I(PHY, "extarcted dci - rv1        %d \n", rv1);
     LOG_I(PHY, "extarcted dci - rv2        %d \n", rv2);
-    LOG_I(PHY, "extarcted dci - ndi1       %d \n", ndi1);
-    LOG_I(PHY, "extarcted dci - ndi2       %d \n", ndi2);
+    //LOG_I(PHY, "extarcted dci - ndi1       %d \n", ndi1);
+    //LOG_I(PHY, "extarcted dci - ndi2       %d \n", ndi2);
     LOG_I(PHY, "extarcted dci - rballoc    %x \n", rballoc);
-    LOG_I(PHY, "extarcted dci - harq pif   %d \n", harq_pid);
+    LOG_I(PHY, "extarcted dci - harq pid   %d \n", harq_pid);
     LOG_I(PHY, "extarcted dci - round0     %d \n", pdlsch0_harq->round);
     LOG_I(PHY, "extarcted dci - round1     %d \n", pdlsch1_harq->round);
+#endif
 
     // I- check dci content minimum coherency
     if(harq_pid >8)
@@ -5041,6 +5051,21 @@ int check_dci_format2_2a_coherency(DCI_format_t dci_format,
       // DCI false detection
       return(0);
     }*/
+
+
+    if((pdlsch0_harq->round == 0) && (rv1 > 0))
+    {
+      // DCI false detection
+        LOG_I(PHY,"bad rv1\n");
+      return(0);
+    }
+
+    if((pdlsch1_harq->round == 0) && (rv2 > 0))
+    {
+      // DCI false detection
+        LOG_I(PHY,"bad rv2\n");
+      return(0);
+    }
 
 
     switch (N_RB_DL) {
@@ -5606,6 +5631,7 @@ void compute_precoding_info_format2A(uint8_t tpmi,
 void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
                                     DCI_INFO_EXTRACTED_t *pdci_info_extarcted,
                                     LTE_DL_FRAME_PARMS *frame_parms,
+                                    uint16_t rnti,
                                     uint8_t subframe,
                                     LTE_DL_UE_HARQ_t *dlsch0_harq,
                                     LTE_DL_UE_HARQ_t *dlsch1_harq,
@@ -5663,15 +5689,17 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
         dlsch1_harq->dl_power_off = 1;
 
         pdlsch0->current_harq_pid = harq_pid;
-        pdlsch0->harq_ack[subframe].harq_id = harq_pid;
+        pdlsch0->harq_ack[subframe].harq_id     = harq_pid;
         pdlsch1->current_harq_pid = harq_pid;
-        pdlsch1->harq_ack[subframe].harq_id = harq_pid;
+        pdlsch1->harq_ack[subframe].harq_id     = harq_pid;
 
         // assume two CW are active
         dlsch0_harq->status   = ACTIVE;
         dlsch1_harq->status   = ACTIVE;
         pdlsch0->active = 1;
         pdlsch1->active = 1;
+        pdlsch0->rnti = rnti;
+        pdlsch1->rnti = rnti;
 
 
       if (TB0_active && TB1_active && tbswap==1) {
@@ -5682,19 +5710,15 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
       if (TB0_active==0) {
         dlsch0_harq->status = SCH_IDLE;
         pdlsch0->active     = 0;
-#ifdef DEBUG_HARQ
+  #ifdef DEBUG_HARQ
         printf("[DCI UE]: TB0 is deactivated, retransmit TB1 transmit in TM6\n");
-#endif
+  #endif
       }
 
       if (TB1_active==0) {
         dlsch1_harq->status = SCH_IDLE;
         pdlsch1->active     = 0;
-#ifdef DEBUG_HARQ
-        printf("[DCI UE]: TB1 is deactivated, retransmit TB0 transmit in TM6\n");
-#endif
       }
-
 
 #ifdef DEBUG_HARQ
       printf("[DCI UE]: dlsch0_harq status %d , dlsch1_harq status %d\n", dlsch0_harq->status, dlsch1_harq->status);
@@ -5727,6 +5751,9 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
           dlsch1_harq->rb_alloc_odd[3] = dlsch0_harq->rb_alloc_odd[3];
 
           dlsch1_harq->nb_rb = dlsch0_harq->nb_rb;
+
+          //dlsch0_harq->Nl       = 1;
+          //dlsch1_harq->Nl       = 1;
         }
       } else if ((TB0_active == 0) && (TB1_active == 1)){
 
@@ -5774,38 +5801,57 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
         if ((ndi1!=dlsch0_harq->DCINdi) || (dlsch0_harq->first_tx==1))  {
           dlsch0_harq->round = 0;
 
+          //LOG_I(PHY,"[UE] DLSCH: New Data Indicator CW0 subframe %d (pid %d, round %d)\n",
+          //           subframe,harq_pid,dlsch0_harq->round);
           if ( dlsch0_harq->first_tx==1) {
             LOG_D(PHY,"Format 2 DCI First TX0: Clearing flag\n");
             dlsch0_harq->first_tx = 0;
           }
         }else{
          if(dlsch0_harq->round == 0) {
+#if 0
             // skip pdsch decoding and report ack
             dlsch0_harq->status   = SCH_IDLE;
             pdlsch0->active       = 0;
             pdlsch0->harq_ack[subframe].ack = 1;
             pdlsch0->harq_ack[subframe].harq_id = harq_pid;
             pdlsch0->harq_ack[subframe].send_harq_status = 1;
+#endif
          }
         }
 
-          dlsch0_harq->TBS = TBStable[get_I_TBS(dlsch0_harq->mcs)][dlsch0_harq->nb_rb-1];
-          if(dlsch0_harq->Nl == 2)
-            dlsch0_harq->TBS = TBStable[get_I_TBS(dlsch0_harq->mcs)][(dlsch0_harq->nb_rb<<1)-1];
-          if (mcs1 <= 28)
+        // if Imcs in [29..31] TBS is assumed to be as determined from DCI transported in the latest
+        // PDCCH for the same trasport block using Imcs in [0 .. 28]
+        if(dlsch0_harq->mcs <= 28)
+        {
+            dlsch0_harq->TBS = TBStable[get_I_TBS(dlsch0_harq->mcs)][dlsch0_harq->nb_rb-1];
+            LOG_D(PHY,"[UE] DLSCH: New TBS CW0 subframe %d (pid %d, round %d) TBS %d \n",
+                       subframe,harq_pid,dlsch0_harq->round, dlsch0_harq->TBS);
+        }
+        else
+        {
+            LOG_D(PHY,"[UE] DLSCH: Keep the same TBS CW0 subframe %d (pid %d, round %d) TBS %d \n",
+                       subframe,harq_pid,dlsch0_harq->round, dlsch0_harq->TBS);
+        }
+        //if(dlsch0_harq->Nl == 2)
+        //dlsch0_harq->TBS = TBStable[get_I_TBS(dlsch0_harq->mcs)][(dlsch0_harq->nb_rb<<1)-1];
+        if (mcs1 <= 28)
             dlsch0_harq->Qm = get_Qm(mcs1);
-          else if (mcs1<=31)
+        else if (mcs1<=31)
             dlsch0_harq->Qm = (mcs1-28)<<1;
       }
 
       if (TB1_active) {
         if ((ndi2!=dlsch1_harq->DCINdi) || (dlsch1_harq->first_tx==1)) {
           dlsch1_harq->round = 0;
+          //LOG_I(PHY,"[UE] DLSCH: New Data Indicator CW1 subframe %d (pid %d, round %d)\n",
+          //           subframe,harq_pid,dlsch0_harq->round);
           if (dlsch1_harq->first_tx==1) {
             LOG_D(PHY,"Format 2 DCI First TX1: Clearing flag\n");
             dlsch1_harq->first_tx = 0;
           }
         }else{
+#if 0
          if(dlsch1_harq->round == 0) {
             // skip pdsch decoding and report ack
             dlsch1_harq->status   = SCH_IDLE;
@@ -5814,15 +5860,25 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
             pdlsch1->harq_ack[subframe].harq_id = harq_pid;
             pdlsch1->harq_ack[subframe].send_harq_status = 1;
          }
+#endif
         }
 
-          dlsch1_harq->TBS = TBStable[get_I_TBS(dlsch1_harq->mcs)][dlsch1_harq->nb_rb-1];
-          if(dlsch0_harq->Nl == 2)
-            dlsch0_harq->TBS = TBStable[get_I_TBS(dlsch0_harq->mcs)][(dlsch0_harq->nb_rb<<1)-1];
-
-          if (mcs2 <= 28)
+        // if Imcs in [29..31] TBS is assumed to be as determined from DCI transported in the latest
+        // PDCCH for the same trasport block using Imcs in [0 .. 28]
+        if(dlsch1_harq->mcs <= 28)
+        {
+            dlsch1_harq->TBS = TBStable[get_I_TBS(dlsch1_harq->mcs)][dlsch1_harq->nb_rb-1];
+            LOG_D(PHY,"[UE] DLSCH: New TBS CW1 subframe %d (pid %d, round %d) TBS %d \n",
+                       subframe,harq_pid,dlsch1_harq->round, dlsch1_harq->TBS);
+        }
+        else
+        {
+            LOG_D(PHY,"[UE] DLSCH: Keep the same TBS CW1 subframe %d (pid %d, round %d) TBS %d \n",
+                       subframe,harq_pid,dlsch1_harq->round, dlsch1_harq->TBS);
+        }
+        if (mcs2 <= 28)
             dlsch1_harq->Qm = get_Qm(mcs2);
-          else if (mcs1<=31)
+        else if (mcs1<=31)
             dlsch1_harq->Qm = (mcs2-28)<<1;
       }
 
@@ -5920,7 +5976,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                               tc_rnti,
                                               si_rnti,
                                               ra_rnti,
-                                              p_rnti,
+                                              p_rnti,frame,subframe,
                                               &dci_info_extarcted,
                                               dlsch0_harq);
       if(status == 0)
@@ -6020,7 +6076,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                               tc_rnti,
                                               si_rnti,
                                               ra_rnti,
-                                              p_rnti,
+                                              p_rnti,frame,subframe,
                                               &dci_info_extarcted,
                                               dlsch0_harq);
       if(status == 0)
@@ -6047,7 +6103,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     case format2:
     {
         // extract dci infomation
-        LOG_I(PHY,"[DCI-format2] extract dci infomation \n");
+        //LOG_I(PHY,"[DCI-format2] AbsSubframe %d.%d extract dci infomation \n", frame, subframe);
         extract_dci2_info(frame_parms->N_RB_DL,
                 frame_type,
                 frame_parms->nb_antenna_ports_eNB,
@@ -6069,7 +6125,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
         dlsch0_harq = dlsch0->harq_processes[harq_pid];
         dlsch1_harq = dlsch1->harq_processes[harq_pid];
 
-        LOG_I(PHY,"[DCI-format2] check dci content \n");
+        //LOG_I(PHY,"[DCI-format2] check dci content \n");
         status = check_dci_format2_2a_coherency(format2,
                 frame_parms->N_RB_DL,
                 &dci_info_extarcted,
@@ -6083,10 +6139,11 @@ int generate_ue_dlsch_params_from_dci(int frame,
             return(-1);
 
         // dci is correct ==> update internal structure and prepare dl decoding
-        LOG_I(PHY,"[DCI-format2] update internal structure and prepare dl decoding \n");
+        //LOG_I(PHY,"[DCI-format2] update internal structure and prepare dl decoding \n");
         prepare_dl_decoding_format2_2A(format2,
                 &dci_info_extarcted,
                 frame_parms,
+                rnti,
                 subframe,
                 dlsch0_harq,
                 dlsch1_harq,
@@ -6099,7 +6156,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     case format2A:
     {
     // extract dci infomation
-    LOG_I(PHY,"[DCI-format2A] extract dci infomation \n");
+    //LOG_I(PHY,"[DCI-format2] AbsSubframe %d.%d extract dci infomation \n", frame%1024, subframe);
     extract_dci2A_info(frame_parms->N_RB_DL,
                        frame_type,
                        frame_parms->nb_antenna_ports_eNB,
@@ -6107,10 +6164,10 @@ int generate_ue_dlsch_params_from_dci(int frame,
                        &dci_info_extarcted);
 
     // check dci content
-    LOG_I(PHY,"[DCI-format2A] check dci content \n");
-    LOG_I(PHY,"[DCI-format2A] tb_swap %d harq_pid %d\n", dci_info_extarcted.tb_swap, dci_info_extarcted.harq_pid);
-      dlsch[0]->active = 0;
-      dlsch[1]->active = 0;
+    //LOG_I(PHY,"[DCI-format2A] check dci content \n");
+    //LOG_I(PHY,"[DCI-format2A] tb_swap %d harq_pid %d\n", dci_info_extarcted.tb_swap, dci_info_extarcted.harq_pid);
+      //dlsch[0]->active = 0;
+      //dlsch[1]->active = 0;
 
     if (dci_info_extarcted.tb_swap == 0) {
       dlsch0 = dlsch[0];
@@ -6122,7 +6179,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     dlsch0_harq = dlsch0->harq_processes[dci_info_extarcted.harq_pid];
     dlsch1_harq = dlsch1->harq_processes[dci_info_extarcted.harq_pid];
 
-    LOG_I(PHY,"[DCI-format2A] check dci content \n");
+    //LOG_I(PHY,"[DCI-format2A] check dci content \n");
     status = check_dci_format2_2a_coherency(format2A,
                                               frame_parms->N_RB_DL,
                                               &dci_info_extarcted,
@@ -6136,10 +6193,11 @@ int generate_ue_dlsch_params_from_dci(int frame,
       return(-1);
 
     // dci is correct ==> update internal structure and prepare dl decoding
-    LOG_I(PHY,"[DCI-format2A] update internal structure and prepare dl decoding \n");
+    //LOG_I(PHY,"[DCI-format2A] update internal structure and prepare dl decoding \n");
     prepare_dl_decoding_format2_2A(format2A,
                                    &dci_info_extarcted,
                                    frame_parms,
+                                   rnti,
                                    subframe,
                                    dlsch0_harq,
                                    dlsch1_harq,
@@ -7142,7 +7200,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
   uint8_t transmission_mode = ue->transmission_mode[eNB_id];
   ANFBmode_t AckNackFBMode;
   LTE_UE_ULSCH_t *ulsch = ue->ulsch[eNB_id];
-  LTE_UE_DLSCH_t **dlsch = ue->dlsch[0];
+  LTE_UE_DLSCH_t **dlsch = ue->dlsch[subframe&0x1][0];
   PHY_MEASUREMENTS *meas = &ue->measurements;
   LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   //  uint32_t current_dlsch_cqi = ue->current_dlsch_cqi[eNB_id];
@@ -7947,7 +8005,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     if (frame_parms->frame_type == FDD) {
       int dl_subframe = (subframe<4) ? (subframe+6) : (subframe-4);
 
-      if (ue->dlsch[eNB_id][0]->harq_ack[dl_subframe].send_harq_status>0) { // we have downlink transmission
+      if (ue->dlsch[dl_subframe&0x1][eNB_id][0]->harq_ack[dl_subframe].send_harq_status>0) { // we have downlink transmission
         ulsch->harq_processes[harq_pid]->O_ACK = 1;
       } else {
         ulsch->harq_processes[harq_pid]->O_ACK = 0;

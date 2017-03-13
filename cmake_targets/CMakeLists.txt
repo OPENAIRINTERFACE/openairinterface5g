@@ -130,6 +130,9 @@ else (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
     file(STRINGS "/proc/cpuinfo" CPUINFO REGEX flags LIMIT_COUNT 1)
     if (CPUINFO MATCHES "avx2")
       set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx2")
+      set(COMPILATION_AVX2 "True")
+    else()
+      set(COMPILATION_AVX2 "False")
     endif()
     if (CPUINFO MATCHES "sse4_1")
       set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.1")
@@ -1116,6 +1119,11 @@ set(PHY_SRC
 if (${SMBV})
   set(PHY_SRC "${PHY_SRC} ${OPENAIR1_DIR}/PHY/TOOLS/smbv.c")
 endif  (${SMBV})
+
+if (${COMPILATION_AVX2} STREQUAL "True")
+  set(PHY_SRC ${PHY_SRC} ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_llr_computation_avx2.c)
+endif ()
+
 add_library(PHY ${PHY_SRC})
 
 #Layer 2 library
