@@ -314,7 +314,14 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 	retx_so_start = pdu_mngt->hole_so_start[pdu_mngt->retx_hole_index];
 	retx_so_stop = pdu_mngt->hole_so_stop[pdu_mngt->retx_hole_index];
 
-	AssertFatal ((retx_so_start <= retx_so_stop) && (retx_so_stop - retx_so_start + 1 < pdu_mngt->payload_size),
+	/*
+	if (!(retx_so_start <= retx_so_stop) && (retx_so_stop - retx_so_start + 1 <= pdu_mngt->payload_size))
+	{
+		AssertFatal(0);
+	}
+	*/
+
+	AssertFatal ((retx_so_start <= retx_so_stop) && (retx_so_stop - retx_so_start + 1 <= pdu_mngt->payload_size),
 			"RLC AM Tx PDU Segment Data SO Error: retx_so_start=%d retx_so_stop=%d OriginalPDUDataLength=%d sn=%d LcId=%d!\n",
 			retx_so_start,retx_so_stop,pdu_mngt->payload_size,sn,rlc_pP->channel_id);
 
