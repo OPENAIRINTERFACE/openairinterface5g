@@ -42,7 +42,12 @@
 #define NOCYGWIN_STATIC
 #endif
 
-extern int16_t dlsch_demod_shift;
+/* dynamic shift for LLR computation for TM3/4
+ * set as command line argument, see lte-softmodem.c
+ * default value: 0
+ */
+int16_t dlsch_demod_shift = 0;
+
 //#define DEBUG_HARQ
 
 //#undef LOG_D

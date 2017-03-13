@@ -151,8 +151,6 @@ uint8_t usim_test = 0;
 uint8_t nb_antenna_tx = 1;
 uint8_t nb_antenna_rx = 1;
 
-int16_t dlsch_demod_shift = 0;
-
 char ref[128] = "internal";
 char channels[128] = "0";
 
@@ -323,6 +321,7 @@ void help (void) {
   printf("  --ue-txgain set UE TX gain\n");
   printf("  --ue-nb-ant-rx  set UE number of rx antennas ");
   printf("  --ue-scan_carrier set UE to scan around carrier\n");
+  printf("  --dlsch-demod-shift dynamic shift for LLR compuation for TM3/4 (default 0)\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
   printf("  --mmapped-dma sets flag for improved EXMIMO UE performance\n");  
   printf("  --external-clock tells hardware to use an external clock reference\n");
@@ -804,9 +803,11 @@ static void get_options (int argc, char **argv) {
     case LONG_OPTION_THREADEVENSUBFRAME:
        threads.even=atoi(optarg);
        break;
-    case LONG_OPTION_DEMOD_SHIFT:
+    case LONG_OPTION_DEMOD_SHIFT: {
+        extern int16_t dlsch_demod_shift;
         dlsch_demod_shift = atof(optarg);
         break;
+    }
 #if T_TRACER
         case LONG_OPTION_T_PORT: {
             extern int T_port;
