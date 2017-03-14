@@ -488,7 +488,8 @@ void fill_phy_ue_vars(unsigned int ue_id, uint8_t CC_id,unsigned int last_slot)
     rnti = UE_transport_info[ue_id][CC_id].rnti[n_enb];
     enb_id = UE_transport_info[ue_id][CC_id].eNB_id[n_enb];
 
-    PHY_vars_UE_g[ue_id][CC_id]->pdcch_vars[enb_id]->crnti=rnti;
+    PHY_vars_UE_g[ue_id][CC_id]->pdcch_vars[0][enb_id]->crnti=rnti;
+    PHY_vars_UE_g[ue_id][CC_id]->pdcch_vars[1][enb_id]->crnti=rnti;
 
     harq_pid = UE_transport_info[ue_id][CC_id].harq_pid[n_enb];
 

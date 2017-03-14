@@ -927,7 +927,7 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   case PDSCH: // TB0
     dlsch_ue  = phy_vars_ue->dlsch[subframe&0x1][eNB_id][0];
     harq_pid = dlsch_ue->current_harq_pid;
-    ue_id= (uint32_t)find_ue((int16_t)phy_vars_ue->pdcch_vars[(uint32_t)eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2][CC_id]);
+    ue_id= (uint32_t)find_ue((int16_t)phy_vars_ue->pdcch_vars[subframe & 0x1][(uint32_t)eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2][CC_id]);
     DevAssert( ue_id != (uint32_t)-1 );
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2][CC_id]->dlsch[ue_id][0];
 
@@ -973,7 +973,7 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   case PDSCH1: { // TB1
     dlsch_ue = phy_vars_ue->dlsch[subframe&0x1][eNB_id][1];
     harq_pid = dlsch_ue->current_harq_pid;
-    int8_t UE_id = find_ue( phy_vars_ue->pdcch_vars[eNB_id]->crnti, PHY_vars_eNB_g[eNB_id2][CC_id] );
+    int8_t UE_id = find_ue( phy_vars_ue->pdcch_vars[subframe & 0x1][eNB_id]->crnti, PHY_vars_eNB_g[eNB_id2][CC_id] );
     DevAssert( UE_id != -1 );
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2][CC_id]->dlsch[UE_id][1];
     // reset HARQ

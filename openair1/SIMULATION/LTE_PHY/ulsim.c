@@ -630,7 +630,7 @@ int main(int argc, char **argv)
     fl_show_form (form_enb->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
   }
 
-  UE->pdcch_vars[0]->crnti = 14;
+  UE->pdcch_vars[0][0]->crnti = 14;
 
   UE->frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
   UE->frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;

@@ -1579,9 +1579,15 @@ int main( int argc, char **argv ) {
                               UE[CC_id]->X_u);
 
             if (UE[CC_id]->mac_enabled == 1)
-                UE[CC_id]->pdcch_vars[0]->crnti = 0x1234;
+            {
+                UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1234;
+                UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1234;
+            }
             else
-                UE[CC_id]->pdcch_vars[0]->crnti = 0x1235;
+            {
+                UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1235;
+                UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1235;
+            }
 
             UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
             UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];

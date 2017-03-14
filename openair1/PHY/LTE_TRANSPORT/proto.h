@@ -1308,9 +1308,7 @@ int32_t rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                  uint8_t i_mod,
                  uint8_t harq_pid);
 
-int32_t rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
-                 LTE_UE_PDCCH **lte_ue_pdcch_vars,
-                 LTE_DL_FRAME_PARMS *frame_parms,
+int32_t rx_pdcch(PHY_VARS_UE *ue,
                  uint32_t frame,
                  uint8_t subframe,
                  uint8_t eNB_id,
@@ -1781,6 +1779,7 @@ uint32_t ulsch_encoding(uint8_t *a,
                         PHY_VARS_UE *phy_vars_ue,
                         uint8_t harq_pid,
                         uint8_t eNB_id,
+                        uint8_t subframe_rx,
                         uint8_t tmode,
                         uint8_t control_only_flag,
                         uint8_t Nbundled);
@@ -1796,6 +1795,7 @@ uint32_t ulsch_encoding(uint8_t *a,
 int32_t ulsch_encoding_emul(uint8_t *ulsch_buffer,
                             PHY_VARS_UE *phy_vars_ue,
                             uint8_t eNB_id,
+                            uint8_t subframe_rx,
                             uint8_t harq_pid,
                             uint8_t control_only_flag);
 

@@ -56,9 +56,7 @@ int16_t dlsch_demod_shift = 0;
 //#define DEBUG_PHY 1
 //#define DEBUG_DLSCH_DEMOD 1
 
-int avg[4];
-int avg_0[2];
-int avg_1[2];
+
 
 // [MCS][i_mod (0,1,2) = (2,4,6)]
 unsigned char offset_mumimo_llr_drange_fix=0;
@@ -110,6 +108,9 @@ int rx_pdsch(PHY_VARS_UE *ue,
   PHY_MEASUREMENTS *measurements = &ue->measurements;
   LTE_UE_DLSCH_t   **dlsch;
 
+  int avg[4];
+  int avg_0[2];
+  int avg_1[2];
 
   unsigned char aatx,aarx;
 
@@ -143,7 +144,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
     break;
 
   case PDSCH:
-    pdsch_vars = &ue->pdsch_vars[subframe&0x1][eNB_id];
+    pdsch_vars = ue->pdsch_vars[subframe&0x1];
     dlsch = ue->dlsch[subframe&0x1][eNB_id];
     LOG_D(PHY,"AbsSubframe %d.%d / Sym %d harq_pid %d,  harq status %d.%d \n",
                    frame,subframe,symbol,harq_pid,
