@@ -284,10 +284,9 @@ rlc_am_rx_pdu_status_t rlc_am_rx_list_handle_pdu_segment(
 	  rlc_am_pdu_info_t* pdu_rx_info_p                  = &((rlc_am_rx_pdu_management_t*)(tb_pP->data))->pdu_info;
 	  rlc_am_pdu_info_t* pdu_info_cursor_p           = NULL;
 	  rlc_am_pdu_info_t* pdu_info_previous_cursor_p  = NULL;
-	  mem_block_t*       cursor_p                    = NULL;
+	  mem_block_t*       cursor_p                    = rlc_pP->receiver_buffer.head;
 	  mem_block_t*       previous_cursor_p           = NULL;
 	  mem_block_t*       next_cursor_p           	 = NULL;
-	  cursor_p = rlc_pP->receiver_buffer.head;
 	  boolean_t prev_segment_found = FALSE;
 	  boolean_t next_segment_found = FALSE;
 	  uint16_t so_start = 0;
@@ -298,8 +297,9 @@ rlc_am_rx_pdu_status_t rlc_am_rx_list_handle_pdu_segment(
 	  /*****************************************************/
 	  // 1) Find previous cursor to the PDU to insert
 	  /*****************************************************/
-	  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
-	  while (cursor_p != NULL) {
+	  AssertFatal(cursor_p != NULL,"AM Rx PDU Error, received buffer empty LcID=%d\n",rlc_pP->channel_id);
+
+	  do {
 		  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
 
 		  // Stop if Cursor SN >= Received SN
@@ -310,7 +310,7 @@ rlc_am_rx_pdu_status_t rlc_am_rx_list_handle_pdu_segment(
           previous_cursor_p = cursor_p;
           pdu_info_previous_cursor_p = pdu_info_cursor_p;
           cursor_p = cursor_p->next;
-	  }
+	  } while (cursor_p != NULL);
 
 	  /*****************************************************/
 	  // 2) Store the received Segment
@@ -536,9 +536,8 @@ rlc_am_rx_pdu_status_t rlc_am_rx_list_handle_pdu(
 {
 	  rlc_am_pdu_info_t* pdu_rx_info_p                  = &((rlc_am_rx_pdu_management_t*)(tb_pP->data))->pdu_info;
 	  rlc_am_pdu_info_t* pdu_info_cursor_p           = NULL;
-	  mem_block_t*       cursor_p                    = NULL;
+	  mem_block_t*       cursor_p                    = rlc_pP->receiver_buffer.head;
 	  mem_block_t*       previous_cursor_p           = NULL;
-	  cursor_p = rlc_pP->receiver_buffer.head;
 	  rlc_am_rx_pdu_status_t pdu_status = RLC_AM_DATA_PDU_STATUS_OK;
 	  // it is assumed this pdu is in rx window
 
@@ -546,9 +545,9 @@ rlc_am_rx_pdu_status_t rlc_am_rx_list_handle_pdu(
 	  /*****************************************************/
 	  // 1) Find previous cursor to the PDU to insert
 	  /*****************************************************/
-	  previous_cursor_p = cursor_p;
-	  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
-	  while (cursor_p != NULL) {
+	  AssertFatal(cursor_p != NULL,"AM Rx PDU Error, received buffer empty LcID=%d\n",rlc_pP->channel_id);
+
+	  do {
 		  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
 
 		  // Stop if Cursor SN >= Received SN
@@ -558,16 +557,15 @@ rlc_am_rx_pdu_status_t rlc_am_rx_list_handle_pdu(
 
           previous_cursor_p = cursor_p;
           cursor_p = cursor_p->next;
-	  }
+	  } while (cursor_p != NULL);
 
 	  /*****************************************************/
 	  // 2) Insert PDU by removing byte duplicate if required
 	  /*****************************************************/
-	  // First case : cursor_p is NULL, it means the SN is received for the first time
+	  // First case : cursor_p is NULL or SN are different, it means the SN is received for the first time
 	  // Insert PDU after previous_cursor_p
 	  if ((cursor_p == NULL) || (pdu_info_cursor_p->sn != pdu_rx_info_p->sn)) {
-	      rlc_usn_t sn_prev = ((rlc_am_rx_pdu_management_t*)(previous_cursor_p->data))->pdu_info.sn;
-	      if (RLC_AM_DIFF_SN(sn_prev,rlc_pP->vr_r) < RLC_AM_DIFF_SN(pdu_rx_info_p->sn,rlc_pP->vr_r)) {
+	      if (previous_cursor_p != NULL) {
 	            LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SN=%d] PDU INSERTED AFTER PDU SN=%d\n",
 	                        PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_rx_info_p->sn,
 	                        ((rlc_am_rx_pdu_management_t*)(previous_cursor_p->data))->pdu_info.sn);
