@@ -265,7 +265,7 @@ uint32_t ulsch_encoding(uint8_t *a,
     rnti = ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->crnti;
     fill_CQI(ulsch,meas,0,harq_pid,ue->frame_parms.N_RB_DL,rnti, tmode,ue->sinr_eff);
 
-    LOG_I(PHY,"ULSCH Encoding rnti %x \n", rnti);
+    LOG_D(PHY,"ULSCH Encoding rnti %x \n", rnti);
     print_CQI(ulsch->o,ulsch->uci_format,0,ue->frame_parms.N_RB_DL);
 
     // save PUSCH pmi for later (transmission modes 4,5,6)
