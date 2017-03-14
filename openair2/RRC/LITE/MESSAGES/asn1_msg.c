@@ -1593,7 +1593,7 @@ do_RRCConnectionSetup(
           SoundingRS_UL_ConfigDedicated__setup__srs_HoppingBandwidth_hbw0;
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition=0;
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.duration=1;
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=19;
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=2;
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb=0;
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift=
           SoundingRS_UL_ConfigDedicated__setup__cyclicShift_cs0;

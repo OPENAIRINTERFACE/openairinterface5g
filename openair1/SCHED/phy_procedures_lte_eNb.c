@@ -2087,7 +2087,7 @@ void prach_procedures(PHY_VARS_eNB *eNB) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,0);
 }
 
-void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq_pid)
+void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq_pid,uint8_t do_srs)
 {
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   uint8_t SR_payload = 0,*pucch_payload=NULL,pucch_payload0[2]= {0,0},pucch_payload1[2]= {0,0};
@@ -2099,10 +2099,6 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
   PUCCH_FMT_t format;
   const int subframe = proc->subframe_rx;
   const int frame = proc->frame_rx;
-  uint16_t srsPeriodicity;
-  uint16_t srsOffset;
-  uint16_t do_srs=0;
-  uint16_t is_srs_pos=0;
 
   if ((eNB->dlsch[UE_id][0]) &&
       (eNB->dlsch[UE_id][0]->rnti>0) &&
@@ -2111,16 +2107,6 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
     // check SR availability
     do_SR = is_SR_subframe(eNB,proc,UE_id);
     //      do_SR = 0;
-
-    // check if there is SRS and we have to use shortened format
-    // TODO: check for exceptions in transmission of SRS together with ACK/NACK
-    is_srs_pos = is_srs_occasion_common(fp,pdcch_alloc2ul_frame(fp,frame,subframe),pdcch_alloc2ul_subframe(fp,subframe));
-    if (is_srs_pos && eNB->soundingrs_ul_config_dedicated[UE_id].srsConfigDedicatedSetup ) {
-      compute_srs_pos(fp->frame_type, eNB->soundingrs_ul_config_dedicated[UE_id].srs_ConfigIndex, &srsPeriodicity, &srsOffset);
-      if ((((10*pdcch_alloc2ul_frame(fp,frame,subframe)+pdcch_alloc2ul_subframe(fp,subframe)) % srsPeriodicity) == srsOffset)) {
-	do_srs = 1;
-      }
-    }
 
     // Now ACK/NAK
     // First check subframe_tx flag for earlier subframes
@@ -2896,6 +2882,11 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
   const int frame    = proc->frame_rx;
   int offset         = eNB->CC_id;//(proc == &eNB->proc.proc_rxtx[0]) ? 0 : 1;
 
+  uint16_t srsPeriodicity;
+  uint16_t srsOffset;
+  uint16_t do_srs=0;
+  uint16_t is_srs_pos=0;
+
   T(T_ENB_PHY_UL_TICK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe));
 
   T(T_ENB_PHY_INPUT_SIGNAL, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(0),
@@ -2925,13 +2916,34 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
     eNB->cba_last_reception[i]=0;
   }
 
-  // Do PUCCH processing first
-
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    pucch_procedures(eNB,proc,i,harq_pid);
-  }
 
-  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+    // Do SRS processing 
+    // check if there is SRS and we have to use shortened format
+    // TODO: check for exceptions in transmission of SRS together with ACK/NACK
+    is_srs_pos = is_srs_occasion_common(fp,pdcch_alloc2ul_frame(fp,frame,subframe),pdcch_alloc2ul_subframe(fp,subframe));
+    if (is_srs_pos && eNB->soundingrs_ul_config_dedicated[i].srsConfigDedicatedSetup ) {
+      compute_srs_pos(fp->frame_type, eNB->soundingrs_ul_config_dedicated[i].srs_ConfigIndex, &srsPeriodicity, &srsOffset);
+      if ((((10*pdcch_alloc2ul_frame(fp,frame,subframe)+pdcch_alloc2ul_subframe(fp,subframe)) % srsPeriodicity) == srsOffset)) {
+	do_srs = 1;
+      }
+    }
+
+    if (do_srs==1) {
+      if (lte_srs_channel_estimation(fp,
+				     &eNB->common_vars,
+				     &eNB->srs_vars[i],
+				     &eNB->soundingrs_ul_config_dedicated[i],
+				     subframe,
+				     0/*eNB_id*/)) {
+	LOG_E(PHY,"problem processing SRS\n");
+      }
+    }
+
+    // Do PUCCH processing 
+
+    pucch_procedures(eNB,proc,i,harq_pid, do_srs);
+
 
     // check for Msg3
     if (eNB->mac_enabled==1) {

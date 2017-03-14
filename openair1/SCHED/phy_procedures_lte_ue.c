@@ -1579,7 +1579,13 @@ void ue_srs_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8
             nb_rb_srs,
             tx_amp);
 
-    generate_srs_tx(ue, eNB_id, tx_amp, subframe_tx);
+    uint16_t nsymb = (ue->frame_parms.Ncp==0) ? 14:12;
+    uint16_t symbol_offset = (int)ue->frame_parms.ofdm_symbol_size*((subframe_tx*nsymb)+(nsymb-1));
+    generate_srs(&ue->frame_parms, 
+		 &ue->soundingrs_ul_config_dedicated[eNB_id], 
+		 &ue->common_vars.txdataF[eNB_id][symbol_offset], 
+		 tx_amp, 
+		 subframe_tx);
   }
 }
 

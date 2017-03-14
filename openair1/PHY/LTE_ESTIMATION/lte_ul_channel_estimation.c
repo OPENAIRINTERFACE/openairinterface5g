@@ -667,28 +667,28 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
 }
 
 extern uint16_t transmission_offset_tdd[16];
-#define DEBUG_SRS
+//#define DEBUG_SRS
 
 int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
                                    LTE_eNB_COMMON *common_vars,
                                    LTE_eNB_SRS *srs_vars,
                                    SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
-                                   unsigned char sub_frame_number,
+                                   unsigned char subframe,
                                    unsigned char eNB_id)
 {
 
-  int T_SFC,aa;
+  int aa;
   int N_symb,symbol;
-  uint8_t nb_antennas_rx = frame_parms->nb_antenna_ports_eNB;
+  uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
 #ifdef DEBUG_SRS
   char fname[40], vname[40];
 #endif
 
-  uint8_t Ssrs  = frame_parms->soundingrs_ul_config_common.srs_SubframeConfig;
+  //uint8_t Ssrs  = frame_parms->soundingrs_ul_config_common.srs_SubframeConfig;
+  //uint8_t T_SFC = (Ssrs<=7 ? 5 : 10);
 
   N_symb = 2*7-frame_parms->Ncp;
-  symbol = (sub_frame_number+1)*N_symb-1; //SRS is always in last symbol of subframe
-  T_SFC = (Ssrs<=7 ? 5 : 10);
+  symbol = N_symb-1; //SRS is always in last symbol of subframe
 
   /*
      msg("SRS channel estimation eNB %d, subframs %d, %d %d %d %d %d\n",eNB_id,sub_frame_number,
@@ -699,19 +699,21 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
      SRS_parms->Ssrs);
   */
 
-  if ((1<<(sub_frame_number%T_SFC))&transmission_offset_tdd[Ssrs]) {
+  //if ((1<<(sub_frame_number%T_SFC))&transmission_offset_tdd[Ssrs]) {
 
-    if (generate_srs_rx(frame_parms,
-                        soundingrs_ul_config_dedicated,
-                        srs_vars->srs)==-1) {
-      msg("lte_srs_channel_estimation: Error in generate_srs_rx\n");
+  if (generate_srs(frame_parms,
+		   soundingrs_ul_config_dedicated,
+		   &srs_vars->srs[eNB_id],
+		   0x7FFF,
+		   subframe)==-1) {
+      LOG_E(PHY,"lte_srs_channel_estimation: Error in generate_srs_rx\n");
       return(-1);
     }
 
     for (aa=0; aa<nb_antennas_rx; aa++) {
 #ifdef DEBUG_SRS
       msg("SRS channel estimation eNB %d, subframs %d, aarx %d, %p, %p, %p\n",eNB_id,sub_frame_number,aa,
-          &common_vars->rxdataF[eNB_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
+          &common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],
           srs_vars->srs,
           srs_vars->srs_ch_estimates[eNB_id][aa]);
 #endif
@@ -719,14 +721,15 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
       //write_output("eNB_rxF.m","rxF",&common_vars->rxdataF[0][aa][2*frame_parms->ofdm_symbol_size*symbol],2*(frame_parms->ofdm_symbol_size),2,1);
       //write_output("eNB_srs.m","srs_eNB",common_vars->srs,(frame_parms->ofdm_symbol_size),1,1);
 
-      mult_cpx_conj_vector((int16_t*) &common_vars->rxdataF[eNB_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
-			   (int16_t*) srs_vars->srs,
+      //memcpy(srs_vars->srs_ch_estimates[eNB_id][aa],&srs_vars->srs[eNB_id],frame_parms->ofdm_symbol_size*sizeof(int32_t));
+      //memcpy(srs_vars->srs_ch_estimates[eNB_id][aa],&common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],frame_parms->ofdm_symbol_size*sizeof(int32_t));
+      mult_cpx_conj_vector((int16_t*) &common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],
+			   (int16_t*) &srs_vars->srs[eNB_id],
 			   (int16_t*) srs_vars->srs_ch_estimates[eNB_id][aa],
 			   frame_parms->ofdm_symbol_size,
 			   15,
 			   0);
 
-      //msg("SRS channel estimation cmult out\n");
 #ifdef USER_MODE
 #ifdef DEBUG_SRS
       sprintf(fname,"eNB_id%d_an%d_srs_ch_est.m",eNB_id,aa);
@@ -735,7 +738,6 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 #endif
     }
-  }
 
   /*
     else {
