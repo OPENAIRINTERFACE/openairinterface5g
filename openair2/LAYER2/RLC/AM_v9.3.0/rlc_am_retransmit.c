@@ -430,7 +430,7 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 		sdus_segment_size[0] = data_size - retx_so_start;
 
 		/* Check if so end is in the first SDU portion */
-		if (sdus_segment_size[0] > retx_so_stop - retx_so_start + 1)
+		if (sdus_segment_size[0] >= retx_so_stop - retx_so_start + 1)
 		{
 			sdus_segment_size[0] = retx_so_stop - retx_so_start + 1;
 			*payload_sizeP = sdus_segment_size[0];
@@ -451,7 +451,7 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 		{
 			sdu_index ++;
 			sdu_segment_index ++;
-			while (sdu_index < pdu_mngt->nb_sdus)
+			while ((sdu_index < pdu_mngt->nb_sdus) && (data_size < retx_so_stop + 1))
 			{
 				if (sdu_index < pdu_mngt->nb_sdus - 1)
 				{
@@ -468,20 +468,19 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 					data_size = pdu_mngt->payload_size;
 				}
 
-				if (data_size >= retx_so_stop + 1)
-				{
-					sdus_segment_size[sdu_segment_index] = retx_so_stop - (data_size - sdu_size) + 1;
-					break;
-				}
-
 				sdus_segment_size[sdu_segment_index] = sdu_size;
 				sdu_index ++;
 				sdu_segment_index ++;
 			}
 
 
+			if (data_size > retx_so_stop + 1)
+			{
+				sdus_segment_size[sdu_segment_index - 1] = retx_so_stop - (data_size - sdu_size) + 1;
+			}
+
 			/* Set number of LIs in the segment */
-			num_LIs_pdu_segment = sdu_segment_index;
+			num_LIs_pdu_segment = sdu_segment_index - 1;
 
 			AssertFatal (num_LIs_pdu_segment <=  pdu_mngt->nb_sdus - 1, "RLC AM Tx PDU Segment Data Error: nbLISegment=%d nbLIPDU=%d sn=%d LcId=%d !\n",
 					num_LIs_pdu_segment,pdu_mngt->nb_sdus - 1,sn,rlc_pP->channel_id);
@@ -527,6 +526,8 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 		data_size = 0;
 		for (int i = 0; i < num_LIs_pdu_segment + 1; i++)
 		{
+			AssertFatal (sdus_segment_size[i] > 0, "RLC AM Tx PDU Segment Data Error: EMpty LI index=%d numLISegment=%d numLIPDU=%d PDULength=%d SOStart=%d SOStop=%d sn=%d LcId=%d !\n",
+							i,num_LIs_pdu_segment,pdu_mngt->nb_sdus - 1,pdu_mngt->payload_size,retx_so_start,retx_so_stop,sn,rlc_pP->channel_id);
 			data_size += sdus_segment_size[i];
 			if ((retx_so_stop == data_size - 1) && (i < num_LIs_pdu_segment))
 			{
@@ -534,7 +535,7 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 			}
 		}
 
-		AssertFatal (data_size == *payload_sizeP, "RLC AM PDU Segment Data Error: SduSum=%d Data=%d sn=%d LcId=%d !\n",
+		AssertFatal (data_size == *payload_sizeP, "RLC AM Tx PDU Segment Data Error: SduSum=%d Data=%d sn=%d LcId=%d !\n",
 				data_size,*payload_sizeP,sn,rlc_pP->channel_id);
 
 
