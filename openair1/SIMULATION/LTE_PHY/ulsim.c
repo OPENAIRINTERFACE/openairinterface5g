@@ -285,6 +285,9 @@ int main(int argc, char **argv)
 
 
   logInit();
+  set_comp_log(PHY,LOG_DEBUG,LOG_MED,1);
+  set_glog(LOG_INFO,LOG_MED);
+
 
   while ((c = getopt (argc, argv, "hapZEbm:n:Y:X:x:s:w:e:q:d:D:O:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:QB:PI:LF")) != -1) {
     switch (c) {
@@ -634,21 +637,27 @@ int main(int argc, char **argv)
 
   UE->frame_parms.soundingrs_ul_config_common.enabled_flag = srs_flag;
   UE->frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
-  UE->frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
+  UE->frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 3;
+  UE->soundingrs_ul_config_dedicated[eNB_id].srsConfigDedicatedSetup = srs_flag;
+  UE->soundingrs_ul_config_dedicated[eNB_id].duration = 1;
+  UE->soundingrs_ul_config_dedicated[eNB_id].srs_ConfigIndex = 2;
   UE->soundingrs_ul_config_dedicated[eNB_id].srs_Bandwidth = 0;
   UE->soundingrs_ul_config_dedicated[eNB_id].transmissionComb = 0;
   UE->soundingrs_ul_config_dedicated[eNB_id].freqDomainPosition = 0;
+  UE->soundingrs_ul_config_dedicated[eNB_id].cyclicShift = 0;
 
   eNB->frame_parms.soundingrs_ul_config_common.enabled_flag = srs_flag;
   eNB->frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
-  eNB->frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
-
-  eNB->soundingrs_ul_config_dedicated[UE_id].srs_ConfigIndex = 1;
+  eNB->frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 3;
+  eNB->soundingrs_ul_config_dedicated[UE_id].srsConfigDedicatedSetup = srs_flag;
+  eNB->soundingrs_ul_config_dedicated[UE_id].duration = 1;
+  eNB->soundingrs_ul_config_dedicated[UE_id].srs_ConfigIndex = 2;
   eNB->soundingrs_ul_config_dedicated[UE_id].srs_Bandwidth = 0;
   eNB->soundingrs_ul_config_dedicated[UE_id].transmissionComb = 0;
   eNB->soundingrs_ul_config_dedicated[UE_id].freqDomainPosition = 0;
+  eNB->soundingrs_ul_config_dedicated[UE_id].cyclicShift = 0;
+
   eNB->cooperation_flag = cooperation_flag;
-  //  eNB->eNB_UE_stats[0].SRS_parameters = UE->SRS_parameters;
 
   eNB->pusch_config_dedicated[UE_id].betaOffset_ACK_Index = beta_ACK;
   eNB->pusch_config_dedicated[UE_id].betaOffset_RI_Index  = beta_RI;
@@ -658,6 +667,11 @@ int main(int argc, char **argv)
   UE->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index = beta_CQI;
 
   UE->ul_power_control_dedicated[eNB_id].deltaMCS_Enabled = 1;
+
+  // disable periodic cqi/ri reporting
+  UE->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex = -1;
+  UE->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex = -1;
+
 
   printf("PUSCH Beta : ACK %f, RI %f, CQI %f\n",(double)beta_ack[beta_ACK]/8,(double)beta_ri[beta_RI]/8,(double)beta_cqi[beta_CQI]/8);
 
@@ -700,8 +714,8 @@ int main(int argc, char **argv)
 
   } 
 
-
-
+  UE->dlsch_SI[0]  = new_ue_dlsch(1,1,1827072,MAX_TURBO_ITERATIONS,N_RB_DL,0);
+  UE->dlsch_ra[0]  = new_ue_dlsch(1,1,1827072,MAX_TURBO_ITERATIONS,N_RB_DL,0);
 
   UE->measurements.rank[0] = 0;
   UE->transmission_mode[0] = 2;
@@ -917,6 +931,10 @@ int main(int argc, char **argv)
       initialize(&time_vector_rx_dec);
 
       ndi=0;
+
+      phy_reset_ue(UE);
+      UE->UE_mode[eNB_id]=PUSCH;
+
       for (trials = 0; trials<n_frames; trials++) {
         //      printf("*");
         //        UE->frame++;

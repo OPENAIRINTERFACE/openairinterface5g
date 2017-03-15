@@ -2916,15 +2916,17 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
     eNB->cba_last_reception[i]=0;
   }
 
+  is_srs_pos = is_srs_occasion_common(fp,frame,subframe);
+  
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
 
     // Do SRS processing 
     // check if there is SRS and we have to use shortened format
     // TODO: check for exceptions in transmission of SRS together with ACK/NACK
-    is_srs_pos = is_srs_occasion_common(fp,pdcch_alloc2ul_frame(fp,frame,subframe),pdcch_alloc2ul_subframe(fp,subframe));
+    do_srs=0;
     if (is_srs_pos && eNB->soundingrs_ul_config_dedicated[i].srsConfigDedicatedSetup ) {
       compute_srs_pos(fp->frame_type, eNB->soundingrs_ul_config_dedicated[i].srs_ConfigIndex, &srsPeriodicity, &srsOffset);
-      if ((((10*pdcch_alloc2ul_frame(fp,frame,subframe)+pdcch_alloc2ul_subframe(fp,subframe)) % srsPeriodicity) == srsOffset)) {
+      if (((10*frame+subframe) % srsPeriodicity) == srsOffset) {
 	do_srs = 1;
       }
     }

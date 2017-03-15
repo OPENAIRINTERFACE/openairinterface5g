@@ -204,7 +204,7 @@ int32_t generate_srs(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 
 #ifdef DEBUG_SRS
-  LOG_I(PHY,"generate_srs_tx: Msc_RS = %d, Msc_RS_idx = %d, k0 = %d\n",Msc_RS, Msc_RS_idx,k0);
+  LOG_D(PHY,"generate_srs_tx: Msc_RS = %d, Msc_RS_idx = %d, k0 = %d\n",Msc_RS, Msc_RS_idx,k0);
 #endif
 
     carrier_pos = (frame_parms->first_carrier_offset + k0);

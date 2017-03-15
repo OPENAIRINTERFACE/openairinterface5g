@@ -259,14 +259,13 @@ void dump_dlsch_ra(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t s
 }
 
 
-void phy_reset_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
+void phy_reset_ue(PHY_VARS_UE *ue)
 {
 
   // This flushes ALL DLSCH and ULSCH harq buffers of ALL connected eNBs...add the eNB_index later
   // for more flexibility
 
   uint8_t i,j,k,s;
-  PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
 
   //[NUMBER_OF_CONNECTED_eNB_MAX][2];
   for(i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
@@ -409,7 +408,9 @@ uint8_t is_cqi_TXOp(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id)
   //      cqirep->cqi_PMI_ConfigIndex,
   //      (((10*frame + subframe) % cqirep->Npd) == cqirep->N_OFFSET_CQI));
 
-  if (((10*frame + subframe) % cqirep->Npd) == cqirep->N_OFFSET_CQI)
+  if (cqirep->cqi_PMI_ConfigIndex==-1)
+    return(0);
+  else if (((10*frame + subframe) % cqirep->Npd) == cqirep->N_OFFSET_CQI)
     return(1);
   else
     return(0);
@@ -428,8 +429,9 @@ uint8_t is_ri_TXOp(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id)
   //      ue->Mod_id,ue->pdcch_vars[eNB_id]->crnti,frame,subframe,
   //      cqirep->ri_ConfigIndex,
   //      (((10*frame + subframe + cqirep->N_OFFSET_CQI - N_OFFSET_RI) % (cqirep->Npd<<log2Mri)) == 0));
-
-  if (((10*frame + subframe + cqirep->N_OFFSET_CQI - N_OFFSET_RI) % (cqirep->Npd<<log2Mri)) == 0)
+  if (cqirep->ri_ConfigIndex==-1)
+    return(0);
+  else if (((10*frame + subframe + cqirep->N_OFFSET_CQI - N_OFFSET_RI) % (cqirep->Npd<<log2Mri)) == 0)
     return(1);
   else
     return(0);
