@@ -736,8 +736,12 @@ rlc_am_send_status_pdu(
     } // End main while NACK_SN
 
     /* Clear E1 of last nack_sn entry */
-	AssertFatal ((control_pdu_info.num_nack) || (all_segments_received == 0), "RLC AM Tx Status PDU Data Error no NACK_SN LcId=%d\n",rlc_pP->channel_id);
-    control_pdu_info.nack_list[control_pdu_info.num_nack - 1].e1  = 0;
+	AssertFatal ((control_pdu_info.num_nack) || (all_segments_received == 0), "RLC AM Tx Status PDU Data Error no NACK_SN vrR=%d vrMS=%d lastSN_NACK=%d Completed=%d NbBytesAvailable=%d LcId=%d\n",
+	        rlc_pP->vr_r,rlc_pP->vr_ms,sn_nack,status_report_completed,(nb_bits_to_transmit >> 3),rlc_pP->channel_id);
+	if (control_pdu_info.num_nack) {
+	    control_pdu_info.nack_list[control_pdu_info.num_nack - 1].e1  = 0;
+	}
+
 
     /* Set ACK_SN unless it was set before */
     if (!status_report_completed){
