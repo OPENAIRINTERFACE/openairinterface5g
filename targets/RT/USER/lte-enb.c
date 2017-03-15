@@ -1560,7 +1560,7 @@ static void* eNB_thread_single( void* param ) {
   wait_sync("eNB_thread_single");
 
 #if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
-  if (eNB->node_function < NGFI_RRU_IF5)
+  if ((eNB->node_function < NGFI_RRU_IF5) && (eNB->mac_enabled==1))
     wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
 #endif 
 

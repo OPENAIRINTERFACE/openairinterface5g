@@ -138,7 +138,7 @@ int trx_lms_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) 
     ret = -1;
   }
   
-  LMS_SetNormalizedGain(lms_device, LMS_CH_TX, 0, .2);//openair0_cfg->tx_gain[0]);
+  LMS_SetGaindB(lms_device, LMS_CH_TX, 0, openair0_cfg->tx_gain[0]);
   LMS_SetGaindB(lms_device, LMS_CH_RX, 0, openair0_cfg->rx_gain[0]-openair0_cfg->rx_gain_offset[0]); 
 
   return(ret);
@@ -202,10 +202,11 @@ int trx_lms_start(openair0_device *device){
     }
     printf("Set TX frequency %f MHz\n",device->openair0_cfg[0].tx_freq[0]/1e6);
 
-    //printf("Override antenna settings to: RX1_H, TXA_2");
-    //LMS_SetAntenna(lms_device, LMS_CH_RX, 0, 1);
-    //LMS_SetAntenna(lms_device, LMS_CH_TX, 0, 2);
-
+    /*
+    printf("Override antenna settings to: RX1_H, TXA_2");
+    LMS_SetAntenna(lms_device, LMS_CH_RX, 0, 1);
+    LMS_SetAntenna(lms_device, LMS_CH_TX, 0, 2);
+    */
 
     
     for (int i = 0; i< device->openair0_cfg->rx_num_channels; i++)
@@ -354,7 +355,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg){
     break;
   case 15360000:
     openair0_cfg[0].samples_per_packet    = 2048;
-    openair0_cfg[0].tx_sample_advance     = 70;
+    openair0_cfg[0].tx_sample_advance     = 450;
     openair0_cfg[0].tx_bw                 = 15.36e6;
     openair0_cfg[0].rx_bw                 = 15.36e6;
     break;
