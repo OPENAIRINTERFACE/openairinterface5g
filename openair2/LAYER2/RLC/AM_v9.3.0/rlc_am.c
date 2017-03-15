@@ -1236,6 +1236,8 @@ rlc_am_data_req (
     l_rlc_p->input_sdus[l_rlc_p->next_sdu_index].flags.no_new_sdu_segmented_in_last_pdu = 0;
     //l_rlc_p->input_sdus[l_rlc_p->next_sdu_index].li_index_for_discard = -1;
     l_rlc_p->next_sdu_index = (l_rlc_p->next_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
+    if (l_rlc_p->channel_id <3)
+    {
     LOG_I(RLC, PROTOCOL_RLC_AM_CTXT_FMT" RLC_AM_DATA_REQ size %d Bytes,  NB SDU %d current_sdu_index=%d next_sdu_index=%d conf %d mui %d\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,l_rlc_p),
           data_size,
@@ -1244,6 +1246,7 @@ rlc_am_data_req (
           l_rlc_p->next_sdu_index,
           conf,
           mui);
+    }
   } else {
 #if MESSAGE_CHART_GENERATOR
     mui         = ((struct rlc_am_data_req*) (sdu_pP->data))->mui;

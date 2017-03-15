@@ -384,8 +384,8 @@ rlc_am_receive_process_control_pdu(
 
 
     } else {
-      LOG_N(RLC, PROTOCOL_RLC_AM_CTXT_FMT" WARNING CONTROL PDU ACK SN OUT OF WINDOW\n",
-            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
+      LOG_N(RLC, PROTOCOL_RLC_AM_CTXT_FMT" WARNING CONTROL PDU ACK SN %d OUT OF WINDOW vtA=%d vtS=%d\n",
+            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),ack_sn,rlc_pP->vt_a,rlc_pP->vt_s);
       status = FALSE;
     }
   } else {
@@ -415,6 +415,9 @@ rlc_am_receive_process_control_pdu(
       if (data_cnf_so_stop == 0x7FFF) {
     	  rlc_am_pdu_sdu_data_cnf(ctxt_pP,rlc_pP,sn_data_cnf);
       }
+
+      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" RECEIVE STATUS PDU ACK_SN=%d NewvtA=%d OldvtA=%d SnDataCnf=%d DataCnfSOStop=%d vtS=%d\n",
+                  PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),ack_sn,vt_a_new,rlc_pP->vt_a,sn_data_cnf,data_cnf_so_stop,rlc_pP->vt_s);
 
       /* Update vtA and vtMS */
       rlc_pP->vt_a = vt_a_new;
