@@ -723,8 +723,10 @@ rlc_am_send_status_pdu(
     	  }
       } // end while on all PDU segments of sn_cursor
       else {
-    	  /* Go to next received PDU or PDU segment if sn_cursor is fully received */
-    	  cursor_p = cursor_p->next;
+    	  /* Go to next received PDU or PDU segment with different SN */
+    	  do {
+    		  	  cursor_p = cursor_p->next;
+    	  	  } while ((cursor_p != NULL) && (((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info.sn == sn_cursor));
       }
 
       /* Increment sn_nack except if sn_nack = vrMS and if current SN was not fully received */

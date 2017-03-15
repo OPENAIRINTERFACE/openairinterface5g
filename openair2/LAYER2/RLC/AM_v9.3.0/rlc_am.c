@@ -134,8 +134,11 @@ rlc_am_get_status_pdu_buffer_occupancy(
 			} // end if segments
 			else
 			{
-				 /* Go to next received PDU or PDU Segment */
-				 cursor_p = cursor_p->next;
+				  /* Go to next received PDU or PDU segment with different SN */
+				  do
+				  {
+					  cursor_p = cursor_p->next;
+				  } while ((cursor_p != NULL) && (((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info.sn == sn_cursor));
 			}
 
 			sn_prev = RLC_AM_NEXT_SN(sn_cursor);

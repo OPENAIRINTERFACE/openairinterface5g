@@ -638,7 +638,6 @@ rlc_am_rx_pdu_status_t rlc_am_rx_list_handle_pdu(
 		  mem_block_t* trunc_pdu = create_new_segment_from_pdu(tb_pP,next_waited_so,pdu_rx_info_p->payload_size - next_waited_so);
 
 		  if (trunc_pdu != NULL) {
-			  ((rlc_am_rx_pdu_management_t *) (trunc_pdu->data))->segment_reassembled = RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_PENDING;
 			  /* Insert PDU Segment */
 			  list2_insert_after_element(trunc_pdu, previous_cursor_p, &rlc_pP->receiver_buffer);
 
@@ -1317,7 +1316,9 @@ rlc_am_rx_list_reassemble_rlc_sdus(
 	  }
 
 	  /* Reset Management pointers */
-	  if (cursor_p != NULL) {
+	  if ((cursor_p != NULL) &&
+			  ((((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info.sn == RLC_AM_NEXT_SN(sn)) ||
+					  (((rlc_am_rx_pdu_management_t*)(cursor_p->data))->segment_reassembled == RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_PENDING))) {
 		  rlc_am_rx_pdu_management_p = ((rlc_am_rx_pdu_management_t*)(cursor_p->data));
 	  }
 	  else {
