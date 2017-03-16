@@ -3375,9 +3375,16 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-  float one_over_nb_re = 0;
-  one_over_nb_re = 1/(nb_rb *12);
-  int16_t one_over_nb_re_q1_15 = (int16_t)(one_over_nb_re * (float)(1<<15) );
+  if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0))
+    nre=8;
+  else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==1))
+    nre=10;
+  else
+    nre=12;
+
+  double one_over_nb_re = 0.0;
+  one_over_nb_re = 1/((double)(nb_rb*nre));
+  int16_t one_over_nb_re_q1_15 = (int16_t)(one_over_nb_re * (double)(1<<15) );
   coeff128 = _mm_set_epi16(one_over_nb_re_q1_15,one_over_nb_re_q1_15,one_over_nb_re_q1_15,one_over_nb_re_q1_15,
                             one_over_nb_re_q1_15,one_over_nb_re_q1_15,one_over_nb_re_q1_15,one_over_nb_re_q1_15);
 
@@ -3399,7 +3406,7 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
           dl_ch128+=2;
         }
         else {
-          avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
+          avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[2],_mm_srai_epi16(_mm_mulhi_epi16(dl_ch128[2], coeff128),15)));
           dl_ch128+=3;
         }
         /*
@@ -3411,18 +3418,10 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
         */
       }
 
-      if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0))
-        nre=8;
-      else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==1))
-        nre=10;
-      else
-        nre=12;
-
       avg[(aatx<<1)+aarx] =(((int32_t*)&avg128D)[0] +
                             ((int32_t*)&avg128D)[1] +
                             ((int32_t*)&avg128D)[2] +
                             ((int32_t*)&avg128D)[3]);
-
                 //  printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
     }
 
