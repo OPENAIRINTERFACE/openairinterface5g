@@ -899,7 +899,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
   int input_buffer_length = dlsch_harq->TBS/8;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   uint8_t *DLSCH_pdu=NULL;
-  uint8_t DLSCH_pdu_tmp[768*8];
+  uint8_t DLSCH_pdu_tmp[input_buffer_length+4]; //[768*8];
   uint8_t DLSCH_pdu_rar[256];
   int i;
 
