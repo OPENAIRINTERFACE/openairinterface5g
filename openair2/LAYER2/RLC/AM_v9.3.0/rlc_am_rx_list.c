@@ -35,34 +35,72 @@ boolean_t rlc_am_rx_check_vr_reassemble(
 		  const protocol_ctxt_t* const ctxt_pP,
 		  const rlc_am_entity_t* const rlc_pP)
 {
-	mem_block_t*       cursor_p                    = NULL;
-	cursor_p = rlc_pP->receiver_buffer.head;
+	mem_block_t*       cursor_p                    = rlc_pP->receiver_buffer.head;
+	rlc_am_rx_pdu_management_t * pdu_cursor_mgnt_p = NULL;
+	sdu_size_t          next_waited_so = 0;
 	boolean_t reassemble = FALSE;
 
 	if (cursor_p != NULL) {
 
 		rlc_am_pdu_info_t* pdu_info_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
 		rlc_usn_t sn_ref = pdu_info_p->sn;
+
 		if (sn_ref != rlc_pP->vr_r) {
+			/* Case vrR has advanced from head : most likely case */
+
 			reassemble = TRUE;
-		}
-
-		/* jump up to vrR */
-		while ((RLC_AM_DIFF_SN(pdu_info_p->sn,sn_ref) < RLC_AM_DIFF_SN(rlc_pP->vr_r,sn_ref)) && (cursor_p != NULL)) {
-			if ((pdu_info_p->rf) && (((rlc_am_rx_pdu_management_t*)(cursor_p->data))->segment_reassembled == RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_NO)) {
-				((rlc_am_rx_pdu_management_t*)(cursor_p->data))->segment_reassembled = RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_PENDING;
+			/* Handle first SN if it is made of PDU segments : set them all to be reassembled */
+			if (pdu_info_p->rf) {
+				pdu_cursor_mgnt_p = (rlc_am_rx_pdu_management_t *) (cursor_p->data);
+				next_waited_so = 0;
+				AssertFatal(pdu_cursor_mgnt_p->all_segments_received > 0,"AM Rx Check Reassembly head SN=%d with PDU segments != vrR=%d should be fully received LCID=%d\n",
+						sn_ref,rlc_pP->vr_r,rlc_pP->channel_id);
+				while ((cursor_p != NULL) && (pdu_info_p->sn == sn_ref) && (pdu_info_p->so == next_waited_so)) {
+					if (pdu_cursor_mgnt_p->segment_reassembled == RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_NO) {
+						pdu_cursor_mgnt_p->segment_reassembled = RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_PENDING;
+					}
+					next_waited_so += pdu_info_p->payload_size;
+					cursor_p = cursor_p->next;
+					if (cursor_p != NULL) {
+						pdu_cursor_mgnt_p = (rlc_am_rx_pdu_management_t *) (cursor_p->data);
+						pdu_info_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+					}
+				}
 			}
-			cursor_p = cursor_p->next;
-			if (cursor_p != NULL) {
-				pdu_info_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
-			}
-		}
 
-		if ((cursor_p != NULL) && (pdu_info_p->sn == rlc_pP->vr_r)) {
+			/* Now jump up to vrR */
+			while ((RLC_AM_DIFF_SN(pdu_info_p->sn,sn_ref) < RLC_AM_DIFF_SN(rlc_pP->vr_r,sn_ref)) && (cursor_p != NULL)) {
+				cursor_p = cursor_p->next;
+				if (cursor_p != NULL) {
+					pdu_info_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+				}
+			}
+
+			/* Handle vrR if it is made of incomplete PDU Segments */
+			if ((cursor_p != NULL) && (pdu_info_p->sn == rlc_pP->vr_r)) {
+				pdu_cursor_mgnt_p = (rlc_am_rx_pdu_management_t *) (cursor_p->data);
+				next_waited_so = 0;
+				AssertFatal(pdu_cursor_mgnt_p->all_segments_received == 0,"AM Rx Check Reassembly vr=%d should be partly received SNHead=%d LCID=%d\n",
+						rlc_pP->vr_r,sn_ref,rlc_pP->channel_id);
+				while ((cursor_p != NULL) && (pdu_info_p->sn == rlc_pP->vr_r) && (pdu_info_p->so == next_waited_so)) {
+					if (pdu_cursor_mgnt_p->segment_reassembled == RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_NO) {
+						pdu_cursor_mgnt_p->segment_reassembled = RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_PENDING;
+					}
+					next_waited_so += pdu_info_p->payload_size;
+					cursor_p = cursor_p->next;
+					if (cursor_p != NULL) {
+						pdu_cursor_mgnt_p = (rlc_am_rx_pdu_management_t *) (cursor_p->data);
+						pdu_info_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+					}
+				}
+			}
+		} /* end sn_ref != rlc_pP->vr_r */
+		else {
 			/* case vrR = partially received */
-			rlc_am_rx_pdu_management_t * pdu_cursor_mgnt_p = (rlc_am_rx_pdu_management_t *) (cursor_p->data);
-			sdu_size_t          next_waited_so = 0;
-			AssertFatal(pdu_cursor_mgnt_p->all_segments_received == 0,"AM Rx Check Reassembly vr=%d should be partly received LCID=%d\n",
+
+			pdu_cursor_mgnt_p = (rlc_am_rx_pdu_management_t *) (cursor_p->data);
+			next_waited_so = 0;
+			AssertFatal(pdu_cursor_mgnt_p->all_segments_received == 0,"AM Rx Check Reassembly SNHead=vr=%d should be partly received LCID=%d\n",
 					rlc_pP->vr_r,rlc_pP->channel_id);
 			while ((cursor_p != NULL) && (pdu_info_p->sn == rlc_pP->vr_r) && (pdu_info_p->so == next_waited_so)) {
 				if (pdu_cursor_mgnt_p->segment_reassembled == RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_NO) {
@@ -76,8 +114,7 @@ boolean_t rlc_am_rx_check_vr_reassemble(
 					pdu_info_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
 				}
 			}
-		}
-
+		} /*end sn_ref == rlc_pP->vr_r */
 	}
 	return reassemble;
 }
@@ -287,9 +324,7 @@ rlc_am_rx_pdu_status_t rlc_am_rx_list_handle_pdu_segment(
 	  mem_block_t*       cursor_p                    = rlc_pP->receiver_buffer.head;
 	  mem_block_t*       previous_cursor_p           = NULL;
 	  mem_block_t*       next_cursor_p           	 = NULL;
-	  boolean_t prev_segment_found = FALSE;
-	  boolean_t next_segment_found = FALSE;
-	  uint16_t so_start = 0;
+	  uint16_t so_start_min = 0;
 	  uint16_t so_end = 0;
 	  uint16_t so_start_segment = pdu_rx_info_p->so;
 	  uint16_t so_end_segment = pdu_rx_info_p->so + pdu_rx_info_p->payload_size - 1;
@@ -334,120 +369,73 @@ rlc_am_rx_pdu_status_t rlc_am_rx_list_handle_pdu_segment(
 		  return RLC_AM_DATA_PDU_STATUS_OK;
 	  }
 
+	  /********************************************/
 	  /* Now handle case cursor->sn = received SN */
-	  // Filter out SN duplicate
+	  /********************************************/
+
 	  rlc_am_rx_pdu_management_t * pdu_cursor_mgnt_p = (rlc_am_rx_pdu_management_t *) (cursor_p->data);
 
+	  // Filter out SN duplicate
 	  if (pdu_cursor_mgnt_p->all_segments_received) {
 		  return RLC_AM_DATA_PDU_STATUS_AM_SEGMENT_DUPLICATE;
 	  }
 
-	  // Handle the remaining case : some PDU Segments already received for the same SN
-	  // Try to insert the PDU according to its SO and SO+datalength of stored ones
-	  // First find the segment just before the pdu to insert
-	  while ((cursor_p != NULL) && (pdu_info_cursor_p->sn == pdu_rx_info_p->sn)) {
-		  if (pdu_rx_info_p->so < pdu_info_cursor_p->so) {
-			  prev_segment_found = TRUE;
-			  break;
-		  }
+	  // Try to Handle the most likely cases first
+	  if (pdu_info_cursor_p->so == 0) {
 
+		  /* Loop on stored segments and find the stored segment containing received SOStart */
 		  previous_cursor_p = cursor_p;
 		  pdu_info_previous_cursor_p = pdu_info_cursor_p;
-		  cursor_p = cursor_p->next;
-		  if (cursor_p != NULL) {
-			  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
-		  }
-	  }
-
-	  /* if not previously inserted, it will be put after the last segment if it was not LSF*/
-	  if (!prev_segment_found) {
-		  if (pdu_info_previous_cursor_p->lsf == 0) {
-			  prev_segment_found = TRUE;
-			  next_segment_found = TRUE; // no more segment after the PDU
-			  next_cursor_p = cursor_p;
-			  AssertFatal(previous_cursor_p->next == next_cursor_p,"AM Rx PDU Segment store at the end error, SN=%d \n",pdu_rx_info_p->sn);
-		  }
-		  else
-		  {
-			  // the segment is duplicate
-			  return RLC_AM_DATA_PDU_STATUS_AM_SEGMENT_DUPLICATE;
-		  }
-	  }
-
-
-	  // Check that the Segment is not duplicate by scanning stored contiguous segments from previous_cursor_p
-	  if ((previous_cursor_p != NULL) && (pdu_info_previous_cursor_p->sn == pdu_rx_info_p->sn)) {
-
-		  so_start = pdu_info_previous_cursor_p->so;
-		  so_end = pdu_info_previous_cursor_p->so + pdu_info_previous_cursor_p->payload_size - 1;
-
-		  pdu_info_cursor_p = pdu_info_previous_cursor_p;
-		  cursor_p = previous_cursor_p->next;
-		  rlc_am_pdu_info_t* pdu_info_cursor_next_p = NULL;
-		  if (cursor_p != NULL) {
-			  pdu_info_cursor_next_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
-		  }
-
-		  while ((cursor_p != NULL) && (pdu_info_cursor_next_p->sn == pdu_rx_info_p->sn)
-				  && (pdu_info_cursor_next_p->so == pdu_info_cursor_p->so + pdu_info_cursor_p->payload_size)) {
-			  so_end += pdu_info_cursor_next_p->payload_size;
-			  pdu_info_cursor_p = pdu_info_cursor_next_p;
+		  while ((cursor_p != NULL) && (pdu_info_cursor_p->sn == pdu_rx_info_p->sn)
+				  && ((pdu_info_cursor_p->so + pdu_info_cursor_p->payload_size) <= so_start_segment)) {
+			  previous_cursor_p = cursor_p;
+			  pdu_info_previous_cursor_p = pdu_info_cursor_p;
 			  cursor_p = cursor_p->next;
 			  if (cursor_p != NULL) {
-				  pdu_info_cursor_next_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+				  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
 			  }
 		  }
 
-		  /* Now discard the PDU segment if it is within so_start so_end */
-		  if ((so_start <= so_start_segment) && (so_end_segment <= so_end)) {
+		  // Most likely case : no duplicate, the segment is put after all stored segments which are contiguous
+		  if ((cursor_p == NULL) || (pdu_info_cursor_p->sn != pdu_rx_info_p->sn) || (pdu_info_cursor_p->so > so_end_segment)) {
+              LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SEGMENT SN=%d SOSTART=%d] PDU SEGMENT INSERTED AFTER PDU SEGMENT WITH SOEND=%d\n",
+                          PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_rx_info_p->sn,so_start_segment,
+						  pdu_info_previous_cursor_p->so + pdu_info_previous_cursor_p->payload_size - 1);
+
+			  list2_insert_after_element(tb_pP, previous_cursor_p, &rlc_pP->receiver_buffer);
+			  return RLC_AM_DATA_PDU_STATUS_OK;
+		  }
+
+		  // Duplicate case : Resume contiguous scan and update previous_cursor_p
+		  so_start_min = pdu_info_previous_cursor_p->so;
+		  so_end = so_start_min + pdu_info_previous_cursor_p->payload_size;
+		  cursor_p = previous_cursor_p->next;
+		  if (cursor_p != NULL) {
+			  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+		  }
+		  while ((cursor_p != NULL) && (pdu_info_cursor_p->sn == pdu_rx_info_p->sn)
+				  && (pdu_info_cursor_p->so == so_end)) {
+			  previous_cursor_p = cursor_p;
+			  pdu_info_previous_cursor_p = pdu_info_cursor_p;
+			  so_end += pdu_info_cursor_p->payload_size;
+			  cursor_p = cursor_p->next;
+			  if (cursor_p != NULL) {
+				  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+			  }
+		  }
+
+		  /* Now discard the PDU segment if it is within so_start_min and so_end */
+		  if ((so_start_min <= so_start_segment) && (so_end_segment < so_end)) {
 			  LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SEGMENT]  DISCARD : DUPLICATE SEGMENT SN=%d\n",
 							  PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_rx_info_p->sn);
 			  return RLC_AM_DATA_PDU_STATUS_AM_SEGMENT_DUPLICATE;
 		  }
-	  }
 
-
-	  // Now found the segment which will be right after the pdu to insert
-	  if (!next_segment_found) {
-		  /* special case if SN=vrR and some segments have been previously reassembled and not yet discarded */
-		  /* update previous_cursor_p up to the last reassembled Segment */
-		  if ((previous_cursor_p != NULL) && (pdu_rx_info_p->sn == rlc_pP->vr_r)) {
-			  if (((rlc_am_rx_pdu_management_t*)(previous_cursor_p->data))->segment_reassembled == RLC_AM_RX_PDU_SEGMENT_REASSEMBLED) {
-				  pdu_info_previous_cursor_p = &((rlc_am_rx_pdu_management_t*)(previous_cursor_p->data))->pdu_info;
-				  so_end = pdu_info_previous_cursor_p->so + pdu_info_previous_cursor_p->payload_size;
-				  cursor_p = previous_cursor_p->next;
-				  if (cursor_p != NULL) {
-					  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
-				  }
-
-				  while ((cursor_p != NULL) && (pdu_info_cursor_p->sn == pdu_rx_info_p->sn) &&
-						  (((rlc_am_rx_pdu_management_t*)(cursor_p->data))->segment_reassembled == RLC_AM_RX_PDU_SEGMENT_REASSEMBLED)) {
-					  AssertFatal(pdu_info_cursor_p->so == so_end,"AM Rx PDU Segment store contiguous reassembled error, SN=%d \n",pdu_rx_info_p->sn);
-					  so_end += pdu_info_cursor_p->payload_size;
-					  previous_cursor_p = cursor_p;
-					  cursor_p = cursor_p->next;
-					  if (cursor_p != NULL) {
-						  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
-					  }
-				  }
-			  }
-		  }
-
-		  if (previous_cursor_p != NULL) {
-			  cursor_p = previous_cursor_p->next;
-		  }
-		  else {
-			  cursor_p = rlc_pP->receiver_buffer.head;
-		  }
-
+		  // Discard potential embedded segments in the received PDU segment
+		  // The first one is discontigous
 		  next_cursor_p = cursor_p;
-		  if (next_cursor_p != NULL) {
-			  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(next_cursor_p->data))->pdu_info;
-		  }
-
-		  // Discard embedded segments in the received PDU segment
 		  while ((next_cursor_p != NULL) && (pdu_info_cursor_p->sn == pdu_rx_info_p->sn) &&
-				  (pdu_rx_info_p->so + pdu_rx_info_p->payload_size >= pdu_info_cursor_p->so + pdu_info_cursor_p->payload_size)) {
+				  (so_end_segment >= pdu_info_cursor_p->so + pdu_info_cursor_p->payload_size - 1)) {
 			  /* Discard the segment */
 			  cursor_p = next_cursor_p;
 			  next_cursor_p = next_cursor_p->next;
@@ -458,75 +446,196 @@ rlc_am_rx_pdu_status_t rlc_am_rx_list_handle_pdu_segment(
 				  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(next_cursor_p->data))->pdu_info;
 			  }
 		  }
-	  }
+		  cursor_p = next_cursor_p;
 
-	  /* Now remove duplicate bytes */
-	  // remove duplicate at the begining, only valid if the segment is to be inserted after a PDU segment of the same SN
-	  if (previous_cursor_p != NULL) {
-		  pdu_info_previous_cursor_p = &((rlc_am_rx_pdu_management_t*)(previous_cursor_p->data))->pdu_info;
-		  if ((pdu_info_previous_cursor_p->sn == pdu_rx_info_p->sn) && (so_start_segment < pdu_info_previous_cursor_p->so + pdu_info_previous_cursor_p->payload_size)) {
+		  //Remove duplicate at the begining
+		  if (so_start_segment < pdu_info_previous_cursor_p->so) {
+			  so_start_segment = pdu_info_previous_cursor_p->so + pdu_info_previous_cursor_p->payload_size;
+		  }
+		  else if (so_start_segment < pdu_info_previous_cursor_p->so + pdu_info_previous_cursor_p->payload_size){
 			  so_start_segment += (pdu_info_previous_cursor_p->so + pdu_info_previous_cursor_p->payload_size - so_start_segment);
 		  }
-	  }
 
-	  // remove duplicate at the end
-	  if (next_cursor_p != NULL) {
-		  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(next_cursor_p->data))->pdu_info;
+		  // Now remove duplicate at the end, only valid if cursor_p SN has the same received SN
+		  if (cursor_p != NULL) {
+			  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(next_cursor_p->data))->pdu_info;
 
-		  if ((pdu_info_cursor_p->sn == pdu_rx_info_p->sn) && (so_end_segment >= pdu_info_cursor_p->so)) {
-			  so_end_segment = pdu_info_cursor_p->so - 1;
+			  if ((pdu_info_cursor_p->sn == pdu_rx_info_p->sn) && (so_end_segment >= pdu_info_cursor_p->so)) {
+				  so_end_segment = pdu_info_cursor_p->so - 1;
+			  }
 		  }
-	  }
 
+		  AssertFatal((so_start_segment <= so_end_segment) && (pdu_rx_info_p->so <= so_start_segment) &&
+				  (so_end_segment <= pdu_rx_info_p->so + pdu_rx_info_p->payload_size - 1),
+				  " AM RX PDU Segment Duplicate elimination error FirstSO=0 OldSOStart=%d OldSOEnd=%d newSOStart=%d newSOEnd =%d SN=%d\n",
+				  pdu_rx_info_p->so,pdu_rx_info_p->so + pdu_rx_info_p->payload_size - 1,so_start_segment,so_end_segment,pdu_rx_info_p->sn);
 
-	  AssertFatal((so_start_segment <= so_end_segment) && (pdu_rx_info_p->so <= so_start_segment) &&
-			  (so_end_segment <= pdu_rx_info_p->so + pdu_rx_info_p->payload_size - 1),
-			  " AM RX PDU Segment Duplicate elimination error OldSOStart=%d OldSOEnd=%d newSOStart=%d newSOEnd =%d SN=%d\n",
-			  pdu_rx_info_p->so,pdu_rx_info_p->so + pdu_rx_info_p->payload_size - 1,so_start_segment,so_end_segment,pdu_rx_info_p->sn);
+	  } // end pdu_info_cursor_p->so == 0
+	  else {
+		  // Handle most likely case : PDU Segment without duplicate is inserted before first stored PDU segment
+		  if (so_end_segment < pdu_info_cursor_p->so) {
+              LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SEGMENT SN=%d SOSTART=%d SOEND=%d] PDU SEGMENT INSERTED BEFORE PDU SEGMENT WITH SOSTART=%d\n",
+                            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_rx_info_p->sn,so_start_segment,so_end_segment,
+							pdu_info_cursor_p->so);
 
-	  /* Last step : Insertion */
-	  /* If some duplicate bytes had been removed, build a new PDU segment */
-	  if ((pdu_rx_info_p->so != so_start_segment) || (so_end_segment != pdu_rx_info_p->so + pdu_rx_info_p->payload_size - 1)) {
-
-		  mem_block_t* trunc_segment = create_new_segment_from_pdu(tb_pP,so_start_segment - pdu_rx_info_p->so,so_end_segment - so_start_segment + 1);
-		  if (trunc_segment != NULL) {
-			  LOG_I(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SEGMENT]  CREATE SEGMENT FROM SEGMENT OFFSET=%d DATA LENGTH=%d SN=%d\n",
-			  	              PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),so_start_segment - pdu_rx_info_p->so,so_end_segment - so_start_segment + 1,pdu_rx_info_p->sn);
-
-			  if (previous_cursor_p != NULL) {
-				  list2_insert_after_element(trunc_segment, previous_cursor_p, &rlc_pP->receiver_buffer);
-			  }
-			  else {
-				  list2_insert_before_element(trunc_segment, rlc_pP->receiver_buffer.head, &rlc_pP->receiver_buffer);
-			  }
-
-			  /* Free original PDU Segment */
-			  free_mem_block(tb_pP, __func__);
-
+			  list2_insert_before_element(tb_pP, cursor_p, &rlc_pP->receiver_buffer);
 			  return RLC_AM_DATA_PDU_STATUS_OK;
 		  }
-		  else {
-			  return RLC_AM_DATA_PDU_STATUS_BUFFER_FULL;
+
+		  // Handle duplicate case
+		  if (so_start_segment < pdu_info_cursor_p->so) {
+			  // First Case : only duplicate at the end
+			  // Scan for embedded segments to be discarded
+			  next_cursor_p = cursor_p;
+			  while ((next_cursor_p != NULL) && (pdu_info_cursor_p->sn == pdu_rx_info_p->sn) &&
+					  (so_end_segment >= pdu_info_cursor_p->so + pdu_info_cursor_p->payload_size - 1)) {
+				  /* Discard the segment */
+				  cursor_p = next_cursor_p;
+				  next_cursor_p = next_cursor_p->next;
+				  list2_remove_element (cursor_p, &rlc_pP->receiver_buffer);
+				  free_mem_block(cursor_p, __func__);
+
+				  if (next_cursor_p != NULL) {
+					  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(next_cursor_p->data))->pdu_info;
+				  }
+			  }
+			  cursor_p = next_cursor_p;
+
+			  // Now remove duplicate at the end, only valid if cursor_p SN has the same received SN
+			  if (cursor_p != NULL) {
+				  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(next_cursor_p->data))->pdu_info;
+
+				  if ((pdu_info_cursor_p->sn == pdu_rx_info_p->sn) && (so_end_segment >= pdu_info_cursor_p->so)) {
+					  so_end_segment = pdu_info_cursor_p->so - 1;
+				  }
+			  }
+
+			  AssertFatal((so_start_segment <= so_end_segment) &&
+					  (so_end_segment <= pdu_rx_info_p->so + pdu_rx_info_p->payload_size - 1),
+					  " AM RX PDU Segment Duplicate elimination at the end error FirstSO!=0 SOStart=%d OldSOEnd=%d newSOEnd =%d SN=%d\n",
+					  pdu_rx_info_p->so,pdu_rx_info_p->so + pdu_rx_info_p->payload_size - 1,so_end_segment,pdu_rx_info_p->sn);
+
 		  }
-	  }
-	  else
-	  {
+		  else {
+			  // Second Case: Duplicate at the begining and potentially at the end
+			  /* Loop on stored segments and find the stored segment containing received SOStart */
+
+			  previous_cursor_p = cursor_p;
+			  pdu_info_previous_cursor_p = pdu_info_cursor_p;
+			  while ((cursor_p != NULL) && (pdu_info_cursor_p->sn == pdu_rx_info_p->sn)
+					  && ((pdu_info_cursor_p->so + pdu_info_cursor_p->payload_size) <= so_start_segment)) {
+				  previous_cursor_p = cursor_p;
+				  pdu_info_previous_cursor_p = pdu_info_cursor_p;
+				  cursor_p = cursor_p->next;
+				  if (cursor_p != NULL) {
+					  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+				  }
+			  }
+
+			  // Most likely case : no duplicate, the segment is put after all stored segments which are contiguous
+			  if ((cursor_p == NULL) || (pdu_info_cursor_p->sn != pdu_rx_info_p->sn) || (pdu_info_cursor_p->so > so_end_segment)) {
+	              LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SEGMENT SN=%d SOSTART=%d] PDU SEGMENT INSERTED AFTER PDU SEGMENT WITH SOEND=%d\n",
+	                          PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_rx_info_p->sn,so_start_segment,
+							  pdu_info_previous_cursor_p->so + pdu_info_previous_cursor_p->payload_size - 1);
+
+				  list2_insert_after_element(tb_pP, previous_cursor_p, &rlc_pP->receiver_buffer);
+				  return RLC_AM_DATA_PDU_STATUS_OK;
+			  }
+
+			  // Now look for contiguous segments to check whether the received segment is not fully duplicate
+			  so_start_min = pdu_info_previous_cursor_p->so;
+			  so_end = so_start_min + pdu_info_previous_cursor_p->payload_size;
+			  cursor_p = previous_cursor_p->next;
+			  if (cursor_p != NULL) {
+				  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+			  }
+			  while ((cursor_p != NULL) && (pdu_info_cursor_p->sn == pdu_rx_info_p->sn)
+					  && (pdu_info_cursor_p->so == so_end)) {
+				  previous_cursor_p = cursor_p;
+				  pdu_info_previous_cursor_p = pdu_info_cursor_p;
+				  so_end += pdu_info_cursor_p->payload_size;
+				  cursor_p = cursor_p->next;
+				  if (cursor_p != NULL) {
+					  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+				  }
+			  }
+
+			  /* Now discard the PDU segment if it is within so_start_min and so_end */
+			  if ((so_start_min <= so_start_segment) && (so_end_segment < so_end)) {
+				  LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SEGMENT]  DISCARD : DUPLICATE SEGMENT SN=%d\n",
+								  PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_rx_info_p->sn);
+				  return RLC_AM_DATA_PDU_STATUS_AM_SEGMENT_DUPLICATE;
+			  }
+
+			  //Remove duplicate at the begining
+			  if (so_start_segment < pdu_info_previous_cursor_p->so) {
+				  so_start_segment = pdu_info_previous_cursor_p->so + pdu_info_previous_cursor_p->payload_size;
+			  }
+			  else if (so_start_segment < pdu_info_previous_cursor_p->so + pdu_info_previous_cursor_p->payload_size){
+				  so_start_segment += (pdu_info_previous_cursor_p->so + pdu_info_previous_cursor_p->payload_size - so_start_segment);
+			  }
+
+
+			  // Now Scan for embedded segments to be discarded
+			  next_cursor_p = cursor_p;
+			  while ((next_cursor_p != NULL) && (pdu_info_cursor_p->sn == pdu_rx_info_p->sn) &&
+					  (so_end_segment >= pdu_info_cursor_p->so + pdu_info_cursor_p->payload_size - 1)) {
+				  /* Discard the segment */
+				  cursor_p = next_cursor_p;
+				  next_cursor_p = next_cursor_p->next;
+				  list2_remove_element (cursor_p, &rlc_pP->receiver_buffer);
+				  free_mem_block(cursor_p, __func__);
+
+				  if (next_cursor_p != NULL) {
+					  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(next_cursor_p->data))->pdu_info;
+				  }
+			  }
+			  cursor_p = next_cursor_p;
+
+			  // Now remove duplicate at the end, only valid if cursor_p SN has the same received SN
+			  if (cursor_p != NULL) {
+				  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(next_cursor_p->data))->pdu_info;
+
+				  if ((pdu_info_cursor_p->sn == pdu_rx_info_p->sn) && (so_end_segment >= pdu_info_cursor_p->so)) {
+					  so_end_segment = pdu_info_cursor_p->so - 1;
+				  }
+			  }
+
+			  AssertFatal((so_start_segment <= so_end_segment) && (pdu_rx_info_p->so <= so_start_segment) &&
+					  (so_end_segment <= pdu_rx_info_p->so + pdu_rx_info_p->payload_size - 1),
+					  " AM RX PDU Segment Duplicate elimination error FirstSO!=0 OldSOStart=%d OldSOEnd=%d newSOStart=%d newSOEnd =%d SN=%d\n",
+					  pdu_rx_info_p->so,pdu_rx_info_p->so + pdu_rx_info_p->payload_size - 1,so_start_segment,so_end_segment,pdu_rx_info_p->sn);
+		  }
+
+	  } // end pdu_info_cursor_p->so != 0
+
+
+	  /* Last step :  duplicate bytes had been removed, build a new PDU segment */
+	  AssertFatal((pdu_rx_info_p->so != so_start_segment) || (so_end_segment != pdu_rx_info_p->so + pdu_rx_info_p->payload_size - 1),
+			  " AM RX PDU Segment Duplicate elimination error FirstSO!=0 OldSOStart=%d OldSOEnd=%d newSOStart=%d newSOEnd =%d SN=%d\n",
+			  pdu_rx_info_p->so,pdu_rx_info_p->so + pdu_rx_info_p->payload_size - 1,so_start_segment,so_end_segment,pdu_rx_info_p->sn);
+
+	  mem_block_t* trunc_segment = create_new_segment_from_pdu(tb_pP,so_start_segment - pdu_rx_info_p->so,so_end_segment - so_start_segment + 1);
+	  if (trunc_segment != NULL) {
+		  LOG_I(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SEGMENT]  CREATE SEGMENT FROM SEGMENT OFFSET=%d DATA LENGTH=%d SN=%d\n",
+						  PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),so_start_segment - pdu_rx_info_p->so,so_end_segment - so_start_segment + 1,pdu_rx_info_p->sn);
+
 		  if (previous_cursor_p != NULL) {
-		      pdu_info_previous_cursor_p = &((rlc_am_rx_pdu_management_t*)(previous_cursor_p->data))->pdu_info;
-              LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SEGMENT SN=%d NOT EMPTY] PDU SEGMENT INSERTED AFTER PDU SN=%d\n",
-                          PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_rx_info_p->sn,
-                          pdu_info_previous_cursor_p->sn);
-			  list2_insert_after_element(tb_pP, previous_cursor_p, &rlc_pP->receiver_buffer);
+			  list2_insert_after_element(trunc_segment, previous_cursor_p, &rlc_pP->receiver_buffer);
 		  }
 		  else {
-              LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SEGMENT SN=%d NOT EMPTY] PDU SEGMENT INSERTED BEFORE PDU SN=%d\n",
-                            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_rx_info_p->sn,
-                            pdu_rx_info_p->sn);
-			  list2_insert_before_element(tb_pP, rlc_pP->receiver_buffer.head, &rlc_pP->receiver_buffer);
+			  list2_insert_before_element(trunc_segment, rlc_pP->receiver_buffer.head, &rlc_pP->receiver_buffer);
 		  }
+
+		  /* Free original PDU Segment */
+		  free_mem_block(tb_pP, __func__);
 
 		  return RLC_AM_DATA_PDU_STATUS_OK;
 	  }
+	  else {
+		  return RLC_AM_DATA_PDU_STATUS_BUFFER_FULL;
+	  }
+
 }
 
 rlc_am_rx_pdu_status_t rlc_am_rx_list_handle_pdu(
@@ -1316,10 +1425,12 @@ rlc_am_rx_list_reassemble_rlc_sdus(
 	  }
 
 	  /* Reset Management pointers */
-	  if ((cursor_p != NULL) &&
-			  ((((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info.sn == RLC_AM_NEXT_SN(sn)) ||
-					  (((rlc_am_rx_pdu_management_t*)(cursor_p->data))->segment_reassembled == RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_PENDING))) {
+	  if (cursor_p != NULL) {
 		  rlc_am_rx_pdu_management_p = ((rlc_am_rx_pdu_management_t*)(cursor_p->data));
+		  /* Next SN must be the same or SN+1 */
+		  if (RLC_AM_DIFF_SN(rlc_am_rx_pdu_management_p->pdu_info.sn,sn) > 1) {
+			  return;
+		  }
 	  }
 	  else {
 		  return;
