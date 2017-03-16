@@ -160,7 +160,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
                          LTE_DL_FRAME_PARMS *frame_parms,
                          LTE_UE_DLSCH_t *dlsch,
                          LTE_DL_UE_HARQ_t *harq_process,
-                         uint8_t frame,
+                         uint32_t frame,
                          uint8_t subframe,
                          uint8_t harq_pid,
                          uint8_t is_crnti,
@@ -472,6 +472,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     	}
 
       start_meas(dlsch_turbo_decoding_stats);
+      LOG_D(PHY,"AbsSubframe %d.%d Start turbo segment %d/%d \n",frame%1024,subframe,r,harq_process->C-1);
       ret = tc
             (&harq_process->d[r][96],
              harq_process->c[r],
@@ -626,7 +627,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 
 
     if ((err_flag == 0) && (ret>=(1+dlsch->max_turbo_iterations))) {// a Code segment is in error so break;
-      //printf("CRC failed, segment %d\n",r);
+      LOG_D(PHY,"AbsSubframe %d.%d CRC failed, segment %d/%d \n",frame%1024,subframe,r,harq_process->C-1);
       err_flag = 1;
     }
   }

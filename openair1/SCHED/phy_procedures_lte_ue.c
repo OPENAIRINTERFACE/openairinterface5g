@@ -1991,7 +1991,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
           LOG_D(PHY,"[UE  %d][SR %x] AbsSubframe %d.%d Generating PUCCH 1 (SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d\n",
                   Mod_id,
                   ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->rnti,
-                  frame_tx, subframe_tx,
+                  frame_tx%1024, subframe_tx,
                   frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission,
                   isShortenPucch,
                   ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex,
@@ -3532,7 +3532,7 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
       LOG_I(PHY,"start turbo decode for CW 0 for AbsSubframe %d.%d / %d  --> Pdcch Sym  %d \n", frame_rx, subframe_rx, harq_pid, ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->num_pdcch_symbols);
 #endif
 
-      start_meas(&ue->dlsch_decoding_stats);
+      start_meas(&ue->dlsch_decoding_stats[subframe_rx&0x1]);
       ret = dlsch_decoding(ue,
 			   pdsch_vars->llr[0],
 			   &ue->frame_parms,
@@ -3543,12 +3543,13 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
 			   harq_pid,
 			   pdsch==PDSCH?1:0,
 			   dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
-      stop_meas(&ue->dlsch_decoding_stats);
+      stop_meas(&ue->dlsch_decoding_stats[subframe_rx&0x1]);
 
       LOG_D(PHY," --> Unscrambling for CW0 %5.3f\n",
               (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
-      LOG_D(PHY," --> Turbo Decoding for CW0 %5.3f\n",
-              (ue->dlsch_decoding_stats.p_time)/(cpuf*1000.0));
+      LOG_D(PHY,"AbsSubframe %d.%d --> Turbo Decoding for CW0 %5.3f\n",
+              frame_rx%1024, subframe_rx,(ue->dlsch_decoding_stats[subframe_rx&0x1].p_time)/(cpuf*1000.0));
+
 
       if(is_cw1_active)
       {
@@ -3582,7 +3583,9 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
           LOG_I(PHY,"start turbo decode for CW 1 for AbsSubframe %d.%d / %d  --> Kmimo  %d \n", frame_rx, subframe_rx, harq_pid, dlsch1->Kmimo);
           LOG_I(PHY,"start turbo decode for CW 1 for AbsSubframe %d.%d / %d  --> Pdcch Sym  %d \n", frame_rx, subframe_rx, harq_pid, ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->num_pdcch_symbols);
 #endif
-          start_meas(&ue->dlsch_decoding_stats);
+
+          start_meas(&ue->dlsch_decoding_stats[subframe_rx&0x1]);
+
           ret1 = dlsch_decoding(ue,
                   pdsch_vars->llr[1],
                   &ue->frame_parms,
@@ -3593,12 +3596,13 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
                   harq_pid,
                   pdsch==PDSCH?1:0,
                   dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
-          stop_meas(&ue->dlsch_decoding_stats);
+          stop_meas(&ue->dlsch_decoding_stats[subframe_rx&0x1]);
+
 
           LOG_D(PHY," --> Unscrambling for CW1 %5.3f\n",
                   (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
-          LOG_D(PHY," --> Turbo Decoding for CW1 %5.3f\n",
-                  (ue->dlsch_decoding_stats.p_time)/(cpuf*1000.0));
+          LOG_D(PHY,"AbsSubframe %d.%d --> Turbo Decoding for CW1 %5.3f\n",
+                  frame_rx%1024, subframe_rx,(ue->dlsch_decoding_stats[subframe_rx&0x1].p_time)/(cpuf*1000.0));
       }
 
       LOG_D(PHY," ------ end turbo decoder for AbsSubframe %d.%d ------  \n", frame_rx, subframe_rx);
@@ -3620,10 +3624,11 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
       
       if(dlsch0->rnti != 0xffff)
       {
-      LOG_D(PHY,"[UE  %d][PDSCH %x/%d] AbsSubframe %d.%d : DLSCH CW0 in error (rv %d,mcs %d,TBS %d)\n",
+      LOG_D(PHY,"[UE  %d][PDSCH %x/%d] AbsSubframe %d.%d : DLSCH CW0 in error (rv %d,round %d, mcs %d,TBS %d)\n",
 	    ue->Mod_id,dlsch0->rnti,
 	    harq_pid,frame_rx,subframe_rx,
 	    dlsch0->harq_processes[harq_pid]->rvidx,
+        dlsch0->harq_processes[harq_pid]->round,
 	    dlsch0->harq_processes[harq_pid]->mcs,
 	    dlsch0->harq_processes[harq_pid]->TBS);
       }
@@ -3632,10 +3637,11 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
     } else {
         if(dlsch0->rnti != 0xffff)
         {
-      LOG_D(PHY,"[UE  %d][PDSCH %x/%d] AbsSubframe %d.%d : Received DLSCH CW0 (rv %d,mcs %d,TBS %d)\n",
+      LOG_D(PHY,"[UE  %d][PDSCH %x/%d] AbsSubframe %d.%d : Received DLSCH CW0 (rv %d,round %d, mcs %d,TBS %d)\n",
 	    ue->Mod_id,dlsch0->rnti,
 	    harq_pid,frame_rx,subframe_rx,
 	    dlsch0->harq_processes[harq_pid]->rvidx,
+        dlsch0->harq_processes[harq_pid]->round,
 	    dlsch0->harq_processes[harq_pid]->mcs,
 	    dlsch0->harq_processes[harq_pid]->TBS);
         }
