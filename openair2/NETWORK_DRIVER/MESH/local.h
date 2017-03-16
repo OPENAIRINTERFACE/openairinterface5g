@@ -98,6 +98,26 @@ struct cx_entity {
   int provider_id[MAX_MEASURE_NB];
 
 };
+//#define NAS_RETRY_LIMIT_DEFAULT 5
+
+struct nas_priv {
+  int irq;
+  struct timer_list timer;
+  spinlock_t lock;
+  struct net_device_stats stats;
+  uint8_t retry_limit;
+  uint32_t timer_establishment;
+  uint32_t timer_release;
+  struct cx_entity cx[NAS_CX_MAX];
+  struct classifier_entity *rclassifier[NAS_DSCP_MAX]; // receive classifier
+  uint16_t nrclassifier;
+  int sap[NAS_SAPI_MAX];
+  struct sock *nl_sk;
+  uint8_t nlmsg[NAS_MAX_LENGTH+sizeof(struct nlmsghdr)];
+  uint8_t xbuffer[NAS_MAX_LENGTH]; // transmition buffer
+  uint8_t rbuffer[NAS_MAX_LENGTH]; // reception buffer
+};
+
 
 struct classifier_entity {
   uint32_t classref;
@@ -122,29 +142,7 @@ struct classifier_entity {
   struct rb_entity *rb_rx;   //pointer to rb_entity for receiving (in case of forwarding rule)
   nasRadioBearerId_t rab_id;            // RAB identification for sending
   nasRadioBearerId_t rab_id_rx;   // RAB identification for receiving (in case of forwarding rule)
-  void (*fct)(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst);
-};
-
-
-
-//#define NAS_RETRY_LIMIT_DEFAULT 5
-
-struct nas_priv {
-  int irq;
-  struct timer_list timer;
-  spinlock_t lock;
-  struct net_device_stats stats;
-  uint8_t retry_limit;
-  uint32_t timer_establishment;
-  uint32_t timer_release;
-  struct cx_entity cx[NAS_CX_MAX];
-  struct classifier_entity *rclassifier[NAS_DSCP_MAX]; // receive classifier
-  uint16_t nrclassifier;
-  int sap[NAS_SAPI_MAX];
-  struct sock *nl_sk;
-  uint8_t nlmsg[NAS_MAX_LENGTH+sizeof(struct nlmsghdr)];
-  uint8_t xbuffer[NAS_MAX_LENGTH]; // transmition buffer
-  uint8_t rbuffer[NAS_MAX_LENGTH]; // reception buffer
+  void (*fct)(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst, struct nas_priv *gpriv);
 };
 
 struct ipversion {
