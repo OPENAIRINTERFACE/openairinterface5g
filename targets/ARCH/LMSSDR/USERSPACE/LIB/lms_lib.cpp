@@ -128,10 +128,10 @@ void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index) {
 /*! \brief Set Gains (TX/RX) on LMSSDR
  * \param device the hardware to use
  * \param openair0_cfg openair0 Config structure
- * \returns 0 in success
+ * \returns 0 in success, -1 on error
  */
 int trx_lms_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) {
-  int ret;
+  int ret = 0;
 
   if (openair0_cfg->rx_gain[0] > 70+openair0_cfg->rx_gain_offset[0]) {
     printf("[LMS] Reduce RX Gain 0 by %f dB\n",openair0_cfg->rx_gain[0]-openair0_cfg->rx_gain_offset[0]-70);

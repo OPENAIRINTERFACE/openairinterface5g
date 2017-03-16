@@ -163,7 +163,6 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
 #ifndef __AVX2__
       if (fftsize==128) 
-#else
 #endif
       {
         for (j=0; j<fftsize ; j++) {
