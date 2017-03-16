@@ -790,7 +790,7 @@ void nas_CLASS_send(struct sk_buff *skb,int inst)
              dscp, sprotocol, sp->classref, sfct, sp->rab_id);
 #endif
 
-      sp->fct(skb, cx, sp,inst);
+      sp->fct(skb, cx, sp,inst, NULL);
 
     } // if classifier entry match found
 
@@ -808,7 +808,7 @@ void nas_CLASS_send(struct sk_buff *skb,int inst)
   if (no_connection == 1)
     printk("NAS_CLASS_SEND: no corresponding connection, so the message is dropped\n");
 
-#endif NAS_DEBUG_CLASS
+#endif /* NAS_DEBUG_CLASS */
 
 
   //  }   // while loop over connections
