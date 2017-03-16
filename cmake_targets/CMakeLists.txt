@@ -2059,22 +2059,22 @@ endforeach(myExe)
 
 #ensure that the T header files are generated before targets depending on them
 if (${T_TRACER})
-  add_dependencies(lte-softmodem generate_T)
-  add_dependencies(lte-softmodem-nos1 generate_T)
-  add_dependencies(rrh_gw generate_T)
-  add_dependencies(oaisim generate_T)
-  add_dependencies(oaisim_nos1 generate_T)
-  add_dependencies(dlsim generate_T)
-  add_dependencies(dlsim_tm4 generate_T)
-  add_dependencies(dlsim_tm7 generate_T)
-  add_dependencies(ulsim generate_T)
-  add_dependencies(pbchsim generate_T)
-  add_dependencies(scansim generate_T)
-  add_dependencies(mbmssim generate_T)
-  add_dependencies(pdcchsim generate_T)
-  add_dependencies(pucchsim generate_T)
-  add_dependencies(prachsim generate_T)
-  add_dependencies(syncsim generate_T)
+  foreach(i
+        #all "add_executable" definitions (except tests, rb_tool, updatefw)
+        lte-softmodem lte-softmodem-nos1 rrh_gw oaisim oaisim_nos1
+        dlsim_tm4 dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim
+        pdcchsim pucchsim prachsim syncsim
+        #all "add_library" definitions
+        ITTI RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB
+        oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif
+        oai_eth_transpro
+        FLPT_MSG ASYNC_IF FLEXRAN_AGENT HASHTABLE MSC UTIL OMG_SUMO SECU_OSA
+        SECU_CN SCHED_LIB PHY L2 default_sched remote_sched RAL MIH CN_UTILS
+        GTPV1U SCTP_CLIENT UDP LIB_NAS_UE LFDS LFDS7 SIMU SIMU_ETH OPENAIR0_LIB)
+    if (TARGET ${i})
+      add_dependencies(${i} generate_T)
+    endif()
+  endforeach(i)
 endif (${T_TRACER})
 
 ##################################################
