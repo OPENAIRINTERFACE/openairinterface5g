@@ -699,7 +699,14 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     }
 
     fl_set_xyplot_xbounds(form->pdcch_llr,0,12*frame_parms->N_RB_DL*2*3);
-    fl_set_xyplot_data(form->pdcch_llr,bit_pdcch,llr_pdcch,12*frame_parms->N_RB_DL*2*num_pdcch_symbols,"","","");
+    if (frame_parms->N_RB_DL != 100)
+    {
+        fl_set_xyplot_data(form->pdcch_llr,bit_pdcch,llr_pdcch,12*frame_parms->N_RB_DL*2*num_pdcch_symbols,"","","");
+    }
+    else
+    {
+        LOG_E(PHY,"PDCCH LLR plot is bugged in 20 MHz BW, to be fixed !!!");
+    }
   }
 
   // PDCCH I/Q of MF Output
@@ -708,8 +715,14 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
       I[i] = pdcch_comp[2*i];
       Q[i] = pdcch_comp[2*i+1];
     }
-
-    fl_set_xyplot_data(form->pdcch_comp,I,Q,12*frame_parms->N_RB_DL*num_pdcch_symbols,"","","");
+    if (frame_parms->N_RB_DL != 100)
+    {
+        fl_set_xyplot_data(form->pdcch_comp,I,Q,12*frame_parms->N_RB_DL*num_pdcch_symbols,"","","");
+    }
+    else
+    {
+        LOG_E(PHY,"PDCCH COMP plot is bugged in 20 MHz BW, to be fixed !!!");
+    }
   }
 
   // PDSCH LLRs
@@ -720,7 +733,14 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     }
 
     fl_set_xyplot_xbounds(form->pdsch_llr,0,coded_bits_per_codeword);
-    fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword,"","","");
+    if (frame_parms->N_RB_DL != 100)
+    {
+        fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword,"","","");
+    }
+    else
+    {
+        LOG_E(PHY,"PDSCH LLR plot is bugged in 20 MHz BW, to be fixed !!!");
+    }
   }
 
   // PDSCH I/Q of MF Output
