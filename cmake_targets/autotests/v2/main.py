@@ -280,55 +280,21 @@ machine_list.wait_all_free()
 # run eNB softmodem tests                                                    #
 ##############################################################################
 
-tests = {
-  'b210' : {
-    'alu' : {
-      'fdd' : {
-        '5' : {
-          'bandrich' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }},
-          'sony' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }}},
-        '10' : {
-          'bandrich' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }},
-          'sony' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }}},
-        '20' : {
-          'bandrich' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }},
-          'sony' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }}}},
-      'tdd' : {
-        '5' : {
-          '3276' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }}},
-        '10' : {
-          '3276' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }}},
-        '20' : {
-          '3276' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }}}}},
-    'openair-cn' : {}
-  },
-  'x310' : {
-    'alu' : {},
-    'openair-cn' : {}
-  },
-  'exmimo2' : {
-    'alu' : {},
-    'openair-cn' : {}
-  }
-}
+tests = {}
+for a in { 'b210', 'x310', 'exmimo2' }:
+  tests[a] = {}
+  for b in { 'alu', 'openair-cn' }:
+    tests[a][b] = {}
+    for c in { 'fdd', 'tdd' }:
+      tests[a][b][c] = {}
+      for d in { '5', '10', '20' }:
+        tests[a][b][c][d] = {}
+        for e in { 'bandrich', 'sony', '3276' }:
+          tests[a][b][c][d][e] = {}
+          for f in { 'tcp', 'udp' }:
+            tests[a][b][c][d][e][f] = {}
+            for g in { 'dl', 'ul' }:
+              tests[a][b][c][d][e][f][g] = False
 
 todo_tests_ids = []
 for test in todo_tests:
