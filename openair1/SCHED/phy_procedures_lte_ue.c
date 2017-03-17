@@ -641,9 +641,9 @@ void ue_compute_srs_occasion(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id
               }
 
               uint8_t pucch_ack_payload[2];
-              if ((ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->harq_ack) && (get_ack(&ue->frame_parms,
+              if (get_ack(&ue->frame_parms,
                       ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->harq_ack,
-                      subframe_tx,pucch_ack_payload,0) > 0))
+                      subframe_tx,pucch_ack_payload,0) > 0)
               {
                   is_sr_an_subframe = 1;
               }
