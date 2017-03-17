@@ -9,18 +9,24 @@ class alu_test:
                  openair,
                  user, password,
                  log_subdir,
-                 env):
-        self.epc_machine  = epc
-        self.enb_machine  = enb
-        self.ue_machine   = ue
-        self.openair_dir  = openair
-        self.oai_user     = user
-        self.oai_password = password
-        self.env          = env
+                 env,
+                 enb_rru = "",
+                 enb_rcc = ""):
+        self.epc_machine      = epc
+        self.enb_machine      = enb
+        self.ue_machine       = ue
+        self.openair_dir      = openair
+        self.oai_user         = user
+        self.oai_password     = password
+        self.env              = env
+        self.enb_rru_machine  = enb_rru
+        self.enb_rcc_machine  = enb_rcc
 
-        self.task_hss = None
-        self.task_enb = None
-        self.task_ue  = None
+        self.task_hss     = None
+        self.task_enb     = None
+        self.task_ue      = None
+        self.task_rru_enb = None
+        self.task_rcc_enb = None
 
         self.logdir = openair + '/cmake_targets/autotests/log/' + log_subdir
         quickshell('mkdir -p ' + self.logdir)
@@ -40,6 +46,10 @@ class alu_test:
             self.task_enb.kill()
         if self.task_ue != None and self.task_ue.alive():
             self.task_ue.kill()
+        if self.task_rru_enb != None and self.task_rru_enb.alive():
+            self.task_rru_enb.kill()
+        if self.task_rcc_enb != None and self.task_rcc_enb.alive():
+            self.task_rcc_enb.kill()
 
     ##########################################################################
     # start_epc
@@ -101,7 +111,7 @@ class alu_test:
     ##########################################################################
     # compile_enb
     ##########################################################################
-    def compile_enb(self, build_arguments):
+    def compile_enb(self, build_arguments, log_suffix=""):
         log("INFO: ALU test: compile softmodem on " + self.enb_machine)
         envcomp = list(self.env)
         envcomp.append('BUILD_ARGUMENTS="' + build_arguments + '"')
@@ -120,7 +130,8 @@ class alu_test:
                 self.oai_user,
                 self.oai_password,
                 envcomp,
-                self.logdir + "/compile_softmodem." + self.enb_machine,
+                self.logdir + "/compile_softmodem." + log_suffix + \
+                    self.enb_machine,
                 post_action=post_action)
         ret = task.wait()
         if ret != 0:
@@ -163,6 +174,62 @@ class alu_test:
             #os._exit(1)
 
     ##########################################################################
+    # start_enb_rru_rcc
+    ##########################################################################
+    def start_enb_rru_rcc(self, rru_config_file, rcc_config_file):
+        #copy wanted configuration files
+        quickshell("sshpass -p " + self.oai_password +
+                   " scp config/" + rru_config_file + " " +
+                   self.oai_user + "@" + self.enb_rru_machine+":/tmp/enb.conf")
+        quickshell("sshpass -p " + self.oai_password +
+                   " scp config/" + rcc_config_file + " " +
+                   self.oai_user + "@" + self.enb_rcc_machine+":/tmp/enb.conf")
+
+        #run RRU/RCC softmodem
+        log("INFO: ALU test: run RRU softmodem with configuration file " +
+            rru_config_file)
+        self.task_rru_enb = Task("actions/run_enb.bash",
+                "run_RRU_softmodem",
+                self.enb_rru_machine,
+                self.oai_user,
+                self.oai_password,
+                self.env,
+                self.logdir + "/run_softmodem." + self.enb_rru_machine,
+                event=self.event)
+        self.task_rru_enb.waitlog('[RRH] binding to')
+        log("INFO: ALU test: run RCC softmodem with configuration file " +
+            rcc_config_file)
+        self.task_rcc_enb = Task("actions/run_enb.bash",
+                "run_RCC_softmodem",
+                self.enb_rcc_machine,
+                self.oai_user,
+                self.oai_password,
+                self.env,
+                self.logdir + "/run_softmodem." + self.enb_rcc_machine,
+                event=self.event)
+        self.task_rcc_enb.waitlog('[BBU] local ip addr')
+        #wait for RRU and RCC to be connected
+        self.task_rru_enb.waitlog('devices ok (eNB_thread_asynch_rx)')
+
+    ##########################################################################
+    # stop_enb_rru_rcc
+    ##########################################################################
+    def stop_enb_rru_rcc(self):
+        log("INFO: ALU test: stop RRU/RCC softmodem")
+        self.task_rru_enb.sendnow("%c" % 3)
+        ret = self.task_rru_enb.wait()
+        if ret != 0:
+            log("ERROR: ALU test: RRU softmodem failed")
+            #not sure if we have to quit here or not
+            #os._exit(1)
+        self.task_rcc_enb.sendnow("%c" % 3)
+        ret = self.task_rcc_enb.wait()
+        if ret != 0:
+            log("ERROR: ALU test: RCC softmodem failed")
+            #not sure if we have to quit here or not
+            #os._exit(1)
+
+    ##########################################################################
     # start_ue
     ##########################################################################
     def start_ue(self, ue):
@@ -185,7 +252,9 @@ class alu_test:
 
         self.event.clear()
 
-        if (    not self.task_enb.alive() or
+        if (    (self.task_enb != None and not self.task_enb.alive()) or
+                (self.task_rru_enb!=None and not self.task_rru_enb.alive()) or
+                (self.task_rcc_enb!=None and not self.task_rcc_enb.alive()) or
                 not self.task_hss.alive() or
                 not self.task_ue.alive()):
             log("ERROR: ALU test: eNB, HSS or UE task died")
@@ -250,14 +319,20 @@ class alu_test:
         self.event.wait()
         log("DEBUG: event.wait() done")
 
-        if (    not self.task_enb.alive() or
+        if (    (self.task_enb != None and not self.task_enb.alive()) or
+                (self.task_rru_enb!=None and not self.task_rru_enb.alive()) or
+                (self.task_rcc_enb!=None and not self.task_rcc_enb.alive()) or
                 not self.task_hss.alive() or
                 not self.task_ue.alive()):
             log("ERROR: unexpected task exited, test failed, kill all")
             if task_traffic_client.alive():
                 task_traffic_client.kill()
-            if self.task_enb.alive():
+            if (self.task_enb != None and self.task_enb.alive()):
                 self.task_enb.kill()
+            if (self.task_rru_enb != None and self.task_rru_enb.alive()):
+                self.task_rru_enb.kill()
+            if (self.task_rcc_enb != None and self.task_rcc_enb.alive()):
+                self.task_rcc_enb.kill()
             if self.task_ue.alive():
                 self.task_ue.kill()
 
@@ -277,7 +352,9 @@ class alu_test:
 
         self.event.clear()
 
-        if (    not self.task_enb.alive() or
+        if (    (self.task_enb != None and not self.task_enb.alive()) or
+                (self.task_rru_enb!=None and not self.task_rru_enb.alive()) or
+                (self.task_rcc_enb!=None and not self.task_rcc_enb.alive()) or
                 not self.task_hss.alive() or
                 not self.task_ue.alive()):
             log("ERROR: ALU test: eNB, HSS or UE task died")
@@ -334,8 +411,6 @@ class alu_test:
 ##############################################################################
 
 def run_b210_alu(tests, openair_dir, oai_user, oai_password, env):
-    if not do_tests(tests['b210']['alu']):
-        return
 
     #compile eNB (two cases: one for FDD and one for TDD)
 
@@ -364,6 +439,44 @@ def run_b210_alu(tests, openair_dir, oai_user, oai_password, env):
         except BaseException, e:
             log("ERROR: ALU test failed: eNB compilation failed: " + str(e))
             return
+
+    #compile RRU/RCC eNB
+
+    if do_tests(tests['remote b210']['alu']['fdd']):
+        #RRU
+        alu = alu_test(epc='amerique', ue='stevens',
+                       openair=openair_dir,
+                       user=oai_user, password=oai_password,
+                       log_subdir='enb_tests/remote_b210_alu/compile_enb_rru',
+                       env=env,
+                       #hack: set 'enb' to reuse 'compile_enb'
+                       enb = 'superserver',
+                       enb_rru = 'superserver', enb_rcc = 'starsky')
+
+        try:
+            alu.compile_enb("--eNB -x -c -w USRP -t ETHERNET",
+                            log_suffix='rru.')
+        except BaseException, e:
+            log("ERROR: ALU test failed: RRU eNB compilation failed: "+str(e))
+            return
+
+        #RCC
+        alu = alu_test(epc='amerique', ue='stevens',
+                       openair=openair_dir,
+                       user=oai_user, password=oai_password,
+                       log_subdir='enb_tests/remote_b210_alu/compile_enb_rcc',
+                       env=env,
+                       #hack: set 'enb' to reuse 'compile_enb'
+                       enb = 'starsky',
+                       enb_rru = 'superserver', enb_rcc = 'starsky')
+
+        try:
+            alu.compile_enb("--eNB -w None -t ETHERNET",
+                            log_suffix='rcc.')
+        except BaseException, e:
+            log("ERROR: ALU test failed: RCC eNB compilation failed: "+str(e))
+            return
+
 
     #run tests
 
@@ -406,6 +519,32 @@ def run_b210_alu(tests, openair_dir, oai_user, oai_password, env):
                             if do_tests(ctest[ue]['udp']['ul']): alu.ul_udp(ue, udp_ul_bandwidth[bw])
                             alu.stop_ue(ue)
                     alu.stop_enb()
+                    alu.stop_epc()
+                except BaseException, e:
+                    log("ERROR: ALU test failed: " + str(e))
+                    alu.finish()
+            if do_tests(tests['remote b210']['alu'][mode][bw]):
+                log("INFO: ALU test: run RRU/RCC tests for bandwidth " + bw + " MHz")
+                ctest = tests['remote b210']['alu'][mode][bw]
+                alu = alu_test(epc='amerique', enb='', ue=ue_machine[mode],
+                               openair=openair_dir,
+                               user=oai_user, password=oai_password,
+                               log_subdir='enb_tests/remote_b210_alu/' + bw,
+                               env=env,
+                               enb_rru='superserver', enb_rcc='starsky')
+                try:
+                    alu.start_epc()
+                    alu.start_enb_rru_rcc("rru.band7.tm1.if4p5." + bw + "MHz.udp.usrpb210.conf",
+                                          "rcc.band7.tm1.if4p5." + bw + "MHz.conf")
+                    for ue in ('bandrich', '3276'):
+                        if ue in ctest and do_tests(ctest[ue]):
+                            alu.start_ue(ue)
+                            if do_tests(ctest[ue]['tcp']['dl']): alu.dl_tcp(ue)
+                            if do_tests(ctest[ue]['tcp']['ul']): alu.ul_tcp(ue)
+                            if do_tests(ctest[ue]['udp']['dl']): alu.dl_udp(ue, udp_dl_bandwidth[bw])
+                            if do_tests(ctest[ue]['udp']['ul']): alu.ul_udp(ue, udp_ul_bandwidth[bw])
+                            alu.stop_ue(ue)
+                    alu.stop_enb_rru_rcc()
                     alu.stop_epc()
                 except BaseException, e:
                     log("ERROR: ALU test failed: " + str(e))
