@@ -2267,12 +2267,14 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
   }
     
   // reset DL ACK/NACK status
-  reset_ack(&ue->frame_parms,
-             ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->harq_ack,
-             subframe_tx,
-             ue->ulsch[eNB_id]->o_ACK,0);
+  if (ue->dlsch[proc->subframe_rx&0x1][eNB_id][0] != NULL)
+    reset_ack(&ue->frame_parms,
+               ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->harq_ack,
+               subframe_tx,
+               ue->ulsch[eNB_id]->o_ACK,0);
 
-  reset_ack(&ue->frame_parms,
+  if (ue->dlsch_SI[eNB_id] != NULL)
+    reset_ack(&ue->frame_parms,
              ue->dlsch_SI[eNB_id]->harq_ack,
              subframe_tx,
              ue->ulsch[eNB_id]->o_ACK,0);
