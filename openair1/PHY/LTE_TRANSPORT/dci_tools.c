@@ -5144,6 +5144,7 @@ void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,
                                     LTE_DL_FRAME_PARMS *frame_parms,
                                     uint8_t  subframe,
                                     uint16_t rnti,
+									uint16_t tc_rnti,
                                     uint16_t si_rnti,
                                     uint16_t ra_rnti,
                                     uint16_t p_rnti,
@@ -5206,6 +5207,13 @@ void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,
     }
     else //CRNTI
     {
+    	if (rnti == tc_rnti) {
+			//fix for standalone Contention Resolution Id
+			pdlsch0_harq->DCINdi = (uint8_t)-1;
+			 LOG_D(PHY,"UE (%x/%d): Format1A DCI: C-RNTI is temporary. Set NDI = %d and to be ignored\n",
+				 rnti,harq_pid,pdlsch0_harq->DCINdi);
+    	}
+
         // DCI has been toggled or this is the first transmission
         if (ndi1!=pdlsch0_harq->DCINdi)
         {
@@ -5992,6 +6000,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                      frame_parms,
                                      subframe,
                                      rnti,
+									 tc_rnti,
                                      si_rnti,
                                      ra_rnti,
                                      p_rnti,
@@ -6092,6 +6101,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                      frame_parms,
                                      subframe,
                                      rnti,
+									 tc_rnti,
                                      si_rnti,
                                      ra_rnti,
                                      p_rnti,
