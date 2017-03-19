@@ -8831,6 +8831,37 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
 
+#ifdef __AVX2__
+
+  // Round length up to multiple of 16 words
+  uint32_t len256i = ((len+16)>>4)*16;
+  int32_t *rxF_256i      = (int32_t*) malloc16_clear(len256i*4);
+  int32_t *rxF_i_256i    = (int32_t*) malloc16_clear(len256i*4);
+  int32_t *ch_mag_256i   = (int32_t*) malloc16_clear(len256i*4);
+  int32_t *ch_mag_i_256i = (int32_t*) malloc16_clear(len256i*4);
+  int32_t *rho_256i      = (int32_t*) malloc16_clear(len256i*4);
+
+  memcpy(rxF_256i, rxF, len*4);
+  memcpy(rxF_i_256i, rxF_i, len*4);
+  memcpy(ch_mag_256i, ch_mag, len*4);
+  memcpy(ch_mag_i_256i, ch_mag_i, len*4);
+  memcpy(rho_256i, rho, len*4);
+
+  qam64_qam64_avx2((int32_t *)rxF_256i,
+                   (int32_t *)rxF_i_256i,
+                   (int32_t *)ch_mag_256i,
+                   (int32_t *)ch_mag_i_256i,
+                   (int16_t *)llr16,
+                   (int32_t *) rho_256i,
+                   len);
+
+  free16(rxF_256i, sizeof(rxF_256i));
+  free16(rxF_i_256i, sizeof(rxF_i_256i));
+  free16(ch_mag_256i, sizeof(ch_mag_256i));
+  free16(ch_mag_i_256i, sizeof(ch_mag_i_256i));
+  free16(rho_256i, sizeof(rho_256i));
+
+#else
   qam64_qam64((short *)rxF,
               (short *)rxF_i,
               (short *)ch_mag,
@@ -8838,6 +8869,7 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
               (short *)llr16,
               (short *)rho,
               len);
+#endif
 
   llr16 += (6*len);
   *llr16p = (short *)llr16;
