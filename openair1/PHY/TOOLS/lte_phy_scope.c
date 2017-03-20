@@ -705,7 +705,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     }
     else
     {
-        LOG_E(PHY,"PDCCH LLR plot is bugged in 20 MHz BW, to be fixed !!!");
+        LOG_D(PHY,"UE PDCCH LLR plot is bugged in 20 MHz BW, to be fixed !!!\n");
     }
   }
 
@@ -721,7 +721,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     }
     else
     {
-        LOG_E(PHY,"PDCCH COMP plot is bugged in 20 MHz BW, to be fixed !!!");
+        LOG_D(PHY,"UE PDCCH COMP plot is bugged in 20 MHz BW, to be fixed !!!\n");
     }
   }
 
@@ -739,7 +739,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     }
     else
     {
-        LOG_E(PHY,"PDSCH LLR plot is bugged in 20 MHz BW, to be fixed !!!");
+        LOG_D(PHY,"UE PDSCH LLR plot is bugged in 20 MHz BW, to be fixed !!!\n");
     }
   }
 
