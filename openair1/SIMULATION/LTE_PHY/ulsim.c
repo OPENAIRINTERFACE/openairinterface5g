@@ -50,6 +50,7 @@
 PHY_VARS_eNB *eNB;
 PHY_VARS_UE *UE;
 
+double cpuf;
 
 
 
@@ -280,6 +281,7 @@ int main(int argc, char **argv)
   opp_enabled=1; // to enable the time meas
 
   cpu_freq_GHz = (double)get_cpu_freq_GHz();
+  cpuf = cpu_freq_GHz;
 
   printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
 

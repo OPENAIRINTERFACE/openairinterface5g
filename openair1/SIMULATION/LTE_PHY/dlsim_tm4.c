@@ -297,8 +297,6 @@ int main(int argc, char **argv)
 
   int threequarter_fs=0;
 
-  cpuf = get_cpu_freq_GHz();
-
   opp_enabled=1; // to enable the time meas
 
 #if defined(__arm__)
@@ -317,6 +315,8 @@ int main(int argc, char **argv)
 #else
   cpu_freq_GHz = get_cpu_freq_GHz();
 #endif
+  cpuf = cpu_freq_GHz;
+
   printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
 
   //signal(SIGSEGV, handler);
