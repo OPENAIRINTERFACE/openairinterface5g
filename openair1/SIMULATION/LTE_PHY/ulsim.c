@@ -50,6 +50,7 @@
 PHY_VARS_eNB *eNB;
 PHY_VARS_UE *UE;
 
+double cpuf;
 
 
 
@@ -280,6 +281,7 @@ int main(int argc, char **argv)
   opp_enabled=1; // to enable the time meas
 
   cpu_freq_GHz = (double)get_cpu_freq_GHz();
+  cpuf = cpu_freq_GHz;
 
   printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
 
@@ -630,7 +632,7 @@ int main(int argc, char **argv)
     fl_show_form (form_enb->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
   }
 
-  UE->pdcch_vars[0]->crnti = 14;
+  UE->pdcch_vars[0][0]->crnti = 14;
 
   UE->frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
   UE->frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;

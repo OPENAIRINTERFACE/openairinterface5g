@@ -5144,6 +5144,7 @@ void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,
                                     LTE_DL_FRAME_PARMS *frame_parms,
                                     uint8_t  subframe,
                                     uint16_t rnti,
+									uint16_t tc_rnti,
                                     uint16_t si_rnti,
                                     uint16_t ra_rnti,
                                     uint16_t p_rnti,
@@ -5206,6 +5207,13 @@ void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,
     }
     else //CRNTI
     {
+    	if (rnti == tc_rnti) {
+			//fix for standalone Contention Resolution Id
+			pdlsch0_harq->DCINdi = (uint8_t)-1;
+			 LOG_D(PHY,"UE (%x/%d): Format1A DCI: C-RNTI is temporary. Set NDI = %d and to be ignored\n",
+				 rnti,harq_pid,pdlsch0_harq->DCINdi);
+    	}
+
         // DCI has been toggled or this is the first transmission
         if (ndi1!=pdlsch0_harq->DCINdi)
         {
@@ -5720,9 +5728,9 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
         pdlsch1->active     = 0;
       }
 
-#ifdef DEBUG_HARQ
+//#ifdef DEBUG_HARQ
       printf("[DCI UE]: dlsch0_harq status %d , dlsch1_harq status %d\n", dlsch0_harq->status, dlsch1_harq->status);
-#endif
+//#endif
 
       // compute resource allocation
       if (TB0_active == 1){
@@ -5882,9 +5890,9 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
             dlsch1_harq->Qm = (mcs2-28)<<1;
       }
 
-#ifdef DEBUG_HARQ
+//#ifdef DEBUG_HARQ
       printf("[DCI UE]: dlsch0_harq status %d , dlsch1_harq status %d\n", dlsch0_harq->status, dlsch1_harq->status);
-#endif
+//#endif
 
   #ifdef DEBUG_HARQ
       if (dlsch0 != NULL && dlsch1 != NULL)
@@ -5992,6 +6000,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                      frame_parms,
                                      subframe,
                                      rnti,
+									 tc_rnti,
                                      si_rnti,
                                      ra_rnti,
                                      p_rnti,
@@ -6092,6 +6101,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                      frame_parms,
                                      subframe,
                                      rnti,
+									 tc_rnti,
                                      si_rnti,
                                      ra_rnti,
                                      p_rnti,
@@ -6156,7 +6166,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     case format2A:
     {
     // extract dci infomation
-    //LOG_I(PHY,"[DCI-format2] AbsSubframe %d.%d extract dci infomation \n", frame%1024, subframe);
+    LOG_I(PHY,"[DCI-format2] AbsSubframe %d.%d extract dci infomation \n", frame%1024, subframe);
     extract_dci2A_info(frame_parms->N_RB_DL,
                        frame_type,
                        frame_parms->nb_antenna_ports_eNB,
@@ -6376,7 +6386,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     }
 
 
-  #ifdef DEBUG_DCI
+#ifdef DEBUG_DCI
 
     if (dlsch[0] && (dlsch[0]->rnti != 0xffff)) {
       printf("dci_format:%d Abssubframe: %d.%d \n",dci_format,frame%1024,subframe);
@@ -6384,7 +6394,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
       printf("PDSCH dlsch0 UE: NBRB     %d\n",dlsch0_harq->nb_rb);
       printf("PDSCH dlsch0 UE: rballoc  %x\n",dlsch0_harq->rb_alloc_even[0]);
       printf("PDSCH dlsch0 UE: harq_pid %d\n",harq_pid);
-      printf("PDSCH dlsch0 UE: tpc      %d\n",TPC);
+      //printf("PDSCH dlsch0 UE: tpc      %d\n",TPC);
       printf("PDSCH dlsch0 UE: g        %d\n",dlsch[0]->g_pucch);
       printf("PDSCH dlsch0 UE: round    %d\n",dlsch0_harq->round);
       printf("PDSCH dlsch0 UE: DCINdi   %d\n",dlsch0_harq->DCINdi);
@@ -6393,8 +6403,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
       printf("PDSCH dlsch0 UE: mcs      %d\n",dlsch0_harq->mcs);
       printf("PDSCH dlsch0 UE: pwr_off  %d\n",dlsch0_harq->dl_power_off);
     }
-
-  #endif
+#endif
 
   #if T_TRACER
     if( (dlsch[0]->rnti != si_rnti) && (dlsch[0]->rnti != ra_rnti) && (dlsch[0]->rnti != p_rnti))
@@ -8077,7 +8086,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
   // ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
 
- #ifdef DEBUG_DCI
+#ifdef DEBUG_DCI
 
     printf("Format 0 DCI : ulsch (ue): AbsSubframe %d.%d\n",proc->frame_rx%1024,subframe);
     printf("Format 0 DCI : ulsch (ue): NBRB        %d\n",ulsch->harq_processes[harq_pid]->nb_rb);

@@ -853,7 +853,7 @@ int nas_CTL_ioctl(struct net_device *dev,
 //---------------------------------------------------------------------------
 void nas_CTL_send(struct sk_buff *skb,
                   struct cx_entity *cx,
-                  struct classifier_entity *gc)
+                  struct classifier_entity *gc, int inst, struct nas_priv *gpriv)
 {
   //---------------------------------------------------------------------------
   printk("NAS_CTL_SEND - void \n");

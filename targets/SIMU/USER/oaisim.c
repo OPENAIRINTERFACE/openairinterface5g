@@ -1332,6 +1332,8 @@ main (int argc, char **argv)
   if (oai_emulation.info.opp_enabled == 1)
     reset_opp_meas_oaisim ();
 
+  cpuf=get_cpu_freq_GHz();
+
   init_time ();
 
   init_slot_isr ();

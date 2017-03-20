@@ -45,7 +45,7 @@ PHY_VARS_UE *UE;
 
 #define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 
-
+double cpuf;
 
 extern uint16_t prach_root_sequence_map0_3[838];
 
@@ -98,6 +98,8 @@ int main(int argc, char **argv)
   double ue_speed = 0;
   int NCS_config = 1,rootSequenceIndex=0;
   int threequarter_fs = 0;
+
+  cpuf = get_cpu_freq_GHz();
 
   logInit();
 

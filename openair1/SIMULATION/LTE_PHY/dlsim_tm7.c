@@ -3504,7 +3504,7 @@ PMI_FEEDBACK:
                                    UE->frame_parms.ofdm_symbol_size*nsymb/2,1,1);
 
                     //pdsch_vars
-                    dump_dlsch2(UE,eNB_id,subframe,coded_bits_per_codeword,round);
+                    dump_dlsch2(UE,eNB_id,subframe,&coded_bits_per_codeword,round);
                     //dump_dlsch2(UE,eNB_id_i,coded_bits_per_codeword);
                     write_output("dlsch_e.m","e",eNB->dlsch[0][0]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
 
@@ -3721,7 +3721,7 @@ PMI_FEEDBACK:
               }
 
               //pdsch_vars
-              dump_dlsch2(UE,eNB_id,subframe,coded_bits_per_codeword,round);
+              dump_dlsch2(UE,eNB_id,subframe,&coded_bits_per_codeword,round);
               /*
               write_output("dlsch_e.m","e",eNB->dlsch[0][0]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
               write_output("dlsch_ber_bit.m","ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);

@@ -56,9 +56,7 @@ int16_t dlsch_demod_shift = 0;
 //#define DEBUG_PHY 1
 //#define DEBUG_DLSCH_DEMOD 1
 
-int avg[4];
-int avg_0[2];
-int avg_1[2];
+
 
 // [MCS][i_mod (0,1,2) = (2,4,6)]
 unsigned char offset_mumimo_llr_drange_fix=0;
@@ -110,6 +108,9 @@ int rx_pdsch(PHY_VARS_UE *ue,
   PHY_MEASUREMENTS *measurements = &ue->measurements;
   LTE_UE_DLSCH_t   **dlsch;
 
+  int avg[4];
+  int avg_0[2];
+  int avg_1[2];
 
   unsigned char aatx,aarx;
 
@@ -143,7 +144,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
     break;
 
   case PDSCH:
-    pdsch_vars = &ue->pdsch_vars[subframe&0x1][eNB_id];
+    pdsch_vars = ue->pdsch_vars[subframe&0x1];
     dlsch = ue->dlsch[subframe&0x1][eNB_id];
     LOG_D(PHY,"AbsSubframe %d.%d / Sym %d harq_pid %d,  harq status %d.%d \n",
                    frame,subframe,symbol,harq_pid,
@@ -3374,9 +3375,16 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-  float one_over_nb_re = 0;
-  one_over_nb_re = 1/(nb_rb *12);
-  int16_t one_over_nb_re_q1_15 = (int16_t)(one_over_nb_re * (float)(1<<15) );
+  if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0))
+    nre=8;
+  else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==1))
+    nre=10;
+  else
+    nre=12;
+
+  double one_over_nb_re = 0.0;
+  one_over_nb_re = 1/((double)(nb_rb*nre));
+  int16_t one_over_nb_re_q1_15 = (int16_t)(one_over_nb_re * (double)(1<<15) );
   coeff128 = _mm_set_epi16(one_over_nb_re_q1_15,one_over_nb_re_q1_15,one_over_nb_re_q1_15,one_over_nb_re_q1_15,
                             one_over_nb_re_q1_15,one_over_nb_re_q1_15,one_over_nb_re_q1_15,one_over_nb_re_q1_15);
 
@@ -3398,7 +3406,7 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
           dl_ch128+=2;
         }
         else {
-          avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
+          avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[2],_mm_srai_epi16(_mm_mulhi_epi16(dl_ch128[2], coeff128),15)));
           dl_ch128+=3;
         }
         /*
@@ -3410,18 +3418,10 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
         */
       }
 
-      if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0))
-        nre=8;
-      else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==1))
-        nre=10;
-      else
-        nre=12;
-
       avg[(aatx<<1)+aarx] =(((int32_t*)&avg128D)[0] +
                             ((int32_t*)&avg128D)[1] +
                             ((int32_t*)&avg128D)[2] +
                             ((int32_t*)&avg128D)[3]);
-
                 //  printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
     }
 
@@ -5880,7 +5880,7 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
 #ifdef USER_MODE
 
 
-void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t subframe,uint16_t coded_bits_per_codeword,int round,  unsigned char harq_pid)
+void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t subframe,unsigned int *coded_bits_per_codeword,int round,  unsigned char harq_pid)
 {
   unsigned int nsymb = (ue->frame_parms.Ncp == 0) ? 14 : 12;
   char fname[32],vname[32];
@@ -5959,7 +5959,7 @@ void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t subframe,uint16_t coded_
 
   sprintf(fname,"dlsch%d_rxF_r%d_llr.m",eNB_id,round);
   sprintf(vname,"dl%d_r%d_llr",eNB_id,round);
-  write_output(fname,vname, ue->pdsch_vars[subframe&0x1][eNB_id]->llr[0],coded_bits_per_codeword,1,0);
+  write_output(fname,vname, ue->pdsch_vars[subframe&0x1][eNB_id]->llr[0],coded_bits_per_codeword[0],1,0);
   sprintf(fname,"dlsch%d_r%d_mag1.m",eNB_id,round);
   sprintf(vname,"dl%d_r%d_mag1",eNB_id,round);
   write_output(fname,vname,ue->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_mag0[0],12*N_RB_DL*nsymb,1,1);

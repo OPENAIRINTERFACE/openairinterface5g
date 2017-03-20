@@ -1004,6 +1004,7 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   start_rf_prev_ts = start_rf_new_ts;
   clock_gettime( CLOCK_MONOTONIC, &start_rf_new);
   start_rf_new_ts = ts;
+  LOG_D(PHY,"rx_rf: first_rx %d received ts %"PRId64" (sptti %d)\n",proc->first_rx,ts,fp->samples_per_tti);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 
   proc->timestamp_rx = ts-eNB->ts_offset;
@@ -1020,7 +1021,7 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   else {
 
     if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
-      LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples\n",proc->timestamp_rx - old_ts - fp->samples_per_tti);
+      LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_tti,eNB->ts_offset);
       eNB->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
       proc->timestamp_rx = ts-eNB->ts_offset;
     }
@@ -1559,7 +1560,7 @@ static void* eNB_thread_single( void* param ) {
   wait_sync("eNB_thread_single");
 
 #if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
-  if (eNB->node_function < NGFI_RRU_IF5)
+  if ((eNB->node_function < NGFI_RRU_IF5) && (eNB->mac_enabled==1))
     wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
 #endif 
 
@@ -1723,7 +1724,7 @@ void init_eNB_proc(int inst) {
     proc->CC_id = CC_id;    
     proc->instance_cnt_synch        =  -1;
 
-    proc->first_rx=1;
+    proc->first_rx=2;
     proc->first_tx=1;
     proc->frame_offset = 0;
 
