@@ -8847,7 +8847,7 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   memcpy(ch_mag_i_256i, ch_mag_i, len*4);
   memcpy(rho_256i, rho, len*4);
 
-#if 1
+#if 0
   qam64_qam16_avx2((short *)rxF_256i,
                    (short *)rxF_i_256i,
                    (short *)ch_mag_256i,
