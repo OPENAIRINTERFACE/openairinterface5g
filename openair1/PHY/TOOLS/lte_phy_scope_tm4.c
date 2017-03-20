@@ -797,4 +797,10 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     for (arx=0;arx<nb_antennas_rx;arx++) {
         free(chest_t_abs[arx]);
     }
+    for (int i = 0; i<8; ++i)
+      for (int j = 0; j < 7*2*frame_parms->N_RB_DL*12+4; ++j )
+        phy_vars_ue->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[0][0][i][j]=0;
+
+    for (int m=0; m<coded_bits_per_codeword0; ++m)
+        phy_vars_ue->pdsch_vars[subframe&0x1][eNB_id]->llr[1][m]=0;
   }

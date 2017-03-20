@@ -156,6 +156,9 @@ int rx_pdsch(PHY_VARS_UE *ue,
       codeword_TB1 = dlsch[1]->harq_processes[harq_pid]->codeword;
       dlsch0_harq = dlsch[codeword_TB0]->harq_processes[harq_pid];
       dlsch1_harq = dlsch[codeword_TB1]->harq_processes[harq_pid];
+#ifdef DEBUG_HARQ
+      printf("[DEMOD] I am assuming both TBs are active\n");
+#endif
     }
      else if ((dlsch[0]->harq_processes[harq_pid]->status == ACTIVE) &&
               (dlsch[1]->harq_processes[harq_pid]->status != ACTIVE) ) {
@@ -163,6 +166,9 @@ int rx_pdsch(PHY_VARS_UE *ue,
       dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
       dlsch1_harq = NULL;
       codeword_TB1 = -1;
+#ifdef DEBUG_HARQ
+      printf("[DEMOD] I am assuming only TB0 is active\n");
+#endif
     }
      else if ((dlsch[0]->harq_processes[harq_pid]->status != ACTIVE) &&
               (dlsch[1]->harq_processes[harq_pid]->status == ACTIVE) ){
@@ -170,6 +176,9 @@ int rx_pdsch(PHY_VARS_UE *ue,
       dlsch0_harq  = dlsch[1]->harq_processes[harq_pid];
       dlsch1_harq  = NULL;
       codeword_TB0 = -1;
+#ifdef DEBUG_HARQ
+      printf("[DEMOD] I am assuming only TB1 is active\n");
+#endif
     }
     else {
       LOG_E(PHY,"[UE][FATAL] Frame %d subframe %d: no active DLSCH\n",ue->proc.proc_rxtx[0].frame_rx,subframe);
@@ -229,14 +238,16 @@ int rx_pdsch(PHY_VARS_UE *ue,
   }
 
 
-
   if ((dlsch0_harq->mimo_mode==LARGE_CDD) || ((dlsch0_harq->mimo_mode>=DUALSTREAM_UNIFORM_PRECODING1) && (dlsch0_harq->mimo_mode<=DUALSTREAM_PUSCH_PRECODING)))  {
-    DevAssert(dlsch1_harq);
+   // DevAssert(dlsch1_harq);
     if (eNB_id!=eNB_id_i) {
       LOG_E(PHY,"TM3/TM4 requires to set eNB_id==eNB_id_i!\n");
       return(-1);
     }
   }
+#ifdef DEBUG_HARQ
+  printf("Demod  dlsch0_harq->pmi_alloc %d\n",  dlsch0_harq->pmi_alloc);
+#endif
 
   if (frame_parms->nb_antenna_ports_eNB>1 && beamforming_mode==0) {
 #ifdef DEBUG_DLSCH_MOD

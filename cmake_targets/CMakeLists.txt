@@ -1966,7 +1966,6 @@ target_link_libraries (oaisim_nos1 forms)
 
 target_link_libraries (oaisim_nos1 ${T_LIB})
 
-
 # Unitary tests for each piece of L1: example, mbmssim is MBMS L1 simulator
 #####################################
 
@@ -2063,9 +2062,9 @@ if (${T_TRACER})
   add_dependencies(lte-softmodem-nos1 generate_T)
   add_dependencies(rrh_gw generate_T)
   add_dependencies(oaisim generate_T)
-  add_dependencies(oaisim_nos1 generate_T)
   add_dependencies(dlsim generate_T)
   add_dependencies(dlsim_tm4 generate_T)
+  add_dependencies(dlsim_tm4_feedback generate_T)
   add_dependencies(dlsim_tm7 generate_T)
   add_dependencies(ulsim generate_T)
   add_dependencies(pbchsim generate_T)

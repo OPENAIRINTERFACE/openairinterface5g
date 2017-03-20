@@ -459,6 +459,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
                          unsigned int subframe_offset,
                          unsigned char N0_symbol,
                          unsigned char abstraction_flag,
+                         unsigned char rank_adaptation,
                          uint8_t subframe)
 {
 
@@ -484,12 +485,6 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
 
   ue->measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;
 
-    if (ue->transmission_mode[eNB_id]!=4)
-     ue->measurements.rank[eNB_id] = 0;
-    else
-    ue->measurements.rank[eNB_id] = 1;
-  //  printf ("tx mode %d\n", ue->transmission_mode[eNB_id]);
-  //  printf ("rank %d\n", ue->PHY_measurements.rank[eNB_id]);
 
   switch (N_RB_DL) {
   case 6:
@@ -552,16 +547,25 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
 
   eNB_id=0;
   if (ue->transmission_mode[0]==4 || ue->transmission_mode[0]==3){
-    rank_tm3_tm4 = rank_estimation_tm3_tm4(&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][0][4],
-                                           &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2][4],
-                                           &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][1][4],
-                                           &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][3][4],
-                                           N_RB_DL);
-
+    if (rank_adaptation == 1)
+      rank_tm3_tm4 = rank_estimation_tm3_tm4(&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][0][4],
+                                             &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2][4],
+                                             &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][1][4],
+                                             &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][3][4],
+                                             N_RB_DL);
+    else
+      rank_tm3_tm4=1;
 #ifdef DEBUG_RANK_EST
   printf("rank tm3 or tm4 %d\n", rank_tm3_tm4);
 #endif
   }
+
+  if (ue->transmission_mode[eNB_id]!=4 && ue->transmission_mode[eNB_id]!=3)
+    ue->measurements.rank[eNB_id] = 0;
+  else
+    ue->measurements.rank[eNB_id] = rank_tm3_tm4;
+  //  printf ("tx mode %d\n", ue->transmission_mode[eNB_id]);
+  //  printf ("rank %d\n", ue->PHY_measurements.rank[eNB_id]);
 
   // filter to remove jitter
   if (ue->init_averaging == 0) {

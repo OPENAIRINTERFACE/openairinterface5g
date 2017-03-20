@@ -43,13 +43,13 @@ extern openair0_config_t openair0_cfg[];
 
 //#define DEBUG_INITIAL_SYNCH
 
-int pbch_detection(PHY_VARS_UE *ue, runmode_t mode) 
+int pbch_detection(PHY_VARS_UE *ue, runmode_t mode)
 {
 
   uint8_t l,pbch_decoded,frame_mod4,pbch_tx_ant,dummy;
   LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   char phich_resource[6];
-  
+
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",ue->Mod_id,
         ue->rx_offset);
@@ -63,7 +63,7 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode)
 	     ue->rx_offset,
 	     0,
 	     1);
-  }  
+  }
   for (l=0; l<frame_parms->symbols_per_tti/2; l++) {
 
     slot_fep(ue,
@@ -72,7 +72,7 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode)
 	     ue->rx_offset,
 	     0,
 	     1);
-  }  
+  }
   slot_fep(ue,
 	   0,
 	   2,
@@ -83,9 +83,11 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode)
   lte_ue_measurements(ue,
 		      ue->rx_offset,
 		      0,
-		      0,0);
-  
-  
+                      0,
+		      0,
+                      0);
+
+
   if (ue->frame_parms.frame_type == TDD) {
     ue_rrc_measurements(ue,
 			2,
@@ -511,8 +513,8 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
 	  ue->measurements.n0_power_tot_dBm,
 	  10*log10(ue->measurements.rsrp[0])-ue->rx_total_gain_dB,
 	  (10*log10(ue->measurements.rsrq[0])));
-    
-    
+
+
     LOG_I(PHY,"[UE %d] Frame %d MIB Information => %s, %s, NidCell %d, N_RB_DL %d, PHICH DURATION %d, PHICH RESOURCE %s, TX_ANT %d\n",
 	  ue->Mod_id,
 	  ue->proc.proc_rxtx[0].frame_rx,
@@ -560,7 +562,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
       rx_power += signal_energy(&ue->common_vars.rxdata[aarx][sync_pos2],
 				frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
-    
+
     /*
     // do a measurement on the full frame
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
@@ -569,7 +571,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
     */
 
     // we might add a low-pass filter here later
-    ue->measurements.rx_power_avg[0] = rx_power/frame_parms->nb_antennas_rx; 
+    ue->measurements.rx_power_avg[0] = rx_power/frame_parms->nb_antennas_rx;
 
     ue->measurements.rx_power_avg_dB[0] = dB_fixed(ue->measurements.rx_power_avg[0]);
 
@@ -578,7 +580,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
 #endif
 
 #ifndef OAI_USRP
-#ifndef OAI_BLADERF 
+#ifndef OAI_BLADERF
 #ifndef OAI_LMSSDR
   phy_adjust_gain(ue,ue->measurements.rx_power_avg_dB[0],0);
 #endif
@@ -589,7 +591,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
   else {
 
 #ifndef OAI_USRP
-#ifndef OAI_BLADERF 
+#ifndef OAI_BLADERF
 #ifndef OAI_LMSSDR
   phy_adjust_gain(ue,dB_fixed(ue->measurements.rssi),0);
 #endif
