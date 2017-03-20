@@ -50,6 +50,7 @@
 PHY_VARS_eNB *eNB;
 PHY_VARS_UE *UE;
 
+double cpuf;
 
 DCI1E_5MHz_2A_M10PRB_TDD_t  DLSCH_alloc_pdu2_1E[2];
 #define UL_RB_ALLOC 0x1ff;
@@ -117,6 +118,8 @@ int main(int argc, char **argv)
   fl_show_form (form_ue->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 #endif
   */
+
+  cpuf = get_cpu_freq_GHz();
 
   logInit();
   number_of_cards = 1;

@@ -50,6 +50,7 @@ PHY_VARS_UE *UE;
 #define CCCH_RB_ALLOC computeRIV(eNB->frame_parms.N_RB_UL,0,2)
 #define DLSCH_RB_ALLOC ((uint16_t)0x1fbf) // igore DC component,RB13
 
+double cpuf;
 
 DCI_PDU DCI_pdu;
 
@@ -456,6 +457,8 @@ int main(int argc, char **argv)
   int CCE_table[800];
 
   number_of_cards = 1;
+
+  cpuf = get_cpu_freq_GHz();
 
   logInit();
 
@@ -1088,9 +1091,7 @@ int main(int argc, char **argv)
           UE->pdcch_vars[0][0]->crnti = n_rnti;
 
           //    printf("Doing RX : num_pdcch_symbols at TX %d\n",num_pdcch_symbols);
-          rx_pdcch(&UE->common_vars,
-                   UE->pdcch_vars[0],
-                   &UE->frame_parms,
+          rx_pdcch(UE,
                    trial,
                    subframe,
                    0,
