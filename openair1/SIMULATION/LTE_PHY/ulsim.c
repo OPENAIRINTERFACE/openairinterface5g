@@ -932,7 +932,8 @@ int main(int argc, char **argv)
 
       ndi=0;
 
-      phy_reset_ue(UE);
+      PHY_vars_UE_g = UE;
+      phy_reset_ue(0,0,0);
       UE->UE_mode[eNB_id]=PUSCH;
 
       for (trials = 0; trials<n_frames; trials++) {

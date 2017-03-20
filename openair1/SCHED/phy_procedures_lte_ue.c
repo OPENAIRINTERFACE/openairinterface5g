@@ -258,14 +258,14 @@ void dump_dlsch_ra(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t s
   write_output("dlsch_mag2.m","dlschmag2",ue->pdsch_vars_ra[0]->dl_ch_magb0,300*nsymb,1,1);
 }
 
-
-void phy_reset_ue(PHY_VARS_UE *ue)
+void phy_reset_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 {
 
   // This flushes ALL DLSCH and ULSCH harq buffers of ALL connected eNBs...add the eNB_index later
   // for more flexibility
 
   uint8_t i,j,k,s;
+  PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
 
   //[NUMBER_OF_CONNECTED_eNB_MAX][2];
   for(i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
