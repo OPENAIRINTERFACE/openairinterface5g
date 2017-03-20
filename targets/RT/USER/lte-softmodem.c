@@ -321,6 +321,7 @@ void help (void) {
   printf("  --ue-txgain set UE TX gain\n");
   printf("  --ue-nb-ant-rx  set UE number of rx antennas ");
   printf("  --ue-scan_carrier set UE to scan around carrier\n");
+  printf("  --dlsch-demod-shift dynamic shift for LLR compuation for TM3/4 (default 0)\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
   printf("  --mmapped-dma sets flag for improved EXMIMO UE performance\n");  
   printf("  --external-clock tells hardware to use an external clock reference\n");
@@ -635,6 +636,7 @@ static void get_options (int argc, char **argv) {
         LONG_OPTION_THREADIQ,
         LONG_OPTION_THREADODDSUBFRAME,
         LONG_OPTION_THREADEVENSUBFRAME,
+        LONG_OPTION_DEMOD_SHIFT,
 #if T_TRACER
         LONG_OPTION_T_PORT,
         LONG_OPTION_T_NOWAIT,
@@ -670,6 +672,7 @@ static void get_options (int argc, char **argv) {
         {"threadIQ",  required_argument, NULL, LONG_OPTION_THREADIQ},
         {"threadOddSubframe",  required_argument, NULL, LONG_OPTION_THREADODDSUBFRAME},
         {"threadEvenSubframe",  required_argument, NULL, LONG_OPTION_THREADEVENSUBFRAME},
+        {"dlsch-demod-shift", required_argument,  NULL, LONG_OPTION_DEMOD_SHIFT},
 #if T_TRACER
         {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
         {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
@@ -800,7 +803,11 @@ static void get_options (int argc, char **argv) {
     case LONG_OPTION_THREADEVENSUBFRAME:
        threads.even=atoi(optarg);
        break;
-
+    case LONG_OPTION_DEMOD_SHIFT: {
+        extern int16_t dlsch_demod_shift;
+        dlsch_demod_shift = atof(optarg);
+        break;
+    }
 #if T_TRACER
         case LONG_OPTION_T_PORT: {
             extern int T_port;
@@ -1572,9 +1579,15 @@ int main( int argc, char **argv ) {
                               UE[CC_id]->X_u);
 
             if (UE[CC_id]->mac_enabled == 1)
-                UE[CC_id]->pdcch_vars[0]->crnti = 0x1234;
+            {
+                UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1234;
+                UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1234;
+            }
             else
-                UE[CC_id]->pdcch_vars[0]->crnti = 0x1235;
+            {
+                UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1235;
+                UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1235;
+            }
 
             UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
             UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
@@ -1726,7 +1739,7 @@ int main( int argc, char **argv ) {
 #if defined(ENABLE_ITTI)
 
     if ((UE_flag == 1)||
-            (node_function[0]<NGFI_RAU_IF4p5))
+	((node_function[0]<NGFI_RAU_IF4p5)&&(phy_test==0)))
         // don't create if node doesn't connect to RRC/S1/GTP
         if (create_tasks(UE_flag ? 0 : 1, UE_flag ? 1 : 0) < 0) {
             printf("cannot create ITTI tasks\n");

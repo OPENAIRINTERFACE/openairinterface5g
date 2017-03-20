@@ -280,65 +280,45 @@ machine_list.wait_all_free()
 # run eNB softmodem tests                                                    #
 ##############################################################################
 
-tests = {
-  'b210' : {
-    'alu' : {
-      '5' : {
-        'bandrich' : {
-          'tcp' : { 'ul': False, 'dl' : False },
-          'udp' : { 'ul': False, 'dl' : False }},
-        'sony' : {
-          'tcp' : { 'ul': False, 'dl' : False },
-          'udp' : { 'ul': False, 'dl' : False }}},
-      '10' : {
-        'bandrich' : {
-          'tcp' : { 'ul': False, 'dl' : False },
-          'udp' : { 'ul': False, 'dl' : False }},
-        'sony' : {
-          'tcp' : { 'ul': False, 'dl' : False },
-          'udp' : { 'ul': False, 'dl' : False }}},
-      '20' : {
-        'bandrich' : {
-          'tcp' : { 'ul': False, 'dl' : False },
-          'udp' : { 'ul': False, 'dl' : False }},
-        'sony' : {
-          'tcp' : { 'ul': False, 'dl' : False },
-          'udp' : { 'ul': False, 'dl' : False }}}},
-    'openair-cn' : {}
-  },
-  'x310' : {
-    'alu' : {},
-    'openair-cn' : {}
-  },
-  'exmimo2' : {
-    'alu' : {},
-    'openair-cn' : {}
-  }
-}
+tests = {}
+for a in { 'b210', 'remote b210', 'x310', 'exmimo2' }:
+  tests[a] = {}
+  for b in { 'alu', 'openair-cn' }:
+    tests[a][b] = {}
+    for c in { 'fdd', 'tdd' }:
+      tests[a][b][c] = {}
+      for d in { '5', '10', '20' }:
+        tests[a][b][c][d] = {}
+        for e in { 'bandrich', 'sony', '3276' }:
+          tests[a][b][c][d][e] = {}
+          for f in { 'tcp', 'udp' }:
+            tests[a][b][c][d][e][f] = {}
+            for g in { 'dl', 'ul' }:
+              tests[a][b][c][d][e][f][g] = False
 
 todo_tests_ids = []
 for test in todo_tests:
     todo_tests_ids.append(test.get('id'))
 
 for test in todo_tests_ids:
-  if test=='015500':tests['b210']['alu'][ '5']['bandrich']['udp']['ul']=True
-  if test=='015501':tests['b210']['alu']['10']['bandrich']['udp']['ul']=True
-  if test=='015502':tests['b210']['alu']['20']['bandrich']['udp']['ul']=True
-  if test=='015503':tests['b210']['alu'][ '5']['bandrich']['udp']['dl']=True
-  if test=='015504':tests['b210']['alu']['10']['bandrich']['udp']['dl']=True
-  if test=='015505':tests['b210']['alu']['20']['bandrich']['udp']['dl']=True
+  if test=='015500':tests['b210']['alu']['fdd'][ '5']['bandrich']['udp']['ul']=True
+  if test=='015501':tests['b210']['alu']['fdd']['10']['bandrich']['udp']['ul']=True
+  if test=='015502':tests['b210']['alu']['fdd']['20']['bandrich']['udp']['ul']=True
+  if test=='015503':tests['b210']['alu']['fdd'][ '5']['bandrich']['udp']['dl']=True
+  if test=='015504':tests['b210']['alu']['fdd']['10']['bandrich']['udp']['dl']=True
+  if test=='015505':tests['b210']['alu']['fdd']['20']['bandrich']['udp']['dl']=True
   if test=='015506':log('WARNING: skip test ' + test) #TODO
   if test=='015507':log('WARNING: skip test ' + test) #TODO
   if test=='015508':log('WARNING: skip test ' + test) #TODO
   if test=='015509':log('WARNING: skip test ' + test) #TODO
   if test=='015510':log('WARNING: skip test ' + test) #TODO
   if test=='015511':log('WARNING: skip test ' + test) #TODO
-  if test=='015512':tests['b210']['alu'][ '5']['bandrich']['tcp']['ul']=True
-  if test=='015513':tests['b210']['alu']['10']['bandrich']['tcp']['ul']=True
-  if test=='015514':tests['b210']['alu']['20']['bandrich']['tcp']['ul']=True
-  if test=='015515':tests['b210']['alu'][ '5']['bandrich']['tcp']['dl']=True
-  if test=='015516':tests['b210']['alu']['10']['bandrich']['tcp']['dl']=True
-  if test=='015517':tests['b210']['alu']['20']['bandrich']['tcp']['dl']=True
+  if test=='015512':tests['b210']['alu']['fdd'][ '5']['bandrich']['tcp']['ul']=True
+  if test=='015513':tests['b210']['alu']['fdd']['10']['bandrich']['tcp']['ul']=True
+  if test=='015514':tests['b210']['alu']['fdd']['20']['bandrich']['tcp']['ul']=True
+  if test=='015515':tests['b210']['alu']['fdd'][ '5']['bandrich']['tcp']['dl']=True
+  if test=='015516':tests['b210']['alu']['fdd']['10']['bandrich']['tcp']['dl']=True
+  if test=='015517':tests['b210']['alu']['fdd']['20']['bandrich']['tcp']['dl']=True
   if test=='015518':log('WARNING: skip test ' + test) #TODO
   if test=='015519':log('WARNING: skip test ' + test) #TODO
   if test=='015520':log('WARNING: skip test ' + test) #TODO
@@ -427,6 +407,19 @@ for test in todo_tests_ids:
   if test=='017504':log('WARNING: skip test ' + test) #TODO
   if test=='017505':log('WARNING: skip test ' + test) #TODO
 
+  if test=='017600':tests['remote b210']['alu']['fdd'][ '5']['bandrich']['udp']['ul']=True
+  if test=='017601':tests['remote b210']['alu']['fdd']['10']['bandrich']['udp']['ul']=True
+  if test=='017602':tests['remote b210']['alu']['fdd']['20']['bandrich']['udp']['ul']=True
+  if test=='017603':tests['remote b210']['alu']['fdd'][ '5']['bandrich']['udp']['dl']=True
+  if test=='017604':tests['remote b210']['alu']['fdd']['10']['bandrich']['udp']['dl']=True
+  if test=='017605':tests['remote b210']['alu']['fdd']['20']['bandrich']['udp']['dl']=True
+  if test=='017606':tests['remote b210']['alu']['fdd'][ '5']['bandrich']['tcp']['ul']=True
+  if test=='017607':tests['remote b210']['alu']['fdd']['10']['bandrich']['tcp']['ul']=True
+  if test=='017608':tests['remote b210']['alu']['fdd']['20']['bandrich']['tcp']['ul']=True
+  if test=='017609':tests['remote b210']['alu']['fdd'][ '5']['bandrich']['tcp']['dl']=True
+  if test=='017610':tests['remote b210']['alu']['fdd']['10']['bandrich']['tcp']['dl']=True
+  if test=='017611':tests['remote b210']['alu']['fdd']['20']['bandrich']['tcp']['dl']=True
+
   if test=='018000':log('WARNING: skip test ' + test) #TODO
   if test=='018001':log('WARNING: skip test ' + test) #TODO
   if test=='018002':log('WARNING: skip test ' + test) #TODO
@@ -440,6 +433,31 @@ for test in todo_tests_ids:
   if test=='018503':log('WARNING: skip test ' + test) #TODO
   if test=='018504':log('WARNING: skip test ' + test) #TODO
   if test=='018505':log('WARNING: skip test ' + test) #TODO
+
+  if test=='018600':tests['b210']['alu']['tdd'][ '5']['3276']['udp']['ul']=True
+  if test=='018601':tests['b210']['alu']['tdd']['10']['3276']['udp']['ul']=True
+  if test=='018602':tests['b210']['alu']['tdd']['20']['3276']['udp']['ul']=True
+  if test=='018603':tests['b210']['alu']['tdd'][ '5']['3276']['udp']['dl']=True
+  if test=='018604':tests['b210']['alu']['tdd']['10']['3276']['udp']['dl']=True
+  if test=='018605':tests['b210']['alu']['tdd']['20']['3276']['udp']['dl']=True
+  if test=='018606':log('WARNING: skip test ' + test) #TODO
+  if test=='018607':log('WARNING: skip test ' + test) #TODO
+  if test=='018608':log('WARNING: skip test ' + test) #TODO
+  if test=='018609':log('WARNING: skip test ' + test) #TODO
+  if test=='018610':log('WARNING: skip test ' + test) #TODO
+  if test=='018611':log('WARNING: skip test ' + test) #TODO
+  if test=='018612':tests['b210']['alu']['tdd'][ '5']['3276']['tcp']['ul']=True
+  if test=='018613':tests['b210']['alu']['tdd']['10']['3276']['tcp']['ul']=True
+  if test=='018614':tests['b210']['alu']['tdd']['20']['3276']['tcp']['ul']=True
+  if test=='018615':tests['b210']['alu']['tdd'][ '5']['3276']['tcp']['dl']=True
+  if test=='018616':tests['b210']['alu']['tdd']['10']['3276']['tcp']['dl']=True
+  if test=='018617':tests['b210']['alu']['tdd']['20']['3276']['tcp']['dl']=True
+  if test=='018618':log('WARNING: skip test ' + test) #TODO
+  if test=='018619':log('WARNING: skip test ' + test) #TODO
+  if test=='018620':log('WARNING: skip test ' + test) #TODO
+  if test=='018621':log('WARNING: skip test ' + test) #TODO
+  if test=='018622':log('WARNING: skip test ' + test) #TODO
+  if test=='018623':log('WARNING: skip test ' + test) #TODO
 
   if test=='025500':log('WARNING: skip test ' + test) #TODO
   if test=='025501':log('WARNING: skip test ' + test) #TODO

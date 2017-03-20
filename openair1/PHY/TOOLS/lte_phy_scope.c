@@ -513,32 +513,32 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   int beamforming_mode = phy_vars_ue->transmission_mode[eNB_id]>6 ? phy_vars_ue->transmission_mode[eNB_id] : 0;
 
 
-  if (phy_vars_ue->dlsch[eNB_id][0]!=NULL) {
-    harq_pid = phy_vars_ue->dlsch[eNB_id][0]->current_harq_pid;
+  if (phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]!=NULL) {
+    harq_pid = phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid;
 
     if (harq_pid>=8)
       return;
 
-    mcs = phy_vars_ue->dlsch[eNB_id][0]->harq_processes[harq_pid]->mcs;
+    mcs = phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->mcs;
 
     // Button 0
-    if(!phy_vars_ue->dlsch[eNB_id][0]->harq_processes[harq_pid]->dl_power_off) {
+    if(!phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->dl_power_off) {
       // we are in TM5
       fl_show_object(form->button_0);
     }
   }
 
-  if (phy_vars_ue->pdcch_vars[eNB_id]!=NULL) {
-    num_pdcch_symbols = phy_vars_ue->pdcch_vars[eNB_id]->num_pdcch_symbols;
+  if (phy_vars_ue->pdcch_vars[subframe&0x1][eNB_id]!=NULL) {
+    num_pdcch_symbols = phy_vars_ue->pdcch_vars[subframe&0x1][eNB_id]->num_pdcch_symbols;
   }
 
   //    coded_bits_per_codeword = frame_parms->N_RB_DL*12*get_Qm(mcs)*(frame_parms->symbols_per_tti);
-  if (phy_vars_ue->dlsch[eNB_id][0]!=NULL) {
+  if (phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]!=NULL) {
     coded_bits_per_codeword = get_G(frame_parms,
-                                    phy_vars_ue->dlsch[eNB_id][0]->harq_processes[harq_pid]->nb_rb,
-                                    phy_vars_ue->dlsch[eNB_id][0]->harq_processes[harq_pid]->rb_alloc_even,
+                                    phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->nb_rb,
+                                    phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->rb_alloc_even,
                                     get_Qm(mcs),
-                                    phy_vars_ue->dlsch[eNB_id][0]->harq_processes[harq_pid]->Nl,
+                                    phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->Nl,
                                     num_pdcch_symbols,
                                     frame,
                                     subframe,
@@ -566,8 +566,8 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   chest_f = (int16_t**) phy_vars_ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id];
   pbch_llr = (int8_t*) phy_vars_ue->pbch_vars[eNB_id]->llr;
   pbch_comp = (int16_t*) phy_vars_ue->pbch_vars[eNB_id]->rxdataF_comp[0];
-  pdcch_llr = (int8_t*) phy_vars_ue->pdcch_vars[eNB_id]->llr;
-  pdcch_comp = (int16_t*) phy_vars_ue->pdcch_vars[eNB_id]->rxdataF_comp[0];
+  pdcch_llr = (int8_t*) phy_vars_ue->pdcch_vars[subframe&0x1][eNB_id]->llr;
+  pdcch_comp = (int16_t*) phy_vars_ue->pdcch_vars[subframe&0x1][eNB_id]->rxdataF_comp[0];
   pdsch_llr = (int16_t*) phy_vars_ue->pdsch_vars[subframe&0x1][eNB_id]->llr[0]; // stream 0
   //    pdsch_llr = (int16_t*) phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id]->llr[0]; // stream 0
   pdsch_comp = (int16_t*) phy_vars_ue->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp0[0];
@@ -702,7 +702,14 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     }
 
     fl_set_xyplot_xbounds(form->pdcch_llr,0,12*frame_parms->N_RB_DL*2*3);
-    fl_set_xyplot_data(form->pdcch_llr,bit_pdcch,llr_pdcch,12*frame_parms->N_RB_DL*2*num_pdcch_symbols,"","","");
+    if (frame_parms->N_RB_DL != 100)
+    {
+        fl_set_xyplot_data(form->pdcch_llr,bit_pdcch,llr_pdcch,12*frame_parms->N_RB_DL*2*num_pdcch_symbols,"","","");
+    }
+    else
+    {
+        LOG_D(PHY,"UE PDCCH LLR plot is bugged in 20 MHz BW, to be fixed !!!\n");
+    }
   }
 
   // PDCCH I/Q of MF Output
@@ -711,8 +718,14 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
       I[i] = pdcch_comp[2*i];
       Q[i] = pdcch_comp[2*i+1];
     }
-
-    fl_set_xyplot_data(form->pdcch_comp,I,Q,12*frame_parms->N_RB_DL*num_pdcch_symbols,"","","");
+    if (frame_parms->N_RB_DL != 100)
+    {
+        fl_set_xyplot_data(form->pdcch_comp,I,Q,12*frame_parms->N_RB_DL*num_pdcch_symbols,"","","");
+    }
+    else
+    {
+        LOG_D(PHY,"UE PDCCH COMP plot is bugged in 20 MHz BW, to be fixed !!!\n");
+    }
   }
 
   // PDSCH LLRs
@@ -723,7 +736,14 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     }
 
     fl_set_xyplot_xbounds(form->pdsch_llr,0,coded_bits_per_codeword);
-    fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword,"","","");
+    if (frame_parms->N_RB_DL != 100)
+    {
+        fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword,"","","");
+    }
+    else
+    {
+        LOG_D(PHY,"UE PDSCH LLR plot is bugged in 20 MHz BW, to be fixed !!!\n");
+    }
   }
 
   // PDSCH I/Q of MF Output

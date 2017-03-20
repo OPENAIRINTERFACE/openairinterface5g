@@ -155,9 +155,10 @@ void nas_mesh_start_default_sclassifier(struct cx_entity *cx,struct rb_entity *r
 }
 
 //---------------------------------------------------------------------------
-void nas_mesh_timer(unsigned long data,struct nas_priv *gpriv)
+void nas_mesh_timer(unsigned long data)
 {
   //---------------------------------------------------------------------------
+  struct nas_priv *gpriv=(struct nas_priv *) data;
   uint8_t cxi;
   struct cx_entity *cx;
   struct rb_entity *rb;
@@ -168,7 +169,7 @@ void nas_mesh_timer(unsigned long data,struct nas_priv *gpriv)
 
   (gpriv->timer).function=nas_mesh_timer;
   (gpriv->timer).expires=jiffies+NAS_TIMER_TICK;
-  (gpriv->timer).data=0L;
+  (gpriv->timer).data=data;
 
   return;
 
@@ -381,6 +382,7 @@ int nas_mesh_DC_send_cx_release_request(struct cx_entity *cx,
 void nas_mesh_DC_send_sig_data_request(struct sk_buff *skb,
                                        struct cx_entity *cx,
                                        struct classifier_entity *gc,
+                                       int inst,
                                        struct nas_priv *gpriv)
 {
   //---------------------------------------------------------------------------

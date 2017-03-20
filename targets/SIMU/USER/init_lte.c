@@ -162,29 +162,31 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
   phy_init_lte_ue(PHY_vars_UE,1,abstraction_flag);
 
   for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
-    for (j=0; j<2; j++) {
-      PHY_vars_UE->dlsch[i][j]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
+      for (j=0; j<2; j++) { // 2CWs
+          for (int l=0; l<2; l++){ // 2Threads
+              PHY_vars_UE->dlsch[l][i][j]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
 
-      if (!PHY_vars_UE->dlsch[i][j]) {
-        LOG_E(PHY,"Can't get ue dlsch structures\n");
-        exit(-1);
-      } else
-        LOG_D(PHY,"dlsch[%d][%d] => %p\n",UE_id,i,PHY_vars_UE->dlsch[i][j]);
-    }
+              if (!PHY_vars_UE->dlsch[l][i][j]) {
+                  LOG_E(PHY,"Can't get ue dlsch structures\n");
+                  exit(-1);
+              } else
+                  LOG_D(PHY,"dlsch[%d][%d] => %p\n",UE_id,i,PHY_vars_UE->dlsch[l][i][j]);
+          }
+      }
 
 
 
-    PHY_vars_UE->ulsch[i]  = new_ue_ulsch(frame_parms->N_RB_UL, abstraction_flag);
+      PHY_vars_UE->ulsch[i]  = new_ue_ulsch(frame_parms->N_RB_UL, abstraction_flag);
 
-    if (!PHY_vars_UE->ulsch[i]) {
-      LOG_E(PHY,"Can't get ue ulsch structures\n");
-      exit(-1);
-    }
+      if (!PHY_vars_UE->ulsch[i]) {
+          LOG_E(PHY,"Can't get ue ulsch structures\n");
+          exit(-1);
+      }
 
-    PHY_vars_UE->dlsch_SI[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
-    PHY_vars_UE->dlsch_ra[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
+      PHY_vars_UE->dlsch_SI[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
+      PHY_vars_UE->dlsch_ra[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
 
-    PHY_vars_UE->transmission_mode[i] = frame_parms->nb_antenna_ports_eNB==1 ? 1 : 2;
+      PHY_vars_UE->transmission_mode[i] = frame_parms->nb_antenna_ports_eNB==1 ? 1 : 2;
   }
 
   PHY_vars_UE->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;

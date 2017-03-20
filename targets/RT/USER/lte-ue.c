@@ -56,6 +56,8 @@
 
 #include "T.h"
 
+extern double cpuf;
+
 #define FRAME_PERIOD    100000000ULL
 #define DAQ_PERIOD      66667ULL
 #define FIFO_PRIORITY   40
@@ -267,7 +269,7 @@ static void *UE_thread_synch(void *arg) {
         }
     }
 
-    AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
+    //    AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
 
     while (oai_exit==0) {
         AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
@@ -366,13 +368,13 @@ static void *UE_thread_synch(void *arg) {
 
                     UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
                     //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
-                    UE->rfdevice.trx_stop_func(&UE->rfdevice);
+                    //UE->rfdevice.trx_stop_func(&UE->rfdevice);
                     sleep(1);
                     init_frame_parms(&UE->frame_parms,1);
-                    if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
+                    /*if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
                         LOG_E(HW,"Could not start the device\n");
                         oai_exit=1;
-                    }
+                    }*/
                 } else {
                     AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
                     UE->is_synchronized = 1;
@@ -538,6 +540,9 @@ static void *UE_thread_rxn_txnp4(void *arg) {
             }
             phy_procedures_UE_RX( UE, proc, 0, 0, UE->mode, no_relay, NULL );
         }
+
+        start_meas(&UE->generic_stat);
+
         if (UE->mac_enabled==1) {
 
             ret = mac_xface->ue_scheduler(UE->Mod_id,
@@ -567,6 +572,9 @@ static void *UE_thread_rxn_txnp4(void *arg) {
                        UE->Mod_id, proc->frame_rx, proc->subframe_tx,txt );
             }
         }
+
+        stop_meas(&UE->generic_stat);
+
         // Prepare the future Tx data
 
         if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
@@ -639,6 +647,7 @@ void *UE_thread(void *arg) {
 
     int sub_frame=-1;
     //int cumulated_shift=0;
+    AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
     while (!oai_exit) {
         AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
         int instance_cnt_synch = UE->proc.instance_cnt_synch;

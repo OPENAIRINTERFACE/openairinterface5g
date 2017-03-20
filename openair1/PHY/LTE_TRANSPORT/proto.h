@@ -704,6 +704,22 @@ void qam64_qam16(short *stream0_in,
                  short *rho01,
                  int length);
 
+/** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream 64QAM/16QAM reception.
+    @param stream0_in Input from channel compensated (MR combined) stream 0
+    @param stream1_in Input from channel compensated (MR combined) stream 1
+    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param ch_mag_i Input from scaled channel magnitude square of h0'*g1
+    @param stream0_out Output from LLR unit for stream0
+    @param rho01 Cross-correlation between channels (MR combined)
+    @param length in complex channel outputs*/
+void qam64_qam16_avx2(short *stream0_in,
+                      short *stream1_in,
+                      short *ch_mag,
+                      short *ch_mag_i,
+                      short *stream0_out,
+                      short *rho01,
+                      int length);
+
 /** \brief This function perform LLR computation for dual-stream (64QAM/16QAM) transmission.
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
@@ -745,6 +761,22 @@ void qam64_qam64(short *stream0_in,
                  short *stream0_out,
                  short *rho01,
                  int length);
+
+/** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream 64QAM/64QAM reception.
+    @param stream0_in Input from channel compensated (MR combined) stream 0
+    @param stream1_in Input from channel compensated (MR combined) stream 1
+    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param ch_mag_i Input from scaled channel magnitude square of h0'*g1
+    @param stream0_out Output from LLR unit for stream0
+    @param rho01 Cross-correlation between channels (MR combined)
+    @param length in complex channel outputs*/
+void qam64_qam64_avx2(int32_t *stream0_in,
+                      int32_t *stream1_in,
+                      int32_t *ch_mag,
+                      int32_t *ch_mag_i,
+                      int16_t *stream0_out,
+                      int32_t *rho01,
+                      int length);
 
 /** \brief This function perform LLR computation for dual-stream (64QAM/64QAM) transmission.
     @param frame_parms Frame descriptor structure
@@ -1236,7 +1268,7 @@ uint32_t dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
                         LTE_DL_FRAME_PARMS *lte_frame_parms,
                         LTE_UE_DLSCH_t *dlsch,
                         LTE_DL_UE_HARQ_t *harq_process,
-                        uint8_t frame,
+                        uint32_t frame,
                         uint8_t subframe,
                         uint8_t harq_pid,
                         uint8_t is_crnti,
@@ -1276,9 +1308,7 @@ int32_t rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                  uint8_t i_mod,
                  uint8_t harq_pid);
 
-int32_t rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
-                 LTE_UE_PDCCH **lte_ue_pdcch_vars,
-                 LTE_DL_FRAME_PARMS *frame_parms,
+int32_t rx_pdcch(PHY_VARS_UE *ue,
                  uint32_t frame,
                  uint8_t subframe,
                  uint8_t eNB_id,
@@ -1751,6 +1781,7 @@ uint32_t ulsch_encoding(uint8_t *a,
                         PHY_VARS_UE *phy_vars_ue,
                         uint8_t harq_pid,
                         uint8_t eNB_id,
+                        uint8_t subframe_rx,
                         uint8_t tmode,
                         uint8_t control_only_flag,
                         uint8_t Nbundled);
@@ -1766,6 +1797,7 @@ uint32_t ulsch_encoding(uint8_t *a,
 int32_t ulsch_encoding_emul(uint8_t *ulsch_buffer,
                             PHY_VARS_UE *phy_vars_ue,
                             uint8_t eNB_id,
+                            uint8_t subframe_rx,
                             uint8_t harq_pid,
                             uint8_t control_only_flag);
 

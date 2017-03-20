@@ -406,7 +406,7 @@ int main(int argc, char **argv)
 
   DCI_ALLOC_t dci_alloc[8],dci_alloc_rx[8];
   uint16_t n_rnti=1234,dci_cnt;
-  uint16_t coded_bits_per_codeword;
+  unsigned int coded_bits_per_codeword;
   double tmp_re,tmp_im,foff,deltaF=0.0,cs,sn;
   uint32_t carrier_freq[4]= {1907600000,1907600000,1907600000,1907600000};
   uint32_t rf_mode[4]     = {55759,55759,55759,55759};
@@ -1739,7 +1739,7 @@ int main(int argc, char **argv)
                                       PHY_vars_UE[0]->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
                                       0);
 
-      dump_dlsch2(PHY_vars_UE[0],0,0,coded_bits_per_codeword);
+      dump_dlsch2(PHY_vars_UE[0],0,0,&coded_bits_per_codeword);
 
     }
   } else {

@@ -8664,6 +8664,43 @@ c
     <nruns>10</nruns>
     </testCase> 
 
+  <testCase id="017600"></testCase>
+  <testCase id="017601"></testCase>
+  <testCase id="017602"></testCase>
+  <testCase id="017603"></testCase>
+  <testCase id="017604"></testCase>
+  <testCase id="017605"></testCase>
+  <testCase id="017606"></testCase>
+  <testCase id="017607"></testCase>
+  <testCase id="017608"></testCase>
+  <testCase id="017609"></testCase>
+  <testCase id="017610"></testCase>
+  <testCase id="017611"></testCase>
+
+  <testCase id="018600"></testCase>
+  <testCase id="018601"></testCase>
+  <testCase id="018602"></testCase>
+  <testCase id="018603"></testCase>
+  <testCase id="018604"></testCase>
+  <testCase id="018605"></testCase>
+  <testCase id="018606"></testCase>
+  <testCase id="018607"></testCase>
+  <testCase id="018608"></testCase>
+  <testCase id="018609"></testCase>
+  <testCase id="018610"></testCase>
+  <testCase id="018611"></testCase>
+  <testCase id="018612"></testCase>
+  <testCase id="018613"></testCase>
+  <testCase id="018614"></testCase>
+  <testCase id="018615"></testCase>
+  <testCase id="018616"></testCase>
+  <testCase id="018617"></testCase>
+  <testCase id="018618"></testCase>
+  <testCase id="018619"></testCase>
+  <testCase id="018620"></testCase>
+  <testCase id="018621"></testCase>
+  <testCase id="018622"></testCase>
+  <testCase id="018623"></testCase>
 
   <testCase id="025500" >
     <class>lte-softmodem</class>

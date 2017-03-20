@@ -128,30 +128,20 @@ void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index) {
 /*! \brief Set Gains (TX/RX) on LMSSDR
  * \param device the hardware to use
  * \param openair0_cfg openair0 Config structure
- * \returns 0 in success
+ * \returns 0 in success, -1 on error
  */
 int trx_lms_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) {
+  int ret = 0;
 
-  LMS_SetNormalizedGain(lms_device, LMS_CH_TX, 0, openair0_cfg[0].tx_gain[0]/100.0);
+  if (openair0_cfg->rx_gain[0] > 70+openair0_cfg->rx_gain_offset[0]) {
+    printf("[LMS] Reduce RX Gain 0 by %f dB\n",openair0_cfg->rx_gain[0]-openair0_cfg->rx_gain_offset[0]-70);
+    ret = -1;
+  }
+  
+  LMS_SetGaindB(lms_device, LMS_CH_TX, 0, openair0_cfg->tx_gain[0]);
+  LMS_SetGaindB(lms_device, LMS_CH_RX, 0, openair0_cfg->rx_gain[0]-openair0_cfg->rx_gain_offset[0]); 
 
-  // RX gains, use low-level setting
-
-  double gv = openair0_cfg[0].rx_gain[0] - openair0_cfg[0].rx_gain_offset[0];   
-  if (gv > 31) {     
-    printf("RX Gain 0 too high, reduce by %f dB\n",gv-31);     
-    gv = 31;   
-  }   
-  if (gv < 0) {     
-    printf("RX Gain 0 too low, increase by %f dB\n",-gv);     
-    gv = 0;   
-  }   
-  printf("[LMS] Setting 7002M G_PGA_RBB to %d\n", (int16_t)gv);   
-  LMS7002M lms7;
-  lms7.SetConnection(lms7.GetConnection());
-  lms7.Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB),(int16_t)gv);
-
-
-  return(0);
+  return(ret);
 }
 
 /*! \brief Start LMSSDR
@@ -212,10 +202,11 @@ int trx_lms_start(openair0_device *device){
     }
     printf("Set TX frequency %f MHz\n",device->openair0_cfg[0].tx_freq[0]/1e6);
 
+    /*
     printf("Override antenna settings to: RX1_H, TXA_2");
     LMS_SetAntenna(lms_device, LMS_CH_RX, 0, 1);
     LMS_SetAntenna(lms_device, LMS_CH_TX, 0, 2);
-
+    */
 
     
     for (int i = 0; i< device->openair0_cfg->rx_num_channels; i++)
@@ -292,12 +283,21 @@ int trx_lms_set_freq(openair0_device* device, openair0_config_t *openair0_cfg,in
 
 // 31 = 19 dB => 105 dB total gain @ 2.6 GHz
 /*! \brief calibration table for LMSSDR */
+// V1.2 board
+rx_gain_calib_table_t calib_table_lmssdr_1v2[] = {
+  {3500000000.0,44.0},  // on L PAD
+  {2660000000.0,55.0},  // on L PAD
+  {2300000000.0,54.0},  // on L PAD
+  {1880000000.0,54.0},  // on L PAD
+  {816000000.0,79.0},   // on W PAD
+  {-1,0}};
+// V1.4 board
 rx_gain_calib_table_t calib_table_lmssdr[] = {
-  {3500000000.0,70.0},
-  {2660000000.0,80.0},
-  {2300000000.0,80.0},
-  {1880000000.0,74.0},  // on W PAD
-  {816000000.0,76.0},   // on W PAD
+  {3500000000.0,44.0},  // on H PAD
+  {2660000000.0,55.0},  // on H PAD
+  {2300000000.0,54.0},  // on H PAD
+  {1880000000.0,54.0},  // on H PAD
+  {816000000.0,79.0},   // on L PAD
   {-1,0}};
 
 
@@ -344,7 +344,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg){
 
   device->type=LMSSDR_DEV;
   printf("LMSSDR: Initializing openair0_device for %s ...\n", ((device->host_type == BBU_HOST) ? "BBU": "RRH"));
-
+  openair0_cfg[0].iq_txshift = 0;
   switch ((int)openair0_cfg[0].sample_rate) {
   case 30720000:
     // from usrp_time_offset
@@ -355,9 +355,9 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg){
     break;
   case 15360000:
     openair0_cfg[0].samples_per_packet    = 2048;
-    openair0_cfg[0].tx_sample_advance     = 70;
-    openair0_cfg[0].tx_bw                 = 10e6;
-    openair0_cfg[0].rx_bw                 = 10e6;
+    openair0_cfg[0].tx_sample_advance     = 450;
+    openair0_cfg[0].tx_bw                 = 15.36e6;
+    openair0_cfg[0].rx_bw                 = 15.36e6;
     break;
   case 7680000:
     openair0_cfg[0].samples_per_packet    = 1024;
