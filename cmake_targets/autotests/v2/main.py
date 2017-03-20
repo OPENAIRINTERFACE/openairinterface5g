@@ -280,55 +280,21 @@ machine_list.wait_all_free()
 # run eNB softmodem tests                                                    #
 ##############################################################################
 
-tests = {
-  'b210' : {
-    'alu' : {
-      'fdd' : {
-        '5' : {
-          'bandrich' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }},
-          'sony' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }}},
-        '10' : {
-          'bandrich' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }},
-          'sony' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }}},
-        '20' : {
-          'bandrich' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }},
-          'sony' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }}}},
-      'tdd' : {
-        '5' : {
-          '3276' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }}},
-        '10' : {
-          '3276' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }}},
-        '20' : {
-          '3276' : {
-            'tcp' : { 'ul': False, 'dl' : False },
-            'udp' : { 'ul': False, 'dl' : False }}}}},
-    'openair-cn' : {}
-  },
-  'x310' : {
-    'alu' : {},
-    'openair-cn' : {}
-  },
-  'exmimo2' : {
-    'alu' : {},
-    'openair-cn' : {}
-  }
-}
+tests = {}
+for a in { 'b210', 'remote b210', 'x310', 'exmimo2' }:
+  tests[a] = {}
+  for b in { 'alu', 'openair-cn' }:
+    tests[a][b] = {}
+    for c in { 'fdd', 'tdd' }:
+      tests[a][b][c] = {}
+      for d in { '5', '10', '20' }:
+        tests[a][b][c][d] = {}
+        for e in { 'bandrich', 'sony', '3276' }:
+          tests[a][b][c][d][e] = {}
+          for f in { 'tcp', 'udp' }:
+            tests[a][b][c][d][e][f] = {}
+            for g in { 'dl', 'ul' }:
+              tests[a][b][c][d][e][f][g] = False
 
 todo_tests_ids = []
 for test in todo_tests:
@@ -440,6 +406,19 @@ for test in todo_tests_ids:
   if test=='017503':log('WARNING: skip test ' + test) #TODO
   if test=='017504':log('WARNING: skip test ' + test) #TODO
   if test=='017505':log('WARNING: skip test ' + test) #TODO
+
+  if test=='017600':tests['remote b210']['alu']['fdd'][ '5']['bandrich']['udp']['ul']=True
+  if test=='017601':tests['remote b210']['alu']['fdd']['10']['bandrich']['udp']['ul']=True
+  if test=='017602':tests['remote b210']['alu']['fdd']['20']['bandrich']['udp']['ul']=True
+  if test=='017603':tests['remote b210']['alu']['fdd'][ '5']['bandrich']['udp']['dl']=True
+  if test=='017604':tests['remote b210']['alu']['fdd']['10']['bandrich']['udp']['dl']=True
+  if test=='017605':tests['remote b210']['alu']['fdd']['20']['bandrich']['udp']['dl']=True
+  if test=='017606':tests['remote b210']['alu']['fdd'][ '5']['bandrich']['tcp']['ul']=True
+  if test=='017607':tests['remote b210']['alu']['fdd']['10']['bandrich']['tcp']['ul']=True
+  if test=='017608':tests['remote b210']['alu']['fdd']['20']['bandrich']['tcp']['ul']=True
+  if test=='017609':tests['remote b210']['alu']['fdd'][ '5']['bandrich']['tcp']['dl']=True
+  if test=='017610':tests['remote b210']['alu']['fdd']['10']['bandrich']['tcp']['dl']=True
+  if test=='017611':tests['remote b210']['alu']['fdd']['20']['bandrich']['tcp']['dl']=True
 
   if test=='018000':log('WARNING: skip test ' + test) #TODO
   if test=='018001':log('WARNING: skip test ' + test) #TODO

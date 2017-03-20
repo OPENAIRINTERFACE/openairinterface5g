@@ -321,10 +321,9 @@ void nas_COMMON_receive(uint16_t dlen,
 
 //---------------------------------------------------------------------------
 // Delete the data
-void nas_COMMON_del_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *sp,int inst)
+void nas_COMMON_del_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *sp,int inst,struct nas_priv *gpriv)
 {
   struct nas_priv *priv=netdev_priv(nasdev[inst]);
-
   //---------------------------------------------------------------------------
   ++priv->stats.tx_dropped;
 }
@@ -332,7 +331,7 @@ void nas_COMMON_del_send(struct sk_buff *skb, struct cx_entity *cx, struct class
 //---------------------------------------------------------------------------
 // Request the transfer of data (QoS SAP)
 
-void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst)
+void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst, struct nas_priv *gpriv)
 {
   //---------------------------------------------------------------------------
   struct pdcp_data_req_header_s     pdcph;

@@ -96,7 +96,7 @@ void nas_COMMON_receive(unsigned short dlen,
  */
 void nas_COMMON_QOS_send(struct sk_buff *skb,
                          struct cx_entity *cx,
-                         struct classifier_entity *gc,int inst);
+                         struct classifier_entity *gc,int inst, struct nas_priv *gpriv);
 
 /**
 \fn void nas_COMMON_del_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst)
@@ -108,7 +108,7 @@ void nas_COMMON_QOS_send(struct sk_buff *skb,
  */
 void nas_COMMON_del_send(struct sk_buff *skb,
                          struct cx_entity *cx,
-                         struct classifier_entity *gc,int inst);
+                         struct classifier_entity *gc,int inst, struct nas_priv *gpriv);
 
 #ifndef PDCP_USE_NETLINK
 /**
@@ -195,19 +195,18 @@ void nas_mesh_init(int inst   //!< Instance ID
 
                   );
 
-void nas_mesh_timer(unsigned long data,
-                    struct nas_priv *gpriv);
+void nas_mesh_timer(unsigned long data);
 
 int  nas_mesh_DC_receive(struct cx_entity *cx,struct nas_priv *gpriv);
 int  nas_mesh_GC_receive(struct nas_priv *gpriv);
 int  nas_mesh_DC_send_cx_establish_request(struct cx_entity *cx,struct nas_priv *gpriv);
 int  nas_mesh_DC_send_cx_release_request(struct cx_entity *cx,struct nas_priv *gpriv);
-void nas_mesh_DC_send_sig_data_request(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,struct nas_priv *gpriv);
+void nas_mesh_DC_send_sig_data_request(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst, struct nas_priv *gpriv);
 
 // iocontrol.c
 void nas_CTL_send(struct sk_buff *skb,
                   struct cx_entity *cx,
-                  struct classifier_entity *gc);
+                  struct classifier_entity *gc,int inst, struct nas_priv *gpriv);
 //int nas_CTL_receive_authentication(struct ipv6hdr *iph, struct cx-entity *cx, unsigned char sapi);
 int nas_CTL_ioctl(struct net_device *dev,
                   struct ifreq *ifr, int cmd);
