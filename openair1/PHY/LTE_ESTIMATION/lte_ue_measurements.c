@@ -36,6 +36,8 @@
 #define DEBUG_MEAS_UE
 //#define DEBUG_RANK_EST
 
+int16_t cond_num_threshold = 0;
+
 #ifdef USER_MODE
 void print_shorts(char *s,short *x)
 {
@@ -1019,9 +1021,10 @@ uint8_t rank_estimation_tm3_tm4 (int *dl_ch_estimates_00, // please respect the 
     denum_db[i]=dB_fixed(determ_fin[i]);
     numer_db[i]=dB_fixed(numer_fin[i]);
     cond_db[i]=(numer_db[i]-denum_db[i]);
-    if (cond_db[i] < 11)
+    if (cond_db[i] < cond_num_threshold)
       count++;
 #ifdef DEBUG_RANK_EST
+    printf("cond_num_threshold =%d \n", cond_num_threshold);
     printf("i %d  numer_db[i] = %d \n", i, numer_db[i]);
     printf("i %d  denum_db[i] = %d \n", i, denum_db[i]);
     printf("i %d  cond_db[i] =  %d \n", i, cond_db[i]);

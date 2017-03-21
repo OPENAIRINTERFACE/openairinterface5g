@@ -57,6 +57,7 @@
 extern unsigned int dlsch_tbs25[27][25],TBStable[27][110];
 extern unsigned char offset_mumimo_llr_drange_fix;
 extern int16_t dlsch_demod_shift;
+extern int16_t cond_num_threshold;
 
 #include "PHY/TOOLS/lte_phy_scope.h"
 
@@ -338,7 +339,7 @@ int main(int argc, char **argv)
   perfect_ce = 0;
 
 
-  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:XYv:J:K:U")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:XYv:V:J:K:U")) != -1) {
 
     switch (c) {
     case 'a':
@@ -622,6 +623,9 @@ int main(int argc, char **argv)
       case 'Y':
         perfect_ce=1;
         break;
+      case 'V':
+        cond_num_threshold = atof(optarg);
+        break;
       case 'J':
         dlsch_demod_shift = atof(optarg);
         break;
@@ -808,14 +812,14 @@ int main(int argc, char **argv)
   if (transmission_mode==3 || transmission_mode==4){
     if (rank_adapt==1){
       if (perfect_ce==1)
-        sprintf(rankadapt_fname,"rank_adapt1_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, dlsch_demod_shift);
+        sprintf(rankadapt_fname,"rank_adapt1_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d_connum_%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, dlsch_demod_shift, cond_num_threshold);
       else
-        sprintf(rankadapt_fname,"rank_adapt1_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, dlsch_demod_shift);
+        sprintf(rankadapt_fname,"rank_adapt1_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d_connum_%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, dlsch_demod_shift, cond_num_threshold);
     } else {
         if (perfect_ce==1)
-          sprintf(rankadapt_fname,"rank_adapt0_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, dlsch_demod_shift);
+          sprintf(rankadapt_fname,"rank_adapt0_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d_connum_%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, dlsch_demod_shift, cond_num_threshold);
         else
-          sprintf(rankadapt_fname,"rank_adapt0_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, dlsch_demod_shift);
+          sprintf(rankadapt_fname,"rank_adapt0_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d_connum_%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, dlsch_demod_shift, cond_num_threshold);
     }
   rankadapt_fd = fopen(rankadapt_fname,"w");
     if (rankadapt_fd==NULL) {
