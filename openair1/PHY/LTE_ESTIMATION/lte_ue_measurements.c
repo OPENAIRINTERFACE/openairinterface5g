@@ -852,13 +852,30 @@ uint8_t rank_estimation_tm3_tm4 (int *dl_ch_estimates_00, // please respect the 
 
   int count=0;
 
-  int32_t conjch00_ch01[12*N_RB], conjch01_ch00[12*N_RB], conjch10_ch11[12*N_RB], conjch11_ch10[12*N_RB];
-  int32_t conjch00_ch00[12*N_RB], conjch01_ch01[12*N_RB], conjch10_ch10[12*N_RB], conjch11_ch11[12*N_RB];
-  int32_t af_mf_00[12*N_RB], af_mf_00_sq[12*N_RB], af_mf_01_sq[12*N_RB], af_mf_10_sq[12*N_RB];
-  int32_t af_mf_11_sq[12*N_RB], af_mf_01[12*N_RB], af_mf_10[12*N_RB], af_mf_11[12*N_RB];
-  int32_t determ_fin[12*N_RB], denum_db[12*N_RB];
-  int32_t numer_fin[12*N_RB], numer_db[12*N_RB];
-  int32_t cond_db[12*N_RB];
+  /* we need at least alignment to 16 bytes, let's put 32 to be sure
+   * (maybe not necessary but doesn't hurt)
+   */
+  int32_t conjch00_ch01[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch01_ch00[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch10_ch11[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch11_ch10[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch00_ch00[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch01_ch01[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch10_ch10[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch11_ch11[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_00[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_00_sq[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_01_sq[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_10_sq[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_11_sq[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_01[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_10[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_11[12*N_RB] __attribute__((aligned(32)));
+  int32_t determ_fin[12*N_RB] __attribute__((aligned(32)));
+  int32_t denum_db[12*N_RB] __attribute__((aligned(32)));
+  int32_t numer_fin[12*N_RB] __attribute__((aligned(32)));
+  int32_t numer_db[12*N_RB] __attribute__((aligned(32)));
+  int32_t cond_db[12*N_RB] __attribute__((aligned(32)));
 
   ch00_rank = dl_ch_estimates_00;
   ch01_rank = dl_ch_estimates_01;
