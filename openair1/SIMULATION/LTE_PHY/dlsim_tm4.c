@@ -162,6 +162,8 @@ int main(int argc, char **argv)
   int n_users = 1;
   int active_tb0_sent[4]={0,0,0,0};
   int active_tb1_sent[4]={0,0,0,0};
+  int failed_tb0[4]={0,0,0,0};
+  int failed_tb1[4]={0,0,0,0};
 
   int TB=0;
 
@@ -754,6 +756,7 @@ int main(int argc, char **argv)
   printf("Transmission mode %d with %dx%d antenna configuration, Extended Prefix %d\n",transmission_mode,n_tx_phy,n_rx,extended_prefix_flag);
   printf("Using receiver type %d\n", rx_type);
   printf("dlsch_demod_shift %d\n", dlsch_demod_shift);
+  printf("rank adaptation %d\n", rank_adapt);
   //printf("Using I_UA rec shift layer 1  %d\n", dlsch_demod_shift0);
   //printf("Using I_UA rec shift layer 2  %d\n", dlsch_demod_shift1);
   snr1 = snr0+snr_int;
@@ -824,6 +827,7 @@ int main(int argc, char **argv)
         else
           sprintf(rankadapt_fname,"rank_adapt0_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d_connum_%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, dlsch_demod_shift, cond_num_threshold);
     }
+
   rankadapt_fd = fopen(rankadapt_fname,"w");
     if (rankadapt_fd==NULL) {
       fprintf(stderr,"Cannot create file %s!\n",rankadapt_fname);
@@ -2082,6 +2086,7 @@ int main(int argc, char **argv)
     }
 
     for (SNR=snr0; SNR<snr1; SNR+=snr_step) {
+      printf("frm SNR rank_adapt =%d,\n", rank_adapt);
 
       UE->proc.proc_rxtx[0].frame_rx=0;
       for (i=0; i<4; i++) {
@@ -2103,6 +2108,8 @@ int main(int argc, char **argv)
         throug_tot_acc_aver[i]=0;
         active_tb0_sent[i]=0;
         active_tb1_sent[i]=0;
+        failed_tb0[i]=0;
+        failed_tb1[i]=0;
         throug_tot_acc_aver_all_rounds=0;
 
       }
@@ -4724,6 +4731,12 @@ int main(int argc, char **argv)
               if (TB1_active==1)
                 active_tb1_sent[round]++;
 
+              if (TB0_active==1 && decoded_tb[0]==0)
+                failed_tb0[round]++;
+
+              if (TB1_active==1 && decoded_tb[1]==0)
+                failed_tb1[round]++;
+
             if (rank_indc[0]==1 || (rank_indc[0]==0 && rank_adapt==0)){
               if ((TB0_active==1) && (decoded_tb[0]==1)){
                 throug_tb0=rate0_init*get_Qm(eNB->dlsch[0][0]->harq_processes[0]->mcs)/(round+1);
@@ -4888,8 +4901,8 @@ int main(int argc, char **argv)
               push_front(&time_vector_rx_demod, t_rx_demod);
               push_front(&time_vector_rx_dec, t_rx_dec);
 
-
             }   //trials
+
 
 #ifdef DEBUG_HARQ
         printf("\n both failed round 0 = %d, both failed round 1 = %d, both failed round 2 = %d, both failed round 3 = %d\n", resend_both[0], resend_both[1], resend_both[2], resend_both[3]);
@@ -5166,7 +5179,7 @@ int main(int argc, char **argv)
          thr_cw0_tot + thr_cw1_tot,
          rate[0],
          rate[1]);
-      }else{
+      }else if (((transmission_mode==3) || (transmission_mode==4)) && (rank_adapt==0)){
         printf("Errors (%d(%d)/%d %d(%d)/%d %d(%d)/%d %d(%d)/%d),"
                 "dci_errors %d/%d, thr TB0 = %f , thr TB1 = %f, overall thr = %f , rate 0 = %f , rate 1 = %f \n",
          errs[0][0],
@@ -5188,6 +5201,28 @@ int main(int argc, char **argv)
          thr_cw0_tot + thr_cw1_tot,
          rate0_init,
          rate1_init);
+      } else{
+         printf("Errors: r0 TB0 %d/%d TB1 %d/%d, r1 TB0 %d/%d TB1 %d/%d, r2 TB0 %d/%d TB1 %d/%d, r3 TB0 %d/%d TB1 %d/%d,"
+                "Through tot: TB0 = %f, TB1 = %f, overall thr = %f\n",
+         failed_tb0[0],
+         active_tb0_sent[0],
+         failed_tb1[0],
+         active_tb1_sent[0],
+         failed_tb0[1],
+         active_tb0_sent[1],
+         failed_tb1[1],
+         active_tb1_sent[1],
+         failed_tb0[2],
+         active_tb0_sent[2],
+         failed_tb1[2],
+         active_tb1_sent[2],
+         failed_tb0[3],
+         active_tb0_sent[3],
+         failed_tb1[3],
+         active_tb1_sent[3],
+         throug_tb0_acc_aver[0]+throug_tb0_acc_aver[1]+throug_tb0_acc_aver[2]+throug_tb0_acc_aver[3],
+         throug_tb1_acc_aver[0]+throug_tb1_acc_aver[1]+throug_tb1_acc_aver[2]+throug_tb1_acc_aver[3],
+         throug_tot_acc_aver_all_rounds);
       }
 
       if (print_perf==1) {
@@ -5308,9 +5343,8 @@ int main(int argc, char **argv)
                 errs[0][3],
                 round_trials[0][3],
                 dci_errors);
-      }
-      else if ( rx_type== rx_SIC_dual_stream) {
-        fprintf(bler_fd,"%f;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
+      } else if(rx_type== rx_SIC_dual_stream){
+                fprintf(bler_fd,"%f;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
                 SNR,
                 mcs1,
                 mcs2,
@@ -5318,101 +5352,100 @@ int main(int argc, char **argv)
                 tbs1_init,
                 rate0_init,
                 rate1_init,
-                errs[0][0],
-                errs[1][0],
-                round_trials[0][0],
-                round_trials[1][0],
+                failed_tb0[0],
+                failed_tb1[0],
+                active_tb0_sent[0],
+                active_tb1_sent[0],
                 sic_attempt[0],
                 decoded_in_sic[0],
                 resend_both[0],
                 resend_one[0],
-                errs[0][1],
-                errs[1][1],
-                round_trials[0][1],
-                round_trials[1][1],
+                failed_tb0[1],
+                failed_tb1[1],
+                active_tb0_sent[1],
+                active_tb1_sent[1],
                 sic_attempt[1],
                 decoded_in_sic[1],
                 resend_both[1],
                 resend_one[1],
-                errs[0][2],
-                errs[1][2],
-                round_trials[0][2],
-                round_trials[1][2],
+                failed_tb0[2],
+                failed_tb1[2],
+                active_tb0_sent[2],
+                active_tb1_sent[2],
                 sic_attempt[2],
                 decoded_in_sic[2],
                 resend_both[2],
                 resend_one[2],
-                errs[0][3],
-                errs[1][3],
-                round_trials[0][3],
-                round_trials[1][3],
+                failed_tb0[3],
+                failed_tb1[3],
+                active_tb0_sent[3],
+                active_tb1_sent[3],
                 sic_attempt[3],
                 decoded_in_sic[3],
-                thr_cw0[0],
-                thr_cw1[0],
-                thr_cw0[0]+thr_cw1[0],
-                thr_cw0[1],
-                thr_cw1[1],
-                thr_cw0[1]+thr_cw1[1],
-                thr_cw0[2],
-                thr_cw1[2],
-                thr_cw0[2]+thr_cw1[2],
-                thr_cw0[3],
-                thr_cw1[3],
-                thr_cw0[3]+thr_cw1[3],
-                thr_cw0[0]+thr_cw0[1]+thr_cw0[2]+thr_cw0[3]+thr_cw1[0]+thr_cw1[1]+thr_cw1[2]+ thr_cw1[3]);
-            }
-      else{
-        fprintf(bler_fd,"%f;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
-                SNR,
-                mcs1,
-                mcs2,
-                tbs0_init,
-                tbs1_init,
-                rate0_init,
-                rate1_init,
-                errs[0][0],
-                errs[1][0],
-                round_trials[0][0],
-                round_trials[1][0],
-                TB0_deact[0],
-                TB1_deact[0],
-                resend_both[0],
-                resend_one[0],
-                errs[0][1],
-                errs[1][1],
-                round_trials[0][1],
-                round_trials[1][1],
-                TB0_deact[1],
-                TB1_deact[1],
-                resend_both[1],
-                resend_one[1],
-                errs[0][2],
-                errs[1][2],
-                round_trials[0][2],
-                round_trials[1][2],
-                TB0_deact[2],
-                TB1_deact[2],
-                resend_both[2],
-                resend_one[2],
-                errs[0][3],
-                errs[1][3],
-                round_trials[0][3],
-                round_trials[1][3],
-                thr_cw0[0],
-                thr_cw1[0],
-                thr_cw0[0]+thr_cw1[0],
-                thr_cw0[1],
-                thr_cw1[1],
-                thr_cw0[1]+thr_cw1[1],
-                thr_cw0[2],
-                thr_cw1[2],
-                thr_cw0[2]+thr_cw1[2],
-                thr_cw0[3],
-                thr_cw1[3],
-                thr_cw0[3]+thr_cw1[3],
-                thr_cw0[0]+thr_cw0[1]+thr_cw0[2]+thr_cw0[3]+thr_cw1[0]+thr_cw1[1]+thr_cw1[2]+ thr_cw1[3]);
-      }
+                throug_tb0_acc_aver[0],
+                throug_tb1_acc_aver[0],
+                throug_tb0_acc_aver[0]+throug_tb1_acc_aver[0],
+                throug_tb0_acc_aver[1],
+                throug_tb1_acc_aver[1],
+                throug_tb0_acc_aver[1]+throug_tb1_acc_aver[1],
+                throug_tb0_acc_aver[2],
+                throug_tb1_acc_aver[2],
+                throug_tb0_acc_aver[2]+throug_tb1_acc_aver[2],
+                throug_tb0_acc_aver[3],
+                throug_tb1_acc_aver[3],
+                throug_tb0_acc_aver[3]+throug_tb1_acc_aver[3],
+                throug_tot_acc_aver_all_rounds);
+        } else if ((rx_type!= rx_SIC_dual_stream)){
+                    fprintf(bler_fd,"%f;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
+                  SNR,
+                  mcs1,
+                  mcs2,
+                  tbs0_init,
+                  tbs1_init,
+                  rate0_init,
+                  rate1_init,
+                  failed_tb0[0],
+                  failed_tb1[0],
+                  active_tb0_sent[0],
+                  active_tb1_sent[0],
+                  TB0_deact[0],
+                  TB1_deact[0],
+                  resend_both[0],
+                  resend_one[0],
+                  failed_tb0[1],
+                  failed_tb1[1],
+                  active_tb0_sent[1],
+                  active_tb1_sent[1],
+                  TB0_deact[1],
+                  TB1_deact[1],
+                  resend_both[1],
+                  resend_one[1],
+                  failed_tb0[2],
+                  failed_tb1[2],
+                  active_tb0_sent[2],
+                  active_tb1_sent[2],
+                  TB0_deact[2],
+                  TB1_deact[2],
+                  resend_both[2],
+                  resend_one[2],
+                  failed_tb0[3],
+                  failed_tb1[3],
+                  active_tb0_sent[3],
+                  active_tb1_sent[3],
+                  throug_tb0_acc_aver[0],
+                  throug_tb1_acc_aver[0],
+                  throug_tb0_acc_aver[0]+throug_tb1_acc_aver[0],
+                  throug_tb0_acc_aver[1],
+                  throug_tb1_acc_aver[1],
+                  throug_tb0_acc_aver[1]+throug_tb1_acc_aver[1],
+                  throug_tb0_acc_aver[2],
+                  throug_tb1_acc_aver[2],
+                  throug_tb0_acc_aver[2]+throug_tb1_acc_aver[2],
+                  throug_tb0_acc_aver[3],
+                  throug_tb1_acc_aver[3],
+                  throug_tb0_acc_aver[3]+throug_tb1_acc_aver[3],
+                  throug_tot_acc_aver_all_rounds);
+        }
 
        if (transmission_mode==3 || transmission_mode==4){
          fprintf(rankadapt_fd,"%f;%d;%d;%d;%d;%f;%f;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
