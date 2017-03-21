@@ -833,8 +833,10 @@ int main(int argc, char **argv)
       fprintf(stderr,"Cannot create file %s!\n",rankadapt_fname);
       exit(-1);
     }
-  fprintf(rankadapt_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; rank; throug_tb0_acc_aver[0]; throug_tb1_acc_aver[0]; throug_tb0_acc_aver[1]; throug_tb1_acc_aver[1]; throug_tb0_acc_aver[2]; throug_tb1_acc_aver[2]; throug_tb0_acc_aver[3]; throug_tb1_acc_aver[3]; throug_tot_acc_aver[0]; throug_tot_acc_aver[1]; throug_tot_acc_aver[2]; throug_tot_acc_aver[2]; throug_tot_acc_aver[3]; throug_tot_acc_aver[3]; throug_tot_acc_aver_all_rounds\n");
-
+    if (rx_type == rx_SIC_dual_stream)
+      fprintf(rankadapt_fd,"SNR; rank_adapt; clsm_counter; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_tb0; err0_tb1; trials_tb0_r0; trials_tb1_r0; sic_att0; sic_suc0; ret_both0; ret_one0; err1_tb0; err1_tb1; trials_tb0_r1; trials_tb1_r1; sic_att1; sic_suc1; ret_both1; ret_one1; err2_tb0; err2_tb1; trials_tb0_r2; trials1_tb1_r2; sic_att2; sic_suc2; ret_both2; ret_one2; err3_tb0; err3_tb1; trials_tb0_r3; trials_tb1_r3; sic_att3; sic_suc3; th_tb0_r0; th_tb1_r0; th_sum_r0; th_tb0_r1; th_tb1_r1; th_sum_r1; th_tb0_r2; th_tb1_r2; th_sum_r2; th_tb0_r3; th_tb1_r3; th_sum_r3; tot_th\n");
+    else
+      fprintf(rankadapt_fd,"SNR; rank_adapt; clsm_counter; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_tb0; err0_tb1; trials_tb0_r0; trials_tb1_r0; deact_tb0_r0; deact_tb1_r0; ret_both0; ret_one0; err1_tb0; err1_tb1; trials_tb0_r1; trials_tb1_r1; deact_tb0_r1; deact_tb1_r1; ret_both1; ret_one1; err2_tb0; err2_tb1; trials_tb0_r2; trials1_tb1_r2; deact_tb0_r2; deact_tb1_r2; ret_both2; ret_one2; err3_tb0; err3_tb1; trials_tb0_r3; trials_tb1_r3; th_tb0_r0; th_tb1_r0; th_sum_r0; th_tb0_r1; th_tb1_r1; th_sum_r1; th_tb0_r2; th_tb1_r2; th_sum_r2; th_tb0_r3; th_tb1_r3; th_sum_r3; tot_th\n");
   }
 
   bler_fd = fopen(bler_fname,"w");
@@ -848,7 +850,7 @@ int main(int argc, char **argv)
   else if (rx_type == rx_SIC_dual_stream)
     fprintf(bler_fd,"SNR; rank_adapt; rank; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_tb0; err0_tb1; trials_tb0_r0; trials_tb1_r0; sic_att0; sic_suc0; ret_both0; ret_one0; err1_tb0; err1_tb1; trials_tb0_r1; trials_tb1_r1; sic_att1; sic_suc1; ret_both1; ret_one1; err2_tb0; err2_tb1; trials_tb0_r2; trials1_tb1_r2; sic_att2; sic_suc2; ret_both2; ret_one2; err3_tb0; err3_tb1; trials_tb0_r3; trials_tb1_r3; sic_att3; sic_suc3; th_tb0_r0; th_tb1_r0; th_sum_r0; th_tb0_r1; th_tb1_r1; th_sum_r1; th_tb0_r2; th_tb1_r2; th_sum_r2; th_tb0_r3; th_tb1_r3; th_sum_r3; tot_th\n");
   else
-    fprintf(bler_fd,"SNR; rank_adapt; rank; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_tb0; err0_tb1; trials_tb0_r0; trials_tb1_r0; deact_tb0_r0; deact_tb1_r0; ret_both0; ret_one0; err1_tb0; err1_tb1; trials_tb0_r1; trials_tb1_r1; deact_tb0_r1; deact_tb1_r1; ret_both1; ret_one1; err2_tb0; err2_tb1; trials_tb0_r2; trials1_tb1_r2; deact_tb0_r2; deact_tb1_r2; ret_both2; ret_one2; err3_tb0; err3_tb1; trials_tb0_r3; trials_tb1_r3; th_tb0_r0; th_tb1_r0; th_sum_r0; th_tb0_r1; th_tb1_r1; th_sum_r1; th_tb0_r2; th_tb1_r2; th_sum_r2; th_tb0_r3; th_tb1_r3; th_sum_r3; tot_th\n");
+    fprintf(bler_fd,"SNR; rank_adapt; clsm_counter; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_tb0; err0_tb1; trials_tb0_r0; trials_tb1_r0; deact_tb0_r0; deact_tb1_r0; ret_both0; ret_one0; err1_tb0; err1_tb1; trials_tb0_r1; trials_tb1_r1; deact_tb0_r1; deact_tb1_r1; ret_both1; ret_one1; err2_tb0; err2_tb1; trials_tb0_r2; trials1_tb1_r2; deact_tb0_r2; deact_tb1_r2; ret_both2; ret_one2; err3_tb0; err3_tb1; trials_tb0_r3; trials_tb1_r3; th_tb0_r0; th_tb1_r0; th_sum_r0; th_tb0_r1; th_tb1_r1; th_sum_r1; th_tb0_r2; th_tb1_r2; th_sum_r2; th_tb0_r3; th_tb1_r3; th_sum_r3; tot_th\n");
 
 
 
@@ -2120,6 +2122,9 @@ int main(int argc, char **argv)
       iter_trials[0]=0;
       iter_trials[1]=0;
 
+      uint32_t clsm_counter=0;
+      uint32_t two_tb_flag=0;
+
       reset_meas(&eNB->phy_proc_tx); // total eNB tx
       reset_meas(&eNB->dlsch_scrambling_stats);
       reset_meas(&UE->dlsch_unscrambling_stats);
@@ -2270,7 +2275,7 @@ int main(int argc, char **argv)
                   eNB->dlsch[0][1]->harq_processes[0]->rvidx = round&3;
 
               if (round == 0) {   // First round
-                if ((rank_indc[round]==1) || (rank_indc[round]==0 && rank_adapt==0)) {
+                if ((rank_indc[0]==1) || (rank_indc[0]==0 && rank_adapt==0)) {
                   TB0_active = 1;
                   TB1_active = 1;
 #ifdef DEBUG_HARQ
@@ -4735,6 +4740,13 @@ int main(int argc, char **argv)
               if (TB1_active==1 && decoded_tb[1]==0)
                 failed_tb1[round]++;
 
+              if (round==0){
+                if (rank_adapt==1){
+                  if (rank_indc[0]==1)
+                    clsm_counter++;
+                  }
+              }
+
             if (rank_indc[0]==1 || (rank_indc[0]==0 && rank_adapt==0)){
               if ((TB0_active==1) && (decoded_tb[0]==1)){
                 throug_tb0=rate0_init*get_Qm(eNB->dlsch[0][0]->harq_processes[0]->mcs)/(round+1);
@@ -4836,6 +4848,7 @@ int main(int argc, char **argv)
             }
 
           }
+
 
 #ifdef DEBUG_HARQ
           printf("[DLSIM] Now round is %d, trial %d\n" , round, trials);
@@ -5201,7 +5214,7 @@ int main(int argc, char **argv)
          rate1_init);
       } else{
          printf("Errors: r0 TB0 %d/%d TB1 %d/%d, r1 TB0 %d/%d TB1 %d/%d, r2 TB0 %d/%d TB1 %d/%d, r3 TB0 %d/%d TB1 %d/%d,"
-                "Through tot: TB0 = %f, TB1 = %f, overall thr = %f\n",
+                "Through tot: TB0 = %f, TB1 = %f, overall thr = %f, clsm applied %d times\n",
          failed_tb0[0],
          active_tb0_sent[0],
          failed_tb1[0],
@@ -5220,7 +5233,8 @@ int main(int argc, char **argv)
          active_tb1_sent[3],
          throug_tb0_acc_aver[0]+throug_tb0_acc_aver[1]+throug_tb0_acc_aver[2]+throug_tb0_acc_aver[3],
          throug_tb1_acc_aver[0]+throug_tb1_acc_aver[1]+throug_tb1_acc_aver[2]+throug_tb1_acc_aver[3],
-         throug_tot_acc_aver_all_rounds);
+         throug_tot_acc_aver_all_rounds,
+         clsm_counter);
       }
 
       if (print_perf==1) {
@@ -5345,7 +5359,7 @@ int main(int argc, char **argv)
                 fprintf(bler_fd,"%f;%d;%d;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
                 SNR,
                 rank_adapt,
-                rank_indc[0],
+                clsm_counter,
                 mcs1,
                 mcs2,
                 tbs0_init,
@@ -5396,10 +5410,10 @@ int main(int argc, char **argv)
                 throug_tb0_acc_aver[3]+throug_tb1_acc_aver[3],
                 throug_tot_acc_aver_all_rounds);
         } else if ((rx_type!= rx_SIC_dual_stream)){
-                    fprintf(bler_fd,"%f;%d;%d;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
+              fprintf(bler_fd,"%f;%d;%d;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
                   SNR,
                   rank_adapt,
-                  rank_indc[0],
+                  clsm_counter,
                   mcs1,
                   mcs2,
                   tbs0_init,
@@ -5447,31 +5461,118 @@ int main(int argc, char **argv)
                   throug_tb1_acc_aver[3],
                   throug_tb0_acc_aver[3]+throug_tb1_acc_aver[3],
                   throug_tot_acc_aver_all_rounds);
+
         }
 
        if (transmission_mode==3 || transmission_mode==4){
-         fprintf(rankadapt_fd,"%f;%d;%d;%d;%d;%f;%f;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
+        if (rx_type== rx_SIC_dual_stream){
+         fprintf(rankadapt_fd,"%f;%d;%d;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
                 SNR,
+                rank_adapt,
+                clsm_counter,
                 mcs1,
                 mcs2,
                 tbs0_init,
                 tbs1_init,
                 rate0_init,
                 rate1_init,
-                rank_indc[0],
+                failed_tb0[0],
+                failed_tb1[0],
+                active_tb0_sent[0],
+                active_tb1_sent[0],
+                sic_attempt[0],
+                decoded_in_sic[0],
+                resend_both[0],
+                resend_one[0],
+                failed_tb0[1],
+                failed_tb1[1],
+                active_tb0_sent[1],
+                active_tb1_sent[1],
+                sic_attempt[1],
+                decoded_in_sic[1],
+                resend_both[1],
+                resend_one[1],
+                failed_tb0[2],
+                failed_tb1[2],
+                active_tb0_sent[2],
+                active_tb1_sent[2],
+                sic_attempt[2],
+                decoded_in_sic[2],
+                resend_both[2],
+                resend_one[2],
+                failed_tb0[3],
+                failed_tb1[3],
+                active_tb0_sent[3],
+                active_tb1_sent[3],
+                sic_attempt[3],
+                decoded_in_sic[3],
                 throug_tb0_acc_aver[0],
                 throug_tb1_acc_aver[0],
+                throug_tb0_acc_aver[0]+throug_tb1_acc_aver[0],
                 throug_tb0_acc_aver[1],
                 throug_tb1_acc_aver[1],
+                throug_tb0_acc_aver[1]+throug_tb1_acc_aver[1],
                 throug_tb0_acc_aver[2],
                 throug_tb1_acc_aver[2],
+                throug_tb0_acc_aver[2]+throug_tb1_acc_aver[2],
                 throug_tb0_acc_aver[3],
                 throug_tb1_acc_aver[3],
-                throug_tot_acc_aver[0],
-                throug_tot_acc_aver[1],
-                throug_tot_acc_aver[2],
-                throug_tot_acc_aver[3],
+                throug_tb0_acc_aver[3]+throug_tb1_acc_aver[3],
                 throug_tot_acc_aver_all_rounds);
+        }
+       else{
+          fprintf(rankadapt_fd,"%f;%d;%d;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
+                  SNR,
+                  rank_adapt,
+                  clsm_counter,
+                  mcs1,
+                  mcs2,
+                  tbs0_init,
+                  tbs1_init,
+                  rate0_init,
+                  rate1_init,
+                  failed_tb0[0],
+                  failed_tb1[0],
+                  active_tb0_sent[0],
+                  active_tb1_sent[0],
+                  TB0_deact[0],
+                  TB1_deact[0],
+                  resend_both[0],
+                  resend_one[0],
+                  failed_tb0[1],
+                  failed_tb1[1],
+                  active_tb0_sent[1],
+                  active_tb1_sent[1],
+                  TB0_deact[1],
+                  TB1_deact[1],
+                  resend_both[1],
+                  resend_one[1],
+                  failed_tb0[2],
+                  failed_tb1[2],
+                  active_tb0_sent[2],
+                  active_tb1_sent[2],
+                  TB0_deact[2],
+                  TB1_deact[2],
+                  resend_both[2],
+                  resend_one[2],
+                  failed_tb0[3],
+                  failed_tb1[3],
+                  active_tb0_sent[3],
+                  active_tb1_sent[3],
+                  throug_tb0_acc_aver[0],
+                  throug_tb1_acc_aver[0],
+                  throug_tb0_acc_aver[0]+throug_tb1_acc_aver[0],
+                  throug_tb0_acc_aver[1],
+                  throug_tb1_acc_aver[1],
+                  throug_tb0_acc_aver[1]+throug_tb1_acc_aver[1],
+                  throug_tb0_acc_aver[2],
+                  throug_tb1_acc_aver[2],
+                  throug_tb0_acc_aver[2]+throug_tb1_acc_aver[2],
+                  throug_tb0_acc_aver[3],
+                  throug_tb1_acc_aver[3],
+                  throug_tb0_acc_aver[3]+throug_tb1_acc_aver[3],
+                  throug_tot_acc_aver_all_rounds);
+       }
       }
 
 
