@@ -56,10 +56,7 @@
 
 extern unsigned int dlsch_tbs25[27][25],TBStable[27][110];
 extern unsigned char offset_mumimo_llr_drange_fix;
-
-extern uint8_t interf_unaw_shift0;
-extern uint8_t interf_unaw_shift1;
-extern uint8_t interf_unaw_shift;
+extern int16_t dlsch_demod_shift;
 
 #include "PHY/TOOLS/lte_phy_scope.h"
 
@@ -341,7 +338,7 @@ int main(int argc, char **argv)
   perfect_ce = 0;
 
 
-  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:XYv:W:J:K:U")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:XYv:J:K:U")) != -1) {
 
     switch (c) {
     case 'a':
@@ -625,14 +622,8 @@ int main(int argc, char **argv)
       case 'Y':
         perfect_ce=1;
         break;
-      case 'V':
-        interf_unaw_shift0=atoi(optarg);
-        break;
-      case 'W':
-        interf_unaw_shift1=atoi(optarg);
-        break;
       case 'J':
-        interf_unaw_shift=atoi(optarg);
+        dlsch_demod_shift = atof(optarg);
         break;
       case 'K':
       tpmi_retr = atoi(optarg);
@@ -755,9 +746,9 @@ int main(int argc, char **argv)
   printf("n_frames = %d\n",n_frames);
   printf("Transmission mode %d with %dx%d antenna configuration, Extended Prefix %d\n",transmission_mode,n_tx_phy,n_rx,extended_prefix_flag);
   printf("Using receiver type %d\n", rx_type);
-  printf("TM1 shift %d\n", interf_unaw_shift);
-  //printf("Using I_UA rec shift layer 1  %d\n", interf_unaw_shift0);
-  //printf("Using I_UA rec shift layer 2  %d\n", interf_unaw_shift1);
+  printf("dlsch_demod_shift %d\n", dlsch_demod_shift);
+  //printf("Using I_UA rec shift layer 1  %d\n", dlsch_demod_shift0);
+  //printf("Using I_UA rec shift layer 2  %d\n", dlsch_demod_shift1);
   snr1 = snr0+snr_int;
   printf("SNR0 %f, SNR1 %f\n",snr0,snr1);
 
@@ -791,25 +782,25 @@ int main(int argc, char **argv)
     sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_u%d_imod%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1,mcs_i,rx_type,i_mod);
   else if (abstx == 1){
     if (perfect_ce==1)
-      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_pce_sh%d_rpmi%d_n.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2,interf_unaw_shift, tpmi_retr);
+      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_pce_sh%d_rpmi%d_n.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2,dlsch_demod_shift, tpmi_retr);
     else
-      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_sh%d_rtpmi%d_n.csv",transmission_mode,rx_type,channel_model, n_frames, n_rx, num_rounds, mcs1, mcs2,interf_unaw_shift, tpmi_retr);
+      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_ab_sh%d_rtpmi%d_n.csv",transmission_mode,rx_type,channel_model, n_frames, n_rx, num_rounds, mcs1, mcs2,dlsch_demod_shift, tpmi_retr);
   }
   else {//abstx=0
     if (perfect_ce==1){
       if (updated_csi==1){
-        sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d_up_rtpmi%d_n.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift, tpmi_retr);
+        sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d_up_rtpmi%d_n.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, dlsch_demod_shift, tpmi_retr);
       }
       else{
-          sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d_rtpmi%d_n.csv",transmission_mode,rx_type, channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift, tpmi_retr);
+          sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d_rtpmi%d_n.csv",transmission_mode,rx_type, channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, dlsch_demod_shift, tpmi_retr);
       }
     }
     else{
       if (updated_csi==1){
-        sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d_up_rtpmi%d_n.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift, tpmi_retr);
+        sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d_up_rtpmi%d_n.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, dlsch_demod_shift, tpmi_retr);
       }
       else{
-          sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d_rtpmi%csv",transmission_mode,rx_type, channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift, tpmi_retr);
+          sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d_rtpmi%csv",transmission_mode,rx_type, channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, dlsch_demod_shift, tpmi_retr);
       }
     }
   }
@@ -817,14 +808,14 @@ int main(int argc, char **argv)
   if (transmission_mode==3 || transmission_mode==4){
     if (rank_adapt==1){
       if (perfect_ce==1)
-        sprintf(rankadapt_fname,"rank_adapt1_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift);
+        sprintf(rankadapt_fname,"rank_adapt1_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, dlsch_demod_shift);
       else
-        sprintf(rankadapt_fname,"rank_adapt1_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift);
+        sprintf(rankadapt_fname,"rank_adapt1_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, dlsch_demod_shift);
     } else {
         if (perfect_ce==1)
-          sprintf(rankadapt_fname,"rank_adapt0_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift);
+          sprintf(rankadapt_fname,"rank_adapt0_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_pce_sh%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, dlsch_demod_shift);
         else
-          sprintf(rankadapt_fname,"rank_adapt0_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, interf_unaw_shift);
+          sprintf(rankadapt_fname,"rank_adapt0_tx%d_r%d_ch%d_%d_nrx%d_rnd%d_mcs%d_mcsi%d_sh%d.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx, num_rounds, mcs1, mcs2, dlsch_demod_shift);
     }
   rankadapt_fd = fopen(rankadapt_fname,"w");
     if (rankadapt_fd==NULL) {
@@ -877,9 +868,9 @@ int main(int argc, char **argv)
 
     else
       if (perfect_ce==1)
-        sprintf(csv_fname,"dout_tx%d_r%d_ch%d_%d_rnd%d_mcs%d_mcsi%d_pce_sh%d_%d_csi.m",transmission_mode,rx_type, channel_model, n_frames, num_rounds, mcs1, mcs2, interf_unaw_shift, n_ch_rlz);
+        sprintf(csv_fname,"dout_tx%d_r%d_ch%d_%d_rnd%d_mcs%d_mcsi%d_pce_sh%d_%d_csi.m",transmission_mode,rx_type, channel_model, n_frames, num_rounds, mcs1, mcs2, dlsch_demod_shift, n_ch_rlz);
       else
-        sprintf(csv_fname,"dout_tx%d_r%d_ch%d_%d_rnd%d_mcs%d_mcsi%d_sh%d_%d_csi.m",transmission_mode,rx_type, channel_model, n_frames, num_rounds, mcs1, mcs2, interf_unaw_shift, n_ch_rlz);
+        sprintf(csv_fname,"dout_tx%d_r%d_ch%d_%d_rnd%d_mcs%d_mcsi%d_sh%d_%d_csi.m",transmission_mode,rx_type, channel_model, n_frames, num_rounds, mcs1, mcs2, dlsch_demod_shift, n_ch_rlz);
 
     csv_fd = fopen(csv_fname,"w");
     fprintf(csv_fd,"data_all%d=[",mcs1);

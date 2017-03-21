@@ -60,9 +60,6 @@ int16_t dlsch_demod_shift = 0;
 
 // [MCS][i_mod (0,1,2) = (2,4,6)]
 unsigned char offset_mumimo_llr_drange_fix=0;
-uint8_t interf_unaw_shift0=0;
-uint8_t interf_unaw_shift1=0;
-uint8_t interf_unaw_shift=0;
 //inferference-free case
 unsigned char interf_unaw_shift_tm4_mcs[29]={5, 3, 4, 3, 3, 2, 1, 1, 2, 0, 1, 1, 1, 1, 0, 0,
                                              1, 1, 1, 1, 0, 2, 1, 0, 1, 0, 1, 0, 0} ;
@@ -419,22 +416,18 @@ int rx_pdsch(PHY_VARS_UE *ue,
                                  dlsch0_harq->mimo_mode);
 
       LOG_D(PHY,"Channel Level TM34  avg_0 %d, avg_1 %d, rx_type %d, rx_standard %d, interf_unaw_shift %d \n", avg_0[0],
-              avg_1[0], rx_type, rx_standard, interf_unaw_shift);
+              avg_1[0], rx_type, rx_standard, dlsch_demod_shift);
         if (rx_type>rx_standard) {
-          avg_0[0] = (log2_approx(avg_0[0])/2) + dlsch_demod_shift;// + 2 ;//+ 4;
-          avg_1[0] = (log2_approx(avg_1[0])/2) + dlsch_demod_shift;// + 2 ;//+ 4;
+          avg_0[0] = (log2_approx(avg_0[0])/2) -13 + dlsch_demod_shift;// + 2 ;//+ 4;
+          avg_1[0] = (log2_approx(avg_1[0])/2) -13 + dlsch_demod_shift;// + 2 ;//+ 4;
           pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg_0[0],0);
           pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg_1[0],0);
-          //printf("TM4 I-A log2_maxh0 = %d\n", pdsch_vars[eNB_id]->log2_maxh0);
-          //printf("TM4 I-A log2_maxh1 = %d\n", pdsch_vars[eNB_id]->log2_maxh1);
+         // printf("dlsch_demod_shift  %d\n", dlsch_demod_shift);
          }
           else {
-          avg_0[0] = (log2_approx(avg_0[0])/2) - 13 + interf_unaw_shift;
-          avg_1[0] = (log2_approx(avg_1[0])/2) - 13 + interf_unaw_shift;
+          avg_0[0] = (log2_approx(avg_0[0])/2) - 13 + dlsch_demod_shift;
+          avg_1[0] = (log2_approx(avg_1[0])/2) - 13 + dlsch_demod_shift;
           pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg_0[0],0);
-          pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg_1[0],0);
-          //printf("TM4 I-UA log2_maxh0 = %d\n", pdsch_vars[eNB_id]->log2_maxh0);
-          //printf("TM4 I-UA log2_maxh1 = %d\n", pdsch_vars[eNB_id]->log2_maxh1);
         }
       }
       else if (dlsch0_harq->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {// single-layer precoding (TM5, TM6)
