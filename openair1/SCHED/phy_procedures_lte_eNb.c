@@ -822,10 +822,12 @@ void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   int frame = proc->frame_tx;
   int subframe = proc->subframe_tx;
+  /*
   uint16_t srsPeriodicity=0;
   uint16_t srsOffset=0;
   uint16_t srsConfigIndex=0;
   uint16_t do_srs=0;
+  */
   uint16_t is_srs_pos=0;
 
   LOG_D(PHY,
@@ -1006,17 +1008,10 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
 	      
 	  generate_eNB_ulsch_params_from_rar(DLSCH_pdu,
 					     frame,
-					     (subframe),
+					     subframe,
 					     eNB->ulsch[(uint32_t)UE_id],
 					     fp);
 	      
-	  eNB->ulsch[(uint32_t)UE_id]->Msg3_active = 1;
-	      
-	  get_Msg3_alloc(fp,
-			 subframe,
-			 frame,
-			 &eNB->ulsch[(uint32_t)UE_id]->Msg3_frame,
-			 &eNB->ulsch[(uint32_t)UE_id]->Msg3_subframe);
 	  LOG_D(PHY,"[eNB][RAPROC] Frame %d subframe %d, Activated Msg3 demodulation for UE %"PRId8" in frame %"PRIu32", subframe %"PRIu8"\n",
 		frame,
 		subframe,
