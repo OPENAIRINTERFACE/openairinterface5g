@@ -170,7 +170,7 @@ int main(int argc, char **argv)
   int hold_rank1_precoder=0;
   int tpmi_retr=0;
   bool  is_first_time;
-  int rank_adapt =1;
+  int rank_adapt =0;
   int updated_csi = 0;
 
   SCM_t channel_model=Rayleigh1;
@@ -339,7 +339,7 @@ int main(int argc, char **argv)
   perfect_ce = 0;
 
 
-  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:XYv:V:J:K:U")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:XYWv:V:J:K:U")) != -1) {
 
     switch (c) {
     case 'a':
@@ -622,6 +622,9 @@ int main(int argc, char **argv)
         break;
       case 'Y':
         perfect_ce=1;
+        break;
+      case 'W':
+        rank_adapt=1;
         break;
       case 'V':
         cond_num_threshold = atof(optarg);
