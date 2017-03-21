@@ -42,6 +42,7 @@
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
 #include "OCG_vars.h"
+#include "intertask_interface_init.h"
 
 #include "unitary_defs.h"
 
@@ -285,11 +286,15 @@ int main(int argc, char **argv)
 
   printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
 
-
   logInit();
+  /*
+  // enable these lines if you need debug info
+  // however itti will catch all signals, so ctrl-c won't work anymore
+  // alternatively you can disable ITTI completely in CMakeLists.txt
+  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
   set_comp_log(PHY,LOG_DEBUG,LOG_MED,1);
-  set_glog(LOG_INFO,LOG_MED);
-
+  set_glog(LOG_DEBUG,LOG_MED);
+  */
 
   while ((c = getopt (argc, argv, "hapZEbm:n:Y:X:x:s:w:e:q:d:D:O:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:QB:PI:LF")) != -1) {
     switch (c) {
@@ -571,6 +576,11 @@ int main(int argc, char **argv)
 		 osf,
 		 0);
 
+  // for a call to phy_reset_ue later we need PHY_vars_UE_g allocated and pointing to UE
+  PHY_vars_UE_g = (PHY_VARS_UE***)malloc(sizeof(PHY_VARS_UE**));
+  PHY_vars_UE_g[0] = (PHY_VARS_UE**) malloc(sizeof(PHY_VARS_UE*));
+  PHY_vars_UE_g[0][0] = UE;
+
   if (nb_rb_set == 0)
     nb_rb = eNB->frame_parms.N_RB_UL;
 
@@ -584,8 +594,6 @@ int main(int argc, char **argv)
   frame_parms = &eNB->frame_parms;
 
   txdata = UE->common_vars.txdata;
-
-
 
   nsymb = (eNB->frame_parms.Ncp == NORMAL) ? 14 : 12;
 
@@ -934,7 +942,6 @@ int main(int argc, char **argv)
 
       ndi=0;
 
-      PHY_vars_UE_g = UE;
       phy_reset_ue(0,0,0);
       UE->UE_mode[eNB_id]=PUSCH;
 

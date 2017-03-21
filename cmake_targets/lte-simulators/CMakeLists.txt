@@ -3,7 +3,6 @@ set(PACKAGE_NAME "unitary_tests_simulators")
 set(PHYSIM True)
 set(RF_BOARD None)
 set(XFORMS True)
-set(ENABLE_ITTI False)
 
 set(DEBUG_PHY False)
 set(MU_RECIEVER False)
