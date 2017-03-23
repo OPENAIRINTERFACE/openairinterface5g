@@ -409,7 +409,7 @@ DCI_PDU DCI_pdu_tmp;
 void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,PHY_VARS_RN *rn,relaying_type_t r_type) {
 
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   MCH_PDU *mch_pduP;
   MCH_PDU  mch_pdu;
   //  uint8_t sync_area=255;
@@ -425,7 +425,7 @@ void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,PHY_VARS_RN *rn,rel
 			 subframe<<1,1);
   }
   
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   // if mcch is active, send regardless of the node type: eNB or RN
   // when mcch is active, MAC sched does not allow MCCH and MTCH multiplexing
   mch_pduP = mac_xface->get_mch_sdu(eNB->Mod_id,
@@ -3461,7 +3461,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 
 #undef DEBUG_PHY_PROC
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 int phy_procedures_RN_eNB_TX(unsigned char last_slot, unsigned char next_slot, relaying_type_t r_type)
 {
 

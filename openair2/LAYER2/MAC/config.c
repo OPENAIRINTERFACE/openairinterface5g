@@ -42,7 +42,7 @@
 #include "extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-AreaInfo-r9.h"
 #include "MBSFN-SubframeConfigList.h"
@@ -93,7 +93,7 @@ rrc_mac_config_req(
   uint8_t                          eNB_index,
                        RadioResourceConfigCommonSIB_t  *radioResourceConfigCommon,
                        struct PhysicalConfigDedicated  *physicalConfigDedicated,
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
                        SCellToAddMod_r10_t *sCellToAddMod_r10,
                        //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -110,7 +110,7 @@ rrc_mac_config_req(
                        long                            *ul_Bandwidth,
                        AdditionalSpectrumEmission_t    *additionalSpectrumEmission,
                        struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
                        ,uint8_t                              MBMS_Flag,
                        MBSFN_AreaInfoList_r9_t         *mbsfn_AreaInfoList,
                        PMCH_InfoList_r9_t              *pmch_InfoList
@@ -217,7 +217,7 @@ rrc_mac_config_req(
         if (mac_MainConfig->ul_SCH_Config->periodicBSR_Timer) {
           UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer = (uint16_t) *mac_MainConfig->ul_SCH_Config->periodicBSR_Timer;
         } else {
-          UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer = (uint16_t) MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
+          UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer = (uint16_t) PeriodicBSR_Timer_r12_infinity;
         }
 
         if (mac_MainConfig->ul_SCH_Config->maxHARQ_Tx) {
@@ -230,11 +230,11 @@ rrc_mac_config_req(
         if (mac_MainConfig->ul_SCH_Config->retxBSR_Timer) {
           UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer     = (uint16_t) mac_MainConfig->ul_SCH_Config->retxBSR_Timer;
         } else {
-          UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer     = (uint16_t)MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
+          UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer     = (uint16_t)RetxBSR_Timer_r12_sf2560;
       }
       }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
       if (mac_MainConfig->ext1 && mac_MainConfig->ext1->sr_ProhibitTimer_r9) {
         UE_mac_inst[Mod_idP].scheduling_info.sr_ProhibitTimer  = (uint16_t) *mac_MainConfig->ext1->sr_ProhibitTimer_r9;
@@ -310,7 +310,7 @@ rrc_mac_config_req(
     }
   }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (sCellToAddMod_r10 != NULL) {
 
@@ -449,7 +449,7 @@ rrc_mac_config_req(
               eNB_mac_inst[Mod_idP].common_channels[0].mbsfn_SubframeConfig[i]->subframeAllocation.choice.oneFrame.buf[0]);
       }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
       eNB_mac_inst[Mod_idP].common_channels[0].MBMS_flag = MBMS_Flag;
 #endif
     } else { // UE
@@ -465,7 +465,7 @@ rrc_mac_config_req(
     }
   }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (mbsfn_AreaInfoList != NULL) {
     if (eNB_flagP == 1) {

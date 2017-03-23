@@ -61,7 +61,7 @@
 #define DEBUG_eNB_SCHEDULER 1
 
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 int8_t get_mbsfn_sf_alloction (module_id_t module_idP, uint8_t CC_id, uint8_t mbsfn_sync_area)
 {
   // currently there is one-to-one mapping between sf allocation pattern and sync area
@@ -466,7 +466,7 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
   }
 
   TBS = mac_xface->get_TBS_DL(eNB_mac_inst[module_idP].common_channels[CC_id].MCH_pdu.mcs, mac_xface->frame_parms->N_RB_DL);
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   // do not let mcch and mtch multiplexing when relaying is active
   // for sync area 1, so not transmit data
   //if ((i == 0) && ((eNB_mac_inst[module_idP].MBMS_flag != multicast_relay) || (eNB_mac_inst[module_idP].mcch_active==0))) {
@@ -538,7 +538,7 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
     }
   }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   //  }
 #endif
 

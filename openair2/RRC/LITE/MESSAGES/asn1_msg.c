@@ -58,7 +58,7 @@
 #include "RRCConnectionSetup.h"
 #include "SRB-ToAddModList.h"
 #include "DRB-ToAddModList.h"
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #include "MCCH-Message.h"
 //#define MRB1 1
 #endif
@@ -614,7 +614,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
                  BCCH_DL_SCH_Message_t *bcch_message,
                  SystemInformationBlockType2_t **sib2,
                  SystemInformationBlockType3_t **sib3
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
                  ,
                  SystemInformationBlockType13_r9_t **sib13,
                  uint8_t MBMS_flag
@@ -625,7 +625,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
                 )
 {
   struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib2_part,*sib3_part;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib13_part;
   MBSFN_SubframeConfigList_t *MBSFNSubframeConfigList;
   MBSFN_AreaInfoList_r9_t *MBSFNArea_list;
@@ -650,7 +650,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
     exit(-1);
   }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   LOG_I(RRC,"[eNB %d] Configuration SIB2/3, MBMS = %d\n", Mod_id, MBMS_flag);
 #else
   LOG_I(RRC,"[eNB %d] Configuration SIB2/3\n", Mod_id);
@@ -666,7 +666,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   *sib2 = &sib2_part->choice.sib2;
   *sib3 = &sib3_part->choice.sib3;
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flag > 0) {
     sib13_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
@@ -680,7 +680,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   // sib2
 
   (*sib2)->ac_BarringInfo = NULL;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #if 0
   (*sib2)->ssac_BarringForMMTEL_Voice_r9 = NULL;
   (*sib2)->ssac_BarringForMMTEL_Video_r9 = NULL;
@@ -769,7 +769,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
     = configuration->pucch_nRB_CQI[CC_id];
   (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.nCS_AN
     = configuration->pucch_nCS_AN[CC_id];
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
   (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.n1PUCCH_AN
     = configuration->pucch_n1_AN[CC_id];
 #endif
@@ -929,7 +929,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->freqInfo.ul_Bandwidth = NULL;
   //  (*sib2)->mbsfn_SubframeConfigList = NULL;
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flag > 0) {
     LOG_I(RRC,"Adding MBSFN subframe Configuration 1 to SIB2\n");
@@ -985,7 +985,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->timeAlignmentTimerCommon=TimeAlignmentTimer_infinity;//TimeAlignmentTimer_sf5120;
 
   /// (*SIB3)
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   (*sib3)->ext1 = NULL;
 #if 0
   (*sib3)->s_IntraSearch_v920=NULL;
@@ -1020,7 +1020,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   // SIB13
   // fill in all elements of SIB13 if present
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flag > 0 ) {
     //  Notification for mcch change
@@ -1102,7 +1102,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
                    sib2_part);
   ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,
                    sib3_part);
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flag > 0) {
     ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib13_part);
@@ -1563,7 +1563,7 @@ do_RRCConnectionSetup(
   // CQI ReportConfig
 
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic));
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic= CQI_ReportModeAperiodic_rm30;
 #else
   *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CQI_ReportConfig__cqi_ReportModeAperiodic_rm30; // HLC CQI, no PMI
@@ -1776,7 +1776,7 @@ do_SecurityModeCommand(
     SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8;
   // the two following information could be based on the mod_id
   dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm
-    = (e_SecurityAlgorithmConfig__cipheringAlgorithm)cipheringAlgorithm;
+    = (CipheringAlgorithm_r12_t)cipheringAlgorithm;
   dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm
     = (e_SecurityAlgorithmConfig__integrityProtAlgorithm)integrityProtAlgorithm;
 
@@ -1929,7 +1929,7 @@ do_RRCConnectionReconfiguration(
   struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList
   *dedicatedInfoNASList
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   , SCellToAddMod_r10_t  *SCell_config
 #endif
 )
@@ -2224,7 +2224,7 @@ uint8_t do_RRCConnectionRelease(
 uint8_t TMGI[5] = {4,3,2,1,0};//TMGI is a string of octet, ref. TS 24.008 fig. 10.5.4a
 
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
                            LTE_DL_FRAME_PARMS *frame_parms,
                            uint8_t sync_area,
@@ -2396,7 +2396,7 @@ uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_
       sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.nonCriticalExtension));
 
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measId=measid;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrpResult=rsrp_s;
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrqResult=rsrq_s;
 #else

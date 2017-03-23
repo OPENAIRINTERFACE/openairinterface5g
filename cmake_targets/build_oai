@@ -41,7 +41,7 @@ VCD_TIMING="False"
 DEADLINE_SCHEDULER_FLAG_USER="False"
 FORCE_DEADLINE_SCHEDULER_FLAG_USER=""
 CPU_AFFINITY_FLAG_USER="False" #Only valid when lowlatecy flag is set to False
-REL="Rel10"
+REL="Rel14"
 HW="None"
 TP="None"
 NOS1=0
@@ -95,8 +95,9 @@ Options
 -a | --agent
    Enables agent for software-defined control of the eNB
 -r | --3gpp-release
-   default is Rel10,
+   default is Rel14,
    Rel8 limits the implementation to 3GPP Release 8 version
+   Rel10 limits the implementation to 3GPP Release 10 version
 -w | --hardware
    EXMIMO, USRP, BLADERF, ETHERNET, LMSSDR, None (Default)
    Adds this RF board support (in external packages installation and in compilation)
