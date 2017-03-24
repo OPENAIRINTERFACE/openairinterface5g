@@ -2997,7 +2997,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
   int subframe_rx = proc->subframe_rx;
   int frame_rx = proc->frame_rx;
   int pmch_mcs=-1;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   int CC_id = ue->CC_id;
 #endif
   uint8_t sync_area=255;
