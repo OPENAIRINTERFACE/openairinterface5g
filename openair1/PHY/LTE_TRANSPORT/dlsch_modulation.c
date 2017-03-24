@@ -2004,7 +2004,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   uint32_t i,i2,jj,jj2,re_allocated,symbol_offset;
   uint16_t l,rb,re_offset;
   uint32_t rb_alloc_ind;
-  uint32_t *rb_alloc; //=dlsch0_harq->rb_alloc;
+  uint32_t *rb_alloc = NULL; //=dlsch0_harq->rb_alloc;
 
   uint8_t pilots=0;
   uint8_t skip_dc,skip_half;
