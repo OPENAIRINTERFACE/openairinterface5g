@@ -472,7 +472,7 @@ l2l1_task (void *args_p)
   // Framing variables
   int32_t sf;
 
-  char fname[64], vname[64];
+  //char fname[64], vname[64];
 
   //#ifdef XFORMS
   // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
