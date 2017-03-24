@@ -539,7 +539,7 @@ void *rrh_eNB_rx_thread(void *arg) {
 
 void *rrh_eNB_tx_thread(void *arg) {
 
-  struct timespec time0a,time0,time1,time2;
+  struct timespec time0,time1,time2;
 
   rrh_module_t *dev = (rrh_module_t *)arg;
   struct timespec time_req_1us, time_rem_1us;
