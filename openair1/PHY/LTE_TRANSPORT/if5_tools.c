@@ -56,7 +56,9 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   int32_t *txp[fp->nb_antennas_tx], *rxp[fp->nb_antennas_rx]; 
   int32_t *tx_buffer=NULL;
+#ifdef DEBUG_DL_MOBIPASS
   int8_t dummy_buffer[fp->samples_per_tti*2];
+#endif
   void    *alaw_buffer = eNB->ifbuffer.tx[subframe&1];
   uint16_t *data_block = NULL;
   uint16_t *j = NULL;
@@ -262,8 +264,10 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
   int32_t *txp[fp->nb_antennas_tx], *rxp[fp->nb_antennas_rx]; 
 
   uint16_t packet_id=0, i=0, element_id=0;
-  int8_t dummy_buffer_rx[fp->samples_per_tti*2];
+#ifdef DEBUG_UL_MOBIPASS
+  //int8_t dummy_buffer_rx[fp->samples_per_tti*2];
   uint8_t rxe;
+#endif
 
   int32_t spp_eth  = (int32_t) eNB->ifdevice.openair0_cfg->samples_per_packet;
   int32_t spsf     = (int32_t) eNB->ifdevice.openair0_cfg->samples_per_frame/10;
@@ -390,14 +394,16 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
     
     uint16_t db_fulllength = PAYLOAD_MOBIPASS_NUM_SAMPLES;
     openair0_timestamp timestamp_mobipass[fp->samples_per_tti/db_fulllength];
+#ifdef DEBUG_UL_MOBIPASS
     int lower_offset = 0;
     int  upper_offset = 70000;
+#endif
     int subframe_skip = 0;
     int reset_flag = 0;
     int32_t *rx_buffer=NULL;
     __m128i *data_block=NULL, *data_block_head=NULL;
     __m128i *rxp128;
-    __m128i r0, r1;
+    __m128i r0;
 
     //rx_buffer = memalign(16, MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + db_fulllength*sizeof(int16_t));
     rx_buffer = malloc(MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + db_fulllength*sizeof(int16_t));
