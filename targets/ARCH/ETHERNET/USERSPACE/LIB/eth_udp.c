@@ -139,7 +139,7 @@ int trx_eth_read_udp_IF4p5(openair0_device *device, openair0_timestamp *timestam
   IF4p5_header_t *test_header = (IF4p5_header_t*)(buff[0]);
   
   int block_cnt=0; 
-  int again_cnt=0;
+  //int again_cnt=0;
   packet_size = max(UDP_IF4p5_PRACH_SIZE_BYTES, max(UDP_IF4p5_PULFFT_SIZE_BYTES(nblocks), UDP_IF4p5_PDLFFT_SIZE_BYTES(nblocks)));
 
   while(bytes_received == -1) {
