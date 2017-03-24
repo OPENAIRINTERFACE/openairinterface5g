@@ -1213,7 +1213,7 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
         }
 
 
-      const size_t num = 7*2*fp->N_RB_DL*12+4;
+      //const size_t num = 7*2*fp->N_RB_DL*12+4;
       for (k=0;k<8;k++) { //harq_pid
         for (l=0;l<8;l++) { //round
           pdsch_vars_th0[eNB_id]->rxdataF_comp1[k][l] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
