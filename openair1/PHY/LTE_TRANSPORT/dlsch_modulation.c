@@ -584,7 +584,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 
 
   int first_layer0; //= dlsch0_harq->first_layer;
-  int Nlayers0; //  = dlsch0_harq->Nlayers;
+  int Nlayers0 = -1; //  = dlsch0_harq->Nlayers;
   uint8_t mod_order0=0; // = get_Qm(dlsch0_harq->mcs);
   uint8_t mod_order1=0; //=2;
   uint8_t precoder_index0,precoder_index1;
