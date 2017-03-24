@@ -163,8 +163,8 @@ void fill_ulsch_dci(PHY_VARS_eNB *eNB,void *UL_dci,int first_rb,int nb_rb,int mc
 
 }
 
-extern void eNB_fep_full(PHY_VARS_eNB *eNB);
-extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB);
+extern void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc);
+extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc);
 
 int main(int argc, char **argv)
 {
@@ -196,7 +196,7 @@ int main(int argc, char **argv)
   int chMod = 0 ;
   int UE_id = 0;
   unsigned char nb_rb=25,first_rb=0,mcs=0,round=0,bundling_flag=1;
-  unsigned char l;
+  //unsigned char l;
 
   unsigned char awgn_flag = 0 ;
   SCM_t channel_model=Rice1;
@@ -245,7 +245,7 @@ int main(int argc, char **argv)
   int hold_channel=0;
   channel_desc_t *UE2eNB;
 
-  uint8_t control_only_flag = 0;
+  //uint8_t control_only_flag = 0;
   int delay = 0;
   double maxDoppler = 0.0;
   uint8_t srs_flag = 0;
@@ -677,6 +677,8 @@ int main(int argc, char **argv)
   UE->ulsch[0]   = new_ue_ulsch(N_RB_DL,0);
 
   if (parallel_flag == 1) {
+    extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
+    extern void init_td_thread(PHY_VARS_eNB *, pthread_attr_t *);
     init_fep_thread(eNB,NULL);
     init_td_thread(eNB,NULL);
   }
@@ -843,6 +845,7 @@ int main(int argc, char **argv)
 
         while (!feof(input_fdUL)) {
           ret=fscanf(input_fdUL,"%s %s",input_val_str,input_val_str2);//&input_val1,&input_val2);
+          if (ret != 2) printf("ERROR: error reading file\n");
 
           if ((i%4)==0) {
             ((short*)txdata[0])[i/2] = (short)((1<<15)*strtod(input_val_str,NULL));
