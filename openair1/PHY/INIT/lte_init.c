@@ -707,7 +707,7 @@ void phy_config_dedicated_eNB(uint8_t Mod_id,
   }
 
 }
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
                                    uint8_t eNB_index,
                                    SCellToAddMod_r10_t *sCellToAddMod_r10,

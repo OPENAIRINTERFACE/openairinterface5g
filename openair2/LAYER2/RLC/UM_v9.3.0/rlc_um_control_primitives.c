@@ -78,7 +78,11 @@ void config_req_rlc_um (
   }
 }
 //-----------------------------------------------------------------------------
+#if defined(Rel14)
+const uint32_t const t_Reordering_tab[32] = {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200,1600};
+#else
 const uint32_t const t_Reordering_tab[T_Reordering_spare1] = {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200};
+#endif
 
 void config_req_rlc_um_asn1 (
   const protocol_ctxt_t* const ctxt_pP,
@@ -99,7 +103,7 @@ void config_req_rlc_um_asn1 (
   hash_key_t       key                 = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
   hashtable_rc_t   h_rc;
 
-#if Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (mbms_flagP) {
     AssertFatal(dl_rlc_pP, "No RLC UM DL config");
@@ -194,7 +198,11 @@ void config_req_rlc_um_asn1 (
         return;
       }
 
+#if defined(Rel14)
+      if (dl_rlc_pP->t_Reordering<32) {
+#else
       if (dl_rlc_pP->t_Reordering<T_Reordering_spare1) {
+#endif
         t_Reordering = t_Reordering_tab[dl_rlc_pP->t_Reordering];
       } else {
         LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID T_Reordering %ld, RLC NOT CONFIGURED\n",

@@ -930,7 +930,7 @@ l2l1_task (void *args_p)
           }
         }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
         for (RN_id=oai_emulation.info.first_rn_local;
              RN_id<oai_emulation.info.first_rn_local+oai_emulation.info.nb_rn_local;
