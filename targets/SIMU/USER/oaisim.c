@@ -1216,7 +1216,10 @@ main (int argc, char **argv)
   for(int i =0; i<NUMBER_OF_UE_MAX; i++){
       char command_line[100];
       sprintf(command_line, "while ip rule del table %d; do true; done",i+201);
-      system(command_line);
+      /* we don't care about return value from system(), but let's the
+       * compiler be silent, so let's do "if (XX);"
+       */
+      if (system(command_line)) /* nothing */;
   }
   // start thread for log gen
   log_thread_init ();
