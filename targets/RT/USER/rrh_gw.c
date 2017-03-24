@@ -65,7 +65,7 @@
 
 /* local IP/MAC address is detected*/
 char rrh_ip[20] = "0.0.0.0"; 
-unsigned char rrh_mac[6] = "0:0:0:0:0:0"; 
+unsigned char rrh_mac[20] = "0:0:0:0:0:0";
 int  rrh_port = 50000; // has to be an option
 
 /* log */
