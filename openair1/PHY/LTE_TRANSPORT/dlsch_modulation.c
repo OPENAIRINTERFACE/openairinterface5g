@@ -578,7 +578,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 {
 
   uint8_t *x0 = NULL;
-  MIMO_mode_t mimo_mode;
+  MIMO_mode_t mimo_mode = -1;
 
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->frame_parms;
 
