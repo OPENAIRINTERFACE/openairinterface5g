@@ -376,7 +376,7 @@ void *timer_proc(void *arg) {
 
   timer_t             timerid;    
   struct itimerspec   *timer= (struct itimerspec *)arg ; // the timer data structure
-  struct itimerspec   *old_value;
+  struct itimerspec   old_value;
 
   
 #ifdef DEADLINE_SCHEDULER
@@ -407,7 +407,7 @@ void *timer_proc(void *arg) {
   
   signal(SIGALRM, timer_signal_handler);
   LOG_I(RRH,"Timer has started!\n");
-  timer_settime (timerid, 0, timer, old_value);
+  timer_settime (timerid, 0, timer, &old_value);
 
   while (!rrh_exit) {
     sleep(1);
