@@ -545,7 +545,7 @@ void *rrh_eNB_tx_thread(void *arg) {
   struct timespec time_req_1us, time_rem_1us;
   ssize_t bytes_received;
   int i;
-  openair0_timestamp last_hw_counter=0;
+  //openair0_timestamp last_hw_counter=0;
   unsigned int samples_per_frame=0,samples_per_subframe=0;
   unsigned int  spp_rf=0, spp_eth=0;
   uint8_t loopback=0,measurements=0;
@@ -634,7 +634,7 @@ void *rrh_eNB_tx_thread(void *arg) {
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TX_TS, timestamp_tx&0xffffffff ); 
       
             
-      if (dev->devs->type == NONE_DEV)	last_hw_counter=hw_counter;
+      //if (dev->devs->type == NONE_DEV)	last_hw_counter=hw_counter;
     
     
       if (loopback ==1 ) { 
