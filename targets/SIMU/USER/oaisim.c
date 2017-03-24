@@ -59,6 +59,7 @@
 
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
+#include "system.h"
 
 
 #include "PHY/TOOLS/lte_phy_scope.h"
@@ -1193,6 +1194,8 @@ main (int argc, char **argv)
 {
 
   clock_t t;
+
+  start_background_system();
 
 #ifdef SMBV
   // Rohde&Schwarz SMBV100A vector signal generator

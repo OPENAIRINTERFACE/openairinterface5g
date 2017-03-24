@@ -74,6 +74,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "create_tasks.h"
 #endif
 
+#include "system.h"
+
 #ifdef XFORMS
 #include "PHY/TOOLS/lte_phy_scope.h"
 #include "stats.h"
@@ -1370,6 +1372,8 @@ int main( int argc, char **argv ) {
 #if defined (XFORMS)
     int ret;
 #endif
+
+    start_background_system();
 
 #ifdef DEBUG_CONSOLE
     setvbuf(stdout, NULL, _IONBF, 0);

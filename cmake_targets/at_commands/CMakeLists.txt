@@ -716,6 +716,7 @@ ADD_EXECUTABLE(at_nas_ue  ${OPENAIR_NAS_DIR}/UE/UEprocess.c
                           ${OPENAIR_NAS_DIR}/UE/nas_proc.c  
                           ${OPENAIR_NAS_DIR}/UE/nas_user.c  
                           ${OPENAIR_DIR}/common/utils/utils.c
+                          ${OPENAIR_DIR}/common/utils/system.c
                           )
                           
 target_link_libraries (at_nas_ue 
