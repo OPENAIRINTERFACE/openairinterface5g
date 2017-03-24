@@ -342,6 +342,9 @@ void *rrh_UE_rx_thread(void *arg) {
   nsamps	    = dev->eth_dev.openair0_cfg->samples_per_packet;
   samples_per_frame = dev->eth_dev.openair0_cfg->samples_per_frame;
   
+  /* TODO: check if setting time0 has to be done here */
+  clock_gettime(CLOCK_MONOTONIC,&time0);
+
   while (rrh_exit == 0) {
     if (!UE_rx_started) {
       UE_rx_started=1;  //Set this flag to 1 to indicate that a UE started retrieving data
