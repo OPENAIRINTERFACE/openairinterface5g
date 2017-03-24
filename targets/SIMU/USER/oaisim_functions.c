@@ -91,7 +91,9 @@ extern char smbv_ip[16];
 #define K 2                  // averaging coefficient
 #define TARGET_SF_TIME_NS 1000000       // 1ms = 1000000 ns
 
+#ifndef min
 #define min(a,b) ((a)<(b)?(a):(b))
+#endif
 
 int           otg_times             = 0;
 int           if_times              = 0;
@@ -1014,8 +1016,8 @@ int eNB_trx_stop(openair0_device *device) {
 int UE_trx_start(openair0_device *device) {
   return(0);
 }
-int UE_trx_end(openair0_device *device) {
-  return(0);
+void UE_trx_end(openair0_device *device) {
+  return;
 }
 int UE_trx_stop(openair0_device *device) {
   return(0);
@@ -1293,7 +1295,7 @@ void init_devices(void){
 
 void init_openair1(void)
 {
-  module_id_t UE_id, eNB_id;
+  module_id_t UE_id, eNB_id = 0;
   uint8_t CC_id;
 #if ENABLE_RAL
   int list_index;
@@ -1447,6 +1449,7 @@ void init_openair1(void)
 
     } // CC_id
   } // UE_id
+  extern void init_UE(int);
   init_UE(NB_UE_INST);
     }
 

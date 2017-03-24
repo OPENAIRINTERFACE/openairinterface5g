@@ -1695,7 +1695,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 
 
   uint8_t  pucch_ack_payload[2];
-  uint8_t  n2_pucch;
+  uint8_t  n2_pucch = -1;
   uint16_t pucch_resource;
   ANFBmode_t bundling_flag;
   PUCCH_FMT_t format;
@@ -2997,7 +2997,9 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
   int subframe_rx = proc->subframe_rx;
   int frame_rx = proc->frame_rx;
   int pmch_mcs=-1;
+#ifdef Rel10
   int CC_id = ue->CC_id;
+#endif
   uint8_t sync_area=255;
   uint8_t mcch_active;
   int l;

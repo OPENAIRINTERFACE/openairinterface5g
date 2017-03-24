@@ -9,13 +9,6 @@ RRC_Rel10=(
 
 X2AP_Rel11_2=(
   "X2ap-CriticalityDiagnostics-IE-List.h" ae96308b37fcbcbf39da5012e42968135fc5f27b "fix_asn1.data/X2AP.rel11.2/X2ap-CriticalityDiagnostics-IE-List.h.diff"
-  "NativeInteger.c"                       1a55f5402fd363318cf5444ffe1f67530dcf66ff "fix_asn1.data/X2AP.rel11.2/NativeInteger.c.diff"
-  "constr_SET_OF.c"                       808cbbdf19b118c0bdb04e3acf2cbe6e4133be2b "fix_asn1.data/X2AP.rel11.2/constr_SET_OF.c.diff"
-)
-
-S1AP_Rel10_5=(
-  "NativeInteger.c" 1a55f5402fd363318cf5444ffe1f67530dcf66ff "fix_asn1.data/S1AP.rel10.5/NativeInteger.c.diff"
-  "constr_SET_OF.c" 808cbbdf19b118c0bdb04e3acf2cbe6e4133be2b "fix_asn1.data/S1AP.rel10.5/constr_SET_OF.c.diff"
 )
 
 red_color="$(tput setaf 1)"
@@ -130,8 +123,7 @@ function patch_s1ap()
 
   case "$version" in
     R10 )
-      echo "patching S1AP files release 10.5"
-      apply_patches "$directory" S1AP_Rel10_5 ${#S1AP_Rel10_5[*]}
+      #nothing to do anymore (fixes went to asn1c)
       ;;
     * )
       error unknwon/unhandled S1AP version \'"$version"\'

@@ -387,7 +387,7 @@ void nas_mesh_DC_send_sig_data_request(struct sk_buff *skb,
 {
   //---------------------------------------------------------------------------
   struct nas_ue_dc_element *p;
-  char data_type = 'A';
+  //char data_type = 'A';
   int bytes_wrote=0;
 
   // Start debug information
@@ -466,7 +466,7 @@ void nas_mesh_DC_send_peer_sig_data_request(struct cx_entity *cx, uint8_t sig_ca
   struct nas_ue_dc_element *p;
   uint8_t nas_data[10];
   unsigned int nas_length;
-  char data_type = 'Z';
+  //char data_type = 'Z';
   int bytes_wrote=0;
 
   // Start debug information

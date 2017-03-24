@@ -65,7 +65,7 @@
 
 /* local IP/MAC address is detected*/
 char rrh_ip[20] = "0.0.0.0"; 
-unsigned char rrh_mac[6] = "0:0:0:0:0:0"; 
+unsigned char rrh_mac[20] = "0:0:0:0:0:0";
 int  rrh_port = 50000; // has to be an option
 
 /* log */
@@ -197,7 +197,7 @@ static rrh_module_t new_module (unsigned int id) {
     openair0_cfg.my_port = rrh_port;
     LOG_I(RRH,"UDP mode selected for ethernet.\n");
   } else if (eth_mode==ETH_RAW_MODE) {
-    openair0_cfg.my_addr = &rrh_mac[0];
+    openair0_cfg.my_addr = (char*)&rrh_mac[0];
     openair0_cfg.my_port = rrh_port;
     LOG_I(RRH,"RAW mode selected for ethernet.\n");
   } 
@@ -342,7 +342,7 @@ static int get_address(char* if_name, uint8_t flag) {
       perror("IOCTL:");
       exit(-1);
     } 
-    ether_ntoa_r ((unsigned char *)ifr.ifr_hwaddr.sa_data, rrh_mac);
+    ether_ntoa_r ((struct ether_addr *)ifr.ifr_hwaddr.sa_data, (char*)rrh_mac);
     LOG_I(RRH,"%s: MAC address: %s\n",if_name,rrh_mac);    
   }
   
@@ -376,7 +376,7 @@ void *timer_proc(void *arg) {
 
   timer_t             timerid;    
   struct itimerspec   *timer= (struct itimerspec *)arg ; // the timer data structure
-  struct itimerspec   *old_value;
+  struct itimerspec   old_value;
 
   
 #ifdef DEADLINE_SCHEDULER
@@ -407,7 +407,7 @@ void *timer_proc(void *arg) {
   
   signal(SIGALRM, timer_signal_handler);
   LOG_I(RRH,"Timer has started!\n");
-  timer_settime (timerid, 0, timer, old_value);
+  timer_settime (timerid, 0, timer, &old_value);
 
   while (!rrh_exit) {
     sleep(1);
