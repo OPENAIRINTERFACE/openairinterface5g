@@ -1999,7 +1999,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
   uint8_t nsymb;
   uint8_t harq_pid; //= dlsch0->current_harq_pid;
-  LTE_DL_eNB_HARQ_t *dlsch0_harq;
+  LTE_DL_eNB_HARQ_t *dlsch0_harq = NULL;
   LTE_DL_eNB_HARQ_t *dlsch1_harq = NULL; //= dlsch1->harq_processes[harq_pid];
   uint32_t i,i2,jj,jj2,re_allocated,symbol_offset;
   uint16_t l,rb,re_offset;
