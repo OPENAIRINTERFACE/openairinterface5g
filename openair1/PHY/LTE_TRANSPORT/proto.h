@@ -1568,9 +1568,11 @@ uint8_t SE2I_TBS(float SE,
     @param soundingrs_ul_config_dedicated Dynamic configuration from RRC during Connection Establishment
     @param txdataF pointer to the frequency domain TX signal
     @returns 0 on success*/
-int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
-                    SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
-                    int *txdataF);
+int generate_srs(LTE_DL_FRAME_PARMS *frame_parms,
+		 SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
+		 int *txdataF,
+		 int16_t amp,
+		 uint32_t subframe);
 
 int32_t generate_srs_tx_emul(PHY_VARS_UE *phy_vars_ue,
                              uint8_t subframe);

@@ -427,7 +427,7 @@ void enb_config_display(void)
 
       if (enb_properties.properties[i]->srs_enable[j]) {
         printf( "\tsrs_BandwidthConfig for CC %d:\t%ld:\n",j,enb_properties.properties[i]->srs_BandwidthConfig[j]);
-        printf( "\tsrs_BandwidthConfig for CC %d:\t%ld:\n",j,enb_properties.properties[i]->srs_SubframeConfig[j]);
+        printf( "\tsrs_SubframeConfig for CC %d:\t%ld:\n",j,enb_properties.properties[i]->srs_SubframeConfig[j]);
         printf( "\tsrs_ackNackST for CC %d:\t%d:\n",j,enb_properties.properties[i]->srs_ackNackST[j]);
         printf( "\tsrs_MaxUpPts for CC %d:\t%d:\n",j,enb_properties.properties[i]->srs_MaxUpPts[j]);
       }

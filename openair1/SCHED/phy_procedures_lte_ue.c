@@ -259,7 +259,6 @@ void dump_dlsch_ra(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t s
   write_output("dlsch_mag2.m","dlschmag2",ue->pdsch_vars_ra[0]->dl_ch_magb0,300*nsymb,1,1);
 }
 
-
 void phy_reset_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 {
 
@@ -416,7 +415,9 @@ uint8_t is_cqi_TXOp(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id)
   //      cqirep->cqi_PMI_ConfigIndex,
   //      (((10*frame + subframe) % cqirep->Npd) == cqirep->N_OFFSET_CQI));
 
-  if (((10*frame + subframe) % cqirep->Npd) == cqirep->N_OFFSET_CQI)
+  if (cqirep->cqi_PMI_ConfigIndex==-1)
+    return(0);
+  else if (((10*frame + subframe) % cqirep->Npd) == cqirep->N_OFFSET_CQI)
     return(1);
   else
     return(0);
@@ -435,170 +436,34 @@ uint8_t is_ri_TXOp(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id)
   //      ue->Mod_id,ue->pdcch_vars[eNB_id]->crnti,frame,subframe,
   //      cqirep->ri_ConfigIndex,
   //      (((10*frame + subframe + cqirep->N_OFFSET_CQI - N_OFFSET_RI) % (cqirep->Npd<<log2Mri)) == 0));
-
-  if (((10*frame + subframe + cqirep->N_OFFSET_CQI - N_OFFSET_RI) % (cqirep->Npd<<log2Mri)) == 0)
+  if (cqirep->ri_ConfigIndex==-1)
+    return(0);
+  else if (((10*frame + subframe + cqirep->N_OFFSET_CQI - N_OFFSET_RI) % (cqirep->Npd<<log2Mri)) == 0)
     return(1);
   else
     return(0);
 }
 
-void compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset)
+
+
+void ue_compute_srs_occasion(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t isSubframeSRS) 
 {
-    if(TDD == frameType)
-    {
-        if(isrs<10)
-        {
-            mac_xface->macphy_exit("2 ms SRS periodicity not supported");
-        }
-
-        if((isrs>9)&&(isrs<15))
-        {
-            *psrsPeriodicity=5;
-            *psrsOffset=isrs-10;
-        }
-        if((isrs>14)&&(isrs<25))
-        {
-            *psrsPeriodicity=10;
-            *psrsOffset=isrs-15;
-        }
-        if((isrs>24)&&(isrs<45))
-        {
-            *psrsPeriodicity=20;
-            *psrsOffset=isrs-25;
-        }
-        if((isrs>44)&&(isrs<85))
-        {
-            *psrsPeriodicity=40;
-            *psrsOffset=isrs-45;
-        }
-        if((isrs>84)&&(isrs<165))
-        {
-            *psrsPeriodicity=80;
-            *psrsOffset=isrs-85;
-        }
-        if((isrs>164)&&(isrs<325))
-        {
-            *psrsPeriodicity=160;
-            *psrsOffset=isrs-165;
-        }
-        if((isrs>324)&&(isrs<645))
-        {
-            *psrsPeriodicity=320;
-            *psrsOffset=isrs-325;
-        }
-
-        if(isrs>644)
-        {
-            mac_xface->macphy_exit("Isrs out of range");
-        }
-
-    }
-    else
-    {
-        if(isrs<2)
-        {
-            *psrsPeriodicity=2;
-            *psrsOffset=isrs;
-        }
-        if((isrs>1)&&(isrs<7))
-        {
-            *psrsPeriodicity=5;
-            *psrsOffset=isrs-2;
-        }
-        if((isrs>6)&&(isrs<17))
-        {
-            *psrsPeriodicity=10;
-            *psrsOffset=isrs-7;
-        }
-        if((isrs>16)&&(isrs<37))
-        {
-            *psrsPeriodicity=20;
-            *psrsOffset=isrs-17;
-        }
-        if((isrs>36)&&(isrs<77))
-        {
-            *psrsPeriodicity=40;
-            *psrsOffset=isrs-37;
-        }
-        if((isrs>76)&&(isrs<157))
-        {
-            *psrsPeriodicity=80;
-            *psrsOffset=isrs-77;
-        }
-        if((isrs>156)&&(isrs<317))
-        {
-            *psrsPeriodicity=160;
-            *psrsOffset=isrs-157;
-        }
-        if((isrs>316)&&(isrs<637))
-        {
-            *psrsPeriodicity=320;
-            *psrsOffset=isrs-317;
-        }
-        if(isrs>636)
-        {
-            mac_xface->macphy_exit("Isrs out of range");
-        }
-    }
-}
-
-void ue_compute_srs_occasion(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id)
-{
-    LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-    int frame_tx    = proc->frame_tx;
-    int subframe_tx = proc->subframe_tx;
-    uint8_t isSubframeSRS   = 0; // SRS Cell Occasion
-
-    uint8_t is_pucch2_subframe = 0;
-    uint8_t is_sr_an_subframe  = 0;
-
-    SOUNDINGRS_UL_CONFIG_DEDICATED *pSoundingrs_ul_config_dedicated=&ue->soundingrs_ul_config_dedicated[eNB_id];
+  
+  LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  int frame_tx    = proc->frame_tx;
+  int subframe_tx = proc->subframe_tx;
+  SOUNDINGRS_UL_CONFIG_DEDICATED *pSoundingrs_ul_config_dedicated=&ue->soundingrs_ul_config_dedicated[eNB_id];
+  uint16_t srsPeriodicity;
+  uint16_t srsOffset;
+  uint8_t is_pucch2_subframe = 0;
+  uint8_t is_sr_an_subframe  = 0;
 
   // check for SRS opportunity
   pSoundingrs_ul_config_dedicated->srsUeSubframe   = 0;
-  pSoundingrs_ul_config_dedicated->srsCellSubframe = 0;
+  pSoundingrs_ul_config_dedicated->srsCellSubframe = isSubframeSRS;
 
-  ue->ulsch[eNB_id]->srs_active   = 0;
-  ue->ulsch[eNB_id]->Nsymb_pusch  = 12-(frame_parms->Ncp<<1)- ue->ulsch[eNB_id]->srs_active;
-  if(frame_parms->soundingrs_ul_config_common.enabled_flag)
-  {
-
-      LOG_D(PHY," SRS SUBFRAMECONFIG: %d, Isrs: %d \n", frame_parms->soundingrs_ul_config_common.srs_SubframeConfig, pSoundingrs_ul_config_dedicated->srs_ConfigIndex);
-
-      uint8_t  TSFC;
-      uint16_t deltaTSFC; // bitmap
-      uint8_t  srs_SubframeConfig;
-      uint16_t srsPeriodicity;
-      uint16_t srsOffset;
-
-      // table resuming TSFC (Period) and deltaSFC (offset)
-      const uint16_t deltaTSFCTabType1[15][2] = { {1,1},{1,2},{2,2},{1,5},{2,5},{4,5},{8,5},{3,5},{12,5},{1,10},{2,10},{4,10},{8,10},{351,10},{383,10} };      // Table 5.5.3.3-2 3GPP 36.211 FDD
-      const uint16_t deltaTSFCTabType2[14][2] = { {2,5},{6,5},{10,5},{18,5},{14,5},{22,5},{26,5},{30,5},{70,10},{74,10},{194,10},{326,10},{586,10},{210,10} }; // Table 5.5.3.3-2 3GPP 36.211 TDD
-
-      srs_SubframeConfig = frame_parms->soundingrs_ul_config_common.srs_SubframeConfig;
-      if (FDD == frame_parms->frame_type)
-      {
-          // srs_SubframeConfig =< 14
-          deltaTSFC = deltaTSFCTabType1[srs_SubframeConfig][0];
-          TSFC      = deltaTSFCTabType1[srs_SubframeConfig][1];
-      }
-      else
-      {
-          // srs_SubframeConfig =< 13
-          deltaTSFC = deltaTSFCTabType2[srs_SubframeConfig][0];
-          TSFC      = deltaTSFCTabType2[srs_SubframeConfig][1];
-      }
-
-      // Sounding reference signal subframes are the subframes satisfying ns/2 mod TSFC (- deltaTSFC
-      uint16_t tmp = (subframe_tx %  TSFC);
-      if((1<<tmp) & deltaTSFC)
-      {
-          // This is a Sounding reference signal subframes
-          isSubframeSRS = 1;
-          pSoundingrs_ul_config_dedicated->srsCellSubframe  = 1;
-      }
-      LOG_D(PHY," ISTDD: %d, TSFC: %d, deltaTSFC: %d, AbsSubframeTX: %d.%d, srsCellSubframe: %d \n", frame_parms->frame_type, TSFC, deltaTSFC, frame_tx, subframe_tx, pSoundingrs_ul_config_dedicated->srsCellSubframe);
-      LOG_D(PHY," SrsDedicatedSetup: %d \n",pSoundingrs_ul_config_dedicated->srsConfigDedicatedSetup);
+  if (isSubframeSRS) {  
+    LOG_D(PHY," SrsDedicatedSetup: %d \n",pSoundingrs_ul_config_dedicated->srsConfigDedicatedSetup);
       if(pSoundingrs_ul_config_dedicated->srsConfigDedicatedSetup)
       {
           compute_srs_pos(frame_parms->frame_type, pSoundingrs_ul_config_dedicated->srs_ConfigIndex, &srsPeriodicity, &srsOffset);
@@ -672,6 +537,7 @@ void ue_compute_srs_occasion(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id
       LOG_D(PHY," srsCellSubframe: %d, srsUeSubframe: %d, Nsymb-pusch: %d \n", pSoundingrs_ul_config_dedicated->srsCellSubframe, pSoundingrs_ul_config_dedicated->srsUeSubframe, ue->ulsch[eNB_id]->Nsymb_pusch);
   }
 }
+
 
 void get_cqipmiri_params(PHY_VARS_UE *ue,uint8_t eNB_id)
 {
@@ -1732,7 +1598,13 @@ void ue_srs_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8
             nb_rb_srs,
             tx_amp);
 
-    generate_srs_tx(ue, eNB_id, tx_amp, subframe_tx);
+    uint16_t nsymb = (ue->frame_parms.Ncp==0) ? 14:12;
+    uint16_t symbol_offset = (int)ue->frame_parms.ofdm_symbol_size*((subframe_tx*nsymb)+(nsymb-1));
+    generate_srs(&ue->frame_parms, 
+		 &ue->soundingrs_ul_config_dedicated[eNB_id], 
+		 &ue->common_vars.txdataF[eNB_id][symbol_offset], 
+		 tx_amp, 
+		 subframe_tx);
   }
 }
 
@@ -2144,9 +2016,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
   int subframe_tx = proc->subframe_tx;
   int frame_tx = proc->frame_tx;
   unsigned int aa;
-  
-
-
+  uint8_t isSubframeSRS;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX,VCD_FUNCTION_IN);
 
@@ -2174,7 +2044,9 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
       
   if (ue->UE_mode[eNB_id] != PRACH) {
     // check cell srs subframe and ue srs subframe. This has an impact on pusch encoding
-    ue_compute_srs_occasion(ue,proc,eNB_id);
+    isSubframeSRS = is_srs_occasion_common(&ue->frame_parms,proc->frame_tx,proc->subframe_tx);
+
+    ue_compute_srs_occasion(ue,proc,eNB_id,isSubframeSRS);
 
     ue_ulsch_uespec_procedures(ue,proc,eNB_id,abstraction_flag);
 

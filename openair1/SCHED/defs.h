@@ -514,6 +514,10 @@ void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
 void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe, unsigned int *coded_bits_per_codeword,int round, unsigned char harq_pid);
 
 
+int is_srs_occasion_common(LTE_DL_FRAME_PARMS *frame_parms,int frame_tx,int subframe_tx);
+
+void compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset);
+
 /*@}*/
 
 

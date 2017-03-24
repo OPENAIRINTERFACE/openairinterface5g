@@ -99,7 +99,7 @@ int errno;
 # endif
 #endif
 
-//#define XER_PRINT
+#define XER_PRINT
 
 extern Enb_properties_array_t enb_properties;
 typedef struct xer_sprint_string_s {
@@ -1593,8 +1593,33 @@ do_RRCConnectionSetup(
           SoundingRS_UL_ConfigDedicated__setup__srs_HoppingBandwidth_hbw0;
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition=0;
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.duration=1;
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=45;
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb=0;
+    if (frame_parms->frame_type==FDD) {
+      if (enb_properties.properties[ctxt_pP->module_id]->srs_SubframeConfig[CC_id]!=0) 
+	LOG_W(RRC,"This code has been optimized for SRS Subframe Config 0, but current config is %d. Expect undefined behaviour!\n",
+	      enb_properties.properties[ctxt_pP->module_id]->srs_SubframeConfig[CC_id]);
+      if (ue_context_pP->local_uid >=20) 
+	LOG_W(RRC,"This code has been optimized for up to 10 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
+	      ue_context_pP->local_uid);
+      //the current code will allow for 20 UEs - to be revised for more
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=7+ue_context_pP->local_uid/2;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb= ue_context_pP->local_uid%2;
+    }
+    else {
+      if (enb_properties.properties[ctxt_pP->module_id]->srs_SubframeConfig[CC_id]!=7) {
+	LOG_W(RRC,"This code has been optimized for SRS Subframe Config 7 and TDD config 3, but current configs are %d and %d. Expect undefined behaviour!\n",
+	      enb_properties.properties[ctxt_pP->module_id]->srs_SubframeConfig[CC_id],
+	      enb_properties.properties[ctxt_pP->module_id]->tdd_config[CC_id]);
+      }
+      if (ue_context_pP->local_uid >=6) 
+	LOG_W(RRC,"This code has been optimized for up to 6 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
+	      ue_context_pP->local_uid);
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=17+ue_context_pP->local_uid/2;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb= ue_context_pP->local_uid%2;
+    }
+    LOG_W(RRC,"local UID %d, srs ConfigIndex %d, TransmissionComb %d\n",ue_context_pP->local_uid,
+	  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex,
+	  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb);
+
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift=
           SoundingRS_UL_ConfigDedicated__setup__cyclicShift_cs0;
   }
