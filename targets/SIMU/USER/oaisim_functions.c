@@ -1016,8 +1016,8 @@ int eNB_trx_stop(openair0_device *device) {
 int UE_trx_start(openair0_device *device) {
   return(0);
 }
-int UE_trx_end(openair0_device *device) {
-  return(0);
+void UE_trx_end(openair0_device *device) {
+  return;
 }
 int UE_trx_stop(openair0_device *device) {
   return(0);
