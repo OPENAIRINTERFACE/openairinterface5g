@@ -91,7 +91,9 @@ extern char smbv_ip[16];
 #define K 2                  // averaging coefficient
 #define TARGET_SF_TIME_NS 1000000       // 1ms = 1000000 ns
 
+#ifndef min
 #define min(a,b) ((a)<(b)?(a):(b))
+#endif
 
 int           otg_times             = 0;
 int           if_times              = 0;
