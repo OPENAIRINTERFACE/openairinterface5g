@@ -1384,14 +1384,16 @@ reset_opp_meas_oaisim (void)
 
   for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
     reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc);
-    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx[0]);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx[1]);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_tx);
 
     reset_meas (&PHY_vars_UE_g[UE_id][0]->ofdm_demod_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->rx_dft_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_channel_estimation_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_freq_offset_estimation_stats);
-    reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats[0]);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats[1]);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_rate_unmatching_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_turbo_decoding_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_deinterleaving_stats);
@@ -1553,8 +1555,10 @@ print_opp_meas_oaisim (void)
     print_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc, "[UE][total_phy_proc]",
                 &oaisim_stats, &oaisim_stats_f);
 
-    print_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx,
-                "[UE][total_phy_proc_rx]", &oaisim_stats, &oaisim_stats_f);
+    print_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx[0],
+                "[UE][total_phy_proc_rx[0]]", &oaisim_stats, &oaisim_stats_f);
+    print_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx[1],
+                "[UE][total_phy_proc_rx[1]]", &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->ofdm_demod_stats,
                 "[UE][ofdm_demod]", &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->rx_dft_stats, "[UE][rx_dft]",
@@ -1567,8 +1571,10 @@ print_opp_meas_oaisim (void)
                 &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_unscrambling_stats,
                 "[UE][unscrambling]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats,
-                "[UE][decoding]", &oaisim_stats, &oaisim_stats_f);
+    print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats[0],
+                "[UE][decoding[0]]", &oaisim_stats, &oaisim_stats_f);
+    print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats[1],
+                "[UE][decoding[1]]", &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_rate_unmatching_stats,
                 "[UE][rate_unmatching]", &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_deinterleaving_stats,
