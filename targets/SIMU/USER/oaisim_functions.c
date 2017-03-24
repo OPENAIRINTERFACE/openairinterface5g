@@ -1449,6 +1449,7 @@ void init_openair1(void)
 
     } // CC_id
   } // UE_id
+  extern void init_UE(int);
   init_UE(NB_UE_INST);
     }
 
