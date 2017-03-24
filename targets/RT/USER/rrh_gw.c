@@ -197,7 +197,7 @@ static rrh_module_t new_module (unsigned int id) {
     openair0_cfg.my_port = rrh_port;
     LOG_I(RRH,"UDP mode selected for ethernet.\n");
   } else if (eth_mode==ETH_RAW_MODE) {
-    openair0_cfg.my_addr = &rrh_mac[0];
+    openair0_cfg.my_addr = (char*)&rrh_mac[0];
     openair0_cfg.my_port = rrh_port;
     LOG_I(RRH,"RAW mode selected for ethernet.\n");
   } 
