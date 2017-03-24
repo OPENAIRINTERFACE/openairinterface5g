@@ -2045,7 +2045,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
   uint8_t get_pmi_temp;
 
-  MIMO_mode_t mimo_mode;
+  MIMO_mode_t mimo_mode = -1;
   uint8_t mprime=0,Ns;
   int8_t  lprime=-1;
   int aa=0;
