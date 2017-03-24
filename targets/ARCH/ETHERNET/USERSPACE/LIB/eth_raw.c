@@ -418,7 +418,6 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
 int trx_eth_read_raw_IF5_mobipass(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc) {
   // Read nblocks info from packet itself
   
-  int nblocks = nsamps;
   int bytes_received=0;
   eth_state_t *eth = (eth_state_t*)device->priv;
 
