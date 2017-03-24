@@ -1286,6 +1286,7 @@ main (int argc, char **argv)
 
   init_openair2 ();
 
+  void init_openair0(void);
   init_openair0();
 
   init_ocm ();
