@@ -1808,6 +1808,7 @@ add_executable(lte-softmodem-nos1
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  ${OPENAIR_DIR}/common/utils/system.c
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}
   ${RTAI_SOURCE}
@@ -1950,6 +1951,7 @@ add_executable(oaisim_nos1
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
+  ${OPENAIR_DIR}/common/utils/system.c
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}
   ${XFORMS_SOURCE}
