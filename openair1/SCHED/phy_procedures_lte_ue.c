@@ -1823,7 +1823,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 
 
   uint8_t  pucch_ack_payload[2];
-  uint8_t  n2_pucch;
+  uint8_t  n2_pucch = -1;
   uint16_t pucch_resource;
   ANFBmode_t bundling_flag;
   PUCCH_FMT_t format;
