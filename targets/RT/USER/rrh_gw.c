@@ -342,7 +342,7 @@ static int get_address(char* if_name, uint8_t flag) {
       perror("IOCTL:");
       exit(-1);
     } 
-    ether_ntoa_r ((unsigned char *)ifr.ifr_hwaddr.sa_data, rrh_mac);
+    ether_ntoa_r ((struct ether_addr *)ifr.ifr_hwaddr.sa_data, (char*)rrh_mac);
     LOG_I(RRH,"%s: MAC address: %s\n",if_name,rrh_mac);    
   }
   
