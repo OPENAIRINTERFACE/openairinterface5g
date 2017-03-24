@@ -157,7 +157,7 @@ int main(int argc,char **argv)
   char rb[100],cx[100],dscp[100],inst[100],mpls_outgoinglabel[100],mpls_incominglabel[100];
   struct nas_msg_rb_establishment_request *msgreq = NULL;
   struct nas_msg_class_add_request *msgreq_class = NULL;
-  in_addr_t saddr_ipv4,daddr_ipv4;
+  in_addr_t saddr_ipv4 = 0,daddr_ipv4 = 0;
   struct in6_addr saddr_ipv6,daddr_ipv6;
   unsigned int mpls_outlabel=0,mpls_inlabel=0;
 
