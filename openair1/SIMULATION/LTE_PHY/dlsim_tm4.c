@@ -4324,6 +4324,8 @@ int main(int argc, char **argv)
 
                 UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][1]->current_harq_pid]->rvidx = round_sic;
                 UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->rvidx=round_sic;
+                UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][1]->current_harq_pid]->round = round_sic;
+                UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->round=round_sic;
 
                 UE->dlsch_eNB[eNB_id]->active                   = UE->dlsch[subframe&0x1][eNB_id][0]->active;
                 UE->dlsch_eNB[eNB_id]->rnti                     = UE->dlsch[subframe&0x1][eNB_id][0]->rnti;
@@ -4376,47 +4378,41 @@ int main(int argc, char **argv)
                   case 2:
 
                     dlsch_qpsk_llr_SIC(&UE->frame_parms,
-                                       UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
+                                       UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
                                        sic_buffer,
-                                       UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
+                                       UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
                                        UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->codeword],
                                        num_pdcch_symbols,
                                        dlsch0_eNB_harq->nb_rb,
                                        subframe,
-                                       dlsch0_eNB_harq->rb_alloc[0],
-                                       get_Qm(eNB->dlsch[0][0]->harq_processes[0]->mcs),
-                                       UE->dlsch[subframe&0x1][eNB_id][0]);
+                                       dlsch0_eNB_harq->rb_alloc[0]);
                   break;
 
                   case 4:
 
                     dlsch_16qam_llr_SIC(&UE->frame_parms,
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
                                         sic_buffer,
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
                                         UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->codeword],
                                         num_pdcch_symbols,
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_mag1[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_mag1[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
                                         dlsch0_eNB_harq->nb_rb,
                                         subframe,
-                                        dlsch0_eNB_harq->rb_alloc[0],
-                                        get_Qm(eNB->dlsch[0][TB]->harq_processes[0]->mcs),
-                                        UE->dlsch[subframe&0x1][eNB_id][0]);
+                                        dlsch0_eNB_harq->rb_alloc[0]);
                   break;
                   case 6:
                     dlsch_64qam_llr_SIC(&UE->frame_parms,
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
                                         sic_buffer,
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
                                         UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->codeword],
                                         num_pdcch_symbols,
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_mag1[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_magb1[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_mag1[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_magb1[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
                                         dlsch0_eNB_harq->nb_rb,
                                         subframe,
-                                        dlsch0_eNB_harq->rb_alloc[0],
-                                        get_Qm(eNB->dlsch[0][0]->harq_processes[0]->mcs),
-                                        UE->dlsch[subframe&0x1][eNB_id][TB]);
+                                        dlsch0_eNB_harq->rb_alloc[0]);
                   break;
                     }
                   //}// rouns sic
