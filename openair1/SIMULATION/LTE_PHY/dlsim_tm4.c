@@ -4385,6 +4385,7 @@ int main(int argc, char **argv)
                                        num_pdcch_symbols,
                                        dlsch0_eNB_harq->nb_rb,
                                        subframe,
+                                       get_Qm(eNB->dlsch[0][0]->harq_processes[0]->mcs),
                                        dlsch0_eNB_harq->rb_alloc[0]);
                   break;
 
@@ -4399,6 +4400,7 @@ int main(int argc, char **argv)
                                         UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_mag1[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
                                         dlsch0_eNB_harq->nb_rb,
                                         subframe,
+                                        get_Qm(eNB->dlsch[0][0]->harq_processes[0]->mcs),
                                         dlsch0_eNB_harq->rb_alloc[0]);
                   break;
                   case 6:
@@ -4412,6 +4414,7 @@ int main(int argc, char **argv)
                                         UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_magb1[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
                                         dlsch0_eNB_harq->nb_rb,
                                         subframe,
+                                        get_Qm(eNB->dlsch[0][0]->harq_processes[0]->mcs),
                                         dlsch0_eNB_harq->rb_alloc[0]);
                   break;
                     }
