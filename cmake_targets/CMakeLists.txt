@@ -283,8 +283,10 @@ if (${RRC_ASN1_VERSION} STREQUAL "Rel8")
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-86.asn)
 elseif (${RRC_ASN1_VERSION} STREQUAL "CBA")
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-a20-lola.asn)
-else()
+elseif (${RRC_ASN1_VERSION} STREQUAL "Rel10")
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-a20.asn)
+else()
+  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1c/ASN1_files/RRC-e10.asn)
 endif  (${RRC_ASN1_VERSION} STREQUAL "Rel8")
 
 set (RRC_FULL_DIR ${asn1_generated_dir}/${RRC_ASN1_VERSION})
@@ -1769,6 +1771,7 @@ add_executable(lte-softmodem
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/utils.c
+  ${OPENAIR_DIR}/common/utils/system.c
   ${GTPU_need_ITTI}
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}
@@ -1805,6 +1808,7 @@ add_executable(lte-softmodem-nos1
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  ${OPENAIR_DIR}/common/utils/system.c
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}
   ${RTAI_SOURCE}
@@ -1900,6 +1904,7 @@ add_executable(oaisim
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/utils.c
+  ${OPENAIR_DIR}/common/utils/system.c
   ${GTPU_need_ITTI}
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${HW_SOURCE}
@@ -1946,6 +1951,7 @@ add_executable(oaisim_nos1
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
+  ${OPENAIR_DIR}/common/utils/system.c
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}
   ${XFORMS_SOURCE}

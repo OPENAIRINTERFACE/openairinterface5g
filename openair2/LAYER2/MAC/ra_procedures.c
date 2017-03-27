@@ -499,37 +499,37 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP, 
             (rach_ConfigCommon->powerRampingParameters.powerRampingStep<<1);  // 2dB increments in ASN.1 definition
 	  int preambleTransMax = -1;
 	  switch (rach_ConfigCommon->ra_SupervisionInfo.preambleTransMax) {
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n3:
+	  case PreambleTransMax_n3:
 	    preambleTransMax = 3;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n4:
+	  case PreambleTransMax_n4:
 	    preambleTransMax = 4;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n5:
+	  case PreambleTransMax_n5:
 	    preambleTransMax = 5;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n6:
+	  case PreambleTransMax_n6:
 	    preambleTransMax = 6;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n7:
+	  case PreambleTransMax_n7:
 	    preambleTransMax = 7;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n8:
+	  case PreambleTransMax_n8:
 	    preambleTransMax = 8;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10:
+	  case PreambleTransMax_n10:
 	    preambleTransMax = 10;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n20:
+	  case PreambleTransMax_n20:
 	    preambleTransMax = 20;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n50:
+	  case PreambleTransMax_n50:
 	    preambleTransMax = 50;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n100:
+	  case PreambleTransMax_n100:
 	    preambleTransMax = 100;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n200:
+	  case PreambleTransMax_n200:
 	    preambleTransMax = 200;
 	    break;
 	  } 

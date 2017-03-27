@@ -193,7 +193,7 @@ int exmimo_assign_shm_vars(int card_id)
 int exmimo_allocate_rx_tx_buffers(int card_id)
 {
   size_t size;
-  int j,i;
+  int j;
   dma_addr_t dma_addr_dummy;
   // Round up to the next PAGE_SIZE (typ. 4096 bytes)
   size = (ADAC_BUFFERSZ_PERCHAN_B >> PAGE_SHIFT) + 1;
@@ -243,8 +243,6 @@ int exmimo_allocate_rx_tx_buffers(int card_id)
  */
 int exmimo_memory_alloc(int card)
 {
-  int i;
-
   if ( bigshm_init( card ) ) {
     printk("exmimo_memory_alloc(): bigshm_init failed for card %d.\n", card);
     return -ENOMEM;

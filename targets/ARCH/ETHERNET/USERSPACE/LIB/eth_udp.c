@@ -139,7 +139,7 @@ int trx_eth_read_udp_IF4p5(openair0_device *device, openair0_timestamp *timestam
   IF4p5_header_t *test_header = (IF4p5_header_t*)(buff[0]);
   
   int block_cnt=0; 
-  int again_cnt=0;
+  //int again_cnt=0;
   packet_size = max(UDP_IF4p5_PRACH_SIZE_BYTES, max(UDP_IF4p5_PULFFT_SIZE_BYTES(nblocks), UDP_IF4p5_PDLFFT_SIZE_BYTES(nblocks)));
 
   while(bytes_received == -1) {
@@ -410,7 +410,7 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
 	   eth->pck_seq_num_cur = *(uint16_t *)buff2;
 	   if ( ( eth->pck_seq_num_cur != (eth->pck_seq_num_prev + 1) ) && !((eth->pck_seq_num_prev==MAX_PACKET_SEQ_NUM(nsamps,device->openair0_cfg->samples_per_frame)) && (eth->pck_seq_num_cur==1 )) && !((eth->pck_seq_num_prev==1) && (eth->pck_seq_num_cur==1))) {	     
 	     //#if DEBUG
-	     printf("Out of order packet received: current_packet=%d previous_packet=%d timestamp=%llu\n",eth->pck_seq_num_cur,eth->pck_seq_num_prev,*timestamp);
+	     printf("Out of order packet received: current_packet=%d previous_packet=%d timestamp=%"PRId64"\n",eth->pck_seq_num_cur,eth->pck_seq_num_prev,*timestamp);
 	     //#endif
 	   }
 	   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RX_SEQ_NUM,eth->pck_seq_num_cur);
@@ -448,7 +448,7 @@ int eth_set_dev_conf_udp(openair0_device *device) {
 
   if (sendto(eth->sockfd,msg,msg_len,0,(struct sockaddr *)&eth->dest_addr,eth->addr_len)==-1) {
     perror("ETHERNET: sendto conf_udp");
-    printf("addr_len : %d, msg_len %d\n",eth->addr_len,msg_len);
+    printf("addr_len : %d, msg_len %zd\n",eth->addr_len,msg_len);
     exit(0);
   }
 

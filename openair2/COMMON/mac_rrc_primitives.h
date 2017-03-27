@@ -33,7 +33,7 @@
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "MeasGapConfig.h"
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-SubframeConfigList.h"
 #endif
@@ -380,7 +380,7 @@ typedef struct {
                             TDD_Config_t *tdd_Config,
                             uint8_t *SIwindowsize,
                             uint16_t *SIperiod
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
                             ,
                             MBMS_flag_t MBMS_Flag,
                             struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,

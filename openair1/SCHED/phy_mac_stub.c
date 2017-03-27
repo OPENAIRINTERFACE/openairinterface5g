@@ -531,7 +531,7 @@ void fill_dci(DCI_PDU *DCI_pdu,PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
       }
     }
     else {
-      switch (eNB->frame_parms.N_RB_DL==6) {
+      switch (eNB->frame_parms.N_RB_DL) {
       case 6:
 	((DCI0_1_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->type    = 0;
 	((DCI0_1_5MHz_TDD_1_6_t*)&DCI_pdu->dci_alloc[1].dci_pdu[0])->hopping = 0;

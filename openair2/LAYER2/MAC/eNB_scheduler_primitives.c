@@ -525,7 +525,7 @@ void swap_UEs(UE_list_t *listP,int nodeiP, int nodejP, int ul_flag)
 
 
 /*
-  #ifdef Rel10
+  #if defined(Rel10) || defined(Rel14)
   unsigned char generate_mch_header( unsigned char *mac_header,
   unsigned char num_sdus,
   unsigned short *sdu_lengths,

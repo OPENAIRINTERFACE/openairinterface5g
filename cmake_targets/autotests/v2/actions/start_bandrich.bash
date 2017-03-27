@@ -16,6 +16,8 @@ stty isig intr ^C
 
 cd /tmp/oai_test_setup/oai
 source oaienv
+sudo rmmod nasmesh || true
+sudo rmmod ue_ip || true
 cd cmake_targets/autotests/v2/actions
 python start_bandrich.py
 

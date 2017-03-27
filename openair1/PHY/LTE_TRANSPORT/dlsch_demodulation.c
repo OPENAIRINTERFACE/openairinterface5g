@@ -120,8 +120,8 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
   int32_t **rxdataF_comp_ptr;
   int32_t **dl_ch_mag_ptr;
-  int32_t codeword_TB0;
-  int32_t codeword_TB1;
+  int32_t codeword_TB0 = -1;
+  int32_t codeword_TB1 = -1;
 
 
 

@@ -942,3 +942,148 @@ MU_MIMO_mode *get_mu_mimo_mode (module_id_t Mod_id, uint8_t  CC_id, rnti_t rnti)
 
   return &PHY_vars_eNB_g[Mod_id][CC_id]->mu_mimo_mode[UE_id];
 }
+
+int is_srs_occasion_common(LTE_DL_FRAME_PARMS *frame_parms,int frame_tx,int subframe_tx)
+{
+  uint8_t isSubframeSRS   = 0; // SRS Cell Occasion
+
+  //ue->ulsch[eNB_id]->srs_active   = 0;
+  //ue->ulsch[eNB_id]->Nsymb_pusch  = 12-(frame_parms->Ncp<<1)- ue->ulsch[eNB_id]->srs_active;
+  if(frame_parms->soundingrs_ul_config_common.enabled_flag)
+  {
+
+    LOG_D(PHY," SRS SUBFRAMECONFIG: %d\n", frame_parms->soundingrs_ul_config_common.srs_SubframeConfig);
+
+      uint8_t  TSFC;
+      uint16_t deltaTSFC; // bitmap
+      uint8_t  srs_SubframeConfig;
+
+      // table resuming TSFC (Period) and deltaSFC (offset)
+      const uint16_t deltaTSFCTabType1[15][2] = { {1,1},{1,2},{2,2},{1,5},{2,5},{4,5},{8,5},{3,5},{12,5},{1,10},{2,10},{4,10},{8,10},{351,10},{383,10} };      // Table 5.5.3.3-2 3GPP 36.211 FDD
+      const uint16_t deltaTSFCTabType2[14][2] = { {2,5},{6,5},{10,5},{18,5},{14,5},{22,5},{26,5},{30,5},{70,10},{74,10},{194,10},{326,10},{586,10},{210,10} }; // Table 5.5.3.3-2 3GPP 36.211 TDD
+
+      srs_SubframeConfig = frame_parms->soundingrs_ul_config_common.srs_SubframeConfig;
+      if (FDD == frame_parms->frame_type)
+      {
+          // srs_SubframeConfig =< 14
+          deltaTSFC = deltaTSFCTabType1[srs_SubframeConfig][0];
+          TSFC      = deltaTSFCTabType1[srs_SubframeConfig][1];
+      }
+      else
+      {
+          // srs_SubframeConfig =< 13
+          deltaTSFC = deltaTSFCTabType2[srs_SubframeConfig][0];
+          TSFC      = deltaTSFCTabType2[srs_SubframeConfig][1];
+      }
+
+      // Sounding reference signal subframes are the subframes satisfying ns/2 mod TSFC (- deltaTSFC
+      uint16_t tmp = (subframe_tx %  TSFC);
+      if((1<<tmp) & deltaTSFC)
+      {
+          // This is a Sounding reference signal subframes
+          isSubframeSRS = 1;
+      }
+      LOG_D(PHY," ISTDD: %d, TSFC: %d, deltaTSFC: %d, AbsSubframeTX: %d.%d\n", frame_parms->frame_type, TSFC, deltaTSFC, frame_tx, subframe_tx);
+  }
+  return(isSubframeSRS);
+}
+
+void compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset)
+{
+    if(TDD == frameType)
+    {
+        if(isrs<10)
+        {
+            mac_xface->macphy_exit("2 ms SRS periodicity not supported");
+        }
+
+        if((isrs>9)&&(isrs<15))
+        {
+            *psrsPeriodicity=5;
+            *psrsOffset=isrs-10;
+        }
+        if((isrs>14)&&(isrs<25))
+        {
+            *psrsPeriodicity=10;
+            *psrsOffset=isrs-15;
+        }
+        if((isrs>24)&&(isrs<45))
+        {
+            *psrsPeriodicity=20;
+            *psrsOffset=isrs-25;
+        }
+        if((isrs>44)&&(isrs<85))
+        {
+            *psrsPeriodicity=40;
+            *psrsOffset=isrs-45;
+        }
+        if((isrs>84)&&(isrs<165))
+        {
+            *psrsPeriodicity=80;
+            *psrsOffset=isrs-85;
+        }
+        if((isrs>164)&&(isrs<325))
+        {
+            *psrsPeriodicity=160;
+            *psrsOffset=isrs-165;
+        }
+        if((isrs>324)&&(isrs<645))
+        {
+            *psrsPeriodicity=320;
+            *psrsOffset=isrs-325;
+        }
+
+        if(isrs>644)
+        {
+            mac_xface->macphy_exit("Isrs out of range");
+        }
+
+    }
+    else
+    {
+        if(isrs<2)
+        {
+            *psrsPeriodicity=2;
+            *psrsOffset=isrs;
+        }
+        if((isrs>1)&&(isrs<7))
+        {
+            *psrsPeriodicity=5;
+            *psrsOffset=isrs-2;
+        }
+        if((isrs>6)&&(isrs<17))
+        {
+            *psrsPeriodicity=10;
+            *psrsOffset=isrs-7;
+        }
+        if((isrs>16)&&(isrs<37))
+        {
+            *psrsPeriodicity=20;
+            *psrsOffset=isrs-17;
+        }
+        if((isrs>36)&&(isrs<77))
+        {
+            *psrsPeriodicity=40;
+            *psrsOffset=isrs-37;
+        }
+        if((isrs>76)&&(isrs<157))
+        {
+            *psrsPeriodicity=80;
+            *psrsOffset=isrs-77;
+        }
+        if((isrs>156)&&(isrs<317))
+        {
+            *psrsPeriodicity=160;
+            *psrsOffset=isrs-157;
+        }
+        if((isrs>316)&&(isrs<637))
+        {
+            *psrsPeriodicity=320;
+            *psrsOffset=isrs-317;
+        }
+        if(isrs>636)
+        {
+            mac_xface->macphy_exit("Isrs out of range");
+        }
+    }
+}

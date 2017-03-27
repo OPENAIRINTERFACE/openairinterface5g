@@ -222,7 +222,7 @@ mac_rrc_data_req(
       return (Sdu_size);
     }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
     if((Srb_id & RAB_OFFSET) == MCCH) {
       if(eNB_rrc_inst[Mod_idP].carrier[CC_id].MCCH_MESS[mbsfn_sync_area].Active==0) {
@@ -281,7 +281,7 @@ mac_rrc_data_req(
       //return(0);
     }
 
-#endif //Rel10
+#endif //Rel10 || Rel14
   } else {  //This is an UE
 
     LOG_D(RRC,"[UE %d] Frame %d Filling CCCH SRB_ID %d\n",Mod_idP,frameP,Srb_id);
@@ -428,7 +428,7 @@ mac_rrc_data_ind(
       }
     }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
     if ((srb_idP & RAB_OFFSET) == MCCH) {
       LOG_T(RRC,"[UE %d] Frame %d: Received SDU on MBSFN sync area %d for MCCH on SRB %d from eNB %d\n",
@@ -459,7 +459,7 @@ mac_rrc_data_ind(
 #endif
     }
 
-#endif // Rel10
+#endif // Rel10 || Rel14
 
   } else { // This is an eNB
     Srb_info = &eNB_rrc_inst[module_idP].carrier[CC_id].Srb0;

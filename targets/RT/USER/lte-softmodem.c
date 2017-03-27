@@ -74,6 +74,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "create_tasks.h"
 #endif
 
+#include "system.h"
+
 #ifdef XFORMS
 #include "PHY/TOOLS/lte_phy_scope.h"
 #include "stats.h"
@@ -319,8 +321,8 @@ void help (void) {
   printf("  --ue-rxgain set UE RX gain\n");
   printf("  --ue-rxgain-off external UE amplifier offset\n");
   printf("  --ue-txgain set UE TX gain\n");
-  printf("  --ue-nb-ant-rx  set UE number of rx antennas ");
-  printf("  --ue-scan_carrier set UE to scan around carrier\n");
+  printf("  --ue-nb-ant-rx  set UE number of rx antennas\n");
+  printf("  --ue-scan-carrier set UE to scan around carrier\n");
   printf("  --dlsch-demod-shift dynamic shift for LLR compuation for TM3/4 (default 0)\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
   printf("  --mmapped-dma sets flag for improved EXMIMO UE performance\n");  
@@ -1370,6 +1372,8 @@ int main( int argc, char **argv ) {
 #if defined (XFORMS)
     int ret;
 #endif
+
+    start_background_system();
 
 #ifdef DEBUG_CONSOLE
     setvbuf(stdout, NULL, _IONBF, 0);

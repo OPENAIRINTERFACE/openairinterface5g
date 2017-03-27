@@ -3,6 +3,8 @@ stty isig intr ^C
 
 cd /tmp/oai_test_setup/oai
 source oaienv
+sudo rmmod nasmesh || true
+sudo rmmod ue_ip || true
 cd cmake_targets/lte_build_oai/build
 ulimit -c unlimited
 sudo rm -f core
