@@ -3,19 +3,16 @@
 # in those arrays, each line is:
 #   <file> <sha1sum of file (without line 4 which changes depending on the location of the files)> <patch to apply to file>
 
+RRC_Rel14=(
+  "SystemInformation-r8-IEs.h" 562e3c3aeb7c6d76d722f31bf24488a26e627f33 "fix_asn1.data/RRC.rel14/SystemInformation-r8-IEs.h.diff"
+)
+
 RRC_Rel10=(
   "SystemInformation-r8-IEs.h" 603cd6615cff36ec7020692d72c0d6de7c4859cb "fix_asn1.data/RRC.rel10/SystemInformation-r8-IEs.h.diff"
 )
 
 X2AP_Rel11_2=(
   "X2ap-CriticalityDiagnostics-IE-List.h" ae96308b37fcbcbf39da5012e42968135fc5f27b "fix_asn1.data/X2AP.rel11.2/X2ap-CriticalityDiagnostics-IE-List.h.diff"
-  "NativeInteger.c"                       1a55f5402fd363318cf5444ffe1f67530dcf66ff "fix_asn1.data/X2AP.rel11.2/NativeInteger.c.diff"
-  "constr_SET_OF.c"                       808cbbdf19b118c0bdb04e3acf2cbe6e4133be2b "fix_asn1.data/X2AP.rel11.2/constr_SET_OF.c.diff"
-)
-
-S1AP_Rel10_5=(
-  "NativeInteger.c" 1a55f5402fd363318cf5444ffe1f67530dcf66ff "fix_asn1.data/S1AP.rel10.5/NativeInteger.c.diff"
-  "constr_SET_OF.c" 808cbbdf19b118c0bdb04e3acf2cbe6e4133be2b "fix_asn1.data/S1AP.rel10.5/constr_SET_OF.c.diff"
 )
 
 red_color="$(tput setaf 1)"
@@ -94,6 +91,10 @@ function patch_rrc()
   local version="$2"
 
   case "$version" in
+    Rel14 )
+      echo "patching RRC files release 14"
+      apply_patches "$directory" RRC_Rel14 ${#RRC_Rel14[*]}
+      ;;
     Rel10 )
       echo "patching RRC files release 10"
       apply_patches "$directory" RRC_Rel10 ${#RRC_Rel10[*]}
@@ -130,8 +131,7 @@ function patch_s1ap()
 
   case "$version" in
     R10 )
-      echo "patching S1AP files release 10.5"
-      apply_patches "$directory" S1AP_Rel10_5 ${#S1AP_Rel10_5[*]}
+      #nothing to do anymore (fixes went to asn1c)
       ;;
     * )
       error unknwon/unhandled S1AP version \'"$version"\'

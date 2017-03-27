@@ -59,7 +59,7 @@ int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char* buffer, int length
     return 0;
 
   if ((mode == normal_txrx) || (mode == no_L2_connect)) {
-    len += sprintf(&buffer[len], "[UE_PROC] UE %d, RNTI %x\n",ue->Mod_id, ue->pdcch_vars[0]->crnti);
+    len += sprintf(&buffer[len], "[UE_PROC] UE %d, RNTI %x\n",ue->Mod_id, ue->pdcch_vars[0][0]->crnti);
      len += sprintf(&buffer[len],"[UE PROC] RSRP[0] %.2f dBm/RE, RSSI %.2f dBm, RSRQ[0] %.2f dB, N0 %d dBm/RE (NF %.1f dB)\n",
 		    10*log10(ue->measurements.rsrp[0])-ue->rx_total_gain_dB,
 		    10*log10(ue->measurements.rssi)-ue->rx_total_gain_dB, 
@@ -507,7 +507,7 @@ int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char* buffer, int length
       len += sprintf(&buffer[len], "[UE PROC] DLSCH Total %d, Error %d, FER %d\n",ue->dlsch_received[0],ue->dlsch_errors[0],ue->dlsch_fer[0]);
       len += sprintf(&buffer[len], "[UE PROC] DLSCH (SI) Total %d, Error %d\n",ue->dlsch_SI_received[0],ue->dlsch_SI_errors[0]);
       len += sprintf(&buffer[len], "[UE PROC] DLSCH (RA) Total %d, Error %d\n",ue->dlsch_ra_received[0],ue->dlsch_ra_errors[0]);
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
       int i=0;
 
       //len += sprintf(&buffer[len], "[UE PROC] MCH  Total %d\n", ue->dlsch_mch_received[0]);

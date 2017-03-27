@@ -162,8 +162,8 @@ rlc_am_get_buffer_occupancy_in_bytes (
       rlc_pP->status_buffer_occupancy = rlc_am_get_status_pdu_buffer_occupancy(rlc_pP);
 #if TRACE_RLC_AM_BO
 
-      LOG_D(RLC, PROTOCOL_CTXT_FMT RB_AM_FMT" BO : CONTROL PDU %d bytes \n",
-            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
+        LOG_D(RLC, PROTOCOL_CTXT_FMT RB_AM_FMT" BO : CONTROL PDU %d bytes \n",
+              PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
 			rlc_pP->status_buffer_occupancy);
 
 #endif
@@ -240,9 +240,15 @@ config_req_rlc_am (
 uint16_t pollPDU_tab[PollPDU_pInfinity+1]= {4,8,16,32,64,128,256,RLC_AM_POLL_PDU_INFINITE}; //PollPDU_pInfinity is chosen to 0xFFFF for now
 uint32_t maxRetxThreshold_tab[UL_AM_RLC__maxRetxThreshold_t32+1]= {1,2,3,4,6,8,16,32};
 uint32_t pollByte_tab[PollByte_spare1]= {25000,50000,75000,100000,125000,250000,375000,500000,750000,1000000,1250000,1500000,2000000,3000000,RLC_AM_POLL_BYTE_INFINITE}; // PollByte_kBinfinity is chosen to 0xFFFFFFFF for now
+#if defined(Rel14)
+uint32_t PollRetransmit_tab[T_PollRetransmit_spare5]= {5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500,800,1000,2000,4000};
+uint32_t am_t_Reordering_tab[32]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200,1600};
+uint32_t t_StatusProhibit_tab[T_StatusProhibit_spare2]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500,800,1000,1200,1600,2000,2400};
+#else
 uint32_t PollRetransmit_tab[T_PollRetransmit_spare9]= {5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500};
 uint32_t am_t_Reordering_tab[T_Reordering_spare1]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200};
 uint32_t t_StatusProhibit_tab[T_StatusProhibit_spare8]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500};
+#endif
 
 //-----------------------------------------------------------------------------
 void config_req_rlc_am_asn1 (
@@ -265,9 +271,15 @@ void config_req_rlc_am_asn1 (
     if ((config_am_pP->ul_AM_RLC.maxRetxThreshold <= UL_AM_RLC__maxRetxThreshold_t32) &&
         (config_am_pP->ul_AM_RLC.pollPDU<=PollPDU_pInfinity) &&
         (config_am_pP->ul_AM_RLC.pollByte<PollByte_spare1) &&
+#if defined(Rel14)
+        (config_am_pP->ul_AM_RLC.t_PollRetransmit<T_PollRetransmit_spare5) &&
+        (config_am_pP->dl_AM_RLC.t_Reordering<32) &&
+        (config_am_pP->dl_AM_RLC.t_StatusProhibit<T_StatusProhibit_spare2) ) {
+#else
         (config_am_pP->ul_AM_RLC.t_PollRetransmit<T_PollRetransmit_spare9) &&
         (config_am_pP->dl_AM_RLC.t_Reordering<T_Reordering_spare1) &&
         (config_am_pP->dl_AM_RLC.t_StatusProhibit<T_StatusProhibit_spare8) ) {
+#endif
 
       MSC_LOG_RX_MESSAGE(
         (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
@@ -423,10 +435,10 @@ rlc_am_get_pdus (
       // When a STATUS PDU has been delivered to lower layer, the receiving side of an AM RLC entity shall:
       //     - start t-StatusProhibit.
 
-      rlc_am_send_status_pdu(ctxt_pP, rlc_pP);
-      mem_block_t* pdu = list_remove_head(&rlc_pP->control_pdu_list);
+        rlc_am_send_status_pdu(ctxt_pP, rlc_pP);
+        mem_block_t* pdu = list_remove_head(&rlc_pP->control_pdu_list);
 
-      if (pdu) {
+        if (pdu) {
           list_add_tail_eurecom (pdu, &rlc_pP->pdus_to_mac_layer);
           RLC_AM_CLEAR_ALL_STATUS(rlc_pP->status_requested);
           rlc_pP->status_buffer_occupancy = 0;
@@ -436,7 +448,7 @@ rlc_am_get_pdus (
       }
       else {
               LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" DELAYED SENT STATUS PDU (Available MAC Data %u)(T-PROHIBIT %u) (DELAY FLAG %u)\n",
-                    PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
+              PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
 					rlc_pP->nb_bytes_requested_by_mac,rlc_pP->t_status_prohibit.ms_time_out,(rlc_pP->status_requested & RLC_AM_STATUS_TRIGGERED_DELAYED));
     }
 
@@ -450,8 +462,8 @@ rlc_am_get_pdus (
     	  list_add_tail_eurecom (pdu_retx, &rlc_pP->pdus_to_mac_layer);
 
           return;
-      }
-    }
+        }
+        }
 
     // THEN TRY TO SEND NEW DATA PDU
     if ((rlc_pP->nb_bytes_requested_by_mac > 2) && (rlc_pP->sdu_buffer_occupancy) && (rlc_pP->vt_s != rlc_pP->vt_ms)) {
@@ -591,8 +603,8 @@ rlc_am_mac_status_indication (
 		  status_resp.buffer_occupancy_in_pdus = rlc->retrans_num_pdus;
 		  status_resp.head_sdu_remaining_size_to_send = rlc->retrans_num_bytes_to_retransmit;
 		  status_resp.head_sdu_is_segmented = 1;
-	  }
-  }
+			    }
+			  }
 #if MESSAGE_CHART_GENERATOR_RLC_MAC
   MSC_LOG_RX_MESSAGE(
     (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
@@ -691,7 +703,7 @@ rlc_am_mac_data_request (
 
   if (enb_flagP) {
 	  // redundant in UE MAC Tx processing and not used in eNB ...
-	  data_req.buffer_occupancy_in_bytes   = rlc_am_get_buffer_occupancy_in_bytes(ctxt_pP, l_rlc_p);
+  data_req.buffer_occupancy_in_bytes   = rlc_am_get_buffer_occupancy_in_bytes(ctxt_pP, l_rlc_p);
   }
   data_req.rlc_info.rlc_protocol_state = l_rlc_p->protocol_state;
 

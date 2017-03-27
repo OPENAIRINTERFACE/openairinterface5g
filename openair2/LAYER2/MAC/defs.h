@@ -57,7 +57,7 @@
 #include "RACH-ConfigCommon.h"
 #include "MeasObjectToAddModList.h"
 #include "MobilityControlInfo.h"
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "PMCH-InfoList-r9.h"
@@ -80,7 +80,7 @@
 #define SCH_PAYLOAD_SIZE_MAX 4096
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
 // Mask for identifying subframe for MBMS
 #define MBSFN_TDD_SF3 0x80// for TDD
@@ -276,7 +276,7 @@ typedef struct {
   uint8_t payload[PCCH_PAYLOAD_SIZE_MAX] ;
 } __attribute__((__packed__))PCCH_PDU;
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 /*! \brief MCCH payload */
 typedef struct {
   uint8_t payload[MCCH_PAYLOAD_SIZE_MAX] ;
@@ -327,7 +327,7 @@ typedef struct {
 /*!\brief LCID of padding LCID for DLSCH */
 #define SHORT_PADDING 31
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 // MCH LCHAN IDs (table6.2.1-4 TS36.321)
 /*!\brief LCID of MCCH for DL */
 #define MCCH_LCHANID 0
@@ -889,7 +889,7 @@ typedef struct {
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
   /// number of subframe allocation pattern available for MBSFN sync area
   uint8_t num_sf_allocation_pattern;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   /// MBMS Flag
   uint8_t MBMS_flag;
   /// Outgoing MCCH pdu for PHY
@@ -1058,7 +1058,7 @@ typedef struct {
   struct RACH_ConfigDedicated *rach_ConfigDedicated;
   /// pointer to RRC PHY configuration
   struct PhysicalConfigDedicated *physicalConfigDedicated;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   /// pointer to RRC PHY configuration SCEll
   struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10;
 #endif
@@ -1132,7 +1132,7 @@ typedef struct {
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8]; // FIXME replace 8 by MAX_MBSFN_AREA?
   /// number of subframe allocation pattern available for MBSFN sync area
   uint8_t num_sf_allocation_pattern;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   /// number of active MBSFN area
   uint8_t num_active_mbsfn_area;
   /// MBSFN Area Info

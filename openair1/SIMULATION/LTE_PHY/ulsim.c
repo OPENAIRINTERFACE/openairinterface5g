@@ -42,6 +42,7 @@
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
 #include "OCG_vars.h"
+#include "intertask_interface_init.h"
 
 #include "unitary_defs.h"
 
@@ -50,6 +51,7 @@
 PHY_VARS_eNB *eNB;
 PHY_VARS_UE *UE;
 
+double cpuf;
 
 
 
@@ -162,8 +164,8 @@ void fill_ulsch_dci(PHY_VARS_eNB *eNB,void *UL_dci,int first_rb,int nb_rb,int mc
 
 }
 
-extern void eNB_fep_full(PHY_VARS_eNB *eNB);
-extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB);
+extern void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc);
+extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc);
 
 int main(int argc, char **argv)
 {
@@ -195,7 +197,7 @@ int main(int argc, char **argv)
   int chMod = 0 ;
   int UE_id = 0;
   unsigned char nb_rb=25,first_rb=0,mcs=0,round=0,bundling_flag=1;
-  unsigned char l;
+  //unsigned char l;
 
   unsigned char awgn_flag = 0 ;
   SCM_t channel_model=Rice1;
@@ -244,7 +246,7 @@ int main(int argc, char **argv)
   int hold_channel=0;
   channel_desc_t *UE2eNB;
 
-  uint8_t control_only_flag = 0;
+  //uint8_t control_only_flag = 0;
   int delay = 0;
   double maxDoppler = 0.0;
   uint8_t srs_flag = 0;
@@ -280,11 +282,19 @@ int main(int argc, char **argv)
   opp_enabled=1; // to enable the time meas
 
   cpu_freq_GHz = (double)get_cpu_freq_GHz();
+  cpuf = cpu_freq_GHz;
 
   printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
 
-
   logInit();
+  /*
+  // enable these lines if you need debug info
+  // however itti will catch all signals, so ctrl-c won't work anymore
+  // alternatively you can disable ITTI completely in CMakeLists.txt
+  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
+  set_comp_log(PHY,LOG_DEBUG,LOG_MED,1);
+  set_glog(LOG_DEBUG,LOG_MED);
+  */
 
   while ((c = getopt (argc, argv, "hapZEbm:n:Y:X:x:s:w:e:q:d:D:O:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:QB:PI:LF")) != -1) {
     switch (c) {
@@ -566,6 +576,11 @@ int main(int argc, char **argv)
 		 osf,
 		 0);
 
+  // for a call to phy_reset_ue later we need PHY_vars_UE_g allocated and pointing to UE
+  PHY_vars_UE_g = (PHY_VARS_UE***)malloc(sizeof(PHY_VARS_UE**));
+  PHY_vars_UE_g[0] = (PHY_VARS_UE**) malloc(sizeof(PHY_VARS_UE*));
+  PHY_vars_UE_g[0][0] = UE;
+
   if (nb_rb_set == 0)
     nb_rb = eNB->frame_parms.N_RB_UL;
 
@@ -579,8 +594,6 @@ int main(int argc, char **argv)
   frame_parms = &eNB->frame_parms;
 
   txdata = UE->common_vars.txdata;
-
-
 
   nsymb = (eNB->frame_parms.Ncp == NORMAL) ? 14 : 12;
 
@@ -630,23 +643,31 @@ int main(int argc, char **argv)
     fl_show_form (form_enb->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
   }
 
-  UE->pdcch_vars[0]->crnti = 14;
+  UE->pdcch_vars[0][0]->crnti = 14;
 
+  UE->frame_parms.soundingrs_ul_config_common.enabled_flag = srs_flag;
   UE->frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
-  UE->frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
+  UE->frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 3;
+  UE->soundingrs_ul_config_dedicated[eNB_id].srsConfigDedicatedSetup = srs_flag;
+  UE->soundingrs_ul_config_dedicated[eNB_id].duration = 1;
+  UE->soundingrs_ul_config_dedicated[eNB_id].srs_ConfigIndex = 2;
   UE->soundingrs_ul_config_dedicated[eNB_id].srs_Bandwidth = 0;
   UE->soundingrs_ul_config_dedicated[eNB_id].transmissionComb = 0;
   UE->soundingrs_ul_config_dedicated[eNB_id].freqDomainPosition = 0;
+  UE->soundingrs_ul_config_dedicated[eNB_id].cyclicShift = 0;
 
+  eNB->frame_parms.soundingrs_ul_config_common.enabled_flag = srs_flag;
   eNB->frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
-  eNB->frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
-
-  eNB->soundingrs_ul_config_dedicated[UE_id].srs_ConfigIndex = 1;
+  eNB->frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 3;
+  eNB->soundingrs_ul_config_dedicated[UE_id].srsConfigDedicatedSetup = srs_flag;
+  eNB->soundingrs_ul_config_dedicated[UE_id].duration = 1;
+  eNB->soundingrs_ul_config_dedicated[UE_id].srs_ConfigIndex = 2;
   eNB->soundingrs_ul_config_dedicated[UE_id].srs_Bandwidth = 0;
   eNB->soundingrs_ul_config_dedicated[UE_id].transmissionComb = 0;
   eNB->soundingrs_ul_config_dedicated[UE_id].freqDomainPosition = 0;
+  eNB->soundingrs_ul_config_dedicated[UE_id].cyclicShift = 0;
+
   eNB->cooperation_flag = cooperation_flag;
-  //  eNB->eNB_UE_stats[0].SRS_parameters = UE->SRS_parameters;
 
   eNB->pusch_config_dedicated[UE_id].betaOffset_ACK_Index = beta_ACK;
   eNB->pusch_config_dedicated[UE_id].betaOffset_RI_Index  = beta_RI;
@@ -656,6 +677,11 @@ int main(int argc, char **argv)
   UE->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index = beta_CQI;
 
   UE->ul_power_control_dedicated[eNB_id].deltaMCS_Enabled = 1;
+
+  // disable periodic cqi/ri reporting
+  UE->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex = -1;
+  UE->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex = -1;
+
 
   printf("PUSCH Beta : ACK %f, RI %f, CQI %f\n",(double)beta_ack[beta_ACK]/8,(double)beta_ri[beta_RI]/8,(double)beta_cqi[beta_CQI]/8);
 
@@ -675,6 +701,8 @@ int main(int argc, char **argv)
   UE->ulsch[0]   = new_ue_ulsch(N_RB_DL,0);
 
   if (parallel_flag == 1) {
+    extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
+    extern void init_td_thread(PHY_VARS_eNB *, pthread_attr_t *);
     init_fep_thread(eNB,NULL);
     init_td_thread(eNB,NULL);
   }
@@ -698,8 +726,8 @@ int main(int argc, char **argv)
 
   } 
 
-
-
+  UE->dlsch_SI[0]  = new_ue_dlsch(1,1,1827072,MAX_TURBO_ITERATIONS,N_RB_DL,0);
+  UE->dlsch_ra[0]  = new_ue_dlsch(1,1,1827072,MAX_TURBO_ITERATIONS,N_RB_DL,0);
 
   UE->measurements.rank[0] = 0;
   UE->transmission_mode[0] = 2;
@@ -841,6 +869,7 @@ int main(int argc, char **argv)
 
         while (!feof(input_fdUL)) {
           ret=fscanf(input_fdUL,"%s %s",input_val_str,input_val_str2);//&input_val1,&input_val2);
+          if (ret != 2) printf("ERROR: error reading file\n");
 
           if ((i%4)==0) {
             ((short*)txdata[0])[i/2] = (short)((1<<15)*strtod(input_val_str,NULL));
@@ -915,6 +944,10 @@ int main(int argc, char **argv)
       initialize(&time_vector_rx_dec);
 
       ndi=0;
+
+      phy_reset_ue(0,0,0);
+      UE->UE_mode[eNB_id]=PUSCH;
+
       for (trials = 0; trials<n_frames; trials++) {
         //      printf("*");
         //        UE->frame++;

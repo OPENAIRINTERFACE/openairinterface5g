@@ -61,7 +61,7 @@ Description Defines a list of PLMN network operators
 #define VDF5  11
 
 
-#define SELECTED_PLMN OAI_LTEBOX //SFR1
+#define SELECTED_PLMN TEST1 //SFR1
 
 #define TEST_PLMN {0,0,0x0f,1,1,0}  // 00101
 #define SFR_PLMN_1  {0,2,0x0f,8,0,1}  // 20810

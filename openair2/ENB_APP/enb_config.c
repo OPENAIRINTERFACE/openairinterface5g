@@ -115,7 +115,7 @@
 #define ENB_CONFIG_STRING_PUCCH_DELTA_SHIFT                         "pucch_delta_shift"
 #define ENB_CONFIG_STRING_PUCCH_NRB_CQI                                 "pucch_nRB_CQI"
 #define ENB_CONFIG_STRING_PUCCH_NCS_AN                                  "pucch_nCS_AN"
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
 #define ENB_CONFIG_STRING_PUCCH_N1_AN                                 "pucch_n1_AN"
 #endif
 #define ENB_CONFIG_STRING_PDSCH_RS_EPRE                                 "pdsch_referenceSignalPower"
@@ -418,7 +418,7 @@ void enb_config_display(void)
       printf( "\tpucch_delta_shift for CC %d:\t%ld:\n",j,enb_properties.properties[i]->pucch_delta_shift[j]);
       printf( "\tpucch_nRB_CQI for CC %d:\t%ld:\n",j,enb_properties.properties[i]->pucch_nRB_CQI[j]);
       printf( "\tpucch_nCS_AN for CC %d:\t%ld:\n",j,enb_properties.properties[i]->pucch_nCS_AN[j]);
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
       printf( "\tpucch_n1_AN for CC %d:\t%ld:\n",j,enb_properties.properties[i]->pucch_n1_AN[j]);
 #endif
 
@@ -427,7 +427,7 @@ void enb_config_display(void)
 
       if (enb_properties.properties[i]->srs_enable[j]) {
         printf( "\tsrs_BandwidthConfig for CC %d:\t%ld:\n",j,enb_properties.properties[i]->srs_BandwidthConfig[j]);
-        printf( "\tsrs_BandwidthConfig for CC %d:\t%ld:\n",j,enb_properties.properties[i]->srs_SubframeConfig[j]);
+        printf( "\tsrs_SubframeConfig for CC %d:\t%ld:\n",j,enb_properties.properties[i]->srs_SubframeConfig[j]);
         printf( "\tsrs_ackNackST for CC %d:\t%d:\n",j,enb_properties.properties[i]->srs_ackNackST[j]);
         printf( "\tsrs_MaxUpPts for CC %d:\t%d:\n",j,enb_properties.properties[i]->srs_MaxUpPts[j]);
       }
@@ -589,7 +589,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
   libconfig_int     pucch_delta_shift             = 0;
   libconfig_int     pucch_nRB_CQI                 = 0;
   libconfig_int     pucch_nCS_AN                  = 0;
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
   libconfig_int     pucch_n1_AN                   = 0;
 #endif
   libconfig_int     pdsch_referenceSignalPower    = 0;
@@ -868,7 +868,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_PUCCH_DELTA_SHIFT, &pucch_delta_shift)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_PUCCH_NRB_CQI, &pucch_nRB_CQI)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_PUCCH_NCS_AN, &pucch_nCS_AN)
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_PUCCH_N1_AN, &pucch_n1_AN)
 #endif
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_PDSCH_RS_EPRE, &pdsch_referenceSignalPower)
@@ -913,7 +913,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_UETIMERS_N311,  &ue_TimersAndConstants_n311)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,  &ue_TransmissionMode)
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
 #endif
                   )) {
@@ -1162,7 +1162,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
                              "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_nCS_AN choice: 0..7!\n",
                              lib_config_file_name_pP, i, pucch_nCS_AN);
 
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
               enb_properties.properties[enb_properties_index]->pucch_n1_AN[j] = pucch_n1_AN;
 
               if ((pucch_n1_AN <0) || (pucch_n1_AN > 2047))
@@ -1347,21 +1347,21 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
                              lib_config_file_name_pP, i, pusch_p0_Nominal);
 
               if (strcmp(pusch_alpha,"AL0")==0) {
-                enb_properties.properties[enb_properties_index]->pusch_alpha[j] = UplinkPowerControlCommon__alpha_al0;
+                enb_properties.properties[enb_properties_index]->pusch_alpha[j] = Alpha_r12_al0;
               } else if (strcmp(pusch_alpha,"AL04")==0) {
-                enb_properties.properties[enb_properties_index]->pusch_alpha[j] = UplinkPowerControlCommon__alpha_al04;
+                enb_properties.properties[enb_properties_index]->pusch_alpha[j] = Alpha_r12_al04;
               } else if (strcmp(pusch_alpha,"AL05")==0) {
-                enb_properties.properties[enb_properties_index]->pusch_alpha[j] = UplinkPowerControlCommon__alpha_al05;
+                enb_properties.properties[enb_properties_index]->pusch_alpha[j] = Alpha_r12_al05;
               } else if (strcmp(pusch_alpha,"AL06")==0) {
-                enb_properties.properties[enb_properties_index]->pusch_alpha[j] = UplinkPowerControlCommon__alpha_al06;
+                enb_properties.properties[enb_properties_index]->pusch_alpha[j] = Alpha_r12_al06;
               } else if (strcmp(pusch_alpha,"AL07")==0) {
-                enb_properties.properties[enb_properties_index]->pusch_alpha[j] = UplinkPowerControlCommon__alpha_al07;
+                enb_properties.properties[enb_properties_index]->pusch_alpha[j] = Alpha_r12_al07;
               } else if (strcmp(pusch_alpha,"AL08")==0) {
-                enb_properties.properties[enb_properties_index]->pusch_alpha[j] = UplinkPowerControlCommon__alpha_al08;
+                enb_properties.properties[enb_properties_index]->pusch_alpha[j] = Alpha_r12_al08;
               } else if (strcmp(pusch_alpha,"AL09")==0) {
-                enb_properties.properties[enb_properties_index]->pusch_alpha[j] = UplinkPowerControlCommon__alpha_al09;
+                enb_properties.properties[enb_properties_index]->pusch_alpha[j] = Alpha_r12_al08;
               } else if (strcmp(pusch_alpha,"AL1")==0) {
-                enb_properties.properties[enb_properties_index]->pusch_alpha[j] = UplinkPowerControlCommon__alpha_al1;
+                enb_properties.properties[enb_properties_index]->pusch_alpha[j] = Alpha_r12_al1;
               } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_Alpha choice: AL0,AL04,AL05,AL06,AL07,AL08,AL09,AL1!\n",
@@ -1553,47 +1553,47 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
 
               switch (rach_preambleTransMax) {
               case 3:
-                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n3;
+                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  PreambleTransMax_n3;
                 break;
 
               case 4:
-                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n4;
+                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  PreambleTransMax_n4;
                 break;
 
               case 5:
-                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n5;
+                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  PreambleTransMax_n5;
                 break;
 
               case 6:
-                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n6;
+                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  PreambleTransMax_n6;
                 break;
 
               case 7:
-                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n7;
+                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  PreambleTransMax_n7;
                 break;
 
               case 8:
-                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n8;
+                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  PreambleTransMax_n8;
                 break;
 
               case 10:
-                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10;
+                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  PreambleTransMax_n10;
                 break;
 
               case 20:
-                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n20;
+                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  PreambleTransMax_n20;
                 break;
 
               case 50:
-                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n50;
+                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  PreambleTransMax_n50;
                 break;
 
               case 100:
-                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n100;
+                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  PreambleTransMax_n100;
                 break;
 
               case 200:
-                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n200;
+                enb_properties.properties[enb_properties_index]->rach_preambleTransMax[j] =  PreambleTransMax_n200;
                 break;
 
               default:

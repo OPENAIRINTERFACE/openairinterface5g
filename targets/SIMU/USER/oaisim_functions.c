@@ -91,7 +91,9 @@ extern char smbv_ip[16];
 #define K 2                  // averaging coefficient
 #define TARGET_SF_TIME_NS 1000000       // 1ms = 1000000 ns
 
+#ifndef min
 #define min(a,b) ((a)<(b)?(a):(b))
+#endif
 
 int           otg_times             = 0;
 int           if_times              = 0;
@@ -161,7 +163,7 @@ extern channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs];
 extern channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX][MAX_NUM_CCs];
 
 extern mapping small_scale_names[];
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
 extern pdcp_mbms_t pdcp_mbms_array_ue[NUMBER_OF_UE_MAX][maxServiceCount][maxSessionPerPMCH];
 extern pdcp_mbms_t pdcp_mbms_array_eNB[NUMBER_OF_eNB_MAX][maxServiceCount][maxSessionPerPMCH];
 #endif
@@ -1014,8 +1016,8 @@ int eNB_trx_stop(openair0_device *device) {
 int UE_trx_start(openair0_device *device) {
   return(0);
 }
-int UE_trx_end(openair0_device *device) {
-  return(0);
+void UE_trx_end(openair0_device *device) {
+  return;
 }
 int UE_trx_stop(openair0_device *device) {
   return(0);
@@ -1293,7 +1295,7 @@ void init_devices(void){
 
 void init_openair1(void)
 {
-  module_id_t UE_id, eNB_id;
+  module_id_t UE_id, eNB_id = 0;
   uint8_t CC_id;
 #if ENABLE_RAL
   int list_index;
@@ -1428,7 +1430,7 @@ void init_openair1(void)
       else
 	PHY_vars_UE_g[UE_id][CC_id]->mac_enabled=1;
 
-      PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[0]->crnti = 0x1235 + UE_id;
+      PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[0][0]->crnti = 0x1235 + UE_id;
       PHY_vars_UE_g[UE_id][CC_id]->current_dlsch_cqi[0] = 10;
 
       LOG_I(EMU, "UE %d mode is initialized to %d\n", UE_id, PHY_vars_UE_g[UE_id][CC_id]->UE_mode[0] );
@@ -1447,6 +1449,7 @@ void init_openair1(void)
 
     } // CC_id
   } // UE_id
+  extern void init_UE(int);
   init_UE(NB_UE_INST);
     }
 
@@ -1738,7 +1741,7 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
       }
     }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
     mbms_service_id_t service_id;
     mbms_session_id_t session_id;
     rb_id_t           rb_id;
@@ -1773,7 +1776,7 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
 
             // old version
             /*      // MBSM multicast traffic
-            #ifdef Rel10
+            #if defined(Rel10) || defined(Rel14)
             if (frame >= 46) {// only generate when UE can receive MTCH (need to control this value)
             for (service_id = 0; service_id < 2 ; service_id++) { //maxServiceCount
             for (session_id = 0; session_id < 2; session_id++) { // maxSessionPerPMCH

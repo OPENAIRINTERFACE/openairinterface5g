@@ -59,6 +59,7 @@
 
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
+#include "system.h"
 
 
 #include "PHY/TOOLS/lte_phy_scope.h"
@@ -472,7 +473,7 @@ l2l1_task (void *args_p)
   // Framing variables
   int32_t sf;
 
-  char fname[64], vname[64];
+  //char fname[64], vname[64];
 
   //#ifdef XFORMS
   // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
@@ -929,7 +930,7 @@ l2l1_task (void *args_p)
           }
         }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
         for (RN_id=oai_emulation.info.first_rn_local;
              RN_id<oai_emulation.info.first_rn_local+oai_emulation.info.nb_rn_local;
@@ -1194,6 +1195,8 @@ main (int argc, char **argv)
 
   clock_t t;
 
+  start_background_system();
+
 #ifdef SMBV
   // Rohde&Schwarz SMBV100A vector signal generator
   strcpy(smbv_ip,DEFAULT_SMBV_IP);
@@ -1216,7 +1219,10 @@ main (int argc, char **argv)
   for(int i =0; i<NUMBER_OF_UE_MAX; i++){
       char command_line[100];
       sprintf(command_line, "while ip rule del table %d; do true; done",i+201);
-      system(command_line);
+      /* we don't care about return value from system(), but let's the
+       * compiler be silent, so let's do "if (XX);"
+       */
+      if (system(command_line)) /* nothing */;
   }
   // start thread for log gen
   log_thread_init ();
@@ -1286,6 +1292,7 @@ main (int argc, char **argv)
 
   init_openair2 ();
 
+  void init_openair0(void);
   init_openair0();
 
   init_ocm ();
@@ -1331,6 +1338,8 @@ main (int argc, char **argv)
   // oai performance profiler is enabled
   if (oai_emulation.info.opp_enabled == 1)
     reset_opp_meas_oaisim ();
+
+  cpuf=get_cpu_freq_GHz();
 
   init_time ();
 
@@ -1381,14 +1390,16 @@ reset_opp_meas_oaisim (void)
 
   for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
     reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc);
-    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx[0]);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx[1]);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_tx);
 
     reset_meas (&PHY_vars_UE_g[UE_id][0]->ofdm_demod_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->rx_dft_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_channel_estimation_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_freq_offset_estimation_stats);
-    reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats[0]);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats[1]);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_rate_unmatching_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_turbo_decoding_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_deinterleaving_stats);
@@ -1550,8 +1561,10 @@ print_opp_meas_oaisim (void)
     print_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc, "[UE][total_phy_proc]",
                 &oaisim_stats, &oaisim_stats_f);
 
-    print_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx,
-                "[UE][total_phy_proc_rx]", &oaisim_stats, &oaisim_stats_f);
+    print_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx[0],
+                "[UE][total_phy_proc_rx[0]]", &oaisim_stats, &oaisim_stats_f);
+    print_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx[1],
+                "[UE][total_phy_proc_rx[1]]", &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->ofdm_demod_stats,
                 "[UE][ofdm_demod]", &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->rx_dft_stats, "[UE][rx_dft]",
@@ -1564,8 +1577,10 @@ print_opp_meas_oaisim (void)
                 &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_unscrambling_stats,
                 "[UE][unscrambling]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats,
-                "[UE][decoding]", &oaisim_stats, &oaisim_stats_f);
+    print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats[0],
+                "[UE][decoding[0]]", &oaisim_stats, &oaisim_stats_f);
+    print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats[1],
+                "[UE][decoding[1]]", &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_rate_unmatching_stats,
                 "[UE][rate_unmatching]", &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_deinterleaving_stats,

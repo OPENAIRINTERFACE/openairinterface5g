@@ -1268,7 +1268,7 @@ uint32_t dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
                         LTE_DL_FRAME_PARMS *lte_frame_parms,
                         LTE_UE_DLSCH_t *dlsch,
                         LTE_DL_UE_HARQ_t *harq_process,
-                        uint8_t frame,
+                        uint32_t frame,
                         uint8_t subframe,
                         uint8_t harq_pid,
                         uint8_t is_crnti,
@@ -1308,9 +1308,7 @@ int32_t rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                  uint8_t i_mod,
                  uint8_t harq_pid);
 
-int32_t rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
-                 LTE_UE_PDCCH **lte_ue_pdcch_vars,
-                 LTE_DL_FRAME_PARMS *frame_parms,
+int32_t rx_pdcch(PHY_VARS_UE *ue,
                  uint32_t frame,
                  uint8_t subframe,
                  uint8_t eNB_id,
@@ -1570,9 +1568,11 @@ uint8_t SE2I_TBS(float SE,
     @param soundingrs_ul_config_dedicated Dynamic configuration from RRC during Connection Establishment
     @param txdataF pointer to the frequency domain TX signal
     @returns 0 on success*/
-int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
-                    SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
-                    int *txdataF);
+int generate_srs(LTE_DL_FRAME_PARMS *frame_parms,
+		 SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
+		 int *txdataF,
+		 int16_t amp,
+		 uint32_t subframe);
 
 int32_t generate_srs_tx_emul(PHY_VARS_UE *phy_vars_ue,
                              uint8_t subframe);
@@ -1781,6 +1781,7 @@ uint32_t ulsch_encoding(uint8_t *a,
                         PHY_VARS_UE *phy_vars_ue,
                         uint8_t harq_pid,
                         uint8_t eNB_id,
+                        uint8_t subframe_rx,
                         uint8_t tmode,
                         uint8_t control_only_flag,
                         uint8_t Nbundled);
@@ -1796,6 +1797,7 @@ uint32_t ulsch_encoding(uint8_t *a,
 int32_t ulsch_encoding_emul(uint8_t *ulsch_buffer,
                             PHY_VARS_UE *phy_vars_ue,
                             uint8_t eNB_id,
+                            uint8_t subframe_rx,
                             uint8_t harq_pid,
                             uint8_t control_only_flag);
 
@@ -1899,7 +1901,7 @@ uint16_t quantize_subband_pmi(PHY_MEASUREMENTS *meas,uint8_t eNB_id,int nb_subba
 
 int32_t pmi_convert_rank1_from_rank2(uint16_t pmi_alloc, int tpmi, int nb_rb);
 
-//uint16_t quantize_subband_pmi2(PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t a_id,int nb_subbands);
+uint16_t quantize_subband_pmi2(PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t a_id,int nb_subbands);
 
 uint64_t pmi2hex_2Ar1(uint32_t pmi);
 

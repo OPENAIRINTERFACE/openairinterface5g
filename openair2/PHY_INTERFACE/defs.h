@@ -112,7 +112,7 @@ typedef struct {
                               AdditionalSpectrumEmission_t *additionalSpectrumEmission,
                               struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList);
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   /// Configure Common PHY parameters from SIB13
   void (*phy_config_sib13_eNB)(module_id_t Mod_id,int CC_id, int mbsfn_Area_idx,
                                long mbsfn_AreaId_r9);
@@ -127,7 +127,7 @@ typedef struct {
   void (*phy_config_dedicated_eNB)(module_id_t Mod_id,int CC_id,rnti_t rnti,
                                    struct PhysicalConfigDedicated *physicalConfigDedicated);
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   /// Get MCH sdu and corresponding MCS for particular MBSFN subframe
   MCH_PDU* (*get_mch_sdu)(module_id_t Mod_id, int CC_id, frame_t frameP,sub_frame_t subframe);
 #endif
@@ -154,7 +154,7 @@ typedef struct {
   /// Send a received DLSCH sdu to MAC
   void (*ue_send_sdu)(module_id_t Mod_id,uint8_t CC_id,frame_t frameP,sub_frame_t subframe,uint8_t *sdu,uint16_t sdu_len,uint8_t CH_index);
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   /// Send a received MCH sdu to MAC
   void (*ue_send_mch_sdu)(module_id_t Mod_id,uint8_t CC_id, frame_t frameP,uint8_t *sdu,uint16_t sdu_len,uint8_t eNB_index,uint8_t sync_area);
 
@@ -202,7 +202,7 @@ typedef struct {
                              AdditionalSpectrumEmission_t *additionalSpectrumEmission,
                              struct MBSFN_SubframeConfigList  *mbsfn_SubframeConfigList);
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   /// Configure Common PHY parameters from SIB13
   void (*phy_config_sib13_ue)(uint8_t Mod_id,int CC_id, uint8_t eNB_index,int mbsfn_Area_idx,
                               long mbsfn_AreaId_r9);

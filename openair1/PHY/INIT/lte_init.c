@@ -483,7 +483,8 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *eNB)
 
       if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated) {
         if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated->present == SoundingRS_UL_ConfigDedicated_PR_setup) {
-
+	  
+	  eNB->soundingrs_ul_config_dedicated[UE_id].srsConfigDedicatedSetup = 1;
           eNB->soundingrs_ul_config_dedicated[UE_id].duration             = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.duration;
           eNB->soundingrs_ul_config_dedicated[UE_id].cyclicShift          = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift;
           eNB->soundingrs_ul_config_dedicated[UE_id].freqDomainPosition   = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition;
@@ -614,8 +615,12 @@ void phy_config_afterHO_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_id, Mobility
 
     // RNTI
 
-    PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[eNB_id]->crnti = mobilityControlInfo->newUE_Identity.buf[0]|(mobilityControlInfo->newUE_Identity.buf[1]<<8);
 
+    PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[0][eNB_id]->crnti = mobilityControlInfo->newUE_Identity.buf[0]|(mobilityControlInfo->newUE_Identity.buf[1]<<8);
+    PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[1][eNB_id]->crnti = mobilityControlInfo->newUE_Identity.buf[0]|(mobilityControlInfo->newUE_Identity.buf[1]<<8);
+
+    LOG_I(PHY,"SET C-RNTI %x %x\n",PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[0][eNB_id]->crnti,
+                                   PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[1][eNB_id]->crnti);
   }
 
   if(ho_failed) {
@@ -702,7 +707,7 @@ void phy_config_dedicated_eNB(uint8_t Mod_id,
   }
 
 }
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
                                    uint8_t eNB_index,
                                    SCellToAddMod_r10_t *sCellToAddMod_r10,
@@ -835,7 +840,7 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
 
     if (physicalConfigDedicated->antennaInfo) {
       phy_vars_ue->transmission_mode[eNB_id] = 1+(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode);
-      LOG_D(PHY,"Transmission Mode %d\n",phy_vars_ue->transmission_mode[eNB_id]);
+      LOG_I(PHY,"Transmission Mode %d\n",phy_vars_ue->transmission_mode[eNB_id]);
       switch(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode) {
       case AntennaInfoDedicated__transmissionMode_tm1:
         phy_vars_ue->transmission_mode[eNB_id] = 1;
@@ -856,7 +861,7 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
         phy_vars_ue->transmission_mode[eNB_id] = 6;
         break;
       case AntennaInfoDedicated__transmissionMode_tm7:
-        lte_gold_ue_spec_port5(phy_vars_ue->lte_gold_uespec_port5_table, phy_vars_ue->frame_parms.Nid_cell, phy_vars_ue->pdcch_vars[eNB_id]->crnti);
+        lte_gold_ue_spec_port5(phy_vars_ue->lte_gold_uespec_port5_table, phy_vars_ue->frame_parms.Nid_cell, phy_vars_ue->pdcch_vars[0][eNB_id]->crnti);
         phy_vars_ue->transmission_mode[eNB_id] = 7;
         break;
       default:
@@ -952,6 +957,14 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
   LOG_I(PHY,"Disabling SIB MIB decoding \n");
   phy_vars_ue->decode_SIB = 0;
   phy_vars_ue->decode_MIB = 0;
+  //phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
+  if(phy_vars_ue->pdcch_vars[0][eNB_id]->crnti == 0x1234)
+      phy_vars_ue->pdcch_vars[0][eNB_id]->crnti = phy_vars_ue->pdcch_vars[1][eNB_id]->crnti;
+  else
+      phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
+
+  LOG_I(PHY,"C-RNTI %x %x \n", phy_vars_ue->pdcch_vars[0][eNB_id]->crnti,
+                               phy_vars_ue->pdcch_vars[1][eNB_id]->crnti);
 
 }
 
@@ -1075,7 +1088,8 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
   LTE_UE_PDSCH** const pdsch_vars_ra      = ue->pdsch_vars_ra;
   LTE_UE_PDSCH** const pdsch_vars_mch     = ue->pdsch_vars_MCH;
   LTE_UE_PBCH** const pbch_vars           = ue->pbch_vars;
-  LTE_UE_PDCCH** const pdcch_vars         = ue->pdcch_vars;
+  LTE_UE_PDCCH** const pdcch_vars_th0     = ue->pdcch_vars[0];
+  LTE_UE_PDCCH** const pdcch_vars_th1     = ue->pdcch_vars[1];
   LTE_UE_PRACH** const prach_vars         = ue->prach_vars;
 
   int i,j,k,l;
@@ -1157,7 +1171,8 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
     pdsch_vars_SI[eNB_id]  = (LTE_UE_PDSCH *)malloc16_clear(sizeof(LTE_UE_PDSCH));
     pdsch_vars_ra[eNB_id]  = (LTE_UE_PDSCH *)malloc16_clear(sizeof(LTE_UE_PDSCH));
     pdsch_vars_mch[eNB_id] = (LTE_UE_PDSCH *)malloc16_clear(sizeof(LTE_UE_PDSCH));
-    pdcch_vars[eNB_id]     = (LTE_UE_PDCCH *)malloc16_clear(sizeof(LTE_UE_PDCCH));
+    pdcch_vars_th0[eNB_id] = (LTE_UE_PDCCH *)malloc16_clear(sizeof(LTE_UE_PDCCH));
+    pdcch_vars_th1[eNB_id] = (LTE_UE_PDCCH *)malloc16_clear(sizeof(LTE_UE_PDCCH));
     prach_vars[eNB_id]     = (LTE_UE_PRACH *)malloc16_clear(sizeof(LTE_UE_PRACH));
     pbch_vars[eNB_id]      = (LTE_UE_PBCH *)malloc16_clear(sizeof(LTE_UE_PBCH));
 
@@ -1199,7 +1214,7 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
         }
 
 
-      const size_t num = 7*2*fp->N_RB_DL*12+4;
+      //const size_t num = 7*2*fp->N_RB_DL*12+4;
       for (k=0;k<8;k++) { //harq_pid
         for (l=0;l<8;l++) { //round
           pdsch_vars_th0[eNB_id]->rxdataF_comp1[k][l] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
@@ -1233,29 +1248,46 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
       phy_init_lte_ue__PDSCH( pdsch_vars_mch[eNB_id], fp );
 
       // 100 PRBs * 12 REs/PRB * 4 PDCCH SYMBOLS * 2 LLRs/RE
-      pdcch_vars[eNB_id]->llr   = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
-      pdcch_vars[eNB_id]->llr16 = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
-      pdcch_vars[eNB_id]->wbar  = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
-      pdcch_vars[eNB_id]->e_rx  = (int8_t*)malloc16_clear( 4*2*100*12 );
+      pdcch_vars_th0[eNB_id]->llr   = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
+      pdcch_vars_th0[eNB_id]->llr16 = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
+      pdcch_vars_th0[eNB_id]->wbar  = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
+      pdcch_vars_th0[eNB_id]->e_rx  = (int8_t*)malloc16_clear( 4*2*100*12 );
 
-      pdcch_vars[eNB_id]->rxdataF_comp        = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-      pdcch_vars[eNB_id]->dl_ch_rho_ext       = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-      pdcch_vars[eNB_id]->rho                 = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-      pdcch_vars[eNB_id]->rxdataF_ext         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-      pdcch_vars[eNB_id]->dl_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdcch_vars_th0[eNB_id]->rxdataF_comp        = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdcch_vars_th0[eNB_id]->dl_ch_rho_ext       = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdcch_vars_th0[eNB_id]->rho                 = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+      pdcch_vars_th0[eNB_id]->rxdataF_ext         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdcch_vars_th0[eNB_id]->dl_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+
+      pdcch_vars_th1[eNB_id]->llr   = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
+      pdcch_vars_th1[eNB_id]->llr16 = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
+      pdcch_vars_th1[eNB_id]->wbar  = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
+      pdcch_vars_th1[eNB_id]->e_rx  = (int8_t*)malloc16_clear( 4*2*100*12 );
+
+      pdcch_vars_th1[eNB_id]->rxdataF_comp        = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdcch_vars_th1[eNB_id]->dl_ch_rho_ext       = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdcch_vars_th1[eNB_id]->rho                 = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+      pdcch_vars_th1[eNB_id]->rxdataF_ext         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdcch_vars_th1[eNB_id]->dl_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
 
       for (i=0; i<fp->nb_antennas_rx; i++) {
         //ue_pdcch_vars[eNB_id]->rho[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->N_RB_DL*12*7*2) );
-        pdcch_vars[eNB_id]->rho[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(100*12*4) );
+        pdcch_vars_th0[eNB_id]->rho[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(100*12*4) );
+        pdcch_vars_th1[eNB_id]->rho[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(100*12*4) );
 
         for (j=0; j<4; j++) { //fp->nb_antennas_tx; j++)
           int idx = (j<<1)+i;
           //  size_t num = 7*2*fp->N_RB_DL*12;
           size_t num = 4*100*12;  // 4 symbols, 100 PRBs, 12 REs per PRB
-          pdcch_vars[eNB_id]->rxdataF_comp[idx]        = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-          pdcch_vars[eNB_id]->dl_ch_rho_ext[idx]       = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-          pdcch_vars[eNB_id]->rxdataF_ext[idx]         = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-          pdcch_vars[eNB_id]->dl_ch_estimates_ext[idx] = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+          pdcch_vars_th0[eNB_id]->rxdataF_comp[idx]        = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+          pdcch_vars_th0[eNB_id]->dl_ch_rho_ext[idx]       = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+          pdcch_vars_th0[eNB_id]->rxdataF_ext[idx]         = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+          pdcch_vars_th0[eNB_id]->dl_ch_estimates_ext[idx] = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+
+          pdcch_vars_th1[eNB_id]->rxdataF_comp[idx]        = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+          pdcch_vars_th1[eNB_id]->dl_ch_rho_ext[idx]       = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+          pdcch_vars_th1[eNB_id]->rxdataF_ext[idx]         = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+          pdcch_vars_th1[eNB_id]->dl_ch_estimates_ext[idx] = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
         }
       }
 

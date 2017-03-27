@@ -74,6 +74,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "create_tasks.h"
 #endif
 
+#include "system.h"
+
 #ifdef XFORMS
 #include "PHY/TOOLS/lte_phy_scope.h"
 #include "stats.h"
@@ -319,8 +321,8 @@ void help (void) {
   printf("  --ue-rxgain set UE RX gain\n");
   printf("  --ue-rxgain-off external UE amplifier offset\n");
   printf("  --ue-txgain set UE TX gain\n");
-  printf("  --ue-nb-ant-rx  set UE number of rx antennas ");
-  printf("  --ue-scan_carrier set UE to scan around carrier\n");
+  printf("  --ue-nb-ant-rx  set UE number of rx antennas\n");
+  printf("  --ue-scan-carrier set UE to scan around carrier\n");
   printf("  --dlsch-demod-shift dynamic shift for LLR compuation for TM3/4 (default 0)\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
   printf("  --mmapped-dma sets flag for improved EXMIMO UE performance\n");  
@@ -1371,6 +1373,8 @@ int main( int argc, char **argv ) {
     int ret;
 #endif
 
+    start_background_system();
+
 #ifdef DEBUG_CONSOLE
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
@@ -1579,9 +1583,15 @@ int main( int argc, char **argv ) {
                               UE[CC_id]->X_u);
 
             if (UE[CC_id]->mac_enabled == 1)
-                UE[CC_id]->pdcch_vars[0]->crnti = 0x1234;
+            {
+                UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1234;
+                UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1234;
+            }
             else
-                UE[CC_id]->pdcch_vars[0]->crnti = 0x1235;
+            {
+                UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1235;
+                UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1235;
+            }
 
             UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
             UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
@@ -1733,7 +1743,7 @@ int main( int argc, char **argv ) {
 #if defined(ENABLE_ITTI)
 
     if ((UE_flag == 1)||
-            (node_function[0]<NGFI_RAU_IF4p5))
+	((node_function[0]<NGFI_RAU_IF4p5)&&(phy_test==0)))
         // don't create if node doesn't connect to RRC/S1/GTP
         if (create_tasks(UE_flag ? 0 : 1, UE_flag ? 1 : 0) < 0) {
             printf("cannot create ITTI tasks\n");

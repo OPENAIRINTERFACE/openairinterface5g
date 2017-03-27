@@ -283,8 +283,10 @@ if (${RRC_ASN1_VERSION} STREQUAL "Rel8")
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-86.asn)
 elseif (${RRC_ASN1_VERSION} STREQUAL "CBA")
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-a20-lola.asn)
-else()
+elseif (${RRC_ASN1_VERSION} STREQUAL "Rel10")
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-a20.asn)
+else()
+  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1c/ASN1_files/RRC-e10.asn)
 endif  (${RRC_ASN1_VERSION} STREQUAL "Rel8")
 
 set (RRC_FULL_DIR ${asn1_generated_dir}/${RRC_ASN1_VERSION})
@@ -561,6 +563,7 @@ elseif (${RF_BOARD} STREQUAL "OAI_LMSSDR")
   include_directories("/usr/local/include/lime")
   include_directories("/usr/include/lime")
   LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
+  LINK_DIRECTORIES("/usr/local/lib")
   LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/lmsSDR")
   LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/lms7002m")
   LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/Si5351C")
@@ -1768,6 +1771,7 @@ add_executable(lte-softmodem
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/utils.c
+  ${OPENAIR_DIR}/common/utils/system.c
   ${GTPU_need_ITTI}
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}
@@ -1804,6 +1808,7 @@ add_executable(lte-softmodem-nos1
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  ${OPENAIR_DIR}/common/utils/system.c
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}
   ${RTAI_SOURCE}
@@ -1899,6 +1904,7 @@ add_executable(oaisim
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/utils.c
+  ${OPENAIR_DIR}/common/utils/system.c
   ${GTPU_need_ITTI}
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${HW_SOURCE}
@@ -1945,6 +1951,7 @@ add_executable(oaisim_nos1
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
+  ${OPENAIR_DIR}/common/utils/system.c
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}
   ${XFORMS_SOURCE}
@@ -2059,22 +2066,22 @@ endforeach(myExe)
 
 #ensure that the T header files are generated before targets depending on them
 if (${T_TRACER})
-  add_dependencies(lte-softmodem generate_T)
-  add_dependencies(lte-softmodem-nos1 generate_T)
-  add_dependencies(rrh_gw generate_T)
-  add_dependencies(oaisim generate_T)
-  add_dependencies(oaisim_nos1 generate_T)
-  add_dependencies(dlsim generate_T)
-  add_dependencies(dlsim_tm4 generate_T)
-  add_dependencies(dlsim_tm7 generate_T)
-  add_dependencies(ulsim generate_T)
-  add_dependencies(pbchsim generate_T)
-  add_dependencies(scansim generate_T)
-  add_dependencies(mbmssim generate_T)
-  add_dependencies(pdcchsim generate_T)
-  add_dependencies(pucchsim generate_T)
-  add_dependencies(prachsim generate_T)
-  add_dependencies(syncsim generate_T)
+  foreach(i
+        #all "add_executable" definitions (except tests, rb_tool, updatefw)
+        lte-softmodem lte-softmodem-nos1 rrh_gw oaisim oaisim_nos1
+        dlsim_tm4 dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim
+        pdcchsim pucchsim prachsim syncsim
+        #all "add_library" definitions
+        ITTI RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB
+        oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif
+        oai_eth_transpro
+        FLPT_MSG ASYNC_IF FLEXRAN_AGENT HASHTABLE MSC UTIL OMG_SUMO SECU_OSA
+        SECU_CN SCHED_LIB PHY L2 default_sched remote_sched RAL MIH CN_UTILS
+        GTPV1U SCTP_CLIENT UDP LIB_NAS_UE LFDS LFDS7 SIMU SIMU_ETH OPENAIR0_LIB)
+    if (TARGET ${i})
+      add_dependencies(${i} generate_T)
+    endif()
+  endforeach(i)
 endif (${T_TRACER})
 
 ##################################################
@@ -2099,11 +2106,16 @@ endforeach()
 # force castxml and clang compilation with gnu89 standard
 # we can't use cXX standard as pthread_rwlock_t is gnu standard
 list(APPEND itti_compiler_options "-std=gnu89")
-
 set (ITTI_H ${ITTI_DIR}/intertask_interface_types.h)
+if(EXISTS /usr/bin/gccxml)
+   set(xml_command gccxml ${itti_compiler_options} -fxml=${OPENAIR_BIN_DIR}/messages.xml ${ITTI_H})
+else()
+   set(xml_command castxml --castxml-gccxml ${itti_compiler_options} ${ITTI_H} -o ${OPENAIR_BIN_DIR}/messages.xml)
+endif()
+
 add_custom_command (
   OUTPUT ${OPENAIR_BIN_DIR}/messages.xml
-  COMMAND gccxml ${itti_compiler_options} -fxml=${OPENAIR_BIN_DIR}/messages.xml ${ITTI_H}
+  COMMAND ${xml_command}
   DEPENDS ${S1AP_OAI_generated} ${RRC_FULL_DIR}/asn1_constants.h
   )
 

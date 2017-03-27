@@ -145,7 +145,7 @@ void do_DL_sig(channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX][MAX_N
 
       // find out which eNB the UE is attached to
       for (eNB_id=0; eNB_id<NB_eNB_INST; eNB_id++) {
-        if (find_ue(PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[0]->crnti,PHY_vars_eNB_g[eNB_id][CC_id])>=0) {
+        if (find_ue(PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[0][0]->crnti,PHY_vars_eNB_g[eNB_id][CC_id])>=0) {
           // UE with UE_id is connected to eNb with eNB_id
           att_eNB_id=eNB_id;
           LOG_D(OCM,"A: UE attached to eNB (UE%d->eNB%d)\n",UE_id,eNB_id);

@@ -93,8 +93,8 @@ void ue_init_mac(module_id_t module_idP)
   // default values as deined in 36.331 sec 9.2.2
   LOG_I(MAC,"[UE%d] Applying default macMainConfig\n",module_idP);
   //UE_mac_inst[module_idP].scheduling_info.macConfig=NULL;
-  UE_mac_inst[module_idP].scheduling_info.retxBSR_Timer= MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf10240;
-  UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer=MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
+  UE_mac_inst[module_idP].scheduling_info.retxBSR_Timer= RetxBSR_Timer_r12_sf10240;
+  UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer=PeriodicBSR_Timer_r12_infinity;
   UE_mac_inst[module_idP].scheduling_info.periodicPHR_Timer = MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20;
   UE_mac_inst[module_idP].scheduling_info.prohibitPHR_Timer = MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20;
   UE_mac_inst[module_idP].scheduling_info.PathlossChange_db = MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;
@@ -579,7 +579,7 @@ void ue_decode_p(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_in
   }
 }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 unsigned char *parse_mch_header(unsigned char *mac_header,
                                 unsigned char *num_sdu,
                                 unsigned char *rx_lcids,
@@ -1353,7 +1353,7 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
   }
 
   // periodicBSR-Timer expires, trigger BSR
-  if ((UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer != MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity)
+  if ((UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer != PeriodicBSR_Timer_r12_infinity)
             && (UE_mac_inst[module_idP].scheduling_info.periodicBSR_SF == 0)){
         // Trigger BSR Periodic
       UE_mac_inst[module_idP].BSR_reporting_active |= BSR_TRIGGER_PERIODIC;
@@ -1771,7 +1771,7 @@ for (lcid=DCCH; (lcid < MAX_NUM_LCID) && (is_all_lcid_processed == FALSE) ; lcid
 			  UE_mac_inst[module_idP].scheduling_info.retxBSR_SF);
 
 	  // Reset Periodic Timer except when BSR is truncated
-	  if ((bsr_t == NULL) && (UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer != MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity))
+	  if ((bsr_t == NULL) && (UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer != PeriodicBSR_Timer_r12_infinity))
 	  {
 		  UE_mac_inst[module_idP].scheduling_info.periodicBSR_SF = get_sf_periodicBSRTimer(UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer);
 
@@ -2397,63 +2397,63 @@ int get_sf_periodicBSRTimer(uint8_t sf_offset)
 {
 
   switch (sf_offset) {
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf5:
+  case PeriodicBSR_Timer_r12_sf5:
     return 5;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf10:
+  case PeriodicBSR_Timer_r12_sf10:
     return 10;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf16:
+  case PeriodicBSR_Timer_r12_sf16:
     return 16;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf20:
+  case PeriodicBSR_Timer_r12_sf20:
     return 20;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf32:
+  case PeriodicBSR_Timer_r12_sf32:
     return 32;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf40:
+  case PeriodicBSR_Timer_r12_sf40:
     return 40;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf64:
+  case PeriodicBSR_Timer_r12_sf64:
     return 64;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf80:
+  case PeriodicBSR_Timer_r12_sf80:
     return 80;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf128:
+  case PeriodicBSR_Timer_r12_sf128:
     return 128;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf160:
+  case PeriodicBSR_Timer_r12_sf160:
     return 160;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf320:
+  case PeriodicBSR_Timer_r12_sf320:
     return 320;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf640:
+  case PeriodicBSR_Timer_r12_sf640:
     return 640;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf1280:
+  case PeriodicBSR_Timer_r12_sf1280:
     return 1280;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf2560:
+  case PeriodicBSR_Timer_r12_sf2560:
     return 2560;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity:
+  case PeriodicBSR_Timer_r12_infinity:
   default:
     return 0xFFFF;
     break;
@@ -2464,27 +2464,27 @@ int get_sf_retxBSRTimer(uint8_t sf_offset)
 {
 
   switch (sf_offset) {
-  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf320:
+  case RetxBSR_Timer_r12_sf320:
     return 320;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf640:
+  case RetxBSR_Timer_r12_sf640:
     return 640;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf1280:
+  case RetxBSR_Timer_r12_sf1280:
     return 1280;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560:
+  case RetxBSR_Timer_r12_sf2560:
     return 2560;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf5120:
+  case RetxBSR_Timer_r12_sf5120:
     return 5120;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf10240:
+  case RetxBSR_Timer_r12_sf10240:
     return 10240;
     break;
 

@@ -255,7 +255,11 @@ int oai_nw_drv_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
     // End debug information
     netif_stop_queue(dev);
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+    netif_trans_update(dev);
+#else
     dev->trans_start = jiffies;
+#endif
 #ifdef OAI_DRV_DEBUG_DEVICE
     printk("[OAI_IP_DRV][%s] step 1\n", __FUNCTION__);
 #endif
@@ -328,7 +332,11 @@ void oai_nw_drv_tx_timeout(struct net_device *dev)
   printk("[OAI_IP_DRV][%s] begin\n", __FUNCTION__);
   //  (struct oai_nw_drv_priv *)(dev->priv)->stats.tx_errors++;
   (priv->stats).tx_errors++;
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+  netif_trans_update(dev);
+#else
   dev->trans_start = jiffies;
+#endif
   netif_wake_queue(dev);
   printk("[OAI_IP_DRV][%s] transmit timed out %s\n", __FUNCTION__,dev->name);
 }
