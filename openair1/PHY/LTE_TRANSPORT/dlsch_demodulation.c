@@ -175,7 +175,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
       dlsch1_harq  = NULL;
       codeword_TB0 = -1;
 #ifdef DEBUG_HARQ
-      printf("[DEMOD] I am assuming only TB1 is active\n");
+      printf("[DEMOD] I am assuming only TB1 is active, it is in cw %d\n", dlsch0_harq->codeword);
 #endif
     }
     else {
@@ -750,7 +750,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
   switch (dlsch0_harq->Qm) {
   case 2 :
-    if ((rx_type==rx_standard) || (codeword_TB0 == -1) || (codeword_TB1 == -1)) {
+    if ((rx_type==rx_standard) || (codeword_TB1 == -1)) {
         dlsch_qpsk_llr(frame_parms,
                        pdsch_vars[eNB_id]->rxdataF_comp0,
                        pdsch_vars[eNB_id]->llr[0],
@@ -759,6 +759,18 @@ int rx_pdsch(PHY_VARS_UE *ue,
                        nb_rb,
                        adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,2,subframe,symbol),
                        pdsch_vars[eNB_id]->llr128,
+                       beamforming_mode);
+
+    } else if (codeword_TB0 == -1){
+
+        dlsch_qpsk_llr(frame_parms,
+                       pdsch_vars[eNB_id]->rxdataF_comp0,
+                       pdsch_vars[eNB_id]->llr[1],
+                       symbol,
+                       first_symbol_flag,
+                       nb_rb,
+                       adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,2,subframe,symbol),
+                       pdsch_vars[eNB_id]->llr128_2ndstream,
                        beamforming_mode);
     }
       else if (rx_type >= rx_IC_single_stream) {
@@ -829,7 +841,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
       }
     break;
   case 4 :
-    if ((rx_type==rx_standard ) || (codeword_TB0 == -1) || (codeword_TB1 == -1)) {
+    if ((rx_type==rx_standard ) || (codeword_TB1 == -1)) {
       dlsch_16qam_llr(frame_parms,
                       pdsch_vars[eNB_id]->rxdataF_comp0,
                       pdsch_vars[eNB_id]->llr[0],
@@ -837,6 +849,15 @@ int rx_pdsch(PHY_VARS_UE *ue,
                       symbol,first_symbol_flag,nb_rb,
                       adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,4,subframe,symbol),
                       pdsch_vars[eNB_id]->llr128,
+                      beamforming_mode);
+    } else if (codeword_TB0 == -1){
+      dlsch_16qam_llr(frame_parms,
+                      pdsch_vars[eNB_id]->rxdataF_comp0,
+                      pdsch_vars[eNB_id]->llr[1],
+                      pdsch_vars[eNB_id]->dl_ch_mag0,
+                      symbol,first_symbol_flag,nb_rb,
+                      adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,4,subframe,symbol),
+                      pdsch_vars[eNB_id]->llr128_2ndstream,
                       beamforming_mode);
     }
     else if (rx_type >= rx_IC_single_stream) {
@@ -913,7 +934,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
     }
     break;
   case 6 :
-    if ((rx_type==rx_standard) || (codeword_TB0 == -1) || (codeword_TB1 == -1))  {
+    if ((rx_type==rx_standard) || (codeword_TB1 == -1))  {
       dlsch_64qam_llr(frame_parms,
                       pdsch_vars[eNB_id]->rxdataF_comp0,
                       pdsch_vars[eNB_id]->llr[0],
@@ -922,6 +943,16 @@ int rx_pdsch(PHY_VARS_UE *ue,
                       symbol,first_symbol_flag,nb_rb,
                       adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,6,subframe,symbol),
                       pdsch_vars[eNB_id]->llr128,
+                      beamforming_mode);
+    } else if (codeword_TB0 == -1){
+      dlsch_64qam_llr(frame_parms,
+                      pdsch_vars[eNB_id]->rxdataF_comp0,
+                      pdsch_vars[eNB_id]->llr[1],
+                      pdsch_vars[eNB_id]->dl_ch_mag0,
+                      pdsch_vars[eNB_id]->dl_ch_magb0,
+                      symbol,first_symbol_flag,nb_rb,
+                      adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,6,subframe,symbol),
+                      pdsch_vars[eNB_id]->llr128_2ndstream,
                       beamforming_mode);
     }
     else if (rx_type >= rx_IC_single_stream) {

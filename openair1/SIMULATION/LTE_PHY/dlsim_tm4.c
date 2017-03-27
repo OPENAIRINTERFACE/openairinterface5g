@@ -4133,21 +4133,25 @@ int main(int argc, char **argv)
                                0,
                                UE->dlsch[subframe&0x1][0][TB],
                                coded_bits_per_codeword[TB],
-                               UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe&0x1][0][TB]->harq_processes[UE->dlsch[subframe&0x1][0][TB]->current_harq_pid]->codeword],
+                               UE->pdsch_vars[subframe&0x1][eNB_id]->llr[TB],
                                TB,
                                subframe<<1);
             stop_meas(&UE->dlsch_unscrambling_stats);
 
             start_meas(&UE->dlsch_decoding_stats[subframe&0x1]);
+#ifdef DEBUG_HARQ
+            //printf("non-SIC decoding TB %d LLR is %d\n", TB, UE->dlsch[subframe&0x1][0][TB]->harq_processes[UE->dlsch[subframe&0x1][0][TB]->current_harq_pid]->codeword);
+#endif
             ret[TB] = dlsch_decoding(UE,
-                                     UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe&0x1][0][TB]->harq_processes[UE->dlsch[subframe&0x1][0][TB]->current_harq_pid]->codeword],
+                                     UE->pdsch_vars[subframe&0x1][eNB_id]->llr[TB],
                                      &UE->frame_parms,
                                      UE->dlsch[subframe&0x1][0][TB],
                                      UE->dlsch[subframe&0x1][0][TB]->harq_processes[UE->dlsch[subframe&0x1][0][TB]->current_harq_pid],
                                      0,
-                                    subframe,
-                                    UE->dlsch[subframe&0x1][0][TB]->current_harq_pid,
-                                    1,llr8_flag);
+                                     subframe,
+                                     UE->dlsch[subframe&0x1][0][TB]->current_harq_pid,
+                                     1,
+                                     llr8_flag);
             stop_meas(&UE->dlsch_decoding_stats[subframe&0x1]);
 #ifdef DEBUG_HARQ
             printf("[DLSIM] ret[%d] = %d\n", TB, ret[TB]);
