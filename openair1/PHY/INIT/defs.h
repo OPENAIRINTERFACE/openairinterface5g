@@ -31,7 +31,7 @@
 #include "TDD-Config.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "MobilityControlInfo.h"
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #include "SCellToAddMod-r10.h"
 #endif
 /** @addtogroup _PHY_STRUCTURES_
@@ -317,7 +317,7 @@ void lte_param_init(unsigned char N_tx_port_eNB,
                     uint8_t osf,
 		    uint32_t perfect_ce);
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
                                    uint8_t eNB_index,
                                    SCellToAddMod_r10_t *sCellToAddMod_r10,

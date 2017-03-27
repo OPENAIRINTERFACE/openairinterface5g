@@ -405,7 +405,7 @@ void ue_decode_p(module_id_t module_idP, int CC_id,frame_t frame, uint8_t CH_ind
 void ue_send_sdu(module_id_t module_idP, uint8_t CC_id,frame_t frame, sub_frame_t subframe, uint8_t *sdu,uint16_t sdu_len,uint8_t CH_index);
 
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 /* \brief Called by PHY to transfer MCH transport block to ue MAC.
 @param Mod_id Index of module instance
 @param frame Frame index
@@ -754,7 +754,7 @@ int rrc_mac_config_req(module_id_t     module_idP,
                        uint8_t         eNB_index,
                        RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
                        struct PhysicalConfigDedicated *physicalConfigDedicated,
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
                        SCellToAddMod_r10_t *sCellToAddMod_r10,
                        //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -771,7 +771,7 @@ int rrc_mac_config_req(module_id_t     module_idP,
                        long *ul_Bandwidth,
                        AdditionalSpectrumEmission_t *additionalSpectrumEmission,
                        struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
                        ,
                        uint8_t MBMS_Flag,
                        MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,

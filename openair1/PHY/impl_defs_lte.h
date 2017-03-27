@@ -320,7 +320,7 @@ typedef struct {
   uint16_t srs_ConfigIndex;
   /// Parameter: \f$n^\text{CS}_\text{SRS}\f$. See TS 36.211 (5.5.3.1). \vr{[0..7]} \note the specification sais it is an enumerated value.
   uint8_t cyclicShift;
-  // Parameter: ue srs subframe for internal implementation
+  // Parameter: internal implementation: UE SRS configured
   uint8_t srsConfigDedicatedSetup;
   // Parameter: cell srs subframe for internal implementation
   uint8_t srsCellSubframe;

@@ -483,7 +483,8 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *eNB)
 
       if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated) {
         if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated->present == SoundingRS_UL_ConfigDedicated_PR_setup) {
-
+	  
+	  eNB->soundingrs_ul_config_dedicated[UE_id].srsConfigDedicatedSetup = 1;
           eNB->soundingrs_ul_config_dedicated[UE_id].duration             = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.duration;
           eNB->soundingrs_ul_config_dedicated[UE_id].cyclicShift          = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift;
           eNB->soundingrs_ul_config_dedicated[UE_id].freqDomainPosition   = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition;
@@ -706,7 +707,7 @@ void phy_config_dedicated_eNB(uint8_t Mod_id,
   }
 
 }
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
                                    uint8_t eNB_index,
                                    SCellToAddMod_r10_t *sCellToAddMod_r10,
@@ -1213,7 +1214,7 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
         }
 
 
-      const size_t num = 7*2*fp->N_RB_DL*12+4;
+      //const size_t num = 7*2*fp->N_RB_DL*12+4;
       for (k=0;k<8;k++) { //harq_pid
         for (l=0;l<8;l++) { //round
           pdsch_vars_th0[eNB_id]->rxdataF_comp1[k][l] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );

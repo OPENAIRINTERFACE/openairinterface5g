@@ -265,7 +265,7 @@ openair_rrc_top_init(
       UE_rrc_inst[module_id].UECapability_size = UECap->sdu_size;
     }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
     LOG_I(RRC,"[UE] eMBMS active state is %d \n", eMBMS_active);
 
     for (module_id=0; module_id<NB_UE_INST; module_id++) {
@@ -286,7 +286,7 @@ openair_rrc_top_init(
       eNB_rrc_inst[module_id].HO_flag   = (uint8_t)HO_active;
     }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
     LOG_I(RRC,"[eNB] eMBMS active state is %d \n", eMBMS_active);
 
     for (module_id=0; module_id<NB_eNB_INST; module_id++) {

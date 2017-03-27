@@ -47,6 +47,7 @@ Description Defines functions used to handle EPS bearer contexts.
 #include "esm_ebr_context.h"
 
 #include "emm_sap.h"
+#include "system.h"
 
 #if defined(ENABLE_ITTI)
 # include "assertions.h"
@@ -286,7 +287,18 @@ int esm_ebr_context_create(
              LOG_TRACE(INFO, "ESM-PROC  - executing %s ",
                        command_line);
 
-             if (system(command_line)) ; /* TODO: what to do? */
+             /* Calling system() here disrupts UE's realtime processing in some cases.
+              * This may be because of the call to fork(), which, for some
+              * unidentified reason, interacts badly with other (realtime) threads.
+              * background_system() is a replacement mechanism relying on a
+              * background process that does the system() and reports result to
+              * the parent process (lte-softmodem, oaisim, ...). The background
+              * process is created very early in the life of the parent process.
+              * The processes interact through standard pipes. See
+              * common/utils/system.c for details.
+              */
+             if (background_system(command_line) != 0)
+               LOG_TRACE(ERROR, "ESM-PROC - failed command '%s'", command_line);
 
              break;
 

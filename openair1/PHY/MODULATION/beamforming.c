@@ -47,7 +47,7 @@ int beam_precoding(int32_t **txdataF,
                    int aa)
 {
   uint8_t p;
-  uint16_t re=0;
+  //uint16_t re=0;
   int slot_offset_F;
   
   slot_offset_F = slot*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==1) ? 6 : 7);

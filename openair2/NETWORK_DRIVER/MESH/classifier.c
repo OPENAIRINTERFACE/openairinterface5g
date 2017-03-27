@@ -605,12 +605,12 @@ void nas_CLASS_send(struct sk_buff *skb,int inst)
   //---------------------------------------------------------------------------
   struct classifier_entity *p, *sp;
   uint8_t *protocolh,version;
-  uint8_t protocol, dscp, exp,label;
+  uint8_t protocol, dscp /*, exp,label*/ ;
   uint16_t classref;
   struct cx_entity *cx;
-  unsigned int i;
+  //unsigned int i;
 
-  unsigned int router_adv = 0;
+  //unsigned int router_adv = 0;
   struct net_device *dev=nasdev[inst];
 
   struct nas_priv *gpriv=netdev_priv(dev);

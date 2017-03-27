@@ -42,7 +42,7 @@
 #include "SRB-ToAddMod.h"
 #include "SRB-ToAddModList.h"
 #include "DL-UM-RLC.h"
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #include "PMCH-InfoList-r9.h"
 #endif
 
@@ -53,7 +53,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
     const SRB_ToAddModList_t   * const srb2add_listP,
     const DRB_ToAddModList_t   * const drb2add_listP,
     const DRB_ToReleaseList_t  * const drb2release_listP
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
     ,const PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP
 #endif
                                         )
@@ -69,7 +69,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
   rlc_union_t           *rlc_union_p     = NULL;
   hash_key_t             key             = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_rc;
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
   int                        i, j;
   MBMS_SessionInfoList_r9_t *mbms_SessionInfoList_r9_p = NULL;
   MBMS_SessionInfo_r9_t     *MBMS_SessionInfo_p        = NULL;
@@ -344,7 +344,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
     }
   }
 
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
 
   if (pmch_InfoList_r9_pP != NULL) {
     for (i=0; i<pmch_InfoList_r9_pP->list.count; i++) {
@@ -487,7 +487,7 @@ rlc_op_status_t rrc_rlc_remove_rlc   (
   hash_key_t             key_lcid        = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_lcid_rc;
   rlc_union_t           *rlc_union_p = NULL;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   rlc_mbms_id_t         *mbms_id_p  = NULL;
 #endif
 #ifdef OAI_EMU
@@ -498,7 +498,7 @@ rlc_op_status_t rrc_rlc_remove_rlc   (
   /* for no gcc warnings */
   (void)lcid;
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flagP == TRUE) {
     if (ctxt_pP->enb_flag) {
@@ -592,7 +592,7 @@ rlc_union_t* rrc_rlc_add_rlc   (
   hash_key_t             key_lcid    = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_lcid_rc;
   rlc_union_t           *rlc_union_p = NULL;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   rlc_mbms_id_t         *mbms_id_p  = NULL;
   logical_chan_id_t      lcid            = 0;
 #endif
@@ -608,7 +608,7 @@ rlc_union_t* rrc_rlc_add_rlc   (
     AssertFatal (chan_idP < RLC_MAX_LC, "LC id is too high (%u/%d)!\n", chan_idP, RLC_MAX_LC);
   }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flagP == TRUE) {
     if (ctxt_pP->enb_flag) {
@@ -650,7 +650,7 @@ rlc_union_t* rrc_rlc_add_rlc   (
     h_lcid_rc = hashtable_insert(rlc_coll_p, key_lcid, rlc_union_p);
 
     if ((h_rc == HASH_TABLE_OK) && (h_lcid_rc == HASH_TABLE_OK)) {
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
       if (MBMS_flagP == TRUE) {
         LOG_I(RLC, PROTOCOL_CTXT_FMT" RLC service id %u session id %u rrc_rlc_add_rlc\n",
