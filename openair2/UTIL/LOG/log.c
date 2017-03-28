@@ -1032,6 +1032,19 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
       if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
     }
 
+    if ( (g_log->flag & FLAG_THREAD) || (c->flag & FLAG_THREAD) ) {
+      #define THREAD_NAME_LEN 16
+      static char threadname[THREAD_NAME_LEN];
+      if (pthread_getname_np(pthread_self(), threadname, THREAD_NAME_LEN) != 0)
+      {
+        perror("pthread_getname_np : ");
+      } else {
+        len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s]", threadname);
+        if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
+      }
+      #undef THREAD_NAME_LEN
+    }
+
     if ( (g_log->flag & FLAG_FUNCT) || (c->flag & FLAG_FUNCT) ) {
       len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s] ",
                       func);
@@ -1287,11 +1300,15 @@ int set_comp_log(int component, int level, int verbosity, int interval)
            LOG_EMERG);
   DevCheck((interval > 0) && (interval <= 0xFF), interval, 0, 0xFF);
 
+#if 0
   if ((verbosity == LOG_NONE) || (verbosity == LOG_LOW) ||
       (verbosity == LOG_MED) || (verbosity == LOG_FULL) ||
       (verbosity == LOG_HIGH)) {
     g_log->log_component[component].flag = verbosity;
   }
+#else
+  g_log->log_component[component].flag = verbosity;
+#endif
 
   g_log->log_component[component].level = level;
   g_log->log_component[component].interval = interval;
