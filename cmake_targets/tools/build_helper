@@ -164,7 +164,13 @@ compilations() {
   } > $dlog/$2.$REL.txt 2>&1
   set -e
   echo_info "Log file for compilation has been written to: $dlog/$2.$REL.txt"
-  if [ -s $3 ] ; then
+
+echo "#!/bash/bin" > domake_$2.sh
+  echo "$SUDO make -j`nproc` $2" >> domake_$2.sh
+  echo "$SUDO cp $3 $4" >> domake_$2.sh
+  chmod 775 domake_$2.sh  
+
+if [ -s $3 ] ; then
      cp $3 $4
      echo_success "$2 compiled"
      check_warnings "$dlog/$2.$REL.txt"
