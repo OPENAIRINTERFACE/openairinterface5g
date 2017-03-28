@@ -261,7 +261,7 @@ mem_block_t * create_new_segment_from_pdu(
 			RLC_AM_PDU_SET_E(*pdu_segment_header_p);
 		}
 		/* SN */
-		(*pdu_segment_header_p) |= (pdu_new_segment_info_p->sn >> 8) ;
+		(*pdu_segment_header_p) |= ((pdu_new_segment_info_p->sn >> 8) & 0x3);
 		*(pdu_segment_header_p + 1) = (pdu_new_segment_info_p->sn & 0xFF);
 
 		pdu_segment_header_p += 2;
@@ -272,7 +272,7 @@ mem_block_t * create_new_segment_from_pdu(
 			RLC_AM_PDU_SET_LSF(*pdu_segment_header_p);
 		}
 		/* Store SO bytes */
-		* (pdu_segment_header_p )  		= (pdu_new_segment_info_p->so >> 8) & 0xFF;
+		* (pdu_segment_header_p )  		|= ((pdu_new_segment_info_p->so >> 8) & 0x7F);
 		* (pdu_segment_header_p + 1)  	= pdu_new_segment_info_p->so & 0xFF;
 
 		if (num_li) {

@@ -1233,6 +1233,10 @@ mem_block_t * rlc_am_get_pdu_to_retransmit(
 				  {
 					  // TO DO : RLC Notification to RRC + ReEstablishment procedure
 					  tx_data_pdu_management->flags.max_retransmit = 1;
+					  LOG_W(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[RLC AM MAX RETX=%d] SN %04d\n",
+					                PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
+									tx_data_pdu_management->retx_count_next,
+					                sn);
 				  }
 			  }
 			  else if (rlc_pP->nb_bytes_requested_by_mac >= 5)
@@ -1273,6 +1277,10 @@ mem_block_t * rlc_am_get_pdu_to_retransmit(
 				  {
 					  // TO DO : RLC Notification to RRC + ReEstablishment procedure
 					  tx_data_pdu_management->flags.max_retransmit = 1;
+					  LOG_W(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[RLC AM MAX RETX=%d] SN %04d\n",
+					  					                PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
+					  									tx_data_pdu_management->retx_count_next,
+					  					                sn);
 				  }
 			  }
 

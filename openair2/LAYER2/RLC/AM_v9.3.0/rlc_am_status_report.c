@@ -378,7 +378,10 @@ rlc_am_receive_process_control_pdu(
             	break;
             }
           }
-          sn_cursor = (sn_cursor + 1)  & RLC_AM_SN_MASK;
+          if (prev_nack_sn != nack_sn) {
+        	  /* do not increment sn_cursor in case of several informations for the same nack_sn */
+              sn_cursor = (sn_cursor + 1)  & RLC_AM_SN_MASK;
+          }
         }
       }
 
