@@ -5215,7 +5215,7 @@ void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,
     	}
 
         // DCI has been toggled or this is the first transmission
-        if ((ndi1!=pdlsch0_harq->DCINdi) || (pdlsch0_harq->first_tx==1))
+        if (ndi1!=pdlsch0_harq->DCINdi)
         {
             pdlsch0_harq->round    = 0;
             pdlsch0_harq->first_tx = 1;
