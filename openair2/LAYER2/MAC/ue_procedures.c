@@ -353,7 +353,7 @@ ue_send_sdu(
 
   if (opt_enabled) {
     trace_pdu(1, sdu, sdu_len, module_idP, 3, UE_mac_inst[module_idP].crnti,
-        UE_mac_inst[module_idP].rxFrame, UE_mac_inst[module_idP].rxSubframe, 0, 0);
+        frameP, subframeP, 0, 0);
     LOG_D(OPT,"[UE %d][DLSCH] Frame %d trace pdu for rnti %x  with size %d\n",
           module_idP, frameP, UE_mac_inst[module_idP].crnti, sdu_len);
   }
@@ -1923,7 +1923,7 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
   if (opt_enabled) {
     trace_pdu(0, ulsch_buffer, buflen, module_idP, 3, UE_mac_inst[module_idP].crnti, UE_mac_inst[module_idP].txFrame, UE_mac_inst[module_idP].txSubframe, 0, 0);
     LOG_D(OPT,"[UE %d][ULSCH] Frame %d subframe %d trace pdu for rnti %x  with size %d\n",
-          module_idP, UE_mac_inst[module_idP].txFrame, UE_mac_inst[module_idP].txSubframe, UE_mac_inst[module_idP].crnti, buflen);
+          module_idP, frameP, subframe, UE_mac_inst[module_idP].crnti, buflen);
   }
 }
 
@@ -2104,7 +2104,7 @@ ue_scheduler(
       /*
       if (lcid == DCCH) {    
         LOG_D(MAC,"[UE %d][SR] Frame %d subframe %d Pending data for SRB1=%d for LCGID %d \n",                  
-        module_idP, frameP,subframeP,UE_mac_inst[module_idP].scheduling_info.BSR[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]],                  
+        module_idP, txFrameP,txSubframeP,UE_mac_inst[module_idP].scheduling_info.BSR[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]],                  
 //         UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]);
       }
       */
