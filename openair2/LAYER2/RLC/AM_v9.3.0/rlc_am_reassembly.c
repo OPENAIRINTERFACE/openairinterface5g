@@ -91,7 +91,7 @@ rlc_am_send_sdu (
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP)
 {
-#   if TRACE_RLC_UM_PDU
+#   if TRACE_RLC_AM_PDU
   char                 message_string[7000];
   size_t               message_string_size = 0;
 #if ENABLE_ITTI

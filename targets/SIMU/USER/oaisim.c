@@ -243,7 +243,7 @@ help (void)
   printf ("-L [0-1] 0 to disable new link adaptation, 1 to enable new link adapatation\n");
   printf ("-m Gives a fixed DL mcs for eNB scheduler\n");
   printf ("-M Set the machine ID for Ethernet-based emulation\n");
-  printf ("-n Set the number of frames for the simulation\n");
+  printf ("-n Set the number of frames for the simulation. 0 for no limit\n");
   printf ("-O [enb_conf_file] eNB configuration file name\n");
   printf ("-p Set the total number of machine in emulation - valid if M is set\n");
   printf ("-P [trace type] Enable protocol analyzer. Possible values for OPT:\n");

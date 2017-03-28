@@ -33,6 +33,13 @@ ORIGIN_PATH=$PWD
 THIS_SCRIPT_PATH=$(dirname $(readlink -f $0))
 source $THIS_SCRIPT_PATH/tools/build_helper
 
+# set environment variables (OPENAIR_HOME, ...)
+set_openair_env
+
+#variables for UE data generation
+gen_nvram_path=$OPENAIR_DIR/targets/bin
+conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
+
 MSC_GEN="False"
 XFORMS="True"
 FLEXRAN_AGENT_SB_IF="True"
@@ -58,9 +65,6 @@ UE_AUTOTEST_TRACE="False"
 BUILD_ECLIPSE=0
 CMAKE_CMD='cmake'
 trap handle_ctrl_c INT
-
-gen_nvram_path=$OPENAIR_DIR/targets/bin
-conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 
 function print_help() {
   echo_info "
@@ -404,7 +408,6 @@ function main() {
 
   echo_info "2. Setting the OAI PATHS ..."
 
-  set_openair_env
   cecho "OPENAIR_DIR    = $OPENAIR_DIR" $green
 
   # for conf files copy in this bash script
@@ -774,9 +777,9 @@ function main() {
   
   # build RF device and transport protocol libraries
   #####################################
-  if [ "$eNB" = "1" -o  "$RRH" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$UE" = "1" -o  "$RRH" = "1" ] ; then
 
-      if [ "$eNB" = "1" ] ; then
+      if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
 	  build_dir=$lte_build_dir	  
       else
 	  build_dir=$rrh_build_dir	 
