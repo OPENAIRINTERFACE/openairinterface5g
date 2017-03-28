@@ -3242,7 +3242,8 @@ void process_rar(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, int eNB_id, runmode_t mo
 						 ue->prach_resources[eNB_id]->ra_RNTI,
 						 dlsch0->harq_processes[0]->b,
 						 &ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->crnti,
-						 ue->prach_resources[eNB_id]->ra_PreambleIndex);
+						 ue->prach_resources[eNB_id]->ra_PreambleIndex,
+						 dlsch0->harq_processes[0]->b); // alter the 'b' buffer so it contains only the selected RAR header and RAR payload
 
       ue->pdcch_vars[(subframe_rx+1) & 0x1][eNB_id]->crnti = ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->crnti;
       
