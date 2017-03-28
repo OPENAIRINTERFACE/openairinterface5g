@@ -33,7 +33,7 @@
 #
 #######################################
 
-LTEIF=oip0
+LTEIF=oip1
 #OPENAIR_DIR=/home/oai/svn-oai/openair4G
 
 load_module() {
@@ -48,11 +48,11 @@ load_module() {
   sudo insmod $1
 }
 
-load_module $OPENAIR_DIR/targets/bin/ue_ip.ko
+load_module ../../targets/bin/ue_ip.ko
 
 if [ "$1" = "UE" ]; then
-  echo "bring up oip0 interface for UE"
-  ifconfig oip0 up
+  echo "bring up $LTEIF interface for UE"
+  ifconfig $LTEIF up
 fi
 
 ip route flush cache
