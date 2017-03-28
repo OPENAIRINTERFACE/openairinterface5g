@@ -55,6 +55,8 @@ T_TRACER="False"
 DISABLE_HARDWARE_DEPENDENCY="False"
 CMAKE_BUILD_TYPE=""
 UE_AUTOTEST_TRACE="False"
+BUILD_ECLIPSE=0
+CMAKE_CMD='cmake'
 trap handle_ctrl_c INT
 
 gen_nvram_path=$OPENAIR_DIR/targets/bin
@@ -141,6 +143,8 @@ Options
    Disable HW dependency during installation
 --ue-autotest-trace
     Enable specific traces for UE autotest framework
+--build-eclipse
+   Build eclipse project files. Paths are auto corrected by fixprj.sh
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I  --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I  --eNB -x --install-system-files
@@ -179,6 +183,7 @@ function main() {
             GDB=1
             CMAKE_BUILD_TYPE="Debug"
             echo_info "Will Compile with gdb symbols and disable compiler optimization"
+            CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Debug"
             shift;;
        --eNB)
             eNB=1
@@ -311,6 +316,11 @@ function main() {
             UHD_IMAGES_DIR=$2
             echo_info "Downloading UHD images in the indicated location"
             shift 2;;
+       --build-eclipse)
+            BUILD_ECLIPSE=1
+            CMAKE_CMD="$CMAKE_CMD"' -DCMAKE_ECLIPSE_GENERATE_SOURCE_PROJECT=TRUE -G"Eclipse CDT4 - Unix Makefiles"'
+            echo_info "Enabling build eclipse project support"
+            shift 1;;			
         -h | --help)
             print_help
             exit 1;;
@@ -320,6 +330,9 @@ function main() {
             break;;
    esac
   done
+  
+  CMAKE_CMD="$CMAKE_CMD .."
+  echo_info "CMAKE_CMD=$CMAKE_CMD"
   
   #########################################################
   # check validity of HW and TP parameters for RRH and eNB
@@ -495,7 +508,7 @@ function main() {
     fi
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     cd  $DIR/$lte_build_dir/build
-    cmake ..
+    eval $CMAKE_CMD
   fi
 
   if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
@@ -524,7 +537,7 @@ function main() {
 
 #    mkdir -p $DIR/at_commands/build
 #    cd $DIR/at_commands/build
-#    cmake ..
+#    eval $CMAKE_CMD
 #    compilations \
 #      at_commands at_nas_ue \
 #      at_nas_ue $dbin/at_nas_ue
@@ -533,7 +546,7 @@ function main() {
     mkdir -p $DIR/nas_sim_tools/build
     cd $DIR/nas_sim_tools/build
     
-    cmake ..
+    eval $CMAKE_CMD
     compilations \
       nas_sim_tools usim \
       usim $dbin/usim
@@ -562,7 +575,7 @@ function main() {
     mkdir -p build
     cd build
     rm -f *sim
-    cmake ..
+    eval $CMAKE_CMD
   fi
 
   if [ "$SIMUS_PHY" = "1" ] ; then
@@ -640,7 +653,7 @@ function main() {
     [ "$CLEAN" = "1" ] && rm -rf $DIR/$oaisim_build_dir/build
     mkdir -p $DIR/$oaisim_build_dir/build
     cd $DIR/$oaisim_build_dir/build
-    cmake ..
+    eval $CMAKE_CMD
     compilations \
 	  $oaisim_build_dir $oaisim_exec \
 	  $oaisim_exec $dbin/$oaisim_exec.$REL
@@ -651,7 +664,7 @@ function main() {
     	echo_info "Compiling at_nas_ue"
 	mkdir -p $DIR/at_commands/build
 	cd $DIR/at_commands/build
-	cmake ..
+	eval $CMAKE_CMD
 	compilations \
 	    at_commands at_nas_ue \
 	    at_nas_ue $dbin/at_nas_ue
@@ -665,7 +678,7 @@ function main() {
 	[ "$CLEAN" = "1" ] && rm -rf $DIR/nas_sim_tools/build
 	mkdir -p $DIR/nas_sim_tools/build
 	cd $DIR/nas_sim_tools/build
-	cmake ..
+	eval $CMAKE_CMD
 	compilations \
 	    nas_sim_tools usim \
 	    usim $dbin/usim
@@ -722,7 +735,7 @@ function main() {
     #[ "$CLEAN" = "1" ] && rm -rf $DIR/oaisim_mme_build_oai/build
     #mkdir -p $DIR/oaisim_mme_build_oai/build
     #cd $DIR/oaisim_mme_build_oai/build
-    #cmake ..
+    #eval $CMAKE_CMD
     #compilations \
 	#  oaisim_mme_build_oai oaisim_mme \
 	#  oaisim_mme $dbin/oaisim_mme.$REL
@@ -752,7 +765,7 @@ function main() {
      echo "set ( T_TRACER $T_TRACER )"            >>  $cmake_file
      echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file    
      cd $DIR/$rrh_build_dir/build
-     cmake ..
+     eval $CMAKE_CMD
      compilations \
 	 rrh_gw rrh_gw \
 	 rrh_gw $dbin/rrh_gw
@@ -847,7 +860,7 @@ fi
     [ "$CLEAN" = "1" ] && rm -rf $OPENAIR_DIR/cmake_targets/doxygen/build
     mkdir -p $OPENAIR_DIR/cmake_targets/doxygen/build
     cd $OPENAIR_DIR/cmake_targets/doxygen/build
-    cmake ..
+    eval $CMAKE_CMD
     make doc
     ) >& $doxygen_log
   fi
