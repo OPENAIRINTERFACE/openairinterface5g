@@ -1998,7 +1998,7 @@ int main(int argc, char **argv)
     }
   */
 
-  UE->pdcch_vars[0][0]->crnti = n_rnti;
+  UE->pdcch_vars[subframe & 0x1][0]->crnti = n_rnti;
 
   // Fill in UL_alloc
   UL_alloc_pdu.type    = 0;
