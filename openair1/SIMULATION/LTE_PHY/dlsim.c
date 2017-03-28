@@ -1301,7 +1301,7 @@ int main(int argc, char **argv)
   unsigned int ret;
   unsigned int coded_bits_per_codeword=0,nsymb; //,tbs=0;
 
-  unsigned int tx_lev=0,tx_lev_dB=0,trials,errs[4]= {0,0,0,0},errs2[4]= {0,0,0,0},round_trials[4]= {0,0,0,0},dci_errors=0;//,num_layers;
+  unsigned int tx_lev=0,tx_lev_dB=0,trials,errs[4]= {0,0,0,0},errs2[4]= {0,0,0,0},round_trials[4]= {0,0,0,0},dci_errors[4]={0,0,0,0};//,num_layers;
   //int re_allocated;
   char fname[32],vname[32];
   FILE *bler_fd;
@@ -2246,7 +2246,10 @@ int main(int argc, char **argv)
       round_trials[2] = 0;
       round_trials[3] = 0;
 
-      dci_errors=0;
+      dci_errors[0]=0;
+      dci_errors[1]=0;
+      dci_errors[2]=0;
+      dci_errors[3]=0;
       //      avg_ber = 0;
 
       round=0;
@@ -2499,6 +2502,9 @@ int main(int argc, char **argv)
 
 	  if (UE->dlsch[subframe&0x1][0][0]->active == 0) {
 	    //printf("DCI not received\n");
+	    dci_errors[round]++;
+	    UE->dlsch_errors[0] = 1;
+
 	    /*
 	    write_output("pdcchF0_ext.m","pdcchF_ext", UE->pdcch_vars[eNB_id]->rxdataF_ext[0],2*3*UE->frame_parms.ofdm_symbol_size,1,1);
 	    write_output("pdcch00_ch0_ext.m","pdcch00_ch0_ext",UE->pdcch_vars[eNB_id]->dl_ch_estimates_ext[0],12*UE->frame_parms.N_RB_DL*3,1,1);
@@ -2837,13 +2843,13 @@ int main(int argc, char **argv)
       double std_phy_proc_rx_demod=0;
       double std_phy_proc_rx_dec=0;
 
-      effective_rate = ((double)(round_trials[0]-dci_errors)/((double)round_trials[0] + round_trials[1] + round_trials[2] + round_trials[3]));
+      effective_rate = 1.0-((double)(errs[0]+errs[1]+errs[2]+errs[3])/((double)round_trials[0] + round_trials[1] + round_trials[2] + round_trials[3]));
 
       printf("\n**********************SNR = %f dB (tx_lev %f)**************************\n",
              SNR,
              (double)tx_lev_dB+10*log10(UE->frame_parms.ofdm_symbol_size/(NB_RB*12)));
 
-      printf("Errors (%d(%d)/%d %d/%d %d/%d %d/%d), Pe = (%e,%e,%e,%e), dci_errors %d/%d, Pe = %e => effective rate %f  (%2.1f%%,%f, %f), normalized delay %f (%f)\n",
+      printf("Errors (%d(%d)/%d %d/%d %d/%d %d/%d), Pe = (%e,%e,%e,%e), dci_errors %d/%d, Pe = %e => effective rate %f, normalized delay %f (%f)\n",
              errs[0],
              errs2[0],
              round_trials[0],
@@ -2857,13 +2863,13 @@ int main(int argc, char **argv)
              (double)errs[1]/(round_trials[0]),
              (double)errs[2]/(round_trials[0]),
              (double)errs[3]/(round_trials[0]),
-             dci_errors,
-             round_trials[0],
-             (double)dci_errors/(round_trials[0]),
-             rate*effective_rate,
+             dci_errors[0]+dci_errors[1]+dci_errors[2]+dci_errors[3],
+             round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3],
+             (double)(dci_errors[0]+dci_errors[1]+dci_errors[2]+dci_errors[3])/(round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]),
+             //rate*effective_rate,
              100*effective_rate,
-             rate,
-             rate*get_Qm(UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->mcs),
+             //rate,
+             //rate*get_Qm(UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->mcs),
              (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/
              (double)eNB->dlsch[0][0]->harq_processes[0]->TBS,
              (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
@@ -2986,7 +2992,7 @@ int main(int argc, char **argv)
                 round_trials[2],
                 errs[3],
                 round_trials[3],
-                dci_errors);
+                dci_errors[0]);
       } else {
         fprintf(bler_fd,"%f;%d;%d;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
                 SNR,
@@ -3002,7 +3008,7 @@ int main(int argc, char **argv)
                 round_trials[2],
                 errs[3],
                 round_trials[3],
-                dci_errors);
+                dci_errors[0]);
       }
 
 
@@ -3035,7 +3041,7 @@ int main(int argc, char **argv)
                   round_trials[2],
                   errs[3],
                   round_trials[3],
-                  dci_errors);
+                  dci_errors[0]);
 
           //fprintf(time_meas_fd,"SNR; MCS; TBS; rate; DL_DECOD_ITER; err0; trials0; err1; trials1; err2; trials2; err3; trials3; PE; dci_err;PE;ND;\n");
           fprintf(time_meas_fd,"%f;%d;%d;%f; %2.1f%%;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%e;%e;%e;%e;%d;%d;%e;%f;%f;",
@@ -3058,9 +3064,9 @@ int main(int argc, char **argv)
                   (double)errs[1]/(round_trials[0]),
                   (double)errs[2]/(round_trials[0]),
                   (double)errs[3]/(round_trials[0]),
-                  dci_errors,
+                  dci_errors[0],
                   round_trials[0],
-                  (double)dci_errors/(round_trials[0]),
+                  (double)dci_errors[0]/(round_trials[0]),
                   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/
                   (double)eNB->dlsch[0][0]->harq_processes[0]->TBS,
                   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
@@ -3079,7 +3085,7 @@ int main(int argc, char **argv)
                   round_trials[2],
                   errs[3],
                   round_trials[3],
-                  dci_errors);
+                  dci_errors[0]);
 
           //fprintf(time_meas_fd,"SNR; MCS; TBS; rate; DL_DECOD_ITER; err0; trials0; err1; trials1; err2; trials2; err3; trials3; PE; dci_err;PE;ND;\n");
           fprintf(time_meas_fd,"%f;%d;%d;%d;%d;%f;%2.1f;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%e;%e;%e;%e;%d;%d;%e;%f;%f;",
@@ -3103,9 +3109,9 @@ int main(int argc, char **argv)
                   (double)errs[1]/(round_trials[0]),
                   (double)errs[2]/(round_trials[0]),
                   (double)errs[3]/(round_trials[0]),
-                  dci_errors,
+                  dci_errors[0],
                   round_trials[0],
-                  (double)dci_errors/(round_trials[0]),
+                  (double)dci_errors[0]/(round_trials[0]),
                   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/
                   (double)eNB->dlsch[0][0]->harq_processes[0]->TBS,
                   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
