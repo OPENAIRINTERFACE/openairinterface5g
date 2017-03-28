@@ -633,7 +633,13 @@ PUCCH_FMT_t get_pucch_format(lte_frame_type_t frame_type,
       }
       if(SR_payload == 1)
       {
-          return pucch_format1;
+          if (frame_type == FDD) {
+              return pucch_format1;
+          } else if (frame_type == TDD) {
+              return pucch_format1b;
+          } else {
+	      AssertFatal(1==0,"Unknown frame_type");
+          }
       }
   }
   else
