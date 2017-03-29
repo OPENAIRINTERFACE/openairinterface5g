@@ -222,6 +222,7 @@ mem_block_t * create_new_segment_from_pdu(
 		pdu_new_segment_info_p->p				= pdu_rx_info_p->p;
 		pdu_new_segment_info_p->rf				= 1;
 		pdu_new_segment_info_p->fi				= (((fi_start ? 0: 1) << 1) | (fi_end ? 0: 1));
+		pdu_new_segment_info_p->num_li			= num_li;
 		pdu_new_segment_info_p->e				= (num_li ? 1: 0);
 		pdu_new_segment_info_p->lsf				= (lsf ? 1: 0);
 		pdu_new_segment_info_p->so				= pdu_rx_info_p->so + so_offset;
@@ -380,6 +381,23 @@ rlc_am_rx_pdu_status_t rlc_am_rx_list_handle_pdu_segment(
 		  return RLC_AM_DATA_PDU_STATUS_AM_SEGMENT_DUPLICATE;
 	  }
 
+	  // Try to catch a segment duplicate
+	  next_cursor_p = cursor_p;
+	  while ((next_cursor_p != NULL) && (pdu_info_cursor_p->sn == pdu_rx_info_p->sn)) {
+		  if ((so_start_segment >= pdu_info_cursor_p->so) && (so_end_segment <= pdu_info_cursor_p->so + pdu_info_cursor_p->payload_size - 1)) {
+			  LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SEGMENT]  DISCARD : DUPLICATE SEGMENT SN=%d\n",
+							  PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_rx_info_p->sn);
+			  return RLC_AM_DATA_PDU_STATUS_AM_SEGMENT_DUPLICATE;
+		  }
+		  next_cursor_p = next_cursor_p->next;
+		  if (next_cursor_p != NULL) {
+			  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(next_cursor_p->data))->pdu_info;
+		  }
+	  }
+
+	  // Reset pdu_info_cursor_p because of the loop before
+	  pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+
 	  // Try to Handle the most likely cases first
 	  if (pdu_info_cursor_p->so == 0) {
 
@@ -425,7 +443,7 @@ rlc_am_rx_pdu_status_t rlc_am_rx_list_handle_pdu_segment(
 		  }
 
 		  /* Now discard the PDU segment if it is within so_start_min and so_end */
-		  if ((so_start_min <= so_start_segment) && (so_end_segment < so_end)) {
+		  if ((so_start_min <= so_start_segment) && (so_end_segment <= so_end - 1)) {
 			  LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SEGMENT]  DISCARD : DUPLICATE SEGMENT SN=%d\n",
 							  PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_rx_info_p->sn);
 			  return RLC_AM_DATA_PDU_STATUS_AM_SEGMENT_DUPLICATE;

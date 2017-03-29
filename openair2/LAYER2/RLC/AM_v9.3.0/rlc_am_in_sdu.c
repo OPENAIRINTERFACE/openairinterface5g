@@ -57,13 +57,12 @@ void rlc_am_free_in_sdu(
     memset(&rlcP->input_sdus[index_in_bufferP], 0, sizeof(rlc_am_tx_sdu_management_t));
     rlcP->input_sdus[index_in_bufferP].flags.transmitted_successfully = 1;
 
-    // TODO : understand why. This should not happen
+    // case when either one SDU needs to be removed from segmentation or SDU buffer is full
     if (rlcP->current_sdu_index == index_in_bufferP) {
       rlcP->current_sdu_index = (rlcP->current_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
     }
 
-    // TODO : this loop is useless as UL SDUs are transmitted and acknowledged in sequence
-    // even with PDCP UL SDU discard functionality
+    // wrapping and reset current_sdu_index to next_sdu_index when all transmitted SDUs have been acknowledged
     while ((rlcP->current_sdu_index != rlcP->next_sdu_index) &&
            (rlcP->input_sdus[rlcP->current_sdu_index].flags.transmitted_successfully == 1)) {
       rlcP->current_sdu_index = (rlcP->current_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;

@@ -1253,14 +1253,16 @@ rlc_am_data_req (
     l_rlc_p->next_sdu_index = (l_rlc_p->next_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
     if (l_rlc_p->channel_id <3)
     {
-    LOG_I(RLC, PROTOCOL_RLC_AM_CTXT_FMT" RLC_AM_DATA_REQ size %d Bytes,  NB SDU %d current_sdu_index=%d next_sdu_index=%d conf %d mui %d\n",
+    LOG_I(RLC, PROTOCOL_RLC_AM_CTXT_FMT" RLC_AM_DATA_REQ size %d Bytes,  NB SDU %d current_sdu_index=%d next_sdu_index=%d conf %d mui %d vtA %d vtS %d\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,l_rlc_p),
           data_size,
           l_rlc_p->nb_sdu,
           l_rlc_p->current_sdu_index,
           l_rlc_p->next_sdu_index,
           conf,
-          mui);
+          mui,
+		  l_rlc_p->vt_a,
+		  l_rlc_p->vt_s);
     }
   } else {
 #if MESSAGE_CHART_GENERATOR
@@ -1278,12 +1280,14 @@ rlc_am_data_req (
       data_size,
       mui);
 #endif
-    LOG_W(RLC, PROTOCOL_RLC_AM_CTXT_FMT" RLC_AM_DATA_REQ BUFFER FULL, NB SDU %d current_sdu_index=%d next_sdu_index=%d size_input_sdus_buffer=%d\n",
+    LOG_W(RLC, PROTOCOL_RLC_AM_CTXT_FMT" RLC_AM_DATA_REQ BUFFER FULL, NB SDU %d current_sdu_index=%d next_sdu_index=%d size_input_sdus_buffer=%d vtA=%d vtS=%d\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,l_rlc_p),
           l_rlc_p->nb_sdu,
           l_rlc_p->current_sdu_index,
           l_rlc_p->next_sdu_index,
-          RLC_AM_SDU_CONTROL_BUFFER_SIZE);
+          RLC_AM_SDU_CONTROL_BUFFER_SIZE,
+		  l_rlc_p->vt_a,
+		  l_rlc_p->vt_s);
     LOG_W(RLC, "                                        input_sdus[].mem_block=%p next input_sdus[].flags.segmented=%d\n",
           l_rlc_p->input_sdus[l_rlc_p->next_sdu_index].mem_block, l_rlc_p->input_sdus[l_rlc_p->next_sdu_index].flags.segmented);
     l_rlc_p->stat_tx_pdcp_sdu_discarded   += 1;

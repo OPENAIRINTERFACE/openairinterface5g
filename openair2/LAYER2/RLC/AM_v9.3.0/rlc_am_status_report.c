@@ -562,7 +562,7 @@ rlc_am_send_status_pdu(
       all_segments_received = ((rlc_am_rx_pdu_management_t*)(cursor_p->data))->all_segments_received;
 
       /* First fill NACK_SN with each missing PDU between current sn_nack and sn_cursor */
-      while ((sn_nack != sn_cursor) && (sn_nack != rlc_pP->vr_ms)) {
+      while ((sn_nack != sn_cursor) && (RLC_AM_DIFF_SN(sn_nack,rlc_pP->vr_r) < RLC_AM_DIFF_SN(rlc_pP->vr_ms,rlc_pP->vr_r))) {
     	  if (nb_bits_transmitted + RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) <= nb_bits_to_transmit) {
     		  /* Fill NACK_SN infos */
               control_pdu_info.nack_list[control_pdu_info.num_nack].nack_sn   = sn_nack;
@@ -594,6 +594,10 @@ rlc_am_send_status_pdu(
 #endif
     		  break;
     	  }
+      }
+
+      if (sn_nack == rlc_pP->vr_ms) {
+    	  break;
       }
 
       /* Now process all Segments of sn_cursor if PDU not fully received */
@@ -732,9 +736,12 @@ rlc_am_send_status_pdu(
     	  	  } while ((cursor_p != NULL) && (((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info.sn == sn_cursor));
       }
 
-      /* Increment sn_nack except if sn_nack = vrMS and if current SN was not fully received */
-      if (sn_nack != rlc_pP->vr_ms) {
+      /* Increment sn_nack except if sn_cursor = vrMS and if current SN was not fully received */
+      if (RLC_AM_DIFF_SN(sn_cursor,rlc_pP->vr_r) < RLC_AM_DIFF_SN(rlc_pP->vr_ms,rlc_pP->vr_r)) {
     	  sn_nack = RLC_AM_NEXT_SN(sn_cursor);
+      }
+      else {
+    	  sn_nack = rlc_pP->vr_ms;
       }
 
 

@@ -95,7 +95,7 @@ boolean_t rlc_am_nack_pdu (
 		}
 
 		// Check consistency
-		if ((so_startP < so_endP) && (so_endP < tx_data_pdu_buffer_p->payload_size)) {
+		if ((so_startP <= so_endP) && (so_endP < tx_data_pdu_buffer_p->payload_size)) {
 	    	if (prev_nack_snP != snP) {
 	    		/* New NACK_SN with SO */
                 /* check whether a new segment is to be placed in Retransmission Buffer, then increment vrReTx */

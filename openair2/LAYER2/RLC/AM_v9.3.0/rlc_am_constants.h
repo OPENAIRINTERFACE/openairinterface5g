@@ -48,7 +48,7 @@
 #    define RLC_AM_SDU_DATA_BUFFER_SIZE           64*1024
 
 /** Max number of incoming SDUs from upper layer that can be buffered in a RLC AM protocol instance. */
-#    define RLC_AM_SDU_CONTROL_BUFFER_SIZE        128
+#    define RLC_AM_SDU_CONTROL_BUFFER_SIZE        1024
 
 /** Size of the retransmission buffer (number of PDUs). */
 #    define RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE RLC_AM_WINDOW_SIZE
