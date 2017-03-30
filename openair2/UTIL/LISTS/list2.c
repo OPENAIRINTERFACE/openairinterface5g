@@ -233,6 +233,8 @@ list2_add_head (mem_block_t * elementP, list2_t * listP)
 
     // almost one element
     if (head == NULL) {
+      elementP->previous = NULL;
+      elementP->next = NULL;
       listP->head = elementP;
       listP->tail = elementP;
     } else {

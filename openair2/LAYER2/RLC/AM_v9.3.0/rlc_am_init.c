@@ -51,16 +51,16 @@ rlc_am_init(
     pthread_mutex_init(&rlc_pP->lock_input_sdus, NULL);
     rlc_pP->input_sdus               = calloc(1, RLC_AM_SDU_CONTROL_BUFFER_SIZE*sizeof(rlc_am_tx_sdu_management_t));
 //#warning "cast the rlc retrans buffer to uint32"
-    //        rlc_pP->pdu_retrans_buffer       = calloc(1, (uint16_t)((unsigned int)RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*(unsigned int)sizeof(rlc_am_tx_data_pdu_management_t)));
-    rlc_pP->pdu_retrans_buffer       = calloc(1, (uint32_t)((unsigned int)RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*(unsigned int)sizeof(
+    //        rlc_pP->tx_data_pdu_buffer       = calloc(1, (uint16_t)((unsigned int)RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*(unsigned int)sizeof(rlc_am_tx_data_pdu_management_t)));
+    rlc_pP->tx_data_pdu_buffer       = calloc(1, (uint32_t)((unsigned int)RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*(unsigned int)sizeof(
                                          rlc_am_tx_data_pdu_management_t)));
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[AM INIT] input_sdus[] = %p  element size=%zu\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           rlc_pP->input_sdus,
           sizeof(rlc_am_tx_sdu_management_t));
-    LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[AM INIT] pdu_retrans_buffer[] = %p element size=%zu\n",
+    LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[AM INIT] tx_data_pdu_buffer[] = %p element size=%zu\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-          rlc_pP->pdu_retrans_buffer,
+          rlc_pP->tx_data_pdu_buffer,
           sizeof(rlc_am_tx_data_pdu_management_t));
 
     // TX state variables
@@ -74,12 +74,12 @@ rlc_am_init(
     // RX state variables
     //rlc_pP->vr_r    = 0;
     rlc_pP->vr_mr   = rlc_pP->vr_r + RLC_AM_WINDOW_SIZE;
-    //rlc_pP->vr_x    = 0;
+    rlc_pP->vr_x    = RLC_SN_UNDEFINED;
     //rlc_pP->vr_ms   = 0;
     //rlc_pP->vr_h    = 0;
+    rlc_pP->sn_status_triggered_delayed = RLC_SN_UNDEFINED;
 
-    rlc_pP->last_frame_status_indication = 123456; // any value > 1
-    rlc_pP->first_retrans_pdu_sn         = -1;
+    rlc_pP->last_absolute_subframe_status_indication = 0xFFFFFFFF; // any value > 1
 
     rlc_pP->initialized                  = TRUE;
   }
@@ -128,12 +128,13 @@ rlc_am_reestablish(
   // RX state variables
   rlc_pP->vr_r    = 0;
   rlc_pP->vr_mr   = rlc_pP->vr_r + RLC_AM_WINDOW_SIZE;
-  rlc_pP->vr_x    = 0;
+  rlc_pP->vr_x    = RLC_SN_UNDEFINED;
   rlc_pP->vr_ms   = 0;
   rlc_pP->vr_h    = 0;
+  rlc_pP->sn_status_triggered_delayed = RLC_SN_UNDEFINED;
+  rlc_pP->status_requested	= RLC_AM_STATUS_NOT_TRIGGERED;
 
-  rlc_pP->last_frame_status_indication = 123456; // any value > 1
-  rlc_pP->first_retrans_pdu_sn         = -1;
+  rlc_pP->last_absolute_subframe_status_indication = 0xFFFFFFFF; // any value > 1
 
   rlc_pP->initialized                  = TRUE;
 
@@ -172,16 +173,16 @@ rlc_am_cleanup(
 
   pthread_mutex_destroy(&rlc_pP->lock_input_sdus);
 
-  if (rlc_pP->pdu_retrans_buffer != NULL) {
+  if (rlc_pP->tx_data_pdu_buffer != NULL) {
     for (i=0; i < RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE; i++) {
-      if (rlc_pP->pdu_retrans_buffer[i].mem_block != NULL) {
-        free_mem_block(rlc_pP->pdu_retrans_buffer[i].mem_block, __func__);
-        rlc_pP->pdu_retrans_buffer[i].mem_block = NULL;
+      if (rlc_pP->tx_data_pdu_buffer[i % RLC_AM_WINDOW_SIZE].mem_block != NULL) {
+        free_mem_block(rlc_pP->tx_data_pdu_buffer[i % RLC_AM_WINDOW_SIZE].mem_block, __func__);
+        rlc_pP->tx_data_pdu_buffer[i % RLC_AM_WINDOW_SIZE].mem_block = NULL;
       }
     }
 
-    free(rlc_pP->pdu_retrans_buffer);
-    rlc_pP->pdu_retrans_buffer       = NULL;
+    free(rlc_pP->tx_data_pdu_buffer);
+    rlc_pP->tx_data_pdu_buffer       = NULL;
   }
 
   memset(rlc_pP, 0, sizeof(rlc_am_entity_t));

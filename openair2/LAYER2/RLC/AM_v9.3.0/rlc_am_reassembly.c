@@ -212,7 +212,8 @@ void
 rlc_am_reassemble_pdu(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP,
-  mem_block_t * const          tb_pP)
+  mem_block_t * const          tb_pP,
+  boolean_t free_rlc_pdu)
 {
   int i,j;
 
@@ -397,5 +398,7 @@ rlc_am_reassemble_pdu(
     }
   }
 
-  free_mem_block(tb_pP, __func__);
+  if (free_rlc_pdu) {
+	  free_mem_block(tb_pP, __func__);
+  }
 }
