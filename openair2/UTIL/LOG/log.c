@@ -28,6 +28,7 @@
 
 */
 
+#define _GNU_SOURCE  /* required for pthread_getname_np */
 //#define LOG_TEST 1
 
 #define COMPONENT_LOG
@@ -1033,8 +1034,8 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
     }
 
     if ( (g_log->flag & FLAG_THREAD) || (c->flag & FLAG_THREAD) ) {
-      #define THREAD_NAME_LEN 16
-      static char threadname[THREAD_NAME_LEN];
+#     define THREAD_NAME_LEN 128
+      char threadname[THREAD_NAME_LEN];
       if (pthread_getname_np(pthread_self(), threadname, THREAD_NAME_LEN) != 0)
       {
         perror("pthread_getname_np : ");
@@ -1042,7 +1043,7 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
         len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s]", threadname);
         if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
       }
-      #undef THREAD_NAME_LEN
+#     undef THREAD_NAME_LEN
     }
 
     if ( (g_log->flag & FLAG_FUNCT) || (c->flag & FLAG_FUNCT) ) {
