@@ -454,6 +454,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP,u
 @param t_crnti Pointer to PHY variable containing the T_CRNTI
 @param preamble_index Preamble Index used by PHY to transmit the PRACH.  This should match the received RAR to trigger the rest of
 random-access procedure
+@param selected_rar_buffer the output buffer for storing the selected RAR header and RAR payload
 @returns timing advance or 0xffff if preamble doesn't match
 */
 uint16_t
@@ -464,7 +465,8 @@ ue_process_rar(
   const rnti_t ra_rnti,
   uint8_t * const dlsch_buffer,
   rnti_t * const t_crnti,
-  const uint8_t preamble_index
+  const uint8_t preamble_index,
+  uint8_t* selected_rar_buffer
 );
 
 

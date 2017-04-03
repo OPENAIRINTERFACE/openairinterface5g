@@ -170,7 +170,7 @@ typedef struct {
   PRACH_RESOURCES_t* (*ue_get_rach)(module_id_t Mod_id,int CC_id,frame_t frameP,uint8_t Msg3_flag,sub_frame_t subframe);
 
   /// Process Random-Access Response
-  uint16_t (*ue_process_rar)(module_id_t Mod_id,int CC_id,frame_t frameP, uint16_t ra_rnti, uint8_t *dlsch_buffer, uint16_t *t_crnti,uint8_t preamble_index);
+  uint16_t (*ue_process_rar)(module_id_t Mod_id,int CC_id,frame_t frameP, uint16_t ra_rnti, uint8_t *dlsch_buffer, uint16_t *t_crnti,uint8_t preamble_index, uint8_t* selected_rar_buffer);
 
   /// Get SR payload (0,1) from UE MAC
   uint32_t (*ue_get_SR)(module_id_t Mod_id,int CC_id,frame_t frameP,uint8_t eNB_id,rnti_t rnti,sub_frame_t subframe);

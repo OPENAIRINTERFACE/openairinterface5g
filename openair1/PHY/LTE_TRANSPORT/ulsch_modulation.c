@@ -402,7 +402,7 @@ void ulsch_modulation(int32_t **txdataF,
   // x1 is set in lte_gold_generic
   x2 = (ulsch->rnti<<14) + (subframe<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
 
-  if (harq_pid > 7) {
+  if (harq_pid>=8) {
     printf("ulsch_modulation.c: Illegal harq_pid %d\n",harq_pid);
     return;
   }

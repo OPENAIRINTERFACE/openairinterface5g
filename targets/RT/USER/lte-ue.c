@@ -323,11 +323,11 @@ static void *UE_thread_synch(void *arg) {
                        downlink_frequency[0][0]+uplink_frequency_offset[0][0]+freq_offset,
                        UE->UE_scan_carrier );
 
-                if (UE->UE_scan_carrier == 1) {
-                    UE->UE_scan_carrier = 0;
+
                     // rerun with new cell parameters and frequency-offset
                     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
                         openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
+			if (UE->UE_scan_carrier == 1) {
                         if (freq_offset >= 0)
                             openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] += abs(UE->common_vars.freq_offset);
                         else
@@ -337,6 +337,7 @@ static void *UE_thread_synch(void *arg) {
                         downlink_frequency[CC_id][i] = openair0_cfg[CC_id].rx_freq[i];
                         freq_offset=0;
                     }
+	  }
 
                     // reconfigure for potentially different bandwidth
                     switch(UE->frame_parms.N_RB_DL) {
@@ -375,6 +376,10 @@ static void *UE_thread_synch(void *arg) {
                         LOG_E(HW,"Could not start the device\n");
                         oai_exit=1;
                     }*/
+
+		if (UE->UE_scan_carrier == 1) {
+
+		  UE->UE_scan_carrier = 0;
                 } else {
                     AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
                     UE->is_synchronized = 1;

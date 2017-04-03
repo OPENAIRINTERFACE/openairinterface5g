@@ -190,7 +190,7 @@ int mac_phy_remove_ue(module_id_t Mod_idP,rnti_t rntiP) {
     eNB = PHY_vars_eNB_g[Mod_idP][CC_id];
     for (i=0; i<NUMBER_OF_UE_MAX; i++) {
       if ((eNB->dlsch[i]==NULL) || (eNB->ulsch[i]==NULL)) {
-	MSC_LOG_EVENT(MSC_PHY_ENB, "0 Failed remove ue %"PRIx16" (ENOMEM)", rnti);
+	MSC_LOG_EVENT(MSC_PHY_ENB, "0 Failed remove ue %"PRIx16" (ENOMEM)", rntiP);
 	LOG_E(PHY,"Can't remove UE, not enough memory allocated\n");
 	return(-1);
       } else {

@@ -332,15 +332,17 @@ rrc_mac_config_req(
   if (eNB_flagP == 0) {
     if (measObj!= NULL) {
       if (measObj[0]!= NULL) {
-        UE_mac_inst[Mod_idP].n_adj_cells = measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList->list.count;
-        LOG_I(MAC,"Number of adjacent cells %d\n",UE_mac_inst[Mod_idP].n_adj_cells);
+        if (measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList != NULL) {
+          UE_mac_inst[Mod_idP].n_adj_cells = measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList->list.count;
+          LOG_D(MAC,"Number of adjacent cells %d\n",UE_mac_inst[Mod_idP].n_adj_cells);
 
-        for (i=0; i<UE_mac_inst[Mod_idP].n_adj_cells; i++) {
-          UE_mac_inst[Mod_idP].adj_cell_id[i] = measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList->list.array[i]->physCellId;
-          LOG_I(MAC,"Cell %d : Nid_cell %d\n",i,UE_mac_inst[Mod_idP].adj_cell_id[i]);
-        }
+          for (i=0; i<UE_mac_inst[Mod_idP].n_adj_cells; i++) {
+            UE_mac_inst[Mod_idP].adj_cell_id[i] = measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList->list.array[i]->physCellId;
+            LOG_D(MAC,"Cell %d : Nid_cell %d\n",i,UE_mac_inst[Mod_idP].adj_cell_id[i]);
+          }
 
-        mac_xface->phy_config_meas_ue(Mod_idP,0,eNB_index,UE_mac_inst[Mod_idP].n_adj_cells,UE_mac_inst[Mod_idP].adj_cell_id);
+          mac_xface->phy_config_meas_ue(Mod_idP,0,eNB_index,UE_mac_inst[Mod_idP].n_adj_cells,UE_mac_inst[Mod_idP].adj_cell_id);
+          }
       }
 
       /*
