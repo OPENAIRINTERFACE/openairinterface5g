@@ -36,27 +36,23 @@ message flex_dl_dci {
 }
 
 message flex_ul_dci {
-  optional uint32 handle = 1;
-  optional uint32 size = 2;    // Size of the ULSCH PDU in bytes for UL Grant.
 	optional uint32 rnti = 1;
-	optional uint32 res_block_start = 2;		// match DCI format 0 PDU 
-	optional uint32 rb_bitmap = 3;		// Bitmap for RB allocation
-	optional uint32 modulation_t = 4;		// A FLMOD_* Value
-	optional uint32 cyclic_shift2 = 5;		//  match DCI format 0/4 PDU 
-	optional uint32 freq_hop_flag = 6;   		// 0 no hopping, 1 hoppping
-	optional uint32 freq_hop_map = 8;			//   match DCI format 0 PDU 
-	optional uint32 ndi = 7;		// New data indicator of each TB
-  optional uint32 rv = 8;			// Redundancy version of each TB
-  optional uint32 harq_process_number = 14; 	//  A FLHARQ_* value
-  optional uint32 ultx_mode = 14; 	//  A FLULM_* value
-  repeated uint32 tbs_size = 5;		// The size of each TBS
-	repeated uint32 current_harq = 9;		// CCE index used to send the DCI
-	optional uint32 n_srs = 10;    // Over lap indication with srs
-  optional uint32 res_alloc = 2;		// Type of resource allocation
-	optional uint32 format = 12;		// DCI format. A FLDCIF_* value
+	optional uint32 rb_start = 2;		// The start RB allocated to the UE 
+	optional uint32 rb_len = 3;		// The number of RBs allocated to the UE
+	optional uint32 mcs = 4;		// Modulation and coding scheme
+	optional uint32 cyclic_shift2 = 5;	//  match DCI format 0/4 PDU 
+	optional uint32 freq_hop_flag = 6;   	// 0 no hopping, 1 hoppping
+	optional uint32 freq_hop_map = 7;	// Frequency hopping bits (0..4) 
+	optional uint32 ndi = 8;		// New data indicator
+  	optional uint32 rv = 9;			// Redundancy version
+  	optional uint32 harq_pid = 10; 		//  The harq process id
+	optional uint32 ultx_mode = 11; 	//  A FLULM_* value
+  	optional uint32 tbs_size = 12;		// The size of each TBS
+	optional uint32 n_srs = 13;    		// Overlap indication with srs
+  	optional uint32 res_alloc = 14;		// Type of resource allocation
+  	optional uint32 size = 15;    // Size of the ULSCH PDU in bytes for UL Grant.
 
-
-//	optional uint32 dai = 15;      		// TDD only
+	optional uint32 dai = 16;      		// TDD only
 
 //	optional uint32 tb_swap = 17;	 	// Boolean. TB to codeword swap flag
 

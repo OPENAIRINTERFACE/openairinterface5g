@@ -18,8 +18,7 @@ message flex_dl_data {
 
 message flex_ul_data {
 	optional uint32 rnti = 1;
-  optional flex_ul_dci dl_dci = 2;
-
+  	optional flex_ul_dci ul_dci = 2;
 }
 
 //
