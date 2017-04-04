@@ -374,19 +374,19 @@ uint8_t get_reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
       }
 
       // report ACK/NACK status
-      o_ACK[0] = 1;
+      o_ACK[cw_idx] = 1;
       status = 0;
       if ((subframe_dl0 < 10) && (harq_ack[subframe_dl0].send_harq_status)) {
-        o_ACK[0] &= harq_ack[subframe_dl0].ack;
+        o_ACK[cw_idx] &= harq_ack[subframe_dl0].ack;
         status = harq_ack[subframe_dl0].send_harq_status;
       }
       if ((subframe_dl1 < 10) && (harq_ack[subframe_dl1].send_harq_status)) {
-        o_ACK[0] &= harq_ack[subframe_dl1].ack;
+        o_ACK[cw_idx] &= harq_ack[subframe_dl1].ack;
         status = harq_ack[subframe_dl1].send_harq_status;
       }
       // report status = Nbundled
       if (!status) {
-        o_ACK[0] = 0;
+        o_ACK[cw_idx] = 0;
       } else {
         if (harq_ack[subframe_ul].vDAI_UL < 0xff) {
           status = harq_ack[subframe_ul].vDAI_UL;
@@ -399,17 +399,17 @@ uint8_t get_reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
               subframe, subframe_ul, harq_ack[subframe_ul].vDAI_UL, status,
               subframe_dl0, harq_ack[subframe_dl0].ack, harq_ack[subframe_dl0].send_harq_status, harq_ack[subframe_dl0].vDAI_DL,
               subframe_dl1, harq_ack[subframe_dl1].ack, harq_ack[subframe_dl1].send_harq_status, harq_ack[subframe_dl1].vDAI_DL,
-              o_ACK[0], status);
+              o_ACK[cw_idx], status);
         } else if (subframe_dl0 < 10) {
           LOG_D(PHY,"ul-sf#%d vDAI_UL[sf#%d]=%d Nbundled=%d: dlsf#%d ACK=%d status=%d vDAI_DL=%d, o_ACK[0]=%d status=%d\n",
               subframe, subframe_ul, harq_ack[subframe_ul].vDAI_UL, status,
               subframe_dl0, harq_ack[subframe_dl0].ack, harq_ack[subframe_dl0].send_harq_status, harq_ack[subframe_dl0].vDAI_DL,
-              o_ACK[0], status);
+              o_ACK[cw_idx], status);
         }else if (subframe_dl1 < 10) {
           LOG_D(PHY,"ul-sf#%d vDAI_UL[sf#%d]=%d Nbundled=%d: dlsf#%d ACK=%d status=%d vDAI_DL=%d, o_ACK[0]=%d status=%d\n",
               subframe, subframe_ul, harq_ack[subframe_ul].vDAI_UL, status,
               subframe_dl1, harq_ack[subframe_dl1].ack, harq_ack[subframe_dl1].send_harq_status, harq_ack[subframe_dl1].vDAI_DL,
-              o_ACK[0], status);
+              o_ACK[cw_idx], status);
         }
       }
 
@@ -600,6 +600,37 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
     LOG_E(PHY,"subframe %d Unsupported TDD configuration %d\n",subframe,frame_parms->tdd_config);
     mac_xface->macphy_exit("subframe x Unsupported TDD configuration");
     return(255);
+
+  }
+}
+
+uint8_t subframe_DL(LTE_DL_FRAME_PARMS *frame_parms,uint8_t current_sfn)
+{
+
+  // if FDD return dummy value
+  if (frame_parms->frame_type == FDD)
+    return(current_sfn);
+
+  switch (frame_parms->tdd_config) {
+
+  case 1:
+    switch (current_sfn) {
+    case 3:
+    case 8:
+      return(current_sfn-3);
+      break;
+
+    default:
+      return(current_sfn);
+      break;
+    }
+
+  case 3:
+    return(current_sfn);
+    break;
+
+  default:
+      AssertFatal(0,"TDD config %d not coded",frame_parms->tdd_config);
 
   }
 }
