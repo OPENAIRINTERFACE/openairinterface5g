@@ -820,6 +820,7 @@ include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/USERSPACE/LIB/")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/DEFS")
 include_directories("${OPENAIR2_DIR}/ENB_APP")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC")
+include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC")
 include_directories("${OPENAIR2_DIR}/UTIL/OSA")
 include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds6.1.1/liblfds611/inc")
 include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds7.0.0/liblfds700/inc")
@@ -905,8 +906,11 @@ if (FLEXRAN_AGENT_SB_IF)
  add_library(FLEXRAN_AGENT
     ${OPENAIR2_DIR}/ENB_APP/flexran_agent_handler.c
     ${OPENAIR2_DIR}/ENB_APP/flexran_agent_common.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_ran_api.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_timer.c
     ${OPENAIR2_DIR}/ENB_APP/flexran_agent_common_internal.c
     ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac.c
+    ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC/flexran_agent_rrc.c
     ${OPENAIR2_DIR}/ENB_APP/flexran_agent.c
     ${OPENAIR2_DIR}/ENB_APP/flexran_agent_task_manager.c
     ${OPENAIR2_DIR}/ENB_APP/flexran_agent_net_comm.c

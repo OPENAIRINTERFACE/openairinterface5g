@@ -39,5 +39,7 @@ enum flex_type {
      // Control delegation messages
      FLPT_DELEGATE_CONTROL = 15;
      FLPT_RECONFIGURE_AGENT = 16;
+     FLPT_RRC_TRIGGERING = 17;
+
 }
 

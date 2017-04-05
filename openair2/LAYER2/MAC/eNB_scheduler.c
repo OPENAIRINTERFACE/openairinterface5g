@@ -158,8 +158,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 	//mac_remove_ue(module_idP, i, frameP, subframeP);
       //Inform the controller about the UE deactivation. Should be moved to RRC agent in the future
 #if defined(FLEXRAN_AGENT_SB_IF)
-      if (mac_agent_registered[module_idP]) {
-	agent_mac_xface[module_idP]->flexran_agent_notify_ue_state_change(module_idP,
+      if (rrc_agent_registered[module_idP]) {
+	agent_rrc_xface[module_idP]->flexran_agent_notify_ue_state_change(module_idP,
 									  rnti,
 									  PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
       }
@@ -1082,15 +1082,15 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++)
     allocate_CCEs(module_idP,CC_id,subframeP,0);
 
-#if defined(FLEXRAN_AGENT_SB_IF)
-#ifndef DISABLE_CONT_STATS
+// #if defined(FLEXRAN_AGENT_SB_IF)
+// #ifndef DISABLE_CONT_STATS
   //Send subframe trigger to the controller
-  if (mac_agent_registered[module_idP]) {
-    agent_mac_xface[module_idP]->flexran_agent_send_update_mac_stats(module_idP);
-  }
-#endif
-#endif
-
+  // if (mac_agent_registered[module_idP]) {
+  //   agent_mac_xface[module_idP]->flexran_agent_send_update_mac_stats(module_idP);
+  // }
+// #endif
+// #endif
+flexran_agent_send_update_stats(module_idP);
   /*
   int dummy=0;
   for (i=0;

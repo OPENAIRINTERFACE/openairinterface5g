@@ -180,6 +180,10 @@ uint8_t find_active_UEs(module_id_t module_idP,int CC_id){
 }
 */
 
+int UE_BSR (uint8_t mod_id, uint8_t ue_id, uint8_t lcid) {
+
+  return eNB_mac_inst[mod_id].UE_list.UE_template[UE_PCCID(mod_id,ue_id)][ue_id].bsr_info[lcid];
+}
 
 // get aggregation (L) form phy for a give UE
 unsigned char get_aggregation (uint8_t bw_index, uint8_t cqi, uint8_t dci_fmt)
@@ -303,6 +307,12 @@ printf("MAC: cannot add new UE for rnti %x\n", rntiP);
   dump_ue_list(UE_list,0);
   return(-1);
 }
+
+int  CC_id_rnti_downlink (uint8_t mod_id, int CC_index, uint16_t ue_rnti) {
+
+  return eNB_mac_inst[mod_id].UE_list.ordered_CCids[CC_index][ue_rnti];
+}
+
 
 //------------------------------------------------------------------------------
 int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP) 
