@@ -2198,10 +2198,10 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   MeasObjectToAddModList_t           *MeasObj_list                     = NULL;
   MeasObjectToAddMod_t               *MeasObj                          = NULL;
   ReportConfigToAddModList_t         *ReportConfig_list                = NULL;
-  ReportConfigToAddMod_t             *ReportConfig_per, *ReportConfig_A1,
-                                     *ReportConfig_A2, *ReportConfig_A3, *ReportConfig_A4, *ReportConfig_A5;
+  ReportConfigToAddMod_t             *ReportConfig_per;//, *ReportConfig_A1,
+                                     // *ReportConfig_A2, *ReportConfig_A3, *ReportConfig_A4, *ReportConfig_A5;
   MeasIdToAddModList_t               *MeasId_list                      = NULL;
-  MeasIdToAddMod_t                   *MeasId0, *MeasId1, *MeasId2, *MeasId3, *MeasId4, *MeasId5;
+  MeasIdToAddMod_t                   *MeasId0; //, *MeasId1, *MeasId2, *MeasId3, *MeasId4, *MeasId5;
 #if Rel10
   long                               *sr_ProhibitTimer_r9              = NULL;
   //     uint8_t sCellIndexToAdd = rrc_find_free_SCell_index(enb_mod_idP, ue_mod_idP, 1);

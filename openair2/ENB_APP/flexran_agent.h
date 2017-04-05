@@ -34,7 +34,10 @@
 #include "flexran_agent_extern.h"
 #include "flexran_agent_timer.h"
 #include "flexran_agent_defs.h"
-
+#include "flexran_agent_net_comm.h"
+#include "flexran_agent_ran_api.h"
+#include "flexran_agent_mac.h"
+#include "flexran_agent_rrc.h"
 #include "log.h"
 #include "assertions.h"
 

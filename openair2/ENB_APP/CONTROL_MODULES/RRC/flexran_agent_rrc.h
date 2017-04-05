@@ -41,7 +41,7 @@
 #include "flexran.pb-c.h"
 #include "stats_messages.pb-c.h"
 #include "stats_common.pb-c.h"
-#include "MeasResults.h"
+
 
 #include "flexran_agent_common.h"
 #include "flexran_agent_rrc_defs.h"
@@ -51,7 +51,7 @@
 void flexran_agent_init_rrc_agent(mid_t mod_id);
 
 /* UE state change message constructor and destructor */
-int flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change);
+void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change);
 int flexran_agent_destroy_ue_state_change(Protocol__FlexranMessage *msg);
 
 
@@ -63,7 +63,7 @@ int flexran_agent_destroy_ue_state_change(Protocol__FlexranMessage *msg);
 // void flexran_agent_send_update_rrc_stats(mid_t mod_id);
 
 /* this is called by RRC as a part of rrc xface  . The controller previously requested  this*/ 
-int flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t *);
+void flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t *);
 
 /*Register technology specific interface callbacks*/
 int flexran_agent_register_rrc_xface(mid_t mod_id, AGENT_RRC_xface *xface);

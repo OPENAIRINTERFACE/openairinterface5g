@@ -32,6 +32,7 @@
 #include "flexran_agent_mac_internal.h"
 #include "flexran_agent_net_comm.h"
 #include "flexran_agent_timer.h"
+#include "flexran_agent_ran_api.h"
 
 #include "LAYER2/MAC/proto.h"
 #include "LAYER2/MAC/flexran_agent_mac_proto.h"
@@ -63,7 +64,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
   // Protocol__FlexHeader *header;
   int i, j, k;
-  int cc_id = 0;
+  // int cc_id = 0;
   int enb_id = mod_id;
 
   /* Allocate memory for list of UE reports */
@@ -141,11 +142,11 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                 /* Check flag for creation of MAC CE buffer status report */
                 if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_CE_BS) {
                         // TODO: Fill in the actual MAC CE buffer status report
-                        ue_report[i]->pending_mac_ces = (flexran_get_MAC_CE_bitmap_TA(enb_id,i,0) | (0 << 1) | (0 << 2)
-                         | (0 << 3)) & 15; /* Use as bitmap. Set one or more of the; /* Use as bitmap. Set one or more of the
-                                       PROTOCOL__FLEX_CE_TYPE__FLPCET_ values
-                                       found in stats_common.pb-c.h. See
-                                       flex_ce_type in FlexRAN specification */
+                        ue_report[i]->pending_mac_ces = (flexran_get_MAC_CE_bitmap_TA(enb_id,i,0) | (0 << 1) | (0 << 2) | (0 << 3)) & 15; 
+                                      // Use as bitmap. Set one or more of the; /* Use as bitmap. Set one or more of the
+                                       // PROTOCOL__FLEX_CE_TYPE__FLPCET_ values
+                                       // found in stats_common.pb-c.h. See
+                                       // flex_ce_type in FlexRAN specification 
                         ue_report[i]->has_pending_mac_ces = 1;
                   
                 }
@@ -213,7 +214,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                     goto error;
                                     protocol__flex_csi_p11__init(csi11);
                                   
-                                    csi11->wb_cqi = flexran_get_ue_wcqi (enb_id, i);                                       
+                                    csi11->wb_cqi =  flexran_get_ue_wcqi (enb_id, i);                                       
                                     // According To spec 36.213                                  
                                      
                                     if (flexran_get_antenna_ports(enb_id, j) == 2 && csi_reports[j]->ri == 1) {

@@ -33,6 +33,7 @@
 #include "flexran_agent_common_internal.h"
 #include "flexran_agent_extern.h"
 #include "flexran_agent_net_comm.h"
+#include "flexran_agent_ran_api.h"
 #include "PHY/extern.h"
 #include "log.h"
 

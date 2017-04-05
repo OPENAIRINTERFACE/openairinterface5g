@@ -264,7 +264,7 @@ int flexran_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properti
   AGENT_MAC_xface *mac_agent_xface = (AGENT_MAC_xface *) malloc(sizeof(AGENT_MAC_xface));
   flexran_agent_register_mac_xface(mod_id, mac_agent_xface);
   
-  AGENT_RRC_xface *rrc_agent_xface = (AGENT_MAC_xface *) malloc(sizeof(AGENT_MAC_xface));
+  AGENT_RRC_xface *rrc_agent_xface = (AGENT_RRC_xface *) malloc(sizeof(AGENT_RRC_xface));
   flexran_agent_register_rrc_xface(mod_id, rrc_agent_xface);
 
   /* 

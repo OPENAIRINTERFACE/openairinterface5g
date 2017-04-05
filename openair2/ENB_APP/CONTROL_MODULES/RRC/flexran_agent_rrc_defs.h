@@ -38,9 +38,11 @@
 #ifndef __FLEXRAN_AGENT_RRC_PRIMITIVES_H__
 #define __FLEXRAN_AGENT_RRC_PRIMITIVES_H__
 
+#include "PHY/extern.h"
 #include "flexran_agent_defs.h"
 #include "flexran.pb-c.h"
 #include "header.pb-c.h"
+#include "MeasResults.h"
 
 #define RINGBUFFER_SIZE 100
 
@@ -55,7 +57,7 @@ typedef struct {
   void (*flexran_agent_notify_ue_state_change)(mid_t mod_id, uint32_t rnti,
                  uint32_t state_change);
 
-  void (*flexran_trigger_rrc_measurements)(mid_t mod_id, MeasResults_t*  measResults)
+  void (*flexran_trigger_rrc_measurements)(mid_t mod_id, MeasResults_t*  measResults);
   
 } AGENT_RRC_xface;
 

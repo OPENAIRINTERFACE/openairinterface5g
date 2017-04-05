@@ -61,12 +61,12 @@ void flexran_agent_init_rrc_agent(mid_t mod_id) {
 
 
 
-int flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change) {
+void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change) {
   int size;
   Protocol__FlexranMessage *msg;
   Protocol__FlexHeader *header;
   void *data;
-  int priority;
+  int priority = 0;
   err_code_t err_code;
 
   int xid = 0;
@@ -258,7 +258,7 @@ int flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_cha
   LOG_D(FLEXRAN_AGENT,"sent message with size %d\n", size);
   return;
  error:
-  LOG_D(FLEXRAN_AGENT, "Could not send UE state message\n");
+  LOG_E(FLEXRAN_AGENT, "Could not send UE state message becasue of %d \n",err_code);
 }
 
 
@@ -278,10 +278,10 @@ int flexran_agent_destroy_ue_state_change(Protocol__FlexranMessage *msg) {
 }
 
 /* this is called by RRC as a part of rrc xface  . The controller previously requested  this*/ 
-int flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t*  measResults) {
+void flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t*  measResults) {
 
   // int i, m, k;
-  int                   priority;
+  int                   priority = 0; // Warning Preventing
   void                  *data;
   int                   size;
   err_code_t             err_code;
@@ -618,16 +618,16 @@ int flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t*  measResults)
   
    LOG_I(FLEXRAN_AGENT,"RRC Trigger is done  \n");
 
-  return 0;
+  return;
 
   error:
 
-    LOG_E(RRC, "Error triggering RRC measurements message!");
+    LOG_E(FLEXRAN_AGENT, "Could not send UE state message becasue of %d \n",err_code);
     /* Free the measurement report received from UE. */
     // ASN_STRUCT_FREE(asn_DEF_MeasResults, p->meas);
     /* Free the params. */
     // free(p);
-    return -1;
+    // return -1;
 }
 
 

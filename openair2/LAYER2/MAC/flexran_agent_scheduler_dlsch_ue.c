@@ -50,7 +50,7 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 #include "ENB_APP/flexran_agent_defs.h"
-
+#include "flexran_agent_ran_api.h"
 #include "pdcp.h"
 
 #include "header.pb-c.h"

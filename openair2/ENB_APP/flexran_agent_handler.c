@@ -31,6 +31,7 @@
 #include "flexran_agent_mac.h"
 #include "flexran_agent_rrc.h"
 #include "flexran_agent_timer.h"
+#include "flexran_agent_ran_api.h"
 #include "log.h"
 
 #include "assertions.h"
@@ -96,7 +97,7 @@ Protocol__FlexranMessage* flexran_agent_handle_message (mid_t mod_id,
     err_code= PROTOCOL__FLEXRAN_ERR__MSG_DECODING;
     goto error; 
   }
-  printf("==================>   %d    %d  \n", decoded_message->msg_case, decoded_message->msg_dir);
+  //printf("==================>   %d    %d  \n", decoded_message->msg_case, decoded_message->msg_dir);
   if ((decoded_message->msg_case > sizeof(agent_messages_callback) / (3 * sizeof(flexran_agent_message_decoded_callback))) || 
       (decoded_message->msg_dir > PROTOCOL__FLEXRAN_DIRECTION__UNSUCCESSFUL_OUTCOME)){
     err_code= PROTOCOL__FLEXRAN_ERR__MSG_NOT_HANDLED;

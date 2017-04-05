@@ -89,7 +89,7 @@ int flexran_get_ue_phr (mid_t mod_id, mid_t ue_id);
 int flexran_get_ue_wcqi (mid_t mod_id, mid_t ue_id);
 
 /* Get the transmission queue size for a UE with a channel_id logical channel id */
-int flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id);
+int flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id, char * buffer_status);
 
 /* Get the head of line delay for a UE with a channel_id logical channel id */
 int flexran_get_hol_delay(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id);
@@ -198,6 +198,17 @@ int flexran_get_p0_pucch_status(mid_t mod_id, mid_t ue_id, int CC_id);
 
 int flexran_update_p0_pucch(mid_t mod_id, mid_t ue_id, int CC_id);
 
+int flexran_get_hopping_mode(mid_t mod_id, int CC_id);
+
+int flexran_get_hopping_offset(mid_t mod_id, int CC_id);
+
+int flexran_get_n_SB(mid_t mod_id, int CC_id);
+
+int flexran_get_phich_resource(mid_t mod_id, int CC_id);
+
+int flexran_get_enable64QAM(mid_t mod_id, int CC_id);
+
+int flexran_get_phich_duration(mid_t mod_id, int CC_id);
 
 /*
  * ************************************

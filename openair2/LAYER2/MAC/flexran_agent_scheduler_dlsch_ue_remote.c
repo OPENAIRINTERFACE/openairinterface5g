@@ -30,7 +30,7 @@
  */
 
 #include "flexran_agent_common_internal.h"
-
+#include "flexran_agent_ran_api.h"
 #include "flexran_agent_scheduler_dlsch_ue_remote.h"
 
 #include "LAYER2/MAC/defs.h"

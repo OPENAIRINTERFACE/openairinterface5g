@@ -37,7 +37,8 @@
 #include "flexran.pb-c.h"
 #include "stats_messages.pb-c.h"
 #include "stats_common.pb-c.h"
-
+#include "flexran_agent_ran_api.h"
+#include "flexran_agent_net_comm.h"
 #include "flexran_agent_defs.h"
 #include "enb_config.h"
 
@@ -156,16 +157,15 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
 /* Function to be used to handle reply message . */
 int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *report_config, Protocol__FlexranMessage **msg);
 
-/* Statistics request protocol message constructor and destructor */
+/* Top level Statistics request protocol message constructor and destructor */
 int flexran_agent_stats_request(mid_t mod_id, xid_t xid, const stats_request_config_t *report_config, Protocol__FlexranMessage **msg);
 int flexran_agent_destroy_stats_request(Protocol__FlexranMessage *msg);
 
-int flexran_agent_stats_request(mid_t mod_id, xid_t xid, const stats_request_config_t *report_config, Protocol__FlexranMessage **msg);
-int flexran_agent_destroy_stats_request(Protocol__FlexranMessage *msg);
- 
+err_code_t flexran_agent_init_cont_stats_update(mid_t mod_id);
+
+void flexran_agent_send_update_stats(mid_t mod_id);
+
 err_code_t flexran_agent_enable_cont_stats_update(mid_t mod_id, xid_t xid, stats_request_config_t *stats_req) ;
-
-int flexran_agent_stats_request(mid_t mod_id, xid_t xid,  const stats_request_config_t *report_config, Protocol__FlexranMessage **msg);
 
 
 #endif
