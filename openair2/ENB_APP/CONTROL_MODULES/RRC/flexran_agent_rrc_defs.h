@@ -54,7 +54,7 @@ typedef struct {
   
    /// Notify the controller for a state change of a particular UE, by sending the proper
   /// UE state change message (ACTIVATION, DEACTIVATION, HANDOVER)
-  void (*flexran_agent_notify_ue_state_change)(mid_t mod_id, uint32_t rnti,
+  int (*flexran_agent_notify_ue_state_change)(mid_t mod_id, uint32_t rnti,
                  uint32_t state_change);
 
   void (*flexran_trigger_rrc_measurements)(mid_t mod_id, MeasResults_t*  measResults);

@@ -97,7 +97,7 @@ Protocol__FlexranMessage* flexran_agent_handle_message (mid_t mod_id,
     err_code= PROTOCOL__FLEXRAN_ERR__MSG_DECODING;
     goto error; 
   }
-  //printf("==================>   %d    %d  \n", decoded_message->msg_case, decoded_message->msg_dir);
+  // printf("==================>   %d    %d  \n", decoded_message->msg_case, decoded_message->msg_dir);
   if ((decoded_message->msg_case > sizeof(agent_messages_callback) / (3 * sizeof(flexran_agent_message_decoded_callback))) || 
       (decoded_message->msg_dir > PROTOCOL__FLEXRAN_DIRECTION__UNSUCCESSFUL_OUTCOME)){
     err_code= PROTOCOL__FLEXRAN_ERR__MSG_NOT_HANDLED;
@@ -309,7 +309,7 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
       } else if (comp_req->report_frequency == PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_CONTINUOUS) {
   /*If request was for continuous updates, disable the previous configuration and
     set up a new one*/
-  // flexran_agent_disable_cont_stats_update(mod_id);
+  flexran_agent_disable_cont_stats_update(mod_id);
   stats_request_config_t request_config;
   request_config.report_type = PROTOCOL__FLEX_STATS_TYPE__FLST_COMPLETE_STATS;
   request_config.report_frequency = PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_ONCE;
