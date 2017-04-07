@@ -1387,6 +1387,12 @@ int main( int argc, char **argv ) {
     memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
 
     memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
+
+    char command_line[500];
+    sprintf(command_line,"git log -1");
+    if (background_system(command_line) != 0)
+      printf("ERROR failed command '%s'", command_line);
+
     set_latency_target();
 
     // set default parameters
