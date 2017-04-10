@@ -1387,6 +1387,7 @@ int main( int argc, char **argv ) {
     memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
 
     memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
+
     set_latency_target();
 
     // set default parameters
@@ -1517,6 +1518,12 @@ int main( int argc, char **argv ) {
 
 
     check_clock();
+
+#ifndef PACKAGE_VERSION
+#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
+#endif
+
+  LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
   // init the parameters
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
