@@ -829,6 +829,15 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
 #endif
 #endif
 
+#if defined(FLEXRAN_AGENT_SB_IF)
+    if (rrc_agent_registered[enb_mod_idP]) {
+      agent_rrc_xface[enb_mod_idP]->flexran_agent_notify_ue_state_change(enb_mod_idP,
+										rnti,
+										PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
+    }
+#endif
+
+
     rrc_mac_remove_ue(enb_mod_idP,rnti);
     rrc_rlc_remove_ue(&ctxt);
     pdcp_remove_UE(&ctxt);
@@ -4885,6 +4894,13 @@ rrc_eNB_decode_ccch(
 
         } else {
           // no context available
+#if defined(FLEXRAN_AGENT_SB_IF)
+	  if (rrc_agent_registered[ctxt_pP->module_id]) {
+	    agent_rrc_xface[ctxt_pP->module_id]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
+										      ctxt_pP->rnti,
+										      PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
+	  }
+#endif
           LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Can't create new context for UE random UE identity (0x%" PRIx64 ")\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
                 random_value);
