@@ -258,7 +258,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *ue,
 
   if (ulsch->harq_processes[harq_pid]->nb_rb > 4) {
     msg("rar_tools.c: unlikely rb count for RAR grant : nb_rb > 3\n");
-    return(-1);
+	// return(-1);
   }
 
   //  ulsch->harq_processes[harq_pid]->Ndi                                   = 1;

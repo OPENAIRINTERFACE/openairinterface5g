@@ -394,7 +394,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP, 
         } else if (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]] > 0) {
           // This is for triggering a transmission on DCCH using PRACH (during handover, or sending SR for example)
           dcch_header_len = 2 + 2;  /// SHORT Subheader + C-RNTI control element
-          rlc_status = mac_rlc_status_ind(module_idP,UE_mac_inst[module_idP].crnti, eNB_indexP,frameP,ENB_FLAG_NO,MBMS_FLAG_NO,
+          rlc_status = mac_rlc_status_ind(module_idP,UE_mac_inst[module_idP].crnti, eNB_indexP,frameP,subframeP,ENB_FLAG_NO,MBMS_FLAG_NO,
                                           DCCH,
                                           6);
 
@@ -409,6 +409,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP, 
           sdu_lengths[0] = mac_rlc_data_req(module_idP, UE_mac_inst[module_idP].crnti,
                                             eNB_indexP, frameP,ENB_FLAG_NO, MBMS_FLAG_NO,
                                             DCCH,
+											6,	//not used
                                             (char *)&ulsch_buff[0]);
 
           LOG_D(MAC,"[UE %d] TX Got %d bytes for DCCH\n",module_idP,sdu_lengths[0]);

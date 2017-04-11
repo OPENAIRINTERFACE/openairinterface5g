@@ -1,0 +1,6 @@
+#!/bin/bash
+#sudo ./build_oai -c -C -I --install-optional-packages --install-system-files --UE -w USRP -V 
+#sudo ./build_oai -c -C -I --install-optional-packages --UE -w USRP -V 
+#sudo ./build_oai -c -C --UE -w USRP -V
+sudo ./build_oai -c -C --UE -w USRP
+#sudo ./build_oai -c -C --UE -w USRP --build-eclipse

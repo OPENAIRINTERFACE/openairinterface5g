@@ -174,6 +174,7 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	   				  rnti,
 	   				  mod_id,
 	   				  frame,
+					  subframe,
 	   				  ENB_FLAG_YES,
 	   				  MBMS_FLAG_NO,
 	   				  lcid,
@@ -193,6 +194,7 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 					    rnti,
 					    mod_id,
 					    frame,
+						subframe,
 					    ENB_FLAG_YES,
 					    MBMS_FLAG_NO,
 					    lcid,
@@ -209,6 +211,7 @@ void flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 						ENB_FLAG_YES,
 						MBMS_FLAG_NO,
 						lcid,
+						rlc_size, //not used
 						(char *)&dlsch_buffer[sdu_length_total]);
 	      
 	      LOG_D(MAC,"[eNB %d][LCID %d] CC_id %d Got %d bytes from RLC\n",mod_id, lcid, CC_id, sdu_lengths[j]);

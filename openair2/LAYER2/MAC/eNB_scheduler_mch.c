@@ -504,7 +504,7 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
           module_idP,CC_id,frameP,MTCH,TBS,
           TBS-header_len_mcch-header_len_msi-sdu_length_total-header_len_mtch);
 
-    rlc_status = mac_rlc_status_ind(module_idP,0,frameP,module_idP,ENB_FLAG_YES,MBMS_FLAG_YES,MTCH,
+    rlc_status = mac_rlc_status_ind(module_idP,0,frameP,subframeP,module_idP,ENB_FLAG_YES,MBMS_FLAG_YES,MTCH,
                                     TBS-header_len_mcch-header_len_msi-sdu_length_total-header_len_mtch);
     LOG_D(MAC,"e-MBMS log channel %u frameP %d, subframeP %d,  rlc_status.bytes_in_buffer is %d\n",
           MTCH,frameP,subframeP, rlc_status.bytes_in_buffer);
@@ -521,6 +521,7 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
                                 ENB_FLAG_YES,
                                 MBMS_FLAG_YES,
                                 MTCH,
+								0,	//not used
                                 (char*)&mch_buffer[sdu_length_total]);
       //sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,frameP, MBMS_FLAG_NO,  MTCH+(MAX_NUM_RB*(NUMBER_OF_UE_MAX+1)), (char*)&mch_buffer[sdu_length_total]);
       LOG_I(MAC,"[eNB %d][MBMS USER-PLANE] CC_id %d Got %d bytes for MTCH %d\n",module_idP,CC_id,sdu_lengths[num_sdus],MTCH);

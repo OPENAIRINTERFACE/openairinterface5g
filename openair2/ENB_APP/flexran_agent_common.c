@@ -426,7 +426,6 @@ int flexran_agent_destroy_agent_reconfiguration(Protocol__FlexranMessage *msg) {
 }
 
 
-
 int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
 
   xid_t xid;

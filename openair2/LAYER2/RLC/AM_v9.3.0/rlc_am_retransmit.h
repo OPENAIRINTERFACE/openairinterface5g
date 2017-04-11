@@ -50,21 +50,24 @@
 #                define public_rlc_am_retransmit(x)     extern x
 #            endif
 #        endif
-/*! \fn void  rlc_am_nack_pdu (const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t *rlcP, uint16_t snP, sdu_size_t so_startP, sdu_size_t so_endP)
+/*! \fn boolean_t  rlc_am_nack_pdu (const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t *rlcP, int16_t snP, int16_t prev_nack_snP,sdu_size_t so_startP, sdu_size_t so_endP)
 * \brief      The RLC AM PDU which have the sequence number snP is marked NACKed with segment offset fields.
 * \param[in]  ctxtP        Running context.
 * \param[in]  rlcP         RLC AM protocol instance pointer.
 * \param[in]  snP          Sequence number of the PDU that is negative acknowledged.
+* \param[in]  prev_nack_snP  Sequence number of previous PDU that is negative acknowledged.
 * \param[in]  so_startP    Start of the segment offset of the PDU that .
 * \param[in]  so_endP      Transport blocks received from MAC layer.
+* \return                  OK/KO
 * \note It may appear a new hole in the retransmission buffer depending on the segment offset informations. Depending on the state of the retransmission buffer, negative confirmation can be sent to higher layers about the drop by the RLC AM instance of a particular SDU.
 */
-protected_rlc_am_retransmit(void         rlc_am_nack_pdu (
+protected_rlc_am_retransmit(boolean_t         rlc_am_nack_pdu (
                               const protocol_ctxt_t* const  ctxt_pP,
                               rlc_am_entity_t *const rlcP,
                               const rlc_sn_t snP,
-                              const sdu_size_t so_startP,
-                              const sdu_size_t so_endP);)
+							  const rlc_sn_t prev_nack_snP,
+                              sdu_size_t so_startP,
+                              sdu_size_t so_endP);)
 
 /*! \fn void rlc_am_ack_pdu (const protocol_ctxt_t* const  ctxt_pP,rlc_am_entity_t *rlcP, rlc_sn_t snP)
 * \brief      The RLC AM PDU which have the sequence number snP is marked ACKed.
@@ -90,6 +93,7 @@ protected_rlc_am_retransmit(mem_block_t* rlc_am_retransmit_get_copy (
                               rlc_am_entity_t *const rlcP,
                               const rlc_sn_t snP));
 
+#if 0
 /*! \fn mem_block_t* rlc_am_retransmit_get_subsegment (const protocol_ctxt_t* const  ctxt_pP,rlc_am_entity_t *rlcP,rlc_sn_t snP, sdu_size_t *sizeP)
 * \brief      The RLC AM PDU which have the sequence number snP is marked ACKed.
 * \param[in]  ctxtP        Running context.
@@ -103,7 +107,18 @@ protected_rlc_am_retransmit(mem_block_t* rlc_am_retransmit_get_subsegment (
                               rlc_am_entity_t *const rlcP,
                               const rlc_sn_t snP,
                               sdu_size_t *const sizeP));
+#endif
 
+/*! \fn mem_block_t* rlc_am_get_pdu_to_retransmit(const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t* rlcP)
+* \brief      Find a PDU or PDU segment to retransmit.
+* \param[in]  ctxtP        Running context.
+* \param[in]  rlcP         RLC AM protocol instance pointer.
+* \return                  A copy of the retransmitted PDU or PDU segment or NULL if TBS was not big enough
+*/
+protected_rlc_am_retransmit(mem_block_t* rlc_am_get_pdu_to_retransmit(
+                              const protocol_ctxt_t* const  ctxt_pP,
+                              rlc_am_entity_t* const rlcP);)
+#if 0
 /*! \fn void rlc_am_retransmit_any_pdu(const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t* rlcP)
 * \brief      Retransmit any PDU in order to unblock peer entity, if no suitable PDU is found (depending on requested MAC size) to be retransmitted, then try to retransmit a subsegment of any PDU.
 * \param[in]  ctxtP        Running context.
@@ -112,6 +127,7 @@ protected_rlc_am_retransmit(mem_block_t* rlc_am_retransmit_get_subsegment (
 protected_rlc_am_retransmit(void rlc_am_retransmit_any_pdu(
                               const protocol_ctxt_t* const  ctxt_pP,
                               rlc_am_entity_t* const rlcP);)
+#endif
 
 /*! \fn void rlc_am_tx_buffer_display (const protocol_ctxt_t* const  ctxt_pP,rlc_am_entity_t* rlcP,  char* message_pP)
 * \brief      Display the dump of the retransmission buffer.

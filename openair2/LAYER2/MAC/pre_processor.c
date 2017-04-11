@@ -109,7 +109,7 @@ void store_dlsch_buffer (module_id_t Mod_id,
 
     for(i=0; i< MAX_NUM_LCID; i++) { // loop over all the logical channels
 
-      rlc_status = mac_rlc_status_ind(Mod_id,rnti, Mod_id,frameP,ENB_FLAG_YES,MBMS_FLAG_NO,i,0 );
+      rlc_status = mac_rlc_status_ind(Mod_id,rnti, Mod_id,frameP,subframeP,ENB_FLAG_YES,MBMS_FLAG_NO,i,0 );
       UE_template->dl_buffer_info[i] = rlc_status.bytes_in_buffer; //storing the dlsch buffer for each logical channel
       UE_template->dl_pdus_in_buffer[i] = rlc_status.pdus_in_buffer;
       UE_template->dl_buffer_head_sdu_creation_time[i] = rlc_status.head_sdu_creation_time ;

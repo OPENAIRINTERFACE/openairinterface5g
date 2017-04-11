@@ -45,6 +45,14 @@ lms_device_t* lms_device;
 lms_stream_t rx_stream;
 lms_stream_t tx_stream;
 
+/* We have a strange behavior when we just start reading
+ * from the device (inconsistent values of the timestamp).
+ * A quick solution is to discard the very first read packet
+ * after a "start".
+ * The following global variable "first_rx" serves that purpose.
+ */
+static int first_rx = 0;
+
 #define RXDCLENGTH 4096
 #define NUMBUFF 32
 
@@ -94,6 +102,10 @@ int trx_lms_read(openair0_device *device, openair0_timestamp *ptimestamp, void *
     meta.flushPartialPacket = false;
 
     int ret;
+    if (first_rx == 1) {
+      first_rx = 0;
+      ret = LMS_RecvStream(&rx_stream,buff[0],nsamps,&meta,50);
+    }
     ret = LMS_RecvStream(&rx_stream,buff[0],nsamps,&meta,50);
     *ptimestamp = meta.timestamp;
     return ret;
@@ -222,6 +234,8 @@ int trx_lms_start(openair0_device *device){
             printf("TX ch:%d calibration failed, bw:%fMHz\n%s\n",i,device->openair0_cfg->tx_bw/1e6,LMS_GetLastErrorMessage());
     }
 
+
+    first_rx = 1;
 
     rx_stream.channel = 0;
     rx_stream.fifoSize = 256*1024;
@@ -355,7 +369,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg){
     break;
   case 15360000:
     openair0_cfg[0].samples_per_packet    = 2048;
-    openair0_cfg[0].tx_sample_advance     = 450;
+    openair0_cfg[0].tx_sample_advance     = 50;   /* TODO: to be refined */
     openair0_cfg[0].tx_bw                 = 15.36e6;
     openair0_cfg[0].rx_bw                 = 15.36e6;
     break;

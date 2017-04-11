@@ -329,6 +329,7 @@ void help (void) {
   printf("  --external-clock tells hardware to use an external clock reference\n");
   printf("  --usim-test use XOR autentication algo in case of test usim mode\n"); 
   printf("  --single-thread-disable. Disables single-thread mode in lte-softmodem\n"); 
+  printf("  -A Set timing_advance\n");
   printf("  -C Set the downlink frequency for all component carriers\n");
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
   printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
@@ -1386,6 +1387,7 @@ int main( int argc, char **argv ) {
     memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
 
     memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
+
     set_latency_target();
 
     // set default parameters
@@ -1417,7 +1419,7 @@ int main( int argc, char **argv ) {
         set_comp_log(HW,      LOG_DEBUG,  LOG_HIGH, 1);
         set_comp_log(PHY,     LOG_DEBUG,   LOG_HIGH, 1);
         set_comp_log(MAC,     LOG_INFO,   LOG_HIGH, 1);
-        set_comp_log(RLC,     LOG_INFO,   LOG_HIGH, 1);
+        set_comp_log(RLC,     LOG_INFO,   LOG_HIGH | FLAG_THREAD, 1);
         set_comp_log(PDCP,    LOG_INFO,   LOG_HIGH, 1);
         set_comp_log(OTG,     LOG_INFO,   LOG_HIGH, 1);
         set_comp_log(RRC,     LOG_INFO,   LOG_HIGH, 1);
@@ -1516,6 +1518,12 @@ int main( int argc, char **argv ) {
 
 
     check_clock();
+
+#ifndef PACKAGE_VERSION
+#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
+#endif
+
+  LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
   // init the parameters
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {

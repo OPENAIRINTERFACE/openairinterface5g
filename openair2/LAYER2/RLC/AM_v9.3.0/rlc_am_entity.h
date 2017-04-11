@@ -57,7 +57,6 @@ typedef struct rlc_am_entity_s {
   boolean_t         is_data_plane;                      /*!< \brief To know if the RLC belongs to a data radio bearer or a signalling radio bearer, for statistics and trace purpose. */
 
   rlc_buffer_occupancy_t sdu_buffer_occupancy;               /*!< \brief Number of bytes of unsegmented SDUs. */
-  rlc_buffer_occupancy_t retransmission_buffer_occupancy;    /*!< \brief Number of bytes of PDUs in retransmission buffer waiting for a ACK. */
   rlc_buffer_occupancy_t status_buffer_occupancy;            /*!< \brief Number of bytes of control PDUs waiting for transmission. */
 
   rlc_am_control_pdu_info_t  control_pdu_info;
@@ -69,17 +68,14 @@ typedef struct rlc_am_entity_s {
   pthread_mutex_t      lock_input_sdus;
   rlc_am_tx_sdu_management_t   *input_sdus;           /*!< \brief Input SDU buffer (for SDUs coming from upper layers). */
   signed int      nb_sdu;                             /*!< \brief Total number of valid rlc_am_tx_sdu_management_t in input_sdus[]. */
-  signed int      nb_sdu_no_segmented;                /*!< \brief Total number of SDUs not segmented and partially segmented. */
+  signed int      nb_sdu_no_segmented;                /*!< \brief Total number of SDUs not segmented and partially segmented. nb_sdu_no_segmented = next_sdu_index - current_sdu_index */
   signed int      next_sdu_index;                     /*!< \brief Next SDU index in input_sdus array where for a new incoming SDU. */
-  signed int      current_sdu_index;                  /*!< \brief Current SDU index in input_sdus array to be segmented. */
+  signed int      current_sdu_index;                  /*!< \brief Current SDU index in input_sdus array to be segmented which is not segmented or partially segmented. */
 
 
-  rlc_am_tx_data_pdu_management_t *pdu_retrans_buffer;       /*!< \brief Retransmission buffer. */
+  rlc_am_tx_data_pdu_management_t *tx_data_pdu_buffer;       /*!< \brief Transmission PDU data buffer. Used also for retransmissions */
   signed int      retrans_num_pdus;                          /*!< \brief Number of PDUs in the retransmission buffer. */
-  signed int      retrans_num_bytes;                         /*!< \brief Number of bytes in the retransmission buffer. */
-  signed int      retrans_num_bytes_to_retransmit;           /*!< \brief Number of bytes in the retransmission buffer to be retransmitted. */
-  unsigned int    num_nack_so;                               /*!< \brief Number of segment offsets asked to be retransmitted by peer RLC entity. */
-  unsigned int    num_nack_sn;                               /*!< \brief Number of segment asked to be retransmitted by peer RLC entity. */
+  signed int      retrans_num_bytes_to_retransmit;           /*!< \brief Number of bytes in the retransmission buffer to be retransmitted. Only payload is taken into account */
   boolean_t       force_poll;                                /*!< \brief force poll due to t_poll_retransmit time-out. */
 
   //---------------------------------------------------------------------
@@ -137,7 +133,7 @@ typedef struct rlc_am_entity_s {
   //-----------------------------
   uint16_t           max_retx_threshold; /*!< \brief This parameter is used by the transmitting side of each AM RLC entity to limit the number of retransmissions of an AMD PDU. */
   uint16_t           poll_pdu;           /*!< \brief This parameter is used by the transmitting side of each AM RLC entity to trigger a poll for every pollPDU PDUs. */
-  uint16_t           poll_byte;          /*!< \brief This parameter is used by the transmitting side of each AM RLC entity to trigger a poll for every pollByte bytes. */
+  uint32_t           poll_byte;          /*!< \brief This parameter is used by the transmitting side of each AM RLC entity to trigger a poll for every pollByte bytes. */
 
   //---------------------------------------------------------------------
   // STATISTICS
@@ -176,14 +172,14 @@ typedef struct rlc_am_entity_s {
   //---------------------------------------------------------------------
   // OUTPUTS
   //---------------------------------------------------------------------
-  sdu_size_t        nb_bytes_requested_by_mac;  /*!< \brief Number of bytes requested by lower layer for next transmission. */
+  sdu_size_t        nb_bytes_requested_by_mac;  /*!< \brief Number of remaining bytes available for transmission of any RLC PDU indicated by lower layer */
   list_t            pdus_to_mac_layer;          /*!< \brief PDUs buffered for transmission to MAC layer. */
   list_t            control_pdu_list;           /*!< \brief Control PDUs buffered for transmission to MAC layer. */
-  rlc_sn_t          first_retrans_pdu_sn;       /*!< \brief Lowest sequence number of PDU to be retransmitted. */
   list_t            segmentation_pdu_list;      /*!< \brief List of "freshly" segmented PDUs. */
 
-  boolean_t         status_requested;             /*!< \brief Status requested by peer. */
-  frame_t           last_frame_status_indication; /*!< \brief The last frame number a  MAC status indication has been received by RLC. */
+  uint8_t           status_requested;             /*!< \brief Status bitmap requested by peer. */
+  rlc_sn_t		    sn_status_triggered_delayed;   /*!< \brief SN of the last received poll for which Status is delayed until SN is out of Rx Window. */
+  uint32_t          last_absolute_subframe_status_indication; /*!< \brief The last absolute subframe number a  MAC status indication has been received by RLC. */
   //-----------------------------
   // buffer occupancy measurements sent to MAC
   //-----------------------------
