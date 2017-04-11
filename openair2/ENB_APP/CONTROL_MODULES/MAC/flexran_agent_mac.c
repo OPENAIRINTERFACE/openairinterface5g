@@ -214,7 +214,9 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                     goto error;
                                     protocol__flex_csi_p11__init(csi11);
                                   
-                                    csi11->wb_cqi =  flexran_get_ue_wcqi (enb_id, i);                                       
+                                    csi11->wb_cqi = malloc(sizeof(csi11->wb_cqi));  
+				    csi11->n_wb_cqi = 1;
+				    csi11->wb_cqi[0] = flexran_get_ue_wcqi (enb_id, i);                                       		    
                                     // According To spec 36.213                                  
                                      
                                     if (flexran_get_antenna_ports(enb_id, j) == 2 && csi_reports[j]->ri == 1) {

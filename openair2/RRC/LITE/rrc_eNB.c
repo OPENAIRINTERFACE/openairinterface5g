@@ -93,9 +93,6 @@
 
 #include "SIMULATION/TOOLS/defs.h" // for taus
 
-#if defined(FLEXRAN_AGENT_SB_IF)
-#include "flexran_agent_extern.h"
-#endif
 //#define XER_PRINT
 
 #ifdef PHY_EMUL

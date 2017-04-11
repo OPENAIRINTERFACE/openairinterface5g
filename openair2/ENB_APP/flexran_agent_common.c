@@ -1075,7 +1075,8 @@ int flexran_agent_rrc_measurement(mid_t mod_id, const void *params, Protocol__Fl
 
 
 int flexran_agent_destroy_rrc_measurement(Protocol__FlexranMessage *msg){
-    
+  // TODO
+  return 0;
 }
 
 

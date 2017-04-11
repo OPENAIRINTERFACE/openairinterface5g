@@ -539,6 +539,7 @@ void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP);
 void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subframeP,uint16_t *first_rb);
 void adjust_bsr_info(int buffer_occupancy, uint16_t TBS, UE_TEMPLATE *UE_template);
 int phy_stats_exist(module_id_t Mod_id, int rnti);
+void sort_UEs (module_id_t Mod_idP, int frameP, sub_frame_t subframeP);
 
 /*! \fn  UE_L2_state_t ue_scheduler(const module_id_t module_idP,const frame_t frameP, const sub_frame_t subframe, const lte_subframe_t direction,const uint8_t eNB_index)
    \brief UE scheduler where all the ue background tasks are done.  This function performs the following:  1) Trigger PDCP every 5ms 2) Call RRC for link status return to PHY3) Perform SR/BSR procedures for scheduling feedback 4) Perform PHR procedures.
