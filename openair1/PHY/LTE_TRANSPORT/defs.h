@@ -777,7 +777,8 @@ typedef enum {
   pucch_format1b,
   pucch_format2,
   pucch_format2a,
-  pucch_format2b
+  pucch_format2b,
+  pucch_format3    // PUCCH format3
 } PUCCH_FMT_t;
 
 
