@@ -4799,7 +4799,7 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
         return(0);
     }
 
-    if(harq_pid >8)
+    if(harq_pid>=8)
     {
         LOG_I(PHY,"bad harq id \n");
         return(0);
@@ -5013,7 +5013,7 @@ int check_dci_format2_2a_coherency(DCI_format_t dci_format,
 #endif
 
     // I- check dci content minimum coherency
-    if(harq_pid >8)
+    if(harq_pid>=8)
     {
         LOG_I(PHY,"bad harq pid\n");
       return(0);

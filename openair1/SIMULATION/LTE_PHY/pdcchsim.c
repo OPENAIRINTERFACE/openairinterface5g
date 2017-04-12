@@ -653,6 +653,7 @@ int main(int argc, char **argv)
       printf("-h This message\n");
       printf("-a Use AWGN channel and not multipath\n");
       printf("-c TDD config\n");
+      printf("-S Subframe number (0..9)\n");
       printf("-R N_RB_DL\n");
       printf("-F use FDD frame\n");
       printf("-p Use extended prefix mode\n");

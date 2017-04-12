@@ -70,6 +70,8 @@ rlc_am_check_timer_status_prohibit(
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
         //#warning         TO DO rlc_am_check_timer_status_prohibit
         rlc_am_stop_and_reset_timer_status_prohibit(ctxt_pP, rlc_pP);
+        /* Clear StatusProhibit flag */
+        RLC_AM_CLEAR_STATUS(rlc_pP->status_requested,RLC_AM_STATUS_PROHIBIT);
         //rlc_pP->t_status_prohibit.frame_time_out = ctxt_pP->frame + rlc_pP->t_status_prohibit.time_out;
       }
     }
@@ -110,6 +112,7 @@ rlc_am_start_timer_status_prohibit(
       rlc_pP->t_status_prohibit.running        = 1;
       rlc_pP->t_status_prohibit.ms_time_out    = rlc_pP->t_status_prohibit.ms_duration + PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP);
       rlc_pP->t_status_prohibit.ms_start       = PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP);
+      RLC_AM_SET_STATUS(rlc_pP->status_requested,RLC_AM_STATUS_PROHIBIT);
       LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T-STATUS-PROHIBIT] STARTED (TIME-OUT = %u ms)\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           rlc_pP->t_status_prohibit.ms_time_out);

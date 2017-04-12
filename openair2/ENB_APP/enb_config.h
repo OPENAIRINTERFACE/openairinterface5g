@@ -214,6 +214,10 @@ typedef struct Enb_properties_s {
   long                    srb1_poll_pdu;
   long                    srb1_poll_byte;
   long                    srb1_max_retx_threshold;
+
+  long                    rrc_report_amount;
+  long                    rrc_report_interval;
+  
   /* Nb of MME to connect to */
   uint8_t             nb_mme;
   /* List of MME to connect to */

@@ -180,10 +180,12 @@ Protocol__FlexUeStatsReport * copy_ue_stats_report(Protocol__FlexUeStatsReport *
     }
   }
 
-  if (copy->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PRH) {
-    copy->has_phr = original->has_phr;
-    copy->phr = original->phr;
-  }
+  
+
+   if (copy->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PHR) { 
+     copy->has_phr = original->has_phr;
+     copy->phr = original->phr;
+   }
 
   if (copy->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RLC_BS) {
     copy->n_rlc_report = original->n_rlc_report; 

@@ -22,15 +22,26 @@
 /*! \file flexran_agent.h
  * \brief top level flexran agent  
  * \author Navid Nikaein and Xenofon Foukas
- * \date 2016
+ * \date 2017
  * \version 0.1
  */
 
 #ifndef FLEXRAN_AGENT_H_
 #define FLEXRAN_AGENT_H_
 
-#include "enb_config.h" // for enb properties
 #include "flexran_agent_common.h"
+#include "flexran_agent_async.h"
+#include "flexran_agent_extern.h"
+#include "flexran_agent_timer.h"
+#include "flexran_agent_defs.h"
+#include "flexran_agent_net_comm.h"
+#include "flexran_agent_ran_api.h"
+#include "flexran_agent_mac.h"
+#include "flexran_agent_rrc.h"
+#include "log.h"
+#include "assertions.h"
+
+#include "enb_config.h" // for enb properties
 
 
 /* Initiation and termination of the eNodeB agent */

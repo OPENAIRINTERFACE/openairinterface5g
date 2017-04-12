@@ -633,7 +633,13 @@ PUCCH_FMT_t get_pucch_format(lte_frame_type_t frame_type,
       }
       if(SR_payload == 1)
       {
-          return pucch_format1;
+          if (frame_type == FDD) {
+              return pucch_format1;
+          } else if (frame_type == TDD) {
+              return pucch_format1b;
+          } else {
+	      AssertFatal(1==0,"Unknown frame_type");
+          }
       }
   }
   else
@@ -729,7 +735,7 @@ uint16_t get_n1_pucch(PHY_VARS_UE *ue,
       } else if (subframe == 8) { // ACK subframes 4
         candidate_dl[0] = 4;
       } else {
-        LOG_E(PHY,"[UE%d] : Frame %d phy_procedures_lte.c: get_n1pucch, illegal subframe %d for tdd_config %d\n",
+        LOG_E(PHY,"[UE%d] : Frame %d phy_procedures_lte.c: get_n1pucch, illegal tx-subframe %d for tdd_config %d\n",
               ue->Mod_id,proc->frame_tx,subframe,frame_parms->tdd_config);
         return(0);
       }
@@ -743,8 +749,8 @@ uint16_t get_n1_pucch(PHY_VARS_UE *ue,
         }
       }
       if (last_dl >= 10) {
-        LOG_E(PHY,"[UE%d] : Frame %d phy_procedures_lte.c: get_n1pucch, illegal subframe %d for tdd_config %d\n",
-              ue->Mod_id,proc->frame_tx,last_dl,frame_parms->tdd_config);
+        LOG_E(PHY,"[UE%d] : Frame %d phy_procedures_lte.c: get_n1pucch, illegal rx-subframe %d (tx-subframe %d) for tdd_config %d\n",
+              ue->Mod_id,proc->frame_tx,last_dl,subframe,frame_parms->tdd_config);
         return (0);
       }
 
@@ -1775,13 +1781,13 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
       }
   }
 
-  ack_status_cw0 = reset_ack(&ue->frame_parms,
+  ack_status_cw0 = get_ack(&ue->frame_parms,
                        ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->harq_ack,
                        subframe_tx,
                        pucch_ack_payload,
                        0);
 
-  ack_status_cw1 = reset_ack(&ue->frame_parms,
+  ack_status_cw1 = get_ack(&ue->frame_parms,
                        ue->dlsch[proc->subframe_rx&0x1][eNB_id][1]->harq_ack,
                        subframe_tx,
                        pucch_ack_payload,
@@ -3236,7 +3242,8 @@ void process_rar(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, int eNB_id, runmode_t mo
 						 ue->prach_resources[eNB_id]->ra_RNTI,
 						 dlsch0->harq_processes[0]->b,
 						 &ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->crnti,
-						 ue->prach_resources[eNB_id]->ra_PreambleIndex);
+						 ue->prach_resources[eNB_id]->ra_PreambleIndex,
+						 dlsch0->harq_processes[0]->b); // alter the 'b' buffer so it contains only the selected RAR header and RAR payload
 
       ue->pdcch_vars[(subframe_rx+1) & 0x1][eNB_id]->crnti = ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->crnti;
       

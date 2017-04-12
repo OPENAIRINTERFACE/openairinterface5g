@@ -88,9 +88,12 @@ typedef struct rlc_am_tx_sdu_management {
 * \brief Structure containing PDU variables related to its retransmission.
 */
 typedef struct pdu_management_flags {
+  uint8_t transmitted:1;            /*!< \brief Boolean telling that this PDU is not empty and has been at least transmitted once. */
   uint8_t ack:1;            /*!< \brief Boolean telling that this PDU has been acknowledged. */
+  uint8_t nack:1;            /*!< \brief Boolean telling that this PDU has been acknowledged negatively. */
   uint8_t retransmit:1;       /*!< \brief Boolean telling a retransmission is scheduled for this PDU. */
-  uint8_t dummy:6;            /*!< \brief Free bits. */
+  uint8_t max_retransmit:1;       /*!< \brief Boolean telling max retransmission has been hit for this PDU. */
+  uint8_t dummy:3;            /*!< \brief Free bits. */
 } pdu_management_flags_t;
 
 
@@ -107,15 +110,17 @@ typedef struct rlc_am_tx_data_pdu_management {
   sdu_size_t       hole_so_start  [RLC_AM_MAX_HOLES_REPORT_PER_PDU]; /*!< \brief Array containing the start segment offsets for marking a hole (negative acknowledged area) in the PDU. */
   sdu_size_t       hole_so_stop   [RLC_AM_MAX_HOLES_REPORT_PER_PDU]; /*!< \brief Array containing the stop segment offsets for marking a hole (negative acknowledged area) in the PDU. */
   uint8_t          num_holes;                         /*!< \brief Number of registereg holes in hole_so_start[], hole_so_stop[]. */
+  uint8_t          retx_hole_index;                   /*!< \brief Next index of registered holes to retransmit. */
   sdu_size_t       header_and_payload_size;           /*!< \brief Size of the PDU in bytes, including header and payload. */
   sdu_size_t       payload_size;                      /*!< \brief Size of the PDU payload in bytes. */
+  sdu_size_t	   retx_payload_size;				  /*!< \brief Size of the PDU payload to be retransmitted in bytes including all Segment portions. */
   rlc_sn_t         sn;                                /*!< \brief Sequence number of the PDU. */
   sdu_size_t       nack_so_start; /*!< \brief Lowest NACK start segment offset, must be set to 0 if global NACK. */
-  sdu_size_t       nack_so_stop;  /*!< \brief Highest NACK stop segment offset, must be set to data_size if global NACK */
+  sdu_size_t       nack_so_stop;  /*!< \brief Highest NACK stop segment offset, must be set to data_size - 1 if global NACK */
 
   int8_t           nb_sdus;       /*!< \brief Number of sdu having segments in this pdu. */
-  int8_t
-  retx_count;    /*!< \brief Counts the number of retransmissions of an AMD PDU (see subclause 5.2.1). There is one RETX_COUNT counter per PDU that needs to be retransmitted. there is one VT(DAT) for each PDU and it is incremented each time the PDU is transmitted. */
+  int8_t           retx_count;    /*!< \brief Counts the number of already occurred retransmissions of an AMD PDU (see subclause 5.2.1). */
+  int8_t           retx_count_next;    /*!< \brief Counts the number of already occurred retransmissions plus the latest pending one. */
 
   pdu_management_flags_t  flags; /*!< \brief PDU variables related to its retransmission. */
 } rlc_am_tx_data_pdu_management_t;
@@ -228,14 +233,48 @@ typedef struct rlc_am_timer {
 * @{
 */
 
+typedef enum rlc_am_rx_segment_reassemble_info
+{
+    /** No Reassembly scheduled */
+    RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_NO           = 0,
+    /** Reassembly scheduled */
+	RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_PENDING      = 1,
+    /** Reassembly done */
+	RLC_AM_RX_PDU_SEGMENT_REASSEMBLED             = 2
+
+} rlc_am_rx_segment_reassemble_info_t;
+
 /*! \struct  rlc_am_rx_pdu_management_t
 * \brief Structure for storing decoded informations from the header of a AMD PDU or AMD PDU segment and information on reassembly.
 */
 typedef struct rlc_am_rx_pdu_management {
   rlc_am_pdu_info_t pdu_info; /*!< \brief Field for storing decoded informations from the header of a AMD PDU or AMD PDU segment. */
   uint8_t              all_segments_received; /*!< \brief Is all segments of PDU SN have been received. */
+  rlc_am_rx_segment_reassemble_info_t			   segment_reassembled; /*!< \brief if the segment for SN=vrR is reassembled but not discarded yet. */
 } rlc_am_rx_pdu_management_t;
 /** @} */
+
+typedef enum rlc_am_rx_pdu_status
+{
+    /** PDU okay. */
+    RLC_AM_DATA_PDU_STATUS_OK                     = 0,
+    /** SN outside RX window */
+	RLC_AM_DATA_PDU_STATUS_SN_OUTSIDE_WINDOW      = 1,
+    /** SN already available */
+	RLC_AM_DATA_PDU_STATUS_SN_DUPLICATE           = 2,
+    /** SN already available */
+	RLC_AM_DATA_PDU_STATUS_AM_SEGMENT_DUPLICATE   = 3,
+    /** Buffer full */
+	RLC_AM_DATA_PDU_STATUS_BUFFER_FULL            = 4,
+    /** Header Error (LI,SO...) */
+	RLC_AM_DATA_PDU_STATUS_HEADER_ERROR           = 5,
+    /** Unknown bearer */
+	RLC_AM_DATA_PDU_STATUS_INVALID_BEARER         = 6,
+    /** RLC in wrong state */
+	RLC_AM_DATA_PDU_STATUS_WRONG_STATE            = 7
+
+} rlc_am_rx_pdu_status_t;
+
 /*! \cond PRIVATE */
 //-----------------------------------------------------------------------------
 //  interlayers optimizations
