@@ -3213,8 +3213,8 @@
 <testCase id="039400" >
         <class>lte-softmodem-noS1</class>
         <desc></desc>
-        <eNB>TCT-Labo1</eNB>
-        <UE>TCT-Labo3</UE>
+        <eNB>imb182-desktop</eNB>
+        <UE>yanbo-M4HM87P-00</UE>
         <TimeOut_cmd>300</TimeOut_cmd>
         <eNB_working_dir>/tmp</eNB_working_dir>
         <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpb210.conf  downlink_frequency 2680000000L</eNB_config_file>
@@ -3265,8 +3265,8 @@
  <testCase id="036600" >
         <class>lte-softmodem-noS1</class>
         <desc></desc>
-        <eNB>TCT-Labo1</eNB>
-        <UE>TCT-Labo3</UE>
+        <eNB>imb182-desktop</eNB>
+        <UE>yanbo-M4HM87P-00</UE>
         <TimeOut_cmd>300</TimeOut_cmd>
         <eNB_working_dir>/tmp</eNB_working_dir>
         <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpb210.conf  downlink_frequency 2680000000L</eNB_config_file>
@@ -3317,8 +3317,8 @@
  <testCase id="038400" >
         <class>lte-softmodem-noS1</class>
         <desc></desc>
-        <eNB>TCT-Labo1</eNB>
-        <UE>TCT-Labo3</UE>
+        <eNB>imb182-desktop</eNB>
+        <UE>yanbo-M4HM87P-00</UE>
         <TimeOut_cmd>300</TimeOut_cmd>
         <eNB_working_dir>/tmp</eNB_working_dir>
         <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpb210.conf  downlink_frequency 2680000000L</eNB_config_file>
@@ -3370,8 +3370,8 @@
  <testCase id="036630" >
         <class>lte-softmodem-noS1</class>
         <desc></desc>
-        <eNB>TCT-Labo1</eNB>
-        <UE>TCT-Labo3</UE>
+        <eNB>imb182-desktop</eNB>
+        <UE>yanbo-M4HM87P-00</UE>
         <TimeOut_cmd>700</TimeOut_cmd>
         <eNB_working_dir>/tmp</eNB_working_dir>
         <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpb210.conf  downlink_frequency 2680000000L</eNB_config_file>
@@ -3420,8 +3420,8 @@
  <testCase id="038430" >
         <class>lte-softmodem-noS1</class>
         <desc></desc>
-        <eNB>TCT-Labo1</eNB>
-        <UE>TCT-Labo3</UE>
+        <eNB>imb182-desktop</eNB>
+        <UE>yanbo-M4HM87P-00</UE>
         <TimeOut_cmd>700</TimeOut_cmd>
         <eNB_working_dir>/tmp</eNB_working_dir>
         <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpb210.conf  downlink_frequency 2680000000L</eNB_config_file>
@@ -3471,8 +3471,8 @@
  <testCase id="039430" >
         <class>lte-softmodem-noS1</class>
         <desc></desc>
-        <eNB>TCT-Labo1</eNB>
-        <UE>TCT-Labo3</UE>
+        <eNB>imb182-desktop</eNB>
+        <UE>yanbo-M4HM87P-00</UE>
         <TimeOut_cmd>700</TimeOut_cmd>
         <eNB_working_dir>/tmp</eNB_working_dir>
         <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpb210.conf  downlink_frequency 2680000000L</eNB_config_file>
