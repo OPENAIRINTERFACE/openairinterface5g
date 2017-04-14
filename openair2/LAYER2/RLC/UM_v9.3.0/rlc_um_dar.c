@@ -183,7 +183,7 @@ int rlc_um_read_length_indicators(unsigned char**data_ppP, rlc_um_e_li_t* e_liP,
       // AssertFatal(*data_size_pP >= 0, "Invalid data_size!");
     }
 
-    if (*num_li_pP >= RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU) {
+    if (*num_li_pP > RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU) {
       return -1;
     }
   }
