@@ -106,7 +106,7 @@ int lte_segmentation(unsigned char *input_buffer,
 #endif
     *Kminus = (*Kplus - 64);
   } else {
-    msg("lte_segmentation.c: Illegal codeword size !!!\n");
+    printf("lte_segmentation.c: Illegal codeword size !!!\n");
     return(-1);
   }
 

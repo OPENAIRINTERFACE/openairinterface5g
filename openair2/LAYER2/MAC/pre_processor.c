@@ -86,7 +86,7 @@ void store_dlsch_buffer (module_id_t Mod_id,
   int                   UE_id,i;
   rnti_t                rnti;
   mac_rlc_status_resp_t rlc_status;
-  UE_list_t             *UE_list = &eNB_mac_inst[Mod_id].UE_list;
+  UE_list_t             *UE_list = &RC.mac[Mod_id]->UE_list;
   UE_TEMPLATE           *UE_template;
 
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
@@ -165,7 +165,7 @@ void assign_rbs_required (module_id_t Mod_id,
   uint16_t         TBS = 0;
   LTE_eNB_UE_stats *eNB_UE_stats[MAX_NUM_CCs];
   int              UE_id,n,i,j,CC_id,pCCid,tmp;
-  UE_list_t        *UE_list = &eNB_mac_inst[Mod_id].UE_list;
+  UE_list_t        *UE_list = &RC.mac[Mod_id]->UE_list;
   //  UE_TEMPLATE           *UE_template;
   LTE_DL_FRAME_PARMS   *frame_parms[MAX_NUM_CCs];
 
@@ -268,7 +268,7 @@ int maxround(module_id_t Mod_id,uint16_t rnti,int frame,sub_frame_t subframe,uin
 
   uint8_t round,round_max=0,UE_id;
   int CC_id;
-  UE_list_t *UE_list = &eNB_mac_inst[Mod_id].UE_list;
+  UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
@@ -288,7 +288,7 @@ int maxcqi(module_id_t Mod_id,int32_t UE_id)
 {
 
   LTE_eNB_UE_stats *eNB_UE_stats = NULL;
-  UE_list_t *UE_list = &eNB_mac_inst[Mod_id].UE_list;
+  UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
   int CC_id,n;
   int CQI = 0;
 
@@ -319,7 +319,7 @@ struct sort_ue_dl_params {
 static int ue_dl_compare(const void *_a, const void *_b, void *_params)
 {
   struct sort_ue_dl_params *params = _params;
-  UE_list_t *UE_list = &eNB_mac_inst[params->Mod_idP].UE_list;
+  UE_list_t *UE_list = &RC.mac[params->Mod_idP]->UE_list;
 
   int UE_id1 = *(const int *)_a;
   int UE_id2 = *(const int *)_b;
@@ -402,7 +402,7 @@ void sort_UEs (module_id_t Mod_idP,
   int               rnti;
   struct sort_ue_dl_params params = { Mod_idP, frameP, subframeP };
 
-  UE_list_t *UE_list = &eNB_mac_inst[Mod_idP].UE_list;
+  UE_list_t *UE_list = &RC.mac[Mod_idP]->UE_list;
 
   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
     rnti = UE_RNTI(Mod_idP, i);
@@ -436,7 +436,7 @@ void sort_UEs (module_id_t Mod_idP,
   int               i=0,ii=0;//,j=0;
   rnti_t            rnti1,rnti2;
 
-  UE_list_t *UE_list = &eNB_mac_inst[Mod_idP].UE_list;
+  UE_list_t *UE_list = &RC.mac[Mod_idP]->UE_list;
 
   for (i=UE_list->head; i>=0; i=UE_list->next[i]) {
 
@@ -517,7 +517,7 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
   int                min_rb_unit[MAX_NUM_CCs];
   uint16_t r1=0;
   uint8_t CC_id;
-  UE_list_t *UE_list = &eNB_mac_inst[Mod_id].UE_list;
+  UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
   LTE_DL_FRAME_PARMS   *frame_parms[MAX_NUM_CCs] = {0};
 
   int transmission_mode = 0;
@@ -901,11 +901,11 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   
 {
   int i,j;
-  UE_list_t *UE_list=&eNB_mac_inst[module_idP].UE_list;
+  UE_list_t *UE_list=&RC.mac[module_idP]->UE_list;
   UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   rnti_t rnti = UE_RNTI(module_idP,UE_id);
-  uint8_t *vrb_map = eNB_mac_inst[module_idP].common_channels[CC_id].vrb_map;
-  int RBGsize = PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL/N_RBG;
+  uint8_t *vrb_map = RC.mac[module_idP]->common_channels[CC_id].vrb_map;
+  int RBGsize = RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL/N_RBG;
 #ifdef SF05_LIMIT
   //int subframe05_limit=0;
   int sf05_upper=-1,sf05_lower=-1;
@@ -928,7 +928,7 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
     // WE SHOULD PROTECT the eNB_UE_stats with a mutex here ...
 
     ue_sched_ctl->ta_timer = 20;  // wait 20 subframes before taking TA measurement from PHY
-    switch (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
+    switch (RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL) {
     case 6:
       ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update;
       break;
@@ -950,7 +950,7 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
       break;
       
     case 100:
-      if (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.threequarter_fs == 0)
+      if (RC.eNB[module_idP][CC_id]->frame_parms.threequarter_fs == 0)
 	ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/16;
       else
 	ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/12;
@@ -1034,7 +1034,7 @@ void dlsch_scheduler_pre_processor_allocate (module_id_t   Mod_id,
 {
 
   int i;
-  UE_list_t *UE_list=&eNB_mac_inst[Mod_id].UE_list;
+  UE_list_t *UE_list=&RC.mac[Mod_id]->UE_list;
   UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 
   for(i=0; i<N_RBG; i++) {
@@ -1091,7 +1091,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   int16_t            total_remaining_rbs[MAX_NUM_CCs];
   uint16_t           max_num_ue_to_be_scheduled=0,total_ue_count=0;
   rnti_t             rnti= -1;
-  UE_list_t          *UE_list = &eNB_mac_inst[module_idP].UE_list;
+  UE_list_t          *UE_list = &RC.mac[module_idP]->UE_list;
   UE_TEMPLATE        *UE_template = 0;
   LTE_DL_FRAME_PARMS   *frame_parms = 0;
 
@@ -1269,7 +1269,7 @@ void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfra
   rnti_t             rnti           = -1;
   int                mcs;
   int                rb_table_index=0,tbs,tx_power;
-  eNB_MAC_INST       *eNB = &eNB_mac_inst[module_idP];
+  eNB_MAC_INST       *eNB = RC.mac[module_idP];
   UE_list_t          *UE_list = &eNB->UE_list;
 
   UE_TEMPLATE       *UE_template;
@@ -1379,7 +1379,7 @@ struct sort_ue_ul_params {
 static int ue_ul_compare(const void *_a, const void *_b, void *_params)
 {
   struct sort_ue_ul_params *params = _params;
-  UE_list_t *UE_list = &eNB_mac_inst[params->module_idP].UE_list;
+  UE_list_t *UE_list = &RC.mac[params->module_idP]->UE_list;
 
   int UE_id1 = *(const int *)_a;
   int UE_id2 = *(const int *)_b;
@@ -1441,7 +1441,7 @@ void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP)
   int               rnti;
   struct sort_ue_ul_params params = { module_idP, frameP, subframeP };
 
-  UE_list_t *UE_list = &eNB_mac_inst[module_idP].UE_list;
+  UE_list_t *UE_list = &RC.mac[module_idP]->UE_list;
 
   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
     rnti = UE_RNTI(module_idP, i);
@@ -1473,7 +1473,7 @@ void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP)
   int               i=0,ii=0;
   rnti_t            rnti1,rnti2;
 
-  UE_list_t *UE_list = &eNB_mac_inst[module_idP].UE_list;
+  UE_list_t *UE_list = &RC.mac[module_idP]->UE_list;
 
   for (i=UE_list->head_ul; i>=0; i=UE_list->next_ul[i]) {
 

@@ -818,38 +818,38 @@ rrc_ue_process_measConfig(
     }
 
     LOG_I(RRC,"call rrc_mac_config_req \n");
-    rrc_mac_config_req(ctxt_pP->module_id,0,ENB_FLAG_NO,0,eNB_index,
-                       (RadioResourceConfigCommonSIB_t *)NULL,
-                       (struct PhysicalConfigDedicated *)NULL,
+    rrc_mac_config_req_ue(ctxt_pP->module_id,0,eNB_index,
+			  (RadioResourceConfigCommonSIB_t *)NULL,
+			  (struct PhysicalConfigDedicated *)NULL,
 #ifdef Rel10
-                       (SCellToAddMod_r10_t *)NULL,
-                       //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
+			  (SCellToAddMod_r10_t *)NULL,
+			  //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
-                       UE_rrc_inst[ctxt_pP->module_id].MeasObj[eNB_index],
-                       (MAC_MainConfig_t *)NULL,
-                       0,
-                       (struct LogicalChannelConfig *)NULL,
-                       (MeasGapConfig_t *)NULL,
-                       (TDD_Config_t *)NULL,
-                       (MobilityControlInfo_t *)NULL,
-                       NULL,
-                       NULL,
-                       NULL,
-                       NULL,
-                       NULL,
-                       NULL
+			  UE_rrc_inst[ctxt_pP->module_id].MeasObj[eNB_index],
+			  (MAC_MainConfig_t *)NULL,
+			  0,
+			  (struct LogicalChannelConfig *)NULL,
+			  (MeasGapConfig_t *)NULL,
+			  (TDD_Config_t *)NULL,
+			  (MobilityControlInfo_t *)NULL,
+			  NULL,
+			  NULL,
+			  NULL,
+			  NULL,
+			  NULL,
+			  NULL
 #ifdef Rel10
-                       ,
-                       0,
-                       (MBSFN_AreaInfoList_r9_t *)NULL,
-                       (PMCH_InfoList_r9_t *)NULL
+			  ,
+			  0,
+			  (MBSFN_AreaInfoList_r9_t *)NULL,
+			  (PMCH_InfoList_r9_t *)NULL
 #endif
 #ifdef CBA
-                       ,
-                       0,
-                       0
+			  ,
+			  0,
+			  0
 #endif
-                      );
+			  );
   }
 
   if (measConfig->reportConfigToRemoveList != NULL) {
@@ -1305,38 +1305,38 @@ rrc_ue_process_radioResourceConfigDedicated(
 
           LOG_I(RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB1 eNB %d) --->][MAC_UE][MOD %02d][]\n",
                 ctxt_pP->frame, ctxt_pP->module_id, eNB_index, ctxt_pP->module_id);
-          rrc_mac_config_req(ctxt_pP->module_id,0,ENB_FLAG_NO,0,eNB_index,
-                             (RadioResourceConfigCommonSIB_t *)NULL,
-                             UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index],
+          rrc_mac_config_req_ue(ctxt_pP->module_id,0,eNB_index,
+				(RadioResourceConfigCommonSIB_t *)NULL,
+				UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index],
 #ifdef Rel10
-                             (SCellToAddMod_r10_t *)NULL,
-                             //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
+				(SCellToAddMod_r10_t *)NULL,
+				//struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
-                             (MeasObjectToAddMod_t **)NULL,
-                             UE_rrc_inst[ctxt_pP->module_id].mac_MainConfig[eNB_index],
-                             1,
-                             SRB1_logicalChannelConfig,
-                             (MeasGapConfig_t *)NULL,
-                             NULL,
-                             NULL,
-                             NULL,
-                             NULL,
-                             NULL,
-                             NULL,
-                             NULL,
-                             NULL
+				(MeasObjectToAddMod_t **)NULL,
+				UE_rrc_inst[ctxt_pP->module_id].mac_MainConfig[eNB_index],
+				1,
+				SRB1_logicalChannelConfig,
+				(MeasGapConfig_t *)NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL
 #ifdef Rel10
-                             ,
-                             0,
-                             (MBSFN_AreaInfoList_r9_t *)NULL,
-                             (PMCH_InfoList_r9_t *)NULL
+				,
+				0,
+				(MBSFN_AreaInfoList_r9_t *)NULL,
+				(PMCH_InfoList_r9_t *)NULL
 #endif
 #ifdef CBA
-                             ,
-                             0,
-                             0
+				,
+				0,
+				0
 #endif
-                            );
+				);
         }
       } else {
         if (UE_rrc_inst[ctxt_pP->module_id].SRB2_config[eNB_index]) {
@@ -1363,38 +1363,38 @@ rrc_ue_process_radioResourceConfigDedicated(
                 ctxt_pP->module_id,
                 eNB_index,
                 ctxt_pP->module_id);
-          rrc_mac_config_req(ctxt_pP->module_id,0,ENB_FLAG_NO,0,eNB_index,
-                             (RadioResourceConfigCommonSIB_t *)NULL,
-                             UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index],
+          rrc_mac_config_req_ue(ctxt_pP->module_id,0,eNB_index,
+				(RadioResourceConfigCommonSIB_t *)NULL,
+				UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index],
 #ifdef Rel10
-                             (SCellToAddMod_r10_t *)NULL,
-                             //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
+				(SCellToAddMod_r10_t *)NULL,
+				//struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
-                             (MeasObjectToAddMod_t **)NULL,
-                             UE_rrc_inst[ctxt_pP->module_id].mac_MainConfig[eNB_index],
-                             2,
-                             SRB2_logicalChannelConfig,
-                             UE_rrc_inst[ctxt_pP->module_id].measGapConfig[eNB_index],
-                             (TDD_Config_t *)NULL,
-                             (MobilityControlInfo_t *)NULL,
-                             NULL,
-                             NULL,
-                             NULL,
-                             NULL,
-                             NULL,
-                             NULL
+				(MeasObjectToAddMod_t **)NULL,
+				UE_rrc_inst[ctxt_pP->module_id].mac_MainConfig[eNB_index],
+				2,
+				SRB2_logicalChannelConfig,
+				UE_rrc_inst[ctxt_pP->module_id].measGapConfig[eNB_index],
+				(TDD_Config_t *)NULL,
+				(MobilityControlInfo_t *)NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL
 #ifdef Rel10
-                             ,
-                             0,
-                             (MBSFN_AreaInfoList_r9_t *)NULL,
-                             (PMCH_InfoList_r9_t *)NULL
+				,
+				0,
+				(MBSFN_AreaInfoList_r9_t *)NULL,
+				(PMCH_InfoList_r9_t *)NULL
 #endif
 #ifdef CBA
-                             ,
-                             0,
-                             0
+				,
+				0,
+				0
 #endif
-                            );
+				);
         }
       }
     }
@@ -1470,43 +1470,43 @@ rrc_ue_process_radioResourceConfigDedicated(
               radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->drb_Identity,
               eNB_index,
               ctxt_pP->module_id);
-        rrc_mac_config_req(ctxt_pP->module_id,0,ENB_FLAG_NO,0,eNB_index,
-                           (RadioResourceConfigCommonSIB_t *)NULL,
-                           UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index],
+        rrc_mac_config_req_ue(ctxt_pP->module_id,0,eNB_index,
+			      (RadioResourceConfigCommonSIB_t *)NULL,
+			      UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index],
 #ifdef Rel10
-                           (SCellToAddMod_r10_t *)NULL,
-                           //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
+			      (SCellToAddMod_r10_t *)NULL,
+			      //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
-                           (MeasObjectToAddMod_t **)NULL,
-                           UE_rrc_inst[ctxt_pP->module_id].mac_MainConfig[eNB_index],
-                           *UE_rrc_inst[ctxt_pP->module_id].DRB_config[eNB_index][DRB_id]->logicalChannelIdentity,
-                           UE_rrc_inst[ctxt_pP->module_id].DRB_config[eNB_index][DRB_id]->logicalChannelConfig,
-                           UE_rrc_inst[ctxt_pP->module_id].measGapConfig[eNB_index],
-                           (TDD_Config_t*)NULL,
-                           (MobilityControlInfo_t *)NULL,
-                           NULL,
-                           NULL,
-                           NULL,
-                           NULL,
-                           NULL,
-                           NULL
+			      (MeasObjectToAddMod_t **)NULL,
+			      UE_rrc_inst[ctxt_pP->module_id].mac_MainConfig[eNB_index],
+			      *UE_rrc_inst[ctxt_pP->module_id].DRB_config[eNB_index][DRB_id]->logicalChannelIdentity,
+			      UE_rrc_inst[ctxt_pP->module_id].DRB_config[eNB_index][DRB_id]->logicalChannelConfig,
+			      UE_rrc_inst[ctxt_pP->module_id].measGapConfig[eNB_index],
+			      (TDD_Config_t*)NULL,
+			      (MobilityControlInfo_t *)NULL,
+			      NULL,
+			      NULL,
+			      NULL,
+			      NULL,
+			      NULL,
+			      NULL
 #ifdef Rel10
-                           ,
-                           0,
-                           (MBSFN_AreaInfoList_r9_t *)NULL,
-                           (PMCH_InfoList_r9_t *)NULL
+			      ,
+			      0,
+			      (MBSFN_AreaInfoList_r9_t *)NULL,
+			      (PMCH_InfoList_r9_t *)NULL
 #endif
 #ifdef CBA
-                           ,
-                           UE_rrc_inst[ue_mod_idP].num_active_cba_groups, //
-                           UE_rrc_inst[ue_mod_idP].cba_rnti[0]
+			      ,
+			      UE_rrc_inst[ue_mod_idP].num_active_cba_groups, //
+			      UE_rrc_inst[ue_mod_idP].cba_rnti[0]
 #endif
-                          );
-
+			      );
+	
       }
     }
   }
-
+  
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State = RRC_CONNECTED;
   LOG_I(RRC,"[UE %d] State = RRC_CONNECTED (eNB %d)\n",ctxt_pP->module_id,eNB_index);
 #if !defined(ENABLE_USE_MME) && defined(OAI_EMU)
@@ -2028,41 +2028,39 @@ rrc_ue_process_mobilityControlInfo(
         ctxt_pP->frame, ctxt_pP->module_id, eNB_index, ctxt_pP->module_id);
 
   // Reset MAC and configure PHY
-  rrc_mac_config_req(ctxt_pP->module_id,
-                     0,
-                     ENB_FLAG_NO,
-                     0,
-                     eNB_index,
-                     (RadioResourceConfigCommonSIB_t *)NULL,
-                     (struct PhysicalConfigDedicated *)NULL,
+  rrc_mac_config_req_ue(ctxt_pP->module_id,
+			0,
+			eNB_index,
+			(RadioResourceConfigCommonSIB_t *)NULL,
+			(struct PhysicalConfigDedicated *)NULL,
 #ifdef Rel10
-                     (SCellToAddMod_r10_t *)NULL,
-                     //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+			(SCellToAddMod_r10_t *)NULL,
+			//(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
-                     (MeasObjectToAddMod_t **)NULL,
-                     (MAC_MainConfig_t *)NULL,
-                     0,
-                     (struct LogicalChannelConfig *)NULL,
-                     (MeasGapConfig_t *)NULL,
-                     (TDD_Config_t *)NULL,
-                     mobilityControlInfo,
-                     (uint8_t *)NULL,
-                     (uint16_t *)NULL,
-                     NULL,
-                     NULL,
-                     NULL,
-                     NULL
+			(MeasObjectToAddMod_t **)NULL,
+			(MAC_MainConfig_t *)NULL,
+			0,
+			(struct LogicalChannelConfig *)NULL,
+			(MeasGapConfig_t *)NULL,
+			(TDD_Config_t *)NULL,
+			mobilityControlInfo,
+			(uint8_t *)NULL,
+			(uint16_t *)NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL
 #ifdef Rel10
-                     ,0,
-                     (MBSFN_AreaInfoList_r9_t *)NULL,
-                     (PMCH_InfoList_r9_t *)NULL
+			,0,
+			(MBSFN_AreaInfoList_r9_t *)NULL,
+			(PMCH_InfoList_r9_t *)NULL
 #endif
 #ifdef CBA
-                     ,0,
-                     0
+			,0,
+			0
 #endif
-                    );
-
+			);
+  
   // Re-establish PDCP for all RBs that are established
   // rrc_pdcp_config_req (ue_mod_idP+NB_eNB_INST, frameP, 0, CONFIG_ACTION_ADD, ue_mod_idP+DCCH);
   // rrc_pdcp_config_req (ue_mod_idP+NB_eNB_INST, frameP, 0, CONFIG_ACTION_ADD, ue_mod_idP+DCCH1);
@@ -2886,38 +2884,38 @@ static int decode_SIB1( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_
   LOG_I( RRC, "[FRAME unknown][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB1 params eNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
          ctxt_pP->module_id, eNB_index, ctxt_pP->module_id );
 
-  rrc_mac_config_req(ctxt_pP->module_id, 0, ENB_FLAG_NO, 0, eNB_index,
-                      (RadioResourceConfigCommonSIB_t *)NULL,
-                      (struct PhysicalConfigDedicated *)NULL,
+  rrc_mac_config_req_ue(ctxt_pP->module_id, 0, eNB_index,
+			(RadioResourceConfigCommonSIB_t *)NULL,
+			(struct PhysicalConfigDedicated *)NULL,
 #ifdef Rel10
-                      (SCellToAddMod_r10_t *)NULL,
-                      //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+			(SCellToAddMod_r10_t *)NULL,
+			//(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
-                      (MeasObjectToAddMod_t **)NULL,
-                      (MAC_MainConfig_t *)NULL,
-                      0,
-                      (struct LogicalChannelConfig *)NULL,
-                      (MeasGapConfig_t *)NULL,
-                      UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->tdd_Config,
-                      (MobilityControlInfo_t *) NULL,
-                      &UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIwindowsize,
-                      &UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIperiod,
-                      NULL,
-                      NULL,
-                      NULL,
-                      (MBSFN_SubframeConfigList_t *)NULL
+			(MeasObjectToAddMod_t **)NULL,
+			(MAC_MainConfig_t *)NULL,
+			0,
+			(struct LogicalChannelConfig *)NULL,
+			(MeasGapConfig_t *)NULL,
+			UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->tdd_Config,
+			(MobilityControlInfo_t *) NULL,
+			&UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIwindowsize,
+			&UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIperiod,
+			NULL,
+			NULL,
+			NULL,
+			(MBSFN_SubframeConfigList_t *)NULL
 #ifdef Rel10
-                      ,0,
-                      (MBSFN_AreaInfoList_r9_t *)NULL,
-                      (PMCH_InfoList_r9_t *)NULL
+			,0,
+			(MBSFN_AreaInfoList_r9_t *)NULL,
+			(PMCH_InfoList_r9_t *)NULL
 #endif
 #ifdef CBA
-                      ,
-                      0,
-                      0
+			,
+			0,
+			0
 #endif
-                    );
-
+			);
+  
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus = 1;
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIB1systemInfoValueTag = sib1->systemInfoValueTag;
 
@@ -3522,35 +3520,35 @@ static int decode_SI( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_in
 	dump_sib2( UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index] );
 	LOG_I( RRC, "[FRAME %05"PRIu32"][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB2 params  eNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
 	       ctxt_pP->frame, ctxt_pP->module_id, eNB_index, ctxt_pP->module_id );
-	rrc_mac_config_req(ctxt_pP->module_id, 0, ENB_FLAG_NO, 0, eNB_index,
-			   &UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->radioResourceConfigCommon,
-			   (struct PhysicalConfigDedicated *)NULL,
+	rrc_mac_config_req_ue(ctxt_pP->module_id, 0, eNB_index,
+			      &UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->radioResourceConfigCommon,
+			      (struct PhysicalConfigDedicated *)NULL,
 #ifdef Rel10
-			   (SCellToAddMod_r10_t *)NULL,
+			      (SCellToAddMod_r10_t *)NULL,
 #endif
-			   (MeasObjectToAddMod_t **)NULL,
-			   (MAC_MainConfig_t *)NULL,
-			   0,
-			   (struct LogicalChannelConfig *)NULL,
-			   (MeasGapConfig_t *)NULL,
-			   (TDD_Config_t *)NULL,
-			   (MobilityControlInfo_t *)NULL,
-			   NULL,
-			   NULL,
-			   UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->freqInfo.ul_CarrierFreq,
-			   UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->freqInfo.ul_Bandwidth,
-			   &UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->freqInfo.additionalSpectrumEmission,
-			   UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->mbsfn_SubframeConfigList
+			      (MeasObjectToAddMod_t **)NULL,
+			      (MAC_MainConfig_t *)NULL,
+			      0,
+			      (struct LogicalChannelConfig *)NULL,
+			      (MeasGapConfig_t *)NULL,
+			      (TDD_Config_t *)NULL,
+			      (MobilityControlInfo_t *)NULL,
+			      NULL,
+			      NULL,
+			      UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->freqInfo.ul_CarrierFreq,
+			      UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->freqInfo.ul_Bandwidth,
+			      &UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->freqInfo.additionalSpectrumEmission,
+			      UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->mbsfn_SubframeConfigList
 #ifdef Rel10
-			   ,0,
-			   (MBSFN_AreaInfoList_r9_t *)NULL,
-			   (PMCH_InfoList_r9_t *)NULL
+			      ,0,
+			      (MBSFN_AreaInfoList_r9_t *)NULL,
+			      (PMCH_InfoList_r9_t *)NULL
 #endif
 #ifdef CBA
-			   ,0,
-			   0
+			      ,0,
+			      0
 #endif
-			   );
+			      );
 	// After SI is received, prepare RRCConnectionRequest
 #ifdef Rel10
 
@@ -3705,31 +3703,31 @@ static int decode_SI( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_in
 	// adding here function to store necessary parameters for using in decode_MCCH_Message + maybe transfer to PHY layer
 	LOG_I( RRC, "[FRAME %05"PRIu32"][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB13 params eNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
 	       ctxt_pP->frame, ctxt_pP->module_id, eNB_index, ctxt_pP->module_id);
-	rrc_mac_config_req(ctxt_pP->module_id,0,ENB_FLAG_NO,0,eNB_index,
-			   (RadioResourceConfigCommonSIB_t *)NULL,
-			   (struct PhysicalConfigDedicated *)NULL,
-			   (SCellToAddMod_r10_t *)NULL,
-			   (MeasObjectToAddMod_t **)NULL,
-			   (MAC_MainConfig_t *)NULL,
-			   0,
-			   (struct LogicalChannelConfig *)NULL,
-			   (MeasGapConfig_t *)NULL,
-			   (TDD_Config_t *)NULL,
-			   (MobilityControlInfo_t *)NULL,
-			   NULL,
-			   NULL,
-			   NULL,
-			   NULL,
-			   NULL,
-			   (MBSFN_SubframeConfigList_t *)NULL,
-			   0,
-			   &UE_rrc_inst[ctxt_pP->module_id].sib13[eNB_index]->mbsfn_AreaInfoList_r9,
-			   (PMCH_InfoList_r9_t *)NULL
+	rrc_mac_config_req_ue(ctxt_pP->module_id,0,eNB_index,
+			      (RadioResourceConfigCommonSIB_t *)NULL,
+			      (struct PhysicalConfigDedicated *)NULL,
+			      (SCellToAddMod_r10_t *)NULL,
+			      (MeasObjectToAddMod_t **)NULL,
+			      (MAC_MainConfig_t *)NULL,
+			      0,
+			      (struct LogicalChannelConfig *)NULL,
+			      (MeasGapConfig_t *)NULL,
+			      (TDD_Config_t *)NULL,
+			      (MobilityControlInfo_t *)NULL,
+			      NULL,
+			      NULL,
+			      NULL,
+			      NULL,
+			      NULL,
+			      (MBSFN_SubframeConfigList_t *)NULL,
+			      0,
+			      &UE_rrc_inst[ctxt_pP->module_id].sib13[eNB_index]->mbsfn_AreaInfoList_r9,
+			      (PMCH_InfoList_r9_t *)NULL
 #ifdef CBA
-			   ,0,
-			   0
+			      ,0,
+			      0
 #endif
-			   );
+			      );
 	break;
       }
 #endif
@@ -4163,39 +4161,39 @@ static void decode_MBSFNAreaConfiguration( module_id_t ue_mod_idP, uint8_t eNB_i
   LOG_I(RRC,"[UE %d] Frame %d : Number of MCH(s) in the MBSFN Sync Area %d  is %d\n",
         ue_mod_idP, frameP, mbsfn_sync_area, UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index]->pmch_InfoList_r9.list.count);
   //  store to MAC/PHY necessary parameters for receiving MTCHs
-  rrc_mac_config_req(ue_mod_idP,0,ENB_FLAG_NO,0,eNB_index,
-                     (RadioResourceConfigCommonSIB_t *)NULL,
-                     (struct PhysicalConfigDedicated *)NULL,
+  rrc_mac_config_req_ue(ue_mod_idP,0,eNB_index,
+			(RadioResourceConfigCommonSIB_t *)NULL,
+			(struct PhysicalConfigDedicated *)NULL,
 #ifdef Rel10
-                     (SCellToAddMod_r10_t *)NULL,
-                     //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+			(SCellToAddMod_r10_t *)NULL,
+			//(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
-                     (MeasObjectToAddMod_t **)NULL,
-                     (MAC_MainConfig_t *)NULL,
-                     0,
-                     (struct LogicalChannelConfig *)NULL,
-                     (MeasGapConfig_t *)NULL,
-                     (TDD_Config_t *)NULL,
-                     (MobilityControlInfo_t *)NULL,
-                     NULL,
-                     NULL,
-                     NULL,
-                     NULL,
-                     NULL,
-                     (MBSFN_SubframeConfigList_t *)NULL
+			(MeasObjectToAddMod_t **)NULL,
+			(MAC_MainConfig_t *)NULL,
+			0,
+			(struct LogicalChannelConfig *)NULL,
+			(MeasGapConfig_t *)NULL,
+			(TDD_Config_t *)NULL,
+			(MobilityControlInfo_t *)NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			(MBSFN_SubframeConfigList_t *)NULL
 #ifdef Rel10
-                     ,
-                     0,
-                     (MBSFN_AreaInfoList_r9_t *)NULL,
-                     &UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index]->pmch_InfoList_r9
+			,
+			0,
+			(MBSFN_AreaInfoList_r9_t *)NULL,
+			&UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index]->pmch_InfoList_r9
 #endif
 #ifdef CBA
-                     ,
-                     0,
-                     0
+			,
+			0,
+			0
 #endif
-                    );
-
+			);
+  
   UE_rrc_inst[ue_mod_idP].Info[eNB_index].MCCHStatus[mbsfn_sync_area] = 1;
 
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_idP, ENB_FLAG_NO, UE_rrc_inst[ue_mod_idP].Info[eNB_index].rnti, frameP, 0,eNB_index);
@@ -4713,3 +4711,66 @@ void *rrc_ue_task( void *args_p )
   }
 }
 #endif
+
+
+
+/*------------------------------------------------------------------------------*/
+void
+openair_rrc_top_init_ue(
+			int eMBMS_active,
+			char* uecap_xer,
+			uint8_t cba_group_active,
+			uint8_t HO_active
+)
+//-----------------------------------------------------------------------------
+{
+
+  module_id_t         module_id;
+  OAI_UECapability_t *UECap     = NULL;
+  int                 CC_id;
+
+  /* for no gcc warnings */
+  (void)CC_id;
+
+  LOG_D(RRC, "[OPENAIR][INIT] Init function start: NB_UE_INST=%d, NB_eNB_INST=%d\n", NB_UE_INST, NB_eNB_INST);
+
+  if (NB_UE_INST > 0) {
+    UE_rrc_inst = (UE_RRC_INST*) malloc16(NB_UE_INST*sizeof(UE_RRC_INST));
+    memset (UE_rrc_inst, 0, NB_UE_INST * sizeof(UE_RRC_INST));
+    LOG_D(RRC, "ALLOCATE %d Bytes for UE_RRC_INST @ %p\n", (unsigned int)(NB_UE_INST*sizeof(UE_RRC_INST)), UE_rrc_inst);
+
+    // fill UE capability
+    UECap = fill_ue_capability (uecap_xer);
+
+    for (module_id = 0; module_id < NB_UE_INST; module_id++) {
+      UE_rrc_inst[module_id].UECap = UECap;
+      UE_rrc_inst[module_id].UECapability = UECap->sdu;
+      UE_rrc_inst[module_id].UECapability_size = UECap->sdu_size;
+    }
+
+#ifdef Rel10
+    LOG_I(RRC,"[UE] eMBMS active state is %d \n", eMBMS_active);
+
+    for (module_id=0; module_id<NB_UE_INST; module_id++) {
+      UE_rrc_inst[module_id].MBMS_flag = (uint8_t)eMBMS_active;
+    }
+
+#endif
+  } else {
+    UE_rrc_inst = NULL;
+  }
+
+}
+
+//-----------------------------------------------------------------------------
+void
+rrc_top_cleanup_ue(
+  void
+)
+//-----------------------------------------------------------------------------
+{
+
+  if (NB_UE_INST > 0) free (UE_rrc_inst);
+  
+
+}

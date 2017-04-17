@@ -50,6 +50,7 @@
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
 #include "UTIL/LOG/log.h"
+#include "common/ran_context.h"
 
 static mapping rrc_status_names[] = {
   {"RRC_INACTIVE", 0},
@@ -60,6 +61,8 @@ static mapping rrc_status_names[] = {
   {"RRC_HO_EXECUTION",5},
   {NULL, -1}
 };
+
+extern RAN_CONTEXT_t RC;
 
 int dump_eNB_l2_stats(char *buffer, int length)
 {
@@ -109,7 +112,7 @@ int dump_eNB_l2_stats(char *buffer, int length)
 
   for (eNB_id=0; eNB_id<number_of_cards; eNB_id++) {
     /* reset the values */
-    eNB = &eNB_mac_inst[eNB_id];
+    eNB = RC.mac[eNB_id];
     UE_list = &eNB->UE_list;
 
     for (CC_id=0 ; CC_id < MAX_NUM_CCs; CC_id++) {

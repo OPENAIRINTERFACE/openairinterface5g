@@ -40,6 +40,7 @@
 #include "rrc_eNB_UE_context.h"
 #include "pdcp.h"
 #include "msc.h"
+#include "common/ran_context.h"
 
 #ifdef PHY_EMUL
 #include "SIMULATION/simulation_defs.h"
@@ -56,6 +57,8 @@ extern UE_MAC_INST *UE_mac_inst;
 #define DEBUG_RRC 1
 
 mui_t mui=0;
+
+extern RAN_CONTEXT_t RC;
 
 //------------------------------------------------------------------------------
 int8_t
@@ -83,25 +86,25 @@ mac_rrc_data_req(
   if( enb_flagP == ENB_FLAG_YES) {
 
     if((Srb_id & RAB_OFFSET) == BCCH) {
-      if(eNB_rrc_inst[Mod_idP].carrier[CC_id].SI.Active==0) {
+      if(RC.rrc[Mod_idP]->carrier[CC_id].SI.Active==0) {
         return 0;
       }
 
       // All even frames transmit SIB in SF 5
-      if (eNB_rrc_inst[Mod_idP].carrier[CC_id].sizeof_SIB1 == 255) {
+      if (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1 == 255) {
         LOG_E(RRC,"[eNB %d] MAC Request for SIB1 and SIB1 not initialized\n",Mod_idP);
         mac_xface->macphy_exit("mac_rrc_data_req:  MAC Request for SIB1 and SIB1 not initialized");
       }
 
       if ((frameP%2) == 0) {
         memcpy(&buffer_pP[0],
-               eNB_rrc_inst[Mod_idP].carrier[CC_id].SIB1,
-               eNB_rrc_inst[Mod_idP].carrier[CC_id].sizeof_SIB1);
+               RC.rrc[Mod_idP]->carrier[CC_id].SIB1,
+               RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1);
 
 #if defined(ENABLE_ITTI)
         {
           MessageDef *message_p;
-          int sib1_size = eNB_rrc_inst[Mod_idP].carrier[CC_id].sizeof_SIB1;
+          int sib1_size = RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1;
           int sdu_size = sizeof(RRC_MAC_BCCH_DATA_REQ (message_p).sdu);
 
           if (sib1_size > sdu_size) {
@@ -114,7 +117,7 @@ mac_rrc_data_req(
           RRC_MAC_BCCH_DATA_REQ (message_p).sdu_size = sib1_size;
           memset (RRC_MAC_BCCH_DATA_REQ (message_p).sdu, 0, BCCH_SDU_SIZE);
           memcpy (RRC_MAC_BCCH_DATA_REQ (message_p).sdu,
-                  eNB_rrc_inst[Mod_idP].carrier[CC_id].SIB1,
+                  RC.rrc[Mod_idP]->carrier[CC_id].SIB1,
                   sib1_size);
           RRC_MAC_BCCH_DATA_REQ (message_p).enb_index = eNB_index;
 
@@ -125,24 +128,24 @@ mac_rrc_data_req(
 #ifdef DEBUG_RRC
         LOG_T(RRC,"[eNB %d] Frame %d : BCCH request => SIB 1\n",Mod_idP,frameP);
 
-        for (i=0; i<eNB_rrc_inst[Mod_idP].carrier[CC_id].sizeof_SIB1; i++) {
+        for (i=0; i<RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1; i++) {
           LOG_T(RRC,"%x.",buffer_pP[i]);
         }
 
         LOG_T(RRC,"\n");
 #endif
 
-        return (eNB_rrc_inst[Mod_idP].carrier[CC_id].sizeof_SIB1);
+        return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1);
       } // All RFN mod 8 transmit SIB2-3 in SF 5
       else if ((frameP%8) == 1) {
         memcpy(&buffer_pP[0],
-               eNB_rrc_inst[Mod_idP].carrier[CC_id].SIB23,
-               eNB_rrc_inst[Mod_idP].carrier[CC_id].sizeof_SIB23);
+               RC.rrc[Mod_idP]->carrier[CC_id].SIB23,
+               RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23);
 
 #if defined(ENABLE_ITTI)
         {
           MessageDef *message_p;
-          int sib23_size = eNB_rrc_inst[Mod_idP].carrier[CC_id].sizeof_SIB23;
+          int sib23_size = RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23;
           int sdu_size = sizeof(RRC_MAC_BCCH_DATA_REQ (message_p).sdu);
 
           if (sib23_size > sdu_size) {
@@ -155,7 +158,7 @@ mac_rrc_data_req(
           RRC_MAC_BCCH_DATA_REQ (message_p).sdu_size = sib23_size;
           memset (RRC_MAC_BCCH_DATA_REQ (message_p).sdu, 0, BCCH_SDU_SIZE);
           memcpy (RRC_MAC_BCCH_DATA_REQ (message_p).sdu,
-                  eNB_rrc_inst[Mod_idP].carrier[CC_id].SIB23,
+                  RC.rrc[Mod_idP]->carrier[CC_id].SIB23,
                   sib23_size);
           RRC_MAC_BCCH_DATA_REQ (message_p).enb_index = eNB_index;
 
@@ -166,13 +169,13 @@ mac_rrc_data_req(
 #ifdef DEBUG_RRC
         LOG_T(RRC,"[eNB %d] Frame %d BCCH request => SIB 2-3\n",Mod_idP,frameP);
 
-        for (i=0; i<eNB_rrc_inst[Mod_idP].carrier[CC_id].sizeof_SIB23; i++) {
+        for (i=0; i<RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23; i++) {
           LOG_T(RRC,"%x.",buffer_pP[i]);
         }
 
         LOG_T(RRC,"\n");
 #endif
-        return(eNB_rrc_inst[Mod_idP].carrier[CC_id].sizeof_SIB23);
+        return(RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23);
       } else {
         return(0);
       }
@@ -181,12 +184,12 @@ mac_rrc_data_req(
     if( (Srb_id & RAB_OFFSET ) == CCCH) {
       LOG_T(RRC,"[eNB %d] Frame %d CCCH request (Srb_id %d)\n",Mod_idP,frameP, Srb_id);
 
-      if(eNB_rrc_inst[Mod_idP].carrier[CC_id].Srb0.Active==0) {
+      if(RC.rrc[Mod_idP]->carrier[CC_id].Srb0.Active==0) {
         LOG_E(RRC,"[eNB %d] CCCH Not active\n",Mod_idP);
         return -1;
       }
 
-      Srb_info=&eNB_rrc_inst[Mod_idP].carrier[CC_id].Srb0;
+      Srb_info=&RC.rrc[Mod_idP]->carrier[CC_id].Srb0;
 
       // check if data is there for MAC
       if(Srb_info->Tx_buffer.payload_size>0) { //Fill buffer
@@ -225,7 +228,7 @@ mac_rrc_data_req(
 #ifdef Rel10
 
     if((Srb_id & RAB_OFFSET) == MCCH) {
-      if(eNB_rrc_inst[Mod_idP].carrier[CC_id].MCCH_MESS[mbsfn_sync_area].Active==0) {
+      if(RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESS[mbsfn_sync_area].Active==0) {
         return 0;  // this parameter is set in function init_mcch in rrc_eNB.c
       }
 
@@ -239,7 +242,7 @@ mac_rrc_data_req(
 #if defined(ENABLE_ITTI)
       {
         MessageDef *message_p;
-        int mcch_size = eNB_rrc_inst[Mod_idP].carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area];
+        int mcch_size = RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area];
         int sdu_size = sizeof(RRC_MAC_MCCH_DATA_REQ (message_p).sdu);
 
         if (mcch_size > sdu_size) {
@@ -252,7 +255,7 @@ mac_rrc_data_req(
         RRC_MAC_MCCH_DATA_REQ (message_p).sdu_size = mcch_size;
         memset (RRC_MAC_MCCH_DATA_REQ (message_p).sdu, 0, MCCH_SDU_SIZE);
         memcpy (RRC_MAC_MCCH_DATA_REQ (message_p).sdu,
-                eNB_rrc_inst[Mod_idP].carrier[CC_id].MCCH_MESSAGE[mbsfn_sync_area],
+                RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESSAGE[mbsfn_sync_area],
                 mcch_size);
         RRC_MAC_MCCH_DATA_REQ (message_p).enb_index = eNB_index;
         RRC_MAC_MCCH_DATA_REQ (message_p).mbsfn_sync_area = mbsfn_sync_area;
@@ -262,20 +265,20 @@ mac_rrc_data_req(
 #endif
 
       memcpy(&buffer_pP[0],
-             eNB_rrc_inst[Mod_idP].carrier[CC_id].MCCH_MESSAGE[mbsfn_sync_area],
-             eNB_rrc_inst[Mod_idP].carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
+             RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESSAGE[mbsfn_sync_area],
+             RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
 
 #ifdef DEBUG_RRC
       LOG_D(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE \n",Mod_idP,frameP);
 
-      for (i=0; i<eNB_rrc_inst[Mod_idP].carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]; i++) {
+      for (i=0; i<RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]; i++) {
         LOG_T(RRC,"%x.",buffer_pP[i]);
       }
 
       LOG_T(RRC,"\n");
 #endif
 
-      return (eNB_rrc_inst[Mod_idP].carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
+      return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
       //      }
       //else
       //return(0);
@@ -462,7 +465,7 @@ mac_rrc_data_ind(
 #endif // Rel10
 
   } else { // This is an eNB
-    Srb_info = &eNB_rrc_inst[module_idP].carrier[CC_id].Srb0;
+    Srb_info = &RC.rrc[module_idP]->carrier[CC_id].Srb0;
     LOG_T(RRC,"[eNB %d] Received SDU for CCCH on SRB %d\n",module_idP,Srb_info->Srb_id);
 
 #if defined(ENABLE_ITTI)
@@ -706,7 +709,7 @@ mac_eNB_get_rrc_status(
 {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   ue_context_p = rrc_eNB_get_ue_context(
-                   &eNB_rrc_inst[Mod_idP],
+                   RC.rrc[Mod_idP],
                    rntiP);
 
   if (ue_context_p != NULL) {
@@ -724,7 +727,7 @@ void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
 {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   ue_context_p = rrc_eNB_get_ue_context(
-                   &eNB_rrc_inst[Mod_instP],
+                   RC.rrc[Mod_instP],
                    rntiP);
 
   if (ue_context_p != NULL) {
@@ -745,7 +748,7 @@ void mac_eNB_rrc_ul_in_sync(const module_id_t Mod_instP,
 {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   ue_context_p = rrc_eNB_get_ue_context(
-                   &eNB_rrc_inst[Mod_instP],
+                   RC.rrc[Mod_instP],
                    rntiP);
 
   if (ue_context_p != NULL) {

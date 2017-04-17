@@ -99,7 +99,7 @@ DCI_PDU *get_dci_sdu(module_id_t module_idP, int CC_id,frame_t frameP, sub_frame
 //------------------------------------------------------------------------------
 {
 
-  return(&eNB_mac_inst[module_idP].common_channels[CC_id].DCI_pdu);
+  return(&RC.mac[module_idP]->common_channels[CC_id].DCI_pdu);
 
 }
 
@@ -108,7 +108,7 @@ int find_UE_id(module_id_t mod_idP, rnti_t rntiP)
 //------------------------------------------------------------------------------
 {
   int UE_id;
-  UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
+  UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
 
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
     if (UE_list->active[UE_id] != TRUE) continue;
@@ -131,7 +131,7 @@ int UE_num_active_CC(UE_list_t *listP,int ue_idP)
 int UE_PCCID(module_id_t mod_idP,int ue_idP)
 //------------------------------------------------------------------------------
 {
-  return(eNB_mac_inst[mod_idP].UE_list.pCC_id[ue_idP]);
+  return(RC.mac[mod_idP]->UE_list.pCC_id[ue_idP]);
 }
 
 //------------------------------------------------------------------------------
@@ -139,7 +139,7 @@ rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP)
 //------------------------------------------------------------------------------
 {
 
-  rnti_t rnti = eNB_mac_inst[mod_idP].UE_list.UE_template[UE_PCCID(mod_idP,ue_idP)][ue_idP].rnti;
+  rnti_t rnti = RC.mac[mod_idP]->UE_list.UE_template[UE_PCCID(mod_idP,ue_idP)][ue_idP].rnti;
 
   if (rnti>0) {
     return (rnti);
@@ -154,7 +154,7 @@ rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP)
 boolean_t is_UE_active(module_id_t mod_idP, int ue_idP)
 //------------------------------------------------------------------------------
 {
-  return(eNB_mac_inst[mod_idP].UE_list.active[ue_idP]);
+  return(RC.mac[mod_idP]->UE_list.active[ue_idP]);
 }
 
 /*
@@ -227,7 +227,7 @@ uint8_t find_num_active_UEs_in_cbagroup(module_id_t module_idP, int CC_id,unsign
   unsigned char nb_ue_in_pusch=0;
   LTE_eNB_UE_stats* eNB_UE_stats;
 
-  for (UE_id=group_id;UE_id<NUMBER_OF_UE_MAX;UE_id+=eNB_mac_inst[module_idP].common_channels[CC_id].num_active_cba_groups) {
+  for (UE_id=group_id;UE_id<NUMBER_OF_UE_MAX;UE_id+=RC.mac[module_idP]->common_channels[CC_id].num_active_cba_groups) {
 
       if (((rnti=eNB_mac_inst[module_idP][CC_id].UE_template[UE_id].rnti) !=0) &&
           (eNB_mac_inst[module_idP][CC_id].UE_template[UE_id].ul_active==TRUE)    &&
@@ -266,7 +266,7 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP)
   int UE_id;
   int i, j;
 
-  UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
+  UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
 
   LOG_D(MAC,"[eNB %d, CC_id %d] Adding UE with rnti %x (next avail %d, num_UEs %d)\n",mod_idP,cc_idP,rntiP,UE_list->avail,UE_list->num_UEs);
   dump_ue_list(UE_list,0);
@@ -309,7 +309,7 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
 //------------------------------------------------------------------------------
 {
   int i;
-  UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
+  UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
   int UE_id = find_UE_id(mod_idP,rntiP);
   int pCC_id;
 
@@ -348,7 +348,7 @@ printf("MAC: remove UE %d rnti %x\n", UE_id, rntiP);
   // check if this has an RA process active
   RA_TEMPLATE *RA_template;
   for (i=0;i<NB_RA_PROC_MAX;i++) {
-    RA_template = (RA_TEMPLATE *)&eNB_mac_inst[mod_idP].common_channels[pCC_id].RA_template[i];
+    RA_template = (RA_TEMPLATE *)&RC.mac[mod_idP]->common_channels[pCC_id].RA_template[i];
     if (RA_template->rnti == rntiP){
       RA_template->RA_active=FALSE;
       RA_template->generate_rar=0;
@@ -681,8 +681,8 @@ void add_ue_spec_dci(DCI_PDU *DCI_pdu,void *pdu,rnti_t rnti,unsigned char dci_si
 uint8_t UE_is_to_be_scheduled(module_id_t module_idP,int CC_id,uint8_t UE_id)
 {
 
-  UE_TEMPLATE *UE_template    = &eNB_mac_inst[module_idP].UE_list.UE_template[CC_id][UE_id];
-  UE_sched_ctrl *UE_sched_ctl = &eNB_mac_inst[module_idP].UE_list.UE_sched_ctrl[UE_id];
+  UE_TEMPLATE *UE_template    = &RC.mac[module_idP]->UE_list.UE_template[CC_id][UE_id];
+  UE_sched_ctrl *UE_sched_ctl = &RC.mac[module_idP]->UE_list.UE_sched_ctrl[UE_id];
 
 
   // do not schedule UE if UL is not working
@@ -905,7 +905,7 @@ int get_nb_subband(void)
 
 void init_CCE_table(int module_idP,int CC_idP)
 {
-  memset(eNB_mac_inst[module_idP].CCE_table[CC_idP],0,800*sizeof(int));
+  memset(RC.mac[module_idP]->CCE_table[CC_idP],0,800*sizeof(int));
 } 
 
 
@@ -1056,8 +1056,8 @@ int allocate_CCEs(int module_idP,
 		  int test_onlyP) {
 
 
-  int *CCE_table = eNB_mac_inst[module_idP].CCE_table[CC_idP];
-  DCI_PDU *DCI_pdu = &eNB_mac_inst[module_idP].common_channels[CC_idP].DCI_pdu;
+  int *CCE_table = RC.mac[module_idP]->CCE_table[CC_idP];
+  DCI_PDU *DCI_pdu = &RC.mac[module_idP]->common_channels[CC_idP].DCI_pdu;
   int nCCE_max = mac_xface->get_nCCE_max(module_idP,CC_idP,1,subframeP);
   int fCCE;
   int i,j;
@@ -1137,7 +1137,7 @@ boolean_t CCE_allocation_infeasible(int module_idP,
 				    int rnti) {
 
 
-  DCI_PDU *DCI_pdu = &eNB_mac_inst[module_idP].common_channels[CC_idP].DCI_pdu;
+  DCI_PDU *DCI_pdu = &RC.mac[module_idP]->common_channels[CC_idP].DCI_pdu;
   //DCI_ALLOC_t *dci_alloc;
   int ret;
   boolean_t res=FALSE;
@@ -1167,7 +1167,7 @@ void SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, rnti_t rntiP
 {
  
   int UE_id = find_UE_id(mod_idP, rntiP);
-  UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
+  UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
  
   if (UE_id  != -1) {
     if (mac_eNB_get_rrc_status(mod_idP,UE_RNTI(mod_idP,UE_id)) < RRC_CONNECTED)
@@ -1187,7 +1187,7 @@ void UL_failure_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, rnti
 {
 
   int UE_id = find_UE_id(mod_idP, rntiP);
-  UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
+  UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
 
   if (UE_id  != -1) {
     LOG_I(MAC,"[eNB %d][UE %d/%x] Frame %d subframeP %d Signaling UL Failure for UE %d on CC_id %d (timer %d)\n",

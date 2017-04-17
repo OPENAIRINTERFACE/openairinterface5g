@@ -25,15 +25,9 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 
-#ifndef USER_MODE
-unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
-unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
-unsigned int DAQ_MBOX;
-#endif
 char* namepointer_chMag ;
 char fmageren_name2[512];
 char* namepointer_log2;
-//PHY_CONFIG *PHY_config;
 
 
 #include "PHY/LTE_REFSIG/primary_synch.h"
@@ -47,8 +41,10 @@ int16_t *primary_synch2_time;
 //PHY_VARS *PHY_vars;
 #ifndef OCP_FRAMEWORK
 PHY_VARS_UE ***PHY_vars_UE_g;
-PHY_VARS_eNB ***PHY_vars_eNB_g;
-PHY_VARS_RN **PHY_vars_RN_g;
+RAN_CONTEXT_t RC;
+
+//PHY_VARS_eNB ***PHY_vars_eNB_g;
+//PHY_VARS_RN **PHY_vars_RN_g;
 LTE_DL_FRAME_PARMS *lte_frame_parms_g;
 #else
 PHY_VARS_UE * PHY_vars_UE_g[MAX_UE][MAX_NUM_CCs]={NULL};
@@ -67,6 +63,7 @@ char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
 
 #include "SIMULATION/ETH_TRANSPORT/vars.h"
 
+unsigned char NB_RU=0;
 
 #ifndef OPENAIR2
 unsigned char NB_eNB_INST=0;
@@ -140,9 +137,9 @@ double beta2_dlsch[6][MCS_COUNT] = { {2.52163, 0.83231, 0.77472, 1.36536, 1.1682
 #ifdef OCP_FRAMEWORK
 #include <enums.h>
 #else
-char eNB_functions[6][20]={"eNodeB_3GPP","eNodeB_3GPP_BBU","NGFI_RCC_IF4p5","NGFI_RAI_IF4p5","NGFI_RRU_IF5","NGFI_RRU_IF4p5",};
+char eNB_functions[6][20]={"eNodeB_3GPP","eNodeB_3GPP_BBU","NGFI_RAU_IF4p5","NGFI_RRU_IF5","NGFI_RRU_IF4p5",};
 char eNB_timing[2][20]={"synch_to_ext_device","synch_to_other"};
-char ru_if_types[MAX_RU_IF_TYPES][20]={"local RF","IF5 RRU","IF4p5 RRU","IF1pp RRU"};
+char ru_if_types[MAX_RU_IF_TYPES][20]={"local RF","IF5 RRU","IF5 Mobipass","IF4p5 RRU","IF1pp RRU"};
 #endif
 
 /// lookup table for unscrambling in RX

@@ -2491,7 +2491,7 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uin
 			    ue->pbch_vars[eNB_id],
 			    &ue->frame_parms,
 			    eNB_id,
-			    ue->frame_parms.mode1_flag==1?SISO:ALAMOUTI,
+			    ue->frame_parms.nb_antenna_ports_eNB==1?SISO:ALAMOUTI,
 			    ue->high_speed_flag,
 			    pbch_phase);
 
@@ -2593,11 +2593,11 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uin
     }
 
 #ifdef DEBUG_PHY_PROC
-    LOG_D(PHY,"[UE %d] frame %d, subframe %d, Received PBCH (MIB): mode1_flag %d, tx_ant %d, frame_tx %d. N_RB_DL %d, phich_duration %d, phich_resource %d/6!\n",
+    LOG_D(PHY,"[UE %d] frame %d, subframe %d, Received PBCH (MIB): nb_antenna_ports_eNB %d, tx_ant %d, frame_tx %d. N_RB_DL %d, phich_duration %d, phich_resource %d/6!\n",
 	  ue->Mod_id,
 	  frame_rx,
 	  subframe_rx,
-	  ue->frame_parms.mode1_flag,
+	  ue->frame_parms.nb_antenna_ports_eNB,
 	  pbch_tx_ant,
 	  frame_tx,
 	  ue->frame_parms.N_RB_DL,
@@ -2682,7 +2682,7 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 	     proc->frame_rx,
 	     subframe_rx,
 	     eNB_id,
-	     (ue->frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
+	     (ue->frame_parms.nb_antenna_ports_eNB == 1) ? SISO : ALAMOUTI,
 	     ue->high_speed_flag,
 	     ue->is_secondary_ue);
 
@@ -2709,7 +2709,7 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
   else {
     for (i=0; i<NB_eNB_INST; i++) {
       for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++)
-	if (PHY_vars_eNB_g[i][CC_id]->frame_parms.Nid_cell == ue->frame_parms.Nid_cell)
+	if (RC.eNB[i][CC_id]->frame_parms.Nid_cell == ue->frame_parms.Nid_cell)
 	  break;
 
       if (CC_id < MAX_NUM_CCs)
@@ -2725,13 +2725,13 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 
     LOG_D(PHY,"Calling dci_decoding_proc_emul ...\n");
     dci_cnt = dci_decoding_procedure_emul(ue->pdcch_vars,
-					  PHY_vars_eNB_g[i][CC_id]->num_ue_spec_dci[subframe_rx&1],
-					  PHY_vars_eNB_g[i][CC_id]->num_common_dci[subframe_rx&1],
-					  PHY_vars_eNB_g[i][CC_id]->dci_alloc[subframe_rx&1],
+					  RC.eNB[i][CC_id]->num_ue_spec_dci[subframe_rx&1],
+					  RC.eNB[i][CC_id]->num_common_dci[subframe_rx&1],
+					  RC.eNB[i][CC_id]->dci_alloc[subframe_rx&1],
 					  dci_alloc_rx,
 					  eNB_id);
     //    printf("DCI: dci_cnt %d\n",dci_cnt);
-    UE_id = (uint32_t)find_ue((int16_t)ue->pdcch_vars[eNB_id]->crnti,PHY_vars_eNB_g[i][CC_id]);
+    UE_id = (uint32_t)find_ue((int16_t)ue->pdcch_vars[eNB_id]->crnti,RC.eNB[i][CC_id]);
 
     if (UE_id>=0) {
       //      printf("Checking PHICH for UE  %d (eNB %d)\n",UE_id,i);

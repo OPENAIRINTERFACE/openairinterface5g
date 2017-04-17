@@ -388,11 +388,17 @@ typedef struct rrc_eNB_ue_context_s {
 } rrc_eNB_ue_context_t;
 
 typedef struct {
+  uint8_t                           *MIB;
+  uint8_t                           sizeof_MIB;
   uint8_t                           *SIB1;
   uint8_t                           sizeof_SIB1;
   uint8_t                           *SIB23;
   uint8_t                           sizeof_SIB23;
-  uint16_t                          physCellId;
+  int                               physCellId;
+  int                               Ncp;
+  int                               p_eNB;
+  uint32_t                          dl_CarrierFreq;
+  uint32_t                          ul_CarrierFreq;
   BCCH_BCH_Message_t                mib;
   BCCH_DL_SCH_Message_t             siblock1;
   BCCH_DL_SCH_Message_t             systemInformation;
@@ -445,6 +451,22 @@ typedef struct eNB_RRC_INST_s {
 #if defined(ENABLE_ITTI)
   RrcConfigurationReq configuration;
 #endif
+  // other PLMN parameters
+  /// Mobile country code
+  int mcc;
+  /// Mobile network code
+  int mnc;
+  /// number of mnc digits
+  int mnc_digit_length;
+
+  // other RAN parameters
+  int srb1_timer_poll_retransmit;
+  int srb1_poll_pdu;
+  int srb1_poll_byte;
+  int srb1_max_retx_threshold;
+  int srb1_timer_reordering;
+  int srb1_timer_status_prohibit;
+  int srs_enable[MAX_NUM_CCs];
 } eNB_RRC_INST;
 
 #define MAX_UE_CAPABILITY_SIZE 255

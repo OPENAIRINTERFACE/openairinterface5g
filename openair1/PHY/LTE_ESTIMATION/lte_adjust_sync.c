@@ -134,23 +134,23 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
       // do ifft of channel estimate
       switch(frame_parms->N_RB_DL) {
       case 6:
-	dft128((int16_t*) &lte_eNB_srs->srs_ch_estimates[ind][aa][0],
-	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[ind][aa],
+	dft128((int16_t*) &lte_eNB_srs->srs_ch_estimates[aa][0],
+	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[aa],
 	       1);
 	break;
       case 25:
-	dft512((int16_t*) &lte_eNB_srs->srs_ch_estimates[ind][aa][0],
-	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[ind][aa],
+	dft512((int16_t*) &lte_eNB_srs->srs_ch_estimates[aa][0],
+	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[aa],
 	       1);
 	break;
       case 50:
-	dft1024((int16_t*) &lte_eNB_srs->srs_ch_estimates[ind][aa][0],
-		(int16_t*) lte_eNB_srs->srs_ch_estimates_time[ind][aa],
+	dft1024((int16_t*) &lte_eNB_srs->srs_ch_estimates[aa][0],
+		(int16_t*) lte_eNB_srs->srs_ch_estimates_time[aa],
 		1);
 	break;
       case 100:
-	dft2048((int16_t*) &lte_eNB_srs->srs_ch_estimates[ind][aa][0],
-	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[ind][aa],
+	dft2048((int16_t*) &lte_eNB_srs->srs_ch_estimates[aa][0],
+	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[aa],
 	       1);
 	break;
       }
@@ -158,7 +158,7 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_PHY
       sprintf(fname,"srs_ch_estimates_time_%d%d.m",ind,aa);
       sprintf(vname,"srs_time_%d%d",ind,aa);
-      write_output(fname,vname,lte_eNB_srs->srs_ch_estimates_time[ind][aa],frame_parms->ofdm_symbol_size*2,2,1);
+      write_output(fname,vname,lte_eNB_srs->srs_ch_estimates_time[aa],frame_parms->ofdm_symbol_size*2,2,1);
 #endif
 #endif
     }
@@ -169,8 +169,8 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
       temp = 0;
 
       for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-        Re = ((int16_t*)lte_eNB_srs->srs_ch_estimates_time[ind][aa])[(i<<1)];
-        Im = ((int16_t*)lte_eNB_srs->srs_ch_estimates_time[ind][aa])[1+(i<<1)];
+        Re = ((int16_t*)lte_eNB_srs->srs_ch_estimates_time[aa])[(i<<1)];
+        Im = ((int16_t*)lte_eNB_srs->srs_ch_estimates_time[aa])[1+(i<<1)];
         temp += (Re*Re/2) + (Im*Im/2);
       }
 

@@ -90,14 +90,22 @@ int16_t get_hundred_times_delta_IF_eNB(PHY_VARS_eNB *eNB,uint8_t UE_id,uint8_t h
 
 int16_t get_hundred_times_delta_IF_mac(module_id_t module_idP, uint8_t CC_id, rnti_t rnti, uint8_t harq_pid)
 {
-  int8_t UE_id = find_ue( rnti, PHY_vars_eNB_g[module_idP][CC_id] );
+
+  int8_t UE_id;
+
+  if ((RC.eNB == NULL) || (module_idP > RC.nb_inst) || (CC_id > RC.nb_CC[module_idP])) {
+    LOG_E(PHY,"get_UE_stats: No eNB found (or not allocated) for Mod_id %d,CC_id %d\n",module_idP,CC_id);
+    return -1;
+  }
+
+  UE_id = find_ue( rnti, RC.eNB[module_idP][CC_id] );
 
   if (UE_id == -1) {
     // not found
     return 0;
   }
 
-  return get_hundred_times_delta_IF_eNB( PHY_vars_eNB_g[module_idP][CC_id], UE_id, harq_pid, 0 );
+  return get_hundred_times_delta_IF_eNB( RC.eNB[module_idP][CC_id], UE_id, harq_pid, 0 );
 }
 
 int16_t get_hundred_times_delta_IF(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t harq_pid)

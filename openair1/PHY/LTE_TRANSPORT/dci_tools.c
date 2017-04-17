@@ -848,10 +848,10 @@ uint8_t get_transmission_mode(module_id_t Mod_id, uint8_t CC_id, rnti_t rnti)
   unsigned char UE_id;
 
   // find the UE_index corresponding to rnti
-  UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id][CC_id]);
+  UE_id = find_ue(rnti,RC.eNB[Mod_id][CC_id]);
   DevAssert( UE_id != (unsigned char)-1 );
 
-  return(PHY_vars_eNB_g[Mod_id][CC_id]->transmission_mode[UE_id]);
+  return(RC.eNB[Mod_id][CC_id]->transmission_mode[UE_id]);
 }
 
 int generate_eNB_dlsch_params_from_dci(int frame,
@@ -1084,7 +1084,7 @@ int generate_eNB_dlsch_params_from_dci(int frame,
     dlsch0_harq->Nl          = 1;
     //dlsch0_harq->layer_index = 0;
 
-    dlsch0_harq->mimo_mode   = (frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI;
+    dlsch0_harq->mimo_mode   = (frame_parms->nb_antenna_ports_eNB == 1) ? SISO : ALAMOUTI;
     /*
     if ((rnti!=si_rnti)&&(rnti!=ra_rnti)&&(rnti!=p_rnti)) {  //handle toggling for C-RNTI
     if (dlsch0_harq->first_tx == 1) {
@@ -1235,7 +1235,7 @@ int generate_eNB_dlsch_params_from_dci(int frame,
     dlsch0_harq->Nl          = 1;
     //    dlsch[0]->layer_index = 0;
     if (beamforming_mode == 0)
-      dlsch0_harq->mimo_mode = (frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI;
+      dlsch0_harq->mimo_mode = (frame_parms->nb_antenna_ports_eNB == 1) ? SISO : ALAMOUTI;
     else if (beamforming_mode == 7)
       dlsch0_harq->mimo_mode = TM7;
     else
@@ -2618,7 +2618,7 @@ int generate_eNB_dlsch_params_from_dci(int frame,
     //    printf("Set pmi %x (tpmi %d)\n",dlsch0->pmi_alloc,tpmi);
 
 
-    if (frame_parms->mode1_flag == 1)
+    if (frame_parms->nb_antenna_ports_eNB == 1)
       dlsch0_harq->mimo_mode   = SISO;
 
     //    dlsch0_harq->Ndi         = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->ndi;
@@ -4162,7 +4162,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     dlsch0_harq->Nl = 1;
     //    dlsch[0]->layer_index = 0;
 
-    dlsch0_harq->mimo_mode = frame_parms->mode1_flag == 1 ?SISO : ALAMOUTI;
+    dlsch0_harq->mimo_mode = frame_parms->nb_antenna_ports_eNB == 1 ?SISO : ALAMOUTI;
     dlsch0_harq->dl_power_off = 1; //no power offset
 
     dlsch[0]->active = 1; // fix no DLSCH decoding for downlink retransmission
@@ -4357,7 +4357,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
 
     dlsch0_harq->Nl = 1;
-    dlsch0_harq->mimo_mode = frame_parms->mode1_flag == 1 ?SISO : ALAMOUTI;
+    dlsch0_harq->mimo_mode = frame_parms->nb_antenna_ports_eNB == 1 ?SISO : ALAMOUTI;
     dlsch0_harq->dl_power_off = 1; //no power offset
 
     LOG_D(PHY,"UE (%x/%d): Subframe %d Format1C DCI: harq_status %d, round %d\n",
@@ -4567,7 +4567,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     dlsch[0]->rnti = rnti;
 
     if (beamforming_mode == 0)
-      dlsch0_harq->mimo_mode   = (frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI;
+      dlsch0_harq->mimo_mode   = (frame_parms->nb_antenna_ports_eNB == 1) ? SISO : ALAMOUTI;
     else if (beamforming_mode == 7)
       dlsch0_harq->mimo_mode   = TM7;
     else
@@ -4896,7 +4896,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     }
 
 
-    if (frame_parms->mode1_flag == 1)
+    if (frame_parms->nb_antenna_ports_eNB == 1)
       dlsch0_harq->mimo_mode   = SISO;
 
     if (ndi1!=dlsch0_harq->DCINdi) {
@@ -5573,7 +5573,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     }
 
 
-    if (frame_parms->mode1_flag == 1)
+    if (frame_parms->nb_antenna_ports_eNB == 1)
       dlsch0_harq->mimo_mode   = SISO;
 
 

@@ -60,19 +60,24 @@ uint16_t get_adjacent_cell_id(uint8_t Mod_id,uint8_t index);
 uint8_t get_adjacent_cell_mod_id(uint16_t phyCellId);
 
 /**
-\brief Generate a default configuration for SIB1 (eNB).
-@param frame_parms Used to store some basic parameters from PHY configuration
-@param buffer Pointer to PER-encoded ASN.1 description of SIB1
-@param sib1 Pointer to asn1c C representation of SIB1
+\brief Generate configuration for SIB1 (eNB).
+@param carrier pointer to Carrier information
+@param N_RB_DL Number of downlink PRBs
+@param phich_Resource PHICH resoure parameter
+@param phich_duration PHICH duration parameter
+@param frame radio frame number
+@return size of encoded bit stream in bytes*/
+uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich_Resource, uint32_t phich_duration, uint32_t frame);
+
+/**
+\brief Generate configuration for SIB1 (eNB).
+@param carrier pointer to Carrier information
+@param Mod_id Instance of eNB
+@param Component carrier Component carrier to configure
+@param configuration Pointer Configuration Request structure  
 @return size of encoded bit stream in bytes*/
 
-uint8_t do_SIB1(uint8_t Mod_id, int CC_id,
-                LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
-                BCCH_DL_SCH_Message_t *bcch_message,
-                SystemInformationBlockType1_t **sib1
-#if defined(ENABLE_ITTI)
-                , RrcConfigurationReq *configuration
-#endif
+uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id, RrcConfigurationReq *configuration
                );
 
 /**
@@ -87,17 +92,7 @@ uint8_t do_SIB1(uint8_t Mod_id, int CC_id,
 @return size of encoded bit stream in bytes*/
 
 uint8_t do_SIB23(uint8_t Mod_id,
-                 int CC_id,
-                 LTE_DL_FRAME_PARMS *frame_parms,
-                 uint8_t *buffer,
-                 BCCH_DL_SCH_Message_t *systemInformation,
-                 SystemInformationBlockType2_t **sib2,
-                 SystemInformationBlockType3_t **sib3
-#ifdef Rel10
-                 ,
-                 SystemInformationBlockType13_r9_t **sib13,
-                 uint8_t MBMS_flag
-#endif
+                 int CC_id
 #if defined(ENABLE_ITTI)
                  , RrcConfigurationReq *configuration
 #endif

@@ -68,7 +68,7 @@ int generate_pss(int32_t **txdataF,
     break;
 
   default:
-    msg("[PSS] eNb_id has to be 0,1,2\n");
+    LOG_E(PHY,"[PSS] eNb_id has to be 0,1,2\n");
     return(-1);
   }
 
@@ -108,7 +108,7 @@ int generate_pss(int32_t **txdataF,
 int generate_pss_emul(PHY_VARS_eNB *phy_vars_eNb,uint8_t sect_id)
 {
 
-  msg("[PHY] EMUL eNB generate_pss_emul eNB %d, sect_id %d\n",phy_vars_eNb->Mod_id,sect_id);
+  LOG_D(PHY,"EMUL eNB generate_pss_emul eNB %d, sect_id %d\n",phy_vars_eNb->Mod_id,sect_id);
   eNB_transport_info[phy_vars_eNb->Mod_id][phy_vars_eNb->CC_id].cntl.pss=sect_id;
   return(0);
 }

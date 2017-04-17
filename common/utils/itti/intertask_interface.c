@@ -206,6 +206,7 @@ void *itti_malloc(task_id_t origin_task_id, task_id_t destination_task_id, ssize
 
 #else
   ptr = malloc (size);
+  if (ptr) memset(ptr,0,size);
 #endif
 
   AssertFatal (ptr != NULL, "Memory allocation of %d bytes failed (%d -> %d)!\n", (int) size, origin_task_id, destination_task_id);

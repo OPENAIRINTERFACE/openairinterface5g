@@ -178,7 +178,7 @@ int32_t generate_srs_tx(PHY_VARS_UE *ue,
   }
 
   if (k0<0) {
-    msg("generate_srs: invalid parameter set msrs0=%d, msrsb=%d, Nb=%d => nb=%d, k0=%d\n",msrs0,msrsb,Nb,nb,k0);
+    LOG_E(PHY,"generate_srs: invalid parameter set msrs0=%d, msrsb=%d, Nb=%d => nb=%d, k0=%d\n",msrs0,msrsb,Nb,nb,k0);
     return(-1);
   }
 
@@ -188,7 +188,7 @@ int32_t generate_srs_tx(PHY_VARS_UE *ue,
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;
   else {
-    msg("generate_srs: index for Msc_RS=%d not found\n",Msc_RS);
+    LOG_E(PHY,"generate_srs: index for Msc_RS=%d not found\n",Msc_RS);
     return(-1);
   }
 
@@ -199,14 +199,14 @@ int32_t generate_srs_tx(PHY_VARS_UE *ue,
   else if (Msc_RS==144)
     Msc_RS_idx = 9;
   else {
-    msg("generate_srs: index for Msc_RS=%d not implemented\n",Msc_RS);
+    LOG_E(PHY,"generate_srs: index for Msc_RS=%d not implemented\n",Msc_RS);
     return(-1);
   }
 
 #endif
 
 #ifdef DEBUG_SRS
-  msg("generate_srs_tx: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
+  LOG_E(PHY,"generate_srs_tx: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
 #endif
 
     carrier_pos = (frame_parms->first_carrier_offset + k0);
@@ -285,7 +285,7 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
   if (k0<0) {
-    msg("Invalid parameter set msrs0=%d, msrsb=%d, Nb=%d => nb=%d, k0=%d\n",msrs0,msrsb,Nb,nb,k0);
+    LOG_E(PHY,"Invalid parameter set msrs0=%d, msrsb=%d, Nb=%d => nb=%d, k0=%d\n",msrs0,msrsb,Nb,nb,k0);
     return(-1);
   }
 
@@ -295,7 +295,7 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;
   else {
-    msg("generate_srs: index for Msc_RS=%d not found\n",Msc_RS);
+    LOG_E(PHY,"generate_srs: index for Msc_RS=%d not found\n",Msc_RS);
     return(-1);
   }
 
@@ -306,14 +306,14 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
   else if (Msc_RS==144)
     Msc_RS_idx = 9;
   else {
-    msg("generate_srs: index for Msc_RS=%d not implemented\n",Msc_RS);
+    LOG_E(PHY,"generate_srs: index for Msc_RS=%d not implemented\n",Msc_RS);
     return(-1);
   }
 
 #endif
 
 #ifdef DEBUG_SRS
-  msg("generate_srs_rx: Msc_RS = %d, Msc_RS_idx = %d, k0=%d\n",Msc_RS, Msc_RS_idx,k0);
+  LOG_E(PHY,"generate_srs_rx: Msc_RS = %d, Msc_RS_idx = %d, k0=%d\n",Msc_RS, Msc_RS_idx,k0);
 #endif
 
   carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;

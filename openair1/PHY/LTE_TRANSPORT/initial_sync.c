@@ -155,7 +155,6 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode)
     frame_parms->nb_antenna_ports_eNB = pbch_tx_ant;
 
     // set initial transmission mode to 1 or 2 depending on number of detected TX antennas
-    frame_parms->mode1_flag = (pbch_tx_ant==1);
     // openair_daq_vars.dlsch_transmission_mode = (pbch_tx_ant>1) ? 2 : 1;
 
 
@@ -245,9 +244,9 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode)
     ue->proc.proc_rxtx[0].frame_tx = ue->proc.proc_rxtx[0].frame_rx;
     ue->proc.proc_rxtx[1].frame_tx = ue->proc.proc_rxtx[1].frame_rx;
 #ifdef DEBUG_INITIAL_SYNCH
-    LOG_I(PHY,"[UE%d] Initial sync: pbch decoded sucessfully mode1_flag %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %s!\n",
+    LOG_I(PHY,"[UE%d] Initial sync: pbch decoded sucessfully p %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %s!\n",
           ue->Mod_id,
-          frame_parms->mode1_flag,
+          frame_parms->nb_antenna_ports_eNB,
           pbch_tx_ant,
           ue->proc.proc_rxtx[0].frame_rx,
           frame_parms->N_RB_DL,

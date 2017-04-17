@@ -1012,6 +1012,7 @@ set(SCHED_SRC
   ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_eNb.c
   ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_ue.c
   ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_common.c
+  ${OPENAIR1_DIR}/SCHED/ru_procedures.c
   ${OPENAIR1_DIR}/SCHED/phy_mac_stub.c
   ${OPENAIR1_DIR}/SCHED/pucch_pc.c
   ${OPENAIR1_DIR}/SCHED/pusch_pc.c
@@ -1093,7 +1094,6 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_sse_16bit.c
   ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_avx2_16bit.c
   ${OPENAIR1_DIR}/PHY/CODING/lte_rate_matching.c
-  ${OPENAIR1_DIR}/PHY/CODING/rate_matching.c
   ${OPENAIR1_DIR}/PHY/CODING/viterbi.c
   ${OPENAIR1_DIR}/PHY/CODING/viterbi_lte.c
   ${OPENAIR1_DIR}/PHY/INIT/lte_init.c
@@ -1750,6 +1750,7 @@ add_executable(lte-softmodem
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
@@ -1873,7 +1874,7 @@ add_executable(oaisim
   ${x2ap_h}
   ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
-  ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/SIMU/USER/channel_sim.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c

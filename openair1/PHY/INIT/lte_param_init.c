@@ -82,7 +82,6 @@ void lte_param_init(unsigned char N_tx_port_eNB,
   //  frame_parms->Bsrs = 0;
   //  frame_parms->kTC = 0;44
   //  frame_parms->n_RRC = 0;
-  frame_parms->mode1_flag = (transmission_mode == 1 || transmission_mode ==7)? 1 : 0;
 
   init_frame_parms(frame_parms,osf);
 

@@ -29,6 +29,7 @@
 //#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
+#include "PHICH-Config.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "MobilityControlInfo.h"
 #ifdef Rel10
@@ -81,17 +82,20 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNb,
 @param N_RB_DL Number of DL resource blocks
 @param Nid_cell Cell ID
 @param Ncp Normal/Extended Prefix flag
-@param frame_type FDD/TDD framing
 @param p_eNB Number of eNB TX antennas
 @param phich_config Pointer to PHICH_CONFIG_COMMON
  */
-void phy_config_mib(LTE_DL_FRAME_PARMS *lte_frame_parms,
-                    uint8_t                N_RB_DL,
-                    uint8_t                Nid_cell,
-                    uint8_t                Ncp,
-                    uint8_t                frame_type,
-                    uint8_t                p_eNB,
-                    PHICH_CONFIG_COMMON *phich_config);
+void phy_config_mib_eNB(int                    Mod_id,
+			int                    CC_id,
+			int                    eutra_band,
+			int                    N_RB_DL,
+			PHICH_Config_t         *phich_config,
+			int                    Nid_cell,
+			int                    Ncp,
+			int                    p_eNB,
+			uint32_t               dl_CarrierFreq,
+			uint32_t               ul_CarrierFreq);
+
 
 
 /** \brief Configure LTE_DL_FRAME_PARMS with components derived after reception of SIB1.

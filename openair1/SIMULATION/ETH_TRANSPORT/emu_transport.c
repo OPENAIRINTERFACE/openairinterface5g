@@ -31,6 +31,7 @@
 
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+#include "common/ran_context.h"
 #include "defs.h"
 #include "extern.h"
 #include "proto.h"
@@ -288,13 +289,13 @@ void fill_phy_enb_vars(unsigned int enb_id, uint8_t CC_id,unsigned int next_slot
   // eNB
   // PBCH : copy payload
 
-  *(uint32_t *)PHY_vars_eNB_g[enb_id][CC_id]->pbch_pdu =
+  *(uint32_t *)RC.eNB[enb_id][CC_id]->pbch_pdu =
     eNB_transport_info[enb_id][CC_id].cntl.pbch_payload;
   /*  LOG_I(EMU," RX slot %d ENB TRANSPORT pbch payload %d pdu[0] %d  pdu[0] %d \n",
     next_slot ,
     eNB_transport_info[enb_id][CC_id].cntl.pbch_payload,
-    ((uint8_t*)PHY_vars_eNB_g[enb_id]->pbch_pdu)[0],
-    ((uint8_t*)PHY_vars_eNB_g[enb_id]->pbch_pdu)[1]);
+    ((uint8_t*)RC.eNB[enb_id]->pbch_pdu)[0],
+    ((uint8_t*)RC.eNB[enb_id]->pbch_pdu)[1]);
   */
   //  }
   //CFI
@@ -308,9 +309,9 @@ void fill_phy_enb_vars(unsigned int enb_id, uint8_t CC_id,unsigned int next_slot
                 eNB_transport_info[enb_id][CC_id].num_ue_spec_dci +
                 eNB_transport_info[enb_id][CC_id].num_common_dci;
 
-  PHY_vars_eNB_g[enb_id][CC_id]->num_ue_spec_dci[(next_slot>>1)&1] =
+  RC.eNB[enb_id][CC_id]->num_ue_spec_dci[(next_slot>>1)&1] =
     eNB_transport_info[enb_id][CC_id].num_ue_spec_dci;
-  PHY_vars_eNB_g[enb_id][CC_id]->num_common_dci[(next_slot>>1)&1]  =
+  RC.eNB[enb_id][CC_id]->num_common_dci[(next_slot>>1)&1]  =
     eNB_transport_info[enb_id][CC_id].num_common_dci;
 #ifdef DEBUG_EMU
   LOG_D(EMU, "Fill phy vars eNB %d for slot %d, DCI found %d  \n",
@@ -319,7 +320,7 @@ void fill_phy_enb_vars(unsigned int enb_id, uint8_t CC_id,unsigned int next_slot
 
   if (nb_total_dci >0) {
 
-    memcpy(PHY_vars_eNB_g[enb_id][CC_id]->dci_alloc[(next_slot>>1)&1],
+    memcpy(RC.eNB[enb_id][CC_id]->dci_alloc[(next_slot>>1)&1],
            eNB_transport_info[enb_id][CC_id].dci_alloc,
            (nb_total_dci) * sizeof(DCI_ALLOC_t));
 
@@ -341,7 +342,7 @@ void fill_phy_enb_vars(unsigned int enb_id, uint8_t CC_id,unsigned int next_slot
 
         switch (eNB_transport_info[enb_id][CC_id].dlsch_type[n_dci_dl]) {
         case 0: //SI:
-          memcpy(PHY_vars_eNB_g[enb_id][CC_id]->dlsch_SI->harq_processes[0]->b,
+          memcpy(RC.eNB[enb_id][CC_id]->dlsch_SI->harq_processes[0]->b,
                  &eNB_transport_info[enb_id][CC_id].transport_blocks[payload_offset],
                  eNB_transport_info[enb_id][CC_id].tbs[n_dci_dl]);
 #ifdef DEBUG_EMU
@@ -351,7 +352,7 @@ void fill_phy_enb_vars(unsigned int enb_id, uint8_t CC_id,unsigned int next_slot
           break;
 
         case 1: //RA:
-          memcpy(PHY_vars_eNB_g[enb_id][CC_id]->dlsch_ra->harq_processes[0]->b,
+          memcpy(RC.eNB[enb_id][CC_id]->dlsch_ra->harq_processes[0]->b,
                  &eNB_transport_info[enb_id][CC_id].transport_blocks[payload_offset],
                  eNB_transport_info[enb_id][CC_id].tbs[n_dci_dl]);
 #ifdef DEBUG_EMU
@@ -363,9 +364,9 @@ void fill_phy_enb_vars(unsigned int enb_id, uint8_t CC_id,unsigned int next_slot
         case 2://TB0:
           harq_pid  = eNB_transport_info[enb_id][CC_id].harq_pid[n_dci_dl];
           ue_id = eNB_transport_info[enb_id][CC_id].ue_id[n_dci_dl];
-          PHY_vars_eNB_g[enb_id][CC_id]->dlsch[ue_id][0]->rnti=
+          RC.eNB[enb_id][CC_id]->dlsch[ue_id][0]->rnti=
             eNB_transport_info[enb_id][CC_id].dci_alloc[n_dci_dl].rnti;
-          dlsch_eNB = PHY_vars_eNB_g[enb_id][CC_id]->dlsch[ue_id][0];
+          dlsch_eNB = RC.eNB[enb_id][CC_id]->dlsch[ue_id][0];
 #ifdef DEBUG_EMU
           LOG_D(EMU,
                 " enb_id %d ue id is %d rnti is %x dci index %d, harq_pid %d tbs %d \n",
@@ -386,9 +387,9 @@ void fill_phy_enb_vars(unsigned int enb_id, uint8_t CC_id,unsigned int next_slot
         case 3://TB1:
           harq_pid = eNB_transport_info[enb_id][CC_id].harq_pid[n_dci_dl];
           ue_id = eNB_transport_info[enb_id][CC_id].ue_id[n_dci_dl];
-          PHY_vars_eNB_g[enb_id][CC_id]->dlsch[ue_id][1]->rnti=
+          RC.eNB[enb_id][CC_id]->dlsch[ue_id][1]->rnti=
             eNB_transport_info[enb_id][CC_id].dci_alloc[n_dci_dl].rnti;
-          dlsch_eNB = PHY_vars_eNB_g[enb_id][CC_id]->dlsch[ue_id][1];
+          dlsch_eNB = RC.eNB[enb_id][CC_id]->dlsch[ue_id][1];
 
           memcpy(dlsch_eNB->harq_processes[harq_pid]->b,
                  &eNB_transport_info[enb_id][CC_id].transport_blocks[payload_offset],
@@ -396,7 +397,7 @@ void fill_phy_enb_vars(unsigned int enb_id, uint8_t CC_id,unsigned int next_slot
           break;
 
         case 5:
-          memcpy(PHY_vars_eNB_g[enb_id][CC_id]->dlsch_MCH->harq_processes[0]->b,
+          memcpy(RC.eNB[enb_id][CC_id]->dlsch_MCH->harq_processes[0]->b,
                  &eNB_transport_info[enb_id][CC_id].transport_blocks[payload_offset],
                  eNB_transport_info[enb_id][CC_id].tbs[n_dci_dl]);
 #ifdef DEBUG_EMU

@@ -177,11 +177,12 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
       AssertFatal(0, "Now execution should not go here");
       LOG_D(PDCP,"Sending to GTPV1U %d bytes\n", ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size);
       gtpv1u_new_data_req(
-        ctxt_pP->module_id, //gtpv1u_data_t *gtpv1u_data_p,
-        ctxt_pP->rnti,//rb_id/maxDRB, TO DO UE ID
-        ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id + 4,
-        &(((uint8_t *) sdu_p->data)[sizeof (pdcp_data_ind_header_t)]),
-        ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size);
+			  ctxt_pP->module_id, //gtpv1u_data_t *gtpv1u_data_p,
+			  ctxt_pP->rnti,//rb_id/maxDRB, TO DO UE ID
+			  ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id + 4,
+			  &(((uint8_t *) sdu_p->data)[sizeof (pdcp_data_ind_header_t)]),
+			  ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size,
+			  0);
 
       list_remove_head (&pdcp_sdu_list);
       free_mem_block (sdu_p, __func__);

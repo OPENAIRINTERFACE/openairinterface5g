@@ -156,12 +156,12 @@ void generate_pcfich(uint8_t num_pdcch_symbols,
     pcfich_scrambling(frame_parms,subframe,pcfich_b[num_pdcch_symbols-1],pcfich_bt);
 
   // modulation
-  if (frame_parms->mode1_flag==1)
+  if (frame_parms->nb_antenna_ports_eNB==1)
     gain_lin_QPSK = (int16_t)((amp*ONE_OVER_SQRT2_Q15)>>15);
   else
     gain_lin_QPSK = amp/2;
 
-  if (frame_parms->mode1_flag) { // SISO
+  if (frame_parms->nb_antenna_ports_eNB==1) { // SISO
 
     for (i=0; i<16; i++) {
       ((int16_t*)(&(pcfich_d[0][i])))[0]   = ((pcfich_bt[2*i] == 1) ? -gain_lin_QPSK : gain_lin_QPSK);
@@ -243,7 +243,6 @@ uint8_t rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
   for (pcfich_quad=0; pcfich_quad<4; pcfich_quad++) {
     reg_offset = (pcfich_reg[pcfich_quad]*4);
 
-    //    if (frame_parms->mode1_flag==1) {  // SISO
     for (i=0; i<4; i++) {
 
       pcfich_d_ptr[0] = ((int16_t*)&rxdataF_comp[0][reg_offset+i])[0]; // RE component

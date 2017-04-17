@@ -73,11 +73,14 @@ typedef struct mme_ip_address_s {
   char     *ipv6_address;
 } mme_ip_address_t;
 
-typedef struct rrh_gw_config_s {
+typedef struct ru_config_s {
+  // indicates if local or remote rf is used (1 == LOCAL)
+  unsigned  local_rf:1;
+  // indicates if UDP socket is used
   unsigned  udp:1;
+  // indicates if RAW socket is used
   unsigned  raw:1;
-  unsigned  active:1;
-  char      *rrh_gw_if_name;
+  char      *ru_if_name;
   char     *local_address;
   char     *remote_address;
   uint16_t  local_port;
@@ -85,15 +88,7 @@ typedef struct rrh_gw_config_s {
   uint8_t   udpif4p5;
   uint8_t   rawif4p5;
   uint8_t   rawif5_mobipass;
-  int tx_scheduling_advance;
-  int tx_sample_advance;
-  int iq_txshift;
-  unsigned  exmimo:1;
-  unsigned  usrp_b200:1;
-  unsigned  usrp_x300:1;
-  unsigned  bladerf:1; 
-  unsigned  lmssdr:1;  
-} rrh_gw_config_t;
+} ru_config_t;
 
 typedef struct Enb_properties_s {
   /* Unique eNB_id to identify the eNB within EPC.
@@ -127,8 +122,8 @@ typedef struct Enb_properties_s {
   /* Physical parameters */
   int16_t                 nb_cc;
 #ifndef OCP_FRAMEWORK
-  eNB_func_t              cc_node_function[1+MAX_NUM_CCs];
-  eNB_timing_t            cc_node_timing[1+MAX_NUM_CCs];
+  node_function_t         cc_node_function[1+MAX_NUM_CCs];
+  node_timing_t           cc_node_timing[1+MAX_NUM_CCs];
   int16_t                 cc_node_synch_ref[1+MAX_NUM_CCs];
   lte_frame_type_t        frame_type[1+MAX_NUM_CCs];
   uint8_t                 tdd_config[1+MAX_NUM_CCs];
@@ -233,11 +228,6 @@ typedef struct Enb_properties_s {
   tcp_udp_port_t      flexran_agent_port;
   char               *flexran_agent_cache;
 
-  /* Nb of RRH to connect to */
-  uint8_t             nb_rrh_gw;
-  char               *rrh_gw_if_name;
-  /* List of MME to connect to */
-  rrh_gw_config_t       rrh_gw_config[4];
 
 #ifndef OCP_FRAMEWORK
   // otg config
@@ -274,9 +264,12 @@ typedef struct Enb_properties_s {
 typedef struct Enb_properties_array_s {
   int                  number;
   Enb_properties_t    *properties[MAX_ENB];
+  int                  nb_ru;
+  ru_config_t         *ru_config[NUMBER_OF_RU_MAX];
 } Enb_properties_array_t;
 
 void                          enb_config_display(void);
+void                          ru_config_display(void);
 const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP);
 
 const Enb_properties_array_t *enb_config_get(void);

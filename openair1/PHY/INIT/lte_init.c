@@ -29,7 +29,6 @@
 #include "LAYER2/MAC/extern.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
-#define DEBUG_PHY
 #include "assertions.h"
 #include <math.h>
 
@@ -37,23 +36,64 @@ extern uint16_t prach_root_sequence_map0_3[838];
 extern uint16_t prach_root_sequence_map4[138];
 uint8_t dmrs1_tab[8] = {0,2,3,4,6,8,9,10};
 
-// FIXME not used anywhere
-void phy_config_mib(LTE_DL_FRAME_PARMS *fp,
-                    uint8_t N_RB_DL,
-                    uint8_t Nid_cell,
-                    uint8_t Ncp,
-                    uint8_t frame_type,
-                    uint8_t p_eNB,
-                    PHICH_CONFIG_COMMON *phich_config)
-{
-  fp->N_RB_DL                            = N_RB_DL;
+
+int N_RB_DL_array[6] = {6,15,25,50,75,100};
+
+void phy_config_mib_eNB(int                 Mod_id,
+			int                 CC_id,
+			int                 eutra_band,
+			int                 dl_Bandwidth,
+			PHICH_Config_t      *phich_config,
+			int                 Nid_cell,
+			int                 Ncp,
+			int                 p_eNB,
+			uint32_t            dl_CarrierFreq,
+			uint32_t            ul_CarrierFreq) {
+
+  
+  LTE_DL_FRAME_PARMS *fp;
+
+  LOG_I(PHY,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d,Nid_cell %d,p %d,DL freq %u)\n",
+	Mod_id, CC_id, eutra_band, N_RB_DL_array[dl_Bandwidth], Nid_cell, p_eNB,dl_CarrierFreq);
+
+  if (RC.eNB == NULL) {
+    RC.eNB = (PHY_VARS_eNB ***)malloc((1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB***));
+    LOG_I(PHY,"RC.eNB = %p\n",RC.eNB);
+    memset(RC.eNB,0,(1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB***));
+  }
+  if (RC.eNB[Mod_id] == NULL) {
+    RC.eNB[Mod_id] = (PHY_VARS_eNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB**));
+    LOG_I(PHY,"RC.eNB[%d] = %p\n",Mod_id,RC.eNB[Mod_id]);
+    memset(RC.eNB[Mod_id],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB***));
+  }
+  if (RC.eNB[Mod_id][CC_id] == NULL) {
+    RC.eNB[Mod_id][CC_id] = (PHY_VARS_eNB *)malloc(sizeof(PHY_VARS_eNB));
+    LOG_I(PHY,"RC.eNB[%d][%d] = %p\n",Mod_id,CC_id,RC.eNB[Mod_id][CC_id]);
+    RC.eNB[Mod_id][CC_id]->Mod_id = Mod_id;
+    RC.eNB[Mod_id][CC_id]->CC_id  = CC_id;
+  }
+
+  fp = &RC.eNB[Mod_id][CC_id]->frame_parms;
+
+  fp->N_RB_DL                            = N_RB_DL_array[dl_Bandwidth];
+  fp->N_RB_UL                            = N_RB_DL_array[dl_Bandwidth];
   fp->Nid_cell                           = Nid_cell;
   fp->nushift                            = Nid_cell%6;
+  fp->eutra_band                         = eutra_band;
   fp->Ncp                                = Ncp;
-  fp->frame_type                         = frame_type;
   fp->nb_antenna_ports_eNB               = p_eNB;
-  fp->phich_config_common.phich_resource = phich_config->phich_resource;
-  fp->phich_config_common.phich_duration = phich_config->phich_duration;
+  fp->phich_config_common.phich_resource = phich_config->phich_Resource;
+  fp->phich_config_common.phich_duration = phich_config->phich_Duration;
+  fp->dl_CarrierFreq                     = dl_CarrierFreq;
+  fp->ul_CarrierFreq                     = ul_CarrierFreq;
+  if (dl_CarrierFreq==ul_CarrierFreq)
+    fp->frame_type = TDD;
+  else
+    fp->frame_type = FDD;
+
+  init_frame_parms(fp,1);
+  phy_init_lte_top(fp);
+
 }
 
 void phy_config_sib1_eNB(uint8_t Mod_id,
@@ -63,13 +103,16 @@ void phy_config_sib1_eNB(uint8_t Mod_id,
                          uint16_t SIPeriod)
 {
 
-  LTE_DL_FRAME_PARMS *fp = &PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = &RC.eNB[Mod_id][CC_id]->frame_parms;
 
   if (tdd_Config) {
     fp->tdd_config    = tdd_Config->subframeAssignment;
     fp->tdd_config_S  = tdd_Config->specialSubframePatterns;
+    fp->frame_type    = TDD;
   }
-
+  else {
+    fp->frame_type    = FDD;
+  }
   fp->SIwindowsize  = SIwindowsize;
   fp->SIPeriod      = SIPeriod;
 }
@@ -101,12 +144,13 @@ void phy_config_sib2_eNB(uint8_t Mod_id,
                          struct MBSFN_SubframeConfigList  *mbsfn_SubframeConfigList)
 {
 
-  LTE_DL_FRAME_PARMS *fp = &PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms;
-  //LTE_eNB_UE_stats *eNB_UE_stats      = PHY_vars_eNB_g[Mod_id][CC_id]->eNB_UE_stats;
-  //int32_t rx_total_gain_eNB_dB        = PHY_vars_eNB_g[Mod_id][CC_id]->rx_total_gain_eNB_dB;
+  LTE_DL_FRAME_PARMS *fp = &RC.eNB[Mod_id][CC_id]->frame_parms;
+  //LTE_eNB_UE_stats *eNB_UE_stats      = RC.eNB[Mod_id][CC_id].eNB_UE_stats;
+  //int32_t rx_total_gain_eNB_dB        = RC.eNB[Mod_id][CC_id].rx_total_gain_eNB_dB;
   int i;
 
-  LOG_D(PHY,"[eNB%d] CCid %d: Applying radioResourceConfigCommon\n",Mod_id,CC_id);
+  LOG_I(PHY,"[eNB%d] CCid %d: Applying radioResourceConfigCommon\n",Mod_id,CC_id);
+
 
   fp->prach_config_common.rootSequenceIndex                           =radioResourceConfigCommon->prach_Config.rootSequenceIndex;
   LOG_D(PHY,"prach_config_common.rootSequenceIndex = %d\n",fp->prach_config_common.rootSequenceIndex );
@@ -123,7 +167,7 @@ void phy_config_sib2_eNB(uint8_t Mod_id,
   fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset           =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_FreqOffset;
   LOG_D(PHY,"prach_config_common.prach_ConfigInfo.prach_FreqOffset = %d\n",fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset);
   compute_prach_seq(&fp->prach_config_common,fp->frame_type,
-                    PHY_vars_eNB_g[Mod_id][CC_id]->X_u);
+                    RC.eNB[Mod_id][CC_id]->X_u);
 
   fp->pucch_config_common.deltaPUCCH_Shift = 1+radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift;
   fp->pucch_config_common.nRB_CQI          = radioResourceConfigCommon->pucch_ConfigCommon.nRB_CQI;
@@ -195,7 +239,7 @@ void phy_config_sib2_eNB(uint8_t Mod_id,
 
   // PUCCH
 
-  init_ncs_cell(fp,PHY_vars_eNB_g[Mod_id][CC_id]->ncs_cell);
+  init_ncs_cell(fp,RC.eNB[Mod_id][CC_id]->ncs_cell);
 
   init_ul_hopping(fp);
 
@@ -227,6 +271,8 @@ void phy_config_sib2_eNB(uint8_t Mod_id,
 
   } else
     fp->num_MBSFN_config = 0;
+
+  //
 }
 
 
@@ -373,7 +419,7 @@ void phy_config_sib13_eNB(uint8_t Mod_id,int CC_id,int mbsfn_Area_idx,
                           long mbsfn_AreaId_r9)
 {
 
-  LTE_DL_FRAME_PARMS *fp = &PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = &RC.eNB[Mod_id][CC_id]->frame_parms;
 
 
   LOG_I(PHY,"[eNB%d] Applying MBSFN_Area_id %ld for index %d\n",Mod_id,mbsfn_AreaId_r9,mbsfn_Area_idx);
@@ -383,7 +429,7 @@ void phy_config_sib13_eNB(uint8_t Mod_id,int CC_id,int mbsfn_Area_idx,
     LOG_N(PHY,"Fix me: only called when mbsfn_Area_idx == 0)\n");
   }
 
-  lte_gold_mbsfn(fp,PHY_vars_eNB_g[Mod_id][CC_id]->lte_gold_mbsfn_table,fp->Nid_cell_mbsfn);
+  lte_gold_mbsfn(fp,RC.eNB[Mod_id][CC_id]->lte_gold_mbsfn_table,fp->Nid_cell_mbsfn);
 }
 
 
@@ -649,8 +695,9 @@ void phy_config_dedicated_eNB(uint8_t Mod_id,
                               struct PhysicalConfigDedicated *physicalConfigDedicated)
 {
 
-  PHY_VARS_eNB *eNB = PHY_vars_eNB_g[Mod_id][CC_id];
+  PHY_VARS_eNB *eNB = RC.eNB[Mod_id][CC_id];
   int8_t UE_id = find_ue(rnti,eNB);
+  int i;
 
   if (UE_id == -1) {
     LOG_E( PHY, "[eNB %"PRIu8"] find_ue() returns -1\n", Mod_id);
@@ -684,7 +731,7 @@ void phy_config_dedicated_eNB(uint8_t Mod_id,
 	break;
       case AntennaInfoDedicated__transmissionMode_tm7:
         lte_gold_ue_spec_port5(eNB->lte_gold_uespec_port5_table[0],eNB->frame_parms.Nid_cell,rnti);
-	eNB->do_precoding = 1;
+	for (i=0;i<eNB->num_RU;i++) eNB->RU_list[i]->do_precoding=1;
 	eNB->transmission_mode[UE_id] = 7;
 	break;
       default:
@@ -717,7 +764,7 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
 {
 
 
-  uint8_t UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id][0]);
+  uint8_t UE_id = find_ue(rnti,RC.eNB[Mod_id][0]);
   struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10 = sCellToAddMod_r10->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10;
   //struct RadioResourceConfigCommonSCell_r10 *physicalConfigCommonSCell_r10 = sCellToAddMod_r10->radioResourceConfigCommonSCell_r10;
   //PhysCellId_t physCellId_r10 = sCellToAddMod_r10->cellIdentification_r10->physCellId_r10;
@@ -961,8 +1008,8 @@ void  phy_config_cba_rnti (module_id_t Mod_id,int CC_id,eNB_flag_t eNB_flag, uin
   } else {
     //for (i=index; i < NUMBER_OF_UE_MAX; i+=num_active_cba_groups){
     //  LOG_D(PHY,"[eNB %d] configure cba group %d with rnti %x for UE %d, num active cba grp %d\n",Mod_id, i%num_active_cba_groups, cba_rnti, i, num_active_cba_groups);
-    PHY_vars_eNB_g[Mod_id][CC_id]->ulsch[index]->num_active_cba_groups=num_active_cba_groups;
-    PHY_vars_eNB_g[Mod_id][CC_id]->ulsch[index]->cba_rnti[cba_group_id] = cba_rnti;
+    RC.eNB[Mod_id][CC_id]->ulsch[index]->num_active_cba_groups=num_active_cba_groups;
+    RC.eNB[Mod_id][CC_id]->ulsch[index]->cba_rnti[cba_group_id] = cba_rnti;
     //}
   }
 }
@@ -982,13 +1029,11 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
 
   phy_generate_viterbi_tables();
   phy_generate_viterbi_tables_lte();
-
   init_td8();
   init_td16();
 #ifdef __AVX2__
   init_td16avx2();
 #endif
-
   lte_sync_time_init(frame_parms);
 
   generate_ul_ref_sigs();
@@ -1075,7 +1120,7 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
   int i,j,k;
   int eNB_id;
 
-  printf("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
+  LOG_D(PHY,"Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
   LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
 
   // many memory allocation sizes are hard coded
@@ -1279,6 +1324,102 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
   return 0;
 }
 
+
+int phy_init_RU(RU_t *ru) {
+
+  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  int i,j;
+  int p;
+  int re;
+
+  LOG_I(PHY,"Initializing RU signal buffers (if_south %s)\n",ru_if_types[ru->if_south]);
+
+  if (ru->if_south <= REMOTE_IF5) { // this means REMOTE_IF5 or LOCAL_RF, so allocate memory for time-domain signals 
+    // Time-domain signals
+    ru->common.txdata        = (int32_t**)malloc16(ru->nb_tx*sizeof(int32_t*));
+    ru->common.rxdata        = (int32_t**)malloc16(ru->nb_rx*sizeof(int32_t*) );
+
+
+    for (i=0; i<ru->nb_tx; i++) {
+      // Allocate 10 subframes of I/Q TX signal data (time) if not
+      ru->common.txdata[i]  = (int32_t*)malloc16_clear( fp->samples_per_tti*10*sizeof(int32_t) );
+
+      LOG_I(PHY,"[INIT] common.txdata[%d] = %p (%lu bytes)\n",i,ru->common.txdata[i],
+	     fp->samples_per_tti*10*sizeof(int32_t));
+
+    }
+    for (i=0;i<ru->nb_rx;i++) {
+      ru->common.rxdata[i] = (int32_t*)malloc16_clear( fp->samples_per_tti*10*sizeof(int32_t) );
+    }
+  } // IF5 or local RF
+  else {
+    LOG_I(PHY,"No rxdata/txdata for RU\n");
+    ru->common.txdata        = (int32_t**)NULL;
+    ru->common.rxdata        = (int32_t**)NULL;
+
+  }
+  if (ru->function != NGFI_RRU_IF5) { // we need to do RX/TX RU processing
+    ru->common.rxdata_7_5kHz = (int32_t**)malloc16(ru->nb_rx*sizeof(int32_t*) );
+    for (i=0;i<ru->nb_rx;i++) {
+      ru->common.rxdata_7_5kHz[i] = (int32_t*)malloc16_clear( 2*fp->samples_per_tti*2*sizeof(int32_t) );
+      LOG_I(PHY,"rxdata_7_5kHz[%d] %p for RU %d\n",i,ru->common.rxdata_7_5kHz[i],ru->idx);
+    }
+  
+
+    // allocate IFFT input buffers (TX)
+    ru->common.txdataF_BF = (int32_t **)malloc16(ru->nb_tx*sizeof(int32_t*));
+    LOG_I(PHY,"[INIT] common.txdata_BF= %p (%lu bytes)\n",ru->common.txdataF_BF,
+	  ru->nb_tx*sizeof(int32_t*));
+    for (i=0; i<ru->nb_tx; i++) {
+      ru->common.txdataF_BF[i] = (int32_t*)malloc16_clear(fp->symbols_per_tti*fp->ofdm_symbol_size*sizeof(int32_t) );
+      LOG_I(PHY,"txdataF_BF[%d] %p for RU %d\n",i,ru->common.txdataF_BF[i],ru->idx);
+    }
+    // allocate FFT output buffers (RX)
+    ru->common.rxdataF     = (int32_t**)malloc16(ru->nb_rx*sizeof(int32_t*) );
+    for (i=0; i<ru->nb_rx; i++) {    
+      // allocate 2 subframes of I/Q signal data (frequency)
+      ru->common.rxdataF[i] = (int32_t*)malloc16_clear(sizeof(int32_t)*(2*fp->ofdm_symbol_size*fp->symbols_per_tti) ); 
+      LOG_I(PHY,"rxdataF[%d] %p for RU %d\n",i,ru->common.rxdataF[i],ru->idx);
+    }
+
+    /* number of elements of an array X is computed as sizeof(X) / sizeof(X[0]) */
+    AssertFatal(ru->nb_rx <= sizeof(ru->prach_rxsigF) / sizeof(ru->prach_rxsigF[0]),
+		"nb_antennas_rx too large");
+    ru->prach_rxsigF = (int16_t**)malloc(ru->nb_rx * sizeof(int16_t*));
+    for (i=0; i<ru->nb_rx; i++) {
+      ru->prach_rxsigF[i] = (int16_t*)malloc16_clear( fp->ofdm_symbol_size*12*2*sizeof(int16_t) );
+      LOG_D(PHY,"[INIT] prach_vars->rxsigF[%d] = %p\n",i,ru->prach_rxsigF[i]);
+    }
+
+    for (i=0; i<RC.nb_inst; i++) {
+      for (p=0;p<15;p++) {
+	if (p<ru->eNB_list[i]->frame_parms.nb_antenna_ports_eNB || p==5) {
+	  ru->beam_weights[i][p] = (int32_t **)malloc16_clear(ru->nb_tx*sizeof(int32_t*));
+	  for (j=0; j<ru->nb_tx; j++) {
+	    ru->beam_weights[i][p][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
+	    // antenna ports 0-3 are mapped on antennas 0-3
+	    // antenna port 4 is mapped on antenna 0
+	    // antenna ports 5-14 are mapped on all antennas 
+	    if (((i<4) && (i==j)) || ((i==4) && (j==0))) {
+	      for (re=0; re<fp->ofdm_symbol_size; re++) 
+		ru->beam_weights[i][p][j][re] = 0x00007fff; 
+	    }
+	    else if (i>4) {
+	      for (re=0; re<fp->ofdm_symbol_size; re++) 
+		ru->beam_weights[i][p][j][re] = 0x00007fff/ru->nb_tx; 
+	    }  
+	    LOG_D(PHY,"[INIT] lte_common_vars->beam_weights[%d][%d] = %p (%lu bytes)\n",
+		  i,j,ru->beam_weights[i][p][j],
+		  fp->ofdm_symbol_size*sizeof(int32_t)); 
+	  }
+	}
+      }
+    }
+  }
+  ru->common.sync_corr = (uint32_t*)malloc16_clear( LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(uint32_t)*fp->samples_per_tti );
+
+}
+  
 int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
                      unsigned char is_secondary_eNB,
                      unsigned char abstraction_flag)
@@ -1291,7 +1432,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   LTE_eNB_SRS* const srs_vars       = eNB->srs_vars;
   LTE_eNB_PRACH* const prach_vars   = &eNB->prach_vars;
   int i, j, eNB_id, UE_id; 
-  int re;
+
 
   eNB->total_dlsch_bitrate = 0;
   eNB->total_transmitted_bits = 0;
@@ -1303,248 +1444,124 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
         fp->phich_config_common.phich_duration);
   LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_eNB][MOD %02"PRIu8"][]\n", eNB->Mod_id);
 
-  if (eNB->node_function != NGFI_RRU_IF4p5) {
-    lte_gold(fp,eNB->lte_gold_table,fp->Nid_cell);
-    generate_pcfich_reg_mapping(fp);
-    generate_phich_reg_mapping(fp);
+  lte_gold(fp,eNB->lte_gold_table,fp->Nid_cell);
+  generate_pcfich_reg_mapping(fp);
+  generate_phich_reg_mapping(fp);
+  
+  for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+    eNB->first_run_timing_advance[UE_id] =
+      1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
     
-    for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-      eNB->first_run_timing_advance[UE_id] =
-	1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
+    // clear whole structure
+    bzero( &eNB->UE_stats[UE_id], sizeof(LTE_eNB_UE_stats) );
+    
+    eNB->physicalConfigDedicated[UE_id] = NULL;
+  }
+  
+  eNB->first_run_I0_measurements = 1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
+  
 
-      // clear whole structure
-      bzero( &eNB->UE_stats[UE_id], sizeof(LTE_eNB_UE_stats) );
-      
-      eNB->physicalConfigDedicated[UE_id] = NULL;
-    }
+  if (abstraction_flag==0) {
     
-    eNB->first_run_I0_measurements = 1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
+    common_vars->txdataF = (int32_t **)malloc16(NB_ANTENNA_PORTS_ENB*sizeof(int32_t*));
+    common_vars->rxdataF = (int32_t **)malloc16(64*sizeof(int32_t*));
+
+    for (i=0; i<NB_ANTENNA_PORTS_ENB; i++) {
+      if (i<fp->nb_antenna_ports_eNB || i==5) {
+	common_vars->txdataF[i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
+
+	LOG_D(PHY,"[INIT] common_vars->txdataF[%d] = %p (%lu bytes)\n",
+	       i,common_vars->txdataF[i],
+	       fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t));
+      }
+    }
+        
+
+
+      // Channel estimates for SRS
+      for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+	
+	srs_vars[UE_id].srs_ch_estimates      = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	srs_vars[UE_id].srs_ch_estimates_time = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	
+	for (i=0; i<fp->nb_antennas_rx; i++) {
+	  srs_vars[UE_id].srs_ch_estimates[i]      = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size );
+	  srs_vars[UE_id].srs_ch_estimates_time[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2 );
+	}
+      } //UE_id
+  } // abstraction_flag = 0
+  else { //UPLINK abstraction = 1
+    eNB->sinr_dB = (double*) malloc16_clear( fp->N_RB_DL*12*sizeof(double) );
   }
 
-  //  for (eNB_id=0; eNB_id<3; eNB_id++) {
-  {
-    eNB_id=0;
-    if (abstraction_flag==0) {
-      
-      // TX vars
-      if (eNB->node_function != NGFI_RCC_IF4p5)
-	common_vars->txdata[eNB_id]  = (int32_t**)malloc16(fp->nb_antennas_tx*sizeof(int32_t*));
-      common_vars->txdataF[eNB_id] = (int32_t **)malloc16(NB_ANTENNA_PORTS_ENB*sizeof(int32_t*));
-      common_vars->txdataF_BF[eNB_id] = (int32_t **)malloc16(fp->nb_antennas_tx*sizeof(int32_t*));
-
-      if (eNB->node_function != NGFI_RRU_IF5) {
-	for (i=0; i<NB_ANTENNA_PORTS_ENB; i++) {
-	  if (i<fp->nb_antenna_ports_eNB || i==5) {
-	    common_vars->txdataF[eNB_id][i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
-#ifdef DEBUG_PHY
-	    printf("[openair][LTE_PHY][INIT] common_vars->txdataF[%d][%d] = %p (%lu bytes)\n",
-		   eNB_id,i,common_vars->txdataF[eNB_id][i],
-		   fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t));
-#endif
-	  }
-	}
-      }
-      for (i=0; i<fp->nb_antennas_tx; i++) {
-	common_vars->txdataF_BF[eNB_id][i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t) );
-	if (eNB->node_function != NGFI_RCC_IF4p5)
-
-	  // Allocate 10 subframes of I/Q TX signal data (time) if not
-	  common_vars->txdata[eNB_id][i]  = (int32_t*)malloc16_clear( fp->samples_per_tti*10*sizeof(int32_t) );
-
-#ifdef DEBUG_PHY
-	printf("[openair][LTE_PHY][INIT] common_vars->txdata[%d][%d] = %p (%lu bytes)\n",eNB_id,i,common_vars->txdata[eNB_id][i],
-	       fp->samples_per_tti*10*sizeof(int32_t));
-#endif
-      }
-      
-      for (i=0; i<NB_ANTENNA_PORTS_ENB; i++) {
-	if (i<fp->nb_antenna_ports_eNB || i==5) {
-	  common_vars->beam_weights[eNB_id][i] = (int32_t **)malloc16_clear(fp->nb_antennas_tx*sizeof(int32_t*));
-	  for (j=0; j<fp->nb_antennas_tx; j++) {
-	    common_vars->beam_weights[eNB_id][i][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
-	    // antenna ports 0-3 are mapped on antennas 0-3
-	    // antenna port 4 is mapped on antenna 0
-	    // antenna ports 5-14 are mapped on all antennas 
-	    if (((i<4) && (i==j)) || ((i==4) && (j==0))) {
-	      for (re=0; re<fp->ofdm_symbol_size; re++) 
-		common_vars->beam_weights[eNB_id][i][j][re] = 0x00007fff; 
-	    }
-	    else if (i>4) {
-	      for (re=0; re<fp->ofdm_symbol_size; re++) 
-		common_vars->beam_weights[eNB_id][i][j][re] = 0x00007fff/fp->nb_antennas_tx; 
-	    }  
-#ifdef DEBUG_PHY
-	    msg("[openair][LTE_PHY][INIT] lte_common_vars->beam_weights[%d][%d][%d] = %p (%d bytes)\n",
-		eNB_id,i,j,common_vars->beam_weights[eNB_id][i][j],
-		fp->ofdm_symbol_size*sizeof(int32_t)); 
-#endif
-	  }
-	}
-      }
-
-      // RX vars
-      if (eNB->node_function != NGFI_RCC_IF4p5) {
-	common_vars->rxdata[eNB_id]        = (int32_t**)malloc16(fp->nb_antennas_rx*sizeof(int32_t*) );
-	common_vars->rxdata_7_5kHz[eNB_id] = (int32_t**)malloc16(fp->nb_antennas_rx*sizeof(int32_t*) );
-      }
-      common_vars->rxdataF[eNB_id]       = (int32_t**)malloc16(fp->nb_antennas_rx*sizeof(int32_t*) );
-
-      for (i=0; i<fp->nb_antennas_rx; i++) {
-	if (eNB->node_function != NGFI_RCC_IF4p5) {
-	  // allocate 2 subframes of I/Q signal data (time) if not an RCC (no time-domain signals)
-	  common_vars->rxdata[eNB_id][i] = (int32_t*)malloc16_clear( fp->samples_per_tti*10*sizeof(int32_t) );
-
-	  if (eNB->node_function != NGFI_RRU_IF5)
-	    // allocate 2 subframes of I/Q signal data (time, 7.5 kHz offset)
-	    common_vars->rxdata_7_5kHz[eNB_id][i] = (int32_t*)malloc16_clear( 2*fp->samples_per_tti*2*sizeof(int32_t) );
-	}
-	if (eNB->node_function != NGFI_RRU_IF5)
-	  // allocate 2 subframes of I/Q signal data (frequency)
-	  common_vars->rxdataF[eNB_id][i] = (int32_t*)malloc16_clear(sizeof(int32_t)*(2*fp->ofdm_symbol_size*fp->symbols_per_tti) );
-#ifdef DEBUG_PHY
-	printf("[openair][LTE_PHY][INIT] common_vars->rxdata[%d][%d] = %p (%lu bytes)\n",eNB_id,i,common_vars->rxdata[eNB_id][i],fp->samples_per_tti*10*sizeof(int32_t));
-	if (eNB->node_function != NGFI_RRU_IF5)
-	  printf("[openair][LTE_PHY][INIT] common_vars->rxdata_7_5kHz[%d][%d] = %p (%lu bytes)\n",eNB_id,i,common_vars->rxdata_7_5kHz[eNB_id][i],fp->samples_per_tti*2*sizeof(int32_t));
-#endif
-        common_vars->rxdataF[eNB_id][i] = (int32_t*)malloc16_clear(sizeof(int32_t)*(fp->ofdm_symbol_size*fp->symbols_per_tti) );
-      }
-      
-      if ((eNB->node_function != NGFI_RRU_IF4p5)&&(eNB->node_function != NGFI_RRU_IF5)) {
-	// Channel estimates for SRS
-	for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-	  
-	  srs_vars[UE_id].srs_ch_estimates[eNB_id]      = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	  srs_vars[UE_id].srs_ch_estimates_time[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	  
-	  for (i=0; i<fp->nb_antennas_rx; i++) {
-	    srs_vars[UE_id].srs_ch_estimates[eNB_id][i]      = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size );
-	    srs_vars[UE_id].srs_ch_estimates_time[eNB_id][i] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2 );
-	  }
-	} //UE_id
-	
-	common_vars->sync_corr[eNB_id] = (uint32_t*)malloc16_clear( LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(uint32_t)*fp->samples_per_tti );
-      }
-    } // abstraction_flag = 0
-    else { //UPLINK abstraction = 1
-      eNB->sinr_dB = (double*) malloc16_clear( fp->N_RB_DL*12*sizeof(double) );
-    }
-  } //eNB_id
-  
-  
   
   if (abstraction_flag==0) {
-    if ((eNB->node_function != NGFI_RRU_IF4p5)&&(eNB->node_function != NGFI_RRU_IF5)) {
-      generate_ul_ref_sigs_rx();
-      
-      // SRS
-      for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-	srs_vars[UE_id].srs = (int32_t*)malloc16_clear(2*fp->ofdm_symbol_size*sizeof(int32_t));
-      }
+    generate_ul_ref_sigs_rx();
+    
+    // SRS
+    for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+      srs_vars[UE_id].srs = (int32_t*)malloc16_clear(2*fp->ofdm_symbol_size*sizeof(int32_t));
     }
   }
   
   
   
-  // ULSCH VARS, skip if NFGI_RRU_IF4
   
-  if ((eNB->node_function!=NGFI_RRU_IF4p5)&&(eNB->node_function != NGFI_RRU_IF5))
-    prach_vars->prachF = (int16_t*)malloc16_clear( 1024*2*sizeof(int16_t) );
   
-  /* number of elements of an array X is computed as sizeof(X) / sizeof(X[0]) */
+  prach_vars->prachF = (int16_t*)malloc16_clear( 1024*2*sizeof(int16_t) );
+  
+  /* number of elements of an array X is computed as sizeof(X) / sizeof(X[0]) 
   AssertFatal(fp->nb_antennas_rx <= sizeof(prach_vars->rxsigF) / sizeof(prach_vars->rxsigF[0]),
               "nb_antennas_rx too large");
   for (i=0; i<fp->nb_antennas_rx; i++) {
     prach_vars->rxsigF[i] = (int16_t*)malloc16_clear( fp->ofdm_symbol_size*12*2*sizeof(int16_t) );
-#ifdef DEBUG_PHY
-    printf("[openair][LTE_PHY][INIT] prach_vars->rxsigF[%d] = %p\n",i,prach_vars->rxsigF[i]);
-#endif
-  }
+    LOG_D(PHY,"[INIT] prach_vars->rxsigF[%d] = %p\n",i,prach_vars->rxsigF[i]);
+    }*/
   
-  if ((eNB->node_function != NGFI_RRU_IF4p5)&&(eNB->node_function != NGFI_RRU_IF5)) {
-    AssertFatal(fp->nb_antennas_rx <= sizeof(prach_vars->prach_ifft) / sizeof(prach_vars->prach_ifft[0]),
-		"nb_antennas_rx too large");
-    for (i=0; i<fp->nb_antennas_rx; i++) {
-      prach_vars->prach_ifft[i] = (int16_t*)malloc16_clear(1024*2*sizeof(int16_t));
-#ifdef DEBUG_PHY
-      printf("[openair][LTE_PHY][INIT] prach_vars->prach_ifft[%d] = %p\n",i,prach_vars->prach_ifft[i]);
-#endif
-    }
 
-    for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-      
-      //FIXME
-      pusch_vars[UE_id] = (LTE_eNB_PUSCH*)malloc16_clear( NUMBER_OF_UE_MAX*sizeof(LTE_eNB_PUSCH) );
-      
-      if (abstraction_flag==0) {
-	for (eNB_id=0; eNB_id<3; eNB_id++) {
-	  
-	  pusch_vars[UE_id]->rxdataF_ext[eNB_id]      = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	  pusch_vars[UE_id]->rxdataF_ext2[eNB_id]     = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	  pusch_vars[UE_id]->drs_ch_estimates[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	  pusch_vars[UE_id]->drs_ch_estimates_time[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	  pusch_vars[UE_id]->rxdataF_comp[eNB_id]     = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	  pusch_vars[UE_id]->ul_ch_mag[eNB_id]  = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	  pusch_vars[UE_id]->ul_ch_magb[eNB_id] = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	  
-	  for (i=0; i<fp->nb_antennas_rx; i++) {
-	    // RK 2 times because of output format of FFT!
-	    // FIXME We should get rid of this
-	    pusch_vars[UE_id]->rxdataF_ext[eNB_id][i]      = (int32_t*)malloc16_clear( 2*sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
-	    pusch_vars[UE_id]->rxdataF_ext2[eNB_id][i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
-	    pusch_vars[UE_id]->drs_ch_estimates[eNB_id][i] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
-	    pusch_vars[UE_id]->drs_ch_estimates_time[eNB_id][i] = (int32_t*)malloc16_clear( 2*2*sizeof(int32_t)*fp->ofdm_symbol_size );
-	    pusch_vars[UE_id]->rxdataF_comp[eNB_id][i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
-	    pusch_vars[UE_id]->ul_ch_mag[eNB_id][i]  = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
-	    pusch_vars[UE_id]->ul_ch_magb[eNB_id][i] = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
-	  }
-	} //eNB_id
-	
-	pusch_vars[UE_id]->llr = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
-      } // abstraction_flag
-    } //UE_id
 
+  
+  for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+    
+    //FIXME
+    pusch_vars[UE_id] = (LTE_eNB_PUSCH*)malloc16_clear( NUMBER_OF_UE_MAX*sizeof(LTE_eNB_PUSCH) );
     
     if (abstraction_flag==0) {
-      if (is_secondary_eNB) {
-	for (eNB_id=0; eNB_id<3; eNB_id++) {
-	  eNB->dl_precoder_SeNB[eNB_id] = (int **)malloc16(4*sizeof(int*));
-	  
-	  if (eNB->dl_precoder_SeNB[eNB_id]) {
-#ifdef DEBUG_PHY
-	    printf("[openair][SECSYS_PHY][INIT] eNB->dl_precoder_SeNB[%d] allocated at %p\n",eNB_id,
-		eNB->dl_precoder_SeNB[eNB_id]);
-#endif
-	  } else {
-	    printf("[openair][SECSYS_PHY][INIT] eNB->dl_precoder_SeNB[%d] not allocated\n",eNB_id);
-	    return(-1);
-	  }
-	  
-	  for (j=0; j<fp->nb_antennas_tx; j++) {
-	    eNB->dl_precoder_SeNB[eNB_id][j] = (int *)malloc16(2*sizeof(int)*(fp->ofdm_symbol_size)); // repeated format (hence the '2*')
-	    
-	    if (eNB->dl_precoder_SeNB[eNB_id][j]) {
-#ifdef DEBUG_PHY
-	      printf("[openair][LTE_PHY][INIT] eNB->dl_precoder_SeNB[%d][%d] allocated at %p\n",eNB_id,j,
-		  eNB->dl_precoder_SeNB[eNB_id][j]);
-#endif
-	      memset(eNB->dl_precoder_SeNB[eNB_id][j],0,2*sizeof(int)*(fp->ofdm_symbol_size));
-	    } else {
-	      printf("[openair][LTE_PHY][INIT] eNB->dl_precoder_SeNB[%d][%d] not allocated\n",eNB_id,j);
-	      return(-1);
-	    }
-	  } //for(j=...nb_antennas_tx
-	  
-	} //for(eNB_id...
-      }
-    }
-    
-    for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++)
-      eNB->UE_stats_ptr[UE_id] = &eNB->UE_stats[UE_id];
-    
-    eNB->pdsch_config_dedicated->p_a = dB0; //defaul value until overwritten by RRCConnectionReconfiguration
+      for (eNB_id=0; eNB_id<3; eNB_id++) {
+	
+	pusch_vars[UE_id]->rxdataF_ext      = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	pusch_vars[UE_id]->rxdataF_ext2     = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	pusch_vars[UE_id]->drs_ch_estimates = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	pusch_vars[UE_id]->drs_ch_estimates_time = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	pusch_vars[UE_id]->rxdataF_comp     = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	pusch_vars[UE_id]->ul_ch_mag  = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	pusch_vars[UE_id]->ul_ch_magb = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	
+	for (i=0; i<fp->nb_antennas_rx; i++) {
+	  // RK 2 times because of output format of FFT!
+	  // FIXME We should get rid of this
+	  pusch_vars[UE_id]->rxdataF_ext[i]      = (int32_t*)malloc16_clear( 2*sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
+	  pusch_vars[UE_id]->rxdataF_ext2[i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
+	  pusch_vars[UE_id]->drs_ch_estimates[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
+	  pusch_vars[UE_id]->drs_ch_estimates_time[i] = (int32_t*)malloc16_clear( 2*2*sizeof(int32_t)*fp->ofdm_symbol_size );
+	  pusch_vars[UE_id]->rxdataF_comp[i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
+	  pusch_vars[UE_id]->ul_ch_mag[i]  = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
+	  pusch_vars[UE_id]->ul_ch_magb[i] = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
+	}
+      } //eNB_id
+      
+      pusch_vars[UE_id]->llr = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
+    } // abstraction_flag
+  } //UE_id
 
-    init_prach_tables(839);
-  } // node_function != NGFI_RRU_IF4p5
+    
+  for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++)
+    eNB->UE_stats_ptr[UE_id] = &eNB->UE_stats[UE_id];
+  
+  eNB->pdsch_config_dedicated->p_a = dB0; //defaul value until overwritten by RRCConnectionReconfiguration
+  
+  init_prach_tables(839);
+
 
   return (0);
 

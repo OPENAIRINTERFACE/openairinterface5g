@@ -484,6 +484,16 @@ typedef struct {
   uint8_t N_RB_DL;
   /// Number of resource blocks (RB) in UL
   uint8_t N_RB_UL;
+  /// EUTRA Band
+  uint8_t eutra_band;
+  /// DL carrier frequency
+  uint32_t dl_CarrierFreq;
+  /// UL carrier frequency
+  uint32_t ul_CarrierFreq;
+  /// TX attenuation
+  uint32_t att_tx;
+  /// RX attenuation
+  uint32_t att_rx;
   ///  total Number of Resource Block Groups: this is ceil(N_PRB/P)
   uint8_t N_RBG;
   /// Total Number of Resource Block Groups SubSets: this is P
@@ -508,28 +518,6 @@ typedef struct {
   uint8_t srsX;
   /// indicates if node is a UE (NODE=2) or eNB (PRIMARY_CH=0).
   uint8_t node_id;
-  /// Frequency index of CBMIMO1 card
-  uint8_t freq_idx;
-  /// RX Frequency for ExpressMIMO/LIME
-  uint32_t carrier_freq[4];
-  /// TX Frequency for ExpressMIMO/LIME
-  uint32_t carrier_freqtx[4];
-  /// RX gain for ExpressMIMO/LIME
-  uint32_t rxgain[4];
-  /// TX gain for ExpressMIMO/LIME
-  uint32_t txgain[4];
-  /// RF mode for ExpressMIMO/LIME
-  uint32_t rfmode[4];
-  /// RF RX DC Calibration for ExpressMIMO/LIME
-  uint32_t rxdc[4];
-  /// RF TX DC Calibration for ExpressMIMO/LIME
-  uint32_t rflocal[4];
-  /// RF VCO calibration for ExpressMIMO/LIME
-  uint32_t rfvcolocal[4];
-  /// Turns on second TX of CBMIMO1 card
-  uint8_t dual_tx;
-  /// flag to indicate SISO transmission
-  uint8_t mode1_flag;
   /// Indicator that 20 MHz channel uses 3/4 sampling frequency
   uint8_t threequarter_fs;
   /// Size of FFT
@@ -623,12 +611,25 @@ typedef enum {
 } PRECODE_TYPE_t;
 
 typedef struct {
+  /// \brief Pointers (dynamic) to the received data in the time domain.
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
+  int32_t **rxdata;
+  /// \brief Pointers (dynamic) to the received data in the frequency domain.
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
+  int32_t **rxdataF;
   /// \brief holds the transmit data in the frequency domain.
   /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER. //?
   /// - first index: eNB id [0..2] (hard coded)
   /// - second index: tx antenna [0..14[ where 14 is the total supported antenna ports.
   /// - third index: sample [0..]
   int32_t **txdataF;
+  /// \brief Holds the beamforming weights
+  /// - first index: eNB id [0..2] (hard coded)
+  /// - second index: eNB antenna port index (hard coded)
+  /// - third index: tx antenna [0..nb_antennas_tx[
+  /// - fourth index: sample [0..]
 } LTE_eNB_COMMON;
 
 typedef struct {
@@ -637,10 +638,8 @@ typedef struct {
   /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
   int32_t **txdata;
   /// \brief holds the transmit data after beamforming in the frequency domain.
-  /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER. //?
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: tx antenna [0..nb_antennas_tx[
-  /// - third index: sample [0..]
+  /// - first index: tx antenna [0..nb_antennas_tx[
+  /// - second index: sample [0..]
   int32_t **txdataF_BF;
   /// \brief Holds the receive data in the frequency domain.
   /// - first index: rx antenna [0..nb_antennas_rx[
@@ -656,13 +655,7 @@ typedef struct {
   int32_t **rxdataF;
   /// \brief Holds output of the sync correlator.
   /// - first index: sample [0..samples_per_tti*10[
-  uint32_t *sync_corr[3];
-  /// \brief Holds the beamforming weights
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: eNB antenna port index (hard coded)
-  /// - third index: tx antenna [0..nb_antennas_tx[
-  /// - fourth index: sample [0..]
-  int32_t **beam_weights[15];
+  uint32_t *sync_corr;
   /// \brief Holds the tdd reciprocity calibration coefficients 
   /// - first index: eNB id [0..2] (hard coded) 
   /// - second index: tx antenna [0..nb_antennas_tx[

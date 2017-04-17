@@ -98,6 +98,18 @@ typedef struct {
   void (*SR_indication)(module_id_t Mod_id,int CC_id,frame_t frameP,rnti_t rnti,sub_frame_t subframe);
   /// Indicate UL Failure to eNodeB MAC
   void (*UL_failure_indication)(module_id_t Mod_id,int CC_id,frame_t frameP,rnti_t rnti,sub_frame_t subframe);
+
+  /// Configure Common PHY parameters from SIB1
+  void (*phy_config_mib_eNB)(module_id_t Mod_id,int CC_id,
+			     int eutra_band,
+			     int N_RB_DL,
+			     PHICH_Config_t *phich_Config,
+			     int Nid_cell,
+			     int Ncp,
+			     int p_eNB,
+			     uint32_t      dl_CarrierFreq,
+			     uint32_t      ul_CarrierFreq);
+
   /// Configure Common PHY parameters from SIB1
   void (*phy_config_sib1_eNB)(module_id_t Mod_id,int CC_id,
                               TDD_Config_t *tdd_config,

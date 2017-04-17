@@ -56,11 +56,8 @@ extern const uint8_t cqi2fmt1x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
 
 extern const uint8_t cqi2fmt2x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
 
-extern UE_MAC_INST *UE_mac_inst;
-extern eNB_MAC_INST *eNB_mac_inst;
-extern eNB_RRC_INST *eNB_rrc_inst;
 extern UE_RRC_INST *UE_rrc_inst;
-extern UE_MAC_INST *ue_mac_inst;
+extern UE_MAC_INST *UE_mac_inst;
 extern MAC_RLC_XFACE *Mac_rlc_xface;
 extern uint8_t Is_rrc_registered;
 

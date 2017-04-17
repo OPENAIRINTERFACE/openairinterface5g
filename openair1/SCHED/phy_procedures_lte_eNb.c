@@ -186,7 +186,7 @@ int mac_phy_remove_ue(module_id_t Mod_idP,rnti_t rntiP) {
   PHY_VARS_eNB *eNB;
 
   for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
-    eNB = PHY_vars_eNB_g[Mod_idP][CC_id];
+    eNB = RC.eNB[Mod_idP][CC_id];
     for (i=0; i<NUMBER_OF_UE_MAX; i++) {
       if ((eNB->dlsch[i]==NULL) || (eNB->ulsch[i]==NULL)) {
 	MSC_LOG_EVENT(MSC_PHY_ENB, "0 Failed remove ue %"PRIx16" (ENOMEM)", rnti);
@@ -238,7 +238,7 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
   LTE_eNB_ULSCH_t *ULSCH_ptr;
   uint8_t ulsch_subframe,ulsch_frame;
   int i;
-  int8_t UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id][CC_id]);
+  int8_t UE_id = find_ue(rnti,RC.eNB[Mod_id][CC_id]);
 
   if (UE_id==-1) {
     LOG_D(PHY,"Cannot find UE with rnti %x (Mod_id %d, CC_id %d)\n",rnti, Mod_id, CC_id);
@@ -248,7 +248,7 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
 
   if ((harq_flag == openair_harq_DL) || (harq_flag == openair_harq_RA))  {// this is a DL request
 
-    DLSCH_ptr = PHY_vars_eNB_g[Mod_id][CC_id]->dlsch[(uint32_t)UE_id][0];
+    DLSCH_ptr = RC.eNB[Mod_id][CC_id]->dlsch[(uint32_t)UE_id][0];
 
     if (harq_flag == openair_harq_RA) {
       if (DLSCH_ptr->harq_processes[0] != NULL) {
@@ -275,11 +275,11 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
     }
   } else { // This is a UL request
 
-    ULSCH_ptr = PHY_vars_eNB_g[Mod_id][CC_id]->ulsch[(uint32_t)UE_id];
-    ulsch_subframe = pdcch_alloc2ul_subframe(&PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms,subframe);
-    ulsch_frame    = pdcch_alloc2ul_frame(&PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms,frame,subframe);
+    ULSCH_ptr = RC.eNB[Mod_id][CC_id]->ulsch[(uint32_t)UE_id];
+    ulsch_subframe = pdcch_alloc2ul_subframe(&RC.eNB[Mod_id][CC_id]->frame_parms,subframe);
+    ulsch_frame    = pdcch_alloc2ul_frame(&RC.eNB[Mod_id][CC_id]->frame_parms,frame,subframe);
     // Note this is for TDD configuration 3,4,5 only
-    *harq_pid = subframe2harq_pid(&PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms,
+    *harq_pid = subframe2harq_pid(&RC.eNB[Mod_id][CC_id]->frame_parms,
                                   ulsch_frame,
                                   ulsch_subframe);
     *round    = ULSCH_ptr->harq_processes[*harq_pid]->round;
@@ -291,12 +291,12 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
 
 int16_t get_target_pusch_rx_power(const module_id_t module_idP, const uint8_t CC_id)
 {
-  return PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.ul_power_control_config_common.p0_NominalPUSCH;
+  return RC.eNB[module_idP][CC_id]->frame_parms.ul_power_control_config_common.p0_NominalPUSCH;
 }
 
 int16_t get_target_pucch_rx_power(const module_id_t module_idP, const uint8_t CC_id)
 {
-  return PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.ul_power_control_config_common.p0_NominalPUCCH;
+  return RC.eNB[module_idP][CC_id]->frame_parms.ul_power_control_config_common.p0_NominalPUCCH;
 }
 
 #ifdef EMOS
@@ -373,7 +373,7 @@ void phy_procedures_emos_eNB_RX(unsigned char subframe,PHY_VARS_eNB *eNB)
     emos_dump_eNB.rx_total_gain_dB = eNB->rx_total_gain_dB;
     emos_dump_eNB.mimo_mode = eNB->transmission_mode[0];
     memcpy(&emos_dump_eNB.measurements,
-           &eNB->measurements[0],
+           &eNB->measurements,
            sizeof(PHY_MEASUREMENTS_eNB));
     memcpy(&emos_dump_eNB.UE_stats[0],&eNB->UE_stats[0],NUMBER_OF_UE_MAX*sizeof(LTE_eNB_UE_stats));
 
@@ -419,7 +419,7 @@ void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,PHY_VARS_RN *rn,rel
   if (eNB->abstraction_flag==0) {
     // This is DL-Cell spec pilots in Control region
     generate_pilots_slot(eNB,
-			 eNB->common_vars.txdataF[0],
+			 eNB->common_vars.txdataF,
 			 AMP,
 			 subframe<<1,1);
   }
@@ -490,7 +490,7 @@ void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,PHY_VARS_RN *rn,rel
 void common_signal_procedures (PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
-  int **txdataF = eNB->common_vars.txdataF[0];
+  int **txdataF = eNB->common_vars.txdataF;
   uint8_t *pbch_pdu=&eNB->pbch_pdu[0];
   int subframe = proc->subframe_tx;
   int frame = proc->frame_tx;
@@ -1104,7 +1104,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
 
 
     dlsch_modulation(eNB,
-		     eNB->common_vars.txdataF[0],
+		     eNB->common_vars.txdataF,
 		     AMP,
 		     subframe,
 		     num_pdcch_symbols,
@@ -1199,7 +1199,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   // clear the transmit data array for the current subframe
   if (eNB->abstraction_flag==0) {
     for (aa=0; aa<fp->nb_antenna_ports_eNB; aa++) {      
-      memset(&eNB->common_vars.txdataF[0][aa][subframe*fp->ofdm_symbol_size*(fp->symbols_per_tti)],
+      memset(&eNB->common_vars.txdataF[aa][subframe*fp->ofdm_symbol_size*(fp->symbols_per_tti)],
              0,fp->ofdm_symbol_size*(fp->symbols_per_tti)*sizeof(int32_t));
     }
   }
@@ -1389,7 +1389,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
                                          0,
                                          AMP,
                                          fp,
-                                         eNB->common_vars.txdataF[0],
+                                         eNB->common_vars.txdataF,
                                          subframe);
 
   }
@@ -1950,17 +1950,22 @@ void prach_procedures(PHY_VARS_eNB *eNB) {
   int subframe = eNB->proc.subframe_prach;
   int frame = eNB->proc.frame_prach;
   uint8_t CC_id = eNB->CC_id;
+  RU_t *ru;
+  int aa=0;
+  int ru_aa;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,1);
   memset(&preamble_energy_list[0],0,64*sizeof(uint16_t));
   memset(&preamble_delay_list[0],0,64*sizeof(uint16_t));
 
+
+  for (i=0;i<eNB->num_RU;i++) {
+    ru=eNB->RU_list[i];
+    for (ru_aa=0;ru_aa<ru->nb_rx;ru_aa++) eNB->prach_vars.rxsigF[aa++] = eNB->RU_list[i]->prach_rxsigF[ru_aa];
+  }
   if (eNB->abstraction_flag == 0) {
-    LOG_D(PHY,"[eNB %d][RAPROC] Frame %d, Subframe %d : PRACH RX Signal Power : %d dBm\n",eNB->Mod_id, 
-          frame,subframe,dB_fixed(signal_energy(&eNB->common_vars.rxdata[0][0][subframe*fp->samples_per_tti],512)) - eNB->rx_total_gain_dB);
-
-
     rx_prach(eNB,
+	     NULL,
              preamble_energy_list,
              preamble_delay_list,
              frame,
@@ -2433,16 +2438,12 @@ void cba_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq_p
     
     if (eNB->abstraction_flag==0) {
       rx_ulsch(eNB,proc,
-	       eNB->UE_stats[UE_id].sector,  // this is the effective sector id
-	       UE_id,
-	       eNB->ulsch,
-	       0);
+	       UE_id);
     }
     
 #ifdef PHY_ABSTRACTION
     else {
       rx_ulsch_emul(eNB,proc,
-		    eNB->UE_stats[UE_id].sector,  // this is the effective sector id
 		    UE_id);
     }
     
@@ -2566,70 +2567,7 @@ void cba_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq_p
 
 }
 
-typedef struct {
-  PHY_VARS_eNB *eNB;
-  int slot;
-} fep_task;
-
-void fep0(PHY_VARS_eNB *eNB,int slot) {
-
-  eNB_proc_t *proc       = &eNB->proc;
-  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
-  int l;
-
-  //  printf("fep0: slot %d\n",slot);
-
-  remove_7_5_kHz(eNB,(slot&1)+(proc->subframe_rx<<1));
-  for (l=0; l<fp->symbols_per_tti/2; l++) {
-    slot_fep_ul(fp,
-		&eNB->common_vars,
-		l,
-		(slot&1)+(proc->subframe_rx<<1),
-		0,
-		0
-		);
-  }
-}
-
-
-
 extern int oai_exit;
-
-static void *fep_thread(void *param) {
-
-  PHY_VARS_eNB *eNB = (PHY_VARS_eNB *)param;
-  eNB_proc_t *proc  = &eNB->proc;
-  while (!oai_exit) {
-
-    if (wait_on_condition(&proc->mutex_fep,&proc->cond_fep,&proc->instance_cnt_fep,"fep thread")<0) break;  
-    fep0(eNB,0);
-    if (release_thread(&proc->mutex_fep,&proc->instance_cnt_fep,"fep thread")<0) break;
-
-    if (pthread_cond_signal(&proc->cond_fep) != 0) {
-      printf("[eNB] ERROR pthread_cond_signal for fep thread exit\n");
-      exit_fun( "ERROR pthread_cond_signal" );
-      return NULL;
-    }
-  }
-
-
-
-  return(NULL);
-}
-
-void init_fep_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_fep) {
-
-  eNB_proc_t *proc = &eNB->proc;
-
-  proc->instance_cnt_fep         = -1;
-    
-  pthread_mutex_init( &proc->mutex_fep, NULL);
-  pthread_cond_init( &proc->cond_fep, NULL);
-
-  pthread_create(&proc->pthread_fep, attr_fep, fep_thread, (void*)eNB);
-
-
-}
 
 extern void *td_thread(void*);
 
@@ -2661,101 +2599,6 @@ void init_te_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_te) {
 
   printf("Creating te_thread\n");
   pthread_create(&proc->pthread_te, attr_te, te_thread, (void*)&proc->tep);
-
-}
-
-
-void eNB_fep_full_2thread(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc_rxtx) {
-
-  eNB_proc_t *proc = &eNB->proc;
-
-  struct timespec wait;
-
-  wait.tv_sec=0;
-  wait.tv_nsec=5000000L;
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,1);
-  start_meas(&eNB->ofdm_demod_stats);
-
-  if (pthread_mutex_timedlock(&proc->mutex_fep,&wait) != 0) {
-    printf("[eNB] ERROR pthread_mutex_lock for fep thread (IC %d)\n", proc->instance_cnt_fep);
-    exit_fun( "error locking mutex_fep" );
-    return;
-  }
-
-  if (proc->instance_cnt_fep==0) {
-    printf("[eNB] FEP thread busy\n");
-    exit_fun("FEP thread busy");
-    pthread_mutex_unlock( &proc->mutex_fep );
-    return;
-  }
-  
-  ++proc->instance_cnt_fep;
-
-
-  if (pthread_cond_signal(&proc->cond_fep) != 0) {
-    printf("[eNB] ERROR pthread_cond_signal for fep thread\n");
-    exit_fun( "ERROR pthread_cond_signal" );
-    return;
-  }
-  
-  pthread_mutex_unlock( &proc->mutex_fep );
-
-  // call second slot in this symbol
-  fep0(eNB,1);
-
-  wait_on_busy_condition(&proc->mutex_fep,&proc->cond_fep,&proc->instance_cnt_fep,"fep thread");  
-
-  stop_meas(&eNB->ofdm_demod_stats);
-}
-
-
-
-void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc_rxtx) {
-
-  int l;
-  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,1);
-  start_meas(&eNB->ofdm_demod_stats);
-  remove_7_5_kHz(eNB,proc_rxtx->subframe_rx<<1);
-  remove_7_5_kHz(eNB,1+(proc_rxtx->subframe_rx<<1));
-  for (l=0; l<fp->symbols_per_tti/2; l++) {
-    slot_fep_ul(fp,
-		&eNB->common_vars,
-		l,
-		(proc_rxtx->subframe_rx)<<1,
-		0,
-		0
-		);
-    slot_fep_ul(fp,
-		&eNB->common_vars,
-		l,
-		1+((proc_rxtx->subframe_rx)<<1),
-		0,
-		0
-		);
-  }
-  stop_meas(&eNB->ofdm_demod_stats);
-  
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,0);
-  
-  if (eNB->node_function == NGFI_RRU_IF4p5) {
-    /// **** send_IF4 of rxdataF to RCC (no prach now) **** ///
-    LOG_D(PHY,"send_IF4p5 (PULFFT): frame %d, subframe %d\n",proc_rxtx->frame_rx,proc_rxtx->subframe_rx);
-    send_IF4p5(eNB, proc_rxtx->frame_rx, proc_rxtx->subframe_rx, IF4p5_PULFFT, 0);
-  }    
-}
-
-void eNB_fep_rru_if5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc_rxtx) {
-
-  eNB_proc_t *proc=&eNB->proc;
-  uint8_t seqno=0;
-
-  /// **** send_IF5 of rxdata to BBU **** ///       
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 1 );  
-  send_IF5(eNB, proc->timestamp_rx, proc->subframe_rx, &seqno, IF5_RRH_GW_UL);
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 0 );          
 
 }
 
@@ -2801,6 +2644,7 @@ void do_prach(PHY_VARS_eNB *eNB,int frame,int subframe) {
 
 }
 
+/*
 void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc){
 
 
@@ -2833,6 +2677,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc){
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON+offset, 0 );
 }
 
+*/
 
 void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const relaying_type_t r_type)
 {
@@ -2971,17 +2816,15 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 
       if (eNB->abstraction_flag==0) {
         rx_ulsch(eNB,proc,
-                 eNB->UE_stats[i].sector,  // this is the effective sector id
-                 i,
-                 eNB->ulsch,
-                 0);
+                 i);
+
+
       }
 
 #ifdef PHY_ABSTRACTION
       else {
         rx_ulsch_emul(eNB,proc,
-                      eNB->UE_stats[i].sector,  // this is the effective sector id
-                      i);
+		      i);
       }
 
 #endif
@@ -3017,8 +2860,8 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
             dB_fixed(eNB->pusch_vars[i]->ulsch_power[1]),
             eNB->UE_stats[i].UL_rssi[0],
             eNB->UE_stats[i].UL_rssi[1],
-            eNB->measurements->n0_power_dB[0],
-            eNB->measurements->n0_power_dB[1],
+            eNB->measurements.n0_power_dB[0],
+            eNB->measurements.n0_power_dB[1],
             eNB->ulsch[i]->harq_processes[harq_pid]->o_ACK[0],
             eNB->ulsch[i]->harq_processes[harq_pid]->o_ACK[1],
             ret);
@@ -3081,8 +2924,8 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 		dB_fixed(eNB->pusch_vars[i]->ulsch_power[1]),
 		eNB->UE_stats[i].UL_rssi[0],
 		eNB->UE_stats[i].UL_rssi[1],
-		eNB->measurements->n0_power_dB[0],
-		eNB->measurements->n0_power_dB[1],
+		eNB->measurements.n0_power_dB[0],
+		eNB->measurements.n0_power_dB[1],
 		eNB->ulsch[i]->harq_processes[harq_pid]->o_ACK[0],
 		eNB->ulsch[i]->harq_processes[harq_pid]->o_ACK[1],
 		ret);
@@ -3190,8 +3033,8 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 		dB_fixed(eNB->pusch_vars[i]->ulsch_power[1]),
 		eNB->UE_stats[i].UL_rssi[0],
 		eNB->UE_stats[i].UL_rssi[1],
-		eNB->measurements->n0_power_dB[0],
-		eNB->measurements->n0_power_dB[1],
+		eNB->measurements.n0_power_dB[0],
+		eNB->measurements.n0_power_dB[1],
 		eNB->ulsch[i]->harq_processes[harq_pid]->o_ACK[0],
 		eNB->ulsch[i]->harq_processes[harq_pid]->o_ACK[1],
 		ret);

@@ -571,7 +571,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
   ue->measurements.n0_power_avg_dB = dB_fixed( ue->measurements.n0_power_avg);
 
   for (eNB_id = 0; eNB_id < ue->n_connected_eNB; eNB_id++) {
-    if (frame_parms->mode1_flag==0) {
+    if (frame_parms->nb_antenna_ports_eNB!=1) {
       // cqi/pmi information
 
       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
@@ -758,6 +758,6 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
 void lte_ue_measurements_emul(PHY_VARS_UE *ue,uint8_t subframe,uint8_t eNB_id)
 {
 
-  msg("[PHY] EMUL UE lte_ue_measurements_emul subframe %d, eNB_id %d\n",subframe,eNB_id);
+  LOG_D(PHY,"EMUL UE lte_ue_measurements_emul subframe %d, eNB_id %d\n",subframe,eNB_id);
 }
 

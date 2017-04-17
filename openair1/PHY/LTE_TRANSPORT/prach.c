@@ -1089,6 +1089,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 //__m128i mmtmpX0,mmtmpX1,mmtmpX2,mmtmpX3;
 
 void rx_prach(PHY_VARS_eNB *eNB,
+	      RU_t *ru,
 	      uint16_t *preamble_energy_list, 
 	      uint16_t *preamble_delay_list, 
 	      uint16_t Nf, 
@@ -1096,16 +1097,41 @@ void rx_prach(PHY_VARS_eNB *eNB,
 {
 
   int i;
-  lte_frame_type_t frame_type = eNB->frame_parms.frame_type;
-  int subframe                = eNB->proc.subframe_prach;
-  uint16_t rootSequenceIndex  = eNB->frame_parms.prach_config_common.rootSequenceIndex;
-  uint8_t prach_ConfigIndex   = eNB->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
-  uint8_t Ncs_config          = eNB->frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;
-  uint8_t restricted_set      = eNB->frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag;
-  int16_t *prachF             = eNB->prach_vars.prachF;
-  int16_t **rxsigF            = eNB->prach_vars.rxsigF;
-  int16_t **prach_ifft        = eNB->prach_vars.prach_ifft;
-  int16_t *prach[eNB->frame_parms.nb_antennas_rx];
+
+  LTE_DL_FRAME_PARMS *fp;
+  lte_frame_type_t   frame_type;
+  uint16_t           rootSequenceIndex;  
+  uint8_t            prach_ConfigIndex;   
+  uint8_t            Ncs_config;          
+  uint8_t            restricted_set;      
+
+  int                subframe;
+  int16_t            *prachF=NULL;
+  int16_t            **rxsigF=NULL;
+  int16_t            **prach_ifft=NULL;
+
+  if (ru) fp = &ru->frame_parms;
+  else if (eNB) fp = &eNB->frame_parms;
+  else AssertFatal(1==0,"rx_prach called without valid RU or eNB descriptor\n");
+  
+  frame_type          = fp->frame_type;
+  rootSequenceIndex   = fp->prach_config_common.rootSequenceIndex;
+  prach_ConfigIndex   = fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
+  Ncs_config          = fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;
+  restricted_set      = fp->prach_config_common.prach_ConfigInfo.highSpeedFlag;
+  int16_t *prach[fp->nb_antennas_rx];
+
+  if (eNB) {
+    subframe          = eNB->proc.subframe_prach;
+    prachF            = eNB->prach_vars.prachF;
+    rxsigF            = eNB->prach_vars.rxsigF;
+    prach_ifft        = eNB->prach_vars.prach_ifft;
+  }
+  else {
+    subframe          = ru->proc.subframe_prach;
+    rxsigF            = ru->prach_rxsigF;
+  }
+
   int16_t *prach2;
   uint8_t n_ra_prb;
   uint8_t preamble_index;
@@ -1133,10 +1159,12 @@ void rx_prach(PHY_VARS_eNB *eNB,
   int fft_size,log2_ifft_size;
   uint8_t nb_ant_rx = 1; //eNB->frame_parms.nb_antennas_rx;
 
+#ifdef PRACH_DEBUG
   int en;
+#endif
 
   for (aa=0; aa<nb_ant_rx; aa++) {
-    prach[aa] = (int16_t*)&eNB->common_vars.rxdata[0][aa][subframe*eNB->frame_parms.samples_per_tti-eNB->N_TA_offset];
+    if (ru) prach[aa] = (int16_t*)&ru->common.rxdata[aa][subframe*fp->samples_per_tti-ru->N_TA_offset];
   }
 
   // First compute physical root sequence
@@ -1158,9 +1186,9 @@ void rx_prach(PHY_VARS_eNB *eNB,
     NCS = NCS_restricted[Ncs_config];
   }
 
-  start_meas(&eNB->rx_prach);
+  if (eNB) start_meas(&eNB->rx_prach);
 
-  n_ra_prb = get_prach_prb_offset(&(eNB->frame_parms),tdd_mapindex,Nf);
+  n_ra_prb = get_prach_prb_offset(fp,tdd_mapindex,Nf);
   prach_root_sequence_map = (prach_fmt < 4) ? prach_root_sequence_map0_3 : prach_root_sequence_map4;
 
   // PDP is oversampled, e.g. 1024 sample instead of 839
@@ -1194,7 +1222,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
   }
 
   // Adjust CP length based on UL bandwidth
-  switch (eNB->frame_parms.N_RB_UL) {
+  switch (fp->N_RB_UL) {
   case 6:
     Ncp>>=4;
     break;
@@ -1216,21 +1244,20 @@ void rx_prach(PHY_VARS_eNB *eNB,
     break;
 
   case 100:
-    if (eNB->frame_parms.threequarter_fs == 1)
+    if (fp->threequarter_fs == 1)
       Ncp=(Ncp*3)>>2;
     break;
   }
 
 
-  if ((eNB->node_function == eNodeB_3GPP) ||
-      (eNB->node_function == eNodeB_3GPP_BBU) ||
-      (eNB->node_function == NGFI_RRU_IF4p5)) { // compute the DFTs of the PRACH temporal resources
+  if (((eNB!=NULL) && (ru!=NULL) && (ru->function != NGFI_RRU_IF4p5))||
+      ((eNB==NULL) && (ru!=NULL) && (ru->function == NGFI_RRU_IF4p5))) { // compute the DFTs of the PRACH temporal resources
     // Do forward transform
     for (aa=0; aa<nb_ant_rx; aa++) {
       prach2 = prach[aa] + (Ncp<<1);
   
       // do DFT
-      switch (eNB->frame_parms.N_RB_UL) {
+      switch (fp->N_RB_UL) {
       case 6:
 	if (prach_fmt == 4) {
 	  dft256(prach2,rxsigF[aa],1);
@@ -1296,7 +1323,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
 	break;
 	
       case 100:
-	if (eNB->frame_parms.threequarter_fs==0) {
+	if (fp->threequarter_fs==0) {
 	  if (prach_fmt == 4) {
 	    dft4096(prach2,rxsigF[aa],1);
 	  } else {
@@ -1321,47 +1348,32 @@ void rx_prach(PHY_VARS_eNB *eNB,
     }
   }
 
-  if (eNB->node_function == NGFI_RRU_IF4p5) {
-    k = (12*n_ra_prb) - 6*eNB->frame_parms.N_RB_UL;
+  if ((eNB==NULL) && (ru!=NULL) && ru->function == NGFI_RRU_IF4p5) {
+    k = (12*n_ra_prb) - 6*fp->N_RB_UL;
     
     if (k<0) {
-      k+=(eNB->frame_parms.ofdm_symbol_size);
+      k+=(fp->ofdm_symbol_size);
     }
 
     k*=12;
     k+=13; 
     k*=2;
     
-    /// **** send_IF4 of rxsigF to RCC **** ///    
-    send_IF4p5(eNB, eNB->proc.frame_prach, eNB->proc.subframe_prach, IF4p5_PRACH, k);
+    /// **** send_IF4 of rxsigF to RAU **** ///    
+    send_IF4p5(ru, ru->proc.frame_prach, ru->proc.subframe_prach, IF4p5_PRACH, k);
 
 #if 0
-    /* TODO: resolv this conflict (there should be no printf anyway, so no big deal) */
-<<<<<<< HEAD
-    /*
     en = dB_fixed(signal_energy(&rxsigF[0][k],840));
-    printf("Sending PRACH, k %d,n_ra_prb %d, N_RB_UL %d,  en %d\n",k,n_ra_prb,eNB->frame_parms.N_RB_UL,en);
-    if (en>60) {
+    if (en>60)
       printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
-      write_output("prach_rx0.m","prach_rx0",(int16_t*)&rxsigF[0][k],839,1,1);
-      exit(-1);
-    }
-    */
-
-=======
-        en = dB_fixed(signal_energy(&rxsigF[0][k],840));
-        if (en>60)
-          printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
->>>>>>> origin/fix-if4p5
 #endif
 
     return;
-  } else if (eNB->node_function == NGFI_RCC_IF4p5) {
-    k = (12*n_ra_prb) - 6*eNB->frame_parms.N_RB_UL;
+  } else if (eNB!=NULL) {
+    k = (12*n_ra_prb) - 6*fp->N_RB_UL;
     
-    if (k<0) {
-      k+=(eNB->frame_parms.ofdm_symbol_size);
-    }
+    if (k<0) k+=fp->ofdm_symbol_size;
+    
 
     k*=12;
     k+=13; 
@@ -1373,30 +1385,16 @@ void rx_prach(PHY_VARS_eNB *eNB,
             839*2*sizeof(int16_t));
 
 #if 0
-    /* TODO: resolv this conflict (there should be no printf anyway, so no big deal) */
-<<<<<<< HEAD
-    /*
-    en = dB_fixed(signal_energy(&rxsigF[0][k],840));
-    printf("Receiving PRACH, k %d,n_ra_prb %d, N_RB_UL %d,  en %d\n",k,n_ra_prb,eNB->frame_parms.N_RB_UL,en);
-    if (en>60) {
-      printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
-      write_output("prach_rx0.m","prach_rx0",(int16_t*)&rxsigF[0][k],839,1,1);
-      exit(-1);
-    }
-    */
-=======
     en = dB_fixed(signal_energy(&rxsigF[0][k],840));
         /*if (en>60)
     printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);*/
-
->>>>>>> origin/fix-if4p5
 #endif
 
   }
   
-  // in case of RCC and prach received rx_thread wakes up prach
+  // in case of RAU and prach received rx_thread wakes up prach
 
-  // here onwards is for eNodeB_3GPP or NGFI_RCC_IF4p5
+  // here onwards is for eNodeB_3GPP or NGFI_RAU_IF4p5
 
   preamble_offset_old = 99;
 
@@ -1496,25 +1494,20 @@ void rx_prach(PHY_VARS_eNB *eNB,
 
 
       
-      k = (12*n_ra_prb) - 6*eNB->frame_parms.N_RB_UL;
+      k = (12*n_ra_prb) - 6*fp->N_RB_UL;
       
       if (k<0)
-	k+=(eNB->frame_parms.ofdm_symbol_size);
+	k+=fp->ofdm_symbol_size;
       
       k*=12;
       k+=13; // phi + K/2
-      //      k+=(12*eNB->frame_parms.first_carrier_offset);
-      //      if (k>(12*eNB->frame_parms.ofdm_symbol_size))
-      //  k-=(12*eNB->frame_parms.ofdm_symbol_size);
-      
-      // printf("First prach carrier : k %d\n",k);
       k*=2;
       
 
       
       memset( prachF, 0, sizeof(int16_t)*2*1024 );
 #ifdef PRACH_DEBUG
-      write_output("prach_rx0.m","prach_rx0",prach[0],6144+792,1,1);
+      if (prach[0]!= NULL) write_output("prach_rx0.m","prach_rx0",prach[0],6144+792,1,1);
 #endif
       // write_output("prach_rx1.m","prach_rx1",prach[1],6144+792,1,1);
       //       write_output("prach_rxF0.m","prach_rxF0",rxsigF[0],24576,1,1);
@@ -1544,7 +1537,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
 	    */
 	  k+=2;
 	  
-	  if (k==(12*2*eNB->frame_parms.ofdm_symbol_size))
+	  if (k==(12*2*fp->ofdm_symbol_size))
 	    k=0;
 	}
 	
@@ -1565,10 +1558,9 @@ void rx_prach(PHY_VARS_eNB *eNB,
 #ifdef PRACH_DEBUG
 
       if (en>40) {
-	k = (12*n_ra_prb) - 6*eNB->frame_parms.N_RB_UL;
+	k = (12*n_ra_prb) - 6*fp->N_RB_UL;
 	
-	if (k<0)
-	  k+=(eNB->frame_parms.ofdm_symbol_size);
+	if (k<0) k+=fp->ofdm_symbol_size;
 	
 	k*=12;
 	k+=13;
@@ -1608,7 +1600,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
 
   }// preamble_index
   
-  stop_meas(&eNB->rx_prach);
+  if (eNB) stop_meas(&eNB->rx_prach);
   
 }
 
@@ -1801,7 +1793,7 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
     for (k=0; k<N_ZC; k++) {
       // 420 is the multiplicative inverse of 2 (required since ru is exp[j 2\pi n])
       X_u[i][k] = ((uint32_t*)ru)[(((k*(1+(inv_u*k)))%N_ZC)*420)%N_ZC];
-      //        printf("X_u[%d][%d] (%d)(%d)(%d) : %d,%d\n",i,k,u*inv_u*k*(1+(inv_u*k)),u*inv_u*k*(1+(inv_u*k))/2,(u*inv_u*k*(1+(inv_u*k))/2)%N_ZC,((int16_t*)&X_u[i][k])[0],((int16_t*)&X_u[i][k])[1]);
+      //printf("X_u[%d][%d] (%d)(%d)(%d) : %d,%d\n",i,k,u*inv_u*k*(1+(inv_u*k)),u*inv_u*k*(1+(inv_u*k))/2,(u*inv_u*k*(1+(inv_u*k))/2)%N_ZC,((int16_t*)&X_u[i][k])[0],((int16_t*)&X_u[i][k])[1]);
     }
   }
 

@@ -158,6 +158,80 @@ typedef enum {
   MAX_OPT
 } eth_opt_t;
 
+#define MAX_RRU_CONFIG_SIZE 1024
+typedef enum {
+  RAU_tick=0,
+  RRU_capabilities=1,
+  RRU_config=2,
+  RRU_MSG_max_num=3
+} rru_config_msg_type_t;
+
+typedef struct RRU_CONFIG_msg_s {
+  rru_config_msg_type_t type;
+  ssize_t len;
+  uint8_t msg[MAX_RRU_CONFIG_SIZE];
+} RRU_CONFIG_msg_t;
+
+typedef enum {
+  OAI_IF5_only      =0,
+  OAI_IF4p5_only    =1,
+  OAI_IF5_and_IF4p5 =2,
+  MBP_IF5           =3,
+  MAX_FH_FMTs       =4
+} FH_fmt_options_t;
+
+#define MAX_BANDS_PER_RRU 4
+
+typedef struct RRU_capabilities_s {
+  /// Fronthaul format
+  FH_fmt_options_t FH_fmt;
+  /// number of EUTRA bands (<=4) supported by RRU
+  uint8_t          num_bands;
+  /// EUTRA band list supported by RRU
+  uint8_t          band_list[MAX_BANDS_PER_RRU];
+  /// Number of concurrent bands (component carriers)
+  uint8_t          num_concurrent_bands;
+  /// Maximum TX EPRE of each band
+  int8_t           max_pdschReferenceSignalPower[MAX_BANDS_PER_RRU];
+  /// Maximum RX gain of each band
+  uint8_t          max_rxgain[MAX_BANDS_PER_RRU];
+  /// Number of RX ports of each band
+  uint8_t          nb_rx[MAX_BANDS_PER_RRU];
+  /// Number of TX ports of each band
+  uint8_t          nb_tx[MAX_BANDS_PER_RRU]; 
+  /// max DL bandwidth (1,6,15,25,50,75,100)
+  uint8_t          N_RB_DL[MAX_BANDS_PER_RRU];
+  /// max UL bandwidth (1,6,15,25,50,75,100)
+  uint8_t          N_RB_UL[MAX_BANDS_PER_RRU];
+} RRU_capabilities_t;
+
+typedef struct RRU_config_s {
+  /// Fronthaul format
+  RU_if_south_t FH_fmt;
+  /// number of EUTRA bands (<=4) configured in RRU
+  uint8_t num_bands;
+  /// EUTRA band list configured in RRU
+  uint8_t band_list[MAX_BANDS_PER_RRU];
+  /// TX frequency
+  uint32_t tx_freq[MAX_BANDS_PER_RRU];
+  /// RX frequency
+  uint32_t rx_freq[MAX_BANDS_PER_RRU];
+  /// TX attenation w.r.t. max
+  uint8_t att_tx[MAX_BANDS_PER_RRU];
+  /// RX attenuation w.r.t. max
+  uint8_t att_rx[MAX_BANDS_PER_RRU];
+  /// DL bandwidth
+  uint8_t N_RB_DL[MAX_BANDS_PER_RRU];
+  /// UL bandwidth
+  uint8_t N_RB_UL[MAX_BANDS_PER_RRU];
+  /// 3/4 sampling rate
+  uint8_t threequarter_fs[MAX_BANDS_PER_RRU];
+  /// prach_FreqOffset for IF4p5
+  int prach_FreqOffset[MAX_BANDS_PER_RRU];
+  /// prach_ConfigIndex for IF4p5
+  int prach_ConfigIndex[MAX_BANDS_PER_RRU];
+} RRU_config_t;
+
 /*
 #define SND_BUF_SIZE	1
 #define RCV_BUF_SIZE	1<<1

@@ -429,7 +429,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
 
   memset(d,0,24*sizeof(int16_t));
 
-  if (frame_parms->mode1_flag==1)
+  if (frame_parms->nb_antenna_ports_eNB==1)
     gain_lin_QPSK = (int16_t)(((int32_t)amp*ONE_OVER_SQRT2_Q15)>>15);
   else
     gain_lin_QPSK = amp/2;
@@ -562,7 +562,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 
     // modulation here
-    if (frame_parms->mode1_flag == 0) {
+    if (frame_parms->nb_antenna_ports_eNB != 1) {
       // do Alamouti precoding here
 
       // Symbol 0
@@ -691,7 +691,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
         }
       }
 
-    } // mode1_flag
+    } // nb_antenna_ports_eNB
 
     else {
       // Symbol 0
@@ -774,7 +774,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       for (i=0;i<512;i++)
       printf("re %d (%d): %d,%d\n",i,subframe_offset+i,((int16_t*)&y[0][subframe_offset+i])[0],((int16_t*)&y[0][subframe_offset+i])[1]);
       */
-    } // mode1_flag
+    } // nb_antenna_ports_eNB
   } else { // extended prefix
 
     // 6 output symbols
@@ -851,7 +851,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 
-    if (frame_parms->mode1_flag == 0) {
+    if (frame_parms->nb_antenna_ports_eNB != 1) {
       // do Alamouti precoding here
       // Symbol 0
       re_offset = frame_parms->first_carrier_offset + (frame_parms->phich_reg[ngroup_PHICH][0]*6);
@@ -1053,7 +1053,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
         y0[j+1] += y0_16[m++];
       }
 
-    } // mode1_flag
+    } // nb_antenna_ports_eNB
   } // normal/extended prefix
 }
 
@@ -1399,7 +1399,7 @@ void rx_phich(PHY_VARS_UE *ue,
             subframe,
             HI16,
             nseq_PHICH,
-            ngroup_PHICH,ulsch->harq_processes[harq_pid]->round+1,
+            ngroup_PHICH,
             ulsch->Mlimit);
       //#endif
 
@@ -1489,7 +1489,7 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
 
   LTE_DL_FRAME_PARMS *frame_parms=&eNB->frame_parms;
   LTE_eNB_ULSCH_t **ulsch = eNB->ulsch;
-  int32_t **txdataF = eNB->common_vars.txdataF[sect_id];
+  int32_t **txdataF = eNB->common_vars.txdataF;
   uint8_t harq_pid;
   uint8_t Ngroup_PHICH,ngroup_PHICH,nseq_PHICH;
   uint8_t NSF_PHICH = 4;

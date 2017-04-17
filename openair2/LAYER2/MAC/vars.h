@@ -92,7 +92,6 @@ MAC_xface *mac_xface;
 uint32_t RRC_CONNECTION_FLAG;
 
 UE_MAC_INST *UE_mac_inst; //[NB_MODULE_MAX];
-eNB_MAC_INST *eNB_mac_inst; //[NB_MODULE_MAX];
 MAC_RLC_XFACE *Mac_rlc_xface;
 
 /// Primary component carrier index of eNB

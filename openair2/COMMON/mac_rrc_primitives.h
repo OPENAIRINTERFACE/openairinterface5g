@@ -33,6 +33,7 @@
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "MeasGapConfig.h"
+#include "TDD-Config.h"
 #ifdef Rel10
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-SubframeConfigList.h"

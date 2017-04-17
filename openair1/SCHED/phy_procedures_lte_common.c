@@ -632,7 +632,7 @@ dci_detect_mode_t dci_detect_mode_select(LTE_DL_FRAME_PARMS *frame_parms,uint8_t
 lte_subframe_t get_subframe_direction(uint8_t Mod_id,uint8_t CC_id,uint8_t subframe)
 {
 
-  return(subframe_select(&PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms,subframe));
+  return(subframe_select(&RC.eNB[Mod_id][CC_id]->frame_parms,subframe));
 
 }
 
@@ -882,19 +882,19 @@ LTE_eNB_UE_stats* get_UE_stats(uint8_t Mod_id, uint8_t  CC_id,uint16_t rnti)
 {
   int8_t UE_id;
 
-  if ((PHY_vars_eNB_g == NULL) || (PHY_vars_eNB_g[Mod_id] == NULL) || (PHY_vars_eNB_g[Mod_id][CC_id]==NULL)) {
+  if ((RC.eNB == NULL) || (Mod_id > RC.nb_inst) || (CC_id > RC.nb_CC[Mod_id])) {
     LOG_E(PHY,"get_UE_stats: No eNB found (or not allocated) for Mod_id %d,CC_id %d\n",Mod_id,CC_id);
     return NULL;
   }
 
-  UE_id = find_ue(rnti, PHY_vars_eNB_g[Mod_id][CC_id]);
+  UE_id = find_ue(rnti, RC.eNB[Mod_id][CC_id]);
 
   if (UE_id == -1) {
     //    LOG_E(PHY,"get_UE_stats: UE with rnti %x not found\n",rnti);
     return NULL;
   }
 
-  return(&PHY_vars_eNB_g[Mod_id][CC_id]->UE_stats[(uint32_t)UE_id]);
+  return(&RC.eNB[Mod_id][CC_id]->UE_stats[(uint32_t)UE_id]);
 }
 
 int8_t find_ue(uint16_t rnti, PHY_VARS_eNB *eNB)
@@ -926,16 +926,16 @@ int8_t find_ue(uint16_t rnti, PHY_VARS_eNB *eNB)
 LTE_DL_FRAME_PARMS* get_lte_frame_parms(module_id_t Mod_id, uint8_t  CC_id)
 {
 
-  return(&PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms);
+  return(&RC.eNB[Mod_id][CC_id]->frame_parms);
 
 }
 
 MU_MIMO_mode *get_mu_mimo_mode (module_id_t Mod_id, uint8_t  CC_id, rnti_t rnti)
 {
-  int8_t UE_id = find_ue( rnti, PHY_vars_eNB_g[Mod_id][CC_id] );
+  int8_t UE_id = find_ue( rnti, RC.eNB[Mod_id][CC_id] );
 
   if (UE_id == -1)
     return 0;
 
-  return &PHY_vars_eNB_g[Mod_id][CC_id]->mu_mimo_mode[UE_id];
+  return &RC.eNB[Mod_id][CC_id]->mu_mimo_mode[UE_id];
 }

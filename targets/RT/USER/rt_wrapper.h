@@ -121,3 +121,8 @@ int sched_getattr(pid_t pid,struct sched_attr *attr,unsigned int size, unsigned 
 
 #define gettid() syscall(__NR_gettid) // for gettid
 
+void thread_top_init(char *thread_name,
+		     int affinity,
+		     uint64_t runtime,
+		     uint64_t deadline,
+		     uint64_t period);

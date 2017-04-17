@@ -79,7 +79,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
   unsigned short rx_lengths[NB_RB_MAX];
   int    UE_id = find_UE_id(enb_mod_idP,rntiP);
   int ii,j;
-  eNB_MAC_INST *eNB = &eNB_mac_inst[enb_mod_idP];
+  eNB_MAC_INST *eNB = RC.mac[enb_mod_idP];
   UE_list_t *UE_list= &eNB->UE_list;
   int crnti_rx=0;
   int old_buffer_info;
@@ -186,9 +186,9 @@ void rx_sdu(const module_id_t enb_mod_idP,
 
 	UE_list->UE_template[CC_idP][UE_id].ul_total_buffer= UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[lcgid];
 
-	PHY_vars_eNB_g[enb_mod_idP][CC_idP]->pusch_stats_bsr[UE_id][(frameP*10)+subframeP] = (payload_ptr[0] & 0x3f);
+	RC.eNB[enb_mod_idP][CC_idP]->pusch_stats_bsr[UE_id][(frameP*10)+subframeP] = (payload_ptr[0] & 0x3f);
 	if (UE_id == UE_list->head)
-	  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BSR,PHY_vars_eNB_g[enb_mod_idP][CC_idP]->pusch_stats_bsr[UE_id][(frameP*10)+subframeP]);	
+	  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BSR,RC.eNB[enb_mod_idP][CC_idP]->pusch_stats_bsr[UE_id][(frameP*10)+subframeP]);	
         if (UE_list->UE_template[CC_idP][UE_id].ul_buffer_creation_time[lcgid] == 0 ) {
           UE_list->UE_template[CC_idP][UE_id].ul_buffer_creation_time[lcgid]=frameP;
         }
@@ -614,7 +614,7 @@ void set_msg3_subframe(module_id_t Mod_id,
                        int Msg3_frame,
                        int Msg3_subframe)
 {
-  eNB_MAC_INST *eNB=&eNB_mac_inst[Mod_id];
+  eNB_MAC_INST *eNB=RC.mac[Mod_id];
   int i;
   for (i=0; i<NB_RA_PROC_MAX; i++) {
     if (eNB->common_channels[CC_id].RA_template[i].RA_active == TRUE &&
@@ -635,7 +635,7 @@ void schedule_ulsch(module_id_t module_idP,
 
   uint16_t first_rb[MAX_NUM_CCs],i;
   int CC_id;
-  eNB_MAC_INST *eNB=&eNB_mac_inst[module_idP];
+  eNB_MAC_INST *eNB=RC.mac[module_idP];
 
   start_meas(&eNB->schedule_ulsch);
 
@@ -715,7 +715,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
   static int32_t          tpc_accumulated=0;
 
   int n,CC_id = 0;
-  eNB_MAC_INST      *eNB=&eNB_mac_inst[module_idP];
+  eNB_MAC_INST      *eNB=RC.mac[module_idP];
   UE_list_t         *UE_list=&eNB->UE_list;
   UE_TEMPLATE       *UE_template;
   UE_sched_ctrl     *UE_sched_ctrl;
@@ -817,8 +817,8 @@ abort();
           LOG_T(MAC,"[eNB %d] Frame %d, subframeP %d, UE %d CC %d : got harq pid %d  round %d (rnti %x,mode %s)\n",
                 module_idP,frameP,subframeP,UE_id,CC_id, harq_pid, round,rnti,mode_string[eNB_UE_stats->mode]);
 
-	PHY_vars_eNB_g[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = UE_template->ul_total_buffer;
-	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BO,PHY_vars_eNB_g[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP]);	
+	RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = UE_template->ul_total_buffer;
+	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BO,RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP]);	
         if (((UE_is_to_be_scheduled(module_idP,CC_id,UE_id)>0)) || (round>0))// || ((frameP%10)==0))
           // if there is information on bsr of DCCH, DTCH or if there is UL_SR, or if there is a packet to retransmit, or we want to schedule a periodic feedback every 10 frames
         {
@@ -1195,7 +1195,7 @@ abort();
 void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_flag, frame_t frameP, sub_frame_t subframeP, unsigned char sched_subframe, uint16_t *first_rb)
 {
 
-  eNB_MAC_INST *eNB = &eNB_mac_inst[module_idP];
+  eNB_MAC_INST *eNB = RC.mac[module_idP];
   UE_list_t         *UE_list=&eNB->UE_list;
   //UE_TEMPLATE       *UE_template;
   void              *ULSCH_dci      = NULL;
@@ -1213,7 +1213,7 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
   uint8_t allocated_rbs=0;
   uint8_t total_UEs=UE_list->num_UEs;
   uint8_t active_UEs[NUM_MAX_CBA_GROUP];
-  uint8_t total_groups=eNB_mac_inst[module_idP].common_channels[CC_id].num_active_cba_groups;
+  uint8_t total_groups=RC.mac[module_idP]->common_channels[CC_id].num_active_cba_groups;
   int     min_rb_unit=2;
   uint8_t cba_policy=CBA_ES;
   int     UE_id;
@@ -1241,7 +1241,7 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
     frame_parms=mac_xface->get_lte_frame_parms(module_idP,CC_id);
     available_rbs=frame_parms->N_RB_DL-1-first_rb[CC_id];
     remaining_rbs=available_rbs;
-    total_groups=eNB_mac_inst[module_idP].common_channels[CC_id].num_active_cba_groups;
+    total_groups=RC.mac[module_idP]->common_channels[CC_id].num_active_cba_groups;
     min_rb_unit=get_min_rb_unit(module_idP,CC_id);
 
     if (available_rbs  < min_rb_unit )
@@ -1252,7 +1252,7 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
     // is scheduled, the correspodning group can't be used for CBA
     // this can be fixed later
     if (total_groups > 0)  {
-      DCI_pdu = &eNB_mac_inst[module_idP].common_channels[CC_id].DCI_pdu;
+      DCI_pdu = &RC.mac[module_idP]->common_channels[CC_id].DCI_pdu;
 
       for (cba_group=0;
            (cba_group<total_groups)   > (1<<aggregation));
@@ -1286,7 +1286,7 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
 
         // If the group needs some resource
         // determine the total number of allocations (one or multiple DCIs): to be refined
-        if ((active_UEs[cba_group] > 0) && (eNB_mac_inst[module_idP].common_channels[CC_id].cba_rnti[cba_group] != 0)) {
+        if ((active_UEs[cba_group] > 0) && (RC.mac[module_idP]->common_channels[CC_id].cba_rnti[cba_group] != 0)) {
           // to be refined in case of : total_UEs >> weight[cba_group]*available_rbs
 
           switch(cba_policy) {
@@ -1391,7 +1391,7 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
           first_rb[CC_id]+=rb_table[rb_table_index];
           LOG_N(MAC,
                 "[eNB %d] CC_id %d Frame %d, subframeP %d: schedule CBA access %d rnti %x, total/required/allocated/remaining rbs (%d/%d/%d/%d), mcs %d, rballoc %d\n",
-                module_idP, CC_id, frameP, subframeP, cba_group,eNB_mac_inst[module_idP].common_channels[CC_id].cba_rnti[cba_group],
+                module_idP, CC_id, frameP, subframeP, cba_group,RC.mac[module_idP]->common_channels[CC_id].cba_rnti[cba_group],
                 available_rbs, required_rbs[cba_group], allocated_rbs, remaining_rbs,
                 mcs[cba_group],rballoc);
 
@@ -1417,7 +1417,7 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
               //add_ue_spec_dci
               add_common_dci(DCI_pdu,
                              ULSCH_dci,
-                             eNB_mac_inst[module_idP].common_channels[CC_id].cba_rnti[cba_group],
+                             RC.mac[module_idP]->common_channels[CC_id].cba_rnti[cba_group],
                              sizeof(DCI0_5MHz_TDD_1_6_t),
                              aggregation,
                              sizeof_DCI0_5MHz_TDD_1_6_t,
@@ -1438,7 +1438,7 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
               //add_ue_spec_dci
               add_common_dci(DCI_pdu,
                              ULSCH_dci,
-                             eNB_mac_inst[module_idP].common_channels[CC_id].cba_rnti[cba_group],
+                             RC.mac[module_idP]->common_channels[CC_id].cba_rnti[cba_group],
                              sizeof(DCI0_5MHz_FDD_t),
                              aggregation,
                              sizeof_DCI0_5MHz_FDD_t,
@@ -1466,7 +1466,7 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
               //add_ue_spec_dci
               add_common_dci(DCI_pdu,
                              ULSCH_dci,
-                             eNB_mac_inst[module_idP].common_channels[CC_id].cba_rnti[cba_group],
+                             RC.mac[module_idP]->common_channels[CC_id].cba_rnti[cba_group],
                              sizeof(DCI0_10MHz_TDD_1_6_t),
                              aggregation,
                              sizeof_DCI0_10MHz_TDD_1_6_t,
@@ -1487,7 +1487,7 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
               //add_ue_spec_dci
               add_common_dci(DCI_pdu,
                              ULSCH_dci,
-                             eNB_mac_inst[module_idP].common_channels[CC_id].cba_rnti[cba_group],
+                             RC.mac[module_idP]->common_channels[CC_id].cba_rnti[cba_group],
                              sizeof(DCI0_10MHz_FDD_t),
                              aggregation,
                              sizeof_DCI0_10MHz_FDD_t,

@@ -219,22 +219,20 @@ void phy_adjust_gain (PHY_VARS_UE *phy_vars_ue,
 
 int lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 			      eNB_rxtx_proc_t *proc,
-                              module_id_t eNB_id,
                               module_id_t UE_id,
                               uint8_t l,
-                              uint8_t Ns,
-                              uint8_t cooperation_flag);
+                              uint8_t Ns);
+
 
 int16_t lte_ul_freq_offset_estimation(LTE_DL_FRAME_PARMS *frame_parms,
                                       int32_t *ul_ch_estimates,
                                       uint16_t nb_rb);
 
 int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
-                               LTE_eNB_COMMON *eNb_common_vars,
-                               LTE_eNB_SRS *eNb_srs_vars,
+                               LTE_eNB_COMMON *eNB_common_vars,
+                               LTE_eNB_SRS *eNB_srs_vars,
                                SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
-                               unsigned char sub_frame_number,
-                               unsigned char eNb_id);
+                               unsigned char sub_frame_number);
 
 int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
                            LTE_eNB_SRS *lte_eNb_srs,

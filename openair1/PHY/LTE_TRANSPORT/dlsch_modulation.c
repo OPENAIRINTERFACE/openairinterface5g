@@ -87,7 +87,7 @@ uint8_t is_not_UEspecRS(int8_t lprime, uint8_t re, uint8_t nushift, uint8_t Ncp,
       break;
 
     default:
-      msg("is_not_UEspecRS() [dlsch_modulation.c] : ERROR, unknown beamforming_mode %d\n",beamforming_mode);
+      LOG_E(PHY,"is_not_UEspecRS() [dlsch_modulation.c] : ERROR, unknown beamforming_mode %d\n",beamforming_mode);
       return(-1);
   }
 
@@ -593,7 +593,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
   //  int first_layer1;
 
 
-  int use2ndpilots = (frame_parms->mode1_flag==1)?1:0;
+  int use2ndpilots = (frame_parms->nb_antenna_ports_eNB==1)?1:0;
 
   uint32_t tti_offset; //,aa;
   uint8_t re;
@@ -1884,6 +1884,9 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   uint8_t Nl0 = dlsch0_harq->Nl;
   uint8_t Nl1;
 #endif
+  int ru_id;
+  RU_t *ru;
+  int eNB_id;
 
   if (dlsch1) {
     dlsch1_harq = dlsch1->harq_processes[harq_pid];
@@ -1983,9 +1986,16 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
           lprime=-1;
       }
 
-      // mapping ue specific beamforming weights from UE specified DLSCH structure to common space
-      for (aa=0;aa<frame_parms->nb_antennas_tx;aa++){
-        memcpy(phy_vars_eNB->common_vars.beam_weights[0][5][aa],dlsch0->ue_spec_bf_weights[0][aa],frame_parms->ofdm_symbol_size*sizeof(int32_t));
+      // mapping ue specific beamforming weights from UE specified DLSCH structure to RU beam weights for the eNB
+      for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
+	ru = RC.ru[ru_id];
+	for (eNB_id=0;eNB_id<ru->num_eNB;eNB_id++){
+	  if (phy_vars_eNB == ru->eNB_list[eNB_id]) {
+	    for (aa=0;aa<ru->nb_tx;aa++){
+	      memcpy(ru->beam_weights[eNB_id][5][aa],dlsch0->ue_spec_bf_weights[ru_id][0][aa],frame_parms->ofdm_symbol_size*sizeof(int32_t));
+	    }
+	  }
+	}
       }
  
     }
@@ -1996,7 +2006,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
     nushiftmod3 = frame_parms->nushift%3;
 
     if (pilots>0) {  // compute pilot arrays, could be done statically if performance suffers
-      if (frame_parms->mode1_flag == 1) {
+      if (frame_parms->nb_antenna_ports_eNB == 1) {
 	//	printf("l %d, nushift %d, offset %d\n",l,frame_parms->nushift,offset);
 	for (i=0,i2=0;i<12;i++) {
 	  if ((i!=(frame_parms->nushift+offset)) && (i!=((frame_parms->nushift+6+offset)%12)))

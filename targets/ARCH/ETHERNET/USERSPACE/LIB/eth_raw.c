@@ -60,15 +60,15 @@ int eth_socket_init_raw(openair0_device *device) {
   int sock_type=0;
   int sock_proto=0;  
  
-  if (device->host_type == RRH_HOST ) {  /* RRH doesn't know remote MAC(will be retrieved from first packet send from BBU) and remote port(don't care) */
-    local_mac = device->openair0_cfg->my_addr; 
+  if (device->host_type == RRU_HOST ) {  /* RRU doesn't know remote MAC(will be retrieved from first packet send from RAU) and remote port(don't care) */
+    local_mac = device->eth_params->my_addr; 
     remote_mac = malloc(ETH_ALEN);
     memset((void*)remote_mac,0,ETH_ALEN);
-    printf("[%s] local MAC addr %s remote MAC addr %s\n","RRH", local_mac,remote_mac);    
+    printf("[%s] local MAC addr %s remote MAC addr %s\n","RRU", local_mac,remote_mac);    
   } else {
-    local_mac = device->openair0_cfg->my_addr;
-    remote_mac = device->openair0_cfg->remote_addr;
-    printf("[%s] local MAC addr %s remote MAC addr %s\n","BBU", local_mac,remote_mac);    
+    local_mac = device->eth_params->my_addr;
+    remote_mac = device->eth_params->remote_addr;
+    printf("[%s] local MAC addr %s remote MAC addr %s\n","RAU", local_mac,remote_mac);    
   }
    
   
@@ -96,7 +96,7 @@ int eth_socket_init_raw(openair0_device *device) {
   if (eth->flags == ETH_RAW_IF5_MOBIPASS) {
      eth->local_addr_ll.sll_protocol = htons(0xbffe);
   } else{ 
-     eth->local_addr_ll.sll_protocol = htons((short)device->openair0_cfg->my_port);
+     eth->local_addr_ll.sll_protocol = htons((short)device->eth_params->my_port);
   }
   eth->local_addr_ll.sll_halen    = ETH_ALEN;
   eth->local_addr_ll.sll_pkttype  = PACKET_OTHERHOST;
@@ -113,9 +113,9 @@ int eth_socket_init_raw(openair0_device *device) {
  if (eth->flags == ETH_RAW_IF5_MOBIPASS) {
    eth->eh.ether_type = htons(0xbffe);
  } else {
-   eth->eh.ether_type = htons((short)device->openair0_cfg->my_port);
+   eth->eh.ether_type = htons((short)device->eth_params->my_port);
  } 
- printf("[%s] binding to hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"),eth->eh.ether_shost[0],eth->eh.ether_shost[1],eth->eh.ether_shost[2],eth->eh.ether_shost[3],eth->eh.ether_shost[4],eth->eh.ether_shost[5]);
+ printf("[%s] binding to hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"),eth->eh.ether_shost[0],eth->eh.ether_shost[1],eth->eh.ether_shost[2],eth->eh.ether_shost[3],eth->eh.ether_shost[4],eth->eh.ether_shost[5]);
  
  return 0;
 }
@@ -146,7 +146,7 @@ int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, voi
     *(int16_t *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int16_t))=1+(i<<1);
     *(openair0_timestamp *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int32_t)) = timestamp;
     
-    /*printf("[RRH]write mod_%d %d , len %d, buff %p \n",
+    /*printf("[RRU]write mod_%d %d , len %d, buff %p \n",
       Mod_id,eth->sockfd[Mod_id],RAW_PACKET_SIZE_BYTES(nsamps), buff2);*/
     
     while(bytes_sent < RAW_PACKET_SIZE_BYTES(nsamps)) {
@@ -172,7 +172,7 @@ int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, voi
 	       *(int16_t *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int16_t)),
 	       *(openair0_timestamp *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int32_t)), 
 	       bytes_sent);
-    dump_packet((device->host_type == BBU_HOST)? "BBU":"RRH", buff2, RAW_PACKET_SIZE_BYTES(nsamps), TX_FLAG);
+    dump_packet((device->host_type == RAU_HOST)? "RAU":"RRU", buff2, RAW_PACKET_SIZE_BYTES(nsamps), TX_FLAG);
 #endif
     eth->tx_actual_nsamps=bytes_sent>>2;
     eth->tx_count++;
@@ -280,7 +280,7 @@ int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, voi
 	     *(int16_t *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int16_t)),
 	     *(openair0_timestamp *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int32_t)),
 	     bytes_received);
-      dump_packet((device->host_type == BBU_HOST)? "BBU":"RRH", buff2, RAW_PACKET_SIZE_BYTES(nsamps),RX_FLAG);	  
+      dump_packet((device->host_type == RAU_HOST)? "RAU":"RRU", buff2, RAW_PACKET_SIZE_BYTES(nsamps),RX_FLAG);	  
 
 #endif  
 
@@ -433,7 +433,7 @@ int eth_set_dev_conf_raw(openair0_device *device) {
   void 	      *msg;
   ssize_t      msg_len;
   
-  /* a BBU client sends to RRH a set of configuration parameters (openair0_config_t)
+  /* a RAU client sends to RRU a set of configuration parameters (openair0_config_t)
      so that RF front end is configured appropriately and
      frame/packet size etc. can be set */ 
   
@@ -464,7 +464,7 @@ int eth_set_dev_conf_raw_IF4p5(openair0_device *device) {
   void 	      *msg;
   ssize_t      msg_len;
   
-  /* a BBU client sends to RRH a set of configuration parameters (openair0_config_t)
+  /* a RAU client sends to RRU a set of configuration parameters (openair0_config_t)
      so that RF front end is configured appropriately and
      frame/packet size etc. can be set */ 
   
@@ -496,7 +496,7 @@ int eth_get_dev_conf_raw(openair0_device *device) {
   msg = malloc(MAC_HEADER_SIZE_BYTES + sizeof(openair0_config_t));
   msg_len = MAC_HEADER_SIZE_BYTES + sizeof(openair0_config_t);
   
-  /* RRH receives from BBU openair0_config_t */
+  /* RRU receives from RAU openair0_config_t */
   if (recv(eth->sockfd,
 	   msg,
 	   msg_len,
@@ -505,11 +505,11 @@ int eth_get_dev_conf_raw(openair0_device *device) {
     exit(0);
   }
   
-  /* RRH stores the remote MAC address */
+  /* RRU stores the remote MAC address */
   memcpy(eth->eh.ether_dhost,(msg+ETH_ALEN),ETH_ALEN);	
   //memcpy((void*)&device->openair0_cfg,(msg + MAC_HEADER_SIZE_BYTES), sizeof(openair0_config_t));
   device->openair0_cfg=(openair0_config_t *)(msg + MAC_HEADER_SIZE_BYTES);
-  printf("[%s] binding mod to hardware address %x:%x:%x:%x:%x:%x           hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"),eth->eh.ether_shost[0],eth->eh.ether_shost[1],eth->eh.ether_shost[2],eth->eh.ether_shost[3],eth->eh.ether_shost[4],eth->eh.ether_shost[5],eth->eh.ether_dhost[0],eth->eh.ether_dhost[1],eth->eh.ether_dhost[2],eth->eh.ether_dhost[3],eth->eh.ether_dhost[4],eth->eh.ether_dhost[5]);
+  printf("[%s] binding mod to hardware address %x:%x:%x:%x:%x:%x           hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"),eth->eh.ether_shost[0],eth->eh.ether_shost[1],eth->eh.ether_shost[2],eth->eh.ether_shost[3],eth->eh.ether_shost[4],eth->eh.ether_shost[5],eth->eh.ether_dhost[0],eth->eh.ether_dhost[1],eth->eh.ether_dhost[2],eth->eh.ether_dhost[3],eth->eh.ether_dhost[4],eth->eh.ether_dhost[5]);
  	  
   return 0;
 }
@@ -525,7 +525,7 @@ int eth_get_dev_conf_raw_IF4p5(openair0_device *device) {
   msg = malloc(MAC_HEADER_SIZE_BYTES + sizeof(openair0_config_t));
   msg_len = MAC_HEADER_SIZE_BYTES + sizeof(openair0_config_t);
   
-  /* RRH receives from BBU openair0_config_t */
+  /* RRU receives from RAU openair0_config_t */
   if (recv(eth->sockfd,
 	   msg,
 	   msg_len,
@@ -534,11 +534,11 @@ int eth_get_dev_conf_raw_IF4p5(openair0_device *device) {
     exit(0);
   }
   
-  /* RRH stores the remote MAC address */
+  /* RRU stores the remote MAC address */
   memcpy(eth->eh.ether_dhost,(msg+ETH_ALEN),ETH_ALEN);	
   //memcpy((void*)&device->openair0_cfg,(msg + MAC_HEADER_SIZE_BYTES), sizeof(openair0_config_t));
   //device->openair0_cfg=(openair0_config_t *)(msg + MAC_HEADER_SIZE_BYTES);
-  printf("[%s] binding mod to hardware address %x:%x:%x:%x:%x:%x           hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"),eth->eh.ether_shost[0],eth->eh.ether_shost[1],eth->eh.ether_shost[2],eth->eh.ether_shost[3],eth->eh.ether_shost[4],eth->eh.ether_shost[5],eth->eh.ether_dhost[0],eth->eh.ether_dhost[1],eth->eh.ether_dhost[2],eth->eh.ether_dhost[3],eth->eh.ether_dhost[4],eth->eh.ether_dhost[5]);
+  printf("[%s] binding mod to hardware address %x:%x:%x:%x:%x:%x           hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"),eth->eh.ether_shost[0],eth->eh.ether_shost[1],eth->eh.ether_shost[2],eth->eh.ether_shost[3],eth->eh.ether_shost[4],eth->eh.ether_shost[5],eth->eh.ether_dhost[0],eth->eh.ether_dhost[1],eth->eh.ether_dhost[2],eth->eh.ether_dhost[3],eth->eh.ether_dhost[4],eth->eh.ether_dhost[5]);
  	  
   return 0;
 }

@@ -75,7 +75,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
   else if ((p==1) && (l>0))
     nu = 0;
   else {
-    msg("lte_dl_channel_estimation: p %d, l %d -> ERROR\n",p,l);
+    LOG_E(PHY,"lte_dl_channel_estimation: p %d, l %d -> ERROR\n",p,l);
     return(-1);
   }
 
@@ -167,7 +167,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
     break;
 
   default:
-    msg("lte_dl_channel_estimation: k=%d -> ERROR\n",k);
+    LOG_E(PHY,"lte_dl_channel_estimation: k=%d -> ERROR\n",k);
     return(-1);
     break;
   }
@@ -622,7 +622,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
 
       }
     } else {
-      msg("channel estimation not implemented for ue->frame_parms.N_RB_DL = %d\n",ue->frame_parms.N_RB_DL);
+      LOG_E(PHY,"channel estimation not implemented for ue->frame_parms.N_RB_DL = %d\n",ue->frame_parms.N_RB_DL);
     }
 
 

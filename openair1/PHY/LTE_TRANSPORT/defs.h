@@ -232,13 +232,13 @@ typedef struct {
 
   // decode phich
   uint8_t decode_phich;
-} LTE_UL_UE_HARQ_t;
+} LTE_UL_UE_HARQ_t; 
 
 typedef struct {
   /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
   int32_t *txdataF[8];
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
-  int32_t **ue_spec_bf_weights[4]; 
+  int32_t **ue_spec_bf_weights[MAX_NUM_RU_PER_eNB][4]; 
   /// dl channel estimates (estimated from ul channel estimates)
   int32_t **calib_dl_ch_estimates;
   /// Allocated RNTI (0 means DLSCH_t is not currently used)

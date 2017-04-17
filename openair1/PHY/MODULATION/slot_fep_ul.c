@@ -25,10 +25,9 @@
 //#define DEBUG_FEP
 
 int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
-                LTE_eNB_COMMON *eNB_common_vars,
+                RU_COMMON *common,
                 unsigned char l,
                 unsigned char Ns,
-                unsigned char eNB_id,
                 int no_prefix)
 {
 #ifdef DEBUG_FEP
@@ -103,8 +102,8 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
     rx_offset = slot_offset +nb_prefix_samples0;
     if (l==0) {
 
-      dft( (int16_t *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][rx_offset],
-           (int16_t *)&eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],
+      dft( (int16_t *)&common->rxdata_7_5kHz[aa][rx_offset],
+           (int16_t *)&common->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
            1
          );
     } else {
@@ -113,8 +112,8 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
       /* should never happen for eNB
       if(rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
       {
-        memcpy((void *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][frame_length_samples],
-               (void *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][0],
+        memcpy((void *)&eNB_common_vars->rxdata_7_5kHz[aa][frame_length_samples],
+               (void *)&eNB_common_vars->rxdata_7_5kHz[aa][0],
                frame_parms->ofdm_symbol_size*sizeof(int));
       }
       */
@@ -122,16 +121,16 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
       // check for 256-bit alignment of input buffer and do DFT directly, else do via intermediate buffer
       if( (rx_offset & 15) != 0){
         memcpy((void *)&tmp_dft_in,
-	       (void *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][(rx_offset % frame_length_samples)],
+	       (void *)&common->rxdata_7_5kHz[aa][(rx_offset % frame_length_samples)],
 	       frame_parms->ofdm_symbol_size*sizeof(int));
         dft( (short *) tmp_dft_in,
-             (short*)  &eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],
+             (short*)  &common->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
              1
            );
       }
       else{
-      dft( (short *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][rx_offset],
-           (short*)&eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],
+      dft( (short *)&common->rxdata_7_5kHz[aa][rx_offset],
+           (short*)&common->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
            1
          );
       }

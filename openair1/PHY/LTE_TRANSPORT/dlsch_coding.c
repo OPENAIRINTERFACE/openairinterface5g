@@ -118,6 +118,8 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
   unsigned char exit_flag = 0,i,j,r,aa,layer;
   int re;
   unsigned char bw_scaling =1;
+  RU_t *ru;
+  int ru_id;
 
   switch (N_RB_DL) {
   case 6:
@@ -146,22 +148,14 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
     dlsch->Mlimit = 4;
     dlsch->Nsoft = Nsoft;
 
-    for (layer=0; layer<4; layer++) {
-      dlsch->ue_spec_bf_weights[layer] = (int32_t**)malloc16(frame_parms->nb_antennas_tx*sizeof(int32_t*));
-  
-       for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-         dlsch->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
-         for (re=0;re<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; re++) {
-           dlsch->ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
-         }
-       }
-     }
 
+    // NOTE: THIS HAS TO BE REVISED FOR RU, commenting to remove memory leak !!!!!
+    /*
      dlsch->calib_dl_ch_estimates = (int32_t**)malloc16(frame_parms->nb_antennas_tx*sizeof(int32_t*));
      for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
        dlsch->calib_dl_ch_estimates[aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
        
-     }
+       }*/
 
     for (i=0; i<10; i++)
       dlsch->harq_ids[i] = Mdlharq;

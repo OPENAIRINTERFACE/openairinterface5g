@@ -31,13 +31,16 @@
 
 #include "messages_types.h"
 
+/*
 int
 gtpv1u_new_data_req(
   uint8_t enb_id,
   uint8_t ue_id,
   uint8_t rab_id,
   uint8_t *buffer,
-  uint32_t buf_len);
+  uint32_t buf_len,
+  uint32_t buf_offset);*/
+
 void *gtpv1u_eNB_task(void *args);
 
 int

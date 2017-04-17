@@ -39,14 +39,16 @@
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
-void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type, int k) {
-  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
-  int32_t **txdataF      = (eNB->CC_id==0) ? eNB->common_vars.txdataF[0] : PHY_vars_eNB_g[0][0]->common_vars.txdataF[0];
-  int32_t **rxdataF      = eNB->common_vars.rxdataF[0];
-  int16_t **rxsigF       = eNB->prach_vars.rxsigF;  
-  void *tx_buffer        = eNB->ifbuffer.tx[subframe&1];
-  void *tx_buffer_prach  = eNB->ifbuffer.tx_prach;
-      
+void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type, int k) {
+
+  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  int32_t **txdataF      = ru->common.txdataF_BF;
+  int32_t **rxdataF      = ru->common.rxdataF;
+  int16_t **prach_rxsigF = ru->prach_rxsigF;  
+  void *tx_buffer        = ru->ifbuffer.tx[subframe&1];
+  void *tx_buffer_prach  = ru->ifbuffer.tx_prach;
+
+
   uint16_t symbol_id=0, element_id=0;
   uint16_t db_fulllength, db_halflength; 
   int slotoffsetF=0, blockoffsetF=0; 
@@ -54,18 +56,20 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
   uint16_t *data_block=NULL, *i=NULL;
 
   IF4p5_header_t *packet_header=NULL;
-  eth_state_t *eth = (eth_state_t*) (eNB->ifdevice.priv);
+  eth_state_t *eth = (eth_state_t*) (ru->ifdevice.priv);
   int nsym = fp->symbols_per_tti;
   
-  if (eNB->CC_id==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
+  if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
 
   if (packet_type == IF4p5_PDLFFT) {
+    LOG_I(PHY,"send DL_IF4p5: RU %d frame %d, subframe %d\n",ru->idx,frame,subframe);
+
     if (subframe_select(fp,subframe)==SF_S)
       nsym=fp->dl_symbols_in_S_subframe;
 
     db_fulllength = 12*fp->N_RB_DL;
     db_halflength = (db_fulllength)>>1;
-    slotoffsetF = (subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
+    slotoffsetF = 0;//(subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength - 1; 
 
 
@@ -77,27 +81,27 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
       data_block = (uint16_t*)(tx_buffer + sizeof_IF4p5_header_t);
     }    
     gen_IF4p5_dl_header(packet_header, frame, subframe);
-		    
+
+    AssertFatal(txdataF[0]!=NULL,"txdataF_BF[0] is null\n");
     for (symbol_id=0; symbol_id<nsym; symbol_id++) {
-      if (eNB->CC_id==1) LOG_I(PHY,"DL_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,frame,subframe,symbol_id);
       
       for (element_id=0; element_id<db_halflength; element_id++) {
-        i = (uint16_t*) &txdataF[eNB->CC_id][blockoffsetF+element_id];
+        i = (uint16_t*) &txdataF[0][blockoffsetF+element_id];
         data_block[element_id] = ((uint16_t) lin2alaw[*i]) | (lin2alaw[*(i+1)]<<8);
 
-        i = (uint16_t*) &txdataF[eNB->CC_id][slotoffsetF+element_id];
+        i = (uint16_t*) &txdataF[0][slotoffsetF+element_id];
         data_block[element_id+db_halflength] = ((uint16_t) lin2alaw[*i]) | (lin2alaw[*(i+1)]<<8);        
       }
 				 		
       packet_header->frame_status &= ~(0x000f<<26);
       packet_header->frame_status |= (symbol_id&0x000f)<<26; 
 			
-      if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
-                                        symbol_id,
-                                        &tx_buffer,
-                                        db_fulllength,
-      			                            1,
-                                        IF4p5_PDLFFT)) < 0) {
+      if ((ru->ifdevice.trx_write_func(&ru->ifdevice,
+				       symbol_id,
+				       &tx_buffer,
+				       db_fulllength,
+				       1,
+				       IF4p5_PDLFFT)) < 0) {
         perror("ETHERNET write for IF4p5_PDLFFT\n");
       }
       
@@ -142,12 +146,12 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
 	packet_header->frame_status &= ~(0x000f<<26);
 	packet_header->frame_status |= (symbol_id&0x000f)<<26; 
 	
-	if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
-					  symbol_id,
-					  &tx_buffer,
-					  db_fulllength,
-					  1,
-					  IF4p5_PULFFT)) < 0) {
+	if ((ru->ifdevice.trx_write_func(&ru->ifdevice,
+					 symbol_id,
+					 &tx_buffer,
+					 db_fulllength,
+					 1,
+					 IF4p5_PULFFT)) < 0) {
 	  perror("ETHERNET write for IF4p5_PULFFT\n");
 	}
 	
@@ -156,12 +160,12 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
       }    
     }
     else {
-      if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
-					0,
-					&tx_buffer,
-					0,
-					1,
-					IF4p5_PULTICK)) < 0) {
+      if ((ru->ifdevice.trx_write_func(&ru->ifdevice,
+				       0,
+				       &tx_buffer,
+				       0,
+				       1,
+				       IF4p5_PULTICK)) < 0) {
 	perror("ETHERNET write for IF4p5_PULFFT\n");
       }
     }
@@ -181,19 +185,19 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
 
     if (eth->flags == ETH_RAW_IF4p5_MODE) {
       memcpy((int16_t*)(tx_buffer_prach + MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t),
-             (&rxsigF[0][k]), 
+             (&prach_rxsigF[0][k]), 
              PRACH_BLOCK_SIZE_BYTES);
     } else {
       memcpy((int16_t*)(tx_buffer_prach + sizeof_IF4p5_header_t),
-             (&rxsigF[0][k]),
+             (&prach_rxsigF[0][k]),
              PRACH_BLOCK_SIZE_BYTES);
     }
 
-    if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
-                                      symbol_id,
-                                      &tx_buffer_prach,
-                                      db_fulllength,
-                                      1,
+    if ((ru->ifdevice.trx_write_func(&ru->ifdevice,
+				     symbol_id,
+				     &tx_buffer_prach,
+				     db_fulllength,
+				     1,
                                       IF4p5_PRACH)) < 0) {
       perror("ETHERNET write for IF4p5_PRACH\n");
     }      
@@ -201,40 +205,41 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
     AssertFatal(1==0, "send_IF4p5 - Unknown packet_type %x", packet_type);     
   }
 
-  if (eNB->CC_id==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );  
+  if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );  
   return;  		    
 }
 
 
-void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_type, uint32_t *symbol_number) {
-  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
-  int32_t **txdataF = eNB->common_vars.txdataF[0];
-  int32_t **rxdataF = eNB->common_vars.rxdataF[0];
-  int16_t **rxsigF = eNB->prach_vars.rxsigF;  
-  void *rx_buffer = eNB->ifbuffer.rx;
+void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint32_t *symbol_number) {
+  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  int32_t **txdataF      = ru->common.txdataF_BF;
+  int32_t **rxdataF      = ru->common.rxdataF;
+  int16_t **prach_rxsigF = ru->prach_rxsigF;  
+  void *rx_buffer        = ru->ifbuffer.rx;
 
   uint16_t element_id;
   uint16_t db_fulllength, db_halflength; 
   int slotoffsetF=0, blockoffsetF=0; 
-  eth_state_t *eth = (eth_state_t*) (eNB->ifdevice.priv);
+  eth_state_t *eth = (eth_state_t*) (ru->ifdevice.priv);
 
-  if (eNB->CC_id==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
+  if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
   
-  if (eNB->node_function == NGFI_RRU_IF4p5) {
+  if (ru->function == NGFI_RRU_IF4p5) {
     db_fulllength = (12*fp->N_RB_DL); 
-  } else {
+  } else { // This is not an RRU
     db_fulllength = (12*fp->N_RB_UL);     
   }  
   db_halflength = db_fulllength>>1;
 
   IF4p5_header_t *packet_header=NULL;
   uint16_t *data_block=NULL, *i=NULL;
-     
-  if (eNB->ifdevice.trx_read_func(&eNB->ifdevice,
-                                  (int64_t*) packet_type,
-                                  &rx_buffer,
-                                  db_fulllength,
-                                  0) < 0) {
+
+  LOG_I(PHY,"recv IF4p5: RU %d waiting (%d samples)\n",ru->idx,db_fulllength);    
+  if (ru->ifdevice.trx_read_func(&ru->ifdevice,
+				 (int64_t*) packet_type,
+				 &rx_buffer,
+				 db_fulllength,
+				 0) < 0) {
     perror("ETHERNET read");
   }
   
@@ -256,9 +261,9 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
   if (*packet_type == IF4p5_PDLFFT) {          
     *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
 
-    LOG_D(PHY,"DL_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,*frame,*subframe,*symbol_number);
+    LOG_I(PHY,"DL_IF4p5: RU %d frame %d, subframe %d, symbol %d\n",ru->idx,*frame,*subframe,*symbol_number);
 
-    slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size) + (*subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
+    slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size);// + (*subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength - 1; 
         
     for (element_id=0; element_id<db_halflength; element_id++) {
@@ -274,7 +279,7 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
   } else if (*packet_type == IF4p5_PULFFT) {         
     *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
 
-    if (eNB->CC_id==0) LOG_D(PHY,"UL_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,*frame,*subframe,*symbol_number);
+    if (ru->idx==0) LOG_D(PHY,"UL_IF4p5: RU %d : frame %d, subframe %d, symbol %d\n",ru->idx,*frame,*subframe,*symbol_number);
 
     slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size);
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
@@ -292,18 +297,17 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
     }
 		
   } else if (*packet_type == IF4p5_PRACH) {  
-     LOG_D(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,*frame,*subframe);  
-    if (eNB->CC_id==1) LOG_I(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",eNB->CC_id,*frame,*subframe);
+    LOG_D(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d\n",ru->idx,*frame,*subframe);  
 
     // FIX: hard coded prach samples length
     db_fulllength = PRACH_HARD_CODED_NUM_SAMPLES;
 
     if (eth->flags == ETH_RAW_IF4p5_MODE) {		
-      memcpy((&rxsigF[0][0]), 
+      memcpy((&prach_rxsigF[0][0]), 
              (int16_t*) (rx_buffer+MAC_HEADER_SIZE_BYTES+sizeof_IF4p5_header_t), 
              PRACH_BLOCK_SIZE_BYTES);
     } else {
-      memcpy((&rxsigF[0][0]),
+      memcpy((&prach_rxsigF[0][0]),
              (int16_t*) (rx_buffer+sizeof_IF4p5_header_t),
              PRACH_BLOCK_SIZE_BYTES);
     }
@@ -313,7 +317,7 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
     AssertFatal(1==0, "recv_IF4p5 - Unknown packet_type %x", *packet_type);            
   }
 
-  if (eNB->CC_id==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );     
+  if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );     
   return;   
 }
 
@@ -358,20 +362,20 @@ void gen_IF4p5_prach_header(IF4p5_header_t *prach_packet, int frame, int subfram
 } 
 
 
-void malloc_IF4p5_buffer(PHY_VARS_eNB *eNB) {
+void malloc_IF4p5_buffer(RU_t *ru) {
   // Keep the size large enough 
-  eth_state_t *eth = (eth_state_t*) (eNB->ifdevice.priv);
+  eth_state_t *eth = (eth_state_t*) (ru->ifdevice.priv);
   int i;
 
   if (eth->flags == ETH_RAW_IF4p5_MODE) {
     for (i=0;i<10;i++)
-      eNB->ifbuffer.tx[i]       = malloc(RAW_IF4p5_PRACH_SIZE_BYTES);
-    eNB->ifbuffer.tx_prach = malloc(RAW_IF4p5_PRACH_SIZE_BYTES);
-    eNB->ifbuffer.rx       = malloc(RAW_IF4p5_PRACH_SIZE_BYTES); 
+      ru->ifbuffer.tx[i]       = malloc(RAW_IF4p5_PRACH_SIZE_BYTES);
+    ru->ifbuffer.tx_prach = malloc(RAW_IF4p5_PRACH_SIZE_BYTES);
+    ru->ifbuffer.rx       = malloc(RAW_IF4p5_PRACH_SIZE_BYTES); 
   } else {
     for (i=0;i<10;i++)
-      eNB->ifbuffer.tx[i]       = malloc(UDP_IF4p5_PRACH_SIZE_BYTES);
-    eNB->ifbuffer.tx_prach = malloc(UDP_IF4p5_PRACH_SIZE_BYTES);
-    eNB->ifbuffer.rx       = malloc(UDP_IF4p5_PRACH_SIZE_BYTES);
+      ru->ifbuffer.tx[i]       = malloc(UDP_IF4p5_PRACH_SIZE_BYTES);
+    ru->ifbuffer.tx_prach = malloc(UDP_IF4p5_PRACH_SIZE_BYTES);
+    ru->ifbuffer.rx       = malloc(UDP_IF4p5_PRACH_SIZE_BYTES);
   }
 }

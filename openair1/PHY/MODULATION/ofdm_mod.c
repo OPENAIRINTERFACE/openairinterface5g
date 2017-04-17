@@ -282,14 +282,15 @@ void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t ne
 
 }
 
+/*
 // OFDM modulation for each symbol
-void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms,int do_precoding)
+void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, RU_COMMON *common, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms,int do_precoding)
 {
 
   int aa, l, slot_offset, slot_offsetF;
-  int32_t **txdataF    = eNB_common_vars->txdataF[eNB_id];
-  int32_t **txdataF_BF = eNB_common_vars->txdataF_BF[eNB_id];
-  int32_t **txdata     = eNB_common_vars->txdata[eNB_id];
+  int32_t **txdataF    = eNB_common_vars->txdataF;
+  int32_t **txdataF_BF = common->txdataF_BF;
+  int32_t **txdata     = common->txdata;
 
   slot_offset  = (next_slot)*(frame_parms->samples_per_tti>>1);
   slot_offsetF = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==EXTENDED) ? 6 : 7);
@@ -300,7 +301,7 @@ void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t ne
 
       //printf("do_OFDM_mod_l, slot=%d, l=%d, NUMBER_OF_OFDM_CARRIERS=%d,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES=%d\n",next_slot, l,NUMBER_OF_OFDM_CARRIERS,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_BEAM_PRECODING,1);
-      if (do_precoding==1) beam_precoding(txdataF,txdataF_BF,frame_parms,eNB_common_vars->beam_weights[eNB_id],next_slot,l,aa);
+      if (do_precoding==1) beam_precoding(txdataF,txdataF_BF,frame_parms,eNB_common_vars->beam_weights,next_slot,l,aa);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_BEAM_PRECODING,0);
 
       //PMCH case not implemented... 
@@ -329,11 +330,12 @@ void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t ne
                        frame_parms->nb_prefix_samples,     // number of prefix samples
                        CYCLIC_PREFIX);
 
-          /* printf("txdata[%d][%d]=%d\n",aa,slot_offset+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(l-1)*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,txdata[aa][slot_offset+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(l-1)*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES]);
- * */
+          //printf("txdata[%d][%d]=%d\n",aa,slot_offset+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(l-1)*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,txdata[aa][slot_offset+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(l-1)*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES]);
+ 
         }
       }
     }
   }
 
 }
+*/

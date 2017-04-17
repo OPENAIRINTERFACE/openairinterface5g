@@ -152,15 +152,15 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
   }
 
 #ifdef DEBUG_RAR
-  msg("ulsch ra (eNB): harq_pid %d\n",harq_pid);
-  msg("ulsch ra (eNB): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-  msg("ulsch ra (eNB): rballoc  %x\n",ulsch->harq_processes[harq_pid]->first_rb);
-  msg("ulsch ra (eNB): harq_pid %d\n",harq_pid);
-  msg("ulsch ra (eNB): round    %d\n",ulsch->harq_processes[harq_pid]->round);
-  msg("ulsch ra (eNB): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
-  msg("ulsch ra (eNB): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
-  msg("ulsch ra (eNB): Or1      %d\n",ulsch->harq_processes[harq_pid]->Or1);
-  msg("ulsch ra (eNB): ORI      %d\n",ulsch->harq_processes[harq_pid]->O_RI);
+  LOG_D(PHY,"ulsch ra (eNB): harq_pid %d\n",harq_pid);
+  LOG_D(PHY,"ulsch ra (eNB): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+  LOG_D(PHY,"ulsch ra (eNB): rballoc  %x\n",ulsch->harq_processes[harq_pid]->first_rb);
+  LOG_D(PHY,"ulsch ra (eNB): harq_pid %d\n",harq_pid);
+  LOG_D(PHY,"ulsch ra (eNB): round    %d\n",ulsch->harq_processes[harq_pid]->round);
+  LOG_D(PHY,"ulsch ra (eNB): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
+  LOG_D(PHY,"ulsch ra (eNB): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
+  LOG_D(PHY,"ulsch ra (eNB): Or1      %d\n",ulsch->harq_processes[harq_pid]->Or1);
+  LOG_D(PHY,"ulsch ra (eNB): ORI      %d\n",ulsch->harq_processes[harq_pid]->O_RI);
 #endif
   return(0);
 }
@@ -231,7 +231,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *ue,
   cqireq=rar[3]&1;
 
   if (rballoc>RIV_max) {
-    msg("rar_tools.c: ERROR: rb_alloc (%x) > RIV_max\n",rballoc);
+    LOG_D(PHY,"rar_tools.c: ERROR: rb_alloc (%x) > RIV_max\n",rballoc);
     return(-1);
   }
 
@@ -244,7 +244,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *ue,
   ulsch->power_offset = ue_power_offsets[ulsch->harq_processes[harq_pid]->nb_rb];
 
   if (ulsch->harq_processes[harq_pid]->nb_rb > 4) {
-    msg("rar_tools.c: unlikely rb count for RAR grant : nb_rb > 3\n");
+    LOG_D(PHY,"rar_tools.c: unlikely rb count for RAR grant : nb_rb > 3\n");
     return(-1);
   }
 
@@ -308,16 +308,16 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *ue,
 
 
   //#ifdef DEBUG_RAR
-  msg("ulsch ra (UE): harq_pid %d\n",harq_pid);
-  msg("ulsch ra (UE): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-  msg("ulsch ra (UE): first_rb %x\n",ulsch->harq_processes[harq_pid]->first_rb);
-  msg("ulsch ra (UE): nb_rb    %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-  msg("ulsch ra (UE): round    %d\n",ulsch->harq_processes[harq_pid]->round);
-  msg("ulsch ra (UE): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
-  msg("ulsch ra (UE): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
-  msg("ulsch ra (UE): TPC      %d\n",ulsch->harq_processes[harq_pid]->TPC);
-  msg("ulsch ra (UE): O        %d\n",ulsch->O);
-  msg("ulsch ra (UE): ORI      %d\n",ulsch->O_RI);
+  LOG_D(PHY,"ulsch ra (UE): harq_pid %d\n",harq_pid);
+  LOG_D(PHY,"ulsch ra (UE): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+  LOG_D(PHY,"ulsch ra (UE): first_rb %x\n",ulsch->harq_processes[harq_pid]->first_rb);
+  LOG_D(PHY,"ulsch ra (UE): nb_rb    %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+  LOG_D(PHY,"ulsch ra (UE): round    %d\n",ulsch->harq_processes[harq_pid]->round);
+  LOG_D(PHY,"ulsch ra (UE): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
+  LOG_D(PHY,"ulsch ra (UE): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
+  LOG_D(PHY,"ulsch ra (UE): TPC      %d\n",ulsch->harq_processes[harq_pid]->TPC);
+  LOG_D(PHY,"ulsch ra (UE): O        %d\n",ulsch->O);
+  LOG_D(PHY,"ulsch ra (UE): ORI      %d\n",ulsch->O_RI);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_RAR,VCD_FUNCTION_OUT);
 

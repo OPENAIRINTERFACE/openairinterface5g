@@ -44,7 +44,7 @@ void randominit(unsigned seed_init)
 {
   int i;
   // this need to be integrated with the existing rng, like taus: navid
-  msg("Initializing random number generator, seed %x\n",seed_init);
+  LOG_D(PHY,"Initializing random number generator, seed %x\n",seed_init);
 
   if (seed_init == 0) {
     srand((unsigned)time(NULL));

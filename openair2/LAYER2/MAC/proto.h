@@ -725,12 +725,10 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
                                     unsigned char short_padding,
                                     unsigned short post_padding);
 
-/** \brief RRC Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.
+/** \brief RRC eNB Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.
 @param Mod_id Instance ID of eNB
 @param CC_id Component Carrier of the eNB
-@param eNB_flag Indicates if this is a eNB or UE configuration
-@param rntiP id of UE if this is an eNB configuration
-@param eNB_id Index of eNB if this is a UE configuration
+@param mib Pointer to MIB
 @param radioResourceConfigCommon Structure from SIB2 for common radio parameters (if NULL keep existing configuration)
 @param physcialConfigDedicated Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated PHY parameters (if NULL keep existing configuration)
 @param measObj Structure from RRCConnectionReconfiguration for UE measurement procedures
@@ -747,16 +745,19 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 @param mbsfn_AreaInfoList pointer to MBSFN Area Info list from SIB13
 @param pmch_InfoList pointer to PMCH_InfoList from MBSFNAreaConfiguration Message (MCCH Message)
 */
-int rrc_mac_config_req(module_id_t     module_idP,
-                       int             CC_id,
-                       eNB_flag_t eNB_flag,
-                       rnti_t          rntiP,
-                       uint8_t         eNB_index,
-                       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
-                       struct PhysicalConfigDedicated *physicalConfigDedicated,
+int rrc_mac_config_req_eNB(module_id_t        module_idP,
+			   int                CC_id,
+			   int                physCellId,
+			   int                p_eNB,
+			   int                Ncp,
+			   int                eutra_band,
+			   uint32_t           dl_CarrierFreq,
+			   BCCH_BCH_Message_t *mib,
+ 			   RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+			   struct PhysicalConfigDedicated *physicalConfigDedicated,
 #ifdef Rel10
-                       SCellToAddMod_r10_t *sCellToAddMod_r10,
-                       //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
+			   SCellToAddMod_r10_t *sCellToAddMod_r10,
+			   //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
                        MeasObjectToAddMod_t **measObj,
                        MAC_MainConfig_t *mac_MainConfig,
@@ -767,7 +768,7 @@ int rrc_mac_config_req(module_id_t     module_idP,
                        MobilityControlInfo_t *mobilityControlInfo,
                        uint8_t *SIwindowsize,
                        uint16_t *SIperiod,
-                       ARFCN_ValueEUTRA_t *ul_CarrierFreq,
+                       uint32_t ul_CarrierFreq,
                        long *ul_Bandwidth,
                        AdditionalSpectrumEmission_t *additionalSpectrumEmission,
                        struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList
@@ -784,6 +785,62 @@ int rrc_mac_config_req(module_id_t     module_idP,
                        uint16_t cba_rnti
 #endif
                       );
+
+/** \brief RRC eNB Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.
+@param Mod_id Instance ID of ue
+@param CC_id Component Carrier of the ue
+@param eNB_id Index of eNB
+@param radioResourceConfigCommon Structure from SIB2 for common radio parameters (if NULL keep existing configuration)
+@param physcialConfigDedicated Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated PHY parameters (if NULL keep existing configuration)
+@param measObj Structure from RRCConnectionReconfiguration for UE measurement procedures
+@param mac_MainConfig Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated MAC parameters (if NULL keep existing configuration)
+@param logicalChannelIdentity Logical channel identity index of corresponding logical channel config
+@param logicalChannelConfig Pointer to logical channel configuration
+@param measGapConfig Measurement Gap configuration for MAC (if NULL keep existing configuration)
+@param tdd_Config TDD Configuration from SIB1 (if NULL keep existing configuration)
+@param mobilityControlInfo mobility control info received for Handover
+@param SIwindowsize SI Windowsize from SIB1 (if NULL keep existing configuration)
+@param SIperiod SI Period from SIB1 (if NULL keep existing configuration)
+@param MBMS_Flag indicates MBMS transmission
+@param mbsfn_SubframeConfigList pointer to mbsfn subframe configuration list from SIB2
+@param mbsfn_AreaInfoList pointer to MBSFN Area Info list from SIB13
+@param pmch_InfoList pointer to PMCH_InfoList from MBSFNAreaConfiguration Message (MCCH Message)
+*/
+int rrc_mac_config_req_ue(module_id_t     module_idP,
+			  int             CC_id,
+			  uint8_t         eNB_index,
+			  RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+			  struct PhysicalConfigDedicated *physicalConfigDedicated,
+#ifdef Rel10
+			  SCellToAddMod_r10_t *sCellToAddMod_r10,
+			  //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
+#endif
+			  MeasObjectToAddMod_t **measObj,
+			  MAC_MainConfig_t *mac_MainConfig,
+			  long logicalChannelIdentity,
+			  LogicalChannelConfig_t *logicalChannelConfig,
+			  MeasGapConfig_t *measGapConfig,
+			  TDD_Config_t *tdd_Config,
+			  MobilityControlInfo_t *mobilityControlInfo,
+			  uint8_t *SIwindowsize,
+			  uint16_t *SIperiod,
+			  ARFCN_ValueEUTRA_t *ul_CarrierFreq,
+			  long *ul_Bandwidth,
+			  AdditionalSpectrumEmission_t *additionalSpectrumEmission,
+			  struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList
+#ifdef Rel10
+			  ,
+			  uint8_t MBMS_Flag,
+			  MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
+			  PMCH_InfoList_r9_t *pmch_InfoList
+			  
+#endif
+#ifdef CBA
+			  ,
+			  uint8_t num_active_cba_groups,
+			  uint16_t cba_rnti
+#endif
+			  );
 
 /** \brief get the estimated UE distance from the PHY->MAC layer.
 @param Mod_id Instance ID of eNB

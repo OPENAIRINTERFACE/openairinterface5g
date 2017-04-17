@@ -32,29 +32,34 @@
 #ifndef __PHY_DEFS__H__
 #define __PHY_DEFS__H__
 
+#define _GNU_SOURCE
+#include <sched.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <linux/sched.h>
+#include <signal.h>
+#include <execinfo.h>
+#include <getopt.h>
+#include <sys/sysinfo.h>
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
 #include <math.h>
 #include "common_lib.h"
+#include "msc.h"
 
 //#include <complex.h>
 #include "assertions.h"
 #ifdef MEX
 # define msg mexPrintf
-#else
-# ifdef OPENAIR2
-#   if ENABLE_RAL
-#     include "collection/hashtable/hashtable.h"
-#     include "COMMON/ral_messages_types.h"
-#     include "UTIL/queue.h"
-#   endif
-#   include "log.h"
-#   define msg(aRGS...) LOG_D(PHY, ##aRGS)
-# else
-#   define msg printf
-# endif
 #endif
 //use msg in the real-time thread context
 #define msg_nrt printf
@@ -71,13 +76,6 @@
 #define bigmalloc16 malloc16
 #define openair_free(y,x) free((y))
 #define PAGE_SIZE 4096
-
-//#ifdef SHRLIBDEV
-//extern int rxrescale;
-//#define RX_IQRESCALELEN rxrescale
-//#else
-//#define RX_IQRESCALELEN 15
-//#endif
 
 //! \brief Allocate \c size bytes of memory on the heap with alignment 16 and zero it afterwards.
 //! If no more memory is available, this function will terminate the program with an assertion error.
@@ -124,12 +122,45 @@ static inline void* malloc16_clear( size_t size )
 #include "PHY/TOOLS/defs.h"
 #include "platform_types.h"
 
-#ifdef OPENAIR_LTE
+#define MAX_NUM_RU_PER_eNB 64 
 
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include <pthread.h>
 
 #include "targets/ARCH/COMMON/common_lib.h"
+
+#if defined(EXMIMO) || defined(OAI_USRP)
+#define NUMBER_OF_eNB_MAX 1
+#define NUMBER_OF_UE_MAX 16
+#define NUMBER_OF_RU_MAX 2
+#define NUMBER_OF_CONNECTED_eNB_MAX 3
+#else
+#ifdef LARGE_SCALE
+#define NUMBER_OF_eNB_MAX 2
+#define NUMBER_OF_UE_MAX 120
+#define NUMBER_OF_CONNECTED_eNB_MAX 1 // to save some memory
+#else
+#define NUMBER_OF_eNB_MAX 3
+#define NUMBER_OF_UE_MAX 16
+#define NUMBER_OF_RU_MAX 64
+#define NUMBER_OF_CONNECTED_eNB_MAX 1
+#endif
+#endif
+#define NUMBER_OF_SUBBANDS_MAX 13
+#define NUMBER_OF_HARQ_PID_MAX 8
+
+#define MAX_FRAME_NUMBER 0x400
+
+
+
+#define NUMBER_OF_RN_MAX 3
+typedef enum {no_relay=1,unicast_relay_type1,unicast_relay_type2, multicast_relay} relaying_type_t;
+
+
+
+#define MCS_COUNT 28
+#define MCS_TABLE_LENGTH_MAX 64
+
 
 #define NUM_DCI_MAX 32
 
@@ -137,11 +168,22 @@ static inline void* malloc16_clear( size_t size )
 
 #define NB_BANDS_MAX 8
 
+#define MAX_BANDS_PER_RRU 4
+
+
 #ifdef OCP_FRAMEWORK
 #include <enums.h>
 #else
 typedef enum {normal_txrx=0,rx_calib_ue=1,rx_calib_ue_med=2,rx_calib_ue_byp=3,debug_prach=4,no_L2_connect=5,calib_prach_tx=6,rx_dump_frame=7,loop_through_memory=8} runmode_t;
 
+/*! \brief Extension Type */
+typedef enum {
+  CYCLIC_PREFIX,
+  CYCLIC_SUFFIX,
+  ZEROS,
+  NONE
+} Extension_t;
+	
 enum transmission_access_mode {
   NO_ACCESS=0,
   POSTPONED_ACCESS,
@@ -152,17 +194,18 @@ enum transmission_access_mode {
 
 typedef enum  {
   eNodeB_3GPP=0,   // classical eNodeB function
-  eNodeB_3GPP_BBU, // eNodeB with NGFI IF5
-  NGFI_RCC_IF4p5,  // NGFI_RCC (NGFI radio cloud center) 
-  NGFI_RAU_IF4p5,
+  NGFI_RAU_IF5,    // RAU with NGFI IF5
+  NGFI_RAU_IF4p5,  // RAU with NFGI IF4p5
   NGFI_RRU_IF5,    // NGFI_RRU (NGFI remote radio-unit,IF5)
-  NGFI_RRU_IF4p5   // NGFI_RRU (NGFI remote radio-unit,IF4p5) 
-} eNB_func_t;
+  NGFI_RRU_IF4p5,  // NGFI_RRU (NGFI remote radio-unit,IF4p5)
+  MBP_RRU_IF5      // Mobipass RRU
+} node_function_t;
 
 typedef enum {
   synch_to_ext_device=0,  // synch to RF or Ethernet device
-  synch_to_other          // synch to another source (timer, other RU)
-} RU_timing_t;
+  synch_to_other          // synch to another source_(timer, other RU)
+} node_timing_t;
+#endif
 
 typedef struct UE_SCAN_INFO_s {
   /// 10 best amplitudes (linear) for each pss signals
@@ -228,56 +271,104 @@ typedef struct {
   int G;
 } te_params;
 
-typedef struct pc_proc_t_s {
+typedef struct RU_proc_t_s {
+  /// Pointer to associated RU descriptor
+  struct RU_t_s *ru;
   /// timestamp received from HW
   openair0_timestamp timestamp_rx;
   /// timestamp to send to "slave rru"
   openair0_timestamp timestamp_tx;
   /// subframe to act upon for reception
   int subframe_rx;
+  /// subframe to act upon for transmission
+  int subframe_tx;
+  /// subframe to act upon for reception of prach
+  int subframe_prach;
   /// frame to act upon for reception
   int frame_rx;
+  /// frame to act upon for transmission
+  int frame_tx;
+  /// frame to act upon for reception of prach
+  int frame_prach;
+  /// frame offset for slave RUs (to correct for frame asynchronism at startup)
+  int frame_offset;
   /// \brief Instance count for FH processing thread.
   /// \internal This variable is protected by \ref mutex_FH.
   int instance_cnt_FH;
+  /// \internal This variable is protected by \ref mutex_prach.
+  int instance_cnt_prach;
+  /// \internal This variable is protected by \ref mutex_synch.
+  int instance_cnt_synch;
+  /// \internal This variable is protected by \ref mutex_eNBs.
+  int instance_cnt_eNBs;
   /// \brief Instance count for rx processing thread.
   /// \internal This variable is protected by \ref mutex_asynch_rxtx.
   int instance_cnt_asynch_rxtx;
-  /// pthread structure for FH processing thread
+  /// \internal This variable is protected by \ref mutex_fep
+  int instance_cnt_fep;
+  /// pthread structure for RU FH processing thread
   pthread_t pthread_FH;
-  /// pthread structure for eNB single processing thread
-  pthread_t pthread_single;
+  /// pthread structure for RU prach processing thread
+  pthread_t pthread_prach;
+  /// pthread struct for RU synch thread
+  pthread_t pthread_synch;
+  /// pthread struct for RU RX FEP thread
+  pthread_t pthread_fep;
   /// pthread structure for asychronous RX/TX processing thread
   pthread_t pthread_asynch_rxtx;
   /// flag to indicate first RX acquisition
   int first_rx;
   /// flag to indicate first TX transmission
   int first_tx;
-  /// pthread attributes for FH processing thread
+  /// pthread attributes for RU FH processing thread
   pthread_attr_t attr_FH;
-  /// pthread attributes for single eNB processing thread
-  pthread_attr_t attr_single;
+  /// pthread attributes for RU prach
+  pthread_attr_t attr_prach;
+  /// pthread attributes for RU synch thread
+  pthread_attr_t attr_synch;
   /// pthread attributes for asynchronous RX thread
   pthread_attr_t attr_asynch_rxtx;
-  /// scheduling parameters for FH thread
+  /// pthread attributes for parallel fep thread
+  pthread_attr_t attr_fep;
+  /// scheduling parameters for RU FH thread
   struct sched_param sched_param_FH;
-  /// scheduling parameters for single eNB thread
-  struct sched_param sched_param_single;
+  /// scheduling parameters for RU prach thread
+  struct sched_param sched_param_prach;
+  /// scheduling parameters for RU synch thread
+  struct sched_param sched_param_synch;
   /// scheduling parameters for asynch_rxtx thread
   struct sched_param sched_param_asynch_rxtx;
-  /// condition variable for FH thread
+  /// condition variable for RU FH thread
   pthread_cond_t cond_FH;
+  /// condition variable for RU prach thread
+  pthread_cond_t cond_prach;
+  /// condition variable for RU synch thread
+  pthread_cond_t cond_synch;
   /// condition variable for asynch RX/TX thread
   pthread_cond_t cond_asynch_rxtx;
-  /// mutex for FH
+  /// condition varaible for RU RX FEP thread
+  pthread_cond_t cond_fep;
+  /// condition variable for eNB signal
+  pthread_cond_t cond_eNBs;
+  /// mutex for RU FH
   pthread_mutex_t mutex_FH;
+  /// mutex for RU prach
+  pthread_mutex_t mutex_prach;
+  /// mutex for RU synch
+  pthread_mutex_t mutex_synch;
+  /// mutex for eNB signal
+  pthread_mutex_t mutex_eNBs;
   /// mutex for asynch RX/TX thread
   pthread_mutex_t mutex_asynch_rxtx;
+  /// mutex for fep RX
+  pthread_mutex_t mutex_fep;
+  /// symbol mask for IF4p5 reception per subframe
+  uint32_t symbol_mask[10];
   /// number of slave threads
   int                  num_slaves;
   /// array of pointers to slaves
-  struct pc_proc_t_s           **slave_proc;
-} pc_proc_t;
+  struct RU_proc_t_s           **slave_proc;
+} RU_proc_t;
 
 /// Context data structure for eNB subframe processing
 typedef struct eNB_proc_t_s {
@@ -291,27 +382,19 @@ typedef struct eNB_proc_t_s {
   openair0_timestamp timestamp_tx;
   /// subframe to act upon for reception
   int subframe_rx;
-  /// symbol mask for IF4p5 reception per subframe
-  uint32_t symbol_mask[10];
   /// subframe to act upon for PRACH
   int subframe_prach;
   /// frame to act upon for reception
   int frame_rx;
   /// frame to act upon for transmission
   int frame_tx;
-  /// frame offset for secondary eNBs (to correct for frame asynchronism at startup)
-  int frame_offset;
   /// frame to act upon for PRACH
   int frame_prach;
-  /// \internal This variable is protected by \ref mutex_fep.
-  int instance_cnt_fep;
   /// \internal This variable is protected by \ref mutex_td.
   int instance_cnt_td;
   /// \internal This variable is protected by \ref mutex_te.
   int instance_cnt_te;
   /// \brief Instance count for FH processing thread.
-  /// \internal This variable is protected by \ref mutex_FH.
-  int instance_cnt_FH;
   /// \brief Instance count for rx processing thread.
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
@@ -319,8 +402,6 @@ typedef struct eNB_proc_t_s {
   int instance_cnt_synch;
   /// \internal This variable is protected by \ref mutex_asynch_rxtx.
   int instance_cnt_asynch_rxtx;
-  /// pthread structure for FH processing thread
-  pthread_t pthread_FH;
   /// pthread structure for eNB single processing thread
   pthread_t pthread_single;
   /// pthread structure for asychronous RX/TX processing thread
@@ -329,74 +410,46 @@ typedef struct eNB_proc_t_s {
   int first_rx;
   /// flag to indicate first TX transmission
   int first_tx;
-  /// pthread attributes for parallel fep thread
-  pthread_attr_t attr_fep;
   /// pthread attributes for parallel turbo-decoder thread
   pthread_attr_t attr_td;
   /// pthread attributes for parallel turbo-encoder thread
   pthread_attr_t attr_te;
-  /// pthread attributes for FH processing thread
-  pthread_attr_t attr_FH;
   /// pthread attributes for single eNB processing thread
   pthread_attr_t attr_single;
   /// pthread attributes for prach processing thread
   pthread_attr_t attr_prach;
-  /// pthread attributes for over-the-air synch thread
-  pthread_attr_t attr_synch;
   /// pthread attributes for asynchronous RX thread
   pthread_attr_t attr_asynch_rxtx;
-  /// scheduling parameters for parallel fep thread
-  struct sched_param sched_param_fep;
   /// scheduling parameters for parallel turbo-decoder thread
   struct sched_param sched_param_td;
   /// scheduling parameters for parallel turbo-encoder thread
   struct sched_param sched_param_te;
-  /// scheduling parameters for FH thread
-  struct sched_param sched_param_FH;
   /// scheduling parameters for single eNB thread
   struct sched_param sched_param_single;
   /// scheduling parameters for prach thread
   struct sched_param sched_param_prach;
-  /// scheduling parameters for over-the-air synchronization thread
-  struct sched_param sched_param_synch;
   /// scheduling parameters for asynch_rxtx thread
   struct sched_param sched_param_asynch_rxtx;
-  /// pthread structure for parallel fep thread
-  pthread_t pthread_fep;
   /// pthread structure for parallel turbo-decoder thread
   pthread_t pthread_td;
   /// pthread structure for parallel turbo-encoder thread
   pthread_t pthread_te;
   /// pthread structure for PRACH thread
   pthread_t pthread_prach;
-  /// pthread structure for eNB synch thread
-  pthread_t pthread_synch;
-  /// condition variable for parallel fep thread
-  pthread_cond_t cond_fep;
   /// condition variable for parallel turbo-decoder thread
   pthread_cond_t cond_td;
   /// condition variable for parallel turbo-encoder thread
   pthread_cond_t cond_te;
-  /// condition variable for FH thread
-  pthread_cond_t cond_FH;
   /// condition variable for PRACH processing thread;
   pthread_cond_t cond_prach;
-  // condition variable for over-the-air eNB synchronization
-  pthread_cond_t cond_synch;
   /// condition variable for asynch RX/TX thread
   pthread_cond_t cond_asynch_rxtx;
-  /// mutex for parallel fep thread
-  pthread_mutex_t mutex_fep;
   /// mutex for parallel turbo-decoder thread
   pthread_mutex_t mutex_td;
   /// mutex for parallel turbo-encoder thread
   pthread_mutex_t mutex_te;
-  /// mutex for FH
-  pthread_mutex_t mutex_FH;
   /// mutex for PRACH thread
   pthread_mutex_t mutex_prach;
-  // mutex for over-the-air eNB synchronization
-  pthread_mutex_t mutex_synch;
   /// mutex for asynch RX/TX thread
   pthread_mutex_t mutex_asynch_rxtx;
   /// parameters for turbo-decoding worker thread
@@ -405,10 +458,6 @@ typedef struct eNB_proc_t_s {
   te_params tep;
   /// set of scheduling variables RXn-TXnp4 threads
   eNB_rxtx_proc_t proc_rxtx[2];
-  /// number of slave threads
-  int                  num_slaves;
-  /// array of pointers to slaves
-  struct eNB_proc_t_s           **slave_proc;
 } eNB_proc_t;
 
 
@@ -468,9 +517,267 @@ typedef struct {
   pthread_cond_t cond_synch;
   /// mutex for UE synch thread
   pthread_mutex_t mutex_synch;
+  /// instance count for eNBs
+  int instance_cnt_eNBs;
   /// set of scheduling variables RXn-TXnp4 threads
   UE_rxtx_proc_t proc_rxtx[2];
 } UE_proc_t;
+
+typedef enum {
+  LOCAL_RF        =0,
+  REMOTE_IF5      =1,
+  REMOTE_MBP_IF5  =2,
+  REMOTE_IF4p5    =3,
+  MAX_RU_IF_TYPES =4
+} RU_if_south_t;
+
+typedef struct RU_t_s{
+  /// index of this ru
+  uint32_t idx;
+  /// southbound interface
+  RU_if_south_t if_south;
+  /// timing
+  node_timing_t if_timing;
+  /// function
+  node_function_t function;
+  /// Ethernet parameters for fronthaul interface
+  eth_params_t eth_params;
+  /// flag to indicate the RU is in synch with a master reference
+  int in_synch;
+  /// timing offset
+  int rx_offset;        
+  /// flag to indicate the RU is a slave to another source
+  int is_slave;
+  /// Total gain of receive chain
+  uint32_t             rx_total_gain_dB;
+  /// number of bands that this device can support
+  int num_bands;
+  /// band list
+  int band[MAX_BANDS_PER_RRU];
+  /// number of RX paths on device
+  int nb_rx;
+  /// number of TX paths on device
+  int nb_tx;
+  /// maximum PDSCH RS EPRE
+  int max_pdschReferenceSignalPower;
+  /// maximum RX gain
+  int max_rxgain;
+  /// Attenuation of RX paths on device
+  int att_rx;
+  /// Attenuation of TX paths on device
+  int att_tx;
+  /// flag to indicate precoding operation in RU
+  int do_precoding;
+  /// Frame parameters
+  LTE_DL_FRAME_PARMS frame_parms;
+  ///timing offset used in TDD
+  int              N_TA_offset; 
+  /// RF device descriptor
+  openair0_device rfdevice;
+  /// HW configuration
+  openair0_config_t openair0_cfg;
+  /// Number of eNBs using this RU
+  int num_eNB;
+  /// list of eNBs using this RU
+  struct PHY_VARS_eNB_s *eNB_list[NUMBER_OF_eNB_MAX];
+  /// Mapping of antenna ports to RF chain index
+  openair0_rf_map      rf_map;
+  /// IF device descriptor
+  openair0_device ifdevice;
+  /// Pointer for ifdevice buffer struct
+  if_buffer_t ifbuffer;
+  /// if prach processing is to be performed in RU
+  int                  do_prach;
+  /// function pointer to synchronous RX fronthaul function (RRU,3GPP_eNB)
+  void                 (*fh_south_in)(struct RU_t_s *ru,int *frame, int *subframe);
+  /// function pointer to synchronous TX fronthaul function
+  void                 (*fh_south_out)(struct RU_t_s *ru);
+  /// function pointer to synchronous RX fronthaul function (RRU)
+  void                 (*fh_north_in)(struct RU_t_s *ru,int *frame, int *subframe);
+  /// function pointer to synchronous RX fronthaul function (RRU)
+  void                 (*fh_north_out)(struct RU_t_s *ru);
+  /// function pointer to asynchronous fronthaul interface
+  void                 (*fh_north_asynch_in)(struct RU_t_s *ru,int *frame, int *subframe);
+  /// function pointer to asynchronous fronthaul interface
+  void                 (*fh_south_asynch_in)(struct RU_t_s *ru,int *frame, int *subframe);
+  /// function pointer to initialization function for radio interface
+  int                  (*start_rf)(struct RU_t_s *ru);
+  /// function pointer to initialization function for radio interface
+  int                  (*start_if)(struct RU_t_s *ru,struct PHY_VARS_eNB_s *eNB);
+  /// function pointer to RX front-end processing routine (DFTs/prefix removal or NULL)
+  void                 (*feprx)(struct RU_t_s *ru);
+  /// function pointer to TX front-end processing routine (IDFTs and prefix removal or NULL)
+  void                 (*feptx_ofdm)(struct RU_t_s *ru);
+  /// function pointer to TX front-end processing routine (PRECODING)
+  void                 (*feptx_prec)(struct RU_t_s *ru);
+  /// function pointer to wakeup routine in lte-enb.
+  int (*wakeup_rxtx)(struct PHY_VARS_eNB_s *eNB,int frame_rx,int subframe_rx);
+  /// function pointer to eNB entry routine
+  void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string);
+  /// Timing statistics
+  time_stats_t ofdm_demod_stats;
+  /// RX and TX buffers for precoder output
+  RU_COMMON            common;
+  /// beamforming weight vectors per eNB
+  int32_t **beam_weights[NUMBER_OF_eNB_MAX][15];
+
+  /// received frequency-domain signal for PRACH (IF4p5 RRU) 
+  int16_t              **prach_rxsigF;
+  /// sequence number for IF5
+  uint8_t seqno;
+  /// initial timestamp used as an offset make first real timestamp 0
+  openair0_timestamp   ts_offset;
+  /// process scheduling variables
+  RU_proc_t            proc;
+} RU_t;
+
+
+typedef struct {
+  //unsigned int   rx_power[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];     //! estimated received signal power (linear)
+  //unsigned short rx_power_dB[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];  //! estimated received signal power (dB)
+  //unsigned short rx_avg_power_dB[NUMBER_OF_CONNECTED_eNB_MAX];              //! estimated avg received signal power (dB)
+
+  // RRC measurements
+  uint32_t rssi;
+  int n_adj_cells;
+  unsigned int adj_cell_id[6];
+  uint32_t rsrq[7];
+  uint32_t rsrp[7];
+  float rsrp_filtered[7]; // after layer 3 filtering
+  float rsrq_filtered[7];
+  // common measurements
+  //! estimated noise power (linear)
+  unsigned int   n0_power[NB_ANTENNAS_RX];
+  //! estimated noise power (dB)
+  unsigned short n0_power_dB[NB_ANTENNAS_RX];
+  //! total estimated noise power (linear)
+  unsigned int   n0_power_tot;
+  //! total estimated noise power (dB)
+  unsigned short n0_power_tot_dB;
+  //! average estimated noise power (linear)
+  unsigned int   n0_power_avg;
+  //! average estimated noise power (dB)
+  unsigned short n0_power_avg_dB;
+  //! total estimated noise power (dBm)
+  short n0_power_tot_dBm;
+
+  // UE measurements
+  //! estimated received spatial signal power (linear)
+  int            rx_spatial_power[NUMBER_OF_CONNECTED_eNB_MAX][2][2];
+  //! estimated received spatial signal power (dB)
+  unsigned short rx_spatial_power_dB[NUMBER_OF_CONNECTED_eNB_MAX][2][2];
+
+  /// estimated received signal power (sum over all TX antennas)
+  //int            wideband_cqi[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
+  int            rx_power[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
+  /// estimated received signal power (sum over all TX antennas)
+  //int            wideband_cqi_dB[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
+  unsigned short rx_power_dB[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
+
+  /// estimated received signal power (sum over all TX/RX antennas)
+  int            rx_power_tot[NUMBER_OF_CONNECTED_eNB_MAX]; //NEW
+  /// estimated received signal power (sum over all TX/RX antennas)
+  unsigned short rx_power_tot_dB[NUMBER_OF_CONNECTED_eNB_MAX]; //NEW
+
+  //! estimated received signal power (sum of all TX/RX antennas, time average)
+  int            rx_power_avg[NUMBER_OF_CONNECTED_eNB_MAX];
+  //! estimated received signal power (sum of all TX/RX antennas, time average, in dB)
+  unsigned short rx_power_avg_dB[NUMBER_OF_CONNECTED_eNB_MAX];
+
+  /// SINR (sum of all TX/RX antennas, in dB)
+  int            wideband_cqi_tot[NUMBER_OF_CONNECTED_eNB_MAX];
+  /// SINR (sum of all TX/RX antennas, time average, in dB)
+  int            wideband_cqi_avg[NUMBER_OF_CONNECTED_eNB_MAX];
+
+  //! estimated rssi (dBm)
+  short          rx_rssi_dBm[NUMBER_OF_CONNECTED_eNB_MAX];
+  //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
+  int            rx_correlation[NUMBER_OF_CONNECTED_eNB_MAX][2];
+  //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
+  int            rx_correlation_dB[NUMBER_OF_CONNECTED_eNB_MAX][2];
+
+  /// Wideband CQI (sum of all RX antennas, in dB, for precoded transmission modes (3,4,5,6), up to 4 spatial streams)
+  int            precoded_cqi_dB[NUMBER_OF_CONNECTED_eNB_MAX+1][4];
+  /// Subband CQI per RX antenna (= SINR)
+  int            subband_cqi[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX][NUMBER_OF_SUBBANDS_MAX];
+  /// Total Subband CQI  (= SINR)
+  int            subband_cqi_tot[NUMBER_OF_CONNECTED_eNB_MAX][NUMBER_OF_SUBBANDS_MAX];
+  /// Subband CQI in dB (= SINR dB)
+  int            subband_cqi_dB[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX][NUMBER_OF_SUBBANDS_MAX];
+  /// Total Subband CQI
+  int            subband_cqi_tot_dB[NUMBER_OF_CONNECTED_eNB_MAX][NUMBER_OF_SUBBANDS_MAX];
+  /// Wideband PMI for each RX antenna
+  int            wideband_pmi_re[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
+  /// Wideband PMI for each RX antenna
+  int            wideband_pmi_im[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
+  ///Subband PMI for each RX antenna
+  int            subband_pmi_re[NUMBER_OF_CONNECTED_eNB_MAX][NUMBER_OF_SUBBANDS_MAX][NB_ANTENNAS_RX];
+  ///Subband PMI for each RX antenna
+  int            subband_pmi_im[NUMBER_OF_CONNECTED_eNB_MAX][NUMBER_OF_SUBBANDS_MAX][NB_ANTENNAS_RX];
+  /// chosen RX antennas (1=Rx antenna 1, 2=Rx antenna 2, 3=both Rx antennas)
+  unsigned char           selected_rx_antennas[NUMBER_OF_CONNECTED_eNB_MAX][NUMBER_OF_SUBBANDS_MAX];
+  /// Wideband Rank indication
+  unsigned char  rank[NUMBER_OF_CONNECTED_eNB_MAX];
+  /// Number of RX Antennas
+  unsigned char  nb_antennas_rx;
+  /// DLSCH error counter
+  // short          dlsch_errors;
+
+} PHY_MEASUREMENTS;
+
+typedef struct {
+  //unsigned int   rx_power[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];     //! estimated received signal power (linear)
+  //unsigned short rx_power_dB[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];  //! estimated received signal power (dB)
+  //unsigned short rx_avg_power_dB[NUMBER_OF_CONNECTED_eNB_MAX];              //! estimated avg received signal power (dB)
+
+  // common measurements
+  //! estimated noise power (linear)
+  unsigned int   n0_power[MAX_NUM_RU_PER_eNB];
+  //! estimated noise power (dB)
+  unsigned short n0_power_dB[MAX_NUM_RU_PER_eNB];
+  //! total estimated noise power (linear)
+  unsigned int   n0_power_tot;
+  //! estimated avg noise power (dB)
+  unsigned short n0_power_tot_dB;
+  //! estimated avg noise power (dB)
+  short n0_power_tot_dBm;
+  //! estimated avg noise power per RB per RX ant (lin)
+  unsigned short n0_subband_power[MAX_NUM_RU_PER_eNB][100];
+  //! estimated avg noise power per RB per RX ant (dB)
+  unsigned short n0_subband_power_dB[MAX_NUM_RU_PER_eNB][100];
+  //! estimated avg noise power per RB (dB)
+  short n0_subband_power_tot_dB[100];
+  //! estimated avg noise power per RB (dBm)
+  short n0_subband_power_tot_dBm[100];
+  // eNB measurements (per user)
+  //! estimated received spatial signal power (linear)
+  unsigned int   rx_spatial_power[NUMBER_OF_UE_MAX][2][2];
+  //! estimated received spatial signal power (dB)
+  unsigned short rx_spatial_power_dB[NUMBER_OF_UE_MAX][2][2];
+  //! estimated rssi (dBm)
+  short          rx_rssi_dBm[NUMBER_OF_UE_MAX];
+  //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
+  int            rx_correlation[NUMBER_OF_UE_MAX][2];
+  //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
+  int            rx_correlation_dB[NUMBER_OF_UE_MAX][2];
+
+  /// Wideband CQI (= SINR)
+  int            wideband_cqi[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB];
+  /// Wideband CQI in dB (= SINR dB)
+  int            wideband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB];
+  /// Wideband CQI (sum of all RX antennas, in dB)
+  char           wideband_cqi_tot[NUMBER_OF_UE_MAX];
+  /// Subband CQI per RX antenna and RB (= SINR)
+  int            subband_cqi[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB][100];
+  /// Total Subband CQI and RB (= SINR)
+  int            subband_cqi_tot[NUMBER_OF_UE_MAX][100];
+  /// Subband CQI in dB and RB (= SINR dB)
+  int            subband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB][100];
+  /// Total Subband CQI and RB
+  int            subband_cqi_tot_dB[NUMBER_OF_UE_MAX][100];
+
+} PHY_MEASUREMENTS_eNB;
+
 
 /// Top-level PHY Data Structure for eNB
 typedef struct PHY_VARS_eNB_s {
@@ -478,26 +785,23 @@ typedef struct PHY_VARS_eNB_s {
   module_id_t          Mod_id;
   uint8_t              CC_id;
   eNB_proc_t           proc;
-  eNB_func_t           node_function;
-  eNB_timing_t         node_timing;
-  eth_params_t         *eth_params;
   int                  single_thread_flag;
-  openair0_rf_map      rf_map;
   int                  abstraction_flag;
-  openair0_timestamp   ts_offset;
-  void                 (*do_prach)(struct PHY_VARS_eNB_s *eNB);
+  int                  num_RU;
+  RU_t                 *RU_list[MAX_NUM_RU_PER_eNB];
+  int                  rx_total_gain_dB;
+  //  void                 (*do_prach)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame, int subframe);
   int                  (*td)(struct PHY_VARS_eNB_s *eNB,int UE_id,int harq_pid,int llr8_flag);
   int                  (*te)(struct PHY_VARS_eNB_s *,uint8_t *,uint8_t,LTE_eNB_DLSCH_t *,int,uint8_t,time_stats_t *,time_stats_t *,time_stats_t *);
-  void                 (*proc_uespec_rx)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc,const relaying_type_t r_type);
-  void                 (*proc_tx)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type,PHY_VARS_RN *rn);
-  void                 (*tx_fh)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc);
-  void                 (*rx_fh)(struct PHY_VARS_eNB_s *eNB,int *frame, int *subframe);
-  int                  (*start_if)(struct PHY_VARS_eNB_s *eNB);
-  void                 (*fh_asynch)(struct PHY_VARS_eNB_s *eNB,int *frame, int *subframe);
+  //  void                 (*proc_uespec_rx)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc,const relaying_type_t r_type);
+  //  void                 (*proc_tx)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type,PHY_VARS_RN *rn);
+  //  void                 (*tx_fh)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc);
+  //  void                 (*rx_fh)(struct PHY_VARS_eNB_s *eNB,int *frame, int *subframe);
+  int                  (*start_if)(struct RU_t_s *ru,struct PHY_VARS_eNB_s *eNB);
+  //  void                 (*fh_asynch)(struct PHY_VARS_eNB_s *eNB,int *frame, int *subframe);
   uint8_t              local_flag;
-  uint32_t             rx_total_gain_dB;
   LTE_DL_FRAME_PARMS   frame_parms;
-  PHY_MEASUREMENTS_eNB measurements[NUMBER_OF_eNB_SECTORS_MAX]; /// Measurement variables
+  PHY_MEASUREMENTS_eNB measurements; 
   LTE_eNB_COMMON       common_vars;
   LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PBCH         pbch;
@@ -533,8 +837,6 @@ typedef struct PHY_VARS_eNB_s {
   uint32_t max_peak_val;
   int max_eNB_id, max_sync_pos;
 
-  int              N_TA_offset; ///timing offset used in TDD
-
   /// \brief sinr for all subcarriers of the current link (used only for abstraction).
   /// first index: ? [0..N_RB_DL*12[
   double *sinr_dB;
@@ -545,13 +847,11 @@ typedef struct PHY_VARS_eNB_s {
   unsigned char first_run_timing_advance[NUMBER_OF_UE_MAX];
   unsigned char first_run_I0_measurements;
 
-  unsigned char cooperation_flag; // for cooperative communication
-
+  
   unsigned char    is_secondary_eNB; // primary by default
   unsigned char    is_init_sync;     /// Flag to tell if initial synchronization is performed. This affects how often the secondary eNB will listen to the PSS from the primary system.
   unsigned char    has_valid_precoder; /// Flag to tell if secondary eNB has channel estimates to create NULL-beams from, and this B/F vector is created.
   unsigned char    PeNB_id;          /// id of Primary eNB
-  int              rx_offset;        /// Timing offset (used if is_secondary_eNB)
 
   /// hold the precoder for NULL beam to the primary user
   int              **dl_precoder_SeNB[3];
@@ -649,7 +949,6 @@ typedef struct PHY_VARS_eNB_s {
   time_stats_t dlsch_turbo_encoding_stats;
   time_stats_t dlsch_interleaving_stats;
 
-  time_stats_t ofdm_demod_stats;
   time_stats_t rx_dft_stats;
   time_stats_t ulsch_channel_estimation_stats;
   time_stats_t ulsch_freq_offset_estimation_stats;
@@ -945,65 +1244,33 @@ typedef struct {
   openair0_device rfdevice; 
 } PHY_VARS_UE;
 
-typedef enum {
-  LOCAL_RF=0,
-  REMOTE_IF5=1,
-  REMOTE_IF4p5=2,
-  REMOTE_IF1pp=3,
-  MAX_RU_IF_TYPES=4
-} RU_if_in_t;
 
-typedef struct {
 
-  /// input interface
-  RU_if_in_t RU_if_in;
-  /// timing
-  RU_if_timing_t RU_if_timing;
-  /// number of RX paths on device
-  int nb_rx;
-  /// number of TX paths on device
-  int nb_tx;
-  /// Radio Unit device descriptor
-  openair0_device rudevice;
-  /// Pointer for ifdevice buffer struct
-  if_buffer_t ifbuffer;
-} RU_desc_t;
 
-typedef struct PRECODER_t_s{
-  /// pointer to RAN context governing this precoder
-  RAN_CONTEXT *RC;
-  /// function pointer to synchronous TX fronthaul function
-  void                 (*tx_fh)(PRECODER_t_s *pc);
-  /// function pointer to synchronous RX fronthaul function
-  void                 (*rx_fh)(PRECODER_t_s *pc,int *frame, int *subframe);
-  /// function pointer to asynchronous fronthaul interface
-  void                 (*fh_asynch)(struct PRECODER_t_s *pc,int *frame, int *subframe);
-  /// function pointer to initialization function for radio interface
-  int                  (*start_rf)(struct PRECODER_t_s *pc);
-  /// function pointer to RX front-end processing routine (DFTs/prefix removal or NULL)
-  void                 (*fep_rx)(struct PRECODER_t_s *pc);
-  /// function pointer to TX front-end processing routine (PRECODING and/or IDFTs and prefix removal or NULL)
-  void                 (*fep_tx)(struct PRECODER_t_s *pc);
-  /// RX and TX buffers for precoder output
-  RU_TIME              ru_time;
-} PRECODER_t;
 
-typedef struct {
-  /// Number of eNB instances in this node
-  int nb_inst;
-  /// Number of Component Carriers per instance in this node
-  int *nb_CC;
-  /// Number of radio units
-  int nb_RU;
-  /// eNB context variables
-  PHY_VARS_eNB **eNB;
-  /// RU descriptors
-  RU_desc_t *ru_desc;
-  /// Precoding descriptor per radio unit. This describes what each radio unit is supposed to do and contains the necessary functions for fronthaul interfaces
-  PRECODER_t *pc;
-} RAN_CONTEXT_t;
 
 void exit_fun(const char* s);
+
+#include "UTIL/LOG/log_extern.h"
+extern pthread_cond_t sync_cond;
+extern pthread_mutex_t sync_mutex;
+extern int sync_var;
+
+
+
+static inline void wait_sync(char *thread_name) {
+
+  printf( "waiting for sync (%s)\n",thread_name);
+  pthread_mutex_lock( &sync_mutex );
+  
+  while (sync_var<0)
+    pthread_cond_wait( &sync_cond, &sync_mutex );
+  
+  pthread_mutex_unlock(&sync_mutex);
+  
+  printf( "got sync (%s)\n", thread_name);
+
+}
 
 static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
   if (pthread_mutex_lock(mutex) != 0) {
@@ -1074,5 +1341,4 @@ static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *
 #include "PHY/LTE_ESTIMATION/defs.h"
 
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
-#endif
 #endif //  __PHY_DEFS__H__

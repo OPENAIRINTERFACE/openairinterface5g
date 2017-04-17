@@ -140,7 +140,7 @@ int generate_pilots_slot(PHY_VARS_eNB *eNB,
   uint8_t second_pilot;
 
   if (slot<0 || slot>= 20) {
-    msg("generate_pilots_slot: slot not in range (%d)\n",slot);
+    LOG_E(PHY,"generate_pilots_slot: slot not in range (%d)\n",slot);
     return(-1);
   }
 

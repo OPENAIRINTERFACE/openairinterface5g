@@ -88,7 +88,7 @@ typedef enum {
 
 void init_UE_threads(int nb_inst);
 void *UE_thread(void *arg);
-void init_UE(int nb_inst);
+void init_UE(int nb_inst,int,int);
 
 extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
@@ -165,18 +165,78 @@ static const eutra_band_t eutra_bands[] = {
   {44, 703    * MHz, 803    * MHz, 703    * MHz, 803    * MHz, TDD},
 };
 
+
+
 pthread_t                       main_ue_thread;
 pthread_attr_t                  attr_UE_thread;
 struct sched_param              sched_param_UE_thread;
 
-void init_UE(int nb_inst) {
+
+PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
+                         uint8_t UE_id,
+                         uint8_t abstraction_flag)
+
+{
+
+  int i,j;
+  PHY_VARS_UE* PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
+  memset(PHY_vars_UE,0,sizeof(PHY_VARS_UE));
+  PHY_vars_UE->Mod_id=UE_id;
+  memcpy(&(PHY_vars_UE->frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+  phy_init_lte_ue(PHY_vars_UE,1,abstraction_flag);
+
+  for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
+    for (j=0; j<2; j++) {
+      PHY_vars_UE->dlsch[i][j]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
+
+      if (!PHY_vars_UE->dlsch[i][j]) {
+        LOG_E(PHY,"Can't get ue dlsch structures\n");
+        exit(-1);
+      } else
+        LOG_D(PHY,"dlsch[%d][%d] => %p\n",UE_id,i,PHY_vars_UE->dlsch[i][j]);
+    }
+
+
+
+    PHY_vars_UE->ulsch[i]  = new_ue_ulsch(frame_parms->N_RB_UL, abstraction_flag);
+
+    if (!PHY_vars_UE->ulsch[i]) {
+      LOG_E(PHY,"Can't get ue ulsch structures\n");
+      exit(-1);
+    }
+
+    PHY_vars_UE->dlsch_SI[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
+    PHY_vars_UE->dlsch_ra[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
+
+    PHY_vars_UE->transmission_mode[i] = frame_parms->nb_antenna_ports_eNB==1 ? 1 : 2;
+  }
+
+  PHY_vars_UE->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
+
+  PHY_vars_UE->dlsch_MCH[0]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS_MBSFN,frame_parms->N_RB_DL,0);
+
+  return (PHY_vars_UE);
+}
+
+char uecap_xer[1024];
+
+void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in) {
 
   int error_code;
   int inst;
   PHY_VARS_UE *UE;
   int ret;
 
+  LOG_I(PHY,"UE %d: Calling Layer 2 for initialization\n",inst);
+    
+  if (mac_xface==NULL) mac_xface = malloc(sizeof(MAC_xface));  
+  l2_init_ue(eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,
+	     0,// cba_group_active
+	     0); // HO flag
+  mac_xface->macphy_exit = &exit_fun;
+
   for (inst=0;inst<nb_inst;inst++) {
+
     printf("Intializing UE Threads for instance %d ...\n",inst);
     init_UE_threads(inst);
     sleep(1);
@@ -188,7 +248,7 @@ void init_UE(int nb_inst) {
 	exit_fun("Error loading device library");
       }
     }
-    UE->rfdevice.host_type = BBU_HOST;
+    UE->rfdevice.host_type = RAU_HOST;
     //    UE->rfdevice.type      = NONE_DEV;
     error_code = pthread_create(&UE->proc.pthread_ue, &UE->proc.attr_ue, UE_thread, NULL);
     
@@ -234,6 +294,16 @@ static void *UE_thread_synch(void *arg)
   UE->is_synchronized = 0;
   printf("UE_thread_sync in with PHY_vars_UE %p\n",arg);
   printf("waiting for sync (UE_thread_synch) \n");
+
+  printf("waiting for sync (UE_thread)\n");
+  pthread_mutex_lock(&sync_mutex);
+  printf("Locked sync_mutex, waiting (UE_thread)\n");
+
+  while (sync_var<0)
+    pthread_cond_wait(&sync_cond, &sync_mutex);
+
+  pthread_mutex_unlock(&sync_mutex);
+  printf("unlocked sync_mutex, waiting (UE_thread)\n");
 
 #ifndef DEADLINE_SCHEDULER
   int policy, s, j;
@@ -317,7 +387,7 @@ static void *UE_thread_synch(void *arg)
       current_band = eutra_bands[ind].band;
       printf( "Scanning band %d, dl_min %"PRIu32", ul_min %"PRIu32"\n", current_band, eutra_bands[ind].dl_min,eutra_bands[ind].ul_min);
 
-      if ((eutra_bands[ind].dl_min <= downlink_frequency[0][0]) && (eutra_bands[ind].dl_max >= downlink_frequency[0][0])) {
+      if ((eutra_bands[ind].dl_min <= UE->frame_parms.dl_CarrierFreq) && (eutra_bands[ind].dl_max >= UE->frame_parms.dl_CarrierFreq)) {
 	for (i=0; i<4; i++)
 	  uplink_frequency_offset[CC_id][i] = eutra_bands[ind].ul_min - eutra_bands[ind].dl_min;
 
@@ -338,11 +408,11 @@ static void *UE_thread_synch(void *arg)
 
 
 
-    LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %"PRIu32", UL %"PRIu32" (oai_exit %d, rx_num_channels %d)\n", downlink_frequency[0][0], downlink_frequency[0][0]+uplink_frequency_offset[0][0],oai_exit, openair0_cfg[0].rx_num_channels);
+    LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %"PRIu32", UL %"PRIu32" (oai_exit %d, rx_num_channels %d)\n", UE->frame_parms.dl_CarrierFreq, UE->frame_parms.ul_CarrierFreq,oai_exit, openair0_cfg[0].rx_num_channels);
 
     for (i=0;i<openair0_cfg[UE->rf_map.card].rx_num_channels;i++) {
-      openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] = downlink_frequency[CC_id][i];
-      openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] = downlink_frequency[CC_id][i]+uplink_frequency_offset[CC_id][i];
+      openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] = UE->frame_parms.dl_CarrierFreq;
+      openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] = UE->frame_parms.ul_CarrierFreq;
       openair0_cfg[UE->rf_map.card].autocal[UE->rf_map.chain+i] = 1;
       if (uplink_frequency_offset[CC_id][i] != 0) // 
 	openair0_cfg[UE->rf_map.card].duplex_mode = duplex_mode_FDD;
@@ -443,8 +513,8 @@ static void *UE_thread_synch(void *arg)
           hw_slot_offset,
           freq_offset,
           UE->rx_total_gain_dB,
-          downlink_frequency[0][0]+freq_offset,
-          downlink_frequency[0][0]+uplink_frequency_offset[0][0]+freq_offset,
+          UE->frame_parms.dl_CarrierFreq+freq_offset,
+          UE->frame_parms.ul_CarrierFreq+freq_offset,
           UE->UE_scan_carrier );
 
 	if (UE->UE_scan_carrier == 1) {
@@ -462,7 +532,7 @@ static void *UE_thread_synch(void *arg)
 	        openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] -= UE->common_vars.freq_offset;
 	    }
 	    openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] =  openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i]+uplink_frequency_offset[CC_id][i];
-	    downlink_frequency[CC_id][i] = openair0_cfg[CC_id].rx_freq[i];
+	    UE->frame_parms.dl_CarrierFreq = openair0_cfg[CC_id].rx_freq[i];
 	    freq_offset=0;	    
 	  }
 
@@ -562,12 +632,12 @@ static void *UE_thread_synch(void *arg)
         LOG_I( PHY, "[initial_sync] trying carrier off %d Hz, rxgain %d (DL %u, UL %u)\n", 
 	       freq_offset,
                UE->rx_total_gain_dB,
-               downlink_frequency[0][0]+freq_offset,
-               downlink_frequency[0][0]+uplink_frequency_offset[0][0]+freq_offset );
+               UE->frame_parms.dl_CarrierFreq+freq_offset,
+               UE->frame_parms.ul_CarrierFreq+freq_offset );
 
 	for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
-	  openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] = downlink_frequency[CC_id][i]+freq_offset;
-	  openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] = downlink_frequency[CC_id][i]+uplink_frequency_offset[CC_id][i]+freq_offset;
+	  openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] = UE->frame_parms.dl_CarrierFreq+freq_offset;
+	  openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] = UE->frame_parms.ul_CarrierFreq+freq_offset;
 	  
 	  openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
 	  

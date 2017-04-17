@@ -1640,16 +1640,13 @@ void generate_RIV_tables(void);
 */
 int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode);
 
-void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
+void rx_ulsch(PHY_VARS_eNB *eNB,
               eNB_rxtx_proc_t *proc,
-	      uint8_t eNB_id,  // this is the effective sector id
-              uint8_t UE_id,
-              LTE_eNB_ULSCH_t **ulsch,
-              uint8_t cooperation_flag);
+              uint8_t UE_id);
 
-void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
+
+void rx_ulsch_emul(PHY_VARS_eNB *eNB,
 		   eNB_rxtx_proc_t *proc,
-                   uint8_t sect_id,
                    uint8_t UE_index);
 
 /*!
@@ -1909,7 +1906,8 @@ int32_t generate_prach(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe,
 
 /*!
   \brief Process PRACH waveform
-  @param phy_vars_eNB Pointer to eNB top-level descriptor
+  @param phy_vars_eNB Pointer to eNB top-level descriptor. If NULL, then this is an RRU
+  @param ru Pointer to RU top-level descriptor. If NULL, then this is an eNB and we make use of the RU_list
   @param preamble_energy_list List of energies for each candidate preamble
   @param preamble_delay_list List of delays for each candidate preamble
   @param Nf System frame number
@@ -1917,7 +1915,7 @@ int32_t generate_prach(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe,
   @returns 0 on success
 
 */
-void rx_prach(PHY_VARS_eNB *phy_vars_eNB,uint16_t *preamble_energy_list, uint16_t *preamble_delay_list, uint16_t Nf, uint8_t tdd_mapindex);
+void rx_prach(PHY_VARS_eNB *phy_vars_eNB,RU_t *ru,uint16_t *preamble_energy_list, uint16_t *preamble_delay_list, uint16_t Nf, uint8_t tdd_mapindex);
 
 /*!
   \brief Helper for MAC, returns number of available PRACH in TDD for a particular configuration index

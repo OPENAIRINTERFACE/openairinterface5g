@@ -472,7 +472,7 @@ int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char* buffer, int length
 #endif
 
  
-      len += sprintf(&buffer[len], "[UE PROC] Transmission Mode %d (mode1_flag %d)\n",ue->transmission_mode[eNB],ue->frame_parms.mode1_flag);
+      len += sprintf(&buffer[len], "[UE PROC] Transmission Mode %d \n",ue->transmission_mode[eNB]);
       len += sprintf(&buffer[len], "[UE PROC] PBCH err conseq %d, PBCH error total %d, PBCH FER %d\n",
                      ue->pbch_vars[eNB]->pdu_errors_conseq,
                      ue->pbch_vars[eNB]->pdu_errors,
@@ -577,9 +577,9 @@ int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
                    eNB_id,number_of_cards_l,
                    proc->frame_tx,
                    eNB->rx_total_gain_dB,
-                   eNB->measurements[eNB_id].n0_power_tot_dBm,
-                   eNB->measurements[eNB_id].n0_power_dB[0],
-                   eNB->measurements[eNB_id].n0_power_dB[1]);
+                   eNB->measurements.n0_power_tot_dBm,
+                   eNB->measurements.n0_power_dB[0],
+                   eNB->measurements.n0_power_dB[1]);
 
     len += sprintf(&buffer[len],"PRB I0 (%X.%X.%X.%X): ",
 		   eNB->rb_mask_ul[0],
@@ -587,7 +587,7 @@ int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
 
     for (i=0; i<eNB->frame_parms.N_RB_UL; i++) {
       len += sprintf(&buffer[len],"%4d ",
-                     eNB->measurements[eNB_id].n0_subband_power_tot_dBm[i]);
+                     eNB->measurements.n0_subband_power_tot_dBm[i]);
       if ((i>0) && ((i%25) == 0)) 
 	len += sprintf(&buffer[len],"\n");
     }
@@ -631,7 +631,7 @@ int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
 		       eNB->frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
 		       dB_fixed(eNB->UE_stats[UE_id].Po_PUCCH1_below/eNB->frame_parms.N_RB_UL)-eNB->rx_total_gain_dB,
 		       dB_fixed(eNB->UE_stats[UE_id].Po_PUCCH1_above/eNB->frame_parms.N_RB_UL)-eNB->rx_total_gain_dB,
-		       PUCCH1_THRES+eNB->measurements[0].n0_power_tot_dBm-dB_fixed(eNB->frame_parms.N_RB_UL));
+		       PUCCH1_THRES+eNB->measurements.n0_power_tot_dBm-dB_fixed(eNB->frame_parms.N_RB_UL));
 	
 	len+= sprintf(&buffer[len],"DL mcs %d, UL mcs %d, UL rb %d, delta_TF %d, ",
 		      eNB->dlsch[(uint8_t)UE_id][0]->harq_processes[0]->mcs,
@@ -640,8 +640,8 @@ int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
 		      eNB->ulsch[(uint8_t)UE_id]->harq_processes[0]->delta_TF);
 	
 	len += sprintf(&buffer[len],"Wideband CQI: (%d,%d) dB\n",
-		       eNB->measurements[eNB_id].wideband_cqi_dB[UE_id][0],
-		       eNB->measurements[eNB_id].wideband_cqi_dB[UE_id][1]);
+		       eNB->measurements.wideband_cqi_dB[UE_id][0],
+		       eNB->measurements.wideband_cqi_dB[UE_id][1]);
 	
 	/*	len += sprintf(&buffer[len],"[eNB PROC] Subband CQI:    ");
 	

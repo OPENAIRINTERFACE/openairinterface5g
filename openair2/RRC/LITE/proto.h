@@ -461,4 +461,5 @@ long binary_search_int(int elements[], long numElem, int value);
 
 long binary_search_float(float elements[], long numElem, float value);
 
+void openair_rrc_top_init_eNB(int eMBMS_active,uint8_t HO_active);
 /** @}*/

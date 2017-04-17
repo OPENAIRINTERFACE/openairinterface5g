@@ -247,7 +247,8 @@ void init_oai_emulation(void)
   oai_emulation.info.first_rn_local=0;
   oai_emulation.info.master_id=0;
   oai_emulation.info.nb_ue_local= 1;//default 1 UE
-  oai_emulation.info.nb_enb_local= 1;//default 1 eNB
+  oai_emulation.info.nb_enb_local= 0;//default 0 eNB (to be loaded from config)
+  oai_emulation.info.nb_ru_local= 0;//default 0 ru (to be loaded from config)
   oai_emulation.info.nb_rn_local= 0;//default 0 RN : currently only applicable for eMBMS
   oai_emulation.info.ethernet_flag=0;
   oai_emulation.info.ocm_enabled=1;// flag ?

@@ -41,8 +41,8 @@
 #define OAI_TP_LIBNAME        "liboai_transpro.so"
 
 /* flags for BBU to determine whether the attached radio head is local or remote */
-#define BBU_LOCAL_RADIO_HEAD  0
-#define BBU_REMOTE_RADIO_HEAD 1
+#define RAU_LOCAL_RADIO_HEAD  0
+#define RAU_REMOTE_RADIO_HEAD 1
 
 #ifndef MAX_CARDS
 #define MAX_CARDS 8
@@ -118,10 +118,10 @@ typedef enum {
 /*!\brief  openair0 device host type */
 typedef enum {
   MIN_HOST_TYPE = 0,
- /*!\brief device functions within a BBU */
-  BBU_HOST,
- /*!\brief device functions within a RRH */
-  RRH_HOST,
+ /*!\brief device functions within a RAU */
+  RAU_HOST,
+ /*!\brief device functions within a RRU */
+  RRU_HOST,
   MAX_HOST_TYPE
 
 }host_type_t;
@@ -203,14 +203,6 @@ typedef struct {
   //! the two following parameters are used to convert iqs 
   int iq_txshift;
   int iq_rxrescale;
-  //! remote IP/MAC addr for Ethernet interface
-  char *remote_addr;
-  //! remote port number for Ethernet interface
-  unsigned int remote_port;
-  //! local IP/MAC addr for Ethernet interface (eNB/BBU, UE)
-  char *my_addr;
-  //! local port number for Ethernet interface (eNB/BBU, UE)
-  unsigned int my_port;
   //! Configuration file for LMS7002M
   char *configFilename;
 } openair0_config_t;
@@ -228,11 +220,11 @@ typedef struct {
   char *remote_addr;
   //! remote port number for Ethernet interface
   uint16_t remote_port;
-  //! local IP/MAC addr for Ethernet interface (eNB/BBU, UE)
+  //! local IP/MAC addr for Ethernet interface (eNB/RAU, UE)
   char *my_addr;
-  //! local port number for Ethernet interface (eNB/BBU, UE)
+  //! local port number for Ethernet interface (eNB/RAU, UE)
   uint16_t  my_port;
-  //! local Ethernet interface (eNB/BBU, UE)
+  //! local Ethernet interface (eNB/RAU, UE)
   char *local_if_name;
   //! tx_sample_advance for RF + ETH
   uint8_t tx_sample_advance;
@@ -271,11 +263,14 @@ struct openair0_device_t {
   /*!brief Transport protocol type that the device suppports (in case I/Q samples need to be transported) */
   transport_type_t transp_type;
 
-   /*!brief Type of the device's host (BBU/RRH) */
+   /*!brief Type of the device's host (RAU/RRU) */
   host_type_t host_type;
 
   /* !brief RF frontend parameters set by application */
   openair0_config_t *openair0_cfg;
+
+  /* !brief ETH params set by application */
+  eth_params_t *eth_params;
 
   /*!brief Can be used by driver to hold internal structure*/
   void *priv;
@@ -287,16 +282,16 @@ struct openair0_device_t {
   */
   int (*trx_start_func)(openair0_device *device);
 
-  /*! \brief Called to send a request message between BBU-RRH
+  /*! \brief Called to send a request message between RAU-RRU
       @param device pointer to the device structure specific to the RF hardware target
-      @param msg pointer to the message structure passed between BBU-RRH
+      @param msg pointer to the message structure passed between RAU-RRU
       @param msg_len length of the message  
   */  
   int (*trx_request_func)(openair0_device *device, void *msg, ssize_t msg_len);
 
-  /*! \brief Called to send a reply  message between BBU-RRH
+  /*! \brief Called to send a reply  message between RAU-RRU
       @param device pointer to the device structure specific to the RF hardware target
-      @param msg pointer to the message structure passed between BBU-RRH
+      @param msg pointer to the message structure passed between RAU-RRU
       @param msg_len length of the message  
   */  
   int (*trx_reply_func)(openair0_device *device, void *msg, ssize_t msg_len);
@@ -362,6 +357,11 @@ struct openair0_device_t {
    */
   int (*trx_set_gains_func)(openair0_device* device, openair0_config_t *openair0_cfg);
 
+  /*! \brief RRU Configuration callback
+   * \param idx RU index
+   * \param arg pointer to capabilities or configuration
+   */
+  int (*configure_rru)(int idx, void* arg);
 };
 
 /* type of device init function, implemented in shared lib */

@@ -65,33 +65,15 @@
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
-//efine ENABLE_ENB_AGENT_DL_SCHEDULER
-//#define DISABLE_SF_TRIGGER
-//#define DISABLE_CONT_STATS
 
-//#define DEBUG_HEADER_PARSING 1
-//#define DEBUG_PACKET_TRACE 1
-
-/*
-  #ifndef USER_MODE
-  #define msg debug_msg
-  #endif
- */
-
-
-
-
-
-
+extern RAN_CONTEXT_t RC;
 
 void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, frame_t frameP, sub_frame_t subframeP)  //, int calibration_flag) {
 {
 
   int mbsfn_status[MAX_NUM_CCs];
   protocol_ctxt_t   ctxt;
-#ifdef EXMIMO
-  //int ret;
-#endif
+
 #if defined(ENABLE_ITTI)
   MessageDef   *msg_p;
   const char         *msg_name;
@@ -100,7 +82,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 #endif
   DCI_PDU *DCI_pdu[MAX_NUM_CCs];
   int CC_id,i; //,next_i;
-  UE_list_t *UE_list=&eNB_mac_inst[module_idP].UE_list;
+  UE_list_t *UE_list=&RC.mac[module_idP]->UE_list;
   rnti_t rnti;
   void         *DLSCH_dci=NULL;
   int size_bits=0,size_bytes=0;
@@ -113,14 +95,14 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
   LOG_D(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler (UE_list->head %d)\n",module_idP, frameP, subframeP,UE_list->head);
 
-  start_meas(&eNB_mac_inst[module_idP].eNB_scheduler);
+  start_meas(&RC.mac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    DCI_pdu[CC_id] = &eNB_mac_inst[module_idP].common_channels[CC_id].DCI_pdu;
+    DCI_pdu[CC_id] = &RC.mac[module_idP]->common_channels[CC_id].DCI_pdu;
     mbsfn_status[CC_id]=0;
     // clear vrb_map
-    memset(eNB_mac_inst[module_idP].common_channels[CC_id].vrb_map,0,100);
+    memset(RC.mac[module_idP]->common_channels[CC_id].vrb_map,0,100);
   }
 
   // clear DCI and BCCH contents before scheduling
@@ -128,10 +110,10 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     DCI_pdu[CC_id]->Num_common_dci  = 0;
     DCI_pdu[CC_id]->Num_ue_spec_dci = 0;
 #ifdef Rel10
-    eNB_mac_inst[module_idP].common_channels[CC_id].mcch_active =0;
+    RC.mac[module_idP]->common_channels[CC_id].mcch_active =0;
 #endif
-    eNB_mac_inst[module_idP].frame    = frameP;
-    eNB_mac_inst[module_idP].subframe = subframeP;
+    RC.mac[module_idP]->frame    = frameP;
+    RC.mac[module_idP]->subframe = subframeP;
   }
 
   // refresh UE list based on UEs dropped by PHY in previous subframe
@@ -145,13 +127,13 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 	    UE_list->UE_sched_ctrl[i].ul_out_of_sync==0 ? "in synch" : "out of sync",
 	    UE_list->UE_template[CC_id][i].phr_info);
 
-    PHY_vars_eNB_g[module_idP][CC_id]->pusch_stats_bsr[i][(frameP*10)+subframeP]=-63;
+    RC.eNB[module_idP][CC_id]->pusch_stats_bsr[i][(frameP*10)+subframeP]=-63;
     if (i==UE_list->head)
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BSR,PHY_vars_eNB_g[module_idP][CC_id]->pusch_stats_bsr[i][(frameP*10)+subframeP]); 
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BSR,RC.eNB[module_idP][CC_id]->pusch_stats_bsr[i][(frameP*10)+subframeP]); 
     // increment this, it is cleared when we receive an sdu
-    eNB_mac_inst[module_idP].UE_list.UE_sched_ctrl[i].ul_inactivity_timer++;
+    RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ul_inactivity_timer++;
 
-    eNB_mac_inst[module_idP].UE_list.UE_sched_ctrl[i].cqi_req_timer++;
+    RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer++;
     eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
 
     if (eNB_UE_stats==NULL) {
@@ -177,8 +159,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 	  LOG_D(MAC,"UE %d rnti %x: sending PDCCH order for RAPROC (failure timer %d) \n",i,rnti,UE_list->UE_sched_ctrl[i].ul_failure_timer);	    
 	  DLSCH_dci = (void *)UE_list->UE_template[CC_id][i].DLSCH_DCI[0];
 	  *(uint32_t*)DLSCH_dci = 0;
-	  if (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.frame_type == TDD) {
-	    switch (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
+	  if (RC.eNB[module_idP][CC_id]->frame_parms.frame_type == TDD) {
+	    switch (RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL) {
 	    case 6:
 	      ((DCI1A_1_5MHz_TDD_1_6_t*)DLSCH_dci)->type = 1;
 	      ((DCI1A_1_5MHz_TDD_1_6_t*)DLSCH_dci)->rballoc = 31;
@@ -206,7 +188,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 	    }
 	  }
 	  else { // FDD
-	    switch (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
+	    switch (RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL) {
 	    case 6:
 	      ((DCI1A_1_5MHz_FDD_t*)DLSCH_dci)->type = 1;
 	      ((DCI1A_1_5MHz_FDD_t*)DLSCH_dci)->rballoc = 31;
@@ -349,10 +331,10 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 #ifdef Rel10
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    if (eNB_mac_inst[module_idP].common_channels[CC_id].MBMS_flag >0) {
-      start_meas(&eNB_mac_inst[module_idP].schedule_mch);
+    if (RC.mac[module_idP]->common_channels[CC_id].MBMS_flag >0) {
+      start_meas(&RC.mac[module_idP]->schedule_mch);
       mbsfn_status[CC_id] = schedule_MBMS(module_idP,CC_id,frameP,subframeP);
-      stop_meas(&eNB_mac_inst[module_idP].schedule_mch);
+      stop_meas(&RC.mac[module_idP]->schedule_mch);
     }
   }
 
@@ -1113,7 +1095,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   LOG_D(MAC,"frameP %d, subframeP %d\n",frameP,subframeP);
   */
 
-  stop_meas(&eNB_mac_inst[module_idP].eNB_scheduler);
+  stop_meas(&RC.mac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_OUT);
 
 }

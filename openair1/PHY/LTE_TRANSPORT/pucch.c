@@ -39,7 +39,7 @@
 #include "T.h"
 
 //uint8_t ncs_cell[20][7];
-//#define DEBUG_PUCCH_TX
+//#define DEBUG_PUCCH_TXS
 //#define DEBUG_PUCCH_RX
 
 int16_t cfo_pucch_np[24*7] = {20787,-25330,27244,-18205,31356,-9512,32767,0,31356,9511,27244,18204,20787,25329,
@@ -664,14 +664,14 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
 
   static int first_call=1;
-  LTE_eNB_COMMON *common_vars                = &eNB->common_vars;
+  LTE_eNB_COMMON *common_vars                        = &eNB->common_vars;
   LTE_DL_FRAME_PARMS *frame_parms                    = &eNB->frame_parms;
   //  PUCCH_CONFIG_DEDICATED *pucch_config_dedicated = &eNB->pucch_config_dedicated[UE_id];
-  int8_t sigma2_dB                                   = eNB->measurements[0].n0_subband_power_tot_dB[0]-10;
-  uint32_t *Po_PUCCH                                  = &(eNB->UE_stats[UE_id].Po_PUCCH);
+  int8_t sigma2_dB                                   = eNB->measurements.n0_subband_power_tot_dB[0]-10;
+  uint32_t *Po_PUCCH                                 = &(eNB->UE_stats[UE_id].Po_PUCCH);
   int32_t *Po_PUCCH_dBm                              = &(eNB->UE_stats[UE_id].Po_PUCCH_dBm);
-  uint32_t *Po_PUCCH1_below                           = &(eNB->UE_stats[UE_id].Po_PUCCH1_below);
-  uint32_t *Po_PUCCH1_above                           = &(eNB->UE_stats[UE_id].Po_PUCCH1_above);
+  uint32_t *Po_PUCCH1_below                          = &(eNB->UE_stats[UE_id].Po_PUCCH1_below);
+  uint32_t *Po_PUCCH1_above                          = &(eNB->UE_stats[UE_id].Po_PUCCH1_above);
   int32_t *Po_PUCCH_update                           = &(eNB->UE_stats[UE_id].Po_PUCCH_update);
   uint32_t u,v,n,aa;
   uint32_t z[12*14];
@@ -918,7 +918,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
         re_offset -= (frame_parms->ofdm_symbol_size);
 
       symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*l;
-      rxptr = (int16_t *)&common_vars->rxdataF[0][aa][symbol_offset];
+      rxptr = (int16_t *)&common_vars->rxdataF[aa][symbol_offset];
 
       for (i=0; i<12; i++,j+=2,re_offset++) {
         rxcomp[aa][j]   = (int16_t)((rxptr[re_offset<<1]*(int32_t)zptr[j])>>15)   - ((rxptr[1+(re_offset<<1)]*(int32_t)zptr[1+j])>>15);
@@ -1007,7 +1007,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 #endif
 
 #ifdef DEBUG_PUCCH_RX
-    LOG_I(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,eNB->measurements[0].n0_subband_power_tot_dBm[6],pucch1_thres,phase_max);
+    LOG_I(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,eNB->measurements.n0_subband_power_tot_dBm[6],pucch1_thres,phase_max);
 #endif
 
     eNB->pucch1_stats[UE_id][(subframe<<10)+eNB->pucch1_stats_cnt[UE_id][subframe]] = stat_max;

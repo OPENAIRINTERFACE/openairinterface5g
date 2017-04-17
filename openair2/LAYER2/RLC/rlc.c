@@ -422,7 +422,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 
     case RLC_MODE_AM:
 #ifdef DEBUG_RLC_DATA_REQ
-      msg("RLC_MODE_AM\n");
+      LOG_D(RLC,"RLC_MODE_AM\n");
 #endif
       new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_am_data_req_alloc), __func__);
 

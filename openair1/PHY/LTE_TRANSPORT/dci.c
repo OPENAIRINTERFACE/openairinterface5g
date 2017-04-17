@@ -2165,7 +2165,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
 
 
   // Now do modulation
-  if (frame_parms->mode1_flag==1)
+  if (frame_parms->nb_antenna_ports_eNB==1)
     gain_lin_QPSK = (int16_t)((amp*ONE_OVER_SQRT2_Q15)>>15);
   else
     gain_lin_QPSK = amp/2;
@@ -2177,7 +2177,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
 #endif
 
 
-  if (frame_parms->mode1_flag) { //SISO
+  if (frame_parms->nb_antenna_ports_eNB==1) { //SISO
 
 
     for (i=0; i<Msymb2; i++) {
@@ -2396,23 +2396,23 @@ uint8_t generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
     if (dci_alloc[n_dci].format > 0) { // exclude the uplink dci
 
       if (dci_alloc[n_dci].rnti == SI_RNTI) {
-        dlsch_eNB = PHY_vars_eNB_g[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id]->dlsch_SI;
+        dlsch_eNB = RC.eNB[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id]->dlsch_SI;
         eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].dlsch_type[n_dci_dl] = 0;//SI;
         eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].harq_pid[n_dci_dl] = 0;
         eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].tbs[n_dci_dl] = dlsch_eNB->harq_processes[0]->TBS>>3;
         LOG_D(PHY,"[DCI][EMUL]SI tbs is %d and dci index %d harq pid is %d \n",eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].tbs[n_dci_dl],n_dci_dl,
               eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].harq_pid[n_dci_dl]);
       } else if (dci_alloc[n_dci_dl].ra_flag == 1) {
-        dlsch_eNB = PHY_vars_eNB_g[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id]->dlsch_ra;
+        dlsch_eNB = RC.eNB[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id]->dlsch_ra;
         eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].dlsch_type[n_dci_dl] = 1;//RA;
         eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].harq_pid[n_dci_dl] = 0;
         eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].tbs[n_dci_dl] = dlsch_eNB->harq_processes[0]->TBS>>3;
         LOG_D(PHY,"[DCI][EMUL] RA  tbs is %d and dci index %d harq pid is %d \n",eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].tbs[n_dci_dl],n_dci_dl,
               eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].harq_pid[n_dci_dl]);
       } else {
-        ue_id = find_ue(dci_alloc[n_dci_dl].rnti,PHY_vars_eNB_g[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id]);
+        ue_id = find_ue(dci_alloc[n_dci_dl].rnti,RC.eNB[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id]);
         DevAssert( ue_id != (uint8_t)-1 );
-        dlsch_eNB = PHY_vars_eNB_g[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id]->dlsch[ue_id][0];
+        dlsch_eNB = RC.eNB[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id]->dlsch[ue_id][0];
 
         eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].dlsch_type[n_dci_dl] = 2;//TB0;
         eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].harq_pid[n_dci_dl] = dlsch_eNB->current_harq_pid;
@@ -2556,8 +2556,8 @@ uint16_t get_nCCE_mac(uint8_t Mod_id,uint8_t CC_id,int num_pdcch_symbols,int sub
 
   // check for eNB only !
   return(get_nCCE(num_pdcch_symbols,
-		  &PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms,
-		  get_mi(&PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms,subframe))); 
+		  &RC.eNB[Mod_id][CC_id]->frame_parms,
+		  get_mi(&RC.eNB[Mod_id][CC_id]->frame_parms,subframe))); 
 }
 
 
