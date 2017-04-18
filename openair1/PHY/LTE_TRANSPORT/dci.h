@@ -230,7 +230,7 @@ typedef struct DCI1A_10MHz_TDD_1_6 DCI1A_10MHz_TDD_1_6_t;
 ///  DCI Format Type 0 (20 MHz,TDD1-6, 27 bits)
 struct DCI0_20MHz_TDD_1_6 {
   /// Padding
-  uint32_t padding:2;
+  uint32_t padding:3;
   /// CQI request
   uint32_t cqi_req:1;
   /// DAI
