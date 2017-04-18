@@ -1365,7 +1365,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
     }
 
 //#ifdef DEBUG_PHY_PROC
-        LOG_I(PHY,
+        LOG_D(PHY,
               "[UE  %d][PUSCH %d] AbsSubframe %d.%d Generating PUSCH : first_rb %d, nb_rb %d, round %d, mcs %d, rv %d, cyclic_shift %d (cyclic_shift_common %d,n_DMRS2 %d,n_PRS %d), ACK (%d,%d), O_ACK %d, bundling %d\n",
 	  Mod_id,harq_pid,frame_tx%1024,subframe_tx,
 	  first_rb,nb_rb,
@@ -1525,7 +1525,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
       T(T_UE_PHY_PUSCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
                     T_INT(tx_amp),T_INT(ue->ulsch[eNB_id]->f_pusch),T_INT(get_PL(Mod_id,0,eNB_id)),T_INT(nb_rb));
 #endif
-      LOG_I(PHY,"[UE  %d][PUSCH %d] AbsSubFrame %d.%d, generating PUSCH, Po_PUSCH: %d dBm (max %d dBm), amp %d\n",
+      LOG_D(PHY,"[UE  %d][PUSCH %d] AbsSubFrame %d.%d, generating PUSCH, Po_PUSCH: %d dBm (max %d dBm), amp %d\n",
 	    Mod_id,harq_pid,frame_tx%1024,subframe_tx,ue->tx_power_dBm[subframe_tx],ue->tx_power_max_dBm, tx_amp);
       start_meas(&ue->ulsch_modulation_stats);
       ulsch_modulation(ue->common_vars.txdataF,
@@ -1878,7 +1878,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
       else
       {
           if (SR_payload>0) {
-              LOG_I(PHY,"[UE  %d][SR %x] AbsSubFrame %d.%d Generating PUCCH %s payload %d,%d (with SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d, amp %d\n",
+              LOG_D(PHY,"[UE  %d][SR %x] AbsSubFrame %d.%d Generating PUCCH %s payload %d,%d (with SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d, amp %d\n",
                       Mod_id,
                       ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][0]->rnti,
                       frame_tx % 1024, subframe_tx,
@@ -1891,7 +1891,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
                               Po_PUCCH,
                               tx_amp);
           } else {
-              LOG_I(PHY,"[UE  %d][PDSCH %x] AbsSubFrame %d.%d rx_offset_diff: %d, Generating PUCCH %s, an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d, amp %d\n",
+              LOG_D(PHY,"[UE  %d][PDSCH %x] AbsSubFrame %d.%d rx_offset_diff: %d, Generating PUCCH %s, an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d, amp %d\n",
                       Mod_id,
                       ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][0]->rnti,
                       frame_tx%1024, subframe_tx,ue->rx_offset_diff,
@@ -1995,13 +1995,13 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   break;
 
   case pucch_format2a:
-      LOG_I(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2a (RI or CQI) Ack/Nack 1bit \n",
+      LOG_D(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2a (RI or CQI) Ack/Nack 1bit \n",
               Mod_id,
               ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][0]->rnti,
               frame_tx%1024, subframe_tx);
       break;
   case pucch_format2b:
-      LOG_I(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2b (RI or CQI) Ack/Nack 2bits\n",
+      LOG_D(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2b (RI or CQI) Ack/Nack 2bits\n",
               Mod_id,
               ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][0]->rnti,
               frame_tx%1024, subframe_tx);
