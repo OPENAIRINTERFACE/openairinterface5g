@@ -62,7 +62,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type, int k) 
   if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
 
   if (packet_type == IF4p5_PDLFFT) {
-    LOG_I(PHY,"send DL_IF4p5: RU %d frame %d, subframe %d\n",ru->idx,frame,subframe);
+    LOG_D(PHY,"send DL_IF4p5: RU %d frame %d, subframe %d\n",ru->idx,frame,subframe);
 
     if (subframe_select(fp,subframe)==SF_S)
       nsym=fp->dl_symbols_in_S_subframe;
@@ -234,7 +234,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
   IF4p5_header_t *packet_header=NULL;
   uint16_t *data_block=NULL, *i=NULL;
 
-  LOG_I(PHY,"recv IF4p5: RU %d waiting (%d samples)\n",ru->idx,db_fulllength);    
+  LOG_D(PHY,"recv IF4p5: RU %d waiting (%d samples)\n",ru->idx,db_fulllength);    
   if (ru->ifdevice.trx_read_func(&ru->ifdevice,
 				 (int64_t*) packet_type,
 				 &rx_buffer,
@@ -261,7 +261,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
   if (*packet_type == IF4p5_PDLFFT) {          
     *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
 
-    LOG_I(PHY,"DL_IF4p5: RU %d frame %d, subframe %d, symbol %d\n",ru->idx,*frame,*subframe,*symbol_number);
+    LOG_D(PHY,"DL_IF4p5: RU %d frame %d, subframe %d, symbol %d\n",ru->idx,*frame,*subframe,*symbol_number);
 
     slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size);// + (*subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength - 1; 

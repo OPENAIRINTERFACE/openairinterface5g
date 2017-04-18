@@ -224,7 +224,7 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
   }
    
   eth->tx_nsamps = nblocks;
-  printf("Sending %d bytes to %s\n",packet_size,str);
+  //printf("Sending %d bytes to %s\n",packet_size,str);
 
   bytes_sent = sendto(eth->sockfd,
 		      buff[0], 
