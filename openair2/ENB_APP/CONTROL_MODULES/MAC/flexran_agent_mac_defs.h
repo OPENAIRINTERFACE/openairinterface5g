@@ -61,6 +61,10 @@ typedef struct {
 					 int *mbsfn_flag, Protocol__FlexranMessage **dl_info);
   
 
+ void (*flexran_agent_schedule_ul_spec)(mid_t module_idP,  uint32_t frameP, unsigned char cooperation_flag,
+        uint32_t subframeP, 
+        unsigned char sched_subframe);
+
   /// Notify the controller for a state change of a particular UE, by sending the proper
   /// UE state change message (ACTIVATION, DEACTIVATION, HANDOVER)
   // int (*flexran_agent_notify_ue_state_change)(mid_t mod_id, uint32_t rnti,

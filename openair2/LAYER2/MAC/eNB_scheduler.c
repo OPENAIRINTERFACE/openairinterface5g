@@ -382,11 +382,26 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
 
     if (mac_xface->frame_parms->frame_type == FDD) {  //FDD
+#ifndef FLEXRAN_AGENT_SB_IF
       schedule_ulsch(module_idP,frameP,cooperation_flag,0,4);//,calibration_flag);
+#else
+      if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+     
+#endif
+
     } else if  ((mac_xface->frame_parms->tdd_config == 0) || //TDD
                 (mac_xface->frame_parms->tdd_config == 3) ||
                 (mac_xface->frame_parms->tdd_config == 6)) {
+#ifndef FLEXRAN_AGENT_SB_IF      
       schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,4);//,calibration_flag);
+#else
+      if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+     
+#endif      
     }
 #ifndef FLEXRAN_AGENT_SB_IF
     schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
@@ -418,14 +433,31 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       switch (mac_xface->frame_parms->tdd_config) {
       case 0:
       case 1:
-        schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,7);
+#ifndef FLEXRAN_AGENT_SB_IF
+      schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,7);//,calibration_flag);
+#else
+
+if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif
 #ifndef FLEXRAN_AGENT_SB_IF
         fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #endif
         break;
 
       case 6:
+#ifndef FLEXRAN_AGENT_SB_IF      
         schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,8);
+#else
+
+  if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif  
+
 #ifndef FLEXRAN_AGENT_SB_IF
         fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #endif
@@ -435,7 +467,16 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         break;
       }
     } else { //FDD
+#ifndef FLEXRAN_AGENT_SB_IF            
       schedule_ulsch(module_idP,frameP,cooperation_flag,1,5);
+#else
+
+if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif        
+
 #ifndef FLEXRAN_AGENT_SB_IF
       schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
@@ -465,7 +506,16 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     // TDD, nothing
     // FDD, normal UL/DLSCH
     if (mac_xface->frame_parms->frame_type == FDD) {  //FDD
+#ifndef FLEXRAN_AGENT_SB_IF            
       schedule_ulsch(module_idP,frameP,cooperation_flag,2,6);
+#else
+
+   if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif        
+
 #ifndef FLEXRAN_AGENT_SB_IF
       schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
@@ -498,7 +548,15 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     if (mac_xface->frame_parms->frame_type == TDD) {
       switch (mac_xface->frame_parms->tdd_config) {
       case 2:
+#ifndef FLEXRAN_AGENT_SB_IF                  
         schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,7);
+#else
+
+if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif        
 
         // no break here!
       case 5:
@@ -528,8 +586,16 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         break;
       }
     } else { //FDD
-
+#ifndef FLEXRAN_AGENT_SB_IF                  
       schedule_ulsch(module_idP,frameP,cooperation_flag,3,7);
+#else
+
+if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif        
+
 #ifndef FLEXRAN_AGENT_SB_IF
       schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
@@ -563,7 +629,15 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       switch (mac_xface->frame_parms->tdd_config) {
       case 1:
         //        schedule_RA(module_idP,frameP,subframeP);
+#ifndef FLEXRAN_AGENT_SB_IF                        
         schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,8);
+#else
+
+if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif        
 
         // no break here!
       case 2:
@@ -600,8 +674,16 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       }
     } else {
       if (mac_xface->frame_parms->frame_type == FDD) {  //FDD
-
+#ifndef FLEXRAN_AGENT_SB_IF                        
 	schedule_ulsch(module_idP, frameP, cooperation_flag, 4, 8);
+#else
+
+if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif        
+
 #ifndef FLEXRAN_AGENT_SB_IF
 	schedule_ue_spec(module_idP, frameP, subframeP,  mbsfn_status);
         fill_DLSCH_dci(module_idP, frameP, subframeP,   mbsfn_status);
@@ -637,7 +719,16 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     //schedule_RA(module_idP,frameP,subframeP,5);
     if (mac_xface->frame_parms->frame_type == FDD) {
       schedule_RA(module_idP,frameP,subframeP,1);
+#ifndef FLEXRAN_AGENT_SB_IF                              
       schedule_ulsch(module_idP,frameP,cooperation_flag,5,9);
+#else
+
+if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif        
+
 #ifndef FLEXRAN_AGENT_SB_IF
       schedule_ue_spec(module_idP, frameP, subframeP,  mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
@@ -700,7 +791,15 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         break;
 
       case 1:
+#ifndef FLEXRAN_AGENT_SB_IF                                    
         schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,2);
+#else
+
+if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif         
         //  schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
 #ifndef FLEXRAN_AGENT_SB_IF
         fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
@@ -708,7 +807,15 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         break;
 
       case 6:
+#ifndef FLEXRAN_AGENT_SB_IF                                          
         schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,3);
+#else
+
+if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif                 
         //  schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
 #ifndef FLEXRAN_AGENT_SB_IF
         fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
@@ -767,7 +874,16 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         break;
       }
     } else { //FDD
+#ifndef FLEXRAN_AGENT_SB_IF                                                
       schedule_ulsch(module_idP,frameP,cooperation_flag,6,0);
+#else
+
+if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif
+
 #ifndef FLEXRAN_AGENT_SB_IF
       schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
@@ -850,7 +966,16 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         break;
       }
     } else { //FDD
+#ifndef FLEXRAN_AGENT_SB_IF                                                
       schedule_ulsch(module_idP,frameP,cooperation_flag,7,1);
+#else
+
+if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif
+
 #ifndef FLEXRAN_AGENT_SB_IF
       schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
@@ -888,7 +1013,16 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       case 5:
 
         //  schedule_RA(module_idP,subframeP);
+#ifndef FLEXRAN_AGENT_SB_IF                                                      
         schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,2);
+#else
+
+if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif
+
 #ifndef FLEXRAN_AGENT_SB_IF
         schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
         fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
@@ -915,7 +1049,16 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         break;
       }
     } else { //FDD
+#ifndef FLEXRAN_AGENT_SB_IF                                                            
       schedule_ulsch(module_idP,frameP,cooperation_flag,8,2);
+#else
+
+if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif
+
 #ifndef FLEXRAN_AGENT_SB_IF
       schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
@@ -946,7 +1089,15 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     if (mac_xface->frame_parms->frame_type == TDD) {
       switch (mac_xface->frame_parms->tdd_config) {
       case 1:
+#ifndef FLEXRAN_AGENT_SB_IF                                                                  
         schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,3);
+#else
+
+if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif        
         schedule_RA(module_idP,frameP,subframeP,7);  // 7 = Msg3 subframeP, not
 #ifndef FLEXRAN_AGENT_SB_IF
         schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
@@ -972,7 +1123,16 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
       case 3:
       case 4:
+#ifndef FLEXRAN_AGENT_SB_IF                                                                        
         schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,3);
+#else
+
+if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif 
+
 #ifndef FLEXRAN_AGENT_SB_IF
         schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
         fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
@@ -996,7 +1156,15 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         break;
 
       case 6:
+#ifndef FLEXRAN_AGENT_SB_IF                                                                              
         schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,4);
+#else
+
+if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif         
         //schedule_RA(module_idP,frameP,subframeP);
 #ifndef FLEXRAN_AGENT_SB_IF
         schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
@@ -1049,7 +1217,16 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         break;
       }
     } else { //FDD
+#ifndef FLEXRAN_AGENT_SB_IF                                                                                    
       schedule_ulsch(module_idP,frameP,cooperation_flag,9,3);
+#else
+
+if (mac_agent_registered[module_idP]){
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+      }
+
+#endif   
+
 #ifndef FLEXRAN_AGENT_SB_IF
       schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);

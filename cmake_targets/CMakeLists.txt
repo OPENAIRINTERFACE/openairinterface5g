@@ -1207,6 +1207,7 @@ if (FLEXRAN_AGENT_SB_IF)
 
 set (MAC_SRC ${MAC_SRC}
   ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue.c
+  ${MAC_DIR}/flexran_agent_scheduler_ulsch_ue.c
   ${MAC_DIR}/flexran_agent_scheduler_dataplane.c
   ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue_remote.c
 )

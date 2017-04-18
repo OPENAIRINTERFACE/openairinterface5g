@@ -169,6 +169,14 @@ void flexran_schedule_ue_spec_default(mid_t mod_id, uint32_t frame, uint32_t sub
 				      int *mbsfn_flag, Protocol__FlexranMessage **dl_info);
 
 /*
+  Uplink scheduler used by MAC agent
+*/
+
+void flexran_agent_schedule_ulsch_ue_spec(module_id_t module_idP,  frame_t frameP,  unsigned char cooperation_flag,
+		    sub_frame_t subframeP, 
+		    unsigned char sched_subframe);
+
+/*
  * Data plane function for applying the DL decisions of the scheduler
  */
 void flexran_apply_dl_scheduling_decisions(mid_t mod_id, uint32_t frame, uint32_t subframe, int *mbsfn_flag,
