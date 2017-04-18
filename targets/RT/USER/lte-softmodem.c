@@ -1388,11 +1388,6 @@ int main( int argc, char **argv ) {
 
     memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
 
-    char command_line[500];
-    sprintf(command_line,"git log -1");
-    if (background_system(command_line) != 0)
-      printf("ERROR failed command '%s'", command_line);
-
     set_latency_target();
 
     // set default parameters
@@ -1523,6 +1518,12 @@ int main( int argc, char **argv ) {
 
 
     check_clock();
+
+#ifndef PACKAGE_VERSION
+#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
+#endif
+
+  LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
   // init the parameters
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
