@@ -137,7 +137,7 @@ static inline void fh_if5_mobipass_south_out(RU_t *ru) {
 // southbound IF4p5 fronthaul
 static inline void fh_if4p5_south_out(RU_t *ru) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
-  LOG_I(PHY,"Sending IF4p5 for frame %d subframe %d\n",ru->proc.frame_tx,ru->proc.subframe_tx);
+  LOG_D(PHY,"Sending IF4p5 for frame %d subframe %d\n",ru->proc.frame_tx,ru->proc.subframe_tx);
   send_IF4p5(ru,ru->proc.frame_tx, ru->proc.subframe_tx, IF4p5_PDLFFT, 0);
 }
 
@@ -206,12 +206,9 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
       if ((proc->first_rx==0) && (sf!=*subframe)) 	
 	LOG_E(PHY,"rx_fh_if4p5: PULTICK received subframe %d != expected %d (first_rx %d)\n",sf,*subframe,proc->first_rx);       
       break;     
+      
     } else if (packet_type == IF4p5_PRACH) {
-      if (ru->do_prach==1) {
-	proc->subframe_prach = sf;
-	proc->frame_prach    = f;
-	do_prach_ru(ru);
-      }
+      // nothing in RU for RAU
     }
 
   } while(proc->symbol_mask[*subframe] != symbol_mask_full);    
@@ -453,7 +450,14 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   } while (symbol_mask != symbol_mask_full);    
 
   proc->subframe_tx = subframe_tx;
+  proc->frame_tx    = frame_tx;
 
+    // dump VCD output for first RU in list
+  if (ru == RC.ru[0]) {
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, subframe_tx );
+  }
+  
   if (ru->feptx_ofdm) ru->feptx_ofdm(ru);
   if (ru->fh_south_out) ru->fh_south_out(ru);
 } 
@@ -527,6 +531,11 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   proc->subframe_tx  = (proc->subframe_rx+4)%10;
   proc->frame_tx     = (proc->subframe_rx>5) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
 
+    // dump VCD output for first RU in list
+  if (ru == RC.ru[0]) {
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_RU, proc->frame_rx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU, proc->subframe_rx );
+  }
   
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
@@ -631,7 +640,7 @@ static void* ru_thread_asynch_rxtx( void* param ) {
     } else {
       subframe++;
     }      
-    LOG_I(PHY,"ru_thread_asynch_rxtx: Waiting on incoming fronthaul\n");
+    LOG_D(PHY,"ru_thread_asynch_rxtx: Waiting on incoming fronthaul\n");
     // asynchronous receive from south (Mobipass)
     if (ru->fh_south_asynch_in) ru->fh_south_asynch_in(ru,&frame,&subframe);
     // asynchronous receive from north (RRU IF4/IF5)
@@ -707,15 +716,15 @@ static void* ru_thread_prach( void* param ) {
   while (!oai_exit) {
     
     if (oai_exit) break;
-
     if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"ru_prach_thread") < 0) break;
-    
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 1 );      
     rx_prach(NULL,
 	     ru,
              NULL,
              NULL,
              proc->frame_prach,
              0);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 0 );      
     if (release_thread(&proc->mutex_prach,&proc->instance_cnt_prach,"ru_prach_thread") < 0) break;
   }
 
@@ -857,17 +866,15 @@ static inline int wakeup_prach(RU_t *ru) {
     exit_fun( "error locking mutex_rxtx" );
     return(-1);
   }
-  ++ru->proc.instance_cnt_prach;
-  ru->proc.frame_prach    = ru->proc.frame_rx;
-  ru->proc.subframe_prach = ru->proc.subframe_rx;
-  
-  // the thread can now be woken up
-  if (pthread_cond_signal(&ru->proc.cond_prach) != 0) {
-    LOG_E( PHY, "[RU] ERROR pthread_cond_signal for RU prach thread\n");
-    exit_fun( "ERROR pthread_cond_signal" );
-    return(-1);
+  if (ru->proc.instance_cnt_prach==-1) {
+    ++ru->proc.instance_cnt_prach;
+    ru->proc.frame_prach    = ru->proc.frame_rx;
+    ru->proc.subframe_prach = ru->proc.subframe_rx;
+    
+    // the thread can now be woken up
+    AssertFatal(pthread_cond_signal(&ru->proc.cond_prach) == 0, "ERROR pthread_cond_signal for RU prach thread\n");
   }
-  
+  else LOG_W(PHY,"RU prach thread busy, skipping\n");
   pthread_mutex_unlock( &ru->proc.mutex_prach );
 
   return(0);
@@ -956,8 +963,10 @@ static void* ru_thread( void* param ) {
     else AssertFatal(1==0, "No fronthaul interface at south port");
 
 
-    LOG_D(PHY,"RU thread (proc %p), received frame %d (%p), subframe %d (%p)\n",
-	  proc, proc->frame_tx,&frame,subframe,&subframe);
+    LOG_D(PHY,"RU thread (do_prach %d, is_prach_subframe %d), received frame %d, subframe %d \n",
+	  ru->do_prach,
+	  is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx),
+	  proc->frame_rx,proc->subframe_rx);
  
     if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)>0))
       wakeup_prach(ru);

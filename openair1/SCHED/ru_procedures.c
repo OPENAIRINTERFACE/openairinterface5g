@@ -73,7 +73,7 @@ void feptx_ofdm(RU_t *ru) {
 
 //  int CC_id = ru->proc.CC_id;
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_SFGEN , 1 );
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
 
   //  slot_offset_F = (subframe<<1)*slot_sizeF;
 
@@ -189,7 +189,7 @@ void feptx_ofdm(RU_t *ru) {
 	   dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
     }
   }
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_SFGEN , 0 );
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 0 );
 }
 
 void feptx_prec(RU_t *ru) {
@@ -216,7 +216,7 @@ void feptx_prec(RU_t *ru) {
 		       aa);
       }
     }
-    LOG_I(PHY,"feptx_prec: frame %d, subframe %d: txp (freq) %d dB\n",
+    LOG_D(PHY,"feptx_prec: frame %d, subframe %d: txp (freq) %d dB\n",
 	  ru->proc.frame_tx,subframe,
 	  dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[0],2*fp->symbols_per_tti*fp->ofdm_symbol_size)));
   }
@@ -294,7 +294,6 @@ void ru_fep_full_2thread(RU_t *ru) {
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,1);
   start_meas(&ru->ofdm_demod_stats);
 
   if (pthread_mutex_timedlock(&proc->mutex_fep,&wait) != 0) {
@@ -339,7 +338,6 @@ void fep_full(RU_t *ru) {
 
   start_meas(&ru->ofdm_demod_stats);
 
-  if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,1);
 
   remove_7_5_kHz(ru,proc->subframe_rx<<1);
   remove_7_5_kHz(ru,1+(proc->subframe_rx<<1));
@@ -359,7 +357,6 @@ void fep_full(RU_t *ru) {
   }
   stop_meas(&ru->ofdm_demod_stats);
   
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,0);
   
 }
 
@@ -371,7 +368,7 @@ void do_prach_ru(RU_t *ru) {
 
   // check if we have to detect PRACH first
   if (is_prach_subframe(fp,proc->frame_prach,proc->subframe_prach)>0) { 
-    /* accept some delay in processing - up to 5ms */
+    //accept some delay in processing - up to 5ms
     int i;
     for (i = 0; i < 10 && proc->instance_cnt_prach == 0; i++) {
       LOG_W(PHY,"Frame %d Subframe %d, PRACH thread busy (IC %d)!!\n", proc->frame_prach,proc->subframe_prach,
@@ -403,3 +400,4 @@ void do_prach_ru(RU_t *ru) {
   }
 
 }
+

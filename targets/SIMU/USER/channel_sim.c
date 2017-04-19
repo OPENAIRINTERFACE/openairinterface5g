@@ -251,7 +251,10 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
                               frame_parms->N_RB_DL*12);
 
 #ifdef DEBUG_SIM
-      LOG_D(OCM,"[SIM][DL] RU %d (CCid %d): tx_pwr %.1f dBm/RE (target %d dBm/RE), for subframe %d\n",
+      LOG_I(PHY,"[SIM][DL] subframe %d: txp (time) %d dB\n",
+	    subframe,dB_fixed(signal_energy(&txdata[0][sf_offset],frame_parms->samples_per_tti)));
+	    
+      LOG_I(OCM,"[SIM][DL] RU %d (CCid %d): tx_pwr %.1f dBm/RE (target %d dBm/RE), for subframe %d\n",
             ru_id,CC_id,
             10*log10(tx_pwr),
             frame_parms->pdsch_config_common.referenceSignalPower,
