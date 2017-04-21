@@ -1044,6 +1044,39 @@ int flexran_agent_mac_destroy_dl_config(Protocol__FlexranMessage *msg) {
   return -1;
 }
 
+int flexran_agent_mac_create_empty_ul_config(mid_t mod_id, Protocol__FlexranMessage **msg) {
+
+  int xid = 0;
+  Protocol__FlexHeader *header;
+  if (flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_UL_MAC_CONFIG, &header) != 0)
+    goto error;
+
+  Protocol__FlexUlMacConfig *ul_mac_config_msg;
+  ul_mac_config_msg = malloc(sizeof(Protocol__FlexUlMacConfig));
+  if (ul_mac_config_msg == NULL) {
+    goto error;
+  }
+  protocol__flex_ul_mac_config__init(ul_mac_config_msg);
+
+  ul_mac_config_msg->header = header;
+  ul_mac_config_msg->has_sfn_sf = 1;
+  ul_mac_config_msg->sfn_sf = flexran_get_sfn_sf(mod_id);
+
+  *msg = malloc(sizeof(Protocol__FlexranMessage));
+  if(*msg == NULL)
+    goto error;
+  protocol__flexran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_UL_MAC_CONFIG_MSG;
+  (*msg)->msg_dir =  PROTOCOL__FLEXRAN_DIRECTION__INITIATING_MESSAGE;
+  (*msg)->ul_mac_config_msg = ul_mac_config_msg;
+
+  return 0;
+
+ error:
+  return -1;
+}
+
+
 void flexran_agent_get_pending_dl_mac_config(mid_t mod_id, Protocol__FlexranMessage **msg) {
 
   struct lfds700_misc_prng_state ls;

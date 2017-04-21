@@ -790,6 +790,7 @@ void flexran_agent_schedule_ulsch_ue_spec(module_id_t module_idP,
 		    unsigned char sched_subframe) {
 
 
+// flexran_agent_mac_create_empty_ul_config(module_idP, ul_info);
 
   uint16_t first_rb[MAX_NUM_CCs],i;
   int CC_id;
@@ -883,6 +884,11 @@ void flexran_agent_schedule_ulsch_rnti(module_id_t   module_idP,
   int drop_ue=0;
 
   //  LOG_I(MAC,"entering ulsch preprocesor\n");
+
+
+  
+
+
 
   _ulsch_scheduler_pre_processor(module_idP,
                                 frameP,

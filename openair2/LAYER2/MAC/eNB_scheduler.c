@@ -398,7 +398,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,4);//,calibration_flag);
 #else
       if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,4);   
       }
      
 #endif      
@@ -438,7 +438,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,7);   
       }
 
 #endif
@@ -453,7 +453,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
   if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,8);   
       }
 
 #endif  
@@ -472,7 +472,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,1,5);   
       }
 
 #endif        
@@ -511,7 +511,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
    if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,2,6);   
       }
 
 #endif        
@@ -553,7 +553,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,7);   
       }
 
 #endif        
@@ -591,7 +591,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,3,7);   
       }
 
 #endif        
@@ -634,7 +634,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,8);   
       }
 
 #endif        
@@ -679,7 +679,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,4,8);   
       }
 
 #endif        
@@ -724,7 +724,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,5,9);   
       }
 
 #endif        
@@ -796,7 +796,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,2);   
       }
 
 #endif         
@@ -812,7 +812,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,3);   
       }
 
 #endif                 
@@ -879,7 +879,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,6,0);   
       }
 
 #endif
@@ -971,7 +971,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,7,1);   
       }
 
 #endif
@@ -1018,7 +1018,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,2);   
       }
 
 #endif
@@ -1054,7 +1054,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,8,2);   
       }
 
 #endif
@@ -1094,7 +1094,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,3);   
       }
 
 #endif        
@@ -1128,7 +1128,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,3);   
       }
 
 #endif 
@@ -1161,7 +1161,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,4);   
       }
 
 #endif         
@@ -1222,7 +1222,7 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,9,3);   
       }
 
 #endif   
