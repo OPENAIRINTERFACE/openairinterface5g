@@ -1865,6 +1865,9 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   */  
 
   if(fmt!=pucch_format3) {  /* PUCCH format3 */
+  
+  // TODO
+  // "CQI/PMI/RI+ACK/NACK" will be supported in the future.
 
   if ((deltaPUCCH_Shift==0) || (deltaPUCCH_Shift>3)) {
     LOG_E(PHY,"[eNB] rx_pucch: Illegal deltaPUCCH_shift %d (should be 1,2,3)\n",deltaPUCCH_Shift);
