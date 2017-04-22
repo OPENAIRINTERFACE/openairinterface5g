@@ -1077,6 +1077,45 @@ int flexran_agent_mac_create_empty_ul_config(mid_t mod_id, Protocol__FlexranMess
 }
 
 
+int flexran_agent_mac_destroy_ul_config(Protocol__FlexranMessage *msg) {
+  int i,j, k;
+  if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_UL_MAC_CONFIG_MSG)
+    goto error;
+
+  Protocol__FlexUlDci *ul_dci;
+
+  free(msg->ul_mac_config_msg->header);
+  for (i = 0; i < msg->ul_mac_config_msg->n_ul_ue_data; i++) {
+    // TODO  uplink rlc ...
+    // free(msg->ul_mac_config_msg->dl_ue_data[i]->ce_bitmap); 
+  //   for (j = 0; j < msg->ul_mac_config_msg->ul_ue_data[i]->n_rlc_pdu; j++) {
+  //     for (k = 0; k <  msg->ul_mac_config_msg->ul_ue_data[i]->rlc_pdu[j]->n_rlc_pdu_tb; k++) {
+  // free(msg->ul_mac_config_msg->dl_ue_data[i]->rlc_pdu[j]->rlc_pdu_tb[k]);
+  //     }
+  //     free(msg->ul_mac_config_msg->ul_ue_data[i]->rlc_pdu[j]->rlc_pdu_tb);
+  //     free(msg->ul_mac_config_msg->ul_ue_data[i]->rlc_pdu[j]);
+  //   }
+    // free(msg->ul_mac_config_msg->ul_ue_data[i]->rlc_pdu);
+    ul_dci = msg->ul_mac_config_msg->ul_ue_data[i]->ul_dci;
+    // free(dl_dci->tbs_size);
+    // free(ul_dci->mcs);
+    // free(ul_dci->ndi);
+    // free(ul_dci->rv);
+    // free(ul_dci);
+    free(msg->ul_mac_config_msg->ul_ue_data[i]);
+  }
+  free(msg->ul_mac_config_msg->ul_ue_data);
+  
+  free(msg->ul_mac_config_msg);
+  free(msg);
+
+  return 0;
+
+ error:
+  return -1;
+}
+
+
 void flexran_agent_get_pending_dl_mac_config(mid_t mod_id, Protocol__FlexranMessage **msg) {
 
   struct lfds700_misc_prng_state ls;

@@ -57,6 +57,10 @@ int flexran_agent_mac_destroy_stats_reply(Protocol__FlexranMessage *msg);
 int flexran_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMessage **msg);
 int flexran_agent_mac_destroy_dl_config(Protocol__FlexranMessage *msg);
 
+/* UL MAC scheduling decision protocol message constructor (empty command) and destructor */ 
+int flexran_agent_mac_create_empty_ul_config(mid_t mod_id, Protocol__FlexranMessage **msg);
+int flexran_agent_mac_destroy_ul_config(Protocol__FlexranMessage *msg);
+
 int flexran_agent_mac_handle_dl_mac_config(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 
 

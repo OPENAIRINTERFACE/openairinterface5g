@@ -299,8 +299,9 @@ int flexran_get_harq(const mid_t mod_id,
 		     const mid_t ue_id, 
 		     const int frame, 
 		     const uint8_t subframe, 
-		     uint8_t *id, 
-		     uint8_t *round)	{ //flag_id_status = 0 then id, else status
+		     uint8_t *pid, 
+		     uint8_t *round,
+         const uint8_t harq_flag)	{ //flag_id_status = 0 then id, else status
 	/*TODO: Add int TB in function parameters to get the status of the second TB. This can be done to by editing in
 	 * get_ue_active_harq_pid function in line 272 file: phy_procedures_lte_eNB.c to add
 	 * DLSCH_ptr = PHY_vars_eNB_g[Mod_id][CC_id]->dlsch_eNB[(uint32_t)UE_id][1];*/
@@ -310,10 +311,21 @@ int flexran_get_harq(const mid_t mod_id,
   
 
   uint16_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+  if (harq_flag == openair_harq_DL){
 
-  mac_xface->get_ue_active_harq_pid(mod_id,CC_id,rnti,frame,subframe,&harq_pid,&harq_round,openair_harq_DL);
+      mac_xface->get_ue_active_harq_pid(mod_id,CC_id,rnti,frame,subframe,&harq_pid,&harq_round,openair_harq_DL);
 
-  *id = harq_pid;
+   } else if (harq_flag == openair_harq_UL){
+
+     mac_xface->get_ue_active_harq_pid(mod_id,CC_id,rnti,frame,subframe,&harq_pid,&round,openair_harq_UL);    
+   }
+   else {
+
+      LOG_W(FLEXRAN_AGENT,"harq_flag is not recongnized");
+   }
+
+
+  *pid = harq_pid;
   *round = harq_round;
   /* if (round > 0) { */
   /*   *status = 1; */

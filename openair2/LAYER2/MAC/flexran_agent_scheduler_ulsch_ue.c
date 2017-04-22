@@ -615,8 +615,8 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
       // This is the actual CC_id in the list
       CC_id = UE_list->ordered_ULCCids[n][UE_id];
 
-      mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL);
-
+      // mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL);
+      flexran_get_harq(module_idP, CC_id, UE_id, frameP, subframeP, &harq_pid, &round, openair_harq_UL);
       if(round>0) {
         nb_allocated_rbs[CC_id][UE_id] = UE_list->UE_template[CC_id][UE_id].nb_rb_ul[harq_pid];
       } else {
@@ -787,10 +787,11 @@ void flexran_agent_schedule_ulsch_ue_spec(module_id_t module_idP,
 		    frame_t frameP,
 		    unsigned char cooperation_flag,
 		    sub_frame_t subframeP, 
-		    unsigned char sched_subframe) {
+		    unsigned char sched_subframe,
+        Protocol__FlexranMessage **ul_info) {
 
 
-// flexran_agent_mac_create_empty_ul_config(module_idP, ul_info);
+flexran_agent_mac_create_empty_ul_config(module_idP, ul_info);
 
   uint16_t first_rb[MAX_NUM_CCs],i;
   int CC_id;
@@ -907,7 +908,7 @@ void flexran_agent_schedule_ulsch_rnti(module_id_t   module_idP,
       continue;
     }
 
-    rnti = UE_RNTI(module_idP,UE_id);
+    rnti = flexran_get_ue_crnti(module_idP, UE_id);
 
     if (rnti==NOT_A_RNTI) {
       LOG_W(MAC,"[eNB %d] frame %d subfarme %d, UE %d: no RNTI \n", module_idP,frameP,subframeP,UE_id);
@@ -973,7 +974,7 @@ abort();
         UE_template   = &UE_list->UE_template[CC_id][UE_id];
         UE_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
 
-        if (mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL) == -1 ) {
+        if (flexran_get_harq(module_idP, CC_id, UE_id, frameP, subframeP, &harq_pid, &round, openair_harq_UL) == -1 ) {
           LOG_W(MAC,"[eNB %d] Scheduler Frame %d, subframeP %d: candidate harq_pid from PHY for UE %d CC %d RNTI %x\n",
                 module_idP,frameP,subframeP, UE_id, CC_id, rnti);
           continue;

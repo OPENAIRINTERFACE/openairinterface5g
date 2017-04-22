@@ -386,8 +386,10 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       schedule_ulsch(module_idP,frameP,cooperation_flag,0,4);//,calibration_flag);
 #else
       if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,0,4, &msg);   
       }
+
+      flexran_agent_mac_destroy_ul_config(msg);
      
 #endif
 
@@ -398,8 +400,10 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,4);//,calibration_flag);
 #else
       if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,4, &msg);   
       }
+
+      flexran_agent_mac_destroy_ul_config(msg);
      
 #endif      
     }
@@ -415,7 +419,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -438,8 +442,11 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,7);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,7, &msg);   
       }
+
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif
 #ifndef FLEXRAN_AGENT_SB_IF
@@ -453,8 +460,10 @@ if (mac_agent_registered[module_idP]){
 #else
 
   if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,8);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,8, &msg);   
       }
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif  
 
@@ -472,8 +481,11 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,1,5);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,1,5, &msg);   
       }
+
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif        
 
@@ -489,7 +501,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -511,8 +523,12 @@ if (mac_agent_registered[module_idP]){
 #else
 
    if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,2,6);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,2,6, &msg);   
       }
+
+
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif        
 
@@ -528,7 +544,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -553,8 +569,11 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,7);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,7, &msg);   
       }
+
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif        
 
@@ -572,7 +591,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -591,8 +610,12 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,3,7);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,3,7, &msg);   
       }
+
+
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif        
 
@@ -608,7 +631,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -634,8 +657,11 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,8);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,8, &msg);   
       }
+
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif        
 
@@ -659,7 +685,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 					       frameP,
 					       subframeP,
 					       mbsfn_status,
@@ -679,8 +705,11 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,4,8);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,4,8, &msg);   
       }
+
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif        
 
@@ -696,7 +725,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -724,8 +753,11 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,5,9);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,5,9, &msg);   
       }
+
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif        
 
@@ -741,7 +773,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 					  frameP,
 					  subframeP,
 					  mbsfn_status,
@@ -768,7 +800,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -796,8 +828,11 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,2);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,2, &msg);   
       }
+
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif         
         //  schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
@@ -812,8 +847,11 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,3);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,3, &msg);   
       }
+
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif                 
         //  schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
@@ -836,7 +874,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -860,7 +898,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -879,8 +917,11 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,6,0);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,6,0, &msg);   
       }
+
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif
 
@@ -896,7 +937,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -929,7 +970,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -952,7 +993,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -971,8 +1012,11 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,7,1);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,7,1, &msg);   
       }
+
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif
 
@@ -988,7 +1032,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -1018,8 +1062,10 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,2);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,2, &msg);   
       }
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif
 
@@ -1035,7 +1081,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -1054,8 +1100,11 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,8,2);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,8,2, &msg);   
       }
+
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif
 
@@ -1071,7 +1120,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -1094,8 +1143,11 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,3);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,3, &msg);   
       }
+
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif        
         schedule_RA(module_idP,frameP,subframeP,7);  // 7 = Msg3 subframeP, not
@@ -1111,7 +1163,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -1128,8 +1180,11 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,3);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,3, &msg);   
       }
+
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif 
 
@@ -1145,7 +1200,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -1161,8 +1216,11 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,4);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,subframeP,4, &msg);   
       }
+
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif         
         //schedule_RA(module_idP,frameP,subframeP);
@@ -1178,7 +1236,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -1203,7 +1261,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,
@@ -1222,8 +1280,11 @@ if (mac_agent_registered[module_idP]){
 #else
 
 if (mac_agent_registered[module_idP]){
-       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,9,3);   
+       agent_mac_xface[module_idP]->flexran_agent_schedule_ul_spec(module_idP,frameP,cooperation_flag,9,3, &msg);   
       }
+
+
+      flexran_agent_mac_destroy_ul_config(msg);
 
 #endif   
 
@@ -1239,7 +1300,7 @@ if (mac_agent_registered[module_idP]){
 								      mbsfn_status,
 								      &msg);
 	  
-	  flexran_apply_dl_scheduling_decisions(module_idP,
+	  flexran_apply_scheduling_decisions(module_idP,
 						frameP,
 						subframeP,
 						mbsfn_status,

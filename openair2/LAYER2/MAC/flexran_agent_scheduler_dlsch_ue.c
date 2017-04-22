@@ -526,7 +526,7 @@ void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
       CC_id = UE_list->ordered_CCids[ii][UE_id];
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
       ue_sched_ctl->max_allowed_rbs[CC_id]=nb_rbs_allowed_slice[CC_id][slice_id];
-      flexran_get_harq(Mod_id, CC_id, UE_id, frameP, subframeP, &harq_pid, &round);
+      flexran_get_harq(Mod_id, CC_id, UE_id, frameP, subframeP, &harq_pid, &round, openair_harq_DL);
 
       // if there is no available harq_process, skip the UE
       if (UE_list->UE_sched_ctrl[UE_id].harq_pid[CC_id]<0)
@@ -640,7 +640,7 @@ void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 	for (ii=0; ii<UE_num_active_CC(UE_list,UE_id); ii++) {
           CC_id = UE_list->ordered_CCids[ii][UE_id];
 	  ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-	  flexran_get_harq(Mod_id, CC_id, UE_id, frameP, subframeP, &harq_pid, &round);	  
+	  flexran_get_harq(Mod_id, CC_id, UE_id, frameP, subframeP, &harq_pid, &round, openair_harq_DL);	  
           rnti = UE_RNTI(Mod_id,UE_id);
 
           // LOG_D(MAC,"UE %d rnti 0x\n", UE_id, rnti );
@@ -1096,7 +1096,7 @@ flexran_schedule_ue_spec_common(mid_t   mod_id,
       dl_data[num_ues_added]->serv_cell_index = CC_id;
       
       nb_available_rb = ue_sched_ctl->pre_nb_available_rbs[CC_id];
-      flexran_get_harq(mod_id, CC_id, UE_id, frame, subframe, &harq_pid, &round);
+      flexran_get_harq(mod_id, CC_id, UE_id, frame, subframe, &harq_pid, &round, openair_harq_DL);
       sdu_length_total=0;
       mcs = cqi_to_mcs[flexran_get_ue_wcqi(mod_id, UE_id)];
       //      LOG_I(FLEXRAN_AGENT, "The MCS is %d\n", mcs);

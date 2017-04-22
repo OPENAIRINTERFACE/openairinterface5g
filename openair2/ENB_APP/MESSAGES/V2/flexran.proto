@@ -168,8 +168,8 @@ message flex_dl_mac_config {
 
 message flex_ul_mac_config {
 	optional flex_header header = 1;
-    	optional uint32 sfn_sf = 2;
-    	repeated flex_ul_data ul_ue_data = 3;
+    optional uint32 sfn_sf = 2;
+    repeated flex_ul_data ul_ue_data = 3;
 }
 
 
