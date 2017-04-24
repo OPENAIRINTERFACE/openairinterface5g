@@ -3678,8 +3678,8 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
              ue->frame_parms.samples_per_tti * 4));
 
   // start timers
-
-  LOG_D(PHY," ****** start RX-Chain for AbsSubframe %d.%d ******  \n", frame_rx%1024, subframe_rx);
+  printf("\n");
+  LOG_I(PHY," ****** start RX-Chain for AbsSubframe %d.%d ******  \n", frame_rx%1024, subframe_rx);
   start_meas(&ue->phy_proc_rx[subframe_rx&0x1]);
   start_meas(&ue->generic_stat);
 
