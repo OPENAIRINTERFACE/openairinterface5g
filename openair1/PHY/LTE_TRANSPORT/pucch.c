@@ -1744,7 +1744,7 @@ int16_t pucchfmt3_Decode( int16_t b[48],
             Rho_max = Rho_tmp;
         }
     }
-    if(Interpw==0){
+    if(Interpw<1){
       Interpw=1;
     }
     if((Rho_max/Interpw) > DTXthreshold) {
@@ -1833,6 +1833,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   uint16_t n3_pucch = 20;
   uint16_t n3_pucch_array[NUMBER_OF_UE_MAX];
   uint8_t do_sr = 1;
+  uint16_t crnti=0x1234;
   /* PUCCH format3 << */
 
   if (first_call == 1) {
@@ -2472,7 +2473,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
     pucchfmt3_IDft2( (int16_t*)Fmt3xDataAvgSym[1], (int16_t*)IFFTOutData_Fmt3[1] );
     
     /* descramble */
-    pucchfmt3_Descramble(IFFTOutData_Fmt3, b, subframe, frame_parms->Nid_cell, eNB->UE_stats[UE_id].crnti);
+    pucchfmt3_Descramble(IFFTOutData_Fmt3, b, subframe, frame_parms->Nid_cell, crnti);
 
     /* Is payload 6bit or 7bit? */
     if( do_sr == 1 ) {

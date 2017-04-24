@@ -1998,6 +1998,17 @@ void generate_pucch2x(int32_t **txdataF,
 		      uint8_t subframe,
 		      uint16_t rnti);
 
+void generate_pucch3x(int32_t **txdataF,
+                    LTE_DL_FRAME_PARMS *frame_parms,
+                    uint8_t ncs_cell[20][7],
+                    PUCCH_FMT_t fmt,
+                    PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+                    uint16_t n3_pucch,
+                    uint8_t shortened_format,
+                    uint8_t *payload,
+                    int16_t amp,
+                    uint8_t subframe,
+                    uint16_t rnti);
 
 void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
 			 UE_rxtx_proc_t *proc,
