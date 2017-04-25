@@ -918,6 +918,11 @@ void generate_pucch3x(int32_t **txdataF,
   uint8_t alpha_idx=0;
   uint8_t m_alpha_idx=0;
 
+  // TODO
+  // "SR+ACK/NACK" length is only 7 bits.
+  // This restriction will be lifted in the future.
+  // "CQI/PMI/RI+ACK/NACK" will be supported in the future.
+
     // Channel Coding
     for (uint8_t i=0; i<7; i++) {
       chcod_tbl_idx += (payload[i]<<i); 
@@ -1868,6 +1873,8 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   if(fmt!=pucch_format3) {  /* PUCCH format3 */
   
   // TODO
+  // "SR+ACK/NACK" length is only 7 bits.
+  // This restriction will be lifted in the future.
   // "CQI/PMI/RI+ACK/NACK" will be supported in the future.
 
   if ((deltaPUCCH_Shift==0) || (deltaPUCCH_Shift>3)) {
