@@ -633,13 +633,15 @@ PUCCH_FMT_t get_pucch_format(lte_frame_type_t frame_type,
       }
       if(SR_payload == 1)
       {
+          return pucch_format1;
+          /*
           if (frame_type == FDD) {
               return pucch_format1;
           } else if (frame_type == TDD) {
               return pucch_format1b;
           } else {
 	      AssertFatal(1==0,"Unknown frame_type");
-          }
+          }*/
       }
   }
   else
@@ -1793,7 +1795,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
                        pucch_ack_payload,
                        1);
 
-  nb_cw = ack_status_cw0 + ack_status_cw1;
+  nb_cw = ( (ack_status_cw0 != 0) ? 1:0) + ( (ack_status_cw1 != 0) ? 1:0);
 
   cqi_status = ((ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex>0)&&
       (is_cqi_TXOp(ue,proc,eNB_id)==1));
@@ -1830,8 +1832,8 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
                   (uint8_t *)&pucch_payload,
                   &len);
 
-  LOG_D(PHY,"PUCCH feedback AbsSubframe %d.%d SR %d NbCW %d AckNack %d.%d CQI %d RI %d format %d pucch_resource %d pucch_payload %d %d \n",
-          frame_tx%1024, subframe_tx, SR_payload, nb_cw, pucch_ack_payload[0], pucch_ack_payload[1], cqi_status, ri_status, format, pucch_resource,pucch_payload[0],pucch_payload[1]);
+  LOG_I(PHY,"PUCCH feedback AbsSubframe %d.%d SR %d NbCW %d (%d %d) AckNack %d.%d CQI %d RI %d format %d pucch_resource %d pucch_payload %d %d \n",
+          frame_tx%1024, subframe_tx, SR_payload, nb_cw, ack_status_cw0, ack_status_cw1, pucch_ack_payload[0], pucch_ack_payload[1], cqi_status, ri_status, format, pucch_resource,pucch_payload[0],pucch_payload[1]);
 
 
   // Part - IV
@@ -1866,7 +1868,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 #endif
       if(format == pucch_format1)
       {
-          LOG_D(PHY,"[UE  %d][SR %x] AbsSubframe %d.%d Generating PUCCH 1 (SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d\n",
+          LOG_I(PHY,"[UE  %d][SR %x] AbsSubframe %d.%d Generating PUCCH 1 (SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d\n",
                   Mod_id,
                   ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][0]->rnti,
                   frame_tx%1024, subframe_tx,
@@ -1878,7 +1880,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
       else
       {
           if (SR_payload>0) {
-              LOG_D(PHY,"[UE  %d][SR %x] AbsSubFrame %d.%d Generating PUCCH %s payload %d,%d (with SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d, amp %d\n",
+              LOG_I(PHY,"[UE  %d][SR %x] AbsSubFrame %d.%d Generating PUCCH %s payload %d,%d (with SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d, amp %d\n",
                       Mod_id,
                       ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][0]->rnti,
                       frame_tx % 1024, subframe_tx,
@@ -1891,7 +1893,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
                               Po_PUCCH,
                               tx_amp);
           } else {
-              LOG_D(PHY,"[UE  %d][PDSCH %x] AbsSubFrame %d.%d rx_offset_diff: %d, Generating PUCCH %s, an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d, amp %d\n",
+              LOG_I(PHY,"[UE  %d][PDSCH %x] AbsSubFrame %d.%d rx_offset_diff: %d, Generating PUCCH %s, an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d, amp %d\n",
                       Mod_id,
                       ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][0]->rnti,
                       frame_tx%1024, subframe_tx,ue->rx_offset_diff,
@@ -3998,6 +4000,22 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			abstraction_flag);
     ue->dlsch_ra[eNB_id]->active = 0;
   }
+
+  // duplicate harq structure
+  uint8_t          current_harq_pid        = ue->dlsch[subframe_rx&0x1][eNB_id][0]->current_harq_pid;
+  LTE_DL_UE_HARQ_t *current_harq_processes = ue->dlsch[subframe_rx&0x1][eNB_id][0]->harq_processes[current_harq_pid];
+  LTE_DL_UE_HARQ_t *harq_processes_dest    = ue->dlsch[(subframe_rx+1)&0x1][eNB_id][0]->harq_processes[current_harq_pid];
+
+  harq_status_t *current_harq_ack = &ue->dlsch[subframe_rx&0x1][eNB_id][0]->harq_ack[subframe_rx];
+  harq_status_t *harq_ack_dest    = &ue->dlsch[(subframe_rx+1)&0x1][eNB_id][0]->harq_ack[subframe_rx];
+
+  memcpy(harq_processes_dest, current_harq_processes, sizeof(LTE_DL_UE_HARQ_t));
+  memcpy(harq_ack_dest, current_harq_ack, sizeof(harq_status_t));
+
+  LOG_I(PHY,"AbsSubframe %d.%d CurrentHarqProcess.status %d DestHarqProcess.status %d\n",frame_rx%1024,subframe_rx,current_harq_processes->status,harq_processes_dest->status);
+  LOG_I(PHY,"AbsSubframe %d.%d CurrentHarqProcess.round %d DestHarqProcess.round %d\n",frame_rx%1024,subframe_rx,current_harq_processes->round,harq_processes_dest->round);
+  LOG_I(PHY,"AbsSubframe %d.%d CurrentHarqProcess.delta_PUCCH %d DestHarqProcess.delta_PUCCH %d\n",frame_rx%1024,subframe_rx,current_harq_processes->delta_PUCCH,harq_processes_dest->delta_PUCCH);
+  LOG_I(PHY,"AbsSubframe %d.%d CurrentHarqProcess.rvidx %d DestHarqProcess.rvidx %d\n",frame_rx%1024,subframe_rx,current_harq_processes->rvidx,harq_processes_dest->rvidx);
 
   if (subframe_rx==9) {
     if (frame_rx % 10 == 0) {
