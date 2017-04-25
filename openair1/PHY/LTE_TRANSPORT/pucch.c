@@ -1829,16 +1829,17 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   int16_t b[48];                                                //[bit]
   int16_t IP_CsData_allavg[NB_ANTENNAS_RX][12][4][2];           //[Antenna][Symbol][Nouse Cyclic Shift][Complex]
   int16_t payload_entity = -1;
-  int16_t DTXthreshold = 500;
   int16_t Interpw;
   int16_t payload_max;
   
   // TODO
   // When using PUCCH format3, it must be an argument of rx_pucch function
   uint16_t n3_pucch = 20;
-  uint16_t n3_pucch_array[NUMBER_OF_UE_MAX];
+  uint16_t n3_pucch_array[NUMBER_OF_UE_MAX]={1};
+  n3_pucch_array[0]=n3_pucch;
   uint8_t do_sr = 1;
   uint16_t crnti=0x1234;
+  int16_t DTXthreshold = 10;
   /* PUCCH format3 << */
 
   if (first_call == 1) {
