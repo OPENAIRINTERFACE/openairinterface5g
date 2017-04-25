@@ -346,9 +346,9 @@ boolean_t CCE_allocation_infeasible(int module_idP,
 				  int rnti);
 
 void set_ue_dai(sub_frame_t   subframeP,
-                uint8_t       tdd_config,
                 int           UE_id,
                 uint8_t       CC_id,
+                uint8_t       tdd_config,
                 UE_list_t     *UE_list);
 
 uint8_t find_num_active_UEs_in_cbagroup(module_id_t module_idP, unsigned char group_id);
@@ -370,10 +370,11 @@ int schedule_next_dlue(module_id_t module_idP, int CC_id, sub_frame_t subframe);
 /* \brief Allocates a set of PRBS for a particular UE.  This is a simple function for the moment, later it should process frequency-domain CQI information and/or PMI information.  Currently it just returns the first PRBS that are available in the subframe based on the number requested.
 @param UE_id Index of UE on which to act
 @param nb_rb Number of PRBs allocated to UE by scheduler
+@param N_RB_DL Number of PRBs on DL
 @param rballoc Pointer to bit-map of current PRB allocation given to previous users/control channels.  This is updated for subsequent calls to the routine.
 @returns an rballoc bitmap for resource type 0 allocation (DCI).
 */
-uint32_t allocate_prbs(int UE_id,uint8_t nb_rb, uint32_t *rballoc);
+uint32_t allocate_prbs(int UE_id,uint8_t nb_rb, int N_RB_DL, uint32_t *rballoc);
 
 /* \fn uint32_t req_new_ulsch(module_id_t module_idP)
 \brief check for a new transmission in any drb
@@ -515,7 +516,8 @@ uint8_t *parse_ulsch_header(uint8_t *mac_header,
                             uint16_t *rx_lengths,
                             uint16_t tx_lenght);
 
-
+int to_prb(int);
+int to_rbg(int);
 int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, uint8_t HO_active);
 int mac_init(void);
 int add_new_ue(module_id_t Mod_id, int CC_id, rnti_t rnti,int harq_pid);
@@ -693,7 +695,7 @@ void add_common_dci(DCI_PDU *DCI_pdu,
                     unsigned char dci_fmt,
                     uint8_t ra_flag);
 
-uint32_t allocate_prbs_sub(int nb_rb, uint8_t *rballoc);
+uint32_t allocate_prbs_sub(int nb_rb, int N_RB_DL, int N_RBG, uint8_t *rballoc);
 
 void update_ul_dci(module_id_t module_idP,uint8_t CC_id,rnti_t rnti,uint8_t dai);
 

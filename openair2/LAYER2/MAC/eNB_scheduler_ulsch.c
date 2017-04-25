@@ -698,40 +698,40 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
                          uint16_t     *first_rb)
 {
 
-  int                UE_id;
-  uint8_t            aggregation    = 2;
-  rnti_t             rnti           = -1;
-  uint8_t            round          = 0;
-  uint8_t            harq_pid       = 0;
+  int               UE_id;
+  uint8_t           aggregation    = 2;
+  rnti_t            rnti           = -1;
+  uint8_t           round          = 0;
+  uint8_t           harq_pid       = 0;
   void              *ULSCH_dci      = NULL;
   LTE_eNB_UE_stats  *eNB_UE_stats   = NULL;
   DCI_PDU           *DCI_pdu;
-  uint8_t                 status         = 0;
-  uint8_t                 rb_table_index = -1;
-  uint16_t                TBS = 0;
-  //  int32_t                buffer_occupancy=0;
-  uint32_t                cqi_req,cshift,ndi,mcs=0,rballoc,tpc;
-  int32_t                 normalized_rx_power, target_rx_power=-90;
-  static int32_t          tpc_accumulated=0;
-
-  int n,CC_id = 0;
-  eNB_MAC_INST      *eNB=RC.mac[module_idP];
+  uint8_t           status         = 0; 
+  uint8_t           rb_table_index = -1;
+  uint16_t          TBS = 0;
+  uint32_t          cqi_req,cshift,ndi,mcs=0,rballoc,tpc;
+  int32_t           normalized_rx_power;
+  int32_t           target_rx_power=-90;
+  static int32_t    tpc_accumulated=0;
+  int               n;
+  int               CC_id = 0;
+  int               drop_ue=0;
+  int               N_RB_UL;
+  eNB_MAC_INST      *eNB = RC.mac[module_idP];
+  COMMON_channels_t *cc  = eNB->common_channels;
   UE_list_t         *UE_list=&eNB->UE_list;
   UE_TEMPLATE       *UE_template;
   UE_sched_ctrl     *UE_sched_ctrl;
 
-  //  int                rvidx_tab[4] = {0,2,3,1};
-  LTE_DL_FRAME_PARMS   *frame_parms;
-  int drop_ue=0;
 
-  //  LOG_I(MAC,"entering ulsch preprocesor\n");
+  LOG_D(MAC,"entering ulsch preprocesor\n");
 
   ulsch_scheduler_pre_processor(module_idP,
                                 frameP,
                                 subframeP,
                                 first_rb);
 
-  //  LOG_I(MAC,"exiting ulsch preprocesor\n");
+  LOG_D(MAC,"exiting ulsch preprocesor\n");
 
   // loop over all active UEs
   for (UE_id=UE_list->head_ul; UE_id>=0; UE_id=UE_list->next_ul[UE_id]) {
@@ -786,8 +786,8 @@ abort();
     // loop over all active UL CC_ids for this UE
     for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
       // This is the actual CC_id in the list
-      CC_id = UE_list->ordered_ULCCids[n][UE_id];
-      frame_parms = mac_xface->get_lte_frame_parms(module_idP,CC_id);
+      CC_id        = UE_list->ordered_ULCCids[n][UE_id];
+      N_RB_UL      = to_prb(cc[CC_id].ul_Bandwidth);
       eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
 
       aggregation=get_aggregation(get_bw_index(module_idP,CC_id), 
@@ -891,7 +891,7 @@ abort();
             UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2=mcs;
 	    //            buffer_occupancy = UE_template->ul_total_buffer;
 
-            while (((rb_table[rb_table_index]>(frame_parms->N_RB_UL-1-first_rb[CC_id])) ||
+            while (((rb_table[rb_table_index]>(N_RB_UL-1-first_rb[CC_id])) ||
 		    (rb_table[rb_table_index]>45)) &&
                    (rb_table_index>0)) {
               rb_table_index--;
@@ -901,7 +901,7 @@ abort();
 	    UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx+=rb_table[rb_table_index];
 	    UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_TBS=TBS;
 	    //            buffer_occupancy -= TBS;
-            rballoc = mac_xface->computeRIV(frame_parms->N_RB_UL,
+            rballoc = mac_xface->computeRIV(N_RB_UL,
                                             first_rb[CC_id],
                                             rb_table[rb_table_index]);
 
@@ -934,8 +934,8 @@ abort();
 	    // Cyclic shift for DM RS
 	    cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
 	    	    
-	    if (frame_parms->frame_type == TDD) {
-	      switch (frame_parms->N_RB_UL) {
+	    if (cc[CC_id].tdd_Config!= NULL) { // TDD
+	      switch (N_RB_UL) {
 	      case 6:
 		ULSCH_dci = UE_template->ULSCH_DCI[harq_pid];
 		
@@ -1035,7 +1035,7 @@ abort();
 	      }
 	    } // TDD
 	    else { //FDD
-	      switch (frame_parms->N_RB_UL) {
+	      switch (N_RB_UL) {
 	      case 25:
 	      default:
 		
@@ -1141,9 +1141,6 @@ abort();
 			      S_UL_SCHEDULED);
 	    
 	    LOG_D(MAC,"[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for next UE_id %d, format 0\n", module_idP,CC_id,frameP,subframeP,UE_id);
-#ifdef DEBUG
-	    dump_dci(frame_parms, &DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci-1]);
-#endif
 	    
           }
 	  else {

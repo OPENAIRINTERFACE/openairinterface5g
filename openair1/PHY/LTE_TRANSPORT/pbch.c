@@ -793,7 +793,6 @@ void pbch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
     // take the quarter of the PBCH that corresponds to this frame
     if ((i>=(frame_mod4*(length>>2))) && (i<((1+frame_mod4)*(length>>2)))) {
-      //      if (((s>>(i%32))&1)==1)
 
       if (((s>>(i%32))&1)==0)
         llr[i] = -llr[i];
@@ -936,8 +935,6 @@ uint16_t rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 
     if (mimo_mode == ALAMOUTI) {
       pbch_alamouti(frame_parms,lte_ue_pbch_vars->rxdataF_comp,symbol);
-      //  LOG_D(PHY,"[PBCH][RX] Alamouti receiver not yet implemented!\n");
-      //  return(-1);
     } else if (mimo_mode != SISO) {
       LOG_D(PHY,"[PBCH][RX] Unsupported MIMO mode\n");
       return(-1);
@@ -1008,12 +1005,12 @@ uint16_t rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 #ifdef DEBUG_PBCH
 
   for (i=0; i<(PBCH_A>>3); i++)
-    LOG_D(PHY,"[PBCH] pbch_a[%d] = %x\n",i,decoded_output[i]);
+    LOG_I(PHY,"[PBCH] pbch_a[%d] = %x\n",i,decoded_output[i]);
 
 #endif //DEBUG_PBCH
 
 #ifdef DEBUG_PBCH
-  LOG_D(PHY,"PBCH CRC %x : %x\n",
+  LOG_I(PHY,"PBCH CRC %x : %x\n",
       crc16(pbch_a,PBCH_A),
       ((uint16_t)pbch_a[PBCH_A>>3]<<8)+pbch_a[(PBCH_A>>3)+1]);
 #endif

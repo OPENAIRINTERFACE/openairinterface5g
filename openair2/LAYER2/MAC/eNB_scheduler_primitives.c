@@ -59,7 +59,19 @@
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
 
+int to_prb(int dl_Bandwidth) {
+  int prbmap[6] = {6,15,25,50,75,100};
 
+  AssertFatal(dl_Bandwidth < 6,"dl_Bandwidth is 0..5\n");
+  return(prbmap[dl_Bandwidth]);
+}
+
+int to_rbg(int dl_Bandwidth) {
+  int rbgmap[6] = {6,8,13,17,19,25};
+
+  AssertFatal(dl_Bandwidth < 6,"dl_Bandwidth is 0..5\n");
+  return(rbgmap[dl_Bandwidth]);
+}
 //------------------------------------------------------------------------------
 void init_ue_sched_info(void)
 //------------------------------------------------------------------------------
@@ -715,14 +727,14 @@ uint8_t UE_is_to_be_scheduled(module_id_t module_idP,int CC_id,uint8_t UE_id)
 
 
 
-uint32_t allocate_prbs(int UE_id,unsigned char nb_rb, uint32_t *rballoc)
+uint32_t allocate_prbs(int UE_id,unsigned char nb_rb, int N_RB_DL, uint32_t *rballoc)
 {
 
   int i;
   uint32_t rballoc_dci=0;
   unsigned char nb_rb_alloc=0;
 
-  for (i=0; i<(mac_xface->frame_parms->N_RB_DL-2); i+=2) {
+  for (i=0; i<(N_RB_DL-2); i+=2) {
     if (((*rballoc>>i)&3)==0) {
       *rballoc |= (3<<i);
       rballoc_dci |= (1<<((12-i)>>1));
@@ -734,10 +746,10 @@ uint32_t allocate_prbs(int UE_id,unsigned char nb_rb, uint32_t *rballoc)
     }
   }
 
-  if ((mac_xface->frame_parms->N_RB_DL&1)==1) {
-    if ((*rballoc>>(mac_xface->frame_parms->N_RB_DL-1)&1)==0) {
-      *rballoc |= (1<<(mac_xface->frame_parms->N_RB_DL-1));
-      rballoc_dci |= 1;//(1<<(mac_xface->frame_parms->N_RB_DL>>1));
+  if ((N_RB_DL&1)==1) {
+    if ((*rballoc>>(N_RB_DL-1)&1)==0) {
+      *rballoc |= (1<<(N_RB_DL-1));
+      rballoc_dci |= 1;
     }
   }
 
@@ -748,9 +760,10 @@ int get_bw_index(module_id_t module_id, uint8_t CC_id)
 {
 
   int bw_index=0;
-  LTE_DL_FRAME_PARMS* frame_parms = mac_xface->get_lte_frame_parms(module_id,CC_id);
+ 
+  int N_RB_DL = to_prb(RC.mac[module_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
 
-  switch (frame_parms->N_RB_DL) {
+  switch (N_RB_DL) {
   case 6: // 1.4 MHz
     bw_index=0;
     break;
@@ -769,7 +782,7 @@ int get_bw_index(module_id_t module_id, uint8_t CC_id)
 
   default:
     bw_index=1;
-    LOG_W(MAC,"[eNB %d] N_DL_RB %d unknown for CC_id %d, setting bw_index to 1\n", module_id, CC_id);
+    LOG_W(MAC,"[eNB %d] N_RB_DL %d unknown for CC_id %d, setting bw_index to 1\n", module_id, N_RB_DL,CC_id);
     break;
   }
 
@@ -780,9 +793,9 @@ int get_min_rb_unit(module_id_t module_id, uint8_t CC_id)
 {
 
   int min_rb_unit=0;
-  LTE_DL_FRAME_PARMS* frame_parms = mac_xface->get_lte_frame_parms(module_id,CC_id);
+  int N_RB_DL = to_prb(RC.mac[module_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
 
-  switch (frame_parms->N_RB_DL) {
+  switch (N_RB_DL) {
   case 6: // 1.4 MHz
     min_rb_unit=1;
     break;
@@ -802,14 +815,14 @@ int get_min_rb_unit(module_id_t module_id, uint8_t CC_id)
   default:
     min_rb_unit=2;
     LOG_W(MAC,"[eNB %d] N_DL_RB %d unknown for CC_id %d, setting min_rb_unit to 2\n",
-          module_id, frame_parms->N_RB_DL, CC_id);
+          module_id, N_RB_DL, CC_id);
     break;
   }
 
   return min_rb_unit;
 }
 
-uint32_t allocate_prbs_sub(int nb_rb, uint8_t *rballoc)
+uint32_t allocate_prbs_sub(int nb_rb, int N_RB_DL, int N_RBG, uint8_t *rballoc)
 {
 
   int check=0;//check1=0,check2=0;
@@ -817,20 +830,20 @@ uint32_t allocate_prbs_sub(int nb_rb, uint8_t *rballoc)
   //uint8_t number_of_subbands=13;
 
   LOG_T(MAC,"*****Check1RBALLOC****: %d%d%d%d (nb_rb %d,N_RBG %d)\n",
-        rballoc[3],rballoc[2],rballoc[1],rballoc[0],nb_rb,mac_xface->frame_parms->N_RBG);
+        rballoc[3],rballoc[2],rballoc[1],rballoc[0],nb_rb,N_RBG);
 
-  while((nb_rb >0) && (check < mac_xface->frame_parms->N_RBG)) {
+  while((nb_rb >0) && (check < N_RBG)) {
     //printf("rballoc[%d] %d\n",check,rballoc[check]);
     if(rballoc[check] == 1) {
-      rballoc_dci |= (1<<((mac_xface->frame_parms->N_RBG-1)-check));
+      rballoc_dci |= (1<<((N_RBG-1)-check));
 
-      switch (mac_xface->frame_parms->N_RB_DL) {
+      switch (N_RB_DL) {
       case 6:
         nb_rb--;
         break;
 
       case 25:
-        if ((check == mac_xface->frame_parms->N_RBG-1)) {
+        if ((check == N_RBG-1)) {
           nb_rb--;
         } else {
           nb_rb-=2;
@@ -839,7 +852,7 @@ uint32_t allocate_prbs_sub(int nb_rb, uint8_t *rballoc)
         break;
 
       case 50:
-        if ((check == mac_xface->frame_parms->N_RBG-1)) {
+        if ((check == N_RBG-1)) {
           nb_rb-=2;
         } else {
           nb_rb-=3;
@@ -865,12 +878,12 @@ uint32_t allocate_prbs_sub(int nb_rb, uint8_t *rballoc)
 }
 
 
-int get_nb_subband(void)
+int get_nb_subband(int N_RB_DL)
 {
 
   int nb_sb=0;
 
-  switch (mac_xface->frame_parms->N_RB_DL) {
+  switch (N_RB_DL) {
   case 6:
     nb_sb=0;
     break;

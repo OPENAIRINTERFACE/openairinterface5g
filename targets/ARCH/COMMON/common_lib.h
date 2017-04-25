@@ -218,24 +218,20 @@ typedef struct {
 
 typedef struct {
   char *remote_addr;
-  //! remote port number for Ethernet interface
-  uint16_t remote_port;
+  //! remote port number for Ethernet interface (control)
+  uint16_t remote_portc;
+  //! remote port number for Ethernet interface (user)
+  uint16_t remote_portd;
   //! local IP/MAC addr for Ethernet interface (eNB/RAU, UE)
   char *my_addr;
-  //! local port number for Ethernet interface (eNB/RAU, UE)
-  uint16_t  my_port;
+  //! local port number (control) for Ethernet interface (eNB/RAU, UE)
+  uint16_t  my_portc;
+  //! local port number (user) for Ethernet interface (eNB/RAU, UE)
+  uint16_t  my_portd;
   //! local Ethernet interface (eNB/RAU, UE)
   char *local_if_name;
-  //! tx_sample_advance for RF + ETH
-  uint8_t tx_sample_advance;
-  //! tx_scheduling_advance for RF + ETH
-  uint8_t tx_scheduling_advance;
-  //! iq_txshift  for RF + ETH
-  uint8_t iq_txshift;
   //! transport type preference  (RAW/UDP)
   uint8_t transp_preference;
-  //! radio front end preference (EXMIMO,USRP, BALDERF,LMSSDR)
-  uint8_t rf_preference;
 } eth_params_t;
 
 
@@ -282,19 +278,19 @@ struct openair0_device_t {
   */
   int (*trx_start_func)(openair0_device *device);
 
-  /*! \brief Called to send a request message between RAU-RRU
+  /*! \brief Called to send a request message between RAU-RRU on control port
       @param device pointer to the device structure specific to the RF hardware target
       @param msg pointer to the message structure passed between RAU-RRU
       @param msg_len length of the message  
   */  
-  int (*trx_request_func)(openair0_device *device, void *msg, ssize_t msg_len);
+  int (*trx_ctlsend_func)(openair0_device *device, void *msg, ssize_t msg_len);
 
-  /*! \brief Called to send a reply  message between RAU-RRU
+  /*! \brief Called to receive a reply  message between RAU-RRU on control port
       @param device pointer to the device structure specific to the RF hardware target
       @param msg pointer to the message structure passed between RAU-RRU
       @param msg_len length of the message  
   */  
-  int (*trx_reply_func)(openair0_device *device, void *msg, ssize_t msg_len);
+  int (*trx_ctlrecv_func)(openair0_device *device, void *msg, ssize_t msg_len);
 
   /*! \brief Called to send samples to the RF target
       @param device pointer to the device structure specific to the RF hardware target

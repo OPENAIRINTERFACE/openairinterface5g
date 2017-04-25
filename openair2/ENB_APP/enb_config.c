@@ -239,8 +239,10 @@
 #define CONFIG_STRING_RU_LOCAL_IF_NAME            "local_if_name"
 #define CONFIG_STRING_RU_LOCAL_ADDRESS            "local_address"
 #define CONFIG_STRING_RU_REMOTE_ADDRESS           "remote_address"
-#define CONFIG_STRING_RU_LOCAL_PORT               "local_port"
-#define CONFIG_STRING_RU_REMOTE_PORT              "remote_port"
+#define CONFIG_STRING_RU_LOCAL_PORTC              "local_portc"
+#define CONFIG_STRING_RU_REMOTE_PORTC             "remote_portc"
+#define CONFIG_STRING_RU_LOCAL_PORTD              "local_portd"
+#define CONFIG_STRING_RU_REMOTE_PORTD             "remote_portd"
 #define CONFIG_STRING_RU_LOCAL_RF                 "local_rf"
 #define CONFIG_STRING_RU_TRANSPORT_PREFERENCE     "tr_preference"
 #define CONFIG_STRING_RU_BAND_LIST                "bands"
@@ -397,8 +399,10 @@ void RCconfig_RU() {
   char              *local_rf                     = NULL;
 
   char*             tr_preference                 = NULL;
-  libconfig_int     local_port                    = 0;
-  libconfig_int     remote_port                   = 0;
+  libconfig_int     local_portc                   = 0;
+  libconfig_int     remote_portc                  = 0;
+  libconfig_int     local_portd                   = 0;
+  libconfig_int     remote_portd                  = 0;
 
   libconfig_int     nb_tx                         = 0;
   libconfig_int     nb_rx                         = 0;
@@ -436,8 +440,10 @@ void RCconfig_RU() {
 	         config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_LOCAL_IF_NAME,        (const char **)&if_name)
 	      && config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_LOCAL_ADDRESS,        (const char **)&ipv4)
 	      && config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_REMOTE_ADDRESS,       (const char **)&ipv4_remote)
-	      && config_setting_lookup_int   (setting_ru, CONFIG_STRING_RU_LOCAL_PORT,           &local_port)
-	      && config_setting_lookup_int   (setting_ru, CONFIG_STRING_RU_REMOTE_PORT,          &remote_port)
+	      && config_setting_lookup_int   (setting_ru, CONFIG_STRING_RU_LOCAL_PORTC,          &local_portc)
+	      && config_setting_lookup_int   (setting_ru, CONFIG_STRING_RU_REMOTE_PORTC,         &remote_portc)
+	      && config_setting_lookup_int   (setting_ru, CONFIG_STRING_RU_LOCAL_PORTD,          &local_portd)
+	      && config_setting_lookup_int   (setting_ru, CONFIG_STRING_RU_REMOTE_PORTD,         &remote_portd)
 	      && config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_TRANSPORT_PREFERENCE, (const char **)&tr_preference)
 	      && config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_LOCAL_RF,             (const char **)&local_rf)
 	      )
@@ -508,8 +514,10 @@ void RCconfig_RU() {
       RC.ru[j]->eth_params.local_if_name            = strdup(if_name);
       RC.ru[j]->eth_params.my_addr                  = strdup(ipv4);
       RC.ru[j]->eth_params.remote_addr              = strdup(ipv4_remote);
-      RC.ru[j]->eth_params.my_port                  = local_port;
-      RC.ru[j]->eth_params.remote_port              = remote_port;
+      RC.ru[j]->eth_params.my_portc                 = local_portc;
+      RC.ru[j]->eth_params.remote_portc             = remote_portc;
+      RC.ru[j]->eth_params.my_portd                 = local_portd;
+      RC.ru[j]->eth_params.remote_portd             = remote_portd;
       RC.ru[j]->if_timing                           = synch_to_ext_device;
       RC.ru[j]->num_eNB                             = num_eNB4RU;
       if (strcmp(local_rf, "yes") == 0) {

@@ -184,7 +184,7 @@ void feptx_ofdm(RU_t *ru) {
          ru->common.txdata[aa][tx_offset] = 0x00000000;
        }
      }
-     LOG_I(PHY,"feptx_ofdm: frame %d, subframe %d: txp (time) %d dB, txp (freq) %d dB\n",
+     LOG_D(PHY,"feptx_ofdm: frame %d, subframe %d: txp (time) %d dB, txp (freq) %d dB\n",
 	   ru->proc.frame_tx,subframe,dB_fixed(signal_energy(txdata,fp->samples_per_tti)),
 	   dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
     }
@@ -200,25 +200,36 @@ void feptx_prec(RU_t *ru) {
   int32_t ***bw;
   int subframe = ru->proc.subframe_tx;
 
-  for (i=0;i<ru->num_eNB;i++) {
-    eNB = eNB_list[i];
+  if (ru->num_eNB == 1) {
+    eNB = eNB_list[0];
     fp  = &eNB->frame_parms;
-    bw  = ru->beam_weights[i];
-
-    for (l=0;l<fp->symbols_per_tti;l++) {
-      for (aa=0;aa<ru->nb_tx;aa++) {
-	beam_precoding(eNB->common_vars.txdataF,
-		       ru->common.txdataF_BF,
-		       fp,
-		       bw,
-		       subframe<<1,
-		       l,
-		       aa);
+    
+    for (aa=0;aa<ru->nb_tx;aa++)
+      memcpy((void*)ru->common.txdataF_BF[aa],
+	     (void*)&eNB->common_vars.txdataF[aa][subframe*fp->symbols_per_tti*fp->ofdm_symbol_size],
+	     fp->symbols_per_tti*fp->ofdm_symbol_size*sizeof(int32_t));
+  }
+  else {
+    for (i=0;i<ru->num_eNB;i++) {
+      eNB = eNB_list[i];
+      fp  = &eNB->frame_parms;
+      bw  = ru->beam_weights[i];
+      
+      for (l=0;l<fp->symbols_per_tti;l++) {
+	for (aa=0;aa<ru->nb_tx;aa++) {
+	  beam_precoding(eNB->common_vars.txdataF,
+			 ru->common.txdataF_BF,
+			 fp,
+			 bw,
+			 subframe<<1,
+			 l,
+			 aa);
+	}
       }
+      LOG_D(PHY,"feptx_prec: frame %d, subframe %d: txp (freq) %d dB\n",
+	    ru->proc.frame_tx,subframe,
+	    dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[0],2*fp->symbols_per_tti*fp->ofdm_symbol_size)));
     }
-    LOG_D(PHY,"feptx_prec: frame %d, subframe %d: txp (freq) %d dB\n",
-	  ru->proc.frame_tx,subframe,
-	  dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[0],2*fp->symbols_per_tti*fp->ofdm_symbol_size)));
   }
 }
 

@@ -69,32 +69,34 @@ schedule_SI(
 //------------------------------------------------------------------------------
 {
 
-
-
-  int8_t bcch_sdu_length;
-  int mcs = -1;
-  void *BCCH_alloc_pdu;
-  int CC_id;
-  eNB_MAC_INST *eNB = RC.mac[module_idP];
-  uint8_t *vrb_map;
-  int first_rb = -1;
-  int rballoc[MAX_NUM_CCs];
-  int sizeof1A_bytes,sizeof1A_bits = -1;
-  DCI_PDU *DCI_pdu;
-
+  int8_t            bcch_sdu_length;
+  int               mcs = -1;
+  void              *BCCH_alloc_pdu;
+  int               CC_id;
+  eNB_MAC_INST      *eNB = RC.mac[module_idP];
+  uint8_t           *vrb_map;
+  int               first_rb = -1;
+  int               rballoc[MAX_NUM_CCs];
+  int               sizeof1A_bytes;
+  int               sizeof1A_bits = -1;
+  DCI_PDU           *DCI_pdu;
+  COMMON_channels_t *cc;
+  int               N_RB_DL;
   start_meas(&eNB->schedule_si);
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    
-    BCCH_alloc_pdu  = (void*)&eNB->common_channels[CC_id].BCCH_alloc_pdu;
-    DCI_pdu         = (void*)&eNB->common_channels[CC_id].DCI_pdu;
-    vrb_map         = (void*)&eNB->common_channels[CC_id].vrb_map;
+
+    cc              = &eNB->common_channels[CC_id];
+    BCCH_alloc_pdu  = (void*)&cc->BCCH_alloc_pdu;
+    DCI_pdu         = (void*)&cc->DCI_pdu;
+    vrb_map         = (void*)&cc->vrb_map;
+    N_RB_DL         = to_prb(cc->mib->message.dl_Bandwidth);
 
     bcch_sdu_length = mac_rrc_data_req(module_idP,
                                        CC_id,
                                        frameP,
                                        BCCH,1,
-                                       &eNB->common_channels[CC_id].BCCH_pdu.payload[0],
+                                       &cc->BCCH_pdu.payload[0],
                                        1,
                                        module_idP,
                                        0); // not used in this case
@@ -113,7 +115,7 @@ schedule_SI(
 	  break;
       }
       */
-      switch (RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL) {
+      switch (N_RB_DL) {
       case 6:
 	first_rb = 0;
 	break;
@@ -159,11 +161,11 @@ schedule_SI(
 
 
 
-      if (RC.eNB[module_idP][CC_id]->frame_parms.frame_type == TDD) {
-        switch (RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL) {
+      if (cc->tdd_Config!=NULL) { // TDD
+        switch (N_RB_DL) {
         case 6:
           ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(N_RB_DL,first_rb,4);
           ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
           ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
           ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
@@ -178,7 +180,7 @@ schedule_SI(
 
         case 25:
           ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(N_RB_DL,first_rb,4);
           ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
           ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
           ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
@@ -193,7 +195,7 @@ schedule_SI(
 
         case 50:
           ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(N_RB_DL,first_rb,4);
           ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
           ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
           ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
@@ -208,7 +210,7 @@ schedule_SI(
 
         case 100:
           ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(N_RB_DL,first_rb,4);
           ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
           ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
           ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
@@ -223,10 +225,10 @@ schedule_SI(
         }
 
       } else {
-        switch (RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL) {
+        switch (N_RB_DL) {
         case 6:
           ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(N_RB_DL,first_rb,4);
           ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
           ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
           ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
@@ -242,7 +244,7 @@ schedule_SI(
 
         case 25:
           ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(N_RB_DL,first_rb,4);
           ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
           ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
           ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
@@ -258,7 +260,7 @@ schedule_SI(
 
         case 50:
           ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(N_RB_DL,first_rb,4);
           ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
           ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
           ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
@@ -274,7 +276,7 @@ schedule_SI(
 
         case 100:
           ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(N_RB_DL,first_rb,4);
           ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
           ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
           ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
@@ -306,7 +308,7 @@ schedule_SI(
 
       if (opt_enabled == 1) {
         trace_pdu(1,
-                  &eNB->common_channels[CC_id].BCCH_pdu.payload[0],
+                  &cc->BCCH_pdu.payload[0],
                   bcch_sdu_length,
                   0xffff,
                   4,
@@ -318,7 +320,7 @@ schedule_SI(
 	LOG_D(OPT,"[eNB %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
 	    module_idP, frameP, CC_id, 0xffff, bcch_sdu_length);
       }
-      if (RC.eNB[module_idP][CC_id]->frame_parms.frame_type == TDD) {
+      if (cc->tdd_Config!=NULL) { //TDD
         LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH->DLSCH (TDD) for CC_id %d SI %d bytes (mcs %d, rb 3, TBS %d)\n",
               frameP,
               CC_id,

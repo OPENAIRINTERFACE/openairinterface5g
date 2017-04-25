@@ -1060,7 +1060,7 @@ int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
   while (sample_count<nsamps) {
     while (current_ru_rx_timestamp[ru_id][CC_id]<
 	   (nsamps+last_ru_rx_timestamp[ru_id][CC_id])) {
-      LOG_D(EMU,"eNB: current TS %llu, last TS %llu, sleeping\n",current_ru_rx_timestamp[ru_id][CC_id],last_ru_rx_timestamp[ru_id][CC_id]);
+      LOG_D(EMU,"RU: current TS %llu, last TS %llu, sleeping\n",current_ru_rx_timestamp[ru_id][CC_id],last_ru_rx_timestamp[ru_id][CC_id]);
       usleep(500);
     }
 
@@ -1116,7 +1116,7 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
   while (sample_count<nsamps) {
     while (current_UE_rx_timestamp[UE_id][CC_id] < 
 	   (last_UE_rx_timestamp[UE_id][CC_id]+read_size)) {
-      //LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+      LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
 
       usleep(500);
     }

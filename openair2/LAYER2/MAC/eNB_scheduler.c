@@ -88,21 +88,23 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   int size_bits=0,size_bytes=0;
   
   LTE_eNB_UE_stats  *eNB_UE_stats   = NULL;
+  COMMON_channels_t *cc = RC.mac[module_idP]->common_channels;
 
 #if defined(FLEXRAN_AGENT_SB_IF)
   Protocol__FlexranMessage *msg;
 #endif
 
+  
   LOG_D(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler (UE_list->head %d)\n",module_idP, frameP, subframeP,UE_list->head);
 
   start_meas(&RC.mac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    DCI_pdu[CC_id] = &RC.mac[module_idP]->common_channels[CC_id].DCI_pdu;
+    DCI_pdu[CC_id] = &cc[CC_id].DCI_pdu;
     mbsfn_status[CC_id]=0;
     // clear vrb_map
-    memset(RC.mac[module_idP]->common_channels[CC_id].vrb_map,0,100);
+    memset(cc[CC_id].vrb_map,0,100);
   }
 
   // clear DCI and BCCH contents before scheduling
@@ -110,7 +112,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     DCI_pdu[CC_id]->Num_common_dci  = 0;
     DCI_pdu[CC_id]->Num_ue_spec_dci = 0;
 #ifdef Rel10
-    RC.mac[module_idP]->common_channels[CC_id].mcch_active =0;
+    cc[CC_id].mcch_active =0;
 #endif
     RC.mac[module_idP]->frame    = frameP;
     RC.mac[module_idP]->subframe = subframeP;
@@ -159,27 +161,40 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 	  LOG_D(MAC,"UE %d rnti %x: sending PDCCH order for RAPROC (failure timer %d) \n",i,rnti,UE_list->UE_sched_ctrl[i].ul_failure_timer);	    
 	  DLSCH_dci = (void *)UE_list->UE_template[CC_id][i].DLSCH_DCI[0];
 	  *(uint32_t*)DLSCH_dci = 0;
-	  if (RC.eNB[module_idP][CC_id]->frame_parms.frame_type == TDD) {
-	    switch (RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL) {
-	    case 6:
+	  int N_RB_DL = cc[CC_id].mib->message.dl_Bandwidth;
+	  if (cc[CC_id].tdd_Config != NULL) {
+	    switch (N_RB_DL) {
+	    case 0:
 	      ((DCI1A_1_5MHz_TDD_1_6_t*)DLSCH_dci)->type = 1;
 	      ((DCI1A_1_5MHz_TDD_1_6_t*)DLSCH_dci)->rballoc = 31;
 	      size_bytes = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
 	      size_bits  = sizeof_DCI1A_1_5MHz_TDD_1_6_t;
 	      break;
-	    case 25:
+	    case 1:
+	      /*	      ((DCI1A_2_5MHz_TDD_1_6_t*)DLSCH_dci)->type = 1;
+	      ((DCI1A_2_5MHz_TDD_1_6_t*)DLSCH_dci)->rballoc = 31;
+	      size_bytes = sizeof(DCI1A_2_5MHz_TDD_1_6_t);
+	      size_bits  = sizeof_DCI1A_2_5MHz_TDD_1_6_t;*/
+	      break;
+	    case 2:
 	      ((DCI1A_5MHz_TDD_1_6_t*)DLSCH_dci)->type = 1;
 	      ((DCI1A_5MHz_TDD_1_6_t*)DLSCH_dci)->rballoc = 511;
 	      size_bytes = sizeof(DCI1A_5MHz_TDD_1_6_t);
 	      size_bits  = sizeof_DCI1A_5MHz_TDD_1_6_t;
 	      break;
-	    case 50:
+	    case 3:
 	      ((DCI1A_10MHz_TDD_1_6_t*)DLSCH_dci)->type = 1;
 	      ((DCI1A_10MHz_TDD_1_6_t*)DLSCH_dci)->rballoc = 2047;
 	      size_bytes = sizeof(DCI1A_10MHz_TDD_1_6_t);
 	      size_bits  = sizeof_DCI1A_10MHz_TDD_1_6_t;
 	      break;
-	    case 100:
+	    case 4:/*
+	      ((DCI1A_15MHz_TDD_1_6_t*)DLSCH_dci)->type = 1;
+	      ((DCI1A_15MHz_TDD_1_6_t*)DLSCH_dci)->rballoc = 2047;
+	      size_bytes = sizeof(DCI1A_15MHz_TDD_1_6_t);
+	      size_bits  = sizeof_DCI1A_15MHz_TDD_1_6_t;
+	      break;*/
+	    case 5:
 	      ((DCI1A_20MHz_TDD_1_6_t*)DLSCH_dci)->type = 1;
 	      ((DCI1A_20MHz_TDD_1_6_t*)DLSCH_dci)->rballoc = 8191;
 	      size_bytes = sizeof(DCI1A_20MHz_TDD_1_6_t);
@@ -188,38 +203,38 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 	    }
 	  }
 	  else { // FDD
-	    switch (RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL) {
-	    case 6:
+	    switch (N_RB_DL) {
+	    case 0:
 	      ((DCI1A_1_5MHz_FDD_t*)DLSCH_dci)->type = 1;
 	      ((DCI1A_1_5MHz_FDD_t*)DLSCH_dci)->rballoc = 31;
 	      size_bytes = sizeof(DCI1A_1_5MHz_FDD_t);
 	      size_bits  = sizeof_DCI1A_1_5MHz_FDD_t;
 	      break;
-	    case 15:/*
+	    case 1:/*
 	      ((DCI1A_2_5MHz_FDD_t*)DLSCH_dci)->type = 1;
 	      ((DCI1A_2_5MHz_FDD_t*)DLSCH_dci)->rballoc = 31;
 	      size_bytes = sizeof(DCI1A_1_5MHz_FDD_t);
 	      size_bits  = sizeof_DCI1A_1_5MHz_FDD_t;*/
 	      break;
-	    case 25:
+	    case 2:
 	      ((DCI1A_5MHz_FDD_t*)DLSCH_dci)->type = 1;
 	      ((DCI1A_5MHz_FDD_t*)DLSCH_dci)->rballoc = 511;
 	      size_bytes = sizeof(DCI1A_5MHz_FDD_t);
 	      size_bits  = sizeof_DCI1A_5MHz_FDD_t;
 	      break;
-	    case 50:
+	    case 3:
 	      ((DCI1A_10MHz_FDD_t*)DLSCH_dci)->type = 1;
 	      ((DCI1A_10MHz_FDD_t*)DLSCH_dci)->rballoc = 2047;
 	      size_bytes = sizeof(DCI1A_10MHz_FDD_t);
 	      size_bits  = sizeof_DCI1A_10MHz_FDD_t;
 		break;
-	    case 75:
+	    case 4:
 	      /*	      ((DCI1A_15MHz_FDD_t*)DLSCH_dci)->type = 1;
 	      ((DCI1A_15MHz_FDD_t*)DLSCH_dci)->rballoc = 2047;
 	      size_bytes = sizeof(DCI1A_10MHz_FDD_t);
 	      size_bits  = sizeof_DCI1A_10MHz_FDD_t;*/
 		break;
-	    case 100:
+	    case 5:
 	      ((DCI1A_20MHz_FDD_t*)DLSCH_dci)->type = 1;
 	      ((DCI1A_20MHz_FDD_t*)DLSCH_dci)->rballoc = 8191;
 	      size_bytes = sizeof(DCI1A_20MHz_FDD_t);
@@ -331,7 +346,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 #ifdef Rel10
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    if (RC.mac[module_idP]->common_channels[CC_id].MBMS_flag >0) {
+    if (cc[CC_id].MBMS_flag >0) {
       start_meas(&RC.mac[module_idP]->schedule_mch);
       mbsfn_status[CC_id] = schedule_MBMS(module_idP,CC_id,frameP,subframeP);
       stop_meas(&RC.mac[module_idP]->schedule_mch);
@@ -339,18 +354,6 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   }
 
 #endif
-  // refresh UE list based on UEs dropped by PHY in previous subframe
-  /*
-  i=UE_list->head;
-  while (i>=0) {
-    next_i = UE_list->next[i];
-    LOG_T(MAC,"UE %d : rnti %x, stats %p\n",i,UE_RNTI(module_idP,i),mac_xface->get_eNB_UE_stats(module_idP,0,UE_RNTI(module_idP,i)));
-    if (mac_xface->get_eNB_UE_stats(module_idP,0,UE_RNTI(module_idP,i))==NULL) {
-      mac_remove_ue(module_idP,i,frameP);
-    }
-    i=next_i;
-  }
-  */
 
   switch (subframeP) {
   case 0:
@@ -362,12 +365,11 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
     schedule_RA(module_idP,frameP,subframeP,2);
 
-
-    if (mac_xface->frame_parms->frame_type == FDD) {  //FDD
+    
+    if (cc[0].tdd_Config == NULL) {  //FDD
       schedule_ulsch(module_idP,frameP,cooperation_flag,0,4);//,calibration_flag);
-    } else if  ((mac_xface->frame_parms->tdd_config == TDD) || //TDD
-                (mac_xface->frame_parms->tdd_config == 3) ||
-                (mac_xface->frame_parms->tdd_config == 6)) {
+    } else if  ((cc[0].tdd_Config->subframeAssignment == 3) ||
+                (cc[0].tdd_Config->subframeAssignment == 6)) {
       //schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,4);//,calibration_flag);
     }
 #ifndef FLEXRAN_AGENT_SB_IF
@@ -396,8 +398,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
     // TDD, schedule UL for subframeP 7 (TDD config 0,1) / subframeP 8 (TDD Config 6)
     // FDD, schedule normal UL/DLSCH
-    if (mac_xface->frame_parms->frame_type == TDD) { // TDD
-      switch (mac_xface->frame_parms->tdd_config) {
+    if (cc[0].tdd_Config != NULL) { // TDD
+      switch (cc[0].tdd_Config->subframeAssignment) {
       case 0:
       case 1:
         schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,7);
@@ -446,7 +448,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
     // TDD, nothing
     // FDD, normal UL/DLSCH
-    if (mac_xface->frame_parms->frame_type == FDD) {  //FDD
+    if (cc[0].tdd_Config == NULL) {  //FDD
       schedule_ulsch(module_idP,frameP,cooperation_flag,2,6);
 #ifndef FLEXRAN_AGENT_SB_IF
       schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
@@ -477,8 +479,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     // TDD Config 2, ULSCH for subframeP 7
     // TDD Config 2/5 normal DLSCH
     // FDD, normal UL/DLSCH
-    if (mac_xface->frame_parms->frame_type == TDD) {
-      switch (mac_xface->frame_parms->tdd_config) {
+    if (cc[0].tdd_Config != NULL) {
+      switch (cc[0].tdd_Config->subframeAssignment) {
       case 2:
         schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,7);
 
@@ -541,8 +543,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     // TDD Config 1, ULSCH for subframeP 8
     // TDD Config 1/2/4/5 DLSCH
     // FDD UL/DLSCH
-    if (mac_xface->frame_parms->frame_type == 1) { // TDD
-      switch (mac_xface->frame_parms->tdd_config) {
+    if (cc[0].tdd_Config != NULL) { // TDD
+      switch (cc[0].tdd_Config->subframeAssignment) {
       case 1:
         //        schedule_RA(module_idP,frameP,subframeP);
         schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,8);
@@ -581,7 +583,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         break;
       }
     } else {
-      if (mac_xface->frame_parms->frame_type == FDD) {  //FDD
+      if (cc[0].tdd_Config == NULL) {  //FDD
 
 	schedule_ulsch(module_idP, frameP, cooperation_flag, 4, 8);
 #ifndef FLEXRAN_AGENT_SB_IF
@@ -617,7 +619,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     schedule_SI(module_idP,frameP,subframeP);
 
     //schedule_RA(module_idP,frameP,subframeP,5);
-    if (mac_xface->frame_parms->frame_type == FDD) {
+    if (cc[0].tdd_Config == NULL) {
       schedule_RA(module_idP,frameP,subframeP,1);
       schedule_ulsch(module_idP,frameP,cooperation_flag,5,9);
 #ifndef FLEXRAN_AGENT_SB_IF
@@ -640,8 +642,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 	  flexran_agent_mac_destroy_dl_config(msg);
 	}
 #endif
-    } else if ((mac_xface->frame_parms->tdd_config == 0) || // TDD Config 0
-               (mac_xface->frame_parms->tdd_config == 6)) { // TDD Config 6
+    } else if ((cc[0].tdd_Config->subframeAssignment == 0) || // TDD Config 0
+               (cc[0].tdd_Config->subframeAssignment == 6)) { // TDD Config 6
       //schedule_ulsch(module_idP,cooperation_flag,subframeP);
 #ifndef FLEXRAN_AGENT_SB_IF
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
@@ -676,8 +678,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     // TDD Config 0,1,6 ULSCH for subframes 2,3
     // TDD Config 3,4,5 Normal DLSCH
     // FDD normal ULSCH/DLSCH
-    if (mac_xface->frame_parms->frame_type == TDD) { // TDD
-      switch (mac_xface->frame_parms->tdd_config) {
+    if (cc[0].tdd_Config != NULL) { // TDD
+      switch (cc[0].tdd_Config->subframeAssignment) {
       case 0:
         break;
 
@@ -778,8 +780,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
     // TDD Config 3,4,5 Normal DLSCH
     // FDD Normal UL/DLSCH
-    if (mac_xface->frame_parms->frame_type == TDD) { // TDD
-      switch (mac_xface->frame_parms->tdd_config) {
+    if (cc[0].tdd_Config != NULL) { // TDD
+      switch (cc[0].tdd_Config->subframeAssignment) {
       case 3:
       case 4:
         schedule_RA(module_idP,frameP,subframeP,3);  // 3 = Msg3 subframeP, not
@@ -862,8 +864,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     // TDD Config 2,3,4,5 ULSCH for subframeP 2
     //
     // FDD Normal UL/DLSCH
-    if (mac_xface->frame_parms->frame_type == TDD) { // TDD
-      switch (mac_xface->frame_parms->tdd_config) {
+    if (cc[0].tdd_Config != NULL) { // TDD
+      switch (cc[0].tdd_Config->subframeAssignment) {
       case 2:
       case 3:
       case 4:
@@ -925,8 +927,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   case 9:
 
     // TDD Config 1,3,4,6 ULSCH for subframes 3,3,3,4
-    if (mac_xface->frame_parms->frame_type == TDD) {
-      switch (mac_xface->frame_parms->tdd_config) {
+    if (cc[0].tdd_Config != NULL) {
+      switch (cc[0].tdd_Config->subframeAssignment) {
       case 1:
         schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,3);
         schedule_RA(module_idP,frameP,subframeP,7);  // 7 = Msg3 subframeP, not

@@ -69,7 +69,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type, int k) 
 
     db_fulllength = 12*fp->N_RB_DL;
     db_halflength = (db_fulllength)>>1;
-    slotoffsetF = 0;//(subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
+    slotoffsetF = 1;//(subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength - 1; 
 
 
@@ -263,7 +263,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
 
     LOG_D(PHY,"DL_IF4p5: RU %d frame %d, subframe %d, symbol %d\n",ru->idx,*frame,*subframe,*symbol_number);
 
-    slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size);// + (*subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
+    slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size)+1;// + (*subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength - 1; 
         
     for (element_id=0; element_id<db_halflength; element_id++) {

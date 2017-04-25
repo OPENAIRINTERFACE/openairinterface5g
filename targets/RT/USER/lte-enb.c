@@ -104,7 +104,8 @@ struct timing_info_t {
 // Fix per CC openair rf/if device update
 // extern openair0_device openair0;
 
-extern void do_prach(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
+void do_prach(PHY_VARS_eNB *eNB,int frame,int subframe);
+
 #if defined(ENABLE_ITTI)
 extern volatile int             start_eNB;
 extern volatile int             start_UE;
@@ -123,12 +124,6 @@ time_stats_t softmodem_stats_mt; // main thread
 time_stats_t softmodem_stats_hw; //  hw acquisition
 time_stats_t softmodem_stats_rxtx_sf; // total tx time
 time_stats_t softmodem_stats_rx_sf; // total rx time
-//int32_t **rxdata;
-//int32_t **txdata;
-
-uint8_t seqno; //sequence number
-
-static int                      time_offset[4] = {0,0,0,0};
 
 /* mutex, cond and variable to serialize phy proc TX calls
  * (this mechanism may be relaxed in the future for better
@@ -155,10 +150,9 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   // ****************************************
   // Common RX procedures subframe n
 
-
-  do_prach(eNB,NULL,proc->frame_rx,proc->subframe_rx);
+  do_prach(eNB,proc->frame_rx,proc->subframe_rx);
   //  phy_procedures_eNB_common_RX(eNB,proc);
-  
+
   // UE-specific RX processing for subframe n
   phy_procedures_eNB_uespec_RX(eNB, proc, no_relay );
   
@@ -263,10 +257,8 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string) {
   
   if (!oai_exit) {
 
-
-    if (eNB->CC_id==1) 
-	LOG_D(PHY,"eNB thread single %p (proc %p, CC_id %d), frame %d, subframe %d\n",
-	  pthread_self(), proc, eNB->CC_id, proc->frame_rx,proc->subframe_rx);
+    LOG_D(PHY,"eNB_top in %p (proc %p, CC_id %d), frame %d, subframe %d, instance_cnt_prach %d\n",
+	  pthread_self(), proc, eNB->CC_id, proc->frame_rx,proc->subframe_rx,proc->instance_cnt_prach);
  
 
     T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
@@ -279,6 +271,8 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string) {
     proc_rxtx->timestamp_tx = proc->timestamp_tx;
 
     if (rxtx(eNB,proc_rxtx,string) < 0) LOG_E(PHY,"eNB %d CC_id %d failed during execution\n",eNB->Mod_id,eNB->CC_id);
+    LOG_D(PHY,"eNB_top out %p (proc %p, CC_id %d), frame %d, subframe %d, instance_cnt_prach %d\n",
+	  pthread_self(), proc, eNB->CC_id, proc->frame_rx,proc->subframe_rx,proc->instance_cnt_prach);
   }
   
 }
@@ -336,6 +330,45 @@ int wakeup_rxtx(eNB_proc_t *proc,eNB_rxtx_proc_t *proc_rxtx,LTE_DL_FRAME_PARMS *
   return(0);
 }
 
+void do_prach(PHY_VARS_eNB *eNB,int frame,int subframe) {
+
+  eNB_proc_t *proc = &eNB->proc;
+  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+
+
+
+  // check if we have to detect PRACH first
+  if (is_prach_subframe(fp,frame,subframe)>0) { 
+    LOG_D(PHY,"Triggering prach processing, frame %d, subframe %d\n",frame,subframe);
+    if (proc->instance_cnt_prach == 0) {
+      LOG_W(PHY,"[eNB] Frame %d Subframe %d, dropping PRACH\n", frame,subframe);
+      return;
+    }
+    
+    // wake up thread for PRACH RX
+    if (pthread_mutex_lock(&proc->mutex_prach) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB PRACH thread %d (IC %d)\n", proc->thread_index, proc->instance_cnt_prach);
+      exit_fun( "error locking mutex_prach" );
+      return;
+    }
+    
+    ++proc->instance_cnt_prach;
+    // set timing for prach thread
+    proc->frame_prach = frame;
+    proc->subframe_prach = subframe;
+    
+    // the thread can now be woken up
+    if (pthread_cond_signal(&proc->cond_prach) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB PRACH thread %d\n", proc->thread_index);
+      exit_fun( "ERROR pthread_cond_signal" );
+      return;
+    }
+    
+    pthread_mutex_unlock( &proc->mutex_prach );
+  }
+
+}
+
 /*!
  * \brief The prach receive thread of eNB.
  * \param param is a \ref eNB_proc_t structure which contains the info what to process.
@@ -356,15 +389,17 @@ static void* eNB_thread_prach( void* param ) {
   while (!oai_exit) {
     
     if (oai_exit) break;
+    
 
     if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"eNB_prach_thread") < 0) break;
-    
+
+    LOG_D(PHY,"Running eNB prach procedures\n");
     prach_procedures(eNB);
     
     if (release_thread(&proc->mutex_prach,&proc->instance_cnt_prach,"eNB_prach_thread") < 0) break;
   }
 
-  printf( "Exiting eNB thread PRACH\n");
+  LOG_I(PHY, "Exiting eNB thread PRACH\n");
 
   eNB_thread_prach_status = 0;
   return &eNB_thread_prach_status;
@@ -384,7 +419,7 @@ void init_eNB_proc(int inst) {
   eNB_rxtx_proc_t *proc_rxtx;
   pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_single=NULL,*attr_fep=NULL,*attr_td=NULL,*attr_te=NULL,*attr_synch=NULL;
 
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+  for (CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
     eNB = RC.eNB[inst][CC_id];
 #ifndef OCP_FRAMEWORK
     LOG_I(PHY,"Initializing eNB processes %d CC_id %d \n",inst,CC_id);
@@ -440,6 +475,9 @@ void init_eNB_proc(int inst) {
     pthread_setname_np( proc_rxtx[1].pthread_rxtx, name );
     //    snprintf( name, sizeof(name), "FH %d", i );
     //    pthread_setname_np( proc->pthread_FH, name );
+
+    AssertFatal(proc->instance_cnt_prach == -1,"instance_cnt_prach = %d\n",proc->instance_cnt_prach);
+
     
   }
 
@@ -483,9 +521,8 @@ void kill_eNB_proc(int inst) {
     proc = &eNB->proc;
     proc_rxtx = &proc->proc_rxtx[0];
     
-#ifdef DEBUG_THREADS
-    printf( "Killing TX CC_id %d thread %d\n", CC_id, i );
-#endif
+
+    LOG_I(PHY, "Killing TX CC_id %d inst %d\n", CC_id, inst );
     
     proc_rxtx[0].instance_cnt_rxtx = 0; // FIXME data race!
     proc_rxtx[1].instance_cnt_rxtx = 0; // FIXME data race!
@@ -607,7 +644,6 @@ void init_eNB_afterRU() {
     for (CC_id=0;CC_id<RC.nb_CC[inst];CC_id++) {
       eNB                                  =  RC.eNB[inst][CC_id];
       phy_init_lte_eNB(eNB,0,0);
-
       // map antennas and PRACH signals to eNB RX
       AssertFatal(eNB->num_RU>0,"Number of RU attached to eNB %d is zero\n",eNB->Mod_id);
       LOG_I(PHY,"Mapping RX ports from %d RUs to eNB %d\n",eNB->num_RU,eNB->Mod_id);
@@ -645,11 +681,10 @@ void init_eNB(int single_thread_flag,int wait_for_sync) {
   int CC_id;
   int inst;
   PHY_VARS_eNB *eNB;
-  int ret;
 
   if (RC.eNB == NULL) RC.eNB = (PHY_VARS_eNB***) malloc(RC.nb_inst*sizeof(PHY_VARS_eNB **));
   for (inst=0;inst<RC.nb_inst;inst++) {
-    if (RC.eNB[inst] == NULL) RC.eNB[inst] = (PHY_VARS_eNB*) malloc(RC.nb_CC[inst]*sizeof(PHY_VARS_eNB *));
+    if (RC.eNB[inst] == NULL) RC.eNB[inst] = (PHY_VARS_eNB**) malloc(RC.nb_CC[inst]*sizeof(PHY_VARS_eNB *));
     for (CC_id=0;CC_id<RC.nb_CC[inst];CC_id++) {
       if (RC.eNB[inst][CC_id] == NULL) RC.eNB[inst][CC_id] = (PHY_VARS_eNB*) malloc(sizeof(PHY_VARS_eNB));
       eNB                     = RC.eNB[inst][CC_id]; 
@@ -679,7 +714,7 @@ void init_eNB(int single_thread_flag,int wait_for_sync) {
 void stop_eNB(int nb_inst) {
 
   for (int inst=0;inst<nb_inst;inst++) {
-    printf("Killing eNB %d processing threads\n",inst);
+    LOG_I(PHY,"Killing eNB %d processing threads\n",inst);
     kill_eNB_proc(inst);
   }
 }

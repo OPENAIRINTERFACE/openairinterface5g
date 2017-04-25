@@ -171,52 +171,33 @@ pthread_t                       main_ue_thread;
 pthread_attr_t                  attr_UE_thread;
 struct sched_param              sched_param_UE_thread;
 
+void phy_init_lte_ue_transport(PHY_VARS_UE *ue,int absraction_flag);
 
-PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
-                         uint8_t UE_id,
-                         uint8_t abstraction_flag)
+PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
+			  uint8_t UE_id,
+			  uint8_t abstraction_flag)
 
 {
 
   int i,j;
-  PHY_VARS_UE* PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
-  memset(PHY_vars_UE,0,sizeof(PHY_VARS_UE));
-  PHY_vars_UE->Mod_id=UE_id;
-  memcpy(&(PHY_vars_UE->frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
-  phy_init_lte_ue(PHY_vars_UE,1,abstraction_flag);
+  PHY_VARS_UE* ue;
 
-  for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
-    for (j=0; j<2; j++) {
-      PHY_vars_UE->dlsch[i][j]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
+  if (frame_parms!=(PHY_VARS_UE *)NULL) { // if we want to give initial frame parms, allocate the PHY_VARS_UE structure and put them in
+    ue = (PHY_VARS_UE *)malloc(sizeof(PHY_VARS_UE));
+    memset(ue,0,sizeof(PHY_VARS_UE));
+    memcpy(&(ue->frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+  }					
+  else ue = PHY_vars_UE_g[UE_id][0];
 
-      if (!PHY_vars_UE->dlsch[i][j]) {
-        LOG_E(PHY,"Can't get ue dlsch structures\n");
-        exit(-1);
-      } else
-        LOG_D(PHY,"dlsch[%d][%d] => %p\n",UE_id,i,PHY_vars_UE->dlsch[i][j]);
-    }
+  ue->Mod_id=UE_id;
+  // initialize all signal buffers
+  init_lte_ue_signal(ue,1,abstraction_flag);
+  // intialize transport
+  init_lte_ue_transport(ue,abstraction_flag);
 
-
-
-    PHY_vars_UE->ulsch[i]  = new_ue_ulsch(frame_parms->N_RB_UL, abstraction_flag);
-
-    if (!PHY_vars_UE->ulsch[i]) {
-      LOG_E(PHY,"Can't get ue ulsch structures\n");
-      exit(-1);
-    }
-
-    PHY_vars_UE->dlsch_SI[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
-    PHY_vars_UE->dlsch_ra[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
-
-    PHY_vars_UE->transmission_mode[i] = frame_parms->nb_antenna_ports_eNB==1 ? 1 : 2;
-  }
-
-  PHY_vars_UE->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
-
-  PHY_vars_UE->dlsch_MCH[0]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS_MBSFN,frame_parms->N_RB_DL,0);
-
-  return (PHY_vars_UE);
+  return(ue);
 }
+
 
 char uecap_xer[1024];
 
@@ -237,9 +218,11 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in) {
 
   for (inst=0;inst<nb_inst;inst++) {
 
-    printf("Intializing UE Threads for instance %d ...\n",inst);
+    LOG_I(PHY,"Initializing memory for UE instance %d\n",inst);
+    PHY_vars_UE_g[inst][0] = init_ue_vars(NULL,inst,0);
+
+    LOG_I(PHY,"Intializing UE Threads for instance %d ...\n",inst);
     init_UE_threads(inst);
-    sleep(1);
     UE = PHY_vars_UE_g[inst][0];
 
     if (oaisim_flag == 0) {

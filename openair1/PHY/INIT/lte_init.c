@@ -57,21 +57,23 @@ void phy_config_mib_eNB(int                 Mod_id,
 	Mod_id, CC_id, eutra_band, N_RB_DL_array[dl_Bandwidth], Nid_cell, p_eNB,dl_CarrierFreq);
 
   if (RC.eNB == NULL) {
-    RC.eNB = (PHY_VARS_eNB ***)malloc((1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB***));
+    RC.eNB                               = (PHY_VARS_eNB ***)malloc((1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB***));
     LOG_I(PHY,"RC.eNB = %p\n",RC.eNB);
     memset(RC.eNB,0,(1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB***));
   }
   if (RC.eNB[Mod_id] == NULL) {
-    RC.eNB[Mod_id] = (PHY_VARS_eNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB**));
+    RC.eNB[Mod_id]                       = (PHY_VARS_eNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB**));
     LOG_I(PHY,"RC.eNB[%d] = %p\n",Mod_id,RC.eNB[Mod_id]);
     memset(RC.eNB[Mod_id],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB***));
   }
   if (RC.eNB[Mod_id][CC_id] == NULL) {
     RC.eNB[Mod_id][CC_id] = (PHY_VARS_eNB *)malloc(sizeof(PHY_VARS_eNB));
     LOG_I(PHY,"RC.eNB[%d][%d] = %p\n",Mod_id,CC_id,RC.eNB[Mod_id][CC_id]);
-    RC.eNB[Mod_id][CC_id]->Mod_id = Mod_id;
-    RC.eNB[Mod_id][CC_id]->CC_id  = CC_id;
+    RC.eNB[Mod_id][CC_id]->Mod_id        = Mod_id;
+    RC.eNB[Mod_id][CC_id]->CC_id         = CC_id;
   }
+
+  RC.eNB[Mod_id][CC_id]->mac_enabled     = 1;
 
   fp = &RC.eNB[Mod_id][CC_id]->frame_parms;
 
@@ -92,7 +94,7 @@ void phy_config_mib_eNB(int                 Mod_id,
     fp->frame_type = FDD;
 
   init_frame_parms(fp,1);
-  phy_init_lte_top(fp);
+  init_lte_top(fp);
 
 }
 
@@ -1014,7 +1016,7 @@ void  phy_config_cba_rnti (module_id_t Mod_id,int CC_id,eNB_flag_t eNB_flag, uin
   }
 }
 
-void phy_init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
+void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
 {
 
   crcTableInit();
@@ -1046,6 +1048,7 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
   init_unscrambling_lut();
   init_scrambling_lut();
   //set_taus_seed(1328);
+
 
 }
 
@@ -1100,9 +1103,9 @@ void phy_init_lte_ue__PDSCH( LTE_UE_PDSCH* const pdsch, const LTE_DL_FRAME_PARMS
 }
 
 
-int phy_init_lte_ue(PHY_VARS_UE *ue,
-                    int nb_connected_eNB,
-                    uint8_t abstraction_flag)
+int init_lte_ue_signal(PHY_VARS_UE *ue,
+		       int nb_connected_eNB,
+		       uint8_t abstraction_flag)
 {
 
   // create shortcuts
@@ -1122,6 +1125,13 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
 
   LOG_D(PHY,"Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
   LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
+
+
+
+  init_frame_parms(&ue->frame_parms,1);
+  init_lte_top(&ue->frame_parms);
+  init_ul_hopping(&ue->frame_parms);
+
 
   // many memory allocation sizes are hard coded
   AssertFatal( fp->nb_antennas_rx <= 2, "hard coded allocation for ue_common_vars->dl_ch_estimates[eNB_id]" );
@@ -1324,6 +1334,30 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
   return 0;
 }
 
+void init_lte_ue_transport(PHY_VARS_UE *ue,int abstraction_flag) {
+
+  int i,j;
+
+  for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
+    for (j=0; j<2; j++) {
+      AssertFatal((ue->dlsch[i][j]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag))!=NULL,"Can't get ue dlsch structures\n");
+
+      LOG_D(PHY,"dlsch[%d][%d] => %p\n",ue->Mod_id,i,ue->dlsch[i][j]);
+    }
+
+    AssertFatal((ue->ulsch[i]  = new_ue_ulsch(ue->frame_parms.N_RB_UL, abstraction_flag))!=NULL,"Can't get ue ulsch structures\n");
+
+    ue->dlsch_SI[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag);
+    ue->dlsch_ra[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag);
+
+    ue->transmission_mode[i] = ue->frame_parms.nb_antenna_ports_eNB==1 ? 1 : 2;
+  }
+
+  ue->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
+
+  ue->dlsch_MCH[0]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS_MBSFN,ue->frame_parms.N_RB_DL,0);
+
+}
 
 int phy_init_RU(RU_t *ru) {
 

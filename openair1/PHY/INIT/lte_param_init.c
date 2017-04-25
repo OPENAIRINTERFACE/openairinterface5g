@@ -96,7 +96,7 @@ void lte_param_init(unsigned char N_tx_port_eNB,
   eNB->transmission_mode[0] = transmission_mode;
   UE->transmission_mode[0] = transmission_mode;
 
-  phy_init_lte_top(frame_parms);
+  init_lte_top(frame_parms);
   dump_frame_parms(frame_parms);
 
   UE->measurements.n_adj_cells=0;
@@ -106,7 +106,7 @@ void lte_param_init(unsigned char N_tx_port_eNB,
   for (i=0; i<3; i++)
     lte_gold(frame_parms,UE->lte_gold_table[i],Nid_cell+i);
 
-  phy_init_lte_ue(UE,1,0);
+  init_lte_ue(UE,1,0);
   phy_init_lte_eNB(eNB,0,0);
 
   generate_pcfich_reg_mapping(&UE->frame_parms);

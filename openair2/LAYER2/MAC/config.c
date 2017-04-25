@@ -135,14 +135,7 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_IN);
 
   if (mib!=NULL) {
-    if (RC.mac == NULL) 
-      l2_init_eNB(
-#ifdef Rel10 
-		  MBMS_Flag,
-#else
-		  0,
-#endif 
-		  NULL,0,0);
+    if (RC.mac == NULL) l2_init_eNB();
 
     mac_top_init_eNB();
 

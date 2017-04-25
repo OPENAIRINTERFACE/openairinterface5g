@@ -54,22 +54,32 @@
 /*!\brief opaque ethernet data structure */
 typedef struct {
   
-  /*!\brief socket file desc */ 
-  int sockfd;
+  /*!\brief socket file desc (control)*/ 
+  int sockfdc;
+  /*!\brief socket file desc (user)*/ 
+  int sockfdd;
   /*!\brief interface name */ 
   char *if_name;
   /*!\brief buffer size */ 
   unsigned int buffer_size;
-  /*!\brief destination address for UDP socket*/
-  struct sockaddr_in dest_addr;
-  /*!\brief local address for UDP socket*/
-  struct sockaddr_in local_addr;
+  /*!\brief destination address (control) for UDP socket*/
+  struct sockaddr_in dest_addrc;
+  /*!\brief local address (control) for UDP socket*/
+  struct sockaddr_in local_addrc;
+  /*!\brief destination address (user) for UDP socket*/
+  struct sockaddr_in dest_addrd;
+  /*!\brief local address (user) for UDP socket*/
+  struct sockaddr_in local_addrd;
   /*!\brief address length for both UDP and RAW socket*/
   int addr_len;
-  /*!\brief destination address for RAW socket*/
-  struct sockaddr_ll dest_addr_ll;
-  /*!\brief local address for RAW socket*/
-  struct sockaddr_ll local_addr_ll;
+  /*!\brief destination address (control) for RAW socket*/
+  struct sockaddr_ll dest_addrc_ll;
+  /*!\brief local address (control) for RAW socket*/
+  struct sockaddr_ll local_addrc_ll;
+  /*!\brief destination address (user) for RAW socket*/
+  struct sockaddr_ll dest_addrd_ll;
+  /*!\brief local address (user) for RAW socket*/
+  struct sockaddr_ll local_addrd_ll;
   /*!\brief inteface index for RAW socket*/
   struct ifreq if_index;
   /*!\brief timeout ms */ 
@@ -117,9 +127,10 @@ typedef struct {
   uint64_t tx_count; 
   /*!\brief number of packets received */
   uint64_t rx_count;
-
-  struct ether_header eh; 
-
+  /*!\brief precomputed ethernet header (control) */
+  struct ether_header ehc; 
+  /*!\brief precomputed ethernet header (data) */
+  struct ether_header ehd; 
 } eth_state_t;
 
 
@@ -158,79 +169,6 @@ typedef enum {
   MAX_OPT
 } eth_opt_t;
 
-#define MAX_RRU_CONFIG_SIZE 1024
-typedef enum {
-  RAU_tick=0,
-  RRU_capabilities=1,
-  RRU_config=2,
-  RRU_MSG_max_num=3
-} rru_config_msg_type_t;
-
-typedef struct RRU_CONFIG_msg_s {
-  rru_config_msg_type_t type;
-  ssize_t len;
-  uint8_t msg[MAX_RRU_CONFIG_SIZE];
-} RRU_CONFIG_msg_t;
-
-typedef enum {
-  OAI_IF5_only      =0,
-  OAI_IF4p5_only    =1,
-  OAI_IF5_and_IF4p5 =2,
-  MBP_IF5           =3,
-  MAX_FH_FMTs       =4
-} FH_fmt_options_t;
-
-#define MAX_BANDS_PER_RRU 4
-
-typedef struct RRU_capabilities_s {
-  /// Fronthaul format
-  FH_fmt_options_t FH_fmt;
-  /// number of EUTRA bands (<=4) supported by RRU
-  uint8_t          num_bands;
-  /// EUTRA band list supported by RRU
-  uint8_t          band_list[MAX_BANDS_PER_RRU];
-  /// Number of concurrent bands (component carriers)
-  uint8_t          num_concurrent_bands;
-  /// Maximum TX EPRE of each band
-  int8_t           max_pdschReferenceSignalPower[MAX_BANDS_PER_RRU];
-  /// Maximum RX gain of each band
-  uint8_t          max_rxgain[MAX_BANDS_PER_RRU];
-  /// Number of RX ports of each band
-  uint8_t          nb_rx[MAX_BANDS_PER_RRU];
-  /// Number of TX ports of each band
-  uint8_t          nb_tx[MAX_BANDS_PER_RRU]; 
-  /// max DL bandwidth (1,6,15,25,50,75,100)
-  uint8_t          N_RB_DL[MAX_BANDS_PER_RRU];
-  /// max UL bandwidth (1,6,15,25,50,75,100)
-  uint8_t          N_RB_UL[MAX_BANDS_PER_RRU];
-} RRU_capabilities_t;
-
-typedef struct RRU_config_s {
-  /// Fronthaul format
-  RU_if_south_t FH_fmt;
-  /// number of EUTRA bands (<=4) configured in RRU
-  uint8_t num_bands;
-  /// EUTRA band list configured in RRU
-  uint8_t band_list[MAX_BANDS_PER_RRU];
-  /// TX frequency
-  uint32_t tx_freq[MAX_BANDS_PER_RRU];
-  /// RX frequency
-  uint32_t rx_freq[MAX_BANDS_PER_RRU];
-  /// TX attenation w.r.t. max
-  uint8_t att_tx[MAX_BANDS_PER_RRU];
-  /// RX attenuation w.r.t. max
-  uint8_t att_rx[MAX_BANDS_PER_RRU];
-  /// DL bandwidth
-  uint8_t N_RB_DL[MAX_BANDS_PER_RRU];
-  /// UL bandwidth
-  uint8_t N_RB_UL[MAX_BANDS_PER_RRU];
-  /// 3/4 sampling rate
-  uint8_t threequarter_fs[MAX_BANDS_PER_RRU];
-  /// prach_FreqOffset for IF4p5
-  int prach_FreqOffset[MAX_BANDS_PER_RRU];
-  /// prach_ConfigIndex for IF4p5
-  int prach_ConfigIndex[MAX_BANDS_PER_RRU];
-} RRU_config_t;
 
 /*
 #define SND_BUF_SIZE	1
@@ -286,19 +224,8 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value);
 int eth_socket_init_udp(openair0_device *device);
 int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
 int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
-//int trx_eth_write_udp_IF4(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
-//int trx_eth_read_udp_IF4(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
-int eth_get_dev_conf_udp(openair0_device *device);
 
-/*! \fn static int eth_set_dev_conf_udp(openair0_device *device)
-* \brief
-* \param[in] *device openair device
-* \param[out]
-* \return 0 on success, otherwise -1
-* \note
-* @ingroup  _oai
-*/
-int eth_set_dev_conf_udp(openair0_device *device);
+
 int eth_socket_init_raw(openair0_device *device);
 int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
 int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
@@ -307,6 +234,9 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
 int trx_eth_read_raw_IF5_mobipass(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
 int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
 int trx_eth_read_udp_IF4p5(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
+int trx_eth_ctlsend_udp(openair0_device *device, void *msg, ssize_t msg_len);
+int trx_eth_ctlrecv_udp(openair0_device *device, void *msg, ssize_t msg_len);
+
 int eth_get_dev_conf_raw(openair0_device *device);
 int eth_set_dev_conf_raw(openair0_device *device);
 int eth_get_dev_conf_raw_IF4p5(openair0_device *device);

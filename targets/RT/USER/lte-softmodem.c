@@ -1444,10 +1444,6 @@ int main( int argc, char **argv )
       frame_parms[CC_id]->nb_antenna_ports_eNB = 1; //initial value overwritten by initial sync later
     
 
-      init_ul_hopping(frame_parms[CC_id]);
-      init_frame_parms(frame_parms[CC_id],1);
-      //   phy_init_top(frame_parms[CC_id]);
-      phy_init_lte_top(frame_parms[CC_id]);
     }
   }
 
@@ -1468,7 +1464,7 @@ int main( int argc, char **argv )
 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
-      PHY_vars_UE_g[0][CC_id] = init_lte_UE(frame_parms[CC_id], 0,abstraction_flag);
+      PHY_vars_UE_g[0][CC_id] = init_ue_vars(frame_parms[CC_id], 0,abstraction_flag);
       UE[CC_id] = PHY_vars_UE_g[0][CC_id];
       printf("PHY_vars_UE_g[0][%d] = %p\n",CC_id,UE[CC_id]);
 
@@ -1761,12 +1757,9 @@ int main( int argc, char **argv )
 
 
 
-  sleep(3);
-  
-
-  
   printf("Sending sync to all threads\n");
-  
+
+
   pthread_mutex_lock(&sync_mutex);
   sync_var=0;
   pthread_cond_broadcast(&sync_cond);

@@ -49,7 +49,7 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms);
 
 
 /*!
-\brief Allocate and Initialize the PHY variables relevant to the LTE implementation.
+\brief Allocate and Initialize the PHY variables relevant to the LTE ue signal buffers.
 \details Only a subset of phy_vars_ue is initialized.
 @param[out] phy_vars_ue Pointer to UE Variables
 @param nb_connected_eNB Number of eNB that UE can process in one PDSCH demodulation subframe
@@ -58,9 +58,16 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms);
 @returns -1 if any memory allocation failed
 @note The current implementation will never return -1, but segfault.
  */
-int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
-                    int          nb_connected_eNB,
-                    uint8_t         abstraction_flag);
+int phy_init_lte_ue_signal(PHY_VARS_UE *phy_vars_ue,
+			   int          nb_connected_eNB,
+			   uint8_t         abstraction_flag);
+
+/*!
+\brief Allocate and initialize the PHY variables releated to the transport channel buffers (UL/DL)
+@param ue Pointer to UE L1 context
+@param abstraction flag Indicates that abstraction is used in L1
+*/
+void init_lte_ue_transport(PHY_VARS_UE *ue,int absraction_flag);
 
 /*!
 \brief Allocate and initialize the PHY variables relevant to the LTE implementation (eNB).
@@ -304,7 +311,7 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB);
 int phy_init_secsys_eNB(PHY_VARS_eNB *phy_vars_eNb);
 
 
-void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms);
+void init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms);
 
 //void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parm, PHY_FRAMING *phy_framing);
 

@@ -41,7 +41,7 @@
 #include "common_lib.h"
 extern openair0_config_t openair0_cfg[];
 
-//#define DEBUG_INITIAL_SYNCH
+#define DEBUG_INITIAL_SYNCH
 
 int pbch_detection(PHY_VARS_UE *ue, runmode_t mode) 
 {
@@ -282,6 +282,8 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
   // First try FDD normal prefix
   frame_parms->Ncp=NORMAL;
   frame_parms->frame_type=FDD;
+  frame_parms->nb_antenna_ports_eNB = 2;
+
   init_frame_parms(frame_parms,1);
   /*
   write_output("rxdata0.m","rxd0",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);

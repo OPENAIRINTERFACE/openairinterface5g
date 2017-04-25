@@ -1216,18 +1216,26 @@ void wait_RUs() {
     PHY_vars_UE_g[i][0]->frame_parms.N_RB_DL              = RC.ru[0]->frame_parms.N_RB_DL;
     PHY_vars_UE_g[i][0]->frame_parms.nb_antennas_tx       = 1;
     PHY_vars_UE_g[i][0]->frame_parms.nb_antennas_rx       = 1;
-    PHY_vars_UE_g[i][0]->frame_parms.nb_antenna_ports_eNB = RC.ru[0]->frame_parms.nb_antenna_ports_eNB;
+    // set initially to 2, it will be revised after initial synchronization
+    PHY_vars_UE_g[i][0]->frame_parms.nb_antenna_ports_eNB = 2;
     PHY_vars_UE_g[i][0]->frame_parms.dl_CarrierFreq       = RC.ru[0]->frame_parms.dl_CarrierFreq;
     PHY_vars_UE_g[i][0]->frame_parms.ul_CarrierFreq       = RC.ru[0]->frame_parms.ul_CarrierFreq;
     PHY_vars_UE_g[i][0]->frame_parms.eutra_band           = RC.ru[0]->frame_parms.eutra_band;
-    init_ul_hopping(&PHY_vars_UE_g[i][0]->frame_parms);
-    init_frame_parms(&PHY_vars_UE_g[i][0]->frame_parms,1);
-    phy_init_lte_top(&PHY_vars_UE_g[i][0]->frame_parms);
-    phy_init_lte_ue(PHY_vars_UE_g[i][0],1,0);
-    current_UE_rx_timestamp[i][0] = PHY_vars_UE_g[i][0]->frame_parms.samples_per_tti;
+    LOG_I(PHY,"Initializing UE %d frame parameters from RU information: N_RB_DL %d, p %d, dl_Carrierfreq %u, ul_CarrierFreq %u, eutra_band %d\n",
+	  i,
+	  PHY_vars_UE_g[i][0]->frame_parms.N_RB_DL,
+	  PHY_vars_UE_g[i][0]->frame_parms.nb_antenna_ports_eNB,
+	  PHY_vars_UE_g[i][0]->frame_parms.dl_CarrierFreq,
+	  PHY_vars_UE_g[i][0]->frame_parms.ul_CarrierFreq,
+	  PHY_vars_UE_g[i][0]->frame_parms.eutra_band);
+
+    current_UE_rx_timestamp[i][0] = RC.ru[0]->frame_parms.samples_per_tti;
 
   }
   
+  
+
+
   for (ru_id=0;ru_id<RC.nb_RU;ru_id++) current_ru_rx_timestamp[ru_id][0] = RC.ru[ru_id]->frame_parms.samples_per_tti;
 
   printf("RUs are ready, let's go\n");
@@ -1235,6 +1243,7 @@ void wait_RUs() {
 
 void init_UE(int,int,int);
 void init_RU(const char*);
+
 
 /*------------------------------------------------------------------------------*/
 int
@@ -1252,6 +1261,7 @@ main (int argc, char **argv)
   int node_id;
   int port,Process_Flag=0,wgt,Channel_Flag=0,temp;
 #endif
+  int i;
 
   //default parameters
   oai_emulation.info.n_frames = MAX_FRAME_NUMBER; //1024;          //10;
@@ -1327,7 +1337,7 @@ main (int argc, char **argv)
 
   init_devices ();
   init_RU(NULL);
-  init_UE(NB_UE_INST,0,0);
+
 
   //  init_openair2 ();
 
@@ -1342,6 +1352,9 @@ main (int argc, char **argv)
 
   printf("Waiting for RUs to get set up\n"); 
   wait_RUs();
+
+  init_UE(NB_UE_INST,0,0);
+
   init_ocm ();
   printf("Sending sync to all threads\n");
 

@@ -378,18 +378,6 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
   for (n=0; n<length; n+=4) {
 
-#ifdef RTAI_ENABLED
-
-    // This is necessary since the sync takes a long time and it seems to block all other threads thus screwing up RTAI. If we pause it for a little while during its execution we give RTAI a chance to catch up with its other tasks.
-    if ((n%frame_parms->samples_per_tti == 0) && (n>0) && (openair_daq_vars.sync_state==0)) {
-#ifdef DEBUG_PHY
-      LOG_E(PHY,"[SYNC TIME] pausing for 1000ns, n=%d\n",n);
-#endif
-      rt_sleep(nano2count(1000));
-    }
-
-#endif
-
     sync_corr_ue0[n] = 0;
     sync_corr_ue0[n+length] = 0;
     sync_corr_ue1[n] = 0;

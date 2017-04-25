@@ -103,7 +103,7 @@ int mac_top_init_ue(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active,
   int CC_id;
   int list_el;
   UE_list_t *UE_list;
-
+  COMMON_channels_t   *cc;
   LOG_I(MAC,"[MAIN] Init function start:Nb_UE_INST=%d\n",NB_UE_INST);
 
   if (NB_UE_INST>0) {
@@ -174,11 +174,13 @@ int mac_top_init_ue(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active,
       LOG_D(MAC,"[MAIN][eNB %d] CC_id %d initializing RA_template\n",i, CC_id);
       LOG_D(MAC, "[MSC_NEW][FRAME 00000][MAC_eNB][MOD %02d][]\n", i);
 
-      RA_template = (RA_TEMPLATE *)&RC.mac[i]->common_channels[CC_id].RA_template[0];
+      cc = &RC.mac[i]->common_channels[CC_id];
+      RA_template = &cc->RA_template[0];
+
 
       for (j=0; j<NB_RA_PROC_MAX; j++) {
-        if (mac_xface->frame_parms->frame_type == TDD) {
-          switch (mac_xface->frame_parms->N_RB_DL) {
+        if (cc->tdd_Config != NULL) { // TDD
+          switch (to_prb(cc->mib->message.dl_Bandwidth)) {
           case 6:
             size_bytes1 = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
             size_bytes2 = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
@@ -216,7 +218,7 @@ int mac_top_init_ue(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active,
           }
 
         } else {
-          switch (mac_xface->frame_parms->N_RB_DL) {
+          switch (to_prb(cc->mib->message.dl_Bandwidth)) {
           case 6:
             size_bytes1 = sizeof(DCI1A_1_5MHz_FDD_t);
             size_bytes2 = sizeof(DCI1A_1_5MHz_FDD_t);
