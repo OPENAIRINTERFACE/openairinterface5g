@@ -742,7 +742,9 @@ flexran_schedule_ue_spec_default(mid_t   mod_id,
       if ((n_active_slices > 0) && (n_active_slices <= MAX_NUM_SLICES)) {
 	LOG_N(MAC,"[eNB %d]frame %d subframe %d: number of active slices has changed: %d-->%d\n",
 	      mod_id, frame, subframe, n_active_slices_current, n_active_slices);
+
 	n_active_slices_current = n_active_slices;
+
       } else {
 	LOG_W(MAC,"invalid number of slices %d, revert to the previous value %d\n",n_active_slices, n_active_slices_current);
 	n_active_slices = n_active_slices_current;
@@ -756,18 +758,22 @@ flexran_schedule_ue_spec_default(mid_t   mod_id,
 	  total_slice_percentage=total_slice_percentage - slice_percentage_current[i]  + slice_percentage[i];
 	  LOG_N(MAC,"[eNB %d][SLICE %d] frame %d subframe %d: total percentage %f, slice RB percentage has changed: %f-->%f\n",
 		mod_id, i, frame, subframe, total_slice_percentage, slice_percentage_current[i], slice_percentage[i]);
+
 	  slice_percentage_current[i] = slice_percentage[i];
+
 	} else {
 	  LOG_W(MAC,"[eNB %d][SLICE %d] invalid total RB share (%f->%f), revert the previous value (%f->%f)\n",
 		mod_id,i,  
 		total_slice_percentage,
 		total_slice_percentage - slice_percentage_current[i]  + slice_percentage[i],
 		slice_percentage[i],slice_percentage_current[i]);
+
 	  slice_percentage[i]= slice_percentage_current[i];
 
 	}
       } else {
 	LOG_W(MAC,"[eNB %d][SLICE %d] invalid slice RB share, revert the previous value (%f->%f)\n",mod_id, i,  slice_percentage[i],slice_percentage_current[i]);
+
 	slice_percentage[i]= slice_percentage_current[i];
 
       }
@@ -778,10 +784,14 @@ flexran_schedule_ue_spec_default(mid_t   mod_id,
       if ((slice_maxmcs[i] >= 0) && (slice_maxmcs[i] < 29)){
 	LOG_N(MAC,"[eNB %d][SLICE %d] frame %d subframe %d: slice MAX MCS has changed: %d-->%d\n",
 	      mod_id, i, frame, subframe, slice_maxmcs_current[i], slice_maxmcs[i]);
+
 	slice_maxmcs_current[i] = slice_maxmcs[i];
+
       } else {
 	LOG_W(MAC,"[eNB %d][SLICE %d] invalid slice max mcs %d, revert the previous value %d\n",mod_id, i,  slice_percentage[i],slice_percentage[i]);
+
 	slice_maxmcs[i]= slice_maxmcs_current[i];
+
       }
     }
     
@@ -789,7 +799,9 @@ flexran_schedule_ue_spec_default(mid_t   mod_id,
     if (update_dl_scheduler_current[i] != update_dl_scheduler[i]){
       LOG_N(MAC,"[eNB %d][SLICE %d] frame %d subframe %d: DL scheduler for this slice is updated: %s \n",
 	    mod_id, i, frame, subframe, dl_scheduler_type[i]);
+
       update_dl_scheduler_current[i] = update_dl_scheduler[i];
+      
     }
 
     // Run each enabled slice-specific schedulers one by one

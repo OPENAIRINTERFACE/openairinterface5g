@@ -59,6 +59,12 @@
 // #define ENABLE_MAC_PAYLOAD_DEBUG
 // #define DEBUG_eNB_SCHEDULER 1
 
+
+// RB share for each slice for past and current time
+float slice_percentage_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
+float slice_percentage_current_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
+
+
 // // This table holds the allowable PRB sizes for ULSCH transmissions
 // uint8_t rb_table[33] = {1,2,3,4,5,6,8,9,10,12,15,16,18,20,24,25,27,30,32,36,40,45,48,50,54,60,72,75,80,81,90,96,100};
 
@@ -500,6 +506,7 @@
 // }
 
 void _ulsch_scheduler_pre_processor(module_id_t module_idP,
+                                   int slice_id,                          
                                    int frameP,
                                    sub_frame_t subframeP,
                                    uint16_t *first_rb)
@@ -515,7 +522,8 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
   UE_list_t          *UE_list = &eNB_mac_inst[module_idP].UE_list;
   UE_TEMPLATE        *UE_template = 0;
   LTE_DL_FRAME_PARMS   *frame_parms = 0;
-
+  
+  uint16_t                nb_rbs_allowed_slice[MAX_NUM_CCs][MAX_NUM_SLICES];
 
   //LOG_I(MAC,"assign max mcs min rb\n");
   // maximize MCS and then allocate required RB according to the buffer occupancy with the limit of max available UL RB
@@ -576,15 +584,17 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
 
       max_num_ue_to_be_scheduled+=1;
 
+     nb_rbs_allowed_slice[CC_id][slice_id] = flexran_nb_rbs_allowed_slice(slice_percentage_uplink[slice_id], flexran_get_N_RB_UL(module_idP, CC_id));
+
       if (total_ue_count == 0) {
         average_rbs_per_user[CC_id] = 0;
       } else if (total_ue_count == 1 ) { // increase the available RBs, special case,
-        average_rbs_per_user[CC_id] = frame_parms->N_RB_UL-first_rb[CC_id]+1;
-      } else if( (total_ue_count <= (frame_parms->N_RB_DL-first_rb[CC_id])) &&
+        average_rbs_per_user[CC_id] = nb_rbs_allowed_slice[CC_id][slice_id]-first_rb[CC_id]+1;
+      } else if( (total_ue_count <= (nb_rbs_allowed_slice[CC_id][slice_id]-first_rb[CC_id])) &&
                  (total_ue_count <= max_num_ue_to_be_scheduled)) {
-        average_rbs_per_user[CC_id] = (uint16_t) floor((frame_parms->N_RB_UL-first_rb[CC_id])/total_ue_count);
+        average_rbs_per_user[CC_id] = (uint16_t) floor((nb_rbs_allowed_slice[CC_id][slice_id]-first_rb[CC_id])/total_ue_count);
       } else if (max_num_ue_to_be_scheduled > 0 ) {
-        average_rbs_per_user[CC_id] = (uint16_t) floor((frame_parms->N_RB_UL-first_rb[CC_id])/max_num_ue_to_be_scheduled);
+        average_rbs_per_user[CC_id] = (uint16_t) floor((nb_rbs_allowed_slice[CC_id][slice_id]-first_rb[CC_id])/max_num_ue_to_be_scheduled);
       } else {
         average_rbs_per_user[CC_id]=1;
         LOG_W(MAC,"[eNB %d] frame %d subframe %d: UE %d CC %d: can't get average rb per user (should not be here)\n",
@@ -648,7 +658,7 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
         CC_id = UE_list->ordered_ULCCids[n][UE_id];
         UE_template = &UE_list->UE_template[CC_id][UE_id];
         frame_parms = mac_xface->get_lte_frame_parms(module_idP,CC_id);
-        total_remaining_rbs[CC_id]=frame_parms->N_RB_UL - first_rb[CC_id] - total_allocated_rbs[CC_id];
+        total_remaining_rbs[CC_id]=nb_rbs_allowed_slice[CC_id][slice_id] - first_rb[CC_id] - total_allocated_rbs[CC_id];
 
         if (total_ue_count == 1 ) {
           total_remaining_rbs[CC_id]+=1;
@@ -675,7 +685,7 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
     frame_parms= mac_xface->get_lte_frame_parms(module_idP,CC_id);
 
     if (total_allocated_rbs[CC_id]>0) {
-      LOG_D(MAC,"[eNB %d] total RB allocated for all UEs = %d/%d\n", module_idP, total_allocated_rbs[CC_id], frame_parms->N_RB_UL - first_rb[CC_id]);
+      LOG_D(MAC,"[eNB %d] total RB allocated for all UEs = %d/%d\n", module_idP, total_allocated_rbs[CC_id], nb_rbs_allowed_slice[CC_id][slice_id] - first_rb[CC_id]);
     }
   }
 }
@@ -888,10 +898,11 @@ void flexran_agent_schedule_ulsch_rnti(module_id_t   module_idP,
 
 
   
-
+  int slice_id = 0;
 
 
   _ulsch_scheduler_pre_processor(module_idP,
+                                slice_id,
                                 frameP,
                                 subframeP,
                                 first_rb);
@@ -993,7 +1004,9 @@ abort();
 		UE_sched_ctrl->ul_failure_timer);
           // reset the scheduling request
           UE_template->ul_SR = 0;
-          status = mac_eNB_get_rrc_status(module_idP,rnti);
+          // status = mac_eNB_get_rrc_status(module_idP,rnti);
+          status = flexran_get_rrc_status(module_idP, rnti);
+
 	  if (status < RRC_CONNECTED)
 	    cqi_req = 0;
 	  else if (UE_sched_ctrl->cqi_req_timer>30) {

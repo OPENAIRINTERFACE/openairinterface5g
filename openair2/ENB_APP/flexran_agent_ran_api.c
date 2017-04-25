@@ -655,6 +655,21 @@ int flexran_get_meas_gap_config_offset(mid_t mod_id, mid_t ue_id) {
   return -1;
 }
 
+
+int flexran_get_rrc_status(const mid_t mod_id,  const rnti_t  rntiP){
+
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+
+  ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+
+  if (ue_context_p != NULL) {
+    return(ue_context_p->ue_context.Status);
+  } else {
+    return RRC_INACTIVE;
+  }
+
+}
+
 int flexran_get_ue_aggregated_max_bitrate_dl (mid_t mod_id, mid_t ue_id) {
 	return ((UE_list_t *)enb_ue[mod_id])->UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateDL;
 }
