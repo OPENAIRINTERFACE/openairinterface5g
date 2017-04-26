@@ -65,6 +65,10 @@ float slice_percentage_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
 float slice_percentage_current_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
 
 
+uint16_t flexran_nb_rbs_allowed_slice_uplink(float rb_percentage, int total_rbs){
+  return  (uint16_t) floor(rb_percentage * total_rbs); 
+}
+
 // // This table holds the allowable PRB sizes for ULSCH transmissions
 // uint8_t rb_table[33] = {1,2,3,4,5,6,8,9,10,12,15,16,18,20,24,25,27,30,32,36,40,45,48,50,54,60,72,75,80,81,90,96,100};
 
@@ -505,6 +509,158 @@ float slice_percentage_current_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
 //   stop_meas(&eNB->rx_ulsch_sdu);
 // }
 
+
+
+// void _sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP)
+// {
+//   int               i;
+//   int               list[NUMBER_OF_UE_MAX];
+//   int               list_size = 0;
+//   int               rnti;
+//   struct sort_ue_ul_params params = { module_idP, frameP, subframeP };
+
+//   UE_list_t *UE_list = &eNB_mac_inst[module_idP].UE_list;
+
+//   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+//     rnti = UE_RNTI(module_idP, i);
+//     if (rnti == NOT_A_RNTI)
+//       continue;
+//     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+//       continue;
+//     if (!phy_stats_exist(module_idP, rnti))
+//       continue;
+//     list[list_size] = i;
+//     list_size++;
+//   }
+
+//   qsort_r(list, list_size, sizeof(int), ue_ul_compare, &params);
+
+//   if (list_size) {
+//     for (i = 0; i < list_size-1; i++)
+//       UE_list->next_ul[list[i]] = list[i+1];
+//     UE_list->next_ul[list[list_size-1]] = -1;
+//     UE_list->head_ul = list[0];
+//   } else {
+//     UE_list->head_ul = -1;
+//   }
+
+// }
+
+
+
+void _assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subframeP, uint16_t *first_rb)
+{
+
+  int                i;
+  uint16_t           n,UE_id;
+  uint8_t            CC_id;
+  rnti_t             rnti           = -1;
+  int                mcs;
+  int                rb_table_index=0,tbs,tx_power;
+  eNB_MAC_INST       *eNB = &eNB_mac_inst[module_idP];
+  UE_list_t          *UE_list = &eNB->UE_list;
+
+  UE_TEMPLATE       *UE_template;
+  LTE_DL_FRAME_PARMS   *frame_parms;
+
+
+  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+    if (UE_list->active[i] != TRUE) continue;
+
+    rnti = UE_RNTI(module_idP,i);
+
+    if (rnti==NOT_A_RNTI)
+      continue;
+    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+      continue;
+    if (!phy_stats_exist(module_idP, rnti))
+      continue;
+
+    if (UE_list->UE_sched_ctrl[i].phr_received == 1)
+      mcs = 20; // if we've received the power headroom information the UE, we can go to maximum mcs
+    else
+      mcs = 10; // otherwise, limit to QPSK PUSCH
+
+    UE_id = i;
+
+    for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
+      // This is the actual CC_id in the list
+      CC_id = UE_list->ordered_ULCCids[n][UE_id];
+
+      if (CC_id >= MAX_NUM_CCs) {
+        LOG_E( MAC, "CC_id %u should be < %u, loop n=%u < numactiveULCCs[%u]=%u",
+               CC_id,
+               MAX_NUM_CCs,
+               n,
+               UE_id,
+               UE_list->numactiveULCCs[UE_id]);
+      }
+
+      AssertFatal( CC_id < MAX_NUM_CCs, "CC_id %u should be < %u, loop n=%u < numactiveULCCs[%u]=%u",
+                   CC_id,
+                   MAX_NUM_CCs,
+                   n,
+                   UE_id,
+                   UE_list->numactiveULCCs[UE_id]);
+      frame_parms=mac_xface->get_lte_frame_parms(module_idP,CC_id);
+      UE_template = &UE_list->UE_template[CC_id][UE_id];
+
+      // if this UE has UL traffic
+      if (UE_template->ul_total_buffer > 0 ) {
+
+        tbs = mac_xface->get_TBS_UL(mcs,3);  // 1 or 2 PRB with cqi enabled does not work well!
+        // fixme: set use_srs flag
+        tx_power= mac_xface->estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0);
+
+        while ((((UE_template->phr_info - tx_power) < 0 ) || (tbs > UE_template->ul_total_buffer))&&
+               (mcs > 3)) {
+          // LOG_I(MAC,"UE_template->phr_info %d tx_power %d mcs %d\n", UE_template->phr_info,tx_power, mcs);
+          mcs--;
+          tbs = mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
+          tx_power = mac_xface->estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0); // fixme: set use_srs
+        }
+
+        while ((tbs < UE_template->ul_total_buffer) &&
+               (rb_table[rb_table_index]<(frame_parms->N_RB_UL-first_rb[CC_id])) &&
+               ((UE_template->phr_info - tx_power) > 0) &&
+               (rb_table_index < 32 )) {
+          //  LOG_I(MAC,"tbs %d ul buffer %d rb table %d max ul rb %d\n", tbs, UE_template->ul_total_buffer, rb_table[rb_table_index], frame_parms->N_RB_UL-first_rb[CC_id]);
+          rb_table_index++;
+          tbs = mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
+          tx_power = mac_xface->estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0);
+        }
+
+        UE_template->ue_tx_power = tx_power;
+
+        if (rb_table[rb_table_index]>(frame_parms->N_RB_UL-first_rb[CC_id]-1)) {
+          rb_table_index--;
+        }
+
+        // 1 or 2 PRB with cqi enabled does not work well!
+  if (rb_table[rb_table_index]<3) {
+          rb_table_index=2; //3PRB
+        }
+
+        UE_template->pre_assigned_mcs_ul=mcs;
+        UE_template->pre_allocated_rb_table_index_ul=rb_table_index;
+        UE_template->pre_allocated_nb_rb_ul= rb_table[rb_table_index];
+        LOG_D(MAC,"[eNB %d] frame %d subframe %d: for UE %d CC %d: pre-assigned mcs %d, pre-allocated rb_table[%d]=%d RBs (phr %d, tx power %d)\n",
+              module_idP, frameP, subframeP, UE_id, CC_id,
+              UE_template->pre_assigned_mcs_ul,
+              UE_template->pre_allocated_rb_table_index_ul,
+              UE_template->pre_allocated_nb_rb_ul,
+              UE_template->phr_info,tx_power);
+      } else {
+        UE_template->pre_allocated_rb_table_index_ul=-1;
+        UE_template->pre_allocated_nb_rb_ul=0;
+      }
+    }
+  }
+}
+
+
+
+
 void _ulsch_scheduler_pre_processor(module_id_t module_idP,
                                    int slice_id,                          
                                    int frameP,
@@ -527,7 +683,7 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
 
   //LOG_I(MAC,"assign max mcs min rb\n");
   // maximize MCS and then allocate required RB according to the buffer occupancy with the limit of max available UL RB
-  assign_max_mcs_min_rb(module_idP,frameP, subframeP, first_rb);
+  _assign_max_mcs_min_rb(module_idP,frameP, subframeP, first_rb);
 
   //LOG_I(MAC,"sort ue \n");
   // sort ues
@@ -584,7 +740,7 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
 
       max_num_ue_to_be_scheduled+=1;
 
-     nb_rbs_allowed_slice[CC_id][slice_id] = flexran_nb_rbs_allowed_slice(slice_percentage_uplink[slice_id], flexran_get_N_RB_UL(module_idP, CC_id));
+     nb_rbs_allowed_slice[CC_id][slice_id] = flexran_nb_rbs_allowed_slice_uplink(slice_percentage_uplink[slice_id], flexran_get_N_RB_UL(module_idP, CC_id));
 
       if (total_ue_count == 0) {
         average_rbs_per_user[CC_id] = 0;
