@@ -454,6 +454,7 @@ uint8_t get_reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
       }
 
       // report ACK/NACK status
+      o_ACK[cw_idx] = 0;
       if (harq_ack[subframe_dl0].send_harq_status == 1) {
         o_ACK[cw_idx] = harq_ack[subframe_dl0].ack;
 
@@ -462,10 +463,11 @@ uint8_t get_reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
       } else if (harq_ack[subframe_dl1].send_harq_status == 1)
         o_ACK[cw_idx] = harq_ack[subframe_dl1].ack;
 
-      status = harq_ack[subframe_dl0].send_harq_status + (harq_ack[subframe_dl1].send_harq_status<<1);
+      status = harq_ack[subframe_dl0].send_harq_status + harq_ack[subframe_dl1].send_harq_status;
 
-      LOG_I(PHY,"TDD Config3 UL Sfn %d, dl Sfn0 %d status %d, dl Sfn1 %d status %d \n", subframe, subframe_dl0, harq_ack[subframe_dl0].send_harq_status,
-              subframe_dl1, harq_ack[subframe_dl1].send_harq_status);
+      LOG_I(PHY,"TDD Config3 UL Sfn %d, dl Sfn0 %d status %d o_Ack %d, dl Sfn1 %d status %d o_Ack %d\n",
+    		  subframe, subframe_dl0, harq_ack[subframe_dl0].send_harq_status,harq_ack[subframe_dl0].ack,
+              subframe_dl1, harq_ack[subframe_dl1].send_harq_status,harq_ack[subframe_dl1].ack);
       if (do_reset) {
         // reset ACK/NACK status
         harq_ack[subframe_dl0].ack = 2;

@@ -913,8 +913,8 @@ int rx_pdsch(PHY_VARS_UE *ue,
     }
     break;
   case 6 :
-    printf("LLR rx_type %d cw0 %d cw1 %d symbol %d first symbol %d nb_rb %d rballoceven %d sfn %d beamforming_mode %d\n",
-            rx_type,codeword_TB0,codeword_TB1,symbol,first_symbol_flag,nb_rb,dlsch0_harq->rb_alloc_even,subframe,beamforming_mode);
+    //printf("LLR rx_type %d cw0 %d cw1 %d symbol %d first symbol %d nb_rb %d rballoceven %d sfn %d beamforming_mode %d\n",
+    //        rx_type,codeword_TB0,codeword_TB1,symbol,first_symbol_flag,nb_rb,dlsch0_harq->rb_alloc_even,subframe,beamforming_mode);
     if ((rx_type==rx_standard) || (codeword_TB0 == -1) || (codeword_TB1 == -1))  {
       dlsch_64qam_llr(frame_parms,
                       pdsch_vars[eNB_id]->rxdataF_comp0,

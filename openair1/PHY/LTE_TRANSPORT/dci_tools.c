@@ -6386,7 +6386,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     }
 
 
-#ifdef DEBUG_DCI
+//#ifdef DEBUG_DCI
 
     if (dlsch[0] && (dlsch[0]->rnti != 0xffff)) {
       printf("dci_format:%d Abssubframe: %d.%d \n",dci_format,frame%1024,subframe);
@@ -6395,15 +6395,15 @@ int generate_ue_dlsch_params_from_dci(int frame,
       printf("PDSCH dlsch0 UE: rballoc  %x\n",dlsch0_harq->rb_alloc_even[0]);
       printf("PDSCH dlsch0 UE: harq_pid %d\n",harq_pid);
       //printf("PDSCH dlsch0 UE: tpc      %d\n",TPC);
-      printf("PDSCH dlsch0 UE: g        %d\n",dlsch[0]->g_pucch);
+      //printf("PDSCH dlsch0 UE: g        %d\n",dlsch[0]->g_pucch);
       printf("PDSCH dlsch0 UE: round    %d\n",dlsch0_harq->round);
       printf("PDSCH dlsch0 UE: DCINdi   %d\n",dlsch0_harq->DCINdi);
       printf("PDSCH dlsch0 UE: rvidx    %d\n",dlsch0_harq->rvidx);
       printf("PDSCH dlsch0 UE: TBS      %d\n",dlsch0_harq->TBS);
       printf("PDSCH dlsch0 UE: mcs      %d\n",dlsch0_harq->mcs);
-      printf("PDSCH dlsch0 UE: pwr_off  %d\n",dlsch0_harq->dl_power_off);
+      //printf("PDSCH dlsch0 UE: pwr_off  %d\n",dlsch0_harq->dl_power_off);
     }
-#endif
+//#endif
 
   #if T_TRACER
     if( (dlsch[0]->rnti != si_rnti) && (dlsch[0]->rnti != ra_rnti) && (dlsch[0]->rnti != p_rnti))

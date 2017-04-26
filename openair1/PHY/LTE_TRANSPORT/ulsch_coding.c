@@ -515,8 +515,9 @@ uint32_t ulsch_encoding(uint8_t *a,
     G = G - Q_RI - Q_CQI;
     ulsch->harq_processes[harq_pid]->G = G;
 
-/*
-    LOG_I(PHY,"ULSCH Encoding G %d, Q_RI %d (O_RI%d, Msc_initial %d, Nsymb_initial%d, beta_offset_ri_times8 %d), Q_CQI %d, Q_ACK %d \n",G,Q_RI,ulsch->O_RI,ulsch->harq_processes[harq_pid]->Msc_initial,ulsch->harq_processes[harq_pid]->Nsymb_initial,ulsch->beta_offset_ri_times8,Q_CQI,Q_ACK);
+
+    LOG_I(PHY,"ULSCH Encoding G %d, Q_RI %d (O_RI%d, Msc_initial %d, Nsymb_initial%d, beta_offset_ri_times8 %d), "
+    		"Q_CQI %d, Q_ACK %d \n",G,Q_RI,ulsch->O_RI,ulsch->harq_processes[harq_pid]->Msc_initial,ulsch->harq_processes[harq_pid]->Nsymb_initial,ulsch->beta_offset_ri_times8,Q_CQI,Q_ACK);
 
     LOG_I(PHY,"ULSCH Encoding (Nid_cell %d, rnti %x): harq_pid %d round %d, RV %d, mcs %d, O_RI %d, O_ACK %d, G %d\n",
           frame_parms->Nid_cell,ulsch->rnti,
@@ -527,7 +528,7 @@ uint32_t ulsch_encoding(uint8_t *a,
           ulsch->O_RI,
           ulsch->harq_processes[harq_pid]->O_ACK,
           G);
-*/
+
 
     if ((int)G < 0) {
       LOG_E(PHY,"FATAL: ulsch_coding.c G < 0 (%d) : Q_RI %d, Q_CQI %d, O %d, betaCQI_times8 %d)\n",G,Q_RI,Q_CQI,ulsch->O,ulsch->beta_offset_cqi_times8);
