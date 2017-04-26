@@ -53,7 +53,7 @@
 // UM_Window_Size = 512 when a 10 bit SN is configured and UM_Window_Size = 0
 // when the receiving UM RLC entity is configured for MCCH or MTCH.
 // li field (values shifted 1 bit left)
-#        define RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU            24
+#        define RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU            128
 //----------------------------------------------------------
 // Events defined for state model of the acknowledged mode entity
 /** Internal event defined for state model of the RLC UM. */

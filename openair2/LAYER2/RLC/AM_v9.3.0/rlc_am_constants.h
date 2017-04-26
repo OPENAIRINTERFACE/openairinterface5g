@@ -63,7 +63,7 @@
 #    define RLC_AM_MIN_SEGMENT_SIZE_REQUEST       8
 
 /** Max SDUs that can fit in a PDU. */
-#    define RLC_AM_MAX_SDU_IN_PDU                 32
+#    define RLC_AM_MAX_SDU_IN_PDU                 128
 
 /** Max fragments for a SDU. */
 #    define RLC_AM_MAX_SDU_FRAGMENTS              32
