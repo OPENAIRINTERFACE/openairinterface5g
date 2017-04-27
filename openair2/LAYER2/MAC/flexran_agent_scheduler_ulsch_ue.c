@@ -65,6 +65,8 @@ float slice_percentage_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
 float slice_percentage_current_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
 
 
+ uint16_t                nb_rbs_allowed_slice[MAX_NUM_CCs][MAX_NUM_SLICES];      
+
 uint16_t flexran_nb_rbs_allowed_slice_uplink(float rb_percentage, int total_rbs){
   return  (uint16_t) floor(rb_percentage * total_rbs); 
 }
@@ -548,7 +550,7 @@ uint16_t flexran_nb_rbs_allowed_slice_uplink(float rb_percentage, int total_rbs)
 
 
 
-void _assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subframeP, uint16_t *first_rb)
+void _assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP, sub_frame_t subframeP, uint16_t *first_rb)
 {
 
   int                i;
@@ -621,7 +623,7 @@ void _assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfr
         }
 
         while ((tbs < UE_template->ul_total_buffer) &&
-               (rb_table[rb_table_index]<(frame_parms->N_RB_UL-first_rb[CC_id])) &&
+               (rb_table[rb_table_index]<(nb_rbs_allowed_slice[CC_id][slice_id]-first_rb[CC_id])) &&
                ((UE_template->phr_info - tx_power) > 0) &&
                (rb_table_index < 32 )) {
           //  LOG_I(MAC,"tbs %d ul buffer %d rb table %d max ul rb %d\n", tbs, UE_template->ul_total_buffer, rb_table[rb_table_index], frame_parms->N_RB_UL-first_rb[CC_id]);
@@ -632,7 +634,7 @@ void _assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfr
 
         UE_template->ue_tx_power = tx_power;
 
-        if (rb_table[rb_table_index]>(frame_parms->N_RB_UL-first_rb[CC_id]-1)) {
+        if (rb_table[rb_table_index]>(nb_rbs_allowed_slice[CC_id][slice_id]-first_rb[CC_id]-1)) {
           rb_table_index--;
         }
 
@@ -662,7 +664,7 @@ void _assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfr
 
 
 void _ulsch_scheduler_pre_processor(module_id_t module_idP,
-                                   int slice_id,                          
+                                   int slice_id,                                                     
                                    int frameP,
                                    sub_frame_t subframeP,
                                    uint16_t *first_rb)
@@ -679,11 +681,11 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
   UE_TEMPLATE        *UE_template = 0;
   LTE_DL_FRAME_PARMS   *frame_parms = 0;
   
-  uint16_t                nb_rbs_allowed_slice[MAX_NUM_CCs][MAX_NUM_SLICES];
+  
 
   //LOG_I(MAC,"assign max mcs min rb\n");
   // maximize MCS and then allocate required RB according to the buffer occupancy with the limit of max available UL RB
-  _assign_max_mcs_min_rb(module_idP,frameP, subframeP, first_rb);
+  _assign_max_mcs_min_rb(module_idP, slice_id, frameP, subframeP, first_rb);
 
   //LOG_I(MAC,"sort ue \n");
   // sort ues
@@ -1056,9 +1058,9 @@ void flexran_agent_schedule_ulsch_rnti(module_id_t   module_idP,
   
   int slice_id = 0;
 
-
+  
   _ulsch_scheduler_pre_processor(module_idP,
-                                slice_id,
+                                slice_id,  
                                 frameP,
                                 subframeP,
                                 first_rb);
@@ -1225,7 +1227,7 @@ abort();
             UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2=mcs;
 	    //            buffer_occupancy = UE_template->ul_total_buffer;
 
-            while (((rb_table[rb_table_index]>(frame_parms->N_RB_UL-1-first_rb[CC_id])) ||
+            while (((rb_table[rb_table_index]>(nb_rbs_allowed_slice[CC_id][slice_id]-1-first_rb[CC_id])) ||
 		    (rb_table[rb_table_index]>45)) &&
                    (rb_table_index>0)) {
               rb_table_index--;
@@ -1235,7 +1237,7 @@ abort();
 	    UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx+=rb_table[rb_table_index];
 	    UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_TBS=TBS;
 	    //            buffer_occupancy -= TBS;
-            rballoc = mac_xface->computeRIV(frame_parms->N_RB_UL,
+            rballoc = mac_xface->computeRIV(nb_rbs_allowed_slice[CC_id][slice_id],
                                             first_rb[CC_id],
                                             rb_table[rb_table_index]);
 

@@ -138,12 +138,11 @@ void _assign_rbs_required (module_id_t Mod_id,
 
 // void _sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP);
 
-void _assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subframeP, uint16_t *first_rb);
+void _assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP, sub_frame_t subframeP, uint16_t *first_rb);
 
 
 void _ulsch_scheduler_pre_processor(module_id_t module_idP,
-                                   int slice_id,
-                                   uint16_t                nb_rbs_allowed_slice[MAX_NUM_CCs][MAX_NUM_SLICES],                                                                                    
+                                   int slice_id,                                   
                                    int frameP,
                                    sub_frame_t subframeP,
                                    uint16_t *first_rb);
