@@ -8031,10 +8031,16 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     dlsch[0]->harq_ack[subframe].vDAI_UL = dai+1;
 
-    LOG_D(PHY, "[PUSCH %d] Format0 DCI %s, CQI_req=%d, cshift=%d, TPC=%d, DAI=%d, vDAI_UL[sf#%d]=%d, NDI=%d, MCS=%d, RBalloc=%d, first_rb=%d, harq_pid=%d, nb_rb=%d, subframe_scheduling_flag=%d\n",
+
+    LOG_I(PHY, "[PUSCH %d] Format0 DCI %s, CQI_req=%d, cshift=%d, TPC=%d, DAI=%d, vDAI_UL[sf#%d]=%d, NDI=%d, MCS=%d, RBalloc=%d, first_rb=%d, harq_pid=%d, nb_rb=%d, subframe_scheduling_flag=%d"
+            "   ulsch->bundling %d, O_ACK %d \n",
         harq_pid,
         (frame_parms->frame_type == TDD? "TDD" : "FDD"),
-        cqi_req, cshift, TPC, dai, subframe, dlsch[0]->harq_ack[subframe].vDAI_UL, ndi, mcs, rballoc, ulsch->harq_processes[harq_pid]->first_rb, harq_pid, ulsch->harq_processes[harq_pid]->nb_rb, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag);
+        cqi_req, cshift, TPC, dai, subframe, dlsch[0]->harq_ack[subframe].vDAI_UL, ndi, mcs, rballoc,
+        ulsch->harq_processes[harq_pid]->first_rb, harq_pid, ulsch->harq_processes[harq_pid]->nb_rb,
+        ulsch->harq_processes[harq_pid]->subframe_scheduling_flag,
+        ulsch->bundling,
+        ulsch->harq_processes[harq_pid]->O_ACK);
 
     ulsch->beta_offset_cqi_times8                = beta_cqi[ue->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index];//18;
     ulsch->beta_offset_ri_times8                 = beta_ri[ue->pusch_config_dedicated[eNB_id].betaOffset_RI_Index];//10;
@@ -8086,7 +8092,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
   // ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
 
-#ifdef DEBUG_DCI
+//#ifdef DEBUG_DCI
 
     printf("Format 0 DCI : ulsch (ue): AbsSubframe %d.%d\n",proc->frame_rx%1024,subframe);
     printf("Format 0 DCI : ulsch (ue): NBRB        %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
@@ -8108,9 +8114,9 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     printf("Format 0 DCI :ulsch (ue): Nsymb_pusch   %d\n",ulsch->Nsymb_pusch);
     printf("Format 0 DCI :ulsch (ue): cshift        %d\n",ulsch->harq_processes[harq_pid]->n_DMRS2);
     printf("Format 0 DCI :ulsch (ue): phich status  %d\n",ulsch->harq_processes[harq_pid]->status);
-#else
+//#else
     UNUSED_VARIABLE(dai);
-#endif
+//#endif
     return(0);
   } else {
     LOG_E(PHY,"frame %d, subframe %d: FATAL ERROR, generate_ue_ulsch_params_from_dci, Illegal dci_format %d\n",

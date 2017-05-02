@@ -444,7 +444,522 @@ uint8_t is_ri_TXOp(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id)
     return(0);
 }
 
+void compute_cqi_ri_resources(PHY_VARS_UE *ue,
+                              LTE_UE_ULSCH_t *ulsch,
+                              uint8_t eNB_id,
+                              uint16_t rnti,
+                              uint16_t p_rnti,
+                              uint16_t cba_rnti,
+                              uint8_t cqi_status,
+                              uint8_t ri_status)
+{
+    PHY_MEASUREMENTS *meas = &ue->measurements;
+    uint8_t transmission_mode = ue->transmission_mode[eNB_id];
 
+
+    if (cqi_status == 1 || ri_status == 1)
+    {
+        if( (AntennaInfoDedicated__transmissionMode_tm3 == transmission_mode) || (AntennaInfoDedicated__transmissionMode_tm4 == transmission_mode) )
+        {
+            ulsch->O_RI = 1;
+        }
+        else
+        {
+            ulsch->O_RI = 0;
+        }
+        //ulsch->O_RI = 0; //we only support 2 antenna ports, so this is always 1 according to 3GPP 36.213 Table
+
+        switch(transmission_mode) {
+        // The aperiodic CQI reporting mode is fixed for every transmission mode instead of being configured by higher layer signaling
+        case 1:
+            if ((rnti >= cba_rnti) && (rnti < p_rnti)) {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = HLC_subband_cqi_mcs_CBA;
+                ulsch->o_RI[0]                             = 0;
+            } else  if(meas->rank[eNB_id] == 0) {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = HLC_subband_cqi_nopmi;
+                ulsch->o_RI[0]                             = 0;
+            } else {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = HLC_subband_cqi_nopmi;
+                ulsch->o_RI[0]                             = 1;
+            }
+
+            break;
+
+        case 2:
+            if ((rnti >= cba_rnti) && (rnti < p_rnti)) {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = HLC_subband_cqi_mcs_CBA;
+                ulsch->o_RI[0]                             = 0;
+            } else if(meas->rank[eNB_id] == 0) {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = HLC_subband_cqi_nopmi;
+                ulsch->o_RI[0]                             = 0;
+            } else {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = HLC_subband_cqi_nopmi;
+                ulsch->o_RI[0]                             = 1;
+            }
+
+            break;
+
+        case 3:
+            if ((rnti >= cba_rnti) && (rnti < p_rnti)) {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = HLC_subband_cqi_mcs_CBA;
+                ulsch->o_RI[0]                             = 0;
+            } else if(meas->rank[eNB_id] == 0) {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = HLC_subband_cqi_nopmi;
+                ulsch->o_RI[0]                             = 0;
+            } else {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = HLC_subband_cqi_nopmi;
+                ulsch->o_RI[0]                             = 1;
+            }
+
+            break;
+
+        case 4:
+            if ((rnti >= cba_rnti) && (rnti < p_rnti)) {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = HLC_subband_cqi_mcs_CBA;
+                ulsch->o_RI[0]                             = 0;
+            } else if(meas->rank[eNB_id] == 0) {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = wideband_cqi_rank1_2A;
+                ulsch->o_RI[0]                             = 0;
+            } else {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = wideband_cqi_rank2_2A;
+                ulsch->o_RI[0]                             = 1;
+            }
+
+            break;
+
+        case 5:
+            if ((rnti >= cba_rnti) && (rnti < p_rnti)) {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = HLC_subband_cqi_mcs_CBA;
+                ulsch->o_RI[0]                             = 0;
+            } else if(meas->rank[eNB_id] == 0) {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = wideband_cqi_rank1_2A;
+                ulsch->o_RI[0]                             = 0;
+            } else {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = wideband_cqi_rank2_2A;
+                ulsch->o_RI[0]                             = 1;
+            }
+
+            break;
+
+        case 6:
+            if ((rnti >= cba_rnti) && (rnti < p_rnti)) {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = HLC_subband_cqi_mcs_CBA;
+                ulsch->o_RI[0]                             = 0;
+            } else if(meas->rank[eNB_id] == 0) {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = wideband_cqi_rank1_2A;
+                ulsch->o_RI[0]                             = 0;
+            } else {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = wideband_cqi_rank2_2A;
+                ulsch->o_RI[0]                             = 1;
+            }
+
+            break;
+
+        case 7:
+            if ((rnti >= cba_rnti) && (rnti < p_rnti)) {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = HLC_subband_cqi_mcs_CBA;
+                ulsch->o_RI[0]                             = 0;
+            } else if(meas->rank[eNB_id] == 0) {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = HLC_subband_cqi_nopmi;
+                ulsch->o_RI[0]                             = 0;
+            } else {
+                switch (ue->frame_parms.N_RB_DL) {
+                case 6:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_1_5MHz;
+                    break;
+
+                case 25:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+                    break;
+
+                case 50:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_10MHz;
+                    break;
+
+                case 100:
+                    ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_20MHz;
+                    break;
+                }
+
+                ulsch->uci_format                          = HLC_subband_cqi_nopmi;
+                ulsch->o_RI[0]                             = 1;
+            }
+
+            break;
+
+        default:
+            LOG_E(PHY,"Incorrect Transmission Mode \n");
+            break;
+        }
+        ulsch->O = 4;
+    }
+    else
+    {
+        ulsch->O_RI = 0;
+        ulsch->O                                   = 0;
+        ulsch->uci_format                          = HLC_subband_cqi_nopmi;
+    }
+}
 
 void ue_compute_srs_occasion(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t isSubframeSRS) 
 {
@@ -511,7 +1026,7 @@ void ue_compute_srs_occasion(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id
               uint8_t pucch_ack_payload[2];
               if (get_ack(&ue->frame_parms,
                       ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][0]->harq_ack,
-                      subframe_tx,pucch_ack_payload,0) > 0)
+                      subframe_tx,proc->subframe_rx,pucch_ack_payload,0) > 0)
               {
                   is_sr_an_subframe = 1;
               }
@@ -536,6 +1051,7 @@ void ue_compute_srs_occasion(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id
       }
       LOG_D(PHY," srsCellSubframe: %d, srsUeSubframe: %d, Nsymb-pusch: %d \n", pSoundingrs_ul_config_dedicated->srsCellSubframe, pSoundingrs_ul_config_dedicated->srsUeSubframe, ue->ulsch[eNB_id]->Nsymb_pusch);
   }
+
 }
 
 
@@ -1218,9 +1734,11 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
   uint8_t ulsch_input_buffer[5477] __attribute__ ((aligned(32)));
   uint8_t access_mode;
   uint8_t Nbundled=0;
+  uint8_t NbundledCw1=0;
   uint8_t ack_status_cw0=0;
   uint8_t ack_status_cw1=0;
-
+  uint8_t cqi_status = 0;
+  uint8_t ri_status  = 0;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_UESPEC,VCD_FUNCTION_IN);
 
   // get harq_pid from subframe relationship
@@ -1323,25 +1841,41 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
     ack_status_cw0 = reset_ack(&ue->frame_parms,
             ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][0]->harq_ack,
             subframe_tx,
-            ue->ulsch[eNB_id]->o_ACK,0);
+            proc->subframe_rx,
+            ue->ulsch[eNB_id]->o_ACK,
+            &Nbundled,
+            0);
     ack_status_cw1 = reset_ack(&ue->frame_parms,
             ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][1]->harq_ack,
             subframe_tx,
-            ue->ulsch[eNB_id]->o_ACK,1);
+            proc->subframe_rx,
+            ue->ulsch[eNB_id]->o_ACK,
+            &NbundledCw1,
+            1);
 
-    Nbundled = ack_status_cw0;
+    //Nbundled = ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][0]->harq_ack;
+    //ue->ulsch[eNB_id]->bundling = Nbundled;
+
     first_rb = ue->ulsch[eNB_id]->harq_processes[harq_pid]->first_rb;
     nb_rb = ue->ulsch[eNB_id]->harq_processes[harq_pid]->nb_rb;
     
     
+    // check Periodic CQI/RI reporting
+    cqi_status = ((ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex>0)&&
+        (is_cqi_TXOp(ue,proc,eNB_id)==1));
+
+    ri_status = ((ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0) &&
+             (is_ri_TXOp(ue,proc,eNB_id)==1));
     
-    
+    // compute CQI/RI resources
+    compute_cqi_ri_resources(ue, ue->ulsch[eNB_id], eNB_id, ue->ulsch[eNB_id]->rnti, P_RNTI, CBA_RNTI, cqi_status, ri_status);
+
 
     if (ack_status_cw0 > 0) {
 
       // check if we received a PDSCH at subframe_tx - 4
       // ==> send ACK/NACK on PUSCH
-      ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK = ack_status_cw0 + ack_status_cw1;
+      //ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK = ack_status_cw0 + ack_status_cw1;
 
 #if T_TRACER
     if(ue->ulsch[eNB_id]->o_ACK[0])
@@ -1369,7 +1903,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
 //#ifdef DEBUG_PHY_PROC
         LOG_I(PHY,
               "[UE  %d][PUSCH %d] AbsSubframe %d.%d Generating PUSCH : first_rb %d, nb_rb %d, round %d, mcs %d, rv %d, "
-              "cyclic_shift %d (cyclic_shift_common %d,n_DMRS2 %d,n_PRS %d), ACK (%d,%d), O_ACK %d, bundling %d\n",
+              "cyclic_shift %d (cyclic_shift_common %d,n_DMRS2 %d,n_PRS %d), ACK (%d,%d), O_ACK %d, bundling %d, Nbundled %d, CQI %d, RI %d\n",
 	  Mod_id,harq_pid,frame_tx%1024,subframe_tx,
 	  first_rb,nb_rb,
 	  ue->ulsch[eNB_id]->harq_processes[harq_pid]->round,
@@ -1383,7 +1917,9 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
 	  ue->frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[subframe_tx<<1],
 	  ue->ulsch[eNB_id]->o_ACK[0],ue->ulsch[eNB_id]->o_ACK[1],
 	  ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK,
-	  ue->ulsch[eNB_id]->bundling);
+	  ue->ulsch[eNB_id]->bundling, Nbundled,
+	  cqi_status,
+	  ri_status);
 //#endif
     
     
@@ -1793,12 +2329,14 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   ack_status_cw0 = get_ack(&ue->frame_parms,
                        ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][0]->harq_ack,
                        subframe_tx,
+                       proc->subframe_rx,
                        pucch_ack_payload,
                        0);
 
   ack_status_cw1 = get_ack(&ue->frame_parms,
                        ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][1]->harq_ack,
                        subframe_tx,
+                       proc->subframe_rx,
                        pucch_ack_payload,
                        1);
 
@@ -1812,9 +2350,9 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 
   // Part - II
   // if nothing to report ==> exit function
-  if( (nb_cw==0) && (SR_payload==0) && (cqi_status==0) && (ri_status==0))
+  if( (nb_cw==0) && (SR_payload==0) && (cqi_status==0) && (ri_status==0) )
   {
-      LOG_D(PHY,"PUCCH No feedback AbsSubframe %d.%d SR_payload %d nb_cw %d pucch_ack_payload[0] %d pucch_ack_payload[1] %d cqi_status %d Return \n",
+      LOG_I(PHY,"PUCCH No feedback AbsSubframe %d.%d SR_payload %d nb_cw %d pucch_ack_payload[0] %d pucch_ack_payload[1] %d cqi_status %d Return \n",
             frame_tx%1024, subframe_tx, SR_payload, nb_cw, pucch_ack_payload[0], pucch_ack_payload[1], cqi_status);
       return;
   }
@@ -2154,23 +2692,33 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
   }
     
   // reset DL ACK/NACK status
+  uint8_t N_bundled = 0;
   if (ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][0] != NULL)
   {
     reset_ack(&ue->frame_parms,
                ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][0]->harq_ack,
                subframe_tx,
-               ue->ulsch[eNB_id]->o_ACK,0);
+               proc->subframe_rx,
+               ue->ulsch[eNB_id]->o_ACK,
+               &N_bundled,
+               0);
     reset_ack(&ue->frame_parms,
                ue->dlsch[(subframe_DL(&ue->frame_parms,proc->subframe_rx)+1)&0x1][eNB_id][0]->harq_ack,
                subframe_tx,
-               ue->ulsch[eNB_id]->o_ACK,0);
+               proc->subframe_rx,
+               ue->ulsch[eNB_id]->o_ACK,
+               &N_bundled,
+               0);
   }
 
   if (ue->dlsch_SI[eNB_id] != NULL)
     reset_ack(&ue->frame_parms,
              ue->dlsch_SI[eNB_id]->harq_ack,
              subframe_tx,
-             ue->ulsch[eNB_id]->o_ACK,0);
+             proc->subframe_rx,
+             ue->ulsch[eNB_id]->o_ACK,
+             &N_bundled,
+             0);
 
       
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
@@ -2206,7 +2754,7 @@ void ue_measurement_procedures(
     uint16_t slot, // slot index of each radio frame [0..19]    
     uint8_t abstraction_flag,runmode_t mode)
 {
-  LOG_I(PHY,"ue_measurement_procedures l %d Ncp %d\n",l,ue->frame_parms.Ncp);
+  //LOG_I(PHY,"ue_measurement_procedures l %d Ncp %d\n",l,ue->frame_parms.Ncp);
 
   
   LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
@@ -2247,7 +2795,7 @@ void ue_measurement_procedures(
   if (l==(6-ue->frame_parms.Ncp)) {
 	
     // make sure we have signal from PSS/SSS for N0 measurement
-	  LOG_I(PHY," l==(6-ue->frame_parms.Ncp) ue_rrc_measurements\n");
+	 // LOG_I(PHY," l==(6-ue->frame_parms.Ncp) ue_rrc_measurements\n");
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_RRC_MEASUREMENTS, VCD_FUNCTION_IN);
     ue_rrc_measurements(ue,
@@ -3175,7 +3723,7 @@ void ue_pdsch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, int eNB_id, PDSC
 
     if (dlsch0 && (!dlsch1))  {
       harq_pid = dlsch0->current_harq_pid;
-      LOG_I(PHY,"[UE %d] PDSCH active in subframe %d, harq_pid %d Symbol %d\n",ue->Mod_id,subframe_rx,harq_pid,m);
+      LOG_D(PHY,"[UE %d] PDSCH active in subframe %d, harq_pid %d Symbol %d\n",ue->Mod_id,subframe_rx,harq_pid,m);
 	    
       if ((pdsch==PDSCH) && 
 	  (ue->transmission_mode[eNB_id] == 5) &&
@@ -3752,8 +4300,8 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     l=1;
   }
 
-  LOG_D(PHY," ------ slot 0 Processing: AbsSubframe %d.%d ------  \n", frame_rx%1024, subframe_rx);
-  LOG_D(PHY," ------  --> FFT/ChannelEst/PDCCH slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, subframe_rx);
+  LOG_I(PHY," ------ slot 0 Processing: AbsSubframe %d.%d ------  \n", frame_rx%1024, subframe_rx);
+  LOG_I(PHY," ------  --> FFT/ChannelEst/PDCCH slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, subframe_rx);
   for (; l<=l2; l++) {
     if (abstraction_flag == 0) {
       start_meas(&ue->ofdm_demod_stats);
@@ -3771,7 +4319,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     ue_measurement_procedures(l-1,ue,proc,eNB_id,(subframe_rx<<1),abstraction_flag,mode);
     if ((l==pilot1) ||
 	((pmch_flag==1)&(l==l2)))  {
-      LOG_D(PHY,"[UE  %d] Frame %d: Calling pdcch procedures (eNB %d)\n",ue->Mod_id,frame_rx,eNB_id);
+      LOG_I(PHY,"[UE  %d] Frame %d: Calling pdcch procedures (eNB %d)\n",ue->Mod_id,frame_rx,eNB_id);
       
       if (ue_pdcch_procedures(eNB_id,ue,proc,abstraction_flag) == -1) {
 	LOG_E(PHY,"[UE  %d] Frame %d, subframe %d: Error in pdcch procedures\n",ue->Mod_id,frame_rx,subframe_rx);
@@ -4051,10 +4599,10 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   memcpy(harq_processes_dest, current_harq_processes, sizeof(LTE_DL_UE_HARQ_t));
   memcpy(harq_ack_dest, current_harq_ack, sizeof(harq_status_t));
 
-  LOG_I(PHY,"AbsSubframe %d.%d CurrentHarqProcess.status %d DestHarqProcess.status %d\n",frame_rx%1024,subframe_rx,current_harq_processes->status,harq_processes_dest->status);
-  LOG_I(PHY,"AbsSubframe %d.%d CurrentHarqProcess.round %d DestHarqProcess.round %d\n",frame_rx%1024,subframe_rx,current_harq_processes->round,harq_processes_dest->round);
-  LOG_I(PHY,"AbsSubframe %d.%d CurrentHarqProcess.delta_PUCCH %d DestHarqProcess.delta_PUCCH %d\n",frame_rx%1024,subframe_rx,current_harq_processes->delta_PUCCH,harq_processes_dest->delta_PUCCH);
-  LOG_I(PHY,"AbsSubframe %d.%d CurrentHarqProcess.rvidx %d DestHarqProcess.rvidx %d\n",frame_rx%1024,subframe_rx,current_harq_processes->rvidx,harq_processes_dest->rvidx);
+  //LOG_I(PHY,"AbsSubframe %d.%d CurrentHarqProcess.status %d DestHarqProcess.status %d\n",frame_rx%1024,subframe_rx,current_harq_processes->status,harq_processes_dest->status);
+  //LOG_I(PHY,"AbsSubframe %d.%d CurrentHarqProcess.round %d DestHarqProcess.round %d\n",frame_rx%1024,subframe_rx,current_harq_processes->round,harq_processes_dest->round);
+  //LOG_I(PHY,"AbsSubframe %d.%d CurrentHarqProcess.delta_PUCCH %d DestHarqProcess.delta_PUCCH %d\n",frame_rx%1024,subframe_rx,current_harq_processes->delta_PUCCH,harq_processes_dest->delta_PUCCH);
+  //LOG_I(PHY,"AbsSubframe %d.%d CurrentHarqProcess.rvidx %d DestHarqProcess.rvidx %d\n",frame_rx%1024,subframe_rx,current_harq_processes->rvidx,harq_processes_dest->rvidx);
 
   if (subframe_rx==9) {
     if (frame_rx % 10 == 0) {

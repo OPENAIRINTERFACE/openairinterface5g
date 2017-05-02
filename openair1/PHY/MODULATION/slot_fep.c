@@ -172,19 +172,19 @@ int slot_fep(PHY_VARS_UE *ue,
 
     }
 
-    //#ifdef DEBUG_FEP
+    #ifdef DEBUG_FEP
         //  if (ue->frame <100)
         printf("slot_fep: frame %d: symbol %d rx_offset %d\n", ue->proc.proc_rxtx[(Ns>>1)&1].frame_rx, symbol,rx_offset);
-    //#endif
+    #endif
   }
 
   if (ue->perfect_ce == 0) {
     if ((l==0) || (l==(4-frame_parms->Ncp))) {
       for (aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
 
-//#ifdef DEBUG_FEP
+#ifdef DEBUG_FEP
         printf("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
-//#endif
+#endif
         start_meas(&ue->dlsch_channel_estimation_stats);
         lte_dl_channel_estimation(ue,eNB_id,0,
                                   Ns,
