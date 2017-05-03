@@ -709,20 +709,20 @@ int main(int argc, char **argv)
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0; i<2; i++) {
     eNB->dlsch[0][i] = new_eNB_dlsch(1,8,1827072,N_RB_DL,0,&eNB->frame_parms);
-    UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&1][0][i]  = new_ue_dlsch(1,8,1827072,MAX_TURBO_ITERATIONS,N_RB_DL,0);
+    UE->dlsch[subframe&1][0][i]  = new_ue_dlsch(1,8,1827072,MAX_TURBO_ITERATIONS,N_RB_DL,0);
 
     if (!eNB->dlsch[0][i]) {
       printf("Can't get eNB dlsch structures\n");
       exit(-1);
     }
 
-    if (!UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&1][0][i]) {
+    if (!UE->dlsch[subframe&1][0][i]) {
       printf("Can't get ue dlsch structures\n");
       exit(-1);
     }
 
     eNB->dlsch[0][i]->rnti = 14;
-    UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&1][0][i]->rnti   = 14;
+    UE->dlsch[subframe&1][0][i]->rnti   = 14;
 
   } 
 
@@ -763,7 +763,7 @@ int main(int argc, char **argv)
   init_ul_hopping(&eNB->frame_parms);
 
 
-  UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&1][0][0]->harq_ack[ul_subframe2pdcch_alloc_subframe(&eNB->frame_parms,subframe)].send_harq_status = 1;
+  UE->dlsch[subframe&1][0][0]->harq_ack[ul_subframe2pdcch_alloc_subframe(&eNB->frame_parms,subframe)].send_harq_status = 1;
 
   UE->ulsch_Msg3_active[eNB_id] = 0;
   UE->ul_power_control_dedicated[eNB_id].accumulationEnabled=1;

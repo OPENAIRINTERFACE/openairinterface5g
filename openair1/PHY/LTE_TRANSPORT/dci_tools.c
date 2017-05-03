@@ -7209,7 +7209,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
   uint8_t transmission_mode = ue->transmission_mode[eNB_id];
   ANFBmode_t AckNackFBMode;
   LTE_UE_ULSCH_t *ulsch = ue->ulsch[eNB_id];
-  LTE_UE_DLSCH_t **dlsch = ue->dlsch[subframe_DL(&ue->frame_parms,subframe)&0x1][0];
+  LTE_UE_DLSCH_t **dlsch = ue->dlsch[subframe&0x1][0];
   PHY_MEASUREMENTS *meas = &ue->measurements;
   LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   //  uint32_t current_dlsch_cqi = ue->current_dlsch_cqi[eNB_id];
@@ -8016,7 +8016,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       //int dl_subframe = (subframe<4) ? (subframe+6) : (subframe-4);
       int dl_subframe = subframe;
 
-      if (ue->dlsch[subframe_DL(&ue->frame_parms,dl_subframe)&0x1][eNB_id][0]->harq_ack[dl_subframe].send_harq_status>0) { // we have downlink transmission
+      if (ue->dlsch[dl_subframe&0x1][eNB_id][0]->harq_ack[dl_subframe].send_harq_status>0) { // we have downlink transmission
         ulsch->harq_processes[harq_pid]->O_ACK = 1;
       } else {
         ulsch->harq_processes[harq_pid]->O_ACK = 0;

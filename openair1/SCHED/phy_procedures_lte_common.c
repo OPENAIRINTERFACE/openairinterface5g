@@ -619,37 +619,6 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
   }
 }
 
-uint8_t subframe_DL(LTE_DL_FRAME_PARMS *frame_parms,uint8_t current_sfn)
-{
-
-  // if FDD return dummy value
-  if (frame_parms->frame_type == FDD)
-    return(current_sfn);
-
-  switch (frame_parms->tdd_config) {
-
-  case 1:
-    switch (current_sfn) {
-    case 3:
-    case 8:
-      return(current_sfn-3);
-      break;
-
-    default:
-      return(current_sfn);
-      break;
-    }
-
-  case 3:
-    return(current_sfn);
-    break;
-
-  default:
-      AssertFatal(0,"TDD config %d not coded",frame_parms->tdd_config);
-
-  }
-}
-
 dci_detect_mode_t dci_detect_mode_select(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe)
 {
   dci_detect_mode_t ret = 0;

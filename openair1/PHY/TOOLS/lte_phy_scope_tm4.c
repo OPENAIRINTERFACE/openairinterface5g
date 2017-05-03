@@ -448,11 +448,11 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     int mcs1=0;
     unsigned char harq_pid = 0;
     int beamforming_mode = phy_vars_ue->transmission_mode[eNB_id]>6 ? phy_vars_ue->transmission_mode[eNB_id] : 0;
-    if (phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][0]!=NULL) {
-        harq_pid = phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][0]->current_harq_pid;
+    if (phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]!=NULL) {
+        harq_pid = phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid;
   if (harq_pid>=8)
     return;
-    mcs0 = phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[harq_pid]->mcs;
+    mcs0 = phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->mcs;
         // Button 0
   /*
         if(!phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->dl_power_off) {
@@ -461,23 +461,23 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
         }
   */
     }
-       if (phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][1]!=NULL) {
-        harq_pid = phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][1]->current_harq_pid;
+       if (phy_vars_ue->dlsch[subframe&0x1][eNB_id][1]!=NULL) {
+        harq_pid = phy_vars_ue->dlsch[subframe&0x1][eNB_id][1]->current_harq_pid;
   if (harq_pid>=8)
     return;
-    mcs1 = phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][1]->harq_processes[harq_pid]->mcs;
+    mcs1 = phy_vars_ue->dlsch[subframe&0x1][eNB_id][1]->harq_processes[harq_pid]->mcs;
     }
     if (phy_vars_ue->pdcch_vars[subframe&0x1][eNB_id]!=NULL) {
         num_pdcch_symbols = phy_vars_ue->pdcch_vars[subframe&0x1][eNB_id]->num_pdcch_symbols;
     }
     //    coded_bits_per_codeword = frame_parms->N_RB_DL*12*get_Qm(mcs)*(frame_parms->symbols_per_tti);
-    if (phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][0]!=NULL) {
+    if (phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]!=NULL) {
       mod0 = get_Qm(mcs0);
       coded_bits_per_codeword0 = get_G(frame_parms,
-              phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[harq_pid]->nb_rb,
-              phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[harq_pid]->rb_alloc_even,
+              phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->nb_rb,
+              phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->rb_alloc_even,
               get_Qm(mcs0),
-              phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[harq_pid]->Nl,
+              phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->Nl,
               num_pdcch_symbols,
               frame,
               subframe,
@@ -486,13 +486,13 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
       coded_bits_per_codeword0 = 0; //frame_parms->N_RB_DL*12*get_Qm(mcs)*(frame_parms->symbols_per_tti);
       mod0=0;
     }
-    if (phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][1]!=NULL) {
+    if (phy_vars_ue->dlsch[subframe&0x1][eNB_id][1]!=NULL) {
       mod1 = get_Qm(mcs1);
       coded_bits_per_codeword1 = get_G(frame_parms,
-               phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][1]->harq_processes[harq_pid]->nb_rb,
-               phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][1]->harq_processes[harq_pid]->rb_alloc_even,
+               phy_vars_ue->dlsch[subframe&0x1][eNB_id][1]->harq_processes[harq_pid]->nb_rb,
+               phy_vars_ue->dlsch[subframe&0x1][eNB_id][1]->harq_processes[harq_pid]->rb_alloc_even,
                get_Qm(mcs1),
-               phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][1]->harq_processes[harq_pid]->Nl,
+               phy_vars_ue->dlsch[subframe&0x1][eNB_id][1]->harq_processes[harq_pid]->Nl,
                num_pdcch_symbols,
                frame,
                subframe,

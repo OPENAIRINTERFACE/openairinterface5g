@@ -212,11 +212,6 @@ void prach_procedures(PHY_VARS_eNB *eNB);
 
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
-/*!
- * \brief Function that return the DL SFN, used for TDD where the DL is not always 4 SFN before UL
-*/
-
-uint8_t subframe_DL(LTE_DL_FRAME_PARMS *frame_parms,uint8_t current_sfn);
 
 /*! \brief Function to compute which type of DCIs to detect in the given subframe
   @param frame_parms Pointer to DL frame parameter descriptor

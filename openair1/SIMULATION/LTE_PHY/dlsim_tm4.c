@@ -981,15 +981,15 @@ int main(int argc, char **argv)
   }
 
   for (i=0; i<2; i++) {
-    UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][i]  = new_ue_dlsch(Kmimo,8,Nsoft,MAX_TURBO_ITERATIONS,N_RB_DL,0);
+    UE->dlsch[subframe&0x1][0][i]  = new_ue_dlsch(Kmimo,8,Nsoft,MAX_TURBO_ITERATIONS,N_RB_DL,0);
 
-    if (!UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][i]) {
+    if (!UE->dlsch[subframe&0x1][0][i]) {
 
       printf("Can't get ue dlsch structures\n");
       exit(-1);
     }
 
-    UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][i]->rnti   = n_rnti;
+    UE->dlsch[subframe&0x1][0][i]->rnti   = n_rnti;
   }
 
   // structure for SIC at UE
@@ -2137,8 +2137,8 @@ int main(int argc, char **argv)
 
         eNB2UE[0]->first_run = 1;
 
-        ret[0] = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations+1;
-        ret[1] = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations+1;
+        ret[0] = UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations+1;
+        ret[1] = UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations+1;
 
         resend_cw0_cw1=1;
         resend_cw1=0;
@@ -2146,10 +2146,10 @@ int main(int argc, char **argv)
         TB1_active=1;
 
         while (((transmission_mode == 3 || transmission_mode == 4) &&
-               ((round < num_rounds) && ((ret[0] > UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations) ||
-               (ret[1] > UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations)))) ||
+               ((round < num_rounds) && ((ret[0] > UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations) ||
+               (ret[1] > UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations)))) ||
                ((transmission_mode!=4 && transmission_mode != 3) && ((round< num_rounds) &&
-               (ret[0] > UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations)))) {
+               (ret[0] > UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations)))) {
 #ifdef DEBUG_HARQ
         printf("\n [DLSIM] On top round is %d\n", round);
 #endif
@@ -2160,10 +2160,10 @@ int main(int argc, char **argv)
 
           //printf("Trial %d, round %d , ret[0] %d, ret[1] %d, round_trials %d\n",trials,round, ret[0], ret[1], round_trials[round]);
 
-        /*if (ret[0] > UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations) {
+        /*if (ret[0] > UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations) {
           round_trials[0][round]++;
           round_trials[1][round]++;
-        } else if ((ret[1] > UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations) && (ret[0] <= UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations))
+        } else if ((ret[1] > UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations) && (ret[0] <= UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations))
           round_trials[1][round]++;*/
 
 
@@ -2626,7 +2626,7 @@ int main(int argc, char **argv)
                                                          SI_RNTI,
                                                          0,
                                                          P_RNTI,
-                                                         UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->pmi_alloc,
+                                                         UE->dlsch[subframe&0x1][0][1]->pmi_alloc,
                                                          transmission_mode>=7?transmission_mode:0
                                                          );
                       break;
@@ -2854,7 +2854,7 @@ int main(int argc, char **argv)
                                                          SI_RNTI,
                                                          0,
                                                          P_RNTI,
-                                                         UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->pmi_alloc,
+                                                         UE->dlsch[subframe&0x1][0][1]->pmi_alloc,
                                                          transmission_mode>=7?transmission_mode:0
                                                          );
                       break;
@@ -2985,7 +2985,7 @@ int main(int argc, char **argv)
               // use the PMI from previous trial
                 if (DLSCH_alloc_pdu2_1E[0].tpmi == 5) {
                   eNB->dlsch[0][0]->harq_processes[0]->pmi_alloc = quantize_subband_pmi(&UE->measurements,0,eNB->frame_parms.N_RB_DL);
-                  UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->pmi_alloc = quantize_subband_pmi(&UE->measurements,0,UE->frame_parms.N_RB_DL);
+                  UE->dlsch[subframe&0x1][0][0]->pmi_alloc = quantize_subband_pmi(&UE->measurements,0,UE->frame_parms.N_RB_DL);
                   if (n_users>1)
                     eNB->dlsch[1][0]->harq_processes[0]->pmi_alloc = (eNB->dlsch[0][0]->harq_processes[0]->pmi_alloc ^ 0x1555);
                   /*
@@ -3009,7 +3009,7 @@ int main(int argc, char **argv)
                       printf ("[DLSIM] I am calling from the  eNode B 2\n");
 #endif
 
-                    UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->pmi_alloc = quantize_subband_pmi(&UE->measurements,0,UE->frame_parms.N_RB_DL);
+                    UE->dlsch[subframe&0x1][0][TB]->pmi_alloc = quantize_subband_pmi(&UE->measurements,0,UE->frame_parms.N_RB_DL);
                   }
 
                   else if (updated_csi == 0){
@@ -3022,7 +3022,7 @@ int main(int argc, char **argv)
 #ifdef DEBUG_HARQ
                       printf ("[DLSIM] I am calling from the  eNode B 2\n");
 #endif
-                      UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->pmi_alloc = pmi_convert_rank1_from_rank2(UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->pmi_alloc,5,UE->frame_parms.N_RB_DL);
+                      UE->dlsch[subframe&0x1][0][TB]->pmi_alloc = pmi_convert_rank1_from_rank2(UE->dlsch[subframe&0x1][0][TB]->pmi_alloc,5,UE->frame_parms.N_RB_DL);
                     }
 
                     else if (hold_rank1_precoder == 0 && ((((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 6) ||(((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 6))){
@@ -3033,7 +3033,7 @@ int main(int argc, char **argv)
 #ifdef DEBUG_HARQ
                       printf ("[DLSIM] I am calling from the  eNode B 2\n");
 #endif
-                      UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->pmi_alloc = pmi_convert_rank1_from_rank2(UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->pmi_alloc,6,UE->frame_parms.N_RB_DL);
+                      UE->dlsch[subframe&0x1][0][TB]->pmi_alloc = pmi_convert_rank1_from_rank2(UE->dlsch[subframe&0x1][0][TB]->pmi_alloc,6,UE->frame_parms.N_RB_DL);
                     }
                   } else if (updated_csi == 1){
 
@@ -3052,11 +3052,11 @@ int main(int argc, char **argv)
 #ifdef DEBUG_HARQ
                       printf ("[DLSIM] I quantize from ENodeB 2\n");
 #endif
-                    UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->pmi_alloc = quantize_subband_pmi(&UE->measurements,0,UE->frame_parms.N_RB_DL);
+                    UE->dlsch[subframe&0x1][0][TB]->pmi_alloc = quantize_subband_pmi(&UE->measurements,0,UE->frame_parms.N_RB_DL);
 #ifdef DEBUG_HARQ
                       printf ("[DLSIM] I convert pmi to rank1 eNode B 2\n");
 #endif
-                    UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->pmi_alloc = pmi_convert_rank1_from_rank2(UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->pmi_alloc,5,UE->frame_parms.N_RB_DL);
+                    UE->dlsch[subframe&0x1][0][TB]->pmi_alloc = pmi_convert_rank1_from_rank2(UE->dlsch[subframe&0x1][0][TB]->pmi_alloc,5,UE->frame_parms.N_RB_DL);
                   }
                   else if (((((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 6) ||(((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 6))){
 #ifdef DEBUG_HARQ
@@ -3072,11 +3072,11 @@ int main(int argc, char **argv)
 #ifdef DEBUG_HARQ
                       printf ("[DLSIM] I quantize from ENodeB 2\n");
 #endif
-                    UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->pmi_alloc = quantize_subband_pmi(&UE->measurements,0,UE->frame_parms.N_RB_DL);
+                    UE->dlsch[subframe&0x1][0][TB]->pmi_alloc = quantize_subband_pmi(&UE->measurements,0,UE->frame_parms.N_RB_DL);
 #ifdef DEBUG_HARQ
                       printf ("[DLSIM] I convert pmi to rank1 eNode B 2\n");
 #endif
-                    UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->pmi_alloc = pmi_convert_rank1_from_rank2(UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->pmi_alloc,6,UE->frame_parms.N_RB_DL);
+                    UE->dlsch[subframe&0x1][0][TB]->pmi_alloc = pmi_convert_rank1_from_rank2(UE->dlsch[subframe&0x1][0][TB]->pmi_alloc,6,UE->frame_parms.N_RB_DL);
                   }
 
                 }
@@ -3525,10 +3525,10 @@ int main(int argc, char **argv)
                     //printf("Generating dlsch parameters for RNTI %x\n",dci_alloc_rx[i].rnti);
 
                      if (round == 0) {
-                        UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[0]->first_tx=1;
+                        UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->first_tx=1;
                       }
                       if ((transmission_mode == 3 || transmission_mode ==4) && (round == 0)) {
-                        UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[0]->first_tx=1;
+                        UE->dlsch[subframe&0x1][0][1]->harq_processes[0]->first_tx=1;
                       }
 
                     if ((dci_alloc_rx[i].rnti == n_rnti) &&
@@ -3537,7 +3537,7 @@ int main(int argc, char **argv)
                                                            dci_alloc_rx[i].dci_pdu,
                                                            dci_alloc_rx[i].rnti,
                                                            dci_alloc_rx[i].format,
-                                                           UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0],
+                                                           UE->dlsch[subframe&0x1][0],
                                                            &UE->frame_parms,
                                                            UE->pdsch_config_dedicated,
                                                            SI_RNTI,
@@ -3547,30 +3547,30 @@ int main(int argc, char **argv)
                                                            UE->pdcch_vars[subframe&0x1][0]->crnti_is_temporary? UE->pdcch_vars[subframe&0x1][0]->crnti: 0)==0)) {
                       dump_dci(&UE->frame_parms,&dci_alloc_rx[i]);
                       coded_bits_per_codeword[0]= get_G(&eNB->frame_parms,
-                                                      UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid]->nb_rb,
-                                                      UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid]->rb_alloc_even,
-                                                      get_Qm(UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid]->mcs),
-                                                      UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid]->Nl,
-                                                      UE->pdcch_vars[subframe_DL(&UE->frame_parms,subframe)&0x1][0]->num_pdcch_symbols,
+                                                      UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->nb_rb,
+                                                      UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->rb_alloc_even,
+                                                      get_Qm(UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->mcs),
+                                                      UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->Nl,
+                                                      UE->pdcch_vars[subframe&0x1][0]->num_pdcch_symbols,
                                                       0,
                                                       subframe,
                                                       transmission_mode>=7?transmission_mode:0);
                       if (transmission_mode == 3 || transmission_mode == 4) {
                         coded_bits_per_codeword[1]= get_G(&eNB->frame_parms,
-                                                      UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid]->nb_rb,
-                                                      UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid]->rb_alloc_even,
-                                                      get_Qm(UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid]->mcs),
-                                                      UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid]->Nl,
+                                                      UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->nb_rb,
+                                                      UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->rb_alloc_even,
+                                                      get_Qm(UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->mcs),
+                                                      UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->Nl,
                                                       UE->pdcch_vars[subframe&0x1][1]->num_pdcch_symbols,
                                                       0,
                                                       subframe,
                                                       transmission_mode>=7?transmission_mode:0);
                       }
                       /*
-                      rate = (double)dlsch_tbs25[get_I_TBS(UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid]->mcs)][UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->nb_rb-1]/(coded_bits_per_codeword);
-                      rate*=get_Qm(UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid]->mcs);
+                      rate = (double)dlsch_tbs25[get_I_TBS(UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->mcs)][UE->dlsch[subframe&0x1][0][0]->nb_rb-1]/(coded_bits_per_codeword);
+                      rate*=get_Qm(UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->mcs);
                       */
-                      printf("num_pdcch_symbols %d, G %d, TBS %d\n",UE->pdcch_vars[subframe&0x1][0]->num_pdcch_symbols,coded_bits_per_codeword [0],UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid]->TBS);
+                      printf("num_pdcch_symbols %d, G %d, TBS %d\n",UE->pdcch_vars[subframe&0x1][0]->num_pdcch_symbols,coded_bits_per_codeword [0],UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->TBS);
 
                       dlsch_active = 1; // what does it indicates???
                     } else {
@@ -3594,8 +3594,8 @@ int main(int argc, char **argv)
                       UE->pdcch_vars[subframe&0x1][0]->crnti = n_rnti;
                       UE->pdcch_vars[subframe&0x1][0]->num_pdcch_symbols = num_pdcch_symbols;
                       if (round == 0) {
-                        UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[0]->first_tx=1;
-                        UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[0]->first_tx=1;
+                        UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->first_tx=1;
+                        UE->dlsch[subframe&0x1][0][1]->harq_processes[0]->first_tx=1;
                       }
 
                       switch (transmission_mode) {
@@ -3606,7 +3606,7 @@ int main(int argc, char **argv)
                                                           &DLSCH_alloc_pdu_1[0],
                                                           (common_flag==0)? C_RNTI : SI_RNTI,
                                                           (common_flag==0)? format1 : format1A,
-                                                          UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0],
+                                                          UE->dlsch[subframe&0x1][0],
                                                           &UE->frame_parms,
                                                           UE->pdsch_config_dedicated,
                                                           SI_RNTI,
@@ -3617,14 +3617,14 @@ int main(int argc, char **argv)
                         break;
                       case 3:
 
-                        //printf("Rate: TM3 (before) round %d (%d) first_tx %d\n",round,UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[0]->round,UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[0]->first_tx);
+                        //printf("Rate: TM3 (before) round %d (%d) first_tx %d\n",round,UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->round,UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->first_tx);
 
                         generate_ue_dlsch_params_from_dci(0,
                                                           subframe,
                                                           &DLSCH_alloc_pdu_1[0],
                                                           (common_flag==0)? C_RNTI : SI_RNTI,
                                                           (common_flag==0)? format2A : format1A,
-                                                          UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0],
+                                                          UE->dlsch[subframe&0x1][0],
                                                           &UE->frame_parms,
                                                           UE->pdsch_config_dedicated,
                                                           SI_RNTI,
@@ -3632,7 +3632,7 @@ int main(int argc, char **argv)
                                                           P_RNTI,
                                                           transmission_mode<7?0:transmission_mode,
                                                           UE->pdcch_vars[subframe&0x1][0]->crnti_is_temporary? UE->pdcch_vars[subframe&0x1][0]->crnti: 0);
-                        //printf("Rate: TM3 (after) round %d (%d) first_tx %d\n",round,UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[0]->round,UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[0]->first_tx);
+                        //printf("Rate: TM3 (after) round %d (%d) first_tx %d\n",round,UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->round,UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->first_tx);
                         break;
                       case 4:
                         generate_ue_dlsch_params_from_dci(0,
@@ -3640,7 +3640,7 @@ int main(int argc, char **argv)
                                                           &DLSCH_alloc_pdu_1[0],
                                                           (common_flag==0)? C_RNTI : SI_RNTI,
                                                           (common_flag==0)? format2 : format1A,//format1A only for a codeblock
-                                                          UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0],
+                                                          UE->dlsch[subframe&0x1][0],
                                                           &UE->frame_parms,
                                                           UE->pdsch_config_dedicated,
                                                           SI_RNTI,
@@ -3657,7 +3657,7 @@ int main(int argc, char **argv)
                                                           &DLSCH_alloc_pdu2_1E[0],
                                                           C_RNTI,
                                                           format1E_2A_M10PRB,
-                                                          UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0],
+                                                          UE->dlsch[subframe&0x1][0],
                                                           &UE->frame_parms,
                                                           UE->pdsch_config_dedicated,
                                                           SI_RNTI,
@@ -3673,13 +3673,13 @@ int main(int argc, char **argv)
 
               if (dlsch_active == 1) {
                 if (TB0_active==1)
-                  cur_harq_pid =UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid;
+                  cur_harq_pid =UE->dlsch[subframe&0x1][0][0]->current_harq_pid;
                 else
-                  cur_harq_pid =UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->current_harq_pid;
+                  cur_harq_pid =UE->dlsch[subframe&0x1][0][1]->current_harq_pid;
 
                 if ((Ns==(1+(2*subframe))) && (l==0)) {// process PDSCH symbols 1,2,3,4,5,(6 Normal Prefix
               /*    if (transmission_mode == 5) {
-                    if ((UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[cur_harq_pid]->dl_power_off==0) &&
+                    if ((UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[cur_harq_pid]->dl_power_off==0) &&
                         (openair_daq_vars.use_ia_receiver ==1)) {
                       rx_type = rx_IC_single_stream;
                     } else {
@@ -3701,7 +3701,7 @@ int main(int argc, char **argv)
                                  (m==UE->pdcch_vars[subframe&0x1][0]->num_pdcch_symbols)?1:0,
                                  rx_type,
                                  i_mod,
-                                 UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid)==-1){
+                                 UE->dlsch[subframe&0x1][0][0]->current_harq_pid)==-1){
                       dlsch_active = 0;
                       break;
                     }
@@ -3788,7 +3788,7 @@ int main(int argc, char **argv)
               break;
             }
 
-            UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->rnti = (common_flag==0) ? n_rnti: SI_RNTI;
+            UE->dlsch[subframe&0x1][0][TB]->rnti = (common_flag==0) ? n_rnti: SI_RNTI;
             coded_bits_per_codeword[TB] = get_G(&eNB->frame_parms,
                                             eNB->dlsch[0][TB]->harq_processes[0]->nb_rb,
                                             eNB->dlsch[0][TB]->harq_processes[0]->rb_alloc,
@@ -3798,12 +3798,12 @@ int main(int argc, char **argv)
                                             0,subframe,
                                             transmission_mode>=7?transmission_mode:0);
 
-            UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->current_harq_pid]->G = coded_bits_per_codeword[TB];
-            UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->current_harq_pid]->Qm = get_Qm(eNB->dlsch[0][TB]->harq_processes[0]->mcs);
+            UE->dlsch[subframe&0x1][0][TB]->harq_processes[UE->dlsch[subframe&0x1][0][TB]->current_harq_pid]->G = coded_bits_per_codeword[TB];
+            UE->dlsch[subframe&0x1][0][TB]->harq_processes[UE->dlsch[subframe&0x1][0][TB]->current_harq_pid]->Qm = get_Qm(eNB->dlsch[0][TB]->harq_processes[0]->mcs);
 
             if (n_frames==2) {
               printf("Kmimo=%d, TB=%d, G=%d, TBS=%d\n",Kmimo,TB,coded_bits_per_codeword[TB],
-                     UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->current_harq_pid]->TBS);
+                     UE->dlsch[subframe&0x1][0][TB]->harq_processes[UE->dlsch[subframe&0x1][0][TB]->current_harq_pid]->TBS);
 
               // calculate uncoded BER
               uncoded_ber_bit = (short*) malloc(sizeof(short)*coded_bits_per_codeword[TB]);
@@ -3812,7 +3812,7 @@ int main(int argc, char **argv)
 
               sprintf(fname,"dlsch%d_rxF_r%d_cw%d_llr.m",eNB_id,round, TB);
               sprintf(vname,"dl%d_r%d_cw%d_llr",eNB_id,round, TB);
-              write_output(fname,vname, UE->pdsch_vars[subframe&0x1][0]->llr[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->current_harq_pid]->codeword],coded_bits_per_codeword[TB],1,0);
+              write_output(fname,vname, UE->pdsch_vars[subframe&0x1][0]->llr[UE->dlsch[subframe&0x1][0][TB]->harq_processes[UE->dlsch[subframe&0x1][0][TB]->current_harq_pid]->codeword],coded_bits_per_codeword[TB],1,0);
               sprintf(fname,"dlsch_cw%d_e.m", TB);
               sprintf(vname,"dlschcw%d_e", TB);
               write_output(fname, vname,eNB->dlsch[0][TB]->harq_processes[0]->e,coded_bits_per_codeword[TB],1,4);
@@ -3820,7 +3820,7 @@ int main(int argc, char **argv)
               printf("trials=%d\n", trials);
 
               for (i=0;i<coded_bits_per_codeword[TB];i++)
-                if (eNB->dlsch[0][TB]->harq_processes[0]->e[i] != (UE->pdsch_vars[subframe&0x1][0]->llr[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->current_harq_pid]->codeword][i]<0)) {
+                if (eNB->dlsch[0][TB]->harq_processes[0]->e[i] != (UE->pdsch_vars[subframe&0x1][0]->llr[UE->dlsch[subframe&0x1][0][TB]->harq_processes[UE->dlsch[subframe&0x1][0][TB]->current_harq_pid]->codeword][i]<0)) {
                   uncoded_ber_bit[i] = 1;
                   uncoded_ber++;
                 }
@@ -3842,22 +3842,22 @@ int main(int argc, char **argv)
             start_meas(&UE->dlsch_unscrambling_stats);
             dlsch_unscrambling(&UE->frame_parms,
                                0,
-                               UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB],
+                               UE->dlsch[subframe&0x1][0][TB],
                                coded_bits_per_codeword[TB],
-                               UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->current_harq_pid]->codeword],
+                               UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe&0x1][0][TB]->harq_processes[UE->dlsch[subframe&0x1][0][TB]->current_harq_pid]->codeword],
                                TB,
                                subframe<<1);
             stop_meas(&UE->dlsch_unscrambling_stats);
 
             start_meas(&UE->dlsch_decoding_stats[subframe&0x1]);
             ret[TB] = dlsch_decoding(UE,
-                                     UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->current_harq_pid]->codeword],
+                                     UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe&0x1][0][TB]->harq_processes[UE->dlsch[subframe&0x1][0][TB]->current_harq_pid]->codeword],
                                      &UE->frame_parms,
-                                     UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB],
-                                     UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->current_harq_pid],
+                                     UE->dlsch[subframe&0x1][0][TB],
+                                     UE->dlsch[subframe&0x1][0][TB]->harq_processes[UE->dlsch[subframe&0x1][0][TB]->current_harq_pid],
                                      0,
                                     subframe,
-                                    UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->current_harq_pid,
+                                    UE->dlsch[subframe&0x1][0][TB]->current_harq_pid,
                                     1,llr8_flag);
             stop_meas(&UE->dlsch_decoding_stats[subframe&0x1]);
 #ifdef DEBUG_HARQ
@@ -3865,11 +3865,11 @@ int main(int argc, char **argv)
 #endif
 
             //printf("retr cw 0 = %d\n", ret[0]);
-            //printf("current round = %d\n", UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][cw_non_sic]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][cw_non_sic]->current_harq_pid]->round);
+            //printf("current round = %d\n", UE->dlsch[subframe&0x1][0][cw_non_sic]->harq_processes[UE->dlsch[subframe&0x1][0][cw_non_sic]->current_harq_pid]->round);
 
 
 
-            if (ret[TB] <= UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations ) { //if CW0 is decoded, approach CW1
+            if (ret[TB] <= UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations ) { //if CW0 is decoded, approach CW1
 #ifdef DEBUG_HARQ
             printf("[DLSIM] TB%d is decoded\n", TB);
 #endif
@@ -3880,33 +3880,33 @@ int main(int argc, char **argv)
               if (n_frames==2) {
                 printf("cw non sic %d, round %d: No DLSCH errors found, uncoded ber %f\n",TB,round,uncoded_ber);
 #ifdef PRINT_BYTES
-                for (s=0;s<UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[0]->C;s++) {
-                  if (s<UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[0]->Cminus)
-                    Kr = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[0]->Kminus;
+                for (s=0;s<UE->dlsch[subframe&0x1][0][TB]->harq_processes[0]->C;s++) {
+                  if (s<UE->dlsch[subframe&0x1][0][TB]->harq_processes[0]->Cminus)
+                    Kr = UE->dlsch[subframe&0x1][0][TB]->harq_processes[0]->Kminus;
                   else
-                    Kr = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[0]->Kplus;
+                    Kr = UE->dlsch[subframe&0x1][0][TB]->harq_processes[0]->Kplus;
 
                   Kr_bytes = Kr>>3;
 
                   printf("Decoded_output (Segment %d):\n",s);
                   for (i=0;i<Kr_bytes;i++)
-                    printf("%d : %x (%x)\n",i,UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[0]->c[s][i],
-                           UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[0]->c[s][i]^eNB->dlsch[0][TB]->harq_processes[0]->c[s][i]);
+                    printf("%d : %x (%x)\n",i,UE->dlsch[subframe&0x1][0][TB]->harq_processes[0]->c[s][i],
+                           UE->dlsch[subframe&0x1][0][TB]->harq_processes[0]->c[s][i]^eNB->dlsch[0][TB]->harq_processes[0]->c[s][i]);
                 }
 #endif
               }
 
-              UE->total_TBS[eNB_id] = UE->total_TBS[eNB_id] + UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][TB]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][TB]->current_harq_pid]->TBS;
+              UE->total_TBS[eNB_id] = UE->total_TBS[eNB_id] + UE->dlsch[subframe&0x1][eNB_id][TB]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][TB]->current_harq_pid]->TBS;
 
               // If the  receiver is NOT SIC, Here we are done with both CW, now only to calculate BLER
               //If the receiver IS SIC, we are done only with CW0, CW1 was only compensated by this moment (y1' obtained)
-              if (UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->current_harq_pid]->mimo_mode == LARGE_CDD) {   //try to decode second stream using SIC
+              if (UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid]->mimo_mode == LARGE_CDD) {   //try to decode second stream using SIC
               /*
-              //for (round = 0 ; round < UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->current_harq_pid]->round ; round++) {
+              //for (round = 0 ; round < UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid]->round ; round++) {
               // we assume here that the second stream has a lower MCS and is thus more likely to be decoded
               // re-encoding of second stream
-              dlsch0_ue_harq = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->current_harq_pid];
-              dlsch0_eNB_harq = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->current_harq_pid];
+              dlsch0_ue_harq = UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid];
+              dlsch0_eNB_harq = UE->dlsch[subframe&0x1][eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid];
 
               dlsch0_eNB_harq->mimo_mode    = LARGE_CDD;
               dlsch0_eNB_harq->rb_alloc[0]  = dlsch0_ue_harq->rb_alloc[0];
@@ -3920,14 +3920,14 @@ int main(int argc, char **argv)
               dlsch0_eNB_harq->dl_power_off = dlsch0_ue_harq->dl_power_off;
               dlsch0_eNB_harq->status       = dlsch0_ue_harq->status;
 
-              UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id]->active       = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->active;
-              UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id]->rnti         = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->rnti;
-              UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id]->current_harq_pid         = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->current_harq_pid;
+              UE->dlsch[subframe&0x1][eNB_id]->active       = UE->dlsch[subframe&0x1][eNB_id][0]->active;
+              UE->dlsch[subframe&0x1][eNB_id]->rnti         = UE->dlsch[subframe&0x1][eNB_id][0]->rnti;
+              UE->dlsch[subframe&0x1][eNB_id]->current_harq_pid         = UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid;
 
-              dlsch_encoding(UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->current_harq_pid]->b,
+              dlsch_encoding(UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid]->b,
                  &UE->frame_parms,
                  num_pdcch_symbols,
-                 UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id],
+                 UE->dlsch[subframe&0x1][eNB_id],
                  0,subframe,
                  &UE->dlsch_rate_matching_stats,
                  &UE->dlsch_turbo_encoding_stats,
@@ -3935,10 +3935,10 @@ int main(int argc, char **argv)
                  );
 
               coded_bits_per_codeword = get_G(&UE->frame_parms,
-                      UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id]->current_harq_pid]->nb_rb,
-                      UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id]->current_harq_pid]->rb_alloc,
-                      get_Qm(UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id]->current_harq_pid]->mcs),
-                      UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id]->current_harq_pid]->Nl,
+                      UE->dlsch[subframe&0x1][eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id]->current_harq_pid]->nb_rb,
+                      UE->dlsch[subframe&0x1][eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id]->current_harq_pid]->rb_alloc,
+                      get_Qm(UE->dlsch[subframe&0x1][eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id]->current_harq_pid]->mcs),
+                      UE->dlsch[subframe&0x1][eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id]->current_harq_pid]->Nl,
                       num_pdcch_symbols,
                       0,subframe);
 
@@ -3946,7 +3946,7 @@ int main(int argc, char **argv)
               //scrambling
               dlsch_scrambling(&UE->frame_parms,
                    0,
-                   UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id],
+                   UE->dlsch[subframe&0x1][eNB_id],
                    coded_bits_per_codeword,
                    0,
                    subframe<<1);
@@ -3958,7 +3958,7 @@ int main(int argc, char **argv)
                       subframe,
                       &UE->frame_parms,
                       num_pdcch_symbols,
-                      &UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0],
+                      &UE->dlsch[subframe&0x1][0][0],
                       NULL);
               // sic_buffer is a vector of size nb_antennas_tx, but both contain the same signal, since we do modulation without precoding
               // precoding is contained in effective channel estimate
@@ -3998,8 +3998,8 @@ int main(int argc, char **argv)
               }
 
 
-             if ((UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->current_harq_pid]->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
-                  (UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->current_harq_pid]->mimo_mode <=DUALSTREAM_PUSCH_PRECODING) && (TB0_active == 1) &&
+             if ((UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid]->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
+                  (UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid]->mimo_mode <=DUALSTREAM_PUSCH_PRECODING) && (TB0_active == 1) &&
                   (rx_type==rx_SIC_dual_stream)) {
 #ifdef DEBUG_HARQ
                 printf("[DLSIM] Starting SIC procedure\n");
@@ -4018,10 +4018,10 @@ int main(int argc, char **argv)
 #endif
                 //printf("I enter round_sic loop \n");
                 //printf("round_sic= %d\n", round_sic);
-                dlsch0_ue_harq = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->current_harq_pid];
-                dlsch0_eNB_harq = UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->current_harq_pid];
+                dlsch0_ue_harq = UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid];
+                dlsch0_eNB_harq = UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid];
 
-                dlsch0_eNB_harq->mimo_mode    = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->current_harq_pid]->mimo_mode;
+                dlsch0_eNB_harq->mimo_mode    = UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid]->mimo_mode;
                 dlsch0_eNB_harq->rb_alloc[0]  = dlsch0_ue_harq->rb_alloc_even[0];
                 dlsch0_eNB_harq->nb_rb        = dlsch0_ue_harq->nb_rb;
                 dlsch0_eNB_harq->mcs          = dlsch0_ue_harq->mcs;
@@ -4033,25 +4033,25 @@ int main(int argc, char **argv)
                 dlsch0_eNB_harq->status       = dlsch0_ue_harq->status;
 
                 if (round_sic == 0){
-                  UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][1]->current_harq_pid]->rvidx        = 0;
-                  UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->current_harq_pid]->rvidx=0;
+                  UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][1]->current_harq_pid]->rvidx        = 0;
+                  UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->rvidx=0;
                 }
                   else if (round_sic == 1){
-                  UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][1]->current_harq_pid]->rvidx        = 1;
-                  UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->current_harq_pid]->rvidx=1;
+                  UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][1]->current_harq_pid]->rvidx        = 1;
+                  UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->rvidx=1;
                 }
                   else if (round_sic == 2){
-                  UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][1]->current_harq_pid]->rvidx        = 2;
-                  UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->current_harq_pid]->rvidx=2;
+                  UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][1]->current_harq_pid]->rvidx        = 2;
+                  UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->rvidx=2;
                 }
                   else{
-                  UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][1]->current_harq_pid]->rvidx        = 3;
-                  UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->current_harq_pid]->rvidx=3;
+                  UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][1]->current_harq_pid]->rvidx        = 3;
+                  UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->rvidx=3;
                 }
 
-                UE->dlsch_eNB[eNB_id]->active                   = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->active;
-                UE->dlsch_eNB[eNB_id]->rnti                     = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->rnti;
-                UE->dlsch_eNB[eNB_id]->current_harq_pid         = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->current_harq_pid;
+                UE->dlsch_eNB[eNB_id]->active                   = UE->dlsch[subframe&0x1][eNB_id][0]->active;
+                UE->dlsch_eNB[eNB_id]->rnti                     = UE->dlsch[subframe&0x1][eNB_id][0]->rnti;
+                UE->dlsch_eNB[eNB_id]->current_harq_pid         = UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid;
 
                 dlsch_encoding_SIC(UE,
                                input_buffer0[0], //UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->b,,
@@ -4089,8 +4089,8 @@ int main(int argc, char **argv)
                                                     coded_bits_per_codeword[0]);
 
                // write_output("sic_buffer.m","sic", *sic_buffer,re_allocated,1,1);
-               // write_output("rxdataF_comp1.m","rxF_comp1", *UE->pdsch_vars[eNB_id]->rxdataF_comp1[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid][round],14*12*25,1,1);
-               // write_output("rxdataF_rho.m","rho", *UE->pdsch_vars[eNB_id]->dl_ch_rho_ext[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid][round],14*12*25,1,1);
+               // write_output("rxdataF_comp1.m","rxF_comp1", *UE->pdsch_vars[eNB_id]->rxdataF_comp1[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round],14*12*25,1,1);
+               // write_output("rxdataF_rho.m","rho", *UE->pdsch_vars[eNB_id]->dl_ch_rho_ext[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round],14*12*25,1,1);
 
 
                 switch  (get_Qm(eNB->dlsch[0][1]->harq_processes[0]->mcs)){
@@ -4100,58 +4100,58 @@ int main(int argc, char **argv)
                   case 2:
 
                     dlsch_qpsk_llr_SIC(&UE->frame_parms,
-                                       UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid][round_sic],
+                                       UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
                                        sic_buffer,
-                                       UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid][round_sic],
-                                       UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->current_harq_pid]->codeword],
+                                       UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
+                                       UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->codeword],
                                        num_pdcch_symbols,
                                        dlsch0_eNB_harq->nb_rb,
                                        subframe,
                                        dlsch0_eNB_harq->rb_alloc[0],
                                        get_Qm(eNB->dlsch[0][0]->harq_processes[0]->mcs),
-                                       UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]);
+                                       UE->dlsch[subframe&0x1][eNB_id][0]);
                   break;
 
                   case 4:
 
                     dlsch_16qam_llr_SIC(&UE->frame_parms,
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
                                         sic_buffer,
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid][round_sic],
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->current_harq_pid]->codeword],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->codeword],
                                         num_pdcch_symbols,
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_mag1[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_mag1[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
                                         dlsch0_eNB_harq->nb_rb,
                                         subframe,
                                         dlsch0_eNB_harq->rb_alloc[0],
                                         get_Qm(eNB->dlsch[0][TB]->harq_processes[0]->mcs),
-                                        UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]);
+                                        UE->dlsch[subframe&0x1][eNB_id][0]);
                   break;
                   case 6:
                     dlsch_64qam_llr_SIC(&UE->frame_parms,
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
                                         sic_buffer,
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid][round_sic],
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->current_harq_pid]->codeword],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->codeword],
                                         num_pdcch_symbols,
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_mag1[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid][round_sic],
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_magb1[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_mag1[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_magb1[UE->dlsch[subframe&0x1][0][0]->current_harq_pid][round_sic],
                                         dlsch0_eNB_harq->nb_rb,
                                         subframe,
                                         dlsch0_eNB_harq->rb_alloc[0],
                                         get_Qm(eNB->dlsch[0][0]->harq_processes[0]->mcs),
-                                        UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][TB]);
+                                        UE->dlsch[subframe&0x1][eNB_id][TB]);
                   break;
                     }
                   //}// rouns sic
 #ifdef DEBUG_HARQ
-                  printf("[DLSIM] TB1 is mapped into CW%d\n", UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->current_harq_pid]->codeword);
+                  printf("[DLSIM] TB1 is mapped into CW%d\n", UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->codeword);
 #endif
 
                     //  write_output("rxdata_llr1.m","llr1", UE->pdsch_vars[eNB_id]->llr[1],re_allocated*2,1,0);
 
                   // replace cw_sic with TB+1
-                  UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->rnti = (common_flag==0) ? n_rnti: SI_RNTI;
+                  UE->dlsch[subframe&0x1][0][1]->rnti = (common_flag==0) ? n_rnti: SI_RNTI;
                   coded_bits_per_codeword[1]= get_G(&eNB->frame_parms,
                                                     eNB->dlsch[0][1]->harq_processes[0]->nb_rb,
                                                     eNB->dlsch[0][1]->harq_processes[0]->rb_alloc,
@@ -4162,12 +4162,12 @@ int main(int argc, char **argv)
                                                     subframe,
                                                     transmission_mode>=7?transmission_mode:0);
 
-                  UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->current_harq_pid]->G = coded_bits_per_codeword[1];
-                  UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->current_harq_pid]->Qm = get_Qm(eNB->dlsch[0][1]->harq_processes[0]->mcs);
+                  UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->G = coded_bits_per_codeword[1];
+                  UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->Qm = get_Qm(eNB->dlsch[0][1]->harq_processes[0]->mcs);
 
                   if (n_frames==2) {
                     printf("Kmimo=%d, cw=%d, G=%d, TBS=%d\n",Kmimo,1,coded_bits_per_codeword[1],
-                    UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->current_harq_pid]->TBS);
+                    UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->TBS);
 
                   // calculate uncoded BER
                     uncoded_ber_bit = (short*) malloc(sizeof(short)*coded_bits_per_codeword[1]);
@@ -4181,7 +4181,7 @@ int main(int argc, char **argv)
                     uncoded_ber=0;
                     printf("trials=%d\n", trials);
                     for (i=0;i<coded_bits_per_codeword[1];i++)
-                    if (eNB->dlsch[0][1]->harq_processes[0]->e[i] != (UE->pdsch_vars[subframe&0x1][0]->llr[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->current_harq_pid]->codeword][i]<0)) {
+                    if (eNB->dlsch[0][1]->harq_processes[0]->e[i] != (UE->pdsch_vars[subframe&0x1][0]->llr[UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->codeword][i]<0)) {
                       uncoded_ber_bit[i] = 1;
                       uncoded_ber++;
                     }
@@ -4203,7 +4203,7 @@ int main(int argc, char **argv)
                                    0,
                                    UE->dlsch[subframe&0x1][0][1],
                                    coded_bits_per_codeword[1],
-                                   UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->current_harq_pid]->codeword],
+                                   UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->codeword],
                                    1,
                                    subframe<<1);
                 stop_meas(&UE->dlsch_unscrambling_stats);
@@ -4211,13 +4211,13 @@ int main(int argc, char **argv)
                 start_meas(&UE->dlsch_decoding_stats[subframe&0x1]);
 
                 ret[1] = dlsch_decoding(UE,
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->current_harq_pid]->codeword],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->codeword],
                                         &UE->frame_parms,
-                                        UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1],
-                                        UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->current_harq_pid],
+                                        UE->dlsch[subframe&0x1][0][1],
+                                        UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid],
                                         0,
                                         subframe,
-                                        UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->current_harq_pid,
+                                        UE->dlsch[subframe&0x1][0][1]->current_harq_pid,
                                         1,llr8_flag);
                 stop_meas(&UE->dlsch_decoding_stats[subframe&0x1]);
 
@@ -4227,7 +4227,7 @@ int main(int argc, char **argv)
 
                 //printf("ret TB 1 = %d round %d \n", ret[1], round);
 
-                if (ret[1] <=UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations ) {
+                if (ret[1] <=UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations ) {
                   decoded_in_sic[round]++;
                   round_sic = round+1; // to exit round_sic
 #ifdef DEBUG_HARQ
@@ -4241,19 +4241,19 @@ int main(int argc, char **argv)
                     printf("cw sic %d, round %d: No DLSCH errors found, uncoded ber %f\n",1,round,uncoded_ber);
 
                     #ifdef PRINT_BYTES
-                    for (s=0;s<UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[0]->C;s++) {
-                    if (s<UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[0]->Cminus)
-                      Kr = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[0]->Kminus;
+                    for (s=0;s<UE->dlsch[subframe&0x1][0][1]->harq_processes[0]->C;s++) {
+                    if (s<UE->dlsch[subframe&0x1][0][1]->harq_processes[0]->Cminus)
+                      Kr = UE->dlsch[subframe&0x1][0][1]->harq_processes[0]->Kminus;
                     else
-                      Kr = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[0]->Kplus;
+                      Kr = UE->dlsch[subframe&0x1][0][1]->harq_processes[0]->Kplus;
 
                     Kr_bytes = Kr>>3;
 
                     printf("Decoded_output (Segment %d):\n",s);
 
                     for (i=0;i<Kr_bytes;i++)
-                      printf("%d : %x (%x)\n",i,UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[0]->c[s][i],
-                      UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[0]->c[s][i]^eNB->dlsch[0][1]->harq_processes[0]->c[s][i]);
+                      printf("%d : %x (%x)\n",i,UE->dlsch[subframe&0x1][0][1]->harq_processes[0]->c[s][i],
+                      UE->dlsch[subframe&0x1][0][1]->harq_processes[0]->c[s][i]^eNB->dlsch[0][1]->harq_processes[0]->c[s][i]);
                     }
                     #endif
                   }
@@ -4261,7 +4261,7 @@ int main(int argc, char **argv)
               } //round_sic
 
 
-            if (ret[1] > UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations ){
+            if (ret[1] > UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations ){
               errs[1][round]++;
 #ifdef DEBUG_HARQ
                   printf("[DLSIM] TB1 is not decoded in SIC loop, errs[TB1][round %d] = %d\n",round, errs[1][round]);
@@ -4276,23 +4276,23 @@ int main(int argc, char **argv)
                     //if ((n_frames==1) || (SNR>=30)) {
                     printf("cw sic %d, round %d: DLSCH errors found, uncoded ber %f\n",1,round,uncoded_ber);
 #ifdef PRINT_BYTES
-                    for (s=0;s<UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[0]->C;s++) {
-                      if (s<UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[0]->Cminus)
-                        Kr = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[0]->Kminus;
+                    for (s=0;s<UE->dlsch[subframe&0x1][0][1]->harq_processes[0]->C;s++) {
+                      if (s<UE->dlsch[subframe&0x1][0][1]->harq_processes[0]->Cminus)
+                        Kr = UE->dlsch[subframe&0x1][0][1]->harq_processes[0]->Kminus;
                       else
-                        Kr = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[0]->Kplus;
+                        Kr = UE->dlsch[subframe&0x1][0][1]->harq_processes[0]->Kplus;
 
                       Kr_bytes = Kr>>3;
 
                       printf("Decoded_output (Segment %d):\n",s);
                       for (i=0;i<Kr_bytes;i++)
-                        printf("%d : %x (%x)\n",i,UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[0]->c[s][i],
-                         UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->harq_processes[0]->c[s][i]^eNB->dlsch[0][1]->harq_processes[0]->c[s][i]);
+                        printf("%d : %x (%x)\n",i,UE->dlsch[subframe&0x1][0][1]->harq_processes[0]->c[s][i],
+                         UE->dlsch[subframe&0x1][0][1]->harq_processes[0]->c[s][i]^eNB->dlsch[0][1]->harq_processes[0]->c[s][i]);
                     }
 #endif
                   } //n_frames==1
                  // exit(0);
-              } //if (ret > UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][1]->max_turbo_iterations )
+              } //if (ret > UE->dlsch[subframe&0x1][0][1]->max_turbo_iterations )
             }//if SIC
           } else {
 
@@ -4307,8 +4307,8 @@ int main(int argc, char **argv)
           iter_trials[0]++;
               }*/
 
-            if ((UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->current_harq_pid]->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
-              (UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][eNB_id][0]->current_harq_pid]->mimo_mode <=DUALSTREAM_PUSCH_PRECODING) &&
+            if ((UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid]->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
+              (UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid]->mimo_mode <=DUALSTREAM_PUSCH_PRECODING) &&
                 (rx_type==rx_SIC_dual_stream) && (TB0_active ==1)) {
                 errs[1][round]++;
 #ifdef DEBUG_HARQ
@@ -4327,18 +4327,18 @@ int main(int argc, char **argv)
           //if ((n_frames==1) || (SNR>=30)) {
                 printf("cw %d, round %d: DLSCH errors found, uncoded ber %f\n",TB,round,uncoded_ber);
 #ifdef PRINT_BYTES
-                for (s=0;s<UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[0]->C;s++) {
-                  if (s<UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[0]->Cminus)
-                    Kr = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[0]->Kminus;
+                for (s=0;s<UE->dlsch[subframe&0x1][0][TB]->harq_processes[0]->C;s++) {
+                  if (s<UE->dlsch[subframe&0x1][0][TB]->harq_processes[0]->Cminus)
+                    Kr = UE->dlsch[subframe&0x1][0][TB]->harq_processes[0]->Kminus;
                   else
-                    Kr = UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[0]->Kplus;
+                    Kr = UE->dlsch[subframe&0x1][0][TB]->harq_processes[0]->Kplus;
 
                   Kr_bytes = Kr>>3;
 
                   printf("Decoded_output (Segment %d):\n",s);
                   for (i=0;i<Kr_bytes;i++)
-                    printf("%d : %x (%x)\n",i,UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[0]->c[s][i],
-                     UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][TB]->harq_processes[0]->c[s][i]^eNB->dlsch[0][TB]->harq_processes[0]->c[s][i]);
+                    printf("%d : %x (%x)\n",i,UE->dlsch[subframe&0x1][0][TB]->harq_processes[0]->c[s][i],
+                     UE->dlsch[subframe&0x1][0][TB]->harq_processes[0]->c[s][i]^eNB->dlsch[0][TB]->harq_processes[0]->c[s][i]);
                 }
 #endif
               }
@@ -4410,12 +4410,12 @@ int main(int argc, char **argv)
                UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
             }
             //pdsch_vars
-            dump_dlsch2(UE,eNB_id,subframe,coded_bits_per_codeword,round, UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid);
+            dump_dlsch2(UE,eNB_id,subframe,coded_bits_per_codeword,round, UE->dlsch[subframe&0x1][0][0]->current_harq_pid);
             /*
               write_output("dlsch_e.m","e",eNB->dlsch[0][0]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
               write_output("dlsch_ber_bit.m","ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
               write_output("dlsch_eNB_w.m","w",eNB->dlsch[0][0]->harq_processes[0]->w[0],3*(tbs+64),1,4);
-              write_output("dlsch_UE_w.m","w",UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[0]->w[0],3*(tbs+64),1,0);
+              write_output("dlsch_UE_w.m","w",UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->w[0],3*(tbs+64),1,0);
             */
 
             //pdcch_vars
@@ -4439,15 +4439,15 @@ int main(int argc, char **argv)
           printf("[DLSIM] Errors errs[TB0][round %d] = %d, errs[TB1][round %d] = %d\n ", round, errs[0][round], round, errs[1][round]);
 #endif
 
-          if ((transmission_mode != 3) && (transmission_mode !=4) && (ret[0] > UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations)){
+          if ((transmission_mode != 3) && (transmission_mode !=4) && (ret[0] > UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations)){
             //printf("flag 1 \n");
             round++;
           }
 
 
           if (transmission_mode == 3 || transmission_mode == 4 ) {
-            if (ret[0] > UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations &&
-               ret[1] > UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations){
+            if (ret[0] > UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations &&
+               ret[1] > UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations){
               resend_both[round]++;
               round++;
               resend_cw0_cw1=1;  //resend both cws
@@ -4455,8 +4455,8 @@ int main(int argc, char **argv)
               TB0_active=1;
               TB1_active=1;
             }
-            else if (ret[1] > UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations &&
-                     ret[0] <= UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations){
+            else if (ret[1] > UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations &&
+                     ret[0] <= UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations){
               resend_one[round]++;
               resend_cw0_cw1=0;
               TB0_active=0;
@@ -4476,8 +4476,8 @@ int main(int argc, char **argv)
 #endif
             round++;
             }
-            else if (ret[0] > UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations &&
-                     ret[1] <= UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->max_turbo_iterations){
+            else if (ret[0] > UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations &&
+                     ret[1] <= UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations){
               resend_one[round]++;
               resend_cw0_cw1=0;
               TB0_active=1;
@@ -4796,7 +4796,7 @@ int main(int argc, char **argv)
          rate[0]*effective_rate,
          100*effective_rate,
          rate[0],
-         rate[0]*get_Qm(UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->current_harq_pid]->mcs),
+         rate[0]*get_Qm(UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->mcs),
          (1.0*(round_trials[0][0]-errs[0][0])+2.0*(round_trials[0][1]-errs[0][1])+3.0*(round_trials[0][2]-errs[0][2])+
           4.0*(round_trials[0][3]-errs[0][3]))/((double)round_trials[0][0])/(double)eNB->dlsch[0][0]->harq_processes[0]->TBS,
          (1.0*(round_trials[0][0]-errs[0][0])+2.0*(round_trials[0][1]-errs[0][1])+3.0*(round_trials[0][2]-errs[0][2])
@@ -4901,7 +4901,7 @@ int main(int argc, char **argv)
         printf("|__ DLSCH Rate Unmatching                               :%f us (%d trials)\n",
                (double)UE->dlsch_rate_unmatching_stats.diff/UE->dlsch_rate_unmatching_stats.trials/cpu_freq_GHz/1000.0,UE->dlsch_rate_unmatching_stats.trials);
         printf("|__ DLSCH Turbo Decoding(%d bits)                       :%f us (%d trials)\n",
-               UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[0]->Cminus ? UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[0]->Kminus : UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][0]->harq_processes[0]->Kplus,
+               UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->Cminus ? UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->Kminus : UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->Kplus,
                (double)UE->dlsch_turbo_decoding_stats.diff/UE->dlsch_turbo_decoding_stats.trials/cpu_freq_GHz/1000.0,UE->dlsch_turbo_decoding_stats.trials);
         printf("    |__ init                                            %f us (cycles/iter %f, %d trials)\n",
                (double)UE->dlsch_tc_init_stats.diff/UE->dlsch_tc_init_stats.trials/cpu_freq_GHz/1000.0,
@@ -5326,7 +5326,7 @@ int main(int argc, char **argv)
 
     free_eNB_dlsch(eNB->dlsch[0][i]);
     printf("UE %d\n",i);
-    free_ue_dlsch(UE->dlsch[subframe_DL(&UE->frame_parms,subframe)&0x1][0][i]);
+    free_ue_dlsch(UE->dlsch[subframe&0x1][0][i]);
   }
 
 

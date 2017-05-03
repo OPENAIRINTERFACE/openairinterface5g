@@ -514,16 +514,16 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   int beamforming_mode = phy_vars_ue->transmission_mode[eNB_id]>6 ? phy_vars_ue->transmission_mode[eNB_id] : 0;
 
 
-  if (phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][0]!=NULL) {
-    harq_pid = phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][0]->current_harq_pid;
+  if (phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]!=NULL) {
+    harq_pid = phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid;
 
     if (harq_pid>=8)
       return;
 
-    mcs = phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[harq_pid]->mcs;
+    mcs = phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->mcs;
 
     // Button 0
-    if(!phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[harq_pid]->dl_power_off) {
+    if(!phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->dl_power_off) {
       // we are in TM5
       fl_show_object(form->button_0);
     }
@@ -534,12 +534,12 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   }
 
   //    coded_bits_per_codeword = frame_parms->N_RB_DL*12*get_Qm(mcs)*(frame_parms->symbols_per_tti);
-  if (phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][0]!=NULL) {
+  if (phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]!=NULL) {
     coded_bits_per_codeword = get_G(frame_parms,
-                                    phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[harq_pid]->nb_rb,
-                                    phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[harq_pid]->rb_alloc_even,
+                                    phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->nb_rb,
+                                    phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->rb_alloc_even,
                                     get_Qm(mcs),
-                                    phy_vars_ue->dlsch[subframe_DL(&phy_vars_ue->frame_parms,subframe)&0x1][eNB_id][0]->harq_processes[harq_pid]->Nl,
+                                    phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->Nl,
                                     num_pdcch_symbols,
                                     frame,
                                     subframe,

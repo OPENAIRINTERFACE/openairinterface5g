@@ -146,7 +146,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
   case PDSCH:
     pdsch_vars = ue->pdsch_vars[subframe&0x1];
-    dlsch = ue->dlsch[subframe_DL(&ue->frame_parms,subframe)&0x1][eNB_id];
+    dlsch = ue->dlsch[subframe&0x1][eNB_id];
     LOG_D(PHY,"AbsSubframe %d.%d / Sym %d harq_pid %d,  harq status %d.%d \n",
                    frame,subframe,symbol,harq_pid,
                    dlsch[0]->harq_processes[harq_pid]->status,
