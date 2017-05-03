@@ -8013,13 +8013,20 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     ulsch->bundling = 1-AckNackFBMode;
 
     if (frame_parms->frame_type == FDD) {
-      int dl_subframe = (subframe<4) ? (subframe+6) : (subframe-4);
+      //int dl_subframe = (subframe<4) ? (subframe+6) : (subframe-4);
+      int dl_subframe = subframe;
 
       if (ue->dlsch[subframe_DL(&ue->frame_parms,dl_subframe)&0x1][eNB_id][0]->harq_ack[dl_subframe].send_harq_status>0) { // we have downlink transmission
         ulsch->harq_processes[harq_pid]->O_ACK = 1;
       } else {
         ulsch->harq_processes[harq_pid]->O_ACK = 0;
       }
+      LOG_I(PHY,"DCI 0 Processing: dl_subframe %d send_harq_status Odd %d send_harq_status Even %d harq_pid %d O_ACK %d\n", dl_subframe,
+              ue->dlsch[0][eNB_id][0]->harq_ack[dl_subframe].send_harq_status,
+              ue->dlsch[1][eNB_id][0]->harq_ack[dl_subframe].send_harq_status,
+              harq_pid,
+              ulsch->harq_processes[harq_pid]->O_ACK);
+
     } else {
       if (ulsch->bundling)
         ulsch->harq_processes[harq_pid]->O_ACK = (dai == 3)? 0 : 1;
