@@ -671,8 +671,8 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
                     previous_subframe = 9;
                 else
                     previous_subframe = ((Ns>>1) - 1 )%9;
-                if(((Ns>>1)>0  && subframe_select(&ue->frame_parms,((Ns>>1)-1)) == SF_UL && ue->frame_parms.frame_type == TDD)   ||
-                    ((Ns>>1)==0 && subframe_select(&ue->frame_parms,9) == SF_UL && ue->frame_parms.frame_type == TDD)    )
+
+                if((subframe_select(&ue->frame_parms,previous_subframe) == SF_UL))
                 {
 
                     multadd_complex_vector_real_scalar(dl_ch_prev,328,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
