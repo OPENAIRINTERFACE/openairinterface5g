@@ -754,8 +754,7 @@ void *UE_thread(void *arg) {
                                 UE->rx_offset < 10*UE->frame_parms.samples_per_tti )
                             UE->rx_offset_diff = 1;
 
-                        LOG_I(PHY,"AbsSubframe %d.%d SET rx_off_diff to %d rx_offset %d \n",proc->frame_rx,sub_frame,UE->rx_offset_diff,UE->rx_offset);
-
+                        LOG_D(PHY,"AbsSubframe %d.%d SET rx_off_diff to %d rx_offset %d \n",proc->frame_rx,sub_frame,UE->rx_offset_diff,UE->rx_offset);
                         readBlockSize=UE->frame_parms.samples_per_tti -
                                       UE->frame_parms.ofdm_symbol_size -
                                       UE->frame_parms.nb_prefix_samples0 -

@@ -154,7 +154,7 @@ int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_ord
 
   nsymb = (frame_parms->Ncp==NORMAL) ? 14 : 12;
 
-  //printf("adjust_G2 : symbol %d, subframe %d\n",symbol,subframe);
+  //      printf("adjust_G2 : symbol %d, subframe %d\n",symbol,subframe);
   if ((subframe!=0) && (subframe!=5) && (subframe!=6))  // if not PBCH/SSS or SSS
     return(0);
 
@@ -234,7 +234,7 @@ int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_ord
     }
   }
 
-  //printf("re_pbch_sss %d\n",re_pbch_sss);
+  //  printf("re_pbch_sss %d\n",re_pbch_sss);
   return(re_pbch_sss);
 }
 

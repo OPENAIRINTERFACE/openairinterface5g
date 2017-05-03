@@ -166,7 +166,7 @@ int _do_pss_sss_extract(PHY_VARS_UE *ue,
 
   int32_t **rxdataF;
 
-  LOG_I(PHY,"do_pss_sss_extract subframe %d \n",subframe);
+  //LOG_I(PHY,"do_pss_sss_extract subframe %d \n",subframe);
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
 	  if (frame_parms->frame_type == FDD) {

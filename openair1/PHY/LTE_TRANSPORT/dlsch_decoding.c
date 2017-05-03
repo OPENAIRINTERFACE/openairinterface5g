@@ -644,19 +644,6 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     //LOG_I(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
     //    phy_vars_ue->Mod_id, frame, subframe, harq_pid,harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs,Kr,r,harq_process->round);
 
-
-    if(0){// (harq_process->nb_rb==25 && r==3 && harq_process->round==0 ) {
-          write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
-          write_output("rxdataF0.m"    , "rxdataF0", &phy_vars_ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[0][0],14*frame_parms->ofdm_symbol_size,1,1);
-          write_output("dl_ch_estimates_ext00.m", "dl_ch_estimates_ext00", &phy_vars_ue->pdsch_vars[subframe&0x1][0]->dl_ch_estimates_ext[0][0],14*frame_parms->N_RB_DL*12,1,1);
-          write_output("rxdataF_comp00.m","rxdataF_comp00",              &phy_vars_ue->pdsch_vars[subframe&0x1][0]->rxdataF_comp0[0][0],14*frame_parms->N_RB_DL*12,1,1);
-          write_output("magDLFirst.m", "magDLFirst", &phy_vars_ue->pdsch_vars[subframe&0x1][0]->dl_ch_mag0[0][0],14*frame_parms->N_RB_DL*12,1,1);
-          write_output("magDLSecond.m", "magDLSecond", &phy_vars_ue->pdsch_vars[subframe&0x1][0]->dl_ch_magb0[0][0],14*frame_parms->N_RB_DL*12,1,1);
-
-            AssertFatal (0,"number of soft bits %d nb_rb %d",G,frame_parms->N_RB_DL);
-    }
-
-
     dlsch->harq_ack[subframe].ack = 0;
     dlsch->harq_ack[subframe].harq_id = harq_pid;
     dlsch->harq_ack[subframe].send_harq_status = 1;
@@ -671,7 +658,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     }
     if(is_crnti)
     {
-    LOG_I(PHY,"[UE %d] DLSCH: Setting NACK for subframe %d (pid %d, pid status %d, round %d/Max %d, TBS %d)\n",
+    LOG_D(PHY,"[UE %d] DLSCH: Setting NACK for subframe %d (pid %d, pid status %d, round %d/Max %d, TBS %d)\n",
                phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->status,harq_process->round,dlsch->Mdlharq,harq_process->TBS);
     }
 
@@ -680,16 +667,6 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 
       //LOG_I(PHY,"[UE %d] DLSCH: Setting ACK for subframe %d TBS %d harq_process->mcs %d harq_process->nb_rb %d\n",
                    //phy_vars_ue->Mod_id,subframe,harq_process->TBS,harq_process->mcs,harq_process->nb_rb);
-
-      if(0){// (harq_process->mcs==28 && (subframe ==5 || subframe==0)) {
-                write_output("decoder_llr_ok.m","decllr_ok",dlsch_llr,G,1,0);
-                write_output("rxdataF0_ok.m"    , "rxdataF0_ok", &phy_vars_ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[0][0],14*frame_parms->ofdm_symbol_size,1,1);
-                write_output("dl_ch_estimates_ext00.m", "dl_ch_estimates_ext00_ok", &phy_vars_ue->pdsch_vars[subframe&0x1][0]->dl_ch_estimates_ext[0][0],14*frame_parms->N_RB_DL*12,1,1);
-                write_output("rxdataF_comp00_ok.m","rxdataF_comp00_ok",              &phy_vars_ue->pdsch_vars[subframe&0x1][0]->rxdataF_comp0[0][0],14*frame_parms->N_RB_DL*12,1,1);
-                write_output("magDLFirst_ok.m", "magDLFirst_ok", &phy_vars_ue->pdsch_vars[subframe&0x1][0]->dl_ch_mag0[0][0],14*frame_parms->N_RB_DL*12,1,1);
-                write_output("magDLSecond_ok.m", "magDLSecond_ok", &phy_vars_ue->pdsch_vars[subframe&0x1][0]->dl_ch_magb0[0][0],14*frame_parms->N_RB_DL*12,1,1);
-                AssertFatal (0,"number of soft bits %d",G);
-      }
 
     harq_process->status = SCH_IDLE;
     harq_process->round  = 0;
@@ -701,7 +678,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 
     if(is_crnti)
     {
-    LOG_I(PHY,"[UE %d] DLSCH: Setting ACK for subframe %d (pid %d, round %d, TBS %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round,harq_process->TBS);
+    LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for subframe %d (pid %d, round %d, TBS %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round,harq_process->TBS);
     }
     //LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for subframe %d (pid %d, round %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round);
 

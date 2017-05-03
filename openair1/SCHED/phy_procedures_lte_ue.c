@@ -453,20 +453,14 @@ void compute_cqi_ri_resources(PHY_VARS_UE *ue,
                               uint8_t cqi_status,
                               uint8_t ri_status)
 {
-    PHY_MEASUREMENTS *meas = &ue->measurements;
-    uint8_t transmission_mode = ue->transmission_mode[eNB_id];
+    //PHY_MEASUREMENTS *meas = &ue->measurements;
+    //uint8_t transmission_mode = ue->transmission_mode[eNB_id];
 
 
-    LOG_I(PHY,"compute_cqi_ri_resources O_RI %d O %d uci format %d \n",ulsch->O_RI,ulsch->O,ulsch->uci_format);
+    //LOG_I(PHY,"compute_cqi_ri_resources O_RI %d O %d uci format %d \n",ulsch->O_RI,ulsch->O,ulsch->uci_format);
     if (cqi_status == 1 || ri_status == 1)
     {
         ulsch->O = 4;
-    }
-    else
-    {
-        //ulsch->O_RI = 0;
-        //ulsch->O                                   = 0;
-        //ulsch->uci_format                          = HLC_subband_cqi_nopmi;
     }
 }
 
@@ -1408,8 +1402,8 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
         ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK);
     }
 
-//#ifdef DEBUG_PHY_PROC
-        LOG_I(PHY,
+#ifdef DEBUG_PHY_PROC
+        LOG_D(PHY,
               "[UE  %d][PUSCH %d] AbsSubframe %d.%d Generating PUSCH : first_rb %d, nb_rb %d, round %d, mcs %d, rv %d, "
               "cyclic_shift %d (cyclic_shift_common %d,n_DMRS2 %d,n_PRS %d), ACK (%d,%d), O_ACK %d, bundling %d, Nbundled %d, CQI %d, RI %d\n",
 	  Mod_id,harq_pid,frame_tx%1024,subframe_tx,
@@ -1428,7 +1422,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
 	  ue->ulsch[eNB_id]->bundling, Nbundled,
 	  cqi_status,
 	  ri_status);
-//#endif
+#endif
     
     
     
@@ -1663,20 +1657,19 @@ void ue_srs_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8
 
 int16_t get_pucch2_cqi(PHY_VARS_UE *ue,int eNB_id,int *len) {
 
-
   if ((ue->transmission_mode[eNB_id]<4)||
       (ue->transmission_mode[eNB_id]==7)) { // Mode 1-0 feedback
     // 4-bit CQI message
-	  LOG_I(PHY,"compute CQI value, TM %d, length 4, Cqi Avg %d, value %d \n", ue->transmission_mode[eNB_id],
+	  /*LOG_I(PHY,"compute CQI value, TM %d, length 4, Cqi Avg %d, value %d \n", ue->transmission_mode[eNB_id],
 			  ue->measurements.wideband_cqi_avg[eNB_id],
 			  sinr2cqi((double)ue->measurements.wideband_cqi_avg[eNB_id],
-			            ue->transmission_mode[eNB_id]));
+			            ue->transmission_mode[eNB_id]));*/
     *len=4;
     return(sinr2cqi((double)ue->measurements.wideband_cqi_avg[eNB_id],
 		    ue->transmission_mode[eNB_id]));
   }
   else { // Mode 1-1 feedback, later
-	  LOG_I(PHY,"compute CQI value, TM %d, length 0, Cqi Avg 0 \n", ue->transmission_mode[eNB_id]);
+	  //LOG_I(PHY,"compute CQI value, TM %d, length 0, Cqi Avg 0 \n", ue->transmission_mode[eNB_id]);
     *len=0;
     // 2-antenna ports RI=1, 6 bits (2 PMI, 4 CQI)
 
@@ -1792,7 +1785,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 
   if(ue->ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag)
   {
-      LOG_I(PHY,"PUSCH is programmed on this subframe [pid %d] AbsSuframe %d.%d ==> Skip PUCCH transmission \n",harq_pid,frame_tx,subframe_tx);
+      LOG_D(PHY,"PUSCH is programmed on this subframe [pid %d] AbsSuframe %d.%d ==> Skip PUCCH transmission \n",harq_pid,frame_tx,subframe_tx);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PUCCH,VCD_FUNCTION_OUT);
       return;
   }
@@ -1860,7 +1853,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   // if nothing to report ==> exit function
   if( (nb_cw==0) && (SR_payload==0) && (cqi_status==0) && (ri_status==0) )
   {
-      LOG_I(PHY,"PUCCH No feedback AbsSubframe %d.%d SR_payload %d nb_cw %d pucch_ack_payload[0] %d pucch_ack_payload[1] %d cqi_status %d Return \n",
+      LOG_D(PHY,"PUCCH No feedback AbsSubframe %d.%d SR_payload %d nb_cw %d pucch_ack_payload[0] %d pucch_ack_payload[1] %d cqi_status %d Return \n",
             frame_tx%1024, subframe_tx, SR_payload, nb_cw, pucch_ack_payload[0], pucch_ack_payload[1], cqi_status);
       return;
   }
@@ -1885,7 +1878,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
                   (uint8_t *)&pucch_payload,
                   &len);
 
-  LOG_I(PHY,"PUCCH feedback AbsSubframe %d.%d SR %d NbCW %d (%d %d) AckNack %d.%d CQI %d RI %d format %d pucch_resource %d pucch_payload %d %d \n",
+  LOG_D(PHY,"PUCCH feedback AbsSubframe %d.%d SR %d NbCW %d (%d %d) AckNack %d.%d CQI %d RI %d format %d pucch_resource %d pucch_payload %d %d \n",
           frame_tx%1024, subframe_tx, SR_payload, nb_cw, ack_status_cw0, ack_status_cw1, pucch_ack_payload[0], pucch_ack_payload[1], cqi_status, ri_status, format, pucch_resource,pucch_payload[0],pucch_payload[1]);
 
 
@@ -1921,7 +1914,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 #endif
       if(format == pucch_format1)
       {
-          LOG_I(PHY,"[UE  %d][SR %x] AbsSubframe %d.%d Generating PUCCH 1 (SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d\n",
+          LOG_D(PHY,"[UE  %d][SR %x] AbsSubframe %d.%d Generating PUCCH 1 (SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d\n",
                   Mod_id,
                   ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][0]->rnti,
                   frame_tx%1024, subframe_tx,
@@ -1933,7 +1926,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
       else
       {
           if (SR_payload>0) {
-              LOG_I(PHY,"[UE  %d][SR %x] AbsSubFrame %d.%d Generating PUCCH %s payload %d,%d (with SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d, amp %d\n",
+              LOG_D(PHY,"[UE  %d][SR %x] AbsSubFrame %d.%d Generating PUCCH %s payload %d,%d (with SR for PUSCH), an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, Po_PUCCH %d, amp %d\n",
                       Mod_id,
                       ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][0]->rnti,
                       frame_tx % 1024, subframe_tx,
@@ -1946,7 +1939,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
                               Po_PUCCH,
                               tx_amp);
           } else {
-              LOG_I(PHY,"[UE  %d][PDSCH %x] AbsSubFrame %d.%d rx_offset_diff: %d, Generating PUCCH %s, an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d, amp %d\n",
+              LOG_D(PHY,"[UE  %d][PDSCH %x] AbsSubFrame %d.%d rx_offset_diff: %d, Generating PUCCH %s, an_srs_simultanous %d, shorten_pucch %d, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d, amp %d\n",
                       Mod_id,
                       ue->dlsch[subframe_DL(&ue->frame_parms,proc->subframe_rx)&0x1][eNB_id][0]->rnti,
                       frame_tx%1024, subframe_tx,ue->rx_offset_diff,
@@ -3216,6 +3209,48 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
   } // is_pmch_subframe=true
 }
 
+void copy_harq_proc_struct(LTE_DL_UE_HARQ_t *harq_processes_dest, LTE_DL_UE_HARQ_t *current_harq_processes)
+{
+      harq_processes_dest->B              = current_harq_processes->B              ;
+      harq_processes_dest->C              = current_harq_processes->C              ;
+      harq_processes_dest->Cminus         = current_harq_processes->Cminus         ;
+      harq_processes_dest->Cplus          = current_harq_processes->Cplus          ;
+      harq_processes_dest->DCINdi         = current_harq_processes->DCINdi         ;
+      harq_processes_dest->F              = current_harq_processes->F              ;
+      harq_processes_dest->G              = current_harq_processes->G              ;
+      harq_processes_dest->Kminus         = current_harq_processes->Kminus         ;
+      harq_processes_dest->Kplus          = current_harq_processes->Kplus          ;
+      harq_processes_dest->Nl             = current_harq_processes->Nl             ;
+      harq_processes_dest->Qm             = current_harq_processes->Qm             ;
+      harq_processes_dest->TBS            = current_harq_processes->TBS            ;
+      harq_processes_dest->b              = current_harq_processes->b              ;
+      harq_processes_dest->codeword       = current_harq_processes->codeword       ;
+      harq_processes_dest->delta_PUCCH    = current_harq_processes->delta_PUCCH    ;
+      harq_processes_dest->dl_power_off   = current_harq_processes->dl_power_off   ;
+      harq_processes_dest->first_tx       = current_harq_processes->first_tx       ;
+      harq_processes_dest->mcs            = current_harq_processes->mcs            ;
+      harq_processes_dest->mimo_mode      = current_harq_processes->mimo_mode      ;
+      harq_processes_dest->nb_rb          = current_harq_processes->nb_rb          ;
+      harq_processes_dest->pmi_alloc      = current_harq_processes->pmi_alloc      ;
+      harq_processes_dest->rb_alloc_even[0]  = current_harq_processes->rb_alloc_even[0] ;
+      harq_processes_dest->rb_alloc_even[1]  = current_harq_processes->rb_alloc_even[1] ;
+      harq_processes_dest->rb_alloc_even[2]  = current_harq_processes->rb_alloc_even[2] ;
+      harq_processes_dest->rb_alloc_even[3]  = current_harq_processes->rb_alloc_even[3] ;
+      harq_processes_dest->rb_alloc_odd[0]  = current_harq_processes->rb_alloc_odd[0]  ;
+      harq_processes_dest->rb_alloc_odd[1]  = current_harq_processes->rb_alloc_odd[1]  ;
+      harq_processes_dest->rb_alloc_odd[2]  = current_harq_processes->rb_alloc_odd[2]  ;
+      harq_processes_dest->rb_alloc_odd[3]  = current_harq_processes->rb_alloc_odd[3]  ;
+      harq_processes_dest->round          = current_harq_processes->round          ;
+      harq_processes_dest->rvidx          = current_harq_processes->rvidx          ;
+      harq_processes_dest->status         = current_harq_processes->status         ;
+      harq_processes_dest->vrb_type       = current_harq_processes->vrb_type       ;
+}
+
+void copy_ack_struct(harq_status_t *harq_ack_dest, harq_status_t *current_harq_ack)
+{
+    memcpy(harq_ack_dest, current_harq_ack, sizeof(harq_status_t));
+}
+
 void ue_pdsch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, int eNB_id, PDSCH_t pdsch, LTE_UE_DLSCH_t *dlsch0, LTE_UE_DLSCH_t *dlsch1, int s0, int s1, int abstraction_flag) {
 
   int subframe_rx = proc->subframe_rx;
@@ -3752,8 +3787,8 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
              ue->frame_parms.samples_per_tti * 4));
 
   // start timers
-  printf("\n");
-  LOG_I(PHY," ****** start RX-Chain for AbsSubframe %d.%d ******  \n", frame_rx%1024, subframe_rx);
+
+  LOG_D(PHY," ****** start RX-Chain for AbsSubframe %d.%d ******  \n", frame_rx%1024, subframe_rx);
   start_meas(&ue->phy_proc_rx[subframe_rx&0x1]);
   start_meas(&ue->generic_stat);
 
@@ -3808,8 +3843,8 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     l=1;
   }
 
-  LOG_I(PHY," ------ slot 0 Processing: AbsSubframe %d.%d ------  \n", frame_rx%1024, subframe_rx);
-  LOG_I(PHY," ------  --> FFT/ChannelEst/PDCCH slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, subframe_rx);
+  LOG_D(PHY," ------ slot 0 Processing: AbsSubframe %d.%d ------  \n", frame_rx%1024, subframe_rx);
+  LOG_D(PHY," ------  --> FFT/ChannelEst/PDCCH slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, subframe_rx);
   for (; l<=l2; l++) {
     if (abstraction_flag == 0) {
       start_meas(&ue->ofdm_demod_stats);
@@ -3827,7 +3862,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     ue_measurement_procedures(l-1,ue,proc,eNB_id,(subframe_rx<<1),abstraction_flag,mode);
     if ((l==pilot1) ||
 	((pmch_flag==1)&(l==l2)))  {
-      LOG_I(PHY,"[UE  %d] Frame %d: Calling pdcch procedures (eNB %d)\n",ue->Mod_id,frame_rx,eNB_id);
+      LOG_D(PHY,"[UE  %d] Frame %d: Calling pdcch procedures (eNB %d)\n",ue->Mod_id,frame_rx,eNB_id);
       
       if (ue_pdcch_procedures(eNB_id,ue,proc,abstraction_flag) == -1) {
 	LOG_E(PHY,"[UE  %d] Frame %d, subframe %d: Error in pdcch procedures\n",ue->Mod_id,frame_rx,subframe_rx);
@@ -3938,8 +3973,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 	stop_meas(&ue->ofdm_demod_stats);
       }
       
-      LOG_I(PHY," Measurement slot 1: AbsSubframe %d.%d ------  \n", frame_rx%1024, subframe_rx);
-
       ue_measurement_procedures(l-1,ue,proc,eNB_id,1+(subframe_rx<<1),abstraction_flag,mode);
       
     } // for l=1..l2
@@ -4097,6 +4130,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   }
 
   // duplicate harq structure
+
   uint8_t          current_harq_pid        = ue->dlsch[subframe_rx&0x1][eNB_id][0]->current_harq_pid;
   LTE_DL_UE_HARQ_t *current_harq_processes = ue->dlsch[subframe_rx&0x1][eNB_id][0]->harq_processes[current_harq_pid];
   LTE_DL_UE_HARQ_t *harq_processes_dest    = ue->dlsch[(subframe_rx+1)&0x1][eNB_id][0]->harq_processes[current_harq_pid];
@@ -4104,13 +4138,8 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   harq_status_t *current_harq_ack = &ue->dlsch[subframe_rx&0x1][eNB_id][0]->harq_ack[subframe_rx];
   harq_status_t *harq_ack_dest    = &ue->dlsch[(subframe_rx+1)&0x1][eNB_id][0]->harq_ack[subframe_rx];
 
-  memcpy(harq_processes_dest, current_harq_processes, sizeof(LTE_DL_UE_HARQ_t));
-  memcpy(harq_ack_dest, current_harq_ack, sizeof(harq_status_t));
-
-  //LOG_I(PHY,"AbsSubframe %d.%d CurrentHarqProcess.status %d DestHarqProcess.status %d\n",frame_rx%1024,subframe_rx,current_harq_processes->status,harq_processes_dest->status);
-  //LOG_I(PHY,"AbsSubframe %d.%d CurrentHarqProcess.round %d DestHarqProcess.round %d\n",frame_rx%1024,subframe_rx,current_harq_processes->round,harq_processes_dest->round);
-  //LOG_I(PHY,"AbsSubframe %d.%d CurrentHarqProcess.delta_PUCCH %d DestHarqProcess.delta_PUCCH %d\n",frame_rx%1024,subframe_rx,current_harq_processes->delta_PUCCH,harq_processes_dest->delta_PUCCH);
-  //LOG_I(PHY,"AbsSubframe %d.%d CurrentHarqProcess.rvidx %d DestHarqProcess.rvidx %d\n",frame_rx%1024,subframe_rx,current_harq_processes->rvidx,harq_processes_dest->rvidx);
+  copy_harq_proc_struct(harq_processes_dest, current_harq_processes);
+  copy_ack_struct(harq_ack_dest, current_harq_ack);
 
   if (subframe_rx==9) {
     if (frame_rx % 10 == 0) {

@@ -23,6 +23,7 @@
 #include <string.h>
 #endif
 #include "defs.h"
+#include "SCHED/defs.h"
 #include "PHY/defs.h"
 #include "filt96_32.h"
 #include "T.h"
@@ -642,7 +643,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
               //      dl_ch_prev = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][(4-ue->frame_parms.Ncp)*(ue->frame_parms.ofdm_symbol_size)];
           if(((Ns>>1)!=0) || ( ((Ns>>1)==0) && interpolateS11S12))
           {
-                  LOG_I(PHY,"Interpolate s11-->s0 to get s12 and s13  Ns %d \n", Ns);
+                  //LOG_I(PHY,"Interpolate s11-->s0 to get s12 and s13  Ns %d \n", Ns);
                   dl_ch_prev = (int16_t *)&dl_ch_estimates_previous[(p<<1)+aarx][pilot3*(ue->frame_parms.ofdm_symbol_size)];
 
                   multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
@@ -657,14 +658,8 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
             else if (symbol == pilot1) {
               dl_ch_prev = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][0];
 
-              LOG_I(PHY,"Interpolate s0-->s4 to get s1 s2 and s3 Ns %d \n", Ns);
+              //LOG_I(PHY,"Interpolate s0-->s4 to get s1 s2 and s3 Ns %d \n", Ns);
               if (ue->frame_parms.Ncp==0) {// pilot spacing 4 symbols (1/4,1/2,3/4 combination)
-
-
-                 //subframe_select(ue->frame_parms,((Ns>>1)-1)) == SF_UL
-                //if((Ns>>1) != 5)
-
-
 
                 uint8_t previous_subframe;
                 if(Ns>>1 == 0)
@@ -734,7 +729,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
 
               if((ue->rx_offset_diff !=0) && ((Ns>>1) == 9))
               {
-                  LOG_I(PHY,"Extrapolate s7-->s11 to get s12 and s13 Ns %d\n", Ns);
+                  //LOG_I(PHY,"Extrapolate s7-->s11 to get s12 and s13 Ns %d\n", Ns);
                   interpolateS11S12 = 0;
                   //LOG_E(PHY,"Interpolate s7--s11 s12 s13 pilot 3 Ns %d l %d symbol %d \n", Ns, l, symbol);
                   int16_t *dlChEst_ofdm11 = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][pilot3*(ue->frame_parms.ofdm_symbol_size)];
@@ -765,8 +760,6 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
 
             }
         }
-
-//      }
 
     }
   }

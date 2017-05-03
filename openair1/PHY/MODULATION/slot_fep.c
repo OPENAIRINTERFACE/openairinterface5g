@@ -117,8 +117,6 @@ int slot_fep(PHY_VARS_UE *ue,
 
     if (l==0) {
 
-      LOG_I(PHY,"FFT odfm symbol %d Slot %d \n",symbol,Ns);
-
       if (rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
         memcpy((short *)&common_vars->rxdata[aa][frame_length_samples],
                (short *)&common_vars->rxdata[aa][0],
