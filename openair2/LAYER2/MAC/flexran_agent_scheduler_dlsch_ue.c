@@ -284,7 +284,7 @@ void _assign_rbs_required (module_id_t Mod_id,
           nb_rbs_required[CC_id][UE_id] += min_rb_unit[CC_id];
 
           if (nb_rbs_required[CC_id][UE_id] > nb_rbs_allowed_slice[CC_id][slice_id]) {
-            TBS = mac_xface->get_TBS_DL(flexran_get_ue_wcqi(Mod_id, UE_id), nb_rbs_allowed_slice[CC_id][slice_id]);
+            TBS = mac_xface->get_TBS_DL(cqi_to_mcs[flexran_get_ue_wcqi(Mod_id, UE_id)], nb_rbs_allowed_slice[CC_id][slice_id]);
             nb_rbs_required[CC_id][UE_id] = nb_rbs_allowed_slice[CC_id][slice_id];
             break;
           }
