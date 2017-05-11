@@ -228,7 +228,7 @@ void rlc_am_v9_3_0_test_read_write_bit_field()
   uint8_t*        byte_pos_read      = g_buffer;
   uint16_t        read_value;
 
-  memset (g_buffer, 0, 1024);
+  memset (g_buffer, 0, sizeof(g_buffer));
   // byte 0
   rlc_am_write8_bit_field(&byte_pos_write, &bit_pos_write, 1, 1);
   rlc_am_write8_bit_field(&byte_pos_write, &bit_pos_write, 1, 0);
