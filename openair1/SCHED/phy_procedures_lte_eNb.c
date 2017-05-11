@@ -2272,7 +2272,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
 
         if ((fp->frame_type==FDD) ||
           (bundling_flag==bundling)    ||
-          ((fp->frame_type==TDD)&&(fp->tdd_config==1)&&((subframe!=2)||(subframe!=7)))) {
+          ((fp->frame_type==TDD)&&(fp->tdd_config==1)&&((subframe!=2)&&(subframe!=7)))) {
           format = pucch_format1a;
         } else {
           format = pucch_format1b;
