@@ -284,8 +284,12 @@ void Channel_Inst(int node_id,int port,double **s_re[MAX_eNB+MAX_UE],double **s_
       u2e_t[UE_id][eNB_id]->next_slot=&next_slot;
       u2e_t[UE_id][eNB_id]->abstraction_flag=&abstraction_flag;
       u2e_t[UE_id][eNB_id]->frame_parms=frame_parms;
-      u2e_t[UE_id][eNB_id]->tx_data[3]=tx[eNB_id][3];
-      u2e_t[UE_id][eNB_id]->rx_data[3]=rx[NB_eNB_INST+UE_id][3];
+
+      for (int i=0;i<3;i++)
+      {
+          u2e_t[UE_id][eNB_id]->tx_data[i]=tx[eNB_id][i];
+          u2e_t[UE_id][eNB_id]->rx_data[i]=rx[NB_eNB_INST+UE_id][i];
+      }
 
       if(pthread_cond_init (&downlink_cond[eNB_id][UE_id], NULL)) exit(1);
 
@@ -316,8 +320,11 @@ void Channel_Inst(int node_id,int port,double **s_re[MAX_eNB+MAX_UE],double **s_
       e2u_t[eNB_id][UE_id]->next_slot=&next_slot;
       e2u_t[eNB_id][UE_id]->abstraction_flag=&abstraction_flag;
       e2u_t[eNB_id][UE_id]->frame_parms=frame_parms;
-      e2u_t[eNB_id][UE_id]->tx_data[3]=tx[NB_eNB_INST+UE_id][3];
-      e2u_t[eNB_id][UE_id]->rx_data[3]=rx[eNB_id][3];
+      for (int i=0;i<3;i++)
+      {
+          e2u_t[eNB_id][UE_id]->tx_data[i]=tx[NB_eNB_INST+UE_id][i];
+          e2u_t[eNB_id][UE_id]->rx_data[i]=rx[eNB_id][i];
+      }
 
       if(pthread_cond_init (&uplink_cond[UE_id][eNB_id], NULL)) exit(1);
 
