@@ -71,9 +71,14 @@
 int phy_stats_exist(module_id_t Mod_id, int rnti)
 {
   int CC_id;
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
-    if (mac_xface->get_eNB_UE_stats(Mod_id, CC_id, rnti) == NULL)
-      return 0;
+  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++){
+    int UE_id = find_UE_id(Mod_id,rnti);  
+    if (UE_id == -1) 
+      continue;   //skip if UE is not valid
+    if (CC_id == UE_PCCID(Mod_id,UE_id))  //get stats for only the CCs which the UE belongs to
+      if (mac_xface->get_eNB_UE_stats(Mod_id, CC_id, rnti) == NULL)
+        return 0;
+  }
   return 1;
 }
 

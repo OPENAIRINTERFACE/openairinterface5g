@@ -520,25 +520,27 @@ schedule_ue_spec(
         //  mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
         continue_flag=1;
       }
-      
-      switch(mac_xface->get_transmission_mode(module_idP,CC_id,rnti)){
-      case 1:
-      case 2:
-      case 7:
-	aggregation = get_aggregation(get_bw_index(module_idP,CC_id), 
+
+      if (continue_flag != 1){
+        switch(mac_xface->get_transmission_mode(module_idP,CC_id,rnti)){
+        case 1:
+        case 2:
+        case 7:
+	  aggregation = get_aggregation(get_bw_index(module_idP,CC_id), 
 				      eNB_UE_stats->DL_cqi[0],
 				      format1);
-	break;
-      case 3:
-	aggregation = get_aggregation(get_bw_index(module_idP,CC_id), 
+	  break;
+        case 3:
+	  aggregation = get_aggregation(get_bw_index(module_idP,CC_id), 
 				      eNB_UE_stats->DL_cqi[0],
 				      format2A);
-	break;
-      default:
-	LOG_W(MAC,"Unsupported transmission mode %d\n", mac_xface->get_transmission_mode(module_idP,CC_id,rnti));
-	aggregation = 2;
-      }
-      
+	  break;
+        default:
+	  LOG_W(MAC,"Unsupported transmission mode %d\n", mac_xface->get_transmission_mode(module_idP,CC_id,rnti));
+	  aggregation = 2;
+        }
+      } /* if (continue_flag != 1 */
+
       if ((ue_sched_ctl->pre_nb_available_rbs[CC_id] == 0) ||  // no RBs allocated 
 	  CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,aggregation,rnti)
 	  ) {
