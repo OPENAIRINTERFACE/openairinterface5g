@@ -499,18 +499,18 @@ set(HWLIB_EXMIMO_SOURCE
 add_library(oai_exmimodevif MODULE ${HWLIB_EXMIMO_SOURCE} )
 
 include_directories("${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/")
-set (option_HWUSRPLIB_lib "-l uhd")
 set(HWLIB_USRP_SOURCE
   ${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/usrp_lib.cpp
   )
 add_library(oai_usrpdevif MODULE ${HWLIB_USRP_SOURCE} )
+target_link_libraries(oai_usrpdevif uhd)
 
 include_directories("${OPENAIR_TARGETS}/ARCH/BLADERF/USERSPACE/LIB/")
-set (option_HWBLADERFLIB_lib "-l bladerf")
 set(HWLIB_BLADERF_SOURCE
   ${OPENAIR_TARGETS}/ARCH/BLADERF/USERSPACE/LIB/bladerf_lib.c
   )
 add_library(oai_bladerfdevif MODULE ${HWLIB_BLADERF_SOURCE} )
+target_link_libraries(oai_bladerfdevif bladeRF)
 
 include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/")
 
@@ -518,6 +518,8 @@ set(HWLIB_LMSSDR_SOURCE
   ${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms_lib.cpp
   )
 add_library(oai_lmssdrdevif MODULE ${HWLIB_LMSSDR_SOURCE} )
+target_include_directories(oai_lmssdrdevif PRIVATE /usr/local/include/lime)
+target_link_libraries(oai_lmssdrdevif LimeSuite )
 
 include_directories("${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/")
 set(TPLIB_ETHERNET_SOURCE
@@ -528,70 +530,6 @@ set(TPLIB_ETHERNET_SOURCE
 add_library(oai_eth_transpro MODULE ${TPLIB_ETHERNET_SOURCE} )
 
 
-# RF devices / transport protocols settings
-######################################################################
-if (${RF_BOARD} STREQUAL "EXMIMO")
-  set(DRIVER2013)
-  include_directories ("${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/")
-  include_directories ("${OPENAIR_TARGETS}/ARCH/EXMIMO/DEFS/")
-  set(HW_SOURCE ${HW_SOURCE}
-    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c)
-#    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/gain_control.c)
-  set(option_HW_lib "-rdynamic -ldl")
-
-elseif (${RF_BOARD} STREQUAL "OAI_USRP")
-  include_directories("${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/")
-  include_directories("/opt/include/uhd")
-  set(HW_SOURCE ${HW_SOURCE}
-    ${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/usrp_lib.cpp)
-  LINK_DIRECTORIES("/opt/lib")
-  set(option_HW_lib "-luhd -rdynamic -ldl -lboost_system")
-
-elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
-  include_directories("${OPENAIR_TARGETS}/ARCH/BLADERF/USERSPACE/LIB/")
-  include_directories("${OPENAIR2_DIR}/UTIL/LOG")
-  include_directories("/usr/include")
-  set(HW_SOURCE ${HW_SOURCE}
-    ${OPENAIR_TARGETS}/ARCH/BLADERF/USERSPACE/LIB/bladerf_lib.c
-    )
-  LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
-
-  set(option_HW_lib "bladeRF -rdynamic -ldl")
-
-elseif (${RF_BOARD} STREQUAL "OAI_LMSSDR")
-  include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB")
-  include_directories("/usr/local/include/lime")
-  include_directories("/usr/include/lime")
-  LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
-  LINK_DIRECTORIES("/usr/local/lib")
-  LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/lmsSDR")
-  LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/lms7002m")
-  LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/Si5351C")
-  set(HW_SOURCE ${HW_SOURCE} ${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms_lib.cpp)
-  set(option_HW_lib "-lLimeSuite -rdynamic -ldl")
-
-elseif (${RF_BOARD} STREQUAL "CPRIGW")
-  set(HW_SOURCE ${HW_SOURCE}
-    ${OPENAIR_TARGETS}/ARCH/CPRIGW/USERSPACE/LIB/cprigw_lib.c
-    )
-  include_directories("${OPENAIR_TARGETS}/ARCH/CPRIGW/USERSPACE/LIB/")
-  set(option_HW_lib "-rdynamic dl")
-
-endif (${RF_BOARD} STREQUAL "EXMIMO")
-
-
-if (${TRANSP_PRO} STREQUAL "ETHERNET")
-
-  include_directories ("${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB")
-  set(TRANSPORT_SOURCE ${TRANSPORT_SOURCE}
-    ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.c
-    ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/eth_udp.c
-    ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/eth_raw.c
-    )
-  set(option_TP_lib "-rdynamic -ldl")
-
-
-endif (${TRANSP_PRO} STREQUAL "ETHERNET")
 ##########################################################
 
 include_directories ("${OPENAIR_TARGETS}/ARCH/COMMON")
@@ -1773,8 +1711,6 @@ add_executable(lte-softmodem
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${GTPU_need_ITTI}
-  ${HW_SOURCE}
-  ${TRANSPORT_SOURCE}
   ${RTAI_SOURCE}
   ${XFORMS_SOURCE}
   ${XFORMS_SOURCE_SOFTMODEM}
@@ -1787,7 +1723,7 @@ target_link_libraries (lte-softmodem -ldl
   -Wl,--end-group )
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
+target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
 target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem ${T_LIB})
 
@@ -1809,8 +1745,6 @@ add_executable(lte-softmodem-nos1
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR_DIR}/common/utils/system.c
-  ${HW_SOURCE}
-  ${TRANSPORT_SOURCE}
   ${RTAI_SOURCE}
   ${XFORMS_SOURCE}
   ${XFORMS_SOURCE_SOFTMODEM}
@@ -1822,7 +1756,7 @@ target_link_libraries (lte-softmodem-nos1
   -Wl,--end-group )
 
 target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
+target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}   ${XFORMS_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 ${T_LIB})
 
@@ -1835,8 +1769,6 @@ add_executable(rrh_gw
   ${OPENAIR_TARGETS}/RT/USER/UE_transport_IQ.c
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
-  ${HW_SOURCE}
-  ${TRANSPORT_SOURCE}
   ${T_SOURCE}
   )
 target_include_directories(rrh_gw PRIVATE  ${OPENAIR_DIR}/common/utils/itti)
@@ -1845,14 +1777,9 @@ target_link_libraries(rrh_gw
   UTIL LFDS
   -Wl,--end-group )
 target_link_libraries (rrh_gw rt pthread m )
-target_link_libraries (rrh_gw  ${option_HW_lib} ${option_TP_lib})
 target_link_libraries (rrh_gw ${LIB_LMS_LIBRARIES})
 target_link_libraries (rrh_gw ${T_LIB})
 
-Message("-- option_HW_lib=${option_HW_lib}")
-Message("-- HW_SOURCE=${HW_SOURCE}")
-Message("-- option_TP_lib=${option_TP_lib}")
-Message("-- TRANSPORT_SOURCE=${TRANSPORT_SOURCE}")
 
 # USIM process
 #################
@@ -1907,8 +1834,6 @@ add_executable(oaisim
   ${OPENAIR_DIR}/common/utils/system.c
   ${GTPU_need_ITTI}
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
-  ${HW_SOURCE}
-  ${TRANSPORT_SOURCE}
   ${XFORMS_SOURCE}
   ${T_SOURCE}
 )
@@ -1921,7 +1846,7 @@ target_link_libraries (oaisim
   -Wl,--end-group )
 
 target_link_libraries (oaisim ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
-target_link_libraries (oaisim pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${option_TP_lib}
+target_link_libraries (oaisim pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES} sctp 
   ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES})
 #Force link with forms, regardless XFORMS option
 target_link_libraries (oaisim forms)
@@ -1952,8 +1877,6 @@ add_executable(oaisim_nos1
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${OPENAIR_DIR}/common/utils/system.c
-  ${HW_SOURCE}
-  ${TRANSPORT_SOURCE}
   ${XFORMS_SOURCE}
   ${T_SOURCE}
 )
@@ -1964,7 +1887,7 @@ target_link_libraries (oaisim_nos1
   -Wl,--end-group )
 
 target_link_libraries (oaisim_nos1 ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
-target_link_libraries (oaisim_nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES}  ${option_HW_lib} ${option_TP_lib}
+target_link_libraries (oaisim_nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES}  
   ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
 #Force link with forms, regardless XFORMS option
 target_link_libraries (oaisim_nos1 forms)

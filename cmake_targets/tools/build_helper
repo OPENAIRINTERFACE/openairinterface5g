@@ -243,13 +243,28 @@ check_install_bladerf_driver(){
 		$SUDO add-apt-repository -y ppa:bladerf/bladerf
 		$SUDO apt-get update
 	fi
-	$SUDO apt-get install -y--allow-unauthenticated  bladerf libbladerf-dev
+	$SUDO apt-get install -y --allow-unauthenticated  bladerf libbladerf-dev
 	$SUDO apt-get install -y --allow-unauthenticated bladerf-firmware-fx3
 	$SUDO apt-get install -y --allow-unauthenticated bladerf-fpga-hostedx40	
 }
 
 flash_firmware_bladerf() {
 	$SUDO bladeRF-cli --flash-firmware /usr/share/Nuand/bladeRF/bladeRF_fw.img
+}
+
+check_install_lmssdr_driver(){
+	if ( [ -d "/usr/local/include/lime" ] &&
+             [ -f "/usr/local/include/lime/LimeSuite.h" ] )
+	then
+  		echo_success "Found lmssdr drivers and tools installed from source"
+        else
+                echo_error "lmssdr support implies installing lmssdr drivers and tools" \
+                           " from sources. check:"
+                echo_info "https://open-cells.com/index.php/2017/05/10/limesdr-installation/"
+                echo_fatal "Cannot compile lmssdr device" 
+	fi
+
+
 }
 
 check_install_additional_tools (){
