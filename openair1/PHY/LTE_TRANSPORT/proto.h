@@ -1333,7 +1333,8 @@ int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
   @returns 0 on success
 */
 int pss_only_extract(PHY_VARS_UE *phy_vars_ue,
-                    int32_t pss_ext[4][72]);
+                    int32_t pss_ext[4][72],
+                    uint8_t subframe);
 
 /*! \brief Extract only SSS resource elements
   @param phy_vars_ue Pointer to UE variables
@@ -1341,7 +1342,8 @@ int pss_only_extract(PHY_VARS_UE *phy_vars_ue,
   @returns 0 on success
 */
 int sss_only_extract(PHY_VARS_UE *phy_vars_ue,
-                    int32_t sss_ext[4][72]);
+                    int32_t sss_ext[4][72],
+                    uint8_t subframe);
 
 /*! \brief Performs detection of SSS to find cell ID and other framing parameters (FDD/TDD, normal/extended prefix)
   @param phy_vars_ue Pointer to UE variables

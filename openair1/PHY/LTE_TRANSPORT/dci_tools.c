@@ -8013,13 +8013,20 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     ulsch->bundling = 1-AckNackFBMode;
 
     if (frame_parms->frame_type == FDD) {
-      int dl_subframe = (subframe<4) ? (subframe+6) : (subframe-4);
+      //int dl_subframe = (subframe<4) ? (subframe+6) : (subframe-4);
+      int dl_subframe = subframe;
 
       if (ue->dlsch[dl_subframe&0x1][eNB_id][0]->harq_ack[dl_subframe].send_harq_status>0) { // we have downlink transmission
         ulsch->harq_processes[harq_pid]->O_ACK = 1;
       } else {
         ulsch->harq_processes[harq_pid]->O_ACK = 0;
       }
+      /*LOG_I(PHY,"DCI 0 Processing: dl_subframe %d send_harq_status Odd %d send_harq_status Even %d harq_pid %d O_ACK %d\n", dl_subframe,
+              ue->dlsch[0][eNB_id][0]->harq_ack[dl_subframe].send_harq_status,
+              ue->dlsch[1][eNB_id][0]->harq_ack[dl_subframe].send_harq_status,
+              harq_pid,
+              ulsch->harq_processes[harq_pid]->O_ACK);*/
+
     } else {
       if (ulsch->bundling)
         ulsch->harq_processes[harq_pid]->O_ACK = (dai == 3)? 0 : 1;
@@ -8031,10 +8038,16 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     dlsch[0]->harq_ack[subframe].vDAI_UL = dai+1;
 
-    LOG_D(PHY, "[PUSCH %d] Format0 DCI %s, CQI_req=%d, cshift=%d, TPC=%d, DAI=%d, vDAI_UL[sf#%d]=%d, NDI=%d, MCS=%d, RBalloc=%d, first_rb=%d, harq_pid=%d, nb_rb=%d, subframe_scheduling_flag=%d\n",
+
+    /*LOG_I(PHY, "[PUSCH %d] Format0 DCI %s, CQI_req=%d, cshift=%d, TPC=%d, DAI=%d, vDAI_UL[sf#%d]=%d, NDI=%d, MCS=%d, RBalloc=%d, first_rb=%d, harq_pid=%d, nb_rb=%d, subframe_scheduling_flag=%d"
+            "   ulsch->bundling %d, O_ACK %d \n",
         harq_pid,
         (frame_parms->frame_type == TDD? "TDD" : "FDD"),
-        cqi_req, cshift, TPC, dai, subframe, dlsch[0]->harq_ack[subframe].vDAI_UL, ndi, mcs, rballoc, ulsch->harq_processes[harq_pid]->first_rb, harq_pid, ulsch->harq_processes[harq_pid]->nb_rb, ulsch->harq_processes[harq_pid]->subframe_scheduling_flag);
+        cqi_req, cshift, TPC, dai, subframe, dlsch[0]->harq_ack[subframe].vDAI_UL, ndi, mcs, rballoc,
+        ulsch->harq_processes[harq_pid]->first_rb, harq_pid, ulsch->harq_processes[harq_pid]->nb_rb,
+        ulsch->harq_processes[harq_pid]->subframe_scheduling_flag,
+        ulsch->bundling,
+        ulsch->harq_processes[harq_pid]->O_ACK);*/
 
     ulsch->beta_offset_cqi_times8                = beta_cqi[ue->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index];//18;
     ulsch->beta_offset_ri_times8                 = beta_ri[ue->pusch_config_dedicated[eNB_id].betaOffset_RI_Index];//10;

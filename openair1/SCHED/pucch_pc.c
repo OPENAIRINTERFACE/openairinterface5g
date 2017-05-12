@@ -31,6 +31,7 @@
  */
 
 #include "PHY/defs.h"
+#include "SCHED/defs.h"
 #include "PHY/LTE_TRANSPORT/proto.h"
 #include "PHY/extern.h"
 
