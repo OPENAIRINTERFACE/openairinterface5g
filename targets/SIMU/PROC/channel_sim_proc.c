@@ -183,8 +183,13 @@ void do_DL_sig_channel_T(void *param)
   next_slot=(cthread->next_slot);
   abstraction_flag=*(cthread->abstraction_flag);
   thread_id=(cthread->thread_id);
-  tx_data[3]=cthread->tx_data[3];
-  rx_data[3]=cthread->rx_data[3];
+
+  for (int i=0;i<3;i++)
+  {
+      tx_data[i]=cthread->tx_data[i];
+      rx_data[i]=cthread->rx_data[i];
+  }
+
   s32 att_eNB_id=-1;
   s32 **txdata,**rxdata;
 
