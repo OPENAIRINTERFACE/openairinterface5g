@@ -1341,7 +1341,7 @@ int main(int argc, char **argv)
   //int iii;
 
   int ch_realization;
-  int pmi_feedback=0;
+  //int pmi_feedback=0;
   int hold_channel=0;
 
   // void *data;
@@ -1379,6 +1379,7 @@ int main(int argc, char **argv)
   uint8_t Kmimo;
   uint8_t ue_category=4;
   uint32_t Nsoft;
+  int sf;
 
 
 
@@ -1390,7 +1391,7 @@ int main(int argc, char **argv)
 
   FILE *csv_fd=NULL;
   char csv_fname[32];
-  int dci_flag=1;
+  //int dci_flag=1;
   int two_thread_flag=0;
   int DLSCH_RB_ALLOC = 0;
 
@@ -1452,9 +1453,9 @@ int main(int argc, char **argv)
       Nid_cell = atoi(optarg);
       break;
 
-    case 'd':
-      dci_flag = 1;
-      break;
+    //case 'd':
+    //  dci_flag = 1;
+    //  break;
 
     case 'D':
       frame_type=TDD;
@@ -1481,7 +1482,7 @@ int main(int argc, char **argv)
     case 'i':
       input_fd = fopen(optarg,"r");
       input_file=1;
-      dci_flag = 1;
+      //dci_flag = 1;
       break;
 
     case 'I':
@@ -2104,15 +2105,22 @@ int main(int argc, char **argv)
     }
   }
 
-  for (i=0; i<2; i++) {
-    UE->dlsch[subframe&0x1][0][i]  = new_ue_dlsch(Kmimo,8,Nsoft,MAX_TURBO_ITERATIONS,N_RB_DL,0);
+  /* allocate memory for both subframes (only one is really used
+   * but there is now "copy_harq_proc_struct" which needs both
+   * to be valid)
+   * TODO: refine this somehow (necessary?)
+   */
+  for (sf = 0; sf < 2; sf++) {
+    for (i=0; i<2; i++) {
+      UE->dlsch[sf][0][i]  = new_ue_dlsch(Kmimo,8,Nsoft,MAX_TURBO_ITERATIONS,N_RB_DL,0);
 
-    if (!UE->dlsch[subframe&0x1][0][i]) {
-      printf("Can't get ue dlsch structures\n");
-      exit(-1);
+      if (!UE->dlsch[sf][0][i]) {
+        printf("Can't get ue dlsch structures\n");
+        exit(-1);
+      }
+
+      UE->dlsch[sf][0][i]->rnti   = n_rnti;
     }
-
-    UE->dlsch[subframe&0x1][0][i]->rnti   = n_rnti;
   }
 
     UE->dlsch_SI[0]  = new_ue_dlsch(1,1,Nsoft,MAX_TURBO_ITERATIONS,N_RB_DL,0);
@@ -2317,10 +2325,10 @@ int main(int argc, char **argv)
 	  //	  printf("Trial %d, round %d\n",trials,round);
           round_trials[round]++;
 
-          if(transmission_mode>=5)
-            pmi_feedback=1;
-          else
-            pmi_feedback=0;
+          //if(transmission_mode>=5)
+          //  pmi_feedback=1;
+          //else
+          //  pmi_feedback=0;
 
           if (abstx) {
             if (trials==0 && round==0 && SNR==snr0)  //generate a new channel

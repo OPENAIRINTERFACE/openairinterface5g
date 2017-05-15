@@ -404,6 +404,7 @@ void rrc_ue_generate_RRCConnectionRequest( const protocol_ctxt_t* const ctxt_pP,
 
 mui_t rrc_mui=0;
 
+#if !(defined(ENABLE_ITTI) && defined(ENABLE_USE_MME))
 /* NAS Attach request with IMSI */
 static const char const nas_attach_req_imsi[] = {
   0x07, 0x41,
@@ -417,7 +418,9 @@ static const char const nas_attach_req_imsi[] = {
   0x00, 0x00, 0x00, 0x0D, 0x00, 0x00, 0x0A, 0x00, 0x52, 0x12, 0xF2,
   0x01, 0x27, 0x11,
 };
+#endif /* !(defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)) */
 
+#if 0
 /* NAS Attach request with GUTI */
 static const char const nas_attach_req_guti[] = {
   0x07, 0x41,
@@ -431,6 +434,7 @@ static const char const nas_attach_req_guti[] = {
   0x00, 0x00, 0x00, 0x0D, 0x00, 0x00, 0x0A, 0x00, 0x52, 0x12, 0xF2,
   0x01, 0x27, 0x11,
 };
+#endif
 
 //-----------------------------------------------------------------------------
 static void rrc_ue_generate_RRCConnectionSetupComplete( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, const uint8_t Transaction_id )

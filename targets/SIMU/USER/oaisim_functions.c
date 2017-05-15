@@ -1486,7 +1486,7 @@ void init_ocm(void)
     break;
 
   case TDD:
-    frame_type = "FDD";
+    frame_type = "TDD";
     break;
   }
 
