@@ -1774,7 +1774,7 @@ add_executable(rrh_gw
 target_include_directories(rrh_gw PRIVATE  ${OPENAIR_DIR}/common/utils/itti)
 target_link_libraries(rrh_gw
   -Wl,--start-group
-  UTIL LFDS
+  UTIL LFDS -ldl
   -Wl,--end-group )
 target_link_libraries (rrh_gw rt pthread m )
 target_link_libraries (rrh_gw ${LIB_LMS_LIBRARIES})
