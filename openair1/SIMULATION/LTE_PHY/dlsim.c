@@ -1341,7 +1341,7 @@ int main(int argc, char **argv)
   //int iii;
 
   int ch_realization;
-  int pmi_feedback=0;
+  //int pmi_feedback=0;
   int hold_channel=0;
 
   // void *data;
@@ -1391,7 +1391,7 @@ int main(int argc, char **argv)
 
   FILE *csv_fd=NULL;
   char csv_fname[32];
-  int dci_flag=1;
+  //int dci_flag=1;
   int two_thread_flag=0;
   int DLSCH_RB_ALLOC = 0;
 
@@ -1453,9 +1453,9 @@ int main(int argc, char **argv)
       Nid_cell = atoi(optarg);
       break;
 
-    case 'd':
-      dci_flag = 1;
-      break;
+    //case 'd':
+    //  dci_flag = 1;
+    //  break;
 
     case 'D':
       frame_type=TDD;
@@ -1482,7 +1482,7 @@ int main(int argc, char **argv)
     case 'i':
       input_fd = fopen(optarg,"r");
       input_file=1;
-      dci_flag = 1;
+      //dci_flag = 1;
       break;
 
     case 'I':
@@ -2325,10 +2325,10 @@ int main(int argc, char **argv)
 	  //	  printf("Trial %d, round %d\n",trials,round);
           round_trials[round]++;
 
-          if(transmission_mode>=5)
-            pmi_feedback=1;
-          else
-            pmi_feedback=0;
+          //if(transmission_mode>=5)
+          //  pmi_feedback=1;
+          //else
+          //  pmi_feedback=0;
 
           if (abstx) {
             if (trials==0 && round==0 && SNR==snr0)  //generate a new channel
