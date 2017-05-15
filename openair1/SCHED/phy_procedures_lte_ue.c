@@ -1746,6 +1746,10 @@ void get_pucch_param(PHY_VARS_UE    *ue,
     case pucch_format2b:
         LOG_E(PHY,"NO Resource available for PUCCH 2a/2b \n");
     break;
+
+    case pucch_format3:
+      fprintf(stderr, "PUCCH format 3 not handled\n");
+      abort();
     }
 }
 

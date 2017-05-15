@@ -512,6 +512,10 @@ void generate_pucch1x(int32_t **txdataF,
           case pucch_format2b:
             AssertFatal(1==0,"should not go here\n");
             break;
+
+          case pucch_format3:
+            fprintf(stderr, "PUCCH format 3 not handled\n");
+            abort();
           } // switch fmt
         } else { // These are PUCCH reference symbols
 
@@ -870,7 +874,7 @@ void generate_pucch3x(int32_t **txdataF,
                     uint16_t rnti)
 {
 
-  uint32_t u, v, n;
+  uint32_t u, v;
   uint16_t i, j, re_offset;
   uint32_t z[12*14], *zptr;
   uint32_t y_tilda[12*14]={}, *y_tilda_ptr;
@@ -889,7 +893,7 @@ void generate_pucch3x(int32_t **txdataF,
 
   // variables for channel coding
   uint8_t chcod_tbl_idx = 0;
-  uint8_t chcod_dt[48] = {};
+  //uint8_t chcod_dt[48] = {};
 
   // variables for Scrambling
   uint32_t cinit = 0;
@@ -911,8 +915,8 @@ void generate_pucch3x(int32_t **txdataF,
 
   uint8_t dt_offset;
   uint8_t sym_offset;
-  int16_t y_re[14][12]={0};
-  int16_t y_im[14][12]={0};
+  int16_t y_re[14][12]; //={0};
+  int16_t y_im[14][12]; //={0};
 
   // DMRS
   uint8_t alpha_idx=0;
@@ -1184,17 +1188,17 @@ uint16_t pucchfmt3_Baseseq_csh_remove( int16_t SubCarrierDeMapData[NB_ANTENNAS_R
                                        uint8_t subframe,
                                        uint8_t ncs_cell[20][7] )
 {
-    int16_t     calctmp_baSeq[2];
+    //int16_t     calctmp_baSeq[2];
     int16_t     calctmp_beta[2];
     int16_t     calctmp_alphak[2];
     int16_t     calctmp_SCDeMapData_alphak[2];
     int32_t     n_cell_cs_div64;
     int32_t     n_cell_cs_modNSC_RB;
     
-    int32_t     NSlot1subframe  = D_NSLT1SF;
+    //int32_t     NSlot1subframe  = D_NSLT1SF;
     int32_t     NSym1slot       = D_NSYM1SLT; // Symbol per 1slot
     int32_t     NSym1subframe   = D_NSYM1SF;  // Symbol per 1subframe
-    int32_t     aa, symNo, slotNo, sym, k, i;
+    int32_t     aa, symNo, slotNo, sym, k;
     
     
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {  // Antenna
@@ -1247,16 +1251,18 @@ uint16_t pucchfmt3_ChannelEstimation( int16_t SubCarrierDeMapData[NB_ANTENNAS_RX
                                       uint16_t n3_pucch_array[NUMBER_OF_UE_MAX],
                                       uint8_t ncs_cell[20][7] )
 {
-    uint32_t        aa, symNo, k, rb, sltNo, ueNo, slotNo, sym, i, j;
-    int16_t         np, np_n, ip_np, npucch_sf, ip_ind;
-    int16_t         calctmp[2], calctmp_cs[2];
+    uint32_t        aa, symNo, k, slotNo, sym, i, j;
+    int16_t         np, np_n, ip_ind;
+    //int16_t         npucch_sf;
+    int16_t         calctmp[2];
     int16_t         BsCshData[NB_ANTENNAS_RX][D_NSYM1SF][D_NSC1RB][2];
-    int16_t         delta_theta_calctmp[NB_ANTENNAS_RX][4][D_NSC1RB][2], delta_theta_comp[NB_ANTENNAS_RX][D_NSC1RB][2];
+    //int16_t         delta_theta_calctmp[NB_ANTENNAS_RX][4][D_NSC1RB][2], delta_theta_comp[NB_ANTENNAS_RX][D_NSC1RB][2];
+    int16_t         delta_theta_comp[NB_ANTENNAS_RX][D_NSC1RB][2];
     int16_t         CsData_allavg[NB_ANTENNAS_RX][14][2];
     int16_t         CsData_temp[NB_ANTENNAS_RX][D_NSYM1SF][D_NSC1RB][2];
     int32_t         IP_CsData_allsfavg[NB_ANTENNAS_RX][14][4][2];
     int32_t         IP_allavg[D_NPUCCH_SF5];
-    int16_t         temp_ch[2];
+    //int16_t         temp_ch[2];
 	int16_t         m[NUMBER_OF_UE_MAX], m_self, same_m_number;
 	uint16_t        n3_pucch_sameRB[NUMBER_OF_UE_MAX];
 	int16_t         n_oc0[NUMBER_OF_UE_MAX];
@@ -1273,8 +1279,8 @@ uint16_t pucchfmt3_ChannelEstimation( int16_t SubCarrierDeMapData[NB_ANTENNAS_RX
     uint32_t u=u0;
     uint32_t v=v0;
     
-    double d_theta[32]={0.0};
-    int32_t temp_theta[32][2]={0};
+    //double d_theta[32]={0.0};
+    //int32_t temp_theta[32][2]={0};
     
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
         for (symNo=0; symNo<D_NSYM1SF; symNo++){
@@ -1357,7 +1363,7 @@ uint16_t pucchfmt3_ChannelEstimation( int16_t SubCarrierDeMapData[NB_ANTENNAS_RX
                         np = n3_pucch % D_NPUCCH_SF4;		//
                         np_n = TBL_3_SF4_GEN_N_DASH_NS[np]; //
                     }
-                    npucch_sf = D_NPUCCH_SF4;// = 4
+                    //npucch_sf = D_NPUCCH_SF4;// = 4
                 } else {
                     if (symNo < D_NSYM1SLT) {
                         np = n3_pucch % D_NPUCCH_SF5;
@@ -1366,7 +1372,7 @@ uint16_t pucchfmt3_ChannelEstimation( int16_t SubCarrierDeMapData[NB_ANTENNAS_RX
                         np = (3 * n3_pucch) % D_NPUCCH_SF5;
                         np_n = TBL_3_SF5_GEN_N_DASH_NS[np];
                     }
-                    npucch_sf = D_NPUCCH_SF5;// = 5
+                    //npucch_sf = D_NPUCCH_SF5;// = 5
                 }
                 // cyclic shift e^(-j * beta_n * k)
                 calctmp[0] = alphaTBL_re[(((ncs_cell[2*subframe+slotNo][sym] + np_n)%D_NSC1RB)*k)%12];
@@ -1490,7 +1496,7 @@ uint16_t pucchfmt3_Equalization( int16_t CshData_fmt3[NB_ANTENNAS_RX][14][12][2]
                                  int16_t ChestValue[NB_ANTENNAS_RX][2][12][2],
                                  LTE_DL_FRAME_PARMS *frame_parms)
 {
-    int16_t ueNo, aa, sltNo, symNo, k;
+    int16_t aa, sltNo, symNo, k;
     
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
         sltNo = 0;
@@ -1513,7 +1519,7 @@ uint16_t pucchfmt3_FrqDevRemove( int16_t ChdetAfterValue_fmt3[NB_ANTENNAS_RX][14
                              int16_t RemoveFrqDev_fmt3[NB_ANTENNAS_RX][2][5][12][2],
                              LTE_DL_FRAME_PARMS *frame_parms )
 {
-    int16_t ueNo, aa, sltNo, symNo1slt, k, n;
+    int16_t aa, sltNo, symNo1slt, k, n;
     double calctmp[2];
     
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
@@ -1564,7 +1570,7 @@ uint16_t pucchfmt3_OrthSeqRemove( int16_t RemoveFrqDev_fmt3[NB_ANTENNAS_RX][2][5
                                   uint16_t n3_pucch,
                                   LTE_DL_FRAME_PARMS *frame_parms )
 {
-    int16_t aa, sltNo, symNo, n, k;
+    int16_t aa, sltNo, n, k;
     int16_t Npucch_sf;
     int16_t noc;
     
@@ -1609,7 +1615,7 @@ uint16_t pucchfmt3_AvgAnt( int16_t Fmt3xDataRmvOrth[NB_ANTENNAS_RX][2][5][12][2]
                            uint8_t shortened_format,
                            LTE_DL_FRAME_PARMS *frame_parms )
 {
-    int16_t aa, sltNo, symNo, n, k;
+    int16_t aa, sltNo, n, k;
     int16_t Npucch_sf;
     
     for (sltNo=0; sltNo<D_NSLT1SF; sltNo++){
@@ -1827,7 +1833,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   int16_t Fmt3xDataAvgSym[2][12][2];                            //[Slot][Subcarrier][Complex]
   int16_t IFFTOutData_Fmt3[2][12][2];                           //[Slot][Subcarrier][Complex]
   int16_t b[48];                                                //[bit]
-  int16_t IP_CsData_allavg[NB_ANTENNAS_RX][12][4][2];           //[Antenna][Symbol][Nouse Cyclic Shift][Complex]
+  //int16_t IP_CsData_allavg[NB_ANTENNAS_RX][12][4][2];           //[Antenna][Symbol][Nouse Cyclic Shift][Complex]
   int16_t payload_entity = -1;
   int16_t Interpw;
   int16_t payload_max;

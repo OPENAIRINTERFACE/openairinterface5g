@@ -86,6 +86,10 @@ int16_t pucch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t subframe,u
     }
 
     break;
+
+  case pucch_format3:
+    fprintf(stderr, "PUCCH format 3 not handled\n");
+    abort();
   }
 
   if (pucch_fmt!=pucch_format1) {
