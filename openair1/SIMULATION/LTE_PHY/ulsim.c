@@ -253,7 +253,7 @@ int main(int argc, char **argv)
 
   uint8_t N_RB_DL=25,osf=1;
 
-  uint8_t cyclic_shift = 0;
+  //uint8_t cyclic_shift = 0;
   uint8_t cooperation_flag = 0; //0 no cooperation, 1 delay diversity, 2 Alamouti
   uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
   uint8_t tdd_config=3,frame_type=FDD;
@@ -463,9 +463,9 @@ int main(int argc, char **argv)
       first_rb = atoi(optarg);
       break;
 
-    case 'c':
-      cyclic_shift = atoi(optarg);
-      break;
+    //case 'c':
+    //  cyclic_shift = atoi(optarg);
+    //  break;
 
     case 'E':
       threequarter_fs=1;
@@ -557,7 +557,9 @@ int main(int argc, char **argv)
 
     case 'h':
     default:
-      printf("%s -h(elp) -a(wgn on) -m mcs -n n_frames -s snr0 -t delay_spread -p (extended prefix on) -r nb_rb -f first_rb -c cyclic_shift -o (srs on) -g channel_model [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M'), -d Channel delay, -D maximum Doppler shift \n",
+      /* option "-c cyclic_shift" is not used, let's remove from documentation */
+      //printf("%s -h(elp) -a(wgn on) -m mcs -n n_frames -s snr0 -t delay_spread -p (extended prefix on) -r nb_rb -f first_rb -c cyclic_shift -o (srs on) -g channel_model [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M'), -d Channel delay, -D maximum Doppler shift \n",
+      printf("%s -h(elp) -a(wgn on) -m mcs -n n_frames -s snr0 -t delay_spread -p (extended prefix on) -r nb_rb -f first_rb -o (srs on) -g channel_model [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M'), -d Channel delay, -D maximum Doppler shift \n",
              argv[0]);
       exit(1);
       break;
