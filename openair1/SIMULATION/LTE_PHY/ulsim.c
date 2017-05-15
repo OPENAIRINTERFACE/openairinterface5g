@@ -275,6 +275,7 @@ int main(int argc, char **argv)
   uint8_t max_turbo_iterations=4;
   uint8_t parallel_flag=0;
   int nb_rb_set = 0;
+  int sf;
 
   int threequarter_fs=0;
   int ndi;
@@ -709,22 +710,27 @@ int main(int argc, char **argv)
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0; i<2; i++) {
     eNB->dlsch[0][i] = new_eNB_dlsch(1,8,1827072,N_RB_DL,0,&eNB->frame_parms);
-    UE->dlsch[subframe&1][0][i]  = new_ue_dlsch(1,8,1827072,MAX_TURBO_ITERATIONS,N_RB_DL,0);
-
     if (!eNB->dlsch[0][i]) {
       printf("Can't get eNB dlsch structures\n");
       exit(-1);
     }
-
-    if (!UE->dlsch[subframe&1][0][i]) {
-      printf("Can't get ue dlsch structures\n");
-      exit(-1);
-    }
-
     eNB->dlsch[0][i]->rnti = 14;
-    UE->dlsch[subframe&1][0][i]->rnti   = 14;
-
-  } 
+  }
+  /* allocate memory for both subframes (only one is really used
+   * but there is now "copy_harq_proc_struct" which needs both
+   * to be valid)
+   * TODO: refine this somehow (necessary?)
+   */
+  for (sf = 0; sf < 2; sf++) {
+    for (i=0; i<2; i++) {
+      UE->dlsch[sf][0][i]  = new_ue_dlsch(1,8,1827072,MAX_TURBO_ITERATIONS,N_RB_DL,0);
+      if (!UE->dlsch[sf][0][i]) {
+        printf("Can't get ue dlsch structures\n");
+        exit(-1);
+      }
+      UE->dlsch[sf][0][i]->rnti   = 14;
+    }
+  }
 
   UE->dlsch_SI[0]  = new_ue_dlsch(1,1,1827072,MAX_TURBO_ITERATIONS,N_RB_DL,0);
   UE->dlsch_ra[0]  = new_ue_dlsch(1,1,1827072,MAX_TURBO_ITERATIONS,N_RB_DL,0);

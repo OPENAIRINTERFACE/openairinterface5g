@@ -1379,6 +1379,7 @@ int main(int argc, char **argv)
   uint8_t Kmimo;
   uint8_t ue_category=4;
   uint32_t Nsoft;
+  int sf;
 
 
 
@@ -2104,15 +2105,22 @@ int main(int argc, char **argv)
     }
   }
 
-  for (i=0; i<2; i++) {
-    UE->dlsch[subframe&0x1][0][i]  = new_ue_dlsch(Kmimo,8,Nsoft,MAX_TURBO_ITERATIONS,N_RB_DL,0);
+  /* allocate memory for both subframes (only one is really used
+   * but there is now "copy_harq_proc_struct" which needs both
+   * to be valid)
+   * TODO: refine this somehow (necessary?)
+   */
+  for (sf = 0; sf < 2; sf++) {
+    for (i=0; i<2; i++) {
+      UE->dlsch[sf][0][i]  = new_ue_dlsch(Kmimo,8,Nsoft,MAX_TURBO_ITERATIONS,N_RB_DL,0);
 
-    if (!UE->dlsch[subframe&0x1][0][i]) {
-      printf("Can't get ue dlsch structures\n");
-      exit(-1);
+      if (!UE->dlsch[sf][0][i]) {
+        printf("Can't get ue dlsch structures\n");
+        exit(-1);
+      }
+
+      UE->dlsch[sf][0][i]->rnti   = n_rnti;
     }
-
-    UE->dlsch[subframe&0x1][0][i]->rnti   = n_rnti;
   }
 
     UE->dlsch_SI[0]  = new_ue_dlsch(1,1,Nsoft,MAX_TURBO_ITERATIONS,N_RB_DL,0);
