@@ -785,20 +785,19 @@ function main() {
 	  build_dir=$rrh_build_dir	 
       fi
 
-      # build RF device libraries (currently EXMIMO is not complied with the rest of HW targets)
+      # build RF device libraries
       if [ "$HW" != "None" ] ; then
 	  rm -f liboai_device.so
 	  rm -f $dbin/liboai_device.so
 
-
 	  # link liboai_device.so with the selected RF device library
 	  if [ "$HW" == "EXMIMO" ] ; then
-	      
-	      #add exmimo compilation
-	      #TODO EXMIMO library support
 	      compilations \
 		  $build_dir oai_exmimodevif \
 		  liboai_exmimodevif.so $dbin/liboai_exmimodevif.so.$REL
+
+	      ln -sf liboai_exmimodevif.so liboai_device.so
+	      ln -sf $dbin/liboai_exmimodevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to EXMIMO device library"       
 	  elif [ "$HW" == "OAI_USRP" ] ; then
 	      if [ -d "/usr/include/uhd" ] ; then
