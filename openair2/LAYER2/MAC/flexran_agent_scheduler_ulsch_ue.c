@@ -62,7 +62,7 @@ static int n_active_slices = 1;
 static int n_active_slices_current = 1;
 
 /* RB share for each slice for past and current time*/
-float slice_percentage_uplink[MAX_NUM_SLICES] = {0.8, 0.2, 0.0, 0.0};
+float slice_percentage_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
 float slice_percentage_current_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
 float total_slice_percentage_uplink = 0;
 
