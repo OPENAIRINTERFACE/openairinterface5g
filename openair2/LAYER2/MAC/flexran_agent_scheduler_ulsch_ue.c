@@ -35,6 +35,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
+#include "LAYER2/MAC/flexran_agent_mac_proto.h"
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/proto.h"
 #include "LAYER2/MAC/extern.h"
@@ -56,22 +57,30 @@
 
 #include "T.h"
 
-// #define ENABLE_MAC_PAYLOAD_DEBUG
-// #define DEBUG_eNB_SCHEDULER 1
+/* number of active slices for  past and current time*/
+static int n_active_slices = 1;
+static int n_active_slices_current = 1;
 
-
-// RB share for each slice for past and current time
-float slice_percentage_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
+/* RB share for each slice for past and current time*/
+float slice_percentage_uplink[MAX_NUM_SLICES] = {0.8, 0.2, 0.0, 0.0};
 float slice_percentage_current_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
+float total_slice_percentage_uplink = 0;
 
-
- uint16_t                nb_rbs_allowed_slice[MAX_NUM_CCs][MAX_NUM_SLICES];      
-
+/*resource blocks allowed*/
+static uint16_t                nb_rbs_allowed_slice[MAX_NUM_CCs][MAX_NUM_SLICES];      
+/*Slice Update */
 int update_ul_scheduler[MAX_NUM_SLICES] = {1, 1, 1, 1};
 int update_ul_scheduler_current[MAX_NUM_SLICES] = {1, 1, 1, 1};
 
-// name of available scheduler
-char *ul_scheduler_type[MAX_NUM_SLICES] = {"flexran_schedule_ue_ul_spec_embb"};
+ /* Slice Function Pointer */
+slice_scheduler_ul slice_sched_ul[MAX_NUM_SLICES] = {0};
+
+/* name of available scheduler*/
+char *ul_scheduler_type[MAX_NUM_SLICES] = {"flexran_schedule_ue_ul_spec_embb",
+					   "flexran_schedule_ue_ul_spec_urllc",
+					   "flexran_schedule_ue_ul_spec_mmtc",
+					   "flexran_schedule_ue_ul_spec_be"      // best effort 
+};
 
 
 uint16_t flexran_nb_rbs_allowed_slice_uplink(float rb_percentage, int total_rbs){
@@ -387,25 +396,26 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
 void
 flexran_schedule_ue_ul_spec_default(mid_t   mod_id,
 				 uint32_t      frame,
-				 uint32_t      subframe,
-				 int           *mbsfn_flag,
-				 Protocol__FlexranMessage **dl_info)
+				 uint32_t      cooperation_flag,
+				 int           subframe,
+				 unsigned char sched_subframe,
+				 Protocol__FlexranMessage **ul_info)
 //------------------------------------------------------------------------------
 {
   int i=0;
   
-  flexran_agent_mac_create_empty_ul_config(module_idP, ul_info);
+  flexran_agent_mac_create_empty_ul_config(mod_id, ul_info);
    
   for (i = 0; i < n_active_slices; i++) {
     
     // Load any updated functions
-    if (update_dl_scheduler[i] > 0 ) {
-      slice_sched[i] = dlsym(NULL, dl_scheduler_type[i]); 
-      update_dl_scheduler[i] = 0;
-      update_dl_scheduler_current[i] = 0;
-      slice_percentage_current[i]= slice_percentage[i];
-      total_slice_percentage+=slice_percentage[i];
-      LOG_N(MAC,"update dl scheduler slice %d\n", i);
+    if (update_ul_scheduler[i] > 0 ) {
+      slice_sched_ul[i] = dlsym(NULL, ul_scheduler_type[i]); 
+      update_ul_scheduler[i] = 0;
+      update_ul_scheduler_current[i] = 0;
+      slice_percentage_current_uplink[i]= slice_percentage_uplink[i];
+      total_slice_percentage_uplink+=slice_percentage_uplink[i];
+      LOG_N(MAC,"update ul scheduler slice %d\n", i);
     }
  
     // check if the number of slices has changed, and log 
@@ -423,45 +433,45 @@ flexran_schedule_ue_ul_spec_default(mid_t   mod_id,
     }
     
     // check if the slice rb share has changed, and log the console
-    if (slice_percentage_current[i] != slice_percentage[i]){
-      if ((slice_percentage[i] >= 0.0) && (slice_percentage[i] <= 1.0)){
-	if ((total_slice_percentage - slice_percentage_current[i]  + slice_percentage[i]) <= 1.0) {
-	  total_slice_percentage=total_slice_percentage - slice_percentage_current[i]  + slice_percentage[i];
+    if (slice_percentage_current_uplink[i] != slice_percentage_uplink[i]){
+      if ((slice_percentage_uplink[i] >= 0.0) && (slice_percentage_uplink[i] <= 1.0)){
+	if ((total_slice_percentage_uplink - slice_percentage_current_uplink[i]  + slice_percentage_uplink[i]) <= 1.0) {
+	  total_slice_percentage_uplink=total_slice_percentage_uplink - slice_percentage_current_uplink[i]  + slice_percentage_uplink[i];
 	  LOG_N(MAC,"[eNB %d][SLICE %d] frame %d subframe %d: total percentage %f, slice RB percentage has changed: %f-->%f\n",
-		mod_id, i, frame, subframe, total_slice_percentage, slice_percentage_current[i], slice_percentage[i]);
+		mod_id, i, frame, subframe, total_slice_percentage_uplink, slice_percentage_current_uplink[i], slice_percentage_uplink[i]);
 
-	  slice_percentage_current[i] = slice_percentage[i];
+	  slice_percentage_current_uplink[i] = slice_percentage_uplink[i];
 
 	} else {
 	  LOG_W(MAC,"[eNB %d][SLICE %d] invalid total RB share (%f->%f), revert the previous value (%f->%f)\n",
 		mod_id,i,  
-		total_slice_percentage,
-		total_slice_percentage - slice_percentage_current[i]  + slice_percentage[i],
-		slice_percentage[i],slice_percentage_current[i]);
+		total_slice_percentage_uplink,
+		total_slice_percentage_uplink - slice_percentage_current_uplink[i]  + slice_percentage_uplink[i],
+		slice_percentage_uplink[i],slice_percentage_current_uplink[i]);
 
-	  slice_percentage[i]= slice_percentage_current[i];
+	  slice_percentage_uplink[i]= slice_percentage_current_uplink[i];
 
 	}
       } else {
-	LOG_W(MAC,"[eNB %d][SLICE %d] invalid slice RB share, revert the previous value (%f->%f)\n",mod_id, i,  slice_percentage[i],slice_percentage_current[i]);
+	LOG_W(MAC,"[eNB %d][SLICE %d] invalid slice RB share, revert the previous value (%f->%f)\n",mod_id, i,  slice_percentage_uplink[i],slice_percentage_current_uplink[i]);
 
-	slice_percentage[i]= slice_percentage_current[i];
+	slice_percentage_uplink[i]= slice_percentage_current_uplink[i];
 
       }
     }
   
     // check if a new scheduler, and log the console
-    if (update_dl_scheduler_current[i] != update_dl_scheduler[i]){
+    if (update_ul_scheduler_current[i] != update_ul_scheduler[i]){
       LOG_N(MAC,"[eNB %d][SLICE %d] frame %d subframe %d: DL scheduler for this slice is updated: %s \n",
-	    mod_id, i, frame, subframe, dl_scheduler_type[i]);
+	    mod_id, i, frame, subframe, ul_scheduler_type[i]);
 
-      update_dl_scheduler_current[i] = update_dl_scheduler[i];
+      update_ul_scheduler_current[i] = update_ul_scheduler[i];
       
     }
 
     // Run each enabled slice-specific schedulers one by one
     //LOG_N(MAC,"[eNB %d]frame %d subframe %d slice %d: calling the scheduler\n", mod_id, frame, subframe,i);
-    slice_sched[i](mod_id, i, frame, subframe, mbsfn_flag,dl_info);
+    slice_sched_ul[i](mod_id, frame, cooperation_flag, subframe, sched_subframe,ul_info);
 
   }
   
@@ -469,7 +479,7 @@ flexran_schedule_ue_ul_spec_default(mid_t   mod_id,
 
 void
 flexran_schedule_ue_ul_spec_embb(mid_t  mod_id,
-			                    frame_t frameP, 
+			                    frame_t frame, 
 			                    unsigned char cooperation_flag,
                 		        uint32_t      subframe,
 			                    unsigned char sched_subframe,
@@ -583,7 +593,7 @@ void flexran_agent_schedule_ulsch_rnti(module_id_t   module_idP,
   //  LOG_I(MAC,"entering ulsch preprocesor\n");
 
 
-  
+  /*TODO*/
   int slice_id = 0;
 
   

@@ -39,13 +39,19 @@
 /*
  * slice specific scheduler 
  */
-typedef void (*slice_scheduler)(module_id_t mod_id, 
+typedef void (*slice_scheduler_dl)(module_id_t mod_id, 
 				int slice_id, 
 				uint32_t frame, 
 				uint32_t subframe,
 				int *mbsfn_flag,
 				Protocol__FlexranMessage **dl_info);
 
+typedef void (*slice_scheduler_ul)(module_id_t mod_id, 
+				frame_t frame, 
+				unsigned char cooperation_flag,
+				uint32_t      subframe,
+				unsigned char sched_subframe,
+				Protocol__FlexranMessage **ul_info);
 
 
 /*
@@ -108,6 +114,15 @@ flexran_schedule_ue_dl_spec_common(mid_t   mod_id,
 				uint32_t      subframe,
 				int           *mbsfn_flag,
 				Protocol__FlexranMessage **dl_info);
+
+void
+flexran_schedule_ue_ul_spec_default(mid_t   mod_id,
+				 uint32_t      frame,
+				 uint32_t      cooperation_flag,
+				 int           subframe,
+				 unsigned char sched_subframe,
+				 Protocol__FlexranMessage **ul_info);
+
 
 uint16_t flexran_nb_rbs_allowed_slice(float rb_percentage, 
 				      int total_rbs);

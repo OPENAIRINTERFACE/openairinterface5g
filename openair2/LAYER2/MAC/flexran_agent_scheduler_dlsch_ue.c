@@ -88,8 +88,8 @@ typedef enum {
 
 
 // number of active slices for  past and current time
-int n_active_slices = 1;
-int n_active_slices_current = 1;
+static int n_active_slices = 1;
+static int n_active_slices_current = 1;
 
 // ue to slice mapping
 int slicing_strategy = UEID_TO_SLICEID;
@@ -115,7 +115,7 @@ char *dl_scheduler_type[MAX_NUM_SLICES] = {"flexran_schedule_ue_spec_embb",
 };
 
 // pointer to the slice specific scheduler 
-slice_scheduler slice_sched[MAX_NUM_SLICES] = {0};
+slice_scheduler_dl slice_sched_dl[MAX_NUM_SLICES] = {0};
 
 
 /**
@@ -729,7 +729,7 @@ flexran_schedule_ue_dl_spec_default(mid_t   mod_id,
     
     // Load any updated functions
     if (update_dl_scheduler[i] > 0 ) {
-      slice_sched[i] = dlsym(NULL, dl_scheduler_type[i]); 
+      slice_sched_dl[i] = dlsym(NULL, dl_scheduler_type[i]); 
       update_dl_scheduler[i] = 0;
       update_dl_scheduler_current[i] = 0;
       slice_percentage_current[i]= slice_percentage[i];
@@ -806,7 +806,7 @@ flexran_schedule_ue_dl_spec_default(mid_t   mod_id,
 
     // Run each enabled slice-specific schedulers one by one
     //LOG_N(MAC,"[eNB %d]frame %d subframe %d slice %d: calling the scheduler\n", mod_id, frame, subframe,i);
-    slice_sched[i](mod_id, i, frame, subframe, mbsfn_flag,dl_info);
+    slice_sched_dl[i](mod_id, i, frame, subframe, mbsfn_flag,dl_info);
 
   }
   
@@ -894,7 +894,7 @@ flexran_schedule_ue_spec_urllc(mid_t         mod_id,
 			       Protocol__FlexranMessage **dl_info)
 
 {
-  flexran_schedule_ue_spec_dl_common(mod_id,
+  flexran_schedule_ue_dl_spec_common(mod_id,
 				  slice_id,
 				  frame,
 				  subframe,
