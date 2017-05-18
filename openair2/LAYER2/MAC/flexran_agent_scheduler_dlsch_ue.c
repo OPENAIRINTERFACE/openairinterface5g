@@ -709,12 +709,12 @@ void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 #define SF05_LIMIT 1
 
 /*
- * Main scheduling functions to support slicing
+ * Main Downlink Slicing
  *
  */
 
 void
-flexran_schedule_ue_spec_default(mid_t   mod_id,
+flexran_schedule_ue_dl_spec_default(mid_t   mod_id,
 				 uint32_t      frame,
 				 uint32_t      subframe,
 				 int           *mbsfn_flag,
@@ -876,7 +876,7 @@ flexran_schedule_ue_spec_embb(mid_t         mod_id,
 			      Protocol__FlexranMessage **dl_info)
 
 {
-  flexran_schedule_ue_spec_common(mod_id,
+  flexran_schedule_ue_dl_spec_common(mod_id,
 				  slice_id,
 				  frame,
 				  subframe,
@@ -894,7 +894,7 @@ flexran_schedule_ue_spec_urllc(mid_t         mod_id,
 			       Protocol__FlexranMessage **dl_info)
 
 {
-  flexran_schedule_ue_spec_common(mod_id,
+  flexran_schedule_ue_spec_dl_common(mod_id,
 				  slice_id,
 				  frame,
 				  subframe,
@@ -913,7 +913,7 @@ flexran_schedule_ue_spec_mmtc(mid_t         mod_id,
   
 {
   
-  flexran_schedule_ue_spec_common(mod_id,
+  flexran_schedule_ue_dl_spec_common(mod_id,
 				  slice_id,
 				  frame,
 				  subframe,
@@ -932,7 +932,7 @@ flexran_schedule_ue_spec_be(mid_t         mod_id,
   
 {
   
-  flexran_schedule_ue_spec_common(mod_id,
+  flexran_schedule_ue_dl_spec_common(mod_id,
 				  slice_id,
 				  frame,
 				  subframe,
@@ -943,7 +943,7 @@ flexran_schedule_ue_spec_be(mid_t         mod_id,
 
 //------------------------------------------------------------------------------
 void
-flexran_schedule_ue_spec_common(mid_t   mod_id,
+flexran_schedule_ue_dl_spec_common(mid_t   mod_id,
 				int           slice_id, 
 				uint32_t      frame,
 				uint32_t      subframe,

@@ -51,7 +51,7 @@ typedef void (*slice_scheduler)(module_id_t mod_id,
 /*
  * top level flexran scheduler used by the eNB scheduler
  */
-void flexran_schedule_ue_spec_default(mid_t mod_id, 
+void flexran_schedule_ue_dl_spec_default(mid_t mod_id, 
 				      uint32_t frame, 
 				      uint32_t subframe,
 				      int *mbsfn_flag, 
@@ -102,7 +102,7 @@ flexran_schedule_ue_spec_be(mid_t   mod_id,
  * common flexran scheduler function
  */
 void
-flexran_schedule_ue_spec_common(mid_t   mod_id,
+flexran_schedule_ue_dl_spec_common(mid_t   mod_id,
 				int       slice_id, 
 				uint32_t      frame,
 				uint32_t      subframe,
@@ -182,7 +182,7 @@ void _dlsch_scheduler_pre_processor_allocate (module_id_t   Mod_id,
 /*
  * Default scheduler used by the eNB agent
  */
-void flexran_schedule_ue_spec_default(mid_t mod_id, uint32_t frame, uint32_t subframe,
+void flexran_schedule_ue_dl_spec_default(mid_t mod_id, uint32_t frame, uint32_t subframe,
 				      int *mbsfn_flag, Protocol__FlexranMessage **dl_info);
 
 /*
