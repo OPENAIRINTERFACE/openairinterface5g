@@ -1042,7 +1042,7 @@ rrc_ue_update_radioResourceConfigDedicated(RadioResourceConfigDedicated_t* radio
     // Update cqi_ReportConfig
     if(radioResourceConfigDedicated->physicalConfigDedicated->cqi_ReportConfig != NULL)
     {
-        LOG_I(RRC,"Update cqi_ReportConfig config (size=%d,%d)\n", sizeof(*physicalConfigDedicated2->cqi_ReportConfig), sizeof(CQI_ReportConfig_t));
+        LOG_I(RRC,"Update cqi_ReportConfig config (size=%zu,%zu)\n", sizeof(*physicalConfigDedicated2->cqi_ReportConfig), sizeof(CQI_ReportConfig_t));
 
         if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig == NULL)
             UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig = CALLOC(1,sizeof(CQI_ReportConfig_t));
@@ -1052,7 +1052,7 @@ rrc_ue_update_radioResourceConfigDedicated(RadioResourceConfigDedicated_t* radio
                 sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
 
         if (radioResourceConfigDedicated->physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic != NULL) {
-          LOG_I(RRC,"Update cqi_ReportPeriodic config (size=%d,%d)\n", sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic), sizeof(CQI_ReportPeriodic_t));
+          LOG_I(RRC,"Update cqi_ReportPeriodic config (size=%zu,%zu)\n", sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic), sizeof(CQI_ReportPeriodic_t));
 
           if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig->cqi_ReportPeriodic == NULL)
             UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig->cqi_ReportPeriodic = CALLOC(1,sizeof(CQI_ReportPeriodic_t));
