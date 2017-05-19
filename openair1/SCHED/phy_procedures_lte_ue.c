@@ -702,7 +702,7 @@ uint16_t get_n1_pucch(PHY_VARS_UE *ue,
   LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   uint8_t nCCE0,nCCE1,nCCE2,nCCE3,harq_ack1,harq_ack0,harq_ack3,harq_ack2;
   ANFBmode_t bundling_flag;
-  uint16_t n1_pucch0=0,n1_pucch1=0,n1_pucch2=0,n1_pucch3=0,n1_pucch_inter,pucch_sel_inter;
+  uint16_t n1_pucch0=0,n1_pucch1=0,n1_pucch2=0,n1_pucch3=0,n1_pucch_inter;
   static uint8_t candidate_dl[9]; // which downlink(s) the current ACK/NACK is associating to
   uint8_t last_dl=0xff; // the last downlink with valid DL-DCI. for calculating the PUCCH resource index
   int sf;
@@ -979,22 +979,18 @@ uint16_t get_n1_pucch(PHY_VARS_UE *ue,
              if ((harq_ack0!=2) ) {
                 b[0] = harq_ack0;
                 n1_pucch_inter = n1_pucch0;
-                pucch_sel_inter = 0;
              }
              if ((harq_ack1!=2) ) {
                 b[0] = b[0]&harq_ack1;
                 n1_pucch_inter = n1_pucch1;
-                pucch_sel_inter = 1;
              }
              if ((harq_ack2!=2) ) {
                 b[0] = b[0]&harq_ack2;
                 n1_pucch_inter = n1_pucch2;
-                pucch_sel_inter = 2;
              }
              if ((harq_ack3!=2) ) {
                 b[0] = b[0]&harq_ack3;
                 n1_pucch_inter = n1_pucch3;
-                pucch_sel_inter = 3;
              }
 
              if (subframe == 3) {
@@ -1003,10 +999,10 @@ uint16_t get_n1_pucch(PHY_VARS_UE *ue,
                 n1_pucch_inter = n1_pucch2;
              }
 
-             //LOG_I(PHY,"SFN/SF %d/%d calculating n1_pucch n1_pucch_inter=%d pucch_sel_inter=%d b[0]=%d b[1]=%d \n",
+             //LOG_I(PHY,"SFN/SF %d/%d calculating n1_pucch n1_pucch_inter=%d  b[0]=%d b[1]=%d \n",
              //                                           proc->frame_tx%1024,
              //                                           proc->subframe_tx,n1_pucch_inter,
-             //                                           pucch_sel_inter,b[0],b[1]);
+             //                                           b[0],b[1]);
 
               return(n1_pucch_inter);
 
