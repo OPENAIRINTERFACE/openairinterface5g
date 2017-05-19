@@ -174,7 +174,7 @@ function main()
         ;;      
 
       -V | --vcd)
-        "setting gtk-wave output"
+        echo "setting gtk-wave output"
         exe_arguments="$exe_arguments -V /tmp/oai_gtk_wave.vcd"
         shift ;
         ;;
@@ -182,6 +182,11 @@ function main()
         echo "setting l2 pcap dump output"
         exe_arguments="$exe_arguments -P wireshark"
         shift 2;
+        ;;
+      -x | --xforms)
+        echo "running with xforms"
+        exe_arguments="$exe_arguments --xforms"
+        shift 1;
         ;;
       *)   
         echo "Unknown option $1"
@@ -258,11 +263,11 @@ function main()
   fi
    
   if [ $run_gdb -eq 0 ]; then 
-    exec $OPENAIR_DIR/targets/bin/oaisim.Rel10 $exe_arguments | tee /tmp/enb_ue_s1.log.txt
+    exec $OPENAIR_DIR/targets/bin/oaisim.Rel14 $exe_arguments | tee /tmp/enb_ue_s1.log.txt
   else
     touch      ~/.gdb_enb_ue_s1
     chmod 777  ~/.gdb_enb_ue_s1
-    echo "file $OPENAIR_DIR/targets/bin/oaisim.Rel10" > ~/.gdb_enb_ue_s1
+    echo "file $OPENAIR_DIR/targets/bin/oaisim.Rel14" > ~/.gdb_enb_ue_s1
     echo "set args $exe_arguments" >> ~/.gdb_enb_ue_s1
     echo "run"                        >> ~/.gdb_enb_ue_s1
     cat ~/.gdb_enb_ue_s1
