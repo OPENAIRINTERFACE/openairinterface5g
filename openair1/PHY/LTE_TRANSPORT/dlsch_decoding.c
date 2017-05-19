@@ -167,10 +167,11 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
                          uint8_t llr8_flag)
 {
 
-
+#if UE_TIMING_TRACE
   time_stats_t *dlsch_rate_unmatching_stats=&phy_vars_ue->dlsch_rate_unmatching_stats;
   time_stats_t *dlsch_turbo_decoding_stats=&phy_vars_ue->dlsch_turbo_decoding_stats;
   time_stats_t *dlsch_deinterleaving_stats=&phy_vars_ue->dlsch_deinterleaving_stats;
+#endif
   uint32_t A,E;
   uint32_t G;
   uint32_t ret,offset;
@@ -372,7 +373,9 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     printf("f1 %d, f2 %d, F %d\n",f1f2mat_old[2*iind],f1f2mat_old[1+(2*iind)],(r==0) ? harq_process->F : 0);
 #endif
 
+#if UE_TIMING_TRACE
     start_meas(dlsch_rate_unmatching_stats);
+#endif
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
     harq_process->RTC[r] = generate_dummy_w(4+(Kr_bytes*8),
                                             (uint8_t*) &dummy_w[r][0],
@@ -406,12 +409,17 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
                                    harq_process->Nl,
                                    r,
                                    &E)==-1) {
+#if UE_TIMING_TRACE
       stop_meas(dlsch_rate_unmatching_stats);
+#endif
       LOG_E(PHY,"dlsch_decoding.c: Problem in rate_matching\n");
       return(dlsch->max_turbo_iterations);
     } else
+    {
+#if UE_TIMING_TRACE
       stop_meas(dlsch_rate_unmatching_stats);
-
+#endif
+    }
     r_offset += E;
 
     /*
@@ -419,13 +427,16 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
      harq_process->d[r],
      harq_process->w);
     */
+#if UE_TIMING_TRACE
     start_meas(dlsch_deinterleaving_stats);
+#endif
     sub_block_deinterleaving_turbo(4+Kr,
                                    &harq_process->d[r][96],
 
                                    harq_process->w[r]);
+#if UE_TIMING_TRACE
     stop_meas(dlsch_deinterleaving_stats);
-
+#endif
 #ifdef DEBUG_DLSCH_DECODING
     /*
     if (r==0) {
@@ -470,8 +481,9 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     		AssertFatal (Kr >= 256, "turbo algo issue Kr=%d cb_cnt=%d C=%d nbRB=%d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d\n",
     				Kr,r,harq_process->C,harq_process->nb_rb,A,harq_process->TBS,harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
     	}
-
-      start_meas(dlsch_turbo_decoding_stats);
+#if UE_TIMING_TRACE
+        start_meas(dlsch_turbo_decoding_stats);
+#endif
       LOG_D(PHY,"AbsSubframe %d.%d Start turbo segment %d/%d \n",frame%1024,subframe,r,harq_process->C-1);
       ret = tc
             (&harq_process->d[r][96],
@@ -490,14 +502,17 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
              &phy_vars_ue->dlsch_tc_intl1_stats,
              &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
 
-
+#if UE_TIMING_TRACE
       stop_meas(dlsch_turbo_decoding_stats);
+#endif
     }
 #else
     if ((harq_process->C == 1) ||
 	((r==harq_process->C-1) && (skipped_last==0))) { // last segment with odd number of segments
 
-      start_meas(dlsch_turbo_decoding_stats);
+#if UE_TIMING_TRACE
+        start_meas(dlsch_turbo_decoding_stats);
+#endif
       ret = tc
             (&harq_process->d[r][96],
              harq_process->c[r],
@@ -514,7 +529,9 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
              &phy_vars_ue->dlsch_tc_ext_stats,
              &phy_vars_ue->dlsch_tc_intl1_stats,
              &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
+ #if UE_TIMING_TRACE
       stop_meas(dlsch_turbo_decoding_stats);
+#endif
       //      printf("single decode, exit\n");
       //      exit(-1);
     }
@@ -531,7 +548,9 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 #ifdef DEBUG_DLSCH_DECODING
 	  printf("single decoding segment %d (%p)\n",r-1,&harq_process->d[r-1][96]);
 #endif
+#if UE_TIMING_TRACE
 	  start_meas(dlsch_turbo_decoding_stats);
+#endif
 #ifdef DEBUG_DLSCH_DECODING
 	  printf("double decoding segments %d,%d (%p,%p)\n",r-1,r,&harq_process->d[r-1][96],&harq_process->d[r][96]);
 #endif
@@ -572,10 +591,14 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
              &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
 
 	     exit(-1);*/
-	  stop_meas(dlsch_turbo_decoding_stats);
+#if UE_TIMING_TRACE
+      stop_meas(dlsch_turbo_decoding_stats);
+#endif
 	}
 	else { // Kr_last != Kr
+#if UE_TIMING_TRACE
 	  start_meas(dlsch_turbo_decoding_stats);
+#endif
 	  ret = tc
             (&harq_process->d[r-1][96],
              harq_process->c[r-1],
@@ -592,9 +615,12 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
              &phy_vars_ue->dlsch_tc_ext_stats,
              &phy_vars_ue->dlsch_tc_intl1_stats,
              &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
-	  stop_meas(dlsch_turbo_decoding_stats);
+#if UE_TIMING_TRACE
+      stop_meas(dlsch_turbo_decoding_stats);
 
 	  start_meas(dlsch_turbo_decoding_stats);
+#endif
+
 	  ret = tc
             (&harq_process->d[r][96],
              harq_process->c[r],
@@ -611,6 +637,9 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
              &phy_vars_ue->dlsch_tc_ext_stats,
              &phy_vars_ue->dlsch_tc_intl1_stats,
              &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
+
+#if UE_TIMING_TRACE
+
 	  stop_meas(dlsch_turbo_decoding_stats);
 
 	  /*printf("Segmentation: C %d r %d, dlsch_rate_unmatching_stats %5.3f dlsch_deinterleaving_stats %5.3f  dlsch_turbo_decoding_stats %5.3f \n",
@@ -619,7 +648,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
               dlsch_rate_unmatching_stats->p_time/(cpuf*1000.0),
               dlsch_deinterleaving_stats->p_time/(cpuf*1000.0),
               dlsch_turbo_decoding_stats->p_time/(cpuf*1000.0));*/
-
+#endif
 	}
       }
     }
@@ -641,9 +670,10 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   frame_rx_prev = frame_rx_prev%1024;
 
   if (err_flag == 1) {
-    //LOG_I(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
-    //    phy_vars_ue->Mod_id, frame, subframe, harq_pid,harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs,Kr,r,harq_process->round);
-
+#if UE_DEBUG_TRACE
+    LOG_I(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
+        phy_vars_ue->Mod_id, frame, subframe, harq_pid,harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs,Kr,r,harq_process->round);
+#endif
     dlsch->harq_ack[subframe].ack = 0;
     dlsch->harq_ack[subframe].harq_id = harq_pid;
     dlsch->harq_ack[subframe].send_harq_status = 1;
@@ -664,9 +694,10 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 
     return((1+dlsch->max_turbo_iterations));
   } else {
-
-      //LOG_I(PHY,"[UE %d] DLSCH: Setting ACK for subframe %d TBS %d harq_process->mcs %d harq_process->nb_rb %d\n",
-                   //phy_vars_ue->Mod_id,subframe,harq_process->TBS,harq_process->mcs,harq_process->nb_rb);
+#if UE_DEBUG_TRACE
+      LOG_I(PHY,"[UE %d] DLSCH: Setting ACK for subframe %d TBS %d mcs %d nb_rb %d\n",
+           phy_vars_ue->Mod_id,subframe,harq_process->TBS,harq_process->mcs,harq_process->nb_rb);
+#endif
 
     harq_process->status = SCH_IDLE;
     harq_process->round  = 0;

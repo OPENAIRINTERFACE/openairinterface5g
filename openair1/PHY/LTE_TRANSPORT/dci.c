@@ -1754,7 +1754,7 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
       avgs = cmax(avgs,avgP[(aarx<<1)+aatx]);
 
   log2_maxh = (log2_approx(avgs)/2) + 5;  //+frame_parms->nb_antennas_rx;
-#ifdef DEBUG_PHY
+#ifdef UE_DEBUG_TRACE
   LOG_I(PHY,"subframe %d: pdcch log2_maxh = %d (%d,%d)\n",subframe,log2_maxh,avgP[0],avgs);
 #endif
 

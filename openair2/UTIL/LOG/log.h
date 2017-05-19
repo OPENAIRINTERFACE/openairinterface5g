@@ -315,16 +315,29 @@ void *log_thread_function(void * list);
 #    define LOG_N(c, x...) /* */
 #    define LOG_F(c, x...) /* */
 #  else /* T_TRACER */
-#    define LOG_G(c, x...) logIt(c, LOG_EMERG, x)
-#    define LOG_A(c, x...) logIt(c, LOG_ALERT, x)
-#    define LOG_C(c, x...) logIt(c, LOG_CRIT,  x)
-#    define LOG_E(c, x...) logIt(c, LOG_ERR, x)
-#    define LOG_W(c, x...) logIt(c, LOG_WARNING, x)
-#    define LOG_N(c, x...) logIt(c, LOG_NOTICE, x)
-#    define LOG_I(c, x...) logIt(c, LOG_INFO, x)
-#    define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
-#    define LOG_F(c, x...) logIt(c, LOG_FILE, x)  // log to a file, useful for the MSC chart generation
-#    define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
+#    if UE_NO_LOG
+#        define LOG_I(c, x...) /* */
+#        define LOG_W(c, x...) /* */
+#        define LOG_E(c, x...) /* */
+#        define LOG_D(c, x...) /* */
+#        define LOG_T(c, x...) /* */
+#        define LOG_G(c, x...) /* */
+#        define LOG_A(c, x...) /* */
+#        define LOG_C(c, x...) /* */
+#        define LOG_N(c, x...) /* */
+#        define LOG_F(c, x...) /* */
+#    else  /*UE_NO_LOG*/
+#        define LOG_G(c, x...) logIt(c, LOG_EMERG, x)
+#        define LOG_A(c, x...) logIt(c, LOG_ALERT, x)
+#        define LOG_C(c, x...) logIt(c, LOG_CRIT,  x)
+#        define LOG_E(c, x...) logIt(c, LOG_ERR, x)
+#        define LOG_W(c, x...) logIt(c, LOG_WARNING, x)
+#        define LOG_N(c, x...) logIt(c, LOG_NOTICE, x)
+#        define LOG_I(c, x...) logIt(c, LOG_INFO, x)
+#        define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
+#        define LOG_F(c, x...) logIt(c, LOG_FILE, x)  // log to a file, useful for the MSC chart generation
+#        define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
+#    endif /*UE_NO_LOG*/
 #  endif /* T_TRACER */
 #else /* USER_MODE */
 #  define LOG_G(c, x...) printk(x)
@@ -408,7 +421,7 @@ static inline void printMeas(char * txt, Meas *M, int period) {
                 M->iterations,
                 M->maxArray[1],M->maxArray[2], M->maxArray[3],M->maxArray[4], M->maxArray[5], 
                 M->maxArray[6],M->maxArray[7], M->maxArray[8],M->maxArray[9],M->maxArray[10]);
-        LOG_W(PHY,"%s",txt2);
+        printf("%s",txt2);
     }
 }
 

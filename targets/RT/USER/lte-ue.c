@@ -546,8 +546,9 @@ static void *UE_thread_rxn_txnp4(void *arg) {
             phy_procedures_UE_RX( UE, proc, 0, 0, UE->mode, no_relay, NULL );
         }
 
+#if UE_TIMING_TRACE
         start_meas(&UE->generic_stat);
-
+#endif
         if (UE->mac_enabled==1) {
 
             ret = mac_xface->ue_scheduler(UE->Mod_id,
@@ -577,8 +578,9 @@ static void *UE_thread_rxn_txnp4(void *arg) {
                        UE->Mod_id, proc->frame_rx, proc->subframe_tx,txt );
             }
         }
-
+#if UE_TIMING_TRACE
         stop_meas(&UE->generic_stat);
+#endif
 
         // Prepare the future Tx data
 

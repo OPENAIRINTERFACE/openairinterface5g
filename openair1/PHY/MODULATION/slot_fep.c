@@ -129,11 +129,15 @@ int slot_fep(PHY_VARS_UE *ue,
         dft((int16_t *)tmp_dft_in,
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[(Ns>>1)&0x1].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       } else { // use dft input from RX buffer directly
-        start_meas(&ue->rx_dft_stats);
+#if UE_TIMING_TRACE
+          start_meas(&ue->rx_dft_stats);
+#endif
 
         dft((int16_t *)&common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[(Ns>>1)&0x1].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
+#if UE_TIMING_TRACE
         stop_meas(&ue->rx_dft_stats);
+#endif
 
       }
     } else {
@@ -150,8 +154,9 @@ int slot_fep(PHY_VARS_UE *ue,
         memcpy((void *)&common_vars->rxdata[aa][frame_length_samples],
                (void *)&common_vars->rxdata[aa][0],
                frame_parms->ofdm_symbol_size*sizeof(int));
-
+#if UE_TIMING_TRACE
       start_meas(&ue->rx_dft_stats);
+#endif
 
       if ((rx_offset&7)!=0) {  // if input to dft is not 128-bit aligned, issue for size 6 and 15 PRBs
         memcpy((void *)tmp_dft_in,
@@ -164,8 +169,9 @@ int slot_fep(PHY_VARS_UE *ue,
         dft((int16_t *)&common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[(Ns>>1)&0x1].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       }
-
+#if UE_TIMING_TRACE
       stop_meas(&ue->rx_dft_stats);
+#endif
 
 
     }
@@ -183,13 +189,17 @@ int slot_fep(PHY_VARS_UE *ue,
 #ifdef DEBUG_FEP
         printf("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
 #endif
+#if UE_TIMING_TRACE
         start_meas(&ue->dlsch_channel_estimation_stats);
+#endif
         lte_dl_channel_estimation(ue,eNB_id,0,
                                   Ns,
                                   aa,
                                   l,
                                   symbol);
+#if UE_TIMING_TRACE
         stop_meas(&ue->dlsch_channel_estimation_stats);
+#endif
 
         for (i=0; i<ue->measurements.n_adj_cells; i++) {
           lte_dl_channel_estimation(ue,eNB_id,i+1,
@@ -208,13 +218,17 @@ int slot_fep(PHY_VARS_UE *ue,
 #endif
 
       if (l==(4-frame_parms->Ncp)) {
-        start_meas(&ue->dlsch_freq_offset_estimation_stats);
+#if UE_TIMING_TRACE
+          start_meas(&ue->dlsch_freq_offset_estimation_stats);
+#endif
         lte_est_freq_offset(common_vars->common_vars_rx_data_per_thread[(Ns>>1)&0x1].dl_ch_estimates[0],
                             frame_parms,
                             l,
                             &common_vars->freq_offset,
 			    reset_freq_est);
+#if UE_TIMING_TRACE
         stop_meas(&ue->dlsch_freq_offset_estimation_stats);
+#endif
 
       }
     }
