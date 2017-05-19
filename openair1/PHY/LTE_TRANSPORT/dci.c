@@ -2000,13 +2000,11 @@ uint8_t get_num_pdcch_symbols(uint8_t num_dci,
     numCCE += (1<<(dci_alloc[i].L));
 
     if(firstCCE_max < dci_alloc[i].firstCCE) {
-       firstCCE_max      = dci_alloc[i].firstCCE;
-      L                  = dci_alloc[i].L;
-    }
-    if(i == (num_dci - 1)) {
-      CCE_max_used_index = firstCCE_max + (1<<L) - 1;
+      firstCCE_max = dci_alloc[i].firstCCE;
+      L            = dci_alloc[i].L;
     }
   }
+  CCE_max_used_index = firstCCE_max + (1<<L) - 1;
 
   //if ((9*numCCE) <= (frame_parms->N_RB_DL*2))
   if (CCE_max_used_index < get_nCCE(1, frame_parms, get_mi(frame_parms, subframe)))
