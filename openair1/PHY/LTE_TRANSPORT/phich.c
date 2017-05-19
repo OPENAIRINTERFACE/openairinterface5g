@@ -1396,6 +1396,7 @@ void rx_phich(PHY_VARS_UE *ue,
             HI16,
             nseq_PHICH,
             ngroup_PHICH,
+            ulsch->harq_processes[harq_pid]->round,
             ulsch->Mlimit);
       //#endif
 
