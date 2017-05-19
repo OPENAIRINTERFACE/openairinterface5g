@@ -2009,13 +2009,13 @@ uint8_t get_num_pdcch_symbols(uint8_t num_dci,
   }
 
   //if ((9*numCCE) <= (frame_parms->N_RB_DL*2))
-  if (CCE_max_used_index <= get_nCCE(1, frame_parms, get_mi(frame_parms, subframe)))
+  if (CCE_max_used_index < get_nCCE(1, frame_parms, get_mi(frame_parms, subframe)))
     return(cmax(1,nCCEmin));
   //else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antenna_ports_eNB==4) ? 4 : 5)))
-  else if (CCE_max_used_index <= get_nCCE(2, frame_parms, get_mi(frame_parms, subframe)))
+  else if (CCE_max_used_index < get_nCCE(2, frame_parms, get_mi(frame_parms, subframe)))
     return(cmax(2,nCCEmin));
   //else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antenna_ports_eNB==4) ? 7 : 8)))
-  else if (CCE_max_used_index <= get_nCCE(3, frame_parms, get_mi(frame_parms, subframe)))
+  else if (CCE_max_used_index < get_nCCE(3, frame_parms, get_mi(frame_parms, subframe)))
     return(cmax(3,nCCEmin));
   else if (frame_parms->N_RB_DL<=10) {
     if (frame_parms->Ncp == 0) { // normal CP
