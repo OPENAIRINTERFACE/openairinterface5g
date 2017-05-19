@@ -97,6 +97,7 @@ static inline uint32_t rdtsc_oai(void)
 
 static inline void start_meas(time_stats_t *ts)
 {
+
   if (opp_enabled) {
     if (ts->meas_flag==0) {
       ts->trials++;

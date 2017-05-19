@@ -466,7 +466,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
                               symbol,
                               nb_rb);
 #ifdef UE_DEBUG_TRACE
-    LOG_I(PHY,"[DLSCH] AbsSubframe %d.%d log2_maxh = %d [log2_maxh0 %d log2_maxh1 %d] (%d,%d)\n",
+    LOG_D(PHY,"[DLSCH] AbsSubframe %d.%d log2_maxh = %d [log2_maxh0 %d log2_maxh1 %d] (%d,%d)\n",
             frame%1024,subframe, pdsch_vars[eNB_id]->log2_maxh,
                                                  pdsch_vars[eNB_id]->log2_maxh0,
                                                  pdsch_vars[eNB_id]->log2_maxh1,

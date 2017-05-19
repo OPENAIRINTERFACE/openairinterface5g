@@ -316,16 +316,16 @@ void *log_thread_function(void * list);
 #    define LOG_F(c, x...) /* */
 #  else /* T_TRACER */
 #    if UE_NO_LOG
-#        define LOG_I(c, x...) /* */
-#        define LOG_W(c, x...) /* */
-#        define LOG_E(c, x...) /* */
-#        define LOG_D(c, x...) /* */
-#        define LOG_T(c, x...) /* */
-#        define LOG_G(c, x...) /* */
-#        define LOG_A(c, x...) /* */
-#        define LOG_C(c, x...) /* */
-#        define LOG_N(c, x...) /* */
-#        define LOG_F(c, x...) /* */
+#        define LOG_I(c, x...) ((void)0)
+#        define LOG_W(c, x...) ((void)0)
+#        define LOG_E(c, x...) ((void)0)
+#        define LOG_D(c, x...) ((void)0)
+#        define LOG_T(c, x...) ((void)0)
+#        define LOG_G(c, x...) ((void)0)
+#        define LOG_A(c, x...) ((void)0)
+#        define LOG_C(c, x...) ((void)0)
+#        define LOG_N(c, x...) ((void)0)
+#        define LOG_F(c, x...) ((void)0)
 #    else  /*UE_NO_LOG*/
 #        define LOG_G(c, x...) logIt(c, LOG_EMERG, x)
 #        define LOG_A(c, x...) logIt(c, LOG_ALERT, x)
