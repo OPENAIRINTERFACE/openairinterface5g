@@ -105,7 +105,47 @@ void get_Msg3_alloc(LTE_DL_FRAME_PARMS *frame_parms,
         *frame = (current_frame+2) & 1023;
         break;
       }
-    }
+    } else if (frame_parms->tdd_config == 4) {
+        switch (current_subframe) {
+
+        case 0:
+        case 4:
+        case 5:
+        case 6:
+          *subframe = 2;
+          *frame = (current_frame+1) & 1023;
+          break;
+
+        case 7:
+          *subframe = 3;
+          *frame = (current_frame+1) & 1023;
+          break;
+
+        case 8:
+        case 9:
+          *subframe = 2;
+          *frame = (current_frame+2) & 1023;
+          break;
+        }
+      } else if (frame_parms->tdd_config == 5) {
+          switch (current_subframe) {
+
+          case 0:
+          case 4:
+          case 5:
+          case 6:
+            *subframe = 2;
+            *frame = (current_frame+1) & 1023;
+            break;
+
+          case 7:
+          case 8:
+          case 9:
+            *subframe = 2;
+            *frame = (current_frame+2) & 1023;
+            break;
+          }
+        }
   }
 }
 
@@ -137,6 +177,13 @@ void get_Msg3_alloc_ret(LTE_DL_FRAME_PARMS *frame_parms,
       // original PUSCH in 3, PHICH in 9, ret in 3 next frame
       // original PUSCH in 4, PHICH in 0, ret in 4 next frame
       *frame=(current_frame+1) & 1023;
+    } else if (frame_parms->tdd_config == 4) {
+        // original PUSCH in 2, PHICH in 8, ret in 2 next frame
+        // original PUSCH in 3, PHICH in 9, ret in 3 next frame
+        *frame=(current_frame+1) & 1023;
+    } else if (frame_parms->tdd_config == 5) {
+        // original PUSCH in 2, PHICH in 8, ret in 2 next frame
+        *frame=(current_frame+1) & 1023;
     }
   }
 }
@@ -253,6 +300,24 @@ unsigned char ul_ACK_subframe2_dl_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsig
 
       break;
 
+    case 4:
+          if (subframe == 2) {  // ACK subframes 0, 4 and 5
+            //if (ACK_index==2)
+            //  return(1); TBC
+            if (ACK_index==2)
+            return(0);
+
+            return(4+ACK_index);
+          } else if (subframe == 3) { // ACK subframes 6, 7 8 and 9
+            return(6+ACK_index);  // To be updated
+          } else {
+            LOG_E(PHY,"phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
+                  subframe,frame_parms->tdd_config);
+            return(0);
+          }
+
+          break;
+
     case 1:
       if (subframe == 2) {  // ACK subframes 5 and 6
         return(5+ACK_index);
@@ -297,6 +362,30 @@ unsigned char ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char s
 
       break;
 
+    case 4:
+          if (subframe == 2) {  // ACK subframes 0,4 and 5
+            return(3); // should be 4
+          } else if (subframe == 3) { // ACK subframes 6,7,8 and 9
+            return(4);
+          } else {
+            LOG_E(PHY,"phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
+                  subframe,frame_parms->tdd_config);
+            return(0);
+          }
+
+          break;
+
+    case 5:
+              if (subframe == 2) {  // ACK subframes 0,3,4,5,6,7,8 and 9
+                return(8); // should be 3
+              } else {
+                LOG_E(PHY,"phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
+                      subframe,frame_parms->tdd_config);
+                return(0);
+              }
+
+              break;
+
     case 1:
       if (subframe == 2) {  // ACK subframes 5 and 6
         return(2);
@@ -331,7 +420,7 @@ uint8_t get_reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
                 uint8_t do_reset) // 1 to reset ACK/NACK status : 0 otherwise
 {
   uint8_t status=0;
-  uint8_t subframe_ul=0xff, subframe_dl0=0xff, subframe_dl1=0xff;
+  uint8_t subframe_ul=0xff, subframe_dl0=0xff, subframe_dl1=0xff,subframe_dl2=0xff, subframe_dl3=0xff;
 
   //  printf("get_ack: SF %d\n",subframe);
   if (frame_parms->frame_type == FDD) {
@@ -485,6 +574,63 @@ uint8_t get_reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
 
       break;
 
+    case 4:
+          if (subframe_tx == 2) {  // ACK subframes 4, 5 and 0
+            subframe_dl0 = 4;
+            subframe_dl1 = 5;
+            subframe_dl2 = 0;
+            subframe_ul  = 2;
+            //printf("subframe_tx 2, TDD config 3: harq_ack[5] = %d (%d),harq_ack[6] = %d (%d)\n",harq_ack[5].ack,harq_ack[5].send_harq_status,harq_ack[6].ack,harq_ack[6].send_harq_status);
+          } else if (subframe_tx == 3) { // ACK subframes 6, 7 8 and 9
+            subframe_dl0 = 6;
+            subframe_dl1 = 7;
+            subframe_dl2 = 8;
+            subframe_dl3 = 9;
+            subframe_ul  = 3;
+            //printf("Subframe 3, TDD config 3: harq_ack[7] = %d,harq_ack[8] = %d\n",harq_ack[7].ack,harq_ack[8].ack);
+            //printf("status %d : o_ACK (%d,%d)\n", status,o_ACK[0],o_ACK[1]);
+          } else {
+            LOG_E(PHY,"phy_procedures_lte.c: get_ack, illegal subframe_tx %d for tdd_config %d\n",
+                  subframe_tx,frame_parms->tdd_config);
+            return(0);
+          }
+
+          // report ACK/NACK status
+          o_ACK[cw_idx] = 0;
+          if (harq_ack[subframe_dl0].send_harq_status == 1)
+            o_ACK[cw_idx] = harq_ack[subframe_dl0].ack;
+
+          if (harq_ack[subframe_dl1].send_harq_status == 1)
+            o_ACK[cw_idx] &= harq_ack[subframe_dl1].ack;
+
+          if (harq_ack[subframe_dl2].send_harq_status == 1)
+            o_ACK[cw_idx] &= harq_ack[subframe_dl2].ack;
+
+          if (harq_ack[subframe_dl3].send_harq_status == 1)
+            o_ACK[cw_idx] &= harq_ack[subframe_dl3].ack;
+
+          pN_bundled[0] = harq_ack[subframe_rx].vDAI_UL;
+          status = harq_ack[subframe_dl0].send_harq_status + harq_ack[subframe_dl1].send_harq_status + harq_ack[subframe_dl2].send_harq_status + harq_ack[subframe_dl3].send_harq_status;
+
+          LOG_I(PHY,"TDD Config3 UL Sfn %d, dl Sfn0 %d status %d o_Ack %d, dl Sfn1 %d status %d o_Ack %d dl Sfn2 %d status %d o_Ack %d dl Sfn3 %d status %d o_Ack %d subframe_rx %d N_bundled %d status %d\n",
+                subframe_tx, subframe_dl0, harq_ack[subframe_dl0].send_harq_status,harq_ack[subframe_dl0].ack,
+              subframe_dl1, harq_ack[subframe_dl1].send_harq_status,harq_ack[subframe_dl1].ack,
+              subframe_dl2, harq_ack[subframe_dl2].send_harq_status,harq_ack[subframe_dl2].ack,
+              subframe_dl3, harq_ack[subframe_dl3].send_harq_status,harq_ack[subframe_dl3].ack,subframe_rx, pN_bundled[0], status);
+          if (do_reset) {
+            // reset ACK/NACK status
+            harq_ack[subframe_dl0].ack = 2;
+            harq_ack[subframe_dl1].ack = 2;
+            harq_ack[subframe_dl2].ack = 2;
+            harq_ack[subframe_dl3].ack = 2;
+            harq_ack[subframe_dl0].send_harq_status = 0;
+            harq_ack[subframe_dl1].send_harq_status = 0;
+            harq_ack[subframe_dl2].send_harq_status = 0;
+            harq_ack[subframe_dl3].send_harq_status = 0;
+          }
+
+          break;
+
     }
   }
 
@@ -609,6 +755,29 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
       return(255);
     }
 
+  case 4:
+      if  ((subframe<1) || (subframe>=4))
+        return(SF_DL);
+      else if ((subframe>1) && (subframe < 4))
+        return(SF_UL);
+      else if (subframe==1)
+        return (SF_S);
+      else  {
+        LOG_E(PHY,"[PHY_PROCEDURES_LTE] Unknown subframe number\n");
+        return(255);
+      }
+
+  case 5:
+        if  ((subframe<1) || (subframe>=3))
+          return(SF_DL);
+        else if ((subframe>1) && (subframe < 3))
+          return(SF_UL);
+        else if (subframe==1)
+          return (SF_S);
+        else  {
+          LOG_E(PHY,"[PHY_PROCEDURES_LTE] Unknown subframe number\n");
+          return(255);
+        }
     break;
 
   default:
@@ -683,13 +852,13 @@ unsigned int is_phich_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
       break;
 
     case 4:
-      if ((subframe == 0) || (subframe == 8) )
+      if ((subframe == 8) || (subframe == 9) )
         return(1);
 
       break;
 
     case 5:
-      if (subframe == 0)
+      if (subframe == 8)
         return(1);
 
       break;
