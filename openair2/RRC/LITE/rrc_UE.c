@@ -747,10 +747,10 @@ rrc_ue_establish_drb(
 #        ifdef OAI_EMU
     oai_emulation.info.oai_ifup[ue_mod_idP]=1;
 #        endif
-    LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %d to/from the protocol stack\n",
+    LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
           ue_mod_idP,
           ip_addr_offset3+ue_mod_idP,
-          (eNB_index * maxDRB) + DRB_config->drb_Identity);
+          (long int)((eNB_index * maxDRB) + DRB_config->drb_Identity));
 
     rb_conf_ipv4(0,//add
                  ue_mod_idP,//cx align with the UE index
