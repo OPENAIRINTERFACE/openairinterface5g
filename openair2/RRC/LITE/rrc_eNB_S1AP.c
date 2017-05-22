@@ -287,10 +287,10 @@ rrc_eNB_process_security(
 
   // translation
   LOG_D(RRC,
-        "[eNB %d] NAS security_capabilities.encryption_algorithms %u AS ciphering_algorithm %u NAS security_capabilities.integrity_algorithms %u AS integrity_algorithm %u\n",
+        "[eNB %d] NAS security_capabilities.encryption_algorithms %u AS ciphering_algorithm %lu NAS security_capabilities.integrity_algorithms %u AS integrity_algorithm %u\n",
         ctxt_pP->module_id,
         ue_context_pP->ue_context.security_capabilities.encryption_algorithms,
-        ue_context_pP->ue_context.ciphering_algorithm,
+        (unsigned long)ue_context_pP->ue_context.ciphering_algorithm,
         ue_context_pP->ue_context.security_capabilities.integrity_algorithms,
         ue_context_pP->ue_context.integrity_algorithm);
   /* Select relevant algorithms */
@@ -308,11 +308,11 @@ rrc_eNB_process_security(
     changed = TRUE;
   }
 
-  LOG_I (RRC, "[eNB %d][UE %x] Selected security algorithms (%p): %x, %x, %s\n",
+  LOG_I (RRC, "[eNB %d][UE %x] Selected security algorithms (%p): %lx, %x, %s\n",
          ctxt_pP->module_id,
          ue_context_pP->ue_context.rnti,
          security_capabilities_pP,
-         cipheringAlgorithm,
+         (unsigned long)cipheringAlgorithm,
          integrityProtAlgorithm,
          changed ? "changed" : "same");
 

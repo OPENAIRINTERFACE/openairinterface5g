@@ -140,10 +140,14 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
     rnti = UE_RNTI(module_idP, i);
     CC_id = UE_PCCID(module_idP, i);
-    if ((frameP==0)&&(subframeP==0))
-      LOG_I(MAC,"UE  rnti %x : %s, PHR %d dB\n", rnti, 
-	    UE_list->UE_sched_ctrl[i].ul_out_of_sync==0 ? "in synch" : "out of sync",
-	    UE_list->UE_template[CC_id][i].phr_info);
+    if ((frameP==0)&&(subframeP==0)) {
+      LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP, CC_id, rnti);
+      int cqi = eNB_UE_stats == NULL ? -1 : eNB_UE_stats->DL_cqi[0];
+      LOG_I(MAC,"UE  rnti %x : %s, PHR %d dB CQI %d\n", rnti,
+            UE_list->UE_sched_ctrl[i].ul_out_of_sync==0 ? "in synch" : "out of sync",
+            UE_list->UE_template[CC_id][i].phr_info,
+            cqi);
+    }
 
     PHY_vars_eNB_g[module_idP][CC_id]->pusch_stats_bsr[i][(frameP*10)+subframeP]=-63;
     if (i==UE_list->head)

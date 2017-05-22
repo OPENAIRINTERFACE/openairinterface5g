@@ -87,7 +87,7 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
   unsigned char header_len_mcch=0,header_len_msi=0,header_len_mtch=0, header_len_mtch_temp=0, header_len_mcch_temp=0, header_len_msi_temp=0;
   int ii=0, msi_pos=0;
   int mcch_mcs = -1;
-  uint16_t TBS,j,padding=0,post_padding=0;
+  uint16_t TBS,j=-1,padding=0,post_padding=0;
   mac_rlc_status_resp_t rlc_status;
   int num_mtch;
   int msi_length,i,k;

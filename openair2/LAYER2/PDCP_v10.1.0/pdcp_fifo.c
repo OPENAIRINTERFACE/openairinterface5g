@@ -545,7 +545,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
           pdcp_read_state_g = 0;
           // print_active_requests()
 #ifdef PDCP_DEBUG
-          LOG_D(PDCP, "[PDCP][NETLINK] Something in socket, length %d \n",
+          LOG_D(PDCP, "[PDCP][NETLINK] Something in socket, length %zu\n",
                 nas_nlh_rx->nlmsg_len - sizeof(struct nlmsghdr));
 #endif
 
@@ -603,7 +603,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 
               if (h_rc == HASH_TABLE_OK) {
 #ifdef PDCP_DEBUG
-                LOG_D(PDCP, "[FRAME %5u][eNB][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n",
+                LOG_D(PDCP, "[FRAME %5u][eNB][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %zu) on Rab %d \n",
                       ctxt.frame,
                       pdcp_read_header_g.inst,
                       len,
@@ -693,7 +693,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
               if (h_rc == HASH_TABLE_OK) {
                 rab_id = pdcp_p->rb_id;
 #ifdef PDCP_DEBUG
-                LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n",
+                LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %zu) on Rab %d \n",
                       ctxt.frame,
                       pdcp_read_header_g.inst,
                       len,
