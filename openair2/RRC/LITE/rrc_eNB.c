@@ -2268,8 +2268,8 @@ rrc_eNB_process_MeasurementReport(
   LOG_I(RRC, "RSRP of Source %ld\n", measResults2->measResultPCell.rsrpResult);
   LOG_I(RRC, "RSRQ of Source %ld\n", measResults2->measResultPCell.rsrqResult);
 #else
-  LOG_I(RRC, "RSRP of Source %d\n", measResults2->measResultServCell.rsrpResult);
-  LOG_I(RRC, "RSRQ of Source %d\n", measResults2->measResultServCell.rsrqResult);
+  LOG_I(RRC, "RSRP of Source %ld\n", measResults2->measResultServCell.rsrpResult);
+  LOG_I(RRC, "RSRQ of Source %ld\n", measResults2->measResultServCell.rsrqResult);
 #endif
 
   if (ue_context_pP->ue_context.handover_info->ho_prepare != 0xF0) {

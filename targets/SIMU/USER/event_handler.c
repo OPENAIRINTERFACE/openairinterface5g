@@ -513,7 +513,7 @@ void update_mac(Event_t event)
             if(&mac_config[i].mac_ContentionResolutionTimer !=NULL) {
               oai_emulation->mac_config[i].mac_ContentionResolutionTimer= mac_config[i].mac_ContentionResolutionTimer;
               UE_list->UE_sched_ctrl[i].mac_ContentionResolutionTimer = oai_emulation->mac_config[i].mac_ContentionResolutionTimer;
-              LOG_I(EMU,"mac_ContentionResolutionTimer UE %:", i);
+              LOG_I(EMU,"mac_ContentionResolutionTimer UE %d:", i);
               LOG_I(EMU,"%" PRIu8 "\n",UE_list->UE_sched_ctrl[i].mac_ContentionResolutionTimer);
             }
 
@@ -637,7 +637,7 @@ void update_mac(Event_t event)
           if(&mac_config[i].mac_ContentionResolutionTimer !=NULL) {
             oai_emulation->mac_config[i].mac_ContentionResolutionTimer= mac_config[i].mac_ContentionResolutionTimer;
             UE_list->UE_sched_ctrl[i].mac_ContentionResolutionTimer = oai_emulation->mac_config[i].mac_ContentionResolutionTimer;
-            LOG_I(EMU,"mac_ContentionResolutionTimer UE %:", i);
+            LOG_I(EMU,"mac_ContentionResolutionTimer UE %d:", i);
             LOG_I(EMU,"%" PRIu8 "\n",UE_list->UE_sched_ctrl[i].mac_ContentionResolutionTimer);
           }
 
@@ -903,13 +903,13 @@ void update_mac(Event_t event)
         for(i=UE_list->head; i>=0; i=UE_list->next[i]) {
           oai_emulation->mac_config[i].cqiSchedInterval= mac_config[i].cqiSchedInterval;
           UE_list->UE_sched_ctrl[i].cqiSchedInterval = oai_emulation->mac_config[i].cqiSchedInterval;
-          LOG_I(EMU,"cqiSchedInterval UE :\n", i);
+          LOG_I(EMU,"cqiSchedInterval UE %d:\n", i);
           LOG_I(EMU,"%" PRIu16 "\n",UE_list->UE_sched_ctrl[i].cqiSchedInterval);
         }
       } else {
         oai_emulation->mac_config[event.ue].cqiSchedInterval= mac_config[event.ue].cqiSchedInterval;
         UE_list->UE_sched_ctrl[event.ue].cqiSchedInterval = oai_emulation->mac_config[event.ue].cqiSchedInterval;
-        LOG_I(EMU,"cqiSchedInterval UE :\n", event.ue);
+        LOG_I(EMU,"cqiSchedInterval UE %d:\n", event.ue);
         LOG_I(EMU,"%" PRIu16 "\n",UE_list->UE_sched_ctrl[event.ue].cqiSchedInterval);
       }
     } else if(!strcmp((char *) event.key, "mac_ContentionResolutionTimer") && event.value!=NULL && validate_mac(event)) {
@@ -923,13 +923,13 @@ void update_mac(Event_t event)
         for(i=UE_list->head; i>=0; i=UE_list->next[i]) {
           oai_emulation->mac_config[i].mac_ContentionResolutionTimer= mac_config[i].mac_ContentionResolutionTimer;
           UE_list->UE_sched_ctrl[i].mac_ContentionResolutionTimer = oai_emulation->mac_config[i].mac_ContentionResolutionTimer;
-          LOG_I(EMU,"mac_ContentionResolutionTimer UE :\n", i);
+          LOG_I(EMU,"mac_ContentionResolutionTimer UE %d:\n", i);
           LOG_I(EMU,"%" PRIu8 "\n",UE_list->UE_sched_ctrl[i].mac_ContentionResolutionTimer);
         }
       } else {
         oai_emulation->mac_config[event.ue].mac_ContentionResolutionTimer= mac_config[event.ue].mac_ContentionResolutionTimer;
         UE_list->UE_sched_ctrl[event.ue].mac_ContentionResolutionTimer = oai_emulation->mac_config[event.ue].mac_ContentionResolutionTimer;
-        LOG_I(EMU,"mac_ContentionResolutionTimer UE :\n", event.ue);
+        LOG_I(EMU,"mac_ContentionResolutionTimer UE %d:\n", event.ue);
         LOG_I(EMU,"%" PRIu8 "\n",UE_list->UE_sched_ctrl[event.ue].mac_ContentionResolutionTimer);
       }
     } else if(!strcmp((char *) event.key, "max_allowed_rbs") && event.value!=NULL && validate_mac(event)) {
@@ -1040,7 +1040,7 @@ void update_sys_model(Event_t event)
       LOG_I(EMU,"free_space_model_parameters.pathloss_exponent %G\n",oai_emulation->environment_system_config.fading.free_space_model_parameters.pathloss_exponent);
       LOG_I(EMU,"free_space_model_parameters.pathloss_0_dB %G\n",oai_emulation->environment_system_config.fading.free_space_model_parameters.pathloss_0_dB);
 
-      LOG_I(EMU,"ricean_8tap.rice_factor_dB %G\n",oai_emulation->environment_system_config.fading.ricean_8tap.rice_factor_dB);
+      LOG_I(EMU,"ricean_8tap.rice_factor_dB %d\n",oai_emulation->environment_system_config.fading.ricean_8tap.rice_factor_dB);
 
       //Antenna
       LOG_I(EMU,"antenna.eNB_antenna.number_of_sectors %d\n",oai_emulation->environment_system_config.antenna.eNB_antenna.number_of_sectors);
@@ -1103,7 +1103,7 @@ void update_sys_model(Event_t event)
     } else if(!strcmp((char *) event.key, "free_space_model_parameters.pathloss_0_dB")) {
       LOG_I(EMU,"free_space_model_parameters.pathloss_0_dB %G\n",oai_emulation->environment_system_config.fading.free_space_model_parameters.pathloss_0_dB);
     } else if(!strcmp((char *) event.key, "ricean_8tap.rice_factor_dB")) {
-      LOG_I(EMU,"ricean_8tap.rice_factor_dB %G\n",oai_emulation->environment_system_config.fading.ricean_8tap.rice_factor_dB);
+      LOG_I(EMU,"ricean_8tap.rice_factor_dB %d\n",oai_emulation->environment_system_config.fading.ricean_8tap.rice_factor_dB);
     } else if(!strcmp((char *) event.key, "antenna.eNB_antenna.number_of_sectors")) {
       LOG_I(EMU,"antenna.eNB_antenna.number_of_sectors %d\n",oai_emulation->environment_system_config.antenna.eNB_antenna.number_of_sectors);
     } else if(!strcmp((char *) event.key, "antenna.eNB_antenna.beam_width_dB")) {
@@ -1202,8 +1202,8 @@ void update_topo_model(Event_t event)
       LOG_I(EMU,"UE_moving_dynamics_max_speed_mps %G\n",oai_emulation->topology_config.mobility.UE_mobility.UE_moving_dynamics.max_speed_mps);
       LOG_I(EMU,"UE_moving_dynamics_min_journey_time_ms %G\n",oai_emulation->topology_config.mobility.UE_mobility.UE_moving_dynamics.min_journey_time_ms);
       LOG_I(EMU,"UE_moving_dynamics_max_journey_time_ms %G\n",oai_emulation->topology_config.mobility.UE_mobility.UE_moving_dynamics.max_journey_time_ms);
-      LOG_I(EMU,"grid_map_horizontal_grid %G\n",oai_emulation->topology_config.mobility.UE_mobility.grid_walk.grid_map.horizontal_grid);
-      LOG_I(EMU,"grid_map_vertical_grid %G\n",oai_emulation->topology_config.mobility.UE_mobility.grid_walk.grid_map.vertical_grid);
+      LOG_I(EMU,"grid_map_horizontal_grid %d\n",oai_emulation->topology_config.mobility.UE_mobility.grid_walk.grid_map.horizontal_grid);
+      LOG_I(EMU,"grid_map_vertical_grid %d\n",oai_emulation->topology_config.mobility.UE_mobility.grid_walk.grid_map.vertical_grid);
       LOG_I(EMU,"UE_initial_distribution_selected_option %s\n",oai_emulation->topology_config.mobility.UE_mobility.UE_initial_distribution.selected_option);
       LOG_I(EMU,"random_UE_distribution_number_of_nodes %d\n",oai_emulation->topology_config.mobility.UE_mobility.random_UE_distribution.number_of_nodes);
       LOG_I(EMU,"concentrated_UE_distribution_number_of_nodes %d\n",oai_emulation->topology_config.mobility.UE_mobility.concentrated_UE_distribution.number_of_nodes);
@@ -1245,9 +1245,9 @@ void update_topo_model(Event_t event)
     } else if(!strcmp((char *) event.key, "UE_moving_dynamics_max_journey_time_ms")) {
       LOG_I(EMU,"UE_moving_dynamics_max_journey_time_ms %G\n",oai_emulation->topology_config.mobility.UE_mobility.UE_moving_dynamics.max_journey_time_ms);
     } else if(!strcmp((char *) event.key, "grid_map_horizontal_grid")) {
-      LOG_I(EMU,"grid_map_horizontal_grid %G\n",oai_emulation->topology_config.mobility.UE_mobility.grid_walk.grid_map.horizontal_grid);
+      LOG_I(EMU,"grid_map_horizontal_grid %d\n",oai_emulation->topology_config.mobility.UE_mobility.grid_walk.grid_map.horizontal_grid);
     } else if(!strcmp((char *) event.key, "grid_map_vertical_grid")) {
-      LOG_I(EMU,"grid_map_vertical_grid %G\n",oai_emulation->topology_config.mobility.UE_mobility.grid_walk.grid_map.vertical_grid);
+      LOG_I(EMU,"grid_map_vertical_grid %d\n",oai_emulation->topology_config.mobility.UE_mobility.grid_walk.grid_map.vertical_grid);
     } else if(!strcmp((char *) event.key, "UE_initial_distribution_selected_option")) {
       LOG_I(EMU,"UE_initial_distribution_selected_option %s\n",oai_emulation->topology_config.mobility.UE_mobility.UE_initial_distribution.selected_option);
     } else if(!strcmp((char *) event.key, "random_UE_distribution_number_of_nodes")) {
