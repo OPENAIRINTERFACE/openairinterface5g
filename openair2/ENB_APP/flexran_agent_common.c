@@ -26,8 +26,9 @@
  * \version 0.1
  */
 
-#include<stdio.h>
+#include <stdio.h>
 #include <time.h>
+#include <sys/stat.h>
 
 #include "flexran_agent_common.h"
 #include "flexran_agent_common_internal.h"
@@ -386,13 +387,15 @@ int flexran_agent_control_delegation(mid_t mod_id, const void *params, Protocol_
   Protocol__FlexControlDelegation *control_delegation_msg = input->control_delegation_msg;
 
   //  struct timespec vartime = timer_start();
-  
+  int status;
   //Write the payload lib into a file in the cache and load the lib
   char lib_name[120];
   char target[512];
   snprintf(lib_name, sizeof(lib_name), "/%s.so", control_delegation_msg->name);
   strcpy(target, local_cache);
   strcat(target, lib_name);
+  
+  status = mkdir(local_cache, S_IRWXU | S_IRWXG | S_IRWXO);
 
   FILE *f;
   f = fopen(target, "wb");
