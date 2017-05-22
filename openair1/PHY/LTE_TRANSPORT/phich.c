@@ -135,6 +135,17 @@ unsigned char subframe2_ul_harq(LTE_DL_FRAME_PARMS *frame_parms,unsigned char su
 
     break;
 
+  case 4:
+     if ( (subframe == 8) || (subframe == 9) ) {
+       return(subframe-8);
+     } else {
+       LOG_E(PHY,"phich.c: subframe2_ul_harq, illegal subframe %d for tdd_config %d\n",
+             subframe,frame_parms->tdd_config);
+       return(0);
+     }
+
+     break;
+
   }
 
   return(0);
@@ -1396,6 +1407,7 @@ void rx_phich(PHY_VARS_UE *ue,
             HI16,
             nseq_PHICH,
             ngroup_PHICH,
+            ulsch->harq_processes[harq_pid]->round,
             ulsch->Mlimit);
 #endif
 

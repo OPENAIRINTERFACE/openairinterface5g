@@ -297,7 +297,7 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
       if (ret == -1) {
 	fprintf (stderr,"[ETHERNET] Can't start shell to execute %s %s",system_cmd, strerror(errno));
       } else {
-	printf ("[ETHERNET] status of %s is %i\n",WEXITSTATUS(ret));
+	printf ("[ETHERNET] status of %s is %d\n", system_cmd, WEXITSTATUS(ret));
       }
       printf("[ETHERNET] Coalesce parameters %s\n",system_cmd);
     } else {
@@ -314,7 +314,7 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
       if (ret == -1) {
 	fprintf (stderr,"[ETHERNET] Can't start shell to execute %s %s",system_cmd, strerror(errno));
       } else {
-	printf ("[ETHERNET] status of %s is %i\n",WEXITSTATUS(ret));
+	printf ("[ETHERNET] status of %s is %d\n", system_cmd, WEXITSTATUS(ret));
       }
       printf("[ETHERNET] Pause parameters %s\n",system_cmd);
     } else {
@@ -329,7 +329,7 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
       if (ret == -1) {
         fprintf (stderr,"[ETHERNET] Can't start shell to execute %s %s",system_cmd, strerror(errno));
       } else {
-        printf ("[ETHERNET] status of %s is %i\n",WEXITSTATUS(ret));
+        printf ("[ETHERNET] status of %s is %d\n", system_cmd, WEXITSTATUS(ret));
       }            
       printf("[ETHERNET] Ring parameters %s\n",system_cmd);
     } else {

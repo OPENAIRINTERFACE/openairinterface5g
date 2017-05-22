@@ -747,10 +747,10 @@ rrc_ue_establish_drb(
 #        ifdef OAI_EMU
     oai_emulation.info.oai_ifup[ue_mod_idP]=1;
 #        endif
-    LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %d to/from the protocol stack\n",
+    LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
           ue_mod_idP,
           ip_addr_offset3+ue_mod_idP,
-          (eNB_index * maxDRB) + DRB_config->drb_Identity);
+          (long int)((eNB_index * maxDRB) + DRB_config->drb_Identity));
 
     rb_conf_ipv4(0,//add
                  ue_mod_idP,//cx align with the UE index
@@ -1042,7 +1042,7 @@ rrc_ue_update_radioResourceConfigDedicated(RadioResourceConfigDedicated_t* radio
     // Update cqi_ReportConfig
     if(radioResourceConfigDedicated->physicalConfigDedicated->cqi_ReportConfig != NULL)
     {
-        LOG_I(RRC,"Update cqi_ReportConfig config (size=%d,%d)\n", sizeof(*physicalConfigDedicated2->cqi_ReportConfig), sizeof(CQI_ReportConfig_t));
+        LOG_I(RRC,"Update cqi_ReportConfig config (size=%zu,%zu)\n", sizeof(*physicalConfigDedicated2->cqi_ReportConfig), sizeof(CQI_ReportConfig_t));
 
         if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig == NULL)
             UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig = CALLOC(1,sizeof(CQI_ReportConfig_t));
@@ -1052,7 +1052,7 @@ rrc_ue_update_radioResourceConfigDedicated(RadioResourceConfigDedicated_t* radio
                 sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
 
         if (radioResourceConfigDedicated->physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic != NULL) {
-          LOG_I(RRC,"Update cqi_ReportPeriodic config (size=%d,%d)\n", sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic), sizeof(CQI_ReportPeriodic_t));
+          LOG_I(RRC,"Update cqi_ReportPeriodic config (size=%zu,%zu)\n", sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic), sizeof(CQI_ReportPeriodic_t));
 
           if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig->cqi_ReportPeriodic == NULL)
             UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig->cqi_ReportPeriodic = CALLOC(1,sizeof(CQI_ReportPeriodic_t));

@@ -4888,7 +4888,7 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
 
     if(rballoc > RIV_max)
     {
-        LOG_I(PHY,"bad dci rballoc rballoc %d  RIV_max %d \n",rballoc, RIV_max);
+        LOG_I(PHY,"bad dci rballoc rballoc %d  RIV_max %lld \n",rballoc, RIV_max);
         // DCI false detection
         return(0);
     }
@@ -5124,7 +5124,7 @@ int check_dci_format2_2a_coherency(DCI_format_t dci_format,
    if( (rballoc > RIV_max) && (rah == 1) )
    {
       // DCI false detection
-       LOG_I(PHY,"bad rballoc %d RIV_max %d\n", rballoc, RIV_max);
+       LOG_I(PHY,"bad rballoc %d RIV_max %lld\n", rballoc, RIV_max);
       return(0);
    }
 

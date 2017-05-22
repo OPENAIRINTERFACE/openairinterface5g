@@ -261,7 +261,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
         LOG_E(PHY,"[recv] received %d samples out of %d\n",samples_received,nsamps);
 
     if ( s->rx_md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE)
-        LOG_E(PHY,s->rx_md.to_pp_string(true).c_str());
+        LOG_E(PHY, "%s\n", s->rx_md.to_pp_string(true).c_str());
 
     s->rx_count += nsamps;
     s->rx_timestamp = s->rx_md.time_spec.to_ticks(s->sample_rate);
@@ -664,7 +664,7 @@ extern "C" {
 	LOG_I(PHY,"RF board max packet size %u, size for 100µs jitter %d \n", max, samples);
 	if ( samples < max )
 	  stream_args_rx.args["spp"] = str(boost::format("%d") % samples );
-	LOG_I(PHY,"rx_max_num_samps %u\n",
+	LOG_I(PHY,"rx_max_num_samps %zu\n",
 	      s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps());
 
         for (int i = 0; i<openair0_cfg[0].rx_num_channels; i++)
