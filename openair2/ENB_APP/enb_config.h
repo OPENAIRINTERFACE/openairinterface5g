@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*
                                 enb_config.h
@@ -40,14 +32,17 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <libconfig.h>
 
 #include "commonDef.h"
 #include "platform_types.h"
 #include "platform_constants.h"
 #include "PHY/impl_defs_lte.h"
+#include "PHY/defs.h"
 #include "s1ap_messages_types.h"
 #ifdef CMAKER
 #include "SystemInformationBlockType2.h"
+#include "rrc_messages_types.h"
 #else
 #include "RRC/LITE/MESSAGES/SystemInformationBlockType2.h"
 #endif
@@ -82,10 +77,15 @@ typedef struct rrh_gw_config_s {
   unsigned  udp:1;
   unsigned  raw:1;
   unsigned  active:1;
+  char      *rrh_gw_if_name;
   char     *local_address;
   char     *remote_address;
   uint16_t  local_port;
   uint16_t  remote_port;
+  uint8_t   udpif4p5;
+  uint8_t   rawif4p5;
+  uint8_t   rawif5_mobipass;
+  uint8_t   if_compress;
   int tx_scheduling_advance;
   int tx_sample_advance;
   int iq_txshift;
@@ -112,6 +112,7 @@ typedef struct Enb_properties_s {
    */
   char               *eNB_name;
 
+
   /* Tracking area code */
   uint16_t            tac;
 
@@ -126,6 +127,10 @@ typedef struct Enb_properties_s {
 
   /* Physical parameters */
   int16_t                 nb_cc;
+#ifndef OCP_FRAMEWORK
+  eNB_func_t              cc_node_function[1+MAX_NUM_CCs];
+  eNB_timing_t            cc_node_timing[1+MAX_NUM_CCs];
+  int16_t                 cc_node_synch_ref[1+MAX_NUM_CCs];
   lte_frame_type_t        frame_type[1+MAX_NUM_CCs];
   uint8_t                 tdd_config[1+MAX_NUM_CCs];
   uint8_t                 tdd_config_s[1+MAX_NUM_CCs];
@@ -149,7 +154,7 @@ typedef struct Enb_properties_s {
   long                    pucch_delta_shift[1+MAX_NUM_CCs];
   long                    pucch_nRB_CQI[1+MAX_NUM_CCs];
   long                    pucch_nCS_AN[1+MAX_NUM_CCs];
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
   long                    pucch_n1_AN[1+MAX_NUM_CCs];
 #endif
   long                    pdsch_referenceSignalPower[1+MAX_NUM_CCs];
@@ -199,8 +204,10 @@ typedef struct Enb_properties_s {
   long                    ue_TimersAndConstants_t311[1+MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n310[1+MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n311[1+MAX_NUM_CCs];
+#else
+   RrcConfigurationReq    RrcReq;
+#endif
   long                    ue_TransmissionMode[1+MAX_NUM_CCs];
-
   long                    srb1_timer_poll_retransmit;
   long                    srb1_timer_reordering;
   long                    srb1_timer_status_prohibit;
@@ -222,6 +229,10 @@ typedef struct Enb_properties_s {
   char               *enb_interface_name_for_S1_MME;
   in_addr_t           enb_ipv4_address_for_S1_MME;
 
+  char               *flexran_agent_interface_name;
+  in_addr_t           flexran_agent_ipv4_address;
+  tcp_udp_port_t      flexran_agent_port;
+  char               *flexran_agent_cache;
 
   /* Nb of RRH to connect to */
   uint8_t             nb_rrh_gw;
@@ -229,6 +240,7 @@ typedef struct Enb_properties_s {
   /* List of MME to connect to */
   rrh_gw_config_t       rrh_gw_config[4];
 
+#ifndef OCP_FRAMEWORK
   // otg config
   /* Nb of OTG elements */
   uint8_t            num_otg_elements;
@@ -257,7 +269,7 @@ typedef struct Enb_properties_s {
   int16_t           udp_log_verbosity;
   int16_t           osa_log_level;
   int16_t           osa_log_verbosity;
-
+#endif
 } Enb_properties_t;
 
 typedef struct Enb_properties_array_s {

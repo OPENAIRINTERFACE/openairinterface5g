@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 
 Source    usim_api.h
@@ -54,6 +47,23 @@ Description Implements the API used by the NAS layer to read/write
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
 /****************************************************************************/
+
+/*
+ * Subscriber authentication security key
+ */
+#define USIM_API_K_SIZE         16
+#define USIM_API_K_VALUE        "fec86ba6eb707ed08905757b1bb44b8f"
+
+/*
+ * The name of the file where are stored data of the USIM application
+ */
+#define USIM_API_NVRAM_FILENAME ".usim.nvram"
+
+/*
+ * The name of the environment variable which defines the directory
+ * where the USIM application file is located
+ */
+#define USIM_API_NVRAM_DIRNAME  "USIM_DIR"
 
 /****************************************************************************/
 /************************  G L O B A L    T Y P E S  ************************/
@@ -113,7 +123,26 @@ typedef struct {
   /* Integrity key  */
 #define USIM_IK_SIZE  16
   Byte_t ik[USIM_IK_SIZE];
+  uint8_t usim_api_k[USIM_API_K_SIZE];
+  uint8_t opc[16];
 } usim_keys_t;
+
+/*
+ * List of last used Sequence Numbers SQN
+ */
+#define USIM_API_AK_SIZE 6
+#define USIM_API_SQN_SIZE USIM_API_AK_SIZE
+#define USIM_API_SQNMS_SIZE USIM_API_SQN_SIZE
+
+typedef struct {
+  /* Highest sequence number the USIM has ever accepted */
+  uint8_t sqn_ms[USIM_API_SQNMS_SIZE];
+  /* List of the last used sequence numbers   */
+#define USIM_API_SQN_LIST_SIZE  32
+  uint8_t n_sqns;
+  uint32_t sqn[USIM_API_SQN_LIST_SIZE];
+} usim_sqn_data_t;
+
 
 /*
  * EPS NAS Security Context
@@ -334,6 +363,9 @@ typedef struct {
   usim_epsloci_t epsloci;
   /* Non-Access Stratum configuration       */
   usim_nasconfig_t nasconfig;
+  /* usim test mode */
+  uint8_t usimtestmode;
+  usim_sqn_data_t usim_sqn_data;
 } usim_data_t;
 
 /****************************************************************************/
@@ -344,12 +376,16 @@ typedef struct {
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-int usim_api_read(usim_data_t* data);
+int usim_api_read(const char *filename, usim_data_t* data);
 
-int usim_api_write(const usim_data_t* data);
+int usim_api_write(const char *filename, const usim_data_t* data);
 
-int usim_api_authenticate(const OctetString* rand, const OctetString* autn,
+int usim_api_authenticate(usim_data_t *usim_data, const OctetString* rand_pP, const OctetString* autn_pP,
                           OctetString* auts, OctetString* res,
                           OctetString* ck, OctetString* ik);
+int usim_api_authenticate_test(usim_data_t *usim_data,
+                               const OctetString* rand, const OctetString* autn,
+                               OctetString* auts, OctetString* res,
+                               OctetString* ck, OctetString* ik);
 
 #endif /* __USIM_API_H__*/

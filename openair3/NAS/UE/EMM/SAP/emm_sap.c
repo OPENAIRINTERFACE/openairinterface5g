@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 Source      emm_sap.c
 
@@ -53,6 +46,7 @@ Description Defines the EMM Service Access Points at which the EPS
 #include "emm_reg.h"
 #include "emm_esm.h"
 #include "emm_as.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -80,13 +74,13 @@ Description Defines the EMM Service Access Points at which the EPS
  **      Others:    NONE                                       **
  **                                                                        **
  ***************************************************************************/
-void emm_sap_initialize(void)
+void emm_sap_initialize(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
-  emm_reg_initialize();
+  emm_reg_initialize(user);
   emm_esm_initialize();
-  emm_as_initialize();
+  emm_as_initialize(user);
 
   LOG_FUNC_OUT;
 }
@@ -105,7 +99,7 @@ void emm_sap_initialize(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_sap_send(emm_sap_t *msg)
+int emm_sap_send(nas_user_t *user, emm_sap_t *msg)
 {
   int rc = RETURNerror;
 
@@ -118,17 +112,17 @@ int emm_sap_send(emm_sap_t *msg)
        (primitive < (emm_primitive_t)EMMREG_PRIMITIVE_MAX) ) {
     /* Forward to the EMMREG-SAP */
     msg->u.emm_reg.primitive = primitive;
-    rc = emm_reg_send(&msg->u.emm_reg);
+    rc = emm_reg_send(user, &msg->u.emm_reg);
   } else if ( (primitive > (emm_primitive_t)EMMESM_PRIMITIVE_MIN) &&
               (primitive < (emm_primitive_t)EMMESM_PRIMITIVE_MAX) ) {
     /* Forward to the EMMESM-SAP */
     msg->u.emm_esm.primitive = primitive;
-    rc = emm_esm_send(&msg->u.emm_esm);
+    rc = emm_esm_send(user, &msg->u.emm_esm);
   } else if ( (primitive > (emm_primitive_t)EMMAS_PRIMITIVE_MIN) &&
               (primitive < (emm_primitive_t)EMMAS_PRIMITIVE_MAX) ) {
     /* Forward to the EMMAS-SAP */
     msg->u.emm_as.primitive = primitive;
-    rc = emm_as_send(&msg->u.emm_as);
+    rc = emm_as_send(user, &msg->u.emm_as);
   }
   else {
     LOG_TRACE(WARNING, "EMM-SAP -   Out of range primitive (%d)", primitive);

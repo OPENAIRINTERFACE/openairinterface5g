@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file rar_tools.c
  * \brief random access tools
@@ -105,7 +97,7 @@ unsigned short fill_rar(
   eNB_mac_inst[module_idP].common_channels[CC_id].RA_template[ra_idx].timing_offset /= 16; //T_A = N_TA/16, where N_TA should be on a 30.72Msps
   rar[0] = (uint8_t)(eNB_mac_inst[module_idP].common_channels[CC_id].RA_template[ra_idx].timing_offset>>(2+4)); // 7 MSBs of timing advance + divide by 4
   rar[1] = (uint8_t)(eNB_mac_inst[module_idP].common_channels[CC_id].RA_template[ra_idx].timing_offset<<(4-2))&0xf0; // 4 LSBs of timing advance + divide by 4
-  rballoc = mac_xface->computeRIV(N_RB_UL,1,1); // first PRB only for UL Grant
+  rballoc = mac_xface->computeRIV(N_RB_UL,26,1); // first PRB only for UL Grant
   rar[1] |= (rballoc>>7)&7; // Hopping = 0 (bit 3), 3 MSBs of rballoc
   rar[2] = ((uint8_t)(rballoc&0xff))<<1; // 7 LSBs of rballoc
   mcs = 10;
@@ -126,7 +118,7 @@ unsigned short fill_rar(
 
   if (opt_enabled) {
     trace_pdu(1, dlsch_buffer, input_buffer_length, module_idP, 2, 1,
-              eNB_mac_inst[module_idP].subframe, 0, 0);
+        eNB_mac_inst[module_idP].frame, eNB_mac_inst[module_idP].subframe, 0, 0);
     LOG_D(OPT,"[eNB %d][RAPROC] CC_id %d RAR Frame %d trace pdu for rnti %x and  rapid %d size %d\n",
           module_idP, CC_id, frameP, eNB_mac_inst[module_idP].common_channels[CC_id].RA_template[ra_idx].rnti,
           rarh->RAPID, input_buffer_length);
@@ -141,16 +133,50 @@ ue_process_rar(
   const module_id_t module_idP,
   const int CC_id,
   const frame_t frameP,
+  const rnti_t ra_rnti,
   uint8_t* const dlsch_buffer,
   rnti_t* const t_crnti,
-  const uint8_t preamble_index
+  const uint8_t preamble_index,
+  uint8_t* selected_rar_buffer // output argument for storing the selected RAR header and RAR payload
 )
 //------------------------------------------------------------------------------
 {
+	uint16_t ret = 0; // return value
 
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   //  RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);
   uint8_t *rar = (uint8_t *)(dlsch_buffer+1);
+
+        // get the last RAR payload for working with CMW500
+	uint8_t n_rarpy = 0; // number of RAR payloads
+	uint8_t n_rarh = 0; // number of MAC RAR subheaders
+	uint8_t best_rx_rapid = -1; // the closest RAPID receive from all RARs
+	while (1) {
+		n_rarh++;
+		if (rarh->T == 1) {
+			n_rarpy++;
+			LOG_D(MAC, "RAPID %d\n", rarh->RAPID);
+		}
+
+		if (rarh->RAPID == preamble_index) {
+			LOG_D(PHY, "Found RAR with the intended RAPID %d\n", rarh->RAPID);
+			rar = (uint8_t *)(dlsch_buffer+n_rarh + (n_rarpy-1)*6);
+			break;
+		}
+
+		if (abs((int)rarh->RAPID - (int)preamble_index) < abs((int)best_rx_rapid - (int)preamble_index)) {
+			best_rx_rapid = rarh->RAPID;
+			rar = (uint8_t *)(dlsch_buffer+n_rarh + (n_rarpy-1)*6);
+		}
+
+		if (rarh->E == 0) {
+			LOG_I(PHY, "No RAR found with the intended RAPID. The closest RAPID in all RARs is %d\n", best_rx_rapid);
+			break;
+		} else {
+			rarh++;
+		}
+	};
+	LOG_D(MAC, "number of RAR subheader %d; number of RAR pyloads %d\n", n_rarh, n_rarpy);
 
   if (CC_id>0) {
     LOG_W(MAC,"Should not have received RAR on secondary CCs! \n");
@@ -176,14 +202,27 @@ ue_process_rar(
   LOG_D(MAC,"[UE %d][RAPROC] rar->t_crnti %x\n",module_idP,(uint16_t)rar[5]+(rar[4]<<8));
 #endif
 
+  if (opt_enabled) {
+    LOG_D(OPT,"[UE %d][RAPROC] CC_id %d RAR Frame %d trace pdu for ra-RNTI %x\n",
+          module_idP, CC_id, frameP, ra_rnti);
+    trace_pdu(1, (uint8_t*)dlsch_buffer, n_rarh + n_rarpy*6, module_idP, 2, ra_rnti,
+        UE_mac_inst[module_idP].rxFrame, UE_mac_inst[module_idP].rxSubframe, 0, 0);
+  }
 
   if (preamble_index == rarh->RAPID) {
     *t_crnti = (uint16_t)rar[5]+(rar[4]<<8);//rar->t_crnti;
     UE_mac_inst[module_idP].crnti = *t_crnti;//rar->t_crnti;
     //return(rar->Timing_Advance_Command);
-    return((((uint16_t)(rar[0]&0x7f))<<4) + (rar[1]>>4));
+    ret = ((((uint16_t)(rar[0]&0x7f))<<4) + (rar[1]>>4));
   } else {
     UE_mac_inst[module_idP].crnti=0;
-    return(0xffff);
+    ret = (0xffff);
   }
+
+  // move the selected RAR to the front of the RA_PDSCH buffer
+  memcpy(selected_rar_buffer+0, (uint8_t*)rarh, 1);
+  memcpy(selected_rar_buffer+1, (uint8_t*)rar , 6);
+
+  return ret;
+
 }

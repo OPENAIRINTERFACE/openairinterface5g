@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 Source      PdnConnectivity.c
 
@@ -88,15 +81,15 @@ Description Defines the PDN connectivity ESM procedure executed by the
 /*
  * PDN connection handlers
  */
-static int _pdn_connectivity_create(int pid, const OctetString *apn,
+static int _pdn_connectivity_create(esm_data_t *esm_data, int pid, const OctetString *apn,
                                     esm_proc_pdn_type_t pdn_type, int is_emergency);
-static int _pdn_connectivity_update(int pid, const OctetString *apn,
+static int _pdn_connectivity_update(esm_data_t *esm_data, int pid, const OctetString *apn,
                                     esm_proc_pdn_type_t pdn_type, const OctetString *pdn_addr, int esm_cause);
-static int _pdn_connectivity_delete(int pid);
+static int _pdn_connectivity_delete(esm_data_t *esm_data, int pid);
 
-static int _pdn_connectivity_set_pti(int pid, int pti);
-static int _pdn_connectivity_find_apn(const OctetString *apn);
-static int _pdn_connectivity_find_pdn(const OctetString *apn,
+static int _pdn_connectivity_set_pti(esm_data_t *esm_data, int pid, int pti);
+static int _pdn_connectivity_find_apn(esm_data_t *esm_data, const OctetString *apn);
+static int _pdn_connectivity_find_pdn(esm_data_t * esm_data, const OctetString *apn,
                                       esm_proc_pdn_type_t pdn_type);
 
 /*
@@ -138,10 +131,9 @@ static void *_pdn_connectivity_t3482_handler(void *);
  **             the new PDN connection or the released PDN **
  **             connection                                 **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_connectivity(int cid, int is_to_define,
+int esm_proc_pdn_connectivity(nas_user_t *user, int cid, int is_to_define,
                               esm_proc_pdn_type_t pdn_type,
                               const OctetString *apn, int is_emergency,
                               unsigned int *pti)
@@ -150,15 +142,17 @@ int esm_proc_pdn_connectivity(int cid, int is_to_define,
 
   int rc = RETURNerror;
   int pid = cid - 1;
+  esm_data_t *esm_data = user-> esm_data;
+  esm_pt_data_t *esm_pt_data = user-> esm_pt_data;
 
   if (!is_to_define) {
     LOG_TRACE(INFO, "ESM-PROC  - Undefine PDN connection (cid=%d)", cid);
     /* Delete the PDN connection entry */
-    int pti = _pdn_connectivity_delete(pid);
+    int pti = _pdn_connectivity_delete(esm_data, pid);
 
     if (pti != ESM_PT_UNASSIGNED) {
       /* Release the procedure transaction data */
-      rc = esm_pt_release(pti);
+      rc = esm_pt_release(esm_pt_data, pti);
     }
 
     LOG_FUNC_RETURN(rc);
@@ -166,7 +160,7 @@ int esm_proc_pdn_connectivity(int cid, int is_to_define,
     LOG_TRACE(INFO, "ESM-PROC  - Assign new procedure transaction identity "
               "(cid=%d)", cid);
     /* Assign new procedure transaction identity */
-    *pti = esm_pt_assign();
+    *pti = esm_pt_assign(esm_pt_data);
 
     if (*pti == ESM_PT_UNASSIGNED) {
       LOG_TRACE(WARNING, "ESM-PROC  - Failed to assign new procedure "
@@ -175,7 +169,7 @@ int esm_proc_pdn_connectivity(int cid, int is_to_define,
     }
 
     /* Update the PDN connection data */
-    rc = _pdn_connectivity_set_pti(pid, *pti);
+    rc = _pdn_connectivity_set_pti(esm_data, pid, *pti);
 
     if (rc != RETURNok) {
       LOG_TRACE(WARNING, "ESM-PROC  - Failed to update PDN connection");
@@ -189,14 +183,14 @@ int esm_proc_pdn_connectivity(int cid, int is_to_define,
             (pdn_type == ESM_PDN_TYPE_IPV6)? "IPv6" : "IPv4v6",
             apn->value, cid);
 
-  if (is_emergency && _esm_data.emergency) {
+  if (is_emergency && esm_data->emergency) {
     /* The UE shall not request additional PDN connection for
      * emergency bearer services */
     LOG_TRACE(WARNING, "ESM-PROC  - PDN connection for emergency bearer "
               "services is already active");
     LOG_FUNC_RETURN (RETURNerror);
   } else if (pid < ESM_DATA_PDN_MAX) {
-    if ((pid == _esm_data.pdn[pid].pid) && (_esm_data.pdn[pid].is_active)) {
+    if ((pid == esm_data->pdn[pid].pid) && (esm_data->pdn[pid].is_active)) {
       /* PDN connection with the specified identifier is active */
       LOG_TRACE(WARNING, "ESM-PROC  - PDN connection is active");
       LOG_FUNC_RETURN (RETURNerror);
@@ -208,15 +202,15 @@ int esm_proc_pdn_connectivity(int cid, int is_to_define,
 
   if (apn && apn->length > 0) {
     /* The UE requested subsequent connectivity to additionnal PDNs */
-    int pid = _pdn_connectivity_find_apn(apn);
+    int pid = _pdn_connectivity_find_apn(esm_data, apn);
 
-    if ( (pid >= 0) && _esm_data.pdn[pid].is_active ) {
+    if ( (pid >= 0) && esm_data->pdn[pid].is_active ) {
       /* An active PDN connection to this APN already exists */
-      if ( (_esm_data.pdn[pid].data->type != ESM_PDN_TYPE_IPV4V6) &&
-           (_esm_data.pdn[pid].data->type != pdn_type) ) {
+      if ( (esm_data->pdn[pid].data->type != ESM_PDN_TYPE_IPV4V6) &&
+           (esm_data->pdn[pid].data->type != pdn_type) ) {
         /* The UE is requesting PDN connection for other IP version
          * than the one already activated */
-        if (!_esm_data.pdn[pid].data->addr_realloc) {
+        if (!esm_data->pdn[pid].data->addr_realloc) {
           /* The network does not allow PDN connectivity using
            * IPv4 and IPv6 address versions to the same APN */
           if (pdn_type != ESM_PDN_TYPE_IPV4V6) {
@@ -227,7 +221,7 @@ int esm_proc_pdn_connectivity(int cid, int is_to_define,
           } else {
             LOG_TRACE(WARNING, "ESM-PROC  - %s PDN connection to %s "
                       "already exists",
-                      (_esm_data.pdn[pid].data->type !=
+                      (esm_data->pdn[pid].data->type !=
                        ESM_PDN_TYPE_IPV4)? "IPv6" : "IPv4",
                       apn->value);
           }
@@ -239,8 +233,8 @@ int esm_proc_pdn_connectivity(int cid, int is_to_define,
          * same IP version than the one already activated */
         LOG_TRACE(WARNING, "ESM-PROC  - %s PDN connection to %s "
                   "already exists",
-                  (_esm_data.pdn[pid].data->type != ESM_PDN_TYPE_IPV4)?
-                  (_esm_data.pdn[pid].data->type != ESM_PDN_TYPE_IPV6)?
+                  (esm_data->pdn[pid].data->type != ESM_PDN_TYPE_IPV4)?
+                  (esm_data->pdn[pid].data->type != ESM_PDN_TYPE_IPV6)?
           "IPv4v6" : "IPv6" : "IPv4", apn->value);
         LOG_FUNC_RETURN (RETURNerror);
       }
@@ -255,7 +249,7 @@ int esm_proc_pdn_connectivity(int cid, int is_to_define,
    * not already established, or may have been allowed to request PDN
    * connectivity for other IP version than the one already activated
    */
-  rc = _pdn_connectivity_create(pid, apn, pdn_type, is_emergency);
+  rc = _pdn_connectivity_create(esm_data, pid, apn, pdn_type, is_emergency);
   LOG_FUNC_RETURN(rc);
 }
 
@@ -286,11 +280,11 @@ int esm_proc_pdn_connectivity(int cid, int is_to_define,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_connectivity_request(int is_standalone, int pti,
+int esm_proc_pdn_connectivity_request(nas_user_t *user, int is_standalone, int pti,
                                       OctetString *msg, int sent_by_ue)
 {
   LOG_FUNC_IN;
-
+  esm_pt_data_t *esm_pt_data = user->esm_pt_data;
   int rc = RETURNok;
 
   LOG_TRACE(INFO, "ESM-PROC  - Initiate PDN connectivity (pti=%d)", pti);
@@ -302,21 +296,21 @@ int esm_proc_pdn_connectivity_request(int is_standalone, int pti,
      * Notity EMM that ESM PDU has to be forwarded to lower layers
      */
     emm_sap.primitive = EMMESM_UNITDATA_REQ;
-    emm_sap.u.emm_esm.ueid = 0;
+    emm_sap.u.emm_esm.ueid = user->ueid;
     emm_esm->msg.length = msg->length;
     emm_esm->msg.value = msg->value;
-    rc = emm_sap_send(&emm_sap);
+    rc = emm_sap_send(user, &emm_sap);
 
     if (rc != RETURNerror) {
       /* Start T3482 retransmission timer */
-      rc = esm_pt_start_timer(pti, msg, T3482_DEFAULT_VALUE,
+      rc = esm_pt_start_timer(user, pti, msg, T3482_DEFAULT_VALUE,
                               _pdn_connectivity_t3482_handler);
     }
   }
 
   if (rc != RETURNerror) {
     /* Set the procedure transaction state to PENDING */
-    rc = esm_pt_set_status(pti, ESM_PT_PENDING);
+    rc = esm_pt_set_status(esm_pt_data, pti, ESM_PT_PENDING);
 
     if (rc != RETURNok) {
       /* The procedure transaction was already in PENDING state */
@@ -353,15 +347,17 @@ int esm_proc_pdn_connectivity_request(int is_standalone, int pti,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_connectivity_accept(int pti, esm_proc_pdn_type_t pdn_type,
+int esm_proc_pdn_connectivity_accept(nas_user_t *user, int pti, esm_proc_pdn_type_t pdn_type,
                                      const OctetString *pdn_addr,
                                      const OctetString *apn, int *esm_cause)
 {
   LOG_FUNC_IN;
-
+  esm_data_t *esm_data  = user->esm_data;
+  esm_pt_data_t *esm_pt_data = user->esm_pt_data;
   int     rc;
   int     pid = RETURNerror;
   char    apn_first_char[4];
+  char    str[128];
 
   if (isprint(apn->value[0])) {
     apn_first_char[0] = '\0';
@@ -371,14 +367,14 @@ int esm_proc_pdn_connectivity_accept(int pti, esm_proc_pdn_type_t pdn_type,
 
   LOG_TRACE(INFO, "ESM-PROC  - PDN connectivity accepted by the network "
             "(pti=%d) APN = %s\"%s\", IP address = %s", pti, apn_first_char, isprint(apn->value[0]) ? &apn->value[0] : &apn->value[1],
-            (pdn_type == ESM_PDN_TYPE_IPV4)? esm_data_get_ipv4_addr(pdn_addr) :
-            (pdn_type == ESM_PDN_TYPE_IPV6)? esm_data_get_ipv6_addr(pdn_addr) :
-            esm_data_get_ipv4v6_addr(pdn_addr));
+            (pdn_type == ESM_PDN_TYPE_IPV4)? esm_data_get_ipv4_addr(pdn_addr, str) :
+            (pdn_type == ESM_PDN_TYPE_IPV6)? esm_data_get_ipv6_addr(pdn_addr, str) :
+            esm_data_get_ipv4v6_addr(pdn_addr, str));
 
   /* Stop T3482 timer if running */
-  (void) esm_pt_stop_timer(pti);
+  esm_pt_stop_timer(esm_pt_data, pti);
   /* Set the procedure transaction state to INACTIVE */
-  rc = esm_pt_set_status(pti, ESM_PT_INACTIVE);
+  rc = esm_pt_set_status(esm_pt_data, pti, ESM_PT_INACTIVE);
 
   if (rc != RETURNok) {
     /* The procedure transaction was already in INACTIVE state
@@ -398,7 +394,7 @@ int esm_proc_pdn_connectivity_accept(int pti, esm_proc_pdn_type_t pdn_type,
      */
 
     /* Check whether a PDN connection exists to this APN */
-    pid = _pdn_connectivity_find_pdn(apn, pdn_type);
+    pid = _pdn_connectivity_find_pdn(esm_data, apn, pdn_type);
 
     if (pid < 0) {
       /* No any PDN connection has been defined to establish connectivity
@@ -410,7 +406,7 @@ int esm_proc_pdn_connectivity_accept(int pti, esm_proc_pdn_type_t pdn_type,
     }
 
     /* Update the PDN connection */
-    rc = _pdn_connectivity_update(pid, apn, pdn_type, pdn_addr, *esm_cause);
+    rc = _pdn_connectivity_update(esm_data, pid, apn, pdn_type, pdn_addr, *esm_cause);
 
     if (rc != RETURNok) {
       LOG_TRACE(WARNING, "ESM-PROC  - Failed to update PDN connection "
@@ -445,19 +441,19 @@ int esm_proc_pdn_connectivity_accept(int pti, esm_proc_pdn_type_t pdn_type,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_connectivity_reject(int pti, int *esm_cause)
+int esm_proc_pdn_connectivity_reject(nas_user_t *user, int pti, int *esm_cause)
 {
   LOG_FUNC_IN;
-
+  esm_pt_data_t *esm_pt_data = user->esm_pt_data;
   int rc;
 
   LOG_TRACE(WARNING, "ESM-PROC  - PDN connectivity rejected by "
             "the network (pti=%d), ESM cause = %d", pti, *esm_cause);
 
   /* Stop T3482 timer if running */
-  (void) esm_pt_stop_timer(pti);
+  (void) esm_pt_stop_timer(esm_pt_data, pti);
   /* Set the procedure transaction state to INACTIVE */
-  rc = esm_pt_set_status(pti, ESM_PT_INACTIVE);
+  rc = esm_pt_set_status(esm_pt_data, pti, ESM_PT_INACTIVE);
 
   if (rc != RETURNok) {
     /* The procedure transaction was already in INACTIVE state */
@@ -465,7 +461,7 @@ int esm_proc_pdn_connectivity_reject(int pti, int *esm_cause)
     *esm_cause = ESM_CAUSE_MESSAGE_TYPE_NOT_COMPATIBLE;
   } else {
     /* Release the procedure transaction identity */
-    rc = esm_pt_release(pti);
+    rc = esm_pt_release(user->esm_pt_data, pti);
 
     if (rc != RETURNok) {
       LOG_TRACE(WARNING, "ESM-PROC  - Failed to release PTI %d", pti);
@@ -496,21 +492,21 @@ int esm_proc_pdn_connectivity_reject(int pti, int *esm_cause)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_connectivity_complete(void)
+int esm_proc_pdn_connectivity_complete(nas_user_t *user)
 {
   LOG_FUNC_IN;
-
+  esm_pt_data_t *esm_pt_data = user->esm_pt_data;
   int rc = RETURNerror;
 
   LOG_TRACE(INFO, "ESM-PROC  - PDN connectivity complete");
 
   /* Get the procedure transaction identity assigned to the PDN connection
    * entry which is still pending in the inactive state */
-  int pti = esm_pt_get_pending_pti(ESM_PT_INACTIVE);
+  int pti = esm_pt_get_pending_pti(esm_pt_data, ESM_PT_INACTIVE);
 
   if (pti != ESM_PT_UNASSIGNED) {
     /* Release the procedure transaction identity */
-    rc = esm_pt_release(pti);
+    rc = esm_pt_release(esm_pt_data, pti);
   }
 
   LOG_FUNC_RETURN(rc);
@@ -537,10 +533,10 @@ int esm_proc_pdn_connectivity_complete(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_connectivity_failure(int is_pending)
+int esm_proc_pdn_connectivity_failure(nas_user_t *user, int is_pending)
 {
   LOG_FUNC_IN;
-
+  esm_pt_data_t *esm_pt_data = user->esm_pt_data;
   int rc;
   int pti;
 
@@ -550,7 +546,7 @@ int esm_proc_pdn_connectivity_failure(int is_pending)
   if (is_pending) {
     /* Get the procedure transaction identity assigned to the pending PDN
      * connection entry */
-    pti = esm_pt_get_pending_pti(ESM_PT_PENDING);
+    pti = esm_pt_get_pending_pti(esm_pt_data, ESM_PT_PENDING);
 
     if (pti == ESM_PT_UNASSIGNED) {
       LOG_TRACE(ERROR, "ESM-PROC  - No procedure transaction is PENDING");
@@ -558,15 +554,15 @@ int esm_proc_pdn_connectivity_failure(int is_pending)
     }
 
     /* Set the procedure transaction state to INACTIVE */
-    (void) esm_pt_set_status(pti, ESM_PT_INACTIVE);
+    (void) esm_pt_set_status(esm_pt_data, pti, ESM_PT_INACTIVE);
   } else {
     /* Get the procedure transaction identity assigned to the PDN
      * connection entry which is still pending in the inactive state */
-    pti = esm_pt_get_pending_pti(ESM_PT_INACTIVE);
+    pti = esm_pt_get_pending_pti(esm_pt_data, ESM_PT_INACTIVE);
   }
 
   /* Release the procedure transaction identity */
-  rc = esm_pt_release(pti);
+  rc = esm_pt_release(esm_pt_data, pti);
 
   if (rc != RETURNok) {
     LOG_TRACE(WARNING, "ESM-PROC  - Failed to release PTI %d", pti);
@@ -610,6 +606,7 @@ int esm_proc_pdn_connectivity_failure(int is_pending)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
+// FIXME 
 static void *_pdn_connectivity_t3482_handler(void *args)
 {
   LOG_FUNC_IN;
@@ -617,7 +614,9 @@ static void *_pdn_connectivity_t3482_handler(void *args)
   int rc;
 
   /* Get retransmission timer parameters data */
-  esm_pt_timer_data_t *data = (esm_pt_timer_data_t *)(args);
+  esm_pt_timer_data_t *data = args;
+  nas_user_t *user = data->user;
+  esm_pt_data_t *esm_pt_data = user->esm_pt_data;
 
   /* Increment the retransmission counter */
   data->count += 1;
@@ -633,19 +632,19 @@ static void *_pdn_connectivity_t3482_handler(void *args)
      * has to be sent again
      */
     emm_sap.primitive = EMMESM_UNITDATA_REQ;
-    emm_sap.u.emm_esm.ueid = 0;
+    emm_sap.u.emm_esm.ueid = user->ueid;
     emm_esm->msg.length = data->msg.length;
     emm_esm->msg.value = data->msg.value;
-    rc = emm_sap_send(&emm_sap);
+    rc = emm_sap_send(user, &emm_sap);
 
     if (rc != RETURNerror) {
       /* Restart the timer T3482 */
-      rc = esm_pt_start_timer(data->pti, &data->msg, T3482_DEFAULT_VALUE,
+      rc = esm_pt_start_timer(user, data->pti, &data->msg, T3482_DEFAULT_VALUE,
                               _pdn_connectivity_t3482_handler);
     }
   } else {
     /* Set the procedure transaction state to INACTIVE */
-    rc = esm_pt_set_status(data->pti, ESM_PT_INACTIVE);
+    rc = esm_pt_set_status(esm_pt_data, data->pti, ESM_PT_INACTIVE);
 
     if (rc != RETURNok) {
       /* The procedure transaction was already in INACTIVE state */
@@ -653,7 +652,7 @@ static void *_pdn_connectivity_t3482_handler(void *args)
                 data->pti);
     } else {
       /* Release the transaction identity assigned to this procedure */
-      rc = esm_pt_release(data->pti);
+      rc = esm_pt_release(esm_pt_data, data->pti);
 
       if (rc != RETURNok) {
         LOG_TRACE(WARNING, "ESM-PROC  - Failed to release PTI %d",
@@ -683,14 +682,12 @@ static void *_pdn_connectivity_t3482_handler(void *args)
  **      pdn_type:  PDN type (IPv4, IPv6, IPv4v6)              **
  **      is_emergency:  TRUE if the PDN connection has to be esta- **
  **             blished for emergency bearer services      **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ***************************************************************************/
-static int _pdn_connectivity_create(int pid, const OctetString *apn,
+static int _pdn_connectivity_create(esm_data_t *esm_data, int pid, const OctetString *apn,
                                     esm_proc_pdn_type_t pdn_type,
                                     int is_emergency)
 {
@@ -700,14 +697,14 @@ static int _pdn_connectivity_create(int pid, const OctetString *apn,
 
   if (pid >= ESM_DATA_PDN_MAX) {
     return (RETURNerror);
-  } else if (_esm_data.pdn[pid].is_active) {
+  } else if (esm_data->pdn[pid].is_active) {
     LOG_TRACE(ERROR, "ESM-PROC  - PDN connection is active");
     return (RETURNerror);
   }
 
-  if (_esm_data.pdn[pid].data != NULL) {
+  if (esm_data->pdn[pid].data != NULL) {
     /* Update existing non-active PDN connection */
-    pdn = _esm_data.pdn[pid].data;
+    pdn = esm_data->pdn[pid].data;
   } else {
     /* Create new PDN connection */
     pdn = (esm_pdn_t *)malloc(sizeof(esm_pdn_t));
@@ -720,13 +717,13 @@ static int _pdn_connectivity_create(int pid, const OctetString *apn,
 
     memset(pdn, 0, sizeof(esm_pdn_t));
     /* Increment the number of PDN connections */
-    _esm_data.n_pdns += 1;
+    esm_data->n_pdns += 1;
     /* Set the PDN connection identifier */
-    _esm_data.pdn[pid].pid = pid;
+    esm_data->pdn[pid].pid = pid;
     /* Reset the PDN connection active indicator */
-    _esm_data.pdn[pid].is_active = FALSE;
+    esm_data->pdn[pid].is_active = FALSE;
     /* Setup the PDN connection data */
-    _esm_data.pdn[pid].data = pdn;
+    esm_data->pdn[pid].data = pdn;
   }
 
   /* Update the PDN connection data */
@@ -767,10 +764,9 @@ static int _pdn_connectivity_create(int pid, const OctetString *apn,
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ***************************************************************************/
-static int _pdn_connectivity_update(int pid, const OctetString *apn,
+static int _pdn_connectivity_update(esm_data_t *esm_data, int pid, const OctetString *apn,
                                     esm_proc_pdn_type_t pdn_type,
                                     const OctetString *pdn_addr,
                                     int esm_cause)
@@ -779,21 +775,21 @@ static int _pdn_connectivity_update(int pid, const OctetString *apn,
 
   if (pid >= ESM_DATA_PDN_MAX) {
     return (RETURNerror);
-  } else if (pid != _esm_data.pdn[pid].pid) {
+  } else if (pid != esm_data->pdn[pid].pid) {
     LOG_TRACE(ERROR, "ESM-PROC  - PDN connection identifier is not valid");
     return (RETURNerror);
-  } else if (_esm_data.pdn[pid].data == NULL) {
+  } else if (esm_data->pdn[pid].data == NULL) {
     LOG_TRACE(ERROR, "ESM-PROC  - PDN connection has not been allocated");
     return (RETURNerror);
-  } else if (_esm_data.pdn[pid].is_active) {
+  } else if (esm_data->pdn[pid].is_active) {
     LOG_TRACE(WARNING, "ESM-PROC  - Active %s PDN connection to %s already "
-              "exists", (_esm_data.pdn[pid].data->type != ESM_PDN_TYPE_IPV4)?
-              "IPv6" : "IPv4", _esm_data.pdn[pid].data->apn.value);
+              "exists", (esm_data->pdn[pid].data->type != ESM_PDN_TYPE_IPV4)?
+              "IPv6" : "IPv4", esm_data->pdn[pid].data->apn.value);
     return (RETURNerror);
   }
 
   /* Get the PDN connection */
-  esm_pdn_t *pdn = _esm_data.pdn[pid].data;
+  esm_pdn_t *pdn = esm_data->pdn[pid].data;
 
   /* Setup the Access Point Name value */
   if ( apn && (apn->length > 0) ) {
@@ -854,49 +850,47 @@ static int _pdn_connectivity_update(int pid, const OctetString *apn,
  **                                                                        **
  ** Inputs:  pid:       Identifier of the PDN connection to be     **
  **             released                                   **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The identity of the procedure transaction  **
  **             assigned to the PDN connection when suc-   **
  **             cessfully released;                        **
  **             UNASSIGNED value otherwise.                **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ***************************************************************************/
-static int _pdn_connectivity_delete(int pid)
+static int _pdn_connectivity_delete(esm_data_t *esm_data, int pid)
 {
   int pti = ESM_PT_UNASSIGNED;
 
   if (pid < ESM_DATA_PDN_MAX) {
-    if (pid != _esm_data.pdn[pid].pid) {
+    if (pid != esm_data->pdn[pid].pid) {
       LOG_TRACE(ERROR,
                 "ESM-PROC  - PDN connection identifier is not valid");
-    } else if (_esm_data.pdn[pid].data == NULL) {
+    } else if (esm_data->pdn[pid].data == NULL) {
       LOG_TRACE(ERROR,
                 "ESM-PROC  - PDN connection has not been allocated");
-    } else if (_esm_data.pdn[pid].is_active) {
+    } else if (esm_data->pdn[pid].is_active) {
       LOG_TRACE(ERROR, "ESM-PROC  - PDN connection is active");
     } else {
       /* Get the identity of the procedure transaction that created
        * the PDN connection */
-      pti = _esm_data.pdn[pid].data->pti;
+      pti = esm_data->pdn[pid].data->pti;
     }
   }
 
   if (pti != ESM_PT_UNASSIGNED) {
     /* Decrement the number of PDN connections */
-    _esm_data.n_pdns -= 1;
+    esm_data->n_pdns -= 1;
     /* Set the PDN connection as available */
-    _esm_data.pdn[pid].pid = -1;
+    esm_data->pdn[pid].pid = -1;
 
     /* Release allocated PDN connection data */
-    if (_esm_data.pdn[pid].data->apn.length > 0) {
-      free(_esm_data.pdn[pid].data->apn.value);
+    if (esm_data->pdn[pid].data->apn.length > 0) {
+      free(esm_data->pdn[pid].data->apn.value);
     }
 
-    free(_esm_data.pdn[pid].data);
-    _esm_data.pdn[pid].data = NULL;
+    free(esm_data->pdn[pid].data);
+    esm_data->pdn[pid].data = NULL;
     LOG_TRACE(WARNING, "ESM-PROC  - PDN connection %d released", pid);
   }
 
@@ -917,24 +911,23 @@ static int _pdn_connectivity_delete(int pid)
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ***************************************************************************/
-static int _pdn_connectivity_set_pti(int pid, int pti)
+static int _pdn_connectivity_set_pti(esm_data_t *esm_data, int pid, int pti)
 {
   if (pid < ESM_DATA_PDN_MAX) {
-    if (pid != _esm_data.pdn[pid].pid) {
+    if (pid != esm_data->pdn[pid].pid) {
       LOG_TRACE(ERROR,
                 "ESM-PROC  - PDN connection identifier is not valid");
-    } else if (_esm_data.pdn[pid].data == NULL) {
+    } else if (esm_data->pdn[pid].data == NULL) {
       LOG_TRACE(ERROR,
                 "ESM-PROC  - PDN connection has not been allocated");
-    } else if (_esm_data.pdn[pid].is_active) {
+    } else if (esm_data->pdn[pid].is_active) {
       LOG_TRACE(ERROR, "ESM-PROC  - PDN connection is active");
     } else {
       /* Update the identity of the procedure transaction assigned to
        * the PDN connection */
-      _esm_data.pdn[pid].data->pti = pti;
+      esm_data->pdn[pid].data->pti = pti;
       return (RETURNok);
     }
   }
@@ -950,7 +943,6 @@ static int _pdn_connectivity_set_pti(int pid, int pti)
  **      for the specified APN                                     **
  **                                                                        **
  ** Inputs:  apn:       Access Point Name of the PDN connection    **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The identifier of the PDN connection if    **
@@ -958,17 +950,17 @@ static int _pdn_connectivity_set_pti(int pid, int pti)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _pdn_connectivity_find_apn(const OctetString *apn)
+static int _pdn_connectivity_find_apn(esm_data_t *esm_data, const OctetString *apn)
 {
   int i;
 
   for (i = 0; i < ESM_DATA_PDN_MAX; i++) {
-    if ( (_esm_data.pdn[i].pid != -1) && _esm_data.pdn[i].data ) {
-      if (_esm_data.pdn[i].data->apn.length != apn->length) {
+    if ( (esm_data->pdn[i].pid != -1) && esm_data->pdn[i].data ) {
+      if (esm_data->pdn[i].data->apn.length != apn->length) {
         continue;
       }
 
-      if (memcmp(_esm_data.pdn[i].data->apn.value,
+      if (memcmp(esm_data->pdn[i].data->apn.value,
                  apn->value, apn->length) != 0) {
         continue;
       }
@@ -979,7 +971,7 @@ static int _pdn_connectivity_find_apn(const OctetString *apn)
   }
 
   /* Return the identifier of the PDN connection */
-  return (_esm_data.pdn[i].pid);
+  return (esm_data->pdn[i].pid);
 }
 
 /****************************************************************************
@@ -991,7 +983,6 @@ static int _pdn_connectivity_find_apn(const OctetString *apn)
  **                                                                        **
  ** Inputs:  apn:       Access Point Name of the PDN connection    **
  **      pdn_type:  PDN address type                           **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The identifier of the PDN connection if    **
@@ -999,38 +990,38 @@ static int _pdn_connectivity_find_apn(const OctetString *apn)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _pdn_connectivity_find_pdn(const OctetString *apn,
+static int _pdn_connectivity_find_pdn(esm_data_t *esm_data, const OctetString *apn,
                                       const esm_proc_pdn_type_t pdn_type)
 {
   int i;
 
   for (i = 0; i < ESM_DATA_PDN_MAX; i++) {
-    if ( (_esm_data.pdn[i].pid != -1) && _esm_data.pdn[i].data ) {
+    if ( (esm_data->pdn[i].pid != -1) && esm_data->pdn[i].data ) {
       /* PDN connection established during initial network attachment */
-      if (_esm_data.pdn[i].data->apn.length == 0) {
+      if (esm_data->pdn[i].data->apn.length == 0) {
         break;
       }
 
       /* Subsequent PDN connection established for the specified APN */
-      if (_esm_data.pdn[i].data->apn.length != apn->length) {
+      if (esm_data->pdn[i].data->apn.length != apn->length) {
         continue;
       }
 
-      if (memcmp(_esm_data.pdn[i].data->apn.value,
+      if (memcmp(esm_data->pdn[i].data->apn.value,
                  apn->value, apn->length) != 0) {
         continue;
       }
 
-      if (_esm_data.pdn[i].data->type == ESM_PDN_TYPE_IPV4V6) {
+      if (esm_data->pdn[i].data->type == ESM_PDN_TYPE_IPV4V6) {
         break;
       }
 
-      if (_esm_data.pdn[i].data->type == pdn_type) {
+      if (esm_data->pdn[i].data->type == pdn_type) {
         break;
       }
     }
   }
 
   /* Return the identifier of the PDN connection */
-  return (_esm_data.pdn[i].pid);
+  return (esm_data->pdn[i].pid);
 }

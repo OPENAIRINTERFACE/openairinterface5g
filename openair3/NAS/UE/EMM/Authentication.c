@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 Source      Authentication.c
 
@@ -66,25 +59,22 @@ Description Defines the authentication EMM procedure executed by the
 #include "nas_timer.h"
 
 #include "emmData.h"
+#include "emm_timers.h"
 
 #include "emm_sap.h"
 #include "emm_cause.h"
+#include "emm_timers.h"
 
 #include "usim_api.h"
 #include "secu_defs.h"
+#include "Authentication.h"
 
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
 /****************************************************************************/
 
-/*
- * Retransmission timer handlers
- */
-extern void *_emm_attach_t3410_handler(void *);
-extern void *_emm_service_t3417_handler(void *);
-extern void *_emm_detach_t3421_handler(void *);
-extern void *_emm_tau_t3430_handler(void *);
+extern uint8_t usim_test;
 
 /****************************************************************************/
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
@@ -103,33 +93,14 @@ static void *_authentication_t3418_handler(void *);
 static void *_authentication_t3420_handler(void *);
 
 /*
- * Internal data used for authentication procedure
- */
-static struct {
-  uint8_t rand[AUTH_RAND_SIZE];   /* Random challenge number  */
-  uint8_t res[AUTH_RES_SIZE];     /* Authentication response  */
-  uint8_t ck[AUTH_CK_SIZE];       /* Ciphering key        */
-  uint8_t ik[AUTH_IK_SIZE];       /* Integrity key        */
-#define AUTHENTICATION_T3410    0x01
-#define AUTHENTICATION_T3417    0x02
-#define AUTHENTICATION_T3421    0x04
-#define AUTHENTICATION_T3430    0x08
-  unsigned char timers;       /* Timer restart bitmap     */
-#define AUTHENTICATION_COUNTER_MAX 3
-  unsigned char mac_count:2;  /* MAC failure counter (#20)        */
-  unsigned char umts_count:2; /* UMTS challenge failure counter (#26) */
-  unsigned char sync_count:2; /* Sync failure counter (#21)       */
-} _authentication_data;
-
-/*
  * Abnormal case authentication procedure
  */
-static int _authentication_abnormal_cases_cde(int emm_cause,
+static int _authentication_abnormal_cases_cde(nas_user_t *user, int emm_cause,
     const OctetString *auts);
-static int _authentication_abnormal_case_f(void);
+static int _authentication_abnormal_case_f(nas_user_t *user);
 
-static int _authentication_stop_timers(void);
-static int _authentication_start_timers(void);
+static int _authentication_stop_timers(nas_user_t *user);
+static int _authentication_start_timers(nas_user_t *user);
 static int _authentication_kasme(const OctetString *autn,
                                  const OctetString *ck, const OctetString *ik, const plmn_t *plmn,
                                  OctetString *kasme);
@@ -168,21 +139,21 @@ static int _authentication_kasme(const OctetString *autn,
  **      ksi:       The NAS ket sey identifier                 **
  **      rand:      Authentication parameter RAND              **
  **      autn:      Authentication parameter AUTN              **
- **      Others:    _emm_data, _authentication_data            **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _emm_data, _authentication_data, T3416,    **
  **             T3418, T3420                               **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_authentication_request(int native_ksi, int ksi,
+int emm_proc_authentication_request(nas_user_t *user, int native_ksi, int ksi,
                                     const OctetString *rand,
                                     const OctetString *autn)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNerror;
+  authentication_data_t *authentication_data = user->authentication_data;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
 
   LOG_TRACE(INFO, "EMM-PROC  - Authentication requested ksi type = %s, ksi = %d", native_ksi ? "native" : "mapped", ksi);
 
@@ -190,29 +161,29 @@ int emm_proc_authentication_request(int native_ksi, int ksi,
    * The UE shall proceed with an EPS authentication challenge only if a
    * USIM is present
    */
-  if (!_emm_data.usim_is_valid) {
+  if (!user->emm_data->usim_is_valid) {
     LOG_TRACE(WARNING, "EMM-PROC  - USIM is not present or not valid");
     LOG_FUNC_RETURN (RETURNerror);
   }
 
   /* Stop timer T3418, if running */
-  if (T3418.id != NAS_TIMER_INACTIVE_ID) {
-    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3418 (%d)", T3418.id);
-    T3418.id = nas_timer_stop(T3418.id);
+  if (emm_timers->T3418.id != NAS_TIMER_INACTIVE_ID) {
+    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3418 (%d)", emm_timers->T3418.id);
+    emm_timers->T3418.id = nas_timer_stop(emm_timers->T3418.id);
   }
 
   /* Stop timer T3420, if running */
-  if (T3420.id != NAS_TIMER_INACTIVE_ID) {
-    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3420 (%d)", T3420.id);
-    T3420.id = nas_timer_stop(T3420.id);
+  if (emm_timers->T3420.id != NAS_TIMER_INACTIVE_ID) {
+    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3420 (%d)", emm_timers->T3420.id);
+    emm_timers->T3420.id = nas_timer_stop(emm_timers->T3420.id);
   }
 
   /* Setup security keys */
-  OctetString ck = {AUTH_CK_SIZE, _authentication_data.ck};
-  OctetString ik = {AUTH_IK_SIZE, _authentication_data.ik};
-  OctetString res = {AUTH_RES_SIZE, _authentication_data.res};
+  OctetString ck = {AUTH_CK_SIZE, authentication_data->ck};
+  OctetString ik = {AUTH_IK_SIZE, authentication_data->ik};
+  OctetString res = {AUTH_RES_SIZE, authentication_data->res};
 
-  if (memcmp(_authentication_data.rand, rand->value, AUTH_CK_SIZE) != 0) {
+  if (memcmp(authentication_data->rand, rand->value, AUTH_CK_SIZE) != 0) {
     /*
      * There is no valid stored RAND in the ME or the stored RAND is
      * different from the new received value in the AUTHENTICATION
@@ -240,7 +211,14 @@ int emm_proc_authentication_request(int native_ksi, int ksi,
        * of the core network by means of the received AUTN parameter and
        * request the USIM to compute RES, CK and IK for given RAND
        */
-      rc = usim_api_authenticate(rand, autn, &auts, &res, &ck, &ik);
+      if(usim_test == 0)
+      {
+        rc = usim_api_authenticate(&user->usim_data, rand, autn, &auts, &res, &ck, &ik);
+      }
+      else
+      {
+        rc = usim_api_authenticate_test(&user->usim_data, rand, autn, &auts, &res, &ck, &ik);
+      }
     }
 
     if (rc != RETURNok) {
@@ -252,24 +230,24 @@ int emm_proc_authentication_request(int native_ksi, int ksi,
                 (sbit == 0) ? "Non-EPS authentication unacceptable" :
                 "MAC code failure");
       /* Delete any previously stored RAND and RES and stop timer T3416 */
-      (void) emm_proc_authentication_delete();
+      emm_proc_authentication_delete(user);
 
       /* Proceed authentication abnormal cases procedure */
       if (auts.length > 0) {
         /* 3GPP TS 24.301, section 5.4.2.6, case e
          * SQN failure */
         rc = _authentication_abnormal_cases_cde(
-               EMM_CAUSE_SYNCH_FAILURE, &auts);
+               user, EMM_CAUSE_SYNCH_FAILURE, &auts);
       } else if (sbit == 0) {
         /* 3GPP TS 24.301, section 5.4.2.6, case d
          * Non-EPS authentication unacceptable */
         rc = _authentication_abnormal_cases_cde(
-               EMM_CAUSE_NON_EPS_AUTH_UNACCEPTABLE, NULL);
+               user, EMM_CAUSE_NON_EPS_AUTH_UNACCEPTABLE, NULL);
       } else {
         /* 3GPP TS 24.301, section 5.4.2.6, case c
          * MAC code failure */
         rc = _authentication_abnormal_cases_cde(
-               EMM_CAUSE_MAC_FAILURE, NULL);
+               user, EMM_CAUSE_MAC_FAILURE, NULL);
       }
 
       /* Free the AUTS parameter */
@@ -282,18 +260,18 @@ int emm_proc_authentication_request(int native_ksi, int ksi,
 
     /* Store the new RAND in the volatile memory */
     if (rand->length <= AUTH_RAND_SIZE) {
-      memcpy(_authentication_data.rand, rand->value, rand->length);
+      memcpy(authentication_data->rand, rand->value, rand->length);
     }
 
     /* Start, or reset and restart timer T3416 */
-    if (T3416.id != NAS_TIMER_INACTIVE_ID) {
-      LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3416 (%d)", T3416.id);
-      T3416.id = nas_timer_stop(T3416.id);
+    if (emm_timers->T3416.id != NAS_TIMER_INACTIVE_ID) {
+      LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3416 (%d)", emm_timers->T3416.id);
+      emm_timers->T3416.id = nas_timer_stop(emm_timers->T3416.id);
     }
 
-    T3416.id = nas_timer_start(T3416.sec, _authentication_t3416_handler, NULL);
+    emm_timers->T3416.id = nas_timer_start(emm_timers->T3416.sec, _authentication_t3416_handler, NULL);
     LOG_TRACE(INFO, "EMM-PROC  - Timer T3416 (%d) expires in  %ld seconds",
-              T3416.id, T3416.sec);
+              emm_timers->T3416.id, emm_timers->T3416.sec);
   }
 
   /*
@@ -302,7 +280,7 @@ int emm_proc_authentication_request(int native_ksi, int ksi,
    * the authenticity of the core network
    */
   /* Start any retransmission timers */
-  rc = _authentication_start_timers();
+  rc = _authentication_start_timers(user);
 
   if (rc != RETURNok) {
     LOG_TRACE(WARNING, "EMM-PROC  - Failed to start retransmission timers");
@@ -311,7 +289,7 @@ int emm_proc_authentication_request(int native_ksi, int ksi,
 
   /* Setup EMM procedure handler to be executed upon receiving
    * lower layer notification */
-  rc = emm_proc_lowerlayer_initialize(NULL, NULL, NULL, NULL);
+  rc = emm_proc_lowerlayer_initialize(user->lowerlayer_data, NULL, NULL, NULL, NULL);
 
   if (rc != RETURNok) {
     LOG_TRACE(WARNING,
@@ -325,46 +303,46 @@ int emm_proc_authentication_request(int native_ksi, int ksi,
    */
   emm_sap_t emm_sap;
   emm_sap.primitive = EMMAS_SECURITY_RES;
-  emm_sap.u.emm_as.u.security.guti = _emm_data.guti;
-  emm_sap.u.emm_as.u.security.ueid = 0;
+  emm_sap.u.emm_as.u.security.guti = user->emm_data->guti;
+  emm_sap.u.emm_as.u.security.ueid = user->ueid;
   emm_sap.u.emm_as.u.security.msgType = EMM_AS_MSG_TYPE_AUTH;
   emm_sap.u.emm_as.u.security.emm_cause = EMM_CAUSE_SUCCESS;
   emm_sap.u.emm_as.u.security.res = &res;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.security.sctx,
-                           _emm_data.security, FALSE, TRUE);
-  rc = emm_sap_send(&emm_sap);
+                           user->emm_data->security, FALSE, TRUE);
+  rc = emm_sap_send(user, &emm_sap);
 
   if (rc != RETURNerror) {
     /* Reset the authentication failure counters */
-    _authentication_data.mac_count = 0;
-    _authentication_data.umts_count = 0;
-    _authentication_data.sync_count = 0;
+    authentication_data->mac_count = 0;
+    authentication_data->umts_count = 0;
+    authentication_data->sync_count = 0;
 
     /* Create non-current EPS security context */
-    if (_emm_data.non_current == NULL) {
-      _emm_data.non_current =
+    if (user->emm_data->non_current == NULL) {
+      user->emm_data->non_current =
         (emm_security_context_t *)malloc(sizeof(emm_security_context_t));
     }
 
-    if (_emm_data.non_current) {
-      memset(_emm_data.non_current, 0, sizeof(emm_security_context_t));
+    if (user->emm_data->non_current) {
+      memset(user->emm_data->non_current, 0, sizeof(emm_security_context_t));
 
       /* Set the security context type */
       if (native_ksi) {
-        _emm_data.non_current->type = EMM_KSI_NATIVE;
+        user->emm_data->non_current->type = EMM_KSI_NATIVE;
       } else {
-        _emm_data.non_current->type = EMM_KSI_MAPPED;
+        user->emm_data->non_current->type = EMM_KSI_MAPPED;
       }
 
       /* Set the EPS key set identifier */
-      _emm_data.non_current->eksi = ksi;
+      user->emm_data->non_current->eksi = ksi;
       /* Derive the Kasme from the authentication challenge using
        * the PLMN identity of the selected PLMN */
-      _emm_data.non_current->kasme.length = AUTH_KASME_SIZE;
-      _emm_data.non_current->kasme.value  = malloc(32);
-      _authentication_kasme(autn, &ck, &ik, &_emm_data.splmn,
-                            &_emm_data.non_current->kasme);
+      user->emm_data->non_current->kasme.length = AUTH_KASME_SIZE;
+      user->emm_data->non_current->kasme.value  = malloc(32);
+      _authentication_kasme(autn, &ck, &ik, &user->emm_data->splmn,
+                            &user->emm_data->non_current->kasme);
       /* NAS integrity and cyphering keys are not yet available */
     }
   }
@@ -390,66 +368,67 @@ int emm_proc_authentication_request(int native_ksi, int ksi,
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _emm_data, _authentication_data, T3410,    **
  **             T3417, T3430                               **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_authentication_reject(void)
+int emm_proc_authentication_reject(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
   emm_sap_t emm_sap;
   int rc;
+  authentication_data_t *authentication_data = user->authentication_data;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
 
   LOG_TRACE(WARNING, "EMM-PROC  - Authentication not accepted by the network");
 
   /* Delete any previously stored RAND and RES and stop timer T3416 */
-  (void) emm_proc_authentication_delete();
+  (void) emm_proc_authentication_delete(user);
 
   /* Set the EPS update status to EU3 ROAMING NOT ALLOWED */
-  _emm_data.status = EU3_ROAMING_NOT_ALLOWED;
+  user->emm_data->status = EU3_ROAMING_NOT_ALLOWED;
   /* Delete the stored GUTI */
-  _emm_data.guti = NULL;
+  user->emm_data->guti = NULL;
   /* Delete the TAI list */
-  _emm_data.ltai.n_tais = 0;
+  user->emm_data->ltai.n_tais = 0;
   /* Delete the last visited registered TAI */
-  _emm_data.tai = NULL;
+  user->emm_data->tai = NULL;
 
   /* Delete the eKSI */
-  if (_emm_data.security) {
-    _emm_data.security->type = EMM_KSI_NOT_AVAILABLE;
+  if (user->emm_data->security) {
+    user->emm_data->security->type = EMM_KSI_NOT_AVAILABLE;
   }
 
   /* Consider the USIM invalid */
-  _emm_data.usim_is_valid = FALSE;
+  user->emm_data->usim_is_valid = FALSE;
 
   /* Stop timer T3410 */
-  if (T3410.id != NAS_TIMER_INACTIVE_ID) {
-    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3410 (%d)", T3410.id);
-    T3410.id = nas_timer_stop(T3410.id);
+  if (emm_timers->T3410.id != NAS_TIMER_INACTIVE_ID) {
+    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3410 (%d)", emm_timers->T3410.id);
+    emm_timers->T3410.id = nas_timer_stop(emm_timers->T3410.id);
   }
 
   /* Stop timer T3417 */
-  if (T3417.id != NAS_TIMER_INACTIVE_ID) {
-    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3417 (%d)", T3417.id);
-    T3417.id = nas_timer_stop(T3417.id);
+  if (emm_timers->T3417.id != NAS_TIMER_INACTIVE_ID) {
+    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3417 (%d)", emm_timers->T3417.id);
+    emm_timers->T3417.id = nas_timer_stop(emm_timers->T3417.id);
   }
 
   /* Stop timer T3430 */
-  if (T3430.id != NAS_TIMER_INACTIVE_ID) {
-    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3430 (%d)", T3430.id);
-    T3430.id = nas_timer_stop(T3430.id);
+  if (emm_timers->T3430.id != NAS_TIMER_INACTIVE_ID) {
+    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3430 (%d)", emm_timers->T3430.id);
+    emm_timers->T3430.id = nas_timer_stop(emm_timers->T3430.id);
   }
 
   /* Abort any EMM signalling procedure (prevent the retransmission timers to
    * be restarted) */
-  _authentication_data.timers = 0x00;
+  authentication_data->timers = 0x00;
 
   /*
    * Notify EMM that authentication is not accepted by the network
    */
   emm_sap.primitive = EMMREG_AUTH_REJ;
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -473,24 +452,25 @@ int emm_proc_authentication_reject(void)
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _authentication_data, T3416                **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_authentication_delete(void)
+int emm_proc_authentication_delete(nas_user_t *user)
 {
   LOG_FUNC_IN;
+  authentication_data_t *authentication_data = user->authentication_data;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
 
   LOG_TRACE(INFO, "EMM-PROC  - Delete authentication data RAND and RES");
 
   /* Stop timer T3416, if running */
-  if (T3416.id != NAS_TIMER_INACTIVE_ID) {
-    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3416 (%d)", T3416.id);
-    T3416.id = nas_timer_stop(T3416.id);
+  if (emm_timers->T3416.id != NAS_TIMER_INACTIVE_ID) {
+    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3416 (%d)", emm_timers->T3416.id);
+    emm_timers->T3416.id = nas_timer_stop(emm_timers->T3416.id);
   }
 
   /* Delete any previously stored RAND and RES */
-  memset(_authentication_data.rand, 0, AUTH_RAND_SIZE);
-  memset(_authentication_data.res, 0, AUTH_RES_SIZE);
+  memset(authentication_data->rand, 0, AUTH_RAND_SIZE);
+  memset(authentication_data->res, 0, AUTH_RES_SIZE);
 
   LOG_FUNC_RETURN (RETURNok);
 }
@@ -527,13 +507,15 @@ int emm_proc_authentication_delete(void)
 static void *_authentication_t3416_handler(void *args)
 {
   LOG_FUNC_IN;
+  nas_user_t *user=args;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
 
   LOG_TRACE(WARNING, "EMM-PROC  - T3416 timer expired");
 
   /* Stop timer T3416 */
-  T3416.id = nas_timer_stop(T3416.id);
+  emm_timers->T3416.id = nas_timer_stop(emm_timers->T3416.id);
   /* Delete previouly stored RAND and RES authentication data */
-  (void) emm_proc_authentication_delete();
+  (void) emm_proc_authentication_delete(user);
 
   LOG_FUNC_RETURN (NULL);
 }
@@ -554,7 +536,6 @@ static void *_authentication_t3416_handler(void *args)
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    None                                       **
- **      Others:    _authentication_data, T3418                **
  **                                                                        **
  ***************************************************************************/
 static void *_authentication_t3418_handler(void *args)
@@ -562,16 +543,19 @@ static void *_authentication_t3418_handler(void *args)
   LOG_FUNC_IN;
 
   int rc;
+  nas_user_t *user=args;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
+  authentication_data_t *authentication_data = user->authentication_data;
 
   LOG_TRACE(WARNING, "EMM-PROC  - T3418 timer expired");
 
   /* Stop timer T3418 */
-  T3418.id = nas_timer_stop(T3418.id);
+  emm_timers->T3418.id = nas_timer_stop(emm_timers->T3418.id);
   /* Reset the MAC failure and UMTS challenge failure counters */
-  _authentication_data.mac_count = 0;
-  _authentication_data.umts_count = 0;
+  authentication_data->mac_count = 0;
+  authentication_data->umts_count = 0;
   /* 3GPP TS 24.301, section 5.4.2.7, case f */
-  rc = _authentication_abnormal_case_f();
+  rc = _authentication_abnormal_case_f(user);
 
   if (rc != RETURNok) {
     LOG_TRACE(WARNING, "EMM-PROC  - Failed to proceed abnormal case f");
@@ -595,7 +579,6 @@ static void *_authentication_t3418_handler(void *args)
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    None                                       **
- **      Others:    _authentication_data, T3420                **
  **                                                                        **
  ***************************************************************************/
 static void *_authentication_t3420_handler(void *args)
@@ -603,15 +586,18 @@ static void *_authentication_t3420_handler(void *args)
   LOG_FUNC_IN;
 
   int rc;
+  nas_user_t *user=args;
+  authentication_data_t *authentication_data = user->authentication_data;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
 
   LOG_TRACE(WARNING, "EMM-PROC  - T3420 timer expired");
 
   /* Stop timer T3420 */
-  T3420.id = nas_timer_stop(T3420.id);
+  emm_timers->T3420.id = nas_timer_stop(emm_timers->T3420.id);
   /* Reset the sync failure counter */
-  _authentication_data.sync_count = 0;
+  authentication_data->sync_count = 0;
   /* 3GPP TS 24.301, section 5.4.2.7, case f */
-  rc = _authentication_abnormal_case_f();
+  rc = _authentication_abnormal_case_f(user);
 
   if (rc != RETURNok) {
     LOG_TRACE(WARNING, "EMM-PROC  - Failed to proceed abnormal case f");
@@ -639,20 +625,21 @@ static void *_authentication_t3420_handler(void *args)
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _authentication_data, T3418, T3420         **
  **                                                                        **
  ***************************************************************************/
-static int _authentication_abnormal_cases_cde(int emm_cause,
+static int _authentication_abnormal_cases_cde(nas_user_t *user, int emm_cause,
     const OctetString *auts)
 {
   LOG_FUNC_IN;
 
   int rc;
+  authentication_data_t *authentication_data = user->authentication_data;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
 
   LOG_TRACE(WARNING, "EMM-PROC  - "
             "Abnormal case, authentication counters c/d/e = %d/%d/%d",
-            _authentication_data.mac_count, _authentication_data.umts_count,
-            _authentication_data.sync_count);
+            authentication_data->mac_count, authentication_data->umts_count,
+            authentication_data->sync_count);
 
   /*
    * Notify EMM-AS SAP that Authentication Failure message has to be sent
@@ -660,15 +647,15 @@ static int _authentication_abnormal_cases_cde(int emm_cause,
    */
   emm_sap_t emm_sap;
   emm_sap.primitive = EMMAS_SECURITY_RES;
-  emm_sap.u.emm_as.u.security.guti = _emm_data.guti;
-  emm_sap.u.emm_as.u.security.ueid = 0;
+  emm_sap.u.emm_as.u.security.guti = user->emm_data->guti;
+  emm_sap.u.emm_as.u.security.ueid = user->ueid;
   emm_sap.u.emm_as.u.security.msgType = EMM_AS_MSG_TYPE_AUTH;
   emm_sap.u.emm_as.u.security.emm_cause = emm_cause;
   emm_sap.u.emm_as.u.security.auts = auts;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.security.sctx,
-                           _emm_data.security, FALSE, TRUE);
-  rc = emm_sap_send(&emm_sap);
+                           user->emm_data->security, FALSE, TRUE);
+  rc = emm_sap_send(user, &emm_sap);
 
   if (rc != RETURNerror) {
     /*
@@ -678,34 +665,34 @@ static int _authentication_abnormal_cases_cde(int emm_cause,
     case EMM_CAUSE_MAC_FAILURE:
       /* 3GPP TS 24.301, section 5.4.2.6, case c
        * Update the MAC failure counter */
-      _authentication_data.mac_count += 1;
+      authentication_data->mac_count += 1;
       /* Start timer T3418 */
-      T3418.id = nas_timer_start(T3418.sec,
-                                 _authentication_t3418_handler, NULL);
+      emm_timers->T3418.id = nas_timer_start(emm_timers->T3418.sec,
+                                 _authentication_t3418_handler, user);
       LOG_TRACE(INFO,"EMM-PROC  - Timer T3418 (%d) expires in "
-                "%ld seconds", T3418.id, T3418.sec);
+                "%ld seconds", emm_timers->T3418.id, emm_timers->T3418.sec);
       break;
 
     case EMM_CAUSE_NON_EPS_AUTH_UNACCEPTABLE:
       /* 3GPP TS 24.301, section 5.4.2.6, case d
        * Update the UMTS challenge failure counter */
-      _authentication_data.umts_count += 1;
+      authentication_data->umts_count += 1;
       /* Start timer T3418 */
-      T3418.id = nas_timer_start(T3418.sec,
-                                 _authentication_t3418_handler, NULL);
+      emm_timers->T3418.id = nas_timer_start(emm_timers->T3418.sec,
+                                 _authentication_t3418_handler, user);
       LOG_TRACE(INFO,"EMM-PROC  - Timer T3418 (%d) expires in "
-                "%ld seconds", T3418.id, T3418.sec);
+                "%ld seconds", emm_timers->T3418.id, emm_timers->T3418.sec);
       break;
 
     case EMM_CAUSE_SYNCH_FAILURE:
       /* 3GPP TS 24.301, section 5.4.2.6, case e
        * Update the synch failure counter */
-      _authentication_data.sync_count += 1;
+      authentication_data->sync_count += 1;
       /* Start timer T3420 */
-      T3420.id = nas_timer_start(T3420.sec,
-                                 _authentication_t3420_handler, NULL);
+      emm_timers->T3420.id = nas_timer_start(emm_timers->T3420.sec,
+                                 _authentication_t3420_handler, user);
       LOG_TRACE(INFO,"EMM-PROC  - Timer T3420 (%d) expires in "
-                "%ld seconds", T3420.id, T3420.sec);
+                "%ld seconds", emm_timers->T3420.id, emm_timers->T3420.sec);
       break;
 
     default:
@@ -717,7 +704,7 @@ static int _authentication_abnormal_cases_cde(int emm_cause,
     /*
      * Stop any retransmission timers that are running
      */
-    rc = _authentication_stop_timers();
+    rc = _authentication_stop_timers(user);
 
     if (rc != RETURNok) {
       LOG_TRACE(WARNING, "EMM-PROC  - "
@@ -731,17 +718,17 @@ static int _authentication_abnormal_cases_cde(int emm_cause,
     int failure_counter = 0;
 
     if (emm_cause == EMM_CAUSE_MAC_FAILURE) {
-      failure_counter = _authentication_data.mac_count
-                        + _authentication_data.sync_count;
+      failure_counter = authentication_data->mac_count
+                        + authentication_data->sync_count;
     } else if (emm_cause == EMM_CAUSE_SYNCH_FAILURE) {
-      failure_counter = _authentication_data.mac_count
-                        + _authentication_data.umts_count
-                        + _authentication_data.sync_count;
+      failure_counter = authentication_data->mac_count
+                        + authentication_data->umts_count
+                        + authentication_data->sync_count;
     }
 
     if (failure_counter >= AUTHENTICATION_COUNTER_MAX) {
       /* 3GPP TS 24.301, section 5.4.2.6, case f */
-      rc = _authentication_abnormal_case_f();
+      rc = _authentication_abnormal_case_f(user);
 
       if (rc != RETURNok) {
         LOG_TRACE(WARNING, "EMM-PROC  - "
@@ -769,7 +756,7 @@ static int _authentication_abnormal_cases_cde(int emm_cause,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _authentication_abnormal_case_f(void)
+static int _authentication_abnormal_case_f(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
@@ -783,16 +770,16 @@ static int _authentication_abnormal_case_f(void)
    */
   emm_sap_t emm_sap;
   emm_sap.primitive = EMMAS_RELEASE_REQ;
-  emm_sap.u.emm_as.u.release.guti = _emm_data.guti;
+  emm_sap.u.emm_as.u.release.guti = user->emm_data->guti;
   emm_sap.u.emm_as.u.release.cause = EMM_AS_CAUSE_AUTHENTICATION;
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   if (rc != RETURNerror) {
     /* Start any retransmission timers (e.g. T3410, T3417, T3421 or
      * T3430), if they were running and stopped when the UE received
      * the first AUTHENTICATION REQUEST message containing an invalid
      * MAC or SQN */
-    rc = _authentication_start_timers();
+    rc = _authentication_start_timers(user);
   }
 
   LOG_FUNC_RETURN (rc);
@@ -816,40 +803,41 @@ static int _authentication_abnormal_case_f(void)
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _authentication_data, T3410, T3417, T3421, **
  **             T3430                                      **
  **                                                                        **
  ***************************************************************************/
-static int _authentication_stop_timers(void)
+static int _authentication_stop_timers(nas_user_t *user)
 {
   LOG_FUNC_IN;
+  authentication_data_t *authentication_data = user->authentication_data;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
 
   /* Stop attach timer */
-  if (T3410.id != NAS_TIMER_INACTIVE_ID) {
-    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3410 (%d)", T3410.id);
-    T3410.id = nas_timer_stop(T3410.id);
-    _authentication_data.timers |= AUTHENTICATION_T3410;
+  if (emm_timers->T3410.id != NAS_TIMER_INACTIVE_ID) {
+    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3410 (%d)", emm_timers->T3410.id);
+    emm_timers->T3410.id = nas_timer_stop(emm_timers->T3410.id);
+    authentication_data->timers |= AUTHENTICATION_T3410;
   }
 
   /* Stop service request timer */
-  if (T3417.id != NAS_TIMER_INACTIVE_ID) {
-    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3417 (%d)", T3417.id);
-    T3417.id = nas_timer_stop(T3417.id);
-    _authentication_data.timers |= AUTHENTICATION_T3417;
+  if (emm_timers->T3417.id != NAS_TIMER_INACTIVE_ID) {
+    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3417 (%d)", emm_timers->T3417.id);
+    emm_timers->T3417.id = nas_timer_stop(emm_timers->T3417.id);
+    authentication_data->timers |= AUTHENTICATION_T3417;
   }
 
   /* Stop detach timer */
-  if (T3421.id != NAS_TIMER_INACTIVE_ID) {
-    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3421 (%d)", T3421.id);
-    T3421.id = nas_timer_stop(T3421.id);
-    _authentication_data.timers |= AUTHENTICATION_T3421;
+  if (emm_timers->T3421.id != NAS_TIMER_INACTIVE_ID) {
+    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3421 (%d)", emm_timers->T3421.id);
+    emm_timers->T3421.id = nas_timer_stop(emm_timers->T3421.id);
+    authentication_data->timers |= AUTHENTICATION_T3421;
   }
 
   /* Stop tracking area update timer */
-  if (T3430.id != NAS_TIMER_INACTIVE_ID) {
-    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3430 (%d)", T3430.id);
-    T3430.id = nas_timer_stop(T3430.id);
-    _authentication_data.timers |= AUTHENTICATION_T3430;
+  if (emm_timers->T3430.id != NAS_TIMER_INACTIVE_ID) {
+    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3430 (%d)", emm_timers->T3430.id);
+    emm_timers->T3430.id = nas_timer_stop(emm_timers->T3430.id);
+    authentication_data->timers |= AUTHENTICATION_T3430;
   }
 
   LOG_FUNC_RETURN (RETURNok);
@@ -867,43 +855,44 @@ static int _authentication_stop_timers(void)
  **      3GPP TS 24.301, section 5.4.2.7, case f                   **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _authentication_data                       **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
  **      Others:    T3410, T3417, T3421, T3430                 **
  **                                                                        **
  ***************************************************************************/
-static int _authentication_start_timers(void)
+static int _authentication_start_timers(nas_user_t *user)
 {
   LOG_FUNC_IN;
+  authentication_data_t *authentication_data = user->authentication_data;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
 
-  if (_authentication_data.timers & AUTHENTICATION_T3410) {
+  if (authentication_data->timers & AUTHENTICATION_T3410) {
     /* Start attach timer */
-    T3410.id = nas_timer_start(T3410.sec, _emm_attach_t3410_handler, NULL);
+    emm_timers->T3410.id = nas_timer_start(emm_timers->T3410.sec, emm_attach_t3410_handler, NULL);
     LOG_TRACE(INFO,"EMM-PROC  - Timer T3410 (%d) expires in "
-              "%ld seconds", T3410.id, T3410.sec);
+              "%ld seconds", emm_timers->T3410.id, emm_timers->T3410.sec);
   }
 
-  if (_authentication_data.timers & AUTHENTICATION_T3417) {
+  if (authentication_data->timers & AUTHENTICATION_T3417) {
     /* Start service request timer */
-    T3417.id = nas_timer_start(T3417.sec, _emm_service_t3417_handler, NULL);
+    emm_timers->T3417.id = nas_timer_start(emm_timers->T3417.sec, emm_service_t3417_handler, NULL);
     LOG_TRACE(INFO,"EMM-PROC  - Timer T3417 (%d) expires in "
-              "%ld seconds", T3417.id, T3417.sec);
+              "%ld seconds", emm_timers->T3417.id, emm_timers->T3417.sec);
   }
 
-  if (_authentication_data.timers & AUTHENTICATION_T3421) {
+  if (authentication_data->timers & AUTHENTICATION_T3421) {
     /* Start detach timer */
-    T3421.id = nas_timer_start(T3421.sec, _emm_detach_t3421_handler, NULL);
+    emm_timers->T3421.id = nas_timer_start(emm_timers->T3421.sec, emm_detach_t3421_handler, NULL);
     LOG_TRACE(INFO,"EMM-PROC  - Timer T3421 (%d) expires in "
-              "%ld seconds", T3421.id, T3421.sec);
+              "%ld seconds", emm_timers->T3421.id, emm_timers->T3421.sec);
   }
 
-  if (_authentication_data.timers & AUTHENTICATION_T3430) {
+  if (authentication_data->timers & AUTHENTICATION_T3430) {
     /* Start tracking area update timer */
-    T3430.id = nas_timer_start(T3430.sec, _emm_tau_t3430_handler, NULL);
+    emm_timers->T3430.id = nas_timer_start(emm_timers->T3430.sec, emm_tau_t3430_handler, NULL);
     LOG_TRACE(INFO,"EMM-PROC  - Timer T3430 (%d) expires in "
-              "%ld seconds", T3430.id, T3430.sec);
+              "%ld seconds", emm_timers->T3430.id, emm_timers->T3430.sec);
   }
 
   LOG_FUNC_RETURN (RETURNok);

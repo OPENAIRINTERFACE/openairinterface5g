@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_TRANSPORT/dci.h
 * \brief typedefs for LTE DCI structures from 36-212, V8.6 2009-03.  Limited to 5 MHz formats for the moment.Current LTE compliance V8.6 2009-03.
@@ -238,7 +230,7 @@ typedef struct DCI1A_10MHz_TDD_1_6 DCI1A_10MHz_TDD_1_6_t;
 ///  DCI Format Type 0 (20 MHz,TDD1-6, 27 bits)
 struct DCI0_20MHz_TDD_1_6 {
   /// Padding
-  uint32_t padding:2;
+  uint32_t padding:3;
   /// CQI request
   uint32_t cqi_req:1;
   /// DAI
@@ -1905,9 +1897,9 @@ struct DCI2A_10MHz_4A_TDD {
 #define sizeof_DCI2A_10MHz_4A_TDD_t 41
 typedef struct DCI2A_10MHz_4A_TDD DCI2A_10MHz_4A_TDD_t;
 
-/// DCI Format Type 2A (10 MHz, FDD, 2 Antenna Ports, 36 bits)
+/// DCI Format Type 2A (10 MHz, FDD, 2 Antenna Ports, 40 bits)
 struct DCI2A_10MHz_2A_FDD {
-  uint64_t padding:28;
+  uint64_t padding:24;
   /// Redundancy version 2
   uint64_t rv2:2;
   /// New Data Indicator 2
@@ -1931,7 +1923,7 @@ struct DCI2A_10MHz_2A_FDD {
   /// Resource Allocation Header
   uint64_t rah:1;
 } __attribute__ ((__packed__));
-#define sizeof_DCI2A_10MHz_2A_FDD_t 36
+#define sizeof_DCI2A_10MHz_2A_FDD_t 41
 typedef struct DCI2A_10MHz_2A_FDD DCI2A_10MHz_2A_FDD_t;
 
 /// DCI Format Type 2A (10 MHz, FDD, 4 Antenna Ports, 38 bits)
@@ -2977,3 +2969,53 @@ struct DCI0A_20_MHz {
 #define sizeof_DCI0A_20MHz 17
 
 #define MAX_DCI_SIZE_BITS 45
+
+struct DCI_INFO_EXTRACTED {
+    /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
+    uint8_t type;
+    /// Resource Allocation Header
+    uint8_t rah;
+    /// HARQ Process
+    uint8_t harq_pid;
+    /// CQI Request
+    uint8_t cqi_req;
+    /// SRS Request
+    uint8_t srs_req;
+    /// Power Control
+    uint8_t TPC;
+    /// Localized/Distributed VRB
+    uint8_t vrb_type;
+    /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
+    uint32_t rballoc;
+    // Applicable only when vrb_type = 1
+    uint8_t Ngap;
+    /// Cyclic shift
+    uint8_t cshift;
+    /// Hopping flag
+    uint8_t hopping;
+    /// Downlink Assignment Index
+    uint8_t dai;
+    /// DAI (TDD)
+    uint8_t ulindex;
+
+    /// TB swap
+    uint8_t tb_swap;
+    /// TPMI information for precoding
+    uint8_t tpmi;
+    /// Redundancy version 2
+    uint8_t rv2;
+    /// New Data Indicator 2
+    uint8_t ndi2;
+    /// Modulation and Coding Scheme and Redundancy Version 2
+    uint8_t mcs2;
+    /// Redundancy version 1
+    uint8_t rv1;
+    /// New Data Indicator 1
+    uint8_t ndi1;
+    /// Modulation and Coding Scheme and Redundancy Version 1
+    uint8_t mcs1;
+
+    /// Scrambling ID
+    uint64_t ap_si_nl_id:3;
+};
+typedef struct DCI_INFO_EXTRACTED DCI_INFO_EXTRACTED_t;

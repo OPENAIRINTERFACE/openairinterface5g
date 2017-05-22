@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #define RLC_AM_MODULE 1
 #define RLC_AM_REASSEMBLY_C 1
 #include "platform_types.h"
@@ -62,7 +55,7 @@ rlc_am_reassembly (
         lengthP);
 
   if (rlc_pP->output_sdu_in_construction == NULL) {
-    rlc_pP->output_sdu_in_construction = get_free_mem_block (RLC_SDU_MAX_SIZE);
+    rlc_pP->output_sdu_in_construction = get_free_mem_block (RLC_SDU_MAX_SIZE, __func__);
     rlc_pP->output_sdu_size_to_write = 0;
     assert(rlc_pP->output_sdu_in_construction != NULL);
   }
@@ -98,7 +91,7 @@ rlc_am_send_sdu (
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP)
 {
-#   if TRACE_RLC_UM_PDU
+#   if TRACE_RLC_AM_PDU
   char                 message_string[7000];
   size_t               message_string_size = 0;
 #if ENABLE_ITTI
@@ -204,7 +197,7 @@ rlc_am_send_sdu (
       LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND_SDU] ERROR SIZE <= 0 ... DO NOTHING, SET SDU SIZE TO 0\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
       //msg("[RLC_AM][MOD %d] Freeing mem_block ...\n", rlc_pP->module_id);
-      //free_mem_block (rlc_pP->output_sdu_in_construction);
+      //free_mem_block (rlc_pP->output_sdu_in_construction, __func__);
       AssertFatal(3==4,
                   PROTOCOL_RLC_AM_CTXT_FMT" SEND SDU REQUESTED %d bytes",
                   PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
@@ -219,7 +212,8 @@ void
 rlc_am_reassemble_pdu(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP,
-  mem_block_t * const          tb_pP)
+  mem_block_t * const          tb_pP,
+  boolean_t free_rlc_pdu)
 {
   int i,j;
 
@@ -404,5 +398,7 @@ rlc_am_reassemble_pdu(
     }
   }
 
-  free_mem_block(tb_pP);
+  if (free_rlc_pdu) {
+	  free_mem_block(tb_pP, __func__);
+  }
 }

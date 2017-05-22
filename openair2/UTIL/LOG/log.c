@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file log.c
 * \brief log implementaion
@@ -36,6 +28,7 @@
 
 */
 
+#define _GNU_SOURCE  /* required for pthread_getname_np */
 //#define LOG_TEST 1
 
 #define COMPONENT_LOG
@@ -131,6 +124,7 @@ int logInit (void)
     return(-1);
 #endif
   }
+
 
 #if ! defined(CN_BUILD)
   g_log->log_component[PHY].name = "PHY";
@@ -333,6 +327,14 @@ int logInit (void)
   g_log->log_component[ENB_APP].filelog = 0;
   g_log->log_component[ENB_APP].filelog_name = "";
 
+  g_log->log_component[FLEXRAN_AGENT].name = "FLEXRAN_AGENT";
+  g_log->log_component[FLEXRAN_AGENT].level = LOG_DEBUG;
+  g_log->log_component[FLEXRAN_AGENT].flag = LOG_MED;
+  g_log->log_component[FLEXRAN_AGENT].interval = 1;
+  g_log->log_component[FLEXRAN_AGENT].fd = 0;
+  g_log->log_component[FLEXRAN_AGENT].filelog = 0;
+  g_log->log_component[FLEXRAN_AGENT].filelog_name = "";
+  
   g_log->log_component[TMR].name = "TMR";
   g_log->log_component[TMR].level = LOG_EMERG;
   g_log->log_component[TMR].flag = LOG_MED;
@@ -1031,6 +1033,19 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
       if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
     }
 
+    if ( (g_log->flag & FLAG_THREAD) || (c->flag & FLAG_THREAD) ) {
+#     define THREAD_NAME_LEN 128
+      char threadname[THREAD_NAME_LEN];
+      if (pthread_getname_np(pthread_self(), threadname, THREAD_NAME_LEN) != 0)
+      {
+        perror("pthread_getname_np : ");
+      } else {
+        len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s]", threadname);
+        if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
+      }
+#     undef THREAD_NAME_LEN
+    }
+
     if ( (g_log->flag & FLAG_FUNCT) || (c->flag & FLAG_FUNCT) ) {
       len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s] ",
                       func);
@@ -1286,11 +1301,15 @@ int set_comp_log(int component, int level, int verbosity, int interval)
            LOG_EMERG);
   DevCheck((interval > 0) && (interval <= 0xFF), interval, 0, 0xFF);
 
+#if 0
   if ((verbosity == LOG_NONE) || (verbosity == LOG_LOW) ||
       (verbosity == LOG_MED) || (verbosity == LOG_FULL) ||
       (verbosity == LOG_HIGH)) {
     g_log->log_component[component].flag = verbosity;
   }
+#else
+  g_log->log_component[component].flag = verbosity;
+#endif
 
   g_log->log_component[component].level = level;
   g_log->log_component[component].interval = interval;

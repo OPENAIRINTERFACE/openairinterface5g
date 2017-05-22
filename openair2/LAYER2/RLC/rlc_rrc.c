@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /*
                                 rlc_rrc.c
                              -------------------
@@ -49,7 +42,7 @@
 #include "SRB-ToAddMod.h"
 #include "SRB-ToAddModList.h"
 #include "DL-UM-RLC.h"
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #include "PMCH-InfoList-r9.h"
 #endif
 
@@ -60,7 +53,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
     const SRB_ToAddModList_t   * const srb2add_listP,
     const DRB_ToAddModList_t   * const drb2add_listP,
     const DRB_ToReleaseList_t  * const drb2release_listP
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
     ,const PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP
 #endif
                                         )
@@ -76,7 +69,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
   rlc_union_t           *rlc_union_p     = NULL;
   hash_key_t             key             = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_rc;
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
   int                        i, j;
   MBMS_SessionInfoList_r9_t *mbms_SessionInfoList_r9_p = NULL;
   MBMS_SessionInfo_r9_t     *MBMS_SessionInfo_p        = NULL;
@@ -104,9 +97,9 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
   if (srb2add_listP != NULL) {
     for (cnt=0; cnt<srb2add_listP->list.count; cnt++) {
       rb_id = srb2add_listP->list.array[cnt]->srb_Identity;
-      lc_id  = rb_id + 2;
+      lc_id = rb_id;
 
-      LOG_D(RLC, "Adding SRB %d, rb_id %d\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
+      LOG_D(RLC, "Adding SRB %ld, rb_id %d\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
       srb_toaddmod_p = srb2add_listP->list.array[cnt];
 
       if (srb_toaddmod_p->rlc_Config) {
@@ -125,7 +118,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
                 ctxt_pP,
                 SRB_FLAG_YES,
                 &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.am,
-                rb_id);
+                rb_id, lc_id);
             } else {
               LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
                     PROTOCOL_CTXT_ARGS(ctxt_pP),
@@ -144,7 +137,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
                 UNUSED_PARAM_MBMS_SERVICE_ID,
                 &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.ul_UM_RLC,
                 &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.dl_UM_RLC,
-                rb_id);
+                rb_id, lc_id);
             } else {
               LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
                     PROTOCOL_CTXT_ARGS(ctxt_pP),
@@ -163,7 +156,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
                 UNUSED_PARAM_MBMS_SERVICE_ID,
                 &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_UL.ul_UM_RLC,
                 NULL,
-                rb_id);
+                rb_id, lc_id);
             } else {
               LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
                     PROTOCOL_CTXT_ARGS(ctxt_pP),
@@ -182,7 +175,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
                 UNUSED_PARAM_MBMS_SERVICE_ID,
                 NULL,
                 &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_DL.dl_UM_RLC,
-                rb_id);
+                rb_id, lc_id);
             } else {
               LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
                     PROTOCOL_CTXT_ARGS(ctxt_pP),
@@ -202,6 +195,27 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
         case SRB_ToAddMod__rlc_Config_PR_defaultValue:
 //#warning TO DO SRB_ToAddMod__rlc_Config_PR_defaultValue
+          LOG_I(RRC, "RLC SRB1 is default value !!\n");
+          struct RLC_Config__am  *  config_am_pP = &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.am;
+          config_am_pP->dl_AM_RLC.t_Reordering     = T_Reordering_ms35;
+          config_am_pP->dl_AM_RLC.t_StatusProhibit = T_StatusProhibit_ms0;
+          config_am_pP->ul_AM_RLC.t_PollRetransmit = T_PollRetransmit_ms45;
+          config_am_pP->ul_AM_RLC.pollPDU          = PollPDU_pInfinity;
+          config_am_pP->ul_AM_RLC.pollByte         = PollByte_kBinfinity;
+          config_am_pP->ul_AM_RLC.maxRetxThreshold = UL_AM_RLC__maxRetxThreshold_t4;
+
+          if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_AM) != NULL) {
+            config_req_rlc_am_asn1 (
+              ctxt_pP,
+              SRB_FLAG_YES,
+              &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.am,
+              rb_id,lc_id);
+          } else {
+            LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
+                  PROTOCOL_CTXT_ARGS(ctxt_pP),
+                  rb_id);
+          }
+/*
           if (rrc_rlc_add_rlc   (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_UM) != NULL) {
             config_req_rlc_um_asn1(
               ctxt_pP,
@@ -211,12 +225,13 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
               UNUSED_PARAM_MBMS_SERVICE_ID,
               NULL, // TO DO DEFAULT CONFIG
               NULL, // TO DO DEFAULT CONFIG
-              rb_id);
+              rb_id, lc_id);
           } else {
             LOG_D(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
                   PROTOCOL_CTXT_ARGS(ctxt_pP),
                   rb_id);
           }
+          */
 
           break;
 
@@ -232,9 +247,19 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
       drb_toaddmod_p = drb2add_listP->list.array[cnt];
 
       drb_id = drb_toaddmod_p->drb_Identity;
-      lc_id  = drb_id + 2;
+      if (drb_toaddmod_p->logicalChannelIdentity) {
+        lc_id = *drb_toaddmod_p->logicalChannelIdentity;
+      } else {
+        LOG_E(RLC, PROTOCOL_CTXT_FMT" logicalChannelIdentity is missing from drb-ToAddMod information element!\n", PROTOCOL_CTXT_ARGS(ctxt_pP));
+        continue;
+      }
 
-      LOG_I(RLC, "Adding DRB %d, lc_id %d\n",drb_id,lc_id);
+      if (lc_id == 1 || lc_id == 2) {
+        LOG_E(RLC, PROTOCOL_CTXT_FMT" logicalChannelIdentity = %d is invalid in RRC message when adding DRB!\n", PROTOCOL_CTXT_ARGS(ctxt_pP), lc_id);
+        continue;
+      }
+
+      LOG_D(RLC, "Adding DRB %ld, lc_id %d\n",drb_id,lc_id);
 
 
       if (drb_toaddmod_p->rlc_Config) {
@@ -249,7 +274,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
               ctxt_pP,
               SRB_FLAG_NO,
               &drb_toaddmod_p->rlc_Config->choice.am,
-              drb_id);
+              drb_id, lc_id);
           }
 
           break;
@@ -264,7 +289,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
               UNUSED_PARAM_MBMS_SERVICE_ID,
               &drb_toaddmod_p->rlc_Config->choice.um_Bi_Directional.ul_UM_RLC,
               &drb_toaddmod_p->rlc_Config->choice.um_Bi_Directional.dl_UM_RLC,
-              drb_id);
+              drb_id, lc_id);
           }
 
           break;
@@ -279,7 +304,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
               UNUSED_PARAM_MBMS_SERVICE_ID,
               &drb_toaddmod_p->rlc_Config->choice.um_Uni_Directional_UL.ul_UM_RLC,
               NULL,
-              drb_id);
+              drb_id, lc_id);
           }
 
           break;
@@ -294,13 +319,13 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
               UNUSED_PARAM_MBMS_SERVICE_ID,
               NULL,
               &drb_toaddmod_p->rlc_Config->choice.um_Uni_Directional_DL.dl_UM_RLC,
-              drb_id);
+              drb_id, lc_id);
           }
 
           break;
 
         default:
-          LOG_W(RLC, PROTOCOL_CTXT_FMT"[RB %u] unknown drb_toaddmod_p->rlc_Config->present \n",
+          LOG_W(RLC, PROTOCOL_CTXT_FMT"[RB %ld] unknown drb_toaddmod_p->rlc_Config->present \n",
                 PROTOCOL_CTXT_ARGS(ctxt_pP),
                 drb_id);
         }
@@ -319,7 +344,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
     }
   }
 
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
 
   if (pmch_InfoList_r9_pP != NULL) {
     for (i=0; i<pmch_InfoList_r9_pP->list.count; i++) {
@@ -378,7 +403,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
           mbms_service_id,
           NULL,
           &dl_um_rlc,
-          rb_id);
+          rb_id, lc_id);
       }
     }
   }
@@ -459,8 +484,10 @@ rlc_op_status_t rrc_rlc_remove_rlc   (
   logical_chan_id_t      lcid            = 0;
   hash_key_t             key             = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_rc;
+  hash_key_t             key_lcid        = HASHTABLE_NOT_A_KEY_VALUE;
+  hashtable_rc_t         h_lcid_rc;
   rlc_union_t           *rlc_union_p = NULL;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   rlc_mbms_id_t         *mbms_id_p  = NULL;
 #endif
 #ifdef OAI_EMU
@@ -471,7 +498,7 @@ rlc_op_status_t rrc_rlc_remove_rlc   (
   /* for no gcc warnings */
   (void)lcid;
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flagP == TRUE) {
     if (ctxt_pP->enb_flag) {
@@ -502,23 +529,49 @@ rlc_op_status_t rrc_rlc_remove_rlc   (
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
 
   if (h_rc == HASH_TABLE_OK) {
-    h_rc = hashtable_remove(rlc_coll_p, key);
-    LOG_D(RLC, PROTOCOL_CTXT_FMT"[%s %u] RELEASED %s\n",
-          PROTOCOL_CTXT_ARGS(ctxt_pP),
-          (srb_flagP) ? "SRB" : "DRB",
-          rb_idP,
-          (srb_flagP) ? "SRB" : "DRB");
-  } else if (h_rc == HASH_TABLE_KEY_NOT_EXISTS) {
-    LOG_D(RLC, PROTOCOL_CTXT_FMT"[%s %u] RELEASE : RLC NOT FOUND %s\n",
-          PROTOCOL_CTXT_ARGS(ctxt_pP),
-          (srb_flagP) ? "SRB" : "DRB",
-          rb_idP,
-          (srb_flagP) ? "SRB" : "DRB");
+    // also remove the hash-key created by LC-id
+    switch (rlc_union_p->mode) {
+    case RLC_MODE_AM:
+      lcid = rlc_union_p->rlc.am.channel_id;
+      break;
+    case RLC_MODE_UM:
+      lcid = rlc_union_p->rlc.um.channel_id;
+      break;
+    case RLC_MODE_TM:
+      lcid = rlc_union_p->rlc.tm.channel_id;
+      break;
+    default:
+      LOG_E(RLC, PROTOCOL_CTXT_FMT"[%s %u] RLC mode is unknown!\n",
+            PROTOCOL_CTXT_ARGS(ctxt_pP),
+            (srb_flagP) ? "SRB" : "DRB",
+            rb_idP);
+    }
+    key_lcid = RLC_COLL_KEY_LCID_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, lcid, srb_flagP);
+    h_lcid_rc = hashtable_get(rlc_coll_p, key_lcid, (void**)&rlc_union_p);
   } else {
-    LOG_E(RLC, PROTOCOL_CTXT_FMT"[%s %u] RELEASE : INTERNAL ERROR %s\n",
+    h_lcid_rc = HASH_TABLE_KEY_NOT_EXISTS;
+  }
+
+  if ((h_rc == HASH_TABLE_OK) && (h_lcid_rc == HASH_TABLE_OK)) {
+    h_lcid_rc = hashtable_remove(rlc_coll_p, key_lcid);
+    h_rc = hashtable_remove(rlc_coll_p, key);
+    LOG_D(RLC, PROTOCOL_CTXT_FMT"[%s %u LCID %d] RELEASED %s\n",
           PROTOCOL_CTXT_ARGS(ctxt_pP),
           (srb_flagP) ? "SRB" : "DRB",
-          rb_idP,
+          rb_idP, lcid,
+          (srb_flagP) ? "SRB" : "DRB");
+  } else if ((h_rc == HASH_TABLE_KEY_NOT_EXISTS) || (h_lcid_rc == HASH_TABLE_KEY_NOT_EXISTS)) {
+    LOG_D(RLC, PROTOCOL_CTXT_FMT"[%s %u LCID %d] RELEASE : RLC NOT FOUND %s, by RB-ID=%d, by LC-ID=%d\n",
+          PROTOCOL_CTXT_ARGS(ctxt_pP),
+          (srb_flagP) ? "SRB" : "DRB",
+          rb_idP, lcid,
+          (srb_flagP) ? "SRB" : "DRB",
+          h_rc, h_lcid_rc);
+  } else {
+    LOG_E(RLC, PROTOCOL_CTXT_FMT"[%s %u LCID %d] RELEASE : INTERNAL ERROR %s\n",
+          PROTOCOL_CTXT_ARGS(ctxt_pP),
+          (srb_flagP) ? "SRB" : "DRB",
+          rb_idP, lcid,
           (srb_flagP) ? "SRB" : "DRB");
   }
 
@@ -536,8 +589,10 @@ rlc_union_t* rrc_rlc_add_rlc   (
   //-----------------------------------------------------------------------------
   hash_key_t             key         = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_rc;
+  hash_key_t             key_lcid    = HASHTABLE_NOT_A_KEY_VALUE;
+  hashtable_rc_t         h_lcid_rc;
   rlc_union_t           *rlc_union_p = NULL;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   rlc_mbms_id_t         *mbms_id_p  = NULL;
   logical_chan_id_t      lcid            = 0;
 #endif
@@ -553,7 +608,7 @@ rlc_union_t* rrc_rlc_add_rlc   (
     AssertFatal (chan_idP < RLC_MAX_LC, "LC id is too high (%u/%d)!\n", chan_idP, RLC_MAX_LC);
   }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flagP == TRUE) {
     if (ctxt_pP->enb_flag) {
@@ -576,6 +631,7 @@ rlc_union_t* rrc_rlc_add_rlc   (
 #endif
   {
     key = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
+    key_lcid = RLC_COLL_KEY_LCID_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, chan_idP, srb_flagP);
   }
 
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
@@ -591,9 +647,10 @@ rlc_union_t* rrc_rlc_add_rlc   (
   } else if (h_rc == HASH_TABLE_KEY_NOT_EXISTS) {
     rlc_union_p = calloc(1, sizeof(rlc_union_t));
     h_rc = hashtable_insert(rlc_coll_p, key, rlc_union_p);
+    h_lcid_rc = hashtable_insert(rlc_coll_p, key_lcid, rlc_union_p);
 
-    if (h_rc == HASH_TABLE_OK) {
-#ifdef Rel10
+    if ((h_rc == HASH_TABLE_OK) && (h_lcid_rc == HASH_TABLE_OK)) {
+#if defined(Rel10) || defined(Rel14)
 
       if (MBMS_flagP == TRUE) {
         LOG_I(RLC, PROTOCOL_CTXT_FMT" RLC service id %u session id %u rrc_rlc_add_rlc\n",
@@ -613,11 +670,12 @@ rlc_union_t* rrc_rlc_add_rlc   (
       rlc_union_p->mode = rlc_modeP;
       return rlc_union_p;
     } else {
-      LOG_E(RLC, PROTOCOL_CTXT_FMT"[%s %u] rrc_rlc_add_rlc  FAILED %s\n",
+      LOG_E(RLC, PROTOCOL_CTXT_FMT"[%s %u] rrc_rlc_add_rlc FAILED %s (add by RB_id=%d; add by LC_id=%d)\n",
             PROTOCOL_CTXT_ARGS(ctxt_pP),
             (srb_flagP) ? "SRB" : "DRB",
             rb_idP,
-            (srb_flagP) ? "SRB" : "DRB");
+            (srb_flagP) ? "SRB" : "DRB",
+            h_rc, h_lcid_rc);
       free(rlc_union_p);
       rlc_union_p = NULL;
       return NULL;
@@ -674,7 +732,7 @@ rlc_op_status_t rrc_rlc_config_req   (
         ctxt_pP,
         srb_flagP,
         &rlc_infoP.rlc.rlc_am_info,
-        rb_idP);
+        rb_idP, rb_idP);
       break;
 
     case RLC_MODE_UM:
@@ -685,7 +743,7 @@ rlc_op_status_t rrc_rlc_config_req   (
         ctxt_pP,
         srb_flagP,
         &rlc_infoP.rlc.rlc_um_info,
-        rb_idP);
+        rb_idP, rb_idP);
       break;
 
     case RLC_MODE_TM:
@@ -696,7 +754,7 @@ rlc_op_status_t rrc_rlc_config_req   (
         ctxt_pP,
         srb_flagP,
         &rlc_infoP.rlc.rlc_tm_info,
-        rb_idP);
+        rb_idP, rb_idP);
       break;
 
     default:
@@ -728,7 +786,7 @@ rlc_op_status_t rrc_rlc_data_req     (
   //-----------------------------------------------------------------------------
   mem_block_t*   sdu;
 
-  sdu = get_free_mem_block(sdu_sizeP);
+  sdu = get_free_mem_block(sdu_sizeP, __func__);
 
   if (sdu != NULL) {
     memcpy (sdu->data, sduP, sdu_sizeP);

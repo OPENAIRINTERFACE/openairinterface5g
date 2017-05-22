@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 
 Source      EmmDeregistered.c
@@ -61,6 +54,7 @@ Description Implements the EPS Mobility Management procedures executed
 #include "nas_log.h"
 
 #include "emm_proc.h"
+#include "user_defs.h"
 
 #include <assert.h>
 
@@ -93,17 +87,17 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmDeregistered(const emm_reg_t *evt)
+int EmmDeregistered(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNerror;
 
-  assert(emm_fsm_get_status() == EMM_DEREGISTERED);
+  assert(emm_fsm_get_status(user) == EMM_DEREGISTERED);
 
 
   /* Delete the authentication data RAND and RES */
-  rc = emm_proc_authentication_delete();
+  rc = emm_proc_authentication_delete(user);
 
   if (rc != RETURNok) {
     LOG_FUNC_RETURN (rc);
@@ -123,7 +117,7 @@ int EmmDeregistered(const emm_reg_t *evt)
     /*
      * The UE was powered on without a valid USIM application present
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_NO_IMSI);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_NO_IMSI);
     break;
 
   case _EMMREG_REGISTER_REQ:
@@ -131,11 +125,11 @@ int EmmDeregistered(const emm_reg_t *evt)
      * The default EMM primary substate when the UE is switched on
      * with valid USIM application shall be PLMN-SEARCH
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_PLMN_SEARCH);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_PLMN_SEARCH);
 
     if (rc != RETURNerror) {
       /* Process the network registration request */
-      rc = emm_fsm_process(evt);
+      rc = emm_fsm_process(user, evt);
     }
 
     break;
@@ -149,14 +143,14 @@ int EmmDeregistered(const emm_reg_t *evt)
 
     /* Move to the corresponding initial EMM state */
     if (evt->u.attach.is_emergency) {
-      rc = emm_fsm_set_status(EMM_DEREGISTERED_LIMITED_SERVICE);
+      rc = emm_fsm_set_status(user, EMM_DEREGISTERED_LIMITED_SERVICE);
     } else {
-      rc = emm_fsm_set_status(EMM_DEREGISTERED_NORMAL_SERVICE);
+      rc = emm_fsm_set_status(user, EMM_DEREGISTERED_NORMAL_SERVICE);
     }
 
     if (rc != RETURNerror) {
       /* Restart the attach procedure */
-      rc = emm_proc_attach_restart();
+      rc = emm_proc_attach_restart(user);
     }
 
     break;

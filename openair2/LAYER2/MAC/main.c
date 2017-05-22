@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /*! \file main.c
  * \brief top init of Layer 2
  * \author  Navid Nikaein and Raymond Knopp
@@ -69,24 +62,27 @@
 #endif //PHY_EMUL
 
 #include "SCHED/defs.h"
-
+/* TODO: this abstraction_flag here is very hackish - find a proper solution */
+extern uint8_t abstraction_flag;
 void dl_phy_sync_success(module_id_t   module_idP,
                          frame_t       frameP,
                          unsigned char eNB_index,
                          uint8_t            first_sync)   //init as MR
 {
   LOG_D(MAC,"[UE %d] Frame %d: PHY Sync to eNB_index %d successful \n", module_idP, frameP, eNB_index);
-#if ! defined(ENABLE_USE_MME)
+#if defined(ENABLE_USE_MME)
+  int mme_enabled=1;
+#else
+  int mme_enabled=0;
+#endif
 
-  if (first_sync==1) {
+  if (first_sync==1 && !(mme_enabled==1 && abstraction_flag==0)) {
     layer2_init_UE(module_idP);
     openair_rrc_ue_init(module_idP,eNB_index);
   } else
-#endif
   {
     rrc_in_sync_ind(module_idP,frameP,eNB_index);
   }
-
 }
 
 void mrbch_phy_sync_failure(module_id_t module_idP, frame_t frameP, uint8_t free_eNB_index) //init as CH
@@ -134,11 +130,11 @@ int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, ui
     UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
 
     if (UE_mac_inst == NULL) {
-      LOG_C(MAC,"[MAIN] Can't ALLOCATE %d Bytes for %d UE_MAC_INST with size %d \n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,sizeof(UE_MAC_INST));
+      LOG_C(MAC,"[MAIN] Can't ALLOCATE %zu Bytes for %d UE_MAC_INST with size %zu \n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,sizeof(UE_MAC_INST));
       mac_xface->macphy_exit("[MAC][MAIN] not enough memory for UEs \n");
     }
 
-    LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
+    LOG_D(MAC,"[MAIN] ALLOCATE %zu Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
 
     bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
 
@@ -155,10 +151,10 @@ int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, ui
     eNB_mac_inst = (eNB_MAC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_MAC_INST));
 
     if (eNB_mac_inst == NULL) {
-      LOG_D(MAC,"[MAIN] can't ALLOCATE %d Bytes for %d eNB_MAC_INST with size %d \n",NB_eNB_INST*sizeof(eNB_MAC_INST*),NB_eNB_INST,sizeof(eNB_MAC_INST));
+      LOG_D(MAC,"[MAIN] can't ALLOCATE %zu Bytes for %d eNB_MAC_INST with size %zu \n",NB_eNB_INST*sizeof(eNB_MAC_INST*),NB_eNB_INST,sizeof(eNB_MAC_INST));
       mac_xface->macphy_exit("[MAC][MAIN] not enough memory for eNB \n");
     } else {
-      LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d eNB_MAC_INST @ %p\n",sizeof(eNB_MAC_INST),NB_eNB_INST,eNB_mac_inst);
+      LOG_D(MAC,"[MAIN] ALLOCATE %zu Bytes for %d eNB_MAC_INST @ %p\n",sizeof(eNB_MAC_INST),NB_eNB_INST,eNB_mac_inst);
       bzero(eNB_mac_inst,NB_eNB_INST*sizeof(eNB_MAC_INST));
     }
   } else {
@@ -185,7 +181,7 @@ int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, ui
 #ifdef PHY_EMUL
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;//0: MR, 1: CH, 2: not CH neither MR
 #endif
-    /*#ifdef Rel10
+    /*#if defined(Rel10) || defined(Rel14)
     int n;
     for (n=0;n<4096;n++)
     eNB_mac_inst[Mod_id].MCH_pdu.payload[n] = taus();
@@ -224,8 +220,8 @@ int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, ui
       RA_template = (RA_TEMPLATE *)&eNB_mac_inst[i].common_channels[CC_id].RA_template[0];
 
       for (j=0; j<NB_RA_PROC_MAX; j++) {
-        if (mac_xface->lte_frame_parms->frame_type == TDD) {
-          switch (mac_xface->lte_frame_parms->N_RB_DL) {
+        if (mac_xface->frame_parms->frame_type == TDD) {
+          switch (mac_xface->frame_parms->N_RB_DL) {
           case 6:
             size_bytes1 = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
             size_bytes2 = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
@@ -263,7 +259,7 @@ int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, ui
           }
 
         } else {
-          switch (mac_xface->lte_frame_parms->N_RB_DL) {
+          switch (mac_xface->frame_parms->N_RB_DL) {
           case 6:
             size_bytes1 = sizeof(DCI1A_1_5MHz_FDD_t);
             size_bytes2 = sizeof(DCI1A_1_5MHz_FDD_t);
@@ -326,7 +322,7 @@ int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, ui
   //ICIC init param
 #ifdef ICIC
   uint8_t SB_size;
-  SB_size=mac_xface->get_SB_size(mac_xface->lte_frame_parms->N_RB_DL);
+  SB_size=mac_xface->get_SB_size(mac_xface->frame_parms->N_RB_DL);
 
   srand (time(NULL));
 
@@ -461,11 +457,12 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
   mac_xface->fill_rar                  = fill_rar;
   mac_xface->initiate_ra_proc          = initiate_ra_proc;
   mac_xface->cancel_ra_proc            = cancel_ra_proc;
+  mac_xface->set_msg3_subframe         = set_msg3_subframe;
   mac_xface->SR_indication             = SR_indication;
   mac_xface->UL_failure_indication     = UL_failure_indication;
   mac_xface->rx_sdu                    = rx_sdu;
   mac_xface->get_dlsch_sdu             = get_dlsch_sdu;
-  mac_xface->get_eNB_UE_stats          = get_eNB_UE_stats;
+  mac_xface->get_eNB_UE_stats          = get_UE_stats;
   mac_xface->get_transmission_mode     = get_transmission_mode;
   mac_xface->get_rballoc               = get_rballoc;
   mac_xface->get_nb_rb                 = conv_nprb;
@@ -480,8 +477,9 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
 
   LOG_I(MAC,"[MAIN] init UE MAC functions \n");
   mac_xface->ue_decode_si              = ue_decode_si;
+  mac_xface->ue_decode_p               = ue_decode_p;
   mac_xface->ue_send_sdu               = ue_send_sdu;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   mac_xface->ue_send_mch_sdu           = ue_send_mch_sdu;
   mac_xface->ue_query_mch              = ue_query_mch;
 #endif
@@ -494,7 +492,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
 
 
   LOG_I(MAC,"[MAIN] PHY Frame configuration \n");
-  mac_xface->lte_frame_parms = frame_parms;
+  mac_xface->frame_parms = frame_parms;
 
   mac_xface->get_ue_active_harq_pid = get_ue_active_harq_pid;
   mac_xface->get_PL                 = get_PL;
@@ -519,7 +517,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
   mac_xface->phy_config_sib2_eNB        = phy_config_sib2_eNB;
   mac_xface->phy_config_sib2_ue         = phy_config_sib2_ue;
   mac_xface->phy_config_afterHO_ue      = phy_config_afterHO_ue;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   mac_xface->phy_config_sib13_eNB        = phy_config_sib13_eNB;
   mac_xface->phy_config_sib13_ue         = phy_config_sib13_ue;
 #endif
@@ -532,6 +530,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
 
   mac_xface->phy_config_dedicated_eNB    = phy_config_dedicated_eNB;
   mac_xface->phy_config_dedicated_ue     = phy_config_dedicated_ue;
+  mac_xface->phy_config_harq_ue          = phy_config_harq_ue;
 
   mac_xface->get_lte_frame_parms        = get_lte_frame_parms;
   mac_xface->get_mu_mimo_mode           = get_mu_mimo_mode;
@@ -543,7 +542,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
   mac_xface->get_prach_prb_offset       = get_prach_prb_offset;
   mac_xface->is_prach_subframe          = is_prach_subframe;
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   mac_xface->get_mch_sdu                 = get_mch_sdu;
   mac_xface->phy_config_dedicated_scell_eNB= phy_config_dedicated_scell_eNB;
   mac_xface->phy_config_dedicated_scell_ue= phy_config_dedicated_scell_ue;

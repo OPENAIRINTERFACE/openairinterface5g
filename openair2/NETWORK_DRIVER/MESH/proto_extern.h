@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /***************************************************************************
                           nas_proto_extern.h  -  description
                              -------------------
@@ -103,7 +96,7 @@ void nas_COMMON_receive(unsigned short dlen,
  */
 void nas_COMMON_QOS_send(struct sk_buff *skb,
                          struct cx_entity *cx,
-                         struct classifier_entity *gc,int inst);
+                         struct classifier_entity *gc,int inst, struct nas_priv *gpriv);
 
 /**
 \fn void nas_COMMON_del_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst)
@@ -115,7 +108,7 @@ void nas_COMMON_QOS_send(struct sk_buff *skb,
  */
 void nas_COMMON_del_send(struct sk_buff *skb,
                          struct cx_entity *cx,
-                         struct classifier_entity *gc,int inst);
+                         struct classifier_entity *gc,int inst, struct nas_priv *gpriv);
 
 #ifndef PDCP_USE_NETLINK
 /**
@@ -202,19 +195,18 @@ void nas_mesh_init(int inst   //!< Instance ID
 
                   );
 
-void nas_mesh_timer(unsigned long data,
-                    struct nas_priv *gpriv);
+void nas_mesh_timer(unsigned long data);
 
 int  nas_mesh_DC_receive(struct cx_entity *cx,struct nas_priv *gpriv);
 int  nas_mesh_GC_receive(struct nas_priv *gpriv);
 int  nas_mesh_DC_send_cx_establish_request(struct cx_entity *cx,struct nas_priv *gpriv);
 int  nas_mesh_DC_send_cx_release_request(struct cx_entity *cx,struct nas_priv *gpriv);
-void nas_mesh_DC_send_sig_data_request(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,struct nas_priv *gpriv);
+void nas_mesh_DC_send_sig_data_request(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst, struct nas_priv *gpriv);
 
 // iocontrol.c
 void nas_CTL_send(struct sk_buff *skb,
                   struct cx_entity *cx,
-                  struct classifier_entity *gc);
+                  struct classifier_entity *gc,int inst, struct nas_priv *gpriv);
 //int nas_CTL_receive_authentication(struct ipv6hdr *iph, struct cx-entity *cx, unsigned char sapi);
 int nas_CTL_ioctl(struct net_device *dev,
                   struct ifreq *ifr, int cmd);

@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 Source      SecurityModeControl.c
 
@@ -71,6 +64,11 @@ Description Defines the security mode control EMM procedure executed by the
 # include "assertions.h"
 #include "secu_defs.h"
 #include "msc.h"
+#include "SecurityModeControl.h"
+
+#if  defined(NAS_BUILT_IN_UE)
+#include "nas_itti_messaging.h"
+#endif
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -94,13 +92,6 @@ static int _security_knas_int(const OctetString *kasme, OctetString *knas_int,
                               uint8_t eea);
 static int _security_kenb(const OctetString *kasme, OctetString *kenb,
                           uint32_t count);
-
-/*
- * Internal data used for security mode control procedure
- */
-static struct {
-  OctetString kenb;           /* eNodeB security key      */
-} _security_data;
 
 static void _security_release(emm_security_context_t *ctx);
 
@@ -148,26 +139,27 @@ static void _security_release(emm_security_context_t *ctx);
  **      Others:    None                                                   **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_security_mode_command(int native_ksi, int ksi,
-                                   int seea, int seia, int reea, int reia)
+int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi,
+                                   int seea, int seia, int reea, int reia, int imeisv_request)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNerror;
   int emm_cause = EMM_CAUSE_SUCCESS;
   int security_context_is_new = FALSE;
+  security_data_t *security_data = user->security_data;
 
   LOG_TRACE(INFO, "EMM-PROC  - Security mode control requested (ksi=%d)",
             ksi);
 
   /* Delete any previously stored RAND and RES and stop timer T3416 */
-  (void) emm_proc_authentication_delete();
+  (void) emm_proc_authentication_delete(user);
 
   /*
    * Check the replayed UE security capabilities
    */
-  uint8_t eea = (0x80 >> _emm_data.security->capability.eps_encryption);
-  uint8_t eia = (0x80 >> _emm_data.security->capability.eps_integrity);
+  uint8_t eea = (0x80 >> user->emm_data->security->capability.eps_encryption);
+  uint8_t eia = (0x80 >> user->emm_data->security->capability.eps_integrity);
 
   if ( (reea != eea) || (reia != eia) ) {
     LOG_TRACE(WARNING, "EMM-PROC  - Replayed UE security capabilities "
@@ -183,7 +175,7 @@ int emm_proc_security_mode_command(int native_ksi, int ksi,
   /*
    * Check the non-current EPS security context
    */
-  else if (_emm_data.non_current == NULL) {
+  else if (user->emm_data->non_current == NULL) {
     LOG_TRACE(WARNING, "EMM-PROC  - Non-current EPS security context "
               "is not valid");
     emm_cause = EMM_CAUSE_SECURITY_MODE_REJECTED;
@@ -194,53 +186,53 @@ int emm_proc_security_mode_command(int native_ksi, int ksi,
   else {
     LOG_TRACE(INFO, "EMM-PROC  - Update the non-current EPS security context seea=%u seia=%u", seea, seia);
     /* Update selected cyphering and integrity algorithms */
-    //LG COMENTED _emm_data.non_current->capability.encryption = seea;
-    //LG COMENTED _emm_data.non_current->capability.integrity  = seia;
+    //LG COMENTED user->emm_data->non_current->capability.encryption = seea;
+    //LG COMENTED user->emm_data->non_current->capability.integrity  = seia;
 
-    _emm_data.non_current->selected_algorithms.encryption = seea;
-    _emm_data.non_current->selected_algorithms.integrity = seia;
+    user->emm_data->non_current->selected_algorithms.encryption = seea;
+    user->emm_data->non_current->selected_algorithms.integrity = seia;
 
     /* Derive the NAS cyphering key */
-    if (_emm_data.non_current->knas_enc.value == NULL) {
-      _emm_data.non_current->knas_enc.value =
+    if (user->emm_data->non_current->knas_enc.value == NULL) {
+      user->emm_data->non_current->knas_enc.value =
         (uint8_t *)calloc(1,AUTH_KNAS_ENC_SIZE);
-      _emm_data.non_current->knas_enc.length = AUTH_KNAS_ENC_SIZE;
+      user->emm_data->non_current->knas_enc.length = AUTH_KNAS_ENC_SIZE;
     }
 
-    if (_emm_data.non_current->knas_enc.value != NULL) {
+    if (user->emm_data->non_current->knas_enc.value != NULL) {
       LOG_TRACE(INFO, "EMM-PROC  - Update the non-current EPS security context knas_enc");
-      rc = _security_knas_enc(&_emm_data.non_current->kasme,
-                              &_emm_data.non_current->knas_enc, seea);
+      rc = _security_knas_enc(&user->emm_data->non_current->kasme,
+                              &user->emm_data->non_current->knas_enc, seea);
     }
 
     /* Derive the NAS integrity key */
-    if (_emm_data.non_current->knas_int.value == NULL) {
-      _emm_data.non_current->knas_int.value =
+    if (user->emm_data->non_current->knas_int.value == NULL) {
+      user->emm_data->non_current->knas_int.value =
         (uint8_t *)calloc(1,AUTH_KNAS_INT_SIZE);
-      _emm_data.non_current->knas_int.length = AUTH_KNAS_INT_SIZE;
+      user->emm_data->non_current->knas_int.length = AUTH_KNAS_INT_SIZE;
     }
 
-    if (_emm_data.non_current->knas_int.value != NULL) {
+    if (user->emm_data->non_current->knas_int.value != NULL) {
       if (rc != RETURNerror) {
         LOG_TRACE(INFO, "EMM-PROC  - Update the non-current EPS security context knas_int");
-        rc = _security_knas_int(&_emm_data.non_current->kasme,
-                                &_emm_data.non_current->knas_int, seia);
+        rc = _security_knas_int(&user->emm_data->non_current->kasme,
+                                &user->emm_data->non_current->knas_int, seia);
       }
     }
 
     /* Derive the eNodeB key */
-    if (_security_data.kenb.value == NULL) {
-      _security_data.kenb.value = (uint8_t *)calloc(1,AUTH_KENB_SIZE);
-      _security_data.kenb.length = AUTH_KENB_SIZE;
+    if (security_data->kenb.value == NULL) {
+      security_data->kenb.value = (uint8_t *)calloc(1,AUTH_KENB_SIZE);
+      security_data->kenb.length = AUTH_KENB_SIZE;
     }
 
-    if (_security_data.kenb.value != NULL) {
+    if (security_data->kenb.value != NULL) {
       if (rc != RETURNerror) {
         LOG_TRACE(INFO, "EMM-PROC  - Update the non-current EPS security context kenb");
-        // LG COMMENT rc = _security_kenb(&_emm_data.security->kasme,
-        rc = _security_kenb(&_emm_data.non_current->kasme,
-                            &_security_data.kenb,
-                            *(uint32_t *)(&_emm_data.non_current->ul_count));
+        // LG COMMENT rc = _security_kenb(&user->emm_data->security->kasme,
+        rc = _security_kenb(&user->emm_data->non_current->kasme,
+                            &security_data->kenb,
+                            *(uint32_t *)(&user->emm_data->non_current->ul_count));
       }
     }
 
@@ -251,13 +243,13 @@ int emm_proc_security_mode_command(int native_ksi, int ksi,
       LOG_TRACE(INFO, "EMM-PROC  - NAS security mode command accepted by the UE");
 
       /* Update the current EPS security context */
-      if ( native_ksi && (_emm_data.security->type != EMM_KSI_NATIVE) ) {
+      if ( native_ksi && (user->emm_data->security->type != EMM_KSI_NATIVE) ) {
         /* The type of security context flag included in the SECURITY
          * MODE COMMAND message is set to "native security context" and
          * the UE has a mapped EPS security context as the current EPS
          * security context */
-        if ( (_emm_data.non_current->type == EMM_KSI_NATIVE) &&
-             (_emm_data.non_current->eksi == ksi) ) {
+        if ( (user->emm_data->non_current->type == EMM_KSI_NATIVE) &&
+             (user->emm_data->non_current->eksi == ksi) ) {
           /* The KSI matches the non-current native EPS security
            * context; the UE shall take the non-current native EPS
            * security context into use which then becomes the
@@ -266,33 +258,36 @@ int emm_proc_security_mode_command(int native_ksi, int ksi,
           LOG_TRACE(INFO,
                     "EMM-PROC  - Update Current security context");
           /* Release non-current security context */
-          _security_release(_emm_data.security);
-          _emm_data.security = _emm_data.non_current;
+          _security_release(user->emm_data->security);
+          user->emm_data->security = user->emm_data->non_current;
           /* Reset the uplink NAS COUNT counter */
-          _emm_data.security->ul_count.overflow = 0;
-          _emm_data.security->ul_count.seq_num = 0;
+          user->emm_data->security->ul_count.overflow = 0;
+          user->emm_data->security->ul_count.seq_num = 0;
           /* Set new security context indicator */
           security_context_is_new = TRUE;
         }
       }
 
-      if ( !native_ksi && (_emm_data.security->type != EMM_KSI_NATIVE) ) {
+      if ( !native_ksi && (user->emm_data->security->type != EMM_KSI_NATIVE) ) {
         /* The type of security context flag included in the SECURITY
          * MODE COMMAND message is set to "mapped security context" and
          * the UE has a mapped EPS security context as the current EPS
          * security context */
-        if (ksi != _emm_data.security->eksi) {
+        if (ksi != user->emm_data->security->eksi) {
           /* The KSI does not match the current EPS security context;
            * the UE shall reset the uplink NAS COUNT counter */
           LOG_TRACE(INFO,
                     "EMM-PROC  - Reset uplink NAS COUNT counter");
-          _emm_data.security->ul_count.overflow = 0;
-          _emm_data.security->ul_count.seq_num = 0;
+          user->emm_data->security->ul_count.overflow = 0;
+          user->emm_data->security->ul_count.seq_num = 0;
         }
       }
 
-      _emm_data.security->selected_algorithms.encryption = seea;
-      _emm_data.security->selected_algorithms.integrity  = seia;
+      user->emm_data->security->selected_algorithms.encryption = seea;
+      user->emm_data->security->selected_algorithms.integrity  = seia;
+#if  defined(NAS_BUILT_IN_UE)
+      nas_itti_kenb_refresh_req(security_data->kenb.value);
+#endif
 
     }
     /*
@@ -303,17 +298,17 @@ int emm_proc_security_mode_command(int native_ksi, int ksi,
       emm_cause = EMM_CAUSE_SECURITY_MODE_REJECTED;
 
       /* Release security mode control internal data */
-      if (_security_data.kenb.value) {
-        free(_security_data.kenb.value);
-        _security_data.kenb.value = NULL;
-        _security_data.kenb.length = 0;
+      if (security_data->kenb.value) {
+        free(security_data->kenb.value);
+        security_data->kenb.value = NULL;
+        security_data->kenb.length = 0;
       }
     }
   }
 
   /* Setup EMM procedure handler to be executed upon receiving
    * lower layer notification */
-  rc = emm_proc_lowerlayer_initialize(NULL, NULL, NULL, NULL);
+  rc = emm_proc_lowerlayer_initialize(user->lowerlayer_data, NULL, NULL, NULL, NULL);
 
   if (rc != RETURNok) {
     LOG_TRACE(WARNING,
@@ -327,14 +322,15 @@ int emm_proc_security_mode_command(int native_ksi, int ksi,
    */
   emm_sap_t emm_sap;
   emm_sap.primitive = EMMAS_SECURITY_RES;
-  emm_sap.u.emm_as.u.security.guti = _emm_data.guti;
-  emm_sap.u.emm_as.u.security.ueid = 0;
+  emm_sap.u.emm_as.u.security.guti = user->emm_data->guti;
+  emm_sap.u.emm_as.u.security.ueid = user->ueid;
   emm_sap.u.emm_as.u.security.msgType = EMM_AS_MSG_TYPE_SMC;
+  emm_sap.u.emm_as.u.security.imeisv_request = imeisv_request;
   emm_sap.u.emm_as.u.security.emm_cause = emm_cause;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.security.sctx,
-                           _emm_data.security, security_context_is_new, TRUE);
-  rc = emm_sap_send(&emm_sap);
+                           user->emm_data->security, security_context_is_new, TRUE);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }

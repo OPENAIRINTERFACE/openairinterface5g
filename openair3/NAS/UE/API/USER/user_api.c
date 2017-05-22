@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 
 Source          user_api.c
@@ -52,9 +45,9 @@ Description     Implements the API used by the NAS layer running in the UE
 #include "device.h"
 #include "nas_user.h"
 
-#include "at_command.h"
 #include "at_response.h"
 #include "at_error.h"
+#include "esm_ebr.h"
 
 #include "user_indication.h"
 
@@ -75,63 +68,12 @@ Description     Implements the API used by the NAS layer running in the UE
 /*
  * Asynchronous notification procedure handlers
  */
-static int _user_api_registration_handler(unsigned char id, const void* data, size_t size);
-static int _user_api_location_handler(unsigned char id, const void* data, size_t size);
-static int _user_api_network_handler(unsigned char id, const void* data, size_t size);
-static int _user_api_pdn_connection_handler(unsigned char id, const void* data, size_t size);
+static int _user_api_registration_handler(user_api_id_t *user_api_id, unsigned char id, const void* data, size_t size);
+static int _user_api_location_handler(user_api_id_t *user_api_id, unsigned char id, const void* data, size_t size);
+static int _user_api_network_handler(user_api_id_t *user_api_id, unsigned char id, const void* data, size_t size);
+static int _user_api_pdn_connection_handler(user_api_id_t *user_api_id, unsigned char id, const void* data, size_t size);
 
-static int _user_api_send(at_response_t* data);
-
-/* -------------------
- * Connection endpoint
- * -------------------
- *      The connection endpoint is used to send/receive data to/from the
- *      user application layer. Its definition depends on the underlaying
- *      mechanism chosen to communicate (network socket, I/O terminal device).
- *      A connection endpoint is handled using an identifier, and functions
- *      used to retreive the file descriptor actually allocated by the system,
- *      to receive data, to send data, and to perform clean up when connection
- *      is shut down.
- *      Only one single end to end connection with the user is managed at a
- *      time.
- */
-static struct {
-  /* Connection endpoint reference  */
-  void* endpoint;
-  /* Connection endpoint handlers */
-  void*   (*open) (int, const char*, const char*);
-  int     (*getfd)(const void*);
-  ssize_t (*recv) (void*, char*, size_t);
-  ssize_t (*send) (const void*, const char*, size_t);
-  void    (*close)(void*);
-} _user_api_id;
-
-#define USER_API_OPEN(a, b, c)  _user_api_id.open(a, b, c)
-#define USER_API_GETFD()  _user_api_id.getfd(_user_api_id.endpoint)
-#define USER_API_RECV(a, b) _user_api_id.recv(_user_api_id.endpoint, a, b)
-#define USER_API_SEND(a, b) _user_api_id.send(_user_api_id.endpoint, a, b)
-#define USER_API_CLOSE()  _user_api_id.close(_user_api_id.endpoint)
-
-/*
- * The buffer used to receive data from the user application layer
- */
-#define USER_API_RECV_BUFFER_SIZE 4096
-static char _user_api_recv_buffer[USER_API_RECV_BUFFER_SIZE];
-
-/*
- * The buffer used to send data to the user application layer
- */
-#define USER_API_SEND_BUFFER_SIZE USER_API_RECV_BUFFER_SIZE
-static char _user_api_send_buffer[USER_API_SEND_BUFFER_SIZE];
-
-/*
- * The decoded data received from the user application layer
- */
-static struct {
-  int n_cmd;    /* number of user data to be processed    */
-#define USER_DATA_MAX 10
-  at_command_t cmd[USER_DATA_MAX];  /* user data to be processed  */
-} _user_data = {};
+static int _user_api_send(user_api_id_t *user_api_id, at_response_t* data);
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
@@ -154,44 +96,44 @@ static struct {
  **              Others:        _user_api_id                               **
  **                                                                        **
  ***************************************************************************/
-int user_api_initialize(const char* host, const char* port,
+int user_api_initialize(user_api_id_t *user_api_id, const char* host, const char* port,
                         const char* devname, const char* devparams)
 {
   LOG_FUNC_IN;
 
-  gethostname(_user_api_send_buffer, USER_API_SEND_BUFFER_SIZE);
+  gethostname(user_api_id->send_buffer, USER_API_SEND_BUFFER_SIZE);
 
   if (devname != NULL) {
     /* Initialize device handlers */
-    _user_api_id.open  = device_open;
-    _user_api_id.getfd = device_get_fd;
-    _user_api_id.recv  = device_read;
-    _user_api_id.send  = device_write;
-    _user_api_id.close = device_close;
+    user_api_id->open  = device_open;
+    user_api_id->getfd = device_get_fd;
+    user_api_id->recv  = device_read;
+    user_api_id->send  = device_write;
+    user_api_id->close = device_close;
 
     /* Initialize communication channel */
-    _user_api_id.endpoint = USER_API_OPEN(DEVICE, devname, devparams);
+    user_api_id->endpoint = user_api_id->open(DEVICE, devname, devparams);
 
-    if (_user_api_id.endpoint == NULL) {
+    if (user_api_id->endpoint == NULL) {
       LOG_TRACE(ERROR, "USR-API   - Failed to open connection endpoint, "
                 "%s", strerror(errno));
       LOG_FUNC_RETURN (RETURNerror);
     }
 
     LOG_TRACE(INFO, "USR-API   - User's communication device %d is OPENED "
-              "on %s/%s", user_api_get_fd(), _user_api_send_buffer, devname);
+              "on %s/%s", user_api_get_fd(user_api_id), user_api_id->send_buffer, devname);
   } else {
     /* Initialize network socket handlers */
-    _user_api_id.open  = socket_udp_open;
-    _user_api_id.getfd = socket_get_fd;
-    _user_api_id.recv  = socket_recv;
-    _user_api_id.send  = socket_send;
-    _user_api_id.close = socket_close;
+    user_api_id->open  = socket_udp_open;
+    user_api_id->getfd = socket_get_fd;
+    user_api_id->recv  = socket_recv;
+    user_api_id->send  = socket_send;
+    user_api_id->close = socket_close;
 
     /* Initialize communication channel */
-    _user_api_id.endpoint = USER_API_OPEN(SOCKET_SERVER, host, port);
+    user_api_id->endpoint = user_api_id->open(SOCKET_SERVER, host, port);
 
-    if (_user_api_id.endpoint == NULL) {
+    if (user_api_id->endpoint == NULL) {
       const char* error = ( (errno < 0) ?
                             gai_strerror(errno) : strerror(errno) );
       LOG_TRACE(ERROR, "USR-API   - Failed to open connection endpoint, "
@@ -200,7 +142,7 @@ int user_api_initialize(const char* host, const char* port,
     }
 
     LOG_TRACE(INFO, "USR-API   - User's UDP socket %d is BOUND to %s/%s",
-              user_api_get_fd(), _user_api_send_buffer, port);
+              user_api_get_fd(user_api_id), user_api_id->send_buffer, port);
   }
 
   /* Register the asynchronous notification handlers */
@@ -245,10 +187,10 @@ int user_api_initialize(const char* host, const char* port,
  **              Others:        None                                       **
  **                                                                        **
  ***************************************************************************/
-int user_api_get_fd(void)
+int user_api_get_fd(user_api_id_t *user_api_id)
 {
   LOG_FUNC_IN;
-  LOG_FUNC_RETURN (USER_API_GETFD());
+  LOG_FUNC_RETURN (user_api_id->getfd(user_api_id->endpoint));
 }
 
 /****************************************************************************
@@ -260,19 +202,18 @@ int user_api_get_fd(void)
  **              before its usage.                                         **
  **                                                                        **
  ** Inputs:      index:         Index of the user data structure to get    **
- **              Others:        _user_data                                 **
  **                                                                        **
  ** Outputs:     Return:        A generic pointer to the user data         **
  **                             structure                                  **
  **              Others:        None                                       **
  **                                                                        **
  ***************************************************************************/
-const void* user_api_get_data(int index)
+const void* user_api_get_data(user_at_commands_t *commands, int index)
 {
   LOG_FUNC_IN;
 
-  if (index < _user_data.n_cmd) {
-    LOG_FUNC_RETURN ((void*)(&_user_data.cmd[index]));
+  if (index < commands->n_cmd) {
+    LOG_FUNC_RETURN ((void*)(&commands->cmd[index]));
   }
 
   LOG_FUNC_RETURN (NULL);
@@ -284,33 +225,23 @@ const void* user_api_get_data(int index)
  **                                                                        **
  ** Description: Read data received from the user application layer        **
  **                                                                        **
- ** Inputs:      fd:            File descriptor of the connection endpoint **
- **                             from which data have been received         **
  **          Others:            _user_api_id                               **
  **                                                                        **
  ** Outputs: Return:            The number of bytes read when success;     **
  **                             RETURNerror Otherwise                      **
- **          Others:            _user_api_recv_buffer, _user_api_id        **
+ **          Others:            user_api_id->recv_buffer, _user_api_id        **
  **                                                                        **
  ***************************************************************************/
-int user_api_read_data(int fd)
+int user_api_read_data(user_api_id_t *user_api_id)
 {
   LOG_FUNC_IN;
 
   int rbytes;
 
-  /* Sanity check */
-  int sfd = user_api_get_fd();
-
-  if (fd != sfd) {
-    LOG_TRACE(ERROR, "USR-API   - Endpoint %d is not the one created for communication with the user application layer (%d)", fd, sfd);
-    LOG_FUNC_RETURN (RETURNerror);
-  }
-
-  memset(_user_api_recv_buffer, 0, USER_API_RECV_BUFFER_SIZE);
+  memset(user_api_id->recv_buffer, 0, USER_API_RECV_BUFFER_SIZE);
 
   /* Receive data from the user application layer */
-  rbytes = USER_API_RECV(_user_api_recv_buffer, USER_API_RECV_BUFFER_SIZE);
+  rbytes = user_api_id->recv(user_api_id->endpoint, user_api_id->recv_buffer, USER_API_RECV_BUFFER_SIZE);
 
   if (rbytes == RETURNerror) {
     LOG_TRACE(ERROR, "USR-API   - recv() failed, %s", strerror(errno));
@@ -320,7 +251,7 @@ int user_api_read_data(int fd)
   } else {
     LOG_TRACE(INFO, "USR-API   - %d bytes received "
               "from the user application layer", rbytes);
-    LOG_DUMP(_user_api_recv_buffer, rbytes);
+    LOG_DUMP(user_api_id->recv_buffer, rbytes);
   }
 
   LOG_FUNC_RETURN (rbytes);
@@ -336,45 +267,42 @@ int user_api_read_data(int fd)
  **                                                                        **
  ** Outputs:         Return:    The number of bytes write when success;    **
  **                             RETURNerror Otherwise                      **
- **                  Others:    _user_api_recv_buffer                      **
+ **                  Others:    user_api_id->recv_buffer                      **
  **                                                                        **
  ***************************************************************************/
-int user_api_set_data(char *message)
+int user_api_set_data(user_api_id_t *user_api_id, char *message)
 {
   LOG_FUNC_IN;
 
   int rbytes;
 
-  memset(_user_api_recv_buffer, 0, USER_API_RECV_BUFFER_SIZE);
+  memset(user_api_id->recv_buffer, 0, USER_API_RECV_BUFFER_SIZE);
 
-  strncpy(_user_api_recv_buffer, message, USER_API_RECV_BUFFER_SIZE);
-  rbytes = strlen(_user_api_recv_buffer);
+  strncpy(user_api_id->recv_buffer, message, USER_API_RECV_BUFFER_SIZE);
+  rbytes = strlen(user_api_id->recv_buffer);
 
   LOG_TRACE(INFO, "USR-API   - %d bytes write", rbytes);
-  LOG_DUMP(_user_api_recv_buffer, rbytes);
+  LOG_DUMP(user_api_id->recv_buffer, rbytes);
 
   LOG_FUNC_RETURN (rbytes);
 }
 
 /****************************************************************************
  **                                                                        **
- ** Name:        user_api_send_data()                                      **
+** Name:        user_api_send_data()                                      **
  **                                                                        **
  ** Description: Send data to the user application layer                   **
  **                                                                        **
- ** Inputs:      fd:            File descriptor of the connection endpoint **
- **                             to which data have to be sent              **
  **              length:        Number of bytes to send                    **
- **              Others:        _user_api_send_buffer, _user_api_id        **
  **                                                                        **
  ** Outputs:     Return:        The number of bytes sent when success;     **
  **                             RETURNerror Otherwise                      **
  **              Others:        None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _user_api_send_data(int length)
+static int _user_api_send_data(user_api_id_t *user_api_id, int length)
 {
-  int sbytes = USER_API_SEND(_user_api_send_buffer, length);
+  int sbytes = user_api_id->send(user_api_id->endpoint, user_api_id->send_buffer, length);
 
   if (sbytes == RETURNerror) {
     LOG_TRACE(ERROR, "USR-API   - send() failed, %s", strerror(errno));
@@ -384,28 +312,25 @@ static int _user_api_send_data(int length)
   } else {
     LOG_TRACE(INFO, "USR-API   - %d bytes sent "
               "to the user application layer", sbytes);
-    LOG_DUMP(_user_api_send_buffer, sbytes);
+    LOG_DUMP(user_api_id->send_buffer, sbytes);
   }
 
   return sbytes;
 }
-int user_api_send_data(int fd, int length)
+
+/****************************************************************************
+ **                                                                        **
+ ** Name:        user_api_close()                                          **
+ ***************************************************************************/
+ int user_api_send_data(user_api_id_t *user_api_id, int length)
 {
   LOG_FUNC_IN;
-
-  /* Sanity check */
-  int sfd = user_api_get_fd();
-
-  if (fd != sfd) {
-    LOG_TRACE(ERROR, "USR-API   - Endpoint %d is not the one created for communication with the user application layer (%d)", fd, sfd);
-    LOG_FUNC_RETURN (RETURNerror);
-  }
 
   /* Send data to the user application layer */
   int sbytes = 0;
 
   if (length > 0) {
-    sbytes = _user_api_send_data(length);
+    sbytes = _user_api_send_data(user_api_id, length);
   }
 
   LOG_FUNC_RETURN (sbytes);
@@ -418,31 +343,18 @@ int user_api_send_data(int fd, int length)
  ** Description: Close the user API from which the NAS layer sent/received **
  **              messages to/from the user application layer               **
  **                                                                        **
- ** Inputs:      fd:            File descriptor of the connection endpoint **
- **                             allocated by the system to communicate     **
- **                             with the user application layer            **
  **              Others:        None                                       **
  **                                                                        **
  ** Outputs:     Return:        None                                       **
- **              Others:        _user_api_id                               **
  **                                                                        **
  ***************************************************************************/
-void user_api_close(int fd)
+void user_api_close(user_api_id_t *user_api_id)
 {
   LOG_FUNC_IN;
 
-  /* Sanity check */
-  int sfd = user_api_get_fd();
-
-  if (fd != sfd) {
-    LOG_TRACE(ERROR, "USR-API   - Endpoint %d is not the one created for communication with the user application layer (%d)", fd, sfd);
-    LOG_FUNC_OUT;
-    return;
-  }
-
   /* Cleanup the connection endpoint */
-  USER_API_CLOSE();
-  _user_api_id.endpoint = NULL;
+  user_api_id->close(user_api_id->endpoint) ;
+  user_api_id->endpoint = NULL;
 
   LOG_FUNC_OUT;
 }
@@ -457,46 +369,45 @@ void user_api_close(int fd)
  **    layer when the AT command failed to be decoded.           **
  **                                                                        **
  ** Inputs:  length:  Number of bytes to decode                  **
- **      Others:  _user_api_recv_buffer                      **
  **                                                                        **
  ** Outputs:   Return:  The number of AT commands succeessfully    **
  **       decoded                                    **
- **      Others:  _user_api_send_buffer, _user_data          **
  **                                                                        **
  ***************************************************************************/
-int user_api_decode_data(int length)
+int user_api_decode_data(user_api_id_t *user_api_id, user_at_commands_t *commands, int length)
 {
   LOG_FUNC_IN;
 
   /* Parse the AT command line */
-  LOG_TRACE(INFO, "USR-API   - Decode user data: %s", _user_api_recv_buffer);
-  _user_data.n_cmd = at_command_decode(_user_api_recv_buffer, length,
-                                       _user_data.cmd);
+  LOG_TRACE(INFO, "USR-API   - Decode user data: %s", user_api_id->recv_buffer);
+  commands->n_cmd = at_command_decode(user_api_id->recv_buffer, length,
+                                       commands->cmd);
 
-  if (_user_data.n_cmd > 0) {
+  if (commands->n_cmd > 0) {
     /* AT command data received from the user application layer
      * has been successfully decoded */
     LOG_TRACE(INFO, "USR-API   - %d AT command%s ha%s been successfully "
-              "decoded", _user_data.n_cmd,
-              (_user_data.n_cmd > 1) ? "s" : "",
-              (_user_data.n_cmd > 1) ? "ve" : "s");
+              "decoded", commands->n_cmd,
+              (commands->n_cmd > 1) ? "s" : "",
+              (commands->n_cmd > 1) ? "ve" : "s");
   } else {
     int bytes;
 
     /* Failed to decode AT command data received from the user
      * application layer; Return syntax error code message */
     LOG_TRACE(ERROR, "USR-API   - Syntax error: Failed to decode "
-              "AT command data %s", _user_api_recv_buffer);
+              "AT command data %s", user_api_id->recv_buffer);
 
     /* Encode the syntax error code message */
-    bytes = at_error_encode(_user_api_send_buffer, AT_ERROR_SYNTAX,
+    bytes = at_error_encode(user_api_id->send_buffer, AT_ERROR_SYNTAX,
                             AT_ERROR_OPERATION_NOT_SUPPORTED);
 
+    // FIXME move _user_data call
     /* Send the syntax error code message */
-    (void) _user_api_send_data(bytes);
+    _user_api_send_data(user_api_id, bytes);
   }
 
-  LOG_FUNC_RETURN (_user_data.n_cmd);
+  LOG_FUNC_RETURN (commands->n_cmd);
 }
 
 /****************************************************************************
@@ -515,10 +426,9 @@ int user_api_decode_data(int length)
  ** Outputs:   Return:  The number of characters that have been    **
  **       successfully encoded;                      **
  **       RETURNerror otherwise.                     **
- **      Others:  _user_api_send_buffer                      **
  **                                                                        **
  ***************************************************************************/
-int user_api_encode_data(const void* data, int success_code)
+int user_api_encode_data(user_api_id_t *user_api_id, const void* data, int success_code)
 {
   LOG_FUNC_IN;
 
@@ -527,16 +437,16 @@ int user_api_encode_data(const void* data, int success_code)
 
   /* Encode AT command error message */
   if (user_data->cause_code != AT_ERROR_SUCCESS) {
-    bytes = at_error_encode(_user_api_send_buffer, AT_ERROR_CME,
+    bytes = at_error_encode(user_api_id->send_buffer, AT_ERROR_CME,
                             user_data->cause_code);
   }
   /* Encode AT command response message */
   else {
-    bytes = at_response_encode(_user_api_send_buffer, user_data);
+    bytes = at_response_encode(user_api_id->send_buffer, user_data);
 
     /* Add success result code */
     if ( (success_code) && (bytes != RETURNerror) ) {
-      bytes += at_error_encode(&_user_api_send_buffer[bytes],
+      bytes += at_error_encode(&user_api_id->send_buffer[bytes],
                                AT_ERROR_OK, 0);
     }
   }
@@ -574,7 +484,7 @@ int user_api_encode_data(const void* data, int success_code)
  **      Others:  None                                       **
  **                                                                        **
  ***************************************************************************/
-int user_api_emm_callback(Stat_t stat, tac_t tac, ci_t ci, AcT_t AcT,
+int user_api_emm_callback(user_api_id_t *user_api_id, Stat_t stat, tac_t tac, ci_t ci, AcT_t AcT,
                           const char* data, size_t size)
 {
   LOG_FUNC_IN;
@@ -586,14 +496,14 @@ int user_api_emm_callback(Stat_t stat, tac_t tac, ci_t ci, AcT_t AcT,
      * The list of available operators present in the network has to be
      * displayed to the user application
      */
-    rc = user_ind_notify(USER_IND_PLMN, (void*)data, size);
+    rc = user_ind_notify(user_api_id, USER_IND_PLMN, (void*)data, size);
   } else {
     user_indication_t ind;
     ind.notification.reg.status = stat;
 
     if (size > 0) {
       /* The UE's network registration status has changed */
-      rc = user_ind_notify(USER_IND_REG, (void*)&ind, 0);
+      rc = user_ind_notify(user_api_id, USER_IND_REG, (void*)&ind, 0);
     }
 
     if (rc != RETURNerror) {
@@ -603,7 +513,7 @@ int user_api_emm_callback(Stat_t stat, tac_t tac, ci_t ci, AcT_t AcT,
       ind.notification.loc.tac = tac;
       ind.notification.loc.ci  = ci;
       ind.notification.loc.AcT = AcT;
-      rc = user_ind_notify(USER_IND_LOC, (void*)&ind, 0);
+      rc = user_ind_notify(user_api_id, USER_IND_LOC, (void*)&ind, 0);
     }
   }
 
@@ -631,7 +541,7 @@ int user_api_emm_callback(Stat_t stat, tac_t tac, ci_t ci, AcT_t AcT,
  **      Others:  None                                       **
  **                                                                        **
  ***************************************************************************/
-int user_api_esm_callback(int cid, network_pdn_state_t state)
+int user_api_esm_callback(user_api_id_t *user_api_id, int cid, network_pdn_state_t state)
 {
   LOG_FUNC_IN;
 
@@ -641,7 +551,7 @@ int user_api_esm_callback(int cid, network_pdn_state_t state)
   ind.notification.pdn.cid = cid;
   ind.notification.pdn.status = state;
   /* The status of the specified PDN connection has changed */
-  rc = user_ind_notify(USER_IND_PDN, (void*)&ind, 0);
+  rc = user_ind_notify(user_api_id, USER_IND_PDN, (void*)&ind, 0);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -657,23 +567,22 @@ int user_api_esm_callback(int cid, network_pdn_state_t state)
  ** Description: Encodes and sends data to the user application layer      **
  **                                                                        **
  ** Inputs:  data:    The data to send                           **
- **      Others:  _user_api_send_buffer, _user_api_id        **
  **                                                                        **
  ** Outputs:   Return:  The number of bytes sent when success;     **
  **       RETURNerror Otherwise                      **
  **      Others:  None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _user_api_send(at_response_t* data)
+static int _user_api_send(user_api_id_t *user_api_id, at_response_t* data)
 {
   LOG_FUNC_IN;
 
   /* Encode AT command response message */
-  int bytes = at_response_encode(_user_api_send_buffer, data);
+  int bytes = at_response_encode(user_api_id->send_buffer, data);
 
   /* Send the AT command response message to the user application */
   if (bytes != RETURNerror) {
-    bytes = _user_api_send_data(bytes);
+    bytes = _user_api_send_data(user_api_id, bytes);
   }
 
   LOG_FUNC_RETURN (bytes);
@@ -700,7 +609,7 @@ static int _user_api_send(at_response_t* data)
  **      Others:  None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _user_api_registration_handler(unsigned char id, const void* data,
+static int _user_api_registration_handler(user_api_id_t *user_api_id, unsigned char id, const void* data,
     size_t size)
 {
   LOG_FUNC_IN;
@@ -717,7 +626,7 @@ static int _user_api_registration_handler(unsigned char id, const void* data,
   at_response.response.cereg.stat = reg->status;
 
   /* Encode and send the AT command response message to the user */
-  int bytes = _user_api_send(&at_response);
+  int bytes = _user_api_send(user_api_id, &at_response);
 
   LOG_FUNC_RETURN (bytes);
 }
@@ -742,7 +651,7 @@ static int _user_api_registration_handler(unsigned char id, const void* data,
  **      Others:  None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _user_api_location_handler(unsigned char id, const void* data,
+static int _user_api_location_handler(user_api_id_t *user_api_id, unsigned char id, const void* data,
                                       size_t size)
 {
   LOG_FUNC_IN;
@@ -766,7 +675,7 @@ static int _user_api_location_handler(unsigned char id, const void* data,
   }
 
   /* Encode and send the AT command response message to the user */
-  int bytes = _user_api_send(&at_response);
+  int bytes = _user_api_send(user_api_id, &at_response);
 
   LOG_FUNC_RETURN (bytes);
 }
@@ -789,7 +698,7 @@ static int _user_api_location_handler(unsigned char id, const void* data,
  **      Others:  None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _user_api_network_handler(unsigned char id, const void* data,
+static int _user_api_network_handler(user_api_id_t *user_api_id, unsigned char id, const void* data,
                                      size_t size)
 {
   LOG_FUNC_IN;
@@ -802,7 +711,7 @@ static int _user_api_network_handler(unsigned char id, const void* data,
   at_response.response.cops.tst.size = size;
 
   /* Encode and send the AT command response message to the user */
-  int bytes = _user_api_send(&at_response);
+  int bytes = _user_api_send(user_api_id, &at_response);
 
   LOG_FUNC_RETURN (bytes);
 }
@@ -827,7 +736,7 @@ static int _user_api_network_handler(unsigned char id, const void* data,
  **      Others:  None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _user_api_pdn_connection_handler(unsigned char id, const void* data,
+static int _user_api_pdn_connection_handler(user_api_id_t *user_api_id, unsigned char id, const void* data,
     size_t size)
 {
   LOG_FUNC_IN;
@@ -844,7 +753,7 @@ static int _user_api_pdn_connection_handler(unsigned char id, const void* data,
   at_response.response.cgev.code = pdn->status;
 
   /* Encode and send the AT command response message to the user */
-  int bytes = _user_api_send(&at_response);
+  int bytes = _user_api_send(user_api_id, &at_response);
 
   LOG_FUNC_RETURN (bytes);
 }

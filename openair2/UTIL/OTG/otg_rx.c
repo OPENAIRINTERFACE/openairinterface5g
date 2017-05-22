@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file otg_rx.c
  * \brief function containing the OTG traffic generation functions
@@ -114,8 +106,10 @@ int otg_rx_pkt(const int dst_instanceP, const int ctime, const char * const buff
 
       if (dst_instance != dst_instanceP) {
 //#warning "LG: TODO think about multicast traffic"
-        LOG_W(OTG,"[SRC %d][DST %d] [FLOW_idx %d][APP TYPE %d] RX INFO pkt at time %d: flag 0x %x, seq number %d, tx time %d, size (hdr %d, pdcp %d)  not for dest instance %u\n",
-              dst_instanceP);
+        /* TODO: fix this LOG, a lot of missing parameters, replaced by a simple basic version */
+        /*LOG_W(OTG,"[SRC %d][DST %d] [FLOW_idx %d][APP TYPE %d] RX INFO pkt at time %d: flag 0x %x, seq number %d, tx time %d, size (hdr %d, pdcp %d)  not for dest instance %u\n",
+              dst_instanceP);*/
+        LOG_W(OTG,"dst_instance != dst_instanceP\n");
       }
 
       if(otg_hdr_rx->traffic_type > MAX_NUM_APPLICATION) {
@@ -254,7 +248,7 @@ int otg_rx_pkt(const int dst_instanceP, const int ctime, const char * const buff
               ctime - otg_hdr_rx->time,
               nb_loss_pkts);
 
-        LOG_I(OTG,"INFO LATENCY :: [SRC %d][DST %d] radio access %.2f (tx time %d, ctime %d), OWD:%.2f (ms):\n",
+        LOG_I(OTG,"INFO LATENCY :: [SRC %d][DST %d] radio access %.2f (tx time %d, ctime %d), OWD:%d (ms):\n",
               src_instance,
               dst_instance,
               otg_multicast_info->radio_access_delay[src_instance][dst_instance],

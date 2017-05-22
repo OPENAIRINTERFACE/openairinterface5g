@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file s1ap_eNB_handlers.c
  * \brief s1ap messages handlers for eNB part
@@ -213,7 +205,7 @@ int s1ap_eNB_handle_message(uint32_t assoc_id, int32_t stream,
   if (message.procedureCode > sizeof(messages_callback) / (3 * sizeof(
         s1ap_message_decoded_callback))
       || (message.direction > S1AP_PDU_PR_unsuccessfulOutcome)) {
-    S1AP_ERROR("[SCTP %d] Either procedureCode %d or direction %d exceed expected\n",
+    S1AP_ERROR("[SCTP %d] Either procedureCode %ld or direction %d exceed expected\n",
                assoc_id, message.procedureCode, message.direction);
     return -1;
   }
@@ -222,7 +214,7 @@ int s1ap_eNB_handle_message(uint32_t assoc_id, int32_t stream,
    * This can mean not implemented or no procedure for eNB (wrong direction).
    */
   if (messages_callback[message.procedureCode][message.direction-1] == NULL) {
-    S1AP_ERROR("[SCTP %d] No handler for procedureCode %d in %s\n",
+    S1AP_ERROR("[SCTP %d] No handler for procedureCode %ld in %s\n",
                assoc_id, message.procedureCode,
                s1ap_direction2String[message.direction]);
     return -1;
@@ -460,10 +452,10 @@ int s1ap_eNB_handle_error_indication(uint32_t               assoc_id,
     return -1;
   }
   if ( s1_error_indication_p->presenceMask & S1AP_ERRORINDICATIONIES_MME_UE_S1AP_ID_PRESENT) {
-	  	S1AP_WARN("Received S1 Error indication MME UE S1AP ID 0x%x\n", s1_error_indication_p->mme_ue_s1ap_id);
+	  	S1AP_WARN("Received S1 Error indication MME UE S1AP ID 0x%lx\n", s1_error_indication_p->mme_ue_s1ap_id);
   }
   if ( s1_error_indication_p->presenceMask & S1AP_ERRORINDICATIONIES_ENB_UE_S1AP_ID_PRESENT) {
-  	S1AP_WARN("Received S1 Error indication eNB UE S1AP ID 0x%x\n", s1_error_indication_p->eNB_UE_S1AP_ID);
+  	S1AP_WARN("Received S1 Error indication eNB UE S1AP ID 0x%lx\n", s1_error_indication_p->eNB_UE_S1AP_ID);
   }
 
   if ( s1_error_indication_p->presenceMask & S1AP_ERRORINDICATIONIES_CAUSE_PRESENT) {
@@ -718,7 +710,7 @@ int s1ap_eNB_handle_initial_context_request(uint32_t               assoc_id,
   if ((ue_desc_p = s1ap_eNB_get_ue_context(mme_desc_p->s1ap_eNB_instance,
                    initialContextSetupRequest_p->eNB_UE_S1AP_ID)) == NULL) {
     S1AP_ERROR("[SCTP %d] Received initial context setup request for non "
-               "existing UE context 0x%06x\n", assoc_id,
+               "existing UE context 0x%06lx\n", assoc_id,
                initialContextSetupRequest_p->eNB_UE_S1AP_ID);
     return -1;
   }
@@ -843,7 +835,7 @@ int s1ap_eNB_handle_ue_context_release_command(uint32_t               assoc_id,
     if ((ue_desc_p = s1ap_eNB_get_ue_context(mme_desc_p->s1ap_eNB_instance,
                      enb_ue_s1ap_id)) == NULL) {
       S1AP_ERROR("[SCTP %d] Received UE context release command for non "
-                 "existing UE context 0x%06x\n",
+                 "existing UE context 0x%06lx\n",
                  assoc_id,
                  enb_ue_s1ap_id);
       /*MessageDef *msg_complete_p;
@@ -908,7 +900,7 @@ int s1ap_eNB_handle_e_rab_setup_request(uint32_t               assoc_id,
   if ((ue_desc_p = s1ap_eNB_get_ue_context(mme_desc_p->s1ap_eNB_instance,
                    s1ap_E_RABSetupRequest->eNB_UE_S1AP_ID)) == NULL) {
     S1AP_ERROR("[SCTP %d] Received initial context setup request for non "
-               "existing UE context 0x%06x\n", assoc_id,
+               "existing UE context 0x%06lx\n", assoc_id,
                s1ap_E_RABSetupRequest->eNB_UE_S1AP_ID);
     return -1;
   }
@@ -923,7 +915,7 @@ int s1ap_eNB_handle_e_rab_setup_request(uint32_t               assoc_id,
   ue_desc_p->rx_stream = stream;
 
   if ( ue_desc_p->mme_ue_s1ap_id != s1ap_E_RABSetupRequest->mme_ue_s1ap_id){
-    S1AP_WARN("UE context mme_ue_s1ap_id is different form that of the message (%d != %d)", 
+    S1AP_WARN("UE context mme_ue_s1ap_id is different form that of the message (%d != %ld)", 
 	      ue_desc_p->mme_ue_s1ap_id, s1ap_E_RABSetupRequest->mme_ue_s1ap_id);
 
   }

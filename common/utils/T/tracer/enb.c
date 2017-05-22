@@ -24,6 +24,30 @@ typedef struct {
   view *pdcpview;
   view *rrcview;
   view *legacy;
+  widget *current_ue_label;
+  widget *prev_ue_button;
+  widget *next_ue_button;
+  widget *pusch_iq_ue_xy_plot;
+  widget *ul_estimate_ue_xy_plot;
+  widget *pucch1_energy_ue_xy_plot;
+  widget *pucch_iq_ue_xy_plot;
+  widget *dl_ul_harq_ue_label;
+  widget *dl_mcs_xy_plot;
+  widget *ul_mcs_xy_plot;
+  logger *pusch_iq_ue_logger;
+  logger *ul_estimate_ue_logger;
+  logger *pucch1_energy_ue_threshold_logger;
+  logger *pucch1_energy_ue_energy_logger;
+  logger *pucch_iq_ue_logger;
+  logger *dl_dci_logger[8];
+  logger *dl_ack_logger[8];
+  logger *dl_nack_logger[8];
+  logger *ul_dci_logger[8];
+  logger *ul_dci_retransmission_logger[8];
+  logger *ul_ack_logger[8];
+  logger *ul_nack_logger[8];
+  logger *dl_mcs_logger;
+  logger *ul_mcs_logger;
 } enb_gui;
 
 typedef struct {
@@ -31,6 +55,9 @@ typedef struct {
   int *is_on;
   int nevents;
   pthread_mutex_t lock;
+  enb_gui *e;
+  int ue;                /* what UE is displayed in the UE specific views */
+  void *database;
 } enb_data;
 
 void is_on_changed(void *_d)
@@ -86,18 +113,109 @@ static void *gui_thread(void *_g)
   return NULL;
 }
 
-static filter *ticktime_filter(void *database, char *event, int i)
+static filter *ticktime_filter(void *database, char *event, int i, int ue)
 {
   /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0" */
   return
     filter_and(
       filter_eq(filter_evarg(database, event, "harq_pid"), filter_int(i)),
       filter_and(
-        filter_eq(filter_evarg(database, event, "UE_id"), filter_int(0)),
+        filter_eq(filter_evarg(database, event, "UE_id"), filter_int(ue)),
         filter_eq(filter_evarg(database, event, "eNB_ID"), filter_int(0))));
 }
 
-static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
+static void set_current_ue(gui *g, enb_data *e, int ue)
+{
+  int i;
+  char s[256];
+
+  sprintf(s, "[UE %d]  ", ue);
+  label_set_text(g, e->e->current_ue_label, s);
+  sprintf(s, "PUSCH IQ [UE %d]", ue);
+  xy_plot_set_title(g, e->e->pusch_iq_ue_xy_plot, s);
+  sprintf(s, "UL estimated channel [UE %d]", ue);
+  xy_plot_set_title(g, e->e->ul_estimate_ue_xy_plot, s);
+  sprintf(s, "PUCCH1 energy (SR) [UE %d]", ue);
+  xy_plot_set_title(g, e->e->pucch1_energy_ue_xy_plot, s);
+  sprintf(s, "PUCCH IQ [UE %d]", ue);
+  xy_plot_set_title(g, e->e->pucch_iq_ue_xy_plot, s);
+  sprintf(s, "DL/UL HARQ (x8) [UE %d]", ue);
+  label_set_text(g, e->e->dl_ul_harq_ue_label, s);
+  sprintf(s, "DL MCS [UE %d]", ue);
+  xy_plot_set_title(g, e->e->dl_mcs_xy_plot, s);
+  sprintf(s, "UL MCS [UE %d]", ue);
+  xy_plot_set_title(g, e->e->ul_mcs_xy_plot, s);
+
+  logger_set_filter(e->e->pusch_iq_ue_logger,
+      filter_eq(
+        filter_evarg(e->database, "ENB_PHY_PUSCH_IQ", "UE_ID"),
+        filter_int(ue)));
+  logger_set_filter(e->e->ul_estimate_ue_logger,
+      filter_eq(
+        filter_evarg(e->database, "ENB_PHY_UL_CHANNEL_ESTIMATE", "UE_ID"),
+        filter_int(ue)));
+  logger_set_filter(e->e->pucch1_energy_ue_threshold_logger,
+      filter_eq(
+        filter_evarg(e->database, "ENB_PHY_PUCCH_1_ENERGY", "UE_ID"),
+        filter_int(ue)));
+  logger_set_filter(e->e->pucch1_energy_ue_energy_logger,
+      filter_eq(
+        filter_evarg(e->database, "ENB_PHY_PUCCH_1_ENERGY", "UE_ID"),
+        filter_int(ue)));
+  logger_set_filter(e->e->pucch_iq_ue_logger,
+      filter_eq(
+        filter_evarg(e->database, "ENB_PHY_PUCCH_1AB_IQ", "UE_ID"),
+        filter_int(ue)));
+  for (i = 0; i < 8; i++) {
+    logger_set_filter(e->e->dl_dci_logger[i],
+        ticktime_filter(e->database, "ENB_PHY_DLSCH_UE_DCI", i, ue));
+    logger_set_filter(e->e->dl_ack_logger[i],
+        ticktime_filter(e->database, "ENB_PHY_DLSCH_UE_ACK", i, ue));
+    logger_set_filter(e->e->dl_nack_logger[i],
+        ticktime_filter(e->database, "ENB_PHY_DLSCH_UE_NACK", i, ue));
+    logger_set_filter(e->e->ul_dci_logger[i],
+        ticktime_filter(e->database, "ENB_PHY_ULSCH_UE_DCI", i, ue));
+    logger_set_filter(e->e->ul_dci_retransmission_logger[i],
+        ticktime_filter(e->database,
+            "ENB_PHY_ULSCH_UE_NO_DCI_RETRANSMISSION", i, ue));
+    logger_set_filter(e->e->ul_ack_logger[i],
+        ticktime_filter(e->database, "ENB_PHY_ULSCH_UE_ACK", i, ue));
+    logger_set_filter(e->e->ul_nack_logger[i],
+        ticktime_filter(e->database, "ENB_PHY_ULSCH_UE_NACK", i, ue));
+  }
+  logger_set_filter(e->e->dl_mcs_logger,
+      filter_eq(
+        filter_evarg(e->database, "ENB_PHY_DLSCH_UE_DCI", "UE_id"),
+        filter_int(ue)));
+  logger_set_filter(e->e->ul_mcs_logger,
+      filter_eq(
+        filter_evarg(e->database, "ENB_PHY_ULSCH_UE_DCI", "UE_id"),
+        filter_int(ue)));
+}
+
+static void click(void *private, gui *g,
+    char *notification, widget *w, void *notification_data)
+{
+  int *d = notification_data;
+  int button = d[0];
+  enb_data *ed = private;
+  enb_gui *e = ed->e;
+  int ue = ed->ue;
+
+  if (button != 1) return;
+  if (w == e->prev_ue_button) { ue--; if (ue < 0) ue = 0; }
+  if (w == e->next_ue_button) ue++;
+
+  if (pthread_mutex_lock(&ed->lock)) abort();
+  if (ue != ed->ue) {
+    set_current_ue(g, ed, ue);
+    ed->ue = ue;
+  }
+  if (pthread_mutex_unlock(&ed->lock)) abort();
+}
+
+static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database,
+    enb_data *ed)
 {
   widget *main_window;
   widget *top_container;
@@ -113,7 +231,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   widget *text;
   view *textview;
   int i;
-  widget *w;
+  widget *w, *w2;
   view *v;
   logger *l;
 
@@ -124,7 +242,26 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   line = new_container(g, HORIZONTAL);
   widget_add_child(g, top_container, line, -1);
   logo = new_image(g, openair_logo_png, openair_logo_png_len);
-  widget_add_child(g, line, logo, -1);
+
+  /* logo + prev/next UE buttons */
+  col = new_container(g, VERTICAL);
+  widget_add_child(g, col, logo, -1);
+  w = new_container(g, HORIZONTAL);
+  widget_add_child(g, col, w, -1);
+  w2 = new_label(g, "");
+  widget_add_child(g, w, w2, -1);
+  e->current_ue_label = w2;
+  /* TODO: use button widget, not label widget */
+  w2 = new_label(g, "  [prev UE]  ");
+  widget_add_child(g, w, w2, -1);
+  label_set_clickable(g, w2, 1);
+  e->prev_ue_button = w2;
+  w2 = new_label(g, "  [next UE]  ");
+  widget_add_child(g, w, w2, -1);
+  label_set_clickable(g, w2, 1);
+  e->next_ue_button = w2;
+  widget_add_child(g, line, col, -1);
+
   input_signal_plot = new_xy_plot(g, 256, 55, "input signal", 20);
   widget_add_child(g, line, input_signal_plot, -1);
   xy_plot_set_range(g, input_signal_plot, 0, 7680*10, 20, 70);
@@ -138,21 +275,20 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
       g, input_signal_plot, new_color(g, "#0c0c72"), XY_LOOP_MODE);
   logger_add_view(input_signal_log, input_signal_view);
 
-  /* UE 0 PUSCH IQ data */
-  w = new_xy_plot(g, 55, 55, "PUSCH IQ [UE 0]", 50);
+  /* UE x PUSCH IQ data */
+  w = new_xy_plot(g, 55, 55, "", 50);
+  e->pusch_iq_ue_xy_plot = w;
   widget_add_child(g, line, w, -1);
   xy_plot_set_range(g, w, -1000, 1000, -1000, 1000);
   l = new_iqlog(h, database, "ENB_PHY_PUSCH_IQ", "nb_rb",
       "N_RB_UL", "symbols_per_tti", "pusch_comp");
   v = new_view_xy(100*12*14,10,g,w,new_color(g,"#000"),XY_FORCED_MODE);
   logger_add_view(l, v);
-  logger_set_filter(l,
-      filter_eq(
-        filter_evarg(database, "ENB_PHY_PUSCH_IQ", "UE_ID"),
-        filter_int(0)));
+  e->pusch_iq_ue_logger = l;
 
-  /* UE 0 estimated UL channel */
-  w = new_xy_plot(g, 280, 55, "UL estimated channel [UE 0]", 50);
+  /* UE x estimated UL channel */
+  w = new_xy_plot(g, 280, 55, "", 50);
+  e->ul_estimate_ue_xy_plot = w;
   widget_add_child(g, line, w, -1);
   xy_plot_set_range(g, w, 0, 512*10, -10, 80);
   l = new_framelog(h, database,
@@ -161,43 +297,87 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   framelog_set_update_only_at_sf9(l, 0);
   v = new_view_xy(512*10, 10, g, w, new_color(g, "#0c0c72"), XY_LOOP_MODE);
   logger_add_view(l, v);
-  logger_set_filter(l,
-      filter_eq(
-        filter_evarg(database, "ENB_PHY_UL_CHANNEL_ESTIMATE", "UE_ID"),
-        filter_int(0)));
+  e->ul_estimate_ue_logger = l;
 
-  /* UE 0 PUCCH energy */
-  w = new_xy_plot(g, 128, 55, "PUCCH1 energy (SR) [UE 0]", 50);
+  /* UE x PUCCH energy */
+  w = new_xy_plot(g, 128, 55, "", 50);
+  e->pucch1_energy_ue_xy_plot = w;
   widget_add_child(g, line, w, -1);
   xy_plot_set_range(g, w, 0, 1024*10, -10, 80);
   l = new_ttilog(h, database,
       "ENB_PHY_PUCCH_1_ENERGY", "frame", "subframe", "threshold", 0);
   v = new_view_tti(10, g, w, new_color(g, "#ff0000"));
   logger_add_view(l, v);
-  logger_set_filter(l,
-      filter_eq(
-        filter_evarg(database, "ENB_PHY_PUCCH_1_ENERGY", "UE_ID"),
-        filter_int(0)));
+  e->pucch1_energy_ue_threshold_logger = l;
   l = new_ttilog(h, database,
       "ENB_PHY_PUCCH_1_ENERGY", "frame", "subframe", "energy", 1);
   v = new_view_tti(10, g, w, new_color(g, "#0c0c72"));
   logger_add_view(l, v);
-  logger_set_filter(l,
-      filter_eq(
-        filter_evarg(database, "ENB_PHY_PUCCH_1_ENERGY", "UE_ID"),
-        filter_int(0)));
+  e->pucch1_energy_ue_energy_logger = l;
 
-  /* UE 0 PUCCH IQ data */
-  w = new_xy_plot(g, 55, 55, "PUCCH IQ [UE 0]", 50);
+  /* UE x PUCCH IQ data */
+  w = new_xy_plot(g, 55, 55, "", 50);
+  e->pucch_iq_ue_xy_plot = w;
   widget_add_child(g, line, w, -1);
-  xy_plot_set_range(g, w, -100, 100, -100, 100);
+  xy_plot_set_range(g, w, -2000, 2000, -2000, 2000);
   l = new_iqdotlog(h, database, "ENB_PHY_PUCCH_1AB_IQ", "I", "Q");
   v = new_view_xy(500, 10, g, w, new_color(g,"#000"), XY_LOOP_MODE);
   logger_add_view(l, v);
-  logger_set_filter(l,
-      filter_eq(
-        filter_evarg(database, "ENB_PHY_PUCCH_1AB_IQ", "UE_ID"),
-        filter_int(0)));
+  e->pucch_iq_ue_logger = l;
+
+  /* UE x DL mcs */
+  line = new_container(g, HORIZONTAL);
+  widget_add_child(g, top_container, line, -1);
+  w = new_xy_plot(g, 128, 55, "", 20);
+  xy_plot_set_range(g, w, 0, 1024*10, -2, 30);
+  e->dl_mcs_xy_plot = w;
+  widget_add_child(g, line, w, -1);
+  l = new_ticked_ttilog(h, database, "ENB_PHY_DL_TICK", "frame", "subframe",
+      "ENB_PHY_DLSCH_UE_DCI", "mcs", 0, -1);
+  v = new_view_tti(10, g, w, new_color(g, "#0c0c72"));
+  logger_add_view(l, v);
+  e->dl_mcs_logger = l;
+
+  /* UE x UL mcs */
+  w = new_xy_plot(g, 128, 55, "", 20);
+  xy_plot_set_range(g, w, 0, 1024*10, -2, 30);
+  e->ul_mcs_xy_plot = w;
+  widget_add_child(g, line, w, -1);
+  l = new_ticked_ttilog(h, database, "ENB_PHY_DL_TICK", "frame", "subframe",
+      "ENB_PHY_ULSCH_UE_DCI", "mcs", 0, -1);
+  v = new_view_tti(10, g, w, new_color(g, "#0c0c72"));
+  logger_add_view(l, v);
+  e->ul_mcs_logger = l;
+
+  /* UE x DL PHY (truly: DCI) throughput */
+  col = new_container(g, VERTICAL);
+  widget_add_child(g, line, col, -1);
+  w = new_xy_plot(g, 70, 10, "DL PHY [0]", 35);
+  w2 = new_textarea(g, 70, 11, 64);
+  xy_plot_set_range(g, w, 0, 1000, 0, 100000);
+  xy_plot_set_tick_type(g, w, XY_PLOT_SCROLL_TICK);
+  widget_add_child(g, col, w2, -1);
+  widget_add_child(g, col, w, -1);
+  container_set_child_growable(g, col, w, 1);
+  l = new_throughputlog(h, database, "ENB_PHY_DL_TICK", "frame", "subframe",
+      "ENB_PHY_DLSCH_UE_DCI", "TBS");
+  v = new_view_scrolltti(10, g, w, new_color(g, "#0c0c72"), w2);
+  logger_add_view(l, v);
+
+  /* UE x UL PHY (truly: DCI) throughput */
+  col = new_container(g, VERTICAL);
+  widget_add_child(g, line, col, -1);
+  w = new_xy_plot(g, 70, 10, "UL PHY [0]", 35);
+  w2 = new_textarea(g, 70, 11, 64);
+  xy_plot_set_range(g, w, 0, 1000, 0, 100000);
+  xy_plot_set_tick_type(g, w, XY_PLOT_SCROLL_TICK);
+  widget_add_child(g, col, w2, -1);
+  widget_add_child(g, col, w, -1);
+  container_set_child_growable(g, col, w, 1);
+  l = new_throughputlog(h, database, "ENB_PHY_DL_TICK", "frame", "subframe",
+      "ENB_PHY_ULSCH_UE_DCI", "TBS");
+  v = new_view_scrolltti(10, g, w, new_color(g, "#0c0c72"), w2);
+  logger_add_view(l, v);
 
   /* downlink/uplink UE DCIs */
   widget_add_child(g, top_container,
@@ -250,8 +430,8 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   logger_add_view(timelog, subview);
 
   /* harq processes' ticktime view */
-  widget_add_child(g, top_container,
-      new_label(g,"DL/UL HARQ (x8) [UE 0]"), -1);
+  e->dl_ul_harq_ue_label = new_label(g, "");
+  widget_add_child(g, top_container, e->dl_ul_harq_ue_label, -1);
   line = new_container(g, HORIZONTAL);
   widget_add_child(g, top_container, line, -1);
   timeline_plot = new_timeline(g, 512, 2*8+2, 3);
@@ -271,15 +451,14 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   /* tick on UL view */
   subview = new_subview_ticktime(timeview, 9, new_color(g,"#bbb"), 3600*1000);
   logger_add_view(timelog, subview);
-  /* DL harq pids */
+  /* DL DCI */
   for (i = 0; i < 8; i++) {
     timelog = new_ticklog(h, database, "ENB_PHY_DLSCH_UE_DCI",
         "frame", "subframe");
     subview = new_subview_ticktime(timeview, i+1,
         new_color(g,"#55f"), 3600*1000);
     logger_add_view(timelog, subview);
-    logger_set_filter(timelog,
-        ticktime_filter(database, "ENB_PHY_DLSCH_UE_DCI", i));
+    e->dl_dci_logger[i] = timelog;
   }
   /* DL ACK */
   for (i = 0; i < 8; i++) {
@@ -288,8 +467,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     subview = new_subview_ticktime(timeview, i+1,
         new_color(g,"#282"), 3600*1000);
     logger_add_view(timelog, subview);
-    logger_set_filter(timelog,
-        ticktime_filter(database, "ENB_PHY_DLSCH_UE_ACK", i));
+    e->dl_ack_logger[i] = timelog;
   }
   /* DL NACK */
   for (i = 0; i < 8; i++) {
@@ -298,10 +476,9 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     subview = new_subview_ticktime(timeview, i+1,
         new_color(g,"#f22"), 3600*1000);
     logger_add_view(timelog, subview);
-    logger_set_filter(timelog,
-        ticktime_filter(database, "ENB_PHY_DLSCH_UE_NACK", i));
+    e->dl_nack_logger[i] = timelog;
   }
-  /* UL harq pids */
+  /* UL DCI/retransmission without DCI */
   for (i = 0; i < 8; i++) {
     /* first transmission */
     timelog = new_ticklog(h, database, "ENB_PHY_ULSCH_UE_DCI",
@@ -309,17 +486,14 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     subview = new_subview_ticktime(timeview, i+9+1,
         new_color(g,"#55f"), 3600*1000);
     logger_add_view(timelog, subview);
-    logger_set_filter(timelog,
-        ticktime_filter(database, "ENB_PHY_ULSCH_UE_DCI", i));
+    e->ul_dci_logger[i] = timelog;
     /* retransmission */
     timelog = new_ticklog(h, database,
         "ENB_PHY_ULSCH_UE_NO_DCI_RETRANSMISSION", "frame", "subframe");
     subview = new_subview_ticktime(timeview, i+9+1,
         new_color(g,"#99f"), 3600*1000);
     logger_add_view(timelog, subview);
-    logger_set_filter(timelog,
-        ticktime_filter(database,
-            "ENB_PHY_ULSCH_UE_NO_DCI_RETRANSMISSION", i));
+    e->ul_dci_retransmission_logger[i] = timelog;
   }
   /* UL ACK */
   for (i = 0; i < 8; i++) {
@@ -328,8 +502,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     subview = new_subview_ticktime(timeview, i+9+1,
         new_color(g,"#282"), 3600*1000);
     logger_add_view(timelog, subview);
-    logger_set_filter(timelog,
-        ticktime_filter(database, "ENB_PHY_ULSCH_UE_ACK", i));
+    e->ul_ack_logger[i] = timelog;
   }
   /* UL NACK */
   for (i = 0; i < 8; i++) {
@@ -338,8 +511,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     subview = new_subview_ticktime(timeview, i+9+1,
         new_color(g,"#f22"), 3600*1000);
     logger_add_view(timelog, subview);
-    logger_set_filter(timelog,
-        ticktime_filter(database, "ENB_PHY_ULSCH_UE_NACK", i));
+    e->ul_nack_logger[i] = timelog;
   }
 
   /* phy/mac/rlc/pdcp/rrc textlog */
@@ -416,6 +588,10 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   widget_add_child(g, top_container, text, -1);
   container_set_child_growable(g, top_container, text, 1);
   e->legacy = new_view_textlist(10000, 10, g, text);
+
+  set_current_ue(g, ed, 0);
+  register_notifier(g, "click", e->prev_ue_button, click, ed);
+  register_notifier(g, "click", e->next_ue_button, click, ed);
 }
 
 void view_add_log(view *v, char *log, event_handler *h, void *database,
@@ -495,7 +671,11 @@ int main(int n, char **v)
   g = gui_init();
   new_thread(gui_thread, g);
 
-  enb_main_gui(&eg, g, h, database);
+  enb_data.ue = 0;
+  enb_data.e = &eg;
+  enb_data.database = database;
+
+  enb_main_gui(&eg, g, h, database, &enb_data);
 
   for (i = 0; i < number_of_events; i++) {
     logger *textlog;
@@ -525,9 +705,9 @@ int main(int n, char **v)
   on_off(database, "ENB_PHY_PUCCH_1_ENERGY", is_on, 1);
   on_off(database, "ENB_PHY_PUCCH_1AB_IQ", is_on, 1);
 
-  on_off(database, "LEGACY_RRC_INFO", is_on, 1);
-  on_off(database, "LEGACY_RRC_ERROR", is_on, 1);
-  on_off(database, "LEGACY_RRC_WARNING", is_on, 1);
+  on_off(database, "LEGACY_GROUP_INFO", is_on, 1);
+  on_off(database, "LEGACY_GROUP_ERROR", is_on, 1);
+  on_off(database, "LEGACY_GROUP_WARNING", is_on, 1);
 
   view_add_log(eg.phyview, "ENB_PHY_DLSCH_UE_DCI", h, database, is_on);
   view_add_log(eg.phyview, "ENB_PHY_DLSCH_UE_ACK", h, database, is_on);
@@ -639,7 +819,9 @@ restart:
     event e;
     e = get_event(enb_data.socket, v, database);
     if (e.type == -1) goto restart;
+    if (pthread_mutex_lock(&enb_data.lock)) abort();
     handle_event(h, e);
+    if (pthread_mutex_unlock(&enb_data.lock)) abort();
   }
 
   return 0;

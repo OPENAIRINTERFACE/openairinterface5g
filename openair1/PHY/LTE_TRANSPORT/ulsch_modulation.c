@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_TRANSPORT/ulsch_modulation.c
 * \brief Top-level routines for generating PUSCH physical channel from 36.211 V8.6 2009-03
@@ -45,7 +37,7 @@
 #include "defs.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
-//#define OFDMA_ULSCH
+
 
 //#define DEBUG_ULSCH_MODULATION
 
@@ -72,7 +64,7 @@ void dft_lte(int32_t *z,int32_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
 #elif defined(__arm__)
   int16x8_t norm128;
 #endif
-  //  msg("Doing lte_dft for Msc_PUSCH %d\n",Msc_PUSCH);
+  //  printf("Doing lte_dft for Msc_PUSCH %d\n",Msc_PUSCH);
 
   d0 = (uint32_t *)d;
   d1 = d0+Msc_PUSCH;
@@ -87,7 +79,7 @@ void dft_lte(int32_t *z,int32_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
   d10 = d9+Msc_PUSCH;
   d11 = d10+Msc_PUSCH;
 
-  //  msg("symbol 0 (d0 %p, d %p)\n",d0,d);
+  //  printf("symbol 0 (d0 %p, d %p)\n",d0,d);
   for (i=0,ip=0; i<Msc_PUSCH; i++,ip+=4) {
     dft_in0[ip]   =  d0[i];
     dft_in0[ip+1] =  d1[i];
@@ -101,13 +93,13 @@ void dft_lte(int32_t *z,int32_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
     dft_in2[ip+1] =  d9[i];
     dft_in2[ip+2] =  d10[i];
     dft_in2[ip+3] =  d11[i];
-    //    msg("dft%d %d: %d,%d,%d,%d\n",Msc_PUSCH,ip,d0[i],d1[i],d2[i],d3[i]);
+    //    printf("dft%d %d: %d,%d,%d,%d\n",Msc_PUSCH,ip,d0[i],d1[i],d2[i],d3[i]);
 
     //    dft_in_re2[ip+1] =  d9[i];
     //    dft_in_re2[ip+2] =  d10[i];
   }
 
-  //  msg("\n");
+  //  printf("\n");
 
   switch (Msc_PUSCH) {
   case 12:
@@ -350,10 +342,10 @@ void dft_lte(int32_t *z,int32_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
   z10 = z9+Msc_PUSCH;
   z11 = z10+Msc_PUSCH;
 
-  //  msg("symbol0 (dft)\n");
+  //  printf("symbol0 (dft)\n");
   for (i=0,ip=0; i<Msc_PUSCH; i++,ip+=4) {
     z0[i]     = dft_out0[ip];
-    //    msg("%d,%d,",((short*)&z0[i])[0],((short*)&z0[i])[1]);
+    //    printf("%d,%d,",((short*)&z0[i])[0],((short*)&z0[i])[1]);
     z1[i]     = dft_out0[ip+1];
     z2[i]     = dft_out0[ip+2];
     z3[i]     = dft_out0[ip+3];
@@ -365,11 +357,11 @@ void dft_lte(int32_t *z,int32_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
     z9[i]     = dft_out2[ip+1];
     z10[i]    = dft_out2[ip+2];
     z11[i]    = dft_out2[ip+3];
-    //    msg("out dft%d %d: %d,%d,%d,%d,%d,%d,%d,%d\n",Msc_PUSCH,ip,z0[i],z1[i],z2[i],z3[i],z4[i],z5[i],z6[i],z7[i]);
+    //    printf("out dft%d %d: %d,%d,%d,%d,%d,%d,%d,%d\n",Msc_PUSCH,ip,z0[i],z1[i],z2[i],z3[i],z4[i],z5[i],z6[i],z7[i]);
 
   }
 
-  //  msg("\n");
+  //  printf("\n");
 }
 
 #endif
@@ -403,15 +395,15 @@ void ulsch_modulation(int32_t **txdataF,
   uint8_t c;
 
   if (!ulsch) {
-    msg("ulsch_modulation.c: Null ulsch\n");
+    printf("ulsch_modulation.c: Null ulsch\n");
     return;
   }
 
   // x1 is set in lte_gold_generic
   x2 = (ulsch->rnti<<14) + (subframe<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
 
-  if (harq_pid > 7) {
-    msg("ulsch_modulation.c: Illegal harq_pid %d\n",harq_pid);
+  if (harq_pid>=8) {
+    printf("ulsch_modulation.c: Illegal harq_pid %d\n",harq_pid);
     return;
   }
 
@@ -419,12 +411,12 @@ void ulsch_modulation(int32_t **txdataF,
   nb_rb = ulsch->harq_processes[harq_pid]->nb_rb;
 
   if (nb_rb == 0) {
-    msg("ulsch_modulation.c: Frame %d, Subframe %d Illegal nb_rb %d\n",frame,subframe,nb_rb);
+    printf("ulsch_modulation.c: Frame %d, Subframe %d Illegal nb_rb %d\n",frame,subframe,nb_rb);
     return;
   }
 
-  if (first_rb >25 ) {
-    msg("ulsch_modulation.c: Frame %d, Subframe %d Illegal first_rb %d\n",frame,subframe,first_rb);
+  if (first_rb > frame_parms->N_RB_UL) {
+    printf("ulsch_modulation.c: Frame %d, Subframe %d Illegal first_rb %d\n",frame,subframe,first_rb);
     return;
   }
 
@@ -434,17 +426,18 @@ void ulsch_modulation(int32_t **txdataF,
 
   G = (int)ulsch->harq_processes[harq_pid]->nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
 
+
   // Mapping
   nsymb = (frame_parms->Ncp==0) ? 14:12;
   Msc_PUSCH = ulsch->harq_processes[harq_pid]->nb_rb*12;
 
 #ifdef DEBUG_ULSCH_MODULATION
-  msg("ulsch_modulation.c: Doing modulation (rnti %x,x2 %x) for G=%d bits, harq_pid %d , nb_rb %d, Q_m %d, Nsymb_pusch %d (nsymb %d), subframe %d\n",
-      ulsch->rnti,x2,G,harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,Q_m, ulsch->Nsymb_pusch,nsymb,subframe);
+  LOG_D(PHY,"ulsch_modulation.c: Doing modulation (rnti %x,x2 %x) for G=%d bits, harq_pid %d , nb_rb %d, Q_m %d, Nsymb_pusch %d (nsymb %d), subframe %d\n",
+        ulsch->rnti,x2,G,harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,Q_m, ulsch->Nsymb_pusch,nsymb,subframe);
 #endif
 
   // scrambling (Note the placeholding bits are handled in ulsch_coding.c directly!)
-  //msg("ulsch bits: ");
+  //printf("ulsch bits: ");
   s = lte_gold_generic(&x1, &x2, 1);
   k=0;
 
@@ -454,14 +447,14 @@ void ulsch_modulation(int32_t **txdataF,
       c = (uint8_t)((s>>j)&1);
 
       if (ulsch->h[k] == PUSCH_x) {
-        //  msg("i %d: PUSCH_x\n",i);
+        //  printf("i %d: PUSCH_x\n",i);
         ulsch->b_tilde[k] = 1;
       } else if (ulsch->h[k] == PUSCH_y) {
-        //  msg("i %d: PUSCH_y\n",i);
+        //  printf("i %d: PUSCH_y\n",i);
         ulsch->b_tilde[k] = ulsch->b_tilde[k-1];
       } else {
         ulsch->b_tilde[k] = (ulsch->h[k]+c)&1;
-        //  msg("i %d : %d (h %d c %d)\n", (i<<5)+j,ulsch->b_tilde[k],ulsch->h[k],c);
+        //  printf("i %d : %d (h %d c %d)\n", (i<<5)+j,ulsch->b_tilde[k],ulsch->h[k],c);
       }
 
     }
@@ -469,7 +462,7 @@ void ulsch_modulation(int32_t **txdataF,
     s = lte_gold_generic(&x1, &x2, 0);
   }
 
-  //msg("\n");
+  //printf("\n");
 
 
   gain_lin_QPSK = (short)((amp*ONE_OVER_SQRT2_Q15)>>15);
@@ -493,7 +486,7 @@ void ulsch_modulation(int32_t **txdataF,
         ((int16_t*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 1)  ? (gain_lin_QPSK) : -gain_lin_QPSK;
         ((int16_t*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 1)? (-gain_lin_QPSK) : gain_lin_QPSK;
         //      if (i<Msc_PUSCH)
-        //  msg("input %d (%p): %d,%d\n", i,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
+        //  printf("input %d (%p): %d,%d\n", i,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
 
         // UE1, x0*
         ((int16_t*)&ulsch->d[i+1])[0] = (ulsch->b_tilde[j-2] == 1)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
@@ -626,7 +619,7 @@ void ulsch_modulation(int32_t **txdataF,
         ((int16_t*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 1)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
         ((int16_t*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 1)? (-gain_lin_QPSK) : gain_lin_QPSK;
         //        if (i<Msc_PUSCH)
-        //    msg("input %d/%d Msc_PUSCH %d (%p): %d,%d\n", i,Msymb,Msc_PUSCH,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
+        //    printf("input %d/%d Msc_PUSCH %d (%p): %d,%d\n", i,Msymb,Msc_PUSCH,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
 
         break;
 
@@ -650,7 +643,7 @@ void ulsch_modulation(int32_t **txdataF,
 
         ((int16_t*)&ulsch->d[i])[0]=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
         ((int16_t*)&ulsch->d[i])[1]=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
-        //      msg("input(16qam) %d (%p): %d,%d\n", i,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
+        //      printf("input(16qam) %d (%p): %d,%d\n", i,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
         break;
 
       case 6:
@@ -710,14 +703,14 @@ void ulsch_modulation(int32_t **txdataF,
     //    re_offset0++;
   }
 
-  //  msg("re_offset0 %d\n",re_offset0);
+  //  printf("re_offset0 %d\n",re_offset0);
 
 
   for (j=0,l=0; l<(nsymb-ulsch->srs_active); l++) {
     re_offset = re_offset0;
     symbol_offset = (int)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
 #ifdef DEBUG_ULSCH_MODULATION
-    msg("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
+    printf("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
 #endif
     txptr = &txdataF[0][symbol_offset];
 
@@ -727,10 +720,10 @@ void ulsch_modulation(int32_t **txdataF,
     // Skip reference symbols
     else {
 
-      //      msg("copying %d REs\n",Msc_PUSCH);
+      //      printf("copying %d REs\n",Msc_PUSCH);
       for (i=0; i<Msc_PUSCH; i++,j++) {
 #ifdef DEBUG_ULSCH_MODULATION
-        msg("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((int16_t*)&ulsch->z[j])[0],((int16_t*)&ulsch->z[j])[1]);
+        printf("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((int16_t*)&ulsch->z[j])[0],((int16_t*)&ulsch->z[j])[1]);
 #endif
         txptr[re_offset++] = ulsch->z[j];
 
@@ -748,13 +741,13 @@ void ulsch_modulation(int32_t **txdataF,
     //    re_offset0++;
   }
 
-  //    msg("re_offset0 %d\n",re_offset0);
+  //    printf("re_offset0 %d\n",re_offset0);
   //  printf("txdataF %p\n",&txdataF[0][0]);
   for (j=0,l=0; l<(nsymb-ulsch->srs_active); l++) {
     re_offset = re_offset0;
     symbol_offset = (uint32_t)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
 #ifdef DEBUG_ULSCH_MODULATION
-    msg("ulsch_mod (OFDMA) symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
+    printf("ulsch_mod (SC-FDMA) symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
 #endif
     txptr = &txdataF[0][symbol_offset];
 
@@ -763,11 +756,11 @@ void ulsch_modulation(int32_t **txdataF,
     }
     // Skip reference symbols
     else {
-      //      msg("copying %d REs\n",Msc_PUSCH);
+      //      printf("copying %d REs\n",Msc_PUSCH);
       for (i=0; i<Msc_PUSCH; i++,j++) {
 
 #ifdef DEBUG_ULSCH_MODULATION
-        msg("re_offset %d (%p): %d,%d => %p\n", re_offset,&ulsch->z[j],((int16_t*)&ulsch->z[j])[0],((int16_t*)&ulsch->z[j])[1],&txptr[re_offset]);
+        printf("re_offset %d (%p): %d,%d => %p\n", re_offset,&ulsch->z[j],((int16_t*)&ulsch->z[j])[0],((int16_t*)&ulsch->z[j])[1],&txptr[re_offset]);
 #endif //DEBUG_ULSCH_MODULATION
         txptr[re_offset++] = ulsch->z[j];
 

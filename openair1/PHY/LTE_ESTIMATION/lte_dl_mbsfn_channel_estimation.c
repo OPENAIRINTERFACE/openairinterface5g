@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #ifdef USER_MODE
 #include <string.h>
 #endif
@@ -33,7 +26,7 @@
 #include "PHY/defs.h"
 
 //#define DEBUG_CH
-int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
+int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
                                     uint8_t eNB_id,
                                     uint8_t eNB_offset,
                                     int subframe,
@@ -51,28 +44,16 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   //  unsigned int n;
   //  int i;
 
-  int **dl_ch_estimates=phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[0];
-  int **rxdataF=phy_vars_ue->lte_ue_common_vars.rxdataF;
+  int **dl_ch_estimates=ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0];
+  int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF;
 
-  ch_offset     = (l*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size));
+  ch_offset     = (l*(ue->frame_parms.ofdm_symbol_size));
   symbol_offset = ch_offset;//phy_vars_ue->lte_frame_parms.ofdm_symbol_size*l;
 
-  //  printf("dl_mbsfn_channel_estimation.c:  symbol %d (%d)\n",l,ch_offset);
-  // m=phy_vars_ue->lte_frame_parms.N_RB_DL*6;
-  /*
-      if ((l==2) || (l==10))
-      k = 0;//m<<1;
-      else if (l==6)
-      k = 1;//+(m<<1);
-      else {
-      msg("lte_dl_mbsfn: l %d -> ERROR\n",l);
-      return(-1);
-      }
-  */
-  for (aarx=0; aarx<phy_vars_ue->lte_frame_parms.nb_antennas_rx; aarx++) {
+  for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
     // generate pilot
     if ((l==2)||(l==6)||(l==10)) {
-      lte_dl_mbsfn_rx(phy_vars_ue,
+      lte_dl_mbsfn_rx(ue,
                       &pilot[0],
                       subframe,
                       l>>2);
@@ -81,16 +62,16 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 
 
     pil   = (short *)&pilot[0];
-    rxF   = (short *)&rxdataF[aarx][((symbol_offset+phy_vars_ue->lte_frame_parms.first_carrier_offset))];
+    rxF   = (short *)&rxdataF[aarx][((symbol_offset+ue->frame_parms.first_carrier_offset))];
     ch = (short *)&dl_ch_estimates[aarx][ch_offset];
 
     //    if (eNb_id==0)
-    memset(ch,0,4*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size));
+    memset(ch,0,4*(ue->frame_parms.ofdm_symbol_size));
 
     //***********************************************************************
-    if ((phy_vars_ue->lte_frame_parms.N_RB_DL==6)  ||
-        (phy_vars_ue->lte_frame_parms.N_RB_DL==50) ||
-        (phy_vars_ue->lte_frame_parms.N_RB_DL==100)) {
+    if ((ue->frame_parms.N_RB_DL==6)  ||
+        (ue->frame_parms.N_RB_DL==50) ||
+        (ue->frame_parms.N_RB_DL==100)) {
 
       // Interpolation  and extrapolation;
       if (l==6) {
@@ -99,10 +80,10 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
         rxF+=2;
       }
 
-      for (rb=0; rb<phy_vars_ue->lte_frame_parms.N_RB_DL; rb++) {
+      for (rb=0; rb<ue->frame_parms.N_RB_DL; rb++) {
         // ------------------------1st pilot------------------------
 
-        if (rb==(phy_vars_ue->lte_frame_parms.N_RB_DL>>1)) {
+        if (rb==(ue->frame_parms.N_RB_DL>>1)) {
           rxF = (short *)&rxdataF[aarx][symbol_offset+1];
 
           if (l==6)
@@ -117,7 +98,7 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
         /*
           printf("rb %d: pil0 (%d,%d) x (%d,%d) = (%d,%d)\n",
           rb,pil[0],pil[1],rxF[0],rxF[1],ch[0],ch[1]);*/
-        if ((rb>0)&&(rb!=(phy_vars_ue->lte_frame_parms.N_RB_DL>>1))) {
+        if ((rb>0)&&(rb!=(ue->frame_parms.N_RB_DL>>1))) {
           ch[-2] += ch[2];
           ch[-1] += ch[3];
         } else {
@@ -165,8 +146,8 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
         ch[20] = (short)(((int)pil[10]*rxF[20] - (int)pil[11]*rxF[21])>>15);
         ch[21] = (short)(((int)pil[10]*rxF[21] + (int)pil[11]*rxF[20])>>15);
 
-        if ((rb<(phy_vars_ue->lte_frame_parms.N_RB_DL-1))&&
-            (rb!=((phy_vars_ue->lte_frame_parms.N_RB_DL>>1)-1))) {
+        if ((rb<(ue->frame_parms.N_RB_DL-1))&&
+            (rb!=((ue->frame_parms.N_RB_DL>>1)-1))) {
           ch[22] = ch[20]>>1;
           ch[23] = ch[21]>>1;
           ch[18] += ch[22];
@@ -188,7 +169,7 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
     }
 
     //*********************************************************************
-    else if (phy_vars_ue->lte_frame_parms.N_RB_DL==25) {
+    else if (ue->frame_parms.N_RB_DL==25) {
       //printf("Channel estimation\n");
       //------------------------ loop over first 12 RBs------------------------
       if (l==6) {
@@ -711,72 +692,73 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
     //------------------------Temporal Interpolation ------------------------------
     if (l==6) {
       ch = (short *)&dl_ch_estimates[aarx][ch_offset];
-      //  printf("Interpolating ch 2,6 => %d\n",ch_offset);
-      ch_prev = (short *)&dl_ch_estimates[aarx][2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)];
-      ch0 = (short *)&dl_ch_estimates[aarx][0*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)];
-      memcpy(ch0,ch_prev,4*phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+      //        printf("Interpolating ch 2,6 => %d\n",ch_offset);
+      ch_prev = (short *)&dl_ch_estimates[aarx][2*(ue->frame_parms.ofdm_symbol_size)];
+      ch0 = (short *)&dl_ch_estimates[aarx][0*(ue->frame_parms.ofdm_symbol_size)];
+      memcpy(ch0,ch_prev,4*ue->frame_parms.ofdm_symbol_size);
 
-      ch1 = (short *)&dl_ch_estimates[aarx][1*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)];
-      memcpy(ch1,ch_prev,4*phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+      ch1 = (short *)&dl_ch_estimates[aarx][1*(ue->frame_parms.ofdm_symbol_size)];
+      memcpy(ch1,ch_prev,4*ue->frame_parms.ofdm_symbol_size);
 
       // 3/4 ch2 + 1/4 ch6 => ch3
-      multadd_complex_vector_real_scalar(ch_prev,24576,ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-      multadd_complex_vector_real_scalar(ch,8192,ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+      multadd_complex_vector_real_scalar(ch_prev,24576,ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
+      multadd_complex_vector_real_scalar(ch,8192,ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
+
       // 1/2 ch2 + 1/2 ch6 => ch4
-      multadd_complex_vector_real_scalar(ch_prev,16384,ch_prev+(4*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-      multadd_complex_vector_real_scalar(ch,16384,ch_prev+(4*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+      multadd_complex_vector_real_scalar(ch_prev,16384,ch_prev+(4*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
+      multadd_complex_vector_real_scalar(ch,16384,ch_prev+(4*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
       // 1/4 ch2 + 3/4 ch6 => ch5
-      multadd_complex_vector_real_scalar(ch_prev,8192,ch_prev+(6*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size))),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-      multadd_complex_vector_real_scalar(ch,24576,ch_prev+(6*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size))),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+      multadd_complex_vector_real_scalar(ch_prev,8192,ch_prev+(6*((ue->frame_parms.ofdm_symbol_size))),1,ue->frame_parms.ofdm_symbol_size);
+      multadd_complex_vector_real_scalar(ch,24576,ch_prev+(6*((ue->frame_parms.ofdm_symbol_size))),0,ue->frame_parms.ofdm_symbol_size);
     }
 
     if (l==10) {
       ch = (short *)&dl_ch_estimates[aarx][ch_offset];
-      ch_prev = (short *)&dl_ch_estimates[aarx][6*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)];
+      ch_prev = (short *)&dl_ch_estimates[aarx][6*(ue->frame_parms.ofdm_symbol_size)];
       // 3/4 ch6 + 1/4 ch10 => ch7
-      multadd_complex_vector_real_scalar(ch_prev,24576,ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-      multadd_complex_vector_real_scalar(ch,8192,ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+      multadd_complex_vector_real_scalar(ch_prev,24576,ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
+      multadd_complex_vector_real_scalar(ch,8192,ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
       // 1/2 ch6 + 1/2 ch10 => ch8
-      multadd_complex_vector_real_scalar(ch_prev,16384,ch_prev+(4*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-      multadd_complex_vector_real_scalar(ch,16384,ch_prev+(4*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+      multadd_complex_vector_real_scalar(ch_prev,16384,ch_prev+(4*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
+      multadd_complex_vector_real_scalar(ch,16384,ch_prev+(4*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
       // 1/4 ch6 + 3/4 ch10 => ch9
-      multadd_complex_vector_real_scalar(ch_prev,8192,ch_prev+(6*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size))),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-      multadd_complex_vector_real_scalar(ch,24576,ch_prev+(6*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size))),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+      multadd_complex_vector_real_scalar(ch_prev,8192,ch_prev+(6*((ue->frame_parms.ofdm_symbol_size))),1,ue->frame_parms.ofdm_symbol_size);
+      multadd_complex_vector_real_scalar(ch,24576,ch_prev+(6*((ue->frame_parms.ofdm_symbol_size))),0,ue->frame_parms.ofdm_symbol_size);
       // 5/4 ch10 - 1/4 ch6 => ch11
       // Ch11
-      ch_prev = (short *)&dl_ch_estimates[aarx][10*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)];
-      ch11 = (short *)&dl_ch_estimates[aarx][11*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)];
-      memcpy(ch11,ch_prev,4*phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+      ch_prev = (short *)&dl_ch_estimates[aarx][10*(ue->frame_parms.ofdm_symbol_size)];
+      ch11 = (short *)&dl_ch_estimates[aarx][11*(ue->frame_parms.ofdm_symbol_size)];
+      memcpy(ch11,ch_prev,4*ue->frame_parms.ofdm_symbol_size);
     }
   }
 
   // do ifft of channel estimate
-  for (aa=0; aa<phy_vars_ue->lte_frame_parms.nb_antennas_rx*phy_vars_ue->lte_frame_parms.nb_antennas_tx; aa++) {
-    if (phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_offset][aa]) {
-      switch (phy_vars_ue->lte_frame_parms.N_RB_DL) {
+  for (aa=0; aa<ue->frame_parms.nb_antennas_rx*ue->frame_parms.nb_antennas_tx; aa++) {
+    if (ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_offset][aa]) {
+      switch (ue->frame_parms.N_RB_DL) {
       case 6:
-	idft128((int16_t*) &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_offset][aa][8],
-		(int16_t*) phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_offset][aa],
+	idft128((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_offset][aa][8],
+		(int16_t*) ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates_time[eNB_offset][aa],
 		1);
 	break;
       case 25:
-	idft512((int16_t*) &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_offset][aa][8],
-		(int16_t*) phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_offset][aa],
+	idft512((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_offset][aa][8],
+		(int16_t*) ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates_time[eNB_offset][aa],
 		1);
 	break;
       case 50:
-	idft1024((int16_t*) &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_offset][aa][8],
-		(int16_t*) phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_offset][aa],
+	idft1024((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_offset][aa][8],
+		(int16_t*) ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates_time[eNB_offset][aa],
 		1);
 	break;
       case 75:
-	idft1536((int16_t*) &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_offset][aa][8],
-		 (int16_t*) phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_offset][aa],
+	idft1536((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_offset][aa][8],
+		 (int16_t*) ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates_time[eNB_offset][aa],
 		 1);
 	break;
       case 100:
-	idft2048((int16_t*) &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_offset][aa][8],
-		(int16_t*) phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_offset][aa],
+	idft2048((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_offset][aa][8],
+		(int16_t*) ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates_time[eNB_offset][aa],
 		1);
 	break;
       default:

@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-   Contact Information
-   OpenAirInterface Admin: openair_admin@eurecom.fr
-   OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file oaisim_config.c
 * \brief Configuration of oaisim
@@ -456,7 +448,7 @@ int olg_config(void)
    set_comp_log(PHY,  LOG_TRACE, 0x15, 1);
    set_comp_log(PDCP, LOG_DEBUG, 0x15,1);
    set_comp_log(RRC,  LOG_DEBUG, 0x15,1);
-   set_comp_log(OCM,  LOG_ERR, 0x15,20);
+   set_comp_log(OCM,  LOG_DEBUG, 0x15,20);
    set_comp_log(OTG,  LOG_DEBUG, 0x15,1);
    set_comp_log(OMG,  LOG_NOTICE, 0x15,1);
    set_comp_log(OPT,  LOG_ERR, 0x15,1);
@@ -476,7 +468,7 @@ int ocg_config_env(void)
       oai_emulation.info.frame_type[CC_id] = map_str_to_int(frame_type_names, oai_emulation.info.frame_type_name[CC_id]);
 
       if (oai_emulation.info.frame_type[CC_id] == -1) {
-        LOG_E(EMU,"frame type incorrect %s, set it to TDD \n",oai_emulation.info.frame_type_name);
+        LOG_E(EMU,"frame type incorrect %s, set it to TDD \n",oai_emulation.info.frame_type_name[CC_id]);
         oai_emulation.info.frame_type[CC_id]=TDD;
       } else
         LOG_I(EMU,"Frame type is %s \n",oai_emulation.info.frame_type_name[CC_id]);
@@ -486,7 +478,7 @@ int ocg_config_env(void)
           LOG_E(EMU,"TDD config %d out of range, set it to 3\n",oai_emulation.info.tdd_config[CC_id]);
           oai_emulation.info.tdd_config[CC_id]=3;
         } else
-          LOG_I(EMU,"TDD config is set to \n",oai_emulation.info.tdd_config[CC_id]);
+          LOG_I(EMU,"TDD config is set to %d\n",oai_emulation.info.tdd_config[CC_id]);
       }
     }
   }
@@ -1095,8 +1087,8 @@ int ocg_config_app(void)
               oai_emulation.application_config.customized_traffic.holding_time_pe_off[customized_traffic_config_index];
 
 
-            LOG_I(OTG,"customized:: OCG_config_OTG: (2) FORMAT (%d:%d) source = %d, dest = %d, dist type for size = %d start/duration %d/%d\n", source_id_start, source_id_end, source_id_index,
-                  destination_id_index, g_otg->size_dist[source_id_index][destination_id_index][0],
+            LOG_I(OTG,"customized:: OCG_config_OTG: (2) FORMAT (%s:%s) source = %d, dest = %d, dist type for size = %d [TODO: check code, printed value may not be correct, checks the indexes of the arry access] start/duration %d/%d\n", source_id_start, source_id_end, source_id_index,
+                  destination_id_index, g_otg->size_dist[source_id_index][destination_id_index][0][0],
                   g_otg->flow_start[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]],
                   g_otg->flow_duration[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]);
             per_source_id = strtok(NULL, comma);

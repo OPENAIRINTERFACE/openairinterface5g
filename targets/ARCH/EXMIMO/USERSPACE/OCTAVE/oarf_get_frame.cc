@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface 
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-    included in this distribution in the file called "COPYING". If not, 
-    see <http://www.gnu.org/licenses/>.
-
-   Contact Information
-   OpenAirInterface Admin: openair_admin@eurecom.fr
-   OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-  
-   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 // Maxime Guillaud - created Fri May 12 16:20:04 CEST 2006
 // Matthias Ihmig, 2013
@@ -42,6 +34,7 @@
 extern "C" {
 #include "openair0_lib.h"
 }
+#include "oarf.h"
 
 #define FCNNAME "oarf_get_frame"
 
@@ -178,7 +171,7 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame")
     printf("Info : Only resampling_factor of channel 0 is taken into account for copying received frame for all the other chains\n");
 
     
-    ComplexMatrix dx (FRAME_LENGTH_COMPLEX_SAMPLES*4, numant*openair0_num_detected_cards);
+    ComplexMatrix dx (FRAME_LENGTH_COMPLEX_SAMPLES*4, MAX_ANTENNAS*openair0_num_detected_cards);
     /*
     // set the tx buffer to 0x00010001 to put switch in rx mode
     for (aa=0; aa<numant; aa++) 
@@ -192,14 +185,14 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame")
   
     for (j=0; j<openair0_num_detected_cards;j++)
     {
-      for (i=0; i<numant; i++)
+      for (i=0; i<MAX_ANTENNAS; i++)
       {
           //if ( numant == openair0_num_antennas[j] )
               rx_sig[i+(j*MAX_ANTENNAS)] = (short*) openair0_exmimo_pci[ j ].adc_head[ i ];
           //else
           //    rx_sig[i+(j*MAX_ANTENNAS)] = (short*) openair0_exmimo_pci[ i / (int)openair0_num_antennas[0] ].adc_head[i % openair0_num_antennas[0]];
             
-         // printf("Card %i adc_head[%i] = %p \n",j, i, rx_sig[i+(j*MAX_ANTENNAS)]);
+          //  printf("Card %i adc_head[%i] = %p \n",j, i, rx_sig[i+(j*MAX_ANTENNAS)]);
       }
     }
 
@@ -208,8 +201,8 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame")
         openair0_get_frame(card);
 
   for (j=0; j<openair0_num_detected_cards;j++)
-    for (i=0; i<frame_length_samples[j]; i++)
-        for (aa=0; aa<numant; aa++)
+    for (i=0; i<frame_length_samples[j]; i++) 
+        for (aa=0; aa<MAX_ANTENNAS; aa++) 
             dx(i, aa+j*MAX_ANTENNAS) = Complex( rx_sig[aa+j*MAX_ANTENNAS][i*2], rx_sig[aa+j*MAX_ANTENNAS][i*2+1] );
     
     openair0_close();

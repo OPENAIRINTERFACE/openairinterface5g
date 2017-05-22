@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /* file: 3gpplte_turbo_decoder_sse.c
    purpose: Routines for implementing max-logmap decoding of Turbo-coded (DLSCH) transport channels from 36-212, V8.6 2009-03
    authors: raymond.knopp@eurecom.fr, Laurent Thomas (Alcatel-Lucent)
@@ -132,18 +125,18 @@ void log_map8(llr_t* systematic,
   msg("log_map, frame_length %d\n",frame_length);
 #endif
 
-  start_meas(gamma_stats) ;
+  if (gamma_stats) start_meas(gamma_stats) ;
   compute_gamma8(m11,m10,systematic,y_parity,frame_length,term_flag) ;
-  stop_meas(gamma_stats);
-  start_meas(alpha_stats) ;
+  if (gamma_stats) stop_meas(gamma_stats);
+  if (alpha_stats) start_meas(alpha_stats) ;
   compute_alpha8(alpha,beta,m11,m10,frame_length,F)                  ;
-  stop_meas(alpha_stats);
-  start_meas(beta_stats)  ;
+  if (alpha_stats) stop_meas(alpha_stats);
+  if (beta_stats) start_meas(beta_stats)  ;
   compute_beta8(alpha,beta,m11,m10,frame_length,F,offset8_flag)      ;
-  stop_meas(beta_stats);
-  start_meas(ext_stats)   ;
+  if (beta_stats) stop_meas(beta_stats);
+  if (ext_stats) start_meas(ext_stats)   ;
   compute_ext8(alpha,beta,m11,m10,ext,systematic,frame_length)       ;
-  stop_meas(ext_stats);
+  if (ext_stats) stop_meas(ext_stats);
 
 
 }
@@ -493,6 +486,11 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
 
 #endif
 
+  if (frame_length > 6144) {
+    LOG_E(PHY,"compute_beta: frame_length %d\n",frame_length);
+    return;
+  }
+
   // we are supposed to run compute_alpha just before compute_beta
   // so the initial states of backward computation can be set from last value of alpha states (forward computation)
 
@@ -512,9 +510,11 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
   beta_ptr[6] = alpha128[6+(frame_length>>1)];
   beta_ptr[7] = alpha128[7+(frame_length>>1)];
 
+  int overlap = (frame_length>>4)> L ? (frame_length>>4)-L : 0 ;
+
   for (rerun_flag=0, loopval=0;
        rerun_flag<2 ;
-       loopval=(frame_length>>4)-L,rerun_flag++) {
+       loopval=overlap,rerun_flag++) {
 
     if (offset8_flag==0) {
       // FIXME! beta0-beta7 are used uninitialized. FIXME!
@@ -963,7 +963,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
   }
 
 
-  start_meas(init_stats);
+  if (init_stats) start_meas(init_stats);
 
 
   if ((n&15)>0) {
@@ -1326,7 +1326,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
   msg("\n");
 #endif //DEBUG_LOGMAP
 
-  stop_meas(init_stats);
+  if (init_stats) stop_meas(init_stats);
 
   // do log_map from first parity bit
 
@@ -1338,7 +1338,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
     printf("\n*******************ITERATION %d (n %d, n2 %d), ext %p\n\n",iteration_cnt,n,n2,ext);
 #endif //DEBUG_LOGMAP
 
-    start_meas(intl1_stats);
+    if (intl1_stats) start_meas(intl1_stats);
     pi4_p=pi4tab8[iind];
 
     for (i=0; i<(n2>>4); i++) { // steady-state portion
@@ -1379,7 +1379,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
 #endif
     }
 
-    stop_meas(intl1_stats);
+    if (intl1_stats) stop_meas(intl1_stats);
 
     // do log_map from second parity bit
 
@@ -1484,7 +1484,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
 
     // Check if we decoded the block
     if (iteration_cnt>1) {
-      start_meas(intl2_stats);
+      if (intl2_stats) start_meas(intl2_stats);
 
       if ((n2&0x7f) == 0) {  // n2 is a multiple of 128 bits
 
@@ -1623,9 +1623,9 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
         break;
       }
 
-      stop_meas(intl2_stats);
+      if (intl2_stats) stop_meas(intl2_stats);
 
-      if ((crc == oldcrc) && (crc!=0)) {
+      if (crc == oldcrc) {
         return(iteration_cnt);
       }
     }

@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_TRANSPORT/group_hopping.c
 * \brief Top-level routines for group/sequence hopping and nPRS sequence generationg for DRS and PUCCH from 36-211, V8.6 2009-03
@@ -50,6 +42,8 @@ void generate_grouphop(LTE_DL_FRAME_PARMS *frame_parms)
   // This is from Section 5.5.1.3
   uint32_t fss_pusch = frame_parms->Nid_cell + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
 
+  uint32_t fss_pucch = frame_parms->Nid_cell;
+
   x2 = frame_parms->Nid_cell/30;
 #ifdef DEBUG_GROUPHOP
   printf("[PHY] GroupHop:");
@@ -57,7 +51,10 @@ void generate_grouphop(LTE_DL_FRAME_PARMS *frame_parms)
 
   for (ns=0; ns<20; ns++) {
     if (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled == 0)
+    {
       frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[ns] = fss_pusch%30;
+      frame_parms->pucch_config_common.grouphop[ns]                          = fss_pucch%30;
+    }
     else {
       if ((ns&3) == 0) {
         s = lte_gold_generic(&x1,&x2,reset);
@@ -65,6 +62,7 @@ void generate_grouphop(LTE_DL_FRAME_PARMS *frame_parms)
       }
 
       frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[ns] = (((uint8_t*)&s)[ns&3]+fss_pusch)%30;
+      frame_parms->pucch_config_common.grouphop[ns]                          = (((uint8_t*)&s)[ns&3]+fss_pucch)%30;
     }
 
 #ifdef DEBUG_GROUPHOP
@@ -120,7 +118,8 @@ void generate_nPRS(LTE_DL_FRAME_PARMS *frame_parms)
   uint16_t next = 0;
   uint8_t ns=0;
 
-  uint32_t fss_pusch = frame_parms->Nid_cell + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
+  uint32_t fss_pucch = (frame_parms->Nid_cell) % 30;
+  uint32_t fss_pusch = (fss_pucch + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH) % 30;
 
   x2 = (32*(uint32_t)(frame_parms->Nid_cell/30)) + fss_pusch;
 #ifdef DEBUG_GROUPHOP

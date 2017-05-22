@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 Source      EmmDeregisteredNormalService.c
 
@@ -62,6 +55,7 @@ Description Implements the EPS Mobility Management procedures executed
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
 /****************************************************************************/
+extern uint8_t usim_test;
 
 /****************************************************************************/
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
@@ -90,24 +84,24 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmDeregisteredNormalService(const emm_reg_t *evt)
+int EmmDeregisteredNormalService(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNerror;
 
-  assert(emm_fsm_get_status() == EMM_DEREGISTERED_NORMAL_SERVICE);
+  assert(emm_fsm_get_status(user) == EMM_DEREGISTERED_NORMAL_SERVICE);
 
   switch (evt->primitive) {
   case _EMMREG_REGISTER_REQ:
     /*
      * The user manually re-selected a PLMN to register to
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_PLMN_SEARCH);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_PLMN_SEARCH);
 
     if (rc != RETURNerror) {
       /* Process the network registration request */
-      rc = emm_fsm_process(evt);
+      rc = emm_fsm_process(user, evt);
     }
 
     break;
@@ -116,7 +110,14 @@ int EmmDeregisteredNormalService(const emm_reg_t *evt)
     /*
      * Initiate the attach procedure for EPS services
      */
-    rc = emm_proc_attach(EMM_ATTACH_TYPE_EPS);
+    if(usim_test == 0)
+    {
+      rc = emm_proc_attach(user, EMM_ATTACH_TYPE_EPS);
+    }
+    else
+    {
+      rc = emm_proc_attach(user, EMM_ATTACH_TYPE_IMSI); // CMW500 IMSI initial attach expected
+    }
     break;
 
   case _EMMREG_ATTACH_REQ:
@@ -125,7 +126,7 @@ int EmmDeregisteredNormalService(const emm_reg_t *evt)
      * message successfully delivered to the network);
      * enter state EMM-REGISTERED-INITIATED
      */
-    rc = emm_fsm_set_status(EMM_REGISTERED_INITIATED);
+    rc = emm_fsm_set_status(user, EMM_REGISTERED_INITIATED);
     break;
 
   case _EMMREG_LOWERLAYER_SUCCESS:
@@ -133,21 +134,21 @@ int EmmDeregisteredNormalService(const emm_reg_t *evt)
      * Initial NAS message has been successfully delivered
      * to the network
      */
-    rc = emm_proc_lowerlayer_success();
+    rc = emm_proc_lowerlayer_success(user->lowerlayer_data);
     break;
 
   case _EMMREG_LOWERLAYER_FAILURE:
     /*
      * Initial NAS message failed to be delivered to the network
      */
-    rc = emm_proc_lowerlayer_failure(TRUE);
+    rc = emm_proc_lowerlayer_failure(user->lowerlayer_data, TRUE);
     break;
 
   case _EMMREG_LOWERLAYER_RELEASE:
     /*
      * NAS signalling connection has been released
      */
-    rc = emm_proc_lowerlayer_release();
+    rc = emm_proc_lowerlayer_release(user->lowerlayer_data);
     break;
 
   case _EMMREG_ATTACH_CNF:
@@ -156,7 +157,7 @@ int EmmDeregisteredNormalService(const emm_reg_t *evt)
      * context activated;
      * enter state EMM-REGISTERED.
      */
-    rc = emm_fsm_set_status(EMM_REGISTERED);
+    rc = emm_fsm_set_status(user, EMM_REGISTERED);
     break;
 
   default:

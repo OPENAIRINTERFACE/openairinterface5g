@@ -1,37 +1,32 @@
 #! /usr/bin/python
-#******************************************************************************
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
 
-#    OpenAirInterface 
-#    Copyright(c) 1999 - 2014 Eurecom
-
-#    OpenAirInterface is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-
-
-#    OpenAirInterface is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-
-#   You should have received a copy of the GNU General Public License
-#   along with OpenAirInterface.The full GNU General Public License is 
-#   included in this distribution in the file called "COPYING". If not, 
-#   see <http://www.gnu.org/licenses/>.
-
-#  Contact Information
-#  OpenAirInterface Admin: openair_admin@eurecom.fr
-#  OpenAirInterface Tech : openair_tech@eurecom.fr
-#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-  
-#  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-# *******************************************************************************/
-
-# \author Rohit Gupta
+# \author Rohit Gupta - Benoit ROBERT (benoit.robert@syrtem.com)
 # \version 0.1
 # @ingroup _test
+
+# \Changelog
+# 2016-11-18 : 
+#   - Add progess bar during test execution update_progress()
 
 import tempfile
 import threading
@@ -45,6 +40,10 @@ import getpass
 import math #from time import clock 
 import xml.etree.ElementTree as ET
 import re
+
+#from dict2xml import dict2xml as xmlify
+
+from colorama import Fore, Back, Style
 
 import numpy as np
 
@@ -63,6 +62,36 @@ from lib_autotest import *
 import ssh
 from ssh import SSHSession
 import argparse
+
+
+# update_progress() : Displays or updates a console progress bar
+## Accepts a float between 0 and 1. Any int will be converted to a float.
+## A value under 0 represents a 'halt'.
+## A value at 1 or bigger represents 100%
+def update_progress(progress, prefix_string):
+    barLength = 20 # Modify this to change the length of the progress bar
+    status = ""
+    #print "progress = "+ str(progress)
+    if isinstance(progress, int):
+        progress = float(progress)
+    if not isinstance(progress, float):
+        progress = 0
+        status = "error: progress var must be float\r\n"
+    if progress < 0:
+        progress = 0
+        status = "Halt...\r\n"
+    if progress >= 1:
+        progress = 1
+        status = "Done...\r\n"
+    block = int(round(barLength*progress))
+    text = "\r"+prefix_string+" [{0}] {1}% {2}".format( "="*block + " "*(barLength-block), progress*100, status)
+    sys.stdout.write(text)
+    sys.stdout.flush()
+
+
+def exit_prog(exit_val):
+  print(Style.RESET_ALL),
+  sys.exit(exit_val)
 
 # \brief write a string to a file
 # \param filename name of file
@@ -176,7 +205,7 @@ def sftp_module (username, password, hostname, ports, paramList,logfile):
    #paramiko logfile path should not be changed with multiple calls. The logs seem to in first file regardless
    error = ""
    #The lines below are outside exception loop to be sure to terminate the test case if the network connectivity goes down or there is authentication failure
-   transport = paramiko.Transport(hostname, ports)
+   transport = paramiko.Transport((hostname, ports))
    transport.connect(username = username, password = password)
    sftp = paramiko.SFTPClient.from_transport(transport)
    #  index =0 
@@ -278,7 +307,7 @@ def update_config_file(oai, config_string, logdirRepo, python_script):
 # \param logdir_local_base local directory
 # \param operation operation to perform (get_all, put_all) transfers recursively for directories
 def SSHSessionWrapper(machine, username, key_file, password, logdir_remote, logdir_local_base, operation):
-  max_tries = 100
+  max_tries = 10
   i=0
   while i <= max_tries:
     i = i +1
@@ -313,30 +342,50 @@ def SSHSessionWrapper(machine, username, key_file, password, logdir_remote, logd
 # \param CleanUpAluLteBox program to terminate AlU Bell Labs LTE Box
 # \param ExmimoRfStop String to stop EXMIMO card (specified in test_case_list.xml)
 def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop, logdir, logdirOAI5GRepo):
-  cmd = 'sudo -E killall -s INT -q -r ' + programList + ' ; sleep 5 ; sudo -E killall -9 -q -r ' + programList
+  cmd = 'killall -9 ' + programList
   result = oai.send(cmd, True)
-  print "Killing old programs..." + result
+#  print "\t\t > "+cmd
+#  print "\t\t < "+result
+
+#  print "Killing old programs on ..." + result
   programArray = programList.split()
   programListJoin = '|'.join(programArray)
   cmd = " ( date ;echo \"Starting cleaning old programs.. \" ; dmesg|tail ; echo \"Current disk space.. \" ; df -h )>& " + logdir + "/oai_test_setup_cleanup.log.`hostname` 2>&1 ; sync"
   result=oai.send_recv(cmd)
+#  print "\t\t > "+cmd
+#  print "\t\t < "+result
+
   cmd = cleanupOldProgramsScript + ' ' + '\''+programListJoin+'\''
   #result = oai.send_recv(cmd)
   #print result
   result = oai.send_expect_false(cmd, 'Match found', False)
-  print "Looking for old programs..." + result
+#  print "\t\t > "+cmd
+#  print "\t\t < "+result
+
+#  print "Looking for old programs..." + result
   res=oai.send_recv(CleanUpAluLteBox, True)
+#  print "\t\t > "+CleanUpAluLteBox
+#  print "\t\t < "+res
   cmd= " echo \"Starting EXmimoRF Stop... \"  >> " + logdir + "/oai_test_setup_cleanup.log.`hostname` 2>&1  ; sync ";
-  oai.send_recv(cmd)
+  result = oai.send_recv(cmd)
+#  print "\t\t > "+cmd
+#  print "\t\t < "+result
   cmd  = "( " + "cd " + logdirOAI5GRepo + " ; source oaienv ;  "  +  ExmimoRfStop + " ) >> " + logdir + "/oai_test_setup_cleanup.log.`hostname` 2>&1  ; sync "
-  print "cleanoldprograms cmd = " + cmd
+#  print "cleanoldprograms cmd = " + cmd
   res=oai.send_recv(cmd, False, timeout=600)
+#  print "\t\t > "+cmd
+#  print "\t\t < "+res
+
   cmd= " echo \"Stopping EXmimoRF Stop... \" >> " + logdir + "/oai_test_setup_cleanup.log.`hostname` 2>&1  ; sync ";
-  oai.send_recv(cmd)
+  result = oai.send_recv(cmd)
+#  print "\t\t > "+cmd
+#  print "\t\t < "+result
 
   #res = oai.send_recv(ExmimoRfStop, False)
   cmd = " ( date ;echo \"Finished cleaning old programs.. \" ; dmesg | tail)>> $HOME/.oai_test_setup_cleanup.log.`hostname` 2>&1 ; sync"
   res=oai.send_recv(cmd)
+#  print "\t\t > "+cmd
+#  print "\t\t < "+res
 
 # \brief Class thread to launch a generic command on remote machine
 # \param threadID number of thread (for book keeping)
@@ -362,10 +411,10 @@ class oaiThread (threading.Thread):
         try:
           oai = openair('localdomain',self.machine)
           oai.connect(self.username, self.password)
-          print "Starting " + self.threadname + " on machine " + self.machine
+          # print "Starting " + self.threadname + " on machine " + self.machine
           result = oai.send_recv(self.cmd, self.sudo, self.timeout)
-          print "result = " + result
-          print "Exiting " + self.threadname
+          #print "result = " + result
+          #print "Exiting " + self.threadname
           oai.disconnect()
         except Exception, e:
            error=''
@@ -559,7 +608,7 @@ def wait_testcaseclass_generic_threads(threadListGeneric, timeout = 1):
 # \param CleanupAluLteBox string that contains commands to stop ALU Bell Labs LTEBox (specified in test_case_list.xml)
 # \param ExmimoRfStop command to stop EXMIMO Card
 # \param nruns_lte-softmodem global parameter to override number of runs (nruns) within the test case
-def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, user, password, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem, timeout_cmd):
+def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, user, password, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem,  GitOAI5GRepoBranch,  GitOpenaircnRepoBranch,timeout_cmd):
   #We ignore the password sent to this function for secuirity reasons for password present in log files
   #It is recommended to add a line in /etc/sudoers that looks something like below. The line below will run sudo without password prompt
   # your_user_name ALL=(ALL:ALL) NOPASSWD: ALL
@@ -582,14 +631,15 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   tags = testcase.findtext('tags',default='')
 
   RRHMachine = testcase.findtext('RRH',default='')
+  RRH_config_file = testcase.findtext('RRH_config_file',default='')
   RRH_compile_prog = testcase.findtext('RRH_compile_prog',default='')
   RRH_compile_prog_args = testcase.findtext('RRH_compile_prog_args',default='')
   RRH_pre_exec = testcase.findtext('RRH_pre_exec',default='')
   RRH_pre_exec_args = testcase.findtext('RRH_pre_exec_args',default='')
   RRH_main_exec = testcase.findtext('RRH_main_exec',default='')
   RRH_main_exec_args = testcase.findtext('RRH_main_exec_args',default='')
-  RRH_terminate_missing_procs = testcase.findtext('RRH_terminate_missing_procs',default='True')
-
+  RRH_terminate_missing_procs = testcase.findtext('RRH_terminate_missing_procs',default='False')
+  RRH_branch = testcase.findtext('RRH_branch',default=GitOAI5GRepoBranch)
 
   eNBMachine = testcase.findtext('eNB',default='')
   eNB_config_file = testcase.findtext('eNB_config_file',default='')
@@ -601,10 +651,11 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   eNB_main_exec_args = testcase.findtext('eNB_main_exec_args',default='')
   eNB_traffic_exec = testcase.findtext('eNB_traffic_exec',default='')
   eNB_traffic_exec_args = testcase.findtext('eNB_traffic_exec_args',default='')
-  eNB_terminate_missing_procs = testcase.findtext('eNB_terminate_missing_procs',default='True')
+  eNB_terminate_missing_procs = testcase.findtext('eNB_terminate_missing_procs',default='False')
   eNB_search_expr_true = testcase.findtext('eNB_search_expr_true','')
   if re.compile('\w+').match(eNB_search_expr_true) != None:
       eNB_search_expr_true = eNB_search_expr_true + '  duration=' + str(timeout_cmd-90) + 's' 
+  eNB_branch = testcase.findtext('eNB_branch',default=GitOAI5GRepoBranch)
 
   UEMachine = testcase.findtext('UE',default='')
   UE_config_file = testcase.findtext('UE_config_file',default='')
@@ -616,11 +667,12 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   UE_main_exec_args = testcase.findtext('UE_main_exec_args',default='')
   UE_traffic_exec = testcase.findtext('UE_traffic_exec',default='')
   UE_traffic_exec_args = testcase.findtext('UE_traffic_exec_args',default='')
-  UE_terminate_missing_procs = testcase.findtext('UE_terminate_missing_procs',default='True')
+  UE_terminate_missing_procs = testcase.findtext('UE_terminate_missing_procs',default='False')
   UE_search_expr_true = testcase.findtext('UE_search_expr_true','')
   UE_stop_script =  testcase.findtext('UE_stop_script','')
   if re.compile('\w+').match(UE_search_expr_true) != None:
       UE_search_expr_true = UE_search_expr_true + '  duration=' + str(timeout_cmd-90) + 's'
+  UE_branch = testcase.findtext('UE_branch',default=GitOAI5GRepoBranch)
 
   EPCMachine = testcase.findtext('EPC',default='')
   EPC_config_file = testcase.findtext('EPC_config_file',default='')
@@ -637,8 +689,10 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   HSS_main_exec_args = testcase.findtext('HSS_main_exec_args',default='')  
   EPC_traffic_exec = testcase.findtext('EPC_traffic_exec',default='')
   EPC_traffic_exec_args = testcase.findtext('EPC_traffic_exec_args',default='')
-  EPC_terminate_missing_procs = testcase.findtext('EPC_terminate_missing_procs',default='True')
+  EPC_terminate_missing_procs = testcase.findtext('EPC_terminate_missing_procs',default='False')
   EPC_search_expr_true = testcase.findtext('EPC_search_expr_true','')
+  EPC_branch = testcase.findtext('EPC_branch',default=GitOpenaircnRepoBranch)
+
   if re.compile('\w+').match(EPC_search_expr_true) != None:
      EPC_search_expr_true = EPC_search_expr_true + '  duration=' + str(timeout_cmd-90) + 's'
 
@@ -695,7 +749,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     logdir_local_testcase = logdir_local + '/cmake_targets/autotests/log/'+ testcasename + '/run_' + str(run)
     #Make the log directory of test case
     if RRHMachine != '':
-      cmd = 'rm -fr ' + logdir_RRH + ' ; mkdir -p ' + logdir_RRH
+      cmd = 'rm -fr ' + logdir_RRH + ' ; mkdir -p ' + logdir_RRH 
       result = oai_RRH.send_recv(cmd)
     cmd = 'rm -fr ' + logdir_eNB + ' ; mkdir -p ' + logdir_eNB
     result = oai_eNB.send_recv(cmd)
@@ -715,8 +769,10 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
        logfile_task_RRH_out = logdir_RRH + '/RRH_task_out' + '_' + str(run) + '_.log'
        logfile_task_RRH = logdir_local_testcase + '/RRH_task' + '_' + str(run) + '_.log'
        task_RRH_compile = ' ( uname -a ; date \n'
-       task_RRH_compile = task_RRH_compile + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
+       task_RRH_compile = task_RRH_compile + 'cd ' + logdirOAI5GRepo + '; git reset --hard HEAD ; git checkout ' + RRH_branch + ' ; source oaienv   \n' 
+       task_RRH_compile = task_RRH_compile + ' source cmake_targets/tools/build_helper \n'
        task_RRH_compile = task_RRH_compile + 'env |grep OPENAIR  \n'
+       task_RRH_compile = task_RRH_compile + update_config_file(oai_RRH, RRH_config_file, logdirOAI5GRepo, '$OPENAIR_DIR/cmake_targets/autotests/tools/search_repl.py') + '\n'
        if RRH_compile_prog != "":
          task_RRH_compile  = task_RRH_compile +  ' ( ' + RRH_compile_prog + ' '+ RRH_compile_prog_args + ' ) > ' + logfile_compile_RRH + ' 2>&1 \n'
        task_RRH_compile =  task_RRH_compile + ' date ) > ' + logfile_task_RRH_compile_out + ' 2>&1  '
@@ -754,7 +810,8 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     logfile_pcap_tmp_eNB = '/tmp/' + '/eNB_tshark' + '_' + str(run) + '_.pcap'
 
     task_eNB_compile = ' ( uname -a ; date \n'
-    task_eNB_compile = task_eNB_compile + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
+    task_eNB_compile = task_eNB_compile + 'cd ' + logdirOAI5GRepo + '; git reset --hard HEAD ; git checkout ' + eNB_branch + ' ; source oaienv   \n' 
+    task_eNB_compile = task_eNB_compile + ' source cmake_targets/tools/build_helper \n'
     task_eNB_compile = task_eNB_compile + 'env |grep OPENAIR  \n'
     task_eNB_compile = task_eNB_compile + update_config_file(oai_eNB, eNB_config_file, logdirOAI5GRepo, '$OPENAIR_DIR/cmake_targets/autotests/tools/search_repl.py') + '\n'
     if eNB_compile_prog != "":
@@ -804,8 +861,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
 
     task_UE_compile = ' ( uname -a ; date \n'
     task_UE_compile = task_UE_compile + 'array_exec_pid=()' + '\n'
-    task_UE_compile = task_UE_compile + 'cd ' + logdirOAI5GRepo + '\n'  
-    task_UE_compile = task_UE_compile + 'source oaienv \n'
+    task_UE_compile = task_UE_compile + 'cd ' + logdirOAI5GRepo + '; git reset --hard HEAD ; git checkout ' + UE_branch + ' ; source oaienv   \n' 
     task_UE_compile = task_UE_compile + 'source cmake_targets/tools/build_helper \n'
     task_UE_compile = task_UE_compile + 'env |grep OPENAIR  \n'
     task_UE_compile = task_UE_compile + update_config_file(oai_UE, UE_config_file, logdirOAI5GRepo, '$OPENAIR_DIR/cmake_targets/autotests/tools/search_repl.py') + '\n'
@@ -855,7 +911,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
 
     task_EPC_compile = ' ( uname -a ; date \n'
     task_EPC_compile = task_EPC_compile + 'array_exec_pid=()' + '\n'
-    task_EPC_compile = task_EPC_compile + 'cd ' + logdirOpenaircnRepo + ' ; source oaienv \n'
+    task_EPC_compile = task_EPC_compile + 'cd ' + logdirOpenaircnRepo + '; git reset --hard HEAD ; git checkout ' + EPC_branch + ' ; source oaienv   \n' 
     task_EPC_compile = task_EPC_compile + update_config_file(oai_EPC, EPC_config_file, logdirOpenaircnRepo, logdirOpenaircnRepo+'/TEST/autotests/tools/search_repl.py') + '\n'
     task_EPC_compile = task_EPC_compile +  'source BUILD/TOOLS/build_helper \n'
     if EPC_compile_prog != "":
@@ -894,27 +950,28 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     task_EPC  = task_EPC + ' ) > ' + logfile_task_EPC_out + ' 2>&1 ' 
     write_file(logfile_task_EPC, task_EPC, mode="w")
     
-    #first we compile all the programs
-    thread_EPC = oaiThread(1, "EPC_thread", EPCMachine, user, password , task_EPC_compile, False, timeout_thread)
-    thread_eNB = oaiThread(2, "eNB_thread", eNBMachine, user, password , task_eNB_compile, False, timeout_thread)
-    thread_UE = oaiThread(3, "UE_thread", UEMachine, user, password  , task_UE_compile, False, timeout_thread) 
-    if RRHMachine != '':
-        thread_RRH = oaiThread(4, "RRH_thread", RRHMachine, user, password  , task_RRH_compile, False, timeout_thread) 
-    threads=[]
-    threads.append(thread_eNB)
-    threads.append(thread_UE)
-    threads.append(thread_EPC)
-    if RRHMachine != '':
-        threads.append(thread_RRH)
-    # Start new Threads
-    thread_eNB.start()
-    thread_UE.start()
-    thread_EPC.start()
-    if RRHMachine != '':
-        thread_RRH.start()
-    #Wait for all the compile threads to complete
-    for t in threads:
-       t.join()
+    #first we compile all the programs but only for run_0
+    if run == 0:
+       thread_EPC = oaiThread(1, "EPC_thread", EPCMachine, user, password , task_EPC_compile, False, timeout_thread)
+       thread_eNB = oaiThread(2, "eNB_thread", eNBMachine, user, password , task_eNB_compile, False, timeout_thread)
+       thread_UE = oaiThread(3, "UE_thread", UEMachine, user, password  , task_UE_compile, False, timeout_thread) 
+       if RRHMachine != '':
+          thread_RRH = oaiThread(4, "RRH_thread", RRHMachine, user, password  , task_RRH_compile, False, timeout_thread) 
+       threads=[]
+       threads.append(thread_eNB)
+       threads.append(thread_UE)
+       threads.append(thread_EPC)
+       if RRHMachine != '':
+         threads.append(thread_RRH)
+       # Start new Threads
+       thread_eNB.start()
+       thread_UE.start()
+       thread_EPC.start()
+       if RRHMachine != '':
+         thread_RRH.start()
+       #Wait for all the compile threads to complete
+       for t in threads:
+         t.join()
 
     #Now we execute all the threads
     thread_EPC = oaiThread(1, "EPC_thread", EPCMachine, user, password , task_EPC, False, timeout_thread)
@@ -1050,6 +1107,665 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   write_file(xmlFile, xml, mode="w")
 
 
+
+
+# \brief handler for executing test cases (lte-softmodem-noS1)
+# \param testcase name of testcase
+# \param oldprogramList list of programs which must be terminated before running a test case
+# \param logdirOAI5GRepo directory on remote machine which has openairinterface5g repo installed
+# \param logdirOpenaircnRepo directory on remote machine which has openair-cn repo installed
+# \param MachineList list of all machines on which test cases can be run
+# \param user username with which to login
+# \param password password with which to login
+# \param CleanupAluLteBox string that contains commands to stop ALU Bell Labs LTEBox (specified in test_case_list.xml)
+# \param ExmimoRfStop command to stop EXMIMO Card
+# \param nruns_lte-softmodem global parameter to override number of runs (nruns) within the test case
+def handle_testcaseclass_softmodem_noS1 (testcase, oldprogramList, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, user, password, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem, timeout_cmd):
+  #We ignore the password sent to this function for secuirity reasons for password present in log files
+  #It is recommended to add a line in /etc/sudoers that looks something like below. The line below will run sudo without password prompt
+  # your_user_name ALL=(ALL:ALL) NOPASSWD: ALL
+
+  indent="\t"
+  threads=[]
+
+  #
+  # Test case parameters
+  # -----------------------------------------------------------------------------
+  testcase_verdict = 'PASS'
+  testcase_time_start = datetime.datetime.now()
+  testcase_name   = testcase.get('id')
+  testcase_class  = testcase.findtext('class',default='')
+  testcase_desc   = testcase.findtext('desc',default='')
+  if timeout_cmd == '':
+     timeout_cmd = testcase.findtext('TimeOut_cmd',default='')
+  timeout_cmd = int(float(timeout_cmd))
+  timeout_thread = timeout_cmd + 60    #Timeout_thread is more than that of cmd to have room for compilation time, etc
+  if nruns_lte_softmodem == '':
+    nruns = testcase.findtext('nruns',default='')
+  else:
+    nruns = nruns_lte_softmodem
+  nruns = int(float(nruns))
+  tags = testcase.findtext('tags',default='')
+
+  max_ntries = testcase.findtext('max_ntries',default='')
+  if max_ntries :
+    max_ntries = int(float(max_ntries))
+  else :
+    max_ntries = nruns
+
+  print( indent + "> testcase time start     : " + str(testcase_time_start) )
+  print( indent + "> testcase class          : " + testcase_class )
+  print( indent + "> testcase description    : " + testcase_desc )
+  print( indent + "> testcase timeout        : " + str(timeout_cmd) )
+  print( indent + "> testcase thread timeout : " + str(timeout_thread) )
+  print( indent + "> number of runs          : " + str(nruns) )
+  print( indent + "> number of max tries     : " + str(max_ntries) )  
+  print( indent + "> testcase tags           : " + tags )
+
+  logdir_local_testcase = openairdir_local + '/cmake_targets/autotests/log/'+ testcasename
+  logdir_eNB_testcase   = logdirOAI5GRepo +'/cmake_targets/autotests/log/'+ testcasename 
+  logdir_UE_testcase    = logdirOAI5GRepo +'/cmake_targets/autotests/log/'+ testcasename 
+
+  #
+  # Local checks for test cases 
+  # -----------------------------------------------
+  
+  # Logging directory
+  if (not os.path.exists(logdir_local_testcase)):
+    os.system('mkdir -p ' + logdir_local_testcase)
+
+  #
+  # REMOTE MACHINE COMPILATION
+  # ------------------------------------------------
+  
+  eNBMachine = testcase.findtext('eNB',default='')
+  eNB_config_file = testcase.findtext('eNB_config_file',default='')
+  eNB_compile_prog = testcase.findtext('eNB_compile_prog',default='')
+  eNB_compile_prog_args = testcase.findtext('eNB_compile_prog_args',default='')
+
+  logfile_compile_eNB           = logdir_eNB_testcase + '/eNB_compile.log'
+  logfile_task_eNB_compile_out  = logdir_eNB_testcase + '/eNB_task_compile_out.log'
+  logfile_task_eNB_compile      = logdir_local_testcase + '/eNB_task_compile.log'
+
+  # Check that machine is in test setup machine list
+  print( Fore.WHITE + indent + "> testcase eNB machine    :"),
+  if (eNBMachine not in MachineList):
+    print( Fore.RED + eNBMachine + " not in test setup machine list")
+    testcase_verdict = 'INCON'
+  else :
+    print eNBMachine,
+    # get machine description
+    eNBMachineDesc = MachineDescDic[eNBMachine]                   
+    index_eNBMachine = MachineList.index(eNBMachine)
+    # check that openairinterface is installed on machine
+    oai_eNB = openair('localdomain', eNBMachine)
+    oai_eNB.connect(user, password)
+    cmd = 'cd ' + logdirOAI5GRepo + '; source oaienv ; env|grep --color=never OPENAIR'
+    res= oai_eNB.send_recv(cmd)
+    m = re.search('OPENAIR_HOME', res, re.DOTALL)
+    if  m:  
+      print
+      # Create testcase directory on remote eNB
+      cmd = 'rm -fr ' + logdir_eNB_testcase + ' ; mkdir -p ' + logdir_eNB_testcase
+      result = oai_eNB.send_recv(cmd)
+    
+      # Check if we need to compile lte-softmodem-noS1 on remote machine
+      eNB_compile_cmd = eNB_compile_prog + ' '+ eNB_compile_prog_args
+      if  ('last_compile_prog' in eNBMachineDesc) and eNBMachineDesc['last_compile_prog'] == eNB_compile_cmd:
+        print( Fore.WHITE + indent + "> eNB machine compilation : skipped -> "+eNB_compile_cmd )
+      else:
+        print( Fore.WHITE + indent + "> eNB machine compilation : triggered -> "+eNB_compile_cmd )
+        eNBMachineDesc['last_compile_prog'] = eNB_compile_prog + ' '+ eNB_compile_prog_args        # if last compilation is the same do not compile again
+        task_eNB_compile = ' ( uname -a ; date \n'
+        task_eNB_compile = task_eNB_compile + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
+        task_eNB_compile = task_eNB_compile + 'env |grep OPENAIR  \n'
+        task_eNB_compile = task_eNB_compile + update_config_file(oai_eNB, eNB_config_file, logdirOAI5GRepo, '$OPENAIR_DIR/cmake_targets/autotests/tools/search_repl.py') + '\n'
+        if eNB_compile_cmd != "":
+          task_eNB_compile  = task_eNB_compile +  ' ( ' + eNB_compile_cmd + ' ) > ' + logfile_compile_eNB + ' 2>&1 \n'
+        task_eNB_compile =  task_eNB_compile + ' date ) > ' + logfile_task_eNB_compile_out + ' 2>&1  '
+        write_file(logfile_task_eNB_compile, task_eNB_compile, mode="w")
+
+
+        thread_eNB = oaiThread(1, "eNB_thread_compile", eNBMachine, user, password , task_eNB_compile, False, timeout_thread)
+        threads.append(thread_eNB)
+        thread_eNB.start()
+
+    else:
+      print( Fore.RED + " -> OAI5G not properly setup ! please check REMOTE MACHINE PREPARATION step")
+      testcase_verdict = 'INCON'
+
+
+  UEMachine = testcase.findtext('UE',default='')
+  UE_config_file = testcase.findtext('UE_config_file',default='')
+  UE_compile_prog = testcase.findtext('UE_compile_prog',default='')
+  UE_compile_prog_args = testcase.findtext('UE_compile_prog_args',default='')
+
+  logfile_compile_UE           = logdir_UE_testcase + '/UE_compile.log'
+  logfile_task_UE_compile_out  = logdir_UE_testcase + '/UE_task_compile_out.log'
+  logfile_task_UE_compile      = logdir_local_testcase + '/UE_task_compile.log'
+
+  # Check that machine is in test setup machine list
+  print( Fore.WHITE + indent + "> testcase UE machine     :"),
+  if (UEMachine not in MachineList):
+    print( Fore.RED + UEMachine + " not in test setup machine list")
+    testcase_verdict = 'INCON'
+  else :
+    print UEMachine,
+    # get machine description
+    UEMachineDesc = MachineDescDic[UEMachine]                   
+    index_UEMachine = MachineList.index(UEMachine)
+    # check that openairinterface is installed on machine
+    oai_UE = openair('localdomain', UEMachine)
+    oai_UE.connect(user, password)
+    cmd = 'cd ' + logdirOAI5GRepo + '; source oaienv ; env|grep --color=never OPENAIR'
+    res= oai_UE.send_recv(cmd)
+    m = re.search('OPENAIR_HOME', res, re.DOTALL)
+    if  m:  
+      print
+      # Create testcase directory on remote UE
+      cmd = 'rm -fr ' + logdir_UE_testcase + ' ; mkdir -p ' + logdir_UE_testcase
+      result = oai_UE.send_recv(cmd)
+    
+      # Check if we need to compile lte-softmodem-noS1 on remote machine
+      UE_compile_cmd = UE_compile_prog + ' '+ UE_compile_prog_args
+      if  ('last_compile_prog' in UEMachineDesc) and UEMachineDesc['last_compile_prog'] == UE_compile_cmd:
+        print( Fore.WHITE + indent + "> UE machine compilation  : skipped -> "+UE_compile_cmd )
+      else:
+        print( Fore.WHITE + indent + "> UE machine compilation  : triggered -> "+UE_compile_cmd )
+        UEMachineDesc['last_compile_prog'] = UE_compile_prog + ' '+ UE_compile_prog_args
+        task_UE_compile = ' ( uname -a ; date \n'
+        task_UE_compile = task_UE_compile + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
+        task_UE_compile = task_UE_compile + 'env |grep OPENAIR  \n'
+        task_UE_compile = task_UE_compile + update_config_file(oai_UE, UE_config_file, logdirOAI5GRepo, '$OPENAIR_DIR/cmake_targets/autotests/tools/search_repl.py') + '\n'
+        if UE_compile_cmd != "":
+          task_UE_compile  = task_UE_compile +  ' ( ' + UE_compile_cmd + ' ) > ' + logfile_compile_UE + ' 2>&1 \n'
+        task_UE_compile =  task_UE_compile + ' date ) > ' + logfile_task_UE_compile_out + ' 2>&1  '
+        write_file(logfile_task_UE_compile, task_UE_compile, mode="w")
+
+        thread_UE = oaiThread(2, "UE_thread_compile", UEMachine, user, password , task_UE_compile, False, timeout_thread)
+        threads.append(thread_UE)
+        thread_UE.start()
+
+    else:
+      print( Fore.RED + " -> OAI5G not properly setup ! please check REMOTE MACHINE PREPARATION step")
+      testcase_verdict = 'INCON'
+
+
+
+
+
+
+  # Wait for Compilation thread to terminate
+  #-----------------------------------------
+  for t in threads:
+    t.join()
+
+    # TODO check that compilation is succeed
+    
+    #first we compile all the programs
+#    thread_UE = oaiThread(3, "UE_thread", UEMachine, user, password  , task_UE_compile, False, timeout_thread) 
+#    threads.append(thread_UE)
+#    thread_UE.start()
+    
+
+
+
+
+#  index_UEMachine = MachineList.index(UEMachine)
+#  oai_UE = openair('localdomain', UEMachine)
+#  oai_UE.connect(user, password)
+#  res = oai_UE.send_recv(cmd)
+#  res = oai_eNB.send_recv(cmd)
+
+
+
+  #
+  # RUN LOOP
+  # ------------------------------------------------
+  if testcase_verdict != 'PASS':      # if something went wrong to not run test cases
+    max_ntries=0
+
+  indent="\t\t"
+
+  runs_results = []
+  nb_runs       = 0
+  nb_run_pass   = 0
+  nb_run_failed = 0
+  nb_run_inc    = 0
+  nb_run_skip   = 0
+
+  nb_seg_fault  = 0
+
+  for run in range(0,max_ntries):
+
+    if nruns == nb_run_pass + nb_run_failed:
+      break
+
+    nb_runs   += 1
+
+    #
+    # RUN initialization
+    # ----------------------------------------------------
+    
+    prefix_string = Fore.WHITE + indent + "> RUN_"+str(run).zfill(2)+"              :"
+
+#    print (Fore.WHITE + indent + "> RUN_"+str(run).zfill(2)+"                  : " ),
+#    sys.stdout.flush()
+
+    run_start_time=datetime.datetime.now()
+
+    logdir_local_run = openairdir_local + '/cmake_targets/autotests/log/'+ testcasename + '/run_' + str(run)
+    logdir_eNB_run   = logdirOAI5GRepo +'/cmake_targets/autotests/log/'  + testcasename + '/run_' + str(run)
+    logdir_UE_run    = logdirOAI5GRepo +'/cmake_targets/autotests/log/'  + testcasename + '/run_' + str(run)
+
+    cmd = 'rm -fr ' + logdir_eNB_run + ' ; mkdir -p ' + logdir_eNB_run
+    result = oai_eNB.send_recv(cmd)
+    cmd = 'rm -fr ' + logdir_UE_run + ' ; mkdir -p ' +  logdir_UE_run
+    result = oai_UE.send_recv(cmd)
+    cmd = ' rm -fr ' + logdir_local_run + ' ; mkdir -p ' + logdir_local_run
+    result = os.system(cmd)
+
+
+    #
+    # RUN parametrization
+    # ----------------------------------------------------
+    eNB_pre_exec          = testcase.findtext('eNB_pre_exec',default='')
+    eNB_pre_exec_args     = testcase.findtext('eNB_pre_exec_args',default='')
+    eNB_main_exec         = testcase.findtext('eNB_main_exec',default='')
+    eNB_main_exec_args    = testcase.findtext('eNB_main_exec_args',default='')
+    eNB_traffic_exec      = testcase.findtext('eNB_traffic_exec',default='')
+    eNB_traffic_exec_args = testcase.findtext('eNB_traffic_exec_args',default='')
+    eNB_terminate_missing_procs = testcase.findtext('eNB_terminate_missing_procs',default='True')
+
+    logfile_exec_eNB      = logdir_eNB_run   + '/eNB_exec'     + '_' + str(run) + '_.log'
+    logfile_pre_exec_eNB  = logdir_eNB_run   + '/eNB_pre_exec' + '_' + str(run) + '_.log'
+    logfile_task_eNB_out  = logdir_eNB_run   + '/eNB_task_out' + '_' + str(run) + '_.log'
+    logfile_traffic_eNB   = logdir_eNB_run   + '/eNB_traffic'  + '_' + str(run) + '_.log'
+    logfile_task_eNB      = logdir_local_run + '/eNB_task'     + '_' + str(run) + '_.log'
+
+    task_eNB = ' ( uname -a ; date \n'
+    task_eNB = task_eNB + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
+    task_eNB = task_eNB + 'env |grep OPENAIR  \n' + 'array_exec_pid=() \n'
+    if eNB_pre_exec != "":
+       task_eNB  = task_eNB +  ' ( date; ' + eNB_pre_exec + ' '+ eNB_pre_exec_args + ' ) > ' + logfile_pre_exec_eNB + ' 2>&1 \n'
+    if eNB_main_exec != "":
+       task_eNB = task_eNB + ' ( date; ' + addsudo(eNB_main_exec + ' ' + eNB_main_exec_args, '') + ' ) > ' + logfile_exec_eNB + ' 2>&1 & \n'
+       task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
+       task_eNB = task_eNB + 'echo eNB_main_exec PID = $! \n'
+    if eNB_traffic_exec != "":
+       cmd_traffic = eNB_traffic_exec + ' ' + eNB_traffic_exec_args
+       if cmd_traffic.find('-c') >= 0:
+          cmd_traffic = cmd_traffic + ' -t ' + str(timeout_cmd - 80)
+       task_eNB = task_eNB + ' (date;  ' + cmd_traffic + ' ) > ' + logfile_traffic_eNB + ' 2>&1 & \n'
+       task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
+       task_eNB = task_eNB + 'echo eNB_traffic_exec PID = $! \n'
+    #terminate the eNB test case after timeout_cmd seconds
+    task_eNB  = task_eNB + finalize_deploy_script (timeout_cmd, eNB_terminate_missing_procs) + ' \n'
+    #task_eNB  = task_eNB + 'sleep ' +  str(timeout_cmd) + ' \n'
+    task_eNB  = task_eNB + 'handle_ctrl_c' + '\n' 
+    task_eNB  = task_eNB + ' ) > ' + logfile_task_eNB_out + ' 2>&1  '
+    write_file(logfile_task_eNB, task_eNB, mode="w")
+
+
+    UE_pre_exec                 = testcase.findtext('UE_pre_exec',default='')
+    UE_pre_exec_args            = testcase.findtext('UE_pre_exec_args',default='')
+    UE_main_exec                = testcase.findtext('UE_main_exec',default='')
+    UE_main_exec_args           = testcase.findtext('UE_main_exec_args',default='')
+    UE_traffic_exec             = testcase.findtext('UE_traffic_exec',default='')
+    UE_traffic_exec_args        = testcase.findtext('UE_traffic_exec_args',default='')
+    UE_terminate_missing_procs  = testcase.findtext('UE_terminate_missing_procs',default='True')
+    UE_search_expr_true         = testcase.findtext('UE_search_expr_true','')
+
+    logfile_exec_UE     = logdir_UE_run + '/UE_exec'     + '_' + str(run) + '_.log'
+    logfile_pre_exec_UE = logdir_UE_run + '/UE_pre_exec' + '_' + str(run) + '_.log'
+    logfile_task_UE_out = logdir_UE_run + '/UE_task_out' + '_' + str(run) + '_.log'
+    logfile_traffic_UE  = logdir_UE_run + '/UE_traffic'  + '_' + str(run) + '_.log'   
+    logfile_task_UE     = logdir_local_run + '/UE_task'  + '_' + str(run) + '_.log'
+  
+
+    task_UE = ' ( uname -a ; date \n'
+    task_UE = task_UE + 'array_exec_pid=()' + '\n'
+    task_UE = task_UE + 'cd ' + logdirOAI5GRepo + '\n'  
+    task_UE = task_UE + 'source oaienv \n'
+    task_UE = task_UE + 'source cmake_targets/tools/build_helper \n'
+    task_UE = task_UE + 'env |grep OPENAIR  \n'
+    if UE_pre_exec != "":
+      task_UE  = task_UE +  ' ( date; ' + UE_pre_exec + ' '+ UE_pre_exec_args + ' ) > ' + logfile_pre_exec_UE + ' 2>&1 \n'
+    if UE_main_exec != "":
+      task_UE = task_UE + ' ( date;  ' + addsudo(UE_main_exec + ' ' + UE_main_exec_args, '')  + ' ) > ' + logfile_exec_UE + ' 2>&1 & \n'
+      task_UE = task_UE + 'array_exec_pid+=($!) \n'
+      task_UE = task_UE + 'echo UE_main_exec PID = $! \n'
+    if UE_traffic_exec != "":
+       cmd_traffic = UE_traffic_exec + ' ' + UE_traffic_exec_args
+       if cmd_traffic.find('-c') >= 0:
+          cmd_traffic = cmd_traffic + ' -t ' + str(timeout_cmd - 60)
+       task_UE = task_UE + ' ( date;  ' + cmd_traffic + ' ) >' + logfile_traffic_UE + ' 2>&1 & \n'
+       task_UE = task_UE + 'array_exec_pid+=($!) \n'
+       task_UE = task_UE + 'echo UE_traffic_exec PID = $! \n'
+    #terminate the UE test case after timeout_cmd seconds
+    task_UE  = task_UE + finalize_deploy_script (timeout_cmd, UE_terminate_missing_procs) + ' \n'
+    #task_UE  = task_UE + 'sleep ' +  str(timeout_cmd) + ' \n'
+    task_UE  = task_UE + 'handle_ctrl_c' + '\n' 
+    task_UE  = task_UE + ' ) > ' + logfile_task_UE_out + ' 2>&1 '
+    write_file(logfile_task_UE, task_UE, mode="w")
+    #task_UE = 'echo \" ' + task_UE + '\" > ' + logfile_script_UE + ' 2>&1 ; ' + task_UE
+
+
+
+
+
+
+
+    #
+    # RUN work
+    # ----------------------------------------------------
+    thread_eNB = oaiThread(1, "eNB_thread", eNBMachine, user, password , task_eNB, False, timeout_thread)
+    thread_UE = oaiThread(2, "UE_thread", UEMachine, user, password  , task_UE, False, timeout_thread) 
+    threads=[]
+    threads.append(thread_eNB)
+    threads.append(thread_UE)
+    thread_eNB.start()
+    thread_UE.start()
+
+    run_work_inprogress_flag = True
+    progress_step = timeout_thread/20
+    progress_count = 0
+
+    while (run_work_inprogress_flag):
+
+
+      update_progress(float(progress_count)/float(timeout_thread),prefix_string)
+
+      time.sleep(progress_step)
+
+      progress_count += progress_step
+
+#      sys.stdout.write ('#')
+#      sys.stdout.flush()
+
+      run_work_inprogress_flag = False
+      for t in threads:
+          if t.isAlive():
+            run_work_inprogress_flag = True
+
+    
+    update_progress(1,prefix_string)
+
+    for t in threads:
+      t.join()
+
+
+    #
+    # 
+    #-----------------------------------------------------
+    cleanOldProgramsAllMachines([oai_eNB, oai_UE] , oldprogramList, CleanUpAluLteBox, ExmimoRfStop, [logdir_eNB_run, logdir_UE_run], logdirOAI5GRepo)       
+
+    SSHSessionWrapper(eNBMachine, user, None, password, logdir_eNB_run, logdir_local_testcase, "get_all")
+   #print "Copying files from UEMachine : " + UEMachine + "logdir_UE = " + logdir_UE
+    SSHSessionWrapper(UEMachine, user, None, password, logdir_UE_run, logdir_local_testcase, "get_all")
+
+    metric_checks_flag = 1
+
+    fname = logdir_local_run+ '/UE_exec'     + '_' + str(run) + '_.log'
+    cell_synch_status = analyser.check_cell_synchro(fname)
+    print (Fore.WHITE + indent + "> Check Cell synchro  :"),
+      
+    if cell_synch_status == 'CELL_SYNCH':
+      print ( Fore.GREEN + cell_synch_status)
+    else :
+      print ( Fore.RED + cell_synch_status)
+      metric_checks_flag = 0
+
+    ue_seg_fault_status = analyser.check_exec_seg_fault(fname)
+    if ue_seg_fault_status == 'SEG_FAULT' :
+      nb_seg_fault += 1
+
+    #
+    # Check metrics
+    #----------------------------------------------------
+    runs_metrics = []
+    run_traffic = []
+
+    if metric_checks_flag :
+      verdict = 'PASS'
+
+      # UE side metrics
+      metricList=testcase.findall('UE_metric')
+      for metric in metricList:
+        
+        metric_verdict = 'PASS'
+
+        metric_def = {}
+        metric_def['id']            = metric.get('id') 
+        metric_def['description']   = metric.get('description') 
+        metric_def['regex']         = metric.get('regex') 
+        metric_def['unit_of_meas']  = metric.get('unit_of_meas') 
+        metric_def['pass_fail_stat']= metric.get('pass_fail_stat') 
+        metric_min_lim = metric.get('min_limit')
+        if metric_min_lim:
+          metric_def['min_limit']     = float(metric_min_lim)
+        metric_max_lim = metric.get('max_limit')
+        if metric_max_lim:
+          metric_def['max_limit']     = float(metric_max_lim)
+
+        fname = logdir_local_run+ '/UE_exec'     + '_' + str(run) + '_.log'
+
+        args = {'metric' : metric_def,
+                'file' : fname }
+    
+        metric_extracted = analyser.do_extract_metrics(args)
+
+        print (Fore.WHITE + indent + "> Metric              : "+metric_def['id']),
+        print ("(min="+str( metric_extracted['metric_min'])+", max="+str( metric_extracted['metric_max'])+", mean="+str( metric_extracted['metric_mean'])+", median="+str( metric_extracted['metric_median'])+")")
+
+#        print "\t  > Metric "+metric_def['id']+" :"
+#        print "\t\t> min       = "+ str( metric_extracted['metric_min'] )
+#        print "\t\t> min_index = "+ str( metric_extracted['metric_min_index'] )
+#        print "\t\t> max       = "+ str( metric_extracted['metric_max'] )
+#        print "\t\t> max_index = "+ str( metric_extracted['metric_max_index'] )
+#        print "\t\t> mean      = "+ str( metric_extracted['metric_mean'] )
+#        print "\t\t> median    = "+ str( metric_extracted['metric_median'] )      
+
+        if metric_def['pass_fail_stat'] :
+          metric_verdict = analyser.do_check_verdict(metric_def, metric_extracted)
+   
+        metric_fig = logdir_local_run+ '/UE_metric_'+ metric_def['id']+'_' + str(run) + '_.png'
+        analyser.do_img_metrics(metric_def, metric_extracted, metric_fig)
+
+
+        metric_fig_report = '../log/'+ testcasename + '/run_' + str(run) + '/UE_metric_'+ metric_def['id']+'_' + str(run) + '_.png'
+
+        run_metrics = dict( metric_id       = metric_def['id'],
+                            metric_desc     = metric_def['description'],
+                            metric_uom      = metric_def['unit_of_meas'],
+                            metric_min      = metric_extracted['metric_min'],
+                            metric_min_index= metric_extracted['metric_min_index'],
+                            metric_max      = metric_extracted['metric_max'],
+                            metric_max_index= metric_extracted['metric_max_index'],
+                            metric_mean     = metric_extracted['metric_mean'],
+                            metric_median   = metric_extracted['metric_median'],
+                            metric_fig      = metric_fig_report)
+
+        if metric_def['pass_fail_stat'] :
+          run_metrics['pass_fail_stat'] = metric_def['pass_fail_stat']
+        if metric_min_lim :
+          run_metrics['pass_fail_min_limit'] = metric_def['min_limit']
+        if metric_max_lim :
+          run_metrics['pass_fail_max_limit'] = metric_def['max_limit']
+
+        runs_metrics.append(run_metrics)
+
+        if metric_verdict != 'PASS':
+          verdict = metric_verdict
+
+      # End Metrics LOOP
+      # ---------------------
+
+
+      # Traffic analysis
+      if UE_traffic_exec != "":
+
+        fname = logdir_local_run+ '/UE_traffic'     + '_' + str(run) + '_.log'
+        args = {'file' : fname }
+        traffic_metrics = analyser.do_extract_traffic_metrics(args)
+        traffic_fig = logdir_local_run+ '/UE_traffic'+'_' + str(run) + '_.png'
+        analyser.do_img_traffic(traffic_metrics, traffic_fig)
+
+        traffic_fig_report= '../log/'+ testcasename + '/run_' + str(run) + '/UE_traffic'+'_' + str(run) + '_.png'
+
+        dur_pass_fail_crit = 'none'
+        if traffic_metrics['traffic_count'] == 0 :
+          verdict = 'FAIL'
+        elif UE_search_expr_true != "":
+          traffic_duration_limit = float(UE_search_expr_true)
+          dur_pass_fail_crit = str(traffic_duration_limit)
+  #        print 'traffic_duration_limit = '+str(traffic_duration_limit)
+  #        print 'traffic_metrics[interval_stop_max] = '+str(traffic_metrics['interval_stop_max'])
+          if traffic_metrics['interval_stop_max'] < traffic_duration_limit :
+            verdict = 'FAIL'
+
+
+        run_traffic = dict( traffic_count   = traffic_metrics['traffic_count'],
+                            bw_min          = traffic_metrics['bw_min'],
+                            bw_max          = traffic_metrics['bw_max'],
+                            bw_mean         = traffic_metrics['bw_mean'],
+                            bw_median       = traffic_metrics['bw_median'],
+                            jitter_min      = traffic_metrics['jitter_min'],
+                            jitter_max      = traffic_metrics['jitter_max'],
+                            jitter_mean     = traffic_metrics['jitter_mean'],
+                            jitter_median   = traffic_metrics['jitter_median'],
+                            rl_min          = traffic_metrics['rl_min'],
+                            rl_max          = traffic_metrics['rl_max'],
+                            rl_mean         = traffic_metrics['rl_mean'],
+                            rl_median       = traffic_metrics['rl_median'],
+                            iperf_duration  = traffic_metrics['interval_stop_max'],
+                            dur_pass_fail_crit = dur_pass_fail_crit,
+                            traffic_fig     = traffic_fig_report )
+      else:
+        run_traffic = dict( traffic_count   = 0)
+
+    else :
+      verdict = 'SKIP'
+
+
+
+    #
+    # RUN verdict and finalization
+    # ----------------------------------------------------
+    run_stop_time=datetime.datetime.now()
+    run_duration = run_stop_time-run_start_time
+#   print (Fore.WHITE + ("duration=" :"),
+    print (Fore.WHITE + indent + "> RUN duration        : "+ str(run_duration) +"s" )
+
+    print (Fore.WHITE + indent + "> RUN verdict         :"),
+
+    if verdict == 'PASS':
+      nb_run_pass   += 1
+      print ( Fore.GREEN + verdict)
+    elif verdict == 'FAIL':
+      nb_run_failed += 1
+      testcase_verdict = 'FAIL'
+      print ( Fore.RED + verdict)
+    elif verdict == 'SKIP':
+      nb_run_skip += 1
+      print ( Fore.YELLOW + verdict)
+    else:
+      nb_run_inc    += 1
+      if testcase_verdict == 'PASS' : testcase_verdict = 'INCON'
+      print (Fore.YELLOW+'INCONCLUSIVE')
+
+    run_results = dict( run_id=str(run),
+                        run_start_time = run_start_time,
+                        run_stop_time  = run_stop_time ,
+                        run_verdict    = verdict,
+                        ue_seg_fault_status = ue_seg_fault_status,
+                        run_duration   = run_duration,
+                        runs_metrics   = runs_metrics,
+                        run_traffic   = run_traffic)
+    runs_results.append(run_results)
+
+  # END RUN LOOP
+  #----------------------------------------------------
+
+  indent="\t"
+
+  # Test case duration
+  # ----------------------------------  
+  testcase_time_stop = datetime.datetime.now()
+  print(Fore.WHITE + indent + "> testcase time stop      : " + str(testcase_time_start) ),
+  print " -> TestCase duration = "+str(testcase_time_stop - testcase_time_start)
+
+  # Save remote log files
+  # -----------------------------------  
+  #Now we change the permissions of the logfiles to avoid some of them being with root permissions
+  cmd = 'sudo -E chown -R ' + user + ' ' + logdir_eNB_testcase
+  res= oai_eNB.send_recv(cmd)
+  cmd = 'sudo -E chown -R ' + user + ' ' +  logdir_UE_testcase
+  res= oai_UE.send_recv(cmd)
+
+  # Save remote log files on MTC
+  #print "Copying files from eNBMachine " + eNBMachine + "logdir_eNB = " + logdir_eNB
+  SSHSessionWrapper(eNBMachine, user, None, password, logdir_eNB_testcase, openairdir_local + '/cmake_targets/autotests/log/', "get_all")
+  #print "Copying files from UEMachine : " + UEMachine + "logdir_UE = " + logdir_UE
+  SSHSessionWrapper(UEMachine, user, None, password, logdir_UE_testcase, openairdir_local + '/cmake_targets/autotests/log/', "get_all")
+
+  oai_eNB.disconnect()
+  oai_UE.disconnect()
+
+  # Set test case final verdict
+  # -----------------------------------
+  test_result_string = 'do be completed'
+
+  if testcase_verdict == 'PASS':
+    if nb_run_pass == 0 : 
+      testcase_verdict = 'INCON'
+
+  print(Fore.WHITE + indent + "> testcase final verdict  :"),
+  if testcase_verdict == 'PASS':
+    print ( Fore.GREEN + testcase_verdict)
+  elif testcase_verdict == 'FAIL':
+    print ( Fore.RED + testcase_verdict)
+  else:
+    print (Fore.YELLOW+'INCONCLUSIVE')
+
+  print(Style.RESET_ALL)
+
+  duration= testcase_time_stop - testcase_time_start
+
+  test_result = dict(testcase_name=testcasename,
+                     testcaseclass=testcaseclass, 
+                     testcase_verdict = testcase_verdict,
+                     testcase_time_start=testcase_time_start,
+                     testcase_time_stop=testcase_time_stop,
+                     tags=tags,
+                     nruns=nb_runs,
+                     nb_run_pass = nb_run_pass,
+                     nb_run_skip = nb_run_skip,
+                     nb_run_failed = nb_run_failed,
+                     nb_run_inc=nb_run_inc,
+                     nb_seg_fault = nb_seg_fault,
+                     testcase_timeout=timeout_cmd,
+                     testcase_duration = duration,
+                     testcase_eNBMachine =eNBMachine,
+                     testcase_UEMachine =UEMachine,
+                     runs_results = runs_results)
+  test_results.append(test_result)
+
+  xmlFile = logdir_local_testcase + '/test.' + testcasename + '.xml'
+  xml="\n<testcase classname=\'"+ testcaseclass +  "\' name=\'" + testcasename + "."+tags +  "\' Run_result=\'" + test_result_string + "\' time=\'" + str(duration) + " s \' RESULT=\'" + testcase_verdict + "\'></testcase> \n"
+  write_file(xmlFile, xml, mode="w")
+
+#  xmlFile_ng = logdir_local_testcase + '/test.' + testcasename + '_ng.xml'
+#  xml_ng = xmlify(test_result, wrap=testcasename, indent="  ")
+#  write_file(xmlFile_ng, xml_ng, mode="w")
+
+
+
+  return testcase_verdict
+
+
+
+
 # \brief This function searches if test case is present in list of test cases that need to be executed by user
 # \param testcasename the test case to search for
 # \param testcasegroup list that is passed from the arguments
@@ -1062,12 +1778,12 @@ def search_test_case_group(testcasename, testcasegroup, test_case_exclude):
           if entry.find('+') >=0:
             match = re.search(entry, testcasename)
             if match:
-               print "\nSkipping test case as it is found in black list: " + testcasename
+               #print "\nSkipping test case as it is found in black list: " + testcasename
                return False
           else:
              match = entry.find(testcasename)
              if match >=0:
-                print "\nSkipping test case as it is found in black list: " + testcasename
+                #print "\nSkipping test case as it is found in black list: " + testcasename
                 return False
     if testcasegroup == '':
          return True
@@ -1155,17 +1871,27 @@ if openairdir_local is None:
    print "Environment variable OPENAIR_DIR not set correctly"
    sys.exit()
 locallogdir = openairdir_local + '/cmake_targets/autotests/log'
+reportdir = openairdir_local + '/cmake_targets/autotests/report'
 MachineList = ''
 MachineListGeneric=''
+MachineDescDic={}
 flag_remove_logdir=False
 flag_start_testcase=False
 nruns_lte_softmodem=''
 flag_skip_git_head_check=False
 flag_skip_oai_install=False
+flag_skip_machine_preparation=False
+flag_skip_sanity_check=False
+flag_generate_html_report = False
 Timeout_cmd=''
-print "Number of arguments argc = " + str(len(sys.argv))
+xmlInputFile=''
+
+#print "Number of arguments argc = " + str(len(sys.argv))
 #for index in range(1,len(sys.argv) ):
 #  print "argv_" + str(index) + " : " + sys.argv[index]
+
+oai_list = []
+
 
 i=1
 while i < len (sys.argv):
@@ -1226,6 +1952,15 @@ while i < len (sys.argv):
         i = i +1
     elif arg == '--skip-oai-install':
         flag_skip_oai_install=True
+    elif arg == '--skip-machine-preparation':
+        flag_skip_machine_preparation=True
+    elif arg == '--skip-sanity-check':
+        flag_skip_sanity_check=True
+    elif arg == '--test-suite' :
+        xmlInputFile = sys.argv[i+1]
+        i = i +1
+    elif arg == '--generate-html-report':
+        flag_generate_html_report=True
     elif arg == '-h' :
         print "-s:  This flag *MUST* be set to start the test cases"
         print "-r:  Remove the log directory in autotests"
@@ -1243,78 +1978,65 @@ while i < len (sys.argv):
         print "--skip-git-head-check: skip checking of GitHead remote/local branch (only for debugging)"
         print "--timeout_cmd: Override the default parameter (timeout_cmd) in test_case_list.xml. This parameter is in seconds and should be > 120"
         print "--skip-oai-install: Skips the openairinterface5g installer"
+        print "--skip-machine-preparation: skipp the whole system preparation -> direct to test cases"
+        print "--skip-sanity-check: skipp the machine sanity checks"
+        print "--test-suite: Select a XML test-suite file"
+        print "--generate-html-report: Generate an HTML report of the test campaign (supported only for noS1 testsuite !!)"
         sys.exit()
     else :
         print "Unrecongnized Option: <" + arg + ">. Use -h to see valid options"
         sys.exit()
     i= i + 1     
 
-try:  
-   os.environ["OPENAIR1_DIR"]
-except KeyError: 
-   print "Please set the environment variable OPENAIR1_DIR in the .bashrc"
-   sys.exit(1)
-
-try:  
-   os.environ["OPENAIR2_DIR"]
-except KeyError: 
-   print "Please set the environment variable OPENAIR2_DIR in the .bashrc"
-   sys.exit(1)
-
-try:  
-   os.environ["OPENAIR_TARGETS"]
-except KeyError: 
-   print "Please set the environment variable OPENAIR_TARGETS in the .bashrc"
-   sys.exit(1)
-
-print "Killing zombie ssh sessions from earlier sessions..."
-cmd='ps aux |grep \"/usr/bin/ssh -q -l guptar\"| awk \'{print $2}\' | sudo xargs kill -9  '
-
-os.system(cmd)
-
-if flag_start_testcase == False:
-  print "You need to start the testcase by passing option -s. Use -h to see all options. Aborting now..."
-  sys.exit(1)
-
-# get the oai object
-host = os.uname()[1]
-#oai = openair('localdomain','calisson')
-oai_list = []
-
-#start_time = time.time()  # datetime.datetime.now()
-if user=='':
-  user = getpass.getuser()
-if pw=='':
-  pw = getpass.getpass()
-
-print "Killing zombie ssh sessions from earlier sessions..."
-cmd='ps aux |grep \"/usr/bin/ssh -q -l guptar\"|tr -s \" \" :|cut -f 2 -d :|xargs kill -9 '
-cmd = cmd + '; ps aux |grep \"/usr/bin/ssh -q -l ' + user + '\"|tr -s \" \" :|cut -f 2 -d :|xargs kill -9 '
-os.system(cmd)
-
-print "host = " + host 
-print "user = " + user
-xmlInputFile=os.environ.get('OPENAIR_DIR')+"/cmake_targets/autotests/test_case_list.xml"
-NFSResultsDir = '/mnt/sradio'
-cleanupOldProgramsScript = '$OPENAIR_DIR/cmake_targets/autotests/tools/remove_old_programs.bash'
 logdir = '/tmp/' + 'OAITestFrameWork-' + user + '/'
 logdirOAI5GRepo = logdir + 'openairinterface5g/'
 logdirOpenaircnRepo = logdir + 'openair-cn/'
-
-if flag_remove_logdir == True:
-   print "Removing directory: " + locallogdir
-   os.system(' rm -fr ' + locallogdir + '; mkdir -p ' +  locallogdir  )
-
-paramiko_logfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/log/paramiko.log')
-res=os.system(' echo > ' + paramiko_logfile)
-paramiko.util.log_to_file(paramiko_logfile)
-
-#pw=getpass.getpass()
+patchdir = logdirOAI5GRepo + 'cmake_targets/autotests/patches/'
+NFSResultsDir = '/mnt/sradio'
+cleanupOldProgramsScript = '$OPENAIR_DIR/cmake_targets/autotests/tools/remove_old_programs.bash'
 
 #Now we parse the xml file for basic configuration
+if xmlInputFile == '':
+  xmlInputFile=os.environ.get('OPENAIR_DIR')+"/cmake_targets/autotests/test_case_list.xml"
 xmlTree = ET.parse(xmlInputFile)
 xmlRoot = xmlTree.getroot()
 
+#
+# Read test session configuration
+# ---------------------------------------------------------------------------------
+print (Fore.YELLOW + '\nStep 0.1 - Read test session configuration')
+print (Fore.YELLOW + '-------------------------------------------------')
+
+test_session_start_time = datetime.datetime.now()
+print (Fore.WHITE + '  - start time                    : '+ str(test_session_start_time))
+
+host = os.uname()[1]
+print (Fore.WHITE + '  - MTC host                      : '+host)
+
+
+if user=='':
+  user = getpass.getuser()
+print (Fore.WHITE + '  - user                          : '+user)
+
+if pw=='':
+  pw = getpass.getpass()
+print (Fore.WHITE + '  - password                      : '+pw)
+
+print (Fore.WHITE + '  - cmd line flags                : ')
+print (Fore.WHITE + '    +  -s                         : '+str(flag_start_testcase))
+print (Fore.WHITE + '    +  -r                         : '+str(flag_remove_logdir))
+print (Fore.WHITE + '    +  -c                         : '+str(cleanUpRemoteMachines))
+print (Fore.WHITE + '    +  --skip-git-head-check      : '+str(flag_skip_git_head_check))
+print (Fore.WHITE + '    +  --skip-oai-install         : '+str(flag_skip_oai_install))
+print (Fore.WHITE + '    +  --skip-machine-preparation : '+str(flag_skip_machine_preparation))
+print (Fore.WHITE + '    +  --skip-sanity-check        : '+str(flag_skip_sanity_check))
+
+
+print (Fore.WHITE + '  - Test setup basic config       : (* -> overwrite by cmd line parameter)')
+print (Fore.WHITE + '    +  test setup config file     : '+str(xmlInputFile))
+print (Fore.WHITE + '    +  remote setup dir           : '+str(logdir))
+print (Fore.WHITE + '    +  remote OAI5G repo          : '+str(logdirOAI5GRepo))
+print (Fore.WHITE + '    +  remote OpenAirCN repo      : '+str(logdirOpenaircnRepo))
 
 
 if MachineList =='':
@@ -1327,6 +2049,8 @@ if GitOAI5GRepo == '':
 
 if GitOAI5GRepoBranch == '':
    GitOAI5GRepoBranch = xmlRoot.findtext('GitOAI5GRepoBranch',default='')
+if GitOAI5GHeadVersion == '':
+   GitOAI5GHeadVersion = xmlRoot.findtext('GitOAI5GHeadVersion',default='')
 
 GitOpenaircnRepoBranch = xmlRoot.findtext('GitOpenair-cnRepoBranch',default='')
 CleanUpOldProgs = xmlRoot.findtext('CleanUpOldProgs',default='')
@@ -1339,23 +2063,27 @@ ExmimoRfStop = xmlRoot.findtext('ExmimoRfStop',default='')
 if nruns_lte_softmodem == '':
    nruns_lte_softmodem = xmlRoot.findtext('nruns_lte-softmodem',default='')
 
-print "MachineList = " + MachineList
-print "GitOpenair-cnRepo = " + GitOpenaircnRepo
-print "GitOAI5GRepo = " + GitOAI5GRepo
-print "GitOAI5GBranch = " + GitOAI5GRepoBranch
-print "GitOpenaircnRepoBranch = " + GitOpenaircnRepoBranch
-print "NFSResultsShare = " + NFSResultsShare
-print "nruns_lte_softmodem = " + nruns_lte_softmodem
-print "Timeout_cmd = " + Timeout_cmd
+print (Fore.WHITE + '    +  MachineList                : '+ MachineList)
+print (Fore.WHITE + '    +  GitOpenair-cnRepo          : '+  GitOpenaircnRepo)
+print (Fore.WHITE + '    +  GitOAI5GRepo               : '+ GitOAI5GRepo)
+print (Fore.WHITE + '    +  GitOAI5GBranch             : '+ GitOAI5GRepoBranch)
+print (Fore.WHITE + '    +  GitOpenaircnRepoBranch     : '+ GitOpenaircnRepoBranch)
+print (Fore.WHITE + '    +  NFSResultsShare            : '+ NFSResultsShare)
+print (Fore.WHITE + '    +  nruns_lte_softmodem        : '+ nruns_lte_softmodem)
+print (Fore.WHITE + '    +  Timeout_cmd                : '+ Timeout_cmd)
+
 
 if GitOAI5GHeadVersion == '':
-  cmd = "git show-ref --heads -s "+ GitOAI5GRepoBranch
+  cmd = "git log --pretty=format:\'%H\' -n 1" # origin/"+ GitOAI5GRepoBranch
+#  cmd = "git show-ref --heads -s "+ GitOAI5GRepoBranch
   GitOAI5GHeadVersion = subprocess.check_output ([cmd], shell=True)
   GitOAI5GHeadVersion=GitOAI5GHeadVersion.replace("\n","")
 
-print "GitOAI5GHeadVersion = " + GitOAI5GHeadVersion
-print "CleanUpOldProgs = " + CleanUpOldProgs
-print "Timeout_execution = " + str(Timeout_execution)
+ # Print commiter and date : git log -1 --pretty=format:"%an %ad" 
+
+print (Fore.WHITE + '    +  GitOAI5GHeadVersion        : '+  GitOAI5GHeadVersion)
+#print "CleanUpOldProgs = " + CleanUpOldProgs
+print (Fore.WHITE + '    +  Timeout_execution (s)      : '+  str(Timeout_execution))
 
 if GitOAI5GHeadVersion == '':
   print "Error getting the OAI5GBranch Head version...Exiting"
@@ -1363,194 +2091,404 @@ if GitOAI5GHeadVersion == '':
 
 NFSTestsResultsDir = NFSResultsShare + '/'+ GitOAI5GRepoBranch + '/' + GitOAI5GHeadVersion
 
-print "NFSTestsResultsDir = " + NFSTestsResultsDir
+#print "NFSTestsResultsDir = " + NFSTestsResultsDir
+
+OAI5GpatchFileList=xmlRoot.findall('OAI5GPatchFile')
+
+
 
 MachineList = MachineList.split()
 MachineListGeneric = MachineListGeneric.split()
 
-#index=0
+
+MachineDescDic
+
+
+#
+# 'Check Mater Test Controller sanity (MTC)'
+# ---------------------------------------------------------------------------------
+print (Fore.YELLOW + '\nStep 0.2 - Check Mater Test Controller sanity (MTC)')
+print (Fore.YELLOW + '-------------------------------------------------')
+
+try:
+  print (Fore.WHITE + '  - check OpenAirInterface environment variable OPENAIR1_DIR... '),
+  os.environ["OPENAIR1_DIR"]
+except KeyError:
+    print (Fore.RED + 'FAILED')
+    print "Please set the environment variable OPENAIR1_DIR in the .bashrc or run 'source oaienv' "
+    exit_prog(1)
+print (Fore.GREEN + 'OK')
+
+try:
+  print (Fore.WHITE + '  - check OpenAirInterface environment variable OPENAIR2_DIR... '),
+  os.environ["OPENAIR2_DIR"]
+except KeyError: 
+  print (Fore.RED + 'FAILED')
+  print "Please set the environment variable OPENAIR2_DIR in the .bashrc or run 'source oaienv' "
+  exit_prog(1)
+print (Fore.GREEN + 'OK')
+
+try:  
+   os.environ["OPENAIR_TARGETS"]
+except KeyError: 
+   print "Please set the environment variable OPENAIR_TARGETS in the .bashrc or run 'source oaienv' "
+   sexit_prog(1)
+
+print (Fore.WHITE + '  - kill zombie ssh sessions from earlier sessions...         '),
+cmd='ps aux |grep \"/usr/bin/ssh -q -l ' + user + '\"| tr -s \" \" :| cut -f 2 -d :| xargs kill -9 '
+os.system(cmd)
+print (Fore.GREEN + 'DONE')
+
+if flag_start_testcase == False:
+  print "You need to start the testcase by passing option -s. Use -h to see all options. Aborting now..."
+  exit_prog(1)
+
+  
+#print "Killing zombie ssh sessions from earlier sessions..."
+#cmd='ps aux |grep \"/usr/bin/ssh -q -l guptar\"|tr -s \" \" :|cut -f 2 -d :|xargs kill -9 '
+#cmd = cmd + '; ps aux |grep \"/usr/bin/ssh -q -l ' + user + '\"| tr -s \" \" :| cut -f 2 -d :| xargs kill -9 '
+#os.system(cmd)
+#print cmd
+
+try:
+  analyser = __import__("lib_autotest_analyser")
+except ImportError as err:
+  print('Import error: ' + str(err))
+  exit(0)
+
+if flag_remove_logdir == True:
+   print "Removing directory: " + locallogdir
+   os.system(' rm -fr ' + locallogdir + '; mkdir -p ' +  locallogdir  )
+   
+if not os.path.exists(locallogdir):
+	os.system('mkdir -p ' +  locallogdir  )
+
+
+paramiko_logfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/log/paramiko.log')
+res=os.system(' echo > ' + paramiko_logfile)
+paramiko.util.log_to_file(paramiko_logfile)
+
+
+#
+# 'REMOTE MACHINE SANITY CHEKS'
+# ---------------------------------------------------------------------------------
+print (Fore.YELLOW + '\nStep 0.3 - REMOTE MACHINE SANITY CHEKS')
+print (Fore.YELLOW + '-------------------------------------------------')
+
+
 for machine in MachineList: 
   oai_list.append( openair('localdomain',machine))
-  #index = index + 1
+  MachineDescDic[machine]={}
 
 
-print "\nTesting the sanity of machines used for testing..."
-if localshell == 0:
+if not flag_skip_sanity_check:
+
+  if localshell == 0:
     try:
-        index=0
-        for machine in MachineList:
-           print '\n******* Note that the user <'+user+'> should be a sudoer *******\n'
-           print '******* Connecting to the machine <'+machine+'> to perform the test *******\n'
-           if not pw :
-              print "username: " + user 
-              #pw = getpass.getpass() 
-              #print "password: " + pw            
-           else :
-              print "username: " + user 
-              #print "password: " + pw 
-           # issues in ubuntu 12.04
-           oai_list[index].connect(user,pw)
-           print '\nChecking for sudo permissions on machine <'+machine+'>...'
-           result = oai_list[index].send_expect_false('sudo -S -v','may not run sudo',True)
-           print "Sudo permissions..." + result
-           
-           print '\nCleaning Older running programs : ' + CleanUpOldProgs
-           cleanOldPrograms(oai_list[index], CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop, '$HOME', '/tmp')
+      index=0
+      for machine in MachineList:
+        print (Fore.WHITE + "  - Check sanity for remote machine "+machine)
 
-           #result = oai_list[index].send('mount ' + NFSResultsDir, True)
-           #print "Mounting NFS Share " + NFSResultsDir + "..." + result
+        oai_list[index].connect(user,pw)
+        print (Fore.WHITE + "    > Checking for sudo permissions for user "+user+ " : "),
+        result = oai_list[index].send_expect_false('sudo -S -v','may not run sudo',True)
+        if (result == 'OK'):
+          print (Fore.GREEN + result )
+        else:
+          print (Fore.RED + result )
+         
+        print (Fore.WHITE + "    > Cleaning Older running programs : "),
+        cleanOldPrograms(oai_list[index], CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop, '$HOME', '/tmp')
+        print (Fore.WHITE + " Done")
 
-           # Check if NFS share is mounted correctly.
-           #print 'Checking if NFS Share<' + NFSResultsDir + '> is mounted correctly...'
-           #cmd = 'if grep -qs '+NFSResultsDir+ ' /proc/mounts; then  echo \'' + NFSResultsDir  + ' is mounted\' ; fi'
-           #search_expr = NFSResultsDir + ' is mounted'
-           #print "cmd = " + cmd
-           #print "search_expr = " + search_expr
-           #result = oai_list[index].send_expect(cmd, search_expr)
-           #print "Mount NFS_Results_Dir..." + result
-           index = index + 1
-           
-           #oai.connect2(user,pw) 
-           #oai.get_shell()
+        #result = oai_list[index].send('mount ' + NFSResultsDir, True)
+        #print "Mounting NFS Share " + NFSResultsDir + "..." + result
+
+        # Check if NFS share is mounted correctly.
+        #print 'Checking if NFS Share<' + NFSResultsDir + '> is mounted correctly...'
+        #cmd = 'if grep -qs '+NFSResultsDir+ ' /proc/mounts; then  echo \'' + NFSResultsDir  + ' is mounted\' ; fi'
+        #search_expr = NFSResultsDir + ' is mounted'
+        #print "cmd = " + cmd
+        #print "search_expr = " + search_expr
+        #result = oai_list[index].send_expect(cmd, search_expr)
+        #print "Mount NFS_Results_Dir..." + result
+        index = index + 1
+
+        #oai.connect2(user,pw) 
+        #oai.get_shell()
     except :
         print 'Fail to connect to the machine: '+ machine 
         sys.exit(1)
+  else:
+      pw = ''
+      oai_list[0].connect_localshell()
 else:
-    pw = ''
-    oai_list[0].connect_localshell()
+  print (Fore.RED + "  Skipping Machine sanity check...")
 
-#We now prepare the machines for testing
-index=0
-threads_init_setup=[]
-for oai in oai_list:
-  try:
-      print "setting up machine: " + MachineList[index]
-      #print oai_list[oai].send_recv('echo \''+pw+'\' |sudo -S -v')
-      #print oai_list[oai].send_recv('sudo su')
-      #print oai_list[oai].send_recv('who am i') 
-      #cleanUpPrograms(oai_list[oai]
-      cmd = 'sudo -S -E rm -fr ' + logdir + ' ; mkdir -p ' + logdir 
-      result = oai.send_recv(cmd)
+#
+# 'REMOTE MACHINE TEST SETUP CONFIGURATION'
+# ---------------------------------------------------------------------------------
+print (Fore.YELLOW + '\nStep 0.4 - REMOTE MACHINE PREPARATION')
+print (Fore.YELLOW + '-------------------------------------------------')
+
+if not flag_skip_machine_preparation:
+  index=0
+  threads_init_setup=[]
+  for oai in oai_list:
+    try:
+        print "setting up machine: " + MachineList[index]
+        #print oai_list[oai].send_recv('echo \''+pw+'\' |sudo -S -v')
+        #print oai_list[oai].send_recv('sudo su')
+        #print oai_list[oai].send_recv('who am i') 
+        #cleanUpPrograms(oai_list[oai]
+        cmd = 'sudo -S -E rm -fr ' + logdir + ' ; mkdir -p ' + logdir 
+        result = oai.send_recv(cmd)
+        print cmd
+
+        setuplogfile  = logdir  + '/setup_log_' + MachineList[index] + '_.txt'
+        setup_script  = locallogdir  + '/setup_script_' + MachineList[index] +  '_.txt'
+
+        #Sometimes git fails so the script below retries in that case
+        localfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/tools/git-retry.sh')
+        remotefile = logdir + '/git-retry.sh'
+        paramList=[]
+        port=22
+        paramList.append ( {"operation":'put', "localfile":localfile, "remotefile":remotefile} )
+        sftp_log = os.path.expandvars(locallogdir + '/sftp_module.log')
+        sftp_module (user, pw, MachineList[index], port, paramList, sftp_log)
+
+        cmd = ' ( \n'
+        #cmd = cmd  + 'rm -fR ' +  logdir + '\n'
+        #cmd = cmd + 'mkdir -p ' + logdir + '\n'
+        cmd = cmd + 'cd '+ logdir   + '\n'
+        cmd = cmd + 'sudo apt-get install -y git \n'
+        cmd = cmd + 'chmod 700 ' + logdir + '/git-retry.sh \n' 
+        cmd = cmd + logdir + '/git-retry.sh clone  '+ GitOAI5GRepo  +' \n'
+        cmd = cmd + logdir + '/git-retry.sh clone '+ GitOpenaircnRepo + ' \n'
+        cmd = cmd +  'cd ' + logdirOAI5GRepo  + '\n'
+        cmd = cmd + 'git checkout ' + GitOAI5GRepoBranch   + '\n'
+        if GitOAI5GHeadVersion :
+          cmd = cmd + 'git checkout ' + GitOAI5GHeadVersion   + '\n'
+        cmd = cmd + 'git_head=`git ls-remote |grep \'' + GitOAI5GRepoBranch + '\'` \n'
+        cmd = cmd + 'git_head=($git_head) \n'
+        cmd = cmd + 'git_head=${git_head[0]} \n'
+        cmd = cmd + 'echo \"GitOAI5GHeadVersion_remote = $git_head\" \n'
+        cmd = cmd + 'echo \"GitOAI5GHeadVersion_local = ' + GitOAI5GHeadVersion + '\" \n'
+        if flag_skip_git_head_check==True:
+           cmd = cmd + 'echo \"skipping GitHead check...\" \n '
+        else:
+           cmd = cmd + 'if [ \"$git_head\" != \"'+ GitOAI5GHeadVersion + '\" ]; then echo \"error: Git openairinterface5g head version does not match\" ; fi \n'
+        cmd = cmd + 'source oaienv'   + '\n'
+        if flag_skip_oai_install == False:
+           cmd = cmd + 'source $OPENAIR_DIR/cmake_targets/tools/build_helper \n'
+           cmd = cmd + 'echo \"Installing core OAI dependencies...Start\" \n'
+           cmd = cmd + '$OPENAIR_DIR/cmake_targets/build_oai -I --install-optional-packages \n'
+           cmd = cmd + 'echo \"Installing core OAI dependencies...Finished\" \n'
+           #cmd = cmd + 'echo \"Installing BLADERF OAI dependencies...Start\" \n'
+           #cmd = cmd + 'check_install_bladerf_driver \n'
+           #cmd = cmd + 'echo \"Installing BLADERF OAI dependencies...Finished\" \n'
+           #cmd = cmd + 'echo \"Installing USRP OAI dependencies...Start\" \n'
+           #cmd = cmd + 'check_install_usrp_uhd_driver \n'
+           #cmd = cmd + 'echo \"Installing USRP OAI dependencies...Finished\" \n'
+        cmd = cmd +  'cd ' + logdirOpenaircnRepo  + '\n'
+        cmd = cmd +  'git checkout ' + GitOpenaircnRepoBranch  + '\n'
+        cmd = cmd +  'env |grep OPENAIR'  + '\n'
+        cmd = cmd + ' cd ' + logdir   + '\n'
+        cmd = cmd + 'mkdir -p ' + patchdir + '\n'
+        cmd = cmd + ' ) > ' +  setuplogfile + ' 2>&1 \n'
+        #cmd = cmd + 'echo \' ' + cmd  + '\' > ' + setup_script + ' 2>&1 \n '
+        #result = oai_list[index].send_recv(cmd, False, 300 )
+        write_file(setup_script, cmd, mode="w")
+        tempThread = oaiThread(index, 'thread_setup_'+str(index)+'_' + MachineList[index] , MachineList[index] , user, pw, cmd, False, 3000)
+        threads_init_setup.append(tempThread )
+        tempThread.start()
+        index = index + 1
+    except Exception, e:
+           print 'There is error in one of the commands to setup the machine '+ MachineList[index] 
+           error=''
+           error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+           error = error + traceback.format_exc()
+           print error
+           sys.exit(1)
+
+  #Now we wait for all the threads to complete
+  index = 0
+  for t in threads_init_setup:
+    t.join()
+
+    port = 22
+    paramList=[]
+    sftp_log = os.path.expandvars(locallogdir + '/sftp_module.log')
+
+    #Now we copy patch files and apply them
+    print( Fore.WHITE + "  - Installating patch files on machine " + MachineList[index])
+    for patchFile in OAI5GpatchFileList:
+      localfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/patches/')+patchFile.get('name')
+      remotefile = logdirOAI5GRepo + '/cmake_targets/autotests/patches/'+patchFile.get('name')
+      if patchFile.get('machine') == MachineList[index] or patchFile.get('machine') == None:     
+        if os.path.isfile(localfile):
+          print( Fore.WHITE + "\t> PATCH FILE :"+localfile)
+          paramList=[]
+          paramList.append ( {"operation":'put', "localfile":localfile, "remotefile":remotefile} )
+          sftp_module (user, pw, MachineList[index], port, paramList, sftp_log)
+          cmd =  '  cd ' + logdirOAI5GRepo + ' ;git apply cmake_targets/autotests/patches/'+patchFile.get('name')
+          res = oai_list[index].send_recv(cmd)
+          #print res
      
-      setuplogfile  = logdir  + '/setup_log_' + MachineList[index] + '_.txt'
-      setup_script  = locallogdir  + '/setup_script_' + MachineList[index] +  '_.txt'
+    paramList=[]
 
-      #Sometimes git fails so the script below retries in that case
-      localfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/tools/git-retry.sh')
-      remotefile = logdir + '/git-retry.sh'
-      paramList=[]
-      port=22
-      paramList.append ( {"operation":'put', "localfile":localfile, "remotefile":remotefile} )
-      sftp_log = os.path.expandvars(locallogdir + '/sftp_module.log')
-      sftp_module (user, pw, MachineList[index], port, paramList, sftp_log)
+    setuplogfile  = logdir  + '/setup_log_' + MachineList[index] + '_.txt'
+    setup_script  = locallogdir  + '/setup_script_' + MachineList[index] +  '_.txt'
+    localfile = locallogdir + '/setup_log_' + MachineList[index] + '_.txt'
+    remotefile = logdir  + '/setup_log_' + MachineList[index] + '_.txt'
+    sftp_log = os.path.expandvars(locallogdir + '/sftp_module.log')
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    #sftp_module (user, pw, MachineList[index], port, localfile, remotefile, sftp_log, "get")
+
+    #Now we copy test_case_list.xml on the remote machines
+    localfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/test_case_list.xml')
+    remotefile = logdirOAI5GRepo + '/cmake_targets/autotests/test_case_list.xml'
+    # paramList.append ( {"operation":'put', "localfile":localfile, "remotefile":remotefile} )
+    #     sftp_module (user, pw, MachineList[index], port, paramList, sftp_log)
+
+    sftp_module (user, pw, MachineList[index], port, paramList, sftp_log)
 
 
-      cmd = ' ( \n'
-      #cmd = cmd  + 'rm -fR ' +  logdir + '\n'
-      #cmd = cmd + 'mkdir -p ' + logdir + '\n'
-      cmd = cmd + 'cd '+ logdir   + '\n'
-      cmd = cmd + 'sudo apt-get install -y git \n'
-      cmd = cmd + 'chmod 700 ' + logdir + '/git-retry.sh \n' 
-      cmd = cmd + logdir + '/git-retry.sh clone  '+ GitOAI5GRepo  +' \n'
-      cmd = cmd + logdir + '/git-retry.sh clone '+ GitOpenaircnRepo + ' \n'
-      cmd = cmd +  'cd ' + logdirOAI5GRepo  + '\n'
-      cmd = cmd + 'git checkout ' + GitOAI5GRepoBranch   + '\n'                      
-      #cmd = cmd + 'git checkout ' + GitOAI5GHeadVersion   + '\n'
-      cmd = cmd + 'git_head=`git ls-remote |grep \'' + GitOAI5GRepoBranch + '\'` \n'
-      cmd = cmd + 'git_head=($git_head) \n'
-      cmd = cmd + 'git_head=${git_head[0]} \n'
-      cmd = cmd + 'echo \"GitOAI5GHeadVersion_remote = $git_head\" \n'
-      cmd = cmd + 'echo \"GitOAI5GHeadVersion_local = ' + GitOAI5GHeadVersion + '\" \n'
-      if flag_skip_git_head_check==True:
-         cmd = cmd + 'echo \"skipping GitHead check...\" \n '
-      else:
-         cmd = cmd + 'if [ \"$git_head\" != \"'+ GitOAI5GHeadVersion + '\" ]; then echo \"error: Git openairinterface5g head version does not match\" ; fi \n'
-      cmd = cmd + 'source oaienv'   + '\n'
-      if flag_skip_oai_install == False:
-         cmd = cmd + 'source $OPENAIR_DIR/cmake_targets/tools/build_helper \n'
-         cmd = cmd + 'echo \"Installing core OAI dependencies...Start\" \n'
-         cmd = cmd + '$OPENAIR_DIR/cmake_targets/build_oai -I --install-optional-packages \n'
-         cmd = cmd + 'echo \"Installing core OAI dependencies...Finished\" \n'
-         #cmd = cmd + 'echo \"Installing BLADERF OAI dependencies...Start\" \n'
-         #cmd = cmd + 'check_install_bladerf_driver \n'
-         #cmd = cmd + 'echo \"Installing BLADERF OAI dependencies...Finished\" \n'
-         #cmd = cmd + 'echo \"Installing USRP OAI dependencies...Start\" \n'
-         #cmd = cmd + 'check_install_usrp_uhd_driver \n'
-         #cmd = cmd + 'echo \"Installing USRP OAI dependencies...Finished\" \n'
-      cmd = cmd +  'cd ' + logdirOpenaircnRepo  + '\n'
-      cmd = cmd +  'git checkout ' + GitOpenaircnRepoBranch  + '\n'
-      cmd = cmd +  'env |grep OPENAIR'  + '\n'
-      cmd = cmd + ' cd ' + logdir   + '\n'
-      cmd = cmd + ' ) > ' +  setuplogfile + ' 2>&1 \n'
-      #cmd = cmd + 'echo \' ' + cmd  + '\' > ' + setup_script + ' 2>&1 \n '
-      #result = oai_list[index].send_recv(cmd, False, 300 )
-      write_file(setup_script, cmd, mode="w")
-      tempThread = oaiThread(index, 'thread_setup_'+str(index)+'_' + MachineList[index] , MachineList[index] , user, pw, cmd, False, 3000)
-      threads_init_setup.append(tempThread )
-      tempThread.start()
-      index = index + 1
-  except Exception, e:
-         print 'There is error in one of the commands to setup the machine '+ MachineList[index] 
-         error=''
-         error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
-         error = error + traceback.format_exc()
-         print error
-         sys.exit(1)
-
-#Now we wait for all the threads to complete
-index = 0
-for t in threads_init_setup:
-   t.join()
-   setuplogfile  = logdir  + '/setup_log_' + MachineList[index] + '_.txt'
-   setup_script  = locallogdir  + '/setup_script_' + MachineList[index] +  '_.txt'
-   localfile = locallogdir + '/setup_log_' + MachineList[index] + '_.txt'
-   remotefile = logdir  + '/setup_log_' + MachineList[index] + '_.txt'
-   port = 22
-   
-   paramList=[]
-   sftp_log = os.path.expandvars(locallogdir + '/sftp_module.log')
-   paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-   #sftp_module (user, pw, MachineList[index], port, localfile, remotefile, sftp_log, "get")
-
-   #Now we copy test_case_list.xml on the remote machines
-   localfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/test_case_list.xml')
-   remotefile = logdirOAI5GRepo + '/cmake_targets/autotests/test_case_list.xml'
-   paramList.append ( {"operation":'put', "localfile":localfile, "remotefile":remotefile} )
-   sftp_log = os.path.expandvars(locallogdir + '/sftp_module.log')
-   sftp_module (user, pw, MachineList[index], port, paramList, sftp_log)
-
-   cmd =  '  cd ' + logdirOAI5GRepo + ' ; source oaienv ; env|grep OPENAIR \n'
-   res = oai_list[index].send_recv(cmd)
-   index  = index +1
-   if os.path.exists(localfile) == 0:
+    cmd =  '  cd ' + logdirOAI5GRepo + ' ; source oaienv ; env|grep OPENAIR \n'
+    res = oai_list[index].send_recv(cmd)
+    index  = index +1
+    if os.path.exists(localfile) == 0:
       print "Setup log file <" + localfile + "> missing for machine <" + MachineList[index] + ">.  Please check the setup log files. Exiting now"
       sys.exit(1)
 
-#Now we process all the test cases
-#Now we check if there was error in setup files
+  #Now we process all the test cases
+  #Now we check if there was error in setup files
 
-status, out = commands.getstatusoutput('grep ' +  ' -il \'error\' ' + locallogdir + '/setup_log*')
-if (out != '') :
-  print "There is error in setup of machines"
-  print "status  = " + str(status) + "\n Check files for error = " + out
-  print "Exiting now..."
-  sys.exit(1)
+  status, out = commands.getstatusoutput('grep ' +  ' -il \'error\' ' + locallogdir + '/setup_log*')
+  if (out != '') :
+    print "There is error in setup of machines"
+    print "status  = " + str(status) + "\n Check files for error = " + out
+    print "Exiting now..."
+    sys.exit(1)
 
-cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop, '$HOME' , logdirOAI5GRepo)
-if cleanUpRemoteMachines == True:
-  sys.exit(0)
+  cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop, '$HOME' , logdirOAI5GRepo)
+  if cleanUpRemoteMachines == True:
+    print "Error while cleaning Remote machines"
+    print "Exiting now..."
+    sys.exit(0)
+
+
+else:
+  print (Fore.RED + "  Skipping Machine preparation...")
+
+# **************************************************************************
+# **************************************************************************
+#           STEP 2 - TEST SELECTION AND PARAMETRIZATION
+# **************************************************************************
+# **************************************************************************
+
+print (Fore.YELLOW + '\nStep 2 - TEST SELECTION')
+print (Fore.YELLOW + '-------------------------------------------------')
+
+print (Fore.WHITE + "  Parsing test case list for test selection...")
+print (Fore.WHITE + "  - TestCaseExclusionList      : "+TestCaseExclusionList)
+print (Fore.WHITE + "  - testcasegroup              : "+testcasegroup)
+
+
+testcaseList=xmlRoot.findall('testCase')
+
+nb_total_testcases              = 0
+nb_total_testcases_softmodem    = 0
+nb_total_testcases_softmodem_noS1 = 0
+nb_total_testcases_compilation  = 0
+nb_total_testcases_execution    = 0
+
+nb_run_testcases                = 0
+nb_run_testcases_softmodem      = 0
+nb_run_testcases_softmodem_noS1 = 0
+nb_run_testcases_compilation    = 0
+nb_run_testcases_execution      = 0
+
+
+for testcase in testcaseList:
+  try:
+    testcasename = testcase.get('id')
+    testcaseclass = testcase.findtext('class',default='')
+    desc = testcase.findtext('desc',default='')
+    nb_total_testcases+=1
+
+    run_flag = search_test_case_group(testcasename, testcasegroup, TestCaseExclusionList)
+    if (run_flag):
+      nb_run_testcases+=1
+
+    if testcaseclass == 'lte-softmodem' :
+      nb_total_testcases_softmodem+=1
+      if (run_flag): nb_run_testcases_softmodem+=1
+    elif testcaseclass == 'lte-softmodem-noS1':  
+      nb_total_testcases_softmodem_noS1+=1
+      if (run_flag): nb_run_testcases_softmodem_noS1+=1
+    elif testcaseclass == 'compilation':
+      nb_total_testcases_compilation+=1 
+      if (run_flag): nb_run_testcases_compilation+=1
+    elif testcaseclass == 'execution': 
+      nb_total_testcases_execution+=1
+      if (run_flag): nb_run_testcases_execution+=1
+    else :
+      print "Unknown test case class: " + testcaseclass
+      sys.exit()
+
+  except Exception, e:
+     error=''
+     error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+     error = error + '\n testcasename = ' + testcasename + '\n testcaseclass = ' + testcaseclass + '\n desc = ' + 'desc' + '\n'  
+     error = error + traceback.format_exc()
+     print error
+     print "Continuing to next test case..."
+
+print (Fore.WHITE + "  Parsing done...")
+
+print (Fore.WHITE + "  - Total number of test cases        : "+str(nb_total_testcases))
+print (Fore.WHITE + "  - Total number class softmodem      : "+str(nb_total_testcases_softmodem))
+print (Fore.WHITE + "  - Total number class softmodem-noS1 : "+str(nb_total_testcases_softmodem_noS1))
+print (Fore.WHITE + "  - Total number class compilation    : "+str(nb_total_testcases_compilation))
+print (Fore.WHITE + "  - Total number class execution      : "+str(nb_total_testcases_execution))
+print
+print (Fore.WHITE + "  - Selected number of test cases     : "+str(nb_run_testcases))
+print (Fore.WHITE + "  - Selected class softmodem          : "+str(nb_run_testcases_softmodem))
+print (Fore.WHITE + "  - Selected class softmodem_noS1     : "+str(nb_run_testcases_softmodem_noS1))
+print (Fore.WHITE + "  - Selected class compilation        : "+str(nb_run_testcases_compilation))
+print (Fore.WHITE + "  - Selected class execution          : "+str(nb_run_testcases_execution))
+
+
+# **************************************************************************
+# **************************************************************************
+#           STEP 3 - TEST CAMPAIGNS
+# **************************************************************************
+# **************************************************************************
+
+test_results = []
+
+
+print (Fore.YELLOW + '\nStep 3 - TEST CAMPAIGNS')
+print (Fore.YELLOW + '-------------------------------------------------')
+
+print (Fore.WHITE + "  Start test campaign...")
 
 threadListGlobal=[]
-testcaseList=xmlRoot.findall('testCase')
-#print testcaseList
+run_count = 0
 for testcase in testcaseList:
   try:
     testcasename = testcase.get('id')
     testcaseclass = testcase.findtext('class',default='')
     desc = testcase.findtext('desc',default='')
     #print "Machine list top level = " + ','.join(MachineList)
+
     if search_test_case_group(testcasename, testcasegroup, TestCaseExclusionList) == True:
+      run_count+=1
+      print (Fore.WHITE + "  ("+str(run_count).zfill(3)+"/"+str(nb_run_testcases).zfill(3)+") - test case "+testcasename+" : "),
       if testcaseclass == 'lte-softmodem' :
+        #First we wait for all the test cases in generic test case class to finish as they are running in parallel
+        threadListGlobal = wait_testcaseclass_generic_threads(threadListGlobal, Timeout_execution)
         eNBMachine = testcase.findtext('eNB',default='')
         UEMachine = testcase.findtext('UE',default='')
         EPCMachine = testcase.findtext('EPC',default='')
@@ -1561,9 +2499,8 @@ for testcase in testcaseList:
            print "One of the machines is not in the machine list"
            print "eNBMachine : " + eNBMachine + "UEMachine : " + UEMachine + "EPCMachine : " + EPCMachine + "MachineList : " + ','.join(MachineList)
         print "testcasename = " + testcasename + " class = " + testcaseclass
-        threadListGlobal = wait_testcaseclass_generic_threads(threadListGlobal, Timeout_execution)
         #cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
-        handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, user, pw, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem, Timeout_cmd )
+        handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, user, pw, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem, GitOAI5GRepoBranch,  GitOpenaircnRepoBranch, Timeout_cmd )
         
         #The lines below are copied from below to trace the failure of some of the machines in test setup. These lines below need to be removed in long term
         print "Creating xml file for overall results..."
@@ -1579,6 +2516,23 @@ for testcase in testcaseList:
         print "Copying files from GilabCI Runner Machine : " + host + " .locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
         SSHSessionWrapper('localhost', user, None, pw , NFSTestsResultsDir , locallogdir, "put_all")
         oai_localhost.disconnect()
+
+      elif testcaseclass == 'lte-softmodem-noS1' :
+        eNBMachine = testcase.findtext('eNB',default='')
+        UEMachine = testcase.findtext('UE',default='')
+        if (eNBMachine not in MachineList)|(UEMachine not in MachineList):
+           print "One of the machines is not in the machine list"
+           print "eNBMachine : " + eNBMachine + "UEMachine : " + UEMachine + "MachineList : " + ','.join(MachineList)
+        print "testcasename = " + testcasename + " class = " + testcaseclass
+        threadListGlobal = wait_testcaseclass_generic_threads(threadListGlobal, Timeout_execution)
+        
+        handle_testcaseclass_softmodem_noS1 (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, user, pw, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem, Timeout_cmd ) 
+
+        #The lines below are copied from below to trace the failure of some of the machines in test setup. These lines below need to be removed in long term
+        print "Creating xml file for overall results..."
+        cmd = "cat $OPENAIR_DIR/cmake_targets/autotests/log/*/*.xml > $OPENAIR_DIR/cmake_targets/autotests/log/results_autotests.xml "
+        res=os.system(cmd)
+        os.system('sync')
 
       elif (testcaseclass == 'compilation'): 
         threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, user, pw, CleanUpAluLteBox,Timeout_execution, ExmimoRfStop)
@@ -1604,6 +2558,22 @@ for param in threadListGlobal:
    thread_id = param["thread_id"]
    thread_id.join()
 
+
+# **************************************************************************
+# **************************************************************************
+#           STEP 4 - TEST REPORT PRODUCTION
+# **************************************************************************
+# **************************************************************************
+
+
+
+test_session_stop_time = datetime.datetime.now()
+
+print (Fore.YELLOW + '\nStep 4 - TEST REPORT PRODUCTION')
+print (Fore.YELLOW + '-------------------------------------------------')
+
+# XML test report
+# --------------------------------------------------------------------
 print "Creating xml file for overall results..."
 cmd = "cat $OPENAIR_DIR/cmake_targets/autotests/log/*/*.xml > $OPENAIR_DIR/cmake_targets/autotests/log/results_autotests.xml "
 res=os.system(cmd)
@@ -1621,5 +2591,44 @@ cmd = "cat " + NFSTestsResultsDir + "/log/*/*.xml > " + NFSTestsResultsDir + "/l
 res = oai_localhost.send_recv(cmd)
  
 oai_localhost.disconnect()
+
+
+# HTML test report
+# --------------------------------------------------------------------
+if flag_generate_html_report:
+  
+  print "Creating html test report..."
+
+  report_dir = reportdir + '/'+ test_session_start_time.strftime("%Y-%m-%d_%H-%M")+"_"+host
+
+  cmd = 'mkdir -p ' + report_dir
+  result = os.system(cmd)
+
+  cmd = 'cp -r '+locallogdir+' '+report_dir
+  result = os.system(cmd)
+
+  context = {
+      'report_path' : report_dir,
+      'test_session_start_time' : test_session_start_time,
+      'test_session_stop_time'  : test_session_stop_time,
+      'test_session_duration'   : test_session_stop_time-test_session_start_time,    
+      'mtc_host'                : host,
+      'user'                    : user,
+      'password'                : pw,
+      'test_results'            : test_results,  
+  }
+
+  for test_result in test_results:
+    cmd = 'mkdir -p ' + report_dir + '/'+ test_result['testcase_name']
+    result = os.system(cmd)
+
+    report_file = report_dir + '/'+ test_result['testcase_name'] + '/'+ test_result['testcase_name']+ '_report.html'
+
+    analyser.create_test_report_detailed_html(test_result, report_file )
+
+   # print test_result
+
+  analyser.create_report_html(context)
+
 
 sys.exit()

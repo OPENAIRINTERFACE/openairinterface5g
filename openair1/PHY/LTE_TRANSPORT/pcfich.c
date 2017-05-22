@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_TRANSPORT/pcfich.c
 * \brief Top-level routines for generating and decoding  the PCFICH/CFI physical/transport channel V8.6 2009-03
@@ -77,9 +69,9 @@ void generate_pcfich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
     first_reg = pcfich_reg[3];
   }
 
-  //#ifdef DEBUG_PCFICH
+  #ifdef DEBUG_PCFICH
   printf("pcfich_reg : %d,%d,%d,%d\n",pcfich_reg[0],pcfich_reg[1],pcfich_reg[2],pcfich_reg[3]);
-  //#endif
+  #endif
 }
 
 void pcfich_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
@@ -199,7 +191,7 @@ void generate_pcfich(uint8_t num_pdcch_symbols,
   // mapping
   nsymb = (frame_parms->Ncp==0) ? 14:12;
 
-  symbol_offset = (uint32_t)frame_parms->ofdm_symbol_size*((subframe*nsymb));
+  symbol_offset = (uint32_t)frame_parms->ofdm_symbol_size*(subframe*nsymb);
   re_offset = frame_parms->first_carrier_offset;
 
   // loop over 4 quadruplets and lookup REGs
@@ -216,7 +208,7 @@ void generate_pcfich(uint8_t num_pdcch_symbols,
       if ((i!=nushiftmod3)&&(i!=(nushiftmod3+3))) {
         txdataF[0][symbol_offset+reg_offset+i] = pcfich_d[0][m];
 
-        if (frame_parms->nb_antennas_tx_eNB>1)
+        if (frame_parms->nb_antenna_ports_eNB>1)
           txdataF[1][symbol_offset+reg_offset+i] = pcfich_d[1][m];
 
         m++;

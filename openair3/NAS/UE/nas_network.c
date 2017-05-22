@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 Source      nas_network.h
 
@@ -50,6 +43,7 @@ Description NAS procedure functions triggered by the network
 
 #include "as_message.h"
 #include "nas_proc.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -98,11 +92,11 @@ void nas_network_initialize(void)
  **          Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-void nas_network_cleanup(void)
+void nas_network_cleanup(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
-  nas_proc_cleanup();
+  nas_proc_cleanup(user);
 
   LOG_FUNC_OUT;
 }
@@ -125,7 +119,7 @@ void nas_network_cleanup(void)
  **          Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_network_process_data(int msg_id, const void *data)
+int nas_network_process_data(nas_user_t *user, int msg_id, const void *data)
 {
   LOG_FUNC_IN;
 
@@ -149,7 +143,7 @@ int nas_network_process_data(int msg_id, const void *data)
     /* Received cell information confirm */
     const cell_info_cnf_t *info = &msg->msg.cell_info_cnf;
     int cell_found = (info->errCode == AS_SUCCESS);
-    rc = nas_proc_cell_info(cell_found, info->tac,
+    rc = nas_proc_cell_info(user, cell_found, info->tac,
                             info->cellID, info->rat,
                             info->rsrp, info->rsrq);
     break;
@@ -167,12 +161,12 @@ int nas_network_process_data(int msg_id, const void *data)
 
     if ( (confirm->errCode == AS_SUCCESS) ||
          (confirm->errCode == AS_TERMINATED_NAS) ) {
-      rc = nas_proc_establish_cnf(confirm->nasMsg.data,
+      rc = nas_proc_establish_cnf(user, confirm->nasMsg.data,
                                   confirm->nasMsg.length);
     } else {
       LOG_TRACE(WARNING, "NET-MAIN  - "
                 "Initial NAS message not delivered");
-      rc = nas_proc_establish_rej();
+      rc = nas_proc_establish_rej(user);
     }
 
     break;
@@ -180,7 +174,7 @@ int nas_network_process_data(int msg_id, const void *data)
 
   case AS_NAS_RELEASE_IND:
     /* Received NAS signalling connection releaase indication */
-    rc = nas_proc_release_ind(msg->msg.nas_release_ind.cause);
+    rc = nas_proc_release_ind(user, msg->msg.nas_release_ind.cause);
     break;
 
   case AS_UL_INFO_TRANSFER_CNF:
@@ -189,9 +183,9 @@ int nas_network_process_data(int msg_id, const void *data)
     if (msg->msg.ul_info_transfer_cnf.errCode != AS_SUCCESS) {
       LOG_TRACE(WARNING, "NET-MAIN  - "
                 "Uplink NAS message not delivered");
-      rc = nas_proc_ul_transfer_rej();
+      rc = nas_proc_ul_transfer_rej(user);
     } else {
-      rc = nas_proc_ul_transfer_cnf();
+      rc = nas_proc_ul_transfer_cnf(user);
     }
 
     break;
@@ -199,7 +193,7 @@ int nas_network_process_data(int msg_id, const void *data)
   case AS_DL_INFO_TRANSFER_IND: {
     const dl_info_transfer_ind_t *info = &msg->msg.dl_info_transfer_ind;
     /* Received downlink data transfer indication */
-    rc = nas_proc_dl_transfer_ind(info->nasMsg.data,
+    rc = nas_proc_dl_transfer_ind(user, info->nasMsg.data,
                                   info->nasMsg.length);
     break;
   }

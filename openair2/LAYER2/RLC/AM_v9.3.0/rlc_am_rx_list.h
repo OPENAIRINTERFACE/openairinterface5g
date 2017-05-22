@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /*! \file rlc_am_rx_list.h
 * \brief This file defines the prototypes of the functions dealing with a RX list data structure supporting re-segmentation.
 * \author GAUTHIER Lionel
@@ -66,6 +59,16 @@
 #include "PHY/defs.h"
 
 //-----------------------------------------------------------------------------
+/*! \fn rlc_am_rx_pdu_status_t rlc_am_rx_list_check_duplicate_insert_pdu(const protocol_ctxt_t* const  ctxt_pP,rlc_am_entity_t* const rlc_pP,mem_block_t* const tb_pP)
+* \brief      Insert a PDU in the RX buffer after removing byte duplicate (implemented with a list).
+* \param[in]  ctxt_pP        Running context.
+* \param[in]  rlcP         RLC AM protocol instance pointer.
+* \param[in]  tbP          A PDU embedded in a mem_block_t.
+* \return     Zero if the PDU could be inserted in the RX buffer, a negative value if the PDU could not be inserted.
+*/
+protected_rlc_am_rx_list( rlc_am_rx_pdu_status_t rlc_am_rx_list_check_duplicate_insert_pdu(const protocol_ctxt_t* const  ctxt_pP,rlc_am_entity_t* const rlc_pP,mem_block_t* const tb_pP);)
+
+#if 0
 /*! \fn signed int rlc_am_rx_list_insert_pdu(const protocol_ctxt_t* const ctxt_pP, rlc_am_entity_t* const rlcP , mem_block_t* const tbP)
 * \brief      Insert a PDU in the RX buffer (implemented with a list).
 * \param[in]  ctxt_pP        Running context.
@@ -74,6 +77,15 @@
 * \return     Zero if the PDU could be inserted in the RX buffer, a negative value if the PDU could not be inserted.
 */
 protected_rlc_am_rx_list( signed int rlc_am_rx_list_insert_pdu(const protocol_ctxt_t* const ctxt_pP, rlc_am_entity_t* const rlcP,  mem_block_t* const tbP);)
+#endif
+
+/*! \fn boolean_t rlc_am_rx_check_vr_reassemble(const protocol_ctxt_t* const ctxt_pP,const rlc_am_entity_t* const rlc_pP)
+* \brief      Check if reassembly taking into account potential new vrR value
+* \param[in]  ctxt_pP        Running context.
+* \param[in]  rlcP         RLC AM protocol instance pointer.
+* \return     TRUE if reassembly must be done, FALSE else
+*/
+protected_rlc_am_rx_list( boolean_t rlc_am_rx_check_vr_reassemble(const protocol_ctxt_t* const ctxt_pP,const rlc_am_entity_t* const rlc_pP);)
 
 /*! \fn void rlc_am_rx_check_all_byte_segments(const protocol_ctxt_t* const ctxt_pP, rlc_am_entity_t* const rlcP, mem_block_t* const tbP)
 * \brief      Check if all sub-segments of a PDU are received, if yes then call rlc_am_rx_mark_all_segments_received() procedure.

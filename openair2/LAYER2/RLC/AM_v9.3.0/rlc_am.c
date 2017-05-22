@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #define RLC_AM_MODULE 1
 #define RLC_AM_C 1
 //-----------------------------------------------------------------------------
@@ -52,58 +45,146 @@
 
 //-----------------------------------------------------------------------------
 uint32_t
+rlc_am_get_status_pdu_buffer_occupancy(
+  rlc_am_entity_t * const      rlc_pP){
+
+	//Compute Max Status PDU size according to what has been received and not received in the window [vrR vrMS[
+
+    // minimum header size in bits to be transmitted: D/C + CPT + ACK_SN + E1
+	uint32_t                    nb_bits_to_transmit	  = RLC_AM_PDU_D_C_BITS + RLC_AM_STATUS_PDU_CPT_LENGTH + RLC_AM_SN_BITS + RLC_AM_PDU_E_BITS;
+	mem_block_t                  *cursor_p              = rlc_pP->receiver_buffer.head;
+    rlc_am_pdu_info_t            *pdu_info_cursor_p     = NULL;
+    int                           waited_so             = 0;
+
+	rlc_sn_t sn_cursor = rlc_pP->vr_r;
+	rlc_sn_t sn_prev = rlc_pP->vr_r;
+	rlc_sn_t sn_end = rlc_pP->vr_ms;
+	boolean_t	segment_loop_end	  = false;
+
+
+	if (sn_prev != sn_end)
+	{
+		while ((RLC_AM_DIFF_SN(sn_prev,rlc_pP->vr_r) < RLC_AM_DIFF_SN(sn_end,rlc_pP->vr_r)) && (cursor_p != NULL))
+		{
+			pdu_info_cursor_p     = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+			sn_cursor             = pdu_info_cursor_p->sn;
+
+			// Add holes between sn_prev and sn_cursor
+			while ((sn_prev != sn_cursor) && (sn_prev != sn_end))
+			{
+				  /* Add 1 NACK_SN + E1 + E2 */
+				  nb_bits_to_transmit += (RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1));
+				  sn_prev = RLC_AM_NEXT_SN(sn_prev);
+			} //end while (sn_prev != sn_cursor)
+
+			/* Handle case sn_cursor is partially received */
+			/* Each gap will add NACK_SN + E1 + E2 + SOStart + SOEnd */
+			if ((((rlc_am_rx_pdu_management_t*)(cursor_p->data))->all_segments_received == 0) && (RLC_AM_DIFF_SN(sn_cursor,rlc_pP->vr_r) < RLC_AM_DIFF_SN(sn_end,rlc_pP->vr_r)))
+			{
+                 /* Check lsf */
+				  segment_loop_end = (pdu_info_cursor_p->lsf == 1);
+
+	    		  /* Fill for [0 SO[ if SO not null */
+	    		  if (pdu_info_cursor_p->so) {
+	    			  nb_bits_to_transmit += (RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1));
+	                  waited_so = pdu_info_cursor_p->so + pdu_info_cursor_p->payload_size;
+	    		  }
+	    		  else {
+	        		  waited_so = pdu_info_cursor_p->payload_size;
+	    		  }
+
+                  /* Go to next segment */
+                  cursor_p = cursor_p->next;
+                  if (cursor_p != NULL)
+                  {
+                      pdu_info_cursor_p     = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+                  }
+
+	    		  /* Fill following gaps if any */
+	    		  while (!segment_loop_end)
+	    		  {
+	    			  if ((cursor_p != NULL) && (pdu_info_cursor_p->sn == sn_cursor))
+	    			  {
+		                  /* Check lsf */
+	    				  segment_loop_end = (pdu_info_cursor_p->lsf == 1);
+
+            			  if (waited_so < pdu_info_cursor_p->so) {
+    	                      nb_bits_to_transmit += (RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1));
+            			  }
+            			  else {
+            				  /* contiguous segment: only update waited_so */
+            				  /* Assuming so and payload_size updated according to duplication removal done at reception ... */
+            				  waited_so += pdu_info_cursor_p->payload_size;
+            			  }
+
+            			  /* Go to next received PDU or PDU Segment */
+            			  cursor_p = cursor_p->next;
+    	                  if (cursor_p != NULL)
+    	                  {
+    		                  pdu_info_cursor_p     = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
+    	                  }
+	    			  }
+	    			  else
+	    			  {
+	    				  /* Fill last gap assuming LSF is not received */
+	    				  nb_bits_to_transmit += (RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1));
+	    				  segment_loop_end = true;
+	    			  }
+	    		  } // end while (!segment_loop_end)
+			} // end if segments
+			else
+			{
+				  /* Go to next received PDU or PDU segment with different SN */
+				  do
+				  {
+					  cursor_p = cursor_p->next;
+				  } while ((cursor_p != NULL) && (((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info.sn == sn_cursor));
+			}
+
+			sn_prev = RLC_AM_NEXT_SN(sn_cursor);
+		}
+	} // end if (sn_prev != sn_end)
+
+	// round up to the greatest byte
+	return ((nb_bits_to_transmit + 7) >> 3);
+
+}
+
+//-----------------------------------------------------------------------------
+uint32_t
 rlc_am_get_buffer_occupancy_in_bytes (
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP)
 {
-  uint32_t max_li_overhead;
-  uint32_t header_overhead;
-
   // priority of control trafic
-  if (rlc_pP->status_requested) {
-    if (rlc_pP->t_status_prohibit.running == 0) {
+  rlc_pP->status_buffer_occupancy = 0;
+  if ((rlc_pP->status_requested) && !(rlc_pP->status_requested & RLC_AM_STATUS_NO_TX_MASK)) {
+      rlc_pP->status_buffer_occupancy = rlc_am_get_status_pdu_buffer_occupancy(rlc_pP);
 #if TRACE_RLC_AM_BO
 
-      if (((15  +  rlc_pP->num_nack_sn*(10+1)  +  rlc_pP->num_nack_so*(15+15+1) + 7) >> 3) > 0) {
         LOG_D(RLC, PROTOCOL_CTXT_FMT RB_AM_FMT" BO : CONTROL PDU %d bytes \n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-              ((15  +  rlc_pP->num_nack_sn*(10+1)  +  rlc_pP->num_nack_so*(15+15+1) + 7) >> 3));
-      }
+			rlc_pP->status_buffer_occupancy);
 
 #endif
-      return ((15  +  rlc_pP->num_nack_sn*(10+1)  +  rlc_pP->num_nack_so*(15+15+1) + 7) >> 3);
-    }
-  }
-
-  // data traffic
-  if (rlc_pP->nb_sdu_no_segmented <= 1) {
-    max_li_overhead = 0;
-  } else {
-    max_li_overhead = (((rlc_pP->nb_sdu_no_segmented - 1) * 3) / 2) + ((rlc_pP->nb_sdu_no_segmented - 1) % 2);
-  }
-
-  if (rlc_pP->sdu_buffer_occupancy == 0) {
-    header_overhead = 0;
-  } else {
-    header_overhead = 2;
   }
 
 
 #if TRACE_RLC_AM_BO
 
-  if ((rlc_pP->status_buffer_occupancy + rlc_pP->retransmission_buffer_occupancy + rlc_pP->sdu_buffer_occupancy + max_li_overhead + header_overhead) > 0) {
+  if ((rlc_pP->status_buffer_occupancy + rlc_pP->retrans_num_bytes_to_retransmit + rlc_pP->sdu_buffer_occupancy + max_li_overhead + header_overhead) > 0) {
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" BO : STATUS  BUFFER %d bytes \n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP), rlc_pP->status_buffer_occupancy);
-    LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" BO : RETRANS BUFFER %d bytes \n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP), rlc_pP->retransmission_buffer_occupancy);
+    LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" BO : RETRANS BUFFER %d bytes \n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP), rlc_pP->retrans_num_bytes_to_retransmit);
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" BO : SDU     BUFFER %d bytes + li_overhead %d bytes header_overhead %d bytes (nb sdu not segmented %d)\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           rlc_pP->sdu_buffer_occupancy,
-          max_li_overhead,
-          header_overhead,
+          0,
+          0,
           rlc_pP->nb_sdu_no_segmented);
   }
 
 #endif
-  return rlc_pP->status_buffer_occupancy + rlc_pP->retrans_num_bytes_to_retransmit + rlc_pP->sdu_buffer_occupancy + max_li_overhead + header_overhead;
+  return rlc_pP->status_buffer_occupancy + rlc_pP->retrans_num_bytes_to_retransmit + rlc_pP->sdu_buffer_occupancy;
 }
 //-----------------------------------------------------------------------------
 void
@@ -120,7 +201,8 @@ config_req_rlc_am (
   const protocol_ctxt_t* const ctxt_pP,
   const srb_flag_t             srb_flagP,
   rlc_am_info_t  * const       config_am_pP,
-  const rb_id_t                rb_idP
+  const rb_id_t                rb_idP,
+  const logical_chan_id_t      chan_idP 
 )
 {
   rlc_union_t       *rlc_union_p = NULL;
@@ -142,7 +224,7 @@ config_req_rlc_am (
           config_am_pP->t_reordering,
           config_am_pP->t_status_prohibit);
     rlc_am_init(ctxt_pP, l_rlc_p);
-    rlc_am_set_debug_infos(ctxt_pP, l_rlc_p, srb_flagP, rb_idP);
+    rlc_am_set_debug_infos(ctxt_pP, l_rlc_p, srb_flagP, rb_idP, chan_idP);
     rlc_am_configure(ctxt_pP, l_rlc_p,
                      config_am_pP->max_retx_threshold,
                      config_am_pP->poll_pdu,
@@ -155,19 +237,26 @@ config_req_rlc_am (
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,l_rlc_p));
   }
 }
-uint32_t pollPDU_tab[PollPDU_pInfinity+1]= {4,8,16,32,64,128,256,1024}; // What is PollPDU_pInfinity??? 1024 for now
+uint16_t pollPDU_tab[PollPDU_pInfinity+1]= {4,8,16,32,64,128,256,RLC_AM_POLL_PDU_INFINITE}; //PollPDU_pInfinity is chosen to 0xFFFF for now
 uint32_t maxRetxThreshold_tab[UL_AM_RLC__maxRetxThreshold_t32+1]= {1,2,3,4,6,8,16,32};
-uint32_t pollByte_tab[PollByte_spare1]= {25,50,75,100,125,250,375,500,750,1000,1250,1500,2000,3000,10000}; // What is PollByte_kBinfinity??? 10000 for now
+uint32_t pollByte_tab[PollByte_spare1]= {25000,50000,75000,100000,125000,250000,375000,500000,750000,1000000,1250000,1500000,2000000,3000000,RLC_AM_POLL_BYTE_INFINITE}; // PollByte_kBinfinity is chosen to 0xFFFFFFFF for now
+#if defined(Rel14)
+uint32_t PollRetransmit_tab[T_PollRetransmit_spare5]= {5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500,800,1000,2000,4000};
+uint32_t am_t_Reordering_tab[32]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200,1600};
+uint32_t t_StatusProhibit_tab[T_StatusProhibit_spare2]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500,800,1000,1200,1600,2000,2400};
+#else
 uint32_t PollRetransmit_tab[T_PollRetransmit_spare9]= {5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500};
 uint32_t am_t_Reordering_tab[T_Reordering_spare1]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200};
 uint32_t t_StatusProhibit_tab[T_StatusProhibit_spare8]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500};
+#endif
 
 //-----------------------------------------------------------------------------
 void config_req_rlc_am_asn1 (
   const protocol_ctxt_t* const         ctxt_pP,
   const srb_flag_t                     srb_flagP,
   const struct RLC_Config__am  * const config_am_pP,
-  const rb_id_t                        rb_idP)
+  const rb_id_t                        rb_idP,
+  const logical_chan_id_t              chan_idP)
 {
   rlc_union_t     *rlc_union_p   = NULL;
   rlc_am_entity_t *l_rlc_p         = NULL;
@@ -182,9 +271,15 @@ void config_req_rlc_am_asn1 (
     if ((config_am_pP->ul_AM_RLC.maxRetxThreshold <= UL_AM_RLC__maxRetxThreshold_t32) &&
         (config_am_pP->ul_AM_RLC.pollPDU<=PollPDU_pInfinity) &&
         (config_am_pP->ul_AM_RLC.pollByte<PollByte_spare1) &&
+#if defined(Rel14)
+        (config_am_pP->ul_AM_RLC.t_PollRetransmit<T_PollRetransmit_spare5) &&
+        (config_am_pP->dl_AM_RLC.t_Reordering<32) &&
+        (config_am_pP->dl_AM_RLC.t_StatusProhibit<T_StatusProhibit_spare2) ) {
+#else
         (config_am_pP->ul_AM_RLC.t_PollRetransmit<T_PollRetransmit_spare9) &&
         (config_am_pP->dl_AM_RLC.t_Reordering<T_Reordering_spare1) &&
         (config_am_pP->dl_AM_RLC.t_StatusProhibit<T_StatusProhibit_spare8) ) {
+#endif
 
       MSC_LOG_RX_MESSAGE(
         (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
@@ -208,7 +303,7 @@ void config_req_rlc_am_asn1 (
             t_StatusProhibit_tab[config_am_pP->dl_AM_RLC.t_StatusProhibit]);
 
       rlc_am_init(ctxt_pP, l_rlc_p);
-      rlc_am_set_debug_infos(ctxt_pP, l_rlc_p, srb_flagP, rb_idP);
+      rlc_am_set_debug_infos(ctxt_pP, l_rlc_p, srb_flagP, rb_idP, chan_idP);
       rlc_am_configure(ctxt_pP, l_rlc_p,
                        maxRetxThreshold_tab[config_am_pP->ul_AM_RLC.maxRetxThreshold],
                        pollPDU_tab[config_am_pP->ul_AM_RLC.pollPDU],
@@ -227,7 +322,7 @@ void config_req_rlc_am_asn1 (
         PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, l_rlc_p));
 
       LOG_D(RLC,
-            PROTOCOL_RLC_AM_CTXT_FMT"ILLEGAL CONFIG_REQ (max_retx_threshold=%d poll_pdu=%d poll_byte=%d t_poll_retransmit=%d t_reord=%d t_status_prohibit=%d), RLC-AM NOT CONFIGURED\n",
+            PROTOCOL_RLC_AM_CTXT_FMT"ILLEGAL CONFIG_REQ (max_retx_threshold=%ld poll_pdu=%ld poll_byte=%ld t_poll_retransmit=%ld t_reord=%ld t_status_prohibit=%ld), RLC-AM NOT CONFIGURED\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,l_rlc_p),
             config_am_pP->ul_AM_RLC.maxRetxThreshold,
             config_am_pP->ul_AM_RLC.pollPDU,
@@ -310,7 +405,7 @@ rlc_am_get_pdus (
   rlc_am_entity_t * const      rlc_pP
 )
 {
-  int display_flag = 0;
+  //int display_flag = 0;
   // 5.1.3.1 Transmit operations
   // 5.1.3.1.1
   // General
@@ -327,7 +422,8 @@ rlc_am_get_pdus (
   case RLC_DATA_TRANSFER_READY_STATE:
 
     // TRY TO SEND CONTROL PDU FIRST
-    if ((rlc_pP->nb_bytes_requested_by_mac > 2) && (rlc_pP->status_requested)) {
+    if ((rlc_pP->nb_bytes_requested_by_mac >= 2) &&
+    		((rlc_pP->status_requested) && !(rlc_pP->status_requested & RLC_AM_STATUS_NO_TX_MASK))) {
       // When STATUS reporting has been triggered, the receiving side of an AM RLC entity shall:
       // - if t-StatusProhibit is not running:
       //     - at the first transmission opportunity indicated by lower layer, construct a STATUS PDU and deliver it to lower layer;
@@ -338,139 +434,39 @@ rlc_am_get_pdus (
       //
       // When a STATUS PDU has been delivered to lower layer, the receiving side of an AM RLC entity shall:
       //     - start t-StatusProhibit.
-      if (rlc_pP->t_status_prohibit.running == 0) {
+
         rlc_am_send_status_pdu(ctxt_pP, rlc_pP);
         mem_block_t* pdu = list_remove_head(&rlc_pP->control_pdu_list);
 
         if (pdu) {
           list_add_tail_eurecom (pdu, &rlc_pP->pdus_to_mac_layer);
-          rlc_pP->status_requested = 0;
+          RLC_AM_CLEAR_ALL_STATUS(rlc_pP->status_requested);
+          rlc_pP->status_buffer_occupancy = 0;
           rlc_am_start_timer_status_prohibit(ctxt_pP, rlc_pP);
           return;
         }
-      } else {
-        LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" DELAYED SENT STATUS PDU BECAUSE T-STATUS-PROHIBIT RUNNING (TIME-OUT %u)\n",
+      }
+      else {
+              LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" DELAYED SENT STATUS PDU (Available MAC Data %u)(T-PROHIBIT %u) (DELAY FLAG %u)\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-              rlc_pP->t_status_prohibit.ms_time_out);
-      }
+					rlc_pP->nb_bytes_requested_by_mac,rlc_pP->t_status_prohibit.ms_time_out,(rlc_pP->status_requested & RLC_AM_STATUS_TRIGGERED_DELAYED));
     }
 
-    /*while ((rlc_pP->nb_bytes_requested_by_mac > 0) && (stay_on_this_list)) {
-        mem_block_t* pdu = list_get_head(&rlc_pP->control_pdu_list);
-        if (pdu != NULL {
-            if ( ((rlc_am_tx_control_pdu_management_t*)(pdu->data))->size <= rlc_pP->nb_bytes_requested_by_mac) {
-                pdu = list_remove_head(&rlc_pP->control_pdu_list);
-    #if TRACE_RLC_AM_TX
-                msg ("[FRAME %5u][%s][RLC_AM][MOD %u/%u][RB %u] SEND CONTROL PDU\n", ((rlc_am_entity_t *) rlc_pP)->module_id,((rlc_am_entity_t *) rlc_pP)->rb_id, ctxt_pP->frame);
-    #endif
-                list_add_tail_eurecom (pdu, &rlc_pP->pdus_to_mac_layer);
-                rlc_pP->nb_bytes_requested_by_mac = rlc_pP->nb_bytes_requested_by_mac - ((rlc_am_tx_control_pdu_management_t*)(pdu->data))->size;
-            } else {
-              stay_on_this_list = 0;
-            }
-        } else {
-            stay_on_this_list = 0;
-        }
-    }*/
     // THEN TRY TO SEND RETRANS PDU
-    if (rlc_pP->first_retrans_pdu_sn >= 0) {
-      rlc_am_tx_data_pdu_management_t* tx_data_pdu_management;
+      if ((rlc_pP->retrans_num_bytes_to_retransmit) && (rlc_pP->nb_bytes_requested_by_mac > 2)) {
 
-      // tx min 3 bytes because of the size of the RLC header
-      while ((rlc_pP->nb_bytes_requested_by_mac > 2) &&
-             (rlc_pP->first_retrans_pdu_sn  >= 0) &&
-             (rlc_pP->first_retrans_pdu_sn != rlc_pP->vt_s)) {
+      /* Get 1 AM data PDU or PDU segment to retransmit */
+      mem_block_t* pdu_retx = rlc_am_get_pdu_to_retransmit(ctxt_pP, rlc_pP);
 
-        tx_data_pdu_management = &rlc_pP->pdu_retrans_buffer[rlc_pP->first_retrans_pdu_sn];
+      if (pdu_retx != NULL) {
+    	  list_add_tail_eurecom (pdu_retx, &rlc_pP->pdus_to_mac_layer);
 
-        if ((tx_data_pdu_management->header_and_payload_size <= rlc_pP->nb_bytes_requested_by_mac) && (tx_data_pdu_management->retx_count >= 0)
-            && (tx_data_pdu_management->nack_so_start == 0) && (tx_data_pdu_management->nack_so_stop == 0x7FFF)) {
-          mem_block_t* copy = rlc_am_retransmit_get_copy(ctxt_pP, rlc_pP, rlc_pP->first_retrans_pdu_sn);
-          LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" RE-SEND DATA PDU SN %04d   %d BYTES\n",
-                PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-                rlc_pP->first_retrans_pdu_sn,
-                tx_data_pdu_management->header_and_payload_size);
-          rlc_pP->stat_tx_data_pdu                   += 1;
-          rlc_pP->stat_tx_retransmit_pdu             += 1;
-          rlc_pP->stat_tx_retransmit_pdu_by_status   += 1;
-          rlc_pP->stat_tx_data_bytes                 += tx_data_pdu_management->header_and_payload_size;
-          rlc_pP->stat_tx_retransmit_bytes           += tx_data_pdu_management->header_and_payload_size;
-          rlc_pP->stat_tx_retransmit_bytes_by_status += tx_data_pdu_management->header_and_payload_size;
-
-          list_add_tail_eurecom (copy, &rlc_pP->pdus_to_mac_layer);
-          rlc_pP->nb_bytes_requested_by_mac = rlc_pP->nb_bytes_requested_by_mac - tx_data_pdu_management->header_and_payload_size;
-
-          tx_data_pdu_management->retx_count += 1;
           return;
-        } else if ((tx_data_pdu_management->retx_count >= 0) && (rlc_pP->nb_bytes_requested_by_mac >= RLC_AM_MIN_SEGMENT_SIZE_REQUEST)) {
-          LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" SEND SEGMENT OF DATA PDU SN %04d MAC BYTES %d SIZE %d RTX COUNT %d  nack_so_start %d nack_so_stop %04X(hex)\n",
-                PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-                rlc_pP->first_retrans_pdu_sn,
-                rlc_pP->nb_bytes_requested_by_mac,
-                tx_data_pdu_management->header_and_payload_size,
-                tx_data_pdu_management->retx_count,
-                tx_data_pdu_management->nack_so_start,
-                tx_data_pdu_management->nack_so_stop);
-
-          mem_block_t* copy = rlc_am_retransmit_get_subsegment(
-                                ctxt_pP,
-                                rlc_pP,
-                                rlc_pP->first_retrans_pdu_sn,
-                                &rlc_pP->nb_bytes_requested_by_mac);
-          LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" SEND SEGMENT OF DATA PDU SN %04d (NEW SO %05d)\n",
-                PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-                rlc_pP->first_retrans_pdu_sn,
-                tx_data_pdu_management->nack_so_start);
-
-          rlc_pP->stat_tx_data_pdu                   += 1;
-          rlc_pP->stat_tx_retransmit_pdu             += 1;
-          rlc_pP->stat_tx_retransmit_pdu_by_status   += 1;
-          rlc_pP->stat_tx_data_bytes                 += (((struct mac_tb_req*)(copy->data))->tb_size);
-          rlc_pP->stat_tx_retransmit_bytes           += (((struct mac_tb_req*)(copy->data))->tb_size);
-          rlc_pP->stat_tx_retransmit_bytes_by_status += (((struct mac_tb_req*)(copy->data))->tb_size);
-          list_add_tail_eurecom (copy, &rlc_pP->pdus_to_mac_layer);
-        } else {
-          break;
+        }
         }
 
-        // update first_retrans_pdu_sn
-        while ((rlc_pP->first_retrans_pdu_sn != rlc_pP->vt_s) &&
-               (!(rlc_pP->pdu_retrans_buffer[rlc_pP->first_retrans_pdu_sn].flags.retransmit))) {
-          rlc_pP->first_retrans_pdu_sn = (rlc_pP->first_retrans_pdu_sn+1) & RLC_AM_SN_MASK;
-          LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" UPDATED first_retrans_pdu_sn SN %04d\n",
-                PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-                rlc_pP->first_retrans_pdu_sn);
-        };
-
-        display_flag = 1;
-
-        if (rlc_pP->first_retrans_pdu_sn == rlc_pP->vt_s) {
-          // no more pdu to be retransmited
-          rlc_pP->first_retrans_pdu_sn = -1;
-          display_flag = 0;
-          LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" CLEAR first_retrans_pdu_sn\n",
-                PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
-        }
-
-        if (display_flag > 0) {
-          LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" UPDATED first_retrans_pdu_sn %04d\n",
-                PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-                rlc_pP->first_retrans_pdu_sn);
-        }
-
-        return;
-
-        /* ONLY ONE TB PER TTI
-                            if ((tx_data_pdu_management->retx_count >= 0) && (rlc_pP->nb_bytes_requested_by_mac < RLC_AM_MIN_SEGMENT_SIZE_REQUEST)) {
-        #if TRACE_RLC_AM_TX
-                              msg ("[FRAME %5u][%s][RLC_AM][MOD %u/%u][RB %u] BREAK LOOP ON RETRANSMISSION BECAUSE ONLY %d BYTES ALLOWED TO TRANSMIT BY MAC\n",ctxt_pP->frame,  ((rlc_am_entity_t *) rlc_pP)->module_id,((rlc_am_entity_t *) rlc_pP)->rb_id, rlc_pP->nb_bytes_requested_by_mac);
-        #endif
-                              break;
-                            }*/
-      }
-    }
-
-    if ((rlc_pP->nb_bytes_requested_by_mac > 2) && (rlc_pP->vt_s != rlc_pP->vt_ms)) {
+    // THEN TRY TO SEND NEW DATA PDU
+    if ((rlc_pP->nb_bytes_requested_by_mac > 2) && (rlc_pP->sdu_buffer_occupancy) && (rlc_pP->vt_s != rlc_pP->vt_ms)) {
       rlc_am_segment_10(ctxt_pP, rlc_pP);
       list_add_list (&rlc_pP->segmentation_pdu_list, &rlc_pP->pdus_to_mac_layer);
 
@@ -481,29 +477,6 @@ rlc_am_get_pdus (
       }
     }
 
-    if ((rlc_pP->pdus_to_mac_layer.head == NULL) &&
-        (rlc_am_is_timer_poll_retransmit_timed_out(ctxt_pP, rlc_pP)) &&
-        (rlc_pP->nb_bytes_requested_by_mac > 2)) {
-      rlc_am_retransmit_any_pdu(ctxt_pP, rlc_pP);
-      return;
-    } else {
-      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" COULD NOT RETRANSMIT ANY PDU BECAUSE ",
-            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
-
-      if (rlc_pP->pdus_to_mac_layer.head != NULL) {
-        LOG_D(RLC, "THERE ARE SOME PDUS READY TO TRANSMIT ");
-      }
-
-      if (!(rlc_am_is_timer_poll_retransmit_timed_out(ctxt_pP, rlc_pP))) {
-        LOG_D(RLC, "TIMER POLL DID NOT TIMED OUT (RUNNING = %d NUM PDUS TO RETRANS = %d  NUM BYTES TO RETRANS = %d) ", rlc_pP->t_poll_retransmit.running,
-              rlc_pP->retrans_num_pdus, rlc_pP->retrans_num_bytes_to_retransmit);
-      }
-
-      if (rlc_pP->nb_bytes_requested_by_mac <= 2) {
-        LOG_D(RLC, "NUM BYTES REQUESTED BY MAC = %d", rlc_pP->nb_bytes_requested_by_mac);
-      }
-      LOG_D(RLC, "\n");
-    }
 
     break;
 
@@ -526,7 +499,7 @@ rlc_am_rx (
   switch (rlc->protocol_state) {
 
   case RLC_NULL_STATE:
-    LOG_N(RLC, PROTOCOL_RLC_AM_CTXT_FMT" ERROR MAC_DATA_IND IN RLC_NULL_STATE\n", arg_pP);
+    LOG_N(RLC, PROTOCOL_RLC_AM_CTXT_FMT" ERROR MAC_DATA_IND IN RLC_NULL_STATE\n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP, rlc));
     list_free (&data_indP.data);
     break;
 
@@ -535,7 +508,7 @@ rlc_am_rx (
     break;
 
   default:
-    LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" TX UNKNOWN PROTOCOL STATE 0x%02X\n", rlc, rlc->protocol_state);
+    LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" TX UNKNOWN PROTOCOL STATE 0x%02X\n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP, rlc), rlc->protocol_state);
   }
 }
 
@@ -545,7 +518,8 @@ rlc_am_mac_status_indication (
   const protocol_ctxt_t* const ctxt_pP,
   void * const                 rlc_pP,
   const uint16_t               tb_sizeP,
-  struct mac_status_ind        tx_statusP)
+  struct mac_status_ind        tx_statusP,
+  const eNB_flag_t enb_flagP)
 {
   struct mac_status_resp  status_resp;
   uint16_t  sdu_size = 0;
@@ -560,17 +534,46 @@ rlc_am_mac_status_indication (
   status_resp.head_sdu_is_segmented            = 0;
   status_resp.rlc_info.rlc_protocol_state = rlc->protocol_state;
 
-  if (rlc->last_frame_status_indication != ctxt_pP->frame) {
+  /* TODO: remove this hack. Problem is: there is a race.
+   * UE comes. SRB2 is configured via message to RRC.
+   * At some point the RLC AM is created but not configured yet.
+   * At this moment (I think) MAC calls mac_rlc_status_ind
+   * which calls this function. But the init was not finished yet
+   * and we have a crash below when testing mem_block != NULL.
+   */
+  if (rlc->input_sdus == NULL) return status_resp;
+
+  if (rlc->last_absolute_subframe_status_indication != (PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP))) {
     rlc_am_check_timer_poll_retransmit(ctxt_pP, rlc);
     rlc_am_check_timer_reordering(ctxt_pP, rlc);
     rlc_am_check_timer_status_prohibit(ctxt_pP, rlc);
   }
 
-  rlc->last_frame_status_indication = ctxt_pP->frame;
+  rlc->last_absolute_subframe_status_indication = PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP);
 
   rlc->nb_bytes_requested_by_mac = tb_sizeP;
 
   status_resp.buffer_occupancy_in_bytes = rlc_am_get_buffer_occupancy_in_bytes(ctxt_pP, rlc);
+
+  // For eNB scheduler : Add Max RLC header size for new PDU
+  // For UE : do not add RLC header part to be compliant with BSR definition in 36.321
+  if (enb_flagP == ENB_FLAG_YES) {
+	  uint32_t max_li_overhead = 0;
+	  uint32_t header_overhead = 0;
+
+	   if (rlc->nb_sdu_no_segmented > 1) {
+	   	/* This computation assumes there is no SDU with size greater than 2047 bytes, otherwise a new PDU must be built except for LI15 configuration from Rel12*/
+	 	  uint32_t num_li = rlc->nb_sdu_no_segmented - 1;
+	       max_li_overhead = num_li + (num_li >> 1) + (num_li & 1);
+	   }
+
+	   if (rlc->sdu_buffer_occupancy > 0) {
+	     header_overhead = 2;
+	   }
+
+	   status_resp.buffer_occupancy_in_bytes += (header_overhead + max_li_overhead);
+  }
+
 
   if ((rlc->input_sdus[rlc->current_sdu_index].mem_block != NULL) && (status_resp.buffer_occupancy_in_bytes)) {
 
@@ -592,32 +595,16 @@ rlc_am_mac_status_indication (
     }
 
   } else {
-	  if (rlc_am_is_timer_poll_retransmit_timed_out(ctxt_pP, rlc)) {
-		  if ((status_resp.buffer_occupancy_in_bytes == 0) && (rlc->input_sdus[rlc->current_sdu_index].mem_block == NULL) && (rlc->nb_sdu > 0)) {
-			  // force BO to be > 0
-			  rlc_sn_t             sn           = (rlc->vt_s - 1) & RLC_AM_SN_MASK;
-			  rlc_sn_t             sn_end       = (rlc->vt_a - 1) & RLC_AM_SN_MASK;
-			  int                  found_pdu    = 0;
-			  rlc_sn_t             found_pdu_sn = 0; // avoid warning
-                          (void)found_pdu_sn; /* avoid gcc warning "set but not used" */
-
-
-			  while (sn != sn_end) {
-			    if (rlc->pdu_retrans_buffer[sn].mem_block != NULL) {
-			      if (!found_pdu) {
-			        found_pdu = 1;
-			        found_pdu_sn = sn;
-			      }
-			      status_resp.buffer_occupancy_in_bytes = rlc->pdu_retrans_buffer[sn].header_and_payload_size;
-			      status_resp.buffer_occupancy_in_pdus  = rlc->nb_sdu;
-			      status_resp.head_sdu_remaining_size_to_send  = status_resp.buffer_occupancy_in_bytes;
-			      // TODO head_sdu_is_segmented
-			      break;
+	  /* Not so many possibilities ... */
+	  /* either buffer_occupancy_in_bytes = 0 and that's it */
+	  /* or we have segmented all received SDUs and buffer occupancy is then made of retransmissions and/or status pdu pending */
+	  /* then consider only retransmission buffer for the specific BO values used by eNB scheduler (not used up to now...) */
+	  if (rlc->retrans_num_bytes_to_retransmit) {
+		  status_resp.buffer_occupancy_in_pdus = rlc->retrans_num_pdus;
+		  status_resp.head_sdu_remaining_size_to_send = rlc->retrans_num_bytes_to_retransmit;
+		  status_resp.head_sdu_is_segmented = 1;
 			    }
 			  }
-		  }
-	  }
-  }
 #if MESSAGE_CHART_GENERATOR_RLC_MAC
   MSC_LOG_RX_MESSAGE(
     (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
@@ -660,11 +647,23 @@ rlc_am_mac_status_indication (
 #endif
   return status_resp;
 }
+
+//-----------------------------------------------------------------------------
+void
+rlc_am_set_nb_bytes_requested_by_mac (
+  void * const            rlc_pP,
+  const tb_size_t         tb_sizeP
+)
+{
+	((rlc_am_entity_t *) rlc_pP)->nb_bytes_requested_by_mac = tb_sizeP;
+}
+
 //-----------------------------------------------------------------------------
 struct mac_data_req
 rlc_am_mac_data_request (
   const protocol_ctxt_t* const ctxt_pP,
-  void * const                 rlc_pP
+  void * const                 rlc_pP,
+  const eNB_flag_t        enb_flagP
 )
 {
   struct mac_data_req data_req;
@@ -702,7 +701,10 @@ rlc_am_mac_data_request (
           data_req.data.nb_elements);
   }
 
+  if (enb_flagP) {
+	  // redundant in UE MAC Tx processing and not used in eNB ...
   data_req.buffer_occupancy_in_bytes   = rlc_am_get_buffer_occupancy_in_bytes(ctxt_pP, l_rlc_p);
+  }
   data_req.rlc_info.rlc_protocol_state = l_rlc_p->protocol_state;
 
 #if TRACE_RLC_AM_PDU || MESSAGE_CHART_GENERATOR
@@ -1249,14 +1251,19 @@ rlc_am_data_req (
     l_rlc_p->input_sdus[l_rlc_p->next_sdu_index].flags.no_new_sdu_segmented_in_last_pdu = 0;
     //l_rlc_p->input_sdus[l_rlc_p->next_sdu_index].li_index_for_discard = -1;
     l_rlc_p->next_sdu_index = (l_rlc_p->next_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
-    LOG_I(RLC, PROTOCOL_RLC_AM_CTXT_FMT" RLC_AM_DATA_REQ size %d Bytes,  NB SDU %d current_sdu_index=%d next_sdu_index=%d conf %d mui %d\n",
+    if (l_rlc_p->channel_id <3)
+    {
+    LOG_I(RLC, PROTOCOL_RLC_AM_CTXT_FMT" RLC_AM_DATA_REQ size %d Bytes,  NB SDU %d current_sdu_index=%d next_sdu_index=%d conf %d mui %d vtA %d vtS %d\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,l_rlc_p),
           data_size,
           l_rlc_p->nb_sdu,
           l_rlc_p->current_sdu_index,
           l_rlc_p->next_sdu_index,
           conf,
-          mui);
+          mui,
+		  l_rlc_p->vt_a,
+		  l_rlc_p->vt_s);
+    }
   } else {
 #if MESSAGE_CHART_GENERATOR
     mui         = ((struct rlc_am_data_req*) (sdu_pP->data))->mui;
@@ -1273,17 +1280,19 @@ rlc_am_data_req (
       data_size,
       mui);
 #endif
-    LOG_W(RLC, PROTOCOL_RLC_AM_CTXT_FMT" RLC_AM_DATA_REQ BUFFER FULL, NB SDU %d current_sdu_index=%d next_sdu_index=%d size_input_sdus_buffer=%d\n",
+    LOG_W(RLC, PROTOCOL_RLC_AM_CTXT_FMT" RLC_AM_DATA_REQ BUFFER FULL, NB SDU %d current_sdu_index=%d next_sdu_index=%d size_input_sdus_buffer=%d vtA=%d vtS=%d\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,l_rlc_p),
           l_rlc_p->nb_sdu,
           l_rlc_p->current_sdu_index,
           l_rlc_p->next_sdu_index,
-          RLC_AM_SDU_CONTROL_BUFFER_SIZE);
+          RLC_AM_SDU_CONTROL_BUFFER_SIZE,
+		  l_rlc_p->vt_a,
+		  l_rlc_p->vt_s);
     LOG_W(RLC, "                                        input_sdus[].mem_block=%p next input_sdus[].flags.segmented=%d\n",
           l_rlc_p->input_sdus[l_rlc_p->next_sdu_index].mem_block, l_rlc_p->input_sdus[l_rlc_p->next_sdu_index].flags.segmented);
     l_rlc_p->stat_tx_pdcp_sdu_discarded   += 1;
     l_rlc_p->stat_tx_pdcp_bytes_discarded += ((struct rlc_am_data_req *) (sdu_pP->data))->data_size;
-    free_mem_block (sdu_pP);
+    free_mem_block (sdu_pP, __func__);
 #if STOP_ON_IP_TRAFFIC_OVERLOAD
     AssertFatal(0, PROTOCOL_RLC_AM_CTXT_FMT" RLC_AM_DATA_REQ size %d Bytes, SDU DROPPED, INPUT BUFFER OVERFLOW NB SDU %d current_sdu_index=%d next_sdu_index=%d \n",
                 PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,l_rlc_p),

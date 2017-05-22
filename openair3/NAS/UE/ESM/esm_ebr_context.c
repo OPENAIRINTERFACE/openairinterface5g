@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 Source      esm_ebr_context.h
 
@@ -54,6 +47,7 @@ Description Defines functions used to handle EPS bearer contexts.
 #include "esm_ebr_context.h"
 
 #include "emm_sap.h"
+#include "system.h"
 
 #if defined(ENABLE_ITTI)
 # include "assertions.h"
@@ -89,36 +83,33 @@ static int _esm_ebr_context_check_precedence(const network_tft_t *,
  ** Description: Creates a new EPS bearer context to the PDN with the spe- **
  **      cified PDN connection identifier                          **
  **                                                                        **
- ** Inputs:  ueid:      UE identifier                              **
+ ** Inputs: **
  **      pid:       PDN connection identifier                  **
  **      ebi:       EPS bearer identity                        **
  **      is_default:    TRUE if the new bearer is a default EPS    **
  **             bearer context                             **
  **      esm_qos:   EPS bearer level QoS parameters            **
  **      tft:       Traffic flow template parameters           **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The EPS bearer identity of the default EPS **
  **             bearer associated to the new EPS bearer    **
  **             context if successfully created;           **
  **             UNASSIGN EPS bearer value otherwise.       **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ***************************************************************************/
 int esm_ebr_context_create(
-
+  esm_data_t *esm_data, int ueid,
   int pid, int ebi, int is_default,
   const network_qos_t *qos, const network_tft_t *tft)
 {
   int                 bid     = 0;
   esm_data_context_t *esm_ctx = NULL;
   esm_pdn_t          *pdn     = NULL;
-  //unsigned int        ueid    = 0;
 
   LOG_FUNC_IN;
 
-  esm_ctx = &_esm_data;
+  esm_ctx = esm_data;
 
   bid = ESM_DATA_EPS_BEARER_MAX;
 
@@ -216,7 +207,7 @@ int esm_ebr_context_create(
            char          *netmask      = NULL;
            char           broadcast[INET_ADDRSTRLEN];
            struct in_addr in_addr;
-           char           command_line[128];
+           char           command_line[500];
            int            res;
 
            switch (pdn->type) {
@@ -282,15 +273,32 @@ int esm_ebr_context_create(
              }
 
              res = sprintf(command_line,
-                           "ifconfig oip1 %s netmask %s broadcast %s",
-                           ipv4_addr, netmask, broadcast);
-             (void)res; /* avoid gcc warning "set but not used" */
-             //                            AssertFatal((res > 0) && (res < 128),
-             //                                    "error in system command line");
+                           "ifconfig oip%d %s netmask %s broadcast %s up && "
+                           "ip rule add from %s/32 table %d && "
+                           "ip rule add to %s/32 table %d && "
+                           "ip route add default dev oip%d table %d",
+                           ueid + 1, ipv4_addr, netmask, broadcast,
+                           ipv4_addr, ueid + 201,
+                           ipv4_addr, ueid + 201,
+                           ueid + 1, ueid + 201);
+             if ( res<0 ) {
+                LOG_TRACE(WARNING, "ESM-PROC  - Failed to system command string");
+             }
              LOG_TRACE(INFO, "ESM-PROC  - executing %s ",
                        command_line);
 
-             if (system(command_line)) ; /* TODO: what to do? */
+             /* Calling system() here disrupts UE's realtime processing in some cases.
+              * This may be because of the call to fork(), which, for some
+              * unidentified reason, interacts badly with other (realtime) threads.
+              * background_system() is a replacement mechanism relying on a
+              * background process that does the system() and reports result to
+              * the parent process (lte-softmodem, oaisim, ...). The background
+              * process is created very early in the life of the parent process.
+              * The processes interact through standard pipes. See
+              * common/utils/system.c for details.
+              */
+             if (background_system(command_line) != 0)
+               LOG_TRACE(ERROR, "ESM-PROC - failed command '%s'", command_line);
 
              break;
 
@@ -323,9 +331,8 @@ int esm_ebr_context_create(
  ** Description: Releases EPS bearer context entry previously allocated    **
  **      to the EPS bearer with the specified EPS bearer identity  **
  **                                                                        **
- ** Inputs:  ueid:      UE identifier                              **
+ ** Inputs:   **
  **      ebi:       EPS bearer identity                        **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     pid:       Identifier of the PDN connection entry the **
  **             EPS bearer context belongs to              **
@@ -334,22 +341,20 @@ int esm_ebr_context_create(
  **      Return:    The EPS bearer identity associated to the  **
  **             EPS bearer context if successfully relea-  **
  **             sed; UNASSIGN EPS bearer value otherwise.  **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ***************************************************************************/
-int esm_ebr_context_release(
-
+int esm_ebr_context_release(nas_user_t *user,
   int ebi, int *pid, int *bid)
 {
   int found = FALSE;
   esm_pdn_t *pdn = NULL;
   esm_data_context_t *esm_ctx;
-
-  //unsigned int ueid = 0;
+  esm_ebr_data_t *esm_ebr_data = user->esm_ebr_data;
+  user_api_id_t *user_api_id = user->user_api_id;
 
   LOG_FUNC_IN;
 
-  esm_ctx = &_esm_data;
+  esm_ctx = user->esm_data;
 
   if (ebi != ESM_EBI_UNASSIGNED) {
     /*
@@ -463,11 +468,11 @@ int esm_ebr_context_release(
           }
 
           /* Set the EPS bearer context state to INACTIVE */
-          (void) esm_ebr_set_status(pdn->bearer[i]->ebi,
+          esm_ebr_set_status(user_api_id, esm_ebr_data, pdn->bearer[i]->ebi,
                                     ESM_EBR_INACTIVE, TRUE);
 
           /* Release EPS bearer data */
-          (void) esm_ebr_release(pdn->bearer[i]->ebi);
+          esm_ebr_release(esm_ebr_data, pdn->bearer[i]->ebi);
 
           // esm_ebr_release()
           /* Release dedicated EPS bearer data */
@@ -499,7 +504,7 @@ int esm_ebr_context_release(
       emm_sap_t emm_sap;
       emm_sap.primitive = EMMESM_ESTABLISH_CNF;
       emm_sap.u.emm_esm.u.establish.is_attached = FALSE;
-      (void) emm_sap_send(&emm_sap);
+      (void) emm_sap_send(user, &emm_sap);
     }
     /* 3GPP TS 24.301, section 6.4.4.3, 6.4.4.6
      * If due to the EPS bearer context deactivation only the PDN
@@ -512,7 +517,7 @@ int esm_ebr_context_release(
       emm_sap.primitive = EMMESM_ESTABLISH_CNF;
       emm_sap.u.emm_esm.u.establish.is_attached = TRUE;
       emm_sap.u.emm_esm.u.establish.is_emergency = TRUE;
-      (void) emm_sap_send(&emm_sap);
+      (void) emm_sap_send(user, &emm_sap);
     }
 
     LOG_FUNC_RETURN (ebi);
@@ -531,7 +536,6 @@ int esm_ebr_context_release(
  **                                                                        **
  ** Inputs:  ebi:       The EPS bearer identity of the default EPS **
  **             bearer context                             **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The identifier of the PDN connection entry **
@@ -540,22 +544,22 @@ int esm_ebr_context_release(
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_ebr_context_get_pid(int ebi)
+int esm_ebr_context_get_pid(esm_data_t *esm_data, int ebi)
 {
   LOG_FUNC_IN;
 
   int pid;
 
   for (pid = 0; pid < ESM_DATA_PDN_MAX; pid++) {
-    if (_esm_data.pdn[pid].data == NULL) {
+    if (esm_data->pdn[pid].data == NULL) {
       continue;
     }
 
-    if (_esm_data.pdn[pid].data->bearer[0] == NULL) {
+    if (esm_data->pdn[pid].data->bearer[0] == NULL) {
       continue;
     }
 
-    if (_esm_data.pdn[pid].data->bearer[0]->ebi == ebi) {
+    if (esm_data->pdn[pid].data->bearer[0]->ebi == ebi) {
       break;
     }
   }
@@ -583,14 +587,13 @@ int esm_ebr_context_get_pid(int ebi)
  **      tft:       The traffic flow template (set of packet   **
  **             filters) to be checked                     **
  **      operation: Traffic flow template operation            **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_ebr_context_check_tft(int pid, int ebi,
+int esm_ebr_context_check_tft(esm_data_t *esm_data, int pid, int ebi,
                               const network_tft_t *tft,
                               esm_ebr_context_tft_t operation)
 {
@@ -600,14 +603,14 @@ int esm_ebr_context_check_tft(int pid, int ebi,
   int i;
 
   if (pid < ESM_DATA_PDN_MAX) {
-    if (pid != _esm_data.pdn[pid].pid) {
+    if (pid != esm_data->pdn[pid].pid) {
       LOG_TRACE(ERROR, "ESM-PROC  - PDN connection identifier %d "
                 "is not valid", pid);
-    } else if (_esm_data.pdn[pid].data == NULL) {
+    } else if (esm_data->pdn[pid].data == NULL) {
       LOG_TRACE(ERROR, "ESM-PROC  - PDN connection %d has not been "
                 "allocated", pid);
     } else if (operation == ESM_EBR_CONTEXT_TFT_CREATE) {
-      esm_pdn_t *pdn = _esm_data.pdn[pid].data;
+      esm_pdn_t *pdn = esm_data->pdn[pid].data;
 
       /* For each EPS bearer context associated to the PDN connection */
       for (i = 0; i < pdn->n_bearers; i++) {

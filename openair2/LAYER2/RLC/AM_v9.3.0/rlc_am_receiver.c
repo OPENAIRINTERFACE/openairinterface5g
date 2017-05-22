@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #define RLC_AM_MODULE 1
 #define RLC_AM_RECEIVER_C 1
 #include "platform_types.h"
@@ -38,6 +31,7 @@
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
 
+
 //-----------------------------------------------------------------------------
 signed int
 rlc_am_get_data_pdu_infos(
@@ -47,14 +41,15 @@ rlc_am_get_data_pdu_infos(
   int16_t total_sizeP,
   rlc_am_pdu_info_t* pdu_info_pP)
 {
-  memset(pdu_info_pP, 0, sizeof (rlc_am_pdu_info_t));
+    memset(pdu_info_pP, 0, sizeof (rlc_am_pdu_info_t));
 
-  int16_t          sum_li = 0;
-  pdu_info_pP->d_c = header_pP->b1 >> 7;
-  pdu_info_pP->num_li = 0;
+    int16_t          sum_li = 0;
+    pdu_info_pP->d_c = header_pP->b1 >> 7;
+    pdu_info_pP->num_li = 0;
 
 
-  if (pdu_info_pP->d_c) {
+    AssertFatal (pdu_info_pP->d_c != 0, "RLC AM Rx PDU Data D/C Header Error LcId=%d\n", rlc_pP->channel_id);
+
     pdu_info_pP->rf  = (header_pP->b1 >> 6) & 0x01;
     pdu_info_pP->p   = (header_pP->b1 >> 5) & 0x01;
     pdu_info_pP->fi  = (header_pP->b1 >> 3) & 0x03;
@@ -124,12 +119,6 @@ rlc_am_get_data_pdu_infos(
     }
 
     return 0;
-  } else {
-    LOG_W(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[GET DATA PDU INFO]  SN %04d ERROR CONTROL PDU ",
-          PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-          pdu_info_pP->sn);
-    return -1;
-  }
 }
 //-----------------------------------------------------------------------------
 void
@@ -188,26 +177,22 @@ rlc_am_rx_update_vr_ms(
     do {
       pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
 
-      if (((rlc_am_rx_pdu_management_t*)(cursor_p->data))->all_segments_received == 0) {
+      if ((((rlc_am_rx_pdu_management_t*)(cursor_p->data))->all_segments_received == 0) ||
+          (rlc_pP->vr_ms != pdu_info_cursor_p->sn)) {
+
 #if TRACE_RLC_AM_RX
         LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[UPDATE VR(MS)] UPDATED VR(MS) %04d -> %04d\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
               rlc_pP->vr_ms, pdu_info_cursor_p->sn);
 #endif
-        rlc_pP->vr_ms = pdu_info_cursor_p->sn;
+
         return;
       }
 
+      rlc_pP->vr_ms = RLC_AM_NEXT_SN(pdu_info_cursor_p->sn);
       cursor_p = cursor_p->next;
-    } while (cursor_p != NULL);
+    } while ((cursor_p != NULL) && (rlc_pP->vr_ms != rlc_pP->vr_h));
 
-#if TRACE_RLC_AM_RX
-    LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[UPDATE VR(MS)] UPDATED VR(MS) %04d -> %04d\n",
-          PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-          rlc_pP->vr_ms,
-          (pdu_info_cursor_p->sn + 1)  & RLC_AM_SN_MASK);
-#endif
-    rlc_pP->vr_ms = (pdu_info_cursor_p->sn + 1)  & RLC_AM_SN_MASK;
   }
 }
 // assumed the sn of the tb_p is equal to VR(R)
@@ -329,34 +314,30 @@ rlc_am_receive_process_data_pdu (
   //             - discard the duplicate byte segments.
   rlc_am_pdu_info_t*  pdu_info_p         = &((rlc_am_rx_pdu_management_t*)(tb_pP->data))->pdu_info;
   rlc_am_pdu_sn_10_t* rlc_am_pdu_sn_10_p = (rlc_am_pdu_sn_10_t*)first_byte_pP;
+  rlc_am_rx_pdu_status_t pdu_status		= RLC_AM_DATA_PDU_STATUS_OK;
+  boolean_t		reassemble = false;
 
   if (rlc_am_get_data_pdu_infos(ctxt_pP,rlc_pP, rlc_am_pdu_sn_10_p, tb_size_in_bytesP, pdu_info_p) >= 0) {
 
     ((rlc_am_rx_pdu_management_t*)(tb_pP->data))->all_segments_received = 0;
 
-    if (rlc_am_in_rx_window(ctxt_pP, rlc_pP, pdu_info_p->sn)) {
+      if (RLC_AM_SN_IN_WINDOW(pdu_info_p->sn, rlc_pP->vr_r)) {
 
-      if (pdu_info_p->p) {
-        LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  POLL BIT SET, STATUS REQUESTED:\n",
-              PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
-        rlc_pP->status_requested = 1;
-      }
-
-      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU] VR(R) %04d VR(H) %04d VR(MR) %04d VR(MS) %04d VR(X) %04d\n",
+      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SN=%04d] VR(R) %04d VR(H) %04d VR(MR) %04d VR(MS) %04d VR(X) %04d\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
+            pdu_info_p->sn,
             rlc_pP->vr_r,
             rlc_pP->vr_h,
             rlc_pP->vr_mr,
             rlc_pP->vr_ms,
             rlc_pP->vr_x);
 
-      if (rlc_am_rx_list_insert_pdu(ctxt_pP, rlc_pP,tb_pP) < 0) {
+      pdu_status = rlc_am_rx_list_check_duplicate_insert_pdu(ctxt_pP, rlc_pP,tb_pP);
+      if (pdu_status != RLC_AM_DATA_PDU_STATUS_OK) {
         rlc_pP->stat_rx_data_pdu_dropped     += 1;
         rlc_pP->stat_rx_data_bytes_dropped   += tb_size_in_bytesP;
-        free_mem_block (tb_pP);
-        LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  PDU DISCARDED, STATUS REQUESTED:\n",
-              PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
-        rlc_pP->status_requested = 1;
+        LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  PDU DISCARDED CAUSE=%d SN=%d\n",
+              PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_status,pdu_info_p->sn);
 #if RLC_STOP_ON_LOST_PDU
         AssertFatal( 0 == 1,
                      PROTOCOL_RLC_AM_CTXT_FMT" LOST PDU DETECTED\n",
@@ -401,12 +382,15 @@ rlc_am_receive_process_data_pdu (
         rlc_am_rx_list_display(rlc_pP, "rlc_am_receive_process_data_pdu AFTER INSERTION ");
 #endif
 
-        if (rlc_am_sn_gte_vr_h(ctxt_pP, rlc_pP, pdu_info_p->sn) > 0) {
-          rlc_pP->vr_h = (pdu_info_p->sn + 1) & RLC_AM_SN_MASK;
+        /* 1) Update vrH if sn >= vrH */
+        if (RLC_AM_DIFF_SN(pdu_info_p->sn,rlc_pP->vr_r) >= RLC_AM_DIFF_SN(rlc_pP->vr_h,rlc_pP->vr_r))
+        {
+        	rlc_pP->vr_h = RLC_AM_NEXT_SN(pdu_info_p->sn);
         }
 
         rlc_am_rx_check_all_byte_segments(ctxt_pP, rlc_pP, tb_pP);
 
+        /* 2) Reordering Window Processing: Update vr_ms if sn = vr_ms and all bytes received for sn */
         if ((pdu_info_p->sn == rlc_pP->vr_ms) && (((rlc_am_rx_pdu_management_t*)(tb_pP->data))->all_segments_received)) {
           rlc_am_rx_update_vr_ms(ctxt_pP, rlc_pP,  tb_pP);
         }
@@ -417,38 +401,114 @@ rlc_am_receive_process_data_pdu (
             rlc_pP->vr_mr = (rlc_pP->vr_r + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
           }
 
-          rlc_am_rx_list_reassemble_rlc_sdus(ctxt_pP, rlc_pP);
+          reassemble = rlc_am_rx_check_vr_reassemble(ctxt_pP, rlc_pP);
+          //TODO : optimization : check whether a reassembly is needed by looking at LI, FI, SO, etc...
+
         }
 
-        if (rlc_pP->t_reordering.running) {
-          if ((rlc_pP->vr_x == rlc_pP->vr_r) || ((rlc_am_in_rx_window(ctxt_pP, rlc_pP, pdu_info_p->sn) == 0) && (rlc_pP->vr_x != rlc_pP->vr_mr))) {
+        //FNA: fix check VrX out of receiving window
+        if ((rlc_pP->t_reordering.running) || ((rlc_pP->t_reordering.ms_duration == 0) && (rlc_pP->vr_x != RLC_SN_UNDEFINED))) {
+          if ((rlc_pP->vr_x == rlc_pP->vr_r) || (!(RLC_AM_SN_IN_WINDOW(rlc_pP->vr_x, rlc_pP->vr_r)) && (rlc_pP->vr_x != rlc_pP->vr_mr))) {
             rlc_am_stop_and_reset_timer_reordering(ctxt_pP, rlc_pP);
+            rlc_pP->vr_x = RLC_SN_UNDEFINED;
           }
         }
 
         if (!(rlc_pP->t_reordering.running)) {
           if (rlc_pP->vr_h != rlc_pP->vr_r) { // - if VR (H) > VR(R) translated to - if VR (H) != VR(R)
-            rlc_am_start_timer_reordering(ctxt_pP, rlc_pP);
             rlc_pP->vr_x = rlc_pP->vr_h;
+            if (rlc_pP->t_reordering.ms_duration != 0) {
+                rlc_am_start_timer_reordering(ctxt_pP, rlc_pP);
+            }
+            else {
+            	/* specific case for no timer reordering configured */
+            	/* reordering window directly advances with vrH */
+            	rlc_pP->vr_ms = rlc_pP->vr_h;
+
+				/* Trigger a Status and clear any existing Delay Flag */
+				RLC_AM_SET_STATUS(rlc_pP->status_requested,RLC_AM_STATUS_TRIGGERED_T_REORDERING);
+				RLC_AM_CLEAR_STATUS(rlc_pP->status_requested,RLC_AM_STATUS_TRIGGERED_DELAYED);
+				rlc_pP->sn_status_triggered_delayed = RLC_SN_UNDEFINED;
+            }
           }
         }
       }
 
-      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU] VR(R) %04d VR(H) %04d  VR(MS) %04d  VR(MR) %04d\n",
+      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU SN=%04d] NEW VR(R) %04d VR(H) %04d  VR(MS) %04d  VR(MR) %04d VR(X) %04d reassemble=%d\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
+            pdu_info_p->sn,
             rlc_pP->vr_r,
             rlc_pP->vr_h,
             rlc_pP->vr_ms,
-            rlc_pP->vr_mr);
+            rlc_pP->vr_mr,
+            rlc_pP->vr_x,
+            reassemble);
     } else {
       rlc_pP->stat_rx_data_pdu_out_of_window     += 1;
       rlc_pP->stat_rx_data_bytes_out_of_window   += tb_size_in_bytesP;
-      free_mem_block (tb_pP);
-      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  PDU OUT OF RX WINDOW, DISCARDED, STATUS REQUESTED:\n",
-            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
-      rlc_pP->status_requested = 1;
+      pdu_status = RLC_AM_DATA_PDU_STATUS_SN_OUTSIDE_WINDOW;
+      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  PDU OUT OF RX WINDOW, DISCARDED, SN=%d\n",
+            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_info_p->sn);
     }
+
+      /* 3) Check for triggering a Tx Status PDU if a poll is received or if a pending status was delayed */
+      if ((pdu_info_p->p) && (pdu_status < RLC_AM_DATA_PDU_STATUS_BUFFER_FULL)) {
+        LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  POLL BIT SET, STATUS REQUESTED:\n",
+              PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
+
+        /* Polling Info Saving for In and Out of Window PDU */
+        /* avoid multi status trigger */
+        if ((RLC_AM_GET_STATUS(rlc_pP->status_requested,RLC_AM_STATUS_TRIGGERED_DELAYED)) ||
+            !(RLC_AM_GET_STATUS(rlc_pP->status_requested,(RLC_AM_STATUS_TRIGGERED_POLL | RLC_AM_STATUS_TRIGGERED_T_REORDERING))))
+        {
+            RLC_AM_SET_STATUS(rlc_pP->status_requested,RLC_AM_STATUS_TRIGGERED_POLL);
+
+            if ((pdu_status != RLC_AM_DATA_PDU_STATUS_OK) || ((pdu_status == RLC_AM_DATA_PDU_STATUS_OK) &&
+                                                           (!(RLC_AM_SN_IN_WINDOW(pdu_info_p->sn,rlc_pP->vr_r)) ||
+                                                            (RLC_AM_DIFF_SN(pdu_info_p->sn,rlc_pP->vr_r) < RLC_AM_DIFF_SN(rlc_pP->vr_ms,rlc_pP->vr_r)))
+                                                          )
+               )
+            {
+                /* Conditions are met for sending a Status Report */
+                /* Then clear Delay Flag and reset its corresponding sn */
+                RLC_AM_CLEAR_STATUS(rlc_pP->status_requested,RLC_AM_STATUS_TRIGGERED_DELAYED);
+                rlc_pP->sn_status_triggered_delayed = RLC_SN_UNDEFINED;
+            }
+            else if (rlc_pP->sn_status_triggered_delayed == RLC_SN_UNDEFINED)
+            {
+                /* Delay status trigger if pdustatus OK and sn>= vr_ms */
+                /* Note: vr_r and vr_ms have been updated */
+                RLC_AM_SET_STATUS(rlc_pP->status_requested,RLC_AM_STATUS_TRIGGERED_DELAYED);
+                rlc_pP->sn_status_triggered_delayed = pdu_info_p->sn;
+            }
+        }
+      }
+
+      /* ReEnable a previously delayed Status Trigger if PDU discarded or */
+      /* sn no more in RxWindow due to RxWindow advance or sn < vr_ms */
+      if ((RLC_AM_GET_STATUS(rlc_pP->status_requested,RLC_AM_STATUS_TRIGGERED_DELAYED)) &&
+          (pdu_status == RLC_AM_DATA_PDU_STATUS_OK)  &&
+          (!(RLC_AM_SN_IN_WINDOW(rlc_pP->sn_status_triggered_delayed,rlc_pP->vr_r)) ||
+           (RLC_AM_DIFF_SN(rlc_pP->sn_status_triggered_delayed,rlc_pP->vr_r) < RLC_AM_DIFF_SN(rlc_pP->vr_ms,rlc_pP->vr_r)))
+         )
+      {
+          RLC_AM_CLEAR_STATUS(rlc_pP->status_requested,RLC_AM_STATUS_TRIGGERED_DELAYED);
+          rlc_pP->sn_status_triggered_delayed = RLC_SN_UNDEFINED;
+      }
+
+
   } else {
-    free_mem_block (tb_pP);
+	  pdu_status = RLC_AM_DATA_PDU_STATUS_HEADER_ERROR;
+      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  PDU DISCARDED BAD HEADER FORMAT SN=%d\n",
+            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_info_p->sn);
+  }
+
+  if (pdu_status != RLC_AM_DATA_PDU_STATUS_OK) {
+	  /* Discard received block if out of window, duplicate or header error */
+      free_mem_block (tb_pP, __func__);
+  }
+  else if (reassemble) {
+	  /* Reassemble SDUs */
+	  rlc_am_rx_list_reassemble_rlc_sdus(ctxt_pP, rlc_pP);
   }
 }

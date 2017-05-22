@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_TRANSPORT/defs.h
 * \brief data structures for PDSCH/DLSCH/PUSCH/ULSCH physical and transport channel descriptors (TX/RX)
@@ -87,11 +79,17 @@
 #if !defined(C_RNTI)
 #define C_RNTI   (rnti_t)0x1234
 #endif
-
-#define PMI_2A_11 0
+// These are the codebook indexes according to Table 6.3.4.2.3-1 of 36.211
+//1 layer
+#define PMI_2A_11  0
 #define PMI_2A_1m1 1
-#define PMI_2A_1j 2
+#define PMI_2A_1j  2
 #define PMI_2A_1mj 3
+//2 layers
+#define PMI_2A_R1_10 0
+#define PMI_2A_R1_11 1
+#define PMI_2A_R1_1j 2
+
 
 typedef enum {
   SCH_IDLE,
@@ -143,7 +141,7 @@ typedef struct {
   /// downlink power offset field
   uint8_t dl_power_off;
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
-  uint8_t e[MAX_NUM_CHANNEL_BITS];
+  uint8_t e[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
   /// Turbo-code outputs (36-212 V8.6 2009-03, p.12
   uint8_t *d[MAX_NUM_DLSCH_SEGMENTS];//[(96+3+(3*6144))];
   /// Sub-block interleaver outputs (36-212 V8.6 2009-03, p.16-17)
@@ -166,6 +164,8 @@ typedef struct {
   uint8_t Nlayers;
   /// First layer for this PSCH transmission
   uint8_t first_layer;
+   /// codeword this transport block is mapped to
+  uint8_t codeword;
 } LTE_DL_eNB_HARQ_t;
 
 typedef struct {
@@ -235,11 +235,20 @@ typedef struct {
   uint8_t control_only;
   /// Flag to indicate that this is a calibration ULSCH (i.e. no MAC SDU and filled with TDD calibration information)
   //  int calibration_flag;
+  /// Number of soft channel bits
+  uint32_t G;
+
+  // decode phich
+  uint8_t decode_phich;
 } LTE_UL_UE_HARQ_t;
 
 typedef struct {
   /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
-  uint32_t *txdataF[8];
+  int32_t *txdataF[8];
+  /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
+  int32_t **ue_spec_bf_weights[4]; 
+  /// dl channel estimates (estimated from ul channel estimates)
+  int32_t **calib_dl_ch_estimates;
   /// Allocated RNTI (0 means DLSCH_t is not currently used)
   uint16_t rnti;
   /// Active flag for baseband transmitter processing
@@ -341,12 +350,16 @@ typedef struct {
   int16_t Po_PUSCH;
   /// PHR - current power headroom (based on last PUSCH transmission)
   int16_t PHR;
+  /// Po_SRS - target output power for SRS
+  int16_t Po_SRS;
   /// num active cba group
   uint8_t num_active_cba_groups;
   /// num dci found for cba
   uint8_t num_cba_dci[10];
   /// allocated CBA RNTI
   uint16_t cba_rnti[4];//NUM_MAX_CBA_GROUP];
+  /// UL max-harq-retransmission
+  uint8_t Mlimit;
 } LTE_UE_ULSCH_t;
 
 typedef struct {
@@ -368,12 +381,18 @@ typedef struct {
   uint8_t TPC;
   /// First Allocated RB
   uint16_t first_rb;
+  /// First Allocated RB - previous scheduling
+  /// This is needed for PHICH generation which
+  /// is done after a new scheduling
+  uint16_t previous_first_rb;
   /// Current Number of RBs
   uint16_t nb_rb;
   /// Transport block size
   uint32_t TBS;
   /// The payload + CRC size in bits
   uint32_t B;
+  /// Number of soft channel bits
+  uint32_t G;
   /// CQI CRC status
   uint8_t cqi_crc_status;
   /// Pointer to CQI data
@@ -407,7 +426,7 @@ typedef struct {
   /// coded RI bits
   int16_t q_RI[MAX_RI_PAYLOAD];
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
-  int16_t e[MAX_NUM_CHANNEL_BITS];
+  int16_t e[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
   /// Temporary h sequence to flag PUSCH_x/PUSCH_y symbols which are not scrambled
   uint8_t h[MAX_NUM_CHANNEL_BITS];
   /// Pointer to the payload
@@ -450,6 +469,10 @@ typedef struct {
   uint8_t Nsymb_initial;
   /// n_DMRS  for cyclic shift of DMRS (36.213 Table 9.1.2-2)
   uint8_t n_DMRS;
+  /// n_DMRS  for cyclic shift of DMRS (36.213 Table 9.1.2-2) - previous scheduling
+  /// This is needed for PHICH generation which
+  /// is done after a new scheduling
+  uint8_t previous_n_DMRS;
   /// n_DMRS 2 for cyclic shift of DMRS (36.211 Table 5.5.1.1.-1)
   uint8_t n_DMRS2;
   /// Flag to indicate that this ULSCH is for calibration information sent from UE (i.e. no MAC SDU to pass up)
@@ -569,6 +592,8 @@ typedef struct {
   uint32_t trials[8];
   /// error statistics per round
   uint32_t errors[8];
+  /// codeword this transport block is mapped to
+  uint8_t codeword;
 } LTE_DL_UE_HARQ_t;
 
 typedef struct {
@@ -660,12 +685,16 @@ typedef struct {
 typedef struct {
   /// HARQ process id
   uint8_t harq_id;
-  /// ACK bits (after decoding)
+  /// ACK bits (after decoding) 0:NACK / 1:ACK / 2:DTX
   uint8_t ack;
   /// send status (for PUCCH)
   uint8_t send_harq_status;
   /// nCCE (for PUCCH)
   uint8_t nCCE;
+  /// DAI value detected from DCI1/1a/1b/1d/2/2a/2b/2c. 0xff indicates not touched
+  uint8_t vDAI_DL;
+  /// DAI value detected from DCI0/4. 0xff indicates not touched
+  uint8_t vDAI_UL;
 } harq_status_t;
 
 typedef struct {
@@ -679,7 +708,7 @@ typedef struct {
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
-  /// Current HARQ process id
+  /// Current HARQ process id threadRx Odd and threadRx Even
   uint8_t current_harq_pid;
   /// Current subband antenna selection
   uint32_t antenna_alloc;
@@ -703,6 +732,8 @@ typedef struct {
   uint32_t Nsoft;
   /// Maximum number of Turbo iterations
   uint8_t max_turbo_iterations;
+  /// number of iterations used in last turbo decoding
+  uint8_t last_iteration_cnt;
   /// accumulated tx power adjustment for PUCCH
   int8_t               g_pucch;
 } LTE_UE_DLSCH_t;
@@ -719,15 +750,26 @@ typedef enum {format0,
               format2B,
               format2C,
               format2D,
-              format3
+              format3,
+	      format3A,
+	      format4
              } DCI_format_t;
 
 typedef enum {
   SI_PDSCH=0,
   RA_PDSCH,
+  P_PDSCH,
   PDSCH,
+  PDSCH1,
   PMCH
 } PDSCH_t;
+
+typedef enum {
+  rx_standard=0,
+  rx_IC_single_stream,
+  rx_IC_dual_stream,
+  rx_SIC_dual_stream
+} RX_type_t;
 
 typedef enum {
   pucch_format1=0,
@@ -735,7 +777,8 @@ typedef enum {
   pucch_format1b,
   pucch_format2,
   pucch_format2a,
-  pucch_format2b
+  pucch_format2b,
+  pucch_format3    // PUCCH format3
 } PUCCH_FMT_t;
 
 

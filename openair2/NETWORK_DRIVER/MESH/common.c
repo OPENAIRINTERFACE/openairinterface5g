@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /*! \file common.c
 * \brief implementation of emultor tx and rx
 * \author Navid Nikaein, Lionel GAUTHIER, and Raymomd Knopp
@@ -66,14 +59,14 @@ void nas_COMMON_receive(uint16_t dlen,
   struct nas_priv *gpriv=netdev_priv(nasdev[inst]);
   uint32_t odaddr,osaddr;
 
-  int i;
+  //int i;
 
   unsigned char protocol;
 
-  unsigned char *addr,*daddr,*saddr,*ifaddr,sn;
+  unsigned char /**addr,*/ *daddr,*saddr,*ifaddr /*,sn*/;
 
-  struct udphdr *uh;
-  struct tcphdr *th;
+  //struct udphdr *uh;
+  //struct tcphdr *th;
   uint16_t *cksum,check;
 
   struct iphdr *network_header;
@@ -328,10 +321,9 @@ void nas_COMMON_receive(uint16_t dlen,
 
 //---------------------------------------------------------------------------
 // Delete the data
-void nas_COMMON_del_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *sp,int inst)
+void nas_COMMON_del_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *sp,int inst,struct nas_priv *gpriv)
 {
   struct nas_priv *priv=netdev_priv(nasdev[inst]);
-
   //---------------------------------------------------------------------------
   ++priv->stats.tx_dropped;
 }
@@ -339,7 +331,7 @@ void nas_COMMON_del_send(struct sk_buff *skb, struct cx_entity *cx, struct class
 //---------------------------------------------------------------------------
 // Request the transfer of data (QoS SAP)
 
-void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst)
+void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst, struct nas_priv *gpriv)
 {
   //---------------------------------------------------------------------------
   struct pdcp_data_req_header_s     pdcph;
@@ -348,7 +340,7 @@ void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct class
   int i;
 #endif
   unsigned int bytes_wrote;
-  unsigned char j;
+  //unsigned char j;
   // Start debug information
 #ifdef NAS_DEBUG_SEND
   printk("NAS_COMMON_QOS_SEND - inst %d begin \n",inst);
@@ -603,7 +595,7 @@ struct rb_entity *nas_COMMON_search_rb(struct cx_entity *cx, nasRadioBearerId_t 
               struct classifier_entity *nas_COMMON_search_class_for_rb(nasRadioBearerId_t rab_id,struct nas_priv *priv)
 {
 
-  struct rb_entity *rb;
+  //struct rb_entity *rb;
   int dscp;
   struct classifier_entity *rclass;
 

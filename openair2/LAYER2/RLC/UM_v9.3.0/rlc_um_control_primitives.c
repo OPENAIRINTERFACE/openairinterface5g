@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #define RLC_UM_MODULE 1
 #define RLC_UM_CONTROL_PRIMITIVES_C 1
 #include "platform_types.h"
@@ -47,7 +40,8 @@ void config_req_rlc_um (
   const protocol_ctxt_t* const ctxt_pP,
   const srb_flag_t      srb_flagP,
   const rlc_um_info_t  * const config_um_pP,
-  const rb_id_t         rb_idP)
+  const rb_id_t           rb_idP,
+  const logical_chan_id_t chan_idP)
 {
   rlc_union_t     *rlc_union_p  = NULL;
   rlc_um_entity_t *rlc_p        = NULL;
@@ -68,7 +62,7 @@ void config_req_rlc_um (
     rlc_um_init(ctxt_pP, rlc_p);
 
     if (rlc_um_fsm_notify_event (ctxt_pP, rlc_p, RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_DATA_TRANSFER_READY_STATE_EVENT)) {
-      rlc_um_set_debug_infos(ctxt_pP, rlc_p, srb_flagP, rb_idP);
+      rlc_um_set_debug_infos(ctxt_pP, rlc_p, srb_flagP, rb_idP, chan_idP);
       rlc_um_configure(
         ctxt_pP,
         rlc_p,
@@ -84,7 +78,11 @@ void config_req_rlc_um (
   }
 }
 //-----------------------------------------------------------------------------
+#if defined(Rel14)
+const uint32_t const t_Reordering_tab[32] = {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200,1600};
+#else
 const uint32_t const t_Reordering_tab[T_Reordering_spare1] = {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200};
+#endif
 
 void config_req_rlc_um_asn1 (
   const protocol_ctxt_t* const ctxt_pP,
@@ -94,7 +92,8 @@ void config_req_rlc_um_asn1 (
   const mbms_service_id_t   mbms_service_idP,
   const UL_UM_RLC_t       * const ul_rlc_pP,
   const DL_UM_RLC_t       * const dl_rlc_pP,
-  const rb_id_t             rb_idP)
+  const rb_id_t             rb_idP,
+  const logical_chan_id_t   chan_idP)
 {
   uint32_t         ul_sn_FieldLength   = 0;
   uint32_t         dl_sn_FieldLength   = 0;
@@ -104,7 +103,7 @@ void config_req_rlc_um_asn1 (
   hash_key_t       key                 = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
   hashtable_rc_t   h_rc;
 
-#if Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (mbms_flagP) {
     AssertFatal(dl_rlc_pP, "No RLC UM DL config");
@@ -142,7 +141,7 @@ void config_req_rlc_um_asn1 (
 
 
   if (rlc_um_fsm_notify_event (ctxt_pP, rlc_p, RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_DATA_TRANSFER_READY_STATE_EVENT)) {
-    rlc_um_set_debug_infos(ctxt_pP,rlc_p, srb_flagP, rb_idP);
+    rlc_um_set_debug_infos(ctxt_pP,rlc_p, srb_flagP, rb_idP, chan_idP);
 
     if (ul_rlc_pP != NULL) {
       switch (ul_rlc_pP->sn_FieldLength) {
@@ -155,7 +154,7 @@ void config_req_rlc_um_asn1 (
         break;
 
       default:
-        LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID UL sn_FieldLength %d, RLC NOT CONFIGURED\n",
+        LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID UL sn_FieldLength %ld, RLC NOT CONFIGURED\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
               rlc_p->rb_id,
               ul_rlc_pP->sn_FieldLength);
@@ -183,7 +182,7 @@ void config_req_rlc_um_asn1 (
         break;
 
       default:
-        LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID DL sn_FieldLength %d, RLC NOT CONFIGURED\n",
+        LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID DL sn_FieldLength %ld, RLC NOT CONFIGURED\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
               rlc_p->rb_id,
               dl_rlc_pP->sn_FieldLength);
@@ -199,10 +198,14 @@ void config_req_rlc_um_asn1 (
         return;
       }
 
+#if defined(Rel14)
+      if (dl_rlc_pP->t_Reordering<32) {
+#else
       if (dl_rlc_pP->t_Reordering<T_Reordering_spare1) {
+#endif
         t_Reordering = t_Reordering_tab[dl_rlc_pP->t_Reordering];
       } else {
-        LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID T_Reordering %d, RLC NOT CONFIGURED\n",
+        LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID T_Reordering %ld, RLC NOT CONFIGURED\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
               rlc_p->rb_id,
               dl_rlc_pP->t_Reordering);
@@ -339,13 +342,13 @@ rlc_um_cleanup (
   list_free (&rlc_pP->pdus_from_mac_layer);
 
   if ((rlc_pP->output_sdu_in_construction)) {
-    free_mem_block (rlc_pP->output_sdu_in_construction);
+    free_mem_block (rlc_pP->output_sdu_in_construction, __func__);
   }
 
   if (rlc_pP->dar_buffer) {
     for (index = 0; index < 1024; index++) {
       if (rlc_pP->dar_buffer[index]) {
-        free_mem_block (rlc_pP->dar_buffer[index]);
+        free_mem_block (rlc_pP->dar_buffer[index], __func__);
       }
     }
 
@@ -423,14 +426,16 @@ void rlc_um_configure(
 void rlc_um_set_debug_infos(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_um_entity_t * const rlc_pP,
-  const srb_flag_t       srb_flagP,
-  const rb_id_t          rb_idP)
+  const srb_flag_t        srb_flagP,
+  const rb_id_t           rb_idP,
+  const logical_chan_id_t chan_idP) 
 {
   LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" [SET DEBUG INFOS] rb_id %d srb_flag %d\n",
         PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
         rb_idP,
         srb_flagP);
-  rlc_pP->rb_id         = rb_idP;
+  rlc_pP->rb_id      = rb_idP;
+  rlc_pP->channel_id = chan_idP;
 
   if (srb_flagP) {
     rlc_pP->is_data_plane = 0;

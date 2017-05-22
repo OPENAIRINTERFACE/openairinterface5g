@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /***************************************************************************
                           rb_tool.c  -  User-space utility for driving NASMESH IOCTL interface
                              -------------------
@@ -43,7 +36,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/time.h>
-
+#include <sys/ioctl.h>
+#include <ctype.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -116,7 +110,7 @@ void IAL_NAS_ioctl_init(int inst)
 {
 
   struct nas_msg_statistic_reply *msgrep;
-  int err,rc;
+  int err;
 
   sprintf(gifr.name, "oai%d",inst);
 
@@ -139,7 +133,6 @@ void IAL_NAS_ioctl_init(int inst)
 
   if (err<0) {
     printf("IOCTL error, err=%d\n",err);
-    rc = -1;
   }
 
   printf("tx_packets = %u, rx_packets = %u\n", msgrep->tx_packets, msgrep->rx_packets);
@@ -158,19 +151,13 @@ void IAL_NAS_ioctl_init(int inst)
 int main(int argc,char **argv)
 //---------------------------------------------------------------------------
 {
-  int done = 0, rc = 0, meas_polling_counter = 0;
-  fd_set readfds;
-  struct timeval tv;
-  int i = 0;
   int err = 0;
-  char * buffer;
   int c = 0;
   int action=0,rbset=0,cxset=0,instset=0,saddr_ipv4set=0,saddr_ipv6set=0,daddr_ipv4set=0,daddr_ipv6set=0,dscpset=0,mpls_outlabelset=0,mpls_inlabelset=0;
   char rb[100],cx[100],dscp[100],inst[100],mpls_outgoinglabel[100],mpls_incominglabel[100];
-  int index = 0;
   struct nas_msg_rb_establishment_request *msgreq = NULL;
   struct nas_msg_class_add_request *msgreq_class = NULL;
-  in_addr_t saddr_ipv4,daddr_ipv4;
+  in_addr_t saddr_ipv4 = 0,daddr_ipv4 = 0;
   struct in6_addr saddr_ipv6,daddr_ipv6;
   unsigned int mpls_outlabel=0,mpls_inlabel=0;
 
@@ -220,15 +207,21 @@ int main(int argc,char **argv)
       mpls_inlabelset=1;
       break;
 
-    case 's':
-      inet_aton(optarg,&saddr_ipv4);
+    case 's': {
+      struct in_addr a;
+      inet_aton(optarg,&a);
+      saddr_ipv4 = a.s_addr;
       saddr_ipv4set = 1;
       break;
+    }
 
-    case 't':
-      inet_aton(optarg,&daddr_ipv4);
+    case 't': {
+      struct in_addr a;
+      inet_aton(optarg,&a);
+      daddr_ipv4 = a.s_addr;
       daddr_ipv4set = 1;
       break;
+    }
 
     case 'x':
       printf("IPv6: %s\n",optarg);
@@ -310,7 +303,7 @@ int main(int argc,char **argv)
   if (action == ADD_RB) {
     gifr.type =  NAS_MSG_RB_ESTABLISHMENT_REQUEST;
     err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
-
+    if (err == -1) perror("ioctl");
 
 
     if (saddr_ipv4set == 1) {
@@ -336,6 +329,7 @@ int main(int argc,char **argv)
 
       gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
       err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+      if (err == -1) perror("ioctl");
       msgreq_class->rab_id = atoi(rb);
       msgreq_class->lcr = atoi(cx);
 
@@ -347,6 +341,7 @@ int main(int argc,char **argv)
       msgreq_class->saddr.ipv4 = daddr_ipv4;
       gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
       err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+      if (err == -1) perror("ioctl");
     }
 
     if (saddr_ipv6set == 1) {
@@ -377,6 +372,7 @@ int main(int argc,char **argv)
 
       gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
       err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+      if (err == -1) perror("ioctl");
 
       msgreq_class->rab_id = atoi(rb);
       msgreq_class->lcr = atoi(cx);
@@ -387,6 +383,7 @@ int main(int argc,char **argv)
       memcpy(&msgreq_class->saddr.ipv6,&daddr_ipv6,16);
       gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
       err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+      if (err == -1) perror("ioctl");
 
 
     }
@@ -418,6 +415,7 @@ int main(int argc,char **argv)
 
       gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
       err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+      if (err == -1) perror("ioctl");
 
       msgreq_class->rab_id = atoi(rb);
       msgreq_class->lcr = atoi(cx);
@@ -437,12 +435,14 @@ int main(int argc,char **argv)
 
       gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
       err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+      if (err == -1) perror("ioctl");
 
 
     }
   } else if (action == DEL_RB) {
     gifr.type =  NAS_MSG_RB_RELEASE_REQUEST;
     err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+    if (err == -1) perror("ioctl");
   }
 
 

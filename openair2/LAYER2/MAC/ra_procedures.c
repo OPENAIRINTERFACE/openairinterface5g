@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file ra_procedures.c
  * \brief Routines for UE MAC-layer Random-access procedures (36.321) V8.6 2009-03
@@ -252,13 +244,13 @@ void get_prach_resources(module_id_t module_idP,
 
   // choose random PRACH resource in TDD
   if (UE_mac_inst[module_idP].tdd_Config) {
-    num_prach = mac_xface->get_num_prach_tdd(mac_xface->lte_frame_parms);
+    num_prach = mac_xface->get_num_prach_tdd(mac_xface->frame_parms);
 
     if ((num_prach>0) && (num_prach<6)) {
       UE_mac_inst[module_idP].RA_prach_resources.ra_TDD_map_index = (taus()%num_prach);
     }
 
-    f_id = mac_xface->get_fid_prach_tdd(mac_xface->lte_frame_parms,
+    f_id = mac_xface->get_fid_prach_tdd(mac_xface->frame_parms,
                                         UE_mac_inst[module_idP].RA_prach_resources.ra_TDD_map_index);
   }
 
@@ -279,8 +271,8 @@ void Msg1_tx(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id
   UE_mac_inst[module_idP].RA_attempt_number++;
 
   if (opt_enabled) {
-    trace_pdu(0, NULL, 0, module_idP, 2, UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex,
-              UE_mac_inst[module_idP].subframe, 0, UE_mac_inst[module_idP].RA_attempt_number);
+    trace_pdu(0, NULL, 0, module_idP, 0 , UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex,
+        UE_mac_inst[module_idP].txFrame, UE_mac_inst[module_idP].txSubframe, 0, UE_mac_inst[module_idP].RA_attempt_number);
     LOG_D(OPT,"[UE %d][RAPROC] TX MSG1 Frame %d trace pdu for rnti %x  with size %d\n",
           module_idP, frameP, 1, UE_mac_inst[module_idP].RA_Msg3_size);
   }
@@ -304,7 +296,7 @@ void Msg3_tx(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id
 
   if (opt_enabled) { // msg3
     trace_pdu(0, &UE_mac_inst[module_idP].CCCH_pdu.payload[0], UE_mac_inst[module_idP].RA_Msg3_size,
-              module_idP, 3, UE_mac_inst[module_idP].crnti, UE_mac_inst[module_idP].subframe, 0, 0);
+              module_idP, 3, UE_mac_inst[module_idP].crnti, UE_mac_inst[module_idP].txFrame, UE_mac_inst[module_idP].txSubframe, 0, 0);
     LOG_D(OPT,"[UE %d][RAPROC] MSG3 Frame %d trace pdu Preamble %d   with size %d\n",
           module_idP, frameP, UE_mac_inst[module_idP].crnti /*UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex*/, UE_mac_inst[module_idP].RA_Msg3_size);
   }
@@ -399,10 +391,10 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP, 
                                 1); //post_padding
           return(&UE_mac_inst[module_idP].RA_prach_resources);
 
-        } else if (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[DCCH] > 0) {
+        } else if (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]] > 0) {
           // This is for triggering a transmission on DCCH using PRACH (during handover, or sending SR for example)
           dcch_header_len = 2 + 2;  /// SHORT Subheader + C-RNTI control element
-          rlc_status = mac_rlc_status_ind(module_idP,UE_mac_inst[module_idP].crnti, eNB_indexP,frameP,ENB_FLAG_NO,MBMS_FLAG_NO,
+          rlc_status = mac_rlc_status_ind(module_idP,UE_mac_inst[module_idP].crnti, eNB_indexP,frameP,subframeP,ENB_FLAG_NO,MBMS_FLAG_NO,
                                           DCCH,
                                           6);
 
@@ -417,10 +409,16 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP, 
           sdu_lengths[0] = mac_rlc_data_req(module_idP, UE_mac_inst[module_idP].crnti,
                                             eNB_indexP, frameP,ENB_FLAG_NO, MBMS_FLAG_NO,
                                             DCCH,
+											6,	//not used
                                             (char *)&ulsch_buff[0]);
 
           LOG_D(MAC,"[UE %d] TX Got %d bytes for DCCH\n",module_idP,sdu_lengths[0]);
-          update_bsr(module_idP, frameP, eNB_indexP,DCCH,UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]);
+          update_bsr(module_idP, frameP, subframeP,eNB_indexP);
+	      UE_mac_inst[module_idP].scheduling_info.BSR[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]] =
+	    		  locate_BsrIndexByBufferSize(BSR_TABLE, BSR_TABLE_SIZE, UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[DCCH]]);
+
+	      //TO DO: fill BSR infos in UL TBS
+
           //header_len +=2;
           UE_mac_inst[module_idP].RA_active                        = 1;
           UE_mac_inst[module_idP].RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
@@ -502,37 +500,37 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP, 
             (rach_ConfigCommon->powerRampingParameters.powerRampingStep<<1);  // 2dB increments in ASN.1 definition
 	  int preambleTransMax = -1;
 	  switch (rach_ConfigCommon->ra_SupervisionInfo.preambleTransMax) {
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n3:
+	  case PreambleTransMax_n3:
 	    preambleTransMax = 3;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n4:
+	  case PreambleTransMax_n4:
 	    preambleTransMax = 4;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n5:
+	  case PreambleTransMax_n5:
 	    preambleTransMax = 5;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n6:
+	  case PreambleTransMax_n6:
 	    preambleTransMax = 6;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n7:
+	  case PreambleTransMax_n7:
 	    preambleTransMax = 7;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n8:
+	  case PreambleTransMax_n8:
 	    preambleTransMax = 8;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10:
+	  case PreambleTransMax_n10:
 	    preambleTransMax = 10;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n20:
+	  case PreambleTransMax_n20:
 	    preambleTransMax = 20;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n50:
+	  case PreambleTransMax_n50:
 	    preambleTransMax = 50;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n100:
+	  case PreambleTransMax_n100:
 	    preambleTransMax = 100;
 	    break;
-	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n200:
+	  case PreambleTransMax_n200:
 	    preambleTransMax = 200;
 	    break;
 	  } 

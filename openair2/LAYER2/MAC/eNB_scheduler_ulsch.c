@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file eNB_scheduler_ulsch.c
  * \brief eNB procedures for the ULSCH transport channel
@@ -101,7 +93,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_SDU,1);
   if (opt_enabled == 1) {
-    trace_pdu(0, sduP,sdu_lenP, 0, 3, rntiP,subframeP, 0,0);
+    trace_pdu(0, sduP,sdu_lenP, 0, 3, rntiP, frameP, subframeP, 0,0);
     LOG_D(OPT,"[eNB %d][ULSCH] Frame %d  rnti %x  with size %d\n",
     		  enb_mod_idP, frameP, rntiP, sdu_lenP);
   }
@@ -148,9 +140,8 @@ void rx_sdu(const module_id_t enb_mod_idP,
         LOG_D(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d : Received PHR PH = %d (db)\n",
               enb_mod_idP, CC_idP, rx_ces[i], UE_list->UE_template[CC_idP][UE_id].phr_info);
         UE_list->UE_template[CC_idP][UE_id].phr_info_configured=1;
+	UE_list->UE_sched_ctrl[UE_id].phr_received = 1;
       }
-      UE_list->UE_sched_ctrl[UE_id].phr_received = 1;
-
       payload_ptr+=sizeof(POWER_HEADROOM_CMD);
       break;
 
@@ -342,7 +333,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
 
           if (UE_id < 0) {
             memcpy(&eNB->common_channels[CC_idP].RA_template[ii].cont_res_id[0],payload_ptr,6);
-            LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d CCCH: Received Msg3: length %d, offset %d\n",
+            LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d CCCH: Received Msg3: length %d, offset %ld\n",
                   enb_mod_idP,CC_idP,frameP,rx_lengths[i],payload_ptr-sduP);
 
             if ((UE_id=add_new_ue(enb_mod_idP,CC_idP,eNB->common_channels[CC_idP].RA_template[ii].rnti,harq_pidP)) == -1 ) {
@@ -352,7 +343,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
               LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Added user with rnti %x => UE %d\n",
                     enb_mod_idP,CC_idP,frameP,eNB->common_channels[CC_idP].RA_template[ii].rnti,UE_id);
           } else {
-            LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d CCCH: Received Msg3 from already registered UE %d: length %d, offset %d\n",
+            LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d CCCH: Received Msg3 from already registered UE %d: length %d, offset %ld\n",
                   enb_mod_idP,CC_idP,frameP,UE_id,rx_lengths[i],payload_ptr-sduP);
 	    // kill RA procedure
           }
@@ -442,7 +433,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
 	
 	if (UE_id != -1) {
 	  // adjust buffer occupancy of the correponding logical channel group
-	  LOG_D(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d, removing from LCGID %d, %d\n",
+	  LOG_D(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d, removing from LCGID %ld, %d\n",
 		enb_mod_idP,CC_idP,frameP, rx_lengths[i], UE_id,rx_lcids[i],
 		UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]],
 		UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]]);
@@ -475,7 +466,6 @@ void rx_sdu(const module_id_t enb_mod_idP,
 	  }
 	}    
 	else {/*(UE_id != -1*/ 
-	  UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx+=1;
 	  LOG_E(MAC,"[eNB %d] CC_id %d Frame %d : received unsupported or unknown LCID %d from UE %d ",
 		enb_mod_idP, CC_idP, frameP, rx_lcids[i], UE_id);
 	}
@@ -578,7 +568,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
         }
       }
 
-      LOG_D(MAC,"[eNB] sdu %d lcid %d tb_length %d length %d (offset now %d)\n",
+      LOG_D(MAC,"[eNB] sdu %d lcid %d tb_length %d length %d (offset now %ld)\n",
             num_sdus,lcid,tb_length, length,mac_header_ptr-mac_header);
       rx_lcids[num_sdus] = lcid;
       rx_lengths[num_sdus] = length;
@@ -611,6 +601,29 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
   return(mac_header_ptr);
 }
 
+/* This function is called by PHY layer when it schedules some
+ * uplink for a random access message 3.
+ * The MAC scheduler has to skip the RBs used by this message 3
+ * (done below in schedule_ulsch).
+ */
+void set_msg3_subframe(module_id_t Mod_id,
+                       int CC_id,
+                       int frame,
+                       int subframe,
+                       int rnti,
+                       int Msg3_frame,
+                       int Msg3_subframe)
+{
+  eNB_MAC_INST *eNB=&eNB_mac_inst[Mod_id];
+  int i;
+  for (i=0; i<NB_RA_PROC_MAX; i++) {
+    if (eNB->common_channels[CC_id].RA_template[i].RA_active == TRUE &&
+        eNB->common_channels[CC_id].RA_template[i].rnti == rnti) {
+      eNB->common_channels[CC_id].RA_template[i].Msg3_subframe = Msg3_subframe;
+      break;
+    }
+  }
+}
 
 void schedule_ulsch(module_id_t module_idP, 
 		    frame_t frameP,
@@ -629,6 +642,7 @@ void schedule_ulsch(module_id_t module_idP,
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
+    //leave out first RB for PUCCH
     first_rb[CC_id] = 1;
 
     // UE data info;
@@ -647,9 +661,11 @@ void schedule_ulsch(module_id_t module_idP,
     for (i=0; i<NB_RA_PROC_MAX; i++) {
       if ((eNB->common_channels[CC_id].RA_template[i].RA_active == TRUE) &&
           (eNB->common_channels[CC_id].RA_template[i].generate_rar == 0) &&
+          (eNB->common_channels[CC_id].RA_template[i].generate_Msg4 == 0) &&
+          (eNB->common_channels[CC_id].RA_template[i].wait_ack_Msg4 == 0) &&
           (eNB->common_channels[CC_id].RA_template[i].Msg3_subframe == sched_subframe)) {
-	//leave out first RB for PUCCH
         first_rb[CC_id]++;
+        eNB->common_channels[CC_id].RA_template[i].Msg3_subframe = -1;
         break;
       }
     }
@@ -713,8 +729,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
   ulsch_scheduler_pre_processor(module_idP,
                                 frameP,
                                 subframeP,
-                                first_rb,
-                                aggregation);
+                                first_rb);
 
   //  LOG_I(MAC,"exiting ulsch preprocesor\n");
 
@@ -735,6 +750,39 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
       continue;
     }
 
+    /* let's drop the UE if get_eNB_UE_stats returns NULL when calling it with any of the UE's active UL CCs */
+    /* TODO: refine? */
+    drop_ue = 0;
+    for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
+      CC_id = UE_list->ordered_ULCCids[n][UE_id];
+      if (mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti) == NULL) {
+        LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: no PHY context\n", module_idP,frameP,subframeP,UE_id,rnti,CC_id);
+        drop_ue = 1;
+        break;
+      }
+    }
+    if (drop_ue == 1) {
+/* we can't come here, ulsch_scheduler_pre_processor won't put in the list a UE with no PHY context */
+abort();
+      /* TODO: this is a hack. Sometimes the UE has no PHY context but
+       * is still present in the MAC with 'ul_failure_timer' = 0 and
+       * 'ul_out_of_sync' = 0. It seems wrong and the UE stays there forever. Let's
+       * start an UL out of sync procedure in this case.
+       * The root cause of this problem has to be found and corrected.
+       * In the meantime, this hack...
+       */
+      if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer == 0 &&
+          UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 0) {
+        LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: UE in weird state, let's put it 'out of sync'\n",
+              module_idP,frameP,subframeP,UE_id,rnti,CC_id);
+        // inform RRC of failure and clear timer
+        mac_eNB_rrc_ul_failure(module_idP,CC_id,frameP,subframeP,rnti);
+        UE_list->UE_sched_ctrl[UE_id].ul_failure_timer=0;
+        UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync=1;
+      }
+      continue;
+    }
+
     // loop over all active UL CC_ids for this UE
     for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
       // This is the actual CC_id in the list
@@ -742,22 +790,18 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
       frame_parms = mac_xface->get_lte_frame_parms(module_idP,CC_id);
       eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
 
-      if (eNB_UE_stats==NULL) {
-        LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: no PHY context\n", module_idP,frameP,subframeP,UE_id,rnti,CC_id);
-	drop_ue=1;
-        continue; // mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
-      }
-
-      if (drop_ue==1)
-	continue;
-
+      aggregation=get_aggregation(get_bw_index(module_idP,CC_id), 
+				  eNB_UE_stats->DL_cqi[0],
+				  format0);
+      
       if (CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,aggregation,rnti)) {
         LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: not enough nCCE\n", module_idP,frameP,subframeP,UE_id,rnti,CC_id);
         continue; // break;
+      } else{
+	LOG_D(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d mode %s: aggregation level %d\n", 
+	      module_idP,frameP,subframeP,UE_id,rnti,CC_id, mode_string[eNB_UE_stats->mode], 1<<aggregation);
       }
 
-
-      //      printf("UE %d/%x is feasible, mode %s\n",UE_id,rnti,mode_string[eNB_UE_stats->mode]);
 
       if (eNB_UE_stats->mode == PUSCH) { // ue has a ulsch channel
 
@@ -765,7 +809,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
         UE_template   = &UE_list->UE_template[CC_id][UE_id];
         UE_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
 
-        if (mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,1) == -1 ) {
+        if (mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL) == -1 ) {
           LOG_W(MAC,"[eNB %d] Scheduler Frame %d, subframeP %d: candidate harq_pid from PHY for UE %d CC %d RNTI %x\n",
                 module_idP,frameP,subframeP, UE_id, CC_id, rnti);
           continue;
@@ -784,7 +828,6 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 		UE_sched_ctrl->ul_failure_timer);
           // reset the scheduling request
           UE_template->ul_SR = 0;
-          aggregation = process_ue_cqi(module_idP,UE_id); 
           status = mac_eNB_get_rrc_status(module_idP,rnti);
 	  if (status < RRC_CONNECTED)
 	    cqi_req = 0;
@@ -837,14 +880,11 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	    UE_list->eNB_UE_stats[CC_id][UE_id].normalized_rx_power=normalized_rx_power;
 	    UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power=target_rx_power;
 	    UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1=UE_template->pre_assigned_mcs_ul;
-            mcs = cmin (UE_template->pre_assigned_mcs_ul, openair_daq_vars.target_ue_ul_mcs); // adjust, based on user-defined MCS
-	    if ((cqi_req==1) && (mcs>19)) {
-		mcs=19;
-	    }
+            mcs = UE_template->pre_assigned_mcs_ul;//cmin (UE_template->pre_assigned_mcs_ul, openair_daq_vars.target_ue_ul_mcs); // adjust, based on user-defined MCS
             if (UE_template->pre_allocated_rb_table_index_ul >=0) {
               rb_table_index=UE_template->pre_allocated_rb_table_index_ul;
             } else {
-	      mcs=cmin (10, openair_daq_vars.target_ue_ul_mcs);
+	      mcs=10;//cmin (10, openair_daq_vars.target_ue_ul_mcs);
               rb_table_index=5; // for PHR
 	    }
 
@@ -867,7 +907,13 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 
             T(T_ENB_MAC_UE_UL_SCHEDULE, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP),
               T_INT(subframeP), T_INT(harq_pid), T_INT(mcs), T_INT(first_rb[CC_id]), T_INT(rb_table[rb_table_index]),
-              T_INT(TBS));
+              T_INT(TBS), T_INT(ndi));
+
+	    if (mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED)
+	      LOG_I(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",
+		    module_idP,harq_pid,rnti,CC_id,frameP,subframeP,UE_id,mcs,
+		    first_rb[CC_id],rb_table[rb_table_index],
+		    rb_table_index,TBS,harq_pid);
 
 	    // bad indices : 20 (40 PRB), 21 (45 PRB), 22 (48 PRB)
             // increment for next UE allocation
@@ -877,12 +923,6 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	    UE_sched_ctrl->ul_scheduled |= (1<<harq_pid);
 	    if (UE_id == UE_list->head)
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_SCHEDULED,UE_sched_ctrl->ul_scheduled);
-
-	    if (mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED)
-	      LOG_I(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",
-		    module_idP,harq_pid,rnti,CC_id,frameP,subframeP,UE_id,mcs,
-		    first_rb[CC_id],rb_table[rb_table_index],
-		    rb_table_index,TBS,harq_pid);
 
 	    // adjust total UL buffer status by TBS, wait for UL sdus to do final update
 	    LOG_D(MAC,"[eNB %d] CC_id %d UE %d/%x : adjusting ul_total_buffer, old %d, TBS %d\n", module_idP,CC_id,UE_id,rnti,UE_template->ul_total_buffer,TBS);
@@ -1191,7 +1231,7 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
     required_rbs[cba_group] = 0;
     num_cba_resources[cba_group]=0;
     active_UEs[cba_group]=0;
-    mcs[cba_group]=openair_daq_vars.target_ue_ul_mcs;
+    mcs[cba_group]=10;//openair_daq_vars.target_ue_ul_mcs;
   }
 
   //LOG_D(MAC, "[eNB ] CBA granted ues are %d\n",granted_UEs );
@@ -1239,7 +1279,7 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
           }
         }
 
-        mcs[cba_group]= cmin(mcs[cba_group],openair_daq_vars.target_ue_ul_mcs);
+        mcs[cba_group]= mcs[cba_group];//cmin(mcs[cba_group],openair_daq_vars.target_ue_ul_mcs);
 
         if (available_rbs < min_rb_unit )
           break;

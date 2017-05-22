@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file asn1_msg.c
 * \brief primitives to build the asn1 messages
@@ -66,7 +58,7 @@
 #include "RRCConnectionSetup.h"
 #include "SRB-ToAddModList.h"
 #include "DRB-ToAddModList.h"
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #include "MCCH-Message.h"
 //#define MRB1 1
 #endif
@@ -117,6 +109,7 @@ typedef struct xer_sprint_string_s {
 } xer_sprint_string_t;
 
 extern unsigned char NB_eNB_INST;
+extern uint8_t usim_test;
 
 uint16_t two_tier_hexagonal_cellIds[7] = {0,1,2,4,5,7,8};
 uint16_t two_tier_hexagonal_adjacent_cellIds[7][6] = {{1,2,4,5,7,8},    // CellId 0
@@ -621,7 +614,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
                  BCCH_DL_SCH_Message_t *bcch_message,
                  SystemInformationBlockType2_t **sib2,
                  SystemInformationBlockType3_t **sib3
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
                  ,
                  SystemInformationBlockType13_r9_t **sib13,
                  uint8_t MBMS_flag
@@ -632,7 +625,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
                 )
 {
   struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib2_part,*sib3_part;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib13_part;
   MBSFN_SubframeConfigList_t *MBSFNSubframeConfigList;
   MBSFN_AreaInfoList_r9_t *MBSFNArea_list;
@@ -657,7 +650,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
     exit(-1);
   }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   LOG_I(RRC,"[eNB %d] Configuration SIB2/3, MBMS = %d\n", Mod_id, MBMS_flag);
 #else
   LOG_I(RRC,"[eNB %d] Configuration SIB2/3\n", Mod_id);
@@ -673,7 +666,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   *sib2 = &sib2_part->choice.sib2;
   *sib3 = &sib3_part->choice.sib3;
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flag > 0) {
     sib13_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
@@ -687,7 +680,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   // sib2
 
   (*sib2)->ac_BarringInfo = NULL;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #if 0
   (*sib2)->ssac_BarringForMMTEL_Voice_r9 = NULL;
   (*sib2)->ssac_BarringForMMTEL_Video_r9 = NULL;
@@ -776,7 +769,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
     = configuration->pucch_nRB_CQI[CC_id];
   (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.nCS_AN
     = configuration->pucch_nCS_AN[CC_id];
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
   (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.n1PUCCH_AN
     = configuration->pucch_n1_AN[CC_id];
 #endif
@@ -936,7 +929,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->freqInfo.ul_Bandwidth = NULL;
   //  (*sib2)->mbsfn_SubframeConfigList = NULL;
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flag > 0) {
     LOG_I(RRC,"Adding MBSFN subframe Configuration 1 to SIB2\n");
@@ -992,7 +985,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->timeAlignmentTimerCommon=TimeAlignmentTimer_infinity;//TimeAlignmentTimer_sf5120;
 
   /// (*SIB3)
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   (*sib3)->ext1 = NULL;
 #if 0
   (*sib3)->s_IntraSearch_v920=NULL;
@@ -1027,7 +1020,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   // SIB13
   // fill in all elements of SIB13 if present
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flag > 0 ) {
     //  Notification for mcch change
@@ -1109,7 +1102,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
                    sib2_part);
   ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,
                    sib3_part);
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flag > 0) {
     ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib13_part);
@@ -1268,7 +1261,10 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uin
   rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.nonCriticalExtension=CALLOC(1,
       sizeof(*rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.nonCriticalExtension));
 
-  rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.selectedPLMN_Identity=2;
+  if(usim_test == 0)
+      rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.selectedPLMN_Identity= 2;
+  else
+      rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.selectedPLMN_Identity= 1;
 
   rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME =
     NULL;//calloc(1,sizeof(*rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME));
@@ -1392,6 +1388,7 @@ uint8_t
 do_RRCConnectionSetup(
   const protocol_ctxt_t*     const ctxt_pP,
   rrc_eNB_ue_context_t*      const ue_context_pP,
+  int                              CC_id,
   uint8_t*                   const buffer,
   const uint8_t                    transmission_mode,
   const uint8_t                    Transaction_id,
@@ -1496,7 +1493,10 @@ do_RRCConnectionSetup(
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH         = CALLOC(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH));
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH         = CALLOC(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH));
   physicalConfigDedicated2->cqi_ReportConfig              = CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL;//CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
+  if (enb_properties.properties[ctxt_pP->module_id]->srs_enable[CC_id])
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
+  else
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL;
   physicalConfigDedicated2->antennaInfo                   = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->schedulingRequestConfig       = CALLOC(1,sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
 #ifdef CBA
@@ -1505,7 +1505,10 @@ do_RRCConnectionSetup(
   // PDSCH
   //assign_enum(&physicalConfigDedicated2->pdsch_ConfigDedicated->p_a,
   //        PDSCH_ConfigDedicated__p_a_dB0);
-  physicalConfigDedicated2->pdsch_ConfigDedicated->p_a=   PDSCH_ConfigDedicated__p_a_dB0;
+  if (frame_parms->nb_antenna_ports_eNB==2)
+    physicalConfigDedicated2->pdsch_ConfigDedicated->p_a=   PDSCH_ConfigDedicated__p_a_dB_3;
+  else
+    physicalConfigDedicated2->pdsch_ConfigDedicated->p_a=   PDSCH_ConfigDedicated__p_a_dB0;
 
   // PUCCH
   physicalConfigDedicated2->pucch_ConfigDedicated->ackNackRepetition.present=PUCCH_ConfigDedicated__ackNackRepetition_PR_release;
@@ -1560,7 +1563,7 @@ do_RRCConnectionSetup(
   // CQI ReportConfig
 
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic));
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic= CQI_ReportModeAperiodic_rm30;
 #else
   *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CQI_ReportConfig__cqi_ReportModeAperiodic_rm30; // HLC CQI, no PMI
@@ -1582,19 +1585,44 @@ do_RRCConnectionSetup(
     */
 
   //soundingRS-UL-ConfigDedicated
-  /*
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->present = SoundingRS_UL_ConfigDedicated_PR_setup;
-  assign_enum(&physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth,
-        SoundingRS_UL_ConfigDedicated__setup__srs_Bandwidth_bw0);
-  assign_enum(&physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth,
-        SoundingRS_UL_ConfigDedicated__setup__srs_HoppingBandwidth_hbw0);
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition=0;
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.duration=1;
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=1;
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb=0;
-  assign_enum(&physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift,
-        SoundingRS_UL_ConfigDedicated__setup__cyclicShift_cs0);
-  */
+  if (enb_properties.properties[ctxt_pP->module_id]->srs_enable[CC_id]) {
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->present = SoundingRS_UL_ConfigDedicated_PR_setup;
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth =
+                                                             SoundingRS_UL_ConfigDedicated__setup__srs_Bandwidth_bw0;
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth =
+          SoundingRS_UL_ConfigDedicated__setup__srs_HoppingBandwidth_hbw0;
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition=0;
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.duration=1;
+    if (frame_parms->frame_type==FDD) {
+      if (enb_properties.properties[ctxt_pP->module_id]->srs_SubframeConfig[CC_id]!=0) 
+	LOG_W(RRC,"This code has been optimized for SRS Subframe Config 0, but current config is %d. Expect undefined behaviour!\n",
+	      enb_properties.properties[ctxt_pP->module_id]->srs_SubframeConfig[CC_id]);
+      if (ue_context_pP->local_uid >=20) 
+	LOG_W(RRC,"This code has been optimized for up to 10 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
+	      ue_context_pP->local_uid);
+      //the current code will allow for 20 UEs - to be revised for more
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=7+ue_context_pP->local_uid/2;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb= ue_context_pP->local_uid%2;
+    }
+    else {
+      if (enb_properties.properties[ctxt_pP->module_id]->srs_SubframeConfig[CC_id]!=7) {
+	LOG_W(RRC,"This code has been optimized for SRS Subframe Config 7 and TDD config 3, but current configs are %d and %d. Expect undefined behaviour!\n",
+	      enb_properties.properties[ctxt_pP->module_id]->srs_SubframeConfig[CC_id],
+	      enb_properties.properties[ctxt_pP->module_id]->tdd_config[CC_id]);
+      }
+      if (ue_context_pP->local_uid >=6) 
+	LOG_W(RRC,"This code has been optimized for up to 6 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
+	      ue_context_pP->local_uid);
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=17+ue_context_pP->local_uid/2;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb= ue_context_pP->local_uid%2;
+    }
+    LOG_W(RRC,"local UID %d, srs ConfigIndex %d, TransmissionComb %d\n",ue_context_pP->local_uid,
+	  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex,
+	  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb);
+
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift=
+          SoundingRS_UL_ConfigDedicated__setup__cyclicShift_cs0;
+  }
 
 
   //AntennaInfoDedicated
@@ -1773,7 +1801,7 @@ do_SecurityModeCommand(
     SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8;
   // the two following information could be based on the mod_id
   dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm
-    = (e_SecurityAlgorithmConfig__cipheringAlgorithm)cipheringAlgorithm;
+    = (CipheringAlgorithm_r12_t)cipheringAlgorithm;
   dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm
     = (e_SecurityAlgorithmConfig__integrityProtAlgorithm)integrityProtAlgorithm;
 
@@ -1926,7 +1954,7 @@ do_RRCConnectionReconfiguration(
   struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList
   *dedicatedInfoNASList
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   , SCellToAddMod_r10_t  *SCell_config
 #endif
 )
@@ -2221,7 +2249,7 @@ uint8_t do_RRCConnectionRelease(
 uint8_t TMGI[5] = {4,3,2,1,0};//TMGI is a string of octet, ref. TS 24.008 fig. 10.5.4a
 
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
                            LTE_DL_FRAME_PARMS *frame_parms,
                            uint8_t sync_area,
@@ -2393,7 +2421,7 @@ uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_
       sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.nonCriticalExtension));
 
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measId=measid;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrpResult=rsrp_s;
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrqResult=rsrq_s;
 #else
@@ -2669,6 +2697,21 @@ OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname)
 
     // UE_EUTRA_Capability->measParameters.bandListEUTRA.list.count                         = 0;  // no measurements on other bands
     // UE_EUTRA_Capability->featureGroupIndicators  // null
+
+    // featureGroup is mandatory for CMW tests
+    // featureGroup is filled only for usim-test mode
+    BIT_STRING_t *bit_string;
+    uint32_t     featrG;
+    bit_string = CALLOC(1, sizeof(*bit_string));
+    featrG     = 0x04000800;
+    if(usim_test == 1)
+    {
+        bit_string->buf         = &featrG;
+        bit_string->size        = 4;
+        bit_string->bits_unused = 0;
+        UE_EUTRA_Capability->featureGroupIndicators = bit_string;
+    }
+
     // UE_EUTRA_Capability->interRAT_Parameters     // null
   } else {
 

@@ -1,31 +1,24 @@
 /*
- * Copyright (c) 2015, EURECOM (www.eurecom.fr)
- * All rights reserved.
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ *      http://www.openairinterface.org/?page_id=698
  *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * The views and conclusions contained in the software and documentation are those
- * of the authors and should not be interpreted as representing official policies,
- * either expressed or implied, of the FreeBSD Project.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
  */
+
 /*
 
 Source      commonDef.h
@@ -50,6 +43,13 @@ Description Contains global common definitions
 #include <stddef.h>
 #include <stdbool.h>
 
+/* boolean_t is also defined in openair2/COMMON/platform_types.h
+ * let's protect potential redefinition
+ */
+
+#ifndef _BOOLEAN_T_DEFINED_
+#define _BOOLEAN_T_DEFINED_
+
 typedef signed char        boolean_t;
 
 #if !defined(TRUE)
@@ -61,6 +61,8 @@ typedef signed char        boolean_t;
 #endif
 
 #define BOOL_NOT(b) (b^TRUE)
+
+#endif /* _BOOLEAN_T_DEFINED_ */
 
 #define NAS_UE_ID_FMT "0x%06x"
 
@@ -313,15 +315,6 @@ typedef struct {
  * A list of TAIs
  */
 #define TAI_LIST_T(SIZE) struct {Byte_t n_tais; tai_t tai[SIZE];}
-
-/*
- * User notification callback, executed whenever a change of data with
- * respect of network information (e.g. network registration and/or
- * location change, new PLMN becomes available) is notified by the
- * EPS Mobility Management sublayer
- */
-typedef int (*emm_indication_callback_t) (Stat_t, tac_t, ci_t, AcT_t,
-    const char*, size_t);
 
 typedef enum eps_protocol_discriminator_e {
   /* Protocol discriminator identifier for EPS Mobility Management */

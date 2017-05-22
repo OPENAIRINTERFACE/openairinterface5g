@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-   Contact Information
-   OpenAirInterface Admin: openair_admin@eurecom.fr
-   OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /*! \file UE_transport_IQ.c
  * \brief UE transport IQ sampels 
  * \author  Katerina Trilyraki, Navid Nikaein, Raymond Knopp
@@ -94,7 +87,6 @@ void config_UE_mod( rrh_module_t *dev_ue, uint8_t RT_flag,uint8_t NRT_flag) {
 
   int 	  i;
   int 	  error_code_UE, error_code_proc_UE;
-  void    *tmp;
   
   RT_flag_UE=RT_flag;
   NRT_flag_UE=NRT_flag;
@@ -252,8 +244,7 @@ void *rrh_UE_thread(void *arg) {
 
   struct sched_param 	sched_param_UE_rx, sched_param_UE_tx;
   int16_t		i,cmd;   //,nsamps,antenna_index;
-  ssize_t 	        bytes_received;
-  struct timespec 	time_req_1us, time_rem_1us;
+  //struct timespec 	time_req_1us;
   pthread_t 		UE_rx_thread, UE_tx_thread;
   pthread_attr_t 	attr_UE_rx, attr_UE_tx;
   int 			error_code_UE_rx, error_code_UE_tx;
@@ -261,8 +252,8 @@ void *rrh_UE_thread(void *arg) {
   unsigned int          samples_per_frame=0;
   
   samples_per_frame= dev->eth_dev.openair0_cfg->samples_per_frame;
-  time_req_1us.tv_sec = 0;
-  time_req_1us.tv_nsec = 1000;
+  //time_req_1us.tv_sec = 0;
+  //time_req_1us.tv_nsec = 1000;
   
   while (rrh_exit==0) {
     
@@ -345,12 +336,15 @@ void *rrh_UE_rx_thread(void *arg) {
   int 		      trace_cnt=0;
   unsigned long long  max_rx_time=0, min_rx_time=133333, total_rx_time=0, average_rx_time=133333, s_period=0, trial=0;
   unsigned int        samples_per_frame=0;
-  openair0_timestamp  temp, last_hw_counter=0;
+  openair0_timestamp  last_hw_counter=0;
   
   antenna_index     = 0;
   nsamps	    = dev->eth_dev.openair0_cfg->samples_per_packet;
   samples_per_frame = dev->eth_dev.openair0_cfg->samples_per_frame;
   
+  /* TODO: check if setting time0 has to be done here */
+  clock_gettime(CLOCK_MONOTONIC,&time0);
+
   while (rrh_exit == 0) {
     if (!UE_rx_started) {
       UE_rx_started=1;  //Set this flag to 1 to indicate that a UE started retrieving data
@@ -453,7 +447,7 @@ void *rrh_UE_rx_thread(void *arg) {
       
       if (s_period++ == PRINTF_PERIOD) {
 	s_period=0;
-	printf("Average UE RX time : %lu\tMax RX time : %lu\tMin RX time : %lu\n",average_rx_time,max_rx_time,min_rx_time);
+	printf("Average UE RX time : %llu\tMax RX time : %llu\tMin RX time : %llu\n",average_rx_time,max_rx_time,min_rx_time);
 	
       }
       
@@ -488,7 +482,6 @@ void *rrh_UE_tx_thread(void *arg) {
   rrh_module_t    	*dev = (rrh_module_t *)arg;
   ssize_t 		bytes_received;
   int 			antenna_index, nsamps;
-  int 			trace_cnt=0;
   unsigned int          samples_per_frame=0;
   
   antenna_index    = 0;
@@ -511,7 +504,7 @@ void *rrh_UE_tx_thread(void *arg) {
     if (NRT_flag_UE==1) {
       nrt_UE_counter[antenna_index]++;
     }
-    printf(" first part size: %d   second part size: %d idx=%d \n",
+    printf(" first part size: %d   second part size: %"PRId64" idx=%"PRId64"\n",
 	   (int32_t)(((samples_per_frame)<<2)-((timestamp_UE_tx[antenna_index]%(samples_per_frame))<<2)),
 	   (nsamps<<2)-((samples_per_frame)<<2)+((timestamp_UE_tx[antenna_index]%(samples_per_frame))<<2),
 	   timestamp_UE_tx[antenna_index]%(samples_per_frame));

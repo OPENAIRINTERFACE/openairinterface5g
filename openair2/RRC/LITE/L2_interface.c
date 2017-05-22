@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file l2_interface.c
  * \brief layer 2 interface, used to support different RRC sublayer
@@ -230,7 +222,7 @@ mac_rrc_data_req(
       return (Sdu_size);
     }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
     if((Srb_id & RAB_OFFSET) == MCCH) {
       if(eNB_rrc_inst[Mod_idP].carrier[CC_id].MCCH_MESS[mbsfn_sync_area].Active==0) {
@@ -289,12 +281,12 @@ mac_rrc_data_req(
       //return(0);
     }
 
-#endif //Rel10
+#endif //Rel10 || Rel14
   } else {  //This is an UE
-#ifdef DEBUG_RRC
+
     LOG_D(RRC,"[UE %d] Frame %d Filling CCCH SRB_ID %d\n",Mod_idP,frameP,Srb_id);
     LOG_D(RRC,"[UE %d] Frame %d buffer_pP status %d,\n",Mod_idP,frameP, UE_rrc_inst[Mod_idP].Srb0[eNB_index].Tx_buffer.payload_size);
-#endif
+
 
     if( (UE_rrc_inst[Mod_idP].Srb0[eNB_index].Tx_buffer.payload_size > 0) ) {
 
@@ -397,6 +389,10 @@ mac_rrc_data_ind(
 #endif
     }
 
+    if(srb_idP == PCCH) {
+      LOG_D(RRC,"[UE %d] Received SDU for PCCH on SRB %d from eNB %d\n",module_idP,srb_idP,eNB_indexP);
+      decode_PCCH_DLSCH_Message(&ctxt,eNB_indexP,(uint8_t*)sduP,sdu_lenP);
+    }
     if((srb_idP & RAB_OFFSET) == CCCH) {
       if (sdu_lenP>0) {
         LOG_T(RRC,"[UE %d] Received SDU for CCCH on SRB %d from eNB %d\n",module_idP,srb_idP & RAB_OFFSET,eNB_indexP);
@@ -432,7 +428,7 @@ mac_rrc_data_ind(
       }
     }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
     if ((srb_idP & RAB_OFFSET) == MCCH) {
       LOG_T(RRC,"[UE %d] Frame %d: Received SDU on MBSFN sync area %d for MCCH on SRB %d from eNB %d\n",
@@ -463,7 +459,7 @@ mac_rrc_data_ind(
 #endif
     }
 
-#endif // Rel10
+#endif // Rel10 || Rel14
 
   } else { // This is an eNB
     Srb_info = &eNB_rrc_inst[module_idP].carrier[CC_id].Srb0;
@@ -677,13 +673,14 @@ void rrc_in_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_index)
 void rrc_out_of_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_index)
 {
   //-------------------------------------------------------------------------------------------//
-  LOG_I(RRC,"[UE %d] Frame %d: OUT OF SYNC FROM eNB %d (T310 active %d : T310 %d, N310 %d, N311 %d)\n ",
-        Mod_idP,frameP,eNB_index,
-	UE_rrc_inst[Mod_idP].Info[eNB_index].T300_active,
-        UE_rrc_inst[Mod_idP].Info[eNB_index].T310_cnt,
-        UE_rrc_inst[Mod_idP].Info[eNB_index].N310_cnt,
-        UE_rrc_inst[Mod_idP].Info[eNB_index].N311_cnt);
-
+  if (UE_rrc_inst[Mod_idP].Info[eNB_index].N310_cnt>10)
+    LOG_I(RRC,"[UE %d] Frame %d: OUT OF SYNC FROM eNB %d (T310 active %d : T310 %d, N310 %d, N311 %d)\n ",
+	  Mod_idP,frameP,eNB_index,
+	  UE_rrc_inst[Mod_idP].Info[eNB_index].T300_active,
+	  UE_rrc_inst[Mod_idP].Info[eNB_index].T310_cnt,
+	  UE_rrc_inst[Mod_idP].Info[eNB_index].N310_cnt,
+	  UE_rrc_inst[Mod_idP].Info[eNB_index].N311_cnt);
+  
 #if defined(ENABLE_ITTI)
   {
     MessageDef *message_p;

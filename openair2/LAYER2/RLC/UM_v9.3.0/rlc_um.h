@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /*! \file rlc_um.h
 * \brief This file, and only this file must be included by code that interact with RLC UM layer.
 * \author GAUTHIER Lionel
@@ -193,15 +186,23 @@ protected_rlc_um( void     rlc_um_rx (const protocol_ctxt_t* const ctxt_pP, rlc_
 * \param[in]  tx_statusP                Transmission status given by MAC on previous MAC transmission of the PDU.
 * \return     The maximum number of bytes that can be served by RLC instance to MAC.
 */
-public_rlc_um(    struct mac_status_resp rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP, uint16_t tbs_sizeP, struct mac_status_ind tx_statusP);)
+public_rlc_um(    struct mac_status_resp rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP, uint16_t tbs_sizeP, struct mac_status_ind tx_statusP, const eNB_flag_t enb_flagP);)
 
-/*! \fn struct mac_data_req rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP)
+/*! \fn void     rlc_um_set_nb_bytes_requested_by_mac (rlc_um_entity_t * const rlc_pP, const tb_size_t		tb_sizeP)
+* \brief    Set available TBS size for MAC Tx.
+* \param[in]  rlc_pP                    RLC UM protocol instance pointer.
+* \param[in]  tb_sizeP                 remaining TBS in bytes.
+*/
+public_rlc_um(   void     rlc_um_set_nb_bytes_requested_by_mac (rlc_um_entity_t * const rlc_pP, const tb_size_t		tb_sizeP);)
+
+/*! \fn struct mac_data_req rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP,const eNB_flag_t  enb_flagP)
 * \brief    Gives PDUs to lower layer MAC.
 * \param[in]  ctxt_pP                   Running context.
 * \param[in]  rlc_pP                    RLC UM protocol instance pointer.
+* \param[in]  enb_flagP                 eNB or UE flag.
 * \return     A PDU of the previously requested number of bytes, and the updated maximum number of bytes that can be served by RLC instance to MAC for next RLC transmission.
 */
-public_rlc_um(    struct mac_data_req rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP);)
+public_rlc_um(    struct mac_data_req rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP,const eNB_flag_t  enb_flagP);)
 
 
 /*! \fn void     rlc_um_mac_data_indication (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP,struct mac_data_ind data_indP)
@@ -212,6 +213,11 @@ public_rlc_um(    struct mac_data_req rlc_um_mac_data_request (const protocol_ct
 */
 public_rlc_um(   void     rlc_um_mac_data_indication (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP, struct mac_data_ind data_indP);)
 
+/*! \fn uint32_t rlc_um_get_buffer_occupancy (rlc_um_entity_t *rlc_pP)
+* \brief    Gets Tx Buffer Occupancy.
+* \param[in]  rlc_pP                    RLC UM protocol instance pointer.)
+*/
+public_rlc_um(    uint32_t rlc_um_get_buffer_occupancy (rlc_um_entity_t *rlc_pP);)
 
 /*! \fn void     rlc_um_data_req (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP, mem_block_t *sduP)
 * \brief    Interface with higher layers, buffer higher layer SDUS for transmission.

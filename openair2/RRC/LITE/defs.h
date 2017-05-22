@@ -1,32 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
-
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file RRC/LITE/defs.h
 * \brief RRC struct definitions and function prototypes
@@ -70,7 +61,7 @@
 #include "RRCConnectionReestablishmentRequest.h"
 #include "BCCH-DL-SCH-Message.h"
 #include "BCCH-BCH-Message.h"
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #include "MCCH-Message.h"
 #include "MBSFNAreaConfiguration-r9.h"
 #include "SCellToAddMod-r10.h"
@@ -80,8 +71,59 @@
 #include "UE-EUTRA-Capability.h"
 #include "MeasResults.h"
 
+/* correct Rel(8|10)/Rel14 differences
+ * the code is in favor of Rel14, those defines do the translation
+ */
+#if !defined(Rel14)
+#  define CipheringAlgorithm_r12_t e_SecurityAlgorithmConfig__cipheringAlgorithm
+#  define CipheringAlgorithm_r12_eea0 SecurityAlgorithmConfig__cipheringAlgorithm_eea0
+#  define CipheringAlgorithm_r12_eea1 SecurityAlgorithmConfig__cipheringAlgorithm_eea1
+#  define CipheringAlgorithm_r12_eea2 SecurityAlgorithmConfig__cipheringAlgorithm_eea2
+#  define CipheringAlgorithm_r12_spare1 SecurityAlgorithmConfig__cipheringAlgorithm_spare1
+#  define Alpha_r12_al0 UplinkPowerControlCommon__alpha_al0
+#  define Alpha_r12_al04 UplinkPowerControlCommon__alpha_al04
+#  define Alpha_r12_al05 UplinkPowerControlCommon__alpha_al05
+#  define Alpha_r12_al06 UplinkPowerControlCommon__alpha_al06
+#  define Alpha_r12_al07 UplinkPowerControlCommon__alpha_al07
+#  define Alpha_r12_al08 UplinkPowerControlCommon__alpha_al08
+#  define Alpha_r12_al09 UplinkPowerControlCommon__alpha_al09
+#  define Alpha_r12_al1 UplinkPowerControlCommon__alpha_al1
+#  define PreambleTransMax_n3 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n3
+#  define PreambleTransMax_n4 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n4
+#  define PreambleTransMax_n5 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n5
+#  define PreambleTransMax_n6 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n6
+#  define PreambleTransMax_n7 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n7
+#  define PreambleTransMax_n8 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n8
+#  define PreambleTransMax_n10 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10
+#  define PreambleTransMax_n20 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n20
+#  define PreambleTransMax_n50 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n50
+#  define PreambleTransMax_n100 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n100
+#  define PreambleTransMax_n200 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n200
+#  define PeriodicBSR_Timer_r12_sf5 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf5
+#  define PeriodicBSR_Timer_r12_sf10 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf10
+#  define PeriodicBSR_Timer_r12_sf16 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf16
+#  define PeriodicBSR_Timer_r12_sf20 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf20
+#  define PeriodicBSR_Timer_r12_sf32 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf32
+#  define PeriodicBSR_Timer_r12_sf40 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf40
+#  define PeriodicBSR_Timer_r12_sf64 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf64
+#  define PeriodicBSR_Timer_r12_sf80 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf80
+#  define PeriodicBSR_Timer_r12_sf128 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf128
+#  define PeriodicBSR_Timer_r12_sf160 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf160
+#  define PeriodicBSR_Timer_r12_sf320 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf320
+#  define PeriodicBSR_Timer_r12_sf640 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf640
+#  define PeriodicBSR_Timer_r12_sf1280 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf1280
+#  define PeriodicBSR_Timer_r12_sf2560 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf2560
+#  define PeriodicBSR_Timer_r12_infinity MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity
+#  define RetxBSR_Timer_r12_sf320 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf320
+#  define RetxBSR_Timer_r12_sf640 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf640
+#  define RetxBSR_Timer_r12_sf1280 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf1280
+#  define RetxBSR_Timer_r12_sf2560 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560
+#  define RetxBSR_Timer_r12_sf5120 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf5120
+#  define RetxBSR_Timer_r12_sf10240 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf10240
+#endif
+
 // This corrects something generated by asn1c which is different between Rel8 and Rel10
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
 #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member SystemInformation_r8_IEs_sib_TypeAndInfo_Member
 #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib2
 #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib3 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib3
@@ -95,7 +137,7 @@
 #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib11 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib11
 #endif
 /*
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib12_v920 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib12_v920
 #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib13_v920
 #endif
@@ -109,6 +151,14 @@
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
+#endif
+
+/* TODO: be sure this include is correct.
+ * It solves a problem of compilation of the RRH GW,
+ * issue #186.
+ */
+#if !defined(ENABLE_ITTI)
+# include "as_message.h"
 #endif
 
 #if defined(ENABLE_USE_MME)
@@ -182,7 +232,7 @@ typedef enum HO_STATE_e {
 #define PAYLOAD_SIZE_MAX 1024
 #define RRC_BUF_SIZE 255
 #define UNDEF_SECURITY_MODE 0xff
-#define NO_SECURITY_MODE 0x33
+#define NO_SECURITY_MODE 0x20
 
 #define CBA_OFFSET        0xfff4
 // #define NUM_MAX_CBA_GROUP 4 // in the platform_constants
@@ -195,7 +245,7 @@ typedef struct UE_RRC_INFO_s {
   uint8_t SIB1systemInfoValueTag;
   uint32_t SIStatus;
   uint32_t SIcnt;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   uint8_t MCCHStatus[8]; // MAX_MBSFN_AREA
 #endif
   uint8_t SIwindowsize; //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
@@ -302,7 +352,7 @@ typedef struct HANDOVER_INFO_UE_s {
 
 typedef struct eNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   SCellToAddMod_r10_t                sCell_config[2];
 #endif
   SRB_ToAddModList_t*                SRB_configList;
@@ -330,7 +380,7 @@ typedef struct eNB_RRC_UE_s {
   uint8_t kenb[32];
 #endif
   /* Used integrity/ciphering algorithms */
-  e_SecurityAlgorithmConfig__cipheringAlgorithm     ciphering_algorithm;
+  CipheringAlgorithm_r12_t                          ciphering_algorithm;
   e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
 
   uint8_t                            Status;
@@ -367,6 +417,7 @@ typedef struct eNB_RRC_UE_s {
 #endif
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;
+  uint32_t                           ue_release_timer_thres;
 } eNB_RRC_UE_t;
 
 typedef uid_t ue_uid_t;
@@ -400,7 +451,7 @@ typedef struct {
   SystemInformationBlockType1_t     *sib1;
   SystemInformationBlockType2_t     *sib2;
   SystemInformationBlockType3_t     *sib3;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   SystemInformationBlockType13_r9_t *sib13;
   uint8_t                           MBMS_flag;
   uint8_t                           num_mbsfn_sync_area;
@@ -489,7 +540,7 @@ typedef struct UE_RRC_INST_s {
   SystemInformationBlockType10_t *sib10[NB_CNX_UE];
   SystemInformationBlockType11_t *sib11[NB_CNX_UE];
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   uint8_t                           MBMS_flag;
   uint8_t *MCCH_MESSAGE[NB_CNX_UE];
   uint8_t sizeof_MCCH_MESSAGE[NB_CNX_UE];
@@ -506,6 +557,7 @@ typedef struct UE_RRC_INST_s {
   struct SRB_ToAddMod             *SRB1_config[NB_CNX_UE];
   struct SRB_ToAddMod             *SRB2_config[NB_CNX_UE];
   struct DRB_ToAddMod             *DRB_config[NB_CNX_UE][8];
+  rb_id_t                         *defaultDRB; // remember the ID of the default DRB
   MeasObjectToAddMod_t            *MeasObj[NB_CNX_UE][MAX_MEAS_OBJ];
   struct ReportConfigToAddMod     *ReportConfig[NB_CNX_UE][MAX_MEAS_CONFIG];
   struct QuantityConfig           *QuantityConfig[NB_CNX_UE];
@@ -534,7 +586,7 @@ typedef struct UE_RRC_INST_s {
 #endif
 
   /* Used integrity/ciphering algorithms */
-  e_SecurityAlgorithmConfig__cipheringAlgorithm     ciphering_algorithm;
+  CipheringAlgorithm_r12_t                          ciphering_algorithm;
   e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
 } UE_RRC_INST;
 

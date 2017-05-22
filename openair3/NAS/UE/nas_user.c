@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 Source      nas_user.c
 
@@ -44,8 +37,7 @@ Description NAS procedure functions triggered by the user
 *****************************************************************************/
 
 
-#include "nas_user.h"
-#include "userDef.h"
+#include "user_defs.h"
 #include "nas_log.h"
 #include "memory.h"
 
@@ -54,6 +46,8 @@ Description NAS procedure functions triggered by the user
 #include "at_error.h"
 #include "user_indication.h"
 #include "nas_proc.h"
+#include "nas_user.h"
+#include "utils.h"
 #include "user_api.h"
 
 #include <string.h> // memset, strncpy, strncmp
@@ -72,30 +66,30 @@ Description NAS procedure functions triggered by the user
  *  Functions executed upon receiving AT command from the user
  * ---------------------------------------------------------------------
  */
-static int _nas_user_proc_cgsn    (const at_command_t *data);
-static int _nas_user_proc_cgmi    (const at_command_t *data);
-static int _nas_user_proc_cgmm    (const at_command_t *data);
-static int _nas_user_proc_cgmr    (const at_command_t *data);
-static int _nas_user_proc_cimi    (const at_command_t *data);
-static int _nas_user_proc_cfun    (const at_command_t *data);
-static int _nas_user_proc_cpin    (const at_command_t *data);
-static int _nas_user_proc_csq     (const at_command_t *data);
-static int _nas_user_proc_cesq    (const at_command_t *data);
-static int _nas_user_proc_cops    (const at_command_t *data);
-static int _nas_user_proc_cgatt   (const at_command_t *data);
-static int _nas_user_proc_creg    (const at_command_t *data);
-static int _nas_user_proc_cgreg   (const at_command_t *data);
-static int _nas_user_proc_cereg   (const at_command_t *data);
-static int _nas_user_proc_cgdcont (const at_command_t *data);
-static int _nas_user_proc_cgact   (const at_command_t *data);
-static int _nas_user_proc_cmee    (const at_command_t *data);
-static int _nas_user_proc_clck    (const at_command_t *data);
-static int _nas_user_proc_cgpaddr (const at_command_t *data);
-static int _nas_user_proc_cnum    (const at_command_t *data);
-static int _nas_user_proc_clac    (const at_command_t *data);
+static int _nas_user_proc_cgsn    (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_cgmi    (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_cgmm    (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_cgmr    (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_cimi    (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_cfun    (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_cpin    (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_csq     (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_cesq    (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_cops    (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_cgatt   (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_creg    (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_cgreg   (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_cereg   (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_cgdcont (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_cgact   (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_cmee    (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_clck    (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_cgpaddr (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_cnum    (nas_user_t *user, const at_command_t *data);
+static int _nas_user_proc_clac    (nas_user_t *user, const at_command_t *data);
 
 /* NAS procedures applicable to AT commands */
-typedef int (*_nas_user_procedure_t) (const at_command_t *);
+typedef int (*_nas_user_procedure_t) (nas_user_t *, const at_command_t *);
 
 static _nas_user_procedure_t _nas_user_procedure[AT_COMMAND_ID_MAX] = {
   NULL,
@@ -123,30 +117,11 @@ static _nas_user_procedure_t _nas_user_procedure[AT_COMMAND_ID_MAX] = {
 };
 
 /*
- * Internal representation of data structure returned to the user
- * as the result of NAS procedure function call
- */
-static at_response_t _nas_user_data = {};
-
-/*
  * ---------------------------------------------------------------------
  *              Local UE context
  * ---------------------------------------------------------------------
  */
-/*
- * MT SIM pending status (see ETSI TS 127 007 V10.6.0, Note 2)
- * Commands which interact with MT that are accepted when MT is pending SIM PIN,
- * SIM PUK, or PH-SIM are: +CGMI, +CGMM, +CGMR, +CGSN, D112; (emergency call),
- * +CPAS, +CFUN, +CPIN, +CPINR, +CDIS (read and test command only), and +CIND
- * (read and test command only).
-*/
-typedef enum {
-  NAS_USER_READY, /* MT is not pending for any password   */
-  NAS_USER_SIM_PIN,   /* MT is waiting SIM PIN to be given    */
-  NAS_USER_SIM_PUK,   /* MT is waiting SIM PUK to be given    */
-  NAS_USER_PH_SIM_PIN /* MT is waiting phone-to-SIM card
-             * password to be given         */
-} nas_user_sim_status;
+
 static const char *_nas_user_sim_status_str[] = {
   "READY",
   "SIM PIN",
@@ -154,28 +129,15 @@ static const char *_nas_user_sim_status_str[] = {
   "PH-SIM PIN"
 };
 
-/*
- * The local UE context
- */
-static struct {
-  /* Firmware version number          */
-  const char *version;
-  /* SIM pending status           */
-  nas_user_sim_status sim_status;
-  /* Level of functionality           */
-  int fun;
-} _nas_user_context;
-
-/*
- * ---------------------------------------------------------------------
- *  UE parameters stored in the UE's non-volatile memory device
- * ---------------------------------------------------------------------
- */
-static user_nvdata_t _nas_user_nvdata;
-
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
+
+void _nas_user_context_initialize(nas_user_context_t *nas_user_context, const char *version) {
+  nas_user_context->version = version;
+  nas_user_context->sim_status = NAS_USER_SIM_PIN;
+  nas_user_context->fun = AT_CFUN_FUN_DEFAULT;
+}
 
 /****************************************************************************
  **                                                                        **
@@ -190,38 +152,27 @@ static user_nvdata_t _nas_user_nvdata;
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    None                                       **
- **          Others:    _nas_user_nvdata, _nas_user_context        **
  **                                                                        **
  ***************************************************************************/
-void nas_user_initialize(emm_indication_callback_t emm_cb,
+void nas_user_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
                          esm_indication_callback_t esm_cb, const char *version)
 {
   LOG_FUNC_IN;
 
-  /* Get UE's data pathname */
-  char *path = memory_get_path(USER_NVRAM_DIRNAME, USER_NVRAM_FILENAME);
-
-  if (path == NULL) {
-    LOG_TRACE(ERROR, "USR-MAIN  - Failed to get UE's data pathname");
-  }
+  user->nas_user_nvdata = calloc_or_fail(sizeof(user_nvdata_t));
 
   /* Get UE data stored in the non-volatile memory device */
-  else {
-    int rc = memory_read(path, &_nas_user_nvdata, sizeof(user_nvdata_t));
-
-    if (rc != RETURNok) {
-      LOG_TRACE(ERROR, "USR-MAIN  - Failed to read %s", path);
-    }
-
-    free(path);
+  int rc = memory_read(user->user_nvdata_store, user->nas_user_nvdata, sizeof(user_nvdata_t));
+  if (rc != RETURNok) {
+    LOG_TRACE(ERROR, "USR-MAIN  - Failed to read non volatile memory");
+    abort();
   }
 
-  _nas_user_context.version = version;
-  _nas_user_context.sim_status = NAS_USER_SIM_PIN;
-  _nas_user_context.fun = AT_CFUN_FUN_DEFAULT;
+  user->nas_user_context = calloc_or_fail(sizeof(nas_user_context_t));
+  _nas_user_context_initialize(user->nas_user_context, version);
 
   /* Initialize the internal NAS processing data */
-  nas_proc_initialize(emm_cb, esm_cb, _nas_user_nvdata.IMEI);
+  nas_proc_initialize(user, emm_cb, esm_cb, user->nas_user_nvdata->IMEI);
 
   LOG_FUNC_OUT;
 }
@@ -239,7 +190,7 @@ void nas_user_initialize(emm_indication_callback_t emm_cb,
  ** Outputs:     Return:        FALSE, TRUE                                **
  **                                                                        **
  ***************************************************************************/
-int nas_user_receive_and_process(int *fd, char *message)
+int nas_user_receive_and_process(nas_user_t *user, char *message)
 {
   LOG_FUNC_IN;
 
@@ -247,13 +198,14 @@ int nas_user_receive_and_process(int *fd, char *message)
   int nb_command;
   int bytes;
   int i;
+  user_api_id_t *user_api_id = user->user_api_id;
 
   if (message != NULL) {
     /* Set the message in receive buffer (Use to simulate reception of data from UserProcess) */
-    bytes = user_api_set_data(message);
+    bytes = user_api_set_data(user_api_id, message);
   } else {
     /* Read the user data message */
-    bytes = user_api_read_data (*fd);
+    bytes = user_api_read_data (user_api_id);
 
     if (bytes == RETURNerror) {
       /* Failed to read data from the user application layer;
@@ -270,11 +222,11 @@ int nas_user_receive_and_process(int *fd, char *message)
   }
 
   /* Decode the user data message */
-  nb_command = user_api_decode_data (bytes);
+  nb_command = user_api_decode_data (user_api_id, user->user_at_commands, bytes);
 
   for (i = 0; i < nb_command; i++) {
     /* Get the user data to be processed */
-    const void *data = user_api_get_data (i);
+    const void *data = user_api_get_data (user->user_at_commands, i);
 
     if (data == NULL) {
       /* Failed to get user data at the given index;
@@ -286,7 +238,7 @@ int nas_user_receive_and_process(int *fd, char *message)
     }
 
     /* Process the user data message */
-    ret_code = nas_user_process_data (data);
+    ret_code = nas_user_process_data (user, data);
 
     if (ret_code != RETURNok) {
       /* The user data message has not been successfully
@@ -300,7 +252,7 @@ int nas_user_receive_and_process(int *fd, char *message)
     /* Send response to UserProcess (If not in simulated reception) */
     if (message == NULL) {
       /* Encode the user data message */
-      bytes = user_api_encode_data (nas_user_get_data (), i == nb_command - 1);
+      bytes = user_api_encode_data (user->user_api_id, nas_user_get_data (user), i == nb_command - 1);
 
       if (bytes == RETURNerror) {
         /* Failed to encode the user data message;
@@ -309,7 +261,7 @@ int nas_user_receive_and_process(int *fd, char *message)
       }
 
       /* Send the data message to the user */
-      bytes = user_api_send_data (*fd, bytes);
+      bytes = user_api_send_data (user_api_id, bytes);
 
       if (bytes == RETURNerror) {
         /* Failed to send data to the user application layer;
@@ -338,12 +290,12 @@ int nas_user_receive_and_process(int *fd, char *message)
  ** Outputs:     None                                                      **
  **      Return:    RETURNok if the command has been success-  **
  **             fully executed; RETURNerror otherwise      **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-int nas_user_process_data(const void *data)
+int nas_user_process_data(nas_user_t *user, const void *data)
 {
   LOG_FUNC_IN;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNerror;
 
@@ -362,18 +314,18 @@ int nas_user_process_data(const void *data)
     nas_procedure = _nas_user_procedure[user_data->id];
 
     if (nas_procedure != NULL) {
-      ret_code = (*nas_procedure)(user_data);
+      ret_code = (*nas_procedure)(user, user_data);
     } else {
       /* AT command related to result format only */
-      _nas_user_data.id = user_data->id;
-      _nas_user_data.type = user_data->type;
-      _nas_user_data.mask = user_data->mask;
-      _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+      at_response->id = user_data->id;
+      at_response->type = user_data->type;
+      at_response->mask = user_data->mask;
+      at_response->cause_code = AT_ERROR_SUCCESS;
       ret_code = RETURNok;
     }
   } else {
     LOG_TRACE(ERROR, "USR-MAIN  - Data to be processed is null");
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
   }
 
   LOG_FUNC_RETURN (ret_code);
@@ -396,10 +348,10 @@ int nas_user_process_data(const void *data)
  **          Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-const void *nas_user_get_data(void)
+const void *nas_user_get_data(nas_user_t *user)
 {
   LOG_FUNC_IN;
-  LOG_FUNC_RETURN ((void *) &_nas_user_data);
+  LOG_FUNC_RETURN ((void *) user->at_response);
 }
 
 /****************************************************************************/
@@ -418,30 +370,29 @@ const void *nas_user_get_data(void)
  **      ning the IMEI.                                            **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_nvdata                           **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_cgsn(const at_command_t *data)
+static int _nas_user_proc_cgsn(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_cgsn_resp_t *cgsn = &_nas_user_data.response.cgsn;
+  at_cgsn_resp_t *cgsn = &at_response->response.cgsn;
   memset(cgsn, 0, sizeof(at_cgsn_resp_t));
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_CGSN_MASK;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_CGSN_MASK;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_ACT:
     /* Get the Product Serial Number Identification (IMEI) */
-    strncpy(cgsn->sn, _nas_user_nvdata.IMEI,
+    strncpy(cgsn->sn, user->nas_user_nvdata->IMEI,
             AT_RESPONSE_INFO_TEXT_SIZE);
     break;
 
@@ -452,7 +403,7 @@ static int _nas_user_proc_cgsn(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CGSN command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -470,30 +421,29 @@ static int _nas_user_proc_cgsn(const at_command_t *data)
  **      le Equipment to which it is connected to.                 **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_nvdata                           **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_cgmi(const at_command_t *data)
+static int _nas_user_proc_cgmi(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_cgmi_resp_t *cgmi = &_nas_user_data.response.cgmi;
+  at_cgmi_resp_t *cgmi = &at_response->response.cgmi;
   memset(cgmi, 0, sizeof(at_cgmi_resp_t));
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_CGMI_MASK;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_CGMI_MASK;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_ACT:
     /* Get the Manufacturer identifier */
-    strncpy(cgmi->manufacturer, _nas_user_nvdata.manufacturer,
+    strncpy(cgmi->manufacturer, user->nas_user_nvdata->manufacturer,
             AT_RESPONSE_INFO_TEXT_SIZE);
     break;
 
@@ -504,7 +454,7 @@ static int _nas_user_proc_cgmi(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CGMI command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -522,30 +472,29 @@ static int _nas_user_proc_cgmi(const at_command_t *data)
  **      Equipment to which it is connected to.                    **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_nvdata                           **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_cgmm(const at_command_t *data)
+static int _nas_user_proc_cgmm(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_cgmm_resp_t *cgmm = &_nas_user_data.response.cgmm;
+  at_cgmm_resp_t *cgmm = &at_response->response.cgmm;
   memset(cgmm, 0, sizeof(at_cgmm_resp_t));
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_CGMM_MASK;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_CGMM_MASK;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_ACT:
     /* Get the Model identifier */
-    strncpy(cgmm->model, _nas_user_nvdata.model,
+    strncpy(cgmm->model, user->nas_user_nvdata->model,
             AT_RESPONSE_INFO_TEXT_SIZE);
     break;
 
@@ -556,7 +505,7 @@ static int _nas_user_proc_cgmm(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CGMM command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -575,30 +524,30 @@ static int _nas_user_proc_cgmm(const at_command_t *data)
  **      Equipment to which it is connected to.                    **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_cgmr(const at_command_t *data)
+static int _nas_user_proc_cgmr(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_cgmr_resp_t *cgmr = &_nas_user_data.response.cgmr;
+  at_cgmr_resp_t *cgmr = &at_response->response.cgmr;
   memset(cgmr, 0, sizeof(at_cgmr_resp_t));
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_CGMR_MASK;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_CGMR_MASK;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_ACT:
     /* Get the revision identifier */
-    strncpy(cgmr->revision, _nas_user_context.version,
+    strncpy(cgmr->revision, nas_user_context->version,
             AT_RESPONSE_INFO_TEXT_SIZE);
     break;
 
@@ -609,7 +558,7 @@ static int _nas_user_proc_cgmr(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CGMR command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -631,39 +580,39 @@ static int _nas_user_proc_cgmr(const at_command_t *data)
  **      ning the IMSI.                                            **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_nvdata                           **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_cimi(const at_command_t *data)
+static int _nas_user_proc_cimi(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_cimi_resp_t *cimi = &_nas_user_data.response.cimi;
+  at_cimi_resp_t *cimi = &at_response->response.cimi;
   memset(cimi, 0, sizeof(at_cimi_resp_t));
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_CIMI_MASK;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_CIMI_MASK;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_ACT:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
-      _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
+    if (nas_user_context->sim_status != NAS_USER_READY) {
+      at_response->cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
 
     /* Get the International Mobile Subscriber Identity (IMSI) */
-    ret_code = nas_proc_get_imsi(cimi->IMSI);
+    ret_code = nas_proc_get_imsi(user->emm_data, cimi->IMSI);
 
     if (ret_code != RETURNok) {
       LOG_TRACE(ERROR, "USR-MAIN  - Failed to get IMSI number");
-      _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+      at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     }
 
     break;
@@ -675,7 +624,7 @@ static int _nas_user_proc_cimi(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CIMI command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -692,27 +641,27 @@ static int _nas_user_proc_cimi(const at_command_t *data)
  **      to different power consumption states.                    **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_cfun(const at_command_t *data)
+static int _nas_user_proc_cfun(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_cfun_resp_t *cfun = &_nas_user_data.response.cfun;
+  at_cfun_resp_t *cfun = &at_response->response.cfun;
   memset(cfun, 0, sizeof(at_cfun_resp_t));
 
   int fun = AT_CFUN_FUN_DEFAULT;
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_CFUN_MASK;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_CFUN_MASK;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_SET:
@@ -728,7 +677,7 @@ static int _nas_user_proc_cfun(const at_command_t *data)
          * return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - <rst> parameter is not valid"
                   " (%d)", data->command.cfun.rst);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -741,7 +690,7 @@ static int _nas_user_proc_cfun(const at_command_t *data)
          * is not valid; return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - <fun> parameter is not valid"
                   " (%d)", data->command.cfun.fun);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -758,7 +707,7 @@ static int _nas_user_proc_cfun(const at_command_t *data)
     case AT_CFUN_FULL:
       /* Notify the NAS procedure call manager that the UE is
        * operational */
-      ret_code = nas_proc_enable_s1_mode();
+      ret_code = nas_proc_enable_s1_mode(user);
       break;
 
     default:
@@ -768,14 +717,14 @@ static int _nas_user_proc_cfun(const at_command_t *data)
 
     if (ret_code != RETURNerror) {
       /* Update the functionality level */
-      _nas_user_context.fun = fun;
+      nas_user_context->fun = fun;
     }
 
     break;
 
   case AT_COMMAND_GET:
     /* Get the MT's functionality level */
-    cfun->fun = _nas_user_context.fun;
+    cfun->fun = nas_user_context->fun;
     break;
 
   case AT_COMMAND_TST:
@@ -787,7 +736,7 @@ static int _nas_user_proc_cfun(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CFUN command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -805,25 +754,25 @@ static int _nas_user_proc_cfun(const at_command_t *data)
  **      can be operated.                                          **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_context, _nas_user_data          **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_cpin(const at_command_t *data)
+static int _nas_user_proc_cpin(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_cpin_resp_t *cpin = &_nas_user_data.response.cpin;
+  at_cpin_resp_t *cpin = &at_response->response.cpin;
   memset(cpin, 0, sizeof(at_cpin_resp_t));
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_CPIN_MASK;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_CPIN_MASK;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_SET:
@@ -832,24 +781,24 @@ static int _nas_user_proc_cpin(const at_command_t *data)
      * Set command sends to the MT a password which is necessary
      * before it can be operated
      */
-    if (_nas_user_context.sim_status == NAS_USER_SIM_PIN) {
+    if (nas_user_context->sim_status == NAS_USER_SIM_PIN) {
       /* The MT is waiting for PIN password; check the PIN code */
-      if (strncmp(_nas_user_nvdata.PIN,
+      if (strncmp(user->nas_user_nvdata->PIN,
                   data->command.cpin.pin, USER_PIN_SIZE) != 0) {
         /* The PIN code is NOT matching; return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - PIN code is not correct "
                   "(%s)", data->command.cpin.pin);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PASSWD;
+        at_response->cause_code = AT_ERROR_INCORRECT_PASSWD;
         ret_code = RETURNerror;
       } else {
         /* The PIN code is matching; update the user's PIN
          * pending status */
-        _nas_user_context.sim_status = NAS_USER_READY;
+        nas_user_context->sim_status = NAS_USER_READY;
       }
     } else {
       /* The MT is NOT waiting for PIN password;
        * return an error message */
-      _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_ALLOWED;
+      at_response->cause_code = AT_ERROR_OPERATION_NOT_ALLOWED;
       ret_code = RETURNerror;
     }
 
@@ -861,7 +810,7 @@ static int _nas_user_proc_cpin(const at_command_t *data)
      * whether some password is required or not.
      */
     strncpy(cpin->code,
-            _nas_user_sim_status_str[_nas_user_context.sim_status],
+            _nas_user_sim_status_str[nas_user_context->sim_status],
             AT_CPIN_RESP_SIZE);
     break;
 
@@ -873,7 +822,7 @@ static int _nas_user_proc_cpin(const at_command_t *data)
     /* Other types of AT CPIN command are not valid */
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CPIN command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -891,30 +840,30 @@ static int _nas_user_proc_cpin(const at_command_t *data)
  **      Equipment.                                                **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_csq(const at_command_t *data)
+static int _nas_user_proc_csq(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_csq_resp_t *csq = &_nas_user_data.response.csq;
+  at_csq_resp_t *csq = &at_response->response.csq;
   memset(csq, 0, sizeof(at_csq_resp_t));
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_CSQ_MASK;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_CSQ_MASK;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_ACT:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
-      _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
+    if (nas_user_context->sim_status != NAS_USER_READY) {
+      at_response->cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
 
@@ -935,7 +884,7 @@ static int _nas_user_proc_csq(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CSQ command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -952,30 +901,30 @@ static int _nas_user_proc_csq(const at_command_t *data)
  **      meters.                                                   **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_cesq(const at_command_t *data)
+static int _nas_user_proc_cesq(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_cesq_resp_t *cesq = &_nas_user_data.response.cesq;
+  at_cesq_resp_t *cesq = &at_response->response.cesq;
   memset(cesq, 0, sizeof(at_cesq_resp_t));
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_CESQ_MASK;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_CESQ_MASK;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_ACT:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
-      _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
+    if (nas_user_context->sim_status != NAS_USER_READY) {
+      at_response->cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
 
@@ -986,7 +935,7 @@ static int _nas_user_proc_cesq(const at_command_t *data)
     cesq->ber  = AT_CESQ_BER_UNKNOWN;
     cesq->rscp = AT_CESQ_RSCP_UNKNOWN;
     cesq->ecno = AT_CESQ_ECNO_UNKNOWN;
-    ret_code = nas_proc_get_signal_quality(&cesq->rsrq, &cesq->rsrp);
+    ret_code = nas_proc_get_signal_quality(user, &cesq->rsrq, &cesq->rsrp);
     break;
 
   case AT_COMMAND_TST:
@@ -998,7 +947,7 @@ static int _nas_user_proc_cesq(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CESQ command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -1017,19 +966,19 @@ static int _nas_user_proc_cesq(const at_command_t *data)
  **      slot.                                                     **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_cops(const at_command_t *data)
+static int _nas_user_proc_cops(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_cops_resp_t *cops = &_nas_user_data.response.cops;
+  at_cops_resp_t *cops = &at_response->response.cops;
   memset(cops, 0, sizeof(at_cops_resp_t));
 
   static int read_format = AT_COPS_FORMAT_DEFAULT;
@@ -1042,15 +991,15 @@ static int _nas_user_proc_cops(const at_command_t *data)
 
   int oper_is_selected;
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_NO_PARAM;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_NO_PARAM;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_SET:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
-      _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
+    if (nas_user_context->sim_status != NAS_USER_READY) {
+      at_response->cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
 
@@ -1086,7 +1035,7 @@ static int _nas_user_proc_cops(const at_command_t *data)
         /* <oper> field shall be present */
         if ( !(data->mask & AT_COPS_OPER_MASK) ) {
           LOG_TRACE(ERROR, "USR-MAIN  - <oper> parameter is not present");
-          _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+          at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
           ret_code = RETURNerror;
           break;
         }
@@ -1094,7 +1043,7 @@ static int _nas_user_proc_cops(const at_command_t *data)
         /* <format> field shall be present */
         if ( !(data->mask & AT_COPS_FORMAT_MASK) ) {
           LOG_TRACE(ERROR, "USR-MAIN  - <format> parameter is not present");
-          _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+          at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
           ret_code = RETURNerror;
           break;
         }
@@ -1105,7 +1054,7 @@ static int _nas_user_proc_cops(const at_command_t *data)
           /* The value of <format> field is not valid */
           LOG_TRACE(ERROR, "USR-MAIN  - <format> parameter is not valid (%d)",
                     data->command.cops.format);
-          _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+          at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
           ret_code = RETURNerror;
           break;
         }
@@ -1119,7 +1068,7 @@ static int _nas_user_proc_cops(const at_command_t *data)
             /* The value of <AcT> field is not valid */
             LOG_TRACE(ERROR, "USR-MAIN  - <AcT> parameter is not valid (%d)",
                       data->command.cops.AcT);
-            _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+            at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
             ret_code = RETURNerror;
             break;
           }
@@ -1147,7 +1096,7 @@ static int _nas_user_proc_cops(const at_command_t *data)
             /* The value of <format> field is not valid */
             LOG_TRACE(ERROR, "USR-MAIN  - <format> parameter is not valid (%d)",
                       data->command.cops.format);
-            _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+            at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
             ret_code = RETURNerror;
             break;
           }
@@ -1163,7 +1112,7 @@ static int _nas_user_proc_cops(const at_command_t *data)
 
       default:
         LOG_TRACE(ERROR, "USR-MAIN  - <mode> parameter is not supported (%d)", mode);
-        _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+        at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
         ret_code = RETURNerror;
         break;
       }
@@ -1175,22 +1124,22 @@ static int _nas_user_proc_cops(const at_command_t *data)
     if (ret_code != RETURNerror) {
       if (mode == AT_COPS_DEREG) {
         /* Force an attempt to deregister from the network */
-        ret_code = nas_proc_deregister();
+        ret_code = nas_proc_deregister(user);
 
         if (ret_code != RETURNok) {
           LOG_TRACE(ERROR, "USR-MAIN  - Network deregistration failed");
-          _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+          at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
           break;
         }
       } else if (mode != AT_COPS_FORMAT) {
         /* Force an attempt to automatically/manualy select
          * and register the GSM/UMTS/EPS network operator */
-        ret_code = nas_proc_register(mode, format,
+        ret_code = nas_proc_register(user, mode, format,
                                      &data->command.cops.plmn, AcT);
 
         if (ret_code != RETURNok) {
           LOG_TRACE(ERROR, "USR-MAIN  - Network registration failed (<mode>=%d)", mode);
-          _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+          at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
           break;
         }
       }
@@ -1205,14 +1154,14 @@ static int _nas_user_proc_cops(const at_command_t *data)
      */
 
     /* Get the current network registration data */
-    ret_code = nas_proc_get_reg_data(&mode,
+    ret_code = nas_proc_get_reg_data(user, &mode,
                                      &oper_is_selected, read_format,
                                      &cops->get.plmn, &cops->get.AcT);
 
     if (ret_code != RETURNok) {
       LOG_TRACE(ERROR, "USR-MAIN  - Failed to get registration data (<mode>=%d)",
                 mode);
-      _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+      at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
       break;
     }
 
@@ -1228,11 +1177,11 @@ static int _nas_user_proc_cops(const at_command_t *data)
     /* Set optional parameter bitmask */
     if (oper_is_selected) {
       cops->get.format = read_format;
-      _nas_user_data.mask |= (AT_COPS_RESP_FORMAT_MASK |
+      at_response->mask |= (AT_COPS_RESP_FORMAT_MASK |
                               AT_COPS_RESP_OPER_MASK);
 
       if (cops->get.AcT != NET_ACCESS_UNAVAILABLE) {
-        _nas_user_data.mask |= AT_COPS_RESP_ACT_MASK;
+        at_response->mask |= AT_COPS_RESP_ACT_MASK;
       }
     }
 
@@ -1243,13 +1192,13 @@ static int _nas_user_proc_cops(const at_command_t *data)
      * Test command returns a set of parameters, each representing
      * an operator present in the network.
      */
-    cops->tst.size = nas_proc_get_oper_list(&cops->tst.data);
+    cops->tst.size = nas_proc_get_oper_list(user, &cops->tst.data);
     break;
 
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+COPS command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -1266,30 +1215,30 @@ static int _nas_user_proc_cops(const at_command_t *data)
  **      or detach the MT from, the EPS service.                   **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_cgatt(const at_command_t *data)
+static int _nas_user_proc_cgatt(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_cgatt_resp_t *cgatt = &_nas_user_data.response.cgatt;
+  at_cgatt_resp_t *cgatt = &at_response->response.cgatt;
   memset(cgatt, 0, sizeof(at_cgatt_resp_t));
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_CGATT_MASK;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_CGATT_MASK;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_SET:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
-      _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
+    if (nas_user_context->sim_status != NAS_USER_READY) {
+      at_response->cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
 
@@ -1304,7 +1253,7 @@ static int _nas_user_proc_cgatt(const at_command_t *data)
          * return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - <state> parameter is not valid (%d)",
                   data->command.cgatt.state);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -1315,16 +1264,16 @@ static int _nas_user_proc_cgatt(const at_command_t *data)
       ret_code = RETURNerror;
 
       if (data->command.cgatt.state == AT_CGATT_ATTACHED) {
-        ret_code = nas_proc_attach();
+        ret_code = nas_proc_attach(user);
       } else if (data->command.cgatt.state == AT_CGATT_DETACHED) {
-        ret_code = nas_proc_detach(FALSE);
+        ret_code = nas_proc_detach(user, FALSE);
       }
 
       if (ret_code != RETURNok) {
         LOG_TRACE(ERROR, "USR-MAIN  - Failed to attach/detach "
                   "to/from EPS service (<state>=%d)",
                   data->command.cgatt.state);
-        _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+        at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
       }
     }
 
@@ -1335,7 +1284,7 @@ static int _nas_user_proc_cgatt(const at_command_t *data)
     /*
      * Read command returns the current EPS service state.
      */
-    if (nas_proc_get_attach_status() != TRUE) {
+    if (nas_proc_get_attach_status(user) != TRUE) {
       cgatt->state = AT_CGATT_DETACHED;
     } else {
       cgatt->state = AT_CGATT_ATTACHED;
@@ -1353,7 +1302,7 @@ static int _nas_user_proc_cgatt(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CGATT command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -1371,32 +1320,32 @@ static int _nas_user_proc_cgatt(const at_command_t *data)
  **      location information in GERA/UTRA/E-UTRA Network.         **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_creg(const at_command_t *data)
+static int _nas_user_proc_creg(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_creg_resp_t *creg = &_nas_user_data.response.creg;
+  at_creg_resp_t *creg = &at_response->response.creg;
   memset(creg, 0, sizeof(at_creg_resp_t));
 
   static int n = AT_CREG_N_DEFAULT;
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_NO_PARAM;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_NO_PARAM;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_SET:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
-      _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
+    if (nas_user_context->sim_status != NAS_USER_READY) {
+      at_response->cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
 
@@ -1413,7 +1362,7 @@ static int _nas_user_proc_creg(const at_command_t *data)
          * return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - <n> parameter is not valid"
                   " (%d)", data->command.creg.n);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -1439,7 +1388,7 @@ static int _nas_user_proc_creg(const at_command_t *data)
       if (ret_code != RETURNok) {
         LOG_TRACE(ERROR,
                   "USR-MAIN  - Failed to disable logging of network notification");
-        _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+        at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
       }
 
       break;
@@ -1454,7 +1403,7 @@ static int _nas_user_proc_creg(const at_command_t *data)
 
       if (ret_code != RETURNok) {
         LOG_TRACE(ERROR, "USR-MAIN  - Failed to enable logging of registration status");
-        _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+        at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
       }
 
       break;
@@ -1481,11 +1430,11 @@ static int _nas_user_proc_creg(const at_command_t *data)
     case AT_CREG_OFF:
     case AT_CREG_ON:
       /* Get network registration status */
-      ret_code = nas_proc_get_reg_status(&creg->stat);
+      ret_code = nas_proc_get_reg_status(user, &creg->stat);
 
       if (ret_code != RETURNok) {
         LOG_TRACE(ERROR, "USR-MAIN  - Failed to get registration status");
-        _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+        at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
       }
 
       break;
@@ -1502,7 +1451,7 @@ static int _nas_user_proc_creg(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CREG command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -1520,32 +1469,32 @@ static int _nas_user_proc_creg(const at_command_t *data)
  **      information in GERA/UTRA Network.                         **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_cgreg(const at_command_t *data)
+static int _nas_user_proc_cgreg(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_cgreg_resp_t *cgreg = &_nas_user_data.response.cgreg;
+  at_cgreg_resp_t *cgreg = &at_response->response.cgreg;
   memset(cgreg, 0, sizeof(at_cgreg_resp_t));
 
   static int n = AT_CGREG_N_DEFAULT;
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_NO_PARAM;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_NO_PARAM;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_SET:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
-      _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
+    if (nas_user_context->sim_status != NAS_USER_READY) {
+      at_response->cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
 
@@ -1562,7 +1511,7 @@ static int _nas_user_proc_cgreg(const at_command_t *data)
          * return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - <n> parameter is not valid"
                   " (%d)", data->command.cgreg.n);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -1588,7 +1537,7 @@ static int _nas_user_proc_cgreg(const at_command_t *data)
       if (ret_code != RETURNok) {
         LOG_TRACE(ERROR,
                   "USR-MAIN  - Failed to disable logging of network notification");
-        _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+        at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
       }
 
       break;
@@ -1603,7 +1552,7 @@ static int _nas_user_proc_cgreg(const at_command_t *data)
 
       if (ret_code != RETURNok) {
         LOG_TRACE(ERROR, "USR-MAIN  - Failed to enable logging of registration status");
-        _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+        at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
       }
 
       break;
@@ -1630,11 +1579,11 @@ static int _nas_user_proc_cgreg(const at_command_t *data)
     case AT_CGREG_OFF:
     case AT_CGREG_ON:
       /* Get network registration status */
-      ret_code = nas_proc_get_reg_status(&cgreg->stat);
+      ret_code = nas_proc_get_reg_status(user, &cgreg->stat);
 
       if (ret_code != RETURNok) {
         LOG_TRACE(ERROR, "USR-MAIN  - Failed to get registration status");
-        _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+        at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
       }
 
       break;
@@ -1651,7 +1600,7 @@ static int _nas_user_proc_cgreg(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CGREG command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -1669,32 +1618,32 @@ static int _nas_user_proc_cgreg(const at_command_t *data)
  **      information in E-UTRA Network.                            **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_cereg(const at_command_t *data)
+static int _nas_user_proc_cereg(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_cereg_resp_t *cereg = &_nas_user_data.response.cereg;
+  at_cereg_resp_t *cereg = &at_response->response.cereg;
   memset(cereg, 0, sizeof(at_cereg_resp_t));
 
   static int n = AT_CEREG_N_DEFAULT;
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_NO_PARAM;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_NO_PARAM;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_SET:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
-      _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
+    if (nas_user_context->sim_status != NAS_USER_READY) {
+      at_response->cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
 
@@ -1711,7 +1660,7 @@ static int _nas_user_proc_cereg(const at_command_t *data)
          * return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - <n> parameter is not valid"
                   " (%d)",  data->command.cereg.n);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -1737,7 +1686,7 @@ static int _nas_user_proc_cereg(const at_command_t *data)
       if (ret_code != RETURNok) {
         LOG_TRACE(ERROR,
                   "USR-MAIN  - Failed to disable logging of network notification");
-        _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+        at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
       }
 
       break;
@@ -1748,7 +1697,7 @@ static int _nas_user_proc_cereg(const at_command_t *data)
 
       if (ret_code != RETURNok) {
         LOG_TRACE(ERROR, "USR-MAIN  - Failed to enable logging of location information");
-        _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+        at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
       }
 
       break;
@@ -1760,7 +1709,7 @@ static int _nas_user_proc_cereg(const at_command_t *data)
 
       if (ret_code != RETURNok) {
         LOG_TRACE(ERROR, "USR-MAIN  - Failed to enable logging of registration status");
-        _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+        at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
       }
 
       break;
@@ -1783,21 +1732,21 @@ static int _nas_user_proc_cereg(const at_command_t *data)
     switch (n) {
     case AT_CEREG_BOTH:
       /* Get EPS location information  */
-      ret_code = nas_proc_get_loc_info(cereg->tac, cereg->ci,
+      ret_code = nas_proc_get_loc_info(user, cereg->tac, cereg->ci,
                                        &cereg->AcT);
 
       if (ret_code != RETURNok) {
         LOG_TRACE(ERROR, "USR-MAIN  - Failed to get location information");
-        _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+        at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
         break;
       }
 
       if (cereg->tac[0] != 0) {
-        _nas_user_data.mask |= (AT_CEREG_RESP_TAC_MASK |
+        at_response->mask |= (AT_CEREG_RESP_TAC_MASK |
                                 AT_CEREG_RESP_CI_MASK);
 
         if (cereg->AcT != NET_ACCESS_UNAVAILABLE) {
-          _nas_user_data.mask |= (AT_CEREG_RESP_ACT_MASK);
+          at_response->mask |= (AT_CEREG_RESP_ACT_MASK);
         }
       }
 
@@ -1806,11 +1755,11 @@ static int _nas_user_proc_cereg(const at_command_t *data)
     case AT_CEREG_OFF:
     case AT_CEREG_ON:
       /* Get network registration status */
-      ret_code = nas_proc_get_reg_status(&cereg->stat);
+      ret_code = nas_proc_get_reg_status(user, &cereg->stat);
 
       if (ret_code != RETURNok) {
         LOG_TRACE(ERROR, "USR-MAIN  - Failed to get registration status");
-        _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+        at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
       }
 
       break;
@@ -1827,7 +1776,7 @@ static int _nas_user_proc_cereg(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CEREG command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -1850,19 +1799,19 @@ static int _nas_user_proc_cereg(const at_command_t *data)
  **      fault bearer and traffic flows in EPS.                    **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_cgdcont(const at_command_t *data)
+static int _nas_user_proc_cgdcont(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_cgdcont_get_t *cgdcont = &_nas_user_data.response.cgdcont.get;
+  at_cgdcont_get_t *cgdcont = &at_response->response.cgdcont.get;
   memset(cgdcont, 0, sizeof(at_cgdcont_resp_t));
 
   int cid = AT_CGDCONT_CID_DEFAULT;
@@ -1874,15 +1823,15 @@ static int _nas_user_proc_cgdcont(const at_command_t *data)
   int im_cn_signalling = AT_CGDCONT_IM_CM_DEFAULT;
   int reset_pdn = TRUE;
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_NO_PARAM;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_NO_PARAM;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_SET:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
-      _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
+    if (nas_user_context->sim_status != NAS_USER_READY) {
+      at_response->cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
 
@@ -1896,7 +1845,7 @@ static int _nas_user_proc_cgdcont(const at_command_t *data)
          * return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - <cid> parameter is not valid"
                   " (%d)", data->command.cgdcont.cid);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -1916,7 +1865,7 @@ static int _nas_user_proc_cgdcont(const at_command_t *data)
          * return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - <PDN_type> parameter is not "
                   "valid (%s)", data->command.cgdcont.PDP_type);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -1935,7 +1884,7 @@ static int _nas_user_proc_cgdcont(const at_command_t *data)
          * not valid; return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - <d_comp> parameter is not "
                   "valid (%d)", data->command.cgdcont.d_comp);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -1950,7 +1899,7 @@ static int _nas_user_proc_cgdcont(const at_command_t *data)
          * not valid; return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - <h_comp> parameter is not "
                   "valid (%d)", data->command.cgdcont.h_comp);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -1966,7 +1915,7 @@ static int _nas_user_proc_cgdcont(const at_command_t *data)
         LOG_TRACE(ERROR, "USR-MAIN  - <IPv4AddrAlloc> parameter "
                   "is not valid (%d)",
                   data->command.cgdcont.IPv4AddrAlloc);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -1982,7 +1931,7 @@ static int _nas_user_proc_cgdcont(const at_command_t *data)
         LOG_TRACE(ERROR, "USR-MAIN  - <emergency indication> "
                   "parameter is not valid (%d)",
                   data->command.cgdcont.emergency_indication);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -1998,7 +1947,7 @@ static int _nas_user_proc_cgdcont(const at_command_t *data)
         LOG_TRACE(ERROR, "USR-MAIN  - <P-CSCF_discovery> "
                   "parameter is not valid (%d)",
                   data->command.cgdcont.P_CSCF_discovery);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -2015,7 +1964,7 @@ static int _nas_user_proc_cgdcont(const at_command_t *data)
         LOG_TRACE(ERROR, "USR-MAIN  - <IM_CN_Signalling_Flag_Ind> "
                   "parameter is not valid (%d)",
                   data->command.cgdcont.IM_CN_Signalling_Flag_Ind);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -2029,10 +1978,10 @@ static int _nas_user_proc_cgdcont(const at_command_t *data)
     if (reset_pdn) {
       /* A special form of the set command, +CGDCONT=<cid> causes
        * the values for context number <cid> to become undefined */
-      ret_code = nas_proc_reset_pdn(cid);
+      ret_code = nas_proc_reset_pdn(user, cid);
     } else {
       /* Define a new PDN connection */
-      ret_code = nas_proc_set_pdn(cid, pdn_type, apn,
+      ret_code = nas_proc_set_pdn(user, cid, pdn_type, apn,
                                   ipv4_addr_allocation, emergency,
                                   p_cscf, im_cn_signalling);
     }
@@ -2040,7 +1989,7 @@ static int _nas_user_proc_cgdcont(const at_command_t *data)
     if (ret_code != RETURNok) {
       LOG_TRACE(ERROR, "USR-MAIN  - Failed to setup PDN connection "
                 "(<cid>=%d)", data->command.cgdcont.cid);
-      _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+      at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     }
 
     break;
@@ -2050,14 +1999,14 @@ static int _nas_user_proc_cgdcont(const at_command_t *data)
      * Read command returns the current settings for each
      * defined PDN connection/default EPS bearer context
      */
-    cgdcont->n_pdns = nas_proc_get_pdn_param(cgdcont->cid,
+    cgdcont->n_pdns = nas_proc_get_pdn_param(user->esm_data, cgdcont->cid,
                       cgdcont->PDP_type,
                       cgdcont->APN,
                       AT_CGDCONT_RESP_SIZE);
 
     if (cgdcont->n_pdns == 0) {
       LOG_TRACE(ERROR, "USR-MAIN  - No any PDN context is defined");
-      _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+      at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     }
 
     break;
@@ -2068,15 +2017,15 @@ static int _nas_user_proc_cgdcont(const at_command_t *data)
      */
   {
     /* Get the maximum value of a PDN context identifier */
-    int cid_max = nas_proc_get_pdn_range();
+    int cid_max = nas_proc_get_pdn_range(user->esm_data);
 
     if (cid_max > AT_CGDCONT_RESP_SIZE) {
       /* The range is defined by the user interface */
-      _nas_user_data.response.cgdcont.tst.n_cid =
+      at_response->response.cgdcont.tst.n_cid =
         AT_CGDCONT_RESP_SIZE;
     } else {
       /* The range is defined by the ESM sublayer application */
-      _nas_user_data.response.cgdcont.tst.n_cid = cid_max;
+      at_response->response.cgdcont.tst.n_cid = cid_max;
     }
   }
   break;
@@ -2084,7 +2033,7 @@ static int _nas_user_proc_cgdcont(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CGDCONT command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -2102,33 +2051,33 @@ static int _nas_user_proc_cgdcont(const at_command_t *data)
  **      for E-UTRAN                                               **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_cgact(const at_command_t *data)
+static int _nas_user_proc_cgact(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_cgact_resp_t *cgact = &_nas_user_data.response.cgact;
+  at_cgact_resp_t *cgact = &at_response->response.cgact;
   memset(cgact, 0, sizeof(at_cgact_resp_t));
 
   int cid = -1;
   int state = AT_CGACT_STATE_DEFAULT;
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_CGACT_MASK;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_CGACT_MASK;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_SET:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
-      _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
+    if (nas_user_context->sim_status != NAS_USER_READY) {
+      at_response->cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
 
@@ -2143,7 +2092,7 @@ static int _nas_user_proc_cgact(const at_command_t *data)
          * not valid; return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - <state> parameter is "
                   "not valid (%d)",  data->command.cgact.state);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -2157,7 +2106,7 @@ static int _nas_user_proc_cgact(const at_command_t *data)
          * return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - <cid> parameter is "
                   "not valid (%d)",  data->command.cgact.cid);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -2171,9 +2120,9 @@ static int _nas_user_proc_cgact(const at_command_t *data)
     ret_code = RETURNerror;
 
     if (state == AT_CGACT_DEACTIVATED) {
-      ret_code = nas_proc_deactivate_pdn(cid);
+      ret_code = nas_proc_deactivate_pdn(user, cid);
     } else if (state == AT_CGACT_ACTIVATED) {
-      ret_code = nas_proc_activate_pdn(cid);
+      ret_code = nas_proc_activate_pdn(user, cid);
     }
 
     if (ret_code != RETURNok) {
@@ -2181,7 +2130,7 @@ static int _nas_user_proc_cgact(const at_command_t *data)
                 "(<state>=%d,<cid>=%d)",
                 (state != AT_CGACT_ACTIVATED)? "deactivate" :
                 "activate", state, cid);
-      _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+      at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     }
 
     break;
@@ -2191,12 +2140,12 @@ static int _nas_user_proc_cgact(const at_command_t *data)
      * The read command returns the current activation states for
      * all the defined PDN/EPS bearer contexts
      */
-    cgact->n_pdns = nas_proc_get_pdn_status(cgact->cid, cgact->state,
+    cgact->n_pdns = nas_proc_get_pdn_status(user, cgact->cid, cgact->state,
                                             AT_CGACT_RESP_SIZE);
 
     if (cgact->n_pdns == 0) {
       LOG_TRACE(ERROR, "USR-MAIN  - No any PDN context is defined");
-      _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+      at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     }
 
     break;
@@ -2211,7 +2160,7 @@ static int _nas_user_proc_cgact(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CGACT command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -2233,23 +2182,23 @@ static int _nas_user_proc_cgact(const at_command_t *data)
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_cmee(const at_command_t *data)
+static int _nas_user_proc_cmee(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
 
   int ret_code = RETURNok;
-  at_cmee_resp_t *cmee = &_nas_user_data.response.cmee;
+  at_response_t *at_response = user->at_response;
+  at_cmee_resp_t *cmee = &at_response->response.cmee;
   memset(cmee, 0, sizeof(at_cmee_resp_t));
 
   int n = AT_CMEE_N_DEFAULT;
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_CMEE_MASK;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_CMEE_MASK;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_ACT:    /* ATV0, ATV1 response format commands */
@@ -2267,7 +2216,7 @@ static int _nas_user_proc_cmee(const at_command_t *data)
          * return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - <n> parameter is not valid"
                   " (%d)", data->command.cmee.n);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -2311,7 +2260,7 @@ static int _nas_user_proc_cmee(const at_command_t *data)
 
     if (cmee->n == RETURNerror) {
       LOG_TRACE(ERROR, "USR-MAIN  - Failed to get format of the final result code");
-      _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+      at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     }
 
     break;
@@ -2325,7 +2274,7 @@ static int _nas_user_proc_cmee(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CMEE command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -2346,21 +2295,21 @@ static int _nas_user_proc_cmee(const at_command_t *data)
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_clck(const at_command_t *data)
+static int _nas_user_proc_clck(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_clck_resp_t *clck = &_nas_user_data.response.clck;
+  at_clck_resp_t *clck = &at_response->response.clck;
   memset(clck, 0, sizeof(at_clck_resp_t));
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_CLCK_MASK;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_CLCK_MASK;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_SET:
@@ -2376,7 +2325,7 @@ static int _nas_user_proc_clck(const at_command_t *data)
       /* Facilities other than SIM is not supported */
       LOG_TRACE(ERROR, "USR-MAIN  - Facility is not supported (%s)",
                 data->command.clck.fac);
-      _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+      at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
       ret_code = RETURNerror;
       break;
     }
@@ -2384,12 +2333,12 @@ static int _nas_user_proc_clck(const at_command_t *data)
     /* Check password parameter */
     if (data->mask & AT_CLCK_PASSWD_MASK) {
       /* Check the PIN code */
-      if (strncmp(_nas_user_nvdata.PIN,
+      if (strncmp(user->nas_user_nvdata->PIN,
                   data->command.clck.passwd, USER_PIN_SIZE) != 0) {
         /* The PIN code is NOT matching; return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - Password is not correct "
                   "(%s)", data->command.clck.passwd);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PASSWD;
+        at_response->cause_code = AT_ERROR_INCORRECT_PASSWD;
         ret_code = RETURNerror;
         break;
       }
@@ -2404,14 +2353,14 @@ static int _nas_user_proc_clck(const at_command_t *data)
         /* unlock requires password */
         LOG_TRACE(ERROR, "USR-MAIN  - unlock mode of operation "
                   "requires a password");
-        _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
+        at_response->cause_code = AT_ERROR_SIM_PIN_REQUIRED;
         ret_code = RETURNerror;
         break;
       }
 
       LOG_TRACE(ERROR, "USR-MAIN  - unlock mode of operation "
                 "is not supported");
-      _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+      at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
       ret_code = RETURNerror;
       break;
 
@@ -2422,14 +2371,14 @@ static int _nas_user_proc_clck(const at_command_t *data)
         /* unlock requires password */
         LOG_TRACE(ERROR, "USR-MAIN  - lock mode of operation "
                   "requires a password");
-        _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
+        at_response->cause_code = AT_ERROR_SIM_PIN_REQUIRED;
         ret_code = RETURNerror;
         break;
       }
 
       LOG_TRACE(ERROR, "USR-MAIN  - lock mode of operation "
                 "is not supported");
-      _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+      at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
       ret_code = RETURNerror;
       break;
 
@@ -2441,7 +2390,7 @@ static int _nas_user_proc_clck(const at_command_t *data)
     default:
       LOG_TRACE(ERROR, "USR-MAIN  - <mode> parameter is not valid"
                 " (%d)", data->command.clck.mode);
-      _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+      at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
       ret_code = RETURNerror;
       break;
     }
@@ -2457,7 +2406,7 @@ static int _nas_user_proc_clck(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CLCK command type %d is not supported",
               data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -2474,32 +2423,32 @@ static int _nas_user_proc_clck(const at_command_t *data)
  **      for the specified context identifiers                     **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_cgpaddr(const at_command_t *data)
+static int _nas_user_proc_cgpaddr(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_cgpaddr_resp_t *cgpaddr = &_nas_user_data.response.cgpaddr;
+  at_cgpaddr_resp_t *cgpaddr = &at_response->response.cgpaddr;
   memset(cgpaddr, 0, sizeof(at_cgpaddr_resp_t));
 
   int cid = -1;
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_CGPADDR_MASK;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_CGPADDR_MASK;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_SET:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
-      _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
+    if (nas_user_context->sim_status != NAS_USER_READY) {
+      at_response->cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
 
@@ -2513,7 +2462,7 @@ static int _nas_user_proc_cgpaddr(const at_command_t *data)
          * return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - <cid> parameter is "
                   "not valid (%d)",  data->command.cgpaddr.cid);
-        _nas_user_data.cause_code = AT_ERROR_INCORRECT_PARAMETERS;
+        at_response->cause_code = AT_ERROR_INCORRECT_PARAMETERS;
         ret_code = RETURNerror;
         break;
       }
@@ -2524,14 +2473,14 @@ static int _nas_user_proc_cgpaddr(const at_command_t *data)
     /*
      * Get the PDP addresses
      */
-    cgpaddr->n_pdns = nas_proc_get_pdn_addr(cid, cgpaddr->cid,
+    cgpaddr->n_pdns = nas_proc_get_pdn_addr(user, cid, cgpaddr->cid,
                                             cgpaddr->PDP_addr_1,
                                             cgpaddr->PDP_addr_2,
                                             AT_CGPADDR_RESP_SIZE);
 
     if (cgpaddr->n_pdns == 0) {
       LOG_TRACE(ERROR, "USR-MAIN  - No any PDN context is defined");
-      _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+      at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     }
 
     break;
@@ -2540,7 +2489,7 @@ static int _nas_user_proc_cgpaddr(const at_command_t *data)
     /*
      * The test command returns a list of defined <cid>s.
      */
-    cgpaddr->n_pdns = nas_proc_get_pdn_addr(cid, cgpaddr->cid,
+    cgpaddr->n_pdns = nas_proc_get_pdn_addr(user, cid, cgpaddr->cid,
                                             cgpaddr->PDP_addr_1,
                                             cgpaddr->PDP_addr_2,
                                             AT_CGPADDR_RESP_SIZE);
@@ -2549,7 +2498,7 @@ static int _nas_user_proc_cgpaddr(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CGPADDR command type %d is "
               "not supported", data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -2566,39 +2515,39 @@ static int _nas_user_proc_cgpaddr(const at_command_t *data)
  **      subscriber.                                               **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_cnum(const at_command_t *data)
+static int _nas_user_proc_cnum(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
+  at_response_t *at_response = user->at_response;
 
   int ret_code = RETURNok;
-  at_cnum_resp_t *cnum = &_nas_user_data.response.cnum;
+  at_cnum_resp_t *cnum = &at_response->response.cnum;
   memset(cnum, 0, sizeof(at_cnum_resp_t));
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_CNUM_MASK;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_CNUM_MASK;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_ACT:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
-      _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
+    if (nas_user_context->sim_status != NAS_USER_READY) {
+      at_response->cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
 
     /* Get the International Mobile Subscriber Identity (IMSI) */
-    ret_code = nas_proc_get_msisdn(cnum->number, &cnum->type);
+    ret_code = nas_proc_get_msisdn(user, cnum->number, &cnum->type);
 
     if (ret_code != RETURNok) {
       LOG_TRACE(ERROR, "USR-MAIN  - Failed to get MS dialing number");
-      _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+      at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     }
 
     break;
@@ -2610,7 +2559,7 @@ static int _nas_user_proc_cnum(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CNUM command type %d is "
               "not supported", data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }
@@ -2627,25 +2576,23 @@ static int _nas_user_proc_cnum(const at_command_t *data)
  **      are available for the user.                               **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_data                             **
  **                                                                        **
  ***************************************************************************/
-static int _nas_user_proc_clac(const at_command_t *data)
+static int _nas_user_proc_clac(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
-
+  at_response_t *at_response = user->at_response;
   int ret_code = RETURNok;
-  at_clac_resp_t *clac = &_nas_user_data.response.clac;
+  at_clac_resp_t *clac = &at_response->response.clac;
   memset(clac, 0, sizeof(at_clac_resp_t));
 
-  _nas_user_data.id = data->id;
-  _nas_user_data.type = data->type;
-  _nas_user_data.mask = AT_RESPONSE_CLAC_MASK;
-  _nas_user_data.cause_code = AT_ERROR_SUCCESS;
+  at_response->id = data->id;
+  at_response->type = data->type;
+  at_response->mask = AT_RESPONSE_CLAC_MASK;
+  at_response->cause_code = AT_ERROR_SUCCESS;
 
   switch (data->type) {
   case AT_COMMAND_ACT:
@@ -2655,7 +2602,7 @@ static int _nas_user_proc_clac(const at_command_t *data)
     if (clac->n_acs == 0) {
       LOG_TRACE(ERROR, "USR-MAIN  - Failed to get the list of "
                 "supported AT commands");
-      _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+      at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     }
 
     break;
@@ -2667,7 +2614,7 @@ static int _nas_user_proc_clac(const at_command_t *data)
   default:
     LOG_TRACE(ERROR, "USR-MAIN  - AT+CLAC command type %d is "
               "not supported", data->type);
-    _nas_user_data.cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
+    at_response->cause_code = AT_ERROR_OPERATION_NOT_SUPPORTED;
     ret_code = RETURNerror;
     break;
   }

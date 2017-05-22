@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 Source      esmData.h
 
@@ -59,10 +52,22 @@ Description Defines internal private data handled by EPS Session
 
 /* Total number of active EPS bearers */
 #define ESM_DATA_EPS_BEARER_TOTAL   11
+#define ESM_SAP_BUFFER_SIZE 4096
 
 /****************************************************************************/
 /************************  G L O B A L    T Y P E S  ************************/
 /****************************************************************************/
+
+/*
+ * --------------------------------------------------------------------------
+ * Internal data handled by the default EPS bearer context activation
+ * procedure in the UE
+ * --------------------------------------------------------------------------
+ */
+typedef struct {
+  int ebi;    /* EPS bearer identity of the default EPS bearer associated
+         * to the PDN connection to be activated */
+} default_eps_bearer_context_data_t;
 
 /*
  * Minimal and maximal value of an EPS bearer identity:
@@ -78,8 +83,6 @@ typedef enum {
                  * in the UE, in the network        */
   ESM_EBR_STATE_MAX
 } esm_ebr_state;
-
-
 
 /*
  * -----------------------
@@ -179,6 +182,7 @@ typedef struct esm_data_context_s {
   } pdn[ESM_DATA_PDN_MAX+1];
 
   esm_ebr_data_t ebr;
+  uint8_t send_buffer[ESM_SAP_BUFFER_SIZE];
 } esm_data_context_t;
 
 /*
@@ -192,27 +196,16 @@ typedef struct esm_data_context_s {
  */
 typedef esm_data_context_t esm_data_t;
 
-
 /****************************************************************************/
 /********************  G L O B A L    V A R I A B L E S  ********************/
 /****************************************************************************/
-
-/*
- * ESM internal data (used within ESM only)
- * ----------------------------------------
- */
-esm_data_t _esm_data;
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-extern char ip_addr_str[100];
-
-extern char *esm_data_get_ipv4_addr(const OctetString *ip_addr);
-
-extern char *esm_data_get_ipv6_addr(const OctetString *ip_addr);
-
-extern char *esm_data_get_ipv4v6_addr(const OctetString *ip_addr);
+char *esm_data_get_ipv4_addr(const OctetString *ip_addr, char *ret);
+char *esm_data_get_ipv6_addr(const OctetString *ip_addr, char *ret);
+char *esm_data_get_ipv4v6_addr(const OctetString *ip_addr, char *ret);
 
 #endif /* __ESMDATA_H__*/

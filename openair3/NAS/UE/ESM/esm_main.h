@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 Source      esm_main.h
 
@@ -48,6 +41,9 @@ Description Defines the EPS Session Management procedure call manager,
 #define __ESM_MAIN_H__
 
 #include "networkDef.h"
+#include "esm_ebr.h"
+#include "esmData.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -65,19 +61,19 @@ Description Defines the EPS Session Management procedure call manager,
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-void esm_main_initialize(esm_indication_callback_t cb);
+void esm_main_initialize(nas_user_t *user, esm_indication_callback_t cb);
 
-void esm_main_cleanup(void);
+void esm_main_cleanup(esm_data_t *esm_data);
 
 
 /* User's getter for PDN connections and EPS bearer contexts */
-int esm_main_get_nb_pdns_max(void);
-int esm_main_get_nb_pdns(void);
-int esm_main_has_emergency(void);
-int esm_main_get_pdn_status(int cid, int *state);
-int esm_main_get_pdn(int cid, int *type, const char **apn, int *is_emergency,
+int esm_main_get_nb_pdns_max(esm_data_t *esm_data);
+int esm_main_get_nb_pdns(esm_data_t *esm_data);
+int esm_main_has_emergency(esm_data_t *esm_data);
+int esm_main_get_pdn_status(nas_user_t *user, int cid, int *state);
+int esm_main_get_pdn(esm_data_t *esm_data, int cid, int *type, const char **apn, int *is_emergency,
                      int *is_active);
-int esm_main_get_pdn_addr(int cid, const char **ipv4addr, const char **ipv6addr);
+int esm_main_get_pdn_addr(esm_data_t *esm_data, int cid, const char **ipv4addr, const char **ipv6addr);
 
 
 #endif /* __ESM_MAIN_H__*/

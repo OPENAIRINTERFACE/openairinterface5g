@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /* file: lte_sync_time.c
    purpose: coarse timing synchronization for LTE (using PSS)
    author: florian.kaltenberger@eurecom.fr, oscar.tonelli@yahoo.it
@@ -517,14 +510,15 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
 
   // perform a time domain correlation using the oversampled sync sequence
 
-  unsigned int n, ar, peak_val, peak_pos, mean_val;
+  unsigned int n, ar, peak_val, peak_pos;
+  uint64_t mean_val;
   int result;
   short *primary_synch_time;
   int eNB_id = frame_parms->Nid_cell%3;
 
   // msg("[SYNC TIME] Calling sync_time_eNB(%p,%p,%d,%d)\n",rxdata,frame_parms,eNB_id,length);
   if (sync_corr_eNB == NULL) {
-    msg("[SYNC TIME] sync_corr_eNB not yet allocated! Exiting.\n");
+    LOG_E(PHY,"[SYNC TIME] sync_corr_eNB not yet allocated! Exiting.\n");
     return(-1);
   }
 
@@ -542,7 +536,7 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
     break;
 
   default:
-    msg("[SYNC TIME] Illegal eNB_id!\n");
+    LOG_E(PHY,"[SYNC TIME] Illegal eNB_id!\n");
     return (-1);
   }
 
@@ -574,7 +568,7 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
        peak_val);
     }
     */
-    mean_val += (sync_corr_eNB[n]>>10);
+    mean_val += sync_corr_eNB[n];
 
     if (sync_corr_eNB[n]>peak_val) {
       peak_val = sync_corr_eNB[n];
@@ -582,17 +576,15 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
     }
   }
 
+  mean_val/=length;
+
   *peak_val_out = peak_val;
 
-  if (peak_val <= (40*mean_val)) {
-#ifdef DEBUG_PHY
-    msg("[SYNC TIME] No peak found (%u,%u,%u,%u)\n",peak_pos,peak_val,mean_val,40*mean_val);
-#endif
+  if (peak_val <= (40*(uint32_t)mean_val)) {
+    LOG_D(PHY,"[SYNC TIME] No peak found (%u,%u,%"PRIu64",%"PRIu64")\n",peak_pos,peak_val,mean_val,40*mean_val);
     return(-1);
   } else {
-#ifdef DEBUG_PHY
-    msg("[SYNC TIME] Peak found at pos %u, val = %u, mean_val = %u\n",peak_pos,peak_val,mean_val);
-#endif
+    LOG_D(PHY,"[SYNC TIME] Peak found at pos %u, val = %u, mean_val = %"PRIu64"\n",peak_pos,peak_val,mean_val);
     return(peak_pos);
   }
 

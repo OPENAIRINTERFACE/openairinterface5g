@@ -1,32 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-   Contact Information
-   OpenAirInterface Admin: openair_admin@eurecom.fr
-   OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-
-   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
-
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 #include <arpa/inet.h>
 #include <linux/if_packet.h>
@@ -40,32 +31,32 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "common_lib.h"
-#include "LMS_SDR.h"
-#include "LMS7002M.h"
-#include "Si5351C.h"
-#include "LMS_StreamBoard.h"
-#include "LMS7002M_RegistersMap.h"
-
 #include <cmath>
 
 /** @addtogroup _LMSSDR_PHY_RF_INTERFACE_
  * @{
  */
+#include <lime/LimeSuite.h>
+#include <lime/LMS7002M.h>
+#include <lime/LMS7002M_RegistersMap.h>
+#include "common_lib.h"
 
-///define for parameter enumeration if prefix might be needed
-#define LMS7param(id) id
+lms_device_t* lms_device;
+lms_stream_t rx_stream;
+lms_stream_t tx_stream;
 
-LMScomms* usbport;
-LMScomms* comport;
-LMS7002M* lms7;
-Si5351C* Si;
-LMS_StreamBoard *lmsStream;
+/* We have a strange behavior when we just start reading
+ * from the device (inconsistent values of the timestamp).
+ * A quick solution is to discard the very first read packet
+ * after a "start".
+ * The following global variable "first_rx" serves that purpose.
+ */
+static int first_rx = 0;
 
 #define RXDCLENGTH 4096
-#define NUMBUFF 40
-int16_t cos_fsover8[8]  = {2047,   1447,      0,  -1448,  -2047,  -1448,     0,   1447};
-int16_t cos_3fsover8[8] = {2047,  -1448,      0,   1447,  -2047,   1447,     0,  -1448};
+#define NUMBUFF 32
+
+using namespace lime;
 
 extern "C"
 {
@@ -74,18 +65,23 @@ int write_output(const char *fname,const char *vname,void *data,int length,int d
 
 /*! \brief Called to send samples to the LMSSDR RF target
       \param device pointer to the device structure specific to the RF hardware target
-      \param timestamp The timestamp at whicch the first sample MUST be sent 
+      \param timestamp The timestamp at whicch the first sample MUST be sent
       \param buff Buffer which holds the samples
       \param nsamps number of samples to be sent
       \param antenna_id index of the antenna
       \param flags Ignored for the moment
       \returns 0 on success
-*/ 
+*/
 int trx_lms_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int antenna_id, int flags) {
-  
- LMS_TRxWrite((int16_t*)buff[0], nsamps,0, timestamp);
 
- return nsamps;
+
+    lms_stream_meta_t meta;
+    meta.waitForTimestamp = true;
+    meta.flushPartialPacket = false;
+    meta.timestamp = timestamp;
+
+
+    return LMS_SendStream(&tx_stream,(const void*)buff[0],nsamps,&meta,30);
 }
 
 /*! \brief Receive samples from hardware.
@@ -100,15 +96,21 @@ int trx_lms_write(openair0_device *device, openair0_timestamp timestamp, void **
  * \returns number of samples read
 */
 int trx_lms_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int antenna_id) {
-    
-  uint64_t timestamp;
-  int16_t *dst_ptr = (int16_t*) buff[0];
-  int ret;
-  ret = LMS_TRxRead(dst_ptr, nsamps,0,&timestamp, 10);
-  *ptimestamp=timestamp;
 
-  return ret;   
+    lms_stream_meta_t meta;
+    meta.waitForTimestamp = false;
+    meta.flushPartialPacket = false;
+
+    int ret;
+    if (first_rx == 1) {
+      first_rx = 0;
+      ret = LMS_RecvStream(&rx_stream,buff[0],nsamps,&meta,50);
+    }
+    ret = LMS_RecvStream(&rx_stream,buff[0],nsamps,&meta,50);
+    *ptimestamp = meta.timestamp;
+    return ret;
 }
+
 
 /*! \brief set RX gain offset from calibration table
  * \param openair0_cfg RF frontend parameters set by application
@@ -132,233 +134,186 @@ void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index) {
     }
     i++;
   }
-  
+
 }
 
 /*! \brief Set Gains (TX/RX) on LMSSDR
  * \param device the hardware to use
  * \param openair0_cfg openair0 Config structure
- * \returns 0 in success 
+ * \returns 0 in success, -1 on error
  */
-
 int trx_lms_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) {
+  int ret = 0;
 
-  double gv = openair0_cfg[0].rx_gain[0] - openair0_cfg[0].rx_gain_offset[0];
-
-  if (gv > 31) {
-    printf("RX Gain 0 too high, reduce by %f dB\n",gv-31);
-    gv = 31;
+  if (openair0_cfg->rx_gain[0] > 70+openair0_cfg->rx_gain_offset[0]) {
+    printf("[LMS] Reduce RX Gain 0 by %f dB\n",openair0_cfg->rx_gain[0]-openair0_cfg->rx_gain_offset[0]-70);
+    ret = -1;
   }
-  if (gv < 0) {
-    printf("RX Gain 0 too low, increase by %f dB\n",-gv);
-    gv = 0;
-  }
-  printf("[LMS] Setting 7002M G_PGA_RBB to %d\n", (int16_t)gv);
-  lms7->Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB),(int16_t)gv);
+  
+  LMS_SetGaindB(lms_device, LMS_CH_TX, 0, openair0_cfg->tx_gain[0]);
+  LMS_SetGaindB(lms_device, LMS_CH_RX, 0, openair0_cfg->rx_gain[0]-openair0_cfg->rx_gain_offset[0]); 
 
-  return(0);
+  return(ret);
 }
 
 /*! \brief Start LMSSDR
- * \param device the hardware to use 
+ * \param device the hardware to use
  * \returns 0 on success
  */
 int trx_lms_start(openair0_device *device){
- 
 
- LMS_Init(0, 128*1024);   
- usbport = LMS_GetUSBPort();
- //connect data stream port
-  LMS_UpdateDeviceList(usbport);
-  const char *name = LMS_GetDeviceName(usbport, 0);
-  printf("Connecting to device: %s\n",name);
+    lms_info_str_t list[16]={0};
 
+    int n= LMS_GetDeviceList(list);
 
-
-  if (LMS_DeviceOpen(usbport, 0)==0)
-  {
-    Si = new Si5351C();
-    lms7 = new LMS7002M(usbport);
-    liblms7_status opStatus;
-
-    printf("Configuring Si5351C\n");
-    Si->Initialize(usbport);
-    Si->SetPLL(0, 25000000, 0);
-    Si->SetPLL(1, 25000000, 0);
-    Si->SetClock(0, 27000000, true, false);
-    Si->SetClock(1, 27000000, true, false);
-    for (int i = 2; i < 8; ++i)
-      Si->SetClock(i, 27000000, false, false);
-    Si5351C::Status status = Si->ConfigureClocks();
-    if (status != Si5351C::SUCCESS)
-      {
-	printf("Failed to configure Si5351C");
-	exit(-1);
-      }
-    status = Si->UploadConfiguration();
-    if (status != Si5351C::SUCCESS)
-      printf("Failed to upload Si5351C configuration");
-    
-
-
-    lms7->ResetChip();
-
-    opStatus = lms7->LoadConfig(device->openair0_cfg[0].configFilename);
-    
-    if (opStatus != LIBLMS7_SUCCESS) {
-      printf("Failed to load configuration file %s\n",device->openair0_cfg[0].configFilename);
-      exit(-1);
+    if (n <= 0) {
+        fprintf(stderr, "No LimeSDR board found: %s\n", n < 0?LMS_GetLastErrorMessage():"");
+        return -1;
     }
-    opStatus = lms7->UploadAll();
 
-    if (opStatus != LIBLMS7_SUCCESS) {
-      printf("Failed to upload configuration file\n");
+    printf("Connecting to device: %s\n",list[0]);
+    if (LMS_Open(&lms_device,list[0],NULL)<0) {
+        fprintf(stderr, "Can't open device port: %s\n",LMS_GetLastErrorMessage());
+        return -1;
+    }
+
+    LMS_Init(lms_device);
+    LMS_EnableCalibCache(lms_device,false);
+
+    if (LMS_LoadConfig(lms_device,device->openair0_cfg[0].configFilename) != 0)
+    {
+      printf("Failed to load configuration file %s\n%s",device->openair0_cfg[0].configFilename,LMS_GetLastErrorMessage());
       exit(-1);
     }
 
-    // Set TX filter
+   /* LMS_EnableChannel(lms_device,LMS_CH_RX,0,true);
+    LMS_EnableChannel(lms_device,LMS_CH_TX,0,true);
+    if (device->openair0_cfg->rx_num_channels == 2)
+    {
+        LMS_EnableChannel(lms_device,LMS_CH_RX,1,true);
+        LMS_EnableChannel(lms_device,LMS_CH_TX,1,true);
+    } */
+    LMS_VCTCXOWrite(lms_device,129);
+
+    if (LMS_SetSampleRate(lms_device,device->openair0_cfg->sample_rate,2)!=0)
+    {
+        fprintf(stderr, "Failed to set sample rate %s\n",LMS_GetLastErrorMessage());
+        return -1;
+    }
+    printf("Set sample rate %f MHz\n",device->openair0_cfg->sample_rate/1e6);
+
+    if (LMS_SetLOFrequency(lms_device,LMS_CH_RX, 0, device->openair0_cfg[0].rx_freq[0])!=0)
+    {
+        fprintf(stderr, "Failed to Set Rx frequency: %s\n", LMS_GetLastErrorMessage());
+        return -1;
+    }
+    if (LMS_SetLOFrequency(lms_device,LMS_CH_TX, 0,device->openair0_cfg[0].tx_freq[0])!=0)
+    {
+        fprintf(stderr, "Failed to Set Tx frequency: %s\n", LMS_GetLastErrorMessage());
+        return -1;
+    }
+    printf("Set TX frequency %f MHz\n",device->openair0_cfg[0].tx_freq[0]/1e6);
+
+    /*
+    printf("Override antenna settings to: RX1_H, TXA_2");
+    LMS_SetAntenna(lms_device, LMS_CH_RX, 0, 1);
+    LMS_SetAntenna(lms_device, LMS_CH_TX, 0, 2);
+    */
+
     
-    printf("Tuning TX filter\n");
-    opStatus = lms7->TuneTxFilter(LMS7002M::TxFilter::TX_HIGHBAND,device->openair0_cfg[0].tx_bw/1e6);
+    for (int i = 0; i< device->openair0_cfg->rx_num_channels; i++)
+    {
+        if (LMS_SetLPFBW(lms_device,LMS_CH_RX,i,device->openair0_cfg->rx_bw)!=0)
+            printf("RX ch:%d filter calibration failed, bw:%fMHz\n%s\n",i,device->openair0_cfg->rx_bw/1e6,LMS_GetLastErrorMessage());
+        if (LMS_SetLPFBW(lms_device,LMS_CH_TX,i,device->openair0_cfg->tx_bw)!=0)
+            printf("TX ch:%d filter calibration failed, bw:%fMHz\n%s\n",i,device->openair0_cfg->tx_bw/1e6,LMS_GetLastErrorMessage());
 
-    if (opStatus != LIBLMS7_SUCCESS) {
-      printf("Warning: Could not tune TX filter to %f MHz\n",device->openair0_cfg[0].tx_bw/1e6);
-    }
-    
-    printf("Tuning RX filter\n");
-    
-    opStatus = lms7->TuneRxFilter(LMS7002M::RxFilter::RX_LPF_LOWBAND,device->openair0_cfg[0].rx_bw/1e6);
-
-    if (opStatus != LIBLMS7_SUCCESS) {
-      printf("Warning: Could not tune RX filter to %f MHz\n",device->openair0_cfg[0].rx_bw/1e6);
+        if (LMS_Calibrate(lms_device,LMS_CH_RX,i,device->openair0_cfg->rx_bw,0)!=0)
+            printf("RX ch:%d calibration failed, bw:%f MHz\n%s\n",i,device->openair0_cfg->rx_bw/1e6,LMS_GetLastErrorMessage());
+        if (LMS_Calibrate(lms_device,LMS_CH_TX,i,device->openair0_cfg->tx_bw,0)!=0)
+            printf("TX ch:%d calibration failed, bw:%fMHz\n%s\n",i,device->openair0_cfg->tx_bw/1e6,LMS_GetLastErrorMessage());
     }
 
-    /*    printf("Tuning TIA filter\n");
-    opStatus = lms7->TuneRxFilter(LMS7002M::RxFilter::RX_TIA,7.0);
 
-    if (opStatus != LIBLMS7_SUCCESS) {
-      printf("Warning: Could not tune RX TIA filter\n");
-      }*/
+    first_rx = 1;
 
-    opStatus = lms7->SetInterfaceFrequency(lms7->GetFrequencyCGEN_MHz(), 
-					   lms7->Get_SPI_Reg_bits(HBI_OVR_TXTSP), 
-					   lms7->Get_SPI_Reg_bits(HBD_OVR_RXTSP));
-    if (opStatus != LIBLMS7_SUCCESS) {
-      printf("SetInterfaceFrequency failed: %f,%d,%d\n",
-	     lms7->GetFrequencyCGEN_MHz(), 
-	     lms7->Get_SPI_Reg_bits(HBI_OVR_TXTSP), 
-	     lms7->Get_SPI_Reg_bits(HBD_OVR_RXTSP));
-    }
-    else {
-      printf("SetInterfaceFrequency as %f,%d,%d\n",
-	     lms7->GetFrequencyCGEN_MHz(), 
-	     lms7->Get_SPI_Reg_bits(HBI_OVR_TXTSP), 
-	     lms7->Get_SPI_Reg_bits(HBD_OVR_RXTSP));
-    } 
-    lmsStream = new LMS_StreamBoard(usbport);    
-    LMS_StreamBoard::Status opStreamStatus; 
-    // this will configure that sampling rate at output of FPGA
-    opStreamStatus = lmsStream->ConfigurePLL(usbport,
-					     device->openair0_cfg[0].sample_rate,
-					     device->openair0_cfg[0].sample_rate,90);
-    if (opStatus != LIBLMS7_SUCCESS){
-      printf("Sample rate programming failed\n");
-      exit(-1);
-    }
-
-    opStatus = lms7->SetFrequencySX(LMS7002M::Tx, device->openair0_cfg[0].tx_freq[0]/1e6,30.72);
-
-    if (opStatus != LIBLMS7_SUCCESS) {
-      printf("Cannot set TX frequency %f MHz\n",device->openair0_cfg[0].tx_freq[0]/1e6);
-      exit(-1);
-    }
-    else {
-      printf("Set TX frequency %f MHz\n",device->openair0_cfg[0].tx_freq[0]/1e6);
-    }
-    opStatus = lms7->SetFrequencySX(LMS7002M::Rx, device->openair0_cfg[0].rx_freq[0]/1e6,30.72);
-
-    if (opStatus != LIBLMS7_SUCCESS) {
-      printf("Cannot set RX frequency %f MHz\n",device->openair0_cfg[0].rx_freq[0]/1e6);
-      exit(-1);
-    }
-    else {
-      printf("Set RX frequency %f MHz\n",device->openair0_cfg[0].rx_freq[0]/1e6);
-    }
+    rx_stream.channel = 0;
+    rx_stream.fifoSize = 256*1024;
+    rx_stream.throughputVsLatency = 0.1;
+    rx_stream.dataFmt = lms_stream_t::LMS_FMT_I12;
+    rx_stream.isTx = false;
+    if (LMS_SetupStream(lms_device, &rx_stream)!=0)
+        printf("RX stream setup failed %s\n",LMS_GetLastErrorMessage());
+    tx_stream.channel = 0;
+    tx_stream.fifoSize = 256*1024;
+    tx_stream.throughputVsLatency = 0.1;
+    tx_stream.dataFmt = lms_stream_t::LMS_FMT_I12;
+    tx_stream.isTx = true;
 
     trx_lms_set_gains(device, device->openair0_cfg);
-    // Run calibration procedure
-    //    calibrate_rf(device);
-    //lms7->CalibrateTx(5.0);
-    LMS_RxStart();
-  }
-  else
-  {
-   return(-1);
-  }
-  
- //connect control port 
 
- /* comport = LMS_GetCOMPort();
-  LMS_UpdateDeviceList(comport);
-  name = LMS_GetDeviceName(comport, 0);
-  if (*name == 0)
-      comport = usbport;  //attempt to use data port 
-  else
-  {
-    printf("Connecting to device: %s\n",name);
-    if (LMS_DeviceOpen(comport, 0)!=0)
-        return (-1);
-  }
-   lms7 = new LMS7002M(comport);
-   if( access( "./config.ini", F_OK ) != -1 ) //load config file
-   lms7->LoadConfig("./config.ini");
-   //calibration takes too long
-   //lms7->CalibrateRx(5.0);  
-   //lms7->CalibrateTx(5.0);
- */
+    if (LMS_SetupStream(lms_device, &tx_stream)!=0)
+        printf("TX stream setup failed %s\n",LMS_GetLastErrorMessage());
 
-  return 0;
+    printf("SR:   %.3f MHz\n", (float)device->openair0_cfg->sample_rate / 1e6);
+
+
+    printf("SR:   %.3f MHz\n", (float)device->openair0_cfg->sample_rate / 1e6);
+
+    if (LMS_StartStream(&rx_stream)!=0)
+        printf("Failed to start TX stream %s\n",LMS_GetLastErrorMessage());
+    if (LMS_StartStream(&tx_stream)!=0)
+        printf("Failed to start Rx stream %s\n",LMS_GetLastErrorMessage());
+    return 0;
 }
 
 /*! \brief Stop LMSSDR
- * \param card Index of the RF card to use 
+ * \param card Index of the RF card to use
  * \returns 0 on success
  */
-int trx_lms_stop(int card) {
-  /*
-  LMS_DeviceClose(usbport);
-  LMS_DeviceClose(comport);
-  delete lms7;
-  return LMS_Destroy();
-  */
+int trx_lms_stop(openair0_device *device) {
+    LMS_StopStream(&rx_stream);
+    LMS_StopStream(&tx_stream);
+    LMS_DestroyStream(lms_device,&rx_stream);
+    LMS_DestroyStream(lms_device,&tx_stream);
+    LMS_Close(lms_device);
 }
 
 /*! \brief Set frequencies (TX/RX)
  * \param device the hardware to use
  * \param openair0_cfg openair0 Config structure (ignored. It is there to comply with RF common API)
  * \param exmimo_dump_config (ignored)
- * \returns 0 in success 
+ * \returns 0 in success
  */
 int trx_lms_set_freq(openair0_device* device, openair0_config_t *openair0_cfg,int exmimo_dump_config) {
-  //Control port must be connected 
-   
-  lms7->SetFrequencySX(LMS7002M::Tx,openair0_cfg->tx_freq[0]/1e6,30.72);
-  lms7->SetFrequencySX(LMS7002M::Rx,openair0_cfg->rx_freq[0]/1e6,30.72);
+  //Control port must be connected
+  LMS_SetLOFrequency(lms_device,LMS_CH_TX,0,openair0_cfg->tx_freq[0]);
+  LMS_SetLOFrequency(lms_device,LMS_CH_RX,0,openair0_cfg->rx_freq[0]);
   printf ("[LMS] rx frequency:%f;\n",openair0_cfg->rx_freq[0]/1e6);
   set_rx_gain_offset(openair0_cfg,0);
   return(0);
-    
+
 }
 
 // 31 = 19 dB => 105 dB total gain @ 2.6 GHz
 /*! \brief calibration table for LMSSDR */
-rx_gain_calib_table_t calib_table_sodera[] = {
-  {3500000000.0,70.0},
-  {2660000000.0,80.0},
-  {2300000000.0,80.0},
-  {1880000000.0,74.0},  // on W PAD
-  {816000000.0,76.0},   // on W PAD
+// V1.2 board
+rx_gain_calib_table_t calib_table_lmssdr_1v2[] = {
+  {3500000000.0,44.0},  // on L PAD
+  {2660000000.0,55.0},  // on L PAD
+  {2300000000.0,54.0},  // on L PAD
+  {1880000000.0,54.0},  // on L PAD
+  {816000000.0,79.0},   // on W PAD
   {-1,0}};
+// V1.4 board
+rx_gain_calib_table_t calib_table_lmssdr[] = {
+  {3500000000.0,44.0},  // on H PAD
+  {2660000000.0,55.0},  // on H PAD
+  {2300000000.0,54.0},  // on H PAD
+  {1880000000.0,54.0},  // on H PAD
+  {816000000.0,79.0},   // on L PAD
+  {-1,0}};
+
 
 
 
@@ -366,8 +321,9 @@ rx_gain_calib_table_t calib_table_sodera[] = {
 
 /*! \brief Get LMSSDR Statistics
  * \param device the hardware to use
- * \returns 0 in success 
+ * \returns 0 in success
  */
+
 int trx_lms_get_stats(openair0_device* device) {
 
   return(0);
@@ -376,7 +332,7 @@ int trx_lms_get_stats(openair0_device* device) {
 
 /*! \brief Reset LMSSDR Statistics
  * \param device the hardware to use
- * \returns 0 in success 
+ * \returns 0 in success
  */
 int trx_lms_reset_stats(openair0_device* device) {
 
@@ -385,7 +341,7 @@ int trx_lms_reset_stats(openair0_device* device) {
 }
 
 
-/*! \brief Terminate operation of the LMSSDR transceiver -- free all associated resources 
+/*! \brief Terminate operation of the LMSSDR transceiver -- free all associated resources
  * \param device the hardware to use
  */
 void trx_lms_end(openair0_device *device) {
@@ -402,36 +358,32 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg){
 
   device->type=LMSSDR_DEV;
   printf("LMSSDR: Initializing openair0_device for %s ...\n", ((device->host_type == BBU_HOST) ? "BBU": "RRH"));
-
+  openair0_cfg[0].iq_txshift = 0;
   switch ((int)openair0_cfg[0].sample_rate) {
   case 30720000:
     // from usrp_time_offset
     openair0_cfg[0].samples_per_packet    = 2048;
-    openair0_cfg[0].tx_sample_advance     = 15;
+    openair0_cfg[0].tx_sample_advance     = 40;
     openair0_cfg[0].tx_bw                 = 30.72e6;
     openair0_cfg[0].rx_bw                 = 30.72e6;
-    openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
     break;
   case 15360000:
     openair0_cfg[0].samples_per_packet    = 2048;
-    openair0_cfg[0].tx_sample_advance     = 45;
-    openair0_cfg[0].tx_bw                 = 28e6;
-    openair0_cfg[0].rx_bw                 = 10e6;
-    openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
+    openair0_cfg[0].tx_sample_advance     = 50;   /* TODO: to be refined */
+    openair0_cfg[0].tx_bw                 = 15.36e6;
+    openair0_cfg[0].rx_bw                 = 15.36e6;
     break;
   case 7680000:
     openair0_cfg[0].samples_per_packet    = 1024;
-    openair0_cfg[0].tx_sample_advance     = 70;
-    openair0_cfg[0].tx_bw                 = 28e6;
+    openair0_cfg[0].tx_sample_advance     = 50;
+    openair0_cfg[0].tx_bw                 = 5.0e6;
     openair0_cfg[0].rx_bw                 = 5.0e6;
-    openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
     break;
   case 1920000:
     openair0_cfg[0].samples_per_packet    = 256;
-    openair0_cfg[0].tx_sample_advance     = 50;
+    openair0_cfg[0].tx_sample_advance     = 10;
     openair0_cfg[0].tx_bw                 = 1.25e6;
     openair0_cfg[0].rx_bw                 = 1.25e6;
-    openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
     break;
   default:
     printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
@@ -439,20 +391,20 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg){
     break;
   }
 
-  openair0_cfg[0].rx_gain_calib_table = calib_table_sodera;
+  openair0_cfg[0].rx_gain_calib_table = calib_table_lmssdr;
   set_rx_gain_offset(openair0_cfg,0);
 
   device->Mod_id           = 1;
   device->trx_start_func   = trx_lms_start;
   device->trx_write_func   = trx_lms_write;
-  device->trx_read_func    = trx_lms_read;  
+  device->trx_read_func    = trx_lms_read;
   device->trx_get_stats_func   = trx_lms_get_stats;
   device->trx_reset_stats_func = trx_lms_reset_stats;
   device->trx_end_func = trx_lms_end;
   device->trx_stop_func = trx_lms_stop;
   device->trx_set_freq_func = trx_lms_set_freq;
   device->trx_set_gains_func = trx_lms_set_gains;
-  
+
   device->openair0_cfg = openair0_cfg;
 
   return 0;

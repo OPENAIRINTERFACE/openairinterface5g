@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 Source      esm_proc.h
 
@@ -50,6 +43,7 @@ Description Defines the EPS Session Management procedures executed at
 #include "OctetString.h"
 #include "emmData.h"
 #include "ProtocolConfigurationOptions.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -85,7 +79,7 @@ typedef enum {
  * Type of the ESM procedure callback executed when requested by the UE
  * or initiated by the network
  */
-typedef int (*esm_proc_procedure_t) (int, int, OctetString *, int);
+typedef int (*esm_proc_procedure_t) (nas_user_t *user, int, int, OctetString *, int);
 
 /* EPS bearer level QoS parameters */
 typedef network_qos_t esm_proc_qos_t;
@@ -119,7 +113,7 @@ typedef struct {
  * --------------------------------------------------------------------------
  */
 int esm_proc_status_ind(int pti, int ebi, int *esm_cause);
-int esm_proc_status(int is_standalone, int pti, OctetString *msg,
+int esm_proc_status(nas_user_t *user, int is_standalone, int pti, OctetString *msg,
                     int sent_by_ue);
 
 
@@ -128,16 +122,16 @@ int esm_proc_status(int is_standalone, int pti, OctetString *msg,
  *          PDN connectivity procedure
  * --------------------------------------------------------------------------
  */
-int esm_proc_pdn_connectivity(int cid, int to_define,
+int esm_proc_pdn_connectivity(nas_user_t *user, int cid, int to_define,
                               esm_proc_pdn_type_t pdn_type, const OctetString *apn, int is_emergency,
                               unsigned int *pti);
-int esm_proc_pdn_connectivity_request(int is_standalone, int pti,
+int esm_proc_pdn_connectivity_request(nas_user_t *user, int is_standalone, int pti,
                                       OctetString *msg, int sent_by_ue);
-int esm_proc_pdn_connectivity_accept(int pti, esm_proc_pdn_type_t pdn_type,
+int esm_proc_pdn_connectivity_accept(nas_user_t *user, int pti, esm_proc_pdn_type_t pdn_type,
                                      const OctetString *pdn_address, const OctetString *apn, int *esm_cause);
-int esm_proc_pdn_connectivity_reject(int pti, int *esm_cause);
-int esm_proc_pdn_connectivity_complete(void);
-int esm_proc_pdn_connectivity_failure(int is_pending);
+int esm_proc_pdn_connectivity_reject(nas_user_t *user, int pti, int *esm_cause);
+int esm_proc_pdn_connectivity_complete(nas_user_t *user);
+int esm_proc_pdn_connectivity_failure(nas_user_t *user, int is_pending);
 
 
 /*
@@ -145,12 +139,12 @@ int esm_proc_pdn_connectivity_failure(int is_pending);
  *              PDN disconnect procedure
  * --------------------------------------------------------------------------
  */
-int esm_proc_pdn_disconnect(int cid, unsigned int *pti, unsigned int *ebi);
-int esm_proc_pdn_disconnect_request(int is_standalone, int pti,
+int esm_proc_pdn_disconnect(esm_data_t *esm_data, int cid, unsigned int *pti, unsigned int *ebi);
+int esm_proc_pdn_disconnect_request(nas_user_t *user, int is_standalone, int pti,
                                     OctetString *msg, int sent_by_ue);
 
-int esm_proc_pdn_disconnect_accept(int pti, int *esm_cause);
-int esm_proc_pdn_disconnect_reject(int pti, int *esm_cause);
+int esm_proc_pdn_disconnect_accept(esm_pt_data_t *esm_pt_data, int pti, int *esm_cause);
+int esm_proc_pdn_disconnect_reject(nas_user_t *user, int pti, int *esm_cause);
 
 /*
  * --------------------------------------------------------------------------
@@ -158,14 +152,14 @@ int esm_proc_pdn_disconnect_reject(int pti, int *esm_cause);
  * --------------------------------------------------------------------------
  */
 
-int esm_proc_default_eps_bearer_context_request(int pid, int ebi,
+int esm_proc_default_eps_bearer_context_request(nas_user_t *user, int pid, int ebi,
     const esm_proc_qos_t *esm_qos, int *esm_cause);
-int esm_proc_default_eps_bearer_context_complete(void);
-int esm_proc_default_eps_bearer_context_failure(void);
+int esm_proc_default_eps_bearer_context_complete(default_eps_bearer_context_data_t *default_eps_bearer_context_data);
+int esm_proc_default_eps_bearer_context_failure(nas_user_t *user);
 
-int esm_proc_default_eps_bearer_context_accept(int is_standalone, int ebi,
+int esm_proc_default_eps_bearer_context_accept(nas_user_t *user, int is_standalone, int ebi,
     OctetString *msg, int ue_triggered);
-int esm_proc_default_eps_bearer_context_reject(int is_standalone, int ebi,
+int esm_proc_default_eps_bearer_context_reject(nas_user_t *user, int is_standalone, int ebi,
     OctetString *msg, int ue_triggered);
 
 /*
@@ -174,12 +168,12 @@ int esm_proc_default_eps_bearer_context_reject(int is_standalone, int ebi,
  * --------------------------------------------------------------------------
  */
 
-int esm_proc_dedicated_eps_bearer_context_request(int ebi, int default_ebi,
+int esm_proc_dedicated_eps_bearer_context_request(nas_user_t *user, int ebi, int default_ebi,
     const esm_proc_qos_t *qos, const esm_proc_tft_t *tft, int *esm_cause);
 
-int esm_proc_dedicated_eps_bearer_context_accept(int is_standalone, int ebi,
+int esm_proc_dedicated_eps_bearer_context_accept(nas_user_t *user, int is_standalone, int ebi,
     OctetString *msg, int ue_triggered);
-int esm_proc_dedicated_eps_bearer_context_reject(int is_standalone, int ebi,
+int esm_proc_dedicated_eps_bearer_context_reject(nas_user_t *user, int is_standalone, int ebi,
     OctetString *msg, int ue_triggered);
 
 /*
@@ -188,11 +182,11 @@ int esm_proc_dedicated_eps_bearer_context_reject(int is_standalone, int ebi,
  * --------------------------------------------------------------------------
  */
 
-int esm_proc_eps_bearer_context_deactivate(int is_local, int ebi, int *pid,
+int esm_proc_eps_bearer_context_deactivate(nas_user_t *user, int is_local, int ebi, int *pid,
     int *bid);
-int esm_proc_eps_bearer_context_deactivate_request(int ebi, int *esm_cause);
+int esm_proc_eps_bearer_context_deactivate_request(nas_user_t *user, int ebi, int *esm_cause);
 
-int esm_proc_eps_bearer_context_deactivate_accept(int is_standalone, int ebi,
+int esm_proc_eps_bearer_context_deactivate_accept(nas_user_t *user, int is_standalone, int ebi,
     OctetString *msg, int ue_triggered);
 
 #endif /* __ESM_PROC_H__*/

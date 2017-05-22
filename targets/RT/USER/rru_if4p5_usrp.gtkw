@@ -1,0 +1,49 @@
+[*]
+[*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
+[*] Sun Jan 15 07:26:50 2017
+[*]
+[dumpfile] "/tmp/openair_dump_eNB.vcd"
+[dumpfile_mtime] "Sun Jan 15 07:04:19 2017"
+[dumpfile_size] 18140627
+[savefile] "/home/uprru1/oai/openairinterface5g/targets/RT/USER/rru_if4p5_usrp.gtkw"
+[timestart] 29977510000
+[size] 1301 716
+[pos] 309 0
+*-21.793451 29983948856 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 284
+[signals_width] 262
+[sst_expanded] 1
+[sst_vpaned_height] 294
+@28
+functions.trx_read
+functions.trx_write
+@25
+variables.trx_write_flags[63:0]
+@28
+functions.trx_write_if
+functions.send_if4
+functions.trx_read_if
+functions.recv_if4
+@24
+variables.trx_ts[63:0]
+variables.trx_tst[63:0]
+@28
+functions.eNB_thread_rxtx0
+@24
+variables.frame_number_RX0_eNB[63:0]
+variables.subframe_number_RX0_eNB[63:0]
+variables.frame_number_TX0_eNB[63:0]
+variables.subframe_number_TX0_eNB[63:0]
+@28
+functions.eNB_thread_rxtx1
+@24
+variables.frame_number_RX1_eNB[63:0]
+variables.subframe_number_RX1_eNB[63:0]
+variables.frame_number_TX1_eNB[63:0]
+variables.subframe_number_TX1_eNB[63:0]
+@28
+functions.phy_eNB_ofdm_mod_l
+functions.phy_eNB_slot_fep
+functions.phy_enb_prach_rx
+[pattern_trace] 1
+[pattern_trace] 0

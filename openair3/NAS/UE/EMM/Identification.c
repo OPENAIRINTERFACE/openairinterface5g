@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 Source      Identification.c
 
@@ -56,6 +49,7 @@ Description Defines the identification EMM procedure executed by the
 
 #include "emm_sap.h"
 #include "msc.h"
+#include "user_defs.h"
 
 #include <stdlib.h> // malloc, free
 #include <string.h> // memcpy
@@ -109,7 +103,7 @@ static const char *_emm_identity_type_str[] = {
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_identification_request(emm_proc_identity_type_t type)
+int emm_proc_identification_request(nas_user_t *user, emm_proc_identity_type_t type)
 {
   LOG_FUNC_IN;
 
@@ -121,7 +115,7 @@ int emm_proc_identification_request(emm_proc_identity_type_t type)
 
   /* Setup EMM procedure handler to be executed upon receiving
    * lower layer notification */
-  rc = emm_proc_lowerlayer_initialize(NULL, NULL, NULL, NULL);
+  rc = emm_proc_lowerlayer_initialize(user->lowerlayer_data, NULL, NULL, NULL, NULL);
 
   if (rc != RETURNok) {
     LOG_TRACE(WARNING,
@@ -136,8 +130,8 @@ int emm_proc_identification_request(emm_proc_identity_type_t type)
     imsi_t modified_imsi;
 
     /* International Mobile Subscriber Identity is requested */
-    if (_emm_data.imsi) {
-      memcpy (&modified_imsi, _emm_data.imsi, sizeof (modified_imsi));
+    if (user->emm_data->imsi) {
+      memcpy (&modified_imsi, user->emm_data->imsi, sizeof (modified_imsi));
 
       /* LW: Eventually replace the 0xF value set in MNC digit 3 by a 0 to avoid IMSI to be truncated before reaching HSS */
       if (modified_imsi.u.num.digit6 == 0xF) {
@@ -173,9 +167,9 @@ int emm_proc_identification_request(emm_proc_identity_type_t type)
   case EMM_IDENT_TYPE_IMEI:
 
     /* International Mobile Equipment Identity is requested */
-    if (_emm_data.imei) {
+    if (user->emm_data->imei) {
       emm_sap.u.emm_as.u.security.identType = EMM_IDENT_TYPE_IMEI;
-      emm_sap.u.emm_as.u.security.imei = _emm_data.imei;
+      emm_sap.u.emm_as.u.security.imei = user->emm_data->imei;
     }
 
     break;
@@ -183,9 +177,9 @@ int emm_proc_identification_request(emm_proc_identity_type_t type)
   case EMM_IDENT_TYPE_TMSI:
 
     /* Temporary Mobile Subscriber Identity is requested */
-    if (_emm_data.guti) {
+    if (user->emm_data->guti) {
       emm_sap.u.emm_as.u.security.identType = EMM_IDENT_TYPE_TMSI;
-      emm_sap.u.emm_as.u.security.tmsi = _emm_data.guti->m_tmsi;
+      emm_sap.u.emm_as.u.security.tmsi = user->emm_data->guti->m_tmsi;
     }
 
     break;
@@ -200,13 +194,13 @@ int emm_proc_identification_request(emm_proc_identity_type_t type)
    * to the MME
    */
   emm_sap.primitive = EMMAS_SECURITY_RES;
-  emm_sap.u.emm_as.u.security.guti = _emm_data.guti;
-  emm_sap.u.emm_as.u.security.ueid = 0;
+  emm_sap.u.emm_as.u.security.guti = user->emm_data->guti;
+  emm_sap.u.emm_as.u.security.ueid = user->ueid;
   emm_sap.u.emm_as.u.security.msgType = EMM_AS_MSG_TYPE_IDENT;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.security.sctx,
-                           _emm_data.security, FALSE, TRUE);
-  rc = emm_sap_send(&emm_sap);
+                           user->emm_data->security, FALSE, TRUE);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }

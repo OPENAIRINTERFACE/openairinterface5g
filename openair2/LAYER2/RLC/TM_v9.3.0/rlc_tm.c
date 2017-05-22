@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #define RLC_TM_MODULE 1
 #define RLC_TM_C 1
 //-----------------------------------------------------------------------------
@@ -58,7 +51,7 @@ rlc_tm_send_sdu (
   length_in_bytes = (length_in_bitsP + 7) >> 3;
 
   if (rlc_pP->output_sdu_in_construction == NULL) {
-    rlc_pP->output_sdu_in_construction = get_free_mem_block (length_in_bytes);
+    rlc_pP->output_sdu_in_construction = get_free_mem_block (length_in_bytes, __func__);
   }
 
   if ((rlc_pP->output_sdu_in_construction)) {
@@ -104,7 +97,7 @@ rlc_tm_no_segment (
 
     sdu_mngt_p = ((struct rlc_tm_tx_sdu_management *) (rlc_pP->input_sdus[rlc_pP->current_sdu_index]->data));
 
-    if (!(pdu_p = get_free_mem_block (((rlc_pP->rlc_pdu_size + 7) >> 3) + sizeof (struct rlc_tm_tx_data_pdu_struct) + GUARD_CRC_LIH_SIZE))) {
+    if (!(pdu_p = get_free_mem_block (((rlc_pP->rlc_pdu_size + 7) >> 3) + sizeof (struct rlc_tm_tx_data_pdu_struct) + GUARD_CRC_LIH_SIZE, __func__))) {
       LOG_D(RLC, PROTOCOL_RLC_TM_CTXT_FMT"[SEGMENT] ERROR COULD NOT GET NEW PDU, EXIT\n",
             PROTOCOL_RLC_TM_CTXT_ARGS(ctxt_pP, rlc_pP));
       return;
@@ -123,7 +116,7 @@ rlc_tm_no_segment (
     list_add_tail_eurecom (pdu_p, &rlc_pP->pdus_to_mac_layer);
 
     rlc_pP->buffer_occupancy -= (sdu_mngt_p->sdu_size >> 3);
-    free_mem_block (rlc_pP->input_sdus[rlc_pP->current_sdu_index]);
+    free_mem_block (rlc_pP->input_sdus[rlc_pP->current_sdu_index], __func__);
     rlc_pP->input_sdus[rlc_pP->current_sdu_index] = NULL;
     rlc_pP->current_sdu_index = (rlc_pP->current_sdu_index + 1) % rlc_pP->size_input_sdus_buffer;
     rlc_pP->nb_sdu -= 1;
@@ -149,7 +142,7 @@ rlc_tm_rx (
     ((struct rlc_tm_rx_pdu_management *) (tb_p->data))->first_byte = first_byte_p;
 
     rlc_tm_send_sdu (ctxt_pP, rlc_p, (((struct mac_tb_ind *) (tb_p->data))->error_indication), first_byte_p, data_indP.tb_size);
-    free_mem_block (tb_p);
+    free_mem_block (tb_p, __func__);
   }
 }
 
@@ -242,6 +235,6 @@ rlc_tm_data_req (
     rlc_p->input_sdus[rlc_p->next_sdu_index] = sdu_pP;
     rlc_p->next_sdu_index = (rlc_p->next_sdu_index + 1) % rlc_p->size_input_sdus_buffer;
   } else {
-    free_mem_block (sdu_pP);
+    free_mem_block (sdu_pP, __func__);
   }
 }

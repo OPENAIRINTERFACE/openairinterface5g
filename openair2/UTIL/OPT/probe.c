@@ -29,36 +29,6 @@
  * SUCH DAMAGE
  */
 
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
-
-
 /*! \file probe.c
 * \brief
 * \author navid nikaein
@@ -189,7 +159,7 @@ static void *opt_listener_thread(void *arg)
       pthread_exit(NULL);
     } else {
       /* Normal read -> discard PDU */
-      LOG_D(OPT, "Incoming data received from: %s:%u with length %d\n",
+      LOG_D(OPT, "Incoming data received from: %s:%u with length %zd\n",
             inet_ntoa(opt_listener.address.sin_addr),
             ntohs(opt_listener.address.sin_port), ret);
     }
@@ -228,7 +198,9 @@ int opt_create_listener_socket(char *ip_address, uint16_t port)
   ret = bind(opt_listener.sd, (struct sockaddr*) &opt_listener.address, sizeof(opt_listener.address));
 
   if (ret != 0) {
-    LOG_E(OPT, "Failed to bind socket to (%s:%u): %s\n", strerror(errno));
+    LOG_E(OPT, "Failed to bind socket to (%s:%u): %s\n",
+          inet_ntoa(opt_listener.address.sin_addr),
+          ntohs(opt_listener.address.sin_port), strerror(errno));
     opt_type = OPT_NONE;
     close(opt_listener.sd);
     opt_listener.sd = -1;
@@ -260,7 +232,7 @@ int opt_create_listener_socket(char *ip_address, uint16_t port)
  */
 /* Add framing header to MAC PDU and send. */
 static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
-                      guint16 rnti, guint16 ueid, guint16 subframeNumber,
+                      guint16 rnti, guint16 ueid, guint16 sfnSf,
                       guint8 isPredefinedData, guint8 retx, guint8 crcStatus,
                       guint8 oob_event, guint8 oob_event_value,
                       uint8_t *pdu_buffer, unsigned int pdu_buffer_size)
@@ -308,7 +280,7 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
 
   /* Subframe number */
   frameBuffer[frameOffset++] = MAC_LTE_SUBFRAME_TAG;
-  tmp16 = htons(subframeNumber); // frame counter : this will give an expert info as wireshark expects SF and not F
+  tmp16 = htons(sfnSf); // frame counter : this will give an expert info as wireshark expects SF and not F
   memcpy(frameBuffer+frameOffset, &tmp16, 2);
   frameOffset += 2;
 
@@ -317,7 +289,7 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
   
 #ifdef WIRESHARK_DEV
   frameOffset += 2;
-  tmp16 = htons(subframeNumber); // subframe
+  tmp16 = htons(sfnSf); // subframe
   memcpy(frameBuffer+frameOffset, &tmp16, 2);
   frameOffset += 2;
 #endif
@@ -334,19 +306,25 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
     frameBuffer[frameOffset++] = retx;
   }
 
-#ifdef WIRESHARK_DEV
+//#ifdef WIRESHARK_DEV
 
   /* Relating to out-of-band events */
   /* N.B. dissector will only look to these fields if length is 0... */
   if (pdu_buffer_size==0) {
     switch (oob_event) {
     case ltemac_send_preamble :
-      LOG_D(OPT,"oob event %d %d\n",ltemac_send_preamble );
+      LOG_D(OPT,"oob ltemac_send_preamble event %02x."
+          //"%02x."
+          "%02x.%02x\n",
+          MAC_LTE_OOB_EVENT_TAG,
+          //ltemac_send_preamble,
+          rnti,
+          oob_event_value);
       //frameBuffer[frameOffset++]=0;
       //frameBuffer[frameOffset++]=0;
       //frameBuffer[frameOffset++]=0;
       frameBuffer[frameOffset++] = MAC_LTE_OOB_EVENT_TAG;
-      frameBuffer[frameOffset++]=ltemac_send_preamble;
+      //frameBuffer[frameOffset++]=ltemac_send_preamble;
       frameBuffer[frameOffset++]=rnti; // is the preamble
       frameBuffer[frameOffset++]=oob_event_value;
       break;
@@ -359,12 +337,12 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
 
     case ltemac_sr_failure:
     default:
-      LOG_D(OPT,"not implemeneted yet\n");
+      LOG_W(OPT,"not implemeneted yet\n");
       break;
     }
   }
 
-#endif
+//#endif
   /***************************************/
   /* Now write the MAC PDU               */
   frameBuffer[frameOffset++] = MAC_LTE_PAYLOAD_TAG;
@@ -382,7 +360,7 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
                      (const struct sockaddr *)&g_serv_addr, sizeof(g_serv_addr));
 
   if (bytesSent != frameOffset) {
-    LOG_W(OPT, "sendto() failed (not a thread-safe func)- expected %d bytes, got %d (errno=%d)\n",
+    LOG_W(OPT, "sendto() failed (not a thread-safe func)- expected %d bytes, got %ld (errno=%d)\n",
           frameOffset, bytesSent, errno);
     //exit(1);
   }
@@ -458,7 +436,7 @@ static int MAC_LTE_PCAP_WritePDU(MAC_Context_Info_t *context,
 
 /* Remote serveraddress (where Wireshark is running) */
 void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
-               int ueid, int rntiType, int rnti, uint8_t subframe, int oob_event,
+               int ueid, int rntiType, int rnti, uint16_t sysFrameNumber, uint8_t subFrameNumber, int oob_event,
                int oob_event_value)
 {
   MAC_Context_Info_t pdu_context;
@@ -471,7 +449,7 @@ void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
 
     SendFrame(radio_type,
               (direction == DIRECTION_DOWNLINK) ? DIRECTION_DOWNLINK : DIRECTION_UPLINK,
-              rntiType, rnti, ueid, subframe,
+              rntiType, rnti, ueid, (sysFrameNumber<<4) + subFrameNumber,
               1, 0, 1,  //guint8 isPredefinedData, guint8 retx, guint8 crcStatus
               oob_event,oob_event_value,
               pdu_buffer, pdu_buffer_size);
@@ -490,8 +468,8 @@ void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
     pdu_context.ueid = ueid;
     pdu_context.isRetx = 0;
     pdu_context.crcStatusOK =1;
-    pdu_context.sysFrameNumber = subframe;
-    pdu_context.subFrameNumber = 0;
+    pdu_context.sysFrameNumber = sysFrameNumber;
+    pdu_context.subFrameNumber = subFrameNumber;
     pdu_context.subframesSinceCaptureStart = subframesSinceCaptureStart++;
     MAC_LTE_PCAP_WritePDU( &pdu_context, pdu_buffer, pdu_buffer_size);
     break;

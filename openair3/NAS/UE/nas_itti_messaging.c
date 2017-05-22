@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 #include <string.h>
 
 #include "intertask_interface.h"
@@ -187,7 +180,40 @@ int nas_itti_protected_msg(const char *buffer, const nas_message_t *msg, const i
 
 extern unsigned char NB_eNB_INST;
 
-int nas_itti_cell_info_req(const plmn_t plmnID, const Byte_t rat)
+int nas_itti_kenb_refresh_req(const Byte_t kenb[32])
+{
+  MessageDef *message_p;
+
+  message_p = itti_alloc_new_message(TASK_NAS_UE, NAS_KENB_REFRESH_REQ);
+
+  memcpy(NAS_KENB_REFRESH_REQ(message_p).kenb, kenb, sizeof(NAS_KENB_REFRESH_REQ(message_p).kenb));
+
+  MSC_LOG_TX_MESSAGE(
+      MSC_NAS_UE,
+      MSC_RRC_UE,
+      NULL,0,
+      "0 NAS_KENB_REFRESH_REQ KeNB "
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x",
+      kenb[0],  kenb[1],  kenb[2],  kenb[3],
+      kenb[4],  kenb[5],  kenb[6],  kenb[7],
+      kenb[8],  kenb[9],  kenb[10], kenb[11],
+      kenb[12], kenb[13], kenb[14], kenb[15],
+      kenb[16], kenb[17], kenb[18], kenb[19],
+      kenb[20], kenb[21], kenb[22], kenb[23],
+      kenb[24], kenb[25], kenb[26], kenb[27],
+      kenb[28], kenb[29], kenb[30], kenb[31]);
+
+  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + 0 /* TODO to be virtualized */, message_p);
+}
+
+int nas_itti_cell_info_req(const plmn_t plmnID, const Byte_t rat, int user_id)
 {
   MessageDef *message_p;
 
@@ -204,10 +230,10 @@ int nas_itti_cell_info_req(const plmn_t plmnID, const Byte_t rat)
   	  plmnID.MCCdigit1, plmnID.MCCdigit2, plmnID.MCCdigit3,
   	  plmnID.MNCdigit1, plmnID.MNCdigit2, plmnID.MNCdigit3);
 
-  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + 0 /* TODO to be virtualized */, message_p);
+  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + user_id, message_p);
 }
 
-int nas_itti_nas_establish_req(as_cause_t cause, as_call_type_t type, as_stmsi_t s_tmsi, plmn_t plmnID, Byte_t *data, uint32_t length)
+int nas_itti_nas_establish_req(as_cause_t cause, as_call_type_t type, as_stmsi_t s_tmsi, plmn_t plmnID, Byte_t *data, uint32_t length, int user_id)
 {
   MessageDef *message_p;
 
@@ -229,10 +255,10 @@ int nas_itti_nas_establish_req(as_cause_t cause, as_call_type_t type, as_stmsi_t
   	     plmnID.MCCdigit1, plmnID.MCCdigit2, plmnID.MCCdigit3,
   	     plmnID.MNCdigit1, plmnID.MNCdigit2, plmnID.MNCdigit3);
 
-  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + 0 /* TODO to be virtualized */, message_p);
+  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + user_id, message_p);
 }
 
-int nas_itti_ul_data_req(const uint32_t ue_id, void *const data, const uint32_t length)
+int nas_itti_ul_data_req(const uint32_t ue_id, void *const data, const uint32_t length, int user_id)
 {
   MessageDef *message_p;
 
@@ -242,10 +268,10 @@ int nas_itti_ul_data_req(const uint32_t ue_id, void *const data, const uint32_t 
   NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = data;
   NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = length;
 
-  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + 0 /* TODO to be virtualized */, message_p);
+  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + user_id, message_p);
 }
 
-int nas_itti_rab_establish_rsp(const as_stmsi_t s_tmsi, const as_rab_id_t rabID, const nas_error_code_t errCode)
+int nas_itti_rab_establish_rsp(const as_stmsi_t s_tmsi, const as_rab_id_t rabID, const nas_error_code_t errCode, int user_id)
 {
   MessageDef *message_p;
 
@@ -261,5 +287,5 @@ int nas_itti_rab_establish_rsp(const as_stmsi_t s_tmsi, const as_rab_id_t rabID,
   	      NULL,0,
   	     "0 NAS_RAB_ESTABLI_RSP MME code %u m-TMSI %u rb id %u status %u",
   	     s_tmsi.MMEcode, s_tmsi.m_tmsi,rabID, errCode );
-  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + 0 /* TODO to be virtualized */, message_p);
+  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + user_id, message_p);
 }

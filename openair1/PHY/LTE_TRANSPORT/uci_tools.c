@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_TRANSPORT/phich.c
 * \brief Routines for generation of and computations regarding the uplink control information (UCI) for PUSCH. V8.6 2009-03
@@ -176,6 +168,7 @@ void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats, uint8_
   //unsigned char rank;
   //UCI_format fmt;
   //uint8_t N_RB_DL = 25;
+  uint8_t i;
   LOG_D(PHY,"[eNB][UCI] N_RB_DL %d uci format %d\n", N_RB_DL,uci_format);
 
   switch(N_RB_DL) {
@@ -283,6 +276,11 @@ void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats, uint8_
         stats->DL_cqi[1] = 24;
 
       stats->DL_pmi_dual   = ((wideband_cqi_rank2_2A_5MHz *)o)->pmi;
+      //this translates the 2-layer PMI into a single layer PMI for the first codeword
+      //the PMI for the second codeword will be stats->DL_pmi_single^0x1555
+      stats->DL_pmi_single = 0;
+      for (i=0;i<7;i++)
+	stats->DL_pmi_single = stats->DL_pmi_single | (((stats->DL_pmi_dual&(1<i))>>i)*2)<<2*i;  
       break;
 
     case HLC_subband_cqi_nopmi:
@@ -589,6 +587,7 @@ void print_CQI(void *o,UCI_format_t uci_format,unsigned char eNB_id,int N_RB_DL)
   switch(uci_format) {
   case wideband_cqi_rank1_2A:
 #ifdef DEBUG_UCI
+    LOG_D(PHY,"[PRINT CQI] flat_LA %d\n", flag_LA);
     switch(N_RB_DL) {
     case 6:
       LOG_I(PHY,"[PRINT CQI] wideband_cqi rank 1: eNB %d, cqi %d\n",eNB_id,
@@ -843,4 +842,6 @@ void print_CQI(void *o,UCI_format_t uci_format,unsigned char eNB_id,int N_RB_DL)
   */
 
 }
+
+
 

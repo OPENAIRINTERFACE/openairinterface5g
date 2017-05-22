@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 Source      LowerLayer.c
 
@@ -67,17 +60,6 @@ Description Defines EMM procedures executed by the Non-Access Stratum
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
 /****************************************************************************/
 
-/*
- * Data structure used to handle EMM procedures executed by the UE upon
- * receiving lower layer notifications
- */
-static struct {
-  lowerlayer_success_callback_t success; /* Successful data delivery  */
-  lowerlayer_failure_callback_t failure; /* Lower layer failure   */
-  lowerlayer_release_callback_t release; /* NAS signalling release    */
-  void *args;         /* EMM procedure argument parameters    */
-} _lowerlayer_data;
-
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
@@ -95,7 +77,6 @@ static struct {
  ** Description: Notify the EPS Mobility Management entity that data have  **
  **      been successfully delivered to the network                **
  **                                                                        **
- ** Inputs:  ueid:      UE lower layer identifier                  **
  **      Others:    None                                       **
  **                                                                        **
  ** Outputs:     None                                                      **
@@ -103,7 +84,7 @@ static struct {
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int lowerlayer_success(unsigned int ueid)
+int lowerlayer_success(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
@@ -111,8 +92,8 @@ int lowerlayer_success(unsigned int ueid)
   int rc;
 
   emm_sap.primitive = EMMREG_LOWERLAYER_SUCCESS;
-  emm_sap.u.emm_reg.ueid = ueid;
-  rc = emm_sap_send(&emm_sap);
+  emm_sap.u.emm_reg.ueid = user->ueid;
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -124,7 +105,6 @@ int lowerlayer_success(unsigned int ueid)
  ** Description: Notify the EPS Mobility Management entity that lower la-  **
  **      yers failed to deliver data to the network                **
  **                                                                        **
- ** Inputs:  ueid:      UE lower layer identifier                  **
  **      Others:    None                                       **
  **                                                                        **
  ** Outputs:     None                                                      **
@@ -132,7 +112,7 @@ int lowerlayer_success(unsigned int ueid)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int lowerlayer_failure(unsigned int ueid)
+int lowerlayer_failure(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
@@ -140,8 +120,8 @@ int lowerlayer_failure(unsigned int ueid)
   int rc;
 
   emm_sap.primitive = EMMREG_LOWERLAYER_FAILURE;
-  emm_sap.u.emm_reg.ueid = ueid;
-  rc = emm_sap_send(&emm_sap);
+  emm_sap.u.emm_reg.ueid = user->ueid;
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -162,12 +142,12 @@ int lowerlayer_failure(unsigned int ueid)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int lowerlayer_establish(void)
+int lowerlayer_establish(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
   /* Update the EPS Connection Management status */
-  _emm_data.ecm_status = ECM_CONNECTED;
+  user->emm_data->ecm_status = ECM_CONNECTED;
 
   LOG_FUNC_RETURN (RETURNok);
 }
@@ -187,7 +167,7 @@ int lowerlayer_establish(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int lowerlayer_release(int cause)
+int lowerlayer_release(nas_user_t *user, int cause)
 {
   LOG_FUNC_IN;
 
@@ -195,11 +175,11 @@ int lowerlayer_release(int cause)
   int rc;
 
   /* Update the EPS Connection Management status */
-  _emm_data.ecm_status = ECM_IDLE;
+  user->emm_data->ecm_status = ECM_IDLE;
 
   emm_sap.primitive = EMMREG_LOWERLAYER_RELEASE;
-  emm_sap.u.emm_reg.ueid = 0;
-  rc = emm_sap_send(&emm_sap);
+  emm_sap.u.emm_reg.ueid = user->ueid;
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -211,7 +191,6 @@ int lowerlayer_release(int cause)
  ** Description: Notify the EPS Session Management entity that data have   **
  **      been received from lower layers                           **
  **                                                                        **
- ** Inputs:  ueid:      UE lower layer identifier                  **
  **      data:      Data transfered from lower layers          **
  **      Others:    None                                       **
  **                                                                        **
@@ -220,7 +199,7 @@ int lowerlayer_release(int cause)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int lowerlayer_data_ind(unsigned int ueid, const OctetString *data)
+int lowerlayer_data_ind(nas_user_t *user, const OctetString *data)
 {
   esm_sap_t esm_sap;
   int rc;
@@ -230,10 +209,10 @@ int lowerlayer_data_ind(unsigned int ueid, const OctetString *data)
 
   esm_sap.primitive = ESM_UNITDATA_IND;
   esm_sap.is_standalone = TRUE;
-  esm_sap.ueid = ueid;
+  esm_sap.ueid = user->ueid;
 
   esm_sap.recv = data;
-  rc = esm_sap_send(&esm_sap);
+  rc = esm_sap_send(user, &esm_sap);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -245,7 +224,6 @@ int lowerlayer_data_ind(unsigned int ueid, const OctetString *data)
  ** Description: Notify the EPS Mobility Management entity that data have  **
  **      to be transfered to lower layers                          **
  **                                                                        **
- ** Inputs:  ueid:      UE lower layer identifier                  **
  **          data:      Data to be transfered to lower layers      **
  **      Others:    None                                       **
  **                                                                        **
@@ -254,7 +232,7 @@ int lowerlayer_data_ind(unsigned int ueid, const OctetString *data)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int lowerlayer_data_req(unsigned int ueid, const OctetString *data)
+int lowerlayer_data_req(nas_user_t *user, const OctetString *data)
 {
   LOG_FUNC_IN;
 
@@ -264,16 +242,16 @@ int lowerlayer_data_req(unsigned int ueid, const OctetString *data)
   //struct emm_data_context_s *ctx  = NULL;
 
   emm_sap.primitive = EMMAS_DATA_REQ;
-  emm_sap.u.emm_as.u.data.guti = _emm_data.guti;
-  emm_sap.u.emm_as.u.data.ueid = 0;
-  sctx = _emm_data.security;
+  emm_sap.u.emm_as.u.data.guti = user->emm_data->guti;
+  emm_sap.u.emm_as.u.data.ueid = user->ueid;
+  sctx = user->emm_data->security;
 
   emm_sap.u.emm_as.u.data.NASinfo = 0;
   emm_sap.u.emm_as.u.data.NASmsg.length = data->length;
   emm_sap.u.emm_as.u.data.NASmsg.value = data->value;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.data.sctx, sctx, FALSE, TRUE);
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -304,17 +282,17 @@ int lowerlayer_data_req(unsigned int ueid, const OctetString *data)
  **      Others:    _lowerlayer_data                           **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_lowerlayer_initialize(lowerlayer_success_callback_t success,
+int emm_proc_lowerlayer_initialize(lowerlayer_data_t *lowerlayer_data, lowerlayer_success_callback_t success,
                                    lowerlayer_failure_callback_t failure,
                                    lowerlayer_release_callback_t release,
                                    void *args)
 {
   LOG_FUNC_IN;
 
-  _lowerlayer_data.success = success;
-  _lowerlayer_data.failure = failure;
-  _lowerlayer_data.release = release;
-  _lowerlayer_data.args = args;
+  lowerlayer_data->success = success;
+  lowerlayer_data->failure = failure;
+  lowerlayer_data->release = release;
+  lowerlayer_data->args = args;
 
   LOG_FUNC_RETURN (RETURNok);
 }
@@ -335,17 +313,17 @@ int emm_proc_lowerlayer_initialize(lowerlayer_success_callback_t success,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_lowerlayer_success(void)
+int emm_proc_lowerlayer_success(lowerlayer_data_t *lowerlayer_data)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNok;
 
-  lowerlayer_success_callback_t emm_callback = _lowerlayer_data.success;
+  lowerlayer_success_callback_t emm_callback = lowerlayer_data->success;
 
   if (emm_callback) {
-    rc = (*emm_callback)(_lowerlayer_data.args);
-    _lowerlayer_data.success = NULL;
+    rc = (*emm_callback)(lowerlayer_data->args);
+    lowerlayer_data->success = NULL;
   }
 
   LOG_FUNC_RETURN (rc);
@@ -367,17 +345,17 @@ int emm_proc_lowerlayer_success(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_lowerlayer_failure(int is_initial)
+int emm_proc_lowerlayer_failure(lowerlayer_data_t *lowerlayer_data, int is_initial)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNok;
 
-  lowerlayer_failure_callback_t emm_callback = _lowerlayer_data.failure;
+  lowerlayer_failure_callback_t emm_callback = lowerlayer_data->failure;
 
   if (emm_callback) {
-    rc = (*emm_callback)(is_initial, _lowerlayer_data.args);
-    _lowerlayer_data.failure = NULL;
+    rc = (*emm_callback)(is_initial, lowerlayer_data->args);
+    lowerlayer_data->failure = NULL;
   }
 
   LOG_FUNC_RETURN (rc);
@@ -398,17 +376,17 @@ int emm_proc_lowerlayer_failure(int is_initial)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_lowerlayer_release(void)
+int emm_proc_lowerlayer_release(lowerlayer_data_t *lowerlayer_data)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNok;
 
-  lowerlayer_release_callback_t emm_callback = _lowerlayer_data.release;
+  lowerlayer_release_callback_t emm_callback = lowerlayer_data->release;
 
   if (emm_callback) {
-    rc = (*emm_callback)(_lowerlayer_data.args);
-    _lowerlayer_data.release = NULL;
+    rc = (*emm_callback)(lowerlayer_data->args);
+    lowerlayer_data->release = NULL;
   }
 
   LOG_FUNC_RETURN (rc);

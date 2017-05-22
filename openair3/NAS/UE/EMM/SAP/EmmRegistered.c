@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 Source      EmmRegistered.c
 
@@ -88,13 +81,13 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmRegistered(const emm_reg_t *evt)
+int EmmRegistered(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNerror;
 
-  assert(emm_fsm_get_status() == EMM_REGISTERED);
+  assert(emm_fsm_get_status(user) == EMM_REGISTERED);
 
 
   switch (evt->primitive) {
@@ -103,7 +96,7 @@ int EmmRegistered(const emm_reg_t *evt)
     /*
      * Initiate detach procedure for EPS services
      */
-    rc = emm_proc_detach(EMM_DETACH_TYPE_EPS, evt->u.detach.switch_off);
+    rc = emm_proc_detach(user, EMM_DETACH_TYPE_EPS, evt->u.detach.switch_off);
     break;
 
   case _EMMREG_DETACH_REQ:
@@ -112,7 +105,7 @@ int EmmRegistered(const emm_reg_t *evt)
      * message successfully delivered to the network);
      * enter state EMM-DEREGISTERED-INITIATED
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_INITIATED);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_INITIATED);
     break;
 
   case _EMMREG_DETACH_CNF:
@@ -120,7 +113,7 @@ int EmmRegistered(const emm_reg_t *evt)
      * The UE implicitly detached from the network (all EPS
      * bearer contexts may have been deactivated)
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED);
     break;
 
   case _EMMREG_TAU_REQ:
@@ -143,21 +136,21 @@ int EmmRegistered(const emm_reg_t *evt)
     /*
      * Data transfer message has been successfully delivered
      */
-    rc = emm_proc_lowerlayer_success();
+    rc = emm_proc_lowerlayer_success(user->lowerlayer_data);
     break;
 
   case _EMMREG_LOWERLAYER_FAILURE:
     /*
      * Data transfer message failed to be delivered
      */
-    rc = emm_proc_lowerlayer_failure(FALSE);
+    rc = emm_proc_lowerlayer_failure(user->lowerlayer_data, FALSE);
     break;
 
   case _EMMREG_LOWERLAYER_RELEASE:
     /*
      * NAS signalling connection has been released
      */
-    rc = emm_proc_lowerlayer_release();
+    rc = emm_proc_lowerlayer_release(user->lowerlayer_data);
     break;
 
   default:

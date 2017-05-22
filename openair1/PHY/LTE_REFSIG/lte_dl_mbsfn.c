@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 // 6.10.2.2 MBSFN reference signals Mapping to resource elements
 
 #ifdef USER_MODE
@@ -39,7 +32,7 @@
 //extern unsigned int lte_gold_table[10][3][42];
 //#define DEBUG_DL_MBSFN
 
-int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, int32_t *output,
+int lte_dl_mbsfn(PHY_VARS_eNB *eNB, int32_t *output,
                  short amp,
                  int subframe,
                  unsigned char l)
@@ -62,9 +55,9 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, int32_t *output,
   ((short *)&qpsk[3])[1] = -a;
 
 
-  mprime = 3*(110 - phy_vars_eNB->lte_frame_parms.N_RB_DL);
+  mprime = 3*(110 - eNB->frame_parms.N_RB_DL);
 
-  for (m=0; m<phy_vars_eNB->lte_frame_parms.N_RB_DL*6; m++) {
+  for (m=0; m<eNB->frame_parms.N_RB_DL*6; m++) {
 
     if ((l==0) || (l==2))
       k = m<<1;
@@ -75,24 +68,24 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, int32_t *output,
       return(-1);
     }
 
-    k+=phy_vars_eNB->lte_frame_parms.first_carrier_offset;
+    k+=eNB->frame_parms.first_carrier_offset;
 
     mprime_dword     = mprime>>4;
     mprime_qpsk_symb = mprime&0xf;
 
-    if (k >= phy_vars_eNB->lte_frame_parms.ofdm_symbol_size) {
+    if (k >= eNB->frame_parms.ofdm_symbol_size) {
       k++;  // skip DC carrier
-      k-=phy_vars_eNB->lte_frame_parms.ofdm_symbol_size;
+      k-=eNB->frame_parms.ofdm_symbol_size;
     }
 
-    output[k] = qpsk[(phy_vars_eNB->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
+    output[k] = qpsk[(eNB->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
     //output[k] = (lte_gold_table[eNB_offset][subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
 
 
 #ifdef DEBUG_DL_MBSFN
     msg("subframe %d, l %d, m %d, mprime %d, mprime_dword %d, mprime_qpsk_symbol %d\n",
         subframe,l,m,mprime,mprime_dword,mprime_qpsk_symb);
-    msg("index = %d (k %d)(%x)\n",(phy_vars_eNB->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k,phy_vars_eNB->lte_gold_mbsfn_table[subframe][l][mprime_dword]);
+    msg("index = %d (k %d)(%x)\n",(eNB->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k,eNB->lte_gold_mbsfn_table[subframe][l][mprime_dword]);
 #endif
     mprime++;
 
@@ -110,7 +103,7 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, int32_t *output,
 
 
 
-int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue,
+int lte_dl_mbsfn_rx(PHY_VARS_UE *ue,
                     int *output,
                     int subframe,
                     unsigned char l)
@@ -131,20 +124,20 @@ int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue,
   ((short *)&qpsk[3])[0] = -ONE_OVER_SQRT2_Q15;
   ((short *)&qpsk[3])[1] = ONE_OVER_SQRT2_Q15;
 
-  mprime = 3*(110 - phy_vars_ue->lte_frame_parms.N_RB_DL);
+  mprime = 3*(110 - ue->frame_parms.N_RB_DL);
 
-  for (m=0; m<phy_vars_ue->lte_frame_parms.N_RB_DL*6; m++) {
+  for (m=0; m<ue->frame_parms.N_RB_DL*6; m++) {
 
     mprime_dword     = mprime>>4;
     mprime_qpsk_symb = mprime&0xf;
 
     // this is r_mprime from 3GPP 36-211 6.10.1.2
-    output[k] = qpsk[(phy_vars_ue->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
+    output[k] = qpsk[(ue->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
 
 #ifdef DEBUG_DL_MBSFN
     printf("subframe %d, l %d, m %d, mprime %d, mprime_dword %d, mprime_qpsk_symbol %d\n",
            subframe,l,m,mprime, mprime_dword,mprime_qpsk_symb);
-    printf("index = %d (k %d) (%x)\n",(phy_vars_ue->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k,phy_vars_ue->lte_gold_mbsfn_table[subframe][l][mprime_dword]);
+    printf("index = %d (k %d) (%x)\n",(ue->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k,ue->lte_gold_mbsfn_table[subframe][l][mprime_dword]);
 #endif
 
     mprime++;

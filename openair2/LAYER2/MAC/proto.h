@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /*! \file LAYER2/MAC/proto.h
  * \brief MAC functions prototypes for eNB and UE
  * \author Navid Nikaein and Raymond Knopp
@@ -35,6 +28,7 @@
  */
 #ifndef __LAYER2_MAC_PROTO_H__
 #define __LAYER2_MAC_PROTO_H__
+
 /** \addtogroup _mac
  *  @{
  */
@@ -127,6 +121,7 @@ void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,i
 @param mbsfn_flag  Indicates that MCH/MCCH is in this subframe
 */
 void schedule_ue_spec(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
+
 
 /** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
     @param Mod_id Module id of UE
@@ -253,6 +248,25 @@ unsigned short fill_rar(
 */
 void cancel_ra_proc(module_id_t module_idP,int CC_id,frame_t frameP, uint16_t preamble_index);
 
+/* \brief Function used by PHY to inform MAC that an uplink is scheduled
+          for Msg3 in given subframe. This is used so that the MAC
+          scheduler marks as busy the RBs used by the Msg3.
+@param Mod_id        Instance ID of eNB
+@param CC_id         CC ID of eNB
+@param frame         current frame
+@param subframe      current subframe
+@param rnti          UE rnti concerned
+@param Msg3_frame    frame where scheduling takes place
+@param Msg3_subframe subframe where scheduling takes place
+*/
+void set_msg3_subframe(module_id_t Mod_id,
+                       int CC_id,
+                       int frame,
+                       int subframe,
+                       int rnti,
+                       int Msg3_frame,
+                       int Msg3_subframe);
+
 /* \brief Function to indicate a received SDU on ULSCH.
 @param Mod_id Instance ID of eNB
 @param rnti RNTI of UE transmitting the SR
@@ -306,7 +320,7 @@ rnti_t      UE_RNTI           (module_id_t module_idP, int UE_id);
 int         UE_PCCID          (module_id_t module_idP, int UE_id);
 uint8_t     find_active_UEs   (module_id_t module_idP);
 boolean_t   is_UE_active      (module_id_t module_idP, int UE_id);
-uint8_t     process_ue_cqi    (module_id_t module_idP, int UE_id);
+uint8_t     get_aggregation   (uint8_t bw_index, uint8_t cqi, uint8_t dci_fmt);
 
 int8_t find_active_UEs_with_traffic(module_id_t module_idP);
 
@@ -385,11 +399,13 @@ void mac_out_of_sync_ind(module_id_t module_idP, frame_t frameP, uint16_t CH_ind
 
 void ue_decode_si(module_id_t module_idP, int CC_id,frame_t frame, uint8_t CH_index, void *pdu, uint16_t len);
 
+void ue_decode_p(module_id_t module_idP, int CC_id,frame_t frame, uint8_t CH_index, void *pdu, uint16_t len);
 
-void ue_send_sdu(module_id_t module_idP, uint8_t CC_id,frame_t frame, uint8_t *sdu,uint16_t sdu_len,uint8_t CH_index);
+
+void ue_send_sdu(module_id_t module_idP, uint8_t CC_id,frame_t frame, sub_frame_t subframe, uint8_t *sdu,uint16_t sdu_len,uint8_t CH_index);
 
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 /* \brief Called by PHY to transfer MCH transport block to ue MAC.
 @param Mod_id Index of module instance
 @param frame Frame index
@@ -431,10 +447,14 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP,u
 
 /* \brief Function called by PHY to process the received RAR.  It checks that the preamble matches what was sent by the eNB and provides the timing advance and t-CRNTI.
 @param Mod_id Index of UE instance
+@param CC_id Index to a component carrier
+@param frame Frame index
+@param ra_rnti RA_RNTI value
 @param dlsch_buffer  Pointer to dlsch_buffer containing RAR PDU
 @param t_crnti Pointer to PHY variable containing the T_CRNTI
 @param preamble_index Preamble Index used by PHY to transmit the PRACH.  This should match the received RAR to trigger the rest of
 random-access procedure
+@param selected_rar_buffer the output buffer for storing the selected RAR header and RAR payload
 @returns timing advance or 0xffff if preamble doesn't match
 */
 uint16_t
@@ -442,9 +462,11 @@ ue_process_rar(
   const module_id_t module_idP,
   const int CC_id,
   const frame_t frameP,
+  const rnti_t ra_rnti,
   uint8_t * const dlsch_buffer,
   rnti_t * const t_crnti,
-  const uint8_t preamble_index
+  const uint8_t preamble_index,
+  uint8_t* selected_rar_buffer
 );
 
 
@@ -511,24 +533,30 @@ int UE_PCCID(module_id_t mod_idP,int ue_idP);
 rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP);
 
 
-void ulsch_scheduler_pre_processor(module_id_t module_idP, int frameP, sub_frame_t subframeP, uint16_t *first_rb, uint8_t  aggregattion);
+void ulsch_scheduler_pre_processor(module_id_t module_idP, int frameP, sub_frame_t subframeP, uint16_t *first_rb);
 void store_ulsch_buffer(module_id_t module_idP, int frameP, sub_frame_t subframeP);
 void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP);
 void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subframeP,uint16_t *first_rb);
 void adjust_bsr_info(int buffer_occupancy, uint16_t TBS, UE_TEMPLATE *UE_template);
+int phy_stats_exist(module_id_t Mod_id, int rnti);
 
 /*! \fn  UE_L2_state_t ue_scheduler(const module_id_t module_idP,const frame_t frameP, const sub_frame_t subframe, const lte_subframe_t direction,const uint8_t eNB_index)
    \brief UE scheduler where all the ue background tasks are done.  This function performs the following:  1) Trigger PDCP every 5ms 2) Call RRC for link status return to PHY3) Perform SR/BSR procedures for scheduling feedback 4) Perform PHR procedures.
 \param[in] module_idP instance of the UE
-\param[in] subframe t the subframe number
+\param[in] rxFrame the RX frame number
+\param[in] rxSubframe the RX subframe number
+\param[in] txFrame the TX frame number
+\param[in] txSubframe the TX subframe number
 \param[in] direction  subframe direction
 \param[in] eNB_index  instance of eNB
 @returns L2 state (CONNETION_OK or CONNECTION_LOST or PHY_RESYNCH)
 */
 UE_L2_STATE_t ue_scheduler(
   const module_id_t module_idP,
-  const frame_t frameP,
-  const sub_frame_t subframe,
+  const frame_t rxFrameP,
+  const sub_frame_t rxSubframe,
+  const frame_t txFrameP,
+  const sub_frame_t txSubframe,
   const lte_subframe_t direction,
   const uint8_t eNB_index,
   const int CC_id);
@@ -542,21 +570,6 @@ UE_L2_STATE_t ue_scheduler(
 \param[out] access(1) or postpone (0)
 */
 int cba_access(module_id_t module_idP,frame_t frameP,sub_frame_t subframe, uint8_t eNB_index,uint16_t buflen);
-
-/*! \fn  int get_bsr_lcgid (module_id_t module_idP);
-\brief determine the lcgid for the bsr
-\param[in] Mod_id instance of the UE
-\param[out] lcgid
-*/
-int get_bsr_lcgid (module_id_t module_idP);
-
-/*! \fn  uint8_t get_bsr_len (module_id_t module_idP,uint16_t bufflen);
-\brief determine whether the bsr is short or long assuming that the MAC pdu is built
-\param[in] Mod_id instance of the UE
-\param[in] bufflen size of phy transport block
-\param[out] bsr_len size of bsr control element
-*/
-uint8_t get_bsr_len (module_id_t module_idP, uint16_t buflen);
 
 /*! \fn  BSR_SHORT *  get_bsr_short(module_id_t module_idP, uint8_t bsr_len)
 \brief get short bsr level
@@ -574,22 +587,21 @@ BSR_SHORT *get_bsr_short(module_id_t module_idP, uint8_t bsr_len);
 */
 BSR_LONG * get_bsr_long(module_id_t module_idP, uint8_t bsr_len);
 
-/*! \fn  boolean_t update_bsr(module_id_t module_idP, frame_t frameP, uint8_t lcid)
+/*! \fn  boolean_t update_bsr(module_id_t module_idP, frame_t frameP,sub_frame_t subframeP)
    \brief get the rlc stats and update the bsr level for each lcid
 \param[in] Mod_id instance of the UE
 \param[in] frame Frame index
-\param[in] lcid logical channel identifier
 */
-boolean_t update_bsr(module_id_t module_idP, frame_t frameP, eNB_index_t eNB_index, uint8_t lcid, uint8_t lcgid);
+boolean_t update_bsr(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP,eNB_index_t eNB_index);
 
-/*! \fn  locate (int *table, int size, int value)
+/*! \fn  locate_BsrIndexByBufferSize (int *table, int size, int value)
    \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table.
 \param[in] *table Pointer to BSR table
 \param[in] size Size of the table
 \param[in] value Value of the buffer
 \return the index in the BSR_LEVEL table
 */
-uint8_t locate (const uint32_t *table, int size, int value);
+uint8_t locate_BsrIndexByBufferSize (const uint32_t *table, int size, int value);
 
 
 /*! \fn  int get_sf_periodicBSRTimer(uint8_t periodicBSR_Timer)
@@ -687,6 +699,8 @@ uint32_t allocate_prbs_sub(int nb_rb, uint8_t *rballoc);
 
 void update_ul_dci(module_id_t module_idP,uint8_t CC_id,rnti_t rnti,uint8_t dai);
 
+int get_bw_index(module_id_t module_id, uint8_t CC_id);
+
 int get_min_rb_unit(module_id_t module_idP, uint8_t CC_id);
 
 /* \brief Generate header for DL-SCH.  This function parses the desired control elements and sdus and generates the header as described
@@ -742,7 +756,7 @@ int rrc_mac_config_req(module_id_t     module_idP,
                        uint8_t         eNB_index,
                        RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
                        struct PhysicalConfigDedicated *physicalConfigDedicated,
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
                        SCellToAddMod_r10_t *sCellToAddMod_r10,
                        //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -759,7 +773,7 @@ int rrc_mac_config_req(module_id_t     module_idP,
                        long *ul_Bandwidth,
                        AdditionalSpectrumEmission_t *additionalSpectrumEmission,
                        struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
                        ,
                        uint8_t MBMS_Flag,
                        MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
@@ -786,7 +800,7 @@ rrc_get_estimated_ue_distance(
   const int         CC_idP,
   const uint8_t     loc_typeP);
 
-void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_eNB);
+void fill_dci(DCI_PDU *DCI_pdu, PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc);
 
 #endif
 /** @}*/

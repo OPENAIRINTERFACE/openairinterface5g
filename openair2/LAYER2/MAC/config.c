@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /*! \file config.c
  * \brief UE and eNB configuration performed by RRC or as a consequence of RRC procedures
  * \author  Navid Nikaein and Raymond Knopp
@@ -49,7 +42,7 @@
 #include "extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-AreaInfo-r9.h"
 #include "MBSFN-SubframeConfigList.h"
@@ -77,6 +70,9 @@ void ue_mac_reset(module_id_t module_idP,uint8_t eNB_index)
   UE_mac_inst[module_idP].scheduling_info.SR_pending=0;
   UE_mac_inst[module_idP].scheduling_info.SR_COUNTER=0;
 
+//Set BSR Trigger Bmp and remove timer flags
+  UE_mac_inst[module_idP].BSR_reporting_active = BSR_TRIGGER_NONE;
+
   // stop ongoing RACH procedure
 
   // discard explicitly signaled ra_PreambleIndex and ra_RACH_MaskIndex, if any
@@ -97,7 +93,7 @@ rrc_mac_config_req(
   uint8_t                          eNB_index,
                        RadioResourceConfigCommonSIB_t  *radioResourceConfigCommon,
                        struct PhysicalConfigDedicated  *physicalConfigDedicated,
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
                        SCellToAddMod_r10_t *sCellToAddMod_r10,
                        //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -114,7 +110,7 @@ rrc_mac_config_req(
                        long                            *ul_Bandwidth,
                        AdditionalSpectrumEmission_t    *additionalSpectrumEmission,
                        struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
                        ,uint8_t                              MBMS_Flag,
                        MBSFN_AreaInfoList_r9_t         *mbsfn_AreaInfoList,
                        PMCH_InfoList_r9_t              *pmch_InfoList
@@ -185,18 +181,28 @@ rrc_mac_config_req(
       if (logicalChannelConfig->ul_SpecificParameters) {
         UE_mac_inst[Mod_idP].scheduling_info.bucket_size[logicalChannelIdentity]=logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate *
             logicalChannelConfig->ul_SpecificParameters->bucketSizeDuration; // set the max bucket size
-        UE_mac_inst[Mod_idP].scheduling_info.LCGID[logicalChannelIdentity]=*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
-        LOG_D(MAC,"[CONFIG][UE %d] LCID %d is attached to the LCGID %d\n",Mod_idP,logicalChannelIdentity,*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup);
+        if (logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup != NULL) {
+            UE_mac_inst[Mod_idP].scheduling_info.LCGID[logicalChannelIdentity]=*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
+            LOG_D(MAC,"[CONFIG][UE %d] LCID %ld is attached to the LCGID %ld\n",Mod_idP,logicalChannelIdentity,*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup);
+        }
+        else {
+        	UE_mac_inst[Mod_idP].scheduling_info.LCGID[logicalChannelIdentity] = MAX_NUM_LCGID;
+        }
+        UE_mac_inst[Mod_idP].scheduling_info.LCID_buffer_remain[logicalChannelIdentity] = 0;
       } else {
-        LOG_E(MAC,"[CONFIG][UE %d] LCID %d NULL ul_SpecificParameters\n",Mod_idP,logicalChannelIdentity);
+        LOG_E(MAC,"[CONFIG][UE %d] LCID %ld NULL ul_SpecificParameters\n",Mod_idP,logicalChannelIdentity);
         mac_xface->macphy_exit("NULL ul_SpecificParameters");
       }
     }
     else {
-      if (logicalChannelConfig)
-	UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity] = *logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
-      else
-	UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity] = 0;
+      if (UE_id == -1) {
+        LOG_E(MAC,"%s:%d:%s: ERROR, UE_id == -1\n", __FILE__, __LINE__, __FUNCTION__);
+      } else {
+        if (logicalChannelConfig)
+	  UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity] = *logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
+        else
+	  UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity] = 0;
+      }
     }
   }
 
@@ -211,7 +217,7 @@ rrc_mac_config_req(
         if (mac_MainConfig->ul_SCH_Config->periodicBSR_Timer) {
           UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer = (uint16_t) *mac_MainConfig->ul_SCH_Config->periodicBSR_Timer;
         } else {
-          UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer = (uint16_t) MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
+          UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer = (uint16_t) PeriodicBSR_Timer_r12_infinity;
         }
 
         if (mac_MainConfig->ul_SCH_Config->maxHARQ_Tx) {
@@ -219,25 +225,48 @@ rrc_mac_config_req(
         } else {
           UE_mac_inst[Mod_idP].scheduling_info.maxHARQ_Tx     = (uint16_t) MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
         }
+        mac_xface->phy_config_harq_ue(Mod_idP,0,eNB_index,UE_mac_inst[Mod_idP].scheduling_info.maxHARQ_Tx);
 
         if (mac_MainConfig->ul_SCH_Config->retxBSR_Timer) {
           UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer     = (uint16_t) mac_MainConfig->ul_SCH_Config->retxBSR_Timer;
         } else {
-          UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer     = (uint16_t)MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
+          UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer     = (uint16_t)RetxBSR_Timer_r12_sf2560;
       }
       }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
       if (mac_MainConfig->ext1 && mac_MainConfig->ext1->sr_ProhibitTimer_r9) {
         UE_mac_inst[Mod_idP].scheduling_info.sr_ProhibitTimer  = (uint16_t) *mac_MainConfig->ext1->sr_ProhibitTimer_r9;
       } else {
-        UE_mac_inst[Mod_idP].scheduling_info.sr_ProhibitTimer  = (uint16_t) 0;
+        UE_mac_inst[Mod_idP].scheduling_info.sr_ProhibitTimer  = 0;
       }
 
+      if (mac_MainConfig->ext2 && mac_MainConfig->ext2->mac_MainConfig_v1020) {
+        if (mac_MainConfig->ext2->mac_MainConfig_v1020->extendedBSR_Sizes_r10) {
+          UE_mac_inst[Mod_idP].scheduling_info.extendedBSR_Sizes_r10 = (uint16_t) *mac_MainConfig->ext2->mac_MainConfig_v1020->extendedBSR_Sizes_r10;
+        } else {
+          UE_mac_inst[Mod_idP].scheduling_info.extendedBSR_Sizes_r10 = (uint16_t)0;
+        }
+        if (mac_MainConfig->ext2->mac_MainConfig_v1020->extendedPHR_r10) {
+          UE_mac_inst[Mod_idP].scheduling_info.extendedPHR_r10 = (uint16_t) *mac_MainConfig->ext2->mac_MainConfig_v1020->extendedPHR_r10;
+        } else {
+          UE_mac_inst[Mod_idP].scheduling_info.extendedPHR_r10 = (uint16_t)0;
+        }
+      } else {
+        UE_mac_inst[Mod_idP].scheduling_info.extendedBSR_Sizes_r10 = (uint16_t)0;
+        UE_mac_inst[Mod_idP].scheduling_info.extendedPHR_r10 = (uint16_t)0;
+      }
 #endif
-      UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_SF  = get_sf_periodicBSRTimer(UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer);
-      UE_mac_inst[Mod_idP].scheduling_info.retxBSR_SF     = get_sf_retxBSRTimer(UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer);
+      UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_SF  = MAC_UE_BSR_TIMER_NOT_RUNNING;
+      UE_mac_inst[Mod_idP].scheduling_info.retxBSR_SF     = MAC_UE_BSR_TIMER_NOT_RUNNING;
+
+       UE_mac_inst[Mod_idP].BSR_reporting_active = BSR_TRIGGER_NONE;
+
+      LOG_D(MAC,"[UE %d]: periodic BSR %d (SF), retx BSR %d (SF)\n",
+            Mod_idP,
+            UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_SF,
+            UE_mac_inst[Mod_idP].scheduling_info.retxBSR_SF);
 
       UE_mac_inst[Mod_idP].scheduling_info.drx_config     = mac_MainConfig->drx_Config;
       UE_mac_inst[Mod_idP].scheduling_info.phr_config     = mac_MainConfig->phr_Config;
@@ -259,6 +288,7 @@ rrc_mac_config_req(
       UE_mac_inst[Mod_idP].scheduling_info.periodicPHR_SF =  get_sf_perioidicPHR_Timer(UE_mac_inst[Mod_idP].scheduling_info.periodicPHR_Timer);
       UE_mac_inst[Mod_idP].scheduling_info.prohibitPHR_SF =  get_sf_prohibitPHR_Timer(UE_mac_inst[Mod_idP].scheduling_info.prohibitPHR_Timer);
       UE_mac_inst[Mod_idP].scheduling_info.PathlossChange_db =  get_db_dl_PathlossChange(UE_mac_inst[Mod_idP].scheduling_info.PathlossChange);
+      UE_mac_inst[Mod_idP].PHR_reporting_active = 0;
       LOG_D(MAC,"[UE %d] config PHR (%d): periodic %d (SF) prohibit %d (SF)  pathlosschange %d (db) \n",
             Mod_idP,
             (mac_MainConfig->phr_Config)?mac_MainConfig->phr_Config->present:-1,
@@ -270,19 +300,25 @@ rrc_mac_config_req(
 
   if (physicalConfigDedicated != NULL) {
     if (eNB_flagP==1) {
-      mac_xface->phy_config_dedicated_eNB(Mod_idP, CC_idP, UE_RNTI(Mod_idP, UE_id), physicalConfigDedicated);
+      if (UE_id == -1)
+        LOG_E(MAC,"%s:%d:%s: ERROR, UE_id == -1\n", __FILE__, __LINE__, __FUNCTION__);
+      else
+        mac_xface->phy_config_dedicated_eNB(Mod_idP, CC_idP, UE_RNTI(Mod_idP, UE_id), physicalConfigDedicated);
     } else {
       mac_xface->phy_config_dedicated_ue(Mod_idP,0,eNB_index,physicalConfigDedicated);
       UE_mac_inst[Mod_idP].physicalConfigDedicated=physicalConfigDedicated; // for SR proc
     }
   }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (sCellToAddMod_r10 != NULL) {
 
     if (eNB_flagP==1) {
-      mac_xface->phy_config_dedicated_scell_eNB(Mod_idP,UE_RNTI(Mod_idP,UE_id),sCellToAddMod_r10,1);
+      if (UE_id == -1)
+        LOG_E(MAC,"%s:%d:%s: ERROR, UE_id == -1\n", __FILE__, __LINE__, __FUNCTION__);
+      else
+        mac_xface->phy_config_dedicated_scell_eNB(Mod_idP,UE_RNTI(Mod_idP,UE_id),sCellToAddMod_r10,1);
     } else {
 
 	//#warning "phy_config_dedicated_scell_ue is empty"
@@ -296,15 +332,17 @@ rrc_mac_config_req(
   if (eNB_flagP == 0) {
     if (measObj!= NULL) {
       if (measObj[0]!= NULL) {
-        UE_mac_inst[Mod_idP].n_adj_cells = measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList->list.count;
-        LOG_I(MAC,"Number of adjacent cells %d\n",UE_mac_inst[Mod_idP].n_adj_cells);
+        if (measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList != NULL) {
+          UE_mac_inst[Mod_idP].n_adj_cells = measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList->list.count;
+          LOG_D(MAC,"Number of adjacent cells %d\n",UE_mac_inst[Mod_idP].n_adj_cells);
 
-        for (i=0; i<UE_mac_inst[Mod_idP].n_adj_cells; i++) {
-          UE_mac_inst[Mod_idP].adj_cell_id[i] = measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList->list.array[i]->physCellId;
-          LOG_I(MAC,"Cell %d : Nid_cell %d\n",i,UE_mac_inst[Mod_idP].adj_cell_id[i]);
-        }
+          for (i=0; i<UE_mac_inst[Mod_idP].n_adj_cells; i++) {
+            UE_mac_inst[Mod_idP].adj_cell_id[i] = measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList->list.array[i]->physCellId;
+            LOG_D(MAC,"Cell %d : Nid_cell %d\n",i,UE_mac_inst[Mod_idP].adj_cell_id[i]);
+          }
 
-        mac_xface->phy_config_meas_ue(Mod_idP,0,eNB_index,UE_mac_inst[Mod_idP].n_adj_cells,UE_mac_inst[Mod_idP].adj_cell_id);
+          mac_xface->phy_config_meas_ue(Mod_idP,0,eNB_index,UE_mac_inst[Mod_idP].n_adj_cells,UE_mac_inst[Mod_idP].adj_cell_id);
+          }
       }
 
       /*
@@ -413,7 +451,7 @@ rrc_mac_config_req(
               eNB_mac_inst[Mod_idP].common_channels[0].mbsfn_SubframeConfig[i]->subframeAllocation.choice.oneFrame.buf[0]);
       }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
       eNB_mac_inst[Mod_idP].common_channels[0].MBMS_flag = MBMS_Flag;
 #endif
     } else { // UE
@@ -429,7 +467,7 @@ rrc_mac_config_req(
     }
   }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (mbsfn_AreaInfoList != NULL) {
     if (eNB_flagP == 1) {

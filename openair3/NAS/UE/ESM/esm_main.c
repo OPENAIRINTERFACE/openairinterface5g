@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 Source      esm_main.c
 
@@ -47,11 +40,13 @@ Description Defines the EPS Session Management procedure call manager,
 #include "esm_main.h"
 #include "commonDef.h"
 #include "nas_log.h"
+#include "utils.h"
 
 #include "emmData.h"
 #include "esmData.h"
 #include "esm_pt.h"
 #include "esm_ebr.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -76,35 +71,46 @@ Description Defines the EPS Session Management procedure call manager,
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    None                                       **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ***************************************************************************/
-void esm_main_initialize(esm_indication_callback_t cb)
+void esm_main_initialize(nas_user_t *user, esm_indication_callback_t cb)
 {
   LOG_FUNC_IN;
 
   int i;
 
+  esm_data_t *esm_data = calloc_or_fail(sizeof(esm_data_t));
+  user->esm_data = esm_data;
+
+  default_eps_bearer_context_data_t *default_eps_bearer_context = calloc(1, sizeof(default_eps_bearer_context_data_t));
+  if ( default_eps_bearer_context == NULL ) {
+    LOG_TRACE(ERROR, "ESM-MAIN  - Can't malloc default_eps_bearer_context");
+    exit(EXIT_FAILURE);
+  }
+  default_eps_bearer_context->ebi = ESM_EBI_UNASSIGNED;
+  user->default_eps_bearer_context_data = default_eps_bearer_context;
   /* Total number of active EPS bearer contexts */
-  _esm_data.n_ebrs = 0;
+  esm_data->n_ebrs = 0;
   /* List of active PDN connections */
-  _esm_data.n_pdns = 0;
+  esm_data->n_pdns = 0;
 
   for (i = 0; i < ESM_DATA_PDN_MAX + 1; i++) {
-    _esm_data.pdn[i].pid = -1;
-    _esm_data.pdn[i].is_active = FALSE;
-    _esm_data.pdn[i].data = NULL;
+    esm_data->pdn[i].pid = -1;
+    esm_data->pdn[i].is_active = FALSE;
+    esm_data->pdn[i].data = NULL;
   }
 
   /* Emergency bearer services indicator */
-  _esm_data.emergency = FALSE;
+  esm_data->emergency = FALSE;
 
   /* Initialize the procedure transaction identity manager */
-  esm_pt_initialize();
+
+  user->esm_pt_data = esm_pt_initialize();
 
   /* Initialize the EPS bearer context manager */
-  esm_ebr_initialize(cb);
-
+  user->esm_ebr_data = esm_ebr_initialize();
+  // FIXME only one callback for all user or many for many ?
+  esm_ebr_register_callback(cb);
   LOG_FUNC_OUT;
 }
 
@@ -123,7 +129,7 @@ void esm_main_initialize(esm_indication_callback_t cb)
  **                  Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-void esm_main_cleanup(void)
+void esm_main_cleanup(esm_data_t *esm_data)
 {
   LOG_FUNC_IN;
 
@@ -134,8 +140,8 @@ void esm_main_cleanup(void)
 
     /* De-activate EPS bearers and clean up PDN connections */
     for (pid = 0; pid < ESM_DATA_PDN_MAX; pid++) {
-      if (_esm_data.pdn[pid].data) {
-        esm_pdn_t *pdn = _esm_data.pdn[pid].data;
+      if (esm_data->pdn[pid].data) {
+        esm_pdn_t *pdn = esm_data->pdn[pid].data;
 
         if (pdn->apn.length > 0) {
           free(pdn->apn.value);
@@ -159,7 +165,7 @@ void esm_main_cleanup(void)
         }
 
         /* Release the PDN connection */
-        free(_esm_data.pdn[pid].data);
+        free(esm_data->pdn[pid].data);
       }
     }
   }
@@ -175,7 +181,6 @@ void esm_main_cleanup(void)
  **      a defined state at the same time                          **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The maximum number of PDN connections that **
@@ -183,7 +188,7 @@ void esm_main_cleanup(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_main_get_nb_pdns_max(void)
+int esm_main_get_nb_pdns_max(esm_data_t *esm_data)
 {
   LOG_FUNC_IN;
 
@@ -197,18 +202,17 @@ int esm_main_get_nb_pdns_max(void)
  ** Description: Get the number of active PDN connections                  **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The number of active PDN connections       **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_main_get_nb_pdns(void)
+int esm_main_get_nb_pdns(esm_data_t *esm_data)
 {
   LOG_FUNC_IN;
 
-  LOG_FUNC_RETURN (_esm_data.n_pdns);
+  LOG_FUNC_RETURN (esm_data->n_pdns);
 }
 
 /****************************************************************************
@@ -219,7 +223,6 @@ int esm_main_get_nb_pdns(void)
  **      vices is established                                      **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    TRUE if a PDN connection for emergency     **
@@ -227,11 +230,11 @@ int esm_main_get_nb_pdns(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_main_has_emergency(void)
+int esm_main_has_emergency(esm_data_t *esm_data)
 {
   LOG_FUNC_IN;
 
-  LOG_FUNC_RETURN (_esm_data.emergency);
+  LOG_FUNC_RETURN (esm_data->emergency);
 }
 
 /****************************************************************************
@@ -241,7 +244,6 @@ int esm_main_has_emergency(void)
  ** Description: Get the status of the specified PDN connection            **
  **                                                                        **
  ** Inputs:  cid:       PDN connection identifier                  **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     state:     TRUE if the current state of the PDN con-  **
  **             nection is ACTIVE; FALSE otherwise.        **
@@ -252,28 +254,30 @@ int esm_main_has_emergency(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_main_get_pdn_status(int cid, int *state)
+int esm_main_get_pdn_status(nas_user_t *user, int cid, int *state)
 {
   LOG_FUNC_IN;
 
   unsigned int pid = cid - 1;
+  esm_data_t *esm_data = user->esm_data;
+  esm_ebr_data_t *esm_ebr_data = user-> esm_ebr_data;
 
   if (pid >= ESM_DATA_PDN_MAX) {
     return (FALSE);
-  } else if (pid != _esm_data.pdn[pid].pid) {
+  } else if (pid != esm_data->pdn[pid].pid) {
     LOG_TRACE(WARNING, "ESM-MAIN  - PDN connection %d is not defined", cid);
     return (FALSE);
-  } else if (_esm_data.pdn[pid].data == NULL) {
+  } else if (esm_data->pdn[pid].data == NULL) {
     LOG_TRACE(ERROR, "ESM-MAIN  - PDN connection %d has not been allocated",
               cid);
     return (FALSE);
   }
 
-  if (_esm_data.pdn[pid].data->bearer[0] != NULL) {
+  if (esm_data->pdn[pid].data->bearer[0] != NULL) {
     /* The status of a PDN connection is the status of the default EPS bearer
      * that has been assigned to this PDN connection at activation time */
-    int ebi = _esm_data.pdn[pid].data->bearer[0]->ebi;
-    *state = (esm_ebr_get_status(ebi) == ESM_EBR_ACTIVE);
+    int ebi = esm_data->pdn[pid].data->bearer[0]->ebi;
+    *state = (esm_ebr_get_status(esm_ebr_data, ebi) == ESM_EBR_ACTIVE);
   }
 
   /* The PDN connection has not been activated yet */
@@ -287,7 +291,6 @@ int esm_main_get_pdn_status(int cid, int *state)
  ** Description: Get parameters defined for the specified PDN connection   **
  **                                                                        **
  ** Inputs:  cid:       PDN connection identifier                  **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     type:      PDN connection type (IPv4, IPv6, IPv4v6)   **
  **      apn:       Access Point logical Name in used          **
@@ -297,7 +300,7 @@ int esm_main_get_pdn_status(int cid, int *state)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_main_get_pdn(int cid, int *type, const char **apn,
+int esm_main_get_pdn(esm_data_t *esm_data, int cid, int *type, const char **apn,
                      int *is_emergency, int *is_active)
 {
   LOG_FUNC_IN;
@@ -306,29 +309,29 @@ int esm_main_get_pdn(int cid, int *type, const char **apn,
 
   if (pid >= ESM_DATA_PDN_MAX) {
     return (RETURNerror);
-  } else if (pid != _esm_data.pdn[pid].pid) {
+  } else if (pid != esm_data->pdn[pid].pid) {
     LOG_TRACE(WARNING, "ESM-MAIN  - PDN connection %d is not defined", cid);
     return (RETURNerror);
-  } else if (_esm_data.pdn[pid].data == NULL) {
+  } else if (esm_data->pdn[pid].data == NULL) {
     LOG_TRACE(ERROR, "ESM-MAIN  - PDN connection %d has not been allocated",
               cid);
     return (RETURNerror);
   }
 
   /* Get the PDN type */
-  *type = _esm_data.pdn[pid].data->type;
+  *type = esm_data->pdn[pid].data->type;
 
   /* Get the Access Point Name */
-  if (_esm_data.pdn[pid].data->apn.length > 0) {
-    *apn = (char *)(_esm_data.pdn[pid].data->apn.value);
+  if (esm_data->pdn[pid].data->apn.length > 0) {
+    *apn = (char *)(esm_data->pdn[pid].data->apn.value);
   } else {
     *apn = NULL;
   }
 
   /* Get the emergency bearer services indicator */
-  *is_emergency = _esm_data.pdn[pid].data->is_emergency;
+  *is_emergency = esm_data->pdn[pid].data->is_emergency;
   /* Get the active PDN connection indicator */
-  *is_active = _esm_data.pdn[pid].is_active;
+  *is_active = esm_data->pdn[pid].is_active;
 
   LOG_FUNC_RETURN (RETURNok);
 }
@@ -341,7 +344,6 @@ int esm_main_get_pdn(int cid, int *type, const char **apn,
  **      tion                                                      **
  **                                                                        **
  ** Inputs:  cid:       PDN connection identifier                  **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     ipv4adddr: IPv4 address                               **
  **      ipv6adddr: IPv6 address                               **
@@ -349,7 +351,7 @@ int esm_main_get_pdn(int cid, int *type, const char **apn,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_main_get_pdn_addr(int cid, const char **ipv4addr, const char **ipv6addr)
+int esm_main_get_pdn_addr(esm_data_t *esm_data, int cid, const char **ipv4addr, const char **ipv6addr)
 {
   LOG_FUNC_IN;
 
@@ -357,35 +359,30 @@ int esm_main_get_pdn_addr(int cid, const char **ipv4addr, const char **ipv6addr)
 
   if (pid >= ESM_DATA_PDN_MAX) {
     return (RETURNerror);
-  } else if (pid != _esm_data.pdn[pid].pid) {
+  } else if (pid != esm_data->pdn[pid].pid) {
     LOG_TRACE(WARNING, "ESM-MAIN  - PDN connection %d is not defined", cid);
     return (RETURNerror);
-  } else if (_esm_data.pdn[pid].data == NULL) {
+  } else if (esm_data->pdn[pid].data == NULL) {
     LOG_TRACE(ERROR, "ESM-MAIN  - PDN connection %d has not been allocated",
               cid);
     return (RETURNerror);
-  } else if (!_esm_data.pdn[pid].is_active) {
+  } else if (!esm_data->pdn[pid].is_active) {
     /* No any IP address has been assigned to this PDN connection */
     return (RETURNok);
   }
 
-  if (_esm_data.pdn[pid].data->type == NET_PDN_TYPE_IPV4) {
+  if (esm_data->pdn[pid].data->type == NET_PDN_TYPE_IPV4) {
     /* Get IPv4 address */
-    *ipv4addr = _esm_data.pdn[pid].data->ip_addr;
-  } else if (_esm_data.pdn[pid].data->type == NET_PDN_TYPE_IPV6) {
+    *ipv4addr = esm_data->pdn[pid].data->ip_addr;
+  } else if (esm_data->pdn[pid].data->type == NET_PDN_TYPE_IPV6) {
     /* Get IPv6 address */
-    *ipv6addr = _esm_data.pdn[pid].data->ip_addr;
+    *ipv6addr = esm_data->pdn[pid].data->ip_addr;
   } else {
     /* IPv4v6 dual-stack terminal */
-    *ipv4addr = _esm_data.pdn[pid].data->ip_addr;
-    *ipv6addr = _esm_data.pdn[pid].data->ip_addr+ESM_DATA_IPV4_ADDRESS_SIZE;
+    *ipv4addr = esm_data->pdn[pid].data->ip_addr;
+    *ipv6addr = esm_data->pdn[pid].data->ip_addr+ESM_DATA_IPV4_ADDRESS_SIZE;
   }
 
   LOG_FUNC_RETURN (RETURNok);
 }
-
-
-/****************************************************************************/
-/*********************  L O C A L    F U N C T I O N S  *********************/
-/****************************************************************************/
 

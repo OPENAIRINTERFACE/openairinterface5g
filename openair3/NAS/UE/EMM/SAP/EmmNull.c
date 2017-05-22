@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 Source      EmmNull.c
 
@@ -53,6 +46,7 @@ Description Implements the EPS Mobility Management procedures executed
 #include "nas_log.h"
 
 #include "emm_proc.h"
+#include "user_defs.h"
 
 #include <assert.h>
 
@@ -83,16 +77,16 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmNull(const emm_reg_t *evt)
+int EmmNull(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
   int rc;
 
-  assert(emm_fsm_get_status() == EMM_NULL);
+  assert(emm_fsm_get_status(user) == EMM_NULL);
 
   /* Delete the authentication data RAND and RES */
-  rc = emm_proc_authentication_delete();
+  rc = emm_proc_authentication_delete(user);
 
   if (rc != RETURNok) {
     LOG_FUNC_RETURN (rc);
@@ -104,14 +98,14 @@ int EmmNull(const emm_reg_t *evt)
      * The EPS capability has been enabled in the UE:
      * Move to the DEREGISTERED state;
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED);
 
     /*
      * And initialize the EMM procedure call manager in order to
      * establish an EMM context and make the UE reachable by an MME.
      */
     if (rc != RETURNerror) {
-      rc = emm_proc_initialize();
+      rc = emm_proc_initialize(user);
     }
 
     break;

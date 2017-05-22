@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 Source      EsmStatus.c
 
@@ -168,7 +161,7 @@ int esm_proc_status_ind(
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_status(int is_standalone,
+int esm_proc_status(nas_user_t *user, int is_standalone,
                     int ebi, OctetString *msg,
                     int ue_triggered)
 {
@@ -183,10 +176,10 @@ int esm_proc_status(int is_standalone,
    * Notity EMM that ESM PDU has to be forwarded to lower layers
    */
   emm_sap.primitive = EMMESM_UNITDATA_REQ;
-  emm_sap.u.emm_esm.ueid = 0;
+  emm_sap.u.emm_esm.ueid = user->ueid;
   emm_sap.u.emm_esm.u.data.msg.length = msg->length;
   emm_sap.u.emm_esm.u.data.msg.value = msg->value;
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }

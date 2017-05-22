@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #define RLC_UM_MODULE 1
 #define RLC_UM_C 1
 //-----------------------------------------------------------------------------
@@ -433,7 +426,7 @@ rlc_um_rx (const protocol_ctxt_t* const ctxt_pP, void *argP, struct mac_data_ind
 
 //-----------------------------------------------------------------------------
 struct mac_status_resp
-rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP, uint16_t tbs_sizeP, struct mac_status_ind tx_statusP)
+rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP, uint16_t tbs_sizeP, struct mac_status_ind tx_statusP,const eNB_flag_t enb_flagP)
 {
   struct mac_status_resp status_resp;
   uint16_t  sdu_size = 0;
@@ -460,7 +453,11 @@ rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP
 
     if ((status_resp.buffer_occupancy_in_bytes > 0) && ((mb_p = list_get_head(&rlc_p->input_sdus)) != NULL)) {
 
-      status_resp.buffer_occupancy_in_bytes += rlc_p->tx_header_min_length_in_bytes;
+      if (enb_flagP == ENB_FLAG_YES) {
+    	  /* For eNB: add minimum RLC UM header size for the scheduler */
+    	  /* For UE : RLC header part is not taken into account for BSR reporting (cf 36.321) */
+          status_resp.buffer_occupancy_in_bytes += rlc_p->tx_header_min_length_in_bytes;
+      }
       status_resp.buffer_occupancy_in_pdus = rlc_p->input_sdus.nb_elements;
 
       diff_time =   ctxt_pP->frame - ((struct rlc_um_tx_sdu_management *)mb_p->data)->sdu_creation_time;
@@ -514,8 +511,18 @@ rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP
 }
 
 //-----------------------------------------------------------------------------
+void
+rlc_um_set_nb_bytes_requested_by_mac (
+  void *				rlc_pP,
+  const tb_size_t		tb_sizeP
+)
+{
+	((rlc_um_entity_t *) rlc_pP)->nb_bytes_requested_by_mac = tb_sizeP;
+}
+
+//-----------------------------------------------------------------------------
 struct mac_data_req
-rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP)
+rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP,const eNB_flag_t  enb_flagP)
 {
   struct mac_data_req data_req;
   int16_t               tb_size_in_bytes;
@@ -537,10 +544,13 @@ rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP)
   list_add_list (&l_rlc_p->pdus_to_mac_layer, &data_req.data);
 
 
-  data_req.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy (l_rlc_p);
+  if (enb_flagP) {
+	  // redundant in UE MAC Tx processing and not used in eNB scheduler ...
+	  data_req.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy (l_rlc_p);
 
-  if (data_req.buffer_occupancy_in_bytes > 0) {
-    data_req.buffer_occupancy_in_bytes += l_rlc_p->tx_header_min_length_in_bytes;
+	  if (data_req.buffer_occupancy_in_bytes > 0) {
+	    data_req.buffer_occupancy_in_bytes += l_rlc_p->tx_header_min_length_in_bytes;
+	  }
   }
 
   data_req.rlc_info.rlc_protocol_state = l_rlc_p->protocol_state;

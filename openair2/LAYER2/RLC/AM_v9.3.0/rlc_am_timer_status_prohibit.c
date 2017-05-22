@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #define RLC_AM_MODULE 1
 #define RLC_AM_TIMER_STATUS_PROHIBIT_C 1
 //-----------------------------------------------------------------------------
@@ -77,6 +70,8 @@ rlc_am_check_timer_status_prohibit(
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
         //#warning         TO DO rlc_am_check_timer_status_prohibit
         rlc_am_stop_and_reset_timer_status_prohibit(ctxt_pP, rlc_pP);
+        /* Clear StatusProhibit flag */
+        RLC_AM_CLEAR_STATUS(rlc_pP->status_requested,RLC_AM_STATUS_PROHIBIT);
         //rlc_pP->t_status_prohibit.frame_time_out = ctxt_pP->frame + rlc_pP->t_status_prohibit.time_out;
       }
     }
@@ -117,6 +112,7 @@ rlc_am_start_timer_status_prohibit(
       rlc_pP->t_status_prohibit.running        = 1;
       rlc_pP->t_status_prohibit.ms_time_out    = rlc_pP->t_status_prohibit.ms_duration + PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP);
       rlc_pP->t_status_prohibit.ms_start       = PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP);
+      RLC_AM_SET_STATUS(rlc_pP->status_requested,RLC_AM_STATUS_PROHIBIT);
       LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T-STATUS-PROHIBIT] STARTED (TIME-OUT = %u ms)\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           rlc_pP->t_status_prohibit.ms_time_out);

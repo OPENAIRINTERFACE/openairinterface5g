@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "extern.h"
@@ -42,7 +35,7 @@ short conjugate75[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
 short conjugate75_2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1} ;
 short negate[8]__attribute__((aligned(16))) = {-1,-1,-1,-1,-1,-1,-1,-1};
 
-void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,int32_t*txdata,uint8_t slot)
+void apply_7_5_kHz(PHY_VARS_UE *ue,int32_t*txdata,uint8_t slot)
 {
 
 
@@ -58,7 +51,7 @@ void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,int32_t*txdata,uint8_t slot)
   uint32_t slot_offset;
   //   uint8_t aa;
   uint32_t i;
-  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
 
   switch (frame_parms->N_RB_UL) {
 
@@ -91,10 +84,8 @@ void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,int32_t*txdata,uint8_t slot)
     break;
   }
 
-  slot_offset = (uint32_t)slot * phy_vars_ue->lte_frame_parms.samples_per_tti/2;
-  //  if ((slot&1)==1)
-  //    slot_offset += (len/4);
-  len = phy_vars_ue->lte_frame_parms.samples_per_tti/2;
+  slot_offset = (uint32_t)slot * frame_parms->samples_per_tti/2;
+  len = frame_parms->samples_per_tti/2;
 
 #if defined(__x86_64__) || defined(__i386__)
   txptr128 = (__m128i *)&txdata[slot_offset];
@@ -149,12 +140,12 @@ void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,int32_t*txdata,uint8_t slot)
 }
 
 
-void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,uint8_t slot)
+void remove_7_5_kHz(PHY_VARS_eNB *eNB,uint8_t slot)
 {
 
 
-  int32_t **rxdata=phy_vars_eNB->lte_eNB_common_vars.rxdata[0];
-  int32_t **rxdata_7_5kHz=phy_vars_eNB->lte_eNB_common_vars.rxdata_7_5kHz[0];
+  int32_t **rxdata=eNB->common_vars.rxdata[0];
+  int32_t **rxdata_7_5kHz=eNB->common_vars.rxdata_7_5kHz[0];
   uint16_t len;
   uint32_t *kHz7_5ptr;
 #if defined(__x86_64__) || defined(__i386__)
@@ -168,9 +159,9 @@ void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,uint8_t slot)
   uint32_t slot_offset,slot_offset2;
   uint8_t aa;
   uint32_t i;
-  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_eNB->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms=&eNB->frame_parms;
 
-  switch (phy_vars_eNB->lte_frame_parms.N_RB_UL) {
+  switch (frame_parms->N_RB_UL) {
 
   case 6:
     kHz7_5ptr = (frame_parms->Ncp==0) ? (uint32_t*)s6n_kHz_7_5 : (uint32_t*)s6e_kHz_7_5;
@@ -202,12 +193,12 @@ void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,uint8_t slot)
   }
 
 
-  slot_offset = (uint32_t)slot * phy_vars_eNB->lte_frame_parms.samples_per_tti/2-phy_vars_eNB->N_TA_offset;
-  slot_offset2 = (uint32_t)(slot&1) * phy_vars_eNB->lte_frame_parms.samples_per_tti/2;
+  slot_offset = (uint32_t)slot * frame_parms->samples_per_tti/2-eNB->N_TA_offset;
+  slot_offset2 = (uint32_t)(slot&1) * frame_parms->samples_per_tti/2;
 
-  len = phy_vars_eNB->lte_frame_parms.samples_per_tti/2;
+  len = frame_parms->samples_per_tti/2;
 
-  for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) {
+  for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
 
 #if defined(__x86_64__) || defined(__i386__)
     rxptr128        = (__m128i *)&rxdata[aa][slot_offset];
@@ -270,3 +261,4 @@ void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,uint8_t slot)
     }
   }
 }
+

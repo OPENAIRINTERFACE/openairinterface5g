@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 /*****************************************************************************
 
 Source      emm_send.c
@@ -862,6 +855,34 @@ int emm_send_security_mode_complete(const emm_as_security_t *msg,
   /* Mandatory - Message type */
   emm_msg->messagetype = SECURITY_MODE_COMPLETE;
 
+  if(msg->imeisv_request)
+  {
+	  // configure imeisv param
+	  emm_msg->presencemask |= SECURITY_MODE_COMPLETE_IMEISV_PRESENT;
+
+	  // 33 85 76 02 05 26 84 01 F1
+	  emm_msg->imeisv.imeisv.digit1         = 0x3;
+	  emm_msg->imeisv.imeisv.oddeven        = 0x0;
+	  emm_msg->imeisv.imeisv.typeofidentity = 0x3;
+	  emm_msg->imeisv.imeisv.digit2         = 0x5;
+	  emm_msg->imeisv.imeisv.digit3         = 0x7;
+	  emm_msg->imeisv.imeisv.digit4         = 0x4;
+	  emm_msg->imeisv.imeisv.digit5         = 0x7;
+	  emm_msg->imeisv.imeisv.digit6         = 0x3;
+	  emm_msg->imeisv.imeisv.digit7         = 0x0;
+	  emm_msg->imeisv.imeisv.digit8         = 0x4;
+	  emm_msg->imeisv.imeisv.digit9         = 0x0;
+	  emm_msg->imeisv.imeisv.digit10        = 0x0;
+	  emm_msg->imeisv.imeisv.digit11        = 0x7;
+	  emm_msg->imeisv.imeisv.digit12        = 0x0;
+	  emm_msg->imeisv.imeisv.digit13        = 0x5;
+	  emm_msg->imeisv.imeisv.digit14        = 0x3;
+	  emm_msg->imeisv.imeisv.digit15        = 0x0;
+	  emm_msg->imeisv.imeisv.digit16        = 0x0;
+	  emm_msg->imeisv.imeisv.parity         = IMEI_ODD_PARITY;
+
+	  size += SECURITY_MODE_COMPLETE_MAXIMUM_LENGTH;
+  }
   LOG_FUNC_RETURN (size);
 }
 

@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file asn1_msg.h
 * \brief primitives to build the asn1 messages
@@ -101,7 +93,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
                  BCCH_DL_SCH_Message_t *systemInformation,
                  SystemInformationBlockType2_t **sib2,
                  SystemInformationBlockType3_t **sib3
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
                  ,
                  SystemInformationBlockType13_r9_t **sib13,
                  uint8_t MBMS_flag
@@ -141,6 +133,7 @@ do_RRCConnectionReconfigurationComplete(
 PhysicalConfigDedicated IEs.  The latter does not enable periodic CQI reporting (PUCCH format 2/2a/2b) or SRS.
 @param ctxt_pP Running context
 @param ue_context_pP UE context
+@param CC_id         Component Carrier ID
 @param buffer Pointer to PER-encoded ASN.1 description of DL-CCCH-Message PDU
 @param transmission_mode Transmission mode for UE (1-9)
 @param UE_id UE index for this message
@@ -152,6 +145,7 @@ uint8_t
 do_RRCConnectionSetup(
   const protocol_ctxt_t*     const ctxt_pP,
   rrc_eNB_ue_context_t*      const ue_context_pP,
+  int                              CC_id,
   uint8_t*                   const buffer,
   const uint8_t                    transmission_mode,
   const uint8_t                    Transaction_id,
@@ -203,7 +197,7 @@ do_RRCConnectionReconfiguration(
     RSRP_Range_t                       *rsrp,
     C_RNTI_t                           *cba_rnti,
   struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList* dedicatedInfoNASList
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
     , SCellToAddMod_r10_t  *SCell_config
 #endif
                                         );
@@ -244,7 +238,7 @@ uint8_t do_RRCConnectionRelease(uint8_t Mod_id, uint8_t *buffer,int Transaction_
  * @returns Size of encoded bit stream in bytes
 */
 uint8_t do_MCCHMessage(uint8_t *buffer);
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 /***
  * \brief Generate an MCCH-Message (eNB). This routine configures MBSFNAreaConfiguration (PMCH-InfoList and Subframe Allocation for MBMS data)
  * @param buffer Pointer to PER-encoded ASN.1 description of MCCH-Message PDU

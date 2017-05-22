@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file LAYER2/PDCP_v10.1.0/pdcp.h
 * \brief pdcp interface with RLC, RRC
@@ -82,7 +74,7 @@
 #include "DRB-ToAddModList.h"
 #include "SRB-ToAddMod.h"
 #include "SRB-ToAddModList.h"
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #include "MBMS-SessionInfoList-r9.h"
 #include "PMCH-InfoList-r9.h"
 #endif
@@ -192,7 +184,7 @@ typedef struct pdcp_s {
 
 } pdcp_t;
 
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
 typedef struct pdcp_mbms_s {
   boolean_t instanciated_instance;
   rb_id_t   rb_id;
@@ -279,6 +271,7 @@ public_pdcp(void rrc_pdcp_config_req (
 * \param[in]  kRRCenc           RRC encryption key
 * \param[in]  kRRCint           RRC integrity key
 * \param[in]  kUPenc            User-Plane encryption key
+* \param[in]  defaultDRB        Default DRB ID
 * \return     A status about the processing, OK or error code.
 */
 public_pdcp(
@@ -291,9 +284,10 @@ public_pdcp(
     uint8_t                  *const kRRCenc,
     uint8_t                  *const kRRCint,
     uint8_t                  *const kUPenc
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
     ,PMCH_InfoList_r9_t  *pmch_InfoList_r9
 #endif
+    ,rb_id_t                 *const defaultDRB 
   ));
 
 /*! \fn boolean_t pdcp_config_req_asn1 (const protocol_ctxt_t* const ctxt_pP, srb_flag_t srb_flagP, uint32_t  action, rb_id_t rb_id, uint8_t rb_sn, uint8_t rb_report, uint16_t header_compression_profile, uint8_t security_mode)
@@ -454,7 +448,7 @@ public_pdcp(pdcp_stats_t              eNB_pdcp_stats[NUMBER_OF_eNB_MAX];)
 protected_pdcp(rnti_t                 pdcp_UE_UE_module_id_to_rnti[NUMBER_OF_UE_MAX];)
 protected_pdcp(rnti_t                 pdcp_eNB_UE_instance_to_rnti[NUMBER_OF_UE_MAX];) // for noS1 mode
 protected_pdcp(unsigned int           pdcp_eNB_UE_instance_to_rnti_index;)
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
 public_pdcp(pdcp_mbms_t               pdcp_mbms_array_ue[NUMBER_OF_UE_MAX][maxServiceCount][maxSessionPerPMCH];)   // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
 public_pdcp(pdcp_mbms_t               pdcp_mbms_array_eNB[NUMBER_OF_eNB_MAX][maxServiceCount][maxSessionPerPMCH];) // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
 #endif
@@ -467,12 +461,25 @@ protected_pdcp(unsigned char          pdcp_input_sdu_buffer[MAX_IP_PACKET_SIZE];
 protected_pdcp(sdu_size_t             pdcp_input_index_header;)
 protected_pdcp(sdu_size_t             pdcp_input_sdu_size_read;)
 protected_pdcp(sdu_size_t             pdcp_input_sdu_remaining_size_to_read;)
+
 #define PDCP_COLL_KEY_VALUE(mODULE_iD, rNTI, iS_eNB, rB_iD, iS_sRB) \
    ((hash_key_t)mODULE_iD          | \
     (((hash_key_t)(rNTI))   << 8)  | \
     (((hash_key_t)(iS_eNB)) << 24) | \
     (((hash_key_t)(rB_iD))  << 25) | \
-    (((hash_key_t)(iS_sRB)) << 33))
+    (((hash_key_t)(iS_sRB)) << 33) | \
+    (((hash_key_t)(0x55))   << 34))
+
+// hash key to the same PDCP as indexed by PDCP_COLL_KEY_VALUE(... rB_iD, iS_sRB=0) where rB_iD
+// is the default DRB ID. The hidden code 0x55 indicates the key is indexed by (rB_iD,is_sRB)
+// whereas the hidden code 0xaa indicates the key is for default DRB only
+#define PDCP_COLL_KEY_DEFAULT_DRB_VALUE(mODULE_iD, rNTI, iS_eNB) \
+    ((hash_key_t)mODULE_iD          | \
+     (((hash_key_t)(rNTI))   << 8)  | \
+     (((hash_key_t)(iS_eNB)) << 24) | \
+     (((hash_key_t)(0xff))   << 25) | \
+     (((hash_key_t)(0x00))   << 33) | \
+     (((hash_key_t)(0xaa))   << 34))
 
 // service id max val is maxServiceCount = 16 (asn1_constants.h)
 

@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /*! \file rlc.h
 * \brief This file, and only this file must be included by external code that interact with RLC layer.
 * \author GAUTHIER Lionel
@@ -62,7 +55,7 @@
 #    include "SRB-ToAddModList.h"
 #    include "DRB-ToReleaseList.h"
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #include "PMCH-InfoList-r9.h"
 #endif
 
@@ -231,7 +224,7 @@ typedef struct rlc_mbms_id_s {
   mbms_session_id_t       session_id;
 } rlc_mbms_id_t;
 
-#if !defined(Rel10)
+#if !defined(Rel10) && !defined(Rel14)
 #    if !defined(maxServiceCount)
 //unused arrays rlc_mbms_array_ue rlc_mbms_array_eNB
 #        define maxServiceCount 1
@@ -269,7 +262,18 @@ public_rlc(logical_chan_id_t    rlc_mbms_rbid2lcid_eNB[NUMBER_OF_eNB_MAX][NB_RB_
     (((hash_key_t)(rNTI))   << 8)  | \
     (((hash_key_t)(iS_eNB)) << 24) | \
     (((hash_key_t)(rB_iD))  << 25) | \
-    (((hash_key_t)(iS_sRB)) << 33))
+    (((hash_key_t)(iS_sRB)) << 33) | \
+    (((hash_key_t)(0x05))   << 34))
+
+// index to the same RLC entity as RLC_COLL_KEY_VALUE(), but using LC_id instead
+// the hidden last key indicates if this is a hash-key with RB_id (0x05) or LC_id (0x0a)
+#define RLC_COLL_KEY_LCID_VALUE(eNB_iD, rNTI, iS_eNB, lC_iD, iS_sRB) \
+   ((hash_key_t)eNB_iD             | \
+    (((hash_key_t)(rNTI))   << 8)  | \
+    (((hash_key_t)(iS_eNB)) << 24) | \
+    (((hash_key_t)(lC_iD))  << 25) | \
+    (((hash_key_t)(iS_sRB)) << 33) | \
+    (((hash_key_t)(0x0a))   << 34))
 
 // service id max val is maxServiceCount = 16 (asn1_constants.h)
 
@@ -305,7 +309,7 @@ private_rlc_mac(struct mac_data_ind   mac_rlc_deserialize_tb (char*, tb_size_t, 
 //-----------------------------------------------------------------------------
 //   PUBLIC INTERFACE WITH RRC
 //-----------------------------------------------------------------------------
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 /*! \fn rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t* const ctxtP, const srb_flag_t srb_flagP, const SRB_ToAddMod_t* const srb2addmod, const DRB_ToAddModList_t* const drb2add_listP, const DRB_ToReleaseList_t*  const drb2release_listP, const PMCH_InfoList_r9_t * const pmch_info_listP)
 * \brief  Function for RRC to configure a Radio Bearer.
 * \param[in]  ctxtP              Running context.
@@ -432,10 +436,11 @@ public_rlc_rrc(void rrc_rlc_register_rrc (rrc_data_ind_cb_t rrc_data_indP, rrc_d
 * \param [in]     eNB_flagP        Flag to indicate eNB (1) or UE (0)
 * \param [in]     MBMS_flagP       Flag to indicate whether this is the MBMS service (1) or not (0)
 * \param [in]     rb_idP           Radio bearer identifier.
+* \param [in]     tb_sizeP         Available Tx TBS in bytes. For UE only.
 * \param [in,out] bufferP          Memory area to fill with the bytes requested by MAC.
 * \return     A status about the processing, OK or error code.
 */
-public_rlc_mac(tbs_size_t            mac_rlc_data_req     (const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, char*);)
+public_rlc_mac(tbs_size_t            mac_rlc_data_req     (const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, const tb_size_t,char*);)
 
 /*! \fn void mac_rlc_data_ind     (const module_id_t mod_idP, const rnti_t rntiP, const frame_t frameP, const  eNB_flag_t eNB_flagP, const  MBMS_flag_t MBMS_flagP, logical_chan_id_t rb_idP, uint32_t frameP, char* bufferP, tb_size_t tb_sizeP, num_tb_t num_tbP, crc_t *crcs)
 * \brief    Interface with MAC layer, deserialize the transport blocks sent by MAC, then map data indication to the RLC instance corresponding to the radio bearer identifier.
@@ -453,18 +458,31 @@ public_rlc_mac(tbs_size_t            mac_rlc_data_req     (const module_id_t, co
 public_rlc_mac(void                  mac_rlc_data_ind     (const module_id_t, const rnti_t, const eNB_index_t,const frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, char*, tb_size_t, num_tb_t,
                crc_t* );)
 
-/*! \fn mac_rlc_status_resp_t mac_rlc_status_ind     (const module_id_t mod_idP, const rnti_t rntiP, const frame_t frameP, const  eNB_flag_t eNB_flagP, const  MBMS_flag_t MBMS_flagP, logical_chan_id_t rb_idP, tb_size_t tb_sizeP)
+/*! \fn mac_rlc_status_resp_t mac_rlc_status_ind     (const module_id_t mod_idP, const rnti_t rntiP, const frame_t frameP, const sub_frame_t subframeP, const  eNB_flag_t eNB_flagP, const  MBMS_flag_t MBMS_flagP, logical_chan_id_t rb_idP, tb_size_t tb_sizeP)
 * \brief    Interface with MAC layer, request and set the number of bytes scheduled for transmission by the RLC instance corresponding to the radio bearer identifier.
 * \param[in]  mod_idP          Virtualized module identifier.
 * \param[in]  rntiP            UE identifier.
 * \param[in]  frameP            Frame index.
+* \param[in]  subframeP         SubFrame index.
 * \param[in]  eNB_flagP         Flag to indicate eNB operation (1 true, 0 false)
 * \param[in]  MBMS_flagP       Flag to indicate whether this is the MBMS service (1) or not (0)
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  tb_sizeP         Size of a transport block set in bytes.
 * \return     The maximum number of bytes that the RLC instance can send in the next transmission sequence.
 */
-public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, tb_size_t );)
+public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const sub_frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, tb_size_t );)
+
+/*! \fn rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(const module_id_t module_idP, const rnti_t rntiP, const eNB_index_t eNB_index, const frame_t frameP, const sub_frame_t subframeP,const eNB_flag_t enb_flagP, const logical_chan_id_t channel_idP)
+* \brief    Interface with MAC layer, UE only: request and get the number of bytes scheduled for transmission by the RLC instance corresponding to the radio bearer identifier.
+* \param[in]  mod_idP          Virtualized module identifier.
+* \param[in]  rntiP            UE identifier.
+* \param[in]  frameP            Frame index.
+* \param[in]  subframeP         SubFrame index.
+* \param[in]  eNB_flagP         Flag to indicate eNB operation (1 true, 0 false)
+* \param[in]  channel_idP       Logical Channel identifier.
+* \return     The maximum number of bytes that the RLC instance can send in the next transmission sequence.
+*/
+public_rlc_mac(rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const sub_frame_t, const eNB_flag_t, const logical_chan_id_t );)
 //-----------------------------------------------------------------------------
 //   RLC methods
 //-----------------------------------------------------------------------------
