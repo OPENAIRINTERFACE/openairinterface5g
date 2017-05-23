@@ -607,7 +607,10 @@ int parse_mac_config(mid_t mod_id, yaml_parser_t *parser) {
       } else if (strcmp((char *) event.data.scalar.value, "ul_scheduler") == 0) {
 	// Call the proper handler
 	LOG_D(ENB_APP, "This is for the ul_scheduler subsystem\n");
-	goto error;
+	if (parse_dl_scheduler_config(mod_id, parser) == -1) {
+    LOG_D(ENB_APP, "An error occured\n");
+    goto error;
+  }
 	// TODO
       } else if (strcmp((char *) event.data.scalar.value, "ra_scheduler") == 0) {
 	// Call the proper handler

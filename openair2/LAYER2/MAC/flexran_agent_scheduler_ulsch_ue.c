@@ -58,8 +58,8 @@
 #include "T.h"
 
 /* number of active slices for  past and current time*/
-static int n_active_slices = 1;
-static int n_active_slices_current = 1;
+int n_active_slices_uplink = 1;
+int n_active_slices_uplink_current = 1;
 
 /* RB share for each slice for past and current time*/
 float slice_percentage_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
@@ -406,7 +406,7 @@ flexran_schedule_ue_ul_spec_default(mid_t   mod_id,
   
   flexran_agent_mac_create_empty_ul_config(mod_id, ul_info);
    
-  for (i = 0; i < n_active_slices; i++) {
+  for (i = 0; i < n_active_slices_uplink; i++) {
     
     // Load any updated functions
     if (update_ul_scheduler[i] > 0 ) {
@@ -419,16 +419,16 @@ flexran_schedule_ue_ul_spec_default(mid_t   mod_id,
     }
  
     // check if the number of slices has changed, and log 
-    if (n_active_slices_current != n_active_slices ){
-      if ((n_active_slices > 0) && (n_active_slices <= MAX_NUM_SLICES)) {
+    if (n_active_slices_uplink_current != n_active_slices_uplink ){
+      if ((n_active_slices_uplink > 0) && (n_active_slices_uplink <= MAX_NUM_SLICES)) {
 	LOG_N(MAC,"[eNB %d]frame %d subframe %d: number of active slices has changed: %d-->%d\n",
-	      mod_id, frame, subframe, n_active_slices_current, n_active_slices);
+	      mod_id, frame, subframe, n_active_slices_uplink_current, n_active_slices_uplink);
 
-	n_active_slices_current = n_active_slices;
+	n_active_slices_uplink_current = n_active_slices_uplink;
 
       } else {
-	LOG_W(MAC,"invalid number of slices %d, revert to the previous value %d\n",n_active_slices, n_active_slices_current);
-	n_active_slices = n_active_slices_current;
+	LOG_W(MAC,"invalid number of slices %d, revert to the previous value %d\n",n_active_slices_uplink, n_active_slices_uplink_current);
+	n_active_slices_uplink = n_active_slices_uplink_current;
       }
     }
     

@@ -88,8 +88,8 @@ typedef enum {
 
 
 // number of active slices for  past and current time
-static int n_active_slices = 1;
-static int n_active_slices_current = 1;
+int n_active_slices = 1;
+int n_active_slices_current = 1;
 
 // ue to slice mapping
 int slicing_strategy = UEID_TO_SLICEID;
