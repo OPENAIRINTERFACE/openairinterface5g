@@ -990,7 +990,8 @@ int get_nCCE_offset(int *CCE_table,
       search_space_free = 1;
 
       for (l=0; l<L; l++) {
-        if (CCE_table[(((Yk+m)%(nCCE/L))*L) + l] == 1) {
+        int cce = (((Yk+m)%(nCCE/L))*L) + l;
+        if (cce >= nCCE || CCE_table[cce] == 1) {
           search_space_free = 0;
           break;
         }
