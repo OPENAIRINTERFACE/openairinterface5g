@@ -846,7 +846,7 @@ int main(int argc, char **argv)
   }
 
   if ((transmission_mode != 3) && (transmission_mode != 4))
-    fprintf(bler_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_st1; err0_st2 trials0; err1_st1; err1_st2; trials1; err2_st1; err2_st2; trials2; err3_st1; err3_st2; trials3; throug 0; throug 1; sum throug; dci_err\n");
+    fprintf(bler_fd,"SNR; MCS1; TBS1; rate 0; err0; trials0; err1;trials1; err2;trials2; err3; trials3\n");
   else if (rx_type == rx_SIC_dual_stream)
     fprintf(bler_fd,"SNR; rank_adapt; rank; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_tb0; err0_tb1; trials_tb0_r0; trials_tb1_r0; sic_att0; sic_suc0; ret_both0; ret_one0; err1_tb0; err1_tb1; trials_tb0_r1; trials_tb1_r1; sic_att1; sic_suc1; ret_both1; ret_one1; err2_tb0; err2_tb1; trials_tb0_r2; trials1_tb1_r2; sic_att2; sic_suc2; ret_both2; ret_one2; err3_tb0; err3_tb1; trials_tb0_r3; trials_tb1_r3; sic_att3; sic_suc3; th_tb0_r0; th_tb1_r0; th_sum_r0; th_tb0_r1; th_tb1_r1; th_sum_r1; th_tb0_r2; th_tb1_r2; th_sum_r2; th_tb0_r3; th_tb1_r3; th_sum_r3; tot_th\n");
   else
@@ -5344,7 +5344,7 @@ int main(int argc, char **argv)
       }
 
       if ((transmission_mode != 3) && (transmission_mode != 4)) {
-        fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+        fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d\n",
                 SNR,
                 mcs1,
                 eNB->dlsch[0][0]->harq_processes[0]->TBS,
@@ -5356,8 +5356,7 @@ int main(int argc, char **argv)
                 errs[0][2],
                 round_trials[0][2],
                 errs[0][3],
-                round_trials[0][3],
-                dci_errors);
+                round_trials[0][3]);
       } else if(rx_type== rx_SIC_dual_stream){
                 fprintf(bler_fd,"%f;%d;%d;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
                 SNR,
