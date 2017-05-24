@@ -190,7 +190,7 @@ int mac_phy_remove_ue(module_id_t Mod_idP,rnti_t rntiP) {
     eNB = PHY_vars_eNB_g[Mod_idP][CC_id];
     for (i=0; i<NUMBER_OF_UE_MAX; i++) {
       if ((eNB->dlsch[i]==NULL) || (eNB->ulsch[i]==NULL)) {
-	MSC_LOG_EVENT(MSC_PHY_ENB, "0 Failed remove ue %"PRIx16" (ENOMEM)", rnti);
+	MSC_LOG_EVENT(MSC_PHY_ENB, "0 Failed remove ue %"PRIx16" (ENOMEM)", rntiP);
 	LOG_E(PHY,"Can't remove UE, not enough memory allocated\n");
 	return(-1);
       } else {
@@ -906,7 +906,9 @@ void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
     T_INT(eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->round),
     T_INT(eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->first_rb),
     T_INT(eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->nb_rb),
-    T_INT(eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->TBS));
+    T_INT(eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->TBS),
+    T_INT(dci_alloc->L),
+    T_INT(dci_alloc->firstCCE));
 }
 
 void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *dlsch, LTE_eNB_DLSCH_t *dlsch1,LTE_eNB_UE_stats *ue_stats,int ra_flag,int num_pdcch_symbols) {
@@ -2272,7 +2274,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
 
         if ((fp->frame_type==FDD) ||
           (bundling_flag==bundling)    ||
-          ((fp->frame_type==TDD)&&(fp->tdd_config==1)&&((subframe!=2)||(subframe!=7)))) {
+          ((fp->frame_type==TDD)&&(fp->tdd_config==1)&&((subframe!=2)&&(subframe!=7)))) {
           format = pucch_format1a;
         } else {
           format = pucch_format1b;

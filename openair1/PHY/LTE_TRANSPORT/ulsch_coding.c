@@ -242,7 +242,7 @@ uint32_t ulsch_encoding(uint8_t *a,
     return(-1);
   }
 
-  if (harq_pid > 7) {
+  if (harq_pid >= 8) {
     LOG_E(PHY,"Illegal harq_pid %d\n",harq_pid);
     return(-1);
   }

@@ -136,14 +136,47 @@ ue_process_rar(
   const rnti_t ra_rnti,
   uint8_t* const dlsch_buffer,
   rnti_t* const t_crnti,
-  const uint8_t preamble_index
+  const uint8_t preamble_index,
+  uint8_t* selected_rar_buffer // output argument for storing the selected RAR header and RAR payload
 )
 //------------------------------------------------------------------------------
 {
+	uint16_t ret = 0; // return value
 
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   //  RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);
   uint8_t *rar = (uint8_t *)(dlsch_buffer+1);
+
+        // get the last RAR payload for working with CMW500
+	uint8_t n_rarpy = 0; // number of RAR payloads
+	uint8_t n_rarh = 0; // number of MAC RAR subheaders
+	uint8_t best_rx_rapid = -1; // the closest RAPID receive from all RARs
+	while (1) {
+		n_rarh++;
+		if (rarh->T == 1) {
+			n_rarpy++;
+			LOG_D(MAC, "RAPID %d\n", rarh->RAPID);
+		}
+
+		if (rarh->RAPID == preamble_index) {
+			LOG_D(PHY, "Found RAR with the intended RAPID %d\n", rarh->RAPID);
+			rar = (uint8_t *)(dlsch_buffer+n_rarh + (n_rarpy-1)*6);
+			break;
+		}
+
+		if (abs((int)rarh->RAPID - (int)preamble_index) < abs((int)best_rx_rapid - (int)preamble_index)) {
+			best_rx_rapid = rarh->RAPID;
+			rar = (uint8_t *)(dlsch_buffer+n_rarh + (n_rarpy-1)*6);
+		}
+
+		if (rarh->E == 0) {
+			LOG_I(PHY, "No RAR found with the intended RAPID. The closest RAPID in all RARs is %d\n", best_rx_rapid);
+			break;
+		} else {
+			rarh++;
+		}
+	};
+	LOG_D(MAC, "number of RAR subheader %d; number of RAR pyloads %d\n", n_rarh, n_rarpy);
 
   if (CC_id>0) {
     LOG_W(MAC,"Should not have received RAR on secondary CCs! \n");
@@ -172,7 +205,7 @@ ue_process_rar(
   if (opt_enabled) {
     LOG_D(OPT,"[UE %d][RAPROC] CC_id %d RAR Frame %d trace pdu for ra-RNTI %x\n",
           module_idP, CC_id, frameP, ra_rnti);
-    trace_pdu(1, (uint8_t*)rarh, 7, module_idP, 2, ra_rnti,
+    trace_pdu(1, (uint8_t*)dlsch_buffer, n_rarh + n_rarpy*6, module_idP, 2, ra_rnti,
         UE_mac_inst[module_idP].rxFrame, UE_mac_inst[module_idP].rxSubframe, 0, 0);
   }
 
@@ -180,9 +213,16 @@ ue_process_rar(
     *t_crnti = (uint16_t)rar[5]+(rar[4]<<8);//rar->t_crnti;
     UE_mac_inst[module_idP].crnti = *t_crnti;//rar->t_crnti;
     //return(rar->Timing_Advance_Command);
-    return((((uint16_t)(rar[0]&0x7f))<<4) + (rar[1]>>4));
+    ret = ((((uint16_t)(rar[0]&0x7f))<<4) + (rar[1]>>4));
   } else {
     UE_mac_inst[module_idP].crnti=0;
-    return(0xffff);
+    ret = (0xffff);
   }
+
+  // move the selected RAR to the front of the RA_PDSCH buffer
+  memcpy(selected_rar_buffer+0, (uint8_t*)rarh, 1);
+  memcpy(selected_rar_buffer+1, (uint8_t*)rar , 6);
+
+  return ret;
+
 }

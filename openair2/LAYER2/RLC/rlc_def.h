@@ -64,6 +64,7 @@ enum RLC_OPERATION_MODE { TRANSMITTER_ONLY = 0x00,
 // dimensions
 #    define SN_12BITS_MASK                            0x0FFF
 #    define RLC_SN_OVERFLOW                           0xFFFF
+#    define RLC_SN_UNDEFINED                          RLC_SN_OVERFLOW
 //----------------------------------------------------------
 // DISCARD
 //----------------------------------------------------------

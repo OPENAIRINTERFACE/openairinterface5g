@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Carrier frequency in Hz
+#FREQ=2660000000 #FDD
+FREQ=2350000000 #TDD
+NRB=50
+TA=0
+
+#9:trace, 8/7:debug, 6:info, 4:warn, 3:error
+LOGLEVEL=6
+
+#enable or disable soft scope
+#SCOPE=''
+SCOPE='-d'
+
+#enable or disable VCD logging
+VCD=''
+#VCD='-V'
+
+ISTDD='-T'
+#ISTDD=''
+
+#use external clock
+ECLK="--external-clock"
+#ECLK=""
+
+#UE scan carrier
+#ISSCAN="--ue-scan-carrier"
+ISSCAN=""
+
+sudo sh -c './init_nas_s1 UE'
+cd ../../targets/bin/ 
+sudo -E ./lte-softmodem.Rel10 -U -C$FREQ -r$NRB $ISSCAN --ue-txgain 70 --ue-rxgain 80 -A $TA $ECLK -W $ISTDD -g $LOGLEVEL $SCOPE 2>&1 | sudo tee /tmp/UE.log 

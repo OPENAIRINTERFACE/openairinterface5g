@@ -59,6 +59,16 @@
 #include "PHY/defs.h"
 
 //-----------------------------------------------------------------------------
+/*! \fn rlc_am_rx_pdu_status_t rlc_am_rx_list_check_duplicate_insert_pdu(const protocol_ctxt_t* const  ctxt_pP,rlc_am_entity_t* const rlc_pP,mem_block_t* const tb_pP)
+* \brief      Insert a PDU in the RX buffer after removing byte duplicate (implemented with a list).
+* \param[in]  ctxt_pP        Running context.
+* \param[in]  rlcP         RLC AM protocol instance pointer.
+* \param[in]  tbP          A PDU embedded in a mem_block_t.
+* \return     Zero if the PDU could be inserted in the RX buffer, a negative value if the PDU could not be inserted.
+*/
+protected_rlc_am_rx_list( rlc_am_rx_pdu_status_t rlc_am_rx_list_check_duplicate_insert_pdu(const protocol_ctxt_t* const  ctxt_pP,rlc_am_entity_t* const rlc_pP,mem_block_t* const tb_pP);)
+
+#if 0
 /*! \fn signed int rlc_am_rx_list_insert_pdu(const protocol_ctxt_t* const ctxt_pP, rlc_am_entity_t* const rlcP , mem_block_t* const tbP)
 * \brief      Insert a PDU in the RX buffer (implemented with a list).
 * \param[in]  ctxt_pP        Running context.
@@ -67,6 +77,15 @@
 * \return     Zero if the PDU could be inserted in the RX buffer, a negative value if the PDU could not be inserted.
 */
 protected_rlc_am_rx_list( signed int rlc_am_rx_list_insert_pdu(const protocol_ctxt_t* const ctxt_pP, rlc_am_entity_t* const rlcP,  mem_block_t* const tbP);)
+#endif
+
+/*! \fn boolean_t rlc_am_rx_check_vr_reassemble(const protocol_ctxt_t* const ctxt_pP,const rlc_am_entity_t* const rlc_pP)
+* \brief      Check if reassembly taking into account potential new vrR value
+* \param[in]  ctxt_pP        Running context.
+* \param[in]  rlcP         RLC AM protocol instance pointer.
+* \return     TRUE if reassembly must be done, FALSE else
+*/
+protected_rlc_am_rx_list( boolean_t rlc_am_rx_check_vr_reassemble(const protocol_ctxt_t* const ctxt_pP,const rlc_am_entity_t* const rlc_pP);)
 
 /*! \fn void rlc_am_rx_check_all_byte_segments(const protocol_ctxt_t* const ctxt_pP, rlc_am_entity_t* const rlcP, mem_block_t* const tbP)
 * \brief      Check if all sub-segments of a PDU are received, if yes then call rlc_am_rx_mark_all_segments_received() procedure.

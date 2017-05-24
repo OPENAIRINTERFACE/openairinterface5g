@@ -493,7 +493,8 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   int16_t **chest_f;
   int16_t *pdsch_llr;
   int16_t *pdsch_comp;
-  int8_t *pdcch_llr;
+  int16_t *pdsch_mag;
+  int8_t  *pdcch_llr;
   int16_t *pdcch_comp;
   int8_t *pbch_llr;
   int16_t *pbch_comp;
@@ -571,6 +572,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   pdsch_llr = (int16_t*) phy_vars_ue->pdsch_vars[subframe&0x1][eNB_id]->llr[0]; // stream 0
   //    pdsch_llr = (int16_t*) phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id]->llr[0]; // stream 0
   pdsch_comp = (int16_t*) phy_vars_ue->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp0[0];
+  pdsch_mag = (int16_t*) phy_vars_ue->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_mag0[0];
 
   // Received signal in time domain of receive antenna 0
   if (rxsig_t != NULL) {
@@ -752,8 +754,9 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
 
     for (k=0; k<frame_parms->symbols_per_tti; k++) {
       for (i=0; i<12*frame_parms->N_RB_DL/2; i++) {
-        I[ind] = pdsch_comp[(2*frame_parms->N_RB_DL*12*k)+4*i];
-        Q[ind] = pdsch_comp[(2*frame_parms->N_RB_DL*12*k)+4*i+1];
+    	int j = (2*frame_parms->N_RB_DL*12*k)+4*i;
+        I[ind] = (pdsch_mag[j  ]!=0? 1.0/pdsch_mag[j  ]: 0.0) * pdsch_comp[j  ]*1.0;
+        Q[ind] = (pdsch_mag[j+1]!=0? 1.0/pdsch_mag[j+1]: 0.0) * pdsch_comp[j+1]*1.0;
         ind++;
       }
     }

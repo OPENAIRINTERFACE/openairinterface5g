@@ -203,6 +203,52 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
     LOG_TRACE(INFO, "EMM-MAIN  - USIM application data successfully read");
     user->emm_data->usim_is_valid = TRUE;
 
+    /* print keys (for debugging) */
+    {
+      char usim_api_k[256];
+      char opc[256];
+      sprintf(usim_api_k,
+              "%2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x "
+              "%2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x",
+              user->usim_data.keys.usim_api_k[0],
+              user->usim_data.keys.usim_api_k[1],
+              user->usim_data.keys.usim_api_k[2],
+              user->usim_data.keys.usim_api_k[3],
+              user->usim_data.keys.usim_api_k[4],
+              user->usim_data.keys.usim_api_k[5],
+              user->usim_data.keys.usim_api_k[6],
+              user->usim_data.keys.usim_api_k[7],
+              user->usim_data.keys.usim_api_k[8],
+              user->usim_data.keys.usim_api_k[9],
+              user->usim_data.keys.usim_api_k[10],
+              user->usim_data.keys.usim_api_k[11],
+              user->usim_data.keys.usim_api_k[12],
+              user->usim_data.keys.usim_api_k[13],
+              user->usim_data.keys.usim_api_k[14],
+              user->usim_data.keys.usim_api_k[15]);
+      sprintf(opc,
+              "%2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x "
+              "%2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x",
+              user->usim_data.keys.opc[0],
+              user->usim_data.keys.opc[1],
+              user->usim_data.keys.opc[2],
+              user->usim_data.keys.opc[3],
+              user->usim_data.keys.opc[4],
+              user->usim_data.keys.opc[5],
+              user->usim_data.keys.opc[6],
+              user->usim_data.keys.opc[7],
+              user->usim_data.keys.opc[8],
+              user->usim_data.keys.opc[9],
+              user->usim_data.keys.opc[10],
+              user->usim_data.keys.opc[11],
+              user->usim_data.keys.opc[12],
+              user->usim_data.keys.opc[13],
+              user->usim_data.keys.opc[14],
+              user->usim_data.keys.opc[15]);
+      LOG_TRACE(INFO, "EMM-MAIN  - usim_api_k: %s", usim_api_k);
+      LOG_TRACE(INFO, "EMM-MAIN  - opc:        %s", opc);
+    }
+
     /* Get the Home PLMN derived from the IMSI */
     user->emm_data->hplmn.MCCdigit1 = user->usim_data.imsi.u.num.digit1;
     user->emm_data->hplmn.MCCdigit2 = user->usim_data.imsi.u.num.digit2;

@@ -212,6 +212,7 @@ void prach_procedures(PHY_VARS_eNB *eNB);
 
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
+
 /*! \brief Function to compute which type of DCIs to detect in the given subframe
   @param frame_parms Pointer to DL frame parameter descriptor
   @param subframe Subframe index
@@ -305,7 +306,7 @@ uint8_t pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n);
   @param o_ACK Pointer to ACK/NAK payload for PUCCH/PUSCH
   @returns status indicator for PUCCH/PUSCH transmission
 */
-uint8_t get_ack(LTE_DL_FRAME_PARMS *frame_parms,harq_status_t *harq_ack,uint8_t subframe,uint8_t *o_ACK, uint8_t cw_idx);
+uint8_t get_ack(LTE_DL_FRAME_PARMS *frame_parms,harq_status_t *harq_ack,uint8_t subframe_tx,uint8_t subframe_rx,uint8_t *o_ACK, uint8_t cw_idx);
 
 /*! \brief Reset ACK/NACK information
   @param frame_parms Pointer to DL frame parameter descriptor
@@ -316,8 +317,10 @@ uint8_t get_ack(LTE_DL_FRAME_PARMS *frame_parms,harq_status_t *harq_ack,uint8_t 
 */
 uint8_t reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
                 harq_status_t *harq_ack,
-                unsigned char subframe,
+                unsigned char subframe_tx,
+                unsigned char subframe_rx,
                 unsigned char *o_ACK,
+                uint8_t *pN_bundled,
                 uint8_t cw_idx);
 
 /*! \brief Compute UL ACK subframe from DL subframe. This is used to retrieve corresponding DLSCH HARQ pid at eNB upon reception of ACK/NAK information on PUCCH/PUSCH.  Derived from Table 10.1-1 in 36.213 (p. 69 in version 8.6)

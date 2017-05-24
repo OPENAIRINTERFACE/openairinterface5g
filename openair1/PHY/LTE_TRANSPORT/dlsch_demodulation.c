@@ -31,6 +31,7 @@
  */
 //#include "PHY/defs.h"
 #include "PHY/extern.h"
+#include "SCHED/defs.h"
 #include "defs.h"
 #include "extern.h"
 #include "PHY/sse_intrin.h"
@@ -264,12 +265,12 @@ int rx_pdsch(PHY_VARS_UE *ue,
                                    ue->high_speed_flag,
                                    frame_parms,
                                    dlsch0_harq->mimo_mode);
-//#ifdef DEBUG_DLSCH_MOD
-    /*   printf("dlsch: using pmi %lx, rb_alloc %x, pmi_ext ",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),*rballoc);
+#ifdef DEBUG_DLSCH_MOD
+      printf("dlsch: using pmi %lx, rb_alloc %x, pmi_ext ",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),*rballoc);
        for (rb=0;rb<nb_rb;rb++)
           printf("%d",pdsch_vars[eNB_id]->pmi_ext[rb]);
-       printf("\n");*/
-//#endif
+       printf("\n");
+#endif
 
    if (rx_type >= rx_IC_single_stream) {
       if (eNB_id_i<ue->n_connected_eNB) // we are in TM5
@@ -361,7 +362,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
 
 #ifdef DEBUG_PHY
-  LOG_D(PHY,"[DLSCH] log2_maxh = %d (%d,%d)\n",pdsch_vars[eNB_id]->log2_maxh,avg[0],avgs);
+  LOG_D(PHY,"[DLSCH] nb_rb %d log2_maxh = %d (%d,%d)\n",nb_rb,pdsch_vars[eNB_id]->log2_maxh,avg[0],avgs);
   LOG_D(PHY,"[DLSCH] mimo_mode = %d\n", dlsch0_harq->mimo_mode);
 #endif
 
@@ -469,11 +470,12 @@ int rx_pdsch(PHY_VARS_UE *ue,
                               symbol,
                               nb_rb);
 #ifdef DEBUG_PHY
-    LOG_I(PHY,"[DLSCH] log2_maxh = %d [log2_maxh0 %d log2_maxh1 %d] (%d,%d)\n",pdsch_vars[eNB_id]->log2_maxh,
+    LOG_I(PHY,"[DLSCH] AbsSubframe %d.%d log2_maxh = %d [log2_maxh0 %d log2_maxh1 %d] (%d,%d)\n",
+            frame%1024,subframe, pdsch_vars[eNB_id]->log2_maxh,
                                                  pdsch_vars[eNB_id]->log2_maxh0,
                                                  pdsch_vars[eNB_id]->log2_maxh1,
                                                  avg[0],avgs);
-    LOG_I(PHY,"[DLSCH] mimo_mode = %d\n", dlsch0_harq->mimo_mode);
+    LOG_D(PHY,"[DLSCH] mimo_mode = %d\n", dlsch0_harq->mimo_mode);
 #endif
   }
 
@@ -747,6 +749,8 @@ int rx_pdsch(PHY_VARS_UE *ue,
     dl_ch_mag_ptr = pdsch_vars[eNB_id_i]->dl_ch_mag0;
     //i_mod should have been passed as a parameter
   }
+
+  //printf("LLR dlsch0_harq->Qm %d rx_type %d cw0 %d cw1 %d symbol %d \n",dlsch0_harq->Qm,rx_type,codeword_TB0,codeword_TB1,symbol);
 
   switch (dlsch0_harq->Qm) {
   case 2 :
@@ -1080,15 +1084,15 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
 // Please keep it: useful for debugging
 #if 0
-  if( (symbol == 13) && (dlsch0_harq->mimo_mode == 2) )
+  if( (symbol == 13) && (subframe==0) && (dlsch0_harq->Qm == 6) /*&& (nb_rb==25)*/)
   {
       LOG_E(PHY,"Dump Phy Chan Est \n");
-      if(subframe&0x1)
+      if(1)
       {
 #if 1
-      //write_output("rxdataF0.m"    , "rxdataF0",             &common_vars->common_vars_rx_data_per_thread[subframe&0x1].rxdataF[0][0],14*frame_parms->ofdm_symbol_size,1,1);
+      write_output("rxdataF0.m"    , "rxdataF0",             &common_vars->common_vars_rx_data_per_thread[subframe&0x1].rxdataF[0][0],14*frame_parms->ofdm_symbol_size,1,1);
       //write_output("rxdataF1.m"    , "rxdataF1",             &common_vars->common_vars_rx_data_per_thread[subframe&0x1].rxdataF[0][0],14*frame_parms->ofdm_symbol_size,1,1);
-      //write_output("dl_ch_estimates00.m", "dl_ch_estimates00",   &common_vars->common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][0][0],14*frame_parms->ofdm_symbol_size,1,1);
+      write_output("dl_ch_estimates00.m", "dl_ch_estimates00",   &common_vars->common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][0][0],14*frame_parms->ofdm_symbol_size,1,1);
       //write_output("dl_ch_estimates01.m", "dl_ch_estimates01",   &common_vars->common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][1][0],14*frame_parms->ofdm_symbol_size,1,1);
       //write_output("dl_ch_estimates10.m", "dl_ch_estimates10",   &common_vars->common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2][0],14*frame_parms->ofdm_symbol_size,1,1);
       //write_output("dl_ch_estimates11.m", "dl_ch_estimates11",   &common_vars->common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][3][0],14*frame_parms->ofdm_symbol_size,1,1);
@@ -1099,16 +1103,16 @@ int rx_pdsch(PHY_VARS_UE *ue,
       //write_output("rxdataF_ext10.m"    , "rxdataF_ext10",       &pdsch_vars[eNB_id]->rxdataF_ext[2][0],14*frame_parms->N_RB_DL*12,1,1);
       //write_output("rxdataF_ext11.m"    , "rxdataF_ext11",       &pdsch_vars[eNB_id]->rxdataF_ext[3][0],14*frame_parms->N_RB_DL*12,1,1);
       write_output("dl_ch_estimates_ext00.m", "dl_ch_estimates_ext00", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0],14*frame_parms->N_RB_DL*12,1,1);
-      write_output("dl_ch_estimates_ext01.m", "dl_ch_estimates_ext01", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[1][0],14*frame_parms->N_RB_DL*12,1,1);
-      write_output("dl_ch_estimates_ext10.m", "dl_ch_estimates_ext10", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][0],14*frame_parms->N_RB_DL*12,1,1);
-      write_output("dl_ch_estimates_ext11.m", "dl_ch_estimates_ext11", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[3][0],14*frame_parms->N_RB_DL*12,1,1);
+      //write_output("dl_ch_estimates_ext01.m", "dl_ch_estimates_ext01", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[1][0],14*frame_parms->N_RB_DL*12,1,1);
+      //write_output("dl_ch_estimates_ext10.m", "dl_ch_estimates_ext10", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][0],14*frame_parms->N_RB_DL*12,1,1);
+      //write_output("dl_ch_estimates_ext11.m", "dl_ch_estimates_ext11", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[3][0],14*frame_parms->N_RB_DL*12,1,1);
       write_output("rxdataF_comp00.m","rxdataF_comp00",              &pdsch_vars[eNB_id]->rxdataF_comp0[0][0],14*frame_parms->N_RB_DL*12,1,1);
-      write_output("rxdataF_comp01.m","rxdataF_comp01",              &pdsch_vars[eNB_id]->rxdataF_comp0[1][0],14*frame_parms->N_RB_DL*12,1,1);
-      write_output("rxdataF_comp10.m","rxdataF_comp10",              &pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][0][0],14*frame_parms->N_RB_DL*12,1,1);
-      write_output("rxdataF_comp11.m","rxdataF_comp11",              &pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][1][0],14*frame_parms->N_RB_DL*12,1,1);
+      //write_output("rxdataF_comp01.m","rxdataF_comp01",              &pdsch_vars[eNB_id]->rxdataF_comp0[1][0],14*frame_parms->N_RB_DL*12,1,1);
+      //write_output("rxdataF_comp10.m","rxdataF_comp10",              &pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][0][0],14*frame_parms->N_RB_DL*12,1,1);
+      //write_output("rxdataF_comp11.m","rxdataF_comp11",              &pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][1][0],14*frame_parms->N_RB_DL*12,1,1);
 #endif
       write_output("llr0.m","llr0",  &pdsch_vars[eNB_id]->llr[0][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
-      write_output("llr1.m","llr1",  &pdsch_vars[eNB_id]->llr[1][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
+      //write_output("llr1.m","llr1",  &pdsch_vars[eNB_id]->llr[1][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
 
 
       AssertFatal(0," ");
@@ -3358,7 +3362,7 @@ void dlsch_scale_channel(int **dl_ch_estimates_ext,
 
 ch_amp = ((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
 
-    LOG_D(PHY,"Scaling PDSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);
+    LOG_D(PHY,"Scaling PDSCH Chest in OFDM symbol %d by %d, pilots %d nb_rb %d NCP %d symbol %d\n",symbol_mod,ch_amp,pilots,nb_rb,frame_parms->Ncp,symbol);
    // printf("Scaling PDSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);
 
   ch_amp128 = _mm_set1_epi16(ch_amp); // Q3.13
