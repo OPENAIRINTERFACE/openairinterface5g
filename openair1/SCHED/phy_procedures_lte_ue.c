@@ -2125,10 +2125,8 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
                   (uint8_t *)&pucch_payload,
                   &len);
 
-  LOG_D(PHY,"PUCCH feedback AbsSubframe %d.%d SR %d NbCW %d (%d %d) AckNack %d.%d CQI %d RI %d format %d pucch_resource %d pucch_payload %d %d \n",
-          frame_tx%1024, subframe_tx, SR_payload, nb_cw, ack_status_cw0, ack_status_cw1, pucch_ack_payload[0], pucch_ack_payload[1], cqi_status, ri_status, format, pucch_resource,pucch_payload[0],pucch_payload[1]);
 
-          frame_tx%1024, subframe_tx, SR_payload, nb_cw, pucch_ack_payload[0], pucch_ack_payload[1], cqi_status, ri_status, format, pucch_resource,pucch_payload[0],pucch_payload[1]);
+  LOG_D(PHY,"PUCCH feedback AbsSubframe %d.%d SR %d NbCW %d (%d %d) AckNack %d.%d CQI %d RI %d format %d pucch_resource %d pucch_payload %d %d \n", frame_tx%1024, subframe_tx, SR_payload, nb_cw, ack_status_cw0, ack_status_cw1, pucch_ack_payload[0], pucch_ack_payload[1], cqi_status, ri_status, format, pucch_resource,pucch_payload[0],pucch_payload[1]);
 
   // Part - IV
   // Generate PUCCH signal
@@ -2504,6 +2502,7 @@ void ue_measurement_procedures(
     uint16_t slot, // slot index of each radio frame [0..19]
     uint8_t abstraction_flag,runmode_t mode)
 {
+
   //LOG_I(PHY,"ue_measurement_procedures l %d Ncp %d\n",l,ue->frame_parms.Ncp);
 
   LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
@@ -3523,6 +3522,7 @@ void ue_pdsch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, int eNB_id, PDSC
         dual_stream_UE = 1;
         eNB_id_i = ue->n_connected_eNB;
         i_mod =  dlsch0->harq_processes[harq_pid]->Qm;
+
       }
       else if((pdsch==PDSCH) && (ue->transmission_mode[eNB_id]==3))
       {
@@ -3600,8 +3600,7 @@ void process_rar(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, int eNB_id, runmode_t mo
                                                  dlsch0->harq_processes[0]->b,
                                                  &ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->crnti,
                                                  ue->prach_resources[eNB_id]->ra_PreambleIndex,
-                                                 dlsch0->harq_processes[0]->b); // alter the 'b' buffer so it contains only the selected RAR header and RAR payload
-
+                                                 dlsch0->harq_processes[0]->b); // alter the 'b' buffer so it contains only
       ue->pdcch_vars[(subframe_rx+1) & 0x1][eNB_id]->crnti = ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->crnti;
 
 
