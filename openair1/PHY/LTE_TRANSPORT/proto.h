@@ -1333,7 +1333,8 @@ int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
   @returns 0 on success
 */
 int pss_only_extract(PHY_VARS_UE *phy_vars_ue,
-                    int32_t pss_ext[4][72]);
+                    int32_t pss_ext[4][72],
+                    uint8_t subframe);
 
 /*! \brief Extract only SSS resource elements
   @param phy_vars_ue Pointer to UE variables
@@ -1341,7 +1342,8 @@ int pss_only_extract(PHY_VARS_UE *phy_vars_ue,
   @returns 0 on success
 */
 int sss_only_extract(PHY_VARS_UE *phy_vars_ue,
-                    int32_t sss_ext[4][72]);
+                    int32_t sss_ext[4][72],
+                    uint8_t subframe);
 
 /*! \brief Performs detection of SSS to find cell ID and other framing parameters (FDD/TDD, normal/extended prefix)
   @param phy_vars_ue Pointer to UE variables
@@ -1998,6 +2000,17 @@ void generate_pucch2x(int32_t **txdataF,
 		      uint8_t subframe,
 		      uint16_t rnti);
 
+void generate_pucch3x(int32_t **txdataF,
+                    LTE_DL_FRAME_PARMS *frame_parms,
+                    uint8_t ncs_cell[20][7],
+                    PUCCH_FMT_t fmt,
+                    PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+                    uint16_t n3_pucch,
+                    uint8_t shortened_format,
+                    uint8_t *payload,
+                    int16_t amp,
+                    uint8_t subframe,
+                    uint16_t rnti);
 
 void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
 			 UE_rxtx_proc_t *proc,

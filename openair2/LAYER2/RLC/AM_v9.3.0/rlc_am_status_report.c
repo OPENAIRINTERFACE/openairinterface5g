@@ -408,19 +408,27 @@ rlc_am_receive_process_control_pdu(
       //TODO : this part does not cover all cases of Data Cnf and move it at the end of Status PDU processing
       sn_cursor = rlc_pP->vt_a;
 
-      /* Handle all acked PDU up to and excluding sn_data_cnf */
-      while (sn_cursor != sn_data_cnf) {
-    	  rlc_am_pdu_sdu_data_cnf(ctxt_pP,rlc_pP,sn_cursor);
-    	  sn_cursor = RLC_AM_NEXT_SN(sn_cursor);
-      }
+      // Fix Issue 238 : check sn_data_cnf has been transmitted
+      if ((rlc_pP->tx_data_pdu_buffer[sn_data_cnf % RLC_AM_WINDOW_SIZE].flags.transmitted) &&
+    		  (rlc_pP->tx_data_pdu_buffer[sn_data_cnf % RLC_AM_WINDOW_SIZE].sn == sn_data_cnf)) {
+    	  /* Handle all acked PDU up to and excluding sn_data_cnf */
+          while (sn_cursor != sn_data_cnf) {
+        	  rlc_am_pdu_sdu_data_cnf(ctxt_pP,rlc_pP,sn_cursor);
+        	  sn_cursor = RLC_AM_NEXT_SN(sn_cursor);
+          }
 
-      // Handle last SN. TO DO : case of PDU partially ACKED with SDU to be data conf
-      if (data_cnf_so_stop == 0x7FFF) {
-    	  rlc_am_pdu_sdu_data_cnf(ctxt_pP,rlc_pP,sn_data_cnf);
-      }
+          // Handle last SN. TO DO : case of PDU partially ACKED with SDU to be data conf
+          if (data_cnf_so_stop == 0x7FFF) {
+        	  rlc_am_pdu_sdu_data_cnf(ctxt_pP,rlc_pP,sn_data_cnf);
+          }
 
-      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" RECEIVE STATUS PDU ACK_SN=%d NewvtA=%d OldvtA=%d SnDataCnf=%d DataCnfSOStop=%d vtS=%d\n",
-                  PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),ack_sn,vt_a_new,rlc_pP->vt_a,sn_data_cnf,data_cnf_so_stop,rlc_pP->vt_s);
+          LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" RECEIVE STATUS PDU ACK_SN=%d NewvtA=%d OldvtA=%d SnDataCnf=%d DataCnfSOStop=%d vtS=%d\n",
+                      PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),ack_sn,vt_a_new,rlc_pP->vt_a,sn_data_cnf,data_cnf_so_stop,rlc_pP->vt_s);
+      }
+      else {
+          LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" RECEIVE STATUS PDU WITH NO SDU CNF ACK_SN=%d NewvtA=%d OldvtA=%d vtS=%d\n",
+                      PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),ack_sn,vt_a_new,rlc_pP->vt_a,rlc_pP->vt_s);
+      }
 
       /* Update vtA and vtMS */
       rlc_pP->vt_a = vt_a_new;

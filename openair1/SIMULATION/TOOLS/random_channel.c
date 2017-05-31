@@ -101,7 +101,7 @@ void fill_channel_desc(channel_desc_t *chan_desc,
 
   LOG_D(OCM,"[CHANNEL] Filling a (nb_taps %d)\n",nb_taps);
   for (i = 0; i<nb_taps; i++) {
-    LOG_D(OCM,"tap %d (%p,%d)\n",i,&chan_desc->a[i],nb_tx*nb_rx * sizeof(struct complex));
+    LOG_D(OCM,"tap %d (%p,%zu)\n",i,&chan_desc->a[i],nb_tx*nb_rx * sizeof(struct complex));
     chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
   }
 

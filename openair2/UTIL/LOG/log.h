@@ -259,8 +259,8 @@ void log_set_instance_type (log_instance_type_t instance);
 #    include "log_if.h"
 /*----------------------------------------------------------------------------*/
 int  logInit (void);
-void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...);
-void logRecord(const char *file, const char *func, int line,int comp, int level, const char *format, ...);
+void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
+void logRecord(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
 int  set_comp_log(int component, int level, int verbosity, int interval);
 int  set_log(int component, int level, int interval);
 void set_glog(int level, int verbosity);

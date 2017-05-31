@@ -85,11 +85,13 @@ int main(int argc, char **argv)
 
   //  double pucch_sinr;
   uint8_t osf=1,N_RB_DL=25;
-  uint32_t pucch_tx=0,pucch1_missed=0,pucch1_false=0,sig;
+  uint32_t pucch_tx=0,pucch1_missed=0,pucch1_false=0,pucch3_false=0,sig;
   PUCCH_FMT_t pucch_format = pucch_format1;
   PUCCH_CONFIG_DEDICATED pucch_config_dedicated;
   uint8_t subframe=0;
   uint8_t pucch_payload,pucch_payload_rx;
+  uint8_t pucch3_payload_size=7;
+  uint8_t pucch3_payload[21],pucch3_payload_rx[21];
   double tx_gain=1.0;
   int32_t stat;
   double stat_no_sig,stat_sig;
@@ -98,6 +100,9 @@ int main(int argc, char **argv)
 
   uint16_t n1_pucch = 0;
   uint16_t n2_pucch = 0;
+  uint16_t n3_pucch = 20;
+  
+  uint16_t n_rnti=0x1234;
 
   number_of_cards = 1;
 
@@ -118,6 +123,8 @@ int main(int argc, char **argv)
         pucch_format = pucch_format1a;
       else if (atoi(optarg)==2)
         pucch_format = pucch_format1b;
+      else if (atoi(optarg)==6) // 3,4,5 is reserved for format2,2a,2b
+        pucch_format = pucch_format3;
       else {
         printf("Unsupported pucch_format %d\n",atoi(optarg));
         exit(-1);
@@ -282,7 +289,7 @@ int main(int argc, char **argv)
       printf("-N Noise variance in dB\n");
       printf("-R N_RB_DL\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
-      printf("-f PUCCH format (0=1,1=1a,2=1b), formats 2/2a/2b not supported\n");
+      printf("-f PUCCH format (0=1,1=1a,2=1b,6=3), formats 2/2a/2b not supported\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       exit (-1);
       break;
@@ -362,18 +369,34 @@ int main(int argc, char **argv)
   UE->frame_parms.pucch_config_common.nRB_CQI          = 4;
   UE->frame_parms.pucch_config_common.nCS_AN           = 6;
 
-  pucch_payload = 0;
 
-  generate_pucch1x(UE->common_vars.txdataF,
-		   frame_parms,
-		   UE->ncs_cell,
-		   pucch_format,
-		   &pucch_config_dedicated,
-		   n1_pucch,
-		   0, //shortened_format,
-		   &pucch_payload,
-		   AMP, //amp,
-		   subframe); //subframe
+  if( (pucch_format == pucch_format1) || (pucch_format == pucch_format1a) || (pucch_format == pucch_format1b) ){
+    pucch_payload = 0;
+    generate_pucch1x(UE->common_vars.txdataF,
+  		   frame_parms,
+  		   UE->ncs_cell,
+  		   pucch_format,
+  		   &pucch_config_dedicated,
+  		   n1_pucch,
+  		   0, //shortened_format,
+  		   &pucch_payload,
+  		   AMP, //amp,
+  		   subframe); //subframe
+  }else if( pucch_format == pucch_format3){
+    for(i=0;i<pucch3_payload_size;i++)
+      pucch3_payload[i]=(uint8_t)(taus()&0x1);
+    generate_pucch3x(UE->common_vars.txdataF,
+  		   frame_parms,
+  		   UE->ncs_cell,
+  		   pucch_format,
+  		   &pucch_config_dedicated,
+  		   n3_pucch,
+  		   0, //shortened_format,
+  		   pucch3_payload,
+  		   AMP, //amp,
+  		   subframe, //subframe
+         n_rnti);  //rnti
+  }
   write_output("txsigF0.m","txsF0", &UE->common_vars.txdataF[0][2*subframe*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*nsymb,1,1);
 
   tx_lev = 0;
@@ -429,6 +452,7 @@ int main(int argc, char **argv)
     pucch_tx = 0;
     pucch1_missed=0;
     pucch1_false=0;
+    pucch3_false=0;
 
     stat_no_sig = 0;
     stat_sig = 0;
@@ -540,7 +564,7 @@ int main(int argc, char **argv)
                         n1_pucch,
                         n2_pucch,
                         0, //shortened_format,
-                        &pucch_payload_rx, //payload,
+                        (pucch_format==pucch_format3) ? pucch3_payload_rx : &pucch_payload_rx, //payload,
                         0 /* frame not defined, let's pass 0 */,
                         subframe,
                         pucch1_thres);
@@ -561,8 +585,15 @@ int main(int argc, char **argv)
           printf("EXIT\n");
           exit(-1);
           }*/
-        } else {
+        } else if( (pucch_format==pucch_format1a) || (pucch_format==pucch_format1b) ) {
           pucch1_false = (pucch_payload_rx != pucch_payload) ? (pucch1_false+1) : pucch1_false;
+        } else if (pucch_format==pucch_format3){
+          for(i=0;i<pucch3_payload_size;i++){
+            if(pucch3_payload[i]!=pucch3_payload_rx[i]){
+              pucch3_false = (pucch3_false+1);
+              break;
+            }
+          }
         }
 
         //      printf("sig %d\n",sig);
@@ -576,7 +607,8 @@ int main(int argc, char **argv)
       printf("pucch_trials %d : pucch1a_errors %d\n",pucch_tx,pucch1_false);
     else if (pucch_format==pucch_format1b)
       printf("pucch_trials %d : pucch1b_errors %d\n",pucch_tx,pucch1_false);
-
+    else if (pucch_format==pucch_format3)
+      printf("pucch_trials %d : pucch3_errors %d\n",pucch_tx,pucch3_false);
   }
 
   if (n_frames==1) {

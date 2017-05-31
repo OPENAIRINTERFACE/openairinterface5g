@@ -461,11 +461,11 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     //#ifndef __AVX2__
 #if 1
     if (err_flag == 0) {
-
-        LOG_D(PHY, "turbo algo Kr=%d cb_cnt=%d C=%d nbRB=%d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d maxIter %d\n",
-                            Kr,r,harq_process->C,harq_process->nb_rb,A,harq_process->TBS,
+/*
+        LOG_I(PHY, "turbo algo Kr=%d cb_cnt=%d C=%d nbRB=%d crc_type %d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d maxIter %d\n",
+                            Kr,r,harq_process->C,harq_process->nb_rb,crc_type,A,harq_process->TBS,
                             harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round,dlsch->max_turbo_iterations);
-
+*/
     	if (llr8_flag) {
     		AssertFatal (Kr >= 256, "turbo algo issue Kr=%d cb_cnt=%d C=%d nbRB=%d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d\n",
     				Kr,r,harq_process->C,harq_process->nb_rb,A,harq_process->TBS,harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
@@ -641,8 +641,8 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   frame_rx_prev = frame_rx_prev%1024;
 
   if (err_flag == 1) {
-    LOG_D(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, round %d, subframe %d)\n",
-        phy_vars_ue->Mod_id, frame_rx_prev, subframe_rx_prev, harq_pid, harq_process->round, subframe);
+    //LOG_I(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
+    //    phy_vars_ue->Mod_id, frame, subframe, harq_pid,harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs,Kr,r,harq_process->round);
 
     dlsch->harq_ack[subframe].ack = 0;
     dlsch->harq_ack[subframe].harq_id = harq_pid;
@@ -665,13 +665,16 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     return((1+dlsch->max_turbo_iterations));
   } else {
 
+      //LOG_I(PHY,"[UE %d] DLSCH: Setting ACK for subframe %d TBS %d harq_process->mcs %d harq_process->nb_rb %d\n",
+                   //phy_vars_ue->Mod_id,subframe,harq_process->TBS,harq_process->mcs,harq_process->nb_rb);
+
     harq_process->status = SCH_IDLE;
     harq_process->round  = 0;
     dlsch->harq_ack[subframe].ack = 1;
     dlsch->harq_ack[subframe].harq_id = harq_pid;
     dlsch->harq_ack[subframe].send_harq_status = 1;
-    LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for SFN/SF %d/%d (pid %d, pid status %d, round %d, subframe %d)\n",
-        phy_vars_ue->Mod_id, frame_rx_prev, subframe_rx_prev, harq_pid, harq_process->status, harq_process->round, subframe);
+    //LOG_I(PHY,"[UE %d] DLSCH: Setting ACK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d)\n",
+      //  phy_vars_ue->Mod_id, frame, subframe, harq_pid, harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs);
 
     if(is_crnti)
     {

@@ -520,25 +520,27 @@ schedule_ue_spec(
         //  mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
         continue_flag=1;
       }
-      
-      switch(mac_xface->get_transmission_mode(module_idP,CC_id,rnti)){
-      case 1:
-      case 2:
-      case 7:
-	aggregation = get_aggregation(get_bw_index(module_idP,CC_id), 
+
+      if (continue_flag != 1){
+        switch(mac_xface->get_transmission_mode(module_idP,CC_id,rnti)){
+        case 1:
+        case 2:
+        case 7:
+	  aggregation = get_aggregation(get_bw_index(module_idP,CC_id), 
 				      eNB_UE_stats->DL_cqi[0],
 				      format1);
-	break;
-      case 3:
-	aggregation = get_aggregation(get_bw_index(module_idP,CC_id), 
+	  break;
+        case 3:
+	  aggregation = get_aggregation(get_bw_index(module_idP,CC_id), 
 				      eNB_UE_stats->DL_cqi[0],
 				      format2A);
-	break;
-      default:
-	LOG_W(MAC,"Unsupported transmission mode %d\n", mac_xface->get_transmission_mode(module_idP,CC_id,rnti));
-	aggregation = 2;
-      }
-      
+	  break;
+        default:
+	  LOG_W(MAC,"Unsupported transmission mode %d\n", mac_xface->get_transmission_mode(module_idP,CC_id,rnti));
+	  aggregation = 2;
+        }
+      } /* if (continue_flag != 1 */
+
       if ((ue_sched_ctl->pre_nb_available_rbs[CC_id] == 0) ||  // no RBs allocated 
 	  CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,aggregation,rnti)
 	  ) {
@@ -610,17 +612,15 @@ schedule_ue_spec(
 
       if (round > 0) {
 
-        if (frame_parms[CC_id]->frame_type == TDD) {
-          UE_list->UE_template[CC_id][UE_id].DAI++;
-          update_ul_dci(module_idP,CC_id,rnti,UE_list->UE_template[CC_id][UE_id].DAI);
-          LOG_D(MAC,"DAI update: CC_id %d subframeP %d: UE %d, DAI %d\n",
-                CC_id,subframeP,UE_id,UE_list->UE_template[CC_id][UE_id].DAI);
-        }
-
         // get freq_allocation
         nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
 
         if (nb_rb <= nb_available_rb) {
+          if (frame_parms[CC_id]->frame_type == TDD) {
+            UE_list->UE_template[CC_id][UE_id].DAI++;
+            update_ul_dci(module_idP,CC_id,rnti,UE_list->UE_template[CC_id][UE_id].DAI);
+            LOG_D(MAC,"DAI update: CC_id %d subframeP %d: UE %d, DAI %d\n", CC_id,subframeP,UE_id,UE_list->UE_template[CC_id][UE_id].DAI);
+          }
 
           if(nb_rb == ue_sched_ctl->pre_nb_available_rbs[CC_id]) {
             for(j=0; j<frame_parms[CC_id]->N_RBG; j++) { // for indicating the rballoc for each sub-band

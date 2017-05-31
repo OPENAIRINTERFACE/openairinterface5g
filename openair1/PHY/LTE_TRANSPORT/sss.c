@@ -166,6 +166,7 @@ int _do_pss_sss_extract(PHY_VARS_UE *ue,
 
   int32_t **rxdataF;
 
+  //LOG_I(PHY,"do_pss_sss_extract subframe %d \n",subframe);
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
 	  if (frame_parms->frame_type == FDD) {
@@ -180,11 +181,26 @@ int _do_pss_sss_extract(PHY_VARS_UE *ue,
 	    pss_symb = 2;
 	    sss_symb = frame_parms->symbols_per_tti-1;
 
+	    if(subframe==5 || subframe==0)
+	    {
 	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe&0x1)].rxdataF;
 	    sss_rxF  =  &rxdataF[aarx][(rx_offset + (sss_symb*(frame_parms->ofdm_symbol_size)))];
 
 	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[((subframe+1)&0x1)].rxdataF;
 	    pss_rxF  =  &rxdataF[aarx][(rx_offset + (pss_symb*(frame_parms->ofdm_symbol_size)))];
+	    }
+	    else if(subframe==6 || subframe==1)
+	    {
+		    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe&0x1)].rxdataF;
+		    pss_rxF  =  &rxdataF[aarx][(rx_offset + (pss_symb*(frame_parms->ofdm_symbol_size)))];
+
+		    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe+1)&0x1].rxdataF;
+		    sss_rxF  =  &rxdataF[aarx][(rx_offset + (sss_symb*(frame_parms->ofdm_symbol_size)))];
+	    }
+	    else
+	    {
+	    	AssertFatal(0,"");
+	    }
 
 	  }
     //printf("extract_rbs: symbol_mod=%d, rx_offset=%d, ch_offset=%d\n",symbol_mod,
@@ -204,11 +220,26 @@ int _do_pss_sss_extract(PHY_VARS_UE *ue,
         }
         else
         {
+        	if(subframe==5 || subframe==0)
+        	{
     	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe&0x1)].rxdataF;
     	    sss_rxF  =  &rxdataF[aarx][(1 + (sss_symb*(frame_parms->ofdm_symbol_size)))];
 
     	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[((subframe+1)&0x1)].rxdataF;
     	    pss_rxF  =  &rxdataF[aarx][(1 + (pss_symb*(frame_parms->ofdm_symbol_size)))];
+        	}
+    	    else if(subframe==6 || subframe==1)
+    	    {
+    		    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe&0x1)].rxdataF;
+    		    pss_rxF  =  &rxdataF[aarx][(rx_offset + (pss_symb*(frame_parms->ofdm_symbol_size)))];
+
+    		    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe+1)&0x1].rxdataF;
+    		    sss_rxF  =  &rxdataF[aarx][(rx_offset + (sss_symb*(frame_parms->ofdm_symbol_size)))];
+    	    }
+    	    else
+    	    {
+    	    	AssertFatal(0,"");
+    	    }
         }
       }
 
@@ -237,18 +268,20 @@ int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
 }
 
 int pss_only_extract(PHY_VARS_UE *phy_vars_ue,
-                    int32_t pss_ext[4][72])
+                    int32_t pss_ext[4][72],
+                    uint8_t subframe)
 {
   static int32_t dummy[4][72];
-  return _do_pss_sss_extract(phy_vars_ue, pss_ext, dummy, 1 /* doPss */, 0 /* doSss */, 0);
+  return _do_pss_sss_extract(phy_vars_ue, pss_ext, dummy, 1 /* doPss */, 0 /* doSss */, subframe);
 }
 
 
 int sss_only_extract(PHY_VARS_UE *phy_vars_ue,
-                    int32_t sss_ext[4][72])
+                    int32_t sss_ext[4][72],
+                    uint8_t subframe)
 {
   static int32_t dummy[4][72];
-  return _do_pss_sss_extract(phy_vars_ue, dummy, sss_ext, 0 /* doPss */, 1 /* doSss */, 0);
+  return _do_pss_sss_extract(phy_vars_ue, dummy, sss_ext, 0 /* doPss */, 1 /* doSss */, subframe);
 }
 
 

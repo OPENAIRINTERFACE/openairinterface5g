@@ -404,6 +404,7 @@ void rrc_ue_generate_RRCConnectionRequest( const protocol_ctxt_t* const ctxt_pP,
 
 mui_t rrc_mui=0;
 
+#if !(defined(ENABLE_ITTI) && defined(ENABLE_USE_MME))
 /* NAS Attach request with IMSI */
 static const char const nas_attach_req_imsi[] = {
   0x07, 0x41,
@@ -417,7 +418,9 @@ static const char const nas_attach_req_imsi[] = {
   0x00, 0x00, 0x00, 0x0D, 0x00, 0x00, 0x0A, 0x00, 0x52, 0x12, 0xF2,
   0x01, 0x27, 0x11,
 };
+#endif /* !(defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)) */
 
+#if 0
 /* NAS Attach request with GUTI */
 static const char const nas_attach_req_guti[] = {
   0x07, 0x41,
@@ -431,6 +434,7 @@ static const char const nas_attach_req_guti[] = {
   0x00, 0x00, 0x00, 0x0D, 0x00, 0x00, 0x0A, 0x00, 0x52, 0x12, 0xF2,
   0x01, 0x27, 0x11,
 };
+#endif
 
 //-----------------------------------------------------------------------------
 static void rrc_ue_generate_RRCConnectionSetupComplete( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, const uint8_t Transaction_id )
@@ -743,10 +747,10 @@ rrc_ue_establish_drb(
 #        ifdef OAI_EMU
     oai_emulation.info.oai_ifup[ue_mod_idP]=1;
 #        endif
-    LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %d to/from the protocol stack\n",
+    LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
           ue_mod_idP,
           ip_addr_offset3+ue_mod_idP,
-          (eNB_index * maxDRB) + DRB_config->drb_Identity);
+          (long int)((eNB_index * maxDRB) + DRB_config->drb_Identity));
 
     rb_conf_ipv4(0,//add
                  ue_mod_idP,//cx align with the UE index
@@ -1038,7 +1042,7 @@ rrc_ue_update_radioResourceConfigDedicated(RadioResourceConfigDedicated_t* radio
     // Update cqi_ReportConfig
     if(radioResourceConfigDedicated->physicalConfigDedicated->cqi_ReportConfig != NULL)
     {
-        LOG_I(RRC,"Update cqi_ReportConfig config (size=%d,%d)\n", sizeof(*physicalConfigDedicated2->cqi_ReportConfig), sizeof(CQI_ReportConfig_t));
+        LOG_I(RRC,"Update cqi_ReportConfig config (size=%zu,%zu)\n", sizeof(*physicalConfigDedicated2->cqi_ReportConfig), sizeof(CQI_ReportConfig_t));
 
         if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig == NULL)
             UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig = CALLOC(1,sizeof(CQI_ReportConfig_t));
@@ -1048,7 +1052,7 @@ rrc_ue_update_radioResourceConfigDedicated(RadioResourceConfigDedicated_t* radio
                 sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
 
         if (radioResourceConfigDedicated->physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic != NULL) {
-          LOG_I(RRC,"Update cqi_ReportPeriodic config (size=%d,%d)\n", sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic), sizeof(CQI_ReportPeriodic_t));
+          LOG_I(RRC,"Update cqi_ReportPeriodic config (size=%zu,%zu)\n", sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic), sizeof(CQI_ReportPeriodic_t));
 
           if(UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig->cqi_ReportPeriodic == NULL)
             UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]->cqi_ReportConfig->cqi_ReportPeriodic = CALLOC(1,sizeof(CQI_ReportPeriodic_t));

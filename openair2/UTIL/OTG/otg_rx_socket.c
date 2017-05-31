@@ -98,7 +98,7 @@ void *recv_ip4_tcp(void* csock)
 
 
       LOG_I(OTG,"SOCKET:: TCP-IP4 :: size=%d  received=%d, Received buffer: %s   \n\n\n", strlen(buffer),  sock_rcv, buffer);
-      buffer[PAYLOAD_MAX] != '\0';
+      //buffer[PAYLOAD_MAX] != '\0';
 
     }
 

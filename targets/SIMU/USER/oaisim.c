@@ -1188,12 +1188,23 @@ int T_port = 2021;    /* default port to listen to to wait for the tracer */
 int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
 
+static void print_current_directory(void)
+{
+  char dir[8192]; /* arbitrary size (should be big enough) */
+  if (getcwd(dir, 8192) == NULL)
+    printf("ERROR getting working directory\n");
+  else
+    printf("working directory: %s\n", dir);
+}
+
 /*------------------------------------------------------------------------------*/
 int
 main (int argc, char **argv)
 {
 
   clock_t t;
+
+  print_current_directory();
 
   start_background_system();
 
@@ -1349,6 +1360,11 @@ main (int argc, char **argv)
 
   LOG_N(EMU,
         ">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
+
+#ifndef PACKAGE_VERSION
+#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
+#endif
+  LOG_I(EMU, "Version: %s\n", PACKAGE_VERSION);
 
 #if defined(ENABLE_ITTI)
 

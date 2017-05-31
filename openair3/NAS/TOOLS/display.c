@@ -248,6 +248,14 @@ void display_usim_data(const char *filename) {
 	memcpy(key, data.keys.ik, USIM_IK_SIZE);
 	printf("\tIK\t: \"%s\"\n", key);
 
+        printf("\n\tusim_api_k:");
+        for (int i = 0; i < 16; i++)
+          printf(" %2.2x", data.keys.usim_api_k[i]);
+        printf("\n\topc       :");
+        for (int i = 0; i < 16; i++)
+          printf(" %2.2x", data.keys.opc[i]);
+        printf("\n\n");
+
 	printf("EPS NAS security context:\n");
 	printf("\tKSIasme\t: 0x%.2x\n", data.securityctx.KSIasme.value[0]);
 	char kasme[USIM_K_ASME_SIZE + 1];
