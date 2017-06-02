@@ -104,17 +104,13 @@
     <eNB>TCT-Labo1</eNB>
     <UE>TCT-Labo3</UE>
     <TimeOut_cmd>300</TimeOut_cmd>
-    <eNB_working_dir>/tmp</eNB_working_dir>    
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  downlink_frequency 2350000000L</eNB_config_file>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  uplink_frequency_offset 0</eNB_config_file>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  tdd_config 3</eNB_config_file>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  tdd_config_s 5</eNB_config_file>
+    <eNB_working_dir>/tmp</eNB_working_dir> 
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
     <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf -W -m 0 --single-thread-disable --phy-test</eNB_main_exec_args>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3SS5.25PRB.usrpb210.conf -W -m 0 --single-thread-disable --phy-test</eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
@@ -2161,15 +2157,13 @@
 	<eNB>TCT-Labo1</eNB>
 	<UE>TCT-Labo3</UE>
 	<TimeOut_cmd>300</TimeOut_cmd>
-	<eNB_working_dir>/tmp</eNB_working_dir>
-	<eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  N_RB_DL 50</eNB_config_file>
-        <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  tdd_config 3</eNB_config_file>	
+	<eNB_working_dir>/tmp</eNB_working_dir>	
 	<eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
 	<eNB_compile_prog_args>-c -w USRP --eNB --noS1 </eNB_compile_prog_args>
 	<eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
 	<eNB_pre_exec_args></eNB_pre_exec_args>
 	<eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
-	<eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf -W -m 28 </eNB_main_exec_args>
+	<eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3SS5.50PRB.usrpb210.conf -W -m 28 </eNB_main_exec_args>
 	<eNB_traffic_exec>sleep 30;iperf -c 10.0.1.9 -i 1 -u -b 18M</eNB_traffic_exec>
 	<eNB_traffic_exec_args></eNB_traffic_exec_args>
 	<eNB_search_expr_true></eNB_search_expr_true>
@@ -2190,7 +2184,7 @@
 	<UE_search_expr_false></UE_search_expr_false>
 	<UE_terminate_missing_procs>False</UE_terminate_missing_procs>
 	<tags>UE_USRP.NOS1.DATA_IPERF.BAND40.10MHZ.MCS28</tags>
-	<nruns>1</nruns><max_ntries>1</max_ntries>
+	<nruns>3</nruns><max_ntries>6</max_ntries>
 	<UE_metric  id="UE_DLSCH_BITRATE" 
 	    description="UE downlink physical throughput"  
 	    regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
@@ -2683,16 +2677,12 @@
         <UE>TCT-Labo3</UE>
         <TimeOut_cmd>300</TimeOut_cmd>
         <eNB_working_dir>/tmp</eNB_working_dir>
-        <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  downlink_frequency 2350000000L</eNB_config_file>
-        <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  uplink_frequency_offset 0</eNB_config_file>
-        <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  tdd_config_s 5</eNB_config_file>
-        <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  tdd_config 3</eNB_config_file>
         <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
         <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
         <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
         <eNB_pre_exec_args></eNB_pre_exec_args>
         <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
-        <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf -W -m 0 </eNB_main_exec_args>
+        <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3SS5.25PRB.usrpb210.conf -W -m 0 </eNB_main_exec_args>
         <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1 -u -b 300K</eNB_traffic_exec>
         <eNB_traffic_exec_args></eNB_traffic_exec_args>
         <eNB_search_expr_true></eNB_search_expr_true>
@@ -2887,14 +2877,12 @@
         <UE>TCT-Labo3</UE>
         <TimeOut_cmd>300</TimeOut_cmd>
         <eNB_working_dir>/tmp</eNB_working_dir>
-        <eNB_config_file>$OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  tdd_config 3
-         		 $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  tdd_config_s 5</eNB_config_file>
         <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
         <eNB_compile_prog_args>-c -w USRP --eNB --noS1</eNB_compile_prog_args>
         <eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
         <eNB_pre_exec_args></eNB_pre_exec_args>
         <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
-        <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf -W -m 0 </eNB_main_exec_args>
+        <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3SS5.25PRB.usrpb210.conf -W -m 0 </eNB_main_exec_args>
         <eNB_traffic_exec>sleep 80;iperf -c 10.0.1.9 -i 1 -u -b 1200K</eNB_traffic_exec>
         <eNB_traffic_exec_args></eNB_traffic_exec_args>
         <eNB_search_expr_true></eNB_search_expr_true>
@@ -2915,7 +2903,7 @@
         <UE_search_expr_false></UE_search_expr_false>
         <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
         <tags>UE_USRP.NOS1.DATA_IPERF.BAND40.5MHZ.MCS16</tags>
-        <nruns>1</nruns><max_ntries>1</max_ntries>
+        <nruns>3</nruns><max_ntries>6</max_ntries>
         <UE_metric  id="UE_DLSCH_BITRATE" 
                 description="UE downlink physical throughput"  
                 regex='(UE_DLSCH_BITRATE) =\s+(\d+\.\d+) kbps.+frame = (\d+)\)' 
@@ -3254,16 +3242,12 @@
 	<UE>TCT-Labo3</UE>
 	<TimeOut_cmd>300</TimeOut_cmd>
 	<eNB_working_dir>/tmp</eNB_working_dir>
-        <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  downlink_frequency 2350000000L</eNB_config_file>
-        <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  uplink_frequency_offset 0</eNB_config_file>
-        <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  tdd_config_s 5</eNB_config_file>
-        <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  tdd_config 3</eNB_config_file>
 	<eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
 	<eNB_compile_prog_args>-c -w USRP --eNB --noS1 </eNB_compile_prog_args>
 	<eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
 	<eNB_pre_exec_args></eNB_pre_exec_args>
 	<eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
-	<eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf -W -m 28 </eNB_main_exec_args>
+	<eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3SS5.25PRB.usrpb210.conf -W -m 28 </eNB_main_exec_args>
 	<eNB_traffic_exec>sleep 30;iperf -c 10.0.1.9 -i 1 -u -b 8220K</eNB_traffic_exec>
 	<eNB_traffic_exec_args></eNB_traffic_exec_args>
 	<eNB_search_expr_true></eNB_search_expr_true>
@@ -3781,18 +3765,13 @@
 	<eNB>TCT-Labo1</eNB>
 	<UE>TCT-Labo3</UE>
 	<TimeOut_cmd>300</TimeOut_cmd>
-	<eNB_working_dir>/tmp</eNB_working_dir>
-	<eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  downlink_frequency 2350000000L</eNB_config_file>
-	<eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  uplink_frequency_offset 0</eNB_config_file>
-	<eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  tdd_config_s 5</eNB_config_file>
-	<eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  tdd_config 3</eNB_config_file>
-	<eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf  N_RB_DL 100</eNB_config_file>	
+	<eNB_working_dir>/tmp</eNB_working_dir>	
 	<eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
 	<eNB_compile_prog_args>-c -w USRP --eNB --noS1 </eNB_compile_prog_args>
 	<eNB_pre_exec>source $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 eNB</eNB_pre_exec>
 	<eNB_pre_exec_args></eNB_pre_exec_args>
 	<eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1</eNB_main_exec>
-	<eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3S5.usrpb210.conf -W -m 28 </eNB_main_exec_args>
+	<eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band40.tm1.TDD3SS5.100PRB.usrpb210.conf -W -m 28 </eNB_main_exec_args>
 	<eNB_traffic_exec>sleep 30;iperf -c 10.0.1.9 -i 1 -u -b 33M</eNB_traffic_exec>
 	<eNB_traffic_exec_args></eNB_traffic_exec_args>
 	<eNB_search_expr_true></eNB_search_expr_true>
@@ -3812,7 +3791,7 @@
 	<UE_search_expr_true>200</UE_search_expr_true>
 	<UE_search_expr_false></UE_search_expr_false>
 	<UE_terminate_missing_procs>False</UE_terminate_missing_procs>
-	<tags>UE_USRP.NOS1.DATA_IPERF.BAND40.10MHZ.MCS28</tags>
+	<tags>UE_USRP.NOS1.DATA_IPERF.BAND40.20MHZ.MCS28</tags>
 	<nruns>3</nruns><max_ntries>6</max_ntries>
 	<UE_metric  id="UE_DLSCH_BITRATE" 
 	    description="UE downlink physical throughput"  
