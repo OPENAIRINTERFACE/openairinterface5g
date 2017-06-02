@@ -3886,10 +3886,18 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
 #if UE_TIMING_TRACE
       stop_meas(&ue->dlsch_decoding_stats[subframe_rx&0x1]);
 
+#if DISABLE_LOG_X
       printf(" --> Unscrambling for CW0 %5.3f\n",
               (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
       printf("AbsSubframe %d.%d --> Turbo Decoding for CW0 %5.3f\n",
               frame_rx%1024, subframe_rx,(ue->dlsch_decoding_stats[subframe_rx&0x1].p_time)/(cpuf*1000.0));
+#else
+      LOG_D(PHY, " --> Unscrambling for CW0 %5.3f\n",
+              (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
+      LOG_D(PHY, "AbsSubframe %d.%d --> Turbo Decoding for CW0 %5.3f\n",
+              frame_rx%1024, subframe_rx,(ue->dlsch_decoding_stats[subframe_rx&0x1].p_time)/(cpuf*1000.0));
+#endif
+
 #endif
 
       if(is_cw1_active)
@@ -3945,10 +3953,18 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
 
           stop_meas(&ue->dlsch_decoding_stats[subframe_rx&0x1]);
 
+#if DISABLE_LOG_X
           printf(" --> Unscrambling for CW1 %5.3f\n",
                   (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
           printf("AbsSubframe %d.%d --> Turbo Decoding for CW1 %5.3f\n",
                   frame_rx%1024, subframe_rx,(ue->dlsch_decoding_stats[subframe_rx&0x1].p_time)/(cpuf*1000.0));
+#else
+          LOG_D(PHY, " --> Unscrambling for CW1 %5.3f\n",
+                  (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
+          LOG_D(PHY, "AbsSubframe %d.%d --> Turbo Decoding for CW1 %5.3f\n",
+                  frame_rx%1024, subframe_rx,(ue->dlsch_decoding_stats[subframe_rx&0x1].p_time)/(cpuf*1000.0));
+#endif
+
 #endif
       }
 
@@ -4254,7 +4270,12 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   // first slot has been processed (FFTs + Channel Estimation, PCFICH/PHICH/PDCCH)
 #if UE_TIMING_TRACE
   stop_meas(&ue->generic_stat);
+#if DISABLE_LOG_X
   printf("[SFN %d] Slot0: FFT + Channel Estimate + PCFICH/PHICH/PDCCH %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
+#else
+  LOG_D(PHY, "[SFN %d] Slot0: FFT + Channel Estimate + PCFICH/PHICH/PDCCH %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
+#endif
+
 #endif
 
   LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, subframe_rx);
@@ -4362,7 +4383,12 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   } // not an S-subframe
 #if UE_TIMING_TRACE
   stop_meas(&ue->generic_stat);
+#if DISABLE_LOG_X
   printf("[SFN %d] Slot1: FFT + Channel Estimate + Pdsch Proc Slot0 %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
+#else
+  LOG_D(PHY, "[SFN %d] Slot1: FFT + Channel Estimate + Pdsch Proc Slot0 %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
+#endif
+
 #endif
 
   LOG_D(PHY," ------  end FFT/ChannelEst/PDCCH slot 1: AbsSubframe %d.%d ------  \n", frame_rx%1024, subframe_rx);
@@ -4406,8 +4432,14 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			abstraction_flag);
 #if UE_TIMING_TRACE
     stop_meas(&ue->dlsch_procedures_stat);
+#if DISABLE_LOG_X
     printf("[SFN %d] Slot1:       Pdsch Proc %5.2f\n",subframe_rx,ue->pdsch_procedures_stat.p_time/(cpuf*1000.0));
     printf("[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",subframe_rx,ue->dlsch_procedures_stat.p_time/(cpuf*1000.0));
+#else
+    LOG_D(PHY, "[SFN %d] Slot1:       Pdsch Proc %5.2f\n",subframe_rx,ue->pdsch_procedures_stat.p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",subframe_rx,ue->dlsch_procedures_stat.p_time/(cpuf*1000.0));
+#endif
+
 #endif
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
@@ -4556,7 +4588,11 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
   stop_meas(&ue->phy_proc_rx[subframe_rx&0x1]);
+#if DISABLE_LOG_X
   printf("------FULL RX PROC [SFN %d]: %5.2f ------\n",subframe_rx,ue->phy_proc_rx[subframe_rx&0x1].p_time/(cpuf*1000.0));
+#else
+  LOG_D(PHY, "------FULL RX PROC [SFN %d]: %5.2f ------\n",subframe_rx,ue->phy_proc_rx[subframe_rx&0x1].p_time/(cpuf*1000.0));
+#endif
 #endif
   LOG_D(PHY," ****** end RX-Chain  for AbsSubframe %d.%d ******  \n", frame_rx%1024, subframe_rx);
   return (0);

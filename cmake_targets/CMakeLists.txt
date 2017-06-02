@@ -238,7 +238,7 @@ add_boolean_option(T_TRACER            False "Activate the T tracer, a debugging
 add_boolean_option(UE_AUTOTEST_TRACE   False "Activate UE autotest specific logs")
 add_boolean_option(UE_DEBUG_TRACE      False "Activate UE debug trace")
 add_boolean_option(UE_TIMING_TRACE     False "Activate UE timing trace")
-add_boolean_option(UE_NO_LOG           False "Deactivate all LOG_X")
+add_boolean_option(DISABLE_LOG_X       False "Deactivate all LOG_* macros")
 
 add_boolean_option(DEBUG_CONSOLE False "makes debugging easier, disables stdout/stderr buffering")
 

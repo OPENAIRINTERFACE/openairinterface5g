@@ -315,7 +315,7 @@ void *log_thread_function(void * list);
 #    define LOG_N(c, x...) /* */
 #    define LOG_F(c, x...) /* */
 #  else /* T_TRACER */
-#    if UE_NO_LOG
+#    if DISABLE_LOG_X
 #        define LOG_I(c, x...) /* */
 #        define LOG_W(c, x...) /* */
 #        define LOG_E(c, x...) /* */
@@ -326,7 +326,7 @@ void *log_thread_function(void * list);
 #        define LOG_C(c, x...) /* */
 #        define LOG_N(c, x...) /* */
 #        define LOG_F(c, x...) /* */
-#    else  /*UE_NO_LOG*/
+#    else  /*DISABLE_LOG_X*/
 #        define LOG_G(c, x...) logIt(c, LOG_EMERG, x)
 #        define LOG_A(c, x...) logIt(c, LOG_ALERT, x)
 #        define LOG_C(c, x...) logIt(c, LOG_CRIT,  x)
@@ -337,7 +337,7 @@ void *log_thread_function(void * list);
 #        define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
 #        define LOG_F(c, x...) logIt(c, LOG_FILE, x)  // log to a file, useful for the MSC chart generation
 #        define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
-#    endif /*UE_NO_LOG*/
+#    endif /*DISABLE_LOG_X*/
 #  endif /* T_TRACER */
 #else /* USER_MODE */
 #  define LOG_G(c, x...) printk(x)
@@ -421,7 +421,11 @@ static inline void printMeas(char * txt, Meas *M, int period) {
                 M->iterations,
                 M->maxArray[1],M->maxArray[2], M->maxArray[3],M->maxArray[4], M->maxArray[5], 
                 M->maxArray[6],M->maxArray[7], M->maxArray[8],M->maxArray[9],M->maxArray[10]);
+#if DISABLE_LOG_X
         printf("%s",txt2);
+#else
+        LOG_W(PHY, "%s",txt2);
+#endif
     }
 }
 
