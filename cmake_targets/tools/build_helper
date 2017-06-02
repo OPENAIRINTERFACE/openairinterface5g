@@ -31,11 +31,11 @@ fi
 OS_DISTRO=$(grep "^ID=" /etc/os-release | sed "s/ID=//" | sed "s/\"//g")
 OS_RELEASE=$(grep "^VERSION_ID=" /etc/os-release | sed "s/VERSION_ID=//" | sed "s/\"//g")
 case "$OS_DISTRO" in
-  fedora) OS_BASEDISTRO="fedora"; INSTALLER="dnf"; CMAKE_CMD="cmake" ;;
-  rhel)   OS_BASEDISTRO="fedora"; INSTALLER="yum"; CMAKE_CMD="cmake3" ;;
-  centos) OS_BASEDISTRO="fedora"; INSTALLER="yum"; CMAKE_CMD="cmake3" ;;
-  debian) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE_CMD="cmake" ;;
-  ubuntu) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE_CMD="cmake" ;;
+  fedora) OS_BASEDISTRO="fedora"; INSTALLER="dnf"; CMAKE="cmake" ;;
+  rhel)   OS_BASEDISTRO="fedora"; INSTALLER="yum"; CMAKE="cmake3" ;;
+  centos) OS_BASEDISTRO="fedora"; INSTALLER="yum"; CMAKE="cmake3" ;;
+  debian) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE="cmake" ;;
+  ubuntu) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE="cmake" ;;
 esac
 KERNEL_VERSION=$(uname -r | cut -d '.' -f1)
 KERNEL_MAJOR=$(uname -r | cut -d '.' -f2)
@@ -218,6 +218,9 @@ install_protobuf_c_from_source(){
     protobuf_c_install_log=$OPENAIR_DIR/cmake_targets/log/protobuf_c_install_log.txt
     echo_info "\nInstalling Google Protobuf_C from sources. The log file for Protobuf_C installation is here: $protobuf_c_install_log "
     (
+    if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
+        export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+    fi
     cd /tmp
     echo "Downloading protobuf-c"
     rm -rf /tmp/protobuf-c
@@ -230,6 +233,27 @@ install_protobuf_c_from_source(){
     $SUDO make install
     $SUDO ldconfig
     ) >& $protobuf_c_install_log
+}
+
+install_usrp_uhd_driver_from_source(){
+    uhd_install_log=$OPENAIR_DIR/cmake_targets/log/uhd_install_log.txt
+    echo_info "\nInstalling UHD driver from sources. The log file for UHD driver installation is here: $uhd_install_log "
+    (
+    cd /tmp
+    echo "Downloading UHD driver"
+    rm -rf /tmp/uhd
+    git clone git://github.com/EttusResearch/uhd.git
+    cd uhd
+    git checkout tags/release_003_010_001_001
+    mkdir -p host/build
+    cd host/build
+    $CMAKE ../
+    echo "Compiling UHD"
+    make
+    make test
+    $SUDO make install
+    $SUDO ldconfig
+    ) >& $uhd_install_log
 }
 
 check_install_usrp_uhd_driver(){
@@ -245,8 +269,14 @@ check_install_usrp_uhd_driver(){
         $SUDO apt-get -y --allow-unauthenticated install  python python-tk libboost-all-dev libusb-1.0-0-dev
         $SUDO apt-get -y --allow-unauthenticated install libuhd-dev libuhd003 uhd-host
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
-        $SUDO $INSTALLER -y install python boost libusb-devel boost-devel
-        $SUDO $INSTALLER -y install uhd uhd-devel uhd-firmware
+        $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils cmake
+        if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
+            # until EPEL repo hasn't bumped UHD driver to >=3.10 in EPEL, build driver from source
+            $SUDO $INSTALLER -y remove uhd uhd-devel uhd-firmware
+            install_ursp_uhd_driver_from_source
+        else
+            $SUDO $INSTALLER -y install uhd uhd-devel uhd-firmware
+        fi
     fi
 }
 
@@ -263,6 +293,33 @@ install_usrp_uhd_driver() {
     fi
 }
 
+install_bladerf_driver_from_source(){
+    bladerf_install_log=$OPENAIR_DIR/cmake_targets/log/bladerf_install_log.txt
+    echo_info "\nInstalling BladeRF driver from sources. The log file for BladeRF driver installation is here: $bladerf_install_log "
+    (
+    cd /tmp
+    echo "Downloading BladeRF driver"
+    rm -rf /tmp/bladeRF
+    git clone https://github.com/Nuand/bladeRF.git
+    cd bladeRF
+    git checkout tags/2016.06
+    mkdir -p build
+    cd build
+    $CMAKE ../
+    echo "Compiling BladeRF driver"
+    make
+    $SUDO make install
+    $SUDO ldconfig
+    echo "Downloading FPGA and firmware images"
+    cd /tmp/bladeRF
+    wget https://www.nuand.com/fx3/bladeRF_fw_latest.img
+    wget https://www.nuand.com/fpga/hostedx40-latest.rbf
+    sudo mkdir -p /usr/share/Nuand/bladeRF
+    sudo mv bladeRF_fw_latest.img /usr/share/Nuand/bladeRF/bladeRF_fw.img
+    sudo mv hostedx40-latest.rbf /usr/share/Nuand/bladeRF/hostedx40.rbf
+    ) >& $bladerf_install_log
+}
+
 check_install_bladerf_driver(){
     if [[ "$OS_DISTRO" == "ubuntu" ]]; then
         if [ "$(get_distribution_release)" == "ubuntu14.04" ] ; then
@@ -272,6 +329,8 @@ check_install_bladerf_driver(){
         $SUDO apt-get install -y --allow-unauthenticated  bladerf libbladerf-dev
         $SUDO apt-get install -y --allow-unauthenticated bladerf-firmware-fx3
         $SUDO apt-get install -y --allow-unauthenticated bladerf-fpga-hostedx40	
+   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
+        install_bladerf_driver_from_source
    else
         echo_error "BladeRF Installer for OAI does not support automatic build. Install BladeRF compiling sources manually from BladeRF website"
    fi
@@ -518,8 +577,9 @@ check_install_oai_software() {
     $SUDO $INSTALLER install -y \
       autoconf \
       automake \
+      bc \
       bison \
-      $CMAKE_CMD \
+      $CMAKE \
       doxygen \
       ethtool \
       flex \
@@ -560,19 +620,22 @@ check_install_oai_software() {
       openssh-clients \
       openssh-server \
       openssl \
+      patch \
+      psmisc \
       python \
       subversion \
       xmlstarlet \
       python-pip \
       wget \
       kernel-headers \
+      kernel-devel \
       nettle-devel \
       gnutls-devel \
       libXpm-devel \
       lapack \
       lapack-devel \
       blas \
-      libblas-devel
+      blas-devel
   fi
 
     install_asn1c_from_source
