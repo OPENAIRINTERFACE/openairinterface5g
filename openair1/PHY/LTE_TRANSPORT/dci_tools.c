@@ -8030,7 +8030,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       if (ulsch->bundling)
         ulsch->harq_processes[harq_pid]->O_ACK = (dai == 3)? 0 : 1;
       else
-        ulsch->harq_processes[harq_pid]->O_ACK = (dai+1)&3;
+        ulsch->harq_processes[harq_pid]->O_ACK = (dai >= 2)? 2 : (dai+1)&3; //(dai+1)&3;
 
       //      ulsch->harq_processes[harq_pid]->V_UL_DAI = dai+1;
     }
