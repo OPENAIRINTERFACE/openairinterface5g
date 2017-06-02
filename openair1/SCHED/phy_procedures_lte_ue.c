@@ -914,14 +914,13 @@ uint16_t get_n1_pucch(PHY_VARS_UE *ue,
           //last_dl = (subframe-2)<<1;
           if (subframe == 2) {
           // i=0
-          //nCCE0 = ue->pdcch_vars[proc->subframe_rx & 0x1][eNB_id]->nCCE[2+subframe];
           nCCE0 = ue->pdcch_vars[proc->subframe_rx & 0x1][eNB_id]->nCCE[(8+subframe)%10];
           n1_pucch0 = 2*get_Np(frame_parms->N_RB_DL,nCCE0,0) + nCCE0+ frame_parms->pucch_config_common.n1PUCCH_AN;
           // i=1
-          nCCE1 = ue->pdcch_vars[proc->subframe_rx & 0x1][eNB_id]->nCCE[2+subframe];
+          nCCE1 = ue->pdcch_vars[proc->subframe_rx & 0x1][eNB_id]->nCCE[3+subframe];
           n1_pucch1 = get_Np(frame_parms->N_RB_DL,nCCE1,0) + get_Np(frame_parms->N_RB_DL,nCCE1,1) + nCCE1 + frame_parms->pucch_config_common.n1PUCCH_AN;
           // i=2
-          nCCE2 = ue->pdcch_vars[proc->subframe_rx & 0x1][eNB_id]->nCCE[(3+subframe)%10];
+          nCCE2 = ue->pdcch_vars[proc->subframe_rx & 0x1][eNB_id]->nCCE[(2+subframe)%10];
           n1_pucch2 = 2*get_Np(frame_parms->N_RB_DL,nCCE2,1) + nCCE2+ frame_parms->pucch_config_common.n1PUCCH_AN;
           // i=3
           //nCCE3 = ue->pdcch_vars[proc->subframe_rx & 0x1][eNB_id]->nCCE[(9+subframe)%10];
@@ -931,11 +930,11 @@ uint16_t get_n1_pucch(PHY_VARS_UE *ue,
           if (ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->harq_ack[(8+subframe)%10].send_harq_status>0)  // n-6 // subframe 6 is to be ACK/NAKed
             harq_ack0 = ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->harq_ack[(8+subframe)%10].ack;
 
-          if (ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->harq_ack[2+subframe].send_harq_status>0)  // n-6 // subframe 5 is to be ACK/NAKed
-            harq_ack1 = ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->harq_ack[2+subframe].ack;
+          if (ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->harq_ack[3+subframe].send_harq_status>0)  // n-6 // subframe 5 is to be ACK/NAKed
+            harq_ack1 = ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->harq_ack[3+subframe].ack;
 
-          if (ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->harq_ack[(3+subframe)%10].send_harq_status>0)  // n-6 // subframe 6 is to be ACK/NAKed
-            harq_ack2 = ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->harq_ack[(3+subframe)%10].ack;
+          if (ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->harq_ack[(2+subframe)%10].send_harq_status>0)  // n-6 // subframe 6 is to be ACK/NAKed
+            harq_ack2 = ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->harq_ack[(2+subframe)%10].ack;
 
           //if (ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->harq_ack[(9+subframe)%10].send_harq_status>0)  // n-6 // subframe 5 is to be ACK/NAKed
             //harq_ack3 = ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->harq_ack[(9+subframe)%10].ack;
@@ -981,28 +980,38 @@ uint16_t get_n1_pucch(PHY_VARS_UE *ue,
           //                                nCCE3, n1_pucch3, harq_ack3, bundling_flag);
 
           if ((bundling_flag==bundling)&&(SR == 0)) {  // This is for bundling without SR,
+             b[0] = 1;
+             ack_counter = 0;
+
+             if ((harq_ack3!=2) ) {
+                b[0] = b[0]&harq_ack3;
+                n1_pucch_inter = n1_pucch3;
+                ack_counter ++;
+             }
              if ((harq_ack0!=2) ) {
-                b[0] = harq_ack0;
+                b[0] = b[0]&harq_ack0;
                 n1_pucch_inter = n1_pucch0;
+                ack_counter ++;
              }
              if ((harq_ack1!=2) ) {
                 b[0] = b[0]&harq_ack1;
                 n1_pucch_inter = n1_pucch1;
+                ack_counter ++;
              }
              if ((harq_ack2!=2) ) {
                 b[0] = b[0]&harq_ack2;
                 n1_pucch_inter = n1_pucch2;
-             }
-             if ((harq_ack3!=2) ) {
-                b[0] = b[0]&harq_ack3;
-                n1_pucch_inter = n1_pucch3;
+                ack_counter ++;
              }
 
-             if (subframe == 3) {
+             if (ack_counter == 0)
+                 b[0] = 0;
+
+             /*if (subframe == 3) {
                 n1_pucch_inter = n1_pucch2;
              } else if (subframe == 2) {
-                n1_pucch_inter = n1_pucch2;
-             }
+                n1_pucch_inter = n1_pucch1;
+             }*/
 
              //LOG_I(PHY,"SFN/SF %d/%d calculating n1_pucch n1_pucch_inter=%d  b[0]=%d b[1]=%d \n",
              //                                           proc->frame_tx%1024,
@@ -1138,6 +1147,7 @@ uint16_t get_n1_pucch(PHY_VARS_UE *ue,
              }
             } else if (SR==1) { // SR and 0,1,or 2 ACKS, (first 3 entries in Table 7.3-1 of 36.213)
               // this should be number of ACKs (including
+              ack_counter = 0;
               if (harq_ack0==1)
                  ack_counter ++;
               if (harq_ack1==1)
@@ -3086,6 +3096,9 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 
 #endif
 
+  uint8_t *nCCE_current = &ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->nCCE[subframe_rx];
+  uint8_t *nCCE_dest = &ue->pdcch_vars[(subframe_rx+1) & 0x1][eNB_id]->nCCE[subframe_rx];
+  memcpy(nCCE_dest, nCCE_current, sizeof(uint8_t));
 
   LOG_D(PHY,"[UE  %d] AbsSubFrame %d.%d, Mode %s: DCI found %i --> rnti %x / crnti %x : format %d\n",
        ue->Mod_id,frame_rx%1024,subframe_rx,mode_string[ue->UE_mode[eNB_id]],
