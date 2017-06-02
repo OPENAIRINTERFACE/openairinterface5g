@@ -1098,6 +1098,8 @@ void rx_phich(PHY_VARS_UE *ue,
   uint8_t NSF_PHICH = 4;
   uint8_t pusch_subframe;
 
+  int8_t delta_PUSCH_acc[4] = {-1,0,1,3};
+
   // check if we're expecting a PHICH in this subframe
   LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX\n",ue->Mod_id,harq_pid,proc->frame_rx,subframe);
 
@@ -1386,6 +1388,14 @@ void rx_phich(PHY_VARS_UE *ue,
             HI16,
             nseq_PHICH,
             ngroup_PHICH);
+
+      ulsch->f_pusch += delta_PUSCH_acc[ulsch->harq_processes[harq_pid]->TPC];
+
+      LOG_I(PHY,"[PUSCH %d] AbsSubframe %d.%d: f_pusch (ACC) %d, adjusting by %d (TPC %d)\n",
+                 harq_pid,proc->frame_rx,subframe,ulsch->f_pusch,
+                    delta_PUSCH_acc[ulsch->harq_processes[harq_pid]->TPC],
+                    ulsch->harq_processes[harq_pid]->TPC);
+
 
       ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
       //      ulsch->harq_processes[harq_pid]->Ndi = 0;
