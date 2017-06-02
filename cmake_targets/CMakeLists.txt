@@ -1636,9 +1636,25 @@ else()
 endif()
 
 # Atlas is required by some packages, but not found in pkg-config
-if(EXISTS "/usr/include/atlas/cblas.h")
+# So, here are some hacks here. Hope this gets fixed in future!
+if(EXISTS "/usr/include/atlas/cblas.h" OR EXISTS "/usr/include/cblas.h")
   include_directories("/usr/include/atlas")
-  list(APPEND ATLAS_LIBRARIES cblas atlas lapack)
+  LINK_DIRECTORIES("/usr/lib64")
+  LINK_DIRECTORIES("/usr/lib64/atlas") #Added because atlas libraries in CentOS 7 are here!
+  
+  if(EXISTS "/usr/lib64/libblas.so" OR EXISTS "/usr/lib/libblas.so") #Case for CentOS7
+     list(APPEND ATLAS_LIBRARIES blas)
+  else() # Case for Ubuntu
+     list(APPEND ATLAS_LIBRARIES cblas)
+  endif()
+
+  if(EXISTS "/usr/lib/atlas/libtatlas.so" OR EXISTS "/usr/lib64/atlas/libtatlas.so") #Case for CentOS7
+     list(APPEND ATLAS_LIBRARIES tatlas)
+  else()
+     list(APPEND ATLAS_LIBRARIES atlas) #Case for Ubuntu
+  endif()
+
+  list(APPEND ATLAS_LIBRARIES lapack)
 else()
   message("No Blas/Atlas libs found, some targets will fail")
 endif()

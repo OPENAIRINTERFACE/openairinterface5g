@@ -45,6 +45,9 @@
 #include <stdarg.h>
 #include <time.h>
 #include <stdint.h>
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
 #include <inttypes.h>
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
