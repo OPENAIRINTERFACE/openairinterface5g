@@ -6386,22 +6386,21 @@ int generate_ue_dlsch_params_from_dci(int frame,
     }
 
 
-#ifdef DEBUG_DCI
+#ifdef UE_DEBUG_TRACE
 
     if (dlsch[0] && (dlsch[0]->rnti != 0xffff)) {
-      printf("dci_format:%d Abssubframe: %d.%d \n",dci_format,frame%1024,subframe);
-      printf("PDSCH dlsch0 UE: rnti     %x\n",dlsch[0]->rnti);
-      printf("PDSCH dlsch0 UE: NBRB     %d\n",dlsch0_harq->nb_rb);
-      printf("PDSCH dlsch0 UE: rballoc  %x\n",dlsch0_harq->rb_alloc_even[0]);
-      printf("PDSCH dlsch0 UE: harq_pid %d\n",harq_pid);
-      //printf("PDSCH dlsch0 UE: tpc      %d\n",TPC);
-      printf("PDSCH dlsch0 UE: g        %d\n",dlsch[0]->g_pucch);
-      printf("PDSCH dlsch0 UE: round    %d\n",dlsch0_harq->round);
-      printf("PDSCH dlsch0 UE: DCINdi   %d\n",dlsch0_harq->DCINdi);
-      printf("PDSCH dlsch0 UE: rvidx    %d\n",dlsch0_harq->rvidx);
-      printf("PDSCH dlsch0 UE: TBS      %d\n",dlsch0_harq->TBS);
-      printf("PDSCH dlsch0 UE: mcs      %d\n",dlsch0_harq->mcs);
-      printf("PDSCH dlsch0 UE: pwr_off  %d\n",dlsch0_harq->dl_power_off);
+        LOG_I(PHY,"dci_format:%d Abssubframe: %d.%d \n",dci_format,frame%1024,subframe);
+        LOG_D(PHY,"PDSCH dlsch0 UE: rnti     %x\n",dlsch[0]->rnti);
+        LOG_D(PHY,"PDSCH dlsch0 UE: NBRB     %d\n",dlsch0_harq->nb_rb);
+        LOG_D(PHY,"PDSCH dlsch0 UE: rballoc  %x\n",dlsch0_harq->rb_alloc_even[0]);
+        LOG_D(PHY,"PDSCH dlsch0 UE: harq_pid %d\n",harq_pid);
+        LOG_D(PHY,"PDSCH dlsch0 UE: g        %d\n",dlsch[0]->g_pucch);
+        LOG_D(PHY,"PDSCH dlsch0 UE: round    %d\n",dlsch0_harq->round);
+        LOG_D(PHY,"PDSCH dlsch0 UE: DCINdi   %d\n",dlsch0_harq->DCINdi);
+        LOG_D(PHY,"PDSCH dlsch0 UE: rvidx    %d\n",dlsch0_harq->rvidx);
+        LOG_D(PHY,"PDSCH dlsch0 UE: TBS      %d\n",dlsch0_harq->TBS);
+        LOG_D(PHY,"PDSCH dlsch0 UE: mcs      %d\n",dlsch0_harq->mcs);
+        LOG_D(PHY,"PDSCH dlsch0 UE: pwr_off  %d\n",dlsch0_harq->dl_power_off);
     }
 #endif
 
@@ -8099,28 +8098,28 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
   // ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
 
-#ifdef DEBUG_DCI
+#ifdef UE_DEBUG_TRACE
 
-    printf("Format 0 DCI : ulsch (ue): AbsSubframe %d.%d\n",proc->frame_rx%1024,subframe);
-    printf("Format 0 DCI : ulsch (ue): NBRB        %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-    printf("Format 0 DCI :ulsch (ue): first_rb    %d\n",ulsch->harq_processes[harq_pid]->first_rb);
-    printf("Format 0 DCI :ulsch (ue): rballoc     %d\n",rballoc);
-    printf("Format 0 DCI :ulsch (ue): harq_pid    %d\n",harq_pid);
-    printf("Format 0 DCI :ulsch (ue): first_tx       %d\n",ulsch->harq_processes[harq_pid]->first_tx);
-    printf("Format 0 DCI :ulsch (ue): DCINdi       %d\n",ulsch->harq_processes[harq_pid]->DCINdi);
-    printf("Format 0 DCI :ulsch (ue): round       %d\n",ulsch->harq_processes[harq_pid]->round);
-    //printf("Format 0 DCI :ulsch (ue): TBS         %d\n",ulsch->harq_processes[harq_pid]->TBS);
-    printf("Format 0 DCI :ulsch (ue): mcs         %d\n",ulsch->harq_processes[harq_pid]->mcs);
-    //printf("Format 0 DCI :ulsch (ue): O           %d\n",ulsch->O);
-    //printf("Format 0 DCI :ulsch (ue): cqiReq      %d\n",cqi_req);
+    LOG_I(PHY,"Format 0 DCI : ulsch (ue): AbsSubframe %d.%d\n",proc->frame_rx%1024,subframe);
+    LOG_D(PHY,"Format 0 DCI : ulsch (ue): NBRB        %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+    LOG_D(PHY,"Format 0 DCI :ulsch (ue): first_rb    %d\n",ulsch->harq_processes[harq_pid]->first_rb);
+    LOG_D(PHY,"Format 0 DCI :ulsch (ue): rballoc     %d\n",rballoc);
+    LOG_D(PHY,"Format 0 DCI :ulsch (ue): harq_pid    %d\n",harq_pid);
+    LOG_D(PHY,"Format 0 DCI :ulsch (ue): first_tx       %d\n",ulsch->harq_processes[harq_pid]->first_tx);
+    LOG_D(PHY,"Format 0 DCI :ulsch (ue): DCINdi       %d\n",ulsch->harq_processes[harq_pid]->DCINdi);
+    LOG_D(PHY,"Format 0 DCI :ulsch (ue): round       %d\n",ulsch->harq_processes[harq_pid]->round);
+    //LOG_I(PHY,"Format 0 DCI :ulsch (ue): TBS         %d\n",ulsch->harq_processes[harq_pid]->TBS);
+    LOG_D(PHY,"Format 0 DCI :ulsch (ue): mcs         %d\n",ulsch->harq_processes[harq_pid]->mcs);
+    //LOG_I(PHY,"Format 0 DCI :ulsch (ue): O           %d\n",ulsch->O);
+    //LOG_I(PHY,"Format 0 DCI :ulsch (ue): cqiReq      %d\n",cqi_req);
     //if (frame_parms->frame_type == TDD)
-    //  printf("Format 0 DCI :ulsch (ue): O_ACK/DAI   %d/%d\n",ulsch->harq_processes[harq_pid]->O_ACK,dai);
+    //  LOG_I(PHY,"Format 0 DCI :ulsch (ue): O_ACK/DAI   %d/%d\n",ulsch->harq_processes[harq_pid]->O_ACK,dai);
     //else
-    //  printf("Format 0 DCI :ulsch (ue): O_ACK       %d\n",ulsch->harq_processes[harq_pid]->O_ACK);
+    //  LOG_I(PHY,"Format 0 DCI :ulsch (ue): O_ACK       %d\n",ulsch->harq_processes[harq_pid]->O_ACK);
 
-    printf("Format 0 DCI :ulsch (ue): Nsymb_pusch   %d\n",ulsch->Nsymb_pusch);
-    printf("Format 0 DCI :ulsch (ue): cshift        %d\n",ulsch->harq_processes[harq_pid]->n_DMRS2);
-    printf("Format 0 DCI :ulsch (ue): phich status  %d\n",ulsch->harq_processes[harq_pid]->status);
+    LOG_D(PHY,"Format 0 DCI :ulsch (ue): Nsymb_pusch   %d\n",ulsch->Nsymb_pusch);
+    LOG_D(PHY,"Format 0 DCI :ulsch (ue): cshift        %d\n",ulsch->harq_processes[harq_pid]->n_DMRS2);
+    LOG_D(PHY,"Format 0 DCI :ulsch (ue): phich status  %d\n",ulsch->harq_processes[harq_pid]->status);
 #else
     UNUSED_VARIABLE(dai);
 #endif

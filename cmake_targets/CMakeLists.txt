@@ -236,6 +236,9 @@ add_boolean_option(XFORMS              False "This adds the possibility to see t
 add_boolean_option(PRINT_STATS         False "This adds the possibility to see the status")
 add_boolean_option(T_TRACER            False "Activate the T tracer, a debugging/monitoring framework" )
 add_boolean_option(UE_AUTOTEST_TRACE   False "Activate UE autotest specific logs")
+add_boolean_option(UE_DEBUG_TRACE      False "Activate UE debug trace")
+add_boolean_option(UE_TIMING_TRACE     False "Activate UE timing trace")
+add_boolean_option(UE_NO_LOG           False "Deactivate all LOG_X")
 
 add_boolean_option(DEBUG_CONSOLE False "makes debugging easier, disables stdout/stderr buffering")
 
