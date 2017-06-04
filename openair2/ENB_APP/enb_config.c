@@ -1274,26 +1274,30 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			       RC.config_file_name, i, pusch_nDMRS1);
 
 		if (strcmp(phich_duration,"NORMAL")==0) {
-		  RRC_CONFIGURATION_REQ (msg_p).phich_duration[j] = normal;
+		  RRC_CONFIGURATION_REQ (msg_p).phich_duration[j] = PHICH_Config__phich_Duration_normal;
 		} else if (strcmp(phich_duration,"EXTENDED")==0) {
-		  RRC_CONFIGURATION_REQ (msg_p).phich_duration[j] = extended;
+		  RRC_CONFIGURATION_REQ (msg_p).phich_duration[j] = PHICH_Config__phich_Duration_extended;
 		} else
 		  AssertFatal (0,
 			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for phich_duration choice: NORMAL,EXTENDED!\n",
 			       RC.config_file_name, i, phich_duration);
 
 		if (strcmp(phich_resource,"ONESIXTH")==0) {
-		  RRC_CONFIGURATION_REQ (msg_p).phich_resource[j] = oneSixth;
+		  RRC_CONFIGURATION_REQ (msg_p).phich_resource[j] = PHICH_Config__phich_Resource_oneSixth ;
 		} else if (strcmp(phich_resource,"HALF")==0) {
-		  RRC_CONFIGURATION_REQ (msg_p).phich_resource[j] = half;
+		  RRC_CONFIGURATION_REQ (msg_p).phich_resource[j] = PHICH_Config__phich_Resource_half;
 		} else if (strcmp(phich_resource,"ONE")==0) {
-		  RRC_CONFIGURATION_REQ (msg_p).phich_resource[j] = one;
+		  RRC_CONFIGURATION_REQ (msg_p).phich_resource[j] = PHICH_Config__phich_Resource_one;
 		} else if (strcmp(phich_resource,"TWO")==0) {
-		  RRC_CONFIGURATION_REQ (msg_p).phich_resource[j] = two;
+		  RRC_CONFIGURATION_REQ (msg_p).phich_resource[j] = PHICH_Config__phich_Resource_two;
 		} else
 		  AssertFatal (0,
 			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for phich_resource choice: ONESIXTH,HALF,ONE,TWO!\n",
 			       RC.config_file_name, i, phich_resource);
+
+		printf("phich.resource %d (%s), phich.duration %d (%s)\n",
+		       RRC_CONFIGURATION_REQ (msg_p).phich_resource[j],phich_resource,
+		       RRC_CONFIGURATION_REQ (msg_p).phich_duration[j],phich_duration);
 
 		if (strcmp(srs_enable, "ENABLE") == 0) {
 		  RRC_CONFIGURATION_REQ (msg_p).srs_enable[j] = TRUE;

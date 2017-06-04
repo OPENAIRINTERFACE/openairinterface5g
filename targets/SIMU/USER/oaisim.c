@@ -705,7 +705,6 @@ l2l1_task (void *args_p)
 
     for (sf = 0; sf < 10; sf++) {
       LOG_D(EMU,"************************* Subframe %d\n",sf);
-
       start_meas (&oaisim_stats_f);
 
       wait_for_slot_isr ();
@@ -732,18 +731,20 @@ l2l1_task (void *args_p)
 
         CC_id=0;
         int all_done=0;
+
         while (all_done==0) {
           pthread_mutex_lock(&subframe_mutex);
           int subframe_ru_mask_local = subframe_ru_mask;
           int subframe_UE_mask_local  = subframe_UE_mask;
           pthread_mutex_unlock(&subframe_mutex);
-          LOG_D(EMU,"Frame %d, Subframe %d: Checking masks %x,%x\n",frame,sf,subframe_ru_mask,subframe_UE_mask);
+          LOG_D(EMU,"Frame %d, Subframe %d: Checking masks %x,%x\n",frame,sf,subframe_ru_mask_local,subframe_UE_mask_local);
           if ((subframe_ru_mask_local == ((1<<NB_RU)-1)) &&
               (subframe_UE_mask_local == ((1<<NB_UE_INST)-1)))
              all_done=1;
           else
 	    usleep(1500);
         }
+
 
         //clear subframe masks for next round
         pthread_mutex_lock(&subframe_mutex);
@@ -761,9 +762,11 @@ l2l1_task (void *args_p)
 	*/
 	for (ru_id=0;ru_id<NB_RU;ru_id++) {
 	  current_ru_rx_timestamp[ru_id][CC_id] += RC.ru[ru_id]->frame_parms.samples_per_tti;
+	  LOG_D(EMU,"RU %d/%d: TS %llu\n",ru_id,CC_id,current_ru_rx_timestamp[ru_id][CC_id]);
         }
         for (UE_inst = 0; UE_inst<NB_UE_INST;UE_inst++) {
 	  current_UE_rx_timestamp[UE_inst][CC_id] += PHY_vars_UE_g[UE_inst][CC_id]->frame_parms.samples_per_tti;
+	  LOG_D(EMU,"UE %d/%d: TS %llu\n",UE_id,CC_id,current_UE_rx_timestamp[UE_inst][CC_id]);
         }
 
 
@@ -817,14 +820,14 @@ l2l1_task (void *args_p)
               if(eNB_avg_thr)
                 fprintf(eNB_avg_thr,"%d %d\n",RC.eNB[eNB_inst][0]->proc.proc_rxtx[sf&1].frame_tx,
                         (RC.eNB[eNB_inst][0]->total_system_throughput)/((RC.eNB[eNB_inst][0]->proc.proc_rxtx[sf&1].frame_tx+1)*10));
-
+	    /*
             if (eNB_stats[eNB_inst]) {
               len = dump_eNB_stats(RC.eNB[eNB_inst][0], stats_buffer, 0);
               rewind (eNB_stats[eNB_inst]);
               fwrite (stats_buffer, 1, len, eNB_stats[eNB_inst]);
               fflush(eNB_stats[eNB_inst]);
             }
-
+	    */
 #ifdef OPENAIR2
 
             if (eNB_l2_stats) {
@@ -1214,6 +1217,7 @@ void wait_RUs() {
   // copy frame parameters from RU to UEs
   for (i=0;i<NB_UE_INST;i++) {
     PHY_vars_UE_g[i][0]->frame_parms.N_RB_DL              = RC.ru[0]->frame_parms.N_RB_DL;
+    PHY_vars_UE_g[i][0]->frame_parms.N_RB_UL              = RC.ru[0]->frame_parms.N_RB_UL;
     PHY_vars_UE_g[i][0]->frame_parms.nb_antennas_tx       = 1;
     PHY_vars_UE_g[i][0]->frame_parms.nb_antennas_rx       = 1;
     // set initially to 2, it will be revised after initial synchronization
@@ -1229,7 +1233,7 @@ void wait_RUs() {
 	  PHY_vars_UE_g[i][0]->frame_parms.ul_CarrierFreq,
 	  PHY_vars_UE_g[i][0]->frame_parms.eutra_band);
 
-    current_UE_rx_timestamp[i][0] = RC.ru[0]->frame_parms.samples_per_tti;
+    current_UE_rx_timestamp[i][0] = RC.ru[0]->frame_parms.samples_per_tti + RC.ru[0]->frame_parms.ofdm_symbol_size + RC.ru[0]->frame_parms.nb_prefix_samples0;
 
   }
   

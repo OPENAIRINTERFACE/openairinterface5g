@@ -2562,7 +2562,7 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uin
       proc->frame_tx = proc->frame_rx;
       ue->proc.proc_rxtx[1].frame_rx = proc->frame_rx;
       ue->proc.proc_rxtx[1].frame_tx = proc->frame_tx;
-      LOG_I(PHY,"[UE %d] frame %d, subframe %d: Adjusting frame counter (PBCH ant_tx=%d, frame_tx=%d, phase %d, rx_offset %d) => new frame %d\n",
+      LOG_I(PHY,"[UE %d] TXPATH frame %d, subframe %d: Adjusting frame counter (PBCH ant_tx=%d, frame_tx=%d, phase %d, rx_offset %d) => new frame %d\n",
 	    ue->Mod_id,
 	    frame_rx,
 	    subframe_rx,
@@ -2575,7 +2575,7 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uin
       
     } else if (((frame_tx & 0x03FF) != (proc->frame_rx & 0x03FF))) {
       //(pbch_tx_ant != ue->frame_parms.nb_antennas_tx)) {
-      LOG_D(PHY,"[UE %d] frame %d, subframe %d: Re-adjusting frame counter (PBCH ant_tx=%d, frame_rx=%d, frame%%1024=%d, phase %d).\n",
+      LOG_I(PHY,"[UE %d] frame %d, subframe %d: Re-adjusting frame counter (PBCH ant_tx=%d, frame_rx=%d, frame%%1024=%d, phase %d).\n",
 	    ue->Mod_id,
 	    proc->frame_rx,
 	    subframe_rx,
@@ -2834,9 +2834,7 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
     else if ((dci_alloc_rx[i].rnti == SI_RNTI) &&
 	     ((dci_alloc_rx[i].format == format1A) || (dci_alloc_rx[i].format == format1C))) {
 
-#ifdef DEBUG_PHY_PROC
-      LOG_D(PHY,"[UE  %d] subframe %d: Found rnti %x, format 1%s, dci_cnt %d\n",ue->Mod_id,subframe_rx,dci_alloc_rx[i].rnti,dci_alloc_rx[i].format==format1A?"A":"C",i);
-#endif
+
 
 
       if (generate_ue_dlsch_params_from_dci(frame_rx,
@@ -2852,7 +2850,9 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 					    P_RNTI,
 					    ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id],
               0)==0) {
-
+#ifdef DEBUG_PHY_PROC
+	LOG_I(PHY,"[UE  %d] frame %d subframe %d: Found rnti %x, format 1%s, dci_cnt %d, mcs %d\n",ue->Mod_id,frame_rx,subframe_rx,dci_alloc_rx[i].rnti,dci_alloc_rx[i].format==format1A?"A":"C",i,ue->dlsch_SI[eNB_id]->harq_processes[0]->mcs);
+#endif
 	ue->dlsch_SI_received[eNB_id]++;
  
 
@@ -3570,6 +3570,16 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   LOG_D(PHY,"[%s %d] Frame %d subframe %d: Doing phy_procedures_UE_RX\n",
 	(r_type == multicast_relay) ? "RN/UE" : "UE",
 	ue->Mod_id,frame_rx, subframe_rx);
+  LOG_D(PHY,"phy_procedures_UR_RX: Frame %d, subframe %d : energy %d\n",
+	frame_rx,subframe_rx,
+	  dB_fixed(signal_energy(&ue->common_vars.rxdata[0][subframe_rx*ue->frame_parms.samples_per_tti],
+				 ue->frame_parms.samples_per_tti)));
+
+  /*													   
+  if ((subframe_rx == 5) && ((frame_rx &1) == 0)) {
+    write_output("rxsig5.m","rxs5",&ue->common_vars.rxdata[0][subframe_rx*ue->frame_parms.samples_per_tti],ue->frame_parms.samples_per_tti,1,1);
+    exit(-1);
+    }*/
 #endif
 
   if (ue->frame_parms.Ncp == 0) {  // normal prefix

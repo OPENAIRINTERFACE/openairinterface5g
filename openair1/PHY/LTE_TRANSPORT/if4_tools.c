@@ -39,7 +39,7 @@
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
-void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type, int k) {
+void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 
   LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
   int32_t **txdataF      = ru->common.txdataF_BF;
@@ -132,7 +132,8 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type, int k) 
 
     if (packet_type == IF4p5_PULFFT) {
       for (symbol_id=fp->symbols_per_tti-nsym; symbol_id<fp->symbols_per_tti; symbol_id++) {			
-	LOG_D(PHY,"IF4p5_PULFFT: frame %d, subframe %d, symbol %d\n",frame,subframe,symbol_id);
+	LOG_D(PHY,"IF4p5_PULFFT: frame %d, subframe %d, symbol %d: %d dB\n",frame,subframe,symbol_id,
+	      dB_fixed(signal_energy((int32_t*)&rxdataF[0][blockoffsetF],db_halflength)));
 	for (element_id=0; element_id<db_halflength; element_id++) {
 	  i = (uint16_t*) &rxdataF[0][blockoffsetF+element_id];
 	  data_block[element_id] = ((uint16_t) lin2alaw[*i]) | ((uint16_t)(lin2alaw[*(i+1)]<<8));
@@ -172,7 +173,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type, int k) 
   } else if (packet_type == IF4p5_PRACH) {
     // FIX: hard coded prach samples length
     LOG_D(PHY,"IF4p5_PRACH: frame %d, subframe %d\n",frame,subframe);
-    db_fulllength = PRACH_HARD_CODED_NUM_SAMPLES;
+    db_fulllength = PRACH_NUM_SAMPLES;
     
     if (eth->flags == ETH_RAW_IF4p5_MODE) {
       packet_header = (IF4p5_header_t *)(tx_buffer_prach + MAC_HEADER_SIZE_BYTES);
@@ -185,11 +186,11 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type, int k) 
 
     if (eth->flags == ETH_RAW_IF4p5_MODE) {
       memcpy((int16_t*)(tx_buffer_prach + MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t),
-             (&prach_rxsigF[0][k]), 
+             (&prach_rxsigF[0][0]), 
              PRACH_BLOCK_SIZE_BYTES);
     } else {
       memcpy((int16_t*)(tx_buffer_prach + sizeof_IF4p5_header_t),
-             (&prach_rxsigF[0][k]),
+             (&prach_rxsigF[0][0]),
              PRACH_BLOCK_SIZE_BYTES);
     }
 
@@ -209,6 +210,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type, int k) 
   return;  		    
 }
 
+extern void wakeup_prach(PHY_VARS_eNB *eNB,RU_t *ru);
 
 void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint32_t *symbol_number) {
   LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
@@ -221,6 +223,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
   uint16_t db_fulllength, db_halflength; 
   int slotoffsetF=0, blockoffsetF=0; 
   eth_state_t *eth = (eth_state_t*) (ru->ifdevice.priv);
+  int idx;
 
   if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
   
@@ -297,10 +300,9 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
     }
 		
   } else if (*packet_type == IF4p5_PRACH) {  
-    LOG_D(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d\n",ru->idx,*frame,*subframe);  
 
     // FIX: hard coded prach samples length
-    db_fulllength = PRACH_HARD_CODED_NUM_SAMPLES;
+    db_fulllength = PRACH_NUM_SAMPLES;
 
     if (eth->flags == ETH_RAW_IF4p5_MODE) {		
       memcpy((&prach_rxsigF[0][0]), 
@@ -311,6 +313,11 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
              (int16_t*) (rx_buffer+sizeof_IF4p5_header_t),
              PRACH_BLOCK_SIZE_BYTES);
     }
+
+    LOG_I(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d => %d dB\n",ru->idx,*frame,*subframe,
+	  dB_fixed(signal_energy(&prach_rxsigF[0][0],839)));
+    for (idx=0;idx<ru->num_eNB;idx++) ru->wakeup_prach_eNB(ru->eNB_list[idx],ru);
+
   } else if (*packet_type == IF4p5_PULTICK) {
 
   } else {

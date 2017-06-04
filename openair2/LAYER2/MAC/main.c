@@ -536,6 +536,10 @@ int l2_init_ue(int eMBMS_active, char *uecap_xer,uint8_t cba_group_active, uint8
   mac_xface->ue_process_rar            = ue_process_rar;
   mac_xface->ue_scheduler              = ue_scheduler;
   mac_xface->process_timing_advance    = process_timing_advance;
+  mac_xface->Msg3_transmitted          = Msg3_tx;
+  mac_xface->Msg1_transmitted          = Msg1_tx;
+  mac_xface->ra_failed                 = ra_failed;
+  mac_xface->ra_succeeded              = ra_succeeded;
 
 
   LOG_I(MAC,"[MAIN] PHY Frame configuration \n");
@@ -641,10 +645,6 @@ int l2_init_eNB()
   mac_xface->get_prb                   = get_prb;
   //  mac_xface->get_SB_size               = Get_SB_size;
   mac_xface->get_subframe_direction    = get_subframe_direction;
-  mac_xface->Msg3_transmitted          = Msg3_tx;
-  mac_xface->Msg1_transmitted          = Msg1_tx;
-  mac_xface->ra_failed                 = ra_failed;
-  mac_xface->ra_succeeded              = ra_succeeded;
   mac_xface->mac_phy_remove_ue         = mac_phy_remove_ue;
 
   LOG_I(MAC,"[MAIN] PHY Frame configuration \n");

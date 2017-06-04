@@ -150,6 +150,7 @@ void feptx_ofdm(RU_t *ru) {
 	}
       }
       else {
+	LOG_D(PHY,"feptx_ofdm: Writing to position %d\n",slot_offset);
 	tx_offset = (int)slot_offset;
 	txdata = (int16_t*)&ru->common.txdata[aa][tx_offset];
 
@@ -184,8 +185,8 @@ void feptx_ofdm(RU_t *ru) {
          ru->common.txdata[aa][tx_offset] = 0x00000000;
        }
      }
-     LOG_D(PHY,"feptx_ofdm: frame %d, subframe %d: txp (time) %d dB, txp (freq) %d dB\n",
-	   ru->proc.frame_tx,subframe,dB_fixed(signal_energy(txdata,fp->samples_per_tti)),
+     LOG_D(PHY,"feptx_ofdm (TXPATH): frame %d, subframe %d: txp (time %p) %d dB, txp (freq) %d dB\n",
+	   ru->proc.frame_tx,subframe,txdata,dB_fixed(signal_energy(txdata,fp->samples_per_tti)),
 	   dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
     }
   }
@@ -248,10 +249,9 @@ void fep0(RU_t *ru,int slot) {
 
   remove_7_5_kHz(ru,(slot&1)+(proc->subframe_rx<<1));
   for (l=0; l<fp->symbols_per_tti/2; l++) {
-    slot_fep_ul(fp,
-		&ru->common,
+    slot_fep_ul(ru,
 		l,
-		(slot&1)+(proc->subframe_rx<<1),
+		(slot&1),
 		0
 		);
   }
@@ -353,16 +353,14 @@ void fep_full(RU_t *ru) {
   remove_7_5_kHz(ru,proc->subframe_rx<<1);
   remove_7_5_kHz(ru,1+(proc->subframe_rx<<1));
   for (l=0; l<fp->symbols_per_tti/2; l++) {
-    slot_fep_ul(fp,
-		&ru->common,
+    slot_fep_ul(ru,
 		l,
-		proc->subframe_rx<<1,
+		0,
 		0
 		);
-    slot_fep_ul(fp,
-		&ru->common,
+    slot_fep_ul(ru,
 		l,
-		1+(proc->subframe_rx<<1),
+		1,
 		0
 		);
   }

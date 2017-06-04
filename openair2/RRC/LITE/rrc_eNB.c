@@ -140,6 +140,10 @@ init_SI(
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Ncp             = configuration->prefix_type[CC_id];
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq  = configuration->downlink_frequency[CC_id];
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].ul_CarrierFreq  = configuration->downlink_frequency[CC_id]+ configuration->uplink_frequency_offset[CC_id];
+  LOG_I(RRC, "Configuring MIB (N_RB_DL %d,phich_Resource %d,phich_Duration %d)\n", 
+	configuration->N_RB_DL[CC_id],
+	configuration->phich_resource[CC_id],
+	configuration->phich_duration[CC_id]);
   do_MIB(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],
 #ifdef ENABLE_ITTI
 	 configuration->N_RB_DL[CC_id],

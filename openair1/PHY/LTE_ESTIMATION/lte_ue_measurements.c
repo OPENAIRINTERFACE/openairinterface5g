@@ -344,10 +344,10 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 
       for (l=0,nu=0; l<=(4-ue->frame_parms.Ncp); l+=(4-ue->frame_parms.Ncp),nu=3) {
         k = (nu + nushift)%6;
-#ifdef DEBUG_MEAS_RRC
-        LOG_I(PHY,"[UE %d] Frame %d subframe %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, nushift %d, eNB_offset %d, k %d, l %d)\n",ue->Mod_id,ue->proc.proc_rxtx[subframe&1].frame_rx,subframe,Nid_cell,nushift,
+	//#ifdef DEBUG_MEAS_RRC
+        LOG_D(PHY,"[UE %d] Frame %d subframe %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, nushift %d, eNB_offset %d, k %d, l %d)\n",ue->Mod_id,ue->proc.proc_rxtx[subframe&1].frame_rx,subframe,Nid_cell,nushift,
               eNB_offset,k,l);
-#endif
+	//#endif
 
         for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
           rxF = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[aarx][(l*ue->frame_parms.ofdm_symbol_size)];
@@ -422,18 +422,18 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 
     }
 
-#ifdef DEBUG_MEAS_RRC
+    //#ifdef DEBUG_MEAS_RRC
 
     //    if (slot == 0) {
 
       if (eNB_offset == 0)
-        LOG_I(PHY,"[UE %d] Frame %d, subframe %d RRC Measurements => rssi %3.1f dBm (digital: %3.1f dB, gain %d), N0 %d dBm\n",ue->Mod_id,
+        LOG_D(PHY,"[UE %d] Frame %d, subframe %d RRC Measurements => rssi %3.1f dBm (digital: %3.1f dB, gain %d), N0 %d dBm\n",ue->Mod_id,
               ue->proc.proc_rxtx[subframe&1].frame_rx,subframe,10*log10(ue->measurements.rssi)-ue->rx_total_gain_dB,
               10*log10(ue->measurements.rssi),
               ue->rx_total_gain_dB,
               ue->measurements.n0_power_tot_dBm);
 
-      LOG_I(PHY,"[UE %d] Frame %d, subframe %d RRC Measurements (idx %d, Cell id %d) => rsrp: %3.1f dBm/RE (%d), rsrq: %3.1f dB\n",
+      LOG_D(PHY,"[UE %d] Frame %d, subframe %d RRC Measurements (idx %d, Cell id %d) => rsrp: %3.1f dBm/RE (%d), rsrq: %3.1f dB\n",
             ue->Mod_id,
             ue->proc.proc_rxtx[subframe&1].frame_rx,subframe,eNB_offset,
             (eNB_offset>0) ? ue->measurements.adj_cell_id[eNB_offset-1] : ue->frame_parms.Nid_cell,
@@ -448,7 +448,7 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 
       //    }
 
-#endif
+      //#endif
   }
 
 }

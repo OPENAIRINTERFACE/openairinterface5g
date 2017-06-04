@@ -495,6 +495,8 @@ void common_signal_procedures (PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
   int subframe = proc->subframe_tx;
   int frame = proc->frame_tx;
 
+  LOG_D(PHY,"common_signal_procedures: frame %d, subframe %d\n",frame,subframe); 
+
   // generate Cell-Specific Reference Signals for both slots
   if (eNB->abstraction_flag==0) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_RS_TX,1);
@@ -695,12 +697,12 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 				       P_RNTI,
 				       eNB->UE_stats[0].DL_pmi_single,
 				       0);
-    
+    LOG_I(PHY,"frame %d, subframe %d : SI with mcs %d\n",frame,subframe,eNB->dlsch_SI->harq_processes[0]->mcs);
     
     eNB->dlsch_SI->nCCE[subframe] = dci_alloc->firstCCE;
-    
-    LOG_T(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resource for common DCI (SI)  => %"PRIu8"\n",eNB->Mod_id,frame,subframe,
-	  eNB->dlsch_SI->nCCE[subframe]);
+   
+    LOG_I(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resource for common DCI (SI)  => %"PRIu8", aggregation %d\n",eNB->Mod_id,frame,subframe,
+	  eNB->dlsch_SI->nCCE[subframe],1<<dci_alloc->L);
     
 #if defined(SMBV) 
     
@@ -824,7 +826,7 @@ void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
   int frame = proc->frame_tx;
   int subframe = proc->subframe_tx;
 
-  LOG_D(PHY,
+  LOG_I(PHY,
 	"[eNB %"PRIu8"][PUSCH %"PRIu8"] Frame %d subframe %d UL Frame %"PRIu32", UL Subframe %"PRIu8", Generated ULSCH (format0) DCI (rnti %"PRIx16", dci %"PRIx8"), aggregation %d\n",
 	eNB->Mod_id,
 	subframe2harq_pid(fp,
@@ -849,7 +851,6 @@ void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 				     P_RNTI,
 				     CBA_RNTI,
 				     0);  // do_srs
-  
   LOG_T(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resources for UE spec DCI (PUSCH %"PRIx16") => %d\n",
 	eNB->Mod_id,frame,subframe,dci_alloc->rnti,
 	dci_alloc->firstCCE);
@@ -1391,7 +1392,10 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
                                          fp,
                                          eNB->common_vars.txdataF,
                                          subframe);
-
+    if (DCI_pdu->Num_ue_spec_dci+DCI_pdu->Num_common_dci > 0) {
+      LOG_D(PHY,"[eNB %"PRIu8"] Frame %d, subframe %d: num_pdcch_symbols %d\n",eNB->Mod_id,frame, subframe,
+            num_pdcch_symbols);
+    }
   }
 
 #ifdef PHY_ABSTRACTION // FIXME this ifdef seems suspicious
@@ -1965,7 +1969,7 @@ void prach_procedures(PHY_VARS_eNB *eNB) {
   }
   if (eNB->abstraction_flag == 0) {
     rx_prach(eNB,
-	     NULL,
+	     eNB->RU_list[0],
              preamble_energy_list,
              preamble_delay_list,
              frame,
@@ -1999,12 +2003,13 @@ void prach_procedures(PHY_VARS_eNB *eNB) {
     }
   }
 
-#ifdef DEBUG_PHY_PROC
-  LOG_D(PHY,"[RAPROC] Most likely preamble %d, energy %d dB delay %d\n",
-        preamble_max,
+  //#ifdef DEBUG_PHY_PROC
+  LOG_D(PHY,"[RAPROC] Frame %d, subframe %d : Most likely preamble %d, energy %d dB delay %d\n",
+        frame,subframe,
+	preamble_max,
         preamble_energy_list[preamble_max],
         preamble_delay_list[preamble_max]);
-#endif
+  //#endif
 
   if (preamble_energy_list[preamble_max] > 580) {
 
@@ -2867,14 +2872,14 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 
         if (eNB->ulsch[i]->Msg3_flag == 1) {
 
-          LOG_D(PHY,"[eNB %d/%d][RAPROC] frame %d, subframe %d, UE %d: Error receiving ULSCH (Msg3), round %d/%d\n",
+          LOG_I(PHY,"[eNB %d/%d][RAPROC] frame %d, subframe %d, UE %d: Error receiving ULSCH (Msg3), round %d/%d\n",
                 eNB->Mod_id,
                 eNB->CC_id,
                 frame,subframe, i,
                 eNB->ulsch[i]->harq_processes[harq_pid]->round-1,
                 fp->maxHARQ_Msg3Tx-1);
-	  /*dump_ulsch(eNB,proc,i);
-	    exit(-1);*/
+	  dump_ulsch(eNB,proc,i);
+	  exit(-1);
 
 	  LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d RNTI %x RX power (%d,%d) RSSI (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d\n",
 		eNB->Mod_id,harq_pid,

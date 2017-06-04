@@ -71,8 +71,7 @@ int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
                    int sample_offset,
                    int no_prefix);
 
-int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
-                RU_COMMON *common,
+int slot_fep_ul(RU_t *ru,
                 unsigned char l,
                 unsigned char Ns,
                 int no_prefix);

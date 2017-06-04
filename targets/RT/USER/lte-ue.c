@@ -189,7 +189,9 @@ PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
   }					
   else ue = PHY_vars_UE_g[UE_id][0];
 
-  ue->Mod_id=UE_id;
+
+  ue->Mod_id      = UE_id;
+  ue->mac_enabled = 1;
   // initialize all signal buffers
   init_lte_ue_signal(ue,1,abstraction_flag);
   // intialize transport
@@ -298,37 +300,37 @@ static void *UE_thread_synch(void *arg)
   /* CPU 0 is reserved for UHD threads */
   CPU_ZERO(&cpuset);
 
-  #ifdef CPU_AFFINITY
+#ifdef CPU_AFFINITY
   if (get_nprocs() >2)
-  {
-    for (j = 1; j < get_nprocs(); j++)
-      CPU_SET(j, &cpuset);
-
-    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-    if (s != 0)
     {
-      perror( "pthread_setaffinity_np");
-      exit_fun("Error setting processor affinity");
+      for (j = 1; j < get_nprocs(); j++)
+	CPU_SET(j, &cpuset);
+
+      s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+      if (s != 0)
+	{
+	  perror( "pthread_setaffinity_np");
+	  exit_fun("Error setting processor affinity");
+	}
     }
-  }
-  #endif
+#endif
 
   /* Check the actual affinity mask assigned to the thread */
 
   s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
   if (s != 0)
-  {
-    perror( "pthread_getaffinity_np");
-    exit_fun("Error getting processor affinity ");
-  }
+    {
+      perror( "pthread_getaffinity_np");
+      exit_fun("Error getting processor affinity ");
+    }
   memset(cpu_affinity, 0 , sizeof(cpu_affinity));
   for (j = 0; j < CPU_SETSIZE; j++)
-  if (CPU_ISSET(j, &cpuset))
-  {  
-     char temp[1024];
-     sprintf(temp, " CPU_%d ", j);    
-     strcat(cpu_affinity, temp);
-  }
+    if (CPU_ISSET(j, &cpuset))
+      {  
+	char temp[1024];
+	sprintf(temp, " CPU_%d ", j);    
+	strcat(cpu_affinity, temp);
+      }
 
   memset(&sparam, 0 , sizeof (sparam));
   sparam.sched_priority = sched_get_priority_max(SCHED_FIFO)-1;
@@ -336,24 +338,24 @@ static void *UE_thread_synch(void *arg)
   
   s = pthread_setschedparam(pthread_self(), policy, &sparam);
   if (s != 0)
-     {
-     perror("pthread_setschedparam : ");
-     exit_fun("Error setting thread priority");
-     }
+    {
+      perror("pthread_setschedparam : ");
+      exit_fun("Error setting thread priority");
+    }
   s = pthread_getschedparam(pthread_self(), &policy, &sparam);
   if (s != 0)
-   {
-     perror("pthread_getschedparam : ");
-     exit_fun("Error getting thread priority");
+    {
+      perror("pthread_getschedparam : ");
+      exit_fun("Error getting thread priority");
 
-   }
+    }
 
   LOG_I( HW, "[SCHED][UE] Started UE synch thread on CPU %d TID %ld , sched_policy = %s, priority = %d, CPU Affinity = %s \n", (int)sched_getcpu(), gettid(),
-                   (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
-                   (policy == SCHED_RR)    ? "SCHED_RR" :
-                   (policy == SCHED_OTHER) ? "SCHED_OTHER" :
-                   "???",
-                   (int) sparam.sched_priority, cpu_affinity);
+	 (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
+	 (policy == SCHED_RR)    ? "SCHED_RR" :
+	 (policy == SCHED_OTHER) ? "SCHED_OTHER" :
+	 "???",
+	 (int) sparam.sched_priority, cpu_affinity);
 
 #endif
 
@@ -491,14 +493,16 @@ static void *UE_thread_synch(void *arg)
       LOG_I(PHY,"[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
       if (initial_sync( UE, UE->mode ) == 0) {
 
+
+
         hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_tti;
         LOG_I( HW, "Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %u, UL %u), UE_scan_carrier %d\n",
-          hw_slot_offset,
-          freq_offset,
-          UE->rx_total_gain_dB,
-          UE->frame_parms.dl_CarrierFreq+freq_offset,
-          UE->frame_parms.ul_CarrierFreq+freq_offset,
-          UE->UE_scan_carrier );
+	       hw_slot_offset,
+	       freq_offset,
+	       UE->rx_total_gain_dB,
+	       UE->frame_parms.dl_CarrierFreq+freq_offset,
+	       UE->frame_parms.ul_CarrierFreq+freq_offset,
+	       UE->UE_scan_carrier );
 
 	if (UE->UE_scan_carrier == 1) {
 
@@ -506,14 +510,14 @@ static void *UE_thread_synch(void *arg)
 	  // rerun with new cell parameters and frequency-offset
 	  for (i=0;i<openair0_cfg[UE->rf_map.card].rx_num_channels;i++) {
 	    openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
-		if (freq_offset >= 0)
-	    {
+	    if (freq_offset >= 0)
+	      {
 	        openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] += UE->common_vars.freq_offset;
-	    }
+	      }
 	    else
-	    {
+	      {
 	        openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] -= UE->common_vars.freq_offset;
-	    }
+	      }
 	    openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] =  openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i]+uplink_frequency_offset[CC_id][i];
 	    UE->frame_parms.dl_CarrierFreq = openair0_cfg[CC_id].rx_freq[i];
 	    freq_offset=0;	    
@@ -712,37 +716,37 @@ static void *UE_thread_rxn_txnp4(void *arg)
   /* CPU 0 is reserved for UHD threads */
   CPU_ZERO(&cpuset);
 
-  #ifdef CPU_AFFINITY
+#ifdef CPU_AFFINITY
   if (get_nprocs() >2)
-  {
-    for (j = 1; j < get_nprocs(); j++)
-      CPU_SET(j, &cpuset);
-
-    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-    if (s != 0)
     {
-      perror( "pthread_setaffinity_np");
-      exit_fun("Error setting processor affinity");
+      for (j = 1; j < get_nprocs(); j++)
+	CPU_SET(j, &cpuset);
+
+      s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+      if (s != 0)
+	{
+	  perror( "pthread_setaffinity_np");
+	  exit_fun("Error setting processor affinity");
+	}
     }
-  }
-  #endif
+#endif
 
   /* Check the actual affinity mask assigned to the thread */
 
   s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
   if (s != 0)
-  {
-    perror( "pthread_getaffinity_np");
-    exit_fun("Error getting processor affinity ");
-  }
+    {
+      perror( "pthread_getaffinity_np");
+      exit_fun("Error getting processor affinity ");
+    }
   memset(cpu_affinity, 0 , sizeof(cpu_affinity));
   for (j = 0; j < CPU_SETSIZE; j++)
-  if (CPU_ISSET(j, &cpuset))
-  {  
-     char temp[1024];
-     sprintf(temp, " CPU_%d ", j);    
-     strcat(cpu_affinity, temp);
-  }
+    if (CPU_ISSET(j, &cpuset))
+      {  
+	char temp[1024];
+	sprintf(temp, " CPU_%d ", j);    
+	strcat(cpu_affinity, temp);
+      }
 
   memset(&sparam, 0 , sizeof (sparam));
   sparam.sched_priority = sched_get_priority_max(SCHED_FIFO)-1;
@@ -750,24 +754,24 @@ static void *UE_thread_rxn_txnp4(void *arg)
   
   s = pthread_setschedparam(pthread_self(), policy, &sparam);
   if (s != 0)
-     {
-     perror("pthread_setschedparam : ");
-     exit_fun("Error setting thread priority");
-     }
+    {
+      perror("pthread_setschedparam : ");
+      exit_fun("Error setting thread priority");
+    }
   s = pthread_getschedparam(pthread_self(), &policy, &sparam);
   if (s != 0)
-   {
-     perror("pthread_getschedparam : ");
-     exit_fun("Error getting thread priority");
+    {
+      perror("pthread_getschedparam : ");
+      exit_fun("Error getting thread priority");
 
-   }
+    }
 
   LOG_I( HW, "[SCHED][UE] Started UE RX thread on CPU %d TID %ld , sched_policy = %s, priority = %d, CPU Affinity = %s \n", (int)sched_getcpu(), gettid(),
-                   (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
-                   (policy == SCHED_RR)    ? "SCHED_RR" :
-                   (policy == SCHED_OTHER) ? "SCHED_OTHER" :
-                   "???",
-                   (int) sparam.sched_priority, cpu_affinity);
+	 (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
+	 (policy == SCHED_RR)    ? "SCHED_RR" :
+	 (policy == SCHED_OTHER) ? "SCHED_OTHER" :
+	 "???",
+	 (int) sparam.sched_priority, cpu_affinity);
 
 
 #endif
@@ -787,10 +791,10 @@ static void *UE_thread_rxn_txnp4(void *arg)
   char threadname[THREAD_NAME_LEN];
   ret = pthread_getname_np(proc->pthread_rxtx, threadname, THREAD_NAME_LEN);
   if (ret != 0)
-  {
-   perror("pthread_getname_np : ");
-   exit_fun("Error getting thread name");
-  }
+    {
+      perror("pthread_getname_np : ");
+      exit_fun("Error getting thread name");
+    }
 
   pthread_mutex_unlock(&sync_mutex);
   printf("unlocked sync_mutex, waiting (UE_thread_rxtx)\n");
@@ -831,20 +835,20 @@ static void *UE_thread_rxn_txnp4(void *arg)
         (sf_type == SF_S)) {
     
       if (UE->frame_parms.frame_type == TDD) {
-      LOG_D(PHY, "%s,TDD%d,%s: calling UE_RX\n",
-          threadname,
-          UE->frame_parms.tdd_config,
-          (sf_type==SF_DL? "SF_DL" :
-          (sf_type==SF_UL? "SF_UL" :
-          (sf_type==SF_S ? "SF_S"  : "UNKNOWN_SF_TYPE"))));
+	LOG_D(PHY, "%s,TDD%d,%s: calling UE_RX\n",
+	      threadname,
+	      UE->frame_parms.tdd_config,
+	      (sf_type==SF_DL? "SF_DL" :
+	       (sf_type==SF_UL? "SF_UL" :
+		(sf_type==SF_S ? "SF_S"  : "UNKNOWN_SF_TYPE"))));
       } else {
         LOG_D(PHY, "%s,%s,%s: calling UE_RX\n",
-            threadname,
-            (UE->frame_parms.frame_type==FDD? "FDD":
-            (UE->frame_parms.frame_type==TDD? "TDD":"UNKNOWN_DUPLEX_MODE")),
-            (sf_type==SF_DL? "SF_DL" :
-            (sf_type==SF_UL? "SF_UL" :
-            (sf_type==SF_S ? "SF_S"  : "UNKNOWN_SF_TYPE"))));
+	      threadname,
+	      (UE->frame_parms.frame_type==FDD? "FDD":
+	       (UE->frame_parms.frame_type==TDD? "TDD":"UNKNOWN_DUPLEX_MODE")),
+	      (sf_type==SF_DL? "SF_DL" :
+	       (sf_type==SF_UL? "SF_UL" :
+		(sf_type==SF_S ? "SF_S"  : "UNKNOWN_SF_TYPE"))));
       }
       phy_procedures_UE_RX( UE, proc, 0, 0, UE->mode, no_relay, NULL );
     }
@@ -852,13 +856,13 @@ static void *UE_thread_rxn_txnp4(void *arg)
     if (UE->mac_enabled==1) {
 
       ret = mac_xface->ue_scheduler(UE->Mod_id,
-          proc->frame_rx,
-          proc->subframe_rx,
-          proc->frame_tx,
-          proc->subframe_tx,
-          subframe_select(&UE->frame_parms,proc->subframe_tx),
-          0,
-          0/*FIXME CC_id*/);
+				    proc->frame_rx,
+				    proc->subframe_rx,
+				    proc->frame_tx,
+				    proc->subframe_tx,
+				    subframe_select(&UE->frame_parms,proc->subframe_tx),
+				    0,
+				    0/*FIXME CC_id*/);
       
       if (ret == CONNECTION_LOST) {
 	LOG_E( PHY, "[UE %"PRIu8"] Frame %"PRIu32", subframe %u RRC Connection lost, returning to PRACH\n",
@@ -884,10 +888,10 @@ static void *UE_thread_rxn_txnp4(void *arg)
     }
 
     if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_S) &&
-  (UE->frame_parms.frame_type == TDD)) {
+	(UE->frame_parms.frame_type == TDD)) {
 
       if (UE->mode != loop_through_memory) {
-  phy_procedures_UE_S_TX(UE,0,0,no_relay);
+	phy_procedures_UE_S_TX(UE,0,0,no_relay);
       }
     }
 
@@ -1033,7 +1037,8 @@ void *UE_thread(void *arg) {
 					   UE->frame_parms.samples_per_tti*10,
 					   UE->frame_parms.nb_antennas_rx);
 	  
-	  
+	  LOG_D(PHY,"UE TS %llu, synch, samples %d\n",timestamp,UE->frame_parms.samples_per_tti*10);
+
 	  if (rxs!=UE->frame_parms.samples_per_tti*10) {
 	    LOG_E(PHY, "problem in rx 1! expect #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti*10, rxs);
 	    exit_fun("problem in rx 1");
@@ -1067,6 +1072,7 @@ void *UE_thread(void *arg) {
 					     rxp,
 					     UE->frame_parms.samples_per_tti,
 					     UE->frame_parms.nb_antennas_rx);
+	    LOG_D(PHY,"UE TS %llu, subframe %d, samples %d\n",timestamp,sf,UE->frame_parms.samples_per_tti);
 
 	    if (rxs!=UE->frame_parms.samples_per_tti){
 	      LOG_E(PHY, "problem in rx 2! expect #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti, rxs);
@@ -1086,15 +1092,17 @@ void *UE_thread(void *arg) {
 
 	  if (UE->no_timing_correction==0) {
 	    LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
-	    rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
-					     &timestamp,
-					     (void**)UE->common_vars.rxdata,
-					     UE->rx_offset,
-					     UE->frame_parms.nb_antennas_rx);
-	    if (rxs != UE->rx_offset) {
-	      LOG_E(PHY, "problem in rx 3! expect #samples=%d but got only %d!\n", UE->rx_offset, rxs);
-	      exit_fun("problem in rx 3!");
-	      return &UE_thread_retval;
+	    if (UE->rx_offset>0) {
+	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
+					       &timestamp,
+					       (void**)UE->common_vars.rxdata,
+					       UE->rx_offset,
+					       UE->frame_parms.nb_antennas_rx);
+	      if (rxs != UE->rx_offset) {
+		LOG_E(PHY, "problem in rx 3! expect #samples=%d but got only %d!\n", UE->rx_offset, rxs);
+		exit_fun("problem in rx 3!");
+		return &UE_thread_retval;
+	      }
 	    }
 	  }
 	  LOG_D(PHY,"Set rx_offset to 0 \n");
@@ -1108,11 +1116,12 @@ void *UE_thread(void *arg) {
 					   (void**)UE->common_vars.rxdata,
 					   UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0,
 					   UE->frame_parms.nb_antennas_rx);
-    if (rxs != (UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0)) {
-      LOG_E(PHY, "problem in rx 4! expect #samples=%d but got only %d!\n", UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0, rxs);
-      exit_fun("problem in rx 4!");
-      return &UE_thread_retval;
-    }
+	  LOG_D(PHY,"UE TS %llu, subframe %d, samples %d\n",timestamp,0,UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0);
+	  if (rxs != (UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0)) {
+	    LOG_E(PHY, "problem in rx 4! expect #samples=%d but got only %d!\n", UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0, rxs);
+	    exit_fun("problem in rx 4!");
+	    return &UE_thread_retval;
+	  }
 	  slot_fep(UE,
 		   0,
 		   0,
@@ -1129,26 +1138,25 @@ void *UE_thread(void *arg) {
 
       }// start_rx_stream==0
       else {
-	//UE->proc.proc_rxtx[0].frame_rx++;
-	//UE->proc.proc_rxtx[1].frame_rx++;
-	
 	for (int sf=0;sf<10;sf++) {
+
 	  for (i=0; i<UE->frame_parms.nb_antennas_rx; i++) 
 	    rxp[i] = (void*)&UE->common_vars.rxdata[i][UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0+(sf*UE->frame_parms.samples_per_tti)];
 	  // grab signal for subframe
 	  if (UE->mode != loop_through_memory) {
 	    if (sf<9) {
-	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_UE, 1 );
 	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
 					       &timestamp,
 					       rxp,
 					       UE->frame_parms.samples_per_tti,
 					       UE->frame_parms.nb_antennas_rx);
-	      LOG_D(PHY,"grab signal for subframe %d offset %d Nbsamples %d \n", sf, UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0+(sf*UE->frame_parms.samples_per_tti),
-	    		  UE->frame_parms.samples_per_tti);
-	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
+
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_UE, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS_MISSING, UE->frame_parms.samples_per_tti - rxs);
+	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS_UE, timestamp&0xffffffff );
+
 	      if (rxs != UE->frame_parms.samples_per_tti) {
 	        LOG_E(PHY, "problem in rx 5! expect #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti, rxs);
 	        exit_fun("problem in rx 5!");
@@ -1159,7 +1167,7 @@ void *UE_thread(void *arg) {
 	      for (i=0; i<UE->frame_parms.nb_antennas_tx; i++)
 		txp[i] = (void*)&UE->common_vars.txdata[i][((sf+2)%10)*UE->frame_parms.samples_per_tti];
 	      
-	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_UE, 1 );
 	      txs = UE->rfdevice.trx_write_func(&UE->rfdevice,
 						timestamp+
 						(2*UE->frame_parms.samples_per_tti) -
@@ -1169,13 +1177,13 @@ void *UE_thread(void *arg) {
 						UE->frame_parms.samples_per_tti,
 						UE->frame_parms.nb_antennas_tx,
 						1);
-	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_UE, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS, txs );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS_MISSING, UE->frame_parms.samples_per_tti - txs);
-        if (txs !=  UE->frame_parms.samples_per_tti) {
-           LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, UE->frame_parms.samples_per_tti);
-           exit_fun( "problem transmitting samples" );
-        }
+	      if (txs !=  UE->frame_parms.samples_per_tti) {
+		LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, UE->frame_parms.samples_per_tti);
+		exit_fun( "problem transmitting samples" );
+	      }
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS_MISSING, UE->frame_parms.samples_per_tti - txs);
 	    }
 	    
@@ -1187,16 +1195,18 @@ void *UE_thread(void *arg) {
 					       UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0,
 					       UE->frame_parms.nb_antennas_rx);
 
-	      LOG_D(PHY,"grab signal for subframe %d offset %d Nbsamples %d \n", sf, UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0+(sf*UE->frame_parms.samples_per_tti),
-	    		  UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0);
+	      LOG_D(PHY,"grab signal for subframe %d offset %d Nbsamples %d => %d dB\n", sf, 
+		    UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0+(sf*UE->frame_parms.samples_per_tti),
+		    UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0,
+		    dB_fixed(signal_energy(rxp[0],UE->frame_parms.samples_per_tti)));
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS_MISSING, (UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0) - rxs);
-        if (rxs != (UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0)) {
-          LOG_E(PHY, "problem in rx 6! expect #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0, rxs);
-          exit_fun("problem in rx 6!");
-          return &UE_thread_retval;
-        }
+	      if (rxs != (UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0)) {
+		LOG_E(PHY, "problem in rx 6! expect #samples=%d but got only %d!\n", UE->frame_parms.samples_per_tti-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0, rxs);
+		exit_fun("problem in rx 6!");
+		return &UE_thread_retval;
+	      }
 
 	      // prepare tx buffer pointers
 	      for (i=0; i<UE->frame_parms.nb_antennas_tx; i++)
@@ -1216,16 +1226,16 @@ void *UE_thread(void *arg) {
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS, txs );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_WRITE_NS_MISSING, (UE->frame_parms.samples_per_tti - rx_off_diff) - txs);
               if (txs !=  UE->frame_parms.samples_per_tti - rx_off_diff) {
-                 LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, UE->frame_parms.samples_per_tti-rx_off_diff);
-                 exit_fun( "problem transmitting samples" );
+		LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, UE->frame_parms.samples_per_tti-rx_off_diff);
+		exit_fun( "problem transmitting samples" );
               }
 
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 1 );
+	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 1 );
 	      // read in first symbol of next frame and adjust for timing drift
-          for (i=0; i<UE->frame_parms.nb_antennas_rx; i++)
-          {
-            rxp[i] = (void*)&UE->common_vars.rxdata[i][0];
-          }
+	      for (i=0; i<UE->frame_parms.nb_antennas_rx; i++)
+		{
+		  rxp[i] = (void*)&UE->common_vars.rxdata[i][0];
+		}
 
 	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
 					       &timestamp1,
@@ -1234,26 +1244,26 @@ void *UE_thread(void *arg) {
 					       UE->frame_parms.nb_antennas_rx);
 
 	      for (i=0; i<UE->frame_parms.nb_antennas_rx; i++)
-	      {
-	        rxp[i] = (void*)&UE->common_vars.rxdata[i][UE->frame_parms.nb_prefix_samples0];
-	      }
+		{
+		  rxp[i] = (void*)&UE->common_vars.rxdata[i][UE->frame_parms.nb_prefix_samples0];
+		}
 
 	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
 					       &timestamp1,
-						   rxp,
+					       rxp,
 					       UE->frame_parms.ofdm_symbol_size,
 					       UE->frame_parms.nb_antennas_rx);
 
 	      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_SF9, 0 );
 	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE0_TRX_READ_NS, rxs );
-        if (rxs != (UE->frame_parms.ofdm_symbol_size)) {
-          LOG_E(PHY, "problem in rx 7! expect #samples=%d but got only %d! rx_off_diff=%d\n", UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0 - rx_off_diff, rxs, rx_off_diff);
-          exit_fun("problem in rx 7!");
-          return &UE_thread_retval;
-        }
-        UE->rx_offset_diff = rx_off_diff;
-        LOG_D(PHY,"SET rx_off_diff to %d\n",UE->rx_offset_diff);
-        rx_off_diff = 0;
+	      if (rxs != (UE->frame_parms.ofdm_symbol_size)) {
+		LOG_E(PHY, "problem in rx 7! expect #samples=%d but got only %d! rx_off_diff=%d\n", UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0 - rx_off_diff, rxs, rx_off_diff);
+		exit_fun("problem in rx 7!");
+		return &UE_thread_retval;
+	      }
+	      UE->rx_offset_diff = rx_off_diff;
+	      LOG_D(PHY,"SET rx_off_diff to %d\n",UE->rx_offset_diff);
+	      rx_off_diff = 0;
 	    }
 	  }
 	  // operate on thread sf mod 2
@@ -1271,23 +1281,27 @@ void *UE_thread(void *arg) {
 	  int instance_cnt_rxtx = ++proc->instance_cnt_rxtx;
 	  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE_INST_CNT_RX, proc->instance_cnt_rxtx);
 	  if(sf == 0)
-	  {
-	     UE->proc.proc_rxtx[0].frame_rx++;
-	     UE->proc.proc_rxtx[1].frame_rx++;
-	  }
+	    {
+	      UE->proc.proc_rxtx[0].frame_rx++;
+	      UE->proc.proc_rxtx[1].frame_rx++;
+	      proc->frame_rx = UE->proc.proc_rxtx[0].frame_rx;
+	    }
+
+
 	  proc->subframe_rx=sf;
 	  proc->subframe_tx=(sf+4)%10;
 	  proc->frame_tx = proc->frame_rx + ((proc->subframe_rx>5)?1:0);
 	  proc->timestamp_tx = timestamp+(4*UE->frame_parms.samples_per_tti)-UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
 
+	  LOG_D(PHY,"UE TS %llu, frame %d, subframe %d\n",timestamp,proc->frame_rx,proc->subframe_rx);
 #if T_TRACER
 	  T(T_UE_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx%1024), T_INT(proc->subframe_rx));
 #endif
 	  /*
-	  if (sf != (timestamp/UE->frame_parms.samples_per_tti)%10) {
+	    if (sf != (timestamp/UE->frame_parms.samples_per_tti)%10) {
 	    LOG_E(PHY,"steady-state UE_thread error : frame_rx %d, subframe_rx %d, frame_tx %d, subframe_tx %d, rx subframe %d\n",proc->frame_rx,proc->subframe_rx,proc->frame_tx,proc->subframe_tx,(timestamp/UE->frame_parms.samples_per_tti)%10);
 	    exit(-1);
-	  }
+	    }
 	  */
 	  if (pthread_mutex_unlock(&proc->mutex_rxtx) != 0) {
 	    LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE RX\n" );
@@ -1306,7 +1320,7 @@ void *UE_thread(void *arg) {
 	    }
 	    LOG_D(PHY, "firing up rxtx_thread[%d] at subframe %d\n", proc_select, sf);
 
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SIGNAL_COND_RXTX0+proc_select, 0 );
+	    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SIGNAL_COND_RXTX0+proc_select, 0 );
 
 	  } else {
 	    LOG_E( PHY, "[SCHED][UE] UE RX thread busy (IC %d)!!\n", instance_cnt_rxtx);
@@ -1348,22 +1362,22 @@ void *UE_thread(void *arg) {
     } // UE->is_synchronized==1
       
   } // while !oai_exit
- return NULL;
+  return NULL;
 } // UE_thread
 
 /*
-void *UE_thread_old(void *arg)
-{
+  void *UE_thread_old(void *arg)
+  {
   UNUSED(arg)
   static int UE_thread_retval;
   PHY_VARS_UE *UE = PHY_vars_UE_g[0][0];
   int spp = openair0_cfg[0].samples_per_packet;
   int slot=1, frame=0, hw_subframe=0, rxpos=0, txpos=openair0_cfg[0].tx_scheduling_advance;
-#ifdef __AVX2__
+  #ifdef __AVX2__
   int dummy[2][spp] __attribute__((aligned(32)));
-#else
+  #else
   int dummy[2][spp] __attribute__((aligned(16)));
-#endif
+  #endif
   int dummy_dump = 0;
   int tx_enabled = 0;
   int start_rx_stream = 0;
@@ -1376,11 +1390,11 @@ void *UE_thread_old(void *arg)
 
   openair0_timestamp timestamp;
 
-#ifdef NAS_UE
+  #ifdef NAS_UE
   MessageDef *message_p;
-#endif
+  #endif
 
-#ifdef DEADLINE_SCHEDULER
+  #ifdef DEADLINE_SCHEDULER
 
   struct sched_attr attr;
   unsigned int flags = 0;
@@ -1397,18 +1411,18 @@ void *UE_thread_old(void *arg)
   attr.sched_period   = 500000;
 
   if (sched_setattr(0, &attr, flags) < 0 ) {
-    perror("[SCHED] main eNB thread: sched_setattr failed\n");
-    exit_fun("Nothing to add");
-    return &UE_thread_retval;
+  perror("[SCHED] main eNB thread: sched_setattr failed\n");
+  exit_fun("Nothing to add");
+  return &UE_thread_retval;
   }
   LOG_I(HW,"[SCHED][eNB] eNB main deadline thread %lu started on CPU %d\n",
-        (unsigned long)gettid(), sched_getcpu());
+  (unsigned long)gettid(), sched_getcpu());
 
-#else
+  #else
   struct sched_param sp;
   sp.sched_priority = sched_get_priority_max(SCHED_FIFO);
   pthread_setschedparam(pthread_self(),SCHED_FIFO,&sp);
-#endif
+  #endif
 
   // Lock memory from swapping. This is a process wide call (not constraint to this thread).
   mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -1418,320 +1432,320 @@ void *UE_thread_old(void *arg)
   printf("Locked sync_mutex, waiting (UE_thread)\n");
 
   while (sync_var<0)
-    pthread_cond_wait(&sync_cond, &sync_mutex);
+  pthread_cond_wait(&sync_cond, &sync_mutex);
 
   pthread_mutex_unlock(&sync_mutex);
   printf("unlocked sync_mutex, waiting (UE_thread)\n");
 
   printf("starting UE thread\n");
 
-#ifdef NAS_UE
+  #ifdef NAS_UE
   message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
   itti_send_msg_to_task (TASK_NAS_UE, INSTANCE_DEFAULT, message_p);
-#endif
+  #endif
 
   T0 = rt_get_time_ns();
   first_rx = 1;
   rxpos=0;
 
   while (!oai_exit) {
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_HW_SUBFRAME, hw_subframe );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_HW_FRAME, frame );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_DUMMY_DUMP, dummy_dump );
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_HW_SUBFRAME, hw_subframe );
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_HW_FRAME, frame );
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_DUMMY_DUMP, dummy_dump );
 
 
-    while (rxpos < (1+hw_subframe)*UE->frame_parms.samples_per_tti) {
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
+  while (rxpos < (1+hw_subframe)*UE->frame_parms.samples_per_tti) {
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
 
-#ifndef USRP_DEBUG
+  #ifndef USRP_DEBUG
 
-      DevAssert( UE->frame_parms.nb_antennas_rx <= 2 );
-      void* rxp[2];
+  DevAssert( UE->frame_parms.nb_antennas_rx <= 2 );
+  void* rxp[2];
 
-      for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
-        rxp[i] = (dummy_dump==0) ? (void*)&rxdata[i][rxpos] : (void*)dummy[i];
+  for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
+  rxp[i] = (dummy_dump==0) ? (void*)&rxdata[i][rxpos] : (void*)dummy[i];
       
     
-      if (UE->mode != loop_through_memory) {
-	rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
-				     &timestamp,
-				     rxp,
-				     spp - ((first_rx==1) ? rx_off_diff : 0),
-				     UE->frame_parms.nb_antennas_rx);
+  if (UE->mode != loop_through_memory) {
+  rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
+  &timestamp,
+  rxp,
+  spp - ((first_rx==1) ? rx_off_diff : 0),
+  UE->frame_parms.nb_antennas_rx);
 
-	if (rxs != (spp- ((first_rx==1) ? rx_off_diff : 0))) {
-	  printf("rx error: asked %d got %d ",spp - ((first_rx==1) ? rx_off_diff : 0),rxs);
-	  if (UE->is_synchronized == 1) {
-	    exit_fun("problem in rx");
-	    return &UE_thread_retval;
-	  }
-	}
-      }
+  if (rxs != (spp- ((first_rx==1) ? rx_off_diff : 0))) {
+  printf("rx error: asked %d got %d ",spp - ((first_rx==1) ? rx_off_diff : 0),rxs);
+  if (UE->is_synchronized == 1) {
+  exit_fun("problem in rx");
+  return &UE_thread_retval;
+  }
+  }
+  }
 
-      if (rx_off_diff !=0)
-	LOG_D(PHY,"frame %d, rx_offset %d, rx_off_diff %d\n",UE->frame_rx,UE->rx_offset,rx_off_diff);
+  if (rx_off_diff !=0)
+  LOG_D(PHY,"frame %d, rx_offset %d, rx_off_diff %d\n",UE->frame_rx,UE->rx_offset,rx_off_diff);
 
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 
-      // Transmit TX buffer based on timestamp from RX
-      if ((tx_enabled==1) && (UE->mode!=loop_through_memory)) {
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+  // Transmit TX buffer based on timestamp from RX
+  if ((tx_enabled==1) && (UE->mode!=loop_through_memory)) {
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
 
-        DevAssert( UE->frame_parms.nb_antennas_tx <= 2 );
-        void* txp[2];
+  DevAssert( UE->frame_parms.nb_antennas_tx <= 2 );
+  void* txp[2];
 
-        for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-          txp[i] = (void*)&txdata[i][txpos];
+  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
+  txp[i] = (void*)&txdata[i][txpos];
 
-        UE->rfdevice.trx_write_func(&openair0,
-                                (timestamp+openair0_cfg[0].tx_scheduling_advance-openair0_cfg[0].tx_sample_advance),
-                                txp,
-				spp - ((first_rx==1) ? rx_off_diff : 0),
-                                UE->frame_parms.nb_antennas_tx,
-                                1);
+  UE->rfdevice.trx_write_func(&openair0,
+  (timestamp+openair0_cfg[0].tx_scheduling_advance-openair0_cfg[0].tx_sample_advance),
+  txp,
+  spp - ((first_rx==1) ? rx_off_diff : 0),
+  UE->frame_parms.nb_antennas_tx,
+  1);
 
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
-      }
-      else if (UE->mode == loop_through_memory)
-	rt_sleep_ns(1000000);
-#else
-      // define USRP_DEBUG is active
-      rt_sleep_ns(1000000);
-#endif
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
+  }
+  else if (UE->mode == loop_through_memory)
+  rt_sleep_ns(1000000);
+  #else
+  // define USRP_DEBUG is active
+  rt_sleep_ns(1000000);
+  #endif
 
-      rx_off_diff = 0;
-      first_rx = 0;
+  rx_off_diff = 0;
+  first_rx = 0;
 
-      rxpos += spp;
-      txpos += spp;
+  rxpos += spp;
+  txpos += spp;
 
-      if (txpos >= 10*PHY_vars_UE_g[0][0]->frame_parms.samples_per_tti)
-        txpos -= 10*PHY_vars_UE_g[0][0]->frame_parms.samples_per_tti;
-    }
+  if (txpos >= 10*PHY_vars_UE_g[0][0]->frame_parms.samples_per_tti)
+  txpos -= 10*PHY_vars_UE_g[0][0]->frame_parms.samples_per_tti;
+  }
 
-    if (rxpos >= 10*PHY_vars_UE_g[0][0]->frame_parms.samples_per_tti)
-      rxpos -= 10*PHY_vars_UE_g[0][0]->frame_parms.samples_per_tti;
+  if (rxpos >= 10*PHY_vars_UE_g[0][0]->frame_parms.samples_per_tti)
+  rxpos -= 10*PHY_vars_UE_g[0][0]->frame_parms.samples_per_tti;
 
-    if (UE->is_synchronized == 1)  {
-      LOG_D( HW, "UE_thread: hw_frame %d, hw_subframe %d (time %lli)\n", frame, hw_subframe, rt_get_time_ns()-T0 );
+  if (UE->is_synchronized == 1)  {
+  LOG_D( HW, "UE_thread: hw_frame %d, hw_subframe %d (time %lli)\n", frame, hw_subframe, rt_get_time_ns()-T0 );
 
-      if (start_rx_stream == 1) {
-	LOG_D(PHY,"Locking mutex_rx (IC %d)\n",UE->instance_cnt_rx);
-        if (pthread_mutex_lock(&UE->mutex_rx) != 0) {
-          LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RX thread\n" );
-          exit_fun("nothing to add");
-          return &UE_thread_retval;
-        }
+  if (start_rx_stream == 1) {
+  LOG_D(PHY,"Locking mutex_rx (IC %d)\n",UE->instance_cnt_rx);
+  if (pthread_mutex_lock(&UE->mutex_rx) != 0) {
+  LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RX thread\n" );
+  exit_fun("nothing to add");
+  return &UE_thread_retval;
+  }
 
-        int instance_cnt_rx = ++UE->instance_cnt_rx;
+  int instance_cnt_rx = ++UE->instance_cnt_rx;
 
-	LOG_D(PHY,"Unlocking mutex_rx (IC %d)\n",instance_cnt_rx);
-        if (pthread_mutex_unlock(&UE->mutex_rx) != 0) {
-          LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE RX thread\n" );
-          exit_fun("nothing to add");
-          return &UE_thread_retval;
-        }
+  LOG_D(PHY,"Unlocking mutex_rx (IC %d)\n",instance_cnt_rx);
+  if (pthread_mutex_unlock(&UE->mutex_rx) != 0) {
+  LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE RX thread\n" );
+  exit_fun("nothing to add");
+  return &UE_thread_retval;
+  }
 
-	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE_INST_CNT_RX, instance_cnt_rx);
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE_INST_CNT_RX, instance_cnt_rx);
 
 
-        if (instance_cnt_rx == 0) {
-	  LOG_D(HW,"signalling rx thread to wake up, hw_frame %d, hw_subframe %d (time %lli)\n", frame, hw_subframe, rt_get_time_ns()-T0 );
-          if (pthread_cond_signal(&UE->proc.cond_rx) != 0) {
-            LOG_E( PHY, "[SCHED][UE] ERROR pthread_cond_signal for UE RX thread\n" );
-            exit_fun("nothing to add");
-            return &UE_thread_retval;
-          }
+  if (instance_cnt_rx == 0) {
+  LOG_D(HW,"signalling rx thread to wake up, hw_frame %d, hw_subframe %d (time %lli)\n", frame, hw_subframe, rt_get_time_ns()-T0 );
+  if (pthread_cond_signal(&UE->proc.cond_rx) != 0) {
+  LOG_E( PHY, "[SCHED][UE] ERROR pthread_cond_signal for UE RX thread\n" );
+  exit_fun("nothing to add");
+  return &UE_thread_retval;
+  }
 	  
-	  LOG_D(HW,"signalled rx thread to wake up, hw_frame %d, hw_subframe %d (time %lli)\n", frame, hw_subframe, rt_get_time_ns()-T0 );
-	  if (UE->mode == loop_through_memory) {
-	    printf("Processing subframe %d",UE->slot_rx>>1);
-	    getchar();
-	  }
+  LOG_D(HW,"signalled rx thread to wake up, hw_frame %d, hw_subframe %d (time %lli)\n", frame, hw_subframe, rt_get_time_ns()-T0 );
+  if (UE->mode == loop_through_memory) {
+  printf("Processing subframe %d",UE->slot_rx>>1);
+  getchar();
+  }
 
-          if (UE->mode == rx_calib_ue) {
-            if (frame == 10) {
-              LOG_D(PHY,
-                    "[SCHED][UE] Found cell with N_RB_DL %"PRIu8", PHICH CONFIG (%d,%d), Nid_cell %"PRIu16", NB_ANTENNAS_TX %"PRIu8", frequency offset "PRIi32" Hz, RSSI (digital) %hu dB, measured Gain %d dB, total_rx_gain %"PRIu32" dB, USRP rx gain %f dB\n",
-                    UE->frame_parms.N_RB_DL,
-                    UE->frame_parms.phich_config_common.phich_duration,
-                    UE->frame_parms.phich_config_common.phich_resource,
-                    UE->frame_parms.Nid_cell,
-                    UE->frame_parms.nb_antennas_tx_eNB,
-                    UE->common_vars.freq_offset,
-                    UE->measurements.rx_power_avg_dB[0],
-                    UE->measurements.rx_power_avg_dB[0] - rx_input_level_dBm,
-                    UE->rx_total_gain_dB,
-                    openair0_cfg[0].rx_gain[0]
-                   );
-              exit_fun("[HW][UE] UE in RX calibration mode, exiting");
-              return &UE_thread_retval;
-            }
-          }
-        } else {
-          LOG_E( PHY, "[SCHED][UE] UE RX thread busy (IC %d)!!\n", instance_cnt_rx);
-	  if (instance_cnt_rx > 2) {
-	    exit_fun("instance_cnt_rx > 1");
-	    return &UE_thread_retval;
-	  }
-        }
+  if (UE->mode == rx_calib_ue) {
+  if (frame == 10) {
+  LOG_D(PHY,
+  "[SCHED][UE] Found cell with N_RB_DL %"PRIu8", PHICH CONFIG (%d,%d), Nid_cell %"PRIu16", NB_ANTENNAS_TX %"PRIu8", frequency offset "PRIi32" Hz, RSSI (digital) %hu dB, measured Gain %d dB, total_rx_gain %"PRIu32" dB, USRP rx gain %f dB\n",
+  UE->frame_parms.N_RB_DL,
+  UE->frame_parms.phich_config_common.phich_duration,
+  UE->frame_parms.phich_config_common.phich_resource,
+  UE->frame_parms.Nid_cell,
+  UE->frame_parms.nb_antennas_tx_eNB,
+  UE->common_vars.freq_offset,
+  UE->measurements.rx_power_avg_dB[0],
+  UE->measurements.rx_power_avg_dB[0] - rx_input_level_dBm,
+  UE->rx_total_gain_dB,
+  openair0_cfg[0].rx_gain[0]
+  );
+  exit_fun("[HW][UE] UE in RX calibration mode, exiting");
+  return &UE_thread_retval;
+  }
+  }
+  } else {
+  LOG_E( PHY, "[SCHED][UE] UE RX thread busy (IC %d)!!\n", instance_cnt_rx);
+  if (instance_cnt_rx > 2) {
+  exit_fun("instance_cnt_rx > 1");
+  return &UE_thread_retval;
+  }
+  }
 
        
-        if ((tx_enabled==1)&&(UE->mode != loop_through_memory)) {
+  if ((tx_enabled==1)&&(UE->mode != loop_through_memory)) {
 
-	  if (pthread_mutex_lock(&UE->mutex_tx) != 0) {
-	    LOG_E( PHY, "[SCHED][UE] error locking mutex for UE TX thread\n" );
-	    exit_fun("nothing to add");
-	    return &UE_thread_retval;
-	  }
-
-
-          int instance_cnt_tx = ++UE->instance_cnt_tx;
-
-          if (pthread_mutex_unlock(&UE->mutex_tx) != 0) {
-            LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE TX thread\n" );
-            exit_fun("nothing to add");
-            return &UE_thread_retval;
-          }
-	  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE_INST_CNT_TX, instance_cnt_tx);
+  if (pthread_mutex_lock(&UE->mutex_tx) != 0) {
+  LOG_E( PHY, "[SCHED][UE] error locking mutex for UE TX thread\n" );
+  exit_fun("nothing to add");
+  return &UE_thread_retval;
+  }
 
 
-          if (instance_cnt_tx == 0) {
-            if (pthread_cond_signal(&UE->cond_tx) != 0) {
-              LOG_E( PHY, "[SCHED][UE] ERROR pthread_cond_signal for UE TX thread\n" );
-              exit_fun("nothing to add");
-              return &UE_thread_retval;
-            }
-	    LOG_D(HW,"signalled tx thread to wake up, hw_frame %d, hw_subframe %d (time %lli)\n", frame, hw_subframe, rt_get_time_ns()-T0 );
+  int instance_cnt_tx = ++UE->instance_cnt_tx;
 
-          } else {
-            LOG_E( PHY, "[SCHED][UE] UE TX thread busy (IC %d)!!\n" );
-	    if (instance_cnt_tx>2) {
-	      exit_fun("instance_cnt_tx > 1");
-	      return &UE_thread_retval;
-	    }
-          }
-        }
+  if (pthread_mutex_unlock(&UE->mutex_tx) != 0) {
+  LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE TX thread\n" );
+  exit_fun("nothing to add");
+  return &UE_thread_retval;
+  }
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE_INST_CNT_TX, instance_cnt_tx);
 
-      }
-    } else {
-      // we are not yet synchronized
-      if ((hw_subframe == 9) && (dummy_dump == 0)) {
-        // Wake up initial synch thread
-        if (pthread_mutex_lock(&UE->mutex_synch) != 0) {
-          LOG_E( PHY, "[SCHED][UE] error locking mutex for UE initial synch thread\n" );
-          exit_fun("nothing to add");
-          return &UE_thread_retval;
-        }
 
-        int instance_cnt_synch = ++UE->instance_cnt_synch;
+  if (instance_cnt_tx == 0) {
+  if (pthread_cond_signal(&UE->cond_tx) != 0) {
+  LOG_E( PHY, "[SCHED][UE] ERROR pthread_cond_signal for UE TX thread\n" );
+  exit_fun("nothing to add");
+  return &UE_thread_retval;
+  }
+  LOG_D(HW,"signalled tx thread to wake up, hw_frame %d, hw_subframe %d (time %lli)\n", frame, hw_subframe, rt_get_time_ns()-T0 );
 
-        if (pthread_mutex_unlock(&UE->mutex_synch) != 0) {
-          LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE initial synch thread\n" );
-          exit_fun("nothing to add");
-          return &UE_thread_retval;
-        }
+  } else {
+  LOG_E( PHY, "[SCHED][UE] UE TX thread busy (IC %d)!!\n" );
+  if (instance_cnt_tx>2) {
+  exit_fun("instance_cnt_tx > 1");
+  return &UE_thread_retval;
+  }
+  }
+  }
 
-        dummy_dump = 1;
+  }
+  } else {
+  // we are not yet synchronized
+  if ((hw_subframe == 9) && (dummy_dump == 0)) {
+  // Wake up initial synch thread
+  if (pthread_mutex_lock(&UE->mutex_synch) != 0) {
+  LOG_E( PHY, "[SCHED][UE] error locking mutex for UE initial synch thread\n" );
+  exit_fun("nothing to add");
+  return &UE_thread_retval;
+  }
 
-        if (instance_cnt_synch == 0) {
-          if (pthread_cond_signal(&UE->cond_synch) != 0) {
-            LOG_E( PHY, "[SCHED][UE] ERROR pthread_cond_signal for UE sync thread\n" );
-            exit_fun("nothing to add");
-            return &UE_thread_retval;
-          }
-        } else {
-          LOG_E( PHY, "[SCHED][UE] UE sync thread busy!!\n" );
-          exit_fun("nothing to add");
-          return &UE_thread_retval;
-        }
-      }
-    }
+  int instance_cnt_synch = ++UE->instance_cnt_synch;
 
-    hw_subframe++;
-    slot+=2;
+  if (pthread_mutex_unlock(&UE->mutex_synch) != 0) {
+  LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE initial synch thread\n" );
+  exit_fun("nothing to add");
+  return &UE_thread_retval;
+  }
 
-    if (hw_subframe==10) {
-      hw_subframe = 0;
-      first_rx = 1;
-      frame++;
-      slot = 1;
+  dummy_dump = 1;
 
-      int fail = pthread_mutex_lock(&UE->mutex_synch);
-      int instance_cnt_synch = UE->instance_cnt_synch;
-      fail = fail || pthread_mutex_unlock(&UE->mutex_synch);
+  if (instance_cnt_synch == 0) {
+  if (pthread_cond_signal(&UE->cond_synch) != 0) {
+  LOG_E( PHY, "[SCHED][UE] ERROR pthread_cond_signal for UE sync thread\n" );
+  exit_fun("nothing to add");
+  return &UE_thread_retval;
+  }
+  } else {
+  LOG_E( PHY, "[SCHED][UE] UE sync thread busy!!\n" );
+  exit_fun("nothing to add");
+  return &UE_thread_retval;
+  }
+  }
+  }
 
-      if (fail) {
-        LOG_E( PHY, "[SCHED][UE] error (un-)locking mutex for UE synch\n" );
-        exit_fun("noting to add");
-        return &UE_thread_retval;
-      }
+  hw_subframe++;
+  slot+=2;
 
-      if (instance_cnt_synch < 0) {
-        // the UE_thread_synch is ready
-        if (UE->is_synchronized == 1) {
-          rx_off_diff = 0;
-          LTE_DL_FRAME_PARMS *frame_parms = &UE->frame_parms; // for macro FRAME_LENGTH_COMPLEX_SAMPLES
+  if (hw_subframe==10) {
+  hw_subframe = 0;
+  first_rx = 1;
+  frame++;
+  slot = 1;
 
-	  //	  LOG_I(PHY,"UE->rx_offset %d\n",UE->rx_offset);
-          if ((UE->rx_offset > RX_OFF_MAX) && (start_rx_stream == 0)) {
-            start_rx_stream=1;
-            frame=0;
-            // dump ahead in time to start of frame
+  int fail = pthread_mutex_lock(&UE->mutex_synch);
+  int instance_cnt_synch = UE->instance_cnt_synch;
+  fail = fail || pthread_mutex_unlock(&UE->mutex_synch);
 
-#ifndef USRP_DEBUG
-	    if (UE->mode != loop_through_memory) {
-	      LOG_I(PHY,"Resynchronizing RX by %d samples\n",UE->rx_offset);
-	      rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
-					   &timestamp,
-					   (void**)rxdata,
-					   UE->rx_offset,
-					   UE->frame_parms.nb_antennas_rx);
-	      if (rxs != UE->rx_offset) {
-		exit_fun("problem in rx");
-		return &UE_thread_retval;
-	      }
-	      UE->rx_offset=0;
-	      tx_enabled = 1;
-	    }
-	    else
-	      rt_sleep_ns(1000000);
-#else
-            rt_sleep_ns(10000000);
-#endif
+  if (fail) {
+  LOG_E( PHY, "[SCHED][UE] error (un-)locking mutex for UE synch\n" );
+  exit_fun("noting to add");
+  return &UE_thread_retval;
+  }
 
-          } else if ((UE->rx_offset<(FRAME_LENGTH_COMPLEX_SAMPLES/2)) &&
-		     (UE->rx_offset > RX_OFF_MIN) && 
-		     (start_rx_stream==1) && 
-		     (rx_correction_timer == 0)) {
-            rx_off_diff = -UE->rx_offset + RX_OFF_MIN;
-	    LOG_D(PHY,"UE->rx_offset %d > %d, diff %d\n",UE->rx_offset,RX_OFF_MIN,rx_off_diff);
-            rx_correction_timer = 5;
-          } else if ((UE->rx_offset>(FRAME_LENGTH_COMPLEX_SAMPLES/2)) && 
-		     (UE->rx_offset < (FRAME_LENGTH_COMPLEX_SAMPLES-RX_OFF_MIN)) &&
-		     (start_rx_stream==1) && 
-		     (rx_correction_timer == 0)) {   // moving to the left so drop rx_off_diff samples
-            rx_off_diff = FRAME_LENGTH_COMPLEX_SAMPLES - RX_OFF_MIN - UE->rx_offset;
-	    LOG_D(PHY,"UE->rx_offset %d < %d, diff %d\n",UE->rx_offset,FRAME_LENGTH_COMPLEX_SAMPLES-RX_OFF_MIN,rx_off_diff);
+  if (instance_cnt_synch < 0) {
+  // the UE_thread_synch is ready
+  if (UE->is_synchronized == 1) {
+  rx_off_diff = 0;
+  LTE_DL_FRAME_PARMS *frame_parms = &UE->frame_parms; // for macro FRAME_LENGTH_COMPLEX_SAMPLES
 
-            rx_correction_timer = 5;
-          }
+  //	  LOG_I(PHY,"UE->rx_offset %d\n",UE->rx_offset);
+  if ((UE->rx_offset > RX_OFF_MAX) && (start_rx_stream == 0)) {
+  start_rx_stream=1;
+  frame=0;
+  // dump ahead in time to start of frame
 
-          if (rx_correction_timer>0)
-            rx_correction_timer--;
-        }
+  #ifndef USRP_DEBUG
+  if (UE->mode != loop_through_memory) {
+  LOG_I(PHY,"Resynchronizing RX by %d samples\n",UE->rx_offset);
+  rxs = UE->rfdevice.trx_read_func(&UE->rfdevice,
+  &timestamp,
+  (void**)rxdata,
+  UE->rx_offset,
+  UE->frame_parms.nb_antennas_rx);
+  if (rxs != UE->rx_offset) {
+  exit_fun("problem in rx");
+  return &UE_thread_retval;
+  }
+  UE->rx_offset=0;
+  tx_enabled = 1;
+  }
+  else
+  rt_sleep_ns(1000000);
+  #else
+  rt_sleep_ns(10000000);
+  #endif
 
-        dummy_dump=0;
-      }
-    }
+  } else if ((UE->rx_offset<(FRAME_LENGTH_COMPLEX_SAMPLES/2)) &&
+  (UE->rx_offset > RX_OFF_MIN) && 
+  (start_rx_stream==1) && 
+  (rx_correction_timer == 0)) {
+  rx_off_diff = -UE->rx_offset + RX_OFF_MIN;
+  LOG_D(PHY,"UE->rx_offset %d > %d, diff %d\n",UE->rx_offset,RX_OFF_MIN,rx_off_diff);
+  rx_correction_timer = 5;
+  } else if ((UE->rx_offset>(FRAME_LENGTH_COMPLEX_SAMPLES/2)) && 
+  (UE->rx_offset < (FRAME_LENGTH_COMPLEX_SAMPLES-RX_OFF_MIN)) &&
+  (start_rx_stream==1) && 
+  (rx_correction_timer == 0)) {   // moving to the left so drop rx_off_diff samples
+  rx_off_diff = FRAME_LENGTH_COMPLEX_SAMPLES - RX_OFF_MIN - UE->rx_offset;
+  LOG_D(PHY,"UE->rx_offset %d < %d, diff %d\n",UE->rx_offset,FRAME_LENGTH_COMPLEX_SAMPLES-RX_OFF_MIN,rx_off_diff);
 
-#if defined(ENABLE_ITTI)
-    itti_update_lte_time(frame, slot);
-#endif
+  rx_correction_timer = 5;
+  }
+
+  if (rx_correction_timer>0)
+  rx_correction_timer--;
+  }
+
+  dummy_dump=0;
+  }
+  }
+
+  #if defined(ENABLE_ITTI)
+  itti_update_lte_time(frame, slot);
+  #endif
   }
 
   return &UE_thread_retval;
-}
+  }
 
 */
 
@@ -1827,13 +1841,13 @@ int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg)
     }
     
     /*
-    if (frame_parms->frame_type == TDD) {
+      if (frame_parms->frame_type == TDD) {
       if (frame_parms->N_RB_DL == 100)
-        N_TA_offset = 624;
+      N_TA_offset = 624;
       else if (frame_parms->N_RB_DL == 50)
-        N_TA_offset = 624/2;
+      N_TA_offset = 624/2;
       else if (frame_parms->N_RB_DL == 25)
-        N_TA_offset = 624/4;
+      N_TA_offset = 624/4;
       }
     */
     

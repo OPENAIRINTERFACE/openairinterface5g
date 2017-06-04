@@ -95,4 +95,6 @@ double dac_fixed_gain(double *s_re[2],
                       unsigned int length_meas,
                       unsigned char B,
                       double gain,
+		      uint8_t do_amp_compute,
+		      double *amp1,
                       int NB_RE);

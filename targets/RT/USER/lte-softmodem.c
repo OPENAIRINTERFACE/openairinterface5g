@@ -526,6 +526,7 @@ static void *scope_thread(void *arg)
                    0,7);
 
     } else {
+      /*
       if (RC.eNB[0][0]->mac_enabled==1) {
 	len = dump_eNB_l2_stats (stats_buffer, 0);
 	//fl_set_object_label(form_stats_l2->stats_text, stats_buffer);
@@ -540,7 +541,7 @@ static void *scope_thread(void *arg)
       //fl_set_object_label(form_stats->stats_text, stats_buffer);
       fl_clear_browser(form_stats->stats_text);
       fl_add_browser_line(form_stats->stats_text, stats_buffer);
-
+      */
       ue_cnt=0;
       for(UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
 	for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {

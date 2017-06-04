@@ -146,6 +146,9 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
     RC.mac[Mod_idP]->common_channels[CC_idP].eutra_band     = eutra_band;
     RC.mac[Mod_idP]->common_channels[CC_idP].dl_CarrierFreq = dl_CarrierFreq;
 
+    LOG_I(MAC,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d,Nid_cell %d,p %d,DL freq %u,phich_config.resource %d, phich_config.duration %d)\n",
+	  Mod_idP, CC_idP, eutra_band, mib->message.dl_Bandwidth, physCellId, p_eNB,dl_CarrierFreq,mib->message.phich_Config.phich_Resource,mib->message.phich_Config.phich_Duration);
+
     mac_xface->phy_config_mib_eNB(Mod_idP,CC_idP,
 				  eutra_band,
 				  mib->message.dl_Bandwidth,
@@ -178,6 +181,8 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
       RC.mac[Mod_idP]->common_channels[CC_idP].radioResourceConfigCommon = radioResourceConfigCommon;
       if (ul_CarrierFreq>0) RC.mac[Mod_idP]->common_channels[CC_idP].ul_CarrierFreq          = ul_CarrierFreq;
       if (ul_Bandwidth) RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth                = *ul_Bandwidth;
+      else RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth                             = RC.mac[Mod_idP]->common_channels[CC_idP].mib->message.dl_Bandwidth;
+
       mac_xface->phy_config_sib2_eNB(Mod_idP, CC_idP, radioResourceConfigCommon, NULL, ul_Bandwidth, additionalSpectrumEmission, mbsfn_SubframeConfigList);
 
 

@@ -1077,7 +1077,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
   }
 
 
-#ifdef PRACH_DEBUG
+#if 0
   write_output("prach_txF0.m","prachtxF0",prachF,prach_len-Ncp,1,1);
   write_output("prach_tx0.m","prachtx0",prach+(Ncp<<1),prach_len-Ncp,1,1);
   write_output("txsig.m","txs",(int16_t*)(&ue->common_vars.txdata[0][0]),2*ue->frame_parms.samples_per_tti,1,1);
@@ -1109,9 +1109,16 @@ void rx_prach(PHY_VARS_eNB *eNB,
   int16_t            *prachF=NULL;
   int16_t            **rxsigF=NULL;
   int16_t            **prach_ifft=NULL;
+  int                nb_rx;
 
-  if (ru) fp = &ru->frame_parms;
-  else if (eNB) fp = &eNB->frame_parms;
+  if (ru) { 
+    fp    = &ru->frame_parms;
+    nb_rx = ru->nb_rx;
+  }
+  else if (eNB) {
+    fp    = &eNB->frame_parms;
+    nb_rx = fp->nb_antennas_rx;
+  }
   else AssertFatal(1==0,"rx_prach called without valid RU or eNB descriptor\n");
   
   frame_type          = fp->frame_type;
@@ -1119,7 +1126,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
   prach_ConfigIndex   = fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
   Ncs_config          = fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;
   restricted_set      = fp->prach_config_common.prach_ConfigInfo.highSpeedFlag;
-  int16_t *prach[fp->nb_antennas_rx];
+  int16_t *prach[nb_rx];
 
   if (eNB) {
     subframe          = eNB->proc.subframe_prach;
@@ -1130,6 +1137,8 @@ void rx_prach(PHY_VARS_eNB *eNB,
   else {
     subframe          = ru->proc.subframe_prach;
     rxsigF            = ru->prach_rxsigF;
+    LOG_D(PHY,"PRACH (RU) : running rx_prach for subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d\n",
+	  subframe,fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset,prach_ConfigIndex);
   }
 
   int16_t *prach2;
@@ -1157,14 +1166,19 @@ void rx_prach(PHY_VARS_eNB *eNB,
   int32_t lev;
   int16_t levdB;
   int fft_size,log2_ifft_size;
-  uint8_t nb_ant_rx = 1; //eNB->frame_parms.nb_antennas_rx;
 
 #ifdef PRACH_DEBUG
-  int en;
+  int en,en0=0;
 #endif
 
-  for (aa=0; aa<nb_ant_rx; aa++) {
-    if (ru) prach[aa] = (int16_t*)&ru->common.rxdata[aa][subframe*fp->samples_per_tti-ru->N_TA_offset];
+  for (aa=0; aa<nb_rx; aa++) {
+    if ((eNB==NULL) && 
+	(ru!=NULL)) { 
+      prach[aa] = (int16_t*)&ru->common.rxdata[aa][(subframe*fp->samples_per_tti)-ru->N_TA_offset];
+#ifdef PRACH_DEBUG
+      LOG_D(PHY,"RU %d, subframe %d, : prach %p (energy %d)\n",ru->idx,subframe,prach[aa],dB_fixed(en0=signal_energy(prach[aa],fp->samples_per_tti))); 
+#endif
+    }
   }
 
   // First compute physical root sequence
@@ -1250,10 +1264,11 @@ void rx_prach(PHY_VARS_eNB *eNB,
   }
 
 
-  if (((eNB!=NULL) && (ru!=NULL) && (ru->function != NGFI_RRU_IF4p5))||
+  if (((eNB!=NULL) && (ru!=NULL) && (ru->function != NGFI_RAU_IF4p5))||
       ((eNB==NULL) && (ru!=NULL) && (ru->function == NGFI_RRU_IF4p5))) { // compute the DFTs of the PRACH temporal resources
     // Do forward transform
-    for (aa=0; aa<nb_ant_rx; aa++) {
+    LOG_D(PHY,"rx_prach: Doing FFT for N_RB_UL %d\n",fp->N_RB_UL);
+    for (aa=0; aa<nb_rx; aa++) {
       prach2 = prach[aa] + (Ncp<<1);
   
       // do DFT
@@ -1345,49 +1360,53 @@ void rx_prach(PHY_VARS_eNB *eNB,
 	
 	break;
       }
+
+      k = (12*n_ra_prb) - 6*fp->N_RB_UL;
+      
+      if (k<0) {
+	k+=(fp->ofdm_symbol_size);
+      }
+      
+      k*=12;
+      k+=13; 
+      k*=2;
+      int dftsize_x2 = fp->ofdm_symbol_size*24;
+      LOG_D(PHY,"Shifting prach_rxF from %d to 0\n",k);
+
+      if ((k+(839*2)) > dftsize_x2) { // PRACH signal is split around DC 
+	memmove((void*)&rxsigF[aa][dftsize_x2-k],(void*)&rxsigF[aa][0],(k+(839*2)-dftsize_x2)*2);	
+	memmove((void*)&rxsigF[aa][0],(void*)(&rxsigF[aa][k]),(dftsize_x2-k)*2);	
+      }
+      else  // PRACH signal is not split around DC
+	memmove((void*)&rxsigF[aa][0],(void*)(&rxsigF[aa][k]),839*4);	
+      
     }
+	     
   }
 
   if ((eNB==NULL) && (ru!=NULL) && ru->function == NGFI_RRU_IF4p5) {
-    k = (12*n_ra_prb) - 6*fp->N_RB_UL;
-    
-    if (k<0) {
-      k+=(fp->ofdm_symbol_size);
-    }
 
-    k*=12;
-    k+=13; 
-    k*=2;
-    
     /// **** send_IF4 of rxsigF to RAU **** ///    
-    send_IF4p5(ru, ru->proc.frame_prach, ru->proc.subframe_prach, IF4p5_PRACH, k);
-
+    send_IF4p5(ru, ru->proc.frame_prach, ru->proc.subframe_prach, IF4p5_PRACH);
+    
 #if 0
-    en = dB_fixed(signal_energy(&rxsigF[0][k],840));
-    if (en>60)
-      printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
+    if (dB_fixed(en0)>30) {
+      en = dB_fixed(signal_energy(&rxsigF[0][k],840));
+      //    if (en>60)
+      printf("PRACH (if4p5), k %d, n_ra_prb %d: Frame %d, Subframe %d => %d dB\n",k,n_ra_prb,ru->proc.frame_rx,ru->proc.subframe_rx,en);
+      write_output("rxsigF.m","prach_rxF",rxsigF[0],12288,1,1);
+      exit(-1);
+    }
 #endif
 
     return;
   } else if (eNB!=NULL) {
-    k = (12*n_ra_prb) - 6*fp->N_RB_UL;
-    
-    if (k<0) k+=fp->ofdm_symbol_size;
-    
 
-    k*=12;
-    k+=13; 
-    k*=2;
-
-    // Adjust received rxsigF offset    
-    memmove((&rxsigF[0][k]),
-            (&rxsigF[0][0]),
-            839*2*sizeof(int16_t));
 
 #if 0
-    en = dB_fixed(signal_energy(&rxsigF[0][k],840));
-        /*if (en>60)
-    printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);*/
+    en = dB_fixed(signal_energy(&rxsigF[0][0],840));
+    /*if (en>60)*/
+    printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
 #endif
 
   }
@@ -1493,18 +1512,6 @@ void rx_prach(PHY_VARS_eNB *eNB,
       
 
 
-      
-      k = (12*n_ra_prb) - 6*fp->N_RB_UL;
-      
-      if (k<0)
-	k+=fp->ofdm_symbol_size;
-      
-      k*=12;
-      k+=13; // phi + K/2
-      k*=2;
-      
-
-      
       memset( prachF, 0, sizeof(int16_t)*2*1024 );
 #ifdef PRACH_DEBUG
       if (prach[0]!= NULL) write_output("prach_rx0.m","prach_rx0",prach[0],6144+792,1,1);
@@ -1513,30 +1520,14 @@ void rx_prach(PHY_VARS_eNB *eNB,
       //       write_output("prach_rxF0.m","prach_rxF0",rxsigF[0],24576,1,1);
       // write_output("prach_rxF1.m","prach_rxF1",rxsigF[1],6144,1,1);
 
-      for (aa=0;aa<nb_ant_rx; aa++) {
+      for (aa=0;aa<nb_rx; aa++) {
       // Do componentwise product with Xu*
-	
+
+	k=0;	
 	for (offset=0; offset<(N_ZC<<1); offset+=2) {
 	  prachF[offset]   = (int16_t)(((int32_t)Xu[offset]*rxsigF[aa][k]   + (int32_t)Xu[offset+1]*rxsigF[aa][k+1])>>15);
 	  prachF[offset+1] = (int16_t)(((int32_t)Xu[offset]*rxsigF[aa][k+1] - (int32_t)Xu[offset+1]*rxsigF[aa][k])>>15);
-	  /*
-	    if (offset<16)
-	    printf("Xu[%d] %d %d, rxsigF[%d][%d] %d %d\n",offset,Xu[offset],Xu[offset+1],aa,k,rxsigF[aa][k],rxsigF[aa][k+1]);
-	  */
-	  /*
-	    mmtmpX0 = _mm_madd_epi16(*(__m128i*)&Xu[offset],*(__m128i*)&rxsigF[aa][k<<1]);
-	    mmtmpX1 = _mm_shufflelo_epi16(*(__m128i*)&Xu[offset],_MM_SHUFFLE(2,3,0,1));
-	    mmtmpX1 = _mm_shufflehi_epi16(mmtmpX1,_MM_SHUFFLE(2,3,0,1));
-	    mmtmpX1 = _mm_sign_epi16(mmtmpX1,*(__m128i*)&conjugate[0]);
-	    mmtmpX1 = _mm_madd_epi16(mmtmpX1,*(__m128i*)&rxsigF[aa][k<<1]);
-	    mmtmpX0 = _mm_srai_epi32(mmtmpX0,15);
-	    mmtmpX1 = _mm_srai_epi32(mmtmpX1,15);
-	    mmtmpX2 = _mm_unpacklo_epi32(mmtmpX0,mmtmpX1);
-	    mmtmpX3 = _mm_unpackhi_epi32(mmtmpX0,mmtmpX1);
-	    *(__m128i*)&prachF[offset] = _mm_packs_epi32(mmtmpX2,mmtmpX3);
-	    */
 	  k+=2;
-	  
 	  if (k==(12*2*fp->ofdm_symbol_size))
 	    k=0;
 	}
@@ -1566,8 +1557,9 @@ void rx_prach(PHY_VARS_eNB *eNB,
 	k+=13;
 	k*=2;
 	printf("Dumping prach, k = %d (n_ra_prb %d)\n",k,n_ra_prb);
-	write_output("rxsigF.m","prach_rxF",&rxsigF[0][k],840,1,1);
+	write_output("rxsigF.m","prach_rxF",&rxsigF[0][0],12288,1,1);
 	write_output("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
+	write_output("Xu.m","xu",Xu,N_ZC,1,1);
 	write_output("prach_ifft0.m","prach_t0",prach_ifft[0],1024,1,1);
 	exit(-1);
       }
@@ -1581,7 +1573,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
     for (i=0; i<NCS2; i++) {
       lev = 0;
       
-      for (aa=0; aa<nb_ant_rx; aa++) {
+      for (aa=0; aa<nb_rx; aa++) {
 	lev += (int32_t)prach_ifft[aa][(preamble_shift2+i)<<1]*prach_ifft[aa][(preamble_shift2+i)<<1] + (int32_t)prach_ifft[aa][1+((preamble_shift2+i)<<1)]*prach_ifft[aa][1+((preamble_shift2+i)<<1)];
       }
      

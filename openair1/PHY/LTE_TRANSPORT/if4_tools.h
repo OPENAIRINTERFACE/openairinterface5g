@@ -62,7 +62,7 @@ void gen_IF4p5_ul_header(IF4p5_header_t*, uint16_t, int, int);
 
 void gen_IF4p5_prach_header(IF4p5_header_t*, int, int);
 
-void send_IF4p5(RU_t*, int, int, uint16_t, int);
+void send_IF4p5(RU_t*, int, int, uint16_t);
 
 void recv_IF4p5(RU_t*, int*, int*, uint16_t*, uint32_t*);
 

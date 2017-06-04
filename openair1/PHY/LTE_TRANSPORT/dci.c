@@ -42,6 +42,7 @@
 
 #include "assertions.h" 
 #include "T.h"
+#include "UTIL/LOG/log.h"
 
 //#define DEBUG_DCI_ENCODING 1
 //#define DEBUG_DCI_DECODING 1
@@ -452,10 +453,7 @@ void pdcch_deinterleaving(LTE_DL_FRAME_PARMS *frame_parms,uint16_t *z, uint16_t 
 
   //  printf("Mquad %d, RCC %d\n",Mquad,RCC);
 
-  if (!z) {
-    printf("dci.c: pdcch_deinterleaving: FATAL z is Null\n");
-    return;
-  }
+  AssertFatal(z!=NULL,"dci.c: pdcch_deinterleaving: FATAL z is Null\n");
 
   // undo permutation
   for (i=0; i<Mquad; i++) {
@@ -1881,9 +1879,9 @@ int32_t rx_pdcch(LTE_UE_COMMON *common_vars,
 
 
 #ifdef DEBUG_DCI_DECODING
-  printf("[PDCCH] subframe %d n_pdcch_symbols from PCFICH =%d\n",subframe,n_pdcch_symbols);
+  LOG_I(PHY,"[PDCCH] subframe %d n_pdcch_symbols from PCFICH =%d\n",subframe,n_pdcch_symbols);
 
-  printf("demapping: subframe %d, mi %d, tdd_config %d\n",subframe,get_mi(frame_parms,subframe),frame_parms->tdd_config);
+  LOG_I(PHY,"demapping: subframe %d, mi %d, tdd_config %d\n",subframe,get_mi(frame_parms,subframe),frame_parms->tdd_config);
 #endif
 
   pdcch_demapping(pdcch_vars[eNB_id]->llr,
@@ -2020,7 +2018,7 @@ uint8_t get_num_pdcch_symbols(uint8_t num_dci,
   }
 
 
-  LOG_I(PHY," dci.c: get_num_pdcch_symbols subframe %d FATAL, illegal numCCE %d (num_dci %d)\n",subframe,numCCE,num_dci);
+  //  LOG_I(PHY," dci.c: get_num_pdcch_symbols subframe %d FATAL, illegal numCCE %d (num_dci %d)\n",subframe,numCCE,num_dci);
   //for (i=0;i<num_dci;i++) {
   //  printf("dci_alloc[%d].L = %d\n",i,dci_alloc[i].L);
   //}
@@ -2114,7 +2112,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
       if (dci_alloc[i].L == (uint8_t)L) {
 
 #ifdef DEBUG_DCI_ENCODING
-        printf("Generating common DCI %d/%d (nCCE %d) of length %d, aggregation %d (%x)\n",i,num_common_dci,dci_alloc[i].firstCCE,dci_alloc[i].dci_length,1<<dci_alloc[i].L,
+        LOG_I(PHY,"Generating common DCI %d/%d (nCCE %d) of length %d, aggregation %d (%x)\n",i,num_common_dci,dci_alloc[i].firstCCE,dci_alloc[i].dci_length,1<<dci_alloc[i].L,
               *(unsigned int*)dci_alloc[i].dci_pdu);
         dump_dci(frame_parms,&dci_alloc[i]);
 #endif
@@ -2792,14 +2790,13 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
     // CCE is not allocated yet
 
     if (CCEmap_cand == 0) {
-#ifdef DEBUG_DCI_DECODING
 
       if (do_common == 1)
-        LOG_I(PHY,"[DCI search - common] Attempting candidate %d Aggregation Level %d DCI length %d at CCE %d/%d (CCEmap %x,CCEmap_cand %x)\n",m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask);
+        LOG_D(PHY,"[DCI search - common] Attempting candidate %d Aggregation Level %d DCI length %d at CCE %d/%d (CCEmap %x,CCEmap_cand %x)\n",m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask);
       else
-        LOG_I(PHY,"[DCI search - ue spec] Attempting candidate %d Aggregation Level %d DCI length %d at CCE %d/%d (CCEmap %x,CCEmap_cand %x)\n",m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask);
+        LOG_D(PHY,"[DCI search - ue spec] Attempting candidate %d Aggregation Level %d DCI length %d at CCE %d/%d (CCEmap %x,CCEmap_cand %x)\n",m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask);
 
-#endif
+
 
       dci_decoding(sizeof_bits,
                    L,
@@ -2810,9 +2807,9 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
         printf("dci_decoded_output[%d] => %x\n",i,dci_decoded_output[i]);
       */
       crc = (crc16(dci_decoded_output,sizeof_bits)>>16) ^ extract_crc(dci_decoded_output,sizeof_bits);
-#ifdef DEBUG_DCI_DECODING
-      printf("crc =>%x\n",crc);
-#endif
+
+      //LOG_I(PHY,"crc =>%x\n",crc);
+
 
       if (((L>1) && ((crc == si_rnti)||
 		     (crc == p_rnti)||
@@ -2828,9 +2825,9 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
           dci_alloc[*dci_cnt].dci_pdu[2] = dci_decoded_output[1];
           dci_alloc[*dci_cnt].dci_pdu[1] = dci_decoded_output[2];
           dci_alloc[*dci_cnt].dci_pdu[0] = dci_decoded_output[3];
-#ifdef DEBUG_DCI_DECODING
-          printf("DCI => %x,%x,%x,%x\n",dci_decoded_output[0],dci_decoded_output[1],dci_decoded_output[2],dci_decoded_output[3]);
-#endif
+
+	  //LOG_I(PHY,"DCI => %x,%x,%x,%x\n",dci_decoded_output[0],dci_decoded_output[1],dci_decoded_output[2],dci_decoded_output[3]);
+
         } else {
           dci_alloc[*dci_cnt].dci_pdu[7] = dci_decoded_output[0];
           dci_alloc[*dci_cnt].dci_pdu[6] = dci_decoded_output[1];
@@ -2840,11 +2837,9 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
           dci_alloc[*dci_cnt].dci_pdu[2] = dci_decoded_output[5];
           dci_alloc[*dci_cnt].dci_pdu[1] = dci_decoded_output[6];
           dci_alloc[*dci_cnt].dci_pdu[0] = dci_decoded_output[7];
-#ifdef DEBUG_DCI_DECODING
-          printf("DCI => %x,%x,%x,%x,%x,%x,%x,%x\n",
-              dci_decoded_output[0],dci_decoded_output[1],dci_decoded_output[2],dci_decoded_output[3],
-              dci_decoded_output[4],dci_decoded_output[5],dci_decoded_output[6],dci_decoded_output[7]);
-#endif
+	  //LOG_I(PHY,"DCI => %x,%x,%x,%x,%x,%x,%x,%x\n",
+          //    dci_decoded_output[0],dci_decoded_output[1],dci_decoded_output[2],dci_decoded_output[3],
+          //    dci_decoded_output[4],dci_decoded_output[5],dci_decoded_output[6],dci_decoded_output[7]);
         }
 
         if (crc==si_rnti) {

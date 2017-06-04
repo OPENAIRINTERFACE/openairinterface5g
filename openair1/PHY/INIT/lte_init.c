@@ -41,7 +41,7 @@ int N_RB_DL_array[6] = {6,15,25,50,75,100};
 
 void phy_config_mib_eNB(int                 Mod_id,
 			int                 CC_id,
-			int                 eutra_band,
+			int                 eutra_band,  
 			int                 dl_Bandwidth,
 			PHICH_Config_t      *phich_config,
 			int                 Nid_cell,
@@ -52,9 +52,10 @@ void phy_config_mib_eNB(int                 Mod_id,
 
   
   LTE_DL_FRAME_PARMS *fp;
+  PHICH_RESOURCE_t phich_resource_table[4]={oneSixth,half,one,two};
 
-  LOG_I(PHY,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d,Nid_cell %d,p %d,DL freq %u)\n",
-	Mod_id, CC_id, eutra_band, N_RB_DL_array[dl_Bandwidth], Nid_cell, p_eNB,dl_CarrierFreq);
+  LOG_I(PHY,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d,Nid_cell %d,p %d,DL freq %u,phich_config.resource %d, phich_config.duration %d)\n",
+	Mod_id, CC_id, eutra_band, N_RB_DL_array[dl_Bandwidth], Nid_cell, p_eNB,dl_CarrierFreq,phich_config->phich_Resource,phich_config->phich_Duration);
 
   if (RC.eNB == NULL) {
     RC.eNB                               = (PHY_VARS_eNB ***)malloc((1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB***));
@@ -84,7 +85,9 @@ void phy_config_mib_eNB(int                 Mod_id,
   fp->eutra_band                         = eutra_band;
   fp->Ncp                                = Ncp;
   fp->nb_antenna_ports_eNB               = p_eNB;
-  fp->phich_config_common.phich_resource = phich_config->phich_Resource;
+
+  AssertFatal(phich_config->phich_Resource < 4, "Illegal phich_Resource\n");
+  fp->phich_config_common.phich_resource = phich_resource_table[phich_config->phich_Resource];
   fp->phich_config_common.phich_duration = phich_config->phich_Duration;
   fp->dl_CarrierFreq                     = dl_CarrierFreq;
   fp->ul_CarrierFreq                     = ul_CarrierFreq;
@@ -168,6 +171,8 @@ void phy_config_sib2_eNB(uint8_t Mod_id,
   LOG_D(PHY,"prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig = %d\n",fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig);
   fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset           =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_FreqOffset;
   LOG_D(PHY,"prach_config_common.prach_ConfigInfo.prach_FreqOffset = %d\n",fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset);
+
+  init_prach_tables(839);
   compute_prach_seq(&fp->prach_config_common,fp->frame_type,
                     RC.eNB[Mod_id][CC_id]->X_u);
 
@@ -244,7 +249,6 @@ void phy_config_sib2_eNB(uint8_t Mod_id,
   init_ncs_cell(fp,RC.eNB[Mod_id][CC_id]->ncs_cell);
 
   init_ul_hopping(fp);
-
 
   // MBSFN
   if (mbsfn_SubframeConfigList != NULL) {
@@ -1563,15 +1567,15 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
     if (abstraction_flag==0) {
       for (eNB_id=0; eNB_id<3; eNB_id++) {
 	
-	pusch_vars[UE_id]->rxdataF_ext      = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	pusch_vars[UE_id]->rxdataF_ext2     = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	pusch_vars[UE_id]->drs_ch_estimates = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	pusch_vars[UE_id]->drs_ch_estimates_time = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	pusch_vars[UE_id]->rxdataF_comp     = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	pusch_vars[UE_id]->ul_ch_mag  = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	pusch_vars[UE_id]->ul_ch_magb = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+	pusch_vars[UE_id]->rxdataF_ext      = (int32_t**)malloc16( 2*sizeof(int32_t*) );
+	pusch_vars[UE_id]->rxdataF_ext2     = (int32_t**)malloc16( 2*sizeof(int32_t*) );
+	pusch_vars[UE_id]->drs_ch_estimates = (int32_t**)malloc16( 2*sizeof(int32_t*) );
+	pusch_vars[UE_id]->drs_ch_estimates_time = (int32_t**)malloc16( 2*sizeof(int32_t*) );
+	pusch_vars[UE_id]->rxdataF_comp     = (int32_t**)malloc16( 2*sizeof(int32_t*) );
+	pusch_vars[UE_id]->ul_ch_mag  = (int32_t**)malloc16( 2*sizeof(int32_t*) );
+	pusch_vars[UE_id]->ul_ch_magb = (int32_t**)malloc16( 2*sizeof(int32_t*) );
 	
-	for (i=0; i<fp->nb_antennas_rx; i++) {
+	for (i=0; i<2; i++) {
 	  // RK 2 times because of output format of FFT!
 	  // FIXME We should get rid of this
 	  pusch_vars[UE_id]->rxdataF_ext[i]      = (int32_t*)malloc16_clear( 2*sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
@@ -1594,7 +1598,6 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   
   eNB->pdsch_config_dedicated->p_a = dB0; //defaul value until overwritten by RRCConnectionReconfiguration
   
-  init_prach_tables(839);
 
 
   return (0);

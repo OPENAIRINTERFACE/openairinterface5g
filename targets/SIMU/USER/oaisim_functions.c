@@ -1064,10 +1064,6 @@ int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
       usleep(500);
     }
 
-    // tell top-level we are busy
-    pthread_mutex_lock(&subframe_mutex);
-    subframe_ru_mask|=(1<<ru_id);
-    pthread_mutex_unlock(&subframe_mutex); 
     
     subframe = (last_ru_rx_timestamp[ru_id][CC_id]/RC.ru[ru_id]->frame_parms.samples_per_tti)%10;
     LOG_D(EMU,"RU_trx_read generating UL subframe %d (Ts %llu, current TS %llu)\n",
@@ -1097,13 +1093,13 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 
   int UE_id = device->Mod_id;
   int CC_id  = device->CC_id;
-  int subframe;
+  int subframe,new_subframe;
   int sample_count=0;
   int read_size;
 
   *ptimestamp = last_UE_rx_timestamp[UE_id][CC_id];
 
-  LOG_D(EMU,"UE_trx_read nsamps %d TS(%llu,%llu) antenna %d\n",nsamps,
+  LOG_D(EMU,"[TXPATH]UE_trx_read nsamps %d TS %llu (%llu) antenna %d\n",nsamps,
         (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
         (unsigned long long)last_UE_rx_timestamp[UE_id][CC_id],
 	cc);
@@ -1116,29 +1112,23 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
   while (sample_count<nsamps) {
     while (current_UE_rx_timestamp[UE_id][CC_id] < 
 	   (last_UE_rx_timestamp[UE_id][CC_id]+read_size)) {
-      LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+      LOG_D(EMU,"[TXPATH]UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
 
       usleep(500);
     }
 
     //    LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
-      
-    // tell top-level we are busy 
-    pthread_mutex_lock(&subframe_mutex);
-    subframe_UE_mask|=(1<<UE_id);
-    pthread_mutex_unlock(&subframe_mutex);
-
-
-    // otherwise we have one subframe here so generate the received signal
+    // if we cross a subframe-boundary
     subframe = (last_UE_rx_timestamp[UE_id][CC_id]/PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)%10;
-    if ((last_UE_rx_timestamp[UE_id][CC_id]%PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti) > 0)
-      subframe++;
+    new_subframe = ((last_UE_rx_timestamp[UE_id][CC_id]+read_size)/PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)%10;
+    if (new_subframe!=subframe) {
+      // tell top-level we are busy 
+      pthread_mutex_lock(&subframe_mutex);
+      subframe_UE_mask|=(1<<UE_id);
+      LOG_D(EMU,"Setting UE_id %d mask to busy (%d)\n",UE_id,subframe_UE_mask);
+      pthread_mutex_unlock(&subframe_mutex);
 
-    last_UE_rx_timestamp[UE_id][CC_id] += read_size;
-    sample_count += read_size;
- 
-    if (subframe > 9) 
-      return(nsamps);
+    }
 
     LOG_D(PHY,"UE_trx_read generating DL subframe %d (Ts %llu, current TS %llu)\n",
 	  subframe,(unsigned long long)*ptimestamp,
@@ -1147,10 +1137,23 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 	      enb_data,
 	      ue_data,
 	      subframe,
+	      last_UE_rx_timestamp[UE_id][CC_id]%PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti,
+	      nsamps,
 	      0, //abstraction_flag,
 	      &PHY_vars_UE_g[UE_id][CC_id]->frame_parms,
 	      UE_id,
 	      CC_id);
+
+    LOG_D(EMU,"[TXPATH]UE_trx_read @ TS %llu (%llu)=> frame %d, subframe %d\n",
+	  (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
+	  (unsigned long long)last_UE_rx_timestamp[UE_id][CC_id],
+	  ((unsigned long long)last_UE_rx_timestamp[UE_id][CC_id]/(PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti*10))&1023,
+	  subframe);
+
+    last_UE_rx_timestamp[UE_id][CC_id] += read_size;
+    sample_count += read_size;
+ 
+
 
 
   }
@@ -1159,7 +1162,33 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
   return(nsamps);
 }
 
+extern double ru_amp[NUMBER_OF_RU_MAX];
+
 int ru_trx_write(openair0_device *device,openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
+
+  int ru_id = device->Mod_id;
+
+  LTE_DL_FRAME_PARMS *frame_parms = &RC.ru[ru_id]->frame_parms;
+
+  pthread_mutex_lock(&subframe_mutex);
+  LOG_D(EMU,"[TXPATH] ru_trx_write: RU %d mask %d\n",ru_id,subframe_ru_mask);
+  pthread_mutex_unlock(&subframe_mutex); 
+
+  // compute amplitude of TX signal from first symbol in subframe
+  // note: assumes that the packet is an entire subframe 
+
+  ru_amp[ru_id] = 0;
+  for (int aa=0; aa<RC.ru[ru_id]->nb_tx; aa++) {
+    ru_amp[ru_id] += (double)signal_energy((int32_t*)buff[aa],frame_parms->ofdm_symbol_size)/(12*frame_parms->N_RB_DL);
+  }
+  ru_amp[ru_id] = sqrt(ru_amp[ru_id]);
+
+  LOG_D(EMU,"Setting amp for RU %d to %f (%d)\n",ru_id,ru_amp[ru_id], dB_fixed((double)signal_energy((int32_t*)buff[0],frame_parms->ofdm_symbol_size)));
+  // tell top-level we are done
+  pthread_mutex_lock(&subframe_mutex);
+  subframe_ru_mask|=(1<<ru_id);
+  LOG_D(EMU,"Setting RU %d to busy\n",ru_id);
+  pthread_mutex_unlock(&subframe_mutex);
 
   return(nsamps);
 }

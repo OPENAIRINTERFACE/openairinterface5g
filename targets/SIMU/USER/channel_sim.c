@@ -60,7 +60,7 @@
 #include "oaisim.h"
 
 #define RF
-//#define DEBUG_SIM
+#define DEBUG_SIM
 
 int number_rb_ul;
 int first_rbUL ;
@@ -77,10 +77,15 @@ int UE_output_mask[NUMBER_OF_RU_MAX];
 pthread_mutex_t RU_output_mutex[NUMBER_OF_UE_MAX];
 pthread_mutex_t UE_output_mutex[NUMBER_OF_RU_MAX];
 
+double ru_amp[NUMBER_OF_RU_MAX];
+
 void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs],
 	       node_desc_t *enb_data[NUMBER_OF_RU_MAX],
 	       node_desc_t *ue_data[NUMBER_OF_UE_MAX],
-	       uint16_t subframe,uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *ue_frame_parms,
+	       uint16_t subframe,
+	       uint16_t offset,
+	       uint16_t length,
+	       uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *ue_frame_parms,
 	       uint8_t UE_id,
 	       int CC_id)
 {
@@ -237,22 +242,26 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
       txdata = RC.ru[ru_id]->common.txdata;
       frame_parms = &RC.ru[ru_id]->frame_parms;
 
-      sf_offset = subframe*frame_parms->samples_per_tti;
+      sf_offset = (subframe*frame_parms->samples_per_tti) + offset;
+      LOG_D(EMU,"TXPATH: RU %d : DL_sig reading TX for subframe %d (sf_offset %d, length %d) from %p\n",ru_id,subframe,sf_offset,length,txdata[0]+sf_offset); 
+      int length_meas = frame_parms->ofdm_symbol_size;
       tx_pwr = dac_fixed_gain(s_re,
                               s_im,
                               txdata,
                               sf_offset,
                               nb_antennas_tx,
-                              frame_parms->samples_per_tti,
+                              length,
                               sf_offset,
-                              frame_parms->ofdm_symbol_size,
+                              length_meas,
                               14,
                               frame_parms->pdsch_config_common.referenceSignalPower, // dBm/RE
+			      0,
+			      &ru_amp[ru_id],
                               frame_parms->N_RB_DL*12);
 
 #ifdef DEBUG_SIM
       LOG_D(PHY,"[SIM][DL] subframe %d: txp (time) %d dB\n",
-	    subframe,dB_fixed(signal_energy(&txdata[0][sf_offset],frame_parms->samples_per_tti)));
+	    subframe,dB_fixed(signal_energy(&txdata[0][sf_offset],length_meas)));
 	    
       LOG_D(OCM,"[SIM][DL] RU %d (CCid %d): tx_pwr %.1f dBm/RE (target %d dBm/RE), for subframe %d\n",
             ru_id,CC_id,
@@ -261,9 +270,13 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
             subframe);
 
 #endif
+      tx_pwr = signal_energy_fp(s_re,s_im,nb_antennas_tx,
+				length<length_meas?length:length_meas,
+                                0)/(12.0*frame_parms->N_RB_DL);
+ 
       //RU2UE[eNB_id][UE_id]->path_loss_dB = 0;
       multipath_channel(RU2UE[ru_id][UE_id][CC_id],s_re,s_im,r_re0,r_im0,
-                        frame_parms->samples_per_tti,hold_channel);
+                        length,hold_channel);
 #ifdef DEBUG_SIM
       rx_pwr = signal_energy_fp2(RU2UE[ru_id][UE_id][CC_id]->ch[0],
                                  RU2UE[ru_id][UE_id][CC_id]->channel_length)*RU2UE[ru_id][UE_id][CC_id]->channel_length;
@@ -278,7 +291,7 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
 
 #endif
 
-      LOG_D(OCM,"[SIM][DL] Channel eNB %d => UE %d (CCid %d): tx_power %.1f dBm/RE, path_loss %1.f dB\n",
+      LOG_D(OCM,"[SIM][DL] Channel RU %d => UE %d (CCid %d): tx_power %.1f dBm/RE, path_loss %1.f dB\n",
             ru_id,UE_id,CC_id,
             (double)frame_parms->pdsch_config_common.referenceSignalPower,
             //         enb_data[eNB_id]->tx_power_dBm,
@@ -286,11 +299,15 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
 
 #ifdef DEBUG_SIM
       rx_pwr = signal_energy_fp(r_re0,r_im0,nb_antennas_rx,
-                                frame_parms->ofdm_symbol_size,
+                                length<length_meas?length:length_meas,
                                 0)/(12.0*frame_parms->N_RB_DL);
-      LOG_D(OCM,"[SIM][DL] UE %d : rx_pwr %f dBm/RE (%f dBm RSSI)for subframe %d\n",UE_id,
-            10*log10(rx_pwr),
-            10*log10(rx_pwr*(double)frame_parms->N_RB_DL*12),subframe);
+     LOG_D(OCM,"[SIM][DL] UE %d : rx_pwr %f dBm/RE (%f dBm RSSI,tx %f dB)for subframe %d (length %d)\n",UE_id,
+	   10*log10(rx_pwr),
+	   10*log10(rx_pwr*(double)frame_parms->N_RB_DL*12),
+	   10*log10(tx_pwr),subframe,
+	   length<length_meas?length:length_meas);
+
+      
       LOG_D(OCM,"[SIM][DL] UE %d : rx_pwr (noise) -132 dBm/RE (N0fs = %.1f dBm, N0B = %.1f dBm) for subframe %d\n",
             UE_id,
             10*log10(RU2UE[ru_id][UE_id][CC_id]->sampling_rate*1e6)-174,
@@ -311,16 +328,16 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
       rf_rx_simple(r_re0,
                    r_im0,
                    nb_antennas_rx,
-                   frame_parms->samples_per_tti,
+                   length,
                    1e3/RU2UE[ru_id][UE_id][CC_id]->sampling_rate,  // sampling time (ns)
                    (double)PHY_vars_UE_g[UE_id][CC_id]->rx_total_gain_dB - 66.227);   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
 
 #ifdef DEBUG_SIM
       rx_pwr = signal_energy_fp(r_re0,r_im0,
                                 nb_antennas_rx,
-                                frame_parms->ofdm_symbol_size,
+                                length<length_meas?length:length_meas,
                                 0)/(12.0*frame_parms->N_RB_DL);
-      LOG_D(OCM,"[SIM][DL] UE %d : ADC in (eNB %d) %f dBm/RE for subframe %d\n",
+      LOG_D(OCM,"[SIM][DL] UE %d : ADC in (RU %d) %f dBm/RE for subframe %d\n",
             UE_id,ru_id,
             10*log10(rx_pwr),subframe);
 #endif
@@ -341,12 +358,12 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
 	double *r_im_p[2] = {r_im_DL[ru_id][0],r_im_DL[ru_id][1]};
 
 #ifdef DEBUG_SIM
-	rx_pwr = signal_energy_fp(r_re_p,r_im_p,nb_antennas_rx,frame_parms->ofdm_symbol_size,0)/(12.0*frame_parms->N_RB_DL);
-	LOG_D(OCM,"[SIM][DL] UE %d : ADC in %f dBm for subframe %d\n",UE_id,10*log10(rx_pwr),subframe);
+	rx_pwr = signal_energy_fp(r_re_p,r_im_p,nb_antennas_rx,length<length_meas?length:length_meas,0)/(12.0*frame_parms->N_RB_DL);
+	LOG_D(OCM,"[SIM][DL] UE %d : ADC in %f dBm/RE for subframe %d\n",UE_id,10*log10(rx_pwr),subframe);
 #endif
 	
 	rxdata = PHY_vars_UE_g[UE_id][CC_id]->common_vars.rxdata;
-	sf_offset = subframe*frame_parms->samples_per_tti;
+	sf_offset = (subframe*frame_parms->samples_per_tti)+offset;
 
 
 	adc(r_re_p,
@@ -355,12 +372,13 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
 	    sf_offset,
 	    rxdata,
 	    nb_antennas_rx,
-	    frame_parms->samples_per_tti,
+	    length,
 	    12);
 	
 #ifdef DEBUG_SIM
-	rx_pwr2 = signal_energy(rxdata[0]+sf_offset,frame_parms->ofdm_symbol_size)/(12.0*frame_parms->N_RB_DL);
-	LOG_D(OCM,"[SIM][DL] UE %d : rx_pwr (ADC out) %f dB/RE (%d) for subframe %d, writing to %p\n",UE_id, 10*log10((double)rx_pwr2),rx_pwr2,subframe,rxdata);
+	rx_pwr2 = signal_energy(rxdata[0]+sf_offset,length<length_meas?length:length_meas)/(12.0*frame_parms->N_RB_DL);
+	LOG_D(OCM,"[SIM][DL] UE %d : rx_pwr (ADC out) %f dB/RE (%d) for subframe %d, writing to %p, length %d\n",UE_id, 10*log10((double)rx_pwr2),rx_pwr2,subframe,rxdata,length<length_meas?length:length_meas);
+	LOG_D(OCM,"[SIM][DL] UE %d : rx_pwr (ADC out) %f dB for subframe %d\n",UE_id,10*log10((double)rx_pwr2*12*frame_parms->N_RB_DL) ,subframe);
 #else
 	UNUSED_VARIABLE(rx_pwr2);
 	UNUSED_VARIABLE(tx_pwr);
@@ -477,7 +495,7 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
     // Compute RX signal for eNB = eNB_id
     for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
       
-      txdata = RC.ru[ru_id]->common.txdata;
+      txdata = PHY_vars_UE_g[UE_id][CC_id]->common_vars.txdata;
       AssertFatal(txdata != NULL,"txdata is null\n");
       sf_offset = subframe*frame_parms->samples_per_tti;
       if (((double)PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm[subframe] +
@@ -499,10 +517,12 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
 				frame_parms->ofdm_symbol_size,
 				14,
 				(double)PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm[subframe]-10*log10((double)PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe]),
+				1,
+				NULL,
 				PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe]);  // This make the previous argument the total power
 	LOG_D(OCM,"[SIM][UL] UE %d tx_pwr %f dBm (target %d dBm, num_RE %d) for subframe %d (sf_offset %d)\n",
 	      UE_id,
-	      10*log10(tx_pwr),
+	      10*log10(tx_pwr*PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe]),
 	      PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm[subframe],
 	      PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe],
 	      subframe,sf_offset);
@@ -520,10 +540,17 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
 	      UE2RU[UE_id][ru_id][CC_id]->path_loss_dB);
 
 	rx_pwr = signal_energy_fp(r_re0,r_im0,nb_antennas_rx,frame_parms->samples_per_tti,0);
-	LOG_D(OCM,"[SIM][UL] eNB %d : rx_pwr %f dBm (%f) for subframe %d, sptti %d\n",
-	      ru_id,10*log10(rx_pwr),rx_pwr,subframe,frame_parms->samples_per_tti);
-	
-	
+	LOG_D(OCM,"[SIM][UL] RU %d (%d/%d rx antennas) : rx_pwr %f dBm (tx_pwr - PL %f) for subframe %d, sptti %d\n",
+	      ru_id,nb_antennas_rx,UE2RU[UE_id][ru_id][CC_id]->nb_rx,10*log10(rx_pwr),10*log10(tx_pwr*PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe])+UE2RU[UE_id][ru_id][CC_id]->path_loss_dB,subframe,frame_parms->samples_per_tti);
+	/*	
+	if (abs(10*log10(rx_pwr)-10*log10(tx_pwr*PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe])-UE2RU[UE_id][ru_id][CC_id]->path_loss_dB)>3) {
+	  write_output("txsig_re.m","s_re",s_re[0],frame_parms->samples_per_tti,1,7);
+	  write_output("txsig_im.m","s_im",s_im[0],frame_parms->samples_per_tti,1,7);
+	  write_output("rxsig_re.m","r_re",r_re0[0],frame_parms->samples_per_tti,1,7);
+	  write_output("rxsig_im.m","r_im",r_im0[0],frame_parms->samples_per_tti,1,7);
+	  exit(-1);
+	  }*/
+
 	if (UE2RU[UE_id][ru_id][CC_id]->first_run == 1)
 	  UE2RU[UE_id][ru_id][CC_id]->first_run = 0;
 	
@@ -542,6 +569,10 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
     double *r_re_p[2] = {r_re_UL[ru_id][0],r_re_UL[ru_id][1]};
     double *r_im_p[2] = {r_im_UL[ru_id][0],r_im_UL[ru_id][1]};
 
+    rx_pwr = signal_energy_fp(r_re_p,r_im_p,nb_antennas_rx,frame_parms->samples_per_tti,0);
+    LOG_D(OCM,"[SIM][UL] RU %d (%d/%d rx antennas) : rx_pwr %f dBm (before RF) for subframe %d, gain %f\n",
+	  ru_id,nb_antennas_rx,nb_antennas_rx,10*log10(rx_pwr),subframe,
+	  (double)RC.ru[ru_id]->max_rxgain-(double)RC.ru[ru_id]->att_rx - 66.227);
     rf_rx_simple(r_re_p,
 		 r_im_p,
 		 nb_antennas_rx,
@@ -550,8 +581,9 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
 		 (double)RC.ru[ru_id]->max_rxgain-(double)RC.ru[ru_id]->att_rx - 66.227);   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
     
 #ifdef DEBUG_SIM
-    rx_pwr = signal_energy_fp(r_re_p,r_im_p,nb_antennas_rx,frame_parms->samples_per_tti,0)*(double)frame_parms->ofdm_symbol_size/(12.0*frame_parms->N_RB_DL);
-    LOG_D(OCM,"[SIM][UL] rx_pwr (ADC in) %f dB for subframe %d\n",10*log10(rx_pwr),subframe);
+    rx_pwr = signal_energy_fp(r_re_p,r_im_p,nb_antennas_rx,frame_parms->samples_per_tti,0);//*(double)frame_parms->ofdm_symbol_size/(12.0*frame_parms->N_RB_DL;
+    LOG_D(OCM,"[SIM][UL] rx_pwr (ADC in) %f dB for subframe %d (rx_gain %f)\n",10*log10(rx_pwr),subframe,
+	  (double)RC.ru[ru_id]->max_rxgain-(double)RC.ru[ru_id]->att_rx);
 #endif
     
     rxdata = RC.ru[ru_id]->common.rxdata;
@@ -569,7 +601,7 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
     
 #ifdef DEBUG_SIM
     rx_pwr2 = signal_energy(rxdata[0]+sf_offset,frame_parms->samples_per_tti)*(double)frame_parms->ofdm_symbol_size/(12.0*frame_parms->N_RB_DL);
-    LOG_D(OCM,"[SIM][UL] RU %d rx_pwr (ADC out) %f dB (%d) for subframe %d (offset %d)\n",ru_id,10*log10((double)rx_pwr2),rx_pwr2,subframe,sf_offset);
+    LOG_D(OCM,"[SIM][UL] RU %d rx_pwr (ADC out) %f dB (%d) for subframe %d (offset %d) = %p\n",ru_id,10*log10((double)rx_pwr2),rx_pwr2,subframe,sf_offset,rxdata[0]+sf_offset);
 #else
     UNUSED_VARIABLE(tx_pwr);
     UNUSED_VARIABLE(rx_pwr);

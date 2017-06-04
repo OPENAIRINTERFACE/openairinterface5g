@@ -206,7 +206,7 @@ int lte_est_timing_advance_pusch(PHY_VARS_eNB* eNB,uint8_t UE_id)
 
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
   LTE_eNB_PUSCH *eNB_pusch_vars = eNB->pusch_vars[UE_id];
-  int32_t **ul_ch_estimates_time=  eNB_pusch_vars->drs_ch_estimates_time[0];
+  int32_t **ul_ch_estimates_time=  eNB_pusch_vars->drs_ch_estimates_time;
   uint8_t cyclic_shift = 0;
   int sync_pos = (frame_parms->ofdm_symbol_size-cyclic_shift*frame_parms->ofdm_symbol_size/12)%(frame_parms->ofdm_symbol_size);
 

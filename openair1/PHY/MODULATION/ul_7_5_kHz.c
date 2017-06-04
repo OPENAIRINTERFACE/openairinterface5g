@@ -197,7 +197,7 @@ void remove_7_5_kHz(RU_t *ru,uint8_t slot)
 
   len = frame_parms->samples_per_tti/2;
 
-  for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+  for (aa=0; aa<ru->nb_rx; aa++) {
 
 #if defined(__x86_64__) || defined(__i386__)
     rxptr128        = (__m128i *)&rxdata[aa][slot_offset];

@@ -104,7 +104,6 @@ struct timing_info_t {
 // Fix per CC openair rf/if device update
 // extern openair0_device openair0;
 
-void do_prach(PHY_VARS_eNB *eNB,int frame,int subframe);
 
 #if defined(ENABLE_ITTI)
 extern volatile int             start_eNB;
@@ -141,7 +140,7 @@ void exit_fun(const char* s);
 
 void init_eNB(int,int);
 void stop_eNB(int nb_inst);
-
+void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru);
 
 static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_name) {
 
@@ -150,8 +149,8 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   // ****************************************
   // Common RX procedures subframe n
 
-  do_prach(eNB,proc->frame_rx,proc->subframe_rx);
-  //  phy_procedures_eNB_common_RX(eNB,proc);
+  // if this is IF5 or 3GPP_eNB
+  if (eNB->RU_list[0]->function < NGFI_RAU_IF4p5) wakeup_prach_eNB(eNB,NULL);
 
   // UE-specific RX processing for subframe n
   phy_procedures_eNB_uespec_RX(eNB, proc, no_relay );
@@ -278,11 +277,38 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string) {
 }
 
 
-int wakeup_rxtx(eNB_proc_t *proc,eNB_rxtx_proc_t *proc_rxtx,LTE_DL_FRAME_PARMS *fp) {
+int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
+
+  eNB_proc_t *proc=&eNB->proc;
+
+  eNB_rxtx_proc_t *proc_rxtx=&proc->proc_rxtx[proc->frame_rx&1];
+
+  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
 
   int i;
   struct timespec wait;
   
+  pthread_mutex_lock(&proc->mutex_RU);
+  for (i=0;i<eNB->num_RU;i++) {
+    if (ru == eNB->RU_list[i]) {
+      if ((proc->RU_mask&(1<<i)) > 0)
+	LOG_E(PHY,"eNB %d frame %d, subframe %d : previous information from RU %d (num_RU %d,mask %x) has not been served yet!\n",
+	      eNB->Mod_id,proc->frame_rx,proc->subframe_rx,ru->idx,eNB->num_RU,proc->RU_mask);
+      proc->RU_mask |= (1<<i);
+    }
+  }
+  if (proc->RU_mask != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
+    pthread_mutex_unlock(&proc->mutex_RU);
+    return(0);
+  }
+  else { // all RUs have provided their information so continue on and wakeup eNB processing
+    proc->RU_mask = 0;
+    pthread_mutex_unlock(&proc->mutex_RU);
+  }
+
+
+
+
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
 
@@ -330,18 +356,37 @@ int wakeup_rxtx(eNB_proc_t *proc,eNB_rxtx_proc_t *proc_rxtx,LTE_DL_FRAME_PARMS *
   return(0);
 }
 
-void do_prach(PHY_VARS_eNB *eNB,int frame,int subframe) {
+void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru) {
 
   eNB_proc_t *proc = &eNB->proc;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+  int i;
 
-
-
+  if (ru!=NULL) {
+    pthread_mutex_lock(&proc->mutex_RU_PRACH);
+    for (i=0;i<eNB->num_RU;i++) {
+      if (ru == eNB->RU_list[i]) {
+	if ((proc->RU_mask_prach&(1<<i)) > 0)
+	  LOG_E(PHY,"eNB %d frame %d, subframe %d : previous information (PRACH) from RU %d (num_RU %d, mask %x) has not been served yet!\n",
+		eNB->Mod_id,proc->frame_rx,proc->subframe_rx,ru->idx,eNB->num_RU,proc->RU_mask_prach);
+	proc->RU_mask_prach |= (1<<i);
+      }
+    }
+    if (proc->RU_mask_prach != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
+      pthread_mutex_unlock(&proc->mutex_RU_PRACH);
+      return(0);
+    }
+    else { // all RUs have provided their information so continue on and wakeup eNB processing
+      proc->RU_mask_prach = 0;
+      pthread_mutex_unlock(&proc->mutex_RU_PRACH);
+    }
+  }
+    
   // check if we have to detect PRACH first
-  if (is_prach_subframe(fp,frame,subframe)>0) { 
-    LOG_D(PHY,"Triggering prach processing, frame %d, subframe %d\n",frame,subframe);
+  if (is_prach_subframe(fp,proc->frame_rx,proc->subframe_rx)>0) { 
+    LOG_D(PHY,"Triggering prach processing, frame %d, subframe %d\n",proc->frame_rx,proc->subframe_rx);
     if (proc->instance_cnt_prach == 0) {
-      LOG_W(PHY,"[eNB] Frame %d Subframe %d, dropping PRACH\n", frame,subframe);
+      LOG_W(PHY,"[eNB] Frame %d Subframe %d, dropping PRACH\n", proc->frame_rx,proc->subframe_rx);
       return;
     }
     
@@ -354,8 +399,8 @@ void do_prach(PHY_VARS_eNB *eNB,int frame,int subframe) {
     
     ++proc->instance_cnt_prach;
     // set timing for prach thread
-    proc->frame_prach = frame;
-    proc->subframe_prach = subframe;
+    proc->frame_prach = proc->frame_rx;
+    proc->subframe_prach = proc->subframe_rx;
     
     // the thread can now be woken up
     if (pthread_cond_signal(&proc->cond_prach) != 0) {
@@ -435,6 +480,8 @@ void init_eNB_proc(int inst) {
 
     proc->first_rx=1;
     proc->first_tx=1;
+    proc->RU_mask=0;
+    proc->RU_mask_prach=0;
 
     pthread_mutex_init( &proc_rxtx[0].mutex_rxtx, NULL);
     pthread_mutex_init( &proc_rxtx[1].mutex_rxtx, NULL);
@@ -443,6 +490,8 @@ void init_eNB_proc(int inst) {
 
     pthread_mutex_init( &proc->mutex_prach, NULL);
     pthread_mutex_init( &proc->mutex_asynch_rxtx, NULL);
+    pthread_mutex_init( &proc->mutex_RU,NULL);
+    pthread_mutex_init( &proc->mutex_RU_PRACH,NULL);
 
     pthread_cond_init( &proc->cond_prach, NULL);
     pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
@@ -672,8 +721,9 @@ void init_eNB_afterRU() {
     
     if (RC.ru[ru_id]==NULL) RC.ru[ru_id] = (RU_t*)malloc(sizeof(RU_t));
     
-    RC.ru[ru_id]->wakeup_rxtx = wakeup_rxtx;
-    RC.ru[ru_id]->eNB_top     = eNB_top;
+    RC.ru[ru_id]->wakeup_rxtx      = wakeup_rxtx;
+    RC.ru[ru_id]->wakeup_prach_eNB = wakeup_prach_eNB;
+    RC.ru[ru_id]->eNB_top          = eNB_top;
   }
 }
 void init_eNB(int single_thread_flag,int wait_for_sync) {

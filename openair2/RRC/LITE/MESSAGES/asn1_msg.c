@@ -223,36 +223,20 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
   case 100:
     mib->message.dl_Bandwidth = MasterInformationBlock__dl_Bandwidth_n100;
     break;
-
   default:
-    mib->message.dl_Bandwidth = MasterInformationBlock__dl_Bandwidth_n6;
-    break;
+    AssertFatal(1==0,"Unknown dl_Bandwidth %d\n",N_RB_DL);
   }
 
-  switch (phich_Resource) {
-  case oneSixth:
-    mib->message.phich_Config.phich_Resource = 0;
-    break;
-
-  case half:
-    mib->message.phich_Config.phich_Resource = 1;
-    break;
-
-  case one:
-    mib->message.phich_Config.phich_Resource = 2;
-    break;
-
-  case two:
-    mib->message.phich_Config.phich_Resource = 3;
-    break;
-  }
-
+  AssertFatal(phich_Resource <= PHICH_Config__phich_Resource_two,"Illegal phich_Resource\n");
+  mib->message.phich_Config.phich_Resource = phich_Resource;
+  AssertFatal(phich_Resource <= PHICH_Config__phich_Duration_extended,"Illegal phich_Duration\n");
+  mib->message.phich_Config.phich_Duration = phich_duration;
   LOG_I(RRC,"[MIB] systemBandwidth %x, phich_duration %x, phich_resource %x,sfn %x\n",
          (uint32_t)mib->message.dl_Bandwidth,
          (uint32_t)phich_duration,
          (uint32_t)phich_Resource,
          (uint32_t)sfn);
-  mib->message.phich_Config.phich_Duration = phich_duration;
+
   mib->message.systemFrameNumber.buf = &sfn;
   mib->message.systemFrameNumber.size = 1;
   mib->message.systemFrameNumber.bits_unused=0;

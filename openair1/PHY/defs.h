@@ -288,6 +288,8 @@ typedef struct RU_proc_t_s {
   int frame_rx;
   /// frame to act upon for transmission
   int frame_tx;
+  /// unwrapped frame count
+  int frame_tx_unwrap;
   /// frame to act upon for reception of prach
   int frame_prach;
   /// frame offset for slave RUs (to correct for frame asynchronism at startup)
@@ -452,6 +454,14 @@ typedef struct eNB_proc_t_s {
   pthread_mutex_t mutex_prach;
   /// mutex for asynch RX/TX thread
   pthread_mutex_t mutex_asynch_rxtx;
+  /// mutex for RU access to eNB processing (PDSCH/PUSCH)
+  pthread_mutex_t mutex_RU;
+  /// mutex for RU access to eNB processing (PRACH)
+  pthread_mutex_t mutex_RU_PRACH;
+  /// mask for RUs serving eNB (PDSCH/PUSCH)
+  int RU_mask;
+  /// mask for RUs serving eNB (PRACH)
+  int RU_mask_prach;
   /// parameters for turbo-decoding worker thread
   td_params tdp;
   /// parameters for turbo-encoding worker thread
@@ -612,6 +622,8 @@ typedef struct RU_t_s{
   void                 (*feptx_prec)(struct RU_t_s *ru);
   /// function pointer to wakeup routine in lte-enb.
   int (*wakeup_rxtx)(struct PHY_VARS_eNB_s *eNB,int frame_rx,int subframe_rx);
+  /// function pointer to wakeup routine in lte-enb.
+  int (*wakeup_prach_eNB)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru);
   /// function pointer to eNB entry routine
   void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string);
   /// Timing statistics

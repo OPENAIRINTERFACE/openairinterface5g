@@ -550,7 +550,7 @@ int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char* buffer, int length
   return len;
 } // is_clusterhead
 
-
+/*
 int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
 {
 
@@ -593,14 +593,12 @@ int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
     }
     len += sprintf(&buffer[len],"\n");
     len += sprintf(&buffer[len],"\nPERFORMANCE PARAMETERS\n");
-    /*
-    len += sprintf(&buffer[len],"[eNB PROC] Total DLSCH Bitrate for the System %dkbps\n",((eNB->UE_stats[0].dlsch_bitrate + eNB->UE_stats[1].dlsch_bitrate)/1000));
-    len += sprintf(&buffer[len],"[eNB PROC] Total Bits successfully transitted %dKbits in %dframe(s)\n",((eNB->UE_stats[0].total_transmitted_bits + eNB->UE_stats[1].total_transmitted_bits)/1000),eNB->frame+1);
-    len += sprintf(&buffer[len],"[eNB PROC] Average System Throughput %dKbps\n",(eNB->UE_stats[0].total_transmitted_bits + eNB->UE_stats[1].total_transmitted_bits)/((eNB->frame+1)*10));
-    */
 
     for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-      if ((eNB->dlsch[(uint8_t)UE_id][0]->rnti>0)&&
+      if (eNB &&
+	  (eNB->dlsch!=NULL) &&
+	  (eNB->dlsch[(uint8_t)UE_id]!=NULL) &&
+	  (eNB->dlsch[(uint8_t)UE_id][0]->rnti>0)&&
 	  (eNB->UE_stats[UE_id].mode == PUSCH)) {	
 
         eNB->total_dlsch_bitrate = eNB->UE_stats[UE_id].dlsch_bitrate + eNB->total_dlsch_bitrate;
@@ -643,15 +641,6 @@ int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
 		       eNB->measurements.wideband_cqi_dB[UE_id][0],
 		       eNB->measurements.wideband_cqi_dB[UE_id][1]);
 	
-	/*	len += sprintf(&buffer[len],"[eNB PROC] Subband CQI:    ");
-	
-	for (i=0; i<eNB->frame_parms.N_RB_DL; i++)
-	  len += sprintf(&buffer[len],"%2d ",
-			 eNB->measurements[eNB_id].subband_cqi_tot_dB[UE_id][i]);
-	
-	len += sprintf(&buffer[len],"\n");
-	*/
-
 	len += sprintf(&buffer[len],"DL TM %d, DL_cqi %d, DL_pmi_single %jx ",
 		       eNB->transmission_mode[UE_id],
 		       eNB->UE_stats[UE_id].DL_cqi[0],
@@ -802,27 +791,6 @@ int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
         len += sprintf(&buffer[len],"DLSCH total bits ack'ed: %dkbit ",(eNB->UE_stats[UE_id].total_TBS)/1000);
         len += sprintf(&buffer[len],"DLSCH Average throughput (100 frames): %dkbps\n",(eNB->UE_stats[UE_id].dlsch_bitrate/1000));
 	//        len += sprintf(&buffer[len],"[eNB PROC] Transmission Mode %d\n",eNB->transmission_mode[UE_id]);
-	/*
-        if(eNB->transmission_mode[UE_id] == 5) {
-          if(eNB->mu_mimo_mode[UE_id].dl_pow_off == 0)
-            len += sprintf(&buffer[len],"[eNB PROC] ****UE %d is in MU-MIMO mode****\n",UE_id);
-          else if(eNB->mu_mimo_mode[UE_id].dl_pow_off == 1)
-            len += sprintf(&buffer[len],"[eNB PROC] ****UE %d is in SU-MIMO mode****\n",UE_id);
-          else
-            len += sprintf(&buffer[len],"[eNB PROC] ****UE %d is not scheduled****\n",UE_id);
-        }
-	*/
-	/*
-        len += sprintf(&buffer[len],"[eNB PROC] RB Allocation on Sub-bands: ");
-
-        //  for (j=0;j< mac_xface->frame_parms->N_RBGS;j++)
-        for (j=0; j<7; j++)
-          len += sprintf(&buffer[len],"%d ",
-                         eNB->mu_mimo_mode[UE_id].rballoc_sub[j]);
-
-        len += sprintf(&buffer[len],"\n");
-        len += sprintf(&buffer[len],"[eNB PROC] Total Number of Allocated PRBs = %d\n",eNB->mu_mimo_mode[UE_id].pre_nb_available_rbs);
-	*/
       }
     }
 
@@ -833,3 +801,4 @@ int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
   
   return len;
 }
+*/

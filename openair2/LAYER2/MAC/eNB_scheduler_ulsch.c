@@ -790,16 +790,18 @@ abort();
       N_RB_UL      = to_prb(cc[CC_id].ul_Bandwidth);
       eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
 
+      
       aggregation=get_aggregation(get_bw_index(module_idP,CC_id), 
 				  eNB_UE_stats->DL_cqi[0],
 				  format0);
       
+
       if (CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,aggregation,rnti)) {
         LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: not enough nCCE\n", module_idP,frameP,subframeP,UE_id,rnti,CC_id);
         continue; // break;
       } else{
-	LOG_D(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d mode %s: aggregation level %d\n", 
-	      module_idP,frameP,subframeP,UE_id,rnti,CC_id, mode_string[eNB_UE_stats->mode], 1<<aggregation);
+	LOG_D(MAC,"[eNB %d] frame %d subframe %d,Scheduling PUSCH for UE %d/%x CC %d mode %s: aggregation level %d, N_RB_UL %d\n", 
+	      module_idP,frameP,subframeP,UE_id,rnti,CC_id, mode_string[eNB_UE_stats->mode], 1<<aggregation,N_RB_UL);
       }
 
 
@@ -910,7 +912,7 @@ abort();
               T_INT(TBS), T_INT(ndi));
 
 	    if (mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED)
-	      LOG_I(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",
+	      LOG_D(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",
 		    module_idP,harq_pid,rnti,CC_id,frameP,subframeP,UE_id,mcs,
 		    first_rb[CC_id],rb_table[rb_table_index],
 		    rb_table_index,TBS,harq_pid);

@@ -1810,11 +1810,11 @@ void rx_ulsch_emul(PHY_VARS_eNB *eNB,
   //#ifndef OAI_EMU
   write_output("/tmp/ulsch_d.m","ulsch_dseq",&eNB->ulsch[UE_id]->harq_processes[harq_pid]->d[0][96],
                eNB->ulsch[UE_id]->harq_processes[harq_pid]->Kplus*3,1,0);
-  write_output("/tmp/rxsig0.m","rxs0", &eNB->common_vars.rxdata[0][0],eNB->frame_parms.samples_per_tti*10,1,1);
+  if (eNB->common_vars.rxdata) write_output("/tmp/rxsig0.m","rxs0", &eNB->common_vars.rxdata[0][0],eNB->frame_parms.samples_per_tti*10,1,1);
 
   
   if (eNB->frame_parms.nb_antennas_rx>1)
-    write_output("/tmp/rxsig1.m","rxs1", &eNB->common_vars.rxdata[1][0],eNB->frame_parms.samples_per_tti*10,1,1);
+    if (eNB->common_vars.rxdata) write_output("/tmp/rxsig1.m","rxs1", &eNB->common_vars.rxdata[1][0],eNB->frame_parms.samples_per_tti*10,1,1);
   
 
   write_output("/tmp/rxsigF0.m","rxsF0", &eNB->common_vars.rxdataF[0][0],eNB->frame_parms.ofdm_symbol_size*nsymb,1,1);
@@ -1827,11 +1827,12 @@ void rx_ulsch_emul(PHY_VARS_eNB *eNB,
   if (eNB->frame_parms.nb_antennas_rx>1)
     write_output("/tmp/rxsigF1_ext.m","rxsF1_ext", &eNB->pusch_vars[UE_id]->rxdataF_ext[0][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
 
-
-  write_output("/tmp/srs_est0.m","srsest0",eNB->srs_vars[UE_id].srs_ch_estimates[0],eNB->frame_parms.ofdm_symbol_size,1,1);
+  /*
+  if (eNB->srs_vars[UE_id].srs_ch_estimates) write_output("/tmp/srs_est0.m","srsest0",eNB->srs_vars[UE_id].srs_ch_estimates[0],eNB->frame_parms.ofdm_symbol_size,1,1);
 
   if (eNB->frame_parms.nb_antennas_rx>1)
-    write_output("/tmp/srs_est1.m","srsest1",eNB->srs_vars[UE_id].srs_ch_estimates[1],eNB->frame_parms.ofdm_symbol_size,1,1);
+    if (eNB->srs_vars[UE_id].srs_ch_estimates) write_output("/tmp/srs_est1.m","srsest1",eNB->srs_vars[UE_id].srs_ch_estimates[1],eNB->frame_parms.ofdm_symbol_size,1,1);
+  */
 
   write_output("/tmp/drs_est0.m","drsest0",eNB->pusch_vars[UE_id]->drs_ch_estimates[0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
 
