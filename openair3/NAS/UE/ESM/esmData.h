@@ -52,10 +52,22 @@ Description Defines internal private data handled by EPS Session
 
 /* Total number of active EPS bearers */
 #define ESM_DATA_EPS_BEARER_TOTAL   11
+#define ESM_SAP_BUFFER_SIZE 4096
 
 /****************************************************************************/
 /************************  G L O B A L    T Y P E S  ************************/
 /****************************************************************************/
+
+/*
+ * --------------------------------------------------------------------------
+ * Internal data handled by the default EPS bearer context activation
+ * procedure in the UE
+ * --------------------------------------------------------------------------
+ */
+typedef struct {
+  int ebi;    /* EPS bearer identity of the default EPS bearer associated
+         * to the PDN connection to be activated */
+} default_eps_bearer_context_data_t;
 
 /*
  * Minimal and maximal value of an EPS bearer identity:
@@ -71,8 +83,6 @@ typedef enum {
                  * in the UE, in the network        */
   ESM_EBR_STATE_MAX
 } esm_ebr_state;
-
-
 
 /*
  * -----------------------
@@ -172,6 +182,7 @@ typedef struct esm_data_context_s {
   } pdn[ESM_DATA_PDN_MAX+1];
 
   esm_ebr_data_t ebr;
+  uint8_t send_buffer[ESM_SAP_BUFFER_SIZE];
 } esm_data_context_t;
 
 /*
@@ -185,27 +196,16 @@ typedef struct esm_data_context_s {
  */
 typedef esm_data_context_t esm_data_t;
 
-
 /****************************************************************************/
 /********************  G L O B A L    V A R I A B L E S  ********************/
 /****************************************************************************/
-
-/*
- * ESM internal data (used within ESM only)
- * ----------------------------------------
- */
-esm_data_t _esm_data;
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-extern char ip_addr_str[100];
-
-extern char *esm_data_get_ipv4_addr(const OctetString *ip_addr);
-
-extern char *esm_data_get_ipv6_addr(const OctetString *ip_addr);
-
-extern char *esm_data_get_ipv4v6_addr(const OctetString *ip_addr);
+char *esm_data_get_ipv4_addr(const OctetString *ip_addr, char *ret);
+char *esm_data_get_ipv6_addr(const OctetString *ip_addr, char *ret);
+char *esm_data_get_ipv4v6_addr(const OctetString *ip_addr, char *ret);
 
 #endif /* __ESMDATA_H__*/

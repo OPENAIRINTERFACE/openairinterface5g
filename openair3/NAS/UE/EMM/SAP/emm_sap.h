@@ -46,6 +46,7 @@ Description Defines the EMM Service Access Points at which the EPS
 #include "emm_regDef.h"
 #include "emm_esmDef.h"
 #include "emm_asDef.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -156,8 +157,8 @@ typedef struct emm_sap_s {
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-void emm_sap_initialize(void);
+void emm_sap_initialize(nas_user_t *user);
 
-int emm_sap_send(emm_sap_t *msg);
+int emm_sap_send(nas_user_t *user, emm_sap_t *msg);
 
 #endif /* __EMM_SAP_H__*/

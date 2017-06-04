@@ -37,9 +37,12 @@ Description Defines functions used to handle ESM procedure transactions.
 *****************************************************************************/
 
 #include "esm_pt.h"
+#include "esm_pt_defs.h"
+#include "user_defs.h"
 
 #include "commonDef.h"
 #include "nas_log.h"
+#include "utils.h"
 
 #include <stdlib.h> // malloc, free
 #include <string.h> // memcpy
@@ -47,14 +50,6 @@ Description Defines functions used to handle ESM procedure transactions.
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
 /****************************************************************************/
-
-/*
- * Minimal and maximal value of a procedure transaction identity:
- * The Procedure Transaction Identity (PTI) identifies bi-directional
- * messages flows
- */
-#define ESM_PTI_MIN     (PROCEDURE_TRANSACTION_IDENTITY_FIRST)
-#define ESM_PTI_MAX     (PROCEDURE_TRANSACTION_IDENTITY_LAST)
 
 /****************************************************************************/
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
@@ -66,33 +61,9 @@ static const char *_esm_pt_state_str[ESM_PT_STATE_MAX] = {
   "PROCEDURE TRANSACTION PENDING"
 };
 
-/*
- * --------------------------
- * Procedure transaction data
- * --------------------------
- */
-typedef struct {
-  unsigned char pti;      /* Procedure transaction identity   */
-  esm_pt_state status;    /* Procedure transaction status     */
-  struct nas_timer_t timer;   /* Retransmission timer         */
-  esm_pt_timer_data_t *args;  /* Retransmission timer parameters data */
-} esm_pt_context_t;
-
-/*
- * ------------------------------
- * List of procedure transactions
- * ------------------------------
- */
-static struct {
-  unsigned char index;    /* Index of the next procedure transaction
-                 * identity to be used */
-#define ESM_PT_DATA_SIZE (ESM_PTI_MAX - ESM_PTI_MIN + 1)
-  esm_pt_context_t *context[ESM_PT_DATA_SIZE + 1];
-} _esm_pt_data;
-
 /* Return the index of the next available entry in the list of procedure
  * transaction data */
-static int _esm_pt_get_available_entry(void);
+static int _esm_pt_get_available_entry(esm_pt_data_t *esm_pt_data);
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
@@ -109,22 +80,22 @@ static int _esm_pt_get_available_entry(void);
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    None                                       **
- **      Others:    _esm_pt_data                               **
  **                                                                        **
  ***************************************************************************/
-void esm_pt_initialize(void)
+esm_pt_data_t *esm_pt_initialize(void)
 {
   LOG_FUNC_IN;
-
+  esm_pt_data_t *esm_pt_data = calloc_or_fail(sizeof(esm_pt_data_t));
   int i;
 
-  _esm_pt_data.index = 0;
+  esm_pt_data->index = 0;
 
   for (i = 0; i < ESM_PT_DATA_SIZE + 1; i++) {
-    _esm_pt_data.context[i] = NULL;
+    esm_pt_data->context[i] = NULL;
   }
 
   LOG_FUNC_OUT;
+  return esm_pt_data;
 }
 
 /****************************************************************************
@@ -140,43 +111,42 @@ void esm_pt_initialize(void)
  **      Return:    The identity of the new procedure transac- **
  **             tion when successfully assigned;           **
  **             the unassigned PTI (0) otherwise.          **
- **      Others:    _esm_pt_data                               **
  **                                                                        **
  ***************************************************************************/
-int esm_pt_assign(void)
+int esm_pt_assign(esm_pt_data_t *esm_pt_data)
 {
   LOG_FUNC_IN;
 
   /* Search for an available procedure transaction identity */
-  int i = _esm_pt_get_available_entry();
+  int i = _esm_pt_get_available_entry(esm_pt_data);
 
   if (i < 0) {
     LOG_FUNC_RETURN (ESM_PT_UNASSIGNED);
   }
 
   /* Assign new procedure transaction */
-  _esm_pt_data.context[i] =
+  esm_pt_data->context[i] =
     (esm_pt_context_t *)malloc(sizeof(esm_pt_context_t));
 
-  if (_esm_pt_data.context[i] == NULL) {
+  if (esm_pt_data->context[i] == NULL) {
     LOG_FUNC_RETURN (ESM_PT_UNASSIGNED);
   }
 
   /* Store the index of the next available procedure transaction identity */
-  _esm_pt_data.index = i + 1;
+  esm_pt_data->index = i + 1;
 
   /* An available procedure transaction identity is found */
-  _esm_pt_data.context[i]->pti = i + ESM_PTI_MIN;
+  esm_pt_data->context[i]->pti = i + ESM_PTI_MIN;
   /* Set the procedure transaction status to INACTIVE */
-  _esm_pt_data.context[i]->status = ESM_PT_INACTIVE;
+  esm_pt_data->context[i]->status = ESM_PT_INACTIVE;
   /* Disable the retransmission timer */
-  _esm_pt_data.context[i]->timer.id = NAS_TIMER_INACTIVE_ID;
+  esm_pt_data->context[i]->timer.id = NAS_TIMER_INACTIVE_ID;
   /* Setup retransmission timer parameters */
-  _esm_pt_data.context[i]->args = NULL;
+  esm_pt_data->context[i]->args = NULL;
 
   LOG_TRACE(INFO, "ESM-FSM   - Procedure transaction identity %d assigned",
-            _esm_pt_data.context[i]->pti);
-  LOG_FUNC_RETURN (_esm_pt_data.context[i]->pti);
+            esm_pt_data->context[i]->pti);
+  LOG_FUNC_RETURN (esm_pt_data->context[i]->pti);
 }
 
 /****************************************************************************
@@ -193,10 +163,9 @@ int esm_pt_assign(void)
  **      Return:    RETURNok if the procedure transaction iden-**
  **             tity has been successfully released;       **
  **             RETURNerror otherwise.                     **
- **      Others:    _esm_pt_data                               **
  **                                                                        **
  ***************************************************************************/
-int esm_pt_release(int pti)
+int esm_pt_release(esm_pt_data_t *esm_pt_data, int pti)
 {
   LOG_FUNC_IN;
 
@@ -205,7 +174,7 @@ int esm_pt_release(int pti)
   }
 
   /* Get procedure transaction data */
-  esm_pt_context_t *ctx = _esm_pt_data.context[pti - ESM_PTI_MIN];
+  esm_pt_context_t *ctx = esm_pt_data->context[pti - ESM_PTI_MIN];
 
   if ( (ctx == NULL) || (ctx->pti != pti) ) {
     /* Procedure transaction not assigned */
@@ -236,8 +205,8 @@ int esm_pt_release(int pti)
   }
 
   /* Release transaction procedure data */
-  free(_esm_pt_data.context[pti - ESM_PTI_MIN]);
-  _esm_pt_data.context[pti - ESM_PTI_MIN] = NULL;
+  free(esm_pt_data->context[pti - ESM_PTI_MIN]);
+  esm_pt_data->context[pti - ESM_PTI_MIN] = NULL;
 
   LOG_TRACE(INFO, "ESM-FSM   - Procedure transaction %d released", pti);
 
@@ -261,20 +230,20 @@ int esm_pt_release(int pti)
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _esm_pt_data                               **
  **                                                                        **
  ***************************************************************************/
-int esm_pt_start_timer(int pti, const OctetString *msg,
+int esm_pt_start_timer(nas_user_t *user, int pti, const OctetString *msg,
                        long sec, nas_timer_callback_t cb)
 {
   LOG_FUNC_IN;
+  esm_pt_data_t *esm_pt_data = user->esm_pt_data;
 
   if ( (pti < ESM_PTI_MIN) || (pti > ESM_PTI_MAX) ) {
     LOG_FUNC_RETURN (RETURNerror);
   }
 
   /* Get procedure transaction data */
-  esm_pt_context_t *ctx = _esm_pt_data.context[pti - ESM_PTI_MIN];
+  esm_pt_context_t *ctx = esm_pt_data->context[pti - ESM_PTI_MIN];
 
   if ( (ctx == NULL) || (ctx->pti != pti) ) {
     /* Procedure transaction not assigned */
@@ -291,6 +260,7 @@ int esm_pt_start_timer(int pti, const OctetString *msg,
     ctx->args = (esm_pt_timer_data_t *)malloc(sizeof(esm_pt_timer_data_t));
 
     if (ctx->args) {
+      ctx->args->user = user;
       /* Set the EPS bearer identity */
       ctx->args->pti = pti;
       /* Reset the retransmission counter */
@@ -332,10 +302,9 @@ int esm_pt_start_timer(int pti, const OctetString *msg,
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _esm_pt_data                               **
  **                                                                        **
  ***************************************************************************/
-int esm_pt_stop_timer(int pti)
+int esm_pt_stop_timer(esm_pt_data_t *esm_pt_data, int pti)
 {
   LOG_FUNC_IN;
 
@@ -344,7 +313,7 @@ int esm_pt_stop_timer(int pti)
   }
 
   /* Get procedure transaction data */
-  esm_pt_context_t *ctx = _esm_pt_data.context[pti - ESM_PTI_MIN];
+  esm_pt_context_t *ctx = esm_pt_data->context[pti - ESM_PTI_MIN];
 
   if ( (ctx == NULL) || (ctx->pti != pti) ) {
     /* Procedure transaction not assigned */
@@ -384,10 +353,9 @@ int esm_pt_stop_timer(int pti)
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _esm_pt_data                               **
  **                                                                        **
  ***************************************************************************/
-int esm_pt_set_status(int pti, esm_pt_state status)
+int esm_pt_set_status(esm_pt_data_t *esm_pt_data, int pti, esm_pt_state status)
 {
   LOG_FUNC_IN;
 
@@ -398,7 +366,7 @@ int esm_pt_set_status(int pti, esm_pt_state status)
   }
 
   /* Get procedure transaction data */
-  esm_pt_context_t *ctx = _esm_pt_data.context[pti - ESM_PTI_MIN];
+  esm_pt_context_t *ctx = esm_pt_data->context[pti - ESM_PTI_MIN];
 
   if ( (ctx == NULL) || (ctx->pti != pti) ) {
     /* Procedure transaction not assigned */
@@ -431,7 +399,6 @@ int esm_pt_set_status(int pti, esm_pt_state status)
  **      transaction                                               **
  **                                                                        **
  ** Inputs:  pti:       The identity of the procedure transaction  **
- **      Others:    _esm_pt_data                               **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The current value of the ESM procedure     **
@@ -439,23 +406,23 @@ int esm_pt_set_status(int pti, esm_pt_state status)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-esm_pt_state esm_pt_get_status(int pti)
+esm_pt_state esm_pt_get_status(esm_pt_data_t *esm_pt_data, int pti)
 {
   if ( (pti < ESM_PTI_MIN) || (pti > ESM_PTI_MAX) ) {
     return (ESM_PT_INACTIVE);
   }
 
-  if (_esm_pt_data.context[pti - ESM_PTI_MIN] == NULL) {
+  if (esm_pt_data->context[pti - ESM_PTI_MIN] == NULL) {
     /* Procedure transaction not allocated */
     return (ESM_PT_INACTIVE);
   }
 
-  if (_esm_pt_data.context[pti - ESM_PTI_MIN]->pti != pti) {
+  if (esm_pt_data->context[pti - ESM_PTI_MIN]->pti != pti) {
     /* Procedure transaction not assigned */
     return (ESM_PT_INACTIVE);
   }
 
-  return (_esm_pt_data.context[pti - ESM_PTI_MIN]->status);
+  return (esm_pt_data->context[pti - ESM_PTI_MIN]->status);
 }
 
 /****************************************************************************
@@ -467,7 +434,6 @@ esm_pt_state esm_pt_get_status(int pti)
  **      given state                                               **
  **                                                                        **
  ** Inputs:  status:    The PDN connection status                  **
- **      Others:    _esm_pt_data                               **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The procedure transaction identity of the  **
@@ -476,18 +442,18 @@ esm_pt_state esm_pt_get_status(int pti)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_pt_get_pending_pti(esm_pt_state status)
+int esm_pt_get_pending_pti(esm_pt_data_t *esm_pt_data, esm_pt_state status)
 {
   LOG_FUNC_IN;
 
   int i;
 
   for (i = 0; i < ESM_PT_DATA_SIZE; i++) {
-    if (_esm_pt_data.context[i] == NULL) {
+    if (esm_pt_data->context[i] == NULL) {
       continue;
     }
 
-    if (_esm_pt_data.context[i]->status != status) {
+    if (esm_pt_data->context[i]->status != status) {
       continue;
     }
 
@@ -496,7 +462,7 @@ int esm_pt_get_pending_pti(esm_pt_state status)
   }
 
   if (i < ESM_PT_DATA_SIZE) {
-    LOG_FUNC_RETURN (_esm_pt_data.context[i]->pti);
+    LOG_FUNC_RETURN (esm_pt_data->context[i]->pti);
   }
 
   /* PDN connection entry not found */
@@ -511,18 +477,17 @@ int esm_pt_get_pending_pti(esm_pt_state status)
  **      does not match an assigned PTI value currently in use     **
  **                                                                        **
  ** Inputs:  pti:       The identity of the procedure transaction  **
- **      Others:    _esm_pt_data                               **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    TRUE, FALSE                                **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_pt_is_not_in_use(int pti)
+int esm_pt_is_not_in_use(esm_pt_data_t *esm_pt_data, int pti)
 {
   return ( (pti == ESM_PT_UNASSIGNED) ||
-           (_esm_pt_data.context[pti - ESM_PTI_MIN] == NULL) ||
-           (_esm_pt_data.context[pti - ESM_PTI_MIN]->pti) != pti);
+           (esm_pt_data->context[pti - ESM_PTI_MIN] == NULL) ||
+           (esm_pt_data->context[pti - ESM_PTI_MIN]->pti) != pti);
 }
 
 /****************************************************************************
@@ -557,7 +522,6 @@ int esm_pt_is_reserved(int pti)
  **      of procedure transaction data                             **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _esm_pt_data                               **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The index of the next available procedure  **
@@ -566,20 +530,20 @@ int esm_pt_is_reserved(int pti)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _esm_pt_get_available_entry(void)
+static int _esm_pt_get_available_entry(esm_pt_data_t *esm_pt_data)
 {
   int i;
 
-  for (i = _esm_pt_data.index; i < ESM_PT_DATA_SIZE; i++) {
-    if (_esm_pt_data.context[i] != NULL) {
+  for (i = esm_pt_data->index; i < ESM_PT_DATA_SIZE; i++) {
+    if (esm_pt_data->context[i] != NULL) {
       continue;
     }
 
     return i;
   }
 
-  for (i = 0; i < _esm_pt_data.index; i++) {
-    if (_esm_pt_data.context[i] != NULL) {
+  for (i = 0; i < esm_pt_data->index; i++) {
+    if (esm_pt_data->context[i] != NULL) {
       continue;
     }
 

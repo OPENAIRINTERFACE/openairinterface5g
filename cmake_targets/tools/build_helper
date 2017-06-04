@@ -136,6 +136,20 @@ clean_all_files() {
 # Compilers
 ###################################
 
+#check_warnings:
+#    print error message if the compilation had warnings
+#argument:
+#    $1: log file
+check_warnings() {
+  #we look for 'warning:' in the compilation log file
+  #this is how gcc starts a warning
+  #this is not perfect, we may get false positive
+  warning_count=`grep "warning:" "$1"|wc -l`
+  if [ $warning_count -gt 0 ]; then
+    echo_error "WARNING: $warning_count warnings. See $1"
+  fi
+}
+
 compilations() {
   cd $OPENAIR_DIR/cmake_targets/$1/build
   set +e
@@ -153,6 +167,7 @@ compilations() {
   if [ -s $3 ] ; then
      cp $3 $4
      echo_success "$2 compiled"
+     check_warnings "$dlog/$2.$REL.txt"
   else
      echo_error "$2 compilation failed"
      exit 1
@@ -216,7 +231,11 @@ install_usrp_uhd_driver() {
         # We move uhd-host apart because it depends on linux kernel version
         # On newer kernels, it fails to install
         $SUDO apt-get -y install uhd-host
-        $SUDO uhd_images_downloader 
+        if [ -z $1 ]; then
+          $SUDO uhd_images_downloader
+        else
+          $SUDO uhd_images_downloader -i $1
+        fi
 }
 
 check_install_bladerf_driver(){
@@ -224,13 +243,28 @@ check_install_bladerf_driver(){
 		$SUDO add-apt-repository -y ppa:bladerf/bladerf
 		$SUDO apt-get update
 	fi
-	$SUDO apt-get install -y--allow-unauthenticated  bladerf libbladerf-dev
+	$SUDO apt-get install -y --allow-unauthenticated  bladerf libbladerf-dev
 	$SUDO apt-get install -y --allow-unauthenticated bladerf-firmware-fx3
 	$SUDO apt-get install -y --allow-unauthenticated bladerf-fpga-hostedx40	
 }
 
 flash_firmware_bladerf() {
 	$SUDO bladeRF-cli --flash-firmware /usr/share/Nuand/bladeRF/bladeRF_fw.img
+}
+
+check_install_lmssdr_driver(){
+	if ( [ -d "/usr/local/include/lime" ] &&
+             [ -f "/usr/local/include/lime/LimeSuite.h" ] )
+	then
+  		echo_success "Found lmssdr drivers and tools installed from source"
+        else
+                echo_error "lmssdr support implies installing lmssdr drivers and tools" \
+                           " from sources. check:"
+                echo_info "https://open-cells.com/index.php/2017/05/10/limesdr-installation/"
+                echo_fatal "Cannot compile lmssdr device" 
+	fi
+
+
 }
 
 check_install_additional_tools (){
@@ -450,19 +484,18 @@ install_asn1c_from_source(){
 ################################################
 
 install_nas_tools() {
-  cd $1
-  if [ ! -f .ue.nvram ]; then
+  if [ ! -f .ue.nvram0 ]; then
     echo_success "generate .ue_emm.nvram .ue.nvram"
-    ./nvram --gen
+    ./nvram --gen -c $1 -o $2
   else
-    [ ./nvram -nt .ue.nvram  -o ./nvram -nt .ue_emm.nvram ] && ./nvram --gen
+    [ ./nvram -nt .ue.nvram0 -o ./nvram -nt .ue_emm.nvram0 ] && ./nvram --gen -c $1 -o $2
   fi
 
-  if [ ! -f .usim.nvram ]; then
+  if [ ! -f .usim.nvram0 ]; then
     echo_success "generate .usim.nvram"
-    ./usim --gen
+    ./usim --gen -c $1 -o $2
   else
-    [ ./usim -nt .usim.nvram ] && ./usim --gen
+    [ ./usim -nt .usim.nvram0 ] && ./usim --gen -c $1 -o $2
   fi
 
 }

@@ -84,7 +84,7 @@ FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void )
   fl_set_xyplot_ybounds(fdui->rxsig_t,10,70);
 
   // Time-domain channel response
-  fdui->chest_t = fl_add_xyplot( FL_NORMAL_XYPLOT, 410, 20, 370, 100, "Channel Impulse Response (samples, abs)" );
+  fdui->chest_t = fl_add_xyplot( FL_NORMAL_XYPLOT, 410, 20, 370, 100, "SRS Frequency Response (samples, abs)" );
   fl_set_object_boxtype( fdui->chest_t, FL_EMBOSSED_BOX );
   fl_set_object_color( fdui->chest_t, FL_BLACK, FL_RED );
   fl_set_object_lcolor( fdui->chest_t, FL_WHITE ); // Label color
@@ -196,7 +196,8 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   bit = malloc(coded_bits_per_codeword*sizeof(float));
 
   rxsig_t = (int16_t**) phy_vars_enb->common_vars.rxdata[eNB_id];
-  chest_t = (int16_t**) phy_vars_enb->pusch_vars[UE_id]->drs_ch_estimates_time[eNB_id];
+  //chest_t = (int16_t**) phy_vars_enb->pusch_vars[UE_id]->drs_ch_estimates_time[eNB_id];
+  chest_t = (int16_t**) phy_vars_enb->srs_vars[UE_id].srs_ch_estimates[eNB_id];
   chest_f = (int16_t**) phy_vars_enb->pusch_vars[UE_id]->drs_ch_estimates[eNB_id];
   pusch_llr = (int16_t*) phy_vars_enb->pusch_vars[UE_id]->llr;
   pusch_comp = (int16_t*) phy_vars_enb->pusch_vars[UE_id]->rxdataF_comp[eNB_id][0];
@@ -232,8 +233,10 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
 
     if (chest_t[0] !=NULL) {
       for (i=0; i<(frame_parms->ofdm_symbol_size); i++) {
-	i2 = (i+(frame_parms->ofdm_symbol_size>>1))%frame_parms->ofdm_symbol_size;
-	time2[i] = (float)(i-(frame_parms->ofdm_symbol_size>>1));
+        //i2 = (i+(frame_parms->ofdm_symbol_size>>1))%frame_parms->ofdm_symbol_size;
+	i2=i;
+        //time2[i] = (float)(i-(frame_parms->ofdm_symbol_size>>1));
+        time2[i] = (float)i;
         chest_t_abs[0][i] = 10*log10((float) (1+chest_t[0][2*i2]*chest_t[0][2*i2]+chest_t[0][2*i2+1]*chest_t[0][2*i2+1]));
 
         if (chest_t_abs[0][i] > ymax)
@@ -247,7 +250,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
       if (chest_t[arx] !=NULL) {
         for (i=0; i<(frame_parms->ofdm_symbol_size>>3); i++) {
           chest_t_abs[arx][i] = 10*log10((float) (1+chest_t[arx][2*i]*chest_t[arx][2*i]+chest_t[arx][2*i+1]*chest_t[arx][2*i+1]));
- 
+
           if (chest_t_abs[arx][i] > ymax)
             ymax = chest_t_abs[arx][i];
         }
@@ -340,7 +343,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
       Q_pucch[ind] = (float)pucch1ab_comp[2*(ind)+1];
       A_pucch[ind] = 10*log10(pucch1_comp[ind]);
       B_pucch[ind] = ind;
-      C_pucch[ind] = (float)pucch1_thres[ind]; 
+      C_pucch[ind] = (float)pucch1_thres[ind];
     }
     fl_set_xyplot_data(form->pucch_comp,I_pucch,Q_pucch,10240,"","","");
     fl_set_xyplot_data(form->pucch_comp1,B_pucch,A_pucch,1024,"","","");
@@ -490,7 +493,8 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   int16_t **chest_f;
   int16_t *pdsch_llr;
   int16_t *pdsch_comp;
-  int8_t *pdcch_llr;
+  int16_t *pdsch_mag;
+  int8_t  *pdcch_llr;
   int16_t *pdcch_comp;
   int8_t *pbch_llr;
   int16_t *pbch_comp;
@@ -510,32 +514,32 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   int beamforming_mode = phy_vars_ue->transmission_mode[eNB_id]>6 ? phy_vars_ue->transmission_mode[eNB_id] : 0;
 
 
-  if (phy_vars_ue->dlsch[eNB_id][0]!=NULL) {
-    harq_pid = phy_vars_ue->dlsch[eNB_id][0]->current_harq_pid;
+  if (phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]!=NULL) {
+    harq_pid = phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid;
 
     if (harq_pid>=8)
       return;
 
-    mcs = phy_vars_ue->dlsch[eNB_id][0]->harq_processes[harq_pid]->mcs;
+    mcs = phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->mcs;
 
     // Button 0
-    if(!phy_vars_ue->dlsch[eNB_id][0]->harq_processes[harq_pid]->dl_power_off) {
+    if(!phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->dl_power_off) {
       // we are in TM5
       fl_show_object(form->button_0);
     }
   }
 
-  if (phy_vars_ue->pdcch_vars[eNB_id]!=NULL) {
-    num_pdcch_symbols = phy_vars_ue->pdcch_vars[eNB_id]->num_pdcch_symbols;
+  if (phy_vars_ue->pdcch_vars[subframe&0x1][eNB_id]!=NULL) {
+    num_pdcch_symbols = phy_vars_ue->pdcch_vars[subframe&0x1][eNB_id]->num_pdcch_symbols;
   }
 
   //    coded_bits_per_codeword = frame_parms->N_RB_DL*12*get_Qm(mcs)*(frame_parms->symbols_per_tti);
-  if (phy_vars_ue->dlsch[eNB_id][0]!=NULL) {
+  if (phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]!=NULL) {
     coded_bits_per_codeword = get_G(frame_parms,
-                                    phy_vars_ue->dlsch[eNB_id][0]->harq_processes[harq_pid]->nb_rb,
-                                    phy_vars_ue->dlsch[eNB_id][0]->harq_processes[harq_pid]->rb_alloc_even,
+                                    phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->nb_rb,
+                                    phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->rb_alloc_even,
                                     get_Qm(mcs),
-                                    phy_vars_ue->dlsch[eNB_id][0]->harq_processes[harq_pid]->Nl,
+                                    phy_vars_ue->dlsch[subframe&0x1][eNB_id][0]->harq_processes[harq_pid]->Nl,
                                     num_pdcch_symbols,
                                     frame,
                                     subframe,
@@ -563,11 +567,12 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   chest_f = (int16_t**) phy_vars_ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id];
   pbch_llr = (int8_t*) phy_vars_ue->pbch_vars[eNB_id]->llr;
   pbch_comp = (int16_t*) phy_vars_ue->pbch_vars[eNB_id]->rxdataF_comp[0];
-  pdcch_llr = (int8_t*) phy_vars_ue->pdcch_vars[eNB_id]->llr;
-  pdcch_comp = (int16_t*) phy_vars_ue->pdcch_vars[eNB_id]->rxdataF_comp[0];
+  pdcch_llr = (int8_t*) phy_vars_ue->pdcch_vars[subframe&0x1][eNB_id]->llr;
+  pdcch_comp = (int16_t*) phy_vars_ue->pdcch_vars[subframe&0x1][eNB_id]->rxdataF_comp[0];
   pdsch_llr = (int16_t*) phy_vars_ue->pdsch_vars[subframe&0x1][eNB_id]->llr[0]; // stream 0
   //    pdsch_llr = (int16_t*) phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id]->llr[0]; // stream 0
   pdsch_comp = (int16_t*) phy_vars_ue->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp0[0];
+  pdsch_mag = (int16_t*) phy_vars_ue->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_mag0[0];
 
   // Received signal in time domain of receive antenna 0
   if (rxsig_t != NULL) {
@@ -699,7 +704,14 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     }
 
     fl_set_xyplot_xbounds(form->pdcch_llr,0,12*frame_parms->N_RB_DL*2*3);
-    fl_set_xyplot_data(form->pdcch_llr,bit_pdcch,llr_pdcch,12*frame_parms->N_RB_DL*2*num_pdcch_symbols,"","","");
+    if (frame_parms->N_RB_DL != 100)
+    {
+        fl_set_xyplot_data(form->pdcch_llr,bit_pdcch,llr_pdcch,12*frame_parms->N_RB_DL*2*num_pdcch_symbols,"","","");
+    }
+    else
+    {
+        LOG_D(PHY,"UE PDCCH LLR plot is bugged in 20 MHz BW, to be fixed !!!\n");
+    }
   }
 
   // PDCCH I/Q of MF Output
@@ -708,8 +720,14 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
       I[i] = pdcch_comp[2*i];
       Q[i] = pdcch_comp[2*i+1];
     }
-
-    fl_set_xyplot_data(form->pdcch_comp,I,Q,12*frame_parms->N_RB_DL*num_pdcch_symbols,"","","");
+    if (frame_parms->N_RB_DL != 100)
+    {
+        fl_set_xyplot_data(form->pdcch_comp,I,Q,12*frame_parms->N_RB_DL*num_pdcch_symbols,"","","");
+    }
+    else
+    {
+        LOG_D(PHY,"UE PDCCH COMP plot is bugged in 20 MHz BW, to be fixed !!!\n");
+    }
   }
 
   // PDSCH LLRs
@@ -720,7 +738,14 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     }
 
     fl_set_xyplot_xbounds(form->pdsch_llr,0,coded_bits_per_codeword);
-    fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword,"","","");
+    if (frame_parms->N_RB_DL != 100)
+    {
+        fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword,"","","");
+    }
+    else
+    {
+        LOG_D(PHY,"UE PDSCH LLR plot is bugged in 20 MHz BW, to be fixed !!!\n");
+    }
   }
 
   // PDSCH I/Q of MF Output
@@ -729,8 +754,9 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
 
     for (k=0; k<frame_parms->symbols_per_tti; k++) {
       for (i=0; i<12*frame_parms->N_RB_DL/2; i++) {
-        I[ind] = pdsch_comp[(2*frame_parms->N_RB_DL*12*k)+4*i];
-        Q[ind] = pdsch_comp[(2*frame_parms->N_RB_DL*12*k)+4*i+1];
+    	int j = (2*frame_parms->N_RB_DL*12*k)+4*i;
+        I[ind] = (pdsch_mag[j  ]!=0? 1.0/pdsch_mag[j  ]: 0.0) * pdsch_comp[j  ]*1.0;
+        Q[ind] = (pdsch_mag[j+1]!=0? 1.0/pdsch_mag[j+1]: 0.0) * pdsch_comp[j+1]*1.0;
         ind++;
       }
     }

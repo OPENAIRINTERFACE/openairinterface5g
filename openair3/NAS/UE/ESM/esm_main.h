@@ -41,6 +41,9 @@ Description Defines the EPS Session Management procedure call manager,
 #define __ESM_MAIN_H__
 
 #include "networkDef.h"
+#include "esm_ebr.h"
+#include "esmData.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -58,19 +61,19 @@ Description Defines the EPS Session Management procedure call manager,
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-void esm_main_initialize(esm_indication_callback_t cb);
+void esm_main_initialize(nas_user_t *user, esm_indication_callback_t cb);
 
-void esm_main_cleanup(void);
+void esm_main_cleanup(esm_data_t *esm_data);
 
 
 /* User's getter for PDN connections and EPS bearer contexts */
-int esm_main_get_nb_pdns_max(void);
-int esm_main_get_nb_pdns(void);
-int esm_main_has_emergency(void);
-int esm_main_get_pdn_status(int cid, int *state);
-int esm_main_get_pdn(int cid, int *type, const char **apn, int *is_emergency,
+int esm_main_get_nb_pdns_max(esm_data_t *esm_data);
+int esm_main_get_nb_pdns(esm_data_t *esm_data);
+int esm_main_has_emergency(esm_data_t *esm_data);
+int esm_main_get_pdn_status(nas_user_t *user, int cid, int *state);
+int esm_main_get_pdn(esm_data_t *esm_data, int cid, int *type, const char **apn, int *is_emergency,
                      int *is_active);
-int esm_main_get_pdn_addr(int cid, const char **ipv4addr, const char **ipv6addr);
+int esm_main_get_pdn_addr(esm_data_t *esm_data, int cid, const char **ipv4addr, const char **ipv6addr);
 
 
 #endif /* __ESM_MAIN_H__*/

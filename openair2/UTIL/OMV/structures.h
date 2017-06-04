@@ -31,13 +31,12 @@
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
 
+#include "openairinterface5g_limits.h"
 #ifndef __PHY_IMPLEMENTATION_DEFS_H__
-#define Maxneighbor 64
-#define NUMBER_OF_UE_MAX 64
-#define NUMBER_OF_eNB_MAX 3
-#ifndef NB_ANTENNAS_RX
-#  define NB_ANTENNAS_RX  4
-#endif
+	#define Maxneighbor NUMBER_OF_UE_MAX
+	#ifndef NB_ANTENNAS_RX
+		#define NB_ANTENNAS_RX  4
+	#endif
 #endif
 //
 

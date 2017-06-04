@@ -121,9 +121,9 @@ void lte_param_init(unsigned char N_tx_port_eNB,
     UE->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
     ((UE->frame_parms).pdsch_config_common).p_b = 0;
   } else { // rho_a = rhob
-    eNB->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
+    eNB->pdsch_config_dedicated->p_a  = dBm3; // 4 = 0dB
     ((eNB->frame_parms).pdsch_config_common).p_b = 1;
-    UE->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
+    UE->pdsch_config_dedicated->p_a  = dBm3; // 4 = 0dB
     ((UE->frame_parms).pdsch_config_common).p_b = 1;
   }
 

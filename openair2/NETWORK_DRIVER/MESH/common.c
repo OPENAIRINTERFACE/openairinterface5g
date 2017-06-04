@@ -59,14 +59,14 @@ void nas_COMMON_receive(uint16_t dlen,
   struct nas_priv *gpriv=netdev_priv(nasdev[inst]);
   uint32_t odaddr,osaddr;
 
-  int i;
+  //int i;
 
   unsigned char protocol;
 
-  unsigned char *addr,*daddr,*saddr,*ifaddr,sn;
+  unsigned char /**addr,*/ *daddr,*saddr,*ifaddr /*,sn*/;
 
-  struct udphdr *uh;
-  struct tcphdr *th;
+  //struct udphdr *uh;
+  //struct tcphdr *th;
   uint16_t *cksum,check;
 
   struct iphdr *network_header;
@@ -321,10 +321,9 @@ void nas_COMMON_receive(uint16_t dlen,
 
 //---------------------------------------------------------------------------
 // Delete the data
-void nas_COMMON_del_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *sp,int inst)
+void nas_COMMON_del_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *sp,int inst,struct nas_priv *gpriv)
 {
   struct nas_priv *priv=netdev_priv(nasdev[inst]);
-
   //---------------------------------------------------------------------------
   ++priv->stats.tx_dropped;
 }
@@ -332,7 +331,7 @@ void nas_COMMON_del_send(struct sk_buff *skb, struct cx_entity *cx, struct class
 //---------------------------------------------------------------------------
 // Request the transfer of data (QoS SAP)
 
-void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst)
+void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst, struct nas_priv *gpriv)
 {
   //---------------------------------------------------------------------------
   struct pdcp_data_req_header_s     pdcph;
@@ -341,7 +340,7 @@ void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct class
   int i;
 #endif
   unsigned int bytes_wrote;
-  unsigned char j;
+  //unsigned char j;
   // Start debug information
 #ifdef NAS_DEBUG_SEND
   printk("NAS_COMMON_QOS_SEND - inst %d begin \n",inst);
@@ -596,7 +595,7 @@ struct rb_entity *nas_COMMON_search_rb(struct cx_entity *cx, nasRadioBearerId_t 
               struct classifier_entity *nas_COMMON_search_class_for_rb(nasRadioBearerId_t rab_id,struct nas_priv *priv)
 {
 
-  struct rb_entity *rb;
+  //struct rb_entity *rb;
   int dscp;
   struct classifier_entity *rclass;
 

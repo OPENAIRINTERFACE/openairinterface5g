@@ -852,8 +852,8 @@ compile_nas_tools() {
         fi
         echo_success "make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS/tools all"
         make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS/tools all
-        rm .ue.nvram
-        rm .usim.nvram
+        rm .ue.nvram0
+        rm .usim.nvram0
         touch /tmp/nas_cleaned
 }
 
@@ -1027,13 +1027,13 @@ install_oaisim() {
 
 install_nas_tools() {
     cd $OPENAIR_TARGETS/bin
-    if [ ! -f .ue.nvram ]; then
-        echo_success "generate .ue_emm.nvram .ue.nvram"
+    if [ ! -f .ue.nvram0 ]; then
+        echo_success "generate .ue_emm.nvram0 .ue.nvram0"
         $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/ue_data --gen
     fi
 
-    if [ ! -f .usim.nvram ]; then
-        echo_success "generate .usim.nvram"
+    if [ ! -f .usim.nvram0 ]; then
+        echo_success "generate .usim.nvram0"
         $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/usim_data --gen
     fi
     $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/ue_data --print

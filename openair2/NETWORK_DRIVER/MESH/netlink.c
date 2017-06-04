@@ -50,7 +50,7 @@
 
 static struct sock *nas_nl_sk = NULL;
 static int exit_netlink_thread=0;
-static int nas_netlink_rx_thread(void *);
+//static int nas_netlink_rx_thread(void *);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0)
 struct netlink_kernel_cfg oai_netlink_cfg;
 #endif
@@ -76,7 +76,7 @@ static void nas_nl_data_ready (struct sk_buff *skb)
   //nasmesh_unlock();
 
   struct nlmsghdr *nlh = NULL;
-  int j;
+  //int j;
 
   if (skb) {
 

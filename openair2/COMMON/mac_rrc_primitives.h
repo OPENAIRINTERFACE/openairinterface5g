@@ -33,7 +33,7 @@
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "MeasGapConfig.h"
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-SubframeConfigList.h"
 #endif
@@ -380,7 +380,7 @@ typedef struct {
                             TDD_Config_t *tdd_Config,
                             uint8_t *SIwindowsize,
                             uint16_t *SIperiod
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
                             ,
                             MBMS_flag_t MBMS_Flag,
                             struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
@@ -388,9 +388,9 @@ typedef struct {
                             struct PMCH_InfoList_r9 *pmch_InfoList
 #endif
                            );
-  unsigned int (*mac_rlc_data_req)(module_id_t, unsigned int, char*);
+  unsigned int (*mac_rlc_data_req)(module_id_t, unsigned int, const unsigned int,char*);
   void (*mac_rlc_data_ind)(module_id_t, logical_chan_id_t, char*, tb_size_t, num_tb_t, crc_t* );
-  mac_rlc_status_resp_t (*mac_rlc_status_ind)     (module_id_t enb_mod_idP, module_id_t ue_mod_idP, frame_t frameP, eNB_flag_t eNB_flagP, MBMS_flag_t MBMS_flagP,
+  mac_rlc_status_resp_t (*mac_rlc_status_ind)     (module_id_t enb_mod_idP, module_id_t ue_mod_idP, frame_t frameP, sub_frame_t subframeP, eNB_flag_t eNB_flagP, MBMS_flag_t MBMS_flagP,
       logical_chan_id_t channel_idP, tb_size_t tb_sizeP);
   signed int (*rrc_rlc_data_req)(module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, char *);
   void (*rrc_rlc_register_rrc) (void (*rrc_data_indP)(module_id_t , rb_id_t , sdu_size_t , char* ),

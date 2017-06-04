@@ -32,6 +32,7 @@
 #ifndef __PHY_DEFS__H__
 #define __PHY_DEFS__H__
 
+#define _GNU_SOURCE 
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
@@ -153,10 +154,10 @@ enum transmission_access_mode {
 typedef enum  {
   eNodeB_3GPP=0,   // classical eNodeB function
   eNodeB_3GPP_BBU, // eNodeB with NGFI IF5
-  NGFI_RCC_IF4p5,  // NGFI_RCC (NGFI radio cloud center) 
+  NGFI_RCC_IF4p5,  // NGFI_RCC (NGFI radio cloud center)
   NGFI_RAU_IF4p5,
   NGFI_RRU_IF5,    // NGFI_RRU (NGFI remote radio-unit,IF5)
-  NGFI_RRU_IF4p5   // NGFI_RRU (NGFI remote radio-unit,IF4p5) 
+  NGFI_RRU_IF4p5   // NGFI_RRU (NGFI remote radio-unit,IF4p5)
 } eNB_func_t;
 
 typedef enum {
@@ -391,6 +392,9 @@ typedef struct {
   pthread_mutex_t mutex_rxtx;
   /// scheduling parameters for RXn-TXnp4 thread
   struct sched_param sched_param_rxtx;
+  int sub_frame_start;
+  int sub_frame_step;
+  unsigned long long gotIQs;
 } UE_rxtx_proc_t;
 
 /// Context data structure for eNB subframe processing
@@ -592,7 +596,7 @@ typedef struct PHY_VARS_eNB_s {
   uint32_t total_transmitted_bits;
   uint32_t total_system_throughput;
 
-  int              hw_timing_advance;
+  int hw_timing_advance;
 
   time_stats_t phy_proc;
   time_stats_t phy_proc_tx;
@@ -629,7 +633,7 @@ typedef struct PHY_VARS_eNB_s {
 #ifdef LOCALIZATION
   /// time state for localization
   time_stats_t localization_stats;
-#endif 
+#endif
 
   int32_t pucch1_stats_cnt[NUMBER_OF_UE_MAX][10];
   int32_t pucch1_stats[NUMBER_OF_UE_MAX][10*1024];
@@ -641,9 +645,9 @@ typedef struct PHY_VARS_eNB_s {
   int32_t pusch_stats_mcs[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_bsr[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
-  
+
   /// RF and Interface devices per CC
-  openair0_device rfdevice; 
+  openair0_device rfdevice;
   openair0_device ifdevice;
   /// Pointer for ifdevice buffer struct
   if_buffer_t ifbuffer;
@@ -702,16 +706,16 @@ typedef struct {
   LTE_DL_FRAME_PARMS  frame_parms_before_ho;
   LTE_UE_COMMON    common_vars;
 
-  LTE_UE_PDSCH     *pdsch_vars[2][NUMBER_OF_CONNECTED_eNB_MAX+1];
+  LTE_UE_PDSCH     *pdsch_vars[2][NUMBER_OF_CONNECTED_eNB_MAX+1]; // two RxTx Threads
   LTE_UE_PDSCH_FLP *pdsch_vars_flp[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_ra[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_p[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_MCH[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
-  LTE_UE_PDCCH     *pdcch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_PDCCH     *pdcch_vars[2][NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch[NUMBER_OF_CONNECTED_eNB_MAX][2];
+  LTE_UE_DLSCH_t   *dlsch[2][NUMBER_OF_CONNECTED_eNB_MAX][2]; // two RxTx Threads
   LTE_UE_ULSCH_t   *ulsch[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_SI[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_ra[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -798,6 +802,8 @@ typedef struct {
   uint8_t               prach_cnt;
   uint8_t               prach_PreambleIndex;
   //  uint8_t               prach_timer;
+  uint8_t               decode_SIB;
+  uint8_t               decode_MIB;
   int              rx_offset; /// Timing offset
   int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
   int              timing_advance; ///timing advance signalled from eNB
@@ -868,7 +874,7 @@ typedef struct {
 
   time_stats_t phy_proc;
   time_stats_t phy_proc_tx;
-  time_stats_t phy_proc_rx;
+  time_stats_t phy_proc_rx[2];
 
   uint32_t use_ia_receiver;
 
@@ -881,12 +887,16 @@ typedef struct {
   time_stats_t ulsch_interleaving_stats;
   time_stats_t ulsch_multiplexing_stats;
 
+  time_stats_t generic_stat;
+  time_stats_t pdsch_procedures_stat;
+  time_stats_t dlsch_procedures_stat;
+
   time_stats_t ofdm_demod_stats;
   time_stats_t dlsch_rx_pdcch_stats;
   time_stats_t rx_dft_stats;
   time_stats_t dlsch_channel_estimation_stats;
   time_stats_t dlsch_freq_offset_estimation_stats;
-  time_stats_t dlsch_decoding_stats;
+  time_stats_t dlsch_decoding_stats[2];
   time_stats_t dlsch_demodulation_stats;
   time_stats_t dlsch_rate_unmatching_stats;
   time_stats_t dlsch_turbo_decoding_stats;
@@ -906,7 +916,18 @@ typedef struct {
   time_stats_t tx_prach;
 
   /// RF and Interface devices per CC
-  openair0_device rfdevice; 
+  openair0_device rfdevice;
+  time_stats_t dlsch_encoding_SIC_stats;
+  time_stats_t dlsch_scrambling_SIC_stats;
+  time_stats_t dlsch_modulation_SIC_stats;
+  time_stats_t dlsch_llr_stripping_unit_SIC_stats;
+  time_stats_t dlsch_unscrambling_SIC_stats;
+
+#if ENABLE_RAL
+  hash_table_t    *ral_thresholds_timed;
+  SLIST_HEAD(ral_thresholds_gen_poll_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
+  SLIST_HEAD(ral_thresholds_lte_poll_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
+#endif
 
 } PHY_VARS_UE;
 
@@ -919,7 +940,7 @@ static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,
     exit_fun("nothing to add");
     return(-1);
   }
-  
+
   while (*instance_cnt < 0) {
     // most of the time the thread is waiting here
     // proc->instance_cnt_rxtx is -1
@@ -941,7 +962,7 @@ static inline int wait_on_busy_condition(pthread_mutex_t *mutex,pthread_cond_t *
     exit_fun("nothing to add");
     return(-1);
   }
-  
+
   while (*instance_cnt == 0) {
     // most of the time the thread will skip this
     // waits only if proc->instance_cnt_rxtx is 0
@@ -963,9 +984,9 @@ static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *
     exit_fun("nothing to add");
     return(-1);
   }
-  
+
   *instance_cnt=*instance_cnt-1;
-  
+
   if (pthread_mutex_unlock(mutex) != 0) {
     LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for %s\n",name);
     exit_fun("nothing to add");

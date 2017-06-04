@@ -36,7 +36,6 @@ void lfds700_hash_a_cleanup( struct lfds700_hash_a_state *has,
 
 
 /****************************************************************************/
-#pragma warning( disable : 4100 )
 
 static void btree_au_element_cleanup_function( struct lfds700_btree_au_state *baus, struct lfds700_btree_au_element *baue )
 {
@@ -57,5 +56,4 @@ static void btree_au_element_cleanup_function( struct lfds700_btree_au_state *ba
   return;
 }
 
-#pragma warning( default : 4100 )
 

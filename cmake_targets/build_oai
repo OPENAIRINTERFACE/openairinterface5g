@@ -33,6 +33,13 @@ ORIGIN_PATH=$PWD
 THIS_SCRIPT_PATH=$(dirname $(readlink -f $0))
 source $THIS_SCRIPT_PATH/tools/build_helper
 
+# set environment variables (OPENAIR_HOME, ...)
+set_openair_env
+
+#variables for UE data generation
+gen_nvram_path=$OPENAIR_DIR/targets/bin
+conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
+
 MSC_GEN="False"
 XFORMS="True"
 FLEXRAN_AGENT_SB_IF="True"
@@ -41,7 +48,7 @@ VCD_TIMING="False"
 DEADLINE_SCHEDULER_FLAG_USER="False"
 FORCE_DEADLINE_SCHEDULER_FLAG_USER=""
 CPU_AFFINITY_FLAG_USER="False" #Only valid when lowlatecy flag is set to False
-REL="Rel10"
+REL="Rel14"
 HW="None"
 TP="None"
 NOS1=0
@@ -55,19 +62,21 @@ T_TRACER="False"
 DISABLE_HARDWARE_DEPENDENCY="False"
 CMAKE_BUILD_TYPE=""
 UE_AUTOTEST_TRACE="False"
+BUILD_ECLIPSE=0
+CMAKE_CMD='cmake'
 trap handle_ctrl_c INT
 
 function print_help() {
-  echo_info '
+  echo_info "
 This program installs OpenAirInterface Software
 You should have ubuntu 14.xx, updated, and the Linux kernel >= 3.14
 Options
 -h
    This help
 -c | --clean
-   Erase all files to make a rebuild from start"
+   Erase all files to make a rebuild from start
 -C | --clean-all
-   Erase all files made by previous compilations, installations"
+   Erase all files made by previous compilations, installations
 --clean-kernel
    Erase previously installed features in kernel: iptables, drivers, ...
 -I | --install-external-packages
@@ -82,14 +91,19 @@ Options
 --eNB
    Makes the LTE softmodem
 --UE
-   Makes the UE specific parts (ue_ip, usim, nvram) 
+   Makes the UE specific parts (ue_ip, usim, nvram) from the given configuration file
+--UE-conf-nvram [configuration file]
+   Specify conf_nvram_path (default \"$conf_nvram_path\")
+--UE-gen-nvram [output path]
+   Specify gen_nvram_path (default \"$gen_nvram_path\")
 --RRH
    Makes the RRH
 -a | --agent
    Enables agent for software-defined control of the eNB
 -r | --3gpp-release
-   default is Rel10,
+   default is Rel14,
    Rel8 limits the implementation to 3GPP Release 8 version
+   Rel10 limits the implementation to 3GPP Release 10 version
 -w | --hardware
    EXMIMO, USRP, BLADERF, ETHERNET, LMSSDR, None (Default)
    Adds this RF board support (in external packages installation and in compilation)
@@ -97,7 +111,7 @@ Options
    ETHERNET , None
    Adds this trasport protocol support in compilation
 --oaisim
-   Makes the oaisim simulator. Hardware will be defaulted to "None".
+   Makes the oaisim simulator. Hardware will be defaulted to \"None\".
 --phy_simulators
    Makes the unitary tests Layer 1 simulators
 --core_simulators
@@ -133,6 +147,8 @@ Options
    Disable HW dependency during installation
 --ue-autotest-trace
     Enable specific traces for UE autotest framework
+--build-eclipse
+   Build eclipse project files. Paths are auto corrected by fixprj.sh
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I  --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I  --eNB -x --install-system-files
@@ -140,11 +156,12 @@ Usage (first build):
 Usage (Regular):
  oaisim : ./build_oai --oaisim -x 
  Eurecom EXMIMO + OAI ENB : ./build_oai --eNB -x 
- NI/ETTUS B201  + OAI ENB : ./build_oai --eNB -x -w USRP'
+ NI/ETTUS B201  + OAI ENB : ./build_oai --eNB -x -w USRP"
 }
 
 
 function main() {
+
   until [ -z "$1" ]
   do
     case "$1" in
@@ -170,6 +187,7 @@ function main() {
             GDB=1
             CMAKE_BUILD_TYPE="Debug"
             echo_info "Will Compile with gdb symbols and disable compiler optimization"
+            CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Debug"
             shift;;
        --eNB)
             eNB=1
@@ -183,6 +201,12 @@ function main() {
             UE=1
             echo_info "Will compile UE"
             shift;;
+       --UE-conf-nvram)
+            conf_nvram_path=$(readlink -f "$1")
+            shift 2;;
+        --UE-gen-nvram)
+            gen_nvram_path=$(readlink -f $2)
+            shift 2;;
        --RRH)
             RRH=1
             echo_info "Will compile RRH"
@@ -292,6 +316,15 @@ function main() {
             UE_AUTOTEST_TRACE="True"
             echo_info "Enabling autotest specific trace for UE"
             shift 1;;
+        --uhd-images-dir)
+            UHD_IMAGES_DIR=$2
+            echo_info "Downloading UHD images in the indicated location"
+            shift 2;;
+       --build-eclipse)
+            BUILD_ECLIPSE=1
+            CMAKE_CMD="$CMAKE_CMD"' -DCMAKE_ECLIPSE_GENERATE_SOURCE_PROJECT=TRUE -G"Eclipse CDT4 - Unix Makefiles"'
+            echo_info "Enabling build eclipse project support"
+            shift 1;;			
         -h | --help)
             print_help
             exit 1;;
@@ -301,6 +334,9 @@ function main() {
             break;;
    esac
   done
+  
+  CMAKE_CMD="$CMAKE_CMD .."
+  echo_info "CMAKE_CMD=$CMAKE_CMD"
   
   #########################################################
   # check validity of HW and TP parameters for RRH and eNB
@@ -362,13 +398,16 @@ function main() {
   echo_info "Flags for Deadline scheduler: $DEADLINE_SCHEDULER_FLAG_USER"
   echo_info "Flags for CPU Affinity: $CPU_AFFINITY_FLAG_USER"
 
+  if [ -n "$UHD_IMAGES_DIR" ] && [ -z "$INSTALL_EXTERNAL" ]; then
+    echo_error "UHD images download settings will not be applied without -I present"
+    exit
+  fi
   ############################################
   # setting and printing OAI envs, we should check here
   ############################################
 
   echo_info "2. Setting the OAI PATHS ..."
 
-  set_openair_env
   cecho "OPENAIR_DIR    = $OPENAIR_DIR" $green
 
   # for conf files copy in this bash script
@@ -399,7 +438,7 @@ function main() {
       echo_info "installing packages for USRP support"
       check_install_usrp_uhd_driver
       if [ ! "$DISABLE_HARDWARE_DEPENDENCY" == "True" ]; then
-        install_usrp_uhd_driver
+        install_usrp_uhd_driver $UHD_IMAGES_DIR
       fi
     fi 
     if [ "$HW" == "OAI_BLADERF" ] ; then
@@ -472,7 +511,7 @@ function main() {
     fi
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     cd  $DIR/$lte_build_dir/build
-    cmake ..
+    eval $CMAKE_CMD
   fi
 
   if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
@@ -501,7 +540,7 @@ function main() {
 
 #    mkdir -p $DIR/at_commands/build
 #    cd $DIR/at_commands/build
-#    cmake ..
+#    eval $CMAKE_CMD
 #    compilations \
 #      at_commands at_nas_ue \
 #      at_nas_ue $dbin/at_nas_ue
@@ -510,22 +549,24 @@ function main() {
     mkdir -p $DIR/nas_sim_tools/build
     cd $DIR/nas_sim_tools/build
     
-    cmake ..
+    eval $CMAKE_CMD
     compilations \
       nas_sim_tools usim \
       usim $dbin/usim
     compilations \
       nas_sim_tools nvram \
       nvram $dbin/nvram
+    compilations \
+        nas_sim_tools conf2uedata \
+        conf2uedata $dbin/conf2uedata
 
     # generate USIM data
-    if [ -f $dbin/nvram ]; then
-      install_nas_tools $dbin $dconf
+    if [ -f $dbin/conf2uedata ]; then
+      install_nas_tools $conf_nvram_path $gen_nvram_path
       echo_info "Copying UE specific part to $DIR/$lte_build_dir/build"
-      cp -Rvf $dbin/.ue_emm.nvram $DIR/$lte_build_dir/build
-      cp -Rvf $dbin/.ue.nvram $DIR/$lte_build_dir/build
-      cp -Rvf $dbin/.usim.nvram $DIR/$lte_build_dir/build
-
+      cp -Rvf $dbin/.ue_emm.nvram0 $DIR/$lte_build_dir/build
+      cp -Rvf $dbin/.ue.nvram0 $DIR/$lte_build_dir/build
+      cp -Rvf $dbin/.usim.nvram0 $DIR/$lte_build_dir/build
     else
       echo_warning "not generated UE NAS files: binaries not found"
     fi
@@ -537,13 +578,13 @@ function main() {
     mkdir -p build
     cd build
     rm -f *sim
-    cmake ..
+    eval $CMAKE_CMD
   fi
 
   if [ "$SIMUS_PHY" = "1" ] ; then
     # lte unitary simulators compilation
     echo_info "Compiling unitary tests simulators"
-    simlist="dlsim ulsim pucchsim prachsim pdcchsim pbchsim mbmssim"
+    simlist="dlsim_tm4 dlsim ulsim pucchsim prachsim pdcchsim pbchsim mbmssim"
     for f in $simlist ; do
       compilations \
       lte-simulators $f \
@@ -615,7 +656,7 @@ function main() {
     [ "$CLEAN" = "1" ] && rm -rf $DIR/$oaisim_build_dir/build
     mkdir -p $DIR/$oaisim_build_dir/build
     cd $DIR/$oaisim_build_dir/build
-    cmake ..
+    eval $CMAKE_CMD
     compilations \
 	  $oaisim_build_dir $oaisim_exec \
 	  $oaisim_exec $dbin/$oaisim_exec.$REL
@@ -626,7 +667,7 @@ function main() {
     	echo_info "Compiling at_nas_ue"
 	mkdir -p $DIR/at_commands/build
 	cd $DIR/at_commands/build
-	cmake ..
+	eval $CMAKE_CMD
 	compilations \
 	    at_commands at_nas_ue \
 	    at_nas_ue $dbin/at_nas_ue
@@ -640,17 +681,20 @@ function main() {
 	[ "$CLEAN" = "1" ] && rm -rf $DIR/nas_sim_tools/build
 	mkdir -p $DIR/nas_sim_tools/build
 	cd $DIR/nas_sim_tools/build
-	cmake ..
+	eval $CMAKE_CMD
 	compilations \
 	    nas_sim_tools usim \
 	    usim $dbin/usim
 	compilations \
 	    nas_sim_tools nvram \
 	    nvram $dbin/nvram
+	compilations \
+        nas_sim_tools conf2uedata \
+        conf2uedata $dbin/conf2uedata
 
 	# generate USIM data
-	if [ -f $dbin/nvram ]; then
-	    install_nas_tools $dbin $dconf
+	if [ -f $dbin/conf2uedata ]; then
+	    install_nas_tools $conf_nvram_path $gen_nvram_path
 	else
 	    echo_warning "not generated UE NAS files: binaries not found"
 	fi
@@ -675,8 +719,8 @@ function main() {
 	compilations \
 	    $oaisim_build_dir oai_eth_transpro \
 	    liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
-	ln -s liboai_eth_transpro.so liboai_transpro.so
-	ln -s $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
+	ln -sf liboai_eth_transpro.so liboai_transpro.so
+	ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
 	echo_info "liboai_transpro.so is linked with ETHERNET library"	 
     fi
       
@@ -694,7 +738,7 @@ function main() {
     #[ "$CLEAN" = "1" ] && rm -rf $DIR/oaisim_mme_build_oai/build
     #mkdir -p $DIR/oaisim_mme_build_oai/build
     #cd $DIR/oaisim_mme_build_oai/build
-    #cmake ..
+    #eval $CMAKE_CMD
     #compilations \
 	#  oaisim_mme_build_oai oaisim_mme \
 	#  oaisim_mme $dbin/oaisim_mme.$REL
@@ -724,7 +768,7 @@ function main() {
      echo "set ( T_TRACER $T_TRACER )"            >>  $cmake_file
      echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file    
      cd $DIR/$rrh_build_dir/build
-     cmake ..
+     eval $CMAKE_CMD
      compilations \
 	 rrh_gw rrh_gw \
 	 rrh_gw $dbin/rrh_gw
@@ -733,28 +777,27 @@ function main() {
   
   # build RF device and transport protocol libraries
   #####################################
-  if [ "$eNB" = "1" -o  "$RRH" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$UE" = "1" -o  "$RRH" = "1" ] ; then
 
-      if [ "$eNB" = "1" ] ; then
+      if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
 	  build_dir=$lte_build_dir	  
       else
 	  build_dir=$rrh_build_dir	 
       fi
 
-      # build RF device libraries (currently EXMIMO is not complied with the rest of HW targets)
+      # build RF device libraries
       if [ "$HW" != "None" ] ; then
 	  rm -f liboai_device.so
 	  rm -f $dbin/liboai_device.so
 
-
 	  # link liboai_device.so with the selected RF device library
 	  if [ "$HW" == "EXMIMO" ] ; then
-	      
-	      #add exmimo compilation
-	      #TODO EXMIMO library support
 	      compilations \
 		  $build_dir oai_exmimodevif \
 		  liboai_exmimodevif.so $dbin/liboai_exmimodevif.so.$REL
+
+	      ln -sf liboai_exmimodevif.so liboai_device.so
+	      ln -sf $dbin/liboai_exmimodevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to EXMIMO device library"       
 	  elif [ "$HW" == "OAI_USRP" ] ; then
 	      if [ -d "/usr/include/uhd" ] ; then
@@ -763,8 +806,8 @@ function main() {
 		      liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
 	      fi
 
-	      ln -s liboai_usrpdevif.so liboai_device.so
-	      ln -s $dbin/liboai_usrpdevif.so.$REL $dbin/liboai_device.so
+	      ln -sf liboai_usrpdevif.so liboai_device.so
+	      ln -sf $dbin/liboai_usrpdevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to USRP device library"        
 	  elif [ "$HW" == "OAI_BLADERF" ] ; then
 	      if [ -f "/usr/include/libbladeRF.h" ] ; then
@@ -773,8 +816,8 @@ function main() {
 		      liboai_bladerfdevif.so $dbin/liboai_bladerfdevif.so.$REL
 	      fi
 
-	      ln -s liboai_bladerfdevif.so liboai_device.so
-	      ln -s $dbin/liboai_bladerfdevif.so.$REL $dbin/liboai_device.so
+	      ln -sf liboai_bladerfdevif.so liboai_device.so
+	      ln -sf $dbin/liboai_bladerfdevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to BLADERF device library"	 
 	  elif [ "$HW" == "OAI_LMSSDR" ] ; then
 #	      if [ -f "/usr/include/libbladeRF.h" ] ; then
@@ -783,8 +826,8 @@ function main() {
 		      liboai_lmssdrdevif.so $dbin/liboai_lmssdrdevif.so.$REL
 #	      fi
 
-	      ln -s liboai_lmssdrdevif.so liboai_device.so
-	      ln -s $dbin/liboai_lmssdrdevif.so.$REL $dbin/liboai_device.so
+	      ln -sf liboai_lmssdrdevif.so liboai_device.so
+	      ln -sf $dbin/liboai_lmssdrdevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to LMSSDR device library"	 
 	  else 
 	      echo_info "liboai_device.so is not linked to any device library"	    
@@ -800,8 +843,8 @@ function main() {
 	      compilations \
 		  $build_dir oai_eth_transpro \
 		  liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
-	      ln -s liboai_eth_transpro.so liboai_transpro.so
-	      ln -s $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
+	      ln -sf liboai_eth_transpro.so liboai_transpro.so
+	      ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
 	      echo_info "liboai_transpro.so is linked with ETHERNET library"	 
 	  fi      
       fi
@@ -819,7 +862,7 @@ fi
     [ "$CLEAN" = "1" ] && rm -rf $OPENAIR_DIR/cmake_targets/doxygen/build
     mkdir -p $OPENAIR_DIR/cmake_targets/doxygen/build
     cd $OPENAIR_DIR/cmake_targets/doxygen/build
-    cmake ..
+    eval $CMAKE_CMD
     make doc
     ) >& $doxygen_log
   fi

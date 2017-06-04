@@ -21,7 +21,7 @@
 
 /*! \file oaisim_functions.c
 * \brief function primitives of oaisim
-* \author Navid Nikaein 
+* \author Navid Nikaein
 * \date 2013-2015
 * \version 1.0
 * \company Eurecom
@@ -91,7 +91,9 @@ extern char smbv_ip[16];
 #define K 2                  // averaging coefficient
 #define TARGET_SF_TIME_NS 1000000       // 1ms = 1000000 ns
 
+#ifndef min
 #define min(a,b) ((a)<(b)?(a):(b))
+#endif
 
 int           otg_times             = 0;
 int           if_times              = 0;
@@ -161,7 +163,7 @@ extern channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs];
 extern channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX][MAX_NUM_CCs];
 
 extern mapping small_scale_names[];
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
 extern pdcp_mbms_t pdcp_mbms_array_ue[NUMBER_OF_UE_MAX][maxServiceCount][maxSessionPerPMCH];
 extern pdcp_mbms_t pdcp_mbms_array_eNB[NUMBER_OF_eNB_MAX][maxServiceCount][maxSessionPerPMCH];
 #endif
@@ -729,8 +731,9 @@ void get_simulation_options(int argc, char *argv[])
       /*
       oai_emulation.info.transmission_mode[0] = atoi (optarg);
 
-      if ((oai_emulation.info.transmission_mode[0] != 1) &&  (oai_emulation.info.transmission_mode[0] != 2) && (oai_emulation.info.transmission_mode[0] != 3)
-          && (oai_emulation.info.transmission_mode[0] != 5) && (oai_emulation.info.transmission_mode[0] != 6) && (oai_emulation.info.transmission_mode[0] !=7)) {
+      if ((oai_emulation.info.transmission_mode[0] != 1) && (oai_emulation.info.transmission_mode[0] != 2) &&
+	  (oai_emulation.info.transmission_mode[0] != 3) && (oai_emulation.info.transmission_mode[0] != 4) &&
+          (oai_emulation.info.transmission_mode[0] != 5) && (oai_emulation.info.transmission_mode[0] != 6)) && (oai_emulation.info.transmission_mode[0] !=7)) {
         printf("Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode[0]);
         exit(-1);
       }
@@ -1013,8 +1016,8 @@ int eNB_trx_stop(openair0_device *device) {
 int UE_trx_start(openair0_device *device) {
   return(0);
 }
-int UE_trx_end(openair0_device *device) {
-  return(0);
+void UE_trx_end(openair0_device *device) {
+  return;
 }
 int UE_trx_stop(openair0_device *device) {
   return(0);
@@ -1035,65 +1038,73 @@ int UE_trx_set_gains(openair0_device *device, openair0_config_t *openair0_cfg) {
 extern pthread_mutex_t subframe_mutex;
 extern int subframe_eNB_mask,subframe_UE_mask;
 
-int eNB_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
-
+int eNB_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc)
+{
+  int ret = nsamps;
   int eNB_id = device->Mod_id;
   int CC_id  = device->CC_id;
 
   int subframe;
-  int sample_count=0;
+  int read_samples, max_samples;
+  openair0_timestamp last = last_eNB_rx_timestamp[eNB_id][CC_id];
 
   *ptimestamp = last_eNB_rx_timestamp[eNB_id][CC_id];
 
-  LOG_D(EMU,"eNB_trx_read nsamps %d TS(%llu,%llu) => subframe %d\n",nsamps,
-        (unsigned long long)current_eNB_rx_timestamp[eNB_id][CC_id],
-        (unsigned long long)last_eNB_rx_timestamp[eNB_id][CC_id],
-	(*ptimestamp/PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti)%10);
+  LOG_D(EMU,"eNB_trx_read nsamps %d TS(%"PRId64",%"PRId64") => subframe %d\n",nsamps,
+        current_eNB_rx_timestamp[eNB_id][CC_id],
+        last_eNB_rx_timestamp[eNB_id][CC_id],
+	(int)((*ptimestamp/PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti)%10));
   // if we're at a subframe boundary generate UL signals for this eNB
 
-  while (sample_count<nsamps) {
-    while (current_eNB_rx_timestamp[eNB_id][CC_id]<
-	   (nsamps+last_eNB_rx_timestamp[eNB_id][CC_id])) {
-      //      LOG_D(EMU,"eNB: current TS %llu, last TS %llu, sleeping\n",current_eNB_rx_timestamp[eNB_id][CC_id],last_eNB_rx_timestamp[eNB_id][CC_id]);
+  while (nsamps) {
+    while (current_eNB_rx_timestamp[eNB_id][CC_id] == last) {
+      LOG_D(EMU,"eNB: current TS %"PRId64", last TS %"PRId64", sleeping\n",current_eNB_rx_timestamp[eNB_id][CC_id],last_eNB_rx_timestamp[eNB_id][CC_id]);
       usleep(500);
     }
 
-    // tell top-level we are busy
-    pthread_mutex_lock(&subframe_mutex);
-    subframe_eNB_mask|=(1<<eNB_id);
-    pthread_mutex_unlock(&subframe_mutex); 
+    read_samples = nsamps;
+    max_samples = current_eNB_rx_timestamp[eNB_id][CC_id]-last;
+    if (read_samples > max_samples)
+      read_samples = max_samples;
+
+    last += read_samples;
+    nsamps -= read_samples;
+
+    if (current_eNB_rx_timestamp[eNB_id][CC_id] == last) {
+      subframe = (last/PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti)%10;
+      //subframe = (subframe+9) % 10;
+
+      LOG_D(PHY,"eNB_trx_read generating UL subframe %d (Ts %llu, current TS %llu)\n",
+            subframe,(unsigned long long)*ptimestamp,
+            (unsigned long long)current_eNB_rx_timestamp[eNB_id][CC_id]);
     
-    subframe = (last_eNB_rx_timestamp[eNB_id][CC_id]/PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti)%10;
-    LOG_D(EMU,"eNB_trx_read generating UL subframe %d (Ts %llu, current TS %llu)\n",
-	  subframe,(unsigned long long)*ptimestamp,
-	  (unsigned long long)current_eNB_rx_timestamp[eNB_id][CC_id]);
-    
-    do_UL_sig(UE2eNB,
-	      enb_data,
-	      ue_data,
-	      subframe,
-	      0,  // abstraction_flag
-	      &PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms,
-	      0,  // frame is only used for abstraction
-	      eNB_id,
-	      CC_id);
-  
-    last_eNB_rx_timestamp[eNB_id][CC_id] += PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti;
-    sample_count += PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti;
+      do_UL_sig(UE2eNB,
+                enb_data,
+                ue_data,
+                subframe,
+                0,  // abstraction_flag
+                &PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms,
+                0,  // frame is only used for abstraction
+                eNB_id,
+                CC_id);
+
+      last_eNB_rx_timestamp[eNB_id][CC_id] = last;
+    }
   }
   
+  last_eNB_rx_timestamp[eNB_id][CC_id] = last;
 
-
-  return(nsamps);
+  return ret;
 }
 
-int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
-
+int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc)
+{
+  int ret = nsamps;
   int UE_id = device->Mod_id;
   int CC_id  = device->CC_id;
   int subframe;
-  int sample_count=0;
-  int read_size;
+  int read_samples, max_samples;
+  openair0_timestamp last = last_UE_rx_timestamp[UE_id][CC_id];
 
   *ptimestamp = last_UE_rx_timestamp[UE_id][CC_id];
 
@@ -1102,55 +1113,59 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
         (unsigned long long)last_UE_rx_timestamp[UE_id][CC_id],
 	cc);
 
-  if (nsamps < PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)
-    read_size = nsamps;
-  else
-    read_size = PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti;
-
-  while (sample_count<nsamps) {
-    while (current_UE_rx_timestamp[UE_id][CC_id] < 
-	   (last_UE_rx_timestamp[UE_id][CC_id]+read_size)) {
-      //LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+  while (nsamps) {
+    /* wait for all processing to be finished */
+    while (1) {
+      PHY_VARS_UE *UE = PHY_vars_UE_g[UE_id][0];
+      int ready = 1;
+      int i;
+      for (i = 0; i < 2; i++)
+        if (UE->proc.proc_rxtx[i].instance_cnt_rxtx >= 0) ready = 0;
+      if (UE->proc.instance_cnt_synch >= 0) ready = 0;
+      if (ready) break;
+      usleep(500);
+    }
+    while (current_UE_rx_timestamp[UE_id][CC_id] == last) {
+      LOG_D(EMU,"UE_trx_read : current TS %"PRId64", last TS %"PRId64", sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
 
       usleep(500);
     }
 
     //    LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
       
-    // tell top-level we are busy 
-    pthread_mutex_lock(&subframe_mutex);
-    subframe_UE_mask|=(1<<UE_id);
-    pthread_mutex_unlock(&subframe_mutex);
+    read_samples = nsamps;
+    max_samples = current_UE_rx_timestamp[UE_id][CC_id]-last;
+    if (read_samples > max_samples)
+      read_samples = max_samples;
 
+    last += read_samples;
+    nsamps -= read_samples;
 
-    // otherwise we have one subframe here so generate the received signal
-    subframe = (last_UE_rx_timestamp[UE_id][CC_id]/PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)%10;
-    if ((last_UE_rx_timestamp[UE_id][CC_id]%PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti) > 0)
-      subframe++;
+    if (current_UE_rx_timestamp[UE_id][CC_id] == last) {
+      // we have one subframe here so generate the received signal
+      subframe = (last/PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)%10;
+      //subframe = (subframe+9) % 10;
 
-    last_UE_rx_timestamp[UE_id][CC_id] += read_size;
-    sample_count += read_size;
- 
-    if (subframe > 9) 
-      return(nsamps);
+      LOG_D(PHY,"UE_trx_read generating DL subframe %d (Ts %llu, current TS %llu)\n",
+            subframe,(unsigned long long)*ptimestamp,
+            (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id]);
 
-    LOG_D(PHY,"UE_trx_read generating DL subframe %d (Ts %llu, current TS %llu)\n",
-	  subframe,(unsigned long long)*ptimestamp,
-	  (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id]);    
-    do_DL_sig(eNB2UE,
-	      enb_data,
-	      ue_data,
-	      subframe,
-	      0, //abstraction_flag,
-	      &PHY_vars_UE_g[UE_id][CC_id]->frame_parms,
-	      UE_id,
-	      CC_id);
+      do_DL_sig(eNB2UE,
+                enb_data,
+                ue_data,
+                subframe,
+                0, //abstraction_flag,
+                &PHY_vars_UE_g[UE_id][CC_id]->frame_parms,
+                UE_id,
+                CC_id);
 
-
+      last_UE_rx_timestamp[UE_id][CC_id] = last;
+    }
   }
 
+  last_UE_rx_timestamp[UE_id][CC_id] = last;
 
-  return(nsamps);
+  return ret;
 }
 
 int eNB_trx_write(openair0_device *device,openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
@@ -1280,7 +1295,7 @@ void init_devices(void){
 
 void init_openair1(void)
 {
-  module_id_t UE_id, eNB_id;
+  module_id_t UE_id, eNB_id = 0;
   uint8_t CC_id;
 #if ENABLE_RAL
   int list_index;
@@ -1288,9 +1303,9 @@ void init_openair1(void)
 
   // change the nb_connected_eNB
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    init_lte_vars (&frame_parms[CC_id], 
-		   oai_emulation.info.frame_type[CC_id], 
-		   oai_emulation.info.tdd_config[CC_id], 
+    init_lte_vars (&frame_parms[CC_id],
+		   oai_emulation.info.frame_type[CC_id],
+		   oai_emulation.info.tdd_config[CC_id],
 		   oai_emulation.info.tdd_config_S[CC_id],
 		   oai_emulation.info.extended_prefix_flag[CC_id],
                    oai_emulation.info.N_RB_DL[CC_id], 
@@ -1396,9 +1411,9 @@ void init_openair1(void)
   // init_ue_status();
   for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      
+
       PHY_vars_UE_g[UE_id][CC_id]->tx_power_max_dBm=10;
-      
+
       PHY_vars_UE_g[UE_id][CC_id]->rx_total_gain_dB=100;
 
       // update UE_mode for each eNB_id not just 0
@@ -1415,7 +1430,7 @@ void init_openair1(void)
       else
 	PHY_vars_UE_g[UE_id][CC_id]->mac_enabled=1;
 
-      PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[0]->crnti = 0x1235 + UE_id;
+      PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[0][0]->crnti = 0x1235 + UE_id;
       PHY_vars_UE_g[UE_id][CC_id]->current_dlsch_cqi[0] = 10;
 
       LOG_I(EMU, "UE %d mode is initialized to %d\n", UE_id, PHY_vars_UE_g[UE_id][CC_id]->UE_mode[0] );
@@ -1434,6 +1449,7 @@ void init_openair1(void)
 
     } // CC_id
   } // UE_id
+  extern void init_UE(int);
   init_UE(NB_UE_INST);
     }
 
@@ -1470,7 +1486,7 @@ void init_ocm(void)
     break;
 
   case TDD:
-    frame_type = "FDD";
+    frame_type = "TDD";
     break;
   }
 
@@ -1485,7 +1501,7 @@ void init_ocm(void)
     get_beta_map_up();
 #endif
     get_MIESM_param();
-    
+
     //load_pbch_desc();
   }
 
@@ -1526,7 +1542,7 @@ void init_ocm(void)
               map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option), eNB_id, UE_id);
 
 
-        eNB2UE[eNB_id][UE_id][CC_id] = 
+        eNB2UE[eNB_id][UE_id][CC_id] =
 	  new_channel_desc_scm(PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.nb_antennas_tx,
 			       PHY_vars_UE_g[UE_id][CC_id]->frame_parms.nb_antennas_rx,
 			       map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
@@ -1539,7 +1555,7 @@ void init_ocm(void)
         LOG_D(OCM,"[SIM] Initializing channel (%s, %d) from UE %d to eNB %d\n", oai_emulation.environment_system_config.fading.small_scale.selected_option,
               map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),UE_id, eNB_id);
 
-        UE2eNB[UE_id][eNB_id][CC_id] = 
+        UE2eNB[UE_id][eNB_id][CC_id] =
 	  new_channel_desc_scm(PHY_vars_UE_g[UE_id][CC_id]->frame_parms.nb_antennas_tx,
 			       PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.nb_antennas_rx,
 			       map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
@@ -1664,7 +1680,7 @@ void update_ocm()
           //pathloss: -132.24 dBm/15kHz RE + target SNR - eNB TX power per RE
           if (eNB_id == (UE_id % NB_eNB_INST)) {
             eNB2UE[eNB_id][UE_id][CC_id]->path_loss_dB = -132.24 + snr_dB - PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.pdsch_config_common.referenceSignalPower;
-            UE2eNB[UE_id][eNB_id][CC_id]->path_loss_dB = -132.24 + snr_dB - PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.pdsch_config_common.referenceSignalPower; 
+            UE2eNB[UE_id][eNB_id][CC_id]->path_loss_dB = -132.24 + snr_dB - PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.pdsch_config_common.referenceSignalPower;
           } else {
             eNB2UE[eNB_id][UE_id][CC_id]->path_loss_dB = -132.24 + sinr_dB - PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.pdsch_config_common.referenceSignalPower;
             UE2eNB[UE_id][eNB_id][CC_id]->path_loss_dB = -132.24 + sinr_dB - PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.pdsch_config_common.referenceSignalPower;
@@ -1673,7 +1689,7 @@ void update_ocm()
           LOG_D(OCM,"Path loss from eNB %d to UE %d (CCid %d)=> %f dB (eNB TX %d, SNR %f)\n",eNB_id,UE_id,CC_id,
                 eNB2UE[eNB_id][UE_id][CC_id]->path_loss_dB,
                 PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.pdsch_config_common.referenceSignalPower,snr_dB);
-        
+
         }
       }
     }
@@ -1698,9 +1714,9 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
 
       // generate traffic if the ue is rrc reconfigured state
       //if ((rrc_state=mac_eNB_get_rrc_status(enb_module_idP, dst_id)) > 2 /*RRC_CONNECTED*/ ) {
-      if (mac_eNB_get_rrc_status(enb_module_idP, oai_emulation.info.eNB_ue_module_id_to_rnti[enb_module_idP][dst_id]) > 2 ){ 
+      if (mac_eNB_get_rrc_status(enb_module_idP, oai_emulation.info.eNB_ue_module_id_to_rnti[enb_module_idP][dst_id]) > 2 ){
 	if_times += 1;
-	
+
         for (app_id=0; app_id<MAX_NUM_APPLICATION; app_id++) {
           otg_pkt = malloc (sizeof(Packet_otg_elt_t));
 
@@ -1725,7 +1741,7 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
       }
     }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
     mbms_service_id_t service_id;
     mbms_session_id_t session_id;
     rb_id_t           rb_id;
@@ -1760,7 +1776,7 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
 
             // old version
             /*      // MBSM multicast traffic
-            #ifdef Rel10
+            #if defined(Rel10) || defined(Rel14)
             if (frame >= 46) {// only generate when UE can receive MTCH (need to control this value)
             for (service_id = 0; service_id < 2 ; service_id++) { //maxServiceCount
             for (session_id = 0; session_id < 2; session_id++) { // maxSessionPerPMCH
@@ -1842,16 +1858,16 @@ void update_otg_UE(module_id_t ue_mod_idP, unsigned int ctime)
       if (mac_UE_get_rrc_status(ue_mod_idP, dst_id ) > 2 /*RRC_CONNECTED*/) {
         for (app_id=0; app_id<MAX_NUM_APPLICATION; app_id++) {
 	  Packet_otg_elt_t *otg_pkt = malloc (sizeof(Packet_otg_elt_t));
-	  
+
 	  if (otg_pkt!=NULL)
 	    memset(otg_pkt,0,sizeof(Packet_otg_elt_t));
 	  else {
 	    LOG_E(OTG,"not enough memory\n");
 	    exit(-1);
 	  }// Manage to add this packet to the tail of your list
-	  
+
 	  (otg_pkt->otg_pkt).sdu_buffer = (uint8_t*) packet_gen(src_id, dst_id, app_id, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
-	  
+
 	  if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
 	    (otg_pkt->otg_pkt).rb_id     = DTCH-2;
 	    (otg_pkt->otg_pkt).module_id = module_id;

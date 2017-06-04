@@ -39,3 +39,7 @@ v0.3 -> Last stable commit on develop branch before the merge of feature-131-new
 v0.4 -> Merge of feature-131-new-license. It closes issue#131 and changes the license to OAI Public License V1.0
 v0.5 -> Merge of enhancement-10-harmony-lts. It includes fixes for Ubuntu 16.04 support
 v0.5.1 -> Merge of bugfix-137-uplink-fixes. It includes stablity fixes for eNB
+v0.5.2 -> Last version with old code for oaisim (abstraction mode works)
+v0.6 -> RRH functionality, UE greatly improved, better TDD support,
+        a lot of bugs fixed. WARNING: oaisim in PHY abstraction mode does not
+        work, you need to use v0.5.2 for that.

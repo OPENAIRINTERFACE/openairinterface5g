@@ -405,7 +405,7 @@ void ue_decode_p(module_id_t module_idP, int CC_id,frame_t frame, uint8_t CH_ind
 void ue_send_sdu(module_id_t module_idP, uint8_t CC_id,frame_t frame, sub_frame_t subframe, uint8_t *sdu,uint16_t sdu_len,uint8_t CH_index);
 
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 /* \brief Called by PHY to transfer MCH transport block to ue MAC.
 @param Mod_id Index of module instance
 @param frame Frame index
@@ -454,6 +454,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP,u
 @param t_crnti Pointer to PHY variable containing the T_CRNTI
 @param preamble_index Preamble Index used by PHY to transmit the PRACH.  This should match the received RAR to trigger the rest of
 random-access procedure
+@param selected_rar_buffer the output buffer for storing the selected RAR header and RAR payload
 @returns timing advance or 0xffff if preamble doesn't match
 */
 uint16_t
@@ -464,7 +465,8 @@ ue_process_rar(
   const rnti_t ra_rnti,
   uint8_t * const dlsch_buffer,
   rnti_t * const t_crnti,
-  const uint8_t preamble_index
+  const uint8_t preamble_index,
+  uint8_t* selected_rar_buffer
 );
 
 
@@ -754,7 +756,7 @@ int rrc_mac_config_req(module_id_t     module_idP,
                        uint8_t         eNB_index,
                        RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
                        struct PhysicalConfigDedicated *physicalConfigDedicated,
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
                        SCellToAddMod_r10_t *sCellToAddMod_r10,
                        //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -771,7 +773,7 @@ int rrc_mac_config_req(module_id_t     module_idP,
                        long *ul_Bandwidth,
                        AdditionalSpectrumEmission_t *additionalSpectrumEmission,
                        struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
                        ,
                        uint8_t MBMS_Flag,
                        MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,

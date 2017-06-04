@@ -32,7 +32,7 @@
 * @ingroup _rlc_am_internal_segment_impl_
 * @{
 */
-
+#if 0
 #ifndef __RLC_AM_SEGMENT_HOLES_H__
 #    define __RLC_AM_SEGMENT_HOLES_H__
 //-----------------------------------------------------------------------------
@@ -107,4 +107,5 @@ protected_rlc_am_segments_holes(void rlc_am_add_hole (
                                   const sdu_size_t so_startP,
                                   sdu_size_t so_stopP);)
 /** @} */
+#endif
 #endif

@@ -43,6 +43,7 @@ Description Defines the EPS Mobility Management procedures executed at
 #include "nas_log.h"
 
 #include "emmData.h"
+#include "user_defs.h"
 
 
 
@@ -127,30 +128,30 @@ static const char *_emm_fsm_status_str[EMM_STATE_MAX] = {
  */
 
 /* Type of the EPS Mobility Management state machine handler */
-typedef int(*emm_fsm_handler_t)(const emm_reg_t *);
+typedef int(*emm_fsm_handler_t)(nas_user_t *user, const emm_reg_t *);
 
-int EmmNull(const emm_reg_t *);
-int EmmDeregistered(const emm_reg_t *);
-int EmmRegistered(const emm_reg_t *);
-int EmmDeregisteredInitiated(const emm_reg_t *);
-int EmmDeregisteredNormalService(const emm_reg_t *);
-int EmmDeregisteredLimitedService(const emm_reg_t *);
-int EmmDeregisteredAttemptingToAttach(const emm_reg_t *);
-int EmmDeregisteredPlmnSearch(const emm_reg_t *);
-int EmmDeregisteredNoImsi(const emm_reg_t *);
-int EmmDeregisteredAttachNeeded(const emm_reg_t *);
-int EmmDeregisteredNoCellAvailable(const emm_reg_t *);
-int EmmRegisteredInitiated(const emm_reg_t *);
-int EmmRegisteredNormalService(const emm_reg_t *);
-int EmmRegisteredAttemptingToUpdate(const emm_reg_t *);
-int EmmRegisteredLimitedService(const emm_reg_t *);
-int EmmRegisteredPlmnSearch(const emm_reg_t *);
-int EmmRegisteredUpdateNeeded(const emm_reg_t *);
-int EmmRegisteredNoCellAvailable(const emm_reg_t *);
-int EmmRegisteredAttemptingToUpdate(const emm_reg_t *);
-int EmmRegisteredImsiDetachInitiated(const emm_reg_t *);
-int EmmTrackingAreaUpdatingInitiated(const emm_reg_t *);
-int EmmServiceRequestInitiated(const emm_reg_t *);
+int EmmNull(nas_user_t *user, const emm_reg_t *);
+int EmmDeregistered(nas_user_t *user, const emm_reg_t *);
+int EmmRegistered(nas_user_t *user, const emm_reg_t *);
+int EmmDeregisteredInitiated(nas_user_t *user, const emm_reg_t *);
+int EmmDeregisteredNormalService(nas_user_t *user, const emm_reg_t *);
+int EmmDeregisteredLimitedService(nas_user_t *user, const emm_reg_t *);
+int EmmDeregisteredAttemptingToAttach(nas_user_t *user, const emm_reg_t *);
+int EmmDeregisteredPlmnSearch(nas_user_t *user, const emm_reg_t *);
+int EmmDeregisteredNoImsi(nas_user_t *user, const emm_reg_t *);
+int EmmDeregisteredAttachNeeded(nas_user_t *user, const emm_reg_t *);
+int EmmDeregisteredNoCellAvailable(nas_user_t *user, const emm_reg_t *);
+int EmmRegisteredInitiated(nas_user_t *user, const emm_reg_t *);
+int EmmRegisteredNormalService(nas_user_t *user, const emm_reg_t *);
+int EmmRegisteredAttemptingToUpdate(nas_user_t *user, const emm_reg_t *);
+int EmmRegisteredLimitedService(nas_user_t *user, const emm_reg_t *);
+int EmmRegisteredPlmnSearch(nas_user_t *user, const emm_reg_t *);
+int EmmRegisteredUpdateNeeded(nas_user_t *user, const emm_reg_t *);
+int EmmRegisteredNoCellAvailable(nas_user_t *user, const emm_reg_t *);
+int EmmRegisteredAttemptingToUpdate(nas_user_t *user, const emm_reg_t *);
+int EmmRegisteredImsiDetachInitiated(nas_user_t *user, const emm_reg_t *);
+int EmmTrackingAreaUpdatingInitiated(nas_user_t *user, const emm_reg_t *);
+int EmmServiceRequestInitiated(nas_user_t *user, const emm_reg_t *);
 
 
 /* EMM state machine handlers */
@@ -180,14 +181,6 @@ static const emm_fsm_handler_t _emm_fsm_handlers[EMM_STATE_MAX] = {
   EmmServiceRequestInitiated,
 };
 
-/*
- * -----------------------------------------------------------------------------
- *          Current EPS Mobility Management status
- * -----------------------------------------------------------------------------
- */
-
-emm_fsm_state_t _emm_fsm_status[EMM_FSM_NB_UE_MAX];
-
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
@@ -206,14 +199,12 @@ emm_fsm_state_t _emm_fsm_status[EMM_FSM_NB_UE_MAX];
  **      Others:    _emm_fsm_status                            **
  **                                                                        **
  ***************************************************************************/
-void emm_fsm_initialize(void)
+emm_fsm_state_t emm_fsm_initialize()
 {
-  //int ueid;
   LOG_FUNC_IN;
 
-  _emm_fsm_status[0] = EMM_NULL;
-
   LOG_FUNC_OUT;
+  return EMM_NULL;
 }
 
 /****************************************************************************
@@ -231,22 +222,18 @@ void emm_fsm_initialize(void)
  **      Others:    _emm_fsm_status                            **
  **                                                                        **
  ***************************************************************************/
-int emm_fsm_set_status(
+int emm_fsm_set_status(nas_user_t *user,
   emm_fsm_state_t  status)
 {
   LOG_FUNC_IN;
 
-  unsigned int ueid = 0;
-
-
-
-  if ( (status < EMM_STATE_MAX) && (ueid < EMM_FSM_NB_UE_MAX) ) {
+  if ( status < EMM_STATE_MAX ) {
     LOG_TRACE(INFO, "EMM-FSM   - Status changed: %s ===> %s",
-              _emm_fsm_status_str[_emm_fsm_status[ueid]],
+              _emm_fsm_status_str[user->emm_fsm_status],
               _emm_fsm_status_str[status]);
 
-    if (status != _emm_fsm_status[ueid]) {
-      _emm_fsm_status[ueid] = status;
+    if (status != user->emm_fsm_status) {
+      user->emm_fsm_status = status;
     }
 
     LOG_FUNC_RETURN (RETURNok);
@@ -270,9 +257,9 @@ int emm_fsm_set_status(
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-emm_fsm_state_t emm_fsm_get_status(void)
+emm_fsm_state_t emm_fsm_get_status(nas_user_t *user)
 {
-  return (_emm_fsm_status[0]);
+  return user->emm_fsm_status;
 }
 
 /****************************************************************************
@@ -289,7 +276,7 @@ emm_fsm_state_t emm_fsm_get_status(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_fsm_process(const emm_reg_t *evt)
+int emm_fsm_process(nas_user_t *user, const emm_reg_t *evt)
 {
   int rc;
   emm_fsm_state_t status;
@@ -299,7 +286,7 @@ int emm_fsm_process(const emm_reg_t *evt)
 
   primitive = evt->primitive;
 
-  status = _emm_fsm_status[0];
+  status = user->emm_fsm_status;
 
   LOG_TRACE(INFO, "EMM-FSM   - Received event %s (%d) in state %s",
             _emm_fsm_event_str[primitive - _EMMREG_START - 1], primitive,
@@ -307,7 +294,7 @@ int emm_fsm_process(const emm_reg_t *evt)
 
 
   /* Execute the EMM state machine */
-  rc = (_emm_fsm_handlers[status])(evt);
+  rc = (_emm_fsm_handlers[status])(user, evt);
 
   LOG_FUNC_RETURN (rc);
 }

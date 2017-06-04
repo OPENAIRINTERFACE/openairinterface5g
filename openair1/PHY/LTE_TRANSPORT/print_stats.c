@@ -59,7 +59,7 @@ int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char* buffer, int length
     return 0;
 
   if ((mode == normal_txrx) || (mode == no_L2_connect)) {
-    len += sprintf(&buffer[len], "[UE_PROC] UE %d, RNTI %x\n",ue->Mod_id, ue->pdcch_vars[0]->crnti);
+    len += sprintf(&buffer[len], "[UE_PROC] UE %d, RNTI %x\n",ue->Mod_id, ue->pdcch_vars[0][0]->crnti);
      len += sprintf(&buffer[len],"[UE PROC] RSRP[0] %.2f dBm/RE, RSSI %.2f dBm, RSRQ[0] %.2f dB, N0 %d dBm/RE (NF %.1f dB)\n",
 		    10*log10(ue->measurements.rsrp[0])-ue->rx_total_gain_dB,
 		    10*log10(ue->measurements.rssi)-ue->rx_total_gain_dB, 
@@ -107,9 +107,9 @@ int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char* buffer, int length
       len += sprintf(&buffer[len], "[UE PROC] Po_PUCCH = %d dBm (Po_NOMINAL_PUCCH %d dBm, g_pucch %d dB)\n", 
 		     get_PL(ue->Mod_id,ue->CC_id,0)+
 		     ue->frame_parms.ul_power_control_config_common.p0_NominalPUCCH+
-		     ue->dlsch[0][0]->g_pucch,
+		     ue->dlsch[0][0][0]->g_pucch,
 		     ue->frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
-		     ue->dlsch[0][0]->g_pucch);
+		     ue->dlsch[0][0][0]->g_pucch);
     }
     //for (eNB=0;eNB<NUMBER_OF_eNB_MAX;eNB++) {
     for (eNB=0; eNB<1; eNB++) {
@@ -482,24 +482,24 @@ int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char* buffer, int length
         len += sprintf(&buffer[len], "[UE PROC] Mode 6 Wideband CQI eNB %d : %d dB\n",eNB,ue->measurements.precoded_cqi_dB[eNB][0]);
 
       for (harq_pid=0;harq_pid<8;harq_pid++) {
-	len+=sprintf(&buffer[len],"[UE PROC] eNB %d: CW 0 harq_pid %d, mcs %d:",eNB,harq_pid,ue->dlsch[0][0]->harq_processes[harq_pid]->mcs);
+	len+=sprintf(&buffer[len],"[UE PROC] eNB %d: CW 0 harq_pid %d, mcs %d:",eNB,harq_pid,ue->dlsch[0][0][0]->harq_processes[harq_pid]->mcs);
 	for (round=0;round<8;round++)
 	  len+=sprintf(&buffer[len],"%d/%d ",
-		       ue->dlsch[0][0]->harq_processes[harq_pid]->errors[round],
-		       ue->dlsch[0][0]->harq_processes[harq_pid]->trials[round]);
+		       ue->dlsch[0][0][0]->harq_processes[harq_pid]->errors[round],
+		       ue->dlsch[0][0][0]->harq_processes[harq_pid]->trials[round]);
 	len+=sprintf(&buffer[len],"\n");
       }
-      if (ue->dlsch[0] && ue->dlsch[0][0] && ue->dlsch[0][1]) {
-        len += sprintf(&buffer[len], "[UE PROC] Saved PMI for DLSCH eNB %d : %jx (%p)\n",eNB,pmi2hex_2Ar1(ue->dlsch[0][0]->pmi_alloc),ue->dlsch[0][0]);
+      if (ue->dlsch[0][0] && ue->dlsch[0][0][0] && ue->dlsch[0][0][1]) {
+        len += sprintf(&buffer[len], "[UE PROC] Saved PMI for DLSCH eNB %d : %jx (%p)\n",eNB,pmi2hex_2Ar1(ue->dlsch[0][0][0]->pmi_alloc),ue->dlsch[0][0][0]);
 
-        len += sprintf(&buffer[len], "[UE PROC] eNB %d: dl_power_off = %d\n",eNB,ue->dlsch[0][0]->harq_processes[0]->dl_power_off);
+        len += sprintf(&buffer[len], "[UE PROC] eNB %d: dl_power_off = %d\n",eNB,ue->dlsch[0][0][0]->harq_processes[0]->dl_power_off);
 
 	for (harq_pid=0;harq_pid<8;harq_pid++) {
-	  len+=sprintf(&buffer[len],"[UE PROC] eNB %d: CW 1 harq_pid %d, mcs %d:",eNB,harq_pid,ue->dlsch[0][1]->harq_processes[0]->mcs);
+	  len+=sprintf(&buffer[len],"[UE PROC] eNB %d: CW 1 harq_pid %d, mcs %d:",eNB,harq_pid,ue->dlsch[0][0][1]->harq_processes[0]->mcs);
 	  for (round=0;round<8;round++)
 	    len+=sprintf(&buffer[len],"%d/%d ",
-			 ue->dlsch[0][1]->harq_processes[harq_pid]->errors[round],
-			 ue->dlsch[0][1]->harq_processes[harq_pid]->trials[round]);
+			 ue->dlsch[0][0][1]->harq_processes[harq_pid]->errors[round],
+			 ue->dlsch[0][0][1]->harq_processes[harq_pid]->trials[round]);
 	  len+=sprintf(&buffer[len],"\n");
 	}
       }
@@ -507,7 +507,7 @@ int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char* buffer, int length
       len += sprintf(&buffer[len], "[UE PROC] DLSCH Total %d, Error %d, FER %d\n",ue->dlsch_received[0],ue->dlsch_errors[0],ue->dlsch_fer[0]);
       len += sprintf(&buffer[len], "[UE PROC] DLSCH (SI) Total %d, Error %d\n",ue->dlsch_SI_received[0],ue->dlsch_SI_errors[0]);
       len += sprintf(&buffer[len], "[UE PROC] DLSCH (RA) Total %d, Error %d\n",ue->dlsch_ra_received[0],ue->dlsch_ra_errors[0]);
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
       int i=0;
 
       //len += sprintf(&buffer[len], "[UE PROC] MCH  Total %d\n", ue->dlsch_mch_received[0]);

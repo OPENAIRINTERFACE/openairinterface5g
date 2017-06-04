@@ -468,7 +468,7 @@ int ocg_config_env(void)
       oai_emulation.info.frame_type[CC_id] = map_str_to_int(frame_type_names, oai_emulation.info.frame_type_name[CC_id]);
 
       if (oai_emulation.info.frame_type[CC_id] == -1) {
-        LOG_E(EMU,"frame type incorrect %s, set it to TDD \n",oai_emulation.info.frame_type_name);
+        LOG_E(EMU,"frame type incorrect %s, set it to TDD \n",oai_emulation.info.frame_type_name[CC_id]);
         oai_emulation.info.frame_type[CC_id]=TDD;
       } else
         LOG_I(EMU,"Frame type is %s \n",oai_emulation.info.frame_type_name[CC_id]);
@@ -478,7 +478,7 @@ int ocg_config_env(void)
           LOG_E(EMU,"TDD config %d out of range, set it to 3\n",oai_emulation.info.tdd_config[CC_id]);
           oai_emulation.info.tdd_config[CC_id]=3;
         } else
-          LOG_I(EMU,"TDD config is set to \n",oai_emulation.info.tdd_config[CC_id]);
+          LOG_I(EMU,"TDD config is set to %d\n",oai_emulation.info.tdd_config[CC_id]);
       }
     }
   }
@@ -1087,8 +1087,8 @@ int ocg_config_app(void)
               oai_emulation.application_config.customized_traffic.holding_time_pe_off[customized_traffic_config_index];
 
 
-            LOG_I(OTG,"customized:: OCG_config_OTG: (2) FORMAT (%d:%d) source = %d, dest = %d, dist type for size = %d start/duration %d/%d\n", source_id_start, source_id_end, source_id_index,
-                  destination_id_index, g_otg->size_dist[source_id_index][destination_id_index][0],
+            LOG_I(OTG,"customized:: OCG_config_OTG: (2) FORMAT (%s:%s) source = %d, dest = %d, dist type for size = %d [TODO: check code, printed value may not be correct, checks the indexes of the arry access] start/duration %d/%d\n", source_id_start, source_id_end, source_id_index,
+                  destination_id_index, g_otg->size_dist[source_id_index][destination_id_index][0][0],
                   g_otg->flow_start[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]],
                   g_otg->flow_duration[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]);
             per_source_id = strtok(NULL, comma);

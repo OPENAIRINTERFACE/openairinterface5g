@@ -93,8 +93,8 @@ void ue_init_mac(module_id_t module_idP)
   // default values as deined in 36.331 sec 9.2.2
   LOG_I(MAC,"[UE%d] Applying default macMainConfig\n",module_idP);
   //UE_mac_inst[module_idP].scheduling_info.macConfig=NULL;
-  UE_mac_inst[module_idP].scheduling_info.retxBSR_Timer= MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf10240;
-  UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer=MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
+  UE_mac_inst[module_idP].scheduling_info.retxBSR_Timer= RetxBSR_Timer_r12_sf10240;
+  UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer=PeriodicBSR_Timer_r12_infinity;
   UE_mac_inst[module_idP].scheduling_info.periodicPHR_Timer = MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20;
   UE_mac_inst[module_idP].scheduling_info.prohibitPHR_Timer = MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20;
   UE_mac_inst[module_idP].scheduling_info.PathlossChange_db = MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;
@@ -353,7 +353,7 @@ ue_send_sdu(
 
   if (opt_enabled) {
     trace_pdu(1, sdu, sdu_len, module_idP, 3, UE_mac_inst[module_idP].crnti,
-        UE_mac_inst[module_idP].rxFrame, UE_mac_inst[module_idP].rxSubframe, 0, 0);
+        frameP, subframeP, 0, 0);
     LOG_D(OPT,"[UE %d][DLSCH] Frame %d trace pdu for rnti %x  with size %d\n",
           module_idP, frameP, UE_mac_inst[module_idP].crnti, sdu_len);
   }
@@ -579,7 +579,7 @@ void ue_decode_p(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_in
   }
 }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 unsigned char *parse_mch_header(unsigned char *mac_header,
                                 unsigned char *num_sdu,
                                 unsigned char *rx_lcids,
@@ -1265,13 +1265,13 @@ unsigned char generate_ulsch_header(uint8_t *mac_header,
 void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subframe, uint8_t eNB_index,uint8_t *ulsch_buffer,uint16_t buflen, uint8_t *access_mode)
 {
 
-  mac_rlc_status_resp_t rlc_status;
   uint8_t total_rlc_pdu_header_len=0, rlc_pdu_header_len_last=0 ;
   uint16_t buflen_remain = 0;
   uint8_t bsr_len=0,bsr_ce_len=0,bsr_header_len=0;
   uint8_t phr_header_len=0, phr_ce_len=0,phr_len=0;
   uint8_t lcid=0,lcid_rlc_pdu_count=0;
   boolean_t is_lcid_processed = FALSE;
+  boolean_t is_all_lcid_processed = FALSE;
   uint16_t sdu_lengths[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
   uint8_t sdu_lcids[8]    = { 0, 0, 0, 0, 0, 0, 0, 0 };
   uint8_t payload_offset=0,num_sdus=0;
@@ -1291,6 +1291,7 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
   int lcg_id_bsr_trunc = 0;
   int highest_priority = 16;
   int num_lcg_id_with_data = 0;
+  rlc_buffer_occupancy_t lcid_buffer_occupancy_old=0, lcid_buffer_occupancy_new=0;
   
   LOG_D(MAC,"[UE %d] MAC PROCESS UL TRANSPORT BLOCK at frame%d subframe %d TBS=%d\n",
                         module_idP, frameP, subframe, buflen);
@@ -1352,7 +1353,7 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
   }
 
   // periodicBSR-Timer expires, trigger BSR
-  if ((UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer != MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity)
+  if ((UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer != PeriodicBSR_Timer_r12_infinity)
             && (UE_mac_inst[module_idP].scheduling_info.periodicBSR_SF == 0)){
         // Trigger BSR Periodic
       UE_mac_inst[module_idP].BSR_reporting_active |= BSR_TRIGGER_PERIODIC;
@@ -1400,16 +1401,32 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
   // check for UL bandwidth requests and add SR control element
 
   // Check for DCCH first
-// TO DO: Unrool the loop to do it at least once to avoid the if num_sdu
-for (lcid=DCCH; lcid < DTCH ; lcid++) {
+// TO DO: Multiplex in the order defined by the logical channel prioritization
+for (lcid=DCCH; (lcid < MAX_NUM_LCID) && (is_all_lcid_processed == FALSE) ; lcid++) {
   if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY) {
 
-      is_lcid_processed = FALSE;
       lcid_rlc_pdu_count = 0;
+      is_lcid_processed	= FALSE;
+      lcid_buffer_occupancy_old = mac_rlc_get_buffer_occupancy_ind(module_idP,
+              	  	  	  	  	  	  	  	  	  	  	  	  	  UE_mac_inst[module_idP].crnti,
+																  eNB_index,
+																  frameP,
+																  subframe,
+																  ENB_FLAG_NO,
+																  lcid);
+
+      lcid_buffer_occupancy_new = lcid_buffer_occupancy_old;
+
+      AssertFatal (lcid_buffer_occupancy_new == UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid], "LCID=%d RLC has BO %d bytes but MAC has stored %d bytes\n",
+      					lcid,lcid_buffer_occupancy_new,UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid]);
+
+      AssertFatal (lcid_buffer_occupancy_new <= UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]], "LCID=%d RLC has more BO %d bytes than BSR = %d bytes\n",
+      					lcid,lcid_buffer_occupancy_new,UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]]);
+
 
       //Multiplex all available DCCH RLC PDUs considering to multiplex the last PDU each time for maximize the data
       //Adjust at the end of the loop
-      while ((!is_lcid_processed) && (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + MIN_MAC_HDR_RLC_SIZE <= buflen)) {
+      while ((!is_lcid_processed) && (lcid_buffer_occupancy_new) && (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + MIN_MAC_HDR_RLC_SIZE <= buflen)) {
 
     	  // Workaround for issue in OAI eNB or EPC which are not able to process SRB2 message multiplexed with SRB1 on the same MAC PDU
     	  if ((usim_test == 0) && (lcid == DCCH1) && (lcid_rlc_pdu_count == 0) && (num_sdus)) {
@@ -1420,253 +1437,103 @@ for (lcid=DCCH; lcid < DTCH ; lcid++) {
 
           buflen_remain = buflen - (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + 1);
 
-          rlc_status = mac_rlc_status_ind(module_idP,
-                          UE_mac_inst[module_idP].crnti,
-                          eNB_index,
-                          frameP,
-                          ENB_FLAG_NO,
-                          MBMS_FLAG_NO, // eNB_index
-                                          lcid,
-                                          buflen_remain);
 
-          // Workaround for BO issue in RLC AM ReTx : RLC BO can not be bigger than stored MAC BO
-          if (UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] <  rlc_status.bytes_in_buffer) {
-
-        	  LOG_I(MAC, "[UE %d] Frame %d Subframe%d: WARNING Inconsistent BO! for LCID=%d MAC=%d RLC=%d RLC PDU nb=%d\n",
-        	                          module_idP,frameP,subframe,
-									  lcid,UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid],rlc_status.bytes_in_buffer,lcid_rlc_pdu_count);
-
-        	  // Skip multiplexing for the LCID
-        	  break;
-          }
-
-          /*
-          AssertFatal ( UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] >=  rlc_status.bytes_in_buffer, "Inconsistent BO! for LCID=%d MAC=%d RLC=%d RLC PDU nb=%d Frame %d Subrame %d\n",
-                  lcid,UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid],rlc_status.bytes_in_buffer,lcid_rlc_pdu_count,frameP,subframe);
-                  */
-
-          if (rlc_status.bytes_in_buffer > 0) {
+		  LOG_D(MAC, "[UE %d] Frame %d : UL-DXCH -> ULSCH, RLC %d has %d bytes to "
+				"send (Transport Block size %d BSR size=%d PHR=%d SDU Length Total %d , mac header len %d BSR byte before Tx=%d)\n",
+				module_idP,frameP, lcid,lcid_buffer_occupancy_new,buflen,bsr_len,phr_len,sdu_length_total,total_rlc_pdu_header_len,UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]]);
 
 
-          LOG_D(MAC, "[UE %d] Frame %d : UL-DCCH -> ULSCH, RLC SRB%d has %d bytes to "
-                "send (Transport Block size %d BSR size=%d PHR=%d SDU Length Total %d , mac header len %d BSR byte before Tx=%d)\n",
-                module_idP,frameP, lcid,UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid],buflen,bsr_len,phr_len,sdu_length_total,total_rlc_pdu_header_len,UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]]);
+		  sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
+							 UE_mac_inst[module_idP].crnti,
+							 eNB_index,
+							 frameP,
+							 ENB_FLAG_NO,
+							 MBMS_FLAG_NO,
+							 lcid,
+							 buflen_remain,
+							 (char *)&ulsch_buff[sdu_length_total]);
 
 
-          sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
-                             UE_mac_inst[module_idP].crnti,
-                             eNB_index,
-                             frameP,
-                             ENB_FLAG_NO,
-                             MBMS_FLAG_NO,
-                                             lcid,
-                                             (char *)&ulsch_buff[sdu_length_total]);
+		  AssertFatal (buflen_remain >= sdu_lengths[num_sdus], "LCID=%d RLC has segmented %d bytes but MAC has max=%d\n",
+					lcid,sdu_lengths[num_sdus],buflen_remain);
 
 
-            AssertFatal (UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] >= sdu_lengths[num_sdus], "LCID=%d RLC has segmented %d bytes but MAC has max=%d\n",
-                    lcid,sdu_lengths[num_sdus],UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid]);
+		  if (sdu_lengths[num_sdus])
+		  {
+			  sdu_length_total += sdu_lengths[num_sdus];
+			  sdu_lcids[num_sdus] = lcid;
+			  LOG_D(MAC,"[UE %d] TX Multiplex RLC PDU TX Got %d bytes for LcId%d\n",module_idP,sdu_lengths[num_sdus],lcid);
 
+			  if (buflen == (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + 1)) {
+				  //No more remaining TBS after this PDU
+				  //exit the function
+				  rlc_pdu_header_len_last = 1;
+				  is_lcid_processed = TRUE;
+				  is_all_lcid_processed = TRUE;
+			  }
+			  else {
+				  rlc_pdu_header_len_last = (sdu_lengths[num_sdus] > 128 ) ? 3 : 2 ;
 
+				  //Change to 1 byte if it does not fit in the TBS, ie last PDU
+				  if (buflen <= (bsr_len + phr_len + total_rlc_pdu_header_len + rlc_pdu_header_len_last + sdu_length_total)) {
+					  rlc_pdu_header_len_last = 1;
+					  is_lcid_processed = TRUE;
+					  is_all_lcid_processed = TRUE;
+				  }
+			  }
 
-          sdu_length_total += sdu_lengths[num_sdus];
-          sdu_lcids[num_sdus] = lcid;
-          LOG_D(MAC,"[UE %d] TX Multiplex RLC PDU TX Got %d bytes for SRB%d\n",module_idP,sdu_lengths[num_sdus],lcid);
-          //header_len +=2;
-          // update LCID remain buffer
-          UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] -= sdu_lengths[num_sdus];
-          /* Update BSR : substract transmitted data */
-          if (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] >= sdu_lengths[num_sdus]){
-              UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] -= sdu_lengths[num_sdus] ;
-          }
-          else {
-              LOG_I(MAC, "[UE %d] Frame %d Subframe%d: WARNING Buffer occupancy =%d for LCGID%d is lower than data transmitted=%d for LCID%d\n",
-                        module_idP,frameP,subframe,
-                        UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]],
-                        UE_mac_inst[module_idP].scheduling_info.LCGID[lcid],
-                        sdu_lengths[num_sdus],lcid);
-              UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] = 0;
-          }
+			  //Update number of SDU
+			  num_sdus ++;
 
-          //Update the number of LCGID with data as BSR shall reflect status after BSR transmission
-          if ((num_lcg_id_with_data > 1) && (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] == 0))
-          {
-              num_lcg_id_with_data --;
-              // Change BSR size to BSR SHORT if num_lcg_id_with_data becomes to 1
-              if ((bsr_len) && (num_lcg_id_with_data == 1))
-              {
-                  bsr_ce_len = sizeof(BSR_SHORT);
-                  bsr_len = bsr_ce_len + bsr_header_len;
-              }
+			  //Update total MAC Header size for RLC PDUs and save last one
+			  total_rlc_pdu_header_len += rlc_pdu_header_len_last;
 
-          }
+			  lcid_rlc_pdu_count ++;
+		  }
+		  else
+		  {
+			  /* avoid infinite loop ... */
+			  is_lcid_processed = TRUE;
+		  }
 
-          if (buflen == (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + 1)) {
-              //No more remaining TBS after this PDU
-              //exit the function
-              rlc_pdu_header_len_last = 1;
-              is_lcid_processed = TRUE;
-          }
-          else {
-              rlc_pdu_header_len_last = (sdu_lengths[num_sdus] > 128 ) ? 3 : 2 ;
+          /* Get updated BO after multiplexing this PDU */
+          lcid_buffer_occupancy_new = mac_rlc_get_buffer_occupancy_ind(module_idP,
+                        	  	  	  	  	  	  	  	  	  	  	  	  	  UE_mac_inst[module_idP].crnti,
+          																  eNB_index,
+          																  frameP,
+          																  subframe,
+          																  ENB_FLAG_NO,
+          																  lcid);
 
-              //Change to 1 byte if it does not fit in the TBS, ie last PDU
-              if (buflen <= (bsr_len + phr_len + total_rlc_pdu_header_len + rlc_pdu_header_len_last + sdu_length_total)) {
-                  rlc_pdu_header_len_last = 1;
-                  is_lcid_processed = TRUE;
-              }
-          }
-
-          //Update number of SDU
-          num_sdus ++;
-
-          //Update total MAC Header size for RLC PDUs and save last one
-          total_rlc_pdu_header_len += rlc_pdu_header_len_last;
-
-          } //end if (rlc_status.bytes_in_buffer > 0)
-          else {
-              // Switch to next LCID or exit the whole loop
-              is_lcid_processed = TRUE;
-          }
-          lcid_rlc_pdu_count ++;
+          is_lcid_processed = (is_lcid_processed) || (lcid_buffer_occupancy_new <= 0);
    }
+
+    //Update Buffer remain and BSR bytes after transmission
+
+    AssertFatal (lcid_buffer_occupancy_new <=  lcid_buffer_occupancy_old, "MAC UE Tx error : Buffer Occupancy After Tx=%d greater than before=%d BO! for LCID=%d RLC PDU nb=%d Frame %d Subrame %d\n",
+    		lcid_buffer_occupancy_new,lcid_buffer_occupancy_old,lcid,lcid_rlc_pdu_count,frameP,subframe);
+
+    UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] = lcid_buffer_occupancy_new;
+    UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] += (lcid_buffer_occupancy_new - lcid_buffer_occupancy_old);
+
+    //Update the number of LCGID with data as BSR shall reflect status after BSR transmission
+    if ((num_lcg_id_with_data > 1) && (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] == 0))
+    {
+        num_lcg_id_with_data --;
+        // Change BSR size to BSR SHORT if num_lcg_id_with_data becomes to 1
+        if ((bsr_len) && (num_lcg_id_with_data == 1))
+        {
+            bsr_ce_len = sizeof(BSR_SHORT);
+            bsr_len = bsr_ce_len + bsr_header_len;
+        }
+    }
+
 
     UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] = LCID_EMPTY;
    }
-}
-
-
-// Now Check for DTCH first
-// TO DO: do it according to Logical Channel Prioritization if at least 2 DTCH
-for (lcid=DTCH; lcid < MAX_NUM_LCID ; lcid++) {
-if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY) {
-
-    is_lcid_processed = FALSE;
-    lcid_rlc_pdu_count = 0;
-
-    //Multiplex all available DTCH RLC PDUs considering to multiplex the last PDU each time for maximize the data
-    //Adjust at the end of the loop
-    while ((!is_lcid_processed) && (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + MIN_MAC_HDR_RLC_SIZE <= buflen)) {
-
-        buflen_remain = buflen - (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + 1);
-
-        rlc_status = mac_rlc_status_ind(module_idP,
-                        UE_mac_inst[module_idP].crnti,
-                        eNB_index,
-                        frameP,
-                        ENB_FLAG_NO,
-                        MBMS_FLAG_NO, // eNB_index
-                                        lcid,
-                                        buflen_remain);
-
-        // Workaround for BO issue in RLC AM ReTx : RLC BO can not be bigger than stored MAC BO
-        if (UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] <  rlc_status.bytes_in_buffer) {
-
-      	  LOG_I(MAC, "[UE %d] Frame %d Subframe%d: WARNING Inconsistent BO! for LCID=%d MAC=%d RLC=%d RLC PDU nb=%d\n",
-      	                          module_idP,frameP,subframe,
-									  lcid,UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid],rlc_status.bytes_in_buffer,lcid_rlc_pdu_count);
-
-      	  // Skip multiplexing for the LCID
-      	  break;
-        }
-
-        /*
-        AssertFatal ( UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] >=  rlc_status.bytes_in_buffer, "Inconsistent BO! for LCID=%d MAC=%d RLC=%d RLC PDU nb=%d Frame %d Subrame %d\n",
-                  lcid,UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid],rlc_status.bytes_in_buffer,lcid_rlc_pdu_count,frameP,subframe);
-        */
-
-        if (rlc_status.bytes_in_buffer > 0) {
-
-
-        LOG_D(MAC, "[UE %d] Frame %d : UL-DTCH -> ULSCH, RLC LCID%d has %d bytes to "
-              "send (Transport Block size %d BSR size=%d PHR=%d SDU Length Total %d , mac header len %d BSR byte before Tx=%d)\n",
-              module_idP,frameP, lcid,UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid],buflen,bsr_len,phr_len,sdu_length_total,total_rlc_pdu_header_len,UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]]);
-
-
-        sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
-                           UE_mac_inst[module_idP].crnti,
-                           eNB_index,
-                           frameP,
-                           ENB_FLAG_NO,
-                           MBMS_FLAG_NO,
-                                           lcid,
-                                           (char *)&ulsch_buff[sdu_length_total]);
-
-        AssertFatal (sdu_lengths[num_sdus] < MAX_ULSCH_PAYLOAD_BYTES, "LCID=%d RLC PDU size = %d is too big\n",
-                lcid,sdu_lengths[num_sdus]);
-
-
-          AssertFatal (UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] >= sdu_lengths[num_sdus], "LCID=%d RLC has segmented %d bytes but MAC has max=%d\n",
-                  lcid,sdu_lengths[num_sdus],UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid]);
-
-
-
-        sdu_length_total += sdu_lengths[num_sdus];
-        sdu_lcids[num_sdus] = lcid;
-        LOG_D(MAC,"[UE %d] TX Multiplex RLC PDU TX Got %d bytes for LCID%d\n",module_idP,sdu_lengths[num_sdus],lcid);
-        //header_len +=2;
-        // update LCID remain buffer
-        UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] -= sdu_lengths[num_sdus];
-        /* Update BSR : substract transmitted data */
-        if (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] >= sdu_lengths[num_sdus]){
-            UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] -= sdu_lengths[num_sdus] ;
-        }
-        else {
-            LOG_I(MAC, "[UE %d] Frame %d Subframe%d: WARNING Buffer occupancy =%d for LCGID%d is lower than data transmitted=%d for LCID%d\n",
-                      module_idP,frameP,subframe,
-                      UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]],
-                      UE_mac_inst[module_idP].scheduling_info.LCGID[lcid],
-                      sdu_lengths[num_sdus],lcid);
-            UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] = 0;
-        }
-
-        //Update the number of LCGID with data as BSR shall reflect status after BSR transmission
-        if ((num_lcg_id_with_data > 1) && (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] == 0))
-        {
-            num_lcg_id_with_data --;
-            // Change BSR size to BSR SHORT if num_lcg_id_with_data becomes to 1
-            if ((bsr_len) && (num_lcg_id_with_data == 1))
-            {
-                bsr_ce_len = sizeof(BSR_SHORT);
-                bsr_len = bsr_ce_len + bsr_header_len;
-            }
-
-        }
-
-        if (buflen == (bsr_len + phr_len + total_rlc_pdu_header_len + sdu_length_total + 1)) {
-            //No more remaining TBS after this PDU
-            //exit the function
-            rlc_pdu_header_len_last = 1;
-            is_lcid_processed = TRUE;
-        }
-        else {
-            rlc_pdu_header_len_last = (sdu_lengths[num_sdus] > 128 ) ? 3 : 2 ;
-
-            //Change to 1 byte if it does not fit in the TBS, ie last PDU
-            if (buflen <= (bsr_len + phr_len + total_rlc_pdu_header_len + rlc_pdu_header_len_last + sdu_length_total)) {
-                rlc_pdu_header_len_last = 1;
-                is_lcid_processed = TRUE;
-            }
-        }
-
-        //Update number of SDU
-        num_sdus ++;
-
-        //Update total MAC Header size for RLC PDUs and save last one
-        total_rlc_pdu_header_len += rlc_pdu_header_len_last;
-
-        } //end if (rlc_status.bytes_in_buffer > 0)
-        else {
-            // Switch to next LCID or exit the whole loop
-            is_lcid_processed = TRUE;
-        }
-        lcid_rlc_pdu_count ++;
  }
 
-  UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] = LCID_EMPTY;
- }
-}
 
-  //lcgid= get_bsr_lcgid(module_idP);
 
   // Compute BSR Values and update Nb LCGID with data after multiplexing
   num_lcg_id_with_data = 0;
@@ -1904,7 +1771,7 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
 			  UE_mac_inst[module_idP].scheduling_info.retxBSR_SF);
 
 	  // Reset Periodic Timer except when BSR is truncated
-	  if ((bsr_t == NULL) && (UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer != MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity))
+	  if ((bsr_t == NULL) && (UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer != PeriodicBSR_Timer_r12_infinity))
 	  {
 		  UE_mac_inst[module_idP].scheduling_info.periodicBSR_SF = get_sf_periodicBSRTimer(UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer);
 
@@ -1923,7 +1790,7 @@ if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] == LCID_NOT_EMPTY)
   if (opt_enabled) {
     trace_pdu(0, ulsch_buffer, buflen, module_idP, 3, UE_mac_inst[module_idP].crnti, UE_mac_inst[module_idP].txFrame, UE_mac_inst[module_idP].txSubframe, 0, 0);
     LOG_D(OPT,"[UE %d][ULSCH] Frame %d subframe %d trace pdu for rnti %x  with size %d\n",
-          module_idP, UE_mac_inst[module_idP].txFrame, UE_mac_inst[module_idP].txSubframe, UE_mac_inst[module_idP].crnti, buflen);
+          module_idP, frameP, subframe, UE_mac_inst[module_idP].crnti, buflen);
   }
 }
 
@@ -2104,7 +1971,7 @@ ue_scheduler(
       /*
       if (lcid == DCCH) {    
         LOG_D(MAC,"[UE %d][SR] Frame %d subframe %d Pending data for SRB1=%d for LCGID %d \n",                  
-        module_idP, frameP,subframeP,UE_mac_inst[module_idP].scheduling_info.BSR[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]],                  
+        module_idP, txFrameP,txSubframeP,UE_mac_inst[module_idP].scheduling_info.BSR[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]],                  
 //         UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]);
       }
       */
@@ -2396,9 +2263,9 @@ boolean_t  update_bsr(module_id_t module_idP, frame_t frameP, sub_frame_t subfra
 			  	lcgid_buffer_remain[lcgid] += UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid];
 		  	}
 
-		    rlc_status = mac_rlc_status_ind(module_idP, UE_mac_inst[module_idP].crnti,eNB_index,frameP,ENB_FLAG_NO,MBMS_FLAG_NO,
+		    rlc_status = mac_rlc_status_ind(module_idP, UE_mac_inst[module_idP].crnti,eNB_index,frameP,subframeP,ENB_FLAG_NO,MBMS_FLAG_NO,
 		                                    lcid,
-		                                    0);
+		                                    0xFFFF); //TBS is not used in RLC at this step, set a special value for debug
 
 		    lcid_bytes_in_buffer[lcid] = rlc_status.bytes_in_buffer;
 
@@ -2530,63 +2397,63 @@ int get_sf_periodicBSRTimer(uint8_t sf_offset)
 {
 
   switch (sf_offset) {
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf5:
+  case PeriodicBSR_Timer_r12_sf5:
     return 5;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf10:
+  case PeriodicBSR_Timer_r12_sf10:
     return 10;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf16:
+  case PeriodicBSR_Timer_r12_sf16:
     return 16;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf20:
+  case PeriodicBSR_Timer_r12_sf20:
     return 20;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf32:
+  case PeriodicBSR_Timer_r12_sf32:
     return 32;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf40:
+  case PeriodicBSR_Timer_r12_sf40:
     return 40;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf64:
+  case PeriodicBSR_Timer_r12_sf64:
     return 64;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf80:
+  case PeriodicBSR_Timer_r12_sf80:
     return 80;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf128:
+  case PeriodicBSR_Timer_r12_sf128:
     return 128;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf160:
+  case PeriodicBSR_Timer_r12_sf160:
     return 160;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf320:
+  case PeriodicBSR_Timer_r12_sf320:
     return 320;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf640:
+  case PeriodicBSR_Timer_r12_sf640:
     return 640;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf1280:
+  case PeriodicBSR_Timer_r12_sf1280:
     return 1280;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf2560:
+  case PeriodicBSR_Timer_r12_sf2560:
     return 2560;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity:
+  case PeriodicBSR_Timer_r12_infinity:
   default:
     return 0xFFFF;
     break;
@@ -2597,27 +2464,27 @@ int get_sf_retxBSRTimer(uint8_t sf_offset)
 {
 
   switch (sf_offset) {
-  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf320:
+  case RetxBSR_Timer_r12_sf320:
     return 320;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf640:
+  case RetxBSR_Timer_r12_sf640:
     return 640;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf1280:
+  case RetxBSR_Timer_r12_sf1280:
     return 1280;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560:
+  case RetxBSR_Timer_r12_sf2560:
     return 2560;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf5120:
+  case RetxBSR_Timer_r12_sf5120:
     return 5120;
     break;
 
-  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf10240:
+  case RetxBSR_Timer_r12_sf10240:
     return 10240;
     break;
 

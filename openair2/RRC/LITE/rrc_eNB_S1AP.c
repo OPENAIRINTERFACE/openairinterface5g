@@ -69,7 +69,7 @@ static const uint16_t S1AP_ENCRYPTION_EEA2_MASK = 0x4000;
 static const uint16_t S1AP_INTEGRITY_EIA1_MASK = 0x8000;
 static const uint16_t S1AP_INTEGRITY_EIA2_MASK = 0x4000;
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 # define INTEGRITY_ALGORITHM_NONE SecurityAlgorithmConfig__integrityProtAlgorithm_eia0_v920
 #else
 #ifdef EXMIMO_IOT
@@ -228,21 +228,21 @@ rrc_eNB_get_ue_context_from_s1ap_ids(
  *\param algorithms The bit mask of available algorithms received from S1AP.
  *\return the selected algorithm.
  */
-static e_SecurityAlgorithmConfig__cipheringAlgorithm rrc_eNB_select_ciphering(uint16_t algorithms)
+static CipheringAlgorithm_r12_t rrc_eNB_select_ciphering(uint16_t algorithms)
 {
 
 //#warning "Forced   return SecurityAlgorithmConfig__cipheringAlgorithm_eea0, to be deleted in future"
-  return SecurityAlgorithmConfig__cipheringAlgorithm_eea0;
+  return CipheringAlgorithm_r12_eea0;
 
   if (algorithms & S1AP_ENCRYPTION_EEA2_MASK) {
-    return SecurityAlgorithmConfig__cipheringAlgorithm_eea2;
+    return CipheringAlgorithm_r12_eea2;
   }
 
   if (algorithms & S1AP_ENCRYPTION_EEA1_MASK) {
-    return SecurityAlgorithmConfig__cipheringAlgorithm_eea1;
+    return CipheringAlgorithm_r12_eea1;
   }
 
-  return SecurityAlgorithmConfig__cipheringAlgorithm_eea0;
+  return CipheringAlgorithm_r12_eea0;
 }
 
 /*! \fn e_SecurityAlgorithmConfig__integrityProtAlgorithm rrc_eNB_select_integrity(uint16_t algorithms)
@@ -279,7 +279,7 @@ rrc_eNB_process_security(
 )
 {
   boolean_t                                         changed = FALSE;
-  e_SecurityAlgorithmConfig__cipheringAlgorithm cipheringAlgorithm;
+  CipheringAlgorithm_r12_t                          cipheringAlgorithm;
   e_SecurityAlgorithmConfig__integrityProtAlgorithm integrityProtAlgorithm;
 
   /* Save security parameters */
@@ -287,10 +287,10 @@ rrc_eNB_process_security(
 
   // translation
   LOG_D(RRC,
-        "[eNB %d] NAS security_capabilities.encryption_algorithms %u AS ciphering_algorithm %u NAS security_capabilities.integrity_algorithms %u AS integrity_algorithm %u\n",
+        "[eNB %d] NAS security_capabilities.encryption_algorithms %u AS ciphering_algorithm %lu NAS security_capabilities.integrity_algorithms %u AS integrity_algorithm %u\n",
         ctxt_pP->module_id,
         ue_context_pP->ue_context.security_capabilities.encryption_algorithms,
-        ue_context_pP->ue_context.ciphering_algorithm,
+        (unsigned long)ue_context_pP->ue_context.ciphering_algorithm,
         ue_context_pP->ue_context.security_capabilities.integrity_algorithms,
         ue_context_pP->ue_context.integrity_algorithm);
   /* Select relevant algorithms */
@@ -308,11 +308,11 @@ rrc_eNB_process_security(
     changed = TRUE;
   }
 
-  LOG_I (RRC, "[eNB %d][UE %x] Selected security algorithms (%p): %x, %x, %s\n",
+  LOG_I (RRC, "[eNB %d][UE %x] Selected security algorithms (%p): %lx, %x, %s\n",
          ctxt_pP->module_id,
          ue_context_pP->ue_context.rnti,
          security_capabilities_pP,
-         cipheringAlgorithm,
+         (unsigned long)cipheringAlgorithm,
          integrityProtAlgorithm,
          changed ? "changed" : "same");
 

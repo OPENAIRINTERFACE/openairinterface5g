@@ -202,7 +202,7 @@
 
 
 #define ONE_OVER_SQRT2_Q15 23170
-
+#define ONE_OVER_2_Q15 16384
 
 // QAM amplitude definitions
 
@@ -284,21 +284,7 @@ typedef enum {
 #define NUMBER_OF_HARQ_PID_MAX 8
 
 #define MAX_FRAME_NUMBER 0x400
-#if defined(CBMIMO1) || defined(EXMIMO) || defined(OAI_USRP)
-#define NUMBER_OF_eNB_MAX 1
-#define NUMBER_OF_UE_MAX 16
-#define NUMBER_OF_CONNECTED_eNB_MAX 3
-#else
-#ifdef LARGE_SCALE
-#define NUMBER_OF_eNB_MAX 2
-#define NUMBER_OF_UE_MAX 120
-#define NUMBER_OF_CONNECTED_eNB_MAX 1 // to save some memory
-#else
-#define NUMBER_OF_eNB_MAX 7
-#define NUMBER_OF_UE_MAX 16
-#define NUMBER_OF_CONNECTED_eNB_MAX 3
-#endif
-#endif
+#include "openairinterface5g_limits.h"
 
 #define NUMBER_OF_RN_MAX 3
 typedef enum {no_relay=1,unicast_relay_type1,unicast_relay_type2, multicast_relay} relaying_type_t;

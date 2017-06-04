@@ -104,20 +104,20 @@ Description Defines the dedicated EPS bearer context activation ESM
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_dedicated_eps_bearer_context_request(int ebi, int default_ebi,
+int esm_proc_dedicated_eps_bearer_context_request(nas_user_t *user, int ebi, int default_ebi,
     const esm_proc_qos_t *qos,
     const esm_proc_tft_t *tft,
     int *esm_cause)
 {
   LOG_FUNC_IN;
-
+  esm_data_t *esm_data = user->esm_data;
   int rc = RETURNerror;
 
   LOG_TRACE(INFO, "ESM-PROC  - Dedicated EPS bearer context activation "
             "requested by the network (ebi=%d)", ebi);
 
   /* Get the PDN connection the dedicated EPS bearer is linked to */
-  int pid = esm_ebr_context_get_pid(default_ebi);
+  int pid = esm_ebr_context_get_pid(esm_data, default_ebi);
 
   if (pid < 0) {
     /* 3GPP TS 24.301, section 6.4.2.5, abnormal case c
@@ -131,7 +131,7 @@ int esm_proc_dedicated_eps_bearer_context_request(int ebi, int default_ebi,
   }
 
   /* Assign dedicated EPS bearer context */
-  int new_ebi = esm_ebr_assign(ebi, pid+1, FALSE);
+  int new_ebi = esm_ebr_assign(user->esm_ebr_data, ebi, pid+1, FALSE);
 
   if (new_ebi == ESM_EBI_UNASSIGNED) {
     /* 3GPP TS 24.301, section 6.4.2.5, abnormal cases a and b
@@ -141,7 +141,7 @@ int esm_proc_dedicated_eps_bearer_context_request(int ebi, int default_ebi,
     int old_pid, old_bid;
     /* Locally deactivate the existing EPS bearer context and proceed
      * with the requested dedicated EPS bearer context activation */
-    rc = esm_proc_eps_bearer_context_deactivate(TRUE, ebi,
+    rc = esm_proc_eps_bearer_context_deactivate(user, TRUE, ebi,
          &old_pid, &old_bid);
 
     if (rc != RETURNok) {
@@ -149,13 +149,13 @@ int esm_proc_dedicated_eps_bearer_context_request(int ebi, int default_ebi,
       *esm_cause = ESM_CAUSE_PROTOCOL_ERROR;
     } else {
       /* Assign new dedicated EPS bearer context */
-      ebi = esm_ebr_assign(ebi, pid+1, FALSE);
+      ebi = esm_ebr_assign(user->esm_ebr_data, ebi, pid+1, FALSE);
     }
   }
 
   if (ebi != ESM_EBI_UNASSIGNED) {
     /* Check syntactical errors in packet filters */
-    rc = esm_ebr_context_check_tft(pid, ebi, tft,
+    rc = esm_ebr_context_check_tft(esm_data, pid, ebi, tft,
                                    ESM_EBR_CONTEXT_TFT_CREATE);
 
     if (rc != RETURNok) {
@@ -165,7 +165,7 @@ int esm_proc_dedicated_eps_bearer_context_request(int ebi, int default_ebi,
       *esm_cause = ESM_CAUSE_SYNTACTICAL_ERROR_IN_PACKET_FILTER;
     } else {
       /* Create new dedicated EPS bearer context */
-      default_ebi = esm_ebr_context_create(pid, ebi, FALSE, qos, tft);
+      default_ebi = esm_ebr_context_create(esm_data, user->ueid, pid, ebi, FALSE, qos, tft);
 
       if (default_ebi != ESM_EBI_UNASSIGNED) {
         /* Dedicated EPS bearer contextx successfully created */
@@ -206,12 +206,14 @@ int esm_proc_dedicated_eps_bearer_context_request(int ebi, int default_ebi,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_dedicated_eps_bearer_context_accept(int is_standalone, int ebi,
+int esm_proc_dedicated_eps_bearer_context_accept(nas_user_t *user, int is_standalone, int ebi,
     OctetString *msg, int ue_triggered)
 {
   LOG_FUNC_IN;
 
   int rc;
+  esm_ebr_data_t *esm_ebr_data = user->esm_ebr_data;
+  user_api_id_t *user_api_id = user->user_api_id;
 
   LOG_TRACE(INFO,"ESM-PROC  - Dedicated EPS bearer context activation "
             "accepted by the UE (ebi=%d)", ebi);
@@ -222,14 +224,14 @@ int esm_proc_dedicated_eps_bearer_context_accept(int is_standalone, int ebi,
    * Notity EMM that ESM PDU has to be forwarded to lower layers
    */
   emm_sap.primitive = EMMESM_UNITDATA_REQ;
-  emm_sap.u.emm_esm.ueid = 0;
+  emm_sap.u.emm_esm.ueid = user->ueid;
   emm_esm->msg.length = msg->length;
   emm_esm->msg.value = msg->value;
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   if (rc != RETURNerror) {
     /* Set the EPS bearer context state to ACTIVE */
-    rc = esm_ebr_set_status(ebi, ESM_EBR_ACTIVE, ue_triggered);
+    rc = esm_ebr_set_status(user_api_id, esm_ebr_data, ebi, ESM_EBR_ACTIVE, ue_triggered);
 
     if (rc != RETURNok) {
       /* The EPS bearer context was already in ACTIVE state */
@@ -266,7 +268,7 @@ int esm_proc_dedicated_eps_bearer_context_accept(int is_standalone, int ebi,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_dedicated_eps_bearer_context_reject(int is_standalone, int ebi,
+int esm_proc_dedicated_eps_bearer_context_reject(nas_user_t *user, int is_standalone, int ebi,
     OctetString *msg, int ue_triggered)
 {
   LOG_FUNC_IN;
@@ -276,9 +278,9 @@ int esm_proc_dedicated_eps_bearer_context_reject(int is_standalone, int ebi,
   LOG_TRACE(WARNING, "ESM-PROC  - Dedicated EPS bearer context activation "
             "not accepted by the UE (ebi=%d)", ebi);
 
-  if ( !esm_ebr_is_not_in_use(ebi) ) {
+  if ( !esm_ebr_is_not_in_use(user->esm_ebr_data, ebi) ) {
     /* Release EPS bearer data currently in use */
-    rc = esm_ebr_release(ebi);
+    rc = esm_ebr_release(user->esm_ebr_data, ebi);
   }
 
   if (rc != RETURNok) {
@@ -290,10 +292,10 @@ int esm_proc_dedicated_eps_bearer_context_reject(int is_standalone, int ebi,
      * Notity EMM that ESM PDU has to be forwarded to lower layers
      */
     emm_sap.primitive = EMMESM_UNITDATA_REQ;
-    emm_sap.u.emm_esm.ueid = 0;
+    emm_sap.u.emm_esm.ueid = user->ueid;
     emm_esm->msg.length = msg->length;
     emm_esm->msg.value = msg->value;
-    rc = emm_sap_send(&emm_sap);
+    rc = emm_sap_send(user, &emm_sap);
   }
 
   LOG_FUNC_RETURN (rc);

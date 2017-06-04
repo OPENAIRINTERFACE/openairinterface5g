@@ -88,31 +88,47 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2 -std=gnu99 -Wall -Wstrict-prototype
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -ggdb -DMALLOC_CHECK_=3")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -ggdb -DMALLOC_CHECK_=3 -O2")
 
-#This is to detect nettle version changes between Ubuntu 14.04/16.04
-set ( nettle_cmd "nettle-hash" )
-set ( nettle_arg "-V" )
-execute_process(COMMAND  ${nettle_cmd} ${nettle_arg}   RESULT_VARIABLE rv OUTPUT_VARIABLE ov ERROR_VARIABLE ev)
-
-string(REGEX MATCH "[+-]?[0-9]+([.][0-9]+)?" nv ${ov})
-
-message("NETTLE_VERSION = ${nv}")
-
-# we need to remove decimal as floating point arithematic does not work properly with C preprocessor
-STRING(REGEX REPLACE "[.]" "" nv ${nv})
-
-if ("${nv}" STREQUAL "")
-  message( FATAL_ERROR "The nettle version not detected properly. Try to run build_oai -I again" )
-endif()
-
-set (NETTLE_VERSION "${nv}")
-add_definitions("-DNETTLE_VERSION=${NETTLE_VERSION}")
+##This is to detect nettle version changes between Ubuntu 14.04/16.04
+#set ( nettle_cmd "nettle-hash" )
+#set ( nettle_arg "-V" )
+#execute_process(COMMAND  ${nettle_cmd} ${nettle_arg}   RESULT_VARIABLE rv OUTPUT_VARIABLE ov ERROR_VARIABLE ev)
+#
+#string(REGEX MATCH "[+-]?[0-9]+([.][0-9]+)?" nv ${ov})
+#
+#message("NETTLE_VERSION = ${nv}")
+#
+## we need to remove decimal as floating point arithematic does not work properly with C preprocessor
+#STRING(REGEX REPLACE "[.]" "" nv ${nv})
+#
+#if ("${nv}" STREQUAL "")
+#  message( FATAL_ERROR "The nettle version not detected properly. Try to run build_oai -I again" )
+#endif()
+#
+#set (NETTLE_VERSION "${nv}")
+#add_definitions("-DNETTLE_VERSION=${NETTLE_VERSION}")
 
 include(FindPkgConfig)
 
-INCLUDE(FindNettle)
-IF( NOT NETTLE_FOUND )
-  MESSAGE( SEND_ERROR "Nettle is required" )
-ENDIF( NOT NETTLE_FOUND )
+pkg_search_module(NETTLE nettle)
+if(NOT ${NETTLE_FOUND})
+  message( FATAL_ERROR "PACKAGE nettle not found: some targets will fail. Run build_oai -I again!")
+else()
+  include_directories(${NETTLE_INCLUDE_DIRS})
+endif()
+
+message ("NETTLE VERSION_INSTALLED  = ${NETTLE_VERSION}")
+
+string(REGEX REPLACE "([0-9]+).*" "\\1" NETTLE_VERSION_MAJOR ${NETTLE_VERSION})
+string(REGEX REPLACE "[0-9]+\\.([0-9]+).*" "\\1" NETTLE_VERSION_MINOR ${NETTLE_VERSION})
+message ("NETTLE_VERSION_MAJOR = ${NETTLE_VERSION_MAJOR}")
+message ("NETTLE_VERSION_MINOR = ${NETTLE_VERSION_MINOR}")
+
+if ("${NETTLE_VERSION_MAJOR}" STREQUAL "" OR "${NETTLE_VERSION_MINOR}" STREQUAL "")
+  message( FATAL_ERROR "The nettle version not detected properly. Try to run build_oai -I again" )
+endif()
+
+add_definitions("-DNETTLE_VERSION_MAJOR=${NETTLE_VERSION_MAJOR}")
+add_definitions("-DNETTLE_VERSION_MINOR=${NETTLE_VERSION_MINOR}")
 
 
 pkg_search_module(OPENSSL openssl REQUIRED)
@@ -215,8 +231,8 @@ set(api_user_HDR
 
 add_library(api_user ${api_user_SRC} ${api_user_HDR})
 target_include_directories(api_user PRIVATE ${OPENAIR_NAS_DIR}/UE/API/USER
-                                            ${OPENAIR_NAS_DIR}/UE
                                             ${OPENAIR_NAS_DIR}/COMMON
+                                            ${OPENAIR_NAS_DIR}/UE
                                             )
 
 ################################################################################
@@ -397,6 +413,7 @@ target_include_directories(emm PRIVATE
                      ${OPENAIR_DIR}/common/utils/msc 
                      ${OPENAIR_DIR}/common/utils
                      ${OPENAIR_DIR}/openair2/COMMON
+                     ${OPENAIR_NAS_DIR}/UE
                      ${OPENAIR_NAS_DIR}/UE/API/USIM 
                      ${OPENAIR_NAS_DIR}/UE/EMM
                      ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG
@@ -409,7 +426,6 @@ target_include_directories(emm PRIVATE
 # esm LIB
 ################################################################################
 set(esm_SRC
-    ${OPENAIR_NAS_DIR}/UE/ESM/esm_main.c
     ${OPENAIR_NAS_DIR}/UE/ESM/DedicatedEpsBearerContextActivation.c
     ${OPENAIR_NAS_DIR}/UE/ESM/DefaultEpsBearerContextActivation.c
     ${OPENAIR_NAS_DIR}/UE/ESM/EpsBearerContextDeactivation.c
@@ -452,6 +468,7 @@ set(esm_SRC
 )
 
 set(esm_HDR
+    ${OPENAIR_TARGETS}/COMMON/openairinterface5g_limits.h
     ${OPENAIR_NAS_DIR}/UE/ESM/esm_main.h
     ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/ActivateDedicatedEpsBearerContextAccept.h
     ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/ActivateDedicatedEpsBearerContextReject.h
@@ -481,13 +498,17 @@ set(esm_HDR
     ${OPENAIR_NAS_DIR}/UE/ESM/SAP/esm_recv.h
     ${OPENAIR_NAS_DIR}/UE/ESM/SAP/esm_sap.h
     ${OPENAIR_NAS_DIR}/UE/ESM/SAP/esm_send.h
+    ${OPENAIR_DIR}/common/utils/utils.h
 )
 
 add_library(esm ${esm_SRC} ${esm_HDR})
 
 target_include_directories(esm PRIVATE 
+                     ${OPENAIR_DIR}/common/utils
+                     ${OPENAIR_NAS_DIR}/UE
                      ${OPENAIR_NAS_DIR}/UE/API/USER 
                      ${OPENAIR_NAS_DIR}/UE/ESM
+                     ${OPENAIR_TARGETS}/COMMON
                      ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG
                      ${OPENAIR_NAS_DIR}/UE/ESM/SAP
                      ${OPENAIR_NAS_DIR}/COMMON/IES
@@ -670,6 +691,9 @@ target_include_directories(ies PRIVATE
 # EXECUTABLE at_nas_ue
 ################################################################################
 include_directories( 
+                     ${OPENAIR_TARGETS}/COMMON
+                     ${OPENAIR_NAS_DIR}/UE
+                     ${OPENAIR_DIR}/common/utils
                      ${OPENAIR_DIR}/common/utils/msc 
                      ${OPENAIR3_DIR}/COMMON 
                      ${OPENAIR3_DIR}/SECU 
@@ -691,6 +715,8 @@ ADD_EXECUTABLE(at_nas_ue  ${OPENAIR_NAS_DIR}/UE/UEprocess.c
                           ${OPENAIR_NAS_DIR}/UE/nas_parser.c
                           ${OPENAIR_NAS_DIR}/UE/nas_proc.c  
                           ${OPENAIR_NAS_DIR}/UE/nas_user.c  
+                          ${OPENAIR_DIR}/common/utils/utils.c
+                          ${OPENAIR_DIR}/common/utils/system.c
                           )
                           
 target_link_libraries (at_nas_ue 
