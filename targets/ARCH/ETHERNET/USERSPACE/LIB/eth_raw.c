@@ -163,21 +163,25 @@ int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, voi
     memcpy(buff2,(void*)&eth->ehd,MAC_HEADER_SIZE_BYTES);
     *(int16_t *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int16_t))=1+(i<<1);
     *(openair0_timestamp *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int32_t)) = timestamp;
+  
+    int sent_byte;
     
+
     /*printf("[RRU]write mod_%d %d , len %d, buff %p \n",
       Mod_id,eth->sockfd[Mod_id],RAW_PACKET_SIZE_BYTES(nsamps), buff2);*/
     
-    while(bytes_sent < RAW_PACKET_SIZE_BYTES(nsamps)) {
+    while(bytes_sent < sent_byte) {
 #if DEBUG   
       printf("------- TX ------: buff2 current position=%d remaining_bytes=%d  bytes_sent=%d \n",
 	     (void *)(buff2+bytes_sent), 
-	     RAW_PACKET_SIZE_BYTES(nsamps) - bytes_sent,
+	     sent_byte - bytes_sent,
 	     bytes_sent);
 #endif
       /* Send packet */
+
       bytes_sent += send(eth->sockfdd,
 			 buff2, 
-			 RAW_PACKET_SIZE_BYTES(nsamps),
+			 sent_byte,
 			 sendto_flag);
       if ( bytes_sent == -1) {
 	eth->num_tx_errors++;
@@ -190,7 +194,9 @@ int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, voi
 	       *(int16_t *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int16_t)),
 	       *(openair0_timestamp *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int32_t)), 
 	       bytes_sent);
-    dump_packet((device->host_type == RAU_HOST)? "RAU":"RRU", buff2, RAW_PACKET_SIZE_BYTES(nsamps), TX_FLAG);
+
+    dump_packet((device->host_type == RAU_HOST)? "RAU":"RRU", buff2, sent_byte, TX_FLAG);
+
 #endif
     eth->tx_actual_nsamps=bytes_sent>>2;
     eth->tx_count++;
@@ -253,39 +259,73 @@ int trx_eth_write_raw_IF4p5(openair0_device *device, openair0_timestamp timestam
 
 
 int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc) {
-      
+
+  int ret;
   int bytes_received=0;
   int i=0;
   eth_state_t *eth = (eth_state_t*)device->priv;
   int rcvfrom_flag =0;
-  int ret;
 
+  int block_cnt=0;
+  int again_cnt=0;
+  
   eth->rx_nsamps=nsamps;
 
   for (i=0;i<cc;i++) {
       /* buff[i] points to the position in rx buffer where the payload to be received will be placed
 	 buff2 points to the position in rx buffer where the packet header will be placed */
       void *buff2 = (void*)(buff[i]-APP_HEADER_SIZE_BYTES-MAC_HEADER_SIZE_BYTES); 
-      
+
       /* we don't want to ovewrite with the header info the previous rx buffer data so we store it*/
       struct ether_header temp =  *(struct ether_header *)buff2;
       int32_t temp0 = *(int32_t *)(buff2 + MAC_HEADER_SIZE_BYTES);
       openair0_timestamp  temp1 = *(openair0_timestamp *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int32_t));
-      
+
       bytes_received=0;
+      int receive_bytes;
+      if (eth->compression == ALAW_COMPRESS) {
+        receive_bytes = RAW_PACKET_SIZE_BYTES_ALAW(nsamps);
+      } else {
+        receive_bytes = RAW_PACKET_SIZE_BYTES(nsamps);
+      }
       
-      while(bytes_received < RAW_PACKET_SIZE_BYTES(nsamps)) {
+      while(bytes_received < receive_bytes) {
+      again:
 	ret = recv(eth->sockfdd,
-		  buff2,
-		  RAW_PACKET_SIZE_BYTES(nsamps),
-		  rcvfrom_flag);
-	
+			      buff2,
+			      receive_bytes,
+			      rcvfrom_flag);
+
 	if (ret ==-1) {
 	  eth->num_rx_errors++;
-	  perror("ETHERNET IF5 READ: ");
-          return(-1);	
+          if (errno == EAGAIN) {
+            again_cnt++;
+            usleep(10);
+            if (again_cnt == 1000) {
+              perror("ETHERNET IF5 READ (EAGAIN): ");
+              exit(-1);
+            } else {
+              printf("AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN \n");
+              goto again;
+            }
+          } else if (errno == EWOULDBLOCK) {
+            block_cnt++;
+            usleep(10);
+            if (block_cnt == 1000) {
+              perror("ETHERNET IF5 READ (EWOULDBLOCK): ");
+              exit(-1);
+            } else {
+              printf("BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK \n");
+              goto again;
+            }
+          } else {
+            perror("ETHERNET IF5 READ");
+            printf("(%s):\n", strerror(errno));
+            exit(-1);
+          }
+
 	} else {
-	  bytes_received += ret;
+	  bytes_received+=ret;
 	  /* store the timestamp value from packet's header */
 	  *timestamp =  *(openair0_timestamp *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int32_t));  
 	  eth->rx_actual_nsamps=bytes_received>>2;   
@@ -299,6 +339,7 @@ int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, voi
 	     *(int16_t *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int16_t)),
 	     *(openair0_timestamp *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int32_t)),
 	     bytes_received);
+
       dump_packet((device->host_type == RAU_HOST)? "RAU":"RRU", buff2, RAW_PACKET_SIZE_BYTES(nsamps),RX_FLAG);	  
 
 #endif  
@@ -315,6 +356,7 @@ int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, voi
 
 int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc) {
 
+  int ret;
   // Read nblocks info from packet itself
   int nblocks = nsamps;  
   int bytes_received=0;
@@ -322,26 +364,53 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
   
   ssize_t packet_size = MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t;      
   IF4p5_header_t *test_header = (IF4p5_header_t*)(buff[0] + MAC_HEADER_SIZE_BYTES);
-  int ret;
 
-#ifdef DEBUG
-  printf("Reading from device %p, eth %p, sockfd %d\n",device,eth,eth->sockfd);
-#endif
+  int block_cnt=0;
+  int again_cnt=0;
 
-  bytes_received = recv(eth->sockfdd,
-                        buff[0],
-                        packet_size,
-                        MSG_PEEK);                        
-  if (bytes_received ==-1) {
-    eth->num_rx_errors++;
-    perror("ETHERNET IF4p5 READ (header): "); 
-#ifdef DEBUG
-    for (int i=0;i<packet_size;i++)
-      printf("%2x.",((uint8_t*)buff[0])[i]);
-    printf("\n");
-#endif
-    return(-1);
+  while (bytes_received < packet_size) {
+  again:
+    ret = recv(eth->sockfdd,
+	       buff[0],
+	       packet_size,
+	       MSG_PEEK);                        
+    if (ret ==-1) {
+      eth->num_rx_errors++;
+      if (errno == EAGAIN) {
+        again_cnt++;
+        usleep(10);
+        if (again_cnt == 1000) {
+          perror("ETHERNET IF4p5 READ (EAGAIN): ");
+          exit(-1);
+        } else {
+          printf("AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN \n");
+          goto again;
+        }
+      } else if (errno == EWOULDBLOCK) {
+        block_cnt++;
+        usleep(10);
+        if (block_cnt == 1000) {
+          perror("ETHERNET IF4p5 READ (EWOULDBLOCK): ");
+          exit(-1);
+        } else {
+          printf("BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK \n");
+          goto again;
+        }
+      } else {
+        perror("ETHERNET IF4p5 READ");
+        printf("(%s):\n", strerror(errno));
+        exit(-1);
+      }
+    }
+    else bytes_received+=ret;
   }
+
+#ifdef DEBUG
+  for (int i=0;i<packet_size;i++)
+    printf("%2x.",((uint8_t*)buff[0])[i]);
+  printf("\n");
+#endif
+  
   *timestamp = test_header->sub_type; 
   
   if (test_header->sub_type == IF4p5_PDLFFT) {
@@ -350,8 +419,7 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
     packet_size = RAW_IF4p5_PULFFT_SIZE_BYTES(nblocks);             
   } else {
     packet_size = RAW_IF4p5_PRACH_SIZE_BYTES;
-  }
-  
+  }  
   
   while(bytes_received < packet_size) {
     ret = recv(eth->sockfdd,

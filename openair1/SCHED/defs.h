@@ -104,7 +104,7 @@ void phy_procedures_eNB_lte(uint8_t subframe,PHY_VARS_eNB **phy_vars_eNB,uint8_t
 */
 void phy_procedures_UE_lte(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,runmode_t mode,relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn);
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 /*! \brief Top-level entry routine for relay node procedures when acting as eNB. This proc will make us of the existing eNB procs.
   @param last_slot Index of last slot (0-19)
   @param next_slot Index of next_slot (0-19)
@@ -197,7 +197,7 @@ void phy_procedures_eNB_S_TX(PHY_VARS_eNB *phy_vars_eNB,relaying_type_t r_type);
 */
 void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type);
 
-/*! \brief Scheduling for eNB PRACH RX procedures 
+/*! \brief Scheduling for eNB PRACH RX procedures
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param proc Pointer to RXn-TXnp4 proc information
 */
@@ -211,6 +211,7 @@ void prach_procedures(PHY_VARS_eNB *eNB);
 
 
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
+
 
 /*! \brief Function to compute which type of DCIs to detect in the given subframe
   @param frame_parms Pointer to DL frame parameter descriptor
@@ -305,7 +306,7 @@ uint8_t pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n);
   @param o_ACK Pointer to ACK/NAK payload for PUCCH/PUSCH
   @returns status indicator for PUCCH/PUSCH transmission
 */
-uint8_t get_ack(LTE_DL_FRAME_PARMS *frame_parms,harq_status_t *harq_ack,uint8_t subframe,uint8_t *o_ACK);
+uint8_t get_ack(LTE_DL_FRAME_PARMS *frame_parms,harq_status_t *harq_ack,uint8_t subframe_tx,uint8_t subframe_rx,uint8_t *o_ACK, uint8_t cw_idx);
 
 /*! \brief Reset ACK/NACK information
   @param frame_parms Pointer to DL frame parameter descriptor
@@ -316,8 +317,11 @@ uint8_t get_ack(LTE_DL_FRAME_PARMS *frame_parms,harq_status_t *harq_ack,uint8_t 
 */
 uint8_t reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
                 harq_status_t *harq_ack,
-                unsigned char subframe,
-                unsigned char *o_ACK);
+                unsigned char subframe_tx,
+                unsigned char subframe_rx,
+                unsigned char *o_ACK,
+                uint8_t *pN_bundled,
+                uint8_t cw_idx);
 
 /*! \brief Compute UL ACK subframe from DL subframe. This is used to retrieve corresponding DLSCH HARQ pid at eNB upon reception of ACK/NAK information on PUCCH/PUSCH.  Derived from Table 10.1-1 in 36.213 (p. 69 in version 8.6)
   @param frame_parms Pointer to DL frame parameter descriptor
@@ -509,7 +513,13 @@ int get_ue_active_harq_pid(uint8_t Mod_id,uint8_t CC_id,uint16_t rnti,int frame,
 void dump_dlsch(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe,uint8_t harq_pid);
 void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe);
 void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe);
-void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe, uint16_t coded_bits_per_codeword,int round);
+
+void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe, unsigned int *coded_bits_per_codeword,int round, unsigned char harq_pid);
+
+
+int is_srs_occasion_common(LTE_DL_FRAME_PARMS *frame_parms,int frame_tx,int subframe_tx);
+
+void compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset);
 
 /*@}*/
 

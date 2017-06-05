@@ -43,6 +43,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdarg.h>
+#include <time.h>
+#include <stdint.h>
+#include <inttypes.h>
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <pthread.h>
 #else
 #include "rtai_fifos.h"
 #endif
@@ -76,40 +83,196 @@ extern "C" {
  *  @ingroup _macro
  *  @brief LOG defines 9 levels of messages for users. Importance of these levels decrease gradually from 0 to 8
  * @{*/
-#ifndef LOG_EMERG
 # define  LOG_EMERG 0 /*!< \brief system is unusable */
-#endif
-#ifndef LOG_ALERT
 # define  LOG_ALERT 1 /*!< \brief action must be taken immediately */
-#endif
-#ifndef LOG_CRIT
 # define  LOG_CRIT  2 /*!< \brief critical conditions */
-#endif
-#ifndef LOG_ERR
 # define  LOG_ERR   3 /*!< \brief error conditions */
-#endif
-#ifndef LOG_WARNING
 # define  LOG_WARNING 4 /*!< \brief warning conditions */
-#endif
-#ifndef LOG_NOTICE
 # define  LOG_NOTICE  5 /*!< \brief normal but significant condition */
-#endif
-#ifndef LOG_INFO
 # define  LOG_INFO  6 /*!< \brief informational */
-#endif
-#ifndef LOG_DEBUG
 # define  LOG_DEBUG 7 /*!< \brief debug-level messages */
-#endif
-#ifndef LOG_FILE
 # define  LOG_FILE        8 /*!< \brief message sequence chart -level  */
-#endif
-#ifndef LOG_TRACE
 # define  LOG_TRACE 9 /*!< \brief trace-level messages */
-#endif
-
 #define NUM_LOG_LEVEL  10 /*!< \brief the number of message levels users have with LOG */
 /* @}*/
 
+
+/** @defgroup _log_format Defined log format
+ *  @ingroup _macro
+ *  @brief Macro of log formats defined by LOG
+ * @{*/
+
+/* .log_format = 0x13 uncolored standard messages
+ * .log_format = 0x93 colored standard messages */
+
+#define LOG_RED "\033[1;31m"  /*!< \brief VT100 sequence for bold red foreground */
+#define LOG_GREEN "\033[32m"  /*!< \brief VT100 sequence for green foreground */
+#define LOG_ORANGE "\033[93m"   /*!< \brief VT100 sequence for orange foreground */
+#define LOG_BLUE "\033[34m" /*!< \brief VT100 sequence for blue foreground */
+#define LOG_CYBL "\033[40;36m"  /*!< \brief VT100 sequence for cyan foreground on black background */
+#define LOG_RESET "\033[0m" /*!< \brief VT100 sequence for reset (black) foreground */
+/* @}*/
+
+
+/** @defgroup _syslog_conf Macros for write in syslog.conf
+ *  @ingroup _macro
+ *  @brief Macros used to write lines (local/remote) in syslog.conf
+ * @{*/
+#define LOG_LOCAL      0x01
+#define LOG_REMOTE     0x02
+
+#define FLAG_COLOR     0x001  /*!< \brief defaults */
+#define FLAG_PID       0x002  /*!< \brief defaults */
+#define FLAG_COMP      0x004
+#define FLAG_THREAD    0x008  /*!< \brief all : 255/511 */
+#define FLAG_LEVEL     0x010
+#define FLAG_FUNCT     0x020
+#define FLAG_FILE_LINE 0x040
+#define FLAG_TIME      0x100
+
+#define LOG_NONE        0x00
+#define LOG_LOW         0x5
+#define LOG_MED         0x15
+#define LOG_HIGH        0x35
+#define LOG_FULL        0x75
+
+#define OAI_OK 0    /*!< \brief all ok */
+#define OAI_ERR 1   /*!< \brief generic error */
+#define OAI_ERR_READ_ONLY 2 /*!< \brief tried to write to read-only item */
+#define OAI_ERR_NOTFOUND 3  /*!< \brief something wasn't found */
+/* @}*/
+
+
+//static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, LOG_BLUE, "", "", "", LOG_GREEN}; /*!< \brief Optional start-format strings for highlighting */
+
+//static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};  /*!< \brief Optional end-format strings for highlighting */
+
+typedef enum {
+    MIN_LOG_COMPONENTS = 0,
+    PHY = MIN_LOG_COMPONENTS,
+    MAC,
+    EMU,
+    OCG,
+    OMG,
+    OPT,
+    OTG,
+    OTG_LATENCY,
+    OTG_LATENCY_BG,
+    OTG_GP,
+    OTG_GP_BG,
+    OTG_JITTER,
+    RLC,
+    PDCP,
+    RRC,
+    NAS,
+    PERF,
+    OIP,
+    CLI,
+    MSC,
+    OCM,
+    UDP_,
+    GTPU,
+    SPGW,
+    S1AP,
+    SCTP,
+    HW,
+    OSA,
+    RAL_ENB,
+    RAL_UE,
+    ENB_APP,
+    FLEXRAN_AGENT,
+    TMR,
+    USIM,
+    LOCALIZE,
+    RRH,
+    X2AP,
+    MAX_LOG_COMPONENTS,
+}
+comp_name_t;
+
+//#define msg printf
+
+typedef struct {
+    char *name; /*!< \brief string name of item */
+    int value;  /*!< \brief integer value of mapping */
+} mapping;
+
+
+typedef struct  {
+    const char *name;
+    int         level;
+    int         flag;
+    int         interval;
+    int         fd;
+    int         filelog;
+    char       *filelog_name;
+
+    /* SR: make the log buffer component relative */
+    char        log_buffer[MAX_LOG_TOTAL];
+} log_component_t;
+
+typedef struct  {
+    unsigned int remote_ip;
+    unsigned int audit_ip;
+    int  remote_level;
+    int  facility;
+    int  audit_facility;
+    int  format;
+} log_config_t;
+
+
+typedef struct {
+    log_component_t         log_component[MAX_LOG_COMPONENTS];
+    log_config_t            config;
+    char*                   level2string[NUM_LOG_LEVEL];
+    int                     level;
+    int                     onlinelog;
+    int                     flag;
+    int                     syslog;
+    int                     filelog;
+    char*                   filelog_name;
+} log_t;
+
+typedef struct LOG_params {
+    const char *file;
+    const char *func;
+    int line;
+    int comp;
+    int level;
+    const char *format;
+    char l_buff_info [MAX_LOG_INFO];
+    int len;
+} LOG_params;
+
+#if defined(ENABLE_ITTI)
+typedef enum log_instance_type_e {
+    LOG_INSTANCE_UNKNOWN,
+    LOG_INSTANCE_ENB,
+    LOG_INSTANCE_UE,
+} log_instance_type_t;
+
+void log_set_instance_type (log_instance_type_t instance);
+#endif
+
+
+/*--- INCLUDES ---------------------------------------------------------------*/
+#    include "log_if.h"
+/*----------------------------------------------------------------------------*/
+int  logInit (void);
+void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
+void logRecord(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
+int  set_comp_log(int component, int level, int verbosity, int interval);
+int  set_log(int component, int level, int interval);
+void set_glog(int level, int verbosity);
+void set_log_syslog(int enable);
+void set_log_onlinelog(int enable);
+void set_log_filelog(int enable);
+void set_component_filelog(int comp);
+int  map_str_to_int(mapping *map, const char *str);
+char *map_int_to_str(mapping *map, int val);
+void logClean (void);
+int  is_newline( char *str, int size);
+void *log_thread_function(void * list);
 
 /** @defgroup _logIt logIt function
  *  @ingroup _macro
@@ -186,169 +349,107 @@ extern "C" {
 #define LOG_RETURN(c,x) do {uint32_t __rv;__rv=(unsigned int)(x);LOG_T(c,"Returning %08x\n", __rv);return((typeof(x))__rv);}while(0)  /*!< \brief Macro to log a function exit, including integer value, then to return a value to the calling function */
 /* @}*/
 
-
-/** @defgroup _log_format Defined log format
- *  @ingroup _macro
- *  @brief Macro of log formats defined by LOG
- * @{*/
-
-/* .log_format = 0x13 uncolored standard messages
- * .log_format = 0x93 colored standard messages */
-
-#define LOG_RED "\033[1;31m"  /*!< \brief VT100 sequence for bold red foreground */
-#define LOG_GREEN "\033[32m"  /*!< \brief VT100 sequence for green foreground */
-#define LOG_ORANGE "\033[93m"   /*!< \brief VT100 sequence for orange foreground */
-#define LOG_BLUE "\033[34m" /*!< \brief VT100 sequence for blue foreground */
-#define LOG_CYBL "\033[40;36m"  /*!< \brief VT100 sequence for cyan foreground on black background */
-#define LOG_RESET "\033[0m" /*!< \brief VT100 sequence for reset (black) foreground */
-/* @}*/
-
-
-/** @defgroup _syslog_conf Macros for write in syslog.conf
- *  @ingroup _macro
- *  @brief Macros used to write lines (local/remote) in syslog.conf
- * @{*/
-#define LOG_LOCAL      0x01
-#define LOG_REMOTE     0x02
-
-#define FLAG_COLOR     0x001  /*!< \brief defaults */
-#define FLAG_PID       0x002  /*!< \brief defaults */
-#define FLAG_COMP      0x004
-#define FLAG_THREAD    0x008  /*!< \brief all : 255/511 */
-#define FLAG_LEVEL     0x010
-#define FLAG_FUNCT     0x020
-#define FLAG_FILE_LINE 0x040
-#define FLAG_TIME      0x100
-
-#define LOG_NONE        0x00
-#define LOG_LOW         0x5
-#define LOG_MED         0x15
-#define LOG_HIGH        0x35
-#define LOG_FULL        0x75
-
-#define OAI_OK 0    /*!< \brief all ok */
-#define OAI_ERR 1   /*!< \brief generic error */
-#define OAI_ERR_READ_ONLY 2 /*!< \brief tried to write to read-only item */
-#define OAI_ERR_NOTFOUND 3  /*!< \brief something wasn't found */
-/* @}*/
-
-
-//static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, LOG_BLUE, "", "", "", LOG_GREEN}; /*!< \brief Optional start-format strings for highlighting */
-
-//static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};  /*!< \brief Optional end-format strings for highlighting */
-
-typedef enum {
-  MIN_LOG_COMPONENTS = 0,
-  PHY = MIN_LOG_COMPONENTS,
-  MAC,
-  EMU,
-  OCG,
-  OMG,
-  OPT,
-  OTG,
-  OTG_LATENCY,
-  OTG_LATENCY_BG,
-  OTG_GP,
-  OTG_GP_BG,
-  OTG_JITTER,
-  RLC,
-  PDCP,
-  RRC,
-  NAS,
-  PERF,
-  OIP,
-  CLI,
-  MSC,
-  OCM,
-  UDP_,
-  GTPU,
-  SPGW,
-  S1AP,
-  SCTP,
-  HW,
-  OSA,
-  RAL_ENB,
-  RAL_UE,
-  ENB_APP,
-  FLEXRAN_AGENT,
-  TMR,
-  USIM,
-  LOCALIZE,
-  RRH,
-  X2AP,
-  MAX_LOG_COMPONENTS,
+static __inline__ uint64_t rdtsc(void) {
+  uint64_t a, d;
+  __asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
+  return (d<<32) | a;
 }
-comp_name_t;
 
-//#define msg printf
+#define DEBUG_REALTIME 1
+#if DEBUG_REALTIME
 
-typedef struct {
-  char *name; /*!< \brief string name of item */
-  int value;  /*!< \brief integer value of mapping */
-} mapping;
+extern double cpuf;
 
+static inline uint64_t checkTCPU(int timeout, char * file, int line) {
+    static uint64_t __thread lastCPUTime=0;
+    static uint64_t __thread last=0;
+    uint64_t cur=rdtsc();
+    struct timespec CPUt;
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &CPUt);
+    uint64_t CPUTime=CPUt.tv_sec*1000*1000+CPUt.tv_nsec/1000;
+    double microCycles=(double)(cpuf*1000);
+    int duration=(int)((cur-last)/microCycles);
+    if ( last!=0 && duration > timeout ) {
+      //struct timespec ts;
+      //clock_gettime(CLOCK_MONOTONIC, &ts);
+      printf("%s:%d lte-ue delay %d (exceed %d), CPU for this period: %lld\n", file, line,
+               duration, timeout, (long long)CPUTime-lastCPUTime );
+    }
+    last=cur;
+    lastCPUTime=CPUTime;
+    return cur;
+}
 
-typedef struct  {
-  const char *name;
-  int         level;
-  int         flag;
-  int         interval;
-  int         fd;
-  int         filelog;
-  char       *filelog_name;
+static inline unsigned long long checkT(int timeout, char * file, int line) {
+    static unsigned long long __thread last=0;
+    unsigned long long cur=rdtsc();
+    int microCycles=(int)(cpuf*1000);
+    int duration=(int)((cur-last)/microCycles);
+    if ( last!=0 && duration > timeout )
+        printf("%s:%d lte-ue delay %d (exceed %d)\n", file, line,
+               duration, timeout);
+    last=cur;
+    return cur;
+}
 
-  /* SR: make the log buffer component relative */
-  char        log_buffer[MAX_LOG_TOTAL];
-} log_component_t;
+typedef struct m {
+    uint64_t iterations;
+    uint64_t sum;
+    uint64_t maxArray[11];
+} Meas;
 
-typedef struct  {
-  unsigned int remote_ip;
-  unsigned int audit_ip;
-  int  remote_level;
-  int  facility;
-  int  audit_facility;
-  int  format;
-} log_config_t;
+static inline void printMeas(char * txt, Meas *M, int period) {
+    if (M->iterations%period == 0 ) {
+        char txt2[512];
+        sprintf(txt2,"%s avg=%" PRIu64 " iterations=%" PRIu64 " max=%" 
+                PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 "\n",
+                txt,
+                M->sum/M->iterations,
+                M->iterations,
+                M->maxArray[1],M->maxArray[2], M->maxArray[3],M->maxArray[4], M->maxArray[5], 
+                M->maxArray[6],M->maxArray[7], M->maxArray[8],M->maxArray[9],M->maxArray[10]);
+        LOG_W(PHY,"%s",txt2);
+    }
+}
 
+static inline int cmpint(const void* a, const void* b) {
+    uint64_t* aa=(uint64_t*)a;
+    uint64_t* bb=(uint64_t*)b;
+    return (int)(*aa-*bb);
+}
 
-typedef struct {
-  log_component_t         log_component[MAX_LOG_COMPONENTS];
-  log_config_t            config;
-  char*                   level2string[NUM_LOG_LEVEL];
-  int                     level;
-  int                     onlinelog;
-  int                     flag;
-  int                     syslog;
-  int                     filelog;
-  char*                   filelog_name;
-} log_t;
+static inline void updateTimes(uint64_t start, Meas *M, int period, char * txt) {
+    if (start!=0) {
+        uint64_t end=rdtsc();
+        long long diff=(end-start)/(cpuf*1000);
+        M->maxArray[0]=diff;
+        M->sum+=diff;
+        M->iterations++;
+        qsort(M->maxArray, 11, sizeof(uint64_t), cmpint);
+        printMeas(txt,M,period);
+    }
+}
 
-typedef struct LOG_params {
-  const char *file;
-  const char *func;
-  int line;
-  int comp;
-  int level;
-  const char *format;
-  char l_buff_info [MAX_LOG_INFO];
-  int len;
-} LOG_params;
+#define check(a) do { checkT(a,__FILE__,__LINE__); } while (0)
+#define checkcpu(a) do { checkTCPU(a,__FILE__,__LINE__); } while (0)
+#define initRefTimes(a) static __thread Meas a= {0}
+#define pickTime(a) uint64_t a=rdtsc()
+#define readTime(a) a
+#define initStaticTime(a) static __thread uint64_t a={0}
+#define pickStaticTime(a) do { a=rdtsc(); } while (0)
 
-
-#if defined(ENABLE_ITTI)
-typedef enum log_instance_type_e {
-  LOG_INSTANCE_UNKNOWN,
-  LOG_INSTANCE_ENB,
-  LOG_INSTANCE_UE,
-} log_instance_type_t;
-
-void log_set_instance_type (log_instance_type_t instance);
+#else
+#define check(a) do {} while (0)
+#define checkcpu(a) do {} while (0)
+#define initRefTimes(a) do {} while (0)
+#define initStaticTime(a) do {} while (0)
+#define pickTime(a) do {} while (0)
+#define readTime(a) 0
+#define pickStaticTime(a) do {} while (0)
+#define updateTimes(a,b,c,d) do {} while (0)
+#define printMeas(a,b,c) do {} while (0)
 #endif
-int logInit (void);
 
-/*--- INCLUDES ---------------------------------------------------------------*/
-#    include "log_if.h"
-/*----------------------------------------------------------------------------*/
 #ifdef __cplusplus
 }
 #endif

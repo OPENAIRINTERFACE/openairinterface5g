@@ -21,7 +21,7 @@
 
 /*! \file oaisim_functions.c
 * \brief function primitives of oaisim
-* \author Navid Nikaein 
+* \author Navid Nikaein
 * \date 2013-2015
 * \version 1.0
 * \company Eurecom
@@ -160,7 +160,7 @@ extern channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs];
 extern channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM_CCs];
 
 extern mapping small_scale_names[];
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
 extern pdcp_mbms_t pdcp_mbms_array_ue[NUMBER_OF_UE_MAX][maxServiceCount][maxSessionPerPMCH];
 extern pdcp_mbms_t pdcp_mbms_array_eNB[NUMBER_OF_eNB_MAX][maxServiceCount][maxSessionPerPMCH];
 #endif
@@ -721,8 +721,9 @@ void get_simulation_options(int argc, char *argv[])
       /*
       oai_emulation.info.transmission_mode[0] = atoi (optarg);
 
-      if ((oai_emulation.info.transmission_mode[0] != 1) &&  (oai_emulation.info.transmission_mode[0] != 2) && (oai_emulation.info.transmission_mode[0] != 3)
-          && (oai_emulation.info.transmission_mode[0] != 5) && (oai_emulation.info.transmission_mode[0] != 6) && (oai_emulation.info.transmission_mode[0] !=7)) {
+      if ((oai_emulation.info.transmission_mode[0] != 1) && (oai_emulation.info.transmission_mode[0] != 2) &&
+	  (oai_emulation.info.transmission_mode[0] != 3) && (oai_emulation.info.transmission_mode[0] != 4) &&
+          (oai_emulation.info.transmission_mode[0] != 5) && (oai_emulation.info.transmission_mode[0] != 6)) && (oai_emulation.info.transmission_mode[0] !=7)) {
         printf("Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode[0]);
         exit(-1);
       }
@@ -1041,6 +1042,7 @@ int UE_trx_set_gains(openair0_device *device, openair0_config_t *openair0_cfg) {
 extern pthread_mutex_t subframe_mutex;
 extern int subframe_ru_mask,subframe_UE_mask;
 
+
 int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
 
   int ru_id  = device->Mod_id;
@@ -1050,6 +1052,7 @@ int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
   int sample_count=0;
 
   *ptimestamp = last_ru_rx_timestamp[ru_id][CC_id];
+
 
   LOG_D(EMU,"RU_trx_read nsamps %d TS(%llu,%llu) => subframe %d\n",nsamps,
         (unsigned long long)current_ru_rx_timestamp[ru_id][CC_id],
@@ -1085,14 +1088,14 @@ int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
   }
   
 
-
   return(nsamps);
 }
 
-int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
-
+int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc)
+{
   int UE_id = device->Mod_id;
   int CC_id  = device->CC_id;
+
   int subframe,new_subframe;
   int sample_count=0;
   int read_size;
@@ -1104,6 +1107,7 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
         (unsigned long long)last_UE_rx_timestamp[UE_id][CC_id],
 	cc);
 
+
   if (nsamps < PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)
     read_size = nsamps;
   else
@@ -1113,11 +1117,11 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
     while (current_UE_rx_timestamp[UE_id][CC_id] < 
 	   (last_UE_rx_timestamp[UE_id][CC_id]+read_size)) {
       LOG_D(EMU,"[TXPATH]UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
-
       usleep(500);
     }
 
     //    LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+
     // if we cross a subframe-boundary
     subframe = (last_UE_rx_timestamp[UE_id][CC_id]/PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)%10;
     new_subframe = ((last_UE_rx_timestamp[UE_id][CC_id]+read_size)/PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)%10;
@@ -1281,6 +1285,7 @@ void init_openair0() {
 
 void init_devices(void){
 
+
   module_id_t UE_id, ru_id;
   uint8_t CC_id;
   RU_t *ru;
@@ -1302,10 +1307,12 @@ void init_devices(void){
     ru->rfdevice.trx_set_freq_func  = ru_trx_set_freq;
     ru->rfdevice.trx_set_gains_func = ru_trx_set_gains;
     last_ru_rx_timestamp[ru_id][0] = 0;
+
   }
   if (PHY_vars_UE_g==NULL) {
     PHY_vars_UE_g = (PHY_VARS_UE ***)malloc((1+NB_UE_INST)*sizeof(PHY_VARS_UE*));
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
+      printf("Initializing UE %d\n",UE_id);
       PHY_vars_UE_g[UE_id] = (PHY_VARS_UE **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_UE*));
       for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
 	PHY_vars_UE_g[UE_id][CC_id] = (PHY_VARS_UE *)malloc(sizeof(PHY_VARS_UE));
@@ -1341,7 +1348,7 @@ void init_ocm(void)
     break;
 
   case TDD:
-    frame_type = "FDD";
+    frame_type = "TDD";
     break;
   }
 
@@ -1352,7 +1359,7 @@ void init_ocm(void)
     get_beta_map_up();
 #endif
     get_MIESM_param();
-    
+
     //load_pbch_desc();
   }
 
@@ -1405,6 +1412,7 @@ void init_ocm(void)
         random_channel(RU2UE[ru_id][UE_id][CC_id],abstraction_flag);
         LOG_D(OCM,"[SIM] Initializing channel (%s, %d) from UE %d to ru %d\n", oai_emulation.environment_system_config.fading.small_scale.selected_option,
               map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),UE_id, ru_id);
+
 
         UE2RU[UE_id][ru_id][CC_id] = 
 	  new_channel_desc_scm(PHY_vars_UE_g[UE_id][CC_id]->frame_parms.nb_antennas_tx,
@@ -1569,9 +1577,9 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
 
       // generate traffic if the ue is rrc reconfigured state
       //if ((rrc_state=mac_eNB_get_rrc_status(enb_module_idP, dst_id)) > 2 /*RRC_CONNECTED*/ ) {
-      if (mac_eNB_get_rrc_status(enb_module_idP, oai_emulation.info.eNB_ue_module_id_to_rnti[enb_module_idP][dst_id]) > 2 ){ 
+      if (mac_eNB_get_rrc_status(enb_module_idP, oai_emulation.info.eNB_ue_module_id_to_rnti[enb_module_idP][dst_id]) > 2 ){
 	if_times += 1;
-	
+
         for (app_id=0; app_id<MAX_NUM_APPLICATION; app_id++) {
           otg_pkt = malloc (sizeof(Packet_otg_elt_t));
 
@@ -1596,7 +1604,7 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
       }
     }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
     mbms_service_id_t service_id;
     mbms_session_id_t session_id;
     rb_id_t           rb_id;
@@ -1631,7 +1639,7 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
 
             // old version
             /*      // MBSM multicast traffic
-            #ifdef Rel10
+            #if defined(Rel10) || defined(Rel14)
             if (frame >= 46) {// only generate when UE can receive MTCH (need to control this value)
             for (service_id = 0; service_id < 2 ; service_id++) { //maxServiceCount
             for (session_id = 0; session_id < 2; session_id++) { // maxSessionPerPMCH
@@ -1713,16 +1721,16 @@ void update_otg_UE(module_id_t ue_mod_idP, unsigned int ctime)
       if (mac_UE_get_rrc_status(ue_mod_idP, dst_id ) > 2 /*RRC_CONNECTED*/) {
         for (app_id=0; app_id<MAX_NUM_APPLICATION; app_id++) {
 	  Packet_otg_elt_t *otg_pkt = malloc (sizeof(Packet_otg_elt_t));
-	  
+
 	  if (otg_pkt!=NULL)
 	    memset(otg_pkt,0,sizeof(Packet_otg_elt_t));
 	  else {
 	    LOG_E(OTG,"not enough memory\n");
 	    exit(-1);
 	  }// Manage to add this packet to the tail of your list
-	  
+
 	  (otg_pkt->otg_pkt).sdu_buffer = (uint8_t*) packet_gen(src_id, dst_id, app_id, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
-	  
+
 	  if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
 	    (otg_pkt->otg_pkt).rb_id     = DTCH-2;
 	    (otg_pkt->otg_pkt).module_id = module_id;

@@ -38,13 +38,15 @@
 #include "MeasGapConfig.h"
 #include "MeasObjectToAddModList.h"
 #include "TDD-Config.h"
+#include "MAC-MainConfig.h"
 #include "defs.h"
 #include "proto.h"
 #include "extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
+
 #include "common/ran_context.h"
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-AreaInfo-r9.h"
 #include "MBSFN-SubframeConfigList.h"
@@ -88,6 +90,7 @@ void ue_mac_reset(module_id_t module_idP,uint8_t eNB_index)
 
 }
 
+
 int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 			   int                              CC_idP,
 			   int                              physCellId,
@@ -98,7 +101,7 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 			   BCCH_BCH_Message_t               *mib,
 			   RadioResourceConfigCommonSIB_t   *radioResourceConfigCommon,
 			   struct PhysicalConfigDedicated  *physicalConfigDedicated,
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 			   SCellToAddMod_r10_t *sCellToAddMod_r10,
 			   //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -115,7 +118,7 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 			   long                            *ul_Bandwidth,
 			   AdditionalSpectrumEmission_t    *additionalSpectrumEmission,
 			   struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 			   ,uint8_t                              MBMS_Flag,
 			   MBSFN_AreaInfoList_r9_t         *mbsfn_AreaInfoList,
 			   PMCH_InfoList_r9_t              *pmch_InfoList
@@ -209,7 +212,9 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
   } 
 
 
-#ifdef Rel10
+
+
+#if defined(Rel10) || defined(Rel14)
 
   if (sCellToAddMod_r10 != NULL) {
 
@@ -240,7 +245,7 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 #endif
   }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (mbsfn_AreaInfoList != NULL) {
       // One eNB could be part of multiple mbsfn syc area, this could change over time so reset each time
@@ -280,6 +285,7 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 #endif
 #ifdef CBA
 
+
   if (cba_rnti) {
     LOG_D(MAC,"[eNB %d] configure CBA RNTI for UE  %d (total active cba groups %d)\n",
 	  Mod_idP, UE_id, num_active_cba_groups);
@@ -314,7 +320,7 @@ rrc_mac_config_req_ue(
   uint8_t                          eNB_index,
   RadioResourceConfigCommonSIB_t  *radioResourceConfigCommon,
   struct PhysicalConfigDedicated  *physicalConfigDedicated,
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   SCellToAddMod_r10_t *sCellToAddMod_r10,
   //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -331,7 +337,7 @@ rrc_mac_config_req_ue(
   long                            *ul_Bandwidth,
   AdditionalSpectrumEmission_t    *additionalSpectrumEmission,
   struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   ,uint8_t                              MBMS_Flag,
   MBSFN_AreaInfoList_r9_t         *mbsfn_AreaInfoList,
   PMCH_InfoList_r9_t              *pmch_InfoList
@@ -398,7 +404,13 @@ rrc_mac_config_req_ue(
       if (mac_MainConfig->ul_SCH_Config->periodicBSR_Timer) {
 	UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer = (uint16_t) *mac_MainConfig->ul_SCH_Config->periodicBSR_Timer;
       } else {
-	UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer = (uint16_t) MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
+	UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer = 
+#ifndef Rel14
+	  (uint16_t) MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity
+#else
+	  (uint16_t) PeriodicBSR_Timer_r12_infinity;
+#endif
+	  ;
       }
       
       if (mac_MainConfig->ul_SCH_Config->maxHARQ_Tx) {
@@ -411,11 +423,16 @@ rrc_mac_config_req_ue(
       if (mac_MainConfig->ul_SCH_Config->retxBSR_Timer) {
 	UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer     = (uint16_t) mac_MainConfig->ul_SCH_Config->retxBSR_Timer;
       } else {
+#ifndef Rel14
 	UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer     = (uint16_t)MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
+#else
+	UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer     = (uint16_t)RetxBSR_Timer_r12_sf2560;
+#endif
       }
     }
 
-#ifdef Rel10
+
+#if defined(Rel10) || defined(Rel14)
     
     if (mac_MainConfig->ext1 && mac_MainConfig->ext1->sr_ProhibitTimer_r9) {
       UE_mac_inst[Mod_idP].scheduling_info.sr_ProhibitTimer  = (uint16_t) *mac_MainConfig->ext1->sr_ProhibitTimer_r9;
@@ -484,7 +501,7 @@ rrc_mac_config_req_ue(
     UE_mac_inst[Mod_idP].physicalConfigDedicated=physicalConfigDedicated; // for SR proc
   }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (sCellToAddMod_r10 != NULL) {
 
@@ -616,7 +633,7 @@ rrc_mac_config_req_ue(
   }
   
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (mbsfn_AreaInfoList != NULL) {
     LOG_I(MAC,"[UE %d][CONFIG] Received %d MBSFN Area Info\n", Mod_idP, mbsfn_AreaInfoList->list.count);

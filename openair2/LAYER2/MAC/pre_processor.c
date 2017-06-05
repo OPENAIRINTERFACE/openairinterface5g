@@ -66,14 +66,29 @@
 */
 
 /* this function checks that get_eNB_UE_stats returns
- * a non-NULL pointer for all CCs for a given UE
+ * a non-NULL pointer for all the active CCs of an UE
  */
 int phy_stats_exist(module_id_t Mod_id, int rnti)
 {
   int CC_id;
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
+  int i;
+  int UE_id          = find_UE_id(Mod_id, rnti);
+  UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
+  if (UE_id == -1) {
+    LOG_W(MAC, "[eNB %d] UE %x not found, should be there (in phy_stats_exist)\n",
+	  Mod_id, rnti);
+    return 0;
+  }
+  if (UE_list->numactiveCCs[UE_id] == 0) {
+    LOG_W(MAC, "[eNB %d] UE %x has no active CC (in phy_stats_exist)\n",
+	  Mod_id, rnti);
+    return 0;
+  }
+  for (i = 0; i < UE_list->numactiveCCs[UE_id]; i++) {
+    CC_id = UE_list->ordered_CCids[i][UE_id];
     if (mac_xface->get_eNB_UE_stats(Mod_id, CC_id, rnti) == NULL)
       return 0;
+  }
   return 1;
 }
 
@@ -109,7 +124,7 @@ void store_dlsch_buffer (module_id_t Mod_id,
 
     for(i=0; i< MAX_NUM_LCID; i++) { // loop over all the logical channels
 
-      rlc_status = mac_rlc_status_ind(Mod_id,rnti, Mod_id,frameP,ENB_FLAG_YES,MBMS_FLAG_NO,i,0 );
+      rlc_status = mac_rlc_status_ind(Mod_id,rnti, Mod_id,frameP,subframeP,ENB_FLAG_YES,MBMS_FLAG_NO,i,0 );
       UE_template->dl_buffer_info[i] = rlc_status.bytes_in_buffer; //storing the dlsch buffer for each logical channel
       UE_template->dl_pdus_in_buffer[i] = rlc_status.pdus_in_buffer;
       UE_template->dl_buffer_head_sdu_creation_time[i] = rlc_status.head_sdu_creation_time ;
@@ -718,7 +733,7 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
                                                   N_RBG[CC_id],
                                                   transmission_mode,
                                                   min_rb_unit[CC_id],
-                                                  N_RB_DL,
+                                                  to_prb(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth),
                                                   nb_rbs_required,
                                                   nb_rbs_required_remaining,
                                                   rballoc_sub,
@@ -1079,8 +1094,8 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   rnti_t             rnti                       = -1;
   UE_list_t          *UE_list                   = &RC.mac[module_idP]->UE_list;
   UE_TEMPLATE        *UE_template               = 0;
-  int                N_RB_DL                    = to_prb(RC.mac[module_idP]->common_channels[CC_id].mib->message.dl_Bandwidth);
-  int                N_RB_UL                    = to_prb(RC.mac[module_idP]->common_channels[CC_id].ul_Bandwidth);
+  int                N_RB_DL;
+  int                N_RB_UL;
   //LOG_I(MAC,"assign max mcs min rb\n");
   // maximize MCS and then allocate required RB according to the buffer occupancy with the limit of max available UL RB
   assign_max_mcs_min_rb(module_idP,frameP, subframeP, first_rb);
@@ -1093,9 +1108,11 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   // we need to distribute RBs among UEs
   // step1:  reset the vars
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    total_allocated_rbs[CC_id]=0;
-    total_remaining_rbs[CC_id]=0;
-    average_rbs_per_user[CC_id]=0;
+    N_RB_DL                     = to_prb(RC.mac[module_idP]->common_channels[CC_id].mib->message.dl_Bandwidth);
+    N_RB_UL                     = to_prb(RC.mac[module_idP]->common_channels[CC_id].ul_Bandwidth);
+    total_allocated_rbs[CC_id]  = 0;
+    total_remaining_rbs[CC_id]  = 0;
+    average_rbs_per_user[CC_id] = 0;
 
     for (i=UE_list->head_ul; i>=0; i=UE_list->next_ul[i]) {
       nb_allocated_rbs[CC_id][i]=0;

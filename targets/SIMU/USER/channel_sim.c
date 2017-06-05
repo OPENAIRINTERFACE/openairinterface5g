@@ -150,8 +150,9 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
       }
 
       // find out which eNB the UE is attached to
+
       for (eNB_id=0; eNB_id<RC.nb_inst; eNB_id++) {
-        if (find_ue(PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[0]->crnti,RC.eNB[eNB_id][CC_id])>=0) {
+        if (find_ue(PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[0][0]->crnti,RC.eNB[eNB_id][CC_id])>=0) {
           // UE with UE_id is connected to eNb with eNB_id
           att_eNB_id=eNB_id;
           LOG_D(OCM,"A: UE attached to eNB (UE%d->eNB%d)\n",UE_id,eNB_id);
@@ -353,6 +354,7 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
       if (RU_output_mask[UE_id] == (1<<RC.nb_RU)-1) {
 	RU_output_mask[UE_id]=0;
       
+
 
 	double *r_re_p[2] = {r_re_DL[ru_id][0],r_re_DL[ru_id][1]};
 	double *r_im_p[2] = {r_im_DL[ru_id][0],r_im_DL[ru_id][1]};

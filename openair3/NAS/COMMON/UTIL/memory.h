@@ -58,6 +58,8 @@ Description Memory access utilities
 
 char* memory_get_path(const char* dirname, const char* filename);
 
+char* memory_get_path_from_ueid(const char* dirname, const char* filename, int ueid);
+
 int memory_read(const char* datafile, void* data, size_t size);
 
 int memory_write(const char* datafile, const void* data, size_t size);

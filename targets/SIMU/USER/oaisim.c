@@ -59,6 +59,7 @@
 
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
+#include "system.h"
 
 
 #include "PHY/TOOLS/lte_phy_scope.h"
@@ -180,6 +181,9 @@ extern uint8_t ethernet_flag;
 extern uint16_t Nid_cell;
 
 
+double cpuf;
+#include "threads_t.h"
+threads_t threads= {-1,-1,-1};
 
 //#ifdef XFORMS
 int otg_enabled;
@@ -238,7 +242,7 @@ help (void)
   printf ("-L [0-1] 0 to disable new link adaptation, 1 to enable new link adapatation\n");
   printf ("-m Gives a fixed DL mcs for eNB scheduler\n");
   printf ("-M Set the machine ID for Ethernet-based emulation\n");
-  printf ("-n Set the number of frames for the simulation\n");
+  printf ("-n Set the number of frames for the simulation. 0 for no limit\n");
   printf ("-O [enb_conf_file] eNB configuration file name\n");
   printf ("-p Set the total number of machine in emulation - valid if M is set\n");
   printf ("-P [trace type] Enable protocol analyzer. Possible values for OPT:\n");
@@ -456,7 +460,8 @@ l2l1_task_state_t l2l1_state = L2L1_WAITTING;
 
 extern openair0_timestamp current_ru_rx_timestamp[NUMBER_OF_RU_MAX][MAX_NUM_CCs];
 extern openair0_timestamp current_UE_rx_timestamp[NUMBER_OF_UE_MAX][MAX_NUM_CCs];
-
+extern openair0_timestamp last_eNB_rx_timestamp[NUMBER_OF_eNB_MAX][MAX_NUM_CCs];
+extern openair0_timestamp last_UE_rx_timestamp[NUMBER_OF_UE_MAX][MAX_NUM_CCs];
 
 /*------------------------------------------------------------------------------*/
 void *
@@ -468,7 +473,7 @@ l2l1_task (void *args_p)
   // Framing variables
   int32_t sf;
 
-  char fname[64], vname[64];
+  //char fname[64], vname[64];
 
   //#ifdef XFORMS
   // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
@@ -589,6 +594,7 @@ l2l1_task (void *args_p)
       switch (ITTI_MSG_ID(message_p)) {
       case INITIALIZE_MESSAGE:
         l2l1_state = L2L1_RUNNING;
+        start_eNB = 1;
         break;
 
       case ACTIVATE_MESSAGE:
@@ -728,11 +734,11 @@ l2l1_task (void *args_p)
 #endif
 
 	clear_eNB_transport_info (oai_emulation.info.nb_enb_local);
-
-        CC_id=0;
+	CC_id=0;
         int all_done=0;
 
         while (all_done==0) {
+
           pthread_mutex_lock(&subframe_mutex);
           int subframe_ru_mask_local = subframe_ru_mask;
           int subframe_UE_mask_local  = subframe_UE_mask;
@@ -769,23 +775,6 @@ l2l1_task (void *args_p)
 	  LOG_D(EMU,"UE %d/%d: TS %llu\n",UE_id,CC_id,current_UE_rx_timestamp[UE_inst][CC_id]);
         }
 
-
-	if (oai_emulation.info.cli_start_enb[eNB_inst] != 0) {
-	  T(T_ENB_MASTER_TICK, T_INT(eNB_inst), T_INT(frame % 1024), T_INT(slot/2));
-	  /*
-	  LOG_D(EMU,
-		"PHY procedures eNB %d for frame %d, slot %d (subframe TX %d, RX %d) TDD %d/%d Nid_cell %d\n",
-		eNB_inst,
-		frame%MAX_FRAME_NUMBER,
-		2*sf,
-		PHY_vars_eNB_g[eNB_inst][0]->proc[slot >> 1].subframe_tx,
-		PHY_vars_eNB_g[eNB_inst][0]->proc[slot >> 1].subframe_rx,
-		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.frame_type,
-		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.tdd_config,
-		PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.Nid_cell);
-	  */
-	}
-
         for (eNB_inst = oai_emulation.info.first_enb_local;
              (eNB_inst
               < (oai_emulation.info.first_enb_local
@@ -793,7 +782,6 @@ l2l1_task (void *args_p)
              eNB_inst++) {
           if (oai_emulation.info.cli_start_enb[eNB_inst] != 0) {
         
-	    T(T_ENB_MASTER_TICK, T_INT(eNB_inst), T_INT(frame % 1024), T_INT(sf));
 	    /*
 	    LOG_D(EMU,
 		  "PHY procedures eNB %d for frame %d, subframe %d TDD %d/%d Nid_cell %d\n",
@@ -942,7 +930,7 @@ l2l1_task (void *args_p)
           }
         }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
         for (RN_id=oai_emulation.info.first_rn_local;
              RN_id<oai_emulation.info.first_rn_local+oai_emulation.info.nb_rn_local;
@@ -1201,6 +1189,7 @@ int T_port = 2021;    /* default port to listen to to wait for the tracer */
 int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
 
+
 void wait_RUs() {
 
   int i;
@@ -1222,6 +1211,7 @@ void wait_RUs() {
     PHY_vars_UE_g[i][0]->frame_parms.nb_antennas_rx       = 1;
     // set initially to 2, it will be revised after initial synchronization
     PHY_vars_UE_g[i][0]->frame_parms.nb_antenna_ports_eNB = 2;
+    PHY_vars_UE_g[i][0]->frame_parms.tdd_config = 1;
     PHY_vars_UE_g[i][0]->frame_parms.dl_CarrierFreq       = RC.ru[0]->frame_parms.dl_CarrierFreq;
     PHY_vars_UE_g[i][0]->frame_parms.ul_CarrierFreq       = RC.ru[0]->frame_parms.ul_CarrierFreq;
     PHY_vars_UE_g[i][0]->frame_parms.eutra_band           = RC.ru[0]->frame_parms.eutra_band;
@@ -1249,12 +1239,25 @@ void init_UE(int,int,int);
 void init_RU(const char*);
 
 
+static void print_current_directory(void)
+{
+  char dir[8192]; /* arbitrary size (should be big enough) */
+  if (getcwd(dir, 8192) == NULL)
+    printf("ERROR getting working directory\n");
+  else
+    printf("working directory: %s\n", dir);
+}
+
 /*------------------------------------------------------------------------------*/
 int
 main (int argc, char **argv)
 {
 
   clock_t t;
+
+  print_current_directory();
+
+  start_background_system();
 
 #ifdef SMBV
   // Rohde&Schwarz SMBV100A vector signal generator
@@ -1275,6 +1278,15 @@ main (int argc, char **argv)
   //Default values if not changed by the user in get_simulation_options();
   pdcp_period = 1;
   omg_period = 1;
+  //Clean ip rule table
+  for(int i =0; i<NUMBER_OF_UE_MAX; i++){
+      char command_line[100];
+      sprintf(command_line, "while ip rule del table %d; do true; done",i+201);
+      /* we don't care about return value from system(), but let's the
+       * compiler be silent, so let's do "if (XX);"
+       */
+      if (system(command_line)) /* nothing */;
+  }
   // start thread for log gen
   log_thread_init ();
 
@@ -1343,9 +1355,10 @@ main (int argc, char **argv)
   init_RU(NULL);
 
 
-  //  init_openair2 ();
 
+  //  init_openair2 ();
   //  init_openair0();
+
 
 
 
@@ -1387,6 +1400,8 @@ main (int argc, char **argv)
   if (oai_emulation.info.opp_enabled == 1)
     reset_opp_meas_oaisim ();
 
+  cpuf=get_cpu_freq_GHz();
+
   init_time ();
 
   init_slot_isr ();
@@ -1396,10 +1411,15 @@ main (int argc, char **argv)
   LOG_N(EMU,
         ">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
 
+#ifndef PACKAGE_VERSION
+#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
+#endif
+  LOG_I(EMU, "Version: %s\n", PACKAGE_VERSION);
+
 #if defined(ENABLE_ITTI)
 
+  // Handle signals until all tasks are terminated
   itti_wait_tasks_end();
-
 
 #else
 
@@ -1436,14 +1456,16 @@ reset_opp_meas_oaisim (void)
 
   for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
     reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc);
-    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx[0]);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx[1]);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_tx);
 
     //    reset_meas (&PHY_vars_UE_g[UE_id][0]->ofdm_demod_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->rx_dft_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_channel_estimation_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_freq_offset_estimation_stats);
-    reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats[0]);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats[1]);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_rate_unmatching_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_turbo_decoding_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_deinterleaving_stats);
@@ -1605,6 +1627,7 @@ print_opp_meas_oaisim (void)
     print_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc, "[UE][total_phy_proc]",
                 &oaisim_stats, &oaisim_stats_f);
 
+
     print_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx,
                 "[UE][total_phy_proc_rx]", &oaisim_stats, &oaisim_stats_f);
     //    print_meas (&PHY_vars_UE_g[UE_id][0]->ofdm_demod_stats,
@@ -1619,8 +1642,10 @@ print_opp_meas_oaisim (void)
                 &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_unscrambling_stats,
                 "[UE][unscrambling]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats,
-                "[UE][decoding]", &oaisim_stats, &oaisim_stats_f);
+    print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats[0],
+                "[UE][decoding[0]]", &oaisim_stats, &oaisim_stats_f);
+    print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats[1],
+                "[UE][decoding[1]]", &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_rate_unmatching_stats,
                 "[UE][rate_unmatching]", &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_deinterleaving_stats,

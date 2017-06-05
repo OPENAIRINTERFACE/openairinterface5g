@@ -233,9 +233,12 @@ int nasmt_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
   }
 
   // End debug information
-
   netif_stop_queue(dev);
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+  netif_trans_update(dev);
+#else
   dev->trans_start = jiffies;
+#endif
 #ifdef NAS_DEBUG_SEND_DETAIL
   printk("nasmt_hard_start_xmit: step 1\n");
 #endif
@@ -307,7 +310,11 @@ void nasmt_tx_timeout(struct net_device *dev)
   printk("nasmt_tx_timeout: begin\n");
   //((struct nas_priv *)(dev->priv))->stats.tx_errors++;
   (gpriv->stats).tx_errors++;
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+  netif_trans_update(dev);
+#else
   dev->trans_start = jiffies;
+#endif
   netif_wake_queue(dev);
   printk("nasmt_tx_timeout: transmit timed out %s\n",dev->name);
 }

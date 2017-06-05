@@ -78,13 +78,15 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmRegisteredInitiated(const emm_reg_t *evt)
+int EmmRegisteredInitiated(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNerror;
+  emm_data_t *emm_data = user->emm_data;
+  user_api_id_t *user_api_id = user->user_api_id;
 
-  assert(emm_fsm_get_status() == EMM_REGISTERED_INITIATED);
+  assert(emm_fsm_get_status(user) == EMM_REGISTERED_INITIATED);
 
   switch (evt->primitive) {
   case _EMMREG_ATTACH_INIT:
@@ -96,14 +98,14 @@ int EmmRegisteredInitiated(const emm_reg_t *evt)
 
     /* Move to the corresponding initial EMM state */
     if (evt->u.attach.is_emergency) {
-      rc = emm_fsm_set_status(EMM_DEREGISTERED_LIMITED_SERVICE);
+      rc = emm_fsm_set_status(user, EMM_DEREGISTERED_LIMITED_SERVICE);
     } else {
-      rc = emm_fsm_set_status(EMM_DEREGISTERED_NORMAL_SERVICE);
+      rc = emm_fsm_set_status(user, EMM_DEREGISTERED_NORMAL_SERVICE);
     }
 
     if (rc != RETURNerror) {
       /* Restart the attach procedure */
-      rc = emm_proc_attach_restart();
+      rc = emm_proc_attach_restart(user);
     }
 
     break;
@@ -114,7 +116,7 @@ int EmmRegisteredInitiated(const emm_reg_t *evt)
      * timer T3410 expired). The network attach procedure shall be
      * restarted when timer T3411 expires.
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_ATTEMPTING_TO_ATTACH);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_ATTEMPTING_TO_ATTACH);
     break;
 
   case _EMMREG_ATTACH_EXCEEDED:
@@ -126,7 +128,7 @@ int EmmRegisteredInitiated(const emm_reg_t *evt)
      * SEARCH in order to perform a PLMN selection.
      */
     /* TODO: ATTEMPTING-TO-ATTACH or PLMN-SEARCH ??? */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_ATTEMPTING_TO_ATTACH);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_ATTEMPTING_TO_ATTACH);
     break;
 
   case _EMMREG_ATTACH_CNF:
@@ -134,13 +136,13 @@ int EmmRegisteredInitiated(const emm_reg_t *evt)
      * EPS network attach accepted by the network;
      * enter state EMM-REGISTERED.
      */
-    rc = emm_fsm_set_status(EMM_REGISTERED);
+    rc = emm_fsm_set_status(user, EMM_REGISTERED);
 
     if (rc != RETURNerror) {
       /*
        * Notify EMM that the MT is registered
        */
-      rc = emm_proc_registration_notify(NET_REG_STATE_HN);
+      rc = emm_proc_registration_notify(user_api_id, emm_data, NET_REG_STATE_HN);
 
       if (rc != RETURNok) {
         LOG_TRACE(WARNING, "EMM-FSM   - "
@@ -161,13 +163,13 @@ int EmmRegisteredInitiated(const emm_reg_t *evt)
      * EPS network attach rejected by the network;
      * enter state EMM-DEREGISTERED.
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED);
 
     if (rc != RETURNerror) {
       /*
        * Notify EMM that the MT's registration is denied
        */
-      rc = emm_proc_registration_notify(NET_REG_STATE_DENIED);
+      rc = emm_proc_registration_notify(user_api_id, emm_data, NET_REG_STATE_DENIED);
 
       if (rc != RETURNok) {
         LOG_TRACE(WARNING, "EMM-FSM   - "
@@ -181,11 +183,11 @@ int EmmRegisteredInitiated(const emm_reg_t *evt)
     /*
      * The UE has to select a new PLMN to register to
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_PLMN_SEARCH);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_PLMN_SEARCH);
 
     if (rc != RETURNerror) {
       /* Process the network registration request */
-      rc = emm_fsm_process(evt);
+      rc = emm_fsm_process(user, evt);
     }
 
     break;
@@ -194,7 +196,7 @@ int EmmRegisteredInitiated(const emm_reg_t *evt)
     /*
      * The UE failed to register to the network for normal EPS service
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_LIMITED_SERVICE);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_LIMITED_SERVICE);
     break;
 
   case _EMMREG_NO_IMSI:
@@ -202,14 +204,14 @@ int EmmRegisteredInitiated(const emm_reg_t *evt)
      * The UE failed to register to the network for emergency
      * bearer services
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_NO_IMSI);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_NO_IMSI);
     break;
 
   case _EMMREG_DETACH_INIT:
     /*
      * Initiate detach procedure for EPS services
      */
-    rc = emm_proc_detach(EMM_DETACH_TYPE_EPS, evt->u.detach.switch_off);
+    rc = emm_proc_detach(user, EMM_DETACH_TYPE_EPS, evt->u.detach.switch_off);
     break;
 
   case _EMMREG_DETACH_REQ:
@@ -218,7 +220,7 @@ int EmmRegisteredInitiated(const emm_reg_t *evt)
      * message successfully delivered to the network);
      * enter state EMM-DEREGISTERED-INITIATED
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_INITIATED);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_INITIATED);
     break;
 
   case _EMMREG_LOWERLAYER_SUCCESS:
@@ -228,7 +230,7 @@ int EmmRegisteredInitiated(const emm_reg_t *evt)
      * any message transfered by EMM common procedures requested
      * by the network.
      */
-    rc = emm_proc_lowerlayer_success();
+    rc = emm_proc_lowerlayer_success(user->lowerlayer_data);
     break;
 
   case _EMMREG_LOWERLAYER_FAILURE:
@@ -238,7 +240,7 @@ int EmmRegisteredInitiated(const emm_reg_t *evt)
      * any message transfered by EMM common procedures requested
      * by the network.
      */
-    rc = emm_proc_lowerlayer_failure(FALSE);
+    rc = emm_proc_lowerlayer_failure(user->lowerlayer_data, FALSE);
     break;
 
   case _EMMREG_LOWERLAYER_RELEASE:
@@ -247,7 +249,7 @@ int EmmRegisteredInitiated(const emm_reg_t *evt)
      * Accept, Attach Reject, or any message transfered by EMM common
      * procedures requested by the network, is received.
      */
-    rc = emm_proc_lowerlayer_release();
+    rc = emm_proc_lowerlayer_release(user->lowerlayer_data);
     break;
 
   default:

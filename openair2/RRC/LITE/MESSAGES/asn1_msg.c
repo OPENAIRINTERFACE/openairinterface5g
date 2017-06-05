@@ -58,7 +58,7 @@
 #include "RRCConnectionSetup.h"
 #include "SRB-ToAddModList.h"
 #include "DRB-ToAddModList.h"
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #include "MCCH-Message.h"
 //#define MRB1 1
 #endif
@@ -241,8 +241,14 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
   mib->message.systemFrameNumber.size = 1;
   mib->message.systemFrameNumber.bits_unused=0;
   mib->message.spare.buf = (uint8_t *)&spare;
+#ifndef Rel14
   mib->message.spare.size = 2;
   mib->message.spare.bits_unused = 6;  // This makes a spare of 10 bits
+#else
+  mib->message.spare.size = 1;
+  mib->message.spare.bits_unused = 3;  // This makes a spare of 5 bits
+  mib->message.schedulingInfoSIB1_BR_r13 = 0; // turn off eMTC
+#endif
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_BCH_Message,
                                    (void*)mib,
@@ -488,6 +494,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 }
 
 uint8_t do_SIB23(uint8_t Mod_id,
+
                  int CC_id
 #if defined(ENABLE_ITTI)
                  , RrcConfigurationReq *configuration
@@ -495,7 +502,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
                 )
 {
   struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib2_part,*sib3_part;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib13_part;
   MBSFN_SubframeConfigList_t *MBSFNSubframeConfigList;
   MBSFN_AreaInfoList_r9_t *MBSFNArea_list;
@@ -507,7 +514,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   BCCH_DL_SCH_Message_t             *bcch_message = &RC.rrc[Mod_id]->carrier[CC_id].systemInformation;
   SystemInformationBlockType2_t     **sib2        = &RC.rrc[Mod_id]->carrier[CC_id].sib2;
   SystemInformationBlockType3_t     **sib3        = &RC.rrc[Mod_id]->carrier[CC_id].sib3;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   SystemInformationBlockType13_r9_t **sib13       = &RC.rrc[Mod_id]->carrier[CC_id].sib13;
   uint8_t                           MBMS_flag     = RC.rrc[Mod_id]->carrier[CC_id].MBMS_flag;
 #endif
@@ -529,7 +536,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
     exit(-1);
   }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   LOG_I(RRC,"[eNB %d] Configuration SIB2/3, MBMS = %d\n", Mod_id, MBMS_flag);
 #else
   LOG_I(RRC,"[eNB %d] Configuration SIB2/3\n", Mod_id);
@@ -545,7 +552,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   *sib2 = &sib2_part->choice.sib2;
   *sib3 = &sib3_part->choice.sib3;
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flag > 0) {
     sib13_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
@@ -559,7 +566,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   // sib2
 
   (*sib2)->ac_BarringInfo = NULL;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #if 0
   (*sib2)->ssac_BarringForMMTEL_Voice_r9 = NULL;
   (*sib2)->ssac_BarringForMMTEL_Video_r9 = NULL;
@@ -648,7 +655,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
     = configuration->pucch_nRB_CQI[CC_id];
   (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.nCS_AN
     = configuration->pucch_nCS_AN[CC_id];
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
   (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.n1PUCCH_AN
     = configuration->pucch_n1_AN[CC_id];
 #endif
@@ -804,7 +811,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->freqInfo.ul_Bandwidth = NULL;
   //  (*sib2)->mbsfn_SubframeConfigList = NULL;
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flag > 0) {
     LOG_I(RRC,"Adding MBSFN subframe Configuration 1 to SIB2\n");
@@ -853,7 +860,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->timeAlignmentTimerCommon=TimeAlignmentTimer_infinity;//TimeAlignmentTimer_sf5120;
 
   /// (*SIB3)
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   (*sib3)->ext1 = NULL;
 #if 0
   (*sib3)->s_IntraSearch_v920=NULL;
@@ -888,7 +895,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   // SIB13
   // fill in all elements of SIB13 if present
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flag > 0 ) {
     //  Notification for mcch change
@@ -964,7 +971,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
                    sib2_part);
   ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,
                    sib3_part);
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flag > 0) {
     ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib13_part);
@@ -1254,15 +1261,15 @@ do_RRCConnectionSetup(
   uint8_t*                   const buffer,
   const uint8_t              transmission_mode,
   const uint8_t              Transaction_id,
-  const LTE_DL_FRAME_PARMS* const frame_parms,
   SRB_ToAddModList_t  **SRB_configList,
   struct PhysicalConfigDedicated  **physicalConfigDedicated)
 {
 
   asn_enc_rval_t enc_rval;
   uint8_t ecause=0;
-  eNB_RRC_INST *rrc = RC.rrc[ctxt_pP->module_id];
-
+  eNB_RRC_INST *rrc               = RC.rrc[ctxt_pP->module_id];
+  rrc_eNB_carrier_data_t *carrier = &rrc->carrier[CC_id];
+ 
   long* logicalchannelgroup = NULL;
   struct SRB_ToAddMod* SRB1_config = NULL;
   struct SRB_ToAddMod__rlc_Config* SRB1_rlc_config = NULL;
@@ -1368,13 +1375,16 @@ do_RRCConnectionSetup(
   // PDSCH
   //assign_enum(&physicalConfigDedicated2->pdsch_ConfigDedicated->p_a,
   //        PDSCH_ConfigDedicated__p_a_dB0);
-  physicalConfigDedicated2->pdsch_ConfigDedicated->p_a=   PDSCH_ConfigDedicated__p_a_dB0;
+  if (carrier->p_eNB==2)
+    physicalConfigDedicated2->pdsch_ConfigDedicated->p_a=   PDSCH_ConfigDedicated__p_a_dB_3;
+  else
+    physicalConfigDedicated2->pdsch_ConfigDedicated->p_a=   PDSCH_ConfigDedicated__p_a_dB0;
 
   // PUCCH
   physicalConfigDedicated2->pucch_ConfigDedicated->ackNackRepetition.present=PUCCH_ConfigDedicated__ackNackRepetition_PR_release;
   physicalConfigDedicated2->pucch_ConfigDedicated->ackNackRepetition.choice.release=0;
 
-  if (frame_parms->frame_type == FDD) {
+  if (carrier->sib1->tdd_Config == NULL) {
     physicalConfigDedicated2->pucch_ConfigDedicated->tdd_AckNackFeedbackMode=NULL;//PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing;
   } else { //TDD
     physicalConfigDedicated2->pucch_ConfigDedicated->tdd_AckNackFeedbackMode= CALLOC(1,sizeof(long));
@@ -1423,7 +1433,7 @@ do_RRCConnectionSetup(
   // CQI ReportConfig
 
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic));
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic= CQI_ReportModeAperiodic_rm30;
 #else
   *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CQI_ReportConfig__cqi_ReportModeAperiodic_rm30; // HLC CQI, no PMI
@@ -1453,8 +1463,37 @@ do_RRCConnectionSetup(
           SoundingRS_UL_ConfigDedicated__setup__srs_HoppingBandwidth_hbw0;
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition=0;
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.duration=1;
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=45;
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb=0;
+    if (carrier->sib1->tdd_Config==NULL) { // FDD
+      if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present
+	  == SoundingRS_UL_ConfigCommon_PR_setup)
+	if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig!=0) 
+	  LOG_W(RRC,"This code has been optimized for SRS Subframe Config 0, but current config is %d. Expect undefined behaviour!\n",
+		carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig);
+      if (ue_context_pP->local_uid >=20) 
+	LOG_W(RRC,"This code has been optimized for up to 10 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
+	      ue_context_pP->local_uid);
+      //the current code will allow for 20 UEs - to be revised for more
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=7+ue_context_pP->local_uid/2;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb= ue_context_pP->local_uid%2;
+    }
+    else {
+      if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present
+	  == SoundingRS_UL_ConfigCommon_PR_setup)
+	if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig!=7) {
+	  LOG_W(RRC,"This code has been optimized for SRS Subframe Config 7 and TDD config 3, but current configs are %d and %d. Expect undefined behaviour!\n",
+		carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig,
+		carrier->sib1->tdd_Config->subframeAssignment);
+	}
+      if (ue_context_pP->local_uid >=6) 
+	LOG_W(RRC,"This code has been optimized for up to 6 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
+	      ue_context_pP->local_uid);
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=17+ue_context_pP->local_uid/2;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb= ue_context_pP->local_uid%2;
+    }
+    LOG_W(RRC,"local UID %d, srs ConfigIndex %d, TransmissionComb %d\n",ue_context_pP->local_uid,
+	  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex,
+	  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb);
+
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift=
           SoundingRS_UL_ConfigDedicated__setup__cyclicShift_cs0;
   }
@@ -1517,10 +1556,10 @@ do_RRCConnectionSetup(
   physicalConfigDedicated2->schedulingRequestConfig->present = SchedulingRequestConfig_PR_setup;
   physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 3;//ue_context_pP->local_uid;
 
-  if (frame_parms->frame_type == 0) { // FDD
+  if (carrier->sib1->tdd_Config == NULL) { // FDD
     physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 5+(ue_context_pP->local_uid%10);  // Isr = 5 (every 10 subframes, offset=2+UE_id mod3)
   } else {
-    switch (frame_parms->tdd_config) {
+    switch (carrier->sib1->tdd_Config->subframeAssignment) {
     case 1:
       physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 7+(ue_context_pP->local_uid&1)+((
             ue_context_pP->local_uid&3)>>1)*5;  // Isr = 5 (every 10 subframes, offset=2 for UE0, 3 for UE1, 7 for UE2, 8 for UE3 , 2 for UE4 etc..)
@@ -1636,7 +1675,7 @@ do_SecurityModeCommand(
     SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8;
   // the two following information could be based on the mod_id
   dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm
-    = (e_SecurityAlgorithmConfig__cipheringAlgorithm)cipheringAlgorithm;
+    = (CipheringAlgorithm_r12_t)cipheringAlgorithm;
   dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm
     = (e_SecurityAlgorithmConfig__integrityProtAlgorithm)integrityProtAlgorithm;
 
@@ -1789,7 +1828,7 @@ do_RRCConnectionReconfiguration(
   struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList
   *dedicatedInfoNASList
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   , SCellToAddMod_r10_t  *SCell_config
 #endif
 )
@@ -2084,9 +2123,8 @@ uint8_t do_RRCConnectionRelease(
 uint8_t TMGI[5] = {4,3,2,1,0};//TMGI is a string of octet, ref. TS 24.008 fig. 10.5.4a
 
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
-                           LTE_DL_FRAME_PARMS *frame_parms,
                            uint8_t sync_area,
                            uint8_t *buffer,
                            MCCH_Message_t *mcch_message,
@@ -2098,6 +2136,9 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
   PMCH_Info_r9_t *pmch_Info_1;
   MBMS_SessionInfo_r9_t *mbms_Session_1;
   // MBMS_SessionInfo_r9_t *mbms_Session_2;
+  eNB_RRC_INST *rrc               = RC.rrc[Mod_id];
+  rrc_eNB_carrier_data_t *carrier = &rrc->carrier[0];
+ 
 
   memset(mcch_message,0,sizeof(MCCH_Message_t));
   mcch_message->message.present = MCCH_MessageType_PR_c1;
@@ -2119,7 +2160,7 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
   // CURRENTLY WE ARE SUPPORITNG ONLY ONE sf ALLOCATION
   switch (sync_area) {
   case 0:
-    if (frame_parms->frame_type == TDD) {// pattern 001110 for TDD
+    if (carrier->sib1->tdd_Config != NULL) {// pattern 001110 for TDD
       mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.buf[0]=0x08<<2;// shift 2bits cuz 2last bits are unused.
     } else { //111000
       mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.buf[0]=0x38<<2;
@@ -2128,7 +2169,7 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
     break;
 
   case 1:
-    if (frame_parms->frame_type == TDD) {
+    if (carrier->sib1->tdd_Config != NULL) {
       mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.buf[0]=0x08<<2;// shift 2bits cuz 2last bits are unused.
     } else { // 000111
       mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.buf[0]=0x07<<2;
@@ -2256,7 +2297,7 @@ uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_
       sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.nonCriticalExtension));
 
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measId=measid;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrpResult=rsrp_s;
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrqResult=rsrq_s;
 #else

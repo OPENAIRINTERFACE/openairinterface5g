@@ -32,6 +32,7 @@
 #ifndef __PHY_DEFS__H__
 #define __PHY_DEFS__H__
 
+
 #define _GNU_SOURCE
 #include <sched.h>
 #include <stdio.h>
@@ -121,29 +122,29 @@ static inline void* malloc16_clear( size_t size )
 #include "PHY/CODING/defs.h"
 #include "PHY/TOOLS/defs.h"
 #include "platform_types.h"
-
 #define MAX_NUM_RU_PER_eNB 64 
 
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include <pthread.h>
 
 #include "targets/ARCH/COMMON/common_lib.h"
+#include "targets/COMMON/openairinterface5g_limits.h"
 
 #if defined(EXMIMO) || defined(OAI_USRP)
-#define NUMBER_OF_eNB_MAX 1
-#define NUMBER_OF_UE_MAX 16
-#define NUMBER_OF_RU_MAX 2
-#define NUMBER_OF_CONNECTED_eNB_MAX 3
+//#define NUMBER_OF_eNB_MAX 1
+//#define NUMBER_OF_UE_MAX 16
+
+//#define NUMBER_OF_CONNECTED_eNB_MAX 3
 #else
 #ifdef LARGE_SCALE
-#define NUMBER_OF_eNB_MAX 2
-#define NUMBER_OF_UE_MAX 120
-#define NUMBER_OF_CONNECTED_eNB_MAX 1 // to save some memory
+//#define NUMBER_OF_eNB_MAX 2
+//#define NUMBER_OF_UE_MAX 120
+//#define NUMBER_OF_CONNECTED_eNB_MAX 1 // to save some memory
 #else
-#define NUMBER_OF_eNB_MAX 3
-#define NUMBER_OF_UE_MAX 16
-#define NUMBER_OF_RU_MAX 64
-#define NUMBER_OF_CONNECTED_eNB_MAX 1
+//#define NUMBER_OF_eNB_MAX 3
+//#define NUMBER_OF_UE_MAX 16
+//#define NUMBER_OF_RU_MAX 64
+//#define NUMBER_OF_CONNECTED_eNB_MAX 1
 #endif
 #endif
 #define NUMBER_OF_SUBBANDS_MAX 13
@@ -500,6 +501,9 @@ typedef struct {
   pthread_mutex_t mutex_rxtx;
   /// scheduling parameters for RXn-TXnp4 thread
   struct sched_param sched_param_rxtx;
+  int sub_frame_start;
+  int sub_frame_step;
+  unsigned long long gotIQs;
 } UE_rxtx_proc_t;
 
 /// Context data structure for eNB subframe processing
@@ -623,7 +627,7 @@ typedef struct RU_t_s{
   /// function pointer to wakeup routine in lte-enb.
   int (*wakeup_rxtx)(struct PHY_VARS_eNB_s *eNB,int frame_rx,int subframe_rx);
   /// function pointer to wakeup routine in lte-enb.
-  int (*wakeup_prach_eNB)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru);
+  int (*wakeup_prach_eNB)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
   /// function pointer to eNB entry routine
   void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string);
   /// Timing statistics
@@ -946,7 +950,7 @@ typedef struct PHY_VARS_eNB_s {
   uint32_t total_transmitted_bits;
   uint32_t total_system_throughput;
 
-  int              hw_timing_advance;
+  int hw_timing_advance;
 
   time_stats_t phy_proc;
   time_stats_t phy_proc_tx;
@@ -982,7 +986,7 @@ typedef struct PHY_VARS_eNB_s {
 #ifdef LOCALIZATION
   /// time state for localization
   time_stats_t localization_stats;
-#endif 
+#endif
 
   int32_t pucch1_stats_cnt[NUMBER_OF_UE_MAX][10];
   int32_t pucch1_stats[NUMBER_OF_UE_MAX][10*1024];
@@ -994,7 +998,6 @@ typedef struct PHY_VARS_eNB_s {
   int32_t pusch_stats_mcs[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_bsr[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
-  
 } PHY_VARS_eNB;
 
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50)) msg
@@ -1049,16 +1052,16 @@ typedef struct {
   LTE_DL_FRAME_PARMS  frame_parms_before_ho;
   LTE_UE_COMMON    common_vars;
 
-  LTE_UE_PDSCH     *pdsch_vars[2][NUMBER_OF_CONNECTED_eNB_MAX+1];
+  LTE_UE_PDSCH     *pdsch_vars[2][NUMBER_OF_CONNECTED_eNB_MAX+1]; // two RxTx Threads
   LTE_UE_PDSCH_FLP *pdsch_vars_flp[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_ra[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_p[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_MCH[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
-  LTE_UE_PDCCH     *pdcch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_PDCCH     *pdcch_vars[2][NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch[NUMBER_OF_CONNECTED_eNB_MAX][2];
+  LTE_UE_DLSCH_t   *dlsch[2][NUMBER_OF_CONNECTED_eNB_MAX][2]; // two RxTx Threads
   LTE_UE_ULSCH_t   *ulsch[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_SI[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_ra[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -1145,6 +1148,8 @@ typedef struct {
   uint8_t               prach_cnt;
   uint8_t               prach_PreambleIndex;
   //  uint8_t               prach_timer;
+  uint8_t               decode_SIB;
+  uint8_t               decode_MIB;
   int              rx_offset; /// Timing offset
   int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
   int              timing_advance; ///timing advance signalled from eNB
@@ -1215,7 +1220,7 @@ typedef struct {
 
   time_stats_t phy_proc;
   time_stats_t phy_proc_tx;
-  time_stats_t phy_proc_rx;
+  time_stats_t phy_proc_rx[2];
 
   uint32_t use_ia_receiver;
 
@@ -1228,12 +1233,16 @@ typedef struct {
   time_stats_t ulsch_interleaving_stats;
   time_stats_t ulsch_multiplexing_stats;
 
+  time_stats_t generic_stat;
+  time_stats_t pdsch_procedures_stat;
+  time_stats_t dlsch_procedures_stat;
+
   time_stats_t ofdm_demod_stats;
   time_stats_t dlsch_rx_pdcch_stats;
   time_stats_t rx_dft_stats;
   time_stats_t dlsch_channel_estimation_stats;
   time_stats_t dlsch_freq_offset_estimation_stats;
-  time_stats_t dlsch_decoding_stats;
+  time_stats_t dlsch_decoding_stats[2];
   time_stats_t dlsch_demodulation_stats;
   time_stats_t dlsch_rate_unmatching_stats;
   time_stats_t dlsch_turbo_decoding_stats;
@@ -1253,6 +1262,7 @@ typedef struct {
   time_stats_t tx_prach;
 
   /// RF and Interface devices per CC
+
   openair0_device rfdevice; 
 } PHY_VARS_UE;
 
@@ -1363,7 +1373,7 @@ static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,
     exit_fun("nothing to add");
     return(-1);
   }
-  
+
   while (*instance_cnt < 0) {
     // most of the time the thread is waiting here
     // proc->instance_cnt_rxtx is -1
@@ -1385,7 +1395,7 @@ static inline int wait_on_busy_condition(pthread_mutex_t *mutex,pthread_cond_t *
     exit_fun("nothing to add");
     return(-1);
   }
-  
+
   while (*instance_cnt == 0) {
     // most of the time the thread will skip this
     // waits only if proc->instance_cnt_rxtx is 0
@@ -1407,9 +1417,9 @@ static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *
     exit_fun("nothing to add");
     return(-1);
   }
-  
+
   *instance_cnt=*instance_cnt-1;
-  
+
   if (pthread_mutex_unlock(mutex) != 0) {
     LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for %s\n",name);
     exit_fun("nothing to add");

@@ -739,7 +739,6 @@ void nas_set_msg_imei_reply(struct nas_msg_l2id_reply *msgrep,
   //---------------------------------------------------------------------------
   struct cx_entity *cx;
   int lcr=0; // Temp lcr->mt =0
-  int i;
 
   cx=nas_COMMON_search_cx(lcr,priv);
 
@@ -853,7 +852,7 @@ int nas_CTL_ioctl(struct net_device *dev,
 //---------------------------------------------------------------------------
 void nas_CTL_send(struct sk_buff *skb,
                   struct cx_entity *cx,
-                  struct classifier_entity *gc)
+                  struct classifier_entity *gc, int inst, struct nas_priv *gpriv)
 {
   //---------------------------------------------------------------------------
   printk("NAS_CTL_SEND - void \n");

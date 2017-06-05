@@ -320,7 +320,7 @@ typedef struct {
   uint16_t srs_ConfigIndex;
   /// Parameter: \f$n^\text{CS}_\text{SRS}\f$. See TS 36.211 (5.5.3.1). \vr{[0..7]} \note the specification sais it is an enumerated value.
   uint8_t cyclicShift;
-  // Parameter: ue srs subframe for internal implementation
+  // Parameter: internal implementation: UE SRS configured
   uint8_t srsConfigDedicatedSetup;
   // Parameter: cell srs subframe for internal implementation
   uint8_t srsCellSubframe;
@@ -625,11 +625,6 @@ typedef struct {
   /// - second index: tx antenna [0..14[ where 14 is the total supported antenna ports.
   /// - third index: sample [0..]
   int32_t **txdataF;
-  /// \brief Holds the beamforming weights
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: eNB antenna port index (hard coded)
-  /// - third index: tx antenna [0..nb_antennas_tx[
-  /// - fourth index: sample [0..]
 } LTE_eNB_COMMON;
 
 typedef struct {
@@ -775,15 +770,22 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **rxdataF_comp0;
-  /// \brief Received frequency-domain signal after extraction and channel compensation.
-  /// - first index: ? [0..7] (hard coded) accessed via \c round
-  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - third index: ? [0..168*N_RB_DL[
-  int32_t **rxdataF_comp1[8];
+  /// \brief Received frequency-domain signal after extraction and channel compensation for the second stream. For the SIC receiver we need to store the history of this for each harq process and round
+  /// - first index: ? [0..7] (hard coded) accessed via \c harq_pid
+  /// - second index: ? [0..7] (hard coded) accessed via \c round
+  /// - third index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - fourth index: ? [0..168*N_RB_DL[
+  int32_t **rxdataF_comp1[8][8];
   /// \brief Downlink channel estimates extracted in PRBS.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_estimates_ext;
+  /// \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS. For the SIC receiver we need to store the history of this for each harq process and round
+  /// - first index: ? [0..7] (hard coded) accessed via \c harq_pid
+  /// - second index: ? [0..7] (hard coded) accessed via \c round
+  /// - third index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - fourth index: ? [0..168*N_RB_DL[
+  int32_t **dl_ch_rho_ext[8][8];
   /// \brief Downlink beamforming channel estimates in frequency domain.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
@@ -792,10 +794,6 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_bf_ch_estimates_ext;
-  /// \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..168*N_RB_DL[
-  int32_t **dl_ch_rho_ext;
   /// \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
@@ -810,7 +808,7 @@ typedef struct {
   /// \brief Magnitude of Downlink Channel second layer (16QAM level/First 64QAM level).
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
-  int32_t **dl_ch_mag1;
+  int32_t **dl_ch_mag1[8][8];
   /// \brief Magnitude of Downlink Channel, first layer (2nd 64QAM level).
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
@@ -818,7 +816,7 @@ typedef struct {
   /// \brief Magnitude of Downlink Channel second layer (2nd 64QAM level).
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
-  int32_t **dl_ch_magb1;
+  int32_t **dl_ch_magb1[8][8];
   /// \brief Cross-correlation of two eNB signals.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: symbol [0..]
@@ -831,6 +829,10 @@ typedef struct {
   int16_t *llr[2];
   /// \f$\log_2(\max|H_i|^2)\f$
   int16_t log2_maxh;
+    /// \f$\log_2(\max|H_i|^2)\f$ //this is for TM3-4 layer1 channel compensation
+  int16_t log2_maxh0;
+    /// \f$\log_2(\max|H_i|^2)\f$ //this is for TM3-4 layer2 channel commpensation
+  int16_t log2_maxh1;
   /// \brief LLR shifts for subband scaling.
   /// - first index: ? [0..168*N_RB_DL[
   uint8_t *llr_shifts;

@@ -252,13 +252,6 @@ typedef struct {
   network_pkf_t* pkf[NET_PACKET_FILTER_MAX];
 } network_tft_t;
 
-/*
- * User notification callback, executed whenever a change of status with
- * respect of PDN connection or EPS bearer context is notified by the EPS
- * Session Management sublayer
- */
-typedef int (*esm_indication_callback_t) (int, network_pdn_state_t);
-
 /****************************************************************************/
 /********************  G L O B A L    V A R I A B L E S  ********************/
 /****************************************************************************/

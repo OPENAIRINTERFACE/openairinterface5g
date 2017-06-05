@@ -86,7 +86,7 @@
 #define DEFAULT_RAB_ID 1
 
 #define NB_RB_MAX      (maxDRB + 3) /* was 11, now 14, maxDRB comes from asn1_constants.h, + 3 because of 3 SRB, one invisible id 0, then id 1 and 2 */
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
 #define NB_RB_MBMS_MAX (maxSessionPerPMCH*maxServiceCount)
 #else
 // Do not allocate unused memory

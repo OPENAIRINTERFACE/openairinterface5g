@@ -87,7 +87,6 @@ void config_UE_mod( rrh_module_t *dev_ue, uint8_t RT_flag,uint8_t NRT_flag) {
 
   int 	  i;
   int 	  error_code_UE, error_code_proc_UE;
-  void    *tmp;
   
   RT_flag_UE=RT_flag;
   NRT_flag_UE=NRT_flag;
@@ -245,8 +244,7 @@ void *rrh_UE_thread(void *arg) {
 
   struct sched_param 	sched_param_UE_rx, sched_param_UE_tx;
   int16_t		i,cmd;   //,nsamps,antenna_index;
-  ssize_t 	        bytes_received;
-  struct timespec 	time_req_1us, time_rem_1us;
+  //struct timespec 	time_req_1us;
   pthread_t 		UE_rx_thread, UE_tx_thread;
   pthread_attr_t 	attr_UE_rx, attr_UE_tx;
   int 			error_code_UE_rx, error_code_UE_tx;
@@ -254,8 +252,8 @@ void *rrh_UE_thread(void *arg) {
   unsigned int          samples_per_frame=0;
   
   samples_per_frame= dev->eth_dev.openair0_cfg->samples_per_frame;
-  time_req_1us.tv_sec = 0;
-  time_req_1us.tv_nsec = 1000;
+  //time_req_1us.tv_sec = 0;
+  //time_req_1us.tv_nsec = 1000;
   
   while (rrh_exit==0) {
     
@@ -338,12 +336,15 @@ void *rrh_UE_rx_thread(void *arg) {
   int 		      trace_cnt=0;
   unsigned long long  max_rx_time=0, min_rx_time=133333, total_rx_time=0, average_rx_time=133333, s_period=0, trial=0;
   unsigned int        samples_per_frame=0;
-  openair0_timestamp  temp, last_hw_counter=0;
+  openair0_timestamp  last_hw_counter=0;
   
   antenna_index     = 0;
   nsamps	    = dev->eth_dev.openair0_cfg->samples_per_packet;
   samples_per_frame = dev->eth_dev.openair0_cfg->samples_per_frame;
   
+  /* TODO: check if setting time0 has to be done here */
+  clock_gettime(CLOCK_MONOTONIC,&time0);
+
   while (rrh_exit == 0) {
     if (!UE_rx_started) {
       UE_rx_started=1;  //Set this flag to 1 to indicate that a UE started retrieving data
@@ -446,7 +447,7 @@ void *rrh_UE_rx_thread(void *arg) {
       
       if (s_period++ == PRINTF_PERIOD) {
 	s_period=0;
-	printf("Average UE RX time : %lu\tMax RX time : %lu\tMin RX time : %lu\n",average_rx_time,max_rx_time,min_rx_time);
+	printf("Average UE RX time : %llu\tMax RX time : %llu\tMin RX time : %llu\n",average_rx_time,max_rx_time,min_rx_time);
 	
       }
       
@@ -481,7 +482,6 @@ void *rrh_UE_tx_thread(void *arg) {
   rrh_module_t    	*dev = (rrh_module_t *)arg;
   ssize_t 		bytes_received;
   int 			antenna_index, nsamps;
-  int 			trace_cnt=0;
   unsigned int          samples_per_frame=0;
   
   antenna_index    = 0;
@@ -504,7 +504,7 @@ void *rrh_UE_tx_thread(void *arg) {
     if (NRT_flag_UE==1) {
       nrt_UE_counter[antenna_index]++;
     }
-    printf(" first part size: %d   second part size: %d idx=%d \n",
+    printf(" first part size: %d   second part size: %"PRId64" idx=%"PRId64"\n",
 	   (int32_t)(((samples_per_frame)<<2)-((timestamp_UE_tx[antenna_index]%(samples_per_frame))<<2)),
 	   (nsamps<<2)-((samples_per_frame)<<2)+((timestamp_UE_tx[antenna_index]%(samples_per_frame))<<2),
 	   timestamp_UE_tx[antenna_index]%(samples_per_frame));

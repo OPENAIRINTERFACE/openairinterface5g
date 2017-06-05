@@ -115,7 +115,7 @@ int emm_proc_status_ind(unsigned int ueid, int emm_cause)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_status(unsigned int ueid, int emm_cause)
+int emm_proc_status(nas_user_t *user, int emm_cause)
 {
   LOG_FUNC_IN;
 
@@ -132,15 +132,15 @@ int emm_proc_status(unsigned int ueid, int emm_cause)
    */
   emm_sap.primitive = EMMAS_STATUS_IND;
   emm_sap.u.emm_as.u.status.emm_cause = emm_cause;
-  emm_sap.u.emm_as.u.status.ueid = ueid;
+  emm_sap.u.emm_as.u.status.ueid = user->ueid;
 
-  emm_sap.u.emm_as.u.status.guti = _emm_data.guti;
-  sctx = _emm_data.security;
+  emm_sap.u.emm_as.u.status.guti = user->emm_data->guti;
+  sctx = user->emm_data->security;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.status.sctx, sctx,
                            FALSE, TRUE);
 
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }

@@ -88,6 +88,7 @@ typedef struct ru_config_s {
   uint8_t   udpif4p5;
   uint8_t   rawif4p5;
   uint8_t   rawif5_mobipass;
+  uint8_t   if_compress;
 } ru_config_t;
 
 typedef struct Enb_properties_s {
@@ -148,7 +149,7 @@ typedef struct Enb_properties_s {
   long                    pucch_delta_shift[1+MAX_NUM_CCs];
   long                    pucch_nRB_CQI[1+MAX_NUM_CCs];
   long                    pucch_nCS_AN[1+MAX_NUM_CCs];
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
   long                    pucch_n1_AN[1+MAX_NUM_CCs];
 #endif
   long                    pdsch_referenceSignalPower[1+MAX_NUM_CCs];

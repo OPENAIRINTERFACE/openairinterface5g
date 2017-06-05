@@ -80,6 +80,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
       }
     }
     
+
     LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
     PHY_vars_eNB->ulsch[1+i] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,frame_parms->N_RB_UL, abstraction_flag);
     
@@ -148,8 +149,8 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 }
 */
 
-
 /*
+
 PHY_VARS_RN* init_lte_RN(LTE_DL_FRAME_PARMS *frame_parms,
                          uint8_t RN_id,
                          uint8_t eMBMS_active_state)

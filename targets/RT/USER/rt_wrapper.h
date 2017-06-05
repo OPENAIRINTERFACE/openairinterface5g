@@ -30,7 +30,8 @@
 * \warning This code will be removed when a legacy libc API becomes available.
 */
 
-
+#ifndef _RT_WRAPPER_H_
+#define _RT_WRAPPER_H_
 
 #define _GNU_SOURCE
 #include <time.h>
@@ -121,8 +122,11 @@ int sched_getattr(pid_t pid,struct sched_attr *attr,unsigned int size, unsigned 
 
 #define gettid() syscall(__NR_gettid) // for gettid
 
+
 void thread_top_init(char *thread_name,
 		     int affinity,
 		     uint64_t runtime,
 		     uint64_t deadline,
 		     uint64_t period);
+
+#endif

@@ -114,7 +114,7 @@ typedef struct RrcConfigurationReq_s {
   long                    pucch_delta_shift[MAX_NUM_CCs];
   long                    pucch_nRB_CQI[MAX_NUM_CCs];
   long                    pucch_nCS_AN[MAX_NUM_CCs];
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
   long                    pucch_n1_AN[MAX_NUM_CCs];
 #endif
   long                    pdsch_referenceSignalPower[MAX_NUM_CCs];

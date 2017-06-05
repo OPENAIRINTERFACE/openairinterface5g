@@ -111,7 +111,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     DCI_pdu[CC_id]->Num_common_dci  = 0;
     DCI_pdu[CC_id]->Num_ue_spec_dci = 0;
-#ifdef Rel10
+
+#if defined(Rel10) || defined(Rel14)
     cc[CC_id].mcch_active =0;
 #endif
     RC.mac[module_idP]->frame    = frameP;
@@ -124,10 +125,14 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
     rnti = UE_RNTI(module_idP, i);
     CC_id = UE_PCCID(module_idP, i);
-    if ((frameP==0)&&(subframeP==0))
-      LOG_I(MAC,"UE  rnti %x : %s, PHR %d dB\n", rnti, 
-	    UE_list->UE_sched_ctrl[i].ul_out_of_sync==0 ? "in synch" : "out of sync",
-	    UE_list->UE_template[CC_id][i].phr_info);
+    if ((frameP==0)&&(subframeP==0)) {
+      LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP, CC_id, rnti);
+      int cqi = eNB_UE_stats == NULL ? -1 : eNB_UE_stats->DL_cqi[0];
+      LOG_I(MAC,"UE  rnti %x : %s, PHR %d dB CQI %d\n", rnti,
+            UE_list->UE_sched_ctrl[i].ul_out_of_sync==0 ? "in synch" : "out of sync",
+            UE_list->UE_template[CC_id][i].phr_info,
+            cqi);
+    }
 
     RC.eNB[module_idP][CC_id]->pusch_stats_bsr[i][(frameP*10)+subframeP]=-63;
     if (i==UE_list->head)
@@ -302,7 +307,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         // TODO process CCCH data req.
         break;
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
       case RRC_MAC_MCCH_DATA_REQ:
         LOG_D(MAC, "Received %s from %s: instance %d, frameP %d, eNB_index %d, mbsfn_sync_area %d\n",
@@ -343,7 +348,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
             0, // eNB index, unused in eNB
             CC_id);
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     if (cc[CC_id].MBMS_flag >0) {
@@ -363,14 +368,15 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     // Schedule Normal DLSCH
 
 
-    schedule_RA(module_idP,frameP,subframeP,2);
+    //    schedule_RA(module_idP,frameP,subframeP,2);
 
     
     if (cc[0].tdd_Config == NULL) {  //FDD
       schedule_ulsch(module_idP,frameP,cooperation_flag,0,4);//,calibration_flag);
-    } else if  ((cc[0].tdd_Config->subframeAssignment == 3) ||
+    } else if  ((cc[0].tdd_Config->subframeAssignment == 0) ||
+		(cc[0].tdd_Config->subframeAssignment == 3) ||
                 (cc[0].tdd_Config->subframeAssignment == 6)) {
-      //schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,4);//,calibration_flag);
+      schedule_ulsch(module_idP,frameP,cooperation_flag,subframeP,4);//,calibration_flag);
     }
 #ifndef FLEXRAN_AGENT_SB_IF
     schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);

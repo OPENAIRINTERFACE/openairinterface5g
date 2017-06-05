@@ -43,6 +43,7 @@ Description NAS procedure functions triggered by the network
 
 #include "as_message.h"
 #include "nas_proc.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -91,11 +92,11 @@ void nas_network_initialize(void)
  **          Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-void nas_network_cleanup(void)
+void nas_network_cleanup(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
-  nas_proc_cleanup();
+  nas_proc_cleanup(user);
 
   LOG_FUNC_OUT;
 }
@@ -118,7 +119,7 @@ void nas_network_cleanup(void)
  **          Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_network_process_data(int msg_id, const void *data)
+int nas_network_process_data(nas_user_t *user, int msg_id, const void *data)
 {
   LOG_FUNC_IN;
 
@@ -142,7 +143,7 @@ int nas_network_process_data(int msg_id, const void *data)
     /* Received cell information confirm */
     const cell_info_cnf_t *info = &msg->msg.cell_info_cnf;
     int cell_found = (info->errCode == AS_SUCCESS);
-    rc = nas_proc_cell_info(cell_found, info->tac,
+    rc = nas_proc_cell_info(user, cell_found, info->tac,
                             info->cellID, info->rat,
                             info->rsrp, info->rsrq);
     break;
@@ -160,12 +161,12 @@ int nas_network_process_data(int msg_id, const void *data)
 
     if ( (confirm->errCode == AS_SUCCESS) ||
          (confirm->errCode == AS_TERMINATED_NAS) ) {
-      rc = nas_proc_establish_cnf(confirm->nasMsg.data,
+      rc = nas_proc_establish_cnf(user, confirm->nasMsg.data,
                                   confirm->nasMsg.length);
     } else {
       LOG_TRACE(WARNING, "NET-MAIN  - "
                 "Initial NAS message not delivered");
-      rc = nas_proc_establish_rej();
+      rc = nas_proc_establish_rej(user);
     }
 
     break;
@@ -173,7 +174,7 @@ int nas_network_process_data(int msg_id, const void *data)
 
   case AS_NAS_RELEASE_IND:
     /* Received NAS signalling connection releaase indication */
-    rc = nas_proc_release_ind(msg->msg.nas_release_ind.cause);
+    rc = nas_proc_release_ind(user, msg->msg.nas_release_ind.cause);
     break;
 
   case AS_UL_INFO_TRANSFER_CNF:
@@ -182,9 +183,9 @@ int nas_network_process_data(int msg_id, const void *data)
     if (msg->msg.ul_info_transfer_cnf.errCode != AS_SUCCESS) {
       LOG_TRACE(WARNING, "NET-MAIN  - "
                 "Uplink NAS message not delivered");
-      rc = nas_proc_ul_transfer_rej();
+      rc = nas_proc_ul_transfer_rej(user);
     } else {
-      rc = nas_proc_ul_transfer_cnf();
+      rc = nas_proc_ul_transfer_cnf(user);
     }
 
     break;
@@ -192,7 +193,7 @@ int nas_network_process_data(int msg_id, const void *data)
   case AS_DL_INFO_TRANSFER_IND: {
     const dl_info_transfer_ind_t *info = &msg->msg.dl_info_transfer_ind;
     /* Received downlink data transfer indication */
-    rc = nas_proc_dl_transfer_ind(info->nasMsg.data,
+    rc = nas_proc_dl_transfer_ind(user, info->nasMsg.data,
                                   info->nasMsg.length);
     break;
   }

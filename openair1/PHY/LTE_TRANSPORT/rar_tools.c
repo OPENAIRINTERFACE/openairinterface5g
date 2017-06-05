@@ -31,6 +31,7 @@
 */
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+#include "SCHED/defs.h"
 #include "SCHED/extern.h"
 #include "LAYER2/MAC/defs.h"
 #include "SCHED/defs.h"
@@ -69,6 +70,7 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
   uint8_t cqireq;
   uint16_t *RIV2nb_rb_LUT, *RIV2first_rb_LUT;
   uint16_t RIV_max;
+  uint16_t use_srs=0;
 
   LOG_D(PHY,"[eNB][RAPROC] generate_eNB_ulsch_params_from_rar: subframe %d (harq_pid %d)\n",subframe,harq_pid);
 
@@ -133,8 +135,6 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
   ulsch->beta_offset_ri_times8                 = 10;
   ulsch->beta_offset_harqack_times8            = 16;
 
-
-  ulsch->harq_processes[harq_pid]->Nsymb_pusch                           = 12-(frame_parms->Ncp<<1);
   ulsch->rnti = (((uint16_t)rar[4])<<8)+rar[5];
 
   if (ulsch->harq_processes[harq_pid]->round == 0) {
@@ -150,6 +150,19 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
     ulsch->harq_processes[harq_pid]->rvidx = 0;
     ulsch->harq_processes[harq_pid]->round++;
   }
+
+
+  ulsch->Msg3_active = 1;
+	      
+  get_Msg3_alloc(frame_parms,
+		 subframe,
+		 frame,
+		 &ulsch->Msg3_frame,
+		 &ulsch->Msg3_subframe);
+
+  use_srs = is_srs_occasion_common(frame_parms,ulsch->Msg3_frame,ulsch->Msg3_subframe);
+  ulsch->harq_processes[harq_pid]->Nsymb_pusch = 12-(frame_parms->Ncp<<1)-(use_srs==0?0:1);
+  ulsch->harq_processes[harq_pid]->srs_active                            = use_srs;
 
 #ifdef DEBUG_RAR
   LOG_D(PHY,"ulsch ra (eNB): harq_pid %d\n",harq_pid);
@@ -225,7 +238,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *ue,
 
 
 
-  ulsch->harq_processes[harq_pid]->TPC                                   = (rar[3]>>3)&7;//rar->TPC;
+  ulsch->harq_processes[harq_pid]->TPC                                   = (rar[3]>>2)&7;//rar->TPC;
 
   rballoc = (((uint16_t)(rar[1]&7))<<7)|(rar[2]>>1);
   cqireq=rar[3]&1;

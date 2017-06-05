@@ -74,7 +74,7 @@
 #include "DRB-ToAddModList.h"
 #include "SRB-ToAddMod.h"
 #include "SRB-ToAddModList.h"
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #include "MBMS-SessionInfoList-r9.h"
 #include "PMCH-InfoList-r9.h"
 #endif
@@ -184,7 +184,7 @@ typedef struct pdcp_s {
 
 } pdcp_t;
 
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
 typedef struct pdcp_mbms_s {
   boolean_t instanciated_instance;
   rb_id_t   rb_id;
@@ -284,7 +284,7 @@ public_pdcp(
     uint8_t                  *const kRRCenc,
     uint8_t                  *const kRRCint,
     uint8_t                  *const kUPenc
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
     ,PMCH_InfoList_r9_t  *pmch_InfoList_r9
 #endif
     ,rb_id_t                 *const defaultDRB 
@@ -448,7 +448,7 @@ public_pdcp(pdcp_stats_t              eNB_pdcp_stats[NUMBER_OF_eNB_MAX];)
 protected_pdcp(rnti_t                 pdcp_UE_UE_module_id_to_rnti[NUMBER_OF_UE_MAX];)
 protected_pdcp(rnti_t                 pdcp_eNB_UE_instance_to_rnti[NUMBER_OF_UE_MAX];) // for noS1 mode
 protected_pdcp(unsigned int           pdcp_eNB_UE_instance_to_rnti_index;)
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
 public_pdcp(pdcp_mbms_t               pdcp_mbms_array_ue[NUMBER_OF_UE_MAX][maxServiceCount][maxSessionPerPMCH];)   // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
 public_pdcp(pdcp_mbms_t               pdcp_mbms_array_eNB[NUMBER_OF_eNB_MAX][maxServiceCount][maxSessionPerPMCH];) // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
 #endif

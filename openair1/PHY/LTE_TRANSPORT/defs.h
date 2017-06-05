@@ -79,11 +79,17 @@
 #if !defined(C_RNTI)
 #define C_RNTI   (rnti_t)0x1234
 #endif
-
-#define PMI_2A_11 0
+// These are the codebook indexes according to Table 6.3.4.2.3-1 of 36.211
+//1 layer
+#define PMI_2A_11  0
 #define PMI_2A_1m1 1
-#define PMI_2A_1j 2
+#define PMI_2A_1j  2
 #define PMI_2A_1mj 3
+//2 layers
+#define PMI_2A_R1_10 0
+#define PMI_2A_R1_11 1
+#define PMI_2A_R1_1j 2
+
 
 typedef enum {
   SCH_IDLE,
@@ -158,6 +164,8 @@ typedef struct {
   uint8_t Nlayers;
   /// First layer for this PSCH transmission
   uint8_t first_layer;
+   /// codeword this transport block is mapped to
+  uint8_t codeword;
 } LTE_DL_eNB_HARQ_t;
 
 typedef struct {
@@ -238,7 +246,7 @@ typedef struct {
   /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
   int32_t *txdataF[8];
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
-  int32_t **ue_spec_bf_weights[MAX_NUM_RU_PER_eNB][4]; 
+  int32_t **ue_spec_bf_weights[4]; 
   /// dl channel estimates (estimated from ul channel estimates)
   int32_t **calib_dl_ch_estimates;
   /// Allocated RNTI (0 means DLSCH_t is not currently used)
@@ -584,6 +592,8 @@ typedef struct {
   uint32_t trials[8];
   /// error statistics per round
   uint32_t errors[8];
+  /// codeword this transport block is mapped to
+  uint8_t codeword;
 } LTE_DL_UE_HARQ_t;
 
 typedef struct {
@@ -698,7 +708,7 @@ typedef struct {
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
-  /// Current HARQ process id
+  /// Current HARQ process id threadRx Odd and threadRx Even
   uint8_t current_harq_pid;
   /// Current subband antenna selection
   uint32_t antenna_alloc;
@@ -755,12 +765,20 @@ typedef enum {
 } PDSCH_t;
 
 typedef enum {
+  rx_standard=0,
+  rx_IC_single_stream,
+  rx_IC_dual_stream,
+  rx_SIC_dual_stream
+} RX_type_t;
+
+typedef enum {
   pucch_format1=0,
   pucch_format1a,
   pucch_format1b,
   pucch_format2,
   pucch_format2a,
-  pucch_format2b
+  pucch_format2b,
+  pucch_format3    // PUCCH format3
 } PUCCH_FMT_t;
 
 

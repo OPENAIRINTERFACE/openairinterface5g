@@ -123,9 +123,7 @@ skb_p->mark = rb_idP;
 
   // LG TEST skb_p->ip_summed = CHECKSUM_NONE;
   skb_p->ip_summed = CHECKSUM_UNNECESSARY;
-
-
-  ipv_p = (struct ipversion*)((void*)&(skb_p->data[hard_header_len]));
+  ipv_p = (ipversion_t *)((void *)&(skb_p->data[hard_header_len]));
 
   switch (ipv_p->version) {
 
@@ -345,7 +343,7 @@ void ue_ip_common_wireless2ip(struct nlmsghdr *nlh_pP)
 
   ue_ip_common_class_wireless2ip(pdcph_p->data_size,
                                  (unsigned char *)NLMSG_DATA(nlh_pP) + UE_IP_PDCPH_SIZE,
-                                 1, //pdcph_p->inst,
+                                 pdcph_p->inst,
                                  pdcph_p->rb_id);
 
 }

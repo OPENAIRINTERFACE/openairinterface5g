@@ -49,6 +49,7 @@ Description Defines the identification EMM procedure executed by the
 
 #include "emm_sap.h"
 #include "msc.h"
+#include "user_defs.h"
 
 #include <stdlib.h> // malloc, free
 #include <string.h> // memcpy
@@ -102,7 +103,7 @@ static const char *_emm_identity_type_str[] = {
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_identification_request(emm_proc_identity_type_t type)
+int emm_proc_identification_request(nas_user_t *user, emm_proc_identity_type_t type)
 {
   LOG_FUNC_IN;
 
@@ -114,7 +115,7 @@ int emm_proc_identification_request(emm_proc_identity_type_t type)
 
   /* Setup EMM procedure handler to be executed upon receiving
    * lower layer notification */
-  rc = emm_proc_lowerlayer_initialize(NULL, NULL, NULL, NULL);
+  rc = emm_proc_lowerlayer_initialize(user->lowerlayer_data, NULL, NULL, NULL, NULL);
 
   if (rc != RETURNok) {
     LOG_TRACE(WARNING,
@@ -129,8 +130,8 @@ int emm_proc_identification_request(emm_proc_identity_type_t type)
     imsi_t modified_imsi;
 
     /* International Mobile Subscriber Identity is requested */
-    if (_emm_data.imsi) {
-      memcpy (&modified_imsi, _emm_data.imsi, sizeof (modified_imsi));
+    if (user->emm_data->imsi) {
+      memcpy (&modified_imsi, user->emm_data->imsi, sizeof (modified_imsi));
 
       /* LW: Eventually replace the 0xF value set in MNC digit 3 by a 0 to avoid IMSI to be truncated before reaching HSS */
       if (modified_imsi.u.num.digit6 == 0xF) {
@@ -166,9 +167,9 @@ int emm_proc_identification_request(emm_proc_identity_type_t type)
   case EMM_IDENT_TYPE_IMEI:
 
     /* International Mobile Equipment Identity is requested */
-    if (_emm_data.imei) {
+    if (user->emm_data->imei) {
       emm_sap.u.emm_as.u.security.identType = EMM_IDENT_TYPE_IMEI;
-      emm_sap.u.emm_as.u.security.imei = _emm_data.imei;
+      emm_sap.u.emm_as.u.security.imei = user->emm_data->imei;
     }
 
     break;
@@ -176,9 +177,9 @@ int emm_proc_identification_request(emm_proc_identity_type_t type)
   case EMM_IDENT_TYPE_TMSI:
 
     /* Temporary Mobile Subscriber Identity is requested */
-    if (_emm_data.guti) {
+    if (user->emm_data->guti) {
       emm_sap.u.emm_as.u.security.identType = EMM_IDENT_TYPE_TMSI;
-      emm_sap.u.emm_as.u.security.tmsi = _emm_data.guti->m_tmsi;
+      emm_sap.u.emm_as.u.security.tmsi = user->emm_data->guti->m_tmsi;
     }
 
     break;
@@ -193,13 +194,13 @@ int emm_proc_identification_request(emm_proc_identity_type_t type)
    * to the MME
    */
   emm_sap.primitive = EMMAS_SECURITY_RES;
-  emm_sap.u.emm_as.u.security.guti = _emm_data.guti;
-  emm_sap.u.emm_as.u.security.ueid = 0;
+  emm_sap.u.emm_as.u.security.guti = user->emm_data->guti;
+  emm_sap.u.emm_as.u.security.ueid = user->ueid;
   emm_sap.u.emm_as.u.security.msgType = EMM_AS_MSG_TYPE_IDENT;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.security.sctx,
-                           _emm_data.security, FALSE, TRUE);
-  rc = emm_sap_send(&emm_sap);
+                           user->emm_data->security, FALSE, TRUE);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }

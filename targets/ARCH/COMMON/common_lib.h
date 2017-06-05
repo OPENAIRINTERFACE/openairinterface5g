@@ -232,6 +232,8 @@ typedef struct {
   char *local_if_name;
   //! transport type preference  (RAW/UDP)
   uint8_t transp_preference;
+  //! compression enable (0: No comp/ 1: A-LAW)
+  uint8_t if_compress;
 } eth_params_t;
 
 

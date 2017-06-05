@@ -816,6 +816,14 @@ pdcp_data_ind(
         ((pdcp_data_ind_header_t *) new_sdu_p->data)->rb_id = rb_id;
 #if defined(OAI_EMU)
         ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id + oai_emulation.info.nb_enb_local - oai_emulation.info.first_ue_local;
+#else
+#  if defined(ENABLE_USE_MME)
+        /* for the UE compiled in S1 mode, we need 1 here
+         * for the UE compiled in noS1 mode, we need 0
+         * TODO: be sure of this
+         */
+        ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = 1;
+#  endif
 #endif
       } else {
         ((pdcp_data_ind_header_t*) new_sdu_p->data)->rb_id = rb_id + (ctxt_pP->module_id * maxDRB);
@@ -1062,7 +1070,7 @@ rrc_pdcp_config_asn1_req (
   uint8_t                  *const kRRCenc_pP,
   uint8_t                  *const kRRCint_pP,
   uint8_t                  *const kUPenc_pP
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   ,PMCH_InfoList_r9_t*  const pmch_InfoList_r9_pP
 #endif
   ,rb_id_t                 *const defaultDRB 
@@ -1089,7 +1097,7 @@ rrc_pdcp_config_asn1_req (
   hashtable_rc_t  h_rc;
   hash_key_t      key_defaultDRB = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t  h_defaultDRB_rc;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   int i,j;
   MBMS_SessionInfoList_r9_t *mbms_SessionInfoList_r9_p = NULL;
   MBMS_SessionInfo_r9_t     *MBMS_SessionInfo_p        = NULL;
@@ -1387,7 +1395,7 @@ rrc_pdcp_config_asn1_req (
     }
   }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (pmch_InfoList_r9_pP != NULL) {
     for (i=0; i<pmch_InfoList_r9_pP->list.count; i++) {
@@ -1582,7 +1590,7 @@ pdcp_config_req_asn1 (
 
     memset(pdcp_pP, 0, sizeof(pdcp_t));
     break;
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
 
   case CONFIG_ACTION_MBMS_ADD:
   case CONFIG_ACTION_MBMS_MODIFY:
@@ -1900,7 +1908,7 @@ void pdcp_layer_init(void)
 {
 
   module_id_t       instance;
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
   mbms_session_id_t session_id;
   mbms_service_id_t service_id;
 #endif
@@ -1912,7 +1920,7 @@ void pdcp_layer_init(void)
   AssertFatal(pdcp_coll_p != NULL, "UNRECOVERABLE error, PDCP hashtable_create failed");
 
   for (instance = 0; instance < NUMBER_OF_UE_MAX; instance++) {
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
 
     for (service_id = 0; service_id < maxServiceCount; service_id++) {
       for (session_id = 0; session_id < maxSessionPerPMCH; session_id++) {
@@ -1926,7 +1934,7 @@ void pdcp_layer_init(void)
 
     
   for (instance = 0; instance < NUMBER_OF_eNB_MAX; instance++) {
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
 
     for (service_id = 0; service_id < maxServiceCount; service_id++) {
       for (session_id = 0; session_id < maxSessionPerPMCH; session_id++) {

@@ -264,7 +264,7 @@ typedef struct protocol_ctxt_s {
     (Ctxt_Pp)->subframe  = sUBfRAME; \
     PROTOCOL_CTXT_COMPUTE_MODULE_ID(Ctxt_Pp)
 
-#define PROTOCOL_CTXT_FMT "[FRAME %05u][%s][MOD %02u][RNTI %"PRIx16"]"
+#define PROTOCOL_CTXT_FMT "[FRAME %05u][%s][MOD %02u][RNTI %" PRIx16 "]"
 #define PROTOCOL_CTXT_ARGS(CTXT_Pp) \
     (CTXT_Pp)->frame, \
     ((CTXT_Pp)->enb_flag == ENB_FLAG_YES) ? "eNB":" UE", \

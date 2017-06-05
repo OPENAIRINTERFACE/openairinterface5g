@@ -31,6 +31,8 @@
  */
 
 
+#include "time_utils.h"
+
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "rt_wrapper.h"
@@ -140,7 +142,8 @@ void exit_fun(const char* s);
 
 void init_eNB(int,int);
 void stop_eNB(int nb_inst);
-void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru);
+
+void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
 
 static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_name) {
 
@@ -150,7 +153,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   // Common RX procedures subframe n
 
   // if this is IF5 or 3GPP_eNB
-  if (eNB->RU_list[0]->function < NGFI_RAU_IF4p5) wakeup_prach_eNB(eNB,NULL);
+  if (eNB->RU_list[0]->function < NGFI_RAU_IF4p5) wakeup_prach_eNB(eNB,NULL,proc->frame_rx,proc->subframe_rx);
 
   // UE-specific RX processing for subframe n
   phy_procedures_eNB_uespec_RX(eNB, proc, no_relay );
@@ -244,10 +247,13 @@ static void wait_system_ready (char *message, volatile int *start_flag) {
 
 
 
+
 void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string) {
+
 
   eNB_proc_t *proc           = &eNB->proc;
   eNB_rxtx_proc_t *proc_rxtx = &proc->proc_rxtx[0];
+
 
 
 
@@ -256,9 +262,11 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string) {
   
   if (!oai_exit) {
 
+
     LOG_D(PHY,"eNB_top in %p (proc %p, CC_id %d), frame %d, subframe %d, instance_cnt_prach %d\n",
 	  pthread_self(), proc, eNB->CC_id, proc->frame_rx,proc->subframe_rx,proc->instance_cnt_prach);
  
+
 
     T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
 
@@ -356,7 +364,7 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
   return(0);
 }
 
-void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru) {
+void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
 
   eNB_proc_t *proc = &eNB->proc;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
@@ -366,9 +374,10 @@ void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru) {
     pthread_mutex_lock(&proc->mutex_RU_PRACH);
     for (i=0;i<eNB->num_RU;i++) {
       if (ru == eNB->RU_list[i]) {
+	LOG_I(PHY,"frame %d, subframe %d: RU %d for eNB %d signals PRACH (mask %x, num_RU %d)\n",frame,subframe,i,eNB->Mod_id,proc->RU_mask_prach,eNB->num_RU);
 	if ((proc->RU_mask_prach&(1<<i)) > 0)
 	  LOG_E(PHY,"eNB %d frame %d, subframe %d : previous information (PRACH) from RU %d (num_RU %d, mask %x) has not been served yet!\n",
-		eNB->Mod_id,proc->frame_rx,proc->subframe_rx,ru->idx,eNB->num_RU,proc->RU_mask_prach);
+		eNB->Mod_id,frame,subframe,ru->idx,eNB->num_RU,proc->RU_mask_prach);
 	proc->RU_mask_prach |= (1<<i);
       }
     }
@@ -383,10 +392,10 @@ void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru) {
   }
     
   // check if we have to detect PRACH first
-  if (is_prach_subframe(fp,proc->frame_rx,proc->subframe_rx)>0) { 
-    LOG_D(PHY,"Triggering prach processing, frame %d, subframe %d\n",proc->frame_rx,proc->subframe_rx);
+  if (is_prach_subframe(fp,frame,subframe)>0) { 
+    LOG_I(PHY,"Triggering prach processing, frame %d, subframe %d\n",frame,subframe);
     if (proc->instance_cnt_prach == 0) {
-      LOG_W(PHY,"[eNB] Frame %d Subframe %d, dropping PRACH\n", proc->frame_rx,proc->subframe_rx);
+      LOG_W(PHY,"[eNB] Frame %d Subframe %d, dropping PRACH\n", frame,subframe);
       return;
     }
     
@@ -399,8 +408,8 @@ void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru) {
     
     ++proc->instance_cnt_prach;
     // set timing for prach thread
-    proc->frame_prach = proc->frame_rx;
-    proc->subframe_prach = proc->subframe_rx;
+    proc->frame_prach = frame;
+    proc->subframe_prach = subframe;
     
     // the thread can now be woken up
     if (pthread_cond_signal(&proc->cond_prach) != 0) {
@@ -449,6 +458,7 @@ static void* eNB_thread_prach( void* param ) {
   eNB_thread_prach_status = 0;
   return &eNB_thread_prach_status;
 }
+
 
 
 extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
@@ -531,21 +541,21 @@ void init_eNB_proc(int inst) {
   }
 
   //for multiple CCs: setup master and slaves
- /* 
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    eNB = PHY_vars_eNB_g[inst][CC_id];
+  /* 
+     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+     eNB = PHY_vars_eNB_g[inst][CC_id];
 
-    if (eNB->node_timing == synch_to_ext_device) { //master
-      eNB->proc.num_slaves = MAX_NUM_CCs-1;
-      eNB->proc.slave_proc = (eNB_proc_t**)malloc(eNB->proc.num_slaves*sizeof(eNB_proc_t*));
+     if (eNB->node_timing == synch_to_ext_device) { //master
+     eNB->proc.num_slaves = MAX_NUM_CCs-1;
+     eNB->proc.slave_proc = (eNB_proc_t**)malloc(eNB->proc.num_slaves*sizeof(eNB_proc_t*));
 
-      for (i=0; i< eNB->proc.num_slaves; i++) {
-        if (i < CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i]->proc);
-        if (i >= CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i+1]->proc);
-      }
-    }
-    }
-*/
+     for (i=0; i< eNB->proc.num_slaves; i++) {
+     if (i < CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i]->proc);
+     if (i >= CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i+1]->proc);
+     }
+     }
+     }
+  */
 
   /* setup PHY proc TX sync mechanism */
   pthread_mutex_init(&sync_phy_proc.mutex_phy_proc_tx, NULL);
@@ -746,10 +756,12 @@ void init_eNB(int single_thread_flag,int wait_for_sync) {
       LOG_I(PHY,"Initializing eNB %d CC_id %d\n",inst,CC_id);
 #endif
 
+
       eNB->td                   = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
       eNB->te                   = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
 
       
+
     }
 
   }
@@ -757,7 +769,7 @@ void init_eNB(int single_thread_flag,int wait_for_sync) {
 
   LOG_D(HW,"[lte-softmodem.c] eNB structure allocated\n");
   
-
+ 
 }
 
 

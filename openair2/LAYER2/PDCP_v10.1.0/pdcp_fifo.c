@@ -167,7 +167,8 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
         ((pdcp_data_ind_header_t *) sdu_p->data)->data_size);
 #else
 #if ! defined(OAI_EMU)
-    ((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
+    /* TODO: do we have to reset to 0 or not? not for a scenario with 1 UE at least */
+//    ((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
 #endif
 #endif
 
@@ -431,7 +432,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
       if ((data_p->pdcp_read_header.traffic_type == TRAFFIC_IPV6_TYPE_MULTICAST) /*TRAFFIC_IPV6_TYPE_MULTICAST */ ||
           (data_p->pdcp_read_header.traffic_type == TRAFFIC_IPV4_TYPE_MULTICAST) /*TRAFFIC_IPV4_TYPE_MULTICAST */ ||
           (data_p->pdcp_read_header.traffic_type == TRAFFIC_IPV4_TYPE_BROADCAST) /*TRAFFIC_IPV4_TYPE_BROADCAST */ ) {
-#if defined (Rel10)
+#if defined(Rel10) || defined(Rel14)
           PDCP_TRANSMISSION_MODE_TRANSPARENT;
 #else
           pdcp_mode= PDCP_TRANSMISSION_MODE_DATA;
@@ -545,7 +546,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
           pdcp_read_state_g = 0;
           // print_active_requests()
 #ifdef PDCP_DEBUG
-          LOG_D(PDCP, "[PDCP][NETLINK] Something in socket, length %d \n",
+          LOG_D(PDCP, "[PDCP][NETLINK] Something in socket, length %zu\n",
                 nas_nlh_rx->nlmsg_len - sizeof(struct nlmsghdr));
 #endif
 
@@ -572,7 +573,8 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                   pdcp_read_header_g.inst - oai_emulation.info.nb_enb_local+ NB_eNB_INST + oai_emulation.info.first_ue_local :
                   pdcp_read_header_g.inst +  oai_emulation.info.first_enb_local;*/
 #else // OAI_EMU
-          pdcp_read_header_g.inst = 0;
+          /* TODO: do we have to reset to 0 or not? not for a scenario with 1 UE at least */
+//          pdcp_read_header_g.inst = 0;
 //#warning "TO DO CORRCT VALUES FOR ue mod id, enb mod id"
           ctxt.frame         = ctxt_cpy.frame;
           ctxt.enb_flag      = ctxt_cpy.enb_flag;
@@ -602,7 +604,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 
               if (h_rc == HASH_TABLE_OK) {
 #ifdef PDCP_DEBUG
-                LOG_D(PDCP, "[FRAME %5u][eNB][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n",
+                LOG_D(PDCP, "[FRAME %5u][eNB][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %zu) on Rab %d \n",
                       ctxt.frame,
                       pdcp_read_header_g.inst,
                       len,
@@ -692,7 +694,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
               if (h_rc == HASH_TABLE_OK) {
                 rab_id = pdcp_p->rb_id;
 #ifdef PDCP_DEBUG
-                LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n",
+                LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %zu) on Rab %d \n",
                       ctxt.frame,
                       pdcp_read_header_g.inst,
                       len,

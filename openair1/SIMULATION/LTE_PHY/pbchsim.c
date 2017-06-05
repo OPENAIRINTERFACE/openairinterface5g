@@ -50,6 +50,8 @@
 PHY_VARS_eNB *eNB,*eNB1,*eNB2;
 PHY_VARS_UE *UE;
 
+double cpuf;
+
 #define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 
 int32_t *dummybuf[4];
@@ -115,6 +117,8 @@ int main(int argc, char **argv)
   FD_lte_phy_scope_ue *form_ue;
   char title[255];
 #endif
+
+  cpuf = get_cpu_freq_GHz();
 
   logInit();
   number_of_cards = 1;

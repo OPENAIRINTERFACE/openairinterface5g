@@ -77,5 +77,13 @@ protected_rlc_am_in_sdu(void rlc_am_free_in_sdu_data (const protocol_ctxt_t* con
 * \return 1 if the buffer is empty, else 0.
 */
 protected_rlc_am_in_sdu(signed int rlc_am_in_sdu_is_empty(const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t *rlcP);)
+
+/*! \fn void rlc_am_pdu_sdu_data_cnf(const protocol_ctxt_t* const ctxt_pP,rlc_am_entity_t* const       rlc_pP,const rlc_sn_t           snP)
+* \brief    Process SDU cnf of a ACKED PDU for all SDUs concatenated in this PDU.
+* \param[in]  ctxtP                     Running context.
+* \param[in]  rlcP                      RLC AM protocol instance pointer.
+* \param[in]  snP                       Sequence number of the PDU.
+*/
+protected_rlc_am_in_sdu(void rlc_am_pdu_sdu_data_cnf(const protocol_ctxt_t* const ctxt_pP,rlc_am_entity_t* const       rlc_pP,const rlc_sn_t           snP);)
 /** @} */
 #    endif

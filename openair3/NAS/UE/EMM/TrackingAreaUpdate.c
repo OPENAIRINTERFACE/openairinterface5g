@@ -67,10 +67,6 @@ Description Defines the tracking area update EMM procedure executed by the
  *   Internal data handled by the tracking area update procedure in the UE
  * --------------------------------------------------------------------------
  */
-/*
- * Timer handlers
- */
-void *_emm_tau_t3430_handler(void *);
 
 /*
  * --------------------------------------------------------------------------
@@ -110,14 +106,16 @@ void *_emm_tau_t3430_handler(void *);
  **              Others:        None                                       **
  **                                                                        **
  ***************************************************************************/
-void *_emm_tau_t3430_handler(void *args)
+void *emm_tau_t3430_handler(void *args)
 {
   LOG_FUNC_IN;
+  nas_user_t *user = args;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
 
   LOG_TRACE(WARNING, "EMM-PROC  - T3430 timer expired");
 
   /* Stop timer T3430 */
-  T3430.id = nas_timer_stop(T3430.id);
+  emm_timers->T3430.id = nas_timer_stop(emm_timers->T3430.id);
 
   LOG_FUNC_RETURN(NULL);
 }

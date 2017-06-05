@@ -63,6 +63,7 @@
 
 #include "SCHED/defs.h"
 
+
 #include "common/ran_context.h"
 
 extern RAN_CONTEXT_t RC;
@@ -70,20 +71,22 @@ extern RAN_CONTEXT_t RC;
 void dl_phy_sync_success(module_id_t   module_idP,
                          frame_t       frameP,
                          unsigned char eNB_index,
-                         uint8_t            first_sync)   //init as MR
+                         uint8_t       first_sync)   //init as MR
 {
   LOG_D(MAC,"[UE %d] Frame %d: PHY Sync to eNB_index %d successful \n", module_idP, frameP, eNB_index);
-#if ! defined(ENABLE_USE_MME)
+#if defined(ENABLE_USE_MME)
+  int mme_enabled=1;
+#else
+  int mme_enabled=0;
+#endif
 
-  if (first_sync==1) {
+  if (first_sync==1 && !(mme_enabled==1)) {
     layer2_init_UE(module_idP);
     openair_rrc_ue_init(module_idP,eNB_index);
   } else
-#endif
   {
     rrc_in_sync_ind(module_idP,frameP,eNB_index);
   }
-
 }
 
 void mac_UE_out_of_sync_ind(module_id_t module_idP, frame_t frameP, uint16_t eNB_index)
@@ -526,7 +529,7 @@ int l2_init_ue(int eMBMS_active, char *uecap_xer,uint8_t cba_group_active, uint8
   mac_xface->ue_decode_si              = ue_decode_si;
   mac_xface->ue_decode_p               = ue_decode_p;
   mac_xface->ue_send_sdu               = ue_send_sdu;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   mac_xface->ue_send_mch_sdu           = ue_send_mch_sdu;
   mac_xface->ue_query_mch              = ue_query_mch;
 #endif
@@ -565,7 +568,8 @@ int l2_init_ue(int eMBMS_active, char *uecap_xer,uint8_t cba_group_active, uint8
 
   mac_xface->phy_config_sib2_ue         = phy_config_sib2_ue;
   mac_xface->phy_config_afterHO_ue      = phy_config_afterHO_ue;
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
+  mac_xface->phy_config_sib13_eNB        = phy_config_sib13_eNB;
   mac_xface->phy_config_sib13_ue         = phy_config_sib13_ue;
 #endif
 #ifdef CBA
@@ -588,7 +592,7 @@ int l2_init_ue(int eMBMS_active, char *uecap_xer,uint8_t cba_group_active, uint8
   mac_xface->get_prach_prb_offset       = get_prach_prb_offset;
   mac_xface->is_prach_subframe          = is_prach_subframe;
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   mac_xface->get_mch_sdu                 = get_mch_sdu;
   mac_xface->phy_config_dedicated_scell_ue= phy_config_dedicated_scell_ue;
 

@@ -23,6 +23,7 @@
 #include <string.h>
 #endif
 #include "defs.h"
+#include "SCHED/defs.h"
 #include "PHY/defs.h"
 #include "filt96_32.h"
 #include "T.h"
@@ -637,105 +638,129 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
                                            32767-ue->ch_est_alpha,
                                            dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),0,ue->frame_parms.ofdm_symbol_size);
       } else { // high_speed_flag == 1
-        if (symbol == 0) {
-          //      printf("Interpolating %d->0\n",4-ue->frame_parms.Ncp);
-          //      dl_ch_prev = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][(4-ue->frame_parms.Ncp)*(ue->frame_parms.ofdm_symbol_size)];
+            if ((symbol == 0)) {
+              //      printf("Interpolating %d->0\n",4-ue->frame_parms.Ncp);
+              //      dl_ch_prev = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][(4-ue->frame_parms.Ncp)*(ue->frame_parms.ofdm_symbol_size)];
           if(((Ns>>1)!=0) || ( ((Ns>>1)==0) && interpolateS11S12))
           {
-              //LOG_D(PHY,"Interpolate s11-->s0 to get s12 and s13  Ns %d \n", Ns);
-              dl_ch_prev = (int16_t *)&dl_ch_estimates_previous[(p<<1)+aarx][pilot3*(ue->frame_parms.ofdm_symbol_size)];
+                  //LOG_I(PHY,"Interpolate s11-->s0 to get s12 and s13  Ns %d \n", Ns);
+                  dl_ch_prev = (int16_t *)&dl_ch_estimates_previous[(p<<1)+aarx][pilot3*(ue->frame_parms.ofdm_symbol_size)];
+
+                  multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
+                  multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
+
+                  multadd_complex_vector_real_scalar(dl_ch_prev,10923,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),1,ue->frame_parms.ofdm_symbol_size);
+                  multadd_complex_vector_real_scalar(dl_ch,21845,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),0,ue->frame_parms.ofdm_symbol_size);
+           }
+
+              interpolateS11S12 = 1;
+            } // this is 1/3,2/3 combination for pilots spaced by 3 symbols
+            else if (symbol == pilot1) {
+              dl_ch_prev = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][0];
+
+              //LOG_I(PHY,"Interpolate s0-->s4 to get s1 s2 and s3 Ns %d \n", Ns);
+              if (ue->frame_parms.Ncp==0) {// pilot spacing 4 symbols (1/4,1/2,3/4 combination)
+
+                uint8_t previous_subframe;
+                if(Ns>>1 == 0)
+                    previous_subframe = 9;
+                else
+                    previous_subframe = ((Ns>>1) - 1 )%9;
+
+                if((subframe_select(&ue->frame_parms,previous_subframe) == SF_UL))
+                {
+
+                    multadd_complex_vector_real_scalar(dl_ch_prev,328,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
+                    multadd_complex_vector_real_scalar(dl_ch,32440,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
+
+                    multadd_complex_vector_real_scalar(dl_ch_prev,328,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),1,ue->frame_parms.ofdm_symbol_size);
+                    multadd_complex_vector_real_scalar(dl_ch,32440,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),0,ue->frame_parms.ofdm_symbol_size);
+
+                    multadd_complex_vector_real_scalar(dl_ch_prev,8192,dl_ch_prev+(3*2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
+                    multadd_complex_vector_real_scalar(dl_ch,32440,dl_ch_prev+(3*2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
+                }
+                else
+                {
+                    multadd_complex_vector_real_scalar(dl_ch_prev,24576,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
+                    multadd_complex_vector_real_scalar(dl_ch,8192,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
+
+                    multadd_complex_vector_real_scalar(dl_ch_prev,16384,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),1,ue->frame_parms.ofdm_symbol_size);
+                    multadd_complex_vector_real_scalar(dl_ch,16384,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),0,ue->frame_parms.ofdm_symbol_size);
+
+                    multadd_complex_vector_real_scalar(dl_ch_prev,8192,dl_ch_prev+(3*2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
+                    multadd_complex_vector_real_scalar(dl_ch,24576,dl_ch_prev+(3*2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
+
+                    }
+              } else {
+                multadd_complex_vector_real_scalar(dl_ch_prev,328,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
+                multadd_complex_vector_real_scalar(dl_ch,21845,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
+
+                multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)<<1),1,ue->frame_parms.ofdm_symbol_size);
+                multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),0,ue->frame_parms.ofdm_symbol_size);
+              } // pilot spacing 3 symbols (1/3,2/3 combination)
+            } else if (symbol == pilot2) {
+              dl_ch_prev = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][pilot1*(ue->frame_parms.ofdm_symbol_size)];
 
               multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
               multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
 
               multadd_complex_vector_real_scalar(dl_ch_prev,10923,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),1,ue->frame_parms.ofdm_symbol_size);
               multadd_complex_vector_real_scalar(dl_ch,21845,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),0,ue->frame_parms.ofdm_symbol_size);
-          }
+            } else { // symbol == pilot3
+              //      printf("Interpolating 0->%d\n",4-ue->frame_parms.Ncp);
+              dl_ch_prev = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][pilot2*(ue->frame_parms.ofdm_symbol_size)];
 
-          interpolateS11S12 = 1;
-        } // this is 1/3,2/3 combination for pilots spaced by 3 symbols
-        else if (symbol == pilot1) {
-          dl_ch_prev = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][0];
+              if (ue->frame_parms.Ncp==0) {// pilot spacing 4 symbols (1/4,1/2,3/4 combination)
+                multadd_complex_vector_real_scalar(dl_ch_prev,24576,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
+                multadd_complex_vector_real_scalar(dl_ch,8192,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
 
-          if (ue->frame_parms.Ncp==0) {// pilot spacing 4 symbols (1/4,1/2,3/4 combination)
-            multadd_complex_vector_real_scalar(dl_ch_prev,24576,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
-            multadd_complex_vector_real_scalar(dl_ch,8192,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
+                multadd_complex_vector_real_scalar(dl_ch_prev,16384,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),1,ue->frame_parms.ofdm_symbol_size);
+                multadd_complex_vector_real_scalar(dl_ch,16384,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),0,ue->frame_parms.ofdm_symbol_size);
 
-            multadd_complex_vector_real_scalar(dl_ch_prev,16384,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),1,ue->frame_parms.ofdm_symbol_size);
-            multadd_complex_vector_real_scalar(dl_ch,16384,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),0,ue->frame_parms.ofdm_symbol_size);
+                multadd_complex_vector_real_scalar(dl_ch_prev,8192,dl_ch_prev+(3*2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
+                multadd_complex_vector_real_scalar(dl_ch,24576,dl_ch_prev+(3*2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
+              } else {
+                multadd_complex_vector_real_scalar(dl_ch_prev,10923,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
+                multadd_complex_vector_real_scalar(dl_ch,21845,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
 
-            multadd_complex_vector_real_scalar(dl_ch_prev,8192,dl_ch_prev+(3*2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
-            multadd_complex_vector_real_scalar(dl_ch,24576,dl_ch_prev+(3*2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
-          } else {
-            multadd_complex_vector_real_scalar(dl_ch_prev,10923,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
-            multadd_complex_vector_real_scalar(dl_ch,21845,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
+                multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)<<1),1,ue->frame_parms.ofdm_symbol_size);
+                multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),0,ue->frame_parms.ofdm_symbol_size);
+              } // pilot spacing 3 symbols (1/3,2/3 combination)
 
-            multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)<<1),1,ue->frame_parms.ofdm_symbol_size);
-            multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),0,ue->frame_parms.ofdm_symbol_size);
-          } // pilot spacing 3 symbols (1/3,2/3 combination)
-        } else if (symbol == pilot2) {
-          dl_ch_prev = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][pilot1*(ue->frame_parms.ofdm_symbol_size)];
-
-          multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
-          multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
-
-          multadd_complex_vector_real_scalar(dl_ch_prev,10923,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),1,ue->frame_parms.ofdm_symbol_size);
-          multadd_complex_vector_real_scalar(dl_ch,21845,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),0,ue->frame_parms.ofdm_symbol_size);
-        } else { // symbol == pilot3
-          //      printf("Interpolating 0->%d\n",4-ue->frame_parms.Ncp);
-          dl_ch_prev = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][pilot2*(ue->frame_parms.ofdm_symbol_size)];
-
-          if (ue->frame_parms.Ncp==0) {// pilot spacing 4 symbols (1/4,1/2,3/4 combination)
-            multadd_complex_vector_real_scalar(dl_ch_prev,24576,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
-            multadd_complex_vector_real_scalar(dl_ch,8192,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
-
-            multadd_complex_vector_real_scalar(dl_ch_prev,16384,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),1,ue->frame_parms.ofdm_symbol_size);
-            multadd_complex_vector_real_scalar(dl_ch,16384,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),0,ue->frame_parms.ofdm_symbol_size);
-
-            multadd_complex_vector_real_scalar(dl_ch_prev,8192,dl_ch_prev+(3*2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
-            multadd_complex_vector_real_scalar(dl_ch,24576,dl_ch_prev+(3*2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
-          } else {
-            multadd_complex_vector_real_scalar(dl_ch_prev,10923,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
-            multadd_complex_vector_real_scalar(dl_ch,21845,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
-
-            multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)<<1),1,ue->frame_parms.ofdm_symbol_size);
-            multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*((ue->frame_parms.ofdm_symbol_size)<<1)),0,ue->frame_parms.ofdm_symbol_size);
-          } // pilot spacing 3 symbols (1/3,2/3 combination)
-
-          if((ue->rx_offset_diff !=0) && ((Ns>>1) == 9))
-          {
-              //LOG_D(PHY,"Extrapolate s7-->s11 to get s12 and s13 Ns %d\n", Ns);
-              interpolateS11S12 = 0;
-              //LOG_E(PHY,"Interpolate s7--s11 s12 s13 pilot 3 Ns %d l %d symbol %d \n", Ns, l, symbol);
-              int16_t *dlChEst_ofdm11 = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][pilot3*(ue->frame_parms.ofdm_symbol_size)];
-              int16_t *dlChEst_ofdm7  = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][pilot2*(ue->frame_parms.ofdm_symbol_size)];
-
-              // interpolate ofdm s12: 5/4*ofdms11 + -1/4*ofdms7 5/4 q1.15 40960 -1/4 q1.15 8192
-              int16_t *dlChEst_ofdm12 = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][12*ue->frame_parms.ofdm_symbol_size];
-              for(int i=0; i<(2*ue->frame_parms.ofdm_symbol_size); i++)
+              if((ue->rx_offset_diff !=0) && ((Ns>>1) == 9))
               {
-                  int64_t tmp_mult = 0;
-                  tmp_mult = ((int64_t)dlChEst_ofdm11[i] * 40960 - (int64_t)dlChEst_ofdm7[i] * 8192);
+                  //LOG_I(PHY,"Extrapolate s7-->s11 to get s12 and s13 Ns %d\n", Ns);
+                  interpolateS11S12 = 0;
+                  //LOG_E(PHY,"Interpolate s7--s11 s12 s13 pilot 3 Ns %d l %d symbol %d \n", Ns, l, symbol);
+                  int16_t *dlChEst_ofdm11 = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][pilot3*(ue->frame_parms.ofdm_symbol_size)];
+                  int16_t *dlChEst_ofdm7  = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][pilot2*(ue->frame_parms.ofdm_symbol_size)];
 
-                  tmp_mult = tmp_mult >> 15;
-                  dlChEst_ofdm12[i] = tmp_mult;
+                  // interpolate ofdm s12: 5/4*ofdms11 + -1/4*ofdms7 5/4 q1.15 40960 -1/4 q1.15 8192
+                  int16_t *dlChEst_ofdm12 = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][12*ue->frame_parms.ofdm_symbol_size];
+                  for(int i=0; i<(2*ue->frame_parms.ofdm_symbol_size); i++)
+                  {
+                      int64_t tmp_mult = 0;
+                      tmp_mult = ((int64_t)dlChEst_ofdm11[i] * 40960 - (int64_t)dlChEst_ofdm7[i] * 8192);
+
+                      tmp_mult = tmp_mult >> 15;
+                      dlChEst_ofdm12[i] = tmp_mult;
+                  }
+
+                  // interpolate ofdm s13: 3/2*ofdms11 + -1/2*ofdms7 3/2 q1.15 49152 1/2 q1.15 16384
+                  int16_t *dlChEst_ofdm13 = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][13*ue->frame_parms.ofdm_symbol_size];
+                  for(int i=0; i<(2*ue->frame_parms.ofdm_symbol_size); i++)
+                  {
+                      int64_t tmp_mult = 0;
+                      tmp_mult = ((int64_t)dlChEst_ofdm11[i] * 49152 - (int64_t)dlChEst_ofdm7[i] * 16384);
+
+                      tmp_mult = tmp_mult >> 15;
+                      dlChEst_ofdm13[i] = tmp_mult;
+                  }
               }
 
-              // interpolate ofdm s13: 3/2*ofdms11 + -1/2*ofdms7 3/2 q1.15 49152 1/2 q1.15 16384
-              int16_t *dlChEst_ofdm13 = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][13*ue->frame_parms.ofdm_symbol_size];
-              for(int i=0; i<(2*ue->frame_parms.ofdm_symbol_size); i++)
-              {
-                  int64_t tmp_mult = 0;
-                  tmp_mult = ((int64_t)dlChEst_ofdm11[i] * 49152 - (int64_t)dlChEst_ofdm7[i] * 16384);
-
-                  tmp_mult = tmp_mult >> 15;
-                  dlChEst_ofdm13[i] = tmp_mult;
-              }
-          }
-
+            }
         }
 
-      }
     }
   }
 

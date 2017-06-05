@@ -161,7 +161,7 @@ int esm_proc_status_ind(
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_status(int is_standalone,
+int esm_proc_status(nas_user_t *user, int is_standalone,
                     int ebi, OctetString *msg,
                     int ue_triggered)
 {
@@ -176,10 +176,10 @@ int esm_proc_status(int is_standalone,
    * Notity EMM that ESM PDU has to be forwarded to lower layers
    */
   emm_sap.primitive = EMMESM_UNITDATA_REQ;
-  emm_sap.u.emm_esm.ueid = 0;
+  emm_sap.u.emm_esm.ueid = user->ueid;
   emm_sap.u.emm_esm.u.data.msg.length = msg->length;
   emm_sap.u.emm_esm.u.data.msg.value = msg->value;
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }

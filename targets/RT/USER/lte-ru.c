@@ -1624,17 +1624,19 @@ void init_precoding_weights(PHY_VARS_eNB *eNB) {
     for (tb=0;tb<2;tb++) {
       dlsch = eNB->dlsch[ue][tb];
       for (layer=0; layer<4; layer++) {
-	for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
+	int nb_tx=0;
+	for (ru_id=0;ru_id<RC.nb_RU;ru_id++) { 
 	  ru = RC.ru[ru_id];
-	  dlsch->ue_spec_bf_weights[ru_id][layer] = (int32_t**)malloc16(ru->nb_tx*sizeof(int32_t*));
-	  
-	  for (aa=0; aa<ru->nb_tx; aa++) {
-	    dlsch->ue_spec_bf_weights[ru_id][layer][aa] = (int32_t *)malloc16(fp->ofdm_symbol_size*sizeof(int32_t));
-	    for (re=0;re<fp->ofdm_symbol_size; re++) {
-	      dlsch->ue_spec_bf_weights[ru_id][layer][aa][re] = 0x00007fff;
-	    }
-	  }
+	  nb_tx+=ru->nb_tx;
 	}
+	dlsch->ue_spec_bf_weights[layer] = (int32_t**)malloc16(nb_tx*sizeof(int32_t*));
+	  
+	for (aa=0; aa<nb_tx; aa++) {
+	  dlsch->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(fp->ofdm_symbol_size*sizeof(int32_t));
+	  for (re=0;re<fp->ofdm_symbol_size; re++) {
+	    dlsch->ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
+	  }
+	}	
       }
     }
   }

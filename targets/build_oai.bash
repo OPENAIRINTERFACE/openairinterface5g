@@ -756,13 +756,13 @@ if [ $RUN -ne 0 ]; then
 		    install_nasmesh
                 else
                     # prepare NAS for UE
-                    if [ ! -f .ue.nvram ]; then
-                        echo_success "generate .ue_emm.nvram .ue.nvram"
+                    if [ ! -f .ue.nvram0 ]; then
+                        echo_success "generate .ue_emm.nvram0 .ue.nvram0"
                         $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/ue_data --gen
                     fi
 
-                    if [ ! -f .usim.nvram ]; then
-                        echo_success "generate .usim.nvram"
+                    if [ ! -f .usim.nvram0 ]; then
+                        echo_success "generate .usim.nvram0"
                         $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/usim_data --gen
                     fi
                     $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/ue_data --print

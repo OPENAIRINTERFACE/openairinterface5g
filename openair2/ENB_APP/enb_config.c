@@ -116,7 +116,7 @@
 #define ENB_CONFIG_STRING_PUCCH_DELTA_SHIFT                         "pucch_delta_shift"
 #define ENB_CONFIG_STRING_PUCCH_NRB_CQI                                 "pucch_nRB_CQI"
 #define ENB_CONFIG_STRING_PUCCH_NCS_AN                                  "pucch_nCS_AN"
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
 #define ENB_CONFIG_STRING_PUCCH_N1_AN                                 "pucch_n1_AN"
 #endif
 #define ENB_CONFIG_STRING_PDSCH_RS_EPRE                                 "pdsch_referenceSignalPower"
@@ -197,6 +197,9 @@
 #define ENB_CONFIG_STRING_FLEXRAN_AGENT_PORT                "FLEXRAN_AGENT_PORT"
 #define ENB_CONFIG_STRING_FLEXRAN_AGENT_CACHE               "FLEXRAN_AGENT_CACHE"
 
+
+
+
 #define ENB_CONFIG_STRING_ASN1_VERBOSITY                   "Asn1_verbosity"
 #define ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE              "none"
 #define ENB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING          "annoying"
@@ -253,6 +256,7 @@
 #define CONFIG_STRING_RU_ATT_RX                   "att_rx"
 #define CONFIG_STRING_RU_MAX_RS_EPRE              "max_pdschReferenceSignalPower"
 #define CONFIG_STRING_RU_MAX_RXGAIN               "max_rxgain"
+#define CONFIG_STRING_RU_IF_COMPRESSION           "if_compression"
 
 #define KHz (1000UL)
 #define MHz (1000 * KHz)
@@ -298,6 +302,7 @@ static const eutra_band_t eutra_bands[] = {
   {43, 3600    * MHz, 3800    * MHz, 3600    * MHz, 3800    * MHz, TDD},
   {44, 703    * MHz, 803    * MHz, 703    * MHz, 803    * MHz, TDD},
 };
+
 
 
 
@@ -637,7 +642,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   libconfig_int     pucch_delta_shift             = 0;
   libconfig_int     pucch_nRB_CQI                 = 0;
   libconfig_int     pucch_nCS_AN                  = 0;
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
   libconfig_int     pucch_n1_AN                   = 0;
 #endif
   libconfig_int     pdsch_referenceSignalPower    = 0;
@@ -708,6 +713,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   char*             local_rf                      = NULL;
   char*             preference                    = NULL;
   char*             active                        = NULL;
+  char*             if_compression                = NULL;
 
   char*             tr_preference                 = NULL;
   libconfig_int     local_port                    = 0;
@@ -837,6 +843,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
       
       
       // search if in active list
+
       for (j=0; j < num_enbs; j++) {
 	if (strcmp(active_enb[j], enb_name) == 0) {
 	  
@@ -900,7 +907,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_PUCCH_DELTA_SHIFT, &pucch_delta_shift)
 		    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_PUCCH_NRB_CQI, &pucch_nRB_CQI)
 		    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_PUCCH_NCS_AN, &pucch_nCS_AN)
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
 		    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_PUCCH_N1_AN, &pucch_n1_AN)
 #endif
 		    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_PDSCH_RS_EPRE, &pdsch_referenceSignalPower)
@@ -945,8 +952,9 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_UETIMERS_N311,  &ue_TimersAndConstants_n311)
 		    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,  &ue_TransmissionMode)
 		    
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 		    
+
 #endif
 		    )) {
 		AssertFatal (0,
@@ -1169,7 +1177,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_nCS_AN choice: 0..7!\n",
 			       RC.config_file_name, i, pucch_nCS_AN);
 
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
 		RRC_CONFIGURATION_REQ (msg_p).pucch_n1_AN[j] = pucch_n1_AN;
 
 		if ((pucch_n1_AN <0) || (pucch_n1_AN > 2047))
@@ -1357,6 +1365,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_p0_Nominal choice: -126..24 !\n",
 			       RC.config_file_name, i, pusch_p0_Nominal);
 
+#ifndef Rel14
 		if (strcmp(pusch_alpha,"AL0")==0) {
 		  RRC_CONFIGURATION_REQ (msg_p).pusch_alpha[j] = UplinkPowerControlCommon__alpha_al0;
 		} else if (strcmp(pusch_alpha,"AL04")==0) {
@@ -1373,7 +1382,27 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		  RRC_CONFIGURATION_REQ (msg_p).pusch_alpha[j] = UplinkPowerControlCommon__alpha_al09;
 		} else if (strcmp(pusch_alpha,"AL1")==0) {
 		  RRC_CONFIGURATION_REQ (msg_p).pusch_alpha[j] = UplinkPowerControlCommon__alpha_al1;
-		} else
+		} 
+#else
+		if (strcmp(pusch_alpha,"AL0")==0) {
+		  RRC_CONFIGURATION_REQ (msg_p).pusch_alpha[j] = Alpha_r12_al0;
+		} else if (strcmp(pusch_alpha,"AL04")==0) {
+		  RRC_CONFIGURATION_REQ (msg_p).pusch_alpha[j] = Alpha_r12_al04;
+		} else if (strcmp(pusch_alpha,"AL05")==0) {
+		  RRC_CONFIGURATION_REQ (msg_p).pusch_alpha[j] = Alpha_r12_al05;
+		} else if (strcmp(pusch_alpha,"AL06")==0) {
+		  RRC_CONFIGURATION_REQ (msg_p).pusch_alpha[j] = Alpha_r12_al06;
+		} else if (strcmp(pusch_alpha,"AL07")==0) {
+		  RRC_CONFIGURATION_REQ (msg_p).pusch_alpha[j] = Alpha_r12_al07;
+		} else if (strcmp(pusch_alpha,"AL08")==0) {
+		  RRC_CONFIGURATION_REQ (msg_p).pusch_alpha[j] = Alpha_r12_al08;
+		} else if (strcmp(pusch_alpha,"AL09")==0) {
+		  RRC_CONFIGURATION_REQ (msg_p).pusch_alpha[j] = Alpha_r12_al09;
+		} else if (strcmp(pusch_alpha,"AL1")==0) {
+		  RRC_CONFIGURATION_REQ (msg_p).pusch_alpha[j] = Alpha_r12_al1;
+		} 
+#endif
+		else
 		  AssertFatal (0,
 			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_Alpha choice: AL0,AL04,AL05,AL06,AL07,AL08,AL09,AL1!\n",
 			       RC.config_file_name, i, pusch_alpha);
@@ -1563,6 +1592,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
 
 		switch (rach_preambleTransMax) {
+#ifndef Rel14
 		case 3:
 		  RRC_CONFIGURATION_REQ (msg_p).rach_preambleTransMax[j] =  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n3;
 		  break;
@@ -1606,6 +1636,53 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		case 200:
 		  RRC_CONFIGURATION_REQ (msg_p).rach_preambleTransMax[j] =  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n200;
 		  break;
+
+#else
+
+		case 3:
+		  RRC_CONFIGURATION_REQ (msg_p).rach_preambleTransMax[j] =  PreambleTransMax_n3;
+		  break;
+
+		case 4:
+		  RRC_CONFIGURATION_REQ (msg_p).rach_preambleTransMax[j] =  PreambleTransMax_n4;
+		  break;
+
+		case 5:
+		  RRC_CONFIGURATION_REQ (msg_p).rach_preambleTransMax[j] =  PreambleTransMax_n5;
+		  break;
+
+		case 6:
+		  RRC_CONFIGURATION_REQ (msg_p).rach_preambleTransMax[j] =  PreambleTransMax_n6;
+		  break;
+
+		case 7:
+		  RRC_CONFIGURATION_REQ (msg_p).rach_preambleTransMax[j] =  PreambleTransMax_n7;
+		  break;
+
+		case 8:
+		  RRC_CONFIGURATION_REQ (msg_p).rach_preambleTransMax[j] =  PreambleTransMax_n8;
+		  break;
+
+		case 10:
+		  RRC_CONFIGURATION_REQ (msg_p).rach_preambleTransMax[j] =  PreambleTransMax_n10;
+		  break;
+
+		case 20:
+		  RRC_CONFIGURATION_REQ (msg_p).rach_preambleTransMax[j] =  PreambleTransMax_n20;
+		  break;
+
+		case 50:
+		  RRC_CONFIGURATION_REQ (msg_p).rach_preambleTransMax[j] =  PreambleTransMax_n50;
+		  break;
+
+		case 100:
+		  RRC_CONFIGURATION_REQ (msg_p).rach_preambleTransMax[j] =  PreambleTransMax_n100;
+		  break;
+
+		case 200:
+		  RRC_CONFIGURATION_REQ (msg_p).rach_preambleTransMax[j] =  PreambleTransMax_n200;
+		  break;
+#endif
 
 		default:
 		  AssertFatal (0,
@@ -2032,6 +2109,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			     RC.config_file_name, i, srb1_max_retx_threshold);
 	      }
 
+
 	      switch (srb1_poll_pdu) {
 	      case 4:
 		rrc->srb1_poll_pdu = PollPDU_p4;
@@ -2288,6 +2366,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			     "Bad config value when parsing eNB configuration file %s, enb %d  srb1_timer_reordering %u!\n",
 			     RC.config_file_name, i, srb1_timer_reordering);
 	      }
+
 	    } else {
 	      rrc->srb1_timer_poll_retransmit = T_PollRetransmit_ms80;
 	      rrc->srb1_timer_reordering      = T_Reordering_ms35;
@@ -2801,6 +2880,7 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
 	
 	if (! config_setting_lookup_int(setting_enb, ENB_CONFIG_STRING_ENB_ID, &enb_id)) {
 	  // Calculate a default eNB ID
+
 # if defined(ENABLE_USE_MME)
 	  uint32_t hash;
 	  

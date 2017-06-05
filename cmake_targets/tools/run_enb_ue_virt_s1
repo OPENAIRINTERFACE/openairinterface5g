@@ -174,7 +174,7 @@ function main()
         ;;      
 
       -V | --vcd)
-        "setting gtk-wave output"
+        echo "setting gtk-wave output"
         exe_arguments="$exe_arguments -V /tmp/oai_gtk_wave.vcd"
         shift ;
         ;;
@@ -182,6 +182,11 @@ function main()
         echo "setting l2 pcap dump output"
         exe_arguments="$exe_arguments -P wireshark"
         shift 2;
+        ;;
+      -x | --xforms)
+        echo "running with xforms"
+        exe_arguments="$exe_arguments --xforms"
+        shift 1;
         ;;
       *)   
         echo "Unknown option $1"
@@ -247,12 +252,6 @@ function main()
   if [ $? -ne 0 ]; then
     echo "200 lte " >> /etc/iproute2/rt_tables
   fi
-  ip rule add fwmark 1 table lte 
-  ifconfig oip1 up
-  ip route add default dev oip1 table lte
-  # the actual IP address depends on the EPC/MME config file for address pool
-  ip route add from 192.188.0.0/24 table lte
-  ip route add to 192.188.0.0/24 table lte
 
   exe_arguments="$exe_arguments -s15 -AAWGN -y1 -b1 -u1 -Q0"
     
@@ -264,11 +263,11 @@ function main()
   fi
    
   if [ $run_gdb -eq 0 ]; then 
-    exec $OPENAIR_DIR/targets/bin/oaisim.Rel10 $exe_arguments | tee /tmp/enb_ue_s1.log.txt
+    exec $OPENAIR_DIR/targets/bin/oaisim.Rel14 $exe_arguments | tee /tmp/enb_ue_s1.log.txt
   else
     touch      ~/.gdb_enb_ue_s1
     chmod 777  ~/.gdb_enb_ue_s1
-    echo "file $OPENAIR_DIR/targets/bin/oaisim.Rel10" > ~/.gdb_enb_ue_s1
+    echo "file $OPENAIR_DIR/targets/bin/oaisim.Rel14" > ~/.gdb_enb_ue_s1
     echo "set args $exe_arguments" >> ~/.gdb_enb_ue_s1
     echo "run"                        >> ~/.gdb_enb_ue_s1
     cat ~/.gdb_enb_ue_s1

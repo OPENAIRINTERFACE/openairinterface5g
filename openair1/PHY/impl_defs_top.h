@@ -203,7 +203,7 @@
 
 
 #define ONE_OVER_SQRT2_Q15 23170
-
+#define ONE_OVER_2_Q15 16384
 
 // QAM amplitude definitions
 
@@ -271,6 +271,13 @@ typedef struct {
   int *RX_DMA_BUFFER[2];
 } TX_RX_VARS;
 
+/// Measurement Variables
+
+#define NUMBER_OF_SUBBANDS_MAX 13
+#define NUMBER_OF_HARQ_PID_MAX 8
+
+#define MAX_FRAME_NUMBER 0x400
+#include "openairinterface5g_limits.h"
 
 
 

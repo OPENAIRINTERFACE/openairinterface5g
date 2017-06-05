@@ -124,11 +124,8 @@ void *nas_interrupt(void)
 int nas_open(struct net_device *dev)
 {
   //---------------------------------------------------------------------------
-  struct nas_priv *priv=netdev_priv(dev);
-
   printk("OPEN: begin\n");
   //  MOD_INC_USE_COUNT;
-
   // Address has already been set at init
 #ifndef PDCP_USE_NETLINK
 
@@ -250,7 +247,11 @@ int nas_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
     // End debug information
     netif_stop_queue(dev);
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+    netif_trans_update(dev);
+#else
     dev->trans_start = jiffies;
+#endif
 #ifdef DEBUG_DEVICE
     printk("HARD_START_XMIT: step 1\n");
 #endif
@@ -311,7 +312,11 @@ void nas_tx_timeout(struct net_device *dev)
   printk("TX_TIMEOUT: begin\n");
   //  (struct nas_priv *)(dev->priv)->stats.tx_errors++;
   (priv->stats).tx_errors++;
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+  netif_trans_update(dev);
+#else
   dev->trans_start = jiffies;
+#endif
   netif_wake_queue(dev);
   printk("TX_TIMEOUT: transmit timed out %s\n",dev->name);
 }
@@ -406,8 +411,8 @@ void nas_init(struct net_device *dev)
     nas_TOOL_imei2iid(IMEI, dev->dev_addr);// IMEI to device address (for stateless autoconfiguration address)
     nas_TOOL_imei2iid(IMEI, (uint8_t *)priv->cx[0].iid6);
 #else
-    nas_TOOL_imei2iid(nas_IMEI, dev->dev_addr);// IMEI to device address (for stateless autoconfiguration address)
-    nas_TOOL_imei2iid(nas_IMEI, (uint8_t *)priv->cx[0].iid6);
+    nas_TOOL_imei2iid((uint8_t *)nas_IMEI, dev->dev_addr); // IMEI to device address (for stateless autoconfiguration address)
+    nas_TOOL_imei2iid((uint8_t *)nas_IMEI, (uint8_t *)priv->cx[0].iid6);
 #endif
     // this is more appropriate for user space soft realtime emulation
 #else
@@ -478,8 +483,8 @@ int init_module (void)
     if (nasdev[inst]) {
       nas_mesh_init(inst);
       //memcpy(nasdev[inst]->dev_addr,&nas_IMEI[0],8);
-      nas_TOOL_imei2iid(nas_IMEI, nasdev[inst]->dev_addr);// IMEI to device address (for stateless autoconfiguration address)
-      nas_TOOL_imei2iid(nas_IMEI, (uint8_t *)priv->cx[0].iid6);
+      nas_TOOL_imei2iid((uint8_t *)nas_IMEI, nasdev[inst]->dev_addr);// IMEI to device address (for stateless autoconfiguration address)
+      nas_TOOL_imei2iid((uint8_t *)nas_IMEI, (uint8_t *)priv->cx[0].iid6);
       // TO HAVE DIFFERENT HW @
       ((unsigned char*)nasdev[inst]->dev_addr)[7] = ((unsigned char*)nasdev[inst]->dev_addr)[7] + (unsigned char)inst + 1;
       printk("Setting HW addr for INST %d to : %X%X\n",inst,*((unsigned int *)&nasdev[inst]->dev_addr[0]),*((unsigned int *)&nasdev[inst]->dev_addr[4]));

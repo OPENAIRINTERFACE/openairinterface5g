@@ -535,7 +535,8 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *eNB)
 
       if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated) {
         if (physicalConfigDedicated->soundingRS_UL_ConfigDedicated->present == SoundingRS_UL_ConfigDedicated_PR_setup) {
-
+	  
+	  eNB->soundingrs_ul_config_dedicated[UE_id].srsConfigDedicatedSetup = 1;
           eNB->soundingrs_ul_config_dedicated[UE_id].duration             = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.duration;
           eNB->soundingrs_ul_config_dedicated[UE_id].cyclicShift          = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift;
           eNB->soundingrs_ul_config_dedicated[UE_id].freqDomainPosition   = physicalConfigDedicated->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition;
@@ -666,8 +667,12 @@ void phy_config_afterHO_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_id, Mobility
 
     // RNTI
 
-    PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[eNB_id]->crnti = mobilityControlInfo->newUE_Identity.buf[0]|(mobilityControlInfo->newUE_Identity.buf[1]<<8);
 
+    PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[0][eNB_id]->crnti = mobilityControlInfo->newUE_Identity.buf[0]|(mobilityControlInfo->newUE_Identity.buf[1]<<8);
+    PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[1][eNB_id]->crnti = mobilityControlInfo->newUE_Identity.buf[0]|(mobilityControlInfo->newUE_Identity.buf[1]<<8);
+
+    LOG_I(PHY,"SET C-RNTI %x %x\n",PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[0][eNB_id]->crnti,
+                                   PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[1][eNB_id]->crnti);
   }
 
   if(ho_failed) {
@@ -718,34 +723,35 @@ void phy_config_dedicated_eNB(uint8_t Mod_id,
     if (physicalConfigDedicated->antennaInfo) {
       switch(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode) {
       case AntennaInfoDedicated__transmissionMode_tm1:
-	eNB->transmission_mode[UE_id] = 1;
-	break;
+        eNB->transmission_mode[UE_id] = 1;
+        break;
       case AntennaInfoDedicated__transmissionMode_tm2:
-	eNB->transmission_mode[UE_id] = 2;
-	break;
+        eNB->transmission_mode[UE_id] = 2;
+        break;
       case AntennaInfoDedicated__transmissionMode_tm3:
-	eNB->transmission_mode[UE_id] = 3;
-	break;
+        eNB->transmission_mode[UE_id] = 3;
+        break;
       case AntennaInfoDedicated__transmissionMode_tm4:
-	eNB->transmission_mode[UE_id] = 4;
-	break;
+        eNB->transmission_mode[UE_id] = 4;
+        break;
       case AntennaInfoDedicated__transmissionMode_tm5:
-	eNB->transmission_mode[UE_id] = 5;
-	break;
+        eNB->transmission_mode[UE_id] = 5;
+        break;
       case AntennaInfoDedicated__transmissionMode_tm6:
-	eNB->transmission_mode[UE_id] = 6;
-	break;
+        eNB->transmission_mode[UE_id] = 6;
+        break;
       case AntennaInfoDedicated__transmissionMode_tm7:
         lte_gold_ue_spec_port5(eNB->lte_gold_uespec_port5_table[0],eNB->frame_parms.Nid_cell,rnti);
+
 	for (i=0;i<eNB->num_RU;i++) eNB->RU_list[i]->do_precoding=1;
 	eNB->transmission_mode[UE_id] = 7;
 	break;
       default:
-	LOG_E(PHY,"Unknown transmission mode!\n");
-	break;
+        LOG_E(PHY,"Unknown transmission mode!\n");
+        break;
       }
       LOG_I(PHY,"Transmission Mode (phy_config_dedicated_eNB) %d\n",eNB->transmission_mode[UE_id]);
- 
+
     } else {
       LOG_D(PHY,"[eNB %d] : Received NULL radioResourceConfigDedicated->antennaInfo from eNB %d\n",Mod_id,UE_id);
     }
@@ -755,7 +761,7 @@ void phy_config_dedicated_eNB(uint8_t Mod_id,
   }
 
 }
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
                                    uint8_t eNB_index,
                                    SCellToAddMod_r10_t *sCellToAddMod_r10,
@@ -888,34 +894,34 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
 
     if (physicalConfigDedicated->antennaInfo) {
       phy_vars_ue->transmission_mode[eNB_id] = 1+(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode);
-      LOG_D(PHY,"Transmission Mode %d\n",phy_vars_ue->transmission_mode[eNB_id]);
+      LOG_I(PHY,"Transmission Mode %d\n",phy_vars_ue->transmission_mode[eNB_id]);
       switch(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode) {
       case AntennaInfoDedicated__transmissionMode_tm1:
-	phy_vars_ue->transmission_mode[eNB_id] = 1;
-	break;
+        phy_vars_ue->transmission_mode[eNB_id] = 1;
+        break;
       case AntennaInfoDedicated__transmissionMode_tm2:
-	phy_vars_ue->transmission_mode[eNB_id] = 2;
-	break;
+        phy_vars_ue->transmission_mode[eNB_id] = 2;
+        break;
       case AntennaInfoDedicated__transmissionMode_tm3:
-	phy_vars_ue->transmission_mode[eNB_id] = 3;
-	break;
+        phy_vars_ue->transmission_mode[eNB_id] = 3;
+        break;
       case AntennaInfoDedicated__transmissionMode_tm4:
-	phy_vars_ue->transmission_mode[eNB_id] = 4;
-	break;
+        phy_vars_ue->transmission_mode[eNB_id] = 4;
+        break;
       case AntennaInfoDedicated__transmissionMode_tm5:
-	phy_vars_ue->transmission_mode[eNB_id] = 5;
-	break;
+        phy_vars_ue->transmission_mode[eNB_id] = 5;
+        break;
       case AntennaInfoDedicated__transmissionMode_tm6:
-	phy_vars_ue->transmission_mode[eNB_id] = 6;
-	break;
+        phy_vars_ue->transmission_mode[eNB_id] = 6;
+        break;
       case AntennaInfoDedicated__transmissionMode_tm7:
-        lte_gold_ue_spec_port5(phy_vars_ue->lte_gold_uespec_port5_table, phy_vars_ue->frame_parms.Nid_cell, phy_vars_ue->pdcch_vars[eNB_id]->crnti);
-	phy_vars_ue->transmission_mode[eNB_id] = 7;
-	break;
+        lte_gold_ue_spec_port5(phy_vars_ue->lte_gold_uespec_port5_table, phy_vars_ue->frame_parms.Nid_cell, phy_vars_ue->pdcch_vars[0][eNB_id]->crnti);
+        phy_vars_ue->transmission_mode[eNB_id] = 7;
+        break;
       default:
-	LOG_E(PHY,"Unknown transmission mode!\n");
-	break;
-      } 
+        LOG_E(PHY,"Unknown transmission mode!\n");
+        break;
+      }
     } else {
       LOG_D(PHY,"[UE %d] Received NULL physicalConfigDedicated->antennaInfo from eNB %d\n",Mod_id, eNB_id);
     }
@@ -959,29 +965,29 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
 
     if (physicalConfigDedicated->cqi_ReportConfig) {
       if (physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic) {
-	// configure PUSCH CQI reporting
-	phy_vars_ue->cqi_report_config[eNB_id].cqi_ReportModeAperiodic = *physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic;
-	if ((phy_vars_ue->cqi_report_config[eNB_id].cqi_ReportModeAperiodic != rm12) && 
-	    (phy_vars_ue->cqi_report_config[eNB_id].cqi_ReportModeAperiodic != rm30) &&
-	    (phy_vars_ue->cqi_report_config[eNB_id].cqi_ReportModeAperiodic != rm31))
-	  LOG_E(PHY,"Unsupported Aperiodic CQI Feedback Mode : %d\n",phy_vars_ue->cqi_report_config[eNB_id].cqi_ReportModeAperiodic);
+        // configure PUSCH CQI reporting
+        phy_vars_ue->cqi_report_config[eNB_id].cqi_ReportModeAperiodic = *physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic;
+        if ((phy_vars_ue->cqi_report_config[eNB_id].cqi_ReportModeAperiodic != rm12) &&
+            (phy_vars_ue->cqi_report_config[eNB_id].cqi_ReportModeAperiodic != rm30) &&
+            (phy_vars_ue->cqi_report_config[eNB_id].cqi_ReportModeAperiodic != rm31))
+          LOG_E(PHY,"Unsupported Aperiodic CQI Feedback Mode : %d\n",phy_vars_ue->cqi_report_config[eNB_id].cqi_ReportModeAperiodic);
       }
       if (physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic) {
-	if (physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic->present == CQI_ReportPeriodic_PR_setup) {
-	// configure PUCCH CQI reporting
-	  phy_vars_ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PUCCH_ResourceIndex = physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex;
-	  phy_vars_ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex     = physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_pmi_ConfigIndex;
-	  if (physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.ri_ConfigIndex)
-	    phy_vars_ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex = *physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.ri_ConfigIndex;	
-	}
-	else if (physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic->present == CQI_ReportPeriodic_PR_release) {
-	  // handle release
-	  phy_vars_ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex = -1;
-	  phy_vars_ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex = -1;
-	}
+        if (physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic->present == CQI_ReportPeriodic_PR_setup) {
+        // configure PUCCH CQI reporting
+          phy_vars_ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PUCCH_ResourceIndex = physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex;
+          phy_vars_ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex     = physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_pmi_ConfigIndex;
+          if (physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.ri_ConfigIndex)
+            phy_vars_ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex = *physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.ri_ConfigIndex;
+        }
+        else if (physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic->present == CQI_ReportPeriodic_PR_release) {
+          // handle release
+          phy_vars_ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex = -1;
+          phy_vars_ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex = -1;
+        }
       }
     }
-    
+
 #ifdef CBA
 
     if (physicalConfigDedicated->pusch_CBAConfigDedicated_vlola) {
@@ -1000,6 +1006,19 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
 
   // fill cqi parameters for periodic CQI reporting
   get_cqipmiri_params(phy_vars_ue,eNB_id);
+
+  // disable MIB SIB decoding once we are on connected mode
+  LOG_I(PHY,"Disabling SIB MIB decoding \n");
+  phy_vars_ue->decode_SIB = 0;
+  phy_vars_ue->decode_MIB = 0;
+  //phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
+  if(phy_vars_ue->pdcch_vars[0][eNB_id]->crnti == 0x1234)
+      phy_vars_ue->pdcch_vars[0][eNB_id]->crnti = phy_vars_ue->pdcch_vars[1][eNB_id]->crnti;
+  else
+      phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
+
+  LOG_I(PHY,"C-RNTI %x %x \n", phy_vars_ue->pdcch_vars[0][eNB_id]->crnti,
+                               phy_vars_ue->pdcch_vars[1][eNB_id]->crnti);
 
 }
 
@@ -1068,8 +1087,9 @@ void phy_init_lte_ue__PDSCH( LTE_UE_PDSCH* const pdsch, const LTE_DL_FRAME_PARMS
   pdsch->pmi_ext = (uint8_t*)malloc16_clear( fp->N_RB_DL );
   pdsch->llr[0] = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
   pdsch->llr128 = (int16_t**)malloc16_clear( sizeof(int16_t*) );
-  pdsch->llr128_2ndstream = (int16_t**)malloc16_clear( sizeof(int16_t*) );
   // FIXME! no further allocation for (int16_t*)pdsch->llr128 !!! expect SIGSEGV
+  // FK, 11-3-2015: this is only as a temporary pointer, no memory is stored there
+
 
   pdsch->rxdataF_ext            = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
   pdsch->rxdataF_uespec_pilots  = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
@@ -1078,10 +1098,11 @@ void phy_init_lte_ue__PDSCH( LTE_UE_PDSCH* const pdsch, const LTE_DL_FRAME_PARMS
   pdsch->dl_ch_estimates_ext    = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
   pdsch->dl_bf_ch_estimates     = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
   pdsch->dl_bf_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-  pdsch->dl_ch_rho_ext          = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-  pdsch->dl_ch_rho2_ext         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  //pdsch->dl_ch_rho_ext          = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  //pdsch->dl_ch_rho2_ext         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
   pdsch->dl_ch_mag0             = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
   pdsch->dl_ch_magb0            = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+
 
   // the allocated memory size is fixed:
   AssertFatal( fp->nb_antennas_rx <= 2, "nb_antennas_rx > 2" );
@@ -1098,14 +1119,13 @@ void phy_init_lte_ue__PDSCH( LTE_UE_PDSCH* const pdsch, const LTE_DL_FRAME_PARMS
       pdsch->dl_ch_estimates_ext[idx]     = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
       pdsch->dl_bf_ch_estimates[idx]      = (int32_t*)malloc16_clear( sizeof(int32_t) * fp->ofdm_symbol_size*7*2);
       pdsch->dl_bf_ch_estimates_ext[idx]  = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-      pdsch->dl_ch_rho_ext[idx]           = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-      pdsch->dl_ch_rho2_ext[idx]          = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      //pdsch->dl_ch_rho_ext[idx]           = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      //pdsch->dl_ch_rho2_ext[idx]          = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
       pdsch->dl_ch_mag0[idx]              = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
       pdsch->dl_ch_magb0[idx]             = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
     }
   }
 }
-
 
 int init_lte_ue_signal(PHY_VARS_UE *ue,
 		       int nb_connected_eNB,
@@ -1121,10 +1141,11 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
   LTE_UE_PDSCH** const pdsch_vars_ra      = ue->pdsch_vars_ra;
   LTE_UE_PDSCH** const pdsch_vars_mch     = ue->pdsch_vars_MCH;
   LTE_UE_PBCH** const pbch_vars           = ue->pbch_vars;
-  LTE_UE_PDCCH** const pdcch_vars         = ue->pdcch_vars;
+  LTE_UE_PDCCH** const pdcch_vars_th0     = ue->pdcch_vars[0];
+  LTE_UE_PDCCH** const pdcch_vars_th1     = ue->pdcch_vars[1];
   LTE_UE_PRACH** const prach_vars         = ue->prach_vars;
 
-  int i,j,k;
+  int i,j,k,l;
   int eNB_id;
 
   LOG_D(PHY,"Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
@@ -1210,7 +1231,8 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
     pdsch_vars_SI[eNB_id]  = (LTE_UE_PDSCH *)malloc16_clear(sizeof(LTE_UE_PDSCH));
     pdsch_vars_ra[eNB_id]  = (LTE_UE_PDSCH *)malloc16_clear(sizeof(LTE_UE_PDSCH));
     pdsch_vars_mch[eNB_id] = (LTE_UE_PDSCH *)malloc16_clear(sizeof(LTE_UE_PDSCH));
-    pdcch_vars[eNB_id]     = (LTE_UE_PDCCH *)malloc16_clear(sizeof(LTE_UE_PDCCH));
+    pdcch_vars_th0[eNB_id] = (LTE_UE_PDCCH *)malloc16_clear(sizeof(LTE_UE_PDCCH));
+    pdcch_vars_th1[eNB_id] = (LTE_UE_PDCCH *)malloc16_clear(sizeof(LTE_UE_PDCCH));
     prach_vars[eNB_id]     = (LTE_UE_PRACH *)malloc16_clear(sizeof(LTE_UE_PRACH));
     pbch_vars[eNB_id]      = (LTE_UE_PBCH *)malloc16_clear(sizeof(LTE_UE_PBCH));
 
@@ -1219,68 +1241,113 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
       phy_init_lte_ue__PDSCH( pdsch_vars_th1[eNB_id], fp );
 
       // thread 0
-      pdsch_vars_th0[eNB_id]->llr_shifts   = (uint8_t*)malloc16_clear(7*2*fp->N_RB_DL*12);
-      pdsch_vars_th0[eNB_id]->llr_shifts_p = pdsch_vars_th0[eNB_id]->llr_shifts;
-      pdsch_vars_th0[eNB_id]->dl_ch_mag1   = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-      pdsch_vars_th0[eNB_id]->dl_ch_magb1  = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-      pdsch_vars_th0[eNB_id]->llr[1]       = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
+      pdsch_vars_th0[eNB_id]->llr_shifts      = (uint8_t*)malloc16_clear(7*2*fp->N_RB_DL*12);
+      pdsch_vars_th0[eNB_id]->llr_shifts_p        = pdsch_vars_th0[eNB_id]->llr_shifts;
+      pdsch_vars_th0[eNB_id]->llr[1]              = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
+      pdsch_vars_th0[eNB_id]->llr128_2ndstream    = (int16_t**)malloc16_clear( sizeof(int16_t*) );
+      pdsch_vars_th0[eNB_id]->rho                 = (int32_t**)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t*) );
 
-      for (k=0; k<8; k++)
-        pdsch_vars_th0[eNB_id]->rxdataF_comp1[k] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+       // thread 0
+      pdsch_vars_th1[eNB_id]->llr_shifts      = (uint8_t*)malloc16_clear(7*2*fp->N_RB_DL*12);
+      pdsch_vars_th1[eNB_id]->llr_shifts_p        = pdsch_vars_th0[eNB_id]->llr_shifts;
+      pdsch_vars_th1[eNB_id]->llr[1]              = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
+      pdsch_vars_th1[eNB_id]->llr128_2ndstream    = (int16_t**)malloc16_clear( sizeof(int16_t*) );
+      pdsch_vars_th1[eNB_id]->rho                 = (int32_t**)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t*) );
 
-      // thread 1
-      pdsch_vars_th1[eNB_id]->llr_shifts   = (uint8_t*)malloc16_clear(7*2*fp->N_RB_DL*12);
-      pdsch_vars_th1[eNB_id]->llr_shifts_p = pdsch_vars_th1[eNB_id]->llr_shifts;
-      pdsch_vars_th1[eNB_id]->dl_ch_mag1   = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-      pdsch_vars_th1[eNB_id]->dl_ch_magb1  = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-      pdsch_vars_th1[eNB_id]->llr[1]       = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
 
-      for (k=0; k<8; k++)
-        pdsch_vars_th1[eNB_id]->rxdataF_comp1[k] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+
+
+      for (int i=0; i<fp->nb_antennas_rx; i++){
+        pdsch_vars_th0[eNB_id]->rho[i]     = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
+        pdsch_vars_th1[eNB_id]->rho[i]     = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
+        }
+
+      pdsch_vars_th0[eNB_id]->dl_ch_rho2_ext      = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdsch_vars_th1[eNB_id]->dl_ch_rho2_ext      = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
 
       for (i=0; i<fp->nb_antennas_rx; i++)
         for (j=0; j<4; j++) {
-          int idx = (j<<1)+i;
-          pdsch_vars_th0[eNB_id]->dl_ch_mag1[idx]  = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
-          pdsch_vars_th0[eNB_id]->dl_ch_magb1[idx] = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
-
-          pdsch_vars_th1[eNB_id]->dl_ch_mag1[idx]  = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
-          pdsch_vars_th1[eNB_id]->dl_ch_magb1[idx] = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
-
-          for (k=0; k<8; k++)
-          {
-            pdsch_vars_th0[eNB_id]->rxdataF_comp1[idx][k] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->N_RB_DL*12*14) );
-            pdsch_vars_th1[eNB_id]->rxdataF_comp1[idx][k] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->N_RB_DL*12*14) );
-          }
+          const int idx = (j<<1)+i;
+          const size_t num = 7*2*fp->N_RB_DL*12+4;
+          pdsch_vars_th0[eNB_id]->dl_ch_rho2_ext[idx] = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+          pdsch_vars_th1[eNB_id]->dl_ch_rho2_ext[idx] = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
         }
 
+
+      //const size_t num = 7*2*fp->N_RB_DL*12+4;
+      for (k=0;k<8;k++) { //harq_pid
+        for (l=0;l<8;l++) { //round
+          pdsch_vars_th0[eNB_id]->rxdataF_comp1[k][l] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+          pdsch_vars_th0[eNB_id]->dl_ch_rho_ext[k][l] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+          pdsch_vars_th0[eNB_id]->dl_ch_mag1[k][l] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+          pdsch_vars_th0[eNB_id]->dl_ch_magb1[k][l] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+
+          pdsch_vars_th1[eNB_id]->rxdataF_comp1[k][l] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+          pdsch_vars_th1[eNB_id]->dl_ch_rho_ext[k][l] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+          pdsch_vars_th1[eNB_id]->dl_ch_mag1[k][l] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+          pdsch_vars_th1[eNB_id]->dl_ch_magb1[k][l] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+
+
+          for (int i=0; i<fp->nb_antennas_rx; i++)
+            for (int j=0; j<4; j++) { //frame_parms->nb_antennas_tx; j++)
+              const int idx = (j<<1)+i;
+              pdsch_vars_th0[eNB_id]->dl_ch_rho_ext[k][l][idx] = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
+              pdsch_vars_th0[eNB_id]->rxdataF_comp1[k][l][idx] = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
+              pdsch_vars_th0[eNB_id]->dl_ch_mag1[k][l][idx] = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
+              pdsch_vars_th0[eNB_id]->dl_ch_magb1[k][l][idx] = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
+
+              pdsch_vars_th1[eNB_id]->dl_ch_rho_ext[k][l][idx] = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
+              pdsch_vars_th1[eNB_id]->rxdataF_comp1[k][l][idx] = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
+              pdsch_vars_th1[eNB_id]->dl_ch_mag1[k][l][idx] = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
+              pdsch_vars_th1[eNB_id]->dl_ch_magb1[k][l][idx] = (int32_t*)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
+                }
+        }
+      }
       phy_init_lte_ue__PDSCH( pdsch_vars_SI[eNB_id], fp );
       phy_init_lte_ue__PDSCH( pdsch_vars_ra[eNB_id], fp );
       phy_init_lte_ue__PDSCH( pdsch_vars_mch[eNB_id], fp );
-      // 100 PRBs * 12 REs/PRB * 4 PDCCH SYMBOLS * 2 LLRs/RE
-      pdcch_vars[eNB_id]->llr   = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
-      pdcch_vars[eNB_id]->llr16 = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
-      pdcch_vars[eNB_id]->wbar  = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
-      pdcch_vars[eNB_id]->e_rx  = (int8_t*)malloc16_clear( 4*2*100*12 );
 
-      pdcch_vars[eNB_id]->rxdataF_comp        = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-      pdcch_vars[eNB_id]->dl_ch_rho_ext       = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-      pdcch_vars[eNB_id]->rho                 = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-      pdcch_vars[eNB_id]->rxdataF_ext         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-      pdcch_vars[eNB_id]->dl_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      // 100 PRBs * 12 REs/PRB * 4 PDCCH SYMBOLS * 2 LLRs/RE
+      pdcch_vars_th0[eNB_id]->llr   = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
+      pdcch_vars_th0[eNB_id]->llr16 = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
+      pdcch_vars_th0[eNB_id]->wbar  = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
+      pdcch_vars_th0[eNB_id]->e_rx  = (int8_t*)malloc16_clear( 4*2*100*12 );
+
+      pdcch_vars_th0[eNB_id]->rxdataF_comp        = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdcch_vars_th0[eNB_id]->dl_ch_rho_ext       = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdcch_vars_th0[eNB_id]->rho                 = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+      pdcch_vars_th0[eNB_id]->rxdataF_ext         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdcch_vars_th0[eNB_id]->dl_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+
+      pdcch_vars_th1[eNB_id]->llr   = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
+      pdcch_vars_th1[eNB_id]->llr16 = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
+      pdcch_vars_th1[eNB_id]->wbar  = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
+      pdcch_vars_th1[eNB_id]->e_rx  = (int8_t*)malloc16_clear( 4*2*100*12 );
+
+      pdcch_vars_th1[eNB_id]->rxdataF_comp        = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdcch_vars_th1[eNB_id]->dl_ch_rho_ext       = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdcch_vars_th1[eNB_id]->rho                 = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
+      pdcch_vars_th1[eNB_id]->rxdataF_ext         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+      pdcch_vars_th1[eNB_id]->dl_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
 
       for (i=0; i<fp->nb_antennas_rx; i++) {
         //ue_pdcch_vars[eNB_id]->rho[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->N_RB_DL*12*7*2) );
-        pdcch_vars[eNB_id]->rho[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(100*12*4) );
+        pdcch_vars_th0[eNB_id]->rho[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(100*12*4) );
+        pdcch_vars_th1[eNB_id]->rho[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(100*12*4) );
 
         for (j=0; j<4; j++) { //fp->nb_antennas_tx; j++)
           int idx = (j<<1)+i;
           //  size_t num = 7*2*fp->N_RB_DL*12;
           size_t num = 4*100*12;  // 4 symbols, 100 PRBs, 12 REs per PRB
-          pdcch_vars[eNB_id]->rxdataF_comp[idx]        = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-          pdcch_vars[eNB_id]->dl_ch_rho_ext[idx]       = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-          pdcch_vars[eNB_id]->rxdataF_ext[idx]         = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-          pdcch_vars[eNB_id]->dl_ch_estimates_ext[idx] = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+          pdcch_vars_th0[eNB_id]->rxdataF_comp[idx]        = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+          pdcch_vars_th0[eNB_id]->dl_ch_rho_ext[idx]       = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+          pdcch_vars_th0[eNB_id]->rxdataF_ext[idx]         = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+          pdcch_vars_th0[eNB_id]->dl_ch_estimates_ext[idx] = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+
+          pdcch_vars_th1[eNB_id]->rxdataF_comp[idx]        = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+          pdcch_vars_th1[eNB_id]->dl_ch_rho_ext[idx]       = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+          pdcch_vars_th1[eNB_id]->rxdataF_ext[idx]         = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+          pdcch_vars_th1[eNB_id]->dl_ch_estimates_ext[idx] = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
         }
       }
 
@@ -1326,11 +1393,19 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
   ue->sinr_CQI_dB = (double*) malloc16_clear( fp->N_RB_DL*12*sizeof(double) );
 
   ue->init_averaging = 1;
-  ue->pdsch_config_dedicated->p_a = dB0; // default value until overwritten by RRCConnectionReconfiguration
+  // default value until overwritten by RRCConnectionReconfiguration
+  if (fp->nb_antenna_ports_eNB==2)
+    ue->pdsch_config_dedicated->p_a = dBm3;
+  else
+    ue->pdsch_config_dedicated->p_a = dB0;
 
   // set channel estimation to do linear interpolation in time
   ue->high_speed_flag = 1;
   ue->ch_est_alpha    = 24576;
+
+  // enable MIB/SIB decoding by default
+  ue->decode_MIB = 1;
+  ue->decode_SIB = 1;
 
   init_prach_tables(839);
 
@@ -1340,13 +1415,15 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
 
 void init_lte_ue_transport(PHY_VARS_UE *ue,int abstraction_flag) {
 
-  int i,j;
+  int i,j,k;
 
   for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
     for (j=0; j<2; j++) {
-      AssertFatal((ue->dlsch[i][j]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag))!=NULL,"Can't get ue dlsch structures\n");
+      for (k=0; k<2; k++) {
+	AssertFatal((ue->dlsch[k][i][j]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag))!=NULL,"Can't get ue dlsch structures\n");
 
-      LOG_D(PHY,"dlsch[%d][%d] => %p\n",ue->Mod_id,i,ue->dlsch[i][j]);
+	LOG_D(PHY,"dlsch[%d][%d][%d] => %p\n",k,i,j,ue->dlsch[i][j]);
+      }
     }
 
     AssertFatal((ue->ulsch[i]  = new_ue_ulsch(ue->frame_parms.N_RB_UL, abstraction_flag))!=NULL,"Can't get ue ulsch structures\n");
@@ -1469,6 +1546,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   LTE_eNB_PUSCH** const pusch_vars  = eNB->pusch_vars;
   LTE_eNB_SRS* const srs_vars       = eNB->srs_vars;
   LTE_eNB_PRACH* const prach_vars   = &eNB->prach_vars;
+
   int i, j, eNB_id, UE_id; 
 
 
@@ -1481,6 +1559,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
         fp->N_RB_DL,fp->phich_config_common.phich_resource,
         fp->phich_config_common.phich_duration);
   LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_eNB][MOD %02"PRIu8"][]\n", eNB->Mod_id);
+
 
   lte_gold(fp,eNB->lte_gold_table,fp->Nid_cell);
   generate_pcfich_reg_mapping(fp);
@@ -1498,6 +1577,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   
   eNB->first_run_I0_measurements = 1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
   
+
 
   if (abstraction_flag==0) {
     
@@ -1598,7 +1678,6 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   
   eNB->pdsch_config_dedicated->p_a = dB0; //defaul value until overwritten by RRCConnectionReconfiguration
   
-
 
   return (0);
 

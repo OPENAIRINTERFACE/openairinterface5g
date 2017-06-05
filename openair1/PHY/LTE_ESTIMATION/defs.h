@@ -232,7 +232,8 @@ int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
                                LTE_eNB_COMMON *eNB_common_vars,
                                LTE_eNB_SRS *eNB_srs_vars,
                                SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
-                               unsigned char sub_frame_number);
+                               unsigned char sub_frame_number,
+			       unsigned char eNB_id);
 
 int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
                            LTE_eNB_SRS *lte_eNb_srs,

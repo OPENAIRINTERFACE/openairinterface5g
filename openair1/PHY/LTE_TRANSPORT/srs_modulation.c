@@ -120,17 +120,15 @@ int compareints (const void * a, const void * b)
   return ( *(unsigned short*)a - *(unsigned short*)b );
 }
 
-
-int32_t generate_srs_tx(PHY_VARS_UE *ue,
-                        uint8_t eNB_id,
-                        int16_t amp,
-                        uint32_t subframe)
+#define DEBUG_SRS
+int32_t generate_srs(LTE_DL_FRAME_PARMS *frame_parms,
+		     SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
+		     int32_t *txptr,
+		     int16_t amp,
+		     uint32_t subframe)
 {
 
-  LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
-  SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated=&ue->soundingrs_ul_config_dedicated[eNB_id];
-  int32_t **txdataF = ue->common_vars.txdataF;
-  uint16_t msrsb=0,Nb=0,nb,b,msrs0=0,k,Msc_RS,Msc_RS_idx,carrier_pos,symbol_offset;
+  uint16_t msrsb=0,Nb=0,nb,b,msrs0=0,k,Msc_RS,Msc_RS_idx,carrier_pos;
   uint16_t *Msc_idx_ptr;
   int32_t k0;
   //uint32_t subframe_offset;
@@ -206,22 +204,13 @@ int32_t generate_srs_tx(PHY_VARS_UE *ue,
 #endif
 
 #ifdef DEBUG_SRS
-  LOG_E(PHY,"generate_srs_tx: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
+  LOG_D(PHY,"generate_srs_tx: Msc_RS = %d, Msc_RS_idx = %d, k0 = %d\n",Msc_RS, Msc_RS_idx,k0);
 #endif
 
     carrier_pos = (frame_parms->first_carrier_offset + k0);
     if (carrier_pos>frame_parms->ofdm_symbol_size) {
         carrier_pos -= frame_parms->ofdm_symbol_size;
     }
-    uint16_t nsymb = (frame_parms->Ncp==0) ? 14:12;
-    symbol_offset = (int)frame_parms->ofdm_symbol_size*((subframe*nsymb)+(nsymb-1));
-
-    //msg("carrier_pos = %d\n",carrier_pos);
-    //subframe_offset = subframe*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size;
-    //symbol_offset = subframe_offset+(frame_parms->symbols_per_tti-1)*frame_parms->ofdm_symbol_size;
-
-    int32_t *txptr;
-    txptr = &txdataF[0][symbol_offset];
 
     for (k=0; k<Msc_RS; k++) {
       int32_t real = ((int32_t) amp * (int32_t) ul_ref_sigs[u][v][Msc_RS_idx][k<<1])     >> 15;
@@ -245,6 +234,7 @@ int generate_srs_tx_emul(PHY_VARS_UE *phy_vars_ue,uint8_t subframe)
   return(0);
 }
 
+#if 0
 int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
                     SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
                     int *txdataF)
@@ -313,16 +303,14 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 
 #ifdef DEBUG_SRS
-  LOG_E(PHY,"generate_srs_rx: Msc_RS = %d, Msc_RS_idx = %d, k0=%d\n",Msc_RS, Msc_RS_idx,k0);
+  LOG_I(PHY,"generate_srs_rx: Msc_RS = %d, Msc_RS_idx = %d, k0=%d\n",Msc_RS, Msc_RS_idx,k0);
 #endif
 
   carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
 
   for (k=0; k<Msc_RS; k++) {
-    ((short*) txdataF)[carrier_pos<<2]   = ul_ref_sigs_rx[0][0][Msc_RS_idx][k<<2];
-    ((short*) txdataF)[(carrier_pos<<2)+1] = ul_ref_sigs_rx[0][0][Msc_RS_idx][(k<<2)+1];
-    ((short*) txdataF)[(carrier_pos<<2)+2] = ul_ref_sigs_rx[0][0][Msc_RS_idx][(k<<2)+2];
-    ((short*) txdataF)[(carrier_pos<<2)+3] = ul_ref_sigs_rx[0][0][Msc_RS_idx][(k<<2)+3];
+    ((short*) txdataF)[carrier_pos<<1]   = ul_ref_sigs_rx[0][0][Msc_RS_idx][k<<1];
+    ((short*) txdataF)[(carrier_pos<<1)+1] = ul_ref_sigs_rx[0][0][Msc_RS_idx][(k<<1)+1];
     carrier_pos+=2;
 
     if (carrier_pos >= frame_parms->ofdm_symbol_size)
@@ -365,7 +353,7 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
   //  write_output("srs_rx.m","srsrx",txdataF,1024,2,1);
   return(0);
 }
-
+#endif
 
 #ifdef MAIN
 main()
