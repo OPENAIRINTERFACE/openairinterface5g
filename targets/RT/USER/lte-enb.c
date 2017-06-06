@@ -450,7 +450,7 @@ void proc_tx_high0(PHY_VARS_eNB *eNB,
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_ENB+offset, proc->frame_tx );
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB+offset, proc->subframe_tx );
 
-  phy_procedures_eNB_TX(eNB,proc,r_type,rn,1);
+  phy_procedures_eNB_TX(eNB,proc,r_type,rn,1,1);
 
   /* we're done, let the next one proceed */
   if (pthread_mutex_lock(&sync_phy_proc.mutex_phy_proc_tx) != 0) {
