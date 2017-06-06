@@ -1391,9 +1391,11 @@ int main(int argc, char **argv)
 
   FILE *csv_fd=NULL;
   char csv_fname[32];
-  //int dci_flag=1;
+  int dci_flag=0;
   int two_thread_flag=0;
   int DLSCH_RB_ALLOC = 0;
+
+  int log_level = LOG_ERR;
 
 #if defined(__arm__)
   FILE    *proc_fd = NULL;
@@ -1418,15 +1420,13 @@ int main(int argc, char **argv)
   //signal(SIGSEGV, handler);
   //signal(SIGABRT, handler);
 
-  logInit();
-
   // default parameters
   n_frames = 1000;
   snr0 = 0;
   //  num_layers = 1;
   perfect_ce = 0;
 
-  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:q:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:Pl:WXY")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:q:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:Pl:WXYL:")) != -1) {
     switch (c) {
     case 'a':
       awgn_flag = 1;
@@ -1453,9 +1453,9 @@ int main(int argc, char **argv)
       Nid_cell = atoi(optarg);
       break;
 
-    //case 'd':
-    //  dci_flag = 1;
-    //  break;
+    case 'd':
+      dci_flag = 1;
+      break;
 
     case 'D':
       frame_type=TDD;
@@ -1482,7 +1482,7 @@ int main(int argc, char **argv)
     case 'i':
       input_fd = fopen(optarg,"r");
       input_file=1;
-      //dci_flag = 1;
+      dci_flag = 1;
       break;
 
     case 'I':
@@ -1722,7 +1722,9 @@ int main(int argc, char **argv)
       dump_table=1;
       break;
 
-
+    case 'L':
+      log_level=atoi(optarg);
+      break;
 
     case 'h':
     default:
@@ -1732,7 +1734,7 @@ int main(int argc, char **argv)
       printf("-c Number of PDCCH symbols\n");
       printf("-m MCS1 for TB 1\n");
       printf("-M MCS2 for TB 2\n");
-      printf("-d Transmit the DCI and compute its error statistics and the overall throughput\n");
+      printf("-d Transmit the DCI and compute its error statistics\n");
       printf("-p Use extended prefix mode\n");
       printf("-n Number of frames to simulate\n");
       printf("-o Sample offset for receiver\n");
@@ -1756,6 +1758,16 @@ int main(int argc, char **argv)
       break;
     }
   }
+
+  logInit();
+  // enable these lines if you need debug info
+  set_comp_log(PHY,LOG_DEBUG,LOG_HIGH,1);
+  set_glog(log_level,LOG_HIGH);
+  // moreover you need to init itti with the following line
+  // however itti will catch all signals, so ctrl-c won't work anymore
+  // alternatively you can disable ITTI completely in CMakeLists.txt
+  //itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
+
 
   if (common_flag == 0) {
     switch (N_RB_DL) {
@@ -2159,7 +2171,7 @@ int main(int argc, char **argv)
 	     TPC,
 	     mcs1,
 	     mcs2,
-	     0,
+	     1,
 	     0,
 	     &num_common_dci,
 	     &num_ue_spec_dci,
@@ -2361,11 +2373,12 @@ int main(int argc, char **argv)
 
                 eNB->dlsch[0][0]->harq_processes[0]->rvidx = round&3;
 
-		fill_DCI(eNB,&dci_alloc[0],subframe,n_rnti,n_users,transmission_mode,common_flag,DLSCH_RB_ALLOC,TPC,mcs1,mcs2,trials&1,round&3,&num_common_dci,&num_ue_spec_dci,&num_dci);
+		fill_DCI(eNB,&dci_alloc[0],subframe,n_rnti,n_users,transmission_mode,common_flag,DLSCH_RB_ALLOC,TPC,
+			 mcs1,mcs2,!(trials&1),round&3,&num_common_dci,&num_ue_spec_dci,&num_dci);
 	      }
 	      else {
 		fill_DCI(eNB,&dci_alloc[0],subframe,n_rnti,n_users,transmission_mode,common_flag,DLSCH_RB_ALLOC,TPC,
-			 (TB0_active==1)?mcs1:0,mcs2,trials&1,(TB0_active==1)?round&3:0,&num_common_dci,&num_ue_spec_dci,&num_dci);
+			 (TB0_active==1)?mcs1:0,mcs2,!(trials&1),(TB0_active==1)?round&3:0,&num_common_dci,&num_ue_spec_dci,&num_dci);
 	      }
 	      for (i=num_common_dci; i<num_dci; i++) {
 
@@ -2419,7 +2432,7 @@ int main(int argc, char **argv)
 	    proc_eNB->subframe_tx = subframe;
 	    eNB->abstraction_flag=0;
 
-	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,1);
+	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,1,dci_flag);
 
 
 	    start_meas(&eNB->ofdm_mod_stats);
@@ -2455,7 +2468,7 @@ int main(int argc, char **argv)
 
 	    proc_eNB->subframe_tx = subframe+1;
 
-	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,0);
+	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,0,dci_flag);
 
 	    do_OFDM_mod_l(eNB->common_vars.txdataF[eNB_id],
 			  eNB->common_vars.txdata[eNB_id],
@@ -2506,7 +2519,38 @@ int main(int argc, char **argv)
 		   0);
 
 	  if (n_frames==1) printf("Running phy_procedures_UE_RX\n");
-	  phy_procedures_UE_RX(UE,proc,0,0,normal_txrx,no_relay,NULL);
+
+	  if (dci_flag==0) {
+	    if (n_frames==1)
+	      printf("bypassing PDCCH/DCI detection\n");
+	    if  (generate_ue_dlsch_params_from_dci(proc->frame_rx,
+						   proc->subframe_rx,
+						   (void *)&dci_alloc[0].dci_pdu,
+						   n_rnti,
+						   dci_alloc[0].format,
+						   UE->dlsch[proc->subframe_rx&0x1][eNB_id],
+						   &UE->frame_parms,
+						   UE->pdsch_config_dedicated,
+						   SI_RNTI,
+						   0,
+						   P_RNTI,
+						   UE->transmission_mode[eNB_id]<7?0:UE->transmission_mode[eNB_id],
+						   0)==0) {
+
+		dump_dci(&UE->frame_parms, &dci_alloc[0]);
+
+		//UE->dlsch[proc->subframe_rx&0x1][eNB_id][0]->active = 1;
+		//UE->dlsch[proc->subframe_rx&0x1][eNB_id][1]->active = 1;
+
+		UE->pdcch_vars[proc->subframe_rx&0x1][eNB_id]->num_pdcch_symbols = num_pdcch_symbols;
+
+		UE->dlsch_received[eNB_id]++;
+	    } else {
+	      LOG_E(PHY,"Problem in DCI!\n");
+	    }
+	  }
+
+	  phy_procedures_UE_RX(UE,proc,0,0,dci_flag,normal_txrx,no_relay,NULL);
 
 	  if (UE->dlsch[subframe&0x1][0][0]->active == 0) {
 	    //printf("DCI not received\n");

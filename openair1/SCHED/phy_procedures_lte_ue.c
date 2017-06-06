@@ -3058,19 +3058,16 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 	(dci_alloc_rx[i].format != format0)) {
       
 
-      LOG_D(PHY,"[UE  %d][DCI][PDSCH %x] AbsSubframe %d.%d: format %d, num_pdcch_symbols %d, nCCE %d, total CCEs %d\n",
+      LOG_I(PHY,"[UE  %d][DCI][PDSCH %x] AbsSubframe %d.%d: format %d, num_pdcch_symbols %d, nCCE %d, total CCEs %d\n",
 	    ue->Mod_id,dci_alloc_rx[i].rnti,
 	    frame_rx%1024,subframe_rx,
 	    dci_alloc_rx[i].format,
 	    ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->num_pdcch_symbols,
 	    ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->nCCE[subframe_rx],
 	    get_nCCE(3,&ue->frame_parms,get_mi(&ue->frame_parms,0)));
-
-
-
-
       
-      //dump_dci(&ue->frame_parms, &dci_alloc_rx[i]);
+      dump_dci(&ue->frame_parms, &dci_alloc_rx[i]);
+
       if ((ue->UE_mode[eNB_id] > PRACH) &&
 	  (generate_ue_dlsch_params_from_dci(frame_rx,
 					     subframe_rx,
@@ -4014,7 +4011,8 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
 
 
 }
-int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,runmode_t mode,
+int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
+			 uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,
 			 relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn) {
  
   int l,l2;
@@ -4043,20 +4041,20 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 
   pmch_flag = is_pmch_subframe(frame_rx,subframe_rx,&ue->frame_parms) ? 1 : 0;
 
-
-  // deactivate reception until we scan pdcch
-  if (ue->dlsch[subframe_rx&0x1][eNB_id][0])
-    ue->dlsch[subframe_rx&0x1][eNB_id][0]->active = 0;
-  if (ue->dlsch[subframe_rx&0x1][eNB_id][1])
-    ue->dlsch[subframe_rx&0x1][eNB_id][1]->active = 0;
-
-  if (ue->dlsch_SI[eNB_id])
-    ue->dlsch_SI[eNB_id]->active = 0;
-  if (ue->dlsch_p[eNB_id])
-    ue->dlsch_p[eNB_id]->active = 0;
-  if (ue->dlsch_ra[eNB_id])
-    ue->dlsch_ra[eNB_id]->active = 0;
-
+  if (do_pdcch_flag) {
+    // deactivate reception until we scan pdcch
+    if (ue->dlsch[subframe_rx&0x1][eNB_id][0])
+      ue->dlsch[subframe_rx&0x1][eNB_id][0]->active = 0;
+    if (ue->dlsch[subframe_rx&0x1][eNB_id][1])
+      ue->dlsch[subframe_rx&0x1][eNB_id][1]->active = 0;
+    
+    if (ue->dlsch_SI[eNB_id])
+      ue->dlsch_SI[eNB_id]->active = 0;
+    if (ue->dlsch_p[eNB_id])
+      ue->dlsch_p[eNB_id]->active = 0;
+    if (ue->dlsch_ra[eNB_id])
+      ue->dlsch_ra[eNB_id]->active = 0;
+  }
   
 #ifdef DEBUG_PHY_PROC
   LOG_D(PHY,"[%s %d] Frame %d subframe %d: Doing phy_procedures_UE_RX\n",
@@ -4109,15 +4107,17 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     }
     
     ue_measurement_procedures(l-1,ue,proc,eNB_id,(subframe_rx<<1),abstraction_flag,mode);
-    if ((l==pilot1) ||
-	((pmch_flag==1)&(l==l2)))  {
-      LOG_D(PHY,"[UE  %d] Frame %d: Calling pdcch procedures (eNB %d)\n",ue->Mod_id,frame_rx,eNB_id);
-      
-      if (ue_pdcch_procedures(eNB_id,ue,proc,abstraction_flag) == -1) {
-	LOG_E(PHY,"[UE  %d] Frame %d, subframe %d: Error in pdcch procedures\n",ue->Mod_id,frame_rx,subframe_rx);
-	return(-1);
+    if (do_pdcch_flag) {
+      if ((l==pilot1) ||
+	  ((pmch_flag==1)&(l==l2)))  {
+	LOG_D(PHY,"[UE  %d] Frame %d: Calling pdcch procedures (eNB %d)\n",ue->Mod_id,frame_rx,eNB_id);
+	
+	if (ue_pdcch_procedures(eNB_id,ue,proc,abstraction_flag) == -1) {
+	  LOG_E(PHY,"[UE  %d] Frame %d, subframe %d: Error in pdcch procedures\n",ue->Mod_id,frame_rx,subframe_rx);
+	  return(-1);
+	}
+	LOG_D(PHY,"num_pdcch_symbols %d\n",ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->num_pdcch_symbols);
       }
-      LOG_D(PHY,"num_pdcch_symbols %d\n",ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->num_pdcch_symbols);
     }
     
   } // for l=1..l2
@@ -4145,6 +4145,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   start_meas(&ue->generic_stat);
   // do procedures for C-RNTI
   if (ue->dlsch[subframe_rx&0x1][eNB_id][0]->active == 1) {
+    LOG_D(PHY,"dlsch is active, doing ue_pdsch_procedures\n");
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
     ue_pdsch_procedures(ue,
 			proc,
@@ -4460,7 +4461,7 @@ int phy_procedures_RN_UE_RX(uint8_t slot_rx, uint8_t next_slot, relaying_type_t 
 #endif
  
  
-void phy_procedures_UE_lte(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,runmode_t mode,
+void phy_procedures_UE_lte(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,
 			   relaying_type_t r_type, PHY_VARS_RN *phy_vars_rn)
 {
 #if defined(ENABLE_ITTI)
@@ -4530,7 +4531,7 @@ void phy_procedures_UE_lte(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,u
        
       if (phy_procedures_RN_UE_RX(subframe_rx, subframe_tx, r_type) != 0 )
 #endif
-	phy_procedures_UE_RX(ue,proc,eNB_id,abstraction_flag,mode,r_type,phy_vars_rn);
+	phy_procedures_UE_RX(ue,proc,eNB_id,abstraction_flag,do_pdcch_flag,mode,r_type,phy_vars_rn);
     }
      
     if ((subframe_select(&ue->frame_parms,subframe_tx)==SF_S) &&
@@ -4544,7 +4545,7 @@ void phy_procedures_UE_lte(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,u
 	 
       if (phy_procedures_RN_UE_RX(subframe_rx, subframe_tx, r_type) != 0 )
 #endif
-	phy_procedures_UE_RX(ue,proc,eNB_id,abstraction_flag,mode,r_type,phy_vars_rn);
+	phy_procedures_UE_RX(ue,proc,eNB_id,abstraction_flag,do_pdcch_flag,mode,r_type,phy_vars_rn);
     }
        
     if (ue->mac_enabled==1) {
