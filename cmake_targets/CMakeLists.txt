@@ -236,6 +236,9 @@ add_boolean_option(XFORMS              False "This adds the possibility to see t
 add_boolean_option(PRINT_STATS         False "This adds the possibility to see the status")
 add_boolean_option(T_TRACER            False "Activate the T tracer, a debugging/monitoring framework" )
 add_boolean_option(UE_AUTOTEST_TRACE   False "Activate UE autotest specific logs")
+add_boolean_option(UE_DEBUG_TRACE      False "Activate UE debug trace")
+add_boolean_option(UE_TIMING_TRACE     False "Activate UE timing trace")
+add_boolean_option(DISABLE_LOG_X       False "Deactivate all LOG_* macros")
 
 add_boolean_option(DEBUG_CONSOLE False "makes debugging easier, disables stdout/stderr buffering")
 
@@ -1633,9 +1636,25 @@ else()
 endif()
 
 # Atlas is required by some packages, but not found in pkg-config
-if(EXISTS "/usr/include/atlas/cblas.h")
+# So, here are some hacks here. Hope this gets fixed in future!
+if(EXISTS "/usr/include/atlas/cblas.h" OR EXISTS "/usr/include/cblas.h")
   include_directories("/usr/include/atlas")
-  list(APPEND ATLAS_LIBRARIES cblas atlas lapack)
+  LINK_DIRECTORIES("/usr/lib64")
+  LINK_DIRECTORIES("/usr/lib64/atlas") #Added because atlas libraries in CentOS 7 are here!
+  
+  if(EXISTS "/usr/lib64/libblas.so" OR EXISTS "/usr/lib/libblas.so") #Case for CentOS7
+     list(APPEND ATLAS_LIBRARIES blas)
+  else() # Case for Ubuntu
+     list(APPEND ATLAS_LIBRARIES cblas)
+  endif()
+
+  if(EXISTS "/usr/lib/atlas/libtatlas.so" OR EXISTS "/usr/lib64/atlas/libtatlas.so") #Case for CentOS7
+     list(APPEND ATLAS_LIBRARIES tatlas)
+  else()
+     list(APPEND ATLAS_LIBRARIES atlas) #Case for Ubuntu
+  endif()
+
+  list(APPEND ATLAS_LIBRARIES lapack)
 else()
   message("No Blas/Atlas libs found, some targets will fail")
 endif()

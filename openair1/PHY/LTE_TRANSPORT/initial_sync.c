@@ -466,13 +466,21 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
   if( (abs(ue->common_vars.freq_offset) > 150) && (ret == 0) )
   {
 	  ret=-1;
-	  LOG_E(HW,"Ignore MIB with high freq offset [%d Hz] estimation \n",ue->common_vars.freq_offset);
+#if DISABLE_LOG_X
+	  printf("Ignore MIB with high freq offset [%d Hz] estimation \n",ue->common_vars.freq_offset);
+#else
+	  LOG_E(HW, "Ignore MIB with high freq offset [%d Hz] estimation \n",ue->common_vars.freq_offset);
+#endif
   }
 
   if (ret==0) {  // PBCH found so indicate sync to higher layers and configure frame parameters
 
     //#ifdef DEBUG_INITIAL_SYNCH
-    LOG_I(PHY,"[UE%d] In synch, rx_offset %d samples\n",ue->Mod_id, ue->rx_offset);
+#if DISABLE_LOG_X
+    printf("[UE%d] In synch, rx_offset %d samples\n",ue->Mod_id, ue->rx_offset);
+#else
+    LOG_I(PHY, "[UE%d] In synch, rx_offset %d samples\n",ue->Mod_id, ue->rx_offset);
+#endif
     //#endif
 
     if (ue->UE_scan_carrier == 0) {
@@ -503,7 +511,8 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
 
     }
 
-    LOG_I(PHY,"[UE %d] Frame %d RRC Measurements => rssi %3.1f dBm (dig %3.1f dB, gain %d), N0 %d dBm,  rsrp %3.1f dBm/RE, rsrq %3.1f dB\n",ue->Mod_id,
+#if DISABLE_LOG_X
+    printf("[UE %d] Frame %d RRC Measurements => rssi %3.1f dBm (dig %3.1f dB, gain %d), N0 %d dBm,  rsrp %3.1f dBm/RE, rsrq %3.1f dB\n",ue->Mod_id,
 	  ue->proc.proc_rxtx[0].frame_rx,
 	  10*log10(ue->measurements.rssi)-ue->rx_total_gain_dB,
 	  10*log10(ue->measurements.rssi),
@@ -511,9 +520,9 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
 	  ue->measurements.n0_power_tot_dBm,
 	  10*log10(ue->measurements.rsrp[0])-ue->rx_total_gain_dB,
 	  (10*log10(ue->measurements.rsrq[0])));
-    
-    
-    LOG_I(PHY,"[UE %d] Frame %d MIB Information => %s, %s, NidCell %d, N_RB_DL %d, PHICH DURATION %d, PHICH RESOURCE %s, TX_ANT %d\n",
+
+
+    printf("[UE %d] Frame %d MIB Information => %s, %s, NidCell %d, N_RB_DL %d, PHICH DURATION %d, PHICH RESOURCE %s, TX_ANT %d\n",
 	  ue->Mod_id,
 	  ue->proc.proc_rxtx[0].frame_rx,
 	  duplex_string[ue->frame_parms.frame_type],
@@ -523,13 +532,43 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
 	  ue->frame_parms.phich_config_common.phich_duration,
 	  phich_string[ue->frame_parms.phich_config_common.phich_resource],
 	  ue->frame_parms.nb_antenna_ports_eNB);
+#else
+    LOG_I(PHY, "[UE %d] Frame %d RRC Measurements => rssi %3.1f dBm (dig %3.1f dB, gain %d), N0 %d dBm,  rsrp %3.1f dBm/RE, rsrq %3.1f dB\n",ue->Mod_id,
+	  ue->proc.proc_rxtx[0].frame_rx,
+	  10*log10(ue->measurements.rssi)-ue->rx_total_gain_dB,
+	  10*log10(ue->measurements.rssi),
+	  ue->rx_total_gain_dB,
+	  ue->measurements.n0_power_tot_dBm,
+	  10*log10(ue->measurements.rsrp[0])-ue->rx_total_gain_dB,
+	  (10*log10(ue->measurements.rsrq[0])));
+    
+    
+    LOG_I(PHY, "[UE %d] Frame %d MIB Information => %s, %s, NidCell %d, N_RB_DL %d, PHICH DURATION %d, PHICH RESOURCE %s, TX_ANT %d\n",
+	  ue->Mod_id,
+	  ue->proc.proc_rxtx[0].frame_rx,
+	  duplex_string[ue->frame_parms.frame_type],
+	  prefix_string[ue->frame_parms.Ncp],
+	  ue->frame_parms.Nid_cell,
+	  ue->frame_parms.N_RB_DL,
+	  ue->frame_parms.phich_config_common.phich_duration,
+	  phich_string[ue->frame_parms.phich_config_common.phich_resource],
+	  ue->frame_parms.nb_antenna_ports_eNB);
+#endif
 
 #if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
-    LOG_I(PHY,"[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
+#  if DISABLE_LOG_X
+    printf("[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
 	  ue->Mod_id,
 	  ue->proc.proc_rxtx[0].frame_rx,
 	  openair0_cfg[0].rx_freq[0]-ue->common_vars.freq_offset,
 	  ue->common_vars.freq_offset);
+#  else
+    LOG_I(PHY, "[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
+	  ue->Mod_id,
+	  ue->proc.proc_rxtx[0].frame_rx,
+	  openair0_cfg[0].rx_freq[0]-ue->common_vars.freq_offset,
+	  ue->common_vars.freq_offset);
+#  endif
 #endif
   } else {
 #ifdef DEBUG_INITIAL_SYNC

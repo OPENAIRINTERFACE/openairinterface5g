@@ -311,7 +311,11 @@ static void *UE_thread_synch(void *arg) {
 
         case pbch:
 
-            LOG_I(PHY,"[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
+#if DISABLE_LOG_X
+            printf("[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
+#else
+            LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
+#endif
             if (initial_sync( UE, UE->mode ) == 0) {
 
                 hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_tti;
@@ -432,11 +436,19 @@ static void *UE_thread_synch(void *arg) {
                         return &UE_thread_synch_retval; // not reached
                     }
                 }
-                LOG_I( PHY, "[initial_sync] trying carrier off %d Hz, rxgain %d (DL %u, UL %u)\n",
+#if DISABLE_LOG_X
+                printf("[initial_sync] trying carrier off %d Hz, rxgain %d (DL %u, UL %u)\n",
                        freq_offset,
                        UE->rx_total_gain_dB,
                        downlink_frequency[0][0]+freq_offset,
                        downlink_frequency[0][0]+uplink_frequency_offset[0][0]+freq_offset );
+#else
+                LOG_I(PHY, "[initial_sync] trying carrier off %d Hz, rxgain %d (DL %u, UL %u)\n",
+                       freq_offset,
+                       UE->rx_total_gain_dB,
+                       downlink_frequency[0][0]+freq_offset,
+                       downlink_frequency[0][0]+uplink_frequency_offset[0][0]+freq_offset );
+#endif
 
                 for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
                     openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] = downlink_frequency[CC_id][i]+freq_offset;
@@ -546,8 +558,9 @@ static void *UE_thread_rxn_txnp4(void *arg) {
             phy_procedures_UE_RX( UE, proc, 0, 0, UE->mode, no_relay, NULL );
         }
 
+#if UE_TIMING_TRACE
         start_meas(&UE->generic_stat);
-
+#endif
         if (UE->mac_enabled==1) {
 
             ret = mac_xface->ue_scheduler(UE->Mod_id,
@@ -577,8 +590,9 @@ static void *UE_thread_rxn_txnp4(void *arg) {
                        UE->Mod_id, proc->frame_rx, proc->subframe_tx,txt );
             }
         }
-
+#if UE_TIMING_TRACE
         stop_meas(&UE->generic_stat);
+#endif
 
         // Prepare the future Tx data
 
