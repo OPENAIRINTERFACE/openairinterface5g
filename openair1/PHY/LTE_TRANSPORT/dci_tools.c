@@ -5214,28 +5214,38 @@ void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,
 				 rnti,harq_pid,pdlsch0_harq->DCINdi);
     	}
 
-        // DCI has been toggled or this is the first transmission
-        if (ndi1!=pdlsch0_harq->DCINdi)
+        // NDI has been toggled or this is the first transmission
+        if ((ndi1!=pdlsch0_harq->DCINdi) || (pdlsch0_harq->first_tx==1))  
         {
             pdlsch0_harq->round    = 0;
-            pdlsch0_harq->first_tx = 1;
-            pdlsch0_harq->status   = ACTIVE;
-        }
-
-        if( ((ndi1 == pdlsch0_harq->DCINdi) && (pdlsch0_harq->round == 0)) ||
-            ((rv1  != 0) && (pdlsch0_harq->round == 0))
-          )
-        {
-            LOG_D(PHY,"skip pdsch decoding and report ack\n");
-            // skip pdsch decoding and report ack
-            pdlsch0_harq->status   = SCH_IDLE;
-            pdlsch0->active       = 0;
-            pdlsch0->harq_ack[subframe].ack = 1;
-            pdlsch0->harq_ack[subframe].harq_id = harq_pid;
-            pdlsch0->harq_ack[subframe].send_harq_status = 1;
-
             pdlsch0_harq->first_tx = 0;
+            pdlsch0_harq->status   = ACTIVE;
+
         }
+	/*
+	else if (rv1  != 0 )  
+	//NDI has not been toggled but rv was increased by eNB: retransmission
+	  {
+	    if (pdlsch0_harq->round == 0)  
+	    //packet was actually decoded in previous transmission (ACK was missed by eNB)
+	    //However, the round is not a good check as it might have been decoded in a retransmission prior to this one.
+	      {
+		LOG_D(PHY,"skip pdsch decoding and report ack\n");
+		// skip pdsch decoding and report ack
+		pdlsch0_harq->status   = SCH_IDLE;
+		pdlsch0->active       = 0;
+		pdlsch0->harq_ack[subframe].ack = 1;
+		pdlsch0->harq_ack[subframe].harq_id = harq_pid;
+		pdlsch0->harq_ack[subframe].send_harq_status = 1;
+
+		pdlsch0_harq->first_tx = 0;
+	      }
+	    else  //normal retransmission
+	      { 
+		// nothing to do
+	      }
+	  }
+	*/
     }
 
     pdlsch0_harq->DCINdi = ndi1;
@@ -5815,18 +5825,22 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
             LOG_D(PHY,"Format 2 DCI First TX0: Clearing flag\n");
             dlsch0_harq->first_tx = 0;
           }
-        }else{
-         if(dlsch0_harq->round == 0) {
-#if 0
-            // skip pdsch decoding and report ack
-            dlsch0_harq->status   = SCH_IDLE;
-            pdlsch0->active       = 0;
-            pdlsch0->harq_ack[subframe].ack = 1;
-            pdlsch0->harq_ack[subframe].harq_id = harq_pid;
-            pdlsch0->harq_ack[subframe].send_harq_status = 1;
-#endif
-         }
         }
+	else if (rv1  != 0 ) 
+	  //NDI has not been toggled but rv was increased by eNB: retransmission
+	  {
+	    if(dlsch0_harq->round == 0) {
+#if 0
+	      // skip pdsch decoding and report ack
+	      dlsch0_harq->status   = SCH_IDLE;
+	      pdlsch0->active       = 0;
+	      pdlsch0->harq_ack[subframe].ack = 1;
+	      pdlsch0->harq_ack[subframe].harq_id = harq_pid;
+	      pdlsch0->harq_ack[subframe].send_harq_status = 1;
+#endif
+	    }
+	  }
+      
 
         // if Imcs in [29..31] TBS is assumed to be as determined from DCI transported in the latest
         // PDCCH for the same trasport block using Imcs in [0 .. 28]
@@ -5858,19 +5872,22 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
             LOG_D(PHY,"Format 2 DCI First TX1: Clearing flag\n");
             dlsch1_harq->first_tx = 0;
           }
-        }else{
-#if 0
-         if(dlsch1_harq->round == 0) {
-            // skip pdsch decoding and report ack
-            dlsch1_harq->status   = SCH_IDLE;
-            pdlsch1->active       = 0;
-            pdlsch1->harq_ack[subframe].ack = 1;
-            pdlsch1->harq_ack[subframe].harq_id = harq_pid;
-            pdlsch1->harq_ack[subframe].send_harq_status = 1;
-         }
-#endif
         }
-
+	else if (rv1  != 0 )  
+	//NDI has not been toggled but rv was increased by eNB: retransmission
+	  {
+#if 0
+	    if(dlsch1_harq->round == 0) {
+	      // skip pdsch decoding and report ack
+	      dlsch1_harq->status   = SCH_IDLE;
+	      pdlsch1->active       = 0;
+	      pdlsch1->harq_ack[subframe].ack = 1;
+	      pdlsch1->harq_ack[subframe].harq_id = harq_pid;
+	      pdlsch1->harq_ack[subframe].send_harq_status = 1;
+	    }
+#endif
+	  }
+	
         // if Imcs in [29..31] TBS is assumed to be as determined from DCI transported in the latest
         // PDCCH for the same trasport block using Imcs in [0 .. 28]
         if(dlsch1_harq->mcs <= 28)
@@ -6344,11 +6361,15 @@ int generate_ue_dlsch_params_from_dci(int frame,
         dlsch0_harq->mimo_mode   = SISO;
 
 
-      if (dlsch0_harq->DCINdi != ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->ndi) {
+      if ((dlsch0_harq->DCINdi != ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->ndi) || 
+	(dlsch0_harq->first_tx==1)) {
 
         dlsch0_harq->round = 0;
+	dlsch0_harq->first_tx = 0;
         dlsch0_harq->status = ACTIVE;
-      } else if (dlsch0_harq->status == SCH_IDLE) { // we got an Ndi = 0 for a previously decoded process,
+      } 
+      /*
+	else if (dlsch0_harq->status == SCH_IDLE) { // we got same ndi for a previously decoded process,
         // this happens if either another harq process in the same
         // is NAK or an ACK was not received
 
@@ -6358,6 +6379,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
         dlsch0->active = 0;
         return(0);
       }
+      */
 
       dlsch0_harq->DCINdi = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->ndi;
       dlsch0_harq->mcs    = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs;
