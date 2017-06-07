@@ -1396,6 +1396,7 @@ int main(int argc, char **argv)
   int DLSCH_RB_ALLOC = 0;
 
   int log_level = LOG_ERR;
+  int dci_received;
 
 #if defined(__arm__)
   FILE    *proc_fd = NULL;
@@ -2330,10 +2331,10 @@ int main(int argc, char **argv)
 
         //if (trials%100==0)
         eNB2UE[0]->first_run = 1;
+	UE->dlsch[subframe&0x1][eNB_id][0]->harq_ack[subframe].ack = 0;
+	UE->dlsch[subframe&0x1][eNB_id][1]->harq_ack[subframe].ack = 0;
 
-        UE->dlsch_errors[0] = 1;
-
-        while ((round < num_rounds) && (UE->dlsch_errors[0] > 0)) {
+        while ((round < num_rounds) && (UE->dlsch[subframe&0x1][eNB_id][0]->harq_ack[subframe].ack == 0)) {
 	  //	  printf("Trial %d, round %d\n",trials,round);
           round_trials[round]++;
 
@@ -2509,7 +2510,7 @@ int main(int argc, char **argv)
 	  UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[subframe&1];
 	  proc->subframe_rx = subframe;
 	  UE->UE_mode[0] = PUSCH;
-	  UE->dlsch_errors[0] = 0;
+
 	  // first symbol has to be done separately in one-shot mode
 	  slot_fep(UE,
 		   0,
@@ -2550,12 +2551,15 @@ int main(int argc, char **argv)
 	    }
 	  }
 
+	  dci_received = UE->pdcch_vars[proc->subframe_rx & 0x1][eNB_id]->dci_received;
+
 	  phy_procedures_UE_RX(UE,proc,0,0,dci_flag,normal_txrx,no_relay,NULL);
 
-	  if (UE->dlsch[subframe&0x1][0][0]->active == 0) {
+	  dci_received = dci_received - UE->pdcch_vars[proc->subframe_rx & 0x1][eNB_id]->dci_received;
+
+	  if (dci_flag && (dci_received == 0)) {
 	    //printf("DCI not received\n");
 	    dci_errors[round]++;
-	    UE->dlsch_errors[0] = 1;
 
 	    /*
 	    write_output("pdcchF0_ext.m","pdcchF_ext", UE->pdcch_vars[eNB_id]->rxdataF_ext[0],2*3*UE->frame_parms.ofdm_symbol_size,1,1);
@@ -2626,7 +2630,7 @@ int main(int argc, char **argv)
 
 
 
-          if (UE->dlsch_errors[0] == 0) {
+          if (UE->dlsch[subframe&0x1][eNB_id][0]->harq_ack[subframe].ack == 1) {
 
             avg_iter += UE->dlsch[subframe&0x1][eNB_id][0]->last_iteration_cnt;
             iter_trials++;
@@ -2906,15 +2910,15 @@ int main(int argc, char **argv)
              errs2[0],
              round_trials[0],
              errs[1],
-             round_trials[0],
+             round_trials[1],
              errs[2],
-             round_trials[0],
+             round_trials[2],
              errs[3],
-             round_trials[0],
+             round_trials[3],
              (double)errs[0]/(round_trials[0]),
-             (double)errs[1]/(round_trials[0]),
-             (double)errs[2]/(round_trials[0]),
-             (double)errs[3]/(round_trials[0]),
+             (double)errs[1]/(round_trials[1]),
+             (double)errs[2]/(round_trials[2]),
+             (double)errs[3]/(round_trials[3]),
              dci_errors[0]+dci_errors[1]+dci_errors[2]+dci_errors[3],
              round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3],
              (double)(dci_errors[0]+dci_errors[1]+dci_errors[2]+dci_errors[3])/(round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]),
