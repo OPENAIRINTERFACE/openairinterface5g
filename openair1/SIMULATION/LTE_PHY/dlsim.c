@@ -705,7 +705,7 @@ void fill_DCI(PHY_VARS_eNB *eNB,
           dci_alloc[*num_dci].format     = format2A;
           dump_dci(&eNB->frame_parms,&dci_alloc[*num_dci]);
 
-          printf("Generating dlsch params for user %d / format 2A (%d)\n",k,format2A);
+          //printf("Generating dlsch params for user %d / format 2A (%d)\n",k,format2A);
           generate_eNB_dlsch_params_from_dci(0,
 					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
@@ -846,7 +846,7 @@ void fill_DCI(PHY_VARS_eNB *eNB,
           dci_alloc[*num_dci].firstCCE       = 0;
           dump_dci(&eNB->frame_parms,&dci_alloc[*num_dci]);
 
-          printf("Generating dlsch params for user %d\n",k);
+          //printf("Generating dlsch params for user %d\n",k);
           generate_eNB_dlsch_params_from_dci(0,
 					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
@@ -866,7 +866,7 @@ void fill_DCI(PHY_VARS_eNB *eNB,
 
         }
 
-        printf("Generated DCI format 2A (Transmission Mode 3)\n");
+        //printf("Generated DCI format 2A (Transmission Mode 3)\n");
         break;
 
       case 4:
