@@ -62,8 +62,7 @@ typedef struct {
   
 
  void (*flexran_agent_schedule_ul_spec)(mid_t module_idP,  uint32_t frameP, unsigned char cooperation_flag,
-        uint32_t subframeP, 
-        unsigned char sched_subframe, Protocol__FlexranMessage **ul_info);
+        uint32_t subframeP, unsigned char sched_subframe, Protocol__FlexranMessage **ul_info);
 
   /// Notify the controller for a state change of a particular UE, by sending the proper
   /// UE state change message (ACTIVATION, DEACTIVATION, HANDOVER)
@@ -72,6 +71,7 @@ typedef struct {
   
   
   void *dl_scheduler_loaded_lib;
+  void *ul_scheduler_loaded_lib;
   /*TODO: Fill in with the rest of the MAC layer technology specific callbacks (UL/DL scheduling, RACH info etc)*/
 
 } AGENT_MAC_xface;

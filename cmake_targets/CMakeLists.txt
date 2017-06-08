@@ -1231,6 +1231,9 @@ if (FLEXRAN_AGENT_SB_IF)
 add_library(default_sched SHARED ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue.c)
 add_library(remote_sched SHARED ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue_remote.c)
 
+add_library(default_ul_sched SHARED ${MAC_DIR}/flexran_agent_scheduler_ulsch_ue.c)
+
+
 endif()
 
 # L3 Libs

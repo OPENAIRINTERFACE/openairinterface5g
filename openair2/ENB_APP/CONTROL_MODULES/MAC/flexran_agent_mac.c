@@ -1254,7 +1254,7 @@ int flexran_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   xface->flexran_agent_get_pending_dl_mac_config = flexran_agent_get_pending_dl_mac_config;
   
   xface->dl_scheduler_loaded_lib = NULL;
-
+  xface->ul_scheduler_loaded_lib = NULL;
   mac_agent_registered[mod_id] = 1;
   agent_mac_xface[mod_id] = xface;
 
@@ -1272,7 +1272,7 @@ int flexran_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   
 
   xface->dl_scheduler_loaded_lib = NULL;
-
+  xface->ul_scheduler_loaded_lib = NULL;
   mac_agent_registered[mod_id] = 0;
   agent_mac_xface[mod_id] = NULL;
 

@@ -58,16 +58,16 @@
 #include "T.h"
 
 /* number of active slices for  past and current time*/
-int n_active_slices_uplink = 1;
-int n_active_slices_uplink_current = 1;
+int n_active_slices_uplink = 2;
+int n_active_slices_uplink_current = 2;
 
 /* RB share for each slice for past and current time*/
-float slice_percentage_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
-float slice_percentage_current_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
+float slice_percentage_uplink[MAX_NUM_SLICES] = {0.5, 0.5, 0.0, 0.0};
+float slice_percentage_current_uplink[MAX_NUM_SLICES] = {0.5, 0.5, 0.0, 0.0};
 float total_slice_percentage_uplink = 0;
 
 /*resource blocks allowed*/
-static uint16_t                nb_rbs_allowed_slice[MAX_NUM_CCs][MAX_NUM_SLICES];      
+uint16_t                nb_rbs_allowed_slice_uplink[MAX_NUM_CCs][MAX_NUM_SLICES];      
 /*Slice Update */
 int update_ul_scheduler[MAX_NUM_SLICES] = {1, 1, 1, 1};
 int update_ul_scheduler_current[MAX_NUM_SLICES] = {1, 1, 1, 1};
@@ -144,7 +144,7 @@ void _assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP, su
                    UE_list->numactiveULCCs[UE_id]);
       frame_parms=mac_xface->get_lte_frame_parms(module_idP,CC_id);
       UE_template = &UE_list->UE_template[CC_id][UE_id];
-      nb_rbs_allowed_slice[CC_id][UE_id] = flexran_nb_rbs_allowed_slice_uplink(slice_percentage_uplink[UE_id], flexran_get_N_RB_UL(module_idP, CC_id));
+      nb_rbs_allowed_slice_uplink[CC_id][UE_id] = flexran_nb_rbs_allowed_slice_uplink(slice_percentage_uplink[UE_id], flexran_get_N_RB_UL(module_idP, CC_id));
       // if this UE has UL traffic
       if (UE_template->ul_total_buffer > 0 ) {
 
@@ -161,7 +161,7 @@ void _assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP, su
         }
 
         while ((tbs < UE_template->ul_total_buffer) &&
-               (rb_table[rb_table_index]<(nb_rbs_allowed_slice[CC_id][UE_id]-first_rb[CC_id])) &&
+               (rb_table[rb_table_index]<(nb_rbs_allowed_slice_uplink[CC_id][UE_id]-first_rb[CC_id])) &&
                ((UE_template->phr_info - tx_power) > 0) &&
                (rb_table_index < 32 )) {
           //  LOG_I(MAC,"tbs %d ul buffer %d rb table %d max ul rb %d\n", tbs, UE_template->ul_total_buffer, rb_table[rb_table_index], frame_parms->N_RB_UL-first_rb[CC_id]);
@@ -172,7 +172,7 @@ void _assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP, su
 
         UE_template->ue_tx_power = tx_power;
 
-        if (rb_table[rb_table_index]>(nb_rbs_allowed_slice[CC_id][UE_id]-first_rb[CC_id]-1)) {
+        if (rb_table[rb_table_index]>(nb_rbs_allowed_slice_uplink[CC_id][UE_id]-first_rb[CC_id]-1)) {
           rb_table_index--;
         }
 
@@ -212,7 +212,7 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
   uint16_t           UE_id,n,r;
   uint8_t            CC_id, round, harq_pid;
   uint16_t           nb_allocated_rbs[MAX_NUM_CCs][NUMBER_OF_UE_MAX],total_allocated_rbs[MAX_NUM_CCs],average_rbs_per_user[MAX_NUM_CCs];
-  uint16_t          nb_rbs_allowed_slice[MAX_NUM_CCs][MAX_NUM_SLICES];
+  uint16_t          nb_rbs_allowed_slice_uplink[MAX_NUM_CCs][MAX_NUM_SLICES];
   int16_t            total_remaining_rbs[MAX_NUM_CCs];
   uint16_t           max_num_ue_to_be_scheduled=0,total_ue_count=0;
   rnti_t             rnti= -1;
@@ -281,17 +281,17 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
 
       max_num_ue_to_be_scheduled+=1;
 
-     nb_rbs_allowed_slice[CC_id][UE_id] = flexran_nb_rbs_allowed_slice_uplink(slice_percentage_uplink[UE_id], flexran_get_N_RB_UL(module_idP, CC_id));
+     nb_rbs_allowed_slice_uplink[CC_id][UE_id] = flexran_nb_rbs_allowed_slice_uplink(slice_percentage_uplink[UE_id], flexran_get_N_RB_UL(module_idP, CC_id));
 
       if (total_ue_count == 0) {
         average_rbs_per_user[CC_id] = 0;
       } else if (total_ue_count == 1 ) { // increase the available RBs, special case,
-        average_rbs_per_user[CC_id] = nb_rbs_allowed_slice[CC_id][i]-first_rb[CC_id]+1;
-      } else if( (total_ue_count <= (nb_rbs_allowed_slice[CC_id][i]-first_rb[CC_id])) &&
+        average_rbs_per_user[CC_id] = nb_rbs_allowed_slice_uplink[CC_id][i]-first_rb[CC_id]+1;
+      } else if( (total_ue_count <= (nb_rbs_allowed_slice_uplink[CC_id][i]-first_rb[CC_id])) &&
                  (total_ue_count <= max_num_ue_to_be_scheduled)) {
-        average_rbs_per_user[CC_id] = (uint16_t) floor((nb_rbs_allowed_slice[CC_id][i]-first_rb[CC_id])/total_ue_count);
+        average_rbs_per_user[CC_id] = (uint16_t) floor((nb_rbs_allowed_slice_uplink[CC_id][i]-first_rb[CC_id])/total_ue_count);
       } else if (max_num_ue_to_be_scheduled > 0 ) {
-        average_rbs_per_user[CC_id] = (uint16_t) floor((nb_rbs_allowed_slice[CC_id][slice_id]-first_rb[CC_id])/max_num_ue_to_be_scheduled);
+        average_rbs_per_user[CC_id] = (uint16_t) floor((nb_rbs_allowed_slice_uplink[CC_id][i]-first_rb[CC_id])/max_num_ue_to_be_scheduled);
       } else {
         average_rbs_per_user[CC_id]=1;
         LOG_W(MAC,"[eNB %d] frame %d subframe %d: UE %d CC %d: can't get average rb per user (should not be here)\n",
@@ -322,7 +322,7 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
       // This is the actual CC_id in the list
       CC_id = UE_list->ordered_ULCCids[n][UE_id];
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];      
-      ue_sched_ctl->max_allowed_rbs[CC_id]=nb_rbs_allowed_slice[CC_id][UE_id];
+      ue_sched_ctl->max_allowed_rbs[CC_id]=nb_rbs_allowed_slice_uplink[CC_id][UE_id];
       // mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL);
       flexran_get_harq(module_idP, CC_id, UE_id, frameP, subframeP, &harq_pid, &round, openair_harq_UL);
       if(round>0) {
@@ -356,7 +356,7 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
         CC_id = UE_list->ordered_ULCCids[n][UE_id];
         UE_template = &UE_list->UE_template[CC_id][UE_id];        
         frame_parms = mac_xface->get_lte_frame_parms(module_idP,CC_id);
-        total_remaining_rbs[CC_id]=nb_rbs_allowed_slice[CC_id][UE_id] - first_rb[CC_id] - total_allocated_rbs[CC_id];
+        total_remaining_rbs[CC_id]=nb_rbs_allowed_slice_uplink[CC_id][UE_id] - first_rb[CC_id] - total_allocated_rbs[CC_id];
 
         if (total_ue_count == 1 ) {
           total_remaining_rbs[CC_id]+=1;
@@ -383,7 +383,7 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
     frame_parms= mac_xface->get_lte_frame_parms(module_idP,CC_id);
 
     if (total_allocated_rbs[CC_id]>0) {
-      LOG_D(MAC,"[eNB %d] total RB allocated for all UEs = %d/%d\n", module_idP, total_allocated_rbs[CC_id], nb_rbs_allowed_slice[CC_id][slice_id] - first_rb[CC_id]);
+      LOG_D(MAC,"[eNB %d] total RB allocated for all UEs = %d/%d\n", module_idP, total_allocated_rbs[CC_id], nb_rbs_allowed_slice_uplink[CC_id][slice_id] - first_rb[CC_id]);
     }
   }
 }
@@ -434,30 +434,30 @@ flexran_schedule_ue_ul_spec_default(mid_t   mod_id,
     
     // check if the slice rb share has changed, and log the console
     if (slice_percentage_current_uplink[i] != slice_percentage_uplink[i]){
-      if ((slice_percentage_uplink[i] >= 0.0) && (slice_percentage_uplink[i] <= 1.0)){
-	if ((total_slice_percentage_uplink - slice_percentage_current_uplink[i]  + slice_percentage_uplink[i]) <= 1.0) {
-	  total_slice_percentage_uplink=total_slice_percentage_uplink - slice_percentage_current_uplink[i]  + slice_percentage_uplink[i];
+ //      if ((slice_percentage_uplink[i] >= 0.0) && (slice_percentage_uplink[i] <= 1.0)){
+	// if ((total_slice_percentage_uplink - slice_percentage_current_uplink[i]  + slice_percentage_uplink[i]) <= 1.0) {
+	//   total_slice_percentage_uplink=total_slice_percentage_uplink - slice_percentage_current_uplink[i]  + slice_percentage_uplink[i];
 	  LOG_N(MAC,"[eNB %d][SLICE %d] frame %d subframe %d: total percentage %f, slice RB percentage has changed: %f-->%f\n",
 		mod_id, i, frame, subframe, total_slice_percentage_uplink, slice_percentage_current_uplink[i], slice_percentage_uplink[i]);
 
 	  slice_percentage_current_uplink[i] = slice_percentage_uplink[i];
 
-	} else {
-	  LOG_W(MAC,"[eNB %d][SLICE %d] invalid total RB share (%f->%f), revert the previous value (%f->%f)\n",
-		mod_id,i,  
-		total_slice_percentage_uplink,
-		total_slice_percentage_uplink - slice_percentage_current_uplink[i]  + slice_percentage_uplink[i],
-		slice_percentage_uplink[i],slice_percentage_current_uplink[i]);
+	// } else {
+	//   LOG_W(MAC,"[eNB %d][SLICE %d] invalid total RB share (%f->%f), revert the previous value (%f->%f)\n",
+	// 	mod_id,i,  
+	// 	total_slice_percentage_uplink,
+	// 	total_slice_percentage_uplink - slice_percentage_current_uplink[i]  + slice_percentage_uplink[i],
+	// 	slice_percentage_uplink[i],slice_percentage_current_uplink[i]);
 
-	  slice_percentage_uplink[i]= slice_percentage_current_uplink[i];
+	//   slice_percentage_uplink[i]= slice_percentage_current_uplink[i];
 
-	}
-      } else {
-	LOG_W(MAC,"[eNB %d][SLICE %d] invalid slice RB share, revert the previous value (%f->%f)\n",mod_id, i,  slice_percentage_uplink[i],slice_percentage_current_uplink[i]);
+	// }
+ //      } else {
+	// LOG_W(MAC,"[eNB %d][SLICE %d] invalid slice RB share, revert the previous value (%f->%f)\n",mod_id, i,  slice_percentage_uplink[i],slice_percentage_current_uplink[i]);
 
-	slice_percentage_uplink[i]= slice_percentage_current_uplink[i];
+	// slice_percentage_uplink[i]= slice_percentage_current_uplink[i];
 
-      }
+      // }
     }
   
     // check if a new scheduler, and log the console
@@ -471,9 +471,13 @@ flexran_schedule_ue_ul_spec_default(mid_t   mod_id,
 
     // Run each enabled slice-specific schedulers one by one
     //LOG_N(MAC,"[eNB %d]frame %d subframe %d slice %d: calling the scheduler\n", mod_id, frame, subframe,i);
-    slice_sched_ul[i](mod_id, frame, cooperation_flag, subframe, sched_subframe,ul_info);
+    
+
+    
 
   }
+
+    slice_sched_ul[0](mod_id, frame, cooperation_flag, subframe, sched_subframe,ul_info);
   
 }
 
@@ -765,7 +769,7 @@ abort();
             UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2=mcs;
 	    //            buffer_occupancy = UE_template->ul_total_buffer;
 
-            while (((rb_table[rb_table_index]>(nb_rbs_allowed_slice[CC_id][UE_id]-1-first_rb[CC_id])) ||
+            while (((rb_table[rb_table_index]>(nb_rbs_allowed_slice_uplink[CC_id][UE_id]-1-first_rb[CC_id])) ||
 		    (rb_table[rb_table_index]>45)) &&
                    (rb_table_index>0)) {
               rb_table_index--;

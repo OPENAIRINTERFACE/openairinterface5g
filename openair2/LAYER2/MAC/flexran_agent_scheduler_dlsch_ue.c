@@ -88,16 +88,16 @@ typedef enum {
 
 
 // number of active slices for  past and current time
-int n_active_slices = 1;
-int n_active_slices_current = 1;
+int n_active_slices = 2;
+int n_active_slices_current = 2;
 
 // ue to slice mapping
 int slicing_strategy = UEID_TO_SLICEID;
 int slicing_strategy_current = UEID_TO_SLICEID;
 
 // RB share for each slice for past and current time
-float slice_percentage[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
-float slice_percentage_current[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
+float slice_percentage[MAX_NUM_SLICES] = {0.5, 0.5, 0.0, 0.0};
+float slice_percentage_current[MAX_NUM_SLICES] = {0.5, 0.5, 0.0, 0.0};
 float total_slice_percentage = 0;
 
 // MAX MCS for each slice for past and current time
@@ -753,30 +753,30 @@ flexran_schedule_ue_dl_spec_default(mid_t   mod_id,
     
     // check if the slice rb share has changed, and log the console
     if (slice_percentage_current[i] != slice_percentage[i]){
-      if ((slice_percentage[i] >= 0.0) && (slice_percentage[i] <= 1.0)){
-	if ((total_slice_percentage - slice_percentage_current[i]  + slice_percentage[i]) <= 1.0) {
-	  total_slice_percentage=total_slice_percentage - slice_percentage_current[i]  + slice_percentage[i];
+ //      if ((slice_percentage[i] >= 0.0) && (slice_percentage[i] <= 1.0)){
+	// if ((total_slice_percentage - slice_percentage_current[i]  + slice_percentage[i]) <= 1.0) {
+	//   total_slice_percentage=total_slice_percentage - slice_percentage_current[i]  + slice_percentage[i];
 	  LOG_N(MAC,"[eNB %d][SLICE %d] frame %d subframe %d: total percentage %f, slice RB percentage has changed: %f-->%f\n",
 		mod_id, i, frame, subframe, total_slice_percentage, slice_percentage_current[i], slice_percentage[i]);
 
 	  slice_percentage_current[i] = slice_percentage[i];
 
-	} else {
-	  LOG_W(MAC,"[eNB %d][SLICE %d] invalid total RB share (%f->%f), revert the previous value (%f->%f)\n",
-		mod_id,i,  
-		total_slice_percentage,
-		total_slice_percentage - slice_percentage_current[i]  + slice_percentage[i],
-		slice_percentage[i],slice_percentage_current[i]);
+	// } else {
+	//   LOG_W(MAC,"[eNB %d][SLICE %d] invalid total RB share (%f->%f), revert the previous value (%f->%f)\n",
+	// 	mod_id,i,  
+	// 	total_slice_percentage,
+	// 	total_slice_percentage - slice_percentage_current[i]  + slice_percentage[i],
+	// 	slice_percentage[i],slice_percentage_current[i]);
 
-	  slice_percentage[i]= slice_percentage_current[i];
+	//   slice_percentage[i]= slice_percentage_current[i];
 
-	}
-      } else {
-	LOG_W(MAC,"[eNB %d][SLICE %d] invalid slice RB share, revert the previous value (%f->%f)\n",mod_id, i,  slice_percentage[i],slice_percentage_current[i]);
+	// }
+ //      } else {
+	// LOG_W(MAC,"[eNB %d][SLICE %d] invalid slice RB share, revert the previous value (%f->%f)\n",mod_id, i,  slice_percentage[i],slice_percentage_current[i]);
 
-	slice_percentage[i]= slice_percentage_current[i];
+	// slice_percentage[i]= slice_percentage_current[i];
 
-      }
+      // }
     }
   
     // check if the slice max MCS, and log the console
