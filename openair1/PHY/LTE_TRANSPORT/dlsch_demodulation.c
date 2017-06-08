@@ -3390,8 +3390,8 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 
   //nb_rb*nre = y * 2^x
   int16_t x = factor2(nb_rb*nre);
-  int16_t y = (nb_rb*nre)/(1<<x);
-  printf("nb_rb*nre = %d = %d * 2^(%d)\n",nb_rb*nre,y,x);
+  int16_t y = (nb_rb*nre)>>x;
+  //printf("nb_rb*nre = %d = %d * 2^(%d)\n",nb_rb*nre,y,x);
 
   for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++)
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
@@ -3431,7 +3431,7 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 			      ((int32_t*)&avg128D)[1] +
 			      ((int32_t*)&avg128D)[2] +
 			      ((int32_t*)&avg128D)[3])/y;
-      printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
+      //printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
     }
 
   _mm_empty();
