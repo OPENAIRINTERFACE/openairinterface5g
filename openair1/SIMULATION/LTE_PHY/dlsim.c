@@ -1292,7 +1292,6 @@ int main(int argc, char **argv)
   uint16_t tdd_config=3;
 
 
-
   SCM_t channel_model=Rayleigh1;
   //  unsigned char *input_data,*decoded_output;
 
@@ -1366,6 +1365,7 @@ int main(int argc, char **argv)
   int rballocset=0;
   int print_perf=0;
   int test_perf=0;
+  int test_passed=0;
   int dump_table=0;
 
   double effective_rate=0.0;
@@ -1741,6 +1741,11 @@ int main(int argc, char **argv)
       printf("-o Sample offset for receiver\n");
       printf("-s Starting SNR, runs from SNR to SNR+%.1fdB in steps of %.1fdB. If n_frames is 1 then just SNR is simulated and MATLAB/OCTAVE output is generated\n", snr_int, snr_step);
       printf("-f step size of SNR, default value is 1.\n");
+      printf("-C cell id\n");
+      printf("-S subframe\n");
+      printf("-D use TDD mode\n");
+      printf("-b TDD config\n");
+      printf("-B bandwidth configuration (in number of ressource blocks): 6, 25, 50, 100\n");
       printf("-r ressource block allocation (see  section 7.1.6.3 in 36.213\n");
       printf("-g [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M')\n");
       printf("-F forgetting factor (0 new channel every trial, 1 channel constant\n");
@@ -3241,9 +3246,11 @@ int main(int argc, char **argv)
         UE->dlsch_decoding_stats[subframe&1].trials);
         */
         printf("[passed] effective rate : %f  (%2.1f%%,%f)): log and break \n",rate*effective_rate, 100*effective_rate, rate );
+	test_passed = 1;
         break;
       } else if (test_perf !=0 ) {
         printf("[continue] effective rate : %f  (%2.1f%%,%f)): increase snr \n",rate*effective_rate, 100*effective_rate, rate);
+	test_passed = 0;
       }
 
       if (((double)errs[0]/(round_trials[0]))<(10.0/n_frames))
@@ -3294,8 +3301,10 @@ int main(int argc, char **argv)
     free_ue_dlsch(UE->dlsch[subframe&0x1][0][i]);
   }
 
-
-  return(0);
+  if (test_perf && !test_passed)
+    return(-1);
+  else 
+    return(0);
 }
 
 
