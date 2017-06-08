@@ -5735,9 +5735,9 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
         pdlsch1->active     = 0;
       }
 
-//#ifdef DEBUG_HARQ
+#ifdef DEBUG_HARQ
       printf("[DCI UE]: dlsch0_harq status %d , dlsch1_harq status %d\n", dlsch0_harq->status, dlsch1_harq->status);
-//#endif
+#endif
 
       // compute resource allocation
       if (TB0_active == 1){
@@ -5908,9 +5908,16 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
             dlsch1_harq->Qm = (mcs2-28)<<1;
       }
 
-#ifdef DEBUG_HARQ
+
+  #ifdef DEBUG_HARQ
       printf("[DCI UE]: TB0_active %d , TB1_active %d\n", TB0_active, TB1_active);
-#endif
+      if (dlsch0 != NULL && dlsch1 != NULL)
+        printf("[DCI UE] dlsch0_harq status = %d, dlsch1_harq status = %d\n", dlsch0_harq->status, dlsch1_harq->status);
+      else if (dlsch0 == NULL && dlsch1 != NULL)
+        printf("[DCI UE] dlsch0_harq NULL dlsch1_harq status = %d\n", dlsch1_harq->status);
+      else if (dlsch0 != NULL && dlsch1 == NULL)
+        printf("[DCI UE] dlsch1_harq NULL dlsch0_harq status = %d\n", dlsch0_harq->status);
+  #endif
 }
 
 int generate_ue_dlsch_params_from_dci(int frame,
