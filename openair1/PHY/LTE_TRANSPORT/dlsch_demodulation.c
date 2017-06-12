@@ -144,6 +144,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
   case PDSCH:
     pdsch_vars = ue->pdsch_vars[subframe&0x1];
     dlsch = ue->dlsch[subframe&0x1][eNB_id];
+    //printf("status TB0 = %d, status TB1 = %d \n", dlsch[0]->harq_processes[harq_pid]->status, dlsch[1]->harq_processes[harq_pid]->status);
     LOG_D(PHY,"AbsSubframe %d.%d / Sym %d harq_pid %d,  harq status %d.%d \n",
                    frame,subframe,symbol,harq_pid,
                    dlsch[0]->harq_processes[harq_pid]->status,
@@ -198,6 +199,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
   DevAssert(dlsch0_harq);
   round = dlsch0_harq->round;
+  //printf("round = %d\n", round);
 
   if (eNB_id > 2) {
     LOG_W(PHY,"dlsch_demodulation.c: Illegal eNB_id %d\n",eNB_id);
@@ -238,7 +240,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
 
   if ((dlsch0_harq->mimo_mode==LARGE_CDD) || ((dlsch0_harq->mimo_mode>=DUALSTREAM_UNIFORM_PRECODING1) && (dlsch0_harq->mimo_mode<=DUALSTREAM_PUSCH_PRECODING)))  {
-   // DevAssert(dlsch1_harq);
+    DevAssert(dlsch1_harq);
     if (eNB_id!=eNB_id_i) {
       LOG_E(PHY,"TM3/TM4 requires to set eNB_id==eNB_id_i!\n");
       return(-1);

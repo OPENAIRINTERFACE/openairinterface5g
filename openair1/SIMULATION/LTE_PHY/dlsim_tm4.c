@@ -4297,12 +4297,10 @@ int main(int argc, char **argv)
                   (rx_type==rx_SIC_dual_stream)) {
 #ifdef DEBUG_HARQ
                 printf("[DLSIM] Starting SIC procedure\n");
+                printf("current round = %d\n", PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->round);
+                printf("\n CW 0 is decoded, i go for , round %d\n", round);
+                printf("\n ret[TB0] = %d  round %d\n", ret[TB], round);
 #endif
-               // printf("current round = %d\n", PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->round);
-
-
-              //printf("\n CW 0 is decoded, i go for , round %d\n", round);
-              //printf("\n ret[TB0] = %d  round %d\n", ret[TB], round);
                 sic_attempt[round]++;
 
                 for (round_sic = 0 ; round_sic < (round +1); round_sic++) {
@@ -4319,26 +4317,29 @@ int main(int argc, char **argv)
                 dlsch0_eNB_harq->rb_alloc[0]  = dlsch0_ue_harq->rb_alloc_even[0];
                 dlsch0_eNB_harq->nb_rb        = dlsch0_ue_harq->nb_rb;
                 dlsch0_eNB_harq->mcs          = dlsch0_ue_harq->mcs;
-                dlsch0_eNB_harq->rvidx        = dlsch0_ue_harq->rvidx;
+                dlsch0_eNB_harq->rvidx        = round_sic;//dlsch0_ue_harq->rvidx;
+                //printf("dlsch0_eNB_harq->rvidx = %d \n", dlsch0_eNB_harq->rvidx);
                 dlsch0_eNB_harq->Nl           = dlsch0_ue_harq->Nl;
-                dlsch0_eNB_harq->round        = dlsch0_ue_harq->round;
+                dlsch0_eNB_harq->round        = round_sic; //dlsch0_ue_harq->round;
                 dlsch0_eNB_harq->TBS          = dlsch0_ue_harq->TBS;
                 dlsch0_eNB_harq->dl_power_off = dlsch0_ue_harq->dl_power_off;
                 dlsch0_eNB_harq->status       = dlsch0_ue_harq->status;
 
-                UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][1]->current_harq_pid]->rvidx = round_sic;
+                UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid]->rvidx = round_sic;
                 UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->rvidx=round_sic;
-                UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][1]->current_harq_pid]->round = round_sic;
+                UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid]->round = round_sic;
                 UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->round=round_sic;
 
                 UE->dlsch_eNB[eNB_id]->active                   = UE->dlsch[subframe&0x1][eNB_id][0]->active;
                 UE->dlsch_eNB[eNB_id]->rnti                     = UE->dlsch[subframe&0x1][eNB_id][0]->rnti;
                 UE->dlsch_eNB[eNB_id]->current_harq_pid         = UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid;
-
+#ifdef DEBUG_HARQ
+                printf("UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid]->round = %d\n", UE->dlsch_eNB[eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid]->round);
+#endif
                 dlsch_encoding_SIC(UE,
                                input_buffer0[0], //UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->b,,
                                num_pdcch_symbols,
-                               UE->dlsch_eNB[eNB_id],
+                               &UE->dlsch_eNB[0][0],
                                0,
                                subframe,
                                &UE->dlsch_rate_matching_stats,
@@ -4358,7 +4359,7 @@ int main(int argc, char **argv)
 
                 dlsch_scrambling(&UE->frame_parms,
                                  0,
-                                 UE->dlsch_eNB[eNB_id],
+                                 &UE->dlsch_eNB[0][0],
                                  coded_bits_per_codeword[0],
                                  0,
                                  subframe<<1);
@@ -4385,7 +4386,7 @@ int main(int argc, char **argv)
                                        UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
                                        sic_buffer,
                                        UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
-                                       UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->codeword],
+                                       UE->pdsch_vars[subframe&0x1][eNB_id]->llr[1],
                                        num_pdcch_symbols,
                                        dlsch0_eNB_harq->nb_rb,
                                        subframe,
@@ -4399,7 +4400,7 @@ int main(int argc, char **argv)
                                         UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
                                         sic_buffer,
                                         UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->codeword],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->llr[1],
                                         num_pdcch_symbols,
                                         UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_mag1[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
                                         dlsch0_eNB_harq->nb_rb,
@@ -4412,7 +4413,7 @@ int main(int argc, char **argv)
                                         UE->pdsch_vars[subframe&0x1][eNB_id]->rxdataF_comp1[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
                                         sic_buffer,
                                         UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_rho_ext[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->codeword],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->llr[1],
                                         num_pdcch_symbols,
                                         UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_mag1[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
                                         UE->pdsch_vars[subframe&0x1][eNB_id]->dl_ch_magb1[UE->dlsch[subframe&0x1][0][1]->current_harq_pid][round_sic],
@@ -4482,7 +4483,7 @@ int main(int argc, char **argv)
                                    0,
                                    UE->dlsch[subframe&0x1][0][1],
                                    coded_bits_per_codeword[1],
-                                   UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->codeword],
+                                   UE->pdsch_vars[subframe&0x1][eNB_id]->llr[1],
                                    1,
                                    subframe<<1);
                 stop_meas(&UE->dlsch_unscrambling_stats);
@@ -4490,7 +4491,7 @@ int main(int argc, char **argv)
                 start_meas(&UE->dlsch_decoding_stats[subframe&0x1]);
 
                 ret[1] = dlsch_decoding(UE,
-                                        UE->pdsch_vars[subframe&0x1][eNB_id]->llr[UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->codeword],
+                                        UE->pdsch_vars[subframe&0x1][eNB_id]->llr[1],
                                         &UE->frame_parms,
                                         UE->dlsch[subframe&0x1][0][1],
                                         UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid],
