@@ -4576,6 +4576,10 @@ int main(int argc, char **argv)
               } //if (ret > UE->dlsch[subframe&0x1][0][1]->max_turbo_iterations )
             }//if SIC
           } else {
+
+            if (TB0_active && TB1_active)
+              UE->dlsch[subframe&0x1][0][1]->harq_processes[UE->dlsch[subframe&0x1][0][1]->current_harq_pid]->round++;
+
             decoded_tb[TB]=0;
             errs[TB][round]++;
 #ifdef DEBUG_HARQ
