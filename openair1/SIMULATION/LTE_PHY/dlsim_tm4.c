@@ -257,6 +257,7 @@ int main(int argc, char **argv)
   FD_lte_phy_scope_ue *form_ue = NULL;
   char title[255];
   uint32_t DLSCH_RB_ALLOC = 0x1fff;
+  int log_level = LOG_ERR;
   int numCCE=0;
   int dci_length_bytes=0,dci_length=0;
   int common_flag=0,TPC=0;
@@ -331,9 +332,6 @@ int main(int argc, char **argv)
   //signal(SIGSEGV, handler);
   //signal(SIGABRT, handler);
 
-  logInit();
-  set_glog(LOG_INFO, LOG_MED);
-
   // default parameters
   n_frames = 1000;
   snr0 = 0;
@@ -341,7 +339,7 @@ int main(int argc, char **argv)
   perfect_ce = 0;
 
 
-  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:XYWv:V:J:K:U")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:Pl:XYWv:V:J:K:UL:")) != -1) {
 
     switch (c) {
     case 'a':
@@ -404,10 +402,6 @@ int main(int argc, char **argv)
     case 'I':
       input_trch_fd = fopen(optarg,"r");
       input_trch_file=1;
-      break;
-
-    case 'L':
-      llr8_flag=1;
       break;
 
     case 'l':
@@ -640,6 +634,9 @@ int main(int argc, char **argv)
       case 'U':
       updated_csi=1;
       break;
+      case 'L':
+      log_level=atoi(optarg);
+      break;
       case 'h':
       default:
       printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -p(extended prefix on) -m mcs1 -M mcs2 -n n_frames -s snr0 -x transmission mode (1,2,3,5,6) -y TXant -z RXant -I trch_file\n",argv[0]);
@@ -672,6 +669,15 @@ int main(int argc, char **argv)
 
     }
   }
+
+  logInit();
+  // enable these lines if you need debug info
+  set_comp_log(PHY,LOG_DEBUG,LOG_HIGH,1);
+  set_glog(log_level,LOG_HIGH);
+  // moreover you need to init itti with the following line
+  // however itti will catch all signals, so ctrl-c won't work anymore
+  // alternatively you can disable ITTI completely in CMakeLists.txt
+  //itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
 
   if (common_flag == 0) {
     switch (N_RB_DL) {
