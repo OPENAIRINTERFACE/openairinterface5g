@@ -5046,14 +5046,14 @@ int check_dci_format2_2a_coherency(DCI_format_t dci_format,
     }
 
 
-    if((pdlsch0_harq->round == 0) && (rv1 > 0))
+    if((pdlsch0_harq->round == 0) && (rv1 > 0) && (mcs1 != 0))
     {
       // DCI false detection
         LOG_I(PHY,"bad rv1\n");
       //return(0);
     }
 
-    if((pdlsch1_harq->round == 0) && (rv2 > 0))
+    if((pdlsch1_harq->round == 0) && (rv2 > 0) && (mcs2 != 0))
     {
       // DCI false detection
         LOG_I(PHY,"bad rv2\n");
