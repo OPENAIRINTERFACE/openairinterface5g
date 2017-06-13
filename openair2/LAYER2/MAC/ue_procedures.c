@@ -345,8 +345,9 @@ ue_send_sdu(
   unsigned char rx_lcids[NB_RB_MAX];
   unsigned short rx_lengths[NB_RB_MAX];
   unsigned char *tx_sdu;
-
+#if UE_TIMING_TRACE
   start_meas(&UE_mac_inst[module_idP].rx_dlsch_sdu);
+#endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_IN);
 
   LOG_T(MAC,"sdu: %x.%x.%x\n",sdu[0],sdu[1],sdu[2]);
@@ -504,13 +505,16 @@ ue_send_sdu(
   } // end if (payload_ptr != NULL)
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
+#if UE_TIMING_TRACE
   stop_meas(&UE_mac_inst[module_idP].rx_dlsch_sdu);
+#endif
 }
 
 void ue_decode_si(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_index, void *pdu,uint16_t len)
 {
-
-  start_meas(&UE_mac_inst[module_idP].rx_si);
+#if UE_TIMING_TRACE
+    start_meas(&UE_mac_inst[module_idP].rx_si);
+#endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_IN);
 
   LOG_D(MAC,"[UE %d] Frame %d Sending SI to RRC (LCID Id %d,len %d)\n",module_idP,frameP,BCCH,len);
@@ -526,7 +530,9 @@ void ue_decode_si(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_i
                    eNB_index,
                    0);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_OUT);
+#if UE_TIMING_TRACE
   stop_meas(&UE_mac_inst[module_idP].rx_si);
+#endif
   if (opt_enabled == 1) {
     trace_pdu(0,
 	      (uint8_t *)pdu,
@@ -545,8 +551,9 @@ void ue_decode_si(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_i
 
 void ue_decode_p(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_index, void *pdu,uint16_t len)
 {
-
-  start_meas(&UE_mac_inst[module_idP].rx_p);
+#if UE_TIMING_TRACE
+    start_meas(&UE_mac_inst[module_idP].rx_p);
+#endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_IN);
 
   LOG_D(MAC,"[UE %d] Frame %d Sending Paging message to RRC (LCID Id %d,len %d)\n",module_idP,frameP,PCCH,len);
@@ -562,7 +569,9 @@ void ue_decode_p(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_in
                    eNB_index,
                    0);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_OUT);
+#if UE_TIMING_TRACE
   stop_meas(&UE_mac_inst[module_idP].rx_p);
+#endif
   if (opt_enabled == 1) {
     trace_pdu(0,
 	      (uint8_t *)pdu,
@@ -636,8 +645,9 @@ void ue_send_mch_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP, uint
   unsigned char num_sdu, i, *payload_ptr;
   unsigned char rx_lcids[NB_RB_MAX];
   unsigned short rx_lengths[NB_RB_MAX];
-
+#if UE_TIMING_TRACE
   start_meas(&UE_mac_inst[module_idP].rx_mch_sdu);
+#endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_MCH_SDU, VCD_FUNCTION_IN);
 
   LOG_D(MAC,"[UE %d] Frame %d : process the mch PDU for sync area %d \n",module_idP,frameP, sync_area);
@@ -696,7 +706,9 @@ void ue_send_mch_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP, uint
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_MCH_SDU, VCD_FUNCTION_OUT);
+#if UE_TIMING_TRACE
   stop_meas(&UE_mac_inst[module_idP].rx_mch_sdu);
+#endif
 }
 
 int8_t ue_get_mbsfn_sf_alloction (module_id_t module_idP, uint8_t mbsfn_sync_area, unsigned char eNB_index)
@@ -721,8 +733,9 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
   int mbsfn_period = 0;// 1<<(UE_mac_inst[module_idP].mbsfn_SubframeConfig[0]->radioframeAllocationPeriod);
   int mcch_period = 0;// 32<<(UE_mac_inst[module_idP].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
   int mch_scheduling_period = -1;
-
+#if UE_TIMING_TRACE
   start_meas(&UE_mac_inst[module_idP].ue_query_mch);
+#endif
 
   if (UE_mac_inst[module_idP].pmch_Config[0]) {
     mch_scheduling_period = 8<<(UE_mac_inst[module_idP].pmch_Config[0]->mch_SchedulingPeriod_r9);
@@ -977,8 +990,9 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
       }
     }
   } // end of for
-
+#if UE_TIMING_TRACE
   stop_meas(&UE_mac_inst[module_idP].ue_query_mch);
+#endif
 
   if ( (mcch_flag==1)) { // || (msi_flag==1))
     *mcch_active=1;
@@ -1302,8 +1316,9 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
     mac_xface->macphy_exit("MAC FATAL  CC_id>0");
     return;
   }
-
+#if UE_TIMING_TRACE
   start_meas(&UE_mac_inst[module_idP].tx_ulsch_sdu);
+#endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_IN);
 
 #ifdef CBA
@@ -1785,7 +1800,9 @@ for (lcid=DCCH; (lcid < MAX_NUM_LCID) && (is_all_lcid_processed == FALSE) ; lcid
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_OUT);
+#if UE_TIMING_TRACE
   stop_meas(&UE_mac_inst[module_idP].tx_ulsch_sdu);
+#endif
   
   if (opt_enabled) {
     trace_pdu(0, ulsch_buffer, buflen, module_idP, 3, UE_mac_inst[module_idP].crnti, UE_mac_inst[module_idP].txFrame, UE_mac_inst[module_idP].txSubframe, 0, 0);
@@ -1829,7 +1846,9 @@ ue_scheduler(
   instance_t    instance;
   int           result;
 #endif
+#if UE_TIMING_TRACE
   start_meas(&UE_mac_inst[module_idP].ue_scheduler);
+#endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SCHEDULER, VCD_FUNCTION_IN);
 
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_NO, UE_mac_inst[module_idP].crnti, txFrameP, txSubframeP,eNB_indexP);
@@ -1889,14 +1908,18 @@ ue_scheduler(
   case RRC_ConnSetup_failed:
     LOG_E(MAC,"RRCConnectionSetup failed, returning to IDLE state\n");
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SCHEDULER, VCD_FUNCTION_OUT);
+#if UE_TIMING_TRACE
     stop_meas(&UE_mac_inst[module_idP].ue_scheduler);
+#endif
     return(CONNECTION_LOST);
     break;
 
   case RRC_PHY_RESYNCH:
     LOG_E(MAC,"RRC Loss of synch, returning PHY_RESYNCH\n");
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SCHEDULER, VCD_FUNCTION_OUT);
+#if UE_TIMING_TRACE
     stop_meas(&UE_mac_inst[module_idP].ue_scheduler);
+#endif
     return(PHY_RESYNCH);
 
   case RRC_Handover_failed:
@@ -1909,7 +1932,9 @@ ue_scheduler(
   case RRC_HO_STARTED:
     LOG_I(MAC,"RRC handover, Instruct PHY to start the contention-free PRACH and synchronization\n");
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SCHEDULER, VCD_FUNCTION_OUT);
+#if UE_TIMING_TRACE
     stop_meas(&UE_mac_inst[module_idP].ue_scheduler);
+#endif
     return(PHY_HO_PRACH);
 
   default:
@@ -1926,7 +1951,9 @@ ue_scheduler(
     } else {
       LOG_E(MAC,"FATAL: radioResourceConfigCommon is NULL!!!\n");
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SCHEDULER, VCD_FUNCTION_OUT);
-      stop_meas(&UE_mac_inst[module_idP].ue_scheduler);
+#if UE_TIMING_TRACE
+    stop_meas(&UE_mac_inst[module_idP].ue_scheduler);
+#endif
       mac_xface->macphy_exit("");
       //return(RRC_OK);
     }
@@ -2011,7 +2038,9 @@ ue_scheduler(
     UE_mac_inst[module_idP].ul_active=0;
     LOG_T(MAC,"[UE %d] Release all SRs \n", module_idP);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SCHEDULER, VCD_FUNCTION_OUT);
+#if UE_TIMING_TRACE
     stop_meas(&UE_mac_inst[module_idP].ue_scheduler);
+#endif
     return(CONNECTION_OK);
   }
 
@@ -2059,7 +2088,9 @@ ue_scheduler(
 
   //If the UE has UL resources allocated for new transmission for this TTI here:
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SCHEDULER, VCD_FUNCTION_OUT);
-  stop_meas(&UE_mac_inst[module_idP].ue_scheduler);
+#if UE_TIMING_TRACE
+    stop_meas(&UE_mac_inst[module_idP].ue_scheduler);
+#endif
   return(CONNECTION_OK);
 }
 

@@ -1754,8 +1754,8 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
       avgs = cmax(avgs,avgP[(aarx<<1)+aatx]);
 
   log2_maxh = (log2_approx(avgs)/2) + 5;  //+frame_parms->nb_antennas_rx;
-#ifdef DEBUG_PHY
-  LOG_I(PHY,"subframe %d: pdcch log2_maxh = %d (%d,%d)\n",subframe,log2_maxh,avgP[0],avgs);
+#ifdef UE_DEBUG_TRACE
+  LOG_D(PHY,"subframe %d: pdcch log2_maxh = %d (%d,%d)\n",subframe,log2_maxh,avgP[0],avgs);
 #endif
 
 #if T_TRACER
@@ -2653,7 +2653,8 @@ int get_nCCE_offset_l1(int *CCE_table,
       search_space_free = 1;
 
       for (l=0; l<L; l++) {
-        if (CCE_table[(((Yk+m)%(nCCE/L))*L) + l] == 1) {
+        int cce = (((Yk+m)%(nCCE/L))*L) + l;
+        if (cce >= nCCE || CCE_table[cce] == 1) {
           search_space_free = 0;
           break;
         }
