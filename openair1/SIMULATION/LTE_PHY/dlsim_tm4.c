@@ -730,6 +730,11 @@ int main(int argc, char **argv)
     fl_set_button(form_ue->button_0, use_sic_receiver);
     fl_set_object_label(form_ue->button_0, "SIC Receiver ON");
     fl_set_object_color(form_ue->button_0, FL_RED, FL_RED);
+  }else if (transmission_mode==4 && rx_type == rx_IC_dual_stream ){
+    use_sic_receiver = 0;
+    fl_set_button(form_ue->button_0, use_sic_receiver);
+    fl_set_object_label(form_ue->button_0, "SIC Receiver ON");
+    fl_set_object_color(form_ue->button_0, FL_RED, FL_RED);
   }
 
 
