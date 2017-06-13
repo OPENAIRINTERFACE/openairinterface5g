@@ -392,6 +392,25 @@ typedef struct {
   pthread_mutex_t mutex_rxtx;
   /// scheduling parameters for RXn-TXnp4 thread
   struct sched_param sched_param_rxtx;
+
+  /// internal This variable is protected by ref mutex_fep_slot1.
+  int instance_cnt_fep_slot1;
+  /// pthread descriptor fep_slot1 thread
+  pthread_t pthread_fep_slot1;
+  /// pthread attributes for fep_slot1 processing thread
+  pthread_attr_t attr_fep_slot1;
+  /// condition variable for UE fep_slot1 thread;
+  pthread_cond_t cond_fep_slot1;
+  /// mutex for UE synch thread
+  pthread_mutex_t mutex_fep_slot1;
+  //
+  uint8_t chan_est_pilot0_slot1_available;
+  uint8_t llr_slot1_available;
+  uint8_t dci_slot0_available;
+  uint8_t first_symbol_available;
+  /// scheduling parameters for fep_slot1 thread
+  struct sched_param sched_param_fep_slot1;
+
   int sub_frame_start;
   int sub_frame_step;
   unsigned long long gotIQs;
@@ -930,6 +949,14 @@ typedef struct {
 #endif
 
 } PHY_VARS_UE;
+
+/* this structure is used to pass both UE phy vars and
+ * proc to the function UE_thread_rxn_txnp4
+ */
+struct rx_tx_thread_data {
+  PHY_VARS_UE    *UE;
+  UE_rxtx_proc_t *proc;
+};
 
 void exit_fun(const char* s);
 

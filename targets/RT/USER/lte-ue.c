@@ -476,15 +476,6 @@ static void *UE_thread_synch(void *arg) {
     return &UE_thread_synch_retval;
 }
 
-
-/* this structure is used to pass both UE phy vars and
- * proc to the function UE_thread_rxn_txnp4
- */
-struct rx_tx_thread_data {
-  PHY_VARS_UE    *UE;
-  UE_rxtx_proc_t *proc;
-};
-
 /*!
  * \brief This is the UE thread for RX subframe n and TX subframe n+4.
  * This thread performs the phy_procedures_UE_RX() on every received slot.
@@ -508,9 +499,9 @@ static void *UE_thread_rxn_txnp4(void *arg) {
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     if ( (proc->sub_frame_start+1)%2 == 0 && threads.even != -1 )
-        CPU_SET(threads.even, &cpuset);
+        CPU_SET(1, &cpuset);
     if ( (proc->sub_frame_start+1)%2 == 1 && threads.odd != -1 )
-        CPU_SET(threads.odd, &cpuset);
+        CPU_SET(2, &cpuset);
     init_thread(900000,1000000 , FIFO_PRIORITY-1, &cpuset,
                 threadname);
 
@@ -852,16 +843,273 @@ void *UE_thread(void *arg) {
     return NULL;
 }
 
+void *UE_thread_fep_slot1(void *arg) {
+
+    static __thread int UE_thread_rxtx_retval;
+    struct rx_tx_thread_data *rtd = arg;
+    UE_rxtx_proc_t *proc = rtd->proc;
+    PHY_VARS_UE    *ue   = rtd->UE;
+
+    char threadname[256];
+    proc->subframe_rx=proc->sub_frame_start;
+    sprintf(threadname,"UE_SLOT1_PROC_%d", proc->sub_frame_start);
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    if ( (proc->sub_frame_start+1)%2 == 0 )
+        CPU_SET(0, &cpuset);
+    if ( (proc->sub_frame_start+1)%2 == 1 )
+        CPU_SET(4, &cpuset);
+    init_thread(900000,1000000 , FIFO_PRIORITY-1, &cpuset,
+                threadname);
+
+
+    uint8_t l;
+    uint8_t compute_llrs_slot1;
+
+    proc->instance_cnt_fep_slot1=-1;
+
+    while (!oai_exit) {
+        if (pthread_mutex_lock(&proc->mutex_fep_slot1) != 0) {
+            LOG_E( PHY, "[SCHED][UE] error locking mutex for UE FEP Slo1\n" );
+            exit_fun("nothing to add");
+        }
+        while (proc->instance_cnt_fep_slot1 < 0) {
+            // most of the time, the thread is waiting here
+            pthread_cond_wait( &proc->cond_fep_slot1, &proc->mutex_fep_slot1 );
+        }
+        if (pthread_mutex_unlock(&proc->mutex_fep_slot1) != 0) {
+            LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE FEP Slo1\n" );
+            exit_fun("nothing to add");
+        }
+
+        // Start Thread Processing
+        LOG_I(PHY," [Th-Slave] ==> execute fep slot1 thread for AbsSubframe %d.%d \n", proc->frame_rx, proc->subframe_rx);
+#if 1
+        int frame_rx    = proc->frame_rx;
+        int subframe_rx = proc->subframe_rx;
+        uint8_t pilot0;
+        uint8_t pilot1;
+        uint8_t slot1;
+
+        slot1  = (subframe_rx<<1) + 1;
+        pilot0 = 0;
+        if (ue->frame_parms.Ncp == 0) {  // normal prefix
+          pilot1 = 4;
+        } else { // extended prefix
+          pilot1 = 3;
+        }
+
+        // do first symbol of next downlink subframe for channel estimation
+        int next_subframe_rx = (1+subframe_rx)%10;
+        uint8_t next_subframe_slot0 = next_subframe_rx<<1;
+        // 1- perform FFT for pilot ofdm symbols first (ofdmSym0 next subframe ofdmSym11)
+        if (subframe_select(&ue->frame_parms,next_subframe_rx) != SF_UL)
+        {
+            //LOG_I(PHY,"[Th-Slave] FFT symbol %d slot %d \n", pilot0, next_subframe_slot0);
+            front_end_fft(ue,
+                    pilot0,
+                    next_subframe_slot0,
+                    0,
+                    0);
+        }
+        //LOG_I(PHY,"[Th-Slave]FFT symbol %d slot %d \n",pilot1,slot1);
+        front_end_fft(ue,
+                pilot1,
+                slot1,
+                0,
+                0);
+        // 2- perform FFT for other ofdm symbols other than pilots
+        for (l=1; l<ue->frame_parms.symbols_per_tti>>1; l++)
+        {
+            if( (l != pilot0) && (l != pilot1))
+            {
+                //LOG_I(PHY,"[Th-Slave]FFT symbol %d slot %d\n",l,slot1);
+                start_meas(&ue->ofdm_demod_stats);
+                VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
+                front_end_fft(ue,
+                        l,
+                        slot1,
+                        0,
+                        0);
+                VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
+                stop_meas(&ue->ofdm_demod_stats);
+            }
+        } // for l=1..l2
+
+        // 3- perform Channel Estimation for slot1
+        for (l=1; l<ue->frame_parms.symbols_per_tti>>1; l++)
+        {
+            uint32_t wait=0;
+            if(l==pilot1)
+            {
+                LOG_I(PHY,"[Th-Slave] ==> wait pilot0 slot1 channel estimation is ready \n");
+                while(proc->chan_est_pilot0_slot1_available==0)
+                {
+                    //wait until channel estimation for pilot0/slot1 is available
+                    usleep(1);
+                    wait++;
+                }
+            }
+            front_end_chanEst(ue,
+                    l,
+                    slot1,
+                    0);
+
+            //LOG_I(PHY,"[Th-Slave]ChanEst symbol %d slot %d wait%d\n",l,slot1,wait);
+            ue_measurement_procedures(l-1,ue,proc,0,1+(subframe_rx<<1),0,ue->mode);
+        }
+        //LOG_I(PHY,"[Th-Slave]ChanEst symbol %d slot %d\n",0,next_subframe_slot0);
+        front_end_chanEst(ue,
+                0,
+                next_subframe_slot0,
+                0);
+
+        if ( (subframe_rx == 0) && (ue->decode_MIB == 1))
+        {
+            ue_pbch_procedures(0,ue,proc,0);
+        }
+#endif
+        LOG_I(PHY," [Th-Slave] ==> FFT/CHanEst Done for AbsSubframe %d.%d \n", proc->frame_rx, proc->subframe_rx);
+
+        LOG_I(PHY," [Th-Slave] ==> Start LLR Comuptation slot1 for AbsSubframe %d.%d \n", proc->frame_rx, proc->subframe_rx);
+
+#if 1
+     // wait until dci info are available
+     uint32_t wait=0;
+     while(proc->dci_slot0_available==0) // (proc->dci_slot0_available==0)
+     {
+        //wait until channel estimation for pilot0/slot1 is available
+        usleep(1);
+        wait++;
+     }
+     // check if a dl grant was received on a DCI
+     compute_llrs_slot1 = 0;
+     if(ue->dlsch[subframe_rx&0x1][0][0]->active ||
+        ((ue->dlsch_SI[0]) && (ue->dlsch_SI[0]->active == 1)) ||
+        ((ue->dlsch_p[0]) && (ue->dlsch_p[0]->active == 1)) ||
+        ((ue->dlsch_ra[0]) && (ue->dlsch_ra[0]->active == 1))
+        )
+     {
+       compute_llrs_slot1 = 1;
+     }
+     else
+     {
+       proc->llr_slot1_available = 1;
+     }
+     LOG_I(PHY,"[Th-Slave] compute llrs slot-1 %d AbsSubframe %d.%d \n",compute_llrs_slot1,frame_rx%1024,subframe_rx);
+
+     if(compute_llrs_slot1)
+     {
+         // wait until computation of first ofdm symbol is done
+         uint32_t wait=0;
+         while(proc->first_symbol_available==0)
+         {
+             //wait until channel estimation for pilot0/slot1 is available
+             usleep(1);
+             wait++;
+         }
+
+         // start slave thread for Pdsch Procedure (slot1)
+         // do procedures for C-RNTI
+         //LOG_I(PHY,"[Th-Slave] AbsSubframe %d.%d Pdsch Procedure (slot1) wait %d \n",frame_rx%1024,subframe_rx,wait);
+         //LOG_I(PHY,"[Th-Slave] AbsSubframe %d.%d Pdsch Procedure PDSCH Active %d \n",frame_rx%1024,subframe_rx, ue->dlsch[subframe_rx&0x1][0][0]->active);
+         if (ue->dlsch[subframe_rx&0x1][0][0]->active == 1) {
+             //LOG_I(PHY,"[Th-Slave] AbsSubframe %d.%d Pdsch Procedure PDSCH \n",frame_rx%1024,subframe_rx);
+             VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
+             start_meas(&ue->pdsch_procedures_stat);
+             ue_pdsch_procedures(ue,
+                     proc,
+                     0,
+                     PDSCH,
+                     ue->dlsch[subframe_rx&0x1][0][0],
+                     NULL,
+                     1+(ue->frame_parms.symbols_per_tti>>1),
+                     ue->frame_parms.symbols_per_tti-1,
+                     0);
+             stop_meas(&ue->pdsch_procedures_stat);
+         }
+
+         // do procedures for SI-RNTI
+         if ((ue->dlsch_SI[0]) && (ue->dlsch_SI[0]->active == 1)) {
+             //LOG_I(PHY,"[Th-Slave] AbsSubframe %d.%d Pdsch Procedure SI-PDSCH \n",frame_rx%1024,subframe_rx);
+             ue_pdsch_procedures(ue,
+                     proc,
+                     0,
+                     SI_PDSCH,
+                     ue->dlsch_SI[0],
+                     NULL,
+                     1+(ue->frame_parms.symbols_per_tti>>1),
+                     ue->frame_parms.symbols_per_tti-1,
+                     0);
+         }
+
+         // do procedures for P-RNTI
+         if ((ue->dlsch_p[0]) && (ue->dlsch_p[0]->active == 1)) {
+             //LOG_I(PHY,"[Th-Slave] AbsSubframe %d.%d Pdsch Procedure P-PDSCH \n",frame_rx%1024,subframe_rx);
+             ue_pdsch_procedures(ue,
+                     proc,
+                     0,
+                     P_PDSCH,
+                     ue->dlsch_p[0],
+                     NULL,
+                     1+(ue->frame_parms.symbols_per_tti>>1),
+                     ue->frame_parms.symbols_per_tti-1,
+                     0);
+         }
+         // do procedures for RA-RNTI
+         if ((ue->dlsch_ra[0]) && (ue->dlsch_ra[0]->active == 1)) {
+             //LOG_I(PHY,"[Th-Slave] AbsSubframe %d.%d Pdsch Procedure RA-PDSCH \n",frame_rx%1024,subframe_rx);
+             ue_pdsch_procedures(ue,
+                     proc,
+                     0,
+                     RA_PDSCH,
+                     ue->dlsch_ra[0],
+                     NULL,
+                     1+(ue->frame_parms.symbols_per_tti>>1),
+                     ue->frame_parms.symbols_per_tti-1,
+                     0);
+         }
+
+         //LOG_I(PHY,"Set available llrs slot1 to 1 AbsSubframe %d.%d \n",frame_rx%1024,subframe_rx);
+         proc->llr_slot1_available = 1;
+     }
+#endif
+
+     LOG_I(PHY," [Th-Slave] ==> End slot1 Thread for AbsSubframe %d.%d \n", proc->frame_rx, proc->subframe_rx);
+
+        // End Thread Processing
+
+        if (pthread_mutex_lock(&proc->mutex_fep_slot1) != 0) {
+            LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RXTX\n" );
+            exit_fun("noting to add");
+        }
+        proc->instance_cnt_fep_slot1--;
+        if (pthread_mutex_unlock(&proc->mutex_fep_slot1) != 0) {
+            LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE FEP Slo1\n" );
+            exit_fun("noting to add");
+        }
+    }
+
+
+    // thread finished
+    free(arg);
+    return &UE_thread_rxtx_retval;
+}
 /*!
  * \brief Initialize the UE theads.
  * Creates the UE threads:
  * - UE_thread_rxtx0
  * - UE_thread_rxtx1
  * - UE_thread_synch
+ * - UE_thread_fep_slot0
+ * - UE_thread_fep_slot1
+ * - UE_thread_dlsch_proc_slot0
+ * - UE_thread_dlsch_proc_slot1
  * and the locking between them.
  */
 void init_UE_threads(PHY_VARS_UE *UE) {
     struct rx_tx_thread_data *rtd;
+    struct fep_slot1_thread_data *fep_slot1_data;
 
     pthread_attr_init (&UE->proc.attr_ue);
     pthread_attr_setstacksize(&UE->proc.attr_ue,8192);//5*PTHREAD_STACK_MIN);
@@ -881,9 +1129,12 @@ void init_UE_threads(PHY_VARS_UE *UE) {
         UE->proc.proc_rxtx[i].sub_frame_start=i;
         UE->proc.proc_rxtx[i].sub_frame_step=nb_threads;
         pthread_create(&UE->proc.proc_rxtx[i].pthread_rxtx, NULL, UE_thread_rxn_txnp4, rtd);
+
+        pthread_mutex_init(&UE->proc.proc_rxtx[i].mutex_fep_slot1,NULL);
+        pthread_cond_init(&UE->proc.proc_rxtx[i].cond_fep_slot1,NULL);
+        pthread_create(&UE->proc.proc_rxtx[i].pthread_fep_slot1,NULL,UE_thread_fep_slot1, rtd);
     }
     pthread_create(&UE->proc.pthread_synch,NULL,UE_thread_synch,(void*)UE);
-
 }
 
 

@@ -802,7 +802,8 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                           unsigned char first_symbol_flag,
                           unsigned short nb_rb,
                           uint16_t pbch_pss_sss_adjust,
-                          short **llr16p);
+                          //short **llr16p,
+                          uint32_t llr_offset);
 
 
 /** \brief This function generates log-likelihood ratios (decoder input) for single-stream QPSK received waveforms.
@@ -823,7 +824,7 @@ int32_t dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
                        uint8_t first_symbol_flag,
                        uint16_t nb_rb,
                        uint16_t pbch_pss_sss_adj,
-                       int16_t **llr128p,
+                       //int16_t **llr128p,
                        uint8_t beamforming_mode);
 
 /**
@@ -912,7 +913,8 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
                      uint16_t pbch_pss_sss_adjust,
-                     int16_t **llr_save,
+                     //int16_t **llr_save,
+                     uint32_t llr_offset,
                      uint8_t beamforming_mode);
 
 
@@ -1297,6 +1299,7 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     @param i_mod Modulation order of the interfering stream
 */
 int32_t rx_pdsch(PHY_VARS_UE *phy_vars_ue,
+                 UE_rxtx_proc_t *proc,
                  PDSCH_t type,
                  uint8_t eNB_id,
                  uint8_t eNB_id_i,
@@ -1646,6 +1649,8 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                       void *dci_pdu,
                                       rnti_t rnti,
                                       DCI_format_t dci_format,
+                                      LTE_UE_PDCCH *pdcch_vars,
+                                      LTE_UE_PDSCH *pdsch_vars,
                                       LTE_UE_DLSCH_t **dlsch,
                                       LTE_DL_FRAME_PARMS *frame_parms,
                                       PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,

@@ -140,6 +140,8 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t 
 */
 int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,runmode_t mode,relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn);
 
+void *UE_thread_fep_slot1(void *arg);
+
 /*! \brief Scheduling for UE TX procedures in TDD S-subframes.
   @param phy_vars_ue Pointer to UE variables on which to act
   @param eNB_id Local id of eNB on which to act

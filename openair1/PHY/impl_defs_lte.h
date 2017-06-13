@@ -925,6 +925,10 @@ typedef struct {
   //uint32_t *rb_alloc;
   //uint8_t Qm[2];
   //MIMO_mode_t mimo_mode;
+  // llr offset per ofdm symbol
+  uint32_t llr_offset[14];
+  // llr length per ofdm symbol
+  uint32_t llr_length[14];
 } LTE_UE_PDSCH;
 
 typedef struct {
