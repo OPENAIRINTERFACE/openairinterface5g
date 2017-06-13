@@ -149,6 +149,8 @@ int main(int argc, char **argv)
   double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
   double iqim=0.0;
 
+  extern int use_sic_receiver;
+
   uint8_t extended_prefix_flag=0,transmission_mode=1,n_tx_port=1, n_tx_phy=1, n_rx=1;
   uint16_t Nid_cell=0;
 
@@ -722,15 +724,15 @@ int main(int argc, char **argv)
   sprintf (title, "LTE PHY SCOPE eNB");
   fl_show_form (form_ue->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 
-  /*
-  if (rx_type==rx_IC_single_stream) {
-    openair_daq_vars.use_ia_receiver = 1;
-    fl_set_button(form_ue->button_0,1);
-    fl_set_object_label(form_ue->button_0, "IA Receiver ON");
-    fl_set_object_color(form_ue->button_0, FL_GREEN, FL_GREEN);
+
+  if (transmission_mode==4 && rx_type == rx_SIC_dual_stream ) {
+    use_sic_receiver = 1;
+    fl_set_button(form_ue->button_0, use_sic_receiver);
+    fl_set_object_label(form_ue->button_0, "SIC Receiver ON");
+    fl_set_object_color(form_ue->button_0, FL_RED, FL_RED);
   }
 
-  */
+
   }
 
   if (transmission_mode==5) {
@@ -3894,6 +3896,11 @@ int main(int argc, char **argv)
 #ifdef DEBUG_HARQ
                    printf("[DLSIM 3 ] UE->dlsch[subframe&0x1][0][1]->pmi_alloc %d \n", UE->dlsch[subframe&0x1][0][1]->pmi_alloc);
 #endif
+
+                   if (transmission_mode==4 && use_sic_receiver==1)
+                    rx_type=rx_SIC_dual_stream;
+                  else if (transmission_mode==4 && use_sic_receiver==0)
+                    rx_type=rx_IC_dual_stream;
 
                       switch (transmission_mode) {
                       case 1:
