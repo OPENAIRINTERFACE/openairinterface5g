@@ -990,7 +990,8 @@ int get_nCCE_offset(int *CCE_table,
       search_space_free = 1;
 
       for (l=0; l<L; l++) {
-        if (CCE_table[(((Yk+m)%(nCCE/L))*L) + l] == 1) {
+        int cce = (((Yk+m)%(nCCE/L))*L) + l;
+        if (cce >= nCCE || CCE_table[cce] == 1) {
           search_space_free = 0;
           break;
         }
@@ -1079,13 +1080,8 @@ try_again:
           dci_alloc->rnti,1<<dci_alloc->L,
           nCCE,nCCE_max,DCI_pdu->num_pdcch_symbols);
 
-    if (nCCE + (1<<dci_alloc->L) > nCCE_max) {
-      if (DCI_pdu->num_pdcch_symbols == 3)
-        goto failed;
-      DCI_pdu->num_pdcch_symbols++;
-      nCCE_max = mac_xface->get_nCCE_max(module_idP,CC_idP,DCI_pdu->num_pdcch_symbols,subframeP);
-      goto try_again;
-    }
+    if (nCCE + (1<<dci_alloc->L) > nCCE_max)
+      goto failed;
 
     // number of CCEs left can potentially hold this allocation
     fCCE = get_nCCE_offset(CCE_table,
@@ -1095,9 +1091,11 @@ try_again:
                            dci_alloc->rnti,
                            subframeP);
     if (fCCE == -1) {
+failed:
       if (DCI_pdu->num_pdcch_symbols == 3) {
-        LOG_I(MAC,"subframe %d: Dropping Allocation for RNTI %x\n",
-              subframeP,dci_alloc->rnti);
+        LOG_I(MAC,"subframe %d: Dropping Allocation for RNTI %x (DCI %d/%d)\n",
+              subframeP,dci_alloc->rnti,
+              i, DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci);
         for (j=0;j<=i;j++){
           LOG_I(MAC,"DCI %d/%d (%d,%d) : rnti %x dci format %d, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
                 j,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci,
@@ -1107,7 +1105,7 @@ try_again:
                 nCCE,nCCE_max,DCI_pdu->num_pdcch_symbols);
         }
 	//dump_CCE_table(CCE_table,nCCE_max,subframeP,dci_alloc->rnti,1<<dci_alloc->L);
-        goto failed;
+        goto fatal;
       }
       DCI_pdu->num_pdcch_symbols++;
       nCCE_max = mac_xface->get_nCCE_max(module_idP,CC_idP,DCI_pdu->num_pdcch_symbols,subframeP);
@@ -1125,7 +1123,7 @@ try_again:
 
   return 0;
 
-failed:
+fatal:
   return -1;
 }
 
