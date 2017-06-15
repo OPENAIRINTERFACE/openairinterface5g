@@ -82,6 +82,48 @@ openair0_timestamp trx_get_timestamp(openair0_device *device, bladerf_module mod
  * \returns 0 on success
  */
 int trx_brf_start(openair0_device *device) {
+  brf_state_t *brf = (brf_state_t*)device->priv;
+  int status;
+
+  brf->meta_tx.flags = 0;
+
+  if ((status = bladerf_sync_config(brf->dev,
+          BLADERF_MODULE_TX,
+          BLADERF_FORMAT_SC16_Q11_META,
+          brf->num_buffers,
+          brf->buffer_size,
+          brf->num_transfers,
+          100/*brf->tx_timeout_ms*/)) != 0 ) {
+    fprintf(stderr,"Failed to configure TX sync interface: %s\n", bladerf_strerror(status));
+    abort();
+  }
+  if ((status = bladerf_sync_config(brf->dev,
+          BLADERF_MODULE_RX,
+          BLADERF_FORMAT_SC16_Q11_META,
+          brf->num_buffers,
+          brf->buffer_size,
+          brf->num_transfers,
+          100/*brf->rx_timeout_ms*/)) != 0 ) {
+    fprintf(stderr,"Failed to configure RX sync interface: %s\n", bladerf_strerror(status));
+    abort();
+  }
+  if ((status=bladerf_enable_module(brf->dev, BLADERF_MODULE_TX, true)) != 0) {
+    fprintf(stderr,"Failed to enable TX module: %s\n", bladerf_strerror(status));
+    abort();
+  }
+  if ((status=bladerf_enable_module(brf->dev, BLADERF_MODULE_RX, true)) != 0) {
+    fprintf(stderr,"Failed to enable RX module: %s\n", bladerf_strerror(status));
+    abort();
+  }
+
+  if ((status=bladerf_calibrate_dc(brf->dev, BLADERF_MODULE_TX)) != 0) {
+    fprintf(stderr,"Failed to calibrate TX DC: %s\n", bladerf_strerror(status));
+    abort();
+  }
+  if ((status=bladerf_calibrate_dc(brf->dev, BLADERF_MODULE_RX)) != 0) {
+    fprintf(stderr,"Failed to calibrate RX DC: %s\n", bladerf_strerror(status));
+    abort();
+  }
 
   return 0;
 }
@@ -133,7 +175,7 @@ static int trx_brf_write(openair0_device *device,openair0_timestamp ptimestamp, 
   brf->tx_count++;
   
 
-  return(0);
+  return nsamps; //brf->meta_tx.actual_count;
 }
 
 /*! \brief Receive samples from hardware.
@@ -155,6 +197,7 @@ static int trx_brf_read(openair0_device *device, openair0_timestamp *ptimestamp,
   // BRF has only one rx/tx chain
   int16_t *samples = (int16_t*)buff[0];
   
+  brf->meta_rx.actual_count = 0;
   brf->meta_rx.flags = BLADERF_META_FLAG_RX_NOW;
   status = bladerf_sync_rx(brf->dev, samples, (unsigned int) nsamps, &brf->meta_rx, 2*brf->rx_timeout_ms);
   
@@ -180,7 +223,7 @@ static int trx_brf_read(openair0_device *device, openair0_timestamp *ptimestamp,
   
   *ptimestamp = brf->meta_rx.timestamp;
  
-  return brf->meta_rx.actual_count;
+  return nsamps; //brf->meta_rx.actual_count;
 
 }
 
@@ -188,6 +231,7 @@ static int trx_brf_read(openair0_device *device, openair0_timestamp *ptimestamp,
  * \param device the hardware to use
  */
 void trx_brf_end(openair0_device *device) {
+abort();
 
   int status;
   brf_state_t *brf = (brf_state_t*)device->priv;
@@ -1080,6 +1124,15 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   calibrate_rf(device);
 
   //  memcpy((void*)&device->openair0_cfg,(void*)&openair0_cfg[0],sizeof(openair0_config_t));
+
+  if ((status=bladerf_enable_module(brf->dev, BLADERF_MODULE_TX, false)) != 0) {
+    fprintf(stderr,"Failed to enable TX module: %s\n", bladerf_strerror(status));
+    abort();
+  }
+  if ((status=bladerf_enable_module(brf->dev, BLADERF_MODULE_RX, false)) != 0) {
+    fprintf(stderr,"Failed to enable RX module: %s\n", bladerf_strerror(status));
+    abort();
+  }
 
   return 0;
 }
