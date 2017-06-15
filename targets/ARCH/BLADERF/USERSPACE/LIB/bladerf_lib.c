@@ -213,6 +213,10 @@ static int trx_brf_read(openair0_device *device, openair0_timestamp *ptimestamp,
 	   brf->num_overflows,brf->meta_rx.timestamp,  brf->meta_rx.actual_count, nsamps);
   } 
 
+  if (brf->meta_rx.actual_count != nsamps) {
+    printf("RX bad samples count, wanted %d, got %d\n", nsamps, brf->meta_rx.actual_count);
+  }
+
   //printf("Current RX timestampe  %u\n",  brf->meta_rx.timestamp);
   //printf("[BRF] (buff %p) ts=0x%"PRIu64" %s\n",samples, brf->meta_rx.timestamp,bladerf_strerror(status));
   brf->rx_current_ts=brf->meta_rx.timestamp;
