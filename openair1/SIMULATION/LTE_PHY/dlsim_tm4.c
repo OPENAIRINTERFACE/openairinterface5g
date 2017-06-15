@@ -717,6 +717,11 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
+   if (transmission_mode==4 && rx_type == rx_SIC_dual_stream )
+    use_sic_receiver = 1;
+  else if (transmission_mode==4 && rx_type == rx_IC_dual_stream )
+    use_sic_receiver = 0;
+
 
   if (xforms==1) {
   fl_initialize (&argc, argv, NULL, 0, 0);
@@ -725,15 +730,15 @@ int main(int argc, char **argv)
   fl_show_form (form_ue->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 
 
-  if (transmission_mode==4 && rx_type == rx_SIC_dual_stream ) {
+  if (transmission_mode==4 && use_sic_receiver == 1) {
     use_sic_receiver = 1;
     fl_set_button(form_ue->button_0, use_sic_receiver);
     fl_set_object_label(form_ue->button_0, "SIC Receiver ON");
-    fl_set_object_color(form_ue->button_0, FL_RED, FL_RED);
-  }else if (transmission_mode==4 && rx_type == rx_IC_dual_stream ){
+    fl_set_object_color(form_ue->button_0, FL_GREEN, FL_GREEN);
+  }else if (transmission_mode==4 && use_sic_receiver == 0 ){
     use_sic_receiver = 0;
     fl_set_button(form_ue->button_0, use_sic_receiver);
-    fl_set_object_label(form_ue->button_0, "SIC Receiver ON");
+    fl_set_object_label(form_ue->button_0, "SIC Receiver OFF");
     fl_set_object_color(form_ue->button_0, FL_RED, FL_RED);
   }
 
@@ -3902,10 +3907,14 @@ int main(int argc, char **argv)
                    printf("[DLSIM 3 ] UE->dlsch[subframe&0x1][0][1]->pmi_alloc %d \n", UE->dlsch[subframe&0x1][0][1]->pmi_alloc);
 #endif
 
-                   if (transmission_mode==4 && use_sic_receiver==1)
+                   if (transmission_mode==4 && use_sic_receiver==1){
                     rx_type=rx_SIC_dual_stream;
-                  else if (transmission_mode==4 && use_sic_receiver==0)
+                    //printf("I am using SIC!\n");
+                  }
+                  else if (transmission_mode==4 && use_sic_receiver==0){
                     rx_type=rx_IC_dual_stream;
+                  //printf("I am using PIA!\n");
+                }
 
                       switch (transmission_mode) {
                       case 1:
