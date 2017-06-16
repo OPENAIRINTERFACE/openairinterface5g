@@ -555,7 +555,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
                        (sf_type==SF_UL? "SF_UL" :
                         (sf_type==SF_S ? "SF_S"  : "UNKNOWN_SF_TYPE"))));
             }
-            phy_procedures_UE_RX( UE, proc, 0, 0, UE->mode, no_relay, NULL );
+            phy_procedures_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
         }
 
 #if UE_TIMING_TRACE

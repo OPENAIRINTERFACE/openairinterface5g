@@ -37,6 +37,26 @@ unsigned char log2_approx(unsigned int x)
   return(l2);
 }
 
+unsigned char factor2(unsigned int x)
+{
+
+  int i;
+  unsigned char l2;
+
+  l2=0;
+
+  for (i=0; i<31; i++)
+    if ((x&(1<<i)) != 0)
+      break;
+
+  l2 = i;
+
+  //printf("factor2(%d) = %d\n",x,l2);
+  return(l2);
+}
+
+
+
 unsigned char log2_approx64(unsigned long long int x)
 {
 
