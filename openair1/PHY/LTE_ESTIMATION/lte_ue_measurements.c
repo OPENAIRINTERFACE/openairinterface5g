@@ -32,8 +32,8 @@
 #define k1 ((long long int) 1000)
 #define k2 ((long long int) (1024-k1))
 
-#define DEBUG_MEAS_RRC
-#define DEBUG_MEAS_UE
+//#define DEBUG_MEAS_RRC
+//#define DEBUG_MEAS_UE
 //#define DEBUG_RANK_EST
 
 int16_t cond_num_threshold = 0;

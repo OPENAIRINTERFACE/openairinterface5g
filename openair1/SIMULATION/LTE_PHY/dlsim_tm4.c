@@ -625,10 +625,10 @@ int main(int argc, char **argv)
         rank_adapt=1;
         break;
       case 'V':
-        cond_num_threshold = atof(optarg);
+        cond_num_threshold = atoi(optarg);
         break;
       case 'J':
-        dlsch_demod_shift = atof(optarg);
+        dlsch_demod_shift = atoi(optarg);
         break;
       case 'K':
       tpmi_retr = atoi(optarg);
@@ -671,6 +671,16 @@ int main(int argc, char **argv)
 
     }
   }
+
+  if (dlsch_demod_shift==0) {
+    if ((transmission_mode==3 || transmission_mode==4) && (rx_type>rx_standard)) {
+      if (mcs1<17)
+        dlsch_demod_shift=0;
+      else
+       dlsch_demod_shift=-2;
+    }
+  }
+
 
   logInit();
   // enable these lines if you need debug info
@@ -719,8 +729,9 @@ int main(int argc, char **argv)
 
    if (transmission_mode==4 && rx_type == rx_SIC_dual_stream )
     use_sic_receiver = 1;
-  else if (transmission_mode==4 && rx_type == rx_IC_dual_stream )
+  else if (transmission_mode==4 && rx_type < rx_SIC_dual_stream )
     use_sic_receiver = 0;
+
 
 
   if (xforms==1) {
@@ -3908,12 +3919,12 @@ int main(int argc, char **argv)
 #endif
 
                    if (transmission_mode==4 && use_sic_receiver==1){
-                    rx_type=rx_SIC_dual_stream;
-                    //printf("I am using SIC!\n");
+                    if (rx_type>rx_IC_single_stream)
+                      rx_type=rx_SIC_dual_stream;
                   }
                   else if (transmission_mode==4 && use_sic_receiver==0){
-                    rx_type=rx_IC_dual_stream;
-                  //printf("I am using PIA!\n");
+                    if (rx_type>rx_IC_single_stream)
+                      rx_type=rx_IC_dual_stream;
                 }
 
                       switch (transmission_mode) {

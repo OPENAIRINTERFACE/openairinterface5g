@@ -48,6 +48,7 @@
  * default value: 0
  */
 int16_t dlsch_demod_shift = 0;
+int16_t interf_unaw_shift = 13;
 
 //#define DEBUG_HARQ
 
@@ -418,19 +419,20 @@ int rx_pdsch(PHY_VARS_UE *ue,
                                  nb_rb,
                                  dlsch0_harq->mimo_mode);
 
-      LOG_D(PHY,"Channel Level TM34  avg_0 %d, avg_1 %d, rx_type %d, rx_standard %d, interf_unaw_shift %d \n", avg_0[0],
+      LOG_D(PHY,"Channel Level TM34  avg_0 %d, avg_1 %d, rx_type %d, rx_standard %d, dlsch_demod_shift %d \n", avg_0[0],
               avg_1[0], rx_type, rx_standard, dlsch_demod_shift);
         if (rx_type>rx_standard) {
-          avg_0[0] = (log2_approx(avg_0[0])/2) -13 + dlsch_demod_shift;// + 2 ;//+ 4;
-          avg_1[0] = (log2_approx(avg_1[0])/2) -13 + dlsch_demod_shift;// + 2 ;//+ 4;
+          avg_0[0] = (log2_approx(avg_0[0])/2) + dlsch_demod_shift;// + 2 ;//+ 4;
+          avg_1[0] = (log2_approx(avg_1[0])/2) + dlsch_demod_shift;// + 2 ;//+ 4;
           pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg_0[0],0);
           pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg_1[0],0);
          // printf("dlsch_demod_shift  %d\n", dlsch_demod_shift);
          }
           else {
-          avg_0[0] = (log2_approx(avg_0[0])/2) - 13 + dlsch_demod_shift;
-          avg_1[0] = (log2_approx(avg_1[0])/2) - 13 + dlsch_demod_shift;
+          avg_0[0] = (log2_approx(avg_0[0])/2) - 13 + interf_unaw_shift;
+          avg_1[0] = (log2_approx(avg_1[0])/2) - 13 + interf_unaw_shift;
           pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg_0[0],0);
+          pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg_1[0],0);
         }
       }
       else if (dlsch0_harq->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {// single-layer precoding (TM5, TM6)

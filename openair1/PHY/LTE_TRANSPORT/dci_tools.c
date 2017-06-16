@@ -4997,19 +4997,19 @@ int check_dci_format2_2a_coherency(DCI_format_t dci_format,
     long long RIV_max = 0;
 
 #ifdef DEBUG_DCI
-    printf("extarcted dci - dci_format %d \n", dci_format);
-    printf("extarcted dci - rah        %d \n", rah);
-    printf("extarcted dci - mcs1       %d \n", mcs1);
-    printf("extarcted dci - mcs2       %d \n", mcs2);
-    printf("extarcted dci - rv1        %d \n", rv1);
-    printf("extarcted dci - rv2        %d \n", rv2);
-    //printf("extarcted dci - ndi1       %d \n", ndi1);
-   // printf("extarcted dci - ndi2       %d \n", ndi2);
-    printf("extarcted dci - rballoc    %x \n", rballoc);
-    printf("extarcted dci - harq pif   %d \n", harq_pid);
-    printf("extarcted dci - round0     %d \n", pdlsch0_harq->round);
-    printf("extarcted dci - round1     %d \n", pdlsch1_harq->round);
-
+    LOG_I(PHY, "extarcted dci - dci_format %d \n", dci_format);
+    LOG_I(PHY, "extarcted dci - rnti       %d \n", rnti);
+    LOG_I(PHY, "extarcted dci - rah        %d \n", rah);
+    LOG_I(PHY, "extarcted dci - mcs1       %d \n", mcs1);
+    LOG_I(PHY, "extarcted dci - mcs2       %d \n", mcs2);
+    LOG_I(PHY, "extarcted dci - rv1        %d \n", rv1);
+    LOG_I(PHY, "extarcted dci - rv2        %d \n", rv2);
+    //LOG_I(PHY, "extarcted dci - ndi1       %d \n", ndi1);
+    //LOG_I(PHY, "extarcted dci - ndi2       %d \n", ndi2);
+    LOG_I(PHY, "extarcted dci - rballoc    %x \n", rballoc);
+    LOG_I(PHY, "extarcted dci - harq pid   %d \n", harq_pid);
+    LOG_I(PHY, "extarcted dci - round0     %d \n", pdlsch0_harq->round);
+    LOG_I(PHY, "extarcted dci - round1     %d \n", pdlsch1_harq->round);
 #endif
 
     // I- check dci content minimum coherency
@@ -5528,6 +5528,7 @@ switch (tpmi) {
               dlsch_harq->pmi_alloc   = pmi_extend(frame_parms,3, 0);
             break;
             case 5:
+              dlsch_harq->mimo_mode   = PUSCH_PRECODING0;
               dlsch_harq->pmi_alloc   = pmi_alloc;//pmi_convert(frame_parms,dlsch0->pmi_alloc,0);
             break;
             case 6:
