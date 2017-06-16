@@ -5938,18 +5938,8 @@ int generate_ue_dlsch_params_from_dci(int frame,
 {
 
     uint8_t harq_pid=0;
-  uint32_t rballoc=0,RIV_max=0;
   uint8_t frame_type=frame_parms->frame_type;
-  uint8_t vrb_type=0;
-  uint8_t mcs=0,mcs1=0,mcs2=0;
-  uint8_t rv=0,rv1=0,rv2=0;
-  uint8_t TB0_active=0,TB1_active=0;
-  uint8_t ndi=0,ndi1=0,ndi2=0;
-  uint8_t rah=0;
-  uint8_t TPC=0;
-  uint8_t NPRB=0,tbswap=0,tpmi=0;
-  uint8_t Ngap;
-  uint8_t dai=0;
+  uint8_t tpmi=0;
   LTE_UE_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
   LTE_DL_UE_HARQ_t *dlsch0_harq=NULL,*dlsch1_harq=NULL;
 
