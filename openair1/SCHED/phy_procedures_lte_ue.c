@@ -2209,7 +2209,8 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
                   &len);
 
 
-  LOG_D(PHY,"PUCCH feedback AbsSubframe %d.%d SR %d NbCW %d (%d %d) AckNack %d.%d CQI %d RI %d format %d pucch_resource %d pucch_payload %d %d \n", frame_tx%1024, subframe_tx, SR_payload, nb_cw, ack_status_cw0, ack_status_cw1, pucch_ack_payload[0], pucch_ack_payload[1], cqi_status, ri_status, format, pucch_resource,pucch_payload[0],pucch_payload[1]);
+  LOG_D(PHY,"PUCCH feedback AbsSubframe %d.%d SR %d NbCW %d (%d %d) AckNack %d.%d CQI %d RI %d format %d pucch_resource %d pucch_payload %d %d \n",
+	frame_tx%1024, subframe_tx, SR_payload, nb_cw, ack_status_cw0, ack_status_cw1, pucch_ack_payload[0], pucch_ack_payload[1], cqi_status, ri_status, format, pucch_resource,pucch_payload[0],pucch_payload[1]);
 
   // Part - IV
   // Generate PUCCH signal
@@ -3151,7 +3152,7 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
         (dci_alloc_rx[i].rnti == ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->crnti) &&
         (dci_alloc_rx[i].format != format0)) {
 
-      LOG_I(PHY,"[UE  %d][DCI][PDSCH %x] AbsSubframe %d.%d: format %d, num_pdcch_symbols %d, nCCE %d, total CCEs %d\n",
+      LOG_D(PHY,"[UE  %d][DCI][PDSCH %x] AbsSubframe %d.%d: format %d, num_pdcch_symbols %d, nCCE %d, total CCEs %d\n",
 	    ue->Mod_id,dci_alloc_rx[i].rnti,
 	    frame_rx%1024,subframe_rx,
 	    dci_alloc_rx[i].format,
@@ -3159,7 +3160,7 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 	    ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->nCCE[subframe_rx],
 	    get_nCCE(3,&ue->frame_parms,get_mi(&ue->frame_parms,0)));
 
-      dump_dci(&ue->frame_parms, &dci_alloc_rx[i]);
+      //dump_dci(&ue->frame_parms, &dci_alloc_rx[i]);
 
       if ((ue->UE_mode[eNB_id] > PRACH) &&
           (generate_ue_dlsch_params_from_dci(frame_rx,
