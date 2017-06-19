@@ -161,7 +161,7 @@ int lte_est_freq_offset(int **dl_ch_estimates,
                         LTE_DL_FRAME_PARMS *frame_parms,
                         int l,
                         int* freq_offset,
-			int reset);
+            int reset);
 
 int lte_mbsfn_est_freq_offset(int **dl_ch_estimates,
                               LTE_DL_FRAME_PARMS *frame_parms,
@@ -180,7 +180,7 @@ This function computes the time domain channel response, finds the peak and adju
 void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
                       PHY_VARS_UE *phy_vars_ue,
                       module_id_t eNb_id,
-					  uint8_t subframe,
+                      uint8_t subframe,
                       unsigned char clear,
                       short coef);
 
@@ -189,7 +189,8 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
                          unsigned int subframe_offset,
                          unsigned char N0_symbol,
                          unsigned char abstraction_flag,
-						 uint8_t subframe);
+                         unsigned char rank_adaptation,
+                         uint8_t subframe);
 
 //! \brief This function performance RSRP/RSCP measurements
 void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
@@ -214,11 +215,11 @@ int8_t set_RSRQ_filtered(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index,floa
 
 //! Automatic gain control
 void phy_adjust_gain (PHY_VARS_UE *phy_vars_ue,
-		      uint32_t rx_power_fil_dB,
+              uint32_t rx_power_fil_dB,
                       unsigned char eNB_id);
 
 int lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
-			      eNB_rxtx_proc_t *proc,
+                  eNB_rxtx_proc_t *proc,
                               module_id_t eNB_id,
                               module_id_t UE_id,
                               uint8_t l,
@@ -246,7 +247,7 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 int lte_est_timing_advance_pusch(PHY_VARS_eNB* phy_vars_eNB,module_id_t UE_id);
 
 void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNB,
-			     int subframe,
+                 int subframe,
                              module_id_t eNB_id,
                              unsigned char clear);
 
