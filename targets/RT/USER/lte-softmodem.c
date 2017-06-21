@@ -222,7 +222,7 @@ double cpuf;
 char uecap_xer[1024],uecap_xer_in=0;
 
 int oaisim_flag=0;
-threads_t threads= {-1,-1,-1};
+threads_t threads= {-1,-1,-1,-1};
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution
@@ -637,8 +637,9 @@ static void get_options (int argc, char **argv) {
         LONG_OPTION_WAIT_FOR_SYNC,
         LONG_OPTION_SINGLE_THREAD_DISABLE,
         LONG_OPTION_THREADIQ,
-        LONG_OPTION_THREADODDSUBFRAME,
-        LONG_OPTION_THREADEVENSUBFRAME,
+        LONG_OPTION_THREADONESUBFRAME,
+        LONG_OPTION_THREADTWOSUBFRAME,
+        LONG_OPTION_THREADTHREESUBFRAME,
         LONG_OPTION_DEMOD_SHIFT,
 #if T_TRACER
         LONG_OPTION_T_PORT,
@@ -673,8 +674,9 @@ static void get_options (int argc, char **argv) {
         {"wait-for-sync", no_argument, NULL, LONG_OPTION_WAIT_FOR_SYNC},
         {"single-thread-disable", no_argument, NULL, LONG_OPTION_SINGLE_THREAD_DISABLE},
         {"threadIQ",  required_argument, NULL, LONG_OPTION_THREADIQ},
-        {"threadOddSubframe",  required_argument, NULL, LONG_OPTION_THREADODDSUBFRAME},
-        {"threadEvenSubframe",  required_argument, NULL, LONG_OPTION_THREADEVENSUBFRAME},
+        {"threadOneSubframe",  required_argument, NULL, LONG_OPTION_THREADONESUBFRAME},
+        {"threadTwoSubframe",  required_argument, NULL, LONG_OPTION_THREADTWOSUBFRAME},
+        {"threadThreeSubframe",  required_argument, NULL, LONG_OPTION_THREADTHREESUBFRAME},
         {"dlsch-demod-shift", required_argument,  NULL, LONG_OPTION_DEMOD_SHIFT},
 #if T_TRACER
         {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
@@ -800,12 +802,15 @@ static void get_options (int argc, char **argv) {
     case LONG_OPTION_THREADIQ:
        threads.iq=atoi(optarg);
        break;
-    case LONG_OPTION_THREADODDSUBFRAME:
-       threads.odd=atoi(optarg);
+    case LONG_OPTION_THREADONESUBFRAME:
+       threads.one=atoi(optarg);
        break;
-    case LONG_OPTION_THREADEVENSUBFRAME:
-       threads.even=atoi(optarg);
+    case LONG_OPTION_THREADTWOSUBFRAME:
+       threads.two=atoi(optarg);
        break;
+    case LONG_OPTION_THREADTHREESUBFRAME:
+       threads.three=atoi(optarg);
+    break;
     case LONG_OPTION_DEMOD_SHIFT: {
         extern int16_t dlsch_demod_shift;
         dlsch_demod_shift = atof(optarg);

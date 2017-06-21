@@ -262,7 +262,7 @@ uint32_t ulsch_encoding(uint8_t *a,
   // fill CQI/PMI information
   if (ulsch->O>0) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ULSCH_ENCODING_FILL_CQI, VCD_FUNCTION_IN);
-    rnti = ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->crnti;
+    rnti = ue->pdcch_vars[subframe_rx%RX_NB_TH][eNB_id]->crnti;
     fill_CQI(ulsch,meas,0,harq_pid,ue->frame_parms.N_RB_DL,rnti, tmode,ue->sinr_eff);
 
     LOG_D(PHY,"ULSCH Encoding rnti %x \n", rnti);
@@ -971,7 +971,7 @@ int ulsch_encoding_emul(uint8_t *ulsch_buffer,
   LTE_UE_DLSCH_t **dlsch = ue->dlsch[0][eNB_id];
   PHY_MEASUREMENTS *meas = &ue->measurements;
   uint8_t tmode = ue->transmission_mode[eNB_id];
-  uint16_t rnti=ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->crnti;
+  uint16_t rnti=ue->pdcch_vars[subframe_rx%RX_NB_TH][eNB_id]->crnti;
   LOG_D(PHY,"EMUL UE ulsch_encoding for eNB %d,mod_id %d, harq_pid %d rnti %x, ACK(%d,%d) \n",
         eNB_id,ue->Mod_id, harq_pid, rnti,ulsch->o_ACK[0],ulsch->o_ACK[1]);
 
@@ -1005,7 +1005,7 @@ int ulsch_encoding_emul(uint8_t *ulsch_buffer,
   //UE_transport_info_TB_index[ue->Mod_id]+=ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS>>3;
   // navid: currently more than one eNB is not supported in the code
   UE_transport_info[ue->Mod_id][ue->CC_id].num_eNB = 1;
-  UE_transport_info[ue->Mod_id][ue->CC_id].rnti[0] = ue->pdcch_vars[subframe_rx & 0x1][0]->crnti;
+  UE_transport_info[ue->Mod_id][ue->CC_id].rnti[0] = ue->pdcch_vars[subframe_rx%RX_NB_TH][0]->crnti;
   UE_transport_info[ue->Mod_id][ue->CC_id].eNB_id[0]  = eNB_id;
   UE_transport_info[ue->Mod_id][ue->CC_id].harq_pid[0] = harq_pid;
   UE_transport_info[ue->Mod_id][ue->CC_id].tbs[0]     = ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS>>3 ;
