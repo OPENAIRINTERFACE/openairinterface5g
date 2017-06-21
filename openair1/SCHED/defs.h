@@ -43,6 +43,7 @@ enum THREAD_INDEX { OPENAIR_THREAD_INDEX = 0,
 
 #define OPENAIR_THREAD_STACK_SIZE     PTHREAD_STACK_MIN //4096 //RTL_PTHREAD_STACK_MIN*6
 //#define DLC_THREAD_STACK_SIZE        4096 //DLC stack size
+//#define UE_SLOT_PARALLELISATION
 
 enum openair_SCHED_STATUS {
   openair_SCHED_STOPPED=1,
@@ -140,7 +141,9 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t 
 */
 int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,runmode_t mode,relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn);
 
+#ifdef UE_SLOT_PARALLELISATION
 void *UE_thread_fep_slot1(void *arg);
+#endif
 
 /*! \brief Scheduling for UE TX procedures in TDD S-subframes.
   @param phy_vars_ue Pointer to UE variables on which to act

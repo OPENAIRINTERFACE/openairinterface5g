@@ -843,6 +843,7 @@ void *UE_thread(void *arg) {
     return NULL;
 }
 
+#ifdef UE_SLOT_PARALLELISATION
 void *UE_thread_fep_slot1(void *arg) {
 
     static __thread int UE_thread_rxtx_retval;
@@ -1095,6 +1096,8 @@ void *UE_thread_fep_slot1(void *arg) {
     free(arg);
     return &UE_thread_rxtx_retval;
 }
+#endif
+
 /*!
  * \brief Initialize the UE theads.
  * Creates the UE threads:
@@ -1109,7 +1112,9 @@ void *UE_thread_fep_slot1(void *arg) {
  */
 void init_UE_threads(PHY_VARS_UE *UE) {
     struct rx_tx_thread_data *rtd;
+#ifdef UE_SLOT_PARALLELISATION
     struct fep_slot1_thread_data *fep_slot1_data;
+#endif
 
     pthread_attr_init (&UE->proc.attr_ue);
     pthread_attr_setstacksize(&UE->proc.attr_ue,8192);//5*PTHREAD_STACK_MIN);
@@ -1130,9 +1135,12 @@ void init_UE_threads(PHY_VARS_UE *UE) {
         UE->proc.proc_rxtx[i].sub_frame_step=nb_threads;
         pthread_create(&UE->proc.proc_rxtx[i].pthread_rxtx, NULL, UE_thread_rxn_txnp4, rtd);
 
+#ifdef UE_SLOT_PARALLELISATION
         pthread_mutex_init(&UE->proc.proc_rxtx[i].mutex_fep_slot1,NULL);
         pthread_cond_init(&UE->proc.proc_rxtx[i].cond_fep_slot1,NULL);
         pthread_create(&UE->proc.proc_rxtx[i].pthread_fep_slot1,NULL,UE_thread_fep_slot1, rtd);
+#endif
+
     }
     pthread_create(&UE->proc.pthread_synch,NULL,UE_thread_synch,(void*)UE);
 }

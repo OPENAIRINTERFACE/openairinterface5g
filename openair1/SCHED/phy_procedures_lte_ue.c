@@ -73,6 +73,7 @@ fifo_dump_emos_UE emos_dump_UE;
 
 #define NS_PER_SLOT 500000
 
+
 extern int oai_exit;
 
 extern double cpuf;
@@ -4146,7 +4147,7 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
 
 }
 
-#if 0
+#ifdef UE_SLOT_PARALLELISATION
 /*!
  * \brief This is the UE synchronize thread.
  * It performs band scanning and synchonization.
