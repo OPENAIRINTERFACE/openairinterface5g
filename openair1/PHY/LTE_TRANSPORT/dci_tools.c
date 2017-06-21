@@ -4773,15 +4773,15 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
     uint8_t  mcs1      = pdci_info_extarcted->mcs1;
     uint8_t  TPC       = pdci_info_extarcted->TPC;
     uint8_t  rah       = pdci_info_extarcted->rah;
-#ifdef DEBUG_DCI
+//#ifdef DEBUG_DCI
     uint8_t  rv1       = pdci_info_extarcted->rv1;
     uint8_t  ndi1      = pdci_info_extarcted->ndi1;
-#endif
+//#endif
 
     uint8_t  NPRB    = 0;
     long long int RIV_max = 0;
 
-#ifdef DEBUG_DCI
+//#ifdef DEBUG_DCI
     LOG_I(PHY,"[DCI-FORMAT-1-1A] AbsSubframe %d.%d dci_format %d\n", frame, subframe, dci_format);
     LOG_I(PHY,"[DCI-FORMAT-1-1A] rnti       %x\n",  rnti);
     LOG_I(PHY,"[DCI-FORMAT-1-1A] harq_pid   %d\n", harq_pid);
@@ -4791,7 +4791,7 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
     LOG_I(PHY,"[DCI-FORMAT-1-1A] rv1        %d\n", rv1);
     LOG_I(PHY,"[DCI-FORMAT-1-1A] ndi1       %d\n", ndi1);
     LOG_I(PHY,"[DCI-FORMAT-1-1A] TPC        %d\n", TPC);
-#endif
+//#endif
 
     // I- check dci content minimum coherency
     if( ((rnti==si_rnti) || (rnti==p_rnti) || (rnti==ra_rnti)) && harq_pid > 0)
@@ -5185,15 +5185,15 @@ void compute_llr_offset(LTE_DL_FRAME_PARMS *frame_parms,
         if(symbol < (frame_parms->symbols_per_tti-1))
           pdsch_vars->llr_offset[symbol+1] = pdsch_vars->llr_offset[symbol] + llr_offset;
 
-        //LOG_I(PHY,"Granted Re subframe %d / symbol %d => %d (%d RBs)\n", subframe, symbol_mod, granted_re,dlsch0_harq->nb_rb);
-        //LOG_I(PHY,"Pbch/PSS/SSS Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, pbch_pss_sss_re);
-        //LOG_I(PHY,"CRS Re Per PRB subframe %d / symbol %d => %d \n", subframe, symbol_mod, crs_re);
-        //LOG_I(PHY,"Data Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, data_re);
+        LOG_I(PHY,"Granted Re subframe %d / symbol %d => %d (%d RBs)\n", subframe, symbol_mod, granted_re,dlsch0_harq->nb_rb);
+        LOG_I(PHY,"Pbch/PSS/SSS Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, pbch_pss_sss_re);
+        LOG_I(PHY,"CRS Re Per PRB subframe %d / symbol %d => %d \n", subframe, symbol_mod, crs_re);
+        LOG_I(PHY,"Data Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, data_re);
 
 
 
-        //LOG_I(PHY,"Data Re subframe %d-symbol %d => llr length %d, llr offset %d \n", subframe, symbol,
-        //      pdsch_vars->llr_length[symbol], pdsch_vars->llr_offset[symbol]);
+        LOG_I(PHY,"Data Re subframe %d-symbol %d => llr length %d, llr offset %d \n", subframe, symbol,
+              pdsch_vars->llr_length[symbol], pdsch_vars->llr_offset[symbol]);
     }
 }
 void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,
@@ -5267,6 +5267,7 @@ void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,
     else // format1
     {
         NPRB = conv_nprb(rah, rballoc, N_RB_DL);
+        nb_rb_alloc = NPRB;
     }
 
     pdlsch0->current_harq_pid = harq_pid;
