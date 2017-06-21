@@ -4933,7 +4933,7 @@ int check_dci_format1c_coherency(uint8_t N_RB_DL,
 
     // I- check dci content minimum coherency
 
-    if((rnti!=si_rnti) || (rnti!=p_rnti) || (rnti!=ra_rnti))
+    if((rnti!=si_rnti) && (rnti!=p_rnti) && (rnti!=ra_rnti))
       return(0);
 
     switch (N_RB_DL) {
