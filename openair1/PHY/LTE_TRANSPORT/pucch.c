@@ -2530,7 +2530,7 @@ int32_t rx_pucch_emul(PHY_VARS_eNB *eNB,
   rnti = eNB->ulsch[UE_index]->rnti;
 
   for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
-    if (rnti == PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[subframe & 0x1][0]->crnti)
+    if (rnti == PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[subframe%RX_NB_TH][0]->crnti)
       break;
   }
 

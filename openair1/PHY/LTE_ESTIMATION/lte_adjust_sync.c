@@ -58,8 +58,8 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
     temp = 0;
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-      Re = ((int16_t*)ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates_time[eNB_id][aa])[(i<<2)];
-      Im = ((int16_t*)ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates_time[eNB_id][aa])[1+(i<<2)];
+      Re = ((int16_t*)ue->common_vars.common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates_time[eNB_id][aa])[(i<<2)];
+      Im = ((int16_t*)ue->common_vars.common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates_time[eNB_id][aa])[1+(i<<2)];
       temp += (Re*Re/2) + (Im*Im/2);
     }
 

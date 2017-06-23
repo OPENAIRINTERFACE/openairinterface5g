@@ -3,8 +3,9 @@
 
 typedef struct threads_s {
     int iq;
-    int odd;
-    int even;
+    int one;
+    int two;
+    int three;
 } threads_t;
 
 #endif /* _THREADS_T_H_ */
