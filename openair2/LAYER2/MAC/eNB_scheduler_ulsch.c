@@ -885,7 +885,7 @@ abort();
               rb_table_index=UE_template->pre_allocated_rb_table_index_ul;
             } else {
 	      mcs=10;//cmin (10, openair_daq_vars.target_ue_ul_mcs);
-              rb_table_index=5; // for PHR
+              rb_table_index=13; // for PHR
 	    }
 
             UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2=mcs;

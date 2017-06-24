@@ -59,28 +59,28 @@
 
 #include "SIMULATION/TOOLS/defs.h" // for taus
 
-void flexran_apply_dl_scheduling_decisions(mid_t mod_id,
+void flexran_apply_scheduling_decisions(mid_t mod_id,
 					   uint32_t frame,
 					   uint32_t subframe,
 					   int *mbsfn_flag,
 					   Protocol__FlexranMessage *dl_scheduling_info) {
 
-  Protocol__FlexDlMacConfig *mac_config = dl_scheduling_info->dl_mac_config_msg;
+  Protocol__FlexDlMacConfig *mac_dl_config = dl_scheduling_info->dl_mac_config_msg;
 
   // Check if there is anything to schedule for random access
-  if (mac_config->n_dl_rar > 0) {
+  if (mac_dl_config->n_dl_rar > 0) {
     /*TODO: call the random access data plane function*/
   }
 
   // Check if there is anything to schedule for paging/broadcast
-  if (mac_config->n_dl_broadcast > 0) {
+  if (mac_dl_config->n_dl_broadcast > 0) {
     /*TODO: call the broadcast/paging data plane function*/
   }
 
   // Check if there is anything to schedule for the UEs
-  if (mac_config->n_dl_ue_data > 0) {
+  if (mac_dl_config->n_dl_ue_data > 0) {
     flexran_apply_ue_spec_scheduling_decisions(mod_id, frame, subframe, mbsfn_flag,
-					       mac_config->n_dl_ue_data, mac_config->dl_ue_data);
+					       mac_dl_config->n_dl_ue_data, mac_dl_config->dl_ue_data);
   }
   
 }

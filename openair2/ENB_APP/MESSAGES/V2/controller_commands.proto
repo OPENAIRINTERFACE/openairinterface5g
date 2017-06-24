@@ -3,7 +3,7 @@ package protocol;
 import "mac_primitives.proto";
 
 //
-// Body of UE DL MAC scheduling configuration info
+// Body of UE DL/UL MAC scheduling configuration info
 //
 
 message flex_dl_data {
@@ -13,6 +13,12 @@ message flex_dl_data {
 	repeated flex_rlc_pdu rlc_pdu = 4; // list of parameters for the creation of RLC PDUs. One for each lcid
 	optional uint32 serv_cell_index = 5;
 	optional uint32 act_deact_ce = 6; //Hex content of MAC CE for Activation/Deactivation in CA
+}
+
+
+message flex_ul_data {
+	optional uint32 rnti = 1;
+  	optional flex_ul_dci ul_dci = 2;
 }
 
 //

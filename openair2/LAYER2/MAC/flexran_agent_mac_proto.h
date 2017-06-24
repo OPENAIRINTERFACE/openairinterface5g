@@ -39,19 +39,25 @@
 /*
  * slice specific scheduler 
  */
-typedef void (*slice_scheduler)(module_id_t mod_id, 
+typedef void (*slice_scheduler_dl)(module_id_t mod_id, 
 				int slice_id, 
 				uint32_t frame, 
 				uint32_t subframe,
 				int *mbsfn_flag,
 				Protocol__FlexranMessage **dl_info);
 
+typedef void (*slice_scheduler_ul)(module_id_t mod_id, 
+				frame_t frame, 
+				unsigned char cooperation_flag,
+				uint32_t      subframe,
+				unsigned char sched_subframe,
+				Protocol__FlexranMessage **ul_info);
 
 
 /*
  * top level flexran scheduler used by the eNB scheduler
  */
-void flexran_schedule_ue_spec_default(mid_t mod_id, 
+void flexran_schedule_ue_dl_spec_default(mid_t mod_id, 
 				      uint32_t frame, 
 				      uint32_t subframe,
 				      int *mbsfn_flag, 
@@ -102,12 +108,21 @@ flexran_schedule_ue_spec_be(mid_t   mod_id,
  * common flexran scheduler function
  */
 void
-flexran_schedule_ue_spec_common(mid_t   mod_id,
+flexran_schedule_ue_dl_spec_common(mid_t   mod_id,
 				int       slice_id, 
 				uint32_t      frame,
 				uint32_t      subframe,
 				int           *mbsfn_flag,
 				Protocol__FlexranMessage **dl_info);
+
+void
+flexran_schedule_ue_ul_spec_default(mid_t   mod_id,
+				 uint32_t      frame,
+				 uint32_t      cooperation_flag,
+				 int           subframe,
+				 unsigned char sched_subframe,
+				 Protocol__FlexranMessage **ul_info);
+
 
 uint16_t flexran_nb_rbs_allowed_slice(float rb_percentage, 
 				      int total_rbs);
@@ -116,6 +131,8 @@ int flexran_slice_member(int UE_id,
 			 int slice_id);
 
 int flexran_slice_maxmcs(int slice_id) ;
+
+/* Downlink Primitivies */
 
 void _store_dlsch_buffer (module_id_t Mod_id,
 			  int         slice_id,
@@ -130,6 +147,21 @@ void _assign_rbs_required (module_id_t Mod_id,
 			   uint16_t    nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
 			   uint16_t    nb_rbs_allowed_slice[MAX_NUM_CCs][MAX_NUM_SLICES], 
 			   int         min_rb_unit[MAX_NUM_CCs]);
+
+
+/* Uplink Primitivies */
+
+// void _sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP);
+
+void _assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP, sub_frame_t subframeP, uint16_t *first_rb);
+
+
+void _ulsch_scheduler_pre_processor(module_id_t module_idP,
+                                   int slice_id,                                   
+                                   int frameP,
+                                   sub_frame_t subframeP,
+                                   uint16_t *first_rb);
+
 
 void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 				     int           slice_id,
@@ -165,13 +197,21 @@ void _dlsch_scheduler_pre_processor_allocate (module_id_t   Mod_id,
 /*
  * Default scheduler used by the eNB agent
  */
-void flexran_schedule_ue_spec_default(mid_t mod_id, uint32_t frame, uint32_t subframe,
+void flexran_schedule_ue_dl_spec_default(mid_t mod_id, uint32_t frame, uint32_t subframe,
 				      int *mbsfn_flag, Protocol__FlexranMessage **dl_info);
+
+/*
+  Uplink scheduler used by MAC agent
+*/
+
+void flexran_agent_schedule_ulsch_ue_spec(module_id_t module_idP,  frame_t frameP,  unsigned char cooperation_flag,
+		    sub_frame_t subframeP, 
+		    unsigned char sched_subframe, Protocol__FlexranMessage **ul_info);
 
 /*
  * Data plane function for applying the DL decisions of the scheduler
  */
-void flexran_apply_dl_scheduling_decisions(mid_t mod_id, uint32_t frame, uint32_t subframe, int *mbsfn_flag,
+void flexran_apply_scheduling_decisions(mid_t mod_id, uint32_t frame, uint32_t subframe, int *mbsfn_flag,
 					   Protocol__FlexranMessage *dl_scheduling_info);
 
 /*

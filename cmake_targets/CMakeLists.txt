@@ -1145,6 +1145,7 @@ if (FLEXRAN_AGENT_SB_IF)
 
 set (MAC_SRC ${MAC_SRC}
   ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue.c
+  ${MAC_DIR}/flexran_agent_scheduler_ulsch_ue.c
   ${MAC_DIR}/flexran_agent_scheduler_dataplane.c
   ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue_remote.c
 )
@@ -1167,6 +1168,9 @@ if (FLEXRAN_AGENT_SB_IF)
 #Test for adding a shared library
 add_library(default_sched SHARED ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue.c)
 add_library(remote_sched SHARED ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue_remote.c)
+
+add_library(default_ul_sched SHARED ${MAC_DIR}/flexran_agent_scheduler_ulsch_ue.c)
+
 
 endif()
 

@@ -187,7 +187,7 @@ int flexran_get_ue_pmi(mid_t mod_id);
    a designated frame and subframe. Returns 0 for success. The id and the 
    status of the HARQ process are stored in id and status respectively */
 int flexran_get_harq(const mid_t mod_id, const uint8_t CC_id, const mid_t ue_id,
-		     const int frame, const uint8_t subframe, unsigned char *id, unsigned char *round);
+		     const int frame, const uint8_t subframe, unsigned char *id, unsigned char *round,const uint8_t harq_flag);
 
 /* Uplink power control management*/
 int flexran_get_p0_pucch_dbm(mid_t mod_id, mid_t ue_id, int CC_id);
