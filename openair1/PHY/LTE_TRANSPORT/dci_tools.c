@@ -5150,7 +5150,7 @@ void compute_llr_offset(LTE_DL_FRAME_PARMS *frame_parms,
 
     pdsch_vars->llr_offset[pdcch_vars->num_pdcch_symbols] = 0;
 
-    LOG_I(PHY,"compute_llr_offset:  nb RB %d - Qm %d \n", nb_rb_alloc, dlsch0_harq->Qm);
+    //LOG_I(PHY,"compute_llr_offset:  nb RB %d - Qm %d \n", nb_rb_alloc, dlsch0_harq->Qm);
 
     //dlsch0_harq->rb_alloc_even;
     //dlsch0_harq->rb_alloc_odd;
@@ -5180,15 +5180,15 @@ void compute_llr_offset(LTE_DL_FRAME_PARMS *frame_parms,
         if(symbol < (frame_parms->symbols_per_tti-1))
           pdsch_vars->llr_offset[symbol+1] = pdsch_vars->llr_offset[symbol] + llr_offset;
 
-        LOG_I(PHY,"Granted Re subframe %d / symbol %d => %d (%d RBs)\n", subframe, symbol_mod, granted_re,dlsch0_harq->nb_rb);
-        LOG_I(PHY,"Pbch/PSS/SSS Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, pbch_pss_sss_re);
-        LOG_I(PHY,"CRS Re Per PRB subframe %d / symbol %d => %d \n", subframe, symbol_mod, crs_re);
-        LOG_I(PHY,"Data Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, data_re);
+        //LOG_I(PHY,"Granted Re subframe %d / symbol %d => %d (%d RBs)\n", subframe, symbol_mod, granted_re,dlsch0_harq->nb_rb);
+        //LOG_I(PHY,"Pbch/PSS/SSS Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, pbch_pss_sss_re);
+        //LOG_I(PHY,"CRS Re Per PRB subframe %d / symbol %d => %d \n", subframe, symbol_mod, crs_re);
+        //LOG_I(PHY,"Data Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, data_re);
 
 
 
-        LOG_I(PHY,"Data Re subframe %d-symbol %d => llr length %d, llr offset %d \n", subframe, symbol,
-              pdsch_vars->llr_length[symbol], pdsch_vars->llr_offset[symbol]);
+        //LOG_I(PHY,"Data Re subframe %d-symbol %d => llr length %d, llr offset %d \n", subframe, symbol,
+        //      pdsch_vars->llr_length[symbol], pdsch_vars->llr_offset[symbol]);
     }
 }
 void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,
@@ -6114,12 +6114,15 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                               &dci_info_extarcted,
                                               dlsch0_harq);
       if(status == 0)
+      {
+        printf("bad DCI 1A !!! \n");
         return(-1);
+      }
 
       // dci is correct ==> update internal structure and prepare dl decoding
-#ifdef DEBUG_DCI
+//#ifdef DEBUG_DCI
       LOG_I(PHY,"[DCI-FORMAT-1A] AbsSubframe %d.%d prepare dl decoding \n", frame, subframe);
-#endif
+//#endif
       prepare_dl_decoding_format1_1A(format1A,
                                      frame_parms->N_RB_DL,
                                      &dci_info_extarcted,
@@ -6219,12 +6222,16 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                               &dci_info_extarcted,
                                               dlsch0_harq);
       if(status == 0)
-        return(-1);
+      {
+          printf("bad DCI 1 !!! \n");
+          return(-1);
+      }
+
 
       // dci is correct ==> update internal structure and prepare dl decoding
-#ifdef DEBUG_DCI
+//#ifdef DEBUG_DCI
       LOG_I(PHY,"[DCI-FORMAT-1] AbsSubframe %d.%d prepare dl decoding \n", frame, subframe);
-#endif
+//#endif
       prepare_dl_decoding_format1_1A(format1,
                                      frame_parms->N_RB_DL,
                                      &dci_info_extarcted,
