@@ -37,6 +37,9 @@
 #include "types.h"
 //#include "defs.h"
 
+#define RX_NB_TH_MAX 2
+#define RX_NB_TH 2
+
 #define LTE_NUMBER_OF_SUBFRAMES_PER_FRAME 10
 #define LTE_SLOTS_PER_FRAME  20
 #define LTE_CE_FILTER_LENGTH 5
@@ -822,7 +825,7 @@ typedef struct {
   /// - second index: sample [0..FRAME_LENGTH_COMPLEX_SAMPLES+2048[
   int32_t **rxdata;
 
-  LTE_UE_COMMON_PER_THREAD common_vars_rx_data_per_thread[2];
+  LTE_UE_COMMON_PER_THREAD common_vars_rx_data_per_thread[RX_NB_TH_MAX];
 
   /// holds output of the sync correlator
   int32_t *sync_corr;

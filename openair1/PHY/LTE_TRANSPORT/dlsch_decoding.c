@@ -272,7 +272,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     return(max_turbo_iterations);
     }*/
 
-  /*harq_pid = dlsch->current_harq_pid[subframe&0x1];
+  /*harq_pid = dlsch->current_harq_pid[subframe%RX_NB_TH];
   if (harq_pid >= 8) {
     printf("dlsch_decoding.c: Illegal harq_pid %d\n",harq_pid);
     return(max_turbo_iterations);
@@ -393,7 +393,9 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
           harq_process->round);
 #endif
 
-//printf("dlsch->harq_processes[harq_pid]->rvidx = %d\n", dlsch->harq_processes[harq_pid]->rvidx);
+#ifdef DEBUG_DLSCH_DECODING
+    printf(" in decoding dlsch->harq_processes[harq_pid]->rvidx = %d\n", dlsch->harq_processes[harq_pid]->rvidx);
+#endif
     if (lte_rate_matching_turbo_rx(harq_process->RTC[r],
                                    G,
                                    harq_process->w[r],
@@ -960,9 +962,9 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     break;
 
   case PDSCH: // TB0
-    dlsch_ue  = phy_vars_ue->dlsch[subframe&0x1][eNB_id][0];
+    dlsch_ue  = phy_vars_ue->dlsch[subframe%RX_NB_TH][eNB_id][0];
     harq_pid = dlsch_ue->current_harq_pid;
-    ue_id= (uint32_t)find_ue((int16_t)phy_vars_ue->pdcch_vars[subframe & 0x1][(uint32_t)eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2][CC_id]);
+    ue_id= (uint32_t)find_ue((int16_t)phy_vars_ue->pdcch_vars[subframe%RX_NB_TH][(uint32_t)eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2][CC_id]);
     DevAssert( ue_id != (uint32_t)-1 );
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2][CC_id]->dlsch[ue_id][0];
 
@@ -1006,9 +1008,9 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     break;
 
   case PDSCH1: { // TB1
-    dlsch_ue = phy_vars_ue->dlsch[subframe&0x1][eNB_id][1];
+    dlsch_ue = phy_vars_ue->dlsch[subframe%RX_NB_TH][eNB_id][1];
     harq_pid = dlsch_ue->current_harq_pid;
-    int8_t UE_id = find_ue( phy_vars_ue->pdcch_vars[subframe & 0x1][eNB_id]->crnti, PHY_vars_eNB_g[eNB_id2][CC_id] );
+    int8_t UE_id = find_ue( phy_vars_ue->pdcch_vars[subframe%RX_NB_TH][eNB_id]->crnti, PHY_vars_eNB_g[eNB_id2][CC_id] );
     DevAssert( UE_id != -1 );
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2][CC_id]->dlsch[UE_id][1];
     // reset HARQ
@@ -1060,7 +1062,7 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     break;
 
   default:
-    dlsch_ue = phy_vars_ue->dlsch[subframe&0x1][eNB_id][0];
+    dlsch_ue = phy_vars_ue->dlsch[subframe%RX_NB_TH][eNB_id][0];
     LOG_E(PHY,"dlsch_decoding_emul: FATAL, unknown DLSCH_id %d\n",dlsch_id);
     dlsch_ue->last_iteration_cnt = 1+dlsch_ue->max_turbo_iterations;
     return(1+dlsch_ue->max_turbo_iterations);

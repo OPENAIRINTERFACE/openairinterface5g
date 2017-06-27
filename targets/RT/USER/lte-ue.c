@@ -498,10 +498,13 @@ static void *UE_thread_rxn_txnp4(void *arg) {
     sprintf(threadname,"UE_%d_proc_%d", UE->Mod_id, proc->sub_frame_start);
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
-    if ( (proc->sub_frame_start+1)%2 == 0 && threads.even != -1 )
-        CPU_SET(1, &cpuset);
-    if ( (proc->sub_frame_start+1)%2 == 1 && threads.odd != -1 )
-        CPU_SET(2, &cpuset);
+    if ( (proc->sub_frame_start+1)%RX_NB_TH == 0 && threads.one != -1 )
+        CPU_SET(threads.one, &cpuset);
+    if ( (proc->sub_frame_start+1)%RX_NB_TH == 1 && threads.two != -1 )
+        CPU_SET(threads.two, &cpuset);
+    if ( (proc->sub_frame_start+1)%RX_NB_TH == 2 && threads.three != -1 )
+            CPU_SET(threads.three, &cpuset);
+            //CPU_SET(threads.three, &cpuset);
     init_thread(900000,1000000 , FIFO_PRIORITY-1, &cpuset,
                 threadname);
 
@@ -546,7 +549,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
                        (sf_type==SF_UL? "SF_UL" :
                         (sf_type==SF_S ? "SF_S"  : "UNKNOWN_SF_TYPE"))));
             }
-            phy_procedures_UE_RX( UE, proc, 0, 0, UE->mode, no_relay, NULL );
+            phy_procedures_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
         }
 
 #if UE_TIMING_TRACE
@@ -635,6 +638,7 @@ void *UE_thread(void *arg) {
     int start_rx_stream = 0;
     int i;
     char threadname[128];
+    int th_id;
 
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
@@ -716,8 +720,11 @@ void *UE_thread(void *arg) {
                                                                UE->frame_parms.nb_antennas_rx),"");
                     }
                     UE->rx_offset=0;
-                    UE->proc.proc_rxtx[0].frame_rx++;
-                    UE->proc.proc_rxtx[1].frame_rx++;
+                    //UE->proc.proc_rxtx[0].frame_rx++;
+                    //UE->proc.proc_rxtx[1].frame_rx++;
+                    for (th_id=0; th_id < RX_NB_TH; th_id++) {
+                        UE->proc.proc_rxtx[th_id].frame_rx++;
+                    }
 
                     // read in first symbol
                     AssertFatal (UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0 ==
@@ -734,7 +741,7 @@ void *UE_thread(void *arg) {
             } else {
                 sub_frame++;
                 sub_frame%=10;
-                UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[sub_frame&1];
+                UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[sub_frame%RX_NB_TH];
 
                 if (UE->mode != loop_through_memory) {
                     for (i=0; i<UE->frame_parms.nb_antennas_rx; i++)
@@ -801,11 +808,17 @@ void *UE_thread(void *arg) {
                     // operate on thread sf mod 2
                     AssertFatal(pthread_mutex_lock(&proc->mutex_rxtx) ==0,"");
                     if(sub_frame == 0) {
-                        UE->proc.proc_rxtx[0].frame_rx++;
-                        UE->proc.proc_rxtx[1].frame_rx++;
+                        //UE->proc.proc_rxtx[0].frame_rx++;
+                        //UE->proc.proc_rxtx[1].frame_rx++;
+                        for (th_id=0; th_id < RX_NB_TH; th_id++) {
+                            UE->proc.proc_rxtx[th_id].frame_rx++;
+                        }
                     }
-                    UE->proc.proc_rxtx[0].gotIQs=readTime(gotIQs);
-                    UE->proc.proc_rxtx[1].gotIQs=readTime(gotIQs);
+                    //UE->proc.proc_rxtx[0].gotIQs=readTime(gotIQs);
+                    //UE->proc.proc_rxtx[1].gotIQs=readTime(gotIQs);
+                    for (th_id=0; th_id < RX_NB_TH; th_id++) {
+                        UE->proc.proc_rxtx[th_id].gotIQs=readTime(gotIQs);
+                    }
                     proc->subframe_rx=sub_frame;
                     proc->subframe_tx=(sub_frame+4)%10;
                     proc->frame_tx = proc->frame_rx + (proc->subframe_rx>5?1:0);
@@ -1123,16 +1136,18 @@ void init_UE_threads(PHY_VARS_UE *UE) {
     pthread_cond_init(&UE->proc.cond_synch,NULL);
 
     // the threads are not yet active, therefore access is allowed without locking
-    int nb_threads=2;
+    int nb_threads=RX_NB_TH;
     for (int i=0; i<nb_threads; i++) {
         rtd = calloc(1, sizeof(struct rx_tx_thread_data));
         if (rtd == NULL) abort();
         rtd->UE = UE;
         rtd->proc = &UE->proc.proc_rxtx[i];
+
         pthread_mutex_init(&UE->proc.proc_rxtx[i].mutex_rxtx,NULL);
         pthread_cond_init(&UE->proc.proc_rxtx[i].cond_rxtx,NULL);
         UE->proc.proc_rxtx[i].sub_frame_start=i;
         UE->proc.proc_rxtx[i].sub_frame_step=nb_threads;
+        printf("Init_UE_threads rtd %d proc %d nb_threads %d i %d\n",rtd->proc->sub_frame_start, UE->proc.proc_rxtx[i].sub_frame_start,nb_threads, i);
         pthread_create(&UE->proc.proc_rxtx[i].pthread_rxtx, NULL, UE_thread_rxn_txnp4, rtd);
 
 #ifdef UE_SLOT_PARALLELISATION
