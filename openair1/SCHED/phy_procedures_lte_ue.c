@@ -3686,7 +3686,10 @@ void ue_pdsch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, int eNB_id, PDSC
       else
 	first_symbol_flag = 0;
 #if UE_TIMING_TRACE
-      start_meas(&ue->dlsch_llr_stats);
+      uint8_t slot = 0;
+      if(m >= ue->frame_parms.symbols_per_tti>>1)
+        slot = 1;
+      start_meas(&ue->dlsch_llr_stats[subframe_rx%RX_NB_TH][slot]);
 #endif
       // process DLSCH received in first slot
       rx_pdsch(ue,
@@ -3702,8 +3705,14 @@ void ue_pdsch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, int eNB_id, PDSC
 	       i_mod,
 	       dlsch0->current_harq_pid);
 #if UE_TIMING_TRACE
-      stop_meas(&ue->dlsch_llr_stats);
+      stop_meas(&ue->dlsch_llr_stats[subframe_rx%RX_NB_TH][slot]);
+//#if DISABLE_LOG_X
+//    printf("[AbsSFN %d.%d] LLR Computation Symbol %d %5.2f \n",proc->frame_rx,subframe_rx,m,ue->dlsch_llr_stats[subframe_rx%RX_NB_TH][slot].p_time/(cpuf*1000.0));
+//#else
+//    LOG_D(PHY, "[AbsSFN %d.%d] LLR Computation Symbol %d %5.2fn %5.2f \n",proc->frame_rx,subframe_rx,m,ue->dlsch_llr_stats[subframe_rx%RX_NB_TH][slot].p_time/(cpuf*1000.0));
+//#endif
 #endif
+
     } // CRNTI active
   }
 }
@@ -4226,7 +4235,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
 
 #if UE_TIMING_TRACE
     start_meas(&ue->phy_proc_rx[subframe_rx%RX_NB_TH]);
-    start_meas(&ue->generic_stat);
+    start_meas(&ue->ue_front_end_stat[subframe_rx%RX_NB_TH]);
 #endif
 
     pmch_flag = is_pmch_subframe(frame_rx,subframe_rx,&ue->frame_parms) ? 1 : 0;
@@ -4314,27 +4323,23 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
     /**** FFT Slot0 + Slot1 ****/
     // I- start main thread for FFT/ChanEst symbol: 0/1 --> 7
 #if UE_TIMING_TRACE
-    start_meas(&ue->generic_stat);
+    start_meas(&ue->ue_front_end_per_slot_stat[subframe_rx%RX_NB_TH][0]);
 #endif
     // 1- perform FFT for pilot ofdm symbols first (ofdmSym7 ofdmSym4 or (ofdmSym6 ofdmSym3))
-    LOG_I(PHY,"AbsSubframe %d.%d FFT slot1 symbol %d\n", frame_rx%1024, subframe_rx,pilot0);
     front_end_fft(ue,
             pilot0,
             slot1,
             0,
             0);
-    LOG_I(PHY,"AbsSubframe %d.%d FFT slot0 symbol %d\n", frame_rx%1024, subframe_rx,pilot1);
     front_end_fft(ue,
             pilot1,
             slot0,
             0,
             0);
-    LOG_I(PHY,"AbsSubframe %d.%d ChanEst slot0 symbol %d\n", frame_rx%1024, subframe_rx,pilot1);
     front_end_chanEst(ue,
             pilot1,
             slot0,
             0);
-    LOG_I(PHY,"AbsSubframe %d.%d ChanEst slot1 symbol %d\n", frame_rx%1024, subframe_rx,pilot0);
     front_end_chanEst(ue,
             pilot0,
             slot1,
@@ -4350,7 +4355,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
 #if UE_TIMING_TRACE
             start_meas(&ue->ofdm_demod_stats);
 #endif
-            LOG_I(PHY,"AbsSubframe %d.%d FFT slot0 symbol %d\n", frame_rx%1024, subframe_rx,l);
             VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
             front_end_fft(ue,
                     l,
@@ -4369,7 +4373,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
     {
         if( (l != pilot0) && (l != pilot1))
         {
-        	LOG_I(PHY,"AbsSubframe %d.%d ChanEst slot0 symbol %d\n", frame_rx%1024, subframe_rx,l);
             front_end_chanEst(ue,
                     l,
                     slot0,
@@ -4379,25 +4382,42 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
     }
 
     if (do_pdcch_flag) {
-        LOG_I(PHY,"[UE  %d] Frame %d: Calling pdcch procedures (eNB %d)\n",ue->Mod_id,frame_rx,eNB_id);
-
+#if UE_TIMING_TRACE
+        start_meas(&ue->pdcch_procedures_stat[subframe_rx%RX_NB_TH]);
+#endif
         if (ue_pdcch_procedures(eNB_id,ue,proc,abstraction_flag) == -1) {
             LOG_E(PHY,"[UE  %d] Frame %d, subframe %d: Error in pdcch procedures\n",ue->Mod_id,frame_rx,subframe_rx);
+#if UE_TIMING_TRACE
+            stop_meas(&ue->pdcch_procedures_stat[subframe_rx%RX_NB_TH]);
+#if DISABLE_LOG_X
+            printf("[AbsSFN %d.%d] Slot0: PDCCH %5.2f \n",frame_rx,subframe_rx,ue->pdcch_procedures_stat[subframe_rx%RX_NB_TH].p_time/(cpuf*1000.0));
+#else
+            LOG_D(PHY, "[AbsSFN %d.%d] Slot0: PDCCH %5.2f \n",frame_rx,subframe_rx,ue->pdcch_procedures_stat[subframe_rx%RX_NB_TH].p_time/(cpuf*1000.0));
+#endif
+#endif
             return(-1);
         }
+#if UE_TIMING_TRACE
+        stop_meas(&ue->pdcch_procedures_stat[subframe_rx%RX_NB_TH]);
+#if DISABLE_LOG_X
+        printf("[AbsSFN %d.%d] Slot0: PDCCH %5.2f \n",frame_rx,subframe_rx,ue->pdcch_procedures_stat[subframe_rx%RX_NB_TH].p_time/(cpuf*1000.0));
+#else
+        LOG_D(PHY, "[AbsSFN %d.%d] Slot0: PDCCH %5.2f \n",frame_rx,subframe_rx,ue->pdcch_procedures_stat[subframe_rx%RX_NB_TH].p_time/(cpuf*1000.0));
+#endif
+#endif
     }
 
-    LOG_I(PHY,"num_pdcch_symbols %d\n",ue->pdcch_vars[subframe_rx%RX_NB_TH][eNB_id]->num_pdcch_symbols);
-    LOG_I(PHY,"Set available dci slot0 to 1 AbsSubframe %d.%d \n",frame_rx%1024,subframe_rx);
+    //LOG_I(PHY,"num_pdcch_symbols %d\n",ue->pdcch_vars[subframe_rx%RX_NB_TH][eNB_id]->num_pdcch_symbols);
+    //LOG_I(PHY,"Set available dci slot0 to 1 AbsSubframe %d.%d \n",frame_rx%1024,subframe_rx);
     proc->dci_slot0_available=1;
 
     // first slot has been processed (FFTs + Channel Estimation, PCFICH/PHICH/PDCCH)
 #if UE_TIMING_TRACE
-    stop_meas(&ue->generic_stat);
+    stop_meas(&ue->ue_front_end_per_slot_stat[subframe_rx%RX_NB_TH][0]);
 #if DISABLE_LOG_X
-    printf("[SFN %d] Slot0: FFT + Channel Estimate + PCFICH/PHICH/PDCCH %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
+    printf("[AbsSFN %d.%d] Slot0: FFT + Channel Estimate + PCFICH/PHICH/PDCCH %5.2f \n",frame_rx,subframe_rx,ue->ue_front_end_per_slot_stat[subframe_rx%RX_NB_TH][0].p_time/(cpuf*1000.0));
 #else
-    LOG_D(PHY, "[SFN %d] Slot0: FFT + Channel Estimate + PCFICH/PHICH/PDCCH %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %d.%d] Slot0: FFT + Channel Estimate + PCFICH/PHICH/PDCCH %5.2f \n",frame_rx,subframe_rx,ue->ue_front_end_per_slot_stat[subframe_rx%RX_NB_TH][0].p_time/(cpuf*1000.0));
 #endif
 #endif
 
@@ -4410,7 +4430,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
 
 #if 1
 #if UE_TIMING_TRACE
-    start_meas(&ue->generic_stat);
+    start_meas(&ue->ue_front_end_per_slot_stat[subframe_rx%RX_NB_TH][1]);
 #endif
     // II- start slave thread for FFT/ChanEst
     // do first symbol of next downlink subframe for channel estimation
@@ -4419,7 +4439,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
     // 1- perform FFT for pilot ofdm symbols first (ofdmSym0 next subframe ofdmSym11)
     if (subframe_select(&ue->frame_parms,next_subframe_rx) != SF_UL)
     {
-    	LOG_I(PHY,"AbsSubframe %d.%d FFT slot0 symbol %d\n", frame_rx%1024, subframe_rx,pilot0);
         front_end_fft(ue,
                 pilot0,
                 next_subframe_slot0,
@@ -4427,7 +4446,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
                 0);
     }
 
-    LOG_I(PHY,"AbsSubframe %d.%d FFT slot1 symbol %d\n", frame_rx%1024, subframe_rx,pilot1);
     front_end_fft(ue,
             pilot1,
             slot1,
@@ -4442,7 +4460,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
 #if UE_TIMING_TRACE
             start_meas(&ue->ofdm_demod_stats);
 #endif
-            LOG_I(PHY,"AbsSubframe %d.%d FFT slot1 symbol %d\n", frame_rx%1024, subframe_rx,l);
             VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
             front_end_fft(ue,
                     l,
@@ -4470,14 +4487,12 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
             }
         }
 #endif
-        LOG_I(PHY,"AbsSubframe %d.%d ChanEst slot1 symbol %d\n", frame_rx%1024, subframe_rx,l);
         front_end_chanEst(ue,
                 l,
                 slot1,
                 0);
         ue_measurement_procedures(l-1,ue,proc,eNB_id,1+(subframe_rx<<1),abstraction_flag,mode);
     }
-    LOG_I(PHY,"AbsSubframe %d.%d ChanEst slot0 symbol %d\n", frame_rx%1024, subframe_rx,pilot0);
     front_end_chanEst(ue,
             pilot0,
             next_subframe_slot0,
@@ -4489,14 +4504,23 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
     }
 
 #if UE_TIMING_TRACE
-    stop_meas(&ue->generic_stat);
+    stop_meas(&ue->ue_front_end_per_slot_stat[subframe_rx%RX_NB_TH][1]);
 #if DISABLE_LOG_X
-    printf("[SFN %d] Slot1: FFT + Channel Estimate + Pdsch Proc Slot0 %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
+    printf("[AbsSFN %d.%d] Slot1: FFT + Channel Estimate + Pdsch Proc Slot0 %5.2f \n",frame_rx,subframe_rx,ue->ue_front_end_per_slot_stat[subframe_rx%RX_NB_TH][1].p_time/(cpuf*1000.0));
 #else
-    LOG_D(PHY, "[SFN %d] Slot1: FFT + Channel Estimate + Pdsch Proc Slot0 %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %d.%d] Slot1: FFT + Channel Estimate + Pdsch Proc Slot0 %5.2f \n",frame_rx,subframe_rx,ue->ue_front_end_per_slot_stat[subframe_rx%RX_NB_TH][1].p_time/(cpuf*1000.0));
 #endif
 #endif
 
+#endif
+
+#if UE_TIMING_TRACE
+    stop_meas(&ue->ue_front_end_stat[subframe_rx%RX_NB_TH]);
+#if DISABLE_LOG_X
+    printf("[AbsSFN %d.%d] Full Front End Processing %5.2f \n",frame_rx,subframe_rx,ue->ue_front_end_stat[subframe_rx%RX_NB_TH].p_time/(cpuf*1000.0));
+#else
+    LOG_D(PHY, "[AbsSFN %d.%d] Full Front End Processing %5.2f \n",frame_rx,subframe_rx,ue->ue_front_end_stat[subframe_rx%RX_NB_TH].p_time/(cpuf*1000.0));
+#endif
 #endif
     /**** End Subframe FFT-ChannelEst ****/
 
@@ -4508,10 +4532,13 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
     //LOG_I(PHY,"AbsSubframe %d.%d Pdsch Procedure PDSCH Active %d \n",frame_rx%1024,subframe_rx, ue->dlsch[subframe_rx%RX_NB_TH][0][0]->active);
 
 #if UE_TIMING_TRACE
-    start_meas(&ue->generic_stat);
+    start_meas(&ue->pdsch_procedures_stat[subframe_rx%RX_NB_TH]);
+#endif
+
+#if UE_TIMING_TRACE
+    start_meas(&ue->pdsch_procedures_per_slot_stat[subframe_rx%RX_NB_TH][0]);
 #endif
     if (ue->dlsch[subframe_rx%RX_NB_TH][eNB_id][0]->active == 1) {
-    	LOG_I(PHY,"LLR Computation PDSCH slot0 \n");
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
         ue_pdsch_procedures(ue,
                 proc,
@@ -4527,9 +4554,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
     }
 
     // do procedures for SI-RNTI
-    LOG_I(PHY,"LLR Computation SI_PDSCH slot0 active %d \n", ue->dlsch_SI[eNB_id]->active);
     if ((ue->dlsch_SI[eNB_id]) && (ue->dlsch_SI[eNB_id]->active == 1)) {
-    	LOG_I(PHY,"LLR Computation SI_PDSCH slot0 \n");
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_IN);
         ue_pdsch_procedures(ue,
                 proc,
@@ -4545,7 +4570,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
 
     // do procedures for SI-RNTI
     if ((ue->dlsch_p[eNB_id]) && (ue->dlsch_p[eNB_id]->active == 1)) {
-    	LOG_I(PHY,"LLR Computation P_PDSCH slot0 \n");
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_P, VCD_FUNCTION_IN);
         ue_pdsch_procedures(ue,
                 proc,
@@ -4561,7 +4585,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
 
     // do procedures for RA-RNTI
     if ((ue->dlsch_ra[eNB_id]) && (ue->dlsch_ra[eNB_id]->active == 1)) {
-    	LOG_I(PHY,"LLR Computation RA_PDSCH slot0 \n");
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_IN);
         ue_pdsch_procedures(ue,
                 proc,
@@ -4576,26 +4599,22 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
     }
 
 #if UE_TIMING_TRACE
-    stop_meas(&ue->generic_stat);
+    stop_meas(&ue->pdsch_procedures_per_slot_stat[subframe_rx%RX_NB_TH][0]);
 #if DISABLE_LOG_X
-    printf("[SFN %d] Slot0: LLR Computation %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
+    printf("[AbsSFN %d.%d] Slot0: LLR Computation %5.2f \n",frame_rx,subframe_rx,ue->pdsch_procedures_per_slot_stat[subframe_rx%RX_NB_TH][0].p_time/(cpuf*1000.0));
 #else
-    LOG_D(PHY, "[SFN %d] Slot0: LLR Computation %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %d.%d] Slot0: LLR Computation %5.2f \n",frame_rx,subframe_rx,ue->pdsch_procedures_per_slot_stat[subframe_rx%RX_NB_TH][0].p_time/(cpuf*1000.0));
 #endif
 #endif
 
 #if 1
 #if UE_TIMING_TRACE
-    start_meas(&ue->generic_stat);
+    start_meas(&ue->pdsch_procedures_per_slot_stat[subframe_rx%RX_NB_TH][1]);
 #endif
     // start slave thread for Pdsch Procedure (slot1)
     // do procedures for C-RNTI
     if (ue->dlsch[subframe_rx%RX_NB_TH][eNB_id][0]->active == 1) {
-    	LOG_I(PHY,"LLR Computation PDSCH slot1 \n");
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
-#if UE_TIMING_TRACE
-        start_meas(&ue->pdsch_procedures_stat);
-#endif
         ue_pdsch_procedures(ue,
                 proc,
                 eNB_id,
@@ -4607,15 +4626,10 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
                 abstraction_flag);
         LOG_D(PHY," ------ end PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, subframe_rx);
         LOG_D(PHY," ------ --> PDSCH Turbo Decoder slot 0/1: AbsSubframe %d.%d ------  \n", frame_rx%1024, subframe_rx);
-#if UE_TIMING_TRACE
-        stop_meas(&ue->pdsch_procedures_stat);
-#endif
     }
 
     // do procedures for SI-RNTI
-    LOG_I(PHY,"LLR Computation SI_PDSCH slot1 active %d \n",ue->dlsch_SI[eNB_id]->active);
     if ((ue->dlsch_SI[eNB_id]) && (ue->dlsch_SI[eNB_id]->active == 1)) {
-    	LOG_I(PHY,"LLR Computation SI_PDSCH slot1 \n");
         ue_pdsch_procedures(ue,
                 proc,
                 eNB_id,
@@ -4629,7 +4643,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
 
     // do procedures for P-RNTI
     if ((ue->dlsch_p[eNB_id]) && (ue->dlsch_p[eNB_id]->active == 1)) {
-    	LOG_I(PHY,"LLR Computation P_PDSCH slot1 \n");
         ue_pdsch_procedures(ue,
                 proc,
                 eNB_id,
@@ -4642,7 +4655,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
     }
     // do procedures for RA-RNTI
     if ((ue->dlsch_ra[eNB_id]) && (ue->dlsch_ra[eNB_id]->active == 1)) {
-    	LOG_I(PHY,"LLR Computation RA_PDSCH slot1 \n");
         ue_pdsch_procedures(ue,
                 proc,
                 eNB_id,
@@ -4655,16 +4667,25 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
     }
     proc->llr_slot1_available=1;
 #if UE_TIMING_TRACE
-    stop_meas(&ue->generic_stat);
+    stop_meas(&ue->pdsch_procedures_per_slot_stat[subframe_rx%RX_NB_TH][1]);
 #if DISABLE_LOG_X
-    printf("[SFN %d] Slot1: LLR Computation %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
+    printf("[AbsSFN %d.%d] Slot1: LLR Computation %5.2f \n",frame_rx,subframe_rx,ue->pdsch_procedures_per_slot_stat[subframe_rx%RX_NB_TH][1].p_time/(cpuf*1000.0));
 #else
-    LOG_D(PHY, "[SFN %d] Slot1: LLR Computation %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %d.%d] Slot1: LLR Computation %5.2f \n",frame_rx,subframe_rx,ue->pdsch_procedures_per_slot_stat[subframe_rx%RX_NB_TH][1].p_time/(cpuf*1000.0));
 #endif
 #endif
 
 #endif
 
+
+#if UE_TIMING_TRACE
+    stop_meas(&ue->pdsch_procedures_stat[subframe_rx%RX_NB_TH]);
+#if DISABLE_LOG_X
+    printf("[AbsSFN %d.%d] Full LLR Computation %5.2f \n",frame_rx,subframe_rx,ue->pdsch_procedures_stat[subframe_rx%RX_NB_TH].p_time/(cpuf*1000.0));
+#else
+    LOG_D(PHY, "[AbsSFN %d.%d] Full LLR Computation %5.2f \n",frame_rx,subframe_rx,ue->pdsch_procedures_stat[subframe_rx%RX_NB_TH].p_time/(cpuf*1000.0));
+#endif
+#endif
 
 #if 0
     if(subframe_rx==5 &&  ue->dlsch[subframe_rx%RX_NB_TH][eNB_id][0]->harq_processes[ue->dlsch[subframe_rx%RX_NB_TH][eNB_id][0]->current_harq_pid]->nb_rb > 20){
@@ -4688,7 +4709,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
 
     //=====================================================================//
 #if UE_TIMING_TRACE
-    start_meas(&ue->generic_stat);
+    start_meas(&ue->dlsch_procedures_stat[subframe_rx%RX_NB_TH]);
 #endif
 
 #if 0
@@ -4700,9 +4721,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
         usleep(1);
         wait++;
     }
-#if UE_TIMING_TRACE
-    stop_meas(&ue->generic_stat);
-#endif
 #endif
     //printf("------ Waiting for LLR-Slot1  [SFN %d]: %5.2f ------\n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
 
@@ -4713,9 +4731,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
     // Start Turbo decoder
     if (ue->dlsch[subframe_rx%RX_NB_TH][eNB_id][0]->active == 1) {
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
-#if UE_TIMING_TRACE
-        start_meas(&ue->dlsch_procedures_stat);
-#endif
         ue_dlsch_procedures(ue,
                 proc,
                 eNB_id,
@@ -4725,23 +4740,10 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
                 &ue->dlsch_errors[eNB_id],
                 mode,
                 abstraction_flag);
-#if UE_TIMING_TRACE
-        stop_meas(&ue->dlsch_procedures_stat);
-#if DISABLE_LOG_X
-        printf("[SFN %d] Slot1:       Pdsch Proc %5.2f\n",subframe_rx,ue->pdsch_procedures_stat.p_time/(cpuf*1000.0));
-        printf("[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",subframe_rx,ue->dlsch_procedures_stat.p_time/(cpuf*1000.0));
-#else
-        LOG_D(PHY, "[SFN %d] Slot1:       Pdsch Proc %5.2f\n",subframe_rx,ue->pdsch_procedures_stat.p_time/(cpuf*1000.0));
-        LOG_D(PHY, "[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",subframe_rx,ue->dlsch_procedures_stat.p_time/(cpuf*1000.0));
-#endif
-
-#endif
-
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
     }
 
     // do procedures for SI-RNTI
-    printf("dlsch procedures SI %d \n", ue->dlsch_SI[eNB_id]->active);
     if ((ue->dlsch_SI[eNB_id]) && (ue->dlsch_SI[eNB_id]->active == 1)) {
         ue_dlsch_procedures(ue,
                 proc,
@@ -4781,18 +4783,32 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
                 abstraction_flag);
         ue->dlsch_ra[eNB_id]->active = 0;
     }
-#if UE_TIMING_TRACE
-    stop_meas(&ue->generic_stat);
-#if DISABLE_LOG_X
-    printf("[SFN %d] Channel Decoder: %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
-#else
-    LOG_D(PHY, "[SFN %d] Channel Decoder: %5.2f %5.2f \n",subframe_rx,ue->generic_stat.p_time/(cpuf*1000.0));
-#endif
-#endif
-    // duplicate harq structure
 
-    uint8_t          current_harq_pid        = ue->dlsch[subframe_rx%RX_NB_TH][eNB_id][0]->current_harq_pid;
-    LTE_DL_UE_HARQ_t *current_harq_processes = ue->dlsch[subframe_rx%RX_NB_TH][eNB_id][0]->harq_processes[current_harq_pid];
+#if UE_TIMING_TRACE
+        stop_meas(&ue->dlsch_procedures_stat[subframe_rx%RX_NB_TH]);
+#if DISABLE_LOG_X
+        printf("[AbsSFN %d.%d] Channel Decoder: %5.2f \n",frame_rx,subframe_rx,ue->dlsch_procedures_stat[subframe_rx%RX_NB_TH].p_time/(cpuf*1000.0));
+#else
+        LOG_D(PHY, "[AbsSFN %d.%d] Channel Decoder: %5.2f \n",frame_rx,subframe_rx,ue->dlsch_procedures_stat[subframe_rx%RX_NB_TH].p_time/(cpuf*1000.0));
+#endif
+
+#endif
+
+        // duplicate harq structure
+        uint8_t          current_harq_pid        = ue->dlsch[subframe_rx%RX_NB_TH][eNB_id][0]->current_harq_pid;
+        LTE_DL_UE_HARQ_t *current_harq_processes = ue->dlsch[subframe_rx%RX_NB_TH][eNB_id][0]->harq_processes[current_harq_pid];
+        harq_status_t    *current_harq_ack       = &ue->dlsch[subframe_rx%RX_NB_TH][eNB_id][0]->harq_ack[subframe_rx];
+
+        for(uint8_t rx_th_idx=0; rx_th_idx<RX_NB_TH; rx_th_idx++)
+        {
+            LTE_DL_UE_HARQ_t *harq_processes_dest  = ue->dlsch[(subframe_rx+rx_th_idx)%RX_NB_TH][eNB_id][0]->harq_processes[current_harq_pid];
+            harq_status_t    *harq_ack_dest        = &ue->dlsch[(subframe_rx+rx_th_idx)%RX_NB_TH][eNB_id][0]->harq_ack[subframe_rx];
+
+            copy_harq_proc_struct(harq_processes_dest, current_harq_processes);
+            copy_ack_struct(harq_ack_dest, current_harq_ack);
+
+        }
+    /*
     LTE_DL_UE_HARQ_t *harq_processes_dest    = ue->dlsch[(subframe_rx+1)%RX_NB_TH][eNB_id][0]->harq_processes[current_harq_pid];
     LTE_DL_UE_HARQ_t *harq_processes_dest1    = ue->dlsch[(subframe_rx+2)%RX_NB_TH][eNB_id][0]->harq_processes[current_harq_pid];
 
@@ -4805,7 +4821,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
 
     copy_harq_proc_struct(harq_processes_dest1, current_harq_processes);
     copy_ack_struct(harq_ack_dest1, current_harq_ack);
-
+    */
     if (subframe_rx==9) {
         if (frame_rx % 10 == 0) {
             if ((ue->dlsch_received[eNB_id] - ue->dlsch_received_last[eNB_id]) != 0)
@@ -4830,11 +4846,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
 
     }
 
-#if UE_TIMING_TRACE
-    stop_meas(&ue->generic_stat);
-    printf("after tubo until end of Rx %5.2f \n",ue->generic_stat.p_time/(cpuf*1000.0));
-#endif
-
 #ifdef EMOS
     phy_procedures_emos_UE_RX(ue,slot,eNB_id);
 #endif
@@ -4845,9 +4856,9 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
 #if UE_TIMING_TRACE
     stop_meas(&ue->phy_proc_rx[subframe_rx%RX_NB_TH]);
 #if DISABLE_LOG_X
-    printf("------FULL RX PROC [SFN %d]: %5.2f ------\n",subframe_rx,ue->phy_proc_rx[subframe_rx%RX_NB_TH].p_time/(cpuf*1000.0));
+    printf("------FULL RX PROC [AbsSFN %d.%d]: %5.2f ------\n",frame_rx,subframe_rx,ue->phy_proc_rx[subframe_rx%RX_NB_TH].p_time/(cpuf*1000.0));
 #else
-    LOG_D(PHY, "------FULL RX PROC [SFN %d]: %5.2f ------\n",subframe_rx,ue->phy_proc_rx[subframe_rx%RX_NB_TH].p_time/(cpuf*1000.0));
+    LOG_D(PHY, "------FULL RX PROC [AbsSFN %d.%d]: %5.2f ------\n",frame_rx,subframe_rx,ue->phy_proc_rx[subframe_rx%RX_NB_TH].p_time/(cpuf*1000.0));
 #endif
 #endif
 
@@ -5391,7 +5402,7 @@ void phy_procedures_UE_lte(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,u
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_LTE,1);
 #if UE_TIMING_TRACE
-  start_meas(&ue->phy_proc);
+  start_meas(&ue->phy_proc[subframe_rx%RX_NB_TH]);
 #endif
 #if defined(ENABLE_ITTI)
 
@@ -5485,7 +5496,7 @@ void phy_procedures_UE_lte(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,u
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_LTE,0);
 #if UE_TIMING_TRACE
-    stop_meas(&ue->phy_proc);
+    stop_meas(&ue->phy_proc[subframe_rx%RX_NB_TH]);
 #endif
   } // slot
 }

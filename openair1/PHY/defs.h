@@ -894,9 +894,9 @@ typedef struct {
   /// Transmission mode per eNB
   uint8_t transmission_mode[NUMBER_OF_CONNECTED_eNB_MAX];
 
-  time_stats_t phy_proc;
+  time_stats_t phy_proc[RX_NB_TH];
   time_stats_t phy_proc_tx;
-  time_stats_t phy_proc_rx[2];
+  time_stats_t phy_proc_rx[RX_NB_TH];
 
   uint32_t use_ia_receiver;
 
@@ -910,8 +910,12 @@ typedef struct {
   time_stats_t ulsch_multiplexing_stats;
 
   time_stats_t generic_stat;
-  time_stats_t pdsch_procedures_stat;
-  time_stats_t dlsch_procedures_stat;
+  time_stats_t ue_front_end_stat[RX_NB_TH];
+  time_stats_t ue_front_end_per_slot_stat[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
+  time_stats_t pdcch_procedures_stat[RX_NB_TH];
+  time_stats_t pdsch_procedures_stat[RX_NB_TH];
+  time_stats_t pdsch_procedures_per_slot_stat[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
+  time_stats_t dlsch_procedures_stat[RX_NB_TH];
 
   time_stats_t ofdm_demod_stats;
   time_stats_t dlsch_rx_pdcch_stats;
@@ -923,7 +927,7 @@ typedef struct {
   time_stats_t dlsch_rate_unmatching_stats;
   time_stats_t dlsch_turbo_decoding_stats;
   time_stats_t dlsch_deinterleaving_stats;
-  time_stats_t dlsch_llr_stats;
+  time_stats_t dlsch_llr_stats[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
   time_stats_t dlsch_unscrambling_stats;
   time_stats_t dlsch_rate_matching_stats;
   time_stats_t dlsch_turbo_encoding_stats;
