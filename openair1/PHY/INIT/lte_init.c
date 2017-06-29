@@ -764,6 +764,7 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
                              struct PhysicalConfigDedicated *physicalConfigDedicated )
 {
 
+  static uint8_t first_dedicated_configuration = 0;
   PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
 
   phy_vars_ue->total_TBS[eNB_id]=0;
@@ -954,9 +955,13 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
   get_cqipmiri_params(phy_vars_ue,eNB_id);
 
   // disable MIB SIB decoding once we are on connected mode
-  LOG_I(PHY,"Disabling SIB MIB decoding \n");
-  phy_vars_ue->decode_SIB = 0;
-  phy_vars_ue->decode_MIB = 0;
+  first_dedicated_configuration ++;
+  if(first_dedicated_configuration > 1)
+  {
+  	LOG_I(PHY,"Disable SIB MIB decoding \n");
+  	phy_vars_ue->decode_SIB = 0;
+  	phy_vars_ue->decode_MIB = 0;
+  }
   //phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
   if(phy_vars_ue->pdcch_vars[0][eNB_id]->crnti == 0x1234)
       phy_vars_ue->pdcch_vars[0][eNB_id]->crnti = phy_vars_ue->pdcch_vars[1][eNB_id]->crnti;

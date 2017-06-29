@@ -2937,6 +2937,309 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
   } // candidate loop
 }
 
+uint16_t dci_CRNTI_decoding_procedure(PHY_VARS_UE *ue,
+                                DCI_ALLOC_t *dci_alloc,
+                                uint8_t DCIFormat,
+                                uint8_t agregationLevel,
+                                int16_t eNB_id,
+                                uint8_t subframe)
+{
+
+  uint8_t  dci_cnt=0,old_dci_cnt=0;
+  uint32_t CCEmap0=0,CCEmap1=0,CCEmap2=0;
+  LTE_UE_PDCCH **pdcch_vars = ue->pdcch_vars[subframe%RX_NB_TH];
+  LTE_DL_FRAME_PARMS *frame_parms  = &ue->frame_parms;
+  uint8_t mi = get_mi(&ue->frame_parms,subframe);
+  uint16_t ra_rnti=99;
+  uint8_t format0_found=0,format_c_found=0;
+  uint8_t tmode = ue->transmission_mode[eNB_id];
+  uint8_t frame_type = frame_parms->frame_type;
+  uint8_t format1A_size_bits=0,format1A_size_bytes=0;
+  uint8_t format1C_size_bits=0,format1C_size_bytes=0;
+  uint8_t format0_size_bits=0,format0_size_bytes=0;
+  uint8_t format1_size_bits=0,format1_size_bytes=0;
+  uint8_t format2_size_bits=0,format2_size_bytes=0;
+  uint8_t format2A_size_bits=0,format2A_size_bytes=0;
+  dci_detect_mode_t mode = dci_detect_mode_select(&ue->frame_parms,subframe);
+
+  switch (frame_parms->N_RB_DL) {
+  case 6:
+    if (frame_type == TDD) {
+      format1A_size_bits  = sizeof_DCI1A_1_5MHz_TDD_1_6_t;
+      format1A_size_bytes = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
+      format1C_size_bits  = sizeof_DCI1C_1_5MHz_t;
+      format1C_size_bytes = sizeof(DCI1C_1_5MHz_t);
+      format0_size_bits  = sizeof_DCI0_1_5MHz_TDD_1_6_t;
+      format0_size_bytes = sizeof(DCI0_1_5MHz_TDD_1_6_t);
+      format1_size_bits  = sizeof_DCI1_1_5MHz_TDD_t;
+      format1_size_bytes = sizeof(DCI1_1_5MHz_TDD_t);
+
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
+        format2_size_bits  = sizeof_DCI2_1_5MHz_2A_TDD_t;
+        format2_size_bytes = sizeof(DCI2_1_5MHz_2A_TDD_t);
+        format2A_size_bits  = sizeof_DCI2A_1_5MHz_2A_TDD_t;
+        format2A_size_bytes = sizeof(DCI2A_1_5MHz_2A_TDD_t);
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
+        format2_size_bits  = sizeof_DCI2_1_5MHz_4A_TDD_t;
+        format2_size_bytes = sizeof(DCI2_1_5MHz_4A_TDD_t);
+        format2A_size_bits  = sizeof_DCI2A_1_5MHz_4A_TDD_t;
+        format2A_size_bytes = sizeof(DCI2A_1_5MHz_4A_TDD_t);
+      }
+    } else {
+      format1A_size_bits  = sizeof_DCI1A_1_5MHz_FDD_t;
+      format1A_size_bytes = sizeof(DCI1A_1_5MHz_FDD_t);
+      format1C_size_bits  = sizeof_DCI1C_1_5MHz_t;
+      format1C_size_bytes = sizeof(DCI1C_1_5MHz_t);
+      format0_size_bits  = sizeof_DCI0_1_5MHz_FDD_t;
+      format0_size_bytes = sizeof(DCI0_1_5MHz_FDD_t);
+      format1_size_bits  = sizeof_DCI1_1_5MHz_FDD_t;
+      format1_size_bytes = sizeof(DCI1_1_5MHz_FDD_t);
+
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
+        format2_size_bits  = sizeof_DCI2_1_5MHz_2A_FDD_t;
+        format2_size_bytes = sizeof(DCI2_1_5MHz_2A_FDD_t);
+        format2A_size_bits  = sizeof_DCI2A_1_5MHz_2A_FDD_t;
+        format2A_size_bytes = sizeof(DCI2A_1_5MHz_2A_FDD_t);
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
+        format2_size_bits  = sizeof_DCI2_1_5MHz_4A_FDD_t;
+        format2_size_bytes = sizeof(DCI2_1_5MHz_4A_FDD_t);
+        format2A_size_bits  = sizeof_DCI2A_1_5MHz_4A_FDD_t;
+        format2A_size_bytes = sizeof(DCI2A_1_5MHz_4A_FDD_t);
+      }
+    }
+
+    break;
+
+  case 25:
+  default:
+    if (frame_type == TDD) {
+      format1A_size_bits  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+      format1A_size_bytes = sizeof(DCI1A_5MHz_TDD_1_6_t);
+      format1C_size_bits  = sizeof_DCI1C_5MHz_t;
+      format1C_size_bytes = sizeof(DCI1C_5MHz_t);
+      format0_size_bits  = sizeof_DCI0_5MHz_TDD_1_6_t;
+      format0_size_bytes = sizeof(DCI0_5MHz_TDD_1_6_t);
+      format1_size_bits  = sizeof_DCI1_5MHz_TDD_t;
+      format1_size_bytes = sizeof(DCI1_5MHz_TDD_t);
+
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
+        format2_size_bits  = sizeof_DCI2_5MHz_2A_TDD_t;
+        format2_size_bytes = sizeof(DCI2_5MHz_2A_TDD_t);
+        format2A_size_bits  = sizeof_DCI2A_5MHz_2A_TDD_t;
+        format2A_size_bytes = sizeof(DCI2A_5MHz_2A_TDD_t);
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
+        format2_size_bits  = sizeof_DCI2_5MHz_4A_TDD_t;
+        format2_size_bytes = sizeof(DCI2_5MHz_4A_TDD_t);
+        format2A_size_bits  = sizeof_DCI2A_5MHz_4A_TDD_t;
+        format2A_size_bytes = sizeof(DCI2A_5MHz_4A_TDD_t);
+      }
+    } else {
+      format1A_size_bits  = sizeof_DCI1A_5MHz_FDD_t;
+      format1A_size_bytes = sizeof(DCI1A_5MHz_FDD_t);
+      format1C_size_bits  = sizeof_DCI1C_5MHz_t;
+      format1C_size_bytes = sizeof(DCI1C_5MHz_t);
+      format0_size_bits  = sizeof_DCI0_5MHz_FDD_t;
+      format0_size_bytes = sizeof(DCI0_5MHz_FDD_t);
+      format1_size_bits  = sizeof_DCI1_5MHz_FDD_t;
+      format1_size_bytes = sizeof(DCI1_5MHz_FDD_t);
+
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
+        format2_size_bits  = sizeof_DCI2_5MHz_2A_FDD_t;
+        format2_size_bytes = sizeof(DCI2_5MHz_2A_FDD_t);
+        format2A_size_bits  = sizeof_DCI2A_5MHz_2A_FDD_t;
+        format2A_size_bytes = sizeof(DCI2A_5MHz_2A_FDD_t);
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
+        format2_size_bits  = sizeof_DCI2_5MHz_4A_FDD_t;
+        format2_size_bytes = sizeof(DCI2_5MHz_4A_FDD_t);
+        format2A_size_bits  = sizeof_DCI2A_5MHz_4A_FDD_t;
+        format2A_size_bytes = sizeof(DCI2A_5MHz_4A_FDD_t);
+      }
+    }
+
+    break;
+
+  case 50:
+    if (frame_type == TDD) {
+      format1A_size_bits  = sizeof_DCI1A_10MHz_TDD_1_6_t;
+      format1A_size_bytes = sizeof(DCI1A_10MHz_TDD_1_6_t);
+      format1C_size_bits  = sizeof_DCI1C_10MHz_t;
+      format1C_size_bytes = sizeof(DCI1C_10MHz_t);
+      format0_size_bits  = sizeof_DCI0_10MHz_TDD_1_6_t;
+      format0_size_bytes = sizeof(DCI0_10MHz_TDD_1_6_t);
+      format1_size_bits  = sizeof_DCI1_10MHz_TDD_t;
+      format1_size_bytes = sizeof(DCI1_10MHz_TDD_t);
+
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
+        format2_size_bits  = sizeof_DCI2_10MHz_2A_TDD_t;
+        format2_size_bytes = sizeof(DCI2_10MHz_2A_TDD_t);
+        format2A_size_bits  = sizeof_DCI2A_10MHz_2A_TDD_t;
+        format2A_size_bytes = sizeof(DCI2A_10MHz_2A_TDD_t);
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
+        format2_size_bits  = sizeof_DCI2_10MHz_4A_TDD_t;
+        format2_size_bytes = sizeof(DCI2_10MHz_4A_TDD_t);
+        format2A_size_bits  = sizeof_DCI2A_10MHz_4A_TDD_t;
+        format2A_size_bytes = sizeof(DCI2A_10MHz_4A_TDD_t);
+      }
+    } else {
+      format1A_size_bits  = sizeof_DCI1A_10MHz_FDD_t;
+      format1A_size_bytes = sizeof(DCI1A_10MHz_FDD_t);
+      format1C_size_bits  = sizeof_DCI1C_10MHz_t;
+      format1C_size_bytes = sizeof(DCI1C_10MHz_t);
+      format0_size_bits  = sizeof_DCI0_10MHz_FDD_t;
+      format0_size_bytes = sizeof(DCI0_10MHz_FDD_t);
+      format1_size_bits  = sizeof_DCI1_10MHz_FDD_t;
+      format1_size_bytes = sizeof(DCI1_10MHz_FDD_t);
+
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
+        format2_size_bits  = sizeof_DCI2_10MHz_2A_FDD_t;
+        format2_size_bytes = sizeof(DCI2_10MHz_2A_FDD_t);
+        format2A_size_bits  = sizeof_DCI2A_10MHz_2A_FDD_t;
+        format2A_size_bytes = sizeof(DCI2A_10MHz_2A_FDD_t);
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
+        format2_size_bits  = sizeof_DCI2_10MHz_4A_FDD_t;
+        format2_size_bytes = sizeof(DCI2_10MHz_4A_FDD_t);
+        format2A_size_bits  = sizeof_DCI2A_10MHz_4A_FDD_t;
+        format2A_size_bytes = sizeof(DCI2A_10MHz_4A_FDD_t);
+      }
+    }
+
+    break;
+
+  case 100:
+    if (frame_type == TDD) {
+      format1A_size_bits  = sizeof_DCI1A_20MHz_TDD_1_6_t;
+      format1A_size_bytes = sizeof(DCI1A_20MHz_TDD_1_6_t);
+      format1C_size_bits  = sizeof_DCI1C_20MHz_t;
+      format1C_size_bytes = sizeof(DCI1C_20MHz_t);
+      format0_size_bits  = sizeof_DCI0_20MHz_TDD_1_6_t;
+      format0_size_bytes = sizeof(DCI0_20MHz_TDD_1_6_t);
+      format1_size_bits  = sizeof_DCI1_20MHz_TDD_t;
+      format1_size_bytes = sizeof(DCI1_20MHz_TDD_t);
+
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
+        format2_size_bits  = sizeof_DCI2_20MHz_2A_TDD_t;
+        format2_size_bytes = sizeof(DCI2_20MHz_2A_TDD_t);
+        format2A_size_bits  = sizeof_DCI2A_20MHz_2A_TDD_t;
+        format2A_size_bytes = sizeof(DCI2A_20MHz_2A_TDD_t);
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
+        format2_size_bits  = sizeof_DCI2_20MHz_4A_TDD_t;
+        format2_size_bytes = sizeof(DCI2_20MHz_4A_TDD_t);
+        format2A_size_bits  = sizeof_DCI2A_20MHz_4A_TDD_t;
+        format2A_size_bytes = sizeof(DCI2A_20MHz_4A_TDD_t);
+      }
+    } else {
+      format1A_size_bits  = sizeof_DCI1A_20MHz_FDD_t;
+      format1A_size_bytes = sizeof(DCI1A_20MHz_FDD_t);
+      format1C_size_bits  = sizeof_DCI1C_20MHz_t;
+      format1C_size_bytes = sizeof(DCI1C_20MHz_t);
+      format0_size_bits  = sizeof_DCI0_20MHz_FDD_t;
+      format0_size_bytes = sizeof(DCI0_20MHz_FDD_t);
+      format1_size_bits  = sizeof_DCI1_20MHz_FDD_t;
+      format1_size_bytes = sizeof(DCI1_20MHz_FDD_t);
+
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
+        format2_size_bits  = sizeof_DCI2_20MHz_2A_FDD_t;
+        format2_size_bytes = sizeof(DCI2_20MHz_2A_FDD_t);
+        format2A_size_bits  = sizeof_DCI2A_20MHz_2A_FDD_t;
+        format2A_size_bytes = sizeof(DCI2A_20MHz_2A_FDD_t);
+      } else if (frame_parms->nb_antenna_ports_eNB == 4) {
+        format2_size_bits  = sizeof_DCI2_20MHz_4A_FDD_t;
+        format2_size_bytes = sizeof(DCI2_20MHz_4A_FDD_t);
+        format2A_size_bits  = sizeof_DCI2A_20MHz_4A_FDD_t;
+        format2A_size_bytes = sizeof(DCI2A_20MHz_4A_FDD_t);
+      }
+    }
+
+    break;
+  }
+
+  if (ue->prach_resources[eNB_id])
+    ra_rnti = ue->prach_resources[eNB_id]->ra_RNTI;
+
+  // Now check UE_SPEC format0/1A ue_spec search spaces at aggregation 8
+  dci_decoding_procedure0(pdcch_vars,0,mode,
+                          subframe,
+                          dci_alloc,
+                          eNB_id,
+                          frame_parms,
+                          mi,
+                          ((ue->decode_SIB == 1) ? SI_RNTI : 0),
+                          ra_rnti,
+              P_RNTI,
+              agregationLevel,
+                          format1A,
+                          format1A,
+                          format1A,
+                          format0,
+                          format0_size_bits,
+                          format0_size_bytes,
+                          &dci_cnt,
+                          &format0_found,
+                          &format_c_found,
+                          &CCEmap0,
+                          &CCEmap1,
+                          &CCEmap2);
+
+  if ((CCEmap0==0xffff)||
+      ((format0_found==1)&&(format_c_found==1)))
+    return(dci_cnt);
+
+  if (DCIFormat == 1)
+  {
+      if ((tmode < 3) || (tmode == 7)) {
+          //printf("Crnti decoding frame param agregation %d DCI %d \n",agregationLevel,DCIFormat);
+
+          // Now check UE_SPEC format 1 search spaces at aggregation 1
+
+           //printf("[DCI search] Format 1/1A aggregation 1\n");
+
+          old_dci_cnt=dci_cnt;
+          dci_decoding_procedure0(pdcch_vars,0,mode,subframe,
+                                  dci_alloc,
+                                  eNB_id,
+                                  frame_parms,
+                                  mi,
+                                  ((ue->decode_SIB == 1) ? SI_RNTI : 0),
+                                  ra_rnti,
+                                  P_RNTI,
+                                  0,
+                                  format1A,
+                                  format1A,
+                                  format1A,
+                                  format1,
+                                  format1_size_bits,
+                                  format1_size_bytes,
+                                  &dci_cnt,
+                                  &format0_found,
+                                  &format_c_found,
+                                  &CCEmap0,
+                                  &CCEmap1,
+                                  &CCEmap2);
+
+          if ((CCEmap0==0xffff) ||
+              (format_c_found==1))
+            return(dci_cnt);
+
+          if (dci_cnt>old_dci_cnt)
+            return(dci_cnt);
+
+          //printf("Crnti 1 decoding frame param agregation %d DCI %d \n",agregationLevel,DCIFormat);
+
+      }
+      else
+      {
+          AssertFatal(0,"Other Transmission mode not yet coded\n");
+      }
+  }
+  else
+  {
+     AssertFatal(0,"DCI format %d not yet implemented \n",DCIFormat);
+  }
+
+  return(dci_cnt);
+
+}
+
 uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
                                 DCI_ALLOC_t *dci_alloc,
                                 int do_common,

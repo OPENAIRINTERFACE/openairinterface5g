@@ -3083,11 +3083,37 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_OUT);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DCI_DECODING, VCD_FUNCTION_IN);
-    dci_cnt = dci_decoding_procedure(ue,
-             dci_alloc_rx,
-             (ue->UE_mode[eNB_id] < PUSCH)? 1 : 0,  // if we're in PUSCH don't listen to common search space,
-             // later when we need paging or RA during connection, update this ...
-             eNB_id,subframe_rx);
+
+    start_meas(&ue->dlsch_decoding_stats[subframe_rx]);
+
+    //printf("Decode SIB frame param agregation + DCI %d %d \n",agregationLevel,dciFormat);
+
+    //agregation level == FF means no configuration on
+    if(agregationLevel == 0xFF || ue->decode_SIB)
+    {
+        // search all possible dcis
+        dci_cnt = dci_decoding_procedure(ue,
+                dci_alloc_rx,
+                (ue->UE_mode[eNB_id] < PUSCH)? 1 : 0,  // if we're in PUSCH don't listen to common search space,
+                                                       // later when we need paging or RA during connection, update this ...
+                eNB_id,subframe_rx);
+    }
+    else
+    {
+        // search only preconfigured dcis
+        // search C RNTI dci
+        dci_cnt = dci_CRNTI_decoding_procedure(ue,
+                dci_alloc_rx,
+                dciFormat,
+                agregationLevel,
+                eNB_id,
+                subframe_rx);
+    }
+
+    stop_meas(&ue->dlsch_decoding_stats[subframe_rx]);
+    printf("subframe_rx %d dci_decoding procedure %5.3f\n",
+         subframe_rx,
+         (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DCI_DECODING, VCD_FUNCTION_OUT);
     //LOG_D(PHY,"[UE  %d][PUSCH] Frame %d subframe %d PHICH RX\n",ue->Mod_id,frame_rx,subframe_rx);
 

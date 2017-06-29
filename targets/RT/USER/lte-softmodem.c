@@ -150,6 +150,9 @@ int chain_offset=0;
 int phy_test = 0;
 uint8_t usim_test = 0;
 
+uint8_t dci_Format = 0;
+uint8_t agregation_Level =0xFF;
+
 uint8_t nb_antenna_tx = 1;
 uint8_t nb_antenna_rx = 1;
 
@@ -640,6 +643,8 @@ static void get_options (int argc, char **argv) {
         LONG_OPTION_THREADONESUBFRAME,
         LONG_OPTION_THREADTWOSUBFRAME,
         LONG_OPTION_THREADTHREESUBFRAME,
+        LONG_OPTION_DCIFORMAT,
+        LONG_OPTION_AGREGATIONLEVEL,
         LONG_OPTION_DEMOD_SHIFT,
 #if T_TRACER
         LONG_OPTION_T_PORT,
@@ -677,6 +682,8 @@ static void get_options (int argc, char **argv) {
         {"threadOneSubframe",  required_argument, NULL, LONG_OPTION_THREADONESUBFRAME},
         {"threadTwoSubframe",  required_argument, NULL, LONG_OPTION_THREADTWOSUBFRAME},
         {"threadThreeSubframe",  required_argument, NULL, LONG_OPTION_THREADTHREESUBFRAME},
+        {"DCIformat",  required_argument, NULL, LONG_OPTION_DCIFORMAT},
+        {"AgregationLevel",  required_argument, NULL, LONG_OPTION_AGREGATIONLEVEL},
         {"dlsch-demod-shift", required_argument,  NULL, LONG_OPTION_DEMOD_SHIFT},
 #if T_TRACER
         {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
@@ -811,6 +818,12 @@ static void get_options (int argc, char **argv) {
     case LONG_OPTION_THREADTHREESUBFRAME:
        threads.three=atoi(optarg);
     break;
+    case LONG_OPTION_DCIFORMAT:
+        dci_Format = atoi(optarg);
+       break;
+    case LONG_OPTION_AGREGATIONLEVEL:
+        agregation_Level = atoi(optarg);
+        break;
     case LONG_OPTION_DEMOD_SHIFT: {
         extern int16_t dlsch_demod_shift;
         dlsch_demod_shift = atof(optarg);
@@ -1559,6 +1572,11 @@ int main( int argc, char **argv ) {
     if (UE_flag==1) {
         NB_UE_INST=1;
         NB_INST=1;
+
+        dciFormat     = dci_Format;
+        agregationLevel     = agregation_Level;
+
+        LOG_I(PHY,"Set dciFormat %d , agregationLevel %d \n",dciFormat, agregationLevel);
 
         PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE**));
         PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_UE*)*MAX_NUM_CCs);
