@@ -3080,11 +3080,9 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
              ue->high_speed_flag,
              ue->is_secondary_ue);
 
-
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_OUT);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DCI_DECODING, VCD_FUNCTION_IN);
 
-    start_meas(&ue->dlsch_decoding_stats[subframe_rx]);
 
     //printf("Decode SIB frame param agregation + DCI %d %d \n",agregationLevel,dciFormat);
 
@@ -3110,10 +3108,6 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
                 subframe_rx);
     }
 
-    stop_meas(&ue->dlsch_decoding_stats[subframe_rx]);
-    printf("subframe_rx %d dci_decoding procedure %5.3f\n",
-         subframe_rx,
-         (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DCI_DECODING, VCD_FUNCTION_OUT);
     //LOG_D(PHY,"[UE  %d][PUSCH] Frame %d subframe %d PHICH RX\n",ue->Mod_id,frame_rx,subframe_rx);
 
@@ -4307,10 +4301,15 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
 	  ((pmch_flag==1)&(l==l2)))  {
 	LOG_D(PHY,"[UE  %d] Frame %d: Calling pdcch procedures (eNB %d)\n",ue->Mod_id,frame_rx,eNB_id);
 
+	//start_meas(&ue->rx_pdcch_stats[subframe_rx%RX_NB_TH]);
 	if (ue_pdcch_procedures(eNB_id,ue,proc,abstraction_flag) == -1) {
 	  LOG_E(PHY,"[UE  %d] Frame %d, subframe %d: Error in pdcch procedures\n",ue->Mod_id,frame_rx,subframe_rx);
 	  return(-1);
 	}
+	//stop_meas(&ue->rx_pdcch_stats[subframe_rx%RX_NB_TH]);
+    //printf("subframe %d n_pdcch_sym %d pdcch procedures  %5.3f \n",
+    //        subframe_rx, ue->pdcch_vars[subframe_rx%RX_NB_TH][eNB_id]->num_pdcch_symbols,
+    //     (ue->rx_pdcch_stats[subframe_rx%RX_NB_TH].p_time)/(cpuf*1000.0));
 	LOG_D(PHY,"num_pdcch_symbols %d\n",ue->pdcch_vars[subframe_rx%RX_NB_TH][eNB_id]->num_pdcch_symbols);
       }
     }

@@ -332,6 +332,8 @@ void help (void) {
   printf("  --external-clock tells hardware to use an external clock reference\n");
   printf("  --usim-test use XOR autentication algo in case of test usim mode\n"); 
   printf("  --single-thread-disable. Disables single-thread mode in lte-softmodem\n"); 
+  printf("  --AgregationLevel Choose the agregation level used by tghe eNB for the OAI use 1, it will save some time of processing the pdcch\n");
+  printf("  --DCIformat choose the DCI format (for the moment only valid for SISO DCI format 1\n");
   printf("  -A Set timing_advance\n");
   printf("  -C Set the downlink frequency for all component carriers\n");
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");

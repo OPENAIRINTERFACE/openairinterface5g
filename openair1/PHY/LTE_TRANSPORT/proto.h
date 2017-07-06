@@ -1521,6 +1521,12 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
                                 int16_t eNB_id,
                                 uint8_t subframe);
 
+uint16_t dci_CRNTI_decoding_procedure(PHY_VARS_UE *ue,
+                                DCI_ALLOC_t *dci_alloc,
+                                uint8_t DCIFormat,
+                                uint8_t agregationLevel,
+                                int16_t eNB_id,
+                                uint8_t subframe);
 
 uint16_t dci_decoding_procedure_emul(LTE_UE_PDCCH **lte_ue_pdcch_vars,
                                      uint8_t num_ue_spec_dci,
