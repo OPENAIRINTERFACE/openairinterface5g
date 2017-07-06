@@ -2037,8 +2037,7 @@ uint8_t get_num_pdcch_symbols(uint8_t num_dci,
   return(0);
 }
 
-uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
-                         uint8_t num_common_dci,
+uint8_t generate_dci_top(uint8_t num_dci,
                          DCI_ALLOC_t *dci_alloc,
                          uint32_t n_rnti,
                          int16_t amp,
@@ -2094,9 +2093,8 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
     break;
   }
 
-  num_pdcch_symbols = get_num_pdcch_symbols(num_ue_spec_dci+num_common_dci,dci_alloc,frame_parms,subframe);
-  //  printf("subframe %d in generate_dci_top num_pdcch_symbols = %d, num_dci %d\n",
-  //     subframe,num_pdcch_symbols,num_ue_spec_dci+num_common_dci);
+  num_pdcch_symbols = get_num_pdcch_symbols(num_dci,dci_alloc,frame_parms,subframe);
+
   generate_pcfich(num_pdcch_symbols,
                   amp,
                   frame_parms,
@@ -2118,15 +2116,15 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
   // generate DCIs in order of decreasing aggregation level, then common/ue spec
   // MAC is assumed to have ordered the UE spec DCI according to the RNTI-based randomization
   for (L=3; L>=0; L--) {
-    for (i=0; i<num_common_dci; i++) {
+    for (i=0; i<num_dci; i++) {
 
       if (dci_alloc[i].L == (uint8_t)L) {
 
-#ifdef DEBUG_DCI_ENCODING
-        LOG_I(PHY,"Generating common DCI %d/%d (nCCE %d) of length %d, aggregation %d (%x)\n",i,num_common_dci,dci_alloc[i].firstCCE,dci_alloc[i].dci_length,1<<dci_alloc[i].L,
+	//#ifdef DEBUG_DCI_ENCODING
+        LOG_I(PHY,"Generating DCI %d/%d (nCCE %d) of length %d, aggregation %d (%x)\n",i,num_dci,dci_alloc[i].firstCCE,dci_alloc[i].dci_length,1<<dci_alloc[i].L,
               *(unsigned int*)dci_alloc[i].dci_pdu);
         dump_dci(frame_parms,&dci_alloc[i]);
-#endif
+	//#endif
 
         if (dci_alloc[i].firstCCE>=0) {
           e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
@@ -2135,29 +2133,6 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
                                 dci_alloc[i].L,
                                 dci_alloc[i].rnti);
         }
-      }
-    }
-
-    for (; i<num_ue_spec_dci + num_common_dci; i++) {
-
-      if (dci_alloc[i].L == (uint8_t)L) {
-
-#ifdef DEBUG_DCI_ENCODING
-        printf(" Generating UE (rnti %x) (nCCE %d) specific DCI %d of length %d, aggregation %d, format %d (%x)\n",dci_alloc[i].rnti,dci_alloc[i].firstCCE,i,dci_alloc[i].dci_length,1<<dci_alloc[i].L,dci_alloc[i].format,
-              dci_alloc[i].dci_pdu);
-        dump_dci(frame_parms,&dci_alloc[i]);
-#endif
-
-        if (dci_alloc[i].firstCCE >= 0) {
-          e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
-                                e+(72*dci_alloc[i].firstCCE),
-                                dci_alloc[i].dci_length,
-                                dci_alloc[i].L,
-                                dci_alloc[i].rnti);
-        }
-	else {
-	  
-	}
       }
     }
   }
@@ -2366,84 +2341,6 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
 
   return(num_pdcch_symbols);
 }
-
-#ifdef PHY_ABSTRACTION
-uint8_t generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
-                              uint8_t num_ue_spec_dci,
-                              uint8_t num_common_dci,
-                              DCI_ALLOC_t *dci_alloc,
-                              uint8_t subframe)
-{
-  int n_dci, n_dci_dl;
-  uint8_t ue_id;
-  LTE_eNB_DLSCH_t *dlsch_eNB;
-  uint8_t num_pdcch_symbols = get_num_pdcch_symbols(num_ue_spec_dci+num_common_dci,
-                              dci_alloc,
-                              &phy_vars_eNB->frame_parms,
-                              subframe);
-  eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].cntl.cfi=num_pdcch_symbols;
-
-  memcpy(phy_vars_eNB->dci_alloc[subframe&1],dci_alloc,sizeof(DCI_ALLOC_t)*(num_ue_spec_dci+num_common_dci));
-  phy_vars_eNB->num_ue_spec_dci[subframe&1]=num_ue_spec_dci;
-  phy_vars_eNB->num_common_dci[subframe&1]=num_common_dci;
-  eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].num_ue_spec_dci = num_ue_spec_dci;
-  eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].num_common_dci = num_common_dci;
-
-  LOG_D(PHY,"[eNB %d][DCI][EMUL] CC id %d:  num spec dci %d num comm dci %d num PMCH %d \n",
-        phy_vars_eNB->Mod_id, phy_vars_eNB->CC_id, num_ue_spec_dci,num_common_dci,
-        eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].num_pmch);
-
-  if (eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].cntl.pmch_flag == 1 )
-    n_dci_dl = eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].num_pmch;
-  else
-    n_dci_dl = 0;
-
-  for (n_dci =0 ;
-       n_dci < (eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].num_ue_spec_dci+ eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].num_common_dci);
-       n_dci++) {
-
-    if (dci_alloc[n_dci].format > 0) { // exclude the uplink dci
-
-      if (dci_alloc[n_dci].rnti == SI_RNTI) {
-        dlsch_eNB = RC.eNB[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id]->dlsch_SI;
-        eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].dlsch_type[n_dci_dl] = 0;//SI;
-        eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].harq_pid[n_dci_dl] = 0;
-        eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].tbs[n_dci_dl] = dlsch_eNB->harq_processes[0]->TBS>>3;
-        LOG_D(PHY,"[DCI][EMUL]SI tbs is %d and dci index %d harq pid is %d \n",eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].tbs[n_dci_dl],n_dci_dl,
-              eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].harq_pid[n_dci_dl]);
-      } else if (dci_alloc[n_dci_dl].ra_flag == 1) {
-        dlsch_eNB = RC.eNB[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id]->dlsch_ra;
-        eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].dlsch_type[n_dci_dl] = 1;//RA;
-        eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].harq_pid[n_dci_dl] = 0;
-        eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].tbs[n_dci_dl] = dlsch_eNB->harq_processes[0]->TBS>>3;
-        LOG_D(PHY,"[DCI][EMUL] RA  tbs is %d and dci index %d harq pid is %d \n",eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].tbs[n_dci_dl],n_dci_dl,
-              eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].harq_pid[n_dci_dl]);
-      } else {
-        ue_id = find_ue(dci_alloc[n_dci_dl].rnti,RC.eNB[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id]);
-        DevAssert( ue_id != (uint8_t)-1 );
-        dlsch_eNB = RC.eNB[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id]->dlsch[ue_id][0];
-
-        eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].dlsch_type[n_dci_dl] = 2;//TB0;
-        eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].harq_pid[n_dci_dl] = dlsch_eNB->current_harq_pid;
-        eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].ue_id[n_dci_dl] = ue_id;
-        eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].tbs[n_dci_dl] = dlsch_eNB->harq_processes[dlsch_eNB->current_harq_pid]->TBS>>3;
-        LOG_D(PHY,"[DCI][EMUL] TB1 tbs is %d and dci index %d harq pid is %d \n",eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].tbs[n_dci_dl],n_dci_dl,
-              eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].harq_pid[n_dci_dl]);
-        // check for TB1 later
-
-      }
-    }
-
-    n_dci_dl++;
-  }
-
-  memcpy((void *)&eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].dci_alloc,
-         (void *)dci_alloc,
-         n_dci*sizeof(DCI_ALLOC_t));
-
-  return(num_pdcch_symbols);
-}
-#endif
 
 
 void dci_decoding(uint8_t DCI_LENGTH,
@@ -2768,9 +2665,8 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
     else if (CCEind<96)
       CCEmap = CCEmap2;
     else {
-      LOG_E(PHY,"Illegal CCEind %d (Yk %d, m %d, nCCE %d, L2 %d\n",CCEind,Yk,m,nCCE,L2);
-      mac_xface->macphy_exit("Illegal CCEind\n");
-      return; // not reached
+      AssertFatal(1==0,
+		  "Illegal CCEind %d (Yk %d, m %d, nCCE %d, L2 %d\n",CCEind,Yk,m,nCCE,L2);
     }
 
     switch (L2) {
@@ -2791,9 +2687,8 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
       break;
 
     default:
-      LOG_E( PHY, "Illegal L2 value %d\n", L2 );
-      mac_xface->macphy_exit( "Illegal L2\n" );
-      return; // not reached
+      AssertFatal(1==0,
+		  "Illegal L2 value %d\n", L2 );
     }
 
     CCEmap_cand = (*CCEmap)&CCEmap_mask;

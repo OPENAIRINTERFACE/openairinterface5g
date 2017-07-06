@@ -99,7 +99,7 @@ unsigned short fill_rar(
   RC.mac[module_idP]->common_channels[CC_id].RA_template[ra_idx].timing_offset /= 16; //T_A = N_TA/16, where N_TA should be on a 30.72Msps
   rar[0] = (uint8_t)(RC.mac[module_idP]->common_channels[CC_id].RA_template[ra_idx].timing_offset>>(2+4)); // 7 MSBs of timing advance + divide by 4
   rar[1] = (uint8_t)(RC.mac[module_idP]->common_channels[CC_id].RA_template[ra_idx].timing_offset<<(4-2))&0xf0; // 4 LSBs of timing advance + divide by 4
-  rballoc = mac_xface->computeRIV(N_RB_UL,26,1); // first PRB only for UL Grant
+  rballoc = mac_computeRIV(N_RB_UL,26,1); // first PRB only for UL Grant
   rar[1] |= (rballoc>>7)&7; // Hopping = 0 (bit 3), 3 MSBs of rballoc
   rar[2] = ((uint8_t)(rballoc&0xff))<<1; // 7 LSBs of rballoc
   mcs = 10;

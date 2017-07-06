@@ -65,9 +65,9 @@
 #ifndef NON_ACCESS_STRATUM
 #include "UTIL/MEM/mem_block.h"
 #include "UTIL/LISTS/list.h"
-#include "COMMON/mac_rrc_primitives.h"
 #endif //NON_ACCESS_STRATUM
 //-----------------------------------------------------------------------------
+#include "RRC/LITE/defs.h"
 #include "COMMON/platform_constants.h"
 #include "COMMON/platform_types.h"
 #include "DRB-ToAddMod.h"

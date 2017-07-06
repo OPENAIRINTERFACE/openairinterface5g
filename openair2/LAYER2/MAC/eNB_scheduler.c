@@ -68,6 +68,68 @@
 
 extern RAN_CONTEXT_t RC;
 
+uint16_t pdcch_order_table[6] = {31,31,511,2047,2047,8191};
+
+void check_ul_failure(module_id_t module_idP,int CC_id,int UE_id,
+		      frame_t frameP, sub_frame_t subframeP) {
+
+  UE_list_t                           *UE_list      = &RC.mac[module_idP]->UE_list;
+  nfapi_dl_config_request_body_t      *DL_req       = &RC.mac[module_idP]->DL_req[0];
+  uint16_t                            rnti          = UE_RNTI(module_idP,UE_id);
+  eNB_UE_STATS                        *eNB_UE_stats = &RC.mac[module_idP]->UE_list.eNB_UE_stats[CC_id][UE_id];
+  COMMON_channels_t                   *cc           = RC.mac[module_idP]->common_channels;
+
+  // check uplink failure
+  if ((UE_list->UE_sched_ctrl[UE_id].ul_failure_timer>0)&&
+      (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync==0)) {
+    LOG_D(MAC,"UE %d rnti %x: UL Failure timer %d \n",UE_id,rnti,UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
+    if (UE_list->UE_sched_ctrl[UE_id].ra_pdcch_order_sent==0) {
+      UE_list->UE_sched_ctrl[UE_id].ra_pdcch_order_sent=1;
+      
+      // add a format 1A dci for this UE to request an RA procedure (only one UE per subframe)
+      LOG_D(MAC,"UE %d rnti %x: sending PDCCH order for RAPROC (failure timer %d) \n",UE_id,rnti,UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);	    
+      nfapi_dl_config_request_pdu_t* dl_config_pdu                    = &DL_req[CC_id].dl_config_pdu_list[DL_req[CC_id].number_pdu]; 
+      memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
+      dl_config_pdu->pdu_type                                         = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE; 
+      dl_config_pdu->pdu_size                                         = 2+sizeof(nfapi_dl_config_dci_dl_pdu);
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format            = NFAPI_DL_DCI_FORMAT_1A;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level     = get_aggregation(get_bw_index(module_idP,CC_id),eNB_UE_stats->dl_cqi,format1A);
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti                  = rnti;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type             = 1;    // CRNTI : see Table 4-10 from SCF082 - nFAPI specifications
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power    = 6000; // equal to RS power
+      
+      AssertFatal((cc[CC_id].mib->message.dl_Bandwidth >=0) && (cc[CC_id].mib->message.dl_Bandwidth<6),
+		  "illegal dl_Bandwidth %d\n",(int)cc[CC_id].mib->message.dl_Bandwidth);
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = pdcch_order_table[cc[CC_id].mib->message.dl_Bandwidth];
+      DL_req[CC_id].number_dci++;
+      DL_req[CC_id].number_pdu++;
+      
+      /* 
+	 add_ue_spec_dci(&DL_req[CC_id],
+	 rnti,
+	 get_aggregation(get_tw_index(module_idP,CC_id),eNB_UE_stats->DL_cqi[0],format1A),
+	 format1A,
+	 NO_DLSCH);*/
+    }
+    else { // ra_pdcch_sent==1
+      LOG_D(MAC,"UE %d rnti %x: sent PDCCH order for RAPROC waiting (failure timer %d) \n",UE_id,rnti,UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);	    	    
+      if ((UE_list->UE_sched_ctrl[UE_id].ul_failure_timer % 40) == 0)
+	UE_list->UE_sched_ctrl[UE_id].ra_pdcch_order_sent=0; // resend every 4 frames	      
+    }
+    
+    UE_list->UE_sched_ctrl[UE_id].ul_failure_timer++;
+    // check threshold
+    if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 200) {
+      // inform RRC of failure and clear timer
+      LOG_I(MAC,"UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",UE_id,rnti);
+      mac_eNB_rrc_ul_failure(module_idP,CC_id,frameP,subframeP,rnti);
+      UE_list->UE_sched_ctrl[UE_id].ul_failure_timer=0;
+      UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync=1;
+    }
+  } // ul_failure_timer>0
+  
+}
+
 void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, frame_t frameP, sub_frame_t subframeP)  //, int calibration_flag) {
 {
 
@@ -80,38 +142,49 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   instance_t    instance;
   int           result;
 #endif
-  DCI_PDU *DCI_pdu[MAX_NUM_CCs];
   int CC_id,i; //,next_i;
   UE_list_t *UE_list=&RC.mac[module_idP]->UE_list;
   rnti_t rnti;
-  void         *DLSCH_dci=NULL;
-  int size_bits=0,size_bytes=0;
   
-  LTE_eNB_UE_stats  *eNB_UE_stats   = NULL;
-  COMMON_channels_t *cc = RC.mac[module_idP]->common_channels;
-
+  COMMON_channels_t                   *cc             = RC.mac[module_idP]->common_channels;
+  nfapi_dl_config_request_body_t      *DL_req         = &RC.mac[module_idP]->DL_req[0];
+  nfapi_ul_config_request_body_t      *UL_req         = &RC.mac[module_idP]->UL_req[0];
+  nfapi_hi_dci0_request_body_t        *HI_DCI0_req    = &RC.mac[module_idP]->HI_DCI0_req[0];
+  nfapi_tx_request_body_t             *TX_req         = &RC.mac[module_idP]->TX_req[0];
+  eNB_UE_STATS                        *eNB_UE_stats;
 #if defined(FLEXRAN_AGENT_SB_IF)
   Protocol__FlexranMessage *msg;
 #endif
 
   
-  LOG_D(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler (UE_list->head %d)\n",module_idP, frameP, subframeP,UE_list->head);
+  LOG_I(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler (UE_list->head %d)\n",module_idP, frameP, subframeP,UE_list->head);
 
   start_meas(&RC.mac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    DCI_pdu[CC_id] = &cc[CC_id].DCI_pdu;
     mbsfn_status[CC_id]=0;
     // clear vrb_map
     memset(cc[CC_id].vrb_map,0,100);
-  }
 
-  // clear DCI and BCCH contents before scheduling
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    DCI_pdu[CC_id]->Num_common_dci  = 0;
-    DCI_pdu[CC_id]->Num_ue_spec_dci = 0;
+    // clear DL/UL info for new scheduling round
 
+    RC.mac[module_idP]->pdu_index[CC_id]         = 0;
+    DL_req[CC_id].number_pdcch_ofdm_symbols      = 1;
+    DL_req[CC_id].number_dci                     = 0;
+    DL_req[CC_id].number_pdu                     = 0;
+    DL_req[CC_id].number_pdsch_rnti              = 0;
+    DL_req[CC_id].transmission_power_pcfich      = 6000;
+
+    HI_DCI0_req[CC_id].sfnsf                     = subframeP + (frameP<<3);
+    HI_DCI0_req[CC_id].number_of_dci             = 0;
+    HI_DCI0_req[CC_id].number_of_hi              = 0;
+
+    UL_req[CC_id].number_of_pdus                 = 0;
+    UL_req[CC_id].rach_prach_frequency_resources = 0; // ignored, handled by PHY for now
+    UL_req[CC_id].srs_present                    = 0; // ignored, handled by PHY for now
+
+    TX_req[CC_id].number_of_pdus                 = 0;
 #if defined(Rel10) || defined(Rel14)
     cc[CC_id].mcch_active =0;
 #endif
@@ -123,15 +196,15 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
     if (UE_list->active[i] != TRUE) continue;
 
-    rnti = UE_RNTI(module_idP, i);
-    CC_id = UE_PCCID(module_idP, i);
+    rnti         = UE_RNTI(module_idP, i);
+    CC_id        = UE_PCCID(module_idP, i);
+    eNB_UE_stats = &RC.mac[module_idP]->UE_list.eNB_UE_stats[CC_id][i];
+
     if ((frameP==0)&&(subframeP==0)) {
-      LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP, CC_id, rnti);
-      int cqi = eNB_UE_stats == NULL ? -1 : eNB_UE_stats->DL_cqi[0];
       LOG_I(MAC,"UE  rnti %x : %s, PHR %d dB CQI %d\n", rnti,
             UE_list->UE_sched_ctrl[i].ul_out_of_sync==0 ? "in synch" : "out of sync",
             UE_list->UE_template[CC_id][i].phr_info,
-            cqi);
+            eNB_UE_stats->dl_cqi);
     }
 
     RC.eNB[module_idP][CC_id]->pusch_stats_bsr[i][(frameP*10)+subframeP]=-63;
@@ -141,139 +214,26 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ul_inactivity_timer++;
 
     RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer++;
-    eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
 
-    if (eNB_UE_stats==NULL) {
+    // was this before: 
+    //    eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
+
+    
+    // eNB_UE_stats is never NULL now
+
+    /*    if (eNB_UE_stats==NULL) {
 	//mac_remove_ue(module_idP, i, frameP, subframeP);
       //Inform the controller about the UE deactivation. Should be moved to RRC agent in the future
-#if defined(FLEXRAN_AGENT_SB_IF)
+#if defined(FLEXRAN_AGENT_S_IF)
       if (mac_agent_registered[module_idP]) {
 	agent_mac_xface[module_idP]->flexran_agent_notify_ue_state_change(module_idP,
 									  rnti,
 									  PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
       }
 #endif
-    }
-    else {
-      // check uplink failure
-      if ((UE_list->UE_sched_ctrl[i].ul_failure_timer>0)&&
-	  (UE_list->UE_sched_ctrl[i].ul_out_of_sync==0)) {
-	LOG_D(MAC,"UE %d rnti %x: UL Failure timer %d \n",i,rnti,UE_list->UE_sched_ctrl[i].ul_failure_timer);
-	if (UE_list->UE_sched_ctrl[i].ra_pdcch_order_sent==0) {
-	  UE_list->UE_sched_ctrl[i].ra_pdcch_order_sent=1;
-	  
-	  // add a format 1A dci for this UE to request an RA procedure (only one UE per subframe)
-	  LOG_D(MAC,"UE %d rnti %x: sending PDCCH order for RAPROC (failure timer %d) \n",i,rnti,UE_list->UE_sched_ctrl[i].ul_failure_timer);	    
-	  DLSCH_dci = (void *)UE_list->UE_template[CC_id][i].DLSCH_DCI[0];
-	  *(uint32_t*)DLSCH_dci = 0;
-	  int N_RB_DL = cc[CC_id].mib->message.dl_Bandwidth;
-	  if (cc[CC_id].tdd_Config != NULL) {
-	    switch (N_RB_DL) {
-	    case 0:
-	      ((DCI1A_1_5MHz_TDD_1_6_t*)DLSCH_dci)->type = 1;
-	      ((DCI1A_1_5MHz_TDD_1_6_t*)DLSCH_dci)->rballoc = 31;
-	      size_bytes = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
-	      size_bits  = sizeof_DCI1A_1_5MHz_TDD_1_6_t;
-	      break;
-	    case 1:
-	      /*	      ((DCI1A_2_5MHz_TDD_1_6_t*)DLSCH_dci)->type = 1;
-	      ((DCI1A_2_5MHz_TDD_1_6_t*)DLSCH_dci)->rballoc = 31;
-	      size_bytes = sizeof(DCI1A_2_5MHz_TDD_1_6_t);
-	      size_bits  = sizeof_DCI1A_2_5MHz_TDD_1_6_t;*/
-	      break;
-	    case 2:
-	      ((DCI1A_5MHz_TDD_1_6_t*)DLSCH_dci)->type = 1;
-	      ((DCI1A_5MHz_TDD_1_6_t*)DLSCH_dci)->rballoc = 511;
-	      size_bytes = sizeof(DCI1A_5MHz_TDD_1_6_t);
-	      size_bits  = sizeof_DCI1A_5MHz_TDD_1_6_t;
-	      break;
-	    case 3:
-	      ((DCI1A_10MHz_TDD_1_6_t*)DLSCH_dci)->type = 1;
-	      ((DCI1A_10MHz_TDD_1_6_t*)DLSCH_dci)->rballoc = 2047;
-	      size_bytes = sizeof(DCI1A_10MHz_TDD_1_6_t);
-	      size_bits  = sizeof_DCI1A_10MHz_TDD_1_6_t;
-	      break;
-	    case 4:/*
-	      ((DCI1A_15MHz_TDD_1_6_t*)DLSCH_dci)->type = 1;
-	      ((DCI1A_15MHz_TDD_1_6_t*)DLSCH_dci)->rballoc = 2047;
-	      size_bytes = sizeof(DCI1A_15MHz_TDD_1_6_t);
-	      size_bits  = sizeof_DCI1A_15MHz_TDD_1_6_t;
-	      break;*/
-	    case 5:
-	      ((DCI1A_20MHz_TDD_1_6_t*)DLSCH_dci)->type = 1;
-	      ((DCI1A_20MHz_TDD_1_6_t*)DLSCH_dci)->rballoc = 8191;
-	      size_bytes = sizeof(DCI1A_20MHz_TDD_1_6_t);
-	      size_bits  = sizeof_DCI1A_20MHz_TDD_1_6_t;
-	      break;
-	    }
-	  }
-	  else { // FDD
-	    switch (N_RB_DL) {
-	    case 0:
-	      ((DCI1A_1_5MHz_FDD_t*)DLSCH_dci)->type = 1;
-	      ((DCI1A_1_5MHz_FDD_t*)DLSCH_dci)->rballoc = 31;
-	      size_bytes = sizeof(DCI1A_1_5MHz_FDD_t);
-	      size_bits  = sizeof_DCI1A_1_5MHz_FDD_t;
-	      break;
-	    case 1:/*
-	      ((DCI1A_2_5MHz_FDD_t*)DLSCH_dci)->type = 1;
-	      ((DCI1A_2_5MHz_FDD_t*)DLSCH_dci)->rballoc = 31;
-	      size_bytes = sizeof(DCI1A_1_5MHz_FDD_t);
-	      size_bits  = sizeof_DCI1A_1_5MHz_FDD_t;*/
-	      break;
-	    case 2:
-	      ((DCI1A_5MHz_FDD_t*)DLSCH_dci)->type = 1;
-	      ((DCI1A_5MHz_FDD_t*)DLSCH_dci)->rballoc = 511;
-	      size_bytes = sizeof(DCI1A_5MHz_FDD_t);
-	      size_bits  = sizeof_DCI1A_5MHz_FDD_t;
-	      break;
-	    case 3:
-	      ((DCI1A_10MHz_FDD_t*)DLSCH_dci)->type = 1;
-	      ((DCI1A_10MHz_FDD_t*)DLSCH_dci)->rballoc = 2047;
-	      size_bytes = sizeof(DCI1A_10MHz_FDD_t);
-	      size_bits  = sizeof_DCI1A_10MHz_FDD_t;
-		break;
-	    case 4:
-	      /*	      ((DCI1A_15MHz_FDD_t*)DLSCH_dci)->type = 1;
-	      ((DCI1A_15MHz_FDD_t*)DLSCH_dci)->rballoc = 2047;
-	      size_bytes = sizeof(DCI1A_10MHz_FDD_t);
-	      size_bits  = sizeof_DCI1A_10MHz_FDD_t;*/
-		break;
-	    case 5:
-	      ((DCI1A_20MHz_FDD_t*)DLSCH_dci)->type = 1;
-	      ((DCI1A_20MHz_FDD_t*)DLSCH_dci)->rballoc = 8191;
-	      size_bytes = sizeof(DCI1A_20MHz_FDD_t);
-	      size_bits  = sizeof_DCI1A_20MHz_FDD_t;
-	      break;
-	    }
-	  }
-	  
-	  add_ue_spec_dci(DCI_pdu[CC_id],
-			  DLSCH_dci,
-			  rnti,
-			  size_bytes,
-			  get_aggregation(get_bw_index(module_idP,CC_id),eNB_UE_stats->DL_cqi[0],format1A),
-			  size_bits,
-			  format1A,
-			  0);
-	}
-	else { // ra_pdcch_sent==1
-	  LOG_D(MAC,"UE %d rnti %x: sent PDCCH order for RAPROC waiting (failure timer %d) \n",i,rnti,UE_list->UE_sched_ctrl[i].ul_failure_timer);	    	    
-	  if ((UE_list->UE_sched_ctrl[i].ul_failure_timer % 40) == 0)
-	    UE_list->UE_sched_ctrl[i].ra_pdcch_order_sent=0; // resend every 4 frames	      
-	}
-      
-	UE_list->UE_sched_ctrl[i].ul_failure_timer++;
-	// check threshold
-	if (UE_list->UE_sched_ctrl[i].ul_failure_timer > 200) {
-	  // inform RRC of failure and clear timer
-	  LOG_I(MAC,"UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",i,rnti);
-	  mac_eNB_rrc_ul_failure(module_idP,CC_id,frameP,subframeP,rnti);
-	  UE_list->UE_sched_ctrl[i].ul_failure_timer=0;
-	  UE_list->UE_sched_ctrl[i].ul_out_of_sync=1;
-	}
-      }
-    } // ul_failure_timer>0
+}*/
+    check_ul_failure(module_idP,CC_id,i,frameP,subframeP);
+
   }
 
 #if defined(ENABLE_ITTI)
@@ -337,13 +297,9 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 /*   } */
 /* #endif */
   
-  //if (subframeP%5 == 0)
-  //#ifdef EXMIMO
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frameP, subframeP,module_idP);
   pdcp_run(&ctxt);
-  //#endif
 
-  // check HO
   rrc_rx_tx(&ctxt,
             0, // eNB index, unused in eNB
             CC_id);
@@ -369,8 +325,11 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
 
     //    schedule_RA(module_idP,frameP,subframeP,2);
-
-    
+    LOG_I(MAC,"Scheduling MIB\n");
+    if ((frameP&3) == 0) schedule_mib(module_idP,frameP,subframeP);
+    LOG_I(MAC,"NFAPI: number_of_pdus %d, number_of_TX_req %d\n",
+	  DL_req[0].number_pdu,
+	  TX_req[0].number_of_pdus);
     if (cc[0].tdd_Config == NULL) {  //FDD
       schedule_ulsch(module_idP,frameP,cooperation_flag,0,4);//,calibration_flag);
     } else if  ((cc[0].tdd_Config->subframeAssignment == 0) ||
@@ -1066,7 +1025,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
   }
 
-  LOG_D(MAC,"FrameP %d, subframeP %d : Scheduling CCEs\n",frameP,subframeP);
+  LOG_I(MAC,"FrameP %d, subframeP %d : Scheduling CCEs\n",frameP,subframeP);
 
   // Allocate CCEs for good after scheduling is done
   for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++)
@@ -1081,27 +1040,6 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 #endif
 #endif
 
-  /*
-  int dummy=0;
-  for (i=0;
-       i<DCI_pdu[CC_id]->Num_common_dci+DCI_pdu[CC_id]->Num_ue_spec_dci;
-       i++)
-    if (DCI_pdu[CC_id]->dci_alloc[i].rnti==2)
-      dummy=1;
-	
-  if (dummy==1)
-    for (i=0;
-	 i<DCI_pdu[CC_id]->Num_common_dci+DCI_pdu[CC_id]->Num_ue_spec_dci;
-	 i++)
-      LOG_I(MAC,"Frame %d, subframe %d: DCI %d/%d, format %d, rnti %x, NCCE %d(num_pdcch_symb %d)\n",
-	    frameP,subframeP,i,DCI_pdu[CC_id]->Num_common_dci+DCI_pdu[CC_id]->Num_ue_spec_dci,
-	    DCI_pdu[CC_id]->dci_alloc[i].format,
-	    DCI_pdu[CC_id]->dci_alloc[i].rnti,
-	    DCI_pdu[CC_id]->dci_alloc[i].firstCCE,
-	    DCI_pdu[CC_id]->num_pdcch_symbols);
-
-  LOG_D(MAC,"frameP %d, subframeP %d\n",frameP,subframeP);
-  */
 
   stop_meas(&RC.mac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_OUT);

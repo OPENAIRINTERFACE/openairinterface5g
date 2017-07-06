@@ -225,7 +225,7 @@ get_free_mem_block (uint32_t sizeP, const char* caller)
   if (sizeP > MEM_MNGT_MB12_BLOCK_SIZE) {
     LOG_E (RLC,"[MEM_MNGT][ERROR][FATAL] size requested %d out of bounds\n", sizeP);
     display_mem_load ();
-    mac_xface->macphy_exit("[MEM_MNGT][ERROR][FATAL] get_free_mem_block size requested out of bounds");
+    AssertFatal(1==0,"get_free_mem_block size requested out of bounds");
     return NULL;
   }
 
@@ -278,7 +278,7 @@ get_free_mem_block (uint32_t sizeP, const char* caller)
 
   LOG_E(PHY, "[MEM_MNGT][ERROR][FATAL] failed allocating MEM_BLOCK size %d byes (pool_selected=%d size=%d)\n", sizeP, pool_selected, size);
   display_mem_load();
-  mac_xface->macphy_exit("[MEM_MNGT][ERROR][FATAL] get_free_mem_block failed");
+  AssertFatal(1==0,"get_free_mem_block failed");
 
 #ifdef MEMBLOCK_BIG_LOCK
   if (pthread_mutex_unlock(&mtex)) abort();
@@ -317,7 +317,7 @@ get_free_copy_mem_block (void)
     //    break_point ();
     //#endif
 
-    mac_xface->macphy_exit("[MEM_MNGT][ERROR][FATAL] get_free_copy_mem_block failed");
+    AssertFatal(1==0,"mem pool is empty");
     return NULL;
   }
 }

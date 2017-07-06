@@ -36,6 +36,7 @@
 
 #include "types.h"
 //#include "defs.h"
+#include "openair2/COMMON/platform_types.h"
 
 #define LTE_NUMBER_OF_SUBFRAMES_PER_FRAME 10
 #define LTE_SLOTS_PER_FRAME  20
@@ -657,6 +658,59 @@ typedef struct {
   /// - third index: frequency [0..]
   int32_t **tdd_calib_coeffs;
 } RU_COMMON;
+
+typedef enum {format0,
+              format1,
+              format1A,
+              format1B,
+              format1C,
+              format1D,
+              format1E_2A_M10PRB,
+              format2,
+              format2A,
+              format2B,
+              format2C,
+              format2D,
+              format3,
+	      format3A,
+	      format4
+             } DCI_format_t;
+
+typedef struct {
+  /// Length of DCI in bits
+  uint8_t dci_length;
+  /// Aggregation level
+  uint8_t L;
+  /// Position of first CCE of the dci
+  int firstCCE;
+  /// flag to indicate that this is a RA response
+  boolean_t ra_flag;
+  /// rnti
+  rnti_t rnti;
+  /// harq_pid
+  rnti_t harq_pid;
+  /// Format
+  DCI_format_t format;
+  /// DCI pdu
+  uint8_t dci_pdu[8];
+} DCI_ALLOC_t;
+
+
+typedef struct {
+  uint8_t     num_dci;
+  uint8_t     num_pdcch_symbols; 
+  DCI_ALLOC_t dci_alloc[32];
+} LTE_eNB_PDCCH;
+
+/*
+typedef struct {
+
+} LTE_eNB_ePDCCH;
+
+typedef struct {
+
+} LTE_eNB_MPDCCH;
+*/
 
 typedef struct {
   /// \brief Hold the channel estimates in frequency domain based on SRS.

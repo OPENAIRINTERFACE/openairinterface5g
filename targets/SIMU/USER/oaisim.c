@@ -625,7 +625,7 @@ l2l1_task (void *args_p)
 
   if (abstraction_flag == 1) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
-      mac_xface->dl_phy_sync_success (UE_id, 0, 0,1);   //UE_id%NB_eNB_INST);
+      dl_phy_sync_success (UE_id, 0, 0,1);   //UE_id%NB_eNB_INST);
   }
   
   start_meas (&oaisim_stats);
@@ -733,7 +733,7 @@ l2l1_task (void *args_p)
         log_set_instance_type (LOG_INSTANCE_ENB);
 #endif
 
-	clear_eNB_transport_info (oai_emulation.info.nb_enb_local);
+
 	CC_id=0;
         int all_done=0;
 
@@ -830,8 +830,6 @@ l2l1_task (void *args_p)
           }
         }// eNB_inst loop
 
-        // Call ETHERNET emulation here
-        //emu_transport (frame, last_slot, next_slot, direction, oai_emulation.info.frame_type, ethernet_flag);
 
 #if defined(ENABLE_ITTI)
         log_set_instance_type (LOG_INSTANCE_UE);
@@ -1895,10 +1893,6 @@ oai_shutdown (void)
   if (oai_emulation.info.opp_enabled == 1)
     print_opp_meas_oaisim ();
 
-  // relase all rx state
-  if (ethernet_flag == 1) {
-    emu_transport_release ();
-  }
 
 #ifdef PROC
 

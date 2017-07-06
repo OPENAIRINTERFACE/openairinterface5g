@@ -204,7 +204,7 @@ void lte_ue_measurements_emul(PHY_VARS_UE *phy_vars_ue,uint8_t last_slot,uint8_t
 @returns Path loss in dB
  */
 int16_t get_PL(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
-uint32_t get_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
+double get_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
 uint32_t get_RSRQ(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
 uint8_t get_n_adj_cells(module_id_t Mod_id,uint8_t CC_id);
 uint32_t get_rx_total_gain_dB(module_id_t Mod_id,uint8_t CC_id);

@@ -303,15 +303,21 @@ void *eNB_app_task(void *args_p)
   long                            enb_register_retry_timer_id;
 # endif
   uint32_t                        enb_id;
-  MessageDef                     *msg_p           = NULL;
-  const char                     *msg_name        = NULL;
+  MessageDef                      *msg_p           = NULL;
+  const char                      *msg_name        = NULL;
   instance_t                      instance;
   int                             result;
-
+  int                             j;
   /* for no gcc warnings */
   (void)instance;
 
   itti_mark_task_ready (TASK_ENB_APP);
+
+  RCconfig_L1();
+
+  RCconfig_macrlc();
+
+  if (RC.nb_L1_inst>0) AssertFatal(l1_north_init_eNB()==0,"could not initialize L1 north interface\n");
 
   # if defined(ENABLE_ITTI)
 #   if defined(OAI_EMU)
@@ -337,10 +343,10 @@ void *eNB_app_task(void *args_p)
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
     //    configure_phy(enb_id);//
     RC.rrc[enb_id] = (eNB_RRC_INST*)malloc(sizeof(eNB_RRC_INST));
-
+    
     configure_rrc(enb_id);//
   }
-
+  
 #if defined (FLEXRAN_AGENT_SB_IF)
   
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
@@ -348,6 +354,8 @@ void *eNB_app_task(void *args_p)
     flexran_agent_start(enb_id, enb_properties_p);
   }
 #endif 
+  
+
 
 # if defined(ENABLE_USE_MME)
   /* Try to register each eNB */

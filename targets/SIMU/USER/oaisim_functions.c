@@ -882,7 +882,7 @@ void check_and_adjust_params(void)
 
   if (ret < 0)
     LOG_W(EMU,"[INIT] Netlink not available, careful ...\n");
-
+  /*
   if (ethernet_flag == 1) {
     oai_emulation.info.master[oai_emulation.info.master_id].nb_ue = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_rn_local;
     oai_emulation.info.master[oai_emulation.info.master_id].nb_enb = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_rn_local;
@@ -904,14 +904,14 @@ void check_and_adjust_params(void)
     }
 
     LOG_I (EMU, " Total number of master %d my master id %d\n", oai_emulation.info.nb_master, oai_emulation.info.master_id);
-    init_bypass ();
+    //    init_bypass ();
 
     while (emu_tx_status != SYNCED_TRANSPORT) {
       LOG_I (EMU, " Waiting for EMU Transport to be synced\n");
       emu_transport_sync ();    //emulation_tx_rx();
     }
   } // ethernet flag
-
+  */
   //
   NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
   NB_eNB_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;

@@ -98,7 +98,7 @@ int16_t get_hundred_times_delta_IF_mac(module_id_t module_idP, uint8_t CC_id, rn
     return -1;
   }
 
-  UE_id = find_ue( rnti, RC.eNB[module_idP][CC_id] );
+  UE_id = find_ulsch( rnti, RC.eNB[module_idP][CC_id],SEARCH_EXIST);
 
   if (UE_id == -1) {
     // not found
@@ -161,11 +161,11 @@ void pusch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_
 
   if(ue->ulsch_Msg3_active[eNB_id] == 1) {  // Msg3 PUSCH
 
-    ue->ulsch[eNB_id]->Po_PUSCH += (mac_xface->get_Po_NOMINAL_PUSCH(ue->Mod_id,0) + PL);
+    ue->ulsch[eNB_id]->Po_PUSCH += (get_Po_NOMINAL_PUSCH(ue->Mod_id,0) + PL);
 
     LOG_I(PHY,"[UE  %d][RAPROC] frame %d, subframe %d: Msg3 Po_PUSCH %d dBm (%d,%d,100*PL=%d,%d,%d)\n",
           ue->Mod_id,proc->frame_tx,proc->subframe_tx,ue->ulsch[eNB_id]->Po_PUSCH,
-          100*mac_xface->get_Po_NOMINAL_PUSCH(ue->Mod_id,0),
+          100*get_Po_NOMINAL_PUSCH(ue->Mod_id,0),
           hundred_times_log10_NPRB[nb_rb-1],
           100*PL,
           get_hundred_times_delta_IF(ue,eNB_id,harq_pid),

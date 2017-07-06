@@ -55,8 +55,7 @@ void lte_param_init(unsigned char N_tx_port_eNB,
   UE = malloc(sizeof(PHY_VARS_UE));
   memset((void*)eNB,0,sizeof(PHY_VARS_eNB));
   memset((void*)UE,0,sizeof(PHY_VARS_UE));
-  //PHY_config = malloc(sizeof(PHY_CONFIG));
-  mac_xface = malloc(sizeof(MAC_xface));
+
 
   srand(0);
   randominit(0);

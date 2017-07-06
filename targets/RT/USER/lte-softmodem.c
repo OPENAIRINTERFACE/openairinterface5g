@@ -1581,7 +1581,7 @@ int main( int argc, char **argv )
     if (UE_flag==1) {
       printf("Filling UE band info\n");
       fill_ue_band_info();
-      mac_xface->dl_phy_sync_success (0, 0, 0, 1);
+      dl_phy_sync_success (0, 0, 0, 1);
     } 
   }
   

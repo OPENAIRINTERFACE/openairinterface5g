@@ -59,6 +59,9 @@
 #define DEBUG_eNB_SCHEDULER 1
 
 
+// NEED TO ADD schedule_SI_BR for SIB1_BR and SIB23_BR
+// CCE_allocation_infeasible to be done for EPDCCH/MPDCCH
+
 //------------------------------------------------------------------------------
 void
 schedule_SI(
@@ -69,26 +72,22 @@ schedule_SI(
 //------------------------------------------------------------------------------
 {
 
-  int8_t            bcch_sdu_length;
-  int               mcs = -1;
-  void              *BCCH_alloc_pdu;
-  int               CC_id;
-  eNB_MAC_INST      *eNB = RC.mac[module_idP];
-  uint8_t           *vrb_map;
-  int               first_rb = -1;
-  int               rballoc[MAX_NUM_CCs];
-  int               sizeof1A_bytes;
-  int               sizeof1A_bits = -1;
-  DCI_PDU           *DCI_pdu;
-  COMMON_channels_t *cc;
-  int               N_RB_DL;
+  int8_t                         bcch_sdu_length;
+  int                            mcs = -1;
+  int                            CC_id;
+  eNB_MAC_INST                   *eNB = RC.mac[module_idP];
+  COMMON_channels_t              *cc;
+  uint8_t                        *vrb_map;
+  int                            first_rb = -1;
+  int                            N_RB_DL;
+  nfapi_dl_config_request_pdu_t  *dl_config_pdu;
+  nfapi_tx_request_pdu_t         *TX_req;
+
   start_meas(&eNB->schedule_si);
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
     cc              = &eNB->common_channels[CC_id];
-    BCCH_alloc_pdu  = (void*)&cc->BCCH_alloc_pdu;
-    DCI_pdu         = (void*)&cc->DCI_pdu;
     vrb_map         = (void*)&cc->vrb_map;
     N_RB_DL         = to_prb(cc->mib->message.dl_Bandwidth);
 
@@ -138,169 +137,86 @@ schedule_SI(
       vrb_map[first_rb+2] = 1;
       vrb_map[first_rb+3] = 1;
 
-      // Get MCS for length of SI
-      if (bcch_sdu_length <= (mac_xface->get_TBS_DL(0,3))) {
+      // Get MCS for length of SI, 3 PRBs
+      if (bcch_sdu_length <= 7) {
         mcs=0;
-      } else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(1,3))) {
+      } else if (bcch_sdu_length <= 11) {
         mcs=1;
-      } else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(2,3))) {
+      } else if (bcch_sdu_length <= 18) {
         mcs=2;
-      } else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(3,3))) {
+      } else if (bcch_sdu_length <= 22) {
         mcs=3;
-      } else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(4,3))) {
+      } else if (bcch_sdu_length <= 26) {
         mcs=4;
-      } else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(5,3))) {
+      } else if (bcch_sdu_length <= 28) {
         mcs=5;
-      } else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(6,3))) {
+      } else if (bcch_sdu_length <= 32) {
         mcs=6;
-      } else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(7,3))) {
+      } else if (bcch_sdu_length <= 41) {
         mcs=7;
-      } else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(8,3))) {
+      } else if (bcch_sdu_length <= 49) {
         mcs=8;
       }
+      dl_config_pdu                                                         = &eNB->DL_req[CC_id].dl_config_pdu_list[eNB->DL_req[CC_id].number_pdu]; 
+      memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
+      dl_config_pdu->pdu_type                                               = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE; 
+      dl_config_pdu->pdu_size                                               = (uint8_t)(2+sizeof(nfapi_dl_config_dci_dl_pdu));
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format                  = NFAPI_DL_DCI_FORMAT_1A;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level           = 4;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti                        = 0xFFFF;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type                   = 2;    // S-RNTI : see Table 4-10 from SCF082 - nFAPI specifications
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power          = 6000; // equal to RS power
+      
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process                = 0;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc                         = 1; // no TPC
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1        = 1;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1                       = mcs;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1        = 0;
 
-
-
-      if (cc->tdd_Config!=NULL) { // TDD
-        switch (N_RB_DL) {
-        case 6:
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(N_RB_DL,first_rb,4);
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rv = 1;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->harq_pid = 0;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->TPC = 1;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->padding = 0;
-          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc);
-	  sizeof1A_bytes = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
-	  sizeof1A_bits = sizeof_DCI1A_1_5MHz_TDD_1_6_t;
-          break;
-
-        case 25:
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(N_RB_DL,first_rb,4);
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rv = 1;
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->harq_pid = 0;
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->TPC = 1;
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->padding = 0;
-          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc);
-	  sizeof1A_bytes = sizeof(DCI1A_5MHz_TDD_1_6_t);
-	  sizeof1A_bits = sizeof_DCI1A_5MHz_TDD_1_6_t;
-	  break;
-
-        case 50:
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(N_RB_DL,first_rb,4);
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rv = 1;
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->harq_pid = 0;
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->TPC = 1;
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->padding = 0;
-          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc);
-	  sizeof1A_bytes = sizeof(DCI1A_10MHz_TDD_1_6_t);
-	  sizeof1A_bits = sizeof_DCI1A_10MHz_TDD_1_6_t;
-          break;
-
-        case 100:
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(N_RB_DL,first_rb,4);
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rv = 1;
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->harq_pid = 0;
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->TPC = 1;
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->padding = 0;
-          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc);
-	  sizeof1A_bytes = sizeof(DCI1A_20MHz_TDD_1_6_t);
-	  sizeof1A_bits = sizeof_DCI1A_20MHz_TDD_1_6_t; 
-         break;
-        }
-
-      } else {
-        switch (N_RB_DL) {
-        case 6:
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(N_RB_DL,first_rb,4);
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->rv = 1;
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->harq_pid = 0;
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->TPC = 1;
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->padding = 0;
-
-          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc);
-	  sizeof1A_bytes = sizeof(DCI1A_1_5MHz_FDD_t);
-	  sizeof1A_bits = sizeof_DCI1A_1_5MHz_FDD_t;
-          break;
-
-        case 25:
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(N_RB_DL,first_rb,4);
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->rv = 1;
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->harq_pid = 0;
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->TPC = 1;
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->padding = 0;
-
-          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc);
-	  sizeof1A_bytes = sizeof(DCI1A_5MHz_FDD_t);
-	  sizeof1A_bits = sizeof_DCI1A_5MHz_FDD_t;
-          break;
-
-        case 50:
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(N_RB_DL,first_rb,4);
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->rv = 1;
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->harq_pid = 0;
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->TPC = 1;
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->padding = 0;
-
-          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->rballoc);
-	  sizeof1A_bytes = sizeof(DCI1A_10MHz_FDD_t);
-	  sizeof1A_bits = sizeof_DCI1A_10MHz_FDD_t;
-          break;
-
-        case 100:
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->mcs = mcs;
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(N_RB_DL,first_rb,4);
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->rv = 1;
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->harq_pid = 0;
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->TPC = 1;
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->padding = 0;
-
-          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->rballoc);
- 	  sizeof1A_bytes = sizeof(DCI1A_20MHz_FDD_t);
-	  sizeof1A_bits = sizeof_DCI1A_20MHz_FDD_t;
-	  break;
-
-        }
-      }
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding       = getRIV(N_RB_DL,first_rb,4);      
 
       if (!CCE_allocation_infeasible(module_idP,CC_id,1,subframeP,2,SI_RNTI)) {
-	add_common_dci(DCI_pdu,
-		       BCCH_alloc_pdu,
-		       SI_RNTI,
-		       sizeof1A_bytes,
-		       2,
-		       sizeof1A_bits,
-		       format1A,0);
+	LOG_I(MAC,"Frame %d: Subframe %d : Adding common DCI for S_RNTI\n",
+	      frameP,subframeP);
+	eNB->DL_req[CC_id].number_dci++;
+	eNB->DL_req[CC_id].number_pdu++;
+	dl_config_pdu                                                                  = &eNB->DL_req[CC_id].dl_config_pdu_list[eNB->DL_req[CC_id].number_pdu]; 
+	memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
+	dl_config_pdu->pdu_type                                                        = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE; 
+	dl_config_pdu->pdu_size                                                        = (uint8_t)(2+sizeof(nfapi_dl_config_dlsch_pdu));
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index                              = eNB->pdu_index[CC_id];
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti                                   = 0xFFFF;
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type               = 2;   // format 1A/1B/1D
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.virtual_resource_block_assignment_flag = 0;   // localized
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding                  = getRIV(N_RB_DL,first_rb,4);
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.modulation                             = 2; //QPSK
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.redundancy_version                     = 0;
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_blocks                       = 1;// first block
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_block_to_codeword_swap_flag  = 0;
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_scheme                    = (cc->p_eNB==1 ) ? 0 : 1;
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_layers                       = 1;
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_subbands                     = 1;
+	//	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.codebook_index                         = ;
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ue_category_capacity                   = 1;
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pa                                     = 4; // 0 dB
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.delta_power_offset_index               = 0;
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ngap                                   = 0;
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.nprb                                   = get_subbandsize(cc->mib->message.dl_Bandwidth); // ignored
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode                      = (cc->p_eNB==1 ) ? 1 : 2;
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = 1;
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = 1;
+	//	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ; 
+	eNB->DL_req[CC_id].number_pdu++;
+
+	// Program TX Request
+	TX_req                                                                = &eNB->TX_req[CC_id].tx_pdu_list[eNB->TX_req[CC_id].number_of_pdus]; 
+	TX_req->pdu_length                                                    = bcch_sdu_length;
+	TX_req->pdu_index                                                     = eNB->pdu_index[CC_id]++;
+	TX_req->num_segments                                                  = 1;
+	TX_req->segments[0].segment_length                                    = bcch_sdu_length;
+	TX_req->segments[0].segment_data                                      = cc->BCCH_pdu.payload;
+	eNB->TX_req[CC_id].number_of_pdus++;
+
       }
       else {
 	LOG_E(MAC,"[eNB %d] CCid %d Frame %d, subframe %d : Cannot add DCI 1A for SI\n",module_idP, CC_id,frameP,subframeP);
@@ -321,19 +237,17 @@ schedule_SI(
 	    module_idP, frameP, CC_id, 0xffff, bcch_sdu_length);
       }
       if (cc->tdd_Config!=NULL) { //TDD
-        LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH->DLSCH (TDD) for CC_id %d SI %d bytes (mcs %d, rb 3, TBS %d)\n",
+        LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH->DLSCH (TDD) for CC_id %d SI %d bytes (mcs %d, rb 3)\n",
               frameP,
               CC_id,
               bcch_sdu_length,
-              mcs,
-              mac_xface->get_TBS_DL(mcs,3));
+              mcs);
       } else {
-        LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH->DLSCH (FDD) for CC_id %d SI %d bytes (mcs %d, rb 3, TBS %d)\n",
+        LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH->DLSCH (FDD) for CC_id %d SI %d bytes (mcs %d, rb 3)\n",
               frameP,
               CC_id,
               bcch_sdu_length,
-              mcs,
-              mac_xface->get_TBS_DL(mcs,3));
+              mcs);
       }
 
 
@@ -351,3 +265,64 @@ schedule_SI(
   stop_meas(&eNB->schedule_si);
   return;
 }
+
+void schedule_mib(module_id_t   module_idP,
+		  frame_t       frameP,
+		  sub_frame_t   subframeP) {
+
+  eNB_MAC_INST                   *eNB = RC.mac[module_idP];
+  COMMON_channels_t              *cc;
+  nfapi_dl_config_request_pdu_t  *dl_config_pdu;
+  nfapi_tx_request_pdu_t         *TX_req;
+  int mib_sdu_length;
+  int CC_id;
+
+  AssertFatal(subframeP==0,"Subframe must be 0\n");
+  AssertFatal((frameP&3)==0,"Frame must be a multiple of 4\n");
+
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+
+    cc              = &eNB->common_channels[CC_id];
+
+    mib_sdu_length = mac_rrc_data_req(module_idP,
+				      CC_id,
+				      frameP,
+				      MIBCH,1,
+				      &cc->MIB_pdu.payload[0],
+				      1,
+				      module_idP,
+				      0); // not used in this case
+
+    LOG_I(MAC,"Frame %d, subframe %d: BCH PDU length %d\n",
+	  frameP,subframeP,mib_sdu_length);
+
+    if (mib_sdu_length > 0) {
+
+      LOG_I(MAC,"Frame %d, subframe %d: Adding BCH PDU in position %d (length %d)\n",
+	    frameP,subframeP,eNB->DL_req[CC_id].number_pdu,mib_sdu_length);
+
+      dl_config_pdu                                                         = &eNB->DL_req[CC_id].dl_config_pdu_list[eNB->DL_req[CC_id].number_pdu]; 
+      memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
+      dl_config_pdu->pdu_type                                               = NFAPI_DL_CONFIG_BCH_PDU_TYPE,
+      dl_config_pdu->pdu_size                                               = 2+sizeof(nfapi_dl_config_bch_pdu);
+      dl_config_pdu->bch_pdu.bch_pdu_rel8.length                            = mib_sdu_length;
+      dl_config_pdu->bch_pdu.bch_pdu_rel8.pdu_index                         = eNB->pdu_index[CC_id];
+      dl_config_pdu->bch_pdu.bch_pdu_rel8.transmission_power                = 6000;
+      eNB->DL_req[CC_id].number_pdu++;
+
+      LOG_I(MAC,"eNB->DL_req[0].number_pdu %d (%p)\n",
+	    eNB->DL_req[CC_id].number_pdu,&eNB->DL_req[CC_id].number_pdu);
+      // DL request
+
+      TX_req                                                                = &eNB->TX_req[CC_id].tx_pdu_list[eNB->TX_req[CC_id].number_of_pdus]; 
+      TX_req->pdu_length                                                    = 3;
+      TX_req->pdu_index                                                     = eNB->pdu_index[CC_id]++;
+      TX_req->num_segments                                                  = 1;
+      TX_req->segments[0].segment_length                                    = 0;
+      TX_req->segments[0].segment_data                                      = cc[CC_id].MIB_pdu.payload;
+      eNB->TX_req[CC_id].number_of_pdus++;
+    }
+  }
+}
+
+ 

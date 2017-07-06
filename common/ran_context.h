@@ -50,11 +50,17 @@
 typedef struct {
   /// RAN context config file name
   char *config_file_name;
-  /// Number of eNB instances in this node
+  /// Number of RRC instances in this node
   int nb_inst;
   /// Number of Component Carriers per instance in this node
   int *nb_CC;
-  /// Number of radio units
+  /// Number of MACRLC instances in this node
+  int nb_macrlc_inst;
+  /// Number of L1 instances in this node
+  int nb_L1_inst;
+  /// Number of Component Carriers per instance in this node
+  int *nb_L1_CC;
+  /// Number of RU instances in this node
   int nb_RU;
   /// eNB context variables
   struct PHY_VARS_eNB_s ***eNB;

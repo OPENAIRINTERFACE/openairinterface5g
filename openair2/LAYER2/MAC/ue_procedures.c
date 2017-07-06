@@ -42,7 +42,6 @@
 # include "SCHED/defs.h"
 # include "PHY/impl_defs_top.h"
 #endif
-#include "PHY_INTERFACE/defs.h"
 #include "PHY_INTERFACE/extern.h"
 #include "COMMON/mac_rrc_primitives.h"
 
@@ -251,11 +250,8 @@ uint32_t ue_get_SR(module_id_t module_idP,int CC_id,frame_t frameP,uint8_t eNB_i
 
   DevCheck(module_idP < (int)NB_UE_INST, module_idP, NB_UE_INST, 0);
 
-  if (CC_id>0) {
-    LOG_E(MAC,"Transmission on secondary CCs is not supported yet\n");
-    mac_xface->macphy_exit("MAC FATAL  CC_id>0");
-    return 0;
-  }
+  AssertFatal(CC_id==0,
+	      "Transmission on secondary CCs is not supported yet\n");
 
   // determin the measurement gap
   if (UE_mac_inst[module_idP].measGapConfig !=NULL) {
@@ -396,7 +392,7 @@ ue_send_sdu(
         for (i=0; i<6; i++)
           if (tx_sdu[i] != payload_ptr[i]) {
             LOG_E(MAC,"[UE %d][RAPROC] Contention detected, RA failed\n",module_idP);
-            mac_xface->ra_failed(module_idP,CC_id,eNB_index);
+            ra_failed(module_idP,CC_id,eNB_index);
             UE_mac_inst[module_idP].RA_contention_resolution_timer_active = 0;
             VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
             return;
@@ -404,7 +400,7 @@ ue_send_sdu(
 
         LOG_I(MAC,"[UE %d][RAPROC] Frame %d : Clearing contention resolution timer\n", module_idP, frameP);
         UE_mac_inst[module_idP].RA_contention_resolution_timer_active = 0;
-        mac_xface->ra_succeeded(module_idP,CC_id,eNB_index);
+        ra_succeeded(module_idP,CC_id,eNB_index);
       }
 
       payload_ptr+=6;
@@ -414,7 +410,7 @@ ue_send_sdu(
 #ifdef DEBUG_HEADER_PARSING
       LOG_D(MAC,"[UE] CE %d : UE Timing Advance : %d\n",i,payload_ptr[0]);
 #endif
-      mac_xface->process_timing_advance(module_idP,CC_id,payload_ptr[0]);
+      process_timing_advance(module_idP,CC_id,payload_ptr[0]);
       payload_ptr++;
       break;
 
@@ -721,6 +717,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
   int mbsfn_period = 0;// 1<<(UE_mac_inst[module_idP].mbsfn_SubframeConfig[0]->radioframeAllocationPeriod);
   int mcch_period = 0;// 32<<(UE_mac_inst[module_idP].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
   int mch_scheduling_period = -1;
+  int frame_FDD=1;
 
   start_meas(&UE_mac_inst[module_idP].ue_query_mch);
 
@@ -779,16 +776,18 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           }
         }
 
+	if (UE_mac_inst[module_idP].tdd_Config == NULL) frame_FDD=1;
+	else frame_FDD=0;
         // Check if the subframe is for MSI, MCCH or MTCHs and Set the correspoding flag to 1
         switch (subframe) {
         case 1:
-          if (mac_xface->frame_parms->frame_type == FDD) {
+          if (frame_FDD==1) {
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF1) == MBSFN_FDD_SF1) {
               if (msi_pos == 1) {
                 msi_flag = 1;
               }
 
-              if ( (frameP % mcch_period == UE_mac_inst[module_idP].mbsfn_AreaInfo[i]->mcch_Config_r9.mcch_Offset_r9) &&
+	      if ( (frameP % mcch_period == UE_mac_inst[module_idP].mbsfn_AreaInfo[i]->mcch_Config_r9.mcch_Offset_r9) &&
                    ((UE_mac_inst[module_idP].mbsfn_AreaInfo[i]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_FDD_SF1) == MBSFN_FDD_SF1) ) {
                 mcch_flag = 1;
               }
@@ -800,7 +799,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 2:
-          if (mac_xface->frame_parms->frame_type == FDD) {
+          if (frame_FDD==1) {
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF2) == MBSFN_FDD_SF2) {
               if (msi_pos == 2) {
                 msi_flag = 1;
@@ -818,7 +817,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 3:
-          if (mac_xface->frame_parms->frame_type == TDD) { // TDD
+          if (frame_FDD==0) { //TDD
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF3) == MBSFN_TDD_SF3) {
               if (msi_pos == 1) {
                 msi_flag = 1;
@@ -849,7 +848,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 4:
-          if (mac_xface->frame_parms->frame_type == TDD) {
+          if (frame_FDD==0) {
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF4) == MBSFN_TDD_SF4) {
               if (msi_pos == 2) {
                 msi_flag = 1;
@@ -867,7 +866,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 6:
-          if (mac_xface->frame_parms->frame_type == FDD) {
+          if (frame_FDD==1) {
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF6) == MBSFN_FDD_SF6) {
               if (msi_pos == 4) {
                 msi_flag = 1;
@@ -885,7 +884,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 7:
-          if (mac_xface->frame_parms->frame_type == TDD) { // TDD
+          if (frame_FDD==0) { // TDD
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF7) == MBSFN_TDD_SF7) {
               if (msi_pos == 3) {
                 msi_flag = 1;
@@ -916,7 +915,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 8:
-          if (mac_xface->frame_parms->frame_type == TDD) { //TDD
+          if (frame_FDD==0) { //TDD
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF8) == MBSFN_TDD_SF8) {
               if (msi_pos == 4) {
                 msi_flag = 1;
@@ -947,7 +946,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           break;
 
         case 9:
-          if (mac_xface->frame_parms->frame_type == TDD) {
+          if (frame_FDD==0) {
             if ((UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF9) == MBSFN_TDD_SF9) {
               if (msi_pos == 5) {
                 msi_flag = 1;
@@ -1296,13 +1295,8 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
   LOG_D(MAC,"[UE %d] MAC PROCESS UL TRANSPORT BLOCK at frame%d subframe %d TBS=%d\n",
                         module_idP, frameP, subframe, buflen);
 
-  
-  if (CC_id>0) {
-    LOG_E(MAC,"Transmission on secondary CCs is not supported yet\n");
-    mac_xface->macphy_exit("MAC FATAL  CC_id>0");
-    return;
-  }
-
+  AssertFatal(CC_id==0,
+	      "Transmission on secondary CCs is not supported yet\n");
   start_meas(&UE_mac_inst[module_idP].tx_ulsch_sdu);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_IN);
 
@@ -1574,7 +1568,7 @@ for (lcid=DCCH; (lcid < MAX_NUM_LCID) && (is_all_lcid_processed == FALSE) ; lcid
     phr_p->PH = get_phr_mapping(module_idP,CC_id,eNB_index);
     phr_p->R  = 0;
     LOG_D(MAC,"[UE %d] Frame %d report PHR with mapping (%d->%d) for LCID %d\n",
-          module_idP,frameP, mac_xface->get_PHR(module_idP,CC_id,eNB_index), phr_p->PH,POWER_HEADROOM);
+          module_idP,frameP, get_PHR(module_idP,CC_id,eNB_index), phr_p->PH,POWER_HEADROOM);
     update_phr(module_idP,CC_id);
   } else {
     phr_p=NULL;
@@ -1902,7 +1896,7 @@ ue_scheduler(
   case RRC_Handover_failed:
     LOG_N(MAC,"Handover failure for UE %d eNB_index %d\n",module_idP,eNB_indexP);
     //Invalid...need to add another MAC UE state for re-connection procedure
-    mac_xface->phy_config_afterHO_ue(module_idP,0,eNB_indexP,(MobilityControlInfo_t *)NULL,1);
+    phy_config_afterHO_ue(module_idP,0,eNB_indexP,(MobilityControlInfo_t *)NULL,1);
     //return(3);
     break;
 
@@ -1927,7 +1921,7 @@ ue_scheduler(
       LOG_E(MAC,"FATAL: radioResourceConfigCommon is NULL!!!\n");
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SCHEDULER, VCD_FUNCTION_OUT);
       stop_meas(&UE_mac_inst[module_idP].ue_scheduler);
-      mac_xface->macphy_exit("");
+      AssertFatal(1==0,"");
       //return(RRC_OK);
     }
 
@@ -1942,7 +1936,7 @@ ue_scheduler(
       UE_mac_inst[module_idP].RA_contention_resolution_timer_active = 0;
       // Signal PHY to quit RA procedure
       LOG_E(MAC,"Module id %u Contention resolution timer expired, RA failed\n", module_idP);
-      mac_xface->ra_failed(module_idP,0,eNB_indexP);
+      ra_failed(module_idP,0,eNB_indexP);
     }
   }
 
@@ -1957,7 +1951,7 @@ ue_scheduler(
           bucketsizeduration_max = get_ms_bucketsizeduration(UE_mac_inst[module_idP].logicalChannelConfig[lcid]->ul_SpecificParameters->bucketSizeDuration);
         } else {
           LOG_E(MAC,"[UE %d] lcid %d, NULL ul_SpecificParameters\n",module_idP,lcid);
-          mac_xface->macphy_exit("");
+          AssertFatal(1==0,"");
         }
 
         if ( UE_mac_inst[module_idP].scheduling_info.Bj[lcid] > bucketsizeduration_max ) {
@@ -2036,7 +2030,7 @@ ue_scheduler(
     } else {
       //LOG_D(MAC,"PHR normal operation %d active %d \n", UE_mac_inst[module_idP].scheduling_info.periodicPHR_SF, UE_mac_inst[module_idP].PHR_reporting_active);
       if ((UE_mac_inst[module_idP].scheduling_info.prohibitPHR_SF <= 0) &&
-          ((mac_xface->get_PL(module_idP,0,eNB_indexP) <  UE_mac_inst[module_idP].scheduling_info.PathlossChange_db) ||
+          ((get_PL(module_idP,0,eNB_indexP) <  UE_mac_inst[module_idP].scheduling_info.PathlossChange_db) ||
            (UE_mac_inst[module_idP].power_backoff_db[eNB_indexP] > UE_mac_inst[module_idP].scheduling_info.PathlossChange_db)))
         // trigger PHR and reset the timer later when the PHR report is sent
       {
@@ -2530,11 +2524,8 @@ int get_ms_bucketsizeduration(uint8_t bucketsizeduration)
 void update_phr(module_id_t module_idP,int CC_id)
 {
 
-  if (CC_id>0) {
-    LOG_E(MAC,"Transmission on secondary CCs is not supported yet\n");
-    mac_xface->macphy_exit("MAC FATAL  CC_id>0");
-    return;
-  }
+  AssertFatal(CC_id==0,
+	      "Transmission on secondary CCs is not supported yet\n");
 
   UE_mac_inst[module_idP].PHR_reporting_active =0;
   UE_mac_inst[module_idP].scheduling_info.periodicPHR_SF =  get_sf_perioidicPHR_Timer(UE_mac_inst[module_idP].scheduling_info.periodicPHR_Timer);
@@ -2544,20 +2535,17 @@ void update_phr(module_id_t module_idP,int CC_id)
 uint8_t get_phr_mapping (module_id_t module_idP, int CC_id, uint8_t eNB_index)
 {
 
-  if (CC_id>0) {
-    LOG_E(MAC,"Transmission on secondary CCs is not supported yet\n");
-    mac_xface->macphy_exit("MAC FATAL  CC_id>0");
-    return 0; // not reached
-  }
+  AssertFatal(CC_id==0,
+	      "Transmission on secondary CCs is not supported yet\n");
 
   //power headroom reporting range is from -23 ...+40 dB, as described in 36313
   //note: mac_xface->get_Po_NOMINAL_PUSCH(module_idP) is float
-  if (mac_xface->get_PHR(module_idP,CC_id,eNB_index) < -23) {
+  if (get_PHR(module_idP,CC_id,eNB_index) < -23) {
     return 0;
-  } else if (mac_xface->get_PHR(module_idP,CC_id,eNB_index) >= 40) {
+  } else if (get_PHR(module_idP,CC_id,eNB_index) >= 40) {
     return 63;
   } else { // -23 to 40
-    return  (uint8_t) mac_xface->get_PHR(module_idP,CC_id,eNB_index) + PHR_MAPPING_OFFSET;
+    return  (uint8_t) get_PHR(module_idP,CC_id,eNB_index) + PHR_MAPPING_OFFSET;
 
   }
 }

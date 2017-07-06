@@ -46,9 +46,6 @@
 //#define DEBUG_PBCH_ENCODING
 //#define INTERFERENCE_MITIGATION 1
 
-#ifdef OPENAIR2
-#include "PHY_INTERFACE/defs.h"
-#endif
 
 #define PBCH_A 24
 
@@ -210,12 +207,12 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 
     //  pbch_data[i] = ((char*) &crc)[0];
     //  pbch_data[i+1] = ((char*) &crc)[1];
-#ifdef DEBUG_PBCH
+    //#ifdef DEBUG_PBCH
 
     for (i=0; i<(PBCH_A>>3); i++)
-      LOG_D(PHY,"[PBCH] pbch_data[%d] = %x\n",i,pbch_a[i]);
+      LOG_I(PHY,"[PBCH] pbch_data[%d] = %x\n",i,pbch_a[i]);
 
-#endif
+    //#endif
 
     if (frame_parms->nb_antenna_ports_eNB == 1)
       amask = 0x0000;

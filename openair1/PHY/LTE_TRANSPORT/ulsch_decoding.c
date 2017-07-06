@@ -954,21 +954,18 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
     sumKr += Kr;
   }
 
-  if (sumKr==0) {
-    LOG_N(PHY,"[eNB %d] ulsch_decoding.c: FATAL sumKr is 0!\n",eNB->Mod_id);
-    LOG_D(PHY,"ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): harq_pid %d round %d, RV %d, mcs %d, O_RI %d, O_ACK %d, G %d, subframe %d\n",
-          frame_parms->Nid_cell,ulsch->rnti,x2,
-          harq_pid,
-          ulsch_harq->round,
-          ulsch_harq->rvidx,
-          ulsch_harq->mcs,
-          ulsch_harq->O_RI,
-          ulsch_harq->O_ACK,
-          G,
-          subframe);
-    mac_xface->macphy_exit("ulsch_decoding.c: FATAL sumKr is 0!");
-    return(-1);
-  }
+  AssertFatal(sumKr>0,
+	      "[eNB %d] ulsch_decoding.c: FATAL sumKr is 0! (Nid_cell %d, rnti %x, x2 %x): harq_pid %d round %d, RV %d, mcs %d, O_RI %d, O_ACK %d, G %d, subframe %d\n",
+	      frame_parms->Nid_cell,ulsch->rnti,x2,
+	      harq_pid,
+	      ulsch_harq->round,
+	      ulsch_harq->rvidx,
+	      ulsch_harq->mcs,
+	      ulsch_harq->O_RI,
+	      ulsch_harq->O_ACK,
+	      G,
+	      subframe);
+
 
   // Compute Q_ri
   Qprime = ulsch_harq->O_RI*ulsch_harq->Msc_initial*ulsch_harq->Nsymb_initial * ulsch->beta_offset_ri_times8;

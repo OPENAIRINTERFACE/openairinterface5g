@@ -52,6 +52,7 @@ do {                                                                            
  * @{
  */
 /*! \brief MACPHY Interface */
+/*
 typedef struct {
   /// Pointer function that initializes L2
   int (*macphy_init)(int eMBMS_active, char *uecap_xer, uint8_t CBA_active,uint8_t HO_active);
@@ -364,6 +365,7 @@ typedef struct {
 
 } MAC_xface;
 
+*/
 
 #endif
 

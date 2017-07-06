@@ -100,6 +100,7 @@ typedef struct RrcConfigurationReq_s {
   uint8_t                 tdd_config[MAX_NUM_CCs];
   uint8_t                 tdd_config_s[MAX_NUM_CCs];
   lte_prefix_type_t       prefix_type[MAX_NUM_CCs];
+  uint8_t                 pbch_repetition[MAX_NUM_CCs];
   int16_t                 eutra_band[MAX_NUM_CCs];
   uint32_t                downlink_frequency[MAX_NUM_CCs];
   int32_t                 uplink_frequency_offset[MAX_NUM_CCs];

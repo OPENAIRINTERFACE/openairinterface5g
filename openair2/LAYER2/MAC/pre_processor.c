@@ -68,6 +68,7 @@
 /* this function checks that get_eNB_UE_stats returns
  * a non-NULL pointer for all the active CCs of an UE
  */
+/*
 int phy_stats_exist(module_id_t Mod_id, int rnti)
 {
   int CC_id;
@@ -91,6 +92,7 @@ int phy_stats_exist(module_id_t Mod_id, int rnti)
   }
   return 1;
 }
+*/
 
 // This function stores the downlink buffer for all the logical channels
 void store_dlsch_buffer (module_id_t Mod_id,
@@ -175,12 +177,11 @@ void assign_rbs_required (module_id_t Mod_id,
                           int         min_rb_unit[MAX_NUM_CCs])
 {
 
-
-  rnti_t           rnti;
   uint16_t         TBS = 0;
-  LTE_eNB_UE_stats *eNB_UE_stats[MAX_NUM_CCs];
+
   int              UE_id,n,i,j,CC_id,pCCid,tmp;
   UE_list_t        *UE_list = &RC.mac[Mod_id]->UE_list;
+  eNB_UE_STATS     *eNB_UE_stats,*eNB_UE_stats_i,*eNB_UE_stats_j;
   int N_RB_DL;
 
   // clear rb allocations across all CC_id
@@ -188,34 +189,24 @@ void assign_rbs_required (module_id_t Mod_id,
     if (UE_list->active[UE_id] != TRUE) continue;
 
     pCCid = UE_PCCID(Mod_id,UE_id);
-    rnti = UE_list->UE_template[pCCid][UE_id].rnti;
-
-    /* skip UE not present in PHY (for any of its active CCs) */
-    if (!phy_stats_exist(Mod_id, rnti))
-      continue;
-
+    eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
     //update CQI information across component carriers
     for (n=0; n<UE_list->numactiveCCs[UE_id]; n++) {
 
       CC_id = UE_list->ordered_CCids[n][UE_id];
-      eNB_UE_stats[CC_id] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
-      /*
-      DevCheck(((eNB_UE_stats[CC_id]->DL_cqi[0] < MIN_CQI_VALUE) || (eNB_UE_stats[CC_id]->DL_cqi[0] > MAX_CQI_VALUE)),
-      eNB_UE_stats[CC_id]->DL_cqi[0], MIN_CQI_VALUE, MAX_CQI_VALUE);
-      */
-      eNB_UE_stats[CC_id]->dlsch_mcs1=cqi_to_mcs[eNB_UE_stats[CC_id]->DL_cqi[0]];
 
-      eNB_UE_stats[CC_id]->dlsch_mcs1 = eNB_UE_stats[CC_id]->dlsch_mcs1;//cmin(eNB_UE_stats[CC_id]->dlsch_mcs1,openair_daq_vars.target_ue_dl_mcs);
+      eNB_UE_stats->dlsch_mcs1=cqi_to_mcs[eNB_UE_stats->dl_cqi];
 
     }
 
     // provide the list of CCs sorted according to MCS
     for (i=0; i<UE_list->numactiveCCs[UE_id]; i++) {
+      eNB_UE_stats_i = &UE_list->eNB_UE_stats[UE_list->ordered_CCids[i][UE_id]][UE_id];
       for (j=i+1; j<UE_list->numactiveCCs[UE_id]; j++) {
         DevAssert( j < MAX_NUM_CCs );
-
-        if (eNB_UE_stats[UE_list->ordered_CCids[i][UE_id]]->dlsch_mcs1 >
-            eNB_UE_stats[UE_list->ordered_CCids[j][UE_id]]->dlsch_mcs1) {
+	eNB_UE_stats_j = &UE_list->eNB_UE_stats[UE_list->ordered_CCids[j][UE_id]][UE_id];
+        if (eNB_UE_stats_j->dlsch_mcs1 >
+            eNB_UE_stats_i->dlsch_mcs1) {
           tmp = UE_list->ordered_CCids[i][UE_id];
           UE_list->ordered_CCids[i][UE_id] = UE_list->ordered_CCids[j][UE_id];
           UE_list->ordered_CCids[j][UE_id] = tmp;
@@ -228,19 +219,19 @@ void assign_rbs_required (module_id_t Mod_id,
 
       for (i=0; i<UE_list->numactiveCCs[UE_id]; i++) {
         CC_id = UE_list->ordered_CCids[i][UE_id];
-        eNB_UE_stats[CC_id] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
+	eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
 
-        if (eNB_UE_stats[CC_id]->dlsch_mcs1==0) {
+        if (eNB_UE_stats->dlsch_mcs1==0) {
           nb_rbs_required[CC_id][UE_id] = 4;  // don't let the TBS get too small
         } else {
           nb_rbs_required[CC_id][UE_id] = min_rb_unit[CC_id];
         }
 
-        TBS = mac_xface->get_TBS_DL(eNB_UE_stats[CC_id]->dlsch_mcs1,nb_rbs_required[CC_id][UE_id]);
+        TBS = get_TBS_DL(eNB_UE_stats->dlsch_mcs1,nb_rbs_required[CC_id][UE_id]);
 
         LOG_D(MAC,"[preprocessor] start RB assignement for UE %d CC_id %d dl buffer %d (RB unit %d, MCS %d, TBS %d) \n",
               UE_id, CC_id, UE_list->UE_template[pCCid][UE_id].dl_buffer_total,
-              nb_rbs_required[CC_id][UE_id],eNB_UE_stats[CC_id]->dlsch_mcs1,TBS);
+              nb_rbs_required[CC_id][UE_id],eNB_UE_stats->dlsch_mcs1,TBS);
 
 	N_RB_DL = to_prb(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
 
@@ -249,16 +240,16 @@ void assign_rbs_required (module_id_t Mod_id,
           nb_rbs_required[CC_id][UE_id] += min_rb_unit[CC_id];
 
           if (nb_rbs_required[CC_id][UE_id] > N_RB_DL) {
-            TBS = mac_xface->get_TBS_DL(eNB_UE_stats[CC_id]->dlsch_mcs1,N_RB_DL);
+            TBS = get_TBS_DL(eNB_UE_stats->dlsch_mcs1,N_RB_DL);
             nb_rbs_required[CC_id][UE_id] = N_RB_DL;
             break;
           }
 
-          TBS = mac_xface->get_TBS_DL(eNB_UE_stats[CC_id]->dlsch_mcs1,nb_rbs_required[CC_id][UE_id]);
+          TBS = get_TBS_DL(eNB_UE_stats->dlsch_mcs1,nb_rbs_required[CC_id][UE_id]);
         } // end of while
 
         LOG_D(MAC,"[eNB %d] Frame %d: UE %d on CC %d: RB unit %d,  nb_required RB %d (TBS %d, mcs %d)\n",
-              Mod_id, frameP,UE_id, CC_id,  min_rb_unit[CC_id], nb_rbs_required[CC_id][UE_id], TBS, eNB_UE_stats[CC_id]->dlsch_mcs1);
+              Mod_id, frameP,UE_id, CC_id,  min_rb_unit[CC_id], nb_rbs_required[CC_id][UE_id], TBS, eNB_UE_stats->dlsch_mcs1);
       }
     }
   }
@@ -291,23 +282,17 @@ int maxround(module_id_t Mod_id,uint16_t rnti,int frame,sub_frame_t subframe,uin
 int maxcqi(module_id_t Mod_id,int32_t UE_id)
 {
 
-  LTE_eNB_UE_stats *eNB_UE_stats = NULL;
+  eNB_UE_STATS *eNB_UE_stats = NULL;
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
   int CC_id,n;
   int CQI = 0;
 
   for (n=0; n<UE_list->numactiveCCs[UE_id]; n++) {
     CC_id = UE_list->ordered_CCids[n][UE_id];
-    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,UE_RNTI(Mod_id,UE_id));
+    eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
 
-    if (eNB_UE_stats==NULL) {
-      /* the UE may have been removed in the PHY layer, don't exit */
-      //mac_xface->macphy_exit("maxcqi: could not get eNB_UE_stats\n");
-      return -1;
-    }
-
-    if (eNB_UE_stats->DL_cqi[0] > CQI) {
-      CQI = eNB_UE_stats->DL_cqi[0];
+    if (eNB_UE_stats->dl_cqi > CQI) {
+      CQI = eNB_UE_stats->dl_cqi;
     }
   }
 
@@ -414,8 +399,6 @@ void sort_UEs (module_id_t Mod_idP,
       continue;
     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
       continue;
-    if (!phy_stats_exist(Mod_idP, rnti))
-      continue;
     list[list_size] = i;
     list_size++;
   }
@@ -452,8 +435,6 @@ void sort_UEs (module_id_t Mod_idP,
 	continue;
       if (UE_list->UE_sched_ctrl[UE_id1].ul_out_of_sync == 1)
 	continue;
-      if (!phy_stats_exist(Mod_idP, rnti1))
-        continue;
       pCC_id1 = UE_PCCID(Mod_idP,UE_id1);
       cqi1    = maxcqi(Mod_idP,UE_id1); //
       round1  = maxround(Mod_idP,rnti1,frameP,subframeP,0);
@@ -464,8 +445,6 @@ void sort_UEs (module_id_t Mod_idP,
         continue;
       if (UE_list->UE_sched_ctrl[UE_id2].ul_out_of_sync == 1)
 	continue;
-      if (!phy_stats_exist(Mod_idP, rnti2))
-        continue;
       cqi2    = maxcqi(Mod_idP,UE_id2);
       round2  = maxround(Mod_idP,rnti2,frameP,subframeP,0);  //mac_xface->get_ue_active_harq_pid(Mod_id,rnti2,subframe,&harq_pid2,&round2,0);
       pCC_id2 = UE_PCCID(Mod_idP,UE_id2);
@@ -596,8 +575,6 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
       continue;
     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
       continue;
-    if (!phy_stats_exist(Mod_id, rnti))
-      continue;
     UE_id = i;
 
     for (ii=0; ii<UE_num_active_CC(UE_list,UE_id); ii++) {
@@ -653,8 +630,6 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
     if(rnti == NOT_A_RNTI)
       continue;
     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
-      continue;
-    if (!phy_stats_exist(Mod_id, rnti))
       continue;
 
     for (ii=0; ii<UE_num_active_CC(UE_list,i); ii++) {
@@ -715,10 +690,8 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
             continue;
 	  if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
 	    continue;
-          if (!phy_stats_exist(Mod_id, rnti))
-            continue;
 
-          transmission_mode = mac_xface->get_transmission_mode(Mod_id,CC_id,rnti);
+          transmission_mode = get_tmode(Mod_id,CC_id,UE_id);
 	  //          mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,frameP,subframeP,&harq_pid,&round,0);
           //rrc_status = mac_eNB_get_rrc_status(Mod_id,rnti);
           /* 1st allocate for the retx */
@@ -763,15 +736,13 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
                     continue;
 		  if (UE_list->UE_sched_ctrl[UE_id2].ul_out_of_sync == 1)
 		    continue;
-                  if (!phy_stats_exist(Mod_idP, rnti2))
-                    continue;
 
-                  eNB_UE_stats2 = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti2);
+                  eNB_UE_stats2 = UE_list->eNB_UE_stats[CC_id][UE_id2];
                   //mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti2,frameP,subframeP,&harq_pid2,&round2,0);
 
                   if ((mac_eNB_get_rrc_status(Mod_id,rnti2) >= RRC_RECONFIGURED) &&
                       (round2==0) &&
-                      (mac_xface->get_transmission_mode(Mod_id,CC_id,rnti2)==5) &&
+                      (get_tmode(Mod_id,CC_id,UE_id2)==5) &&
                       (ue_sched_ctl->dl_pow_off[CC_id] != 1)) {
 
                     if( (((j == (N_RBG[CC_id]-1)) && (ue_sched_ctl->rballoc_sub_UE[CC_id][j] == 0)) ||
@@ -913,19 +884,25 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   //int subframe05_limit=0;
   int sf05_upper=-1,sf05_lower=-1;
 #endif
-  LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
-  if (eNB_UE_stats == NULL) return;
+
+
 
   // initialize harq_pid and round
+
+  /*
+  eNB_UE_stats *eNB_UE_stats;
 
   if (eNB_UE_stats == NULL)
     return;
 
+  
   mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,
 				    frameP,subframeP,
 				    &ue_sched_ctl->harq_pid[CC_id],
 				    &ue_sched_ctl->round[CC_id],
 				    openair_harq_DL);
+  
+
   if (ue_sched_ctl->ta_timer == 0) {
 
     // WE SHOULD PROTECT the eNB_UE_stats with a mutex here ...
@@ -963,9 +940,13 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
     ue_sched_ctl->ta_timer--;
     ue_sched_ctl->ta_update =0; // don't trigger a timing advance command
   }
+  
+
   if (UE_id==0) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_TIMING_ADVANCE,ue_sched_ctl->ta_update);
   }
+  */
+
   nb_rbs_required[CC_id][UE_id]=0;
   ue_sched_ctl->pre_nb_available_rbs[CC_id] = 0;
   ue_sched_ctl->dl_pow_off[CC_id] = 2;
@@ -1086,7 +1067,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
 
   int16_t            i;
   uint16_t           UE_id,n,r;
-  uint8_t            CC_id, round, harq_pid;
+  uint8_t            CC_id, harq_pid;
   uint16_t           nb_allocated_rbs[MAX_NUM_CCs][NUMBER_OF_UE_MAX],total_allocated_rbs[MAX_NUM_CCs],average_rbs_per_user[MAX_NUM_CCs];
   int16_t            total_remaining_rbs[MAX_NUM_CCs];
   uint16_t           max_num_ue_to_be_scheduled = 0;
@@ -1134,8 +1115,6 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
       continue;
 
-    if (!phy_stats_exist(module_idP, rnti))
-      continue;
 
     UE_id = i;
 
@@ -1186,18 +1165,17 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       continue;
     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
       continue;
-    if (!phy_stats_exist(module_idP, rnti))
-      continue;
 
     UE_id = i;
 
     for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
       // This is the actual CC_id in the list
       CC_id = UE_list->ordered_ULCCids[n][UE_id];
+      harq_pid = get_UL_harq(frameP,subframeP);
 
-      mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL);
+      //      mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL);
 
-      if(round>0) {
+      if(UE_list->UE_sched_ctrl[UE_id].round_UL[CC_id]>0) {
         nb_allocated_rbs[CC_id][UE_id] = UE_list->UE_template[CC_id][UE_id].nb_rb_ul[harq_pid];
       } else {
         nb_allocated_rbs[CC_id][UE_id] = cmin(UE_list->UE_template[CC_id][UE_id].pre_allocated_nb_rb_ul, average_rbs_per_user[CC_id]);
@@ -1218,9 +1196,6 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
         continue;
       if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
 	continue;
-      if (!phy_stats_exist(module_idP, rnti))
-        continue;
-
       UE_id = i;
 
       for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
@@ -1284,8 +1259,6 @@ void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfra
       continue;
     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
       continue;
-    if (!phy_stats_exist(module_idP, rnti))
-      continue;
 
     if (UE_list->UE_sched_ctrl[i].phr_received == 1)
       mcs = 20; // if we've received the power headroom information the UE, we can go to maximum mcs
@@ -1321,16 +1294,16 @@ void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfra
       // if this UE has UL traffic
       if (UE_template->ul_total_buffer > 0 ) {
 
-        tbs = mac_xface->get_TBS_UL(mcs,3);  // 1 or 2 PRB with cqi enabled does not work well!
+        tbs = get_TBS_UL(mcs,3);  // 1 or 2 PRB with cqi enabled does not work well!
         // fixme: set use_srs flag
-        tx_power= mac_xface->estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,Ncp,0);
+        tx_power= estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,Ncp,0);
 
         while ((((UE_template->phr_info - tx_power) < 0 ) || (tbs > UE_template->ul_total_buffer))&&
                (mcs > 3)) {
           // LOG_I(MAC,"UE_template->phr_info %d tx_power %d mcs %d\n", UE_template->phr_info,tx_power, mcs);
           mcs--;
-          tbs = mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
-          tx_power = mac_xface->estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,Ncp,0); // fixme: set use_srs
+          tbs = get_TBS_UL(mcs,rb_table[rb_table_index]);
+          tx_power = estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,Ncp,0); // fixme: set use_srs
         }
 
         while ((tbs < UE_template->ul_total_buffer) &&
@@ -1339,8 +1312,8 @@ void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfra
                (rb_table_index < 32 )) {
    
           rb_table_index++;
-          tbs = mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
-          tx_power = mac_xface->estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,Ncp,0);
+          tbs = get_TBS_UL(mcs,rb_table[rb_table_index]);
+          tx_power = estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,Ncp,0);
         }
 
         UE_template->ue_tx_power = tx_power;
@@ -1450,8 +1423,7 @@ void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP)
       continue;
     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
       continue;
-    if (!phy_stats_exist(module_idP, rnti))
-      continue;
+
     list[list_size] = i;
     list_size++;
   }
@@ -1489,8 +1461,7 @@ void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP)
 	continue;
       if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
 	continue;
-      if (!phy_stats_exist(module_idP, rnti1))
-        continue;
+
 
       pCCid1 = UE_PCCID(module_idP,UE_id1);
       round1  = maxround(module_idP,rnti1,frameP,subframeP,1);
@@ -1502,8 +1473,6 @@ void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP)
         continue;
       if (UE_list->UE_sched_ctrl[UE_id2].ul_out_of_sync == 1)
 	continue;
-      if (!phy_stats_exist(module_idP, rnti2))
-        continue;
 
       pCCid2 = UE_PCCID(module_idP,UE_id2);
       round2  = maxround(module_idP,rnti2,frameP,subframeP,1);

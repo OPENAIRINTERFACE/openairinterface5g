@@ -468,7 +468,7 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
     }
   }
 
-  TBS = mac_xface->get_TBS_DL(cc->MCH_pdu.mcs, to_prb(cc->mib->message.dl_Bandwidth));
+  TBS = get_TBS_DL(cc->MCH_pdu.mcs, to_prb(cc->mib->message.dl_Bandwidth));
 #if defined(Rel10) || defined(Rel14)
   // do not let mcch and mtch multiplexing when relaying is active
   // for sync area 1, so not transmit data

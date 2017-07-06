@@ -71,6 +71,7 @@ static inline unsigned int lte_gold_scram(unsigned int *x1, unsigned int *x2, un
 void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
                       int mbsfn_flag,
                       LTE_eNB_DLSCH_t *dlsch,
+		      int harq_pid,
                       int G,
                       uint8_t q,
                       uint8_t Ns)
@@ -79,7 +80,7 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   int i;
   //  uint8_t reset;
   uint32_t x1, x2, s=0;
-  uint8_t *dlsch_e=dlsch->harq_processes[dlsch->current_harq_pid]->e;
+  uint8_t *dlsch_e=dlsch->harq_processes[harq_pid]->e;
   uint8_t *e=dlsch_e;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_SCRAMBLING, VCD_FUNCTION_IN);

@@ -113,13 +113,8 @@ uint32_t get_TBS_DL(uint8_t mcs, uint16_t nb_rb)
   uint32_t TBS;
 
   if ((nb_rb > 0) && (mcs < 29)) {
-#ifdef TBS_FIX
-    TBS = 3*TBStable[get_I_TBS(mcs)][nb_rb-1]/4;
-    TBS = TBS>>3;
-#else
     TBS = TBStable[get_I_TBS(mcs)][nb_rb-1];
     TBS = TBS>>3;
-#endif
     return(TBS);
   } else {
     return(uint32_t)0;
@@ -132,13 +127,8 @@ uint32_t get_TBS_UL(uint8_t mcs, uint16_t nb_rb)
   uint32_t TBS = 0;
 
   if ((nb_rb > 0) && (mcs < 29)) {
-#ifdef TBS_FIX
-    TBS = 3*TBStable[get_I_TBS_UL(mcs)][nb_rb-1]/4;
-    TBS = TBS>>3;
-#else
     TBS = TBStable[get_I_TBS_UL(mcs)][nb_rb-1];
     TBS = TBS>>3;
-#endif
     return(TBS);
   } else {
     return(uint32_t)0;

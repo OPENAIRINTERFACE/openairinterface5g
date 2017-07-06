@@ -75,9 +75,13 @@ mac_rrc_data_req(
 )
 //--------------------------------------------------------------------------
 {
+  asn_enc_rval_t enc_rval;
   SRB_INFO *Srb_info;
-  uint8_t Sdu_size=0;
-
+  uint8_t Sdu_size                = 0;
+  uint8_t sfn                     = (uint8_t)((frameP>>2)&0xff);
+  eNB_RRC_INST *rrc               = RC.rrc[Mod_idP];
+  rrc_eNB_carrier_data_t *carrier = &rrc->carrier[0];
+  BCCH_BCH_Message_t *mib         = &carrier->mib;
 #ifdef DEBUG_RRC
   int i;
   LOG_T(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_idP,Srb_id);
@@ -91,10 +95,8 @@ mac_rrc_data_req(
       }
 
       // All even frames transmit SIB in SF 5
-      if (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1 == 255) {
-        LOG_E(RRC,"[eNB %d] MAC Request for SIB1 and SIB1 not initialized\n",Mod_idP);
-        mac_xface->macphy_exit("mac_rrc_data_req:  MAC Request for SIB1 and SIB1 not initialized");
-      }
+      AssertFatal(RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1 != 255, 
+		  "[eNB %d] MAC Request for SIB1 and SIB1 not initialized\n",Mod_idP);
 
       if ((frameP%2) == 0) {
         memcpy(&buffer_pP[0],
@@ -180,6 +182,21 @@ mac_rrc_data_req(
         return(0);
       }
     }
+    if( (Srb_id & RAB_OFFSET ) == MIBCH) {
+
+        mib->message.systemFrameNumber.buf = &sfn;
+	enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_BCH_Message,
+					 (void*)mib,
+					 carrier->MIB,
+					 100);
+	LOG_I(RRC,"Encoded MIB for frame %d (%p)\n",sfn,carrier->MIB);
+	buffer_pP[0]=carrier->MIB[0];
+	buffer_pP[1]=carrier->MIB[1];
+	buffer_pP[2]=carrier->MIB[2];
+	AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+		     enc_rval.failed_type->name, enc_rval.encoded);
+	return(3);
+    }
 
     if( (Srb_id & RAB_OFFSET ) == CCCH) {
       LOG_T(RRC,"[eNB %d] Frame %d CCCH request (Srb_id %d)\n",Mod_idP,frameP, Srb_id);
@@ -231,12 +248,6 @@ mac_rrc_data_req(
       if(RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESS[mbsfn_sync_area].Active==0) {
         return 0;  // this parameter is set in function init_mcch in rrc_eNB.c
       }
-
-      // this part not needed as it is done in init_mcch
-      /*     if (eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area] == 255) {
-      LOG_E(RRC,"[eNB %d] MAC Request for MCCH MESSAGE and MCCH MESSAGE is not initialized\n",Mod_id);
-      mac_xface->macphy_exit("");
-      }*/
 
 
 #if defined(ENABLE_ITTI)

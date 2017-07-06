@@ -32,6 +32,7 @@
 #ifndef __LTE_TRANSPORT_DEFS__H__
 #define __LTE_TRANSPORT_DEFS__H__
 #include "PHY/defs.h"
+#include "PHY/impl_defs_lte.h"
 #include "dci.h"
 #include "uci.h"
 #ifndef STANDALONE_COMPILE
@@ -90,6 +91,8 @@
 #define PMI_2A_R1_11 1
 #define PMI_2A_R1_1j 2
 
+typedef enum { SEARCH_EXIST=0,
+	       SEARCH_EXIST_OR_FREE} find_type_t;
 
 typedef enum {
   SCH_IDLE,
@@ -104,6 +107,8 @@ typedef struct {
   SCH_status_t status;
   /// Transport block size
   uint32_t TBS;
+  /// pointer to pdu from MAC interface (this is "a" in 36.212)
+  uint8_t *pdu;
   /// The payload + CRC size in bits, "B" from 36-212
   uint32_t B;
   /// Pointer to the payload
@@ -253,12 +258,12 @@ typedef struct {
   uint16_t rnti;
   /// Active flag for baseband transmitter processing
   uint8_t active;
+  /// HARQ process mask, indicates which processes are currently active
+  uint16_t harq_mask;
   /// Indicator of TX activation per subframe.  Used during PUCCH detection for ACK/NAK.
   uint8_t subframe_tx[10];
   /// First CCE of last PDSCH scheduling per subframe.  Again used during PUCCH detection for ACK/NAK.
   uint8_t nCCE[10];
-  /// Current HARQ process id
-  uint8_t current_harq_pid;
   /// Process ID's per subframe.  Used to associate received ACKs on PUSCH/PUCCH to DLSCH harq process ids
   uint8_t harq_ids[10];
   /// Window size (in outgoing transport blocks) for fine-grain rate adaptation
@@ -482,6 +487,8 @@ typedef struct {
 } LTE_UL_eNB_HARQ_t;
 
 typedef struct {
+  /// HARQ process mask, indicates which processes are currently active
+  uint16_t harq_mask;
   /// Pointers to 8 HARQ processes for the ULSCH
   LTE_UL_eNB_HARQ_t *harq_processes[8];
   /// Maximum number of HARQ rounds
@@ -738,22 +745,7 @@ typedef struct {
   int8_t               g_pucch;
 } LTE_UE_DLSCH_t;
 
-typedef enum {format0,
-              format1,
-              format1A,
-              format1B,
-              format1C,
-              format1D,
-              format1E_2A_M10PRB,
-              format2,
-              format2A,
-              format2B,
-              format2C,
-              format2D,
-              format3,
-	      format3A,
-	      format4
-             } DCI_format_t;
+
 
 typedef enum {
   SI_PDSCH=0,
@@ -782,22 +774,6 @@ typedef enum {
 } PUCCH_FMT_t;
 
 
-typedef struct {
-  /// Length of DCI in bits
-  uint8_t dci_length;
-  /// Aggregation level
-  uint8_t L;
-  /// Position of first CCE of the dci
-  int firstCCE;
-  /// flag to indicate that this is a RA response
-  boolean_t ra_flag;
-  /// rnti
-  rnti_t rnti;
-  /// Format
-  DCI_format_t format;
-  /// DCI pdu
-  uint8_t dci_pdu[8];
-} DCI_ALLOC_t;
 
 
 /**@}*/

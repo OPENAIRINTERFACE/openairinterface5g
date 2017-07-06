@@ -133,13 +133,16 @@ init_SI(
   int                                 i;
 #endif
   
-
+  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MIB = (uint8_t*) malloc16(3);
   // copy basic parameters
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId      = configuration->Nid_cell[CC_id];
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB           = configuration->nb_antenna_ports[CC_id];
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Ncp             = configuration->prefix_type[CC_id];
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq  = configuration->downlink_frequency[CC_id];
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].ul_CarrierFreq  = configuration->downlink_frequency[CC_id]+ configuration->uplink_frequency_offset[CC_id];
+#ifdef Rel14
+  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].pbch_repetition = configuration->pbch_repetition[CC_id];
+#endif
   LOG_I(RRC, "Configuring MIB (N_RB_DL %d,phich_Resource %d,phich_Duration %d)\n", 
 	configuration->N_RB_DL[CC_id],
 	configuration->phich_resource[CC_id],
@@ -159,157 +162,150 @@ init_SI(
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23 = 0;
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1 = (uint8_t*) malloc16(32);
 
-  if (RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1)
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 = do_SIB1(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],ctxt_pP->module_id,CC_id
+  AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1!=NULL,PROTOCOL_RRC_CTXT_FMT" init_SI: FATAL, no memory for SIB1 allocated\n",
+	      PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
+  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 = do_SIB1(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],ctxt_pP->module_id,CC_id
 #if defined(ENABLE_ITTI)
-          , configuration
+								   , configuration
 #endif
-        );
-  else {
-    LOG_E(RRC, PROTOCOL_RRC_CTXT_FMT" init_SI: FATAL, no memory for SIB1 allocated\n",
-          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
-    mac_xface->macphy_exit("[RRC][init_SI] FATAL, no memory for SIB1 allocated");
-  }
+								   );
 
-  if (RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 == 255) {
-    mac_xface->macphy_exit("[RRC][init_SI] FATAL, RC.rrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1 == 255");
-  }
+  AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 != 255,"FATAL, RC.rrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1 == 255");
 
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23 = (uint8_t*) malloc16(64);
-
-  if (RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23) {
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23 = do_SIB23(
-          ctxt_pP->module_id,
-
-          CC_id
+  AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23!=NULL,"cannot allocate memory for SIB");
+  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23 = do_SIB23(
+								     ctxt_pP->module_id,
+								     
+								     CC_id
 #if defined(ENABLE_ITTI)
-          , configuration
+								     , configuration
 #endif
-        );
+								     );
 
-    if (RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23 == 255) {
-      mac_xface->macphy_exit("[RRC][init_SI] FATAL, RC.rrc[mod].carrier[CC_id].sizeof_SIB23 == 255");
+  AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23 != 255,"FATAL, RC.rrc[mod].carrier[CC_id].sizeof_SIB23 == 255");
+  
+
+  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" SIB2/3 Contents (partial)\n",
+	PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
+  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.n_SB = %ld\n",
+	PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
+	pusch_ConfigBasic.n_SB);
+  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.hoppingMode = %ld\n",
+	PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
+	pusch_ConfigBasic.hoppingMode);
+  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.pusch_HoppingOffset = %ld\n",
+	PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
+	pusch_ConfigBasic.pusch_HoppingOffset);
+  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.enable64QAM = %d\n",
+	PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	(int)RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
+	pusch_ConfigBasic.enable64QAM);
+  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.groupHoppingEnabled = %d\n",
+	PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	(int)RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
+	ul_ReferenceSignalsPUSCH.groupHoppingEnabled);
+  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.groupAssignmentPUSCH = %ld\n",
+	PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
+	ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH);
+  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.sequenceHoppingEnabled = %d\n",
+	PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	(int)RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
+	ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled);
+  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.cyclicShift  = %ld\n",
+	PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
+	ul_ReferenceSignalsPUSCH.cyclicShift);
+  
+#if defined(Rel10) || defined(Rel14)
+
+  if (RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MBMS_flag > 0) {
+    for (i = 0; i < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.count; i++) {
+      // SIB 2
+      //   LOG_D(RRC, "[eNB %d] mbsfn_SubframeConfigList.list.count = %ld\n", enb_mod_idP, RC.rrc[enb_mod_idP].sib2->mbsfn_SubframeConfigList->list.count);
+      LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" SIB13 contents for MBSFN subframe allocation %d/%d(partial)\n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    i,
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.count);
+      LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" mbsfn_Subframe_pattern is  = %x\n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0] >> 0);
+      LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" radioframe_allocation_period  = %ld (just index number, not the real value)\n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationPeriod);   // need to display the real value, using array of char (like in dumping SIB2)
+      LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" radioframe_allocation_offset  = %ld\n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationOffset);
     }
-
-    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" SIB2/3 Contents (partial)\n",
-          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
-    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.n_SB = %ld\n",
-          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-          RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
-          pusch_ConfigBasic.n_SB);
-    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.hoppingMode = %ld\n",
-          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-          RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
-          pusch_ConfigBasic.hoppingMode);
-    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.pusch_HoppingOffset = %ld\n",
-          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-          RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
-          pusch_ConfigBasic.pusch_HoppingOffset);
-    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.enable64QAM = %d\n",
-          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-          (int)RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
-          pusch_ConfigBasic.enable64QAM);
-    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.groupHoppingEnabled = %d\n",
-          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-          (int)RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
-          ul_ReferenceSignalsPUSCH.groupHoppingEnabled);
-    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.groupAssignmentPUSCH = %ld\n",
-          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-          RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
-          ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH);
-    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.sequenceHoppingEnabled = %d\n",
-          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-          (int)RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
-          ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled);
-    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.cyclicShift  = %ld\n",
-          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-          RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
-          ul_ReferenceSignalsPUSCH.cyclicShift);
-
-#if defined(Rel10) || defined(Rel14)
-
-    if (RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MBMS_flag > 0) {
-      for (i = 0; i < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.count; i++) {
-        // SIB 2
-        //   LOG_D(RRC, "[eNB %d] mbsfn_SubframeConfigList.list.count = %ld\n", enb_mod_idP, RC.rrc[enb_mod_idP].sib2->mbsfn_SubframeConfigList->list.count);
-        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" SIB13 contents for MBSFN subframe allocation %d/%d(partial)\n",
-              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-              i,
-              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.count);
-        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" mbsfn_Subframe_pattern is  = %x\n",
-              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0] >> 0);
-        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" radioframe_allocation_period  = %ld (just index number, not the real value)\n",
-              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationPeriod);   // need to display the real value, using array of char (like in dumping SIB2)
-        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" radioframe_allocation_offset  = %ld\n",
-              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationOffset);
-      }
-
-      //   SIB13
-      for (i = 0; i < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.count; i++) {
-        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" SIB13 contents for MBSFN sync area %d/%d (partial)\n",
-              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-              i,
-              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.count);
-        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" MCCH Repetition Period: %ld (just index number, not real value)\n",
-              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
-        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" MCCH Offset: %ld\n",
-              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_Offset_r9);
-      }
+    
+    //   SIB13
+    for (i = 0; i < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.count; i++) {
+      LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" SIB13 contents for MBSFN sync area %d/%d (partial)\n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    i,
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.count);
+      LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" MCCH Repetition Period: %ld (just index number, not real value)\n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
+      LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" MCCH Offset: %ld\n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_Offset_r9);
     }
-
+  }  
 #endif
 
-    LOG_D(RRC,
-          PROTOCOL_RRC_CTXT_FMT" RRC_UE --- MAC_CONFIG_REQ (SIB1.tdd & SIB2 params) ---> MAC_UE\n",
-          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
-
-    rrc_mac_config_req_eNB(ctxt_pP->module_id, CC_id,
-			   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId,
-			   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB,
-			   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Ncp,
-			   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1->freqBandIndicator,
-			   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq,
-			   (BCCH_BCH_Message_t *)
-			   &RC.rrc[ctxt_pP->module_id]->carrier[CC_id].mib,
-			   (RadioResourceConfigCommonSIB_t *) &
-			   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon,
-			   (struct PhysicalConfigDedicated *)NULL,
-#if defined(Rel10) || defined(Rel14)
-			   (SCellToAddMod_r10_t *)NULL,
-			   //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+  LOG_D(RRC,
+	PROTOCOL_RRC_CTXT_FMT" RRC_UE --- MAC_CONFIG_REQ (SIB1.tdd & SIB2 params) ---> MAC_UE\n",
+	PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
+  
+  rrc_mac_config_req_eNB(ctxt_pP->module_id, CC_id,
+			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId,
+			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB,
+			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Ncp,
+			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1->freqBandIndicator,
+			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq,
+#ifdef Rel14
+			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].pbch_repetition,
 #endif
-			   (MeasObjectToAddMod_t **) NULL,
-			   (MAC_MainConfig_t *) NULL, 0,
-			   (struct LogicalChannelConfig *)NULL,
-			   (MeasGapConfig_t *) NULL,
-			   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1->tdd_Config,
-			   NULL,
-			   &SIwindowsize, &SIperiod,
-			   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].ul_CarrierFreq,
-			   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->freqInfo.ul_Bandwidth,
-			   &RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->freqInfo.additionalSpectrumEmission,
-			   (MBSFN_SubframeConfigList_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList
+			 (BCCH_BCH_Message_t *)
+			 &RC.rrc[ctxt_pP->module_id]->carrier[CC_id].mib,
+			 (RadioResourceConfigCommonSIB_t *) &
+			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon,
+#if defined(Rel14)
+			 (RadioResourceConfigCommonSIB_t *) &
+			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2_BR->radioResourceConfigCommon,
+#endif
+			 (struct PhysicalConfigDedicated *)NULL,
 #if defined(Rel10) || defined(Rel14)
-			   ,
-			   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MBMS_flag,
-			   (MBSFN_AreaInfoList_r9_t*) & RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9,
-			   (PMCH_InfoList_r9_t *) NULL
+			 (SCellToAddMod_r10_t *)NULL,
+			 //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+#endif
+			 (MeasObjectToAddMod_t **) NULL,
+			 (MAC_MainConfig_t *) NULL, 0,
+			 (struct LogicalChannelConfig *)NULL,
+			 (MeasGapConfig_t *) NULL,
+			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1->tdd_Config,
+			 NULL,
+			 &SIwindowsize, &SIperiod,
+			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].ul_CarrierFreq,
+			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->freqInfo.ul_Bandwidth,
+			 &RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->freqInfo.additionalSpectrumEmission,
+			 (MBSFN_SubframeConfigList_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList
+#if defined(Rel10) || defined(Rel14)
+			 ,
+			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MBMS_flag,
+			 (MBSFN_AreaInfoList_r9_t*) & RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9,
+			 (PMCH_InfoList_r9_t *) NULL
 #endif
 #ifdef CBA
-			   , 0, //RC.rrc[ctxt_pP->module_id]->num_active_cba_groups,
-			   0    //RC.rrc[ctxt_pP->module_id]->cba_rnti[0]
+			 , 0, //RC.rrc[ctxt_pP->module_id]->num_active_cba_groups,
+			 0    //RC.rrc[ctxt_pP->module_id]->cba_rnti[0]
 #endif
-			   );
-  } else {
-    LOG_E(RRC, PROTOCOL_RRC_CTXT_FMT" init_SI: FATAL, no memory for SIB2/3 allocated\n",
-          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
-    mac_xface->macphy_exit("[RRC][init_SI] FATAL, no memory for SIB2/3 allocated");
-  }
+			 );
 }
 
 #if defined(Rel10) || defined(Rel14)
@@ -332,37 +328,33 @@ init_MCCH(
     RC.rrc[enb_mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[sync_area] = 0;
     RC.rrc[enb_mod_idP]->carrier[CC_id].MCCH_MESSAGE[sync_area] = (uint8_t *) malloc16(32);
 
-    if (RC.rrc[enb_mod_idP]->carrier[CC_id].MCCH_MESSAGE[sync_area] == NULL) {
-      LOG_E(RRC, "[eNB %d][MAIN] init_MCCH: FATAL, no memory for MCCH MESSAGE allocated \n", enb_mod_idP);
-      mac_xface->macphy_exit("[RRC][init_MCCH] not enough memory\n");
-    } else {
-      RC.rrc[enb_mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[sync_area] = do_MBSFNAreaConfig(enb_mod_idP,
-          sync_area,
-          (uint8_t *)RC.rrc[enb_mod_idP]->carrier[CC_id].MCCH_MESSAGE[sync_area],
-          &RC.rrc[enb_mod_idP]->carrier[CC_id].mcch,
-          &RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message);
-
-      LOG_I(RRC, "mcch message pointer %p for sync area %d \n",
-            RC.rrc[enb_mod_idP]->carrier[CC_id].MCCH_MESSAGE[sync_area],
-            sync_area);
-      LOG_D(RRC, "[eNB %d] MCCH_MESSAGE  contents for Sync Area %d (partial)\n", enb_mod_idP, sync_area);
-      LOG_D(RRC, "[eNB %d] CommonSF_AllocPeriod_r9 %ld\n", enb_mod_idP,
-            RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->commonSF_AllocPeriod_r9);
-      LOG_D(RRC,
-            "[eNB %d] CommonSF_Alloc_r9.list.count (number of MBSFN Subframe Pattern) %d\n",
-            enb_mod_idP, RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->commonSF_Alloc_r9.list.count);
-      LOG_D(RRC, "[eNB %d] MBSFN Subframe Pattern: %02x (in hex)\n",
-            enb_mod_idP,
-            RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->commonSF_Alloc_r9.list.array[0]->subframeAllocation.
-            choice.oneFrame.buf[0]);
-
-      if (RC.rrc[enb_mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[sync_area] == 255) {
-        mac_xface->macphy_exit("[RRC][init_MCCH] RC.rrc[enb_mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[sync_area] == 255");
-      } else {
-        RC.rrc[enb_mod_idP]->carrier[CC_id].MCCH_MESS[sync_area].Active = 1;
-      }
-    }
+    AssertFatal(RC.rrc[enb_mod_idP]->carrier[CC_id].MCCH_MESSAGE[sync_area] != NULL,
+		"[eNB %d]init_MCCH: FATAL, no memory for MCCH MESSAGE allocated \n", enb_mod_idP);
+    RC.rrc[enb_mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[sync_area] = do_MBSFNAreaConfig(enb_mod_idP,
+											    sync_area,
+											    (uint8_t *)RC.rrc[enb_mod_idP]->carrier[CC_id].MCCH_MESSAGE[sync_area],
+											    &RC.rrc[enb_mod_idP]->carrier[CC_id].mcch,
+											    &RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message);
+    
+    LOG_I(RRC, "mcch message pointer %p for sync area %d \n",
+	  RC.rrc[enb_mod_idP]->carrier[CC_id].MCCH_MESSAGE[sync_area],
+	  sync_area);
+    LOG_D(RRC, "[eNB %d] MCCH_MESSAGE  contents for Sync Area %d (partial)\n", enb_mod_idP, sync_area);
+    LOG_D(RRC, "[eNB %d] CommonSF_AllocPeriod_r9 %ld\n", enb_mod_idP,
+	  RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->commonSF_AllocPeriod_r9);
+    LOG_D(RRC,
+	  "[eNB %d] CommonSF_Alloc_r9.list.count (number of MBSFN Subframe Pattern) %d\n",
+	  enb_mod_idP, RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->commonSF_Alloc_r9.list.count);
+    LOG_D(RRC, "[eNB %d] MBSFN Subframe Pattern: %02x (in hex)\n",
+	  enb_mod_idP,
+	  RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->commonSF_Alloc_r9.list.array[0]->subframeAllocation.
+	  choice.oneFrame.buf[0]);
+    
+    AssertFatal(RC.rrc[enb_mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[sync_area] != 255,
+		"RC.rrc[enb_mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[sync_area] == 255");
+    RC.rrc[enb_mod_idP]->carrier[CC_id].MCCH_MESS[sync_area].Active = 1;
   }
+  
 
   //Set the RC.rrc[enb_mod_idP]->MCCH_MESS.Active to 1 (allow to  transfer MCCH message RRC->MAC in function mac_rrc_data_req)
 
@@ -373,7 +365,12 @@ init_MCCH(
   //  LOG_I(RRC, "DUY: serviceID is %d\n",RC.rrc[enb_mod_idP]->mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->tmgi_r9.serviceId_r9.buf[2]);
   //  LOG_I(RRC, "DUY: session ID is %d\n",RC.rrc[enb_mod_idP]->mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->sessionId_r9->buf[0]);
   rrc_mac_config_req_eNB(enb_mod_idP, CC_id,
-			 0,0,0,0,0,(BCCH_BCH_Message_t *)NULL,
+			 0,0,0,0,0,
+#ifdef Rel14 
+			 0,
+#endif
+			 (BCCH_BCH_Message_t *)NULL,
+			 (RadioResourceConfigCommonSIB_t *) NULL,
 			 (RadioResourceConfigCommonSIB_t *) NULL,
 			 (struct PhysicalConfigDedicated *)NULL,
 #if defined(Rel10) || defined(Rel14)
@@ -2728,7 +2725,12 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   rrc_mac_config_req_eNB(
 			 ctxt_pP->module_id,
 			 ue_context_pP->ue_context.primaryCC_id,
-			 0,0,0,0,0,(BCCH_BCH_Message_t *) NULL,
+			 0,0,0,0,0,
+#ifdef Rel14 
+0,
+#endif 
+			 (BCCH_BCH_Message_t *) NULL,
+			 (RadioResourceConfigCommonSIB_t*) NULL,
 			 (RadioResourceConfigCommonSIB_t*) NULL,
 			 ue_context_pP->ue_context.physicalConfigDedicated,
 #if defined(Rel10) || defined(Rel14)
@@ -3301,7 +3303,12 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   rrc_mac_config_req_eNB(
 			 ctxt_pP->module_id,
 			 ue_context_pP->ue_context.primaryCC_id,
-			 0,0,0,0,0,(BCCH_BCH_Message_t *) NULL,
+			 0,0,0,0,0,
+#ifdef Rel14 
+			 0,
+#endif
+			 (BCCH_BCH_Message_t *) NULL,
+			 (RadioResourceConfigCommonSIB_t *) NULL,
 			 (RadioResourceConfigCommonSIB_t *) NULL,
 			 ue_context_pP->ue_context.physicalConfigDedicated,
 #if defined(Rel10) || defined(Rel14)
@@ -3597,7 +3604,12 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
           rrc_mac_config_req_eNB(
 				 ctxt_pP->module_id,
 				 ue_context_pP->ue_context.primaryCC_id,
-				 0,0,0,0,0,(BCCH_BCH_Message_t *) NULL,
+				 0,0,0,0,0,
+#ifdef Rel14 
+				 0,
+#endif
+				 (BCCH_BCH_Message_t *) NULL,
+				 (RadioResourceConfigCommonSIB_t *) NULL,
 				 (RadioResourceConfigCommonSIB_t *) NULL,
 				 ue_context_pP->ue_context.physicalConfigDedicated,
 #if defined(Rel10) || defined(Rel14)
@@ -3643,7 +3655,12 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
           rrc_mac_config_req_eNB(ctxt_pP->module_id,
 				 ue_context_pP->ue_context.primaryCC_id,
-				 0,0,0,0,0,(BCCH_BCH_Message_t *) NULL,
+				 0,0,0,0,0,
+#ifdef Rel14 
+				 0,
+#endif
+				 (BCCH_BCH_Message_t *) NULL,
+				 (RadioResourceConfigCommonSIB_t *) NULL,
 				 (RadioResourceConfigCommonSIB_t *) NULL,
 				 ue_context_pP->ue_context.physicalConfigDedicated,
 #if defined(Rel10) || defined(Rel14)
@@ -3734,7 +3751,12 @@ rrc_eNB_generate_RRCConnectionSetup(
         rrc_mac_config_req_eNB(
 			       ctxt_pP->module_id,
 			       ue_context_pP->ue_context.primaryCC_id,
-			       0,0,0,0,0,(BCCH_BCH_Message_t *) NULL,
+			       0,0,0,0,0,
+#ifdef Rel14 
+			       0,
+#endif
+			       (BCCH_BCH_Message_t *) NULL,
+			       (RadioResourceConfigCommonSIB_t *) NULL,
 			       (RadioResourceConfigCommonSIB_t *) NULL,
 			       ue_context_pP->ue_context.physicalConfigDedicated,
 #if defined(Rel10) || defined(Rel14)

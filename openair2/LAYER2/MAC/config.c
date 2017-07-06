@@ -35,6 +35,9 @@
 #include "SystemInformationBlockType2.h"
 //#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
+#ifdef Rel14
+#include "PRACH-ConfigSIB-v1310.h"
+#endif
 #include "MeasGapConfig.h"
 #include "MeasObjectToAddModList.h"
 #include "TDD-Config.h"
@@ -69,7 +72,7 @@ void ue_mac_reset(module_id_t module_idP,uint8_t eNB_index)
   //timeAlignmentTimer expires
 
   // PHY changes for UE MAC reset
-  mac_xface->phy_reset_ue(module_idP,0,eNB_index);
+  phy_reset_ue(module_idP,0,eNB_index);
 
   // notify RRC to relase PUCCH/SRS
   // cancel all pending SRs
@@ -90,6 +93,326 @@ void ue_mac_reset(module_id_t module_idP,uint8_t eNB_index)
 
 }
 
+int32_t **rxdata;
+int32_t **txdata;
+
+
+typedef struct eutra_bandentry_s {
+    int16_t band;
+    uint32_t ul_min;
+    uint32_t ul_max;
+    uint32_t dl_min;
+    uint32_t dl_max;
+    uint32_t N_OFFs_DL;
+} eutra_bandentry_t;
+
+typedef struct band_info_s {
+    int nbands;
+    eutra_bandentry_t band_info[100];
+} band_info_t;
+
+
+
+static const eutra_bandentry_t eutra_bandtable[] = {
+  { 1, 19200, 19800, 21100, 21700, 0},
+  { 2, 18500, 19100, 19300, 19900, 6000},
+  { 3, 17100, 17850, 18050, 18800, 12000},
+  { 4, 17100, 17550, 21100, 21550, 19500},
+  { 5,  8240,  8490,  8690,  8940, 24000},
+  { 6,  8300,  8400,  8750,  8850, 26500},
+  { 7, 25000, 25700, 26200, 26900, 27500},
+  { 8,  8800, 9150 ,  9250,  9600, 34500},
+  { 9, 17499, 17849, 18449, 18799, 38000},
+  {10, 17100, 17700, 21100, 21700, 41500},
+  {11, 14279, 14529, 14759, 15009, 47500},
+  {12,  6980,  7160,  7280,  7460, 50100},
+  {13,  7770,  7870,  7460,  7560, 51800},
+  {14,  7880,  7980,  7580,  7680, 52800},
+  {17,  7040,  7160,  7340,  7460, 57300},
+  {18,  8150,  9650,  8600, 10100, 58500},
+  {19,  8300,  8450,  8750,  8900, 60000},
+  {20,  8320,  8620,  7910,  8210, 61500},
+  {21, 14479, 14629, 14959, 15109, 64500},
+  {22, 34100, 34900, 35100, 35900, 66000},
+  {23, 20000, 20200, 21800, 22000, 75000},
+  {24, 16126, 16605, 15250, 15590, 77000},
+  {25, 18500, 19150, 19300, 19950, 80400},
+  {26, 8140 ,  8490,  8590,  8940, 86900},
+  {27, 8070 ,  8240,  8520,  8690, 90400},
+  {28, 7030 ,  7580,  7580,  8130, 92100},
+  {29, 0    ,  0   ,  7170,  7280, 96600},
+  {30, 23050, 23250, 23500, 23600, 97700},
+  {31, 45250, 34900, 46250, 35900, 98700},
+  {32, 0    , 0    , 14520, 14960, 99200},
+  {33, 19000, 19200, 19000, 19200, 36000},
+  {34, 20100, 20250, 20100, 20250, 36200},
+  {35, 18500, 19100, 18500, 19100, 36350},
+  {36, 19300, 19900, 19300, 19900, 36950},
+  {37, 19100, 19300, 19100, 19300, 37550},
+  {38, 25700, 26200, 25700, 26300, 37750},
+  {39, 18800, 19200, 18800, 19200, 38250},
+  {40, 23000, 24000, 23000, 24000, 38650},
+  {41, 24960, 26900, 24960, 26900, 39650},
+  {42, 34000, 36000, 34000, 36000, 41590},
+  {43, 36000, 38000, 36000, 38000, 43590},
+  {44, 7030 ,  8030,  7030,  8030, 45590},
+  {45, 14470, 14670, 14470, 14670, 46590},
+  {46, 51500, 59250, 51500, 59250, 46790},
+  {65, 19200, 20100, 21100, 22000, 65536},
+  {66, 17100, 18000, 21100, 22000, 66436},
+  {67, 0    , 0    ,  7380,  7580, 67336},
+  {68, 6980 , 7280 ,  7530,  7830, 67536}};
+
+uint32_t to_earfcn(int eutra_bandP,uint32_t dl_CarrierFreq,uint32_t bw) {
+
+  uint32_t dl_CarrierFreq_by_100k = dl_CarrierFreq/100000;
+  int bw_by_100                   = bw/100;
+
+  int i;
+
+  AssertFatal(eutra_bandP < 69,"eutra_band %d > 68\n",eutra_bandP);
+  for (i=0;i<69 && eutra_bandtable[i].band!=eutra_bandP;i++);
+
+  AssertFatal(dl_CarrierFreq_by_100k>=eutra_bandtable[i].dl_min,
+	      "Band %d, bw %u : DL carrier frequency %u Hz < %u\n",
+	      eutra_bandP,bw,dl_CarrierFreq,eutra_bandtable[i].dl_min);
+  AssertFatal(dl_CarrierFreq_by_100k<=(eutra_bandtable[i].dl_max-bw_by_100),
+	      "Band %d, bw %u: DL carrier frequency %u Hz > %d\n",
+	      eutra_bandP,bw,dl_CarrierFreq,eutra_bandtable[i].dl_max-bw_by_100);
+
+
+  return(dl_CarrierFreq_by_100k - eutra_bandtable[i].dl_min + (eutra_bandtable[i].N_OFFs_DL/10));
+}
+
+uint32_t from_earfcn(int eutra_bandP,uint32_t dl_earfcn) {
+
+  int i;
+
+  AssertFatal(eutra_bandP < 69,"eutra_band %d > 68\n",eutra_bandP);
+  for (i=0;i<69 && eutra_bandtable[i].band!=eutra_bandP;i++);
+
+  return(eutra_bandtable[i].dl_min + (dl_earfcn-(eutra_bandtable[i].N_OFFs_DL/10)))*100000;
+}
+
+
+int32_t get_uldl_offset(int eutra_band) {
+  return(-eutra_bandtable[eutra_band].dl_min + eutra_bandtable[eutra_band].ul_min);
+}
+
+uint32_t bw_table[6] = {6*180,15*180,25*180,50*180,75*180,100*180};
+
+void config_mib(int                 Mod_idP,
+		int                 CC_idP,
+		int                 eutra_bandP,  
+		int                 dl_BandwidthP,
+		PHICH_Config_t      *phich_configP,
+		int                 Nid_cellP,
+		int                 NcpP,
+		int                 p_eNBP,
+		uint32_t            dl_CarrierFreqP,
+		uint32_t            ul_CarrierFreqP,
+		uint32_t            pbch_repetitionP) {
+
+  nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
+		
+  cfg->subframe_config.pcfich_power_offset.value   = 6000;  // 0dB
+  cfg->subframe_config.dl_cyclic_prefix_type.value = NcpP;
+  cfg->subframe_config.ul_cyclic_prefix_type.value = NcpP;
+ 
+  LOG_I(MAC,"Ncp %d,p_eNB %d\n",NcpP,p_eNBP);
+
+  cfg->rf_config.dl_channel_bandwidth.value        = dl_BandwidthP;
+  cfg->rf_config.ul_channel_bandwidth.value        = dl_BandwidthP;
+  cfg->rf_config.tx_antenna_ports.value            = p_eNBP;
+  cfg->rf_config.rx_antenna_ports.value            = 2;
+
+  cfg->nfapi_config.earfcn.value                   = to_earfcn(eutra_bandP,dl_CarrierFreqP,bw_table[dl_BandwidthP]/100);
+  cfg->nfapi_config.rf_bands.number_rf_bands       = 1;
+  cfg->nfapi_config.rf_bands.rf_band[0]            = eutra_bandP;  
+  cfg->phich_config.phich_resource.value           = phich_configP->phich_Resource;
+  cfg->phich_config.phich_duration.value           = phich_configP->phich_Duration;
+  cfg->phich_config.phich_power_offset.value       = 6000;  // 0dB
+
+  cfg->sch_config.primary_synchronization_signal_epre_eprers.value   = 6000; // 0dB
+  cfg->sch_config.secondary_synchronization_signal_epre_eprers.value = 6000; // 0dB
+  cfg->sch_config.physical_cell_id.value                             = Nid_cellP;
+
+#ifdef Rel14
+  cfg->emtc_config.pbch_repetitions_enable_r13.value                 = pbch_repetitionP;
+#endif  
+}
+
+void config_sib1(int Mod_idP,
+		 int CC_idP,
+		 TDD_Config_t *tdd_ConfigP) {
+
+  nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
+
+  if (tdd_ConfigP)   { //TDD
+    cfg->subframe_config.duplex_mode.value                          = 0;
+    cfg->tdd_frame_structure_config.subframe_assignment.value       = tdd_ConfigP->subframeAssignment;
+    cfg->tdd_frame_structure_config.special_subframe_patterns.value = tdd_ConfigP->specialSubframePatterns;
+  }
+  else { // FDD
+    cfg->subframe_config.duplex_mode.value                          = 1;
+    // Note no half-duplex here
+  }
+
+  
+}
+
+int power_off_dB[6] = {78,118,140,170,188,200};
+
+void config_sib2(int Mod_idP, 
+		 int CC_idP, 
+		 RadioResourceConfigCommonSIB_t   *radioResourceConfigCommonP,
+#ifdef Rel14
+		 RadioResourceConfigCommonSIB_t   *radioResourceConfigCommon_BRP,
+#endif
+		 ARFCN_ValueEUTRA_t *ul_CArrierFreqP,
+		 long *ul_BandwidthP,
+		 AdditionalSpectrumEmission_t *additionalSpectrumEmissionP,
+		 struct MBSFN_SubframeConfigList  *mbsfn_SubframeConfigListP) {
+
+  nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
+
+  cfg->subframe_config.pb.value               = radioResourceConfigCommonP->pdsch_ConfigCommon.p_b;
+  cfg->rf_config.reference_signal_power.value = radioResourceConfigCommonP->pdsch_ConfigCommon.referenceSignalPower;
+  cfg->nfapi_config.max_transmit_power.value  = cfg->rf_config.reference_signal_power.value + power_off_dB[cfg->rf_config.dl_channel_bandwidth.value];
+
+  cfg->prach_config.configuration_index.value                 = radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.prach_ConfigIndex;
+  cfg->prach_config.root_sequence_index.value                 = radioResourceConfigCommonP->prach_Config.rootSequenceIndex;
+  cfg->prach_config.zero_correlation_zone_configuration.value = radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig;
+  cfg->prach_config.high_speed_flag.value                     = radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.highSpeedFlag;
+  cfg->prach_config.frequency_offset.value                    = radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.prach_FreqOffset;
+
+  cfg->pusch_config.hopping_mode.value                        = radioResourceConfigCommonP->pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode;
+  cfg->pusch_config.number_of_subbands.value                  = radioResourceConfigCommonP->pusch_ConfigCommon.pusch_ConfigBasic.n_SB;
+  cfg->pusch_config.hopping_offset.value                      = radioResourceConfigCommonP->pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset;
+
+
+		
+  cfg->pucch_config.delta_pucch_shift.value                         = radioResourceConfigCommonP->pucch_ConfigCommon.deltaPUCCH_Shift;
+  cfg->pucch_config.n_cqi_rb.value                                  = radioResourceConfigCommonP->pucch_ConfigCommon.nRB_CQI;
+  cfg->pucch_config.n_an_cs.value                                   = radioResourceConfigCommonP->pucch_ConfigCommon.nCS_AN;
+  cfg->pucch_config.n1_pucch_an.value                               = radioResourceConfigCommonP->pucch_ConfigCommon.n1PUCCH_AN;
+
+  if (radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled == true)
+    cfg->uplink_reference_signal_config.uplink_rs_hopping.value     = 1;
+  else if (radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled == true)
+    cfg->uplink_reference_signal_config.uplink_rs_hopping.value     = 2;
+  else // No hopping
+    cfg->uplink_reference_signal_config.uplink_rs_hopping.value     = 0;
+
+  cfg->uplink_reference_signal_config.group_assignment.value        = radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
+  cfg->uplink_reference_signal_config.cyclic_shift_1_for_drms.value = radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift;
+
+  // how to enable/disable SRS?
+  if (radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.present==SoundingRS_UL_ConfigCommon_PR_setup) {
+    cfg->srs_config.bandwidth_configuration.value                       = radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.srs_BandwidthConfig;
+    cfg->srs_config.srs_subframe_configuration.value                    = radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig;
+    cfg->srs_config.srs_acknack_srs_simultaneous_transmission.value     = radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
+
+    if (radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts)
+       cfg->srs_config.max_up_pts.value                                 = 1;
+    else
+       cfg->srs_config.max_up_pts.value                                 = 0;
+  }
+
+#ifdef Rel14
+  if (RC.mac[Mod_idP]->common_channels[CC_idP].mib->message.schedulingInfoSIB1_BR_r13>0) {
+    AssertFatal(radioResourceConfigCommon_BRP!=NULL,"radioResource rou is missing\n");
+    AssertFatal(radioResourceConfigCommon_BRP->ext4!=NULL,"ext4 is missing\n");
+    cfg->emtc_config.prach_catm_root_sequence_index.value                 = radioResourceConfigCommon_BRP->prach_Config.rootSequenceIndex;
+    cfg->emtc_config.prach_catm_zero_correlation_zone_configuration.value = radioResourceConfigCommon_BRP->prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig;
+    cfg->emtc_config.prach_catm_high_speed_flag.value                     = radioResourceConfigCommon_BRP->prach_Config.prach_ConfigInfo.highSpeedFlag;
+ 
+    struct PRACH_ConfigSIB_v1310 *ext4_prach=radioResourceConfigCommonP->ext4->prach_ConfigCommon_v1310; 
+
+    PRACH_ParametersListCE_r13_t	 *prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
+    int i;
+    PRACH_ParametersCE_r13_t *p;
+    cfg->emtc_config.prach_ce_level_0_enable.value=0;
+    cfg->emtc_config.prach_ce_level_1_enable.value=0;
+    cfg->emtc_config.prach_ce_level_2_enable.value=0;
+    cfg->emtc_config.prach_ce_level_3_enable.value=0;
+    switch (prach_ParametersListCE_r13->list.count) {
+    case 4:
+      p=prach_ParametersListCE_r13->list.array[3];
+      cfg->emtc_config.prach_ce_level_3_enable.value                          = 1;
+      cfg->emtc_config.prach_ce_level_3_configuration_index.value             = p->prach_ConfigIndex_r13;
+      cfg->emtc_config.prach_ce_level_3_frequency_offset.value                = p->prach_FreqOffset_r13;
+      if (p->prach_StartingSubframe_r13) 
+	cfg->emtc_config.prach_ce_level_3_starting_subframe_periodicity.value = *p->prach_StartingSubframe_r13;
+      cfg->emtc_config.prach_ce_level_3_hopping_enable.value                  = p->prach_HoppingConfig_r13;
+      cfg->emtc_config.prach_ce_level_3_hopping_offset.value                  = cfg->rf_config.ul_channel_bandwidth.value-6;
+    case 3:
+      p=prach_ParametersListCE_r13->list.array[2];
+      cfg->emtc_config.prach_ce_level_2_enable.value                          = 1;
+      cfg->emtc_config.prach_ce_level_2_configuration_index.value             = p->prach_ConfigIndex_r13;
+      cfg->emtc_config.prach_ce_level_2_frequency_offset.value                = p->prach_FreqOffset_r13;
+      if (p->prach_StartingSubframe_r13) 
+	cfg->emtc_config.prach_ce_level_2_starting_subframe_periodicity.value = *p->prach_StartingSubframe_r13;
+      cfg->emtc_config.prach_ce_level_2_hopping_enable.value                  = p->prach_HoppingConfig_r13;
+      cfg->emtc_config.prach_ce_level_2_hopping_offset.value                  = cfg->rf_config.ul_channel_bandwidth.value-6;
+    case 2:
+      p=prach_ParametersListCE_r13->list.array[1];
+      cfg->emtc_config.prach_ce_level_1_enable.value                          = 1;
+      cfg->emtc_config.prach_ce_level_1_configuration_index.value             = p->prach_ConfigIndex_r13;
+      cfg->emtc_config.prach_ce_level_1_frequency_offset.value                = p->prach_FreqOffset_r13;
+      if (p->prach_StartingSubframe_r13) 
+	cfg->emtc_config.prach_ce_level_1_starting_subframe_periodicity.value = *p->prach_StartingSubframe_r13;
+      cfg->emtc_config.prach_ce_level_1_hopping_enable.value                  = p->prach_HoppingConfig_r13;
+      cfg->emtc_config.prach_ce_level_1_hopping_offset.value                  = cfg->rf_config.ul_channel_bandwidth.value-6;
+    case 1:
+      p=prach_ParametersListCE_r13->list.array[0];
+      cfg->emtc_config.prach_ce_level_0_enable.value                          = 1;
+      cfg->emtc_config.prach_ce_level_0_configuration_index.value             = p->prach_ConfigIndex_r13;
+      cfg->emtc_config.prach_ce_level_0_frequency_offset.value                = p->prach_FreqOffset_r13;
+      if (p->prach_StartingSubframe_r13) 
+	cfg->emtc_config.prach_ce_level_0_starting_subframe_periodicity.value = *p->prach_StartingSubframe_r13;
+      cfg->emtc_config.prach_ce_level_0_hopping_enable.value                  = p->prach_HoppingConfig_r13;
+      cfg->emtc_config.prach_ce_level_0_hopping_offset.value                  = cfg->rf_config.ul_channel_bandwidth.value-6;
+    }
+
+    struct FreqHoppingParameters_r13 *ext4_freqHoppingParameters = radioResourceConfigCommonP->ext4->freqHoppingParameters_r13;
+    if ((ext4_freqHoppingParameters) && 
+	(ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeA_r13)){
+      switch(ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeA_r13->present) {
+      case 	FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeA_r13_PR_NOTHING:	/* No components present */
+	break;
+      case FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeA_r13_PR_interval_FDD_r13:
+	cfg->emtc_config.pucch_interval_ulhoppingconfigcommonmodea.value = ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeA_r13->choice.interval_FDD_r13;
+	break;
+      case FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeA_r13_PR_interval_TDD_r13:
+	cfg->emtc_config.pucch_interval_ulhoppingconfigcommonmodea.value = ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeA_r13->choice.interval_TDD_r13;
+	break;
+      }
+    }
+    if ((ext4_freqHoppingParameters) && 
+	(ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeB_r13)){
+      switch(ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeB_r13->present) {
+      case 	FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeB_r13_PR_NOTHING:	/* No components present */
+	break;
+      case FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeB_r13_PR_interval_FDD_r13:
+	cfg->emtc_config.pucch_interval_ulhoppingconfigcommonmodeb.value = ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeB_r13->choice.interval_FDD_r13;
+	break;
+      case FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeB_r13_PR_interval_TDD_r13:
+	cfg->emtc_config.pucch_interval_ulhoppingconfigcommonmodeb.value = ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeB_r13->choice.interval_TDD_r13;
+	break;
+      }
+    }
+  }
+#endif
+
+}
+
+void config_dedicated(int Mod_idP, 
+		      int CC_idP, 
+		      uint16_t rnti, 
+		      struct PhysicalConfigDedicated  *physicalConfigDedicated) {
+
+}
 
 int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 			   int                              CC_idP,
@@ -98,8 +421,14 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 			   int                              Ncp,
 			   int                              eutra_band,
 			   uint32_t                         dl_CarrierFreq,
+#ifdef Rel14
+                           int                              pbch_repetition,
+#endif
 			   BCCH_BCH_Message_t               *mib,
 			   RadioResourceConfigCommonSIB_t   *radioResourceConfigCommon,
+#ifdef Rel14
+			   RadioResourceConfigCommonSIB_t   *radioResourceConfigCommon_BR,
+#endif
 			   struct PhysicalConfigDedicated  *physicalConfigDedicated,
 #if defined(Rel10) || defined(Rel14)
 			   SCellToAddMod_r10_t *sCellToAddMod_r10,
@@ -123,10 +452,6 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 			   MBSFN_AreaInfoList_r9_t         *mbsfn_AreaInfoList,
 			   PMCH_InfoList_r9_t              *pmch_InfoList
 #endif
-#ifdef CBA
-			   ,uint8_t                              num_active_cba_groups,
-			   uint16_t                              cba_rnti
-#endif			   
 			   ) {
 			   
   int i;
@@ -142,32 +467,46 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 
     mac_top_init_eNB();
 
-    RC.mac[Mod_idP]->common_channels[CC_idP].mib            = mib;
-    RC.mac[Mod_idP]->common_channels[CC_idP].physCellId     = physCellId;
-    RC.mac[Mod_idP]->common_channels[CC_idP].p_eNB          = p_eNB;
-    RC.mac[Mod_idP]->common_channels[CC_idP].Ncp            = Ncp;
-    RC.mac[Mod_idP]->common_channels[CC_idP].eutra_band     = eutra_band;
-    RC.mac[Mod_idP]->common_channels[CC_idP].dl_CarrierFreq = dl_CarrierFreq;
+    RC.mac[Mod_idP]->common_channels[CC_idP].mib             = mib;
+    RC.mac[Mod_idP]->common_channels[CC_idP].physCellId      = physCellId;
+    RC.mac[Mod_idP]->common_channels[CC_idP].p_eNB           = p_eNB;
+    RC.mac[Mod_idP]->common_channels[CC_idP].Ncp             = Ncp;
+    RC.mac[Mod_idP]->common_channels[CC_idP].eutra_band      = eutra_band;
+    RC.mac[Mod_idP]->common_channels[CC_idP].dl_CarrierFreq  = dl_CarrierFreq;
 
-    LOG_I(MAC,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d,Nid_cell %d,p %d,DL freq %u,phich_config.resource %d, phich_config.duration %d)\n",
-	  Mod_idP, CC_idP, eutra_band, mib->message.dl_Bandwidth, physCellId, p_eNB,dl_CarrierFreq,mib->message.phich_Config.phich_Resource,mib->message.phich_Config.phich_Duration);
+    LOG_I(MAC,
+	  "Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d,Nid_cell %d,p %d,DL freq %u,phich_config.resource %d, phich_config.duration %d)\n",
+	  Mod_idP, 
+	  CC_idP, 
+	  eutra_band, 
+	  to_prb((int)mib->message.dl_Bandwidth), 
+	  physCellId, 
+	  p_eNB,
+	  dl_CarrierFreq,
+	  (int)mib->message.phich_Config.phich_Resource,
+	  (int)mib->message.phich_Config.phich_Duration);
 
-    mac_xface->phy_config_mib_eNB(Mod_idP,CC_idP,
-				  eutra_band,
-				  mib->message.dl_Bandwidth,
-				  &mib->message.phich_Config,
-				  physCellId,
-				  Ncp,
-				  p_eNB,
-				  dl_CarrierFreq,
-				  ul_CarrierFreq);
+    config_mib(Mod_idP,CC_idP,
+	       eutra_band,
+	       mib->message.dl_Bandwidth,
+	       &mib->message.phich_Config,
+	       physCellId,
+	       Ncp,
+	       p_eNB,
+	       dl_CarrierFreq,
+	       ul_CarrierFreq
+#ifdef Rel14
+	       ,pbch_repetition
+#endif
+	       );
+
     mac_init_cell_params(Mod_idP,CC_idP);
   }
   if ((SIwindowsize!=NULL) && (SIperiod!=NULL))  {
     RC.mac[Mod_idP]->common_channels[CC_idP].tdd_Config            = tdd_Config;    
     RC.mac[Mod_idP]->common_channels[CC_idP].SIwindowsize          = *SIwindowsize;    
     RC.mac[Mod_idP]->common_channels[CC_idP].SIperiod              = *SIperiod;    
-    mac_xface->phy_config_sib1_eNB(Mod_idP,CC_idP,tdd_Config,*SIwindowsize,*SIperiod);
+    config_sib1(Mod_idP,CC_idP,tdd_Config);
   }
 
   if (radioResourceConfigCommon!=NULL) {
@@ -186,13 +525,18 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
       if (ul_Bandwidth) RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth                = *ul_Bandwidth;
       else RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth                             = RC.mac[Mod_idP]->common_channels[CC_idP].mib->message.dl_Bandwidth;
 
-      mac_xface->phy_config_sib2_eNB(Mod_idP, CC_idP, radioResourceConfigCommon, NULL, ul_Bandwidth, additionalSpectrumEmission, mbsfn_SubframeConfigList);
+      config_sib2(Mod_idP, CC_idP, 
+		  radioResourceConfigCommon, 
+#ifdef Rel14
+		  radioResourceConfigCommon_BR, 
+#endif
+		  NULL, ul_Bandwidth, additionalSpectrumEmission, mbsfn_SubframeConfigList);
 
 
   }
 
   // SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup
-  if (logicalChannelConfig!= NULL) {
+  if (logicalChannelConfig!= NULL) { // check for eMTC specific things
     if (UE_id == -1) {
       LOG_E(MAC,"%s:%d:%s: ERROR, UE_id == -1\n", __FILE__, __LINE__, __FUNCTION__);
     } else {
@@ -208,7 +552,7 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
     if (UE_id == -1)
       LOG_E(MAC,"%s:%d:%s: ERROR, UE_id == -1\n", __FILE__, __LINE__, __FUNCTION__);
     else
-      mac_xface->phy_config_dedicated_eNB(Mod_idP, CC_idP, UE_RNTI(Mod_idP, UE_id), physicalConfigDedicated);
+      config_dedicated(Mod_idP, CC_idP, UE_RNTI(Mod_idP, UE_id), physicalConfigDedicated);
   } 
 
 
@@ -221,7 +565,7 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
     if (UE_id == -1)
       LOG_E(MAC,"%s:%d:%s: ERROR, UE_id == -1\n", __FILE__, __LINE__, __FUNCTION__);
     else
-      mac_xface->phy_config_dedicated_scell_eNB(Mod_idP,UE_RNTI(Mod_idP,UE_id),sCellToAddMod_r10,1);
+      config_dedicated_scell(Mod_idP,UE_RNTI(Mod_idP,UE_id),sCellToAddMod_r10,1);
     
   }
 
@@ -256,7 +600,7 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
       RC.mac[Mod_idP]->common_channels[0].mbsfn_AreaInfo[i] = mbsfn_AreaInfoList->list.array[i];
       LOG_I(MAC,"[eNB %d][CONFIG] MBSFN_AreaInfo[%d]: MCCH Repetition Period = %ld\n", Mod_idP,i,
 	    RC.mac[Mod_idP]->common_channels[0].mbsfn_AreaInfo[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
-      mac_xface->phy_config_sib13_eNB(Mod_idP,0,i,RC.mac[Mod_idP]->common_channels[0].mbsfn_AreaInfo[i]->mbsfn_AreaId_r9);
+      //      config_sib13(Mod_idP,0,i,RC.mac[Mod_idP]->common_channels[0].mbsfn_AreaInfo[i]->mbsfn_AreaId_r9);
     }
   } 
 
@@ -283,31 +627,15 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
   }
 
 #endif
-#ifdef CBA
 
+  AssertFatal(RC.mac[Mod_idP]->if_inst->PHY_config_req != NULL,"if_inst->phy_config_request is null\n");
+  PHY_Config_t phycfg;
+  phycfg.Mod_id = Mod_idP;
+  phycfg.CC_id  = CC_idP;
+  phycfg.cfg    = &RC.mac[Mod_idP]->config[CC_idP];
 
-  if (cba_rnti) {
-    LOG_D(MAC,"[eNB %d] configure CBA RNTI for UE  %d (total active cba groups %d)\n",
-	  Mod_idP, UE_id, num_active_cba_groups);
-    RC.mac[Mod_idP]->common_channels[CC_idP].num_active_cba_groups=num_active_cba_groups;
-    
-    for (i=0; i < num_active_cba_groups; i ++) {
-      if (RC.mac[Mod_idP]->common_channels[CC_idP].cba_rnti[i] != cba_rnti + i) {
-	RC.mac[Mod_idP]->common_channels[CC_idP].cba_rnti[i] = cba_rnti + i;
-      }
-      
-      //only configure UE ids up to num_active_cba_groups
-      //we use them as candidates for the transmission of dci format0)
-      if (UE_id%num_active_cba_groups == i) {
-	mac_xface->phy_config_cba_rnti(Mod_idP,CC_idP,eNB_flagP,UE_id,cba_rnti + i,i,num_active_cba_groups );
-	LOG_D(MAC,"[eNB %d] configure CBA groups %d with RNTI %x for UE  %d (total active cba groups %d)\n",
-	      Mod_idP, i, RC.mac[Mod_idP]->common_channels[CC_idP].cba_rnti[i],UE_id, num_active_cba_groups);
-      }
-    }
-  }
-  
+  if (RC.mac[Mod_idP]->if_inst->PHY_config_req) RC.mac[Mod_idP]->if_inst->PHY_config_req(&phycfg); 
 
-#endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
 
   return(0);			   
@@ -363,12 +691,12 @@ rrc_mac_config_req_ue(
  
 
   if (tdd_Config && SIwindowsize && SIperiod) {
-    mac_xface->phy_config_sib1_ue(Mod_idP,0,eNB_index,tdd_Config,*SIwindowsize,*SIperiod);
+    phy_config_sib1_ue(Mod_idP,0,eNB_index,tdd_Config,*SIwindowsize,*SIperiod);
   }
 
   if (radioResourceConfigCommon!=NULL) {
     UE_mac_inst[Mod_idP].radioResourceConfigCommon = radioResourceConfigCommon;
-    mac_xface->phy_config_sib2_ue(Mod_idP,0,eNB_index,radioResourceConfigCommon,ul_CarrierFreq,ul_Bandwidth,additionalSpectrumEmission,mbsfn_SubframeConfigList);
+    phy_config_sib2_ue(Mod_idP,0,eNB_index,radioResourceConfigCommon,ul_CarrierFreq,ul_Bandwidth,additionalSpectrumEmission,mbsfn_SubframeConfigList);
   }
 
   // SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup
@@ -377,21 +705,19 @@ rrc_mac_config_req_ue(
     UE_mac_inst[Mod_idP].logicalChannelConfig[logicalChannelIdentity]=logicalChannelConfig;
     UE_mac_inst[Mod_idP].scheduling_info.Bj[logicalChannelIdentity]=0; // initilize the bucket for this lcid
     
-    if (logicalChannelConfig->ul_SpecificParameters) {
-      UE_mac_inst[Mod_idP].scheduling_info.bucket_size[logicalChannelIdentity]=logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate *
-	logicalChannelConfig->ul_SpecificParameters->bucketSizeDuration; // set the max bucket size
-      if (logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup != NULL) {
-	UE_mac_inst[Mod_idP].scheduling_info.LCGID[logicalChannelIdentity]=*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
-	LOG_D(MAC,"[CONFIG][UE %d] LCID %ld is attached to the LCGID %ld\n",Mod_idP,logicalChannelIdentity,*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup);
-      }
-      else {
-	UE_mac_inst[Mod_idP].scheduling_info.LCGID[logicalChannelIdentity] = MAX_NUM_LCGID;
-      }
-      UE_mac_inst[Mod_idP].scheduling_info.LCID_buffer_remain[logicalChannelIdentity] = 0;
-    } else {
-      LOG_E(MAC,"[CONFIG][UE %d] LCID %ld NULL ul_SpecificParameters\n",Mod_idP,logicalChannelIdentity);
-      mac_xface->macphy_exit("NULL ul_SpecificParameters");
+    AssertFatal(logicalChannelConfig->ul_SpecificParameters!=NULL,
+		"[UE %d] LCID %ld NULL ul_SpecificParameters\n",
+		Mod_idP,logicalChannelIdentity);
+    UE_mac_inst[Mod_idP].scheduling_info.bucket_size[logicalChannelIdentity]=logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate *
+      logicalChannelConfig->ul_SpecificParameters->bucketSizeDuration; // set the max bucket size
+    if (logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup != NULL) {
+      UE_mac_inst[Mod_idP].scheduling_info.LCGID[logicalChannelIdentity]=*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
+      LOG_D(MAC,"[CONFIG][UE %d] LCID %ld is attached to the LCGID %ld\n",Mod_idP,logicalChannelIdentity,*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup);
     }
+    else {
+      UE_mac_inst[Mod_idP].scheduling_info.LCGID[logicalChannelIdentity] = MAX_NUM_LCGID;
+    }
+    UE_mac_inst[Mod_idP].scheduling_info.LCID_buffer_remain[logicalChannelIdentity] = 0;
   }
 
   if (mac_MainConfig != NULL) {
@@ -418,7 +744,7 @@ rrc_mac_config_req_ue(
       } else {
 	UE_mac_inst[Mod_idP].scheduling_info.maxHARQ_Tx     = (uint16_t) MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
       }
-      mac_xface->phy_config_harq_ue(Mod_idP,0,eNB_index,UE_mac_inst[Mod_idP].scheduling_info.maxHARQ_Tx);
+      phy_config_harq_ue(Mod_idP,0,eNB_index,UE_mac_inst[Mod_idP].scheduling_info.maxHARQ_Tx);
       
       if (mac_MainConfig->ul_SCH_Config->retxBSR_Timer) {
 	UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer     = (uint16_t) mac_MainConfig->ul_SCH_Config->retxBSR_Timer;
@@ -497,7 +823,7 @@ rrc_mac_config_req_ue(
 
 
   if (physicalConfigDedicated != NULL) {
-    mac_xface->phy_config_dedicated_ue(Mod_idP,0,eNB_index,physicalConfigDedicated);
+    phy_config_dedicated_ue(Mod_idP,0,eNB_index,physicalConfigDedicated);
     UE_mac_inst[Mod_idP].physicalConfigDedicated=physicalConfigDedicated; // for SR proc
   }
 
@@ -506,7 +832,7 @@ rrc_mac_config_req_ue(
   if (sCellToAddMod_r10 != NULL) {
 
 
-    mac_xface->phy_config_dedicated_scell_ue(Mod_idP,eNB_index,sCellToAddMod_r10,1);
+    phy_config_dedicated_scell_ue(Mod_idP,eNB_index,sCellToAddMod_r10,1);
     UE_mac_inst[Mod_idP].physicalConfigDedicatedSCell_r10 = sCellToAddMod_r10->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10; // using SCell index 0
   }
   
@@ -523,18 +849,8 @@ rrc_mac_config_req_ue(
 	LOG_I(MAC,"Cell %d : Nid_cell %d\n",i,UE_mac_inst[Mod_idP].adj_cell_id[i]);
       }
       
-      mac_xface->phy_config_meas_ue(Mod_idP,0,eNB_index,UE_mac_inst[Mod_idP].n_adj_cells,UE_mac_inst[Mod_idP].adj_cell_id);
+      phy_config_meas_ue(Mod_idP,0,eNB_index,UE_mac_inst[Mod_idP].n_adj_cells,UE_mac_inst[Mod_idP].adj_cell_id);
     }
-    
-    /*
-      if (quantityConfig != NULL) {
-      if (quantityConfig[0] != NULL) {
-      UE_mac_inst[Mod_idP].quantityConfig = quantityConfig[0];
-      LOG_I(MAC,"UE %d configured filterCoeff.",UE_mac_inst[Mod_idP].crnti);
-      mac_xface->phy_config_meas_ue
-      }
-      }
-    */
   }
 
 
@@ -616,7 +932,7 @@ rrc_mac_config_req_ue(
 	     sizeof(*mobilityControlInfo->rach_ConfigDedicated));
     }
     
-    mac_xface->phy_config_afterHO_ue(Mod_idP,0,eNB_index,mobilityControlInfo,0);
+    phy_config_afterHO_ue(Mod_idP,0,eNB_index,mobilityControlInfo,0);
   }
 
 
@@ -643,7 +959,7 @@ rrc_mac_config_req_ue(
       UE_mac_inst[Mod_idP].mbsfn_AreaInfo[i] = mbsfn_AreaInfoList->list.array[i];
       LOG_I(MAC,"[UE %d] MBSFN_AreaInfo[%d]: MCCH Repetition Period = %ld\n",Mod_idP, i,
 	    UE_mac_inst[Mod_idP].mbsfn_AreaInfo[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
-      mac_xface->phy_config_sib13_ue(Mod_idP,0,eNB_index,i,UE_mac_inst[Mod_idP].mbsfn_AreaInfo[i]->mbsfn_AreaId_r9);
+      phy_config_sib13_ue(Mod_idP,0,eNB_index,i,UE_mac_inst[Mod_idP].mbsfn_AreaInfo[i]->mbsfn_AreaId_r9);
     }
   }
   
@@ -670,54 +986,11 @@ rrc_mac_config_req_ue(
     UE_mac_inst[Mod_idP].cba_rnti[num_active_cba_groups-1] = cba_rnti;
     LOG_D(MAC,"[UE %d] configure CBA group %d RNTI %x for eNB %d (total active cba group %d)\n",
 	  Mod_idP,Mod_idP%num_active_cba_groups, cba_rnti,eNB_index,num_active_cba_groups);
-    mac_xface->phy_config_cba_rnti(Mod_idP,CC_idP,eNB_flagP,eNB_index,cba_rnti,num_active_cba_groups-1, num_active_cba_groups);
+    phy_config_cba_rnti(Mod_idP,CC_idP,eNB_flagP,eNB_index,cba_rnti,num_active_cba_groups-1, num_active_cba_groups);
   }
 #endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
 
   return(0);
 }
-#ifdef LOCALIZATION
-//------------------------------------------------------------------------------
-double
-rrc_get_estimated_ue_distance(
-  const protocol_ctxt_t* const ctxt_pP,
-  const int         CC_idP,
-  const uint8_t     loc_typeP
-)
-//------------------------------------------------------------------------------
-{
-  // localization types:
-  // 0: power based
-  // 1: time based
-  LTE_eNB_UE_stats     *eNB_UE_stats     = NULL;
-  UE_list_t*            UE_list = &eNB_mac_inst[ctxt_pP->module_id].UE_list;
-  int                   pCCid;
-  int                   UE_id;
 
-  if(ctxt_pP->rnti == NOT_A_RNTI) {
-    return -1;
-  }
-
-  UE_id = find_UE_id(ctxt_pP->module_id,ctxt_pP->rnti);
-  pCCid = UE_PCCID(ctxt_pP->module_id,UE_id);
-  eNB_UE_stats = mac_xface->get_eNB_UE_stats(ctxt_pP->module_id,pCCid,ctxt_pP->rnti);
-
-  switch (loc_typeP) {
-  case 0:
-    return eNB_UE_stats->distance.power_based;
-    break;
-
-  case 1:
-    return eNB_UE_stats->distance.time_based;
-    break;
-
-  default:
-    return  eNB_UE_stats->distance.power_based;
-  }
-
-  //    LOG_D(LOCALIZE, "DEBUG ME, dist = %d\n", &eNB_mac_inst[ctxt_pP->module_id].UE_list.UE_template[CC_idP][UE_id].distance.power_based);
-
-}
-
-#endif

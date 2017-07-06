@@ -2062,7 +2062,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
   if ((dlsch0 != NULL) && (dlsch1 != NULL)){
 
-    harq_pid = dlsch0->current_harq_pid;
+    harq_pid = dlsch0->harq_ids[subframe_offset];
     dlsch0_harq = dlsch0->harq_processes[harq_pid];
     mimo_mode = dlsch0_harq->mimo_mode;
     mod_order0 = get_Qm(dlsch0_harq->mcs);
@@ -2079,7 +2079,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
   }else if ((dlsch0 != NULL) && (dlsch1 == NULL)){
 
-    harq_pid = dlsch0->current_harq_pid;
+    harq_pid = dlsch0->harq_ids[subframe_offset];
     dlsch0_harq = dlsch0->harq_processes[harq_pid];
     mimo_mode = dlsch0_harq->mimo_mode;
     mod_order0 = get_Qm(dlsch0_harq->mcs);
@@ -2096,7 +2096,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
   }else if ((dlsch0 == NULL) && (dlsch1 != NULL)){
 
-    harq_pid = dlsch1->current_harq_pid;
+    harq_pid = dlsch1->harq_ids[subframe_offset];
     dlsch1_harq = dlsch1->harq_processes[harq_pid];
     mimo_mode = dlsch1_harq->mimo_mode;
     mod_order0 = get_Qm(dlsch1_harq->mcs);
@@ -2454,7 +2454,7 @@ int dlsch_modulation_SIC(int32_t **sic_buffer,
                          int G)
 {
 
-  uint8_t harq_pid = dlsch0->current_harq_pid;
+  uint8_t harq_pid = -1;//dlsch0->current_harq_pid;
   LTE_DL_eNB_HARQ_t *dlsch0_harq = dlsch0->harq_processes[harq_pid];
   uint32_t i,jj,re_allocated=0;
   uint8_t mod_order0 = get_Qm(dlsch0_harq->mcs);

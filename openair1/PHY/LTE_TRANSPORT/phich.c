@@ -318,17 +318,17 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
     Ngroup_PHICH<<=1;
   }
 
-  #ifdef DEBUG_PHICH
-  printf("Ngroup_PHICH %d (phich_config_common.phich_resource %d,phich_config_common.phich_duration %s, NidCell %d,Ncp %d, frame_type %d), smallest pcfich REG %d, n0 %d, n1 %d (first PHICH REG %d)\n",
-	 ((frame_parms->Ncp == NORMAL)?Ngroup_PHICH:(Ngroup_PHICH>>1)),
-	 frame_parms->phich_config_common.phich_resource,
-	 frame_parms->phich_config_common.phich_duration==normal?"normal":"extended",
-	 frame_parms->Nid_cell,frame_parms->Ncp,frame_parms->frame_type,
-	 pcfich_reg[frame_parms->pcfich_first_reg_idx],
-	 n0,
-	 n1,
-	 ((frame_parms->Nid_cell))%n0);
-  #endif
+  //  #ifdef DEBUG_PHICH
+  LOG_I(PHY,"Ngroup_PHICH %d (phich_config_common.phich_resource %d,phich_config_common.phich_duration %s, NidCell %d,Ncp %d, frame_type %d), smallest pcfich REG %d, n0 %d, n1 %d (first PHICH REG %d)\n",
+    ((frame_parms->Ncp == NORMAL)?Ngroup_PHICH:(Ngroup_PHICH>>1)),
+    frame_parms->phich_config_common.phich_resource,
+    frame_parms->phich_config_common.phich_duration==normal?"normal":"extended",
+    frame_parms->Nid_cell,frame_parms->Ncp,frame_parms->frame_type,
+    pcfich_reg[frame_parms->pcfich_first_reg_idx],
+    n0,
+    n1,
+    ((frame_parms->Nid_cell))%n0);
+//#endif
 
   // This is the algorithm from Section 6.9.3 in 36-211, it works only for normal PHICH duration for now ...
 
@@ -1394,7 +1394,7 @@ void rx_phich(PHY_VARS_UE *ue,
 
       if (ulsch->harq_processes[harq_pid]->round>=ue->frame_parms.maxHARQ_Msg3Tx) {
         ulsch->harq_processes[harq_pid]->subframe_scheduling_flag =0;
-        ulsch->harq_processes[harq_pid]->status = IDLE;
+        ulsch->harq_processes[harq_pid]->status = SCH_IDLE;
         // inform MAC that Msg3 transmission has failed
         ue->ulsch_Msg3_active[eNB_id] = 0;
       }
@@ -1423,7 +1423,7 @@ void rx_phich(PHY_VARS_UE *ue,
           ulsch->uci_format = HLC_subband_cqi_nopmi;
 
           // disable phich decoding since it is the last retransmission
-          ulsch->harq_processes[harq_pid]->status = IDLE;
+          ulsch->harq_processes[harq_pid]->status = SCH_IDLE;
 
           //ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
           //ulsch->harq_processes[harq_pid]->round  = 0;
@@ -1474,7 +1474,7 @@ void rx_phich(PHY_VARS_UE *ue,
     //ulsch->harq_processes[8] = ulsch->harq_processes[harq_pid];
 
     ulsch->harq_processes[harq_pid]->subframe_scheduling_flag =0;
-    ulsch->harq_processes[harq_pid]->status = IDLE;
+    ulsch->harq_processes[harq_pid]->status = SCH_IDLE;
     ulsch->harq_processes[harq_pid]->round  = 0;
     // inform MAC?
     ue->ulsch_Msg3_active[eNB_id] = 0;

@@ -150,7 +150,7 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
       }
 
       // find out which eNB the UE is attached to
-
+      /*
       for (eNB_id=0; eNB_id<RC.nb_inst; eNB_id++) {
         if (find_ue(PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[0][0]->crnti,RC.eNB[eNB_id][CC_id])>=0) {
           // UE with UE_id is connected to eNb with eNB_id
@@ -158,7 +158,7 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
           LOG_D(OCM,"A: UE attached to eNB (UE%d->eNB%d)\n",UE_id,eNB_id);
         }
       }
-
+      */
       // if UE is not attached yet, find assume its the eNB with the smallest pathloss
       if (att_eNB_id<0) {
         for (eNB_id=0; eNB_id<NB_eNB_INST; eNB_id++) {

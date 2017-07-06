@@ -33,13 +33,6 @@
  *  @{
  */
 
-/** \fn void add_ue_spec_dci(DCI_PDU *DCI_pdu,void *pdu,rnti_t rnti,unsigned char dci_size_bytes,unsigned char aggregation,unsigned char dci_size_bits,unsigned char dci_fmt,uint8_t ra_flag);
-\brief 
-
-*/
-void add_ue_spec_dci(DCI_PDU *DCI_pdu,void *pdu,rnti_t rnti,unsigned char dci_size_bytes,unsigned char aggregation,unsigned char dci_size_bits,unsigned char dci_fmt,uint8_t ra_flag);
-
-//LG commented cause compilation error for RT eNB extern inline unsigned int taus(void);
 
 /** \fn void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,uint8_t Msg3_subframe,unsigned int *nprb);
 \brief First stage of Random-Access Scheduling. Loops over the RA_templates and checks if RAR, Msg3 or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For Msg3 it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A)
@@ -142,11 +135,9 @@ int8_t get_DELTA_PREAMBLE(module_id_t module_idP,int CC_id);
 */
 int8_t get_deltaP_rampup(module_id_t module_idP,uint8_t CC_id);
 
+uint16_t mac_computeRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs);
+
 //main.c
-
-void chbch_phy_sync_success(module_id_t module_idP,frame_t frameP,uint8_t eNB_index);
-
-void mrbch_phy_sync_failure(module_id_t module_idP, frame_t frameP,uint8_t free_eNB_index);
 
 int mac_top_init(int eMBMS_active, char *uecap_xer,uint8_t cba_group_active, uint8_t HO_active);
 
@@ -201,8 +192,7 @@ void dlsch_scheduler_pre_processor_allocate (module_id_t   Mod_id,
     unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX]);
 
 /* \brief Function to trigger the eNB scheduling procedure.  It is called by PHY at the beginning of each subframe, \f$n$\f
-   and generates all DLSCH allocations for subframe \f$n\f$ and ULSCH allocations for subframe \f$n+k$\f. The resultant DCI_PDU is
-   ready after returning from this call.
+   and generates all DLSCH allocations for subframe \f$n\f$ and ULSCH allocations for subframe \f$n+k$\f. 
 @param Mod_id Instance ID of eNB
 @param cooperation_flag Flag to indicated that this cell has cooperating nodes (i.e. that there are collaborative transport channels that
 can be scheduled.
@@ -210,15 +200,6 @@ can be scheduled.
 @param calibration_flag Flag to indicate that eNB scheduler should schedule TDD auto-calibration PUSCH.
 */
 void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, uint8_t cooperation_flag, frame_t frameP, sub_frame_t subframeP);//, int calibration_flag);
-
-/* \brief Function to retrieve result of scheduling (DCI) in current subframe.  Can be called an arbitrary numeber of times after eNB_dlsch_ulsch_scheduler
-in a given subframe.
-@param Mod_id Instance ID of eNB
-@param CC_id Component Carrier Index
-@param subframe Index of current subframe
-@returns Pointer to generated DCI for subframe
-*/
-DCI_PDU *get_dci_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subframe);
 
 /* \brief Function to indicate a received preamble on PRACH.  It initiates the RA procedure.
 @param Mod_id Instance ID of eNB
@@ -687,7 +668,7 @@ int dump_eNB_l2_stats(char *buffer, int length);
 
 double uniform_rngen(int min, int max);
 
-
+/*
 void add_common_dci(DCI_PDU *DCI_pdu,
                     void *pdu,
                     rnti_t rnti,
@@ -696,6 +677,7 @@ void add_common_dci(DCI_PDU *DCI_pdu,
                     unsigned char dci_size_bits,
                     unsigned char dci_fmt,
                     uint8_t ra_flag);
+*/
 
 uint32_t allocate_prbs_sub(int nb_rb, int N_RB_DL, int N_RBG, uint8_t *rballoc);
 
@@ -734,7 +716,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 @param CC_id Component Carrier of the eNB
 @param mib Pointer to MIB
 @param radioResourceConfigCommon Structure from SIB2 for common radio parameters (if NULL keep existing configuration)
-@param physcialConfigDedicated Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated PHY parameters (if NULL keep existing configuration)
+@param physicalConfigDedicated Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated PHY parameters (if NULL keep existing configuration)
 @param measObj Structure from RRCConnectionReconfiguration for UE measurement procedures
 @param mac_MainConfig Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated MAC parameters (if NULL keep existing configuration)
 @param logicalChannelIdentity Logical channel identity index of corresponding logical channel config
@@ -757,8 +739,14 @@ int rrc_mac_config_req_eNB(module_id_t        module_idP,
 			   int                Ncp,
 			   int                eutra_band,
 			   uint32_t           dl_CarrierFreq,
+#ifdef Rel14
+                           int                pbch_repetition,
+#endif
 			   BCCH_BCH_Message_t *mib,
  			   RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+#ifdef Rel14
+ 			   RadioResourceConfigCommonSIB_t *radioResourceConfigCommon_BR,
+#endif
 			   struct PhysicalConfigDedicated *physicalConfigDedicated,
 #if defined(Rel10) || defined(Rel14)
 			   SCellToAddMod_r10_t *sCellToAddMod_r10,
@@ -847,20 +835,9 @@ int rrc_mac_config_req_ue(module_id_t     module_idP,
 #endif
 			  );
 
-/** \brief get the estimated UE distance from the PHY->MAC layer.
-@param Mod_id Instance ID of eNB
-@param UE_id Index of UE if this is an eNB configuration
-@param CC_id Component Carrier Index
-@param loc_type localization type: time-based or power-based
-@return the estimated distance in meters
- */
-double
-rrc_get_estimated_ue_distance(
-  const protocol_ctxt_t * const ctxt_pP,
-  const int         CC_idP,
-  const uint8_t     loc_typeP);
+uint16_t getRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs);
 
-void fill_dci(DCI_PDU *DCI_pdu, PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc);
+int get_subbandsize(uint8_t dl_bandwidth);
 
 #endif
 /** @}*/

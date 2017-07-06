@@ -211,12 +211,10 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in) {
 
   LOG_I(PHY,"UE : Calling Layer 2 for initialization\n");
     
-  if (mac_xface==NULL) mac_xface = malloc(sizeof(MAC_xface));  
   l2_init_ue(eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,
 	     0,// cba_group_active
 	     0); // HO flag
-  mac_xface->macphy_exit = &exit_fun;
-
+  
   for (inst=0;inst<nb_inst;inst++) {
 
     LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
@@ -511,7 +509,7 @@ static void *UE_thread_synch(void *arg)
 	      fclose(fd);
 	      exit(0);
 	    }
-	    mac_xface->macphy_exit("No cell synchronization found, abandoning");
+	    exit_fun("No cell synchronization found, abandoning");
 	    return &UE_thread_synch_retval; // not reached
 	  }
 	}
@@ -633,14 +631,14 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 
         if (UE->mac_enabled==1) {
 
-            ret = mac_xface->ue_scheduler(UE->Mod_id,
-                                          proc->frame_rx,
-                                          proc->subframe_rx,
-                                          proc->frame_tx,
-                                          proc->subframe_tx,
-                                          subframe_select(&UE->frame_parms,proc->subframe_tx),
-                                          0,
-                                          0/*FIXME CC_id*/);
+            ret = ue_scheduler(UE->Mod_id,
+			       proc->frame_rx,
+			       proc->subframe_rx,
+			       proc->frame_tx,
+			       proc->subframe_tx,
+			       subframe_select(&UE->frame_parms,proc->subframe_tx),
+			       0,
+			       0/*FIXME CC_id*/);
             if ( ret != CONNECTION_OK) {
                 char *txt;
                 switch (ret) {

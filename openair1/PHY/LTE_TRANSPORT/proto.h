@@ -33,6 +33,7 @@
 #define __LTE_TRANSPORT_PROTO__H__
 #include "PHY/defs.h"
 #include <math.h>
+#include "nfapi_interface.h"
 
 // Functions below implement 36-211 and 36-212
 
@@ -1402,8 +1403,7 @@ void dci_encoding(uint8_t *a,
                   uint16_t rnti);
 
 /*! \brief Top-level DCI entry point. This routine codes an set of DCI PDUs and performs PDCCH modulation, interleaving and mapping.
-  \param num_ue_spec_dci  Number of UE specific DCI pdus to encode
-  \param num_common_dci Number of Common DCI pdus to encode
+  \param num_dci  Number of DCI pdus to encode
   \param dci_alloc Allocation vectors for each DCI pdu
   \param n_rnti n_RNTI (see )
   \param amp Amplitude of QPSK symbols
@@ -1412,8 +1412,7 @@ void dci_encoding(uint8_t *a,
   \param sub_frame_offset subframe offset in frame
   @returns Number of PDCCH symbols
 */
-uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
-                         uint8_t num_common_dci,
+uint8_t generate_dci_top(uint8_t num_dci,
                          DCI_ALLOC_t *dci_alloc,
                          uint32_t n_rnti,
                          int16_t amp,
@@ -1654,6 +1653,17 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                       uint16_t p_rnti,
                                       uint8_t beamforming_mode,
                                       uint16_t tc_rnti);
+
+int fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
+			eNB_rxtx_proc_t *proc,
+			DCI_ALLOC_t *dci_alloc,
+			nfapi_dl_config_dci_dl_pdu *pdu);
+
+
+int fill_dci_and_ulsch(PHY_VARS_eNB *eNB,
+			eNB_rxtx_proc_t *proc,
+			DCI_ALLOC_t *dci_alloc,
+			nfapi_hi_dci0_dci_pdu *pdu);
 
 int32_t generate_eNB_dlsch_params_from_dci(int frame,
     uint8_t subframe,
@@ -1959,6 +1969,7 @@ void pdcch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
                       int mbsfn_flag,
                       LTE_eNB_DLSCH_t *dlsch,
+		      int hard_pid,
                       int G,
                       uint8_t q,
                       uint8_t Ns);
@@ -2076,7 +2087,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,RU_t *ru,uint16_t *preamble_energy_list
   @param frame_parms Pointer to LTE_DL_FRAME_PARMS structure
   @returns 0-5 depending on number of available prach
 */
-uint8_t get_num_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms);
+uint8_t get_num_prach_tdd(module_id_t Mod_id);
 
 /*!
   \brief Return the PRACH format as a function of the Configuration Index and Frame type.
@@ -2091,7 +2102,7 @@ uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,lte_frame_type_t frame_type);
   @param frame_parms Pointer to LTE_DL_FRAME_PARMS structure
   @returns 0-5 depending on number of available prach
 */
-uint8_t get_fid_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms,uint8_t tdd_map_index);
+uint8_t get_fid_prach_tdd(module_id_t Mod_id,uint8_t tdd_map_index);
 
 /*!
   \brief Comp ute DFT of PRACH ZC sequences.  Used for generation of prach in UE and reception of PRACH in eNB.
@@ -2160,6 +2171,11 @@ double computeRhoB_UE(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
 uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms, uint8_t tdd_mapindex, uint16_t Nf);
 
 uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n);
+
+
+int8_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
+
+int8_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
 
 /**@}*/
 #endif

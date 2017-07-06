@@ -23,7 +23,6 @@
 #define __PHY_EXTERN_H__
 
 #include "PHY/defs.h"
-#include "PHY_INTERFACE/defs.h"
 #include "common/ran_context.h"
 
 extern  char* namepointer_chMag ;
@@ -52,9 +51,6 @@ extern LTE_DL_FRAME_PARMS *lte_frame_parms_g;
 extern PHY_VARS_UE * PHY_vars_UE_g[MAX_UE][MAX_NUM_CCs];
 extern PHY_VARS_eNB * PHY_vars_eNB_g[MAX_eNB][MAX_NUM_CCs];
 #endif
-
-extern MAC_xface *mac_xface;
-
 
 extern short primary_synch0[144];
 extern short primary_synch1[144];

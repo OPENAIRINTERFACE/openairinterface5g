@@ -196,7 +196,7 @@ void fill_eNB_dlsch_MCH(PHY_VARS_eNB *eNB,int mcs,int ndi,int rvidx)
   dlsch->harq_processes[0]->rvidx = rvidx;
   dlsch->harq_processes[0]->Nl    = 1;
   dlsch->harq_processes[0]->TBS   = TBStable[get_I_TBS(dlsch->harq_processes[0]->mcs)][frame_parms->N_RB_DL-1];
-  dlsch->current_harq_pid = 0;
+  //  dlsch->harq_ids[subframe]       = 0;
   dlsch->harq_processes[0]->nb_rb = frame_parms->N_RB_DL;
 
   switch(frame_parms->N_RB_DL) {
@@ -313,7 +313,7 @@ void generate_mch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t *a)
                          AMP);
 
 
-    if (dlsch_encoding(eNB,
+    AssertFatal(dlsch_encoding(eNB,
 		       a,
                        1,
                        eNB->dlsch_MCH,
@@ -321,11 +321,10 @@ void generate_mch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t *a)
                        subframe,
                        &eNB->dlsch_rate_matching_stats,
                        &eNB->dlsch_turbo_encoding_stats,
-                       &eNB->dlsch_interleaving_stats
-                      )<0)
-      mac_xface->macphy_exit("problem in dlsch_encoding");
+                       &eNB->dlsch_interleaving_stats)==0,
+		"problem in dlsch_encoding");
 
-    dlsch_scrambling(&eNB->frame_parms,1,eNB->dlsch_MCH,G,0,subframe<<1);
+    dlsch_scrambling(&eNB->frame_parms,1,eNB->dlsch_MCH,0,G,0,subframe<<1);
 
 
     mch_modulation(eNB->common_vars.txdataF,

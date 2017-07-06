@@ -57,6 +57,8 @@
 #include "common_lib.h"
 #include "msc.h"
 
+#include "openair2/PHY_INTERFACE/IF_Module.h"
+
 //#include <complex.h>
 #include "assertions.h"
 #ifdef MEX
@@ -270,6 +272,7 @@ typedef struct {
   struct PHY_VARS_eNB_s *eNB;
   LTE_eNB_DLSCH_t *dlsch;
   int G;
+  int harq_pid;
 } te_params;
 
 typedef struct RU_proc_t_s {
@@ -805,6 +808,10 @@ typedef struct PHY_VARS_eNB_s {
   int                  abstraction_flag;
   int                  num_RU;
   RU_t                 *RU_list[MAX_NUM_RU_PER_eNB];
+  /// Ethernet parameters for northbound midhaul interface
+  eth_params_t         eth_params_n;
+  /// Ethernet parameters for fronthaul interface
+  eth_params_t         eth_params;
   int                  rx_total_gain_dB;
   //  void                 (*do_prach)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame, int subframe);
   int                  (*td)(struct PHY_VARS_eNB_s *eNB,int UE_id,int harq_pid,int llr8_flag);
@@ -817,7 +824,11 @@ typedef struct PHY_VARS_eNB_s {
   //  void                 (*fh_asynch)(struct PHY_VARS_eNB_s *eNB,int *frame, int *subframe);
   uint8_t              local_flag;
   LTE_DL_FRAME_PARMS   frame_parms;
-  PHY_MEASUREMENTS_eNB measurements; 
+  PHY_MEASUREMENTS_eNB measurements;
+  IF_Module_t          *if_inst;
+  UL_IND_t             UL_INFO;
+  Sched_Rsp_t          Sched_INFO;
+  LTE_eNB_PDCCH        pdcch_vars[2];
   LTE_eNB_COMMON       common_vars;
   LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PBCH         pbch;
@@ -825,7 +836,7 @@ typedef struct PHY_VARS_eNB_s {
   LTE_eNB_PRACH        prach_vars;
   LTE_eNB_DLSCH_t     *dlsch[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
   LTE_eNB_ULSCH_t     *ulsch[NUMBER_OF_UE_MAX+1];      // Nusers + number of RA
-  LTE_eNB_DLSCH_t     *dlsch_SI,*dlsch_ra;
+  LTE_eNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
   LTE_eNB_DLSCH_t     *dlsch_MCH;
   LTE_eNB_UE_stats     UE_stats[NUMBER_OF_UE_MAX];
   LTE_eNB_UE_stats    *UE_stats_ptr[NUMBER_OF_UE_MAX];
@@ -844,6 +855,7 @@ typedef struct PHY_VARS_eNB_s {
 
   uint32_t X_u[64][839];
 
+  uint8_t pbch_configured;
   uint8_t pbch_pdu[4]; //PBCH_PDU_SIZE
   char eNB_generate_rar;
 
@@ -876,10 +888,6 @@ typedef struct PHY_VARS_eNB_s {
   /// if ==0 enables phy only test mode
   int mac_enabled;
 
-  /// For emulation only (used by UE abstraction to retrieve DCI)
-  uint8_t num_common_dci[2];                         // num_dci in even/odd subframes
-  uint8_t num_ue_spec_dci[2];                         // num_dci in even/odd subframes
-  DCI_ALLOC_t dci_alloc[2][NUM_DCI_MAX]; // dci_alloc from even/odd subframes
 
 
   // PDSCH Varaibles

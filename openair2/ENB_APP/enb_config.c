@@ -86,6 +86,16 @@
 #define ENB_CONFIG_STRING_MOBILE_COUNTRY_CODE           "mobile_country_code"
 #define ENB_CONFIG_STRING_MOBILE_NETWORK_CODE           "mobile_network_code"
 
+#define ENB_CONFIG_STRING_LOCAL_S_IF_NAME               "local_s_if_name"
+#define ENB_CONFIG_STRING_LOCAL_S_ADDRESS               "local_s_address"
+#define ENB_CONFIG_STRING_REMOTE_S_ADDRESS              "remote_s_address"
+#define ENB_CONFIG_STRING_LOCAL_S_PORTC                 "local_s_portc"
+#define ENB_CONFIG_STRING_REMOTE_S_PORTC                "remote_s_portc"
+#define ENB_CONFIG_STRING_LOCAL_S_PORTD                 "local_s_portd"
+#define ENB_CONFIG_STRING_REMOTE_S_PORTD                "remote_s_portd"
+#define ENB_CONFIG_STRING_TRANSPORT_S_PREFERENCE        "tr_s_preference"
+
+
 #define ENB_CONFIG_STRING_COMPONENT_CARRIERS                            "component_carriers"
 
 #define ENB_CONFIG_STRING_CC_NODE_FUNCTION                              "node_function"
@@ -96,6 +106,7 @@
 #define ENB_CONFIG_STRING_TDD_CONFIG                                    "tdd_config"
 #define ENB_CONFIG_STRING_TDD_CONFIG_S                                  "tdd_config_s"
 #define ENB_CONFIG_STRING_PREFIX_TYPE                                   "prefix_type"
+#define ENB_CONFIG_STRING_PBCH_REPETITION                               "pbch_repetition"
 #define ENB_CONFIG_STRING_EUTRA_BAND                                    "eutra_band"
 #define ENB_CONFIG_STRING_DOWNLINK_FREQUENCY                            "downlink_frequency"
 #define ENB_CONFIG_STRING_UPLINK_FREQUENCY_OFFSET                       "uplink_frequency_offset"
@@ -234,10 +245,40 @@
 #define ENB_CONFIG_STRING_OSA_LOG_LEVEL                    "osa_log_level"
 #define ENB_CONFIG_STRING_OSA_LOG_VERBOSITY                "osa_log_verbosity"
 
+#define CONFIG_STRING_MACRLC_LIST                          "MACRLCs"
+#define CONFIG_STRING_MACRLC_CONFIG                        "macrlc_config"
+#define CONFIG_STRING_MACRLC_CC                            "num_cc"
+#define CONFIG_STRING_MACRLC_LOCAL_N_IF_NAME               "local_n_if_name"
+#define CONFIG_STRING_MACRLC_LOCAL_N_ADDRESS               "local_n_address"
+#define CONFIG_STRING_MACRLC_REMOTE_N_ADDRESS              "remote_n_address"
+#define CONFIG_STRING_MACRLC_LOCAL_N_PORTC                 "local_n_portc"
+#define CONFIG_STRING_MACRLC_REMOTE_N_PORTC                "remote_n_portc"
+#define CONFIG_STRING_MACRLC_LOCAL_N_PORTD                 "local_n_portd"
+#define CONFIG_STRING_MACRLC_REMOTE_N_PORTD                "remote_n_portd"
+#define CONFIG_STRING_MACRLC_LOCAL_S_IF_NAME               "local_s_if_name"
+#define CONFIG_STRING_MACRLC_LOCAL_S_ADDRESS               "local_s_address"
+#define CONFIG_STRING_MACRLC_REMOTE_S_ADDRESS              "remote_s_address"
+#define CONFIG_STRING_MACRLC_LOCAL_S_PORTC                 "local_s_portc"
+#define CONFIG_STRING_MACRLC_REMOTE_S_PORTC                "remote_s_portc"
+#define CONFIG_STRING_MACRLC_LOCAL_S_PORTD                 "local_s_portd"
+#define CONFIG_STRING_MACRLC_REMOTE_S_PORTD                "remote_s_portd"
+#define CONFIG_STRING_MACRLC_TRANSPORT_S_PREFERENCE        "tr_s_preference"
+#define CONFIG_STRING_MACRLC_TRANSPORT_N_PREFERENCE        "tr_n_preference"
 
-#define CONFIG_STRING_ACTIVE_RUS                   "Active_RUs"
-#define CONFIG_STRING_RU_LIST                      "RUs"
+#define CONFIG_STRING_L1_LIST                              "L1s"
+#define CONFIG_STRING_L1_CONFIG                            "l1_config"
+#define CONFIG_STRING_L1_CC                                "num_cc"
+#define CONFIG_STRING_L1_LOCAL_N_IF_NAME                   "local_n_if_name"
+#define CONFIG_STRING_L1_LOCAL_N_ADDRESS                   "local_n_address"
+#define CONFIG_STRING_L1_REMOTE_N_ADDRESS                  "remote_n_address"
+#define CONFIG_STRING_L1_LOCAL_N_PORTC                     "local_n_portc"
+#define CONFIG_STRING_L1_REMOTE_N_PORTC                    "remote_n_portc"
+#define CONFIG_STRING_L1_LOCAL_N_PORTD                     "local_n_portd"
+#define CONFIG_STRING_L1_REMOTE_N_PORTD                    "remote_n_portd"
+#define CONFIG_STRING_L1_TRANSPORT_N_PREFERENCE            "tr_n_preference"
 
+#define CONFIG_STRING_ACTIVE_RUS                  "Active_RUs"
+#define CONFIG_STRING_RU_LIST                     "RUs"
 #define CONFIG_STRING_RU_CONFIG                   "ru_config"
 #define CONFIG_STRING_RU_LOCAL_IF_NAME            "local_if_name"
 #define CONFIG_STRING_RU_LOCAL_ADDRESS            "local_address"
@@ -368,10 +409,10 @@ typedef enum {
 
 void RCconfig_RU(void);
 void RCconfig_L1(void);
-void RCconfig_L2(void);
+void RCconfig_macrlc(void);
 int  RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc);
 int  RCconfig_S1(MessageDef *msg_p, uint32_t i);
-//void (*RCconfig[lastel])(void) = {RCconfig_RU,RCconfig_L1,RCconfig_L2,RCconfig_RRC,RCconfig_S1};
+
 
 int load_config_file(config_t *cfg) {
 
@@ -432,7 +473,6 @@ void RCconfig_RU() {
 
     if (RC.ru==NULL) RC.ru = (RU_t**)malloc(RC.nb_RU*sizeof(RU_t*));
    
-    printf("Set RU mask to %x\n",RC.ru_mask);
     RC.ru_mask=(1<<NB_RU) - 1;
 
 
@@ -591,6 +631,239 @@ void RCconfig_RU() {
   
 }
 
+void RCconfig_L1() {
+
+  int               i,j;
+
+  config_t          cfg;
+  config_setting_t *setting                         = NULL;
+  config_setting_t *setting_l1                      = NULL;
+
+  char*             if_name_n                       = NULL;
+  char*             ipv4_n                          = NULL;
+  char*             ipv4_n_remote                   = NULL;
+ 
+  char*             tr_n_preference                 = NULL;
+  libconfig_int     local_n_portc                   = 0;
+  libconfig_int     remote_n_portc                  = 0;
+  libconfig_int     local_n_portd                   = 0;
+  libconfig_int     remote_n_portd                  = 0;
+
+  load_config_file(&cfg);
+
+  setting = config_lookup(&cfg, CONFIG_STRING_L1_LIST);
+  
+  if (setting != NULL) {
+
+    if (RC.eNB == NULL) {
+      RC.eNB                               = (PHY_VARS_eNB ***)malloc((1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB***));
+      LOG_I(PHY,"RC.eNB = %p\n",RC.eNB);
+      memset(RC.eNB,0,(1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB***));
+      RC.nb_L1_CC = malloc((1+RC.nb_L1_inst)*sizeof(int));
+    }
+
+    for (j = 0; j < RC.nb_L1_inst; j++) {
+
+      setting_l1 = config_setting_get_elem(setting, j);
+      if (!config_setting_lookup_int   (setting_l1,CONFIG_STRING_L1_CC,&RC.nb_L1_CC[j]))
+	AssertFatal (0,
+		     "Failed to parse configuration file %s, L1 %d config !\n",
+		     RC.config_file_name, j);	
+
+      if (RC.eNB[j] == NULL) {
+	RC.eNB[j]                       = (PHY_VARS_eNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB**));
+	LOG_I(PHY,"RC.eNB[%d] = %p\n",j,RC.eNB[j]);
+	memset(RC.eNB[j],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB***));
+      }
+
+
+      for (i=0;i<RC.nb_L1_CC[j];i++) {
+	if (RC.eNB[j][i] == NULL) {
+	  RC.eNB[j][i] = (PHY_VARS_eNB *)malloc(sizeof(PHY_VARS_eNB));
+	  LOG_I(PHY,"RC.eNB[%d][%d] = %p\n",j,i,RC.eNB[j][i]);
+	  RC.eNB[j][i]->Mod_id  = j;
+	  RC.eNB[j][i]->CC_id   = i;
+	}
+      }
+
+
+      
+      printf("l1 %d/%d (nb CC %d)\n",j,RC.nb_inst,RC.nb_CC[j]);
+      
+
+      printf("RU %d: Transport %s\n",j,tr_n_preference);
+      if (!(config_setting_lookup_string(setting_l1, CONFIG_STRING_L1_TRANSPORT_N_PREFERENCE, (const char **)&tr_n_preference))) {
+	  AssertFatal (0,
+		       "Failed to parse configuration file %s, L1 %d config !\n",
+		       RC.config_file_name, j);
+      }
+
+      if (strcmp(tr_n_preference, "local_mac") == 0) {
+
+      }
+      else if (strcmp(tr_n_preference, "nfapi") == 0) {
+	if (  !(
+		config_setting_lookup_string(setting_l1, CONFIG_STRING_L1_LOCAL_N_IF_NAME,        (const char **)&if_name_n)
+		&& config_setting_lookup_string(setting_l1, CONFIG_STRING_L1_LOCAL_N_ADDRESS,        (const char **)&ipv4_n)
+		&& config_setting_lookup_string(setting_l1, CONFIG_STRING_L1_REMOTE_N_ADDRESS,       (const char **)&ipv4_n_remote)
+		&& config_setting_lookup_int   (setting_l1, CONFIG_STRING_L1_LOCAL_N_PORTC,          &local_n_portc)
+		&& config_setting_lookup_int   (setting_l1, CONFIG_STRING_L1_REMOTE_N_PORTC,         &remote_n_portc)
+		&& config_setting_lookup_int   (setting_l1, CONFIG_STRING_L1_LOCAL_N_PORTD,          &local_n_portd)
+		&& config_setting_lookup_int   (setting_l1, CONFIG_STRING_L1_REMOTE_N_PORTD,         &remote_n_portd)
+		)
+	      ) {
+	  AssertFatal (0,
+		       "Failed to parse configuration file %s, L1 %d config !\n",
+		       RC.config_file_name, j);
+	  continue; // FIXME will prevent segfaults below, not sure what happens at function exit...
+	}
+	RC.eNB[j][0]->eth_params_n.local_if_name            = strdup(if_name_n);
+	RC.eNB[j][0]->eth_params_n.my_addr                  = strdup(ipv4_n);
+	RC.eNB[j][0]->eth_params_n.remote_addr              = strdup(ipv4_n_remote);
+	RC.eNB[j][0]->eth_params_n.my_portc                 = local_n_portc;
+	RC.eNB[j][0]->eth_params_n.remote_portc             = remote_n_portc;
+	RC.eNB[j][0]->eth_params_n.my_portd                 = local_n_portd;
+	RC.eNB[j][0]->eth_params_n.remote_portd             = remote_n_portd;
+	RC.eNB[j][0]->eth_params_n.transp_preference          = ETH_UDP_MODE;
+      }
+      
+      else { // other midhaul
+      }	
+    }// j=0..num_inst
+    printf("Initializing northbound interface for L1\n");
+    l1_north_init_eNB();
+  }
+}
+
+void RCconfig_macrlc() {
+
+  int               i,j;
+
+  config_t          cfg;
+  config_setting_t *setting                         = NULL;
+  config_setting_t *setting_macrlc                  = NULL;
+  char*             if_name_s                       = NULL;
+  char*             ipv4_s                          = NULL;
+  char*             ipv4_s_remote                   = NULL;
+ 
+  char*             tr_s_preference                 = NULL;
+  libconfig_int     local_s_portc                   = 0;
+  libconfig_int     remote_s_portc                  = 0;
+  libconfig_int     local_s_portd                   = 0;
+  libconfig_int     remote_s_portd                  = 0;
+  char*             if_name_n                       = NULL;
+  char*             ipv4_n                          = NULL;
+  char*             ipv4_n_remote                   = NULL;
+ 
+  char*             tr_n_preference                 = NULL;
+  libconfig_int     local_n_portc                   = 0;
+  libconfig_int     remote_n_portc                  = 0;
+  libconfig_int     local_n_portd                   = 0;
+  libconfig_int     remote_n_portd                  = 0;
+
+  load_config_file(&cfg);
+
+  setting = config_lookup(&cfg, CONFIG_STRING_MACRLC_LIST);
+  
+  if (setting != NULL) {
+    
+
+    
+    if ((RC.nb_macrlc_inst=config_setting_length(setting))>0) mac_top_init_eNB();
+    else AssertFatal(1==0,"improper macrlc setting\n");
+    
+    for (j=0;j<RC.nb_macrlc_inst;j++) {
+      setting_macrlc = config_setting_get_elem(setting, j);
+      
+      printf("macrlc %d/%d \n",j,RC.nb_macrlc_inst);
+      
+      if (!(config_setting_lookup_string(setting_macrlc, CONFIG_STRING_MACRLC_TRANSPORT_N_PREFERENCE, (const char **)&tr_n_preference))) {
+	AssertFatal (0,
+		     "Failed to parse configuration file %s, L1 %d config !\n",
+		     RC.config_file_name, j);
+      }
+
+      printf("MACRLC %d: Northbound Transport %s\n",j,tr_n_preference);
+      
+      if (strcmp(tr_n_preference, "local_RRC") == 0) {
+	// check number of instances is same as RRC/PDCP
+	
+      }
+      else if (strcmp(tr_n_preference, "cudu") == 0) {
+	if (  !(
+		config_setting_lookup_string(setting_macrlc, CONFIG_STRING_MACRLC_LOCAL_N_IF_NAME,        (const char **)&if_name_n)
+		&& config_setting_lookup_string(setting_macrlc, CONFIG_STRING_MACRLC_LOCAL_N_ADDRESS,        (const char **)&ipv4_n)
+		&& config_setting_lookup_string(setting_macrlc, CONFIG_STRING_MACRLC_REMOTE_N_ADDRESS,       (const char **)&ipv4_n_remote)
+		&& config_setting_lookup_int   (setting_macrlc, CONFIG_STRING_MACRLC_LOCAL_N_PORTC,          &local_n_portc)
+		&& config_setting_lookup_int   (setting_macrlc, CONFIG_STRING_MACRLC_REMOTE_N_PORTC,         &remote_n_portc)
+		&& config_setting_lookup_int   (setting_macrlc, CONFIG_STRING_MACRLC_LOCAL_N_PORTD,          &local_n_portd)
+		&& config_setting_lookup_int   (setting_macrlc, CONFIG_STRING_MACRLC_REMOTE_N_PORTD,         &remote_n_portd)
+		)
+	      ) {
+	  AssertFatal (0,
+		       "Failed to parse configuration file %s, L1 %d config !\n",
+		       RC.config_file_name, j);
+	  continue; // FIXME will prevent segfaults below, not sure what happens at function exit...
+	}
+	RC.mac[j]->eth_params_n.local_if_name            = strdup(if_name_n);
+	RC.mac[j]->eth_params_n.my_addr                  = strdup(ipv4_n);
+	RC.mac[j]->eth_params_n.remote_addr              = strdup(ipv4_n_remote);
+	RC.mac[j]->eth_params_n.my_portc                 = local_n_portc;
+	RC.mac[j]->eth_params_n.remote_portc             = remote_n_portc;
+	RC.mac[j]->eth_params_n.my_portd                 = local_n_portd;
+	RC.mac[j]->eth_params_n.remote_portd             = remote_n_portd;
+	RC.mac[j]->eth_params_n.transp_preference        = ETH_UDP_MODE;
+      }
+      
+      else { // other midhaul
+	AssertFatal(1==0,"MACRLC %d: unknown northbound midhaul\n",j);
+      }	
+
+      if (!(config_setting_lookup_string(setting_macrlc, CONFIG_STRING_MACRLC_TRANSPORT_S_PREFERENCE, (const char **)&tr_s_preference))) {
+	AssertFatal (0,
+		     "Failed to parse configuration file %s, L1 %d config !\n",
+		     RC.config_file_name, j);
+	continue; // FIXME will prevent segfaults below, not sure what happens at function exit...
+      }
+
+      printf("MACRLC %d: Southbound Transport %s\n",j,tr_s_preference);
+      
+      if (strcmp(tr_s_preference, "local_L1") == 0) {
+
+	
+      }
+      else if (strcmp(tr_s_preference, "nfapi") == 0) {
+	if (  !( 
+		config_setting_lookup_string(setting_macrlc, CONFIG_STRING_MACRLC_LOCAL_S_IF_NAME,        (const char **)&if_name_s)
+		&& config_setting_lookup_string(setting_macrlc, CONFIG_STRING_MACRLC_LOCAL_S_ADDRESS,        (const char **)&ipv4_s)
+		&& config_setting_lookup_string(setting_macrlc, CONFIG_STRING_MACRLC_REMOTE_S_ADDRESS,       (const char **)&ipv4_s_remote)
+		&& config_setting_lookup_int   (setting_macrlc, CONFIG_STRING_MACRLC_LOCAL_S_PORTC,          &local_s_portc)
+		&& config_setting_lookup_int   (setting_macrlc, CONFIG_STRING_MACRLC_REMOTE_S_PORTC,         &remote_s_portc)
+		&& config_setting_lookup_int   (setting_macrlc, CONFIG_STRING_MACRLC_LOCAL_S_PORTD,          &local_s_portd)
+		&& config_setting_lookup_int   (setting_macrlc, CONFIG_STRING_MACRLC_REMOTE_S_PORTD,         &remote_s_portd)
+		 )){
+	  AssertFatal (0,
+		       "Failed to parse configuration file %s, L1 %d config !\n",
+		       RC.config_file_name, j);
+	  continue; // FIXME will prevent segfaults below, not sure what happens at function exit...
+	}
+
+	RC.mac[j]->eth_params_s.local_if_name            = strdup(if_name_s);
+	RC.mac[j]->eth_params_s.my_addr                  = strdup(ipv4_s);
+	RC.mac[j]->eth_params_s.remote_addr              = strdup(ipv4_s_remote);
+	RC.mac[j]->eth_params_s.my_portc                 = local_s_portc;
+	RC.mac[j]->eth_params_s.remote_portc             = remote_s_portc;
+	RC.mac[j]->eth_params_s.my_portd                 = local_s_portd;
+	RC.mac[j]->eth_params_s.remote_portd             = remote_s_portd;
+	RC.mac[j]->eth_params_s.transp_preference        = ETH_UDP_MODE;
+      }
+      
+      else { // other midhaul
+	AssertFatal(1==0,"MACRLC %d: unknown southbound midhaul\n",j);
+      }	
+    }// j=0..num_inst
+  }
+}
 	       
 int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   config_t          cfg;
@@ -614,6 +887,16 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   libconfig_int     enb_id                        = 0;
   int               nb_cc                         = 0;
 
+  char*             if_name_s                       = NULL;
+  char*             ipv4_s                          = NULL;
+  char*             ipv4_s_remote                   = NULL;
+ 
+  char*             tr_s_preference                 = NULL;
+  libconfig_int     local_s_portc                   = 0;
+  libconfig_int     remote_s_portc                  = 0;
+  libconfig_int     local_s_portd                   = 0;
+  libconfig_int     remote_s_portd                  = 0;
+
   const char*       cell_type                     = NULL;
   const char*       tac                           = 0;
   const char*       enb_name                      = NULL;
@@ -622,7 +905,8 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   const char*       frame_type                    = NULL;
   libconfig_int     tdd_config                    = 0;
   libconfig_int     tdd_config_s                  = 0;
-  const char*            prefix_type              = NULL;
+  const char*       prefix_type                   = NULL;
+  const char*       pbch_repetition               = NULL;
   libconfig_int     eutra_band                    = 0;
   long long int     downlink_frequency            = 0;
   libconfig_int     uplink_frequency_offset       = 0;
@@ -706,18 +990,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   libconfig_int     my_int;
 
 
-  char*             if_name                       = NULL;
-  char*             ipv4                          = NULL;
-  char*             ipv4_remote                   = NULL;
-  char*             ipv6                          = NULL;
-  char*             local_rf                      = NULL;
-  char*             preference                    = NULL;
-  char*             active                        = NULL;
-  char*             if_compression                = NULL;
-
-  char*             tr_preference                 = NULL;
-  libconfig_int     local_port                    = 0;
-  libconfig_int     remote_port                   = 0;
   const char*       active_enb[MAX_ENB];
   char*             enb_interface_name_for_S1U    = NULL;
   char*             enb_ipv4_address_for_S1U      = NULL;
@@ -826,14 +1098,13 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 	enb_id = i;
 # endif
       }
-      
+
       if (  !(       config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_CELL_TYPE,           &cell_type)
 		     && config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_ENB_NAME,            &enb_name)
 		     && config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_TRACKING_AREA_CODE,  &tac)
 		     && config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_MOBILE_COUNTRY_CODE, &mcc)
 		     && config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_MOBILE_NETWORK_CODE, &mnc)
-		     
-		     
+		     && config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_TRANSPORT_S_PREFERENCE, (const char **)&tr_s_preference)
 		     )
 	    ) {
 	AssertFatal (0,
@@ -841,7 +1112,39 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		     RC.config_file_name, i);
       }
       
+      printf("RRC %d: Southbound Transport %s\n",j,tr_s_preference);
+	    
+      if (strcmp(tr_s_preference, "local_mac") == 0) {
+
+
+      }
+      else if (strcmp(tr_s_preference, "cudu") == 0) {
+	if (  !(config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_LOCAL_S_IF_NAME,        (const char **)&if_name_s)
+		&& config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_LOCAL_S_ADDRESS,        (const char **)&ipv4_s)
+		&& config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_REMOTE_S_ADDRESS,       (const char **)&ipv4_s_remote)
+		&& config_setting_lookup_int   (setting_enb, ENB_CONFIG_STRING_LOCAL_S_PORTC,          &local_s_portc)
+		&& config_setting_lookup_int   (setting_enb, ENB_CONFIG_STRING_REMOTE_S_PORTC,         &remote_s_portc)
+		&& config_setting_lookup_int   (setting_enb, ENB_CONFIG_STRING_LOCAL_S_PORTD,          &local_s_portd)
+		&& config_setting_lookup_int   (setting_enb, ENB_CONFIG_STRING_REMOTE_S_PORTD,         &remote_s_portd)	
+		)
+	    ) {
+	  AssertFatal (0,
+		       "Failed to parse eNB configuration file %s, %u th enb\n",
+		       RC.config_file_name, i);
+	}
+	rrc->eth_params_s.local_if_name            = strdup(if_name_s);
+	rrc->eth_params_s.my_addr                  = strdup(ipv4_s);
+	rrc->eth_params_s.remote_addr              = strdup(ipv4_s_remote);
+	rrc->eth_params_s.my_portc                 = local_s_portc;
+	rrc->eth_params_s.remote_portc             = remote_s_portc;
+	rrc->eth_params_s.my_portd                 = local_s_portd;
+	rrc->eth_params_s.remote_portd             = remote_s_portd;
+	rrc->eth_params_s.transp_preference        = ETH_UDP_MODE;
+      }
       
+      else { // other midhaul
+      }	      
+
       // search if in active list
 
       for (j=0; j < num_enbs; j++) {
@@ -892,6 +1195,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_TDD_CONFIG, &tdd_config)
 		    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_TDD_CONFIG_S, &tdd_config_s)
 		    && config_setting_lookup_string(component_carrier, ENB_CONFIG_STRING_PREFIX_TYPE, &prefix_type)
+		    && config_setting_lookup_string(component_carrier, ENB_CONFIG_STRING_PBCH_REPETITION, &pbch_repetition)
 		    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_EUTRA_BAND, &eutra_band)
 		    && config_setting_lookup_int64(component_carrier, ENB_CONFIG_STRING_DOWNLINK_FREQUENCY, &downlink_frequency)
 		    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_UPLINK_FREQUENCY_OFFSET, &uplink_frequency_offset)
@@ -1026,6 +1330,21 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			     "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for prefix_type choice: NORMAL or EXTENDED !\n",
 			     RC.config_file_name, i, prefix_type);
 	      }
+#ifdef Rel14
+	      if (!pbch_repetition)
+		AssertFatal (0,
+			     "Failed to parse eNB configuration file %s, enb %d define %s: TRUE,FALSE!\n",
+			     RC.config_file_name, i, ENB_CONFIG_STRING_PBCH_REPETITION);
+	      else if (strcmp(pbch_repetition, "TRUE") == 0) {
+		RRC_CONFIGURATION_REQ (msg_p).pbch_repetition[j] = 1;
+	      } else  if (strcmp(pbch_repetition, "FALSE") == 0) {
+		RRC_CONFIGURATION_REQ (msg_p).pbch_repetition[j] = 0;
+	      } else {
+		AssertFatal (0,
+			     "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pbch_repetition choice: TRUE or FALSE !\n",
+			     RC.config_file_name, i, pbch_repetition);
+	      }
+#endif
               
 	      RRC_CONFIGURATION_REQ (msg_p).eutra_band[j] = eutra_band;
 	      RRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j] = (uint32_t) downlink_frequency;
@@ -3071,7 +3390,7 @@ void RCConfig(const char *config_file_name) {
     
     if (setting != NULL) RC.nb_inst = config_setting_length(setting);
     if (RC.nb_inst > 0) {
-      printf("Number of eNB instances %d\n",RC.nb_inst);
+      printf("Number of eNB RRC instances %d\n",RC.nb_inst);
       setting = config_lookup(&cfg, ENB_CONFIG_STRING_ENB_LIST);
       RC.nb_CC = (int *)malloc((1+RC.nb_inst)*sizeof(int));
       for (int i=0;i<RC.nb_inst;i++) {
@@ -3084,10 +3403,17 @@ void RCConfig(const char *config_file_name) {
       }
     }
 
+    // Get num MACRLC instances
+    setting = config_lookup(&cfg, CONFIG_STRING_MACRLC_LIST);
+    if (setting != NULL) RC.nb_macrlc_inst = config_setting_length(setting);
+
+    // Get num L1 instances
+    setting = config_lookup(&cfg, CONFIG_STRING_L1_LIST);
+    if (setting != NULL) RC.nb_L1_inst = config_setting_length(setting);
+
     // Get num RU instances
     setting = config_lookup(&cfg, CONFIG_STRING_RU_LIST);
-    
-    if (setting != NULL) RC.nb_RU = config_setting_length(setting); 
+    if (setting != NULL) RC.nb_RU     = config_setting_length(setting); 
   }
   else {
     config_destroy(&cfg);

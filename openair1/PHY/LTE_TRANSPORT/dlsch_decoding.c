@@ -864,6 +864,7 @@ int dlsch_abstraction_MIESM(double* sinr_dB,uint8_t TM, uint32_t rb_alloc[4], ui
 #endif
 }
 
+/*
 uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
                              uint8_t subframe,
                              PDSCH_t dlsch_id,
@@ -886,10 +887,8 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
       break;
   }
 
-  if (eNB_id2==NB_eNB_INST) {
-    LOG_E(PHY,"FATAL : Could not find attached eNB for DLSCH emulation !!!!\n");
-    mac_xface->macphy_exit("Could not find attached eNB for DLSCH emulation");
-  }
+  AssertFatal(eNB_id2!=NB_eNB_INST,
+              "FATAL : Could not find attached eNB for DLSCH emulation !!!!\n");
 
   LOG_D(PHY,"[UE] dlsch_decoding_emul : subframe %d, eNB_id %d, dlsch_id %d\n",subframe,eNB_id2,dlsch_id);
 
@@ -1008,10 +1007,10 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     printf("\n");
 #endif
 
-    /*
-      if (dlsch_abstraction_MIESM(phy_vars_ue->sinr_dB, phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc,
-        dlsch_eNB->harq_processes[0]->mcs,RC.eNB[eNB_id]->mu_mimo_mode[ue_id].dl_pow_off) == 1) {
-    */
+    
+    //  if (dlsch_abstraction_MIESM(phy_vars_ue->sinr_dB, phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc,
+    //    dlsch_eNB->harq_processes[0]->mcs,RC.eNB[eNB_id]->mu_mimo_mode[ue_id].dl_pow_off) == 1) {
+    
     if (1) {
       // reset HARQ
       dlsch_ue->harq_processes[0]->status = SCH_IDLE;
@@ -1038,5 +1037,6 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 
   LOG_E(PHY,"[FATAL] dlsch_decoding.c: Should never exit here ...\n");
   return(0);
-}
+  }*/
 #endif
+

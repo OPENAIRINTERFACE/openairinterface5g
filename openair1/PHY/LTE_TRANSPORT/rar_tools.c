@@ -314,10 +314,10 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *ue,
 
   // initialize power control based on PRACH power
   ulsch->f_pusch = delta_PUSCH_msg2[ulsch->harq_processes[harq_pid]->TPC] +
-                   mac_xface->get_deltaP_rampup(ue->Mod_id,ue->CC_id);
+                   get_deltaP_rampup(ue->Mod_id,ue->CC_id);
   LOG_D(PHY,"[UE %d][PUSCH PC] Initializing f_pusch to %d dB, TPC %d (delta_PUSCH_msg2 %d dB), deltaP_rampup %d dB\n",
         ue->Mod_id,ulsch->f_pusch,ulsch->harq_processes[harq_pid]->TPC,delta_PUSCH_msg2[ulsch->harq_processes[harq_pid]->TPC],
-        mac_xface->get_deltaP_rampup(ue->Mod_id,ue->CC_id));
+        get_deltaP_rampup(ue->Mod_id,ue->CC_id));
 
 
   //#ifdef DEBUG_RAR

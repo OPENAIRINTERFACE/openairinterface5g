@@ -64,7 +64,7 @@
 #include "LAYER2/MAC/proto.h"
 #include "RRC/LITE/extern.h"
 #include "PHY_INTERFACE/extern.h"
-
+#include "PHY_INTERFACE/defs.h"
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
 unsigned short config_frames[4] = {2,9,11,13};
@@ -157,6 +157,12 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
 
   // UE-specific RX processing for subframe n
   phy_procedures_eNB_uespec_RX(eNB, proc, no_relay );
+  LOG_I(PHY,"uespec_RX complete: frame %d, subframe %d\n",proc->frame_rx,proc->subframe_rx);
+  eNB->UL_INFO.frame     = proc->frame_rx;
+  eNB->UL_INFO.subframe  = proc->subframe_rx;
+  eNB->UL_INFO.module_id = eNB->Mod_id;
+  eNB->UL_INFO.CC_id     = eNB->CC_id;
+  eNB->if_inst->UL_indication(&eNB->UL_INFO);
   
   // *****************************************
   // TX processing for subframe n+4
@@ -164,6 +170,8 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   // (may be relaxed in the future for performance reasons)
   // *****************************************
   //if (wait_CCs(proc)<0) return(-1);
+  
+
   
   if (oai_exit) return(-1);
   
@@ -742,10 +750,10 @@ void init_eNB(int single_thread_flag,int wait_for_sync) {
   int inst;
   PHY_VARS_eNB *eNB;
 
-  if (RC.eNB == NULL) RC.eNB = (PHY_VARS_eNB***) malloc(RC.nb_inst*sizeof(PHY_VARS_eNB **));
-  for (inst=0;inst<RC.nb_inst;inst++) {
+  if (RC.eNB == NULL) RC.eNB = (PHY_VARS_eNB***) malloc(RC.nb_L1_inst*sizeof(PHY_VARS_eNB **));
+  for (inst=0;inst<RC.nb_L1_inst;inst++) {
     if (RC.eNB[inst] == NULL) RC.eNB[inst] = (PHY_VARS_eNB**) malloc(RC.nb_CC[inst]*sizeof(PHY_VARS_eNB *));
-    for (CC_id=0;CC_id<RC.nb_CC[inst];CC_id++) {
+    for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) {
       if (RC.eNB[inst][CC_id] == NULL) RC.eNB[inst][CC_id] = (PHY_VARS_eNB*) malloc(sizeof(PHY_VARS_eNB));
       eNB                     = RC.eNB[inst][CC_id]; 
       eNB->abstraction_flag   = 0;
@@ -761,15 +769,19 @@ void init_eNB(int single_thread_flag,int wait_for_sync) {
       eNB->te                   = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
 
       
-
+      LOG_I(PHY,"Registering with MAC interface module\n");
+      AssertFatal((eNB->if_inst       = IF_Module_init(inst))!=NULL,"Cannot register interface");
+      eNB->if_inst->schedule_response = schedule_response;
+      eNB->if_inst->PHY_config_req    = phy_config_request;
     }
 
   }
 
 
-  LOG_D(HW,"[lte-softmodem.c] eNB structure allocated\n");
+  LOG_D(PHY,"[lte-softmodem.c] eNB structure allocated\n");
   
- 
+
+
 }
 
 

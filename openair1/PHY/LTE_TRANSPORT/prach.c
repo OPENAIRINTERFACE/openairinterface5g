@@ -393,16 +393,16 @@ void fill_du(uint8_t prach_fmt)
 
 }
 
-uint8_t get_num_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms)
+uint8_t get_num_prach_tdd(module_id_t Mod_id)
 {
-
-  return(tdd_preamble_map[frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex][frame_parms->tdd_config].num_prach);
+  LTE_DL_FRAME_PARMS *fp = &PHY_vars_UE_g[Mod_id][0]->frame_parms;
+  return(tdd_preamble_map[fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex][fp->tdd_config].num_prach);
 }
 
-uint8_t get_fid_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms,uint8_t tdd_map_index)
+uint8_t get_fid_prach_tdd(module_id_t Mod_id,uint8_t tdd_map_index)
 {
-
-  return(tdd_preamble_map[frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex][frame_parms->tdd_config].map[tdd_map_index].f_ra);
+  LTE_DL_FRAME_PARMS *fp = &PHY_vars_UE_g[Mod_id][0]->frame_parms;
+  return(tdd_preamble_map[fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex][fp->tdd_config].map[tdd_map_index].f_ra);
 }
 
 uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,lte_frame_type_t frame_type)
@@ -656,20 +656,12 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 
   // First compute physical root sequence
   if (restricted_set == 0) {
-    if (Ncs_config > 15) {
-      LOG_E( PHY, "[PHY] FATAL, Illegal Ncs_config for unrestricted format %"PRIu8"\n", Ncs_config );
-      mac_xface->macphy_exit("PRACH: Illegal Ncs_config for unrestricted format");
-      return 0; // not reached
-    }
-
+    AssertFatal(Ncs_config <= 15,
+		"[PHY] FATAL, Illegal Ncs_config for unrestricted format %"PRIu8"\n", Ncs_config );
     NCS = NCS_unrestricted[Ncs_config];
   } else {
-    if (Ncs_config > 14) {
-      LOG_E( PHY, "[PHY] FATAL, Illegal Ncs_config for restricted format %"PRIu8"\n", Ncs_config );
-      mac_xface->macphy_exit("PRACH: Illegal Ncs_config for restricted format");
-      return 0; // not reached
-    }
-
+    AssertFatal(Ncs_config <= 14,
+		"[PHY] FATAL, Illegal Ncs_config for restricted format %"PRIu8"\n", Ncs_config );
     NCS = NCS_restricted[Ncs_config];
   }
 
@@ -1036,47 +1028,44 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 
   //LOG_D(PHY,"prach_len=%d\n",prach_len);
 
-  if (prach_fmt==4) {
-    LOG_E( PHY, "prach_fmt4 not fully implemented" );
-    mac_xface->macphy_exit("prach_fmt4 not fully implemented");
-    return 0; // not reached
-  } else {
+  AssertFatal(prach_fmt<4,
+	      "prach_fmt4 not fully implemented" );
 #if defined(EXMIMO) || defined(OAI_USRP)
-    int j;
-    int overflow = prach_start + prach_len - LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*ue->frame_parms.samples_per_tti;
-    LOG_D( PHY, "prach_start=%d, overflow=%d\n", prach_start, overflow );
-
-    for (i=prach_start,j=0; i<min(ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,prach_start+prach_len); i++,j++) {
-      ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j]<<4;
-      ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1]<<4;
-    }
-
-    for (i=0; i<overflow; i++,j++) {
-      ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j]<<4;
-      ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1]<<4;
-    }
+  int j;
+  int overflow = prach_start + prach_len - LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*ue->frame_parms.samples_per_tti;
+  LOG_D( PHY, "prach_start=%d, overflow=%d\n", prach_start, overflow );
+  
+  for (i=prach_start,j=0; i<min(ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,prach_start+prach_len); i++,j++) {
+    ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j]<<4;
+    ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1]<<4;
+  }
+  
+  for (i=0; i<overflow; i++,j++) {
+    ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j]<<4;
+    ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1]<<4;
+  }
 #if defined(EXMIMO)
-    // handle switch before 1st TX subframe, guarantee that the slot prior to transmission is switch on
-    for (k=prach_start - (ue->frame_parms.samples_per_tti>>1) ; k<prach_start ; k++) {
-      if (k<0)
-	ue->common_vars.txdata[0][k+ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
-      else if (k>(ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME))
-	ue->common_vars.txdata[0][k-ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
-      else
-	ue->common_vars.txdata[0][k] &= 0xFFFEFFFE;
-    }
+  // handle switch before 1st TX subframe, guarantee that the slot prior to transmission is switch on
+  for (k=prach_start - (ue->frame_parms.samples_per_tti>>1) ; k<prach_start ; k++) {
+    if (k<0)
+      ue->common_vars.txdata[0][k+ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
+    else if (k>(ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME))
+      ue->common_vars.txdata[0][k-ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
+    else
+      ue->common_vars.txdata[0][k] &= 0xFFFEFFFE;
+  }
 #endif
 #else
-    
-    for (i=0; i<prach_len; i++) {
-      ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i] = prach[2*i];
-      ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i+1] = prach[2*i+1];
-    }
-
-#endif
+  
+  for (i=0; i<prach_len; i++) {
+    ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i] = prach[2*i];
+    ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i+1] = prach[2*i+1];
   }
+  
+#endif
+  
 
-
+  
 #if 0
   write_output("prach_txF0.m","prachtxF0",prachF,prach_len-Ncp,1,1);
   write_output("prach_tx0.m","prachtx0",prach+(Ncp<<1),prach_len-Ncp,1,1);
@@ -1184,20 +1173,12 @@ void rx_prach(PHY_VARS_eNB *eNB,
 
   // First compute physical root sequence
   if (restricted_set == 0) {
-    if (Ncs_config>15) {
-      LOG_E(PHY,"FATAL, Illegal Ncs_config for unrestricted format %d\n",Ncs_config);
-      mac_xface->macphy_exit("PRACH Illegal Ncs_config for unrestricted format");
-      return; // not reached
-    }
-
+    AssertFatal(Ncs_config<=15,
+		"Illegal Ncs_config for unrestricted format %d\n",Ncs_config);
     NCS = NCS_unrestricted[Ncs_config];
   } else {
-    if (Ncs_config>14) {
-      LOG_E(PHY,"FATAL, Illegal Ncs_config for restricted format %d\n",Ncs_config);
-      mac_xface->macphy_exit("PRACH Illegal Ncs_config for restricted format");
-      return; // not reached
-    }
-
+    AssertFatal(Ncs_config<=14,
+		"FATAL, Illegal Ncs_config for restricted format %d\n",Ncs_config);
     NCS = NCS_restricted[Ncs_config];
   }
 
@@ -1654,12 +1635,8 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
   LOG_I(PHY,"compute_prach_seq: NCS_config %d, prach_fmt %d\n",prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig, prach_fmt);
 #endif
 
-  if (prach_fmt>=4) {
-    LOG_E( PHY, "PRACH sequence is only precomputed for prach_fmt<4 (have %"PRIu8")\n", prach_fmt );
-    mac_xface->macphy_exit("PRACH sequence is only precomputed for prach_fmt<4");
-    return; // not reached
-  }
-
+  AssertFatal(prach_fmt<4,
+	      "PRACH sequence is only precomputed for prach_fmt<4 (have %"PRIu8")\n", prach_fmt );
   N_ZC = (prach_fmt < 4) ? 839 : 139;
   //init_prach_tables(N_ZC); //moved to phy_init_lte_ue/eNB, since it takes to long in real-time
 
@@ -1681,13 +1658,9 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
     LOG_I(PHY,"Low speed prach : NCS_config %d\n",prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig);
 #endif
 
-    if (prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig>15) {
-      LOG_E( PHY, "FATAL, Illegal Ncs_config for unrestricted format %"PRIu8"\n", prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig );
-      mac_xface->macphy_exit("PRACH Illegal Ncs_config for unrestricted format");
-      return; // not reached
-    } else {
-      NCS = NCS_unrestricted[prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig];
-    }
+    AssertFatal(prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig<=15,
+		"FATAL, Illegal Ncs_config for unrestricted format %"PRIu8"\n", prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig );
+    NCS = NCS_unrestricted[prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig];
 
     num_preambles = (NCS==0) ? 64 : ((64*NCS)/N_ZC);
 
@@ -1700,14 +1673,10 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
     LOG_I( PHY, "high speed prach : NCS_config %"PRIu8"\n", prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig );
 #endif
 
-    if (prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig>14) {
-      LOG_E( PHY, "FATAL, Illegal Ncs_config for restricted format %"PRIu8"\n", prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig );
-      mac_xface->macphy_exit("PRACH Illegal Ncs_config for restricted format");
-      return; // not reached
-    } else {
-      NCS = NCS_restricted[prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig];
-      fill_du(prach_fmt);
-    }
+    AssertFatal(prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig<=14,
+		"FATAL, Illegal Ncs_config for restricted format %"PRIu8"\n", prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig );
+    NCS = NCS_restricted[prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig];
+    fill_du(prach_fmt);
 
     num_preambles = 64; // compute ZC sequence for 64 possible roots
     // find first non-zero shift root (stored in preamble_offset)

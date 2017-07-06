@@ -274,9 +274,10 @@ int dlsch_encoding_2threads0(te_params *tep) {
 
   LTE_eNB_DLSCH_t *dlsch          = tep->dlsch;
   unsigned int G                  = tep->G;
+  unsigned char harq_pid          = tep->harq_pid;
 
   unsigned short iind;
-  unsigned char harq_pid = dlsch->current_harq_pid;
+
   unsigned short nb_rb = dlsch->harq_processes[harq_pid]->nb_rb;
   unsigned int Kr=0,Kr_bytes,r,r_offset=0;
   unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
@@ -394,7 +395,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
   unsigned int crc=1;
   unsigned short iind;
 
-  unsigned char harq_pid = dlsch->current_harq_pid;
+  unsigned char harq_pid = dlsch->harq_ids[subframe];
   unsigned short nb_rb = dlsch->harq_processes[harq_pid]->nb_rb;
   unsigned int A;
   unsigned char mod_order;
@@ -446,6 +447,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
     proc->tep.eNB               = eNB;
     proc->tep.dlsch             = dlsch;
     proc->tep.G                 = G;
+    proc->tep.harq_pid          = harq_pid;
 
     // wakeup worker to do second half segments
     if (pthread_cond_signal(&proc->cond_te) != 0) {
@@ -577,7 +579,7 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
   unsigned short iind;
 
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
-  unsigned char harq_pid = dlsch->current_harq_pid;
+  unsigned char harq_pid = dlsch->harq_ids[subframe];
   unsigned short nb_rb = dlsch->harq_processes[harq_pid]->nb_rb;
   unsigned int A;
   unsigned char mod_order;
@@ -739,22 +741,22 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
 
 
 int dlsch_encoding_SIC(PHY_VARS_UE *ue,
-                   unsigned char *a,
-                   uint8_t num_pdcch_symbols,
-                   LTE_eNB_DLSCH_t *dlsch,
-                   int frame,
-                   uint8_t subframe,
-                   time_stats_t *rm_stats,
-                   time_stats_t *te_stats,
-                   time_stats_t *i_stats)
+		       unsigned char *a,
+		       uint8_t num_pdcch_symbols,
+		       LTE_eNB_DLSCH_t *dlsch,
+		       int frame,
+		       uint8_t subframe,
+		       time_stats_t *rm_stats,
+		       time_stats_t *te_stats,
+		       time_stats_t *i_stats)
 {
-
+  
   unsigned int G;
   unsigned int crc=1;
   unsigned short iind;
 
   LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-  unsigned char harq_pid = dlsch->current_harq_pid;
+  unsigned char harq_pid = ue->dlsch[subframe&2][0][0]->rnti;
   unsigned short nb_rb = dlsch->harq_processes[harq_pid]->nb_rb;
   unsigned int A;
   unsigned char mod_order;
@@ -917,39 +919,4 @@ int dlsch_encoding_SIC(PHY_VARS_UE *ue,
 
 
 
-#ifdef PHY_ABSTRACTION
-void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
-                         uint8_t *DLSCH_pdu,
-                         LTE_eNB_DLSCH_t *dlsch)
-{
 
-  //int payload_offset = 0;
-  unsigned char harq_pid = dlsch->current_harq_pid;
-  unsigned short i;
-
-  //  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {
-  if (dlsch->harq_processes[harq_pid]->round == 0) {
-    memcpy(dlsch->harq_processes[harq_pid]->b,
-           DLSCH_pdu,
-           dlsch->harq_processes[harq_pid]->TBS>>3);
-    LOG_D(PHY, "eNB %d dlsch_encoding_emul, tbs is %d harq pid %d \n",
-          phy_vars_eNB->Mod_id,
-          dlsch->harq_processes[harq_pid]->TBS>>3,
-          harq_pid);
-
-    for (i=0; i<dlsch->harq_processes[harq_pid]->TBS>>3; i++)
-      LOG_T(PHY,"%x.",DLSCH_pdu[i]);
-
-    LOG_T(PHY,"\n");
-
-    memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].transport_blocks[eNB_transport_info_TB_index[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id]],
-           //     memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id].transport_blocks[payload_offset],
-           DLSCH_pdu,
-           dlsch->harq_processes[harq_pid]->TBS>>3);
-  }
-
-  eNB_transport_info_TB_index[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id]+=dlsch->harq_processes[harq_pid]->TBS>>3;
-  //payload_offset +=dlsch->harq_processes[harq_pid]->TBS>>3;
-
-}
-#endif

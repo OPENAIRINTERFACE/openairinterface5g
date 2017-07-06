@@ -262,7 +262,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
       	      MSC_AS_TIME_ARGS(ctxt_pP),
       	      ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id,
       	      ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size);
-           mac_xface->macphy_exit("sendmsg failed for nas_sock_fd\n");
+	    AssertFatal(1==0,"sendmsg failed for nas_sock_fd\n");
             break;
           } else {
         	  MSC_LOG_TX_MESSAGE(

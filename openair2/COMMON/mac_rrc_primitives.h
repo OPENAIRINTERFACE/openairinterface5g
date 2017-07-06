@@ -92,13 +92,6 @@ result could be based on an event-driven measurement report.
 #define RRC_RACH_ASS_REQ 0
 #define MAC_RACH_BW_REQ 1
 
-typedef enum {
-  RRC_OK=0,
-  RRC_ConnSetup_failed,
-  RRC_PHY_RESYNCH,
-  RRC_Handover_failed,
-  RRC_HO_STARTED
-} RRC_status_t;
 
 
 /*! MAC/PHY Measurement Structure*/
@@ -225,17 +218,7 @@ typedef struct {
 
 /*! \brief MAC Logical Channel Descriptor
  */
-typedef struct {
-  unsigned short transport_block_size;                  /*!< \brief Minimum PDU size in bytes provided by RLC to MAC layer interface */
-  unsigned short max_transport_blocks;                  /*!< \brief Maximum PDU size in bytes provided by RLC to MAC layer interface */
-  unsigned long  Guaranteed_bit_rate;           /*!< \brief Guaranteed Bit Rate (average) to be offered by MAC layer scheduling*/
-  unsigned long  Max_bit_rate;                  /*!< \brief Maximum Bit Rate that can be offered by MAC layer scheduling*/
-  uint8_t  Delay_class;                  /*!< \brief Delay class offered by MAC layer scheduling*/
-  uint8_t  Target_bler;                  /*!< \brief Target Average Transport Block Error rate*/
-  uint8_t  Lchan_t;                      /*!< \brief Logical Channel Type (BCCH,CCCH,DCCH,DTCH_B,DTCH,MRBCH)*/
-} __attribute__ ((__packed__))  LCHAN_DESC;
 
-#define LCHAN_DESC_SIZE sizeof(LCHAN_DESC)
 
 /*!\brief This primitive indicates to RRC that a particular logical channel has been established and that successful transmission has
 been received.  The parameter passed is the logical channel id.

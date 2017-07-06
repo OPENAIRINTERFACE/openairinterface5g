@@ -114,15 +114,20 @@ uint32_t get_RSSI (uint8_t Mod_id,uint8_t CC_id)
 
   return 0xFFFFFFFF;
 }
-uint32_t get_RSRP(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
+double get_RSRP(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 {
+
+  AssertFatal(PHY_vars_UE_g!=NULL,"PHY_vars_UE_g is null\n");
+  AssertFatal(PHY_vars_UE_g[Mod_id]!=NULL,"PHY_vars_UE_g[%d] is null\n",Mod_id);
+  AssertFatal(PHY_vars_UE_g[Mod_id][CC_id]!=NULL,"PHY_vars_UE_g[%d][%d] is null\n",Mod_id,CC_id);
 
   PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
 
   if (ue)
-    return ue->measurements.rsrp[eNB_index];
-
-  return 0xFFFFFFFF;
+    return ((dB_fixed_times10(ue->measurements.rsrp[eNB_index]))/10.0-
+	    get_rx_total_gain_dB(Mod_id,0) -
+	    10*log10(ue->frame_parms.N_RB_DL*12));
+  return -140.0;
 }
 
 uint32_t get_RSRQ(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
