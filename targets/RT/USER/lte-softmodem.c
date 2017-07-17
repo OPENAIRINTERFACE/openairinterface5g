@@ -222,7 +222,7 @@ double cpuf;
 char uecap_xer[1024],uecap_xer_in=0;
 
 int oaisim_flag=0;
-threads_t threads= {-1,-1,-1,-1};
+threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution
@@ -640,6 +640,9 @@ static void get_options (int argc, char **argv) {
         LONG_OPTION_THREADONESUBFRAME,
         LONG_OPTION_THREADTWOSUBFRAME,
         LONG_OPTION_THREADTHREESUBFRAME,
+        LONG_OPTION_THREADSLOT1PROCONE,
+        LONG_OPTION_THREADSLOT1PROCTWO,
+        LONG_OPTION_THREADSLOT1PROCTHREE,
         LONG_OPTION_DEMOD_SHIFT,
 #if T_TRACER
         LONG_OPTION_T_PORT,
@@ -677,6 +680,9 @@ static void get_options (int argc, char **argv) {
         {"threadOneSubframe",  required_argument, NULL, LONG_OPTION_THREADONESUBFRAME},
         {"threadTwoSubframe",  required_argument, NULL, LONG_OPTION_THREADTWOSUBFRAME},
         {"threadThreeSubframe",  required_argument, NULL, LONG_OPTION_THREADTHREESUBFRAME},
+        {"threadSlot1ProcOne",  required_argument, NULL, LONG_OPTION_THREADSLOT1PROCONE},
+        {"threadSlot1ProcTwo",  required_argument, NULL, LONG_OPTION_THREADSLOT1PROCTWO},
+        {"threadSlot1ProcThree",  required_argument, NULL, LONG_OPTION_THREADSLOT1PROCTHREE},
         {"dlsch-demod-shift", required_argument,  NULL, LONG_OPTION_DEMOD_SHIFT},
 #if T_TRACER
         {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
@@ -811,6 +817,15 @@ static void get_options (int argc, char **argv) {
     case LONG_OPTION_THREADTHREESUBFRAME:
        threads.three=atoi(optarg);
     break;
+    case LONG_OPTION_THREADSLOT1PROCONE:
+       threads.slot1_proc_one=atoi(optarg);
+       break;
+    case LONG_OPTION_THREADSLOT1PROCTWO:
+       threads.slot1_proc_two=atoi(optarg);
+       break;
+    case LONG_OPTION_THREADSLOT1PROCTHREE:
+       threads.slot1_proc_three=atoi(optarg);
+       break;
     case LONG_OPTION_DEMOD_SHIFT: {
         extern int16_t dlsch_demod_shift;
         dlsch_demod_shift = atof(optarg);

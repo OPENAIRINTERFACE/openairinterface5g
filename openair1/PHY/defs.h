@@ -397,20 +397,27 @@ typedef struct {
   struct sched_param sched_param_rxtx;
 
   /// internal This variable is protected by ref mutex_fep_slot1.
-  int instance_cnt_fep_slot1;
+  //int instance_cnt_slot0_dl_processing;
+  int instance_cnt_slot1_dl_processing;
   /// pthread descriptor fep_slot1 thread
-  pthread_t pthread_fep_slot1;
+  //pthread_t pthread_slot0_dl_processing;
+  pthread_t pthread_slot1_dl_processing;
   /// pthread attributes for fep_slot1 processing thread
-  pthread_attr_t attr_fep_slot1;
+ // pthread_attr_t attr_slot0_dl_processing;
+  pthread_attr_t attr_slot1_dl_processing;
   /// condition variable for UE fep_slot1 thread;
-  pthread_cond_t cond_fep_slot1;
+  //pthread_cond_t cond_slot0_dl_processing;
+  pthread_cond_t cond_slot1_dl_processing;
   /// mutex for UE synch thread
-  pthread_mutex_t mutex_fep_slot1;
+  //pthread_mutex_t mutex_slot0_dl_processing;
+  pthread_mutex_t mutex_slot1_dl_processing;
   //
   uint8_t chan_est_pilot0_slot1_available;
+  uint8_t chan_est_slot1_available;
   uint8_t llr_slot1_available;
   uint8_t dci_slot0_available;
   uint8_t first_symbol_available;
+  uint8_t channel_level;
   /// scheduling parameters for fep_slot1 thread
   struct sched_param sched_param_fep_slot1;
 
@@ -910,6 +917,7 @@ typedef struct {
   time_stats_t ulsch_multiplexing_stats;
 
   time_stats_t generic_stat;
+  time_stats_t generic_stat_bis[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
   time_stats_t ue_front_end_stat[RX_NB_TH];
   time_stats_t ue_front_end_per_slot_stat[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
   time_stats_t pdcch_procedures_stat[RX_NB_TH];
