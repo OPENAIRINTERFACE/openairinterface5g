@@ -74,12 +74,14 @@ protected_rlc_am_retransmit(boolean_t         rlc_am_nack_pdu (
 * \param[in]  ctxtP        Running context.
 * \param[in]  rlcP         RLC AM protocol instance pointer.
 * \param[in]  snP          Sequence number of the PDU that is acknowledged.
+* \param[in]  free_pdu     Boolean indicating that the PDU can be freed because smaller than new vtA.
 * \note                    Depending on the state of the retransmission buffer, positive confirmation can be sent to higher layers about the receiving by the peer RLC AM instance of a particular SDU.
 */
 protected_rlc_am_retransmit(void         rlc_am_ack_pdu (
                               const protocol_ctxt_t* const  ctxt_pP,
                               rlc_am_entity_t *const rlcP,
-                              const rlc_sn_t snP);)
+                              const rlc_sn_t snP,
+							  boolean_t free_pdu);)
 
 /*! \fn mem_block_t* rlc_am_retransmit_get_copy (const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t *rlcP, rlc_sn_t snP)
 * \brief      The RLC AM PDU which have the sequence number snP is marked ACKed.
