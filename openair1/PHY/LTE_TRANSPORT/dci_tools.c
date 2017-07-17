@@ -4781,18 +4781,17 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
     uint8_t  NPRB    = 0;
     long long int RIV_max = 0;
 
-
+#ifdef DEBUG_DCI
     LOG_I(PHY,"[DCI-FORMAT-1-1A] AbsSubframe %d.%d dci_format %d\n", frame, subframe, dci_format);
     LOG_I(PHY,"[DCI-FORMAT-1-1A] rnti       %x\n",  rnti);
     LOG_I(PHY,"[DCI-FORMAT-1-1A] harq_pid   %d\n", harq_pid);
     LOG_I(PHY,"[DCI-FORMAT-1-1A] rah        %d\n", rah);
     LOG_I(PHY,"[DCI-FORMAT-1-1A] rballoc    %x\n", rballoc);
     LOG_I(PHY,"[DCI-FORMAT-1-1A] mcs1       %d\n", mcs1);
-#ifdef DEBUG_DCI
     LOG_I(PHY,"[DCI-FORMAT-1-1A] rv1        %d\n", rv1);
     LOG_I(PHY,"[DCI-FORMAT-1-1A] ndi1       %d\n", ndi1);
-#endif
     LOG_I(PHY,"[DCI-FORMAT-1-1A] TPC        %d\n", TPC);
+#endif
 
 
     // I- check dci content minimum coherency
@@ -6120,9 +6119,9 @@ int generate_ue_dlsch_params_from_dci(int frame,
       }
 
       // dci is correct ==> update internal structure and prepare dl decoding
-//#ifdef DEBUG_DCI
+#ifdef DEBUG_DCI
       LOG_I(PHY,"[DCI-FORMAT-1A] AbsSubframe %d.%d prepare dl decoding \n", frame, subframe);
-//#endif
+#endif
       prepare_dl_decoding_format1_1A(format1A,
                                      frame_parms->N_RB_DL,
                                      &dci_info_extarcted,
@@ -6229,9 +6228,9 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
 
       // dci is correct ==> update internal structure and prepare dl decoding
-//#ifdef DEBUG_DCI
+#ifdef DEBUG_DCI
       LOG_I(PHY,"[DCI-FORMAT-1] AbsSubframe %d.%d prepare dl decoding \n", frame, subframe);
-//#endif
+#endif
       prepare_dl_decoding_format1_1A(format1,
                                      frame_parms->N_RB_DL,
                                      &dci_info_extarcted,

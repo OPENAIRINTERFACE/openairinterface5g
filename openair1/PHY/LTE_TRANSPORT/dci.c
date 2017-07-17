@@ -653,7 +653,7 @@ void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
       //clear average level
 #if defined(__x86_64__) || defined(__i386__)
       avg128P = _mm_setzero_si128();
-      dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][frame_parms->N_RB_DL*12];
+      dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][0];
 #elif defined(__arm__)
 
 #endif
@@ -1699,49 +1699,51 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
 #ifdef MU_RECEIVER
   uint8_t eNB_id_i=eNB_id+1;//add 1 to eNB_id to separate from wanted signal, chosen as the B/F'd pilots from the SeNB are shifted by 1
 #endif
-  int32_t avgs,s;
-  uint8_t n_pdcch_symbols = 3; //pdcch_vars[eNB_id]->num_pdcch_symbols;
+  int32_t avgs;
+  uint8_t n_pdcch_symbols;
   uint8_t mi = get_mi(frame_parms,subframe);
 
   //printf("In rx_pdcch, subframe %d, eNB_id %d, pdcch_vars %d \n",subframe,eNB_id,pdcch_vars);
 
-  for (s=0; s<n_pdcch_symbols; s++) {
-    if (is_secondary_ue == 1) {
+
+  // procress ofdm symbol 0
+  if (is_secondary_ue == 1) {
       pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].rxdataF,
-                               common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates[eNB_id+1], //add 1 to eNB_id to compensate for the shifted B/F'd pilots from the SeNB
-                               pdcch_vars[eNB_id]->rxdataF_ext,
-                               pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-                               s,
-                               high_speed_flag,
-                               frame_parms);
+              common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates[eNB_id+1], //add 1 to eNB_id to compensate for the shifted B/F'd pilots from the SeNB
+              pdcch_vars[eNB_id]->rxdataF_ext,
+              pdcch_vars[eNB_id]->dl_ch_estimates_ext,
+              0,
+              high_speed_flag,
+              frame_parms);
 #ifdef MU_RECEIVER
       pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].rxdataF,
-                               common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates[eNB_id_i - 1],//subtract 1 to eNB_id_i to compensate for the non-shifted pilots from the PeNB
-                               pdcch_vars[eNB_id_i]->rxdataF_ext,//shift by two to simulate transmission from a second antenna
-                               pdcch_vars[eNB_id_i]->dl_ch_estimates_ext,//shift by two to simulate transmission from a second antenna
-                               s,
-                               high_speed_flag,
-                               frame_parms);
+              common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates[eNB_id_i - 1],//subtract 1 to eNB_id_i to compensate for the non-shifted pilots from the PeNB
+              pdcch_vars[eNB_id_i]->rxdataF_ext,//shift by two to simulate transmission from a second antenna
+              pdcch_vars[eNB_id_i]->dl_ch_estimates_ext,//shift by two to simulate transmission from a second antenna
+              0,
+              high_speed_flag,
+              frame_parms);
 #endif //MU_RECEIVER
-    } else if (frame_parms->nb_antenna_ports_eNB>1) {
+  } else if (frame_parms->nb_antenna_ports_eNB>1) {
       pdcch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].rxdataF,
-                             common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates[eNB_id],
-                             pdcch_vars[eNB_id]->rxdataF_ext,
-                             pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-                             s,
-                             high_speed_flag,
-                             frame_parms);
-    } else {
+              common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates[eNB_id],
+              pdcch_vars[eNB_id]->rxdataF_ext,
+              pdcch_vars[eNB_id]->dl_ch_estimates_ext,
+              0,
+              high_speed_flag,
+              frame_parms);
+  } else {
       pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].rxdataF,
-                               common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates[eNB_id],
-                               pdcch_vars[eNB_id]->rxdataF_ext,
-                               pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-                               s,
-                               high_speed_flag,
-                               frame_parms);
-    }
+              common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates[eNB_id],
+              pdcch_vars[eNB_id]->rxdataF_ext,
+              pdcch_vars[eNB_id]->dl_ch_estimates_ext,
+              0,
+              high_speed_flag,
+              frame_parms);
   }
 
+
+  // compute channel level based on ofdm symbol 0
   pdcch_channel_level(pdcch_vars[eNB_id]->dl_ch_estimates_ext,
                       frame_parms,
                       avgP,
@@ -1762,86 +1764,86 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
   T(T_UE_PHY_PDCCH_ENERGY, T_INT(eNB_id),  T_INT(0), T_INT(frame%1024), T_INT(subframe),
                            T_INT(avgP[0]), T_INT(avgP[1]),    T_INT(avgP[2]),             T_INT(avgP[3]));
 #endif
-  for (s=0; s<n_pdcch_symbols; s++) {
-    pdcch_channel_compensation(pdcch_vars[eNB_id]->rxdataF_ext,
-                               pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-                               pdcch_vars[eNB_id]->rxdataF_comp,
-                               (aatx>1) ? pdcch_vars[eNB_id]->rho : NULL,
-                               frame_parms,
-                               s,
-                               log2_maxh); // log2_maxh+I0_shift
+
+  // compute LLRs for ofdm symbol 0 only
+  pdcch_channel_compensation(pdcch_vars[eNB_id]->rxdataF_ext,
+          pdcch_vars[eNB_id]->dl_ch_estimates_ext,
+          pdcch_vars[eNB_id]->rxdataF_comp,
+          (aatx>1) ? pdcch_vars[eNB_id]->rho : NULL,
+                  frame_parms,
+                  0,
+                  log2_maxh); // log2_maxh+I0_shift
 
 
 #ifdef DEBUG_PHY
 
-    if (subframe==5)
+  if (subframe==5)
       write_output("rxF_comp_d.m","rxF_c_d",&pdcch_vars[eNB_id]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
 
 #endif
 
 #ifdef MU_RECEIVER
 
-    if (is_secondary_ue) {
+  if (is_secondary_ue) {
       //get MF output for interfering stream
       pdcch_channel_compensation(pdcch_vars[eNB_id_i]->rxdataF_ext,
-                                 pdcch_vars[eNB_id_i]->dl_ch_estimates_ext,
-                                 pdcch_vars[eNB_id_i]->rxdataF_comp,
-                                 (aatx>1) ? pdcch_vars[eNB_id_i]->rho : NULL,
-                                 frame_parms,
-                                 s,
-                                 log2_maxh); // log2_maxh+I0_shift
+              pdcch_vars[eNB_id_i]->dl_ch_estimates_ext,
+              pdcch_vars[eNB_id_i]->rxdataF_comp,
+              (aatx>1) ? pdcch_vars[eNB_id_i]->rho : NULL,
+                      frame_parms,
+                      0,
+                      log2_maxh); // log2_maxh+I0_shift
 #ifdef DEBUG_PHY
       write_output("rxF_comp_i.m","rxF_c_i",&pdcch_vars[eNB_id_i]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
 #endif
       pdcch_dual_stream_correlation(frame_parms,
-                                    s,
-                                    pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-                                    pdcch_vars[eNB_id_i]->dl_ch_estimates_ext,
-                                    pdcch_vars[eNB_id]->dl_ch_rho_ext,
-                                    log2_maxh);
-    }
+              0,
+              pdcch_vars[eNB_id]->dl_ch_estimates_ext,
+              pdcch_vars[eNB_id_i]->dl_ch_estimates_ext,
+              pdcch_vars[eNB_id]->dl_ch_rho_ext,
+              log2_maxh);
+  }
 
 #endif //MU_RECEIVER
 
 
-    if (frame_parms->nb_antennas_rx > 1) {
+  if (frame_parms->nb_antennas_rx > 1) {
 #ifdef MU_RECEIVER
 
       if (is_secondary_ue) {
-        pdcch_detection_mrc_i(frame_parms,
-                              pdcch_vars[eNB_id]->rxdataF_comp,
-                              pdcch_vars[eNB_id_i]->rxdataF_comp,
-                              pdcch_vars[eNB_id]->rho,
-                              pdcch_vars[eNB_id]->dl_ch_rho_ext,
-                              s);
+          pdcch_detection_mrc_i(frame_parms,
+                  pdcch_vars[eNB_id]->rxdataF_comp,
+                  pdcch_vars[eNB_id_i]->rxdataF_comp,
+                  pdcch_vars[eNB_id]->rho,
+                  pdcch_vars[eNB_id]->dl_ch_rho_ext,
+                  0);
 #ifdef DEBUG_PHY
-        write_output("rxF_comp_d.m","rxF_c_d",&pdcch_vars[eNB_id]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
-        write_output("rxF_comp_i.m","rxF_c_i",&pdcch_vars[eNB_id_i]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+          write_output("rxF_comp_d.m","rxF_c_d",&pdcch_vars[eNB_id]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+          write_output("rxF_comp_i.m","rxF_c_i",&pdcch_vars[eNB_id_i]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
 #endif
       } else
 #endif //MU_RECEIVER
-        pdcch_detection_mrc(frame_parms,
-                            pdcch_vars[eNB_id]->rxdataF_comp,
-                            s);
+          pdcch_detection_mrc(frame_parms,
+                  pdcch_vars[eNB_id]->rxdataF_comp,
+                  0);
+  }
 
-    }
-
-    if (mimo_mode == SISO)
-      pdcch_siso(frame_parms,pdcch_vars[eNB_id]->rxdataF_comp,s);
-    else
-      pdcch_alamouti(frame_parms,pdcch_vars[eNB_id]->rxdataF_comp,s);
+  if (mimo_mode == SISO)
+      pdcch_siso(frame_parms,pdcch_vars[eNB_id]->rxdataF_comp,0);
+  else
+      pdcch_alamouti(frame_parms,pdcch_vars[eNB_id]->rxdataF_comp,0);
 
 
 #ifdef MU_RECEIVER
 
-    if (is_secondary_ue) {
+  if (is_secondary_ue) {
       pdcch_qpsk_qpsk_llr(frame_parms,
-                          pdcch_vars[eNB_id]->rxdataF_comp,
-                          pdcch_vars[eNB_id_i]->rxdataF_comp,
-                          pdcch_vars[eNB_id]->dl_ch_rho_ext,
-                          pdcch_vars[eNB_id]->llr16, //subsequent function require 16 bit llr, but output must be 8 bit (actually clipped to 4, because of the Viterbi decoder)
-                          pdcch_vars[eNB_id]->llr,
-                          s);
+              pdcch_vars[eNB_id]->rxdataF_comp,
+              pdcch_vars[eNB_id_i]->rxdataF_comp,
+              pdcch_vars[eNB_id]->dl_ch_rho_ext,
+              pdcch_vars[eNB_id]->llr16, //subsequent function require 16 bit llr, but output must be 8 bit (actually clipped to 4, because of the Viterbi decoder)
+              pdcch_vars[eNB_id]->llr,
+              0);
       /*
       #ifdef DEBUG_PHY
       if (subframe==5) {
@@ -1849,22 +1851,21 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
       write_output("llr16_seq.m","llr16",&pdcch_vars[eNB_id]->llr16[s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,4);
       }
       #endif*/
-    } else {
+  } else {
 #endif //MU_RECEIVER
       pdcch_llr(frame_parms,
-                pdcch_vars[eNB_id]->rxdataF_comp,
-                (char *)pdcch_vars[eNB_id]->llr,
-                s);
+              pdcch_vars[eNB_id]->rxdataF_comp,
+              (char *)pdcch_vars[eNB_id]->llr,
+              0);
       /*#ifdef DEBUG_PHY
       write_output("llr8_seq.m","llr8",&pdcch_vars[eNB_id]->llr[s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,4);
       #endif*/
 
 #ifdef MU_RECEIVER
-    }
+  }
 
 #endif //MU_RECEIVER
 
-  }
 
 #if T_TRACER
   T(T_UE_PHY_PDCCH_IQ, T_INT(frame_parms->N_RB_DL), T_INT(frame_parms->N_RB_DL),
@@ -1872,7 +1873,7 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
     T_BUFFER(pdcch_vars[eNB_id]->rxdataF_comp, frame_parms->N_RB_DL*12*n_pdcch_symbols* 4));
 #endif
 
-  // decode pcfich here
+  // decode pcfich here and find out pdcch ofdm symbol number
   n_pdcch_symbols = rx_pcfich(frame_parms,
                               subframe,
                               pdcch_vars[eNB_id],
@@ -1887,6 +1888,147 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
 
   printf("demapping: subframe %d, mi %d, tdd_config %d\n",subframe,get_mi(frame_parms,subframe),frame_parms->tdd_config);
 #endif
+
+  // process pdcch ofdm symbol 1 and 2 if necessary
+  for (int s=1; s<n_pdcch_symbols; s++){
+      if (is_secondary_ue == 1) {
+          pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].rxdataF,
+                  common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates[eNB_id+1], //add 1 to eNB_id to compensate for the shifted B/F'd pilots from the SeNB
+                  pdcch_vars[eNB_id]->rxdataF_ext,
+                  pdcch_vars[eNB_id]->dl_ch_estimates_ext,
+                  s,
+                  high_speed_flag,
+                  frame_parms);
+#ifdef MU_RECEIVER
+pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].rxdataF,
+        common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates[eNB_id_i - 1],//subtract 1 to eNB_id_i to compensate for the non-shifted pilots from the PeNB
+        pdcch_vars[eNB_id_i]->rxdataF_ext,//shift by two to simulate transmission from a second antenna
+        pdcch_vars[eNB_id_i]->dl_ch_estimates_ext,//shift by two to simulate transmission from a second antenna
+        s,
+        high_speed_flag,
+        frame_parms);
+#endif //MU_RECEIVER
+      } else if (frame_parms->nb_antenna_ports_eNB>1) {
+          pdcch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].rxdataF,
+                  common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates[eNB_id],
+                  pdcch_vars[eNB_id]->rxdataF_ext,
+                  pdcch_vars[eNB_id]->dl_ch_estimates_ext,
+                  s,
+                  high_speed_flag,
+                  frame_parms);
+      } else {
+          pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].rxdataF,
+                  common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates[eNB_id],
+                  pdcch_vars[eNB_id]->rxdataF_ext,
+                  pdcch_vars[eNB_id]->dl_ch_estimates_ext,
+                  s,
+                  high_speed_flag,
+                  frame_parms);
+      }
+
+
+      pdcch_channel_compensation(pdcch_vars[eNB_id]->rxdataF_ext,
+              pdcch_vars[eNB_id]->dl_ch_estimates_ext,
+              pdcch_vars[eNB_id]->rxdataF_comp,
+              (aatx>1) ? pdcch_vars[eNB_id]->rho : NULL,
+                      frame_parms,
+                      s,
+                      log2_maxh); // log2_maxh+I0_shift
+
+
+#ifdef DEBUG_PHY
+
+if (subframe==5)
+    write_output("rxF_comp_d.m","rxF_c_d",&pdcch_vars[eNB_id]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+
+#endif
+
+#ifdef MU_RECEIVER
+
+if (is_secondary_ue) {
+    //get MF output for interfering stream
+    pdcch_channel_compensation(pdcch_vars[eNB_id_i]->rxdataF_ext,
+            pdcch_vars[eNB_id_i]->dl_ch_estimates_ext,
+            pdcch_vars[eNB_id_i]->rxdataF_comp,
+            (aatx>1) ? pdcch_vars[eNB_id_i]->rho : NULL,
+                    frame_parms,
+                    s,
+                    log2_maxh); // log2_maxh+I0_shift
+#ifdef DEBUG_PHY
+write_output("rxF_comp_i.m","rxF_c_i",&pdcch_vars[eNB_id_i]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+#endif
+pdcch_dual_stream_correlation(frame_parms,
+        s,
+        pdcch_vars[eNB_id]->dl_ch_estimates_ext,
+        pdcch_vars[eNB_id_i]->dl_ch_estimates_ext,
+        pdcch_vars[eNB_id]->dl_ch_rho_ext,
+        log2_maxh);
+}
+
+#endif //MU_RECEIVER
+
+
+if (frame_parms->nb_antennas_rx > 1) {
+#ifdef MU_RECEIVER
+
+    if (is_secondary_ue) {
+        pdcch_detection_mrc_i(frame_parms,
+                pdcch_vars[eNB_id]->rxdataF_comp,
+                pdcch_vars[eNB_id_i]->rxdataF_comp,
+                pdcch_vars[eNB_id]->rho,
+                pdcch_vars[eNB_id]->dl_ch_rho_ext,
+                s);
+#ifdef DEBUG_PHY
+write_output("rxF_comp_d.m","rxF_c_d",&pdcch_vars[eNB_id]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+write_output("rxF_comp_i.m","rxF_c_i",&pdcch_vars[eNB_id_i]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+#endif
+    } else
+#endif //MU_RECEIVER
+        pdcch_detection_mrc(frame_parms,
+                pdcch_vars[eNB_id]->rxdataF_comp,
+                s);
+
+}
+
+if (mimo_mode == SISO)
+    pdcch_siso(frame_parms,pdcch_vars[eNB_id]->rxdataF_comp,s);
+else
+    pdcch_alamouti(frame_parms,pdcch_vars[eNB_id]->rxdataF_comp,s);
+
+
+#ifdef MU_RECEIVER
+
+if (is_secondary_ue) {
+    pdcch_qpsk_qpsk_llr(frame_parms,
+            pdcch_vars[eNB_id]->rxdataF_comp,
+            pdcch_vars[eNB_id_i]->rxdataF_comp,
+            pdcch_vars[eNB_id]->dl_ch_rho_ext,
+            pdcch_vars[eNB_id]->llr16, //subsequent function require 16 bit llr, but output must be 8 bit (actually clipped to 4, because of the Viterbi decoder)
+            pdcch_vars[eNB_id]->llr,
+            s);
+    /*
+        #ifdef DEBUG_PHY
+        if (subframe==5) {
+        write_output("llr8_seq.m","llr8",&pdcch_vars[eNB_id]->llr[s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,4);
+        write_output("llr16_seq.m","llr16",&pdcch_vars[eNB_id]->llr16[s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,4);
+        }
+        #endif*/
+} else {
+#endif //MU_RECEIVER
+    pdcch_llr(frame_parms,
+            pdcch_vars[eNB_id]->rxdataF_comp,
+            (char *)pdcch_vars[eNB_id]->llr,
+            s);
+    /*#ifdef DEBUG_PHY
+        write_output("llr8_seq.m","llr8",&pdcch_vars[eNB_id]->llr[s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,4);
+        #endif*/
+
+#ifdef MU_RECEIVER
+}
+
+#endif //MU_RECEIVER
+
+  }
 
   pdcch_demapping(pdcch_vars[eNB_id]->llr,
                   pdcch_vars[eNB_id]->wbar,
@@ -2810,8 +2952,8 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
         LOG_I(PHY,"[DCI search nPdcch %d - common] Attempting candidate %d Aggregation Level %d DCI length %d at CCE %d/%d (CCEmap %x,CCEmap_cand %x)\n",
                 pdcch_vars[eNB_id]->num_pdcch_symbols,m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask);
       else
-        LOG_I(PHY,"[DCI search nPdcch %d - ue spec] Attempting candidate %d Aggregation Level %d DCI length %d at CCE %d/%d (CCEmap %x,CCEmap_cand %x)\n",
-                pdcch_vars[eNB_id]->num_pdcch_symbols,m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask);
+        LOG_I(PHY,"[DCI search nPdcch %d - ue spec] Attempting candidate %d Aggregation Level %d DCI length %d at CCE %d/%d (CCEmap %x,CCEmap_cand %x) format %d\n",
+                pdcch_vars[eNB_id]->num_pdcch_symbols,m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask,format_c);
 
 #endif
 
@@ -2900,7 +3042,7 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
           }
         }
 
-        LOG_D(PHY,"DCI decoding CRNTI  [format: %d, nCCE[subframe: %d]: %d ], AggregationLevel %d \n",format_c, subframe, pdcch_vars[eNB_id]->nCCE[subframe],L2);
+        //LOG_I(PHY,"DCI decoding CRNTI  [format: %d, nCCE[subframe: %d]: %d ], AggregationLevel %d \n",format_c, subframe, pdcch_vars[eNB_id]->nCCE[subframe],L2);
         //  memcpy(&dci_alloc[*dci_cnt].dci_pdu[0],dci_decoded_output,sizeof_bytes);
 
 
@@ -2924,17 +3066,194 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
         }
 
 #ifdef DEBUG_DCI_DECODING
-        LOG_I(PHY,"[DCI search] Found DCI %d rnti %x Aggregation %d length %d format %s in CCE %d (CCEmap %x)\n",
-              *dci_cnt,crc,1<<L,sizeof_bits,dci_format_strings[dci_alloc[*dci_cnt-1].format],CCEind,*CCEmap);
+        LOG_I(PHY,"[DCI search] Found DCI %d rnti %x Aggregation %d length %d format %s in CCE %d (CCEmap %x) candidate %d / %d \n",
+              *dci_cnt,crc,1<<L,sizeof_bits,dci_format_strings[dci_alloc[*dci_cnt-1].format],CCEind,*CCEmap,m,nb_candidates );
         dump_dci(frame_parms,&dci_alloc[*dci_cnt-1]);
 
 #endif
-
-        //  if (crc==pdcch_vars[eNB_id]->crnti)
-        //    return;
+         return;
       } // rnti match
     }  // CCEmap_cand == 0
+    if ( agregationLevel != 0xFF &&
+        (format_c == format0 && m==0 && si_rnti != SI_RNTI))
+    {
+      //Only valid for OAI : Save some processing time when looking for DCI format0. From the log we see the DCI only on candidate 0.
+      return;
+    }
   } // candidate loop
+}
+
+uint16_t dci_CRNTI_decoding_procedure(PHY_VARS_UE *ue,
+                                DCI_ALLOC_t *dci_alloc,
+                                uint8_t DCIFormat,
+                                uint8_t agregationLevel,
+                                int16_t eNB_id,
+                                uint8_t subframe)
+{
+
+  uint8_t  dci_cnt=0,old_dci_cnt=0;
+  uint32_t CCEmap0=0,CCEmap1=0,CCEmap2=0;
+  LTE_UE_PDCCH **pdcch_vars = ue->pdcch_vars[subframe%RX_NB_TH];
+  LTE_DL_FRAME_PARMS *frame_parms  = &ue->frame_parms;
+  uint8_t mi = get_mi(&ue->frame_parms,subframe);
+  uint16_t ra_rnti=99;
+  uint8_t format0_found=0,format_c_found=0;
+  uint8_t tmode = ue->transmission_mode[eNB_id];
+  uint8_t frame_type = frame_parms->frame_type;
+  uint8_t format0_size_bits=0,format0_size_bytes=0;
+  uint8_t format1_size_bits=0,format1_size_bytes=0;
+  dci_detect_mode_t mode = dci_detect_mode_select(&ue->frame_parms,subframe);
+
+  switch (frame_parms->N_RB_DL) {
+  case 6:
+    if (frame_type == TDD) {
+      format0_size_bits  = sizeof_DCI0_1_5MHz_TDD_1_6_t;
+      format0_size_bytes = sizeof(DCI0_1_5MHz_TDD_1_6_t);
+      format1_size_bits  = sizeof_DCI1_1_5MHz_TDD_t;
+      format1_size_bytes = sizeof(DCI1_1_5MHz_TDD_t);
+
+    } else {
+      format0_size_bits  = sizeof_DCI0_1_5MHz_FDD_t;
+      format0_size_bytes = sizeof(DCI0_1_5MHz_FDD_t);
+      format1_size_bits  = sizeof_DCI1_1_5MHz_FDD_t;
+      format1_size_bytes = sizeof(DCI1_1_5MHz_FDD_t);
+    }
+
+    break;
+
+  case 25:
+  default:
+    if (frame_type == TDD) {
+      format0_size_bits  = sizeof_DCI0_5MHz_TDD_1_6_t;
+      format0_size_bytes = sizeof(DCI0_5MHz_TDD_1_6_t);
+      format1_size_bits  = sizeof_DCI1_5MHz_TDD_t;
+      format1_size_bytes = sizeof(DCI1_5MHz_TDD_t);
+    } else {
+      format0_size_bits  = sizeof_DCI0_5MHz_FDD_t;
+      format0_size_bytes = sizeof(DCI0_5MHz_FDD_t);
+      format1_size_bits  = sizeof_DCI1_5MHz_FDD_t;
+      format1_size_bytes = sizeof(DCI1_5MHz_FDD_t);
+    }
+
+    break;
+
+  case 50:
+    if (frame_type == TDD) {
+      format0_size_bits  = sizeof_DCI0_10MHz_TDD_1_6_t;
+      format0_size_bytes = sizeof(DCI0_10MHz_TDD_1_6_t);
+      format1_size_bits  = sizeof_DCI1_10MHz_TDD_t;
+      format1_size_bytes = sizeof(DCI1_10MHz_TDD_t);
+
+    } else {
+      format0_size_bits  = sizeof_DCI0_10MHz_FDD_t;
+      format0_size_bytes = sizeof(DCI0_10MHz_FDD_t);
+      format1_size_bits  = sizeof_DCI1_10MHz_FDD_t;
+      format1_size_bytes = sizeof(DCI1_10MHz_FDD_t);
+    }
+
+    break;
+
+  case 100:
+    if (frame_type == TDD) {
+      format0_size_bits  = sizeof_DCI0_20MHz_TDD_1_6_t;
+      format0_size_bytes = sizeof(DCI0_20MHz_TDD_1_6_t);
+      format1_size_bits  = sizeof_DCI1_20MHz_TDD_t;
+      format1_size_bytes = sizeof(DCI1_20MHz_TDD_t);
+    } else {
+      format0_size_bits  = sizeof_DCI0_20MHz_FDD_t;
+      format0_size_bytes = sizeof(DCI0_20MHz_FDD_t);
+      format1_size_bits  = sizeof_DCI1_20MHz_FDD_t;
+      format1_size_bytes = sizeof(DCI1_20MHz_FDD_t);
+    }
+
+    break;
+  }
+
+  if (ue->prach_resources[eNB_id])
+    ra_rnti = ue->prach_resources[eNB_id]->ra_RNTI;
+
+  // Now check UE_SPEC format0/1A ue_spec search spaces at aggregation 8
+  dci_decoding_procedure0(pdcch_vars,0,mode,
+                          subframe,
+                          dci_alloc,
+                          eNB_id,
+                          frame_parms,
+                          mi,
+                          ((ue->decode_SIB == 1) ? SI_RNTI : 0),
+                          ra_rnti,
+              P_RNTI,
+              agregationLevel,
+                          format1A,
+                          format1A,
+                          format1A,
+                          format0,
+                          format0_size_bits,
+                          format0_size_bytes,
+                          &dci_cnt,
+                          &format0_found,
+                          &format_c_found,
+                          &CCEmap0,
+                          &CCEmap1,
+                          &CCEmap2);
+
+  if ((CCEmap0==0xffff)||
+      ((format0_found==1)&&(format_c_found==1)))
+    return(dci_cnt);
+
+  if (DCIFormat == 1)
+  {
+      if ((tmode < 3) || (tmode == 7)) {
+          //printf("Crnti decoding frame param agregation %d DCI %d \n",agregationLevel,DCIFormat);
+
+          // Now check UE_SPEC format 1 search spaces at aggregation 1
+
+           //printf("[DCI search] Format 1/1A aggregation 1\n");
+
+          old_dci_cnt=dci_cnt;
+          dci_decoding_procedure0(pdcch_vars,0,mode,subframe,
+                                  dci_alloc,
+                                  eNB_id,
+                                  frame_parms,
+                                  mi,
+                                  ((ue->decode_SIB == 1) ? SI_RNTI : 0),
+                                  ra_rnti,
+                                  P_RNTI,
+                                  0,
+                                  format1A,
+                                  format1A,
+                                  format1A,
+                                  format1,
+                                  format1_size_bits,
+                                  format1_size_bytes,
+                                  &dci_cnt,
+                                  &format0_found,
+                                  &format_c_found,
+                                  &CCEmap0,
+                                  &CCEmap1,
+                                  &CCEmap2);
+
+          if ((CCEmap0==0xffff) ||
+              (format_c_found==1))
+            return(dci_cnt);
+
+          if (dci_cnt>old_dci_cnt)
+            return(dci_cnt);
+
+          //printf("Crnti 1 decoding frame param agregation %d DCI %d \n",agregationLevel,DCIFormat);
+
+      }
+      else
+      {
+          AssertFatal(0,"Other Transmission mode not yet coded\n");
+      }
+  }
+  else
+  {
+     AssertFatal(0,"DCI format %d not yet implemented \n",DCIFormat);
+  }
+
+  return(dci_cnt);
+
 }
 
 uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
@@ -3310,7 +3629,10 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       ((format0_found==1)&&(format_c_found==1)))
     return(dci_cnt);
 
-  //  printf("[DCI search] Format 0 aggregation 4\n");
+  //printf("[DCI search] Format 0 aggregation 1 dci_cnt %d\n",dci_cnt);
+
+  if (dci_cnt == 0)
+  {
   // Now check UE_SPEC format 0 search spaces at aggregation 4
   dci_decoding_procedure0(pdcch_vars,0,mode,
                           subframe,
@@ -3343,7 +3665,11 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       ((format0_found==1)&&(format_c_found==1)))
     return(dci_cnt);
 
-  //  printf("[DCI search] Format 0 aggregation 2\n");
+  //printf("[DCI search] Format 0 aggregation 2 dci_cnt %d\n",dci_cnt);
+  }
+
+  if (dci_cnt == 0)
+  {
   // Now check UE_SPEC format 0 search spaces at aggregation 2
   dci_decoding_procedure0(pdcch_vars,0,mode,
                           subframe,
@@ -3372,7 +3698,11 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       ((format0_found==1)&&(format_c_found==1)))
     return(dci_cnt);
 
-  //  printf("[DCI search] Format 0 aggregation 4\n");
+  //printf("[DCI search] Format 0 aggregation 4 dci_cnt %d\n",dci_cnt);
+  }
+
+  if (dci_cnt == 0)
+  {
   // Now check UE_SPEC format 0 search spaces at aggregation 1
   dci_decoding_procedure0(pdcch_vars,0,mode,
                           subframe,
@@ -3401,9 +3731,9 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       ((format0_found==1)&&(format_c_found==1)))
     return(dci_cnt);
 
+  //printf("[DCI search] Format 0 aggregation 8 dci_cnt %d\n",dci_cnt);
 
-
-
+  }
   // These are for CRNTI based on transmission mode
   if ((tmode < 3) || (tmode == 7)) {
     // Now check UE_SPEC format 1 search spaces at aggregation 1
@@ -3429,6 +3759,7 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
                             &CCEmap0,
                             &CCEmap1,
                             &CCEmap2);
+    //printf("[DCI search] Format 1 aggregation 1 dci_cnt %d\n",dci_cnt);
 
     if ((CCEmap0==0xffff) ||
         (format_c_found==1))
@@ -3460,7 +3791,7 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
                             &CCEmap0,
                             &CCEmap1,
                             &CCEmap2);
-
+    //printf("[DCI search] Format 1 aggregation 2 dci_cnt %d\n",dci_cnt);
 
     if ((CCEmap0==0xffff)||
         (format_c_found==1))
@@ -3492,6 +3823,7 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
                             &CCEmap0,
                             &CCEmap1,
                             &CCEmap2);
+    //printf("[DCI search] Format 1 aggregation 4 dci_cnt %d\n",dci_cnt);
 
     if ((CCEmap0==0xffff)||
         ((format0_found==1)&&(format_c_found==1)))
@@ -3524,6 +3856,7 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
                             &CCEmap0,
                             &CCEmap1,
                             &CCEmap2);
+    //printf("[DCI search] Format 1 aggregation 8 dci_cnt %d\n",dci_cnt);
 
     if ((CCEmap0==0xffff)||
         ((format0_found==1)&&(format_c_found==1)))

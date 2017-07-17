@@ -75,6 +75,9 @@
 
 #define RX_NB_TH_MAX 2
 #define RX_NB_TH 2
+extern uint8_t dciFormat;
+extern uint8_t agregationLevel;
+
 
 //#ifdef SHRLIBDEV
 //extern int rxrescale;
