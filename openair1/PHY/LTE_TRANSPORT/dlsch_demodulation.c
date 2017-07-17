@@ -112,7 +112,9 @@ int rx_pdsch(PHY_VARS_UE *ue,
   int avg_0[2];
   int avg_1[2];
 
+#if UE_TIMING_TRACE
   uint8_t slot = 0;
+#endif
 
   unsigned char aatx,aarx;
 
@@ -251,10 +253,13 @@ int rx_pdsch(PHY_VARS_UE *ue,
     }
   }
 
+#if UE_TIMING_TRACE
   if(symbol > ue->frame_parms.symbols_per_tti>>1)
   {
       slot = 1;
   }
+#endif
+
 #ifdef DEBUG_HARQ
   printf("Demod  dlsch0_harq->pmi_alloc %d\n",  dlsch0_harq->pmi_alloc);
 #endif
