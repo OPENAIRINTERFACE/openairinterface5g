@@ -184,7 +184,7 @@ extern LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs];
 
 double cpuf;
 #include "threads_t.h"
-threads_t threads= {-1,-1,-1};
+threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
 
 //#ifdef XFORMS
 int otg_enabled;

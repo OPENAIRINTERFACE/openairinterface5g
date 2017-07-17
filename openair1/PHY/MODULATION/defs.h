@@ -78,6 +78,17 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
                 unsigned char eNb_id,
                 int no_prefix);
 
+int front_end_fft(PHY_VARS_UE *ue,
+             unsigned char l,
+             unsigned char Ns,
+             int sample_offset,
+             int no_prefix);
+
+int front_end_chanEst(PHY_VARS_UE *ue,
+             unsigned char l,
+             unsigned char Ns,
+            int reset_freq_est);
+
 void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRAME_PARMS *frame_parms);
 
 void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms);

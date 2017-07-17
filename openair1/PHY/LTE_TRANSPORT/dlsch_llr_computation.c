@@ -636,7 +636,6 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
                    uint8_t first_symbol_flag,
                    uint16_t nb_rb,
                    uint16_t pbch_pss_sss_adjust,
-                   int16_t **llr32p,
                    uint8_t beamforming_mode)
 {
 
@@ -645,12 +644,14 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
   int i,len;
   uint8_t symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
 
+  /*
   if (first_symbol_flag==1) {
     llr32 = (uint32_t*)dlsch_llr;
   } else {
     llr32 = (uint32_t*)(*llr32p);
-  }
+  }*/
 
+  llr32 = (uint32_t*)dlsch_llr;
   if (!llr32) {
     msg("dlsch_qpsk_llr: llr is null, symbol %d, llr32=%p\n",symbol, llr32);
     return(-1);
@@ -672,6 +673,13 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
 
   //printf("dlsch_qpsk_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
+  /*LOG_I(PHY,"dlsch_qpsk_llr: [symb %d / FirstSym %d / Length %d]: @LLR Buff %x, @LLR Buff(symb) %x \n",
+             symbol,
+             first_symbol_flag,
+             len,
+             dlsch_llr,
+             llr32);*/
+
   //printf("ll32p=%p , dlsch_llr=%p, symbol=%d, flag=%d \n", llr32, dlsch_llr, symbol, first_symbol_flag);
   for (i=0; i<len; i++) {
     *llr32 = *rxF;
@@ -680,7 +688,7 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     llr32++;
   }
 
-  *llr32p = (int16_t *)llr32;
+  //*llr32p = (int16_t *)llr32;
 
   return(0);
 }
@@ -1040,7 +1048,8 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
                      uint16_t pbch_pss_sss_adjust,
-                     int16_t **llr_save,
+                     //int16_t **llr_save,
+                     uint32_t llr_offset,
                      uint8_t beamforming_mode)
 {
 #if defined(__x86_64__) || defined(__i386__)
@@ -1054,11 +1063,18 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   unsigned char symbol_mod,len_mod4;
   short *llr;
   int16_t *llr2;
+  int8_t *pllr_symbol;
 
+  /*
   if (first_symbol_flag==1)
     llr = dlsch_llr;
   else
     llr = *llr_save;
+  */
+  llr = dlsch_llr;
+
+  pllr_symbol = (int8_t*)dlsch_llr;
+  pllr_symbol += llr_offset;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
@@ -1081,6 +1097,15 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   } else {
     len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
+
+//  printf("dlsch_64qam_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
+
+/*  LOG_I(PHY,"dlsch_64qam_llr [symb %d / FirstSym %d / Length %d]: @LLR Buff %x \n",
+             symbol,
+             first_symbol_flag,
+             len,
+             dlsch_llr,
+             pllr_symbol);*/
 
   llr2 = llr;
   llr += (len*6);
@@ -1176,7 +1201,6 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   }
 
-  *llr_save = llr;
 #if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
@@ -8789,7 +8813,8 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                           uint8_t first_symbol_flag,
                           uint16_t nb_rb,
                           uint16_t pbch_pss_sss_adjust,
-                          int16_t **llr16p)
+                          //int16_t **llr16p,
+                          uint32_t llr_offset)
 {
 
   int16_t *rxF      = (int16_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
@@ -8798,16 +8823,18 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   int16_t *ch_mag_i = (int16_t*)&dl_ch_mag_i[0][(symbol*frame_parms->N_RB_DL*12)];
   int16_t *rho      = (int16_t*)&rho_i[0][(symbol*frame_parms->N_RB_DL*12)];
   int16_t *llr16;
+  int8_t  *pllr_symbol; // pointer where llrs should filled for this ofdm symbol
   int len;
   uint8_t symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
 
   //first symbol has different structure due to more pilots
-  if (first_symbol_flag == 1) {
+  /*if (first_symbol_flag == 1) {
     llr16 = (int16_t*)dlsch_llr;
   } else {
     llr16 = (int16_t*)(*llr16p);
-  }
+  }*/
 
+  llr16 = (int16_t*)dlsch_llr;
   if (!llr16) {
     msg("dlsch_64qam_64qam_llr: llr is null, symbol %d\n",symbol);
     return(-1);
@@ -8825,6 +8852,18 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     // symbol has no pilots
     len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
+
+  pllr_symbol = (int8_t*)dlsch_llr;
+  pllr_symbol += llr_offset;
+  //printf("dlsch_64qam_64qam_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
+  /*LOG_I(PHY,"dlsch_64qam_64qam_llr [symb %d / FirstSym %d / Length %d / LLR Offset %d]: @LLR Buff %x, @LLR Buff(symb) %x, , @Compute LLR Buff(symb) %x  \n",
+             symbol,
+             first_symbol_flag,
+             len,
+             llr_offset,
+             (int16_t*)dlsch_llr,
+             llr16,
+             pllr_symbol);*/
 
 #ifdef __AVX2__
 
@@ -8859,6 +8898,7 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                    (int32_t *) rho_256i,
                    len);
 #endif
+  
   free16(rxF_256i, sizeof(rxF_256i));
   free16(rxF_i_256i, sizeof(rxF_i_256i));
   free16(ch_mag_256i, sizeof(ch_mag_256i));
@@ -8876,6 +8916,7 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 
   llr16 += (6*len);
-  *llr16p = (short *)llr16;
+  //*llr16p = (short *)llr16;
+
   return(0);
 }

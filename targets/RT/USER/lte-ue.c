@@ -476,15 +476,6 @@ static void *UE_thread_synch(void *arg) {
     return &UE_thread_synch_retval;
 }
 
-
-/* this structure is used to pass both UE phy vars and
- * proc to the function UE_thread_rxn_txnp4
- */
-struct rx_tx_thread_data {
-  PHY_VARS_UE    *UE;
-  UE_rxtx_proc_t *proc;
-};
-
 /*!
  * \brief This is the UE thread for RX subframe n and TX subframe n+4.
  * This thread performs the phy_procedures_UE_RX() on every received slot.
@@ -507,12 +498,13 @@ static void *UE_thread_rxn_txnp4(void *arg) {
     sprintf(threadname,"UE_%d_proc_%d", UE->Mod_id, proc->sub_frame_start);
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
+
     if ( (proc->sub_frame_start+1)%RX_NB_TH == 0 && threads.one != -1 )
         CPU_SET(threads.one, &cpuset);
     if ( (proc->sub_frame_start+1)%RX_NB_TH == 1 && threads.two != -1 )
         CPU_SET(threads.two, &cpuset);
     if ( (proc->sub_frame_start+1)%RX_NB_TH == 2 && threads.three != -1 )
-            CPU_SET(threads.three, &cpuset);
+        CPU_SET(threads.three, &cpuset);
             //CPU_SET(threads.three, &cpuset);
     init_thread(900000,1000000 , FIFO_PRIORITY-1, &cpuset,
                 threadname);
@@ -558,7 +550,11 @@ static void *UE_thread_rxn_txnp4(void *arg) {
                        (sf_type==SF_UL? "SF_UL" :
                         (sf_type==SF_S ? "SF_S"  : "UNKNOWN_SF_TYPE"))));
             }
+#ifdef UE_SLOT_PARALLELISATION
+            phy_procedures_slot_parallelization_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
+#else
             phy_procedures_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
+#endif
         }
 
 #if UE_TIMING_TRACE
@@ -871,6 +867,10 @@ void *UE_thread(void *arg) {
  * - UE_thread_rxtx0
  * - UE_thread_rxtx1
  * - UE_thread_synch
+ * - UE_thread_fep_slot0
+ * - UE_thread_fep_slot1
+ * - UE_thread_dlsch_proc_slot0
+ * - UE_thread_dlsch_proc_slot1
  * and the locking between them.
  */
 void init_UE_threads(PHY_VARS_UE *UE) {
@@ -896,9 +896,19 @@ void init_UE_threads(PHY_VARS_UE *UE) {
         UE->proc.proc_rxtx[i].sub_frame_step=nb_threads;
         printf("Init_UE_threads rtd %d proc %d nb_threads %d i %d\n",rtd->proc->sub_frame_start, UE->proc.proc_rxtx[i].sub_frame_start,nb_threads, i);
         pthread_create(&UE->proc.proc_rxtx[i].pthread_rxtx, NULL, UE_thread_rxn_txnp4, rtd);
+
+#ifdef UE_SLOT_PARALLELISATION
+        //pthread_mutex_init(&UE->proc.proc_rxtx[i].mutex_slot0_dl_processing,NULL);
+        //pthread_cond_init(&UE->proc.proc_rxtx[i].cond_slot0_dl_processing,NULL);
+        //pthread_create(&UE->proc.proc_rxtx[i].pthread_slot0_dl_processing,NULL,UE_thread_slot0_dl_processing, rtd);
+
+        pthread_mutex_init(&UE->proc.proc_rxtx[i].mutex_slot1_dl_processing,NULL);
+        pthread_cond_init(&UE->proc.proc_rxtx[i].cond_slot1_dl_processing,NULL);
+        pthread_create(&UE->proc.proc_rxtx[i].pthread_slot1_dl_processing,NULL,UE_thread_slot1_dl_processing, rtd);
+#endif
+
     }
     pthread_create(&UE->proc.pthread_synch,NULL,UE_thread_synch,(void*)UE);
-
 }
 
 
