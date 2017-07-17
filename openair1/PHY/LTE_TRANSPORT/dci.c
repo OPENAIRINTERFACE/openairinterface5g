@@ -3071,10 +3071,7 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
         dump_dci(frame_parms,&dci_alloc[*dci_cnt-1]);
 
 #endif
-            if(agregationLevel != 0xFF)
-            {
-               return;
-            }
+         return;
       } // rnti match
     }  // CCEmap_cand == 0
     if ( agregationLevel != 0xFF &&
@@ -3632,7 +3629,10 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       ((format0_found==1)&&(format_c_found==1)))
     return(dci_cnt);
 
-  //  printf("[DCI search] Format 0 aggregation 4\n");
+  //printf("[DCI search] Format 0 aggregation 1 dci_cnt %d\n",dci_cnt);
+
+  if (dci_cnt == 0)
+  {
   // Now check UE_SPEC format 0 search spaces at aggregation 4
   dci_decoding_procedure0(pdcch_vars,0,mode,
                           subframe,
@@ -3665,7 +3665,11 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       ((format0_found==1)&&(format_c_found==1)))
     return(dci_cnt);
 
-  //  printf("[DCI search] Format 0 aggregation 2\n");
+  //printf("[DCI search] Format 0 aggregation 2 dci_cnt %d\n",dci_cnt);
+  }
+
+  if (dci_cnt == 0)
+  {
   // Now check UE_SPEC format 0 search spaces at aggregation 2
   dci_decoding_procedure0(pdcch_vars,0,mode,
                           subframe,
@@ -3694,7 +3698,11 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       ((format0_found==1)&&(format_c_found==1)))
     return(dci_cnt);
 
-  //  printf("[DCI search] Format 0 aggregation 4\n");
+  //printf("[DCI search] Format 0 aggregation 4 dci_cnt %d\n",dci_cnt);
+  }
+
+  if (dci_cnt == 0)
+  {
   // Now check UE_SPEC format 0 search spaces at aggregation 1
   dci_decoding_procedure0(pdcch_vars,0,mode,
                           subframe,
@@ -3723,9 +3731,9 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       ((format0_found==1)&&(format_c_found==1)))
     return(dci_cnt);
 
+  //printf("[DCI search] Format 0 aggregation 8 dci_cnt %d\n",dci_cnt);
 
-
-
+  }
   // These are for CRNTI based on transmission mode
   if ((tmode < 3) || (tmode == 7)) {
     // Now check UE_SPEC format 1 search spaces at aggregation 1
@@ -3751,6 +3759,7 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
                             &CCEmap0,
                             &CCEmap1,
                             &CCEmap2);
+    //printf("[DCI search] Format 1 aggregation 1 dci_cnt %d\n",dci_cnt);
 
     if ((CCEmap0==0xffff) ||
         (format_c_found==1))
@@ -3782,7 +3791,7 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
                             &CCEmap0,
                             &CCEmap1,
                             &CCEmap2);
-
+    //printf("[DCI search] Format 1 aggregation 2 dci_cnt %d\n",dci_cnt);
 
     if ((CCEmap0==0xffff)||
         (format_c_found==1))
@@ -3814,6 +3823,7 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
                             &CCEmap0,
                             &CCEmap1,
                             &CCEmap2);
+    //printf("[DCI search] Format 1 aggregation 4 dci_cnt %d\n",dci_cnt);
 
     if ((CCEmap0==0xffff)||
         ((format0_found==1)&&(format_c_found==1)))
@@ -3846,6 +3856,7 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
                             &CCEmap0,
                             &CCEmap1,
                             &CCEmap2);
+    //printf("[DCI search] Format 1 aggregation 8 dci_cnt %d\n",dci_cnt);
 
     if ((CCEmap0==0xffff)||
         ((format0_found==1)&&(format_c_found==1)))
