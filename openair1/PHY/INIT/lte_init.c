@@ -97,14 +97,21 @@ void phy_config_request(PHY_Config_t *phy_config) {
   fp->nushift                            = fp->Nid_cell%6;
   fp->eutra_band                         = eutra_band;
   fp->Ncp                                = Ncp;
+  fp->Ncp_UL                             = Ncp;
   fp->nb_antenna_ports_eNB               = p_eNB;
+
+  fp->threequarter_fs                    = 0;
 
   AssertFatal(cfg->phich_config.phich_resource.value<4, "Illegal phich_Resource\n");
 
   fp->phich_config_common.phich_resource = phich_resource_table[cfg->phich_config.phich_resource.value];
   fp->phich_config_common.phich_duration = cfg->phich_config.phich_duration.value;
   fp->dl_CarrierFreq                     = from_earfcn(eutra_band,dl_CarrierFreq);
-  fp->ul_CarrierFreq                     = fp->dl_CarrierFreq - get_uldl_offset(eutra_band);
+  fp->ul_CarrierFreq                     = fp->dl_CarrierFreq - (get_uldl_offset(eutra_band)*100000);
+
+  fp->tdd_config                         = 0;
+  fp->tdd_config_S                       = 0;
+
   if (fp->dl_CarrierFreq==fp->ul_CarrierFreq)
     fp->frame_type = TDD;
   else
@@ -177,16 +184,20 @@ void phy_config_request(PHY_Config_t *phy_config) {
 
   init_ul_hopping(fp);
 
-  fp->soundingrs_ul_config_common.enabled_flag                        = 1;
+  fp->soundingrs_ul_config_common.enabled_flag                        = 0;// 1; Don't know how to turn this off in NFAPI
   fp->soundingrs_ul_config_common.srs_BandwidthConfig                 = cfg->srs_config.bandwidth_configuration.value;
   fp->soundingrs_ul_config_common.srs_SubframeConfig                  = cfg->srs_config.srs_subframe_configuration.value;
   fp->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission = cfg->srs_config.srs_acknack_srs_simultaneous_transmission.value;
   fp->soundingrs_ul_config_common.srs_MaxUpPts                        = cfg->srs_config.max_up_pts.value;
 
+  fp->num_MBSFN_config = 0;
+
   init_ncs_cell(fp,RC.eNB[Mod_id][CC_id]->ncs_cell);
 
-  init_ul_hopping(fp);
 
+  init_ul_hopping(fp);
+  RC.eNB[Mod_id][CC_id]->configured                                   = 1;
+  LOG_I(PHY,"eNB %d/%d configured\n",Mod_id,CC_id);
 }
 
 void phy_config_sib1_ue(uint8_t Mod_id,int CC_id,
@@ -1651,7 +1662,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   lte_gold(fp,eNB->lte_gold_table,fp->Nid_cell);
   generate_pcfich_reg_mapping(fp);
   generate_phich_reg_mapping(fp);
-  
+
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
     eNB->first_run_timing_advance[UE_id] =
       1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
@@ -1668,6 +1679,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 
   if (abstraction_flag==0) {
     
+    common_vars->rxdata  = (int32_t **)NULL;
     common_vars->txdataF = (int32_t **)malloc16(NB_ANTENNA_PORTS_ENB*sizeof(int32_t*));
     common_vars->rxdataF = (int32_t **)malloc16(64*sizeof(int32_t*));
 
@@ -1683,17 +1695,17 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
         
 
 
-      // Channel estimates for SRS
-      for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-	
-	srs_vars[UE_id].srs_ch_estimates      = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	srs_vars[UE_id].srs_ch_estimates_time = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
-	
-	for (i=0; i<fp->nb_antennas_rx; i++) {
-	  srs_vars[UE_id].srs_ch_estimates[i]      = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size );
-	  srs_vars[UE_id].srs_ch_estimates_time[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2 );
-	}
-      } //UE_id
+    // Channel estimates for SRS
+    for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+      
+      srs_vars[UE_id].srs_ch_estimates      = (int32_t**)malloc16( 64*sizeof(int32_t*) );
+      srs_vars[UE_id].srs_ch_estimates_time = (int32_t**)malloc16( 64*sizeof(int32_t*) );
+      
+      for (i=0; i<64; i++) {
+	srs_vars[UE_id].srs_ch_estimates[i]      = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size );
+	srs_vars[UE_id].srs_ch_estimates_time[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2 );
+      }
+    } //UE_id
   } // abstraction_flag = 0
   else { //UPLINK abstraction = 1
     eNB->sinr_dB = (double*) malloc16_clear( fp->N_RB_DL*12*sizeof(double) );
@@ -1732,28 +1744,28 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
     pusch_vars[UE_id] = (LTE_eNB_PUSCH*)malloc16_clear( NUMBER_OF_UE_MAX*sizeof(LTE_eNB_PUSCH) );
     
     if (abstraction_flag==0) {
-      for (eNB_id=0; eNB_id<3; eNB_id++) {
-	
-	pusch_vars[UE_id]->rxdataF_ext      = (int32_t**)malloc16( 2*sizeof(int32_t*) );
-	pusch_vars[UE_id]->rxdataF_ext2     = (int32_t**)malloc16( 2*sizeof(int32_t*) );
-	pusch_vars[UE_id]->drs_ch_estimates = (int32_t**)malloc16( 2*sizeof(int32_t*) );
-	pusch_vars[UE_id]->drs_ch_estimates_time = (int32_t**)malloc16( 2*sizeof(int32_t*) );
-	pusch_vars[UE_id]->rxdataF_comp     = (int32_t**)malloc16( 2*sizeof(int32_t*) );
-	pusch_vars[UE_id]->ul_ch_mag  = (int32_t**)malloc16( 2*sizeof(int32_t*) );
-	pusch_vars[UE_id]->ul_ch_magb = (int32_t**)malloc16( 2*sizeof(int32_t*) );
-	
-	for (i=0; i<2; i++) {
-	  // RK 2 times because of output format of FFT!
-	  // FIXME We should get rid of this
-	  pusch_vars[UE_id]->rxdataF_ext[i]      = (int32_t*)malloc16_clear( 2*sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
-	  pusch_vars[UE_id]->rxdataF_ext2[i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
-	  pusch_vars[UE_id]->drs_ch_estimates[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
-	  pusch_vars[UE_id]->drs_ch_estimates_time[i] = (int32_t*)malloc16_clear( 2*2*sizeof(int32_t)*fp->ofdm_symbol_size );
-	  pusch_vars[UE_id]->rxdataF_comp[i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
-	  pusch_vars[UE_id]->ul_ch_mag[i]  = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
-	  pusch_vars[UE_id]->ul_ch_magb[i] = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
-	}
-      } //eNB_id
+      pusch_vars[UE_id]->rxdataF_ext      = (int32_t**)malloc16( 2*sizeof(int32_t*) );
+      pusch_vars[UE_id]->rxdataF_ext2     = (int32_t**)malloc16( 2*sizeof(int32_t*) );
+      pusch_vars[UE_id]->drs_ch_estimates = (int32_t**)malloc16( 2*sizeof(int32_t*) );
+      pusch_vars[UE_id]->drs_ch_estimates_time = (int32_t**)malloc16( 2*sizeof(int32_t*) );
+      pusch_vars[UE_id]->rxdataF_comp     = (int32_t**)malloc16( 2*sizeof(int32_t*) );
+      pusch_vars[UE_id]->ul_ch_mag  = (int32_t**)malloc16( 2*sizeof(int32_t*) );
+      pusch_vars[UE_id]->ul_ch_magb = (int32_t**)malloc16( 2*sizeof(int32_t*) );
+
+      AssertFatal(fp->ofdm_symbol_size > 127, "fp->ofdm_symbol_size %d<128\n",fp->ofdm_symbol_size);
+      AssertFatal(fp->symbols_per_tti > 11, "fp->symbols_per_tti %d < 12\n",fp->symbols_per_tti);
+      AssertFatal(fp->N_RB_UL > 5, "fp->N_RB_UL %d < 6\n",fp->N_RB_UL);
+      for (i=0; i<2; i++) {
+	// RK 2 times because of output format of FFT!
+	// FIXME We should get rid of this
+	pusch_vars[UE_id]->rxdataF_ext[i]      = (int32_t*)malloc16_clear( 2*sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
+	pusch_vars[UE_id]->rxdataF_ext2[i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
+	pusch_vars[UE_id]->drs_ch_estimates[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
+	pusch_vars[UE_id]->drs_ch_estimates_time[i] = (int32_t*)malloc16_clear( 2*2*sizeof(int32_t)*fp->ofdm_symbol_size );
+	pusch_vars[UE_id]->rxdataF_comp[i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
+	pusch_vars[UE_id]->ul_ch_mag[i]  = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
+	pusch_vars[UE_id]->ul_ch_magb[i] = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
+      }
       
       pusch_vars[UE_id]->llr = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
     } // abstraction_flag

@@ -189,11 +189,12 @@ void assign_rbs_required (module_id_t Mod_id,
     if (UE_list->active[UE_id] != TRUE) continue;
 
     pCCid = UE_PCCID(Mod_id,UE_id);
-    eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
+
     //update CQI information across component carriers
     for (n=0; n<UE_list->numactiveCCs[UE_id]; n++) {
 
       CC_id = UE_list->ordered_CCids[n][UE_id];
+      eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
 
       eNB_UE_stats->dlsch_mcs1=cqi_to_mcs[eNB_UE_stats->dl_cqi];
 
@@ -886,7 +887,7 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
 #endif
 
 
-
+  LOG_I(MAC,"Running preprocessor for UE %d (%x)\n",UE_id,rnti);
   // initialize harq_pid and round
 
   /*
@@ -1171,7 +1172,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
     for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
       // This is the actual CC_id in the list
       CC_id = UE_list->ordered_ULCCids[n][UE_id];
-      harq_pid = get_UL_harq(frameP,subframeP);
+      harq_pid = subframe2harqpid(&RC.mac[module_idP]->common_channels[CC_id],frameP,subframeP);
 
       //      mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL);
 

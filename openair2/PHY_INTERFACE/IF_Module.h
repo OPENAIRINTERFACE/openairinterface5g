@@ -75,22 +75,22 @@ typedef struct{
   sub_frame_t subframe;
 
   /// harq indication list
-  nfapi_harq_indication_body_t *harq_ind[MAX_NUM_HARQ_IND];
+  nfapi_harq_indication_body_t harq_ind;
 
   /// crc indication list
-  nfapi_crc_indication_body_t *crc_ind[MAX_NUM_CRC_IND];
+  nfapi_crc_indication_body_t crc_ind;
 
   /// SR indication list
-  nfapi_sr_indication_body_t sr_ind[MAX_NUM_SR_IND];
+  nfapi_sr_indication_body_t sr_ind;
 
   /// CQI indication list
-  nfapi_cqi_indication_body_t cqi_ind[MAX_NUM_CQI_IND];
+  nfapi_cqi_indication_body_t cqi_ind;
 
   /// RACH indication list
-  nfapi_rach_indication_body_t rach_ind[MAX_NUM_RACH_IND];
+  nfapi_rach_indication_body_t rach_ind;
 
   /// SRS indication list
-  nfapi_srs_indication_body_t srs_ind[MAX_NUM_SRS_IND];
+  nfapi_srs_indication_body_t srs_ind;
 
   /// RX indication
   nfapi_rx_indication_body_t rx_ind;
@@ -110,13 +110,13 @@ typedef struct{
   /// subframe
   sub_frame_t subframe;
   /// nFAPI DL Config Request
-  nfapi_dl_config_request_body_t *DL_req;
+  nfapi_dl_config_request_t *DL_req;
   /// nFAPI UL Config Request
-  nfapi_ul_config_request_body_t *UL_req;
+  nfapi_ul_config_request_t *UL_req;
   /// nFAPI HI_DCI Request
-  nfapi_hi_dci0_request_body_t *HI_DCI0_req;
+  nfapi_hi_dci0_request_t *HI_DCI0_req;
   /// Pointers to DL SDUs
-  nfapi_tx_request_body_t *TX_req;
+  nfapi_tx_request_t *TX_req;
 }Sched_Rsp_t;
 
 typedef struct {

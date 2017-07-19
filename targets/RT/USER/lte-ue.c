@@ -144,7 +144,7 @@ PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
   int i,j;
   PHY_VARS_UE* ue;
 
-  if (frame_parms!=(PHY_VARS_UE *)NULL) { // if we want to give initial frame parms, allocate the PHY_VARS_UE structure and put them in
+  if (frame_parms!=(LTE_DL_FRAME_PARMS *)NULL) { // if we want to give initial frame parms, allocate the PHY_VARS_UE structure and put them in
     ue = (PHY_VARS_UE *)malloc(sizeof(PHY_VARS_UE));
     memset(ue,0,sizeof(PHY_VARS_UE));
     memcpy(&(ue->frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));

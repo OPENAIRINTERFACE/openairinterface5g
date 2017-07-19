@@ -97,6 +97,310 @@ uint16_t mac_computeRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs) {
   return(RIV);
 }
 
+void get_Msg3alloc(COMMON_channels_t *cc,
+		   unsigned char current_subframe,
+		   unsigned int current_frame,
+		   unsigned int *frame,
+		   unsigned char *subframe)
+{
+
+  // Fill in other TDD Configuration!!!!
+
+  if (cc->tdd_Config==NULL) { // FDD
+    *subframe = current_subframe+6;
+
+    if (*subframe>9) {
+      *subframe = *subframe-10;
+      *frame = (current_frame+1) & 1023;
+    } else {
+      *frame=current_frame;
+    }
+  } else { // TDD
+    if (cc->tdd_Config->subframeAssignment == 1) {
+      switch (current_subframe) {
+
+      case 0:
+        *subframe = 7;
+        *frame = current_frame;
+        break;
+
+      case 4:
+        *subframe = 2;
+        *frame = (current_frame+1) & 1023;
+        break;
+
+      case 5:
+        *subframe = 2;
+        *frame = (current_frame+1) & 1023;
+        break;
+
+      case 9:
+        *subframe = 7;
+        *frame = (current_frame+1) & 1023;
+        break;
+      }
+    } else if (cc->tdd_Config->subframeAssignment == 3) {
+      switch (current_subframe) {
+
+      case 0:
+      case 5:
+      case 6:
+        *subframe = 2;
+        *frame = (current_frame+1) & 1023;
+        break;
+
+      case 7:
+        *subframe = 3;
+        *frame = (current_frame+1) & 1023;
+        break;
+
+      case 8:
+        *subframe = 4;
+        *frame = (current_frame+1) & 1023;
+        break;
+
+      case 9:
+        *subframe = 2;
+        *frame = (current_frame+2) & 1023;
+        break;
+      }
+    } else if (cc->tdd_Config->subframeAssignment == 4) {
+        switch (current_subframe) {
+
+        case 0:
+        case 4:
+        case 5:
+        case 6:
+          *subframe = 2;
+          *frame = (current_frame+1) & 1023;
+          break;
+
+        case 7:
+          *subframe = 3;
+          *frame = (current_frame+1) & 1023;
+          break;
+
+        case 8:
+        case 9:
+          *subframe = 2;
+          *frame = (current_frame+2) & 1023;
+          break;
+        }
+      } else if (cc->tdd_Config->subframeAssignment == 5) {
+          switch (current_subframe) {
+
+          case 0:
+          case 4:
+          case 5:
+          case 6:
+            *subframe = 2;
+            *frame = (current_frame+1) & 1023;
+            break;
+
+          case 7:
+          case 8:
+          case 9:
+            *subframe = 2;
+            *frame = (current_frame+2) & 1023;
+            break;
+          }
+        }
+  }
+}
+
+void get_Msg3allocret(COMMON_channels_t *cc,
+		      unsigned char current_subframe,
+		      unsigned int current_frame,
+		      unsigned int *frame,
+		      unsigned char *subframe)
+{
+  if (cc->tdd_Config == NULL) { //FDD
+    /* always retransmit in n+8 */
+    *subframe = current_subframe + 8;
+
+    if (*subframe > 9) {
+      *subframe = *subframe - 10;
+      *frame = (current_frame + 1) & 1023;
+    } else {
+      *frame = current_frame;
+    }
+  } else {
+    if (cc->tdd_Config->subframeAssignment == 1) {
+      // original PUSCH in 2, PHICH in 6 (S), ret in 2
+      // original PUSCH in 3, PHICH in 9, ret in 3
+      // original PUSCH in 7, PHICH in 1 (S), ret in 7
+      // original PUSCH in 8, PHICH in 4, ret in 8
+      *frame = (current_frame+1) & 1023;
+    } else if (cc->tdd_Config->subframeAssignment == 3) {
+      // original PUSCH in 2, PHICH in 8, ret in 2 next frame
+      // original PUSCH in 3, PHICH in 9, ret in 3 next frame
+      // original PUSCH in 4, PHICH in 0, ret in 4 next frame
+      *frame=(current_frame+1) & 1023;
+    } else if (cc->tdd_Config->subframeAssignment == 4) {
+        // original PUSCH in 2, PHICH in 8, ret in 2 next frame
+        // original PUSCH in 3, PHICH in 9, ret in 3 next frame
+        *frame=(current_frame+1) & 1023;
+    } else if (cc->tdd_Config->subframeAssignment == 5) {
+        // original PUSCH in 2, PHICH in 8, ret in 2 next frame
+        *frame=(current_frame+1) & 1023;
+    }
+  }
+}
+
+uint8_t subframe2harqpid(COMMON_channels_t *cc,uint32_t frame,uint8_t subframe)
+{
+  uint8_t ret = 255;
+
+  AssertFatal(cc!=NULL,"cc is null\n");
+
+  if (cc->tdd_Config == NULL) { // FDD
+    ret = (((frame<<1)+subframe)&7);
+  } else {
+
+    switch (cc->tdd_Config->subframeAssignment) {
+
+    case 1:
+      if ((subframe==2) ||
+          (subframe==3) ||
+          (subframe==7) ||
+          (subframe==8))
+        switch (subframe) {
+        case 2:
+        case 3:
+          ret = (subframe-2);
+          break;
+
+        case 7:
+        case 8:
+          ret = (subframe-5);
+          break;
+
+        default:
+	  AssertFatal(1==0,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,(int)cc->tdd_Config->subframeAssignment);
+          break;
+        }
+
+      break;
+
+    case 2:
+      AssertFatal((subframe==2) || (subframe==7),
+		  "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,(int)cc->tdd_Config->subframeAssignment);
+       
+      ret = (subframe/7);
+      break;
+
+    case 3:
+      AssertFatal((subframe>1) && (subframe<5), 
+		  "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,(int)cc->tdd_Config->subframeAssignment);
+      ret = (subframe-2);
+      break;
+
+    case 4:
+      AssertFatal((subframe>1) && (subframe<4),
+		  "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,(int)cc->tdd_Config->subframeAssignment);
+      ret = (subframe-2);
+      break;
+
+    case 5:
+      AssertFatal(subframe==2,
+		  "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,(int)cc->tdd_Config->subframeAssignment);
+      ret = (subframe-2);
+      break;
+
+    default:
+      AssertFatal(1==0,"subframe2_harq_pid, Unsupported TDD mode %d\n",(int)cc->tdd_Config->subframeAssignment);
+    }
+  }
+  return ret;
+}
+
+uint8_t get_Msg3harqpid(COMMON_channels_t *cc,
+			uint32_t frame,
+			unsigned char current_subframe)
+{
+
+  uint8_t ul_subframe=0;
+  uint32_t ul_frame=0;
+
+  if (cc->tdd_Config == NULL) { // FDD
+    ul_subframe = (current_subframe>3) ? (current_subframe-4) : (current_subframe+6);
+    ul_frame    = (current_subframe>3) ? ((frame+1)&1023) : frame;
+  } else {
+    switch (cc->tdd_Config->subframeAssignment) {
+    case 1:
+      switch (current_subframe) {
+
+      case 9:
+      case 0:
+        ul_subframe = 7;
+        break;
+
+      case 5:
+      case 7:
+        ul_subframe = 2;
+        break;
+
+      }
+
+      break;
+
+    case 3:
+      switch (current_subframe) {
+
+      case 0:
+      case 5:
+      case 6:
+        ul_subframe = 2;
+        break;
+
+      case 7:
+        ul_subframe = 3;
+        break;
+
+      case 8:
+        ul_subframe = 4;
+        break;
+
+      case 9:
+        ul_subframe = 2;
+        break;
+      }
+
+      break;
+
+    case 4:
+      switch (current_subframe) {
+
+      case 0:
+      case 5:
+      case 6:
+      case 8:
+      case 9:
+        ul_subframe = 2;
+        break;
+
+      case 7:
+        ul_subframe = 3;
+        break;
+      }
+
+      break;
+
+    case 5:
+      ul_subframe =2;
+      break;
+
+    default:
+      LOG_E(PHY,"get_Msg3_harq_pid: Unsupported TDD configuration %d\n",(int)cc->tdd_Config->subframeAssignment);
+      AssertFatal(1==0,"get_Msg3_harq_pid: Unsupported TDD configuration");
+      break;
+    }
+  }
+
+  return(subframe2harqpid(cc,ul_frame,ul_subframe));
+
+}
+
 //------------------------------------------------------------------------------
 void init_ue_sched_info(void)
 //------------------------------------------------------------------------------
@@ -145,6 +449,24 @@ int find_UE_id(module_id_t mod_idP, rnti_t rntiP)
     }
   }
 
+  return(-1);
+}
+
+//------------------------------------------------------------------------------
+int find_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP)
+//------------------------------------------------------------------------------
+{
+  int RA_id;
+  AssertFatal(RC.mac[mod_idP],"RC.mac[%d] is null\n",mod_idP);
+  
+  RA_TEMPLATE *RA_template = (RA_TEMPLATE *)&RC.mac[mod_idP]->common_channels[CC_idP].RA_template[0];
+
+ 
+
+  for (RA_id = 0; RA_id < NB_RA_PROC_MAX; RA_id++)
+    if (RA_template[RA_id].RA_active==TRUE && 
+        RA_template[RA_id].wait_ack_Msg4 == 0 &&
+	RA_template[RA_id].rnti == rntiP) return(RA_id);
   return(-1);
 }
 
@@ -274,7 +596,6 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP)
 
   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
     if (UE_list->active[i] == TRUE) continue;
-printf("MAC: new UE id %d rnti %x\n", i, rntiP);
     UE_id = i;
     UE_list->UE_template[cc_idP][UE_id].rnti       = rntiP;
     UE_list->UE_template[cc_idP][UE_id].configured = FALSE;
@@ -286,6 +607,7 @@ printf("MAC: new UE id %d rnti %x\n", i, rntiP);
     UE_list->num_UEs++;
     UE_list->active[UE_id]                         = TRUE;
     memset((void*)&UE_list->UE_sched_ctrl[UE_id],0,sizeof(UE_sched_ctrl));
+    memset((void*)&UE_list->eNB_UE_stats[cc_idP][UE_id],0,sizeof(eNB_UE_STATS));
 
     for (j=0; j<8; j++) {
       UE_list->UE_template[cc_idP][UE_id].oldNDI[j]    = (j==0)?1:0;   // 1 because first transmission is with format1A (Msg4) for harq_pid 0
@@ -299,7 +621,7 @@ printf("MAC: new UE id %d rnti %x\n", i, rntiP);
     return(UE_id);
   }
 
-printf("MAC: cannot add new UE for rnti %x\n", rntiP);
+  printf("MAC: cannot add new UE for rnti %x\n", rntiP);
   LOG_E(MAC,"error in add_new_ue(), could not find space in UE_list, Dumping UE list\n");
   dump_ue_list(UE_list,0);
   return(-1);
@@ -681,24 +1003,29 @@ uint8_t get_tmode(module_id_t module_idP,int CC_idP,int UE_idP) {
 
   struct PhysicalConfigDedicated  *physicalConfigDedicated = eNB->UE_list.physicalConfigDedicated[CC_idP][UE_idP];
 
-  AssertFatal(physicalConfigDedicated->antennaInfo!=NULL,
-	      "antennaInfo is null for CCId %d, UEid %d\n",CC_idP,UE_idP);
-
-  AssertFatal(physicalConfigDedicated->antennaInfo->present != PhysicalConfigDedicated__antennaInfo_PR_NOTHING, 
-	      "antennaInfo (mod_id %d, CC_id %d) is set to NOTHING\n",module_idP,CC_idP);
-
-  if (physicalConfigDedicated->antennaInfo->present == PhysicalConfigDedicated__antennaInfo_PR_explicitValue) {
-    return(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode);
-  }
-  else if (physicalConfigDedicated->antennaInfo->present == PhysicalConfigDedicated__antennaInfo_PR_defaultValue) {
+  if (physicalConfigDedicated == NULL ) { // RRCConnectionSetup not received by UE yet
     AssertFatal(cc->p_eNB<=2,"p_eNB is %d, should be <2\n",cc->p_eNB);
     return(cc->p_eNB);
   }
-  else AssertFatal(1==0,"Shouldn't be here\n");
-
+  else {
+    AssertFatal(physicalConfigDedicated->antennaInfo!=NULL,
+		"antennaInfo is null for CCId %d, UEid %d\n",CC_idP,UE_idP);
+    
+    AssertFatal(physicalConfigDedicated->antennaInfo->present != PhysicalConfigDedicated__antennaInfo_PR_NOTHING, 
+		"antennaInfo (mod_id %d, CC_id %d) is set to NOTHING\n",module_idP,CC_idP);
+    
+    if (physicalConfigDedicated->antennaInfo->present == PhysicalConfigDedicated__antennaInfo_PR_explicitValue) {
+      return(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode);
+    }
+    else if (physicalConfigDedicated->antennaInfo->present == PhysicalConfigDedicated__antennaInfo_PR_defaultValue) {
+      AssertFatal(cc->p_eNB<=2,"p_eNB is %d, should be <2\n",cc->p_eNB);
+      return(cc->p_eNB);
+    }
+    else AssertFatal(1==0,"Shouldn't be here\n");
+  }
 }
 
-int8_t get_UL_harq(module_id_t module_idP,int CC_idP,uint16_t frameP,uint8_t subframeP) {
+int8_t get_ULharq(module_id_t module_idP,int CC_idP,uint16_t frameP,uint8_t subframeP) {
 
   uint8_t           ret       = -1;
   eNB_MAC_INST      *eNB      = RC.mac[module_idP];
@@ -727,48 +1054,39 @@ int8_t get_UL_harq(module_id_t module_idP,int CC_idP,uint16_t frameP,uint8_t sub
           break;
 
         default:
-          LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframeP,cc->tdd_Config->subframeAssignment);
-          ret = -1;
+          AssertFatal(1==0,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframeP,(int)cc->tdd_Config->subframeAssignment);
           break;
         }
 
       break;
 
     case 2:
-      if ((subframeP!=2) && (subframeP!=7)) {
-	LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframeP,cc->tdd_Config->subframeAssignment);
-	ret=-1;
-      }
-      else ret = (subframeP/7);
+      AssertFatal((subframeP==2) || (subframeP==7),
+		  "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframeP,(int)cc->tdd_Config->subframeAssignment);
+      ret = (subframeP/7);
       break;
 
     case 3:
-      if ((subframeP<2) || (subframeP>4)) {
-        LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframeP,cc->tdd_Config->subframeAssignment);
-        ret = -1;
-      }
-      else ret = (subframeP-2);
+      AssertFatal((subframeP>1) && (subframeP<5),
+		  "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframeP,(int)cc->tdd_Config->subframeAssignment);
+      ret = (subframeP-2);
       break;
 
     case 4:
-      if ((subframeP<2) || (subframeP>3)) {
-        LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframeP,cc->tdd_Config->subframeAssignment);
-        ret = -1;
-      }
-      else ret = (subframeP-2);
+      AssertFatal((subframeP>1) && (subframeP<4),
+		  "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframeP,(int)cc->tdd_Config->subframeAssignment);
+      ret = (subframeP-2);
       break;
 
     case 5:
-      if (subframeP!=2) {
-        LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframeP,cc->tdd_Config->subframeAssignment);
-        ret = -1;
-      }
-      else ret = (subframeP-2);
+      AssertFatal(subframeP==2,
+		  "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframeP,(int)cc->tdd_Config->subframeAssignment);
+      ret = (subframeP-2);
       break;
 
     default:
-      LOG_E(PHY,"subframe2_harq_pid, Unsupported TDD mode %d\n",cc->tdd_Config->subframeAssignment);
-      ret = -1;
+      AssertFatal(1==0,"subframe2_harq_pid, Unsupported TDD mode %d\n",(int)cc->tdd_Config->subframeAssignment);
+      break;
     }
   }
 
@@ -1013,14 +1331,14 @@ int get_nCCE_offset(int *CCE_table,
     nb_candidates = (L==4) ? 4 : 2;
     nb_candidates = min(nb_candidates,nCCE/L);
 
-    //    printf("Common DCI nb_candidates %d, L %d\n",nb_candidates,L);
+    printf("Common DCI nb_candidates %d, L %d\n",nb_candidates,L);
 
     for (m = nb_candidates-1 ; m >=0 ; m--) {
 
       search_space_free = 1;
       for (l=0; l<L; l++) {
 
-	//	printf("CCE_table[%d] %d\n",(m*L)+l,CCE_table[(m*L)+l]);
+	printf("CCE_table[%d] %d\n",(m*L)+l,CCE_table[(m*L)+l]);
         if (CCE_table[(m*L) + l] == 1) {
           search_space_free = 0;
           break;
@@ -1265,8 +1583,8 @@ int allocate_CCEs(int module_idP,
 
 
   int                                 *CCE_table           = RC.mac[module_idP]->CCE_table[CC_idP];
-  nfapi_dl_config_request_body_t      *DL_req              = &RC.mac[module_idP]->DL_req[CC_idP];
-  nfapi_hi_dci0_request_body_t        *HI_DCI0_req         = &RC.mac[module_idP]->HI_DCI0_req[CC_idP];
+  nfapi_dl_config_request_body_t      *DL_req              = &RC.mac[module_idP]->DL_req[CC_idP].dl_config_request_body;
+  nfapi_hi_dci0_request_body_t        *HI_DCI0_req         = &RC.mac[module_idP]->HI_DCI0_req[CC_idP].hi_dci0_request_body;
   nfapi_dl_config_request_pdu_t       *dl_config_pdu       = &DL_req->dl_config_pdu_list[0];
   nfapi_hi_dci0_request_pdu_t         *hi_dci0_pdu         = &HI_DCI0_req->hi_dci0_pdu_list[0];
   int                                 nCCE_max             = get_nCCE_max(&RC.mac[module_idP]->common_channels[CC_idP],1,subframeP);
@@ -1471,9 +1789,9 @@ boolean_t CCE_allocation_infeasible(int module_idP,
 				    int aggregation,
 				    int rnti) {
 
-  nfapi_dl_config_request_body_t *DL_req       = &RC.mac[module_idP]->DL_req[CC_idP];
+  nfapi_dl_config_request_body_t *DL_req       = &RC.mac[module_idP]->DL_req[CC_idP].dl_config_request_body;
   nfapi_dl_config_request_pdu_t* dl_config_pdu = &DL_req->dl_config_pdu_list[DL_req->number_pdu];
-  nfapi_hi_dci0_request_body_t *HI_DCI0_req    = &RC.mac[module_idP]->HI_DCI0_req[CC_idP];
+  nfapi_hi_dci0_request_body_t *HI_DCI0_req    = &RC.mac[module_idP]->HI_DCI0_req[CC_idP].hi_dci0_request_body;
   nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu     = &HI_DCI0_req->hi_dci0_pdu_list[HI_DCI0_req->number_of_dci+HI_DCI0_req->number_of_hi]; 
   //DCI_ALLOC_t *dci_alloc;
   int ret;

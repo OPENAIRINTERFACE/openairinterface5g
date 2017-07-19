@@ -172,10 +172,11 @@ int mac_top_init_eNB()
       LOG_D(MAC,"[MAIN] ALLOCATE %zu Bytes for %d eNB_MAC_INST @ %p\n",sizeof(eNB_MAC_INST),RC.nb_macrlc_inst,RC.mac);
       bzero(RC.mac[i],sizeof(eNB_MAC_INST));
       for (j=0;j<MAX_NUM_CCs;j++) {
-	RC.mac[i]->DL_req[j].dl_config_pdu_list    = RC.mac[i]->dl_config_pdu_list[j];
-	RC.mac[i]->UL_req[j].ul_config_pdu_list    = RC.mac[i]->ul_config_pdu_list[j];
-	RC.mac[i]->HI_DCI0_req[j].hi_dci0_pdu_list = RC.mac[i]->hi_dci0_pdu_list[j];
-	RC.mac[i]->TX_req[j].tx_pdu_list           = RC.mac[i]->tx_request_pdu[j];
+	RC.mac[i]->DL_req[j].dl_config_request_body.dl_config_pdu_list      = RC.mac[i]->dl_config_pdu_list[j];
+	RC.mac[i]->UL_req[j].ul_config_request_body.ul_config_pdu_list      = RC.mac[i]->ul_config_pdu_list[j];
+	RC.mac[i]->HI_DCI0_req[j].hi_dci0_request_body.hi_dci0_pdu_list     = RC.mac[i]->hi_dci0_pdu_list[j];
+	RC.mac[i]->TX_req[j].tx_request_body.tx_pdu_list                    = RC.mac[i]->tx_request_pdu[j];
+	RC.mac[i]->ul_handle                                                = 0;
       }
     }
   } else {

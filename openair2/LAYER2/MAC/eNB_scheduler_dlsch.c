@@ -122,7 +122,7 @@ generate_dlsch_header(
   unsigned short *sdu_lengths,
   unsigned char *sdu_lcids,
   unsigned char drx_cmd,
-  short timing_advance_cmd,
+  unsigned short timing_advance_cmd,
   unsigned char *ue_cont_res_id,
   unsigned char short_padding,
   unsigned short post_padding
@@ -183,7 +183,8 @@ generate_dlsch_header(
     last_size=1;
     //    msg("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
     ((TIMING_ADVANCE_CMD *)ce_ptr)->R=0;
-    ((TIMING_ADVANCE_CMD *)ce_ptr)->TA=(timing_advance_cmd+31)&0x3f;
+    AssertFatal(timing_advance_cmd < 64,"timing_advance_cmd %d > 63\n",timing_advance_cmd);
+    ((TIMING_ADVANCE_CMD *)ce_ptr)->TA=timing_advance_cmd;//(timing_advance_cmd+31)&0x3f;
     LOG_D(MAC,"timing advance =%d (%d)\n",timing_advance_cmd,((TIMING_ADVANCE_CMD *)ce_ptr)->TA);
     ce_ptr+=sizeof(TIMING_ADVANCE_CMD);
     //msg("offset %d\n",ce_ptr-mac_header_control_elements);
@@ -452,6 +453,7 @@ schedule_ue_spec(
   int                            N_RB_DL[MAX_NUM_CCs];
   int                            total_nb_available_rb[MAX_NUM_CCs];
   int                            N_RBG[MAX_NUM_CCs];
+  nfapi_dl_config_request_body_t *dl_req;
   nfapi_dl_config_request_pdu_t  *dl_config_pdu;
   nfapi_tx_request_pdu_t         *TX_req;
 
@@ -500,6 +502,8 @@ schedule_ue_spec(
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     LOG_D(MAC, "doing schedule_ue_spec for CC_id %d\n",CC_id);
+
+    dl_req        = &eNB->DL_req[CC_id].dl_config_request_body;
 
     if (mbsfn_flag[CC_id]>0)
       continue;
@@ -655,10 +659,10 @@ schedule_ue_spec(
           case 2:
           case 7:
           default:
-	    dl_config_pdu                                                         = &eNB->DL_req[CC_id].dl_config_pdu_list[eNB->DL_req[CC_id].number_pdu]; 
+	    dl_config_pdu                                                         = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
 	    memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
 	    dl_config_pdu->pdu_type                                               = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE; 
-	    dl_config_pdu->pdu_size                                               = 2+sizeof(nfapi_dl_config_dci_dl_pdu);
+	    dl_config_pdu->pdu_size                                               = (uint8_t)(2+sizeof(nfapi_dl_config_dci_dl_pdu));
 	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format                  = NFAPI_DL_DCI_FORMAT_1;
 	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level           = get_aggregation(get_bw_index(module_idP,CC_id),eNB_UE_stats->dl_cqi,format1);
 	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti                        = rnti;
@@ -686,8 +690,8 @@ schedule_ue_spec(
 	    if (!CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,
 					   dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,
 					   rnti)) {
-	      eNB->DL_req[CC_id].number_dci++;
-	      eNB->DL_req[CC_id].number_pdu++;
+	      dl_req->number_dci++;
+	      dl_req->number_pdu++;
 
 	    }
 	    else {
@@ -1115,10 +1119,10 @@ schedule_ue_spec(
 	    tpc = 1; //0
 	  }
 
-	  dl_config_pdu                                                         = &eNB->DL_req[CC_id].dl_config_pdu_list[eNB->DL_req[CC_id].number_pdu]; 
+	  dl_config_pdu                                                         = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
 	  memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
 	  dl_config_pdu->pdu_type                                               = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE; 
-	  dl_config_pdu->pdu_size                                               = 2+sizeof(nfapi_dl_config_dci_dl_pdu);
+	  dl_config_pdu->pdu_size                                               = (uint8_t)(2+sizeof(nfapi_dl_config_dci_dl_pdu));
 	  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format                  = NFAPI_DL_DCI_FORMAT_1;
 	  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level           = get_aggregation(get_bw_index(module_idP,CC_id),eNB_UE_stats->dl_cqi,format1);
 	  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti                        = rnti;
@@ -1144,8 +1148,8 @@ schedule_ue_spec(
 		  module_idP,CC_id,harq_pid,round,mcs);
 	    
 	  }
-	  eNB->DL_req[CC_id].number_dci++;
-	  eNB->DL_req[CC_id].number_pdu++;
+	  dl_req->number_dci++;
+	  dl_req->number_pdu++;
 
           // Toggle NDI for next time
           LOG_D(MAC,"CC_id %d Frame %d, subframeP %d: Toggling Format1 NDI for UE %d (rnti %x/%d) oldNDI %d\n",
@@ -1156,13 +1160,14 @@ schedule_ue_spec(
 	  UE_list->UE_template[CC_id][UE_id].oldmcs1[harq_pid] = mcs;
 	  UE_list->UE_template[CC_id][UE_id].oldmcs2[harq_pid] = 0;
 
-	  TX_req                                                                = &eNB->TX_req[CC_id].tx_pdu_list[eNB->TX_req[CC_id].number_of_pdus]; 
+	  eNB->TX_req[CC_id].sfn_sf                                             = (frameP<<3)+subframeP;
+	  TX_req                                                                = &eNB->TX_req[CC_id].tx_request_body.tx_pdu_list[eNB->TX_req[CC_id].tx_request_body.number_of_pdus]; 
 	  TX_req->pdu_length                                                    = TBS;
 	  TX_req->pdu_index                                                     = eNB->pdu_index[CC_id]++;
 	  TX_req->num_segments                                                  = 1;
 	  TX_req->segments[0].segment_length                                    = TBS;
 	  TX_req->segments[0].segment_data                                      = eNB->UE_list.DLSCH_pdu[CC_id][0][(unsigned char)UE_id].payload[harq_pid];
-	  eNB->TX_req[CC_id].number_of_pdus++;
+	  eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
 
         } else {  // There is no data from RLC or MAC header, so don't schedule
 
@@ -1245,11 +1250,11 @@ fill_DLSCH_dci(
           rballoc_sub[i] = UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][i];
         }
 
-	nfapi_dl_config_request_body_t      *DL_req         = &RC.mac[module_idP]->DL_req[0];
+	nfapi_dl_config_request_t      *DL_req         = &RC.mac[module_idP]->DL_req[0];
 	nfapi_dl_config_request_pdu_t* dl_config_pdu;
 
-	for (i=0;i<DL_req[CC_id].number_pdu;i++) {
-	  dl_config_pdu                    = &DL_req[CC_id].dl_config_pdu_list[i];
+	for (i=0;i<DL_req[CC_id].dl_config_request_body.number_pdu;i++) {
+	  dl_config_pdu                    = &DL_req[CC_id].dl_config_request_body.dl_config_pdu_list[i];
 	  if ((dl_config_pdu->pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE)&&
 	      (dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti == rnti)) {
 	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding    = allocate_prbs_sub(nb_rb,N_RB_DL,N_RBG,rballoc_sub);
@@ -1308,13 +1313,13 @@ void update_ul_dci(module_id_t module_idP,
 //------------------------------------------------------------------------------
 {
 
-  nfapi_hi_dci0_request_body_t *HI_DCI0_req    = &RC.mac[module_idP]->HI_DCI0_req[CC_idP];
-  nfapi_hi_dci0_request_pdu_t  *hi_dci0_pdu    = &HI_DCI0_req->hi_dci0_pdu_list[0];
+  nfapi_hi_dci0_request_t *HI_DCI0_req    = &RC.mac[module_idP]->HI_DCI0_req[CC_idP];
+  nfapi_hi_dci0_request_pdu_t  *hi_dci0_pdu    = &HI_DCI0_req->hi_dci0_request_body.hi_dci0_pdu_list[0];
   COMMON_channels_t    *cc                     = &RC.mac[module_idP]->common_channels[CC_idP];
   int i;
 
   if (cc->tdd_Config != NULL) { // TDD 
-    for (i=0; i<HI_DCI0_req->number_of_dci + HI_DCI0_req->number_of_dci; i++) {
+    for (i=0; i<HI_DCI0_req->hi_dci0_request_body.number_of_dci + HI_DCI0_req->hi_dci0_request_body.number_of_dci; i++) {
 
       if ((hi_dci0_pdu[i].pdu_type == NFAPI_HI_DCI0_DCI_PDU_TYPE)  && 
 	  (hi_dci0_pdu[i].dci_pdu.dci_pdu_rel8.rnti == rntiP))

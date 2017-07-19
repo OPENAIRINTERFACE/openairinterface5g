@@ -803,6 +803,7 @@ typedef struct PHY_VARS_eNB_s {
   /// Module ID indicator for this instance
   module_id_t          Mod_id;
   uint8_t              CC_id;
+  uint8_t              configured;
   eNB_proc_t           proc;
   int                  single_thread_flag;
   int                  abstraction_flag;
@@ -827,6 +828,9 @@ typedef struct PHY_VARS_eNB_s {
   PHY_MEASUREMENTS_eNB measurements;
   IF_Module_t          *if_inst;
   UL_IND_t             UL_INFO;
+  pthread_mutex_t      UL_INFO_mutex;
+  nfapi_rx_indication_pdu_t  rx_pdu_list[NFAPI_RX_IND_MAX_PDU];
+  nfapi_crc_indication_pdu_t crc_pdu_list[NFAPI_CRC_IND_MAX_PDU];
   Sched_Rsp_t          Sched_INFO;
   LTE_eNB_PDCCH        pdcch_vars[2];
   LTE_eNB_COMMON       common_vars;

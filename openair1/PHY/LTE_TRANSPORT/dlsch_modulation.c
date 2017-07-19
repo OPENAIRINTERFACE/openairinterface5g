@@ -2216,7 +2216,9 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 	for (eNB_id=0;eNB_id<ru->num_eNB;eNB_id++){
 	  if (phy_vars_eNB == ru->eNB_list[eNB_id]) {
 	    for (aa=0;aa<ru->nb_tx;aa++){
-	      memcpy(ru->beam_weights[eNB_id][5][aa],dlsch0->ue_spec_bf_weights[ru_id][0][aa],frame_parms->ofdm_symbol_size*sizeof(int32_t));
+	      memcpy(ru->beam_weights[eNB_id][5][aa],
+		     dlsch0->ue_spec_bf_weights[ru_id][0],
+		     frame_parms->ofdm_symbol_size*sizeof(int32_t));
 	    }
 	  }
 	}
@@ -2454,6 +2456,7 @@ int dlsch_modulation_SIC(int32_t **sic_buffer,
                          int G)
 {
 
+  AssertFatal(1==0,"This function needs to be reintegrated ...\n");
   uint8_t harq_pid = -1;//dlsch0->current_harq_pid;
   LTE_DL_eNB_HARQ_t *dlsch0_harq = dlsch0->harq_processes[harq_pid];
   uint32_t i,jj,re_allocated=0;

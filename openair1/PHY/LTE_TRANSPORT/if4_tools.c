@@ -385,14 +385,22 @@ void malloc_IF4p5_buffer(RU_t *ru) {
   int i;
 
   if (eth->flags == ETH_RAW_IF4p5_MODE) {
-    for (i=0;i<10;i++)
+    for (i=0;i<10;i++) {
       ru->ifbuffer.tx[i]       = malloc(RAW_IF4p5_PRACH_SIZE_BYTES);
+      memset((void*)ru->ifbuffer.tx[i],0,RAW_IF4p5_PRACH_SIZE_BYTES);
+    }
     ru->ifbuffer.tx_prach = malloc(RAW_IF4p5_PRACH_SIZE_BYTES);
+    memset((void*)ru->ifbuffer.tx_prach,0,RAW_IF4p5_PRACH_SIZE_BYTES);
     ru->ifbuffer.rx       = malloc(RAW_IF4p5_PRACH_SIZE_BYTES); 
+    memset((void*)ru->ifbuffer.rx,0,RAW_IF4p5_PRACH_SIZE_BYTES);
   } else {
-    for (i=0;i<10;i++)
+    for (i=0;i<10;i++) {
       ru->ifbuffer.tx[i]       = malloc(UDP_IF4p5_PRACH_SIZE_BYTES);
+      memset((void*)ru->ifbuffer.tx[i],0,UDP_IF4p5_PRACH_SIZE_BYTES);
+    }
     ru->ifbuffer.tx_prach = malloc(UDP_IF4p5_PRACH_SIZE_BYTES);
+    memset((void*)ru->ifbuffer.tx_prach,0,UDP_IF4p5_PRACH_SIZE_BYTES);
     ru->ifbuffer.rx       = malloc(UDP_IF4p5_PRACH_SIZE_BYTES);
+    memset((void*)ru->ifbuffer.rx,0,UDP_IF4p5_PRACH_SIZE_BYTES);
   }
 }

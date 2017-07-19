@@ -76,7 +76,7 @@ int16_t get_hundred_times_delta_IF_eNB(PHY_VARS_eNB *eNB,uint8_t UE_id,uint8_t h
 //#warning "This condition happens sometimes. Need more investigation" // navid
   //DevAssert( MPR_x100/6 < 100 );
 
-  if (eNB->ul_power_control_dedicated[UE_id].deltaMCS_Enabled == 1) {
+  if (1==1) { //eNB->ul_power_control_dedicated[UE_id].deltaMCS_Enabled == 1) {
     // This is the formula from Section 5.1.1.1 in 36.213 10*log10(deltaIF_PUSCH = (2^(MPR*Ks)-1)*beta_offset_pusch)
     if (bw_factor == 1) {
       uint8_t nb_rb = eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb;

@@ -210,7 +210,9 @@ int lte_est_timing_advance_pusch(PHY_VARS_eNB* eNB,uint8_t UE_id)
   uint8_t cyclic_shift = 0;
   int sync_pos = (frame_parms->ofdm_symbol_size-cyclic_shift*frame_parms->ofdm_symbol_size/12)%(frame_parms->ofdm_symbol_size);
 
-
+  AssertFatal(frame_parms->ofdm_symbol_size > 127,"frame_parms->ofdm_symbol_size %d<128\n",frame_parms->ofdm_symbol_size);
+  AssertFatal(frame_parms->nb_antennas_rx >0 && frame_parms->nb_antennas_rx<3,"frame_parms->nb_antennas_rx %d not in [0,1]\n",
+	      frame_parms->nb_antennas_rx);
   for (i = 0; i < frame_parms->ofdm_symbol_size; i++) {
     temp = 0;
 
@@ -236,9 +238,9 @@ int lte_est_timing_advance_pusch(PHY_VARS_eNB* eNB,uint8_t UE_id)
   } else
     max_pos_fil2 = ((max_pos_fil2 * coef) + (max_pos * ncoef)) >> 15;
 
-#ifdef DEBUG_PHY
-  LOG_D(PHY,"frame %d: max_pos = %d, max_pos_fil = %d, sync_pos=%d\n",eNB->proc.frame_rx,max_pos,max_pos_fil2,sync_pos);
-#endif //DEBUG_PHY
+  //#ifdef DEBUG_PHY
+  LOG_I(PHY,"frame %d: max_pos = %d, max_pos_fil = %d, sync_pos=%d\n",eNB->proc.frame_rx,max_pos,max_pos_fil2,sync_pos);
+  //#endif //DEBUG_PHY
 
   return(max_pos_fil2-sync_pos);
 }

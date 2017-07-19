@@ -195,8 +195,11 @@ uint32_t from_earfcn(int eutra_bandP,uint32_t dl_earfcn) {
 }
 
 
-int32_t get_uldl_offset(int eutra_band) {
-  return(-eutra_bandtable[eutra_band].dl_min + eutra_bandtable[eutra_band].ul_min);
+int32_t get_uldl_offset(int eutra_bandP) {
+  int i;
+
+  for (i=0;i<69 && eutra_bandtable[i].band!=eutra_bandP;i++);
+  return(eutra_bandtable[i].dl_min - eutra_bandtable[i].ul_min);
 }
 
 uint32_t bw_table[6] = {6*180,15*180,25*180,50*180,75*180,100*180};
@@ -414,6 +417,12 @@ void config_dedicated(int Mod_idP,
 
 }
 
+void config_dedicated_scell(int Mod_idP, 
+			    uint16_t rnti, 
+			    SCellToAddMod_r10_t *sCellToAddMod_r10) {
+
+}
+
 int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 			   int                              CC_idP,
 			   int                              physCellId,
@@ -424,6 +433,7 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 #ifdef Rel14
                            int                              pbch_repetition,
 #endif
+			   rnti_t                           rntiP,
 			   BCCH_BCH_Message_t               *mib,
 			   RadioResourceConfigCommonSIB_t   *radioResourceConfigCommon,
 #ifdef Rel14
@@ -462,6 +472,7 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_IN);
 
+  
   if (mib!=NULL) {
     if (RC.mac == NULL) l2_init_eNB();
 
@@ -520,6 +531,10 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
       LOG_I(MAC,"[CONFIG]pusch_config_common.sequenceHoppingEnabled = %d\n",radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled);
       LOG_I(MAC,"[CONFIG]pusch_config_common.cyclicShift  = %ld\n",radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift);
 
+      AssertFatal(radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx > 0,
+		  "radioResourceconfigCommon %d == 0\n",
+		  radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx);
+
       RC.mac[Mod_idP]->common_channels[CC_idP].radioResourceConfigCommon = radioResourceConfigCommon;
       if (ul_CarrierFreq>0) RC.mac[Mod_idP]->common_channels[CC_idP].ul_CarrierFreq          = ul_CarrierFreq;
       if (ul_Bandwidth) RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth                = *ul_Bandwidth;
@@ -535,8 +550,11 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 
   }
 
+
   // SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup
   if (logicalChannelConfig!= NULL) { // check for eMTC specific things
+    UE_id = find_UE_id(Mod_idP, rntiP);
+
     if (UE_id == -1) {
       LOG_E(MAC,"%s:%d:%s: ERROR, UE_id == -1\n", __FILE__, __LINE__, __FUNCTION__);
     } else {
@@ -549,6 +567,8 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
   
 
   if (physicalConfigDedicated != NULL) {
+    UE_id = find_UE_id(Mod_idP, rntiP);
+
     if (UE_id == -1)
       LOG_E(MAC,"%s:%d:%s: ERROR, UE_id == -1\n", __FILE__, __LINE__, __FUNCTION__);
     else
@@ -561,11 +581,11 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 #if defined(Rel10) || defined(Rel14)
 
   if (sCellToAddMod_r10 != NULL) {
-
+    UE_id = find_UE_id(Mod_idP, rntiP);
     if (UE_id == -1)
       LOG_E(MAC,"%s:%d:%s: ERROR, UE_id == -1\n", __FILE__, __LINE__, __FUNCTION__);
     else
-      config_dedicated_scell(Mod_idP,UE_RNTI(Mod_idP,UE_id),sCellToAddMod_r10,1);
+      config_dedicated_scell(Mod_idP,rntiP,sCellToAddMod_r10);
     
   }
 

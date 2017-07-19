@@ -157,13 +157,14 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
 
   // UE-specific RX processing for subframe n
   phy_procedures_eNB_uespec_RX(eNB, proc, no_relay );
-  LOG_I(PHY,"uespec_RX complete: frame %d, subframe %d\n",proc->frame_rx,proc->subframe_rx);
+
+  pthread_mutex_lock(&eNB->UL_INFO_mutex);
   eNB->UL_INFO.frame     = proc->frame_rx;
   eNB->UL_INFO.subframe  = proc->subframe_rx;
   eNB->UL_INFO.module_id = eNB->Mod_id;
   eNB->UL_INFO.CC_id     = eNB->CC_id;
   eNB->if_inst->UL_indication(&eNB->UL_INFO);
-  
+  pthread_mutex_unlock(&eNB->UL_INFO_mutex);
   // *****************************************
   // TX processing for subframe n+4
   // run PHY TX procedures the one after the other for all CCs to avoid race conditions
@@ -501,6 +502,7 @@ void init_eNB_proc(int inst) {
     proc->RU_mask=0;
     proc->RU_mask_prach=0;
 
+    pthread_mutex_init( &eNB->UL_INFO_mutex, NULL);
     pthread_mutex_init( &proc_rxtx[0].mutex_rxtx, NULL);
     pthread_mutex_init( &proc_rxtx[1].mutex_rxtx, NULL);
     pthread_cond_init( &proc_rxtx[0].cond_rxtx, NULL);
@@ -531,17 +533,19 @@ void init_eNB_proc(int inst) {
     attr_te     = &proc->attr_te; 
 #endif
 
-    pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, &proc_rxtx[0] );
-    pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, eNB_thread_rxtx, &proc_rxtx[1] );
+    if (eNB->single_thread_flag==0) {
+      pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, &proc_rxtx[0] );
+      pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, eNB_thread_rxtx, &proc_rxtx[1] );
+    }
     pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, eNB );
 
     char name[16];
-    snprintf( name, sizeof(name), "RXTX0 %d", i );
-    pthread_setname_np( proc_rxtx[0].pthread_rxtx, name );
-    snprintf( name, sizeof(name), "RXTX1 %d", i );
-    pthread_setname_np( proc_rxtx[1].pthread_rxtx, name );
-    //    snprintf( name, sizeof(name), "FH %d", i );
-    //    pthread_setname_np( proc->pthread_FH, name );
+    if (eNB->single_thread_flag==0) {
+      snprintf( name, sizeof(name), "RXTX0 %d", i );
+      pthread_setname_np( proc_rxtx[0].pthread_rxtx, name );
+      snprintf( name, sizeof(name), "RXTX1 %d", i );
+      pthread_setname_np( proc_rxtx[1].pthread_rxtx, name );
+    }
 
     AssertFatal(proc->instance_cnt_prach == -1,"instance_cnt_prach = %d\n",proc->instance_cnt_prach);
 
@@ -601,7 +605,7 @@ void kill_eNB_proc(int inst) {
     pthread_join( proc->pthread_prach, (void**)&status );    
     pthread_mutex_destroy( &proc->mutex_prach );
     pthread_cond_destroy( &proc->cond_prach );         
-
+    pthread_mutex_destroy(&eNB->UL_INFO_mutex);
     int i;
     for (i=0;i<2;i++) {
       pthread_join( proc_rxtx[i].pthread_rxtx, (void**)&status );
@@ -714,6 +718,7 @@ void init_eNB_afterRU() {
       // map antennas and PRACH signals to eNB RX
       AssertFatal(eNB->num_RU>0,"Number of RU attached to eNB %d is zero\n",eNB->Mod_id);
       LOG_I(PHY,"Mapping RX ports from %d RUs to eNB %d\n",eNB->num_RU,eNB->Mod_id);
+      eNB->frame_parms.nb_antennas_rx       = 0;
       for (ru_id=0,aa=0;ru_id<eNB->num_RU;ru_id++) {
 	eNB->frame_parms.nb_antennas_rx    += eNB->RU_list[ru_id]->nb_rx;
 	for (i=0;i<eNB->RU_list[ru_id]->nb_rx;aa++,i++) { 
@@ -722,6 +727,9 @@ void init_eNB_afterRU() {
 	  eNB->common_vars.rxdataF[aa]     =  eNB->RU_list[ru_id]->common.rxdataF[i];
 	}
       }
+      AssertFatal(eNB->frame_parms.nb_antennas_rx >0,
+		  "inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,eNB->frame_parms.nb_antennas_rx);
+      LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,eNB->frame_parms.nb_antennas_rx);
 
       AssertFatal(eNB->frame_parms.nb_antennas_rx <= sizeof(eNB->prach_vars.prach_ifft) / sizeof(eNB->prach_vars.prach_ifft[0]),
 		  "nb_antennas_rx too large");
@@ -736,8 +744,8 @@ void init_eNB_afterRU() {
   }
 
   for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
-    
-    if (RC.ru[ru_id]==NULL) RC.ru[ru_id] = (RU_t*)malloc(sizeof(RU_t));
+
+    AssertFatal(RC.ru[ru_id]!=NULL,"ru_id %d is null\n",ru_id);
     
     RC.ru[ru_id]->wakeup_rxtx      = wakeup_rxtx;
     RC.ru[ru_id]->wakeup_prach_eNB = wakeup_prach_eNB;
@@ -770,15 +778,20 @@ void init_eNB(int single_thread_flag,int wait_for_sync) {
 
       
       LOG_I(PHY,"Registering with MAC interface module\n");
-      AssertFatal((eNB->if_inst       = IF_Module_init(inst))!=NULL,"Cannot register interface");
-      eNB->if_inst->schedule_response = schedule_response;
-      eNB->if_inst->PHY_config_req    = phy_config_request;
+      AssertFatal((eNB->if_inst         = IF_Module_init(inst))!=NULL,"Cannot register interface");
+      eNB->if_inst->schedule_response   = schedule_response;
+      eNB->if_inst->PHY_config_req      = phy_config_request;
+      memset((void*)&eNB->UL_INFO,0,sizeof(eNB->UL_INFO));
+      memset((void*)&eNB->Sched_INFO,0,sizeof(eNB->Sched_INFO));
+      LOG_I(PHY,"Setting indication lists\n");
+      eNB->UL_INFO.rx_ind.rx_pdu_list   = eNB->rx_pdu_list;
+      eNB->UL_INFO.crc_ind.crc_pdu_list = eNB->crc_pdu_list;
     }
 
   }
 
 
-  LOG_D(PHY,"[lte-softmodem.c] eNB structure allocated\n");
+  LOG_I(PHY,"[lte-softmodem.c] eNB structure allocated\n");
   
 
 

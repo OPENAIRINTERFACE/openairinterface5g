@@ -471,7 +471,7 @@ void RCconfig_RU() {
   if (setting != NULL) {
 
 
-    if (RC.ru==NULL) RC.ru = (RU_t**)malloc(RC.nb_RU*sizeof(RU_t*));
+    RC.ru = (RU_t**)malloc(RC.nb_RU*sizeof(RU_t*));
    
     RC.ru_mask=(1<<NB_RU) - 1;
 
@@ -551,10 +551,9 @@ void RCconfig_RU() {
       }
       printf("RU %d: Transport %s\n",j,tr_preference);
 
-      if (RC.ru[j]==NULL) {
-	RC.ru[j]                                    = (RU_t*)malloc(sizeof(RU_t));
-	memset((void*)RC.ru[j],0,sizeof(RU_t));
-      }
+      RC.ru[j]                                    = (RU_t*)malloc(sizeof(RU_t));
+      memset((void*)RC.ru[j],0,sizeof(RU_t));
+      
       RC.ru[j]->idx                                 = j;
       RC.ru[j]->eth_params.local_if_name            = strdup(if_name);
       RC.ru[j]->eth_params.my_addr                  = strdup(ipv4);
@@ -680,6 +679,7 @@ void RCconfig_L1() {
       for (i=0;i<RC.nb_L1_CC[j];i++) {
 	if (RC.eNB[j][i] == NULL) {
 	  RC.eNB[j][i] = (PHY_VARS_eNB *)malloc(sizeof(PHY_VARS_eNB));
+	  memset((void*)RC.eNB[j][i],0,sizeof(PHY_VARS_eNB));
 	  LOG_I(PHY,"RC.eNB[%d][%d] = %p\n",j,i,RC.eNB[j][i]);
 	  RC.eNB[j][i]->Mod_id  = j;
 	  RC.eNB[j][i]->CC_id   = i;

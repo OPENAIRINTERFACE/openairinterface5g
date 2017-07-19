@@ -54,14 +54,13 @@ extern const uint8_t cqi2fmt2x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
 
 extern UE_RRC_INST *UE_rrc_inst;
 extern UE_MAC_INST *UE_mac_inst;
-extern uint8_t Is_rrc_registered;
+
 
 extern eNB_ULSCH_INFO eNB_ulsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8
 extern eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8
 
 
 
-extern uint8_t Is_rrc_registered;
 
 #ifndef PHYSIM
 #define NB_INST 1

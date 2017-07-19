@@ -216,12 +216,14 @@ uint8_t *generate_dci0(uint8_t *dci,
   uint16_t coded_bits;
   uint8_t dci_flip[8];
 
-  if (aggregation_level>3) {
-    printf("dci.c: generate_dci FATAL, illegal aggregation_level %d\n",aggregation_level);
-    return NULL;
-  }
+  AssertFatal((aggregation_level==1) || 
+	      (aggregation_level==2) || 
+	      (aggregation_level==4) || 
+	      (aggregation_level==8),
+	      "generate_dci FATAL, illegal aggregation_level %d\n",aggregation_level);
+  
 
-  coded_bits = 72 * (1<<aggregation_level);
+  coded_bits = 72 * aggregation_level;
 
   /*
 
@@ -1967,7 +1969,7 @@ void pdcch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
   }
 }
 
-
+/*
 uint8_t get_num_pdcch_symbols(uint8_t num_dci,
                               DCI_ALLOC_t *dci_alloc,
                               LTE_DL_FRAME_PARMS *frame_parms,
@@ -2036,8 +2038,10 @@ uint8_t get_num_pdcch_symbols(uint8_t num_dci,
   //exit(-1);
   return(0);
 }
+*/
 
-uint8_t generate_dci_top(uint8_t num_dci,
+uint8_t generate_dci_top(uint8_t num_pdcch_symbols,
+			 uint8_t num_dci,
                          DCI_ALLOC_t *dci_alloc,
                          uint32_t n_rnti,
                          int16_t amp,
@@ -2046,7 +2050,7 @@ uint8_t generate_dci_top(uint8_t num_dci,
                          uint32_t subframe)
 {
 
-  uint8_t *e_ptr,num_pdcch_symbols;
+  uint8_t *e_ptr;
   int8_t L;
   uint32_t i, lprime;
   uint32_t gain_lin_QPSK,kprime,kprime_mod12,mprime,nsymb,symbol_offset,tti_offset;
@@ -2093,8 +2097,7 @@ uint8_t generate_dci_top(uint8_t num_dci,
     break;
   }
 
-  num_pdcch_symbols = get_num_pdcch_symbols(num_dci,dci_alloc,frame_parms,subframe);
-
+  
   generate_pcfich(num_pdcch_symbols,
                   amp,
                   frame_parms,
@@ -2115,13 +2118,13 @@ uint8_t generate_dci_top(uint8_t num_dci,
 
   // generate DCIs in order of decreasing aggregation level, then common/ue spec
   // MAC is assumed to have ordered the UE spec DCI according to the RNTI-based randomization
-  for (L=3; L>=0; L--) {
+  for (L=8; L>=1; L>>=1) {
     for (i=0; i<num_dci; i++) {
 
       if (dci_alloc[i].L == (uint8_t)L) {
 
 	//#ifdef DEBUG_DCI_ENCODING
-        LOG_I(PHY,"Generating DCI %d/%d (nCCE %d) of length %d, aggregation %d (%x)\n",i,num_dci,dci_alloc[i].firstCCE,dci_alloc[i].dci_length,1<<dci_alloc[i].L,
+        LOG_I(PHY,"Generating DCI %d/%d (nCCE %d) of length %d, aggregation %d (%x)\n",i,num_dci,dci_alloc[i].firstCCE,dci_alloc[i].dci_length,dci_alloc[i].L,
               *(unsigned int*)dci_alloc[i].dci_pdu);
         dump_dci(frame_parms,&dci_alloc[i]);
 	//#endif
@@ -2360,10 +2363,8 @@ void dci_decoding(uint8_t DCI_LENGTH,
   int32_t i;
 #endif
 
-  if (aggregation_level>3) {
-    LOG_I(PHY," dci.c: dci_decoding FATAL, illegal aggregation_level %d\n",aggregation_level);
-    return;
-  }
+  AssertFatal(aggregation_level<4,
+	      "dci_decoding FATAL, illegal aggregation_level %d\n",aggregation_level);
 
   coded_bits = 72 * (1<<aggregation_level);
 

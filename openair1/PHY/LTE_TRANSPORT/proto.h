@@ -1403,6 +1403,7 @@ void dci_encoding(uint8_t *a,
                   uint16_t rnti);
 
 /*! \brief Top-level DCI entry point. This routine codes an set of DCI PDUs and performs PDCCH modulation, interleaving and mapping.
+  \param num_dci  Number of pdcch symbols
   \param num_dci  Number of DCI pdus to encode
   \param dci_alloc Allocation vectors for each DCI pdu
   \param n_rnti n_RNTI (see )
@@ -1412,7 +1413,8 @@ void dci_encoding(uint8_t *a,
   \param sub_frame_offset subframe offset in frame
   @returns Number of PDCCH symbols
 */
-uint8_t generate_dci_top(uint8_t num_dci,
+uint8_t generate_dci_top(uint8_t num_pdcch_symbols,
+			 uint8_t num_dci,
                          DCI_ALLOC_t *dci_alloc,
                          uint32_t n_rnti,
                          int16_t amp,
@@ -1679,11 +1681,10 @@ int32_t generate_eNB_dlsch_params_from_dci(int frame,
     uint16_t DL_pmi_single,
     uint8_t beamforming_mode);
 
-int32_t generate_eNB_ulsch_params_from_rar(uint8_t *rar_pdu,
-    frame_t frame,
-    uint8_t subframe,
-    LTE_eNB_ULSCH_t *ulsch,
-    LTE_DL_FRAME_PARMS *frame_parms);
+int generate_eNB_ulsch_params_from_rar(PHY_VARS_eNB *eNB,
+				       unsigned char *rar_pdu,
+                                       uint32_t frame,
+                                       unsigned char subframe);
 
 int generate_ue_ulsch_params_from_dci(void *dci_pdu,
                                       rnti_t rnti,

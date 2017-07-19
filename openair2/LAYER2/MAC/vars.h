@@ -100,7 +100,6 @@ int pCC_id[NUMBER_OF_eNB_MAX];
 eNB_ULSCH_INFO eNB_ulsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8
 eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8
 
-uint8_t Is_rrc_registered;
 
 #ifdef OPENAIR2
 unsigned char NB_eNB_INST=0;

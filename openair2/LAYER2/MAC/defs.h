@@ -776,12 +776,13 @@ typedef struct {
   // resource scheduling information
   uint8_t       harq_pid[MAX_NUM_CCs];
   uint8_t       round[MAX_NUM_CCs];
-  uint8_t       round_UL[MAX_NUM_CCs];
+  uint8_t       round_UL[8][MAX_NUM_CCs];
   uint8_t       dl_pow_off[MAX_NUM_CCs];
   uint16_t      pre_nb_available_rbs[MAX_NUM_CCs];
   unsigned char rballoc_sub_UE[MAX_NUM_CCs][N_RBG_MAX];
   uint16_t      ta_timer;
   int16_t       ta_update;
+  uint8_t       ul_cqi;
   int32_t       context_active_timer;
   int32_t       cqi_req_timer;
   int32_t       ul_inactivity_timer;
@@ -817,6 +818,8 @@ typedef struct {
   uint8_t preamble_subframe;
   /// Subframe where Msg3 is to be sent
   uint8_t Msg3_subframe;
+  /// Subframe where Msg3 is to be sent
+  uint8_t Msg3_frame;
   /// Flag to indicate the eNB should generate Msg4 upon reception of SDU from RRC.  This is triggered by first ULSCH reception at eNB for new user.
   uint8_t generate_Msg4;
   /// Flag to indicate that eNB is waiting for ACK that UE has received Msg3.
@@ -833,6 +836,8 @@ typedef struct {
   int16_t timing_offset;
   /// Timeout for RRC connection
   int16_t RRC_timer;
+  /// Round of Msg3 HARQ
+  uint8_t msg3_round;
 } RA_TEMPLATE;
 
 
@@ -957,20 +962,22 @@ typedef struct eNB_MAC_INST_s {
   /// Preallocated DL pdu list
   nfapi_dl_config_request_pdu_t dl_config_pdu_list[MAX_NUM_CCs][MAX_NUM_DL_PDU];
   /// NFAPI DL Config Request Structure
-  nfapi_dl_config_request_body_t DL_req[MAX_NUM_CCs];
+  nfapi_dl_config_request_t DL_req[MAX_NUM_CCs];
   /// Preallocated UL pdu list
   nfapi_ul_config_request_pdu_t ul_config_pdu_list[MAX_NUM_CCs][MAX_NUM_UL_PDU];
+  nfapi_ul_config_request_pdu_t ul_config_pdu_list_msg3[MAX_NUM_CCs];
   /// NFAPI UL Config Request Structure
-  nfapi_ul_config_request_body_t UL_req[MAX_NUM_CCs];
+  nfapi_ul_config_request_t UL_req[MAX_NUM_CCs];
   /// Preallocated HI_DCI0 pdu list 
   nfapi_hi_dci0_request_pdu_t hi_dci0_pdu_list[MAX_NUM_CCs][MAX_NUM_HI_DCI0_PDU];
   /// NFAPI HI/DCI0 Config Request Structure
-  nfapi_hi_dci0_request_body_t HI_DCI0_req[MAX_NUM_CCs];
+  nfapi_hi_dci0_request_t HI_DCI0_req[MAX_NUM_CCs];
   /// Prealocated TX pdu list
   nfapi_tx_request_pdu_t tx_request_pdu[MAX_NUM_CCs][MAX_NUM_TX_REQUEST_PDU];
   /// NFAPI DL PDU structure
-  nfapi_tx_request_body_t TX_req[MAX_NUM_CCs];
-
+  nfapi_tx_request_t TX_req[MAX_NUM_CCs];
+  /// UL handle
+  uint32_t ul_handle;
   UE_list_t UE_list;
 
   ///subband bitmap configuration

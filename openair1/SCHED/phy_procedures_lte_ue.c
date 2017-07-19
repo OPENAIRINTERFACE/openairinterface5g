@@ -1679,7 +1679,6 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
 				 proc->subframe_rx,
 				 ue->transmission_mode[eNB_id],0,0)==0,
 		  "ulsch_coding.c: FATAL ERROR: returning\n");
-      return;
       
       stop_meas(&ue->ulsch_encoding_stats);
       
@@ -1690,8 +1689,9 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
 			 frame_tx,
 			 eNB_id);
       }
+      LOG_I(PHY,"Done Msg3 encoding\n");
     } // Msg3_flag==1
-    else {
+    else {// Msg3_flag==0
       input_buffer_length = ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS/8;
       
       if (ue->mac_enabled==1) {
@@ -1740,12 +1740,13 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
 	LOG_E(PHY,"ulsch_coding.c: FATAL ERROR: returning\n");
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
 	stop_meas(&ue->phy_proc_tx);
-	  return;
+	return;
       }
-    }
+    } // Msg3_flag==0
     stop_meas(&ue->ulsch_encoding_stats);
-  
     
+    LOG_I(PHY,"Doing ULSCH modulation\n");
+	  
     if (ue->mac_enabled==1) {
       pusch_power_cntl(ue,proc,eNB_id,1, abstraction_flag);
       ue->tx_power_dBm[subframe_tx] = ue->ulsch[eNB_id]->Po_PUSCH;
@@ -1767,7 +1768,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
     T(T_UE_PHY_PUSCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
       T_INT(tx_amp),T_INT(ue->ulsch[eNB_id]->f_pusch),T_INT(get_PL(Mod_id,0,eNB_id)),T_INT(nb_rb));
 #endif
-    LOG_D(PHY,"[UE  %d][PUSCH %d] AbsSubFrame %d.%d, generating PUSCH, Po_PUSCH: %d dBm (max %d dBm), amp %d\n",
+    LOG_I(PHY,"[UE  %d][PUSCH %d] AbsSubFrame %d.%d, generating PUSCH, Po_PUSCH: %d dBm (max %d dBm), amp %d\n",
 	  Mod_id,harq_pid,frame_tx%1024,subframe_tx,ue->tx_power_dBm[subframe_tx],ue->tx_power_max_dBm, tx_amp);
     start_meas(&ue->ulsch_modulation_stats);
     ulsch_modulation(ue->common_vars.txdataF,

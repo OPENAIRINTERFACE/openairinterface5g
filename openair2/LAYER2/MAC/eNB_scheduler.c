@@ -74,7 +74,7 @@ void check_ul_failure(module_id_t module_idP,int CC_id,int UE_id,
 		      frame_t frameP, sub_frame_t subframeP) {
 
   UE_list_t                           *UE_list      = &RC.mac[module_idP]->UE_list;
-  nfapi_dl_config_request_body_t      *DL_req       = &RC.mac[module_idP]->DL_req[0];
+  nfapi_dl_config_request_t           *DL_req       = &RC.mac[module_idP]->DL_req[0];
   uint16_t                            rnti          = UE_RNTI(module_idP,UE_id);
   eNB_UE_STATS                        *eNB_UE_stats = &RC.mac[module_idP]->UE_list.eNB_UE_stats[CC_id][UE_id];
   COMMON_channels_t                   *cc           = RC.mac[module_idP]->common_channels;
@@ -88,10 +88,10 @@ void check_ul_failure(module_id_t module_idP,int CC_id,int UE_id,
       
       // add a format 1A dci for this UE to request an RA procedure (only one UE per subframe)
       LOG_D(MAC,"UE %d rnti %x: sending PDCCH order for RAPROC (failure timer %d) \n",UE_id,rnti,UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);	    
-      nfapi_dl_config_request_pdu_t* dl_config_pdu                    = &DL_req[CC_id].dl_config_pdu_list[DL_req[CC_id].number_pdu]; 
+      nfapi_dl_config_request_pdu_t* dl_config_pdu                    = &DL_req[CC_id].dl_config_request_body.dl_config_pdu_list[DL_req[CC_id].dl_config_request_body.number_pdu]; 
       memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
       dl_config_pdu->pdu_type                                         = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE; 
-      dl_config_pdu->pdu_size                                         = 2+sizeof(nfapi_dl_config_dci_dl_pdu);
+      dl_config_pdu->pdu_size                                         = (uint8_t)(2+sizeof(nfapi_dl_config_dci_dl_pdu));
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format            = NFAPI_DL_DCI_FORMAT_1A;
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level     = get_aggregation(get_bw_index(module_idP,CC_id),eNB_UE_stats->dl_cqi,format1A);
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti                  = rnti;
@@ -101,9 +101,9 @@ void check_ul_failure(module_id_t module_idP,int CC_id,int UE_id,
       AssertFatal((cc[CC_id].mib->message.dl_Bandwidth >=0) && (cc[CC_id].mib->message.dl_Bandwidth<6),
 		  "illegal dl_Bandwidth %d\n",(int)cc[CC_id].mib->message.dl_Bandwidth);
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = pdcch_order_table[cc[CC_id].mib->message.dl_Bandwidth];
-      DL_req[CC_id].number_dci++;
-      DL_req[CC_id].number_pdu++;
-      
+      DL_req[CC_id].dl_config_request_body.number_dci++;
+      DL_req[CC_id].dl_config_request_body.number_pdu++;
+     
       /* 
 	 add_ue_spec_dci(&DL_req[CC_id],
 	 rnti,
@@ -146,18 +146,18 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   UE_list_t *UE_list=&RC.mac[module_idP]->UE_list;
   rnti_t rnti;
   
-  COMMON_channels_t                   *cc             = RC.mac[module_idP]->common_channels;
-  nfapi_dl_config_request_body_t      *DL_req         = &RC.mac[module_idP]->DL_req[0];
-  nfapi_ul_config_request_body_t      *UL_req         = &RC.mac[module_idP]->UL_req[0];
-  nfapi_hi_dci0_request_body_t        *HI_DCI0_req    = &RC.mac[module_idP]->HI_DCI0_req[0];
-  nfapi_tx_request_body_t             *TX_req         = &RC.mac[module_idP]->TX_req[0];
-  eNB_UE_STATS                        *eNB_UE_stats;
+  COMMON_channels_t         *cc             = RC.mac[module_idP]->common_channels;
+  nfapi_dl_config_request_t *DL_req         = &RC.mac[module_idP]->DL_req[0];
+  nfapi_ul_config_request_t *UL_req         = &RC.mac[module_idP]->UL_req[0];
+  nfapi_hi_dci0_request_t   *HI_DCI0_req    = &RC.mac[module_idP]->HI_DCI0_req[0];
+  nfapi_tx_request_t        *TX_req         = &RC.mac[module_idP]->TX_req[0];
+  eNB_UE_STATS              *eNB_UE_stats;
 #if defined(FLEXRAN_AGENT_SB_IF)
   Protocol__FlexranMessage *msg;
 #endif
 
   
-  LOG_I(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler (UE_list->head %d)\n",module_idP, frameP, subframeP,UE_list->head);
+  //  LOG_I(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler (UE_list->head %d)\n",module_idP, frameP, subframeP,UE_list->head);
 
   start_meas(&RC.mac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
@@ -169,22 +169,20 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
     // clear DL/UL info for new scheduling round
 
-    RC.mac[module_idP]->pdu_index[CC_id]         = 0;
-    DL_req[CC_id].number_pdcch_ofdm_symbols      = 1;
-    DL_req[CC_id].number_dci                     = 0;
-    DL_req[CC_id].number_pdu                     = 0;
-    DL_req[CC_id].number_pdsch_rnti              = 0;
-    DL_req[CC_id].transmission_power_pcfich      = 6000;
+    RC.mac[module_idP]->pdu_index[CC_id]                                     = 0;
+    DL_req[CC_id].dl_config_request_body.number_pdcch_ofdm_symbols           = 1;
+    DL_req[CC_id].dl_config_request_body.number_dci                          = 0;
+    DL_req[CC_id].dl_config_request_body.number_pdu                          = 0;
+    DL_req[CC_id].dl_config_request_body.number_pdsch_rnti                   = 0;
+    DL_req[CC_id].dl_config_request_body.transmission_power_pcfich           = 6000;
 
-    HI_DCI0_req[CC_id].sfnsf                     = subframeP + (frameP<<3);
-    HI_DCI0_req[CC_id].number_of_dci             = 0;
-    HI_DCI0_req[CC_id].number_of_hi              = 0;
+    HI_DCI0_req[CC_id].hi_dci0_request_body.sfnsf                            = subframeP + (frameP<<3);
+    HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_dci                    = 0;
 
-    UL_req[CC_id].number_of_pdus                 = 0;
-    UL_req[CC_id].rach_prach_frequency_resources = 0; // ignored, handled by PHY for now
-    UL_req[CC_id].srs_present                    = 0; // ignored, handled by PHY for now
-
-    TX_req[CC_id].number_of_pdus                 = 0;
+    UL_req[CC_id].ul_config_request_body.number_of_pdus                      = 0;
+    UL_req[CC_id].ul_config_request_body.rach_prach_frequency_resources      = 0; // ignored, handled by PHY for now
+    UL_req[CC_id].ul_config_request_body.srs_present                         = 0; // ignored, handled by PHY for now
+    TX_req[CC_id].tx_request_body.number_of_pdus                 = 0;
 #if defined(Rel10) || defined(Rel14)
     cc[CC_id].mcch_active =0;
 #endif
@@ -315,7 +313,10 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   }
 
 #endif
-
+  LOG_I(MAC,"[eNB %d][before switch] Frame %d, Subframe %d CC_id %d RA 0 is active, Msg3 in (%d,%d), (%d,%d,%d,%d) UL_pdus %d\n",
+	module_idP,frameP,subframeP,CC_id,cc[0].RA_template[0].Msg3_frame,cc[0].RA_template[0].Msg3_subframe,
+	cc[0].RA_template[0].RA_active,cc[0].RA_template[1].RA_active,cc[0].RA_template[2].RA_active,cc[0].RA_template[3].RA_active,
+	RC.mac[module_idP]->UL_req[0].ul_config_request_body.number_of_pdus);
   switch (subframeP) {
   case 0:
 
@@ -328,8 +329,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     LOG_I(MAC,"Scheduling MIB\n");
     if ((frameP&3) == 0) schedule_mib(module_idP,frameP,subframeP);
     LOG_I(MAC,"NFAPI: number_of_pdus %d, number_of_TX_req %d\n",
-	  DL_req[0].number_pdu,
-	  TX_req[0].number_of_pdus);
+	  DL_req[0].dl_config_request_body.number_pdu,
+	  TX_req[0].tx_request_body.number_of_pdus);
     if (cc[0].tdd_Config == NULL) {  //FDD
       schedule_ulsch(module_idP,frameP,cooperation_flag,0,4);//,calibration_flag);
     } else if  ((cc[0].tdd_Config->subframeAssignment == 0) ||
@@ -1025,12 +1026,21 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
   }
 
-  LOG_I(MAC,"FrameP %d, subframeP %d : Scheduling CCEs\n",frameP,subframeP);
+  LOG_I(MAC,"FrameP %d, subframeP %d : Scheduling CCEs/Msg3\n",frameP,subframeP);
 
-  // Allocate CCEs for good after scheduling is done
-  for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++)
+  LOG_I(MAC,"[eNB %d][before] Frame %d, Subframe %d CC_id %d RA 0 is active, Msg3 in (%d,%d) (%d,%d,%d,%d) UL_pdus %d\n",
+	module_idP,frameP,subframeP,CC_id,cc[0].RA_template[0].Msg3_frame,cc[0].RA_template[0].Msg3_subframe,
+	cc[0].RA_template[0].RA_active,cc[0].RA_template[1].RA_active,cc[0].RA_template[2].RA_active,cc[0].RA_template[3].RA_active,
+	RC.mac[module_idP]->UL_req[0].ul_config_request_body.number_of_pdus);
+  // Allocate CCEs and Msg3 for good after scheduling is done
+  for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
     allocate_CCEs(module_idP,CC_id,subframeP,0);
-
+    check_and_add_msg3(module_idP,frameP,subframeP);
+  }
+  LOG_I(MAC,"[eNB %d][after] Frame %d, Subframe %d CC_id 0 RA 0 is active, Msg3 in (%d,%d) (%d,%d,%d,%d) UL_pdus %d\n",
+	module_idP,frameP,subframeP,cc[0].RA_template[0].Msg3_frame,cc[0].RA_template[0].Msg3_subframe,
+	cc[0].RA_template[0].RA_active,cc[0].RA_template[1].RA_active,cc[0].RA_template[2].RA_active,cc[0].RA_template[3].RA_active,
+	RC.mac[module_idP]->UL_req[0].ul_config_request_body.number_of_pdus);
 #if defined(FLEXRAN_AGENT_SB_IF)
 #ifndef DISABLE_CONT_STATS
   //Send subframe trigger to the controller

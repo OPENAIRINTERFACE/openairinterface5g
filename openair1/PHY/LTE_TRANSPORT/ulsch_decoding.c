@@ -146,8 +146,6 @@ LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t max_turbo_iterations,uint8_t N_RB_UL, uin
             else
               exit_flag=2;
           }
-
-          ulsch->harq_processes[i]->subframe_scheduling_flag = 0;
         }
       } else {
         exit_flag=1;
@@ -177,7 +175,6 @@ void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch)
       if (ulsch->harq_processes[i]) {
         //    ulsch->harq_processes[i]->Ndi = 0;
         ulsch->harq_processes[i]->status = 0;
-        ulsch->harq_processes[i]->subframe_scheduling_flag = 0;
         //ulsch->harq_processes[i]->phich_active = 0; //this will be done later after transmission of PHICH
         ulsch->harq_processes[i]->phich_ACK = 0;
         ulsch->harq_processes[i]->round = 0;

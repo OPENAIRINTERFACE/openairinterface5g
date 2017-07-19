@@ -127,7 +127,7 @@ rrc_eNB_allocate_new_UE_context(
 //------------------------------------------------------------------------------
 {
   struct rrc_eNB_ue_context_s* new_p;
-  new_p = malloc(sizeof(struct rrc_eNB_ue_context_s));
+  new_p = (struct rrc_eNB_ue_context_s* )malloc(sizeof(struct rrc_eNB_ue_context_s));
 
   if (new_p == NULL) {
     LOG_E(RRC, "Cannot allocate new ue context\n");

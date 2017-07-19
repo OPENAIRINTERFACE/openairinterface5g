@@ -951,6 +951,7 @@ int is_srs_occasion_common(LTE_DL_FRAME_PARMS *frame_parms,int frame_tx,int subf
       }
       LOG_D(PHY," ISTDD: %d, TSFC: %d, deltaTSFC: %d, AbsSubframeTX: %d.%d\n", frame_parms->frame_type, TSFC, deltaTSFC, frame_tx, subframe_tx);
   }
+  LOG_D(PHY," isSubframeSRS %d\n", isSubframeSRS);
   return(isSubframeSRS);
 }
 

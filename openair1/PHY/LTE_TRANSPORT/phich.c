@@ -318,7 +318,7 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
     Ngroup_PHICH<<=1;
   }
 
-  //  #ifdef DEBUG_PHICH
+#ifdef DEBUG_PHICH
   LOG_I(PHY,"Ngroup_PHICH %d (phich_config_common.phich_resource %d,phich_config_common.phich_duration %s, NidCell %d,Ncp %d, frame_type %d), smallest pcfich REG %d, n0 %d, n1 %d (first PHICH REG %d)\n",
     ((frame_parms->Ncp == NORMAL)?Ngroup_PHICH:(Ngroup_PHICH>>1)),
     frame_parms->phich_config_common.phich_resource,
@@ -328,7 +328,7 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
     n0,
     n1,
     ((frame_parms->Nid_cell))%n0);
-//#endif
+#endif
 
   // This is the algorithm from Section 6.9.3 in 36-211, it works only for normal PHICH duration for now ...
 
@@ -382,9 +382,9 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
       if (frame_parms->phich_reg[mprime][2]>=pcfich_reg[(frame_parms->pcfich_first_reg_idx+3)&3])
         frame_parms->phich_reg[mprime][2]++;
       
-      #ifdef DEBUG_PHICH
+#ifdef DEBUG_PHICH
       printf("phich_reg :%d => %d,%d,%d\n",mprime,frame_parms->phich_reg[mprime][0],frame_parms->phich_reg[mprime][1],frame_parms->phich_reg[mprime][2]);
-      #endif
+#endif
     } else { // extended PHICH duration
       frame_parms->phich_reg[mprime<<1][0] = (frame_parms->Nid_cell + mprime)%n0;
       frame_parms->phich_reg[1+(mprime<<1)][0] = (frame_parms->Nid_cell + mprime)%n0;
@@ -1473,7 +1473,7 @@ void rx_phich(PHY_VARS_UE *ue,
     //   harqId-8 corresponds to the temporary struct. In total we have 8 harq process(0 ..7) + 1 temporary harq process()
     //ulsch->harq_processes[8] = ulsch->harq_processes[harq_pid];
 
-    ulsch->harq_processes[harq_pid]->subframe_scheduling_flag =0;
+
     ulsch->harq_processes[harq_pid]->status = SCH_IDLE;
     ulsch->harq_processes[harq_pid]->round  = 0;
     // inform MAC?
@@ -1524,7 +1524,7 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
     if ((ulsch[UE_id])&&(ulsch[UE_id]->rnti>0)) {
       if (ulsch[UE_id]->harq_processes[harq_pid]->phich_active == 1) {
 
-        LOG_D(PHY,"[eNB][PUSCH %d/%x] Frame %d subframe %d (pusch_subframe %d,pusch_frame %d) phich active %d\n",
+        LOG_I(PHY,"[eNB][PUSCH %d/%x] Frame %d subframe %d (pusch_subframe %d,pusch_frame %d) phich active %d\n",
               harq_pid,ulsch[UE_id]->rnti,proc->frame_tx,subframe,pusch_subframe,pusch_frame,ulsch[UE_id]->harq_processes[harq_pid]->phich_active);
 
         /* the HARQ process may have been reused by a new scheduling, so we use
@@ -1542,7 +1542,7 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
 
         nseq_PHICH = ((ulsch[UE_id]->harq_processes[harq_pid]->previous_first_rb/Ngroup_PHICH) +
                       ulsch[UE_id]->harq_processes[harq_pid]->previous_n_DMRS)%(2*NSF_PHICH);
-        LOG_D(PHY,"[eNB %d][PUSCH %d] Frame %d subframe %d Generating PHICH, ngroup_PHICH %d/%d, nseq_PHICH %d : HI %d, first_rb %d dci_alloc %d)\n",
+        LOG_I(PHY,"[eNB %d][PUSCH %d] Frame %d subframe %d Generating PHICH, ngroup_PHICH %d/%d, nseq_PHICH %d : HI %d, first_rb %d dci_alloc %d)\n",
               eNB->Mod_id,harq_pid,proc->frame_tx,
               subframe,ngroup_PHICH,Ngroup_PHICH,nseq_PHICH,
               ulsch[UE_id]->harq_processes[harq_pid]->phich_ACK,
@@ -1558,7 +1558,7 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
           T_INT(ulsch[UE_id]->harq_processes[harq_pid]->previous_n_DMRS));
 
         if (ulsch[UE_id]->Msg3_active == 1) {
-          LOG_D(PHY,"[eNB %d][PUSCH %d][RAPROC] Frame %d, subframe %d: Generating Msg3 PHICH for UE %d, ngroup_PHICH %d/%d, nseq_PHICH %d : HI %d, first_rb %d\n",
+          LOG_I(PHY,"[eNB %d][PUSCH %d][RAPROC] Frame %d, subframe %d: Generating Msg3 PHICH for UE %d, ngroup_PHICH %d/%d, nseq_PHICH %d : HI %d, first_rb %d\n",
                 eNB->Mod_id,harq_pid,proc->frame_tx,subframe,
                 UE_id,ngroup_PHICH,Ngroup_PHICH,nseq_PHICH,ulsch[UE_id]->harq_processes[harq_pid]->phich_ACK,
                 ulsch[UE_id]->harq_processes[harq_pid]->previous_first_rb);
@@ -1591,9 +1591,11 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
           if (ulsch[UE_id]->harq_processes[harq_pid]->phich_ACK==0 ) {
             T(T_ENB_PHY_ULSCH_UE_NO_DCI_RETRANSMISSION, T_INT(eNB->Mod_id), T_INT(proc->frame_tx),
               T_INT(subframe), T_INT(UE_id), T_INT(ulsch[UE_id]->rnti), T_INT(harq_pid));
-            LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d, subframe %d : PHICH NACK / (no format0 DCI) Setting subframe_scheduling_flag\n",
+            LOG_I(PHY,"[eNB %d][PUSCH %d] frame %d, subframe %d : PHICH NACK / (no format0 DCI) Setting subframe_scheduling_flag\n",
                   eNB->Mod_id,harq_pid,proc->frame_tx,subframe);
-            ulsch[UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+	    //            ulsch[UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+	    ulsch[UE_id]->harq_processes[harq_pid]->subframe = (subframe + 4)%10;
+ 	    if (subframe>5) ulsch[UE_id]->harq_processes[harq_pid]->frame++;
             ulsch[UE_id]->harq_processes[harq_pid]->rvidx = rv_table[ulsch[UE_id]->harq_processes[harq_pid]->round&3];
             ulsch[UE_id]->harq_processes[harq_pid]->O_RI                                  = 0;
             ulsch[UE_id]->harq_processes[harq_pid]->Or2                                   = 0;
@@ -1601,9 +1603,9 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
             ulsch[UE_id]->harq_processes[harq_pid]->uci_format                            = HLC_subband_cqi_nopmi;
 
           } else {
-            LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d PHICH ACK (no format0 DCI) Clearing subframe_scheduling_flag, setting round to 0\n",
+            LOG_I(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d PHICH ACK (no format0 DCI) Clearing subframe_scheduling_flag, setting round to 0\n",
                   eNB->Mod_id,harq_pid,proc->frame_tx,subframe);
-            ulsch[UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
+	    ulsch[UE_id]->harq_processes[harq_pid]->status = SCH_IDLE;
             ulsch[UE_id]->harq_processes[harq_pid]->round=0;
           }
         }

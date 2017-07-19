@@ -341,10 +341,9 @@ void *eNB_app_task(void *args_p)
   RC.rrc = (eNB_RRC_INST **)malloc(RC.nb_inst*sizeof(eNB_RRC_INST *));
 
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
-    //    configure_phy(enb_id);//
     RC.rrc[enb_id] = (eNB_RRC_INST*)malloc(sizeof(eNB_RRC_INST));
-    
-    configure_rrc(enb_id);//
+    memset((void *)RC.rrc[enb_id],0,sizeof(eNB_RRC_INST));
+    configure_rrc(enb_id);
   }
   
 #if defined (FLEXRAN_AGENT_SB_IF)

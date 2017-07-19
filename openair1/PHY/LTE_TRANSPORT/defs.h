@@ -374,8 +374,12 @@ typedef struct {
   uint8_t rar_alloc;
   /// Status Flag indicating for this ULSCH (idle,active,disabled)
   SCH_status_t status;
-  /// Subframe scheduling indicator (i.e. Transmission opportunity indicator)
-  uint8_t subframe_scheduling_flag;
+  /// Flag to indicate that eNB should decode UE Msg3
+  uint8_t Msg3_flag;
+  /// Subframe for reception
+  uint8_t subframe;
+  /// Frame for reception
+  uint32_t frame;
   /// Subframe cba scheduling indicator (i.e. CBA Transmission opportunity indicator)
   uint8_t subframe_cba_scheduling_flag;
   /// PHICH active flag
@@ -505,12 +509,6 @@ typedef struct {
   uint16_t beta_offset_harqack_times8;
   /// Flag to indicate that eNB awaits UE Msg3
   uint8_t Msg3_active;
-  /// Flag to indicate that eNB should decode UE Msg3
-  uint8_t Msg3_flag;
-  /// Subframe for Msg3
-  uint8_t Msg3_subframe;
-  /// Frame for Msg3
-  uint32_t Msg3_frame;
   /// RNTI attributed to this ULSCH
   uint16_t rnti;
   /// cyclic shift for DM RS

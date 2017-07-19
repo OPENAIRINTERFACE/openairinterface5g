@@ -802,9 +802,9 @@ int8_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
   uint8_t i;
   int8_t first_free_index=-1;
 
-  AssertFatal(eNB==NULL,"eNB is null\n");
+  AssertFatal(eNB!=NULL,"eNB is null\n");
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    AssertFatal(eNB->ulsch[i]==NULL,"eNB->dlsch[%d] is null\n",i);
+    AssertFatal(eNB->ulsch[i]!=NULL,"eNB->dlsch[%d] is null\n",i);
     if ((eNB->ulsch[i]->harq_mask >0) &&
 	(eNB->ulsch[i]->rnti==rnti))       return(i); 
     else if ((eNB->ulsch[i]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
@@ -960,7 +960,7 @@ int fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_
         ((DCI1A_10MHz_TDD_1_6_t *)dci_pdu)->dai       = rel8->downlink_assignment_index;	
         //        printf("TDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",mcs,rballoc,rv,NPRB);
       } else {
-	dci_alloc->dci_length                         = sizeof_DCI1A_20MHz_FDD_t; 
+	dci_alloc->dci_length                         = sizeof_DCI1A_10MHz_FDD_t; 
 	((DCI1A_10MHz_FDD_t *)dci_pdu)->type          = 1;
         ((DCI1A_10MHz_FDD_t *)dci_pdu)->vrb_type      = rel8->virtual_resource_block_assignment_flag;
         ((DCI1A_10MHz_FDD_t *)dci_pdu)->mcs           = rel8->mcs_1;
@@ -7489,15 +7489,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
 uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t subframe)
 {
-  /*
-    #ifdef DEBUG_DCI
-    if (frame_parms->frame_type == TDD)
-    printf("dci_tools.c: subframe2_harq_pid, subframe %d for TDD configuration %d\n",subframe,frame_parms->tdd_config);
-    else
-    printf("dci_tools.c: subframe2_harq_pid, subframe %d for FDD \n",subframe);
-    #endif
-  */
-
   uint8_t ret = 255;
 
   if (frame_parms->frame_type == FDD) {

@@ -206,7 +206,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, uint8_t cooperation_flag,
 @param preamble_index index of the received RA request
 @param timing_offset Offset in samples of the received PRACH w.r.t. eNB timing. This is used to
 */
-void initiate_ra_proc(module_id_t module_idP,int CC_id,frame_t frameP, uint16_t preamble_index,int16_t timing_offset,uint8_t sect_id,sub_frame_t subframe,uint8_t f_id);
+void initiate_ra_proc(module_id_t module_idP,int CC_id,frame_t frameP, sub_frame_t subframeP, uint16_t preamble_index,int16_t timing_offset,uint16_t rnti);
 
 /* \brief Function in eNB to fill RAR pdu when requested by PHY.  This provides a single RAR SDU for the moment and returns the t-CRNTI.
 @param Mod_id Instance ID of eNB
@@ -250,12 +250,23 @@ void set_msg3_subframe(module_id_t Mod_id,
 
 /* \brief Function to indicate a received SDU on ULSCH.
 @param Mod_id Instance ID of eNB
-@param rnti RNTI of UE transmitting the SR
+@param CC_id Component carrier index
+@param rnti RNTI of UE transmitting the SDU
 @param sdu Pointer to received SDU
-@param harq_pid Index of harq process corresponding to this sdu
-@param msg3_flag flag indicating that this sdu is msg3
+@param sdu_len Length of SDU
+@param timing_advance timing advance adjustment after this pdu
+@param ul_cqi Uplink CQI estimate after this pdu (SNR quantized to 8 bits, -64 ... 63.5 dB in .5dB steps)
 */
-void rx_sdu(const module_id_t module_idP, const int CC_id,const frame_t frameP, const sub_frame_t subframeP, const rnti_t rnti, uint8_t *sdu, const uint16_t sdu_len, const int harq_pid,uint8_t *msg3_flag);
+void rx_sdu(const module_id_t enb_mod_idP,
+	    const int         CC_idP,
+	    const frame_t     frameP,
+	    const sub_frame_t subframeP,
+	    const rnti_t      rntiP,
+	    uint8_t          *sduP,
+	    const uint16_t    sdu_lenP,
+	    const uint16_t    timing_advance,
+	    const uint8_t     ul_cqi);
+
 
 /* \brief Function to indicate a scheduled schduling request (SR) was received by eNB.
 @param Mod_id Instance ID of eNB
@@ -706,7 +717,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
                                     unsigned short *sdu_lengths,
                                     unsigned char *sdu_lcids,
                                     unsigned char drx_cmd,
-                                    short timing_advance_cmd,
+                                    unsigned short timing_advance_cmd,
                                     unsigned char *ue_cont_res_id,
                                     unsigned char short_padding,
                                     unsigned short post_padding);
@@ -715,6 +726,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 @param Mod_id Instance ID of eNB
 @param CC_id Component Carrier of the eNB
 @param mib Pointer to MIB
+
 @param radioResourceConfigCommon Structure from SIB2 for common radio parameters (if NULL keep existing configuration)
 @param physicalConfigDedicated Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated PHY parameters (if NULL keep existing configuration)
 @param measObj Structure from RRCConnectionReconfiguration for UE measurement procedures
@@ -742,6 +754,7 @@ int rrc_mac_config_req_eNB(module_id_t        module_idP,
 #ifdef Rel14
                            int                pbch_repetition,
 #endif
+			   rnti_t             rntiP,
 			   BCCH_BCH_Message_t *mib,
  			   RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
 #ifdef Rel14
@@ -838,6 +851,32 @@ int rrc_mac_config_req_ue(module_id_t     module_idP,
 uint16_t getRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs);
 
 int get_subbandsize(uint8_t dl_bandwidth);
+
+uint8_t subframe2harqpid(COMMON_channels_t *cc,uint32_t frame,uint8_t subframe);
+
+void get_Msg3allocret(COMMON_channels_t *cc,
+		      unsigned char current_subframe,
+		      unsigned int current_frame,
+		      unsigned int *frame,
+		      unsigned char *subframe);
+
+void get_Msg3alloc(COMMON_channels_t *cc,
+		   unsigned char current_subframe,
+		   unsigned int current_frame,
+		   unsigned int *frame,
+		   unsigned char *subframe);
+
+uint16_t mac_computeRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs);
+
+int get_phich_resource_times6(COMMON_channels_t *cc);
+
+int to_rbg(int dl_Bandwidth);
+
+int to_prb(int dl_Bandwidth);
+
+uint8_t get_Msg3harqpid(COMMON_channels_t *cc,
+			uint32_t frame,
+			unsigned char current_subframe);
 
 #endif
 /** @}*/

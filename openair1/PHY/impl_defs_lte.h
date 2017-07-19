@@ -35,6 +35,7 @@
 
 
 #include "types.h"
+#include "nfapi_interface.h"
 //#include "defs.h"
 #include "openair2/COMMON/platform_types.h"
 
@@ -1048,6 +1049,8 @@ typedef struct {
   int16_t *prach;
 } LTE_UE_PRACH;
 
+#define MAX_NUM_RX_PRACH_PREAMBLES 4
+
 typedef struct {
   /// \brief ?.
   /// first index: ? [0..1023] (hard coded)
@@ -1060,6 +1063,8 @@ typedef struct {
   /// first index: rx antenna [0..63] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
   /// second index: ? [0..2047] (hard coded)
   int16_t *prach_ifft[64];
+  /// NFAPI PRACH information
+  nfapi_preamble_pdu_t preamble_list[MAX_NUM_RX_PRACH_PREAMBLES];
 } LTE_eNB_PRACH;
 
 typedef struct {

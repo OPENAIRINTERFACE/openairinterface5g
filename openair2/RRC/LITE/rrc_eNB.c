@@ -133,7 +133,7 @@ init_SI(
   int                                 i;
 #endif
   
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MIB = (uint8_t*) malloc16(3);
+  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MIB = (uint8_t*) malloc16(4);
   // copy basic parameters
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId      = configuration->Nid_cell[CC_id];
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB           = configuration->nb_antenna_ports[CC_id];
@@ -255,7 +255,8 @@ init_SI(
 	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
 	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_Offset_r9);
     }
-  }  
+  }
+  else memset((void*)&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13,0,sizeof(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13));
 #endif
 
   LOG_D(RRC,
@@ -271,6 +272,7 @@ init_SI(
 #ifdef Rel14
 			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].pbch_repetition,
 #endif
+			 0, // rnti
 			 (BCCH_BCH_Message_t *)
 			 &RC.rrc[ctxt_pP->module_id]->carrier[CC_id].mib,
 			 (RadioResourceConfigCommonSIB_t *) &
@@ -369,6 +371,7 @@ init_MCCH(
 #ifdef Rel14 
 			 0,
 #endif
+			 0,//rnti
 			 (BCCH_BCH_Message_t *)NULL,
 			 (RadioResourceConfigCommonSIB_t *) NULL,
 			 (RadioResourceConfigCommonSIB_t *) NULL,
@@ -542,8 +545,8 @@ rrc_eNB_get_next_free_ue_context(
 {
   struct rrc_eNB_ue_context_s*        ue_context_p = NULL;
   ue_context_p = rrc_eNB_get_ue_context(
-                   RC.rrc[ctxt_pP->module_id],
-                   ctxt_pP->rnti);
+					RC.rrc[ctxt_pP->module_id],
+					ctxt_pP->rnti);
 
   if (ue_context_p == NULL) {
     RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
@@ -2729,6 +2732,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 #ifdef Rel14 
 0,
 #endif 
+			 ue_context_pP->ue_context.rnti,
 			 (BCCH_BCH_Message_t *) NULL,
 			 (RadioResourceConfigCommonSIB_t*) NULL,
 			 (RadioResourceConfigCommonSIB_t*) NULL,
@@ -3307,6 +3311,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 #ifdef Rel14 
 			 0,
 #endif
+			 ue_context_pP->ue_context.rnti,
 			 (BCCH_BCH_Message_t *) NULL,
 			 (RadioResourceConfigCommonSIB_t *) NULL,
 			 (RadioResourceConfigCommonSIB_t *) NULL,
@@ -3608,6 +3613,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 #ifdef Rel14 
 				 0,
 #endif
+				 ue_context_pP->ue_context.rnti,
 				 (BCCH_BCH_Message_t *) NULL,
 				 (RadioResourceConfigCommonSIB_t *) NULL,
 				 (RadioResourceConfigCommonSIB_t *) NULL,
@@ -3659,6 +3665,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 #ifdef Rel14 
 				 0,
 #endif
+				 ue_context_pP->ue_context.rnti,
 				 (BCCH_BCH_Message_t *) NULL,
 				 (RadioResourceConfigCommonSIB_t *) NULL,
 				 (RadioResourceConfigCommonSIB_t *) NULL,
@@ -3711,7 +3718,7 @@ rrc_eNB_generate_RRCConnectionSetup(
                           ue_context_pP,
                           CC_id,
                           (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload,
-			  (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
+			  (uint8_t) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
                           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
                           SRB_configList,
                           &ue_context_pP->ue_context.physicalConfigDedicated);
@@ -3755,6 +3762,7 @@ rrc_eNB_generate_RRCConnectionSetup(
 #ifdef Rel14 
 			       0,
 #endif
+			       ue_context_pP->ue_context.rnti,
 			       (BCCH_BCH_Message_t *) NULL,
 			       (RadioResourceConfigCommonSIB_t *) NULL,
 			       (RadioResourceConfigCommonSIB_t *) NULL,
@@ -3989,7 +3997,7 @@ rrc_eNB_decode_ccch(
 
   //memset(ul_ccch_msg,0,sizeof(UL_CCCH_Message_t));
 
-  LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Decoding UL CCCH %x.%x.%x.%x.%x.%x (%p)\n",
+  LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Decoding UL CCCH %x.%x.%x.%x.%x.%x (%p)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
         ((uint8_t*) Srb_info->Rx_buffer.Payload)[0],
         ((uint8_t *) Srb_info->Rx_buffer.Payload)[1],
@@ -4006,6 +4014,7 @@ rrc_eNB_decode_ccch(
                0,
                0);
 
+  /*
 #if defined(ENABLE_ITTI)
 #   if defined(DISABLE_ITTI_XER_PRINT)
   {
@@ -4034,6 +4043,7 @@ rrc_eNB_decode_ccch(
   }
 #   endif
 #endif
+  */
 
   for (i = 0; i < 8; i++) {
     LOG_T(RRC, "%x.", ((uint8_t *) & ul_ccch_msg)[i]);
@@ -4963,13 +4973,19 @@ rrc_enb_task(
       CC_id = RRC_MAC_CCCH_DATA_IND(msg_p).CC_id;
       srb_info_p = &RC.rrc[instance]->carrier[CC_id].Srb0;
 
+      LOG_I(RRC,"Decoding CCCH : inst %d, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
+	    instance,CC_id,&ctxt, RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
+      AssertFatal(RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size < RRC_BUFFER_SIZE_MAX,
+		  "CCCH message has size %d > %d\n",
+		  RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,RRC_BUFFER_SIZE_MAX);
       memcpy(srb_info_p->Rx_buffer.Payload,
              RRC_MAC_CCCH_DATA_IND(msg_p).sdu,
              RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
       srb_info_p->Rx_buffer.payload_size = RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size;
+
       rrc_eNB_decode_ccch(&ctxt, srb_info_p, CC_id);
       break;
-
+	    
       /* Messages from PDCP */
     case RRC_DCCH_DATA_IND:
       PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,

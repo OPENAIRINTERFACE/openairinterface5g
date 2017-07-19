@@ -1063,6 +1063,7 @@ static void get_options (int argc, char **argv) {
   if ((UE_flag == 0) && (conf_config_file_name != NULL)) {
 
 
+    memset((void*)&RC,0,sizeof(RC));
 
     /* Read RC configuration file */
     RCConfig(conf_config_file_name);
@@ -1267,6 +1268,25 @@ void wait_RUs() {
   LOG_I(PHY,"RUs configured\n");
 }
 
+void wait_eNBs() {
+
+  int i,j;
+  int waiting=1;
+
+
+  while (waiting==1) {
+    printf("Waiting for eNB L1 instances to all get configured ... sleeping 500ms (nb_L1_inst %d)\n",RC.nb_L1_inst);
+    usleep(500000);
+    waiting=0;
+    for (i=0;i<RC.nb_L1_inst;i++)
+      for (j=0;j<RC.nb_L1_CC[i];j++)
+	if (RC.eNB[i][j]->configured==0) {
+	  waiting=1;
+	  break;
+	}
+  }
+  printf("eNB L1 are configured\n");
+}
 
 int main( int argc, char **argv )
 {
@@ -1275,7 +1295,7 @@ int main( int argc, char **argv )
   void *status;
 #endif
 
-
+  int inst;
   int CC_id;
   int ru_id;
   uint8_t  abstraction_flag=0;
@@ -1668,10 +1688,15 @@ int main( int argc, char **argv )
   }
   else { 
     number_of_cards = 1;    
-    if (RC.nb_inst > 0) {
+    if (RC.nb_L1_inst > 0) {
       printf("Initializing eNB threads\n");
       init_eNB(single_thread_flag,wait_for_sync);
+      for (inst=0;inst<RC.nb_L1_inst;inst++)
+	for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) phy_init_lte_eNB(RC.eNB[inst][CC_id],0,0);
     }
+
+    wait_eNBs();
+
     if (RC.nb_RU >0) {
       printf("Initializing RU threads\n");
       init_RU(rf_config_file);
@@ -1680,11 +1705,22 @@ int main( int argc, char **argv )
 	RC.ru[ru_id]->rf_map.chain=CC_id+chain_offset;
       }
     }
-    
+
+    AssertFatal(RC.eNB[0][0]->UL_INFO.crc_ind.crc_pdu_list!=NULL,
+		"RC.eNB[0][0]->UL_INFO.crc_ind.crc_pdu_list is null\n");
+    AssertFatal(RC.eNB[0][0]->UL_INFO.rx_ind.rx_pdu_list!=NULL,
+		"RC.eNB[0][0]->UL_INFO.rx_ind.rx_pdu_list is null\n");
     wait_RUs();
-    // once all RUs are ready intiailize the rest of the eNBs (dependence on final RU parameters after configuration)
+    AssertFatal(RC.eNB[0][0]->UL_INFO.crc_ind.crc_pdu_list!=NULL,
+		"RC.eNB[0][0]->UL_INFO.crc_ind.crc_pdu_list is null\n");
+    AssertFatal(RC.eNB[0][0]->UL_INFO.rx_ind.rx_pdu_list!=NULL,
+		"RC.eNB[0][0]->UL_INFO.rx_ind.rx_pdu_list is null\n");
+    // once all RUs are ready intiailize the rest of the eNBs ((dependence on final RU parameters after configuration)
     init_eNB_afterRU();
-    
+    AssertFatal(RC.eNB[0][0]->UL_INFO.crc_ind.crc_pdu_list!=NULL,
+		"RC.eNB[0][0]->UL_INFO.crc_ind.crc_pdu_list is null\n");
+    AssertFatal(RC.eNB[0][0]->UL_INFO.rx_ind.rx_pdu_list!=NULL,
+		"RC.eNB[0][0]->UL_INFO.rx_ind.rx_pdu_list is null\n");
     
   }
   

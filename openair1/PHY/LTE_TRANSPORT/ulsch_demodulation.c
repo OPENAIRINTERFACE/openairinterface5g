@@ -47,7 +47,6 @@
 static short jitter[8]  __attribute__ ((aligned(16))) = {1,0,0,1,0,1,1,0};
 static short jitterc[8] __attribute__ ((aligned(16))) = {0,1,1,0,1,0,0,1};
 
-#ifndef OFDMA_ULSCH
 void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *z, uint16_t Msc_PUSCH)
 {
 #if defined(__x86_64__) || defined(__i386__)
@@ -455,7 +454,7 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *z, uint16_t Msc_PUSCH)
 #endif
 
 }
-#endif
+
 
 
 
@@ -726,6 +725,9 @@ void ulsch_extract_rbs_single(int32_t **rxdataF,
   //uint8_t symbol = l+Ns*frame_parms->symbols_per_tti/2;
   uint8_t symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
 
+  AssertFatal((frame_parms->nb_antennas_rx>0) && (frame_parms->nb_antennas_rx<3),
+	      "nb_antennas_rx not in (1-2)\n");
+
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
 
@@ -744,20 +746,12 @@ void ulsch_extract_rbs_single(int32_t **rxdataF,
       rxF_ext += nb_rb1*6;
 
       if (nb_rb2)  {
-        //#ifdef OFDMA_ULSCH
-        //  rxF = &rxdataF[aarx][(1 + symbol*frame_parms->ofdm_symbol_size)*2];
-        //#else
         rxF = &rxdataF[aarx][(symbol*frame_parms->ofdm_symbol_size)];
-        //#endif
         memcpy(rxF_ext, rxF, nb_rb2*6*sizeof(int));
         rxF_ext += nb_rb2*6;
       }
     } else { //there is only data in the second half
-      //#ifdef OFDMA_ULSCH
-      //      rxF = &rxdataF[aarx][(1 + 6*(2*first_rb - frame_parms->N_RB_UL) + symbol*frame_parms->ofdm_symbol_size)*2];
-      //#else
       rxF = &rxdataF[aarx][(6*(2*first_rb - frame_parms->N_RB_UL) + symbol*frame_parms->ofdm_symbol_size)];
-      //#endif
       memcpy(rxF_ext, rxF, nb_rb2*6*sizeof(int));
       rxF_ext += nb_rb2*6;
     }
@@ -806,9 +800,6 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
   __m128i *ul_ch128,*ul_ch_mag128,*ul_ch_mag128b,*rxdataF128,*rxdataF_comp128;
   uint8_t aarx;//,symbol_mod;
   __m128i mmtmpU0,mmtmpU1,mmtmpU2,mmtmpU3;
-#ifdef OFDMA_ULSCH
-  __m128i QAM_amp128U,QAM_amp128bU;
-#endif
 
 #elif defined(__arm__)
 
@@ -817,35 +808,11 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
 
   uint8_t aarx;//,symbol_mod;
   int32x4_t mmtmpU0,mmtmpU1,mmtmpU0b,mmtmpU1b;
-#ifdef OFDMA_ULSCH
-  int16x8_t mmtmpU2,mmtmpU3;
-  int16x8_t QAM_amp128U,QAM_amp128bU;
-#endif
   int16_t conj[4]__attribute__((aligned(16))) = {1,-1,1,-1};
   int32x4_t output_shift128 = vmovq_n_s32(-(int32_t)output_shift);
 
 
 
-#endif
-
-#ifdef OFDMA_ULSCH
-
-#if defined(__x86_64__) || defined(__i386__)
-  if (Qm == 4)
-    QAM_amp128U = _mm_set1_epi16(QAM16_n1);
-  else if (Qm == 6) {
-    QAM_amp128U  = _mm_set1_epi16(QAM64_n1);
-    QAM_amp128bU = _mm_set1_epi16(QAM64_n2);
-  }
-#elif defined(__arm__)
-  if (Qm == 4)
-    QAM_amp128U = vdupq_n_s16(QAM16_n1);
-  else if (Qm == 6) {
-    QAM_amp128U  = vdupq_n_s16(QAM64_n1);
-    QAM_amp128bU = vdupq_n_s16(QAM64_n2);
-  }
-
-#endif
 #endif
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
@@ -870,76 +837,7 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
 #endif
     for (rb=0; rb<nb_rb; rb++) {
       //            printf("comp: symbol %d rb %d\n",symbol,rb);
-#ifdef OFDMA_ULSCH
-      if (Qm>2) {
-        // get channel amplitude if not QPSK
 
-#if defined(__x86_64__) || defined(__i386__)
-        mmtmpU0 = _mm_madd_epi16(ul_ch128[0],ul_ch128[0]);
-
-        mmtmpU0 = _mm_srai_epi32(mmtmpU0,output_shift);
-
-        mmtmpU1 = _mm_madd_epi16(ul_ch128[1],ul_ch128[1]);
-        mmtmpU1 = _mm_srai_epi32(mmtmpU1,output_shift);
-        mmtmpU0 = _mm_packs_epi32(mmtmpU0,mmtmpU1);
-
-        ul_ch_mag128[0] = _mm_unpacklo_epi16(mmtmpU0,mmtmpU0);
-        ul_ch_mag128b[0] = ul_ch_mag128[0];
-        ul_ch_mag128[0] = _mm_mulhi_epi16(ul_ch_mag128[0],QAM_amp128U);
-        ul_ch_mag128[0] = _mm_slli_epi16(ul_ch_mag128[0],2);  // 2 to compensate the scale channel estimate
-        ul_ch_mag128[1] = _mm_unpackhi_epi16(mmtmpU0,mmtmpU0);
-        ul_ch_mag128b[1] = ul_ch_mag128[1];
-        ul_ch_mag128[1] = _mm_mulhi_epi16(ul_ch_mag128[1],QAM_amp128U);
-        ul_ch_mag128[1] = _mm_slli_epi16(ul_ch_mag128[1],2);  // 2 to compensate the scale channel estimate
-
-        mmtmpU0 = _mm_madd_epi16(ul_ch128[2],ul_ch128[2]);
-        mmtmpU0 = _mm_srai_epi32(mmtmpU0,output_shift);
-        mmtmpU1 = _mm_packs_epi32(mmtmpU0,mmtmpU0);
-
-        ul_ch_mag128[2] = _mm_unpacklo_epi16(mmtmpU1,mmtmpU1);
-        ul_ch_mag128b[2] = ul_ch_mag128[2];
-
-        ul_ch_mag128[2] = _mm_mulhi_epi16(ul_ch_mag128[2],QAM_amp128U);
-        ul_ch_mag128[2] = _mm_slli_epi16(ul_ch_mag128[2],2); // 2 to compensate the scale channel estimate
-
-
-        ul_ch_mag128b[0] = _mm_mulhi_epi16(ul_ch_mag128b[0],QAM_amp128bU);
-        ul_ch_mag128b[0] = _mm_slli_epi16(ul_ch_mag128b[0],2); // 2 to compensate the scale channel estimate
-
-
-        ul_ch_mag128b[1] = _mm_mulhi_epi16(ul_ch_mag128b[1],QAM_amp128bU);
-        ul_ch_mag128b[1] = _mm_slli_epi16(ul_ch_mag128b[1],2); // 2 to compensate the scale channel estimate
-
-        ul_ch_mag128b[2] = _mm_mulhi_epi16(ul_ch_mag128b[2],QAM_amp128bU);
-        ul_ch_mag128b[2] = _mm_slli_epi16(ul_ch_mag128b[2],2);// 2 to compensate the scale channel estimate
-
-#elif defined(__arm__)
-          mmtmpU0 = vmull_s16(ul_ch128[0], ul_ch128[0]);
-          mmtmpU0 = vqshlq_s32(vqaddq_s32(mmtmpU0,vrev64q_s32(mmtmpU0)),-output_shift128);
-          mmtmpU1 = vmull_s16(ul_ch128[1], ul_ch128[1]);
-          mmtmpU1 = vqshlq_s32(vqaddq_s32(mmtmpU1,vrev64q_s32(mmtmpU1)),-output_shift128);
-          mmtmpU2 = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
-          mmtmpU0 = vmull_s16(ul_ch128[2], ul_ch128[2]);
-          mmtmpU0 = vqshlq_s32(vqaddq_s32(mmtmpU0,vrev64q_s32(mmtmpU0)),-output_shift128);
-          mmtmpU1 = vmull_s16(ul_ch128[3], ul_ch128[3]);
-          mmtmpU1 = vqshlq_s32(vqaddq_s32(mmtmpU1,vrev64q_s32(mmtmpU1)),-output_shift128);
-          mmtmpU3 = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
-          mmtmpU0 = vmull_s16(ul_ch128[4], ul_ch128[4]);
-          mmtmpU0 = vqshlq_s32(vqaddq_s32(mmtmpU0,vrev64q_s32(mmtmpU0)),-output_shift128);
-          mmtmpU1 = vmull_s16(ul_ch128[5], ul_ch128[5]);
-          mmtmpU1 = vqshlq_s32(vqaddq_s32(mmtmpU1,vrev64q_s32(mmtmpU1)),-output_shift128);
-          mmtmpU4 = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
-
-          ul_ch_mag128b[0] = vqdmulhq_s16(mmtmpU2,QAM_amp128b);
-          ul_ch_mag128b[1] = vqdmulhq_s16(mmtmpU3,QAM_amp128b);
-          ul_ch_mag128[0] = vqdmulhq_s16(mmtmpU2,QAM_amp128);
-          ul_ch_mag128[1] = vqdmulhq_s16(mmtmpU3,QAM_amp128);
-          ul_ch_mag128b[2] = vqdmulhq_s16(mmtmpU4,QAM_amp128b);
-          ul_ch_mag128[2]  = vqdmulhq_s16(mmtmpU4,QAM_amp128);
-#endif
-      }
-
-#else // SC-FDMA
 // just compute channel magnitude without scaling, this is done after equalization for SC-FDMA
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -965,30 +863,29 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
 
 
 #elif defined(__arm__)
-          mmtmpU0 = vmull_s16(ul_ch128[0], ul_ch128[0]);
-          mmtmpU0 = vqshlq_s32(vqaddq_s32(mmtmpU0,vrev64q_s32(mmtmpU0)),-output_shift128);
-          mmtmpU1 = vmull_s16(ul_ch128[1], ul_ch128[1]);
-          mmtmpU1 = vqshlq_s32(vqaddq_s32(mmtmpU1,vrev64q_s32(mmtmpU1)),-output_shift128);
-          ul_ch_mag128[0] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
-          mmtmpU0 = vmull_s16(ul_ch128[2], ul_ch128[2]);
-          mmtmpU0 = vqshlq_s32(vqaddq_s32(mmtmpU0,vrev64q_s32(mmtmpU0)),-output_shift128);
-          mmtmpU1 = vmull_s16(ul_ch128[3], ul_ch128[3]);
-          mmtmpU1 = vqshlq_s32(vqaddq_s32(mmtmpU1,vrev64q_s32(mmtmpU1)),-output_shift128);
-          ul_ch_mag128[1] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
-          mmtmpU0 = vmull_s16(ul_ch128[4], ul_ch128[4]);
-          mmtmpU0 = vqshlq_s32(vqaddq_s32(mmtmpU0,vrev64q_s32(mmtmpU0)),-output_shift128);
-          mmtmpU1 = vmull_s16(ul_ch128[5], ul_ch128[5]);
-          mmtmpU1 = vqshlq_s32(vqaddq_s32(mmtmpU1,vrev64q_s32(mmtmpU1)),-output_shift128);
-          ul_ch_mag128[2] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
-
-#endif
+      mmtmpU0 = vmull_s16(ul_ch128[0], ul_ch128[0]);
+      mmtmpU0 = vqshlq_s32(vqaddq_s32(mmtmpU0,vrev64q_s32(mmtmpU0)),-output_shift128);
+      mmtmpU1 = vmull_s16(ul_ch128[1], ul_ch128[1]);
+      mmtmpU1 = vqshlq_s32(vqaddq_s32(mmtmpU1,vrev64q_s32(mmtmpU1)),-output_shift128);
+      ul_ch_mag128[0] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
+      mmtmpU0 = vmull_s16(ul_ch128[2], ul_ch128[2]);
+      mmtmpU0 = vqshlq_s32(vqaddq_s32(mmtmpU0,vrev64q_s32(mmtmpU0)),-output_shift128);
+      mmtmpU1 = vmull_s16(ul_ch128[3], ul_ch128[3]);
+      mmtmpU1 = vqshlq_s32(vqaddq_s32(mmtmpU1,vrev64q_s32(mmtmpU1)),-output_shift128);
+      ul_ch_mag128[1] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
+      mmtmpU0 = vmull_s16(ul_ch128[4], ul_ch128[4]);
+      mmtmpU0 = vqshlq_s32(vqaddq_s32(mmtmpU0,vrev64q_s32(mmtmpU0)),-output_shift128);
+      mmtmpU1 = vmull_s16(ul_ch128[5], ul_ch128[5]);
+      mmtmpU1 = vqshlq_s32(vqaddq_s32(mmtmpU1,vrev64q_s32(mmtmpU1)),-output_shift128);
+      ul_ch_mag128[2] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
+      
 #endif
 
 #if defined(__x86_64__) || defined(__i386__)
       // multiply by conjugated channel
       mmtmpU0 = _mm_madd_epi16(ul_ch128[0],rxdataF128[0]);
       //        print_ints("re",&mmtmpU0);
-
+      
       // mmtmpU0 contains real part of 4 consecutive outputs (32-bit)
       mmtmpU1 = _mm_shufflelo_epi16(ul_ch128[0],_MM_SHUFFLE(2,3,0,1));
       mmtmpU1 = _mm_shufflehi_epi16(mmtmpU1,_MM_SHUFFLE(2,3,0,1));
@@ -1057,65 +954,65 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
       rxdataF128+=3;
       rxdataF_comp128+=3;
 #elif defined(__arm__)
-        mmtmpU0 = vmull_s16(ul_ch128[0], rxdataF128[0]);
-        //mmtmpU0 = [Re(ch[0])Re(rx[0]) Im(ch[0])Im(ch[0]) Re(ch[1])Re(rx[1]) Im(ch[1])Im(ch[1])] 
-        mmtmpU1 = vmull_s16(ul_ch128[1], rxdataF128[1]);
-        //mmtmpU1 = [Re(ch[2])Re(rx[2]) Im(ch[2])Im(ch[2]) Re(ch[3])Re(rx[3]) Im(ch[3])Im(ch[3])] 
-        mmtmpU0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0),vget_high_s32(mmtmpU0)),
-                               vpadd_s32(vget_low_s32(mmtmpU1),vget_high_s32(mmtmpU1)));
-        //mmtmpU0 = [Re(ch[0])Re(rx[0])+Im(ch[0])Im(ch[0]) Re(ch[1])Re(rx[1])+Im(ch[1])Im(ch[1]) Re(ch[2])Re(rx[2])+Im(ch[2])Im(ch[2]) Re(ch[3])Re(rx[3])+Im(ch[3])Im(ch[3])] 
-
-        mmtmpU0b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[0],*(int16x4_t*)conj)), rxdataF128[0]);
-        //mmtmpU0 = [-Im(ch[0])Re(rx[0]) Re(ch[0])Im(rx[0]) -Im(ch[1])Re(rx[1]) Re(ch[1])Im(rx[1])]
-        mmtmpU1b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[1],*(int16x4_t*)conj)), rxdataF128[1]);
-        //mmtmpU0 = [-Im(ch[2])Re(rx[2]) Re(ch[2])Im(rx[2]) -Im(ch[3])Re(rx[3]) Re(ch[3])Im(rx[3])]
-        mmtmpU1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0b),vget_high_s32(mmtmpU0b)),
-                               vpadd_s32(vget_low_s32(mmtmpU1b),vget_high_s32(mmtmpU1b)));
-        //mmtmpU1 = [-Im(ch[0])Re(rx[0])+Re(ch[0])Im(rx[0]) -Im(ch[1])Re(rx[1])+Re(ch[1])Im(rx[1]) -Im(ch[2])Re(rx[2])+Re(ch[2])Im(rx[2]) -Im(ch[3])Re(rx[3])+Re(ch[3])Im(rx[3])]
-
-        mmtmpU0 = vqshlq_s32(mmtmpU0,-output_shift128);
-        mmtmpU1 = vqshlq_s32(mmtmpU1,-output_shift128);
-        rxdataF_comp128[0] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
-        mmtmpU0 = vmull_s16(ul_ch128[2], rxdataF128[2]);
-        mmtmpU1 = vmull_s16(ul_ch128[3], rxdataF128[3]);
-        mmtmpU0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0),vget_high_s32(mmtmpU0)),
-                               vpadd_s32(vget_low_s32(mmtmpU1),vget_high_s32(mmtmpU1)));
-        mmtmpU0b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[2],*(int16x4_t*)conj)), rxdataF128[2]);
-        mmtmpU1b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[3],*(int16x4_t*)conj)), rxdataF128[3]);
-        mmtmpU1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0b),vget_high_s32(mmtmpU0b)),
-                               vpadd_s32(vget_low_s32(mmtmpU1b),vget_high_s32(mmtmpU1b)));
-        mmtmpU0 = vqshlq_s32(mmtmpU0,-output_shift128);
-        mmtmpU1 = vqshlq_s32(mmtmpU1,-output_shift128);
-        rxdataF_comp128[1] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
-
-        mmtmpU0 = vmull_s16(ul_ch128[4], rxdataF128[4]);
-        mmtmpU1 = vmull_s16(ul_ch128[5], rxdataF128[5]);
-        mmtmpU0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0),vget_high_s32(mmtmpU0)),
-                               vpadd_s32(vget_low_s32(mmtmpU1),vget_high_s32(mmtmpU1)));
-
-        mmtmpU0b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[4],*(int16x4_t*)conj)), rxdataF128[4]);
-        mmtmpU1b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[5],*(int16x4_t*)conj)), rxdataF128[5]);
-        mmtmpU1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0b),vget_high_s32(mmtmpU0b)),
-                               vpadd_s32(vget_low_s32(mmtmpU1b),vget_high_s32(mmtmpU1b)));
-
-              
-        mmtmpU0 = vqshlq_s32(mmtmpU0,-output_shift128);
-        mmtmpU1 = vqshlq_s32(mmtmpU1,-output_shift128);
-        rxdataF_comp128[2] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
-              
-              // Add a jitter to compensate for the saturation in "packs" resulting in a bias on the DC after IDFT
-        rxdataF_comp128[0] = vqaddq_s16(rxdataF_comp128[0],(*(int16x8_t*)&jitter[0]));
-        rxdataF_comp128[1] = vqaddq_s16(rxdataF_comp128[1],(*(int16x8_t*)&jitter[0]));
-        rxdataF_comp128[2] = vqaddq_s16(rxdataF_comp128[2],(*(int16x8_t*)&jitter[0]));
-
+      mmtmpU0 = vmull_s16(ul_ch128[0], rxdataF128[0]);
+      //mmtmpU0 = [Re(ch[0])Re(rx[0]) Im(ch[0])Im(ch[0]) Re(ch[1])Re(rx[1]) Im(ch[1])Im(ch[1])] 
+      mmtmpU1 = vmull_s16(ul_ch128[1], rxdataF128[1]);
+      //mmtmpU1 = [Re(ch[2])Re(rx[2]) Im(ch[2])Im(ch[2]) Re(ch[3])Re(rx[3]) Im(ch[3])Im(ch[3])] 
+      mmtmpU0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0),vget_high_s32(mmtmpU0)),
+			     vpadd_s32(vget_low_s32(mmtmpU1),vget_high_s32(mmtmpU1)));
+      //mmtmpU0 = [Re(ch[0])Re(rx[0])+Im(ch[0])Im(ch[0]) Re(ch[1])Re(rx[1])+Im(ch[1])Im(ch[1]) Re(ch[2])Re(rx[2])+Im(ch[2])Im(ch[2]) Re(ch[3])Re(rx[3])+Im(ch[3])Im(ch[3])] 
       
-        ul_ch128+=6;
-        ul_ch_mag128+=3;
-        ul_ch_mag128b+=3;
-        rxdataF128+=6;
-        rxdataF_comp128+=3;
-              
+      mmtmpU0b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[0],*(int16x4_t*)conj)), rxdataF128[0]);
+      //mmtmpU0 = [-Im(ch[0])Re(rx[0]) Re(ch[0])Im(rx[0]) -Im(ch[1])Re(rx[1]) Re(ch[1])Im(rx[1])]
+      mmtmpU1b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[1],*(int16x4_t*)conj)), rxdataF128[1]);
+      //mmtmpU0 = [-Im(ch[2])Re(rx[2]) Re(ch[2])Im(rx[2]) -Im(ch[3])Re(rx[3]) Re(ch[3])Im(rx[3])]
+      mmtmpU1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0b),vget_high_s32(mmtmpU0b)),
+			     vpadd_s32(vget_low_s32(mmtmpU1b),vget_high_s32(mmtmpU1b)));
+      //mmtmpU1 = [-Im(ch[0])Re(rx[0])+Re(ch[0])Im(rx[0]) -Im(ch[1])Re(rx[1])+Re(ch[1])Im(rx[1]) -Im(ch[2])Re(rx[2])+Re(ch[2])Im(rx[2]) -Im(ch[3])Re(rx[3])+Re(ch[3])Im(rx[3])]
+      
+      mmtmpU0 = vqshlq_s32(mmtmpU0,-output_shift128);
+      mmtmpU1 = vqshlq_s32(mmtmpU1,-output_shift128);
+      rxdataF_comp128[0] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
+      mmtmpU0 = vmull_s16(ul_ch128[2], rxdataF128[2]);
+      mmtmpU1 = vmull_s16(ul_ch128[3], rxdataF128[3]);
+      mmtmpU0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0),vget_high_s32(mmtmpU0)),
+			     vpadd_s32(vget_low_s32(mmtmpU1),vget_high_s32(mmtmpU1)));
+      mmtmpU0b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[2],*(int16x4_t*)conj)), rxdataF128[2]);
+      mmtmpU1b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[3],*(int16x4_t*)conj)), rxdataF128[3]);
+      mmtmpU1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0b),vget_high_s32(mmtmpU0b)),
+			     vpadd_s32(vget_low_s32(mmtmpU1b),vget_high_s32(mmtmpU1b)));
+      mmtmpU0 = vqshlq_s32(mmtmpU0,-output_shift128);
+      mmtmpU1 = vqshlq_s32(mmtmpU1,-output_shift128);
+      rxdataF_comp128[1] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
+      
+      mmtmpU0 = vmull_s16(ul_ch128[4], rxdataF128[4]);
+      mmtmpU1 = vmull_s16(ul_ch128[5], rxdataF128[5]);
+      mmtmpU0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0),vget_high_s32(mmtmpU0)),
+			     vpadd_s32(vget_low_s32(mmtmpU1),vget_high_s32(mmtmpU1)));
+      
+      mmtmpU0b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[4],*(int16x4_t*)conj)), rxdataF128[4]);
+      mmtmpU1b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[5],*(int16x4_t*)conj)), rxdataF128[5]);
+      mmtmpU1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0b),vget_high_s32(mmtmpU0b)),
+			     vpadd_s32(vget_low_s32(mmtmpU1b),vget_high_s32(mmtmpU1b)));
+      
+      
+      mmtmpU0 = vqshlq_s32(mmtmpU0,-output_shift128);
+      mmtmpU1 = vqshlq_s32(mmtmpU1,-output_shift128);
+      rxdataF_comp128[2] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
+      
+      // Add a jitter to compensate for the saturation in "packs" resulting in a bias on the DC after IDFT
+      rxdataF_comp128[0] = vqaddq_s16(rxdataF_comp128[0],(*(int16x8_t*)&jitter[0]));
+      rxdataF_comp128[1] = vqaddq_s16(rxdataF_comp128[1],(*(int16x8_t*)&jitter[0]));
+      rxdataF_comp128[2] = vqaddq_s16(rxdataF_comp128[2],(*(int16x8_t*)&jitter[0]));
+      
+      
+      ul_ch128+=6;
+      ul_ch_mag128+=3;
+      ul_ch_mag128b+=3;
+      rxdataF128+=6;
+      rxdataF_comp128+=3;
 #endif
+      
     }
   }
 
@@ -1669,7 +1566,7 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
 #endif
 
 
-  for (l=0; l<frame_parms->symbols_per_tti-ulsch[UE_id]->harq_processes[harq_pid]->srs_active; l++) {
+  for (l=0; l<(frame_parms->symbols_per_tti-ulsch[UE_id]->harq_processes[harq_pid]->srs_active); l++) {
 
     if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||   // skip pilots
         ((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {
@@ -1688,34 +1585,34 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
 			       ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
 			       log2_maxh); // log2_maxh+I0_shift
 
-  }
+  
 
 
-  if (frame_parms->nb_antennas_rx > 1)
-    ulsch_detection_mrc(frame_parms,
+    if (frame_parms->nb_antennas_rx > 1)
+      ulsch_detection_mrc(frame_parms,
+			  pusch_vars->rxdataF_comp,
+			  pusch_vars->ul_ch_mag,
+			  pusch_vars->ul_ch_magb,
+			  l,
+			  ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
+    
+    
+    
+    //    if ((eNB->measurements.n0_power_dB[0]+3)<pusch_vars->ulsch_power[0]) {
+    if (23<pusch_vars->ulsch_power[0]) {
+      freq_equalization(frame_parms,
 			pusch_vars->rxdataF_comp,
 			pusch_vars->ul_ch_mag,
 			pusch_vars->ul_ch_magb,
 			l,
-			ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
-  
-#ifndef OFDMA_ULSCH
-  
-  if ((eNB->measurements.n0_power_dB[0]+3)<pusch_vars->ulsch_power[0]) {
-    
-    freq_equalization(frame_parms,
-		      pusch_vars->rxdataF_comp,
-		      pusch_vars->ul_ch_mag,
-		      pusch_vars->ul_ch_magb,
-		      l,
-		      ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12,
-		      Qm);
+			ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12,
+			Qm);
+    }
   }
 
-#endif
   
 
-#ifndef OFDMA_ULSCH
+
 
   //#ifdef DEBUG_ULSCH
   // Inverse-Transform equalized outputs
@@ -1726,7 +1623,7 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
   //  printf("Done\n");
   //#endif //DEBUG_ULSCH
 
-#endif
+
 
 
 

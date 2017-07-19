@@ -129,6 +129,7 @@ int attach_rru(RU_t *ru);
 
 int connect_rau(RU_t *ru);
 
+
 /*************************************************************/
 /* Functions to attach and configure RRU                     */
 
@@ -138,9 +139,11 @@ int attach_rru(RU_t *ru) {
   RRU_CONFIG_msg_t rru_config_msg;
   int received_capabilities=0;
 
+  wait_eNBs(ru);
   // Wait for capabilities
   while (received_capabilities==0) {
     
+    memset((void*)&rru_config_msg,0,sizeof(rru_config_msg));
     rru_config_msg.type = RAU_tick; 
     rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t)-MAX_RRU_CONFIG_SIZE;
     LOG_I(PHY,"Sending RAU tick to RRU %d\n",ru->idx);
@@ -187,6 +190,7 @@ int attach_rru(RU_t *ru) {
 	((RRU_config_t *)&rru_config_msg.msg[0])->threequarter_fs[0],
 	((RRU_config_t *)&rru_config_msg.msg[0])->prach_FreqOffset[0],
 	((RRU_config_t *)&rru_config_msg.msg[0])->prach_ConfigIndex[0]);
+
 
   AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),
 	      "RU %d failed send configuration to remote radio\n",ru->idx);
@@ -1542,7 +1546,9 @@ int check_capabilities(RU_t *ru,RRU_capabilities_t *cap) {
 
 
 char rru_format_options[4][20] = {"OAI_IF5_only","OAI_IF4p5_only","OAI_IF5_and_IF4p5","MBP_IF5"};
+
 char rru_formats[3][20] = {"OAI_IF5","MBP_IF5","OAI_IF4p5"};
+char ru_if_formats[4][20] = {"LOCAL_RF","REMOTE_OAI_IF5","REMOTE_MBP_IF5","REMOTE_OAI_IF4p5"};
 
 void configure_ru(int idx,
 		  void *arg) {
@@ -1558,7 +1564,8 @@ void configure_ru(int idx,
   if (capabilities->FH_fmt < MAX_FH_FMTs) LOG_I(PHY, "RU FH options %s\n",rru_format_options[capabilities->FH_fmt]);
   if ((ret=check_capabilities(ru,capabilities)) == 0) {
     // Pass configuration to RRU
-    LOG_I(PHY, "Using %s fronthaul, band %d \n",rru_formats[ru->if_south],ru->frame_parms.eutra_band);
+    LOG_I(PHY, "Using %s fronthaul (%d), band %d \n",ru_if_formats[ru->if_south],ru->if_south,ru->frame_parms.eutra_band);
+    // wait for configuration 
     config->FH_fmt                 = ru->if_south;
     config->num_bands              = 1;
     config->band_list[0]           = ru->frame_parms.eutra_band;
@@ -1572,6 +1579,9 @@ void configure_ru(int idx,
     if (ru->if_south==REMOTE_IF4p5) {
       config->prach_FreqOffset[0]  = ru->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset;
       config->prach_ConfigIndex[0] = ru->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
+      LOG_I(PHY,"REMOTE_IF4p5: prach_FrequOffset %d, prach_ConfigIndex %d\n",
+	    config->prach_FreqOffset[0],config->prach_ConfigIndex[0]);
+
     }
     // take antenna capabilities of RRU
     ru->nb_tx                      = capabilities->nb_tx[0];
@@ -1601,6 +1611,8 @@ void configure_rru(int idx,
   ru->frame_parms.threequarter_fs                                          = config->threequarter_fs[0];
   ru->frame_parms.pdsch_config_common.referenceSignalPower                 = ru->max_pdschReferenceSignalPower-config->att_tx[0];
   if (ru->function==NGFI_RRU_IF4p5) {
+    LOG_I(PHY,"Setting ru->function to NGFI_RRU_IF4p5, prach_FrequOffset %d, prach_ConfigIndex %d\n",
+	  config->prach_FreqOffset[0],config->prach_ConfigIndex[0]);
     ru->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset  = config->prach_FreqOffset[0]; 
     ru->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex = config->prach_ConfigIndex[0]; 
   }
@@ -1656,10 +1668,12 @@ void init_RU(const char *rf_config_file) {
   pthread_mutex_init(&RC.ru_mutex,NULL);
   pthread_cond_init(&RC.ru_cond,NULL);
 
-  // read in configuration file
+  // read in configuration file)
+  printf("configuring RU from file\n");
   RCconfig_RU();
+  printf("number of L1 instaces %d, number of RU %d\n",RC.nb_L1_inst,RC.nb_RU);
 
-  for (i=0;i<RC.nb_inst;i++) 
+  for (i=0;i<RC.nb_L1_inst;i++) 
     for (CC_id=0;CC_id<RC.nb_CC[i];CC_id++) RC.eNB[i][CC_id]->num_RU=0;
 
   for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
@@ -1679,7 +1693,7 @@ void init_RU(const char *rf_config_file) {
       eNB0 = ru->eNB_list[i];
       eNB0->RU_list[eNB0->num_RU++] = ru;
     }
-    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],eNB_timing[ru->if_timing],ru->function);
+    //    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],eNB_timing[ru->if_timing],ru->function);
 
     
     switch (ru->if_south) {

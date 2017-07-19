@@ -67,9 +67,9 @@ void generate_pcfich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
   }
 
 
-#ifdef DEBUG_PCFICH
+  //#ifdef DEBUG_PCFICH
   printf("pcfich_reg : %d,%d,%d,%d\n",pcfich_reg[0],pcfich_reg[1],pcfich_reg[2],pcfich_reg[3]);
-#endif
+  //#endif
 }
 
 void pcfich_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
@@ -144,7 +144,8 @@ void generate_pcfich(uint8_t num_pdcch_symbols,
 
   int nushiftmod3 = frame_parms->nushift%3;
 #ifdef DEBUG_PCFICH
-  printf("[PHY] Generating PCFICH for %d PDCCH symbols, AMP %d\n",num_pdcch_symbols,amp);
+  LOG_D(PHY,"Generating PCFICH in subfrmae %d for %d PDCCH symbols, AMP %d, p %d, Ncp %d\n",
+	subframe,num_pdcch_symbols,amp,frame_parms->nb_antenna_ports_eNB,frame_parms->Ncp);
 #endif
 
   // scrambling
@@ -199,7 +200,6 @@ void generate_pcfich(uint8_t num_pdcch_symbols,
     if (reg_offset>=frame_parms->ofdm_symbol_size)
       reg_offset=1 + reg_offset-frame_parms->ofdm_symbol_size;
 
-    //    printf("mapping pcfich reg_offset %d\n",reg_offset);
     for (i=0; i<6; i++) {
       if ((i!=nushiftmod3)&&(i!=(nushiftmod3+3))) {
         txdataF[0][symbol_offset+reg_offset+i] = pcfich_d[0][m];

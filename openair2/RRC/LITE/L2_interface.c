@@ -79,15 +79,23 @@ mac_rrc_data_req(
   SRB_INFO *Srb_info;
   uint8_t Sdu_size                = 0;
   uint8_t sfn                     = (uint8_t)((frameP>>2)&0xff);
-  eNB_RRC_INST *rrc               = RC.rrc[Mod_idP];
-  rrc_eNB_carrier_data_t *carrier = &rrc->carrier[0];
-  BCCH_BCH_Message_t *mib         = &carrier->mib;
+
+
+  
 #ifdef DEBUG_RRC
   int i;
   LOG_T(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_idP,Srb_id);
 #endif
 
+  eNB_RRC_INST *rrc;
+  rrc_eNB_carrier_data_t *carrier;
+  BCCH_BCH_Message_t *mib;
+
   if( enb_flagP == ENB_FLAG_YES) {
+
+    rrc     = RC.rrc[Mod_idP];
+    carrier = &rrc->carrier[0];
+    mib     = &carrier->mib;
 
     if((Srb_id & RAB_OFFSET) == BCCH) {
       if(RC.rrc[Mod_idP]->carrier[CC_id].SI.Active==0) {
@@ -188,8 +196,8 @@ mac_rrc_data_req(
 	enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_BCH_Message,
 					 (void*)mib,
 					 carrier->MIB,
-					 100);
-	LOG_I(RRC,"Encoded MIB for frame %d (%p)\n",sfn,carrier->MIB);
+					 24);
+	LOG_I(RRC,"Encoded MIB for frame %d (%p), bits %lu\n",sfn,carrier->MIB,enc_rval.encoded);
 	buffer_pP[0]=carrier->MIB[0];
 	buffer_pP[1]=carrier->MIB[1];
 	buffer_pP[2]=carrier->MIB[2];
@@ -297,6 +305,7 @@ mac_rrc_data_req(
 
 #endif //Rel10 || Rel14
   } else {  //This is an UE
+
 
     LOG_D(RRC,"[UE %d] Frame %d Filling CCCH SRB_ID %d\n",Mod_idP,frameP,Srb_id);
     LOG_D(RRC,"[UE %d] Frame %d buffer_pP status %d,\n",Mod_idP,frameP, UE_rrc_inst[Mod_idP].Srb0[eNB_index].Tx_buffer.payload_size);

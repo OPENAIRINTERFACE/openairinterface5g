@@ -151,9 +151,9 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
     dlsch->Nsoft = Nsoft;
     
     for (layer=0; layer<4; layer++) {
-      dlsch->ue_spec_bf_weights[layer] = (int32_t**)malloc16(frame_parms->nb_antennas_tx*sizeof(int32_t*));
+      dlsch->ue_spec_bf_weights[layer] = (int32_t**)malloc16(64*sizeof(int32_t*));
       
-      for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+      for (aa=0; aa<64; aa++) {
 	dlsch->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
 	for (re=0;re<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; re++) {
 	  dlsch->ue_spec_bf_weights[layer][aa][re] = 0x00007fff;

@@ -1722,7 +1722,7 @@ add_executable(lte-softmodem
   ${T_SOURCE}
   )
 
-target_link_libraries (lte-softmodem -ldl
+target_link_libraries (lte-softmodem -ldl 
   -Wl,--start-group
   RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
   -Wl,--end-group )

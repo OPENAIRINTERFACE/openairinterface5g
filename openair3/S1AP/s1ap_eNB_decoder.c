@@ -160,6 +160,7 @@ static int s1ap_eNB_decode_successful_outcome(s1ap_message *message,
   DevAssert(successfullOutcome_p != NULL);
 
   message_string = malloc(sizeof(char) * 10000);
+  memset((void*)message_string,0,sizeof(char) * 10000);
 
   s1ap_string_total_size = 0;
 
