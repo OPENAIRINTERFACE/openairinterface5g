@@ -271,7 +271,7 @@ void phy_reset_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
   PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
 
   //[NUMBER_OF_RX_THREAD=2][NUMBER_OF_CONNECTED_eNB_MAX][2];
-  for(int l=0; l<2; l++) {
+  for(int l=0; l<RX_NB_TH; l++) {
       for(i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
           for(j=0; j<2; j++) {
               //DL HARQ
@@ -336,6 +336,7 @@ void ra_succeeded(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
       PHY_vars_UE_g[Mod_id][CC_id]->ulsch[eNB_index]->harq_processes[i]->status=IDLE;
       PHY_vars_UE_g[Mod_id][CC_id]->dlsch[0][eNB_index][0]->harq_processes[i]->round=0;
       PHY_vars_UE_g[Mod_id][CC_id]->dlsch[1][eNB_index][0]->harq_processes[i]->round=0;
+      PHY_vars_UE_g[Mod_id][CC_id]->ulsch[eNB_index]->harq_processes[i]->subframe_scheduling_flag=0;
     }
   }
 
@@ -2662,7 +2663,8 @@ void ue_measurement_procedures(
 
   }
 
-  if ((subframe_rx==0) && (slot == 0) && (l==(4-frame_parms->Ncp))) {
+  // accumulate and filter timing offset estimation every subframe (instead of every frame)
+  if (( (slot%2) == 0) && (l==(4-frame_parms->Ncp))) {
 
     // AGC
 
@@ -5636,6 +5638,7 @@ void phy_procedures_UE_lte(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,u
 
     if (ue->mac_enabled==1) {
       if (slot==0) {
+          //LOG_I(PHY,"[UE %d] Frame %d, subframe %d, star ue_scheduler\n", ue->Mod_id,frame_rx,subframe_tx);
         ret = mac_xface->ue_scheduler(ue->Mod_id,
             frame_rx,
             subframe_rx,

@@ -725,6 +725,7 @@ void *UE_thread(void *arg) {
                                                                UE->frame_parms.nb_antennas_rx),"");
                     }
                     UE->rx_offset=0;
+                    UE->time_sync_cell=0;
                     //UE->proc.proc_rxtx[0].frame_rx++;
                     //UE->proc.proc_rxtx[1].frame_rx++;
                     for (th_id=0; th_id < RX_NB_TH; th_id++) {

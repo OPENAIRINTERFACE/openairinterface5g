@@ -493,6 +493,8 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
               ue->common_vars.freq_offset );
     #endif
 
+// send sync status to higher layers later when timing offset converge to target timing
+#if 0
       if (ue->mac_enabled==1) {
 	LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
 	//mac_resynch();
@@ -502,6 +504,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
       else {
 	ue->UE_mode[0] = PUSCH;
       }
+#endif
 
       generate_pcfich_reg_mapping(frame_parms);
       generate_phich_reg_mapping(frame_parms);

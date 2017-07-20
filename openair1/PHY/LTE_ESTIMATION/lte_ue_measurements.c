@@ -215,7 +215,7 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
           }
           else
           {
-              rxF_sss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[(subframe+1)%RX_NB_TH].rxdataF[aarx][(13*ue->frame_parms.ofdm_symbol_size)];
+              rxF_sss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[(subframe-1)%RX_NB_TH].rxdataF[aarx][(13*ue->frame_parms.ofdm_symbol_size)];
               rxF_pss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[subframe%RX_NB_TH].rxdataF[aarx][(2*ue->frame_parms.ofdm_symbol_size)];
           }
               //-ve spectrum from SSS
@@ -239,7 +239,7 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
               }
               else
               {
-                  rxF_sss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[(subframe+1)%RX_NB_TH].rxdataF[aarx][(14*ue->frame_parms.ofdm_symbol_size)];
+                  rxF_sss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[(subframe-1)%RX_NB_TH].rxdataF[aarx][(14*ue->frame_parms.ofdm_symbol_size)];
                   rxF_pss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[subframe%RX_NB_TH].rxdataF[aarx][(3*ue->frame_parms.ofdm_symbol_size)];
               }
           //              ue->measurements.n0_power[aarx] += (((int32_t)rxF_pss[-72]*rxF_pss[-72])+((int32_t)rxF_pss[-71]*rxF_pss[-71]));
@@ -278,7 +278,7 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
                 rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe%RX_NB_TH)].rxdataF;
                 rxF_pss  = (int16_t *) &rxdataF[aarx][((pss_symb*(ue->frame_parms.ofdm_symbol_size)))];
 
-                rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe+1)%RX_NB_TH].rxdataF;
+                rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe-1)%RX_NB_TH].rxdataF;
                 rxF_sss  = (int16_t *) &rxdataF[aarx][((sss_symb*(ue->frame_parms.ofdm_symbol_size)))];
 
                 //-ve spectrum from SSS

@@ -1089,6 +1089,7 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
   LTE_UE_COMMON* const common_vars        = &ue->common_vars;
   LTE_UE_PDSCH** const pdsch_vars_SI      = ue->pdsch_vars_SI;
   LTE_UE_PDSCH** const pdsch_vars_ra      = ue->pdsch_vars_ra;
+  LTE_UE_PDSCH** const pdsch_vars_p       = ue->pdsch_vars_p;
   LTE_UE_PDSCH** const pdsch_vars_mch     = ue->pdsch_vars_MCH;
   LTE_UE_PDSCH* (*pdsch_vars_th)[][NUMBER_OF_CONNECTED_eNB_MAX+1] = &ue->pdsch_vars;
   LTE_UE_PDCCH* (*pdcch_vars_th)[][NUMBER_OF_CONNECTED_eNB_MAX]   = &ue->pdcch_vars;
@@ -1184,6 +1185,7 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
 
     pdsch_vars_SI[eNB_id]  = (LTE_UE_PDSCH *)malloc16_clear(sizeof(LTE_UE_PDSCH));
     pdsch_vars_ra[eNB_id]  = (LTE_UE_PDSCH *)malloc16_clear(sizeof(LTE_UE_PDSCH));
+    pdsch_vars_p[eNB_id]   = (LTE_UE_PDSCH *)malloc16_clear(sizeof(LTE_UE_PDSCH));
     pdsch_vars_mch[eNB_id] = (LTE_UE_PDSCH *)malloc16_clear(sizeof(LTE_UE_PDSCH));
     prach_vars[eNB_id]     = (LTE_UE_PRACH *)malloc16_clear(sizeof(LTE_UE_PRACH));
     pbch_vars[eNB_id]      = (LTE_UE_PBCH *)malloc16_clear(sizeof(LTE_UE_PBCH));
@@ -1247,6 +1249,7 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
       }
       phy_init_lte_ue__PDSCH( pdsch_vars_SI[eNB_id], fp );
       phy_init_lte_ue__PDSCH( pdsch_vars_ra[eNB_id], fp );
+      phy_init_lte_ue__PDSCH( pdsch_vars_p[eNB_id], fp );
       phy_init_lte_ue__PDSCH( pdsch_vars_mch[eNB_id], fp );
 
       // 100 PRBs * 12 REs/PRB * 4 PDCCH SYMBOLS * 2 LLRs/RE
@@ -1311,6 +1314,7 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
 
   pdsch_vars_SI[eNB_id]  = (LTE_UE_PDSCH *)malloc16_clear( sizeof(LTE_UE_PDSCH) );
   pdsch_vars_ra[eNB_id]  = (LTE_UE_PDSCH *)malloc16_clear( sizeof(LTE_UE_PDSCH) );
+  pdsch_vars_p[eNB_id]   = (LTE_UE_PDSCH *)malloc16_clear( sizeof(LTE_UE_PDSCH) );
 
   if (abstraction_flag == 0) {
     for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
