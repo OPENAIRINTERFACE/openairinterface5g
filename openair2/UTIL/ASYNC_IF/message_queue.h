@@ -38,6 +38,7 @@
 #ifndef MESSAGE_QUEUE_H
 #define MESSAGE_QUEUE_H
 
+#include <stdint.h>
 #include <pthread.h>
 
 #ifdef __cplusplus
@@ -48,6 +49,7 @@ typedef struct message_t {
   void *data;
   int  size;
   int  priority;
+  uint16_t type;
   struct message_t *next;
 } message_t;
 

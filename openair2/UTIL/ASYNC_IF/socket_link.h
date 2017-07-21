@@ -44,8 +44,10 @@
 extern "C" {
 #endif
 
+  
 typedef struct {
   int      socket_fd;
+  int	   peer_port;
   uint64_t bytes_sent;
   uint64_t packets_sent;
   uint64_t bytes_received;
@@ -54,8 +56,12 @@ typedef struct {
 
 socket_link_t *new_link_server(int port);
 socket_link_t *new_link_client(char *server, int port);
-int link_send_packet(socket_link_t *link, void *data, int size);
-int link_receive_packet(socket_link_t *link, void **data, int *size);
+socket_link_t *new_link_udp_server(int port);
+socket_link_t *new_link_udp_client(char *server, int port);
+socket_link_t *new_link_sctp_server(int port);
+socket_link_t *new_link_sctp_client(char *server, int port);
+int link_send_packet(socket_link_t *link, void *data, int size, uint16_t proto_type, char *peer_addr, int port);
+int link_receive_packet(socket_link_t *link, void **data, int *size, uint16_t proto_type, char *peer_addr, int port);
 int close_link(socket_link_t *link);
 
 #ifdef __cplusplus

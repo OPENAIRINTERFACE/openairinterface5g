@@ -45,6 +45,7 @@ typedef struct proto_agent_channel_s {
   RB_ENTRY(proto_agent_channel_s) entry;
 int channel_id;
 void *channel_info;
+uint16_t type; // 0-> TCP, 1-> UDP, 2->SCTP
 /*Callbacks for channel message Tx and Rx*/
 int (*msg_send)(void *data, int size, int priority, void *channel_info);
 int (*msg_recv)(void **data, int *size, int *priority, void *channel_info);

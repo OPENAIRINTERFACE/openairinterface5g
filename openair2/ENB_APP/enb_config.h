@@ -78,6 +78,22 @@ typedef struct mme_ip_address_s {
   char     *ipv6_address;
 } mme_ip_address_t;
 
+
+typedef struct flexplit_interfaces {
+  char *du_interface;
+  char *du_ipv4_address;
+  uint16_t du_port;
+  
+  char *cu_interface;
+  char *cu_ipv4_address;
+  uint16_t cu_port;
+  
+  unsigned tcp:1;
+  unsigned udp:1;
+  unsigned sctp:1;
+  
+}flexsplit_interfaces_t;
+
 typedef struct rrh_gw_config_s {
   unsigned  udp:1;
   unsigned  raw:1;
@@ -221,11 +237,7 @@ typedef struct Enb_properties_s {
   char               *enb_interface_name_for_S1_MME;
   in_addr_t           enb_ipv4_address_for_S1_MME;
 
-
-  char               *proto_agent_interface_name;
-  in_addr_t           proto_agent_ipv4_address;
-  tcp_udp_port_t      proto_agent_port;
-  char               *proto_agent_cache;
+  flexsplit_interfaces_t flexsplit_interfaces;
 
 
 

@@ -170,13 +170,14 @@
 #define ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U         "ENB_IPV4_ADDRESS_FOR_S1U"
 #define ENB_CONFIG_STRING_ENB_PORT_FOR_S1U              "ENB_PORT_FOR_S1U"
 
-#define ENB_CONFIG_STRING_FLEXSPLIT_CONFIG     		"FLEXSPLIT"
-#define ENB_CONFIG_STRING_PROTO_AGENT_INTERFACE_NAME      "PROTO_AGENT_INTERFACE_NAME"
-#define ENB_CONFIG_STRING_PROTO_AGENT_IPV4_ADDRESS        "PROTO_AGENT_IPV4_ADDRESS"
-#define ENB_CONFIG_STRING_PROTO_AGENT_PORT                "PROTO_AGENT_PORT"
-#define ENB_CONFIG_STRING_PROTO_AGENT_CACHE               "PROTO_AGENT_CACHE"
-
-
+#define ENB_CONFIG_STRING_FLEXSPLIT_INTERFACES_CONFIG	"FLEXSPLIT_INTERFACES"
+#define ENB_CONFIG_STRING_DU_INTERFACE_NAME_FOR_F1U     "DU_INTERFACE_NAME_FOR_F1U"
+#define ENB_CONFIG_STRING_DU_IPV4_ADDRESS_FOR_F1U       "DU_IPV4_ADDRESS_FOR_F1U"
+#define ENB_CONFIG_STRING_DU_PORT_FOR_F1U               "DU_PORT_FOR_F1U"
+#define ENB_CONFIG_STRING_CU_INTERFACE_NAME_FOR_F1U     "CU_INTERFACE_NAME_FOR_F1U"
+#define ENB_CONFIG_STRING_CU_IPV4_ADDRESS_FOR_F1U       "CU_IPV4_ADDRESS_FOR_F1U"
+#define ENB_CONFIG_STRING_CU_PORT_FOR_F1U               "CU_PORT_FOR_F1U"
+#define ENB_CONFIG_STRING_F1_U_TRANSPORT_TYPE           "F1_U_TRANSPORT_TYPE"
 
 #define ENB_CONFIG_STRING_RRH_GW_CONFIG                   "rrh_gw_config"
 #define ENB_CONFIG_STRING_RRH_GW_LOCAL_IF_NAME            "local_if_name"
@@ -635,11 +636,21 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
   char             *cidr                          = NULL;
   char             *astring                       = NULL;
 
-  char*             proto_agent_interface_name      = NULL;
-  char*             proto_agent_ipv4_address        = NULL;
-  libconfig_int     proto_agent_port                = 0;
-  char*             proto_agent_cache               = NULL;
+//   char*             proto_agent_interface_name      = NULL;
+//   char*             proto_agent_ipv4_address        = NULL;
+//   libconfig_int     proto_agent_port                = 0;
+//   char*             proto_agent_cache               = NULL;
 
+  char*		    du_interface_name_for_F1U 	  = NULL;
+  char*		    du_ipv4_address_for_F1U 	  = NULL;
+  libconfig_int	    du_port_for_F1U 		  = 0;
+ 
+  char*		    cu_interface_name_for_F1U 	  = NULL;
+  char*		    cu_ipv4_address_for_F1U 	  = NULL;
+  libconfig_int	    cu_port_for_F1U 		  = 0;
+  
+  char*		    transport_type_F1U		  = NULL;
+  
   libconfig_int     otg_ue_id                     = 0;
   char*             otg_app_type                  = NULL;
   char*             otg_bg_traffic                = NULL;
@@ -2355,27 +2366,65 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
           }
 
 // PROTO_AGENT configuration
-          subsetting = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_FLEXSPLIT_CONFIG);
-
+          subsetting = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_FLEXSPLIT_INTERFACES_CONFIG);
+	  //LOG_I(PROTO_AGENT, "HERE\n");
           if (subsetting != NULL) {
             if (  (
-                   config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_PROTO_AGENT_INTERFACE_NAME,
-                                                 (const char **)&proto_agent_interface_name)
-                   && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_PROTO_AGENT_IPV4_ADDRESS,
-                                                    (const char **)&proto_agent_ipv4_address)
-                   && config_setting_lookup_int(subsetting, ENB_CONFIG_STRING_PROTO_AGENT_PORT,
-                                                &proto_agent_port)
-                   && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_PROTO_AGENT_CACHE,
-                                                    (const char **)&proto_agent_cache)
+                   config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_DU_INTERFACE_NAME_FOR_F1U,
+                                                 (const char **)&du_interface_name_for_F1U)
+                   && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_DU_IPV4_ADDRESS_FOR_F1U,
+                                                    (const char **)&du_ipv4_address_for_F1U)
+                   && config_setting_lookup_int(subsetting, ENB_CONFIG_STRING_DU_PORT_FOR_F1U,
+                                                &du_port_for_F1U)
+		   && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_CU_INTERFACE_NAME_FOR_F1U,
+                                                 (const char **)&cu_interface_name_for_F1U)
+                   && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_CU_IPV4_ADDRESS_FOR_F1U,
+                                                    (const char **)&cu_ipv4_address_for_F1U)
+                   && config_setting_lookup_int(subsetting, ENB_CONFIG_STRING_CU_PORT_FOR_F1U,
+                                                &cu_port_for_F1U)
+                   && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_F1_U_TRANSPORT_TYPE,
+                                                    (const char **)&transport_type_F1U)
                  )
               ) {
-              enb_properties.properties[enb_properties_index]->proto_agent_interface_name = strdup(proto_agent_interface_name);
-              cidr = proto_agent_ipv4_address;
+              enb_properties.properties[enb_properties_index]->flexsplit_interfaces.du_interface = strdup(du_interface_name_for_F1U);
+              cidr = du_ipv4_address_for_F1U;
               address = strtok(cidr, "/");
-              enb_properties.properties[enb_properties_index]->proto_agent_ipv4_address = strdup(address);
+              enb_properties.properties[enb_properties_index]->flexsplit_interfaces.du_ipv4_address = strdup(address);
+	      enb_properties.properties[enb_properties_index]->flexsplit_interfaces.du_port = du_port_for_F1U;
 
-              enb_properties.properties[enb_properties_index]->proto_agent_port = proto_agent_port;
-              enb_properties.properties[enb_properties_index]->proto_agent_cache = strdup(proto_agent_cache);
+	      enb_properties.properties[enb_properties_index]->flexsplit_interfaces.cu_interface = strdup(cu_interface_name_for_F1U);
+              cidr = cu_ipv4_address_for_F1U;
+              address = strtok(cidr, "/");
+              enb_properties.properties[enb_properties_index]->flexsplit_interfaces.cu_ipv4_address = strdup(address);
+	      enb_properties.properties[enb_properties_index]->flexsplit_interfaces.cu_port = cu_port_for_F1U;
+	      
+	      if (strcmp(transport_type_F1U, "UDP") == 0)
+	      {
+		  enb_properties.properties[enb_properties_index]->flexsplit_interfaces.udp = 1;
+		  enb_properties.properties[enb_properties_index]->flexsplit_interfaces.tcp = 0;
+		  enb_properties.properties[enb_properties_index]->flexsplit_interfaces.sctp = 0;
+	      }
+	      else if (strcmp(transport_type_F1U, "TCP") == 0)
+	      {
+		  enb_properties.properties[enb_properties_index]->flexsplit_interfaces.udp = 0;
+		  enb_properties.properties[enb_properties_index]->flexsplit_interfaces.tcp = 1;
+		  enb_properties.properties[enb_properties_index]->flexsplit_interfaces.sctp = 0;		
+	      }
+	      
+	     else if (strcmp(transport_type_F1U, "SCTP") == 0)
+	     {
+		  enb_properties.properties[enb_properties_index]->flexsplit_interfaces.udp = 0;
+		  enb_properties.properties[enb_properties_index]->flexsplit_interfaces.tcp = 0;
+		  enb_properties.properties[enb_properties_index]->flexsplit_interfaces.sctp = 1;
+	     }
+	     else
+	     {
+		  // Will be handled by the proto agent functionality
+	          enb_properties.properties[enb_properties_index]->flexsplit_interfaces.udp = 0;
+		  enb_properties.properties[enb_properties_index]->flexsplit_interfaces.tcp = 0;
+		  enb_properties.properties[enb_properties_index]->flexsplit_interfaces.sctp = 0;	       
+	     }
+	      
             }
           }
 

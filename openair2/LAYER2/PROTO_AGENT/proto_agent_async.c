@@ -37,29 +37,49 @@
 #include "proto_agent_async.h"
 #include "proto_agent_defs.h"
 
+
 #include "log.h"
 
+uint16_t proto_udp = 0;
+uint16_t proto_tcp = 0;
+uint16_t proto_sctp = 0;
 
-proto_agent_async_channel_t * proto_server_async_channel_info(mid_t mod_id, char *dst_ip, uint16_t dst_port) {
+proto_agent_async_channel_t * proto_server_async_channel_info(mid_t mod_id, char *dst_ip, uint16_t dst_port, const char* type, const char *peer_addr) {
 
   proto_agent_async_channel_t *channel;
   channel = (proto_agent_async_channel_t *) malloc(sizeof(proto_agent_channel_t));
+
+  channel->port = dst_port;
+  channel->peer_addr = NULL;
   
   if (channel == NULL)
     goto error;
 
   channel->enb_id = mod_id;
   /*Create a socket*/
-  printf("Starting async server\n");
-  channel->link = new_link_server(dst_port);
-  //channel->link = NULL;
-  printf("Started async server\n");
-  if (channel->link == NULL) goto error;
+  if (strcmp(type, "TCP") == 0)
+  {
+    proto_tcp = 1;
+    channel->link = new_link_server(dst_port);
+    channel->type = 0;
+  }
+  else if (strcmp(type, "UDP") == 0)
+  {
+    proto_udp = 1;
+    //channel->link = new_udp_link_server(dst_port);
+    channel->link = new_link_udp_server(dst_port);
+    channel->type = 1;
+    channel->peer_addr = peer_addr;
+  }
+  else if (strcmp(type, "SCTP") == 0)
+  {
+    proto_sctp = 1;
+    //channel->link = new_sctp_link_server(dst_port);
+    channel->link = new_link_sctp_server(dst_port);
+    channel->type = 2;
+  }
   
-  LOG_I(PROTO_AGENT,"starting proto agent server for module id %d on ipv4 %s, port %d\n",  
-	channel->enb_id,
-	dst_ip,
-	dst_port);
+  if (channel->link == NULL) goto error;
   
    /* 
    * create a message queue
@@ -69,11 +89,11 @@ proto_agent_async_channel_t * proto_server_async_channel_info(mid_t mod_id, char
   if (channel->send_queue == NULL) goto error;
   channel->receive_queue = new_message_queue();
   if (channel->receive_queue == NULL) goto error;
-  
+
    /* 
    * create a link manager 
    */  
-  channel->manager = create_link_manager(channel->send_queue, channel->receive_queue, channel->link);
+  channel->manager = create_link_manager(channel->send_queue, channel->receive_queue, channel->link, channel->type, channel->peer_addr, channel->port);
   if (channel->manager == NULL) goto error;
   
   return channel;
@@ -84,25 +104,41 @@ proto_agent_async_channel_t * proto_server_async_channel_info(mid_t mod_id, char
 }
 
 
-proto_agent_async_channel_t * proto_agent_async_channel_info(mid_t mod_id, char *dst_ip, uint16_t dst_port) {
+proto_agent_async_channel_t * proto_agent_async_channel_info(mid_t mod_id, char *dst_ip, uint16_t dst_port, const char* type, const char *peer_addr) {
 
   proto_agent_async_channel_t *channel;
   channel = (proto_agent_async_channel_t *) malloc(sizeof(proto_agent_channel_t));
+  
+  channel->port = dst_port;
+  channel->peer_addr = NULL;
   
   if (channel == NULL)
     goto error;
 
   channel->enb_id = mod_id;
   /*Create a socket*/
-  channel->link = new_link_client(dst_ip, dst_port);
-
-  if (channel->link == NULL) goto error;
+  if (strcmp(type, "TCP") == 0)
+  {
+    proto_tcp = 1;
+    channel->link = new_link_client(dst_ip, dst_port);
+    channel->type = 0;
+  }
+  else if (strcmp(type, "UDP") == 0)
+  {
+    proto_udp = 1;
+    channel->link = new_link_udp_client(dst_ip, dst_port);
+    channel->type = 1;
+    channel->peer_addr = peer_addr;
+  }
+  else if (strcmp(type, "SCTP") == 0)
+  {
+    proto_sctp = 1;
+    channel->link = new_link_sctp_client(dst_ip, dst_port);;
+    channel->type = 2;
+  }
   
-
-  LOG_I(PROTO_AGENT,"starting proto agent client for module id %d on ipv4 %s, port %d\n",  
-	channel->enb_id,
-	dst_ip,
-	dst_port);
+ 
+  if (channel->link == NULL) goto error;
   
    /* 
    * create a message queue
@@ -116,13 +152,13 @@ proto_agent_async_channel_t * proto_agent_async_channel_info(mid_t mod_id, char 
    /* 
    * create a link manager 
    */  
-  channel->manager = create_link_manager(channel->send_queue, channel->receive_queue, channel->link);
+  channel->manager = create_link_manager(channel->send_queue, channel->receive_queue, channel->link, channel->type, channel->peer_addr, channel->port);
   if (channel->manager == NULL) goto error;
   
   return channel;
 
  error:
-  LOG_I(PROTO_AGENT,"there was an error\n");
+  LOG_E(PROTO_AGENT,"there was an error\n");
   return 1;
 }
 

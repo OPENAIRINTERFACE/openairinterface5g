@@ -254,6 +254,7 @@ int proto_agent_get_ack_result(mid_t mod_id, const void *params, Protocol__Flexs
   Protocol__FspRlcDataReqAck *data_ack = input->data_req_ack;
   result = data_ack->result;
   ack_result = result;
+  return 0;
 
 }
 

@@ -41,6 +41,7 @@
 #include "message_queue.h"
 //#include "ringbuffer_queue.h"
 #include "socket_link.h"
+#include <stdint.h>
 
 #include <pthread.h>
 
@@ -52,6 +53,9 @@ typedef struct {
   message_queue_t *send_queue;
   message_queue_t *receive_queue;
   socket_link_t   *socket_link;
+  uint16_t	  type;
+  char 		  *peer_addr;
+  int		  port;
   pthread_t       sender;
   pthread_t       receiver;
   volatile int    run;
@@ -60,7 +64,11 @@ typedef struct {
 link_manager_t *create_link_manager(
         message_queue_t *send_queue,
         message_queue_t *receive_queue,
-        socket_link_t   *link);
+        socket_link_t   *link,
+	uint16_t 	type,
+	char 		*peer_addr,
+	int 		port
+ 				  );
 void destroy_link_manager(link_manager_t *);
 
 #ifdef __cplusplus

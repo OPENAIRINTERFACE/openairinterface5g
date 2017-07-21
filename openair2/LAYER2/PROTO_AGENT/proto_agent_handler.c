@@ -40,7 +40,7 @@
 #include "assertions.h"
 
 proto_agent_message_decoded_callback agent_messages_callback[][3] = {
-  {proto_agent_hello, proto_agent_hello, 0},
+  {proto_agent_hello, 0, 0},
   {proto_agent_echo_reply, 0, 0},
   {0, just_print, 0},
   {proto_agent_pdcp_data_req_ack, 0, 0},
@@ -100,6 +100,7 @@ Protocol__FlexsplitMessage* proto_agent_handle_message (mid_t mod_id,
 
   if ( err_code < 0 )
   {
+    LOG_I(PROTO_AGENT, "decoded_message case : %d, direction : %d \n", decoded_message->msg_case-1, decoded_message->msg_dir-1);
     goto error;
   }
   else if (err_code == 1) 

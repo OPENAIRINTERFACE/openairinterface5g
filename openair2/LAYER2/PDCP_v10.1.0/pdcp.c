@@ -374,22 +374,23 @@ boolean_t pdcp_data_req(
   enb_properties_p = enb_config_get();
 
   static int agent_started = 1;
-
+/*
   if (agent_started == 1)
   {
+     LOG_I(PROTO_AGENT,"PDCP: starting client side with mod_id %d \n",ctxt_pP->module_id);
      agent_started = proto_agent_start(ctxt_pP->module_id, enb_properties_p);
-  }
+  }*/
   
 
   if (pdcp_pdu_p!=NULL)
   {
-    proto_agent_send_rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
-    free_mem_block(pdcp_pdu_p);
-    rlc_status = ack_result;
+   proto_agent_send_rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
+   free_mem_block(pdcp_pdu_p);
+   rlc_status = ack_result;
   }
   else
   {
-    // It should never get here
+    //It should never get here
     rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
   }
   }
@@ -921,6 +922,23 @@ pdcp_run (
   int           result;
   protocol_ctxt_t  ctxt;
 #endif
+  
+  static int agent_started = 1;
+
+  
+  Enb_properties_array_t *enb_properties_p  = NULL;
+
+  enb_properties_p = enb_config_get();
+  
+  if (agent_started == 1)
+  {
+    LOG_I(PROTO_AGENT,"Starting the PDCP instance\n");
+    //LOG_I(PROTO_AGENT,"PDCP: starting client side with mod_id %d \n",ctxt_pP->module_id);
+
+     agent_started = proto_agent_start(ctxt_pP->module_id, enb_properties_p);
+  }
+  
+  
 
   if (ctxt_pP->enb_flag) {
     start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].pdcp_run);
