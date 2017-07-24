@@ -444,23 +444,26 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 			   SCellToAddMod_r10_t *sCellToAddMod_r10,
 			   //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
-			   MeasObjectToAddMod_t           **measObj,
-			   MAC_MainConfig_t                *mac_MainConfig,
-			   long                             logicalChannelIdentity,
-			   LogicalChannelConfig_t          *logicalChannelConfig,
-			   MeasGapConfig_t                 *measGapConfig,
-			   TDD_Config_t                    *tdd_Config,
-			   MobilityControlInfo_t           *mobilityControlInfo,
-			   uint8_t                              *SIwindowsize,
-			   uint16_t                             *SIperiod,
-			   uint32_t                        ul_CarrierFreq,
-			   long                            *ul_Bandwidth,
-			   AdditionalSpectrumEmission_t    *additionalSpectrumEmission,
-			   struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList
+			   MeasObjectToAddMod_t                    **measObj,
+			   MAC_MainConfig_t                        *mac_MainConfig,
+			   long                                    logicalChannelIdentity,
+			   LogicalChannelConfig_t                  *logicalChannelConfig,
+			   MeasGapConfig_t                         *measGapConfig,
+			   TDD_Config_t                            *tdd_Config,
+			   MobilityControlInfo_t                   *mobilityControlInfo,
+			   SchedulingInfoList_t                    *schedulingInfoList,
+			   uint32_t                                ul_CarrierFreq,
+			   long                                    *ul_Bandwidth,
+			   AdditionalSpectrumEmission_t            *additionalSpectrumEmission,
+			   struct MBSFN_SubframeConfigList         *mbsfn_SubframeConfigList
 #if defined(Rel10) || defined(Rel14)
-			   ,uint8_t                              MBMS_Flag,
-			   MBSFN_AreaInfoList_r9_t         *mbsfn_AreaInfoList,
-			   PMCH_InfoList_r9_t              *pmch_InfoList
+			   ,uint8_t                                MBMS_Flag,
+			   MBSFN_AreaInfoList_r9_t                 *mbsfn_AreaInfoList,
+			   PMCH_InfoList_r9_t                      *pmch_InfoList
+#endif
+#ifdef Rel14
+			   ,
+			   SystemInformationBlockType1_v1310_IEs_t *sib1_v13ext
 #endif
 			   ) {
 			   
@@ -513,13 +516,16 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 
     mac_init_cell_params(Mod_idP,CC_idP);
   }
-  if ((SIwindowsize!=NULL) && (SIperiod!=NULL))  {
-    RC.mac[Mod_idP]->common_channels[CC_idP].tdd_Config            = tdd_Config;    
-    RC.mac[Mod_idP]->common_channels[CC_idP].SIwindowsize          = *SIwindowsize;    
-    RC.mac[Mod_idP]->common_channels[CC_idP].SIperiod              = *SIperiod;    
+  if (schedulingInfoList!=NULL)  {
+    RC.mac[Mod_idP]->common_channels[CC_idP].tdd_Config         = tdd_Config;    
+    RC.mac[Mod_idP]->common_channels[CC_idP].schedulingInfoList = schedulingInfoList;    
     config_sib1(Mod_idP,CC_idP,tdd_Config);
   }
-
+#ifdef Rel14
+  if (sib1_v13ext != NULL) {
+    RC.mac[Mod_idP]->common_channels[CC_idP].sib1_v13ext        = sib1_v13ext;    
+  }
+#endif
   if (radioResourceConfigCommon!=NULL) {
       LOG_I(MAC,"[CONFIG]SIB2/3 Contents (partial)\n");
       LOG_I(MAC,"[CONFIG]pusch_config_common.n_SB = %ld\n",radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.n_SB);
@@ -533,7 +539,7 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 
       AssertFatal(radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx > 0,
 		  "radioResourceconfigCommon %d == 0\n",
-		  radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx);
+		  (int)radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx);
 
       RC.mac[Mod_idP]->common_channels[CC_idP].radioResourceConfigCommon = radioResourceConfigCommon;
       if (ul_CarrierFreq>0) RC.mac[Mod_idP]->common_channels[CC_idP].ul_CarrierFreq          = ul_CarrierFreq;

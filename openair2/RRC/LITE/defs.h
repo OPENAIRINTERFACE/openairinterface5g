@@ -462,6 +462,8 @@ typedef struct {
   uint8_t                           *SIB23;
   uint8_t                           sizeof_SIB23;
 #ifdef Rel14
+  uint8_t                           *SIB1_BR;
+  uint8_t                           sizeof_SIB1_BR;
   uint8_t                           *SIB23_BR;
   uint8_t                           sizeof_SIB23_BR;
 #endif
@@ -477,10 +479,12 @@ typedef struct {
   //  SystemInformation_t               systemInformation;
   SystemInformationBlockType1_t     *sib1;
   SystemInformationBlockType2_t     *sib2;
-#ifdef Rel14
-  SystemInformationBlockType2_t     *sib2_BR;
-#endif
   SystemInformationBlockType3_t     *sib3;
+#ifdef Rel14
+  SystemInformationBlockType1_t     *sib1_BR;
+  SystemInformationBlockType2_t     *sib2_BR;
+  SystemInformationBlockType2_t     *sib3_BR;
+#endif
 #if defined(Rel10) || defined(Rel14)
   SystemInformationBlockType13_r9_t *sib13;
   uint8_t                           MBMS_flag;
@@ -490,10 +494,6 @@ typedef struct {
   MCCH_Message_t            mcch;
   MBSFNAreaConfiguration_r9_t       *mcch_message;
   SRB_INFO                          MCCH_MESS[8];// MAX_MBSFN_AREA
-#endif
-#ifdef CBA
-  uint8_t                        num_active_cba_groups;
-  uint16_t                       cba_rnti[NUM_MAX_CBA_GROUP];
 #endif
   SRB_INFO                          SI;
   SRB_INFO                          Srb0;

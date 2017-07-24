@@ -216,6 +216,10 @@ oai_shutdown (void);
 
 void reset_opp_meas_oaisim (void);
 
+void wait_eNBs() {
+  return;
+}
+
 void
 help (void)
 {
@@ -1349,10 +1353,10 @@ main (int argc, char **argv)
 
   init_seed (set_seed);
 
-  init_devices ();
+
   init_RU(NULL);
 
-
+  init_devices ();
 
   //  init_openair2 ();
   //  init_openair0();

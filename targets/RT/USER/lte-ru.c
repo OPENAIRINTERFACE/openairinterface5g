@@ -1754,6 +1754,7 @@ void init_RU(const char *rf_config_file) {
       ru->fh_south_in            = rx_rf;                               // local synchronous RF RX
       ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
       ru->start_rf               = start_rf;                            // need to start the local RF interface
+      printf("configuring RRU for ru_id %d (start_rf %p)\n",ru_id,start_rf);
       ru->ifdevice.configure_rru = configure_rru;
       fill_rf_config(ru,rf_config_file);
       

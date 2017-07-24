@@ -34,6 +34,7 @@
 #include "PHY/defs.h"
 #include "PHY/impl_defs_lte.h"
 #include "dci.h"
+#include "mdci.h"
 #include "uci.h"
 #ifndef STANDALONE_COMPILE
 #include "UTIL/LISTS/list.h"
@@ -123,7 +124,9 @@ typedef struct {
   uint32_t subframe;
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
-  /// MCS format for this DLSCH
+  /// Modulation order
+  uint8_t Qm;
+  /// MCS
   uint8_t mcs;
   /// Redundancy-version of the current sub-frame
   uint8_t rvidx;

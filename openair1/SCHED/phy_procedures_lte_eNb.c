@@ -909,6 +909,21 @@ void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB,
   fill_dci_and_dlsch(eNB,proc,&pdcch_vars->dci_alloc[pdcch_vars->num_dci],pdu);
 }
 
+void handle_nfapi_mpdcch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,nfapi_dl_config_request_pdu_t *dl_config_pdu);
+void handle_nfapi_mpdcch_pdu(PHY_VARS_eNB *eNB,  
+			     eNB_rxtx_proc_t *proc,
+			     nfapi_dl_config_request_pdu_t *dl_config_pdu) {
+
+  int idx                         = proc->subframe_tx&1;  
+  LTE_eNB_MPDCCH *mpdcch_vars     = &eNB->mpdcch_vars[idx];
+  nfapi_dl_config_mpdcch_pdu *pdu = &dl_config_pdu->mpdcch_pdu;
+
+  LOG_I(PHY,"Frame %d, Subframe %d: MDCI processing\n",proc->frame_tx,proc->subframe_tx);
+
+  // copy dci configuration into eNB structure
+  fill_mdci_and_dlsch(eNB,proc,&mpdcch_vars->mdci_alloc[mpdcch_vars->num_dci],pdu);
+}
+
 void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 				  nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu);
 
@@ -954,12 +969,26 @@ handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 
 }
 
+#ifdef Rel14
+extern uint32_t localRIV2alloc_LUT6[32];
+extern uint32_t localRIV2alloc_LUT25[512];
+extern uint32_t localRIV2alloc_LUT50_0[1600];
+extern uint32_t localRIV2alloc_LUT50_1[1600];
+extern uint32_t localRIV2alloc_LUT100_0[6000];
+extern uint32_t localRIV2alloc_LUT100_1[6000];
+extern uint32_t localRIV2alloc_LUT100_2[6000];
+extern uint32_t localRIV2alloc_LUT100_3[6000];
+#endif
+
 handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,  
 		       nfapi_dl_config_request_pdu_t *dl_config_pdu,
 		       uint8_t codeword_index,
 		       uint8_t *sdu) {
 
   nfapi_dl_config_dlsch_pdu_rel8_t *rel8 = &dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8;
+#ifdef Rel14
+  nfapi_dl_config_dlsch_pdu_rel13_t *rel13 = &dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13;
+#endif
   LTE_eNB_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
   LTE_DL_eNB_HARQ_t *dlsch0_harq=NULL,*dlsch1_harq=NULL;
   int UE_id;
@@ -969,9 +998,14 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   UE_id = find_dlsch(rel8->rnti,eNB,SEARCH_EXIST_OR_FREE);
   AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
   AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
+ 
   dlsch0 = eNB->dlsch[UE_id][0];
   dlsch1 = eNB->dlsch[UE_id][1];
-  
+
+#ifdef Rel14
+  if ((rel13->pdsch_payload_type == 0) && (rel13->ue_type>0)) dlsch0->harq_ids[proc->subframe_tx] = 0;
+#endif
+
   harq_pid        = dlsch0->harq_ids[proc->subframe_tx];
   AssertFatal((harq_pid>=0) && (harq_pid<8),"harq_pid %d not in 0...7\n",harq_pid);
   dlsch0_harq     = dlsch0->harq_processes[harq_pid];
@@ -983,6 +1017,52 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   if (codeword_index == 0) dlsch0_harq->pdu                    = sdu;
   else                     dlsch1_harq->pdu                    = sdu;
 
+#ifdef Rel14
+  if ((rel13->pdsch_payload_type == 0) && (rel13->ue_type>0)) { // this is a BR/CE UE and SIB1-BR
+    // configure PDSCH
+    switch (eNB->frame_parms.N_RB_DL) {
+    case 6:
+      dlsch0_harq->rb_alloc[0]      = localRIV2alloc_LUT6[rel8->resource_block_coding];
+      break;
+    case 15:
+      AssertFatal(1==0,"15 PRBs not supported for now\n");
+      break;
+    case 25:
+      dlsch0_harq->rb_alloc[0]      = localRIV2alloc_LUT25[rel8->resource_block_coding];
+      break;
+    case 50:  
+      dlsch0_harq->rb_alloc[0]      = localRIV2alloc_LUT50_0[rel8->resource_block_coding];
+      dlsch0_harq->rb_alloc[1]      = localRIV2alloc_LUT50_1[rel8->resource_block_coding];
+      break;
+    case 75:
+      AssertFatal(1==0,"75 PRBs not supported for now\n");
+      break;
+    case 100:
+      dlsch0_harq->rb_alloc[0]      = localRIV2alloc_LUT100_0[rel8->resource_block_coding];
+      dlsch0_harq->rb_alloc[1]      = localRIV2alloc_LUT100_1[rel8->resource_block_coding];
+      dlsch0_harq->rb_alloc[2]      = localRIV2alloc_LUT100_2[rel8->resource_block_coding];
+      dlsch0_harq->rb_alloc[3]      = localRIV2alloc_LUT100_3[rel8->resource_block_coding];
+    }
+
+    dlsch0->active                  = 1;
+
+    dlsch0_harq->nb_rb              = 6;
+    dlsch0_harq->vrb_type           = LOCALIZED;
+    dlsch0_harq->rvidx              = 0;
+    dlsch0_harq->Nl                 = 0;
+    dlsch0_harq->mimo_mode          = (eNB->frame_parms.nb_antenna_ports_eNB == 1) ? SISO : ALAMOUTI;
+    dlsch0_harq->dl_power_off       = 1;
+    dlsch0_harq->round              = 0;
+    dlsch0_harq->status             = ACTIVE;
+    dlsch0_harq->TBS                = rel8->length;
+
+
+
+  }
+  else {
+
+  }
+#endif
 }
 
 handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,  
@@ -1121,7 +1201,8 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
       //      handle_nfapi_epdcch_pdu(eNB,dl_config_pdu);
       break;
     case NFAPI_DL_CONFIG_MPDCCH_PDU_TYPE:
-      //      handle_nfapi_mpdcch_pdu(eNB,dl_config_pdu);
+      handle_nfapi_mpdcch_pdu(eNB,proc,dl_config_pdu);
+      eNB->mpdcch_vars[subframe&1].num_dci++; 
       break;
     }
   }
@@ -1138,6 +1219,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
     case NFAPI_HI_DCI0_HI_PDU_TYPE:
       handle_nfapi_hi_dci0_hi_pdu(eNB,proc,hi_dci0_req_pdu);
       eNB->pdcch_vars[subframe&1].num_dci++; 
+
       break;
     }
   } 

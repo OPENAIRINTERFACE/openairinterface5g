@@ -56,6 +56,7 @@
 #include "RadioResourceConfigCommon.h"
 #include "RadioResourceConfigDedicated.h"
 #include "MeasGapConfig.h"
+#include "SchedulingInfoList.h"
 #include "TDD-Config.h"
 #include "RACH-ConfigCommon.h"
 #include "MeasObjectToAddModList.h"
@@ -65,6 +66,9 @@
 #include "MBSFN-SubframeConfigList.h"
 #include "PMCH-InfoList-r9.h"
 #include "SCellToAddMod-r10.h"
+#endif
+#ifdef Rel14
+#include "SystemInformationBlockType1-v1310-IEs.h"
 #endif
 
 #include "nfapi_interface.h"
@@ -310,6 +314,10 @@ typedef struct {
 #define PCCH 4  // Paging 
 /*!\brief Values of PCCH logical channel (fake) */
 #define MIBCH 5  // MIB 
+/*!\brief Values of BCCH SIB1_BR logical channel (fake) */
+#define BCCH_SIB1_BR 6  // SIB1_BR 
+/*!\brief Values of BCCH SIB_BR logical channel (fake) */
+#define BCCH_SI_BR 7  // SI-BR 
 /*!\brief Value of CCCH / SRB0 logical channel */
 #define CCCH 0  // srb0
 /*!\brief DCCH / SRB1 logical channel */
@@ -890,11 +898,12 @@ typedef struct {
   int                              eutra_band;
   uint32_t                         dl_CarrierFreq;
   BCCH_BCH_Message_t               *mib;
-  RadioResourceConfigCommonSIB_t   *radioResourceConfigCommon;  
+  RadioResourceConfigCommonSIB_t   *radioResourceConfigCommon;
+#ifdef Rel14
   RadioResourceConfigCommonSIB_t   *radioResourceConfigCommon_BR;  
+#endif
   TDD_Config_t                     *tdd_Config;
-  uint8_t                          SIwindowsize;
-  uint16_t                         SIperiod;
+  SchedulingInfoList_t             *schedulingInfoList;
   ARFCN_ValueEUTRA_t               ul_CarrierFreq;
   long                             ul_Bandwidth;
   /// Outgoing MIB PDU for PHY
@@ -936,6 +945,14 @@ typedef struct {
   struct MBMS_SessionInfoList_r9 *mbms_SessionList[MAX_PMCH_perMBSFN];
   /// Outgoing MCH pdu for PHY
   MCH_PDU MCH_pdu;
+#endif
+#ifdef Rel14
+  /// Rel13 parameters from SIB1
+  SystemInformationBlockType1_v1310_IEs_t *sib1_v13ext;
+  /// Counter for SIB1-BR scheduling
+  int SIB1_BR_cnt;
+  /// Outgoing BCCH-BR pdu for PHY
+  BCCH_PDU BCCH_BR_pdu[20];
 #endif
 } COMMON_channels_t;
 /*! \brief top level eNB MAC structure */ 

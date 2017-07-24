@@ -1652,6 +1652,9 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   eNB->total_transmitted_bits = 0;
   eNB->total_system_throughput = 0;
   eNB->check_for_MUMIMO_transmissions=0;
+ 
+  while(eNB->configured == 0) usleep(10000);
+
   LOG_I(PHY,"[eNB %"PRIu8"] Initializing DL_FRAME_PARMS : N_RB_DL %"PRIu8", PHICH Resource %d, PHICH Duration %d\n",
         eNB->Mod_id,
         fp->N_RB_DL,fp->phich_config_common.phich_resource,

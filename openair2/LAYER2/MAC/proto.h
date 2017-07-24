@@ -736,61 +736,59 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 @param measGapConfig Measurement Gap configuration for MAC (if NULL keep existing configuration)
 @param tdd_Config TDD Configuration from SIB1 (if NULL keep existing configuration)
 @param mobilityControlInfo mobility control info received for Handover
-@param SIwindowsize SI Windowsize from SIB1 (if NULL keep existing configuration)
-@param SIperiod SI Period from SIB1 (if NULL keep existing configuration)
+@param SchedInfoList SI Scheduling information
 @param MBMS_Flag indicates MBMS transmission
 @param mbsfn_SubframeConfigList pointer to mbsfn subframe configuration list from SIB2
 @param mbsfn_AreaInfoList pointer to MBSFN Area Info list from SIB13
 @param pmch_InfoList pointer to PMCH_InfoList from MBSFNAreaConfiguration Message (MCCH Message)
+@param sib1_ext_r13 SI Scheduling information for SI-BR UEs         
 */
 
-int rrc_mac_config_req_eNB(module_id_t        module_idP,
-			   int                CC_id,
-			   int                physCellId,
-			   int                p_eNB,
-			   int                Ncp,
-			   int                eutra_band,
-			   uint32_t           dl_CarrierFreq,
+int rrc_mac_config_req_eNB(module_id_t                             module_idP,
+			   int                                     CC_id,
+			   int                                     physCellId,
+			   int                                     p_eNB,
+			   int                                     Ncp,
+			   int                                     eutra_band,
+			   uint32_t                                dl_CarrierFreq,
 #ifdef Rel14
-                           int                pbch_repetition,
+                           int                                     pbch_repetition,
 #endif
-			   rnti_t             rntiP,
-			   BCCH_BCH_Message_t *mib,
- 			   RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+			   rnti_t                                  rntiP,
+			   BCCH_BCH_Message_t                      *mib,
+ 			   RadioResourceConfigCommonSIB_t          *radioResourceConfigCommon,
 #ifdef Rel14
- 			   RadioResourceConfigCommonSIB_t *radioResourceConfigCommon_BR,
+ 			   RadioResourceConfigCommonSIB_t          *radioResourceConfigCommon_BR,
 #endif
-			   struct PhysicalConfigDedicated *physicalConfigDedicated,
+			   struct PhysicalConfigDedicated          *physicalConfigDedicated,
 #if defined(Rel10) || defined(Rel14)
-			   SCellToAddMod_r10_t *sCellToAddMod_r10,
+			   SCellToAddMod_r10_t                     *sCellToAddMod_r10,
 			   //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
-                       MeasObjectToAddMod_t **measObj,
-                       MAC_MainConfig_t *mac_MainConfig,
-                       long logicalChannelIdentity,
-                       LogicalChannelConfig_t *logicalChannelConfig,
-                       MeasGapConfig_t *measGapConfig,
-                       TDD_Config_t *tdd_Config,
-                       MobilityControlInfo_t *mobilityControlInfo,
-                       uint8_t *SIwindowsize,
-                       uint16_t *SIperiod,
-                       uint32_t ul_CarrierFreq,
-                       long *ul_Bandwidth,
-                       AdditionalSpectrumEmission_t *additionalSpectrumEmission,
-                       struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList
+			   MeasObjectToAddMod_t                    **measObj,
+			   MAC_MainConfig_t                        *mac_MainConfig,
+			   long                                    logicalChannelIdentity,
+			   LogicalChannelConfig_t                  *logicalChannelConfig,
+			   MeasGapConfig_t                         *measGapConfig,
+			   TDD_Config_t                            *tdd_Config,
+			   MobilityControlInfo_t                   *mobilityControlInfo,
+			   SchedulingInfoList_t                    *schedulingInfoList,
+			   uint32_t                                ul_CarrierFreq,
+			   long                                    *ul_Bandwidth,
+			   AdditionalSpectrumEmission_t            *additionalSpectrumEmission,
+			   struct MBSFN_SubframeConfigList         *mbsfn_SubframeConfigList
 #if defined(Rel10) || defined(Rel14)
-                       ,
-                       uint8_t MBMS_Flag,
-                       MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
-                       PMCH_InfoList_r9_t *pmch_InfoList
-
+			   ,
+			   uint8_t                                 MBMS_Flag,
+			   MBSFN_AreaInfoList_r9_t                 *mbsfn_AreaInfoList,
+			   PMCH_InfoList_r9_t                      *pmch_InfoList
+			   
 #endif
-#ifdef CBA
-                       ,
-                       uint8_t num_active_cba_groups,
-                       uint16_t cba_rnti
+#ifdef Rel14
+			   ,
+			   SystemInformationBlockType1_v1310_IEs_t *sib1_ext_r13          
 #endif
-                      );
+			   );
 
 /** \brief RRC eNB Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.
 @param Mod_id Instance ID of ue

@@ -463,8 +463,8 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
                                  uint8_t Qm,
                                  uint8_t Nl,
                                  uint8_t r,
-                                 uint8_t nb_rb,
-                                 uint8_t m)
+                                 uint8_t nb_rb) 
+//                                 uint8_t m)
 {
 
 

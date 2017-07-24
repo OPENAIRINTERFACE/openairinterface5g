@@ -280,7 +280,7 @@ int dlsch_encoding_2threads0(te_params *tep) {
 
   unsigned short nb_rb = dlsch->harq_processes[harq_pid]->nb_rb;
   unsigned int Kr=0,Kr_bytes,r,r_offset=0;
-  unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
+  //  unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
 
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING_W, VCD_FUNCTION_IN);
@@ -340,11 +340,11 @@ int dlsch_encoding_2threads0(te_params *tep) {
                                         dlsch->Mdlharq,
                                         dlsch->Kmimo,
                                         dlsch->harq_processes[harq_pid]->rvidx,
-                                        get_Qm(dlsch->harq_processes[harq_pid]->mcs),
+                                        dlsch->harq_processes[harq_pid]->Qm,
                                         dlsch->harq_processes[harq_pid]->Nl,
                                         r,
-                                        nb_rb,
-                                        m);                       // r
+                                        nb_rb);
+    //                                        m);                       // r
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING_W, VCD_FUNCTION_OUT);
@@ -400,12 +400,12 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
   unsigned int A;
   unsigned char mod_order;
   unsigned int Kr=0,Kr_bytes,r,r_offset=0;
-  unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
+  //  unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = dlsch->harq_processes[harq_pid]->TBS; //6228
-  mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
+  mod_order = dlsch->harq_processes[harq_pid]->Qm;
   G = get_G(frame_parms,nb_rb,dlsch->harq_processes[harq_pid]->rb_alloc,mod_order,dlsch->harq_processes[harq_pid]->Nl,num_pdcch_symbols,frame,subframe,dlsch->harq_processes[harq_pid]->mimo_mode==TM7?7:0);
 
 
@@ -524,7 +524,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
     // get information for E for the segments that are handled by the worker thread
     if (r<(dlsch->harq_processes[harq_pid]->C>>1)) {
       int Nl=dlsch->harq_processes[harq_pid]->Nl;
-      int Qm=get_Qm(dlsch->harq_processes[harq_pid]->mcs);
+      int Qm=dlsch->harq_processes[harq_pid]->Qm;
       int C = dlsch->harq_processes[harq_pid]->C;
       int Gp = G/Nl/Qm;
       int GpmodC = Gp%C;
@@ -544,11 +544,11 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
 					  dlsch->Mdlharq,
 					  dlsch->Kmimo,
 					  dlsch->harq_processes[harq_pid]->rvidx,
-					  get_Qm(dlsch->harq_processes[harq_pid]->mcs),
+					  dlsch->harq_processes[harq_pid]->Qm,
 					  dlsch->harq_processes[harq_pid]->Nl,
 					  r,
-					  nb_rb,
-					  m);                       // r
+					  nb_rb);
+      //					  m);                       // r
       stop_meas(rm_stats);
     }
   }
@@ -584,14 +584,14 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
   unsigned int A;
   unsigned char mod_order;
   unsigned int Kr=0,Kr_bytes,r,r_offset=0;
-  unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
+  //  unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
   uint8_t beamforming_mode=0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = dlsch->harq_processes[harq_pid]->TBS; //6228
   // printf("Encoder: A: %d\n",A);
-  mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
+  mod_order = dlsch->harq_processes[harq_pid]->Qm;
 
   if(dlsch->harq_processes[harq_pid]->mimo_mode == TM7)
     beamforming_mode = 7;
@@ -720,11 +720,11 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
                                         dlsch->Mdlharq,
                                         dlsch->Kmimo,
                                         dlsch->harq_processes[harq_pid]->rvidx,
-                                        get_Qm(dlsch->harq_processes[harq_pid]->mcs),
+                                        dlsch->harq_processes[harq_pid]->Qm,
                                         dlsch->harq_processes[harq_pid]->Nl,
                                         r,
-                                        nb_rb,
-                                        m);                       // r
+                                        nb_rb);
+					//                                        m);                       // r
     stop_meas(rm_stats);
 #ifdef DEBUG_DLSCH_CODING
 
@@ -761,14 +761,14 @@ int dlsch_encoding_SIC(PHY_VARS_UE *ue,
   unsigned int A;
   unsigned char mod_order;
   unsigned int Kr=0,Kr_bytes,r,r_offset=0;
-  unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
+  //  unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
   uint8_t beamforming_mode=0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = dlsch->harq_processes[harq_pid]->TBS; //6228
   // printf("Encoder: A: %d\n",A);
-  mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
+  mod_order = dlsch->harq_processes[harq_pid]->Qm;
 
   if(dlsch->harq_processes[harq_pid]->mimo_mode == TM7)
     beamforming_mode = 7;
@@ -897,11 +897,11 @@ int dlsch_encoding_SIC(PHY_VARS_UE *ue,
                                         dlsch->Mdlharq,
                                         dlsch->Kmimo,
                                         dlsch->harq_processes[harq_pid]->rvidx,
-                                        get_Qm(dlsch->harq_processes[harq_pid]->mcs),
+                                        dlsch->harq_processes[harq_pid]->Qm,
                                         dlsch->harq_processes[harq_pid]->Nl,
                                         r,
-                                        nb_rb,
-                                        m);                       // r
+                                        nb_rb);
+    //                                        m);                       // r
     stop_meas(rm_stats);
 #ifdef DEBUG_DLSCH_CODING
 

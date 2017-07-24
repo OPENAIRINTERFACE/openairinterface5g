@@ -638,6 +638,10 @@ typedef struct {
   /// - first index: tx antenna [0..nb_antennas_tx[
   /// - second index: sample [0..]
   int32_t **txdataF_BF;
+  /// \brief holds the transmit data before beamforming for epdcch/mpdcch
+  /// - first index : tx antenna [0..nb_epdcch_antenna_ports[
+  /// - second index: sampl [0..]
+  int32_t **txdataF_epdcch;
   /// \brief Holds the receive data in the frequency domain.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
@@ -674,7 +678,13 @@ typedef enum {format0,
               format2D,
               format3,
 	      format3A,
-	      format4
+	      format4,
+              format5,
+              format6_0A,
+              format6_0B,
+              format6_1A,
+              format6_1B,
+              format6_2
              } DCI_format_t;
 
 typedef struct {
@@ -696,6 +706,74 @@ typedef struct {
   uint8_t dci_pdu[8];
 } DCI_ALLOC_t;
 
+#define MAX_EPDCCH_PRB 8
+
+typedef struct {
+  /// Length of DCI in bits
+  uint8_t dci_length;
+  /// Aggregation level
+  uint8_t L;
+  /// Position of first CCE of the dci
+  int firstCCE;
+  /// flag to indicate that this is a RA response
+  boolean_t ra_flag;
+  /// rnti
+  rnti_t rnti;
+  /// Format
+  DCI_format_t format;
+  /// epdcch resource assignment (0=localized,1=distributed) 
+  uint8_t epdcch_resource_assignment_flag;
+  /// epdcch index
+  uint16_t epdcch_id;
+  /// epdcch start symbol
+  uint8_t epdcch_start_symbol;
+  /// epdcch number of PRBs in set
+  uint8_t epdcch_num_prb;
+  /// vector of prb ids for set
+  uint8_t epdcch_prb_index[MAX_EPDCCH_PRB];  
+  /// LBT parameter for frame configuration
+  uint8_t dwpts_symbols;
+  /// LBT parameter for frame configuration
+  uint8_t initial_lbt_sf;
+  /// DCI pdu
+  uint8_t dci_pdu[8];
+} eDCI_ALLOC_t;
+ 
+typedef struct {
+  /// Length of DCI in bits
+  uint8_t dci_length;
+  /// Aggregation level
+  uint8_t L;
+  /// Position of first CCE of the dci
+  int firstCCE;
+  /// flag to indicate that this is a RA response
+  boolean_t ra_flag;
+  /// rnti
+  rnti_t rnti;
+  /// Format
+  DCI_format_t format;
+  /// harq process index
+  uint8_t harq_pid;
+  /// Narrowband index
+  uint8_t narrowband;
+  /// number of PRB pairs for MPDCCH
+  uint8_t number_of_prb_pairs;
+  /// mpdcch resource assignement (0=localized,1=distributed) 
+  uint8_t resource_block_assignment;
+  /// transmission type
+  uint8_t transmission_type;
+  /// mpdcch start symbol
+  uint8_t start_symbol;
+  /// CE mode (1=ModeA,2=ModeB)
+  uint8_t ce_mode;
+  /// 0-503 n_EPDCCHid_i
+  uint16_t dmrs_scrambling_init;
+  /// Absolute subframe of the initial transmission (0-10239)
+  uint16_t initial_transmission_sf_io;
+  /// DCI pdu
+  uint8_t dci_pdu[8];
+} mDCI_ALLOC_t;
+
 
 typedef struct {
   uint8_t     num_dci;
@@ -703,15 +781,17 @@ typedef struct {
   DCI_ALLOC_t dci_alloc[32];
 } LTE_eNB_PDCCH;
 
-/*
-typedef struct {
-
-} LTE_eNB_ePDCCH;
 
 typedef struct {
+  uint8_t     num_dci;
+  eDCI_ALLOC_t edci_alloc[32];
+} LTE_eNB_EPDCCH;
 
+typedef struct {
+  uint8_t     num_dci;
+  mDCI_ALLOC_t mdci_alloc[32];
 } LTE_eNB_MPDCCH;
-*/
+
 
 typedef struct {
   /// \brief Hold the channel estimates in frequency domain based on SRS.

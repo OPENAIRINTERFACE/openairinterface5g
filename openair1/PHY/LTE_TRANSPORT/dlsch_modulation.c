@@ -585,8 +585,8 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 
   int first_layer0 = -1; //= dlsch0_harq->first_layer;
   int Nlayers0 = -1; //  = dlsch0_harq->Nlayers;
-  uint8_t mod_order0=0; // = get_Qm(dlsch0_harq->mcs);
-  uint8_t mod_order1=0; //=2;
+  uint8_t mod_order0=0; 
+  uint8_t mod_order1=0; 
   uint8_t precoder_index0,precoder_index1;
 
   uint8_t *x1=NULL;
@@ -640,12 +640,12 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
     mimo_mode = dlsch0_harq->mimo_mode;
     first_layer0 = dlsch0_harq->first_layer;
     Nlayers0 = dlsch0_harq->Nlayers;
-    mod_order0 = get_Qm(dlsch0_harq->mcs);
+    mod_order0 = dlsch0_harq->Qm;
     x1             = dlsch1_harq->e;
     // Fill these in later for TM8-10
     //    Nlayers1       = dlsch1_harq->Nlayers;
     //    first_layer1   = dlsch1_harq->first_layer;
-    mod_order1     = get_Qm(dlsch1_harq->mcs);
+    mod_order1     = dlsch1_harq->Qm;
 
   } else if ((dlsch0_harq != NULL) && (dlsch1_harq == NULL)){ //This is for SIS0 TM1, TM6, etc
 
@@ -653,7 +653,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
     mimo_mode = dlsch0_harq->mimo_mode;
     first_layer0 = dlsch0_harq->first_layer;
     Nlayers0 = dlsch0_harq->Nlayers;
-    mod_order0 = get_Qm(dlsch0_harq->mcs);
+    mod_order0 = dlsch0_harq->Qm;
 
   } else if ((dlsch0_harq == NULL) && (dlsch1_harq != NULL)){ // This is for TM4 retransmission
 
@@ -661,7 +661,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
     mimo_mode = dlsch1_harq->mimo_mode;
     first_layer0 = dlsch1_harq->first_layer;
     Nlayers0 = dlsch1_harq->Nlayers;
-    mod_order0 = get_Qm(dlsch1_harq->mcs);
+    mod_order0 = dlsch1_harq->Qm;
 
   }
 
@@ -2065,14 +2065,14 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
     harq_pid = dlsch0->harq_ids[subframe_offset];
     dlsch0_harq = dlsch0->harq_processes[harq_pid];
     mimo_mode = dlsch0_harq->mimo_mode;
-    mod_order0 = get_Qm(dlsch0_harq->mcs);
+    mod_order0 = dlsch0_harq->Qm;
     rb_alloc = dlsch0_harq->rb_alloc;
 #ifdef DEBUG_DLSCH_MODULATION
     Nl0 = dlsch0_harq->Nl;
 #endif
 
     dlsch1_harq = dlsch1->harq_processes[harq_pid];
-    mod_order1 = get_Qm(dlsch1_harq->mcs);
+    mod_order1 = dlsch1_harq->Qm;
 #ifdef DEBUG_DLSCH_MODULATION
     Nl1 = dlsch1_harq->Nl;
 #endif
@@ -2082,7 +2082,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
     harq_pid = dlsch0->harq_ids[subframe_offset];
     dlsch0_harq = dlsch0->harq_processes[harq_pid];
     mimo_mode = dlsch0_harq->mimo_mode;
-    mod_order0 = get_Qm(dlsch0_harq->mcs);
+    mod_order0 = dlsch0_harq->Qm;
     rb_alloc = dlsch0_harq->rb_alloc;
 #ifdef DEBUG_DLSCH_MODULATION
     Nl0 = dlsch0_harq->Nl;
@@ -2099,7 +2099,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
     harq_pid = dlsch1->harq_ids[subframe_offset];
     dlsch1_harq = dlsch1->harq_processes[harq_pid];
     mimo_mode = dlsch1_harq->mimo_mode;
-    mod_order0 = get_Qm(dlsch1_harq->mcs);
+    mod_order0 = dlsch1_harq->Qm;
     rb_alloc = dlsch1_harq->rb_alloc;
 #ifdef DEBUG_DLSCH_MODULATION
     Nl0 = dlsch1_harq->Nl;
@@ -2460,7 +2460,7 @@ int dlsch_modulation_SIC(int32_t **sic_buffer,
   uint8_t harq_pid = -1;//dlsch0->current_harq_pid;
   LTE_DL_eNB_HARQ_t *dlsch0_harq = dlsch0->harq_processes[harq_pid];
   uint32_t i,jj,re_allocated=0;
-  uint8_t mod_order0 = get_Qm(dlsch0_harq->mcs);
+  uint8_t mod_order0 = dlsch0_harq->Qm;
   uint8_t *x0  = dlsch0_harq->e;
   uint8_t qam64_table_offset_re = 0;
   uint8_t qam64_table_offset_im = 0;
@@ -2599,7 +2599,7 @@ int mch_modulation(int32_t **txdataF,
   uint32_t i,jj,re_allocated,symbol_offset;
   uint16_t l,rb,re_offset;
   uint8_t skip_dc=0;
-  uint8_t mod_order = get_Qm(dlsch->harq_processes[0]->mcs);
+  uint8_t mod_order = dlsch->harq_processes[0]->Qm;
   int16_t qam16_table_a[4],qam64_table_a[8];//,qam16_table_b[4],qam64_table_b[8];
   int16_t *qam_table_s;
 

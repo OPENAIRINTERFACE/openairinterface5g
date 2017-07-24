@@ -833,6 +833,8 @@ typedef struct PHY_VARS_eNB_s {
   nfapi_crc_indication_pdu_t crc_pdu_list[NFAPI_CRC_IND_MAX_PDU];
   Sched_Rsp_t          Sched_INFO;
   LTE_eNB_PDCCH        pdcch_vars[2];
+  LTE_eNB_EPDCCH       epdcch_vars[2];
+  LTE_eNB_MPDCCH       mpdcch_vars[2];
   LTE_eNB_COMMON       common_vars;
   LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PBCH         pbch;

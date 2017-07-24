@@ -132,7 +132,11 @@ init_SI(
 #if defined(Rel10) || defined(Rel14)
   int                                 i;
 #endif
-  
+
+#ifdef Rel14
+  SystemInformationBlockType1_v1310_IEs_t *sib1_v13ext=(SystemInformationBlockType1_v1310_IEs_t *)NULL;
+#endif
+
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MIB = (uint8_t*) malloc16(4);
   // copy basic parameters
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId      = configuration->Nid_cell[CC_id];
@@ -262,7 +266,22 @@ init_SI(
   LOG_D(RRC,
 	PROTOCOL_RRC_CTXT_FMT" RRC_UE --- MAC_CONFIG_REQ (SIB1.tdd & SIB2 params) ---> MAC_UE\n",
 	PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
-  
+
+#ifdef Rel14
+  if ((RC.rrc[ctxt_pP->module_id]->carrier[CC_id].mib.message.schedulingInfoSIB1_BR_r13>0) && 
+      (RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR!=NULL)) {
+      AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension!=NULL,
+		  "sib2_br->nonCriticalExtension is null (v9.2)\n");
+      AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension!=NULL,
+		  "sib2_br->nonCriticalExtension is null (v11.3)\n");
+      AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL,
+		  "sib2_br->nonCriticalExtension is null (v12.5)\n");
+      AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL,
+		  "sib2_br->nonCriticalExtension is null (v13.10)\n");
+      sib1_v13ext = RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension;
+  }
+#endif
+
   rrc_mac_config_req_eNB(ctxt_pP->module_id, CC_id,
 			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId,
 			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB,
@@ -292,7 +311,7 @@ init_SI(
 			 (MeasGapConfig_t *) NULL,
 			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1->tdd_Config,
 			 NULL,
-			 &SIwindowsize, &SIperiod,
+			 &RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1->schedulingInfoList,
 			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].ul_CarrierFreq,
 			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->freqInfo.ul_Bandwidth,
 			 &RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->freqInfo.additionalSpectrumEmission,
@@ -303,9 +322,9 @@ init_SI(
 			 (MBSFN_AreaInfoList_r9_t*) & RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9,
 			 (PMCH_InfoList_r9_t *) NULL
 #endif
-#ifdef CBA
-			 , 0, //RC.rrc[ctxt_pP->module_id]->num_active_cba_groups,
-			 0    //RC.rrc[ctxt_pP->module_id]->cba_rnti[0]
+#ifdef Rel14
+			 , 
+			 sib1_v13ext
 #endif
 			 );
 }
@@ -386,15 +405,18 @@ init_MCCH(
 			 (struct LogicalChannelConfig *)NULL,
 			 (MeasGapConfig_t *) NULL,
 			 (TDD_Config_t *) NULL,
-			 NULL, (uint8_t *) NULL, (uint16_t *) NULL, 0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
+			 (MobilityControlInfo_t *)NULL, 
+			 (SchedulingInfoList_t *) NULL, 
+			 0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
 #if defined(Rel10) || defined(Rel14)
 			 ,
 			 0,
 			 (MBSFN_AreaInfoList_r9_t *) NULL,
 			 (PMCH_InfoList_r9_t *) & (RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
 #   endif
-#   ifdef CBA
-			 , 0, 0
+#   ifdef Rel14
+			 ,
+			 (SystemInformationBlockType1_v1310_IEs_t *)NULL
 #   endif
 			 );
   
@@ -2748,8 +2770,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 			 ue_context_pP->ue_context.measGapConfig,
 			 (TDD_Config_t*) NULL,
 			 (MobilityControlInfo_t*) NULL,
-			 (uint8_t*) NULL,
-			 (uint16_t*) NULL,
+			 (SchedulingInfoList_t*) NULL,
 			 0,
 			 NULL,
 			 NULL,
@@ -2757,9 +2778,10 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 #if defined(Rel10) || defined(Rel14)
 			 , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
-#ifdef CBA
-			 , RC.rrc[ctxt_pP->module_id]->num_active_cba_groups, RC.rrc[ctxt_pP->module_id]->cba_rnti[0]
-#endif
+#   ifdef Rel14
+			 ,
+			 (SystemInformationBlockType1_v1310_IEs_t *)NULL
+#   endif
 			 );
   
   // Configure target eNB SRB2
@@ -3327,13 +3349,14 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 			 ue_context_pP->ue_context.measGapConfig,
 			 (TDD_Config_t *) NULL,
 			 (MobilityControlInfo_t *) mobilityInfo,
-			 (uint8_t *) NULL, (uint16_t *) NULL, 0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
+			 (SchedulingInfoList_t *) NULL, 0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
 #if defined(Rel10) || defined(Rel14)
 			 , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
-#ifdef CBA
-			 , 0, 0
-#endif
+#   ifdef Rel14
+			 ,
+			 (SystemInformationBlockType1_v1310_IEs_t *)NULL
+#   endif
 			 );
   
   /*
@@ -3629,14 +3652,15 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 				 ue_context_pP->ue_context.measGapConfig,
 				 (TDD_Config_t *) NULL,
 				 NULL,
-				 (uint8_t *) NULL,
-				 (uint16_t *) NULL, 0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
+				 (SchedulingInfoList_t *) NULL,
+				 0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
 #if defined(Rel10) || defined(Rel14)
 				 , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
-#ifdef CBA
-				 , RC.rrc[ctxt_pP->module_id]->num_active_cba_groups, RC.rrc[ctxt_pP->module_id]->cba_rnti[0]
-#endif
+#   ifdef Rel14
+				 ,
+				 (SystemInformationBlockType1_v1310_IEs_t *)NULL
+#   endif
 				 );
 	  
         } else {        // remove LCHAN from MAC/PHY
@@ -3680,13 +3704,16 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 				 (LogicalChannelConfig_t *) NULL,
 				 (MeasGapConfig_t *) NULL,
 				 (TDD_Config_t *) NULL,
-				 NULL, (uint8_t *) NULL, (uint16_t *) NULL, 0, NULL, NULL, NULL
+				 NULL, 
+				 (SchedulingInfoList_t *) NULL,
+				 0, NULL, NULL, NULL
 #if defined(Rel10) || defined(Rel14)
 				 , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
-#ifdef CBA
-				 , 0, 0
-#endif
+#   ifdef Rel14
+				 ,
+				 (SystemInformationBlockType1_v1310_IEs_t *)NULL
+#   endif
 				 );
         }
       }
@@ -3778,14 +3805,15 @@ rrc_eNB_generate_RRCConnectionSetup(
 			       ue_context_pP->ue_context.measGapConfig,
 			       (TDD_Config_t *) NULL,
 			       NULL,
-			       (uint8_t *) NULL,
-			       (uint16_t *) NULL, 0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
+			       (SchedulingInfoList_t *) NULL,
+			       0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
 #if defined(Rel10) || defined(Rel14)
 			       , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
-#ifdef CBA
-			       , 0, 0
-#endif
+#   ifdef Rel14
+			       ,
+			       (SystemInformationBlockType1_v1310_IEs_t *)NULL
+#   endif
 			       );
         break;
       }
@@ -3839,14 +3867,16 @@ openair_rrc_eNB_init(
         PROTOCOL_RRC_CTXT_ARGS(&ctxt));
 
 #if OCP_FRAMEWORK
-while ( RC.rrc[enb_mod_idP] == NULL ) {
-  LOG_E(RRC, "RC.rrc not yet initialized, waiting 1 second\n");
-  sleep(1);
-}
+  while ( RC.rrc[enb_mod_idP] == NULL ) {
+    LOG_E(RRC, "RC.rrc not yet initialized, waiting 1 second\n");
+    sleep(1);
+  }
 #endif 
   AssertFatal(RC.rrc[enb_mod_idP] != NULL, "RC.rrc not initialized!");
   AssertFatal(NUMBER_OF_UE_MAX < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
-
+#ifdef ENABLE_ITTI
+  AssertFatal(configuration!=NULL,"configuration input is null\n");
+#endif
   //    for (j = 0; j < NUMBER_OF_UE_MAX; j++)
   //        RC.rrc[ctxt.module_id].Info.UE[j].Status = RRC_IDLE;  //CH_READY;
   //
@@ -5050,7 +5080,7 @@ rrc_enb_task(
 
       /* Messages from eNB app */
     case RRC_CONFIGURATION_REQ:
-      LOG_I(RRC, "[eNB %d] Received %s\n", instance, msg_name_p);
+      LOG_I(RRC, "[eNB %d] Received %s : %p\n", instance, msg_name_p,&RRC_CONFIGURATION_REQ(msg_p));
       openair_rrc_eNB_configuration(ENB_INSTANCE_TO_MODULE_ID(instance), &RRC_CONFIGURATION_REQ(msg_p));
       break;
 
