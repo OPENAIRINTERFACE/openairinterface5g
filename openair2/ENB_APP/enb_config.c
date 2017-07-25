@@ -462,6 +462,7 @@ void RCconfig_RU() {
   libconfig_int     band[256];
   int               num_eNB4RU                    = 0;
   libconfig_int     eNB_list[256];
+  int               fronthaul_flag                = CONFIG_TRUE;
 
   load_config_file(&cfg);
 
@@ -480,51 +481,44 @@ void RCconfig_RU() {
       
       setting_ru = config_setting_get_elem(setting, j);
       printf("rru %d/%d\n",j,RC.nb_RU);
-				  
+
+
       if (  !(
-	         config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_LOCAL_IF_NAME,        (const char **)&if_name)
-	      && config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_LOCAL_ADDRESS,        (const char **)&ipv4)
-	      && config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_REMOTE_ADDRESS,       (const char **)&ipv4_remote)
-	      && config_setting_lookup_int   (setting_ru, CONFIG_STRING_RU_LOCAL_PORTC,          &local_portc)
-	      && config_setting_lookup_int   (setting_ru, CONFIG_STRING_RU_REMOTE_PORTC,         &remote_portc)
-	      && config_setting_lookup_int   (setting_ru, CONFIG_STRING_RU_LOCAL_PORTD,          &local_portd)
-	      && config_setting_lookup_int   (setting_ru, CONFIG_STRING_RU_REMOTE_PORTD,         &remote_portd)
-	      && config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_TRANSPORT_PREFERENCE, (const char **)&tr_preference)
-	      && config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_LOCAL_RF,             (const char **)&local_rf)
+	      config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_LOCAL_IF_NAME,(const char **)&if_name)
 	      )
 	    ) {
-	AssertFatal (0,
-		     "Failed to parse configuration file %s, RU %d config !\n",
-		     RC.config_file_name, j);
-	continue; // FIXME will prevent segfaults below, not sure what happens at function exit...
-      }
-      if (strcmp(local_rf, "yes") == 0) { // this has a local RF unit so read in default params
-	if (  !(       config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_NB_TX,       &nb_tx)
-		    && config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_NB_RX,       &nb_rx)
-		    && config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_MAX_RS_EPRE, &max_pdschReferenceSignalPower)
-		    && config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_MAX_RXGAIN,  &max_rxgain)
-		    //		 && config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_ATT_TX, &att_tx)
-		    //		 && config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_ATT_RX, &att_rx)
-		 )
+	fronthaul_flag = CONFIG_FALSE;
+      }			  
+      
+      if (fronthaul_flag != CONFIG_TRUE) { // no fronthaul
+	
+	AssertFatal((setting_band = config_setting_get_member(setting_ru, CONFIG_STRING_RU_BAND_LIST))!=NULL,"No allowable LTE bands\n");
+	
+	if (setting_band != NULL) num_bands    = config_setting_length(setting_band);
+	else num_bands=0;
+	
+	for (i=0;i<num_bands;i++) {
+	  setting_band_elem = config_setting_get_elem(setting_band,i);
+	  band[i] = config_setting_get_int(setting_band_elem);
+	  printf("RU %d: band %d\n",j,band[i]);
+	}
+      } // fronthaul_flag == CONFIG_FALSE
+      else { // fronthaul_flag == CONFIG_TRUE
+	if (  !(
+		config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_LOCAL_ADDRESS,        (const char **)&ipv4)
+	 	&& config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_REMOTE_ADDRESS,       (const char **)&ipv4_remote)
+		&& config_setting_lookup_int   (setting_ru, CONFIG_STRING_RU_LOCAL_PORTC,          &local_portc)
+		&& config_setting_lookup_int   (setting_ru, CONFIG_STRING_RU_REMOTE_PORTC,         &remote_portc)
+		&& config_setting_lookup_int   (setting_ru, CONFIG_STRING_RU_LOCAL_PORTD,          &local_portd)
+		&& config_setting_lookup_int   (setting_ru, CONFIG_STRING_RU_REMOTE_PORTD,         &remote_portd)
+		&& config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_TRANSPORT_PREFERENCE, (const char **)&tr_preference)
+		)
 	      ) {
 	  AssertFatal (0,
 		       "Failed to parse configuration file %s, RU %d config !\n",
 		       RC.config_file_name, j);
 	  continue; // FIXME will prevent segfaults below, not sure what happens at function exit...
 	}
-
-	AssertFatal((setting_band = config_setting_get_member(setting_ru, CONFIG_STRING_RU_BAND_LIST))!=NULL,"No allowable LTE bands\n");
-	
-	if (setting_band != NULL) num_bands    = config_setting_length(setting_band);
-	else num_bands=0;
-      
-	for (i=0;i<num_bands;i++) {
-	  setting_band_elem = config_setting_get_elem(setting_band,i);
-	  band[i] = config_setting_get_int(setting_band_elem);
-	  printf("RU %d: band %d\n",j,band[i]);
-	}
-      }
-      else {
 	AssertFatal((setting_eNB_list = config_setting_get_member(setting_ru, CONFIG_STRING_RU_ENB_LIST))!=NULL,"No RU<->eNB mappings\n");
 	
 	if (setting_eNB_list != NULL) num_eNB4RU    = config_setting_length(setting_eNB_list);
@@ -536,51 +530,52 @@ void RCconfig_RU() {
 	  eNB_list[i] = config_setting_get_int(setting_eNB_list_elem);
 	  printf("RU %d: eNB %d\n",j,eNB_list[i]);
 	}
-	if (  !(       config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_NB_TX,  &nb_tx)
-		       && config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_NB_RX,  &nb_rx)
-		       && config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_ATT_TX, &att_tx)
-		       && config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_ATT_RX, &att_rx)
-		       )
-	      ) {
-	  AssertFatal (0,
-		       "Failed to parse configuration file %s, RU %d config !\n",
-		       RC.config_file_name, j);
-	  continue; // FIXME will prevent segfaults below, not sure what happens at function exit...
-	}
-
       }
-      printf("RU %d: Transport %s\n",j,tr_preference);
-
+	
+      if ( !(
+	               config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_NB_TX,  &nb_tx)
+		    && config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_NB_RX,  &nb_rx)
+		    && config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_ATT_TX, &att_tx)
+		    && config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_ATT_RX, &att_rx)
+		    && config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_LOCAL_RF,(const char **)&local_rf)
+		    )) {
+	AssertFatal (0,
+	  "Failed to parse configuration file %s, RU %d config !\n",
+	  RC.config_file_name, j);
+	continue; // FIXME will prevent segfaults below, not sure what happens at function exit...
+      }
+      
       RC.ru[j]                                    = (RU_t*)malloc(sizeof(RU_t));
       memset((void*)RC.ru[j],0,sizeof(RU_t));
       
       RC.ru[j]->idx                                 = j;
-      RC.ru[j]->eth_params.local_if_name            = strdup(if_name);
-      RC.ru[j]->eth_params.my_addr                  = strdup(ipv4);
-      RC.ru[j]->eth_params.remote_addr              = strdup(ipv4_remote);
-      RC.ru[j]->eth_params.my_portc                 = local_portc;
-      RC.ru[j]->eth_params.remote_portc             = remote_portc;
-      RC.ru[j]->eth_params.my_portd                 = local_portd;
-      RC.ru[j]->eth_params.remote_portd             = remote_portd;
+      
       RC.ru[j]->if_timing                           = synch_to_ext_device;
       RC.ru[j]->num_eNB                             = num_eNB4RU;
+      
       if (strcmp(local_rf, "yes") == 0) {
-	if (strcmp(tr_preference, "udp") == 0) {
+	if (fronthaul_flag == CONFIG_FALSE) {
 	  RC.ru[j]->if_south                        = LOCAL_RF;
-	  RC.ru[j]->function                        = NGFI_RRU_IF5;
-	  RC.ru[j]->eth_params.transp_preference    = ETH_UDP_MODE;
-	} else if (strcmp(tr_preference, "raw") == 0) {
-	  RC.ru[j]->if_south                        = LOCAL_RF;
-	  RC.ru[j]->function                        = NGFI_RRU_IF5;
-	  RC.ru[j]->eth_params.transp_preference    = ETH_RAW_MODE;
-	} else if (strcmp(tr_preference, "udp_if4p5") == 0) {
-	  RC.ru[j]->if_south                        = LOCAL_RF;
-	  RC.ru[j]->function                        = NGFI_RRU_IF4p5;
-	  RC.ru[j]->eth_params.transp_preference    = ETH_UDP_IF4p5_MODE;
-	} else if (strcmp(tr_preference, "raw_if4p5") == 0) {
-	  RC.ru[j]->if_south                        = LOCAL_RF;
-	  RC.ru[j]->function                        = NGFI_RRU_IF4p5;
-	  RC.ru[j]->eth_params.transp_preference    = ETH_RAW_IF4p5_MODE;
+	  RC.ru[j]->function                        = eNodeB_3GPP;
+        }
+        else { 
+	  if (strcmp(tr_preference, "udp") == 0) {
+	    RC.ru[j]->if_south                        = LOCAL_RF;
+	    RC.ru[j]->function                        = NGFI_RRU_IF5;
+	    RC.ru[j]->eth_params.transp_preference    = ETH_UDP_MODE;
+	  } else if (strcmp(tr_preference, "raw") == 0) {
+	    RC.ru[j]->if_south                        = LOCAL_RF;
+	    RC.ru[j]->function                        = NGFI_RRU_IF5;
+	    RC.ru[j]->eth_params.transp_preference    = ETH_RAW_MODE;
+	  } else if (strcmp(tr_preference, "udp_if4p5") == 0) {
+	    RC.ru[j]->if_south                        = LOCAL_RF;
+	    RC.ru[j]->function                        = NGFI_RRU_IF4p5;
+	    RC.ru[j]->eth_params.transp_preference    = ETH_UDP_IF4p5_MODE;
+	  } else if (strcmp(tr_preference, "raw_if4p5") == 0) {
+	    RC.ru[j]->if_south                        = LOCAL_RF;
+	    RC.ru[j]->function                        = NGFI_RRU_IF4p5;
+	    RC.ru[j]->eth_params.transp_preference    = ETH_RAW_IF4p5_MODE;
+	  }
 	}
 
 	RC.ru[j]->max_pdschReferenceSignalPower     = max_pdschReferenceSignalPower;
@@ -589,7 +584,15 @@ void RCconfig_RU() {
 	for (i=0;i<num_bands;i++) RC.ru[j]->band[i] = band[i]; 
       }
       else {
+	printf("RU %d: Transport %s\n",j,tr_preference);
 
+	RC.ru[j]->eth_params.local_if_name            = strdup(if_name);
+	RC.ru[j]->eth_params.my_addr                  = strdup(ipv4);
+	RC.ru[j]->eth_params.remote_addr              = strdup(ipv4_remote);
+	RC.ru[j]->eth_params.my_portc                 = local_portc;
+	RC.ru[j]->eth_params.remote_portc             = remote_portc;
+	RC.ru[j]->eth_params.my_portd                 = local_portd;
+	RC.ru[j]->eth_params.remote_portd             = remote_portd;
 	for (i=0;i<num_eNB4RU;i++) RC.ru[j]->eNB_list[i] = RC.eNB[eNB_list[i]][0];
 
 	if (strcmp(tr_preference, "udp") == 0) {
