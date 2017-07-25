@@ -72,6 +72,8 @@
 #include "SystemInformation.h"
 
 #include "SystemInformationBlockType1.h"
+#include "SystemInformationBlockType1-BR-r13.h"
+
 
 #include "SIB-Type.h"
 
@@ -190,7 +192,7 @@ uint8_t get_adjacent_cell_mod_id(uint16_t phyCellId)
   return 0xFF; //error!
 }
 
-uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich_Resource, uint32_t phich_duration, uint32_t frame)
+uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich_Resource, uint32_t phich_duration, uint32_t frame, uint32_t schedulingInfoSIB1)
 {
 
   asn_enc_rval_t enc_rval;
@@ -244,6 +246,7 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
 #ifndef Rel14
   mib->message.spare.size = 2;
   mib->message.spare.bits_unused = 6;  // This makes a spare of 10 bits
+  mib->message.schedulingInfoSIB1_BR_r13 = schedulingInfoSIB1; // turn on eMTC
 #else
   mib->message.spare.size = 1;
   mib->message.spare.bits_unused = 3;  // This makes a spare of 5 bits
@@ -301,7 +304,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 
   uint8_t *buffer                      = carrier->SIB1;
   BCCH_DL_SCH_Message_t *bcch_message  = &carrier->siblock1;
-  SystemInformationBlockType1_t **sib1 = &carrier->sib1;
+	SystemInformationBlockType1_BR_r13_t **sib1_br = &carrier->sib1;
 
   
   memset(bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
@@ -309,7 +312,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   bcch_message->message.choice.c1.present = BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1;
   //  memcpy(&bcch_message.message.choice.c1.choice.systemInformationBlockType1,sib1,sizeof(SystemInformationBlockType1_t));
 
-  *sib1 = &bcch_message->message.choice.c1.choice.systemInformationBlockType1;
+	*sib1_br = &bcch_message->message.choice.c1.choice.systemInformationBlockType1;
 
   memset(&PLMN_identity_info,0,sizeof(PLMN_IdentityInfo_t));
   memset(&schedulingInfo,0,sizeof(SchedulingInfo_t));
@@ -370,90 +373,401 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   //assign_enum(&PLMN_identity_info.cellReservedForOperatorUse,PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved);
   PLMN_identity_info.cellReservedForOperatorUse=PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved;
 
-  ASN_SEQUENCE_ADD(&(*sib1)->cellAccessRelatedInfo.plmn_IdentityList.list,&PLMN_identity_info);
+	ASN_SEQUENCE_ADD(&(*sib1_br)->cellAccessRelatedInfo.plmn_IdentityList.list, &PLMN_identity_info);
 
 
-  // 16 bits
-  (*sib1)->cellAccessRelatedInfo.trackingAreaCode.buf = MALLOC(2);
+	// 16 bits
+	(*sib1_br)->cellAccessRelatedInfo.trackingAreaCode.buf = MALLOC(2);
 #if defined(ENABLE_ITTI)
-  (*sib1)->cellAccessRelatedInfo.trackingAreaCode.buf[0] = (configuration->tac >> 8) & 0xff;
-  (*sib1)->cellAccessRelatedInfo.trackingAreaCode.buf[1] = (configuration->tac >> 0) & 0xff;
+	(*sib1_br)->cellAccessRelatedInfo.trackingAreaCode.buf[0] = (configuration->tac >> 8) & 0xff;
+	(*sib1_br)->cellAccessRelatedInfo.trackingAreaCode.buf[1] = (configuration->tac >> 0) & 0xff;
 #else
-  (*sib1)->cellAccessRelatedInfo.trackingAreaCode.buf[0] = 0x00;
-  (*sib1)->cellAccessRelatedInfo.trackingAreaCode.buf[1] = 0x01;
+	(*sib1_br)->cellAccessRelatedInfo.trackingAreaCode.buf[0] = 0x00;
+	(*sib1_br)->cellAccessRelatedInfo.trackingAreaCode.buf[1] = 0x01;
 #endif
-  (*sib1)->cellAccessRelatedInfo.trackingAreaCode.size=2;
-  (*sib1)->cellAccessRelatedInfo.trackingAreaCode.bits_unused=0;
+	(*sib1_br)->cellAccessRelatedInfo.trackingAreaCode.size = 2;
+	(*sib1_br)->cellAccessRelatedInfo.trackingAreaCode.bits_unused = 0;
 
-  // 28 bits
-  (*sib1)->cellAccessRelatedInfo.cellIdentity.buf = MALLOC(8);
+	// 28 bits
+	(*sib1_br)->cellAccessRelatedInfo.cellIdentity.buf = MALLOC(8);
 #if defined(ENABLE_ITTI)
-  (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[0] = (configuration->cell_identity >> 20) & 0xff;
-  (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[1] = (configuration->cell_identity >> 12) & 0xff;
-  (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[2] = (configuration->cell_identity >>  4) & 0xff;
-  (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[3] = (configuration->cell_identity <<  4) & 0xf0;
+	(*sib1_br)->cellAccessRelatedInfo.cellIdentity.buf[0] = (configuration->cell_identity >> 20) & 0xff;
+	(*sib1_br)->cellAccessRelatedInfo.cellIdentity.buf[1] = (configuration->cell_identity >> 12) & 0xff;
+	(*sib1_br)->cellAccessRelatedInfo.cellIdentity.buf[2] = (configuration->cell_identity >> 4) & 0xff;
+	(*sib1_br)->cellAccessRelatedInfo.cellIdentity.buf[3] = (configuration->cell_identity << 4) & 0xf0;
 #else
-  (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[0] = 0x00;
-  (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[1] = 0x00;
-  (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[2] = 0x00;
-  (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[3] = 0x10;
+	(*sib1_br)->cellAccessRelatedInfo.cellIdentity.buf[0] = 0x00;
+	(*sib1_br)->cellAccessRelatedInfo.cellIdentity.buf[1] = 0x00;
+	(*sib1_br)->cellAccessRelatedInfo.cellIdentity.buf[2] = 0x00;
+	(*sib1_br)->cellAccessRelatedInfo.cellIdentity.buf[3] = 0x10;
 #endif
-  (*sib1)->cellAccessRelatedInfo.cellIdentity.size=4;
-  (*sib1)->cellAccessRelatedInfo.cellIdentity.bits_unused=4;
+	(*sib1_br)->cellAccessRelatedInfo.cellIdentity.size = 4;
+	(*sib1_br)->cellAccessRelatedInfo.cellIdentity.bits_unused = 4;
 
-  //  assign_enum(&(*sib1)->cellAccessRelatedInfo.cellBarred,SystemInformationBlockType1__cellAccessRelatedInfo__cellBarred_notBarred);
-  (*sib1)->cellAccessRelatedInfo.cellBarred=SystemInformationBlockType1__cellAccessRelatedInfo__cellBarred_notBarred;
+	//  assign_enum(&(*sib1)->cellAccessRelatedInfo.cellBarred,SystemInformationBlockType1__cellAccessRelatedInfo__cellBarred_notBarred);
+	(*sib1_br)->cellAccessRelatedInfo.cellBarred = SystemInformationBlockType1__cellAccessRelatedInfo__cellBarred_notBarred;
 
-  //  assign_enum(&(*sib1)->cellAccessRelatedInfo.intraFreqReselection,SystemInformationBlockType1__cellAccessRelatedInfo__intraFreqReselection_allowed);
-  (*sib1)->cellAccessRelatedInfo.intraFreqReselection=SystemInformationBlockType1__cellAccessRelatedInfo__intraFreqReselection_notAllowed;
-  (*sib1)->cellAccessRelatedInfo.csg_Indication=0;
+	//  assign_enum(&(*sib1)->cellAccessRelatedInfo.intraFreqReselection,SystemInformationBlockType1__cellAccessRelatedInfo__intraFreqReselection_allowed);
+	(*sib1_br)->cellAccessRelatedInfo.intraFreqReselection = SystemInformationBlockType1__cellAccessRelatedInfo__intraFreqReselection_notAllowed;
+	(*sib1_br)->cellAccessRelatedInfo.csg_Indication = 0;
 
-  (*sib1)->cellSelectionInfo.q_RxLevMin=-65;
-  (*sib1)->cellSelectionInfo.q_RxLevMinOffset=NULL;
-  //(*sib1)->p_Max = CALLOC(1, sizeof(P_Max_t));
-  //*((*sib1)->p_Max) = 23;
-  (*sib1)->freqBandIndicator =
+	(*sib1_br)->cellSelectionInfo.q_RxLevMin = -65;
+	(*sib1_br)->cellSelectionInfo.q_RxLevMinOffset = NULL;
+	//(*sib1)->p_Max = CALLOC(1, sizeof(P_Max_t));
+	//*((*sib1)->p_Max) = 23;
+	(*sib1_br)->freqBandIndicator =
 #if defined(ENABLE_ITTI)
-    configuration->eutra_band[CC_id];
+		configuration->eutra_band[CC_id];
 #else
-    7;
+		7;
 #endif
 
-  schedulingInfo.si_Periodicity=SchedulingInfo__si_Periodicity_rf8;
+	schedulingInfo.si_Periodicity = SchedulingInfo__si_Periodicity_rf8;
 
-  // This is for SIB2/3
-  sib_type=SIB_Type_sibType3;
-  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
-  ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo);
+	// This is for SIB2/3
+	sib_type = SIB_Type_sibType3;
+	ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list, &sib_type);
+	ASN_SEQUENCE_ADD(&(*sib1_br)->schedulingInfoList.list, &schedulingInfo);
 
-  //  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,NULL);
+	//  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,NULL);
 
 #if defined(ENABLE_ITTI)
 
-  if (configuration->frame_type[CC_id] == TDD)
+	if (configuration->frame_type[CC_id] == TDD)
 #endif
-  {
-    (*sib1)->tdd_Config =                             CALLOC(1,sizeof(struct TDD_Config));
+	{
+		(*sib1_br)->tdd_Config = CALLOC(1, sizeof(struct TDD_Config));
 
-    (*sib1)->tdd_Config->subframeAssignment =
+		(*sib1_br)->tdd_Config->subframeAssignment =
 #if defined(ENABLE_ITTI)
-      configuration->tdd_config[CC_id];
+			configuration->tdd_config[CC_id];
 #else
-      3;
+			3; // +kogo this was frame_parms->tdd_config
 #endif
 
-    (*sib1)->tdd_Config->specialSubframePatterns =
+		(*sib1_br)->tdd_Config->specialSubframePatterns =
 #if defined(ENABLE_ITTI)
-      configuration->tdd_config_s[CC_id];
+			configuration->tdd_config_s[CC_id];
 #else
-    0;
+			0; // +kogo this was frame_parms->tdd_config_S;
 #endif
-  }
+	}
 
-  (*sib1)->si_WindowLength=SystemInformationBlockType1__si_WindowLength_ms20;
-  (*sib1)->systemInfoValueTag=0;
-  //  (*sib1).nonCriticalExtension = calloc(1,sizeof(*(*sib1).nonCriticalExtension));
+	(*sib1_br)->si_WindowLength = SystemInformationBlockType1__si_WindowLength_ms20;
+	(*sib1_br)->systemInfoValueTag = 0;
+	(*sib1_br)->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v890_IEs_t));
 
+	SystemInformationBlockType1_v890_IEs_t *sib1_br_890 = (*sib1_br)->nonCriticalExtension;
+	sib1_br_890->lateNonCriticalExtension = NULL;
+	sib1_br_890->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v920_IEs_t));
+	memset(sib1_br_890->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v920_IEs_t));
+
+	SystemInformationBlockType1_v920_IEs_t *sib1_br_920 = (*sib1_br_890).nonCriticalExtension;
+	sib1_br_920->ims_EmergencySupport_r9 = NULL; // ptr
+	sib1_br_920->cellSelectionInfo_v920 = NULL;
+	sib1_br_920->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1130_IEs_t));
+	memset(sib1_br_920->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1130_IEs_t));
+
+	//////Rel11
+	SystemInformationBlockType1_v1130_IEs_t *sib1_br_1130 = sib1_br_920->nonCriticalExtension;
+
+	sib1_br_1130->tdd_Config_v1130 = NULL; // ptr
+	sib1_br_1130->cellSelectionInfo_v1130 = NULL; // ptr
+	sib1_br_1130->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1250_IEs_t));
+	memset(sib1_br_1130->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1250_IEs_t));
+
+
+	///Rel12
+	SystemInformationBlockType1_v1250_IEs_t *sib1_br_1250 = sib1_br_1130->nonCriticalExtension;
+	sib1_br_1250->cellAccessRelatedInfo_v1250.category0Allowed_r12 = NULL; // long*
+	sib1_br_1250->cellSelectionInfo_v1250 = NULL;
+	sib1_br_1250->freqBandIndicatorPriority_r12 = 0; // long* // FIXME
+	sib1_br_1250->nonCriticalExtension = NULL;
+
+
+
+
+	////Rel1310
+#if defined(ENABLE_ITTI)
+	if (configuration->schedulingInfoSIB1_BR_r13[CC_id] != 0)
+	{
+		sib1_br_1250->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1310_IEs_t));
+		memset(sib1_br_1250->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1310_IEs_t));
+		SystemInformationBlockType1_v1310_IEs_t *sib1_br_1310 = sib1_br_1250->nonCriticalExtension;
+
+
+		if (configuration->hyperSFN_r13[CC_id])
+		{
+			sib1_br_1310->hyperSFN_r13 = calloc(1, sizeof(BIT_STRING_t)); // type
+			memset(sib1_br_1310->hyperSFN_r13, 0, sizeof(BIT_STRING_t));
+			sib1_br_1310->hyperSFN_r13->buf = calloc(2, sizeof(uint8_t));
+			memmove(sib1_br_1310->hyperSFN_r13->buf, configuration->hyperSFN_r13[CC_id], 2 * sizeof(uint8_t));
+			sib1_br_1310->hyperSFN_r13->size = 2;
+			sib1_br_1310->hyperSFN_r13->bits_unused = 6;
+		}
+		else
+			sib1_br_1310->hyperSFN_r13 = NULL;
+
+		if (configuration->eDRX_Allowed_r13[CC_id])
+		{
+			sib1_br_1310->eDRX_Allowed_r13 = calloc(1, sizeof(long));
+			*sib1_br_1310->eDRX_Allowed_r13 = *configuration->eDRX_Allowed_r13[CC_id];
+		}
+		else
+			sib1_br_1310->eDRX_Allowed_r13 = NULL; // long*
+
+		if (configuration->cellSelectionInfoCE_r13[CC_id])
+		{
+			sib1_br_1310->cellSelectionInfoCE_r13 = calloc(1, sizeof(CellSelectionInfoCE_r13_t));
+			memset(sib1_br_1310->cellSelectionInfoCE_r13, 0, sizeof(CellSelectionInfoCE_r13_t));
+			sib1_br_1310->cellSelectionInfoCE_r13->q_RxLevMinCE_r13 = configuration->q_RxLevMinCE_r13[CC_id]; // (Q_RxLevMin_t) long
+			if (configuration->q_QualMinRSRQ_CE_r13[CC_id])
+			{
+				sib1_br_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = calloc(1, sizeof(long));
+				*sib1_br_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = *configuration->q_QualMinRSRQ_CE_r13[CC_id];
+			}
+			else
+				sib1_br_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = NULL; 
+		}
+		else
+			sib1_br_1310->cellSelectionInfoCE_r13 = NULL;
+
+		if (configuration->bandwidthReducedAccessRelatedInfo_r13[CC_id])
+		{
+			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13
+				= calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13));
+
+			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_WindowLength_BR_r13
+				= configuration->si_WindowLength_BR_r13[CC_id]; // 0
+
+
+			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_RepetitionPattern_r13
+				= configuration->si_RepetitionPattern_r13[CC_id]; // 0
+
+			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13 = calloc(1, sizeof(SchedulingInfoList_BR_r13_t));
+			SchedulingInfo_BR_r13_t *schedulinginfo_br_13 = calloc(1, sizeof(SchedulingInfo_BR_r13_t));
+			memset(schedulinginfo_br_13, 0, sizeof(SchedulingInfo_BR_r13_t));
+			schedulinginfo_br_13->si_Narrowband_r13 = 1;
+			schedulinginfo_br_13->si_TBS_r13 = SchedulingInfo_BR_r13__si_TBS_r13_b152;
+			ASN_SEQUENCE_ADD(&sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13->list, schedulinginfo_br_13);
+
+			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13
+				= calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13));
+			memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13, 0,
+				sizeof(sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13)));
+
+			if (configuration->bandwidthReducedAccessRelatedInfo_r13[CC_id])
+			{
+				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
+					= SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
+
+				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf = calloc(2, sizeof(uint8_t));
+				memmove(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf, &configuration->fdd_DownlinkOrTddSubframeBitmapBR_val_r13[CC_id], 2 * sizeof(uint8_t));
+				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.size = 2;
+				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.bits_unused = 6;
+			}
+			else
+			{
+				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
+					= SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
+
+				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf = calloc(5, sizeof(uint8_t));
+				memmove(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf, &configuration->fdd_DownlinkOrTddSubframeBitmapBR_val_r13[CC_id], 5 * sizeof(uint8_t));
+				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.size = 5;
+				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.bits_unused = 0;
+			}
+
+			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13 = calloc(1, sizeof(BIT_STRING_t));
+			memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13, 0, sizeof(BIT_STRING_t));
+			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->buf = calloc(2, sizeof(uint8_t));
+			memmove(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->buf, &configuration->fdd_UplinkSubframeBitmapBR_r13[CC_id],
+				2 * sizeof(uint8_t));
+			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->size = 2;
+			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->bits_unused = 6;
+
+
+			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13 = configuration->startSymbolBR_r13[CC_id];
+			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_HoppingConfigCommon_r13
+				= configuration->si_HoppingConfigCommon_r13[CC_id];
+
+			if (configuration->si_ValidityTime_r13[CC_id])
+			{
+				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = calloc(1, sizeof(long));
+				memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13, 0, sizeof(long));
+				*sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13
+					= *configuration->si_ValidityTime_r13[CC_id];
+			}
+			else
+				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = NULL;
+
+			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13 = calloc(1, sizeof(SystemInfoValueTagList_r13_t));
+			SystemInfoValueTagSI_r13_t systemInfoValueTagSi_r13 = 0;
+			ASN_SEQUENCE_ADD(&sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13->list, &systemInfoValueTagSi_r13);
+		}
+		else
+			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13 = NULL;
+
+		sib1_br_1310->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1320_IEs_t));
+		memset(sib1_br_1310->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1320_IEs_t));
+
+		/////Rel1320
+		SystemInformationBlockType1_v1320_IEs_t *sib1_br_1320 = sib1_br_1310->nonCriticalExtension;
+		
+
+
+		if (configuration->freqHoppingParametersDL_r13[CC_id])
+		{
+			sib1_br_1320->freqHoppingParametersDL_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13));
+			memset(sib1_br_1320->freqHoppingParametersDL_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13));
+
+
+			if (configuration->mpdcch_pdsch_HoppingNB_r13[CC_id])
+			{
+				sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = calloc(1, sizeof(long));
+				*sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = *configuration->mpdcch_pdsch_HoppingNB_r13[CC_id];
+			}
+			else
+				sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = NULL;
+
+			sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13));
+			memset(sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13));
+
+			if (configuration->interval_DLHoppingConfigCommonModeA_r13[CC_id])
+			{
+				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13_PR_interval_FDD_r13;
+				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->choice.interval_FDD_r13 = configuration->interval_DLHoppingConfigCommonModeA_r13_val[CC_id];
+			}
+			else
+			{
+				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13_PR_interval_TDD_r13;
+				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->choice.interval_TDD_r13 = configuration->interval_DLHoppingConfigCommonModeA_r13_val[CC_id];
+			}
+
+			sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13));
+			memset(sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13));
+
+			if (configuration->interval_DLHoppingConfigCommonModeB_r13[CC_id])
+			{
+				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_FDD_r13;
+				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_FDD_r13 = configuration->interval_DLHoppingConfigCommonModeB_r13_val[CC_id];
+			}
+			else
+			{
+				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_TDD_r13;
+				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_TDD_r13 = configuration->interval_DLHoppingConfigCommonModeB_r13_val[CC_id];
+			}
+			
+			if (configuration->mpdcch_pdsch_HoppingOffset_r13[CC_id])
+			{
+
+				sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = calloc(1, sizeof(long));
+				*sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = *configuration->mpdcch_pdsch_HoppingOffset_r13[CC_id];
+			}
+			else
+				sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = NULL;
+
+		}
+		else
+			sib1_br_1320->freqHoppingParametersDL_r13 = NULL;
+
+		sib1_br_1320->nonCriticalExtension = NULL;
+    }
+#else
+  sib1_br_1250->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1310_IEs_t));
+  memset(sib1_br_1250->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1310_IEs_t));
+  SystemInformationBlockType1_v1310_IEs_t *sib1_br_1310 = sib1_br_1250->nonCriticalExtension;
+
+  sib1_br_1310->hyperSFN_r13 = calloc(1, sizeof(BIT_STRING_t)); // type
+  memset(sib1_br_1310->hyperSFN_r13, 0, sizeof(BIT_STRING_t));
+  sib1_br_1310->hyperSFN_r13->buf = calloc(2, sizeof(uint8_t));
+  memset(sib1_br_1310->hyperSFN_r13->buf, 0, 2*sizeof(uint8_t));
+  sib1_br_1310->hyperSFN_r13->size = 2;
+  sib1_br_1310->hyperSFN_r13->bits_unused = 6;
+
+  sib1_br_1310->eDRX_Allowed_r13 = NULL; // long*
+  sib1_br_1310->cellSelectionInfoCE_r13 = calloc(1, sizeof(CellSelectionInfoCE_r13_t));
+  memset(sib1_br_1310->cellSelectionInfoCE_r13, 0, sizeof(CellSelectionInfoCE_r13_t));
+  sib1_br_1310->cellSelectionInfoCE_r13->q_RxLevMinCE_r13 = -70; // (Q_RxLevMin_t) long
+  sib1_br_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = NULL; // (Q_RxLevMin_t) *long
+
+  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13
+          = calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13));
+
+  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_WindowLength_BR_r13
+          = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_WindowLength_BR_r13_ms20; // 0
+
+
+  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_RepetitionPattern_r13
+          = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_RepetitionPattern_r13_everyRF; // 0
+
+  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13 = calloc(1, sizeof(SchedulingInfoList_BR_r13_t));
+  SchedulingInfo_BR_r13_t *schedulinginfo_br_13 = calloc(1, sizeof(SchedulingInfo_BR_r13_t));
+  memset(schedulinginfo_br_13, 0, sizeof(SchedulingInfo_BR_r13_t));
+  schedulinginfo_br_13->si_Narrowband_r13 = 1;
+  schedulinginfo_br_13->si_TBS_r13 = SchedulingInfo_BR_r13__si_TBS_r13_b152;
+  ASN_SEQUENCE_ADD(&sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13->list, schedulinginfo_br_13);
+
+  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13
+          = calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13));
+  memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13, 0,
+         sizeof(sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13)));
+
+  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
+          = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
+  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf = calloc(2, sizeof(uint8_t));
+  memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf, 0, 2 * sizeof(uint8_t));
+  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.size = 2;
+  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.bits_unused = 6;
+
+  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13 = calloc(1, sizeof(BIT_STRING_t));
+  memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13, 0, sizeof(BIT_STRING_t));
+  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->buf = calloc(2, sizeof(uint8_t));
+  memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->buf, 0,
+         2 * sizeof(uint8_t));
+  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->size = 2;
+  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->bits_unused = 6;
+  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13 = 1;
+  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_HoppingConfigCommon_r13
+          = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_HoppingConfigCommon_r13_on;
+
+  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = calloc(1, sizeof(long));
+  memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13, 0, sizeof(long));
+  *sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13
+          = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_ValidityTime_r13_true;
+
+
+  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13 = calloc(1, sizeof(SystemInfoValueTagList_r13_t));
+  SystemInfoValueTagSI_r13_t systemInfoValueTagSi_r13 = 0;
+  ASN_SEQUENCE_ADD(&sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13->list, &systemInfoValueTagSi_r13);
+
+  sib1_br_1310->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1320_IEs_t));
+  memset(sib1_br_1310->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1320_IEs_t));
+
+  /////Rel1320
+  SystemInformationBlockType1_v1320_IEs_t *sib1_br_1320 = sib1_br_1310->nonCriticalExtension;
+  sib1_br_1320->freqHoppingParametersDL_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13));
+  memset(sib1_br_1320->freqHoppingParametersDL_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13));
+
+  sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = calloc(1, sizeof(long));
+  *sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__mpdcch_pdsch_HoppingNB_r13_nb2;
+
+
+  sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13));
+  memset(sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13));
+  sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13_PR_interval_FDD_r13;
+  sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->choice.interval_FDD_r13 = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13__interval_FDD_r13_int1;
+
+  sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13));
+  memset(sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13));
+  sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_FDD_r13;
+  sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_FDD_r13 = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13__interval_FDD_r13_int2;
+
+
+  sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = calloc(1, sizeof(long));
+  *sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = 1;
+
+  sib1_br_1320->nonCriticalExtension = NULL;
+#endif
 #ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message);
 #endif
@@ -512,7 +826,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   uint8_t                           *buffer       = RC.rrc[Mod_id]->carrier[CC_id].SIB23;
   BCCH_DL_SCH_Message_t             *bcch_message = &RC.rrc[Mod_id]->carrier[CC_id].systemInformation;
-  SystemInformationBlockType2_t     **sib2        = &RC.rrc[Mod_id]->carrier[CC_id].sib2;
+  SystemInformationBlockType2_t     **sib2_br     = &RC.rrc[Mod_id]->carrier[CC_id].sib2;
   SystemInformationBlockType3_t     **sib3        = &RC.rrc[Mod_id]->carrier[CC_id].sib3;
 #if defined(Rel10) || defined(Rel14)
   SystemInformationBlockType13_r9_t **sib13       = &RC.rrc[Mod_id]->carrier[CC_id].sib13;
@@ -526,8 +840,8 @@ uint8_t do_SIB23(uint8_t Mod_id,
     exit(-1);
   }
 
-  if (!sib2) {
-    LOG_E(RRC,"[eNB %d] sib2 is null, exiting\n", Mod_id);
+  if (!sib2_br) {
+    LOG_E(RRC,"[eNB %d] sib2_br is null, exiting\n", Mod_id);
     exit(-1);
   }
 
@@ -537,7 +851,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   }
 
 #if defined(Rel10) || defined(Rel14)
-  LOG_I(RRC,"[eNB %d] Configuration SIB2/3, MBMS = %d\n", Mod_id, MBMS_flag);
+  LOG_I(RRC,"[eNB %d] Configuration sib2_br/3, MBMS = %d\n", Mod_id, MBMS_flag);
 #else
   LOG_I(RRC,"[eNB %d] Configuration SIB2/3\n", Mod_id);
 #endif
@@ -549,7 +863,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   sib2_part->present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2;
   sib3_part->present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib3;
 
-  *sib2 = &sib2_part->choice.sib2;
+  *sib2_br = &sib2_part->choice.sib2;
   *sib3 = &sib3_part->choice.sib3;
 
 #if defined(Rel10) || defined(Rel14)
@@ -565,252 +879,428 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   // sib2
 
-  (*sib2)->ac_BarringInfo = NULL;
+  (*sib2_br)->ac_BarringInfo = NULL;
 #if defined(Rel10) || defined(Rel14)
 #if 0
-  (*sib2)->ssac_BarringForMMTEL_Voice_r9 = NULL;
-  (*sib2)->ssac_BarringForMMTEL_Video_r9 = NULL;
-  (*sib2)->ac_BarringForCSFB_r10 = NULL;
+  (*sib2_br)->ssac_BarringForMMTEL_Voice_r9 = NULL;
+  (*sib2_br)->ssac_BarringForMMTEL_Video_r9 = NULL;
+  (*sib2_br)->ac_BarringForCSFB_r10 = NULL;
 #endif
-  (*sib2)->ext1 = NULL;
-  (*sib2)->ext2 = NULL;
+  (*sib2_br)->ext1 = NULL;
+  (*sib2_br)->ext2 = NULL;
 #endif
 
 #if defined(ENABLE_ITTI)
 
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.numberOfRA_Preambles                         = configuration->rach_numberOfRA_Preambles[CC_id];
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig                        = NULL;
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.numberOfRA_Preambles                         = configuration->rach_numberOfRA_Preambles[CC_id];
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig                        = NULL;
 
   if (configuration->rach_preamblesGroupAConfig[CC_id]) {
-    (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig
+    (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig
       = CALLOC(1,sizeof(struct RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig));
-    (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig->sizeOfRA_PreamblesGroupA
+    (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig->sizeOfRA_PreamblesGroupA
       = configuration->rach_sizeOfRA_PreamblesGroupA[CC_id];
-    (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig->messageSizeGroupA
+    (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig->messageSizeGroupA
       = configuration->rach_messageSizeGroupA[CC_id];
-    (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig->messagePowerOffsetGroupB
+    (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig->messagePowerOffsetGroupB
       = configuration->rach_messagePowerOffsetGroupB[CC_id];
   }
 
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.powerRampingStep                   = configuration->rach_powerRampingStep[CC_id];
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower =
-    configuration->rach_preambleInitialReceivedTargetPower[CC_id];
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.preambleTransMax                       = configuration->rach_preambleTransMax[CC_id];
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.ra_ResponseWindowSize                  = configuration->rach_raResponseWindowSize[CC_id];
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.mac_ContentionResolutionTimer          =
-    configuration->rach_macContentionResolutionTimer[CC_id];
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.maxHARQ_Msg3Tx                                            = configuration->rach_maxHARQ_Msg3Tx[CC_id];
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.powerRampingStep                   = configuration->rach_powerRampingStep[CC_id];
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower = configuration->rach_preambleInitialReceivedTargetPower[CC_id];
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.preambleTransMax                       = configuration->rach_preambleTransMax[CC_id];
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.ra_ResponseWindowSize                  = configuration->rach_raResponseWindowSize[CC_id];
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.mac_ContentionResolutionTimer          = configuration->rach_macContentionResolutionTimer[CC_id];
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.maxHARQ_Msg3Tx                                            = configuration->rach_maxHARQ_Msg3Tx[CC_id];
+
+  // LTE-M +kogo
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1 = calloc(1, sizeof(struct RACH_ConfigCommon__ext1));
+  memset((*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1, 0, sizeof(struct RACH_ConfigCommon__ext1));
+
+  if (configuration->rach_maxHARQ_Msg3Tx[CC_id])
+  {
+      (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = calloc(1, sizeof(PreambleTransMax_t));
+      *(*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = configuration->rach_maxHARQ_Msg3Tx[CC_id]; // to be re-initialized when we find the enum
+  }
+  else
+      (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = NULL;
+
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1->rach_CE_LevelInfoList_r13 = calloc(1, sizeof(RACH_CE_LevelInfoList_r13_t));
+  memset((*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1->rach_CE_LevelInfoList_r13, 0, sizeof(RACH_CE_LevelInfoList_r13_t));
+
+  RACH_CE_LevelInfo_r13_t *rach_ce_levelinfo_r13 = calloc(1, sizeof(RACH_CE_LevelInfo_r13_t));
+  memset(rach_ce_levelinfo_r13, 0, sizeof(RACH_CE_LevelInfo_r13_t));
+  rach_ce_levelinfo_r13->preambleMappingInfo_r13.firstPreamble_r13 = 0;
+  rach_ce_levelinfo_r13->preambleMappingInfo_r13.lastPreamble_r13 = 63;
+  rach_ce_levelinfo_r13->ra_ResponseWindowSize_r13 = RACH_CE_LevelInfo_r13__ra_ResponseWindowSize_r13_sf80;
+  rach_ce_levelinfo_r13->mac_ContentionResolutionTimer_r13 = RACH_CE_LevelInfo_r13__mac_ContentionResolutionTimer_r13_sf200;
+  rach_ce_levelinfo_r13->rar_HoppingConfig_r13 = RACH_CE_LevelInfo_r13__rar_HoppingConfig_r13_off;
+
+  ASN_SEQUENCE_ADD(&(*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1->rach_CE_LevelInfoList_r13->list, rach_ce_levelinfo_r13);
+//--------------------------------------------------------------------------------------------------------------------------------------------------- +kogo
 
   // BCCH-Config
-  (*sib2)->radioResourceConfigCommon.bcch_Config.modificationPeriodCoeff
+  (*sib2_br)->radioResourceConfigCommon.bcch_Config.modificationPeriodCoeff
     = configuration->bcch_modificationPeriodCoeff[CC_id];
 
   // PCCH-Config
-  (*sib2)->radioResourceConfigCommon.pcch_Config.defaultPagingCycle
+  (*sib2_br)->radioResourceConfigCommon.pcch_Config.defaultPagingCycle
     = configuration->pcch_defaultPagingCycle[CC_id];
-  (*sib2)->radioResourceConfigCommon.pcch_Config.nB
+  (*sib2_br)->radioResourceConfigCommon.pcch_Config.nB
     = configuration->pcch_nB[CC_id];
 
   // PRACH-Config
-  (*sib2)->radioResourceConfigCommon.prach_Config.rootSequenceIndex
+  (*sib2_br)->radioResourceConfigCommon.prach_Config.rootSequenceIndex
     = configuration->prach_root[CC_id];
-  (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_ConfigIndex
+  (*sib2_br)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_ConfigIndex
     = configuration->prach_config_index[CC_id];
-  (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.highSpeedFlag
+  (*sib2_br)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.highSpeedFlag
     = configuration->prach_high_speed[CC_id];
-  (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig
+  (*sib2_br)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig
     = configuration->prach_zero_correlation[CC_id];
-  (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_FreqOffset
+  (*sib2_br)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_FreqOffset
     = configuration->prach_freq_offset[CC_id];
 
   // PDSCH-Config
-  (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower
+  (*sib2_br)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower
     = configuration->pdsch_referenceSignalPower[CC_id];
-  (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.p_b
+  (*sib2_br)->radioResourceConfigCommon.pdsch_ConfigCommon.p_b
     = configuration->pdsch_p_b[CC_id];
 
   // PUSCH-Config
-  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.n_SB
+  (*sib2_br)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.n_SB
     = configuration->pusch_n_SB[CC_id];
-  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode
+  (*sib2_br)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode
     = configuration->pusch_hoppingMode[CC_id];
-  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset
+  (*sib2_br)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset
     = configuration->pusch_hoppingOffset[CC_id];
-  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM
+  (*sib2_br)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM
     = configuration->pusch_enable64QAM[CC_id];
-  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled
+  (*sib2_br)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled
     = configuration->pusch_groupHoppingEnabled[CC_id];
-  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH
+  (*sib2_br)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH
     = configuration->pusch_groupAssignment[CC_id];
-  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled
+  (*sib2_br)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled
     = configuration->pusch_sequenceHoppingEnabled[CC_id];
-  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift
+  (*sib2_br)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift
     = configuration->pusch_nDMRS1[CC_id];
 
   // PUCCH-Config
 
-  (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.deltaPUCCH_Shift
+  (*sib2_br)->radioResourceConfigCommon.pucch_ConfigCommon.deltaPUCCH_Shift
     = configuration->pucch_delta_shift[CC_id];
-  (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.nRB_CQI
+  (*sib2_br)->radioResourceConfigCommon.pucch_ConfigCommon.nRB_CQI
     = configuration->pucch_nRB_CQI[CC_id];
-  (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.nCS_AN
+  (*sib2_br)->radioResourceConfigCommon.pucch_ConfigCommon.nCS_AN
     = configuration->pucch_nCS_AN[CC_id];
 #if !defined(Rel10) && !defined(Rel14)
-  (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.n1PUCCH_AN
+  (*sib2_br)->radioResourceConfigCommon.pucch_ConfigCommon.n1PUCCH_AN
     = configuration->pucch_n1_AN[CC_id];
 #endif
 
   // SRS Config
   if (configuration->srs_enable[CC_id]==1) {
-    (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present
+    (*sib2_br)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present
       = SoundingRS_UL_ConfigCommon_PR_setup;
-    (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_BandwidthConfig
+    (*sib2_br)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_BandwidthConfig
       = configuration->srs_BandwidthConfig[CC_id];
-    (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig
+    (*sib2_br)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig
       = configuration->srs_SubframeConfig[CC_id];
-    (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission
+    (*sib2_br)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission
       = configuration->srs_ackNackST[CC_id];
 
     if (configuration->srs_MaxUpPts[CC_id]) {
-      (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts
+      (*sib2_br)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts
         = CALLOC(1,sizeof(long));
-      *(*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts=1;
+      *(*sib2_br)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts=1;
     } else {
-      (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts = NULL;
+      (*sib2_br)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts = NULL;
     }
     RC.rrc[Mod_id]->srs_enable[CC_id] = 1;
   } else {
     RC.rrc[Mod_id]->srs_enable[CC_id] = 0;
-    (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present=SoundingRS_UL_ConfigCommon_PR_release;
-    (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.release=0;
+    (*sib2_br)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present=SoundingRS_UL_ConfigCommon_PR_release;
+    (*sib2_br)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.release=0;
   }
 
   // uplinkPowerControlCommon
 
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH
     = configuration->pusch_p0_Nominal[CC_id];
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUCCH
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUCCH
     = configuration->pucch_p0_Nominal[CC_id];
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.alpha
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.alpha
     = configuration->pusch_alpha[CC_id];
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1
     = configuration->pucch_deltaF_Format1[CC_id];
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b
     = configuration->pucch_deltaF_Format1b[CC_id];
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2
     = configuration->pucch_deltaF_Format2[CC_id];
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2a
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2a
     = configuration->pucch_deltaF_Format2a[CC_id];
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2b
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2b
     = configuration->pucch_deltaF_Format2b[CC_id];
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaPreambleMsg3
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaPreambleMsg3
     = configuration->msg3_delta_Preamble[CC_id];
-  (*sib2)->radioResourceConfigCommon.ul_CyclicPrefixLength
+  (*sib2_br)->radioResourceConfigCommon.ul_CyclicPrefixLength
     = configuration->ul_CyclicPrefixLength[CC_id];
+
+  // LTE-M - +Kogo
+  (*sib2_br)->radioResourceConfigCommon.ext4 = calloc(1, sizeof(struct RadioResourceConfigCommonSIB__ext4));
+  memset((*sib2_br)->radioResourceConfigCommon.ext4, 0, sizeof(struct RadioResourceConfigCommonSIB__ext4));
+  (*sib2_br)->radioResourceConfigCommon.ext4->bcch_Config_v1310 = calloc(1, sizeof(BCCH_Config_v1310_t));
+  memset((*sib2_br)->radioResourceConfigCommon.ext4->bcch_Config_v1310, 0, sizeof(BCCH_Config_v1310_t));
+  (*sib2_br)->radioResourceConfigCommon.ext4->bcch_Config_v1310->modificationPeriodCoeff_v1310 = BCCH_Config_v1310__modificationPeriodCoeff_v1310_n64;
+  (*sib2_br)->radioResourceConfigCommon.ext4->pcch_Config_v1310 = NULL;
+  (*sib2_br)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13 = NULL;
+  (*sib2_br)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310 = NULL;
+  (*sib2_br)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310 = NULL;
+
+  if (configuration->prach_ConfigCommon_v1310[CC_id])
+  {
+      (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310 = calloc(1, sizeof(PRACH_ConfigSIB_v1310_t));
+      memset((*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310, 0, sizeof(PRACH_ConfigSIB_v1310_t));
+
+      RSRP_Range_t rsrp_range = 60;
+      ASN_SEQUENCE_ADD(&(*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->rsrp_ThresholdsPrachInfoList_r13.list, &rsrp_range);
+
+      (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13 = NULL;
+
+      if (configuration->mpdcch_startSF_CSS_RA_r13[CC_id])
+      {
+          (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13 = calloc(1, sizeof(struct PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13));
+          memset((*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13, 0, sizeof(struct PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13));
+
+          if (*configuration->mpdcch_startSF_CSS_RA_r13[CC_id])
+          {
+              (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->present = PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13_PR_fdd_r13;
+              (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->choice.fdd_r13 = configuration->mpdcch_startSF_CSS_RA_r13_val[CC_id];
+          }
+          else
+          {
+              (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->present = PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13_PR_tdd_r13;
+              (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->choice.tdd_r13 = configuration->mpdcch_startSF_CSS_RA_r13_val[CC_id];
+          }
+      }
+
+      if (configuration->prach_HoppingOffset_r13[CC_id])
+      {
+          (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_HoppingOffset_r13 = calloc(1, sizeof(long));
+          *(*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_HoppingOffset_r13 = *configuration->prach_HoppingOffset_r13[CC_id];
+      }
+      else
+        (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_HoppingOffset_r13 = NULL;
+
+      PRACH_ParametersCE_r13_t *prach_parametersce_r13 = calloc(1, sizeof(PRACH_ParametersCE_r13_t));
+      memset(prach_parametersce_r13, 0, sizeof(PRACH_ParametersCE_r13_t));
+
+      prach_parametersce_r13->prach_ConfigIndex_r13 = 3;
+      prach_parametersce_r13->prach_FreqOffset_r13 = 1;
+      prach_parametersce_r13->prach_StartingSubframe_r13 = NULL;
+      prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = calloc(1, sizeof(long));
+      *prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = PRACH_ParametersCE_r13__maxNumPreambleAttemptCE_r13_n3;
+
+      prach_parametersce_r13->numRepetitionPerPreambleAttempt_r13 = PRACH_ParametersCE_r13__numRepetitionPerPreambleAttempt_r13_n1;
+      long maxavailablenarrowband = 2;
+      ASN_SEQUENCE_ADD(&prach_parametersce_r13->mpdcch_NarrowbandsToMonitor_r13.list, &maxavailablenarrowband);
+
+      prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = PRACH_ParametersCE_r13__mpdcch_NumRepetition_RA_r13_r1;
+      prach_parametersce_r13->prach_HoppingConfig_r13 = PRACH_ParametersCE_r13__prach_HoppingConfig_r13_off;
+      ASN_SEQUENCE_ADD(&(*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_ParametersListCE_r13.list, prach_parametersce_r13);
+  }
+  else
+      (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310 = NULL;
+
+  (*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310 = calloc(1, sizeof(PUCCH_ConfigCommon_v1310_t));
+  memset((*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310, 0, sizeof(PUCCH_ConfigCommon_v1310_t));
+  (*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->n1PUCCH_AN_InfoList_r13 = calloc(1, sizeof(N1PUCCH_AN_InfoList_r13_t));
+  long pucch_info_value1 = 0;
+  long pucch_info_value2 = 2;
+  ASN_SEQUENCE_ADD(&(*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->n1PUCCH_AN_InfoList_r13->list, &pucch_info_value1);
+  ASN_SEQUENCE_ADD(&(*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->n1PUCCH_AN_InfoList_r13->list, &pucch_info_value2);
+  (*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level0_r13 = NULL;
+  (*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level1_r13 = NULL;
+  (*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level2_r13 = NULL;
+  (*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level3_r13 = NULL;
+//-----------------------------------------------------------------------------------------------------------------------------------------
+
 
   // UE Timers and Constants
 
-  (*sib2)->ue_TimersAndConstants.t300
+  (*sib2_br)->ue_TimersAndConstants.t300
     = configuration->ue_TimersAndConstants_t300[CC_id];
-  (*sib2)->ue_TimersAndConstants.t301
+  (*sib2_br)->ue_TimersAndConstants.t301
     = configuration->ue_TimersAndConstants_t301[CC_id];
-  (*sib2)->ue_TimersAndConstants.t310
+  (*sib2_br)->ue_TimersAndConstants.t310
     = configuration->ue_TimersAndConstants_t310[CC_id];
-  (*sib2)->ue_TimersAndConstants.n310
+  (*sib2_br)->ue_TimersAndConstants.n310
     = configuration->ue_TimersAndConstants_n310[CC_id];
-  (*sib2)->ue_TimersAndConstants.t311
+  (*sib2_br)->ue_TimersAndConstants.t311
     = configuration->ue_TimersAndConstants_t311[CC_id];
-  (*sib2)->ue_TimersAndConstants.n311
+  (*sib2_br)->ue_TimersAndConstants.n311
     = configuration->ue_TimersAndConstants_n311[CC_id];
 
 #else
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.numberOfRA_Preambles=RACH_ConfigCommon__preambleInfo__numberOfRA_Preambles_n64;
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig = NULL;
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.powerRampingStep=RACH_ConfigCommon__powerRampingParameters__powerRampingStep_dB2;
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower=
+  puts("This is a test that #define ITTI is not working");
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.numberOfRA_Preambles=RACH_ConfigCommon__preambleInfo__numberOfRA_Preambles_n64;
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig = NULL;
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.powerRampingStep=RACH_ConfigCommon__powerRampingParameters__powerRampingStep_dB2;
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower=
     RACH_ConfigCommon__powerRampingParameters__preambleInitialReceivedTargetPower_dBm_100;
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.preambleTransMax=RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10;
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.ra_ResponseWindowSize=RACH_ConfigCommon__ra_SupervisionInfo__ra_ResponseWindowSize_sf10;
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.mac_ContentionResolutionTimer=
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.preambleTransMax=RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10;
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.ra_ResponseWindowSize=RACH_ConfigCommon__ra_SupervisionInfo__ra_ResponseWindowSize_sf10;
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.mac_ContentionResolutionTimer=
     RACH_ConfigCommon__ra_SupervisionInfo__mac_ContentionResolutionTimer_sf48;
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.maxHARQ_Msg3Tx = 4;
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.maxHARQ_Msg3Tx = 4;
+
+  // LTE-M +kogo
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1 = calloc(1, sizeof(struct RACH_ConfigCommon__ext1));
+  memset((*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1, 0, sizeof(struct RACH_ConfigCommon__ext1));
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = calloc(1, sizeof(PreambleTransMax_t));
+  *(*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = PreambleTransMax_n5; // to be re-initialized when we find the enum
+  (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1->rach_CE_LevelInfoList_r13 = calloc(1, sizeof(RACH_CE_LevelInfoList_r13_t));
+  memset((*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1->rach_CE_LevelInfoList_r13, 0, sizeof(RACH_CE_LevelInfoList_r13_t));
+
+  RACH_CE_LevelInfo_r13_t *rach_ce_levelinfo_r13 = calloc(1, sizeof(RACH_CE_LevelInfo_r13_t));
+  memset(rach_ce_levelinfo_r13, 0, sizeof(RACH_CE_LevelInfo_r13_t));
+  rach_ce_levelinfo_r13->preambleMappingInfo_r13.firstPreamble_r13 = 0;
+  rach_ce_levelinfo_r13->preambleMappingInfo_r13.lastPreamble_r13 = 63;
+  rach_ce_levelinfo_r13->ra_ResponseWindowSize_r13 = RACH_CE_LevelInfo_r13__ra_ResponseWindowSize_r13_sf80;
+  rach_ce_levelinfo_r13->mac_ContentionResolutionTimer_r13 = RACH_CE_LevelInfo_r13__mac_ContentionResolutionTimer_r13_sf200;
+  rach_ce_levelinfo_r13->rar_HoppingConfig_r13 = RACH_CE_LevelInfo_r13__rar_HoppingConfig_r13_off;
+
+  ASN_SEQUENCE_ADD(&(*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1->rach_CE_LevelInfoList_r13->list, rach_ce_levelinfo_r13);
+//--------------------------------------------------------------------------------------------------------------------------------------------------- +kogo
 
   // BCCH-Config
-  (*sib2)->radioResourceConfigCommon.bcch_Config.modificationPeriodCoeff=BCCH_Config__modificationPeriodCoeff_n2;
+  (*sib2_br)->radioResourceConfigCommon.bcch_Config.modificationPeriodCoeff=BCCH_Config__modificationPeriodCoeff_n2;
 
   // PCCH-Config
-  (*sib2)->radioResourceConfigCommon.pcch_Config.defaultPagingCycle = PCCH_Config__defaultPagingCycle_rf128;
-  (*sib2)->radioResourceConfigCommon.pcch_Config.nB=PCCH_Config__nB_oneT;
+  (*sib2_br)->radioResourceConfigCommon.pcch_Config.defaultPagingCycle = PCCH_Config__defaultPagingCycle_rf128;
+  (*sib2_br)->radioResourceConfigCommon.pcch_Config.nB=PCCH_Config__nB_oneT;
 
   // PRACH-Config
-  (*sib2)->radioResourceConfigCommon.prach_Config.rootSequenceIndex=Mod_id;//0;//384;
-  (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_ConfigIndex = 0;//3;
-  (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.highSpeedFlag = 0;
-  (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig = 1;//12;
-  (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_FreqOffset = 2;
+  (*sib2_br)->radioResourceConfigCommon.prach_Config.rootSequenceIndex=Mod_id;//0;//384;
+  (*sib2_br)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_ConfigIndex = 0;//3;
+  (*sib2_br)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.highSpeedFlag = 0;
+  (*sib2_br)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig = 1;//12;
+  (*sib2_br)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_FreqOffset = 2;
 
   // PDSCH-Config
-  (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower=0;  // corresponds to 24.7 dBm 5 MHz/ 27.7 10 MHz/ 30.7 20 MHz
+  (*sib2_br)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower=0;  // corresponds to 24.7 dBm 5 MHz/ 27.7 10 MHz/ 30.7 20 MHz
 
 
-  (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.p_b=0;
+  (*sib2_br)->radioResourceConfigCommon.pdsch_ConfigCommon.p_b=0; // this is different ,,
 
   // PUSCH-Config
-  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.n_SB=1;
-  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode=PUSCH_ConfigCommon__pusch_ConfigBasic__hoppingMode_interSubFrame;
-  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset=0;
-  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM=0;
-  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled=1;
-  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH=0;
-  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled=0;
-  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift=0;
+  (*sib2_br)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.n_SB=1;
+  (*sib2_br)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode=PUSCH_ConfigCommon__pusch_ConfigBasic__hoppingMode_interSubFrame;
+  (*sib2_br)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset=0;
+  (*sib2_br)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM=0;
+  (*sib2_br)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled=1;
+  (*sib2_br)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH=0;
+  (*sib2_br)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled=0;
+  (*sib2_br)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift=0;
 
   // PUCCH-Config
 
-  (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.deltaPUCCH_Shift=PUCCH_ConfigCommon__deltaPUCCH_Shift_ds1;
-  (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.nRB_CQI = 1;
-  (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.nCS_AN = 0;
-  (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.n1PUCCH_AN = 32;
+  (*sib2_br)->radioResourceConfigCommon.pucch_ConfigCommon.deltaPUCCH_Shift=PUCCH_ConfigCommon__deltaPUCCH_Shift_ds1;
+  (*sib2_br)->radioResourceConfigCommon.pucch_ConfigCommon.nRB_CQI = 1;
+  (*sib2_br)->radioResourceConfigCommon.pucch_ConfigCommon.nCS_AN = 0;
+  (*sib2_br)->radioResourceConfigCommon.pucch_ConfigCommon.n1PUCCH_AN = 32;
 
 
-  (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present=SoundingRS_UL_ConfigCommon_PR_release;
-  (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.release=0;
+  (*sib2_br)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present=SoundingRS_UL_ConfigCommon_PR_release;
+  (*sib2_br)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.release=0;
 
   // uplinkPowerControlCommon
 
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH = -108;
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUCCH = -108;
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.alpha=UplinkPowerControlCommon__alpha_al1;
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1=DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF2;
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b=DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF3;
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH = -108;
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUCCH = -108;
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.alpha=UplinkPowerControlCommon__alpha_al1;
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1=DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF2;
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b=DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF3;
 
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2=DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF0;
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2=DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF0;
 
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2a=DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF0;
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2a=DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF0;
 
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2b=DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF0;
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2b=DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF0;
 
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaPreambleMsg3 = 6;
+  (*sib2_br)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaPreambleMsg3 = 6;
 
-  (*sib2)->radioResourceConfigCommon.ul_CyclicPrefixLength=UL_CyclicPrefixLength_len1;
+  (*sib2_br)->radioResourceConfigCommon.ul_CyclicPrefixLength=UL_CyclicPrefixLength_len1;
 
-  (*sib2)->ue_TimersAndConstants.t300=UE_TimersAndConstants__t300_ms1000;
+  // LTE-M - +Kogo
+  (*sib2_br)->radioResourceConfigCommon.ext4 = calloc(1, sizeof(struct RadioResourceConfigCommonSIB__ext4));
+  memset((*sib2_br)->radioResourceConfigCommon.ext4, 0, sizeof(struct RadioResourceConfigCommonSIB__ext4));
+  (*sib2_br)->radioResourceConfigCommon.ext4->bcch_Config_v1310 = calloc(1, sizeof(BCCH_Config_v1310_t));
+  memset((*sib2_br)->radioResourceConfigCommon.ext4->bcch_Config_v1310, 0, sizeof(BCCH_Config_v1310_t));
+  (*sib2_br)->radioResourceConfigCommon.ext4->bcch_Config_v1310->modificationPeriodCoeff_v1310 = BCCH_Config_v1310__modificationPeriodCoeff_v1310_n64;
+  (*sib2_br)->radioResourceConfigCommon.ext4->pcch_Config_v1310 = NULL;
+  (*sib2_br)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13 = NULL;
+  (*sib2_br)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310 = NULL;
+  (*sib2_br)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310 = NULL;
+  (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310 = calloc(1, sizeof(PRACH_ConfigSIB_v1310_t));
+  memset((*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310, 0, sizeof(PRACH_ConfigSIB_v1310_t));
 
-  (*sib2)->ue_TimersAndConstants.t301=UE_TimersAndConstants__t301_ms1000;
+  RSRP_Range_t rsrp_range = 60;
+  ASN_SEQUENCE_ADD(&(*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->rsrp_ThresholdsPrachInfoList_r13.list, &rsrp_range);
 
-  (*sib2)->ue_TimersAndConstants.t310=UE_TimersAndConstants__t310_ms1000;
+  (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13 = calloc(1, sizeof(struct PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13));
+  memset((*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13, 0, sizeof(struct PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13));
+  (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->present = PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13_PR_fdd_r13;
+  (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->choice.fdd_r13 = PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13__fdd_r13_v5;
+  (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_HoppingOffset_r13 = NULL;
 
-  (*sib2)->ue_TimersAndConstants.n310=UE_TimersAndConstants__n310_n20;
+  PRACH_ParametersCE_r13_t *prach_parametersce_r13 = calloc(1, sizeof(PRACH_ParametersCE_r13_t));
+  memset(prach_parametersce_r13, 0, sizeof(PRACH_ParametersCE_r13_t));
 
-  (*sib2)->ue_TimersAndConstants.t311=UE_TimersAndConstants__t311_ms10000;
+  prach_parametersce_r13->prach_ConfigIndex_r13 = 3;
+  prach_parametersce_r13->prach_FreqOffset_r13 = 1;
+  prach_parametersce_r13->prach_StartingSubframe_r13 = NULL;
+  prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = calloc(1, sizeof(long));
+  *prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = PRACH_ParametersCE_r13__maxNumPreambleAttemptCE_r13_n3;
 
-  (*sib2)->ue_TimersAndConstants.n311=UE_TimersAndConstants__n311_n1;
+  prach_parametersce_r13->numRepetitionPerPreambleAttempt_r13 = PRACH_ParametersCE_r13__numRepetitionPerPreambleAttempt_r13_n1;
+  long maxavailablenarrowband = 2;
+  ASN_SEQUENCE_ADD(&prach_parametersce_r13->mpdcch_NarrowbandsToMonitor_r13.list, &maxavailablenarrowband);
+
+  prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = PRACH_ParametersCE_r13__mpdcch_NumRepetition_RA_r13_r1;
+  prach_parametersce_r13->prach_HoppingConfig_r13 = PRACH_ParametersCE_r13__prach_HoppingConfig_r13_off;
+  ASN_SEQUENCE_ADD(&(*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_ParametersListCE_r13.list, prach_parametersce_r13);
+
+  (*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310 = calloc(1, sizeof(PUCCH_ConfigCommon_v1310_t));
+  memset((*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310, 0, sizeof(PUCCH_ConfigCommon_v1310_t));
+  (*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->n1PUCCH_AN_InfoList_r13 = calloc(1, sizeof(N1PUCCH_AN_InfoList_r13_t));
+  long pucch_info_value1 = 0;
+  long pucch_info_value2 = 2;
+  ASN_SEQUENCE_ADD(&(*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->n1PUCCH_AN_InfoList_r13->list, &pucch_info_value1);
+  ASN_SEQUENCE_ADD(&(*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->n1PUCCH_AN_InfoList_r13->list, &pucch_info_value2);
+  (*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level0_r13 = NULL;
+  (*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level1_r13 = NULL;
+  (*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level2_r13 = NULL;
+  (*sib2_br)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level3_r13 = NULL;
+//-----------------------------------------------------------------------------------------------------------------------------------------
+
+  (*sib2_br)->ue_TimersAndConstants.t300=UE_TimersAndConstants__t300_ms1000;
+
+  (*sib2_br)->ue_TimersAndConstants.t301=UE_TimersAndConstants__t301_ms1000;
+
+  (*sib2_br)->ue_TimersAndConstants.t310=UE_TimersAndConstants__t310_ms1000;
+
+  (*sib2_br)->ue_TimersAndConstants.n310=UE_TimersAndConstants__n310_n20;
+
+  (*sib2_br)->ue_TimersAndConstants.t311=UE_TimersAndConstants__t311_ms10000;
+
+  (*sib2_br)->ue_TimersAndConstants.n311=UE_TimersAndConstants__n311_n1;
 
 #endif
 
-  (*sib2)->freqInfo.additionalSpectrumEmission = 1;
-  (*sib2)->freqInfo.ul_CarrierFreq = NULL;
-  (*sib2)->freqInfo.ul_Bandwidth = NULL;
+  (*sib2_br)->freqInfo.additionalSpectrumEmission = 1;
+  (*sib2_br)->freqInfo.ul_CarrierFreq = NULL;
+  (*sib2_br)->freqInfo.ul_Bandwidth = NULL;
   //  (*sib2)->mbsfn_SubframeConfigList = NULL;
 
 #if defined(Rel10) || defined(Rel14)
@@ -818,8 +1308,8 @@ uint8_t do_SIB23(uint8_t Mod_id,
   if (MBMS_flag > 0) {
     LOG_I(RRC,"Adding MBSFN subframe Configuration 1 to SIB2\n");
     MBSFN_SubframeConfig_t *sib2_mbsfn_SubframeConfig1;
-    (*sib2)->mbsfn_SubframeConfigList = CALLOC(1,sizeof(struct MBSFN_SubframeConfigList));
-    MBSFNSubframeConfigList = (*sib2)->mbsfn_SubframeConfigList;
+    (*sib2_br)->mbsfn_SubframeConfigList = CALLOC(1,sizeof(struct MBSFN_SubframeConfigList));
+    MBSFNSubframeConfigList = (*sib2_br)->mbsfn_SubframeConfigList;
 
     sib2_mbsfn_SubframeConfig1= CALLOC(1,sizeof(*sib2_mbsfn_SubframeConfig1));
     memset((void*)sib2_mbsfn_SubframeConfig1,0,sizeof(*sib2_mbsfn_SubframeConfig1));
@@ -849,17 +1339,17 @@ uint8_t do_SIB23(uint8_t Mod_id,
       sib2_mbsfn_SubframeConfig2->subframeAllocation.choice.oneFrame.bits_unused= 2;
 
       sib2_mbsfn_SubframeConfig2->subframeAllocation.choice.oneFrame.buf[0]=0x07<<2;
-     
+
 
       ASN_SEQUENCE_ADD(&MBSFNSubframeConfigList->list,sib2_mbsfn_SubframeConfig2);
     }
   }
 
 #else // no MBMS transmission
-  (*sib2)->mbsfn_SubframeConfigList = NULL;
+  (*sib2_br)->mbsfn_SubframeConfigList = NULL;
 #endif
 
-  (*sib2)->timeAlignmentTimerCommon=TimeAlignmentTimer_infinity;//TimeAlignmentTimer_sf5120;
+  (*sib2_br)->timeAlignmentTimerCommon=TimeAlignmentTimer_infinity;//TimeAlignmentTimer_sf5120;
 
   /// (*SIB3)
 #if defined(Rel10) || defined(Rel14)
@@ -921,7 +1411,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
     MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.size= 1;
 
     MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf[0]=0x20<<2;  // FDD: SF1
-    
+
 
     MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.bits_unused= 2;
 
@@ -944,7 +1434,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
       MBSFN_Area2->mcch_Config_r9.sf_AllocInfo_r9.bits_unused= 2;
 
       MBSFN_Area2->mcch_Config_r9.sf_AllocInfo_r9.buf[0]=0x04<<2;  // FDD: SF6
-     
+
 
       MBSFN_Area2->mcch_Config_r9.signallingMCS_r9= MBSFN_AreaInfo_r9__mcch_Config_r9__signallingMCS_r9_n7;
 
@@ -1249,6 +1739,442 @@ do_RRCConnectionReconfigurationComplete(
 #ifdef USER_MODE
   LOG_D(RRC,"RRCConnectionReconfigurationComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
+
+  return((enc_rval.encoded+7)/8);
+}
+
+uint8_t
+do_RRCConnectionSetup_BR(
+  const protocol_ctxt_t*     const ctxt_pP,
+  rrc_eNB_ue_context_t*      const ue_context_pP,
+  int                              CC_id,
+  uint8_t*                   const buffer,
+  const uint8_t                    transmission_mode,
+  const uint8_t                    Transaction_id,
+  SRB_ToAddModList_t             **SRB_configList,
+  struct PhysicalConfigDedicated **physicalConfigDedicated)
+{
+
+    asn_enc_rval_t enc_rval;
+    uint8_t ecause=0;
+    eNB_RRC_INST *rrc               = RC.rrc[ctxt_pP->module_id];
+    rrc_eNB_carrier_data_t *carrier = &rrc->carrier[CC_id];
+
+    long* logicalchannelgroup = NULL;
+    struct SRB_ToAddMod* SRB1_config = NULL;
+    struct SRB_ToAddMod__rlc_Config* SRB1_rlc_config = NULL;
+    struct SRB_ToAddMod__logicalChannelConfig* SRB1_lchan_config = NULL;
+    struct LogicalChannelConfig__ul_SpecificParameters* SRB1_ul_SpecificParameters = NULL;
+
+  #ifdef CBA
+    struct PUSCH_CBAConfigDedicated_vlola*  pusch_CBAConfigDedicated_vlola = NULL;
+    long* betaOffset_CBA_Index = NULL;
+    long* cShift_CBA = NULL;
+  #endif
+    PhysicalConfigDedicated_t* physicalConfigDedicated2 = NULL;
+
+    DL_CCCH_Message_t dl_ccch_msg;
+
+    RRCConnectionSetup_t* rrcConnectionSetup = NULL;
+
+    memset((void *)&dl_ccch_msg,0,sizeof(DL_CCCH_Message_t));
+    dl_ccch_msg.message.present           = DL_CCCH_MessageType_PR_c1;
+    dl_ccch_msg.message.choice.c1.present = DL_CCCH_MessageType__c1_PR_rrcConnectionSetup;
+    rrcConnectionSetup          = &dl_ccch_msg.message.choice.c1.choice.rrcConnectionSetup;
+
+  // RRCConnectionSetup
+  // Configure SRB1
+
+  //  *SRB_configList = CALLOC(1,sizeof(*SRB_configList));
+  if (*SRB_configList) {
+    free(*SRB_configList);
+  }
+
+  *SRB_configList = CALLOC(1,sizeof(SRB_ToAddModList_t));
+
+  /// SRB1
+  SRB1_config = CALLOC(1,sizeof(*SRB1_config));
+
+  SRB1_config->srb_Identity = 1;
+  SRB1_rlc_config = CALLOC(1,sizeof(*SRB1_rlc_config));
+  SRB1_config->rlc_Config   = SRB1_rlc_config;
+
+  SRB1_rlc_config->present = SRB_ToAddMod__rlc_Config_PR_explicitValue;
+  SRB1_rlc_config->choice.explicitValue.present=RLC_Config_PR_am;
+#if defined(ENABLE_ITTI)
+  SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit = rrc->srb1_timer_poll_retransmit;
+  SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU          = rrc->srb1_poll_pdu;
+  SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte         = rrc->srb1_poll_byte;
+  SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold = rrc->srb1_max_retx_threshold;
+  SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering     = rrc->srb1_timer_reordering;
+  SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit = rrc->srb1_timer_status_prohibit;
+#else
+  SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit = T_PollRetransmit_ms20;;
+  SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU          = PollPDU_p4;;
+  SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte         = PollByte_kBinfinity;
+  SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold = UL_AM_RLC__maxRetxThreshold_t8;
+  SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering     = T_Reordering_ms35;
+  SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit = T_StatusProhibit_ms0;
+#endif
+
+  SRB1_lchan_config = CALLOC(1,sizeof(*SRB1_lchan_config));
+  SRB1_config->logicalChannelConfig   = SRB1_lchan_config;
+
+  SRB1_lchan_config->present = SRB_ToAddMod__logicalChannelConfig_PR_explicitValue;
+  SRB1_ul_SpecificParameters = CALLOC(1,sizeof(*SRB1_ul_SpecificParameters));
+
+  SRB1_lchan_config->choice.explicitValue.ul_SpecificParameters = SRB1_ul_SpecificParameters;
+
+
+  SRB1_ul_SpecificParameters->priority = 1;
+
+  //assign_enum(&SRB1_ul_SpecificParameters->prioritisedBitRate,LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity);
+  SRB1_ul_SpecificParameters->prioritisedBitRate=LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+
+  //assign_enum(&SRB1_ul_SpecificParameters->bucketSizeDuration,LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50);
+  SRB1_ul_SpecificParameters->bucketSizeDuration=LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
+
+  logicalchannelgroup = CALLOC(1,sizeof(long));
+  *logicalchannelgroup=0;
+  SRB1_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup;
+
+
+  ASN_SEQUENCE_ADD(&(*SRB_configList)->list,SRB1_config);
+
+  // PhysicalConfigDedicated
+
+  physicalConfigDedicated2 = CALLOC(1,sizeof(*physicalConfigDedicated2));
+  *physicalConfigDedicated = physicalConfigDedicated2;
+
+  physicalConfigDedicated2->pdsch_ConfigDedicated         = CALLOC(1,sizeof(*physicalConfigDedicated2->pdsch_ConfigDedicated));
+  physicalConfigDedicated2->pucch_ConfigDedicated         = CALLOC(1,sizeof(*physicalConfigDedicated2->pucch_ConfigDedicated));
+
+  physicalConfigDedicated2->pusch_ConfigDedicated         = NULL;
+  physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH         = NULL;
+  physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH         = NULL;
+
+  physicalConfigDedicated2->uplinkPowerControlDedicated   = CALLOC(1,sizeof(*physicalConfigDedicated2->uplinkPowerControlDedicated));
+  physicalConfigDedicated2->cqi_ReportConfig              = CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
+
+  if (rrc->srs_enable[CC_id])
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
+  else
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL;
+  physicalConfigDedicated2->antennaInfo                   = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
+  physicalConfigDedicated2->schedulingRequestConfig       = CALLOC(1,sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
+#ifdef CBA
+  physicalConfigDedicated2->pusch_CBAConfigDedicated_vlola = CALLOC(1,sizeof(*physicalConfigDedicated2->pusch_CBAConfigDedicated_vlola));
+#endif
+  // PDSCH
+  //assign_enum(&physicalConfigDedicated2->pdsch_ConfigDedicated->p_a,
+  //        PDSCH_ConfigDedicated__p_a_dB0);
+  if (carrier->p_eNB==2)
+    physicalConfigDedicated2->pdsch_ConfigDedicated->p_a=   PDSCH_ConfigDedicated__p_a_dB_3;
+  else
+    physicalConfigDedicated2->pdsch_ConfigDedicated->p_a=   PDSCH_ConfigDedicated__p_a_dB0;
+
+  // PUCCH
+  physicalConfigDedicated2->pucch_ConfigDedicated->ackNackRepetition.present=PUCCH_ConfigDedicated__ackNackRepetition_PR_release;
+  physicalConfigDedicated2->pucch_ConfigDedicated->ackNackRepetition.choice.release=0;
+
+  if (carrier->sib1->tdd_Config == NULL) {
+    physicalConfigDedicated2->pucch_ConfigDedicated->tdd_AckNackFeedbackMode=NULL;//PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing;
+  } else { //TDD
+    physicalConfigDedicated2->pucch_ConfigDedicated->tdd_AckNackFeedbackMode= CALLOC(1,sizeof(long));
+    *(physicalConfigDedicated2->pucch_ConfigDedicated->tdd_AckNackFeedbackMode) =
+      PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_bundling;//PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing;
+  }
+
+  /// TODO to be reviewed
+  // UplinkPowerControlDedicated
+  physicalConfigDedicated2->uplinkPowerControlDedicated->p0_UE_PUSCH = 0; // 0 dB
+  //assign_enum(&physicalConfigDedicated2->uplinkPowerControlDedicated->deltaMCS_Enabled,
+  // UplinkPowerControlDedicated__deltaMCS_Enabled_en1);
+  physicalConfigDedicated2->uplinkPowerControlDedicated->deltaMCS_Enabled= UplinkPowerControlDedicated__deltaMCS_Enabled_en1;
+  physicalConfigDedicated2->uplinkPowerControlDedicated->accumulationEnabled = 1;  // TRUE
+  physicalConfigDedicated2->uplinkPowerControlDedicated->p0_UE_PUCCH = 0; // 0 dB
+  physicalConfigDedicated2->uplinkPowerControlDedicated->pSRS_Offset = 0; // 0 dB
+  physicalConfigDedicated2->uplinkPowerControlDedicated->filterCoefficient = CALLOC(1,
+      sizeof(*physicalConfigDedicated2->uplinkPowerControlDedicated->filterCoefficient));
+  //  assign_enum(physicalConfigDedicated2->uplinkPowerControlDedicated->filterCoefficient,FilterCoefficient_fc4); // fc4 dB
+  *physicalConfigDedicated2->uplinkPowerControlDedicated->filterCoefficient=FilterCoefficient_fc4; // fc4 dB
+
+  // TPC-PDCCH-Config
+
+  // CQI ReportConfig
+
+  /// TODO to be reviewed
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic));
+#if defined(Rel10) || defined(Rel14)
+  *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic= CQI_ReportModeAperiodic_rm30;
+#else
+  *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CQI_ReportConfig__cqi_ReportModeAperiodic_rm30; // HLC CQI, no PMI
+#endif
+  physicalConfigDedicated2->cqi_ReportConfig->nomPDSCH_RS_EPRE_Offset = 0; // 0 dB
+  //physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic=NULL;
+
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic));
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present =  CQI_ReportPeriodic_PR_release;
+    /*
+    physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present =  CQI_ReportPeriodic_PR_setup;
+    physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex = 0;  // n2_pucch
+    physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_pmi_ConfigIndex = 0;  // Icqi/pmi
+    physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present = CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_subbandCQI;  // subband CQI
+    physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.choice.subbandCQI.k=4;
+
+    physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.ri_ConfigIndex=NULL;
+    physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.simultaneousAckNackAndCQI=0;
+    */
+
+  /// TODO to be reviewed
+  if (rrc->srs_enable[CC_id]) {
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->present = SoundingRS_UL_ConfigDedicated_PR_setup;
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth =
+                                                             SoundingRS_UL_ConfigDedicated__setup__srs_Bandwidth_bw0;
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth =
+          SoundingRS_UL_ConfigDedicated__setup__srs_HoppingBandwidth_hbw0;
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition=0;
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.duration=1;
+    if (carrier->sib1->tdd_Config==NULL) { // FDD
+      if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present
+      == SoundingRS_UL_ConfigCommon_PR_setup)
+    if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig!=0)
+      LOG_W(RRC,"This code has been optimized for SRS Subframe Config 0, but current config is %d. Expect undefined behaviour!\n",
+        carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig);
+      if (ue_context_pP->local_uid >=20)
+    LOG_W(RRC,"This code has been optimized for up to 10 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
+          ue_context_pP->local_uid);
+      //the current code will allow for 20 UEs - to be revised for more
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=7+ue_context_pP->local_uid/2;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb= ue_context_pP->local_uid%2;
+    }
+    else {
+      if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present
+      == SoundingRS_UL_ConfigCommon_PR_setup)
+    if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig!=7) {
+      LOG_W(RRC,"This code has been optimized for SRS Subframe Config 7 and TDD config 3, but current configs are %d and %d. Expect undefined behaviour!\n",
+        carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig,
+        carrier->sib1->tdd_Config->subframeAssignment);
+    }
+      if (ue_context_pP->local_uid >=6)
+    LOG_W(RRC,"This code has been optimized for up to 6 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
+          ue_context_pP->local_uid);
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=17+ue_context_pP->local_uid/2;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb= ue_context_pP->local_uid%2;
+    }
+    LOG_W(RRC,"local UID %d, srs ConfigIndex %d, TransmissionComb %d\n",ue_context_pP->local_uid,
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex,
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb);
+
+    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift=
+          SoundingRS_UL_ConfigDedicated__setup__cyclicShift_cs0;
+  }
+
+  //AntennaInfoDedicated
+  physicalConfigDedicated2->antennaInfo = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
+  physicalConfigDedicated2->antennaInfo->present = PhysicalConfigDedicated__antennaInfo_PR_explicitValue;
+  //assign_enum(&physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode,
+  //     AntennaInfoDedicated__transmissionMode_tm2);
+
+  switch (transmission_mode) {
+  default:
+    LOG_W(RRC,"At RRCConnectionSetup Transmission mode can only take values 1 or 2! Defaulting to 1!\n");
+  case 1:
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm1;
+    break;
+
+  case 2:
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm2;
+    break;
+    /*
+  case 3:
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm3;
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     CALLOC(1,
+        sizeof(*physicalConfigDedicated2->antennaInfo->choice.explicitValue.codebookSubsetRestriction));
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
+      AntennaInfoDedicated__codebookSubsetRestriction_PR_n2TxAntenna_tm3;
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.buf= MALLOC(1);
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.buf[0] = 0xc0;
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.size=1;
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.bits_unused=6;
+
+    break;
+
+  case 4:
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm4;
+    break;
+
+  case 5:
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm5;
+    break;
+
+  case 6:
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm6;
+    break;
+
+  case 7:
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm7;
+    break;
+    */
+  }
+
+
+  physicalConfigDedicated2->antennaInfo->choice.explicitValue.ue_TransmitAntennaSelection.present = AntennaInfoDedicated__ue_TransmitAntennaSelection_PR_release;
+  physicalConfigDedicated2->antennaInfo->choice.explicitValue.ue_TransmitAntennaSelection.choice.release = 0;
+
+  // SchedulingRequestConfig
+
+  physicalConfigDedicated2->schedulingRequestConfig->present = SchedulingRequestConfig_PR_setup;
+  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 3;//ue_context_pP->local_uid;
+
+  if (carrier->sib1->tdd_Config == NULL) { // FDD
+    physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 5+(ue_context_pP->local_uid%10);  // Isr = 5 (every 10 subframes, offset=2+UE_id mod3)
+  } else {
+    switch (carrier->sib1->tdd_Config->subframeAssignment) {
+    case 1:
+      physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 7+(ue_context_pP->local_uid&1)+((
+            ue_context_pP->local_uid&3)>>1)*5;  // Isr = 5 (every 10 subframes, offset=2 for UE0, 3 for UE1, 7 for UE2, 8 for UE3 , 2 for UE4 etc..)
+      break;
+
+    case 3:
+      physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 7+
+          (ue_context_pP->local_uid%3);  // Isr = 5 (every 10 subframes, offset=2 for UE0, 3 for UE1, 3 for UE2, 2 for UE3 , etc..)
+      break;
+
+    case 4:
+      physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 7+
+          (ue_context_pP->local_uid&1);  // Isr = 5 (every 10 subframes, offset=2 for UE0, 3 for UE1, 3 for UE2, 2 for UE3 , etc..)
+      break;
+
+    default:
+      physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 7;  // Isr = 5 (every 10 subframes, offset=2 for all UE0 etc..)
+      break;
+    }
+  }
+
+
+  //  assign_enum(&physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax,
+  //SchedulingRequestConfig__setup__dsr_TransMax_n4);
+  //  assign_enum(&physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n4;
+  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n4;
+
+  physicalConfigDedicated2->ext4->csi_RS_ConfigNZPToReleaseList_r11 = NULL;
+  physicalConfigDedicated2->ext4->csi_RS_ConfigNZPToAddModList_r11 = NULL;
+  physicalConfigDedicated2->ext4->csi_RS_ConfigZPToAddModList_r11 = NULL;
+  physicalConfigDedicated2->ext4->csi_RS_ConfigZPToReleaseList_r11 = NULL;
+
+  physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.present = EPDCCH_Config_r11__config_r11_PR_setup;
+  physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.subframePatternConfig_r11 = NULL;
+  physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.startSymbol_r11 = NULL;
+  physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToReleaseList_r11 = NULL;
+
+
+  physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11 = calloc(1, sizeof(EPDCCH_SetConfigToAddModList_r11_t));
+//  memset(physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11, 0, sizeof())
+  EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11 = calloc(0, sizeof(EPDCCH_SetConfig_r11_t));
+  epdcch_setconfig_r11->setConfigId_r11 = 0;
+  epdcch_setconfig_r11->transmissionType_r11 = EPDCCH_SetConfig_r11__transmissionType_r11_localised;
+  epdcch_setconfig_r11->resourceBlockAssignment_r11.numberPRB_Pairs_r11 = EPDCCH_SetConfig_r11__resourceBlockAssignment_r11__numberPRB_Pairs_r11_n2;
+  //epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11 = calloc(0, sizeof(BIT_STRING_t));
+  epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.buf = calloc(0, 2 * sizeof(uint8_t));
+  epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.size = 2;
+  epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.bits_unused = 6;
+  epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.buf[0] = 0x0E;
+
+  epdcch_setconfig_r11->dmrs_ScramblingSequenceInt_r11 = 0;
+  epdcch_setconfig_r11->pucch_ResourceStartOffset_r11 = 0;
+  epdcch_setconfig_r11->re_MappingQCL_ConfigId_r11 = NULL;
+  epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310 = NULL;
+  epdcch_setconfig_r11->ext2->mpdcch_config_r13->present = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13_PR_setup;
+  epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.csi_NumRepetitionCE_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__csi_NumRepetitionCE_r13_sf1;
+  epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_pdsch_HoppingConfig_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_pdsch_HoppingConfig_r13_off;
+  epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.present = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_StartSF_UESS_r13_PR_fdd_r13;
+  epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.choice.fdd_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_StartSF_UESS_r13__fdd_r13_v1;
+  epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_NumRepetition_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_NumRepetition_r13_r1;
+  epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13 = 3;
+  ASN_SEQUENCE_ADD(physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11, epdcch_setconfig_r11);
+
+  physicalConfigDedicated2->ext7->pdsch_ConfigDedicated_v1310 = NULL;
+  physicalConfigDedicated2->ext7->pusch_ConfigDedicated_r13 = NULL;
+
+  physicalConfigDedicated2->ext7->pdcch_CandidateReductions_r13 = NULL;
+  physicalConfigDedicated2->ext7->pucch_ConfigDedicated_r13 = NULL;
+
+  physicalConfigDedicated2->ext7->cqi_ReportConfig_v1310 = NULL;
+
+  physicalConfigDedicated2->ext7->soundingRS_UL_ConfigDedicated_v1310 = NULL;
+  physicalConfigDedicated2->ext7->soundingRS_UL_ConfigDedicatedUpPTsExt_r13 = NULL;
+  physicalConfigDedicated2->ext7->soundingRS_UL_ConfigDedicatedAperiodic_v1310 = NULL;
+  physicalConfigDedicated2->ext7->soundingRS_UL_ConfigDedicatedAperiodicUpPTsExt_r13 = NULL;
+
+  physicalConfigDedicated2->ext7->csi_RS_Config_v1310 = NULL;
+
+  physicalConfigDedicated2->ext7->ce_Mode_r13->present = PhysicalConfigDedicated__ext7__ce_Mode_r13_PR_setup;
+  physicalConfigDedicated2->ext7->ce_Mode_r13->choice.setup = PhysicalConfigDedicated__ext7__ce_Mode_r13__setup_ce_ModeA;
+  physicalConfigDedicated2->ext7->csi_RS_ConfigNZPToAddModListExt_r13 = NULL;
+  physicalConfigDedicated2->ext7->csi_RS_ConfigNZPToReleaseListExt_r13 = NULL;
+
+
+  rrcConnectionSetup->rrc_TransactionIdentifier = Transaction_id;
+  rrcConnectionSetup->criticalExtensions.present = RRCConnectionSetup__criticalExtensions_PR_c1;
+  rrcConnectionSetup->criticalExtensions.choice.c1.present =RRCConnectionSetup__criticalExtensions__c1_PR_rrcConnectionSetup_r8 ;
+  rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.srb_ToAddModList = *SRB_configList;
+  rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.drb_ToAddModList = NULL;
+  rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.drb_ToReleaseList = NULL;
+  rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.sps_Config = NULL;
+  rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.physicalConfigDedicated = physicalConfigDedicated2;
+  rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig = NULL;
+
+#ifdef CBA
+  betaOffset_CBA_Index = CALLOC(1,sizeof(long));
+  cShift_CBA = CALLOC(1,sizeof(long));
+  *betaOffset_CBA_Index=10; // need to be changed by Kaijie
+  *cShift_CBA=4;
+  physicalConfigDedicated2->pusch_CBAConfigDedicated_vlola->betaOffset_CBA_Index=betaOffset_CBA_Index;
+  physicalConfigDedicated2->pusch_CBAConfigDedicated_vlola->cShift_CBA=cShift_CBA;
+  rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.sps_CBA_ConfigList_vlola = NULL;
+#endif
+
+
+#ifdef XER_PRINT
+  xer_fprint(stdout, &asn_DEF_DL_CCCH_Message, (void*)&dl_ccch_msg);
+#endif
+  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message,
+                                   (void*)&dl_ccch_msg,
+                                   buffer,
+                                   100);
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+
+#if defined(ENABLE_ITTI)
+# if !defined(DISABLE_XER_SPRINT)
+  {
+    char        message_string[20000];
+    size_t      message_string_size;
+
+    if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_DL_CCCH_Message, (void *) &dl_ccch_msg)) > 0) {
+      MessageDef *msg_p;
+
+      msg_p = itti_alloc_new_message_sized (TASK_RRC_ENB, RRC_DL_CCCH, message_string_size + sizeof (IttiMsgText));
+      msg_p->ittiMsg.rrc_dl_ccch.size = message_string_size;
+      memcpy(&msg_p->ittiMsg.rrc_dl_ccch.text, message_string, message_string_size);
+
+      itti_send_msg_to_task(TASK_UNKNOWN, ctxt_pP->instance, msg_p);
+    }
+  }
+# endif
+#endif
+
+#ifdef USER_MODE
+  LOG_D(RRC,"RRCConnectionSetup Encoded %d bits (%d bytes), ecause %d\n",
+        enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
+#endif
+
+  //  FREEMEM(SRB_list);
+  //  free(SRB1_config);
+  //  free(SRB1_rlc_config);
+  //  free(SRB1_lchan_config);
+  //  free(SRB1_ul_SpecificParameters);
 
   return((enc_rval.encoded+7)/8);
 }
@@ -1804,6 +2730,225 @@ do_UECapabilityEnquiry(
   }
 
   return((enc_rval.encoded+7)/8);
+}
+
+uint16_t
+do_RRCConnectionReconfiguration_BR(
+  const protocol_ctxt_t*        const ctxt_pP,
+  uint8_t                            *buffer,
+  uint8_t                             Transaction_id,
+  SRB_ToAddModList_t                 *SRB_list,
+  DRB_ToAddModList_t                 *DRB_list,
+  DRB_ToReleaseList_t                *DRB_list2,
+  struct SPS_Config                  *sps_Config,
+  struct PhysicalConfigDedicated     *physicalConfigDedicated,
+  MeasObjectToAddModList_t           *MeasObj_list,
+  ReportConfigToAddModList_t         *ReportConfig_list,
+  QuantityConfig_t                   *quantityConfig,
+  MeasIdToAddModList_t               *MeasId_list,
+  MAC_MainConfig_t                   *mac_MainConfig,
+  MeasGapConfig_t                    *measGapConfig,
+  MobilityControlInfo_t              *mobilityInfo,
+  struct MeasConfig__speedStatePars  *speedStatePars,
+  RSRP_Range_t                       *rsrp,
+  C_RNTI_t                           *cba_rnti,
+  struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList
+  *dedicatedInfoNASList
+
+#if defined(Rel10) || defined(Rel14)
+  , SCellToAddMod_r10_t  *SCell_config
+#endif
+)
+{
+    asn_enc_rval_t enc_rval;
+
+    DL_DCCH_Message_t dl_dcch_msg;
+    RRCConnectionReconfiguration_t *rrcConnectionReconfiguration;
+
+
+    memset(&dl_dcch_msg,0,sizeof(DL_DCCH_Message_t));
+
+    dl_dcch_msg.message.present           = DL_DCCH_MessageType_PR_c1;
+    dl_dcch_msg.message.choice.c1.present = DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration;
+    rrcConnectionReconfiguration          = &dl_dcch_msg.message.choice.c1.choice.rrcConnectionReconfiguration;
+
+    // RRCConnectionReconfiguration
+    rrcConnectionReconfiguration->rrc_TransactionIdentifier = Transaction_id;
+    rrcConnectionReconfiguration->criticalExtensions.present = RRCConnectionReconfiguration__criticalExtensions_PR_c1;
+    rrcConnectionReconfiguration->criticalExtensions.choice.c1.present =RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8 ;
+
+    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated = CALLOC(1,
+        sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated));
+    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->srb_ToAddModList = SRB_list;
+    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToAddModList = DRB_list;
+    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToReleaseList = DRB_list2;
+    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->sps_Config = sps_Config;
+    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->physicalConfigDedicated = physicalConfigDedicated;
+  #ifdef CBA
+    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->cba_RNTI_vlola= cba_rnti;
+  #endif
+
+    // +kogo
+    physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n4;
+
+    physicalConfigDedicated->ext4->csi_RS_ConfigNZPToReleaseList_r11 = NULL;
+    physicalConfigDedicated->ext4->csi_RS_ConfigNZPToAddModList_r11 = NULL;
+    physicalConfigDedicated->ext4->csi_RS_ConfigZPToAddModList_r11 = NULL;
+    physicalConfigDedicated->ext4->csi_RS_ConfigZPToReleaseList_r11 = NULL;
+
+    physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.present = EPDCCH_Config_r11__config_r11_PR_setup;
+    physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.subframePatternConfig_r11 = NULL;
+    physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.startSymbol_r11 = NULL;
+    physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToReleaseList_r11 = NULL;
+
+
+    physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11 = calloc(1, sizeof(EPDCCH_SetConfigToAddModList_r11_t));
+  //  memset(physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11, 0, sizeof())
+    EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11 = calloc(0, sizeof(EPDCCH_SetConfig_r11_t));
+    epdcch_setconfig_r11->setConfigId_r11 = 0;
+    epdcch_setconfig_r11->transmissionType_r11 = EPDCCH_SetConfig_r11__transmissionType_r11_localised;
+    epdcch_setconfig_r11->resourceBlockAssignment_r11.numberPRB_Pairs_r11 = EPDCCH_SetConfig_r11__resourceBlockAssignment_r11__numberPRB_Pairs_r11_n2;
+    //epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11 = calloc(0, sizeof(BIT_STRING_t));
+    epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.buf = calloc(0, 2 * sizeof(uint8_t));
+    epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.size = 2;
+    epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.bits_unused = 6;
+    epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.buf[0] = 0x0E;
+
+    epdcch_setconfig_r11->dmrs_ScramblingSequenceInt_r11 = 0;
+    epdcch_setconfig_r11->pucch_ResourceStartOffset_r11 = 0;
+    epdcch_setconfig_r11->re_MappingQCL_ConfigId_r11 = NULL;
+    epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310 = NULL;
+    epdcch_setconfig_r11->ext2->mpdcch_config_r13->present = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13_PR_setup;
+    epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.csi_NumRepetitionCE_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__csi_NumRepetitionCE_r13_sf1;
+    epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_pdsch_HoppingConfig_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_pdsch_HoppingConfig_r13_off;
+    epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.present = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_StartSF_UESS_r13_PR_fdd_r13;
+    epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.choice.fdd_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_StartSF_UESS_r13__fdd_r13_v1;
+    epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_NumRepetition_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_NumRepetition_r13_r1;
+    epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13 = 3;
+    ASN_SEQUENCE_ADD(physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11, epdcch_setconfig_r11);
+
+    physicalConfigDedicated->ext7->pdsch_ConfigDedicated_v1310 = NULL;
+    physicalConfigDedicated->ext7->pusch_ConfigDedicated_r13 = NULL;
+
+    physicalConfigDedicated->ext7->pdcch_CandidateReductions_r13 = NULL;
+
+    physicalConfigDedicated->ext7->pucch_ConfigDedicated_r13 = NULL;
+
+    physicalConfigDedicated->ext7->cqi_ReportConfig_v1310 = NULL;
+
+    physicalConfigDedicated->ext7->soundingRS_UL_ConfigDedicated_v1310                = NULL;
+    physicalConfigDedicated->ext7->soundingRS_UL_ConfigDedicatedUpPTsExt_r13          = NULL;
+    physicalConfigDedicated->ext7->soundingRS_UL_ConfigDedicatedAperiodic_v1310       = NULL;
+    physicalConfigDedicated->ext7->soundingRS_UL_ConfigDedicatedAperiodicUpPTsExt_r13 = NULL;
+
+    physicalConfigDedicated->ext7->csi_RS_Config_v1310 = NULL;
+
+    physicalConfigDedicated->ext7->ce_Mode_r13->present = PhysicalConfigDedicated__ext7__ce_Mode_r13_PR_setup;
+    physicalConfigDedicated->ext7->ce_Mode_r13->choice.setup = PhysicalConfigDedicated__ext7__ce_Mode_r13__setup_ce_ModeA;
+    physicalConfigDedicated->ext7->csi_RS_ConfigNZPToAddModListExt_r13 = NULL;
+    physicalConfigDedicated->ext7->csi_RS_ConfigNZPToReleaseListExt_r13 = NULL;
+
+    // +kogo ------------------------------------------------------------------------------------------
+
+
+    if (mac_MainConfig!=NULL) {
+      rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig = CALLOC(1,
+          sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig));
+      rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->present
+        =RadioResourceConfigDedicated__mac_MainConfig_PR_explicitValue;
+      memcpy(&rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue,
+             mac_MainConfig,
+             sizeof(*mac_MainConfig));
+    } else {
+      rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig=NULL;
+    }
+
+    if (MeasId_list != NULL) {
+      rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig           = CALLOC(1,
+          sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig));
+      memset((void*)rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig,
+             0, sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig));
+
+      rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;
+      rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measIdToAddModList       = MeasId_list;
+      rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList   = MeasObj_list;
+
+      if (quantityConfig!=NULL) {
+        rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->quantityConfig = CALLOC(1,
+            sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->quantityConfig));
+        memcpy((void *)rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->quantityConfig,
+               (void *)quantityConfig,
+               sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->quantityConfig));
+      } else {
+        rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->quantityConfig = NULL;
+      }
+
+      if(speedStatePars != NULL) {
+        rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->speedStatePars = CALLOC(1,
+            sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->speedStatePars));
+        memcpy((void *)rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->speedStatePars,
+               (void *)speedStatePars,sizeof(*speedStatePars));
+      } else {
+        rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->speedStatePars = NULL;
+      }
+
+      rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->s_Measure= rsrp;
+    } else {
+      rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig = NULL;
+    }
+
+    if (mobilityInfo !=NULL) {
+      rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo = CALLOC(1,
+          sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo));
+      memcpy((void*)rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo, (void*)mobilityInfo,
+             sizeof(MobilityControlInfo_t));
+
+    } else {
+      rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;
+    }
+
+    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = dedicatedInfoNASList;
+    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = NULL;
+
+    enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
+                                     (void*)&dl_dcch_msg,
+                                     buffer,
+                                     RRC_BUF_SIZE);
+    AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %l)!\n",
+                 enc_rval.failed_type->name, enc_rval.encoded);
+
+  #ifdef XER_PRINT
+    xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)&dl_dcch_msg);
+  #endif
+
+  #if defined(ENABLE_ITTI)
+  # if !defined(DISABLE_XER_SPRINT)
+    {
+      char        message_string[30000];
+      size_t      message_string_size;
+
+      if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_DL_DCCH_Message, (void *) &dl_dcch_msg)) > 0) {
+        MessageDef *msg_p;
+
+        msg_p = itti_alloc_new_message_sized (TASK_RRC_ENB, RRC_DL_DCCH, message_string_size + sizeof (IttiMsgText));
+        msg_p->ittiMsg.rrc_dl_dcch.size = message_string_size;
+        memcpy(&msg_p->ittiMsg.rrc_dl_dcch.text, message_string, message_string_size);
+
+        itti_send_msg_to_task(TASK_UNKNOWN, ctxt_pP->instance, msg_p);
+      }
+    }
+  # endif
+  #endif
+
+    //#ifdef USER_MODE
+    LOG_I(RRC,"RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+    // for (i=0;i<30;i++)
+    //    msg("%x.",buffer[i]);
+    // msg("\n");
+
+    //#endif
+
+    return((enc_rval.encoded+7)/8);
 }
 
 //------------------------------------------------------------------------------

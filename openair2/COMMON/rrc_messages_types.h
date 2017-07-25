@@ -166,6 +166,43 @@ typedef struct RrcConfigurationReq_s {
   long                    ue_TimersAndConstants_n310[MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n311[MAX_NUM_CCs];
   long                    ue_TransmissionMode[MAX_NUM_CCs];
+
+
+  //MIB
+  long					  schedulingInfoSIB1_BR_r13[MAX_NUM_CCs];
+  //SIB1 BR options
+  
+
+  uint16_t*				  hyperSFN_r13[MAX_NUM_CCs];
+  long*					  eDRX_Allowed_r13[MAX_NUM_CCs];
+  BOOLEAN_t				  cellSelectionInfoCE_r13[MAX_NUM_CCs];
+  long					  q_RxLevMinCE_r13[MAX_NUM_CCs];
+  long*					  q_QualMinRSRQ_CE_r13[MAX_NUM_CCs];
+  BOOLEAN_t				  bandwidthReducedAccessRelatedInfo_r13[MAX_NUM_CCs];
+  long					  si_WindowLength_BR_r13[MAX_NUM_CCs];
+  long					  si_RepetitionPattern_r13[MAX_NUM_CCs];
+  BOOLEAN_t				  fdd_DownlinkOrTddSubframeBitmapBR_r13[MAX_NUM_CCs];
+  uint64_t				  fdd_DownlinkOrTddSubframeBitmapBR_val_r13[MAX_NUM_CCs];
+  uint16_t				  fdd_UplinkSubframeBitmapBR_r13[MAX_NUM_CCs];
+  long					  startSymbolBR_r13[MAX_NUM_CCs];
+  long					  si_HoppingConfigCommon_r13[MAX_NUM_CCs];
+  long*					  si_ValidityTime_r13[MAX_NUM_CCs];
+  BOOLEAN_t				  freqHoppingParametersDL_r13[MAX_NUM_CCs];
+  long*					  mpdcch_pdsch_HoppingNB_r13[MAX_NUM_CCs];
+  BOOLEAN_t				  interval_DLHoppingConfigCommonModeA_r13[MAX_NUM_CCs];
+  long					  interval_DLHoppingConfigCommonModeA_r13_val[MAX_NUM_CCs];
+  BOOLEAN_t				  interval_DLHoppingConfigCommonModeB_r13[MAX_NUM_CCs];
+  long					  interval_DLHoppingConfigCommonModeB_r13_val[MAX_NUM_CCs];
+  long*					  mpdcch_pdsch_HoppingOffset_r13[MAX_NUM_CCs];
+
+
+  //SIB2 BR Options
+  long*					  preambleTransMax_CE_r13[MAX_NUM_CCs];
+  BOOLEAN_t				  prach_ConfigCommon_v1310[MAX_NUM_CCs];
+  BOOLEAN_t*			  mpdcch_startSF_CSS_RA_r13[MAX_NUM_CCs];
+  long					  mpdcch_startSF_CSS_RA_r13_val[MAX_NUM_CCs];
+  long*					  prach_HoppingOffset_r13[MAX_NUM_CCs];
+
 } RrcConfigurationReq;
 
 // UE: NAS -> RRC messages

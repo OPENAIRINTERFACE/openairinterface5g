@@ -155,9 +155,10 @@ init_SI(
 #ifdef ENABLE_ITTI
 	 configuration->N_RB_DL[CC_id],
 	 configuration->phich_resource[CC_id],
-	 configuration->phich_duration[CC_id]
+     configuration->phich_duration[CC_id],
+     configuration->schedulingInfoSIB1_BR_r13[CC_id]
 #else
-	 50,0,0
+     50, 0, 0, 1
 #endif
 	 ,0);
   
@@ -3731,6 +3732,7 @@ rrc_eNB_generate_RRCConnectionSetup(
 //-----------------------------------------------------------------------------
 {
 
+  bool is_mtc = false;
   LogicalChannelConfig_t             *SRB1_logicalChannelConfig;  //,*SRB2_logicalChannelConfig;
   SRB_ToAddModList_t                **SRB_configList;
   SRB_ToAddMod_t                     *SRB1_config;
@@ -3740,15 +3742,26 @@ rrc_eNB_generate_RRCConnectionSetup(
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
   SRB_configList = &ue_context_pP->ue_context.SRB_configList;
+  if (is_mtc) {
+      do_RRCConnectionSetup_BR(ctxt_pP,
+                            ue_context_pP,
+                            CC_id,
+                            (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload,
+      (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
+      rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
+      SRB_configList,
+      &ue_context_pP->ue_context.physicalConfigDedicated);
+  } else {
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size =
     do_RRCConnectionSetup(ctxt_pP,
                           ue_context_pP,
                           CC_id,
                           (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload,
-			  (uint8_t) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
+              (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
                           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
                           SRB_configList,
                           &ue_context_pP->ue_context.physicalConfigDedicated);
+  }
 
 #ifdef RRC_MSG_PRINT
   LOG_F(RRC,"[MSG] RRC Connection Setup\n");
