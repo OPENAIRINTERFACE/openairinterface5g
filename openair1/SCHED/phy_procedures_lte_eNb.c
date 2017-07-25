@@ -715,7 +715,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   int i;
 
-  LOG_I(PHY,
+  LOG_D(PHY,
 	"[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", G %d, nb_rb %"PRIu16", mcs %"PRIu8", pmi_alloc %"PRIx64", rv %"PRIu8" (round %"PRIu8")\n",
 	eNB->Mod_id, dlsch->rnti,harq_pid,
 	frame, subframe, input_buffer_length,
@@ -903,7 +903,7 @@ void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB,
   LTE_eNB_PDCCH *pdcch_vars       = &eNB->pdcch_vars[idx];
   nfapi_dl_config_dci_dl_pdu *pdu = &dl_config_pdu->dci_dl_pdu;
 
-  LOG_I(PHY,"Frame %d, Subframe %d: DCI processing\n",proc->frame_tx,proc->subframe_tx);
+  LOG_D(PHY,"Frame %d, Subframe %d: DCI processing\n",proc->frame_tx,proc->subframe_tx);
 
   // copy dci configuration into eNB structure
   fill_dci_and_dlsch(eNB,proc,&pdcch_vars->dci_alloc[pdcch_vars->num_dci],pdu);
@@ -918,7 +918,7 @@ void handle_nfapi_mpdcch_pdu(PHY_VARS_eNB *eNB,
   LTE_eNB_MPDCCH *mpdcch_vars     = &eNB->mpdcch_vars[idx];
   nfapi_dl_config_mpdcch_pdu *pdu = &dl_config_pdu->mpdcch_pdu;
 
-  LOG_I(PHY,"Frame %d, Subframe %d: MDCI processing\n",proc->frame_tx,proc->subframe_tx);
+  LOG_D(PHY,"Frame %d, Subframe %d: MDCI processing\n",proc->frame_tx,proc->subframe_tx);
 
   // copy dci configuration into eNB structure
   fill_mdci_and_dlsch(eNB,proc,&mpdcch_vars->mdci_alloc[mpdcch_vars->num_dci],pdu);
@@ -946,7 +946,7 @@ void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   
   nfapi_hi_dci0_hi_pdu *pdu      = &hi_dci0_config_pdu->hi_pdu;
   // copy dci configuration in to eNB structure
-  LOG_I(PHY,"Received HI PDU which value %d (rbstart %d,cshift %d)\n",
+  LOG_D(PHY,"Received HI PDU which value %d (rbstart %d,cshift %d)\n",
 	hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.hi_value,
 	hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.resource_block_start,
 	hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms);
@@ -960,7 +960,7 @@ handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   
   AssertFatal(rel8->length == 3, "BCH PDU has length %d != 3\n",rel8->length);
 
-  LOG_I(PHY,"bch_pdu: %x,%x,%x\n",sdu[0],sdu[1],sdu[2]);
+  LOG_D(PHY,"bch_pdu: %x,%x,%x\n",sdu[0],sdu[1],sdu[2]);
   eNB->pbch_pdu[0] = sdu[2];
   eNB->pbch_pdu[1] = sdu[1];
   eNB->pbch_pdu[2] = sdu[0];
@@ -1012,7 +1012,7 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   dlsch1_harq     = dlsch1->harq_processes[harq_pid];
   AssertFatal(dlsch0_harq!=NULL,"dlsch_harq is null\n");
 
-  LOG_I(PHY,"NFAPI: frame %d, subframe %d: programming dlsch, rnti %x, UE_id %d, harq_pid %d\n",
+  LOG_D(PHY,"NFAPI: frame %d, subframe %d: programming dlsch, rnti %x, UE_id %d, harq_pid %d\n",
 	proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid);
   if (codeword_index == 0) dlsch0_harq->pdu                    = sdu;
   else                     dlsch1_harq->pdu                    = sdu;
@@ -1129,7 +1129,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
   eNB->pdcch_vars[subframe&1].num_dci           = 0;
 
 
-  LOG_I(PHY,"NFAPI: received %d dl_pdu, %d tx_req, %d hi_dci0_config_req, %d UL_config \n",
+  LOG_D(PHY,"NFAPI: received %d dl_pdu, %d tx_req, %d hi_dci0_config_req, %d UL_config \n",
 	number_dl_pdu,TX_req->tx_request_body.number_of_pdus,number_hi_dci0_pdu,number_ul_pdu);
 
   
@@ -1149,7 +1149,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
   }
   for (i=0;i<number_dl_pdu;i++) {
     dl_config_pdu = &DL_req->dl_config_request_body.dl_config_pdu_list[i];
-    LOG_I(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
+    LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
     switch (dl_config_pdu->pdu_type) {
     case NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE:
       handle_nfapi_dci_dl_pdu(eNB,proc,dl_config_pdu);
@@ -1226,7 +1226,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
 
   for (i=0;i<number_ul_pdu;i++) {
     ul_config_pdu = &UL_req->ul_config_request_body.ul_config_pdu_list[i];
-    LOG_I(PHY,"NFAPI: ul_pdu %d : type %d\n",i,ul_config_pdu->pdu_type);
+    LOG_D(PHY,"NFAPI: ul_pdu %d : type %d\n",i,ul_config_pdu->pdu_type);
     AssertFatal(ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE,
 		"Optional UL_PDU type %d not supported\n",ul_config_pdu->pdu_type);
     handle_nfapi_ul_pdu(eNB,proc,ul_config_pdu);
@@ -1382,7 +1382,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   num_dci           = eNB->pdcch_vars[subframe&1].num_dci;
   //  LOG_D(PHY,"num_pdcch_symbols %"PRIu8",(dci common %"PRIu8", dci uespec %"PRIu8"\n",num_pdcch_symbols,
   //        DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci);
-  LOG_I(PHY,"num_pdcch_symbols %"PRIu8",(number dci %"PRIu8"\n",num_pdcch_symbols,
+  LOG_D(PHY,"num_pdcch_symbols %"PRIu8",(number dci %"PRIu8"\n",num_pdcch_symbols,
 	num_dci);
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DCI_INFO,num_pdcch_symbols);
 
@@ -1394,7 +1394,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   phy_config_dedicated_eNB_step2(eNB);
 
   if (num_dci > 0)
-    LOG_I(PHY,"[eNB %"PRIu8"] Frame %d, subframe %d: Calling generate_dci_top (pdcch) (num_dci %"PRIu8")\n",eNB->Mod_id,frame, subframe,
+    LOG_D(PHY,"[eNB %"PRIu8"] Frame %d, subframe %d: Calling generate_dci_top (pdcch) (num_dci %"PRIu8")\n",eNB->Mod_id,frame, subframe,
 	  num_dci);
     
   generate_dci_top(num_pdcch_symbols,
@@ -1956,7 +1956,7 @@ void prach_procedures(PHY_VARS_eNB *eNB) {
   }
 
   //#ifdef DEBUG_PHY_PROC
-  LOG_I(PHY,"[RAPROC] Frame %d, subframe %d : Most likely preamble %d, energy %d dB delay %d\n",
+  LOG_D(PHY,"[RAPROC] Frame %d, subframe %d : Most likely preamble %d, energy %d dB delay %d\n",
         frame,subframe,
 	preamble_max,
         preamble_energy_list[preamble_max],
@@ -1971,7 +1971,7 @@ void prach_procedures(PHY_VARS_eNB *eNB) {
       //      eNB->UE_stats[(uint32_t)UE_id].UE_timing_offset = preamble_delay_list[preamble_max]&0x1FFF; //limit to 13 (=11+2) bits
 
       //      eNB->UE_stats[(uint32_t)UE_id].sector = 0;
-    LOG_I(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
+    LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
 	  eNB->Mod_id,
 	  eNB->CC_id,
 	  frame,
@@ -2569,7 +2569,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
     if ((ulsch) &&
         (eNB->ulsch[i]->rnti>0) &&
         (ulsch_harq->status = ACTIVE))
-      LOG_I(PHY,"Frame %d Subframe UE %d/%x active: scheduled for (%d,%d)\n",
+      LOG_D(PHY,"Frame %d Subframe UE %d/%x active: scheduled for (%d,%d)\n",
 	    frame,i,eNB->ulsch[i]->rnti,ulsch_harq->frame,ulsch_harq->subframe);
     if ((ulsch) &&
         (eNB->ulsch[i]->rnti>0) &&
@@ -2620,7 +2620,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
         }
       }
 
-      LOG_I(PHY,
+      LOG_D(PHY,
             "[eNB %d][PUSCH %d] Frame %d Subframe %d Demodulating PUSCH: dci_alloc %d, rar_alloc %d, round %d, first_rb %d, nb_rb %d, mcs %d, TBS %d, rv %d, cyclic_shift %d (n_DMRS2 %d, cyclicShift_common %d, nprs %d), O_ACK %d \n",
             eNB->Mod_id,harq_pid,frame,subframe,
             ulsch_harq->dci_alloc,
@@ -2660,7 +2660,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 
       stop_meas(&eNB->ulsch_decoding_stats);
 
-      LOG_I(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d RNTI %x RX power (%d,%d) RSSI (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d\n",
+      LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d RNTI %x RX power (%d,%d) RSSI (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d\n",
             eNB->Mod_id,harq_pid,
             frame,subframe,
             ulsch->rnti,

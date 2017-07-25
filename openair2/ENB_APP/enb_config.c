@@ -519,19 +519,20 @@ void RCconfig_RU() {
 		       RC.config_file_name, j);
 	  continue; // FIXME will prevent segfaults below, not sure what happens at function exit...
 	}
-	AssertFatal((setting_eNB_list = config_setting_get_member(setting_ru, CONFIG_STRING_RU_ENB_LIST))!=NULL,"No RU<->eNB mappings\n");
-	
-	if (setting_eNB_list != NULL) num_eNB4RU    = config_setting_length(setting_eNB_list);
-	else num_eNB4RU=0;
-	AssertFatal(num_eNB4RU>0,"Number of eNBs is zero\n");
-
-	for (i=0;i<num_eNB4RU;i++) {
-	  setting_eNB_list_elem = config_setting_get_elem(setting_eNB_list,i);
-	  eNB_list[i] = config_setting_get_int(setting_eNB_list_elem);
-	  printf("RU %d: eNB %d\n",j,eNB_list[i]);
-	}
       }
-	
+
+      AssertFatal((setting_eNB_list = config_setting_get_member(setting_ru, CONFIG_STRING_RU_ENB_LIST))!=NULL,"No RU<->eNB mappings\n");
+      
+      if (setting_eNB_list != NULL) num_eNB4RU    = config_setting_length(setting_eNB_list);
+      else num_eNB4RU=0;
+      AssertFatal(num_eNB4RU>0,"Number of eNBs is zero\n");
+      
+      for (i=0;i<num_eNB4RU;i++) {
+	setting_eNB_list_elem = config_setting_get_elem(setting_eNB_list,i);
+	eNB_list[i] = config_setting_get_int(setting_eNB_list_elem);
+	printf("RU %d: eNB %d\n",j,eNB_list[i]);
+      }
+      
       if ( !(
 	               config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_NB_TX,  &nb_tx)
 		    && config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_NB_RX,  &nb_rx)
@@ -552,6 +553,8 @@ void RCconfig_RU() {
       
       RC.ru[j]->if_timing                           = synch_to_ext_device;
       RC.ru[j]->num_eNB                             = num_eNB4RU;
+
+      for (i=0;i<num_eNB4RU;i++) RC.ru[j]->eNB_list[i] = RC.eNB[eNB_list[i]][0];
       
       if (strcmp(local_rf, "yes") == 0) {
 	if (fronthaul_flag == CONFIG_FALSE) {
@@ -593,7 +596,6 @@ void RCconfig_RU() {
 	RC.ru[j]->eth_params.remote_portc             = remote_portc;
 	RC.ru[j]->eth_params.my_portd                 = local_portd;
 	RC.ru[j]->eth_params.remote_portd             = remote_portd;
-	for (i=0;i<num_eNB4RU;i++) RC.ru[j]->eNB_list[i] = RC.eNB[eNB_list[i]][0];
 
 	if (strcmp(tr_preference, "udp") == 0) {
 	  RC.ru[j]->if_south                     = REMOTE_IF5;

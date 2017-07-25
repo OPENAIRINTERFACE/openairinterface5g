@@ -402,7 +402,7 @@ void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
     
   // check if we have to detect PRACH first
   if (is_prach_subframe(fp,frame,subframe)>0) { 
-    LOG_I(PHY,"Triggering prach processing, frame %d, subframe %d\n",frame,subframe);
+    LOG_D(PHY,"Triggering prach processing, frame %d, subframe %d\n",frame,subframe);
     if (proc->instance_cnt_prach == 0) {
       LOG_W(PHY,"[eNB] Frame %d Subframe %d, dropping PRACH\n", frame,subframe);
       return;
@@ -721,6 +721,15 @@ void init_eNB_afterRU() {
       eNB->frame_parms.nb_antennas_rx       = 0;
       for (ru_id=0,aa=0;ru_id<eNB->num_RU;ru_id++) {
 	eNB->frame_parms.nb_antennas_rx    += eNB->RU_list[ru_id]->nb_rx;
+
+	AssertFatal(eNB->RU_list[ru_id]->common.rxdataF!=NULL,
+		    "RU %d : common.rxdataF is NULL\n",
+		    eNB->RU_list[ru_id]->idx);
+
+	AssertFatal(eNB->RU_list[ru_id]->prach_rxsigF!=NULL,
+		    "RU %d : prach_rxsigF is NULL\n",
+		    eNB->RU_list[ru_id]->idx);
+
 	for (i=0;i<eNB->RU_list[ru_id]->nb_rx;aa++,i++) { 
 	  LOG_I(PHY,"Attaching RU %d antenna %d to eNB antenna %d\n",eNB->RU_list[ru_id]->idx,i,aa);
 	  eNB->prach_vars.rxsigF[aa]       =  eNB->RU_list[ru_id]->prach_rxsigF[i];

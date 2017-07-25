@@ -210,7 +210,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
     //#ifdef DEBUG_PBCH
 
     for (i=0; i<(PBCH_A>>3); i++)
-      LOG_I(PHY,"[PBCH] pbch_data[%d] = %x\n",i,pbch_a[i]);
+      LOG_D(PHY,"[PBCH] pbch_data[%d] = %x\n",i,pbch_a[i]);
 
     //#endif
 

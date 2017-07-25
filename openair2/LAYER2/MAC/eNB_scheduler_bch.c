@@ -496,12 +496,12 @@ void schedule_mib(module_id_t   module_idP,
 				      module_idP,
 				      0); // not used in this case
 
-    LOG_I(MAC,"Frame %d, subframe %d: BCH PDU length %d\n",
+    LOG_D(MAC,"Frame %d, subframe %d: BCH PDU length %d\n",
 	  frameP,subframeP,mib_sdu_length);
 
     if (mib_sdu_length > 0) {
 
-      LOG_I(MAC,"Frame %d, subframe %d: Adding BCH PDU in position %d (length %d)\n",
+      LOG_D(MAC,"Frame %d, subframe %d: Adding BCH PDU in position %d (length %d)\n",
 	    frameP,subframeP,dl_req->number_pdu,mib_sdu_length);
 
       dl_config_pdu                                                         = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
@@ -513,7 +513,7 @@ void schedule_mib(module_id_t   module_idP,
       dl_config_pdu->bch_pdu.bch_pdu_rel8.transmission_power                = 6000;
       dl_req->number_pdu++;
 
-      LOG_I(MAC,"eNB->DL_req[0].number_pdu %d (%p)\n",
+      LOG_D(MAC,"eNB->DL_req[0].number_pdu %d (%p)\n",
 	    dl_req->number_pdu,&dl_req->number_pdu);
       // DL request
 
@@ -647,7 +647,7 @@ schedule_SI(
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding       = getRIV(N_RB_DL,first_rb,4);      
 
       if (!CCE_allocation_infeasible(module_idP,CC_id,1,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,SI_RNTI)) {
-	LOG_I(MAC,"Frame %d: Subframe %d : Adding common DCI for S_RNTI\n",
+	LOG_D(MAC,"Frame %d: Subframe %d : Adding common DCI for S_RNTI\n",
 	      frameP,subframeP);
 	dl_req->number_dci++;
 	dl_req->number_pdu++;

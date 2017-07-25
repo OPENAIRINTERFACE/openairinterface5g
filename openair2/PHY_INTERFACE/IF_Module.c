@@ -16,7 +16,7 @@ void handle_rach(UL_IND_t *UL_info) {
 
     AssertFatal(UL_info->rach_ind.number_of_preambles==1,"More than 1 preamble not supported\n");
     UL_info->rach_ind.number_of_preambles=0;
-    LOG_I(MAC,"Frame %d, Subframe %d Calling initiate_ra_proc\n",UL_info->frame,UL_info->subframe);
+    LOG_D(MAC,"Frame %d, Subframe %d Calling initiate_ra_proc\n",UL_info->frame,UL_info->subframe);
     initiate_ra_proc(UL_info->module_id,
 		     UL_info->CC_id,
 		     UL_info->frame,
@@ -33,7 +33,7 @@ void handle_ulsch(UL_IND_t *UL_info) {
 
   for (i=0;i<UL_info->rx_ind.number_of_pdus;i++) {
 
-    LOG_I(MAC,"Frame %d, Subframe %d Calling rx_sdu \n",UL_info->frame,UL_info->subframe);
+    LOG_D(MAC,"Frame %d, Subframe %d Calling rx_sdu \n",UL_info->frame,UL_info->subframe);
     rx_sdu(UL_info->module_id,
 	   UL_info->CC_id,
 	   UL_info->frame,
@@ -50,7 +50,7 @@ void handle_ulsch(UL_IND_t *UL_info) {
   for (i=0;i<UL_info->crc_ind.number_of_crcs;i++) {
 
     if (UL_info->crc_ind.crc_pdu_list[i].crc_indication_rel8.crc_flag == 1) { // CRC error indication
-      LOG_I(MAC,"Frame %d, Subframe %d Calling rx_sdu (CRC error) \n",UL_info->frame,UL_info->subframe);
+      LOG_D(MAC,"Frame %d, Subframe %d Calling rx_sdu (CRC error) \n",UL_info->frame,UL_info->subframe);
       rx_sdu(UL_info->module_id,
 	     UL_info->CC_id,
 	     UL_info->frame,
@@ -79,7 +79,7 @@ void UL_indication(UL_IND_t *UL_info)
   IF_Module_t  *ifi        = if_inst[module_id];
   eNB_MAC_INST *mac        = RC.mac[module_id];
 
-  LOG_I(PHY,"UL_Indication: frame %d, subframe %d, module_id %d, CC_id %d\n",
+  LOG_D(PHY,"UL_Indication: frame %d, subframe %d, module_id %d, CC_id %d\n",
 	UL_info->frame,UL_info->subframe,
 	module_id,CC_id);
 
@@ -124,7 +124,7 @@ void UL_indication(UL_IND_t *UL_info)
 		module_id,
 		CC_id);
     ifi->schedule_response(sched_info);
-    LOG_I(PHY,"Schedule_response: frame %d, subframe %d (dl_pdus %d / %p)\n",sched_info->frame,sched_info->subframe,sched_info->DL_req->dl_config_request_body.number_pdu,
+    LOG_D(PHY,"Schedule_response: frame %d, subframe %d (dl_pdus %d / %p)\n",sched_info->frame,sched_info->subframe,sched_info->DL_req->dl_config_request_body.number_pdu,
 	  &sched_info->DL_req->dl_config_request_body.number_pdu);
   }						 
 }

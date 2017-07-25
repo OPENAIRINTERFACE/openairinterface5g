@@ -1084,15 +1084,17 @@ static void* ru_thread( void* param ) {
     if (ru->if_south == LOCAL_RF) ret = connect_rau(ru);
     else ret = attach_rru(ru);
     AssertFatal(ret==0,"Cannot connect to radio\n");
-    LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
-    pthread_mutex_lock(&RC.ru_mutex);
-    RC.ru_mask &= ~(1<<ru->idx);
-    pthread_cond_signal(&RC.ru_cond);
-    pthread_mutex_unlock(&RC.ru_mutex);
   }
 
+  LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
+  pthread_mutex_lock(&RC.ru_mutex);
+  RC.ru_mask &= ~(1<<ru->idx);
+  pthread_cond_signal(&RC.ru_cond);
+  pthread_mutex_unlock(&RC.ru_mutex);
   
   wait_sync("ru_thread");
+  
+
 
 
   // Start RF device if any
@@ -1686,13 +1688,12 @@ void init_RU(const char *rf_config_file) {
 
     
     eNB0             = ru->eNB_list[0];
-    if ((ru->function != RRU_IF5) || (ru->function != RRU_if4p5))
+    if ((ru->function != NGFI_RRU_IF5) || (ru->function != NGFI_RRU_IF4p5))
       AssertFatal(eNB0!=NULL,"eNB0 is null!\n");
 
     if (eNB0) {
       LOG_I(PHY,"Copying frame parms from eNB %d to ru %d\n",eNB0->Mod_id,ru->idx);
       memcpy((void*)&ru->frame_parms,(void*)&eNB0->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-      exit(-1);
     }
     // attach all RU to all eNBs in its list/
     for (i=0;i<ru->num_eNB;i++) {
@@ -1706,7 +1707,7 @@ void init_RU(const char *rf_config_file) {
     case LOCAL_RF:   // this is an RU with integrated RF (RRU, eNB)
       if (ru->function ==  NGFI_RRU_IF5) {                 // IF5 RRU
 	ru->do_prach              = 0;                      // no prach processing in RU
-	ru->fh_north_in           = NULL;                   // no synchronous incoming fronthaul from north
+	ru->fh_north_in           = NULL;                   // no shynchronous incoming fronthaul from north
 	ru->fh_north_out          = fh_if5_north_out;       // need only to do send_IF5  reception
 	ru->fh_south_out          = tx_rf;                  // send output to RF
 	ru->fh_north_asynch_in    = fh_if5_north_asynch_in; // TX packets come asynchronously 
@@ -1761,9 +1762,10 @@ void init_RU(const char *rf_config_file) {
       ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
       ru->start_rf               = start_rf;                            // need to start the local RF interface
       printf("configuring ru_id %d (start_rf %p)\n",ru_id,start_rf);
-      ru->ifdevice.configure_rru = configure_rru;
-      fill_rf_config(ru,rf_config_file);
-      
+
+      fill_rf_config(ru,rf_config_file);      
+      init_frame_parms(&ru->frame_parms,1);
+      phy_init_RU(ru);
 
       ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
       if (setup_RU_buffers(ru)!=0) {

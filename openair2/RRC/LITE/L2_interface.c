@@ -197,7 +197,7 @@ mac_rrc_data_req(
 					 (void*)mib,
 					 carrier->MIB,
 					 24);
-	LOG_I(RRC,"Encoded MIB for frame %d (%p), bits %lu\n",sfn,carrier->MIB,enc_rval.encoded);
+	LOG_D(RRC,"Encoded MIB for frame %d (%p), bits %lu\n",sfn,carrier->MIB,enc_rval.encoded);
 	buffer_pP[0]=carrier->MIB[0];
 	buffer_pP[1]=carrier->MIB[1];
 	buffer_pP[2]=carrier->MIB[2];

@@ -1115,6 +1115,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
   prach_ConfigIndex   = fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
   Ncs_config          = fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;
   restricted_set      = fp->prach_config_common.prach_ConfigInfo.highSpeedFlag;
+
   int16_t *prach[nb_rx];
 
   if (eNB) {
@@ -1161,9 +1162,10 @@ void rx_prach(PHY_VARS_eNB *eNB,
   int en,en0=0;
 #endif
 
+  AssertFatal(ru!=NULL,"ru is null\n");
+
   for (aa=0; aa<nb_rx; aa++) {
-    if ((eNB==NULL) && 
-	(ru!=NULL)) { 
+    if (ru->if_south == LOCAL_RF) { // set the time-domain signal if we have to use it in this node
       prach[aa] = (int16_t*)&ru->common.rxdata[aa][(subframe*fp->samples_per_tti)-ru->N_TA_offset];
 #ifdef PRACH_DEBUG
       LOG_D(PHY,"RU %d, subframe %d, : prach %p (energy %d)\n",ru->idx,subframe,prach[aa],dB_fixed(en0=signal_energy(prach[aa],fp->samples_per_tti))); 
@@ -1246,11 +1248,12 @@ void rx_prach(PHY_VARS_eNB *eNB,
   }
 
 
-  if (((eNB!=NULL) && (ru!=NULL) && (ru->function != NGFI_RAU_IF4p5))||
-      ((eNB==NULL) && (ru!=NULL) && (ru->function == NGFI_RRU_IF4p5))) { // compute the DFTs of the PRACH temporal resources
+  if (((eNB!=NULL) && (ru->function != NGFI_RAU_IF4p5))||
+      ((eNB==NULL) && (ru->function == NGFI_RRU_IF4p5))) { // compute the DFTs of the PRACH temporal resources
     // Do forward transform
     LOG_D(PHY,"rx_prach: Doing FFT for N_RB_UL %d\n",fp->N_RB_UL);
     for (aa=0; aa<nb_rx; aa++) {
+      AssertFatal(prach[aa]!=NULL,"prach[%d] is null\n",aa);
       prach2 = prach[aa] + (Ncp<<1);
   
       // do DFT

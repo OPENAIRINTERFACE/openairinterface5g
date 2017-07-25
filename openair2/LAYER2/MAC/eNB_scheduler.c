@@ -313,10 +313,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   }
 
 #endif
-  LOG_I(MAC,"[eNB %d][before switch] Frame %d, Subframe %d CC_id %d RA 0 is active, Msg3 in (%d,%d), (%d,%d,%d,%d) UL_pdus %d\n",
-	module_idP,frameP,subframeP,CC_id,cc[0].RA_template[0].Msg3_frame,cc[0].RA_template[0].Msg3_subframe,
-	cc[0].RA_template[0].RA_active,cc[0].RA_template[1].RA_active,cc[0].RA_template[2].RA_active,cc[0].RA_template[3].RA_active,
-	RC.mac[module_idP]->UL_req[0].ul_config_request_body.number_of_pdus);
+
   switch (subframeP) {
   case 0:
 
@@ -326,9 +323,9 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
 
     //    schedule_RA(module_idP,frameP,subframeP,2);
-    LOG_I(MAC,"Scheduling MIB\n");
+    LOG_D(MAC,"Scheduling MIB\n");
     if ((frameP&3) == 0) schedule_mib(module_idP,frameP,subframeP);
-    LOG_I(MAC,"NFAPI: number_of_pdus %d, number_of_TX_req %d\n",
+    LOG_D(MAC,"NFAPI: number_of_pdus %d, number_of_TX_req %d\n",
 	  DL_req[0].dl_config_request_body.number_pdu,
 	  TX_req[0].tx_request_body.number_of_pdus);
     if (cc[0].tdd_Config == NULL) {  //FDD
@@ -1026,21 +1023,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
   }
 
-  LOG_I(MAC,"FrameP %d, subframeP %d : Scheduling CCEs/Msg3\n",frameP,subframeP);
-
-  LOG_I(MAC,"[eNB %d][before] Frame %d, Subframe %d CC_id %d RA 0 is active, Msg3 in (%d,%d) (%d,%d,%d,%d) UL_pdus %d\n",
-	module_idP,frameP,subframeP,CC_id,cc[0].RA_template[0].Msg3_frame,cc[0].RA_template[0].Msg3_subframe,
-	cc[0].RA_template[0].RA_active,cc[0].RA_template[1].RA_active,cc[0].RA_template[2].RA_active,cc[0].RA_template[3].RA_active,
-	RC.mac[module_idP]->UL_req[0].ul_config_request_body.number_of_pdus);
   // Allocate CCEs and Msg3 for good after scheduling is done
   for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
     allocate_CCEs(module_idP,CC_id,subframeP,0);
     check_and_add_msg3(module_idP,frameP,subframeP);
   }
-  LOG_I(MAC,"[eNB %d][after] Frame %d, Subframe %d CC_id 0 RA 0 is active, Msg3 in (%d,%d) (%d,%d,%d,%d) UL_pdus %d\n",
-	module_idP,frameP,subframeP,cc[0].RA_template[0].Msg3_frame,cc[0].RA_template[0].Msg3_subframe,
-	cc[0].RA_template[0].RA_active,cc[0].RA_template[1].RA_active,cc[0].RA_template[2].RA_active,cc[0].RA_template[3].RA_active,
-	RC.mac[module_idP]->UL_req[0].ul_config_request_body.number_of_pdus);
+
 #if defined(FLEXRAN_AGENT_SB_IF)
 #ifndef DISABLE_CONT_STATS
   //Send subframe trigger to the controller
