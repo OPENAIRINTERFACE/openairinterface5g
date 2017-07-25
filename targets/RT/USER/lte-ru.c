@@ -1474,6 +1474,7 @@ void fill_rf_config(RU_t *ru,const char *rf_config_file) {
     cfg->tx_bw = 1.5e6;
     cfg->rx_bw = 1.5e6;
   }
+  else AssertFatal(1==0,"Unknown N_RB_DL %d\n",fp->N_RB_DL);
 
   if (fp->frame_type==TDD)
     cfg->duplex_mode = duplex_mode_TDD;
@@ -1494,7 +1495,7 @@ void fill_rf_config(RU_t *ru,const char *rf_config_file) {
     cfg->rx_gain[i] = (double)fp->att_rx;
 
     cfg->configFilename = rf_config_file;
-    printf("channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
+    printf("channel %d, Setting tx_gain offset %f, rx_gain offset %f, tx_freq %f, rx_freq %f\n",
 	   i, cfg->tx_gain[i],
 	   cfg->rx_gain[i],
 	   cfg->tx_freq[i],
@@ -1671,7 +1672,7 @@ void init_RU(const char *rf_config_file) {
   // read in configuration file)
   printf("configuring RU from file\n");
   RCconfig_RU();
-  printf("number of L1 instaces %d, number of RU %d\n",RC.nb_L1_inst,RC.nb_RU);
+  printf("number of L1 instances %d, number of RU %d\n",RC.nb_L1_inst,RC.nb_RU);
 
   for (i=0;i<RC.nb_L1_inst;i++) 
     for (CC_id=0;CC_id<RC.nb_CC[i];CC_id++) RC.eNB[i][CC_id]->num_RU=0;
@@ -1685,9 +1686,14 @@ void init_RU(const char *rf_config_file) {
 
     
     eNB0             = ru->eNB_list[0];
+    if ((ru->function != RRU_IF5) || (ru->function != RRU_if4p5))
+      AssertFatal(eNB0!=NULL,"eNB0 is null!\n");
 
-    if (eNB0) memcpy((void*)&ru->frame_parms,(void*)&eNB0->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-
+    if (eNB0) {
+      LOG_I(PHY,"Copying frame parms from eNB %d to ru %d\n",eNB0->Mod_id,ru->idx);
+      memcpy((void*)&ru->frame_parms,(void*)&eNB0->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
+      exit(-1);
+    }
     // attach all RU to all eNBs in its list/
     for (i=0;i<ru->num_eNB;i++) {
       eNB0 = ru->eNB_list[i];
@@ -1754,7 +1760,7 @@ void init_RU(const char *rf_config_file) {
       ru->fh_south_in            = rx_rf;                               // local synchronous RF RX
       ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
       ru->start_rf               = start_rf;                            // need to start the local RF interface
-      printf("configuring RRU for ru_id %d (start_rf %p)\n",ru_id,start_rf);
+      printf("configuring ru_id %d (start_rf %p)\n",ru_id,start_rf);
       ru->ifdevice.configure_rru = configure_rru;
       fill_rf_config(ru,rf_config_file);
       
