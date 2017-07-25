@@ -1218,7 +1218,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
 
     case NFAPI_HI_DCI0_HI_PDU_TYPE:
       handle_nfapi_hi_dci0_hi_pdu(eNB,proc,hi_dci0_req_pdu);
-      eNB->pdcch_vars[subframe&1].num_hi++; 
+      eNB->pdcch_vars[subframe&1].num_dci++; 
 
       break;
     }
