@@ -475,7 +475,9 @@ typedef struct {
   uint32_t                          pbch_repetition;
   BCCH_BCH_Message_t                mib;
   BCCH_DL_SCH_Message_t             siblock1;
+  BCCH_DL_SCH_Message_t             siblock1_BR;
   BCCH_DL_SCH_Message_t             systemInformation;
+  BCCH_DL_SCH_Message_t             systemInformation_BR;
   //  SystemInformation_t               systemInformation;
   SystemInformationBlockType1_t     *sib1;
   SystemInformationBlockType2_t     *sib2;
@@ -483,7 +485,6 @@ typedef struct {
 #ifdef Rel14
   SystemInformationBlockType1_t     *sib1_BR;
   SystemInformationBlockType2_t     *sib2_BR;
-  SystemInformationBlockType2_t     *sib3_BR;
 #endif
 #if defined(Rel10) || defined(Rel14)
   SystemInformationBlockType13_r9_t *sib13;

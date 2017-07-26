@@ -127,8 +127,6 @@ init_SI(
 )
 //-----------------------------------------------------------------------------
 {
-  uint8_t                             SIwindowsize = 1;
-  uint16_t                            SIperiod = 8;
 #if defined(Rel10) || defined(Rel14)
   int                                 i;
 #endif
@@ -149,14 +147,14 @@ init_SI(
 #endif
   LOG_I(RRC, "Configuring MIB (N_RB_DL %d,phich_Resource %d,phich_Duration %d)\n", 
 	configuration->N_RB_DL[CC_id],
-	configuration->phich_resource[CC_id],
-	configuration->phich_duration[CC_id]);
+	(int)configuration->radioresourceconfig[CC_id].phich_resource,
+	(int)configuration->radioresourceconfig[CC_id].phich_duration);
   do_MIB(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],
 #ifdef ENABLE_ITTI
 	 configuration->N_RB_DL[CC_id],
-	 configuration->phich_resource[CC_id],
-     configuration->phich_duration[CC_id],
-     configuration->schedulingInfoSIB1_BR_r13[CC_id]
+	 (int)configuration->radioresourceconfig[CC_id].phich_resource,
+	 (int)configuration->radioresourceconfig[CC_id].phich_duration,
+	 configuration->schedulingInfoSIB1_BR_r13[CC_id]
 #else
      50, 0, 0, 1
 #endif
@@ -173,9 +171,22 @@ init_SI(
 #if defined(ENABLE_ITTI)
 								   , configuration
 #endif
+#ifdef Rel14
+								   ,0
+#endif
 								   );
 
   AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 != 255,"FATAL, RC.rrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1 == 255");
+
+  
+#ifdef Rel14
+  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_BR = do_SIB1(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],ctxt_pP->module_id,CC_id
+#if defined(ENABLE_ITTI)
+								   , configuration
+#endif
+								   ,1
+								   );
+#endif
 
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23 = (uint8_t*) malloc16(64);
   AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23!=NULL,"cannot allocate memory for SIB");
@@ -186,10 +197,29 @@ init_SI(
 #if defined(ENABLE_ITTI)
 								     , configuration
 #endif
+#ifdef Rel14
+								     ,0
+#endif
 								     );
 
   AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23 != 255,"FATAL, RC.rrc[mod].carrier[CC_id].sizeof_SIB23 == 255");
-  
+
+#ifdef Rel14
+  if (configuration->schedulingInfoSIB1_BR_r13[CC_id]>0) {
+    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23_BR = (uint8_t*) malloc16(64);
+    AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23_BR!=NULL,"cannot allocate memory for SIB");
+    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23_BR = do_SIB23(
+									  ctxt_pP->module_id,
+									  CC_id,
+#if defined(ENABLE_ITTI)
+									  configuration,
+#endif
+									  0);
+  }
+  else {
+    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23_BR = 0;
+  }
+#endif
 
   LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" SIB2/3 Contents (partial)\n",
 	PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
@@ -1679,9 +1709,9 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
   //TODO: change TM for secondary CC in SCelltoaddmodlist
   if (*physicalConfigDedicated) {
     if ((*physicalConfigDedicated)->antennaInfo) {
-      (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.transmissionMode = rrc_inst->configuration.ue_TransmissionMode[0];
-      LOG_D(RRC,"Setting transmission mode to %ld+1\n",rrc_inst->configuration.ue_TransmissionMode[0]);
-      if (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm3) {
+      (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.transmissionMode = rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode;
+      LOG_D(RRC,"Setting transmission mode to %ld+1\n",rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode);
+      if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm3) {
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
 	  CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
@@ -1691,7 +1721,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.size=1;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.bits_unused=6;
       }
-      else if (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm4) {
+      else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm4) {
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
 	  CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
@@ -1702,7 +1732,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.bits_unused=2;
 
       }
-      else if (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm5) {
+      else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm5) {
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
 	  CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
@@ -1712,7 +1742,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.size=1;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.bits_unused=4;
       }
-      else if (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm6) {
+      else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm6) {
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
 	  CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
@@ -1727,9 +1757,9 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
       LOG_E(RRC,"antenna_info not present in physical_config_dedicated. Not reconfiguring!\n");
     }
     if ((*physicalConfigDedicated)->cqi_ReportConfig) {
-      if ((rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm4) ||
-	  (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm5) ||
-	  (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm6)) {
+      if ((rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm4) ||
+	  (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm5) ||
+	  (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm6)) {
 	//feedback mode needs to be set as well
 	//TODO: I think this is taken into account in the PHY automatically based on the transmission mode variable
 	printf("setting cqi reporting mode to rm31\n");

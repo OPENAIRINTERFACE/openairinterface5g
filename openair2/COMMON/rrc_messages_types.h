@@ -83,15 +83,85 @@ typedef struct RrcStateInd_s {
   Rrc_Sub_State_t sub_state;
 } RrcStateInd;
 
+typedef struct RadioResourceConfig_s {
+  long                    prach_root;
+  long                    prach_config_index;
+  BOOLEAN_t               prach_high_speed;
+  long                    prach_zero_correlation;
+  long                    prach_freq_offset;
+  long                    pucch_delta_shift;
+  long                    pucch_nRB_CQI;
+  long                    pucch_nCS_AN;
+#if !defined(Rel10) && !defined(Rel14)
+  long                    pucch_n1_AN;
+#endif
+  long                    pdsch_referenceSignalPower;
+  long                    pdsch_p_b;
+  long                    pusch_n_SB;
+  long                    pusch_hoppingMode;
+  long                    pusch_hoppingOffset;
+  BOOLEAN_t               pusch_enable64QAM;
+  BOOLEAN_t               pusch_groupHoppingEnabled;
+  long                    pusch_groupAssignment;
+  BOOLEAN_t               pusch_sequenceHoppingEnabled;
+  long                    pusch_nDMRS1;
+  long                    phich_duration;
+  long                    phich_resource;
+  BOOLEAN_t               srs_enable;
+  long                    srs_BandwidthConfig;
+  long                    srs_SubframeConfig;
+  BOOLEAN_t               srs_ackNackST;
+  BOOLEAN_t               srs_MaxUpPts;
+  long                    pusch_p0_Nominal;
+  long                    pusch_alpha;
+  long                    pucch_p0_Nominal;
+  long                    msg3_delta_Preamble;
+  long                    ul_CyclicPrefixLength;
+  e_DeltaFList_PUCCH__deltaF_PUCCH_Format1                    pucch_deltaF_Format1;
+  e_DeltaFList_PUCCH__deltaF_PUCCH_Format1b                   pucch_deltaF_Format1b;
+  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2                    pucch_deltaF_Format2;
+  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2a                   pucch_deltaF_Format2a;
+  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2b                   pucch_deltaF_Format2b;
+  long                    rach_numberOfRA_Preambles;
+  BOOLEAN_t               rach_preamblesGroupAConfig;
+  long                    rach_sizeOfRA_PreamblesGroupA;
+  long                    rach_messageSizeGroupA;
+  e_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB                    rach_messagePowerOffsetGroupB;
+  long                    rach_powerRampingStep;
+  long                    rach_preambleInitialReceivedTargetPower;
+  long                    rach_preambleTransMax;
+  long                    rach_raResponseWindowSize;
+  long                    rach_macContentionResolutionTimer;
+  long                    rach_maxHARQ_Msg3Tx;
+  long                    bcch_modificationPeriodCoeff;
+  long                    pcch_defaultPagingCycle;
+  long                    pcch_nB;
+  long                    ue_TimersAndConstants_t300;
+  long                    ue_TimersAndConstants_t301;
+  long                    ue_TimersAndConstants_t310;
+  long                    ue_TimersAndConstants_t311;
+  long                    ue_TimersAndConstants_n310;
+  long                    ue_TimersAndConstants_n311;
+  long                    ue_TransmissionMode;
+#ifdef Rel14
+  //SIB2 BR Options
+  long*			  preambleTransMax_CE_r13;
+  BOOLEAN_t		  prach_ConfigCommon_v1310;
+  BOOLEAN_t*	          mpdcch_startSF_CSS_RA_r13;
+  long			  mpdcch_startSF_CSS_RA_r13_val;
+  long*			  prach_HoppingOffset_r13;
+#endif
+} RadioResourceConfig;
+
 // eNB: ENB_APP -> RRC messages
 typedef struct RrcConfigurationReq_s {
-  uint32_t            cell_identity;
+  uint32_t                cell_identity;
 
-  uint16_t            tac;
+  uint16_t                tac;
 
-  uint16_t            mcc;
-  uint16_t            mnc;
-  uint8_t             mnc_digit_length;
+  uint16_t                mcc;
+  uint16_t                mnc;
+  uint8_t                 mnc_digit_length;
 
   
   paging_drx_t            default_drx;
@@ -107,102 +177,44 @@ typedef struct RrcConfigurationReq_s {
   int16_t                 Nid_cell[MAX_NUM_CCs];// for testing, change later
   int16_t                 N_RB_DL[MAX_NUM_CCs];// for testing, change later
   int                     nb_antenna_ports[MAX_NUM_CCs];
-  long                    prach_root[MAX_NUM_CCs];
-  long                    prach_config_index[MAX_NUM_CCs];
-  BOOLEAN_t               prach_high_speed[MAX_NUM_CCs];
-  long                    prach_zero_correlation[MAX_NUM_CCs];
-  long                    prach_freq_offset[MAX_NUM_CCs];
-  long                    pucch_delta_shift[MAX_NUM_CCs];
-  long                    pucch_nRB_CQI[MAX_NUM_CCs];
-  long                    pucch_nCS_AN[MAX_NUM_CCs];
-#if !defined(Rel10) && !defined(Rel14)
-  long                    pucch_n1_AN[MAX_NUM_CCs];
-#endif
-  long                    pdsch_referenceSignalPower[MAX_NUM_CCs];
-  long                    pdsch_p_b[MAX_NUM_CCs];
-  long                    pusch_n_SB[MAX_NUM_CCs];
-  long                    pusch_hoppingMode[MAX_NUM_CCs];
-  long                    pusch_hoppingOffset[MAX_NUM_CCs];
-  BOOLEAN_t               pusch_enable64QAM[MAX_NUM_CCs];
-  BOOLEAN_t               pusch_groupHoppingEnabled[MAX_NUM_CCs];
-  long                    pusch_groupAssignment[MAX_NUM_CCs];
-  BOOLEAN_t               pusch_sequenceHoppingEnabled[MAX_NUM_CCs];
-  long                    pusch_nDMRS1[MAX_NUM_CCs];
-  long                    phich_duration[MAX_NUM_CCs];
-  long                    phich_resource[MAX_NUM_CCs];
-  BOOLEAN_t               srs_enable[MAX_NUM_CCs];
-  long                    srs_BandwidthConfig[MAX_NUM_CCs];
-  long                    srs_SubframeConfig[MAX_NUM_CCs];
-  BOOLEAN_t               srs_ackNackST[MAX_NUM_CCs];
-  BOOLEAN_t               srs_MaxUpPts[MAX_NUM_CCs];
-  long                    pusch_p0_Nominal[MAX_NUM_CCs];
-  long                    pusch_alpha[MAX_NUM_CCs];
-  long                    pucch_p0_Nominal[MAX_NUM_CCs];
-  long                    msg3_delta_Preamble[MAX_NUM_CCs];
-  long                    ul_CyclicPrefixLength[MAX_NUM_CCs];
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format1                    pucch_deltaF_Format1[MAX_NUM_CCs];
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format1b                   pucch_deltaF_Format1b[MAX_NUM_CCs];
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2                    pucch_deltaF_Format2[MAX_NUM_CCs];
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2a                   pucch_deltaF_Format2a[MAX_NUM_CCs];
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2b                   pucch_deltaF_Format2b[MAX_NUM_CCs];
-  long                    rach_numberOfRA_Preambles[MAX_NUM_CCs];
-  BOOLEAN_t               rach_preamblesGroupAConfig[MAX_NUM_CCs];
-  long                    rach_sizeOfRA_PreamblesGroupA[MAX_NUM_CCs];
-  long                    rach_messageSizeGroupA[MAX_NUM_CCs];
-  e_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB                    rach_messagePowerOffsetGroupB[MAX_NUM_CCs];
-  long                    rach_powerRampingStep[MAX_NUM_CCs];
-  long                    rach_preambleInitialReceivedTargetPower[MAX_NUM_CCs];
-  long                    rach_preambleTransMax[MAX_NUM_CCs];
-  long                    rach_raResponseWindowSize[MAX_NUM_CCs];
-  long                    rach_macContentionResolutionTimer[MAX_NUM_CCs];
-  long                    rach_maxHARQ_Msg3Tx[MAX_NUM_CCs];
-  long                    bcch_modificationPeriodCoeff[MAX_NUM_CCs];
-  long                    pcch_defaultPagingCycle[MAX_NUM_CCs];
-  long                    pcch_nB[MAX_NUM_CCs];
-  long                    ue_TimersAndConstants_t300[MAX_NUM_CCs];
-  long                    ue_TimersAndConstants_t301[MAX_NUM_CCs];
-  long                    ue_TimersAndConstants_t310[MAX_NUM_CCs];
-  long                    ue_TimersAndConstants_t311[MAX_NUM_CCs];
-  long                    ue_TimersAndConstants_n310[MAX_NUM_CCs];
-  long                    ue_TimersAndConstants_n311[MAX_NUM_CCs];
-  long                    ue_TransmissionMode[MAX_NUM_CCs];
 
 
+  RadioResourceConfig     radioresourceconfig[MAX_NUM_CCs];
+
+   
+#ifdef Rel14
+
+  RadioResourceConfig     radioresourceconfig_BR[MAX_NUM_CCs];
   //MIB
-  long					  schedulingInfoSIB1_BR_r13[MAX_NUM_CCs];
+  long	 		  schedulingInfoSIB1_BR_r13[MAX_NUM_CCs];
   //SIB1 BR options
   
 
-  uint16_t*				  hyperSFN_r13[MAX_NUM_CCs];
-  long*					  eDRX_Allowed_r13[MAX_NUM_CCs];
-  BOOLEAN_t				  cellSelectionInfoCE_r13[MAX_NUM_CCs];
-  long					  q_RxLevMinCE_r13[MAX_NUM_CCs];
-  long*					  q_QualMinRSRQ_CE_r13[MAX_NUM_CCs];
-  BOOLEAN_t				  bandwidthReducedAccessRelatedInfo_r13[MAX_NUM_CCs];
-  long					  si_WindowLength_BR_r13[MAX_NUM_CCs];
-  long					  si_RepetitionPattern_r13[MAX_NUM_CCs];
-  BOOLEAN_t				  fdd_DownlinkOrTddSubframeBitmapBR_r13[MAX_NUM_CCs];
-  uint64_t				  fdd_DownlinkOrTddSubframeBitmapBR_val_r13[MAX_NUM_CCs];
-  uint16_t				  fdd_UplinkSubframeBitmapBR_r13[MAX_NUM_CCs];
-  long					  startSymbolBR_r13[MAX_NUM_CCs];
-  long					  si_HoppingConfigCommon_r13[MAX_NUM_CCs];
-  long*					  si_ValidityTime_r13[MAX_NUM_CCs];
-  BOOLEAN_t				  freqHoppingParametersDL_r13[MAX_NUM_CCs];
-  long*					  mpdcch_pdsch_HoppingNB_r13[MAX_NUM_CCs];
-  BOOLEAN_t				  interval_DLHoppingConfigCommonModeA_r13[MAX_NUM_CCs];
-  long					  interval_DLHoppingConfigCommonModeA_r13_val[MAX_NUM_CCs];
-  BOOLEAN_t				  interval_DLHoppingConfigCommonModeB_r13[MAX_NUM_CCs];
-  long					  interval_DLHoppingConfigCommonModeB_r13_val[MAX_NUM_CCs];
-  long*					  mpdcch_pdsch_HoppingOffset_r13[MAX_NUM_CCs];
+  uint16_t*		  hyperSFN_r13[MAX_NUM_CCs];
+  long*			  eDRX_Allowed_r13[MAX_NUM_CCs];
+  BOOLEAN_t		  cellSelectionInfoCE_r13[MAX_NUM_CCs];
+  long			  q_RxLevMinCE_r13[MAX_NUM_CCs];
+  long*			  q_QualMinRSRQ_CE_r13[MAX_NUM_CCs];
+  BOOLEAN_t		  bandwidthReducedAccessRelatedInfo_r13[MAX_NUM_CCs];
+  long			  si_WindowLength_BR_r13[MAX_NUM_CCs];
+  long			  si_RepetitionPattern_r13[MAX_NUM_CCs];
+  BOOLEAN_t		  fdd_DownlinkOrTddSubframeBitmapBR_r13[MAX_NUM_CCs];
+  uint64_t		  fdd_DownlinkOrTddSubframeBitmapBR_val_r13[MAX_NUM_CCs];
+  uint16_t		  fdd_UplinkSubframeBitmapBR_r13[MAX_NUM_CCs];
+  long			  startSymbolBR_r13[MAX_NUM_CCs];
+  long			  si_HoppingConfigCommon_r13[MAX_NUM_CCs];
+  long*			  si_ValidityTime_r13[MAX_NUM_CCs];
+  BOOLEAN_t		  freqHoppingParametersDL_r13[MAX_NUM_CCs];
+  long*			  mpdcch_pdsch_HoppingNB_r13[MAX_NUM_CCs];
+  BOOLEAN_t		  interval_DLHoppingConfigCommonModeA_r13[MAX_NUM_CCs];
+  long			  interval_DLHoppingConfigCommonModeA_r13_val[MAX_NUM_CCs];
+  BOOLEAN_t		  interval_DLHoppingConfigCommonModeB_r13[MAX_NUM_CCs];
+  long			  interval_DLHoppingConfigCommonModeB_r13_val[MAX_NUM_CCs];
+  long*			  mpdcch_pdsch_HoppingOffset_r13[MAX_NUM_CCs];
 
 
-  //SIB2 BR Options
-  long*					  preambleTransMax_CE_r13[MAX_NUM_CCs];
-  BOOLEAN_t				  prach_ConfigCommon_v1310[MAX_NUM_CCs];
-  BOOLEAN_t*			  mpdcch_startSF_CSS_RA_r13[MAX_NUM_CCs];
-  long					  mpdcch_startSF_CSS_RA_r13_val[MAX_NUM_CCs];
-  long*					  prach_HoppingOffset_r13[MAX_NUM_CCs];
 
+#endif
 } RrcConfigurationReq;
 
 // UE: NAS -> RRC messages
