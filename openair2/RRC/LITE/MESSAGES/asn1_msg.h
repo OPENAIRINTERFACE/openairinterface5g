@@ -77,7 +77,13 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
 @param configuration Pointer Configuration Request structure  
 @return size of encoded bit stream in bytes*/
 
-uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id, RrcConfigurationReq *configuration
+uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id
+#ifdef Rel14
+                , BOOLEAN_t brOption
+#endif
+#if defined(ENABLE_ITTI)
+                ,RrcConfigurationReq *configuration
+#endif
                );
 
 /**

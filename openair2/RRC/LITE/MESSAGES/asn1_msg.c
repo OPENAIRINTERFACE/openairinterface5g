@@ -288,7 +288,10 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
 }
 
 uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
-		int Mod_id,int CC_id
+        int Mod_id,int CC_id
+#ifdef Rel14
+                , BOOLEAN_t brOption
+#endif
 #if defined(ENABLE_ITTI)
                 , RrcConfigurationReq *configuration
 #endif
@@ -302,10 +305,21 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   SchedulingInfo_t schedulingInfo;
   SIB_Type_t sib_type;
 
-  uint8_t *buffer                      = carrier->SIB1;
+  uint8_t *buffer;
   BCCH_DL_SCH_Message_t *bcch_message  = &carrier->siblock1;
-	SystemInformationBlockType1_BR_r13_t **sib1_br = &carrier->sib1;
-
+  SystemInformationBlockType1_BR_r13_t **sib1_br;
+#ifdef Rel14
+  if(brOption)
+  {
+      buffer                      = carrier->SIB1_BR;
+      sib1_br = &carrier->sib1_BR;
+  }
+  else
+#endif
+  {
+      buffer                      = carrier->SIB1;
+      sib1_br = &carrier->sib1;
+  }
   
   memset(bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
   bcch_message->message.present = BCCH_DL_SCH_MessageType_PR_c1;
@@ -455,318 +469,323 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 
 	(*sib1_br)->si_WindowLength = SystemInformationBlockType1__si_WindowLength_ms20;
 	(*sib1_br)->systemInfoValueTag = 0;
-	(*sib1_br)->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v890_IEs_t));
+    (*sib1_br)->nonCriticalExtension = NULL;
+#ifdef Rel14
+    if(brOption)
+    {
+        (*sib1_br)->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v890_IEs_t));
 
-	SystemInformationBlockType1_v890_IEs_t *sib1_br_890 = (*sib1_br)->nonCriticalExtension;
-	sib1_br_890->lateNonCriticalExtension = NULL;
-	sib1_br_890->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v920_IEs_t));
-	memset(sib1_br_890->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v920_IEs_t));
+        SystemInformationBlockType1_v890_IEs_t *sib1_br_890 = (*sib1_br)->nonCriticalExtension;
+        sib1_br_890->lateNonCriticalExtension = NULL;
+        sib1_br_890->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v920_IEs_t));
+        memset(sib1_br_890->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v920_IEs_t));
 
-	SystemInformationBlockType1_v920_IEs_t *sib1_br_920 = (*sib1_br_890).nonCriticalExtension;
-	sib1_br_920->ims_EmergencySupport_r9 = NULL; // ptr
-	sib1_br_920->cellSelectionInfo_v920 = NULL;
-	sib1_br_920->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1130_IEs_t));
-	memset(sib1_br_920->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1130_IEs_t));
+        SystemInformationBlockType1_v920_IEs_t *sib1_br_920 = (*sib1_br_890).nonCriticalExtension;
+        sib1_br_920->ims_EmergencySupport_r9 = NULL; // ptr
+        sib1_br_920->cellSelectionInfo_v920 = NULL;
+        sib1_br_920->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1130_IEs_t));
+        memset(sib1_br_920->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1130_IEs_t));
 
-	//////Rel11
-	SystemInformationBlockType1_v1130_IEs_t *sib1_br_1130 = sib1_br_920->nonCriticalExtension;
+        //////Rel11
+        SystemInformationBlockType1_v1130_IEs_t *sib1_br_1130 = sib1_br_920->nonCriticalExtension;
 
-	sib1_br_1130->tdd_Config_v1130 = NULL; // ptr
-	sib1_br_1130->cellSelectionInfo_v1130 = NULL; // ptr
-	sib1_br_1130->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1250_IEs_t));
-	memset(sib1_br_1130->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1250_IEs_t));
-
-
-	///Rel12
-	SystemInformationBlockType1_v1250_IEs_t *sib1_br_1250 = sib1_br_1130->nonCriticalExtension;
-	sib1_br_1250->cellAccessRelatedInfo_v1250.category0Allowed_r12 = NULL; // long*
-	sib1_br_1250->cellSelectionInfo_v1250 = NULL;
-	sib1_br_1250->freqBandIndicatorPriority_r12 = 0; // long* // FIXME
-	sib1_br_1250->nonCriticalExtension = NULL;
+        sib1_br_1130->tdd_Config_v1130 = NULL; // ptr
+        sib1_br_1130->cellSelectionInfo_v1130 = NULL; // ptr
+        sib1_br_1130->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1250_IEs_t));
+        memset(sib1_br_1130->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1250_IEs_t));
 
 
-
+        ///Rel12
+        SystemInformationBlockType1_v1250_IEs_t *sib1_br_1250 = sib1_br_1130->nonCriticalExtension;
+        sib1_br_1250->cellAccessRelatedInfo_v1250.category0Allowed_r12 = NULL; // long*
+        sib1_br_1250->cellSelectionInfo_v1250 = NULL;
+        sib1_br_1250->freqBandIndicatorPriority_r12 = 0; // long* // FIXME
+        sib1_br_1250->nonCriticalExtension = NULL;
 
 	////Rel1310
+    ///
 #if defined(ENABLE_ITTI)
-	if (configuration->schedulingInfoSIB1_BR_r13[CC_id] != 0)
-	{
-		sib1_br_1250->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1310_IEs_t));
-		memset(sib1_br_1250->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1310_IEs_t));
-		SystemInformationBlockType1_v1310_IEs_t *sib1_br_1310 = sib1_br_1250->nonCriticalExtension;
+        if (configuration->schedulingInfoSIB1_BR_r13[CC_id] != 0)
+        {
+            sib1_br_1250->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1310_IEs_t));
+            memset(sib1_br_1250->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1310_IEs_t));
+            SystemInformationBlockType1_v1310_IEs_t *sib1_br_1310 = sib1_br_1250->nonCriticalExtension;
 
 
-		if (configuration->hyperSFN_r13[CC_id])
-		{
-			sib1_br_1310->hyperSFN_r13 = calloc(1, sizeof(BIT_STRING_t)); // type
-			memset(sib1_br_1310->hyperSFN_r13, 0, sizeof(BIT_STRING_t));
-			sib1_br_1310->hyperSFN_r13->buf = calloc(2, sizeof(uint8_t));
-			memmove(sib1_br_1310->hyperSFN_r13->buf, configuration->hyperSFN_r13[CC_id], 2 * sizeof(uint8_t));
-			sib1_br_1310->hyperSFN_r13->size = 2;
-			sib1_br_1310->hyperSFN_r13->bits_unused = 6;
-		}
-		else
-			sib1_br_1310->hyperSFN_r13 = NULL;
+            if (configuration->hyperSFN_r13[CC_id])
+            {
+                sib1_br_1310->hyperSFN_r13 = calloc(1, sizeof(BIT_STRING_t)); // type
+                memset(sib1_br_1310->hyperSFN_r13, 0, sizeof(BIT_STRING_t));
+                sib1_br_1310->hyperSFN_r13->buf = calloc(2, sizeof(uint8_t));
+                memmove(sib1_br_1310->hyperSFN_r13->buf, configuration->hyperSFN_r13[CC_id], 2 * sizeof(uint8_t));
+                sib1_br_1310->hyperSFN_r13->size = 2;
+                sib1_br_1310->hyperSFN_r13->bits_unused = 6;
+            }
+            else
+                sib1_br_1310->hyperSFN_r13 = NULL;
 
-		if (configuration->eDRX_Allowed_r13[CC_id])
-		{
-			sib1_br_1310->eDRX_Allowed_r13 = calloc(1, sizeof(long));
-			*sib1_br_1310->eDRX_Allowed_r13 = *configuration->eDRX_Allowed_r13[CC_id];
-		}
-		else
-			sib1_br_1310->eDRX_Allowed_r13 = NULL; // long*
+            if (configuration->eDRX_Allowed_r13[CC_id])
+            {
+                sib1_br_1310->eDRX_Allowed_r13 = calloc(1, sizeof(long));
+                *sib1_br_1310->eDRX_Allowed_r13 = *configuration->eDRX_Allowed_r13[CC_id];
+            }
+            else
+                sib1_br_1310->eDRX_Allowed_r13 = NULL; // long*
 
-		if (configuration->cellSelectionInfoCE_r13[CC_id])
-		{
-			sib1_br_1310->cellSelectionInfoCE_r13 = calloc(1, sizeof(CellSelectionInfoCE_r13_t));
-			memset(sib1_br_1310->cellSelectionInfoCE_r13, 0, sizeof(CellSelectionInfoCE_r13_t));
-			sib1_br_1310->cellSelectionInfoCE_r13->q_RxLevMinCE_r13 = configuration->q_RxLevMinCE_r13[CC_id]; // (Q_RxLevMin_t) long
-			if (configuration->q_QualMinRSRQ_CE_r13[CC_id])
-			{
-				sib1_br_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = calloc(1, sizeof(long));
-				*sib1_br_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = *configuration->q_QualMinRSRQ_CE_r13[CC_id];
-			}
-			else
-				sib1_br_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = NULL; 
-		}
-		else
-			sib1_br_1310->cellSelectionInfoCE_r13 = NULL;
+            if (configuration->cellSelectionInfoCE_r13[CC_id])
+            {
+                sib1_br_1310->cellSelectionInfoCE_r13 = calloc(1, sizeof(CellSelectionInfoCE_r13_t));
+                memset(sib1_br_1310->cellSelectionInfoCE_r13, 0, sizeof(CellSelectionInfoCE_r13_t));
+                sib1_br_1310->cellSelectionInfoCE_r13->q_RxLevMinCE_r13 = configuration->q_RxLevMinCE_r13[CC_id]; // (Q_RxLevMin_t) long
+                if (configuration->q_QualMinRSRQ_CE_r13[CC_id])
+                {
+                    sib1_br_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = calloc(1, sizeof(long));
+                    *sib1_br_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = *configuration->q_QualMinRSRQ_CE_r13[CC_id];
+                }
+                else
+                    sib1_br_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = NULL;
+            }
+            else
+                sib1_br_1310->cellSelectionInfoCE_r13 = NULL;
 
-		if (configuration->bandwidthReducedAccessRelatedInfo_r13[CC_id])
-		{
-			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13
-				= calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13));
+            if (configuration->bandwidthReducedAccessRelatedInfo_r13[CC_id])
+            {
+                sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13
+                    = calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13));
 
-			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_WindowLength_BR_r13
-				= configuration->si_WindowLength_BR_r13[CC_id]; // 0
+                sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_WindowLength_BR_r13
+                    = configuration->si_WindowLength_BR_r13[CC_id]; // 0
 
-			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_RepetitionPattern_r13
-				= configuration->si_RepetitionPattern_r13[CC_id]; // 0
+                sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_RepetitionPattern_r13
+                    = configuration->si_RepetitionPattern_r13[CC_id]; // 0
 
-			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13 = calloc(1, sizeof(SchedulingInfoList_BR_r13_t));
-			SchedulingInfo_BR_r13_t *schedulinginfo_br_13 = calloc(1, sizeof(SchedulingInfo_BR_r13_t));
-			memset(schedulinginfo_br_13, 0, sizeof(SchedulingInfo_BR_r13_t));
-			schedulinginfo_br_13->si_Narrowband_r13 = 1;
-			schedulinginfo_br_13->si_TBS_r13 = SchedulingInfo_BR_r13__si_TBS_r13_b152;
-			ASN_SEQUENCE_ADD(&sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13->list, schedulinginfo_br_13);
+                sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13 = calloc(1, sizeof(SchedulingInfoList_BR_r13_t));
+                SchedulingInfo_BR_r13_t *schedulinginfo_br_13 = calloc(1, sizeof(SchedulingInfo_BR_r13_t));
+                memset(schedulinginfo_br_13, 0, sizeof(SchedulingInfo_BR_r13_t));
+                schedulinginfo_br_13->si_Narrowband_r13 = 1;
+                schedulinginfo_br_13->si_TBS_r13 = SchedulingInfo_BR_r13__si_TBS_r13_b152;
+                ASN_SEQUENCE_ADD(&sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13->list, schedulinginfo_br_13);
 
-			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13
-				= calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13));
-			memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13, 0,
-				sizeof(sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13)));
+                sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13
+                    = calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13));
+                memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13, 0,
+                    sizeof(sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13)));
 
-			if (configuration->bandwidthReducedAccessRelatedInfo_r13[CC_id])
-			{
-				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
-					= SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
+                if (configuration->bandwidthReducedAccessRelatedInfo_r13[CC_id])
+                {
+                    sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
+                        = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
 
-				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf = calloc(2, sizeof(uint8_t));
-				memmove(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf, &configuration->fdd_DownlinkOrTddSubframeBitmapBR_val_r13[CC_id], 2 * sizeof(uint8_t));
-				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.size = 2;
-				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.bits_unused = 6;
-			}
-			else
-			{
-				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
-					= SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
+                    sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf = calloc(2, sizeof(uint8_t));
+                    memmove(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf, &configuration->fdd_DownlinkOrTddSubframeBitmapBR_val_r13[CC_id], 2 * sizeof(uint8_t));
+                    sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.size = 2;
+                    sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.bits_unused = 6;
+                }
+                else
+                {
+                    sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
+                        = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
 
-				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf = calloc(5, sizeof(uint8_t));
-				memmove(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf, &configuration->fdd_DownlinkOrTddSubframeBitmapBR_val_r13[CC_id], 5 * sizeof(uint8_t));
-				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.size = 5;
-				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.bits_unused = 0;
-			}
+                    sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf = calloc(5, sizeof(uint8_t));
+                    memmove(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf, &configuration->fdd_DownlinkOrTddSubframeBitmapBR_val_r13[CC_id], 5 * sizeof(uint8_t));
+                    sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.size = 5;
+                    sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.bits_unused = 0;
+                }
 
-			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13 = calloc(1, sizeof(BIT_STRING_t));
-			memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13, 0, sizeof(BIT_STRING_t));
-			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->buf = calloc(2, sizeof(uint8_t));
-			memmove(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->buf, &configuration->fdd_UplinkSubframeBitmapBR_r13[CC_id],
-				2 * sizeof(uint8_t));
-			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->size = 2;
-			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->bits_unused = 6;
-
-
-			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13 = configuration->startSymbolBR_r13[CC_id];
-
-            sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_HoppingConfigCommon_r13 = configuration->si_HoppingConfigCommon_r13[CC_id];
-
-			if (configuration->si_ValidityTime_r13[CC_id])
-			{
-				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = calloc(1, sizeof(long));
-				memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13, 0, sizeof(long));
-                *sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = *configuration->si_ValidityTime_r13[CC_id];
-			}
-			else
-				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = NULL;
-
-			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13 = calloc(1, sizeof(SystemInfoValueTagList_r13_t));
-			SystemInfoValueTagSI_r13_t systemInfoValueTagSi_r13 = 0;
-			ASN_SEQUENCE_ADD(&sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13->list, &systemInfoValueTagSi_r13);
-		}
-		else
-			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13 = NULL;
-
-		sib1_br_1310->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1320_IEs_t));
-		memset(sib1_br_1310->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1320_IEs_t));
-
-		/////Rel1320
-		SystemInformationBlockType1_v1320_IEs_t *sib1_br_1320 = sib1_br_1310->nonCriticalExtension;
-		
+                sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13 = calloc(1, sizeof(BIT_STRING_t));
+                memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13, 0, sizeof(BIT_STRING_t));
+                sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->buf = calloc(2, sizeof(uint8_t));
+                memmove(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->buf, &configuration->fdd_UplinkSubframeBitmapBR_r13[CC_id],
+                    2 * sizeof(uint8_t));
+                sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->size = 2;
+                sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->bits_unused = 6;
 
 
-		if (configuration->freqHoppingParametersDL_r13[CC_id])
-		{
-			sib1_br_1320->freqHoppingParametersDL_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13));
-			memset(sib1_br_1320->freqHoppingParametersDL_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13));
+                sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13 = configuration->startSymbolBR_r13[CC_id];
+
+                sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_HoppingConfigCommon_r13 = configuration->si_HoppingConfigCommon_r13[CC_id];
+
+                if (configuration->si_ValidityTime_r13[CC_id])
+                {
+                    sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = calloc(1, sizeof(long));
+                    memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13, 0, sizeof(long));
+                    *sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = *configuration->si_ValidityTime_r13[CC_id];
+                }
+                else
+                    sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = NULL;
+
+                sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13 = calloc(1, sizeof(SystemInfoValueTagList_r13_t));
+                SystemInfoValueTagSI_r13_t systemInfoValueTagSi_r13 = 0;
+                ASN_SEQUENCE_ADD(&sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13->list, &systemInfoValueTagSi_r13);
+            }
+            else
+                sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13 = NULL;
+
+            sib1_br_1310->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1320_IEs_t));
+            memset(sib1_br_1310->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1320_IEs_t));
+
+            /////Rel1320
+            SystemInformationBlockType1_v1320_IEs_t *sib1_br_1320 = sib1_br_1310->nonCriticalExtension;
 
 
-			if (configuration->mpdcch_pdsch_HoppingNB_r13[CC_id])
-			{
-				sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = calloc(1, sizeof(long));
-				*sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = *configuration->mpdcch_pdsch_HoppingNB_r13[CC_id];
-			}
-			else
-				sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = NULL;
 
-			sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13));
-			memset(sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13));
+            if (configuration->freqHoppingParametersDL_r13[CC_id])
+            {
+                sib1_br_1320->freqHoppingParametersDL_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13));
+                memset(sib1_br_1320->freqHoppingParametersDL_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13));
 
-			if (configuration->interval_DLHoppingConfigCommonModeA_r13[CC_id])
-			{
-				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13_PR_interval_FDD_r13;
-				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->choice.interval_FDD_r13 = configuration->interval_DLHoppingConfigCommonModeA_r13_val[CC_id];
-			}
-			else
-			{
-				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13_PR_interval_TDD_r13;
-				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->choice.interval_TDD_r13 = configuration->interval_DLHoppingConfigCommonModeA_r13_val[CC_id];
-			}
 
-			sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13));
-			memset(sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13));
+                if (configuration->mpdcch_pdsch_HoppingNB_r13[CC_id])
+                {
+                    sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = calloc(1, sizeof(long));
+                    *sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = *configuration->mpdcch_pdsch_HoppingNB_r13[CC_id];
+                }
+                else
+                    sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = NULL;
 
-			if (configuration->interval_DLHoppingConfigCommonModeB_r13[CC_id])
-			{
-				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_FDD_r13;
-				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_FDD_r13 = configuration->interval_DLHoppingConfigCommonModeB_r13_val[CC_id];
+                sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13));
+                memset(sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13));
 
-			}
-			else
-			{
-				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_TDD_r13;
-				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_TDD_r13 = configuration->interval_DLHoppingConfigCommonModeB_r13_val[CC_id];
-			}
-			
-			if (configuration->mpdcch_pdsch_HoppingOffset_r13[CC_id])
-			{
+                if (configuration->interval_DLHoppingConfigCommonModeA_r13[CC_id])
+                {
+                    sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13_PR_interval_FDD_r13;
+                    sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->choice.interval_FDD_r13 = configuration->interval_DLHoppingConfigCommonModeA_r13_val[CC_id];
+                }
+                else
+                {
+                    sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13_PR_interval_TDD_r13;
+                    sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->choice.interval_TDD_r13 = configuration->interval_DLHoppingConfigCommonModeA_r13_val[CC_id];
+                }
 
-				sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = calloc(1, sizeof(long));
-				*sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = *configuration->mpdcch_pdsch_HoppingOffset_r13[CC_id];
-			}
-			else
-				sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = NULL;
+                sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13));
+                memset(sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13));
 
-		}
-		else
-			sib1_br_1320->freqHoppingParametersDL_r13 = NULL;
+                if (configuration->interval_DLHoppingConfigCommonModeB_r13[CC_id])
+                {
+                    sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_FDD_r13;
+                    sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_FDD_r13 = configuration->interval_DLHoppingConfigCommonModeB_r13_val[CC_id];
 
-		sib1_br_1320->nonCriticalExtension = NULL;
-    }
+                }
+                else
+                {
+                    sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_TDD_r13;
+                    sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_TDD_r13 = configuration->interval_DLHoppingConfigCommonModeB_r13_val[CC_id];
+                }
+
+                if (configuration->mpdcch_pdsch_HoppingOffset_r13[CC_id])
+                {
+
+                    sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = calloc(1, sizeof(long));
+                    *sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = *configuration->mpdcch_pdsch_HoppingOffset_r13[CC_id];
+                }
+                else
+                    sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = NULL;
+
+            }
+            else
+                sib1_br_1320->freqHoppingParametersDL_r13 = NULL;
+
+            sib1_br_1320->nonCriticalExtension = NULL;
+        }
 #else
-  sib1_br_1250->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1310_IEs_t));
-  memset(sib1_br_1250->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1310_IEs_t));
-  SystemInformationBlockType1_v1310_IEs_t *sib1_br_1310 = sib1_br_1250->nonCriticalExtension;
+      sib1_br_1250->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1310_IEs_t));
+      memset(sib1_br_1250->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1310_IEs_t));
+      SystemInformationBlockType1_v1310_IEs_t *sib1_br_1310 = sib1_br_1250->nonCriticalExtension;
 
-  sib1_br_1310->hyperSFN_r13 = calloc(1, sizeof(BIT_STRING_t)); // type
-  memset(sib1_br_1310->hyperSFN_r13, 0, sizeof(BIT_STRING_t));
-  sib1_br_1310->hyperSFN_r13->buf = calloc(2, sizeof(uint8_t));
-  memset(sib1_br_1310->hyperSFN_r13->buf, 0, 2*sizeof(uint8_t));
-  sib1_br_1310->hyperSFN_r13->size = 2;
-  sib1_br_1310->hyperSFN_r13->bits_unused = 6;
+      sib1_br_1310->hyperSFN_r13 = calloc(1, sizeof(BIT_STRING_t)); // type
+      memset(sib1_br_1310->hyperSFN_r13, 0, sizeof(BIT_STRING_t));
+      sib1_br_1310->hyperSFN_r13->buf = calloc(2, sizeof(uint8_t));
+      memset(sib1_br_1310->hyperSFN_r13->buf, 0, 2*sizeof(uint8_t));
+      sib1_br_1310->hyperSFN_r13->size = 2;
+      sib1_br_1310->hyperSFN_r13->bits_unused = 6;
 
-  sib1_br_1310->eDRX_Allowed_r13 = NULL; // long*
-  sib1_br_1310->cellSelectionInfoCE_r13 = calloc(1, sizeof(CellSelectionInfoCE_r13_t));
-  memset(sib1_br_1310->cellSelectionInfoCE_r13, 0, sizeof(CellSelectionInfoCE_r13_t));
-  sib1_br_1310->cellSelectionInfoCE_r13->q_RxLevMinCE_r13 = -70; // (Q_RxLevMin_t) long
-  sib1_br_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = NULL; // (Q_RxLevMin_t) *long
+      sib1_br_1310->eDRX_Allowed_r13 = NULL; // long*
+      sib1_br_1310->cellSelectionInfoCE_r13 = calloc(1, sizeof(CellSelectionInfoCE_r13_t));
+      memset(sib1_br_1310->cellSelectionInfoCE_r13, 0, sizeof(CellSelectionInfoCE_r13_t));
+      sib1_br_1310->cellSelectionInfoCE_r13->q_RxLevMinCE_r13 = -70; // (Q_RxLevMin_t) long
+      sib1_br_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = NULL; // (Q_RxLevMin_t) *long
 
-  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13
-          = calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13));
+      sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13
+              = calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13));
 
-  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_WindowLength_BR_r13
-          = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_WindowLength_BR_r13_ms20; // 0
-
-
-  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_RepetitionPattern_r13
-          = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_RepetitionPattern_r13_everyRF; // 0
-
-  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13 = calloc(1, sizeof(SchedulingInfoList_BR_r13_t));
-  SchedulingInfo_BR_r13_t *schedulinginfo_br_13 = calloc(1, sizeof(SchedulingInfo_BR_r13_t));
-  memset(schedulinginfo_br_13, 0, sizeof(SchedulingInfo_BR_r13_t));
-  schedulinginfo_br_13->si_Narrowband_r13 = 1;
-  schedulinginfo_br_13->si_TBS_r13 = SchedulingInfo_BR_r13__si_TBS_r13_b152;
-  ASN_SEQUENCE_ADD(&sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13->list, schedulinginfo_br_13);
-
-  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13
-          = calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13));
-  memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13, 0,
-         sizeof(sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13)));
-
-  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
-          = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
-  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf = calloc(2, sizeof(uint8_t));
-  memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf, 0, 2 * sizeof(uint8_t));
-  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.size = 2;
-  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.bits_unused = 6;
-
-  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13 = calloc(1, sizeof(BIT_STRING_t));
-  memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13, 0, sizeof(BIT_STRING_t));
-  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->buf = calloc(2, sizeof(uint8_t));
-  memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->buf, 0,
-         2 * sizeof(uint8_t));
-  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->size = 2;
-  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->bits_unused = 6;
-  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13 = 1;
-  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_HoppingConfigCommon_r13
-          = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_HoppingConfigCommon_r13_on;
-
-  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = calloc(1, sizeof(long));
-  memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13, 0, sizeof(long));
-  *sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13
-          = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_ValidityTime_r13_true;
+      sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_WindowLength_BR_r13
+              = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_WindowLength_BR_r13_ms20; // 0
 
 
-  sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13 = calloc(1, sizeof(SystemInfoValueTagList_r13_t));
-  SystemInfoValueTagSI_r13_t systemInfoValueTagSi_r13 = 0;
-  ASN_SEQUENCE_ADD(&sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13->list, &systemInfoValueTagSi_r13);
+      sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_RepetitionPattern_r13
+              = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_RepetitionPattern_r13_everyRF; // 0
 
-  sib1_br_1310->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1320_IEs_t));
-  memset(sib1_br_1310->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1320_IEs_t));
+      sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13 = calloc(1, sizeof(SchedulingInfoList_BR_r13_t));
+      SchedulingInfo_BR_r13_t *schedulinginfo_br_13 = calloc(1, sizeof(SchedulingInfo_BR_r13_t));
+      memset(schedulinginfo_br_13, 0, sizeof(SchedulingInfo_BR_r13_t));
+      schedulinginfo_br_13->si_Narrowband_r13 = 1;
+      schedulinginfo_br_13->si_TBS_r13 = SchedulingInfo_BR_r13__si_TBS_r13_b152;
+      ASN_SEQUENCE_ADD(&sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13->list, schedulinginfo_br_13);
 
-  /////Rel1320
-  SystemInformationBlockType1_v1320_IEs_t *sib1_br_1320 = sib1_br_1310->nonCriticalExtension;
-  sib1_br_1320->freqHoppingParametersDL_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13));
-  memset(sib1_br_1320->freqHoppingParametersDL_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13));
+      sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13
+              = calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13));
+      memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13, 0,
+             sizeof(sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13)));
 
-  sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = calloc(1, sizeof(long));
-  *sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__mpdcch_pdsch_HoppingNB_r13_nb2;
+      sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
+              = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
+      sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf = calloc(2, sizeof(uint8_t));
+      memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf, 0, 2 * sizeof(uint8_t));
+      sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.size = 2;
+      sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.bits_unused = 6;
+
+      sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13 = calloc(1, sizeof(BIT_STRING_t));
+      memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13, 0, sizeof(BIT_STRING_t));
+      sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->buf = calloc(2, sizeof(uint8_t));
+      memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->buf, 0,
+             2 * sizeof(uint8_t));
+      sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->size = 2;
+      sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->bits_unused = 6;
+      sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13 = 1;
+      sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_HoppingConfigCommon_r13
+              = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_HoppingConfigCommon_r13_on;
+
+      sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = calloc(1, sizeof(long));
+      memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13, 0, sizeof(long));
+      *sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13
+              = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_ValidityTime_r13_true;
 
 
-  sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13));
-  memset(sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13));
-  sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13_PR_interval_FDD_r13;
-  sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->choice.interval_FDD_r13 = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13__interval_FDD_r13_int1;
+      sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13 = calloc(1, sizeof(SystemInfoValueTagList_r13_t));
+      SystemInfoValueTagSI_r13_t systemInfoValueTagSi_r13 = 0;
+      ASN_SEQUENCE_ADD(&sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13->list, &systemInfoValueTagSi_r13);
 
-  sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13));
-  memset(sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13));
-  sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_FDD_r13;
-  sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_FDD_r13 = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13__interval_FDD_r13_int2;
+      sib1_br_1310->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1320_IEs_t));
+      memset(sib1_br_1310->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1320_IEs_t));
+
+      /////Rel1320
+      SystemInformationBlockType1_v1320_IEs_t *sib1_br_1320 = sib1_br_1310->nonCriticalExtension;
+      sib1_br_1320->freqHoppingParametersDL_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13));
+      memset(sib1_br_1320->freqHoppingParametersDL_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13));
+
+      sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = calloc(1, sizeof(long));
+      *sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__mpdcch_pdsch_HoppingNB_r13_nb2;
 
 
-  sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = calloc(1, sizeof(long));
-  *sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = 1;
+      sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13));
+      memset(sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13));
+      sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13_PR_interval_FDD_r13;
+      sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->choice.interval_FDD_r13 = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13__interval_FDD_r13_int1;
 
-  sib1_br_1320->nonCriticalExtension = NULL;
-#endif
+      sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13));
+      memset(sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13));
+      sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_FDD_r13;
+      sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_FDD_r13 = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13__interval_FDD_r13_int2;
+
+
+      sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = calloc(1, sizeof(long));
+      *sib1_br_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = 1;
+
+      sib1_br_1320->nonCriticalExtension = NULL;
+
+#endif // ITTI ENABLED
+  }
+#endif // Rel14
 #ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message);
 #endif
