@@ -540,7 +540,6 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_WindowLength_BR_r13
 				= configuration->si_WindowLength_BR_r13[CC_id]; // 0
 
-
 			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_RepetitionPattern_r13
 				= configuration->si_RepetitionPattern_r13[CC_id]; // 0
 
@@ -587,15 +586,14 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 
 
 			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13 = configuration->startSymbolBR_r13[CC_id];
-			sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_HoppingConfigCommon_r13
-				= configuration->si_HoppingConfigCommon_r13[CC_id];
+
+            sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_HoppingConfigCommon_r13 = configuration->si_HoppingConfigCommon_r13[CC_id];
 
 			if (configuration->si_ValidityTime_r13[CC_id])
 			{
 				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = calloc(1, sizeof(long));
 				memset(sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13, 0, sizeof(long));
-				*sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13
-					= *configuration->si_ValidityTime_r13[CC_id];
+                *sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = *configuration->si_ValidityTime_r13[CC_id];
 			}
 			else
 				sib1_br_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = NULL;
@@ -650,6 +648,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 			{
 				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_FDD_r13;
 				sib1_br_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_FDD_r13 = configuration->interval_DLHoppingConfigCommonModeB_r13_val[CC_id];
+
 			}
 			else
 			{
@@ -920,7 +919,8 @@ uint8_t do_SIB23(uint8_t Mod_id,
   if (configuration->rach_maxHARQ_Msg3Tx[CC_id])
   {
       (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = calloc(1, sizeof(PreambleTransMax_t));
-      *(*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = configuration->rach_maxHARQ_Msg3Tx[CC_id]; // to be re-initialized when we find the enum
+      *(*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = *configuration->preambleTransMax_CE_r13[CC_id]; // to be re-initialized when we find the enum
+      printf("[KOGO][DEBUGGING]: preamble trans max: %ld\n", *(*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13);
   }
   else
       (*sib2_br)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = NULL;
@@ -1076,6 +1076,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
           {
               (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->present = PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13_PR_fdd_r13;
               (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->choice.fdd_r13 = configuration->mpdcch_startSF_CSS_RA_r13_val[CC_id];
+              printf("[KOGO][DEBUGGING]: mpdcch start SF RA r13 val: %ld\n", (*sib2_br)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->choice.fdd_r13);
           }
           else
           {

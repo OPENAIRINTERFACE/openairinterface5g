@@ -2485,8 +2485,8 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			       RC.config_file_name, i, ue_TransmissionMode);
 		  break;
 		}
-
-							setting_br13 = config_setting_get_member(setting_enb, ENB_CONFIG_STRING_BR);
+#ifdef Rel14
+                            setting_br13 = config_setting_get_member(component_carrier, ENB_CONFIG_STRING_BR);
 							if (setting_br13 != NULL)
 							{
                                 int hyperSFN_r13;
@@ -2704,10 +2704,12 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 								else
 									RRC_CONFIGURATION_REQ(msg_p).prach_ConfigCommon_v1310[j] = TRUE;
 							}
-							else
+#endif
+                            else
 								RRC_CONFIGURATION_REQ(msg_p).schedulingInfoSIB1_BR_r13[j] = 0;
 						}
 	    }
+
 
 	    setting_srb1 = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_SRB1);
 
