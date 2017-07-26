@@ -645,6 +645,8 @@ void *UE_thread(void *arg) {
     char threadname[128];
     int th_id;
 
+    static uint8_t thread_idx = 0;
+
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     if ( threads.iq != -1 )
@@ -747,7 +749,16 @@ void *UE_thread(void *arg) {
             } else {
                 sub_frame++;
                 sub_frame%=10;
-                UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[sub_frame%RX_NB_TH];
+                UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[thread_idx];
+                // update thread index for received subframe
+                UE->current_thread_id[sub_frame] = thread_idx;
+
+                LOG_D(PHY,"Process Subframe %d thread Idx %d \n", sub_frame, UE->current_thread_id[sub_frame]);
+
+                thread_idx++;
+                if(thread_idx>=RX_NB_TH)
+                    thread_idx = 0;
+
 
                 if (UE->mode != loop_through_memory) {
                     for (i=0; i<UE->frame_parms.nb_antennas_rx; i++)
@@ -833,6 +844,7 @@ void *UE_thread(void *arg) {
                                          UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
 
                     proc->instance_cnt_rxtx++;
+                    LOG_D( PHY, "[SCHED][UE %d] UE RX instance_cnt_rxtx %d subframe %d !!\n", UE->Mod_id, proc->instance_cnt_rxtx,proc->subframe_rx);
                     if (proc->instance_cnt_rxtx == 0) {
                       if (pthread_cond_signal(&proc->cond_rxtx) != 0) {
                         LOG_E( PHY, "[SCHED][UE %d] ERROR pthread_cond_signal for UE RX thread\n", UE->Mod_id);

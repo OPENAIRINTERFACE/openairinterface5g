@@ -50,10 +50,10 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
   uint16_t Nid_cell = (eNB_offset == 0) ? ue->frame_parms.Nid_cell : ue->measurements.adj_cell_id[eNB_offset-1];
 
   uint8_t nushift,pilot1,pilot2,pilot3;
-  uint8_t previous_sfn = ((Ns>>1) - 1 )< 0 ? 9 : (Ns>>1) - 1;
-  int **dl_ch_estimates         =ue->common_vars.common_vars_rx_data_per_thread[(Ns>>1)%RX_NB_TH].dl_ch_estimates[eNB_offset];
-  int **dl_ch_estimates_previous=ue->common_vars.common_vars_rx_data_per_thread[(previous_sfn)%RX_NB_TH].dl_ch_estimates[eNB_offset];
-  int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[(Ns>>1)%RX_NB_TH].rxdataF;
+  uint8_t previous_thread_id = ue->current_thread_id[Ns>>1]==0 ? (RX_NB_TH-1):(ue->current_thread_id[Ns>>1]-1);
+  int **dl_ch_estimates         =ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates[eNB_offset];
+  int **dl_ch_estimates_previous=ue->common_vars.common_vars_rx_data_per_thread[previous_thread_id].dl_ch_estimates[eNB_offset];
+  int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].rxdataF;
 
   if (ue->frame_parms.Ncp == 0) {  // normal prefix
     pilot1 = 4;
@@ -800,15 +800,15 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
   // do ifft of channel estimate
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)
     for (p=0; p<ue->frame_parms.nb_antenna_ports_eNB; p++) {
-      if (ue->common_vars.common_vars_rx_data_per_thread[(Ns>>1)%RX_NB_TH].dl_ch_estimates[eNB_offset][(p<<1)+aarx])
-        idft((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[(Ns>>1)%RX_NB_TH].dl_ch_estimates[eNB_offset][(p<<1)+aarx][8],
-             (int16_t*) ue->common_vars.common_vars_rx_data_per_thread[(Ns>>1)%RX_NB_TH].dl_ch_estimates_time[eNB_offset][(p<<1)+aarx],1);
+      if (ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates[eNB_offset][(p<<1)+aarx])
+        idft((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates[eNB_offset][(p<<1)+aarx][8],
+             (int16_t*) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates_time[eNB_offset][(p<<1)+aarx],1);
     }
 
 #if T_TRACER
         T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(eNB_id), T_INT(ue->Mod_id),
           T_INT(ue->proc.proc_rxtx[(Ns>>1)&1].frame_rx%1024), T_INT(ue->proc.proc_rxtx[(Ns>>1)&1].subframe_rx),
-          T_INT(0), T_BUFFER(&ue->common_vars.common_vars_rx_data_per_thread[(Ns>>1)%RX_NB_TH].dl_ch_estimates_time[eNB_offset][0][0], 512  * 4));
+          T_INT(0), T_BUFFER(&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates_time[eNB_offset][0][0], 512  * 4));
 #endif
 
   return(0);

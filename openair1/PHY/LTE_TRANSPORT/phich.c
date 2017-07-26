@@ -1078,7 +1078,7 @@ void rx_phich(PHY_VARS_UE *ue,
 
 
   LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
-  LTE_UE_PDCCH **pdcch_vars = &ue->pdcch_vars[subframe%RX_NB_TH][eNB_id];
+  LTE_UE_PDCCH **pdcch_vars = &ue->pdcch_vars[ue->current_thread_id[subframe]][eNB_id];
 
   //  uint8_t HI;
   uint8_t harq_pid = phich_subframe_to_harq_pid(frame_parms,proc->frame_rx,subframe);
