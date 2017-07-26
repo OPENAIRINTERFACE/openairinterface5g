@@ -160,6 +160,7 @@ int _do_pss_sss_extract(PHY_VARS_UE *ue,
   int32_t *pss_rxF,*pss_rxF_ext;
   int32_t *sss_rxF,*sss_rxF_ext;
   LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  uint8_t next_thread_id = ue->current_thread_id[subframe]== (RX_NB_TH-1) ? 0:(ue->current_thread_id[subframe]+1);
 
   int rx_offset = frame_parms->ofdm_symbol_size-3*12;
   uint8_t pss_symb,sss_symb;
@@ -173,7 +174,7 @@ int _do_pss_sss_extract(PHY_VARS_UE *ue,
 	    pss_symb = 6-frame_parms->Ncp;
 	    sss_symb = pss_symb-1;
 
-	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe%RX_NB_TH)].rxdataF;
+	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF;
 	    pss_rxF  =  &rxdataF[aarx][(rx_offset + (pss_symb*(frame_parms->ofdm_symbol_size)))];
 	    sss_rxF  =  &rxdataF[aarx][(rx_offset + (sss_symb*(frame_parms->ofdm_symbol_size)))];
 
@@ -183,18 +184,18 @@ int _do_pss_sss_extract(PHY_VARS_UE *ue,
 
 	    if(subframe==5 || subframe==0)
 	    {
-	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe%RX_NB_TH)].rxdataF;
+	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF;
 	    sss_rxF  =  &rxdataF[aarx][(rx_offset + (sss_symb*(frame_parms->ofdm_symbol_size)))];
 
-	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[((subframe+1)%RX_NB_TH)].rxdataF;
+	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[next_thread_id].rxdataF;
 	    pss_rxF  =  &rxdataF[aarx][(rx_offset + (pss_symb*(frame_parms->ofdm_symbol_size)))];
 	    }
 	    else if(subframe==6 || subframe==1)
 	    {
-		    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe%RX_NB_TH)].rxdataF;
+		    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF;
 		    pss_rxF  =  &rxdataF[aarx][(rx_offset + (pss_symb*(frame_parms->ofdm_symbol_size)))];
 
-		    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe+1)%RX_NB_TH].rxdataF;
+		    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[next_thread_id].rxdataF;
 		    sss_rxF  =  &rxdataF[aarx][(rx_offset + (sss_symb*(frame_parms->ofdm_symbol_size)))];
 	    }
 	    else
@@ -222,18 +223,18 @@ int _do_pss_sss_extract(PHY_VARS_UE *ue,
         {
         	if(subframe==5 || subframe==0)
         	{
-    	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe%RX_NB_TH)].rxdataF;
+    	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF;
     	    sss_rxF  =  &rxdataF[aarx][(1 + (sss_symb*(frame_parms->ofdm_symbol_size)))];
 
-    	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[((subframe+1)%RX_NB_TH)].rxdataF;
+    	    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[next_thread_id].rxdataF;
     	    pss_rxF  =  &rxdataF[aarx][(1 + (pss_symb*(frame_parms->ofdm_symbol_size)))];
         	}
     	    else if(subframe==6 || subframe==1)
     	    {
-    		    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe%RX_NB_TH)].rxdataF;
+    		    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF;
     		    pss_rxF  =  &rxdataF[aarx][(rx_offset + (pss_symb*(frame_parms->ofdm_symbol_size)))];
 
-    		    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[(subframe+1)%RX_NB_TH].rxdataF;
+    		    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[next_thread_id].rxdataF;
     		    sss_rxF  =  &rxdataF[aarx][(rx_offset + (sss_symb*(frame_parms->ofdm_symbol_size)))];
     	    }
     	    else
