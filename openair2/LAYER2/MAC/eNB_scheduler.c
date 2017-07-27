@@ -125,8 +125,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
   // clear DCI and BCCH contents before scheduling
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    DCI_pdu[CC_id]->Num_common_dci  = 0;
-    DCI_pdu[CC_id]->Num_ue_spec_dci = 0;
+    DCI_pdu[CC_id]->Num_dci  = 0;
 #if defined(Rel10) || defined(Rel14)
     eNB_mac_inst[module_idP].common_channels[CC_id].mcch_active =0;
 #endif
@@ -172,7 +171,11 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     else {
       // check uplink failure
       if ((UE_list->UE_sched_ctrl[i].ul_failure_timer>0)&&
-	  (UE_list->UE_sched_ctrl[i].ul_out_of_sync==0)) {
+	  (UE_list->UE_sched_ctrl[i].ul_out_of_sync==0) &&
+          /* do nothing if CCE allocation is impossible */
+          !CCE_allocation_infeasible(module_idP, CC_id, 0, subframeP,
+                                     get_aggregation(get_bw_index(module_idP,CC_id),eNB_UE_stats->DL_cqi[0],format1A),
+                                     rnti)) {
 	LOG_D(MAC,"UE %d rnti %x: UL Failure timer %d \n",i,rnti,UE_list->UE_sched_ctrl[i].ul_failure_timer);
 	if (UE_list->UE_sched_ctrl[i].ra_pdcch_order_sent==0) {
 	  UE_list->UE_sched_ctrl[i].ra_pdcch_order_sent=1;
@@ -1098,17 +1101,17 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   /*
   int dummy=0;
   for (i=0;
-       i<DCI_pdu[CC_id]->Num_common_dci+DCI_pdu[CC_id]->Num_ue_spec_dci;
+       i<DCI_pdu[CC_id]->Num_dci;
        i++)
     if (DCI_pdu[CC_id]->dci_alloc[i].rnti==2)
       dummy=1;
 	
   if (dummy==1)
     for (i=0;
-	 i<DCI_pdu[CC_id]->Num_common_dci+DCI_pdu[CC_id]->Num_ue_spec_dci;
+	 i<DCI_pdu[CC_id]->Num_dci;
 	 i++)
       LOG_I(MAC,"Frame %d, subframe %d: DCI %d/%d, format %d, rnti %x, NCCE %d(num_pdcch_symb %d)\n",
-	    frameP,subframeP,i,DCI_pdu[CC_id]->Num_common_dci+DCI_pdu[CC_id]->Num_ue_spec_dci,
+	    frameP,subframeP,i,DCI_pdu[CC_id]->Num_dci,
 	    DCI_pdu[CC_id]->dci_alloc[i].format,
 	    DCI_pdu[CC_id]->dci_alloc[i].rnti,
 	    DCI_pdu[CC_id]->dci_alloc[i].firstCCE,

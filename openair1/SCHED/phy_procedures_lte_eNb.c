@@ -1319,8 +1319,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
 
   // loop over all DCIs for this subframe to generate DLSCH allocations
-  for (i=0; i<DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci ; i++) {
-    LOG_D(PHY,"[eNB] Subframe %d: DCI %d/%d : rnti %x, CCEind %d\n",subframe,i,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci,DCI_pdu->dci_alloc[i].rnti,DCI_pdu->dci_alloc[i].firstCCE);
+  for (i=0; i<DCI_pdu->Num_dci; i++) {
+    LOG_D(PHY,"[eNB] Subframe %d: DCI %d/%d : rnti %x, CCEind %d\n",subframe,i,DCI_pdu->Num_dci,DCI_pdu->dci_alloc[i].rnti,DCI_pdu->dci_alloc[i].firstCCE);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DCI_INFO,DCI_pdu->dci_alloc[i].rnti);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DCI_INFO,DCI_pdu->dci_alloc[i].format);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DCI_INFO,DCI_pdu->dci_alloc[i].firstCCE);
@@ -1346,7 +1346,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   phy_config_dedicated_eNB_step2(eNB);
 
   // Now loop again over the DCIs for UL configuration
-  for (i=0; i<DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci ; i++) {
+  for (i=0; i<DCI_pdu->Num_dci; i++) {
     dci_alloc = &DCI_pdu->dci_alloc[i];
 
     if (dci_alloc->format == format0) {  // this is a ULSCH allocation
@@ -1368,7 +1368,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
 
   // if we have DCI to generate do it now
-  if ((DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci)>0) {
+  if (DCI_pdu->Num_dci>0) {
 
 
   } else { // for emulation!!
@@ -1379,13 +1379,12 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   if (eNB->abstraction_flag == 0) {
     if (do_pdcch_flag) {
-      if (DCI_pdu->Num_ue_spec_dci+DCI_pdu->Num_common_dci > 0) {
-	LOG_D(PHY,"[eNB %"PRIu8"] Frame %d, subframe %d: Calling generate_dci_top (pdcch) (common %"PRIu8",ue_spec %"PRIu8")\n",eNB->Mod_id,frame, subframe,
-	      DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci);
+      if (DCI_pdu->Num_dci > 0) {
+	LOG_D(PHY,"[eNB %"PRIu8"] Frame %d, subframe %d: Calling generate_dci_top (pdcch) (Num_dci=%d)\n",eNB->Mod_id,frame, subframe,
+	      DCI_pdu->Num_dci);
       }
 
-      num_pdcch_symbols = generate_dci_top(DCI_pdu->Num_ue_spec_dci,
-					   DCI_pdu->Num_common_dci,
+      num_pdcch_symbols = generate_dci_top(DCI_pdu->Num_dci,
 					   DCI_pdu->dci_alloc,
 					   0,
 					   AMP,
@@ -1395,15 +1394,15 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
     }
     else {
       num_pdcch_symbols = DCI_pdu->num_pdcch_symbols;
-      LOG_D(PHY,"num_pdcch_symbols %"PRIu8" (dci common %"PRIu8", dci uespec %"PRIu8")\n",num_pdcch_symbols,
-	    DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci);
+      LOG_D(PHY,"num_pdcch_symbols %"PRIu8" (Num_dci %d)\n",num_pdcch_symbols,
+	    DCI_pdu->Num_dci);
     }
   }
 
 #ifdef PHY_ABSTRACTION // FIXME this ifdef seems suspicious
   else {
     LOG_D(PHY,"[eNB %"PRIu8"] Frame %d, subframe %d: Calling generate_dci_to_emul\n",eNB->Mod_id,frame, subframe);
-    num_pdcch_symbols = generate_dci_top_emul(eNB,DCI_pdu->Num_ue_spec_dci,DCI_pdu->Num_common_dci,DCI_pdu->dci_alloc,subframe);
+    num_pdcch_symbols = generate_dci_top_emul(eNB,DCI_pdu->Num_dci,DCI_pdu->dci_alloc,subframe);
   }
 
 #endif
@@ -1414,10 +1413,10 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
 #if defined(SMBV) 
   // Sets up PDCCH and DCI table
-  if (smbv_is_config_frame(frame) && (smbv_frame_cnt < 4) && ((DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci)>0)) {
-    LOG_D(PHY,"[SMBV] Frame %3d, SF %d PDCCH, number of DCIs %d\n",frame,subframe,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci);
+  if (smbv_is_config_frame(frame) && (smbv_frame_cnt < 4) && (DCI_pdu->Num_dci>0)) {
+    LOG_D(PHY,"[SMBV] Frame %3d, SF %d PDCCH, number of DCIs %d\n",frame,subframe,DCI_pdu->Num_dci);
     dump_dci(fp,&DCI_pdu->dci_alloc[0]);
-    smbv_configure_pdcch(smbv_fname,(smbv_frame_cnt*10) + (subframe),num_pdcch_symbols,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci);
+    smbv_configure_pdcch(smbv_fname,(smbv_frame_cnt*10) + (subframe),num_pdcch_symbols,DCI_pdu->Num_dci);
   }
 #endif
 

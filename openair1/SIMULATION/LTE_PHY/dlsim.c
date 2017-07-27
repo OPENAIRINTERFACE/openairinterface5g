@@ -390,10 +390,11 @@ void fill_DCI(PHY_VARS_eNB *eNB,
           }
 
           memcpy(&dci_alloc[*num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[*num_dci].dci_length = dci_length;
-          dci_alloc[*num_dci].L          = 1;
-          dci_alloc[*num_dci].rnti       = n_rnti+k;
-          dci_alloc[*num_dci].format     = format1;
+          dci_alloc[*num_dci].dci_length   = dci_length;
+          dci_alloc[*num_dci].L            = 1;
+          dci_alloc[*num_dci].rnti         = n_rnti+k;
+          dci_alloc[*num_dci].format       = format1;
+          dci_alloc[*num_dci].search_space = DCI_UE_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[*num_dci]);
 
 	  //          printf("Generating dlsch params for user %d\n",k);
@@ -530,11 +531,12 @@ void fill_DCI(PHY_VARS_eNB *eNB,
           }
 
           memcpy(&dci_alloc[*num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[*num_dci].dci_length = dci_length;
-          dci_alloc[*num_dci].L          = 1;
-          dci_alloc[*num_dci].rnti       = SI_RNTI;
-          dci_alloc[*num_dci].format     = format1A;
-          dci_alloc[*num_dci].firstCCE       = 0;
+          dci_alloc[*num_dci].dci_length   = dci_length;
+          dci_alloc[*num_dci].L            = 1;
+          dci_alloc[*num_dci].rnti         = SI_RNTI;
+          dci_alloc[*num_dci].format       = format1A;
+          dci_alloc[*num_dci].firstCCE     = 0;
+          dci_alloc[*num_dci].search_space = DCI_COMMON_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[*num_dci]);
 
           printf("Generating dlsch params for user %d\n",k);
@@ -699,10 +701,11 @@ void fill_DCI(PHY_VARS_eNB *eNB,
           }
 
           memcpy(&dci_alloc[*num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[*num_dci].dci_length = dci_length;
-          dci_alloc[*num_dci].L          = 1;
-          dci_alloc[*num_dci].rnti       = n_rnti+k;
-          dci_alloc[*num_dci].format     = format2A;
+          dci_alloc[*num_dci].dci_length   = dci_length;
+          dci_alloc[*num_dci].L            = 1;
+          dci_alloc[*num_dci].rnti         = n_rnti+k;
+          dci_alloc[*num_dci].format       = format2A;
+          dci_alloc[*num_dci].search_space = DCI_UE_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[*num_dci]);
 
           //printf("Generating dlsch params for user %d / format 2A (%d)\n",k,format2A);
@@ -839,11 +842,12 @@ void fill_DCI(PHY_VARS_eNB *eNB,
           }
 
           memcpy(&dci_alloc[*num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[*num_dci].dci_length = dci_length;
-          dci_alloc[*num_dci].L          = 1;
-          dci_alloc[*num_dci].rnti       = SI_RNTI;
-          dci_alloc[*num_dci].format     = format1A;
-          dci_alloc[*num_dci].firstCCE       = 0;
+          dci_alloc[*num_dci].dci_length   = dci_length;
+          dci_alloc[*num_dci].L            = 1;
+          dci_alloc[*num_dci].rnti         = SI_RNTI;
+          dci_alloc[*num_dci].format       = format1A;
+          dci_alloc[*num_dci].firstCCE     = 0;
+          dci_alloc[*num_dci].search_space = DCI_COMMON_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[*num_dci]);
 
           //printf("Generating dlsch params for user %d\n",k);
@@ -1009,10 +1013,11 @@ void fill_DCI(PHY_VARS_eNB *eNB,
           }
 
           memcpy(&dci_alloc[*num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[*num_dci].dci_length = dci_length;
-          dci_alloc[*num_dci].L          = 1;
-          dci_alloc[*num_dci].rnti       = n_rnti+k;
-          dci_alloc[*num_dci].format     = format2;
+          dci_alloc[*num_dci].dci_length   = dci_length;
+          dci_alloc[*num_dci].L            = 1;
+          dci_alloc[*num_dci].rnti         = n_rnti+k;
+          dci_alloc[*num_dci].format       = format2;
+          dci_alloc[*num_dci].search_space = DCI_UE_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[*num_dci]);
 
           printf("Generating dlsch params for user %d\n",k);
@@ -1149,11 +1154,12 @@ void fill_DCI(PHY_VARS_eNB *eNB,
           }
 
           memcpy(&dci_alloc[*num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[*num_dci].dci_length = dci_length;
-          dci_alloc[*num_dci].L          = 1;
-          dci_alloc[*num_dci].rnti       = SI_RNTI;
-          dci_alloc[*num_dci].format     = format1A;
-          dci_alloc[*num_dci].firstCCE       = 0;
+          dci_alloc[*num_dci].dci_length   = dci_length;
+          dci_alloc[*num_dci].L            = 1;
+          dci_alloc[*num_dci].rnti         = SI_RNTI;
+          dci_alloc[*num_dci].format       = format1A;
+          dci_alloc[*num_dci].firstCCE     = 0;
+          dci_alloc[*num_dci].search_space = DCI_COMMON_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[*num_dci]);
 
           printf("Generating dlsch params for user %d\n",k);
@@ -1181,11 +1187,12 @@ void fill_DCI(PHY_VARS_eNB *eNB,
       case 5:
       case 6:
         memcpy(&dci_alloc[*num_dci].dci_pdu[0],&DLSCH_alloc_pdu2_1E[k],sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t));
-        dci_alloc[*num_dci].dci_length = sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t;
-        dci_alloc[*num_dci].L          = 1;
-        dci_alloc[*num_dci].rnti       = n_rnti+k;
-        dci_alloc[*num_dci].format     = format1E_2A_M10PRB;
-        dci_alloc[*num_dci].firstCCE       = 4*k;
+        dci_alloc[*num_dci].dci_length   = sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t;
+        dci_alloc[*num_dci].L            = 1;
+        dci_alloc[*num_dci].rnti         = n_rnti+k;
+        dci_alloc[*num_dci].format       = format1E_2A_M10PRB;
+        dci_alloc[*num_dci].firstCCE     = 4*k;
+        dci_alloc[*num_dci].search_space = DCI_UE_SPACE;
         printf("Generating dlsch params for user %d\n",k);
         generate_eNB_dlsch_params_from_dci(0,
 					   subframe,
@@ -1224,12 +1231,10 @@ int num_common_dci=0,num_ue_spec_dci=0,num_dci=0,num_pdcch_symbols=1;
 DCI_PDU *get_dci_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subframeP) {
 
   if (subframeP == subframe) {
-    DCI_pdu.Num_ue_spec_dci   = num_ue_spec_dci;
-    DCI_pdu.Num_common_dci    = num_common_dci;
+    DCI_pdu.Num_dci   = num_ue_spec_dci + num_common_dci;
     DCI_pdu.num_pdcch_symbols = num_pdcch_symbols;
   } else {
-    DCI_pdu.Num_ue_spec_dci   = 0;
-    DCI_pdu.Num_common_dci    = 0;
+    DCI_pdu.Num_dci   = 0;
     DCI_pdu.num_pdcch_symbols = num_pdcch_symbols;
   }
 

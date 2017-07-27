@@ -2039,8 +2039,7 @@ uint8_t get_num_pdcch_symbols(uint8_t num_dci,
   return(0);
 }
 
-uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
-                         uint8_t num_common_dci,
+uint8_t generate_dci_top(int num_dci,
                          DCI_ALLOC_t *dci_alloc,
                          uint32_t n_rnti,
                          int16_t amp,
@@ -2050,7 +2049,6 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
 {
 
   uint8_t *e_ptr,num_pdcch_symbols;
-  int8_t L;
   uint32_t i, lprime;
   uint32_t gain_lin_QPSK,kprime,kprime_mod12,mprime,nsymb,symbol_offset,tti_offset;
   int16_t re_offset;
@@ -2096,9 +2094,9 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
     break;
   }
 
-  num_pdcch_symbols = get_num_pdcch_symbols(num_ue_spec_dci+num_common_dci,dci_alloc,frame_parms,subframe);
+  num_pdcch_symbols = get_num_pdcch_symbols(num_dci,dci_alloc,frame_parms,subframe);
   //  printf("subframe %d in generate_dci_top num_pdcch_symbols = %d, num_dci %d\n",
-  //     subframe,num_pdcch_symbols,num_ue_spec_dci+num_common_dci);
+  //     subframe,num_pdcch_symbols,num_dci);
   generate_pcfich(num_pdcch_symbols,
                   amp,
                   frame_parms,
@@ -2117,50 +2115,22 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
 
   e_ptr = e;
 
-  // generate DCIs in order of decreasing aggregation level, then common/ue spec
-  // MAC is assumed to have ordered the UE spec DCI according to the RNTI-based randomization
-  for (L=3; L>=0; L--) {
-    for (i=0; i<num_common_dci; i++) {
-
-      if (dci_alloc[i].L == (uint8_t)L) {
-
+  // generate DCIs
+  for (i=0; i<num_dci; i++) {
 #ifdef DEBUG_DCI_ENCODING
-        printf("Generating common DCI %d/%d (nCCE %d) of length %d, aggregation %d (%x)\n",i,num_common_dci,dci_alloc[i].firstCCE,dci_alloc[i].dci_length,1<<dci_alloc[i].L,
-              *(unsigned int*)dci_alloc[i].dci_pdu);
-        dump_dci(frame_parms,&dci_alloc[i]);
+    printf("Generating %s DCI %d/%d (nCCE %d) of length %d, aggregation %d (%x)\n",
+           dci_alloc[i].search_space == DCI_COMMON_SPACE ? "common" : "UE",
+           i,num_dci,dci_alloc[i].firstCCE,dci_alloc[i].dci_length,1<<dci_alloc[i].L,
+          *(unsigned int*)dci_alloc[i].dci_pdu);
+    dump_dci(frame_parms,&dci_alloc[i]);
 #endif
 
-        if (dci_alloc[i].firstCCE>=0) {
-          e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
-                                e+(72*dci_alloc[i].firstCCE),
-                                dci_alloc[i].dci_length,
-                                dci_alloc[i].L,
-                                dci_alloc[i].rnti);
-        }
-      }
-    }
-
-    for (; i<num_ue_spec_dci + num_common_dci; i++) {
-
-      if (dci_alloc[i].L == (uint8_t)L) {
-
-#ifdef DEBUG_DCI_ENCODING
-        printf(" Generating UE (rnti %x) (nCCE %d) specific DCI %d of length %d, aggregation %d, format %d (%x)\n",dci_alloc[i].rnti,dci_alloc[i].firstCCE,i,dci_alloc[i].dci_length,1<<dci_alloc[i].L,dci_alloc[i].format,
-              dci_alloc[i].dci_pdu);
-        dump_dci(frame_parms,&dci_alloc[i]);
-#endif
-
-        if (dci_alloc[i].firstCCE >= 0) {
-          e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
-                                e+(72*dci_alloc[i].firstCCE),
-                                dci_alloc[i].dci_length,
-                                dci_alloc[i].L,
-                                dci_alloc[i].rnti);
-        }
-	else {
-	  
-	}
-      }
+    if (dci_alloc[i].firstCCE>=0) {
+      e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
+                            e+(72*dci_alloc[i].firstCCE),
+                            dci_alloc[i].dci_length,
+                            dci_alloc[i].L,
+                            dci_alloc[i].rnti);
     }
   }
 
@@ -2371,21 +2341,34 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
 
 #ifdef PHY_ABSTRACTION
 uint8_t generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
-                              uint8_t num_ue_spec_dci,
-                              uint8_t num_common_dci,
+                              int num_dci,
                               DCI_ALLOC_t *dci_alloc,
                               uint8_t subframe)
 {
   int n_dci, n_dci_dl;
   uint8_t ue_id;
   LTE_eNB_DLSCH_t *dlsch_eNB;
-  uint8_t num_pdcch_symbols = get_num_pdcch_symbols(num_ue_spec_dci+num_common_dci,
+  int num_ue_spec_dci;
+  int num_common_dci;
+  int i;
+  uint8_t num_pdcch_symbols = get_num_pdcch_symbols(num_dci,
                               dci_alloc,
                               &phy_vars_eNB->frame_parms,
                               subframe);
   eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].cntl.cfi=num_pdcch_symbols;
 
-  memcpy(phy_vars_eNB->dci_alloc[subframe&1],dci_alloc,sizeof(DCI_ALLOC_t)*(num_ue_spec_dci+num_common_dci));
+  num_ue_spec_dci = 0;
+  num_common_dci = 0;
+  for (i = 0; i < num_dci; i++) {
+    /* TODO: maybe useless test, to remove? */
+    if (!(dci_alloc[i].firstCCE>=0)) abort();
+    if (dci_alloc[i].search_space == DCI_COMMON_SPACE)
+      num_common_dci++;
+    else
+      num_ue_spec_dci++;
+  }
+
+  memcpy(phy_vars_eNB->dci_alloc[subframe&1],dci_alloc,sizeof(DCI_ALLOC_t)*(num_dci));
   phy_vars_eNB->num_ue_spec_dci[subframe&1]=num_ue_spec_dci;
   phy_vars_eNB->num_common_dci[subframe&1]=num_common_dci;
   eNB_transport_info[phy_vars_eNB->Mod_id][phy_vars_eNB->CC_id].num_ue_spec_dci = num_ue_spec_dci;
