@@ -168,11 +168,11 @@ init_SI(
   AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1!=NULL,PROTOCOL_RRC_CTXT_FMT" init_SI: FATAL, no memory for SIB1 allocated\n",
 	      PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 = do_SIB1(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],ctxt_pP->module_id,CC_id
+#ifdef Rel14
+								   ,FALSE
+#endif
 #if defined(ENABLE_ITTI)
 								   , configuration
-#endif
-#ifdef Rel14
-								   ,0
 #endif
 								   );
 
@@ -180,31 +180,35 @@ init_SI(
 
   
 #ifdef Rel14
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_BR = do_SIB1(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],ctxt_pP->module_id,CC_id
+  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_BR = 0;
+  if (configuration->schedulingInfoSIB1_BR_r13[CC_id]>0) {
+    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_BR = (uint8_t*) malloc16(32);
+    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_BR = do_SIB1(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],ctxt_pP->module_id,CC_id
+									,TRUE
 #if defined(ENABLE_ITTI)
-								   , configuration
+									, configuration
 #endif
-								   ,1
-								   );
+									);
+  }
 #endif
-
+  
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23 = (uint8_t*) malloc16(64);
   AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23!=NULL,"cannot allocate memory for SIB");
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23 = do_SIB23(
 								     ctxt_pP->module_id,
-								     
 								     CC_id
+#ifdef Rel14
+								     ,FALSE
+#endif
 #if defined(ENABLE_ITTI)
 								     , configuration
-#endif
-#ifdef Rel14
-								     ,0
 #endif
 								     );
 
   AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23 != 255,"FATAL, RC.rrc[mod].carrier[CC_id].sizeof_SIB23 == 255");
 
 #ifdef Rel14
+  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23_BR = 0;
   if (configuration->schedulingInfoSIB1_BR_r13[CC_id]>0) {
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23_BR = (uint8_t*) malloc16(64);
     AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23_BR!=NULL,"cannot allocate memory for SIB");
@@ -215,9 +219,6 @@ init_SI(
 									  configuration,
 #endif
 									  0);
-  }
-  else {
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23_BR = 0;
   }
 #endif
 
