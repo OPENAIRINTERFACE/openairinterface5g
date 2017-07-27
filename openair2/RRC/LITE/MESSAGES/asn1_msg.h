@@ -78,14 +78,15 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
 @param br_flag Do for BL/CE UE configuration
 @return size of encoded bit stream in bytes*/
 
-uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id 
-#if defined(ENABLE_ITTI)
-		,RrcConfigurationReq *configuration
-#endif
+uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id
 #ifdef Rel14
-		,int br_flag
+                , BOOLEAN_t brOption
 #endif
-		);
+#if defined(ENABLE_ITTI)
+                ,RrcConfigurationReq *configuration
+#endif
+               );
+
 
 /**
 \brief Generate a default configuration for SIB2/SIB3 in one System Information PDU (eNB).
@@ -100,11 +101,11 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id
 
 uint8_t do_SIB23(uint8_t Mod_id,
                  int CC_id
+#ifdef Rel14
+		 , BOOLEAN_t brOption
+#endif
 #if defined(ENABLE_ITTI)
                  , RrcConfigurationReq *configuration
-#endif
-#ifdef Rel14
-		 , int br_flag
 #endif
                 );
 

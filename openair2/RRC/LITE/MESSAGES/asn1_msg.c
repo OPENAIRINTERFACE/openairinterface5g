@@ -289,11 +289,11 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
 
 uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 		int Mod_id,int CC_id
+#ifdef Rel14
+                , BOOLEAN_t brOption
+#endif
 #if defined(ENABLE_ITTI)
                 , RrcConfigurationReq *configuration
-#endif
-#ifdef Rel14
-		, int br_flag
 #endif
 		)
 {
@@ -304,26 +304,26 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   asn_enc_rval_t enc_rval;
   SchedulingInfo_t schedulingInfo;
   SIB_Type_t sib_type;
+
   uint8_t *buffer;
   BCCH_DL_SCH_Message_t *bcch_message;
   SystemInformationBlockType1_t **sib1;
+  SystemInformationBlockType1_BR_r13_t **sib1_br;
 
 #ifdef Rel14
-  if (br_flag==0) {
-    buffer       = carrier->SIB1;
-    bcch_message = &carrier->siblock1;
-    sib1         = &carrier->sib1;
-  }
-  else {
+  if (brOption) {
     buffer       = carrier->SIB1_BR;
     bcch_message = &carrier->siblock1_BR;
     sib1         = &carrier->sib1_BR;
   }
-#else
-  buffer       = carrier->SIB1;
-  bcch_message = &carrier->siblock1;
-  sib1         = &carrier->sib1;
-#endif  
+  else
+#endif
+    {
+      buffer       = carrier->SIB1;
+      bcch_message = &carrier->siblock1;
+      sib1         = &carrier->sib1;
+    }
+
   memset(bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
   bcch_message->message.present = BCCH_DL_SCH_MessageType_PR_c1;
   bcch_message->message.choice.c1.present = BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1;
@@ -473,6 +473,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   (*sib1)->si_WindowLength = SystemInformationBlockType1__si_WindowLength_ms20;
   (*sib1)->systemInfoValueTag = 0;
 
+
 #ifdef Rel14
   (*sib1)->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v890_IEs_t));
 
@@ -495,16 +496,12 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   sib1_1130->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1250_IEs_t));
   memset(sib1_1130->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1250_IEs_t));
 
-
   ///Rel12
   SystemInformationBlockType1_v1250_IEs_t *sib1_1250 = sib1_1130->nonCriticalExtension;
   sib1_1250->cellAccessRelatedInfo_v1250.category0Allowed_r12 = NULL; // long*
   sib1_1250->cellSelectionInfo_v1250 = NULL;
   sib1_1250->freqBandIndicatorPriority_r12 = 0; // long* // FIXME
   sib1_1250->nonCriticalExtension = NULL;
-
-
-
 
   ////Rel1310
 #if defined(ENABLE_ITTI)
@@ -789,6 +786,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 #endif
 #endif
 
+
 #ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message);
 #endif
@@ -831,12 +829,13 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 uint8_t do_SIB23(uint8_t Mod_id,
 
 		 int CC_id
+#ifdef Rel14
+		 , BOOLEAN_t brOption
+#endif
 #if defined(ENABLE_ITTI)
 		 , RrcConfigurationReq *configuration
 #endif
-#ifdef Rel14
-		 , int br_flag
-#endif
+
 		 )
 {
   struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib2_part,*sib3_part;
@@ -854,21 +853,19 @@ uint8_t do_SIB23(uint8_t Mod_id,
   SystemInformationBlockType2_t **sib2;
   RadioResourceConfig           *rrconfig;
 #ifdef Rel14
-  if (br_flag == 0) {
-    buffer   = RC.rrc[Mod_id]->carrier[CC_id].SIB23;
-    sib2     = &RC.rrc[Mod_id]->carrier[CC_id].sib2;
-    rrconfig = &configuration->radioresourceconfig[CC_id];
-  }
-  else {
+  if (brOption) {
     buffer   = RC.rrc[Mod_id]->carrier[CC_id].SIB23_BR;
     sib2     = &RC.rrc[Mod_id]->carrier[CC_id].sib2_BR;
     rrconfig = &configuration->radioresourceconfig_BR[CC_id];
   }
-#else
-  buffer   = RC.rrc[Mod_id]->carrier[CC_id].SIB23;
-  sib2     = &RC.rrc[Mod_id]->carrier[CC_id].sib2;
-  rrconfig = &configuration->radioresourceconfig[CC_id];
+  else
 #endif
+    {
+      buffer   = RC.rrc[Mod_id]->carrier[CC_id].SIB23;
+      sib2     = &RC.rrc[Mod_id]->carrier[CC_id].sib2;
+      rrconfig = &configuration->radioresourceconfig[CC_id];
+    }
+    
   SystemInformationBlockType3_t       **sib3        = &RC.rrc[Mod_id]->carrier[CC_id].sib3;
 #if defined(Rel10) || defined(Rel14)
   SystemInformationBlockType13_r9_t   **sib13       = &RC.rrc[Mod_id]->carrier[CC_id].sib13;
@@ -958,6 +955,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   // LTE-M +kogo
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1 = calloc(1, sizeof(struct RACH_ConfigCommon__ext1));
   memset((*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1, 0, sizeof(struct RACH_ConfigCommon__ext1));
+
 
   if (rrconfig->rach_maxHARQ_Msg3Tx)
     {
@@ -1108,6 +1106,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
       ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->rsrp_ThresholdsPrachInfoList_r13.list, &rsrp_range);
 
       (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13 = NULL;
+
 
       if (rrconfig->mpdcch_startSF_CSS_RA_r13)
 	{

@@ -3773,6 +3773,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 #endif
 	    }
 	  
+
 	    setting_srb1 = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_SRB1);
 
 	    if (setting_srb1 != NULL) {
