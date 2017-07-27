@@ -214,11 +214,14 @@ init_SI(
     AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23_BR!=NULL,"cannot allocate memory for SIB");
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23_BR = do_SIB23(
 									  ctxt_pP->module_id,
-									  CC_id,
-#if defined(ENABLE_ITTI)
-									  configuration,
+                                      CC_id
+#ifdef Rel14
+                                      ,TRUE
 #endif
-									  0);
+#if defined(ENABLE_ITTI)
+                                      ,configuration
+                );
+#endif
   }
 #endif
 

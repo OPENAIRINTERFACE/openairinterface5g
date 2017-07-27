@@ -180,11 +180,11 @@ typedef struct RrcConfigurationReq_s {
 
 
   RadioResourceConfig     radioresourceconfig[MAX_NUM_CCs];
-
+  RadioResourceConfig     radioresourceconfig_BR[MAX_NUM_CCs];
    
 #ifdef Rel14
 
-  RadioResourceConfig     radioresourceconfig_BR[MAX_NUM_CCs];
+
   //MIB
   long	 		  schedulingInfoSIB1_BR_r13[MAX_NUM_CCs];
   //SIB1 BR options

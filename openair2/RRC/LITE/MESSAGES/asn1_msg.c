@@ -852,11 +852,13 @@ uint8_t do_SIB23(uint8_t Mod_id,
   uint8_t                       *buffer;
   SystemInformationBlockType2_t **sib2;
   RadioResourceConfig           *rrconfig;
+
 #ifdef Rel14
   if (brOption) {
     buffer   = RC.rrc[Mod_id]->carrier[CC_id].SIB23_BR;
     sib2     = &RC.rrc[Mod_id]->carrier[CC_id].sib2_BR;
     rrconfig = &configuration->radioresourceconfig_BR[CC_id];
+
   }
   else
 #endif
@@ -955,7 +957,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
   // LTE-M +kogo
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1 = calloc(1, sizeof(struct RACH_ConfigCommon__ext1));
   memset((*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1, 0, sizeof(struct RACH_ConfigCommon__ext1));
-
 
   if (rrconfig->rach_maxHARQ_Msg3Tx)
     {
