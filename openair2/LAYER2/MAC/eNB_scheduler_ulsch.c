@@ -1142,7 +1142,7 @@ abort();
 	    
 	    LOG_D(MAC,"[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for next UE_id %d, format 0\n", module_idP,CC_id,frameP,subframeP,UE_id);
 #ifdef DEBUG
-	    dump_dci(frame_parms, &DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci-1]);
+	    dump_dci(frame_parms, &DCI_pdu->dci_alloc[DCI_pdu->Num_dci-1]);
 #endif
 	    
           }

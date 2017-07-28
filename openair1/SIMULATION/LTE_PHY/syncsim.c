@@ -1101,11 +1101,12 @@ int main(int argc, char **argv)
       ((DCI1_5MHz_FDD_t*)&DLSCH_alloc_pdu)->mcs             = 0;
       ((DCI1_5MHz_FDD_t*)&DLSCH_alloc_pdu)->ndi             = 1;
       ((DCI1_5MHz_FDD_t*)&DLSCH_alloc_pdu)->rv              = 0;
-      dci_alloc[0].dci_length = sizeof_DCI1_5MHz_FDD_t;
+      dci_alloc[0].dci_length   = sizeof_DCI1_5MHz_FDD_t;
       memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu,sizeof(DCI1_5MHz_FDD_t));
-      dci_alloc[0].L          = 2;
-      dci_alloc[0].rnti       = n_rnti;
-      dci_alloc[0].format     = format1;
+      dci_alloc[0].L            = 2;
+      dci_alloc[0].rnti         = n_rnti;
+      dci_alloc[0].format       = format1;
+      dci_alloc[0].search_space = DCI_UE_SPACE;
     } else {
       ((DCI1E_5MHz_2A_M10PRB_TDD_t*)&DLSCH_alloc_pdu)->rah             = 0;
       ((DCI1E_5MHz_2A_M10PRB_TDD_t*)&DLSCH_alloc_pdu)->rballoc         = DLSCH_RB_ALLOC;
@@ -1117,15 +1118,15 @@ int main(int argc, char **argv)
       ((DCI1E_5MHz_2A_M10PRB_TDD_t*)&DLSCH_alloc_pdu)->rv              = 0;
       ((DCI1E_5MHz_2A_M10PRB_TDD_t*)&DLSCH_alloc_pdu)->tpmi            = (transmission_mode>=5 ? 5 : 0);  // precoding
       ((DCI1E_5MHz_2A_M10PRB_TDD_t*)&DLSCH_alloc_pdu)->dl_power_off    = (transmission_mode==5 ? 0 : 1);
-      dci_alloc[0].dci_length = sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t;
+      dci_alloc[0].dci_length   = sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t;
       memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu,sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t));
-      dci_alloc[0].L          = 2;
-      dci_alloc[0].rnti       = n_rnti;
-      dci_alloc[0].format     = format1E_2A_M10PRB;
+      dci_alloc[0].L            = 2;
+      dci_alloc[0].rnti         = n_rnti;
+      dci_alloc[0].format       = format1E_2A_M10PRB;
+      dci_alloc[0].search_space = DCI_UE_SPACE;
     }
 
     num_pdcch_symbols = generate_dci_top(1,
-                                         0,
                                          dci_alloc,
                                          0,
                                          AMP,
@@ -1134,7 +1135,6 @@ int main(int argc, char **argv)
                                          subframe);
     /*
     num_pdcch_symbols = generate_dci_top(1,
-           0,
            dci_alloc,
            0,
            AMP,
