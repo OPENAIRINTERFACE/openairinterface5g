@@ -1431,6 +1431,11 @@ void init_openair1(void)
 	PHY_vars_UE_g[UE_id][CC_id]->mac_enabled=1;
 
       PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[0][0]->crnti = 0x1235 + UE_id;
+
+      for (uint8_t i=0; i<RX_NB_TH_MAX; i++) {
+          PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[i][0]->dciFormat      = 0;
+          PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[i][0]->agregationLevel      = 0xFF;
+      }
       PHY_vars_UE_g[UE_id][CC_id]->current_dlsch_cqi[0] = 10;
 
       LOG_I(EMU, "UE %d mode is initialized to %d\n", UE_id, PHY_vars_UE_g[UE_id][CC_id]->UE_mode[0] );

@@ -3056,12 +3056,14 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
          return;
       } // rnti match
     }  // CCEmap_cand == 0
-    if ( agregationLevel != 0xFF &&
+/*    
+	if ( agregationLevel != 0xFF &&
         (format_c == format0 && m==0 && si_rnti != SI_RNTI))
     {
       //Only valid for OAI : Save some processing time when looking for DCI format0. From the log we see the DCI only on candidate 0.
       return;
     }
+*/
   } // candidate loop
 }
 
@@ -3651,9 +3653,6 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       ((format0_found==1)&&(format_c_found==1)))
     return(dci_cnt);
 
-  if ((CCEmap0==0xffff)||
-      ((format0_found==1)&&(format_c_found==1)))
-    return(dci_cnt);
 
   //printf("[DCI search] Format 0 aggregation 2 dci_cnt %d\n",dci_cnt);
   }

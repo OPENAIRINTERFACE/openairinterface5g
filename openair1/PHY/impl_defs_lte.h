@@ -1034,6 +1034,9 @@ typedef struct {
   uint32_t dci_missed;
   /// nCCE for PUCCH per subframe
   uint8_t nCCE[10];
+  //Check for specific DCIFormat and AgregationLevel
+  uint8_t dciFormat;
+  uint8_t agregationLevel;
 } LTE_UE_PDCCH;
 
 #define PBCH_A 24

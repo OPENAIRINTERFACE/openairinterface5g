@@ -3097,7 +3097,7 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
     //printf("Decode SIB frame param agregation + DCI %d %d \n",agregationLevel,dciFormat);
 
     //agregation level == FF means no configuration on
-    if(agregationLevel == 0xFF || ue->decode_SIB)
+    if(ue->pdcch_vars[ue->current_thread_id[subframe_rx]][eNB_id]->agregationLevel == 0xFF || ue->decode_SIB)
     {
         // search all possible dcis
         dci_cnt = dci_decoding_procedure(ue,
@@ -3112,8 +3112,8 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
         // search C RNTI dci
         dci_cnt = dci_CRNTI_decoding_procedure(ue,
                 dci_alloc_rx,
-                dciFormat,
-                agregationLevel,
+                ue->pdcch_vars[ue->current_thread_id[subframe_rx]][eNB_id]->dciFormat,
+                ue->pdcch_vars[ue->current_thread_id[subframe_rx]][eNB_id]->agregationLevel,
                 eNB_id,
                 subframe_rx);
     }
