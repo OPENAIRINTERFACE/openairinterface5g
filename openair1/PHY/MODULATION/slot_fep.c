@@ -259,6 +259,7 @@ int front_end_fft(PHY_VARS_UE *ue,
   unsigned int slot_offset;
   unsigned int frame_length_samples = frame_parms->samples_per_tti * 10;
   unsigned int rx_offset;
+  uint8_t  threadId;
 
   /*LTE_UE_DLSCH_t **dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id];
   unsigned char harq_pid = dlsch_ue[0]->current_harq_pid;
@@ -321,8 +322,10 @@ int front_end_fft(PHY_VARS_UE *ue,
 
 
 
+  threadId = ue->current_thread_id[Ns>>1];
   for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-    memset(&common_vars->common_vars_rx_data_per_thread[(Ns>>1)&0x1].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int));
+      // change thread index
+    memset(&common_vars->common_vars_rx_data_per_thread[threadId].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int));
 
     rx_offset = sample_offset + slot_offset + nb_prefix_samples0 + subframe_offset - SOFFSET;
     // Align with 256 bit
@@ -340,12 +343,12 @@ int front_end_fft(PHY_VARS_UE *ue,
                (void *)&common_vars->rxdata[aa][rx_offset % frame_length_samples],
                frame_parms->ofdm_symbol_size*sizeof(int));
         dft((int16_t *)tmp_dft_in,
-            (int16_t *)&common_vars->common_vars_rx_data_per_thread[(Ns>>1)&0x1].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
+            (int16_t *)&common_vars->common_vars_rx_data_per_thread[threadId].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       } else { // use dft input from RX buffer directly
         start_meas(&ue->rx_dft_stats);
 
         dft((int16_t *)&common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
-            (int16_t *)&common_vars->common_vars_rx_data_per_thread[(Ns>>1)&0x1].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
+            (int16_t *)&common_vars->common_vars_rx_data_per_thread[threadId].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
         stop_meas(&ue->rx_dft_stats);
 
       }
@@ -355,7 +358,8 @@ int front_end_fft(PHY_VARS_UE *ue,
 
 #ifdef DEBUG_FEP
       //  if (ue->frame <100)
-      LOG_I(PHY,"slot_fep: frame %d: slot %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, slot_offset %d, subframe_offset %d, sample_offset %d,rx_offset %d, frame_length_samples %d\n", ue->proc.proc_rxtx[(Ns>>1)&1].frame_rx,Ns, symbol,
+      LOG_I(PHY,"slot_fep: frame %d: slot %d, threadId %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, slot_offset %d, subframe_offset %d, sample_offset %d,rx_offset %d, frame_length_samples %d\n",
+              ue->proc.proc_rxtx[threadId].frame_rx,Ns, threadId,symbol,
           nb_prefix_samples,nb_prefix_samples0,slot_offset,subframe_offset,sample_offset,rx_offset,frame_length_samples);
 #endif
 
@@ -371,11 +375,11 @@ int front_end_fft(PHY_VARS_UE *ue,
                (void *)&common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
                frame_parms->ofdm_symbol_size*sizeof(int));
         dft((int16_t *)tmp_dft_in,
-            (int16_t *)&common_vars->common_vars_rx_data_per_thread[(Ns>>1)&0x1].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
+            (int16_t *)&common_vars->common_vars_rx_data_per_thread[threadId].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       } else { // use dft input from RX buffer directly
 
         dft((int16_t *)&common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
-            (int16_t *)&common_vars->common_vars_rx_data_per_thread[(Ns>>1)&0x1].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
+            (int16_t *)&common_vars->common_vars_rx_data_per_thread[threadId].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       }
 
       stop_meas(&ue->rx_dft_stats);
@@ -385,7 +389,7 @@ int front_end_fft(PHY_VARS_UE *ue,
 
     #ifdef DEBUG_FEP
         //  if (ue->frame <100)
-        printf("slot_fep: frame %d: symbol %d rx_offset %d\n", ue->proc.proc_rxtx[(Ns>>1)&1].frame_rx, symbol,rx_offset);
+        printf("slot_fep: frame %d: symbol %d rx_offset %d\n", ue->proc.proc_rxtx[threadId].frame_rx, symbol,rx_offset);
     #endif
   }
   return(0);
