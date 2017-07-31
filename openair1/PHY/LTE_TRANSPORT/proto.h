@@ -1348,7 +1348,6 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     @param i_mod Modulation order of the interfering stream
 */
 int32_t rx_pdsch(PHY_VARS_UE *phy_vars_ue,
-                 UE_rxtx_proc_t *proc,
                  PDSCH_t type,
                  uint8_t eNB_id,
                  uint8_t eNB_id_i,

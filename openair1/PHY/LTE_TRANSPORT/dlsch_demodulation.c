@@ -89,7 +89,6 @@ extern void print_shorts(char *s,int16_t *x);
 
 
 int rx_pdsch(PHY_VARS_UE *ue,
-             UE_rxtx_proc_t *proc,
              PDSCH_t type,
              unsigned char eNB_id,
              unsigned char eNB_id_i, //if this == ue->n_connected_eNB, we assume MU interference
@@ -519,15 +518,17 @@ int rx_pdsch(PHY_VARS_UE *ue,
 #endif
 
     //wait until pdcch is decoded
-    proc->channel_level = 1;
+    //proc->channel_level = 1;
   }
 
+  /*
   uint32_t wait = 0;
   while(proc->channel_level == 0)
   {
       usleep(1);
       wait++;
   }
+  */
 
 #if T_TRACER
     if (type == PDSCH)

@@ -418,7 +418,7 @@ typedef struct {
   uint8_t llr_slot1_available;
   uint8_t dci_slot0_available;
   uint8_t first_symbol_available;
-  uint8_t channel_level;
+  //uint8_t channel_level;
   /// scheduling parameters for fep_slot1 thread
   struct sched_param sched_param_fep_slot1;
 
@@ -940,7 +940,8 @@ typedef struct {
   time_stats_t dlsch_rate_unmatching_stats;
   time_stats_t dlsch_turbo_decoding_stats;
   time_stats_t dlsch_deinterleaving_stats;
-  time_stats_t dlsch_llr_stats[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
+  time_stats_t dlsch_llr_stats;
+  time_stats_t dlsch_llr_stats_parallelization[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
   time_stats_t dlsch_unscrambling_stats;
   time_stats_t dlsch_rate_matching_stats;
   time_stats_t dlsch_turbo_encoding_stats;

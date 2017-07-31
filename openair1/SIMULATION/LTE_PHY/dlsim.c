@@ -2263,7 +2263,7 @@ int main(int argc, char **argv)
     }
 
     for (SNR=snr0; SNR<snr1; SNR+=snr_step) {
-      UE->proc.proc_rxtx[subframe&1].frame_rx=0;
+      UE->proc.proc_rxtx[UE->current_thread_id[subframe]].frame_rx=0;
       errs[0]=0;
       errs[1]=0;
       errs[2]=0;
@@ -2332,7 +2332,7 @@ int main(int argc, char **argv)
       struct list time_vector_rx_dec;
       initialize(&time_vector_rx_dec);
 
-      eNB_rxtx_proc_t *proc_eNB = &eNB->proc.proc_rxtx[subframe&1];
+      eNB_rxtx_proc_t *proc_eNB = &eNB->proc.proc_rxtx[UE->current_thread_id[subframe]];
 
       for (trials = 0; trials<n_frames; trials++) {
 	//printf("Trial %d\n",trials);
@@ -2517,7 +2517,7 @@ int main(int argc, char **argv)
 	  DL_channel(eNB,UE,subframe,awgn_flag,SNR,tx_lev,hold_channel,abstx,num_rounds,trials,round,eNB2UE,s_re,s_im,r_re,r_im,csv_fd);
 
 
-	  UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[subframe&1];
+	  UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[UE->current_thread_id[subframe]];
 	  proc->subframe_rx = subframe;
 	  UE->UE_mode[0] = PUSCH;
 
@@ -2539,7 +2539,9 @@ int main(int argc, char **argv)
 						   (void *)&dci_alloc[0].dci_pdu,
 						   n_rnti,
 						   dci_alloc[0].format,
-						   UE->dlsch[proc->subframe_rx&0x1][eNB_id],
+						   UE->pdcch_vars[UE->current_thread_id[proc->subframe_rx]][eNB_id],
+						   UE->pdsch_vars[UE->current_thread_id[proc->subframe_rx]][eNB_id],
+                           UE->dlsch[UE->current_thread_id[proc->subframe_rx]][0],
 						   &UE->frame_parms,
 						   UE->pdsch_config_dedicated,
 						   SI_RNTI,
@@ -2756,7 +2758,7 @@ int main(int argc, char **argv)
 			 subframe);
 	  }
 
-	  UE->proc.proc_rxtx[subframe&1].frame_rx++;
+	  UE->proc.proc_rxtx[UE->current_thread_id[subframe]].frame_rx++;
 	}  //round
 
         //      printf("\n");
@@ -2767,7 +2769,7 @@ int main(int argc, char **argv)
         //len = chbch_stats_read(stats_buffer,NULL,0,4096);
         //printf("%s\n\n",stats_buffer);
 
-        if (UE->proc.proc_rxtx[subframe&1].frame_rx % 10 == 0) {
+        if (UE->proc.proc_rxtx[UE->current_thread_id[subframe]].frame_rx % 10 == 0) {
           UE->bitrate[eNB_id] = (UE->total_TBS[eNB_id] - UE->total_TBS_last[eNB_id])*10;
           LOG_D(PHY,"[UE %d] Calculating bitrate: total_TBS = %d, total_TBS_last = %d, bitrate = %d kbits/s\n",UE->Mod_id,UE->total_TBS[eNB_id],UE->total_TBS_last[eNB_id],
                 UE->bitrate[eNB_id]/1000);
@@ -2789,7 +2791,7 @@ int main(int argc, char **argv)
         double t_rx = (double)UE->phy_proc_rx[subframe&0x1].p_time/cpu_freq_GHz/1000.0;
         double t_rx_fft = (double)UE->ofdm_demod_stats.p_time/cpu_freq_GHz/1000.0;
         double t_rx_demod = (double)UE->dlsch_rx_pdcch_stats.p_time/cpu_freq_GHz/1000.0;
-        double t_rx_dec = (double)UE->dlsch_decoding_stats[subframe&1].p_time/cpu_freq_GHz/1000.0;
+        double t_rx_dec = (double)UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].p_time/cpu_freq_GHz/1000.0;
 
         if (t_tx > t_tx_max)
           t_tx_max = t_tx;
@@ -3002,12 +3004,12 @@ int main(int argc, char **argv)
         printf("|__ Statistcs                           std: %fus median %fus q1 %fus q3 %fus \n",std_phy_proc_rx_demod, rx_demod_median, rx_demod_q1, rx_demod_q3);
         printf("DLSCH unscrambling time                             :%f us (%d trials)\n",(double)UE->dlsch_unscrambling_stats.diff/UE->dlsch_unscrambling_stats.trials/cpu_freq_GHz/1000.0,
                UE->dlsch_unscrambling_stats.trials);
-        std_phy_proc_rx_dec = sqrt((double)UE->dlsch_decoding_stats[subframe&1].diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                                   2)/UE->dlsch_decoding_stats[subframe&1].trials - pow((double)UE->dlsch_decoding_stats[subframe&1].diff/UE->dlsch_decoding_stats[subframe&1].trials/cpu_freq_GHz/1000,2));
+        std_phy_proc_rx_dec = sqrt((double)UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].diff_square/pow(cpu_freq_GHz,2)/pow(1000,
+                                   2)/UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].trials - pow((double)UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].diff/UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].trials/cpu_freq_GHz/1000,2));
         printf("DLSCH Decoding time (%02.2f Mbit/s, avg iter %1.2f)    :%f us (%d trials, max %f)\n",
                eNB->dlsch[0][0]->harq_processes[0]->TBS/1000.0,(double)avg_iter/iter_trials,
-               (double)UE->dlsch_decoding_stats[subframe&1].diff/UE->dlsch_decoding_stats[subframe&1].trials/cpu_freq_GHz/1000.0,UE->dlsch_decoding_stats[subframe&1].trials,
-               (double)UE->dlsch_decoding_stats[subframe&1].max/cpu_freq_GHz/1000.0);
+               (double)UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].diff/UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].trials/cpu_freq_GHz/1000.0,UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].trials,
+               (double)UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].max/cpu_freq_GHz/1000.0);
         printf("|__ Statistcs                           std: %fus median %fus q1 %fus q3 %fus \n",std_phy_proc_rx_dec, rx_dec_median, rx_dec_q1, rx_dec_q3);
         printf("|__ DLSCH Rate Unmatching                               :%f us (%d trials)\n",
                (double)UE->dlsch_rate_unmatching_stats.diff/UE->dlsch_rate_unmatching_stats.trials/cpu_freq_GHz/1000.0,UE->dlsch_rate_unmatching_stats.trials);
@@ -3195,7 +3197,7 @@ int main(int argc, char **argv)
                 UE->dlsch_rx_pdcch_stats.trials,
                 UE->dlsch_llr_stats.trials,
                 UE->dlsch_unscrambling_stats.trials,
-                UE->dlsch_decoding_stats[subframe&1].trials
+                UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].trials
                );
         fprintf(time_meas_fd,"%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;",
                 get_time_meas_us(&eNB->phy_proc_tx),
@@ -3208,7 +3210,7 @@ int main(int argc, char **argv)
                 get_time_meas_us(&UE->dlsch_rx_pdcch_stats),
                 3*get_time_meas_us(&UE->dlsch_llr_stats),
                 get_time_meas_us(&UE->dlsch_unscrambling_stats),
-                get_time_meas_us(&UE->dlsch_decoding_stats[subframe&1])
+                get_time_meas_us(&UE->dlsch_decoding_stats[UE->current_thread_id[subframe]])
                );
         //fprintf(time_meas_fd,"eNB_PROC_TX_STD;eNB_PROC_TX_MAX;eNB_PROC_TX_MIN;eNB_PROC_TX_MED;eNB_PROC_TX_Q1;eNB_PROC_TX_Q3;eNB_PROC_TX_DROPPED;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f;%f;%f;%d;", std_phy_proc_tx, t_tx_max, t_tx_min, tx_median, tx_q1, tx_q3, n_tx_dropped);
@@ -3248,7 +3250,7 @@ int main(int argc, char **argv)
         UE->dlsch_rx_pdcch_stats.trials,
         UE->dlsch_llr_stats.trials,
         UE->dlsch_unscrambling_stats.trials,
-        UE->dlsch_decoding_stats[subframe&1].trials);
+        UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].trials);
         */
         printf("[passed] effective rate : %f  (%2.1f%%,%f)): log and break \n",rate*effective_rate, 100*effective_rate, rate );
 	test_passed = 1;

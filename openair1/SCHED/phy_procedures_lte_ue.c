@@ -3721,11 +3721,10 @@ void ue_pdsch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, int eNB_id, PDSC
       uint8_t slot = 0;
       if(m >= ue->frame_parms.symbols_per_tti>>1)
         slot = 1;
-      start_meas(&ue->dlsch_llr_stats[ue->current_thread_id[subframe_rx]][slot]);
+      start_meas(&ue->dlsch_llr_stats_parallelization[ue->current_thread_id[subframe_rx]][slot]);
 #endif
       // process DLSCH received in first slot
       rx_pdsch(ue,
-           proc,
 	       pdsch,
 	       eNB_id,
 	       eNB_id_i,
@@ -3737,11 +3736,11 @@ void ue_pdsch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, int eNB_id, PDSC
 	       i_mod,
 	       dlsch0->current_harq_pid);
 #if UE_TIMING_TRACE
-      stop_meas(&ue->dlsch_llr_stats[ue->current_thread_id[subframe_rx]][slot]);
+      stop_meas(&ue->dlsch_llr_stats_parallelization[ue->current_thread_id[subframe_rx]][slot]);
 #if DISABLE_LOG_X
-    printf("[AbsSFN %d.%d] LLR Computation Symbol %d %5.2f \n",proc->frame_rx,subframe_rx,m,ue->dlsch_llr_stats[ue->current_thread_id[subframe_rx]][slot].p_time/(cpuf*1000.0));
+    printf("[AbsSFN %d.%d] LLR Computation Symbol %d %5.2f \n",proc->frame_rx,subframe_rx,m,ue->dlsch_llr_stats_parallelization[ue->current_thread_id[subframe_rx]][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_D(PHY, "[AbsSFN %d.%d] LLR Computation Symbol %d %5.2f \n",proc->frame_rx,subframe_rx,m,ue->dlsch_llr_stats[ue->current_thread_id[subframe_rx]][slot].p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %d.%d] LLR Computation Symbol %d %5.2f \n",proc->frame_rx,subframe_rx,m,ue->dlsch_llr_stats_parallelization[ue->current_thread_id[subframe_rx]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
 
@@ -4622,7 +4621,7 @@ int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *pr
     proc->dci_slot0_available=0;
     proc->first_symbol_available=0;
     proc->chan_est_slot1_available=0;
-    proc->channel_level=0;
+    //proc->channel_level=0;
 
     if (pthread_mutex_lock(&proc->mutex_slot1_dl_processing) != 0) {
         LOG_E( PHY, "[SCHED][UE %d][Slot0] error locking mutex for UE slot1 dl processing\n",ue->Mod_id );
