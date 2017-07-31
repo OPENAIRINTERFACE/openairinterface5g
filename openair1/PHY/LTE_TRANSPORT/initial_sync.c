@@ -494,7 +494,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
     #endif
 
 // send sync status to higher layers later when timing offset converge to target timing
-#if 0
+#if OAISIM
       if (ue->mac_enabled==1) {
 	LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
 	//mac_resynch();
