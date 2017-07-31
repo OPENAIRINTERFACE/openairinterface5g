@@ -698,6 +698,9 @@ void *UE_thread(void *arg) {
                 }
 		AssertFatal ( 0== pthread_mutex_unlock(&UE->proc.mutex_synch), "");
             } else {
+#if OAISIM
+              usleep(500);
+#else
                 // grab 10 ms of signal into dummy buffer
                 if (UE->mode != loop_through_memory) {
                     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
@@ -710,6 +713,7 @@ void *UE_thread(void *arg) {
                                               UE->frame_parms.samples_per_tti,
                                               UE->frame_parms.nb_antennas_rx);
                 }
+#endif
             }
 
         } // UE->is_synchronized==0
