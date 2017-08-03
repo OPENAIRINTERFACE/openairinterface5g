@@ -74,7 +74,7 @@ void dump_mch(PHY_VARS_UE *ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword,in
   write_output(fname,vname,ue->pdsch_vars_MCH[eNB_id]->dl_ch_magb0[0],12*N_RB_DL*nsymb_pmch,1,1);
 
   write_output("mch00_ch0.m","pmch00_ch0",
-               &(ue->common_vars.common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates[eNB_id][0][0]),
+               &(ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][0][0]),
                ue->frame_parms.ofdm_symbol_size*12,1,1);
 
   write_output("rxsig_mch.m","rxs_mch",
@@ -969,8 +969,8 @@ int rx_pmch(PHY_VARS_UE *ue,
 
   //printf("*********************mch: symbol %d\n",symbol);
 
-  mch_extract_rbs(common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].rxdataF,
-                  common_vars->common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates[eNB_id],
+  mch_extract_rbs(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF,
+                  common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id],
                   pdsch_vars[eNB_id]->rxdataF_ext,
                   pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                   symbol,

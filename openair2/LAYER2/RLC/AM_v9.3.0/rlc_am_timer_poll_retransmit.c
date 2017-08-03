@@ -88,8 +88,8 @@ rlc_am_check_timer_poll_retransmit(
           /* Look for the first retransmittable PDU starting from vtS - 1 */
 		  while (sn != sn_end) {
 			tx_data_pdu_buffer_p = &rlc_pP->tx_data_pdu_buffer[sn % RLC_AM_WINDOW_SIZE];
-			AssertFatal (tx_data_pdu_buffer_p->mem_block != NULL, "RLC AM Tpoll Retx expiry sn=%d is empty vtA=%d vtS=%d LcId=%d\n",
-					sn, rlc_pP->vt_a,rlc_pP->vt_s,rlc_pP->channel_id);
+			AssertFatal (tx_data_pdu_buffer_p->mem_block != NULL, "RLC AM Tpoll Retx expiry sn=%d ack=%d is empty vtA=%d vtS=%d LcId=%d\n",
+					sn, tx_data_pdu_buffer_p->flags.ack,rlc_pP->vt_a,rlc_pP->vt_s,rlc_pP->channel_id);
 		    if ((tx_data_pdu_buffer_p->flags.ack == 0) && (tx_data_pdu_buffer_p->flags.max_retransmit == 0)) {
 		    	tx_data_pdu_buffer_p->flags.retransmit = 1;
 		    	tx_data_pdu_buffer_p->retx_payload_size = tx_data_pdu_buffer_p->payload_size;

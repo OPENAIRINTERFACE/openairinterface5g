@@ -175,7 +175,7 @@ int main(int argc, char **argv)
 
   int aarx,aatx;
   double channelx,channely;
-  double sigma2, sigma2_dB=10,SNR,SNR2,snr0=-2.0,snr1,SNRmeas,rate,saving_bler=0;
+  double sigma2, sigma2_dB=10,SNR,SNR2=0,snr0=-2.0,snr1,SNRmeas,rate,saving_bler=0;
   double input_snr_step=.2,snr_int=30;
   double blerr;
 

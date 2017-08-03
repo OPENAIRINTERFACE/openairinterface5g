@@ -802,7 +802,8 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                           unsigned char first_symbol_flag,
                           unsigned short nb_rb,
                           uint16_t pbch_pss_sss_adjust,
-                          short **llr16p);
+                          //short **llr16p,
+                          uint32_t llr_offset);
 
 
 /** \brief This function generates log-likelihood ratios (decoder input) for single-stream QPSK received waveforms.
@@ -823,7 +824,7 @@ int32_t dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
                        uint8_t first_symbol_flag,
                        uint16_t nb_rb,
                        uint16_t pbch_pss_sss_adj,
-                       int16_t **llr128p,
+                       //int16_t **llr128p,
                        uint8_t beamforming_mode);
 
 /**
@@ -909,7 +910,8 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
                      uint16_t pbch_pss_sss_adjust,
-                     int16_t **llr_save,
+                     //int16_t **llr_save,
+                     uint32_t llr_offset,
                      uint8_t beamforming_mode);
 
 
@@ -1451,8 +1453,7 @@ void dci_encoding(uint8_t *a,
                   uint16_t rnti);
 
 /*! \brief Top-level DCI entry point. This routine codes an set of DCI PDUs and performs PDCCH modulation, interleaving and mapping.
-  \param num_ue_spec_dci  Number of UE specific DCI pdus to encode
-  \param num_common_dci Number of Common DCI pdus to encode
+  \param num_dci  Number of DCI pdus to encode
   \param dci_alloc Allocation vectors for each DCI pdu
   \param n_rnti n_RNTI (see )
   \param amp Amplitude of QPSK symbols
@@ -1461,8 +1462,7 @@ void dci_encoding(uint8_t *a,
   \param sub_frame_offset subframe offset in frame
   @returns Number of PDCCH symbols
 */
-uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
-                         uint8_t num_common_dci,
+uint8_t generate_dci_top(int num_dci,
                          DCI_ALLOC_t *dci_alloc,
                          uint32_t n_rnti,
                          int16_t amp,
@@ -1471,8 +1471,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
                          uint32_t sub_frame_offset);
 
 uint8_t generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
-                              uint8_t num_ue_spec_dci,
-                              uint8_t num_common_dci,
+                              int num_dci,
                               DCI_ALLOC_t *dci_alloc,
                               uint8_t subframe);
 
@@ -1521,6 +1520,12 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
                                 int16_t eNB_id,
                                 uint8_t subframe);
 
+uint16_t dci_CRNTI_decoding_procedure(PHY_VARS_UE *ue,
+                                DCI_ALLOC_t *dci_alloc,
+                                uint8_t DCIFormat,
+                                uint8_t agregationLevel,
+                                int16_t eNB_id,
+                                uint8_t subframe);
 
 uint16_t dci_decoding_procedure_emul(LTE_UE_PDCCH **lte_ue_pdcch_vars,
                                      uint8_t num_ue_spec_dci,
@@ -1695,6 +1700,8 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                       void *dci_pdu,
                                       rnti_t rnti,
                                       DCI_format_t dci_format,
+                                      LTE_UE_PDCCH *pdcch_vars,
+                                      LTE_UE_PDSCH *pdsch_vars,
                                       LTE_UE_DLSCH_t **dlsch,
                                       LTE_DL_FRAME_PARMS *frame_parms,
                                       PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
