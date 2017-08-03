@@ -699,6 +699,7 @@ void *UE_thread(void *arg) {
 		AssertFatal ( 0== pthread_mutex_unlock(&UE->proc.mutex_synch), "");
             } else {
 #if OAISIM
+              (void)dummy_rx; /* avoid gcc warnings */
               usleep(500);
 #else
                 // grab 10 ms of signal into dummy buffer
