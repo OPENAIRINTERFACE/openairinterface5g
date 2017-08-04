@@ -88,16 +88,16 @@ typedef enum {
 
 
 // number of active slices for  past and current time
-int n_active_slices = 2;
-int n_active_slices_current = 2;
+int n_active_slices = 1;
+int n_active_slices_current = 1;
 
 // ue to slice mapping
 int slicing_strategy = UEID_TO_SLICEID;
 int slicing_strategy_current = UEID_TO_SLICEID;
 
 // RB share for each slice for past and current time
-float slice_percentage[MAX_NUM_SLICES] = {0.5, 0.5, 0.0, 0.0};
-float slice_percentage_current[MAX_NUM_SLICES] = {0.5, 0.5, 0.0, 0.0};
+float slice_percentage[MAX_NUM_SLICES] = {1.0, 1.0, 0.0, 0.0};
+float slice_percentage_current[MAX_NUM_SLICES] = {1.0, 1.0, 0.0, 0.0};
 float total_slice_percentage = 0;
 
 // MAX MCS for each slice for past and current time
