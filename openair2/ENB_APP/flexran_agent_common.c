@@ -1013,6 +1013,10 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
       cell_conf[i]->srs_mac_up_pts = flexran_get_srs_MaxUpPts(enb_id,i);
       cell_conf[i]->has_srs_mac_up_pts = 1;
 
+
+      cell_conf[i]->op_dl_freq = flexran_agent_get_operating_dl_freq (0);
+      cell_conf[i]->has_op_dl_freq = 1;
+
       if (flexran_get_enable64QAM(enb_id,i) == 0) {
 	cell_conf[i]->enable_64qam = PROTOCOL__FLEX_QAM__FLEQ_MOD_16QAM;
       } else if(flexran_get_enable64QAM(enb_id,i) == 1) {

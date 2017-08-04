@@ -956,3 +956,11 @@ int flexran_get_antenna_ports(mid_t mod_id, int CC_id){
   return frame_parms->nb_antenna_ports_eNB;
 
 }
+
+
+float flexran_agent_get_operating_dl_freq (mid_t cc_id) {
+        const Enb_properties_array_t* enb_properties = enb_config_get();
+        return (enb_properties->properties[0]->downlink_frequency[cc_id] / 1000000);
+}
+
+

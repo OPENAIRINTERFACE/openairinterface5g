@@ -299,3 +299,6 @@ int flexran_get_lcg(mid_t ue_id, mid_t lc_id);
 
 /* Get direction of logical channel with id lc_id */
 int flexran_get_direction(mid_t ue_id, mid_t lc_id);
+
+/*Gety downlink frequency*/
+float flexran_agent_get_operating_dl_freq (mid_t cc_id);
