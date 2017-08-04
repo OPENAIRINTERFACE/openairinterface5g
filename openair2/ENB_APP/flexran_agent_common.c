@@ -1014,7 +1014,7 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
       cell_conf[i]->has_srs_mac_up_pts = 1;
 
 
-      cell_conf[i]->op_dl_freq = flexran_agent_get_operating_dl_freq (0);
+      cell_conf[i]->op_dl_freq = flexran_agent_get_operating_dl_freq (i);
       cell_conf[i]->has_op_dl_freq = 1;
 
       if (flexran_get_enable64QAM(enb_id,i) == 0) {
