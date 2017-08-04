@@ -300,5 +300,17 @@ int flexran_get_lcg(mid_t ue_id, mid_t lc_id);
 /* Get direction of logical channel with id lc_id */
 int flexran_get_direction(mid_t ue_id, mid_t lc_id);
 
-/*Gety downlink frequency*/
-float flexran_agent_get_operating_dl_freq (mid_t cc_id);
+/*Get downlink frequency*/
+float flexran_agent_get_operating_dl_freq (mid_t mod_id, int cc_id);
+
+/*Get uplink frequency*/
+float flexran_agent_get_operating_ul_freq (mid_t mod_id, int cc_id);
+
+/*Get eutra band*/
+int flexran_agent_get_operating_eutra_band (mid_t mod_id, int cc_id);
+
+/*Get downlink ref signal power*/
+int flexran_agent_get_operating_pdsch_refpower (mid_t mod_id, int cc_id);
+
+/*Get uplink power*/
+int flexran_agent_get_operating_pusch_p0 (mid_t mod_id, int cc_id);
