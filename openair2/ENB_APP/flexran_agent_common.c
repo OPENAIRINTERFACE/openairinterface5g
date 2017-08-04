@@ -1013,20 +1013,20 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
       cell_conf[i]->srs_mac_up_pts = flexran_get_srs_MaxUpPts(enb_id,i);
       cell_conf[i]->has_srs_mac_up_pts = 1;
 
-      cell_conf[i]->op_dl_freq = flexran_agent_get_operating_dl_freq (enb_id,i);
-      cell_conf[i]->has_op_dl_freq = 1;
+      cell_conf[i]->dl_freq = flexran_agent_get_operating_dl_freq (enb_id,i);
+      cell_conf[i]->has_dl_freq = 1;
 
-      cell_conf[i]->op_ul_freq = flexran_agent_get_operating_ul_freq (enb_id, i);
-      cell_conf[i]->has_op_ul_freq = 1;
+      cell_conf[i]->ul_freq = flexran_agent_get_operating_ul_freq (enb_id, i);
+      cell_conf[i]->has_ul_freq = 1;
 
-      cell_conf[i]->op_eutra_band = flexran_agent_get_operating_eutra_band (enb_id,i);
-      cell_conf[i]->has_op_eutra_band = 1;
+      cell_conf[i]->eutra_band = flexran_agent_get_operating_eutra_band (enb_id,i);
+      cell_conf[i]->has_eutra_band = 1;
 
-      cell_conf[i]->op_dl_pdsch_power = flexran_agent_get_operating_pdsch_refpower(enb_id, i);
-      cell_conf[i]->has_op_dl_pdsch_power = 1;
+      cell_conf[i]->dl_pdsch_power = flexran_agent_get_operating_pdsch_refpower(enb_id, i);
+      cell_conf[i]->has_dl_pdsch_power = 1;
 
-      cell_conf[i]->op_ul_pusch_power = flexran_agent_get_operating_pusch_p0 (enb_id,i);
-      cell_conf[i]->has_op_ul_pusch_power = 1;
+      cell_conf[i]->ul_pusch_power = flexran_agent_get_operating_pusch_p0 (enb_id,i);
+      cell_conf[i]->has_ul_pusch_power = 1;
  
 
       if (flexran_get_enable64QAM(enb_id,i) == 0) {
