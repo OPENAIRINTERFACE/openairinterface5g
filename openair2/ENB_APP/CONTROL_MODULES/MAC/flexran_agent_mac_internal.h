@@ -101,6 +101,10 @@ int parse_dl_scheduler_config(mid_t mod_id, yaml_parser_t *parser);
 
 int parse_dl_scheduler_parameters(mid_t mod_id, yaml_parser_t *parser);
 
+int parse_ul_scheduler_config(mid_t mod_id, yaml_parser_t *parser);
+
+int parse_ul_scheduler_parameters(mid_t mod_id, yaml_parser_t *parser);
+
 int load_dl_scheduler_function(mid_t mod_id, const char *function_name);
 
 #endif /*FLEXRAN_AGENT_MAC_INTERNAL_H_*/
