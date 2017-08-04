@@ -88,16 +88,16 @@ typedef enum {
 
 
 // number of active slices for  past and current time
-int n_active_slices = 2;
-int n_active_slices_current = 2;
+int n_active_slices = 1;
+int n_active_slices_current = 1;
 
 // ue to slice mapping
 int slicing_strategy = UEID_TO_SLICEID;
 int slicing_strategy_current = UEID_TO_SLICEID;
 
 // RB share for each slice for past and current time
-float slice_percentage[MAX_NUM_SLICES] = {0.5, 0.5, 0.0, 0.0};
-float slice_percentage_current[MAX_NUM_SLICES] = {0.5, 0.5, 0.0, 0.0};
+float slice_percentage[MAX_NUM_SLICES] = {1.0, 1.0, 0.0, 0.0};
+float slice_percentage_current[MAX_NUM_SLICES] = {1.0, 1.0, 0.0, 0.0};
 float total_slice_percentage = 0;
 
 // MAX MCS for each slice for past and current time
@@ -495,7 +495,7 @@ void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
     }
   }
   
-  // Store the DLSCH buffer for each logical channel
+  /* Store the DLSCH buffer for each logical channel for each UE */
   _store_dlsch_buffer (Mod_id,slice_id,frameP,subframeP);
 
   // Calculate the number of RBs required by each UE on the basis of logical channel's buffer
@@ -1044,9 +1044,10 @@ flexran_schedule_ue_dl_spec_common(mid_t   mod_id,
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
       
       if (eNB_UE_stats==NULL) {
-	LOG_D(MAC,"[eNB] Cannot find eNB_UE_stats\n");
-        //  mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
-	continue;
+
+        	LOG_D(MAC,"[eNB] Cannot find eNB_UE_stats\n");
+                //  mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
+        	continue;
       }
       
       if (flexran_slice_member(UE_id, slice_id) == 0)
@@ -1062,28 +1063,29 @@ flexran_schedule_ue_dl_spec_common(mid_t   mod_id,
       case 1:
       case 2:
       case 7:
-	aggregation = get_aggregation(get_bw_index(mod_id,CC_id), 
+        	aggregation = get_aggregation(get_bw_index(mod_id,CC_id), 
 				      eNB_UE_stats->DL_cqi[0],
 				      format1);
-	break;
+      	break;
       case 3:
-	aggregation = get_aggregation(get_bw_index(mod_id,CC_id), 
+        	aggregation = get_aggregation(get_bw_index(mod_id,CC_id), 
 				      eNB_UE_stats->DL_cqi[0],
 				      format2A);
-	break;
+      	break;
       default:
-	LOG_W(MAC,"Unsupported transmission mode %d\n", mac_xface->get_transmission_mode(mod_id,CC_id,rnti));
-	aggregation = 2;
+        	LOG_W(MAC,"Unsupported transmission mode %d\n", mac_xface->get_transmission_mode(mod_id,CC_id,rnti));
+        	aggregation = 2;
       }
      
       if ((ue_sched_ctl->pre_nb_available_rbs[CC_id] == 0) ||  // no RBs allocated 
 	  CCE_allocation_infeasible(mod_id, CC_id, 0, subframe, aggregation, rnti)) {
-        LOG_D(MAC,"[eNB %d] Frame %d : no RB allocated for UE %d on CC_id %d: continue \n",
-              mod_id, frame, UE_id, CC_id);
-        //if(mac_xface->get_transmission_mode(module_idP,rnti)==5)
-        continue; //to next user (there might be rbs availiable for other UEs in TM5
-        // else
-        //  break;
+
+            LOG_D(MAC,"[eNB %d] Frame %d : no RB allocated for UE %d on CC_id %d: continue \n",
+                  mod_id, frame, UE_id, CC_id);
+            //if(mac_xface->get_transmission_mode(module_idP,rnti)==5)
+            continue; //to next user (there might be rbs availiable for other UEs in TM5
+            // else
+            //  break;
       }
 
       if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD)  {
@@ -1106,26 +1108,28 @@ flexran_schedule_ue_dl_spec_common(mid_t   mod_id,
       dl_data[num_ues_added]->n_rlc_pdu = 0;
       dl_data[num_ues_added]->has_serv_cell_index = 1;
       dl_data[num_ues_added]->serv_cell_index = CC_id;
-      
-      nb_available_rb = ue_sched_ctl->pre_nb_available_rbs[CC_id];
+            
       flexran_get_harq(mod_id, CC_id, UE_id, frame, subframe, &harq_pid, &round, openair_harq_DL);
       sdu_length_total=0;
       mcs = cqi_to_mcs[flexran_get_ue_wcqi(mod_id, UE_id)];
       //      LOG_I(FLEXRAN_AGENT, "The MCS is %d\n", mcs);
       mcs = cmin(mcs,flexran_slice_maxmcs(slice_id));
-#ifdef EXMIMO
+// #ifdef EXMIMO
 
-       if (mac_xface->get_transmission_mode(mod_id, CC_id, rnti) == 5) {
-	  mcs = cqi_to_mcs[flexran_get_ue_wcqi(mod_id, UE_id)];
-	  mcs =  cmin(mcs,16);
-       }
+//        if (mac_xface->get_transmission_mode(mod_id, CC_id, rnti) == 5) {
+// 	  mcs = cqi_to_mcs[flexran_get_ue_wcqi(mod_id, UE_id)];
+// 	  mcs =  cmin(mcs,16);
+//        }
 
-#endif
+// #endif
 
+      /*Get pre available resource blocks based on buffers*/ 
+      nb_available_rb = ue_sched_ctl->pre_nb_available_rbs[CC_id];
       // initializing the rb allocation indicator for each UE
        for(j = 0; j < flexran_get_N_RBG(mod_id, CC_id); j++) {
-        UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j] = 0;
-	rballoc_sub[j] = 0;
+
+          UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j] = 0;
+        	rballoc_sub[j] = 0;
       }
 
       /* LOG_D(MAC,"[eNB %d] Frame %d: Scheduling UE %d on CC_id %d (rnti %x, harq_pid %d, round %d, rb %d, cqi %d, mcs %d, rrc %d)\n", */
@@ -1146,72 +1150,74 @@ flexran_schedule_ue_dl_spec_common(mid_t   mod_id,
       /* process retransmission  */
       if (round > 0) {
 
-	LOG_D(FLEXRAN_AGENT, "There was a retransmission just now and the round was %d\n", round);
+      	LOG_D(FLEXRAN_AGENT, "There was a retransmission just now and the round was %d\n", round);
 
-	if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
-	  UE_list->UE_template[CC_id][UE_id].DAI++;
-	  update_ul_dci(mod_id, CC_id, rnti, UE_list->UE_template[CC_id][UE_id].DAI);
-	  LOG_D(MAC,"DAI update: CC_id %d subframeP %d: UE %d, DAI %d\n",
-		CC_id, subframe,UE_id,UE_list->UE_template[CC_id][UE_id].DAI);
-	}
+      	if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
+      	  UE_list->UE_template[CC_id][UE_id].DAI++;
+      	  update_ul_dci(mod_id, CC_id, rnti, UE_list->UE_template[CC_id][UE_id].DAI);
+      	  LOG_D(MAC,"DAI update: CC_id %d subframeP %d: UE %d, DAI %d\n",
+      		CC_id, subframe,UE_id,UE_list->UE_template[CC_id][UE_id].DAI);
+      	}
 
-	mcs = UE_list->UE_template[CC_id][UE_id].mcs[harq_pid];
+      	mcs = UE_list->UE_template[CC_id][UE_id].mcs[harq_pid];
 
-	  // get freq_allocation
-	nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
-	  
-	/*TODO: Must add this to FlexRAN agent API */
-	dci_tbs = mac_xface->get_TBS_DL(mcs, nb_rb);
+      	  // get freq_allocation
+      	nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
+      	  
+      	/*TODO: Must add this to FlexRAN agent API */
+      	dci_tbs = mac_xface->get_TBS_DL(mcs, nb_rb);
 
-	if (nb_rb <= nb_available_rb) {
-	  
-	  if(nb_rb == ue_sched_ctl->pre_nb_available_rbs[CC_id]) {
-	    for(j = 0; j < flexran_get_N_RBG(mod_id, CC_id); j++) { // for indicating the rballoc for each sub-band
-	      UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j] = ue_sched_ctl->rballoc_sub_UE[CC_id][j];
-            }
-	  } else {
-	    nb_rb_temp = nb_rb;
-	    j = 0;
+      	if (nb_rb <= nb_available_rb) {
+      	  
+      	  if(nb_rb == ue_sched_ctl->pre_nb_available_rbs[CC_id]) {
+      	    for(j = 0; j < flexran_get_N_RBG(mod_id, CC_id); j++) { // for indicating the rballoc for each sub-band
+      	      UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j] = ue_sched_ctl->rballoc_sub_UE[CC_id][j];
+                  }
+      	  } else {
+      	    nb_rb_temp = nb_rb;
+      	    j = 0;
 
-	    while((nb_rb_temp > 0) && (j < flexran_get_N_RBG(mod_id, CC_id))) {
-	      if(ue_sched_ctl->rballoc_sub_UE[CC_id][j] == 1) {
-		UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j] = ue_sched_ctl->rballoc_sub_UE[CC_id][j];
-		
-		if((j == flexran_get_N_RBG(mod_id, CC_id) - 1) &&
-		   ((flexran_get_N_RB_DL(mod_id, CC_id) == 25)||
-		    (flexran_get_N_RB_DL(mod_id, CC_id) == 50))) {
-		  nb_rb_temp = nb_rb_temp - min_rb_unit[CC_id]+1;
-		} else {
-		  nb_rb_temp = nb_rb_temp - min_rb_unit[CC_id];
-		}
-	      }
-	      j = j + 1;
-	    }
-	  }
+      	    while((nb_rb_temp > 0) && (j < flexran_get_N_RBG(mod_id, CC_id))) {
+      	      if(ue_sched_ctl->rballoc_sub_UE[CC_id][j] == 1) {
+      		UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j] = ue_sched_ctl->rballoc_sub_UE[CC_id][j];
+      		
+      		if((j == flexran_get_N_RBG(mod_id, CC_id) - 1) &&
+      		   ((flexran_get_N_RB_DL(mod_id, CC_id) == 25)||
+      		    (flexran_get_N_RB_DL(mod_id, CC_id) == 50))) {
+      		  nb_rb_temp = nb_rb_temp - min_rb_unit[CC_id]+1;
+      		} else {
+      		  nb_rb_temp = nb_rb_temp - min_rb_unit[CC_id];
+      		}
+      	      }
+      	      j = j + 1;
+      	    }
+      	  }
 
-	  nb_available_rb -= nb_rb;
-	  PHY_vars_eNB_g[mod_id][CC_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = nb_rb;
-	  PHY_vars_eNB_g[mod_id][CC_id]->mu_mimo_mode[UE_id].dl_pow_off = ue_sched_ctl->dl_pow_off[CC_id];
-	  
-	  for(j=0; j < flexran_get_N_RBG(mod_id, CC_id); j++) {
-	    PHY_vars_eNB_g[mod_id][CC_id]->mu_mimo_mode[UE_id].rballoc_sub[j] = UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j];
-	    rballoc_sub[j] = UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j];
-	  }
+      	  nb_available_rb -= nb_rb;
+      	  PHY_vars_eNB_g[mod_id][CC_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = nb_rb;
+      	  PHY_vars_eNB_g[mod_id][CC_id]->mu_mimo_mode[UE_id].dl_pow_off = ue_sched_ctl->dl_pow_off[CC_id];
+      	  
+      	  for(j=0; j < flexran_get_N_RBG(mod_id, CC_id); j++) {
+      	    PHY_vars_eNB_g[mod_id][CC_id]->mu_mimo_mode[UE_id].rballoc_sub[j] = UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j];
+      	    rballoc_sub[j] = UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j];
+      	  }
 
-	  // Keep the old NDI, do not toggle
-	  ndi = UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
-	  tpc = UE_list->UE_template[CC_id][UE_id].oldTPC[harq_pid];
-	  UE_list->UE_template[CC_id][UE_id].mcs[harq_pid] = mcs;
+      	  // Keep the old NDI, do not toggle
+      	  ndi = UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+      	  tpc = UE_list->UE_template[CC_id][UE_id].oldTPC[harq_pid];
+      	  UE_list->UE_template[CC_id][UE_id].mcs[harq_pid] = mcs;
 
-	  ue_has_transmission = 1;
-	  num_ues_added++;
-	} else {
-	  LOG_D(MAC,"[eNB %d] Frame %d CC_id %d : don't schedule UE %d, its retransmission takes more resources than we have\n",
-                mod_id, frame, CC_id, UE_id);
-	  ue_has_transmission = 0;
-	}
-	//End of retransmission
-      } else { /* This is a potentially new SDU opportunity */
+      	  ue_has_transmission = 1;
+      	  num_ues_added++;
+      	} else {
+      	  LOG_D(MAC,"[eNB %d] Frame %d CC_id %d : don't schedule UE %d, its retransmission takes more resources than we have\n",
+                      mod_id, frame, CC_id, UE_id);
+      	  ue_has_transmission = 0;
+      	}
+      	//End of retransmission
+      }
+
+       else { /* This is a potentially new SDU opportunity */
 	rlc_status.bytes_in_buffer = 0;
         // Now check RLC information to compute number of required RBs
         // get maximum TBS size for RLC request
@@ -1265,11 +1271,14 @@ flexran_schedule_ue_dl_spec_common(mid_t   mod_id,
 	       //Fill in as much as possible
 	       data_to_request = cmin(dci_tbs - ta_len - header_len - sdu_length_total, rlc_status.bytes_in_buffer);
 	       LOG_D(FLEXRAN_AGENT, "Will request %d bytes from channel %d\n", data_to_request, j);
+
 	       if (data_to_request < 128) { //The header will be one byte less
-		 header_len--;
-		 header_len_last = 2;
-	       } else {
-		 header_len_last = 3;
+        		 header_len--;
+        		 header_len_last = 2;
+	       }
+          else {
+
+        		 header_len_last = 3;
 	       }
 	       /* if (j == 1 || j == 2) {
 		  data_to_request+=0; 
@@ -1364,7 +1373,8 @@ flexran_schedule_ue_dl_spec_common(mid_t   mod_id,
             for(j = 0; j < flexran_get_N_RBG(mod_id, CC_id); j++) { // for indicating the rballoc for each sub-band
               UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j] = ue_sched_ctl->rballoc_sub_UE[CC_id][j];
             }
-          } else {
+          }
+           else {
 	    nb_rb_temp = nb_rb;
             j = 0;
 	    LOG_D(MAC, "[TEST]Will only partially fill the bitmap\n");
@@ -1412,12 +1422,12 @@ flexran_schedule_ue_dl_spec_common(mid_t   mod_id,
 	  
           UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid] = nb_rb;
 
-	  if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
-            UE_list->UE_template[CC_id][UE_id].DAI++;
-            //  printf("DAI update: subframeP %d: UE %d, DAI %d\n",subframeP,UE_id,UE_list->UE_template[CC_id][UE_id].DAI);
+	  // if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
+   //          UE_list->UE_template[CC_id][UE_id].DAI++;
+   //          //  printf("DAI update: subframeP %d: UE %d, DAI %d\n",subframeP,UE_id,UE_list->UE_template[CC_id][UE_id].DAI);
 	    //#warning only for 5MHz channel
-            update_ul_dci(mod_id, CC_id, rnti, UE_list->UE_template[CC_id][UE_id].DAI);
-          }
+          //   update_ul_dci(mod_id, CC_id, rnti, UE_list->UE_template[CC_id][UE_id].DAI);
+          // }
 
 	  // do PUCCH power control
           // this is the normalized RX power
@@ -1475,189 +1485,189 @@ flexran_schedule_ue_dl_spec_common(mid_t   mod_id,
 	  ue_has_transmission = 0;
 	}
       } // End of new scheduling
-      
+        
       // If we has transmission or retransmission
       if (ue_has_transmission) {
-	switch (mac_xface->get_transmission_mode(mod_id, CC_id, rnti)) {
-	case 1:
-	case 2:
-	default:
-	  dl_dci->has_res_alloc = 1;
-	  dl_dci->res_alloc = 0;
-	  dl_dci->has_vrb_format = 1;
-	  dl_dci->vrb_format = PROTOCOL__FLEX_VRB_FORMAT__FLVRBF_LOCALIZED;
-	  dl_dci->has_format = 1;
-	  dl_dci->format = PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1;
-	  dl_dci->has_rb_bitmap = 1;
-	  dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, rballoc_sub);
-	  dl_dci->has_rb_shift = 1;
-	  dl_dci->rb_shift = 0;
-	  dl_dci->n_ndi = 1;
-	  dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
-	  dl_dci->ndi[0] = ndi;
-	  dl_dci->n_rv = 1;
-	  dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
-	  dl_dci->rv[0] = round & 3;
-	  dl_dci->has_tpc = 1;
-	  dl_dci->tpc = tpc;
-	  dl_dci->n_mcs = 1;
-	  dl_dci->mcs = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_mcs);
-	  dl_dci->mcs[0] = mcs;
-	  dl_dci->n_tbs_size = 1;
-	  dl_dci->tbs_size = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_tbs_size);
-	  dl_dci->tbs_size[0] = dci_tbs;
-	  if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
-	    dl_dci->has_dai = 1;
-	    dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
-	  }
-	  break;
-	case 3:
-	  dl_dci->has_res_alloc = 1;
-	  dl_dci->res_alloc = 0;
-	  dl_dci->has_vrb_format = 1;
-	  dl_dci->vrb_format = PROTOCOL__FLEX_VRB_FORMAT__FLVRBF_LOCALIZED;
-	  dl_dci->has_format = 1;
-	  dl_dci->format = PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_2A;
-	  dl_dci->has_rb_bitmap = 1;
-	  dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, rballoc_sub);
-	  dl_dci->has_rb_shift = 1;
-	  dl_dci->rb_shift = 0;
-	  dl_dci->n_ndi = 2;
-	  dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
-	  dl_dci->ndi[0] = ndi;
-	  dl_dci->ndi[1] = ndi;
-	  dl_dci->n_rv = 2;
-	  dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
-	  dl_dci->rv[0] = round & 3;
-	  dl_dci->rv[1] = round & 3;
-	  dl_dci->has_tpc = 1;
-	  dl_dci->tpc = tpc;
-	  dl_dci->n_mcs = 2;
-	  dl_dci->mcs = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_mcs);
-	  dl_dci->mcs[0] = mcs;
-	  dl_dci->mcs[1] = mcs;
-	  dl_dci->n_tbs_size = 2;
-	  dl_dci->tbs_size = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_tbs_size);
-	  dl_dci->tbs_size[0] = dci_tbs;
-	  dl_dci->tbs_size[1] = dci_tbs;
-	  if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
-	    dl_dci->has_dai = 1;
-	    dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
-	  }
-	  break;
-	case 4:
-	  dl_dci->has_res_alloc = 1;
-	  dl_dci->res_alloc = 0;
-	  dl_dci->has_vrb_format = 1;
-	  dl_dci->vrb_format = PROTOCOL__FLEX_VRB_FORMAT__FLVRBF_LOCALIZED;
-	  dl_dci->has_format = 1;
-	  dl_dci->format = PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_2A;
-	  dl_dci->has_rb_bitmap = 1;
-	  dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, rballoc_sub);
-	  dl_dci->has_rb_shift = 1;
-	  dl_dci->rb_shift = 0;
-	  dl_dci->n_ndi = 2;
-	  dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
-	  dl_dci->ndi[0] = ndi;
-	  dl_dci->ndi[1] = ndi;
-	  dl_dci->n_rv = 2;
-	  dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
-	  dl_dci->rv[0] = round & 3;
-	  dl_dci->rv[1] = round & 3;
-	  dl_dci->has_tpc = 1;
-	  dl_dci->tpc = tpc;
-	  dl_dci->n_mcs = 2;
-	  dl_dci->mcs = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_mcs);
-	  dl_dci->mcs[0] = mcs;
-	  dl_dci->mcs[1] = mcs;
-	  dl_dci->n_tbs_size = 2;
-	  dl_dci->tbs_size = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_tbs_size);
-	  dl_dci->tbs_size[0] = dci_tbs;
-	  dl_dci->tbs_size[1] = dci_tbs;
-	  if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
-	    dl_dci->has_dai = 1;
-	    dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
-	  }
-	  break;
-	case 5:
-	  dl_dci->has_res_alloc = 1;
-	  dl_dci->res_alloc = 0;
-	  dl_dci->has_vrb_format = 1;
-	  dl_dci->vrb_format = PROTOCOL__FLEX_VRB_FORMAT__FLVRBF_LOCALIZED;
-	  dl_dci->has_format = 1;
-	  dl_dci->format = PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1D;
-	  dl_dci->has_rb_bitmap = 1;
-	  dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, rballoc_sub);
-	  dl_dci->has_rb_shift = 1;
-	  dl_dci->rb_shift = 0;
-	  dl_dci->n_ndi = 1;
-	  dl_dci->ndi[0] = ndi;
-	  dl_dci->n_rv = 1;
-	  dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
-	  dl_dci->rv[0] = round & 3;
-	  dl_dci->has_tpc = 1;
-	  dl_dci->tpc = tpc;
-	  dl_dci->n_mcs = 1;
-	  dl_dci->mcs = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_mcs);
-	  dl_dci->mcs[0] = mcs;
-	  dl_dci->n_tbs_size = 1;
-	  dl_dci->tbs_size = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_tbs_size);
-	  dl_dci->tbs_size[0] = dci_tbs;
-	  if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
-	    dl_dci->has_dai = 1;
-	    dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
-	  }
-	  
-	  if(ue_sched_ctl->dl_pow_off[CC_id] == 2) {
-	    ue_sched_ctl->dl_pow_off[CC_id] = 1;
-	  }
-	  
-	  dl_dci->has_dl_power_offset = 1;
-	  dl_dci->dl_power_offset = ue_sched_ctl->dl_pow_off[CC_id];
-	  dl_dci->has_precoding_info = 1;
-	  dl_dci->precoding_info = 5; // Is this right??
-	  
-	  break;
-	case 6:
-	  dl_dci->has_res_alloc = 1;
-	  dl_dci->res_alloc = 0;
-	  dl_dci->has_vrb_format = 1;
-	  dl_dci->vrb_format = PROTOCOL__FLEX_VRB_FORMAT__FLVRBF_LOCALIZED;
-	  dl_dci->has_format = 1;
-	  dl_dci->format = PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1D;
-	  dl_dci->has_rb_bitmap = 1;
-	  dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, rballoc_sub);
-	  dl_dci->has_rb_shift = 1;
-	  dl_dci->rb_shift = 0;
-	  dl_dci->n_ndi = 1;
-	  dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
-	  dl_dci->ndi[0] = ndi;
-	  dl_dci->n_rv = 1;
-	  dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
-	  dl_dci->rv[0] = round & 3;
-	  dl_dci->has_tpc = 1;
-	  dl_dci->tpc = tpc;
-	  dl_dci->n_mcs = 1;
-	  dl_dci->mcs = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_mcs);
-	  dl_dci->mcs[0] = mcs;
-	  if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
-	    dl_dci->has_dai = 1;
-	    dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
-	  }
+        	switch (mac_xface->get_transmission_mode(mod_id, CC_id, rnti)) {
+        	case 1:
+        	case 2:
+        	default:
+        	  dl_dci->has_res_alloc = 1;
+        	  dl_dci->res_alloc = 0;
+        	  dl_dci->has_vrb_format = 1;
+        	  dl_dci->vrb_format = PROTOCOL__FLEX_VRB_FORMAT__FLVRBF_LOCALIZED;
+        	  dl_dci->has_format = 1;
+        	  dl_dci->format = PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1;
+        	  dl_dci->has_rb_bitmap = 1;
+        	  dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, rballoc_sub);
+        	  dl_dci->has_rb_shift = 1;
+        	  dl_dci->rb_shift = 0;
+        	  dl_dci->n_ndi = 1;
+        	  dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
+        	  dl_dci->ndi[0] = ndi;
+        	  dl_dci->n_rv = 1;
+        	  dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
+        	  dl_dci->rv[0] = round & 3;
+        	  dl_dci->has_tpc = 1;
+        	  dl_dci->tpc = tpc;
+        	  dl_dci->n_mcs = 1;
+        	  dl_dci->mcs = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_mcs);
+        	  dl_dci->mcs[0] = mcs;
+        	  dl_dci->n_tbs_size = 1;
+        	  dl_dci->tbs_size = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_tbs_size);
+        	  dl_dci->tbs_size[0] = dci_tbs;
+        	  if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
+        	    dl_dci->has_dai = 1;
+        	    dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
+        	  }
+        	  break;
+        	case 3:
+        	  dl_dci->has_res_alloc = 1;
+        	  dl_dci->res_alloc = 0;
+        	  dl_dci->has_vrb_format = 1;
+        	  dl_dci->vrb_format = PROTOCOL__FLEX_VRB_FORMAT__FLVRBF_LOCALIZED;
+        	  dl_dci->has_format = 1;
+        	  dl_dci->format = PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_2A;
+        	  dl_dci->has_rb_bitmap = 1;
+        	  dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, rballoc_sub);
+        	  dl_dci->has_rb_shift = 1;
+        	  dl_dci->rb_shift = 0;
+        	  dl_dci->n_ndi = 2;
+        	  dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
+        	  dl_dci->ndi[0] = ndi;
+        	  dl_dci->ndi[1] = ndi;
+        	  dl_dci->n_rv = 2;
+        	  dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
+        	  dl_dci->rv[0] = round & 3;
+        	  dl_dci->rv[1] = round & 3;
+        	  dl_dci->has_tpc = 1;
+        	  dl_dci->tpc = tpc;
+        	  dl_dci->n_mcs = 2;
+        	  dl_dci->mcs = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_mcs);
+        	  dl_dci->mcs[0] = mcs;
+        	  dl_dci->mcs[1] = mcs;
+        	  dl_dci->n_tbs_size = 2;
+        	  dl_dci->tbs_size = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_tbs_size);
+        	  dl_dci->tbs_size[0] = dci_tbs;
+        	  dl_dci->tbs_size[1] = dci_tbs;
+        	  if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
+        	    dl_dci->has_dai = 1;
+        	    dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
+        	  }
+        	  break;
+        	case 4:
+        	  dl_dci->has_res_alloc = 1;
+        	  dl_dci->res_alloc = 0;
+        	  dl_dci->has_vrb_format = 1;
+        	  dl_dci->vrb_format = PROTOCOL__FLEX_VRB_FORMAT__FLVRBF_LOCALIZED;
+        	  dl_dci->has_format = 1;
+        	  dl_dci->format = PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_2A;
+        	  dl_dci->has_rb_bitmap = 1;
+        	  dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, rballoc_sub);
+        	  dl_dci->has_rb_shift = 1;
+        	  dl_dci->rb_shift = 0;
+        	  dl_dci->n_ndi = 2;
+        	  dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
+        	  dl_dci->ndi[0] = ndi;
+        	  dl_dci->ndi[1] = ndi;
+        	  dl_dci->n_rv = 2;
+        	  dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
+        	  dl_dci->rv[0] = round & 3;
+        	  dl_dci->rv[1] = round & 3;
+        	  dl_dci->has_tpc = 1;
+        	  dl_dci->tpc = tpc;
+        	  dl_dci->n_mcs = 2;
+        	  dl_dci->mcs = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_mcs);
+        	  dl_dci->mcs[0] = mcs;
+        	  dl_dci->mcs[1] = mcs;
+        	  dl_dci->n_tbs_size = 2;
+        	  dl_dci->tbs_size = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_tbs_size);
+        	  dl_dci->tbs_size[0] = dci_tbs;
+        	  dl_dci->tbs_size[1] = dci_tbs;
+        	  if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
+        	    dl_dci->has_dai = 1;
+        	    dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
+        	  }
+        	  break;
+        	case 5:
+        	  dl_dci->has_res_alloc = 1;
+        	  dl_dci->res_alloc = 0;
+        	  dl_dci->has_vrb_format = 1;
+        	  dl_dci->vrb_format = PROTOCOL__FLEX_VRB_FORMAT__FLVRBF_LOCALIZED;
+        	  dl_dci->has_format = 1;
+        	  dl_dci->format = PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1D;
+        	  dl_dci->has_rb_bitmap = 1;
+        	  dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, rballoc_sub);
+        	  dl_dci->has_rb_shift = 1;
+        	  dl_dci->rb_shift = 0;
+        	  dl_dci->n_ndi = 1;
+        	  dl_dci->ndi[0] = ndi;
+        	  dl_dci->n_rv = 1;
+        	  dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
+        	  dl_dci->rv[0] = round & 3;
+        	  dl_dci->has_tpc = 1;
+        	  dl_dci->tpc = tpc;
+        	  dl_dci->n_mcs = 1;
+        	  dl_dci->mcs = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_mcs);
+        	  dl_dci->mcs[0] = mcs;
+        	  dl_dci->n_tbs_size = 1;
+        	  dl_dci->tbs_size = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_tbs_size);
+        	  dl_dci->tbs_size[0] = dci_tbs;
+        	  if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
+        	    dl_dci->has_dai = 1;
+        	    dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
+        	  }
+        	  
+        	  if(ue_sched_ctl->dl_pow_off[CC_id] == 2) {
+        	    ue_sched_ctl->dl_pow_off[CC_id] = 1;
+        	  }
+        	  
+        	  dl_dci->has_dl_power_offset = 1;
+        	  dl_dci->dl_power_offset = ue_sched_ctl->dl_pow_off[CC_id];
+        	  dl_dci->has_precoding_info = 1;
+        	  dl_dci->precoding_info = 5; // Is this right??
+        	  
+        	  break;
+        	case 6:
+        	  dl_dci->has_res_alloc = 1;
+        	  dl_dci->res_alloc = 0;
+        	  dl_dci->has_vrb_format = 1;
+        	  dl_dci->vrb_format = PROTOCOL__FLEX_VRB_FORMAT__FLVRBF_LOCALIZED;
+        	  dl_dci->has_format = 1;
+        	  dl_dci->format = PROTOCOL__FLEX_DCI_FORMAT__FLDCIF_1D;
+        	  dl_dci->has_rb_bitmap = 1;
+        	  dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, rballoc_sub);
+        	  dl_dci->has_rb_shift = 1;
+        	  dl_dci->rb_shift = 0;
+        	  dl_dci->n_ndi = 1;
+        	  dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
+        	  dl_dci->ndi[0] = ndi;
+        	  dl_dci->n_rv = 1;
+        	  dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
+        	  dl_dci->rv[0] = round & 3;
+        	  dl_dci->has_tpc = 1;
+        	  dl_dci->tpc = tpc;
+        	  dl_dci->n_mcs = 1;
+        	  dl_dci->mcs = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_mcs);
+        	  dl_dci->mcs[0] = mcs;
+        	  if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
+        	    dl_dci->has_dai = 1;
+        	    dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
+        	  }
 
-	  dl_dci->has_dl_power_offset = 1;
-	  dl_dci->dl_power_offset = ue_sched_ctl->dl_pow_off[CC_id];
-	  dl_dci->has_precoding_info = 1;
-	  dl_dci->precoding_info = 5; // Is this right??
-	  break;
-	}
+        	  dl_dci->has_dl_power_offset = 1;
+        	  dl_dci->dl_power_offset = ue_sched_ctl->dl_pow_off[CC_id];
+        	  dl_dci->has_precoding_info = 1;
+        	  dl_dci->precoding_info = 5; // Is this right??
+        	  break;
+        	}
       }
       
-      if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
+      // if (flexran_get_duplex_mode(mod_id, CC_id) == PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
         
 	/* TODO */
 	//set_ul_DAI(mod_id, UE_id, CC_id, frame, subframe, frame_parms);
-      }
+      // }
     } // UE_id loop
    } // CC_id loop
 

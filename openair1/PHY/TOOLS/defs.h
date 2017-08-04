@@ -338,6 +338,9 @@ uint8_t log2_approx64(unsigned long long int x);
 int16_t invSqrt(int16_t x);
 uint32_t angle(struct complex16 perrror);
 
+/// computes the number of factors 2 in x
+unsigned char factor2(unsigned int x);
+
 /*!\fn int32_t phy_phase_compensation_top (uint32_t pilot_type, uint32_t initial_pilot,
         uint32_t last_pilot, int32_t ignore_prefix);
 Compensate the phase rotation of the RF. WARNING: This function is currently unused. It has not been tested!

@@ -705,7 +705,7 @@ void fill_DCI(PHY_VARS_eNB *eNB,
           dci_alloc[*num_dci].format     = format2A;
           dump_dci(&eNB->frame_parms,&dci_alloc[*num_dci]);
 
-          printf("Generating dlsch params for user %d / format 2A (%d)\n",k,format2A);
+          //printf("Generating dlsch params for user %d / format 2A (%d)\n",k,format2A);
           generate_eNB_dlsch_params_from_dci(0,
 					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
@@ -846,7 +846,7 @@ void fill_DCI(PHY_VARS_eNB *eNB,
           dci_alloc[*num_dci].firstCCE       = 0;
           dump_dci(&eNB->frame_parms,&dci_alloc[*num_dci]);
 
-          printf("Generating dlsch params for user %d\n",k);
+          //printf("Generating dlsch params for user %d\n",k);
           generate_eNB_dlsch_params_from_dci(0,
 					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
@@ -866,7 +866,7 @@ void fill_DCI(PHY_VARS_eNB *eNB,
 
         }
 
-        printf("Generated DCI format 2A (Transmission Mode 3)\n");
+        //printf("Generated DCI format 2A (Transmission Mode 3)\n");
         break;
 
       case 4:
@@ -1292,7 +1292,6 @@ int main(int argc, char **argv)
   uint16_t tdd_config=3;
 
 
-
   SCM_t channel_model=Rayleigh1;
   //  unsigned char *input_data,*decoded_output;
 
@@ -1366,6 +1365,7 @@ int main(int argc, char **argv)
   int rballocset=0;
   int print_perf=0;
   int test_perf=0;
+  int test_passed=0;
   int dump_table=0;
 
   double effective_rate=0.0;
@@ -1391,9 +1391,12 @@ int main(int argc, char **argv)
 
   FILE *csv_fd=NULL;
   char csv_fname[32];
-  //int dci_flag=1;
+  int dci_flag=0;
   int two_thread_flag=0;
   int DLSCH_RB_ALLOC = 0;
+
+  int log_level = LOG_ERR;
+  int dci_received;
 
 #if defined(__arm__)
   FILE    *proc_fd = NULL;
@@ -1418,15 +1421,13 @@ int main(int argc, char **argv)
   //signal(SIGSEGV, handler);
   //signal(SIGABRT, handler);
 
-  logInit();
-
   // default parameters
   n_frames = 1000;
   snr0 = 0;
   //  num_layers = 1;
   perfect_ce = 0;
 
-  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:q:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:Pl:WXY")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:q:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:Pl:WXYL:")) != -1) {
     switch (c) {
     case 'a':
       awgn_flag = 1;
@@ -1453,9 +1454,9 @@ int main(int argc, char **argv)
       Nid_cell = atoi(optarg);
       break;
 
-    //case 'd':
-    //  dci_flag = 1;
-    //  break;
+    case 'd':
+      dci_flag = 1;
+      break;
 
     case 'D':
       frame_type=TDD;
@@ -1482,7 +1483,7 @@ int main(int argc, char **argv)
     case 'i':
       input_fd = fopen(optarg,"r");
       input_file=1;
-      //dci_flag = 1;
+      dci_flag = 1;
       break;
 
     case 'I':
@@ -1722,7 +1723,9 @@ int main(int argc, char **argv)
       dump_table=1;
       break;
 
-
+    case 'L':
+      log_level=atoi(optarg);
+      break;
 
     case 'h':
     default:
@@ -1732,12 +1735,17 @@ int main(int argc, char **argv)
       printf("-c Number of PDCCH symbols\n");
       printf("-m MCS1 for TB 1\n");
       printf("-M MCS2 for TB 2\n");
-      printf("-d Transmit the DCI and compute its error statistics and the overall throughput\n");
+      printf("-d Transmit the DCI and compute its error statistics\n");
       printf("-p Use extended prefix mode\n");
       printf("-n Number of frames to simulate\n");
       printf("-o Sample offset for receiver\n");
       printf("-s Starting SNR, runs from SNR to SNR+%.1fdB in steps of %.1fdB. If n_frames is 1 then just SNR is simulated and MATLAB/OCTAVE output is generated\n", snr_int, snr_step);
       printf("-f step size of SNR, default value is 1.\n");
+      printf("-C cell id\n");
+      printf("-S subframe\n");
+      printf("-D use TDD mode\n");
+      printf("-b TDD config\n");
+      printf("-B bandwidth configuration (in number of ressource blocks): 6, 25, 50, 100\n");
       printf("-r ressource block allocation (see  section 7.1.6.3 in 36.213\n");
       printf("-g [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M')\n");
       printf("-F forgetting factor (0 new channel every trial, 1 channel constant\n");
@@ -1756,6 +1764,16 @@ int main(int argc, char **argv)
       break;
     }
   }
+
+  logInit();
+  // enable these lines if you need debug info
+  set_comp_log(PHY,LOG_DEBUG,LOG_HIGH,1);
+  set_glog(log_level,LOG_HIGH);
+  // moreover you need to init itti with the following line
+  // however itti will catch all signals, so ctrl-c won't work anymore
+  // alternatively you can disable ITTI completely in CMakeLists.txt
+  //itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
+
 
   if (common_flag == 0) {
     switch (N_RB_DL) {
@@ -2159,7 +2177,7 @@ int main(int argc, char **argv)
 	     TPC,
 	     mcs1,
 	     mcs2,
-	     0,
+	     1,
 	     0,
 	     &num_common_dci,
 	     &num_ue_spec_dci,
@@ -2318,10 +2336,10 @@ int main(int argc, char **argv)
 
         //if (trials%100==0)
         eNB2UE[0]->first_run = 1;
+	UE->dlsch[subframe&0x1][eNB_id][0]->harq_ack[subframe].ack = 0;
+	UE->dlsch[subframe&0x1][eNB_id][1]->harq_ack[subframe].ack = 0;
 
-        UE->dlsch_errors[0] = 1;
-
-        while ((round < num_rounds) && (UE->dlsch_errors[0] > 0)) {
+        while ((round < num_rounds) && (UE->dlsch[subframe&0x1][eNB_id][0]->harq_ack[subframe].ack == 0)) {
 	  //	  printf("Trial %d, round %d\n",trials,round);
           round_trials[round]++;
 
@@ -2361,11 +2379,12 @@ int main(int argc, char **argv)
 
                 eNB->dlsch[0][0]->harq_processes[0]->rvidx = round&3;
 
-		fill_DCI(eNB,&dci_alloc[0],subframe,n_rnti,n_users,transmission_mode,common_flag,DLSCH_RB_ALLOC,TPC,mcs1,mcs2,trials&1,round&3,&num_common_dci,&num_ue_spec_dci,&num_dci);
+		fill_DCI(eNB,&dci_alloc[0],subframe,n_rnti,n_users,transmission_mode,common_flag,DLSCH_RB_ALLOC,TPC,
+			 mcs1,mcs2,!(trials&1),round&3,&num_common_dci,&num_ue_spec_dci,&num_dci);
 	      }
 	      else {
 		fill_DCI(eNB,&dci_alloc[0],subframe,n_rnti,n_users,transmission_mode,common_flag,DLSCH_RB_ALLOC,TPC,
-			 (TB0_active==1)?mcs1:0,mcs2,trials&1,(TB0_active==1)?round&3:0,&num_common_dci,&num_ue_spec_dci,&num_dci);
+			 (TB0_active==1)?mcs1:0,mcs2,!(trials&1),(TB0_active==1)?round&3:0,&num_common_dci,&num_ue_spec_dci,&num_dci);
 	      }
 	      for (i=num_common_dci; i<num_dci; i++) {
 
@@ -2419,7 +2438,7 @@ int main(int argc, char **argv)
 	    proc_eNB->subframe_tx = subframe;
 	    eNB->abstraction_flag=0;
 
-	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,1);
+	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,1,dci_flag);
 
 
 	    start_meas(&eNB->ofdm_mod_stats);
@@ -2455,7 +2474,7 @@ int main(int argc, char **argv)
 
 	    proc_eNB->subframe_tx = subframe+1;
 
-	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,0);
+	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,0,dci_flag);
 
 	    do_OFDM_mod_l(eNB->common_vars.txdataF[eNB_id],
 			  eNB->common_vars.txdata[eNB_id],
@@ -2496,7 +2515,7 @@ int main(int argc, char **argv)
 	  UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[subframe&1];
 	  proc->subframe_rx = subframe;
 	  UE->UE_mode[0] = PUSCH;
-	  UE->dlsch_errors[0] = 0;
+
 	  // first symbol has to be done separately in one-shot mode
 	  slot_fep(UE,
 		   0,
@@ -2506,12 +2525,46 @@ int main(int argc, char **argv)
 		   0);
 
 	  if (n_frames==1) printf("Running phy_procedures_UE_RX\n");
-	  phy_procedures_UE_RX(UE,proc,0,0,normal_txrx,no_relay,NULL);
 
-	  if (UE->dlsch[subframe&0x1][0][0]->active == 0) {
+	  if (dci_flag==0) {
+	    if (n_frames==1)
+	      printf("bypassing PDCCH/DCI detection\n");
+	    if  (generate_ue_dlsch_params_from_dci(proc->frame_rx,
+						   proc->subframe_rx,
+						   (void *)&dci_alloc[0].dci_pdu,
+						   n_rnti,
+						   dci_alloc[0].format,
+						   UE->dlsch[proc->subframe_rx&0x1][eNB_id],
+						   &UE->frame_parms,
+						   UE->pdsch_config_dedicated,
+						   SI_RNTI,
+						   0,
+						   P_RNTI,
+						   UE->transmission_mode[eNB_id]<7?0:UE->transmission_mode[eNB_id],
+						   0)==0) {
+
+		dump_dci(&UE->frame_parms, &dci_alloc[0]);
+
+		//UE->dlsch[proc->subframe_rx&0x1][eNB_id][0]->active = 1;
+		//UE->dlsch[proc->subframe_rx&0x1][eNB_id][1]->active = 1;
+
+		UE->pdcch_vars[proc->subframe_rx&0x1][eNB_id]->num_pdcch_symbols = num_pdcch_symbols;
+
+		UE->dlsch_received[eNB_id]++;
+	    } else {
+	      LOG_E(PHY,"Problem in DCI!\n");
+	    }
+	  }
+
+	  dci_received = UE->pdcch_vars[proc->subframe_rx & 0x1][eNB_id]->dci_received;
+
+	  phy_procedures_UE_RX(UE,proc,0,0,dci_flag,normal_txrx,no_relay,NULL);
+
+	  dci_received = dci_received - UE->pdcch_vars[proc->subframe_rx & 0x1][eNB_id]->dci_received;
+
+	  if (dci_flag && (dci_received == 0)) {
 	    //printf("DCI not received\n");
 	    dci_errors[round]++;
-	    UE->dlsch_errors[0] = 1;
 
 	    /*
 	    write_output("pdcchF0_ext.m","pdcchF_ext", UE->pdcch_vars[eNB_id]->rxdataF_ext[0],2*3*UE->frame_parms.ofdm_symbol_size,1,1);
@@ -2582,7 +2635,7 @@ int main(int argc, char **argv)
 
 
 
-          if (UE->dlsch_errors[0] == 0) {
+          if (UE->dlsch[subframe&0x1][eNB_id][0]->harq_ack[subframe].ack == 1) {
 
             avg_iter += UE->dlsch[subframe&0x1][eNB_id][0]->last_iteration_cnt;
             iter_trials++;
@@ -2862,15 +2915,15 @@ int main(int argc, char **argv)
              errs2[0],
              round_trials[0],
              errs[1],
-             round_trials[0],
+             round_trials[1],
              errs[2],
-             round_trials[0],
+             round_trials[2],
              errs[3],
-             round_trials[0],
+             round_trials[3],
              (double)errs[0]/(round_trials[0]),
-             (double)errs[1]/(round_trials[0]),
-             (double)errs[2]/(round_trials[0]),
-             (double)errs[3]/(round_trials[0]),
+             (double)errs[1]/(round_trials[1]),
+             (double)errs[2]/(round_trials[2]),
+             (double)errs[3]/(round_trials[3]),
              dci_errors[0]+dci_errors[1]+dci_errors[2]+dci_errors[3],
              round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3],
              (double)(dci_errors[0]+dci_errors[1]+dci_errors[2]+dci_errors[3])/(round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]),
@@ -3193,9 +3246,11 @@ int main(int argc, char **argv)
         UE->dlsch_decoding_stats[subframe&1].trials);
         */
         printf("[passed] effective rate : %f  (%2.1f%%,%f)): log and break \n",rate*effective_rate, 100*effective_rate, rate );
+	test_passed = 1;
         break;
       } else if (test_perf !=0 ) {
         printf("[continue] effective rate : %f  (%2.1f%%,%f)): increase snr \n",rate*effective_rate, 100*effective_rate, rate);
+	test_passed = 0;
       }
 
       if (((double)errs[0]/(round_trials[0]))<(10.0/n_frames))
@@ -3246,8 +3301,10 @@ int main(int argc, char **argv)
     free_ue_dlsch(UE->dlsch[subframe&0x1][0][i]);
   }
 
-
-  return(0);
+  if (test_perf && !test_passed)
+    return(-1);
+  else 
+    return(0);
 }
 
 

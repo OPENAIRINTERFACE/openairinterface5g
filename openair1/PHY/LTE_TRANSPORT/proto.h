@@ -112,7 +112,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag);
     @returns status
 */
 int32_t dlsch_encoding(PHY_VARS_eNB *eNB,
-		       uint8_t *a,
+                       uint8_t *a,
                        uint8_t num_pdcch_symbols,
                        LTE_eNB_DLSCH_t *dlsch,
                        int frame,
@@ -157,14 +157,14 @@ int32_t dlsch_encoding_SIC(PHY_VARS_UE *ue,
     @returns status
 */
 int32_t dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
-				uint8_t *a,
-				uint8_t num_pdcch_symbols,
-				LTE_eNB_DLSCH_t *dlsch,
-				int frame,
-				uint8_t subframe,
-				time_stats_t *rm_stats,
-				time_stats_t *te_stats,
-				time_stats_t *i_stats);
+                                uint8_t *a,
+                                uint8_t num_pdcch_symbols,
+                                LTE_eNB_DLSCH_t *dlsch,
+                                int frame,
+                                uint8_t subframe,
+                                time_stats_t *rm_stats,
+                                time_stats_t *te_stats,
+                                time_stats_t *i_stats);
 
 void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
                          uint8_t *DLSCH_pdu,
@@ -263,11 +263,11 @@ int32_t allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
                            uint32_t *re_allocated,
                            uint8_t skip_dc,
                            uint8_t skip_half,
-			   uint8_t lprime,
-			   uint8_t mprime,
-			   uint8_t Ns,
-			   int *P1_SHIFT,
-			   int *P2_SHIFT);
+                           uint8_t lprime,
+                           uint8_t mprime,
+                           uint8_t Ns,
+                           int *P1_SHIFT,
+                           int *P2_SHIFT);
 
 
 /** \fn int32_t dlsch_modulation(int32_t **txdataF,
@@ -387,7 +387,7 @@ int32_t generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
 
 int32_t generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
                              eNB_rxtx_proc_t *proc,
-			     int32_t **txdataF,
+                             int32_t **txdataF,
                              int16_t amp);
 
 void generate_ue_spec_pilots(PHY_VARS_eNB *phy_vars_eNB,
@@ -395,7 +395,7 @@ void generate_ue_spec_pilots(PHY_VARS_eNB *phy_vars_eNB,
                              int32_t **txdataF,
                              int16_t amp,
                              uint16_t Ntti,
-		             uint8_t beamforming_mode);
+                             uint8_t beamforming_mode);
 
 int32_t generate_pss(int32_t **txdataF,
                      int16_t amp,
@@ -841,16 +841,15 @@ int32_t dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 */
 
 int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
-                       int **rxdataF_comp,
-                                   int32_t **sic_buffer,
-                                   int **rho_i,
-                       short *dlsch_llr,
-                                   uint8_t num_pdcch_symbols,
-                       uint16_t nb_rb,
-                       uint8_t subframe,
-                                   uint32_t rb_alloc,
-                       uint16_t mod_order_0,
-                                   LTE_UE_DLSCH_t *dlsch0);
+                           int **rxdataF_comp,
+                           int32_t **sic_buffer,
+                           int **rho_i,
+                           short *dlsch_llr,
+                           uint8_t num_pdcch_symbols,
+                           uint16_t nb_rb,
+                           uint8_t subframe,
+                           uint16_t mod_order_0,
+                           uint32_t rb_alloc);
 
 void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      int32_t **rxdataF_comp,
@@ -877,30 +876,28 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 */
 void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
                           int32_t **rxdataF_comp,
-                                            int32_t **sic_buffer,  //Q15
-                                      int32_t **rho_i,
-                                            int16_t *dlsch_llr,
-                                            uint8_t num_pdcch_symbols,
-                                            int32_t **dl_ch_mag,
-                                            uint16_t nb_rb,
-                                            uint8_t subframe,
-                                            uint32_t rb_alloc,
+                          int32_t **sic_buffer,  //Q15
+                          int32_t **rho_i,
+                          int16_t *dlsch_llr,
+                          uint8_t num_pdcch_symbols,
+                          int32_t **dl_ch_mag,
+                          uint16_t nb_rb,
+                          uint8_t subframe,
                           uint16_t mod_order_0,
-                                            LTE_UE_DLSCH_t *dlsch0);
+                          uint32_t rb_alloc);
 
 void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                          int32_t **rxdataF_comp,
-                                           int32_t **sic_buffer,  //Q15
-                                     int32_t **rho_i,
-                                           int16_t *dlsch_llr,
-                                           uint8_t num_pdcch_symbols,
-                                           int32_t **dl_ch_mag,
-                                           int32_t **dl_ch_magb,
-                                           uint16_t nb_rb,
-                                           uint8_t subframe,
-                                           uint32_t rb_alloc,
+                         int32_t **sic_buffer,  //Q15
+                         int32_t **rho_i,
+                         int16_t *dlsch_llr,
+                         uint8_t num_pdcch_symbols,
+                         int32_t **dl_ch_mag,
+                         int32_t **dl_ch_magb,
+                         uint16_t nb_rb,
+                         uint8_t subframe,
                          uint16_t mod_order_0,
-                                           LTE_UE_DLSCH_t *dlsch0);
+                         uint32_t rb_alloc);
 
 
 void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
@@ -1170,6 +1167,58 @@ void dlsch_dual_stream_correlationTM34(LTE_DL_FRAME_PARMS *frame_parms,
                                    int **dl_ch_rho_ext,
                                    unsigned char output_shift0,
                                    unsigned char output_shift1);
+//This function is used to compute multiplications in Hhermitian * H matrix
+void conjch0_mult_ch1(int *ch0,
+                      int *ch1,
+                      int32_t *ch0conj_ch1,
+                      unsigned short nb_rb,
+                      unsigned char output_shift0);
+
+void construct_HhH_elements(int *ch0conj_ch0,
+                         int *ch1conj_ch1,
+                         int *ch2conj_ch2,
+                         int *ch3conj_ch3,
+                         int *ch0conj_ch1,
+                         int *ch1conj_ch0,
+                         int *ch2conj_ch3,
+                         int *ch3conj_ch2,
+                         int32_t *after_mf_00,
+                         int32_t *after_mf_01,
+                         int32_t *after_mf_10,
+                         int32_t *after_mf_11,
+                         unsigned short nb_rb);
+
+void squared_matrix_element(int32_t *Hh_h_00,
+                            int32_t *Hh_h_00_sq,
+                            unsigned short nb_rb);
+
+void dlsch_channel_level_TM34_meas(int *ch00,
+                                   int *ch01,
+                                   int *ch10,
+                                   int *ch11,
+                                   int *avg_0,
+                                   int *avg_1,
+                                   unsigned short nb_rb);
+
+void det_HhH(int32_t *after_mf_00,
+             int32_t *after_mf_01,
+             int32_t *after_mf_10,
+             int32_t *after_mf_11,
+             int32_t *det_fin_128,
+             unsigned short nb_rb);
+
+void numer(int32_t *Hh_h_00_sq,
+           int32_t *Hh_h_01_sq,
+           int32_t *Hh_h_10_sq,
+           int32_t *Hh_h_11_sq,
+           int32_t *num_fin,
+           unsigned short nb_rb);
+
+uint8_t rank_estimation_tm3_tm4(int *dl_ch_estimates_00,
+                                int *dl_ch_estimates_01,
+                                int *dl_ch_estimates_10,
+                                int *dl_ch_estimates_11,
+                                unsigned short nb_rb);
 
 void dlsch_channel_compensation_TM56(int **rxdataF_ext,
                                      int **dl_ch_estimates_ext,
@@ -1325,7 +1374,7 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
 int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
                     int32_t pss_ext[4][72],
                     int32_t sss_ext[4][72],
-					uint8_t subframe);
+                                        uint8_t subframe);
 
 /*! \brief Extract only PSS resource elements
   @param phy_vars_ue Pointer to UE variables
@@ -1598,7 +1647,7 @@ int32_t generate_srs_tx(PHY_VARS_UE *phy_vars_ue,
 */
 
 int32_t generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
-			   UE_rxtx_proc_t *proc,
+                           UE_rxtx_proc_t *proc,
                            uint8_t eNB_id,
                            int16_t amp,
                            uint32_t subframe,
@@ -1681,7 +1730,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
                                       DCI_format_t dci_format,
                                       PHY_VARS_UE *phy_vars_ue,
                                       UE_rxtx_proc_t *proc,
-				      uint16_t si_rnti,
+                                      uint16_t si_rnti,
                                       uint16_t ra_rnti,
                                       uint16_t p_rnti,
                                       uint16_t cba_rnti,
@@ -1689,21 +1738,21 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
                                       uint8_t use_srs);
 
 int32_t generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
-					  UE_rxtx_proc_t *proc,
-					  uint8_t eNB_id);
+                                          UE_rxtx_proc_t *proc,
+                                          uint8_t eNB_id);
 double sinr_eff_cqi_calc(PHY_VARS_UE *phy_vars_ue,
                          uint8_t eNB_id,
-						 uint8_t subframe);
+                                                 uint8_t subframe);
 
 uint8_t sinr2cqi(double sinr,uint8_t trans_mode);
 
 int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *PHY_vars_eNB,
-				       eNB_rxtx_proc_t *proc,
-				       void *dci_pdu,
+                                       eNB_rxtx_proc_t *proc,
+                                       void *dci_pdu,
                                        rnti_t rnti,
-				       DCI_format_t dci_format,
+                                       DCI_format_t dci_format,
                                        uint8_t UE_id,
-				       uint16_t si_rnti,
+                                       uint16_t si_rnti,
                                        uint16_t ra_rnti,
                                        uint16_t p_rnti,
                                        uint16_t cba_rnti,
@@ -1759,13 +1808,13 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode);
 
 void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
               eNB_rxtx_proc_t *proc,
-	      uint8_t eNB_id,  // this is the effective sector id
+              uint8_t eNB_id,  // this is the effective sector id
               uint8_t UE_id,
               LTE_eNB_ULSCH_t **ulsch,
               uint8_t cooperation_flag);
 
 void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
-		   eNB_rxtx_proc_t *proc,
+                   eNB_rxtx_proc_t *proc,
                    uint8_t sect_id,
                    uint8_t UE_index);
 
@@ -1815,7 +1864,7 @@ int32_t ulsch_encoding_emul(uint8_t *ulsch_buffer,
   @returns 0 on success
 */
 unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
-			     eNB_rxtx_proc_t *proc,
+                             eNB_rxtx_proc_t *proc,
                              uint8_t UE_id,
                              uint8_t control_only_flag,
                              uint8_t Nbundled,
@@ -1830,9 +1879,9 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   @returns 0 on success
 */
 int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,
-				int UE_id,
-				int harq_pid,
-				int llr8_flag);
+                                int UE_id,
+                                int harq_pid,
+                                int llr8_flag);
 
 /*!
   \brief Decoding of ULSCH data component from 36-212. This one is single thread.
@@ -1843,17 +1892,17 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,
   @returns 0 on success
 */
 int ulsch_decoding_data(PHY_VARS_eNB *eNB,
-			int UE_id,
-			int harq_pid,
-			int llr8_flag);
+                        int UE_id,
+                        int harq_pid,
+                        int llr8_flag);
 
 uint32_t ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
                              eNB_rxtx_proc_t *proc,
-			     uint8_t UE_index,
+                             uint8_t UE_index,
                              uint16_t *crnti);
 
 void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
-			eNB_rxtx_proc_t *proc,
+                        eNB_rxtx_proc_t *proc,
                         int16_t amp,
                         uint8_t sect_id);
 
@@ -1865,7 +1914,7 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 */
 
 void rx_phich(PHY_VARS_UE *phy_vars_ue,
-	      UE_rxtx_proc_t *proc,
+              UE_rxtx_proc_t *proc,
               uint8_t subframe,
               uint8_t eNB_id);
 
@@ -1977,28 +2026,28 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 void init_ncs_cell(LTE_DL_FRAME_PARMS *frame_parms,uint8_t ncs_cell[20][7]);
 
 void generate_pucch1x(int32_t **txdataF,
-		      LTE_DL_FRAME_PARMS *frame_parms,
-		      uint8_t ncs_cell[20][7],
-		      PUCCH_FMT_t fmt,
-		      PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-		      uint16_t n1_pucch,
-		      uint8_t shortened_format,
-		      uint8_t *payload,
-		      int16_t amp,
-		      uint8_t subframe);
+                      LTE_DL_FRAME_PARMS *frame_parms,
+                      uint8_t ncs_cell[20][7],
+                      PUCCH_FMT_t fmt,
+                      PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+                      uint16_t n1_pucch,
+                      uint8_t shortened_format,
+                      uint8_t *payload,
+                      int16_t amp,
+                      uint8_t subframe);
 
 void generate_pucch2x(int32_t **txdataF,
-		      LTE_DL_FRAME_PARMS *fp,
-		      uint8_t ncs_cell[20][7],
-		      PUCCH_FMT_t fmt,
-		      PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-		      uint16_t n2_pucch,
-		      uint8_t *payload,
-		      int A,
-		      int B2,
-		      int16_t amp,
-		      uint8_t subframe,
-		      uint16_t rnti);
+                      LTE_DL_FRAME_PARMS *fp,
+                      uint8_t ncs_cell[20][7],
+                      PUCCH_FMT_t fmt,
+                      PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+                      uint16_t n2_pucch,
+                      uint8_t *payload,
+                      int A,
+                      int B2,
+                      int16_t amp,
+                      uint8_t subframe,
+                      uint16_t rnti);
 
 void generate_pucch3x(int32_t **txdataF,
                     LTE_DL_FRAME_PARMS *frame_parms,
@@ -2013,7 +2062,7 @@ void generate_pucch3x(int32_t **txdataF,
                     uint16_t rnti);
 
 void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
-			 UE_rxtx_proc_t *proc,
+                         UE_rxtx_proc_t *proc,
                          PUCCH_FMT_t format,
                          uint8_t ncs1,
                          uint8_t *pucch_ack_payload,
@@ -2033,11 +2082,11 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
                   uint8_t pucch1_thres);
 
 int32_t rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
-		      eNB_rxtx_proc_t *proc,
-		      uint8_t UE_index,
-		      PUCCH_FMT_t fmt,
-		      uint8_t n1_pucch_sel,
-		      uint8_t *payload);
+                      eNB_rxtx_proc_t *proc,
+                      uint8_t UE_index,
+                      PUCCH_FMT_t fmt,
+                      uint8_t n1_pucch_sel,
+                      uint8_t *payload);
 
 
 /*!

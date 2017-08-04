@@ -61,9 +61,12 @@ BUILD_DOXYGEN=0
 T_TRACER="False"
 DISABLE_HARDWARE_DEPENDENCY="False"
 CMAKE_BUILD_TYPE=""
+CMAKE_CMD="$CMAKE"
 UE_AUTOTEST_TRACE="False"
+UE_DEBUG_TRACE="False"
+UE_TIMING_TRACE="False"
+DISABLE_LOG_X="False"
 BUILD_ECLIPSE=0
-CMAKE_CMD='cmake'
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -147,6 +150,12 @@ Options
    Disable HW dependency during installation
 --ue-autotest-trace
     Enable specific traces for UE autotest framework
+--ue-trace
+    Enable traces for UE debugging
+--ue-timing
+    Enable traces for timing
+--disable-log
+   Disable all LOG_* macros
 --build-eclipse
    Build eclipse project files. Paths are auto corrected by fixprj.sh
 Usage (first build):
@@ -315,6 +324,18 @@ function main() {
         --ue-autotest-trace)
             UE_AUTOTEST_TRACE="True"
             echo_info "Enabling autotest specific trace for UE"
+            shift 1;;
+        --ue-trace)
+            UE_DEBUG_TRACE="True"
+            echo_info "Enabling UE trace for debug"
+            shift 1;;
+        --ue-timing)
+            UE_TIMING_TRACE="True"
+            echo_info "Enabling UE timing trace"
+            shift 1;;
+        --disable-log)
+            DISABLE_LOG_X="True"
+            echo_info "Disabling all LOG_* traces"
             shift 1;;
         --uhd-images-dir)
             UHD_IMAGES_DIR=$2
@@ -504,6 +525,9 @@ function main() {
     echo "set (CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"      >>$cmake_file
     echo "set ( T_TRACER $T_TRACER )"              >>  $cmake_file
     echo "set (UE_AUTOTEST_TRACE $UE_AUTOTEST_TRACE)"        >>  $cmake_file
+    echo "set (UE_DEBUG_TRACE $UE_DEBUG_TRACE)"        >>  $cmake_file
+    echo "set (UE_TIMING_TRACE $UE_TIMING_TRACE)"        >>  $cmake_file
+    echo "set (DISABLE_LOG_X $DISABLE_LOG_X)"        >>  $cmake_file
     if [ "$UE" = 1 -a "$NOS1" = "0" ] ; then
      echo_info "Compiling UE S1 build : enabling Linux and NETLINK"
      echo "set (LINUX True )"              >>  $cmake_file

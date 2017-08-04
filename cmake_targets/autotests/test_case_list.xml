@@ -941,9 +941,14 @@
       (Test 7b, 5 MHz, R3-1.FDD (MCS 15), ETU70, 1.4 dB (30%)),
       (Test 10, 5 MHz, R6.FDD (MCS 25), EVA5, 17.4 dB (70%)),
       (Test 10b, 5 MHz, R6-1.FDD (MCS 24,18 PRB), EVA5, 17.5dB (70%)),
-      (Test 11, 10 MHz, R7.FDD (MCS 25), EVA5, 17.7dB (70%))
+      (Test 11, 10 MHz, R7.FDD (MCS 25), EVA5, 17.7dB (70%)),
+      (Test 11b, 10 MHz, R7-1.FDD (MCS 25), EVA5, 16.7dB (70%)),
+      (Test 15, 20 MHz, R.9 FDD	(MCS 26), EVA5, 17.6dB (70%)),
+      (Test 15b, 20 MHz, R.9-2 FDD (MCS 26, 17PRB), EVA5, 17.3dB (70%)),
+      (Test 15c, 20 MHz, R.9-1 FDD (MCS 26, 83 PRB), EVA5, 16.6dB (70%)),
+
       (TM2 Test 1 10 MHz, R.11 FDD (MCS 14), EVA5, 6.8 dB (70%)),
-      (TM2 Test 1b 20 MHz, R.11-2 FDD (MCS 13), EVA5, 5.9 dB (70%)),
+      (TM2 Test 1b 5 MHz, R.11-2 FDD (MCS 13), EVA5, 5.9 dB (70%)),
        </desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
@@ -960,6 +965,9 @@
                        -m25 -gF -s17.4 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O70
                        -m25 -gF -s17.5 -w1.0 -f.2 -n500 -B25 -c3 -z2 -r1022 -O70
                        -m26 -gF -s17.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
+                       -m26 -gF -s17.6 -w1.0 -f.2 -n500 -B100 -c2 -z2 -O70
+                       -m26 -gF -s17.3 -w1.0 -f.2 -n500 -B100 -c2 -z2 -r1600 -O70
+                       -m26 -gF -s16.6 -w1.0 -f.2 -n500 -B100 -c2 -z2 -r1899 -O70
 		       -m14 -gF -s6.8  -w1.0 -f.2 -n500 -B50 -c2 -x2 -y2 -z2 -O70
                        -m13 -gF -s5.9  -w1.0 -f.2 -n500 -B25 -c3 -x2 -y2 -z2 -O70</main_exec_args>
       <tags>dlsim.test1 dlsim.test5 dlsim.test6 dlsim.test6b dlsim.test7 dlsim.test7b dlsim.test10 dlsim.test10b dlsim.test11 dlsim.TM2_test1 dlsim.TM2_test1b</tags>

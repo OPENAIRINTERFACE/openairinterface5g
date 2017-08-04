@@ -38,6 +38,11 @@ message flex_cell_config {
 	optional uint32 srs_mac_up_pts = 32;		// Boolean value. See TS 36.211, section 5.5.3.2. TDD only
 	optional uint32 enable_64QAM = 33;		// One of the FLEQ_* enum values
 	optional uint32 carrier_index = 34;		// Carrier component index
+	optional uint32 dl_freq = 35;       // operating downlink frequency 
+	optional uint32 ul_freq = 36;       // operating uplink frequency 
+	optional uint32 eutra_band= 37;       // operating band 
+	optional int32 dl_pdsch_power = 38;       // operating downlink power 
+	optional int32 ul_pusch_power = 39;       // operating uplink power
 }
 
 message flex_ue_config {

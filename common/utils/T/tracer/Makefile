@@ -58,7 +58,7 @@ filter/filter.a:
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f *.o core tracer_remote textlog enb vcd record replay
+	rm -f *.o core tracer_remote textlog enb ue vcd record replay
 	rm -f extract_config macpdu2wireshark
 	cd gui && make clean
 	cd view && make clean

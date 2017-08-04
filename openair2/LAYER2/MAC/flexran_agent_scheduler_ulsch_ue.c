@@ -58,13 +58,17 @@
 #include "T.h"
 
 /* number of active slices for  past and current time*/
-int n_active_slices_uplink = 2;
-int n_active_slices_uplink_current = 2;
+int n_active_slices_uplink = 1;
+int n_active_slices_uplink_current = 1;
 
 /* RB share for each slice for past and current time*/
-float slice_percentage_uplink[MAX_NUM_SLICES] = {0.5, 0.5, 0.0, 0.0};
-float slice_percentage_current_uplink[MAX_NUM_SLICES] = {0.5, 0.5, 0.0, 0.0};
+float slice_percentage_uplink[MAX_NUM_SLICES] = {1.0, 1.0, 0.0, 0.0};
+float slice_percentage_current_uplink[MAX_NUM_SLICES] = {1.0, 1.0, 0.0, 0.0};
 float total_slice_percentage_uplink = 0;
+
+// MAX MCS for each slice for past and current time
+int slice_maxmcs_uplink[MAX_NUM_SLICES] = {16, 16, 16, 16};
+int slice_maxmcs_current_uplink[MAX_NUM_SLICES] = {28, 28, 28, 28};
 
 /*resource blocks allowed*/
 uint16_t                nb_rbs_allowed_slice_uplink[MAX_NUM_CCs][MAX_NUM_SLICES];      
@@ -473,11 +477,11 @@ flexran_schedule_ue_ul_spec_default(mid_t   mod_id,
     //LOG_N(MAC,"[eNB %d]frame %d subframe %d slice %d: calling the scheduler\n", mod_id, frame, subframe,i);
     
 
-    
+    slice_sched_ul[i](mod_id, frame, cooperation_flag, subframe, sched_subframe,ul_info);
 
   }
 
-    slice_sched_ul[0](mod_id, frame, cooperation_flag, subframe, sched_subframe,ul_info);
+    
   
 }
 
