@@ -190,29 +190,74 @@ typedef struct RrcConfigurationReq_s {
   //SIB1 BR options
   
 
-  uint16_t*		  hyperSFN_r13[MAX_NUM_CCs];
-  long*			  eDRX_Allowed_r13[MAX_NUM_CCs];
-  BOOLEAN_t		  cellSelectionInfoCE_r13[MAX_NUM_CCs];
-  long			  q_RxLevMinCE_r13[MAX_NUM_CCs];
-  long*			  q_QualMinRSRQ_CE_r13[MAX_NUM_CCs];
-  BOOLEAN_t		  bandwidthReducedAccessRelatedInfo_r13[MAX_NUM_CCs];
-  long			  si_WindowLength_BR_r13[MAX_NUM_CCs];
-  long			  si_RepetitionPattern_r13[MAX_NUM_CCs];
-  BOOLEAN_t		  fdd_DownlinkOrTddSubframeBitmapBR_r13[MAX_NUM_CCs];
-  uint64_t		  fdd_DownlinkOrTddSubframeBitmapBR_val_r13[MAX_NUM_CCs];
-  uint16_t		  fdd_UplinkSubframeBitmapBR_r13[MAX_NUM_CCs];
-  long			  startSymbolBR_r13[MAX_NUM_CCs];
-  long			  si_HoppingConfigCommon_r13[MAX_NUM_CCs];
-  long*			  si_ValidityTime_r13[MAX_NUM_CCs];
-  BOOLEAN_t		  freqHoppingParametersDL_r13[MAX_NUM_CCs];
-  long*			  mpdcch_pdsch_HoppingNB_r13[MAX_NUM_CCs];
-  BOOLEAN_t		  interval_DLHoppingConfigCommonModeA_r13[MAX_NUM_CCs];
-  long			  interval_DLHoppingConfigCommonModeA_r13_val[MAX_NUM_CCs];
-  BOOLEAN_t		  interval_DLHoppingConfigCommonModeB_r13[MAX_NUM_CCs];
-  long			  interval_DLHoppingConfigCommonModeB_r13_val[MAX_NUM_CCs];
-  long*			  mpdcch_pdsch_HoppingOffset_r13[MAX_NUM_CCs];
+  uint16_t*		  hyperSFN_r13                           [MAX_NUM_CCs];
+  long*			  eDRX_Allowed_r13                       [MAX_NUM_CCs];
+  BOOLEAN_t		  cellSelectionInfoCE_r13                [MAX_NUM_CCs];
+  long			  q_RxLevMinCE_r13                       [MAX_NUM_CCs];
+  long*			  q_QualMinRSRQ_CE_r13                   [MAX_NUM_CCs];
+  BOOLEAN_t		  bandwidthReducedAccessRelatedInfo_r13  [MAX_NUM_CCs];
+
+//  +kogo -- FIXME -- size 10 is temporary
+  long            si_Narrowband_r13         [MAX_NUM_CCs][32];
+  long            si_TBS_r13                [MAX_NUM_CCs][32];
+  int             scheduling_info_br_size   [MAX_NUM_CCs];
+//  end +kogo
+
+  long			  si_WindowLength_BR_r13                    [MAX_NUM_CCs];
+  long			  si_RepetitionPattern_r13                  [MAX_NUM_CCs];
+  BOOLEAN_t		  fdd_DownlinkOrTddSubframeBitmapBR_r13     [MAX_NUM_CCs];
+  uint64_t		  fdd_DownlinkOrTddSubframeBitmapBR_val_r13 [MAX_NUM_CCs];
+  uint16_t		  fdd_UplinkSubframeBitmapBR_r13            [MAX_NUM_CCs];
+  long			  startSymbolBR_r13                         [MAX_NUM_CCs];
+  long			  si_HoppingConfigCommon_r13                [MAX_NUM_CCs];
+  long*			  si_ValidityTime_r13                       [MAX_NUM_CCs];
+
+//  +kogo
+  long            systemInfoValueTagSi_r13      [MAX_NUM_CCs][10];
+  int             system_info_value_tag_SI_size [MAX_NUM_CCs];
+//  end +kogo
+
+  BOOLEAN_t		  freqHoppingParametersDL_r13                   [MAX_NUM_CCs];
+  long*			  mpdcch_pdsch_HoppingNB_r13                    [MAX_NUM_CCs];
+  BOOLEAN_t		  interval_DLHoppingConfigCommonModeA_r13       [MAX_NUM_CCs];
+  long			  interval_DLHoppingConfigCommonModeA_r13_val   [MAX_NUM_CCs];
+  BOOLEAN_t		  interval_DLHoppingConfigCommonModeB_r13       [MAX_NUM_CCs];
+  long			  interval_DLHoppingConfigCommonModeB_r13_val   [MAX_NUM_CCs];
+  long*			  mpdcch_pdsch_HoppingOffset_r13                [MAX_NUM_CCs];
+
+//  +kogo -- rach_CE_LevelInfoList_r13
+  long firstPreamble_r13                 [MAX_NUM_CCs][4];
+  long lastPreamble_r13                  [MAX_NUM_CCs][4];
+  long ra_ResponseWindowSize_r13         [MAX_NUM_CCs][4];
+  long mac_ContentionResolutionTimer_r13 [MAX_NUM_CCs][4];
+  long rar_HoppingConfig_r13             [MAX_NUM_CCs][4];
+  int  rach_CE_LevelInfoList_r13_size    [MAX_NUM_CCs];
+//  end kogo
 
 
+// +kogo -- rsrp_range_list
+  long rsrp_range           [MAX_NUM_CCs][3];
+  int rsrp_range_list_size  [MAX_NUM_CCs];
+//  end kogo
+
+//   +kogo -- prach parameters ce list
+  long prach_config_index                        [MAX_NUM_CCs][4];
+  long prach_freq_offset                         [MAX_NUM_CCs][4];
+  long *prach_StartingSubframe_r13               [MAX_NUM_CCs][4];
+  long *maxNumPreambleAttemptCE_r13              [MAX_NUM_CCs][4];
+  long numRepetitionPerPreambleAttempt_r13       [MAX_NUM_CCs][4];
+  long mpdcch_NumRepetition_RA_r13               [MAX_NUM_CCs][4];
+  long prach_HoppingConfig_r13                   [MAX_NUM_CCs][4];
+  int  prach_parameters_list_size                [MAX_NUM_CCs];
+  long max_available_narrow_band                 [MAX_NUM_CCs][4][2];
+  int  max_available_narrow_band_size            [MAX_NUM_CCs];
+//    end kogo
+
+
+// +kogo n1PUCCH_AN_InfoList_r13 list
+    long pucch_info_value       [MAX_NUM_CCs][4];
+    int  pucch_info_value_size  [MAX_NUM_CCs];
+//  end kogo
 
 #endif
 } RrcConfigurationReq;
