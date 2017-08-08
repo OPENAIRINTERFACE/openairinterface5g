@@ -199,10 +199,13 @@ void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,re
 
 /*! \brief Scheduling for eNB PRACH RX procedures
   @param phy_vars_eNB Pointer to eNB variables on which to act
-  @param proc Pointer to RXn-TXnp4 proc information
+  @param br_flag indicator for eMTC PRACH
 */
-void prach_procedures(PHY_VARS_eNB *eNB);
-
+void prach_procedures(PHY_VARS_eNB *eNB,
+#ifdef Rel14
+		      int br_flag
+#endif
+		      );
 /*! \brief Function to compute subframe type as a function of Frame type and TDD Configuration (implements Table 4.2.2 from 36.211, p.11 from version 8.6) and subframe index.
   @param frame_parms Pointer to DL frame parameter descriptor
   @param subframe Subframe index

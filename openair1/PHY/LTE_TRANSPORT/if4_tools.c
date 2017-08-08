@@ -43,12 +43,15 @@ const uint8_t lin2alaw_if4p5[65536] = {213, 213, 213, 213, 213, 213, 213, 213, 2
 
 void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
-  int32_t **txdataF      = ru->common.txdataF_BF;
-  int32_t **rxdataF      = ru->common.rxdataF;
-  int16_t **prach_rxsigF = ru->prach_rxsigF;  
-  void *tx_buffer        = ru->ifbuffer.tx[subframe&1];
-  void *tx_buffer_prach  = ru->ifbuffer.tx_prach;
+  LTE_DL_FRAME_PARMS *fp     = &ru->frame_parms;
+  int32_t **txdataF          = ru->common.txdataF_BF;
+  int32_t **rxdataF          = ru->common.rxdataF;
+  int16_t **prach_rxsigF     = ru->prach_rxsigF;  
+#ifdef Rel14
+  int16_t ***prach_rxsigF_br = ru->prach_rxsigF_br;
+#endif
+  void *tx_buffer            = ru->ifbuffer.tx[subframe&1];
+  void *tx_buffer_prach      = ru->ifbuffer.tx_prach;
 
 
   uint16_t symbol_id=0, element_id=0;
@@ -175,7 +178,8 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 	perror("ETHERNET write for IF4p5_PULFFT\n");
       }
     }
-  } else if (packet_type == IF4p5_PRACH) {
+  } else if (packet_type >= IF4p5_PRACH && 
+	     packet_type <= IF4p5_PRACH+4) {
     // FIX: hard coded prach samples length
     LOG_D(PHY,"IF4p5_PRACH: frame %d, subframe %d\n",frame,subframe);
     db_fulllength = PRACH_NUM_SAMPLES;
@@ -189,13 +193,24 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
     }  
     gen_IF4p5_prach_header(packet_header, frame, subframe);
 
+
+    int16_t *rxF;
+
+#ifdef Rel14
+    if (packet_type > IF4p5_PRACH)
+      rxF = &prach_rxsigF_br[packet_type - IF4p5_PRACH - 1][0][0];
+    else 
+#else
+      rxF = &prach_rxsigF[0][0];
+#endif    
+
     if (eth->flags == ETH_RAW_IF4p5_MODE) {
-      memcpy((int16_t*)(tx_buffer_prach + MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t),
-             (&prach_rxsigF[0][0]), 
-             PRACH_BLOCK_SIZE_BYTES);
+       memcpy((void *)(tx_buffer_prach + MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t),
+              (void*)rxF, 
+              PRACH_BLOCK_SIZE_BYTES);
     } else {
-      memcpy((int16_t*)(tx_buffer_prach + sizeof_IF4p5_header_t),
-             (&prach_rxsigF[0][0]),
+      memcpy((void *)(tx_buffer_prach + sizeof_IF4p5_header_t),
+             (void *)rxF,
              PRACH_BLOCK_SIZE_BYTES);
     }
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 1 );
@@ -204,7 +219,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 				     &tx_buffer_prach,
 				     db_fulllength,
 				     1,
-				     IF4p5_PRACH)) < 0) {
+				     packet_type)) < 0) {
       perror("ETHERNET write for IF4p5_PRACH\n");
     }
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 0 );      
@@ -217,11 +232,14 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 }
 
 void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint32_t *symbol_number) {
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
-  int32_t **txdataF      = ru->common.txdataF_BF;
-  int32_t **rxdataF      = ru->common.rxdataF;
-  int16_t **prach_rxsigF = ru->prach_rxsigF;  
-  void *rx_buffer        = ru->ifbuffer.rx;
+  LTE_DL_FRAME_PARMS *fp     = &ru->frame_parms;
+  int32_t **txdataF          = ru->common.txdataF_BF;
+  int32_t **rxdataF          = ru->common.rxdataF;
+  int16_t **prach_rxsigF     = ru->prach_rxsigF;  
+#ifdef Rel14
+  int16_t ***prach_rxsigF_br = ru->prach_rxsigF_br;
+#endif
+  void *rx_buffer            = ru->ifbuffer.rx;
 
   uint16_t element_id;
   uint16_t db_fulllength, db_halflength; 
@@ -308,18 +326,28 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
 	//if (element_id==0) LOG_I(PHY,"recv_if4p5: symbol %d rxdata0 = (%u,%u)\n",*symbol_number,*i,*(i+1));
     }
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_DECOMPR_IF, 0 );		
-  } else if (*packet_type == IF4p5_PRACH) {  
+  } else if (*packet_type >= IF4p5_PRACH &&
+	     *packet_type <= IF4p5_PRACH + 4) {  
 
+    int16_t *rxF;
+    
+#ifdef Rel14
+    if (*packet_type > IF4p5_PRACH)
+      rxF = &prach_rxsigF_br[*packet_type - IF4p5_PRACH - 1][0][0];
+    else 
+#else
+      rxF = &prach_rxsigF[0][0];
+#endif
 
     // FIX: hard coded prach samples length
     db_fulllength = PRACH_NUM_SAMPLES;
 
     if (eth->flags == ETH_RAW_IF4p5_MODE) {		
-      memcpy((&prach_rxsigF[0][0]), 
+      memcpy(rxF, 
              (int16_t*) (rx_buffer+MAC_HEADER_SIZE_BYTES+sizeof_IF4p5_header_t), 
              PRACH_BLOCK_SIZE_BYTES);
     } else {
-      memcpy((&prach_rxsigF[0][0]),
+      memcpy(rxF,
              (int16_t*) (rx_buffer+sizeof_IF4p5_header_t),
              PRACH_BLOCK_SIZE_BYTES);
     }

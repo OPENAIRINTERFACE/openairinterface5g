@@ -171,6 +171,7 @@ int mac_top_init_eNB()
 		  RC.nb_macrlc_inst*sizeof(eNB_MAC_INST*),RC.nb_macrlc_inst,sizeof(eNB_MAC_INST));
       LOG_D(MAC,"[MAIN] ALLOCATE %zu Bytes for %d eNB_MAC_INST @ %p\n",sizeof(eNB_MAC_INST),RC.nb_macrlc_inst,RC.mac);
       bzero(RC.mac[i],sizeof(eNB_MAC_INST));
+      RC.mac[i]->Mod_id = Mod_id;
       for (j=0;j<MAX_NUM_CCs;j++) {
 	RC.mac[i]->DL_req[j].dl_config_request_body.dl_config_pdu_list      = RC.mac[i]->dl_config_pdu_list[j];
 	RC.mac[i]->UL_req[j].ul_config_request_body.ul_config_pdu_list      = RC.mac[i]->ul_config_pdu_list[j];
@@ -186,6 +187,7 @@ int mac_top_init_eNB()
   // Initialize Linked-List for Active UEs
   for(Mod_id=0; Mod_id<RC.nb_macrlc_inst; Mod_id++) {
     mac = RC.mac[Mod_id];
+
 
     mac->if_inst                = IF_Module_init(Mod_id);
 

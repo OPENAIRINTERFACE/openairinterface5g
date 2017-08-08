@@ -1179,7 +1179,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
       handle_nfapi_dlsch_pdu(eNB,proc,dl_config_pdu,
 			     dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_blocks-1,
 			     TX_req->tx_request_body.tx_pdu_list[dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index].segments[0].segment_data);
-      if (dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti == eNB->prach_vars.preamble_list[0].preamble_rel8.rnti) {// is RAR pdu
+      if (dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti == eNB->preamble_list[0].preamble_rel8.rnti) {// is RAR pdu
 	
 	generate_eNB_ulsch_params_from_rar(eNB,
 					   TX_req->tx_request_body.tx_pdu_list[dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index].segments[0].segment_data,
@@ -1917,107 +1917,136 @@ void get_n1_pucch_eNB(PHY_VARS_eNB *eNB,
   }
 }
 
-void prach_procedures(PHY_VARS_eNB *eNB) {
+void prach_procedures(PHY_VARS_eNB *eNB,
+#ifdef Rel14
+		      int br_flag
+#endif
+		      ) {
 
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
-  uint16_t preamble_energy_list[64],preamble_delay_list[64];
-  uint16_t preamble_max,preamble_energy_max;
+  uint16_t max_preamble[4],max_preamble_energy[4],max_preamble_delay[4];
   uint16_t i;
-  int subframe = eNB->proc.subframe_prach;
-  int frame = eNB->proc.frame_prach;
+  int frame,subframe;
+#ifdef Rel14
+  if (br_flag==1) {
+    subframe = eNB->proc.subframe_prach_br;
+    frame = eNB->proc.frame_prach_br;
+  }
+  else
+#endif
+    {
+      subframe = eNB->proc.subframe_prach;
+      frame = eNB->proc.frame_prach;
+    }
   uint8_t CC_id = eNB->CC_id;
   RU_t *ru;
   int aa=0;
   int ru_aa;
+  LTE_eNB_PRACH *prach_vars;
 
+ 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,1);
-  memset(&preamble_energy_list[0],0,64*sizeof(uint16_t));
-  memset(&preamble_delay_list[0],0,64*sizeof(uint16_t));
-
 
   for (i=0;i<eNB->num_RU;i++) {
     ru=eNB->RU_list[i];
-    for (ru_aa=0;ru_aa<ru->nb_rx;ru_aa++) eNB->prach_vars.rxsigF[aa++] = eNB->RU_list[i]->prach_rxsigF[ru_aa];
-  }
-  rx_prach(eNB,
-	   eNB->RU_list[0],
-	   preamble_energy_list,
-	   preamble_delay_list,
-	   frame,
-	   0);
-  preamble_energy_max = preamble_energy_list[0];
-  preamble_max = 0;
+    for (ru_aa=0,aa=0;ru_aa<ru->nb_rx;ru_aa++,aa++) {
+      eNB->prach_vars.rxsigF[aa] = eNB->RU_list[i]->prach_rxsigF[ru_aa];
+#ifdef Rel14
+      int ce_level;
 
-  for (i=1; i<64; i++) {
-    if (preamble_energy_max < preamble_energy_list[i]) {
-      preamble_energy_max = preamble_energy_list[i];
-      preamble_max = i;
+      if (br_flag==1)
+	for (ce_level=0;ce_level<4;ce_level++) eNB->prach_vars_br.rxsigF[aa] = eNB->RU_list[i]->prach_rxsigF_br[ce_level][ru_aa];
+#endif
     }
   }
+
+  rx_prach(eNB,
+	   eNB->RU_list[0],
+	   &max_preamble[0],
+	   &max_preamble_energy[0],
+	   &max_preamble_delay[0],
+	   frame,
+	   0
+#ifdef Rel14
+	   ,br_flag
+#endif
+	   );
 
   //#ifdef DEBUG_PHY_PROC
   LOG_D(PHY,"[RAPROC] Frame %d, subframe %d : Most likely preamble %d, energy %d dB delay %d\n",
         frame,subframe,
-	preamble_max,
-        preamble_energy_list[preamble_max],
-        preamble_delay_list[preamble_max]);
+	max_preamble[0],
+        max_preamble_energy[0],
+        max_preamble_delay[0]);
   //#endif
 
-  if (preamble_energy_list[preamble_max] > 580) {
+#ifdef Rel14
+  if (br_flag==1) {
 
-    //    UE_id = find_next_ue_index(eNB);
- 
-    //    if (UE_id>=0) {
-      //      eNB->UE_stats[(uint32_t)UE_id].UE_timing_offset = preamble_delay_list[preamble_max]&0x1FFF; //limit to 13 (=11+2) bits
-
-      //      eNB->UE_stats[(uint32_t)UE_id].sector = 0;
-    LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
-	  eNB->Mod_id,
-	  eNB->CC_id,
-	  frame,
-	  subframe,
-	  preamble_max,
-	  preamble_energy_max/10,
-	  preamble_energy_max%10,
-	  preamble_delay_list[preamble_max]);
+    prach_vars = &eNB->prach_vars_br;
+    int prach_mask;
+      
+    prach_mask = is_prach_subframe(&eNB->frame_parms,eNB->proc.frame_prach_br,eNB->proc.subframe_prach_br);
     
-    T(T_ENB_PHY_INITIATE_RA_PROCEDURE, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), 0,
-      T_INT(preamble_max), T_INT(preamble_energy_max), T_INT(preamble_delay_list[preamble_max]));
-
-    if (eNB->mac_enabled==1) {
-      LTE_eNB_PRACH *prach_vars = &eNB->prach_vars;
-      
-      uint8_t update_TA  = 4;
-      uint8_t update_TA2 = 1;
-      switch (fp->N_RB_DL) {
-      case 6:
-	update_TA = 16;
-	break;
-	
-      case 25:
-	update_TA = 4;
-	break;
-	
-      case 50:
-	update_TA = 2;
-	break;
-	
-      case 75:
-	update_TA  = 3;
-	update_TA2 = 2;
-      case 100:
-	update_TA  = 1;
-	break;
+    eNB->UL_INFO.rach_ind_br.preamble_list                              = eNB->preamble_list_br;
+    
+    for (int ind=0,ce_level=0;ce_level<4;ce_level++) {
+      if ((prach_mask&(1<<(1+ce_level)) > 0) && // prach is active and CE level has finished its repetitions
+	  (eNB->prach_vars_br.repetition_number[ce_level]==
+	   eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[ce_level])) {
+	if (max_preamble_energy[ind] > 580) {
+	  eNB->UL_INFO.rach_ind_br.number_of_preambles++;
+	  
+	  eNB->preamble_list_br[ind].preamble_rel8.timing_advance        = max_preamble_delay[ind];//
+	  eNB->preamble_list_br[ind].preamble_rel8.preamble              = max_preamble[ind];
+	  // note: fid is implicitly 0 here, this is the rule for eMTC RA-RNTI from 36.321, Section 5.1.4
+	  eNB->preamble_list_br[ind].preamble_rel8.rnti                  = 1+subframe+(eNB->prach_vars_br.first_frame[ce_level]%40);  
+	  eNB->preamble_list_br[ind].instance_length                     = 0; //don't know exactly what this is
+	  eNB->preamble_list_br[ind].preamble_rel13.rach_resource_type   = 1+ce_level;  // CE Level
+	}
+	ind++;
       }
-      pthread_mutex_lock(&eNB->UL_INFO_mutex);
-      eNB->UL_INFO.rach_ind.number_of_preambles                        = 1;
-      eNB->UL_INFO.rach_ind.preamble_list                              = prach_vars->preamble_list;
-      
-      prach_vars->preamble_list[0].preamble_rel8.timing_advance        = preamble_delay_list[preamble_max]*update_TA/update_TA2;
-      prach_vars->preamble_list[0].preamble_rel8.preamble              = preamble_max;
-      prach_vars->preamble_list[0].preamble_rel8.rnti                  = 1+subframe;  // note: fid is implicitly 0 here
-      prach_vars->preamble_list[0].instance_length                     = 0; //don't know exactly what this is
-      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
+    } // ce_level
+  }
+  else
+#endif
+
+    {
+      if (max_preamble_energy[0] > 580) {
+
+	LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
+	      eNB->Mod_id,
+	      eNB->CC_id,
+	      frame,
+	      subframe,
+	      max_preamble[0],
+	      max_preamble_energy[0]/10,
+	      max_preamble_energy[0]%10,
+	      max_preamble_delay[0]);
+	
+	    T(T_ENB_PHY_INITIATE_RA_PROCEDURE, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), 0,
+	      T_INT(max_preamble[0]), T_INT(max_preamble_energy[0]), T_INT(max_preamble_delay[0]));
+	    
+	    if (eNB->mac_enabled==1) {
+	      
+	      prach_vars = &eNB->prach_vars;
+	      
+	      
+	      pthread_mutex_lock(&eNB->UL_INFO_mutex);
+	      
+	      eNB->UL_INFO.rach_ind.number_of_preambles                 = 1;
+	      eNB->UL_INFO.rach_ind.preamble_list                       = eNB->preamble_list;
+	      
+	      eNB->preamble_list[0].preamble_rel8.timing_advance        = max_preamble_delay[0];
+	      eNB->preamble_list[0].preamble_rel8.preamble              = max_preamble[0];
+	      eNB->preamble_list[0].preamble_rel8.rnti                  = 1+subframe;  // note: fid is implicitly 0 here
+	      eNB->preamble_list[0].preamble_rel13.rach_resource_type   = 0;
+	      eNB->preamble_list[0].instance_length                     = 0; //don't know exactly what this is
+	    
+	      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
+	    }
+      } // max_preamble_energy > 580
+    } // else br_flag
       /*
 	mac_xface->initiate_ra_proc(eNB->Mod_id,
 	eNB->CC_id,
@@ -2026,15 +2055,13 @@ void prach_procedures(PHY_VARS_eNB *eNB) {
 	preamble_delay_list[preamble_max]*update_TA/update_TA2,
 	0,subframe,0);*/
       
-      // fill eNB->UL_info with prach information
-    }      
     
     /*  } else {
     MSC_LOG_EVENT(MSC_PHY_ENB, "0 RA Failed add user, too many");
     LOG_I(PHY,"[eNB %d][RAPROC] frame %d, subframe %d: Unable to add user, max user count reached\n",
 	  eNB->Mod_id,frame, subframe);
 	  }*/
-  }
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,0);
 }
 

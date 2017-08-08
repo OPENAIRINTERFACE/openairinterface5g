@@ -824,10 +824,18 @@ typedef struct {
   uint8_t generate_rar;
   /// Subframe where preamble was received
   uint8_t preamble_subframe;
+  /// Subframe where Msg2 is to be sent
+  uint8_t Msg2_subframe;
+  /// Frame where Msg2 is to be sent
+  uint8_t Msg2_frame;
   /// Subframe where Msg3 is to be sent
   uint8_t Msg3_subframe;
-  /// Subframe where Msg3 is to be sent
+  /// Frame where Msg3 is to be sent
   uint8_t Msg3_frame;
+  /// Subframe where Msg4 is to be sent
+  uint8_t Msg4_subframe;
+  /// Frame where Msg4 is to be sent
+  uint8_t Msg4_frame;
   /// Flag to indicate the eNB should generate Msg4 upon reception of SDU from RRC.  This is triggered by first ULSCH reception at eNB for new user.
   uint8_t generate_Msg4;
   /// Flag to indicate that eNB is waiting for ACK that UE has received Msg3.
@@ -846,6 +854,13 @@ typedef struct {
   int16_t RRC_timer;
   /// Round of Msg3 HARQ
   uint8_t msg3_round;
+#ifdef Rel14
+  uint8_t rach_resource_type;
+  uint8_t msg2_mpdcch_repetition_cnt;
+  uint8_t msg4_mpdcch_repetition_cnt;
+  uint8_t msg2_narrowband;
+  uint8_t msg34_narrowband;
+#endif
 } RA_TEMPLATE;
 
 
@@ -962,7 +977,7 @@ typedef struct eNB_MAC_INST_s {
   /// Ethernet parameters for fronthaul interface
   eth_params_t         eth_params_s;
   ///
-  uint16_t Node_id;
+  module_id_t Mod_id;
   /// frame counter
   frame_t frame;
   /// subframe counter
@@ -1029,6 +1044,15 @@ typedef struct eNB_MAC_INST_s {
 /* 
  * UE part 
  */ 
+
+typedef enum {
+  TYPE0,
+  TYPE1,
+  TYPE1A,
+  TYPE2,
+  TYPE2A,
+  TYPEUESPEC
+} MPDCCH_TYPES_t;
 
 /*!\brief UE layer 2 status */
 typedef enum {

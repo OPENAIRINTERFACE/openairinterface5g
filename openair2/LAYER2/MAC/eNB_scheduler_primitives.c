@@ -208,6 +208,8 @@ void get_Msg3alloc(COMMON_channels_t *cc,
   }
 }
 
+
+
 void get_Msg3allocret(COMMON_channels_t *cc,
 		      unsigned char current_subframe,
 		      unsigned int current_frame,
@@ -400,6 +402,67 @@ uint8_t get_Msg3harqpid(COMMON_channels_t *cc,
   return(subframe2harqpid(cc,ul_frame,ul_subframe));
 
 }
+
+#ifdef Rel14
+
+int get_numnarrowbands(long dl_Bandwidth) {
+  int nb_tab[6] = {1,2,4,8,12,16};
+
+  AssertFatal(dl_Bandwidth<7 || dl_Bandwidth>=0,"dl_Bandwidth not in [0..6]\n");
+  return(nb_tab[dl_Bandwidth]);
+}
+
+int get_numnarrowbandbits(long dl_Bandwidth) {
+  int nbbits_tab[6] = {0,1,2,3,4,4};
+
+  AssertFatal(dl_Bandwidth<7 || dl_Bandwidth>=0,"dl_Bandwidth not in [0..6]\n");
+  return(nbbits_tab[dl_Bandwidth]);
+}
+
+//This implements the frame/subframe condition for first subframe of MPDCCH transmission (Section 9.1.5 36.213, Rel 13/14)
+int startSF_fdd_RA_times2[8] = {2,3,4,5,8,10,16,20};
+int startSF_tdd_RA[7]        = {1,2,4,5,8,10,20};
+
+int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t subframeP,int rmax,MPDCCH_TYPES_t mpdcch_type) {
+
+  struct PRACH_ConfigSIB_v1310 *ext4_prach = eNB->common_channels[CC_id].radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
+  int T;
+
+  switch (mpdcch_type) {
+  case TYPE0:
+    AssertFatal(1==0,"MPDCCH Type 0 not handled yet\n");
+    break;
+  case TYPE1:
+    AssertFatal(1==0,"MPDCCH Type 1 not handled yet\n");
+    break;
+  case TYPE1A:
+    AssertFatal(1==0,"MPDCCH Type 1A not handled yet\n");
+    break;
+  case TYPE2: // RAR
+    AssertFatal(ext4_prach->mpdcch_startSF_CSS_RA_r13!=NULL,
+		"mpdcch_startSF_CSS_RA_r13 is null\n");
+    if (eNB->common_channels[CC_id].tdd_Config==NULL) //FDD
+      T = rmax*startSF_fdd_RA_times2[ext4_prach->mpdcch_startSF_CSS_RA_r13->choice.fdd_r13]>>1;
+    else //TDD
+      T = rmax*startSF_tdd_RA[ext4_prach->mpdcch_startSF_CSS_RA_r13->choice.tdd_r13];
+    break;
+  case TYPE2A:
+    AssertFatal(1==0,"MPDCCH Type 2A not handled yet\n");
+    break;
+  case TYPEUESPEC:
+    AssertFatal(1==0,"MPDCCH Type UESPEC not handled yet\n");
+    break;
+  default:
+    return(0);
+  }
+
+  if (((10*frameP) + subframeP)%T == 0) return(1);
+  else return(0);
+
+}
+
+
+#endif
 
 //------------------------------------------------------------------------------
 void init_ue_sched_info(void)

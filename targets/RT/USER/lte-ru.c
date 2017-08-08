@@ -479,15 +479,19 @@ void fh_if4p5_south_asynch_in(RU_t *ru,int *frame,int *subframe) {
 
   uint16_t packet_type;
   uint32_t symbol_number,symbol_mask,symbol_mask_full,prach_rx;
-
+  uint32_t got_prach_info=0;
 
   symbol_number = 0;
-  symbol_mask = 0;
-  symbol_mask_full = (1<<fp->symbols_per_tti)-1;
-  prach_rx = 0;
+  symbol_mask   = (1<<fp->symbols_per_tti)-1;
+  prach_rx      = 0;
 
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
     recv_IF4p5(ru, &proc->frame_rx, &proc->subframe_rx, &packet_type, &symbol_number);
+    // grab first prach information for this new subframe
+    if (got_prach_info==0) {
+      prach_rx       = is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx);
+      got_prach_info = 1;
+    }
     if (proc->first_rx != 0) {
       *frame = proc->frame_rx;
       *subframe = proc->subframe_rx;
@@ -503,13 +507,15 @@ void fh_if4p5_south_asynch_in(RU_t *ru,int *frame,int *subframe) {
 	exit_fun("Exiting");
       }
     }
-    if (packet_type == IF4p5_PULFFT) {
-      symbol_mask = symbol_mask | (1<<symbol_number);
-      prach_rx = (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)>0) ? 1 : 0;                            
-    } else if (packet_type == IF4p5_PRACH) {
-      prach_rx = 0;
-    }
-  } while( (symbol_mask != symbol_mask_full) || (prach_rx == 1));    
+    if      (packet_type == IF4p5_PULFFT)       symbol_mask &= (~(1<<symbol_number));
+    else if (packet_type == IF4p5_PRACH)        prach_rx    &= (~0x1);
+#ifdef Rel14
+    else if (packet_type == IF4p5_PRACH_BR_CE0) prach_rx    &= (~0x2);
+    else if (packet_type == IF4p5_PRACH_BR_CE1) prach_rx    &= (~0x4);
+    else if (packet_type == IF4p5_PRACH_BR_CE2) prach_rx    &= (~0x8);
+    else if (packet_type == IF4p5_PRACH_BR_CE3) prach_rx    &= (~0x10);
+#endif
+  } while( (symbol_mask > 0) || (prach_rx >0));   // haven't received all PUSCH symbols and PRACH information 
 } 
 
 
@@ -895,19 +901,59 @@ static void* ru_thread_prach( void* param ) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 1 );      
     rx_prach(NULL,
 	     ru,
+	     NULL,
              NULL,
              NULL,
              proc->frame_prach,
-             0);
+             0
+#ifdef Rel14
+	     ,0
+#endif
+	     );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 0 );      
     if (release_thread(&proc->mutex_prach,&proc->instance_cnt_prach,"ru_prach_thread") < 0) break;
   }
 
-  printf( "Exiting RU thread PRACH\n");
+  LOG_I(PHY, "Exiting RU thread PRACH\n");
 
   ru_thread_prach_status = 0;
   return &ru_thread_prach_status;
 }
+
+#ifdef Rel14
+static void* ru_thread_prach_br( void* param ) {
+
+  static int ru_thread_prach_status;
+
+  RU_t *ru        = (RU_t*)param;
+  RU_proc_t *proc = (RU_proc_t*)&ru->proc;
+
+  // set default return value
+  ru_thread_prach_status = 0;
+
+  thread_top_init("ru_thread_prach_br",1,500000L,1000000L,20000000L);
+
+  while (!oai_exit) {
+    
+    if (oai_exit) break;
+    if (wait_on_condition(&proc->mutex_prach_br,&proc->cond_prach_br,&proc->instance_cnt_prach_br,"ru_prach_thread_br") < 0) break;
+    rx_prach(NULL,
+	     ru,
+	     NULL,
+             NULL,
+             NULL,
+             proc->frame_prach_br,
+             0,
+	     1);
+    if (release_thread(&proc->mutex_prach_br,&proc->instance_cnt_prach_br,"ru_prach_thread_br") < 0) break;
+  }
+
+  LOG_I(PHY, "Exiting RU thread PRACH BR\n");
+
+  ru_thread_prach_status = 0;
+  return &ru_thread_prach_status;
+}
+#endif
 
 int wakeup_synch(RU_t *ru){
 
@@ -1058,6 +1104,35 @@ static inline int wakeup_prach_ru(RU_t *ru) {
   return(0);
 }
 
+#ifdef Rel14
+static inline int wakeup_prach_ru_br(RU_t *ru) {
+
+  struct timespec wait;
+  
+  wait.tv_sec=0;
+  wait.tv_nsec=5000000L;
+
+  if (pthread_mutex_timedlock(&ru->proc.mutex_prach_br,&wait) !=0) {
+    LOG_E( PHY, "[RU] ERROR pthread_mutex_lock for RU prach thread BR (IC %d)\n", ru->proc.instance_cnt_prach_br);
+    exit_fun( "error locking mutex_rxtx" );
+    return(-1);
+  }
+  if (ru->proc.instance_cnt_prach_br==-1) {
+    ++ru->proc.instance_cnt_prach_br;
+    ru->proc.frame_prach_br    = ru->proc.frame_rx;
+    ru->proc.subframe_prach_br = ru->proc.subframe_rx;
+
+    LOG_D(PHY,"RU %d: waking up PRACH thread\n",ru->idx);
+    // the thread can now be woken up
+    AssertFatal(pthread_cond_signal(&ru->proc.cond_prach_br) == 0, "ERROR pthread_cond_signal for RU prach thread BR\n");
+  }
+  else LOG_W(PHY,"RU prach thread busy, skipping\n");
+  pthread_mutex_unlock( &ru->proc.mutex_prach_br );
+
+  return(0);
+}
+#endif
+
 static void* ru_thread( void* param ) {
 
   static int ru_thread_status;
@@ -1150,10 +1225,10 @@ static void* ru_thread( void* param ) {
 	  is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx),
 	  proc->frame_rx,proc->subframe_rx);
  
-    if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)>0))
-      wakeup_prach_ru(ru);
-
-
+    if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) wakeup_prach_ru(ru);
+#ifdef Rel14
+    else if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)>1)) wakeup_prach_ru_br(ru);
+#endif
 
     // adjust for timing offset between RU
     if (ru->idx!=0) proc->frame_tx = (proc->frame_tx+proc->frame_offset)&1023;
@@ -1298,7 +1373,9 @@ void init_RU_proc(RU_t *ru) {
   RU_proc_t *proc;
   pthread_attr_t *attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_synch=NULL;
   //pthread_attr_t *attr_fep=NULL;
-
+#ifdef Rel14
+  pthread_attr_t *attr_prach_br=NULL;
+#endif
   char name[100];
 
 #ifndef OCP_FRAMEWORK
@@ -1335,32 +1412,37 @@ void init_RU_proc(RU_t *ru) {
   pthread_attr_init( &proc->attr_synch);
   pthread_attr_init( &proc->attr_asynch_rxtx);
   pthread_attr_init( &proc->attr_fep);
-  
+
+#ifdef Rel14
+  proc->instance_cnt_prach_br       = -1;
+  pthread_mutex_init( &proc->mutex_prach_br, NULL);
+  pthread_cond_init( &proc->cond_prach_br, NULL);
+  pthread_attr_init( &proc->attr_prach_br);
+#endif  
   
 #ifndef DEADLINE_SCHEDULER
-  attr_FH     = &proc->attr_FH;
-  attr_prach  = &proc->attr_prach;
-  attr_synch  = &proc->attr_synch;
-  attr_asynch = &proc->attr_asynch_rxtx;
-  //  attr_fep    = &proc->attr_fep;
+  attr_FH        = &proc->attr_FH;
+  attr_prach     = &proc->attr_prach;
+  attr_synch     = &proc->attr_synch;
+  attr_asynch    = &proc->attr_asynch_rxtx;
+#ifdef Rel14
+  attr_prach_br  = &proc->attr_prach_br;
+#endif
 #endif
   
   pthread_create( &proc->pthread_FH, attr_FH, ru_thread, (void*)ru );
 
   if (ru->function == NGFI_RRU_IF4p5) {
     pthread_create( &proc->pthread_prach, attr_prach, ru_thread_prach, (void*)ru );
-  
+#ifdef Rel14  
+    pthread_create( &proc->pthread_prach_br, attr_prach_br, ru_thread_prach_br, (void*)ru );
+#endif
     if (ru->is_slave == 1) pthread_create( &proc->pthread_synch, attr_synch, ru_thread_synch, (void*)ru);
     
     
     if ((ru->if_timing == synch_to_other) ||
 	(ru->function == NGFI_RRU_IF5) ||
-	(ru->function == NGFI_RRU_IF4p5))
-      
-      
-      pthread_create( &proc->pthread_asynch_rxtx, attr_asynch, ru_thread_asynch_rxtx, (void*)ru );
-    
-    
+	(ru->function == NGFI_RRU_IF4p5)) pthread_create( &proc->pthread_asynch_rxtx, attr_asynch, ru_thread_asynch_rxtx, (void*)ru );
     
     snprintf( name, sizeof(name), "ru_thread_FH %d", ru->idx );
     pthread_setname_np( proc->pthread_FH, name );
@@ -1563,6 +1645,7 @@ void configure_ru(int idx,
   RRU_config_t       *config       = (RRU_config_t *)arg;
   RRU_capabilities_t *capabilities = (RRU_capabilities_t*)arg;
   int ret;
+  int i;
 
   LOG_I(PHY, "Received capabilities from RRU %d\n",idx);
 
@@ -1588,6 +1671,13 @@ void configure_ru(int idx,
       LOG_I(PHY,"REMOTE_IF4p5: prach_FrequOffset %d, prach_ConfigIndex %d\n",
 	    config->prach_FreqOffset[0],config->prach_ConfigIndex[0]);
 
+#ifdef Rel14
+      for (i=0;i<4;i++) {
+	config->emtc_prach_CElevel_enable[0][i]  = ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i];
+	config->emtc_prach_FreqOffset[0][i]      = ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[i];
+	config->emtc_prach_ConfigIndex[0][i]     = ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[i];
+      }
+#endif
     }
     // take antenna capabilities of RRU
     ru->nb_tx                      = capabilities->nb_tx[0];
@@ -1621,6 +1711,13 @@ void configure_rru(int idx,
 	  config->prach_FreqOffset[0],config->prach_ConfigIndex[0]);
     ru->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset  = config->prach_FreqOffset[0]; 
     ru->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex = config->prach_ConfigIndex[0]; 
+#ifdef Rel14
+    for (int i=0;i<4;i++) {
+      ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i] = config->emtc_prach_CElevel_enable[0][i];
+      ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[i]     = config->emtc_prach_FreqOffset[0][i];
+      ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[i]    = config->emtc_prach_ConfigIndex[0][i];
+    }
+#endif
   }
   
   init_frame_parms(&ru->frame_parms,1);

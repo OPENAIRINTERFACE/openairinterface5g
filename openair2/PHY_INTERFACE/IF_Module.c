@@ -11,6 +11,7 @@ IF_Module_t *if_inst[MAX_IF_MODULES];
 Sched_Rsp_t Sched_INFO[MAX_IF_MODULES][MAX_NUM_CCs];
 
 void handle_rach(UL_IND_t *UL_info) {
+  int i;
 
   if (UL_info->rach_ind.number_of_preambles>0) {
 
@@ -23,8 +24,34 @@ void handle_rach(UL_IND_t *UL_info) {
 		     UL_info->subframe,
 		     UL_info->rach_ind.preamble_list[0].preamble_rel8.preamble,
 		     UL_info->rach_ind.preamble_list[0].preamble_rel8.timing_advance,
-		     UL_info->rach_ind.preamble_list[0].preamble_rel8.rnti);
+		     UL_info->rach_ind.preamble_list[0].preamble_rel8.rnti
+#ifdef Rel14
+		     ,0
+#endif
+		     );
   }
+
+#ifdef Rel14
+  if (UL_info->rach_ind_br.number_of_preambles>0) {
+
+    AssertFatal(UL_info->rach_ind_br.number_of_preambles<5,"More than 4 preambles not supported\n");
+    for (i=0;i<UL_info->rach_ind_br.number_of_preambles;i++) {
+      AssertFatal(UL_info->rach_ind_br.preamble_list[i].preamble_rel13.rach_resource_type>0,
+		  "Got regular PRACH preamble, not BL/CE\n");
+      LOG_D(MAC,"Frame %d, Subframe %d Calling initiate_ra_proc (CE_level %d)\n",UL_info->frame,UL_info->subframe,
+	    UL_info->rach_ind_br.preamble_list[i].preamble_rel13.rach_resource_type-1);
+      initiate_ra_proc(UL_info->module_id,
+		       UL_info->CC_id,
+		       UL_info->frame,
+		       UL_info->subframe,
+		       UL_info->rach_ind_br.preamble_list[i].preamble_rel8.preamble,
+		       UL_info->rach_ind_br.preamble_list[i].preamble_rel8.timing_advance,
+		       UL_info->rach_ind_br.preamble_list[i].preamble_rel8.rnti,
+		       UL_info->rach_ind_br.preamble_list[i].preamble_rel13.rach_resource_type);
+    }
+    UL_info->rach_ind.number_of_preambles=0;
+  }
+#endif
 }
 
 void handle_ulsch(UL_IND_t *UL_info) {

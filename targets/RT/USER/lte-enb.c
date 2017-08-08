@@ -144,6 +144,9 @@ void init_eNB(int,int);
 void stop_eNB(int nb_inst);
 
 void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
+#ifdef Rel14
+void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
+#endif
 
 static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_name) {
 
@@ -153,8 +156,12 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   // Common RX procedures subframe n
 
   // if this is IF5 or 3GPP_eNB
-  if (eNB->RU_list[0]->function < NGFI_RAU_IF4p5) wakeup_prach_eNB(eNB,NULL,proc->frame_rx,proc->subframe_rx);
-
+  if (eNB->RU_list[0]->function < NGFI_RAU_IF4p5) {
+    wakeup_prach_eNB(eNB,NULL,proc->frame_rx,proc->subframe_rx);
+#ifdef Rel14
+    wakeup_prach_eNB_br(eNB,NULL,proc->frame_rx,proc->subframe_rx);
+#endif
+  }
   // UE-specific RX processing for subframe n
   phy_procedures_eNB_uespec_RX(eNB, proc, no_relay );
 
@@ -432,6 +439,67 @@ void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
 
 }
 
+#ifdef Rel14
+void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
+
+  eNB_proc_t *proc = &eNB->proc;
+  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+  int i;
+
+  if (ru!=NULL) {
+    pthread_mutex_lock(&proc->mutex_RU_PRACH_br);
+    for (i=0;i<eNB->num_RU;i++) {
+      if (ru == eNB->RU_list[i]) {
+	LOG_I(PHY,"frame %d, subframe %d: RU %d for eNB %d signals PRACH BR (mask %x, num_RU %d)\n",frame,subframe,i,eNB->Mod_id,proc->RU_mask_prach_br,eNB->num_RU);
+	if ((proc->RU_mask_prach_br&(1<<i)) > 0)
+	  LOG_E(PHY,"eNB %d frame %d, subframe %d : previous information (PRACH BR) from RU %d (num_RU %d, mask %x) has not been served yet!\n",
+		eNB->Mod_id,frame,subframe,ru->idx,eNB->num_RU,proc->RU_mask_prach_br);
+	proc->RU_mask_prach_br |= (1<<i);
+      }
+    }
+    if (proc->RU_mask_prach_br != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
+      pthread_mutex_unlock(&proc->mutex_RU_PRACH_br);
+      return(0);
+    }
+    else { // all RUs have provided their information so continue on and wakeup eNB processing
+      proc->RU_mask_prach_br = 0;
+      pthread_mutex_unlock(&proc->mutex_RU_PRACH_br);
+    }
+  }
+    
+  // check if we have to detect PRACH first
+  if (is_prach_subframe(fp,frame,subframe)>0) { 
+    LOG_D(PHY,"Triggering prach br processing, frame %d, subframe %d\n",frame,subframe);
+    if (proc->instance_cnt_prach_br == 0) {
+      LOG_W(PHY,"[eNB] Frame %d Subframe %d, dropping PRACH BR\n", frame,subframe);
+      return;
+    }
+    
+    // wake up thread for PRACH RX
+    if (pthread_mutex_lock(&proc->mutex_prach_br) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB PRACH thread %d (IC %d)\n", proc->thread_index, proc->instance_cnt_prach_br);
+      exit_fun( "error locking mutex_prach" );
+      return;
+    }
+    
+    ++proc->instance_cnt_prach_br;
+    // set timing for prach thread
+    proc->frame_prach_br = frame;
+    proc->subframe_prach_br = subframe;
+    
+    // the thread can now be woken up
+    if (pthread_cond_signal(&proc->cond_prach_br) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB PRACH BR thread %d\n", proc->thread_index);
+      exit_fun( "ERROR pthread_cond_signal" );
+      return;
+    }
+    
+    pthread_mutex_unlock( &proc->mutex_prach_br );
+  }
+
+}
+#endif
+
 /*!
  * \brief The prach receive thread of eNB.
  * \param param is a \ref eNB_proc_t structure which contains the info what to process.
@@ -457,7 +525,11 @@ static void* eNB_thread_prach( void* param ) {
     if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"eNB_prach_thread") < 0) break;
 
     LOG_D(PHY,"Running eNB prach procedures\n");
-    prach_procedures(eNB);
+    prach_procedures(eNB
+#ifdef Rel14
+		     ,0
+#endif
+		     );
     
     if (release_thread(&proc->mutex_prach,&proc->instance_cnt_prach,"eNB_prach_thread") < 0) break;
   }
@@ -468,6 +540,44 @@ static void* eNB_thread_prach( void* param ) {
   return &eNB_thread_prach_status;
 }
 
+#ifdef Rel14
+/*!
+ * \brief The prach receive thread of eNB for BL/CE UEs.
+ * \param param is a \ref eNB_proc_t structure which contains the info what to process.
+ * \returns a pointer to an int. The storage is not on the heap and must not be freed.
+ */
+static void* eNB_thread_prach_br( void* param ) {
+  static int eNB_thread_prach_status;
+
+
+  PHY_VARS_eNB *eNB= (PHY_VARS_eNB *)param;
+  eNB_proc_t *proc = &eNB->proc;
+
+  // set default return value
+  eNB_thread_prach_status = 0;
+
+  thread_top_init("eNB_thread_prach_br",1,500000L,1000000L,20000000L);
+
+  while (!oai_exit) {
+    
+    if (oai_exit) break;
+    
+
+    if (wait_on_condition(&proc->mutex_prach_br,&proc->cond_prach_br,&proc->instance_cnt_prach_br,"eNB_prach_thread_br") < 0) break;
+
+    LOG_D(PHY,"Running eNB prach procedures for BL/CE UEs\n");
+    prach_procedures(eNB,1);
+    
+    if (release_thread(&proc->mutex_prach_br,&proc->instance_cnt_prach_br,"eNB_prach_thread_br") < 0) break;
+  }
+
+  LOG_I(PHY, "Exiting eNB thread PRACH BR\n");
+
+  eNB_thread_prach_status = 0;
+  return &eNB_thread_prach_status;
+}
+
+#endif
 
 
 extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
@@ -482,6 +592,9 @@ void init_eNB_proc(int inst) {
   eNB_proc_t *proc;
   eNB_rxtx_proc_t *proc_rxtx;
   pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_single=NULL,*attr_fep=NULL,*attr_td=NULL,*attr_te=NULL,*attr_synch=NULL;
+#ifdef Rel14
+  pthread_attr_t *attr_prach_br=NULL;
+#endif
 
   for (CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
     eNB = RC.eNB[inst][CC_id];
@@ -523,10 +636,22 @@ void init_eNB_proc(int inst) {
     pthread_attr_init( &proc->attr_te);
     pthread_attr_init( &proc_rxtx[0].attr_rxtx);
     pthread_attr_init( &proc_rxtx[1].attr_rxtx);
+#ifdef Rel14
+    proc->instance_cnt_prach_br    = -1;
+    proc->RU_mask_prach_br=0;
+    pthread_mutex_init( &proc->mutex_prach_br, NULL);
+    pthread_mutex_init( &proc->mutex_RU_PRACH_br,NULL);
+    pthread_cond_init( &proc->cond_prach_br, NULL);
+    pthread_attr_init( &proc->attr_prach_br);
+#endif
 #ifndef DEADLINE_SCHEDULER
     attr0       = &proc_rxtx[0].attr_rxtx;
     attr1       = &proc_rxtx[1].attr_rxtx;
     attr_prach  = &proc->attr_prach;
+#ifdef Rel14
+    attr_prach_br  = &proc->attr_prach_br;
+#endif
+
     attr_asynch = &proc->attr_asynch_rxtx;
     attr_single = &proc->attr_single;
     attr_td     = &proc->attr_td;
@@ -538,7 +663,9 @@ void init_eNB_proc(int inst) {
       pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, eNB_thread_rxtx, &proc_rxtx[1] );
     }
     pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, eNB );
-
+#ifdef Rel14
+    pthread_create( &proc->pthread_prach_br, attr_prach_br, eNB_thread_prach_br, eNB );
+#endif
     char name[16];
     if (eNB->single_thread_flag==0) {
       snprintf( name, sizeof(name), "RXTX0 %d", i );
@@ -601,10 +728,18 @@ void kill_eNB_proc(int inst) {
     pthread_cond_signal( &proc_rxtx[0].cond_rxtx );    
     pthread_cond_signal( &proc_rxtx[1].cond_rxtx );
     pthread_cond_signal( &proc->cond_prach );
+
     pthread_cond_broadcast(&sync_phy_proc.cond_phy_proc_tx);
     pthread_join( proc->pthread_prach, (void**)&status );    
+
     pthread_mutex_destroy( &proc->mutex_prach );
-    pthread_cond_destroy( &proc->cond_prach );         
+    pthread_cond_destroy( &proc->cond_prach );
+#ifdef Rel14
+    pthread_cond_signal( &proc->cond_prach_br );
+    pthread_join( proc->pthread_prach_br, (void**)&status );    
+    pthread_mutex_destroy( &proc->mutex_prach_br );
+    pthread_cond_destroy( &proc->cond_prach_br );
+#endif         
     pthread_mutex_destroy(&eNB->UL_INFO_mutex);
     int i;
     for (i=0;i<2;i++) {
@@ -756,11 +891,13 @@ void init_eNB_afterRU() {
 
     AssertFatal(RC.ru[ru_id]!=NULL,"ru_id %d is null\n",ru_id);
     
-    RC.ru[ru_id]->wakeup_rxtx      = wakeup_rxtx;
-    RC.ru[ru_id]->wakeup_prach_eNB = wakeup_prach_eNB;
-    RC.ru[ru_id]->eNB_top          = eNB_top;
+    RC.ru[ru_id]->wakeup_rxtx         = wakeup_rxtx;
+    RC.ru[ru_id]->wakeup_prach_eNB    = wakeup_prach_eNB;
+    RC.ru[ru_id]->wakeup_prach_eNB_br = wakeup_prach_eNB_br;
+    RC.ru[ru_id]->eNB_top             = eNB_top;
   }
 }
+
 void init_eNB(int single_thread_flag,int wait_for_sync) {
   
   int CC_id;

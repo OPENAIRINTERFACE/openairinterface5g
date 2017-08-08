@@ -330,7 +330,7 @@ void config_sib2(int Mod_idP,
     cfg->emtc_config.prach_catm_zero_correlation_zone_configuration.value = radioResourceConfigCommon_BRP->prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig;
     cfg->emtc_config.prach_catm_high_speed_flag.value                     = radioResourceConfigCommon_BRP->prach_Config.prach_ConfigInfo.highSpeedFlag;
  
-    struct PRACH_ConfigSIB_v1310 *ext4_prach=radioResourceConfigCommonP->ext4->prach_ConfigCommon_v1310; 
+    struct PRACH_ConfigSIB_v1310 *ext4_prach=radioResourceConfigCommon_BRP->ext4->prach_ConfigCommon_v1310; 
 
     PRACH_ParametersListCE_r13_t	 *prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
     int i;
@@ -342,40 +342,44 @@ void config_sib2(int Mod_idP,
     switch (prach_ParametersListCE_r13->list.count) {
     case 4:
       p=prach_ParametersListCE_r13->list.array[3];
-      cfg->emtc_config.prach_ce_level_3_enable.value                          = 1;
-      cfg->emtc_config.prach_ce_level_3_configuration_index.value             = p->prach_ConfigIndex_r13;
-      cfg->emtc_config.prach_ce_level_3_frequency_offset.value                = p->prach_FreqOffset_r13;
+      cfg->emtc_config.prach_ce_level_3_enable.value                            = 1;
+      cfg->emtc_config.prach_ce_level_3_configuration_index.value               = p->prach_ConfigIndex_r13;
+      cfg->emtc_config.prach_ce_level_3_frequency_offset.value                  = p->prach_FreqOffset_r13;
+      cfg->emtc_config.prach_ce_level_3_number_of_repetitions_per_attempt.value = p->numRepetitionPerPreambleAttempt_r13;
       if (p->prach_StartingSubframe_r13) 
-	cfg->emtc_config.prach_ce_level_3_starting_subframe_periodicity.value = *p->prach_StartingSubframe_r13;
-      cfg->emtc_config.prach_ce_level_3_hopping_enable.value                  = p->prach_HoppingConfig_r13;
-      cfg->emtc_config.prach_ce_level_3_hopping_offset.value                  = cfg->rf_config.ul_channel_bandwidth.value-6;
+	cfg->emtc_config.prach_ce_level_3_starting_subframe_periodicity.value   = *p->prach_StartingSubframe_r13;
+      cfg->emtc_config.prach_ce_level_3_hopping_enable.value                    = p->prach_HoppingConfig_r13;
+      cfg->emtc_config.prach_ce_level_3_hopping_offset.value                    = cfg->rf_config.ul_channel_bandwidth.value-6;
     case 3:
       p=prach_ParametersListCE_r13->list.array[2];
-      cfg->emtc_config.prach_ce_level_2_enable.value                          = 1;
-      cfg->emtc_config.prach_ce_level_2_configuration_index.value             = p->prach_ConfigIndex_r13;
-      cfg->emtc_config.prach_ce_level_2_frequency_offset.value                = p->prach_FreqOffset_r13;
+      cfg->emtc_config.prach_ce_level_2_enable.value                            = 1;
+      cfg->emtc_config.prach_ce_level_2_configuration_index.value               = p->prach_ConfigIndex_r13;
+      cfg->emtc_config.prach_ce_level_2_frequency_offset.value                  = p->prach_FreqOffset_r13;
+      cfg->emtc_config.prach_ce_level_2_number_of_repetitions_per_attempt.value = p->numRepetitionPerPreambleAttempt_r13;
       if (p->prach_StartingSubframe_r13) 
-	cfg->emtc_config.prach_ce_level_2_starting_subframe_periodicity.value = *p->prach_StartingSubframe_r13;
-      cfg->emtc_config.prach_ce_level_2_hopping_enable.value                  = p->prach_HoppingConfig_r13;
-      cfg->emtc_config.prach_ce_level_2_hopping_offset.value                  = cfg->rf_config.ul_channel_bandwidth.value-6;
+	cfg->emtc_config.prach_ce_level_2_starting_subframe_periodicity.value   = *p->prach_StartingSubframe_r13;
+      cfg->emtc_config.prach_ce_level_2_hopping_enable.value                    = p->prach_HoppingConfig_r13;
+      cfg->emtc_config.prach_ce_level_2_hopping_offset.value                    = cfg->rf_config.ul_channel_bandwidth.value-6;
     case 2:
       p=prach_ParametersListCE_r13->list.array[1];
-      cfg->emtc_config.prach_ce_level_1_enable.value                          = 1;
-      cfg->emtc_config.prach_ce_level_1_configuration_index.value             = p->prach_ConfigIndex_r13;
-      cfg->emtc_config.prach_ce_level_1_frequency_offset.value                = p->prach_FreqOffset_r13;
+      cfg->emtc_config.prach_ce_level_1_enable.value                            = 1;
+      cfg->emtc_config.prach_ce_level_1_configuration_index.value               = p->prach_ConfigIndex_r13;
+      cfg->emtc_config.prach_ce_level_1_frequency_offset.value                  = p->prach_FreqOffset_r13;
+      cfg->emtc_config.prach_ce_level_1_number_of_repetitions_per_attempt.value = p->numRepetitionPerPreambleAttempt_r13;
       if (p->prach_StartingSubframe_r13) 
-	cfg->emtc_config.prach_ce_level_1_starting_subframe_periodicity.value = *p->prach_StartingSubframe_r13;
-      cfg->emtc_config.prach_ce_level_1_hopping_enable.value                  = p->prach_HoppingConfig_r13;
-      cfg->emtc_config.prach_ce_level_1_hopping_offset.value                  = cfg->rf_config.ul_channel_bandwidth.value-6;
+	cfg->emtc_config.prach_ce_level_1_starting_subframe_periodicity.value   = *p->prach_StartingSubframe_r13;
+      cfg->emtc_config.prach_ce_level_1_hopping_enable.value                    = p->prach_HoppingConfig_r13;
+      cfg->emtc_config.prach_ce_level_1_hopping_offset.value                    = cfg->rf_config.ul_channel_bandwidth.value-6;
     case 1:
       p=prach_ParametersListCE_r13->list.array[0];
-      cfg->emtc_config.prach_ce_level_0_enable.value                          = 1;
-      cfg->emtc_config.prach_ce_level_0_configuration_index.value             = p->prach_ConfigIndex_r13;
-      cfg->emtc_config.prach_ce_level_0_frequency_offset.value                = p->prach_FreqOffset_r13;
+      cfg->emtc_config.prach_ce_level_0_enable.value                            = 1;
+      cfg->emtc_config.prach_ce_level_0_configuration_index.value               = p->prach_ConfigIndex_r13;
+      cfg->emtc_config.prach_ce_level_0_frequency_offset.value                  = p->prach_FreqOffset_r13;
+      cfg->emtc_config.prach_ce_level_0_number_of_repetitions_per_attempt.value = p->numRepetitionPerPreambleAttempt_r13;
       if (p->prach_StartingSubframe_r13) 
-	cfg->emtc_config.prach_ce_level_0_starting_subframe_periodicity.value = *p->prach_StartingSubframe_r13;
-      cfg->emtc_config.prach_ce_level_0_hopping_enable.value                  = p->prach_HoppingConfig_r13;
-      cfg->emtc_config.prach_ce_level_0_hopping_offset.value                  = cfg->rf_config.ul_channel_bandwidth.value-6;
+	cfg->emtc_config.prach_ce_level_0_starting_subframe_periodicity.value   = *p->prach_StartingSubframe_r13;
+      cfg->emtc_config.prach_ce_level_0_hopping_enable.value                    = p->prach_HoppingConfig_r13;
+      cfg->emtc_config.prach_ce_level_0_hopping_offset.value                    = cfg->rf_config.ul_channel_bandwidth.value-6;
     }
 
     struct FreqHoppingParameters_r13 *ext4_freqHoppingParameters = radioResourceConfigCommonP->ext4->freqHoppingParameters_r13;

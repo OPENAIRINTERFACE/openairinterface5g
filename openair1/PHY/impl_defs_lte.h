@@ -56,6 +56,8 @@
 
 #define MAX_MBSFN_AREA 8
 
+#define NB_RX_ANTENNAS_MAX 64
+
 #ifdef OCP_FRAMEWORK
 #include "enums.h"
 #else
@@ -99,6 +101,8 @@ typedef struct {
   uint8_t prach_FreqOffset;
 } PRACH_CONFIG_INFO;
 
+
+
 /// PRACH-ConfigSIB or PRACH-Config from 36.331 RRC spec
 typedef struct {
   /// Parameter: RACH_ROOT_SEQUENCE, see TS 36.211 (5.7.1). \vr{[0..837]}
@@ -108,6 +112,44 @@ typedef struct {
   /// PRACH Configuration Information
   PRACH_CONFIG_INFO prach_ConfigInfo;
 } PRACH_CONFIG_COMMON;
+
+#ifdef Rel14
+
+/// PRACH-eMTC-Config from 36.331 RRC spec
+typedef struct {
+  /// Parameter: High-speed-flag, see TS 36.211 (5.7.2). \vr{[0..1]} 1 corresponds to Restricted set and 0 to Unrestricted set.
+  uint8_t highSpeedFlag;
+/// Parameter: \f$N_\text{CS}\f$, see TS 36.211 (5.7.2). \vr{[0..15]}\n Refer to table 5.7.2-2 for preamble format 0..3 and to table 5.7.2-3 for preamble format 4.
+  uint8_t zeroCorrelationZoneConfig;
+  /// Parameter: prach-FrequencyOffset, see TS 36.211 (5.7.1). \vr{[0..94]}\n For TDD the value range is dependent on the value of \ref prach_ConfigIndex.
+
+  /// PRACH starting subframe periodicity, expressed in number of subframes available for preamble transmission (PRACH opportunities), see TS 36.211. Value 2 corresponds to 2 subframes, 4 corresponds to 4 subframes and so on. EUTRAN configures the PRACH starting subframe periodicity larger than or equal to the Number of PRACH repetitions per attempt for each CE level (numRepetitionPerPreambleAttempt).
+  uint8_t prach_starting_subframe_periodicity[4];
+  /// number of repetitions per preamble attempt per CE level
+  uint8_t prach_numRepetitionPerPreambleAttempt[4];
+  /// prach configuration index for each CE level
+  uint8_t prach_ConfigIndex[4];
+  /// indicator for CE level activation
+  uint8_t prach_CElevel_enable[4];
+  /// prach frequency offset for each CE level 
+  uint8_t prach_FreqOffset[4];
+  /// indicator for CE level hopping activation
+  uint8_t prach_hopping_enable[4];
+  /// indicator for CE level hopping activation
+  uint8_t prach_hopping_offset[4];
+} PRACH_eMTC_CONFIG_INFO;
+
+#endif
+
+/// PRACH-ConfigSIB or PRACH-Config from 36.331 RRC spec
+typedef struct {
+  /// Parameter: RACH_ROOT_SEQUENCE, see TS 36.211 (5.7.1). \vr{[0..837]}
+  uint16_t rootSequenceIndex;
+  /// prach_Config_enabled=1 means enabled. \vr{[0..1]}
+  uint8_t prach_Config_enabled;
+  /// PRACH Configuration Information
+  PRACH_eMTC_CONFIG_INFO prach_ConfigInfo;
+} PRACH_eMTC_CONFIG_COMMON;
 
 /// Enumeration for parameter \f$N_\text{ANRep}\f$ \ref PUCCH_CONFIG_DEDICATED::repetitionFactor.
 typedef enum {
@@ -546,6 +588,10 @@ typedef struct {
   uint8_t nb_antenna_ports_eNB;
   /// PRACH_CONFIG
   PRACH_CONFIG_COMMON prach_config_common;
+#ifdef Rel14
+  /// PRACH_eMTC_CONFIG
+  PRACH_eMTC_CONFIG_COMMON prach_emtc_config_common;
+#endif
   /// PUCCH Config Common (from 36-331 RRC spec)
   PUCCH_CONFIG_COMMON pucch_config_common;
   /// PDSCH Config Common (from 36-331 RRC spec)
@@ -1138,13 +1184,19 @@ typedef struct {
   /// \brief ?.
   /// first index: rx antenna [0..63] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
   /// second index: ? [0..ofdm_symbol_size*12[
-  int16_t *rxsigF[64];
+  int16_t **rxsigF;
   /// \brief local buffer to compute prach_ifft (necessary in case of multiple CCs)
   /// first index: rx antenna [0..63] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
   /// second index: ? [0..2047] (hard coded)
-  int16_t *prach_ifft[64];
-  /// NFAPI PRACH information
-  nfapi_preamble_pdu_t preamble_list[MAX_NUM_RX_PRACH_PREAMBLES];
+  int32_t ***prach_ifft;
+
+  /// repetition number
+#ifdef Rel14
+  /// indicator of first frame in a group of PRACH repetitions
+  int first_frame[4];
+  /// current repetition for each CE level
+  int repetition_number[4];
+#endif
 } LTE_eNB_PRACH;
 
 typedef struct {
@@ -1161,6 +1213,7 @@ typedef struct {
   /// Pointer to Msg3 payload for UL-grant
   uint8_t *Msg3;
 } PRACH_RESOURCES_t;
+
 
 typedef struct {
   /// Downlink Power offset field
