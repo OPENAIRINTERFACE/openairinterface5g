@@ -907,7 +907,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
 #if defined(Rel10) || defined(Rel14)
 
-  if (MBMS_flag > 0) {
+  if ((MBMS_flag > 0) && (brOption==FALSE)) {
     sib13_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
     memset(sib13_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
     sib13_part->present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920;
