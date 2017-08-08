@@ -184,10 +184,14 @@ install_protobuf_from_source(){
     (
     cd /tmp
     echo "Downloading protobuf"
-    rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
-    wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
-    tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner 
-    cd protobuf-2.6.1/
+    #rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
+    #wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
+    #tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner
+    #cd protobuf-2.6.1/
+    rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
+    wget https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
+    tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $USER --group $USER --no-same-owner
+    cd protobuf-3.3.0/
     ./configure
     echo "Compiling protobuf"
     make -j`nproc`
@@ -410,8 +414,6 @@ check_install_oai_software() {
     install_asn1c_from_source
     $SUDO rm -fr /opt/ssh
     $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
-    install_protobuf_from_source
-    install_protobuf_c_from_source
 }
 
 ### Remove Nettle installation which was done from sources
