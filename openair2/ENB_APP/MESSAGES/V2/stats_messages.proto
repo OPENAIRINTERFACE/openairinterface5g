@@ -1,3 +1,4 @@
+syntax = "proto2";
 package protocol;
 
 //import "header.proto";
