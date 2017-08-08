@@ -208,6 +208,8 @@ void get_Msg3alloc(COMMON_channels_t *cc,
   }
 }
 
+
+
 void get_Msg3allocret(COMMON_channels_t *cc,
 		      unsigned char current_subframe,
 		      unsigned int current_frame,
@@ -400,6 +402,67 @@ uint8_t get_Msg3harqpid(COMMON_channels_t *cc,
   return(subframe2harqpid(cc,ul_frame,ul_subframe));
 
 }
+
+#ifdef Rel14
+
+int get_numnarrowbands(long dl_Bandwidth) {
+  int nb_tab[6] = {1,2,4,8,12,16};
+
+  AssertFatal(dl_Bandwidth<7 || dl_Bandwidth>=0,"dl_Bandwidth not in [0..6]\n");
+  return(nb_tab[dl_Bandwidth]);
+}
+
+int get_numnarrowbandbits(long dl_Bandwidth) {
+  int nbbits_tab[6] = {0,1,2,3,4,4};
+
+  AssertFatal(dl_Bandwidth<7 || dl_Bandwidth>=0,"dl_Bandwidth not in [0..6]\n");
+  return(nbbits_tab[dl_Bandwidth]);
+}
+
+//This implements the frame/subframe condition for first subframe of MPDCCH transmission (Section 9.1.5 36.213, Rel 13/14)
+int startSF_fdd_RA_times2[8] = {2,3,4,5,8,10,16,20};
+int startSF_tdd_RA[7]        = {1,2,4,5,8,10,20};
+
+int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t subframeP,int rmax,MPDCCH_TYPES_t mpdcch_type) {
+
+  struct PRACH_ConfigSIB_v1310 *ext4_prach = eNB->common_channels[CC_id].radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
+  int T;
+
+  switch (mpdcch_type) {
+  case TYPE0:
+    AssertFatal(1==0,"MPDCCH Type 0 not handled yet\n");
+    break;
+  case TYPE1:
+    AssertFatal(1==0,"MPDCCH Type 1 not handled yet\n");
+    break;
+  case TYPE1A:
+    AssertFatal(1==0,"MPDCCH Type 1A not handled yet\n");
+    break;
+  case TYPE2: // RAR
+    AssertFatal(ext4_prach->mpdcch_startSF_CSS_RA_r13!=NULL,
+		"mpdcch_startSF_CSS_RA_r13 is null\n");
+    if (eNB->common_channels[CC_id].tdd_Config==NULL) //FDD
+      T = rmax*startSF_fdd_RA_times2[ext4_prach->mpdcch_startSF_CSS_RA_r13->choice.fdd_r13]>>1;
+    else //TDD
+      T = rmax*startSF_tdd_RA[ext4_prach->mpdcch_startSF_CSS_RA_r13->choice.tdd_r13];
+    break;
+  case TYPE2A:
+    AssertFatal(1==0,"MPDCCH Type 2A not handled yet\n");
+    break;
+  case TYPEUESPEC:
+    AssertFatal(1==0,"MPDCCH Type UESPEC not handled yet\n");
+    break;
+  default:
+    return(0);
+  }
+
+  if (((10*frameP) + subframeP)%T == 0) return(1);
+  else return(0);
+
+}
+
+
+#endif
 
 //------------------------------------------------------------------------------
 void init_ue_sched_info(void)
@@ -645,7 +708,6 @@ printf("MAC: cannot remove UE rnti %x\n", rntiP);
 
   pCC_id = UE_PCCID(mod_idP,UE_id);
 
-printf("MAC: remove UE %d rnti %x\n", UE_id, rntiP);
   LOG_I(MAC,"Removing UE %d from Primary CC_id %d (rnti %x)\n",UE_id,pCC_id, rntiP);
   dump_ue_list(UE_list,0);
 
@@ -1331,14 +1393,14 @@ int get_nCCE_offset(int *CCE_table,
     nb_candidates = (L==4) ? 4 : 2;
     nb_candidates = min(nb_candidates,nCCE/L);
 
-    printf("Common DCI nb_candidates %d, L %d\n",nb_candidates,L);
+    //    printf("Common DCI nb_candidates %d, L %d\n",nb_candidates,L);
 
     for (m = nb_candidates-1 ; m >=0 ; m--) {
 
       search_space_free = 1;
       for (l=0; l<L; l++) {
 
-	printf("CCE_table[%d] %d\n",(m*L)+l,CCE_table[(m*L)+l]);
+	//	printf("CCE_table[%d] %d\n",(m*L)+l,CCE_table[(m*L)+l]);
         if (CCE_table[(m*L) + l] == 1) {
           search_space_free = 0;
           break;
@@ -1592,7 +1654,7 @@ int allocate_CCEs(int module_idP,
   int i,j,idci;
   int nCCE=0;
 
-  LOG_I(MAC,"Allocate CCEs subframe %d, test %d : (DL %d,UL %d)\n",subframeP,test_onlyP,DL_req->number_dci,HI_DCI0_req->number_of_dci);
+  LOG_D(MAC,"Allocate CCEs subframe %d, test %d : (DL %d,UL %d)\n",subframeP,test_onlyP,DL_req->number_dci,HI_DCI0_req->number_of_dci);
   DL_req->number_pdcch_ofdm_symbols=1;
 
 try_again:
@@ -1603,7 +1665,7 @@ try_again:
     // allocate DL common DCIs first
     if ((dl_config_pdu[i].pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE)&&
 	(dl_config_pdu[i].dci_dl_pdu.dci_dl_pdu_rel8.rnti_type==2)) {
-      LOG_I(MAC,"Trying to allocate COMMON DCI %d/%d (%d,%d) : rnti %x, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
+      LOG_D(MAC,"Trying to allocate COMMON DCI %d/%d (%d,%d) : rnti %x, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
 	    idci,DL_req->number_dci+HI_DCI0_req->number_of_dci,
 	    DL_req->number_dci,HI_DCI0_req->number_of_dci,
 	    dl_config_pdu[i].dci_dl_pdu.dci_dl_pdu_rel8.rnti,
@@ -1627,11 +1689,11 @@ try_again:
 			     subframeP);
       if (fCCE == -1) {
 	if (DL_req->number_pdcch_ofdm_symbols == 3) {
-	  LOG_I(MAC,"subframe %d: Dropping Allocation for RNTI %x\n",
+	  LOG_D(MAC,"subframe %d: Dropping Allocation for RNTI %x\n",
 		subframeP,dl_config_pdu[i].dci_dl_pdu.dci_dl_pdu_rel8.rnti);
 	  for (j=0;j<=i;j++){
 	    if (dl_config_pdu[j].pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE)
-	      LOG_I(MAC,"DCI %d/%d (%d,%d) : rnti %x dci format %d, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
+	      LOG_D(MAC,"DCI %d/%d (%d,%d) : rnti %x dci format %d, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
 		    j,DL_req->number_dci+HI_DCI0_req->number_of_dci,
 		    DL_req->number_dci,HI_DCI0_req->number_of_dci,
 		    dl_config_pdu[j].dci_dl_pdu.dci_dl_pdu_rel8.rnti,
@@ -1652,7 +1714,7 @@ try_again:
       LOG_D(MAC,"Allocating at nCCE %d\n",fCCE);
       if (test_onlyP == 0) {
 	dl_config_pdu[i].dci_dl_pdu.dci_dl_pdu_rel8.cce_idx=fCCE;
-	LOG_I(MAC,"Allocate COMMON DCI CCEs subframe %d, test %d => L %d fCCE %d\n",subframeP,test_onlyP,dl_config_pdu[i].dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,fCCE);
+	LOG_D(MAC,"Allocate COMMON DCI CCEs subframe %d, test %d => L %d fCCE %d\n",subframeP,test_onlyP,dl_config_pdu[i].dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,fCCE);
       }
       idci++;
     }
@@ -1687,11 +1749,11 @@ try_again:
 			     subframeP);
       if (fCCE == -1) {
 	if (DL_req->number_pdcch_ofdm_symbols == 3) {
-	  LOG_I(MAC,"subframe %d: Dropping Allocation for RNTI %x\n",
+	  LOG_D(MAC,"subframe %d: Dropping Allocation for RNTI %x\n",
 		subframeP,hi_dci0_pdu[i].dci_pdu.dci_pdu_rel8.rnti);
 	  for (j=0;j<=i;j++){
 	    if (hi_dci0_pdu[j].pdu_type == NFAPI_HI_DCI0_DCI_PDU_TYPE)
-	      LOG_I(MAC,"DCI %d/%d (%d,%d) : rnti %x dci format %d, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
+	      LOG_D(MAC,"DCI %d/%d (%d,%d) : rnti %x dci format %d, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
 		    j,DL_req->number_dci+HI_DCI0_req->number_of_dci,
 		    DL_req->number_dci,HI_DCI0_req->number_of_dci,
 		    hi_dci0_pdu[j].dci_pdu.dci_pdu_rel8.rnti,
@@ -1826,7 +1888,7 @@ void SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, rnti_t rntiP
  
   if (UE_id  != -1) {
     if (mac_eNB_get_rrc_status(mod_idP,UE_RNTI(mod_idP,UE_id)) < RRC_CONNECTED)
-      LOG_I(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
+      LOG_D(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
     UE_list->UE_template[cc_idP][UE_id].ul_SR = 1;
     UE_list->UE_template[cc_idP][UE_id].ul_active = TRUE;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SR_INDICATION,1);

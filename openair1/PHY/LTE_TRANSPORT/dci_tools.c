@@ -882,7 +882,7 @@ int fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_
   dci_alloc->harq_pid = rel8->harq_process;
   dci_alloc->ra_flag  = 0;
 
-  LOG_I(PHY,"NFAPI: DCI format %d, nCCE %d, L %d, rnti %x,harq_pid %d\n",
+  LOG_D(PHY,"NFAPI: DCI format %d, nCCE %d, L %d, rnti %x,harq_pid %d\n",
 	rel8->dci_format,rel8->cce_idx,rel8->aggregation_level,rel8->rnti,rel8->harq_process);
   if ((rel8->rnti_type == 2 ) && (rel8->rnti != SI_RNTI) && (rel8->rnti != P_RNTI)) dci_alloc->ra_flag = 1;
 
@@ -1065,7 +1065,7 @@ int fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_
     if (dlsch0_harq->round == 0)
       dlsch0_harq->status = ACTIVE;
 
-    LOG_I(PHY,"DCI 1A: mcs %d, rballoc %x,rv %d, rnti %x\n",rel8->mcs_1,rel8->resource_block_coding,rel8->redundancy_version_1,rel8->rnti);
+    LOG_D(PHY,"DCI 1A: mcs %d, rballoc %x,rv %d, rnti %x\n",rel8->mcs_1,rel8->resource_block_coding,rel8->redundancy_version_1,rel8->rnti);
 
     break;
   case NFAPI_DL_DCI_FORMAT_1:
@@ -6535,9 +6535,9 @@ void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,
     {
     	if (rnti == tc_rnti) {
 			//fix for standalone Contention Resolution Id
-			pdlsch0_harq->DCINdi = (uint8_t)-1;
-			 LOG_D(PHY,"UE (%x/%d): Format1A DCI: C-RNTI is temporary. Set NDI = %d and to be ignored\n",
-				 rnti,harq_pid,pdlsch0_harq->DCINdi);
+	  pdlsch0_harq->DCINdi = (uint8_t)-1;
+	  LOG_D(PHY,"UE (%x/%d): Format1A DCI: C-RNTI is temporary. Set NDI = %d and to be ignored\n",
+		rnti,harq_pid,pdlsch0_harq->DCINdi);
     	}
 
         // DCI has been toggled or this is the first transmission

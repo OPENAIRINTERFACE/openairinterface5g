@@ -89,6 +89,11 @@ typedef struct{
   /// RACH indication list
   nfapi_rach_indication_body_t rach_ind;
 
+#ifdef Rel14
+  /// RACH indication list for BR UEs
+  nfapi_rach_indication_body_t rach_ind_br;
+#endif
+
   /// SRS indication list
   nfapi_srs_indication_body_t srs_ind;
 

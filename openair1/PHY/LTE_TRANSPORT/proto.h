@@ -2074,14 +2074,21 @@ int32_t generate_prach(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe,
   \brief Process PRACH waveform
   @param phy_vars_eNB Pointer to eNB top-level descriptor. If NULL, then this is an RRU
   @param ru Pointer to RU top-level descriptor. If NULL, then this is an eNB and we make use of the RU_list
-  @param preamble_energy_list List of energies for each candidate preamble
-  @param preamble_delay_list List of delays for each candidate preamble
+  @param max_preamble most likely preamble
+  @param max_preamble_energy Estimated Energy of most likely preamble
+  @param max_preamble_delay Estimated Delay of most likely preamble
   @param Nf System frame number
   @param tdd_mapindex Index of PRACH resource in Table 5.7.1-4 (TDD)
+  @param br_flag indicator to act on eMTC PRACH
   @returns 0 on success
 
 */
-void rx_prach(PHY_VARS_eNB *phy_vars_eNB,RU_t *ru,uint16_t *preamble_energy_list, uint16_t *preamble_delay_list, uint16_t Nf, uint8_t tdd_mapindex);
+void rx_prach(PHY_VARS_eNB *phy_vars_eNB,RU_t *ru,
+	      uint16_t *max_preamble, 
+	      uint16_t *max_preamble_energy, 
+	      uint16_t *max_preamble_delay, 
+	      uint16_t Nf, uint8_t tdd_mapindex,
+	      uint8_t br_flag);
 
 /*!
   \brief Helper for MAC, returns number of available PRACH in TDD for a particular configuration index
@@ -2169,7 +2176,10 @@ double computeRhoB_UE(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
   LTE_UE_DLSCH_t *dlsch_ue);
 */
 
-uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms, uint8_t tdd_mapindex, uint16_t Nf);
+uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms, 
+			     uint8_t prach_ConfigIndex, 
+			     uint8_t n_ra_prboffset,
+			     uint8_t tdd_mapindex, uint16_t Nf);
 
 uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n);
 

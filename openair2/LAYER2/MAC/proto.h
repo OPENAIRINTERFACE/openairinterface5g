@@ -205,8 +205,15 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, uint8_t cooperation_flag,
 @param Mod_id Instance ID of eNB
 @param preamble_index index of the received RA request
 @param timing_offset Offset in samples of the received PRACH w.r.t. eNB timing. This is used to
+@param rnti RA rnti corresponding to this PRACH preamble
+@param rach_resource type (0=non BL/CE,1 CE level 0,2 CE level 1, 3 CE level 2,4 CE level 3)
 */
-void initiate_ra_proc(module_id_t module_idP,int CC_id,frame_t frameP, sub_frame_t subframeP, uint16_t preamble_index,int16_t timing_offset,uint16_t rnti);
+void initiate_ra_proc(module_id_t module_idP,int CC_id,frame_t frameP, sub_frame_t subframeP, uint16_t preamble_index,int16_t timing_offset,uint16_t rnti
+#ifdef Rel14
+		      ,
+		      uint8_t rach_resource_type
+#endif
+		      );
 
 /* \brief Function in eNB to fill RAR pdu when requested by PHY.  This provides a single RAR SDU for the moment and returns the t-CRNTI.
 @param Mod_id Instance ID of eNB
