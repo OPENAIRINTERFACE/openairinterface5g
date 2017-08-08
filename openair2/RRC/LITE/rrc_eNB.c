@@ -127,6 +127,7 @@ init_SI(
 )
 //-----------------------------------------------------------------------------
 {
+    puts("[DEBUGGING][KOGO] Inside init_SI function ...");
 #if defined(Rel10) || defined(Rel14)
   int                                 i;
 #endif
@@ -167,6 +168,7 @@ init_SI(
 
   AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1!=NULL,PROTOCOL_RRC_CTXT_FMT" init_SI: FATAL, no memory for SIB1 allocated\n",
 	      PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
+  puts("[DEBUGGING][KOGO] --- Calling SIB1");
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 = do_SIB1(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],ctxt_pP->module_id,CC_id
 #ifdef Rel14
 								   ,FALSE
@@ -183,6 +185,7 @@ init_SI(
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_BR = 0;
   if (configuration->schedulingInfoSIB1_BR_r13[CC_id]>0) {
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_BR = (uint8_t*) malloc16(32);
+    puts("[DEBUGGING][KOGO] --- Calling SIB1 -- second time");
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_BR = do_SIB1(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],ctxt_pP->module_id,CC_id
 									,TRUE
 #if defined(ENABLE_ITTI)
@@ -194,6 +197,7 @@ init_SI(
   
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23 = (uint8_t*) malloc16(64);
   AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23!=NULL,"cannot allocate memory for SIB");
+  puts("[DEBUGGING][KOGO] ---> Calling SIB23 ---> first time");
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23 = do_SIB23(
 								     ctxt_pP->module_id,
 								     CC_id
@@ -212,13 +216,17 @@ init_SI(
   if (configuration->schedulingInfoSIB1_BR_r13[CC_id]>0) {
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23_BR = (uint8_t*) malloc16(64);
     AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23_BR!=NULL,"cannot allocate memory for SIB");
+    puts("[DEBUGGING][KOGO] ---> Calling SIB23 ---> second time");
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23_BR = do_SIB23(
 									  ctxt_pP->module_id,
-									  CC_id,
-#if defined(ENABLE_ITTI)
-									  configuration,
+                                      CC_id
+#ifdef Rel14
+                                      ,TRUE
 #endif
-									  0);
+#if defined(ENABLE_ITTI)
+                                      ,configuration
+                );
+#endif
   }
 #endif
 

@@ -506,188 +506,222 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   ////Rel1310
 #if defined(ENABLE_ITTI)
   if (configuration->schedulingInfoSIB1_BR_r13[CC_id] != 0)
-    {
+  {
       sib1_1250->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1310_IEs_t));
       memset(sib1_1250->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1310_IEs_t));
       SystemInformationBlockType1_v1310_IEs_t *sib1_1310 = sib1_1250->nonCriticalExtension;
 
 
       if (configuration->hyperSFN_r13[CC_id])
-	{
-	  sib1_1310->hyperSFN_r13 = calloc(1, sizeof(BIT_STRING_t)); // type
-	  memset(sib1_1310->hyperSFN_r13, 0, sizeof(BIT_STRING_t));
-	  sib1_1310->hyperSFN_r13->buf = calloc(2, sizeof(uint8_t));
-	  memmove(sib1_1310->hyperSFN_r13->buf, configuration->hyperSFN_r13[CC_id], 2 * sizeof(uint8_t));
-	  sib1_1310->hyperSFN_r13->size = 2;
-	  sib1_1310->hyperSFN_r13->bits_unused = 6;
-	}
+      {
+          sib1_1310->hyperSFN_r13 = calloc(1, sizeof(BIT_STRING_t)); // type
+          memset(sib1_1310->hyperSFN_r13, 0, sizeof(BIT_STRING_t));
+          sib1_1310->hyperSFN_r13->buf = calloc(2, sizeof(uint8_t));
+          memmove(sib1_1310->hyperSFN_r13->buf, configuration->hyperSFN_r13[CC_id], 2 * sizeof(uint8_t));
+          sib1_1310->hyperSFN_r13->size = 2;
+          sib1_1310->hyperSFN_r13->bits_unused = 6;
+      }
       else
-	sib1_1310->hyperSFN_r13 = NULL;
+          sib1_1310->hyperSFN_r13 = NULL;
 
       if (configuration->eDRX_Allowed_r13[CC_id])
-	{
-	  sib1_1310->eDRX_Allowed_r13 = calloc(1, sizeof(long));
-	  *sib1_1310->eDRX_Allowed_r13 = *configuration->eDRX_Allowed_r13[CC_id];
-	}
+      {
+          sib1_1310->eDRX_Allowed_r13 = calloc(1, sizeof(long));
+          *sib1_1310->eDRX_Allowed_r13 = *configuration->eDRX_Allowed_r13[CC_id];
+      }
       else
-	sib1_1310->eDRX_Allowed_r13 = NULL; // long*
+          sib1_1310->eDRX_Allowed_r13 = NULL; // long*
 
       if (configuration->cellSelectionInfoCE_r13[CC_id])
-	{
-	  sib1_1310->cellSelectionInfoCE_r13 = calloc(1, sizeof(CellSelectionInfoCE_r13_t));
-	  memset(sib1_1310->cellSelectionInfoCE_r13, 0, sizeof(CellSelectionInfoCE_r13_t));
-	  sib1_1310->cellSelectionInfoCE_r13->q_RxLevMinCE_r13 = configuration->q_RxLevMinCE_r13[CC_id]; // (Q_RxLevMin_t) long
-	  if (configuration->q_QualMinRSRQ_CE_r13[CC_id])
-	    {
-	      sib1_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = calloc(1, sizeof(long));
-	      *sib1_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = *configuration->q_QualMinRSRQ_CE_r13[CC_id];
-	    }
-	  else
-	    sib1_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = NULL; 
-	}
+      {
+          sib1_1310->cellSelectionInfoCE_r13 = calloc(1, sizeof(CellSelectionInfoCE_r13_t));
+          memset(sib1_1310->cellSelectionInfoCE_r13, 0, sizeof(CellSelectionInfoCE_r13_t));
+          sib1_1310->cellSelectionInfoCE_r13->q_RxLevMinCE_r13 = configuration->q_RxLevMinCE_r13[CC_id]; // (Q_RxLevMin_t) long
+          if (configuration->q_QualMinRSRQ_CE_r13[CC_id])
+          {
+              sib1_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = calloc(1, sizeof(long));
+              *sib1_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = *configuration->q_QualMinRSRQ_CE_r13[CC_id];
+          }
+          else
+              sib1_1310->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = NULL;
+      }
       else
-	sib1_1310->cellSelectionInfoCE_r13 = NULL;
+          sib1_1310->cellSelectionInfoCE_r13 = NULL;
 
       if (configuration->bandwidthReducedAccessRelatedInfo_r13[CC_id])
-	{
-	  sib1_1310->bandwidthReducedAccessRelatedInfo_r13
-	    = calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13));
+      {
+          sib1_1310->bandwidthReducedAccessRelatedInfo_r13
+                  = calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13));
 
-	  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_WindowLength_BR_r13
-	    = configuration->si_WindowLength_BR_r13[CC_id]; // 0
-
-
-	  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_RepetitionPattern_r13
-	    = configuration->si_RepetitionPattern_r13[CC_id]; // 0
-
-	  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13 = calloc(1, sizeof(SchedulingInfoList_BR_r13_t));
-	  SchedulingInfo_BR_r13_t *schedulinginfo_br_13 = calloc(1, sizeof(SchedulingInfo_BR_r13_t));
-	  memset(schedulinginfo_br_13, 0, sizeof(SchedulingInfo_BR_r13_t));
-	  schedulinginfo_br_13->si_Narrowband_r13 = 1;
-	  schedulinginfo_br_13->si_TBS_r13 = SchedulingInfo_BR_r13__si_TBS_r13_b152;
-	  ASN_SEQUENCE_ADD(&sib1_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13->list, schedulinginfo_br_13);
-
-	  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13
-	    = calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13));
-	  memset(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13, 0,
-		 sizeof(sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13)));
-
-	  if (configuration->bandwidthReducedAccessRelatedInfo_r13[CC_id])
-	    {
-	      sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
-		= SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
-
-	      sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf = calloc(2, sizeof(uint8_t));
-	      memmove(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf, &configuration->fdd_DownlinkOrTddSubframeBitmapBR_val_r13[CC_id], 2 * sizeof(uint8_t));
-	      sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.size = 2;
-	      sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.bits_unused = 6;
-	    }
-	  else
-	    {
-	      sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
-		= SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
-
-	      sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf = calloc(5, sizeof(uint8_t));
-	      memmove(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf, &configuration->fdd_DownlinkOrTddSubframeBitmapBR_val_r13[CC_id], 5 * sizeof(uint8_t));
-	      sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.size = 5;
-	      sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.bits_unused = 0;
-	    }
-
-	  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13 = calloc(1, sizeof(BIT_STRING_t));
-	  memset(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13, 0, sizeof(BIT_STRING_t));
-	  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->buf = calloc(2, sizeof(uint8_t));
-	  memmove(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->buf, &configuration->fdd_UplinkSubframeBitmapBR_r13[CC_id],
-		  2 * sizeof(uint8_t));
-	  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->size = 2;
-	  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->bits_unused = 6;
+          sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_WindowLength_BR_r13
+                  = configuration->si_WindowLength_BR_r13[CC_id]; // 0
 
 
-	  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13 = configuration->startSymbolBR_r13[CC_id];
-	  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_HoppingConfigCommon_r13
-	    = configuration->si_HoppingConfigCommon_r13[CC_id];
+          sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_RepetitionPattern_r13
+                  = configuration->si_RepetitionPattern_r13[CC_id]; // 0
 
-	  if (configuration->si_ValidityTime_r13[CC_id])
-	    {
-	      sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = calloc(1, sizeof(long));
-	      memset(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13, 0, sizeof(long));
-	      *sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13
-		= *configuration->si_ValidityTime_r13[CC_id];
-	    }
-	  else
-	    sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = NULL;
+          sib1_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13 = calloc(1, sizeof(SchedulingInfoList_BR_r13_t));
 
-	  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13 = calloc(1, sizeof(SystemInfoValueTagList_r13_t));
-	  SystemInfoValueTagSI_r13_t systemInfoValueTagSi_r13 = 0;
-	  ASN_SEQUENCE_ADD(&sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13->list, &systemInfoValueTagSi_r13);
-	}
+          SchedulingInfo_BR_r13_t *schedulinginfo_br_13 = calloc(1, sizeof(SchedulingInfo_BR_r13_t));
+          memset(schedulinginfo_br_13, 0, sizeof(SchedulingInfo_BR_r13_t));
+
+          int num_sched_info_br = configuration->scheduling_info_br_size[CC_id];
+          int index;
+          for (index = 0; index < num_sched_info_br; ++index)
+          {
+
+              if (configuration->si_Narrowband_r13[CC_id][index] && configuration->si_TBS_r13[CC_id][index])
+              {
+                  schedulinginfo_br_13->si_Narrowband_r13 = configuration->si_Narrowband_r13[CC_id][index];
+                  schedulinginfo_br_13->si_TBS_r13 = configuration->si_TBS_r13[CC_id][index];
+              }
+              else
+              {
+                  schedulinginfo_br_13->si_Narrowband_r13 = 1;
+                  schedulinginfo_br_13->si_TBS_r13 = SchedulingInfo_BR_r13__si_TBS_r13_b152;
+              }
+
+              ASN_SEQUENCE_ADD(&sib1_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13->list, schedulinginfo_br_13);
+          }
+
+          sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13
+                  = calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13));
+          memset(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13, 0,
+                 sizeof(sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13)));
+
+          if (configuration->bandwidthReducedAccessRelatedInfo_r13[CC_id])
+          {
+              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
+                      = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
+
+              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf = calloc(2, sizeof(uint8_t));
+              memmove(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf, &configuration->fdd_DownlinkOrTddSubframeBitmapBR_val_r13[CC_id], 2 * sizeof(uint8_t));
+              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.size = 2;
+              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.bits_unused = 6;
+          }
+          else
+          {
+              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
+                      = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
+
+              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf = calloc(5, sizeof(uint8_t));
+              memmove(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf, &configuration->fdd_DownlinkOrTddSubframeBitmapBR_val_r13[CC_id], 5 * sizeof(uint8_t));
+              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.size = 5;
+              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.bits_unused = 0;
+          }
+
+          sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13 = calloc(1, sizeof(BIT_STRING_t));
+          memset(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13, 0, sizeof(BIT_STRING_t));
+          sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->buf = calloc(2, sizeof(uint8_t));
+          memmove(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->buf, &configuration->fdd_UplinkSubframeBitmapBR_r13[CC_id],
+                  2 * sizeof(uint8_t));
+          sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->size = 2;
+          sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13->bits_unused = 6;
+
+
+          sib1_1310->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13 = configuration->startSymbolBR_r13[CC_id];
+          sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_HoppingConfigCommon_r13
+                  = configuration->si_HoppingConfigCommon_r13[CC_id];
+
+          if (configuration->si_ValidityTime_r13[CC_id])
+          {
+              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = calloc(1, sizeof(long));
+              memset(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13, 0, sizeof(long));
+              *sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = *configuration->si_ValidityTime_r13[CC_id];
+          }
+          else
+          {
+              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = NULL;
+          }
+
+          sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13 = calloc(1, sizeof(SystemInfoValueTagList_r13_t));
+          SystemInfoValueTagSI_r13_t systemInfoValueTagSi_r13;
+
+          int num_system_info_value_tag = configuration->system_info_value_tag_SI_size[CC_id];
+          for (index = 0; index < num_system_info_value_tag; ++index)
+          {
+              if (configuration->systemInfoValueTagSi_r13[CC_id][index])
+              {
+                  systemInfoValueTagSi_r13 = configuration->systemInfoValueTagSi_r13[CC_id][index];
+              }
+              else
+              {
+                  systemInfoValueTagSi_r13 = 0;
+              }
+              ASN_SEQUENCE_ADD(&sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13->list, &systemInfoValueTagSi_r13);
+          }
+
+      }
       else
-	sib1_1310->bandwidthReducedAccessRelatedInfo_r13 = NULL;
+      {
+          sib1_1310->bandwidthReducedAccessRelatedInfo_r13 = NULL;
+      }
 
       sib1_1310->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1320_IEs_t));
       memset(sib1_1310->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1320_IEs_t));
 
       /////Rel1320
       SystemInformationBlockType1_v1320_IEs_t *sib1_1320 = sib1_1310->nonCriticalExtension;
-		
+
 
 
       if (configuration->freqHoppingParametersDL_r13[CC_id])
-	{
-	  sib1_1320->freqHoppingParametersDL_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13));
-	  memset(sib1_1320->freqHoppingParametersDL_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13));
+      {
+          sib1_1320->freqHoppingParametersDL_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13));
+          memset(sib1_1320->freqHoppingParametersDL_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13));
 
 
-	  if (configuration->mpdcch_pdsch_HoppingNB_r13[CC_id])
-	    {
-	      sib1_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = calloc(1, sizeof(long));
-	      *sib1_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = *configuration->mpdcch_pdsch_HoppingNB_r13[CC_id];
-	    }
-	  else
-	    sib1_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = NULL;
+          if (configuration->mpdcch_pdsch_HoppingNB_r13[CC_id])
+          {
+              sib1_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = calloc(1, sizeof(long));
+              *sib1_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = *configuration->mpdcch_pdsch_HoppingNB_r13[CC_id];
+          }
+          else
+              sib1_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingNB_r13 = NULL;
 
-	  sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13));
-	  memset(sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13));
+          sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13));
+          memset(sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13));
 
-	  if (configuration->interval_DLHoppingConfigCommonModeA_r13[CC_id])
-	    {
-	      sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13_PR_interval_FDD_r13;
-	      sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->choice.interval_FDD_r13 = configuration->interval_DLHoppingConfigCommonModeA_r13_val[CC_id];
-	    }
-	  else
-	    {
-	      sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13_PR_interval_TDD_r13;
-	      sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->choice.interval_TDD_r13 = configuration->interval_DLHoppingConfigCommonModeA_r13_val[CC_id];
-	    }
+          if (configuration->interval_DLHoppingConfigCommonModeA_r13[CC_id])
+          {
+              sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13_PR_interval_FDD_r13;
+              sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->choice.interval_FDD_r13 = configuration->interval_DLHoppingConfigCommonModeA_r13_val[CC_id];
+          }
+          else
+          {
+              sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeA_r13_PR_interval_TDD_r13;
+              sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeA_r13->choice.interval_TDD_r13 = configuration->interval_DLHoppingConfigCommonModeA_r13_val[CC_id];
+          }
 
-	  sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13));
-	  memset(sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13));
+          sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13 = calloc(1, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13));
+          memset(sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13, 0, sizeof(struct SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13));
 
-	  if (configuration->interval_DLHoppingConfigCommonModeB_r13[CC_id])
-	    {
-	      sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_FDD_r13;
-	      sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_FDD_r13 = configuration->interval_DLHoppingConfigCommonModeB_r13_val[CC_id];
-	    }
-	  else
-	    {
-	      sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_TDD_r13;
-	      sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_TDD_r13 = configuration->interval_DLHoppingConfigCommonModeB_r13_val[CC_id];
-	    }
-			
-	  if (configuration->mpdcch_pdsch_HoppingOffset_r13[CC_id])
-	    {
+          if (configuration->interval_DLHoppingConfigCommonModeB_r13[CC_id])
+          {
+              sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_FDD_r13;
+              sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_FDD_r13 = configuration->interval_DLHoppingConfigCommonModeB_r13_val[CC_id];
+          }
+          else
+          {
+              sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->present = SystemInformationBlockType1_v1320_IEs__freqHoppingParametersDL_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_TDD_r13;
+              sib1_1320->freqHoppingParametersDL_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_TDD_r13 = configuration->interval_DLHoppingConfigCommonModeB_r13_val[CC_id];
+          }
 
-	      sib1_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = calloc(1, sizeof(long));
-	      *sib1_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = *configuration->mpdcch_pdsch_HoppingOffset_r13[CC_id];
-	    }
-	  else
-	    sib1_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = NULL;
+          if (configuration->mpdcch_pdsch_HoppingOffset_r13[CC_id])
+          {
 
-	}
+              sib1_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = calloc(1, sizeof(long));
+              *sib1_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = *configuration->mpdcch_pdsch_HoppingOffset_r13[CC_id];
+          }
+          else
+              sib1_1320->freqHoppingParametersDL_r13->mpdcch_pdsch_HoppingOffset_r13 = NULL;
+
+      }
       else
-	sib1_1320->freqHoppingParametersDL_r13 = NULL;
+          sib1_1320->freqHoppingParametersDL_r13 = NULL;
 
       sib1_1320->nonCriticalExtension = NULL;
-    }
+  }
 #else
   sib1_1250->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1310_IEs_t));
   memset(sib1_1250->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1310_IEs_t));
@@ -826,6 +860,10 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   return((enc_rval.encoded+7)/8);
 }
 
+
+
+
+
 uint8_t do_SIB23(uint8_t Mod_id,
 
 		 int CC_id
@@ -852,11 +890,13 @@ uint8_t do_SIB23(uint8_t Mod_id,
   uint8_t                       *buffer;
   SystemInformationBlockType2_t **sib2;
   RadioResourceConfig           *rrconfig;
+
 #ifdef Rel14
   if (brOption) {
     buffer   = RC.rrc[Mod_id]->carrier[CC_id].SIB23_BR;
     sib2     = &RC.rrc[Mod_id]->carrier[CC_id].sib2_BR;
     rrconfig = &configuration->radioresourceconfig_BR[CC_id];
+
   }
   else
 #endif
@@ -930,7 +970,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 #endif
 
 #if defined(ENABLE_ITTI)
-
+    puts("INSIDE ITTI !!!!");
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.numberOfRA_Preambles                         = rrconfig->rach_numberOfRA_Preambles;
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig                        = NULL;
 
@@ -956,27 +996,46 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1 = calloc(1, sizeof(struct RACH_ConfigCommon__ext1));
   memset((*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1, 0, sizeof(struct RACH_ConfigCommon__ext1));
 
-
   if (rrconfig->rach_maxHARQ_Msg3Tx)
-    {
+  {
       (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = calloc(1, sizeof(PreambleTransMax_t));
       *(*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = rrconfig->rach_maxHARQ_Msg3Tx; // to be re-initialized when we find the enum
-    }
+  }
   else
-    (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = NULL;
+  {
+      (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = NULL;
+  }
 
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->rach_CE_LevelInfoList_r13 = calloc(1, sizeof(RACH_CE_LevelInfoList_r13_t));
   memset((*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->rach_CE_LevelInfoList_r13, 0, sizeof(RACH_CE_LevelInfoList_r13_t));
 
   RACH_CE_LevelInfo_r13_t *rach_ce_levelinfo_r13 = calloc(1, sizeof(RACH_CE_LevelInfo_r13_t));
   memset(rach_ce_levelinfo_r13, 0, sizeof(RACH_CE_LevelInfo_r13_t));
-  rach_ce_levelinfo_r13->preambleMappingInfo_r13.firstPreamble_r13 = 0;
-  rach_ce_levelinfo_r13->preambleMappingInfo_r13.lastPreamble_r13 = 63;
-  rach_ce_levelinfo_r13->ra_ResponseWindowSize_r13 = RACH_CE_LevelInfo_r13__ra_ResponseWindowSize_r13_sf80;
-  rach_ce_levelinfo_r13->mac_ContentionResolutionTimer_r13 = RACH_CE_LevelInfo_r13__mac_ContentionResolutionTimer_r13_sf200;
-  rach_ce_levelinfo_r13->rar_HoppingConfig_r13 = RACH_CE_LevelInfo_r13__rar_HoppingConfig_r13_off;
 
-  ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->rach_CE_LevelInfoList_r13->list, rach_ce_levelinfo_r13);
+  int num_rach_ce_level_info = configuration->rach_CE_LevelInfoList_r13_size[CC_id];
+  int index;
+  for (index = 0; index < num_rach_ce_level_info; ++index)
+  {
+      if (configuration->rach_CE_LevelInfoList_r13_size[CC_id])
+      {
+          rach_ce_levelinfo_r13->preambleMappingInfo_r13.firstPreamble_r13 = configuration->firstPreamble_r13[CC_id][index];
+          rach_ce_levelinfo_r13->preambleMappingInfo_r13.lastPreamble_r13  = configuration->lastPreamble_r13[CC_id][index];
+          rach_ce_levelinfo_r13->ra_ResponseWindowSize_r13                 = configuration->ra_ResponseWindowSize_r13[CC_id][index];
+          rach_ce_levelinfo_r13->mac_ContentionResolutionTimer_r13         = configuration->mac_ContentionResolutionTimer_r13[CC_id][index];
+          rach_ce_levelinfo_r13->rar_HoppingConfig_r13                     = configuration->rar_HoppingConfig_r13[CC_id][index];
+      }
+      else
+      {
+          rach_ce_levelinfo_r13->preambleMappingInfo_r13.firstPreamble_r13 = 0;
+          rach_ce_levelinfo_r13->preambleMappingInfo_r13.lastPreamble_r13 = 63;
+          rach_ce_levelinfo_r13->ra_ResponseWindowSize_r13 = RACH_CE_LevelInfo_r13__ra_ResponseWindowSize_r13_sf80;
+          rach_ce_levelinfo_r13->mac_ContentionResolutionTimer_r13 = RACH_CE_LevelInfo_r13__mac_ContentionResolutionTimer_r13_sf200;
+          rach_ce_levelinfo_r13->rar_HoppingConfig_r13 = RACH_CE_LevelInfo_r13__rar_HoppingConfig_r13_off;
+      }
+      ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->rach_CE_LevelInfoList_r13->list, rach_ce_levelinfo_r13);
+  }
+
+
   //--------------------------------------------------------------------------------------------------------------------------------------------------- +kogo
 
   // BCCH-Config
@@ -1098,68 +1157,139 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310 = NULL;
 
   if (rrconfig->prach_ConfigCommon_v1310)
-    {
+  {
       (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310 = calloc(1, sizeof(PRACH_ConfigSIB_v1310_t));
       memset((*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310, 0, sizeof(PRACH_ConfigSIB_v1310_t));
 
-      RSRP_Range_t rsrp_range = 60;
-      ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->rsrp_ThresholdsPrachInfoList_r13.list, &rsrp_range);
+      RSRP_Range_t rsrp_range;
+      int num_rsrp_range = configuration->rsrp_range_list_size[CC_id];
+      int rsrp_index;
+      for (rsrp_index = 0; rsrp_index < num_rsrp_range; ++rsrp_index)
+      {
+          if (configuration->rsrp_range_list_size[CC_id])
+          {
+              rsrp_range = configuration->rsrp_range[CC_id][rsrp_index];
+          }
+          else
+          {
+              rsrp_range = 60;
+          }
+
+          ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->rsrp_ThresholdsPrachInfoList_r13.list, &rsrp_range);
+      }
+
 
       (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13 = NULL;
 
-
       if (rrconfig->mpdcch_startSF_CSS_RA_r13)
-	{
-	  (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13 = calloc(1, sizeof(struct PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13));
-	  memset((*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13, 0, sizeof(struct PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13));
+      {
+          (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13 = calloc(1, sizeof(struct PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13));
+          memset((*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13, 0, sizeof(struct PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13));
 
-	  if (*rrconfig->mpdcch_startSF_CSS_RA_r13)
-	    {
-	      (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->present = PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13_PR_fdd_r13;
-	      (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->choice.fdd_r13 = rrconfig->mpdcch_startSF_CSS_RA_r13_val;
-	    }
-	  else
-	    {
-	      (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->present = PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13_PR_tdd_r13;
-	      (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->choice.tdd_r13 = rrconfig->mpdcch_startSF_CSS_RA_r13_val;
-	    }
-	}
+          if (*rrconfig->mpdcch_startSF_CSS_RA_r13)
+          {
+              (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->present = PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13_PR_fdd_r13;
+              (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->choice.fdd_r13 = rrconfig->mpdcch_startSF_CSS_RA_r13_val;
+          }
+          else
+          {
+              (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->present = PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13_PR_tdd_r13;
+              (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->choice.tdd_r13 = rrconfig->mpdcch_startSF_CSS_RA_r13_val;
+          }
+      }
 
       if (rrconfig->prach_HoppingOffset_r13)
-	{
-	  (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_HoppingOffset_r13 = calloc(1, sizeof(long));
-	  *(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_HoppingOffset_r13 = *rrconfig->prach_HoppingOffset_r13;
-	}
+      {
+          (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_HoppingOffset_r13 = calloc(1, sizeof(long));
+          *(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_HoppingOffset_r13 = *rrconfig->prach_HoppingOffset_r13;
+      }
       else
-	(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_HoppingOffset_r13 = NULL;
+      {
+          (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_HoppingOffset_r13 = NULL;
+      }
 
       PRACH_ParametersCE_r13_t *prach_parametersce_r13 = calloc(1, sizeof(PRACH_ParametersCE_r13_t));
       memset(prach_parametersce_r13, 0, sizeof(PRACH_ParametersCE_r13_t));
 
-      prach_parametersce_r13->prach_ConfigIndex_r13 = 3;
-      prach_parametersce_r13->prach_FreqOffset_r13 = 1;
-      prach_parametersce_r13->prach_StartingSubframe_r13 = NULL;
-      prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = calloc(1, sizeof(long));
-      *prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = PRACH_ParametersCE_r13__maxNumPreambleAttemptCE_r13_n3;
+      int num_prach_parameters_ce = configuration->prach_parameters_list_size[CC_id];
+      int prach_parameters_index;
+      for (prach_parameters_index = 0; prach_parameters_index < num_prach_parameters_ce; ++prach_parameters_index)
+      {
+          if (configuration->prach_parameters_list_size[CC_id])
+          {
+              prach_parametersce_r13->prach_ConfigIndex_r13 = configuration->prach_config_index[CC_id][prach_parameters_index];
+              prach_parametersce_r13->prach_FreqOffset_r13 = configuration->prach_freq_offset[CC_id][prach_parameters_index];
 
-      prach_parametersce_r13->numRepetitionPerPreambleAttempt_r13 = PRACH_ParametersCE_r13__numRepetitionPerPreambleAttempt_r13_n1;
-      long maxavailablenarrowband = 2;
-      ASN_SEQUENCE_ADD(&prach_parametersce_r13->mpdcch_NarrowbandsToMonitor_r13.list, &maxavailablenarrowband);
+              if (configuration->prach_StartingSubframe_r13[CC_id][prach_parameters_index])
+              {
+                  *prach_parametersce_r13->prach_StartingSubframe_r13 = *configuration->prach_StartingSubframe_r13[CC_id][prach_parameters_index];
+              }
+              else
+              {
+                  prach_parametersce_r13->prach_StartingSubframe_r13 = NULL;
+              }
 
-      prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = PRACH_ParametersCE_r13__mpdcch_NumRepetition_RA_r13_r1;
-      prach_parametersce_r13->prach_HoppingConfig_r13 = PRACH_ParametersCE_r13__prach_HoppingConfig_r13_off;
-      ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_ParametersListCE_r13.list, prach_parametersce_r13);
-    }
+              if (configuration->maxNumPreambleAttemptCE_r13[CC_id][prach_parameters_index])
+              {
+                  *prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = *configuration->maxNumPreambleAttemptCE_r13[CC_id][prach_parameters_index];
+              }
+              else
+              {
+                  prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = NULL;
+              }
+
+              prach_parametersce_r13->numRepetitionPerPreambleAttempt_r13 = configuration->numRepetitionPerPreambleAttempt_r13[CC_id][prach_parameters_index];
+              prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = configuration->mpdcch_NumRepetition_RA_r13[CC_id][prach_parameters_index];
+              prach_parametersce_r13->prach_HoppingConfig_r13 = configuration->prach_HoppingConfig_r13[CC_id][prach_parameters_index];
+          }
+          else
+          {
+              prach_parametersce_r13->prach_ConfigIndex_r13 = 3;
+              prach_parametersce_r13->prach_FreqOffset_r13 = 1;
+              prach_parametersce_r13->prach_StartingSubframe_r13 = NULL;
+              *prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = calloc(1, sizeof(long));
+              *prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = PRACH_ParametersCE_r13__maxNumPreambleAttemptCE_r13_n3;
+              prach_parametersce_r13->numRepetitionPerPreambleAttempt_r13 = PRACH_ParametersCE_r13__numRepetitionPerPreambleAttempt_r13_n1;
+              prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = PRACH_ParametersCE_r13__mpdcch_NumRepetition_RA_r13_r1;
+              prach_parametersce_r13->prach_HoppingConfig_r13 = PRACH_ParametersCE_r13__prach_HoppingConfig_r13_off;
+          }
+
+          long maxavailablenarrowband = 2;
+          ASN_SEQUENCE_ADD(&prach_parametersce_r13->mpdcch_NarrowbandsToMonitor_r13.list, &maxavailablenarrowband);
+
+          prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = PRACH_ParametersCE_r13__mpdcch_NumRepetition_RA_r13_r1;
+          prach_parametersce_r13->prach_HoppingConfig_r13 = PRACH_ParametersCE_r13__prach_HoppingConfig_r13_off;
+          ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_ParametersListCE_r13.list, prach_parametersce_r13);
+      }
+
+  }
   else
-    (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310 = NULL;
-
+  {
+      (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310 = NULL;
+  }
   (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310 = calloc(1, sizeof(PUCCH_ConfigCommon_v1310_t));
   memset((*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310, 0, sizeof(PUCCH_ConfigCommon_v1310_t));
   (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->n1PUCCH_AN_InfoList_r13 = calloc(1, sizeof(N1PUCCH_AN_InfoList_r13_t));
-  long pucch_info_value1 = 0;
-  long pucch_info_value2 = 2;
-  ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->n1PUCCH_AN_InfoList_r13->list, &pucch_info_value1);
-  ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->n1PUCCH_AN_InfoList_r13->list, &pucch_info_value2);
+
+  int num_pucch_info_list = configuration->pucch_info_value_size[CC_id];
+  int pucch_index;
+  long pucch_info_value;
+  for (pucch_index = 0; pucch_index <  num_pucch_info_list; ++pucch_index)
+  {
+      if (configuration->pucch_info_value_size[CC_id])
+      {
+          pucch_info_value = configuration->pucch_info_value[CC_id][pucch_index];
+      }
+      else
+      {
+          pucch_info_value = 0;
+      }
+      ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->n1PUCCH_AN_InfoList_r13->list, &pucch_info_value);
+  }
+
+//  +kogo FIXME
+//  ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->n1PUCCH_AN_InfoList_r13->list, &pucch_info_value2);
+
   (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level0_r13 = NULL;
   (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level1_r13 = NULL;
   (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level2_r13 = NULL;
@@ -1303,8 +1433,8 @@ uint8_t do_SIB23(uint8_t Mod_id,
   prach_parametersce_r13->prach_StartingSubframe_r13 = NULL;
   prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = calloc(1, sizeof(long));
   *prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = PRACH_ParametersCE_r13__maxNumPreambleAttemptCE_r13_n3;
-
   prach_parametersce_r13->numRepetitionPerPreambleAttempt_r13 = PRACH_ParametersCE_r13__numRepetitionPerPreambleAttempt_r13_n1;
+
   long maxavailablenarrowband = 2;
   ASN_SEQUENCE_ADD(&prach_parametersce_r13->mpdcch_NarrowbandsToMonitor_r13.list, &maxavailablenarrowband);
 
@@ -1314,6 +1444,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310 = calloc(1, sizeof(PUCCH_ConfigCommon_v1310_t));
   memset((*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310, 0, sizeof(PUCCH_ConfigCommon_v1310_t));
+
   (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->n1PUCCH_AN_InfoList_r13 = calloc(1, sizeof(N1PUCCH_AN_InfoList_r13_t));
   long pucch_info_value1 = 0;
   long pucch_info_value2 = 2;
