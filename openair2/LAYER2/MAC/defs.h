@@ -752,6 +752,13 @@ typedef struct {
 #ifdef LOCALIZATION
   eNB_UE_estimated_distances distance;
 #endif
+
+#ifdef Rel14
+  uint8_t rach_resource_type;
+
+
+#endif
+
 } UE_TEMPLATE;
 
 /*! \brief scheduling control information set through an API (not used)*/
