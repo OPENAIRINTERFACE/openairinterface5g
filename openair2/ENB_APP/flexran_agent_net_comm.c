@@ -118,7 +118,7 @@ int flexran_agent_create_channel(void *channel_info,
   /*element should be a real pointer*/
   RB_INSERT(flexran_agent_channel_map, &channel_instance.flexran_agent_head, channel); 
   
-  LOG_I(FLEXRAN_AGENT,"Created a new channel with id 0x%lx\n", channel->channel_id);
+  LOG_I(FLEXRAN_AGENT,"Created a new channel with id %d \n", channel->channel_id);
  
   return channel_id; 
 }
