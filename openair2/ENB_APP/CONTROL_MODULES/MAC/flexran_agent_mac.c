@@ -1078,11 +1078,11 @@ int flexran_agent_mac_create_empty_ul_config(mid_t mod_id, Protocol__FlexranMess
 
 
 int flexran_agent_mac_destroy_ul_config(Protocol__FlexranMessage *msg) {
-  int i,j, k;
+  int i; //,j, k;
   if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_UL_MAC_CONFIG_MSG)
     goto error;
 
-  Protocol__FlexUlDci *ul_dci;
+  // Protocol__FlexUlDci *ul_dci;
 
   free(msg->ul_mac_config_msg->header);
   for (i = 0; i < msg->ul_mac_config_msg->n_ul_ue_data; i++) {
@@ -1096,13 +1096,13 @@ int flexran_agent_mac_destroy_ul_config(Protocol__FlexranMessage *msg) {
   //     free(msg->ul_mac_config_msg->ul_ue_data[i]->rlc_pdu[j]);
   //   }
     // free(msg->ul_mac_config_msg->ul_ue_data[i]->rlc_pdu);
-    ul_dci = msg->ul_mac_config_msg->ul_ue_data[i]->ul_dci;
+    // ul_dci = msg->ul_mac_config_msg->ul_ue_data[i]->ul_dci;
     // free(dl_dci->tbs_size);
     // free(ul_dci->mcs);
     // free(ul_dci->ndi);
     // free(ul_dci->rv);
     // free(ul_dci);
-    free(msg->ul_mac_config_msg->ul_ue_data[i]);
+    // free(msg->ul_mac_config_msg->ul_ue_data[i]);
   }
   free(msg->ul_mac_config_msg->ul_ue_data);
   
@@ -1269,7 +1269,7 @@ int flexran_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   //xface->flexran_agent_send_update_mac_stats = NULL;
   xface->flexran_agent_schedule_ue_spec = NULL;
   xface->flexran_agent_get_pending_dl_mac_config = NULL;
-  
+  xface->flexran_agent_schedule_ul_spec = NULL;
 
   xface->dl_scheduler_loaded_lib = NULL;
   xface->ul_scheduler_loaded_lib = NULL;

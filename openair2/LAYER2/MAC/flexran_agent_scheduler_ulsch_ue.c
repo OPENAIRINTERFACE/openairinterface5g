@@ -49,13 +49,21 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
+#include "ENB_APP/flexran_agent_defs.h"
+#include "flexran_agent_ran_api.h"
 #include "pdcp.h"
+
+#include "header.pb-c.h"
+#include "flexran.pb-c.h"
+#include "flexran_agent_mac.h"
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
 #endif
 
 #include "T.h"
+
+#include <dlfcn.h>
 
 /* number of active slices for  past and current time*/
 int n_active_slices_uplink = 1;
@@ -222,7 +230,7 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
   rnti_t             rnti= -1;
   UE_list_t          *UE_list = &eNB_mac_inst[module_idP].UE_list;
   UE_TEMPLATE        *UE_template = 0;
-  LTE_DL_FRAME_PARMS   *frame_parms = 0;
+  // LTE_DL_FRAME_PARMS   *frame_parms; //Not used yet
   UE_sched_ctrl *ue_sched_ctl;
   
 
@@ -272,7 +280,7 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
       CC_id = UE_list->ordered_ULCCids[n][UE_id];
       UE_template = &UE_list->UE_template[CC_id][UE_id];
       average_rbs_per_user[CC_id]=0;
-      frame_parms = mac_xface->get_lte_frame_parms(module_idP,CC_id);
+      // frame_parms = mac_xface->get_lte_frame_parms(module_idP,CC_id);
 
       if (UE_template->pre_allocated_nb_rb_ul > 0) {
         total_ue_count+=1;
@@ -359,7 +367,7 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
         // This is the actual CC_id in the list
         CC_id = UE_list->ordered_ULCCids[n][UE_id];
         UE_template = &UE_list->UE_template[CC_id][UE_id];        
-        frame_parms = mac_xface->get_lte_frame_parms(module_idP,CC_id);
+        // frame_parms = mac_xface->get_lte_frame_parms(module_idP,CC_id);
         total_remaining_rbs[CC_id]=nb_rbs_allowed_slice_uplink[CC_id][UE_id] - first_rb[CC_id] - total_allocated_rbs[CC_id];
 
         if (total_ue_count == 1 ) {
@@ -384,7 +392,7 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
   }
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    frame_parms= mac_xface->get_lte_frame_parms(module_idP,CC_id);
+    // frame_parms= mac_xface->get_lte_frame_parms(module_idP,CC_id);
 
     if (total_allocated_rbs[CC_id]>0) {
       LOG_D(MAC,"[eNB %d] total RB allocated for all UEs = %d/%d\n", module_idP, total_allocated_rbs[CC_id], nb_rbs_allowed_slice_uplink[CC_id][slice_id] - first_rb[CC_id]);

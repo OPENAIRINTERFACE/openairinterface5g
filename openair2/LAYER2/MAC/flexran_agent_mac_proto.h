@@ -163,6 +163,15 @@ void _ulsch_scheduler_pre_processor(module_id_t module_idP,
                                    uint16_t *first_rb);
 
 
+void flexran_agent_schedule_ulsch_rnti(module_id_t   module_idP,
+                         unsigned char cooperation_flag,
+                         frame_t       frameP,
+                         sub_frame_t   subframeP,
+                         unsigned char sched_subframe,
+                         uint16_t     *first_rb);
+
+/* Downlink Primitives */
+
 void _dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 				     int           slice_id,
 				     frame_t       frameP,

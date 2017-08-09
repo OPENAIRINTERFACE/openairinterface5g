@@ -788,7 +788,7 @@ flexran_schedule_ue_dl_spec_default(mid_t   mod_id,
 	slice_maxmcs_current[i] = slice_maxmcs[i];
 
       } else {
-	LOG_W(MAC,"[eNB %d][SLICE %d] invalid slice max mcs %d, revert the previous value %d\n",mod_id, i,  slice_percentage[i],slice_percentage[i]);
+	// LOG_W(MAC,"[eNB %d][SLICE %d] invalid slice max mcs %d, revert the previous value %d\n",mod_id, i, slice_maxmcs[i],slice_percentage[i]);
 
 	slice_maxmcs[i]= slice_maxmcs_current[i];
 
@@ -1253,7 +1253,7 @@ flexran_schedule_ue_dl_spec_common(mid_t   mod_id,
 	  header_len += 3;
 	  // Need to see if we have space for data from this channel
 	  if (dci_tbs - ta_len - header_len - sdu_length_total > 0) {
-	     LOG_D(MAC, "[TEST]Requested %d bytes from RLC buffer on channel %d during first call\n", dci_tbs-ta_len-header_len);
+	     LOG_D(MAC, "[TEST]Requested %d bytes from RLC buffer on channel %d during first call\n", dci_tbs-ta_len-header_len, j);
 	     //If we have space, we need to see how much data we can request at most (if any available)
 	     rlc_status = mac_rlc_status_ind(mod_id,
 					     rnti,

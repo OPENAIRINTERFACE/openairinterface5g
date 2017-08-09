@@ -317,7 +317,7 @@ int flexran_get_harq(const mid_t mod_id,
 
    } else if (harq_flag == openair_harq_UL){
 
-     mac_xface->get_ue_active_harq_pid(mod_id,CC_id,rnti,frame,subframe,&harq_pid,&round,openair_harq_UL);    
+     mac_xface->get_ue_active_harq_pid(mod_id,CC_id,rnti,frame,subframe,&harq_pid,round,openair_harq_UL);    
    }
    else {
 

@@ -314,3 +314,6 @@ int flexran_agent_get_operating_pdsch_refpower (mid_t mod_id, int cc_id);
 
 /*Get uplink power*/
 int flexran_agent_get_operating_pusch_p0 (mid_t mod_id, int cc_id);
+
+/*RRC status flexRAN*/
+int flexran_get_rrc_status(const mid_t mod_id,  const rnti_t  rntiP);
