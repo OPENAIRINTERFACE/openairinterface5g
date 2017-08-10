@@ -1788,17 +1788,18 @@ void init_RU(const char *rf_config_file) {
 
     
     eNB0             = ru->eNB_list[0];
-    if ((ru->function != NGFI_RRU_IF5) || (ru->function != NGFI_RRU_IF4p5))
+    if ((ru->function != NGFI_RRU_IF5) && (ru->function != NGFI_RRU_IF4p5))
       AssertFatal(eNB0!=NULL,"eNB0 is null!\n");
 
     if (eNB0) {
       LOG_I(PHY,"Copying frame parms from eNB %d to ru %d\n",eNB0->Mod_id,ru->idx);
       memcpy((void*)&ru->frame_parms,(void*)&eNB0->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-    }
-    // attach all RU to all eNBs in its list/
-    for (i=0;i<ru->num_eNB;i++) {
-      eNB0 = ru->eNB_list[i];
-      eNB0->RU_list[eNB0->num_RU++] = ru;
+
+      // attach all RU to all eNBs in its list/
+      for (i=0;i<ru->num_eNB;i++) {
+	eNB0 = ru->eNB_list[i];
+	eNB0->RU_list[eNB0->num_RU++] = ru;
+      }
     }
     //    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],eNB_timing[ru->if_timing],ru->function);
 
@@ -1863,9 +1864,11 @@ void init_RU(const char *rf_config_file) {
       ru->start_rf               = start_rf;                            // need to start the local RF interface
       printf("configuring ru_id %d (start_rf %p)\n",ru_id,start_rf);
 
-      fill_rf_config(ru,rf_config_file);      
-      init_frame_parms(&ru->frame_parms,1);
-      phy_init_RU(ru);
+      if (ru->function == eNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
+	fill_rf_config(ru,rf_config_file);      
+	init_frame_parms(&ru->frame_parms,1);
+	phy_init_RU(ru);
+      }
 
       ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
       if (setup_RU_buffers(ru)!=0) {
