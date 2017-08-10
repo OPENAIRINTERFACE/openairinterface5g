@@ -33,22 +33,33 @@
  *  @{
  */
 
-
-/** \fn void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,uint8_t Msg3_subframe,unsigned int *nprb);
-\brief First stage of Random-Access Scheduling. Loops over the RA_templates and checks if RAR, Msg3 or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For Msg3 it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A)
-for the message.
+/** \fn void schedule_mib(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
+\brief MIB scheduling for PBCH. This function requests the MIB from RRC and provides it to L1.
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
 
 */
-void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,uint8_t Msg3_subframe);
+
+void schedule_mib(module_id_t   module_idP,
+		  frame_t       frameP,
+		  sub_frame_t   subframeP);
+
+/** \fn void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
+\brief First stage of Random-Access Scheduling. Loops over the RA_templates and checks if RAR, Msg3 or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For Msg3 it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A)
+for the message.
+@param Mod_id Instance ID of eNB
+@param frame Frame index
+@param subframe Subframe number on which to act
+*/
+
+
+void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
 
 /** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
-@param Msg3_subframe Subframe where Msg3 will be transmitted
 */
 void schedule_SI(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP);
 

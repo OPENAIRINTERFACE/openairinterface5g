@@ -1691,8 +1691,8 @@ int main( int argc, char **argv )
     if (RC.nb_L1_inst > 0) {
       printf("Initializing eNB threads\n");
       init_eNB(single_thread_flag,wait_for_sync);
-      for (inst=0;inst<RC.nb_L1_inst;inst++)
-	for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) phy_init_lte_eNB(RC.eNB[inst][CC_id],0,0);
+      //      for (inst=0;inst<RC.nb_L1_inst;inst++)
+      //	for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) phy_init_lte_eNB(RC.eNB[inst][CC_id],0,0);
     }
 
     wait_eNBs();

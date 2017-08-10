@@ -403,7 +403,7 @@ uint8_t get_Msg3harqpid(COMMON_channels_t *cc,
 
 }
 
-int is_UL_subframe(COMMON_channels_t *ccP,uint8_t subframeP)
+int is_UL_sf(COMMON_channels_t *ccP,uint8_t subframeP)
 {
 
   // if FDD return dummy value
