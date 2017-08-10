@@ -180,22 +180,27 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
   int reps            = 0;
   int num_nb          = 0;
   first_rb        = 0;
-
-  struct PRACH_ConfigSIB_v1310 *ext4_prach                 = cc[CC_id].radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
-  PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
+  struct PRACH_ConfigSIB_v1310 *ext4_prach;
+  PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13;
   PRACH_ParametersCE_r13_t *p[3];
 
-  switch (prach_ParametersListCE_r13->list.count) {
-  case 4:
-    p[3]=prach_ParametersListCE_r13->list.array[3];
-  case 3:
-    p[2]=prach_ParametersListCE_r13->list.array[2];
-  case 2:
-    p[1]=prach_ParametersListCE_r13->list.array[1];
-  case 1:
-    p[0]=prach_ParametersListCE_r13->list.array[0];
-  default:
-    AssertFatal(1==0,"Illegal count for prach_ParametersListCE_r13 %d\n",prach_ParametersListCE_r13->list.count);
+  if (cc[CC_id].radioResourceConfigCommon_BR) {
+
+    ext4_prach                 = cc[CC_id].radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
+    prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
+        
+    switch (prach_ParametersListCE_r13->list.count) {
+    case 4:
+      p[3]=prach_ParametersListCE_r13->list.array[3];
+    case 3:
+      p[2]=prach_ParametersListCE_r13->list.array[2];
+    case 2:
+      p[1]=prach_ParametersListCE_r13->list.array[1];
+    case 1:
+      p[0]=prach_ParametersListCE_r13->list.array[0];
+    default:
+      AssertFatal(1==0,"Illegal count for prach_ParametersListCE_r13 %d\n",prach_ParametersListCE_r13->list.count);
+    }
   }
 #endif
 
