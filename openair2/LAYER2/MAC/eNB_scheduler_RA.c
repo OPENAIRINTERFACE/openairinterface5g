@@ -199,9 +199,14 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
   }
 #endif
 
+  
   start_meas(&eNB->schedule_ra);
 
+ 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    // skip UL component carriers
+    if (is_UL_sf(&cc[CC_id],subframeP)==1) continue;
+
     vrb_map       = cc[CC_id].vrb_map;
 
     dl_req        = &eNB->DL_req[CC_id].dl_config_request_body;
@@ -224,7 +229,7 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 
 	    // This uses an MPDCCH Type 2 allocation according to Section 9.1.5 36-213
 	    // Parameters:
-	    //    p=2+4 PRB set (number of PRB pairs 6)
+	    //    p=2+4 PRB set (number of PRB pairs 3)
 	    //    rmax = mpdcch-NumRepetition-RA-r13 => Table 9.1.5-3
 	    //    if CELevel = 0,1 => Table 9.1.5-1b for MPDCCH candidates
 	    //    if CELevel = 2,3 => Table 9.1.5-2b for MPDCCH candidates
@@ -568,9 +573,9 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 		}
 	      } // mpdcch_repetition_count == reps
 	      if ((RA_template->Msg4_frame == frameP) && (RA_template->Msg4_subframe == subframeP)) {
+
 		// Program PDSCH
-		RA_template->generate_rar = 0;	 
-		
+
 		LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 BR with RRC Piggyback (RA proc %d, RNTI %x)\n",
 		      module_idP, CC_id, frameP, subframeP,i,RA_template->rnti);
 		

@@ -550,7 +550,11 @@ schedule_SI(
   nfapi_dl_config_request_pdu_t  *dl_config_pdu;
   nfapi_tx_request_pdu_t         *TX_req;
   nfapi_dl_config_request_body_t *dl_req;
+
   start_meas(&eNB->schedule_si);
+
+  // Only schedule System Information in subframe 5
+  if (subframeP != 5) return;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 

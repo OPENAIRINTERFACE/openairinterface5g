@@ -132,7 +132,6 @@ void UL_indication(UL_IND_t *UL_info)
   if (ifi->CC_mask == ((1<<MAX_NUM_CCs)-1)) {
 
     eNB_dlsch_ulsch_scheduler(module_id,
-			      0,
 			      UL_info->frame+((UL_info->subframe>5)?1:0),
 			      (UL_info->subframe+4)%10);
 

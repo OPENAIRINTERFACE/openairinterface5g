@@ -403,6 +403,69 @@ uint8_t get_Msg3harqpid(COMMON_channels_t *cc,
 
 }
 
+int is_UL_subframe(COMMON_channels_t *ccP,uint8_t subframeP)
+{
+
+  // if FDD return dummy value
+  if (ccP->tdd_Config == NULL)
+    return(0);
+
+  switch (ccP->tdd_Config->subframeAssignment) {
+
+  case 1:
+    switch (subframeP) {
+    case 0:
+    case 4:
+    case 5:
+    case 9:
+      return(0);
+      break;
+
+    case 2:
+    case 3:
+    case 7:
+    case 8:
+      return(1);
+      break;
+
+    default:
+      return(0);
+      break;
+    }
+    break;
+
+  case 3:
+    if  ((subframeP<=1) || (subframeP>=5))
+      return(0);
+    else if ((subframeP>1) && (subframeP < 5))
+      return(1);
+    else AssertFatal(1==0,"Unknown subframe number\n");
+    break;
+
+  case 4:
+    if  ((subframeP<=1) || (subframeP>=4))
+      return(0);
+    else if ((subframeP>1) && (subframeP < 4))
+      return(1);
+    else AssertFatal(1==0,"Unknown subframe number\n");
+    break;
+    
+  case 5:
+    if  ((subframeP<=1) || (subframeP>=3))
+      return(0);
+    else if ((subframeP>1) && (subframeP < 3))
+      return(1);
+    else AssertFatal(1==0,"Unknown subframe number\n");
+    break;
+
+  default:
+    AssertFatal(1==0,"subframe %d Unsupported TDD configuration %d\n",
+		subframeP,ccP->tdd_Config->subframeAssignment);
+    break;
+
+  }
+}
+
 #ifdef Rel14
 
 int get_numnarrowbands(long dl_Bandwidth) {
