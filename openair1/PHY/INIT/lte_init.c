@@ -1648,9 +1648,17 @@ int phy_init_RU(RU_t *ru) {
     AssertFatal(ru->nb_rx <= sizeof(ru->prach_rxsigF) / sizeof(ru->prach_rxsigF[0]),
 		"nb_antennas_rx too large");
     ru->prach_rxsigF = (int16_t**)malloc(ru->nb_rx * sizeof(int16_t*));
+    for (j=0;j<4;j++) ru->prach_rxsigF_br[j] = (int16_t**)malloc(ru->nb_rx * sizeof(int16_t*));
+
     for (i=0; i<ru->nb_rx; i++) {
       ru->prach_rxsigF[i] = (int16_t*)malloc16_clear( fp->ofdm_symbol_size*12*2*sizeof(int16_t) );
       LOG_D(PHY,"[INIT] prach_vars->rxsigF[%d] = %p\n",i,ru->prach_rxsigF[i]);
+#ifdef Rel14
+      for (j=0;j<4;j++) {
+	ru->prach_rxsigF_br[j][i] = (int16_t*)malloc16_clear( fp->ofdm_symbol_size*12*2*sizeof(int16_t) );
+	LOG_D(PHY,"[INIT] prach_vars_br->rxsigF[%d] = %p\n",i,ru->prach_rxsigF_br[j][i]);
+      }
+#endif
     }
 
     for (i=0; i<RC.nb_inst; i++) {
@@ -1772,19 +1780,19 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   prach_vars->prachF = (int16_t*)malloc16_clear( 1024*2*sizeof(int16_t) );
 
   // assume maximum of 64 RX antennas for PRACH receiver
-  prach_vars->prach_ifft       = (int16_t***)malloc16_clear(4*sizeof(int32_t**));
-  prach_vars->prach_ifft[0]    = (int16_t**)malloc16_clear(2*sizeof(int32_t*)); 
-  prach_vars->prach_ifft[0][0] = (int16_t*)malloc16_clear(1024*2*sizeof(int32_t));
-  
+  prach_vars->prach_ifft[0]    = (int32_t**)malloc16_clear(64*sizeof(int32_t*)); 
+  for (i=0;i<64;i++) prach_vars->prach_ifft[0][i]    = (int32_t*)malloc16_clear(1024*2*sizeof(int32_t)); 
+
+  prach_vars->rxsigF[0]        = (int16_t**)malloc16_clear(64*sizeof(int16_t*));
   // PRACH BR
 #ifdef Rel14
   prach_vars_br->prachF = (int16_t*)malloc16_clear( 1024*2*sizeof(int32_t) );
 
   // assume maximum of 64 RX antennas for PRACH receiver
-  prach_vars_br->prach_ifft    = (int32_t***)malloc16_clear(4*sizeof(int32_t**));
   for (int ce_level=0;ce_level<4;ce_level++) {
-    prach_vars_br->prach_ifft[ce_level] = (int32_t**)malloc16_clear(64*sizeof(int32_t*)); 
-    for (i=0; i<64; i++) prach_vars_br->prach_ifft[ce_level][i] = (int32_t*)malloc16_clear(1024*2*sizeof(int32_t));
+    prach_vars_br->prach_ifft[ce_level] = (int32_t**)malloc16_clear(64*sizeof(int32_t*));
+    for (i=0;i<64;i++) prach_vars_br->prach_ifft[ce_level][i] = (int32_t*)malloc16_clear(1024*2*sizeof(int32_t));
+    prach_vars->rxsigF[ce_level]        = (int16_t**)malloc16_clear(64*sizeof(int16_t*));
   }
 #endif
   

@@ -126,7 +126,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
       return;
     }
   }
-  else {
+  else { // Check if this is an RA process for the rnti
     AssertFatal((RA_id = find_RA_id(enb_mod_idP,CC_idP,rntiP))!=-1,
 		"Cannot find rnti %x in RA list\n",rntiP);
     AssertFatal(eNB->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx>1,
@@ -353,27 +353,29 @@ void rx_sdu(const module_id_t enb_mod_idP,
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_TERMINATE_RA_PROC,1);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_TERMINATE_RA_PROC,0);
       for (ii=0; ii<NB_RA_PROC_MAX; ii++) {
+	RA_TEMPLATE *RA_template = &eNB->common_channels[CC_idP].RA_template[ii];
+
         LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Checking proc %d : rnti (%x, %x), active %d\n",
               enb_mod_idP, CC_idP, ii,
-              eNB->common_channels[CC_idP].RA_template[ii].rnti, rntiP,
-              eNB->common_channels[CC_idP].RA_template[ii].RA_active);
+              RA_template->rnti, rntiP,
+              RA_template->RA_active);
 
-        if ((eNB->common_channels[CC_idP].RA_template[ii].rnti==rntiP) &&
-            (eNB->common_channels[CC_idP].RA_template[ii].RA_active==TRUE)) {
+        if ((RA_template->rnti==rntiP) &&
+            (RA_template->RA_active==TRUE)) {
 
           //payload_ptr = parse_ulsch_header(msg3,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,msg3_len);
 
           if (UE_id < 0) {
-            memcpy(&eNB->common_channels[CC_idP].RA_template[ii].cont_res_id[0],payload_ptr,6);
+            memcpy(&RA_template->cont_res_id[0],payload_ptr,6);
             LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d CCCH: Received Msg3: length %d, offset %ld\n",
                   enb_mod_idP,CC_idP,frameP,rx_lengths[i],payload_ptr-sduP);
 
-            if ((UE_id=add_new_ue(enb_mod_idP,CC_idP,eNB->common_channels[CC_idP].RA_template[ii].rnti,harq_pid)) == -1 ) {
+            if ((UE_id=add_new_ue(enb_mod_idP,CC_idP,RA_template->rnti,harq_pid)) == -1 ) {
               AssertFatal(1==0,"[MAC][eNB] Max user count reached\n");
 	      // kill RA procedure
             } else
               LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Added user with rnti %x => UE %d\n",
-                    enb_mod_idP,CC_idP,frameP,eNB->common_channels[CC_idP].RA_template[ii].rnti,UE_id);
+                    enb_mod_idP,CC_idP,frameP,RA_template->rnti,UE_id);
           } else {
             LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d CCCH: Received Msg3 from already registered UE %d: length %d, offset %ld\n",
                   enb_mod_idP,CC_idP,frameP,UE_id,rx_lengths[i],payload_ptr-sduP);
@@ -397,9 +399,14 @@ void rx_sdu(const module_id_t enb_mod_idP,
             //  process_ra_message(msg3,num_ce,rx_lcids,rx_ces);
           }
 
-          eNB->common_channels[CC_idP].RA_template[ii].generate_Msg4 = 1;
-          eNB->common_channels[CC_idP].RA_template[ii].wait_ack_Msg4 = 0;
-
+	  // prepare transmission of Msg4
+          RA_template->generate_Msg4 = 1;
+          RA_template->wait_ack_Msg4 = 0;
+	  
+	  // Program Msg4 PDCCH+DLSCH/MPDCCH transmission 4 subframes from now
+	  RA_template->Msg4_frame    = frameP + ((subframeP>5) ? 1 : 0);
+	  RA_template->Msg4_subframe = (subframeP+4)%10;
+	  
         } // if process is active
       } // loop on RA processes
       
@@ -656,22 +663,81 @@ void set_msg3_subframe(module_id_t Mod_id,
   }
 }
 
+
 void schedule_ulsch(module_id_t module_idP, 
 		    frame_t frameP,
-		    unsigned char cooperation_flag,
-		    sub_frame_t subframeP, 
-		    unsigned char sched_subframe) {
+		    sub_frame_t subframeP) { 
+
+
 
 
 
   uint16_t first_rb[MAX_NUM_CCs],i;
   int CC_id;
   eNB_MAC_INST *eNB=RC.mac[module_idP];
+  COMMON_channels_t *cc;
 
   start_meas(&eNB->schedule_ulsch);
 
 
+  int sched_subframe = (subframeP+4)%10;
+
+  cc = &eNB->common_channels[0];
+  int tdd_sfa;
+  // for TDD: check subframes where we have to act and return if nothing should be done now
+  if (cc->tdd_Config) {
+    tdd_sfa = cc->tdd_Config->subframeAssignment;
+    switch (subframeP) {
+    case 0:
+      if ((tdd_sfa == 0)||
+	  (tdd_sfa == 3)||
+	  (tdd_sfa == 6)) sched_subframe = 4;
+      else return;
+      break;
+    case 1:
+      if ((tdd_sfa==0)||
+	  (tdd_sfa==1)) sched_subframe = 7;
+      else if (tdd_sfa==6) sched_subframe = 8;
+      break;
+    default:
+      return;
+
+    case 2: // Don't schedule UL in subframe 2 for TDD
+      return;
+    case 3:
+      if (tdd_sfa==2) sched_subframe = 7;
+      else return;
+      break;
+    case 4:
+      if (tdd_sfa==1) sched_subframe = 8;
+      else return;
+      break;
+    case 5:
+      if (tdd_sfa==0)      sched_subframe = 9;
+      else if (tdd_sfa==6) sched_subframe = 3;
+      else return;
+      break;
+    case 6:
+      if (tdd_sfa==1)      sched_subframe = 2;
+      else if (tdd_sfa==6) sched_subframe = 3;
+      else return;
+      break;
+    case 7:
+      return;
+    case 8:
+      if ((tdd_sfa>=2) || (tdd_sfa<=5)) sched_subframe=2;
+      else return;
+      break;
+    case 9:
+      if ((tdd_sfa==1) || (tdd_sfa==3) || (tdd_sfa==4)) sched_subframe=3;
+      else if (tdd_sfa==6) sched_subframe=4;
+      else return;
+      break;
+    }
+  }
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+
+
 
     //leave out first RB for PUCCH
     first_rb[CC_id] = 1;
@@ -691,19 +757,19 @@ void schedule_ulsch(module_id_t module_idP,
 
     
     for (i=0; i<NB_RA_PROC_MAX; i++) {
-      if ((eNB->common_channels[CC_id].RA_template[i].RA_active == TRUE) &&
-          (eNB->common_channels[CC_id].RA_template[i].generate_rar == 0) &&
-          (eNB->common_channels[CC_id].RA_template[i].generate_Msg4 == 0) &&
-          (eNB->common_channels[CC_id].RA_template[i].wait_ack_Msg4 == 0) &&
-          (eNB->common_channels[CC_id].RA_template[i].Msg3_subframe == sched_subframe)) {
+      if ((cc->RA_template[i].RA_active == TRUE) &&
+          (cc->RA_template[i].generate_rar == 0) &&
+          (cc->RA_template[i].generate_Msg4 == 0) &&
+          (cc->RA_template[i].wait_ack_Msg4 == 0) &&
+          (cc->RA_template[i].Msg3_subframe == sched_subframe)) {
         first_rb[CC_id]++;
-	//    eNB->common_channels[CC_id].RA_template[i].Msg3_subframe = -1;
+	//    cc->RA_template[i].Msg3_subframe = -1;
         break;
       }
     }
   }
 
-  schedule_ulsch_rnti(module_idP, cooperation_flag, frameP, subframeP, sched_subframe,first_rb);
+  schedule_ulsch_rnti(module_idP, frameP, subframeP, sched_subframe,first_rb);
 
 
   stop_meas(&eNB->schedule_ulsch);
@@ -713,7 +779,6 @@ void schedule_ulsch(module_id_t module_idP,
 
 
 void schedule_ulsch_rnti(module_id_t   module_idP,
-                         unsigned char cooperation_flag,
                          frame_t       frameP,
                          sub_frame_t   subframeP,
                          unsigned char sched_subframe,

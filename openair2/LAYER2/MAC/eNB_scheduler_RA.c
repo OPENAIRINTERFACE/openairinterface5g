@@ -149,7 +149,7 @@ void check_and_add_msg3(module_id_t module_idP,frame_t frameP, sub_frame_t subfr
   }
 }
 
-void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,unsigned char Msg3_subframe)
+void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP)
 {
 
   int                             CC_id;
@@ -180,28 +180,38 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
   int reps            = 0;
   int num_nb          = 0;
   first_rb        = 0;
-
-  struct PRACH_ConfigSIB_v1310 *ext4_prach                 = cc[CC_id].radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
-  PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
+  struct PRACH_ConfigSIB_v1310 *ext4_prach;
+  PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13;
   PRACH_ParametersCE_r13_t *p[3];
 
-  switch (prach_ParametersListCE_r13->list.count) {
-  case 4:
-    p[3]=prach_ParametersListCE_r13->list.array[3];
-  case 3:
-    p[2]=prach_ParametersListCE_r13->list.array[2];
-  case 2:
-    p[1]=prach_ParametersListCE_r13->list.array[1];
-  case 1:
-    p[0]=prach_ParametersListCE_r13->list.array[0];
-  default:
-    AssertFatal(1==0,"Illegal count for prach_ParametersListCE_r13 %d\n",prach_ParametersListCE_r13->list.count);
+  if (cc[CC_id].radioResourceConfigCommon_BR) {
+
+    ext4_prach                 = cc[CC_id].radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
+    prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
+        
+    switch (prach_ParametersListCE_r13->list.count) {
+    case 4:
+      p[3]=prach_ParametersListCE_r13->list.array[3];
+    case 3:
+      p[2]=prach_ParametersListCE_r13->list.array[2];
+    case 2:
+      p[1]=prach_ParametersListCE_r13->list.array[1];
+    case 1:
+      p[0]=prach_ParametersListCE_r13->list.array[0];
+    default:
+      AssertFatal(1==0,"Illegal count for prach_ParametersListCE_r13 %d\n",prach_ParametersListCE_r13->list.count);
+    }
   }
 #endif
 
+  
   start_meas(&eNB->schedule_ra);
 
+ 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    // skip UL component carriers
+    if (is_UL_sf(&cc[CC_id],subframeP)==1) continue;
+
     vrb_map       = cc[CC_id].vrb_map;
 
     dl_req        = &eNB->DL_req[CC_id].dl_config_request_body;
@@ -224,7 +234,7 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 
 	    // This uses an MPDCCH Type 2 allocation according to Section 9.1.5 36-213
 	    // Parameters:
-	    //    p=2+4 PRB set (number of PRB pairs 6)
+	    //    p=2+4 PRB set (number of PRB pairs 3)
 	    //    rmax = mpdcch-NumRepetition-RA-r13 => Table 9.1.5-3
 	    //    if CELevel = 0,1 => Table 9.1.5-1b for MPDCCH candidates
 	    //    if CELevel = 2,3 => Table 9.1.5-2b for MPDCCH candidates
@@ -568,9 +578,9 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 		}
 	      } // mpdcch_repetition_count == reps
 	      if ((RA_template->Msg4_frame == frameP) && (RA_template->Msg4_subframe == subframeP)) {
+
 		// Program PDSCH
-		RA_template->generate_rar = 0;	 
-		
+
 		LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 BR with RRC Piggyback (RA proc %d, RNTI %x)\n",
 		      module_idP, CC_id, frameP, subframeP,i,RA_template->rnti);
 		

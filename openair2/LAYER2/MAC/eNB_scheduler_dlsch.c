@@ -456,6 +456,7 @@ schedule_ue_spec(
   nfapi_dl_config_request_body_t *dl_req;
   nfapi_dl_config_request_pdu_t  *dl_config_pdu;
   nfapi_tx_request_pdu_t         *TX_req;
+  int                            tdd_sfa;
 
 #if 0
   if (UE_list->head==-1) {
@@ -466,6 +467,41 @@ schedule_ue_spec(
   start_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,VCD_FUNCTION_IN);
 
+
+  // for TDD: check that we have to act here, otherwise return
+  if (cc[0].tdd_Config) {
+    tdd_sfa = cc[0].tdd_Config->subframeAssignment;
+    switch (subframeP) {
+    case 0:
+      // always continue
+       break;
+    case 1:
+      return;
+	break;
+    case 2:
+      return;
+      break;
+    case 3:
+      if ((tdd_sfa!=2) && (tdd_sfa!=5)) return;
+      break;
+    case 4:
+      if ((tdd_sfa!=1)&&(tdd_sfa!=2)&&(tdd_sfa!=4)&&(tdd_sfa!=5)) return;
+      break;
+    case 5:
+      break;
+    case 6:
+    case 7:
+      if ((tdd_sfa!=1)&&(tdd_sfa!=2)&&(tdd_sfa!=4)&&(tdd_sfa!=5)) return;
+      break;
+    case 8:
+      if ((tdd_sfa!=2)&&(tdd_sfa!=3)&&(tdd_sfa!=4)&&(tdd_sfa!=5)) return;
+      break;
+    case 9:
+      if ((tdd_sfa!=1)&&(tdd_sfa!=3)&&(tdd_sfa!=4)&&(tdd_sfa!=6)) return;
+      break;
+   
+    }
+  }
   //weight = get_ue_weight(module_idP,UE_id);
   aggregation = 2; 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
@@ -1181,6 +1217,8 @@ schedule_ue_spec(
     } // UE_id loop
   }  // CC_id loop
 
+     
+  fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_flag);
 
   stop_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,VCD_FUNCTION_OUT);

@@ -133,6 +133,8 @@ int connect_rau(RU_t *ru);
 /*************************************************************/
 /* Functions to attach and configure RRU                     */
 
+extern void wait_eNBs();
+
 int attach_rru(RU_t *ru) {
   
   ssize_t      msg_len,len;
@@ -626,7 +628,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   if ((frame_tx == 0)&&(subframe_tx == 0)) proc->frame_tx_unwrap += 1024;
 
   proc->timestamp_tx = (((frame_tx + proc->frame_tx_unwrap) * 10) + subframe_tx) * fp->samples_per_tti;
-  LOG_D(PHY,"RU %d/%d TST %llu, frame %d, subframe %d\n",ru->idx,0,proc->timestamp_tx,frame_tx,subframe_tx);
+  LOG_D(PHY,"RU %d/%d TST %llu, frame %d, subframe %d\n",ru->idx,0,(long long unsigned int)proc->timestamp_tx,frame_tx,subframe_tx);
     // dump VCD output for first RU in list
   if (ru == RC.ru[0]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame_tx );
@@ -680,33 +682,53 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   void *rxp[ru->nb_rx];
   unsigned int rxs;
   int i;
-
+  openair0_timestamp ts,old_ts;
     
   for (i=0; i<ru->nb_rx; i++)
     rxp[i] = (void*)&ru->common.rxdata[i][*subframe*fp->samples_per_tti];
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
 
+  old_ts = proc->timestamp_rx;
+
   rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
-				   &(proc->timestamp_rx),
+				   &ts,
 				   rxp,
 				   fp->samples_per_tti,
 				   ru->nb_rx);
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
  
-  if (proc->first_rx == 1)
+  proc->timestamp_rx = ts-ru->ts_offset;
+
+  if (rxs != fp->samples_per_tti)
+    LOG_E(PHY,"rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_tti,rxs);
+
+  if (proc->first_rx == 1) {
     ru->ts_offset = proc->timestamp_rx;
- 
-  proc->frame_rx     = ((proc->timestamp_rx-ru->ts_offset) / (fp->samples_per_tti*10))&1023;
-  proc->subframe_rx  = ((proc->timestamp_rx-ru->ts_offset) / fp->samples_per_tti)%10;
+    proc->timestamp_rx = 0;
+  }
+  else {
+    if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
+      LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_tti,ru->ts_offset);
+      ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
+      proc->timestamp_rx = ts-ru->ts_offset;
+    }
+
+  }
+  proc->frame_rx     = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
+  proc->subframe_rx  = (proc->timestamp_rx / fp->samples_per_tti)%10;
   // synchronize first reception to frame 0 subframe 0
 
   proc->timestamp_tx = proc->timestamp_rx+(4*fp->samples_per_tti);
   proc->subframe_tx  = (proc->subframe_rx+4)%10;
   proc->frame_tx     = (proc->subframe_rx>5) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
-
-  LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",ru->idx, 0, proc->timestamp_rx,ru->ts_offset,proc->frame_rx,proc->subframe_rx);
+  
+  LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
+	ru->idx, 
+	0, 
+	(unsigned long long int)proc->timestamp_rx,
+	(int)ru->ts_offset,proc->frame_rx,proc->subframe_rx);
 
     // dump VCD output for first RU in list
   if (ru == RC.ru[0]) {
@@ -752,30 +774,56 @@ void tx_rf(RU_t *ru) {
   unsigned int txs;
   int i;
 
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
-  // prepare tx buffer pointers
-  
-  for (i=0; i<ru->nb_tx; i++)
-    txp[i] = (void*)&ru->common.txdata[i][proc->subframe_tx*fp->samples_per_tti];
-  
-  txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
-				    proc->timestamp_tx-ru->openair0_cfg.tx_sample_advance,
-				    txp,
-				    fp->samples_per_tti,
-				    ru->nb_tx,
-				    1);
-  
-  LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
-	proc->timestamp_tx,proc->frame_tx,proc->frame_tx_unwrap,proc->subframe_tx,proc);
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
+  lte_subframe_t SF_type     = subframe_select(fp,proc->subframe_tx%10);
+  lte_subframe_t prevSF_type = subframe_select(fp,(proc->subframe_tx+9)%10);
+  lte_subframe_t nextSF_type = subframe_select(fp,(proc->subframe_tx+1)%10);
+  if ((SF_type == SF_DL) ||
+      (SF_type == SF_S)) {
+    
+    for (i=0; i<ru->nb_tx; i++)
+      txp[i] = (void*)&ru->common.txdata[i][proc->subframe_tx*fp->samples_per_tti]; 
+    
+    int siglen=fp->samples_per_tti,flags=1;
+    
+    if (SF_type == SF_S) {
+      siglen = fp->dl_symbols_in_S_subframe*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
+      flags=3; // end of burst
+    }
+    if ((fp->frame_type == TDD) &&
+	(SF_type == SF_DL)&&
+	(prevSF_type == SF_UL) &&
+	(nextSF_type == SF_DL))
+      flags = 2; // start of burst
+    
+    if ((fp->frame_type == TDD) &&
+	(SF_type == SF_DL)&&
+	(prevSF_type == SF_UL) &&
+	(nextSF_type == SF_UL))
+      flags = 4; // start of burst and end of burst (only one DL SF between two UL)
   
     
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+    // prepare tx buffer pointers
     
-  if (txs !=  fp->samples_per_tti) {
-    LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, fp->samples_per_tti);
-    exit_fun( "problem transmitting samples" );
-  }	
+    txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
+				      proc->timestamp_tx+ru->ts_offset-ru->openair0_cfg.tx_sample_advance,
+				      txp,
+				      siglen,
+				      ru->nb_tx,
+				      flags);
+    
+    LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
+	  proc->timestamp_tx,proc->frame_tx,proc->frame_tx_unwrap,proc->subframe_tx,proc);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
+    
+    
+    
+    if (txs !=  fp->samples_per_tti) {
+      LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, fp->samples_per_tti);
+      exit_fun( "problem transmitting samples" );
+    }	
+  }
 }
 
 
@@ -1788,17 +1836,18 @@ void init_RU(const char *rf_config_file) {
 
     
     eNB0             = ru->eNB_list[0];
-    if ((ru->function != NGFI_RRU_IF5) || (ru->function != NGFI_RRU_IF4p5))
+    if ((ru->function != NGFI_RRU_IF5) && (ru->function != NGFI_RRU_IF4p5))
       AssertFatal(eNB0!=NULL,"eNB0 is null!\n");
 
     if (eNB0) {
       LOG_I(PHY,"Copying frame parms from eNB %d to ru %d\n",eNB0->Mod_id,ru->idx);
       memcpy((void*)&ru->frame_parms,(void*)&eNB0->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-    }
-    // attach all RU to all eNBs in its list/
-    for (i=0;i<ru->num_eNB;i++) {
-      eNB0 = ru->eNB_list[i];
-      eNB0->RU_list[eNB0->num_RU++] = ru;
+
+      // attach all RU to all eNBs in its list/
+      for (i=0;i<ru->num_eNB;i++) {
+	eNB0 = ru->eNB_list[i];
+	eNB0->RU_list[eNB0->num_RU++] = ru;
+      }
     }
     //    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],eNB_timing[ru->if_timing],ru->function);
 
@@ -1863,9 +1912,11 @@ void init_RU(const char *rf_config_file) {
       ru->start_rf               = start_rf;                            // need to start the local RF interface
       printf("configuring ru_id %d (start_rf %p)\n",ru_id,start_rf);
 
-      fill_rf_config(ru,rf_config_file);      
-      init_frame_parms(&ru->frame_parms,1);
-      phy_init_RU(ru);
+      if (ru->function == eNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
+	fill_rf_config(ru,rf_config_file);      
+	init_frame_parms(&ru->frame_parms,1);
+	phy_init_RU(ru);
+      }
 
       ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
       if (setup_RU_buffers(ru)!=0) {

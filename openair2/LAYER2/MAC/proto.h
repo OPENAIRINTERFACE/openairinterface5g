@@ -33,22 +33,33 @@
  *  @{
  */
 
-
-/** \fn void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,uint8_t Msg3_subframe,unsigned int *nprb);
-\brief First stage of Random-Access Scheduling. Loops over the RA_templates and checks if RAR, Msg3 or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For Msg3 it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A)
-for the message.
+/** \fn void schedule_mib(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
+\brief MIB scheduling for PBCH. This function requests the MIB from RRC and provides it to L1.
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
 
 */
-void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,uint8_t Msg3_subframe);
+
+void schedule_mib(module_id_t   module_idP,
+		  frame_t       frameP,
+		  sub_frame_t   subframeP);
+
+/** \fn void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
+\brief First stage of Random-Access Scheduling. Loops over the RA_templates and checks if RAR, Msg3 or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For Msg3 it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A)
+for the message.
+@param Mod_id Instance ID of eNB
+@param frame Frame index
+@param subframe Subframe number on which to act
+*/
+
+
+void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
 
 /** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
-@param Msg3_subframe Subframe where Msg3 will be transmitted
 */
 void schedule_SI(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP);
 
@@ -78,9 +89,8 @@ int8_t ue_get_mbsfn_sf_alloction (module_id_t module_idP, uint8_t mbsfn_sync_are
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
-@param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
 */
-void schedule_ulsch(module_id_t module_idP,frame_t frameP,unsigned char cooperation_flag,sub_frame_t subframe,unsigned char sched_subframe);
+void schedule_ulsch(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
 
 /** \brief ULSCH Scheduling per RNTI
 @param Mod_id Instance ID of eNB
@@ -88,15 +98,7 @@ void schedule_ulsch(module_id_t module_idP,frame_t frameP,unsigned char cooperat
 @param subframe Subframe number on which to act
 @param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
 */
-void schedule_ulsch_rnti(module_id_t module_idP, unsigned char cooperation_flag, frame_t frameP, sub_frame_t subframe, unsigned char sched_subframe, uint16_t *first_rb);
-
-/** \brief ULSCH Scheduling for CBA  RNTI
-@param Mod_id Instance ID of eNB
-@param frame Frame index
-@param subframe Subframe number on which to act
-@param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
-*/
-void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_flag, frame_t frameP, sub_frame_t subframe, unsigned char sched_subframe, uint16_t *first_rb);
+void schedule_ulsch_rnti(module_id_t module_idP, frame_t frameP, sub_frame_t subframe, unsigned char sched_subframe, uint16_t *first_rb);
 
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4.
 @param Mod_id Instance of eNB
@@ -194,12 +196,10 @@ void dlsch_scheduler_pre_processor_allocate (module_id_t   Mod_id,
 /* \brief Function to trigger the eNB scheduling procedure.  It is called by PHY at the beginning of each subframe, \f$n$\f
    and generates all DLSCH allocations for subframe \f$n\f$ and ULSCH allocations for subframe \f$n+k$\f. 
 @param Mod_id Instance ID of eNB
-@param cooperation_flag Flag to indicated that this cell has cooperating nodes (i.e. that there are collaborative transport channels that
-can be scheduled.
 @param subframe Index of current subframe
 @param calibration_flag Flag to indicate that eNB scheduler should schedule TDD auto-calibration PUSCH.
 */
-void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, uint8_t cooperation_flag, frame_t frameP, sub_frame_t subframeP);//, int calibration_flag);
+void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);//, int calibration_flag);
 
 /* \brief Function to indicate a received preamble on PRACH.  It initiates the RA procedure.
 @param Mod_id Instance ID of eNB

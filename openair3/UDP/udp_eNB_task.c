@@ -99,7 +99,7 @@ void udp_eNB_receiver(struct udp_socket_desc_s *udp_sock_pP);
 
 void *udp_eNB_task(void *args_p);
 
-int udp_enb_init(const Enb_properties_t *enb_config_p);
+int udp_enb_init();
 /* @brief Retrieve the descriptor associated with the task_id
  */
 static
@@ -295,7 +295,7 @@ void *udp_eNB_task(void *args_p)
   MessageDef         *received_message_p    = NULL;
   //const char         *msg_name = NULL;
   //instance_t          instance  = 0;
-  udp_enb_init(NULL);
+  udp_enb_init();
 
   itti_mark_task_ready(TASK_UDP);
   MSC_START_USE();
@@ -427,7 +427,7 @@ on_error:
   return NULL;
 }
 
-int udp_enb_init(const Enb_properties_t *enb_config_p)
+int udp_enb_init()
 {
   LOG_I(UDP_, "Initializing UDP task interface\n");
   STAILQ_INIT(&udp_socket_list);

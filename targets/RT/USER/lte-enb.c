@@ -721,31 +721,40 @@ void kill_eNB_proc(int inst) {
     
 
     LOG_I(PHY, "Killing TX CC_id %d inst %d\n", CC_id, inst );
-    
-    proc_rxtx[0].instance_cnt_rxtx = 0; // FIXME data race!
-    proc_rxtx[1].instance_cnt_rxtx = 0; // FIXME data race!
+
+    if (eNB->single_thread_flag==0) {
+      proc_rxtx[0].instance_cnt_rxtx = 0; // FIXME data race!
+      proc_rxtx[1].instance_cnt_rxtx = 0; // FIXME data race!
+      pthread_cond_signal( &proc_rxtx[0].cond_rxtx );    
+      pthread_cond_signal( &proc_rxtx[1].cond_rxtx );
+    }
     proc->instance_cnt_prach = 0;
-    pthread_cond_signal( &proc_rxtx[0].cond_rxtx );    
-    pthread_cond_signal( &proc_rxtx[1].cond_rxtx );
     pthread_cond_signal( &proc->cond_prach );
 
     pthread_cond_broadcast(&sync_phy_proc.cond_phy_proc_tx);
     pthread_join( proc->pthread_prach, (void**)&status );    
 
+    LOG_I(PHY, "Destroying prach mutex/cond\n");
     pthread_mutex_destroy( &proc->mutex_prach );
     pthread_cond_destroy( &proc->cond_prach );
 #ifdef Rel14
+    proc->instance_cnt_prach_br = 0;
     pthread_cond_signal( &proc->cond_prach_br );
     pthread_join( proc->pthread_prach_br, (void**)&status );    
     pthread_mutex_destroy( &proc->mutex_prach_br );
     pthread_cond_destroy( &proc->cond_prach_br );
 #endif         
+    LOG_I(PHY, "Destroying UL_INFO mutex\n");
     pthread_mutex_destroy(&eNB->UL_INFO_mutex);
     int i;
-    for (i=0;i<2;i++) {
-      pthread_join( proc_rxtx[i].pthread_rxtx, (void**)&status );
-      pthread_mutex_destroy( &proc_rxtx[i].mutex_rxtx );
-      pthread_cond_destroy( &proc_rxtx[i].cond_rxtx );
+    if (eNB->single_thread_flag==0) {
+      for (i=0;i<2;i++) {
+	LOG_I(PHY, "Joining rxtx[%d] mutex/cond\n");
+	pthread_join( proc_rxtx[i].pthread_rxtx, (void**)&status );
+	LOG_I(PHY, "Destroying rxtx[%d] mutex/cond\n");
+	pthread_mutex_destroy( &proc_rxtx[i].mutex_rxtx );
+	pthread_cond_destroy( &proc_rxtx[i].cond_rxtx );
+      }
     }
   }
 }
@@ -854,6 +863,11 @@ void init_eNB_afterRU() {
       AssertFatal(eNB->num_RU>0,"Number of RU attached to eNB %d is zero\n",eNB->Mod_id);
       LOG_I(PHY,"Mapping RX ports from %d RUs to eNB %d\n",eNB->num_RU,eNB->Mod_id);
       eNB->frame_parms.nb_antennas_rx       = 0;
+      eNB->prach_vars.rxsigF[0] = (int16_t*)malloc16(64*sizeof(int16_t*));
+#ifdef Rel14
+      for (int ce_level=0;ce_level<4;ce_level++)
+	eNB->prach_vars_br.rxsigF[ce_level] = (int16_t*)malloc16(64*sizeof(int16_t*));
+#endif
       for (ru_id=0,aa=0;ru_id<eNB->num_RU;ru_id++) {
 	eNB->frame_parms.nb_antennas_rx    += eNB->RU_list[ru_id]->nb_rx;
 
@@ -875,12 +889,6 @@ void init_eNB_afterRU() {
 		  "inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,eNB->frame_parms.nb_antennas_rx);
       LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,eNB->frame_parms.nb_antennas_rx);
 
-      AssertFatal(eNB->frame_parms.nb_antennas_rx <= sizeof(eNB->prach_vars.prach_ifft) / sizeof(eNB->prach_vars.prach_ifft[0]),
-		  "nb_antennas_rx too large");
-      for (i=0; i<eNB->frame_parms.nb_antennas_rx; i++) {
-	eNB->prach_vars.prach_ifft[i] = (int16_t*)malloc16_clear(1024*2*sizeof(int16_t));
-	LOG_D(PHY,"[INIT] prach_vars->prach_ifft[%d] = %p\n",i,eNB->prach_vars.prach_ifft[i]);
-      }
       init_transport(eNB);
       init_precoding_weights(RC.eNB[inst][CC_id]);
     }

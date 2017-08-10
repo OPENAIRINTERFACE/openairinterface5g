@@ -1361,7 +1361,7 @@ int main( int argc, char **argv )
 #endif
 
   } else {
-    printf("configuring for RAU\n");
+    printf("configuring for RAU/RRU\n");
 
     set_comp_log(HW,      hw_log_level, hw_log_verbosity, 1);
     set_comp_log(PHY,     phy_log_level,   phy_log_verbosity, 1);
@@ -1691,8 +1691,8 @@ int main( int argc, char **argv )
     if (RC.nb_L1_inst > 0) {
       printf("Initializing eNB threads\n");
       init_eNB(single_thread_flag,wait_for_sync);
-      for (inst=0;inst<RC.nb_L1_inst;inst++)
-	for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) phy_init_lte_eNB(RC.eNB[inst][CC_id],0,0);
+      //      for (inst=0;inst<RC.nb_L1_inst;inst++)
+      //	for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) phy_init_lte_eNB(RC.eNB[inst][CC_id],0,0);
     }
 
     wait_eNBs();
@@ -1706,21 +1706,9 @@ int main( int argc, char **argv )
       }
     }
 
-    AssertFatal(RC.eNB[0][0]->UL_INFO.crc_ind.crc_pdu_list!=NULL,
-		"RC.eNB[0][0]->UL_INFO.crc_ind.crc_pdu_list is null\n");
-    AssertFatal(RC.eNB[0][0]->UL_INFO.rx_ind.rx_pdu_list!=NULL,
-		"RC.eNB[0][0]->UL_INFO.rx_ind.rx_pdu_list is null\n");
     wait_RUs();
-    AssertFatal(RC.eNB[0][0]->UL_INFO.crc_ind.crc_pdu_list!=NULL,
-		"RC.eNB[0][0]->UL_INFO.crc_ind.crc_pdu_list is null\n");
-    AssertFatal(RC.eNB[0][0]->UL_INFO.rx_ind.rx_pdu_list!=NULL,
-		"RC.eNB[0][0]->UL_INFO.rx_ind.rx_pdu_list is null\n");
     // once all RUs are ready intiailize the rest of the eNBs ((dependence on final RU parameters after configuration)
     init_eNB_afterRU();
-    AssertFatal(RC.eNB[0][0]->UL_INFO.crc_ind.crc_pdu_list!=NULL,
-		"RC.eNB[0][0]->UL_INFO.crc_ind.crc_pdu_list is null\n");
-    AssertFatal(RC.eNB[0][0]->UL_INFO.rx_ind.rx_pdu_list!=NULL,
-		"RC.eNB[0][0]->UL_INFO.rx_ind.rx_pdu_list is null\n");
     
   }
   

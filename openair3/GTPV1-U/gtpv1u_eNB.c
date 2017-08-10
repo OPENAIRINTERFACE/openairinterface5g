@@ -906,7 +906,7 @@ static int gtpv1u_eNB_init(void)
   NwGtpv1uUdpEntityT      udp;
   NwGtpv1uLogMgrEntityT   log;
   NwGtpv1uTimerMgrEntityT tmr;
-  Enb_properties_t       *enb_properties_p  = NULL;
+
 
   //  enb_properties_p = enb_config_get()->properties[0];
   RC.gtpv1u_data_g = (gtpv1u_data_t*)malloc(sizeof(gtpv1u_data_t));
