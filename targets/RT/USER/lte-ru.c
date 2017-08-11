@@ -1210,6 +1210,17 @@ static void* ru_thread( void* param ) {
     else ret = attach_rru(ru);
     AssertFatal(ret==0,"Cannot connect to radio\n");
   }
+//      if (ru->function == eNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
+        fill_rf_config(ru,ru->rf_config_file);
+        init_frame_parms(&ru->frame_parms,1);
+        phy_init_RU(ru);
+ //     }
+
+      ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+      if (setup_RU_buffers(ru)!=0) {
+        printf("Exiting, cannot initialize RU Buffers\n");
+        exit(-1);
+      }
 
   LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
   pthread_mutex_lock(&RC.ru_mutex);
@@ -1829,6 +1840,7 @@ void init_RU(const char *rf_config_file) {
 
   for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
     ru               = RC.ru[ru_id];
+    ru->rf_config_file = rf_config_file;
     ru->idx          = ru_id;              
     ru->ts_offset    = 0;
     // use eNB_list[0] as a reference for RU frame parameters
@@ -1911,7 +1923,7 @@ void init_RU(const char *rf_config_file) {
       ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
       ru->start_rf               = start_rf;                            // need to start the local RF interface
       printf("configuring ru_id %d (start_rf %p)\n",ru_id,start_rf);
-
+/*
       if (ru->function == eNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
 	fill_rf_config(ru,rf_config_file);      
 	init_frame_parms(&ru->frame_parms,1);
@@ -1922,7 +1934,7 @@ void init_RU(const char *rf_config_file) {
       if (setup_RU_buffers(ru)!=0) {
 	printf("Exiting, cannot initialize RU Buffers\n");
 	exit(-1);
-      }
+      }*/
       break;
 
     case REMOTE_IF5: // the remote unit is IF5 RRU

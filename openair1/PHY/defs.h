@@ -619,6 +619,8 @@ typedef enum {
 typedef struct RU_t_s{
   /// index of this ru
   uint32_t idx;
+ /// Pointer to configuration file
+  char *rf_config_file;
   /// southbound interface
   RU_if_south_t if_south;
   /// timing
@@ -1423,6 +1425,7 @@ typedef struct RRU_capabilities_s {
 } RRU_capabilities_t;
 
 typedef struct RRU_config_s {
+
   /// Fronthaul format
   RU_if_south_t FH_fmt;
   /// number of EUTRA bands (<=4) configured in RRU
