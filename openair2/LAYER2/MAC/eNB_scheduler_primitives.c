@@ -710,7 +710,11 @@ void dump_ue_list(UE_list_t *listP, int ul_flag)
   }
 }
 
-int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP)
+int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP
+               #ifdef Rel14
+                 ,uint8_t rach_resource_type
+               #endif
+               )
 {
   int UE_id;
   int i, j;
@@ -732,6 +736,11 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP)
     UE_list->ordered_ULCCids[0][UE_id]             = cc_idP;
     UE_list->num_UEs++;
     UE_list->active[UE_id]                         = TRUE;
+
+#ifdef Rel14
+    UE_list->UE_template[cc_idP][UE_id].rach_resource_type = rach_resource_type ;
+#endif
+
     memset((void*)&UE_list->UE_sched_ctrl[UE_id],0,sizeof(UE_sched_ctrl));
     memset((void*)&UE_list->eNB_UE_stats[cc_idP][UE_id],0,sizeof(eNB_UE_STATS));
 

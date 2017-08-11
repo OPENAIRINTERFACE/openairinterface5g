@@ -370,7 +370,11 @@ void rx_sdu(const module_id_t enb_mod_idP,
             LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d CCCH: Received Msg3: length %d, offset %ld\n",
                   enb_mod_idP,CC_idP,frameP,rx_lengths[i],payload_ptr-sduP);
 
-            if ((UE_id=add_new_ue(enb_mod_idP,CC_idP,RA_template->rnti,harq_pid)) == -1 ) {
+            if ((UE_id=add_new_ue(enb_mod_idP,CC_idP,eNB->common_channels[CC_idP].RA_template[ii].rnti,harq_pid
+                      #ifdef Rel14
+                        ,eNB->common_channels[CC_idP].RA_template[ii].rach_resource_type
+                      #endif
+                      )) == -1 ) {
               AssertFatal(1==0,"[MAC][eNB] Max user count reached\n");
 	      // kill RA procedure
             } else
