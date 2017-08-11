@@ -1197,12 +1197,12 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
       asn1_xer_print = 0;
     }
   }
-
+  
 #endif
-
+  
   // Get list of active eNBs, (only these will be configured)
   setting = config_lookup(&cfg, ENB_CONFIG_STRING_ACTIVE_ENBS);
-
+  
   if (setting != NULL) {
     num_enbs = config_setting_length(setting);
     setting_enb   = config_setting_get_elem(setting, i);
@@ -1278,7 +1278,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 	rrc->eth_params_s.remote_portd             = remote_s_portd;
 	rrc->eth_params_s.transp_preference        = ETH_UDP_MODE;
       }
-
+      
       else { // other midhaul
       }
 
@@ -2235,7 +2235,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			    RC.config_file_name, i, pcch_defaultPagingCycle);
 
 
-
+	    
 	      switch (bcch_modificationPeriodCoeff) {
 	      case 2:
 		RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].bcch_modificationPeriodCoeff = BCCH_Config__modificationPeriodCoeff_n2;
@@ -2528,6 +2528,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			     RC.config_file_name, i, ue_TransmissionMode);
 		break;
 	      }
+	    
 #ifdef Rel14
 	      setting_br13 = config_setting_get_member(component_carrier, ENB_CONFIG_STRING_BR);
 	      if (setting_br13 == NULL) {
@@ -2541,7 +2542,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		scheduling_info_br_list       = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_SCHEDULING_INFO_LIST);
 		int num_scheduling_info       = config_setting_length(scheduling_info_br_list);
 		RRC_CONFIGURATION_REQ (msg_p).scheduling_info_br_size[j] = num_scheduling_info;
-
+		
 		for (sched_info_idx = 0; sched_info_idx < num_scheduling_info; ++sched_info_idx)
 		  {
 		    scheduling_info_br = config_setting_get_elem(scheduling_info_br_list, sched_info_idx);
@@ -2612,7 +2613,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		      }
 		    RRC_CONFIGURATION_REQ (msg_p).rsrp_range[j][rsrp_range_idx] = rsrp_range_br;
 		  }
-
+		
 		prach_parameters_ce_r13_list = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_PRACH_PARAMETERS_CE_R13);
 		int num_prach_parameters_ce_r13 = config_setting_length(prach_parameters_ce_r13_list);
 		RRC_CONFIGURATION_REQ (msg_p).prach_parameters_list_size[j] = num_prach_parameters_ce_r13;
@@ -2696,9 +2697,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		      && config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PUCCH_DELTA_SHIFT, &pucch_delta_shift)
 		      && config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PUCCH_NRB_CQI, &pucch_nRB_CQI)
 		      && config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PUCCH_NCS_AN, &pucch_nCS_AN)
-#if !defined(Rel10) && !defined(Rel14)
-		      && config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PUCCH_N1_AN, &pucch_n1_AN)
-#endif
 		      && config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PDSCH_RS_EPRE, &pdsch_referenceSignalPower)
 		      && config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PDSCH_PB, &pdsch_p_b)
 		      && config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PUSCH_N_SB, &pusch_n_SB)
@@ -2811,15 +2809,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_nCS_AN choice: 0..7!\n",
 			       RC.config_file_name, i, pucch_nCS_AN);
 
-#if !defined(Rel10) && !defined(Rel14)
-		RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].pucch_n1_AN = pucch_n1_AN;
-
-		if ((pucch_n1_AN <0) || (pucch_n1_AN > 2047))
-		  AssertFatal (0,
-			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_n1_AN choice: 0..2047!\n",
-			       RC.config_file_name, i, pucch_n1_AN);
-
-#endif
 		RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].pdsch_referenceSignalPower = pdsch_referenceSignalPower;
 
 		if ((pdsch_referenceSignalPower <-60) || (pdsch_referenceSignalPower > 50))
@@ -3019,32 +3008,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			      "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_p0_Nominal choice: -126..24 !\n",
 			      RC.config_file_name, i, pusch_p0_Nominal);
 
-#ifndef Rel14
-		if (strcmp(pusch_alpha, "AL0") == 0) {
-		  RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = UplinkPowerControlCommon__alpha_al0;
-		}
-		else if (strcmp(pusch_alpha, "AL04") == 0) {
-		  RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = UplinkPowerControlCommon__alpha_al04;
-		}
-		else if (strcmp(pusch_alpha, "AL05") == 0) {
-		  RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = UplinkPowerControlCommon__alpha_al05;
-		}
-		else if (strcmp(pusch_alpha, "AL06") == 0) {
-		  RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = UplinkPowerControlCommon__alpha_al06;
-		}
-		else if (strcmp(pusch_alpha, "AL07") == 0) {
-		  RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = UplinkPowerControlCommon__alpha_al07;
-		}
-		else if (strcmp(pusch_alpha, "AL08") == 0) {
-		  RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = UplinkPowerControlCommon__alpha_al08;
-		}
-		else if (strcmp(pusch_alpha, "AL09") == 0) {
-		  RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = UplinkPowerControlCommon__alpha_al09;
-		}
-		else if (strcmp(pusch_alpha, "AL1") == 0) {
-		  RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = UplinkPowerControlCommon__alpha_al1;
-		}
-#else
 		if (strcmp(pusch_alpha, "AL0") == 0) {
 		  RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al0;
 		}
@@ -3069,7 +3032,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		else if (strcmp(pusch_alpha, "AL1") == 0) {
 		  RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al1;
 		}
-#endif
 		else
 		  AssertFatal(0,
 			      "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_Alpha choice: AL0,AL04,AL05,AL06,AL07,AL08,AL09,AL1!\n",
@@ -3280,52 +3242,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
 
 		switch (rach_preambleTransMax) {
-#ifndef Rel14
-		case 3:
-		  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_preambleTransMax=  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n3;
-		  break;
-
-		case 4:
-		  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_preambleTransMax=  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n4;
-		  break;
-
-		case 5:
-		  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_preambleTransMax=  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n5;
-		  break;
-
-		case 6:
-		  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_preambleTransMax=  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n6;
-		  break;
-
-		case 7:
-		  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_preambleTransMax=  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n7;
-		  break;
-
-		case 8:
-		  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_preambleTransMax=  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n8;
-		  break;
-
-		case 10:
-		  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_preambleTransMax=  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10;
-		  break;
-
-		case 20:
-		  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_preambleTransMax=  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n20;
-		  break;
-
-		case 50:
-		  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_preambleTransMax=  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n50;
-		  break;
-
-		case 100:
-		  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_preambleTransMax=  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n100;
-		  break;
-
-		case 200:
-		  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_preambleTransMax=  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n200;
-		  break;
-
-#else
 
 		case 3:
 		  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_preambleTransMax=  PreambleTransMax_n3;
@@ -3370,7 +3286,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		case 200:
 		  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_preambleTransMax=  PreambleTransMax_n200;
 		  break;
-#endif
+
 
 		default:
 		  AssertFatal (0,
@@ -3749,7 +3665,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			       RC.config_file_name, i, ue_TransmissionMode);
 		  break;
 		}
-
+	      	      	      
 		int hyperSFN_r13;
 		int eDRX_Allowed_r13;
 		int q_RxLevMinCE_r13;
@@ -3862,11 +3778,12 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		      }
 		    else
 		      RRC_CONFIGURATION_REQ(msg_p).si_ValidityTime_r13[j] = NULL;
-
+		    
 		  }
+	      
 		else
 		  RRC_CONFIGURATION_REQ(msg_p).bandwidthReducedAccessRelatedInfo_r13[j] = FALSE;
-
+	      
 		if (config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_FREQHOPPINGPARAMETERSDL, &freqHoppingParametersDL_r13) && !strcmp(freqHoppingParametersDL_r13, "ENABLE"))
 		  {
 		    RRC_CONFIGURATION_REQ(msg_p).freqHoppingParametersDL_r13[j] = TRUE;
@@ -3915,7 +3832,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		  }
 		else
 		  RRC_CONFIGURATION_REQ(msg_p).freqHoppingParametersDL_r13[j] = FALSE;
-
+	      
 		/////SIB2 Parameters
 
 		if (config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PREAMBLETRANSMAX_CE_R13, &preambleTransMax_CE_r13))
@@ -3925,7 +3842,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		  }
 		else
 		  RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].preambleTransMax_CE_r13 = NULL;
-
+		
 		if (config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_PRACH_CONFIGCOMMON_V1310, &prach_ConfigCommon_v1310) && !strcmp(prach_ConfigCommon_v1310, "ENABLE"))
 		  {
 		    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].prach_ConfigCommon_v1310 = TRUE;
@@ -3962,337 +3879,341 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
 		  }
 		else
-		  RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].prach_ConfigCommon_v1310 = TRUE;
+		  RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].prach_ConfigCommon_v1310 = FALSE;
 	      }
 	      else
 		RRC_CONFIGURATION_REQ(msg_p).schedulingInfoSIB1_BR_r13[j] = 0;
-	    }
+	    
+	  
 #endif
+	    
+
+
+	      setting_srb1 = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_SRB1);
+
+	      if (setting_srb1 != NULL) {
+		if (!(config_setting_lookup_int(setting_srb1, ENB_CONFIG_STRING_SRB1_TIMER_POLL_RETRANSMIT, &srb1_timer_poll_retransmit)
+		      && config_setting_lookup_int(setting_srb1, ENB_CONFIG_STRING_SRB1_TIMER_REORDERING,      &srb1_timer_reordering)
+		      && config_setting_lookup_int(setting_srb1, ENB_CONFIG_STRING_SRB1_TIMER_STATUS_PROHIBIT, &srb1_timer_status_prohibit)
+		      && config_setting_lookup_int(setting_srb1, ENB_CONFIG_STRING_SRB1_MAX_RETX_THRESHOLD,    &srb1_max_retx_threshold)
+		      && config_setting_lookup_int(setting_srb1, ENB_CONFIG_STRING_SRB1_POLL_PDU,              &srb1_poll_pdu)
+		      && config_setting_lookup_int(setting_srb1, ENB_CONFIG_STRING_SRB1_POLL_BYTE,             &srb1_poll_byte)))
+		  AssertFatal (0,
+			       "Failed to parse eNB configuration file %s, enb %d  timer_poll_retransmit, timer_reordering, "
+			       "timer_status_prohibit, poll_pdu, poll_byte, max_retx_threshold !\n",
+			       RC.config_file_name, i);
+		
+		switch (srb1_max_retx_threshold) {
+		case 1:
+		  rrc->srb1_max_retx_threshold = UL_AM_RLC__maxRetxThreshold_t1;
+		  break;
+		  
+		case 2:
+		  rrc->srb1_max_retx_threshold = UL_AM_RLC__maxRetxThreshold_t2;
+		  break;
+		  
+		case 3:
+		  rrc->srb1_max_retx_threshold = UL_AM_RLC__maxRetxThreshold_t3;
+		  break;
+		  
+		case 4:
+		  rrc->srb1_max_retx_threshold = UL_AM_RLC__maxRetxThreshold_t4;
+		  break;
+		  
+		case 6:
+		  rrc->srb1_max_retx_threshold = UL_AM_RLC__maxRetxThreshold_t6;
+		  break;
+		  
+		case 8:
+		  rrc->srb1_max_retx_threshold = UL_AM_RLC__maxRetxThreshold_t8;
+		  break;
+		  
+		case 16:
+		  rrc->srb1_max_retx_threshold = UL_AM_RLC__maxRetxThreshold_t16;
+		  break;
+		  
+		case 32:
+		  rrc->srb1_max_retx_threshold = UL_AM_RLC__maxRetxThreshold_t32;
+		  break;
+		  
+		default:
+		  AssertFatal (0,
+			       "Bad config value when parsing eNB configuration file %s, enb %d  srb1_max_retx_threshold %u!\n",
+			       RC.config_file_name, i, srb1_max_retx_threshold);
+		}
+		
+		
+		switch (srb1_poll_pdu) {
+		case 4:
+		  rrc->srb1_poll_pdu = PollPDU_p4;
+		  break;
+		  
+		case 8:
+		  rrc->srb1_poll_pdu = PollPDU_p8;
+		  break;
+		  
+		case 16:
+		  rrc->srb1_poll_pdu = PollPDU_p16;
+		  break;
+		  
+		case 32:
+		  rrc->srb1_poll_pdu = PollPDU_p32;
+		  break;
+		  
+		case 64:
+		  rrc->srb1_poll_pdu = PollPDU_p64;
+		  break;
+		  
+		case 128:
+		  rrc->srb1_poll_pdu = PollPDU_p128;
+		  break;
+		  
+		case 256:
+		  rrc->srb1_poll_pdu = PollPDU_p256;
+		  break;
+		  
+		default:
+		  if (srb1_poll_pdu >= 10000)
+		    rrc->srb1_poll_pdu = PollPDU_pInfinity;
+		  else
+		    AssertFatal (0,
+				 "Bad config value when parsing eNB configuration file %s, enb %d  srb1_poll_pdu %u!\n",
+				 RC.config_file_name, i, srb1_poll_pdu);
+		}
+		
+		rrc->srb1_poll_byte             = srb1_poll_byte;
+		
+		switch (srb1_poll_byte) {
+		case 25:
+		  rrc->srb1_poll_byte = PollByte_kB25;
+		  break;
+		  
+		case 50:
+		  rrc->srb1_poll_byte = PollByte_kB50;
+		  break;
+		  
+		case 75:
+		  rrc->srb1_poll_byte = PollByte_kB75;
+		  break;
+		  
+		case 100:
+		  rrc->srb1_poll_byte = PollByte_kB100;
+		  break;
+		  
+		case 125:
+		  rrc->srb1_poll_byte = PollByte_kB125;
+		  break;
+		  
+		case 250:
+		  rrc->srb1_poll_byte = PollByte_kB250;
+		  break;
+		  
+		case 375:
+		  rrc->srb1_poll_byte = PollByte_kB375;
+		  break;
+		  
+		case 500:
+		  rrc->srb1_poll_byte = PollByte_kB500;
+		  break;
+		  
+		case 750:
+		  rrc->srb1_poll_byte = PollByte_kB750;
+		  break;
+		  
+		case 1000:
+		  rrc->srb1_poll_byte = PollByte_kB1000;
+		  break;
+		  
+		case 1250:
+		  rrc->srb1_poll_byte = PollByte_kB1250;
+		  break;
+		  
+		case 1500:
+		  rrc->srb1_poll_byte = PollByte_kB1500;
+		  break;
+		  
+		case 2000:
+		  rrc->srb1_poll_byte = PollByte_kB2000;
+		  break;
+		  
+		case 3000:
+		  rrc->srb1_poll_byte = PollByte_kB3000;
+		  break;
+		  
+		default:
+		  if (srb1_poll_byte >= 10000)
+		    rrc->srb1_poll_byte = PollByte_kBinfinity;
+		  else
+		    AssertFatal (0,
+				 "Bad config value when parsing eNB configuration file %s, enb %d  srb1_poll_byte %u!\n",
+				 RC.config_file_name, i, srb1_poll_byte);
+		}
+		
+		if (srb1_timer_poll_retransmit <= 250) {
+		  rrc->srb1_timer_poll_retransmit = (srb1_timer_poll_retransmit - 5) / 5;
+		}
+		else if (srb1_timer_poll_retransmit <= 500) {
+		  rrc->srb1_timer_poll_retransmit = (srb1_timer_poll_retransmit - 300) / 50 + 50;
+		}
+		else {
+		  AssertFatal(0,
+			      "Bad config value when parsing eNB configuration file %s, enb %d  srb1_timer_poll_retransmit %u!\n",
+			      RC.config_file_name, i, srb1_timer_poll_retransmit);
+		}
+		
+		if (srb1_timer_status_prohibit <= 250) {
+		  rrc->srb1_timer_status_prohibit = srb1_timer_status_prohibit / 5;
+		}
+		else if ((srb1_timer_poll_retransmit >= 300) && (srb1_timer_poll_retransmit <= 500)) {
+		  rrc->srb1_timer_status_prohibit = (srb1_timer_status_prohibit - 300) / 50 + 51;
+		}
+		else {
+		  AssertFatal(0,
+			      "Bad config value when parsing eNB configuration file %s, enb %d  srb1_timer_status_prohibit %u!\n",
+			      RC.config_file_name, i, srb1_timer_status_prohibit);
+		}
+		
+		switch (srb1_timer_reordering) {
+		case 0:
+		  rrc->srb1_timer_reordering = T_Reordering_ms0;
+		  break;
+		  
+		case 5:
+		  rrc->srb1_timer_reordering = T_Reordering_ms5;
+		  break;
+		  
+		case 10:
+		  rrc->srb1_timer_reordering = T_Reordering_ms10;
+		  break;
+		  
+		case 15:
+		  rrc->srb1_timer_reordering = T_Reordering_ms15;
+		  break;
+		  
+		case 20:
+		  rrc->srb1_timer_reordering = T_Reordering_ms20;
+		  break;
+		  
+		case 25:
+		  rrc->srb1_timer_reordering = T_Reordering_ms25;
+		  break;
+		  
+		case 30:
+		  rrc->srb1_timer_reordering = T_Reordering_ms30;
+		  break;
+		  
+		case 35:
+		  rrc->srb1_timer_reordering = T_Reordering_ms35;
+		  break;
+		  
+		case 40:
+		  rrc->srb1_timer_reordering = T_Reordering_ms40;
+		  break;
+		  
+		case 45:
+		  rrc->srb1_timer_reordering = T_Reordering_ms45;
+		  break;
+		  
+		case 50:
+		  rrc->srb1_timer_reordering = T_Reordering_ms50;
+		  break;
+		  
+		case 55:
+		  rrc->srb1_timer_reordering = T_Reordering_ms55;
+		  break;
+		  
+		case 60:
+		  rrc->srb1_timer_reordering = T_Reordering_ms60;
+		  break;
+		  
+		case 65:
+		  rrc->srb1_timer_reordering = T_Reordering_ms65;
+		  break;
+		  
+		case 70:
+		  rrc->srb1_timer_reordering = T_Reordering_ms70;
+		  break;
+		  
+		case 75:
+		  rrc->srb1_timer_reordering = T_Reordering_ms75;
+		  break;
+		  
+		case 80:
+		  rrc->srb1_timer_reordering = T_Reordering_ms80;
+		  break;
+		  
+		case 85:
+		  rrc->srb1_timer_reordering = T_Reordering_ms85;
+		  break;
+		  
+		case 90:
+		  rrc->srb1_timer_reordering = T_Reordering_ms90;
+		  break;
+		  
+		case 95:
+		  rrc->srb1_timer_reordering = T_Reordering_ms95;
+		  break;
+		  
+		case 100:
+		  rrc->srb1_timer_reordering = T_Reordering_ms100;
+		  break;
+		  
+		case 110:
+		  rrc->srb1_timer_reordering = T_Reordering_ms110;
+		  break;
+		  
+		case 120:
+		  rrc->srb1_timer_reordering = T_Reordering_ms120;
+		  break;
+		  
+		case 130:
+		  rrc->srb1_timer_reordering = T_Reordering_ms130;
+		  break;
+		  
+		case 140:
+		  rrc->srb1_timer_reordering = T_Reordering_ms140;
+		  break;
+		  
+		case 150:
+		  rrc->srb1_timer_reordering = T_Reordering_ms150;
+		  break;
+		  
+		case 160:
+		  rrc->srb1_timer_reordering = T_Reordering_ms160;
+		  break;
+		  
+		case 170:
+		  rrc->srb1_timer_reordering = T_Reordering_ms170;
+		  break;
+		  
+		case 180:
+		  rrc->srb1_timer_reordering = T_Reordering_ms180;
+		  break;
+		  
+		case 190:
+		  rrc->srb1_timer_reordering = T_Reordering_ms190;
+		  break;
+		  
+		case 200:
+		  rrc->srb1_timer_reordering = T_Reordering_ms200;
+		  break;
+		  
+		default:
+		  AssertFatal (0,
+			       "Bad config value when parsing eNB configuration file %s, enb %d  srb1_timer_reordering %u!\n",
+			       RC.config_file_name, i, srb1_timer_reordering);
+		}
+		
+		break;
+	      }
+
+	    }
 	  }
-
-
-	  setting_srb1 = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_SRB1);
-
-	  if (setting_srb1 != NULL) {
-	    if (!(config_setting_lookup_int(setting_srb1, ENB_CONFIG_STRING_SRB1_TIMER_POLL_RETRANSMIT, &srb1_timer_poll_retransmit)
-		  && config_setting_lookup_int(setting_srb1, ENB_CONFIG_STRING_SRB1_TIMER_REORDERING,      &srb1_timer_reordering)
-		  && config_setting_lookup_int(setting_srb1, ENB_CONFIG_STRING_SRB1_TIMER_STATUS_PROHIBIT, &srb1_timer_status_prohibit)
-		  && config_setting_lookup_int(setting_srb1, ENB_CONFIG_STRING_SRB1_MAX_RETX_THRESHOLD,    &srb1_max_retx_threshold)
-		  && config_setting_lookup_int(setting_srb1, ENB_CONFIG_STRING_SRB1_POLL_PDU,              &srb1_poll_pdu)
-		  && config_setting_lookup_int(setting_srb1, ENB_CONFIG_STRING_SRB1_POLL_BYTE,             &srb1_poll_byte)))
-	      AssertFatal (0,
-			   "Failed to parse eNB configuration file %s, enb %d  timer_poll_retransmit, timer_reordering, "
-			   "timer_status_prohibit, poll_pdu, poll_byte, max_retx_threshold !\n",
-			   RC.config_file_name, i);
-
-	    switch (srb1_max_retx_threshold) {
-	    case 1:
-	      rrc->srb1_max_retx_threshold = UL_AM_RLC__maxRetxThreshold_t1;
-	      break;
-
-	    case 2:
-	      rrc->srb1_max_retx_threshold = UL_AM_RLC__maxRetxThreshold_t2;
-	      break;
-
-	    case 3:
-	      rrc->srb1_max_retx_threshold = UL_AM_RLC__maxRetxThreshold_t3;
-	      break;
-
-	    case 4:
-	      rrc->srb1_max_retx_threshold = UL_AM_RLC__maxRetxThreshold_t4;
-	      break;
-
-	    case 6:
-	      rrc->srb1_max_retx_threshold = UL_AM_RLC__maxRetxThreshold_t6;
-	      break;
-
-	    case 8:
-	      rrc->srb1_max_retx_threshold = UL_AM_RLC__maxRetxThreshold_t8;
-	      break;
-
-	    case 16:
-	      rrc->srb1_max_retx_threshold = UL_AM_RLC__maxRetxThreshold_t16;
-	      break;
-
-	    case 32:
-	      rrc->srb1_max_retx_threshold = UL_AM_RLC__maxRetxThreshold_t32;
-	      break;
-
-	    default:
-	      AssertFatal (0,
-			   "Bad config value when parsing eNB configuration file %s, enb %d  srb1_max_retx_threshold %u!\n",
-			   RC.config_file_name, i, srb1_max_retx_threshold);
-	    }
-
-
-	    switch (srb1_poll_pdu) {
-	    case 4:
-	      rrc->srb1_poll_pdu = PollPDU_p4;
-	      break;
-
-	    case 8:
-	      rrc->srb1_poll_pdu = PollPDU_p8;
-	      break;
-
-	    case 16:
-	      rrc->srb1_poll_pdu = PollPDU_p16;
-	      break;
-
-	    case 32:
-	      rrc->srb1_poll_pdu = PollPDU_p32;
-	      break;
-
-	    case 64:
-	      rrc->srb1_poll_pdu = PollPDU_p64;
-	      break;
-
-	    case 128:
-	      rrc->srb1_poll_pdu = PollPDU_p128;
-	      break;
-
-	    case 256:
-	      rrc->srb1_poll_pdu = PollPDU_p256;
-	      break;
-
-	    default:
-	      if (srb1_poll_pdu >= 10000)
-		rrc->srb1_poll_pdu = PollPDU_pInfinity;
-	      else
-		AssertFatal (0,
-			     "Bad config value when parsing eNB configuration file %s, enb %d  srb1_poll_pdu %u!\n",
-			     RC.config_file_name, i, srb1_poll_pdu);
-	    }
-
-	    rrc->srb1_poll_byte             = srb1_poll_byte;
-
-	    switch (srb1_poll_byte) {
-	    case 25:
-	      rrc->srb1_poll_byte = PollByte_kB25;
-	      break;
-
-	    case 50:
-	      rrc->srb1_poll_byte = PollByte_kB50;
-	      break;
-
-	    case 75:
-	      rrc->srb1_poll_byte = PollByte_kB75;
-	      break;
-
-	    case 100:
-	      rrc->srb1_poll_byte = PollByte_kB100;
-	      break;
-
-	    case 125:
-	      rrc->srb1_poll_byte = PollByte_kB125;
-	      break;
-
-	    case 250:
-	      rrc->srb1_poll_byte = PollByte_kB250;
-	      break;
-
-	    case 375:
-	      rrc->srb1_poll_byte = PollByte_kB375;
-	      break;
-
-	    case 500:
-	      rrc->srb1_poll_byte = PollByte_kB500;
-	      break;
-
-	    case 750:
-	      rrc->srb1_poll_byte = PollByte_kB750;
-	      break;
-
-	    case 1000:
-	      rrc->srb1_poll_byte = PollByte_kB1000;
-	      break;
-
-	    case 1250:
-	      rrc->srb1_poll_byte = PollByte_kB1250;
-	      break;
-
-	    case 1500:
-	      rrc->srb1_poll_byte = PollByte_kB1500;
-	      break;
-
-	    case 2000:
-	      rrc->srb1_poll_byte = PollByte_kB2000;
-	      break;
-
-	    case 3000:
-	      rrc->srb1_poll_byte = PollByte_kB3000;
-	      break;
-
-	    default:
-	      if (srb1_poll_byte >= 10000)
-		rrc->srb1_poll_byte = PollByte_kBinfinity;
-	      else
-		AssertFatal (0,
-			     "Bad config value when parsing eNB configuration file %s, enb %d  srb1_poll_byte %u!\n",
-			     RC.config_file_name, i, srb1_poll_byte);
-	    }
-
-	    if (srb1_timer_poll_retransmit <= 250) {
-	      rrc->srb1_timer_poll_retransmit = (srb1_timer_poll_retransmit - 5) / 5;
-	    }
-	    else if (srb1_timer_poll_retransmit <= 500) {
-	      rrc->srb1_timer_poll_retransmit = (srb1_timer_poll_retransmit - 300) / 50 + 50;
-	    }
-	    else {
-	      AssertFatal(0,
-			  "Bad config value when parsing eNB configuration file %s, enb %d  srb1_timer_poll_retransmit %u!\n",
-			  RC.config_file_name, i, srb1_timer_poll_retransmit);
-	    }
-
-	    if (srb1_timer_status_prohibit <= 250) {
-	      rrc->srb1_timer_status_prohibit = srb1_timer_status_prohibit / 5;
-	    }
-	    else if ((srb1_timer_poll_retransmit >= 300) && (srb1_timer_poll_retransmit <= 500)) {
-	      rrc->srb1_timer_status_prohibit = (srb1_timer_status_prohibit - 300) / 50 + 51;
-	    }
-	    else {
-	      AssertFatal(0,
-			  "Bad config value when parsing eNB configuration file %s, enb %d  srb1_timer_status_prohibit %u!\n",
-			  RC.config_file_name, i, srb1_timer_status_prohibit);
-	    }
-
-	    switch (srb1_timer_reordering) {
-	    case 0:
-	      rrc->srb1_timer_reordering = T_Reordering_ms0;
-	      break;
-
-	    case 5:
-	      rrc->srb1_timer_reordering = T_Reordering_ms5;
-	      break;
-
-	    case 10:
-	      rrc->srb1_timer_reordering = T_Reordering_ms10;
-	      break;
-
-	    case 15:
-	      rrc->srb1_timer_reordering = T_Reordering_ms15;
-	      break;
-
-	    case 20:
-	      rrc->srb1_timer_reordering = T_Reordering_ms20;
-	      break;
-
-	    case 25:
-	      rrc->srb1_timer_reordering = T_Reordering_ms25;
-	      break;
-
-	    case 30:
-	      rrc->srb1_timer_reordering = T_Reordering_ms30;
-	      break;
-
-	    case 35:
-	      rrc->srb1_timer_reordering = T_Reordering_ms35;
-	      break;
-
-	    case 40:
-	      rrc->srb1_timer_reordering = T_Reordering_ms40;
-	      break;
-
-	    case 45:
-	      rrc->srb1_timer_reordering = T_Reordering_ms45;
-	      break;
-
-	    case 50:
-	      rrc->srb1_timer_reordering = T_Reordering_ms50;
-	      break;
-
-	    case 55:
-	      rrc->srb1_timer_reordering = T_Reordering_ms55;
-	      break;
-
-	    case 60:
-	      rrc->srb1_timer_reordering = T_Reordering_ms60;
-	      break;
-
-	    case 65:
-	      rrc->srb1_timer_reordering = T_Reordering_ms65;
-	      break;
-
-	    case 70:
-	      rrc->srb1_timer_reordering = T_Reordering_ms70;
-	      break;
-
-	    case 75:
-	      rrc->srb1_timer_reordering = T_Reordering_ms75;
-	      break;
-
-	    case 80:
-	      rrc->srb1_timer_reordering = T_Reordering_ms80;
-	      break;
-
-	    case 85:
-	      rrc->srb1_timer_reordering = T_Reordering_ms85;
-	      break;
-
-	    case 90:
-	      rrc->srb1_timer_reordering = T_Reordering_ms90;
-	      break;
-
-	    case 95:
-	      rrc->srb1_timer_reordering = T_Reordering_ms95;
-	      break;
-
-	    case 100:
-	      rrc->srb1_timer_reordering = T_Reordering_ms100;
-	      break;
-
-	    case 110:
-	      rrc->srb1_timer_reordering = T_Reordering_ms110;
-	      break;
-
-	    case 120:
-	      rrc->srb1_timer_reordering = T_Reordering_ms120;
-	      break;
-
-	    case 130:
-	      rrc->srb1_timer_reordering = T_Reordering_ms130;
-	      break;
-
-	    case 140:
-	      rrc->srb1_timer_reordering = T_Reordering_ms140;
-	      break;
-
-	    case 150:
-	      rrc->srb1_timer_reordering = T_Reordering_ms150;
-	      break;
-
-	    case 160:
-	      rrc->srb1_timer_reordering = T_Reordering_ms160;
-	      break;
-
-	    case 170:
-	      rrc->srb1_timer_reordering = T_Reordering_ms170;
-	      break;
-
-	    case 180:
-	      rrc->srb1_timer_reordering = T_Reordering_ms180;
-	      break;
-
-	    case 190:
-	      rrc->srb1_timer_reordering = T_Reordering_ms190;
-	      break;
-
-	    case 200:
-	      rrc->srb1_timer_reordering = T_Reordering_ms200;
-	      break;
-
-	    default:
-	      AssertFatal (0,
-			   "Bad config value when parsing eNB configuration file %s, enb %d  srb1_timer_reordering %u!\n",
-			   RC.config_file_name, i, srb1_timer_reordering);
-	    }
-
-	    break;
 	}
       }
     }
   }
 }
-
 int RCconfig_gtpu() {
   config_t          cfg;
   config_setting_t *setting                       = NULL;
