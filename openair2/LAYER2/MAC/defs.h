@@ -827,15 +827,15 @@ typedef struct {
   /// Subframe where Msg2 is to be sent
   uint8_t Msg2_subframe;
   /// Frame where Msg2 is to be sent
-  uint8_t Msg2_frame;
+  frame_t Msg2_frame;
   /// Subframe where Msg3 is to be sent
-  uint8_t Msg3_subframe;
+  sub_frame_t Msg3_subframe;
   /// Frame where Msg3 is to be sent
-  uint8_t Msg3_frame;
+  frame_t Msg3_frame;
   /// Subframe where Msg4 is to be sent
-  uint8_t Msg4_subframe;
+  sub_frame_t Msg4_subframe;
   /// Frame where Msg4 is to be sent
-  uint8_t Msg4_frame;
+  frame_t Msg4_frame;
   /// Flag to indicate the eNB should generate Msg4 upon reception of SDU from RRC.  This is triggered by first ULSCH reception at eNB for new user.
   uint8_t generate_Msg4;
   /// Flag to indicate that eNB is waiting for ACK that UE has received Msg3.
@@ -854,6 +854,10 @@ typedef struct {
   int16_t RRC_timer;
   /// Round of Msg3 HARQ
   uint8_t msg3_round;
+  /// TBS used for Msg4
+  int Msg4_TBsize;
+  /// MCS used for Msg4
+  int Msg4_mcs;
 #ifdef Rel14
   uint8_t rach_resource_type;
   uint8_t msg2_mpdcch_repetition_cnt;

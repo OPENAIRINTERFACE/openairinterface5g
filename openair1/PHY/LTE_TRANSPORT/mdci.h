@@ -233,50 +233,6 @@ typedef struct DCI6_1A_20MHz DCI6_1A_20MHz_t;
 
 ///  basic DCI Format Type 6-0B (5 MHz)
 struct DCI6_0B_5MHz {
-  /// DCI subframe repetition
-  uint32_t dci_rep:2;
-  /// new data indicator
-  uint32_t ndi:1;
-  /// harq id
-  uint32_t harq_pid:1;
-  /// Repetition number
-  uint32_t rep:2;
-  /// Modulation and Coding Scheme and Redundancy Version
-  uint32_t mcs:4;
-  /// RB Assignment (ceil(log2(floor(N_RB_UL/6))) + 3 bits)
-  uint32_t rballoc:5;
-  /// type = 0 => DCI Format 0B, type = 1 => DCI Format 1B
-  uint32_t type:1;
-} __attribute__ ((__packed__));
-
-typedef struct DCI6_0B_5MHz DCI6_0B_5MHz_t; 
-#define sizeof_DCI6_0B_5MHz_t 16
-
-/// basic DCI Format Type 6-1B (5 MHz)
-struct DCI6_1B_5MHz {
-  /// DCI subframe repetition number 
-  uint32_t dci_rep:2;
-  /// HARQ-ACK resource offset
-  uint32_t harq_ack_off:2;
-  /// New Data Indicator
-  uint32_t ndi:1;
-  /// HARQ Process
-  uint32_t harq_pid:1;
-  /// Repetition number
-  uint32_t rep:2;
-  /// Resource block assignment (assignment flag = 0 for 5 MHz, ceil(log2(floor(N_RB_DL/6)))+1)
-  uint32_t rballoc:3;
-  /// Modulation and Coding Scheme and Redundancy Version
-  uint32_t mcs:4;
-  /// 0B/1B differentiator
-  uint32_t type:1;
-} __attribute__ ((__packed__));
-
-typedef struct DCI6_1B_5MHz DCI6_1B_5MHz_t;
-#define sizeof_DCI6_1B_5MHz_t 16 
-
-///  basic DCI Format Type 6-0B (10 MHz)
-struct DCI6_0B_10MHz {
   /// padding to fill 32-bit word
   uint32_t padding:15;
   /// DCI subframe repetition
@@ -286,7 +242,55 @@ struct DCI6_0B_10MHz {
   /// harq id
   uint32_t harq_pid:1;
   /// Repetition number
-  uint32_t rep:2;
+  uint32_t rep:3;
+  /// Modulation and Coding Scheme and Redundancy Version
+  uint32_t mcs:4;
+  /// RB Assignment (ceil(log2(floor(N_RB_UL/6))) + 3 bits)
+  uint32_t rballoc:5;
+  /// type = 0 => DCI Format 0B, type = 1 => DCI Format 1B
+  uint32_t type:1;
+} __attribute__ ((__packed__));
+
+typedef struct DCI6_0B_5MHz DCI6_0B_5MHz_t; 
+#define sizeof_DCI6_0B_5MHz_t 17
+
+/// basic DCI Format Type 6-1B (5 MHz)
+struct DCI6_1B_5MHz {
+  /// padding to fill 32-bit word
+  uint32_t padding:15;
+  /// DCI subframe repetition number 
+  uint32_t dci_rep:2;
+  /// HARQ-ACK resource offset
+  uint32_t harq_ack_off:2;
+  /// New Data Indicator
+  uint32_t ndi:1;
+  /// HARQ Process
+  uint32_t harq_pid:1;
+  /// Repetition number
+  uint32_t rep:3;
+  /// Resource block assignment (assignment flag = 0 for 5 MHz, ceil(log2(floor(N_RB_DL/6)))+1)
+  uint32_t rballoc:3;
+  /// Modulation and Coding Scheme and Redundancy Version
+  uint32_t mcs:4;
+  /// 0B/1B differentiator
+  uint32_t type:1;
+} __attribute__ ((__packed__));
+
+typedef struct DCI6_1B_5MHz DCI6_1B_5MHz_t;
+#define sizeof_DCI6_1B_5MHz_t 17 
+
+///  basic DCI Format Type 6-0B (10 MHz)
+struct DCI6_0B_10MHz {
+  /// padding to fill 32-bit word
+  uint32_t padding:14;
+  /// DCI subframe repetition
+  uint32_t dci_rep:2;
+  /// new data indicator
+  uint32_t ndi:1;
+  /// harq id
+  uint32_t harq_pid:1;
+  /// Repetition number
+  uint32_t rep:3;
   /// Modulation and Coding Scheme and Redundancy Version
   uint32_t mcs:4;
   /// RB Assignment (ceil(log2(floor(N_RB_UL/6))) + 3 bits)
@@ -296,7 +300,7 @@ struct DCI6_0B_10MHz {
 } __attribute__ ((__packed__));
 
 typedef struct DCI6_0B_10MHz DCI6_0B_10MHz_t; 
-#define sizeof_DCI6_0B_10MHz_t 17
+#define sizeof_DCI6_0B_10MHz_t 18
 
 /// basic DCI Format Type 6-1B (10 MHz)
 struct DCI6_1B_10MHz {

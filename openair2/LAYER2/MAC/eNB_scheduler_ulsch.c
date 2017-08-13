@@ -403,7 +403,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
           RA_template->generate_Msg4 = 1;
           RA_template->wait_ack_Msg4 = 0;
 	  
-	  // Program Msg4 PDCCH+DLSCH/MPDCCH transmission 4 subframes from now
+	  // Program Msg4 PDCCH+DLSCH/MPDCCH transmission 4 subframes from now, // Check if this is ok for BL/CE, or if the rule is different
 	  RA_template->Msg4_frame    = frameP + ((subframeP>5) ? 1 : 0);
 	  RA_template->Msg4_subframe = (subframeP+4)%10;
 	  

@@ -98,10 +98,10 @@ uint16_t mac_computeRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs) {
 }
 
 void get_Msg3alloc(COMMON_channels_t *cc,
-		   unsigned char current_subframe,
-		   unsigned int current_frame,
-		   unsigned int *frame,
-		   unsigned char *subframe)
+		   sub_frame_t current_subframe,
+		   frame_t current_frame,
+		   frame_t *frame,
+		   sub_frame_t *subframe)
 {
 
   // Fill in other TDD Configuration!!!!
@@ -211,10 +211,10 @@ void get_Msg3alloc(COMMON_channels_t *cc,
 
 
 void get_Msg3allocret(COMMON_channels_t *cc,
-		      unsigned char current_subframe,
-		      unsigned int current_frame,
-		      unsigned int *frame,
-		      unsigned char *subframe)
+		      sub_frame_t current_subframe,
+		      frame_t current_frame,
+		      frame_t *frame,
+		      sub_frame_t *subframe)
 {
   if (cc->tdd_Config == NULL) { //FDD
     /* always retransmit in n+8 */
@@ -249,7 +249,7 @@ void get_Msg3allocret(COMMON_channels_t *cc,
   }
 }
 
-uint8_t subframe2harqpid(COMMON_channels_t *cc,uint32_t frame,uint8_t subframe)
+uint8_t subframe2harqpid(COMMON_channels_t *cc,frame_t frame,sub_frame_t subframe)
 {
   uint8_t ret = 255;
 
@@ -317,8 +317,8 @@ uint8_t subframe2harqpid(COMMON_channels_t *cc,uint32_t frame,uint8_t subframe)
 }
 
 uint8_t get_Msg3harqpid(COMMON_channels_t *cc,
-			uint32_t frame,
-			unsigned char current_subframe)
+			frame_t frame,
+			sub_frame_t current_subframe)
 {
 
   uint8_t ul_subframe=0;
@@ -403,7 +403,7 @@ uint8_t get_Msg3harqpid(COMMON_channels_t *cc,
 
 }
 
-int is_UL_sf(COMMON_channels_t *ccP,uint8_t subframeP)
+int is_UL_sf(COMMON_channels_t *ccP,sub_frame_t subframeP)
 {
 
   // if FDD return dummy value

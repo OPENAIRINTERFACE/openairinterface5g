@@ -143,7 +143,10 @@ schedule_SIB1_BR(
     switch (N_RB_DL) {
     case 6:
     case 15:
+      m=1;
       n_NB=0;
+      N_S_NB=0;
+      Sj=NULL;
       break;
     case 25:
       m=2;
@@ -305,11 +308,8 @@ schedule_SI_BR(
   nfapi_dl_config_request_pdu_t           *dl_config_pdu;
   nfapi_tx_request_pdu_t                  *TX_req;
   nfapi_dl_config_request_body_t          *dl_req;
-  int                                     m,i,N_S_NB;
-  int                                     *Sj;
-  int                                     n_NB = 0;
-  int                                     TBS;
-  int                                     k,rvidx;
+  int                                     i;
+  int                                     rvidx;
 
 
 
@@ -378,7 +378,7 @@ schedule_SI_BR(
 	  if (bcch_sdu_length > 0) {
 	    AssertFatal(bcch_sdu_length <= (si_TBS_r13>>3),
 			"RRC provided bcch with length %d > %d\n",
-			bcch_sdu_length,(si_TBS_r13>>3));
+			bcch_sdu_length,(int)(si_TBS_r13>>3));
 	    LOG_D(MAC,"[eNB %d] Frame %d : BCCH_BR %d->DLSCH CC_id %d, Received %d bytes \n",module_idP,frameP,i,CC_id,bcch_sdu_length);
 	    
 	    // allocate all 6 PRBs in narrowband for SIB1_BR

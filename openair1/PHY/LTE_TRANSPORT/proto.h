@@ -2188,5 +2188,7 @@ int8_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
 
 int8_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
 
+int8_t find_uci(uint16_t rnti, int frame, int subframe, PHY_VARS_eNB *eNB,find_type_t type);
+
 /**@}*/
 #endif
