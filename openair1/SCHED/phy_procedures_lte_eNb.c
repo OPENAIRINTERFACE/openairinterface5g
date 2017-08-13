@@ -1065,17 +1065,43 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 #endif
 }
 
+handle_uci_harq_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,nfapi_ul_config_request_pdu_t *ul_config_pdu) {
+
+}
+
 handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,  
 		    nfapi_ul_config_request_pdu_t *ul_config_pdu) {
 
   nfapi_ul_config_ulsch_pdu_rel8_t *rel8 = &ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8;
   int8_t UE_id;
   // check if we have received a dci for this ue and ulsch descriptor is configured
-  
-  AssertFatal((UE_id = find_ulsch(rel8->rnti,eNB,SEARCH_EXIST))>=0,
-	      "No existing UE ULSCH for rnti %x\n",rel8->rnti);
-  AssertFatal(eNB->ulsch[UE_id]->harq_mask > 0,
-	      "ulsch for UE_id %d is not active\n",UE_id);
+
+  if (ul_config_pdu == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE) {
+    AssertFatal((UE_id = find_ulsch(rel8->rnti,eNB,SEARCH_EXIST))>=0,
+		"No existing UE ULSCH for rnti %x\n",rel8->rnti);
+    AssertFatal(eNB->ulsch[UE_id]->harq_mask > 0,
+		"ulsch for UE_id %d is not active\n",UE_id);
+  }
+  else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE) {
+    AssertFatal((UE_id = find_uci(rel8->rnti,proc->frame_tx,proc->subframe_tx,eNB,SEARCH_EXIST))>=0,
+		"No existing UE UCI for rnti %x\n",rel8->rnti);
+    handle_uci_harq_pdu(eNB,proc,ul_config_pdu);
+  }
+  else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE) {
+
+  }
+  else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_CQI_HARQ_PDU_TYPE) {
+
+  }
+  else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_CQI_SR_PDU_TYPE) {
+
+  }
+  else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_SR_PDU_TYPE) {
+
+  }
+  else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE) {
+
+  }
 	      
 }
 
@@ -1227,7 +1253,8 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
   for (i=0;i<number_ul_pdu;i++) {
     ul_config_pdu = &UL_req->ul_config_request_body.ul_config_pdu_list[i];
     LOG_D(PHY,"NFAPI: ul_pdu %d : type %d\n",i,ul_config_pdu->pdu_type);
-    AssertFatal(ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE,
+    AssertFatal(ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE ||
+		ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE,
 		"Optional UL_PDU type %d not supported\n",ul_config_pdu->pdu_type);
     handle_nfapi_ul_pdu(eNB,proc,ul_config_pdu);
   }
@@ -1524,6 +1551,8 @@ void process_HARQ_feedback(uint8_t UE_id,
   int subframe = proc->subframe_rx;
   int harq_pid = subframe2harq_pid( fp,frame,subframe);
 
+  nfapi_harq_indication_pdu_t *pdu;
+
   if (fp->frame_type == FDD) { //FDD
     subframe_m4 = (subframe<4) ? subframe+6 : subframe-4;
 
@@ -1546,6 +1575,9 @@ void process_HARQ_feedback(uint8_t UE_id,
       */
     }
 
+    // fill ACK/NAK Indication
+    pdu = &eNB->UL_INFO.harq_ind.harq_pdu_list[eNB->UL_INFO.harq_ind.number_of_harqs];
+    eNB->UL_INFO.harq_ind.number_of_harqs++;    
 
 #if defined(MESSAGE_CHART_GENERATOR_PHY)
     MSC_LOG_RX_MESSAGE(
@@ -1577,6 +1609,7 @@ void process_HARQ_feedback(uint8_t UE_id,
       dlsch_ACK[1] = (eNB->pucch_config_dedicated[UE_id].tdd_AckNackFeedbackMode == bundling)
 	?eNB->ulsch[(uint8_t)UE_id]->harq_processes[harq_pid]->o_ACK[0]:eNB->ulsch[(uint8_t)UE_id]->harq_processes[harq_pid]->o_ACK[1];
     }
+
 
     else {  // PUCCH ACK/NAK
       if ((SR_payload == 1)&&(pucch_sel!=2)) {  // decode Table 7.3 if multiplexing and SR=1
@@ -2752,8 +2785,6 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
                 frame,subframe, i,
                 ulsch_harq->round-1);
 
-	  dump_ulsch(eNB,proc,i);
-	  exit(-1);
 	  
 	  LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d RNTI %x RX power (%d,%d) RSSI (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d\n",
 		eNB->Mod_id,harq_pid,
@@ -2768,46 +2799,6 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 		ulsch_harq->o_ACK[0],
 		ulsch_harq->o_ACK[1],
 		ret);
-	  /*
-          if (ulsch_harq->round ==
-              fp->maxHARQ_Msg3Tx) {
-            LOG_D(PHY,"[eNB %d][RAPROC] maxHARQ_Msg3Tx reached, abandoning RA procedure for UE %d\n",
-                  eNB->Mod_id, i);
-            eNB->UE_stats[i].mode = PRACH;
-//	    if (eNB->mac_enabled==1) { 
-//	      mac_xface->cancel_ra_proc(eNB->Mod_id,
-//					eNB->CC_id,
-//					frame,
-//					eNB->UE_stats[i].crnti);
-//				       
-//	    }
-
-	    //            mac_phy_remove_ue(eNB->Mod_id,eNB->UE_stats[i].crnti);
-
-            eNB->ulsch[(uint32_t)i]->Msg3_active = 0;
-            //ulsch_harq->phich_active = 0;
-
-          } else {
-            // activate retransmission for Msg3 (signalled to UE PHY by PHICH (not MAC/DCI)
-            eNB->ulsch[(uint32_t)i]->Msg3_active = 1;
-
-            get_Msg3_alloc_ret(fp,
-                               subframe,
-                               frame,
-                               &ulsch_harq->frame,
-                               &ulsch_harq->subframe);
-	    
-            //mac_xface->set_msg3_subframe(eNB->Mod_id, eNB->CC_id, frame, subframe, eNB->ulsch[i]->rnti,
-            //                             eNB->ulsch[i]->Msg3_frame, eNB->ulsch[i]->Msg3_subframe);
-	    
-
-            T(T_ENB_PHY_MSG3_ALLOCATION, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
-              T_INT(i), T_INT(ulsch->rnti), T_INT(0 
-	      // 0 is for retransmission
-	      ),
-              T_INT(eNB->ulsch[i]->Msg3_frame), T_INT(eNB->ulsch[i]->Msg3_subframe));
-          }
-*/
           LOG_D(PHY,"[eNB] Frame %d, Subframe %d: Msg3 in error, i = %d \n", frame,subframe,i);
         } // This is Msg3 error
 
@@ -2836,34 +2827,17 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
                   eNB->Mod_id,harq_pid,
                   frame,subframe, i,
                   ulsch->Mlimit);
-
+	    
             ulsch_harq->round=0;
             ulsch_harq->phich_active=0;
             eNB->UE_stats[i].ulsch_errors[harq_pid]++;
             eNB->UE_stats[i].ulsch_consecutive_errors++;
-
-	   /*if (ulsch_harq->nb_rb > 20) {
-		dump_ulsch(eNB,proc,i);
-	 	exit(-1);
-           }*/
-	    // indicate error to MAC
-	    if (eNB->mac_enabled == 1) {
-	      /*
-	      mac_xface->rx_sdu(eNB->Mod_id,
-				eNB->CC_id,
-				frame,subframe,
-				ulsch->rnti,
-				NULL,
-				0,
-				harq_pid,
-				&eNB->ulsch[i]->Msg3_flag);
-	      */
-	    }
-          }
-        }
+	    
+	  }
+	}
       }  // ulsch in error
       else {
-
+	
 
 	fill_crc_indication(eNB,i,frame,subframe,0); // indicate ACK to MAC
 	fill_rx_indication(eNB,i,frame,subframe);    // indicate SDU to MAC
@@ -2920,29 +2894,11 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 		  eNB->Mod_id,
 		  frame,harq_pid,i);
 	    if (eNB->mac_enabled) {
-	      /*
-	      mac_xface->rx_sdu(eNB->Mod_id,
-				eNB->CC_id,
-				frame,subframe,
-				eNB->ulsch[i]->rnti,
-				ulsch_harq->b,
-				ulsch_harq->TBS>>3,
-				harq_pid,
-				&ulsch->Msg3_flag);
-	      */
 	      // Fill UL info
 	    }
 	    // one-shot msg3 detection by MAC: empty PDU (e.g. CRNTI)
 	    if (ulsch_harq->Msg3_flag == 0 ) {
 	      eNB->UE_stats[i].mode = PRACH;
-	      /*
-	      mac_xface->cancel_ra_proc(eNB->Mod_id,
-					eNB->CC_id,
-					frame,
-					eNB->UE_stats[i].crnti);
-	      mac_phy_remove_ue(eNB->Mod_id,eNB->UE_stats[i].crnti);
-	      */
-	      
 	      eNB->ulsch[(uint32_t)i]->Msg3_active = 0;
 	    } // Msg3_flag == 0
 	    
@@ -2984,26 +2940,12 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
                 harq_pid,ulsch_harq->TBS>>3);
 
           for (j=0; j<ulsch_harq->TBS>>3; j++)
-            LOG_T(PHY,"%x.",eNB->ulsch[i]->harq_processesyy[harq_pid]->b[j]);
+            LOG_T(PHY,"%x.",eNB->ulsch[i]->harq_processes[harq_pid]->b[j]);
 
           LOG_T(PHY,"\n");
 #endif
 #endif
 
-	  if (eNB->mac_enabled==1) {
-	    /*
-	    mac_xface->rx_sdu(eNB->Mod_id,
-			      eNB->CC_id,
-			      frame,subframe,
-			      ulsch->rnti,
-			      eNB->ulsch[i]->harq_processes[harq_pid]->b,
-			      eNB->ulsch[i]->harq_processes[harq_pid]->TBS>>3,
-			      harq_pid,
-			      NULL);*/
-
-	    // Fill UL_INFO
-
-	  } // mac_enabled==1
         } // Msg3_flag == 0
 
         

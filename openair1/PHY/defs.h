@@ -619,6 +619,8 @@ typedef enum {
 typedef struct RU_t_s{
   /// index of this ru
   uint32_t idx;
+ /// Pointer to configuration file
+  char *rf_config_file;
   /// southbound interface
   RU_if_south_t if_south;
   /// timing
@@ -886,15 +888,9 @@ typedef struct PHY_VARS_eNB_s {
   /// Ethernet parameters for fronthaul interface
   eth_params_t         eth_params;
   int                  rx_total_gain_dB;
-  //  void                 (*do_prach)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame, int subframe);
   int                  (*td)(struct PHY_VARS_eNB_s *eNB,int UE_id,int harq_pid,int llr8_flag);
   int                  (*te)(struct PHY_VARS_eNB_s *,uint8_t *,uint8_t,LTE_eNB_DLSCH_t *,int,uint8_t,time_stats_t *,time_stats_t *,time_stats_t *);
-  //  void                 (*proc_uespec_rx)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc,const relaying_type_t r_type);
-  //  void                 (*proc_tx)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type,PHY_VARS_RN *rn);
-  //  void                 (*tx_fh)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc);
-  //  void                 (*rx_fh)(struct PHY_VARS_eNB_s *eNB,int *frame, int *subframe);
   int                  (*start_if)(struct RU_t_s *ru,struct PHY_VARS_eNB_s *eNB);
-  //  void                 (*fh_asynch)(struct PHY_VARS_eNB_s *eNB,int *frame, int *subframe);
   uint8_t              local_flag;
   LTE_DL_FRAME_PARMS   frame_parms;
   PHY_MEASUREMENTS_eNB measurements;
@@ -919,6 +915,7 @@ typedef struct PHY_VARS_eNB_s {
   LTE_eNB_PRACH        prach_vars_br;
 #endif
   LTE_eNB_COMMON       common_vars;
+  LTE_eNB_UCI_t        uci_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PBCH         pbch;
   LTE_eNB_PUSCH       *pusch_vars[NUMBER_OF_UE_MAX];
@@ -1423,6 +1420,7 @@ typedef struct RRU_capabilities_s {
 } RRU_capabilities_t;
 
 typedef struct RRU_config_s {
+
   /// Fronthaul format
   RU_if_south_t FH_fmt;
   /// number of EUTRA bands (<=4) configured in RRU

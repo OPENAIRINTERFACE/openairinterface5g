@@ -493,6 +493,73 @@ typedef struct {
   int32_t delta_TF;
 } LTE_UL_eNB_HARQ_t;
 
+
+typedef enum {
+  pucch_format1=0,
+  pucch_format1a,
+  pucch_format1b,
+  pucch_format2,
+  pucch_format2a,
+  pucch_format2b,
+  pucch_format3    // PUCCH format3
+} PUCCH_FMT_t;
+
+typedef enum {
+  SR,
+  HARQ,
+  CQI,
+  HARQ_SR,
+  HARQ_CQI,
+  SR_CQI,
+  HARQ_SR_CQI  
+} UCI_type_t;
+
+#ifdef Rel14
+typedef enum {
+  NOCE,
+  CEMODEA,
+  CEMODEB
+} UE_type_t;
+#endif
+
+typedef struct {
+  uint8_t     active;
+  /// Absolute frame for this UCI
+  uint16_t    frame;
+  /// Absolute subframe for this UCI
+  uint8_t     subframe;
+  /// corresponding UE RNTI
+  uint16_t    rnti;
+  /// Type (SR,HARQ,CQI,HARQ_SR,HARQ_CQI,SR_CQI,HARQ_SR_CQI)
+  UCI_type_t  type;
+  /// PUCCH format to use
+  PUCCH_FMT_t pucch_fmt;
+  /// antenna indicator
+  uint8_t     num_pucch_resources;
+  /// two antenna n1_pucch
+  uint16_t    n_pucch_1[2];
+  /// two antenna n2_pucch
+  uint16_t    n_pucch_2[2];
+#ifdef Rel14
+  /// non BL/CE, CEmodeA, CEmodeB
+  UE_type_t ue_type;
+  /// Indicates the symbols that are left empty due to eMTC retuning.
+  uint8_t empty_symbols;
+  /// number of repetitions for BL/CE
+  uint16_t total_repetitions;
+  /// The size of the DL CQI/PMI in bits.
+  uint16_t dl_cqi_pmi_size2;
+  /// The starting PRB for the PUCCH
+  uint8_t starting_prb;
+  /// The number of PRB in PUCCH
+  uint8_t n_PRB;
+  /// Selected CDM option
+  uint8_t cdm_Index;
+  // Indicates if the resource blocks allocated for this grant overlap with the SRS configuration.
+  uint8_t Nsrs;
+#endif
+} LTE_eNB_UCI_t;
+
 typedef struct {
   /// HARQ process mask, indicates which processes are currently active
   uint16_t harq_mask;
@@ -764,15 +831,6 @@ typedef enum {
   rx_SIC_dual_stream
 } RX_type_t;
 
-typedef enum {
-  pucch_format1=0,
-  pucch_format1a,
-  pucch_format1b,
-  pucch_format2,
-  pucch_format2a,
-  pucch_format2b,
-  pucch_format3    // PUCCH format3
-} PUCCH_FMT_t;
 
 
 

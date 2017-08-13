@@ -120,8 +120,6 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
   unsigned char exit_flag = 0,i,j,r,aa,layer;
   int re;
   unsigned char bw_scaling =1;
-  RU_t *ru;
-  int ru_id;
 
   switch (N_RB_DL) {
   case 6:

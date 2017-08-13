@@ -526,6 +526,8 @@ void RCconfig_RU() {
   int               num_eNB4RU                    = 0;
   libconfig_int     eNB_list[256];
   int               fronthaul_flag                = CONFIG_TRUE;
+  /// TRUE for eNB or RRU, FALSE for RAU
+  int		    local_rf_flag		  = CONFIG_TRUE;
 
   load_config_file(&cfg);
 
@@ -553,7 +555,27 @@ void RCconfig_RU() {
 	fronthaul_flag = CONFIG_FALSE;
       }
 
-      if (fronthaul_flag != CONFIG_TRUE) { // no fronthaul
+      if (  !(
+              config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_LOCAL_RF,(const char **)&local_rf)
+              )
+            ) {
+        local_rf_flag = CONFIG_FALSE;
+      }			  
+      
+      if (local_rf_flag == CONFIG_TRUE) { // eNB or RRU
+	
+
+	if (  !(
+                config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_MAX_RS_EPRE, &max_pdschReferenceSignalPower)
+               )
+              ) {
+          AssertFatal (0,
+                       "Failed to parse configuration file %s, RU %d config !\n",
+                       RC.config_file_name, j);
+          continue;
+        }
+
+>>>>>>> faa111ecc0815354979e075d5b83c5af107d404e
 
 	AssertFatal((setting_band = config_setting_get_member(setting_ru, CONFIG_STRING_RU_BAND_LIST))!=NULL,"No allowable LTE bands\n");
 
@@ -566,7 +588,8 @@ void RCconfig_RU() {
 	  printf("RU %d: band %d\n",j,band[i]);
 	}
       } // fronthaul_flag == CONFIG_FALSE
-      else { // fronthaul_flag == CONFIG_TRUE
+      
+      if (fronthaul_flag == CONFIG_TRUE) { // fronthaul_flag == CONFIG_TRUE
 	if (  !(
 		config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_LOCAL_ADDRESS,        (const char **)&ipv4)
 		&& config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_REMOTE_ADDRESS,       (const char **)&ipv4_remote)
@@ -605,7 +628,6 @@ void RCconfig_RU() {
       if ( !(
 	               config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_NB_TX,  &nb_tx)
 		    && config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_NB_RX,  &nb_rx)
-		    && config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_LOCAL_RF,(const char **)&local_rf)
 		    )) {
 	AssertFatal (0,
 		     "Failed to parse configuration file %s, RU %d config !\n",

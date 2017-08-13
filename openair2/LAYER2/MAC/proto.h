@@ -230,6 +230,17 @@ unsigned short fill_rar(
   const uint8_t input_buffer_length
 );
 
+#ifdef Rel14
+unsigned short fill_rar_br(eNB_MAC_INST *eNB,
+			   int CC_id,
+			   RA_TEMPLATE        *RA_template,      
+			   const frame_t      frameP,
+			   const sub_frame_t  subframeP,
+			   uint8_t*    const  dlsch_buffer,
+			   const uint8_t      ce_level
+			   );
+#endif
+
 /* \brief Function to indicate a failed RA response.  It removes all temporary variables related to the initial connection of a UE
 @param Mod_id Instance ID of eNB
 @param preamble_index index of the received RA request.
@@ -861,19 +872,18 @@ uint16_t getRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs);
 
 int get_subbandsize(uint8_t dl_bandwidth);
 
-uint8_t subframe2harqpid(COMMON_channels_t *cc,uint32_t frame,uint8_t subframe);
 
 void get_Msg3allocret(COMMON_channels_t *cc,
-		      unsigned char current_subframe,
-		      unsigned int current_frame,
-		      unsigned int *frame,
-		      unsigned char *subframe);
+		      sub_frame_t current_subframe,
+		      frame_t current_frame,
+		      frame_t *frame,
+		      sub_frame_t *subframe);
 
 void get_Msg3alloc(COMMON_channels_t *cc,
-		   unsigned char current_subframe,
-		   unsigned int current_frame,
-		   unsigned int *frame,
-		   unsigned char *subframe);
+		   sub_frame_t current_subframe,
+		   frame_t current_frame,
+		   frame_t *frame,
+		   sub_frame_t *subframe);
 
 uint16_t mac_computeRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs);
 
@@ -884,8 +894,23 @@ int to_rbg(int dl_Bandwidth);
 int to_prb(int dl_Bandwidth);
 
 uint8_t get_Msg3harqpid(COMMON_channels_t *cc,
-			uint32_t frame,
-			unsigned char current_subframe);
+			frame_t frame,
+			sub_frame_t current_subframe);
+int is_UL_sf(COMMON_channels_t *ccP,sub_frame_t subframeP);
+
+uint8_t subframe2harqpid(COMMON_channels_t *cc,frame_t frame,sub_frame_t subframe);
+
+
+
+#ifdef Rel14
+int get_numnarrowbandbits(long dl_Bandwidth);
+
+int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t subframeP,int rmax,MPDCCH_TYPES_t mpdcch_type);
+
+int get_numnarrowbands(long dl_Bandwidth);
+#endif
+
+
 
 #endif
 /** @}*/
