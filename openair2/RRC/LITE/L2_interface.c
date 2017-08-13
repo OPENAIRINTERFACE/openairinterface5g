@@ -302,8 +302,24 @@ mac_rrc_data_req(
       //else
       //return(0);
     }
+#endif
 
-#endif //Rel10 || Rel14
+#ifdef Rel14
+    if ((Srb_id & RAB_OFFSET) == BCCH_SIB1_BR){
+        memcpy(&buffer_pP[0],
+               RC.rrc[Mod_idP]->carrier[CC_id].SIB1_BR,
+               RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1_BR);
+        return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1_BR);
+    }
+
+    if ((Srb_id & RAB_OFFSET) == BCCH_SI_BR){ // First SI message with SIB2/3
+        memcpy(&buffer_pP[0],
+               RC.rrc[Mod_idP]->carrier[CC_id].SIB23_BR,
+               RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23_BR);
+        return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23_BR);
+    }
+
+#endif
   } else {  //This is an UE
 
 

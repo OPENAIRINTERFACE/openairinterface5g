@@ -566,7 +566,8 @@ void RCconfig_RU() {
 	
 
 	if (  !(
-                config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_MAX_RS_EPRE, &max_pdschReferenceSignalPower)
+                config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_MAX_RS_EPRE, &max_pdschReferenceSignalPower) &&
+                config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_MAX_RXGAIN, &max_rxgain)
                )
               ) {
           AssertFatal (0,
@@ -574,8 +575,6 @@ void RCconfig_RU() {
                        RC.config_file_name, j);
           continue;
         }
-
->>>>>>> faa111ecc0815354979e075d5b83c5af107d404e
 
 	AssertFatal((setting_band = config_setting_get_member(setting_ru, CONFIG_STRING_RU_BAND_LIST))!=NULL,"No allowable LTE bands\n");
 
@@ -2568,12 +2567,13 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		for (sched_info_idx = 0; sched_info_idx < num_scheduling_info; ++sched_info_idx)
 		  {
 		    scheduling_info_br = config_setting_get_elem(scheduling_info_br_list, sched_info_idx);
-		    if (! config_setting_lookup_int(scheduling_info_br, ENB_CONFIG_STRING_SI_NARROWBAND_R13, &si_Narrowband_r13)
-			&& config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_SI_TBS_R13, &si_TBS_r13)
-			)
-		      {
-			AssertFatal (0, "Failed to parse eNB configuration file %s, scheduking info br %d!\n", RC.config_file_name, nb_cc++);
-		      }
+		    if (!( 
+			     config_setting_lookup_int(scheduling_info_br, ENB_CONFIG_STRING_SI_NARROWBAND_R13, &si_Narrowband_r13)
+			  && config_setting_lookup_int(scheduling_info_br, ENB_CONFIG_STRING_SI_TBS_R13, &si_TBS_r13)
+			   )
+			){
+		      AssertFatal (0, "Failed to parse eNB configuration file %s, scheduking info br %d!\n", RC.config_file_name, nb_cc++);
+		    }
 		    RRC_CONFIGURATION_REQ (msg_p).si_Narrowband_r13[j][sched_info_idx] = si_Narrowband_r13;
 		    RRC_CONFIGURATION_REQ (msg_p).si_TBS_r13[j][sched_info_idx] = si_TBS_r13;
 		  }
@@ -3767,6 +3767,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
 		if (config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_BRAccessRelatedInfo, &bandwidthReducedAccessRelatedInfo_r13) && !strcmp(bandwidthReducedAccessRelatedInfo_r13, "ENABLE"))
 		  {
+		    printf("Enabling BR access SI scheduling parameters\n");
 		    RRC_CONFIGURATION_REQ(msg_p).bandwidthReducedAccessRelatedInfo_r13[j] = TRUE;
 		    if (!config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_SI_WINDOWLENGTH_BR, &si_WindowLength_BR_r13) ||
                         !config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_SI_REPETITIONPATTERN, &si_RepetitionPattern_r13) ||

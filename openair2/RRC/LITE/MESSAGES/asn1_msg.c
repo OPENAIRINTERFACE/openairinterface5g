@@ -192,7 +192,11 @@ uint8_t get_adjacent_cell_mod_id(uint16_t phyCellId)
   return 0xFF; //error!
 }
 
-uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich_Resource, uint32_t phich_duration, uint32_t frame, uint32_t schedulingInfoSIB1)
+uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich_Resource, uint32_t phich_duration, uint32_t frame
+#ifdef Rel14 
+, uint32_t schedulingInfoSIB1
+#endif
+	       )
 {
 
   asn_enc_rval_t enc_rval;
@@ -246,11 +250,13 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
 #ifndef Rel14
   mib->message.spare.size = 2;
   mib->message.spare.bits_unused = 6;  // This makes a spare of 10 bits
-  mib->message.schedulingInfoSIB1_BR_r13 = schedulingInfoSIB1; // turn on eMTC
 #else
   mib->message.spare.size = 1;
   mib->message.spare.bits_unused = 3;  // This makes a spare of 5 bits
-  mib->message.schedulingInfoSIB1_BR_r13 = 0; // turn off eMTC
+  mib->message.schedulingInfoSIB1_BR_r13 = schedulingInfoSIB1; // turn on/off eMTC
+  LOG_I(RRC,"[MIB] schedulingInfoSIB1 %d\n",
+	(uint32_t)mib->message.schedulingInfoSIB1_BR_r13);
+
 #endif
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_BCH_Message,
@@ -550,8 +556,12 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 
       if (configuration->bandwidthReducedAccessRelatedInfo_r13[CC_id])
       {
+
           sib1_1310->bandwidthReducedAccessRelatedInfo_r13
                   = calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13));
+
+	  LOG_I(RRC,"Allocating memory for BR access of SI (%p)\n",
+		sib1_1310->bandwidthReducedAccessRelatedInfo_r13);
 
           sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_WindowLength_BR_r13
                   = configuration->si_WindowLength_BR_r13[CC_id]; // 0
@@ -570,18 +580,10 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
           for (index = 0; index < num_sched_info_br; ++index)
           {
 
-              if (configuration->si_Narrowband_r13[CC_id][index] && configuration->si_TBS_r13[CC_id][index])
-              {
-                  schedulinginfo_br_13->si_Narrowband_r13 = configuration->si_Narrowband_r13[CC_id][index];
-                  schedulinginfo_br_13->si_TBS_r13 = configuration->si_TBS_r13[CC_id][index];
-              }
-              else
-              {
-                  schedulinginfo_br_13->si_Narrowband_r13 = 1;
-                  schedulinginfo_br_13->si_TBS_r13 = SchedulingInfo_BR_r13__si_TBS_r13_b152;
-              }
-
-              ASN_SEQUENCE_ADD(&sib1_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13->list, schedulinginfo_br_13);
+	    schedulinginfo_br_13->si_Narrowband_r13 = configuration->si_Narrowband_r13[CC_id][index];
+	    schedulinginfo_br_13->si_TBS_r13 = configuration->si_TBS_r13[CC_id][index];
+            LOG_I(RRC,"Adding (%d,%d) to scheduling_info_br_13\n",schedulinginfo_br_13->si_Narrowband_r13,schedulinginfo_br_13->si_TBS_r13);
+	    ASN_SEQUENCE_ADD(&sib1_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13->list, schedulinginfo_br_13);
           }
 
           sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13

@@ -150,16 +150,26 @@ init_SI(
 	configuration->N_RB_DL[CC_id],
 	(int)configuration->radioresourceconfig[CC_id].phich_resource,
 	(int)configuration->radioresourceconfig[CC_id].phich_duration);
+#ifdef Rel14
+  LOG_I(RRC, "configuration->schedulingInfoSIB1_BR_r13[CC_id] %d\n",(int)configuration->schedulingInfoSIB1_BR_r13[CC_id]);
+#endif
   do_MIB(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],
 #ifdef ENABLE_ITTI
 	 configuration->N_RB_DL[CC_id],
 	 (int)configuration->radioresourceconfig[CC_id].phich_resource,
 	 (int)configuration->radioresourceconfig[CC_id].phich_duration,
-	 configuration->schedulingInfoSIB1_BR_r13[CC_id]
+	 0
 #else
-     50, 0, 0, 1
+	 50, 0, 0, 0
 #endif
-	 ,0);
+#ifdef Rel14
+#ifdef ENABLE_ITTI
+	 ,configuration->schedulingInfoSIB1_BR_r13[CC_id]
+#else
+	 ,0
+#endif
+#endif
+	 );
   
 
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 = 0;
@@ -311,14 +321,18 @@ init_SI(
   if ((RC.rrc[ctxt_pP->module_id]->carrier[CC_id].mib.message.schedulingInfoSIB1_BR_r13>0) && 
       (RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR!=NULL)) {
       AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension!=NULL,
-		  "sib2_br->nonCriticalExtension is null (v9.2)\n");
+		  "sib2_br->nonCriticalExtension is null (v8.9)\n");
       AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension!=NULL,
-		  "sib2_br->nonCriticalExtension is null (v11.3)\n");
+		  "sib2_br->nonCriticalExtension is null (v9.2)\n");
       AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL,
+		  "sib2_br->nonCriticalExtension is null (v11.3)\n");
+      AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL,
 		  "sib2_br->nonCriticalExtension is null (v12.5)\n");
       AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL,
 		  "sib2_br->nonCriticalExtension is null (v13.10)\n");
-      sib1_v13ext = RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension;
+    
+      sib1_v13ext = RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension;
+
   }
 #endif
 

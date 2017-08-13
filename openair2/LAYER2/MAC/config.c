@@ -527,6 +527,7 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
   }
 #ifdef Rel14
   if (sib1_v13ext != NULL) {
+    LOG_I(MAC,"[CONFIG] Retrieved sib1_v13ext\n");
     RC.mac[Mod_idP]->common_channels[CC_idP].sib1_v13ext        = sib1_v13ext;    
   }
 #endif

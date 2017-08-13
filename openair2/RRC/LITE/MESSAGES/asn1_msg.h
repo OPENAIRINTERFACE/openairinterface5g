@@ -67,7 +67,11 @@ uint8_t get_adjacent_cell_mod_id(uint16_t phyCellId);
 @param phich_duration PHICH duration parameter
 @param frame radio frame number
 @return size of encoded bit stream in bytes*/
-uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich_Resource, uint32_t phich_duration, uint32_t frame, uint32_t schedulingInfoSIB1);
+uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich_Resource, uint32_t phich_duration, uint32_t frame
+#ifdef Rel14
+	       , uint32_t schedulingInfoSIB1
+#endif
+	       );
 
 /**
 \brief Generate configuration for SIB1 (eNB).
