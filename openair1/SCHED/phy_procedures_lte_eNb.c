@@ -1045,8 +1045,8 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
     }
 
     dlsch0->active                  = 1;
-
-    dlsch0_harq->nb_rb              = 6;
+  
+    dlsch0_harq->nb_rb              = 6; 
     dlsch0_harq->vrb_type           = LOCALIZED;
     dlsch0_harq->rvidx              = rel8->redundancy_version;
     dlsch0_harq->Nl                 = 1;

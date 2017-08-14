@@ -384,8 +384,8 @@ schedule_SI_BR(
 	  
 	  if (bcch_sdu_length > 0) {
 	    AssertFatal(bcch_sdu_length <= (si_TBS_r13>>3),
-			"RRC provided bcch with length %d > %d (si_TBS_r13 %d)n",
-			bcch_sdu_length,(int)(si_TBS_r13>>3),schedulingInfoList_BR_r13->list.array[i]->si_TBS_r13);
+			"RRC provided bcch with length %d > %d (si_TBS_r13 %d)\n",
+			bcch_sdu_length,(int)(si_TBS_r13>>3),(int)schedulingInfoList_BR_r13->list.array[i]->si_TBS_r13);
 	    LOG_D(MAC,"[eNB %d] Frame %d : BCCH_BR %d->DLSCH CC_id %d, Received %d bytes \n",module_idP,frameP,i,CC_id,bcch_sdu_length);
 
 	    if ((frameP%1000) < 200) LOG_I(MAC,"[eNB %d] Frame %d : BCCH_BR->DLSCH (SI) CC_id %d, Received %d bytes for NB %d/rvidx %d\n",module_idP,frameP,CC_id,bcch_sdu_length,si_Narrowband_r13,rvidx);	    
