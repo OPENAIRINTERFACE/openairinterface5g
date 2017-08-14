@@ -99,7 +99,7 @@ schedule_SIB1_BR(
   int                            *Sj;
   int                            n_NB = 0;
   int                            TBS;
-  int                            k,rvidx;
+  int                            k=0,rvidx;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
@@ -143,6 +143,7 @@ schedule_SIB1_BR(
     switch (N_RB_DL) {
     case 6:
     case 15:
+    default:
       m=1;
       n_NB=0;
       N_S_NB=0;
@@ -196,9 +197,8 @@ schedule_SIB1_BR(
 
     AssertFatal(bcch_sdu_length <= TBS, "length returned by RRC %d is not compatible with the TBS %d from MIB\n",bcch_sdu_length,TBS);
 
-
-    if ((frameP%1000) < 40) LOG_D(MAC,"[eNB %d] Frame %d : BCCH_BR->DLSCH (SIB1) CC_id %d, Received %d bytes for NB %d\n",module_idP,frameP,CC_id,bcch_sdu_length,n_NB);
-
+    LOG_D(MAC,"[eNB %d] Frame %d : BCCH_BR->DLSCH CC_id %d, Received %d bytes \n",module_idP,frameP,CC_id,bcch_sdu_length);
+    
     // allocate all 6 PRBs in narrowband for SIB1_BR
     first_rb = n_NB*6;
     vrb_map[first_rb] = 1;
@@ -281,7 +281,6 @@ schedule_SIB1_BR(
 
   }
 
-  
   return;
 }
 
@@ -563,10 +562,10 @@ schedule_SI(
   nfapi_dl_config_request_body_t *dl_req;
 
   start_meas(&eNB->schedule_si);
-
+  
   // Only schedule LTE System Information in subframe 5
   if (subframeP == 5) {
-    
+
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       
       cc              = &eNB->common_channels[CC_id];
@@ -753,7 +752,6 @@ schedule_SI(
   schedule_SI_BR(module_idP,frameP,subframeP);
 #endif
 
-    // this might be misleading when bcch is inactive
   stop_meas(&eNB->schedule_si);
   return;
 }

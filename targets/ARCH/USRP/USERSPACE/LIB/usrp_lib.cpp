@@ -341,8 +341,9 @@ int trx_usrp_set_gains(openair0_device* device,
                        openair0_config_t *openair0_cfg) {
 
     usrp_state_t *s = (usrp_state_t*)device->priv;
+    ::uhd::gain_range_t gain_range_tx = s->usrp->get_tx_gain_range(0);
+    s->usrp->set_tx_gain(gain_range_tx.stop()-openair0_cfg[0].tx_gain[0]);
 
-    s->usrp->set_tx_gain(89.0-openair0_cfg[0].tx_gain[0]);
     ::uhd::gain_range_t gain_range = s->usrp->get_rx_gain_range(0);
     // limit to maximum gain
     if (openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0] > gain_range.stop()) {
@@ -641,11 +642,13 @@ extern "C" {
                       openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i],gain_range.stop());
             }
         }
+
         for(int i=0; i<s->usrp->get_tx_num_channels(); i++) {
+	  ::uhd::gain_range_t gain_range_tx = s->usrp->get_tx_gain_range(i);
             if (i<openair0_cfg[0].tx_num_channels) {
                 s->usrp->set_tx_rate(openair0_cfg[0].sample_rate,i);
                 s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[i],i);
-                s->usrp->set_tx_gain(89.0-openair0_cfg[0].tx_gain[i],i);
+                s->usrp->set_tx_gain(gain_range_tx.stop()-openair0_cfg[0].tx_gain[i],i);
             }
         }
 

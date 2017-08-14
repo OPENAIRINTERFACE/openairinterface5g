@@ -302,7 +302,8 @@ mac_rrc_data_req(
       //else
       //return(0);
     }
-#endif
+
+#endif //Rel10 || Rel14
 
 #ifdef Rel14
     if ((Srb_id & RAB_OFFSET) == BCCH_SIB1_BR){
@@ -320,6 +321,7 @@ mac_rrc_data_req(
     }
 
 #endif
+
   } else {  //This is an UE
 
 
