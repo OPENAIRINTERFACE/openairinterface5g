@@ -461,9 +461,9 @@ void  getRepetition(UE_TEMPLATE * pue_template,unsigned int *maxRep , unsigned i
 
 }
 
+/*
 
-
-/*void
+void
 schedule_ue_spec_br(
     module_id_t   module_idP,
     frame_t       frameP,
@@ -759,7 +759,7 @@ schedule_ue_spec_br(
 						unsigned int first_rb, rep, reps;
 
 						// rmax from RRC connection setup
-						getRepetition(&UE_template[CC_id][UE_id], &rmax, &narrowBandindex_index, &first_rb);
+                        getRepetition(&UE_list->UE_template[CC_id][UE_id], &rmax, &narrowBandindex_index, &first_rb);
 
 						// choose r3 by default for RAR (Table 9.1.5-5)
 						rep = 2;
@@ -775,7 +775,7 @@ schedule_ue_spec_br(
 						vrb_map[first_rb + 4] = 1;
 						vrb_map[first_rb + 5] = 1;
 
-						if ((UE_template[CC_id][UE_id].mpdcch_repetition_cnt == 0) &&
+                        if ((UE_list->UE_template[CC_id][UE_id].mpdcch_repetition_cnt == 0) &&
 							(mpdcch_sf_condition(eNB, CC_idP, frameP, subframeP, rmax, TYPEUESPEC) > 0))
 						{
 							// MPDCCH configuration for RAR
@@ -796,7 +796,7 @@ schedule_ue_spec_br(
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti_type = 4;  // other-RNTI
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti = rnti;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ce_mode = (UE_template[CC_id][UE_id].rach_resource_type < 3) ? 1 : 2;
-							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.drms_scrambling_init = cc[CC_idP].physCellId;
+                            dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.drms_scrambling_init = cc[CC_id].physCellId;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.initial_transmission_sf_io = (frameP * 10) + subframeP;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.transmission_power = 6000; // 0dB
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_coding = getRIV(6, 0, 6);  // Note: still to be checked if it should not be (getRIV(N_RB_DL,first_rb,6)) : Check nFAPI specifications and what is done L1 with this parameter
@@ -1572,7 +1572,9 @@ schedule_ue_spec_br(
 	stop_meas(&eNB->schedule_dlsch);
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH, VCD_FUNCTION_OUT);
 
-}*/
+}
+
+*/
 			
 //------------------------------------------------------------------------------
 void

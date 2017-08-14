@@ -758,7 +758,7 @@ typedef struct {
  uint16_t mpdcch_repetition_cnt;
   struct PhysicalConfigDedicated  *physicalConfigDedicated;
   frame_t Msg2_frame;
-  subframe_t Msg2_subframe;
+  sub_frame_t Msg2_subframe;
 #endif
 
 } UE_TEMPLATE;
