@@ -755,7 +755,7 @@ typedef struct {
 
 #ifdef Rel14
   uint8_t rach_resource_type;
-
+ uint16_t mpdcch_repetition_cnt;
   struct PhysicalConfigDedicated  *physicalConfigDedicated;
 #endif
 
