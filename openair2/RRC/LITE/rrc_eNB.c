@@ -3784,8 +3784,9 @@ rrc_eNB_generate_RRCConnectionSetup(
 )
 //-----------------------------------------------------------------------------
 {
-
-  bool is_mtc = false;
+#ifdef Rel14
+  boolean_t is_mtc = ctxt_pP->brOption;
+#endif
   LogicalChannelConfig_t             *SRB1_logicalChannelConfig;  //,*SRB2_logicalChannelConfig;
   SRB_ToAddModList_t                **SRB_configList;
   SRB_ToAddMod_t                     *SRB1_config;
@@ -3795,6 +3796,7 @@ rrc_eNB_generate_RRCConnectionSetup(
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
   SRB_configList = &ue_context_pP->ue_context.SRB_configList;
+#ifdef Rel14
   if (is_mtc) {
       do_RRCConnectionSetup_BR(ctxt_pP,
                             ue_context_pP,
@@ -3804,7 +3806,9 @@ rrc_eNB_generate_RRCConnectionSetup(
       rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
       SRB_configList,
       &ue_context_pP->ue_context.physicalConfigDedicated);
-  } else {
+  } else 
+#endif
+  {
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size =
     do_RRCConnectionSetup(ctxt_pP,
                           ue_context_pP,

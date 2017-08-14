@@ -755,8 +755,10 @@ typedef struct {
 
 #ifdef Rel14
   uint8_t rach_resource_type;
-
-
+ uint16_t mpdcch_repetition_cnt;
+  struct PhysicalConfigDedicated  *physicalConfigDedicated;
+  frame_t Msg2_frame;
+  sub_frame_t Msg2_subframe;
 #endif
 
 } UE_TEMPLATE;

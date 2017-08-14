@@ -314,6 +314,9 @@ mac_rrc_data_ind(
   const eNB_flag_t      eNB_flagP,
   const mac_enb_index_t eNB_indexP,
   const uint8_t         mbsfn_sync_areaP
+#ifdef Rel14
+	, const boolean_t		brOption
+#endif
 );
 
 void mac_sync_ind( module_id_t Mod_instP, uint8_t status);

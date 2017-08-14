@@ -162,6 +162,19 @@ do_RRCConnectionSetup(
   SRB_ToAddModList_t**             SRB_configList,
   struct PhysicalConfigDedicated** physicalConfigDedicated
 );
+#ifdef Rel14
+uint8_t
+do_RRCConnectionSetup_BR(
+	const protocol_ctxt_t*     const ctxt_pP,
+	rrc_eNB_ue_context_t*      const ue_context_pP,
+	int                              CC_id,
+	uint8_t*                   const buffer,
+	const uint8_t                    transmission_mode,
+	const uint8_t                    Transaction_id,
+	SRB_ToAddModList_t**             SRB_configList,
+	struct PhysicalConfigDedicated** physicalConfigDedicated
+);
+#endif
 
 /**
 \brief Generate an RRCConnectionReconfiguration DL-DCCH-Message (eNB).  This routine configures SRBToAddMod (SRB2) and one DRBToAddMod

@@ -417,7 +417,12 @@ void config_sib2(int Mod_idP,
 void config_dedicated(int Mod_idP, 
 		      int CC_idP, 
 		      uint16_t rnti, 
-		      struct PhysicalConfigDedicated  *physicalConfigDedicated) {
+		      struct PhysicalConfigDedicated  *physicalConfigDedicated) 
+{
+    eNB_MAC_INST *eNB = RC.mac[Mod_idP];
+
+    int    UE_id = find_UE_id(Mod_idP, rnti);
+    eNB->UE_list.UE_template[CC_idP][UE_id].physicalConfigDedicated = physicalConfigDedicated;
 
 }
 
