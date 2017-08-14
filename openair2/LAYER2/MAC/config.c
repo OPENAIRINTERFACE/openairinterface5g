@@ -419,8 +419,10 @@ void config_dedicated(int Mod_idP,
 		      uint16_t rnti, 
 		      struct PhysicalConfigDedicated  *physicalConfigDedicated) 
 {
-    //int    UE_id = find_UE_id(Mod_idP, rnti);
-    //eNB->UE_list.UE_template[CC_idP][UE_id].physicalConfigDedicated = physicalConfigDedicated;
+    eNB_MAC_INST *eNB = RC.mac[Mod_idP];
+
+    int    UE_id = find_UE_id(Mod_idP, rnti);
+    eNB->UE_list.UE_template[CC_idP][UE_id].physicalConfigDedicated = physicalConfigDedicated;
 
 }
 

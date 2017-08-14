@@ -2233,11 +2233,13 @@ do_RRCConnectionSetup_BR(
   //  assign_enum(&physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n4;
   physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n4;
 
+  physicalConfigDedicated2->ext4 =  calloc(1, sizeof(struct PhysicalConfigDedicated__ext4) );
   physicalConfigDedicated2->ext4->csi_RS_ConfigNZPToReleaseList_r11 = NULL;
   physicalConfigDedicated2->ext4->csi_RS_ConfigNZPToAddModList_r11 = NULL;
   physicalConfigDedicated2->ext4->csi_RS_ConfigZPToAddModList_r11 = NULL;
   physicalConfigDedicated2->ext4->csi_RS_ConfigZPToReleaseList_r11 = NULL;
 
+  physicalConfigDedicated2->ext4->epdcch_Config_r11 = calloc(1, sizeof(struct EPDCCH_Config_r11 ));
   physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.present = EPDCCH_Config_r11__config_r11_PR_setup;
   physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.subframePatternConfig_r11 = NULL;
   physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.startSymbol_r11 = NULL;
