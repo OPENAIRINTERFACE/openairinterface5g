@@ -1917,6 +1917,7 @@ do_RRCConnectionReconfigurationComplete(
   return((enc_rval.encoded+7)/8);
 }
 
+#ifdef Rel14
 uint8_t
 do_RRCConnectionSetup_BR(
 			 const protocol_ctxt_t*     const ctxt_pP,
@@ -2245,7 +2246,7 @@ do_RRCConnectionSetup_BR(
 
   physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11 = calloc(1, sizeof(EPDCCH_SetConfigToAddModList_r11_t));
   //  memset(physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11, 0, sizeof())
-  EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11 = calloc(0, sizeof(EPDCCH_SetConfig_r11_t));
+  EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11 = calloc(1, sizeof(EPDCCH_SetConfig_r11_t));
   epdcch_setconfig_r11->setConfigId_r11 = 0;
   epdcch_setconfig_r11->transmissionType_r11 = EPDCCH_SetConfig_r11__transmissionType_r11_localised;
   epdcch_setconfig_r11->resourceBlockAssignment_r11.numberPRB_Pairs_r11 = EPDCCH_SetConfig_r11__resourceBlockAssignment_r11__numberPRB_Pairs_r11_n2;
@@ -2258,7 +2259,10 @@ do_RRCConnectionSetup_BR(
   epdcch_setconfig_r11->dmrs_ScramblingSequenceInt_r11 = 0;
   epdcch_setconfig_r11->pucch_ResourceStartOffset_r11 = 0;
   epdcch_setconfig_r11->re_MappingQCL_ConfigId_r11 = NULL;
+
+  epdcch_setconfig_r11->ext2 = calloc(1, sizeof(struct EPDCCH_SetConfig_r11_ext2));
   epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310 = NULL;
+  epdcch_setconfig_r11->ext2->mpdcch_config_r13 = calloc(1, sizeof(struct EPDCCH_SetConfig_r11_ext2_mpdcch_config_r13));
   epdcch_setconfig_r11->ext2->mpdcch_config_r13->present = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13_PR_setup;
   epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.csi_NumRepetitionCE_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__csi_NumRepetitionCE_r13_sf1;
   epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_pdsch_HoppingConfig_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_pdsch_HoppingConfig_r13_off;
@@ -2352,6 +2356,7 @@ do_RRCConnectionSetup_BR(
 
   return((enc_rval.encoded+7)/8);
 }
+#endif
 
 
 //------------------------------------------------------------------------------

@@ -382,6 +382,9 @@ mac_rrc_data_ind(
   const eNB_flag_t      eNB_flagP,
   const mac_enb_index_t eNB_indexP,
   const uint8_t         mbsfn_sync_areaP
+#ifdef Rel14
+  , const boolean_t		brOption
+#endif
 )
 //--------------------------------------------------------------------------
 {
@@ -396,6 +399,9 @@ mac_rrc_data_ind(
   int si_window;
    */
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, eNB_flagP, rntiP, frameP, sub_frameP,eNB_indexP);
+#ifdef Rel14
+  ctxt.brOption = brOption;
+#endif
 
   if(eNB_flagP == ENB_FLAG_NO) {
     if(srb_idP == BCCH) {

@@ -756,7 +756,7 @@ typedef struct {
 #ifdef Rel14
   uint8_t rach_resource_type;
 
-
+  struct PhysicalConfigDedicated  *physicalConfigDedicated;
 #endif
 
 } UE_TEMPLATE;

@@ -455,7 +455,11 @@ ue_send_sdu(
                        rx_lengths[i],
                        ENB_FLAG_NO,
                        eNB_index,
-                       0);
+                       0
+                 #ifdef Rel14
+                       ,0
+                 #endif
+                       );
 
     } else if ((rx_lcids[i] == DCCH) || (rx_lcids[i] == DCCH1)) {
       LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DCCH%d, RRC message (eNB %d, %d bytes)\n", module_idP, frameP, rx_lcids[i],eNB_index,rx_lengths[i]);
@@ -520,7 +524,11 @@ void ue_decode_si(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_i
                    len,
                    ENB_FLAG_NO,
                    eNB_index,
-                   0);
+                   0
+                 #ifdef Rel14
+                       ,0
+                 #endif
+                   );
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_OUT);
   stop_meas(&UE_mac_inst[module_idP].rx_si);
   if (opt_enabled == 1) {
@@ -556,7 +564,11 @@ void ue_decode_p(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_in
                    len,
                    ENB_FLAG_NO,
                    eNB_index,
-                   0);
+                   0
+                 #ifdef Rel14
+                       ,0
+                 #endif
+                   );
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_OUT);
   stop_meas(&UE_mac_inst[module_idP].rx_p);
   if (opt_enabled == 1) {
@@ -659,7 +671,11 @@ void ue_send_mch_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP, uint
                        frameP,0, // unknown subframe
                        M_RNTI,
                        MCCH,
-                       payload_ptr, rx_lengths[i], 0, eNB_index, sync_area);
+                       payload_ptr, rx_lengths[i], 0, eNB_index, sync_area
+                 #ifdef Rel14
+                       ,0
+                 #endif
+                       );
     } else if (rx_lcids[i] == MTCH) {
       if (UE_mac_inst[module_idP].msi_status==1) {
         LOG_I(MAC,"[UE %d] Frame %d : MCH->MTCH for sync area %d (eNB %d, %d bytes)\n",module_idP,frameP, sync_area, eNB_index, rx_lengths[i]);
