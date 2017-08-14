@@ -145,7 +145,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
     bzero(dlsch,sizeof(LTE_eNB_DLSCH_t));
     dlsch->Kmimo = Kmimo;
     dlsch->Mdlharq = Mdlharq;
-    dlsch->Mlimit = 4;
+    dlsch->Mlimit = 8;
     dlsch->Nsoft = Nsoft;
     
     for (layer=0; layer<4; layer++) {
@@ -597,19 +597,19 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
     beamforming_mode = 8;
   else if(dlsch->harq_processes[harq_pid]->mimo_mode == TM9_10)
     beamforming_mode = 9;
-  G = get_G(frame_parms,nb_rb,dlsch->harq_processes[harq_pid]->rb_alloc,mod_order,dlsch->harq_processes[harq_pid]->Nl,num_pdcch_symbols,frame,subframe,beamforming_mode);
+  G = get_G(frame_parms,
+	    nb_rb,
+	    dlsch->harq_processes[harq_pid]->rb_alloc,
+	    mod_order,
+	    dlsch->harq_processes[harq_pid]->Nl,
+	    num_pdcch_symbols,
+	    frame,
+	    subframe,
+	    beamforming_mode);
 
 
-  //  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
   if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
 
-    /*
-    int i;
-    printf("dlsch (tx): \n");
-    for (i=0;i<(A>>3);i++)
-      printf("%02x.",a[i]);
-    printf("\n");
-    */
     // Add 24-bit crc (polynomial A) to payload
     crc = crc24a(a,
                  A)>>8;

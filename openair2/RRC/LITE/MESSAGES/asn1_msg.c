@@ -511,7 +511,8 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 
   ////Rel1310
 #if defined(ENABLE_ITTI)
-  if (configuration->schedulingInfoSIB1_BR_r13[CC_id] != 0)
+  if ((configuration->schedulingInfoSIB1_BR_r13[CC_id] != 0) &&
+      (brOption==TRUE))
   {
       sib1_1250->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1310_IEs_t));
       memset(sib1_1250->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1310_IEs_t));

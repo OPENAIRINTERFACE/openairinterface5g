@@ -715,43 +715,48 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   int i;
 
-  LOG_D(PHY,
-	"[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", G %d, nb_rb %"PRIu16", mcs %"PRIu8", pmi_alloc %"PRIx64", rv %"PRIu8" (round %"PRIu8")\n",
-	eNB->Mod_id, dlsch->rnti,harq_pid,
-	frame, subframe, input_buffer_length,
-	get_G(fp,
-	      dlsch_harq->nb_rb,
-	      dlsch_harq->rb_alloc,
-	      get_Qm(dlsch_harq->mcs),
-	      dlsch_harq->Nl,
-	      num_pdcch_symbols,
-	      frame,
-	      subframe,
-	      dlsch_harq->mimo_mode==TM7?7:0),
-	dlsch_harq->nb_rb,
-	dlsch_harq->mcs,
-	pmi2hex_2Ar1(dlsch_harq->pmi_alloc),
-	dlsch_harq->rvidx,
+  if (frame < 20) {
+    LOG_I(PHY,
+	  "[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", num_pdcch_symbols %d, G %d, nb_rb %"PRIu16", rb0 %x, rb1 %x, TBS %"PRIu16", pmi_alloc %"PRIx64", rv %"PRIu8" (round %"PRIu8")\n",
+	  eNB->Mod_id, dlsch->rnti,harq_pid,
+	  frame, subframe, input_buffer_length, num_pdcch_symbols,
+	  get_G(fp,
+		dlsch_harq->nb_rb,
+		dlsch_harq->rb_alloc,
+		dlsch_harq->Qm,
+		dlsch_harq->Nl,
+		num_pdcch_symbols,
+		frame,
+		subframe,
+		dlsch_harq->mimo_mode==TM7?7:0),
+	  dlsch_harq->nb_rb,
+	  dlsch_harq->rb_alloc[0],
+	  dlsch_harq->rb_alloc[1],
+	  dlsch_harq->TBS,
+	  pmi2hex_2Ar1(dlsch_harq->pmi_alloc),
+	  dlsch_harq->rvidx,
 	dlsch_harq->round);
-
+    for (i=0;i<dlsch_harq->TBS>>3;i++) printf("%x.",dlsch_harq->pdu[i]);
+    printf("\n");
+  }
 #if defined(MESSAGE_CHART_GENERATOR_PHY)
   MSC_LOG_TX_MESSAGE(
 		     MSC_PHY_ENB,MSC_PHY_UE,
 		     NULL,0,
-		     "%05u:%02u PDSCH/DLSCH input size = %"PRIu16", G %d, nb_rb %"PRIu16", mcs %"PRIu8", pmi_alloc %"PRIx16", rv %"PRIu8" (round %"PRIu8")",
+		     "%05u:%02u PDSCH/DLSCH input size = %"PRIu16", G %d, nb_rb %"PRIu16", TBS %"PRIu16", pmi_alloc %"PRIx16", rv %"PRIu8" (round %"PRIu8")",
 		     frame, subframe,
 		     input_buffer_length,
 		     get_G(fp,
 			   dlsch_harq->nb_rb,
 			   dlsch_harq->rb_alloc,
-			   get_Qm(dlsch_harq->mcs),
+			   dlsch_harq->Qm,
 			   dlsch_harq->Nl,
 			   num_pdcch_symbols,
 			   frame,
 			   subframe,
 			   dlsch_harq->mimo_mode==TM7?7:0),
 		     dlsch_harq->nb_rb,
-		     dlsch_harq->mcs,
+		     dlsch_harq->TBS,
 		     pmi2hex_2Ar1(dlsch_harq->pmi_alloc),
 		     dlsch_harq->rvidx,
 		     dlsch_harq->round);
@@ -868,7 +873,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 		   get_G(fp,
 			 dlsch_harq->nb_rb,
 			 dlsch_harq->rb_alloc,
-			 get_Qm(dlsch_harq->mcs),
+			 dlsch_harq->Qm,
 			 dlsch_harq->Nl,
 			 num_pdcch_symbols,
 			 frame,subframe,
@@ -1003,7 +1008,7 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   dlsch1 = eNB->dlsch[UE_id][1];
 
 #ifdef Rel14
-  if ((rel13->pdsch_payload_type == 0) && (rel13->ue_type>0)) dlsch0->harq_ids[proc->subframe_tx] = 0;
+  if ((rel13->pdsch_payload_type < 2) && (rel13->ue_type>0)) dlsch0->harq_ids[proc->subframe_tx] = 0;
 #endif
 
   harq_pid        = dlsch0->harq_ids[proc->subframe_tx];
@@ -1018,7 +1023,15 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   else                     dlsch1_harq->pdu                    = sdu;
 
 #ifdef Rel14
+  dlsch0->sib1_br_flag=0;
   if ((rel13->pdsch_payload_type <2) && (rel13->ue_type>0)) { // this is a BR/CE UE and SIB1-BR/SI-BR
+    dlsch0->rnti    = 0xFFFF;
+    dlsch0->Kmimo   = 1;
+    dlsch0->Mdlharq = 4; 
+    dlsch0->Nsoft   = 25344;
+
+    if (rel13->pdsch_payload_type == 0) dlsch0->sib1_br_flag=1;
+
     // configure PDSCH
     switch (eNB->frame_parms.N_RB_DL) {
     case 6:
@@ -1055,7 +1068,8 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
     dlsch0_harq->round              = 0;
     dlsch0_harq->status             = ACTIVE;
     dlsch0_harq->TBS                = rel8->length<<3;
-
+    dlsch0_harq->Qm                 = rel8->modulation;
+    dlsch0_harq->codeword           = 0;
 
 
   }
@@ -1437,34 +1451,42 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,0);
 
   // Now scan UE specific DLSCH
+  LTE_eNB_DLSCH_t *dlsch0,*dlsch1;
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++)
     {
-      if ((eNB->dlsch[(uint8_t)UE_id][0])&&
-	  (eNB->dlsch[(uint8_t)UE_id][0]->rnti>0)&&
-	  (eNB->dlsch[(uint8_t)UE_id][0]->active == 1)) {
+      dlsch0 = eNB->dlsch[(uint8_t)UE_id][0]; 
+      dlsch1 = eNB->dlsch[(uint8_t)UE_id][1]; 
+      if ((dlsch0)&&
+	  (dlsch0->rnti>0)&&
+	  (dlsch0->active == 1)) {
 
 	// get harq_pid
-	harq_pid = eNB->dlsch[(uint8_t)UE_id][0]->harq_ids[subframe];
+	harq_pid = dlsch0->harq_ids[subframe];
 	AssertFatal(harq_pid>=0,"harq_pid is negative\n");
 	// generate pdsch
 	pdsch_procedures(eNB,
 			 proc,
 			 harq_pid,
-			 eNB->dlsch[(uint8_t)UE_id][0],
-			 eNB->dlsch[(uint8_t)UE_id][1],
+			 dlsch0,
+			 dlsch1,
 			 &eNB->UE_stats[(uint32_t)UE_id],
 			 0,
-			 num_pdcch_symbols);
+#ifdef Rel14
+			 dlsch0->sib1_br_flag==0 ? num_pdcch_symbols : 3
+#else
+			 num_pdcch_symbols
+#endif
+);
 
 
       }
 
-      else if ((eNB->dlsch[(uint8_t)UE_id][0])&&
-	       (eNB->dlsch[(uint8_t)UE_id][0]->rnti>0)&&
-	       (eNB->dlsch[(uint8_t)UE_id][0]->active == 0)) {
+      else if ((dlsch0)&&
+	       (dlsch0->rnti>0)&&
+	       (dlsch0->active == 0)) {
 
 	// clear subframe TX flag since UE is not scheduled for PDSCH in this subframe (so that we don't look for PUCCH later)
-	eNB->dlsch[(uint8_t)UE_id][0]->subframe_tx[subframe]=0;
+	dlsch0->subframe_tx[subframe]=0;
       }
     }
 
@@ -1676,7 +1698,6 @@ void process_HARQ_feedback(uint8_t UE_id,
     dl_subframe = ul_ACK_subframe2_dl_subframe(fp,
 					       subframe,
 					       m);
-
     if (dlsch->subframe_tx[dl_subframe]==1) {
       if (pusch_flag == 1)
         mp++;
@@ -1696,10 +1717,9 @@ void process_HARQ_feedback(uint8_t UE_id,
       if (dl_harq_pid[m]<dlsch->Mdlharq) {
         dlsch_harq_proc = dlsch->harq_processes[dl_harq_pid[m]];
 #ifdef DEBUG_PHY_PROC
-        LOG_D(PHY,"[eNB %d][PDSCH %x/%d] subframe %d, status %d, round %d (mcs %d, rv %d, TBS %d)\n",eNB->Mod_id,
+        LOG_D(PHY,"[eNB %d][PDSCH %x/%d] subframe %d, status %d, round %d (rv %d, TBS %d)\n",eNB->Mod_id,
               dlsch->rnti,dl_harq_pid[m],dl_subframe,
               dlsch_harq_proc->status,dlsch_harq_proc->round,
-              dlsch->harq_processes[dl_harq_pid[m]]->mcs,
               dlsch->harq_processes[dl_harq_pid[m]]->rvidx,
               dlsch->harq_processes[dl_harq_pid[m]]->TBS);
 

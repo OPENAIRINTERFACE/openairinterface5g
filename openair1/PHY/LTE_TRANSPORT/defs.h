@@ -291,7 +291,9 @@ typedef struct {
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
-
+#ifdef Rel14
+  uint8_t sib1_br_flag;
+#endif
 } LTE_eNB_DLSCH_t;
 
 #define PUSCH_x 2

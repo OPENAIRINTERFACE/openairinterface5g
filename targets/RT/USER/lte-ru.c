@@ -822,7 +822,12 @@ void tx_rf(RU_t *ru) {
     if (txs !=  fp->samples_per_tti) {
       LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, fp->samples_per_tti);
       exit_fun( "problem transmitting samples" );
-    }	
+    }
+    /*
+    if ((proc->subframe_tx == 4) && (proc->frame_tx == 10)) {
+      write_output("ru_tx_sf4.m","txs",(void*)&ru->common.txdata[0][4*fp->samples_per_tti],fp->samples_per_tti,1,1);
+      exit(-1);
+      }*/
   }
 }
 
