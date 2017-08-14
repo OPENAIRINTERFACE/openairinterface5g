@@ -99,7 +99,7 @@ schedule_SIB1_BR(
   int                            *Sj;
   int                            n_NB = 0;
   int                            TBS;
-  int                            k,rvidx;
+  int                            k=0,rvidx;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
@@ -143,6 +143,7 @@ schedule_SIB1_BR(
     switch (N_RB_DL) {
     case 6:
     case 15:
+    default:
       m=1;
       n_NB=0;
       N_S_NB=0;
@@ -189,97 +190,96 @@ schedule_SIB1_BR(
     AssertFatal(cc->mib->message.schedulingInfoSIB1_BR_r13<19,"schedulingInfoSIB1_BR_r13 %d > 18\n",
 		(int)cc->mib->message.schedulingInfoSIB1_BR_r13);
 
+    AssertFatal(bcch_sdu_length>0,"RRC returned 0 bytes for SIB1-BR\n");
+
     TBS = SIB1_BR_TBS_table[(cc->mib->message.schedulingInfoSIB1_BR_r13-1)/3]>>3;
 
-    AssertFatal(bcch_sdu_length <= TBS, "length returned by RRC is not compatible with the TBS %d from MIB\n",TBS);
+    AssertFatal(bcch_sdu_length <= TBS, "length returned by RRC %d is not compatible with the TBS %d from MIB\n",bcch_sdu_length,TBS);
 
-    if (bcch_sdu_length > 0) {
-      LOG_D(MAC,"[eNB %d] Frame %d : BCCH_BR->DLSCH CC_id %d, Received %d bytes \n",module_idP,frameP,CC_id,bcch_sdu_length);
-
-      // allocate all 6 PRBs in narrowband for SIB1_BR
-      first_rb = n_NB*6;
-      vrb_map[first_rb] = 1;
-      vrb_map[first_rb+1] = 1;
-      vrb_map[first_rb+2] = 1;
-      vrb_map[first_rb+3] = 1;
-      vrb_map[first_rb+4] = 1;
-      vrb_map[first_rb+5] = 1;
-
-      dl_config_pdu                                                                  = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
-      memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
-      dl_config_pdu->pdu_type                                                        = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE; 
-      dl_config_pdu->pdu_size                                                        = (uint8_t)(2+sizeof(nfapi_dl_config_dlsch_pdu));
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.length                                 = TBS;
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index                              = eNB->pdu_index[CC_id];
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti                                   = 0xFFFF;
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type               = 2;   // format 1A/1B/1D
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.virtual_resource_block_assignment_flag = 0;   // localized
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding                  = getRIV(N_RB_DL,first_rb,6);
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.modulation                             = 2; //QPSK
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.redundancy_version                     = rvidx;
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_blocks                       = 1;// first block
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_block_to_codeword_swap_flag  = 0;
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_scheme                    = (cc->p_eNB==1 ) ? 0 : 1;
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_layers                       = 1;
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_subbands                     = 1;
-      //	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.codebook_index                         = ;
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ue_category_capacity                   = 1;
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pa                                     = 4; // 0 dB
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.delta_power_offset_index               = 0;
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ngap                                   = 0;
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.nprb                                   = get_subbandsize(cc->mib->message.dl_Bandwidth); // ignored
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode                      = (cc->p_eNB==1 ) ? 1 : 2;
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = 1;
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = 1;
-      // Rel13 fields
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type                               = 1; // CEModeA UE
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type                    = 0; // SIB1-BR
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = 0xFFFF; // absolute SF
-
-      //	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ; 
-      dl_req->number_pdu++;
-
-      // Program TX Request
-      TX_req                                                                = &eNB->TX_req[CC_id].tx_request_body.tx_pdu_list[eNB->TX_req[CC_id].tx_request_body.number_of_pdus]; 
-      TX_req->pdu_length                                                    = bcch_sdu_length;
-      TX_req->pdu_index                                                     = eNB->pdu_index[CC_id]++;
-      TX_req->num_segments                                                  = 1;
-      TX_req->segments[0].segment_length                                    = bcch_sdu_length;
-      TX_req->segments[0].segment_data                                      = cc->BCCH_BR_pdu[0].payload;
-      eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
-      
+    LOG_D(MAC,"[eNB %d] Frame %d : BCCH_BR->DLSCH CC_id %d, Received %d bytes \n",module_idP,frameP,CC_id,bcch_sdu_length);
     
-      
-      if (opt_enabled == 1) {
-        trace_pdu(1,
-                  &cc->BCCH_BR_pdu[0].payload[0],
-                  bcch_sdu_length,
-                  0xffff,
-                  4,
-                  0xffff,
-                  eNB->frame,
-                  eNB->subframe,
-                  0,
-                  0);
-	LOG_D(OPT,"[eNB %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
-	      module_idP, frameP, CC_id, 0xffff, bcch_sdu_length);
-      }
-      if (cc->tdd_Config!=NULL) { //TDD
-        LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH-BR 0->DLSCH (TDD) for CC_id %d SIB1-BR %d bytes\n",
-              frameP,
-              CC_id,
-              bcch_sdu_length);
-      } else {
-        LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH-BR 0->DLSCH (FDD) for CC_id %d SIB1-BR %d bytes\n",
-              frameP,
-              CC_id,
-              bcch_sdu_length);
-      }
-    } else {
-
-      //LOG_D(MAC,"[eNB %d] Frame %d : BCCH not active \n",Mod_id,frame);
+    // allocate all 6 PRBs in narrowband for SIB1_BR
+    first_rb = n_NB*6;
+    vrb_map[first_rb] = 1;
+    vrb_map[first_rb+1] = 1;
+    vrb_map[first_rb+2] = 1;
+    vrb_map[first_rb+3] = 1;
+    vrb_map[first_rb+4] = 1;
+    vrb_map[first_rb+5] = 1;
+    
+    dl_config_pdu                                                                  = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
+    memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
+    dl_config_pdu->pdu_type                                                        = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE; 
+    dl_config_pdu->pdu_size                                                        = (uint8_t)(2+sizeof(nfapi_dl_config_dlsch_pdu));
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.length                                 = TBS;
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index                              = eNB->pdu_index[CC_id];
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti                                   = 0xFFFF;
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type               = 2;   // format 1A/1B/1D
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.virtual_resource_block_assignment_flag = 0;   // localized
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding                  = getRIV(N_RB_DL,first_rb,6);
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.modulation                             = 2; //QPSK
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.redundancy_version                     = rvidx;
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_blocks                       = 1;// first block
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_block_to_codeword_swap_flag  = 0;
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_scheme                    = (cc->p_eNB==1 ) ? 0 : 1;
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_layers                       = 1;
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_subbands                     = 1;
+    //	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.codebook_index                         = ;
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ue_category_capacity                   = 1;
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pa                                     = 4; // 0 dB
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.delta_power_offset_index               = 0;
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ngap                                   = 0;
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.nprb                                   = get_subbandsize(cc->mib->message.dl_Bandwidth); // ignored
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode                      = (cc->p_eNB==1 ) ? 1 : 2;
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = 1;
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = 1;
+    // Rel13 fields
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type                               = 1; // CEModeA UE
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type                    = 0; // SIB1-BR
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = 0xFFFF; // absolute SF
+    
+    //	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ; 
+    dl_req->number_pdu++;
+    
+    // Program TX Request
+    TX_req                                                                = &eNB->TX_req[CC_id].tx_request_body.tx_pdu_list[eNB->TX_req[CC_id].tx_request_body.number_of_pdus]; 
+    TX_req->pdu_length                                                    = bcch_sdu_length;
+    TX_req->pdu_index                                                     = eNB->pdu_index[CC_id]++;
+    TX_req->num_segments                                                  = 1;
+    TX_req->segments[0].segment_length                                    = bcch_sdu_length;
+    TX_req->segments[0].segment_data                                      = cc->BCCH_BR_pdu[0].payload;
+    eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
+    
+    
+    
+    if (opt_enabled == 1) {
+      trace_pdu(1,
+		&cc->BCCH_BR_pdu[0].payload[0],
+		bcch_sdu_length,
+		0xffff,
+		4,
+		0xffff,
+		eNB->frame,
+		eNB->subframe,
+		0,
+		0);
+      LOG_D(OPT,"[eNB %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
+	    module_idP, frameP, CC_id, 0xffff, bcch_sdu_length);
     }
+    if (cc->tdd_Config!=NULL) { //TDD
+      LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH-BR 0->DLSCH (TDD) for CC_id %d SIB1-BR %d bytes\n",
+	    frameP,
+	    CC_id,
+	    bcch_sdu_length);
+    } else {
+      LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH-BR 0->DLSCH (FDD) for CC_id %d SIB1-BR %d bytes\n",
+	    frameP,
+	    CC_id,
+	    bcch_sdu_length);
+    }
+
   }
+
 
   return;
 }
@@ -374,11 +374,12 @@ schedule_SI_BR(
 					     module_idP,
 					     0); // not used in this case
 	  
+	  AssertFatal(bcch_sdu_length>0,"RRC returned 0 bytes for SI-BR %d\n",i);
 	  
 	  if (bcch_sdu_length > 0) {
 	    AssertFatal(bcch_sdu_length <= (si_TBS_r13>>3),
-			"RRC provided bcch with length %d > %d\n",
-			bcch_sdu_length,(int)(si_TBS_r13>>3));
+			"RRC provided bcch with length %d > %d (si_TBS_r13 %d)\n",
+			bcch_sdu_length,(int)(si_TBS_r13>>3),(int)schedulingInfoList_BR_r13->list.array[i]->si_TBS_r13);
 	    LOG_D(MAC,"[eNB %d] Frame %d : BCCH_BR %d->DLSCH CC_id %d, Received %d bytes \n",module_idP,frameP,i,CC_id,bcch_sdu_length);
 	    
 	    // allocate all 6 PRBs in narrowband for SIB1_BR
@@ -552,190 +553,195 @@ schedule_SI(
   nfapi_dl_config_request_body_t *dl_req;
 
   start_meas(&eNB->schedule_si);
+  
+  // Only schedule LTE System Information in subframe 5
+  if (subframeP == 5) {
 
-  // Only schedule System Information in subframe 5
-  if (subframeP != 5) return;
-
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-
-    cc              = &eNB->common_channels[CC_id];
-    vrb_map         = (void*)&cc->vrb_map;
-    N_RB_DL         = to_prb(cc->mib->message.dl_Bandwidth); 
-    dl_req          = &eNB->DL_req[CC_id].dl_config_request_body;
-
-
-    bcch_sdu_length = mac_rrc_data_req(module_idP,
-                                       CC_id,
-                                       frameP,
-                                       BCCH,1,
-                                       &cc->BCCH_pdu.payload[0],
-                                       1,
-                                       module_idP,
-                                       0); // not used in this case
-
-    if (bcch_sdu_length > 0) {
-      LOG_D(MAC,"[eNB %d] Frame %d : BCCH->DLSCH CC_id %d, Received %d bytes \n",module_idP,frameP,CC_id,bcch_sdu_length);
-
-      // Allocate 4 PRBs in a random location
-      /*
-      while (1) {
-	first_rb = (unsigned char)(taus()%(PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL-4));
-	if ((vrb_map[first_rb] != 1) && 
-	    (vrb_map[first_rb+1] != 1) && 
-	    (vrb_map[first_rb+2] != 1) && 
-	    (vrb_map[first_rb+3] != 1))
-	  break;
-      }
-      */
-      switch (N_RB_DL) {
-      case 6:
-	first_rb = 0;
-	break;
-      case 15:
-	first_rb = 6;
-	break;
-      case 25:
-	first_rb = 11;
-	break;
-      case 50:
-	first_rb = 23;
-	break;
-      case 100:
-	first_rb = 48;
-	break;
-      }
-
-      vrb_map[first_rb] = 1;
-      vrb_map[first_rb+1] = 1;
-      vrb_map[first_rb+2] = 1;
-      vrb_map[first_rb+3] = 1;
-
-      // Get MCS for length of SI, 3 PRBs
-      if (bcch_sdu_length <= 7) {
-        mcs=0;
-      } else if (bcch_sdu_length <= 11) {
-        mcs=1;
-      } else if (bcch_sdu_length <= 18) {
-        mcs=2;
-      } else if (bcch_sdu_length <= 22) {
-        mcs=3;
-      } else if (bcch_sdu_length <= 26) {
-        mcs=4;
-      } else if (bcch_sdu_length <= 28) {
-        mcs=5;
-      } else if (bcch_sdu_length <= 32) {
-        mcs=6;
-      } else if (bcch_sdu_length <= 41) {
-        mcs=7;
-      } else if (bcch_sdu_length <= 49) {
-        mcs=8;
-      }
-
-
-      dl_config_pdu                                                         = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
-      memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
-      dl_config_pdu->pdu_type                                               = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE; 
-      dl_config_pdu->pdu_size                                               = (uint8_t)(2+sizeof(nfapi_dl_config_dci_dl_pdu));
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format                  = NFAPI_DL_DCI_FORMAT_1A;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level           = 4;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti                        = 0xFFFF;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type                   = 2;    // S-RNTI : see Table 4-10 from SCF082 - nFAPI specifications
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power          = 6000; // equal to RS power
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process                = 0;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc                         = 1; // no TPC
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1        = 1;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1                       = mcs;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1        = 0;
-
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding       = getRIV(N_RB_DL,first_rb,4);      
-
-      if (!CCE_allocation_infeasible(module_idP,CC_id,1,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,SI_RNTI)) {
-	LOG_D(MAC,"Frame %d: Subframe %d : Adding common DCI for S_RNTI\n",
-	      frameP,subframeP);
-	dl_req->number_dci++;
-	dl_req->number_pdu++;
-	dl_config_pdu                                                                  = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
+      cc              = &eNB->common_channels[CC_id];
+      vrb_map         = (void*)&cc->vrb_map;
+      N_RB_DL         = to_prb(cc->mib->message.dl_Bandwidth); 
+      dl_req          = &eNB->DL_req[CC_id].dl_config_request_body;
+      
+      
+      bcch_sdu_length = mac_rrc_data_req(module_idP,
+					 CC_id,
+					 frameP,
+					 BCCH,1,
+					 &cc->BCCH_pdu.payload[0],
+					 1,
+					 module_idP,
+					 0); // not used in this case
+      
+      if (bcch_sdu_length > 0) {
+	LOG_D(MAC,"[eNB %d] Frame %d : BCCH->DLSCH CC_id %d, Received %d bytes \n",module_idP,frameP,CC_id,bcch_sdu_length);
+	
+	// Allocate 4 PRBs in a random location
+	/*
+	  while (1) {
+	  first_rb = (unsigned char)(taus()%(PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL-4));
+	  if ((vrb_map[first_rb] != 1) && 
+	  (vrb_map[first_rb+1] != 1) && 
+	  (vrb_map[first_rb+2] != 1) && 
+	  (vrb_map[first_rb+3] != 1))
+	  break;
+	  }
+	*/
+	switch (N_RB_DL) {
+	case 6:
+	  first_rb = 0;
+	  break;
+	case 15:
+	  first_rb = 6;
+	  break;
+	case 25:
+	  first_rb = 11;
+	  break;
+	case 50:
+	  first_rb = 23;
+	  break;
+	case 100:
+	  first_rb = 48;
+	  break;
+	}
+	
+	vrb_map[first_rb] = 1;
+	vrb_map[first_rb+1] = 1;
+	vrb_map[first_rb+2] = 1;
+	vrb_map[first_rb+3] = 1;
+	
+	// Get MCS for length of SI, 3 PRBs
+	if (bcch_sdu_length <= 7) {
+	  mcs=0;
+	} else if (bcch_sdu_length <= 11) {
+	  mcs=1;
+	} else if (bcch_sdu_length <= 18) {
+	  mcs=2;
+	} else if (bcch_sdu_length <= 22) {
+	  mcs=3;
+	} else if (bcch_sdu_length <= 26) {
+	  mcs=4;
+	} else if (bcch_sdu_length <= 28) {
+	  mcs=5;
+	} else if (bcch_sdu_length <= 32) {
+	  mcs=6;
+	} else if (bcch_sdu_length <= 41) {
+	  mcs=7;
+	} else if (bcch_sdu_length <= 49) {
+	  mcs=8;
+	}
+	
+	
+	dl_config_pdu                                                         = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
 	memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
-	dl_config_pdu->pdu_type                                                        = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE; 
-	dl_config_pdu->pdu_size                                                        = (uint8_t)(2+sizeof(nfapi_dl_config_dlsch_pdu));
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index                              = eNB->pdu_index[CC_id];
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti                                   = 0xFFFF;
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type               = 2;   // format 1A/1B/1D
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.virtual_resource_block_assignment_flag = 0;   // localized
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding                  = getRIV(N_RB_DL,first_rb,4);
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.modulation                             = 2; //QPSK
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.redundancy_version                     = 0;
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_blocks                       = 1;// first block
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_block_to_codeword_swap_flag  = 0;
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_scheme                    = (cc->p_eNB==1 ) ? 0 : 1;
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_layers                       = 1;
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_subbands                     = 1;
-	//	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.codebook_index                         = ;
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ue_category_capacity                   = 1;
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pa                                     = 4; // 0 dB
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.delta_power_offset_index               = 0;
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ngap                                   = 0;
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.nprb                                   = get_subbandsize(cc->mib->message.dl_Bandwidth); // ignored
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode                      = (cc->p_eNB==1 ) ? 1 : 2;
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = 1;
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = 1;
-	//	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ; 
-	dl_req->number_pdu++;
-
-	// Program TX Request
-	TX_req                                                                = &eNB->TX_req[CC_id].tx_request_body.tx_pdu_list[eNB->TX_req[CC_id].tx_request_body.number_of_pdus]; 
-	TX_req->pdu_length                                                    = bcch_sdu_length;
-	TX_req->pdu_index                                                     = eNB->pdu_index[CC_id]++;
-	TX_req->num_segments                                                  = 1;
-	TX_req->segments[0].segment_length                                    = bcch_sdu_length;
-	TX_req->segments[0].segment_data                                      = cc->BCCH_pdu.payload;
-	eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
-
-      }
-      else {
-	LOG_E(MAC,"[eNB %d] CCid %d Frame %d, subframe %d : Cannot add DCI 1A for SI\n",module_idP, CC_id,frameP,subframeP);
-      }
-
-      if (opt_enabled == 1) {
-        trace_pdu(1,
-                  &cc->BCCH_pdu.payload[0],
-                  bcch_sdu_length,
-                  0xffff,
-                  4,
-                  0xffff,
-                  eNB->frame,
-                  eNB->subframe,
-                  0,
-                  0);
-	LOG_D(OPT,"[eNB %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
-	    module_idP, frameP, CC_id, 0xffff, bcch_sdu_length);
-      }
-      if (cc->tdd_Config!=NULL) { //TDD
-        LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH->DLSCH (TDD) for CC_id %d SI %d bytes (mcs %d, rb 3)\n",
-              frameP,
-              CC_id,
-              bcch_sdu_length,
-              mcs);
+	dl_config_pdu->pdu_type                                               = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE; 
+	dl_config_pdu->pdu_size                                               = (uint8_t)(2+sizeof(nfapi_dl_config_dci_dl_pdu));
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format                  = NFAPI_DL_DCI_FORMAT_1A;
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level           = 4;
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti                        = 0xFFFF;
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type                   = 2;    // S-RNTI : see Table 4-10 from SCF082 - nFAPI specifications
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power          = 6000; // equal to RS power
+	
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process                = 0;
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc                         = 1; // no TPC
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1        = 1;
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1                       = mcs;
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1        = 0;
+	
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding       = getRIV(N_RB_DL,first_rb,4);      
+	
+	if (!CCE_allocation_infeasible(module_idP,CC_id,1,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,SI_RNTI)) {
+	  LOG_D(MAC,"Frame %d: Subframe %d : Adding common DCI for S_RNTI\n",
+		frameP,subframeP);
+	  dl_req->number_dci++;
+	  dl_req->number_pdu++;
+	  dl_config_pdu                                                                  = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
+	  memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
+	  dl_config_pdu->pdu_type                                                        = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE; 
+	  dl_config_pdu->pdu_size                                                        = (uint8_t)(2+sizeof(nfapi_dl_config_dlsch_pdu));
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index                              = eNB->pdu_index[CC_id];
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti                                   = 0xFFFF;
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type               = 2;   // format 1A/1B/1D
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.virtual_resource_block_assignment_flag = 0;   // localized
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding                  = getRIV(N_RB_DL,first_rb,4);
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.modulation                             = 2; //QPSK
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.redundancy_version                     = 0;
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_blocks                       = 1;// first block
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_block_to_codeword_swap_flag  = 0;
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_scheme                    = (cc->p_eNB==1 ) ? 0 : 1;
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_layers                       = 1;
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_subbands                     = 1;
+	  //	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.codebook_index                         = ;
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ue_category_capacity                   = 1;
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pa                                     = 4; // 0 dB
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.delta_power_offset_index               = 0;
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ngap                                   = 0;
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.nprb                                   = get_subbandsize(cc->mib->message.dl_Bandwidth); // ignored
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode                      = (cc->p_eNB==1 ) ? 1 : 2;
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = 1;
+	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = 1;
+	  //	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ; 
+	  dl_req->number_pdu++;
+	  
+	  // Program TX Request
+	  TX_req                                                                = &eNB->TX_req[CC_id].tx_request_body.tx_pdu_list[eNB->TX_req[CC_id].tx_request_body.number_of_pdus]; 
+	  TX_req->pdu_length                                                    = bcch_sdu_length;
+	  TX_req->pdu_index                                                     = eNB->pdu_index[CC_id]++;
+	  TX_req->num_segments                                                  = 1;
+	  TX_req->segments[0].segment_length                                    = bcch_sdu_length;
+	  TX_req->segments[0].segment_data                                      = cc->BCCH_pdu.payload;
+	  eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
+	  
+	}
+	else {
+	  LOG_E(MAC,"[eNB %d] CCid %d Frame %d, subframe %d : Cannot add DCI 1A for SI\n",module_idP, CC_id,frameP,subframeP);
+	}
+	
+	if (opt_enabled == 1) {
+	  trace_pdu(1,
+		    &cc->BCCH_pdu.payload[0],
+		    bcch_sdu_length,
+		    0xffff,
+		    4,
+		    0xffff,
+		    eNB->frame,
+		    eNB->subframe,
+		    0,
+		    0);
+	  LOG_D(OPT,"[eNB %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
+		module_idP, frameP, CC_id, 0xffff, bcch_sdu_length);
+	}
+	if (cc->tdd_Config!=NULL) { //TDD
+	  LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH->DLSCH (TDD) for CC_id %d SI %d bytes (mcs %d, rb 3)\n",
+		frameP,
+		CC_id,
+		bcch_sdu_length,
+		mcs);
+	} else {
+	  LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH->DLSCH (FDD) for CC_id %d SI %d bytes (mcs %d, rb 3)\n",
+		frameP,
+		CC_id,
+		bcch_sdu_length,
+		mcs);
+	}
+	
+	
+	eNB->eNB_stats[CC_id].total_num_bcch_pdu+=1;
+	eNB->eNB_stats[CC_id].bcch_buffer=bcch_sdu_length;
+	eNB->eNB_stats[CC_id].total_bcch_buffer+=bcch_sdu_length;
+	eNB->eNB_stats[CC_id].bcch_mcs=mcs;
       } else {
-        LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH->DLSCH (FDD) for CC_id %d SI %d bytes (mcs %d, rb 3)\n",
-              frameP,
-              CC_id,
-              bcch_sdu_length,
-              mcs);
+	
+	//LOG_D(MAC,"[eNB %d] Frame %d : BCCH not active \n",Mod_id,frame);
       }
-
-
-      eNB->eNB_stats[CC_id].total_num_bcch_pdu+=1;
-      eNB->eNB_stats[CC_id].bcch_buffer=bcch_sdu_length;
-      eNB->eNB_stats[CC_id].total_bcch_buffer+=bcch_sdu_length;
-      eNB->eNB_stats[CC_id].bcch_mcs=mcs;
-    } else {
-
-      //LOG_D(MAC,"[eNB %d] Frame %d : BCCH not active \n",Mod_id,frame);
     }
   }
 
+#ifdef Rel14
+  schedule_SIB1_BR(module_idP,frameP,subframeP);
+  schedule_SI_BR(module_idP,frameP,subframeP);
+#endif
   // this might be misleading when bcch is inactive
   stop_meas(&eNB->schedule_si);
   return;

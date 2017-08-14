@@ -1018,7 +1018,7 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   else                     dlsch1_harq->pdu                    = sdu;
 
 #ifdef Rel14
-  if ((rel13->pdsch_payload_type == 0) && (rel13->ue_type>0)) { // this is a BR/CE UE and SIB1-BR
+  if ((rel13->pdsch_payload_type <2) && (rel13->ue_type>0)) { // this is a BR/CE UE and SIB1-BR/SI-BR
     // configure PDSCH
     switch (eNB->frame_parms.N_RB_DL) {
     case 6:
@@ -1048,13 +1048,13 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 
     dlsch0_harq->nb_rb              = 6;
     dlsch0_harq->vrb_type           = LOCALIZED;
-    dlsch0_harq->rvidx              = 0;
-    dlsch0_harq->Nl                 = 0;
+    dlsch0_harq->rvidx              = rel8->redundancy_version;
+    dlsch0_harq->Nl                 = 1;
     dlsch0_harq->mimo_mode          = (eNB->frame_parms.nb_antenna_ports_eNB == 1) ? SISO : ALAMOUTI;
     dlsch0_harq->dl_power_off       = 1;
     dlsch0_harq->round              = 0;
     dlsch0_harq->status             = ACTIVE;
-    dlsch0_harq->TBS                = rel8->length;
+    dlsch0_harq->TBS                = rel8->length<<3;
 
 
 

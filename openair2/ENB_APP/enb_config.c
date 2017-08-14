@@ -503,7 +503,8 @@ void RCconfig_RU() {
 	
 
 	if (  !(
-                config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_MAX_RS_EPRE, &max_pdschReferenceSignalPower)
+                config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_MAX_RS_EPRE, &max_pdschReferenceSignalPower) &&
+                config_setting_lookup_int(setting_ru, CONFIG_STRING_RU_MAX_RXGAIN, &max_rxgain)
                )
               ) {
           AssertFatal (0,
