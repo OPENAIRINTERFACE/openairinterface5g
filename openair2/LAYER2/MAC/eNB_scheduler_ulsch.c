@@ -396,7 +396,11 @@ void rx_sdu(const module_id_t enb_mod_idP,
 			   rx_lengths[i],
 			   ENB_FLAG_YES,
 			   enb_mod_idP,
-			   0);
+                  0
+            #ifdef Rel14
+                  ,(eNB->common_channels[CC_idP].RA_template[ii].rach_resource_type>0)
+            #endif
+                  );
 	  
 	  
           if (num_ce >0) {  // handle msg3 which is not RRCConnectionRequest

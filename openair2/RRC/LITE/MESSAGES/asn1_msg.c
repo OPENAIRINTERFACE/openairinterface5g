@@ -2260,9 +2260,9 @@ do_RRCConnectionSetup_BR(
   epdcch_setconfig_r11->pucch_ResourceStartOffset_r11 = 0;
   epdcch_setconfig_r11->re_MappingQCL_ConfigId_r11 = NULL;
 
-  epdcch_setconfig_r11->ext2 = calloc(1, sizeof(struct EPDCCH_SetConfig_r11_ext2));
+  epdcch_setconfig_r11->ext2 = calloc(1, sizeof(struct EPDCCH_SetConfig_r11__ext2));
   epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310 = NULL;
-  epdcch_setconfig_r11->ext2->mpdcch_config_r13 = calloc(1, sizeof(struct EPDCCH_SetConfig_r11_ext2_mpdcch_config_r13));
+  epdcch_setconfig_r11->ext2->mpdcch_config_r13 = calloc(1, sizeof(struct EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13));
   epdcch_setconfig_r11->ext2->mpdcch_config_r13->present = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13_PR_setup;
   epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.csi_NumRepetitionCE_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__csi_NumRepetitionCE_r13_sf1;
   epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_pdsch_HoppingConfig_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_pdsch_HoppingConfig_r13_off;
