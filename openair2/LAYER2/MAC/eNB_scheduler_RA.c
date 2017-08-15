@@ -212,7 +212,7 @@ void generate_Msg2(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
     first_rb = narrowband_to_first_rb(&cc[CC_idP],RA_template->msg2_narrowband);
     
     if ((RA_template->msg2_mpdcch_repetition_cnt == 0) &&
-	(mpdcch_sf_condition(eNB,CC_idP,frameP,subframeP,rmax,TYPE2)>0)){
+    (mpdcch_sf_condition(eNB,CC_idP,frameP,subframeP,rmax,TYPE2,-1)>0)){
       // MPDCCH configuration for RAR
       
       
@@ -558,7 +558,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
     first_rb = narrowband_to_first_rb(&cc[CC_idP],RA_template->msg34_narrowband);
 
     if ((RA_template->msg4_mpdcch_repetition_cnt == 0) &&
-	(mpdcch_sf_condition(eNB,CC_idP,frameP,subframeP,rmax,TYPE2)>0)){
+    (mpdcch_sf_condition(eNB,CC_idP,frameP,subframeP,rmax,TYPE2,-1)>0)){
       // MPDCCH configuration for RAR
       
       memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));

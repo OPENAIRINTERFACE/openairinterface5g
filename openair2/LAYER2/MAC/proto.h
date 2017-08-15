@@ -905,7 +905,7 @@ uint8_t subframe2harqpid(COMMON_channels_t *cc,frame_t frame,sub_frame_t subfram
 #ifdef Rel14
 int get_numnarrowbandbits(long dl_Bandwidth);
 
-int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t subframeP,int rmax,MPDCCH_TYPES_t mpdcch_type);
+int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t subframeP,int rmax,MPDCCH_TYPES_t mpdcch_type,int UE_id);
 
 int get_numnarrowbands(long dl_Bandwidth);
 
