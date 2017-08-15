@@ -160,6 +160,12 @@ EMAIL   : Lionel.Gauthier@eurecom.fr, navid.nikaein@eurecom.fr
 #define ENB_CONFIG_STRING_MAX_AVAILABLE_NARROWBAND              "maxavailablenarrowband"
 #define ENB_CONFIG_STRING_PUCCH_INFO_VALUE                      "pucch_info_value"
 
+#define ENB_CONFIG_STRING_PCCH_CONFIG_V1310                      "pcch_config_v1310"
+#define ENB_CONFIG_STRING_PAGING_NARROWBANDS_R13                 "paging_narrowbands_r13"
+#define ENB_CONFIG_STRING_MPDCCH_NUMREPETITION_PAGING_R13        "mpdcch_numrepetition_paging_r13"
+#define ENB_CONFIG_STRING_NB_V1310                               "nb_v1310"
+
+
 
 #define ENB_CONFIG_STRING_PDSCH_RS_EPRE                                 "pdsch_referenceSignalPower"
 #define ENB_CONFIG_STRING_PDSCH_PB                                      "pdsch_p_b"
@@ -1007,6 +1013,8 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   config_setting_t *n1_pucch_AN_info_r13_list      = NULL;
   config_setting_t *n1_pucch_AN_info_r13           = NULL;
 
+  config_setting_t *setting_pcch_config_v1310      = NULL;
+
 #if	defined(Rel14)
   config_setting_t *setting_br13 = NULL;
 #endif // REL14
@@ -1133,6 +1141,11 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   libconfig_int     prach_HoppingConfig_r13               = 0;
   libconfig_int     maxavailablenarrowband                = 0;
   libconfig_int     pucch_info_value                      = 0;
+
+  libconfig_int     paging_narrowbands_r13               = 0;
+  libconfig_int     mpdcch_numrepetition_paging_r13       = 0;
+  libconfig_int     nb_v1310                              = 0;
+
 
   libconfig_int     srb1_timer_poll_retransmit    = 0;
   libconfig_int     srb1_timer_reordering         = 0;
@@ -2692,11 +2705,18 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                     RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = NULL;
                   }
 
+
+                  max_available_narrow_band_list = config_setting_get_member(prach_parameters_ce_r13_list, ENB_CONFIG_STRING_MAX_AVAILABLE_NARROW_BAND);
+                  int num_available_narrow_bands = config_setting_length(max_available_narrow_band_list);
+                  RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = num_available_narrow_bands;
+                  int narrow_band_index;
+                  for (narrow_band_index = 0; narrow_band_index < num_available_narrow_bands; narrow_band_index++)
+                  {
+                      max_available_narrow_band = config_setting_get_elem(max_available_narrow_band_list, narrow_band_index);
+                      RRC_CONFIGURATION_REQ (msg_p).max_available_narrow_band[j][prach_parameters_index][narrow_band_index] = config_setting_get_int(max_available_narrow_band);
+                  }
+
                 }
-
-
-                // TODO
-                //              max_available_narrow_band = config_setting_get_member(prach_parameters_ce_r13, ENB_CONFIG_STRING_MAX_AVAILABLE_NARROW_BAND);
 
 
                 n1_pucch_AN_info_r13_list = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_N1_PUCCH_AN_INFO_LIST);
@@ -3725,6 +3745,35 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                 char* prach_ConfigCommon_v1310 = NULL;
                 char* mpdcch_startSF_CSS_RA_r13;
 
+                setting_pcch_config_v1310 = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_PCCH_CONFIG_V1310);
+                if (setting_pcch_config_v1310 != NULL)
+                {
+                    RRC_CONFIGURATION_REQ(msg_p).pcch_config_v1310[j] = TRUE;
+                    if (!config_setting_lookup_int(setting_pcch_config_v1310, ENB_CONFIG_STRING_PAGING_NARROWBANDS_R13, &paging_narrowbands_r13)
+                            || !config_setting_lookup_int(setting_pcch_config_v1310, ENB_CONFIG_STRING_MPDCCH_NUMREPETITION_PAGING_R13, &mpdcch_numrepetition_paging_r13)
+                            )
+                        AssertFatal(0,
+                            "Failed to parse eNB configuration file %s, enb %d pcch_config_v1310!\n",
+                            RC.config_file_name, i);
+
+                    RRC_CONFIGURATION_REQ(msg_p).paging_narrowbands_r13[j] = paging_narrowbands_r13;
+                    RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = mpdcch_numrepetition_paging_r13;
+
+                    if (config_setting_lookup_int(setting_pcch_config_v1310, ENB_CONFIG_STRING_MPDCCH_NUMREPETITION_PAGING_R13, &nb_v1310))
+                    {
+                        RRC_CONFIGURATION_REQ(msg_p).nb_v1310[j]  = CALLOC(1, sizeof(long));
+                        *RRC_CONFIGURATION_REQ(msg_p).nb_v1310[j] = nb_v1310;
+                    }
+                    else
+                    {
+                        RRC_CONFIGURATION_REQ(msg_p).nb_v1310[j] = NULL;
+                    }
+
+                }
+                else
+                {
+                    RRC_CONFIGURATION_REQ(msg_p).pcch_config_v1310[j] = FALSE;
+                }
 
                 if (!config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_schedulingInfoSIB1, &schedulingInfoSIB1_BR_r13))
                   AssertFatal(0,
