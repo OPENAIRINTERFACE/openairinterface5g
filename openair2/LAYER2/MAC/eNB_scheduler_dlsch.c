@@ -416,14 +416,14 @@ set_ul_DAI(
 void  getRepetition(UE_TEMPLATE * pue_template,unsigned int *maxRep , unsigned int *narrowBandindex, unsigned int *first_rb){
     EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11;
 
-    AssertFatal(pue_template->physicalConfigDedicated, "no RRC physical configuration for this UE ") ;
-    AssertFatal(pue_template->physicalConfigDedicated->ext4, "no RRC physical configuration for this UE ") ;
+    AssertFatal(pue_template->physicalConfigDedicated !=NULL, "no RRC physical configuration for this UE ") ;
+    AssertFatal(pue_template->physicalConfigDedicated->ext4 !=NULL, "no RRC physical configuration for this UE ") ;
 
     AssertFatal(pue_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11->list.count > 0 ,"epdcch config list is empty") ;
 
     epdcch_setconfig_r11 = pue_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11->list.array[0] ;
 
-    AssertFatal(epdcch_setconfig_r11->ext2 && epdcch_setconfig_r11->ext2->mpdcch_config_r13 ," mpdcch config not found")  ;
+    AssertFatal(epdcch_setconfig_r11->ext2 !=NULL && epdcch_setconfig_r11->ext2->mpdcch_config_r13 !=NULL," mpdcch config not found")  ;
 
 *maxRep = epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_NumRepetition_r13  ;
 
@@ -431,33 +431,6 @@ void  getRepetition(UE_TEMPLATE * pue_template,unsigned int *maxRep , unsigned i
 
 
 
-/*
-    epdcch_setconfig_r11->setConfigId_r11 = 0;
-    epdcch_setconfig_r11->transmissionType_r11 = EPDCCH_SetConfig_r11__transmissionType_r11_localised;
-    epdcch_setconfig_r11->resourceBlockAssignment_r11.numberPRB_Pairs_r11 = EPDCCH_SetConfig_r11__resourceBlockAssignment_r11__numberPRB_Pairs_r11_n2;
-    //epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11 = calloc(0, sizeof(BIT_STRING_t));
-    epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.buf = calloc(0, 2 * sizeof(uint8_t));
-    epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.size = 2;
-    epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.bits_unused = 6;
-    epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.buf[0] = 0x0E;
-
-    epdcch_setconfig_r11->dmrs_ScramblingSequenceInt_r11 = 0;
-    epdcch_setconfig_r11->pucch_ResourceStartOffset_r11 = 0;
-    epdcch_setconfig_r11->re_MappingQCL_ConfigId_r11 = NULL;
-
-    epdcch_setconfig_r11->ext2 = calloc(1, sizeof(struct EPDCCH_SetConfig_r11__ext2));
-    epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310 = NULL;
-    epdcch_setconfig_r11->ext2->mpdcch_config_r13 = calloc(1, sizeof(struct EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13));
-    epdcch_setconfig_r11->ext2->mpdcch_config_r13->present = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13_PR_setup;
-    epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.csi_NumRepetitionCE_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__csi_NumRepetitionCE_r13_sf1;
-    epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_pdsch_HoppingConfig_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_pdsch_HoppingConfig_r13_off;
-    epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.present = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_StartSF_UESS_r13_PR_fdd_r13;
-    epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.choice.fdd_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_StartSF_UESS_r13__fdd_r13_v1;
-    epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_NumRepetition_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_NumRepetition_r13_r1;
-    epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13 = 3;
-    ASN_SEQUENCE_ADD(physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11, epdcch_setconfig_r11);
-
-    */
 
 }
 
@@ -778,7 +751,7 @@ schedule_ue_spec_br(
 						vrb_map[first_rb + 5] = 1;
 
                         if ((UE_list->UE_template[CC_id][UE_id].mpdcch_repetition_cnt == 0) &&
-                            (mpdcch_sf_condition(eNB, CC_id, frameP, subframeP, rmax, TYPEUESPEC) > 0))
+                            (mpdcch_sf_condition(eNB, CC_id, frameP, subframeP, rmax, TYPEUESPEC,UE_id) > 0))
 						{
 							// MPDCCH configuration for RAR
 							dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
@@ -1393,7 +1366,7 @@ schedule_ue_spec_br(
 						vrb_map[first_rb + 5] = 1;
 
                         if ((UE_list->UE_template[CC_id][UE_id].mpdcch_repetition_cnt == 0) &&
-                            (mpdcch_sf_condition(eNB, CC_id, frameP, subframeP, rmax, TYPEUESPEC) > 0))
+                            (mpdcch_sf_condition(eNB, CC_id, frameP, subframeP, rmax, TYPEUESPEC,UE_id) > 0))
 						{
 							// MPDCCH configuration for RAR
 							dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];

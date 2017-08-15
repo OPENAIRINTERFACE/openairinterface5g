@@ -486,9 +486,13 @@ int get_numnarrowbandbits(long dl_Bandwidth) {
 int startSF_fdd_RA_times2[8] = {2,3,4,5,8,10,16,20};
 int startSF_tdd_RA[7]        = {1,2,4,5,8,10,20};
 
-int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t subframeP,int rmax,MPDCCH_TYPES_t mpdcch_type) {
+int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t subframeP,int rmax,MPDCCH_TYPES_t mpdcch_type,int UE_id) {
 
   struct PRACH_ConfigSIB_v1310 *ext4_prach = eNB->common_channels[CC_id].radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
+
+  EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11= eNB->UE_list ->UE_template[CC_id][UE_id].physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11->list.array[0] ;
+
+
   int T;
 
   switch (mpdcch_type) {
@@ -513,7 +517,14 @@ int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t 
     AssertFatal(1==0,"MPDCCH Type 2A not handled yet\n");
     break;
   case TYPEUESPEC:
-    AssertFatal(1==0,"MPDCCH Type UESPEC not handled yet\n");
+      AssertFatal(epdcch_setconfig_r11 != NULL," epdcch_setconfig_r11 is null for UE specific \n");
+      AssertFatal(epdcch_setconfig_r11->ext2 != NULL," ext2 doesn't exist in epdcch config ' \n");
+
+      if (eNB->common_channels[CC_id].tdd_Config==NULL) //FDD
+        T = rmax*startSF_fdd_RA_times2[epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.choice.fdd_r13]>>1;
+      else //TDD
+        T = rmax*startSF_tdd_RA[epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.choice.tdd_r13];
+
     break;
   default:
     return(0);
