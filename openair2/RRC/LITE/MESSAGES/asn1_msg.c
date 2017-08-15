@@ -653,21 +653,29 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
               sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = NULL;
           }
 
-          sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13 = calloc(1, sizeof(SystemInfoValueTagList_r13_t));
-          SystemInfoValueTagSI_r13_t systemInfoValueTagSi_r13;
 
           int num_system_info_value_tag = configuration->system_info_value_tag_SI_size[CC_id];
-          for (index = 0; index < num_system_info_value_tag; ++index)
+          if (num_system_info_value_tag > 0)
           {
-              if (configuration->systemInfoValueTagSi_r13[CC_id][index])
+              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13 = calloc(1, sizeof(SystemInfoValueTagList_r13_t));
+              SystemInfoValueTagSI_r13_t systemInfoValueTagSi_r13;
+              for (index = 0; index < num_system_info_value_tag; ++index)
               {
-                  systemInfoValueTagSi_r13 = configuration->systemInfoValueTagSi_r13[CC_id][index];
+                  if (configuration->systemInfoValueTagSi_r13[CC_id][index])
+                  {
+                      systemInfoValueTagSi_r13 = configuration->systemInfoValueTagSi_r13[CC_id][index];
+                  }
+                  else
+                  {
+                      systemInfoValueTagSi_r13 = 0;
+                  }
+                  ASN_SEQUENCE_ADD(&sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13->list, &systemInfoValueTagSi_r13);
               }
-              else
-              {
-                  systemInfoValueTagSi_r13 = 0;
-              }
-              ASN_SEQUENCE_ADD(&sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13->list, &systemInfoValueTagSi_r13);
+
+          }
+          else
+          {
+              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13 = NULL;
           }
 
       }

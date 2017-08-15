@@ -2579,18 +2579,27 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                 }
 
                 system_info_value_tag_SI_list = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_SYSTEM_INFO_VALUE_TAG_LIST);
-                int num_system_info = config_setting_length(system_info_value_tag_SI_list);
+                int num_system_info;
+                if (system_info_value_tag_SI_list != NULL)
+                {
+                    num_system_info = config_setting_length(system_info_value_tag_SI_list);
+                    for (sys_info_idx = 0; sys_info_idx < num_system_info; ++sys_info_idx)
+                    {
+                        system_info_value_tag_SI = config_setting_get_elem(system_info_value_tag_SI_list, sys_info_idx);
+                        if ( !(config_setting_lookup_int(system_info_value_tag_SI, ENB_CONFIG_STRING_SYSTEM_INFO_VALUE_TAG_SI_R13, &systemInfoValueTagSi_r13)) )
+                        {
+                            AssertFatal (0, "Failed to parse eNB configuration file %s, system info value tag %d!\n", RC.config_file_name, nb_cc++);
+                        }
+                        RRC_CONFIGURATION_REQ (msg_p).systemInfoValueTagSi_r13[j][sys_info_idx] = systemInfoValueTagSi_r13;
+                    }
+                }
+                else
+                {
+                    num_system_info = 0;
+                }
                 RRC_CONFIGURATION_REQ (msg_p).system_info_value_tag_SI_size[j] = num_system_info;
 
-                for (sys_info_idx = 0; sys_info_idx < num_system_info; ++sys_info_idx)
-                {
-                  system_info_value_tag_SI = config_setting_get_elem(system_info_value_tag_SI_list, sys_info_idx);
-                  if ( !(config_setting_lookup_int(system_info_value_tag_SI, ENB_CONFIG_STRING_SYSTEM_INFO_VALUE_TAG_SI_R13, &systemInfoValueTagSi_r13)) )
-                  {
-                    AssertFatal (0, "Failed to parse eNB configuration file %s, system info value tag %d!\n", RC.config_file_name, nb_cc++);
-                  }
-                  RRC_CONFIGURATION_REQ (msg_p).systemInfoValueTagSi_r13[j][sys_info_idx] = systemInfoValueTagSi_r13;
-                }
+
 
 
                 rach_ce_level_info_r13_list = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_RACH_CE_LEVEL_INFO_LIST);
