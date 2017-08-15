@@ -199,8 +199,10 @@ schedule_SIB1_BR(
     if ((frameP&1023) < 200) LOG_I(MAC,"[eNB %d] Frame %d Subframe %d: SIB1_BR->DLSCH CC_id %d, Received %d bytes, scheduling on NB %d (i %d,m %d,N_S_NB %d)  rvidx %d\n",module_idP,frameP,subframeP,CC_id,bcch_sdu_length,n_NB,i,m,N_S_NB,rvidx);
     
     // allocate all 6 PRBs in narrowband for SIB1_BR
-    first_rb = n_NB*6;
-    vrb_map[first_rb]   = 1;
+
+    first_rb = narrowband_to_first_rb(cc,n_NB);
+
+    vrb_map[first_rb] = 1;
     vrb_map[first_rb+1] = 1;
     vrb_map[first_rb+2] = 1;
     vrb_map[first_rb+3] = 1;
@@ -385,11 +387,11 @@ schedule_SI_BR(
 			bcch_sdu_length,(int)(si_TBS_r13>>3),(int)schedulingInfoList_BR_r13->list.array[i]->si_TBS_r13);
 
 	    // allocate all 6 PRBs in narrowband for SIB1_BR
-	    first_rb = (si_Narrowband_r13-1)*6;
 
 	    // check that SIB1 didn't take this narrowband
 	    if (vrb_map[first_rb] > 0) continue;
 
+	    first_rb = narrowband_to_first_rb(cc,si_Narrowband_r13);
 	    vrb_map[first_rb]   = 1;
 	    vrb_map[first_rb+1] = 1;
 	    vrb_map[first_rb+2] = 1;

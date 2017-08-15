@@ -524,7 +524,35 @@ int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t 
 
 }
 
+int narrowband_to_first_rb(COMMON_channels_t *cc, int nb_index) {
 
+  switch (cc->mib->message.dl_Bandwidth) {
+  case 0: // 6 PRBs, N_NB=1, i_0=0
+    return(0);
+    break;
+  case 3: // 50 PRBs, N_NB=8, i_0=1
+    return((int)(1+(6*nb_index)));
+    break;
+  case 5: // 100 PRBs, N_NB=16, i_0=2
+    return((int)(2+(6*nb_index)));
+    break;
+  case 1: // 15 PRBs  N_NB=2, i_0=1
+    if (nb_index>0) return(1);
+    else            return(0);
+    break;
+  case 2: // 25 PRBs, N_NB=4, i_0=0
+    if (nb_index>1) return(1+(6*nb_index));
+    else            return((6*nb_index));
+    break;
+  case 4: // 75 PRBs, N_NB=12, i_0=1
+    if (nb_index>5) return(2+(6*nb_index));
+    else            return(1+(6*nb_index));
+    break;
+  default:
+    AssertFatal(1==0,"Impossible dl_Bandwidth %d\n",cc->mib->message.dl_Bandwidth);
+    break;
+  }
+}
 #endif
 
 //------------------------------------------------------------------------------

@@ -209,7 +209,7 @@ void generate_Msg2(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
     // get narrowband according to higher-layer config 
     num_nb = p[RA_template->rach_resource_type-1]->mpdcch_NarrowbandsToMonitor_r13.list.count;
     RA_template->msg2_narrowband = *p[RA_template->rach_resource_type-1]->mpdcch_NarrowbandsToMonitor_r13.list.array[RA_template->preamble_index%num_nb];
-    first_rb = RA_template->msg2_narrowband*6;
+    first_rb = narrowband_to_first_rb(&cc[CC_idP],RA_template->msg2_narrowband);
     
     if ((RA_template->msg2_mpdcch_repetition_cnt == 0) &&
 	(mpdcch_sf_condition(eNB,CC_idP,frameP,subframeP,rmax,TYPE2)>0)){
@@ -555,8 +555,8 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
     // get actual repetition count from Table 9.1.5-3
     reps           = (rmax<=8)?(1<<rep):(rmax>>(3-rep));
     // get first narrowband
-    first_rb = RA_template->msg34_narrowband*6;
-    
+    first_rb = narrowband_to_first_rb(&cc[CC_idP],RA_template->msg34_narrowband);
+
     if ((RA_template->msg4_mpdcch_repetition_cnt == 0) &&
 	(mpdcch_sf_condition(eNB,CC_idP,frameP,subframeP,rmax,TYPE2)>0)){
       // MPDCCH configuration for RAR
