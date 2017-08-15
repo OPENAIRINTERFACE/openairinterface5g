@@ -310,7 +310,10 @@ void generate_Msg2(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = 1;
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = 1;
 	//	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ; 
-	
+
+	// Rel10 fields
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10.pdsch_start                           = cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13;
+	// Rel13 fields
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type                               = (RA_template->rach_resource_type < 3) ? 1 : 2;;
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type                    = 2;  // not SI message
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = (10*frameP)+subframeP;
@@ -658,6 +661,8 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = 1;
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = 1;
 	//	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ; 
+
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10.pdsch_start                           = cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13;
 	
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type                               = (RA_template->rach_resource_type < 3) ? 1 : 2;
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type                    = 2;  // not SI message

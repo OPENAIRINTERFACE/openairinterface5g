@@ -705,8 +705,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 		      LTE_eNB_DLSCH_t *dlsch, 
 		      LTE_eNB_DLSCH_t *dlsch1,
 		      LTE_eNB_UE_stats *ue_stats,
-		      int ra_flag,
-		      int num_pdcch_symbols) {
+		      int ra_flag) {
 
   int frame=proc->frame_tx;
   int subframe=proc->subframe_tx;
@@ -717,15 +716,15 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 
   if (frame < 20) {
     LOG_I(PHY,
-	  "[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", num_pdcch_symbols %d, G %d, nb_rb %"PRIu16", rb0 %x, rb1 %x, TBS %"PRIu16", pmi_alloc %"PRIx64", rv %"PRIu8" (round %"PRIu8")\n",
+	  "[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", pdsch_start %d, G %d, nb_rb %"PRIu16", rb0 %x, rb1 %x, TBS %"PRIu16", pmi_alloc %"PRIx64", rv %"PRIu8" (round %"PRIu8")\n",
 	  eNB->Mod_id, dlsch->rnti,harq_pid,
-	  frame, subframe, input_buffer_length, num_pdcch_symbols,
+	  frame, subframe, input_buffer_length, dlsch_harq->pdsch_start,
 	  get_G(fp,
 		dlsch_harq->nb_rb,
 		dlsch_harq->rb_alloc,
 		dlsch_harq->Qm,
 		dlsch_harq->Nl,
-		num_pdcch_symbols,
+		dlsch_harq->pdsch_start,
 		frame,
 		subframe,
 		dlsch_harq->mimo_mode==TM7?7:0),
@@ -751,7 +750,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 			   dlsch_harq->rb_alloc,
 			   dlsch_harq->Qm,
 			   dlsch_harq->Nl,
-			   num_pdcch_symbols,
+			   dlsch_harq->pdsch_start,
 			   frame,
 			   subframe,
 			   dlsch_harq->mimo_mode==TM7?7:0),
@@ -857,7 +856,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
   start_meas(&eNB->dlsch_encoding_stats);
   eNB->te(eNB,
 	  dlsch_harq->pdu,
-	  num_pdcch_symbols,
+	  dlsch_harq->pdsch_start,
 	  dlsch,
 	  frame,subframe,
 	  &eNB->dlsch_rate_matching_stats,
@@ -875,10 +874,11 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 			 dlsch_harq->rb_alloc,
 			 dlsch_harq->Qm,
 			 dlsch_harq->Nl,
-			 num_pdcch_symbols,
+			 dlsch_harq->pdsch_start,
 			 frame,subframe,
 			 0),
 		   0,
+		   frame,
 		   subframe<<1);
   stop_meas(&eNB->dlsch_scrambling_stats);
   
@@ -889,7 +889,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 		   eNB->common_vars.txdataF,
 		   AMP,
 		   subframe,
-		   num_pdcch_symbols,
+		   dlsch_harq->pdsch_start,
 		   dlsch,
 		   dlsch1);
   
@@ -991,6 +991,9 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 		       uint8_t *sdu) {
 
   nfapi_dl_config_dlsch_pdu_rel8_t *rel8 = &dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8;
+#ifndef Rel8
+  nfapi_dl_config_dlsch_pdu_rel10_t *rel10 = &dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10;
+#endif
 #ifdef Rel14
   nfapi_dl_config_dlsch_pdu_rel13_t *rel13 = &dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13;
 #endif
@@ -1017,6 +1020,12 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   dlsch1_harq     = dlsch1->harq_processes[harq_pid];
   AssertFatal(dlsch0_harq!=NULL,"dlsch_harq is null\n");
 
+
+  dlsch0_harq->pdsch_start = eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols;
+
+
+
+
   LOG_D(PHY,"NFAPI: frame %d, subframe %d: programming dlsch, rnti %x, UE_id %d, harq_pid %d\n",
 	proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid);
   if (codeword_index == 0) dlsch0_harq->pdu                    = sdu;
@@ -1025,10 +1034,12 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 #ifdef Rel14
   dlsch0->sib1_br_flag=0;
   if ((rel13->pdsch_payload_type <2) && (rel13->ue_type>0)) { // this is a BR/CE UE and SIB1-BR/SI-BR
-    dlsch0->rnti    = 0xFFFF;
-    dlsch0->Kmimo   = 1;
-    dlsch0->Mdlharq = 4; 
-    dlsch0->Nsoft   = 25344;
+    dlsch0->rnti             = 0xFFFF;
+    dlsch0->Kmimo            = 1;
+    dlsch0->Mdlharq          = 4; 
+    dlsch0->Nsoft            = 25344;
+    dlsch0->i0               = rel13->initial_transmission_sf_io;
+    dlsch0_harq->pdsch_start = rel10->pdsch_start;
 
     if (rel13->pdsch_payload_type == 0) dlsch0->sib1_br_flag=1;
 
@@ -1470,13 +1481,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 			 dlsch0,
 			 dlsch1,
 			 &eNB->UE_stats[(uint32_t)UE_id],
-			 0,
-#ifdef Rel14
-			 dlsch0->sib1_br_flag==0 ? num_pdcch_symbols : 3
-#else
-			 num_pdcch_symbols
-#endif
-);
+			 0);
 
 
       }

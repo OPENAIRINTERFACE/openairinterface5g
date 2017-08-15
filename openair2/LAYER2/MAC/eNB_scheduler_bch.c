@@ -196,7 +196,7 @@ schedule_SIB1_BR(
 
     AssertFatal(bcch_sdu_length <= TBS, "length returned by RRC %d is not compatible with the TBS %d from MIB\n",bcch_sdu_length,TBS);
 
-    if ((frameP&1023) < 200) LOG_I(MAC,"[eNB %d] Frame %d Subframe %d: SIB1_BR->DLSCH CC_id %d, Received %d bytes, scheduling on NB %d (i %d,m %d,N_S_NB %d)  rvidx %d\n",module_idP,frameP,subframeP,CC_id,bcch_sdu_length,n_NB,i,m,N_S_NB,rvidx);
+    if ((frameP&1023) < 200) LOG_D(MAC,"[eNB %d] Frame %d Subframe %d: SIB1_BR->DLSCH CC_id %d, Received %d bytes, scheduling on NB %d (i %d,m %d,N_S_NB %d)  rvidx %d\n",module_idP,frameP,subframeP,CC_id,bcch_sdu_length,n_NB,i,m,N_S_NB,rvidx);
     
     // allocate all 6 PRBs in narrowband for SIB1_BR
 
@@ -235,6 +235,8 @@ schedule_SIB1_BR(
     dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode                      = (cc->p_eNB==1 ) ? 1 : 2;
     dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = 1;
     dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = 1;
+    // Rel10 fields
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10.pdsch_start                           = 3;
     // Rel13 fields
     dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type                               = 1; // CEModeA UE
     dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type                    = 0; // SIB1-BR
@@ -311,7 +313,7 @@ schedule_SI_BR(
   nfapi_dl_config_request_body_t          *dl_req;
   int                                     i;
   int                                     rvidx;
-
+  int                                     absSF = (frameP*10)+subframeP;
 
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
@@ -362,7 +364,7 @@ schedule_SI_BR(
 
 	// check if the SI is to be scheduled now
 	int period_in_sf              = 80<<si_Periodicity; // 2^i * 80 subframes, note: si_Periodicity is 2^i * 80ms
-	int sf_mod_period             = ((frameP*10)+subframeP)%period_in_sf;
+	int sf_mod_period             = absSF%period_in_sf;
 	int k                         = sf_mod_period&3;
 	// Note: definition of k and rvidx from 36.321 section 5.3.1
 	rvidx = (((3*k)>>1) + (k&1))&3;
@@ -398,7 +400,7 @@ schedule_SI_BR(
 	    vrb_map[first_rb+4] = 1;
 	    vrb_map[first_rb+5] = 1;
 
-	    if ((frameP%1000) < 200) LOG_D(MAC,"[eNB %d] Frame %d Subframe %d: SI_BR->DLSCH CC_id %d, Narrowband %d rvidx %d (sf_mod_period %d : si_WindowLength_BR_r13 %d : si_RepetitionPattern_r13 %d) bcch_sdu_length %d\n",
+	    if ((frameP&1023) < 200) LOG_D(MAC,"[eNB %d] Frame %d Subframe %d: SI_BR->DLSCH CC_id %d, Narrowband %d rvidx %d (sf_mod_period %d : si_WindowLength_BR_r13 %d : si_RepetitionPattern_r13 %d) bcch_sdu_length %d\n",
 					   module_idP,frameP,subframeP,CC_id,si_Narrowband_r13-1,rvidx,
 					   sf_mod_period,si_WindowLength_BR_r13,si_RepetitionPattern_r13,
 					   bcch_sdu_length);	    
@@ -432,10 +434,12 @@ schedule_SI_BR(
 	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode                      = (cc->p_eNB==1 ) ? 1 : 2;
 	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = 1;
 	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = 1;
+	    // Rel10 fields (for PDSCH starting symbol)
+	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10.pdsch_start                           = cc[CC_id].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13;
 	    // Rel13 fields
 	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type                               = 1; // CEModeA UE
 	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type                    = 1; // SI-BR
-	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = 0xFFFF; // absolute SF
+	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = absSF - sf_mod_period; 
 	    
 	    //	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ; 
 	    dl_req->number_pdu++;
@@ -757,7 +761,7 @@ schedule_SI(
 
 #ifdef Rel14
   schedule_SIB1_BR(module_idP,frameP,subframeP);
-  //  schedule_SI_BR(module_idP,frameP,subframeP);
+  schedule_SI_BR(module_idP,frameP,subframeP);
 #endif
 
   stop_meas(&eNB->schedule_si);
