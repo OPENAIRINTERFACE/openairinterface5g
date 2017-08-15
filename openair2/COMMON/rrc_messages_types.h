@@ -203,14 +203,14 @@ typedef struct RrcConfigurationReq_s {
   int             scheduling_info_br_size   [MAX_NUM_CCs];
 //  end +kogo
 
-  long			  si_WindowLength_BR_r13                    [MAX_NUM_CCs];
-  long			  si_RepetitionPattern_r13                  [MAX_NUM_CCs];
+  long			  si_WindowLength_BR_r13                       [MAX_NUM_CCs];
+  long			  si_RepetitionPattern_r13                     [MAX_NUM_CCs];
   BOOLEAN_t		 * fdd_DownlinkOrTddSubframeBitmapBR_r13     [MAX_NUM_CCs];
-  uint64_t		  fdd_DownlinkOrTddSubframeBitmapBR_val_r13 [MAX_NUM_CCs];
-  uint16_t		  fdd_UplinkSubframeBitmapBR_r13            [MAX_NUM_CCs];
-  long			  startSymbolBR_r13                         [MAX_NUM_CCs];
-  long			  si_HoppingConfigCommon_r13                [MAX_NUM_CCs];
-  long*			  si_ValidityTime_r13                       [MAX_NUM_CCs];
+  uint64_t		  fdd_DownlinkOrTddSubframeBitmapBR_val_r13  [MAX_NUM_CCs];
+  uint16_t		  *fdd_UplinkSubframeBitmapBR_r13            [MAX_NUM_CCs];
+  long			  startSymbolBR_r13                            [MAX_NUM_CCs];
+  long			  si_HoppingConfigCommon_r13                   [MAX_NUM_CCs];
+  long*			  si_ValidityTime_r13                          [MAX_NUM_CCs];
 
 //  +kogo
   long            systemInfoValueTagSi_r13      [MAX_NUM_CCs][10];
