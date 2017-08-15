@@ -587,30 +587,39 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 	    ASN_SEQUENCE_ADD(&sib1_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13->list, schedulinginfo_br_13);
           }
 
-          sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13
+
+          if (configuration->fdd_DownlinkOrTddSubframeBitmapBR_r13[CC_id])
+          {
+              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13
                   = calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13));
-          memset(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13, 0,
+              memset(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13, 0,
                  sizeof(sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13)));
 
-          if (configuration->bandwidthReducedAccessRelatedInfo_r13[CC_id])
-          {
-              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
-                      = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
+              if (*configuration->fdd_DownlinkOrTddSubframeBitmapBR_r13[CC_id])
+              {
+                  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
+                         = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
 
-              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf = calloc(2, sizeof(uint8_t));
-              memmove(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf, &configuration->fdd_DownlinkOrTddSubframeBitmapBR_val_r13[CC_id], 2 * sizeof(uint8_t));
-              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.size = 2;
-              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.bits_unused = 6;
+                  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf = calloc(2, sizeof(uint8_t));
+                  memmove(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf, &configuration->fdd_DownlinkOrTddSubframeBitmapBR_val_r13[CC_id], 2 * sizeof(uint8_t));
+                  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.size = 2;
+                  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.bits_unused = 6;
+              }
+              else
+              {
+                  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
+                        = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
+
+                  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf = calloc(5, sizeof(uint8_t));
+                  memmove(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf, &configuration->fdd_DownlinkOrTddSubframeBitmapBR_val_r13[CC_id], 5 * sizeof(uint8_t));
+                  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.size = 5;
+                  sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.bits_unused = 0;
+              }
+
           }
           else
           {
-              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
-                      = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
-
-              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf = calloc(5, sizeof(uint8_t));
-              memmove(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf, &configuration->fdd_DownlinkOrTddSubframeBitmapBR_val_r13[CC_id], 5 * sizeof(uint8_t));
-              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.size = 5;
-              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.bits_unused = 0;
+              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13 = NULL;
           }
 
           sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13 = calloc(1, sizeof(BIT_STRING_t));

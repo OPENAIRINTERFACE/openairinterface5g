@@ -205,7 +205,7 @@ typedef struct RrcConfigurationReq_s {
 
   long			  si_WindowLength_BR_r13                    [MAX_NUM_CCs];
   long			  si_RepetitionPattern_r13                  [MAX_NUM_CCs];
-  BOOLEAN_t		  fdd_DownlinkOrTddSubframeBitmapBR_r13     [MAX_NUM_CCs];
+  BOOLEAN_t		 * fdd_DownlinkOrTddSubframeBitmapBR_r13     [MAX_NUM_CCs];
   uint64_t		  fdd_DownlinkOrTddSubframeBitmapBR_val_r13 [MAX_NUM_CCs];
   uint16_t		  fdd_UplinkSubframeBitmapBR_r13            [MAX_NUM_CCs];
   long			  startSymbolBR_r13                         [MAX_NUM_CCs];
