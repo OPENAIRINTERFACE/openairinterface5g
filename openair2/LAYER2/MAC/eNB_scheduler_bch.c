@@ -393,7 +393,7 @@ schedule_SI_BR(
 	    // check that SIB1 didn't take this narrowband
 	    if (vrb_map[first_rb] > 0) continue;
 
-	    first_rb = narrowband_to_first_rb(cc,si_Narrowband_r13);
+	    first_rb = narrowband_to_first_rb(cc,si_Narrowband_r13-1);
 	    vrb_map[first_rb]   = 1;
 	    vrb_map[first_rb+1] = 1;
 	    vrb_map[first_rb+2] = 1;
