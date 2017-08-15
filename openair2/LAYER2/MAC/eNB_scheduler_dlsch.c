@@ -425,7 +425,7 @@ void  getRepetition(UE_TEMPLATE * pue_template,unsigned int *maxRep , unsigned i
 
     AssertFatal(epdcch_setconfig_r11->ext2 && epdcch_setconfig_r11->ext2->mpdcch_config_r13 ," mpdcch config not found")  ;
 
-*maxRep = epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.csi_NumRepetitionCE_r13 ;
+*maxRep = epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_NumRepetition_r13  ;
 
     * narrowBandindex = epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13  ;
 
@@ -461,7 +461,7 @@ void  getRepetition(UE_TEMPLATE * pue_template,unsigned int *maxRep , unsigned i
 
 }
 
-/*
+
 
 void
 schedule_ue_spec_br(
@@ -601,6 +601,8 @@ schedule_ue_spec_br(
 		for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id])
 		{
 
+            if (!UE_list->UE_template[CC_id][UE_id].rach_resource_type )  // do  the following scheduling only if the UE is emtc
+                  continue ;
 
 			continue_flag = 0; // reset the flag to allow allocation for the remaining UEs
 			rnti = UE_RNTI(module_idP, UE_id);
@@ -776,26 +778,26 @@ schedule_ue_spec_br(
 						vrb_map[first_rb + 5] = 1;
 
                         if ((UE_list->UE_template[CC_id][UE_id].mpdcch_repetition_cnt == 0) &&
-							(mpdcch_sf_condition(eNB, CC_idP, frameP, subframeP, rmax, TYPEUESPEC) > 0))
+                            (mpdcch_sf_condition(eNB, CC_id, frameP, subframeP, rmax, TYPEUESPEC) > 0))
 						{
 							// MPDCCH configuration for RAR
 							dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
 							memset((void*)dl_config_pdu, 0, sizeof(nfapi_dl_config_request_pdu_t));
 							dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_MPDCCH_PDU_TYPE;
 							dl_config_pdu->pdu_size = (uint8_t)(2 + sizeof(nfapi_dl_config_mpdcch_pdu));
-							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.dci_format = (UE_template[CC_id][UE_id].rach_resource_type > 1) ? 11 : 10;
+                            dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.dci_format = (UE_list->UE_template[CC_id][UE_id].rach_resource_type > 1) ? 11 : 10;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mpdcch_narrow_band = narrowBandindex_index;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.number_of_prb_pairs = 6;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_assignment = 0; // Note: this can be dynamic
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mpdcch_tansmission_type = 1; // imposed (9.1.5 in 213) for Type 2 Common search space
-							AssertFatal(cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 != NULL,
+                            AssertFatal(cc[CC_id].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 != NULL,
 								"cc[CC_id].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 is null\n");
-							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.start_symbol = cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13;
+                            dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.start_symbol = cc[CC_id].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ecce_index = 0;  // Note: this should be dynamic
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.aggregation_level = 16; // OK for CEModeA r1-3 (9.1.5-1b) or CEModeB r1-4
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti_type = 4;  // other-RNTI
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti = rnti;
-							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ce_mode = (UE_template[CC_id][UE_id].rach_resource_type < 3) ? 1 : 2;
+                            dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ce_mode = (UE_list->UE_template[CC_id][UE_id].rach_resource_type < 3) ? 1 : 2;
                             dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.drms_scrambling_init = cc[CC_id].physCellId;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.initial_transmission_sf_io = (frameP * 10) + subframeP;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.transmission_power = 6000; // 0dB
@@ -826,7 +828,7 @@ schedule_ue_spec_br(
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.direct_indication = 0;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.total_dci_length_including_padding = 0; // this is not needed by OAI L1, but should be filled in
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.number_of_tx_antenna_ports = 1;
-							UE_template[CC_id][UE_id].mpdcch_repetition_cnt++;
+                            UE_list->UE_template[CC_id][UE_id].mpdcch_repetition_cnt++;
 							dl_req->number_pdu++;
 
 
@@ -846,31 +848,31 @@ schedule_ue_spec_br(
 								S_DL_SCHEDULED);
 
 						} //repetition_count==0 && SF condition met
-						else if (UE_template[CC_id][UE_id].msg2_mpdcch_repetition_cnt > 0)
+                        else if (UE_list->UE_template[CC_id][UE_id].mpdcch_repetition_cnt > 0)
 						{
 							// we're in a stream of repetitions
-							UE_template[CC_id][UE_id].mpdcch_repetition_cnt++;
-							if (UE_template[CC_id][UE_id].mpdcch_repetition_cnt == reps)
+                            UE_list->UE_template[CC_id][UE_id].mpdcch_repetition_cnt++;
+                            if (UE_list->UE_template[CC_id][UE_id].mpdcch_repetition_cnt == reps)
 							{
 								// this is the last mpdcch repetition
-								if (cc[CC_idP].tdd_Config == NULL) { // FDD case
+                                if (cc[CC_id].tdd_Config == NULL) { // FDD case
 																	 // wait 2 subframes for PDSCH transmission
-									if (subframeP > 7) UE_template[CC_id][UE_id].Msg2_frame = (frameP + 1) & 1023;
-									else             UE_template[CC_id][UE_id].Msg2_frame = frameP;
-									UE_template[CC_id][UE_id].Msg2_subframe = (subframeP + 2) % 10; // +2 is the "n+x" from Section 7.1.11  in 36.213
+                                    if (subframeP > 7) UE_list->UE_template[CC_id][UE_id].Msg2_frame = (frameP + 1) & 1023;
+                                    else             UE_list->UE_template[CC_id][UE_id].Msg2_frame = frameP;
+                                    UE_list->UE_template[CC_id][UE_id].Msg2_subframe = (subframeP + 2) % 10; // +2 is the "n+x" from Section 7.1.11  in 36.213
 								}
 								else {
 									AssertFatal(1 == 0, "TDD case not done yet\n");
 								}
 							} // mpdcch_repetition_count == reps
-							if ((UE_template[CC_id][UE_id].Msg2_frame == frameP) && (UE_template[CC_id][UE_id].Msg2_subframe == subframeP)) {
+                            if ((UE_list->UE_template[CC_id][UE_id].Msg2_frame == frameP) && (UE_list->UE_template[CC_id][UE_id].Msg2_subframe == subframeP)) {
 								// Program PDSCH
 
 								dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
 								memset((void*)dl_config_pdu, 0, sizeof(nfapi_dl_config_request_pdu_t));
 								dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE;
 								dl_config_pdu->pdu_size = (uint8_t)(2 + sizeof(nfapi_dl_config_dlsch_pdu));
-								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index = eNB->pdu_index[CC_idP];
+                                dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index = eNB->pdu_index[CC_id];
 								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti = rnti;
 								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type = 4;   // format 6-1A
 								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.virtual_resource_block_assignment_flag = 0;   // localized
@@ -893,7 +895,7 @@ schedule_ue_spec_br(
 								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector = 1;
 								//	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ;
 
-								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type = (UE_template[CC_id][UE_id].rach_resource_type < 3) ? 1 : 2;;
+                                dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type = (UE_list->UE_template[CC_id][UE_id].rach_resource_type < 3) ? 1 : 2;;
 								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type = 2;  // not SI message
 								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io = (10 * frameP) + subframeP;
 								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.drms_table_flag = 0;
@@ -956,6 +958,9 @@ schedule_ue_spec_br(
 				rlc_status.bytes_in_buffer = 0;
 				// Now check RLC information to compute number of required RBs
 				// get maximum TBS size for RLC request
+
+
+
 				TBS = 408;
 				// check first for RLC data on DCCH
 				// add the length for  all the control elements (timing adv, drx, etc) : header + payload
@@ -1155,9 +1160,12 @@ schedule_ue_spec_br(
 					//else {
 					//	nb_rb = min_rb_unit[CC_id];
 					//}
+
+                    //[khalid]: maximum MCS (7 or 15) depend on the DCI formate used from UE_list->UE_template[CC_id [UE_id].rach_resource_type
+
 					mcs = 4;
 					nb_rb = 6;
-					
+
 
 					TBS = 408;//get_TBS_DL(mcs, nb_rb);
 
@@ -1368,7 +1376,7 @@ schedule_ue_spec_br(
 						unsigned int first_rb, rep, reps;
 
 						// rmax from RRC connection setup
-						getRepetition(&UE_template[CC_id][UE_id], &rmax, &narrowBandindex_index, &first_rb);
+                        getRepetition(&UE_list->UE_template[CC_id][UE_id], &rmax, &narrowBandindex_index, &first_rb);
 
 						// choose r3 by default for RAR (Table 9.1.5-5)
 						rep = 2;
@@ -1384,28 +1392,28 @@ schedule_ue_spec_br(
 						vrb_map[first_rb + 4] = 1;
 						vrb_map[first_rb + 5] = 1;
 
-						if ((UE_template[CC_id][UE_id].mpdcch_repetition_cnt == 0) &&
-							(mpdcch_sf_condition(eNB, CC_idP, frameP, subframeP, rmax, TYPEUESPEC) > 0))
+                        if ((UE_list->UE_template[CC_id][UE_id].mpdcch_repetition_cnt == 0) &&
+                            (mpdcch_sf_condition(eNB, CC_id, frameP, subframeP, rmax, TYPEUESPEC) > 0))
 						{
 							// MPDCCH configuration for RAR
 							dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
 							memset((void*)dl_config_pdu, 0, sizeof(nfapi_dl_config_request_pdu_t));
 							dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_MPDCCH_PDU_TYPE;
 							dl_config_pdu->pdu_size = (uint8_t)(2 + sizeof(nfapi_dl_config_mpdcch_pdu));
-							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.dci_format = (UE_template[CC_id][UE_id].rach_resource_type > 1) ? 11 : 10;
+                            dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.dci_format = (UE_list->UE_template[CC_id][UE_id].rach_resource_type > 1) ? 11 : 10;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mpdcch_narrow_band = narrowBandindex_index;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.number_of_prb_pairs = 6;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_assignment = 0; // Note: this can be dynamic
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mpdcch_tansmission_type = 1; // imposed (9.1.5 in 213) for Type 2 Common search space
-							AssertFatal(cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 != NULL,
+                            AssertFatal(cc[CC_id].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 != NULL,
 								"cc[CC_id].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 is null\n");
-							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.start_symbol = cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13;
+                            dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.start_symbol = cc[CC_id].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ecce_index = 0;  // Note: this should be dynamic
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.aggregation_level = 16; // OK for CEModeA r1-3 (9.1.5-1b) or CEModeB r1-4
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti_type = 4;  // other-RNTI
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti = rnti;
-							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ce_mode = (UE_template[CC_id][UE_id].rach_resource_type < 3) ? 1 : 2;
-							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.drms_scrambling_init = cc[CC_idP].physCellId;
+                            dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ce_mode = (UE_list->UE_template[CC_id][UE_id].rach_resource_type < 3) ? 1 : 2;
+                            dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.drms_scrambling_init = cc[CC_id].physCellId;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.initial_transmission_sf_io = (frameP * 10) + subframeP;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.transmission_power = 6000; // 0dB
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_coding = getRIV(6, 0, 6);  // Note: still to be checked if it should not be (getRIV(N_RB_DL,first_rb,6)) : Check nFAPI specifications and what is done L1 with this parameter
@@ -1435,7 +1443,7 @@ schedule_ue_spec_br(
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.direct_indication = 0;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.total_dci_length_including_padding = 0; // this is not needed by OAI L1, but should be filled in
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.number_of_tx_antenna_ports = 1;
-							UE_template[CC_id][UE_id].mpdcch_repetition_cnt++;
+                            UE_list->UE_template[CC_id][UE_id].mpdcch_repetition_cnt++;
 							dl_req->number_pdu++;
 
 
@@ -1458,31 +1466,31 @@ schedule_ue_spec_br(
 							eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
 
 						} //repetition_count==0 && SF condition met
-						else if (UE_template[CC_id][UE_id].msg2_mpdcch_repetition_cnt > 0) 
+                        else if (UE_list->UE_template[CC_id][UE_id].mpdcch_repetition_cnt > 0)
 						{
 							// we're in a stream of repetitions
-							UE_template[CC_id][UE_id].mpdcch_repetition_cnt++;
-							if (UE_template[CC_id][UE_id].mpdcch_repetition_cnt == reps)
+                            UE_list->UE_template[CC_id][UE_id].mpdcch_repetition_cnt++;
+                            if (UE_list->UE_template[CC_id][UE_id].mpdcch_repetition_cnt == reps)
 							{ 
 								// this is the last mpdcch repetition
-								if (cc[CC_idP].tdd_Config == NULL) { // FDD case
+                                if (cc[CC_id].tdd_Config == NULL) { // FDD case
 																	 // wait 2 subframes for PDSCH transmission
-									if (subframeP > 7) UE_template[CC_id][UE_id].Msg2_frame = (frameP + 1) & 1023;
-									else             UE_template[CC_id][UE_id].Msg2_frame = frameP;
-									UE_template[CC_id][UE_id].Msg2_subframe = (subframeP + 2) % 10; // +2 is the "n+x" from Section 7.1.11  in 36.213
+                                    if (subframeP > 7) UE_list->UE_template[CC_id][UE_id].Msg2_frame = (frameP + 1) & 1023;
+                                    else             UE_list->UE_template[CC_id][UE_id].Msg2_frame = frameP;
+                                    UE_list->UE_template[CC_id][UE_id].Msg2_subframe = (subframeP + 2) % 10; // +2 is the "n+x" from Section 7.1.11  in 36.213
 								}
 								else {
 									AssertFatal(1 == 0, "TDD case not done yet\n");
 								}
 							} // mpdcch_repetition_count == reps
-							if ((UE_template[CC_id][UE_id].Msg2_frame == frameP) && (UE_template[CC_id][UE_id].Msg2_subframe == subframeP)) {
+                            if ((UE_list->UE_template[CC_id][UE_id].Msg2_frame == frameP) && (UE_list->UE_template[CC_id][UE_id].Msg2_subframe == subframeP)) {
 								// Program PDSCH
 								
 								dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
 								memset((void*)dl_config_pdu, 0, sizeof(nfapi_dl_config_request_pdu_t));
 								dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE;
 								dl_config_pdu->pdu_size = (uint8_t)(2 + sizeof(nfapi_dl_config_dlsch_pdu));
-								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index = eNB->pdu_index[CC_idP];
+                                dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index = eNB->pdu_index[CC_id];
 								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti = rnti;
 								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type = 4;   // format 6-1A
 								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.virtual_resource_block_assignment_flag = 0;   // localized
@@ -1505,7 +1513,7 @@ schedule_ue_spec_br(
 								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector = 1;
 								//	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ;
 
-								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type = (UE_template[CC_id][UE_id].rach_resource_type < 3) ? 1 : 2;;
+                                dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type = (UE_list->UE_template[CC_id][UE_id].rach_resource_type < 3) ? 1 : 2;;
 								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type = 2;  // not SI message
 								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io = (10 * frameP) + subframeP;
 								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.drms_table_flag = 0;
@@ -1574,7 +1582,7 @@ schedule_ue_spec_br(
 
 }
 
-*/
+
 			
 //------------------------------------------------------------------------------
 void
