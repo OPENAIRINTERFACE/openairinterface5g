@@ -874,42 +874,12 @@ schedule_ue_spec_br(
 								dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.drms_table_flag = 0;
 								dl_req->number_pdu++;
 
-								// Program UL processing for Msg3, same as regular LTE
-								//get_Msg3alloc(&cc[CC_idP], subframeP, frameP, &RA_template->Msg3_frame, &RA_template->Msg3_subframe);
 
-
-								//fill_rar_br(eNB, CC_idP, RA_template, frameP, subframeP, cc[CC_idP].RAR_pdu.payload, RA_template->rach_resource_type - 1);
-								//// DL request
-								//eNB->TX_req[CC_idP].sfn_sf = (frameP << 3) + subframeP;
-								//TX_req = &eNB->TX_req[CC_idP].tx_request_body.tx_pdu_list[eNB->TX_req[CC_idP].tx_request_body.number_of_pdus];
-								//TX_req->pdu_length = 7;  // This should be changed if we have more than 1 preamble
-								//TX_req->pdu_index = eNB->pdu_index[CC_idP]++;
-								//TX_req->num_segments = 1;
-								//TX_req->segments[0].segment_length = 7;
-								//TX_req->segments[0].segment_data = cc[CC_idP].RAR_pdu.payload;
-								//eNB->TX_req[CC_idP].tx_request_body.number_of_pdus++;
 							}
 						}
 
 					}
 
-
-
-					//dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
-					//memset((void*)dl_config_pdu, 0, sizeof(nfapi_dl_config_request_pdu_t));
-					//dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE;
-					//dl_config_pdu->pdu_size = (uint8_t)(2 + sizeof(nfapi_dl_config_dci_dl_pdu));
-					//dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format = NFAPI_DL_DCI_FORMAT_1;
-					//dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level = get_aggregation(get_bw_index(module_idP, CC_id), eNB_UE_stats->dl_cqi, format1);
-				   // dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti = rnti;
-					//dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type = 1;    // CRNTI : see Table 4-10 from SCF082 - nFAPI specifications
-					//dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power = 6000; // equal to RS power
-
-					//dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process = harq_pid;
-					//dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc = 1; // dont adjust power when retransmitting
-				   // dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1 = UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
-				  //  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1 = UE_list->UE_template[CC_id][UE_id].oldmcs1[harq_pid];
-				   // dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1 = round & 3;
 
 
 					

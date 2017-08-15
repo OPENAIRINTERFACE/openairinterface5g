@@ -653,21 +653,29 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
               sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = NULL;
           }
 
-          sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13 = calloc(1, sizeof(SystemInfoValueTagList_r13_t));
-          SystemInfoValueTagSI_r13_t systemInfoValueTagSi_r13;
 
           int num_system_info_value_tag = configuration->system_info_value_tag_SI_size[CC_id];
-          for (index = 0; index < num_system_info_value_tag; ++index)
+          if (num_system_info_value_tag > 0)
           {
-              if (configuration->systemInfoValueTagSi_r13[CC_id][index])
+              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13 = calloc(1, sizeof(SystemInfoValueTagList_r13_t));
+              SystemInfoValueTagSI_r13_t systemInfoValueTagSi_r13;
+              for (index = 0; index < num_system_info_value_tag; ++index)
               {
-                  systemInfoValueTagSi_r13 = configuration->systemInfoValueTagSi_r13[CC_id][index];
+                  if (configuration->systemInfoValueTagSi_r13[CC_id][index])
+                  {
+                      systemInfoValueTagSi_r13 = configuration->systemInfoValueTagSi_r13[CC_id][index];
+                  }
+                  else
+                  {
+                      systemInfoValueTagSi_r13 = 0;
+                  }
+                  ASN_SEQUENCE_ADD(&sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13->list, &systemInfoValueTagSi_r13);
               }
-              else
-              {
-                  systemInfoValueTagSi_r13 = 0;
-              }
-              ASN_SEQUENCE_ADD(&sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13->list, &systemInfoValueTagSi_r13);
+
+          }
+          else
+          {
+              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13 = NULL;
           }
 
       }
@@ -1170,7 +1178,28 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->radioResourceConfigCommon.ext4->bcch_Config_v1310 = calloc(1, sizeof(BCCH_Config_v1310_t));
   memset((*sib2)->radioResourceConfigCommon.ext4->bcch_Config_v1310, 0, sizeof(BCCH_Config_v1310_t));
   (*sib2)->radioResourceConfigCommon.ext4->bcch_Config_v1310->modificationPeriodCoeff_v1310 = BCCH_Config_v1310__modificationPeriodCoeff_v1310_n64;
-  (*sib2)->radioResourceConfigCommon.ext4->pcch_Config_v1310 = NULL;
+
+  if (configuration->pcch_config_v1310)
+  {
+      (*sib2)->radioResourceConfigCommon.ext4->pcch_Config_v1310 = CALLOC(1, sizeof(PCCH_Config_v1310_t));
+      (*sib2)->radioResourceConfigCommon.ext4->pcch_Config_v1310->paging_narrowBands_r13 = configuration->paging_narrowbands_r13[CC_id];
+      (*sib2)->radioResourceConfigCommon.ext4->pcch_Config_v1310->mpdcch_NumRepetition_Paging_r13 = configuration->mpdcch_numrepetition_paging_r13[CC_id];
+      if (configuration->nb_v1310[CC_id])
+      {
+          (*sib2)->radioResourceConfigCommon.ext4->pcch_Config_v1310->nB_v1310 = CALLOC(1, sizeof(long));
+          *(*sib2)->radioResourceConfigCommon.ext4->pcch_Config_v1310->nB_v1310 = *configuration->nb_v1310[CC_id];
+      }
+      else
+      {
+          (*sib2)->radioResourceConfigCommon.ext4->pcch_Config_v1310->nB_v1310 = NULL;
+      }
+  }
+  else
+  {
+      (*sib2)->radioResourceConfigCommon.ext4->pcch_Config_v1310 = NULL;
+  }
+
+
   (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13 = NULL;
   (*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310 = NULL;
   (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310 = NULL;
@@ -1273,8 +1302,14 @@ uint8_t do_SIB23(uint8_t Mod_id,
               prach_parametersce_r13->prach_HoppingConfig_r13 = PRACH_ParametersCE_r13__prach_HoppingConfig_r13_off;
           }
 
-          long maxavailablenarrowband = 2;
-          ASN_SEQUENCE_ADD(&prach_parametersce_r13->mpdcch_NarrowbandsToMonitor_r13.list, &maxavailablenarrowband);
+          long maxavailablenarrowband;
+          int num_narrow_bands = configuration->max_available_narrow_band_size[CC_id][prach_parameters_index];
+          int narrow_band_index;
+          for (narrow_band_index = 0; narrow_band_index < num_narrow_bands; narrow_band_index++)
+          {
+              maxavailablenarrowband = configuration->max_available_narrow_band[CC_id][prach_parameters_index][narrow_band_index];
+              ASN_SEQUENCE_ADD(&prach_parametersce_r13->mpdcch_NarrowbandsToMonitor_r13.list, &maxavailablenarrowband);
+          }
 
           prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = PRACH_ParametersCE_r13__mpdcch_NumRepetition_RA_r13_r1;
           prach_parametersce_r13->prach_HoppingConfig_r13 = PRACH_ParametersCE_r13__prach_HoppingConfig_r13_off;
