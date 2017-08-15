@@ -199,7 +199,9 @@ schedule_SIB1_BR(
     LOG_D(MAC,"[eNB %d] Frame %d : BCCH_BR->DLSCH CC_id %d, Received %d bytes \n",module_idP,frameP,CC_id,bcch_sdu_length);
     
     // allocate all 6 PRBs in narrowband for SIB1_BR
-    first_rb = n_NB*6;
+
+    first_rb = narrowband_to_first_rb(cc,n_NB);
+
     vrb_map[first_rb] = 1;
     vrb_map[first_rb+1] = 1;
     vrb_map[first_rb+2] = 1;
@@ -383,7 +385,7 @@ schedule_SI_BR(
 	    LOG_D(MAC,"[eNB %d] Frame %d : BCCH_BR %d->DLSCH CC_id %d, Received %d bytes \n",module_idP,frameP,i,CC_id,bcch_sdu_length);
 	    
 	    // allocate all 6 PRBs in narrowband for SIB1_BR
-	    first_rb = si_Narrowband_r13*6;
+	    first_rb = narrowband_to_first_rb(cc,si_Narrowband_r13);
 	    vrb_map[first_rb]   = 1;
 	    vrb_map[first_rb+1] = 1;
 	    vrb_map[first_rb+2] = 1;
