@@ -3771,7 +3771,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                   RRC_CONFIGURATION_REQ(msg_p).bandwidthReducedAccessRelatedInfo_r13[j] = TRUE;
                   if (!config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_SI_WINDOWLENGTH_BR, &si_WindowLength_BR_r13) ||
                       !config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_SI_REPETITIONPATTERN, &si_RepetitionPattern_r13) ||
-                      !config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_FDD_ULSUBFRAMEBITMAPBR, &fdd_UplinkSubframeBitmapBR_r13) ||
                       !config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_STARTSYMBOLBR, &startSymbolBR_r13) ||
                       !config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_SI_HOPPINGCONFIGCOMMON, &si_HoppingConfigCommon_r13))
                   {
@@ -3800,10 +3799,19 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                   }
 
 
-                    RRC_CONFIGURATION_REQ(msg_p).si_WindowLength_BR_r13[j] = si_WindowLength_BR_r13;
+                  bool fdd_uplink_exist = config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_FDD_ULSUBFRAMEBITMAPBR, &fdd_UplinkSubframeBitmapBR_r13);
+                  if (fdd_uplink_exist) 
+                  {
+                      RRC_CONFIGURATION_REQ(msg_p).fdd_UplinkSubframeBitmapBR_r13[j] = CALLOC(1, sizeof(BOOLEAN_t)); 
+                      *RRC_CONFIGURATION_REQ(msg_p).fdd_UplinkSubframeBitmapBR_r13[j] = fdd_UplinkSubframeBitmapBR_r13;
+                  }
+                  else
+                  {
+                      RRC_CONFIGURATION_REQ(msg_p).fdd_UplinkSubframeBitmapBR_r13[j] = NULL;;
+                  }
+
+                  RRC_CONFIGURATION_REQ(msg_p).si_WindowLength_BR_r13[j] = si_WindowLength_BR_r13;
                   RRC_CONFIGURATION_REQ(msg_p).si_RepetitionPattern_r13[j] = si_RepetitionPattern_r13;
-                 
-                  RRC_CONFIGURATION_REQ(msg_p).fdd_UplinkSubframeBitmapBR_r13[j] = fdd_UplinkSubframeBitmapBR_r13;
                   RRC_CONFIGURATION_REQ(msg_p).si_HoppingConfigCommon_r13[j] = si_HoppingConfigCommon_r13;
                   RRC_CONFIGURATION_REQ(msg_p).startSymbolBR_r13[j] = startSymbolBR_r13;
 
