@@ -490,7 +490,7 @@ int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t 
 
   struct PRACH_ConfigSIB_v1310 *ext4_prach = eNB->common_channels[CC_id].radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
 
-//  EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11= eNB->UE_list ->UE_template[CC_id][UE_id].physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11->list.array[0] ;
+  EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11= &eNB->UE_list.UE_template[CC_id][UE_id].physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11->list.array[0] ;
 
 
   int T;
@@ -517,13 +517,13 @@ int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t 
     AssertFatal(1==0,"MPDCCH Type 2A not handled yet\n");
     break;
   case TYPEUESPEC:
-//      AssertFatal(epdcch_setconfig_r11 != NULL," epdcch_setconfig_r11 is null for UE specific \n");
-//      AssertFatal(epdcch_setconfig_r11->ext2 != NULL," ext2 doesn't exist in epdcch config ' \n");
+     AssertFatal(epdcch_setconfig_r11 != NULL," epdcch_setconfig_r11 is null for UE specific \n");
+     AssertFatal(epdcch_setconfig_r11->ext2 != NULL," ext2 doesn't exist in epdcch config ' \n");
 
-//      if (eNB->common_channels[CC_id].tdd_Config==NULL) //FDD
-//        T = rmax*startSF_fdd_RA_times2[epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.choice.fdd_r13]>>1;
-//      else //TDD
-//        T = rmax*startSF_tdd_RA[epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.choice.tdd_r13];
+      if (eNB->common_channels[CC_id].tdd_Config==NULL) //FDD
+        T = rmax*startSF_fdd_RA_times2[epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.choice.fdd_r13]>>1;
+      else //TDD
+        T = rmax*startSF_tdd_RA[epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.choice.tdd_r13];
 
     break;
   default:
