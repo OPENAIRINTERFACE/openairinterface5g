@@ -1217,6 +1217,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
           if (configuration->rsrp_range_list_size[CC_id])
           {
               rsrp_range = configuration->rsrp_range[CC_id][rsrp_index];
+              printf("[DEBUGGING][KOGO][SIB23] : rsrp range = %d\n", rsrp_range);
           }
           else
           {
@@ -1289,6 +1290,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
               prach_parametersce_r13->numRepetitionPerPreambleAttempt_r13 = configuration->numRepetitionPerPreambleAttempt_r13[CC_id][prach_parameters_index];
               prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = configuration->mpdcch_NumRepetition_RA_r13[CC_id][prach_parameters_index];
               prach_parametersce_r13->prach_HoppingConfig_r13 = configuration->prach_HoppingConfig_r13[CC_id][prach_parameters_index];
+              printf("[DEBUGGING][KOGO][SIB23] : prach hopping config = %d\n", prach_parametersce_r13->prach_HoppingConfig_r13); 
           }
           else
           {
@@ -1344,10 +1346,56 @@ uint8_t do_SIB23(uint8_t Mod_id,
 //  +kogo FIXME
 //  ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->n1PUCCH_AN_InfoList_r13->list, &pucch_info_value2);
 
-  (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level0_r13 = NULL;
-  (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level1_r13 = NULL;
-  (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level2_r13 = NULL;
-  (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level3_r13 = NULL;
+  if (configuration->pucch_NumRepetitionCE_Msg4_Level0_r13[CC_id])
+  {
+      puts("LEVEL 0");
+      (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level0_r13  = CALLOC(1, sizeof(long));
+      *(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level0_r13 =  *configuration->pucch_NumRepetitionCE_Msg4_Level0_r13[CC_id];
+      printf("[DEBUGGING][KOGO][SIB23]: pucch_NumRepetitionCE_Msg4_Level0_r13 = %d\n", *(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level0_r13);
+  }
+  else
+  {
+      (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level0_r13 = NULL;
+  }
+
+
+  if (configuration->pucch_NumRepetitionCE_Msg4_Level1_r13[CC_id])
+  {
+      puts("LEVEL 1");
+      (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level1_r13  = CALLOC(1, sizeof(long));
+      *(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level1_r13 =  *configuration->pucch_NumRepetitionCE_Msg4_Level1_r13[CC_id];
+      printf("[DEBUGGING][KOGO][SIB23]: pucch_NumRepetitionCE_Msg4_Level1_r13 = %d\n", *(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level1_r13);
+  }
+  else
+  {
+      (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level1_r13 = NULL;
+  }
+
+  if (configuration->pucch_NumRepetitionCE_Msg4_Level2_r13[CC_id])
+  {
+      puts("LEVEL 2");
+      (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level2_r13  = CALLOC(1, sizeof(long));
+      *(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level2_r13 =  *configuration->pucch_NumRepetitionCE_Msg4_Level2_r13[CC_id];
+      printf("[DEBUGGING][KOGO][SIB23]: pucch_NumRepetitionCE_Msg4_Level2_r13 = %d\n", *(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level2_r13);
+  }
+  else
+  {
+      (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level2_r13 = NULL;
+  }
+
+  if (configuration->pucch_NumRepetitionCE_Msg4_Level3_r13[CC_id])
+  {
+      puts("LEVEL 3");
+      (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level3_r13  = CALLOC(1, sizeof(long));
+      *(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level3_r13 =  *configuration->pucch_NumRepetitionCE_Msg4_Level3_r13[CC_id];
+      printf("[DEBUGGING][KOGO][SIB23]: pucch_NumRepetitionCE_Msg4_Level3_r13 = %d\n", *(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level3_r13);
+  }
+  else
+  {
+      (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level3_r13 = NULL;
+  }
+
+
   //-----------------------------------------------------------------------------------------------------------------------------------------
 
 

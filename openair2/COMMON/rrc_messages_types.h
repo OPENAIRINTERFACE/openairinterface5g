@@ -265,6 +265,12 @@ typedef struct RrcConfigurationReq_s {
     long  mpdcch_numrepetition_paging_r13 [MAX_NUM_CCs];
     long  *nb_v1310                        [MAX_NUM_CCs];
 
+    long  *pucch_NumRepetitionCE_Msg4_Level0_r13  [MAX_NUM_CCs];
+    long  *pucch_NumRepetitionCE_Msg4_Level1_r13  [MAX_NUM_CCs];
+    long  *pucch_NumRepetitionCE_Msg4_Level2_r13  [MAX_NUM_CCs];
+    long  *pucch_NumRepetitionCE_Msg4_Level3_r13  [MAX_NUM_CCs];
+
+
 #endif
 } RrcConfigurationReq;
 
