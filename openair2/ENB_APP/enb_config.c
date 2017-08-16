@@ -2461,7 +2461,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                   RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TimersAndConstants_t311= UE_TimersAndConstants__t311_ms1000;
                   break;
 
-                case 3110:
+                case 3000:
                   RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TimersAndConstants_t311= UE_TimersAndConstants__t311_ms3000;
                   break;
 
@@ -2481,7 +2481,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                   RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TimersAndConstants_t311= UE_TimersAndConstants__t311_ms20000;
                   break;
 
-                case 31100:
+                case 30000:
                   RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TimersAndConstants_t311= UE_TimersAndConstants__t311_ms30000;
                   break;
 
@@ -3761,7 +3761,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                     RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t311= UE_TimersAndConstants__t311_ms1000;
                     break;
 
-                  case 3110:
+                  case 3000:
                     RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t311= UE_TimersAndConstants__t311_ms3000;
                     break;
 
@@ -3781,7 +3781,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                     RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t311= UE_TimersAndConstants__t311_ms20000;
                     break;
 
-                  case 31100:
+                  case 30000:
                     RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t311= UE_TimersAndConstants__t311_ms30000;
                     break;
 
