@@ -1209,22 +1209,23 @@ uint8_t do_SIB23(uint8_t Mod_id,
       (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310 = calloc(1, sizeof(PRACH_ConfigSIB_v1310_t));
       memset((*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310, 0, sizeof(PRACH_ConfigSIB_v1310_t));
 
-      RSRP_Range_t rsrp_range;
+      RSRP_Range_t *rsrp_range;
       int num_rsrp_range = configuration->rsrp_range_list_size[CC_id];
       int rsrp_index;
       for (rsrp_index = 0; rsrp_index < num_rsrp_range; ++rsrp_index)
       {
+          rsrp_range = CALLOC(1, sizeof(RSRP_Range_t));
           if (configuration->rsrp_range_list_size[CC_id])
           {
-              rsrp_range = configuration->rsrp_range[CC_id][rsrp_index];
-              printf("[DEBUGGING][KOGO][SIB23] : rsrp range = %d\n", rsrp_range);
+              *rsrp_range = configuration->rsrp_range[CC_id][rsrp_index];
+              printf("[DEBUGGING][KOGO][SIB23] : rsrp range = %d\n", *rsrp_range);
           }
           else
           {
-              rsrp_range = 60;
+              *rsrp_range = 60;
           }
 
-          ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->rsrp_ThresholdsPrachInfoList_r13.list, &rsrp_range);
+          ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->rsrp_ThresholdsPrachInfoList_r13.list, rsrp_range);
       }
 
 
