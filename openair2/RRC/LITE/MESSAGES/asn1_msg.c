@@ -1201,7 +1201,137 @@ uint8_t do_SIB23(uint8_t Mod_id,
   }
 
 
-  (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13 = NULL;
+  if (configuration->sib2_freq_hoppingParameters_r13_exists[CC_id])
+  {
+      puts("[DEBUGGING][KOGO][SIB23]: Structure exists");
+      (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13 = CALLOC(1, sizeof(FreqHoppingParameters_r13_t));
+      if (configuration->sib2_mpdcch_pdsch_hoppingNB_r13[CC_id])
+      {
+          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->mpdcch_pdsch_HoppingNB_r13 = CALLOC(1, sizeof(long));
+          *(*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->mpdcch_pdsch_HoppingNB_r13 = *configuration->sib2_mpdcch_pdsch_hoppingNB_r13[CC_id];
+
+      }
+      else
+      {
+          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->mpdcch_pdsch_HoppingNB_r13 = NULL;
+      }
+
+      if (configuration->sib2_interval_DLHoppingConfigCommonModeA_r13[CC_id])
+      {
+          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeA_r13
+                  = CALLOC(1, sizeof(struct FreqHoppingParameters_r13__interval_DLHoppingConfigCommonModeA_r13));
+          if (*configuration->sib2_interval_DLHoppingConfigCommonModeA_r13[CC_id] == 0)
+          {
+              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeA_r13->present
+                      = FreqHoppingParameters_r13__interval_DLHoppingConfigCommonModeA_r13_PR_interval_FDD_r13;
+              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeA_r13->choice.interval_FDD_r13
+                      = configuration->sib2_interval_DLHoppingConfigCommonModeA_r13_val[CC_id];
+          }
+          else
+          {
+              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeA_r13->present
+                      = FreqHoppingParameters_r13__interval_DLHoppingConfigCommonModeA_r13_PR_interval_TDD_r13;
+              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeA_r13->choice.interval_TDD_r13
+                      = configuration->sib2_interval_DLHoppingConfigCommonModeA_r13_val[CC_id];
+
+          }
+      }
+      else
+      {
+          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeA_r13 = NULL;
+      }
+
+
+      if (configuration->sib2_interval_DLHoppingConfigCommonModeB_r13[CC_id])
+      {
+          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeB_r13
+                  = CALLOC(1, sizeof(struct FreqHoppingParameters_r13__interval_DLHoppingConfigCommonModeB_r13));
+          if (*configuration->sib2_interval_DLHoppingConfigCommonModeB_r13[CC_id] == 0)
+          {
+              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeB_r13->present
+                      = FreqHoppingParameters_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_FDD_r13;
+              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_FDD_r13
+                      = configuration->sib2_interval_DLHoppingConfigCommonModeB_r13_val[CC_id];
+          }
+          else
+          {
+              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeB_r13->present
+                      = FreqHoppingParameters_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_TDD_r13;
+              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_TDD_r13
+                      = configuration->sib2_interval_DLHoppingConfigCommonModeB_r13_val[CC_id];
+
+          }
+      }
+      else
+      {
+          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeB_r13 = NULL;
+      }
+
+      if (configuration->sib2_interval_ULHoppingConfigCommonModeA_r13[CC_id])
+      {
+          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeA_r13
+                  = CALLOC(1, sizeof(struct FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeA_r13));
+          if (*configuration->sib2_interval_ULHoppingConfigCommonModeA_r13[CC_id] == 0)
+          {
+              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeA_r13->present
+                      = FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeA_r13_PR_interval_FDD_r13;
+              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeA_r13->choice.interval_FDD_r13
+                      = configuration->sib2_interval_ULHoppingConfigCommonModeA_r13_val[CC_id];
+          }
+          else
+          {
+              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeA_r13->present
+                      = FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeA_r13_PR_interval_TDD_r13;
+              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeA_r13->choice.interval_TDD_r13
+                      = configuration->sib2_interval_ULHoppingConfigCommonModeA_r13_val[CC_id];
+
+          }
+      }
+      else
+      {
+          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeA_r13 = NULL;
+      }
+
+      if (configuration->sib2_interval_ULHoppingConfigCommonModeB_r13[CC_id])
+      {
+          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeB_r13
+                  = CALLOC(1, sizeof(struct FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeB_r13));
+          if (*configuration->sib2_interval_ULHoppingConfigCommonModeB_r13[CC_id] == 0)
+          {
+              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeB_r13->present
+                      = FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeB_r13_PR_interval_FDD_r13;
+              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeB_r13->choice.interval_FDD_r13
+                      = configuration->sib2_interval_ULHoppingConfigCommonModeB_r13_val[CC_id];
+          }
+          else
+          {
+              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeB_r13->present
+                      = FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeB_r13_PR_interval_TDD_r13;
+              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeB_r13->choice.interval_TDD_r13
+                      = configuration->sib2_interval_ULHoppingConfigCommonModeB_r13_val[CC_id];
+
+          }
+      }
+      else
+      {
+          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeB_r13 = NULL;
+      }
+
+      if (configuration->sib2_mpdcch_pdsch_hoppingOffset_r13[CC_id])
+      {
+          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->mpdcch_pdsch_HoppingOffset_r13 = CALLOC(1, sizeof(long));
+          *(*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->mpdcch_pdsch_HoppingOffset_r13 = *configuration->sib2_mpdcch_pdsch_hoppingOffset_r13[CC_id];
+      }
+      else
+      {
+          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->mpdcch_pdsch_HoppingOffset_r13 = NULL;
+      }
+  }
+  else
+  {
+      (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13 = NULL;
+  }
+
   (*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310 = NULL;
   (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310 = NULL;
 

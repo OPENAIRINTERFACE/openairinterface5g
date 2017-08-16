@@ -271,6 +271,20 @@ typedef struct RrcConfigurationReq_s {
     long  *pucch_NumRepetitionCE_Msg4_Level3_r13  [MAX_NUM_CCs];
 
 
+    bool  sib2_freq_hoppingParameters_r13_exists             [MAX_NUM_CCs];
+    long  *sib2_mpdcch_pdsch_hoppingNB_r13                   [MAX_NUM_CCs];
+    long  *sib2_interval_DLHoppingConfigCommonModeA_r13      [MAX_NUM_CCs];
+    long  sib2_interval_DLHoppingConfigCommonModeA_r13_val  [MAX_NUM_CCs];         
+    long  *sib2_interval_DLHoppingConfigCommonModeB_r13      [MAX_NUM_CCs]; 
+    long  sib2_interval_DLHoppingConfigCommonModeB_r13_val  [MAX_NUM_CCs];        
+    long  *sib2_interval_ULHoppingConfigCommonModeA_r13      [MAX_NUM_CCs];
+    long  sib2_interval_ULHoppingConfigCommonModeA_r13_val  [MAX_NUM_CCs];         
+    long  *sib2_interval_ULHoppingConfigCommonModeB_r13      [MAX_NUM_CCs];
+    long  sib2_interval_ULHoppingConfigCommonModeB_r13_val  [MAX_NUM_CCs];
+    long  *sib2_mpdcch_pdsch_hoppingOffset_r13               [MAX_NUM_CCs];
+
+
+
 #endif
 } RrcConfigurationReq;
 
