@@ -1390,7 +1390,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
       }
 
       PRACH_ParametersCE_r13_t *prach_parametersce_r13;
-      memset(prach_parametersce_r13, 0, sizeof(PRACH_ParametersCE_r13_t));
 
       int num_prach_parameters_ce = configuration->prach_parameters_list_size[CC_id];
       int prach_parameters_index;

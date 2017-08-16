@@ -2830,7 +2830,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                 if (setting_freq_hoppingParameters_r13 != NULL) 
                 {
                     RRC_CONFIGURATION_REQ(msg_p).sib2_freq_hoppingParameters_r13_exists[j] = TRUE;
-                    if (config_setting_lookup_int(setting_freq_hoppingParameters_r13, ENB_CONFIG_STRING_MPDCCH_PDSCH_HOPPING_NB_R13, sib2_mpdcch_pdsch_hoppingNB_r13))
+                    if (config_setting_lookup_int(setting_freq_hoppingParameters_r13, ENB_CONFIG_STRING_MPDCCH_PDSCH_HOPPING_NB_R13, &sib2_mpdcch_pdsch_hoppingNB_r13))
                     {
 
                         RRC_CONFIGURATION_REQ(msg_p).sib2_mpdcch_pdsch_hoppingNB_r13[j] = CALLOC(1, sizeof(long));
@@ -2923,23 +2923,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                     RRC_CONFIGURATION_REQ(msg_p).sib2_freq_hoppingParameters_r13_exists[j] = FALSE;
                 }
 
-
-
-
-                printf("[DEBUGGING][KOGO][CONF]: 0 = %d\n", RRC_CONFIGURATION_REQ(msg_p).sib2_freq_hoppingParameters_r13_exists[j]);
-                printf("[DEBUGGING][KOGO][CONF]: 1 = %d\n", *RRC_CONFIGURATION_REQ(msg_p).sib2_mpdcch_pdsch_hoppingNB_r13[j]);
-
-                printf("[DEBUGGING][KOGO][CONF]: 2 = %d\n", *RRC_CONFIGURATION_REQ(msg_p).sib2_interval_DLHoppingConfigCommonModeA_r13[j]);
-                printf("[DEBUGGING][KOGO][CONF]: 3 = %d\n", RRC_CONFIGURATION_REQ(msg_p).sib2_interval_DLHoppingConfigCommonModeA_r13_val[j]);
-                printf("[DEBUGGING][KOGO][CONF]: 4 = %d\n", *RRC_CONFIGURATION_REQ(msg_p).sib2_interval_DLHoppingConfigCommonModeB_r13[j]);
-                printf("[DEBUGGING][KOGO][CONF]: 5 = %d\n", RRC_CONFIGURATION_REQ(msg_p).sib2_interval_DLHoppingConfigCommonModeB_r13_val[j]);
-
-                printf("[DEBUGGING][KOGO][CONF]: 6 = %d\n", *RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13[j]);
-                printf("[DEBUGGING][KOGO][CONF]: 7 = %d\n", RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j]);
-                printf("[DEBUGGING][KOGO][CONF]: 8 = %d\n", *RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeB_r13[j]);
-                printf("[DEBUGGING][KOGO][CONF]: 9 = %d\n", RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeB_r13_val[j]);
-                
-                printf("[DEBUGGING][KOGO][CONF]: 10 = %d\n", *RRC_CONFIGURATION_REQ(msg_p).sib2_mpdcch_pdsch_hoppingNB_r13[j]);
 
                 // Rel8 RadioResourceConfigCommon Parameters
                 if (!(config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_FRAME_TYPE, &frame_type)
