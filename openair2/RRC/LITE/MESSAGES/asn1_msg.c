@@ -654,22 +654,23 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
           }
 
 
+          SystemInfoValueTagSI_r13_t *systemInfoValueTagSi_r13;
           int num_system_info_value_tag = configuration->system_info_value_tag_SI_size[CC_id];
           if (num_system_info_value_tag > 0)
           {
               sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13 = calloc(1, sizeof(SystemInfoValueTagList_r13_t));
-              SystemInfoValueTagSI_r13_t systemInfoValueTagSi_r13;
               for (index = 0; index < num_system_info_value_tag; ++index)
               {
+                  systemInfoValueTagSi_r13 = CALLOC(1, sizeof(SystemInfoValueTagSI_r13_t));
                   if (configuration->systemInfoValueTagSi_r13[CC_id][index])
                   {
-                      systemInfoValueTagSi_r13 = configuration->systemInfoValueTagSi_r13[CC_id][index];
+                      *systemInfoValueTagSi_r13 = configuration->systemInfoValueTagSi_r13[CC_id][index];
                   }
                   else
                   {
-                      systemInfoValueTagSi_r13 = 0;
+                      *systemInfoValueTagSi_r13 = 0;
                   }
-                  ASN_SEQUENCE_ADD(&sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13->list, &systemInfoValueTagSi_r13);
+                  ASN_SEQUENCE_ADD(&sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13->list, systemInfoValueTagSi_r13);
               }
 
           }
@@ -814,8 +815,9 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 
 
   sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13 = calloc(1, sizeof(SystemInfoValueTagList_r13_t));
-  SystemInfoValueTagSI_r13_t systemInfoValueTagSi_r13 = 0;
-  ASN_SEQUENCE_ADD(&sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13->list, &systemInfoValueTagSi_r13);
+  SystemInfoValueTagSI_r13_t *systemInfoValueTagSi_r13 = CALLOC(1, sizeof(SystemInfoValueTagSI_r13_t));
+  *systemInfoValueTagSi_r13 = 0;
+  ASN_SEQUENCE_ADD(&sib1_1310->bandwidthReducedAccessRelatedInfo_r13->systemInfoValueTagList_r13->list, systemInfoValueTagSi_r13);
 
   sib1_1310->nonCriticalExtension = calloc(1, sizeof(SystemInformationBlockType1_v1320_IEs_t));
   memset(sib1_1310->nonCriticalExtension, 0, sizeof(SystemInformationBlockType1_v1320_IEs_t));
@@ -1036,13 +1038,12 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->rach_CE_LevelInfoList_r13 = calloc(1, sizeof(RACH_CE_LevelInfoList_r13_t));
   memset((*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->rach_CE_LevelInfoList_r13, 0, sizeof(RACH_CE_LevelInfoList_r13_t));
 
-  RACH_CE_LevelInfo_r13_t *rach_ce_levelinfo_r13 = calloc(1, sizeof(RACH_CE_LevelInfo_r13_t));
-  memset(rach_ce_levelinfo_r13, 0, sizeof(RACH_CE_LevelInfo_r13_t));
-
+  RACH_CE_LevelInfo_r13_t *rach_ce_levelinfo_r13;
   int num_rach_ce_level_info = configuration->rach_CE_LevelInfoList_r13_size[CC_id];
   int index;
   for (index = 0; index < num_rach_ce_level_info; ++index)
   {
+      rach_ce_levelinfo_r13 = calloc(1, sizeof(RACH_CE_LevelInfo_r13_t));
       if (configuration->rach_CE_LevelInfoList_r13_size[CC_id])
       {
           rach_ce_levelinfo_r13->preambleMappingInfo_r13.firstPreamble_r13 = configuration->firstPreamble_r13[CC_id][index];
@@ -1258,13 +1259,14 @@ uint8_t do_SIB23(uint8_t Mod_id,
           (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_HoppingOffset_r13 = NULL;
       }
 
-      PRACH_ParametersCE_r13_t *prach_parametersce_r13 = calloc(1, sizeof(PRACH_ParametersCE_r13_t));
+      PRACH_ParametersCE_r13_t *prach_parametersce_r13;
       memset(prach_parametersce_r13, 0, sizeof(PRACH_ParametersCE_r13_t));
 
       int num_prach_parameters_ce = configuration->prach_parameters_list_size[CC_id];
       int prach_parameters_index;
       for (prach_parameters_index = 0; prach_parameters_index < num_prach_parameters_ce; ++prach_parameters_index)
       {
+          prach_parametersce_r13 = CALLOC(1, sizeof(PRACH_ParametersCE_r13_t));
           if (configuration->prach_parameters_list_size[CC_id])
           {
               prach_parametersce_r13->prach_ConfigIndex_r13 = configuration->prach_config_index[CC_id][prach_parameters_index];
@@ -1305,13 +1307,14 @@ uint8_t do_SIB23(uint8_t Mod_id,
               prach_parametersce_r13->prach_HoppingConfig_r13 = PRACH_ParametersCE_r13__prach_HoppingConfig_r13_off;
           }
 
-          long maxavailablenarrowband;
+          long *maxavailablenarrowband;
           int num_narrow_bands = configuration->max_available_narrow_band_size[CC_id][prach_parameters_index];
           int narrow_band_index;
           for (narrow_band_index = 0; narrow_band_index < num_narrow_bands; narrow_band_index++)
           {
-              maxavailablenarrowband = configuration->max_available_narrow_band[CC_id][prach_parameters_index][narrow_band_index];
-              ASN_SEQUENCE_ADD(&prach_parametersce_r13->mpdcch_NarrowbandsToMonitor_r13.list, &maxavailablenarrowband);
+              maxavailablenarrowband = CALLOC(1, sizeof(long));
+              *maxavailablenarrowband = configuration->max_available_narrow_band[CC_id][prach_parameters_index][narrow_band_index];
+              ASN_SEQUENCE_ADD(&prach_parametersce_r13->mpdcch_NarrowbandsToMonitor_r13.list, maxavailablenarrowband);
           }
 
           prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = PRACH_ParametersCE_r13__mpdcch_NumRepetition_RA_r13_r1;
@@ -1330,22 +1333,20 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   int num_pucch_info_list = configuration->pucch_info_value_size[CC_id];
   int pucch_index;
-  long pucch_info_value;
+  long *pucch_info_value;
   for (pucch_index = 0; pucch_index <  num_pucch_info_list; ++pucch_index)
   {
+      pucch_info_value = CALLOC(1, sizeof(long));
       if (configuration->pucch_info_value_size[CC_id])
       {
-          pucch_info_value = configuration->pucch_info_value[CC_id][pucch_index];
+          *pucch_info_value = configuration->pucch_info_value[CC_id][pucch_index];
       }
       else
       {
-          pucch_info_value = 0;
+          *pucch_info_value = 0;
       }
-      ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->n1PUCCH_AN_InfoList_r13->list, &pucch_info_value);
+      ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->n1PUCCH_AN_InfoList_r13->list, pucch_info_value);
   }
-
-//  +kogo FIXME
-//  ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->n1PUCCH_AN_InfoList_r13->list, &pucch_info_value2);
 
   if (configuration->pucch_NumRepetitionCE_Msg4_Level0_r13[CC_id])
   {
@@ -1598,7 +1599,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
     sib2_mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.buf[0]=0x38<<2;
 
-    ASN_SEQUENCE_ADD(&MBSFNSubframeConfigList->list,sib2_mbsfn_SubframeConfig1);
+    ASN_SEQUENCE_ADD(&MBSFNSubframeConfigList->list, sib2_mbsfn_SubframeConfig1);
 
     if (MBMS_flag == 4 ) {
       LOG_I(RRC,"Adding MBSFN subframe Configuration 2 to SIB2\n");
@@ -1616,7 +1617,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
       sib2_mbsfn_SubframeConfig2->subframeAllocation.choice.oneFrame.buf[0]=0x07<<2;
 
 
-      ASN_SEQUENCE_ADD(&MBSFNSubframeConfigList->list,sib2_mbsfn_SubframeConfig2);
+      ASN_SEQUENCE_ADD(&MBSFNSubframeConfigList->list, sib2_mbsfn_SubframeConfig2);
     }
   }
 
@@ -1741,7 +1742,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 #if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flag > 0) {
-    ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib13_part);
+    ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list, sib13_part);
   }
 
 #endif
