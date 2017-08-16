@@ -1412,6 +1412,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
               if (configuration->prach_StartingSubframe_r13[CC_id][prach_parameters_index])
               {
+                  prach_parametersce_r13->prach_StartingSubframe_r13 = CALLOC(1, sizeof(long));
                   *prach_parametersce_r13->prach_StartingSubframe_r13 = *configuration->prach_StartingSubframe_r13[CC_id][prach_parameters_index];
               }
               else
@@ -1421,6 +1422,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
               if (configuration->maxNumPreambleAttemptCE_r13[CC_id][prach_parameters_index])
               {
+                  prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = CALLOC(1, sizeof(long));
                   *prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = *configuration->maxNumPreambleAttemptCE_r13[CC_id][prach_parameters_index];
               }
               else

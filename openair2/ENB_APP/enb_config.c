@@ -2786,7 +2786,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                   if (config_setting_lookup_int(prach_parameters_ce_r13, ENB_CONFIG_STRING_MAX_NUM_PREAMBLE_ATTEMPT_CE_R13, &maxNumPreambleAttemptCE_r13))
                   {
                     RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = calloc(1, sizeof(long));
-                    RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = maxNumPreambleAttemptCE_r13;
+                    *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = maxNumPreambleAttemptCE_r13;
                   }
                   else
                   {
