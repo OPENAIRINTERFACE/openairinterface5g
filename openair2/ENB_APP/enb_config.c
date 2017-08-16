@@ -4063,7 +4063,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                   RRC_CONFIGURATION_REQ(msg_p).si_HoppingConfigCommon_r13[j] = si_HoppingConfigCommon_r13;
                   RRC_CONFIGURATION_REQ(msg_p).startSymbolBR_r13[j] = startSymbolBR_r13;
 
-                  if (config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_Q_QUALMINRSRQ_CE, &si_ValidityTime_r13))
+                  if (config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_SI_VALIDITYTIME, &si_ValidityTime_r13))
                   {
                     RRC_CONFIGURATION_REQ(msg_p).si_ValidityTime_r13[j] = calloc(1, sizeof(long));
                     *RRC_CONFIGURATION_REQ(msg_p).si_ValidityTime_r13[j] = si_ValidityTime_r13;

@@ -608,10 +608,15 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
               else
               {
                   sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
-                        = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
+                        = SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern40_r13;
 
                   sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf = calloc(5, sizeof(uint8_t));
-                  memmove(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf, &configuration->fdd_DownlinkOrTddSubframeBitmapBR_val_r13[CC_id], 5 * sizeof(uint8_t));
+//                  memmove(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf, &configuration->fdd_DownlinkOrTddSubframeBitmapBR_val_r13[CC_id], 5 * sizeof(uint8_t));
+                  int bm_index;
+                  for (bm_index = 0; bm_index < 5; bm_index++)
+                  {
+                      sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.buf[bm_index] = 0xFF;
+                  }
                   sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.size = 5;
                   sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern40_r13.bits_unused = 0;
               }
@@ -647,6 +652,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
               sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = calloc(1, sizeof(long));
               memset(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13, 0, sizeof(long));
               *sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = *configuration->si_ValidityTime_r13[CC_id];
+              printf("[DEBUGGING][KOGO]: si_validity time = %d\n", *sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13);
           }
           else
           {
@@ -1783,16 +1789,16 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   (*sib3)->cellReselectionInfoCommon.speedStateReselectionPars=NULL;
 
-  (*sib3)->cellReselectionServingFreqInfo.s_NonIntraSearch=NULL;
-  (*sib3)->cellReselectionServingFreqInfo.threshServingLow=31;
-  (*sib3)->cellReselectionServingFreqInfo.cellReselectionPriority=7;
+  (*sib3)->cellReselectionServingFreqInfo.s_NonIntraSearch        = NULL;
+  (*sib3)->cellReselectionServingFreqInfo.threshServingLow        = 0;
+  (*sib3)->cellReselectionServingFreqInfo.s_NonIntraSearch        = 0;
+  (*sib3)->cellReselectionServingFreqInfo.cellReselectionPriority = 7;
 
   (*sib3)->intraFreqCellReselectionInfo.q_RxLevMin = -70;
   (*sib3)->intraFreqCellReselectionInfo.p_Max = NULL;
   (*sib3)->intraFreqCellReselectionInfo.s_IntraSearch = CALLOC(1,sizeof(*(*sib3)->intraFreqCellReselectionInfo.s_IntraSearch));
   *(*sib3)->intraFreqCellReselectionInfo.s_IntraSearch = 31;
   (*sib3)->intraFreqCellReselectionInfo.allowedMeasBandwidth=CALLOC(1,sizeof(*(*sib3)->intraFreqCellReselectionInfo.allowedMeasBandwidth));
-
   *(*sib3)->intraFreqCellReselectionInfo.allowedMeasBandwidth = AllowedMeasBandwidth_mbw6;
 
   (*sib3)->intraFreqCellReselectionInfo.presenceAntennaPort1 = 0;
@@ -1800,8 +1806,20 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.size = 1;
   (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.buf[0] = 1;
   (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.bits_unused = 6;
-  (*sib3)->intraFreqCellReselectionInfo.t_ReselectionEUTRA = 1;
+  (*sib3)->intraFreqCellReselectionInfo.t_ReselectionEUTRA = 2;
   (*sib3)->intraFreqCellReselectionInfo.t_ReselectionEUTRA_SF = (struct SpeedStateScaleFactors *)NULL;
+
+  (*sib3)->ext1 = CALLOC(1, sizeof(struct SystemInformationBlockType3__ext1));
+  (*sib3)->ext1->s_IntraSearch_v920 = CALLOC(1, sizeof(struct SystemInformationBlockType3__ext1__s_IntraSearch_v920));
+  (*sib3)->ext1->s_IntraSearch_v920->s_IntraSearchP_r9 = 31; // FIXME
+  (*sib3)->ext1->s_IntraSearch_v920->s_IntraSearchQ_r9 = 4;
+
+  (*sib3)->ext4 = CALLOC(1, sizeof(struct SystemInformationBlockType3__ext4));
+  (*sib3)->ext4->cellSelectionInfoCE_r13 = CALLOC(1, sizeof(CellSelectionInfoCE_r13_t));
+  (*sib3)->ext4->cellSelectionInfoCE_r13->q_RxLevMinCE_r13 = -70;
+  (*sib3)->ext4->cellSelectionInfoCE_r13->q_QualMinRSRQ_CE_r13 = NULL;
+  (*sib3)->ext4->t_ReselectionEUTRA_CE_r13 = CALLOC(1, sizeof(T_ReselectionEUTRA_CE_r13_t));
+  *(*sib3)->ext4->t_ReselectionEUTRA_CE_r13 = 2;
 
   // SIB13
   // fill in all elements of SIB13 if present
