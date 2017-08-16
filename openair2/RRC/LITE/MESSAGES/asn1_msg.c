@@ -1408,66 +1408,58 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
       int num_prach_parameters_ce = configuration->prach_parameters_list_size[CC_id];
       int prach_parameters_index;
+      AssertFatal(num_prach_parameters_ce > 0, "PRACH CE parameter list is empty\n");
+
       for (prach_parameters_index = 0; prach_parameters_index < num_prach_parameters_ce; ++prach_parameters_index)
       {
-          prach_parametersce_r13 = CALLOC(1, sizeof(PRACH_ParametersCE_r13_t));
-          if (configuration->prach_parameters_list_size[CC_id])
+	prach_parametersce_r13 = CALLOC(1, sizeof(PRACH_ParametersCE_r13_t));
+        
+	prach_parametersce_r13->prach_ConfigIndex_r13 = configuration->prach_config_index[CC_id][prach_parameters_index];
+	prach_parametersce_r13->prach_FreqOffset_r13 = configuration->prach_freq_offset[CC_id][prach_parameters_index];
+	
+	AssertFatal(configuration->prach_StartingSubframe_r13[CC_id][prach_parameters_index]!=NULL,
+		    "configuration->prach_StartingSubframe_r13[%d][%d] is null",
+		    (int)CC_id,(int)prach_parameters_index);
+	if (configuration->prach_StartingSubframe_r13[CC_id][prach_parameters_index])
+	  {
+	    prach_parametersce_r13->prach_StartingSubframe_r13 = CALLOC(1, sizeof(long));
+	    *prach_parametersce_r13->prach_StartingSubframe_r13 = *configuration->prach_StartingSubframe_r13[CC_id][prach_parameters_index];
+	  }
+	else
+	  {
+	    prach_parametersce_r13->prach_StartingSubframe_r13 = NULL;
+	  }
+	
+	if (configuration->maxNumPreambleAttemptCE_r13[CC_id][prach_parameters_index])
+	  {
+	    prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = CALLOC(1, sizeof(long));
+	    *prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = *configuration->maxNumPreambleAttemptCE_r13[CC_id][prach_parameters_index];
+	  }
+	else
+	  {
+	    prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = NULL;
+	  }
+	
+	prach_parametersce_r13->numRepetitionPerPreambleAttempt_r13 = configuration->numRepetitionPerPreambleAttempt_r13[CC_id][prach_parameters_index];
+	prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = configuration->mpdcch_NumRepetition_RA_r13[CC_id][prach_parameters_index];
+	prach_parametersce_r13->prach_HoppingConfig_r13 = configuration->prach_HoppingConfig_r13[CC_id][prach_parameters_index];
+	printf("[DEBUGGING][KOGO][SIB23] : prach hopping config = %d\n", prach_parametersce_r13->prach_HoppingConfig_r13); 
+	
+	
+	long *maxavailablenarrowband;
+	int num_narrow_bands = configuration->max_available_narrow_band_size[CC_id][prach_parameters_index];
+	int narrow_band_index;
+	for (narrow_band_index = 0; narrow_band_index < num_narrow_bands; narrow_band_index++)
           {
-              prach_parametersce_r13->prach_ConfigIndex_r13 = configuration->prach_config_index[CC_id][prach_parameters_index];
-              prach_parametersce_r13->prach_FreqOffset_r13 = configuration->prach_freq_offset[CC_id][prach_parameters_index];
-
-              if (configuration->prach_StartingSubframe_r13[CC_id][prach_parameters_index])
-              {
-                  prach_parametersce_r13->prach_StartingSubframe_r13 = CALLOC(1, sizeof(long));
-                  *prach_parametersce_r13->prach_StartingSubframe_r13 = *configuration->prach_StartingSubframe_r13[CC_id][prach_parameters_index];
-              }
-              else
-              {
-                  prach_parametersce_r13->prach_StartingSubframe_r13 = NULL;
-              }
-
-              if (configuration->maxNumPreambleAttemptCE_r13[CC_id][prach_parameters_index])
-              {
-                  prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = CALLOC(1, sizeof(long));
-                  *prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = *configuration->maxNumPreambleAttemptCE_r13[CC_id][prach_parameters_index];
-              }
-              else
-              {
-                  prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = NULL;
-              }
-
-              prach_parametersce_r13->numRepetitionPerPreambleAttempt_r13 = configuration->numRepetitionPerPreambleAttempt_r13[CC_id][prach_parameters_index];
-              prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = configuration->mpdcch_NumRepetition_RA_r13[CC_id][prach_parameters_index];
-              prach_parametersce_r13->prach_HoppingConfig_r13 = configuration->prach_HoppingConfig_r13[CC_id][prach_parameters_index];
-              printf("[DEBUGGING][KOGO][SIB23] : prach hopping config = %d\n", prach_parametersce_r13->prach_HoppingConfig_r13); 
+	    maxavailablenarrowband = CALLOC(1, sizeof(long));
+	    *maxavailablenarrowband = configuration->max_available_narrow_band[CC_id][prach_parameters_index][narrow_band_index];
+	    ASN_SEQUENCE_ADD(&prach_parametersce_r13->mpdcch_NarrowbandsToMonitor_r13.list, maxavailablenarrowband);
           }
-          else
-          {
-              prach_parametersce_r13->prach_ConfigIndex_r13 = 3;
-              prach_parametersce_r13->prach_FreqOffset_r13 = 1;
-              prach_parametersce_r13->prach_StartingSubframe_r13 = NULL;
-              *prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = calloc(1, sizeof(long));
-              *prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = PRACH_ParametersCE_r13__maxNumPreambleAttemptCE_r13_n3;
-              prach_parametersce_r13->numRepetitionPerPreambleAttempt_r13 = PRACH_ParametersCE_r13__numRepetitionPerPreambleAttempt_r13_n1;
-              prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = PRACH_ParametersCE_r13__mpdcch_NumRepetition_RA_r13_r1;
-              prach_parametersce_r13->prach_HoppingConfig_r13 = PRACH_ParametersCE_r13__prach_HoppingConfig_r13_off;
-          }
-
-          long *maxavailablenarrowband;
-          int num_narrow_bands = configuration->max_available_narrow_band_size[CC_id][prach_parameters_index];
-          int narrow_band_index;
-          for (narrow_band_index = 0; narrow_band_index < num_narrow_bands; narrow_band_index++)
-          {
-              maxavailablenarrowband = CALLOC(1, sizeof(long));
-              *maxavailablenarrowband = configuration->max_available_narrow_band[CC_id][prach_parameters_index][narrow_band_index];
-              ASN_SEQUENCE_ADD(&prach_parametersce_r13->mpdcch_NarrowbandsToMonitor_r13.list, maxavailablenarrowband);
-          }
-
-          prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = PRACH_ParametersCE_r13__mpdcch_NumRepetition_RA_r13_r1;
-          prach_parametersce_r13->prach_HoppingConfig_r13 = PRACH_ParametersCE_r13__prach_HoppingConfig_r13_off;
-          ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_ParametersListCE_r13.list, prach_parametersce_r13);
+	
+	prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = PRACH_ParametersCE_r13__mpdcch_NumRepetition_RA_r13_r1;
+	prach_parametersce_r13->prach_HoppingConfig_r13 = PRACH_ParametersCE_r13__prach_HoppingConfig_r13_off;
+	ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_ParametersListCE_r13.list, prach_parametersce_r13);
       }
-
   }
   else
   {

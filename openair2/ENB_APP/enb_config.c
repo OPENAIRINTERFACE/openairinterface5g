@@ -2776,7 +2776,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                   if (config_setting_lookup_int(prach_parameters_ce_r13, ENB_CONFIG_STRING_PRACH_STARTING_SUBFRAME_R13, &prach_StartingSubframe_r13))
                   {
                     RRC_CONFIGURATION_REQ (msg_p).prach_StartingSubframe_r13[j][prach_parameters_index] = calloc(1, sizeof(long));
-                    RRC_CONFIGURATION_REQ (msg_p).prach_StartingSubframe_r13[j][prach_parameters_index] = prach_StartingSubframe_r13;
+                    *RRC_CONFIGURATION_REQ (msg_p).prach_StartingSubframe_r13[j][prach_parameters_index] = prach_StartingSubframe_r13;
                   }
                   else
                   {

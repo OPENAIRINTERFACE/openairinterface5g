@@ -715,7 +715,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
   int i;
 
   if (frame < 20) {
-    LOG_I(PHY,
+    LOG_D(PHY,
 	  "[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", pdsch_start %d, G %d, nb_rb %"PRIu16", rb0 %x, rb1 %x, TBS %"PRIu16", pmi_alloc %"PRIx64", rv %"PRIu8" (round %"PRIu8")\n",
 	  eNB->Mod_id, dlsch->rnti,harq_pid,
 	  frame, subframe, input_buffer_length, dlsch_harq->pdsch_start,
@@ -735,8 +735,6 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 	  pmi2hex_2Ar1(dlsch_harq->pmi_alloc),
 	  dlsch_harq->rvidx,
 	dlsch_harq->round);
-    for (i=0;i<dlsch_harq->TBS>>3;i++) printf("%x.",dlsch_harq->pdu[i]);
-    printf("\n");
   }
 #if defined(MESSAGE_CHART_GENERATOR_PHY)
   MSC_LOG_TX_MESSAGE(
@@ -2018,6 +2016,8 @@ void prach_procedures(PHY_VARS_eNB *eNB,
     }
   }
 
+  if ((frame&1023) < 20) LOG_I(PHY,"Frame %d, subframe %d: Running rx_prach (br_flag %d)\n",
+			       frame,subframe,br_flag);
   rx_prach(eNB,
 	   eNB->RU_list[0],
 	   &max_preamble[0],
