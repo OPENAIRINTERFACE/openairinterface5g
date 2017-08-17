@@ -163,10 +163,10 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
 
   int N_NB_index;
 
-  AssertFatal(1==0,"RAR for BL/CE Still to be finished ...\n");
-
   // Copy the Msg2 narrowband
   RA_template->msg34_narrowband = RA_template->msg2_narrowband;
+  RA_template->msg3_first_rb    = ce_level;
+  RA_template->msg3_nb_rb       = 2;
 
   if (ce_level<2) { //CE Level 0,1, CEmodeA
     input_buffer_length =6;
@@ -183,7 +183,7 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
     ULdelay = 0;
     cqireq = 0;
     mpdcch_nb_index = 0;
-    rballoc = mac_computeRIV(6,1+ce_level,1); // one PRB only for UL Grant in position 1+ce_level within Narrowband
+    rballoc = mac_computeRIV(6,RA_template->msg3_first_rb,RA_template->msg3_nb_rb); // one PRB only for UL Grant in position 1+ce_level within Narrowband
     unsigned int buffer = 0;
     buffer |= N_NB_index << (16 + (4 - N_NB_index));
     buffer |= ((rballoc & 0xFF) << (12 + (4 - N_NB_index)));
@@ -204,8 +204,8 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
     rar[3] = (uint8_t)(RA_template->rnti>>8);
     rar[4] = (uint8_t)(RA_template->rnti&0xff);
   }
-  LOG_D(MAC,"[RAPROC] Frame %d Generating RAR BR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for ce_level %d, CRNTI %x,preamble %d/%d,TIMING OFFSET %d\n",
-        frameP,
+  LOG_I(MAC,"[RAPROC] Frame %d Subframe %d : Generating RAR BR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for ce_level %d, CRNTI %x,preamble %d/%d,TIMING OFFSET %d\n",
+        frameP,subframeP,
         *(uint8_t*)rarh,rar[0],rar[1],rar[2],rar[3],rar[4],rar[5],
         ce_level,
         RA_template->rnti,

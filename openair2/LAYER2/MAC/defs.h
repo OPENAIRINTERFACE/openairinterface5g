@@ -861,6 +861,12 @@ typedef struct {
   int16_t timing_offset;
   /// Timeout for RRC connection
   int16_t RRC_timer;
+  /// Msg3 first RB
+  uint8_t msg3_first_rb;
+  /// Msg3 number of RB
+  uint8_t msg3_nb_rb;
+  /// Msg3 MCS
+  uint8_t msg3_mcs;
   /// Round of Msg3 HARQ
   uint8_t msg3_round;
   /// TBS used for Msg4

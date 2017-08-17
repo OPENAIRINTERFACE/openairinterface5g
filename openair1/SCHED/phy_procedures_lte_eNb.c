@@ -1018,7 +1018,15 @@ handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 		    nfapi_ul_config_request_pdu_t *ul_config_pdu) {
 
   nfapi_ul_config_ulsch_pdu_rel8_t *rel8 = &ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8;
+
+  uint16_t *RIV2nb_rb_LUT, *RIV2first_rb_LUT;
+  uint16_t RIV_max;
+  uint16_t use_srs=0;
+
   int8_t UE_id;
+  LTE_eNB_ULSCH_t *ulsch;
+  LTE_UL_eNB_HARQ_t *ulsch_harq;
+
   // check if we have received a dci for this ue and ulsch descriptor is configured
 
   if (ul_config_pdu == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE) {
@@ -1026,6 +1034,80 @@ handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 		"No existing UE ULSCH for rnti %x\n",rel8->rnti);
     AssertFatal(eNB->ulsch[UE_id]->harq_mask > 0,
 		"ulsch for UE_id %d is not active\n",UE_id);
+    LOG_I(PHY,"Applying UL config for UE %d, rnti %x\n",
+	  UE_id,rel8->rnti);
+    /*
+#ifdef Rel14
+    nfapi_ul_config_ulsch_pdu_rel13_t *rel13 = &ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13;
+    int harq_pid = rel8->harq_process_number;
+
+    if (rel13->ue_type > 0) { // This is a BL/CE UE, retrieve PUSCH programming
+      ulsch = eNB->ulsch[UE_id];
+      
+      ulsch_harq = ulsch->harq_processes[harq_pid];
+      
+      switch (eNB->frame_parms.N_RB_DL) {
+      case 6:
+	RIV2nb_rb_LUT     = &RIV2nb_rb_LUT6[0];
+	RIV2first_rb_LUT  = &RIV2first_rb_LUT6[0];
+	RIV_max           = RIV_max6;
+	break;
+	
+      case 25:
+	RIV2nb_rb_LUT     = &RIV2nb_rb_LUT25[0];
+	RIV2first_rb_LUT  = &RIV2first_rb_LUT25[0];
+	RIV_max           = RIV_max25;
+	break;
+	
+      case 50:
+	RIV2nb_rb_LUT     = &RIV2nb_rb_LUT50[0];
+	RIV2first_rb_LUT  = &RIV2first_rb_LUT50[0];
+	RIV_max           = RIV_max50;
+	break;
+	
+      case 100:
+	RIV2nb_rb_LUT     = &RIV2nb_rb_LUT100[0];
+	RIV2first_rb_LUT  = &RIV2first_rb_LUT100[0];
+	RIV_max           = RIV_max100;
+	break;
+	
+      default:
+	DevParam(frame_parms->N_RB_DL, harq_pid, 0);
+	break;
+      }
+      
+      
+      ulsch_harq->first_rb               = rel8->resource_block_start;
+      ulsch_harq->nb_rb                  = rel8->number_of_resource_blocks;
+      ulsch_harq->O_RI                   = 0;//1;
+      ulsch_harq->Or2                    = 0;
+      ulsch_harq->Or1                    = 0;
+      ulsch_harq->O_ACK                  = 0;//2;
+      ulsch->beta_offset_cqi_times8      = 18;
+      ulsch->beta_offset_ri_times8       = 10;
+      ulsch->beta_offset_harqack_times8  = 16;
+      
+      ulsch->rnti = rel8->rnti;
+      ulsch->harq_mask = 1<<harq_pid;
+      
+      if (ulsch_harq->round == 0) {
+	ulsch_harq->status = ACTIVE;
+	ulsch_harq->rvidx = 0;
+	//ulsch_harq->TBS         = dlsch_tbs25[ulsch_harq->mcs][ulsch_harq->nb_rb-1];
+	ulsch_harq->TBS         = TBStable[get_I_TBS_UL(ulsch_harq->mcs)][ulsch_harq->nb_rb-1];
+	ulsch_harq->Msc_initial   = 12*ulsch_harq->nb_rb;
+	ulsch_harq->Nsymb_initial = 9;
+	ulsch_harq->round = 0;
+      } else {
+	ulsch_harq->rvidx = 0;
+	ulsch_harq->round++;
+      }
+      use_srs = is_srs_occasion_common(frame_parms,ulsch_harq->frame,ulsch_harq->subframe);
+      ulsch_harq->Nsymb_pusch = 12-(frame_parms->Ncp<<1)-(use_srs==0?0:1);
+      ulsch_harq->srs_active                            = use_srs;
+    }
+    #endif
+*/
   }
   else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE) {
     AssertFatal((UE_id = find_uci(rel8->rnti,proc->frame_tx,proc->subframe_tx,eNB,SEARCH_EXIST))>=0,
@@ -1033,19 +1115,19 @@ handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
     handle_uci_harq_pdu(eNB,proc,ul_config_pdu);
   }
   else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE) {
-
+    
   }
   else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_CQI_HARQ_PDU_TYPE) {
-
+    
   }
   else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_CQI_SR_PDU_TYPE) {
-
+    
   }
   else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_SR_PDU_TYPE) {
-
+    
   }
   else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE) {
-
+    
   }
 	      
 }
@@ -1151,7 +1233,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
 			     dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_blocks-1,
 			     TX_req->tx_request_body.tx_pdu_list[dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index].segments[0].segment_data);
       if (dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti == eNB->preamble_list[0].preamble_rel8.rnti) {// is RAR pdu
-	
+	LOG_I(PHY,"Frame %d, Subframe %d: Received LTE RAR pdu, programming based on UL Grant\n"); 
 	generate_eNB_ulsch_params_from_rar(eNB,
 					   TX_req->tx_request_body.tx_pdu_list[dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index].segments[0].segment_data,
 					   frame,
@@ -1197,7 +1279,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
 
   for (i=0;i<number_ul_pdu;i++) {
     ul_config_pdu = &UL_req->ul_config_request_body.ul_config_pdu_list[i];
-    LOG_D(PHY,"NFAPI: ul_pdu %d : type %d\n",i,ul_config_pdu->pdu_type);
+    LOG_I(PHY,"NFAPI: ul_pdu %d : type %d\n",i,ul_config_pdu->pdu_type);
     AssertFatal(ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE ||
 		ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE,
 		"Optional UL_PDU type %d not supported\n",ul_config_pdu->pdu_type);
