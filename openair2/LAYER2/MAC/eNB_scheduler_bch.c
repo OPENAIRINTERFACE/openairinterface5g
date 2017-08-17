@@ -121,16 +121,16 @@ schedule_SIB1_BR(
 	  break;
 	case 1: // repetition 8
 	  k = frameP&3;
-	  AssertFatal(N_RB_DL<=15,"SIB1-BR repetition 8 not allowed for N_RB_DL= %d\n",N_RB_DL);
+	  AssertFatal(N_RB_DL>15,"SIB1-BR repetition 8 not allowed for N_RB_DL= %d\n",N_RB_DL);
 	  if      ((foffset==0) && (subframeP!=(4+sfoffset))) continue;
 	  else if ((foffset==1) && (subframeP!=((9+sfoffset)%10))) continue;
 	  break;
 	case 2: // repetition 16
 	  k = ((10*frameP) + subframeP)&3;
-	  AssertFatal(N_RB_DL<=15,"SIB1-BR repetition 16 not allowed for N_RB_DL= %d\n",N_RB_DL);
+	  AssertFatal(N_RB_DL>15,"SIB1-BR repetition 16 not allowed for N_RB_DL= %d\n",N_RB_DL);
 	  if      ((sfoffset == 1) && ((subframeP!=0)||(subframeP!=5))) continue;
-	  else if ((sfoffset == 0) && (foffset==0) && ((subframeP!=4) || (subframeP!=9))) continue;
-	  else if ((sfoffset == 0) && (foffset==1) && ((subframeP!=0) || (subframeP!=9))) continue;
+	  else if ((sfoffset == 0) && (foffset==0) && (subframeP!=4) && (subframeP!=9)) continue;
+	  else if ((sfoffset == 0) && (foffset==1) && (subframeP!=0) && (subframeP!=9)) continue;
 	  break;
       }
     // if we get here we have to schedule SIB1_BR in this frame/subframe
@@ -170,7 +170,7 @@ schedule_SIB1_BR(
       Sj = Sj100;
       break;
     }
-
+    // Note: definition of k above and rvidx from 36.321 section 5.3.1
     rvidx = (((3*k)>>1) + (k&1))&3;
     
     i = cc->SIB1_BR_cnt & (m-1);
@@ -196,7 +196,7 @@ schedule_SIB1_BR(
 
     AssertFatal(bcch_sdu_length <= TBS, "length returned by RRC %d is not compatible with the TBS %d from MIB\n",bcch_sdu_length,TBS);
 
-    LOG_D(MAC,"[eNB %d] Frame %d : BCCH_BR->DLSCH CC_id %d, Received %d bytes \n",module_idP,frameP,CC_id,bcch_sdu_length);
+    if ((frameP&1023) < 200) LOG_D(MAC,"[eNB %d] Frame %d Subframe %d: SIB1_BR->DLSCH CC_id %d, Received %d bytes, scheduling on NB %d (i %d,m %d,N_S_NB %d)  rvidx %d\n",module_idP,frameP,subframeP,CC_id,bcch_sdu_length,n_NB,i,m,N_S_NB,rvidx);
     
     // allocate all 6 PRBs in narrowband for SIB1_BR
 
@@ -235,6 +235,8 @@ schedule_SIB1_BR(
     dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode                      = (cc->p_eNB==1 ) ? 1 : 2;
     dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = 1;
     dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = 1;
+    // Rel10 fields
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10.pdsch_start                           = 3;
     // Rel13 fields
     dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type                               = 1; // CEModeA UE
     dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type                    = 0; // SIB1-BR
@@ -282,7 +284,6 @@ schedule_SIB1_BR(
 
   }
 
-
   return;
 }
 
@@ -312,7 +313,7 @@ schedule_SI_BR(
   nfapi_dl_config_request_body_t          *dl_req;
   int                                     i;
   int                                     rvidx;
-
+  int                                     absSF = (frameP*10)+subframeP;
 
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
@@ -343,7 +344,10 @@ schedule_SI_BR(
 		  "si_WindowLength_BR_r13 %d > %d\n",
 		  (int)cc->sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->si_WindowLength_BR_r13,
 		  SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_WindowLength_BR_r13_ms200);
-		  
+
+      // check that SI frequency-hopping is disabled
+      AssertFatal(cc->sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->si_HoppingConfigCommon_r13==SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_HoppingConfigCommon_r13_off,
+		  "Deactivate SI_HoppingConfigCommon_r13 in configuration file, not supported for now\n");
       long si_WindowLength_BR_r13   = si_WindowLength_BR_r13tab[cc->sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->si_WindowLength_BR_r13];
 
       long si_RepetitionPattern_r13 = cc->sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->si_RepetitionPattern_r13;
@@ -360,10 +364,11 @@ schedule_SI_BR(
 
 	// check if the SI is to be scheduled now
 	int period_in_sf              = 80<<si_Periodicity; // 2^i * 80 subframes, note: si_Periodicity is 2^i * 80ms
-	int sf_mod_period             = ((frameP*10)+subframeP)%period_in_sf;
-
-	rvidx = (((3*sf_mod_period)>>1) + (sf_mod_period&1))&3;
-
+	int sf_mod_period             = absSF%period_in_sf;
+	int k                         = sf_mod_period&3;
+	// Note: definition of k and rvidx from 36.321 section 5.3.1
+	rvidx = (((3*k)>>1) + (k&1))&3;
+	
         if ((sf_mod_period < si_WindowLength_BR_r13) &&
 	    ((frameP&(((1<<si_RepetitionPattern_r13)-1)))==0)) { // this SIB is to be scheduled
 
@@ -382,16 +387,26 @@ schedule_SI_BR(
 	    AssertFatal(bcch_sdu_length <= (si_TBS_r13>>3),
 			"RRC provided bcch with length %d > %d (si_TBS_r13 %d)\n",
 			bcch_sdu_length,(int)(si_TBS_r13>>3),(int)schedulingInfoList_BR_r13->list.array[i]->si_TBS_r13);
-	    LOG_D(MAC,"[eNB %d] Frame %d : BCCH_BR %d->DLSCH CC_id %d, Received %d bytes \n",module_idP,frameP,i,CC_id,bcch_sdu_length);
-	    
+
 	    // allocate all 6 PRBs in narrowband for SIB1_BR
-	    first_rb = narrowband_to_first_rb(cc,si_Narrowband_r13);
+
+	    // check that SIB1 didn't take this narrowband
+	    if (vrb_map[first_rb] > 0) continue;
+
+	    first_rb = narrowband_to_first_rb(cc,si_Narrowband_r13-1);
 	    vrb_map[first_rb]   = 1;
 	    vrb_map[first_rb+1] = 1;
 	    vrb_map[first_rb+2] = 1;
-	    vrb_map[first_rb+3] = 1;
 	    vrb_map[first_rb+4] = 1;
 	    vrb_map[first_rb+5] = 1;
+
+	    if ((frameP&1023) < 200) LOG_D(MAC,"[eNB %d] Frame %d Subframe %d: SI_BR->DLSCH CC_id %d, Narrowband %d rvidx %d (sf_mod_period %d : si_WindowLength_BR_r13 %d : si_RepetitionPattern_r13 %d) bcch_sdu_length %d\n",
+					   module_idP,frameP,subframeP,CC_id,si_Narrowband_r13-1,rvidx,
+					   sf_mod_period,si_WindowLength_BR_r13,si_RepetitionPattern_r13,
+					   bcch_sdu_length);	    
+
+
+
 	    
 	    dl_config_pdu                                                                  = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
 	    memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
@@ -419,10 +434,12 @@ schedule_SI_BR(
 	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode                      = (cc->p_eNB==1 ) ? 1 : 2;
 	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = 1;
 	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = 1;
+	    // Rel10 fields (for PDSCH starting symbol)
+	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10.pdsch_start                           = cc[CC_id].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13;
 	    // Rel13 fields
 	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type                               = 1; // CEModeA UE
 	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type                    = 1; // SI-BR
-	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = 0xFFFF; // absolute SF
+	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = absSF - sf_mod_period; 
 	    
 	    //	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ; 
 	    dl_req->number_pdu++;
@@ -506,6 +523,8 @@ void schedule_mib(module_id_t   module_idP,
 
       LOG_D(MAC,"Frame %d, subframe %d: Adding BCH PDU in position %d (length %d)\n",
 	    frameP,subframeP,dl_req->number_pdu,mib_sdu_length);
+
+      if ((frameP&1023) < 40) LOG_D(MAC,"[eNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes (cc->mib->message.schedulingInfoSIB1_BR_r13 %d)\n",module_idP,frameP,CC_id,mib_sdu_length,cc->mib->message.schedulingInfoSIB1_BR_r13);
 
       dl_config_pdu                                                         = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
       memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
@@ -744,7 +763,7 @@ schedule_SI(
   schedule_SIB1_BR(module_idP,frameP,subframeP);
   schedule_SI_BR(module_idP,frameP,subframeP);
 #endif
-  // this might be misleading when bcch is inactive
+
   stop_meas(&eNB->schedule_si);
   return;
 }

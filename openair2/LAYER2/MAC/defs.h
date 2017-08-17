@@ -752,6 +752,15 @@ typedef struct {
 #ifdef LOCALIZATION
   eNB_UE_estimated_distances distance;
 #endif
+
+#ifdef Rel14
+  uint8_t rach_resource_type;
+ uint16_t mpdcch_repetition_cnt;
+  struct PhysicalConfigDedicated  *physicalConfigDedicated;
+  frame_t Msg2_frame;
+  sub_frame_t Msg2_subframe;
+#endif
+
 } UE_TEMPLATE;
 
 /*! \brief scheduling control information set through an API (not used)*/
@@ -852,6 +861,12 @@ typedef struct {
   int16_t timing_offset;
   /// Timeout for RRC connection
   int16_t RRC_timer;
+  /// Msg3 first RB
+  uint8_t msg3_first_rb;
+  /// Msg3 number of RB
+  uint8_t msg3_nb_rb;
+  /// Msg3 MCS
+  uint8_t msg3_mcs;
   /// Round of Msg3 HARQ
   uint8_t msg3_round;
   /// TBS used for Msg4

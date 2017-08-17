@@ -486,10 +486,13 @@ int get_numnarrowbandbits(long dl_Bandwidth) {
 int startSF_fdd_RA_times2[8] = {2,3,4,5,8,10,16,20};
 int startSF_tdd_RA[7]        = {1,2,4,5,8,10,20};
 
-int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t subframeP,int rmax,MPDCCH_TYPES_t mpdcch_type) {
+int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t subframeP,int rmax,MPDCCH_TYPES_t mpdcch_type,int UE_id) {
 
   struct PRACH_ConfigSIB_v1310 *ext4_prach = eNB->common_channels[CC_id].radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
+
+
   int T;
+  EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11;
 
   switch (mpdcch_type) {
   case TYPE0:
@@ -504,6 +507,7 @@ int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t 
   case TYPE2: // RAR
     AssertFatal(ext4_prach->mpdcch_startSF_CSS_RA_r13!=NULL,
 		"mpdcch_startSF_CSS_RA_r13 is null\n");
+    AssertFatal(rmax>0,"rmax is 0!\b");
     if (eNB->common_channels[CC_id].tdd_Config==NULL) //FDD
       T = rmax*startSF_fdd_RA_times2[ext4_prach->mpdcch_startSF_CSS_RA_r13->choice.fdd_r13]>>1;
     else //TDD
@@ -513,12 +517,23 @@ int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t 
     AssertFatal(1==0,"MPDCCH Type 2A not handled yet\n");
     break;
   case TYPEUESPEC:
-    AssertFatal(1==0,"MPDCCH Type UESPEC not handled yet\n");
+    epdcch_setconfig_r11= &eNB->UE_list.UE_template[CC_id][UE_id].physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11->list.array[0] ;
+    
+    
+    AssertFatal(epdcch_setconfig_r11 != NULL," epdcch_setconfig_r11 is null for UE specific \n");
+    AssertFatal(epdcch_setconfig_r11->ext2 != NULL," ext2 doesn't exist in epdcch config ' \n");
+    
+    if (eNB->common_channels[CC_id].tdd_Config==NULL) //FDD
+      T = rmax*startSF_fdd_RA_times2[epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.choice.fdd_r13]>>1;
+    else //TDD
+      T = rmax*startSF_tdd_RA[epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.choice.tdd_r13];
+    
     break;
   default:
     return(0);
   }
 
+  AssertFatal(T>0,"T is 0!\n");
   if (((10*frameP) + subframeP)%T == 0) return(1);
   else return(0);
 
@@ -738,7 +753,11 @@ void dump_ue_list(UE_list_t *listP, int ul_flag)
   }
 }
 
-int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP)
+int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP
+               #ifdef Rel14
+                 ,uint8_t rach_resource_type
+               #endif
+               )
 {
   int UE_id;
   int i, j;
@@ -760,6 +779,11 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP)
     UE_list->ordered_ULCCids[0][UE_id]             = cc_idP;
     UE_list->num_UEs++;
     UE_list->active[UE_id]                         = TRUE;
+
+#ifdef Rel14
+    UE_list->UE_template[cc_idP][UE_id].rach_resource_type = rach_resource_type ;
+#endif
+
     memset((void*)&UE_list->UE_sched_ctrl[UE_id],0,sizeof(UE_sched_ctrl));
     memset((void*)&UE_list->eNB_UE_stats[cc_idP][UE_id],0,sizeof(eNB_UE_STATS));
 

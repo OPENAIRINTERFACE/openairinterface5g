@@ -705,7 +705,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 		      LTE_eNB_DLSCH_t *dlsch, 
 		      LTE_eNB_DLSCH_t *dlsch1,
 		      LTE_eNB_UE_stats *ue_stats,
-		      int ra_flag){
+		      int ra_flag) {
 
   int frame=proc->frame_tx;
   int subframe=proc->subframe_tx;
@@ -715,7 +715,8 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
   int i;
 
   if (frame < 20) {
-    LOG_I(PHY,
+
+    LOG_D(PHY,
 	  "[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", pdsch_start %d, G %d, nb_rb %"PRIu16", rb0 %x, rb1 %x, TBS %"PRIu16", pmi_alloc %"PRIx64", rv %"PRIu8" (round %"PRIu8")\n",
 	  eNB->Mod_id, dlsch->rnti,harq_pid,
 	  frame, subframe, input_buffer_length, dlsch_harq->pdsch_start,
@@ -953,16 +954,15 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 
 #ifdef Rel14
   dlsch0->sib1_br_flag=0;
-  
-  if ((rel13->pdsch_payload_type <2) && (rel13->ue_type>0)) { // this is a BR/CE UE and SIB1-BR/SI-BR
 
+  if ((rel13->pdsch_payload_type <2) && (rel13->ue_type>0)) { // this is a BR/CE UE and SIB1-BR/SI-BR
     dlsch0->rnti             = 0xFFFF;
     dlsch0->Kmimo            = 1;
-    dlsch0->Mdlharq          = 4;
+    dlsch0->Mdlharq          = 4; 
     dlsch0->Nsoft            = 25344;
     dlsch0->i0               = rel13->initial_transmission_sf_io;
     dlsch0_harq->pdsch_start = rel10->pdsch_start;
-    
+
     if (rel13->pdsch_payload_type == 0) dlsch0->sib1_br_flag=1;
 
     // configure PDSCH
@@ -991,8 +991,8 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
     }
 
     dlsch0->active                  = 1;
-
-    dlsch0_harq->nb_rb              = 6;
+  
+    dlsch0_harq->nb_rb              = 6; 
     dlsch0_harq->vrb_type           = LOCALIZED;
     dlsch0_harq->rvidx              = rel8->redundancy_version;
     dlsch0_harq->Nl                 = 1;
@@ -1003,7 +1003,6 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
     dlsch0_harq->TBS                = rel8->length<<3;
     dlsch0_harq->Qm                 = rel8->modulation;
     dlsch0_harq->codeword           = 0;
-
   }
   else {
 
@@ -1019,7 +1018,15 @@ handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 		    nfapi_ul_config_request_pdu_t *ul_config_pdu) {
 
   nfapi_ul_config_ulsch_pdu_rel8_t *rel8 = &ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8;
+
+  uint16_t *RIV2nb_rb_LUT, *RIV2first_rb_LUT;
+  uint16_t RIV_max;
+  uint16_t use_srs=0;
+
   int8_t UE_id;
+  LTE_eNB_ULSCH_t *ulsch;
+  LTE_UL_eNB_HARQ_t *ulsch_harq;
+
   // check if we have received a dci for this ue and ulsch descriptor is configured
 
   if (ul_config_pdu == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE) {
@@ -1027,6 +1034,80 @@ handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 		"No existing UE ULSCH for rnti %x\n",rel8->rnti);
     AssertFatal(eNB->ulsch[UE_id]->harq_mask > 0,
 		"ulsch for UE_id %d is not active\n",UE_id);
+    LOG_I(PHY,"Applying UL config for UE %d, rnti %x\n",
+	  UE_id,rel8->rnti);
+    /*
+#ifdef Rel14
+    nfapi_ul_config_ulsch_pdu_rel13_t *rel13 = &ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13;
+    int harq_pid = rel8->harq_process_number;
+
+    if (rel13->ue_type > 0) { // This is a BL/CE UE, retrieve PUSCH programming
+      ulsch = eNB->ulsch[UE_id];
+      
+      ulsch_harq = ulsch->harq_processes[harq_pid];
+      
+      switch (eNB->frame_parms.N_RB_DL) {
+      case 6:
+	RIV2nb_rb_LUT     = &RIV2nb_rb_LUT6[0];
+	RIV2first_rb_LUT  = &RIV2first_rb_LUT6[0];
+	RIV_max           = RIV_max6;
+	break;
+	
+      case 25:
+	RIV2nb_rb_LUT     = &RIV2nb_rb_LUT25[0];
+	RIV2first_rb_LUT  = &RIV2first_rb_LUT25[0];
+	RIV_max           = RIV_max25;
+	break;
+	
+      case 50:
+	RIV2nb_rb_LUT     = &RIV2nb_rb_LUT50[0];
+	RIV2first_rb_LUT  = &RIV2first_rb_LUT50[0];
+	RIV_max           = RIV_max50;
+	break;
+	
+      case 100:
+	RIV2nb_rb_LUT     = &RIV2nb_rb_LUT100[0];
+	RIV2first_rb_LUT  = &RIV2first_rb_LUT100[0];
+	RIV_max           = RIV_max100;
+	break;
+	
+      default:
+	DevParam(frame_parms->N_RB_DL, harq_pid, 0);
+	break;
+      }
+      
+      
+      ulsch_harq->first_rb               = rel8->resource_block_start;
+      ulsch_harq->nb_rb                  = rel8->number_of_resource_blocks;
+      ulsch_harq->O_RI                   = 0;//1;
+      ulsch_harq->Or2                    = 0;
+      ulsch_harq->Or1                    = 0;
+      ulsch_harq->O_ACK                  = 0;//2;
+      ulsch->beta_offset_cqi_times8      = 18;
+      ulsch->beta_offset_ri_times8       = 10;
+      ulsch->beta_offset_harqack_times8  = 16;
+      
+      ulsch->rnti = rel8->rnti;
+      ulsch->harq_mask = 1<<harq_pid;
+      
+      if (ulsch_harq->round == 0) {
+	ulsch_harq->status = ACTIVE;
+	ulsch_harq->rvidx = 0;
+	//ulsch_harq->TBS         = dlsch_tbs25[ulsch_harq->mcs][ulsch_harq->nb_rb-1];
+	ulsch_harq->TBS         = TBStable[get_I_TBS_UL(ulsch_harq->mcs)][ulsch_harq->nb_rb-1];
+	ulsch_harq->Msc_initial   = 12*ulsch_harq->nb_rb;
+	ulsch_harq->Nsymb_initial = 9;
+	ulsch_harq->round = 0;
+      } else {
+	ulsch_harq->rvidx = 0;
+	ulsch_harq->round++;
+      }
+      use_srs = is_srs_occasion_common(frame_parms,ulsch_harq->frame,ulsch_harq->subframe);
+      ulsch_harq->Nsymb_pusch = 12-(frame_parms->Ncp<<1)-(use_srs==0?0:1);
+      ulsch_harq->srs_active                            = use_srs;
+    }
+    #endif
+*/
   }
   else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE) {
     AssertFatal((UE_id = find_uci(rel8->rnti,proc->frame_tx,proc->subframe_tx,eNB,SEARCH_EXIST))>=0,
@@ -1034,19 +1115,19 @@ handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
     handle_uci_harq_pdu(eNB,proc,ul_config_pdu);
   }
   else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE) {
-
+    
   }
   else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_CQI_HARQ_PDU_TYPE) {
-
+    
   }
   else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_CQI_SR_PDU_TYPE) {
-
+    
   }
   else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_SR_PDU_TYPE) {
-
+    
   }
   else if (ul_config_pdu == NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE) {
-
+    
   }
 	      
 }
@@ -1152,7 +1233,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
 			     dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_blocks-1,
 			     TX_req->tx_request_body.tx_pdu_list[dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index].segments[0].segment_data);
       if (dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti == eNB->preamble_list[0].preamble_rel8.rnti) {// is RAR pdu
-	
+	LOG_I(PHY,"Frame %d, Subframe %d: Received LTE RAR pdu, programming based on UL Grant\n"); 
 	generate_eNB_ulsch_params_from_rar(eNB,
 					   TX_req->tx_request_body.tx_pdu_list[dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index].segments[0].segment_data,
 					   frame,
@@ -1198,7 +1279,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
 
   for (i=0;i<number_ul_pdu;i++) {
     ul_config_pdu = &UL_req->ul_config_request_body.ul_config_pdu_list[i];
-    LOG_D(PHY,"NFAPI: ul_pdu %d : type %d\n",i,ul_config_pdu->pdu_type);
+    LOG_I(PHY,"NFAPI: ul_pdu %d : type %d\n",i,ul_config_pdu->pdu_type);
     AssertFatal(ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE ||
 		ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE,
 		"Optional UL_PDU type %d not supported\n",ul_config_pdu->pdu_type);
@@ -1604,7 +1685,6 @@ void process_HARQ_feedback(uint8_t UE_id,
     dl_subframe = ul_ACK_subframe2_dl_subframe(fp,
 					       subframe,
 					       m);
-
     if (dlsch->subframe_tx[dl_subframe]==1) {
       if (pusch_flag == 1)
         mp++;
@@ -1627,7 +1707,7 @@ void process_HARQ_feedback(uint8_t UE_id,
         LOG_D(PHY,"[eNB %d][PDSCH %x/%d] subframe %d, status %d, round %d (rv %d, TBS %d)\n",eNB->Mod_id,
               dlsch->rnti,dl_harq_pid[m],dl_subframe,
               dlsch_harq_proc->status,dlsch_harq_proc->round,
-	      dlsch->harq_processes[dl_harq_pid[m]]->rvidx,
+              dlsch->harq_processes[dl_harq_pid[m]]->rvidx,
               dlsch->harq_processes[dl_harq_pid[m]]->TBS);
 
         if (dlsch_harq_proc->status==DISABLED)
@@ -1891,10 +1971,16 @@ void prach_procedures(PHY_VARS_eNB *eNB,
   if (br_flag==1) {
     subframe = eNB->proc.subframe_prach_br;
     frame = eNB->proc.frame_prach_br;
+    pthread_mutex_lock(&eNB->UL_INFO_mutex);
+    eNB->UL_INFO.rach_ind_br.number_of_preambles=0;
+    pthread_mutex_unlock(&eNB->UL_INFO_mutex);
   }
   else
 #endif
     {
+      pthread_mutex_lock(&eNB->UL_INFO_mutex);
+      eNB->UL_INFO.rach_ind.number_of_preambles=0;
+      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
       subframe = eNB->proc.subframe_prach;
       frame = eNB->proc.frame_prach;
     }
@@ -1906,6 +1992,8 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 
  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,1);
+
+
 
   for (i=0;i<eNB->num_RU;i++) {
     ru=eNB->RU_list[i];
@@ -1932,13 +2020,13 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 #endif
 	   );
 
-  //#ifdef DEBUG_PHY_PROC
-  LOG_D(PHY,"[RAPROC] Frame %d, subframe %d : Most likely preamble %d, energy %d dB delay %d\n",
+#ifdef DEBUG_PHY_PROC
+  LOG_I(PHY,"[RAPROC] Frame %d, subframe %d : Most likely preamble %d, energy %d dB delay %d\n",
         frame,subframe,
 	max_preamble[0],
-        max_preamble_energy[0],
+        max_preamble_energy[0]/10,
         max_preamble_delay[0]);
-  //#endif
+#endif
 
 #ifdef Rel14
   if (br_flag==1) {
@@ -1949,30 +2037,46 @@ void prach_procedures(PHY_VARS_eNB *eNB,
     prach_mask = is_prach_subframe(&eNB->frame_parms,eNB->proc.frame_prach_br,eNB->proc.subframe_prach_br);
     
     eNB->UL_INFO.rach_ind_br.preamble_list                              = eNB->preamble_list_br;
-    
+    int ind=0;
+    int ce_level=0;
+    /* Save for later, it doesn't work    
     for (int ind=0,ce_level=0;ce_level<4;ce_level++) {
-      if ((prach_mask&(1<<(1+ce_level)) > 0) && // prach is active and CE level has finished its repetitions
+      
+      if ((eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[ce_level]==1)&&
+	  (prach_mask&(1<<(1+ce_level)) > 0) && // prach is active and CE level has finished its repetitions
 	  (eNB->prach_vars_br.repetition_number[ce_level]==
 	   eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[ce_level])) {
-	if (max_preamble_energy[ind] > 580) {
-	  eNB->UL_INFO.rach_ind_br.number_of_preambles++;
-	  
-	  eNB->preamble_list_br[ind].preamble_rel8.timing_advance        = max_preamble_delay[ind];//
-	  eNB->preamble_list_br[ind].preamble_rel8.preamble              = max_preamble[ind];
-	  // note: fid is implicitly 0 here, this is the rule for eMTC RA-RNTI from 36.321, Section 5.1.4
-	  eNB->preamble_list_br[ind].preamble_rel8.rnti                  = 1+subframe+(eNB->prach_vars_br.first_frame[ce_level]%40);  
-	  eNB->preamble_list_br[ind].instance_length                     = 0; //don't know exactly what this is
-	  eNB->preamble_list_br[ind].preamble_rel13.rach_resource_type   = 1+ce_level;  // CE Level
-	}
+    */
+    if (eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[0]==1){ 
+      if (max_preamble_energy[0] > 350) {
+	eNB->UL_INFO.rach_ind_br.number_of_preambles++;
+	
+	eNB->preamble_list_br[ind].preamble_rel8.timing_advance        = max_preamble_delay[ind];//
+	eNB->preamble_list_br[ind].preamble_rel8.preamble              = max_preamble[ind];
+	// note: fid is implicitly 0 here, this is the rule for eMTC RA-RNTI from 36.321, Section 5.1.4
+	eNB->preamble_list_br[ind].preamble_rel8.rnti                  = 1+subframe+(eNB->prach_vars_br.first_frame[ce_level]%40);  
+	eNB->preamble_list_br[ind].instance_length                     = 0; //don't know exactly what this is
+	eNB->preamble_list_br[ind].preamble_rel13.rach_resource_type   = 1+ce_level;  // CE Level
+	LOG_I(PHY,"Filling NFAPI indication for RACH %d CELevel %d (mask %x) : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
+	      ind,
+	      ce_level,
+	      prach_mask,
+	      eNB->preamble_list_br[ind].preamble_rel8.timing_advance,
+	      eNB->preamble_list_br[ind].preamble_rel8.preamble,
+	      eNB->preamble_list_br[ind].preamble_rel8.rnti,
+	      eNB->preamble_list_br[ind].preamble_rel13.rach_resource_type);
+      }
+      /*
 	ind++;
       }
-    } // ce_level
+      } */// ce_level
+    }
   }
   else
 #endif
 
     {
-      if (max_preamble_energy[0] > 580) {
+      if (max_preamble_energy[0] > 10000) {
 
 	LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
 	      eNB->Mod_id,
@@ -2002,10 +2106,15 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 	      eNB->preamble_list[0].preamble_rel8.rnti                  = 1+subframe;  // note: fid is implicitly 0 here
 	      eNB->preamble_list[0].preamble_rel13.rach_resource_type   = 0;
 	      eNB->preamble_list[0].instance_length                     = 0; //don't know exactly what this is
-	    
+
+	      LOG_I(PHY,"Filling NFAPI indication for RACH : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
+		    eNB->preamble_list[0].preamble_rel8.timing_advance,
+		    eNB->preamble_list[0].preamble_rel8.preamble,
+		    eNB->preamble_list[0].preamble_rel8.rnti,
+		    eNB->preamble_list[0].preamble_rel13.rach_resource_type);	    
 	      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
 	    }
-      } // max_preamble_energy > 580
+      } // max_preamble_energy > 350
     } // else br_flag
       /*
 	mac_xface->initiate_ra_proc(eNB->Mod_id,
@@ -2493,7 +2602,6 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 #ifdef DEBUG_PHY_PROC
   LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_uespec_RX(%d)\n",eNB->Mod_id,frame, subframe);
 #endif
-
 
   eNB->rb_mask_ul[0]=0;
   eNB->rb_mask_ul[1]=0;

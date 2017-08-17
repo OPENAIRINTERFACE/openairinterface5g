@@ -532,7 +532,11 @@ int to_prb(int);
 int to_rbg(int);
 int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, uint8_t HO_active);
 int mac_init(void);
-int add_new_ue(module_id_t Mod_id, int CC_id, rnti_t rnti,int harq_pid);
+int add_new_ue(module_id_t Mod_id, int CC_id, rnti_t rnti,int harq_pid
+               #ifdef Rel14
+                 ,uint8_t rach_resource_type
+               #endif
+               );
 int rrc_mac_remove_ue(module_id_t Mod_id, rnti_t rntiP);
 
 
@@ -901,7 +905,7 @@ uint8_t subframe2harqpid(COMMON_channels_t *cc,frame_t frame,sub_frame_t subfram
 #ifdef Rel14
 int get_numnarrowbandbits(long dl_Bandwidth);
 
-int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t subframeP,int rmax,MPDCCH_TYPES_t mpdcch_type);
+int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t subframeP,int rmax,MPDCCH_TYPES_t mpdcch_type,int UE_id);
 
 int get_numnarrowbands(long dl_Bandwidth);
 
