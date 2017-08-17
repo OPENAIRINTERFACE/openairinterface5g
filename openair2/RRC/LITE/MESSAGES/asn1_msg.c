@@ -2333,17 +2333,17 @@ do_RRCConnectionSetup_BR(
   // CQI ReportConfig
 
   /// TODO to be reviewed
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic));
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic = CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic));
 #if defined(Rel10) || defined(Rel14)
-  *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic= CQI_ReportModeAperiodic_rm30;
+  *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic = CQI_ReportModeAperiodic_rm30;
 #else
   *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CQI_ReportConfig__cqi_ReportModeAperiodic_rm30; // HLC CQI, no PMI
 #endif
   physicalConfigDedicated2->cqi_ReportConfig->nomPDSCH_RS_EPRE_Offset = 0; // 0 dB
   //physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic=NULL;
 
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic));
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present =  CQI_ReportPeriodic_PR_release;
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic = CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic));
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present = CQI_ReportPeriodic_PR_release;
   /*
     physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present =  CQI_ReportPeriodic_PR_setup;
     physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex = 0;  // n2_pucch
@@ -2357,46 +2357,46 @@ do_RRCConnectionSetup_BR(
 
   /// TODO to be reviewed
   if (rrc->srs_enable[CC_id]) {
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->present = SoundingRS_UL_ConfigDedicated_PR_setup;
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth =
-      SoundingRS_UL_ConfigDedicated__setup__srs_Bandwidth_bw0;
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth =
-      SoundingRS_UL_ConfigDedicated__setup__srs_HoppingBandwidth_hbw0;
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition=0;
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.duration=1;
-    if (carrier->sib1->tdd_Config==NULL) { // FDD
-      if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present
-	  == SoundingRS_UL_ConfigCommon_PR_setup)
-	if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig!=0)
-	  LOG_W(RRC,"This code has been optimized for SRS Subframe Config 0, but current config is %d. Expect undefined behaviour!\n",
-		carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig);
-      if (ue_context_pP->local_uid >=20)
-	LOG_W(RRC,"This code has been optimized for up to 10 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
-	      ue_context_pP->local_uid);
-      //the current code will allow for 20 UEs - to be revised for more
-      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=7+ue_context_pP->local_uid/2;
-      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb= ue_context_pP->local_uid%2;
-    }
-    else {
-      if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present
-	  == SoundingRS_UL_ConfigCommon_PR_setup)
-	if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig!=7) {
-	  LOG_W(RRC,"This code has been optimized for SRS Subframe Config 7 and TDD config 3, but current configs are %d and %d. Expect undefined behaviour!\n",
-		carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig,
-		carrier->sib1->tdd_Config->subframeAssignment);
-	}
-      if (ue_context_pP->local_uid >=6)
-	LOG_W(RRC,"This code has been optimized for up to 6 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
-	      ue_context_pP->local_uid);
-      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=17+ue_context_pP->local_uid/2;
-      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb= ue_context_pP->local_uid%2;
-    }
-    LOG_W(RRC,"local UID %d, srs ConfigIndex %d, TransmissionComb %d\n",ue_context_pP->local_uid,
-	  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex,
-	  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb);
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->present = SoundingRS_UL_ConfigDedicated_PR_setup;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth =
+              SoundingRS_UL_ConfigDedicated__setup__srs_Bandwidth_bw0;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth =
+              SoundingRS_UL_ConfigDedicated__setup__srs_HoppingBandwidth_hbw0;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition=0;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.duration=1;
+      if (carrier->sib1->tdd_Config==NULL) { // FDD
+          if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present
+                  == SoundingRS_UL_ConfigCommon_PR_setup)
+              if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig!=0)
+                  LOG_W(RRC,"This code has been optimized for SRS Subframe Config 0, but current config is %d. Expect undefined behaviour!\n",
+                        carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig);
+          if (ue_context_pP->local_uid >=20)
+              LOG_W(RRC,"This code has been optimized for up to 10 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
+                    ue_context_pP->local_uid);
+          //the current code will allow for 20 UEs - to be revised for more
+          physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=7+ue_context_pP->local_uid/2;
+          physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb= ue_context_pP->local_uid%2;
+      }
+      else {
+          if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present
+                  == SoundingRS_UL_ConfigCommon_PR_setup)
+              if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig!=7) {
+                  LOG_W(RRC,"This code has been optimized for SRS Subframe Config 7 and TDD config 3, but current configs are %d and %d. Expect undefined behaviour!\n",
+                        carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig,
+                        carrier->sib1->tdd_Config->subframeAssignment);
+              }
+          if (ue_context_pP->local_uid >=6)
+              LOG_W(RRC,"This code has been optimized for up to 6 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
+                    ue_context_pP->local_uid);
+          physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=17+ue_context_pP->local_uid/2;
+          physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb= ue_context_pP->local_uid%2;
+      }
+      LOG_W(RRC,"local UID %d, srs ConfigIndex %d, TransmissionComb %d\n",ue_context_pP->local_uid,
+            physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex,
+            physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb);
 
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift=
-      SoundingRS_UL_ConfigDedicated__setup__cyclicShift_cs0;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift=
+              SoundingRS_UL_ConfigDedicated__setup__cyclicShift_cs0;
   }
 
   //AntennaInfoDedicated
@@ -2530,11 +2530,13 @@ do_RRCConnectionSetup_BR(
 
   // FIXME allocate physicalConfigDedicated2->ext7
   physicalConfigDedicated2->ext7 = CALLOC(1, sizeof(struct PhysicalConfigDedicated__ext7));
-  physicalConfigDedicated2->ext7->pdsch_ConfigDedicated_v1310 = NULL;
+
+  physicalConfigDedicated2->ext7->pdsch_ConfigDedicated_v1310 = NULL; // has some parameters to be filled
+
   physicalConfigDedicated2->ext7->pusch_ConfigDedicated_r13 = NULL;
+  physicalConfigDedicated2->ext7->pucch_ConfigDedicated_r13 = NULL;
 
   physicalConfigDedicated2->ext7->pdcch_CandidateReductions_r13 = NULL;
-  physicalConfigDedicated2->ext7->pucch_ConfigDedicated_r13 = NULL;
 
   physicalConfigDedicated2->ext7->cqi_ReportConfig_v1310 = NULL;
 
