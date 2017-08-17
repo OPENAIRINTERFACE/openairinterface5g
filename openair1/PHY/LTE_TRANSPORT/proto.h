@@ -1973,6 +1973,7 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 		      int hard_pid,
                       int G,
                       uint8_t q,
+		      uint16_t frame,
                       uint8_t Ns);
 
 void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,

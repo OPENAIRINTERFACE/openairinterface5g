@@ -160,6 +160,31 @@ EMAIL   : Lionel.Gauthier@eurecom.fr, navid.nikaein@eurecom.fr
 #define ENB_CONFIG_STRING_MAX_AVAILABLE_NARROWBAND              "maxavailablenarrowband"
 #define ENB_CONFIG_STRING_PUCCH_INFO_VALUE                      "pucch_info_value"
 
+#define ENB_CONFIG_STRING_PCCH_CONFIG_V1310                      "pcch_config_v1310"
+#define ENB_CONFIG_STRING_PAGING_NARROWBANDS_R13                 "paging_narrowbands_r13"
+#define ENB_CONFIG_STRING_MPDCCH_NUMREPETITION_PAGING_R13        "mpdcch_numrepetition_paging_r13"
+#define ENB_CONFIG_STRING_NB_V1310                               "nb_v1310"
+
+
+#define ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL0    "pucch_NumRepetitionCE_Msg4_Level0_r13" 
+#define ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL1    "pucch_NumRepetitionCE_Msg4_Level1_r13"
+#define ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL2    "pucch_NumRepetitionCE_Msg4_Level2_r13"
+#define ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL3    "pucch_NumRepetitionCE_Msg4_Level3_r13"
+
+#define ENB_CONFIG_STRING_FREQ_HOPPING_PARAMETERS_R13                      "sib2_freq_hoppingParameters_r13"
+#define ENB_CONFIG_STRING_MPDCCH_PDSCH_HOPPING_NB_R13                      "sib2_mpdcch_pdsch_hoppingNB_r13"
+#define ENB_CONFIG_STRING_INTERVAL_DL_HOPPING_CONFIG_COMMON_MODE_A_R13     "sib2_interval_DLHoppingConfigCommonModeA_r13"
+#define ENB_CONFIG_STRING_INTERVAL_DL_HOPPING_CONFIG_COMMON_MODE_A_R13_VAL "sib2_interval_DLHoppingConfigCommonModeA_r13_val" 
+#define ENB_CONFIG_STRING_INTERVAL_DL_HOPPING_CONFIG_COMMON_MODE_B_R13     "sib2_interval_DLHoppingConfigCommonModeB_r13"
+#define ENB_CONFIG_STRING_INTERVAL_DL_HOPPING_CONFIG_COMMON_MODE_B_R13_VAL "sib2_interval_DLHoppingConfigCommonModeB_r13_val"
+#define ENB_CONFIG_STRING_INTERVAL_UL_HOPPING_CONFIG_COMMON_MODE_A_R13     "sib2_interval_ULHoppingConfigCommonModeA_r13"
+#define ENB_CONFIG_STRING_INTERVAL_UL_HOPPING_CONFIG_COMMON_MODE_A_R13_VAL "sib2_interval_ULHoppingConfigCommonModeA_r13_val"
+#define ENB_CONFIG_STRING_INTERVAL_UL_HOPPING_CONFIG_COMMON_MODE_B_R13     "sib2_interval_ULHoppingConfigCommonModeB_r13"
+#define ENB_CONFIG_STRING_INTERVAL_UL_HOPPING_CONFIG_COMMON_MODE_B_R13_VAL "sib2_interval_ULHoppingConfigCommonModeB_r13_val"
+#define ENB_CONFIG_STRING_MPDCCH_PDSCH_HOPPING_OFFSET_R13                  "sib2_mpdcch_pdsch_hoppingOffset_r13"
+
+
+
 
 #define ENB_CONFIG_STRING_PDSCH_RS_EPRE                                 "pdsch_referenceSignalPower"
 #define ENB_CONFIG_STRING_PDSCH_PB                                      "pdsch_p_b"
@@ -1007,6 +1032,10 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   config_setting_t *n1_pucch_AN_info_r13_list      = NULL;
   config_setting_t *n1_pucch_AN_info_r13           = NULL;
 
+  config_setting_t *setting_pcch_config_v1310      = NULL;
+  config_setting_t *setting_freq_hoppingParameters_r13 = NULL;
+
+
 #if	defined(Rel14)
   config_setting_t *setting_br13 = NULL;
 #endif // REL14
@@ -1133,6 +1162,31 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   libconfig_int     prach_HoppingConfig_r13               = 0;
   libconfig_int     maxavailablenarrowband                = 0;
   libconfig_int     pucch_info_value                      = 0;
+
+  libconfig_int     paging_narrowbands_r13                = 0;
+  libconfig_int     mpdcch_numrepetition_paging_r13       = 0;
+  libconfig_int     nb_v1310                              = 0;
+  
+
+  libconfig_int     pucch_NumRepetitionCE_Msg4_Level0_r13 = 0;
+  libconfig_int     pucch_NumRepetitionCE_Msg4_Level1_r13 = 0;
+  libconfig_int     pucch_NumRepetitionCE_Msg4_Level2_r13 = 0;
+  libconfig_int     pucch_NumRepetitionCE_Msg4_Level3_r13 = 0;
+
+  libconfig_int     sib2_mpdcch_pdsch_hoppingNB_r13                   = 0;
+  libconfig_int     sib2_interval_DLHoppingConfigCommonModeA_r13      = 0;
+  libconfig_int     sib2_interval_DLHoppingConfigCommonModeA_r13_val  = 0;
+  libconfig_int     sib2_interval_DLHoppingConfigCommonModeB_r13      = 0;  
+  libconfig_int     sib2_interval_DLHoppingConfigCommonModeB_r13_val  = 0;         
+  libconfig_int     sib2_interval_ULHoppingConfigCommonModeA_r13      = 0; 
+  libconfig_int     sib2_interval_ULHoppingConfigCommonModeA_r13_val  = 0; 
+  libconfig_int     sib2_interval_ULHoppingConfigCommonModeB_r13      = 0; 
+  libconfig_int     sib2_interval_ULHoppingConfigCommonModeB_r13_val  = 0;
+  libconfig_int     sib2_mpdcch_pdsch_hoppingOffset_r13               = 0; 
+
+
+
+
 
   libconfig_int     srb1_timer_poll_retransmit    = 0;
   libconfig_int     srb1_timer_reordering         = 0;
@@ -2407,7 +2461,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                   RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TimersAndConstants_t311= UE_TimersAndConstants__t311_ms1000;
                   break;
 
-                case 3110:
+                case 3000:
                   RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TimersAndConstants_t311= UE_TimersAndConstants__t311_ms3000;
                   break;
 
@@ -2427,7 +2481,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                   RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TimersAndConstants_t311= UE_TimersAndConstants__t311_ms20000;
                   break;
 
-                case 31100:
+                case 30000:
                   RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TimersAndConstants_t311= UE_TimersAndConstants__t311_ms30000;
                   break;
 
@@ -2559,7 +2613,51 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
               }
 
               if (setting_br13 != NULL) {
+                  int cnt = 0;
+                  if (config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL0, &pucch_NumRepetitionCE_Msg4_Level0_r13))
+                  {
+                      RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level0_r13[j] = CALLOC(1, sizeof(long));
+                      *RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level0_r13[j] = pucch_NumRepetitionCE_Msg4_Level0_r13;
+                      ++cnt;
+                  }
+                  else
+                  {
+                      RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level0_r13[j] = NULL;;
+                  }
+        
+                  if (config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL1, &pucch_NumRepetitionCE_Msg4_Level1_r13))
+                  {
+                      RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level1_r13[j] = CALLOC(1, sizeof(long));
+                      *RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level1_r13[j] = pucch_NumRepetitionCE_Msg4_Level1_r13;
+                      ++cnt;
+                  }
+                  else
+                  {
+                      RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level1_r13[j] = NULL;;
+                  }
 
+                  if (config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL2, &pucch_NumRepetitionCE_Msg4_Level2_r13))
+                  {
+                      RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level2_r13[j] = CALLOC(1, sizeof(long));
+                      *RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level2_r13[j] = pucch_NumRepetitionCE_Msg4_Level2_r13;
+                      ++cnt;
+                  }
+                  else
+                  {
+                      RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level2_r13[j] = NULL;
+                  }
+
+                  if (config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL3, &pucch_NumRepetitionCE_Msg4_Level3_r13))
+                  {
+                      RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level3_r13[j] = CALLOC(1, sizeof(long));
+                      *RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level3_r13[j] = pucch_NumRepetitionCE_Msg4_Level3_r13;
+                      ++cnt;
+                  }
+                  else
+                  {
+                      RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level3_r13[j] = NULL;;
+                  }
+ 
                 scheduling_info_br_list       = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_SCHEDULING_INFO_LIST);
                 int num_scheduling_info       = config_setting_length(scheduling_info_br_list);
                 RRC_CONFIGURATION_REQ (msg_p).scheduling_info_br_size[j] = num_scheduling_info;
@@ -2579,18 +2677,27 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                 }
 
                 system_info_value_tag_SI_list = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_SYSTEM_INFO_VALUE_TAG_LIST);
-                int num_system_info = config_setting_length(system_info_value_tag_SI_list);
+                int num_system_info;
+                if (system_info_value_tag_SI_list != NULL)
+                {
+                    num_system_info = config_setting_length(system_info_value_tag_SI_list);
+                    for (sys_info_idx = 0; sys_info_idx < num_system_info; ++sys_info_idx)
+                    {
+                        system_info_value_tag_SI = config_setting_get_elem(system_info_value_tag_SI_list, sys_info_idx);
+                        if ( !(config_setting_lookup_int(system_info_value_tag_SI, ENB_CONFIG_STRING_SYSTEM_INFO_VALUE_TAG_SI_R13, &systemInfoValueTagSi_r13)) )
+                        {
+                            AssertFatal (0, "Failed to parse eNB configuration file %s, system info value tag %d!\n", RC.config_file_name, nb_cc++);
+                        }
+                        RRC_CONFIGURATION_REQ (msg_p).systemInfoValueTagSi_r13[j][sys_info_idx] = systemInfoValueTagSi_r13;
+                    }
+                }
+                else
+                {
+                    num_system_info = 0;
+                }
                 RRC_CONFIGURATION_REQ (msg_p).system_info_value_tag_SI_size[j] = num_system_info;
 
-                for (sys_info_idx = 0; sys_info_idx < num_system_info; ++sys_info_idx)
-                {
-                  system_info_value_tag_SI = config_setting_get_elem(system_info_value_tag_SI_list, sys_info_idx);
-                  if ( !(config_setting_lookup_int(system_info_value_tag_SI, ENB_CONFIG_STRING_SYSTEM_INFO_VALUE_TAG_SI_R13, &systemInfoValueTagSi_r13)) )
-                  {
-                    AssertFatal (0, "Failed to parse eNB configuration file %s, system info value tag %d!\n", RC.config_file_name, nb_cc++);
-                  }
-                  RRC_CONFIGURATION_REQ (msg_p).systemInfoValueTagSi_r13[j][sys_info_idx] = systemInfoValueTagSi_r13;
-                }
+
 
 
                 rach_ce_level_info_r13_list = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_RACH_CE_LEVEL_INFO_LIST);
@@ -2634,6 +2741,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                         RC.config_file_name, nb_cc++);
                   }
                   RRC_CONFIGURATION_REQ (msg_p).rsrp_range[j][rsrp_range_idx] = rsrp_range_br;
+                  printf("[DEBUGGING][KOGO] : rsrp range br = %d\n", rsrp_range_br);
                 }
 
                 prach_parameters_ce_r13_list = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_PRACH_PARAMETERS_CE_R13);
@@ -2655,6 +2763,8 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                         RC.config_file_name, nb_cc++);
                   }
 
+                  printf("[DEBUGGING][KOGO] : prach hopping config = %d\n", prach_HoppingConfig_r13);
+                
                   RRC_CONFIGURATION_REQ (msg_p).prach_config_index[j][prach_parameters_index]                  = prach_config_index_br;
                   RRC_CONFIGURATION_REQ (msg_p).prach_freq_offset[j][prach_parameters_index]                   = prach_freq_offset_br;
                   RRC_CONFIGURATION_REQ (msg_p).prach_StartingSubframe_r13[j][prach_parameters_index]          = prach_StartingSubframe_r13;
@@ -2666,7 +2776,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                   if (config_setting_lookup_int(prach_parameters_ce_r13, ENB_CONFIG_STRING_PRACH_STARTING_SUBFRAME_R13, &prach_StartingSubframe_r13))
                   {
                     RRC_CONFIGURATION_REQ (msg_p).prach_StartingSubframe_r13[j][prach_parameters_index] = calloc(1, sizeof(long));
-                    RRC_CONFIGURATION_REQ (msg_p).prach_StartingSubframe_r13[j][prach_parameters_index] = prach_StartingSubframe_r13;
+                    *RRC_CONFIGURATION_REQ (msg_p).prach_StartingSubframe_r13[j][prach_parameters_index] = prach_StartingSubframe_r13;
                   }
                   else
                   {
@@ -2676,23 +2786,31 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                   if (config_setting_lookup_int(prach_parameters_ce_r13, ENB_CONFIG_STRING_MAX_NUM_PREAMBLE_ATTEMPT_CE_R13, &maxNumPreambleAttemptCE_r13))
                   {
                     RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = calloc(1, sizeof(long));
-                    RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = maxNumPreambleAttemptCE_r13;
+                    *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = maxNumPreambleAttemptCE_r13;
                   }
                   else
                   {
                     RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = NULL;
                   }
 
+
+                  max_available_narrow_band_list = config_setting_get_member(prach_parameters_ce_r13, ENB_CONFIG_STRING_MAX_AVAILABLE_NARROW_BAND);
+                  int num_available_narrow_bands = config_setting_length(max_available_narrow_band_list);
+                  RRC_CONFIGURATION_REQ (msg_p).max_available_narrow_band_size[j][prach_parameters_index] = num_available_narrow_bands;
+                  int narrow_band_index;
+                  for (narrow_band_index = 0; narrow_band_index < num_available_narrow_bands; narrow_band_index++)
+                  {
+                      max_available_narrow_band = config_setting_get_elem(max_available_narrow_band_list, narrow_band_index);
+                      RRC_CONFIGURATION_REQ (msg_p).max_available_narrow_band[j][prach_parameters_index][narrow_band_index] = config_setting_get_int(max_available_narrow_band);
+                  }
+
                 }
-
-
-                // TODO
-                //              max_available_narrow_band = config_setting_get_member(prach_parameters_ce_r13, ENB_CONFIG_STRING_MAX_AVAILABLE_NARROW_BAND);
 
 
                 n1_pucch_AN_info_r13_list = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_N1_PUCCH_AN_INFO_LIST);
 
                 int num_pucch_an_info = config_setting_length(n1_pucch_AN_info_r13_list);
+                AssertFatal(cnt == num_pucch_an_info, "Num Repetition Count should be equal to pucch info count !!!");
                 RRC_CONFIGURATION_REQ (msg_p).pucch_info_value_size[j] = num_pucch_an_info;
                 int pucch_info_idx;
                 for (pucch_info_idx = 0; pucch_info_idx < num_pucch_an_info; ++pucch_info_idx)
@@ -2707,6 +2825,104 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
                   RRC_CONFIGURATION_REQ (msg_p).pucch_info_value[j][pucch_info_idx] = pucch_info_value;
                 }
+
+                setting_freq_hoppingParameters_r13 = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_FREQ_HOPPING_PARAMETERS_R13);
+                if (setting_freq_hoppingParameters_r13 != NULL) 
+                {
+                    RRC_CONFIGURATION_REQ(msg_p).sib2_freq_hoppingParameters_r13_exists[j] = TRUE;
+                    if (config_setting_lookup_int(setting_freq_hoppingParameters_r13, ENB_CONFIG_STRING_MPDCCH_PDSCH_HOPPING_NB_R13, &sib2_mpdcch_pdsch_hoppingNB_r13))
+                    {
+
+                        RRC_CONFIGURATION_REQ(msg_p).sib2_mpdcch_pdsch_hoppingNB_r13[j] = CALLOC(1, sizeof(long));
+                        *RRC_CONFIGURATION_REQ(msg_p).sib2_mpdcch_pdsch_hoppingNB_r13[j] = sib2_mpdcch_pdsch_hoppingNB_r13;
+                    }
+                    else
+                    {
+                       RRC_CONFIGURATION_REQ(msg_p).sib2_mpdcch_pdsch_hoppingNB_r13[j] = NULL; 
+                    }
+                    
+                    if (config_setting_lookup_int(setting_freq_hoppingParameters_r13, ENB_CONFIG_STRING_INTERVAL_DL_HOPPING_CONFIG_COMMON_MODE_A_R13, &sib2_interval_DLHoppingConfigCommonModeA_r13))
+                    {
+
+                        RRC_CONFIGURATION_REQ(msg_p).sib2_interval_DLHoppingConfigCommonModeA_r13[j] = CALLOC(1, sizeof(long));
+                        *RRC_CONFIGURATION_REQ(msg_p).sib2_interval_DLHoppingConfigCommonModeA_r13[j] = sib2_interval_DLHoppingConfigCommonModeA_r13;
+                        config_setting_lookup_int(setting_freq_hoppingParameters_r13, ENB_CONFIG_STRING_INTERVAL_DL_HOPPING_CONFIG_COMMON_MODE_A_R13_VAL, &sib2_interval_DLHoppingConfigCommonModeA_r13_val);
+                        RRC_CONFIGURATION_REQ(msg_p).sib2_interval_DLHoppingConfigCommonModeA_r13_val[j] = sib2_interval_DLHoppingConfigCommonModeA_r13_val;
+                        
+                    }
+                    else
+                    {
+                         RRC_CONFIGURATION_REQ(msg_p).sib2_interval_DLHoppingConfigCommonModeA_r13[j] = NULL;
+                    }
+
+                      
+                    if (config_setting_lookup_int(setting_freq_hoppingParameters_r13, ENB_CONFIG_STRING_INTERVAL_DL_HOPPING_CONFIG_COMMON_MODE_B_R13, &sib2_interval_DLHoppingConfigCommonModeB_r13))
+                    {
+
+                        RRC_CONFIGURATION_REQ(msg_p).sib2_interval_DLHoppingConfigCommonModeB_r13[j] = CALLOC(1, sizeof(long));
+                        *RRC_CONFIGURATION_REQ(msg_p).sib2_interval_DLHoppingConfigCommonModeB_r13[j] = sib2_interval_DLHoppingConfigCommonModeB_r13;
+                        config_setting_lookup_int(setting_freq_hoppingParameters_r13, ENB_CONFIG_STRING_INTERVAL_DL_HOPPING_CONFIG_COMMON_MODE_B_R13_VAL, &sib2_interval_DLHoppingConfigCommonModeB_r13_val);
+                        RRC_CONFIGURATION_REQ(msg_p).sib2_interval_DLHoppingConfigCommonModeB_r13_val[j] = sib2_interval_DLHoppingConfigCommonModeB_r13_val;
+                        
+                    }
+                    else
+                    {
+                         RRC_CONFIGURATION_REQ(msg_p).sib2_interval_DLHoppingConfigCommonModeB_r13[j] = NULL;
+                    }
+
+
+                   
+                    if (config_setting_lookup_int(setting_freq_hoppingParameters_r13, ENB_CONFIG_STRING_INTERVAL_UL_HOPPING_CONFIG_COMMON_MODE_A_R13, &sib2_interval_ULHoppingConfigCommonModeA_r13))
+                    {
+
+                        RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13[j] = CALLOC(1, sizeof(long));
+                        *RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13[j] = sib2_interval_ULHoppingConfigCommonModeA_r13;
+                        config_setting_lookup_int(setting_freq_hoppingParameters_r13, ENB_CONFIG_STRING_INTERVAL_UL_HOPPING_CONFIG_COMMON_MODE_A_R13_VAL, &sib2_interval_ULHoppingConfigCommonModeA_r13_val);
+                        RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j] = sib2_interval_ULHoppingConfigCommonModeA_r13_val;
+                        
+                    }
+                    else
+                    {
+                         RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13[j] = NULL;
+                    }
+
+
+                   
+                    if (config_setting_lookup_int(setting_freq_hoppingParameters_r13, ENB_CONFIG_STRING_INTERVAL_UL_HOPPING_CONFIG_COMMON_MODE_B_R13, &sib2_interval_ULHoppingConfigCommonModeB_r13))
+                    {
+
+                        RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeB_r13[j] = CALLOC(1, sizeof(long));
+                        *RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeB_r13[j] = sib2_interval_ULHoppingConfigCommonModeB_r13;
+                        config_setting_lookup_int(setting_freq_hoppingParameters_r13, ENB_CONFIG_STRING_INTERVAL_UL_HOPPING_CONFIG_COMMON_MODE_B_R13_VAL, &sib2_interval_ULHoppingConfigCommonModeB_r13_val);
+                        RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeB_r13_val[j] = sib2_interval_ULHoppingConfigCommonModeB_r13_val;
+                        
+                    }
+                    else
+                    {
+                         RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeB_r13[j] = NULL;
+                    }
+
+
+
+
+                    if (config_setting_lookup_int(setting_freq_hoppingParameters_r13, ENB_CONFIG_STRING_MPDCCH_PDSCH_HOPPING_OFFSET_R13, &sib2_mpdcch_pdsch_hoppingOffset_r13))
+                    {
+
+                        RRC_CONFIGURATION_REQ(msg_p).sib2_mpdcch_pdsch_hoppingOffset_r13[j] = CALLOC(1, sizeof(long));
+                        *RRC_CONFIGURATION_REQ(msg_p).sib2_mpdcch_pdsch_hoppingOffset_r13[j] = sib2_mpdcch_pdsch_hoppingOffset_r13;
+                    }
+                    else
+                    {
+                       RRC_CONFIGURATION_REQ(msg_p).sib2_mpdcch_pdsch_hoppingOffset_r13[j] = NULL;
+                    }
+ 
+
+                }
+                else
+                {
+                    RRC_CONFIGURATION_REQ(msg_p).sib2_freq_hoppingParameters_r13_exists[j] = FALSE;
+                }
+
 
                 // Rel8 RadioResourceConfigCommon Parameters
                 if (!(config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_FRAME_TYPE, &frame_type)
@@ -3545,7 +3761,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                     RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t311= UE_TimersAndConstants__t311_ms1000;
                     break;
 
-                  case 3110:
+                  case 3000:
                     RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t311= UE_TimersAndConstants__t311_ms3000;
                     break;
 
@@ -3565,7 +3781,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                     RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t311= UE_TimersAndConstants__t311_ms20000;
                     break;
 
-                  case 31100:
+                  case 30000:
                     RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t311= UE_TimersAndConstants__t311_ms30000;
                     break;
 
@@ -3716,6 +3932,38 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                 char* prach_ConfigCommon_v1310 = NULL;
                 char* mpdcch_startSF_CSS_RA_r13;
 
+                setting_pcch_config_v1310 = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_PCCH_CONFIG_V1310);
+                if (setting_pcch_config_v1310 != NULL)
+                {
+                    RRC_CONFIGURATION_REQ(msg_p).pcch_config_v1310[j] = TRUE;
+                    if (!config_setting_lookup_int(setting_pcch_config_v1310, ENB_CONFIG_STRING_PAGING_NARROWBANDS_R13, &paging_narrowbands_r13)
+                            || !config_setting_lookup_int(setting_pcch_config_v1310, ENB_CONFIG_STRING_MPDCCH_NUMREPETITION_PAGING_R13, &mpdcch_numrepetition_paging_r13)
+                            )
+                        AssertFatal(0,
+                            "Failed to parse eNB configuration file %s, enb %d pcch_config_v1310!\n",
+                            RC.config_file_name, i);
+
+                    RRC_CONFIGURATION_REQ(msg_p).paging_narrowbands_r13[j] = paging_narrowbands_r13;
+                    RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = mpdcch_numrepetition_paging_r13;
+
+                    if (config_setting_lookup_int(setting_pcch_config_v1310, ENB_CONFIG_STRING_NB_V1310, &nb_v1310))
+                    {
+                        RRC_CONFIGURATION_REQ(msg_p).nb_v1310[j]  = CALLOC(1, sizeof(long));
+                        *RRC_CONFIGURATION_REQ(msg_p).nb_v1310[j] = nb_v1310;
+
+                        printf("[DEBUGGING][KOGO] : nb_v1310 = %d\n", nb_v1310);
+                    }
+                    else
+                    {
+                        RRC_CONFIGURATION_REQ(msg_p).nb_v1310[j] = NULL;
+                    }
+                    
+
+                }
+                else
+                {
+                    RRC_CONFIGURATION_REQ(msg_p).pcch_config_v1310[j] = FALSE;
+                }
 
                 if (!config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_schedulingInfoSIB1, &schedulingInfoSIB1_BR_r13))
                   AssertFatal(0,
@@ -3815,7 +4063,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                   RRC_CONFIGURATION_REQ(msg_p).si_HoppingConfigCommon_r13[j] = si_HoppingConfigCommon_r13;
                   RRC_CONFIGURATION_REQ(msg_p).startSymbolBR_r13[j] = startSymbolBR_r13;
 
-                  if (config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_Q_QUALMINRSRQ_CE, &si_ValidityTime_r13))
+                  if (config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_SI_VALIDITYTIME, &si_ValidityTime_r13))
                   {
                     RRC_CONFIGURATION_REQ(msg_p).si_ValidityTime_r13[j] = calloc(1, sizeof(long));
                     *RRC_CONFIGURATION_REQ(msg_p).si_ValidityTime_r13[j] = si_ValidityTime_r13;

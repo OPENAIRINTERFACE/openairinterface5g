@@ -250,7 +250,7 @@ typedef struct RrcConfigurationReq_s {
   long prach_HoppingConfig_r13                   [MAX_NUM_CCs][4];
   int  prach_parameters_list_size                [MAX_NUM_CCs];
   long max_available_narrow_band                 [MAX_NUM_CCs][4][2];
-  int  max_available_narrow_band_size            [MAX_NUM_CCs];
+  int  max_available_narrow_band_size            [MAX_NUM_CCs][4];
 //    end kogo
 
 
@@ -258,6 +258,32 @@ typedef struct RrcConfigurationReq_s {
     long pucch_info_value       [MAX_NUM_CCs][4];
     int  pucch_info_value_size  [MAX_NUM_CCs];
 //  end kogo
+
+    // +kogo
+    bool  pcch_config_v1310               [MAX_NUM_CCs];
+    long  paging_narrowbands_r13          [MAX_NUM_CCs];
+    long  mpdcch_numrepetition_paging_r13 [MAX_NUM_CCs];
+    long  *nb_v1310                        [MAX_NUM_CCs];
+
+    long  *pucch_NumRepetitionCE_Msg4_Level0_r13  [MAX_NUM_CCs];
+    long  *pucch_NumRepetitionCE_Msg4_Level1_r13  [MAX_NUM_CCs];
+    long  *pucch_NumRepetitionCE_Msg4_Level2_r13  [MAX_NUM_CCs];
+    long  *pucch_NumRepetitionCE_Msg4_Level3_r13  [MAX_NUM_CCs];
+
+
+    bool  sib2_freq_hoppingParameters_r13_exists             [MAX_NUM_CCs];
+    long  *sib2_mpdcch_pdsch_hoppingNB_r13                   [MAX_NUM_CCs];
+    long  *sib2_interval_DLHoppingConfigCommonModeA_r13      [MAX_NUM_CCs];
+    long  sib2_interval_DLHoppingConfigCommonModeA_r13_val  [MAX_NUM_CCs];         
+    long  *sib2_interval_DLHoppingConfigCommonModeB_r13      [MAX_NUM_CCs]; 
+    long  sib2_interval_DLHoppingConfigCommonModeB_r13_val  [MAX_NUM_CCs];        
+    long  *sib2_interval_ULHoppingConfigCommonModeA_r13      [MAX_NUM_CCs];
+    long  sib2_interval_ULHoppingConfigCommonModeA_r13_val  [MAX_NUM_CCs];         
+    long  *sib2_interval_ULHoppingConfigCommonModeB_r13      [MAX_NUM_CCs];
+    long  sib2_interval_ULHoppingConfigCommonModeB_r13_val  [MAX_NUM_CCs];
+    long  *sib2_mpdcch_pdsch_hoppingOffset_r13               [MAX_NUM_CCs];
+
+
 
 #endif
 } RrcConfigurationReq;

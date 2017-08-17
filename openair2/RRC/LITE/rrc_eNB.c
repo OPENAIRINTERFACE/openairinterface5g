@@ -333,6 +333,24 @@ init_SI(
     
       sib1_v13ext = RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension;
 
+      // Basic Asserts for CE_level0 PRACH configuration
+
+      RadioResourceConfigCommonSIB_t *radioResourceConfigCommon_BR = &RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2_BR->radioResourceConfigCommon;
+      struct PRACH_ConfigSIB_v1310 *ext4_prach=radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310; 
+      
+      PRACH_ParametersListCE_r13_t	 *prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
+      AssertFatal(prach_ParametersListCE_r13->list.count>0,"prach_ParametersListCE_r13 is empty\n");
+      PRACH_ParametersCE_r13_t *p = prach_ParametersListCE_r13->list.array[0];
+      AssertFatal(p->prach_StartingSubframe_r13 != NULL, "prach_StartingSubframe_r13 celevel0 is null\n");
+      AssertFatal((1<<p->numRepetitionPerPreambleAttempt_r13)<=(2<<*p->prach_StartingSubframe_r13),
+		  "prachce0->numReptitionPerPreambleAttempt_r13 %d > prach_StartingSubframe_r13 %d\n",
+		  1<<p->numRepetitionPerPreambleAttempt_r13,
+		  2<<*p->prach_StartingSubframe_r13);
+
+      
+
+
+
   }
 #endif
 

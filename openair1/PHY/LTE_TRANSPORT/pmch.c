@@ -285,6 +285,7 @@ void generate_mch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t *a)
 
   int G;
   int subframe = proc->subframe_tx;
+  int frame    = proc->frame_tx;
 
   if (eNB->abstraction_flag != 0) {
     if (eNB_transport_info_TB_index[eNB->Mod_id][eNB->CC_id]!=0)
@@ -324,7 +325,7 @@ void generate_mch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t *a)
                        &eNB->dlsch_interleaving_stats)==0,
 		"problem in dlsch_encoding");
 
-    dlsch_scrambling(&eNB->frame_parms,1,eNB->dlsch_MCH,0,G,0,subframe<<1);
+    dlsch_scrambling(&eNB->frame_parms,1,eNB->dlsch_MCH,0,G,0,frame,subframe<<1);
 
 
     mch_modulation(eNB->common_vars.txdataF,
