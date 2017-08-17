@@ -1889,10 +1889,16 @@ void prach_procedures(PHY_VARS_eNB *eNB,
   if (br_flag==1) {
     subframe = eNB->proc.subframe_prach_br;
     frame = eNB->proc.frame_prach_br;
+    pthread_mutex_lock(&eNB->UL_INFO_mutex);
+    eNB->UL_INFO.rach_ind_br.number_of_preambles=0;
+    pthread_mutex_unlock(&eNB->UL_INFO_mutex);
   }
   else
 #endif
     {
+      pthread_mutex_lock(&eNB->UL_INFO_mutex);
+      eNB->UL_INFO.rach_ind.number_of_preambles=0;
+      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
       subframe = eNB->proc.subframe_prach;
       frame = eNB->proc.frame_prach;
     }
@@ -1904,6 +1910,8 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 
  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,1);
+
+
 
   for (i=0;i<eNB->num_RU;i++) {
     ru=eNB->RU_list[i];
@@ -1918,8 +1926,6 @@ void prach_procedures(PHY_VARS_eNB *eNB,
     }
   }
 
-  if ((frame&1023) < 20) LOG_I(PHY,"Frame %d, subframe %d: Running rx_prach (br_flag %d)\n",
-			       frame,subframe,br_flag);
   rx_prach(eNB,
 	   eNB->RU_list[0],
 	   &max_preamble[0],
@@ -1932,13 +1938,13 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 #endif
 	   );
 
-  //#ifdef DEBUG_PHY_PROC
-  LOG_D(PHY,"[RAPROC] Frame %d, subframe %d : Most likely preamble %d, energy %d dB delay %d\n",
+#ifdef DEBUG_PHY_PROC
+  LOG_I(PHY,"[RAPROC] Frame %d, subframe %d : Most likely preamble %d, energy %d dB delay %d\n",
         frame,subframe,
 	max_preamble[0],
-        max_preamble_energy[0],
+        max_preamble_energy[0]/10,
         max_preamble_delay[0]);
-  //#endif
+#endif
 
 #ifdef Rel14
   if (br_flag==1) {
@@ -1949,30 +1955,46 @@ void prach_procedures(PHY_VARS_eNB *eNB,
     prach_mask = is_prach_subframe(&eNB->frame_parms,eNB->proc.frame_prach_br,eNB->proc.subframe_prach_br);
     
     eNB->UL_INFO.rach_ind_br.preamble_list                              = eNB->preamble_list_br;
-    
+    int ind=0;
+    int ce_level=0;
+    /* Save for later, it doesn't work    
     for (int ind=0,ce_level=0;ce_level<4;ce_level++) {
-      if ((prach_mask&(1<<(1+ce_level)) > 0) && // prach is active and CE level has finished its repetitions
+      
+      if ((eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[ce_level]==1)&&
+	  (prach_mask&(1<<(1+ce_level)) > 0) && // prach is active and CE level has finished its repetitions
 	  (eNB->prach_vars_br.repetition_number[ce_level]==
 	   eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[ce_level])) {
-	if (max_preamble_energy[ind] > 580) {
-	  eNB->UL_INFO.rach_ind_br.number_of_preambles++;
-	  
-	  eNB->preamble_list_br[ind].preamble_rel8.timing_advance        = max_preamble_delay[ind];//
-	  eNB->preamble_list_br[ind].preamble_rel8.preamble              = max_preamble[ind];
-	  // note: fid is implicitly 0 here, this is the rule for eMTC RA-RNTI from 36.321, Section 5.1.4
-	  eNB->preamble_list_br[ind].preamble_rel8.rnti                  = 1+subframe+(eNB->prach_vars_br.first_frame[ce_level]%40);  
-	  eNB->preamble_list_br[ind].instance_length                     = 0; //don't know exactly what this is
-	  eNB->preamble_list_br[ind].preamble_rel13.rach_resource_type   = 1+ce_level;  // CE Level
-	}
+    */
+    if (eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[0]==1){ 
+      if (max_preamble_energy[0] > 350) {
+	eNB->UL_INFO.rach_ind_br.number_of_preambles++;
+	
+	eNB->preamble_list_br[ind].preamble_rel8.timing_advance        = max_preamble_delay[ind];//
+	eNB->preamble_list_br[ind].preamble_rel8.preamble              = max_preamble[ind];
+	// note: fid is implicitly 0 here, this is the rule for eMTC RA-RNTI from 36.321, Section 5.1.4
+	eNB->preamble_list_br[ind].preamble_rel8.rnti                  = 1+subframe+(eNB->prach_vars_br.first_frame[ce_level]%40);  
+	eNB->preamble_list_br[ind].instance_length                     = 0; //don't know exactly what this is
+	eNB->preamble_list_br[ind].preamble_rel13.rach_resource_type   = 1+ce_level;  // CE Level
+	LOG_I(PHY,"Filling NFAPI indication for RACH %d CELevel %d (mask %x) : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
+	      ind,
+	      ce_level,
+	      prach_mask,
+	      eNB->preamble_list_br[ind].preamble_rel8.timing_advance,
+	      eNB->preamble_list_br[ind].preamble_rel8.preamble,
+	      eNB->preamble_list_br[ind].preamble_rel8.rnti,
+	      eNB->preamble_list_br[ind].preamble_rel13.rach_resource_type);
+      }
+      /*
 	ind++;
       }
-    } // ce_level
+      } */// ce_level
+    }
   }
   else
 #endif
 
     {
-      if (max_preamble_energy[0] > 580) {
+      if (max_preamble_energy[0] > 10000) {
 
 	LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
 	      eNB->Mod_id,
@@ -2002,10 +2024,15 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 	      eNB->preamble_list[0].preamble_rel8.rnti                  = 1+subframe;  // note: fid is implicitly 0 here
 	      eNB->preamble_list[0].preamble_rel13.rach_resource_type   = 0;
 	      eNB->preamble_list[0].instance_length                     = 0; //don't know exactly what this is
-	    
+
+	      LOG_I(PHY,"Filling NFAPI indication for RACH : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
+		    eNB->preamble_list[0].preamble_rel8.timing_advance,
+		    eNB->preamble_list[0].preamble_rel8.preamble,
+		    eNB->preamble_list[0].preamble_rel8.rnti,
+		    eNB->preamble_list[0].preamble_rel13.rach_resource_type);	    
 	      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
 	    }
-      } // max_preamble_energy > 580
+      } // max_preamble_energy > 350
     } // else br_flag
       /*
 	mac_xface->initiate_ra_proc(eNB->Mod_id,
@@ -2493,7 +2520,6 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 #ifdef DEBUG_PHY_PROC
   LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_uespec_RX(%d)\n",eNB->Mod_id,frame, subframe);
 #endif
-
 
   eNB->rb_mask_ul[0]=0;
   eNB->rb_mask_ul[1]=0;

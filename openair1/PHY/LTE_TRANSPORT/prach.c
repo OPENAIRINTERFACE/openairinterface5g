@@ -1153,10 +1153,10 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 #ifdef Rel14
   int prach_ifft_cnt=0;
 #endif
-  //#ifdef PRACH_DEBUG
-  int en,en0=0;
-  //#endif
-
+#ifdef PRACH_DEBUG
+  int en0=0;
+#endif
+  int en;
   if (ru) { 
     fp    = &ru->frame_parms;
     nb_rx = ru->nb_rx;
@@ -1209,12 +1209,14 @@ void rx_prach0(PHY_VARS_eNB *eNB,
       subframe            = eNB->proc.subframe_prach_br;
       prachF              = eNB->prach_vars_br.prachF;
       rxsigF              = eNB->prach_vars_br.rxsigF;
+#ifdef PRACH_DEBUG
       if ((frame&1023) < 20) LOG_I(PHY,"PRACH (eNB) : running rx_prach (br_flag %d, ce_level %d) for frame %d subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d, rootSequenceIndex %d, repetition number %d,numRepetitionsPrePreambleAttempt %d\n",
 				   br_flag,ce_level,frame,subframe,
 				   fp->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[ce_level],
 				   prach_ConfigIndex,rootSequenceIndex,
 				   eNB->prach_vars_br.repetition_number[ce_level],
 				   fp->prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[ce_level]);
+#endif
     }
     else
 #endif
@@ -1224,8 +1226,10 @@ void rx_prach0(PHY_VARS_eNB *eNB,
         subframe          = eNB->proc.subframe_prach;
         prachF            = eNB->prach_vars.prachF;
         rxsigF            = eNB->prach_vars.rxsigF;
+#ifdef PRACH_DEBUG
         if ((frame&1023) < 20) LOG_I(PHY,"PRACH (eNB) : running rx_prach for subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d , rootSequenceIndex %d\n",
 				     subframe,fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset,prach_ConfigIndex,rootSequenceIndex);
+#endif
       }
   }
   else {
@@ -1233,17 +1237,20 @@ void rx_prach0(PHY_VARS_eNB *eNB,
     if (br_flag == 1) {
         subframe          = ru->proc.subframe_prach_br;
         rxsigF            = ru->prach_rxsigF_br[ce_level];
+#ifdef PRACH_DEBUG
         if ((frame&1023) < 20) LOG_I(PHY,"PRACH (RU) : running rx_prach (br_flag %d, ce_level %d) for frame %d subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d\n",
 				     br_flag,ce_level,frame,subframe,fp->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[ce_level],prach_ConfigIndex);
+#endif
     }
     else
 #endif
       {
         subframe          = ru->proc.subframe_prach;
         rxsigF            = ru->prach_rxsigF;
+#ifdef PRACH_DEBUG
         if ((frame&1023) < 20) LOG_I(PHY,"PRACH (RU) : running rx_prach for subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d\n",
 	      subframe,fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset,prach_ConfigIndex);
-
+#endif
       }
 
   }
@@ -1253,9 +1260,9 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   for (aa=0; aa<nb_rx; aa++) {
     if (ru->if_south == LOCAL_RF) { // set the time-domain signal if we have to use it in this node
       prach[aa] = (int16_t*)&ru->common.rxdata[aa][(subframe*fp->samples_per_tti)-ru->N_TA_offset];
-      //#ifdef PRACH_DEBUG
+#ifdef PRACH_DEBUG
 	if ((frame&1023) < 20) LOG_I(PHY,"RU %d, br_flag %d ce_level %d frame %d subframe %d, : prach %p (energy %d)\n",ru->idx,br_flag,ce_level,frame,subframe,prach[aa],dB_fixed(en0=signal_energy(prach[aa],fp->samples_per_tti))); 
-      //#endif
+#endif
     }
   }
 
@@ -1465,25 +1472,13 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 #endif
       send_IF4p5(ru, ru->proc.frame_prach, ru->proc.subframe_prach, IF4p5_PRACH);
     
-#if 0
-    if (dB_fixed(en0)>30) {
-      en = dB_fixed(signal_energy(&rxsigF[0][k],840));
-      //    if (en>60)
-      printf("PRACH (if4p5), k %d, n_ra_prb %d: Frame %d, Subframe %d => %d dB\n",k,n_ra_prb,ru->proc.frame_rx,ru->proc.subframe_rx,en);
-      write_output("rxsigF.m","prach_rxF",rxsigF[0],12288,1,1);
-      exit(-1);
-    }
-#endif
-
     return;
   } else if (eNB!=NULL) {
 
-
-    //#if 0
     en = dB_fixed(signal_energy(&rxsigF[0][0],840));
-    /*if (en>60)*/
-    if ((frame&1023) < 20) LOG_I(PHY,"PRACH (br_flag %d,ce_level %d): Frame %d, Subframe %d => %d dB\n",br_flag,ce_level,eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
-    //#endif
+#ifdef PRACH_DEBUG
+    if ((en > 60)&&(br_flag==1)) LOG_I(PHY,"PRACH (br_flag %d,ce_level %d, n_ra_prb %d, k %d): Frame %d, Subframe %d => %d dB\n",br_flag,ce_level,n_ra_prb,k,eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
+#endif
 
   }
   
@@ -1519,8 +1514,9 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   *max_preamble_energy=0;
   for (preamble_index=0 ; preamble_index<64 ; preamble_index++) {
 
+#ifdef PRACH_DEBUG
     if (en>60) LOG_I(PHY,"frame %d, subframe %d : Trying preamble %d (br_flag %d)\n",frame,subframe,preamble_index,br_flag);
- 
+#endif
     if (restricted_set == 0) {
       // This is the relative offset in the root sequence table (5.7.2-4 from 36.211) for the given preamble index
       preamble_offset = ((NCS==0)? preamble_index : (preamble_index/(N_ZC/NCS)));
@@ -1603,10 +1599,10 @@ void rx_prach0(PHY_VARS_eNB *eNB,
     }
 
     // Compute DFT of RX signal (conjugate input, results in conjugate output) for each new rootSequenceIndex
-    //#ifdef PRACH_DEBUG
+#ifdef PRACH_DEBUG
     if (en>60) LOG_I(PHY,"frame %d, subframe %d : preamble index %d: offset %d, preamble shift %d (br_flag %d, en %d)\n",
 		     frame,subframe,preamble_index,preamble_offset,preamble_shift,br_flag,en);
-    //#endif
+#endif
     log2_ifft_size = 10;
     fft_size = 6144;
 
@@ -1667,25 +1663,6 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 #endif
       // if (aa=1) write_output("prach_rxF_comp1.m","prach_rxF_comp1",prachF,1024,1,1);
       }// antennas_rx
-
-#ifdef PRACH_DEBUG
-
-      if (en>40) {
-	k = (12*n_ra_prb) - 6*fp->N_RB_UL;
-	
-	if (k<0) k+=fp->ofdm_symbol_size;
-	
-	k*=12;
-	k+=13;
-	k*=2;
-	printf("Dumping prach, k = %d (n_ra_prb %d)\n",k,n_ra_prb);
-	write_output("rxsigF.m","prach_rxF",&rxsigF[0][0],12288,1,1);
-	write_output("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
-	write_output("Xu.m","xu",Xu,N_ZC,1,1);
-	write_output("prach_ifft0.m","prach_t0",prach_ifft[0][0],1024,1,1);
-	exit(-1);
-      }
-#endif
     } // new dft
     
     // check energy in nth time shift, for 
@@ -1695,26 +1672,58 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 	 eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[ce_level]))
 #endif
       {
+#ifdef PRACH_DEBUG
 	if (en>60) LOG_I(PHY,"frame %d, subframe %d: Checking for peak in time-domain (br_flag %d, en %d)\n",frame,subframe,br_flag,en);
-
+#endif
 	preamble_shift2 = ((preamble_shift==0) ? 0 : ((preamble_shift<<log2_ifft_size)/N_ZC));
 
     
 	for (i=0; i<NCS2; i++) {
-	  lev = (int32_t)prach_ifft[(preamble_shift2+i)<<1];
+	  lev = (int32_t)prach_ifft[(preamble_shift2+i)];
 	  levdB = dB_fixed_times10(lev);
 	  
 	  if (levdB>*max_preamble_energy) {
 	    *max_preamble_energy  = levdB;
 	    *max_preamble_delay   = ((i*fft_size)>>log2_ifft_size)*update_TA/update_TA2;
 	    *max_preamble         = preamble_index;
-	    if (en>60) LOG_I(PHY,"frame %d, subframe %d : max_preamble_energy %d, max_preamble_delay %d, max_preamble %d (br_flag %d, en %d)\n",frame,subframe,*max_preamble_energy,*max_preamble_delay,*max_preamble,br_flag,en);
+	    //#ifdef PRACH_DEBUG
+	    if ((en>60) && (br_flag==1)) LOG_I(PHY,"frame %d, subframe %d : max_preamble_energy %d, max_preamble_delay %d, max_preamble %d (br_flag %d,ce_level %d, levdB %d, lev %d)\n",frame,subframe,*max_preamble_energy,*max_preamble_delay,*max_preamble,br_flag,ce_level,levdB,lev);
+	    //#endif
 	  }
 	}
 
       }
   }// preamble_index
 
+#ifdef PRACH_DEBUG
+  
+  if (en>60) {
+    k = (12*n_ra_prb) - 6*fp->N_RB_UL;
+    
+    if (k<0) k+=fp->ofdm_symbol_size;
+    
+    k*=12;
+    k+=13;
+    k*=2;
+    
+    if (br_flag == 0) {
+      /*
+	write_output("rxsigF.m","prach_rxF",&rxsigF[0][0],12288,1,1);
+	write_output("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
+	write_output("Xu.m","xu",Xu,N_ZC,1,1);
+	write_output("prach_ifft0.m","prach_t0",prach_ifft,1024,1,1);*/
+    }
+    else {
+      printf("Dumping prach (br_flag %d), k = %d (n_ra_prb %d)\n",br_flag,k,n_ra_prb);
+      write_output("rxsigF_br.m","prach_rxF_br",&rxsigF[0][0],12288,1,1);
+      write_output("prach_rxF_comp0_br.m","prach_rxF_comp0_br",prachF,1024,1,1);
+      write_output("Xu_br.m","xu_br",Xu,N_ZC,1,1);
+      write_output("prach_ifft0_br.m","prach_t0_br",prach_ifft,1024,1,1);
+      exit(-1);      
+    }
+
+  }
+#endif
   if (eNB) stop_meas(&eNB->rx_prach);
 
 }
