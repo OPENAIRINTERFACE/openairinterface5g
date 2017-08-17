@@ -219,7 +219,14 @@ uint8_t *generate_dci0(uint8_t *dci,
   AssertFatal((aggregation_level==1) || 
 	      (aggregation_level==2) || 
 	      (aggregation_level==4) || 
-	      (aggregation_level==8),
+	      (aggregation_level==8) 
+#ifdef Rel14 // Added for EPDCCH/MPDCCH
+	      ||
+	      (aggregation_level==16) ||
+	      (aggregation_level==24) ||
+	      (aggregation_level==32)
+#endif
+	      ,
 	      "generate_dci FATAL, illegal aggregation_level %d\n",aggregation_level);
   
 

@@ -940,7 +940,9 @@ typedef struct PHY_VARS_eNB_s {
   uint32_t         lte_gold_mbsfn_table[10][3][42];
 
   uint32_t X_u[64][839];
-
+#ifdef Rel14
+  uint32_t X_u_br[4][64][839];
+#endif
   uint8_t pbch_configured;
   uint8_t pbch_pdu[4]; //PBCH_PDU_SIZE
   char eNB_generate_rar;

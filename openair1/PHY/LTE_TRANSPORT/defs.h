@@ -148,6 +148,8 @@ typedef struct {
   uint16_t nb_rb;
   /// downlink power offset field
   uint8_t dl_power_off;
+  /// start symbold of pdsch
+  uint8_t pdsch_start;
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
   uint8_t e[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
   /// Turbo-code outputs (36-212 V8.6 2009-03, p.12
@@ -172,7 +174,7 @@ typedef struct {
   uint8_t Nlayers;
   /// First layer for this PSCH transmission
   uint8_t first_layer;
-   /// codeword this transport block is mapped to
+  /// codeword this transport block is mapped to
   uint8_t codeword;
 } LTE_DL_eNB_HARQ_t;
 
@@ -250,6 +252,13 @@ typedef struct {
   uint8_t decode_phich;
 } LTE_UL_UE_HARQ_t; 
 
+#ifdef Rel14
+typedef enum {
+  CEmodeA = 0,
+  CEmodeB = 1
+} CEmode_t;
+#endif
+
 typedef struct {
   /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
   int32_t *txdataF[8];
@@ -291,7 +300,13 @@ typedef struct {
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
-
+#ifdef Rel14
+  /// indicator that this DLSCH corresponds to SIB1-BR, needed for c_init for scrambling
+  uint8_t sib1_br_flag;
+  /// initial absolute subframe (see 36.211 Section 6.3.1), needed for c_init for scrambling
+  uint16_t i0;
+  CEmode_t CEmode;
+#endif
 } LTE_eNB_DLSCH_t;
 
 #define PUSCH_x 2

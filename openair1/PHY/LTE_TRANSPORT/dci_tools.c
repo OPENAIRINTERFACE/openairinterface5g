@@ -2005,7 +2005,7 @@ int fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
   dci_alloc->start_symbol               = rel13->start_symbol;
   dci_alloc->ce_mode                    = rel13->ce_mode;
   dci_alloc->dmrs_scrambling_init       = rel13->drms_scrambling_init;
-  dci_alloc->initial_transmission_sf_io = rel13->initial_transmission_sf_io;
+  dci_alloc->i0                         = rel13->initial_transmission_sf_io;
 
   dci_alloc->ra_flag  = 0;
   if (rel13->rnti_type == 2 ) dci_alloc->ra_flag = 1;

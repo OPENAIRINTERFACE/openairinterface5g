@@ -804,9 +804,9 @@ typedef struct {
   uint8_t narrowband;
   /// number of PRB pairs for MPDCCH
   uint8_t number_of_prb_pairs;
-  /// mpdcch resource assignement (0=localized,1=distributed) 
+  /// mpdcch resource assignement (combinatorial index r)
   uint8_t resource_block_assignment;
-  /// transmission type
+  /// transmission type (0=localized,1=distributed) 
   uint8_t transmission_type;
   /// mpdcch start symbol
   uint8_t start_symbol;
@@ -815,7 +815,11 @@ typedef struct {
   /// 0-503 n_EPDCCHid_i
   uint16_t dmrs_scrambling_init;
   /// Absolute subframe of the initial transmission (0-10239)
-  uint16_t initial_transmission_sf_io;
+  uint16_t i0;
+  /// number of mdpcch repetitions
+  uint16_t reps;
+  /// current absolute subframe number
+  uint16_t absSF;
   /// DCI pdu
   uint8_t dci_pdu[8];
 } mDCI_ALLOC_t;
@@ -834,8 +838,12 @@ typedef struct {
 } LTE_eNB_EPDCCH;
 
 typedef struct {
+  /// number of active MPDCCH allocations
   uint8_t     num_dci;
+  /// MPDCCH DCI allocations from MAC
   mDCI_ALLOC_t mdci_alloc[32];
+  // MAX SIZE of an EPDCCH set is 16EREGs * 9REs/EREG * 8 PRB pairs = 2304 bits 
+  uint8_t e[2304];
 } LTE_eNB_MPDCCH;
 
 

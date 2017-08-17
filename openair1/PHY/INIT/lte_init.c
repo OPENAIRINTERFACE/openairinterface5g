@@ -145,6 +145,13 @@ void phy_config_request(PHY_Config_t *phy_config) {
   LOG_I(PHY,"prach_config_common.prach_ConfigInfo.prach_FreqOffset = %d\n",cfg->prach_config.frequency_offset.value);
 
   init_prach_tables(839);
+  compute_prach_seq(fp->prach_config_common.rootSequenceIndex,
+		    fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
+		    fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig,
+		    fp->prach_config_common.prach_ConfigInfo.highSpeedFlag,
+		    fp->frame_type,
+                    RC.eNB[Mod_id][CC_id]->X_u);
+
 #ifdef Rel14
   fp->prach_emtc_config_common.prach_Config_enabled=1;
 
@@ -160,10 +167,18 @@ void phy_config_request(PHY_Config_t *phy_config) {
   AssertFatal(fp->prach_emtc_config_common.prach_ConfigInfo.prach_starting_subframe_periodicity[3]>=fp->prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[3],
 	      "prach_starting_subframe_periodicity[3] < prach_numPetitionPerPreambleAttempt[3]\n");
 
+
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[3]                     = cfg->emtc_config.prach_ce_level_3_configuration_index.value;
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[3]                      = cfg->emtc_config.prach_ce_level_3_frequency_offset.value;
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_hopping_enable[3]                  = cfg->emtc_config.prach_ce_level_3_hopping_enable.value;
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_hopping_offset[3]                  = cfg->emtc_config.prach_ce_level_3_hopping_offset.value;
+  if (fp->prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[3] == 1)
+    compute_prach_seq(fp->prach_emtc_config_common.rootSequenceIndex,
+		      fp->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[3],
+		      fp->prach_emtc_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig,
+		      fp->prach_emtc_config_common.prach_ConfigInfo.highSpeedFlag,
+		      fp->frame_type,
+		      RC.eNB[Mod_id][CC_id]->X_u_br[3]);
 
   // CE Level 2 parameters
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[2]                  = cfg->emtc_config.prach_ce_level_2_enable.value;
@@ -175,6 +190,13 @@ void phy_config_request(PHY_Config_t *phy_config) {
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[2]                      = cfg->emtc_config.prach_ce_level_2_frequency_offset.value;
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_hopping_enable[2]                  = cfg->emtc_config.prach_ce_level_2_hopping_enable.value;
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_hopping_offset[2]                  = cfg->emtc_config.prach_ce_level_2_hopping_offset.value;
+  if (fp->prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[2] == 1)
+    compute_prach_seq(fp->prach_emtc_config_common.rootSequenceIndex,
+		      fp->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[3],
+		      fp->prach_emtc_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig,
+		      fp->prach_emtc_config_common.prach_ConfigInfo.highSpeedFlag,
+		      fp->frame_type,
+		      RC.eNB[Mod_id][CC_id]->X_u_br[2]);
 
   // CE Level 1 parameters
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[1]                  = cfg->emtc_config.prach_ce_level_1_enable.value;
@@ -182,11 +204,19 @@ void phy_config_request(PHY_Config_t *phy_config) {
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[1] = cfg->emtc_config.prach_ce_level_1_number_of_repetitions_per_attempt.value;
   AssertFatal(fp->prach_emtc_config_common.prach_ConfigInfo.prach_starting_subframe_periodicity[1]>=fp->prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[1],
 	      "prach_starting_subframe_periodicity[1] < prach_numPetitionPerPreambleAttempt[1]\n");
+
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[1]                     = cfg->emtc_config.prach_ce_level_1_configuration_index.value;
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[1]                      = cfg->emtc_config.prach_ce_level_1_frequency_offset.value;
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_hopping_enable[1]                  = cfg->emtc_config.prach_ce_level_1_hopping_enable.value;
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_hopping_offset[1]                  = cfg->emtc_config.prach_ce_level_1_hopping_offset.value;
-
+  if (fp->prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[1] == 1)
+    compute_prach_seq(fp->prach_emtc_config_common.rootSequenceIndex,
+		      fp->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[3],
+		      fp->prach_emtc_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig,
+		      fp->prach_emtc_config_common.prach_ConfigInfo.highSpeedFlag,
+		      fp->frame_type,
+		      RC.eNB[Mod_id][CC_id]->X_u_br[1]);
+  
   // CE Level 0 parameters
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[0]                  = cfg->emtc_config.prach_ce_level_0_enable.value;
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_starting_subframe_periodicity[0]   = cfg->emtc_config.prach_ce_level_0_starting_subframe_periodicity.value;
@@ -197,11 +227,16 @@ void phy_config_request(PHY_Config_t *phy_config) {
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[0]                      = cfg->emtc_config.prach_ce_level_0_frequency_offset.value;
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_hopping_enable[0]                = cfg->emtc_config.prach_ce_level_0_hopping_enable.value;
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_hopping_offset[0]                = cfg->emtc_config.prach_ce_level_0_hopping_offset.value;
-
+  if (fp->prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[0] == 1)
+    compute_prach_seq(fp->prach_emtc_config_common.rootSequenceIndex,
+		      fp->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[3],
+		      fp->prach_emtc_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig,
+		      fp->prach_emtc_config_common.prach_ConfigInfo.highSpeedFlag,
+		      fp->frame_type,
+		      RC.eNB[Mod_id][CC_id]->X_u_br[0]);
 #endif
 
-  compute_prach_seq(&fp->prach_config_common,fp->frame_type,
-                    RC.eNB[Mod_id][CC_id]->X_u);
+
 
   fp->pucch_config_common.deltaPUCCH_Shift = 1+cfg->pucch_config.delta_pucch_shift.value;
   fp->pucch_config_common.nRB_CQI          = cfg->pucch_config.n_cqi_rb.value;
@@ -441,7 +476,11 @@ void phy_config_sib2_ue(uint8_t Mod_id,int CC_id,
   fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig  =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig;
   fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset           =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_FreqOffset;
 
-  compute_prach_seq(&fp->prach_config_common,fp->frame_type,ue->X_u);
+  compute_prach_seq(fp->prach_config_common.rootSequenceIndex,
+		    fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
+		    fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig,
+		    fp->prach_config_common.prach_ConfigInfo.highSpeedFlag,
+		    fp->frame_type,ue->X_u);
 
 
 
@@ -729,7 +768,10 @@ void phy_config_afterHO_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_id, Mobility
     //       prach_root_sequence_map4[fp->prach_config_common.rootSequenceIndex];
 
     //compute_prach_seq(u,N_ZC, PHY_vars_UE_g[Mod_id]->X_u);
-    compute_prach_seq(&PHY_vars_UE_g[Mod_id][CC_id]->frame_parms.prach_config_common,
+    compute_prach_seq(PHY_vars_UE_g[Mod_id][CC_id]->frame_parms.prach_config_common.rootSequenceIndex,
+		      PHY_vars_UE_g[Mod_id][CC_id]->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
+		      PHY_vars_UE_g[Mod_id][CC_id]->frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig,
+		      PHY_vars_UE_g[Mod_id][CC_id]->frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag,
                       fp->frame_type,
                       PHY_vars_UE_g[Mod_id][CC_id]->X_u);
 

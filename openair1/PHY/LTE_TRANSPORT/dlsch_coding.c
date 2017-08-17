@@ -145,7 +145,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
     bzero(dlsch,sizeof(LTE_eNB_DLSCH_t));
     dlsch->Kmimo = Kmimo;
     dlsch->Mdlharq = Mdlharq;
-    dlsch->Mlimit = 4;
+    dlsch->Mlimit = 8;
     dlsch->Nsoft = Nsoft;
     
     for (layer=0; layer<4; layer++) {
