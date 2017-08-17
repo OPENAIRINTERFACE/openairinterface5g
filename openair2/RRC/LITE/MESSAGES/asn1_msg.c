@@ -2171,7 +2171,7 @@ do_RRCConnectionReconfigurationComplete(
   return((enc_rval.encoded+7)/8);
 }
 
-#ifdef Rel14
+//#ifdef Rel14
 uint8_t
 do_RRCConnectionSetup_BR(
 			 const protocol_ctxt_t*     const ctxt_pP,
@@ -2225,11 +2225,11 @@ do_RRCConnectionSetup_BR(
   SRB1_config = CALLOC(1,sizeof(*SRB1_config));
 
   SRB1_config->srb_Identity = 1;
-  SRB1_rlc_config = CALLOC(1,sizeof(*SRB1_rlc_config));
-  SRB1_config->rlc_Config   = SRB1_rlc_config;
+  SRB1_rlc_config = CALLOC(1, sizeof(*SRB1_rlc_config));
+  SRB1_config->rlc_Config  = SRB1_rlc_config; // check this
 
   SRB1_rlc_config->present = SRB_ToAddMod__rlc_Config_PR_explicitValue;
-  SRB1_rlc_config->choice.explicitValue.present=RLC_Config_PR_am;
+  SRB1_rlc_config->choice.explicitValue.present = RLC_Config_PR_am;
 #if defined(ENABLE_ITTI)
   SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit = rrc->srb1_timer_poll_retransmit;
   SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU          = rrc->srb1_poll_pdu;
@@ -2238,22 +2238,22 @@ do_RRCConnectionSetup_BR(
   SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering     = rrc->srb1_timer_reordering;
   SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit = rrc->srb1_timer_status_prohibit;
 #else
-  SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit = T_PollRetransmit_ms20;;
-  SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU          = PollPDU_p4;;
+  SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit = T_PollRetransmit_ms20; // FIXME should be 80
+  SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU          = PollPDU_p4; // FIXME should be infinity
   SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte         = PollByte_kBinfinity;
   SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold = UL_AM_RLC__maxRetxThreshold_t8;
+
   SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering     = T_Reordering_ms35;
   SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit = T_StatusProhibit_ms0;
 #endif
 
-  SRB1_lchan_config = CALLOC(1,sizeof(*SRB1_lchan_config));
-  SRB1_config->logicalChannelConfig   = SRB1_lchan_config;
+  SRB1_lchan_config = CALLOC(1, sizeof(*SRB1_lchan_config));
+  SRB1_config->logicalChannelConfig = SRB1_lchan_config;
 
   SRB1_lchan_config->present = SRB_ToAddMod__logicalChannelConfig_PR_explicitValue;
-  SRB1_ul_SpecificParameters = CALLOC(1,sizeof(*SRB1_ul_SpecificParameters));
+  SRB1_ul_SpecificParameters = CALLOC(1, sizeof(*SRB1_ul_SpecificParameters));
 
   SRB1_lchan_config->choice.explicitValue.ul_SpecificParameters = SRB1_ul_SpecificParameters;
-
 
   SRB1_ul_SpecificParameters->priority = 1;
 
@@ -2286,9 +2286,9 @@ do_RRCConnectionSetup_BR(
   physicalConfigDedicated2->cqi_ReportConfig              = CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
 
   if (rrc->srs_enable[CC_id])
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
   else
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL;
   physicalConfigDedicated2->antennaInfo                   = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->schedulingRequestConfig       = CALLOC(1,sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
 #ifdef CBA
@@ -2298,9 +2298,9 @@ do_RRCConnectionSetup_BR(
   //assign_enum(&physicalConfigDedicated2->pdsch_ConfigDedicated->p_a,
   //        PDSCH_ConfigDedicated__p_a_dB0);
   if (carrier->p_eNB==2)
-    physicalConfigDedicated2->pdsch_ConfigDedicated->p_a=   PDSCH_ConfigDedicated__p_a_dB_3;
+    physicalConfigDedicated2->pdsch_ConfigDedicated->p_a = PDSCH_ConfigDedicated__p_a_dB_3;
   else
-    physicalConfigDedicated2->pdsch_ConfigDedicated->p_a=   PDSCH_ConfigDedicated__p_a_dB0;
+    physicalConfigDedicated2->pdsch_ConfigDedicated->p_a = PDSCH_ConfigDedicated__p_a_dB0;
 
   // PUCCH
   physicalConfigDedicated2->pucch_ConfigDedicated->ackNackRepetition.present=PUCCH_ConfigDedicated__ackNackRepetition_PR_release;
@@ -2309,7 +2309,7 @@ do_RRCConnectionSetup_BR(
   if (carrier->sib1->tdd_Config == NULL) {
     physicalConfigDedicated2->pucch_ConfigDedicated->tdd_AckNackFeedbackMode=NULL;//PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing;
   } else { //TDD
-    physicalConfigDedicated2->pucch_ConfigDedicated->tdd_AckNackFeedbackMode= CALLOC(1,sizeof(long));
+    physicalConfigDedicated2->pucch_ConfigDedicated->tdd_AckNackFeedbackMode = CALLOC(1,sizeof(long));
     *(physicalConfigDedicated2->pucch_ConfigDedicated->tdd_AckNackFeedbackMode) =
       PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_bundling;//PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing;
   }
@@ -2616,7 +2616,7 @@ do_RRCConnectionSetup_BR(
 
   return((enc_rval.encoded+7)/8);
 }
-#endif
+//#endif
 
 
 //------------------------------------------------------------------------------
@@ -2760,9 +2760,9 @@ do_RRCConnectionSetup(
   }
 
   // Pusch_config_dedicated
-  physicalConfigDedicated2->pusch_ConfigDedicated->betaOffset_ACK_Index = 0; // 2.00
-  physicalConfigDedicated2->pusch_ConfigDedicated->betaOffset_RI_Index  = 0; // 1.25
-  physicalConfigDedicated2->pusch_ConfigDedicated->betaOffset_CQI_Index = 8; // 2.25
+  physicalConfigDedicated2->pusch_ConfigDedicated->betaOffset_ACK_Index = 0; // 2.00 // FIXME should be 10
+  physicalConfigDedicated2->pusch_ConfigDedicated->betaOffset_RI_Index  = 0; // 1.25 // FIXME should be 9
+  physicalConfigDedicated2->pusch_ConfigDedicated->betaOffset_CQI_Index = 8; // 2.25 // FIXME should be 10
 
   // UplinkPowerControlDedicated
   physicalConfigDedicated2->uplinkPowerControlDedicated->p0_UE_PUSCH = 0; // 0 dB
@@ -2797,19 +2797,21 @@ do_RRCConnectionSetup(
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH->choice.setup.tpc_RNTI.buf[1]=0x34+ue_context_pP->local_uid;
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH->choice.setup.tpc_RNTI.bits_unused=0;
 
-  // CQI ReportConfig
-
+  // CQI ReportConfig // FIXME -- reportModeAperiodic should be rm20
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic));
 #if defined(Rel10) || defined(Rel14)
-  *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic= CQI_ReportModeAperiodic_rm30;
+  *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic = CQI_ReportModeAperiodic_rm30;
 #else
-  *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CQI_ReportConfig__cqi_ReportModeAperiodic_rm30; // HLC CQI, no PMI
+  *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic = CQI_ReportConfig__cqi_ReportModeAperiodic_rm30; // HLC CQI, no PMI
 #endif
   physicalConfigDedicated2->cqi_ReportConfig->nomPDSCH_RS_EPRE_Offset = 0; // 0 dB
   //physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic=NULL;
   
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic));
+  // FIXME -- release = NULL
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic = CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic));
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present =  CQI_ReportPeriodic_PR_release;
+
+
   /*
     physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present =  CQI_ReportPeriodic_PR_setup;
     physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex = 0;  // n2_pucch
@@ -2823,23 +2825,23 @@ do_RRCConnectionSetup(
 
   //soundingRS-UL-ConfigDedicated
   if (rrc->srs_enable[CC_id]==1) {
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->present = SoundingRS_UL_ConfigDedicated_PR_setup;
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth =
-      SoundingRS_UL_ConfigDedicated__setup__srs_Bandwidth_bw0;
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth =
-      SoundingRS_UL_ConfigDedicated__setup__srs_HoppingBandwidth_hbw0;
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition=0;
-    physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.duration=1;
-    if (carrier->sib1->tdd_Config==NULL) { // FDD
-      if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present
-	  == SoundingRS_UL_ConfigCommon_PR_setup)
-	if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig!=0) 
-	  LOG_W(RRC,"This code has been optimized for SRS Subframe Config 0, but current config is %d. Expect undefined behaviour!\n",
-		carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig);
-      if (ue_context_pP->local_uid >=20) 
-	LOG_W(RRC,"This code has been optimized for up to 10 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
-	      ue_context_pP->local_uid);
-      //the current code will allow for 20 UEs - to be revised for more
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->present = SoundingRS_UL_ConfigDedicated_PR_setup;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth =
+              SoundingRS_UL_ConfigDedicated__setup__srs_Bandwidth_bw0;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth =
+              SoundingRS_UL_ConfigDedicated__setup__srs_HoppingBandwidth_hbw0;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition=0;
+      physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.duration=1;
+      if (carrier->sib1->tdd_Config==NULL) { // FDD
+          if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present
+                  == SoundingRS_UL_ConfigCommon_PR_setup)
+              if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig!=0)
+                  LOG_W(RRC,"This code has been optimized for SRS Subframe Config 0, but current config is %d. Expect undefined behaviour!\n",
+                        carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig);
+          if (ue_context_pP->local_uid >=20)
+              LOG_W(RRC,"This code has been optimized for up to 10 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
+                    ue_context_pP->local_uid);
+          //the current code will allow for 20 UEs - to be revised for more
       physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=7+ue_context_pP->local_uid/2;
       physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb= ue_context_pP->local_uid%2;
     }
@@ -2866,7 +2868,7 @@ do_RRCConnectionSetup(
   }
 
 
-  //AntennaInfoDedicated
+  //AntennaInfoDedicated // FIXME -- check this
   physicalConfigDedicated2->antennaInfo = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->antennaInfo->present = PhysicalConfigDedicated__antennaInfo_PR_explicitValue;
   //assign_enum(&physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode,
@@ -2876,11 +2878,11 @@ do_RRCConnectionSetup(
   default:
     LOG_W(RRC,"At RRCConnectionSetup Transmission mode can only take values 1 or 2! Defaulting to 1!\n");
   case 1:
-    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm1;
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode = AntennaInfoDedicated__transmissionMode_tm1;
     break;
 
   case 2:
-    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm2;
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode = AntennaInfoDedicated__transmissionMode_tm2;
     break;
     /*
       case 3:
@@ -2921,10 +2923,12 @@ do_RRCConnectionSetup(
   // SchedulingRequestConfig
 
   physicalConfigDedicated2->schedulingRequestConfig->present = SchedulingRequestConfig_PR_setup;
+  // FIXME -- sr_PUCCH_resourceIndex should be 18
   physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 3;//ue_context_pP->local_uid;
 
   if (carrier->sib1->tdd_Config == NULL) { // FDD
-    physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 5+(ue_context_pP->local_uid%10);  // Isr = 5 (every 10 subframes, offset=2+UE_id mod3)
+    // FIXME -- check this -- 5 + (ue_context_pP->local_uid % 10) should produce 76
+    physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 5 + (ue_context_pP->local_uid % 10);  // Isr = 5 (every 10 subframes, offset=2+UE_id mod3)
   } else {
     switch (carrier->sib1->tdd_Config->subframeAssignment) {
     case 1:
