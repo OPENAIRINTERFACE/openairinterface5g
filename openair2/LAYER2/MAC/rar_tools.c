@@ -132,12 +132,12 @@ unsigned short fill_rar(
 #ifdef Rel14
 //------------------------------------------------------------------------------
 unsigned short fill_rar_br(eNB_MAC_INST *eNB,
-			   int CC_id,
-			   RA_TEMPLATE        *RA_template,      
-			   const frame_t      frameP,
-			   const sub_frame_t  subframeP,
-			   uint8_t*    const  dlsch_buffer,
-			   const uint8_t      ce_level
+               int CC_id,
+               RA_TEMPLATE        *RA_template,
+               const frame_t      frameP,
+               const sub_frame_t  subframeP,
+               uint8_t*    const  dlsch_buffer,
+               const uint8_t      ce_level
 )
 //------------------------------------------------------------------------------
 {
@@ -147,7 +147,7 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
   uint8_t *rar = (uint8_t *)(dlsch_buffer+1);
   int i;
   uint8_t nb,rballoc,reps;
-  uint8_t mcs,TPC,ULdelay,cqireq;
+  uint8_t mcs,TPC,ULdelay,cqireq,mpdcch_nb_index;
   int input_buffer_length;
 
 
@@ -163,10 +163,10 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
 
   int N_NB_index;
 
-  AssertFatal(1==0,"RAR for BL/CE Still to be finished ...\n"); 
+  AssertFatal(1==0,"RAR for BL/CE Still to be finished ...\n");
 
   // Copy the Msg2 narrowband
-  RA_template->msg34_narrowband = RA_template->msg2_narrowband; 
+  RA_template->msg34_narrowband = RA_template->msg2_narrowband;
 
   if (ce_level<2) { //CE Level 0,1, CEmodeA
     input_buffer_length =6;
@@ -177,16 +177,25 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
     rar[5] = (uint8_t)(RA_template->rnti&0xff);
     //cc->RA_template[ra_idx].timing_offset = 0;
     nb      = 0;
-    rballoc = mac_computeRIV(6,1+ce_level,1); // one PRB only for UL Grant in position 1+ce_level within Narrowband
-    rar[1] |= (rballoc&15)<<(4-N_NB_index); // Hopping = 0 (bit 3), 3 MSBs of rballoc
-
-    reps    = 4;
-    mcs     = 7;
-    TPC     = 3; // no power increase
+    reps = 0;
+    mcs = 7;
+    TPC = 3; // no power increase
     ULdelay = 0;
     cqireq = 0;
-    rar[2] |= ((mcs&0x8)>>3);  // mcs 10
-    rar[3] = (((mcs&0x7)<<5)) | ((TPC&7)<<2) | ((ULdelay&1)<<1) | (cqireq&1);
+    mpdcch_nb_index = 0;
+    rballoc = mac_computeRIV(6,1+ce_level,1); // one PRB only for UL Grant in position 1+ce_level within Narrowband
+    unsigned int buffer = 0;
+    buffer |= N_NB_index << (16 + (4 - N_NB_index));
+    buffer |= ((rballoc & 0xFF) << (12 + (4 - N_NB_index)));
+    buffer |= ((reps & 0x03) << (10 + (4 - N_NB_index)));
+    buffer |= ((mcs & 0x07) << (7 + (4 - N_NB_index)));
+    buffer |= ((TPC & 0x07) << (4 + (4 - N_NB_index)));
+    buffer |= ((cqireq & 0x01) << (3 + (4 - N_NB_index)));
+    buffer |= ((ULdelay & 0x01) << (2 + (4 - N_NB_index)));
+    buffer |= ((ULdelay & 0x01) << (4 - N_NB_index));
+    rar[1] = (buffer>>12) & 0x0F;
+    rar[2] = (buffer>>8) & 0xFF;
+    rar[3] = buffer&0xFF;
   }
   else { // CE level 2,3 => CEModeB
 
