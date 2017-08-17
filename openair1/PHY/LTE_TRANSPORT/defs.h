@@ -175,7 +175,7 @@ typedef struct {
   /// First layer for this PSCH transmission
   uint8_t first_layer;
   /// codeword this transport block is mapped to
-  uint8_t codeword; 
+  uint8_t codeword;
 } LTE_DL_eNB_HARQ_t;
 
 typedef struct {

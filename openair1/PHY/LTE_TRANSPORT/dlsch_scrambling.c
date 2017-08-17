@@ -83,6 +83,9 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   uint32_t x1, x2, s=0;
   uint8_t *dlsch_e=dlsch->harq_processes[harq_pid]->e;
   uint8_t *e=dlsch_e;
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_SCRAMBLING, VCD_FUNCTION_IN);
+
 #ifdef Rel14
   // Rule for accumulation of subframes for BL/CE UEs
   uint8_t Nacc=4;
@@ -102,7 +105,6 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   j0 = (i0+idelta)/Nacc;
   j  = (i - i0)/Nacc; 
 #endif
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_SCRAMBLING, VCD_FUNCTION_IN);
 
   //  reset = 1;
   // x1 is set in lte_gold_generic
