@@ -290,7 +290,7 @@ void generate_Msg2(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	dl_config_pdu->pdu_size                                                        = (uint8_t)(2+sizeof(nfapi_dl_config_dlsch_pdu));
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index                              = eNB->pdu_index[CC_idP];
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti                                   = RA_template->RA_rnti;
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type               = 2;   // format 1A/1B/1D
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type               = 2;   
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.virtual_resource_block_assignment_flag = 0;   // localized
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding                  = getRIV(N_RB_DL,first_rb,6);
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.modulation                             = 2; //QPSK
@@ -541,7 +541,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
   if (RA_template->rach_resource_type>0) {
     
     // Generate DCI + repetitions first
-    // This uses an MPDCCH Type 2 allocation according to Section 9.1.5 36-213 : Note: Assumption that this is still Type 2 Common Search 
+    // This uses an MPDCCH Type 2 allocation according to Section 9.1.5 36-213, Type2 common allocation according to Table 7.1-8 (36-213)
     // Parameters:
     //    p=2+4 PRB set (number of PRB pairs 6)
     //    rmax = mpdcch-NumRepetition-RA-r13 => Table 9.1.5-3

@@ -817,7 +817,11 @@ typedef struct {
   /// 0-503 n_EPDCCHid_i
   uint16_t dmrs_scrambling_init;
   /// Absolute subframe of the initial transmission (0-10239)
-  uint16_t initial_transmission_sf_io;
+  uint16_t i0;
+  /// number of mdpcch repetitions
+  uint16_t reps;
+  /// current absolute subframe number
+  uint16_t absSF;
   /// DCI pdu
   uint8_t dci_pdu[8];
 } mDCI_ALLOC_t;
@@ -836,8 +840,12 @@ typedef struct {
 } LTE_eNB_EPDCCH;
 
 typedef struct {
+  /// number of active MPDCCH allocations
   uint8_t     num_dci;
+  /// MPDCCH DCI allocations from MAC
   mDCI_ALLOC_t mdci_alloc[32];
+  // MAX SIZE of an EPDCCH set is 16EREGs * 9REs/EREG * 8 PRB pairs = 2304 bits 
+  uint8_t e[2304];
 } LTE_eNB_MPDCCH;
 
 

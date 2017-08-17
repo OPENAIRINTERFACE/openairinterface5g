@@ -715,6 +715,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
   int i;
 
   if (frame < 20) {
+
     LOG_D(PHY,
 	  "[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", pdsch_start %d, G %d, nb_rb %"PRIu16", rb0 %x, rb1 %x, TBS %"PRIu16", pmi_alloc %"PRIx64", rv %"PRIu8" (round %"PRIu8")\n",
 	  eNB->Mod_id, dlsch->rnti,harq_pid,
@@ -734,8 +735,8 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 	  dlsch_harq->TBS,
 	  pmi2hex_2Ar1(dlsch_harq->pmi_alloc),
 	  dlsch_harq->rvidx,
-	dlsch_harq->round);
-  }
+	  dlsch_harq->round);
+  }    
 #if defined(MESSAGE_CHART_GENERATOR_PHY)
   MSC_LOG_TX_MESSAGE(
 		     MSC_PHY_ENB,MSC_PHY_UE,
@@ -758,87 +759,13 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 		     dlsch_harq->rvidx,
 		     dlsch_harq->round);
 #endif
-
+  
+  
   if (ue_stats) ue_stats->dlsch_sliding_cnt++;
-
+  
   if (dlsch_harq->round == 0) {
-
     if (ue_stats)
       ue_stats->dlsch_trials[harq_pid][0]++;
-
-
-    if (eNB->mac_enabled==1) {
-
-
-      /*
-      //      if (ra_flag == 0) {
-      DLSCH_pdu = get_dlsch_pdu(eNB->Mod_id,
-				eNB->CC_id,
-				dlsch->rnti);
-
-      
-      }
-
-      else {
-	int16_t crnti = mac_xface->fill_rar(eNB->Mod_id,
-					    eNB->CC_id,
-					    frame,
-					    DLSCH_pdu_rar,
-					    fp->N_RB_UL,
-					    input_buffer_length);
-	DLSCH_pdu = DLSCH_pdu_rar;
-
-	int UE_id;
-
-	if (crnti!=0) 
-	  UE_id = add_ue(crnti,eNB);
-	else 
-	  UE_id = -1;
-	    
-	if (UE_id==-1) {
-	  LOG_W(PHY,"[eNB] Max user count reached.\n");
-	  mac_xface->cancel_ra_proc(eNB->Mod_id,
-				    eNB->CC_id,
-				    frame,
-				    crnti);
-	} else {
-	  eNB->UE_stats[(uint32_t)UE_id].mode = RA_RESPONSE;
-	  // Initialize indicator for first SR (to be cleared after ConnectionSetup is acknowledged)
-	  eNB->first_sr[(uint32_t)UE_id] = 1;
-	      
-	  generate_eNB_ulsch_params_from_rar(DLSCH_pdu,
-					     frame,
-					     subframe,
-					     eNB->ulsch[(uint32_t)UE_id],
-					     fp);
-	      
-	  LOG_D(PHY,"[eNB][RAPROC] Frame %d subframe %d, Activated Msg3 demodulation for UE %"PRId8" in frame %"PRIu32", subframe %"PRIu8"\n",
-		frame,
-		subframe,
-		UE_id,
-		eNB->ulsch[(uint32_t)UE_id]->Msg3_frame,
-		eNB->ulsch[(uint32_t)UE_id]->Msg3_subframe);
-
-
-          LOG_D(PHY, "hack: set phich_active to 0 for UE %d fsf %d %d all HARQs\n", UE_id, frame, subframe);
-          for (i = 0; i < 8; i++)
-            eNB->ulsch[(uint32_t)UE_id]->harq_processes[i]->phich_active = 0;
-
-          mac_xface->set_msg3_subframe(eNB->Mod_id, eNB->CC_id, frame, subframe, (uint16_t)crnti,
-                                       eNB->ulsch[UE_id]->Msg3_frame, eNB->ulsch[UE_id]->Msg3_subframe);
-
-          T(T_ENB_PHY_MSG3_ALLOCATION, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
-            T_INT(UE_id), T_INT((uint16_t)crnti), T_INT(1 // 1 is for initial transmission
-	    ),
-            T_INT(eNB->ulsch[UE_id]->Msg3_frame), T_INT(eNB->ulsch[UE_id]->Msg3_subframe));
-	}
-	if (ue_stats) ue_stats->total_TBS_MAC += dlsch_harq->TBS;
-      */
-    }
-    else {
-      for (i=0; i<input_buffer_length; i++)
-	dlsch_harq->pdu[i] = (unsigned char)(taus()&0xff);
-    }
   } else {
     ue_stats->dlsch_trials[harq_pid][dlsch_harq->round]++;
 #ifdef DEBUG_PHY_PROC
@@ -999,12 +926,12 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   LTE_DL_eNB_HARQ_t *dlsch0_harq=NULL,*dlsch1_harq=NULL;
   int UE_id;
   int harq_pid;
-
+  
   
   UE_id = find_dlsch(rel8->rnti,eNB,SEARCH_EXIST_OR_FREE);
   AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
   AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
- 
+  
   dlsch0 = eNB->dlsch[UE_id][0];
   dlsch1 = eNB->dlsch[UE_id][1];
 
@@ -1018,19 +945,16 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   dlsch1_harq     = dlsch1->harq_processes[harq_pid];
   AssertFatal(dlsch0_harq!=NULL,"dlsch_harq is null\n");
 
-
   dlsch0_harq->pdsch_start = eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols;
 
-
-
-
   LOG_D(PHY,"NFAPI: frame %d, subframe %d: programming dlsch, rnti %x, UE_id %d, harq_pid %d\n",
-	proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid);
+    proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid);
   if (codeword_index == 0) dlsch0_harq->pdu                    = sdu;
   else                     dlsch1_harq->pdu                    = sdu;
 
 #ifdef Rel14
   dlsch0->sib1_br_flag=0;
+
   if ((rel13->pdsch_payload_type <2) && (rel13->ue_type>0)) { // this is a BR/CE UE and SIB1-BR/SI-BR
     dlsch0->rnti             = 0xFFFF;
     dlsch0->Kmimo            = 1;
@@ -1079,8 +1003,6 @@ handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
     dlsch0_harq->TBS                = rel8->length<<3;
     dlsch0_harq->Qm                 = rel8->modulation;
     dlsch0_harq->codeword           = 0;
-
-
   }
   else {
 
@@ -1361,27 +1283,6 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
     common_signal_procedures(eNB,proc);
   }
 
-  /*
-  if (eNB->mac_enabled==1) {
-    // Parse DCI received from MAC
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,1);
-    DCI_pdu = mac_xface->get_dci_sdu(eNB->Mod_id,
-				     eNB->CC_id,
-				     frame,
-				     subframe);
-  }
-  else {
-    DCI_pdu = &DCI_pdu_tmp;
-    fill_dci(DCI_pdu,eNB,proc);
-    // clear previous allocation information for all UEs
-    for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-      if (eNB->dlsch[i][0]){
-        for (j=0; j<8; j++)
-          eNB->dlsch[i][0]->harq_processes[j]->round = 0;
-      }
-    }
-  }
-*/
   // clear existing ulsch dci allocations before applying info from MAC  (this is table
   ul_subframe = pdcch_alloc2ul_subframe(fp,subframe);
   ul_frame = pdcch_alloc2ul_frame(fp,frame,subframe);
@@ -1465,6 +1366,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
     {
       dlsch0 = eNB->dlsch[(uint8_t)UE_id][0]; 
       dlsch1 = eNB->dlsch[(uint8_t)UE_id][1]; 
+
       if ((dlsch0)&&
 	  (dlsch0->rnti>0)&&
 	  (dlsch0->active == 1)) {

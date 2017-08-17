@@ -104,6 +104,26 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_SCRAMBLING, VCD_FUNCTION_IN);
 
+#ifdef Rel14
+  // Rule for accumulation of subframes for BL/CE UEs
+  uint8_t Nacc=4;
+  uint16_t j0,j,idelta;
+  uint16_t i  = (Ns>>1) + (10*frame);
+  uint16_t i0 = dlsch->i0;
+
+  if (dlsch->sib1_br_flag==1)                              Nacc=1;
+  else if (dlsch->rnti == 0xFFFF || dlsch->rnti == 0xFFFE) Nacc = (frame_parms->frame_type == TDD) ? 10 : 4;
+  // Note: above SC-RNTI will also have to be added when/if implemented
+  else if (dlsch->CEmode == CEmodeA)                       Nacc=1;
+  else if (dlsch->CEmode == CEmodeB)                       Nacc = (frame_parms->frame_type == TDD) ? 10 : 4;
+
+  if (frame_parms->frame_type == FDD || Nacc == 1) idelta = 0;
+  else                                             idelta = Nacc-2;
+
+  j0 = (i0+idelta)/Nacc;
+  j  = (i - i0)/Nacc; 
+#endif
+
   //  reset = 1;
   // x1 is set in lte_gold_generic
   if (mbsfn_flag == 0) {

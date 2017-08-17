@@ -1612,16 +1612,17 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 
     if (new_dft == 1) {
       new_dft = 0;
-      Xu=(int16_t*)eNB->X_u[preamble_offset-first_nonzero_root_idx];
 
 #ifdef Rel14
       if (br_flag == 1) {
+	Xu=(int16_t*)eNB->X_u_br[ce_level][preamble_offset-first_nonzero_root_idx];
 	prach_ifft = prach_ifftp[prach_ifft_cnt++];
 	if (eNB->prach_vars_br.repetition_number[ce_level]==1) memset(prach_ifft,0,((N_ZC==839)?2048:256)*sizeof(int32_t));
       }
       else
 #endif
 	{
+	  Xu=(int16_t*)eNB->X_u[preamble_offset-first_nonzero_root_idx];
 	  prach_ifft = prach_ifftp[0];
           memset(prach_ifft,0,((N_ZC==839) ? 2048 : 256)*sizeof(int32_t));
 	}
@@ -1801,15 +1802,18 @@ void init_prach_tables(int N_ZC)
   }
 }
 
-void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
-                       lte_frame_type_t frame_type,
-                       uint32_t X_u[64][839])
+void compute_prach_seq(uint16_t rootSequenceIndex,
+		       uint8_t prach_ConfigIndex,
+		       uint8_t zeroCorrelationZoneConfig,
+		       uint8_t highSpeedFlag,
+		       lte_frame_type_t frame_type,
+		       uint32_t X_u[64][839])
 {
 
   // Compute DFT of x_u => X_u[k] = x_u(inv(u)*k)^* X_u[k] = exp(j\pi u*inv(u)*k*(inv(u)*k+1)/N_ZC)
   unsigned int k,inv_u,i,NCS=0,num_preambles;
   int N_ZC;
-  uint8_t prach_fmt = get_prach_fmt(prach_config_common->prach_ConfigInfo.prach_ConfigIndex,frame_type);
+  uint8_t prach_fmt = get_prach_fmt(prach_ConfigIndex,frame_type);
   uint16_t *prach_root_sequence_map;
   uint16_t u, preamble_offset;
   uint16_t n_shift_ra,n_shift_ra_bar, d_start,numshift;
@@ -1818,7 +1822,7 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_UE_COMPUTE_PRACH, VCD_FUNCTION_IN);
 
 #ifdef PRACH_DEBUG
-  LOG_I(PHY,"compute_prach_seq: NCS_config %d, prach_fmt %d\n",prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig, prach_fmt);
+  LOG_I(PHY,"compute_prach_seq: NCS_config %d, prach_fmt %d\n",zeroCorrelationZoneConfig, prach_fmt);
 #endif
 
   AssertFatal(prach_fmt<4,
@@ -1838,15 +1842,15 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
   LOG_I( PHY, "compute_prach_seq: done init prach_tables\n" );
 #endif
 
-  if (prach_config_common->prach_ConfigInfo.highSpeedFlag== 0) {
+  if (highSpeedFlag== 0) {
 
 #ifdef PRACH_DEBUG
-    LOG_I(PHY,"Low speed prach : NCS_config %d\n",prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig);
+    LOG_I(PHY,"Low speed prach : NCS_config %d\n",zeroCorrelationZoneConfig);
 #endif
 
-    AssertFatal(prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig<=15,
-		"FATAL, Illegal Ncs_config for unrestricted format %"PRIu8"\n", prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig );
-    NCS = NCS_unrestricted[prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig];
+    AssertFatal(zeroCorrelationZoneConfig<=15,
+		"FATAL, Illegal Ncs_config for unrestricted format %"PRIu8"\n", zeroCorrelationZoneConfig );
+    NCS = NCS_unrestricted[zeroCorrelationZoneConfig];
 
     num_preambles = (NCS==0) ? 64 : ((64*NCS)/N_ZC);
 
@@ -1856,12 +1860,12 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
   } else {
 
 #ifdef PRACH_DEBUG
-    LOG_I( PHY, "high speed prach : NCS_config %"PRIu8"\n", prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig );
+    LOG_I( PHY, "high speed prach : NCS_config %"PRIu8"\n", zeroCorrelationZoneConfig );
 #endif
 
-    AssertFatal(prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig<=14,
-		"FATAL, Illegal Ncs_config for restricted format %"PRIu8"\n", prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig );
-    NCS = NCS_restricted[prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig];
+    AssertFatal(zeroCorrelationZoneConfig<=14,
+		"FATAL, Illegal Ncs_config for restricted format %"PRIu8"\n", zeroCorrelationZoneConfig );
+    NCS = NCS_restricted[zeroCorrelationZoneConfig];
     fill_du(prach_fmt);
 
     num_preambles = 64; // compute ZC sequence for 64 possible roots
@@ -1871,7 +1875,7 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
 
     while (not_found == 1) {
       // current root depending on rootSequenceIndex
-      int index = (prach_config_common->rootSequenceIndex + preamble_offset) % N_ZC;
+      int index = (rootSequenceIndex + preamble_offset) % N_ZC;
 
       if (prach_fmt<4) {
         // prach_root_sequence_map points to prach_root_sequence_map0_3
@@ -1915,12 +1919,12 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
 
   if (NCS>0)
     LOG_I( PHY, "Initializing %u preambles for PRACH (NCS_config %"PRIu8", NCS %u, N_ZC/NCS %u)\n",
-           num_preambles, prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig, NCS, N_ZC/NCS );
+           num_preambles, zeroCorrelationZoneConfig, NCS, N_ZC/NCS );
 
 #endif
 
   for (i=0; i<num_preambles; i++) {
-    int index = (prach_config_common->rootSequenceIndex+i+preamble_offset) % N_ZC;
+    int index = (rootSequenceIndex+i+preamble_offset) % N_ZC;
 
     if (prach_fmt<4) {
       // prach_root_sequence_map points to prach_root_sequence_map0_3
@@ -1941,7 +1945,6 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
     for (k=0; k<N_ZC; k++) {
       // 420 is the multiplicative inverse of 2 (required since ru is exp[j 2\pi n])
       X_u[i][k] = ((uint32_t*)ru)[(((k*(1+(inv_u*k)))%N_ZC)*420)%N_ZC];
-      //printf("X_u[%d][%d] (%d)(%d)(%d) : %d,%d\n",i,k,u*inv_u*k*(1+(inv_u*k)),u*inv_u*k*(1+(inv_u*k))/2,(u*inv_u*k*(1+(inv_u*k))/2)%N_ZC,((int16_t*)&X_u[i][k])[0],((int16_t*)&X_u[i][k])[1]);
     }
   }
 

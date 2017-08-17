@@ -1504,10 +1504,6 @@ int main( int argc, char **argv )
       UE[CC_id]->mode    = mode;
       printf("UE[%d]->mode = %d\n",CC_id,mode);
       
-      compute_prach_seq(&UE[CC_id]->frame_parms.prach_config_common,
-			UE[CC_id]->frame_parms.frame_type,
-			UE[CC_id]->X_u);
-      
       if (UE[CC_id]->mac_enabled == 1) { 
 	UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1234;
 	UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1234;
