@@ -33,6 +33,8 @@
 #include <uhd/version.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/thread.hpp>
+#include <boost/format.hpp>
 #include <iostream>
 #include <complex>
 #include <fstream>
@@ -92,12 +94,181 @@ typedef struct {
     int num_seq_errors;
     int64_t tx_count;
     int64_t rx_count;
+    int wait_for_first_pps;
+    int use_gps;
     //! timestamp of RX packet
     openair0_timestamp rx_timestamp;
 
 } usrp_state_t;
 
+//void print_notes(void)
+//{
+    // Helpful notes
+  //  std::cout << boost::format("**************************************Helpful Notes on Clock/PPS Selection**************************************\n");
+  //  std::cout << boost::format("As you can see, the default 10 MHz Reference and 1 PPS signals are now from the GPSDO.\n");
+  //  std::cout << boost::format("If you would like to use the internal reference(TCXO) in other applications, you must configure that explicitly.\n");
+  //  std::cout << boost::format("You can no longer select the external SMAs for 10 MHz or 1 PPS signaling.\n");
+  //  std::cout << boost::format("****************************************************************************************************************\n");
+//}
 
+static int sync_to_gps(openair0_device *device)
+{
+    uhd::set_thread_priority_safe();
+
+    //std::string args;
+
+    //Set up program options
+    //po::options_description desc("Allowed options");
+    //desc.add_options()
+    //("help", "help message")
+    //("args", po::value<std::string>(&args)->default_value(""), "USRP device arguments")
+    //;
+    //po::variables_map vm;
+    //po::store(po::parse_command_line(argc, argv, desc), vm);
+    //po::notify(vm);
+
+    //Print the help message
+    //if (vm.count("help"))
+    //{
+      //  std::cout << boost::format("Synchronize USRP to GPS %s") % desc << std::endl;
+      // return EXIT_FAILURE;
+    //}
+
+    //Create a USRP device
+    //std::cout << boost::format("\nCreating the USRP device with: %s...\n") % args;
+    //uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+    //std::cout << boost::format("Using Device: %s\n") % usrp->get_pp_string();
+ 
+    usrp_state_t *s = (usrp_state_t*)device->priv;    
+
+    try
+    {
+        size_t num_mboards = s->usrp->get_num_mboards();
+        size_t num_gps_locked = 0;
+        for (size_t mboard = 0; mboard < num_mboards; mboard++)
+        {
+            std::cout << "Synchronizing mboard " << mboard << ": " << s->usrp->get_mboard_name(mboard) << std::endl;
+
+            //Set references to GPSDO
+            s->usrp->set_clock_source("gpsdo", mboard);
+            s->usrp->set_time_source("gpsdo", mboard);
+
+            //std::cout << std::endl;
+            //print_notes();
+            //std::cout << std::endl;
+
+            //Check for 10 MHz lock
+            std::vector<std::string> sensor_names = s->usrp->get_mboard_sensor_names(mboard);
+            if(std::find(sensor_names.begin(), sensor_names.end(), "ref_locked") != sensor_names.end())
+            {
+                std::cout << "Waiting for reference lock..." << std::flush;
+                bool ref_locked = false;
+                for (int i = 0; i < 30 and not ref_locked; i++)
+                {
+                    ref_locked = s->usrp->get_mboard_sensor("ref_locked", mboard).to_bool();
+                    if (not ref_locked)
+                    {
+                        std::cout << "." << std::flush;
+                        boost::this_thread::sleep(boost::posix_time::seconds(1));
+                    }
+                }
+                if(ref_locked)
+                {
+                    std::cout << "LOCKED" << std::endl;
+                } else {
+                    std::cout << "FAILED" << std::endl;
+                    std::cout << "Failed to lock to GPSDO 10 MHz Reference. Exiting." << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+            }
+            else
+            {
+                std::cout << boost::format("ref_locked sensor not present on this board.\n");
+            }
+
+            //Wait for GPS lock
+            bool gps_locked = s->usrp->get_mboard_sensor("gps_locked", mboard).to_bool();
+            if(gps_locked)
+            {
+                num_gps_locked++;
+                std::cout << boost::format("GPS Locked\n");
+            }
+            else
+            {
+                std::cerr << "WARNING:  GPS not locked - time will not be accurate until locked" << std::endl;
+            }
+
+            //Set to GPS time
+            uhd::time_spec_t gps_time = uhd::time_spec_t(time_t(s->usrp->get_mboard_sensor("gps_time", mboard).to_int()));
+            //s->usrp->set_time_next_pps(gps_time+1.0, mboard);
+            s->usrp->set_time_next_pps(uhd::time_spec_t(0.0));
+
+            //Wait for it to apply
+            //The wait is 2 seconds because N-Series has a known issue where
+            //the time at the last PPS does not properly update at the PPS edge
+            //when the time is actually set.
+            boost::this_thread::sleep(boost::posix_time::seconds(2));
+
+            //Check times
+            gps_time = uhd::time_spec_t(time_t(s->usrp->get_mboard_sensor("gps_time", mboard).to_int()));
+            uhd::time_spec_t time_last_pps = s->usrp->get_time_last_pps(mboard);
+            std::cout << "USRP time: " << (boost::format("%0.9f") % time_last_pps.get_real_secs()) << std::endl;
+            std::cout << "GPSDO time: " << (boost::format("%0.9f") % gps_time.get_real_secs()) << std::endl;
+            //if (gps_time.get_real_secs() == time_last_pps.get_real_secs())
+            //    std::cout << std::endl << "SUCCESS: USRP time synchronized to GPS time" << std::endl << std::endl;
+            //else
+            //    std::cerr << std::endl << "ERROR: Failed to synchronize USRP time to GPS time" << std::endl << std::endl;
+        }
+
+        if (num_gps_locked == num_mboards and num_mboards > 1)
+        {
+            //Check to see if all USRP times are aligned
+            //First, wait for PPS.
+            uhd::time_spec_t time_last_pps = s->usrp->get_time_last_pps();
+            while (time_last_pps == s->usrp->get_time_last_pps())
+            {
+                boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+            }
+
+            //Sleep a little to make sure all devices have seen a PPS edge
+            boost::this_thread::sleep(boost::posix_time::milliseconds(200));
+
+            //Compare times across all mboards
+            bool all_matched = true;
+            uhd::time_spec_t mboard0_time = s->usrp->get_time_last_pps(0);
+            for (size_t mboard = 1; mboard < num_mboards; mboard++)
+            {
+                uhd::time_spec_t mboard_time = s->usrp->get_time_last_pps(mboard);
+                if (mboard_time != mboard0_time)
+                {
+                    all_matched = false;
+                    std::cerr << (boost::format("ERROR: Times are not aligned: USRP 0=%0.9f, USRP %d=%0.9f")
+                                  % mboard0_time.get_real_secs()
+                                  % mboard
+                                  % mboard_time.get_real_secs()) << std::endl;
+                }
+            }
+            if (all_matched)
+            {
+                std::cout << "SUCCESS: USRP times aligned" << std::endl << std::endl;
+            } else {
+                std::cout << "ERROR: USRP times are not aligned" << std::endl << std::endl;
+            }
+        }
+    }
+    catch (std::exception& e)
+    {
+        std::cout << boost::format("\nError: %s") % e.what();
+        std::cout << boost::format("This could mean that you have not installed the GPSDO correctly.\n\n");
+        std::cout << boost::format("Visit one of these pages if the problem persists:\n");
+        std::cout << boost::format(" * N2X0/E1X0: http://files.ettus.com/manual/page_gpsdo.html");
+        std::cout << boost::format(" * X3X0: http://files.ettus.com/manual/page_gpsdo_x3x0.html\n\n");
+        std::cout << boost::format(" * E3X0: http://files.ettus.com/manual/page_usrp_e3x0.html#e3x0_hw_gps\n\n");
+        exit(EXIT_FAILURE);
+    }
+
+    return EXIT_SUCCESS;
+}
 
 /*! \brief Called to start the USRP transceiver. Return 0 if OK, < 0 if error
     @param device pointer to the device structure specific to the RF hardware target
@@ -108,9 +279,16 @@ static int trx_usrp_start(openair0_device *device) {
 
     // init recv and send streaming
     uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-    cmd.time_spec = s->usrp->get_time_now() + uhd::time_spec_t(0.05);
+    // should be s->usrp->get_time_next_pps(&cmd.time_spec); 
+    //cmd.time_spec = s->usrp->get_time_now() + uhd::time_spec_t(0.05);
+    LOG_I(PHY,"Time in secs now: %llu \n", s->usrp->get_time_now().to_ticks(s->sample_rate));
+    LOG_I(PHY,"Time in secs last pps: %llu \n", s->usrp->get_time_last_pps().to_ticks(s->sample_rate));
+    cmd.time_spec = s->usrp->get_time_last_pps() + uhd::time_spec_t(1.0);    
     cmd.stream_now = false; // start at constant delay
     s->rx_stream->issue_stream_cmd(cmd);
+
+    if (s->use_gps == 1) s->wait_for_first_pps = 1;
+    else s->wait_for_first_pps = 0; 
 
     s->tx_md.time_spec = cmd.time_spec + uhd::time_spec_t(1-(double)s->tx_forward_nsamps/s->sample_rate);
     s->tx_md.has_time_spec = true;
@@ -227,9 +405,11 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
             while (samples_received != nsamps) {
                 samples_received += s->rx_stream->recv(buff_tmp[0]+samples_received,
                                                        nsamps-samples_received, s->rx_md);
-                if (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE)
+                if  ((s->wait_for_first_pps == 0) && (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE))
                     break;
+	        if ((s->wait_for_first_pps == 1) && (samples_received != nsamps)) { printf("sleep...\n");} //usleep(100); 
             }
+	    if (samples_received == nsamps) s->wait_for_first_pps=0;
         }
         // bring RX data into 12 LSBs for softmodem RX
         for (int i=0; i<cc; i++) {
@@ -468,6 +648,8 @@ extern "C" {
     int device_init(openair0_device* device, openair0_config_t *openair0_cfg) {
         uhd::set_thread_priority_safe(1.0);
         usrp_state_t *s = (usrp_state_t*)calloc(sizeof(usrp_state_t),1);
+        
+        s->use_gps =1;
         // Initialize USRP device
         device->openair0_cfg = openair0_cfg;
 
@@ -561,10 +743,13 @@ extern "C" {
             // set master clock rate and sample rate for tx & rx for streaming
 
             // lock mboard clocks
-            if (openair0_cfg[0].clock_source == internal)
-                s->usrp->set_clock_source("internal");
-            else
+            if (openair0_cfg[0].clock_source == internal){
+                //s->usrp->set_clock_source("internal");
+            }
+            else{
                 s->usrp->set_clock_source("external");
+		s->usrp->set_time_source("external");
+            }	
 
             device->type = USRP_B200_DEV;
             if ((vers == 3) && (subvers == 9) && (subsubvers>=2)) {
@@ -683,8 +868,6 @@ extern "C" {
         for(int i=0; i<s->usrp->get_rx_num_channels() && i<openair0_cfg[0].rx_num_channels; i++)
             s->usrp->set_rx_bandwidth(openair0_cfg[0].rx_bw,i);
 
-        s->usrp->set_time_now(uhd::time_spec_t(0.0));
-
         for (int i=0; i<openair0_cfg[0].rx_num_channels; i++) {
             LOG_I(PHY,"RX Channel %d\n",i);
             LOG_I(PHY,"  Actual RX sample rate: %fMSps...\n",s->usrp->get_rx_rate(i)/1e6);
@@ -726,6 +909,14 @@ extern "C" {
             s->tx_forward_nsamps = 90;
         if(is_equal(s->sample_rate, (double)7.68e6))
             s->tx_forward_nsamps = 50;
+
+        if (s->use_gps == 1) {
+	   if (sync_to_gps(device)) {
+		 LOG_I(PHY,"USRP fails to sync with GPS...\n");
+            exit(0);   
+           } 
+        }
+ 
         return 0;
     }
 }
