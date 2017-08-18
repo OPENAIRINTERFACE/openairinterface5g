@@ -277,6 +277,17 @@ static int trx_usrp_start(openair0_device *device) {
 
     usrp_state_t *s = (usrp_state_t*)device->priv;
 
+
+  // setup GPIO for TDD, GPIO(4) = ATR_RX
+  //set data direction register (DDR) to output
+    s->usrp->set_gpio_attr("FP0", "DDR", 0x1f, 0x1f);
+  
+  //set control register to ATR
+    s->usrp->set_gpio_attr("FP0", "CTRL", 0x1f,0x1f);
+  
+  //set ATR register
+    s->usrp->set_gpio_attr("FP0", "ATR_RX", 1<<4, 0x1f);
+
     // init recv and send streaming
     uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     // should be s->usrp->get_time_next_pps(&cmd.time_spec); 
