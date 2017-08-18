@@ -732,7 +732,7 @@ void RCconfig_L1() {
 
 
       
-      printf("l1 %d/%d (nb CC %d)\n",j,RC.nb_inst,RC.nb_CC[j]);
+      printf("l1 %d/%d (nb CC %d)\n",j,RC.nb_inst,RC.nb_L1_CC[j]);
       
 
       printf("RU %d: Transport %s\n",j,tr_n_preference);

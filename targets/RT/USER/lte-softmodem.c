@@ -1073,25 +1073,6 @@ static void get_options (int argc, char **argv) {
 
     printf("Read in %s : nb_inst %d, nb_ru %d\n",conf_config_file_name,NB_eNB_INST,NB_RU);
 
-    /*    
-	  init_all_otg(0);
-	  g_otg->seed = 0;
-	  init_seeds(g_otg->seed);
-
-	  for (k=0; k<enb_properties->properties[i]->num_otg_elements; k++) {
-	  j=enb_properties->properties[i]->otg_ue_id[k]; // ue_id
-	  g_otg->application_idx[i][j] = 1;
-	  //g_otg->packet_gen_type=SUBSTRACT_STRING;
-	  g_otg->background[i][j][0] =enb_properties->properties[i]->otg_bg_traffic[k];
-	  g_otg->application_type[i][j][0] =enb_properties->properties[i]->otg_app_type[k];// BCBR; //MCBR, BCBR
-      
-	  printf("[OTG] configuring traffic type %d for  eNB %d UE %d (Background traffic is %s)\n",
-	  g_otg->application_type[i][j][0], i, j,(g_otg->background[i][j][0]==1)?"Enabled":"Disabled");
-	  }
-    
-	  init_predef_traffic(enb_properties->properties[i]->num_otg_elements, 1);
-    
-    */
     
   } else if (UE_flag == 1) {
     if (conf_config_file_name != NULL) {
@@ -1589,7 +1570,8 @@ int main( int argc, char **argv )
     printf("ITTI tasks created\n");
   }
   else {
-    printf("No ITTI\n");
+    printf("No ITTI, Initializing L1\n");
+    RCconfig_L1();
   }
 #endif
   
