@@ -608,9 +608,6 @@ static void get_options (int argc, char **argv) {
     //  char                          line[1000];
     //  int                           l;
     int k,i;//,j,k;
-#if defined(OAI_USRP) || defined(CPRIGW)
-    int clock_src;
-#endif
     int CC_id;
 
 
@@ -639,6 +636,7 @@ static void get_options (int argc, char **argv) {
         LONG_OPTION_USIMTEST,
         LONG_OPTION_MMAPPED_DMA,
         LONG_OPTION_EXTERNAL_CLOCK,
+        LONG_OPTION_GPSDO_CLOCK,
         LONG_OPTION_WAIT_FOR_SYNC,
         LONG_OPTION_SINGLE_THREAD_DISABLE,
         LONG_OPTION_THREADIQ,
@@ -681,6 +679,7 @@ static void get_options (int argc, char **argv) {
         {"usim-test", no_argument, NULL, LONG_OPTION_USIMTEST},
         {"mmapped-dma", no_argument, NULL, LONG_OPTION_MMAPPED_DMA},
         {"external-clock", no_argument, NULL, LONG_OPTION_EXTERNAL_CLOCK},
+        {"gpsdo-clock", no_argument, NULL, LONG_OPTION_GPSDO_CLOCK},
         {"wait-for-sync", no_argument, NULL, LONG_OPTION_WAIT_FOR_SYNC},
         {"single-thread-disable", no_argument, NULL, LONG_OPTION_SINGLE_THREAD_DISABLE},
         {"threadIQ",  required_argument, NULL, LONG_OPTION_THREADIQ},
@@ -808,6 +807,10 @@ static void get_options (int argc, char **argv) {
 
     case LONG_OPTION_EXTERNAL_CLOCK:
       clock_source = external;
+      break;
+
+    case LONG_OPTION_GPSDO_CLOCK:
+      clock_source = gpsdo;
       break;
 
     case LONG_OPTION_WAIT_FOR_SYNC:
@@ -1000,24 +1003,6 @@ static void get_options (int argc, char **argv) {
                 }
             }
 
-            break;
-
-        case 's':
-#if defined(OAI_USRP) || defined(CPRIGW)
-
-            clock_src = atoi(optarg);
-
-            if (clock_src == 0) {
-                //  char ref[128] = "internal";
-                //strncpy(uhd_ref, ref, strlen(ref)+1);
-            } else if (clock_src == 1) {
-                //char ref[128] = "external";
-                //strncpy(uhd_ref, ref, strlen(ref)+1);
-            }
-
-#else
-            printf("Note: -s not defined for ExpressMIMO2\n");
-#endif
             break;
 
         case 'S':

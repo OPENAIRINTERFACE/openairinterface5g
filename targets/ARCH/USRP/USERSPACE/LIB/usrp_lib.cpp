@@ -660,7 +660,9 @@ extern "C" {
         uhd::set_thread_priority_safe(1.0);
         usrp_state_t *s = (usrp_state_t*)calloc(sizeof(usrp_state_t),1);
         
-        s->use_gps =1;
+	if (openair0_cfg[0].clock_source==gpsdo)        
+	    s->use_gps =1;
+
         // Initialize USRP device
         device->openair0_cfg = openair0_cfg;
 
@@ -755,7 +757,7 @@ extern "C" {
 
             // lock mboard clocks
             if (openair0_cfg[0].clock_source == internal){
-                //s->usrp->set_clock_source("internal");
+	        s->usrp->set_clock_source("internal");
             }
             else{
                 s->usrp->set_clock_source("external");
