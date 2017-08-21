@@ -184,8 +184,6 @@ EMAIL   : Lionel.Gauthier@eurecom.fr, navid.nikaein@eurecom.fr
 #define ENB_CONFIG_STRING_MPDCCH_PDSCH_HOPPING_OFFSET_R13                  "sib2_mpdcch_pdsch_hoppingOffset_r13"
 
 
-
-
 #define ENB_CONFIG_STRING_PDSCH_RS_EPRE                                 "pdsch_referenceSignalPower"
 #define ENB_CONFIG_STRING_PDSCH_PB                                      "pdsch_p_b"
 #define ENB_CONFIG_STRING_PUSCH_N_SB                                    "pusch_n_SB"
@@ -233,6 +231,15 @@ EMAIL   : Lionel.Gauthier@eurecom.fr, navid.nikaein@eurecom.fr
 #define ENB_CONFIG_STRING_UETIMERS_N310                                 "ue_TimersAndConstants_n310"
 #define ENB_CONFIG_STRING_UETIMERS_N311                                 "ue_TimersAndConstants_n311"
 #define ENB_CONFIG_STRING_UE_TRANSMISSION_MODE                          "ue_TransmissionMode"
+
+#define ENB_CONFIG_STRING_PDSCH_MAX_NUM_REPETITION_CE_MODE_A_R13        "pdsch_maxNumRepetitionCEmodeA_r13"
+#define ENB_CONFIG_STRING_PUSCH_MAX_NUM_REPETITION_CE_MODE_A_R13        "pusch_maxNumRepetitionCEmodeA_r13"
+
+#define ENB_CONFIG_STRING_PDSCH_MAX_NUM_REPETITION_CE_MODE_B_R13        "pdsch_maxNumRepetitionCEmodeB_r13"
+#define ENB_CONFIG_STRING_PUSCH_MAX_NUM_REPETITION_CE_MODE_B_R13        "pusch_maxNumRepetitionCEmodeB_r13"
+#define ENB_CONFIG_STRING_PUSCH_HOPPING_OFFSET_V1310                    "pusch_HoppingOffset_v1310"
+
+
 
 #define ENB_CONFIG_STRING_SRB1                                          "srb1_parameters"
 #define ENB_CONFIG_STRING_SRB1_TIMER_POLL_RETRANSMIT                    "timer_poll_retransmit"
@@ -1184,6 +1191,12 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   libconfig_int     sib2_interval_ULHoppingConfigCommonModeB_r13_val  = 0;
   libconfig_int     sib2_mpdcch_pdsch_hoppingOffset_r13               = 0; 
 
+  libconfig_int     pdsch_maxNumRepetitionCEmodeA_r13                 = 0;
+  libconfig_int     pdsch_maxNumRepetitionCEmodeB_r13                 = 0;
+
+  libconfig_int     pusch_maxNumRepetitionCEmodeA_r13                 = 0;
+  libconfig_int     pusch_maxNumRepetitionCEmodeB_r13                 = 0;
+  libconfig_int     pusch_HoppingOffset_v1310                         = 0;
 
 
 
@@ -2725,6 +2738,36 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                   RRC_CONFIGURATION_REQ (msg_p).mac_ContentionResolutionTimer_r13[j][rach_info_level_idx] = mac_ContentionResolutionTimer_r13;
                   RRC_CONFIGURATION_REQ (msg_p).rar_HoppingConfig_r13[j][rach_info_level_idx]             = rar_HoppingConfig_r13;
 
+                }
+
+                if (config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PDSCH_MAX_NUM_REPETITION_CE_MODE_A_R13, &pdsch_maxNumRepetitionCEmodeA_r13))
+                {
+                    RRC_CONFIGURATION_REQ (msg_p).pdsch_maxNumRepetitionCEmodeA_r13[j] = CALLOC(1, sizeof(long));
+                    *RRC_CONFIGURATION_REQ (msg_p).pdsch_maxNumRepetitionCEmodeA_r13[j] = pdsch_maxNumRepetitionCEmodeA_r13;
+                }
+
+                if (config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PDSCH_MAX_NUM_REPETITION_CE_MODE_B_R13, &pdsch_maxNumRepetitionCEmodeB_r13))
+                {
+                    RRC_CONFIGURATION_REQ (msg_p).pdsch_maxNumRepetitionCEmodeB_r13[j] = CALLOC(1, sizeof(long));
+                    *RRC_CONFIGURATION_REQ (msg_p).pdsch_maxNumRepetitionCEmodeB_r13[j] = pdsch_maxNumRepetitionCEmodeB_r13;
+                }
+
+                if (config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PUSCH_MAX_NUM_REPETITION_CE_MODE_A_R13, &pusch_maxNumRepetitionCEmodeA_r13))
+                {
+                    RRC_CONFIGURATION_REQ (msg_p).pusch_maxNumRepetitionCEmodeA_r13[j] = CALLOC(1, sizeof(long));
+                    *RRC_CONFIGURATION_REQ (msg_p).pusch_maxNumRepetitionCEmodeA_r13[j] = pusch_maxNumRepetitionCEmodeA_r13;
+                }
+
+                if (config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PUSCH_MAX_NUM_REPETITION_CE_MODE_B_R13, &pusch_maxNumRepetitionCEmodeB_r13))
+                {
+                    RRC_CONFIGURATION_REQ (msg_p).pusch_maxNumRepetitionCEmodeB_r13[j] = CALLOC(1, sizeof(long));
+                    *RRC_CONFIGURATION_REQ (msg_p).pusch_maxNumRepetitionCEmodeB_r13[j] = pusch_maxNumRepetitionCEmodeB_r13;
+                }
+
+                if (config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PUSCH_HOPPING_OFFSET_V1310, &pusch_HoppingOffset_v1310))
+                {
+                    RRC_CONFIGURATION_REQ (msg_p).pusch_HoppingOffset_v1310[j] = CALLOC(1, sizeof(long));
+                    *RRC_CONFIGURATION_REQ (msg_p).pusch_HoppingOffset_v1310[j] = pusch_HoppingOffset_v1310;
                 }
 
                 rsrp_range_list = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_RSRP_RANGE_LIST);
