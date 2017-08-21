@@ -1338,17 +1338,61 @@ uint8_t do_SIB23(uint8_t Mod_id,
       (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13 = NULL;
   }
 
-  (*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310 = calloc(1,sizeof(PDSCH_ConfigCommon_v1310_t));
-  (*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeA_r13 = calloc(1,sizeof(long));
-  *(*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeA_r13 = 0;
-  (*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeB_r13 = NULL;
 
 
+  // pdsch_ConfigCommon_v1310
+  (*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310 = CALLOC(1,sizeof(PDSCH_ConfigCommon_v1310_t));
+
+  if (configuration->pdsch_maxNumRepetitionCEmodeA_r13[CC_id]) {
+      (*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeA_r13 = CALLOC(1, sizeof(long));
+      *(*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeA_r13 = *configuration->pdsch_maxNumRepetitionCEmodeA_r13[CC_id];
+      printf("[DEBUGGING][KOGO] : pdsch CE MODE A : %ld\n", *(*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeA_r13);
+  } else {
+      (*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeA_r13 = NULL;
+  }
+
+  if (configuration->pdsch_maxNumRepetitionCEmodeB_r13[CC_id]) {
+      (*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeB_r13 = CALLOC(1, sizeof(long)); // check if they're really long
+      *(*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeB_r13 = *configuration->pdsch_maxNumRepetitionCEmodeB_r13[CC_id];
+      printf("[DEBUGGING][KOGO] : pdsch CE MODE B : %ld\n", *(*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeB_r13);
+  } else {
+      (*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeB_r13 = NULL;
+  }
+
+  //  *(*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeA_r13 = 0;
+  //  (*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeB_r13 = NULL;
+
+  //  pusch_ConfigCommon_v1310
   (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310 = calloc(1,sizeof(PUSCH_ConfigCommon_v1310_t));
-  (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeA_r13 = calloc(1,sizeof(long));
-  *(*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeA_r13 = 0;
-  (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeB_r13 = NULL;
-  (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_HoppingOffset_v1310 = NULL;
+
+  if (configuration->pusch_maxNumRepetitionCEmodeA_r13[CC_id]) {
+      (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeA_r13 = calloc(1,sizeof(long));
+      *(*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeA_r13 = *configuration->pusch_maxNumRepetitionCEmodeA_r13[CC_id];
+      printf("[DEBUGGING][KOGO] : pusch CE MODE A : %ld\n", *(*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeA_r13);
+  } else {
+      (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeA_r13 = NULL;
+  }
+
+  if (configuration->pusch_maxNumRepetitionCEmodeB_r13[CC_id]) {
+      (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeB_r13 = CALLOC(1, sizeof(long));
+      *(*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeB_r13 = *configuration->pusch_maxNumRepetitionCEmodeB_r13[CC_id];
+      printf("[DEBUGGING][KOGO] : pusch CE MODE B : %ld\n", *(*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeB_r13);
+  } else {
+      (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeB_r13 = NULL;
+  }
+
+  if (configuration->pusch_HoppingOffset_v1310[CC_id]) {
+      (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_HoppingOffset_v1310 = CALLOC(1, sizeof(long));
+      *(*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_HoppingOffset_v1310 = *configuration->pusch_HoppingOffset_v1310[CC_id];
+      printf("[DEBUGGING][KOGO] : pusch hopping offset : %ld\n", *(*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_HoppingOffset_v1310);
+  } else {
+      (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_HoppingOffset_v1310 = NULL;
+  }
+
+  //  *(*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeA_r13 = 0;
+  //  (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeB_r13 = NULL;
+  //  (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_HoppingOffset_v1310 = NULL;
+
 
   if (rrconfig->prach_ConfigCommon_v1310)
   {
