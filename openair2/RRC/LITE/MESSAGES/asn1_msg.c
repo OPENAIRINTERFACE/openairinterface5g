@@ -2322,7 +2322,7 @@ do_RRCConnectionSetup_BR(
   physicalConfigDedicated2->pdsch_ConfigDedicated         = CALLOC(1,sizeof(*physicalConfigDedicated2->pdsch_ConfigDedicated));
   physicalConfigDedicated2->pucch_ConfigDedicated         = CALLOC(1,sizeof(*physicalConfigDedicated2->pucch_ConfigDedicated));
 
-  physicalConfigDedicated2->pusch_ConfigDedicated         = NULL;
+  physicalConfigDedicated2->pusch_ConfigDedicated         = CALLOC(1,sizeof(*physicalConfigDedicated2->pusch_ConfigDedicated));;
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH         = NULL;
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH         = NULL;
 
@@ -2338,9 +2338,7 @@ do_RRCConnectionSetup_BR(
 #ifdef CBA
   physicalConfigDedicated2->pusch_CBAConfigDedicated_vlola = CALLOC(1,sizeof(*physicalConfigDedicated2->pusch_CBAConfigDedicated_vlola));
 #endif
-  // PDSCH
-  //assign_enum(&physicalConfigDedicated2->pdsch_ConfigDedicated->p_a,
-  //        PDSCH_ConfigDedicated__p_a_dB0);
+
   if (carrier->p_eNB==2)
     physicalConfigDedicated2->pdsch_ConfigDedicated->p_a = PDSCH_ConfigDedicated__p_a_dB_3;
   else
@@ -2349,6 +2347,14 @@ do_RRCConnectionSetup_BR(
   // PUCCH
   physicalConfigDedicated2->pucch_ConfigDedicated->ackNackRepetition.present=PUCCH_ConfigDedicated__ackNackRepetition_PR_release;
   physicalConfigDedicated2->pucch_ConfigDedicated->ackNackRepetition.choice.release=0;
+
+  // PUSCH
+  physicalConfigDedicated2->pusch_ConfigDedicated->betaOffset_ACK_Index = 10;
+  physicalConfigDedicated2->pusch_ConfigDedicated->betaOffset_RI_Index = 9;
+  physicalConfigDedicated2->pusch_ConfigDedicated->betaOffset_CQI_Index = 10;
+
+  //
+
 
   if (carrier->sib1->tdd_Config == NULL) {
     physicalConfigDedicated2->pucch_ConfigDedicated->tdd_AckNackFeedbackMode=NULL;//PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing;
@@ -2375,30 +2381,14 @@ do_RRCConnectionSetup_BR(
   // TPC-PDCCH-Config
 
   // CQI ReportConfig
-
-  /// TODO to be reviewed
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic = CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic));
-#if defined(Rel10) || defined(Rel14)
-  *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic = CQI_ReportModeAperiodic_rm30;
-#else
-  *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CQI_ReportConfig__cqi_ReportModeAperiodic_rm30; // HLC CQI, no PMI
-#endif
+  *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic = CQI_ReportModeAperiodic_rm20;
   physicalConfigDedicated2->cqi_ReportConfig->nomPDSCH_RS_EPRE_Offset = 0; // 0 dB
-  //physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic=NULL;
-
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic = CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic));
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present = CQI_ReportPeriodic_PR_release;
-  /*
-    physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present =  CQI_ReportPeriodic_PR_setup;
-    physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex = 0;  // n2_pucch
-    physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_pmi_ConfigIndex = 0;  // Icqi/pmi
-    physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present = CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_subbandCQI;  // subband CQI
-    physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.choice.subbandCQI.k=4;
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.release = NULL;
 
-    physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.ri_ConfigIndex=NULL;
-    physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.simultaneousAckNackAndCQI=0;
-  */
-
+    
   /// TODO to be reviewed
   if (rrc->srs_enable[CC_id]) {
       physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->present = SoundingRS_UL_ConfigDedicated_PR_setup;
@@ -2446,8 +2436,6 @@ do_RRCConnectionSetup_BR(
   //AntennaInfoDedicated
   physicalConfigDedicated2->antennaInfo = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->antennaInfo->present = PhysicalConfigDedicated__antennaInfo_PR_explicitValue;
-  //assign_enum(&physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode,
-  //     AntennaInfoDedicated__transmissionMode_tm2);
 
   switch (transmission_mode) {
   default:
@@ -2498,7 +2486,7 @@ do_RRCConnectionSetup_BR(
   // SchedulingRequestConfig
 
   physicalConfigDedicated2->schedulingRequestConfig->present = SchedulingRequestConfig_PR_setup;
-  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 3;//ue_context_pP->local_uid;
+  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 18;//ue_context_pP->local_uid;
 
   if (carrier->sib1->tdd_Config == NULL) { // FDD
     physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 5+(ue_context_pP->local_uid%10);  // Isr = 5 (every 10 subframes, offset=2+UE_id mod3)
@@ -2526,10 +2514,7 @@ do_RRCConnectionSetup_BR(
   }
 
 
-  //  assign_enum(&physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax,
-  //SchedulingRequestConfig__setup__dsr_TransMax_n4);
-  //  assign_enum(&physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n4;
-  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n4;
+  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n16;
 
   physicalConfigDedicated2->ext4 =  calloc(1, sizeof(struct PhysicalConfigDedicated__ext4) );
   physicalConfigDedicated2->ext4->csi_RS_ConfigNZPToReleaseList_r11 = NULL;
@@ -2548,15 +2533,15 @@ do_RRCConnectionSetup_BR(
   //  memset(physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11, 0, sizeof())
   EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11 = calloc(1, sizeof(EPDCCH_SetConfig_r11_t));
   epdcch_setconfig_r11->setConfigId_r11 = 0;
-  epdcch_setconfig_r11->transmissionType_r11 = EPDCCH_SetConfig_r11__transmissionType_r11_localised;
+  epdcch_setconfig_r11->transmissionType_r11 = EPDCCH_SetConfig_r11__transmissionType_r11_distributed;
   epdcch_setconfig_r11->resourceBlockAssignment_r11.numberPRB_Pairs_r11 = EPDCCH_SetConfig_r11__resourceBlockAssignment_r11__numberPRB_Pairs_r11_n2;
   //epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11 = calloc(0, sizeof(BIT_STRING_t));
-  epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.buf = calloc(0, 2 * sizeof(uint8_t));
-  epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.size = 2;
-  epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.bits_unused = 6;
-  epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.buf[0] = 0x0E;
+  epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.buf = calloc(1, 5 * sizeof(uint8_t));
+  epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.size = 5;
+  epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.bits_unused = 2;
+  memset(epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.buf, 0, 5 * sizeof(uint8_t));
 
-  epdcch_setconfig_r11->dmrs_ScramblingSequenceInt_r11 = 0;
+  epdcch_setconfig_r11->dmrs_ScramblingSequenceInt_r11 = 54;
   epdcch_setconfig_r11->pucch_ResourceStartOffset_r11 = 0;
   epdcch_setconfig_r11->re_MappingQCL_ConfigId_r11 = NULL;
 
@@ -2569,7 +2554,7 @@ do_RRCConnectionSetup_BR(
   epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.present        = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_StartSF_UESS_r13_PR_fdd_r13;
   epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.choice.fdd_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_StartSF_UESS_r13__fdd_r13_v1;
   epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_NumRepetition_r13               = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_NumRepetition_r13_r1;
-  epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13                  = 3;
+  epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13                  = 2;
   ASN_SEQUENCE_ADD(physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11, epdcch_setconfig_r11);
 
   // FIXME allocate physicalConfigDedicated2->ext7
