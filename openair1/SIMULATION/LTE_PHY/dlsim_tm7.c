@@ -953,14 +953,14 @@ int main(int argc, char **argv)
   }
 
   for (i=0; i<2; i++) {
-    UE->dlsch[subframe&0x1][0][i]  = new_ue_dlsch(Kmimo,8,Nsoft,MAX_TURBO_ITERATIONS,N_RB_DL,0);
+    UE->dlsch[UE->current_thread_id[subframe]][0][i]  = new_ue_dlsch(Kmimo,8,Nsoft,MAX_TURBO_ITERATIONS,N_RB_DL,0);
 
-    if (!UE->dlsch[subframe&0x1][0][i]) {
+    if (!UE->dlsch[UE->current_thread_id[subframe]][0][i]) {
       printf("Can't get ue dlsch structures\n");
       exit(-1);
     }
 
-    UE->dlsch[subframe&0x1][0][i]->rnti   = n_rnti;
+    UE->dlsch[UE->current_thread_id[subframe]][0][i]->rnti   = n_rnti;
   }
 
   // structure for SIC at UE
@@ -1112,10 +1112,11 @@ int main(int argc, char **argv)
           }
 
           memcpy(&dci_alloc[num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[num_dci].dci_length = dci_length;
-          dci_alloc[num_dci].L          = 1;
-          dci_alloc[num_dci].rnti       = n_rnti+k;
-          dci_alloc[num_dci].format     = format1;
+          dci_alloc[num_dci].dci_length   = dci_length;
+          dci_alloc[num_dci].L            = 1;
+          dci_alloc[num_dci].rnti         = n_rnti+k;
+          dci_alloc[num_dci].format       = format1;
+          dci_alloc[num_dci].search_space = DCI_UE_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[num_dci]);
 
           printf("Generating dlsch params for user %d\n",k);
@@ -1255,11 +1256,12 @@ int main(int argc, char **argv)
           }
 
           memcpy(&dci_alloc[num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[num_dci].dci_length = dci_length;
-          dci_alloc[num_dci].L          = 1;
-          dci_alloc[num_dci].rnti       = SI_RNTI;
-          dci_alloc[num_dci].format     = format1A;
-          dci_alloc[num_dci].firstCCE       = 0;
+          dci_alloc[num_dci].dci_length   = dci_length;
+          dci_alloc[num_dci].L            = 1;
+          dci_alloc[num_dci].rnti         = SI_RNTI;
+          dci_alloc[num_dci].format       = format1A;
+          dci_alloc[num_dci].firstCCE     = 0;
+          dci_alloc[num_dci].search_space = DCI_COMMON_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[num_dci]);
 
           printf("Generating dlsch params for user %d\n",k);
@@ -1424,10 +1426,11 @@ int main(int argc, char **argv)
           }
 
           memcpy(&dci_alloc[num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[num_dci].dci_length = dci_length;
-          dci_alloc[num_dci].L          = 1;
-          dci_alloc[num_dci].rnti       = n_rnti+k;
-          dci_alloc[num_dci].format     = format2A;
+          dci_alloc[num_dci].dci_length   = dci_length;
+          dci_alloc[num_dci].L            = 1;
+          dci_alloc[num_dci].rnti         = n_rnti+k;
+          dci_alloc[num_dci].format       = format2A;
+          dci_alloc[num_dci].search_space = DCI_UE_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[num_dci]);
 
           printf("Generating dlsch params for user %d / format 2A (%d)\n",k,format2A);
@@ -1564,11 +1567,12 @@ int main(int argc, char **argv)
           }
 
           memcpy(&dci_alloc[num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[num_dci].dci_length = dci_length;
-          dci_alloc[num_dci].L          = 1;
-          dci_alloc[num_dci].rnti       = SI_RNTI;
-          dci_alloc[num_dci].format     = format1A;
-          dci_alloc[num_dci].firstCCE       = 0;
+          dci_alloc[num_dci].dci_length   = dci_length;
+          dci_alloc[num_dci].L            = 1;
+          dci_alloc[num_dci].rnti         = SI_RNTI;
+          dci_alloc[num_dci].format       = format1A;
+          dci_alloc[num_dci].firstCCE     = 0;
+          dci_alloc[num_dci].search_space = DCI_COMMON_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[num_dci]);
 
           printf("Generating dlsch params for user %d\n",k);
@@ -1734,10 +1738,11 @@ int main(int argc, char **argv)
           }
 
           memcpy(&dci_alloc[num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[num_dci].dci_length = dci_length;
-          dci_alloc[num_dci].L          = 1;
-          dci_alloc[num_dci].rnti       = n_rnti+k;
-          dci_alloc[num_dci].format     = format2;
+          dci_alloc[num_dci].dci_length   = dci_length;
+          dci_alloc[num_dci].L            = 1;
+          dci_alloc[num_dci].rnti         = n_rnti+k;
+          dci_alloc[num_dci].format       = format2;
+          dci_alloc[num_dci].search_space = DCI_UE_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[num_dci]);
 
           printf("Generating dlsch params for user %d\n",k);
@@ -1874,11 +1879,12 @@ int main(int argc, char **argv)
           }
 
           memcpy(&dci_alloc[num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[num_dci].dci_length = dci_length;
-          dci_alloc[num_dci].L          = 1;
-          dci_alloc[num_dci].rnti       = SI_RNTI;
-          dci_alloc[num_dci].format     = format1A;
-          dci_alloc[num_dci].firstCCE       = 0;
+          dci_alloc[num_dci].dci_length   = dci_length;
+          dci_alloc[num_dci].L            = 1;
+          dci_alloc[num_dci].rnti         = SI_RNTI;
+          dci_alloc[num_dci].format       = format1A;
+          dci_alloc[num_dci].firstCCE     = 0;
+          dci_alloc[num_dci].search_space = DCI_COMMON_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[num_dci]);
 
           printf("Generating dlsch params for user %d\n",k);
@@ -1906,11 +1912,12 @@ int main(int argc, char **argv)
       case 5:
       case 6:
         memcpy(&dci_alloc[num_dci].dci_pdu[0],&DLSCH_alloc_pdu2_1E[k],sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t));
-        dci_alloc[num_dci].dci_length = sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t;
-        dci_alloc[num_dci].L          = 1;
-        dci_alloc[num_dci].rnti       = n_rnti+k;
-        dci_alloc[num_dci].format     = format1E_2A_M10PRB;
-        dci_alloc[num_dci].firstCCE       = 4*k;
+        dci_alloc[num_dci].dci_length   = sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t;
+        dci_alloc[num_dci].L            = 1;
+        dci_alloc[num_dci].rnti         = n_rnti+k;
+        dci_alloc[num_dci].format       = format1E_2A_M10PRB;
+        dci_alloc[num_dci].firstCCE     = 4*k;
+        dci_alloc[num_dci].search_space = DCI_UE_SPACE;
         printf("Generating dlsch params for user %d\n",k);
         generate_eNB_dlsch_params_from_dci(0,
 					   subframe,
@@ -2039,7 +2046,7 @@ int main(int argc, char **argv)
     }
 
     for (SNR=snr0; SNR<snr1; SNR+=snr_step) {
-      UE->proc.proc_rxtx[subframe&1].frame_rx=0;
+      UE->proc.proc_rxtx[UE->current_thread_id[subframe]].frame_rx=0;
       errs[0]=0;
       errs[1]=0;
       errs[2]=0;
@@ -2069,7 +2076,7 @@ int main(int argc, char **argv)
       reset_meas(&eNB->dlsch_rate_matching_stats);
       reset_meas(&eNB->dlsch_turbo_encoding_stats);
 
-      reset_meas(&UE->phy_proc_rx[subframe&0x1]); // total UE rx
+      reset_meas(&UE->phy_proc_rx[UE->current_thread_id[subframe]]); // total UE rx
       reset_meas(&UE->ofdm_demod_stats);
       reset_meas(&UE->dlsch_channel_estimation_stats);
       reset_meas(&UE->dlsch_freq_offset_estimation_stats);
@@ -2112,9 +2119,9 @@ int main(int argc, char **argv)
         //if (trials%100==0)
         eNB2UE[0]->first_run = 1;
 
-        ret = UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations+1;
+        ret = UE->dlsch[UE->current_thread_id[subframe]][0][0]->max_turbo_iterations+1;
 
-        while ((round < num_rounds) && (ret > UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations)) {
+        while ((round < num_rounds) && (ret > UE->dlsch[UE->current_thread_id[subframe]][0][0]->max_turbo_iterations)) {
               //printf("Trial %d, round %d\n",trials,round);
           round_trials[round]++;
 
@@ -2556,8 +2563,7 @@ PMI_FEEDBACK:
               }
             }
 	    
-            num_pdcch_symbols_2 = generate_dci_top(num_ue_spec_dci,
-                                                   num_common_dci,
+            num_pdcch_symbols_2 = generate_dci_top(num_ue_spec_dci + num_common_dci,
                                                    dci_alloc,
                                                    0,
                                                    AMP,
@@ -2601,7 +2607,7 @@ PMI_FEEDBACK:
                 // use the PMI from previous trial
                 if (DLSCH_alloc_pdu2_1E[0].tpmi == 5) {
                   eNB->dlsch[0][0]->harq_processes[0]->pmi_alloc = quantize_subband_pmi(&UE->measurements,0,eNB->frame_parms.N_RB_DL);
-                  UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->pmi_alloc = quantize_subband_pmi(&UE->measurements,0,UE->frame_parms.N_RB_DL);
+                  UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->pmi_alloc = quantize_subband_pmi(&UE->measurements,0,UE->frame_parms.N_RB_DL);
 
                   if (n_users>1)
                     eNB->dlsch[1][0]->harq_processes[0]->pmi_alloc = (eNB->dlsch[0][0]->harq_processes[0]->pmi_alloc ^ 0x1555);
@@ -3059,7 +3065,7 @@ PMI_FEEDBACK:
           }
           
 
-          start_meas(&UE->phy_proc_rx[subframe&0x1]);
+          start_meas(&UE->phy_proc_rx[UE->current_thread_id[subframe]]);
 
           // Inner receiver scheduling for 3 slots
         
@@ -3096,24 +3102,24 @@ PMI_FEEDBACK:
                     for(aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
                       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
                         for (i=0; i<frame_parms->N_RB_DL*12; i++) {
-                          ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[k][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(
+                          ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[k][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(
                                 eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
                           //printf("x=%d,AMP=%d\n",eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x,AMP);
-                          ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(
+                          ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(
                                 eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
 
                           if (transmission_mode == 7){
 			    //this should include the BF weights! Will not work for a random channel
                             if (UE->high_speed_flag==0) {
-                              ((int16_t *)UE->pdsch_vars[subframe&0x1][0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i]=(int16_t)(
+                              ((int16_t *)UE->pdsch_vars[UE->current_thread_id[subframe]][0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i]=(int16_t)(
                                   eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
-                              ((int16_t *)UE->pdsch_vars[subframe&0x1][0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+1]=(int16_t)(
+                              ((int16_t *)UE->pdsch_vars[UE->current_thread_id[subframe]][0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+1]=(int16_t)(
                                   eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
                               //printf("**,x=%d,AMP=%d\n",eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x,AMP);
                             } else  {
-                              ((int16_t *)UE->pdsch_vars[subframe&0x1][0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=(int16_t)(
+                              ((int16_t *)UE->pdsch_vars[UE->current_thread_id[subframe]][0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=(int16_t)(
                                   eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
-                              ((int16_t *)UE->pdsch_vars[subframe&0x1][0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=(int16_t)(
+                              ((int16_t *)UE->pdsch_vars[UE->current_thread_id[subframe]][0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=(int16_t)(
                                   eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
                                 
                             }
@@ -3126,15 +3132,15 @@ PMI_FEEDBACK:
                   for(aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
                     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
                       for (i=0; i<frame_parms->N_RB_DL*12; i++) {
-                          ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
-                          ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
+                          ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[0][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
+                          ((int16_t *) UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
                         if (transmission_mode == 7) {
                           if (UE->high_speed_flag==0){
-                            ((int16_t *) UE->pdsch_vars[subframe&0x1][0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i]=(short)(AMP);
-                            ((int16_t *) UE->pdsch_vars[subframe&0x1][0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+1]=0/2;
+                            ((int16_t *) UE->pdsch_vars[UE->current_thread_id[subframe]][0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i]=(short)(AMP);
+                            ((int16_t *) UE->pdsch_vars[UE->current_thread_id[subframe]][0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+1]=0/2;
                           } else {
-                            ((int16_t *) UE->pdsch_vars[subframe&0x1][0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=(short)(AMP);
-                            ((int16_t *) UE->pdsch_vars[subframe&0x1][0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=0/2;
+                            ((int16_t *) UE->pdsch_vars[UE->current_thread_id[subframe]][0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=(short)(AMP);
+                            ((int16_t *) UE->pdsch_vars[UE->current_thread_id[subframe]][0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=0/2;
                           }
                         }
                       }
@@ -3227,7 +3233,7 @@ PMI_FEEDBACK:
 
                   for (i=0; i<dci_cnt; i++) {
                     //        printf("Generating dlsch parameters for RNTI %x\n",dci_alloc_rx[i].rnti);
-                    if (round == 0) UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->first_tx=1;
+                    if (round == 0) UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid]->first_tx=1;
 
                     if ((dci_alloc_rx[i].rnti == n_rnti) &&
                         (generate_ue_dlsch_params_from_dci(0,
@@ -3235,7 +3241,9 @@ PMI_FEEDBACK:
                                                            dci_alloc_rx[i].dci_pdu,
                                                            dci_alloc_rx[i].rnti,
                                                            dci_alloc_rx[i].format,
-                                                           UE->dlsch[subframe&0x1][0],
+                                                           UE->pdcch_vars[UE->current_thread_id[subframe]][eNB_id],
+                                                           UE->pdsch_vars[UE->current_thread_id[subframe]][eNB_id],
+                                                           UE->dlsch[UE->current_thread_id[subframe]][0],
                                                            &UE->frame_parms,
                                                            UE->pdsch_config_dedicated,
                                                            SI_RNTI,
@@ -3244,23 +3252,23 @@ PMI_FEEDBACK:
                                                            transmission_mode<7?0:transmission_mode))) {
                       //dump_dci(&UE->frame_parms,&dci_alloc_rx[i]);
                       coded_bits_per_codeword = get_G(&eNB->frame_parms,
-                                                      UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->nb_rb,
-                                                      UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->rb_alloc_even,
-                                                      get_Qm(UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->mcs),
-                                                      UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->Nl,
+                                                      UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid]->nb_rb,
+                                                      UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid]->rb_alloc_even,
+                                                      get_Qm(UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid]->mcs),
+                                                      UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid]->Nl,
                                                       UE->pdcch_vars[0]->num_pdcch_symbols,
                                                       0,
 						      subframe,
 						      (transmission_mode<7?0:transmission_mode));
           	    /*if (transmission_mode==7 && common_flag==0)
-       	    	      UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->mimo_mode = TM7; */
+       	    	      UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->mimo_mode = TM7; */
 
                       /*
-                      rate = (double)dlsch_tbs25[get_I_TBS(UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->mcs)][UE->dlsch[subframe&0x1][0][0]->nb_rb-1]/(coded_bits_per_codeword);
-                      rate*=get_Qm(UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->mcs);
+                      rate = (double)dlsch_tbs25[get_I_TBS(UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid]->mcs)][UE->dlsch[UE->current_thread_id[subframe]][0][0]->nb_rb-1]/(coded_bits_per_codeword);
+                      rate*=get_Qm(UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid]->mcs);
                       */
                       printf("num_pdcch_symbols %d, G %d, TBS %d\n",UE->pdcch_vars[0]->num_pdcch_symbols,coded_bits_per_codeword,
-                             UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->TBS);
+                             UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid]->TBS);
 
                       dlsch_active = 1;
                     } else {
@@ -3288,7 +3296,7 @@ PMI_FEEDBACK:
                   UE->pdcch_vars[0]->crnti = n_rnti;
                   UE->pdcch_vars[0]->num_pdcch_symbols = num_pdcch_symbols;
 
-                  if (round == 0) UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->first_tx=1;
+                  if (round == 0) UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->first_tx=1;
 
                   switch (transmission_mode) {
                   case 1:
@@ -3299,7 +3307,9 @@ PMI_FEEDBACK:
                                                       &DLSCH_alloc_pdu_1[0],
                                                       (common_flag==0)? C_RNTI : SI_RNTI,
                                                       (common_flag==0)? format1 : format1A,
-                                                      UE->dlsch[subframe&0x1][0],
+                                                      UE->pdcch_vars[UE->current_thread_id[subframe]][eNB_id],
+                                                      UE->pdsch_vars[UE->current_thread_id[subframe]][eNB_id],
+                                                      UE->dlsch[UE->current_thread_id[subframe]][0],
                                                       &UE->frame_parms,
                                                       UE->pdsch_config_dedicated,
                                                       SI_RNTI,
@@ -3307,24 +3317,24 @@ PMI_FEEDBACK:
                                                       P_RNTI,
                                                       transmission_mode<7?0:transmission_mode);
           	    /*if(transmission_mode==7 && common_flag==0)
-       	    	      UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->mimo_mode = TM7;*/
+       	    	      UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->mimo_mode = TM7;*/
                     break;
 
                   case 3:
-                    //        printf("Rate: TM3 (before) round %d (%d) first_tx %d\n",round,UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->round,UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->first_tx);
+                    //        printf("Rate: TM3 (before) round %d (%d) first_tx %d\n",round,UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->round,UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->first_tx);
                     generate_ue_dlsch_params_from_dci(0,
 						      subframe,
                                                       &DLSCH_alloc_pdu_1[0],
                                                       (common_flag==0)? C_RNTI : SI_RNTI,
                                                       (common_flag==0)? format2A : format1A,
-                                                      UE->dlsch[subframe&0x1][0],
+                                                      UE->dlsch[UE->current_thread_id[subframe]][0],
                                                       &UE->frame_parms,
                                                       UE->pdsch_config_dedicated,
                                                       SI_RNTI,
                                                       0,
                                                       P_RNTI,
                                                       0);
-                    //        printf("Rate: TM3 (after) round %d (%d) first_tx %d\n",round,UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->round,UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->first_tx);
+                    //        printf("Rate: TM3 (after) round %d (%d) first_tx %d\n",round,UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->round,UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->first_tx);
                     break;
 
                   case 4:
@@ -3333,7 +3343,9 @@ PMI_FEEDBACK:
                                                       &DLSCH_alloc_pdu_1[0],
                                                       (common_flag==0)? C_RNTI : SI_RNTI,
                                                       (common_flag==0)? format2 : format1A,
-                                                      UE->dlsch[subframe&0x1][0],
+                                                      UE->pdcch_vars[UE->current_thread_id[subframe]][eNB_id],
+                                                      UE->pdsch_vars[UE->current_thread_id[subframe]][eNB_id],
+                                                      UE->dlsch[UE->current_thread_id[subframe]][0],
                                                       &UE->frame_parms,
                                                       UE->pdsch_config_dedicated,
                                                       SI_RNTI,
@@ -3349,7 +3361,9 @@ PMI_FEEDBACK:
                                                       &DLSCH_alloc_pdu2_1E[0],
                                                       C_RNTI,
                                                       format1E_2A_M10PRB,
-                                                      UE->dlsch[subframe&0x1][0],
+                                                      ue->pdcch_vars[UE->current_thread_id[subframe]][eNB_id],
+                                                      ue->pdsch_vars[UE->current_thread_id[subframe]][eNB_id],
+                                                      UE->dlsch[UE->current_thread_id[subframe]][0],
                                                       &UE->frame_parms,
                                                       UE->pdsch_config_dedicated,
                                                       SI_RNTI,
@@ -3381,7 +3395,7 @@ PMI_FEEDBACK:
                 if ((Ns==(1+(2*subframe))) && (l==0)) {// process PDSCH symbols 1,2,3,4,5,(6 Normal Prefix)
 
                   if ((transmission_mode == 5) &&
-                      (UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->dl_power_off==0) &&
+                      (UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid]->dl_power_off==0) &&
                       (UE->use_ia_receiver ==1)) {
                     dual_stream_UE = 1;
                   } else {
@@ -3404,7 +3418,7 @@ PMI_FEEDBACK:
                                  (m==UE->pdcch_vars[0]->num_pdcch_symbols)?1:0,
                                  dual_stream_UE,
                                  i_mod,
-                                 UE->dlsch[subframe&0x1][0][0]->current_harq_pid)==-1) {
+                                 UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid)==-1) {
                       dlsch_active = 0;
                       break;
                     }
@@ -3430,7 +3444,7 @@ PMI_FEEDBACK:
                                  0,
                                  dual_stream_UE,
                                  i_mod,
-                                 UE->dlsch[subframe&0x1][0][0]->current_harq_pid)==-1) {
+                                 UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid)==-1) {
                       dlsch_active=0;
                       break;
                     }
@@ -3456,7 +3470,7 @@ PMI_FEEDBACK:
                                  0,
                                  dual_stream_UE,
                                  i_mod,
-                                 UE->dlsch[subframe&0x1][0][0]->current_harq_pid)==-1) {
+                                 UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid)==-1) {
                       dlsch_active=0;
                       break;
                     }
@@ -3477,30 +3491,30 @@ PMI_FEEDBACK:
                     //write_output("rxsig0.m","rxs0", &UE->common_vars.rxdata[0][0],10*UE->frame_parms.samples_per_tti,1,1);
                     write_output("rxsig0.m","rxs0", &UE->common_vars.rxdata[0][subframe*UE->frame_parms.samples_per_tti],UE->frame_parms.samples_per_tti,1,1);
                     //write_output("rxsigF0.m","rxsF0", &UE->common_vars.rxdataF[0][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
-                    write_output("rxsigF0.m","rxsF0", &UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
+                    write_output("rxsigF0.m","rxsF0", &UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
                     if (UE->frame_parms.nb_antennas_rx>1) {
                       write_output("rxsig1.m","rxs1", UE->common_vars.rxdata[1],UE->frame_parms.samples_per_tti,1,1);
-                      write_output("rxsigF1.m","rxsF1", UE->common_vars..common_vars_rx_data_per_thread[subframe&0x1]rxdataF[1],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
+                      write_output("rxsigF1.m","rxsF1", UE->common_vars..common_vars_rx_data_per_thread[UE->current_thread_id[subframe]]rxdataF[1],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
                     }
 
                     write_output("dlsch00_r0.m","dl00_r0",
-                                 &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][0][0]),
+                                 &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][0][0]),
                                  UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
                     if (UE->frame_parms.nb_antennas_rx>1)
                       write_output("dlsch01_r0.m","dl01_r0",
-                                   &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][1][0]),
+                                   &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][1][0]),
                                    UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
                     if (eNB->frame_parms.nb_antennas_tx>1)
                       write_output("dlsch10_r0.m","dl10_r0",
-                                   &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2][0]),
+                                   &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][2][0]),
                                    UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
                     if ((UE->frame_parms.nb_antennas_rx>1) && (eNB->frame_parms.nb_antennas_tx>1))
                       write_output("dlsch11_r0.m","dl11_r0",
-                                   &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][3][0]),
+                                   &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][3][0]),
                                    UE->frame_parms.ofdm_symbol_size*nsymb/2,1,1);
 
                     //pdsch_vars
@@ -3527,14 +3541,14 @@ PMI_FEEDBACK:
             if (trials==0 && round==0 && transmission_mode>=5 && transmission_mode<7) {
               for (iii=0; iii<NB_RB; iii++) {
                 //fprintf(csv_fd, "%d, %d", (UE->pdsch_vars[eNB_id]->pmi_ext[iii]),(UE->pdsch_vars[eNB_id_i]->pmi_ext[iii]));
-                fprintf(csv_fd,"%x,%x,",(UE->pdsch_vars[subframe&0x1][eNB_id]->pmi_ext[iii]),(UE->pdsch_vars[eNB_id]->pmi_ext[iii]));
-                printf("%x ",(UE->pdsch_vars[subframe&0x1][eNB_id]->pmi_ext[iii]));
+                fprintf(csv_fd,"%x,%x,",(UE->pdsch_vars[UE->current_thread_id[subframe]][eNB_id]->pmi_ext[iii]),(UE->pdsch_vars[eNB_id]->pmi_ext[iii]));
+                printf("%x ",(UE->pdsch_vars[UE->current_thread_id[subframe]][eNB_id]->pmi_ext[iii]));
               }
             }
           }
 
           for (int cw=Kmimo-1; cw>=0; cw--) {
-            UE->dlsch[subframe&0x1][0][cw]->rnti = (common_flag==0) ? n_rnti: SI_RNTI;
+            UE->dlsch[UE->current_thread_id[subframe]][0][cw]->rnti = (common_flag==0) ? n_rnti: SI_RNTI;
             coded_bits_per_codeword = get_G(&eNB->frame_parms,
                                             eNB->dlsch[0][cw]->harq_processes[0]->nb_rb,
                                             eNB->dlsch[0][cw]->harq_processes[0]->rb_alloc,
@@ -3545,14 +3559,14 @@ PMI_FEEDBACK:
 					    subframe,
 					    (transmission_mode<7?0:transmission_mode));
 
-            UE->dlsch[subframe&0x1][0][cw]->harq_processes[UE->dlsch[subframe&0x1][0][cw]->current_harq_pid]->G = coded_bits_per_codeword;
+            UE->dlsch[UE->current_thread_id[subframe]][0][cw]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][0][cw]->current_harq_pid]->G = coded_bits_per_codeword;
 
 
 	                
             // calculate uncoded BLER
             uncoded_ber=0;
             for (i=0;i<coded_bits_per_codeword;i++)
-              if (eNB->dlsch[0][0]->harq_processes[0]->e[i] != (UE->pdsch_vars[subframe&0x1][0]->llr[0][i]<0)) {
+              if (eNB->dlsch[0][0]->harq_processes[0]->e[i] != (UE->pdsch_vars[UE->current_thread_id[subframe]][0]->llr[0][i]<0)) {
                 uncoded_ber_bit[i] = 1;
                 uncoded_ber++;
               }
@@ -3569,26 +3583,26 @@ PMI_FEEDBACK:
             start_meas(&UE->dlsch_unscrambling_stats);
             dlsch_unscrambling(&UE->frame_parms,
                                0,
-                               UE->dlsch[subframe&0x1][0][cw],
+                               UE->dlsch[UE->current_thread_id[subframe]][0][cw],
                                coded_bits_per_codeword,
-                               UE->pdsch_vars[subframe&0x1][eNB_id]->llr[cw],
+                               UE->pdsch_vars[UE->current_thread_id[subframe]][eNB_id]->llr[cw],
                                0,
                                subframe<<1);
             stop_meas(&UE->dlsch_unscrambling_stats);
 
             start_meas(&UE->dlsch_decoding_stats);
             ret = dlsch_decoding(UE,
-                                 UE->pdsch_vars[subframe&0x1][eNB_id]->llr[cw],
+                                 UE->pdsch_vars[UE->current_thread_id[subframe]][eNB_id]->llr[cw],
                                  &UE->frame_parms,
-                                 UE->dlsch[subframe&0x1][0][cw],
-                                 UE->dlsch[subframe&0x1][0][cw]->harq_processes[UE->dlsch[subframe&0x1][0][cw]->current_harq_pid],
+                                 UE->dlsch[UE->current_thread_id[subframe]][0][cw],
+                                 UE->dlsch[UE->current_thread_id[subframe]][0][cw]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][0][cw]->current_harq_pid],
                                  subframe,
-                                 UE->dlsch[subframe&0x1][0][cw]->current_harq_pid,
+                                 UE->dlsch[UE->current_thread_id[subframe]][0][cw]->current_harq_pid,
                                  1,llr8_flag);
             stop_meas(&UE->dlsch_decoding_stats);
 
             if (cw==1) {
-              if (ret <= UE->dlsch[subframe&0x1][0][cw]->max_turbo_iterations) {
+              if (ret <= UE->dlsch[UE->current_thread_id[subframe]][0][cw]->max_turbo_iterations) {
               } else {
                 errs2[round]++;
               }
@@ -3596,10 +3610,10 @@ PMI_FEEDBACK:
           }
 
 
-          stop_meas(&UE->phy_proc_rx[subframe&0x1]);
+          stop_meas(&UE->phy_proc_rx[UE->current_thread_id[subframe]]);
 
 
-          if (ret <= UE->dlsch[subframe&0x1][0][0]->max_turbo_iterations) {
+          if (ret <= UE->dlsch[UE->current_thread_id[subframe]][0][0]->max_turbo_iterations) {
 
             avg_iter += ret;
             iter_trials++;
@@ -3607,15 +3621,15 @@ PMI_FEEDBACK:
             if (n_frames==1)
               printf("No DLSCH errors found (round %d),uncoded ber %f\n",round,uncoded_ber);
 
-            UE->total_TBS[eNB_id] =  UE->total_TBS[eNB_id] + UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid]->TBS;
+            UE->total_TBS[eNB_id] =  UE->total_TBS[eNB_id] + UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->current_harq_pid]->TBS;
             TB0_active = 0;
 
-            if (UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid]->mimo_mode == LARGE_CDD) {   //try to decode second stream using SIC
+            if (UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->current_harq_pid]->mimo_mode == LARGE_CDD) {   //try to decode second stream using SIC
               /*
-              for (round = 0 ; round < UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid]->round ; round++) {
+              for (round = 0 ; round < UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->current_harq_pid]->round ; round++) {
               // re-encoding of first stream
-              dlsch0_ue_harq = UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid];
-              dlsch0_eNB_harq = UE->dlsch[subframe&0x1][eNB_id]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid];
+              dlsch0_ue_harq = UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->current_harq_pid];
+              dlsch0_eNB_harq = UE->dlsch[UE->current_thread_id[subframe]][eNB_id]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->current_harq_pid];
               dlsch0_eNB_harq->mimo_mode    = LARGE_CDD;
               dlsch0_eNB_harq->rb_alloc[0]  = dlsch0_ue_harq->rb_alloc_even[0];
               dlsch0_eNB_harq->nb_rb        = dlsch0_ue_harq->nb_rb;
@@ -3627,13 +3641,13 @@ PMI_FEEDBACK:
               dlsch0_eNB_harq->dl_power_off = dlsch0_ue_harq->dl_power_off;
               dlsch0_eNB_harq->status       = dlsch0_ue_harq->status;
 
-              UE->dlsch[subframe&0x1][eNB_id]->active       = UE->dlsch[subframe&0x1][eNB_id][0]->active;
-              UE->dlsch[subframe&0x1][eNB_id]->rnti         = UE->dlsch[subframe&0x1][eNB_id][0]->rnti;
+              UE->dlsch[UE->current_thread_id[subframe]][eNB_id]->active       = UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->active;
+              UE->dlsch[UE->current_thread_id[subframe]][eNB_id]->rnti         = UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->rnti;
 
-              dlsch_encoding(UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid]->b,
+              dlsch_encoding(UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->current_harq_pid]->b,
                    &UE->frame_parms,
                    num_pdcch_symbols,
-                   UE->dlsch[subframe&0x1][0],
+                   UE->dlsch[UE->current_thread_id[subframe]][0],
                    0,subframe,
                    &UE->dlsch_rate_matching_stats,
                    &UE->dlsch_turbo_encoding_stats,
@@ -3660,18 +3674,18 @@ PMI_FEEDBACK:
               //if ((n_frames==1) || (SNR>=30)) 
               printf("DLSCH errors found (round %d), uncoded ber %f\n",round,uncoded_ber);
 
-              for (s=0; s<UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->C; s++) {
-                if (s<UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->Cminus)
-                  Kr = UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->Kminus;
+              for (s=0; s<UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->C; s++) {
+                if (s<UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Cminus)
+                  Kr = UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Kminus;
                 else
-                  Kr = UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->Kplus;
+                  Kr = UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Kplus;
 
                 Kr_bytes = Kr>>3;
 
                 printf("Decoded_output (Segment %d):\n",s);
 
                 for (i=0; i<Kr_bytes; i++)
-                  printf("%d : %x (%x)\n",i,UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->c[s][i],UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->c[s][i]^eNB->dlsch[0][0]->harq_processes[0]->c[s][i]);
+                  printf("%d : %x (%x)\n",i,UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->c[s][i],UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->c[s][i]^eNB->dlsch[0][0]->harq_processes[0]->c[s][i]);
               }
 
               sprintf(fname,"rxsig0_r%d.m",round);
@@ -3679,7 +3693,7 @@ PMI_FEEDBACK:
               write_output(fname,vname, &UE->common_vars.rxdata[0][0],10*UE->frame_parms.samples_per_tti,1,1);
               sprintf(fname,"rxsigF0_r%d.m",round);
               sprintf(vname,"rxs0F_r%d",round);
-              write_output(fname,vname, &UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[0][0],2*UE->frame_parms.ofdm_symbol_size*nsymb,2,1);
+              write_output(fname,vname, &UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[0][0],2*UE->frame_parms.ofdm_symbol_size*nsymb,2,1);
 	     
               if (UE->frame_parms.nb_antennas_rx>1) {
                 sprintf(fname,"rxsig1_r%d.m",round);
@@ -3687,20 +3701,20 @@ PMI_FEEDBACK:
                 write_output(fname,vname, UE->common_vars.rxdata[1],UE->frame_parms.samples_per_tti,1,1);
                 sprintf(fname,"rxsig1F_r%d.m",round);
                 sprintf(vname,"rxs1F_r%d.m",round);
-                write_output(fname,vname, UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[1],2*UE->frame_parms.ofdm_symbol_size*nsymb,2,1);
+                write_output(fname,vname, UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[1],2*UE->frame_parms.ofdm_symbol_size*nsymb,2,1);
               }
 
               sprintf(fname,"dlsch00_r%d.m",round);
               sprintf(vname,"dl00_r%d",round);
               write_output(fname,vname,
-                           &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][0][0]),
+                           &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][0][0]),
                            UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
               if (UE->frame_parms.nb_antennas_rx>1) {
                 sprintf(fname,"dlsch01_r%d.m",round);
                 sprintf(vname,"dl01_r%d",round);
                 write_output(fname,vname,
-                             &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][1][0]),
+                             &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][1][0]),
                              UE->frame_parms.ofdm_symbol_size*nsymb/2,1,1);
               }
 
@@ -3708,7 +3722,7 @@ PMI_FEEDBACK:
                 sprintf(fname,"dlsch10_r%d.m",round);
                 sprintf(vname,"dl10_r%d",round);
                 write_output(fname,vname,
-                             &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2][0]),
+                             &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][2][0]),
                              UE->frame_parms.ofdm_symbol_size*nsymb/2,1,1);
               }
 
@@ -3716,7 +3730,7 @@ PMI_FEEDBACK:
                 sprintf(fname,"dlsch11_r%d.m",round);
                 sprintf(vname,"dl11_r%d",round);
                 write_output(fname,vname,
-                             &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][3][0]),
+                             &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][3][0]),
                              UE->frame_parms.ofdm_symbol_size*nsymb/2,1,1);
               }
 
@@ -3726,7 +3740,7 @@ PMI_FEEDBACK:
               write_output("dlsch_e.m","e",eNB->dlsch[0][0]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
               write_output("dlsch_ber_bit.m","ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
               write_output("dlsch_w.m","w",eNB->dlsch[0][0]->harq_processes[0]->w[0],3*(tbs+64),1,4);
-              write_output("dlsch_w.m","w",UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->w[0],3*(tbs+64),1,0);
+              write_output("dlsch_w.m","w",UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->w[0],3*(tbs+64),1,0);
               */
 
               if (round == 3) exit(-1);
@@ -3735,7 +3749,7 @@ PMI_FEEDBACK:
             //      printf("round %d errors %d/%d\n",round,errs[round],trials);
 
             round++;
-            //      UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->round++;
+            //      UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->round++;
           }
 
 	  if (xforms==1) {
@@ -3756,7 +3770,7 @@ PMI_FEEDBACK:
         //len = chbch_stats_read(stats_buffer,NULL,0,4096);
         //printf("%s\n\n",stats_buffer);
 
-        if (UE->proc.proc_rxtx[subframe&1].frame_rx % 10 == 0) {
+        if (UE->proc.proc_rxtx[UE->current_thread_id[subframe]].frame_rx % 10 == 0) {
           UE->bitrate[eNB_id] = (UE->total_TBS[eNB_id] - UE->total_TBS_last[eNB_id])*10;
           LOG_D(PHY,"[UE %d] Calculating bitrate: total_TBS = %d, total_TBS_last = %d, bitrate = %d kbits/s\n",UE->Mod_id,UE->total_TBS[eNB_id],UE->total_TBS_last[eNB_id],
                 UE->bitrate[eNB_id]/1000);
@@ -3764,7 +3778,7 @@ PMI_FEEDBACK:
         }
 
 
-        UE->proc.proc_rxtx[subframe&1].frame_rx++;
+        UE->proc.proc_rxtx[UE->current_thread_id[subframe]].frame_rx++;
 
         /* calculate the total processing time for each packet,
          * get the max, min, and number of packets that exceed t>2000us
@@ -3775,7 +3789,7 @@ PMI_FEEDBACK:
         double t_tx_enc = (double)eNB->dlsch_encoding_stats.p_time/cpu_freq_GHz/1000.0;
 
 
-        double t_rx = (double)UE->phy_proc_rx[subframe&0x1].p_time/cpu_freq_GHz/1000.0;
+        double t_rx = (double)UE->phy_proc_rx[UE->current_thread_id[subframe]].p_time/cpu_freq_GHz/1000.0;
         double t_rx_fft = (double)UE->ofdm_demod_stats.p_time/cpu_freq_GHz/1000.0;
         double t_rx_demod = (double)UE->dlsch_rx_pdcch_stats.p_time/cpu_freq_GHz/1000.0;
         double t_rx_dec = (double)UE->dlsch_decoding_stats.p_time/cpu_freq_GHz/1000.0;
@@ -3925,7 +3939,7 @@ PMI_FEEDBACK:
              rate*effective_rate,
              100*effective_rate,
              rate,
-             rate*get_Qm(UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->mcs),
+             rate*get_Qm(UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid]->mcs),
              (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/
              (double)eNB->dlsch[0][0]->harq_processes[0]->TBS,
              (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
@@ -3964,10 +3978,10 @@ PMI_FEEDBACK:
                eNB->dlsch_interleaving_stats.diff/eNB->dlsch_interleaving_stats.trials/cpu_freq_GHz/1000.0,eNB->dlsch_interleaving_stats.trials);
 
         printf("\n\nUE RX function statistics (per 1ms subframe)\n\n");
-        std_phy_proc_rx = sqrt((double)UE->phy_proc_rx[subframe&0x1].diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                               2)/UE->phy_proc_rx[subframe&0x1].trials - pow((double)UE->phy_proc_rx[subframe&0x1].diff/UE->phy_proc_rx[subframe&0x1].trials/cpu_freq_GHz/1000,2));
-        printf("Total PHY proc rx                                   :%f us (%d trials)\n",(double)UE->phy_proc_rx[subframe&0x1].diff/UE->phy_proc_rx[subframe&0x1].trials/cpu_freq_GHz/1000.0,
-               UE->phy_proc_rx[subframe&0x1].trials*2/3);
+        std_phy_proc_rx = sqrt((double)UE->phy_proc_rx[UE->current_thread_id[subframe]].diff_square/pow(cpu_freq_GHz,2)/pow(1000,
+                               2)/UE->phy_proc_rx[UE->current_thread_id[subframe]].trials - pow((double)UE->phy_proc_rx[UE->current_thread_id[subframe]].diff/UE->phy_proc_rx[UE->current_thread_id[subframe]].trials/cpu_freq_GHz/1000,2));
+        printf("Total PHY proc rx                                   :%f us (%d trials)\n",(double)UE->phy_proc_rx[UE->current_thread_id[subframe]].diff/UE->phy_proc_rx[UE->current_thread_id[subframe]].trials/cpu_freq_GHz/1000.0,
+               UE->phy_proc_rx[UE->current_thread_id[subframe]].trials*2/3);
         printf("|__Statistcs                                            std: %fus max: %fus min: %fus median %fus q1 %fus q3 %fus n_dropped: %d packet \n", std_phy_proc_rx, t_rx_max, t_rx_min, rx_median,
                rx_q1, rx_q3, n_rx_dropped);
         std_phy_proc_rx_fft = sqrt((double)UE->ofdm_demod_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
@@ -4001,7 +4015,7 @@ PMI_FEEDBACK:
         printf("|__ DLSCH Rate Unmatching                               :%f us (%d trials)\n",
                (double)UE->dlsch_rate_unmatching_stats.diff/UE->dlsch_rate_unmatching_stats.trials/cpu_freq_GHz/1000.0,UE->dlsch_rate_unmatching_stats.trials);
         printf("|__ DLSCH Turbo Decoding(%d bits)                       :%f us (%d trials)\n",
-               UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->Cminus ? UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->Kminus : UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->Kplus,
+               UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Cminus ? UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Kminus : UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Kplus,
                (double)UE->dlsch_turbo_decoding_stats.diff/UE->dlsch_turbo_decoding_stats.trials/cpu_freq_GHz/1000.0,UE->dlsch_turbo_decoding_stats.trials);
         printf("    |__ init                                            %f us (cycles/iter %f, %d trials)\n",
                (double)UE->dlsch_tc_init_stats.diff/UE->dlsch_tc_init_stats.trials/cpu_freq_GHz/1000.0,
@@ -4179,7 +4193,7 @@ PMI_FEEDBACK:
                 eNB->dlsch_modulation_stats.trials,
                 eNB->dlsch_scrambling_stats.trials,
                 eNB->dlsch_encoding_stats.trials,
-                UE->phy_proc_rx[subframe&0x1].trials,
+                UE->phy_proc_rx[UE->current_thread_id[subframe]].trials,
                 UE->ofdm_demod_stats.trials,
                 UE->dlsch_rx_pdcch_stats.trials,
                 UE->dlsch_llr_stats.trials,
@@ -4192,7 +4206,7 @@ PMI_FEEDBACK:
                 get_time_meas_us(&eNB->dlsch_modulation_stats),
                 get_time_meas_us(&eNB->dlsch_scrambling_stats),
                 get_time_meas_us(&eNB->dlsch_encoding_stats),
-                get_time_meas_us(&UE->phy_proc_rx[subframe&0x1]),
+                get_time_meas_us(&UE->phy_proc_rx[UE->current_thread_id[subframe]]),
                 nsymb*get_time_meas_us(&UE->ofdm_demod_stats),
                 get_time_meas_us(&UE->dlsch_rx_pdcch_stats),
                 3*get_time_meas_us(&UE->dlsch_llr_stats),
@@ -4232,7 +4246,7 @@ PMI_FEEDBACK:
         eNB->dlsch_modulation_stats.trials,
         eNB->dlsch_scrambling_stats.trials,
         eNB->dlsch_encoding_stats.trials,
-        UE->phy_proc_rx[subframe&0x1].trials,
+        UE->phy_proc_rx[UE->current_thread_id[subframe]].trials,
         UE->ofdm_demod_stats.trials,
         UE->dlsch_rx_pdcch_stats.trials,
         UE->dlsch_llr_stats.trials,
@@ -4290,7 +4304,7 @@ PMI_FEEDBACK:
     printf("eNB %d\n",i);
     free_eNB_dlsch(eNB->dlsch[0][i]);
     printf("UE %d\n",i);
-    free_ue_dlsch(UE->dlsch[subframe&0x1][0][i]);
+    free_ue_dlsch(UE->dlsch[UE->current_thread_id[subframe]][0][i]);
   }
 
 

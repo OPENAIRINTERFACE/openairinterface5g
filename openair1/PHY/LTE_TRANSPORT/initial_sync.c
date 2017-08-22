@@ -233,19 +233,17 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode)
       break;
     }
 
-    ue->proc.proc_rxtx[0].frame_rx =   (((ue->pbch_vars[0]->decoded_output[2]&3)<<6) + (ue->pbch_vars[0]->decoded_output[1]>>2))<<2;
-    ue->proc.proc_rxtx[0].frame_rx += frame_mod4;
-
-    ue->proc.proc_rxtx[1].frame_rx =   (((ue->pbch_vars[0]->decoded_output[2]&3)<<6) + (ue->pbch_vars[0]->decoded_output[1]>>2))<<2;
-    ue->proc.proc_rxtx[1].frame_rx += frame_mod4;
+    for(int i=0; i<RX_NB_TH;i++)
+    {
+        ue->proc.proc_rxtx[i].frame_rx =   (((ue->pbch_vars[0]->decoded_output[2]&3)<<6) + (ue->pbch_vars[0]->decoded_output[1]>>2))<<2;
+        ue->proc.proc_rxtx[i].frame_rx =   (((ue->pbch_vars[0]->decoded_output[2]&3)<<6) + (ue->pbch_vars[0]->decoded_output[1]>>2))<<2;
 
 #ifndef USER_MODE
-    // one frame delay
-    ue->proc.proc_rxtx[0].frame_rx ++;
-    ue->proc.proc_rxtx[1].frame_rx ++;
+        // one frame delay
+        ue->proc.proc_rxtx[i].frame_rx ++;
 #endif
-    ue->proc.proc_rxtx[0].frame_tx = ue->proc.proc_rxtx[0].frame_rx;
-    ue->proc.proc_rxtx[1].frame_tx = ue->proc.proc_rxtx[1].frame_rx;
+        ue->proc.proc_rxtx[i].frame_tx = ue->proc.proc_rxtx[0].frame_rx;
+    }
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"[UE%d] Initial sync: pbch decoded sucessfully mode1_flag %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %s!\n",
           ue->Mod_id,
@@ -495,6 +493,8 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
               ue->common_vars.freq_offset );
     #endif
 
+// send sync status to higher layers later when timing offset converge to target timing
+#if OAISIM
       if (ue->mac_enabled==1) {
 	LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
 	//mac_resynch();
@@ -504,6 +504,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
       else {
 	ue->UE_mode[0] = PUSCH;
       }
+#endif
 
       generate_pcfich_reg_mapping(frame_parms);
       generate_phich_reg_mapping(frame_parms);

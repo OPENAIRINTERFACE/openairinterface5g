@@ -1,3 +1,4 @@
+syntax = "proto2";
 package protocol;
 
 import "mac_primitives.proto";

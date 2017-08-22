@@ -2016,7 +2016,7 @@ update_ul_dci(
   DCI0_5MHz_TDD_1_6_t *ULSCH_dci = NULL;;
 
   if (mac_xface->frame_parms->frame_type == TDD) {
-    for (i=0; i<DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci; i++) {
+    for (i=0; i<DCI_pdu->Num_dci; i++) {
       ULSCH_dci = (DCI0_5MHz_TDD_1_6_t *)DCI_pdu->dci_alloc[i].dci_pdu;
 
       if ((DCI_pdu->dci_alloc[i].format == format0) && (DCI_pdu->dci_alloc[i].rnti == rnti)) {

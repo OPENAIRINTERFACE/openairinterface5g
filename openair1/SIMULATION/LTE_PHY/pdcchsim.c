@@ -66,8 +66,7 @@ DCI_PDU *get_dci(LTE_DL_FRAME_PARMS *lte_frame_parms,uint8_t log2L, uint8_t log2
   int UL_pdu_size_bits=0, UL_pdu_size_bytes=0;
   int mcs = 3;
 
-  DCI_pdu.Num_ue_spec_dci = 0;
-  DCI_pdu.Num_common_dci = 0;
+  DCI_pdu.Num_dci = 0;
 
   if (lte_frame_parms->frame_type == TDD) {
     switch (lte_frame_parms->N_RB_DL) {
@@ -358,35 +357,38 @@ DCI_PDU *get_dci(LTE_DL_FRAME_PARMS *lte_frame_parms,uint8_t log2L, uint8_t log2
   for (ind = 0; ind<num_dci; ind++) {
     if (format_selector[ind]==format1A) {
       // add common dci
-      DCI_pdu.dci_alloc[ind].dci_length = BCCH_pdu_size_bits;
-      DCI_pdu.dci_alloc[ind].L          = log2Lcommon;
-      DCI_pdu.dci_alloc[ind].rnti       = SI_RNTI;
-      DCI_pdu.dci_alloc[ind].format     = format1A;
-      DCI_pdu.dci_alloc[ind].ra_flag    = 0;
-      memcpy((void*)&DCI_pdu.dci_alloc[0].dci_pdu[0], &BCCH_alloc_pdu[0], BCCH_pdu_size_bytes);
-      DCI_pdu.Num_common_dci++;
+      DCI_pdu.dci_alloc[ind].dci_length   = BCCH_pdu_size_bits;
+      DCI_pdu.dci_alloc[ind].L            = log2Lcommon;
+      DCI_pdu.dci_alloc[ind].rnti         = SI_RNTI;
+      DCI_pdu.dci_alloc[ind].format       = format1A;
+      DCI_pdu.dci_alloc[ind].ra_flag      = 0;
+      DCI_pdu.dci_alloc[ind].search_space = DCI_COMMON_SPACE;
+      memcpy((void*)&DCI_pdu.dci_alloc[ind].dci_pdu[0], &BCCH_alloc_pdu[0], BCCH_pdu_size_bytes);
+      DCI_pdu.Num_dci++;
       printf("Added common dci (%d) for rnti %x\n",ind,SI_RNTI);
     }
     
 
     if (format_selector[ind]==format1) {
-      DCI_pdu.dci_alloc[ind].dci_length = dci_length;
-      DCI_pdu.dci_alloc[ind].L          = log2L;
-      DCI_pdu.dci_alloc[ind].rnti       = rnti;
-      DCI_pdu.dci_alloc[ind].format     = format1;
-      DCI_pdu.dci_alloc[ind].ra_flag    = 0;
+      DCI_pdu.dci_alloc[ind].dci_length   = dci_length;
+      DCI_pdu.dci_alloc[ind].L            = log2L;
+      DCI_pdu.dci_alloc[ind].rnti         = rnti;
+      DCI_pdu.dci_alloc[ind].format       = format1;
+      DCI_pdu.dci_alloc[ind].ra_flag      = 0;
+      DCI_pdu.dci_alloc[ind].search_space = DCI_UE_SPACE;
       memcpy((void*)&DCI_pdu.dci_alloc[ind].dci_pdu[0], &DLSCH_alloc_pdu[0], dci_length_bytes);
-      DCI_pdu.Num_ue_spec_dci++;
+      DCI_pdu.Num_dci++;
     }
     
     if (format_selector[ind]==format0) {
-      DCI_pdu.dci_alloc[ind].dci_length = UL_pdu_size_bits;
-      DCI_pdu.dci_alloc[ind].L          = log2L;
-      DCI_pdu.dci_alloc[ind].rnti       = rnti;
-      DCI_pdu.dci_alloc[ind].format     = format0;
-      DCI_pdu.dci_alloc[ind].ra_flag    = 0;
+      DCI_pdu.dci_alloc[ind].dci_length   = UL_pdu_size_bits;
+      DCI_pdu.dci_alloc[ind].L            = log2L;
+      DCI_pdu.dci_alloc[ind].rnti         = rnti;
+      DCI_pdu.dci_alloc[ind].format       = format0;
+      DCI_pdu.dci_alloc[ind].ra_flag      = 0;
+      DCI_pdu.dci_alloc[ind].search_space = DCI_UE_SPACE;
       memcpy((void*)&DCI_pdu.dci_alloc[ind].dci_pdu[0], &UL_alloc_pdu[0], UL_pdu_size_bytes);
-      DCI_pdu.Num_ue_spec_dci++;
+      DCI_pdu.Num_dci++;
     }
   }
   
@@ -849,20 +851,20 @@ int main(int argc, char **argv)
 	    n_trials_dl++;
 	  }
 	}
-        num_pdcch_symbols = get_num_pdcch_symbols(DCI_pdu.Num_common_dci+DCI_pdu.Num_ue_spec_dci,
+        num_pdcch_symbols = get_num_pdcch_symbols(DCI_pdu.Num_dci,
                             DCI_pdu.dci_alloc, frame_parms, subframe);
 	numCCE = get_nCCE(num_pdcch_symbols,&eNB->frame_parms,get_mi(&eNB->frame_parms,subframe));
 
         if (n_frames==1) {
           printf("num_dci %d, num_pddch_symbols %d, nCCE %d\n",
-                 DCI_pdu.Num_common_dci+DCI_pdu.Num_ue_spec_dci,
+                 DCI_pdu.Num_dci,
                  num_pdcch_symbols,numCCE);
         }
 
         // apply RNTI-based nCCE allocation
 	memset(CCE_table,0,800*sizeof(int));
 
-        for (i = 0; i < DCI_pdu.Num_common_dci + DCI_pdu.Num_ue_spec_dci; i++) {
+        for (i = 0; i < DCI_pdu.Num_dci; i++) {
           // SI RNTI
           if (DCI_pdu.dci_alloc[i].rnti == SI_RNTI) {
             DCI_pdu.dci_alloc[i].firstCCE = get_nCCE_offset_l1(CCE_table,
@@ -899,8 +901,7 @@ int main(int argc, char **argv)
             exit(-1);
         }
 
-        num_pdcch_symbols = generate_dci_top(DCI_pdu.Num_ue_spec_dci,
-                                             DCI_pdu.Num_common_dci,
+        num_pdcch_symbols = generate_dci_top(DCI_pdu.Num_dci,
                                              DCI_pdu.dci_alloc,
                                              0,
                                              AMP,

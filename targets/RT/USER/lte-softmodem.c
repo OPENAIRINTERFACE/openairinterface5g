@@ -150,6 +150,9 @@ int chain_offset=0;
 int phy_test = 0;
 uint8_t usim_test = 0;
 
+uint8_t dci_Format = 0;
+uint8_t agregation_Level =0xFF;
+
 uint8_t nb_antenna_tx = 1;
 uint8_t nb_antenna_rx = 1;
 
@@ -222,7 +225,7 @@ double cpuf;
 char uecap_xer[1024],uecap_xer_in=0;
 
 int oaisim_flag=0;
-threads_t threads= {-1,-1,-1,-1};
+threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution
@@ -329,6 +332,8 @@ void help (void) {
   printf("  --external-clock tells hardware to use an external clock reference\n");
   printf("  --usim-test use XOR autentication algo in case of test usim mode\n"); 
   printf("  --single-thread-disable. Disables single-thread mode in lte-softmodem\n"); 
+  printf("  --AgregationLevel Choose the agregation level used by tghe eNB for the OAI use 1, it will save some time of processing the pdcch\n");
+  printf("  --DCIformat choose the DCI format, be careful when using this option(for the moment only valid for SISO DCI format 1)\n");
   printf("  -A Set timing_advance\n");
   printf("  -C Set the downlink frequency for all component carriers\n");
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
@@ -640,6 +645,11 @@ static void get_options (int argc, char **argv) {
         LONG_OPTION_THREADONESUBFRAME,
         LONG_OPTION_THREADTWOSUBFRAME,
         LONG_OPTION_THREADTHREESUBFRAME,
+        LONG_OPTION_THREADSLOT1PROCONE,
+        LONG_OPTION_THREADSLOT1PROCTWO,
+        LONG_OPTION_THREADSLOT1PROCTHREE,
+        LONG_OPTION_DCIFORMAT,
+        LONG_OPTION_AGREGATIONLEVEL,
         LONG_OPTION_DEMOD_SHIFT,
 #if T_TRACER
         LONG_OPTION_T_PORT,
@@ -677,6 +687,11 @@ static void get_options (int argc, char **argv) {
         {"threadOneSubframe",  required_argument, NULL, LONG_OPTION_THREADONESUBFRAME},
         {"threadTwoSubframe",  required_argument, NULL, LONG_OPTION_THREADTWOSUBFRAME},
         {"threadThreeSubframe",  required_argument, NULL, LONG_OPTION_THREADTHREESUBFRAME},
+        {"threadSlot1ProcOne",  required_argument, NULL, LONG_OPTION_THREADSLOT1PROCONE},
+        {"threadSlot1ProcTwo",  required_argument, NULL, LONG_OPTION_THREADSLOT1PROCTWO},
+        {"threadSlot1ProcThree",  required_argument, NULL, LONG_OPTION_THREADSLOT1PROCTHREE},
+        {"DCIformat",  required_argument, NULL, LONG_OPTION_DCIFORMAT},
+        {"AgregationLevel",  required_argument, NULL, LONG_OPTION_AGREGATIONLEVEL},
         {"dlsch-demod-shift", required_argument,  NULL, LONG_OPTION_DEMOD_SHIFT},
 #if T_TRACER
         {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
@@ -811,6 +826,21 @@ static void get_options (int argc, char **argv) {
     case LONG_OPTION_THREADTHREESUBFRAME:
        threads.three=atoi(optarg);
     break;
+    case LONG_OPTION_THREADSLOT1PROCONE:
+       threads.slot1_proc_one=atoi(optarg);
+       break;
+    case LONG_OPTION_THREADSLOT1PROCTWO:
+       threads.slot1_proc_two=atoi(optarg);
+       break;
+    case LONG_OPTION_THREADSLOT1PROCTHREE:
+       threads.slot1_proc_three=atoi(optarg);
+       break;
+    case LONG_OPTION_DCIFORMAT:
+        dci_Format = atoi(optarg);
+       break;
+    case LONG_OPTION_AGREGATIONLEVEL:
+        agregation_Level = atoi(optarg);
+        break;
     case LONG_OPTION_DEMOD_SHIFT: {
         extern int16_t dlsch_demod_shift;
         dlsch_demod_shift = atof(optarg);
@@ -1560,6 +1590,7 @@ int main( int argc, char **argv ) {
         NB_UE_INST=1;
         NB_INST=1;
 
+
         PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE**));
         PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_UE*)*MAX_NUM_CCs);
 
@@ -1590,6 +1621,11 @@ int main( int argc, char **argv ) {
             UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
             UE[CC_id]->mode    = mode;
             printf("UE[%d]->mode = %d\n",CC_id,mode);
+
+            for (uint8_t i=0; i<RX_NB_TH_MAX; i++) {
+                UE[CC_id]->pdcch_vars[i][0]->agregationLevel = agregation_Level;
+                UE[CC_id]->pdcch_vars[i][0]->dciFormat     = dci_Format;
+            }
 
             compute_prach_seq(&UE[CC_id]->frame_parms.prach_config_common,
                               UE[CC_id]->frame_parms.frame_type,

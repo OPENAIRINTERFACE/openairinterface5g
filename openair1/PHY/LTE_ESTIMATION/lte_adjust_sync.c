@@ -40,6 +40,8 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 {
 
   static int max_pos_fil = 0;
+  static int count_max_pos_ok = 0;
+  static int first_time = 1;
   int temp = 0, i, aa, max_val = 0, max_pos = 0;
   int diff;
   short Re,Im,ncoef;
@@ -58,8 +60,8 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
     temp = 0;
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-      Re = ((int16_t*)ue->common_vars.common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates_time[eNB_id][aa])[(i<<2)];
-      Im = ((int16_t*)ue->common_vars.common_vars_rx_data_per_thread[subframe%RX_NB_TH].dl_ch_estimates_time[eNB_id][aa])[1+(i<<2)];
+      Re = ((int16_t*)ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_id][aa])[(i<<2)];
+      Im = ((int16_t*)ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_id][aa])[1+(i<<2)];
       temp += (Re*Re/2) + (Im*Im/2);
     }
 
@@ -78,28 +80,59 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   // do not filter to have proactive timing adjustment
   max_pos_fil = max_pos;
 
-  diff = max_pos_fil - (frame_parms->nb_prefix_samples>>3);
+  if(subframe == 6)
+  {
+      diff = max_pos_fil - (frame_parms->nb_prefix_samples>>3);
 
-  if ( abs(diff) < SYNCH_HYST )
-	ue->rx_offset = 0;
-  else
-    ue->rx_offset = diff;
+      if ( abs(diff) < SYNCH_HYST )
+          ue->rx_offset = 0;
+      else
+          ue->rx_offset = diff;
 
-  if ( ue->rx_offset < 0 )
-    ue->rx_offset += FRAME_LENGTH_COMPLEX_SAMPLES;
+      if(abs(diff)<5)
+          count_max_pos_ok ++;
+      else
+          count_max_pos_ok = 0;
 
-  if ( ue->rx_offset >= FRAME_LENGTH_COMPLEX_SAMPLES )
-    ue->rx_offset -= FRAME_LENGTH_COMPLEX_SAMPLES;
+      if(count_max_pos_ok > 10 && first_time == 1)
+      {
+          first_time = 0;
+          ue->time_sync_cell = 1;
+          if (ue->mac_enabled==1) {
+              LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
+              //mac_resynch();
+              mac_xface->dl_phy_sync_success(ue->Mod_id,ue->proc.proc_rxtx[0].frame_rx,0,1);//ue->common_vars.eNb_id);
+              ue->UE_mode[0] = PRACH;
+          }
+          else {
+              ue->UE_mode[0] = PUSCH;
+          }
+      }
+
+      if ( ue->rx_offset < 0 )
+          ue->rx_offset += FRAME_LENGTH_COMPLEX_SAMPLES;
+
+      if ( ue->rx_offset >= FRAME_LENGTH_COMPLEX_SAMPLES )
+          ue->rx_offset -= FRAME_LENGTH_COMPLEX_SAMPLES;
 
 
 
-#ifdef DEBUG_PHY
-  LOG_D(PHY,"AbsSubframe %d.%d: rx_offset (after) = %d : max_pos = %d,max_pos_fil = %d (peak %d) target_pos %d \n",
-        ue->proc.proc_rxtx[0].frame_rx,subframe,ue->rx_offset,max_pos,max_pos_fil,temp,(frame_parms->nb_prefix_samples>>3));
-#endif //DEBUG_PHY
+      #ifdef DEBUG_PHY
+      LOG_D(PHY,"AbsSubframe %d.%d: ThreadId %d diff =%i rx_offset (final) = %i : clear %d,max_pos = %d,max_pos_fil = %d (peak %d) max_val %d target_pos %d \n",
+              ue->proc.proc_rxtx[ue->current_thread_id[subframe]].frame_rx,
+              subframe,
+              ue->current_thread_id[subframe],
+              diff,
+              ue->rx_offset,
+              clear,
+              max_pos,
+              max_pos_fil,
+              temp,max_val,
+              (frame_parms->nb_prefix_samples>>3));
+      #endif //DEBUG_PHY
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_OUT);
-
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_OUT);
+  }
 }
 
 

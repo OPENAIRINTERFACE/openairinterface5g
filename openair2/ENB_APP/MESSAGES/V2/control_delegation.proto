@@ -1,4 +1,4 @@
-//'syntax = "proto2";'
+syntax = "proto2";
 package protocol;
 
 enum flex_control_delegation_type {
