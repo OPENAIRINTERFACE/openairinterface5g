@@ -290,16 +290,20 @@ static int trx_usrp_start(openair0_device *device) {
 
     // init recv and send streaming
     uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-    // should be s->usrp->get_time_next_pps(&cmd.time_spec); 
-    //cmd.time_spec = s->usrp->get_time_now() + uhd::time_spec_t(0.05);
     LOG_I(PHY,"Time in secs now: %llu \n", s->usrp->get_time_now().to_ticks(s->sample_rate));
     LOG_I(PHY,"Time in secs last pps: %llu \n", s->usrp->get_time_last_pps().to_ticks(s->sample_rate));
-    cmd.time_spec = s->usrp->get_time_last_pps() + uhd::time_spec_t(1.0);    
+
+    if (s->use_gps == 1) {
+      s->wait_for_first_pps = 1;
+      cmd.time_spec = s->usrp->get_time_last_pps() + uhd::time_spec_t(1.0);    
+    }
+    else {
+      s->wait_for_first_pps = 0; 
+      cmd.time_spec = s->usrp->get_time_now() + uhd::time_spec_t(0.05);
+    }
+
     cmd.stream_now = false; // start at constant delay
     s->rx_stream->issue_stream_cmd(cmd);
-
-    if (s->use_gps == 1) s->wait_for_first_pps = 1;
-    else s->wait_for_first_pps = 0; 
 
     s->tx_md.time_spec = cmd.time_spec + uhd::time_spec_t(1-(double)s->tx_forward_nsamps/s->sample_rate);
     s->tx_md.has_time_spec = true;
