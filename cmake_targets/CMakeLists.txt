@@ -532,6 +532,19 @@ set(TPLIB_ETHERNET_SOURCE
   )
 add_library(oai_eth_transpro MODULE ${TPLIB_ETHERNET_SOURCE} )
 
+include_directories("${OPENAIR_TARGETS}/ARCH/mobipass/")
+set(TPLIB_MOBIPASS_SOURCE
+  ${OPENAIR_TARGETS}/ARCH/mobipass/interface.c
+  ${OPENAIR_TARGETS}/ARCH/mobipass/mobipass.c
+  ${OPENAIR_TARGETS}/ARCH/mobipass/queues.c
+  )
+add_library(oai_mobipass MODULE ${TPLIB_MOBIPASS_SOURCE} )
+
+# Hide all functions/variables in the mobipass library.
+# Use __attribute__((__visibility__("default")))
+# in the source code to unhide a function/variable.
+get_target_property(mobipas_cflags oai_mobipass COMPILE_FLAGS)
+set_target_properties(oai_mobipass PROPERTIES COMPILE_FLAGS "${mobipass_cflags} -fvisibility=hidden")
 
 ##########################################################
 
