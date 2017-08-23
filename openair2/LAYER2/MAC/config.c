@@ -556,6 +556,7 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 		  (int)radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx);
 
       RC.mac[Mod_idP]->common_channels[CC_idP].radioResourceConfigCommon = radioResourceConfigCommon;
+      RC.mac[Mod_idP]->common_channels[CC_idP].radioResourceConfigCommon_BR = radioResourceConfigCommon_BR;
       if (ul_CarrierFreq>0) RC.mac[Mod_idP]->common_channels[CC_idP].ul_CarrierFreq          = ul_CarrierFreq;
       if (ul_Bandwidth) RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth                = *ul_Bandwidth;
       else RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth                             = RC.mac[Mod_idP]->common_channels[CC_idP].mib->message.dl_Bandwidth;
