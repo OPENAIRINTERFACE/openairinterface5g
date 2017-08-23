@@ -536,6 +536,18 @@ schedule_ue_spec_br(
 
 		if (mbsfn_flag[CC_id] > 0)
 			continue;
+		
+	    unsigned int rmax;
+            unsigned int narrowBandindex_index;
+            unsigned int first_rb, rep, reps;
+
+            // rmax from RRC connection setup
+            getRepetition(&UE_list->UE_template[CC_id][UE_id], &rmax, &narrowBandindex_index);
+
+            first_rb = narrowband_to_first_rb(cc,narrowBandindex_index);
+
+		if (vrb_map[first_rb] == 1)  // skip scheduling emtc UEs if first RB is taken 
+			continue ; 
 
 		for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id])
 		{
@@ -549,14 +561,7 @@ schedule_ue_spec_br(
             // at the end of the scheduler make sure the right subbands coresponding to these RBs are allocated the UE in UE_template directely
             // also check on the fill_DCI function
 
-            unsigned int rmax;
-            unsigned int narrowBandindex_index;
-            unsigned int first_rb, rep, reps;
-
-            // rmax from RRC connection setup
-            getRepetition(&UE_list->UE_template[CC_id][UE_id], &rmax, &narrowBandindex_index);
-
-            first_rb = narrowband_to_first_rb(cc,narrowBandindex_index);
+            
 
             vrb_map[first_rb] = 1;
             vrb_map[first_rb + 1] = 1;

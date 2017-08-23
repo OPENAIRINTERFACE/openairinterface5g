@@ -999,6 +999,9 @@ abort();
               rb_table_index--;
             }
 	    
+            //********************************* [khalid] here will make the modification for emtc
+
+
             TBS = get_TBS_UL(mcs,rb_table[rb_table_index]);
 	    UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx+=rb_table[rb_table_index];
 	    UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_TBS=TBS;
@@ -1016,10 +1019,10 @@ abort();
 	    
 	    // bad indices : 20 (40 PRB), 21 (45 PRB), 22 (48 PRB)
             // increment for next UE allocation
-            first_rb[CC_id]+=rb_table[rb_table_index];
+            first_rb[CC_id]+=rb_table[rb_table_index]; // khalid just shifting the first rb for next ue to schedule
             //store for possible retransmission
             UE_template->nb_rb_ul[harq_pid]    = rb_table[rb_table_index];
-            UE_template->first_rb_ul[harq_pid] = first_rb[CC_id];
+            UE_template->first_rb_ul[harq_pid] = first_rb[CC_id]; // khalid? should store the firsy
 	    
 	    UE_sched_ctrl->ul_scheduled |= (1<<harq_pid);
 	    if (UE_id == UE_list->head)
@@ -1039,7 +1042,7 @@ abort();
 	    hi_dci0_pdu                                                         = &hi_dci0_req->hi_dci0_pdu_list[eNB->HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_dci+eNB->HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_hi]; 	
 	    memset((void*)hi_dci0_pdu,0,sizeof(nfapi_hi_dci0_request_pdu_t));
 	    hi_dci0_pdu->pdu_type                                               = NFAPI_HI_DCI0_DCI_PDU_TYPE; 
-	    hi_dci0_pdu->pdu_size                                               = 2+sizeof(nfapi_hi_dci0_dci_pdu);
+        hi_dci0_pdu->pdu_size                                               = 2+sizeof(nfapi_hi_dci0_dci_pdu); // khalid these items in nFapi in
 	    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dci_format                        = NFAPI_UL_DCI_FORMAT_0;
 	    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level                 = aggregation;
 	    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti                              = rnti;
@@ -1052,7 +1055,7 @@ abort();
 	    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.new_data_indication_1             = ndi;
 	    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tpc                               = tpc;
 	    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.cqi_csi_request                   = cqi_req;
-	    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dl_assignment_index               = UE_template->DAI_ul[sched_subframe];
+        hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dl_assignment_index               = UE_template->DAI_ul[sched_subframe]; // khalid  valid for TDD only
 
 	    if (!CCE_allocation_infeasible(module_idP,CC_id,2,subframeP,
 					   aggregation,
