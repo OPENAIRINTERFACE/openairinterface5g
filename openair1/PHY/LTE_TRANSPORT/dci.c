@@ -2176,6 +2176,7 @@ uint8_t get_num_pdcch_symbols(uint8_t num_dci,
   //  printf("dci_alloc[%d].L = %d\n",i,dci_alloc[i].L);
   //}
   //exit(-1);
+exit(1);
   return(0);
 }
 
