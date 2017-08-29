@@ -45,6 +45,10 @@ ID = ENB_PHY_INPUT_SIGNAL
     DESC = eNodeB received signal in the time domain for a duration of 1ms
     GROUP = ALL:PHY:GRAPHIC:HEAVY:ENB
     FORMAT = int,eNB_ID : int,frame : int,subframe : int,antenna : buffer,rxdata
+ID = ENB_PHY_OUTPUT_SIGNAL
+    DESC = eNodeB sent signal in the time domain for a duration of 1ms
+    GROUP = ALL:PHY:HEAVY:ENB
+    FORMAT = int,eNB_ID : int,CC_id : int,frame : int,subframe : int,antenna : buffer,txdata
 ID = ENB_PHY_UL_CHANNEL_ESTIMATE
     DESC = eNodeB channel estimation in the time domain
     GROUP = ALL:PHY:GRAPHIC:HEAVY:ENB
@@ -111,6 +115,10 @@ ID = ENB_MAC_UE_DL_PDU_WITH_DATA
     DESC = MAC downlink PDU for an UE
     GROUP = ALL:MAC:ENB
     FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : buffer,data
+ID = ENB_MAC_SCHEDULING_REQUEST
+    DESC = MAC scheduling request detected for an UE
+    GROUP = ALL:MAC:ENB
+    FORMAT = int,eNB_ID : int,CC_id : int,frame : int,subframe : int,rnti
 
 #RLC logs
 ID = ENB_RLC_DL
