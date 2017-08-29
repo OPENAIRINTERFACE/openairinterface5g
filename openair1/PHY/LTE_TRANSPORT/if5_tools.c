@@ -445,8 +445,6 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
     if (eNB->node_timing == synch_to_mobipass_standalone) {
       uint16_t db_fulllength = PAYLOAD_MOBIPASS_NUM_SAMPLES;
       openair0_timestamp timestamp_mobipass[fp->samples_per_tti/db_fulllength];
-      int subframe_skip = 0;
-      int reset_flag = 0;
       int32_t *rx_buffer=NULL;
       __m128i *data_block=NULL, *data_block_head=NULL;
       __m128i *rxp128;
@@ -454,13 +452,10 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
 
       unsigned char _rx_buffer[MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + db_fulllength*sizeof(int16_t)];
       rx_buffer = (int32_t *)_rx_buffer;
-      IF5_mobipass_header_t *header = (IF5_mobipass_header_t *)((uint8_t *)rx_buffer + MAC_HEADER_SIZE_BYTES);
       data_block_head = (__m128i *)((uint8_t *)rx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t);
 
       rxp[0] = (void*)&eNB->common_vars.rxdata[0][0][subframe*eNB->frame_parms.samples_per_tti];
       rxp128 = (__m128i *) (rxp[0]);
-
-      eNB_proc_t *proc = &eNB->proc;
 
       packet_id=0;
       while(packet_id<fp->samples_per_tti/db_fulllength) {
