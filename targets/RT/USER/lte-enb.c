@@ -433,6 +433,14 @@ void tx_fh_if5_mobipass(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
     send_IF5(eNB, proc->timestamp_tx, proc->subframe_tx, &seqno, IF5_MOBIPASS); 
 }
 
+void tx_fh_if5_mobipass_standalone(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, proc->timestamp_tx&0xffffffff );
+  if ((eNB->frame_parms.frame_type==FDD) ||
+      ((eNB->frame_parms.frame_type==TDD) &&
+       (subframe_select(&eNB->frame_parms,proc->subframe_tx) != SF_UL)))
+    send_IF5(eNB, proc->timestamp_tx, proc->subframe_tx, &seqno, IF5_MOBIPASS);
+}
+
 void tx_fh_if4p5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
   if ((eNB->frame_parms.frame_type==FDD) ||
       ((eNB->frame_parms.frame_type==TDD) &&
@@ -1097,6 +1105,38 @@ void rx_fh_if5(PHY_VARS_eNB *eNB,int *frame, int *subframe) {
 
 }
 
+void rx_fh_if5_mobipass_standalone(PHY_VARS_eNB *eNB,int *frame, int *subframe)
+{
+  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+  eNB_proc_t *proc = &eNB->proc;
+
+  recv_IF5(eNB, &proc->timestamp_rx, *subframe, IF5_MOBIPASS);
+//printf("in rx_fh_if5_mobipass timestamp from recv_IF5 %ld\n", proc->timestamp_rx);
+
+  proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
+  proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
+//  T(T_SUBFRAME, T_INT(proc->frame_rx), T_INT(proc->subframe_rx), T_STRING(__FUNCTION__));
+
+  if (proc->first_rx == 0) {
+    if (proc->subframe_rx != *subframe){
+      LOG_E(PHY,"rx_fh_if5: Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,*subframe);
+      exit_fun("Exiting");
+    }
+
+    if (proc->frame_rx != *frame) {
+      LOG_E(PHY,"rx_fh_if5: Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,*frame);
+      exit_fun("Exiting");
+    }
+  } else {
+    proc->first_rx--;
+    *frame = proc->frame_rx;
+    *subframe = proc->subframe_rx;
+  }
+
+  proc->timestamp_tx = proc->timestamp_rx +  (4*fp->samples_per_tti);
+
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
+}
 
 void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 
@@ -2131,6 +2171,11 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
            eNB->rx_fh             = rx_fh_slave;
            eNB->fh_asynch         = fh_if5_asynch_UL;
 
+        }
+        else if (eNB->node_timing == synch_to_mobipass_standalone) {
+           eNB->tx_fh             = tx_fh_if5_mobipass_standalone;
+           eNB->rx_fh             = rx_fh_if5_mobipass_standalone;
+           eNB->fh_asynch         = NULL;
         }
         else {
            eNB->tx_fh             = tx_fh_if5;

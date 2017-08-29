@@ -165,8 +165,9 @@ typedef enum  {
 } eNB_func_t;
 
 typedef enum {
-  synch_to_ext_device=0,  // synch to RF or Ethernet device
-  synch_to_other          // synch to another source (timer, other CC_id)
+  synch_to_ext_device=0,        // synch to RF or Ethernet device
+  synch_to_other,               // synch to another source (timer, other CC_id)
+  synch_to_mobipass_standalone  // special case for mobipass in standalone mode
 } eNB_timing_t;
 #endif
 
