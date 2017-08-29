@@ -499,6 +499,10 @@ void proc_tx_full(PHY_VARS_eNB *eNB,
   proc_tx_high0(eNB,proc,r_type,rn);
   // do OFDM modulation
   do_OFDM_mod_rt(proc->subframe_tx,eNB);
+
+  T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(proc->frame_tx), T_INT(proc->subframe_tx),
+    T_INT(0), T_BUFFER(&eNB->common_vars.txdata[0][0][proc->subframe_tx * eNB->frame_parms.samples_per_tti], eNB->frame_parms.samples_per_tti * 4));
+
   // if TX fronthaul go ahead 
   if (eNB->tx_fh) eNB->tx_fh(eNB,proc);
 
