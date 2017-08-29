@@ -945,7 +945,7 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
       int siglen=fp->samples_per_tti,flags=1;
 
       if (SF_type == SF_S) {
-	siglen = fp->dl_symbols_in_S_subframe*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
+	siglen = (fp->dl_symbols_in_S_subframe+1)*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
 	flags=3; // end of burst
       }
       if ((fp->frame_type == TDD) &&
