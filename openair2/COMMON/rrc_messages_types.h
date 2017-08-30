@@ -205,9 +205,9 @@ typedef struct RrcConfigurationReq_s {
 
   long			  si_WindowLength_BR_r13                       [MAX_NUM_CCs];
   long			  si_RepetitionPattern_r13                     [MAX_NUM_CCs];
-  BOOLEAN_t		 * fdd_DownlinkOrTddSubframeBitmapBR_r13     [MAX_NUM_CCs];
-  uint64_t		  fdd_DownlinkOrTddSubframeBitmapBR_val_r13  [MAX_NUM_CCs];
-  uint16_t		  *fdd_UplinkSubframeBitmapBR_r13            [MAX_NUM_CCs];
+  BOOLEAN_t		 * fdd_DownlinkOrTddSubframeBitmapBR_r13       [MAX_NUM_CCs];
+  uint64_t		  fdd_DownlinkOrTddSubframeBitmapBR_val_r13    [MAX_NUM_CCs];
+  uint16_t		  *fdd_UplinkSubframeBitmapBR_r13              [MAX_NUM_CCs];
   long			  startSymbolBR_r13                            [MAX_NUM_CCs];
   long			  si_HoppingConfigCommon_r13                   [MAX_NUM_CCs];
   long*			  si_ValidityTime_r13                          [MAX_NUM_CCs];
@@ -234,6 +234,7 @@ typedef struct RrcConfigurationReq_s {
   int  rach_CE_LevelInfoList_r13_size    [MAX_NUM_CCs];
 //  end kogo
 
+//  long pcch_defaultPagingCycle_br;
 
 // +kogo -- rsrp_range_list
   long rsrp_range           [MAX_NUM_CCs][3];
