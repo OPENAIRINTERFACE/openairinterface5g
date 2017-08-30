@@ -674,11 +674,16 @@ void schedule_ulsch(module_id_t module_idP,
      * We need to get the information from config/phy/wherever
      * as done in the commented code below.
      * For the moment, we hardcode for the config used by default.
-     * Only tested with FDD.
+     * Only deals with FDD, PRACH config 0.
      */
-    int frame_ul = (frameP + (subframeP >= 6)) & 1023;
-    int subframe_ul = (subframeP + 4) % 10;
-    if ((frame_ul & 1) == 0 && subframe_ul == 1) first_rb[CC_id] = 8;
+    LTE_DL_FRAME_PARMS *frame_parms;
+    frame_parms = mac_xface->get_lte_frame_parms(module_idP,CC_id);
+    if (frame_parms->frame_type == FDD &&
+        frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex == 0) {
+      int frame_ul = (frameP + (subframeP >= 6)) & 1023;
+      int subframe_ul = (subframeP + 4) % 10;
+      if ((frame_ul & 1) == 0 && subframe_ul == 1) first_rb[CC_id] = 8;
+    }
 
     /*
     if (mac_xface->is_prach_subframe(&(mac_xface->lte_frame_parms),frameP,subframeP)) {
