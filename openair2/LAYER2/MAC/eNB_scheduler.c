@@ -1087,7 +1087,13 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
   // Allocate CCEs for good after scheduling is done
   for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++)
-    allocate_CCEs(module_idP,CC_id,subframeP,0);
+    if (allocate_CCEs(module_idP,CC_id,subframeP,0)) {
+      LOG_D(MAC, "eNB %d CC_id %d frame %d subframe %d: CCE allocation failed\n",
+            module_idP, CC_id, frameP, subframeP);
+      printf("eNB %d CC_id %d frame %d subframe %d: CCE allocation failed\n",
+            module_idP, CC_id, frameP, subframeP);
+      abort();
+    }
 
 #if defined(FLEXRAN_AGENT_SB_IF)
 #ifndef DISABLE_CONT_STATS

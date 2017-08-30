@@ -290,6 +290,30 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
   return(0);
 }
 
+int get_ue_rbs(int Mod_id, int CC_id, int rnti, int frame, int subframe, int *start_rb, int *nb_rb)
+{
+  LTE_eNB_ULSCH_t *ULSCH_ptr;
+  uint8_t ulsch_subframe,ulsch_frame;
+  int8_t UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id][CC_id]);
+  int harq_pid;
+
+  if (UE_id==-1) {
+    LOG_E(PHY,"Cannot find UE with rnti %x (Mod_id %d, CC_id %d)\n",rnti, Mod_id, CC_id);
+    return(-1);
+  }
+
+  ULSCH_ptr = PHY_vars_eNB_g[Mod_id][CC_id]->ulsch[(uint32_t)UE_id];
+  ulsch_subframe = pdcch_alloc2ul_subframe(&PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms,subframe);
+  ulsch_frame    = pdcch_alloc2ul_frame(&PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms,frame,subframe);
+  harq_pid = subframe2harq_pid(&PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms,
+                                ulsch_frame,
+                                ulsch_subframe);
+  *nb_rb    = ULSCH_ptr->harq_processes[harq_pid]->nb_rb;
+  *start_rb = ULSCH_ptr->harq_processes[harq_pid]->first_rb;
+
+  return(0);
+}
+
 int16_t get_target_pusch_rx_power(const module_id_t module_idP, const uint8_t CC_id)
 {
   return PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.ul_power_control_config_common.p0_NominalPUSCH;

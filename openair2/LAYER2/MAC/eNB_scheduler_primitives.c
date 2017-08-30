@@ -56,6 +56,8 @@
 # include "intertask_interface.h"
 #endif
 
+#include "T.h"
+
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
 
@@ -1157,6 +1159,7 @@ boolean_t CCE_allocation_infeasible(int module_idP,
 
 void SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, rnti_t rntiP, sub_frame_t subframeP)
 {
+  T(T_ENB_MAC_SCHEDULING_REQUEST, T_INT(mod_idP), T_INT(cc_idP), T_INT(frameP), T_INT(subframeP), T_INT(rntiP));
  
   int UE_id = find_UE_id(mod_idP, rntiP);
   UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
