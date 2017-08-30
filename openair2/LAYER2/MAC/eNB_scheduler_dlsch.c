@@ -413,7 +413,7 @@ set_ul_DAI(
 // changes to pre-processor for eMTC
 //------------------------------------------------------------------------------
 
-void  getRepetition(UE_TEMPLATE * pue_template,unsigned int *maxRep , unsigned int *narrowBandindex, unsigned int *first_rb){
+void  getRepetition(UE_TEMPLATE * pue_template,unsigned int *maxRep , unsigned int *narrowBandindex){
     EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11;
 
     AssertFatal(pue_template->physicalConfigDedicated !=NULL, "no RRC physical configuration for this UE ") ;
@@ -427,7 +427,7 @@ void  getRepetition(UE_TEMPLATE * pue_template,unsigned int *maxRep , unsigned i
 
 *maxRep = epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_NumRepetition_r13  ;
 
-    * narrowBandindex = epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13  ;
+    *narrowBandindex = epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13  ;
 
 
 
@@ -492,41 +492,7 @@ schedule_ue_spec_br(
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH, VCD_FUNCTION_IN);
 
 
-	// for TDD: check that we have to act here, otherwise return
-	//if (cc[0].tdd_Config) {
-	//	tdd_sfa = cc[0].tdd_Config->subframeAssignment;
-	//	switch (subframeP) {
-	//	case 0:
-	//		// always continue
-	//		break;
-	//	case 1:
-	//		return;
-	//		break;
-	//	case 2:
-	//		return;
-	//		break;
-	//	case 3:
-	//		if ((tdd_sfa != 2) && (tdd_sfa != 5)) return;
-	//		break;
-	//	case 4:
-	//		if ((tdd_sfa != 1) && (tdd_sfa != 2) && (tdd_sfa != 4) && (tdd_sfa != 5)) return;
-	//		break;
-	//	case 5:
-	//		break;
-	//	case 6:
-	//	case 7:
-	//		if ((tdd_sfa != 1) && (tdd_sfa != 2) && (tdd_sfa != 4) && (tdd_sfa != 5)) return;
-	//		break;
-	//	case 8:
-	//		if ((tdd_sfa != 2) && (tdd_sfa != 3) && (tdd_sfa != 4) && (tdd_sfa != 5)) return;
-	//		break;
-	//	case 9:
-	//		if ((tdd_sfa != 1) && (tdd_sfa != 3) && (tdd_sfa != 4) && (tdd_sfa != 6)) return;
-	//		break;
 
-	//	}
-	//}
-	//weight = get_ue_weight(module_idP,UE_id);
 	aggregation = 2;
 	for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
 		N_RB_DL[CC_id] = to_prb(cc[CC_id].mib->message.dl_Bandwidth);
@@ -570,17 +536,52 @@ schedule_ue_spec_br(
 
 		if (mbsfn_flag[CC_id] > 0)
 			continue;
+		
+	    unsigned int rmax;
+            unsigned int narrowBandindex_index;
+            unsigned int first_rb, rep, reps;
+
+            // rmax from RRC connection setup
+            getRepetition(&UE_list->UE_template[CC_id][UE_id], &rmax, &narrowBandindex_index);
+
+            first_rb = narrowband_to_first_rb(cc,narrowBandindex_index);
+
+		if (vrb_map[first_rb] == 1)  // skip scheduling emtc UEs if first RB is taken 
+			continue ; 
 
 		for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id])
 		{
 
-            if (!UE_list->UE_template[CC_id][UE_id].rach_resource_type )  // do  the following scheduling only if the UE is emtc
+            if (UE_list->UE_template[CC_id][UE_id].rach_resource_type ==0 )  // do  the following scheduling only if the UE is emtc
                   continue ;
+
+            //[khalid] ******** allocate here the vrb_map
+            // 1st check on the vrb_map[] and allocate the one that is next to them
+
+            // at the end of the scheduler make sure the right subbands coresponding to these RBs are allocated the UE in UE_template directely
+            // also check on the fill_DCI function
+
+            
+
+            vrb_map[first_rb] = 1;
+            vrb_map[first_rb + 1] = 1;
+            vrb_map[first_rb + 2] = 1;
+            vrb_map[first_rb + 3] = 1;
+            vrb_map[first_rb + 4] = 1;
+            vrb_map[first_rb + 5] = 1;
+
+
+
+
 
 			continue_flag = 0; // reset the flag to allow allocation for the remaining UEs
 			rnti = UE_RNTI(module_idP, UE_id);
 			eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
 			ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+
+            //[khalid] allocate the middle RB subbands in sf 1,5 for synch signals and PBCH
+
+
 
 
 			if (rnti == NOT_A_RNTI) {
@@ -679,6 +680,14 @@ schedule_ue_spec_br(
 
 			if (round > 0)
 			{
+
+
+                // choose r3 by default for RAR (Table 9.1.5-5)
+                rep = 2;
+                // get actual repetition count from Table 9.1.5-3
+                reps = (rmax <= 8) ? (1 << rep) : (rmax >> (3 - rep));
+
+
 				// get freq_allocation
 				nb_rb = 6;//UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
 
@@ -728,27 +737,7 @@ schedule_ue_spec_br(
 					case 2:
 					case 7:
 					default:
-					{
-						unsigned int rmax;
-						unsigned int narrowBandindex_index;
-						unsigned int first_rb, rep, reps;
-
-						// rmax from RRC connection setup
-                        getRepetition(&UE_list->UE_template[CC_id][UE_id], &rmax, &narrowBandindex_index, &first_rb);
-
-						// choose r3 by default for RAR (Table 9.1.5-5)
-						rep = 2;
-						// get actual repetition count from Table 9.1.5-3
-						reps = (rmax <= 8) ? (1 << rep) : (rmax >> (3 - rep));
-
-						first_rb = narrowBandindex_index * 6;
-
-						vrb_map[first_rb] = 1;
-						vrb_map[first_rb + 1] = 1;
-						vrb_map[first_rb + 2] = 1;
-						vrb_map[first_rb + 3] = 1;
-						vrb_map[first_rb + 4] = 1;
-						vrb_map[first_rb + 5] = 1;
+                    {
 
                         if ((UE_list->UE_template[CC_id][UE_id].mpdcch_repetition_cnt == 0) &&
                             (mpdcch_sf_condition(eNB, CC_id, frameP, subframeP, rmax, TYPEUESPEC,UE_id) > 0))
@@ -774,6 +763,9 @@ schedule_ue_spec_br(
                             dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.drms_scrambling_init = cc[CC_id].physCellId;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.initial_transmission_sf_io = (frameP * 10) + subframeP;
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.transmission_power = 6000; // 0dB
+
+                            //[khalid] missing DCI format   should be 10 for 6-1A
+
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_coding = getRIV(6, 0, 6);  // Note: still to be checked if it should not be (getRIV(N_RB_DL,first_rb,6)) : Check nFAPI specifications and what is done L1 with this parameter
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mcs = UE_list->UE_template[CC_id][UE_id].oldmcs1[harq_pid]; // adjust according to size of RAR, 208 bits with N1A_PRB=3
 							dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pdsch_reptition_levels = 4; // fix to 4 for now
@@ -1167,7 +1159,7 @@ schedule_ue_spec_br(
 					//	TBS = get_TBS_DL(mcs, nb_rb);
 					//}
 
-					//// if we have decreased too much or we don't have enough RBs, increase MCS
+                    // if we have decreased too much or we don't have enough RBs, increase MCS
 					//while ((TBS < (sdu_length_total + header_len_dcch + header_len_dtch + ta_len)) && (((ue_sched_ctl->dl_pow_off[CC_id] > 0) && (mcs < 28))
 					//	|| ((ue_sched_ctl->dl_pow_off[CC_id] == 0) && (mcs <= 15)))) {
 					//	mcs++;
@@ -1313,27 +1305,14 @@ schedule_ue_spec_br(
 					//	tpc = 1; //0
 					//}
 
-					{
-						unsigned int rmax;
-						unsigned int narrowBandindex_index;
-						unsigned int first_rb, rep, reps;
-
-						// rmax from RRC connection setup
-                        getRepetition(&UE_list->UE_template[CC_id][UE_id], &rmax, &narrowBandindex_index, &first_rb);
+                    {
 
 						// choose r3 by default for RAR (Table 9.1.5-5)
 						rep = 2;
 						// get actual repetition count from Table 9.1.5-3
 						reps = (rmax <= 8) ? (1 << rep) : (rmax >> (3 - rep));
 						
-						first_rb = narrowBandindex_index * 6;
 
-						vrb_map[first_rb] = 1;
-						vrb_map[first_rb + 1] = 1;
-						vrb_map[first_rb + 2] = 1;
-						vrb_map[first_rb + 3] = 1;
-						vrb_map[first_rb + 4] = 1;
-						vrb_map[first_rb + 5] = 1;
 
                         if ((UE_list->UE_template[CC_id][UE_id].mpdcch_repetition_cnt == 0) &&
                             (mpdcch_sf_condition(eNB, CC_id, frameP, subframeP, rmax, TYPEUESPEC,UE_id) > 0))

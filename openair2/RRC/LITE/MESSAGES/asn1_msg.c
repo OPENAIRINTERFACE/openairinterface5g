@@ -2215,7 +2215,7 @@ do_RRCConnectionReconfigurationComplete(
   return((enc_rval.encoded+7)/8);
 }
 
-//#ifdef Rel14
+#ifdef Rel14
 uint8_t
 do_RRCConnectionSetup_BR(
 			 const protocol_ctxt_t*     const ctxt_pP,
@@ -2647,7 +2647,7 @@ do_RRCConnectionSetup_BR(
 
   return((enc_rval.encoded+7)/8);
 }
-//#endif
+#endif
 
 
 //------------------------------------------------------------------------------
