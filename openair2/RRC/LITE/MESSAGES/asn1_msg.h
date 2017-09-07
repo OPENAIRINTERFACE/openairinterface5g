@@ -176,6 +176,37 @@ do_RRCConnectionSetup_BR(
 );
 #endif
 
+
+
+#ifdef Rel14
+uint16_t
+do_RRCConnectionReconfiguration_BR(
+                   const protocol_ctxt_t*        const ctxt_pP,
+                   uint8_t                            *buffer,
+                   uint8_t                             Transaction_id,
+                   SRB_ToAddModList_t                 *SRB_list,
+                   DRB_ToAddModList_t                 *DRB_list,
+                   DRB_ToReleaseList_t                *DRB_list2,
+                   struct SPS_Config                  *sps_Config,
+                   struct PhysicalConfigDedicated     *physicalConfigDedicated,
+                   MeasObjectToAddModList_t           *MeasObj_list,
+                   ReportConfigToAddModList_t         *ReportConfig_list,
+                   QuantityConfig_t                   *quantityConfig,
+                   MeasIdToAddModList_t               *MeasId_list,
+                   MAC_MainConfig_t                   *mac_MainConfig,
+                   MeasGapConfig_t                    *measGapConfig,
+                   MobilityControlInfo_t              *mobilityInfo,
+                   struct MeasConfig__speedStatePars  *speedStatePars,
+                   RSRP_Range_t                       *rsrp,
+                   C_RNTI_t                           *cba_rnti,
+                   struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList
+                   *dedicatedInfoNASList
+
+#if defined(Rel10) || defined(Rel14)
+                   , SCellToAddMod_r10_t  *SCell_config
+#endif
+                   );
+#endif
 /**
 \brief Generate an RRCConnectionReconfiguration DL-DCCH-Message (eNB).  This routine configures SRBToAddMod (SRB2) and one DRBToAddMod
 (DRB3).  PhysicalConfigDedicated is not updated.

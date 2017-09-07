@@ -3206,6 +3206,7 @@ do_UECapabilityEnquiry(
   return((enc_rval.encoded+7)/8);
 }
 
+#ifdef Rel14
 uint16_t
 do_RRCConnectionReconfiguration_BR(
 				   const protocol_ctxt_t*        const ctxt_pP,
@@ -3262,68 +3263,10 @@ do_RRCConnectionReconfiguration_BR(
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->cba_RNTI_vlola= cba_rnti;
 #endif
 
-  // +kogo
-  physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n4;
-
-  physicalConfigDedicated->ext4->csi_RS_ConfigNZPToReleaseList_r11 = NULL;
-  physicalConfigDedicated->ext4->csi_RS_ConfigNZPToAddModList_r11 = NULL;
-  physicalConfigDedicated->ext4->csi_RS_ConfigZPToAddModList_r11 = NULL;
-  physicalConfigDedicated->ext4->csi_RS_ConfigZPToReleaseList_r11 = NULL;
-
-  physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.present = EPDCCH_Config_r11__config_r11_PR_setup;
-  physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.subframePatternConfig_r11 = NULL;
-  physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.startSymbol_r11 = NULL;
-  physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToReleaseList_r11 = NULL;
-
-
-  physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11 = calloc(1, sizeof(EPDCCH_SetConfigToAddModList_r11_t));
-  //  memset(physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11, 0, sizeof())
-  EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11 = calloc(0, sizeof(EPDCCH_SetConfig_r11_t));
-  epdcch_setconfig_r11->setConfigId_r11 = 0;
-  epdcch_setconfig_r11->transmissionType_r11 = EPDCCH_SetConfig_r11__transmissionType_r11_localised;
-  epdcch_setconfig_r11->resourceBlockAssignment_r11.numberPRB_Pairs_r11 = EPDCCH_SetConfig_r11__resourceBlockAssignment_r11__numberPRB_Pairs_r11_n2;
-  //epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11 = calloc(0, sizeof(BIT_STRING_t));
-  epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.buf = calloc(0, 2 * sizeof(uint8_t));
-  epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.size = 2;
-  epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.bits_unused = 6;
-  epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.buf[0] = 0x0E;
-
-  epdcch_setconfig_r11->dmrs_ScramblingSequenceInt_r11 = 0;
-  epdcch_setconfig_r11->pucch_ResourceStartOffset_r11 = 0;
-  epdcch_setconfig_r11->re_MappingQCL_ConfigId_r11 = NULL;
-  epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310 = NULL;
-  epdcch_setconfig_r11->ext2->mpdcch_config_r13->present = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13_PR_setup;
-  epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.csi_NumRepetitionCE_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__csi_NumRepetitionCE_r13_sf1;
-  epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_pdsch_HoppingConfig_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_pdsch_HoppingConfig_r13_off;
-  epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.present = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_StartSF_UESS_r13_PR_fdd_r13;
-  epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.choice.fdd_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_StartSF_UESS_r13__fdd_r13_v1;
-  epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_NumRepetition_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_NumRepetition_r13_r1;
-  epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13 = 3;
-  ASN_SEQUENCE_ADD(physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11, epdcch_setconfig_r11);
-
-  physicalConfigDedicated->ext7->pdsch_ConfigDedicated_v1310 = NULL;
-  physicalConfigDedicated->ext7->pusch_ConfigDedicated_r13 = NULL;
-
-  physicalConfigDedicated->ext7->pdcch_CandidateReductions_r13 = NULL;
-
-  physicalConfigDedicated->ext7->pucch_ConfigDedicated_r13 = NULL;
-
-  physicalConfigDedicated->ext7->cqi_ReportConfig_v1310 = NULL;
-
-  physicalConfigDedicated->ext7->soundingRS_UL_ConfigDedicated_v1310                = NULL;
-  physicalConfigDedicated->ext7->soundingRS_UL_ConfigDedicatedUpPTsExt_r13          = NULL;
-  physicalConfigDedicated->ext7->soundingRS_UL_ConfigDedicatedAperiodic_v1310       = NULL;
-  physicalConfigDedicated->ext7->soundingRS_UL_ConfigDedicatedAperiodicUpPTsExt_r13 = NULL;
-
-  physicalConfigDedicated->ext7->csi_RS_Config_v1310 = NULL;
-
-  physicalConfigDedicated->ext7->ce_Mode_r13->present = PhysicalConfigDedicated__ext7__ce_Mode_r13_PR_setup;
-  physicalConfigDedicated->ext7->ce_Mode_r13->choice.setup = PhysicalConfigDedicated__ext7__ce_Mode_r13__setup_ce_ModeA;
-  physicalConfigDedicated->ext7->csi_RS_ConfigNZPToAddModListExt_r13 = NULL;
-  physicalConfigDedicated->ext7->csi_RS_ConfigNZPToReleaseListExt_r13 = NULL;
-
-  // +kogo ------------------------------------------------------------------------------------------
-
+  physicalConfigDedicated->cqi_ReportConfig = CALLOC(1, sizeof(struct CQI_ReportConfig));
+  physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic = CALLOC(1, sizeof(CQI_ReportModeAperiodic_t));
+  *physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic = CQI_ReportModeAperiodic_rm20;
+  physicalConfigDedicated->cqi_ReportConfig->nomPDSCH_RS_EPRE_Offset = 0;
 
   if (mac_MainConfig!=NULL) {
     rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig = CALLOC(1,
@@ -3424,6 +3367,7 @@ do_RRCConnectionReconfiguration_BR(
 
   return((enc_rval.encoded+7)/8);
 }
+#endif
 
 //------------------------------------------------------------------------------
 uint16_t
