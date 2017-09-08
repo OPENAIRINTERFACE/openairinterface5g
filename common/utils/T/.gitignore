@@ -10,4 +10,7 @@ tracer/replay
 tracer/textlog
 tracer/vcd
 tracer/macpdu2wireshark
+tracer/ue
+tracer/extract_input_subframe
+tracer/extract_output_subframe
 tracee/tracee
