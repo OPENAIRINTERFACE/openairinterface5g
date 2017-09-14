@@ -59,6 +59,52 @@
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
 
+int choose(int n,int k) {
+
+  int res  = 1;
+  int res2 = 1;
+  int i;
+
+  if (k>n) return(0);
+  if (n==k) return(1);
+
+  for (i=n;i>k;i--) res*=i;
+  for (i=2;i<=(n-k);i++) res2*=i;
+
+  return(res/res2);
+}
+
+// Patented algorithm from Yang et al, US Patent 2009, "Channel Quality Indexing and Reverse Indexing"
+void reverse_index(int N,int M,int r,int *v) {
+
+  int BaseValue=0;
+  int IncreaseValue,ThresholdValue;
+  int sumV;
+  int i;
+
+  r = choose(N,M) - 1 - r;
+  memset((void*)v,0,M*sizeof(int));
+
+  sumV=0;
+  i=M;
+  while (i>0 && r>0) {
+
+    IncreaseValue = choose(N-M+1-sumV-v[i-1]+i-2,i-1);
+    ThresholdValue = BaseValue+IncreaseValue;
+    if (r>=ThresholdValue) {
+      v[i-1]++;
+      BaseValue=ThresholdValue;
+    }
+    else {
+      r=r-BaseValue;
+      sumV+=v[i-1];
+      i--;
+      BaseValue=0;
+    }
+
+  }
+
+}
 int to_prb(int dl_Bandwidth) {
   int prbmap[6] = {6,15,25,50,75,100};
 
@@ -97,7 +143,15 @@ uint16_t mac_computeRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs) {
   return(RIV);
 }
 
+uint8_t getQm(uint8_t mcs) {
+
+  if (mcs<10) return(2);
+  else if (mcs<17) return(4);
+  else return (6);
+}
+
 void get_Msg3alloc(COMMON_channels_t *cc,
+
 		   sub_frame_t current_subframe,
 		   frame_t current_frame,
 		   frame_t *frame,
@@ -403,6 +457,53 @@ uint8_t get_Msg3harqpid(COMMON_channels_t *cc,
 
 }
 
+uint32_t pdcchalloc2ulframe(COMMON_channels_t *ccP,uint32_t frame, uint8_t n)
+{
+  uint32_t ul_frame;
+
+  if ((ccP->tdd_Config) &&
+      (ccP->tdd_Config->subframeAssignment == 1) &&
+      ((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
+    ul_frame = (frame + (n==1 ? 0 : 1));
+  else if ((ccP->tdd_Config) &&
+	   (ccP->tdd_Config->subframeAssignment == 6) &&
+	   ((n==0)||(n==1)||(n==5)||(n==6)))
+    ul_frame = (frame + (n>=5 ? 1 : 0));
+  else if ((ccP->tdd_Config) &&
+	   (ccP->tdd_Config->subframeAssignment == 6) &&
+           (n==9)) // tdd_config 6 SF 9
+    ul_frame = (frame+1);
+  else
+    ul_frame = (frame+(n>=6 ? 1 : 0));
+
+  LOG_D(PHY, "frame %d subframe %d: PUSCH frame = %d\n", frame, n, ul_frame);
+  return ul_frame;
+
+}
+
+uint8_t pdcchalloc2ulsubframe(COMMON_channels_t *ccP,uint8_t n) {
+
+  uint8_t ul_subframe;
+
+  if ((ccP->tdd_Config) &&
+      (ccP->tdd_Config->subframeAssignment == 1) &&
+      ((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
+    ul_subframe = ((n+6)%10);
+  else if ((ccP->tdd_Config) &&
+	   (ccP->tdd_Config->subframeAssignment == 6) &&
+           ((n==0)||(n==1)||(n==5)||(n==6)))
+    ul_subframe = ((n+7)%10);
+  else if ((ccP->tdd_Config) &&
+	   (ccP->tdd_Config->subframeAssignment == 6) &&
+           (n==9)) // tdd_config 6 SF 9
+    ul_subframe = ((n+5)%10);
+  else
+    ul_subframe = ((n+4)%10);
+
+  LOG_D(PHY, "subframe %d: PUSCH subframe = %d\n", n, ul_subframe);
+  return ul_subframe;
+}
+
 int is_UL_sf(COMMON_channels_t *ccP,sub_frame_t subframeP)
 {
 
@@ -460,12 +561,751 @@ int is_UL_sf(COMMON_channels_t *ccP,sub_frame_t subframeP)
 
   default:
     AssertFatal(1==0,"subframe %d Unsupported TDD configuration %d\n",
-		subframeP,ccP->tdd_Config->subframeAssignment);
+		subframeP,(int)ccP->tdd_Config->subframeAssignment);
     break;
 
   }
 }
 
+uint16_t get_pucch1_absSF(COMMON_channels_t *cc,uint16_t dlsch_absSF) {
+
+  uint16_t sf,f,nextf;
+  
+  if (cc->tdd_Config==NULL) { //FDD n+4
+    return((dlsch_absSF + 4)%10240);
+  }
+  else {
+    sf    = dlsch_absSF%10;
+    f     = dlsch_absSF/10;
+    nextf = (f+1)&1023;
+
+    switch (cc->tdd_Config->subframeAssignment) {
+    case 0:
+      AssertFatal(1==0,"SFA 0 to be filled in now, :-)\n");
+      break;
+    case 1:
+      if      ((sf==5) || (sf==6)) return((10*nextf) + 2);                                        // ACK/NAK in SF 2 next frame
+      else if (sf==9)              return((10*nextf) + 3);                                        // ACK/NAK in SF 3 next frame
+      else if ((sf==0) || (sf==1)) return((10*f) + 2);                                            // ACK/NAK in SF 7 same frame
+      else AssertFatal(1==0,"Impossible dlsch subframe %d for TDD configuration 3\n",sf);
+      break;
+    case 2:
+      if      ((sf==4) || (sf==5) || (sf==6) || (sf==8)) return((10*nextf) + 2);                  // ACK/NAK in SF 2 next frame
+      else if (sf==9)                                    return((10*nextf) + 7);                  // ACK/NAK in SF 7 next frame
+      else if ((sf==0) || (sf==1) || (sf==3))            return((10*f) + 7);                      // ACK/NAK in SF 7 same frame
+      else AssertFatal(1==0,"Impossible dlsch subframe %d for TDD configuration 3\n",sf);
+      break;
+    case 3:
+      if      ((sf==5) || (sf==6) || (sf==7) || (sf==8) || (sf==9)) return((10*nextf) + (sf>>1)); // ACK/NAK in 2,3,4 resp. next frame 
+      else if (sf==1)                                               return((10*nextf) + 2);       // ACK/NAK in 2 next frame 
+      else if (sf==0)                                               return((10*f) + 4);           // ACK/NAK in 4 same frame 
+      else AssertFatal(1==0,"Impossible dlsch subframe %d for TDD configuration 3\n",sf);
+      break;
+    case 4:
+      if      ((sf==6) || (sf==7) || (sf==8) || (sf==9)) return(((10*nextf) + 3)%10240);          // ACK/NAK in SF 3 next frame
+      else if ((sf==0) || (sf==1) || (sf==4) || (sf==5)) return(((10*nextf) + 2)%10240);          // ACK/NAK in SF 2 next frame
+      else AssertFatal(1==0,"Impossible dlsch subframe %d for TDD configuration 4\n",sf);
+      break;
+    case 5:
+      if      ((sf==0) || (sf==1) || (sf==3) || (sf==4) || (sf==5) || (sf==6) || (sf==7) || (sf==8)) return(((10*nextf) + 2)%10240);     // ACK/NAK in SF 3 next frame
+      else if (sf==9)                                                                                return(((10*(1+nextf)) + 2)%10240); // ACK/NAK in SF 2 next frame           
+      else AssertFatal(1==0,"Impossible dlsch subframe %d for TDD configuration 5\n",sf);      
+      break;
+    case 6:
+      AssertFatal(1==0,"SFA 6 To be filled in now, :-)\n");
+      break;
+    default:
+      AssertFatal(1==0,"Illegal TDD subframe Assigment %d\n",(int)cc->tdd_Config->subframeAssignment);
+      break;
+    }
+  }
+  AssertFatal(1==0,"Shouldn't get here\n");
+}
+
+void get_srs_pos(COMMON_channels_t *cc,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset) {
+
+  if(cc->tdd_Config) { // TDD
+    AssertFatal(isrs>=10,"2 ms SRS periodicity not supported");
+    
+    if ((isrs>9)&&(isrs<15)) {
+      *psrsPeriodicity=5;
+      *psrsOffset=isrs-10;
+    }
+    if ((isrs>14)&&(isrs<25)) {
+      *psrsPeriodicity=10;
+      *psrsOffset=isrs-15;
+    }
+    if ((isrs>24)&&(isrs<45)) {
+      *psrsPeriodicity=20;
+      *psrsOffset=isrs-25;
+    }
+    if ((isrs>44)&&(isrs<85)) {
+      *psrsPeriodicity=40;
+      *psrsOffset=isrs-45;
+    }
+    if ((isrs>84)&&(isrs<165)) {
+      *psrsPeriodicity=80;
+      *psrsOffset=isrs-85;
+    }
+    if ((isrs>164)&&(isrs<325)) {
+      *psrsPeriodicity=160;
+      *psrsOffset=isrs-165;
+    }
+    if ((isrs>324)&&(isrs<645)) {
+      *psrsPeriodicity=320;
+      *psrsOffset=isrs-325;
+    }
+    
+    AssertFatal(isrs<=644,"Isrs out of range %d>644\n",isrs);
+      
+  } // TDD
+  else { // FDD
+
+    if (isrs<2) {
+      *psrsPeriodicity=2;
+      *psrsOffset=isrs;
+    }
+    if ((isrs>1)&&(isrs<7)) {
+      *psrsPeriodicity=5;
+      *psrsOffset=isrs-2;
+    }
+    if ((isrs>6)&&(isrs<17)) {
+      *psrsPeriodicity=10;
+      *psrsOffset=isrs-7;
+    }
+    if ((isrs>16)&&(isrs<37)) {
+      *psrsPeriodicity=20;
+      *psrsOffset=isrs-17;
+    }
+    if ((isrs>36)&&(isrs<77)) {
+      *psrsPeriodicity=40;
+      *psrsOffset=isrs-37;
+    }
+    if ((isrs>76)&&(isrs<157)) {
+      *psrsPeriodicity=80;
+      *psrsOffset=isrs-77;
+    }
+    if ((isrs>156)&&(isrs<317)) {
+      *psrsPeriodicity=160;
+      *psrsOffset=isrs-157;
+    }
+    if ((isrs>316)&&(isrs<637)) {
+      *psrsPeriodicity=320;
+      *psrsOffset=isrs-317;
+    }
+    AssertFatal(isrs<=636,"Isrs out of range %d>636\n",isrs);
+	
+  }
+}
+
+void get_csi_params(COMMON_channels_t *cc,struct CQI_ReportPeriodic *cqi_ReportPeriodic,uint16_t *Npd,uint16_t *N_OFFSET_CQI,int *H) {
+
+  uint16_t cqi_PMI_ConfigIndex = cqi_ReportPeriodic->choice.setup.cqi_pmi_ConfigIndex;
+  uint8_t Jtab[6] = {0,2,2,3,4,4};
+
+  AssertFatal(cqi_ReportPeriodic!=NULL,"cqi_ReportPeriodic is null!\n");
+
+  if (cc->tdd_Config==NULL) { //FDD
+    if (cqi_PMI_ConfigIndex <= 1) {        // 2 ms CQI_PMI period
+      *Npd = 2;
+      *N_OFFSET_CQI = cqi_PMI_ConfigIndex;
+    } else if (cqi_PMI_ConfigIndex <= 6) { // 5 ms CQI_PMI period
+      *Npd = 5;
+      *N_OFFSET_CQI = cqi_PMI_ConfigIndex-2;
+    } else if (cqi_PMI_ConfigIndex <=16) { // 10ms CQI_PMI period
+      *Npd = 10;
+      *N_OFFSET_CQI = cqi_PMI_ConfigIndex-7;
+    } else if (cqi_PMI_ConfigIndex <= 36) { // 20 ms CQI_PMI period
+      *Npd = 20;
+      *N_OFFSET_CQI = cqi_PMI_ConfigIndex-17;
+    } else if (cqi_PMI_ConfigIndex <= 76) { // 40 ms CQI_PMI period
+      *Npd = 40;
+      *N_OFFSET_CQI = cqi_PMI_ConfigIndex-37;
+    } else if (cqi_PMI_ConfigIndex <= 156) { // 80 ms CQI_PMI period
+      *Npd = 80;
+      *N_OFFSET_CQI = cqi_PMI_ConfigIndex-77;
+    } else if (cqi_PMI_ConfigIndex <= 316) { // 160 ms CQI_PMI period
+      *Npd = 160;
+      *N_OFFSET_CQI = cqi_PMI_ConfigIndex-157;
+    }
+    else if (cqi_PMI_ConfigIndex > 317) {
+      
+      if (cqi_PMI_ConfigIndex <= 349) { // 32 ms CQI_PMI period
+	*Npd = 32;
+      *N_OFFSET_CQI = cqi_PMI_ConfigIndex-318;
+      }
+      else if (cqi_PMI_ConfigIndex <= 413) { // 64 ms CQI_PMI period
+	*Npd = 64;
+	*N_OFFSET_CQI = cqi_PMI_ConfigIndex-350;
+      }
+      else if (cqi_PMI_ConfigIndex <= 541) { // 128 ms CQI_PMI period
+	*Npd = 128;
+	*N_OFFSET_CQI = cqi_PMI_ConfigIndex-414;
+      }  
+    }
+  }
+  else { // TDD
+   if (cqi_PMI_ConfigIndex == 0) {        // all UL subframes
+     *Npd = 1;
+     *N_OFFSET_CQI = 0;
+   } else if (cqi_PMI_ConfigIndex <= 6) { // 5 ms CQI_PMI period
+     *Npd = 5;
+     *N_OFFSET_CQI = cqi_PMI_ConfigIndex-1;
+   } else if (cqi_PMI_ConfigIndex <=16) { // 10ms CQI_PMI period
+     *Npd = 10;
+     *N_OFFSET_CQI = cqi_PMI_ConfigIndex-6;
+   } else if (cqi_PMI_ConfigIndex <= 36) { // 20 ms CQI_PMI period
+     *Npd = 20;
+     *N_OFFSET_CQI = cqi_PMI_ConfigIndex-16;
+   } else if (cqi_PMI_ConfigIndex <= 76) { // 40 ms CQI_PMI period
+     *Npd = 40;
+     *N_OFFSET_CQI = cqi_PMI_ConfigIndex-36;
+   } else if (cqi_PMI_ConfigIndex <= 156) { // 80 ms CQI_PMI period
+     *Npd = 80;
+     *N_OFFSET_CQI = cqi_PMI_ConfigIndex-76;
+   } else if (cqi_PMI_ConfigIndex <= 316) { // 160 ms CQI_PMI period
+     *Npd = 160;
+     *N_OFFSET_CQI = cqi_PMI_ConfigIndex-156;
+   }
+  }
+
+  // get H
+  if (cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present == CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_subbandCQI)
+    *H = 1+(Jtab[cc->mib->message.dl_Bandwidth]*cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.choice.subbandCQI.k);
+  else
+    *H=1;
+}
+
+
+uint8_t get_dl_cqi_pmi_size_pusch(UE_sched_ctrl *sched_ctl,COMMON_channels_t *cc,uint8_t tmode,uint8_t ri, CQI_ReportModeAperiodic_t *cqi_ReportModeAperiodic) {
+
+  int Ntab[6]       = {0,4,7,9,10,13};
+  int Ntab_uesel[6] = {0,8,13,17,19,25};
+  int N             = Ntab[cc->p_eNB];
+  int Ltab_uesel[6] = {0,6,9,13,15,18};
+  int L             = Ltab_uesel[cc->p_eNB];
+
+  AssertFatal(cqi_ReportModeAperiodic != NULL,"cqi_ReportPeriodic is null!\n");
+
+  switch (*cqi_ReportModeAperiodic) {
+  
+  case CQI_ReportModeAperiodic_rm12:
+    AssertFatal(tmode==4 || tmode==6 || tmode==8 || tmode==9 || tmode==10,"Illegal TM (%d) for CQI_ReportModeAperiodic_rm12\n",tmode);
+    AssertFatal(cc->p_eNB<=4,"only up to 4 antenna ports supported here\n");
+    if (ri==1 && cc->p_eNB==2) return(4+(N<<1));
+    else if (ri==2 && cc->p_eNB==2) return(8+N);
+    else if (ri==1 && cc->p_eNB==4) return(4+(N<<2));
+    else if (ri>1  && cc->p_eNB==4) return(8+(N<<2));		 
+    break;
+  case CQI_ReportModeAperiodic_rm20:
+    // Table 5.2.2.6.3-1 (36.212)
+    AssertFatal(tmode==1 || tmode==2 || tmode==3 || tmode==7 || tmode==9 || tmode==10,"Illegal TM (%d) for CQI_ReportModeAperiodic_rm20\n",tmode);
+    AssertFatal(tmode!=9 && tmode!=10,"TM9/10 will be handled later for CQI_ReportModeAperiodic_rm20\n");
+    return(4+2+L);
+    break;
+  case CQI_ReportModeAperiodic_rm22:
+    // Table 5.2.2.6.3-2 (36.212)
+    AssertFatal(tmode==4 || tmode==6 || tmode==8 || tmode==9 || tmode==10,"Illegal TM (%d) for CQI_ReportModeAperiodic_rm22\n",tmode);
+    AssertFatal(tmode!=9 && tmode!=10,"TM9/10 will be handled later for CQI_ReportModeAperiodic_rm22\n");
+    if (ri==1 && cc->p_eNB==2) return(4+2+0+0+L+4);
+    if (ri==2 && cc->p_eNB==2) return(4+2+4+2+L+2);
+    if (ri==1 && cc->p_eNB==4) return(4+2+0+0+L+8);
+    if (ri>=2 && cc->p_eNB==4) return(4+2+4+2+L+8);
+    break;
+  case CQI_ReportModeAperiodic_rm30:
+    // Table 5.2.2.6.2-1 (36.212)
+    AssertFatal(tmode==1 || tmode==2 || tmode==3 || tmode==7 || tmode==8 || tmode==9 || tmode==10,"Illegal TM (%d) for CQI_ReportModeAperiodic_rm30\n",tmode);
+    AssertFatal(tmode!=8 && tmode!=9 && tmode!=10,"TM8/9/10 will be handled later for CQI_ReportModeAperiodic_rm30\n");
+    return(4+(N<<1));
+    break;
+  case CQI_ReportModeAperiodic_rm31:
+    // Table 5.2.2.6.2-2 (36.212)
+    AssertFatal(tmode==4 || tmode==6 || tmode==8 || tmode==9 || tmode==10,"Illegal TM (%d) for CQI_ReportModeAperiodic_rm31\n",tmode);
+    AssertFatal(tmode!=8 && tmode!=9 && tmode!=10,"TM8/9/10 will be handled later for CQI_ReportModeAperiodic_rm31\n");
+    if (ri==1 && cc->p_eNB==2) return(4+(N<<1)+0+0+2);
+    else if (ri==2 && cc->p_eNB==2) return(4+(N<<1)+4+(N<<1)+1);
+    else if (ri==1 && cc->p_eNB==4) return(4+(N<<1)+0+0+4);
+    else if (ri>=2 && cc->p_eNB==4) return(4+(N<<1)+4+(N<<1)+4);
+    break;
+  case CQI_ReportModeAperiodic_rm32_v1250:
+    AssertFatal(tmode==4 || tmode==6 || tmode==8 || tmode==9 || tmode==10,"Illegal TM (%d) for CQI_ReportModeAperiodic_rm32\n",tmode);
+    AssertFatal(1==0,"CQI_ReportModeAperiodic_rm32_v1250 not supported yet\n");
+    break;
+  case CQI_ReportModeAperiodic_rm10_v1310:
+    // Table 5.2.2.6.1-1F/G (36.212)
+    if (ri==1) return(4); // F
+    else return(7); // G
+    break;
+  case CQI_ReportModeAperiodic_rm11_v1310:
+    // Table 5.2.2.6.1-1H (36.212)
+    AssertFatal(tmode==4 || tmode==6 || tmode==8 || tmode==9 || tmode==10,"Illegal TM (%d) for CQI_ReportModeAperiodic_rm11\n",tmode);
+    AssertFatal(cc->p_eNB<=4,"only up to 4 antenna ports supported here\n");
+    if (ri==1 && cc->p_eNB==2) return(4+0+2);
+    else if (ri==2 && cc->p_eNB==2) return(4+4+1);
+    else if (ri==1 && cc->p_eNB==4) return(4+0+4);
+    else if (ri>1  && cc->p_eNB==4) return(4+4+4);		 
+
+    break;
+  }
+
+}
+
+uint8_t get_rel8_dl_cqi_pmi_size(UE_sched_ctrl *sched_ctl,int CC_idP,COMMON_channels_t *cc,uint8_t tmode, struct CQI_ReportPeriodic *cqi_ReportPeriodic) {
+
+  int no_pmi=0;
+  //    Ltab[6] = {0,log2(15/4/2),log2(25/4/2),log2(50/6/3),log2(75/8/4),log2(100/8/4)};
+
+  uint8_t Ltab[6] = {0,1,2,2,2,2};
+  uint8_t ri = sched_ctl->periodic_ri_received[CC_idP];
+
+  AssertFatal(cqi_ReportPeriodic != NULL,"cqi_ReportPeriodic is null!\n");
+  AssertFatal(cqi_ReportPeriodic->present != CQI_ReportPeriodic_PR_NOTHING,
+	      "cqi_ReportPeriodic->present == CQI_ReportPeriodic_PR_NOTHING!\n");
+  AssertFatal(cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present != CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_NOTHING,
+	      "cqi_ReportPeriodic->cqi_FormatIndicatorPeriodic.choice.setup.present == CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_NOTHING!\n");
+
+  switch(tmode) {
+  case 1:
+  case 2:
+  case 5:
+  case 6:
+  case 7:
+    no_pmi=1;
+    break;
+  default:
+    no_pmi=0;
+  }
+
+
+
+  if ((cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present == CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_widebandCQI) ||
+      (sched_ctl->feedback_cnt[CC_idP] == 0)) {
+    // send wideband report every opportunity if wideband reporting mode is selected, else every H opportunities
+    if (no_pmi == 1)
+      return(4);
+    else if ((cc->p_eNB==2) && (ri==1)) return(6);
+    else if ((cc->p_eNB==2) && (ri==2)) return(8);
+    else if ((cc->p_eNB==4) && (ri==1)) return(8);
+    else if ((cc->p_eNB==4) && (ri==2)) return(11);
+    else AssertFatal(1==0,"illegal combination p %d, ri %d, no_pmi %d\n",cc->p_eNB,ri,no_pmi);
+  }
+  else if (cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present == CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_subbandCQI) {
+    if ((no_pmi == 1)||ri==1) return(4+Ltab[cc->mib->message.dl_Bandwidth]);
+    else 
+      return(7+Ltab[cc->mib->message.dl_Bandwidth]);    
+  }
+  AssertFatal(1==0,"Shouldn't get here : cqi_ReportPeriodic->present %d\n",cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present);
+}
+
+void fill_nfapi_dl_dci_1A(nfapi_dl_config_request_pdu_t   *dl_config_pdu,
+			  uint8_t aggregation_level,
+			  uint16_t rnti,
+			  uint8_t rnti_type,
+			  uint8_t harq_process,
+			  uint8_t tpc,
+			  uint16_t resource_block_coding,
+			  uint8_t mcs,
+			  uint8_t ndi,
+			  uint8_t rv,
+			  uint8_t vrb_flag) {
+  
+  memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
+  dl_config_pdu->pdu_type                                                          = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE; 
+  dl_config_pdu->pdu_size                                                          = (uint8_t)(2+sizeof(nfapi_dl_config_dci_dl_pdu));
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format                             = NFAPI_DL_DCI_FORMAT_1A;
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level                      = aggregation_level;
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti                                   = rnti;
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type                              = rnti_type;
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power                     = 6000; // equal to RS power
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process                           = harq_process;
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc                                    = tpc; // no TPC
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding                  = resource_block_coding;
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1                                  = mcs;
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1                   = ndi;
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1                   = rv;
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.virtual_resource_block_assignment_flag = vrb_flag;
+  
+}
+
+void program_dlsch_acknak(module_id_t module_idP, int CC_idP,int UE_idP, frame_t frameP, sub_frame_t subframeP,uint8_t cce_idx) {
+
+  eNB_MAC_INST                   *eNB      = RC.mac[module_idP];
+  COMMON_channels_t              *cc       = eNB->common_channels;
+  UE_list_t                      *UE_list  = &eNB->UE_list;
+  rnti_t                         rnti      = UE_RNTI(module_idP,UE_idP);
+  nfapi_ul_config_request_body_t *ul_req;
+  nfapi_ul_config_request_pdu_t  *ul_config_pdu;
+
+  int use_simultaneous_pucch_pusch=0;
+  nfapi_ul_config_ulsch_harq_information *ulsch_harq_information = NULL;
+  nfapi_ul_config_harq_information *harq_information = NULL;
+  
+#if defined(Rel10) || defined(Rel14)
+  
+  if ((UE_list->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2) &&
+      (UE_list->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2->pucch_ConfigDedicated_v1020) &&
+      (UE_list->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2->pucch_ConfigDedicated_v1020->simultaneousPUCCH_PUSCH_r10) &&	    
+      (*UE_list->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2->pucch_ConfigDedicated_v1020->simultaneousPUCCH_PUSCH_r10 == PUCCH_ConfigDedicated_v1020__simultaneousPUCCH_PUSCH_r10_true)) use_simultaneous_pucch_pusch=1;
+#endif
+  
+  // pucch1 and pusch feedback is similar, namely in n+k subframes from now
+  // This is used in the following "if/else" condition to check if there isn't or is already an UL grant in n+k
+  int16_t ul_absSF = get_pucch1_absSF(&cc[CC_idP],subframeP+(10*frameP));
+  
+  if ((ul_config_pdu = has_ul_grant(module_idP,CC_idP,
+				    ul_absSF,
+				    rnti)) == NULL) {
+    // no UL grant so
+    // Program ACK/NAK alone Format 1a/b or 3
+    
+    ul_req        = &RC.mac[module_idP]->UL_req_tmp[CC_idP][ul_absSF%10].ul_config_request_body;
+    ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus];	    
+    // Do PUCCH
+    fill_nfapi_uci_acknak(module_idP,
+			  CC_idP,
+			  rnti,
+			  (frameP*10)+subframeP,
+			  cce_idx);
+  }
+  else { // there is already an existing UL grant so update it if needed
+    // on top of some other UL resource (PUSCH,combined SR/CQI/HARQ on PUCCH, etc)
+    switch(ul_config_pdu->pdu_type) {
+    case NFAPI_UL_CONFIG_ULSCH_PDU_TYPE:
+    case NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE:
+    case NFAPI_UL_CONFIG_ULSCH_UCI_HARQ_PDU_TYPE:
+      if (use_simultaneous_pucch_pusch==1) {
+	AssertFatal(ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE,
+		    "Cannot be NFAPI_UL_CONFIG_ULSCH_PDU_TYPE, simultaneous_pucch_pusch is active\n");
+	// Convert it to an NFAPI_UL_CONFIG_ULSCH_UCI_HARQ_PDU_TYPE 
+	harq_information = &ul_config_pdu->ulsch_uci_harq_pdu.harq_information;
+	ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_ULSCH_UCI_HARQ_PDU_TYPE;
+      }
+      else {
+	AssertFatal(ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_UCI_HARQ_PDU_TYPE,
+		    "Cannot be NFAPI_UL_CONFIG_ULSCH_UCI_PDU_TYPE, simultaneous_pucch_pusch is inactive\n");
+	// Convert it to an NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE 
+	ulsch_harq_information = &ul_config_pdu->ulsch_harq_pdu.harq_information;
+	ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE;
+	ul_config_pdu->ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.n_srs_initial=0; // last symbol not punctured
+	ul_config_pdu->ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks=
+	  ul_config_pdu->ulsch_harq_pdu.ulsch_pdu.ulsch_pdu_rel8.number_of_resource_blocks; // we don't change the number of resource blocks across retransmissions yet
+      }
+      break;
+    case NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE:
+    case NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE:
+    case NFAPI_UL_CONFIG_ULSCH_UCI_CSI_PDU_TYPE:
+    case NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE:
+      if (use_simultaneous_pucch_pusch==1) {
+	AssertFatal(ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE||
+		    ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE,
+		    "Cannot be NFAPI_UL_CONFIG_ULSCH_CQI_RI_xxx_PDU_TYPE, simultaneous_pucch_pusch is active\n");
+	// convert it to an NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE
+	harq_information = &ul_config_pdu->ulsch_csi_uci_harq_pdu.harq_information;
+	ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE;
+	
+      }
+      else { 
+	AssertFatal(ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_UCI_CSI_PDU_TYPE ||
+		    ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE,
+		    "Cannot be NFAPI_UL_CONFIG_ULSCH_UCI_xxx_PDU_TYPE, simultaneous_pucch_pusch is inactive\n");
+	// Convert it to an NFAPI_UL_CONFIG_ULSCH_CQI_RI_HARQ_PDU_TYPE 
+	ulsch_harq_information = &ul_config_pdu->ulsch_cqi_harq_ri_pdu.harq_information;
+	ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE;
+	ul_config_pdu->ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.n_srs_initial=0; // last symbol not punctured
+	ul_config_pdu->ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks=
+	  ul_config_pdu->ulsch_harq_pdu.ulsch_pdu.ulsch_pdu_rel8.number_of_resource_blocks; // we don't change the number of resource blocks across retransmissions yet		
+      }
+      
+      break;
+      
+    case NFAPI_UL_CONFIG_UCI_SR_PDU_TYPE:
+    case NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE:
+      // convert/keep it to NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE
+      ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE;
+      harq_information = &ul_config_pdu->uci_sr_harq_pdu.harq_information;
+      break;
+    case NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE:
+    case NFAPI_UL_CONFIG_UCI_CQI_HARQ_PDU_TYPE:
+      // convert/keep it to NFAPI_UL_CONFIG_UCI_CQI_HARQ_PDU_TYPE
+      ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_UCI_CQI_HARQ_PDU_TYPE;
+      harq_information = &ul_config_pdu->uci_cqi_harq_pdu.harq_information;
+      break;
+      
+    case NFAPI_UL_CONFIG_UCI_CQI_SR_PDU_TYPE:
+    case NFAPI_UL_CONFIG_UCI_CQI_SR_HARQ_PDU_TYPE:
+      // convert/keep it to NFAPI_UL_CONFIG_UCI_CQI_SR_HARQ_PDU_TYPE
+      ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_UCI_CQI_SR_HARQ_PDU_TYPE;
+      harq_information = &ul_config_pdu->uci_cqi_sr_harq_pdu.harq_information;
+      break;
+    }
+  }
+  
+  if (ulsch_harq_information) fill_nfapi_ulsch_harq_information(module_idP,CC_idP,
+								rnti,
+								ulsch_harq_information);
+  
+  
+  if (harq_information) fill_nfapi_harq_information(module_idP,CC_idP,
+						    rnti,
+						    (frameP*10)+subframeP,
+						    harq_information,
+						    cce_idx);
+}
+
+uint8_t get_V_UL_DAI(module_id_t module_idP,int CC_idP,uint16_t rntiP) {
+
+  nfapi_hi_dci0_request_body_t        *HI_DCI0_req         = &RC.mac[module_idP]->HI_DCI0_req[CC_idP].hi_dci0_request_body;
+  nfapi_hi_dci0_request_pdu_t         *hi_dci0_pdu         = &HI_DCI0_req->hi_dci0_pdu_list[0];
+
+  for (int i=0;i<HI_DCI0_req->number_of_dci;i++) {
+    if ((hi_dci0_pdu[i].pdu_type == NFAPI_HI_DCI0_DCI_PDU_TYPE)&&
+	(hi_dci0_pdu[i].dci_pdu.dci_pdu_rel8.rnti == rntiP))
+	return(hi_dci0_pdu[i].dci_pdu.dci_pdu_rel8.dl_assignment_index);
+  }
+  return(4); // this is rule from Section 7.3 in 36.213
+}
+void fill_nfapi_ulsch_harq_information(module_id_t module_idP,
+				       int CC_idP,
+				       uint16_t rntiP,
+				       nfapi_ul_config_ulsch_harq_information *harq_information) {
+
+
+  eNB_MAC_INST                   *eNB      = RC.mac[module_idP];
+  COMMON_channels_t              *cc       = &eNB->common_channels[CC_idP];
+  UE_list_t                      *UE_list  = &eNB->UE_list;
+
+  int UE_id                                = find_UE_id(module_idP,rntiP);
+
+  PUSCH_ConfigDedicated_t              *puschConfigDedicated;
+  //  PUSCH_ConfigDedicated_v1020_t        *puschConfigDedicated_v1020;
+  //  PUSCH_ConfigDedicated_v1130_t        *puschConfigDedicated_v1130;
+  //  PUSCH_ConfigDedicated_v1250_t        *puschConfigDedicated_v1250;
+
+  AssertFatal(UE_id>=0,"UE_id cannot be found, impossible\n");
+  AssertFatal(UE_list!=NULL,"UE_list is null\n");
+  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated!=NULL,"physicalConfigDedicated for rnti %x is null\n",rntiP);
+  AssertFatal((puschConfigDedicated = (PUSCH_ConfigDedicated_t *)UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pusch_ConfigDedicated)!=NULL,"physicalConfigDedicated->puschConfigDedicated for rnti %x is null\n",rntiP);
+#if defined(Rel14) || defined(Rel14)
+  /*  if (UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext2) puschConfigDedicated_v1020 =  UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext2->pusch_ConfigDedicated_v1020;
+#endif
+#ifdef Rel14
+  if (UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext4) puschConfigDedicated_v1130 =  UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext4->pusch_ConfigDedicated_v1130;
+  if (UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext5) puschConfigDedicated_v1250 =  UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext5->pusch_ConfigDedicated_v1250;
+  */
+#endif
+  harq_information->harq_information_rel10.delta_offset_harq = puschConfigDedicated->betaOffset_ACK_Index;
+  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated!=NULL,"pucch_ConfigDedicated is null!\n");
+  if ((UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode!=NULL)&&
+      (*UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode==PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing))
+      harq_information->harq_information_rel10.ack_nack_mode = 1;  // multiplexing
+  else
+      harq_information->harq_information_rel10.ack_nack_mode = 0;  // bundling
+
+  switch(get_tmode(module_idP,CC_idP,UE_id)) {
+  case 1:
+  case 2:
+  case 5:
+  case 6:
+  case 7:
+
+    if (cc->tdd_Config==NULL) // FDD
+      harq_information->harq_information_rel10.harq_size = 1;
+    else {
+      if (harq_information->harq_information_rel10.ack_nack_mode == 1)
+	harq_information->harq_information_rel10.harq_size = get_V_UL_DAI(module_idP,CC_idP,rntiP);
+      else
+	harq_information->harq_information_rel10.harq_size = 1;
+    }
+    break;
+  default: // for any other TM we need 2 bits harq 
+    
+    if (cc->tdd_Config==NULL) {
+	harq_information->harq_information_rel10.harq_size     = 2;  
+    }
+    else {
+      if (harq_information->harq_information_rel10.ack_nack_mode == 1)
+	harq_information->harq_information_rel10.harq_size     = get_V_UL_DAI(module_idP,CC_idP,rntiP);  
+      else
+	harq_information->harq_information_rel10.harq_size     = 2;  
+    }
+    break;
+  } // get Tmode
+}
+  
+void fill_nfapi_harq_information(module_id_t module_idP,
+				 int CC_idP,
+				 uint16_t rntiP,
+				 uint16_t absSFP,
+				 nfapi_ul_config_harq_information *harq_information,
+				 uint8_t cce_idxP) {
+  
+  eNB_MAC_INST                   *eNB      = RC.mac[module_idP];
+  COMMON_channels_t              *cc       = &eNB->common_channels[CC_idP];
+  UE_list_t                      *UE_list  = &eNB->UE_list;
+
+  int UE_id                                = find_UE_id(module_idP,rntiP);
+
+
+  AssertFatal(UE_id>=0,"UE_id cannot be found, impossible\n");
+  AssertFatal(UE_list!=NULL,"UE_list is null\n");
+  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated!=NULL,"physicalConfigDedicated for rnti %x is null\n",rntiP);
+
+  harq_information->harq_information_rel11.num_ant_ports = 1;
+
+  switch(get_tmode(module_idP,CC_idP,UE_id)) {
+  case 1:
+  case 2:
+  case 5:
+  case 6:
+  case 7:
+    if (cc->tdd_Config!=NULL) {
+      AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated!=NULL,
+		  "pucch_ConfigDedicated is null for TDD!\n");
+      if ((UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode!=NULL)&&
+	  (*UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode==PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing)) {
+	harq_information->harq_information_rel10_tdd.harq_size     = 2;  // 2-bit ACK/NAK
+	harq_information->harq_information_rel10_tdd.ack_nack_mode = 1;  // multiplexing
+      }
+      else {
+	harq_information->harq_information_rel10_tdd.harq_size     = 1;  // 1-bit ACK/NAK
+	harq_information->harq_information_rel10_tdd.ack_nack_mode = 0;  // bundling
+      }
+      harq_information->harq_information_rel10_tdd.n_pucch_1_0   = cc->radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN + cce_idxP;
+      harq_information->harq_information_rel10_tdd.number_of_pucch_resources = 1;
+    } else {
+      harq_information->harq_information_rel9_fdd.number_of_pucch_resources = 1;
+      harq_information->harq_information_rel9_fdd.harq_size                 = 1;  // 1-bit ACK/NAK
+      harq_information->harq_information_rel9_fdd.n_pucch_1_0               = cc->radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN + cce_idxP;
+    }
+    break;
+  default: // for any other TM we need 2 bits harq 
+    if (cc->tdd_Config!=NULL) {
+      AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated!=NULL,
+		  "pucch_ConfigDedicated is null for TDD!\n");
+      if ((UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode!=NULL)&&
+	  (*UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode==PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing)) {
+	harq_information->harq_information_rel10_tdd.ack_nack_mode = 1;  // multiplexing
+      }
+      else {
+	harq_information->harq_information_rel10_tdd.ack_nack_mode = 0;  // bundling
+      }
+      harq_information->harq_information_rel10_tdd.harq_size       = 2;  
+      harq_information->harq_information_rel10_tdd.n_pucch_1_0   = cc->radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN + cce_idxP;
+      harq_information->harq_information_rel10_tdd.number_of_pucch_resources = 1;
+    }
+    else {
+      harq_information->harq_information_rel9_fdd.number_of_pucch_resources = 1;
+      harq_information->harq_information_rel9_fdd.ack_nack_mode    = 0;  // 1a/b
+      harq_information->harq_information_rel9_fdd.harq_size        = 2;
+      harq_information->harq_information_rel9_fdd.n_pucch_1_0      = cc->radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN + cce_idxP;  
+    }
+    break;
+  } // get Tmode
+}
+ 
+
+uint16_t fill_nfapi_uci_acknak(module_id_t module_idP,
+			       int CC_idP,
+			       uint16_t rntiP,
+			       uint16_t absSFP,
+			       uint8_t cce_idxP) {
+
+  eNB_MAC_INST                   *eNB          = RC.mac[module_idP];
+  COMMON_channels_t              *cc           = &eNB->common_channels[CC_idP];
+  
+  int ackNAK_absSF                             = get_pucch1_absSF(cc,absSFP);
+  nfapi_ul_config_request_body_t *ul_req       = &eNB->UL_req_tmp[CC_idP][ackNAK_absSF%10].ul_config_request_body;
+  nfapi_ul_config_request_pdu_t *ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus]; 
+
+
+  memset((void*)ul_config_pdu,0,sizeof(nfapi_ul_config_request_pdu_t));
+  ul_config_pdu->pdu_type                                                              = NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE; 
+  ul_config_pdu->pdu_size                                                              = (uint8_t)(2+sizeof(nfapi_ul_config_uci_harq_pdu));
+  ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.handle                = 0; // don't know how to use this
+  ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti                  = rntiP;
+
+  fill_nfapi_harq_information(module_idP,CC_idP,
+			      rntiP,
+			      absSFP,
+			      &ul_config_pdu->uci_harq_pdu.harq_information,
+			      cce_idxP);
+  LOG_I(MAC,"Filled in HARQ for rnti %x, cce_idxP %d-> n1_pucch %d\n",rntiP,cce_idxP,ul_config_pdu->uci_harq_pdu.harq_information.harq_information_rel9_fdd.n_pucch_1_0);
+
+  ul_req->number_of_pdus++;
+
+  return(((ackNAK_absSF/10)<<4) + (ackNAK_absSF%10));
+}
+
+void fill_nfapi_dlsch_config(eNB_MAC_INST *eNB, 
+			     nfapi_dl_config_request_body_t *dl_req,
+			     uint16_t length,
+			     uint16_t pdu_index,
+			     uint16_t rnti,
+			     uint8_t resource_allocation_type,
+			     uint8_t virtual_resource_block_assignment_flag,
+			     uint16_t resource_block_coding,
+			     uint8_t modulation,
+			     uint8_t redundancy_version,
+			     uint8_t transport_blocks,
+			     uint8_t transport_block_to_codeword_swap_flag,
+			     uint8_t transmission_scheme,
+			     uint8_t number_of_layers,
+			     uint8_t number_of_subbands,
+			     //			     uint8_t codebook_index,
+			     uint8_t ue_category_capacity,
+			     uint8_t pa,
+			     uint8_t delta_power_offset_index,
+			     uint8_t ngap,
+			     uint8_t nprb,
+			     uint8_t transmission_mode,
+			     uint8_t num_bf_prb_per_subband,
+			     uint8_t num_bf_vector
+			     ) {
+
+  nfapi_dl_config_request_pdu_t   *dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
+
+  dl_config_pdu                                                                  = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
+  memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
+  dl_config_pdu->pdu_type                                                        = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE; 
+  dl_config_pdu->pdu_size                                                        = (uint8_t)(2+sizeof(nfapi_dl_config_dlsch_pdu));
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.length                                 = length;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index                              = pdu_index;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti                                   = rnti;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type               = resource_allocation_type;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.virtual_resource_block_assignment_flag = virtual_resource_block_assignment_flag;   
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding                  = resource_block_coding;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.modulation                             = modulation; 
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.redundancy_version                     = redundancy_version;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_blocks                       = transport_blocks;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_block_to_codeword_swap_flag  = transport_block_to_codeword_swap_flag;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_scheme                    = transmission_scheme;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_layers                       = number_of_layers;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_subbands                     = number_of_subbands;
+  //  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.codebook_index                         = codebook_index;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ue_category_capacity                   = ue_category_capacity;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pa                                     = pa;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.delta_power_offset_index               = delta_power_offset_index;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ngap                                   = ngap;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.nprb                                   = nprb;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode                      = transmission_mode;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = num_bf_prb_per_subband;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = num_bf_vector;
+  dl_req->number_pdu++;
+}
+
+uint16_t fill_nfapi_tx_req(nfapi_tx_request_body_t *tx_req_body,uint16_t absSF,uint16_t pdu_length, uint16_t *pdu_index, uint8_t *pdu) {
+
+  nfapi_tx_request_pdu_t *TX_req        = &tx_req_body->tx_pdu_list[tx_req_body->number_of_pdus]; 
+  LOG_I(MAC,"Filling TX_req %d for pdu length %d\n",tx_req_body->number_of_pdus,pdu_length);
+  TX_req->pdu_length                    = pdu_length;
+  TX_req->pdu_index                     = *pdu_index++;
+  TX_req->num_segments                  = 1;
+  TX_req->segments[0].segment_length    = pdu_length;
+  TX_req->segments[0].segment_data      = pdu;
+  tx_req_body->number_of_pdus++;
+
+  return(((absSF/10)<<4) + (absSF%10));
+}
 #ifdef Rel14
 
 int get_numnarrowbands(long dl_Bandwidth) {
@@ -517,7 +1357,7 @@ int mpdcch_sf_condition(eNB_MAC_INST *eNB,int CC_id, frame_t frameP,sub_frame_t 
     AssertFatal(1==0,"MPDCCH Type 2A not handled yet\n");
     break;
   case TYPEUESPEC:
-    epdcch_setconfig_r11= &eNB->UE_list.UE_template[CC_id][UE_id].physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11->list.array[0] ;
+    epdcch_setconfig_r11= eNB->UE_list.UE_template[CC_id][UE_id].physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11->list.array[0] ;
     
     
     AssertFatal(epdcch_setconfig_r11 != NULL," epdcch_setconfig_r11 is null for UE specific \n");
@@ -564,7 +1404,7 @@ int narrowband_to_first_rb(COMMON_channels_t *cc, int nb_index) {
     else            return(1+(6*nb_index));
     break;
   default:
-    AssertFatal(1==0,"Impossible dl_Bandwidth %d\n",cc->mib->message.dl_Bandwidth);
+    AssertFatal(1==0,"Impossible dl_Bandwidth %d\n",(int)cc->mib->message.dl_Bandwidth);
     break;
   }
 }
@@ -632,10 +1472,16 @@ int find_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP)
 
  
 
-  for (RA_id = 0; RA_id < NB_RA_PROC_MAX; RA_id++)
+  for (RA_id = 0; RA_id < NB_RA_PROC_MAX; RA_id++) {
+    LOG_I(MAC,"Checking RA_id %d for %x : RA_active %d, wait_ack_Msg4 %d\n",
+	  RA_id,rntiP,
+	  RA_template[RA_id].RA_active,
+	  RA_template[RA_id].wait_ack_Msg4);
+	  
     if (RA_template[RA_id].RA_active==TRUE && 
         RA_template[RA_id].wait_ack_Msg4 == 0 &&
 	RA_template[RA_id].rnti == rntiP) return(RA_id);
+  }
   return(-1);
 }
 
@@ -815,9 +1661,7 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
   int pCC_id;
 
   if (UE_id == -1) {
-printf("MAC: cannot remove UE rnti %x\n", rntiP);
     LOG_W(MAC,"rrc_mac_remove_ue: UE %x not found\n", rntiP);
-    mac_phy_remove_ue(mod_idP, rntiP);
     return 0;
   }
 
@@ -843,7 +1687,6 @@ printf("MAC: cannot remove UE rnti %x\n", rntiP);
   eNB_dlsch_info[mod_idP][pCC_id][UE_id].rnti                        = NOT_A_RNTI;
   eNB_dlsch_info[mod_idP][pCC_id][UE_id].status                      = S_DL_NONE;
 
-  mac_phy_remove_ue(mod_idP,rntiP);
 
   // check if this has an RA process active
   RA_TEMPLATE *RA_template;
@@ -1151,7 +1994,7 @@ uint8_t UE_is_to_be_scheduled(module_id_t module_idP,int CC_id,uint8_t UE_id)
   if (UE_sched_ctl->ul_out_of_sync>0)
     return(0);
 
-  LOG_D(MAC,"[eNB %d][PUSCH] Checking UL requirements UE %d/%x\n",module_idP,UE_id,UE_RNTI(module_idP,UE_id));
+  LOG_I(MAC,"[eNB %d][PUSCH] Checking UL requirements UE %d/%x\n",module_idP,UE_id,UE_RNTI(module_idP,UE_id));
 
   if ((UE_template->bsr_info[LCGID0]>0) ||
       (UE_template->bsr_info[LCGID1]>0) ||
@@ -1165,7 +2008,7 @@ uint8_t UE_is_to_be_scheduled(module_id_t module_idP,int CC_id,uint8_t UE_id)
        (mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED))) // every Frame when not RRC_CONNECTED
     { 
 
-    LOG_D(MAC,"[eNB %d][PUSCH] UE %d/%x should be scheduled\n",module_idP,UE_id,UE_RNTI(module_idP,UE_id));
+    LOG_I(MAC,"[eNB %d][PUSCH] UE %d/%x should be scheduled\n",module_idP,UE_id,UE_RNTI(module_idP,UE_id));
     return(1);
   } else {
     return(0);
@@ -1955,10 +2798,94 @@ try_again:
 
   return 0;
 
-failed:
+ failed:
   return -1;
 }
 
+/*
+uint8_t get_ul_req_index(module_id_t module_idP, int CC_idP, sub_frame_t subframeP) {
+  
+  if (RC.mac[module_idP]->common_channels[CC_idP].tdd_Config == NULL) 
+    return(0);
+  
+  switch (RC.mac[module_idP]->common_channels[CC_idP].tdd_Config->subframeAssignment) {
+  
+  case 0:
+  case 1:
+  case 2:
+  case 6:
+    return(0);
+  case 3:
+    // 1,5,6 -> 2, prog. 8, buffer 0
+    // 7,8   -> 3, prog. 9, buffer 1
+    // 9,0   -> 4, prog. 0, buffer 0
+    if ((subframeP == 7) || (subframeP == 8)) return(1);
+    else                                      return(0);
+  case 4:
+    // 0,1,4,5 -> 2, prog. 8, buffer 0
+    // 6,7,8,9 -> 3, prog. 9, buffer 1
+    if (subframeP<6) return(0);
+    else             return(1);
+    return(1);
+    break;
+  case 5:
+    // 9(-1),0,1,3,4,5,6,7,8,9 -> 2, prog 8, buffer 0
+    return(0);
+    break;
+  default:
+    AssertFatal(1==0,"Should not get here, why is tdd_Config->subframeAssignment = %d\n",(int)RC.mac[module_idP]->common_channels[CC_idP].tdd_Config->subframeAssignment);
+    break;
+  }
+  return(0);
+}
+*/
+ 
+nfapi_ul_config_request_pdu_t* has_ul_grant(module_id_t module_idP,int CC_idP,uint16_t subframeP,uint16_t rnti) {
+
+  nfapi_ul_config_request_body_t *ul_req;            
+  nfapi_ul_config_request_pdu_t *ul_config_pdu; 
+		
+  ul_req        = &RC.mac[module_idP]->UL_req_tmp[CC_idP][subframeP].ul_config_request_body;
+  ul_config_pdu = &ul_req->ul_config_pdu_list[0];
+
+  for (int i=0; i<ul_req->number_of_pdus;i++){
+    if ((ul_config_pdu[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE)&&
+	(ul_config_pdu[i].ulsch_pdu.ulsch_pdu_rel8.rnti == rnti)) return(&ul_config_pdu[i]);
+    if ((ul_config_pdu[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE)&&
+	(ul_config_pdu[i].ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti == rnti)) return(&ul_config_pdu[i]);
+    if ((ul_config_pdu[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE)&&
+	(ul_config_pdu[i].ulsch_harq_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti == rnti)) return(&ul_config_pdu[i]);
+    if ((ul_config_pdu[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE)&&
+	(ul_config_pdu[i].ulsch_cqi_harq_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti == rnti)) return(&ul_config_pdu[i]);
+
+    if ((ul_config_pdu[i].pdu_type == NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE)&&
+	(ul_config_pdu[i].uci_cqi_pdu.ue_information.ue_information_rel8.rnti == rnti)) return(&ul_config_pdu[i]);
+    if ((ul_config_pdu[i].pdu_type == NFAPI_UL_CONFIG_UCI_SR_PDU_TYPE)&&
+	(ul_config_pdu[i].uci_sr_pdu.ue_information.ue_information_rel8.rnti == rnti)) return(&ul_config_pdu[i]);
+    if ((ul_config_pdu[i].pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE)&&
+	(ul_config_pdu[i].uci_harq_pdu.ue_information.ue_information_rel8.rnti == rnti)) return(&ul_config_pdu[i]);
+    if ((ul_config_pdu[i].pdu_type == NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE)&&
+	(ul_config_pdu[i].uci_sr_harq_pdu.ue_information.ue_information_rel8.rnti == rnti)) return(&ul_config_pdu[i]);
+    if ((ul_config_pdu[i].pdu_type == NFAPI_UL_CONFIG_UCI_CQI_HARQ_PDU_TYPE)&&
+	(ul_config_pdu[i].uci_cqi_harq_pdu.ue_information.ue_information_rel8.rnti == rnti)) return(&ul_config_pdu[i]);
+    if ((ul_config_pdu[i].pdu_type == NFAPI_UL_CONFIG_UCI_CQI_SR_PDU_TYPE)&&
+	(ul_config_pdu[i].uci_cqi_sr_pdu.ue_information.ue_information_rel8.rnti == rnti)) return(&ul_config_pdu[i]);
+    if ((ul_config_pdu[i].pdu_type == NFAPI_UL_CONFIG_UCI_CQI_SR_HARQ_PDU_TYPE) &&
+	(ul_config_pdu[i].uci_cqi_sr_harq_pdu.ue_information.ue_information_rel8.rnti == rnti)) return(&ul_config_pdu[i]);
+
+    if ((ul_config_pdu[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_UCI_CSI_PDU_TYPE)&&
+	(ul_config_pdu[i].ulsch_uci_csi_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti == rnti)) return(&ul_config_pdu[i]);
+    if ((ul_config_pdu[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_UCI_HARQ_PDU_TYPE)&&
+	(ul_config_pdu[i].ulsch_uci_harq_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti == rnti)) return(&ul_config_pdu[i]);
+    if ((ul_config_pdu[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE)&&
+	(ul_config_pdu[i].ulsch_csi_uci_harq_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti == rnti)) return(&ul_config_pdu[i]);
+
+
+
+  }
+  return(NULL); // no ul grant at all for this UE
+}
+ 
 boolean_t CCE_allocation_infeasible(int module_idP,
 				    int CC_idP,
 				    int format_flag,
@@ -1995,7 +2922,570 @@ boolean_t CCE_allocation_infeasible(int module_idP,
   return(res);
 }
 
-void SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, rnti_t rntiP, sub_frame_t subframeP)
+void extract_harq(module_id_t mod_idP,int CC_idP,int UE_id,frame_t frameP,sub_frame_t subframeP,void *harq_indication,int format) {
+
+  UE_list_t *UE_list       = &RC.mac[mod_idP]->UE_list;
+  UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  rnti_t rnti              = UE_RNTI(mod_idP,UE_id);
+  COMMON_channels_t *cc    = &RC.mac[mod_idP]->common_channels[CC_idP];
+  nfapi_harq_indication_fdd_rel13_t *harq_indication_fdd;
+  nfapi_harq_indication_tdd_rel13_t *harq_indication_tdd;
+  uint16_t num_ack_nak;
+  int numCC = UE_list->numactiveCCs[UE_id];
+  int pCCid = UE_list->pCC_id[UE_id];
+  int spatial_bundling = 0;
+  int tmode[5];
+  int i,j;
+  uint8_t *pdu;
+
+#ifdef Rel14
+  AssertFatal(UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->pucch_ConfigDedicated!=NULL,"pucch_ConfigDedicated is null!\n");
+  if ((UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->ext7) &&
+      (UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->ext7->pucch_ConfigDedicated_r13) &&
+      (((UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->ext7->pucch_ConfigDedicated_r13->spatialBundlingPUCCH_r13) && 
+	(format==0)) ||
+       ((UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->ext7->pucch_ConfigDedicated_r13->spatialBundlingPUSCH_r13) && 
+	(format==1))))
+    spatial_bundling = 1;
+#endif
+
+  for (i=0;i<numCC;i++) tmode[i] = get_tmode(mod_idP,i,UE_id);
+		      
+  if (cc->tdd_Config) { 
+    harq_indication_tdd = (nfapi_harq_indication_tdd_rel13_t *)harq_indication;
+    //    pdu = &harq_indication_tdd->harq_tb_n[0];
+
+    num_ack_nak = harq_indication_tdd->number_of_ack_nack;
+
+    switch (harq_indication_tdd->mode) {
+      case 0: // Format 1a/b
+	AssertFatal(numCC==1,"numCC %d > 1, should not be using Format1a/b\n",numCC);
+	break;
+      case 1: // Channel Selection
+	break;
+      case 2: // Format 3
+	break;
+      case 3: // Format 4
+	break;
+      case 4: // Format 5
+	break;
+    }
+  }
+  else {
+
+    harq_indication_fdd = (nfapi_harq_indication_fdd_rel13_t *)harq_indication;
+    num_ack_nak = harq_indication_fdd->number_of_ack_nack;
+    pdu = &harq_indication_fdd->harq_tb_n[0];
+
+    uint8_t harq_pid = ((10*frameP) + subframeP + 10236)&7;
+
+    switch (harq_indication_fdd->mode) {
+      case 0: // Format 1a/b (10.1.2.1)
+	AssertFatal(numCC==1,"numCC %d > 1, should not be using Format1a/b\n",numCC);
+	if (tmode[0]==1 || tmode[0]==2 || tmode[0]==5 || tmode[0]==6 || tmode[0]==7) { // NOTE: have to handle the case of TM9-10 with 1 antenna port
+	  // single ACK/NAK bit
+	  AssertFatal(num_ack_nak==1,"num_ack_nak %d > 1 for 1 CC and single-layer transmission\n",num_ack_nak);
+	  AssertFatal(sched_ctl->round[CC_idP][harq_pid]<8,"Got ACK/NAK for inactive harq_pid %d for UE %d/%x\n",harq_pid,UE_id,rnti);
+	  AssertFatal(pdu[0] == 1 || pdu[0] == 2, "Received ACK/NAK %d which is not 1 or 2 for harq_pid %d from UE %d/%x\n",pdu[0],harq_pid,UE_id,rnti);
+	  LOG_I(MAC,"Received %d for harq_pid %d\n",pdu[0],harq_pid);
+
+	  if (pdu[0] == 1) { // ACK
+	    sched_ctl->round[CC_idP][harq_pid]=8; // release HARQ process
+	    sched_ctl->tbcnt[CC_idP][harq_pid]=0;
+	  }
+	  else if (pdu[0] == 2) // NAK
+	    sched_ctl->round[CC_idP][harq_pid]++; // increment round
+	}
+	else {
+	  // one or two ACK/NAK bits
+	  AssertFatal(num_ack_nak>2,"num_ack_nak %d > 2 for 1 CC and TM3/4/8/9/10\n",num_ack_nak);
+	  if ((num_ack_nak==2) && (sched_ctl->round[CC_idP][harq_pid]<8) && (sched_ctl->tbcnt[CC_idP][harq_pid]==1) && (pdu[0] == 1) && (pdu[1] == 1)) {
+	    sched_ctl->round[CC_idP][harq_pid]=8;
+	    sched_ctl->tbcnt[CC_idP][harq_pid]=0;
+	  }
+	  if ((num_ack_nak==2) && (sched_ctl->round[CC_idP][harq_pid]<8) && (sched_ctl->tbcnt[CC_idP][harq_pid]==1) && (pdu[0] == 2) && (pdu[1] == 2))
+	    sched_ctl->round[CC_idP][harq_pid]++;
+	  else if (((num_ack_nak==2) && (sched_ctl->round[CC_idP][harq_pid]<8) && (sched_ctl->tbcnt[0][harq_pid]==2) && (pdu[0] == 1) && (pdu[1] == 2)) ||
+		   ((num_ack_nak==2) && (sched_ctl->round[CC_idP][harq_pid]<8) && (sched_ctl->tbcnt[CC_idP][harq_pid]==2) && (pdu[0] == 2) && (pdu[1] == 1))) {
+	    sched_ctl->round[CC_idP][harq_pid]++;
+	    sched_ctl->tbcnt[CC_idP][harq_pid]=1;
+	  }
+	  else if ((num_ack_nak==2) && (sched_ctl->round[CC_idP][harq_pid]<8) && (sched_ctl->tbcnt[CC_idP][harq_pid]==2) && (pdu[0] == 2) && (pdu[1] == 2))
+	    sched_ctl->round[CC_idP][harq_pid]++;
+	  else AssertFatal(1==0,"Illegal ACK/NAK/round combination (%d,%d,%d,%d,%d) for harq_pid %d, UE %d/%x\n",
+			   num_ack_nak,sched_ctl->round[CC_idP][harq_pid],sched_ctl->round[CC_idP][harq_pid],pdu[0],pdu[1], harq_pid,UE_id,
+			   rnti);
+	}
+	break;
+      case 1: // FDD Channel Selection (10.1.2.2.1), must be received for 2 serving cells
+	AssertFatal(numCC==2,"Should not receive harq indication with channel selection with %d active CCs\n",
+		    numCC);
+	
+	if ((num_ack_nak == 2) && (sched_ctl->round[pCCid][harq_pid]<8) && (sched_ctl->round[1-pCCid][harq_pid]<8) && (sched_ctl->tbcnt[pCCid][harq_pid]==1) && (sched_ctl->tbcnt[1-pCCid][harq_pid]==1)) {
+	  AssertFatal(pdu[0]<=3,"pdu[0] %d is not ACK/NAK/DTX\n",pdu[0]);
+	  AssertFatal(pdu[1]<=3,"pdu[1] %d is not ACK/NAK/DTX\n",pdu[1]);
+	  if (pdu[0] == 1) sched_ctl->round[pCCid][harq_pid]=8;
+	  else             sched_ctl->round[pCCid][harq_pid]++;
+	  if (pdu[1] == 1) sched_ctl->round[1-pCCid][harq_pid]=8;
+	  else             sched_ctl->round[1-pCCid][harq_pid]++;
+	} // A=2
+	else if ((num_ack_nak == 3) && (sched_ctl->round[pCCid][harq_pid]<8) && (sched_ctl->tbcnt[pCCid][harq_pid]==2) && (sched_ctl->round[1-pCCid][harq_pid]<8) && (sched_ctl->tbcnt[1-pCCid][harq_pid]==1)) {
+	  AssertFatal(pdu[0]<=3,"pdu[0] %d is not ACK/NAK/DTX\n",pdu[0]);
+	  AssertFatal(pdu[1]<=3,"pdu[1] %d is not ACK/NAK/DTX\n",pdu[1]);
+	  AssertFatal(pdu[2]<=3,"pdu[2] %d is not ACK/NAK/DTX\n",pdu[2]);
+	  AssertFatal(sched_ctl->tbcnt[pCCid][harq_pid] == 2,"sched_ctl->tbcnt[%d][%d] != 2 for UE %d/%x\n",pCCid,harq_pid,UE_id,rnti);
+	  AssertFatal(sched_ctl->tbcnt[1-pCCid][harq_pid] == 1,"sched_ctl->tbcnt[%d][%d] != 1 for UE %d/%x\n",1-pCCid,harq_pid,UE_id,rnti);
+	  if ((pdu[0] == 1) && (pdu[1] == 1)) { // both ACK
+	      sched_ctl->round[pCCid][harq_pid]=8;
+	      sched_ctl->tbcnt[pCCid][harq_pid]=0;
+	  }
+	  else if (((pdu[0] == 2) && (pdu[1] == 1))||
+		   ((pdu[0] == 1) && (pdu[1] == 2))){
+	    sched_ctl->round[pCCid][harq_pid]++;
+	    sched_ctl->tbcnt[pCCid][harq_pid]=1;
+	  }
+	  else
+ 	    sched_ctl->round[pCCid][harq_pid]++;
+
+	  if (pdu[2] == 1) sched_ctl->round[1-pCCid][harq_pid]=8;
+	  else             sched_ctl->round[1-pCCid][harq_pid]++;
+	} // A=3 primary cell has 2 TBs
+	else if ((num_ack_nak == 3) && (sched_ctl->round[1-pCCid][harq_pid]<8) && (sched_ctl->round[pCCid][harq_pid]<8) && (sched_ctl->tbcnt[1-pCCid][harq_pid]==2) && (sched_ctl->tbcnt[pCCid][harq_pid]==1)) {
+	  AssertFatal(pdu[0]<=3,"pdu[0] %d is not ACK/NAK/DTX\n",pdu[0]);
+	  AssertFatal(pdu[1]<=3,"pdu[1] %d is not ACK/NAK/DTX\n",pdu[1]);
+	  AssertFatal(pdu[2]<=3,"pdu[2] %d is not ACK/NAK/DTX\n",pdu[2]);
+	  AssertFatal(sched_ctl->tbcnt[1-pCCid][harq_pid] == 2,"sched_ctl->tbcnt[%d][%d] != 2 for UE %d/%x\n",1-pCCid,harq_pid,UE_id,rnti);
+	  AssertFatal(sched_ctl->tbcnt[pCCid][harq_pid] == 1,"sched_ctl->tbcnt[%d][%d] != 1 for UE %d/%x\n",pCCid,harq_pid,UE_id,rnti);
+	  if ((pdu[0] == 1) && (pdu[1] == 1)) { // both ACK
+	      sched_ctl->round[1-pCCid][harq_pid]=8;
+	      sched_ctl->tbcnt[1-pCCid][harq_pid]=0;
+	  }
+	  else if (((pdu[0] >= 2) && (pdu[1] == 1))||
+		   ((pdu[0] == 1) && (pdu[1] >= 2))){ // one ACK
+	    sched_ctl->round[1-pCCid][harq_pid]++;
+	    sched_ctl->tbcnt[1-pCCid][harq_pid]=1;
+	  }
+	  else  // both NAK/DTX
+ 	    sched_ctl->round[1-pCCid][harq_pid]++;
+
+	  if (pdu[2] == 1) sched_ctl->round[pCCid][harq_pid]=8;
+	  else             sched_ctl->round[pCCid][harq_pid]++;
+	} // A=3 secondary cell has 2 TBs
+#if MAX_NUM_CCs>1
+	else if ((num_ack_nak == 4) && (sched_ctl->round[0][harq_pid]<8) && (sched_ctl->round[1][harq_pid]<8) && (sched_ctl->tbcnt[1-pCCid][harq_pid]==2) && (sched_ctl->tbcnt[pCCid][harq_pid]==2)) {
+	  AssertFatal(pdu[0]<=3,"pdu[0] %d is not ACK/NAK/DTX\n",pdu[0]);
+	  AssertFatal(pdu[1]<=3,"pdu[1] %d is not ACK/NAK/DTX\n",pdu[1]);
+	  AssertFatal(pdu[2]<=3,"pdu[2] %d is not ACK/NAK/DTX\n",pdu[2]);
+	  AssertFatal(pdu[3]<=3,"pdu[3] %d is not ACK/NAK/DTX\n",pdu[3]);
+	  AssertFatal(sched_ctl->tbcnt[0][harq_pid] == 2,"sched_ctl->tbcnt[0][%d] != 2 for UE %d/%x\n",harq_pid,UE_id,rnti);
+	  AssertFatal(sched_ctl->tbcnt[1][harq_pid] == 2,"sched_ctl->tbcnt[1][%d] != 2 for UE %d/%x\n",harq_pid,UE_id,rnti);
+	  if ((pdu[0] == 1) && (pdu[1] == 1)) { // both ACK
+	      sched_ctl->round[0][harq_pid]=8;
+	      sched_ctl->tbcnt[0][harq_pid]=0;
+	  }
+	  else if (((pdu[0] >= 2) && (pdu[1] == 1))||
+		   ((pdu[0] == 1) && (pdu[1] >= 2))){ // one ACK
+	    sched_ctl->round[0][harq_pid]++;
+	    sched_ctl->tbcnt[0][harq_pid]=1;
+	  }
+	  else  // both NAK/DTX
+ 	    sched_ctl->round[0][harq_pid]++;
+
+	  if ((pdu[2] == 1) && (pdu[3] == 1)) { // both ACK
+	      sched_ctl->round[1][harq_pid]=8;
+	      sched_ctl->tbcnt[1][harq_pid]=0;
+	  }
+	  else if (((pdu[2] >= 2) && (pdu[3] == 1))||
+		   ((pdu[2] == 1) && (pdu[3] >= 2))){ // one ACK
+	    sched_ctl->round[1][harq_pid]++;
+	    sched_ctl->tbcnt[1][harq_pid]=1;
+	  }
+	  else  // both NAK/DTX
+ 	    sched_ctl->round[1][harq_pid]++;
+	} // A=4 both serving cells have 2 TBs 
+#endif
+	break;
+      case 2: // Format 3
+	AssertFatal(numCC>2,"Should not receive harq indication with FDD format 3 with %d < 3 active CCs\n",
+		    numCC);
+	for (i=0,j=0;i<numCC;i++) {
+	  if ((sched_ctl->round[i][harq_pid]<8)) {
+	    if (tmode[i]==1 || tmode[i]==2 || tmode[0]==5 || tmode[0]==6 || tmode[0]==7) {
+	      if (pdu[j] == 1) { 
+		sched_ctl->round[i][harq_pid]=8;
+		sched_ctl->tbcnt[i][harq_pid]=0;
+	      }
+	      else if (pdu[j] == 2) sched_ctl->round[i][harq_pid]++;
+	      else AssertFatal(1==0,"Illegal harq_ack value for CC %d harq_pid %d (%d) UE %d/%x\n",
+			       i,harq_pid,pdu[j],UE_id,rnti);
+	      j++;
+	    }
+	    else if (spatial_bundling == 0) {
+	      if      ((sched_ctl->tbcnt[i][harq_pid]==2) && (pdu[j] == 1) && (pdu[j+1]==1)) {
+		sched_ctl->round[i][harq_pid]=8;
+		sched_ctl->tbcnt[i][harq_pid]=0;
+	      }
+	      else if ((sched_ctl->tbcnt[i][harq_pid]==2) && (pdu[j] == 1) && (pdu[j+1]==2)) {
+		sched_ctl->round[i][harq_pid]++;
+		sched_ctl->tbcnt[i][harq_pid]=1;
+	      }
+	      else if ((sched_ctl->tbcnt[i][harq_pid]==2) && (pdu[j] == 2) && (pdu[j+1]==1)) {
+		sched_ctl->round[i][harq_pid]++;
+		sched_ctl->tbcnt[i][harq_pid]=1;
+	      }
+	      else if ((sched_ctl->tbcnt[i][harq_pid]==2) && (pdu[j] == 2) && (pdu[j+1]==2)) {
+		sched_ctl->round[i][harq_pid]++;
+	      }
+	      else AssertFatal(1==0,"Illegal combination for CC %d harq_pid %d (%d,%d,%d) UE %d/%x\n",
+			       i,harq_pid,sched_ctl->tbcnt[i][harq_pid],pdu[j],pdu[j+1],UE_id,rnti);
+	      j+=2;
+	    }
+	    else if (spatial_bundling == 1) {
+	      if      (pdu[j] == 1) {
+		sched_ctl->round[i][harq_pid]=8;
+		sched_ctl->tbcnt[i][harq_pid]=0;
+	      }
+	      else if (pdu[j] == 2) {
+		sched_ctl->round[i][harq_pid]++;
+	      }
+	      else AssertFatal(1==0,"Illegal hack_nak value %d for CC %d harq_pid %d UE %d/%x\n",
+			       pdu[j],i,harq_pid,UE_id,rnti);
+	      j++;
+	    }
+	    else AssertFatal(1==0,"Illegal value for spatial_bundling %d\n",spatial_bundling);
+	  }
+	}
+	break;
+      case 3: // Format 4
+	AssertFatal(1==0,"Should not receive harq indication with Format 4\n");
+	break;
+      case 4: // Format 5
+	AssertFatal(1==0,"Should not receive harq indication with Format 5\n");
+	break;
+    }
+  }
+}
+void extract_pucch_csi(module_id_t mod_idP,int CC_idP,int UE_id, frame_t frameP,sub_frame_t subframeP,uint8_t *pdu, uint8_t length) {
+
+  UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
+  UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  COMMON_channels_t *cc=&RC.mac[mod_idP]->common_channels[CC_idP];
+  struct CQI_ReportPeriodic *cqi_ReportPeriodic;
+  int no_pmi;
+  uint8_t Ltab[6] = {0,2,4,4,4,4};
+  uint8_t Jtab[6] = {0,2,2,3,4,4};
+  int feedback_cnt;
+
+  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated != NULL, "physicalConfigDedicated is null for UE %d\n",UE_id);
+  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig != NULL,"cqi_ReportConfig is null for UE %d\n",UE_id);
+  AssertFatal((cqi_ReportPeriodic = UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic)!=NULL,
+	      "cqi_ReportPeriodic is null for UE %d\n",UE_id);
+  
+  // determine feedback mode
+  AssertFatal(cqi_ReportPeriodic->present != CQI_ReportPeriodic_PR_NOTHING,
+	      "cqi_ReportPeriodic->present == CQI_ReportPeriodic_PR_NOTHING!\n");
+  AssertFatal(cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present != CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_NOTHING,
+	      "cqi_ReportPeriodic->cqi_FormatIndicatorPeriodic.choice.setup.present == CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_NOTHING!\n");
+
+  uint16_t Npd,N_OFFSET_CQI;
+  int H,K,bandwidth_part,L,Lmask;
+  int ri    = sched_ctl->periodic_ri_received[CC_idP];
+  
+  get_csi_params(cc,cqi_ReportPeriodic,&Npd,&N_OFFSET_CQI,&H);
+  K            =(H-1)/Jtab[cc->mib->message.dl_Bandwidth];
+  L            = Ltab[cc->mib->message.dl_Bandwidth];
+  Lmask        =L-1;
+  feedback_cnt = (((frameP*10)+subframeP)/Npd)%H;
+
+  if (feedback_cnt>0) bandwidth_part = (feedback_cnt-1)%K;
+  else                bandwidth_part = 0;
+
+  switch(get_tmode(mod_idP,CC_idP,UE_id)) {
+  case 1:
+  case 2:
+  case 3:
+  case 7:
+    no_pmi=1;
+    break;
+  case 4:
+  case 5:
+  case 6:
+    no_pmi=0;
+    break;
+  default:
+    // note: need to check TM8-10 without PMI/RI or with 1 antenna port (see Section 5.2.3.3.1 from 36.213)
+    no_pmi=0;
+  }
+          
+  if ((cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present == CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_widebandCQI) || 
+      (feedback_cnt==0)){
+      // Note: This implements only Tables: 5.3.3.1-1,5.3.3.1-1A and 5.3.3.1-2 from 36.213 (1,2,4 antenna ports Wideband CQI/PMI)
+
+    if (no_pmi == 1) { // get spatial_diffcqi if needed
+      sched_ctl->periodic_wideband_cqi[CC_idP]             = pdu[0]&0xF;
+      sched_ctl->periodic_wideband_spatial_diffcqi[CC_idP] = (pdu[0]>>4)&7;
+    }
+    else if ((cc->p_eNB==2) && (ri==1))  {
+      // p=2 Rank 1 wideband CQI/PMI 6 bits
+      sched_ctl->periodic_wideband_cqi[CC_idP]             = pdu[0]&0xF;
+      sched_ctl->periodic_wideband_pmi[CC_idP]             = (pdu[0]>>4)&3;
+    }
+    else if ((cc->p_eNB==2) && (ri>1)) {
+      // p=2 Rank 2 wideband CQI/PMI 8 bits
+      sched_ctl->periodic_wideband_cqi[CC_idP]             = pdu[0]&0xF;
+      sched_ctl->periodic_wideband_spatial_diffcqi[CC_idP] = (pdu[0]>>4)&7;
+      sched_ctl->periodic_wideband_pmi[CC_idP]             = (pdu[0]>>7)&1;
+    }
+    else if ((cc->p_eNB==4) && (ri==1)) {
+      // p=4 Rank 1 wideband CQI/PMI 8 bits
+      sched_ctl->periodic_wideband_cqi[CC_idP]             = pdu[0]&0xF;
+      sched_ctl->periodic_wideband_pmi[CC_idP]             = (pdu[0]>>4)&0x0F;
+
+    }
+    else if ((cc->p_eNB==4) && (ri>1)) {
+      // p=4 Rank 2 wideband CQI/PMI 11 bits
+      sched_ctl->periodic_wideband_cqi[CC_idP]             = pdu[0]&0xF;
+      sched_ctl->periodic_wideband_spatial_diffcqi[CC_idP] = (pdu[0]>>4)&7;
+      sched_ctl->periodic_wideband_pmi[CC_idP]             = (pdu[0]>>7)&0xF;
+    }
+    else AssertFatal(1==0,"illegal combination p %d, ri %d, no_pmi %d\n",cc->p_eNB,ri,no_pmi);
+  }
+  else if (cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present == CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_subbandCQI) {
+    // This is Table 5.2.3.3.2-2 for 36.213
+    if (ri==1) {
+      //4+Ltab[cc->mib->message.dl_Bandwidth] bits
+      sched_ctl->periodic_subband_cqi[CC_idP][(bandwidth_part*L)+((pdu[0]>>4)&Lmask)]              = pdu[0]&0xF;
+    }
+    else if (ri>1) {
+      //7+Ltab[cc->mib->message.dl_Bandwidth] bits;    
+      sched_ctl->periodic_subband_spatial_diffcqi[CC_idP][(bandwidth_part*L)+((pdu[0]>>7)&Lmask)]  = (pdu[0]>>4)&7;
+      sched_ctl->periodic_subband_cqi[CC_idP][(bandwidth_part*L)+((pdu[0]>>7)&Lmask)]              = pdu[0]&0xF;
+    }
+  }
+}
+
+void extract_pusch_csi(module_id_t mod_idP,int CC_idP,int UE_id, frame_t frameP,sub_frame_t subframeP,uint8_t *pdu, uint8_t length) {
+
+  UE_list_t *UE_list    = &RC.mac[mod_idP]->UE_list;
+  COMMON_channels_t *cc = &RC.mac[mod_idP]->common_channels[CC_idP]; 
+  UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  int Ntab[6]       = {0,4,7,9,10,13};
+  int Ntab_uesel[6] = {0,8,13,17,19,25};
+  int Ltab_uesel[6] = {0,6,9,13,15,18};
+  int Mtab_uesel[6] = {0,1,3,5,6,6};
+  int v[6];
+  int i;
+  uint64_t p = *(uint64_t*)pdu;
+  CQI_ReportModeAperiodic_t *cqi_ReportModeAperiodic;
+
+  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated != NULL, "physicalConfigDedicated is null for UE %d\n",UE_id);
+  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig != NULL,"cqi_ReportConfig is null for UE %d\n",UE_id);
+  AssertFatal((cqi_ReportModeAperiodic = UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic)!=NULL,
+	      "cqi_ReportModeAperiodic is null for UE %d\n",UE_id);
+
+  int N     = Ntab[cc->p_eNB];
+  int tmode = get_tmode(mod_idP,CC_idP,UE_id);
+  int ri    = sched_ctl->aperiodic_ri_received[CC_idP];
+  int r,diffcqi0=0,diffcqi1=0,pmi_uesel=0;
+  int bw = cc->mib->message.dl_Bandwidth;
+  int m;
+
+  switch(*cqi_ReportModeAperiodic) {
+
+  case CQI_ReportModeAperiodic_rm12:
+    // wideband multiple PMI (TM4/6), Table 5.2.2.6.1-1 (for TM4/6)
+    AssertFatal(tmode==4 || tmode==6 || tmode==8|| tmode==9 || tmode==10,"Illegal transmission mode %d for CQI_ReportModeAperiodic_rm12\n",tmode);
+    if (tmode <= 6) { //Table 5.2.2.6.1-1 36.213
+      if ((ri==1) && (cc->p_eNB==2)) { 
+	sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t)(p&0x0F); p>>=4;
+	for (i=0;i<N;i++) {
+	  sched_ctl->aperiodic_subband_pmi[CC_idP][i] = (uint8_t)(p&0x03);
+	  p>>=2;
+	}
+      }
+      if ((ri==2) && (cc->p_eNB==2)) { 
+	sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t)(p&0x0F); p>>=4;
+	sched_ctl->aperiodic_wideband_cqi1[CC_idP] = (uint8_t)(p&0x0F); p>>=4;
+	for (i=0;i<N;i++) {
+	  sched_ctl->aperiodic_subband_pmi[CC_idP][i] = (uint8_t)(p&0x01);
+	  p>>=1;
+	}
+      }
+      if ((ri==1) && (cc->p_eNB==4)) { 
+	sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t)(p&0x0F); p>>=4;
+	for (i=0;i<N;i++) {
+	  sched_ctl->aperiodic_subband_pmi[CC_idP][i] = (uint8_t)(p&0x03);
+	  p>>=4;
+	}
+      }
+      if ((ri==2) && (cc->p_eNB==4)) { 
+	sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t)(p&0x0F); p>>=4;
+	sched_ctl->aperiodic_wideband_cqi1[CC_idP] = (uint8_t)(p&0x0F); p>>=4;
+	for (i=0;i<N;i++) {
+	  sched_ctl->aperiodic_subband_pmi[CC_idP][i] = (uint8_t)(p&0x01);
+	  p>>=4;
+	}
+      }
+    } // if (tmode <= 6) { //Table 5.2.2.6.1-1 36.213
+    else {
+      AssertFatal(1==0,"support for TM 8-10 to be done\n");
+    }
+
+   break;
+  case CQI_ReportModeAperiodic_rm20:
+    // UE-selected subband CQI no PMI (TM1/2/3/7) , Table 5.2.2.6.3-1 from 36.213 
+    AssertFatal(tmode==1 || tmode==2 || tmode==3 || tmode==7,"Illegal transmission mode %d for CQI_ReportModeAperiodic_rm20\n",tmode);
+
+    sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t)(p&0x0F); p>>=4;
+    diffcqi0 = (uint8_t)(p&0x03); p>>=2;
+    r = (uint8_t)(p&((1>>Ltab_uesel[bw])-1));
+    reverse_index(Ntab_uesel[bw],Mtab_uesel[bw],r,v);
+    for (m=0;m<Mtab_uesel[bw];m++) sched_ctl->aperiodic_subband_diffcqi0[CC_idP][v[m]] = diffcqi0;
+    break;
+  case CQI_ReportModeAperiodic_rm22:
+    // UE-selected subband CQI multiple PMI (TM4/6) Table 5.2.2.6.3-2 from 36.213
+
+    AssertFatal(tmode==4 || tmode==6 || tmode==8|| tmode==9 || tmode==10,"Illegal transmission mode %d for CQI_ReportModeAperiodic_rm22\n",tmode);
+
+    sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t)(p&0x0F); p>>=4;
+    diffcqi0 = (uint8_t)(p&0x03); p>>=2;
+    
+    if (ri>1) {
+      sched_ctl->aperiodic_wideband_cqi1[CC_idP] = (uint8_t)(p&0x0F); p>>=4;
+      diffcqi1 = (uint8_t)(p&0x03); p>>=2;
+    }
+    r = (uint8_t)(p&((1>>Ltab_uesel[bw])-1)); p>>=Ltab_uesel[bw];
+    reverse_index(Ntab_uesel[bw],Mtab_uesel[bw],r,v);
+    if ((ri==1)&&(cc->p_eNB==2)) {
+      pmi_uesel                                  = p&0x3; p>>=2;
+      sched_ctl->aperiodic_wideband_pmi[CC_idP]  = p&0x3;
+    }
+    else if ((ri==2)&&(cc->p_eNB==2)) {
+      pmi_uesel                                  = p&0x1; p>>=1;
+      sched_ctl->aperiodic_wideband_pmi[CC_idP]  = p&0x1;
+    }
+    else if (cc->p_eNB==4) {
+      pmi_uesel                                  = p&0x0F; p>>=4;
+      sched_ctl->aperiodic_wideband_pmi[CC_idP]  = p&0x0F;
+    }
+    for (m=0;m<Mtab_uesel[bw];m++) { 
+      sched_ctl->aperiodic_subband_diffcqi0[CC_idP][v[m]] = diffcqi0;
+      if (ri>1) sched_ctl->aperiodic_subband_diffcqi1[CC_idP][v[m]] = diffcqi1;
+      sched_ctl->aperiodic_subband_pmi[CC_idP][v[m]]      = pmi_uesel;
+    }
+    break;
+  case CQI_ReportModeAperiodic_rm30:
+    //subband CQI no PMI (TM1/2/3/7)
+    AssertFatal(tmode==1 || tmode==2 || tmode==3 || tmode==7,"Illegal transmission mode %d for CQI_ReportModeAperiodic_rm30\n",tmode);
+    sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t)(p&0x0F); p>>=4;
+    for (i=0;i<N;i++) {
+      sched_ctl->aperiodic_subband_diffcqi0[CC_idP][i] = (uint8_t)(p&0x03);
+      p>>=2;
+    }
+    break;
+  case CQI_ReportModeAperiodic_rm31:
+    //subband CQI single PMI (TM4/5/6)
+    AssertFatal(tmode==4 || tmode==5 || tmode==6 || tmode==8|| tmode==9|| tmode==10,"Illegal transmission mode %d for CQI_ReportModeAperiodic_rm31\n",tmode);
+
+    if ((ri==1) && (cc->p_eNB==2)) { 
+      sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t)(p&0x0F); p>>=4;
+      for (i=0;i<N;i++) {
+	sched_ctl->aperiodic_subband_diffcqi0[CC_idP][i] = (uint8_t)(p&0x03);
+	p>>=2;
+      }
+      sched_ctl->aperiodic_wideband_pmi[CC_idP] = p&0x03;
+    }
+    if ((ri==2) && (cc->p_eNB==2)) { 
+      sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t)(p&0x0F); p>>=4;
+      for (i=0;i<N;i++) {
+	sched_ctl->aperiodic_subband_pmi[CC_idP][i] = (uint8_t)(p&0x01);
+	p>>=1;
+      }
+      sched_ctl->aperiodic_wideband_cqi1[CC_idP] = (uint8_t)(p&0x0F); p>>=4;
+      for (i=0;i<N;i++) {
+	sched_ctl->aperiodic_subband_pmi[CC_idP][i] = (uint8_t)(p&0x01);
+	p>>=1;
+      }
+      sched_ctl->aperiodic_wideband_pmi[CC_idP] = p&0x01;
+    }
+    if ((ri==1) && (cc->p_eNB==4)) { 
+      sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t)(p&0x0F); p>>=4;
+      for (i=0;i<N;i++) {
+	sched_ctl->aperiodic_subband_diffcqi0[CC_idP][i] = (uint8_t)(p&0x03);
+	p>>=2;
+      }
+      sched_ctl->aperiodic_wideband_pmi[CC_idP] = p&0x0F;
+    }
+    if ((ri>1) && (cc->p_eNB==4)) { // Note : 64 bits for 20 MHz
+      sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t)(p&0x0F); p>>=4;
+      for (i=0;i<N;i++) {
+	sched_ctl->aperiodic_subband_pmi[CC_idP][i] = (uint8_t)(p&0x01);
+	p>>=1;
+      }
+      sched_ctl->aperiodic_wideband_cqi1[CC_idP] = (uint8_t)(p&0x0F); p>>=4;
+      for (i=0;i<N;i++) {
+	sched_ctl->aperiodic_subband_pmi[CC_idP][i] = (uint8_t)(p&0x01);
+	p>>=2;
+      }
+      sched_ctl->aperiodic_wideband_pmi[CC_idP] = p&0x0F;
+    }
+    
+    break;
+  case CQI_ReportModeAperiodic_rm32_v1250:
+    AssertFatal(tmode==4 || tmode==5 || tmode==6 || tmode==8|| tmode==9|| tmode==10,"Illegal transmission mode %d for CQI_ReportModeAperiodic_rm32\n",tmode);
+    AssertFatal(1==0,"CQI_ReportModeAperiodic_rm32 to be done\n");
+    break;
+  case CQI_ReportModeAperiodic_rm10_v1310:
+    AssertFatal(tmode==1 || tmode==2 || tmode==3 || tmode==7,"Illegal transmission mode %d for CQI_ReportModeAperiodic_rm10\n",tmode);
+    AssertFatal(1==0,"CQI_ReportModeAperiodic_rm10 to be done\n");
+    break;
+  case CQI_ReportModeAperiodic_rm11_v1310:
+    AssertFatal(tmode==4 || tmode==5 || tmode==6 || tmode==8|| tmode==9|| tmode==10,"Illegal transmission mode %d for CQI_ReportModeAperiodic_rm11\n",tmode);
+    AssertFatal(1==0,"CQI_ReportModeAperiodic_rm11 to be done\n");
+    break;
+  }
+
+  
+}
+
+void cqi_indication(module_id_t mod_idP, int CC_idP, frame_t frameP, sub_frame_t subframeP, rnti_t rntiP, 
+		    nfapi_cqi_indication_rel9_t *rel9,uint8_t *pdu,
+		    nfapi_ul_cqi_information_t *ul_cqi_information) {
+
+  int UE_id = find_UE_id(mod_idP, rntiP);
+  UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
+  UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+
+  if (UE_id  >= 0) {
+
+    if (ul_cqi_information->channel == 0) { // PUCCH
+
+      // extract pucch csi information before changing RI information
+      extract_pucch_csi(mod_idP,CC_idP,UE_id,frameP,subframeP,pdu,rel9->length);
+
+      memcpy((void*)sched_ctl->periodic_ri_received,
+	     (void*)rel9->ri,
+	     rel9->number_of_cc_reported);
+
+      // SNR for PUCCH2
+      sched_ctl->pucch2_snr[CC_idP] = ul_cqi_information->ul_cqi;
+    }
+    else { //PUSCH
+      memcpy((void*)sched_ctl->aperiodic_ri_received,
+	     (void*)rel9->ri,
+	     rel9->number_of_cc_reported);
+
+      extract_pusch_csi(mod_idP,CC_idP,UE_id,frameP,subframeP,pdu,rel9->length);
+      
+    }
+
+    // timing advance
+    sched_ctl->timing_advance    = rel9->timing_advance;
+    sched_ctl->timing_advance_r9 = rel9->timing_advance_r9; 
+  }
+}
+
+void SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, sub_frame_t subframeP, rnti_t rntiP, uint8_t ul_cqi)
 {
  
   int UE_id = find_UE_id(mod_idP, rntiP);
@@ -2003,7 +3493,7 @@ void SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, rnti_t rntiP
  
   if (UE_id  != -1) {
     if (mac_eNB_get_rrc_status(mod_idP,UE_RNTI(mod_idP,UE_id)) < RRC_CONNECTED)
-      LOG_D(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
+      LOG_I(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
     UE_list->UE_template[cc_idP][UE_id].ul_SR = 1;
     UE_list->UE_template[cc_idP][UE_id].ul_active = TRUE;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SR_INDICATION,1);
@@ -2032,4 +3522,22 @@ void UL_failure_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, rnti
     //    AssertError(0, 0, "Frame %d: find_UE_id(%u,rnti %d) not found\n", frameP, enb_mod_idP, rntiP);
     LOG_W(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling UL Failure for UE %d (unknown UEid) on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
   }
+}
+
+void harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP, sub_frame_t subframeP, nfapi_harq_indication_pdu_t *harq_pdu) {
+
+
+  rnti_t rnti              = harq_pdu->rx_ue_information.rnti;
+  uint8_t ul_cqi           = harq_pdu->ul_cqi_information.ul_cqi;
+  uint8_t channel          = harq_pdu->ul_cqi_information.channel;
+  int UE_id                = find_UE_id(mod_idP, rnti);
+  UE_list_t *UE_list       = &RC.mac[mod_idP]->UE_list;
+  UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  COMMON_channels_t *cc    = &RC.mac[mod_idP]->common_channels[CC_idP];
+    // extract HARQ Information
+  LOG_I(MAC,"Frame %d, subframe %d: Received harq indication (%d) from UE %d/%x\n",frameP,subframeP,channel,UE_id,rnti);
+  if (cc->tdd_Config) extract_harq(mod_idP,CC_idP,UE_id,frameP,subframeP,(void*)&harq_pdu->harq_indication_tdd_rel13,channel);
+  else                extract_harq(mod_idP,CC_idP,UE_id,frameP,subframeP,(void*)&harq_pdu->harq_indication_fdd_rel13,channel);
+  if (channel == 0)     sched_ctl->pucch1_snr[CC_idP] = ul_cqi;
+
 }

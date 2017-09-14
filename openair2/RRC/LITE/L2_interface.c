@@ -84,7 +84,7 @@ mac_rrc_data_req(
   
 #ifdef DEBUG_RRC
   int i;
-  LOG_T(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_idP,Srb_id);
+  LOG_I(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_idP,Srb_id);
 #endif
 
   eNB_RRC_INST *rrc;
@@ -218,7 +218,7 @@ mac_rrc_data_req(
 
       // check if data is there for MAC
       if(Srb_info->Tx_buffer.payload_size>0) { //Fill buffer
-        LOG_D(RRC,"[eNB %d] CCCH (%p) has %d bytes (dest: %p, src %p)\n",Mod_idP,Srb_info,Srb_info->Tx_buffer.payload_size,buffer_pP,Srb_info->Tx_buffer.Payload);
+        LOG_I(RRC,"[eNB %d] CCCH (%p) has %d bytes (dest: %p, src %p)\n",Mod_idP,Srb_info,Srb_info->Tx_buffer.payload_size,buffer_pP,Srb_info->Tx_buffer.Payload);
 
 #if defined(ENABLE_ITTI)
         {
@@ -504,9 +504,9 @@ mac_rrc_data_ind(
 
   } else { // This is an eNB
     Srb_info = &RC.rrc[module_idP]->carrier[CC_id].Srb0;
-    LOG_T(RRC,"[eNB %d] Received SDU for CCCH on SRB %d\n",module_idP,Srb_info->Srb_id);
-
-#if defined(ENABLE_ITTI)
+    LOG_I(RRC,"[eNB %d] Received SDU for CCCH on SRB %d\n",module_idP,Srb_info->Srb_id);
+    
+#if 0 //defined(ENABLE_ITTI)
     {
       MessageDef *message_p;
       int msg_sdu_size = sizeof(RRC_MAC_CCCH_DATA_IND (message_p).sdu);
@@ -526,6 +526,7 @@ mac_rrc_data_ind(
       RRC_MAC_CCCH_DATA_IND (message_p).CC_id = CC_id;
       memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
       memcpy (RRC_MAC_CCCH_DATA_IND (message_p).sdu, sduP, sdu_size);
+      LOG_I(RRC,"[eNB %d] Sending message to RRC task\n",module_idP);
       itti_send_msg_to_task (TASK_RRC_ENB, ctxt.instance, message_p);
     }
 #else

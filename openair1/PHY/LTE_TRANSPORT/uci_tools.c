@@ -232,18 +232,6 @@ void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats, uint8_
       stats->DL_pmi_dual   = ((HLC_subband_cqi_rank2_2A_1_5MHz *)o)->pmi;
       break;
 
-    case HLC_subband_cqi_mcs_CBA:
-      if ((*crnti == ((HLC_subband_cqi_mcs_CBA_1_5MHz *)o)->crnti) && (*crnti !=0)) {
-        *access_mode=CBA_ACCESS;
-        LOG_N(PHY,"[eNB] UCI for CBA : mcs %d  crnti %x\n",
-              ((HLC_subband_cqi_mcs_CBA_1_5MHz *)o)->mcs, ((HLC_subband_cqi_mcs_CBA_1_5MHz *)o)->crnti);
-      } else {
-        LOG_D(PHY,"[eNB] UCI for CBA : rnti (enb context %x, rx uci %x) invalid, unknown access\n",
-              *crnti, ((HLC_subband_cqi_mcs_CBA_1_5MHz *)o)->crnti);
-      }
-
-      break;
-
     case unknown_cqi:
     default:
       LOG_N(PHY,"[eNB][UCI] received unknown uci (rb %d)\n",N_RB_DL);
@@ -318,18 +306,6 @@ void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats, uint8_
       stats->DL_pmi_dual   = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi;
       break;
 
-    case HLC_subband_cqi_mcs_CBA:
-      if ((*crnti == ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->crnti) && (*crnti !=0)) {
-        *access_mode=CBA_ACCESS;
-        LOG_N(PHY,"[eNB] UCI for CBA : mcs %d  crnti %x\n",
-              ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->mcs, ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->crnti);
-      } else {
-        LOG_D(PHY,"[eNB] UCI for CBA : rnti (enb context %x, rx uci %x) invalid, unknown access\n",
-              *crnti, ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->crnti);
-      }
-
-      break;
-
     case unknown_cqi:
     default:
       LOG_N(PHY,"[eNB][UCI] received unknown uci (rb %d)\n",N_RB_DL);
@@ -398,18 +374,6 @@ void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats, uint8_
       stats->DL_pmi_dual   = ((HLC_subband_cqi_rank2_2A_10MHz *)o)->pmi;
       break;
 
-    case HLC_subband_cqi_mcs_CBA:
-      if ((*crnti == ((HLC_subband_cqi_mcs_CBA_10MHz *)o)->crnti) && (*crnti !=0)) {
-        *access_mode=CBA_ACCESS;
-        LOG_N(PHY,"[eNB] UCI for CBA : mcs %d  crnti %x\n",
-              ((HLC_subband_cqi_mcs_CBA_10MHz *)o)->mcs, ((HLC_subband_cqi_mcs_CBA_10MHz *)o)->crnti);
-      } else {
-        LOG_D(PHY,"[eNB] UCI for CBA : rnti (enb context %x, rx uci %x) invalid, unknown access\n",
-              *crnti, ((HLC_subband_cqi_mcs_CBA_10MHz *)o)->crnti);
-      }
-
-      break;
-
     case unknown_cqi:
     default:
       LOG_N(PHY,"[eNB][UCI] received unknown uci (RB %d)\n",N_RB_DL);
@@ -476,18 +440,6 @@ void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats, uint8_
       do_diff_cqi(N_RB_DL,stats->DL_subband_cqi[0],stats->DL_cqi[0],(((HLC_subband_cqi_rank2_2A_20MHz *)o)->diffcqi1));
       do_diff_cqi(N_RB_DL,stats->DL_subband_cqi[1],stats->DL_cqi[1],(((HLC_subband_cqi_rank2_2A_20MHz *)o)->diffcqi2));
       stats->DL_pmi_dual   = ((HLC_subband_cqi_rank2_2A_20MHz *)o)->pmi;
-      break;
-
-    case HLC_subband_cqi_mcs_CBA:
-      if ((*crnti == ((HLC_subband_cqi_mcs_CBA_20MHz *)o)->crnti) && (*crnti !=0)) {
-        *access_mode=CBA_ACCESS;
-        LOG_N(PHY,"[eNB] UCI for CBA : mcs %d  crnti %x\n",
-              ((HLC_subband_cqi_mcs_CBA_20MHz *)o)->mcs, ((HLC_subband_cqi_mcs_CBA_20MHz *)o)->crnti);
-      } else {
-        LOG_D(PHY,"[eNB] UCI for CBA : rnti (enb context %x, rx uci %x) invalid, unknown access\n",
-              *crnti, ((HLC_subband_cqi_mcs_CBA_20MHz *)o)->crnti);
-      }
-
       break;
 
     case unknown_cqi:
@@ -750,13 +702,6 @@ void print_CQI(void *o,UCI_format_t uci_format,unsigned char eNB_id,int N_RB_DL)
       break;
     }
 
-#endif //DEBUG_UCI
-    break;
-
-  case HLC_subband_cqi_mcs_CBA:
-#ifdef DEBUG_UCI
-    LOG_I(PHY,"[PRINT CQI] hlc_cqi_mcs_CBA : eNB %d, mcs %d\n",eNB_id,((HLC_subband_cqi_mcs_CBA_5MHz *)o)->mcs);
-    LOG_I(PHY,"[PRINT CQI] hlc_cqi_mcs_CBA : eNB %d, rnti %x\n",eNB_id,((HLC_subband_cqi_mcs_CBA_5MHz *)o)->crnti);
 #endif //DEBUG_UCI
     break;
 

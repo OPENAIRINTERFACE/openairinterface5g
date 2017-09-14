@@ -350,6 +350,14 @@ typedef struct {
 
 /// SoundingRS-UL-ConfigDedicated Information Element from 36.331 RRC spec
 typedef struct {
+  /// This descriptor is active
+  uint8_t active;
+  /// This descriptor's frame
+  uint16_t frame;
+  /// This descriptor's subframe
+  uint8_t  subframe;
+  /// rnti
+  uint16_t rnti;
   /// Parameter: \f$B_\text{SRS}\f$, see TS 36.211 (table 5.5.3.2-1, 5.5.3.2-2, 5.5.3.2-3 and 5.5.3.2-4). \vr{[0..3]} \note the specification sais it is an enumerated value.
   uint8_t srs_Bandwidth;
   /// Parameter: SRS hopping bandwidth \f$b_\text{hop}\in\{0,1,2,3\}\f$, see TS 36.211 (5.5.3.2) \vr{[0..3]} \note the specification sais it is an enumerated value.
@@ -831,6 +839,16 @@ typedef struct {
   DCI_ALLOC_t dci_alloc[32];
 } LTE_eNB_PDCCH;
 
+typedef struct {
+  uint8_t hi;
+  uint8_t first_rb;
+  uint8_t n_DMRS;
+} phich_config_t;
+
+typedef struct {
+  uint8_t num_hi;
+  phich_config_t config[32];
+} LTE_eNB_PHICH;
 
 typedef struct {
   uint8_t     num_dci;

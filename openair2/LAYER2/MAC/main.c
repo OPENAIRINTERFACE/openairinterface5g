@@ -175,11 +175,20 @@ int mac_top_init_eNB()
       for (j=0;j<MAX_NUM_CCs;j++) {
 	RC.mac[i]->DL_req[j].dl_config_request_body.dl_config_pdu_list      = RC.mac[i]->dl_config_pdu_list[j];
 	RC.mac[i]->UL_req[j].ul_config_request_body.ul_config_pdu_list      = RC.mac[i]->ul_config_pdu_list[j];
+	for (int k=0;k<10;k++) RC.mac[i]->UL_req_tmp[j][k].ul_config_request_body.ul_config_pdu_list   = RC.mac[i]->ul_config_pdu_list_tmp[j][k];
 	RC.mac[i]->HI_DCI0_req[j].hi_dci0_request_body.hi_dci0_pdu_list     = RC.mac[i]->hi_dci0_pdu_list[j];
 	RC.mac[i]->TX_req[j].tx_request_body.tx_pdu_list                    = RC.mac[i]->tx_request_pdu[j];
 	RC.mac[i]->ul_handle                                                = 0;
       }
     }
+
+    AssertFatal(rlc_module_init()==0,"Could not initialize RLC layer\n");
+
+    // These should be out of here later
+    pdcp_layer_init ();
+
+    rrc_init_global_param();
+
   } else {
     RC.mac = NULL;
   }

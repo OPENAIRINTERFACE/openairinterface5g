@@ -1661,11 +1661,12 @@ int fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
 			DCI_ALLOC_t *dci_alloc,
 			nfapi_dl_config_dci_dl_pdu *pdu);
 
+int fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *dci_alloc,nfapi_dl_config_mpdcch_pdu *pdu);
 
-int fill_dci_and_ulsch(PHY_VARS_eNB *eNB,
-			eNB_rxtx_proc_t *proc,
-			DCI_ALLOC_t *dci_alloc,
-			nfapi_hi_dci0_dci_pdu *pdu);
+void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
+	      nfapi_hi_dci0_dci_pdu *pdu);
+
+void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe);
 
 int32_t generate_eNB_dlsch_params_from_dci(int frame,
     uint8_t subframe,
@@ -1862,8 +1863,7 @@ uint32_t ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 
 void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 			eNB_rxtx_proc_t *proc,
-                        int16_t amp,
-                        uint8_t sect_id);
+                        int16_t amp);
 
 /* \brief  This routine demodulates the PHICH and updates PUSCH/ULSCH parameters.
    @param phy_vars_ue Pointer to UE variables

@@ -1371,9 +1371,7 @@ do_RRCConnectionSetup(
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL;
   physicalConfigDedicated2->antennaInfo                   = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->schedulingRequestConfig       = CALLOC(1,sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
-#ifdef CBA
-  physicalConfigDedicated2->pusch_CBAConfigDedicated_vlola = CALLOC(1,sizeof(*physicalConfigDedicated2->pusch_CBAConfigDedicated_vlola));
-#endif
+
   // PDSCH
   //assign_enum(&physicalConfigDedicated2->pdsch_ConfigDedicated->p_a,
   //        PDSCH_ConfigDedicated__p_a_dB0);

@@ -29,6 +29,8 @@
 #ifndef __LAYER2_MAC_PROTO_H__
 #define __LAYER2_MAC_PROTO_H__
 
+#include "LAYER2/MAC/defs.h"
+
 /** \addtogroup _mac
  *  @{
  */
@@ -287,11 +289,14 @@ void rx_sdu(const module_id_t enb_mod_idP,
 
 
 /* \brief Function to indicate a scheduled schduling request (SR) was received by eNB.
-@param Mod_id Instance ID of eNB
+@param Mod_idP Instance ID of eNB
+@param CC_idP CC_id of received SR
+@param frameP of received SR
+@param subframeP Index of subframe where SR was received
 @param rnti RNTI of UE transmitting the SR
-@param subframe Index of subframe where SR was received
+@param ul_cqi SNR measurement of PUCCH (SNR quantized to 8 bits, -64 ... 63.5 dB in .5dB steps)
 */
-void SR_indication(module_id_t module_idP,int CC_id,frame_t frameP,rnti_t rnti, sub_frame_t subframe);
+void SR_indication(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subframe,rnti_t rnti,uint8_t ul_cqi);
 
 /* \brief Function to indicate a UL failure was detected by eNB PHY.
 @param Mod_id Instance ID of eNB
@@ -314,10 +319,7 @@ uint8_t *get_dlsch_sdu(module_id_t module_idP,int CC_id,frame_t frameP,rnti_t rn
 MCH_PDU *get_mch_sdu( module_id_t Mod_id, int CC_id, frame_t frame, sub_frame_t subframe);
 
 
-//added for ALU icic purpose
-uint32_t  Get_Cell_SBMap(module_id_t module_idP);
-void UpdateSBnumber(module_id_t module_idP);
-//end ALU's algo
+
 
 
 void        ue_mac_reset      (module_id_t module_idP,uint8_t eNB_index);
@@ -326,6 +328,7 @@ void        init_ue_sched_info(void);
 void        add_ue_ulsch_info (module_id_t module_idP, int CC_id, int UE_id, sub_frame_t subframe,UE_ULSCH_STATUS status);
 void        add_ue_dlsch_info (module_id_t module_idP, int CC_id,int UE_id, sub_frame_t subframe,UE_DLSCH_STATUS status);
 int         find_UE_id        (module_id_t module_idP, rnti_t rnti) ;
+int         find_RA_id        (module_id_t mod_idP, int CC_idP, rnti_t rntiP);
 rnti_t      UE_RNTI           (module_id_t module_idP, int UE_id);
 int         UE_PCCID          (module_id_t module_idP, int UE_id);
 uint8_t     find_active_UEs   (module_id_t module_idP);
@@ -896,11 +899,92 @@ int to_prb(int dl_Bandwidth);
 uint8_t get_Msg3harqpid(COMMON_channels_t *cc,
 			frame_t frame,
 			sub_frame_t current_subframe);
+
+uint32_t pdcchalloc2ulframe(COMMON_channels_t *ccP,uint32_t frame, uint8_t n);
+
+uint8_t pdcchalloc2ulsubframe(COMMON_channels_t *ccP,uint8_t n);
+
 int is_UL_sf(COMMON_channels_t *ccP,sub_frame_t subframeP);
+
+uint8_t getQm(uint8_t mcs);
 
 uint8_t subframe2harqpid(COMMON_channels_t *cc,frame_t frame,sub_frame_t subframe);
 
+void get_srs_pos(COMMON_channels_t *cc,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset);
 
+void get_csi_params(COMMON_channels_t *cc,struct CQI_ReportPeriodic *cqi_PMI_ConfigIndex,uint16_t *Npd,uint16_t *N_OFFSET_CQI,int *H);
+
+uint8_t get_rel8_dl_cqi_pmi_size(UE_sched_ctrl *sched_ctl,int CC_idP,COMMON_channels_t *cc,uint8_t tmode, struct CQI_ReportPeriodic *cqi_ReportPeriodic);
+
+uint8_t get_dl_cqi_pmi_size_pusch(UE_sched_ctrl *sched_ctl,COMMON_channels_t *cc,uint8_t tmode, uint8_t ri, CQI_ReportModeAperiodic_t *cqi_ReportModeAperiodic);
+void extract_pucch_csi(module_id_t mod_idP,int CC_idP,int UE_id, frame_t frameP,sub_frame_t subframeP, uint8_t *pdu, uint8_t length);
+
+void extract_pusch_csi(module_id_t mod_idP,int CC_idP,int UE_id, frame_t frameP,sub_frame_t subframeP,uint8_t *pdu, uint8_t length);
+
+uint16_t fill_nfapi_tx_req(nfapi_tx_request_body_t *tx_req_body,uint16_t absSF,uint16_t pdu_length, uint16_t *pdu_index, uint8_t *pdu );
+
+void program_dlsch_acknak(module_id_t module_idP, int CC_idP,int UE_idP, frame_t frameP, sub_frame_t subframeP,uint8_t cce_idx);
+
+void fill_nfapi_dlsch_config(eNB_MAC_INST *eNB, nfapi_dl_config_request_body_t *dl_req,
+			     uint16_t length,
+			     uint16_t pdu_index,
+			     uint16_t rnti,
+			     uint8_t resource_allocation_type,
+			     uint8_t virtual_resource_block_assignment_flag,
+			     uint16_t resource_block_coding,
+			     uint8_t modulation,
+			     uint8_t redundancy_version,
+			     uint8_t transport_blocks,
+			     uint8_t transport_block_to_codeword_swap_flag,
+			     uint8_t transmission_scheme,
+			     uint8_t number_of_layers,
+			     uint8_t number_of_subbands,
+			     //			     uint8_t codebook_index,
+			     uint8_t ue_category_capacity,
+			     uint8_t pa,
+			     uint8_t delta_power_offset_index,
+			     uint8_t ngap,
+			     uint8_t nprb,
+			     uint8_t transmission_mode,
+			     uint8_t num_bf_prb_per_subband,
+			     uint8_t num_bf_vector
+			     );
+
+void fill_nfapi_harq_information(module_id_t module_idP,
+				 int CC_idP,
+				 uint16_t rntiP,
+				 uint16_t absSFP,
+				 nfapi_ul_config_harq_information *harq_information,
+				 uint8_t cce_idxP);
+
+void fill_nfapi_ulsch_harq_information(module_id_t module_idP,
+				       int CC_idP,
+				       uint16_t rntiP,
+				       nfapi_ul_config_ulsch_harq_information *harq_information);
+
+uint16_t fill_nfapi_uci_acknak(module_id_t module_idP,
+			       int CC_idP,
+			       uint16_t rntiP,
+			       uint16_t absSFP,
+			       uint8_t cce_idxP);
+
+void fill_nfapi_dl_dci_1A(nfapi_dl_config_request_pdu_t   *dl_config_pdu,
+			  uint8_t aggregation_level,
+			  uint16_t rnti,
+			  uint8_t rnti_type,
+			  uint8_t harq_process,
+			  uint8_t tpc,
+			  uint16_t resource_block_coding,
+			  uint8_t mcs,
+			  uint8_t ndi,
+			  uint8_t rv,
+			  uint8_t vrb_flag);
+
+nfapi_ul_config_request_pdu_t* has_ul_grant(module_id_t module_idP,int CC_idP,uint16_t subframeP,uint16_t rnti);
+
+uint8_t get_tmode(module_id_t module_idP,int CC_idP,int UE_idP);
+
+uint8_t get_ul_req_index(module_id_t module_idP, int CC_idP, sub_frame_t subframeP);
 
 #ifdef Rel14
 int get_numnarrowbandbits(long dl_Bandwidth);

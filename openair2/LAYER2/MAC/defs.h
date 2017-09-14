@@ -755,11 +755,12 @@ typedef struct {
 
 #ifdef Rel14
   uint8_t rach_resource_type;
- uint16_t mpdcch_repetition_cnt;
-  struct PhysicalConfigDedicated  *physicalConfigDedicated;
+  uint16_t mpdcch_repetition_cnt;
   frame_t Msg2_frame;
-  sub_frame_t Msg2_subframe;
 #endif
+  sub_frame_t Msg2_subframe;
+
+  PhysicalConfigDedicated_t  *physicalConfigDedicated;
 
 } UE_TEMPLATE;
 
@@ -791,9 +792,13 @@ typedef struct {
   uint16_t priority[MAX_NUM_LCID];
 
   // resource scheduling information
-  uint8_t       harq_pid[MAX_NUM_CCs];
-  uint8_t       round[MAX_NUM_CCs];
-  uint8_t       round_UL[8][MAX_NUM_CCs];
+  
+  /// Current DL harq round per harq_pid on each CC
+  uint8_t       round[MAX_NUM_CCs][10];
+  /// Current Active TBs per harq_pid on each CC
+  uint8_t       tbcnt[MAX_NUM_CCs][10];
+  /// Current UL harq round per harq_pid on each CC
+  uint8_t       round_UL[MAX_NUM_CCs][8];
   uint8_t       dl_pow_off[MAX_NUM_CCs];
   uint16_t      pre_nb_available_rbs[MAX_NUM_CCs];
   unsigned char rballoc_sub_UE[MAX_NUM_CCs][N_RBG_MAX];
@@ -803,11 +808,34 @@ typedef struct {
   int32_t       context_active_timer;
   int32_t       cqi_req_timer;
   int32_t       ul_inactivity_timer;
-  int32_t       ul_failure_timer;
+  int32_t       ul_failure_timer; 
   int32_t       ul_scheduled;
   int32_t       ra_pdcch_order_sent;
   int32_t       ul_out_of_sync;
   int32_t       phr_received;
+  uint8_t       periodic_ri_received[NFAPI_CC_MAX];
+  uint8_t       aperiodic_ri_received[NFAPI_CC_MAX];
+  uint8_t       pucch1_snr[NFAPI_CC_MAX];
+  uint8_t       pucch2_snr[NFAPI_CC_MAX];
+  uint8_t       pucch3_snr[NFAPI_CC_MAX];
+  uint8_t       pusch_snr[NFAPI_CC_MAX];
+  uint16_t      feedback_cnt[NFAPI_CC_MAX];
+  uint16_t      timing_advance;
+  uint16_t      timing_advance_r9;
+  uint8_t       periodic_wideband_cqi[NFAPI_CC_MAX];
+  uint8_t       periodic_wideband_spatial_diffcqi[NFAPI_CC_MAX];
+  uint8_t       periodic_wideband_pmi[NFAPI_CC_MAX];
+  uint8_t       periodic_subband_cqi[NFAPI_CC_MAX][16];
+  uint8_t       periodic_subband_spatial_diffcqi[NFAPI_CC_MAX][16];
+  uint8_t       aperiodic_subband_cqi0[NFAPI_CC_MAX][25];
+  uint8_t       aperiodic_subband_pmi[NFAPI_CC_MAX][25];
+  uint8_t       aperiodic_subband_diffcqi0[NFAPI_CC_MAX][25];
+  uint8_t       aperiodic_subband_cqi1[NFAPI_CC_MAX][25];
+  uint8_t       aperiodic_subband_diffcqi1[NFAPI_CC_MAX][25];
+  uint8_t       aperiodic_wideband_cqi0[NFAPI_CC_MAX];
+  uint8_t       aperiodic_wideband_pmi[NFAPI_CC_MAX];
+  uint8_t       aperiodic_wideband_cqi1[NFAPI_CC_MAX];
+  uint8_t       aperiodic_wideband_pmi1[NFAPI_CC_MAX];
 } UE_sched_ctrl;
 /*! \brief eNB template for the Random access information */
 typedef struct {
@@ -867,12 +895,18 @@ typedef struct {
   uint8_t msg3_nb_rb;
   /// Msg3 MCS
   uint8_t msg3_mcs;
+  /// Msg3 TPC command
+  uint8_t msg3_TPC;
+  /// Msg3 ULdelay command
+  uint8_t msg3_ULdelay;
+  /// Msg3 cqireq command
+  uint8_t msg3_cqireq;
   /// Round of Msg3 HARQ
   uint8_t msg3_round;
   /// TBS used for Msg4
-  int Msg4_TBsize;
+  int msg4_TBsize;
   /// MCS used for Msg4
-  int Msg4_mcs;
+  int msg4_mcs;
 #ifdef Rel14
   uint8_t rach_resource_type;
   uint8_t msg2_mpdcch_repetition_cnt;
@@ -954,6 +988,8 @@ typedef struct {
   RA_TEMPLATE RA_template[NB_RA_PROC_MAX];
   /// VRB map for common channels
   uint8_t vrb_map[100];
+  /// VRB map for common channels and retransmissions by PHICH
+  uint8_t vrb_map_UL[100];
   /// MBSFN SubframeConfig
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
   /// number of subframe allocation pattern available for MBSFN sync area
@@ -1006,7 +1042,7 @@ typedef struct eNB_MAC_INST_s {
   /// Common cell resources
   COMMON_channels_t common_channels[MAX_NUM_CCs];
   /// current PDU index (BCH,MCH,DLSCH)
-  int pdu_index[MAX_NUM_CCs];
+  uint16_t pdu_index[MAX_NUM_CCs];
 
   /// NFAPI Config Request Structure
   nfapi_config_request_t config[MAX_NUM_CCs];
@@ -1016,9 +1052,12 @@ typedef struct eNB_MAC_INST_s {
   nfapi_dl_config_request_t DL_req[MAX_NUM_CCs];
   /// Preallocated UL pdu list
   nfapi_ul_config_request_pdu_t ul_config_pdu_list[MAX_NUM_CCs][MAX_NUM_UL_PDU];
-  nfapi_ul_config_request_pdu_t ul_config_pdu_list_msg3[MAX_NUM_CCs];
-  /// NFAPI UL Config Request Structure
+  /// Preallocated UL pdu list for ULSCH (n+k delay)
+  nfapi_ul_config_request_pdu_t ul_config_pdu_list_tmp[MAX_NUM_CCs][10][MAX_NUM_UL_PDU];
+  /// NFAPI UL Config Request Structure, send to L1 4 subframes before processing takes place
   nfapi_ul_config_request_t UL_req[MAX_NUM_CCs];
+  /// NFAPI "Temporary" UL Config Request Structure, holds future UL_config requests
+  nfapi_ul_config_request_t UL_req_tmp[MAX_NUM_CCs][10];
   /// Preallocated HI_DCI0 pdu list 
   nfapi_hi_dci0_request_pdu_t hi_dci0_pdu_list[MAX_NUM_CCs][MAX_NUM_HI_DCI0_PDU];
   /// NFAPI HI/DCI0 Config Request Structure

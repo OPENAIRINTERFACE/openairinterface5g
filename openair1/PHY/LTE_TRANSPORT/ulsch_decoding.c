@@ -224,7 +224,7 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
   int16_t dummy_w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
   LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
   LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
-  int Q_m = get_Qm_ul(ulsch_harq->mcs);
+  int Q_m = ulsch_harq->Qm;
   int G = ulsch_harq->G;
   uint32_t E;
   uint32_t Gp,GpmodC,Nl=1;
@@ -352,7 +352,7 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
                                    1,
                                    ulsch_harq->rvidx,
                                    (ulsch_harq->round==0)?1:0,  // clear
-                                   get_Qm_ul(ulsch_harq->mcs),
+                                   ulsch_harq->Qm,
                                    1,
                                    r,
                                    &E)==-1) {
@@ -447,7 +447,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
   int16_t dummy_w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
   LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
   LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
-  //int Q_m = get_Qm_ul(ulsch_harq->mcs);
+
   int G = ulsch_harq->G;
   unsigned int E;
   int Cby2;
@@ -571,7 +571,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
                                    1,
                                    ulsch_harq->rvidx,
                                    (ulsch_harq->round==0)?1:0,  // clear
-                                   get_Qm_ul(ulsch_harq->mcs),
+                                   ulsch_harq->Qm,
                                    1,
                                    r,
                                    &E)==-1) {
@@ -655,7 +655,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
   int16_t dummy_w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
   LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
   LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
-  //int Q_m = get_Qm_ul(ulsch_harq->mcs);
+
   int G = ulsch_harq->G;
   unsigned int E;
 
@@ -736,7 +736,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
                                    1,
                                    ulsch_harq->rvidx,
                                    (ulsch_harq->round==0)?1:0,  // clear
-                                   get_Qm_ul(ulsch_harq->mcs),
+                                   ulsch_harq->Qm,
                                    1,
                                    r,
                                    &E)==-1) {
@@ -907,16 +907,15 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   A = ulsch_harq->TBS;
 
 
-  Q_m = get_Qm_ul(ulsch_harq->mcs);
+  Q_m = ulsch_harq->Qm;
   G = nb_rb * (12 * Q_m) * ulsch_harq->Nsymb_pusch;
 
 
 #ifdef DEBUG_ULSCH_DECODING
-  printf("ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): round %d, RV %d, mcs %d, O_RI %d, O_ACK %d, G %d, subframe %d\n",
+  printf("ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): round %d, RV %d, O_RI %d, O_ACK %d, G %d, subframe %d\n",
       frame_parms->Nid_cell,ulsch->rnti,x2,
       ulsch_harq->round,
       ulsch_harq->rvidx,
-      ulsch_harq->mcs,
       ulsch_harq->O_RI,
       ulsch_harq->O_ACK,
       G,
@@ -952,12 +951,11 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   }
 
   AssertFatal(sumKr>0,
-	      "[eNB %d] ulsch_decoding.c: FATAL sumKr is 0! (Nid_cell %d, rnti %x, x2 %x): harq_pid %d round %d, RV %d, mcs %d, O_RI %d, O_ACK %d, G %d, subframe %d\n",
+	      "[eNB %d] ulsch_decoding.c: FATAL sumKr is 0! (Nid_cell %d, rnti %x, x2 %x): harq_pid %d round %d, RV %d, O_RI %d, O_ACK %d, G %d, subframe %d\n",
 	      frame_parms->Nid_cell,ulsch->rnti,x2,
 	      harq_pid,
 	      ulsch_harq->round,
 	      ulsch_harq->rvidx,
-	      ulsch_harq->mcs,
 	      ulsch_harq->O_RI,
 	      ulsch_harq->O_ACK,
 	      G,
@@ -2015,41 +2013,6 @@ uint32_t ulsch_decoding_emul(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc,
   } else
     *crnti = 0x0;
 
-  // Do abstraction here to determine if packet it in error
-  /* if (ulsch_abstraction_MIESM(eNB->sinr_dB_eNB,1, eNB->ulsch[UE_id]->harq_processes[harq_pid]->mcs,eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb, eNB->ulsch[UE_id]->harq_processes[harq_pid]->first_rb) == 1)
-   flag = 1;
-   else flag = 0;*/
-
-
-  /*
-  //SINRdbPost = eNB->sinr_dB_eNB;
-  mcsPost = eNB->ulsch[UE_id]->harq_processes[harq_pid]->mcs,
-  nrbPost = eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb;
-  frbPost = eNB->ulsch[UE_id]->harq_processes[harq_pid]->first_rb;
-
-
-  if(nrbPost > 0)
-  {
-  SINRdbPost = eNB->sinr_dB_eNB;
-  ULflag1 = 1;
-  }
-  else
-  {
-   SINRdbPost = NULL  ;
-   ULflag1 = 0 ;
-  }*/
-
-  //
-  // write_output("postprocSINR.m","SINReNB",eNB->sinr_dB,301,1,7);
-
-
-  //Yazdir buraya her frame icin 300 eNb
-  // fprintf(SINRrx,"%e,%e,%e,%e;\n",SINRdbPost);
-  //fprintf(SINRrx,"%e\n",SINRdbPost);
-
-  // fprintf(csv_fd,"%e+i*(%e),",channelx,channely);
-
-  // if (ulsch_abstraction(eNB->sinr_dB,1, eNB->ulsch[UE_id]->harq_processes[harq_pid]->mcs,eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb, eNB->ulsch[UE_id]->harq_processes[harq_pid]->first_rb) == 1) {
   if (1) {
     LOG_D(PHY,"ulsch_decoding_emul abstraction successful\n");
 

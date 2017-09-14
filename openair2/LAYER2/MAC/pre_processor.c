@@ -263,13 +263,19 @@ int maxround(module_id_t Mod_id,uint16_t rnti,int frame,sub_frame_t subframe,uin
 {
 
   uint8_t round,round_max=0,UE_id;
-  int CC_id;
+  int CC_id,harq_pid;
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
+  COMMON_channels_t *cc;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
+    cc = &RC.mac[Mod_id]->common_channels[CC_id];
+
     UE_id = find_UE_id(Mod_id,rnti);
-    round    = UE_list->UE_sched_ctrl[UE_id].round[CC_id];
+    if (cc->tdd_Config) harq_pid = ((frame*10)+subframe)%10;
+    else harq_pid = ((frame*10)+subframe)&7;
+
+    round    = UE_list->UE_sched_ctrl[UE_id].round[CC_id][harq_pid];
     if (round > round_max) {
       round_max = round;
     }
@@ -507,9 +513,10 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
   int transmission_mode = 0;
   UE_sched_ctrl *ue_sched_ctl;
   //  int rrc_status           = RRC_IDLE;
+  COMMON_channels_t *cc;
 
 #ifdef TM5
-  int harq_pid1=0,harq_pid2=0;
+  int harq_pid1=0;
   int round1=0,round2=0;
   int UE_id2;
   uint16_t                i1,i2,i3;
@@ -581,12 +588,10 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
     for (ii=0; ii<UE_num_active_CC(UE_list,UE_id); ii++) {
       CC_id = UE_list->ordered_CCids[ii][UE_id];
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-      harq_pid = ue_sched_ctl->harq_pid[CC_id];
-      round    = ue_sched_ctl->round[CC_id];
-
-      // if there is no available harq_process, skip the UE
-      if (UE_list->UE_sched_ctrl[UE_id].harq_pid[CC_id]<0)
-        continue;
+      cc=&RC.mac[Mod_id]->common_channels[ii];
+      if (cc->tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
+      else harq_pid = ((frameP*10)+subframeP)&7;
+      round    = ue_sched_ctl->round[CC_id][harq_pid];
 
       average_rbs_per_user[CC_id]=0;
 
@@ -681,8 +686,7 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
         for (ii=0; ii<UE_num_active_CC(UE_list,UE_id); ii++) {
           CC_id = UE_list->ordered_CCids[ii][UE_id];
 	  ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-	  harq_pid = ue_sched_ctl->harq_pid[CC_id];
-	  round    = ue_sched_ctl->round[CC_id];
+	  round    = ue_sched_ctl->round[CC_id][harq_pid];
 
           rnti = UE_RNTI(Mod_id,UE_id);
 
@@ -731,7 +735,6 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
                   UE_id2 = ii;
                   rnti2 = UE_RNTI(Mod_id,UE_id2);
 		  ue_sched_ctl2 = &UE_list->UE_sched_ctrl[UE_id2];
-		  harq_pid2 = ue_sched_ctl2->harq_pid[CC_id];
 		  round2    = ue_sched_ctl2->round[CC_id];
                   if(rnti2 == NOT_A_RNTI)
                     continue;
@@ -887,7 +890,7 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
 #endif
 
 
-  LOG_I(MAC,"Running preprocessor for UE %d (%x)\n",UE_id,rnti);
+  LOG_D(MAC,"Running preprocessor for UE %d (%x)\n",UE_id,rnti);
   // initialize harq_pid and round
 
   /*
@@ -1078,11 +1081,11 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   UE_TEMPLATE        *UE_template               = 0;
   int                N_RB_DL;
   int                N_RB_UL;
-  //LOG_I(MAC,"assign max mcs min rb\n");
+  LOG_D(MAC,"In ulsch_preprocessor: assign max mcs min rb\n");
   // maximize MCS and then allocate required RB according to the buffer occupancy with the limit of max available UL RB
   assign_max_mcs_min_rb(module_idP,frameP, subframeP, first_rb);
 
-  //LOG_I(MAC,"sort ue \n");
+  LOG_D(MAC,"In ulsch_preprocessor: sort ue \n");
   // sort ues
   sort_ue_ul (module_idP,frameP, subframeP);
 
@@ -1101,7 +1104,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
     }
   }
 
-  //LOG_I(MAC,"step2 \n");
+  LOG_D(MAC,"In ulsch_preprocessor: step2 \n");
   // step 2: calculate the average rb per UE
   total_ue_count =0;
   max_num_ue_to_be_scheduled=0;
@@ -1119,9 +1122,11 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
 
     UE_id = i;
 
+    LOG_D(MAC,"In ulsch_preprocessor: handling UE %d/%x\n",UE_id,rnti);
     for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
       // This is the actual CC_id in the list
       CC_id = UE_list->ordered_ULCCids[n][UE_id];
+      LOG_D(MAC,"In ulsch_preprocessor: handling UE %d/%x CCid %d\n",UE_id,rnti,CC_id);
       UE_template = &UE_list->UE_template[CC_id][UE_id];
       average_rbs_per_user[CC_id]=0;
 
@@ -1174,6 +1179,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       CC_id = UE_list->ordered_ULCCids[n][UE_id];
       harq_pid = subframe2harqpid(&RC.mac[module_idP]->common_channels[CC_id],frameP,subframeP);
 
+
       //      mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL);
 
       if(UE_list->UE_sched_ctrl[UE_id].round_UL[CC_id]>0) {
@@ -1183,7 +1189,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       }
 
       total_allocated_rbs[CC_id]+= nb_allocated_rbs[CC_id][UE_id];
-
+      LOG_D(MAC,"In ulsch_preprocessor: assigning %d RBs for UE %d/%x CCid %d, harq_pid %d\n",nb_allocated_rbs[CC_id][UE_id],UE_id,rnti,CC_id,harq_pid);
     }
   }
 

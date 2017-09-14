@@ -1857,25 +1857,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
     }
     first_call=0;
   }
-  /*
-  switch (frame_parms->N_RB_UL) {
 
-  case 6:
-    sigma2_dB -= 8;
-    break;
-  case 25:
-    sigma2_dB -= 14;
-    break;
-  case 50:
-    sigma2_dB -= 17;
-    break;
-  case 100:
-    sigma2_dB -= 20;
-    break;
-  default:
-    sigma2_dB -= 14;
-  }
-  */  
 
   if(fmt!=pucch_format3) {  /* PUCCH format3 */
   
@@ -2241,8 +2223,8 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
               stat_re += ((rxcomp[aa][off]*(int32_t)cfo[l2<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l2<<1)])>>15);
               stat_im += ((rxcomp[aa][off]*(int32_t)cfo[1+(l2<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l2<<1)])>>15);
             } else { //reference_symbols
-              stat_ref_re += ((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15);
-              stat_ref_im += ((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15);
+              stat_ref_re += ((rxcomp[aa][off]*(int32_t)cfo[l2<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l2<<1)])>>15);
+              stat_ref_im += ((rxcomp[aa][off]*(int32_t)cfo[1+(l2<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l2<<1)])>>15);
             }
 
             off+=2;
@@ -2420,13 +2402,13 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       if (fmt==pucch_format1b)
         *(1+payload) = (stat_im<0) ? 1 : 0;
     } else { // insufficient energy on PUCCH so NAK
-      *payload = 0;
+      *payload = 4;  // DTX
       ((int16_t*)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[0] = (int16_t)(stat_re);
       ((int16_t*)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[1] = (int16_t)(stat_im);
       eNB->pucch1ab_stats_cnt[UE_id][subframe] = (eNB->pucch1ab_stats_cnt[UE_id][subframe]+1)&1023;
 
       if (fmt==pucch_format1b)
-        *(1+payload) = 0;
+        *(1+payload) = 6;
     }
   } else {
     LOG_E(PHY,"[eNB] PUCCH fmt2/2a/2b not supported\n");

@@ -240,7 +240,7 @@ schedule_SIB1_BR(
     // Rel13 fields
     dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type                               = 1; // CEModeA UE
     dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type                    = 0; // SIB1-BR
-    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = 0xFFFF; // absolute SF
+    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = 0xFFFF; // absolute SFx
     
     //	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ; 
     dl_req->number_pdu++;
@@ -401,8 +401,8 @@ schedule_SI_BR(
 	    vrb_map[first_rb+5] = 1;
 
 	    if ((frameP&1023) < 200) LOG_D(MAC,"[eNB %d] Frame %d Subframe %d: SI_BR->DLSCH CC_id %d, Narrowband %d rvidx %d (sf_mod_period %d : si_WindowLength_BR_r13 %d : si_RepetitionPattern_r13 %d) bcch_sdu_length %d\n",
-					   module_idP,frameP,subframeP,CC_id,si_Narrowband_r13-1,rvidx,
-					   sf_mod_period,si_WindowLength_BR_r13,si_RepetitionPattern_r13,
+					   module_idP,frameP,subframeP,CC_id,(int)si_Narrowband_r13-1,rvidx,
+					   sf_mod_period,(int)si_WindowLength_BR_r13,(int)si_RepetitionPattern_r13,
 					   bcch_sdu_length);	    
 
 
@@ -524,7 +524,7 @@ void schedule_mib(module_id_t   module_idP,
       LOG_D(MAC,"Frame %d, subframe %d: Adding BCH PDU in position %d (length %d)\n",
 	    frameP,subframeP,dl_req->number_pdu,mib_sdu_length);
 
-      if ((frameP&1023) < 40) LOG_D(MAC,"[eNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes (cc->mib->message.schedulingInfoSIB1_BR_r13 %d)\n",module_idP,frameP,CC_id,mib_sdu_length,cc->mib->message.schedulingInfoSIB1_BR_r13);
+      if ((frameP&1023) < 40) LOG_D(MAC,"[eNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes (cc->mib->message.schedulingInfoSIB1_BR_r13 %d)\n",module_idP,frameP,CC_id,mib_sdu_length,(int)cc->mib->message.schedulingInfoSIB1_BR_r13);
 
       dl_config_pdu                                                         = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
       memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
@@ -671,7 +671,14 @@ schedule_SI(
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1        = 0;
 	
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding       = getRIV(N_RB_DL,first_rb,4);      
-	
+
+	// Rel10 fields
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10.pdsch_start                           = 3;
+	// Rel13 fields
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type                               = 0; // regular UE
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type                    = 2; // not BR
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = 0xFFFF; // absolute SF	
+
 	if (!CCE_allocation_infeasible(module_idP,CC_id,1,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,SI_RNTI)) {
 	  LOG_D(MAC,"Frame %d: Subframe %d : Adding common DCI for S_RNTI\n",
 		frameP,subframeP);

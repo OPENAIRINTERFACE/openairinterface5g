@@ -353,10 +353,10 @@ int rx_pdsch(PHY_VARS_UE *ue,
   }
 
 
-#ifdef DEBUG_PHY
+  //#ifdef DEBUG_PHY
   LOG_D(PHY,"[DLSCH] nb_rb %d log2_maxh = %d (%d,%d)\n",nb_rb,pdsch_vars[eNB_id]->log2_maxh,avg[0],avgs);
   LOG_D(PHY,"[DLSCH] mimo_mode = %d\n", dlsch0_harq->mimo_mode);
-#endif
+  //#endif
 
   aatx = frame_parms->nb_antenna_ports_eNB;
   aarx = frame_parms->nb_antennas_rx;
@@ -3327,9 +3327,9 @@ void dlsch_scale_channel(int **dl_ch_estimates_ext,
 
   // Determine scaling amplitude based the symbol
 
-ch_amp = ((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
-
-    LOG_D(PHY,"Scaling PDSCH Chest in OFDM symbol %d by %d, pilots %d nb_rb %d NCP %d symbol %d\n",symbol_mod,ch_amp,pilots,nb_rb,frame_parms->Ncp,symbol);
+  ch_amp = ((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
+  
+  LOG_D(PHY,"Scaling PDSCH Chest in OFDM symbol %d by %d, pilots %d nb_rb %d NCP %d symbol %d\n",symbol_mod,ch_amp,pilots,nb_rb,frame_parms->Ncp,symbol);
    // printf("Scaling PDSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);
 
   ch_amp128 = _mm_set1_epi16(ch_amp); // Q3.13

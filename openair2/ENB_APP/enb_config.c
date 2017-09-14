@@ -496,9 +496,12 @@ void RCconfig_RU() {
               config_setting_lookup_string(setting_ru, CONFIG_STRING_RU_LOCAL_RF,(const char **)&local_rf)
               )
             ) {
-        local_rf_flag = CONFIG_FALSE;
+	local_rf_flag = CONFIG_FALSE;
       }			  
-      
+      else {
+        if (strcmp(local_rf, "no") == 0) 
+	  local_rf_flag = CONFIG_FALSE;
+      }
       if (local_rf_flag == CONFIG_TRUE) { // eNB or RRU
 	
 

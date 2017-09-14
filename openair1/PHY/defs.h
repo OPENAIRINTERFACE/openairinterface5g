@@ -901,6 +901,14 @@ typedef struct PHY_VARS_eNB_s {
   nfapi_rx_indication_pdu_t  rx_pdu_list[NFAPI_RX_IND_MAX_PDU];
   /// NFAPI RX ULSCH CRC information
   nfapi_crc_indication_pdu_t crc_pdu_list[NFAPI_CRC_IND_MAX_PDU];
+  /// NFAPI HARQ information
+  nfapi_harq_indication_pdu_t harq_pdu_list[NFAPI_HARQ_IND_MAX_PDU];
+  /// NFAPI SR information
+  nfapi_sr_indication_pdu_t sr_pdu_list[NFAPI_SR_IND_MAX_PDU];
+  /// NFAPI CQI information
+  nfapi_cqi_indication_pdu_t cqi_pdu_list[NFAPI_CQI_IND_MAX_PDU];
+  /// NFAPI CQI information (raw component)
+  nfapi_cqi_indication_raw_pdu_t cqi_raw_pdu_list[NFAPI_CQI_IND_MAX_PDU];
   /// NFAPI PRACH information
   nfapi_preamble_pdu_t preamble_list[MAX_NUM_RX_PRACH_PREAMBLES];
 #ifdef Rel14
@@ -909,13 +917,14 @@ typedef struct PHY_VARS_eNB_s {
 #endif
   Sched_Rsp_t          Sched_INFO;
   LTE_eNB_PDCCH        pdcch_vars[2];
+  LTE_eNB_PHICH        phich_vars[2];
 #ifdef Rel14
   LTE_eNB_EPDCCH       epdcch_vars[2];
   LTE_eNB_MPDCCH       mpdcch_vars[2];
   LTE_eNB_PRACH        prach_vars_br;
 #endif
   LTE_eNB_COMMON       common_vars;
-  LTE_eNB_UCI_t        uci_vars[NUMBER_OF_UE_MAX];
+  LTE_eNB_UCI          uci_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PBCH         pbch;
   LTE_eNB_PUSCH       *pusch_vars[NUMBER_OF_UE_MAX];

@@ -623,7 +623,7 @@ static inline void itti_receive_msg_internal_event_fd(task_id_t task_id, uint8_t
       read_ret = read (itti_desc.threads[thread_id].task_event_fd, &sem_counter, sizeof(sem_counter));
       AssertFatal (read_ret == sizeof(sem_counter), "Read from task message FD (%d) failed (%d/%d)!\n", thread_id, (int) read_ret, (int) sizeof(sem_counter));
 
-
+      printf("sem_counter %d task %d\n", (int)sem_counter, task_id);
       if (lfds611_queue_dequeue (itti_desc.tasks[task_id].message_queue, (void **) &message) == 0) {
         /* No element in list -> this should not happen */
         AssertFatal (0, "No message in queue for task %d while there are %d events and some for the messages queue!\n", task_id, epoll_ret);
@@ -631,8 +631,12 @@ static inline void itti_receive_msg_internal_event_fd(task_id_t task_id, uint8_t
 
       AssertFatal(message != NULL, "Message from message queue is NULL!\n");
       *received_msg = message->msg;
+
+      printf("ITTI: message %s\n", ITTI_MSG_NAME(message->msg));
+
       result = itti_free (ITTI_MSG_ORIGIN_ID(*received_msg), message);
       AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+
 
       /* Mark that the event has been processed */
       itti_desc.threads[thread_id].events[i].events &= ~EPOLLIN;

@@ -940,6 +940,10 @@ void init_eNB(int single_thread_flag,int wait_for_sync) {
       LOG_I(PHY,"Setting indication lists\n");
       eNB->UL_INFO.rx_ind.rx_pdu_list   = eNB->rx_pdu_list;
       eNB->UL_INFO.crc_ind.crc_pdu_list = eNB->crc_pdu_list;
+      eNB->UL_INFO.sr_ind.sr_pdu_list = eNB->sr_pdu_list;
+      eNB->UL_INFO.harq_ind.harq_pdu_list = eNB->harq_pdu_list;
+      eNB->UL_INFO.cqi_ind.cqi_pdu_list = eNB->cqi_pdu_list;
+      eNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = eNB->cqi_raw_pdu_list;
     }
 
   }
