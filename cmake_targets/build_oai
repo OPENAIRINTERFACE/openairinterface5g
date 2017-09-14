@@ -478,6 +478,9 @@ function main() {
       lte_exec=lte-softmodem
   fi
 
+# configuration module libraries, one currently available, using libconfig 
+  config_libconfig_shlib=params_libconfig
+  
   # first generate the CMakefile in the right directory
   if [ "$eNB" = "1" -o "$UE" = "1" -o "$HW" = "EXMIMO" ] ; then
 
@@ -520,6 +523,11 @@ function main() {
 	  $lte_build_dir $lte_exec \
 	  $lte_exec $dbin/$lte_exec.$REL
 
+# mandatory shared lib
+    compilations \
+	  $lte_build_dir $config_libconfig_shlib \
+	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
+	  
     if [ "$NOS1" = "1" ] ; then
 	compilations \
 	    $lte_build_dir nasmesh \

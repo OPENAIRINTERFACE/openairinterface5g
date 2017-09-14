@@ -485,8 +485,20 @@ add_list1_option(NB_ANTENNAS_TXRX "2" "Number of antennas in ????" "1" "2" "4")
 add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "EXMIMO" "OAI_USRP" "OAI_BLADERF" "CPRIGW" "OAI_LMSSDR")
 
 add_list2_option(TRANSP_PRO "None" "Transport protocol type" "None" "ETHERNET")
-
-
+#NOKIA config enhancement
+set (CONFIG_ROOTDIR
+    ${OPENAIR_DIR}/common/config
+   )
+set (CONFIG_SOURCES
+    ${CONFIG_ROOTDIR}/config_load_configmodule.c
+    ${CONFIG_ROOTDIR}/config_userapi.c
+    ${CONFIG_ROOTDIR}/config_cmdline.c
+   ) 
+set (CONFIG_LIBCONFIG_SOURCES
+    ${CONFIG_ROOTDIR}/libconfig/config_libconfig.c
+   )   
+add_library(params_libconfig MODULE ${CONFIG_LIBCONFIG_SOURCES} )
+target_link_libraries(params_libconfig config)  
 # include RF devices / transport protocols library modules
 ######################################################################
 
@@ -1721,6 +1733,7 @@ add_executable(lte-softmodem
   ${XFORMS_SOURCE}
   ${XFORMS_SOURCE_SOFTMODEM}
   ${T_SOURCE}
+  ${CONFIG_SOURCES}
   )
 
 target_link_libraries (lte-softmodem -ldl 
