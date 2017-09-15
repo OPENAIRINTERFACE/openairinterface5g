@@ -872,7 +872,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 
 	  lcid=0;
 	  
-	  // set HARQ process 0 round to 0 for this UE
+	  // put HARQ process 0 round to IDLE
 	  if (cc->tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
 	  else harq_pid = ((frameP*10)+subframeP)&7;
 	  UE_list->UE_sched_ctrl[UE_id].round[CC_idP][harq_pid] = 0;
@@ -1010,7 +1010,6 @@ void check_Msg4_retransmission(module_id_t module_idP,int CC_idP,frame_t frameP,
 
   // check HARQ status and retransmit if necessary
 
-  // Get candidate harq_pid from PHY
   
   UE_id = find_UE_id(module_idP,RA_template->rnti);
   AssertFatal(UE_id>=0,"Can't find UE for t-crnti\n");

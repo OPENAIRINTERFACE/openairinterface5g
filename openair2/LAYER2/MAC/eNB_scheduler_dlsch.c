@@ -648,7 +648,7 @@ schedule_ue_spec(
 
       /* process retransmission  */
 
-      if (round > 0) {
+      if (round != 8) {
 
         // get freq_allocation
         nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
@@ -759,6 +759,8 @@ schedule_ue_spec(
 				      0, //number of PRBs treated as one subband, not used here
 				      0 // number of beamforming vectors, not used here
 				      );
+
+	      LOG_I(MAC,"Filled NFAPI configuration for DCI/DLSCH %d, retransmission round %d\n",eNB->pdu_index[CC_id],round);
 
 	      eNB->pdu_index[CC_id]++;
 	      program_dlsch_acknak(module_idP,CC_id,UE_id,frameP,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.cce_idx);
@@ -1202,16 +1204,19 @@ schedule_ue_spec(
 	  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_2        = 1;
 	  if (cc[CC_id].tdd_Config != NULL) { //TDD
 	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.downlink_assignment_index = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
-	    LOG_D(MAC,"[eNB %d] Retransmission CC_id %d : harq_pid %d, round %d, dai %d, mcs %d\n",
-		  module_idP,CC_id,harq_pid,round,
+	    LOG_D(MAC,"[eNB %d] Initial transmission CC_id %d : harq_pid %d, dai %d, mcs %d\n",
+		  module_idP,CC_id,harq_pid,
 		  (UE_list->UE_template[CC_id][UE_id].DAI-1),
 		  mcs);
 	  } else {
-	    LOG_D(MAC,"[eNB %d] Retransmission CC_id %d : harq_pid %d, round %d, mcs %d\n",
-		  module_idP,CC_id,harq_pid,round,mcs);
+	    LOG_D(MAC,"[eNB %d] Initial transmission CC_id %d : harq_pid %d, mcs %d\n",
+		  module_idP,CC_id,harq_pid,mcs);
 	    
 	  }
 	  if (!CCE_allocation_infeasible(module_idP,CC_id,1,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,rnti)) {
+
+
+	    ue_sched_ctl->round[CC_id][harq_pid] = 0;
 	    dl_req->number_dci++;
 	    dl_req->number_pdu++;
 	    
@@ -1256,9 +1261,11 @@ schedule_ue_spec(
 							  &eNB->pdu_index[CC_id],
 							  eNB->UE_list.DLSCH_pdu[CC_id][0][(unsigned char)UE_id].payload[harq_pid]);
 	    
+	    LOG_I(MAC,"Filled NFAPI configuration for DCI/DLSCH/TXREQ %d, new SDU\n",eNB->pdu_index[CC_id]);
+
 	    eNB->pdu_index[CC_id]++;
 	    program_dlsch_acknak(module_idP,CC_id,UE_id,frameP,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.cce_idx);
-				 
+
 	  }
 	  else {
 	    LOG_W(MAC,"Frame %d, Subframe %d: Dropping DLSCH allocation for UE %d/%x, infeasible CCE allocations\n",
