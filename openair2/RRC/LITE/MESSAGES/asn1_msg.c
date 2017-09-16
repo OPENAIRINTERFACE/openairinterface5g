@@ -2426,6 +2426,7 @@ uint8_t do_DLInformationTransfer(uint8_t Mod_id, uint8_t **buffer, uint8_t trans
 
   encoded = uper_encode_to_new_buffer (&asn_DEF_DL_DCCH_Message, NULL, (void*) &dl_dcch_msg, (void **) buffer);
 
+  /*
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -2444,6 +2445,7 @@ uint8_t do_DLInformationTransfer(uint8_t Mod_id, uint8_t **buffer, uint8_t trans
   }
 # endif
 #endif
+  */
 
   return encoded;
 }

@@ -968,6 +968,7 @@ add_library(SECU_CN ${SECU_CN_SRC})
 # Scheduler
 ################################"
 set(SCHED_SRC
+  ${OPENAIR1_DIR}/SCHED/fapi_l1.c
   ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_eNb.c
   ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_ue.c
   ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_common.c
