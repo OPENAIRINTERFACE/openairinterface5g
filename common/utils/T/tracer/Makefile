@@ -3,7 +3,8 @@ CFLAGS=-Wall -g -pthread -DT_TRACER -I.
 
 #CFLAGS += -O3 -ffast-math -fomit-frame-pointer
 
-LIBS=-lX11 -lm -lpng -lXft
+LIBS=-lm
+XLIBS=-lX11 -lpng -lXft
 
 all: record replay extract_config textlog enb ue vcd macpdu2wireshark \
      extract_input_subframe extract_output_subframe to_vcd
@@ -28,26 +29,26 @@ extract_output_subframe: extract_output_subframe.o database.o event.o utils.o \
 textlog: utils.o textlog.o database.o event.o handler.o config.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a \
          filter/filter.a
-	$(CC) $(CFLAGS) -o textlog $^ $(LIBS)
+	$(CC) $(CFLAGS) -o textlog $^ $(LIBS) $(XLIBS)
 
 enb: utils.o enb.o database.o event.o handler.o config.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a \
          filter/filter.a
-	$(CC) $(CFLAGS) -o enb $^ $(LIBS)
+	$(CC) $(CFLAGS) -o enb $^ $(LIBS) $(XLIBS)
 
 ue: utils.o ue.o database.o event.o handler.o config.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a \
          filter/filter.a
-	$(CC) $(CFLAGS) -o ue $^ $(LIBS)
+	$(CC) $(CFLAGS) -o ue $^ $(LIBS) $(XLIBS)
 
 vcd: utils.o vcd.o database.o event.o handler.o config.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a \
          filter/filter.a
-	$(CC) $(CFLAGS) -o vcd $^ $(LIBS)
+	$(CC) $(CFLAGS) -o vcd $^ $(LIBS) $(XLIBS)
 
 to_vcd: to_vcd.o database.o event.o handler.o utils.o config.o \
          logger/logger.a filter/filter.a
-	$(CC) $(CFLAGS) -o to_vcd $^ -lm
+	$(CC) $(CFLAGS) -o to_vcd $^ $(LIBS)
 
 macpdu2wireshark: macpdu2wireshark.o database.o utils.o handler.o event.o \
                   config.o
