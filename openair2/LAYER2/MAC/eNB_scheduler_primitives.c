@@ -1229,7 +1229,7 @@ uint16_t fill_nfapi_uci_acknak(module_id_t module_idP,
 			      absSFP,
 			      &ul_config_pdu->uci_harq_pdu.harq_information,
 			      cce_idxP);
-  LOG_I(MAC,"Filled in HARQ for rnti %x, cce_idxP %d-> n1_pucch %d\n",rntiP,cce_idxP,ul_config_pdu->uci_harq_pdu.harq_information.harq_information_rel9_fdd.n_pucch_1_0);
+  LOG_D(MAC,"Filled in HARQ for rnti %x, cce_idxP %d-> n1_pucch %d\n",rntiP,cce_idxP,ul_config_pdu->uci_harq_pdu.harq_information.harq_information_rel9_fdd.n_pucch_1_0);
 
   ul_req->number_of_pdus++;
 
@@ -1296,7 +1296,7 @@ void fill_nfapi_dlsch_config(eNB_MAC_INST *eNB,
 uint16_t fill_nfapi_tx_req(nfapi_tx_request_body_t *tx_req_body,uint16_t absSF,uint16_t pdu_length, uint16_t *pdu_index, uint8_t *pdu) {
 
   nfapi_tx_request_pdu_t *TX_req        = &tx_req_body->tx_pdu_list[tx_req_body->number_of_pdus]; 
-  LOG_I(MAC,"Filling TX_req %d for pdu length %d\n",tx_req_body->number_of_pdus,pdu_length);
+  LOG_D(MAC,"Filling TX_req %d for pdu length %d\n",tx_req_body->number_of_pdus,pdu_length);
   TX_req->pdu_length                    = pdu_length;
   TX_req->pdu_index                     = *pdu_index++;
   TX_req->num_segments                  = 1;
@@ -1473,7 +1473,7 @@ int find_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP)
  
 
   for (RA_id = 0; RA_id < NB_RA_PROC_MAX; RA_id++) {
-    LOG_I(MAC,"Checking RA_id %d for %x : RA_active %d, wait_ack_Msg4 %d\n",
+    LOG_D(MAC,"Checking RA_id %d for %x : RA_active %d, wait_ack_Msg4 %d\n",
 	  RA_id,rntiP,
 	  RA_template[RA_id].RA_active,
 	  RA_template[RA_id].wait_ack_Msg4);
@@ -1637,6 +1637,7 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP
       UE_list->UE_template[cc_idP][UE_id].oldNDI[j]    = (j==0)?1:0;   // 1 because first transmission is with format1A (Msg4) for harq_pid 0
       UE_list->UE_template[cc_idP][UE_id].oldNDI_UL[j] = (j==harq_pidP)?0:1; // 1st transmission is with Msg3;
       UE_list->UE_sched_ctrl[UE_id].round[cc_idP][j]   = 8; 
+      UE_list->UE_sched_ctrl[UE_id].round_UL[cc_idP][j]   = 0; 
     }
 
     eNB_ulsch_info[mod_idP][cc_idP][UE_id].status = S_UL_WAITING;
@@ -1668,7 +1669,7 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
 
   pCC_id = UE_PCCID(mod_idP,UE_id);
 
-  LOG_I(MAC,"Removing UE %d from Primary CC_id %d (rnti %x)\n",UE_id,pCC_id, rntiP);
+  LOG_D(MAC,"Removing UE %d from Primary CC_id %d (rnti %x)\n",UE_id,pCC_id, rntiP);
   dump_ue_list(UE_list,0);
 
   UE_list->active[UE_id] = FALSE;
@@ -1995,7 +1996,7 @@ uint8_t UE_is_to_be_scheduled(module_id_t module_idP,int CC_id,uint8_t UE_id)
   if (UE_sched_ctl->ul_out_of_sync>0)
     return(0);
 
-  LOG_I(MAC,"[eNB %d][PUSCH] Checking UL requirements UE %d/%x\n",module_idP,UE_id,UE_RNTI(module_idP,UE_id));
+  LOG_D(MAC,"[eNB %d][PUSCH] Checking UL requirements UE %d/%x\n",module_idP,UE_id,UE_RNTI(module_idP,UE_id));
 
   if ((UE_template->bsr_info[LCGID0]>0) ||
       (UE_template->bsr_info[LCGID1]>0) ||
@@ -2009,7 +2010,9 @@ uint8_t UE_is_to_be_scheduled(module_id_t module_idP,int CC_id,uint8_t UE_id)
        (mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED))) // every Frame when not RRC_CONNECTED
     { 
 
-    LOG_I(MAC,"[eNB %d][PUSCH] UE %d/%x should be scheduled\n",module_idP,UE_id,UE_RNTI(module_idP,UE_id));
+      LOG_I(MAC,"[eNB %d][PUSCH] UE %d/%x should be scheduled (BSR0 %d,SR %d)\n",module_idP,UE_id,UE_RNTI(module_idP,UE_id),
+	    UE_template->bsr_info[LCGID0],
+	    UE_template->ul_SR);
     return(1);
   } else {
     return(0);
@@ -2988,7 +2991,7 @@ void extract_harq(module_id_t mod_idP,int CC_idP,int UE_id,frame_t frameP,sub_fr
 	  AssertFatal(num_ack_nak==1,"num_ack_nak %d > 1 for 1 CC and single-layer transmission\n",num_ack_nak);
 	  AssertFatal(sched_ctl->round[CC_idP][harq_pid]<8,"Got ACK/NAK for inactive harq_pid %d for UE %d/%x\n",harq_pid,UE_id,rnti);
 	  AssertFatal(pdu[0] == 1 || pdu[0] == 2, "Received ACK/NAK %d which is not 1 or 2 for harq_pid %d from UE %d/%x\n",pdu[0],harq_pid,UE_id,rnti);
-	  LOG_I(MAC,"Received %d for harq_pid %d\n",pdu[0],harq_pid);
+	  LOG_D(MAC,"Received %d for harq_pid %d\n",pdu[0],harq_pid);
 
 	  if (pdu[0] == 1) { // ACK
 	    sched_ctl->round[CC_idP][harq_pid]=8; // release HARQ process
@@ -3494,7 +3497,7 @@ void SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, sub_frame_t 
  
   if (UE_id  != -1) {
     if (mac_eNB_get_rrc_status(mod_idP,UE_RNTI(mod_idP,UE_id)) < RRC_CONNECTED)
-      LOG_I(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
+      LOG_D(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
     UE_list->UE_template[cc_idP][UE_id].ul_SR = 1;
     UE_list->UE_template[cc_idP][UE_id].ul_active = TRUE;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SR_INDICATION,1);
@@ -3513,7 +3516,7 @@ void UL_failure_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, rnti
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
 
   if (UE_id  != -1) {
-    LOG_I(MAC,"[eNB %d][UE %d/%x] Frame %d subframeP %d Signaling UL Failure for UE %d on CC_id %d (timer %d)\n",
+    LOG_D(MAC,"[eNB %d][UE %d/%x] Frame %d subframeP %d Signaling UL Failure for UE %d on CC_id %d (timer %d)\n",
 	  mod_idP,UE_id,rntiP,frameP,subframeP, UE_id,cc_idP,
 	  UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
     if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer == 0)
@@ -3536,7 +3539,7 @@ void harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP, sub_frame_
   UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   COMMON_channels_t *cc    = &RC.mac[mod_idP]->common_channels[CC_idP];
     // extract HARQ Information
-  LOG_I(MAC,"Frame %d, subframe %d: Received harq indication (%d) from UE %d/%x\n",frameP,subframeP,channel,UE_id,rnti);
+  LOG_D(MAC,"Frame %d, subframe %d: Received harq indication (%d) from UE %d/%x\n",frameP,subframeP,channel,UE_id,rnti);
   if (cc->tdd_Config) extract_harq(mod_idP,CC_idP,UE_id,frameP,subframeP,(void*)&harq_pdu->harq_indication_tdd_rel13,channel);
   else                extract_harq(mod_idP,CC_idP,UE_id,frameP,subframeP,(void*)&harq_pdu->harq_indication_fdd_rel13,channel);
   if (channel == 0)     sched_ctl->pucch1_snr[CC_idP] = ul_cqi;

@@ -96,7 +96,7 @@ typedef enum { SEARCH_EXIST=0,
 	       SEARCH_EXIST_OR_FREE} find_type_t;
 
 typedef enum {
-  SCH_IDLE,
+  SCH_IDLE=0,
   ACTIVE,
   CBA_ACTIVE,
   DISABLED
@@ -464,6 +464,8 @@ typedef struct {
   uint8_t Nsymb_pusch;
   /// SRS active flag
   uint8_t srs_active;
+  /// NDI
+  uint8_t ndi;
   /// Index of current HARQ round for this ULSCH
   uint8_t round;
   /// Redundancy-version of the current sub-frame

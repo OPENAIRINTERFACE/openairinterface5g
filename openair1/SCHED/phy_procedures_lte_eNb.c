@@ -83,7 +83,7 @@ void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,PHY_VARS_RN *rn,rel
   switch (r_type) {
   case no_relay:
     if ((mch_pduP->Pdu_size > 0) && (mch_pduP->sync_area == 0)) // TEST: only transmit mcch for sync area 0
-      LOG_I(PHY,"[eNB%"PRIu8"] Frame %d subframe %d : Got MCH pdu for MBSFN (MCS %"PRIu8", TBS %d) \n",
+      LOG_D(PHY,"[eNB%"PRIu8"] Frame %d subframe %d : Got MCH pdu for MBSFN (MCS %"PRIu8", TBS %d) \n",
 	    eNB->Mod_id,proc->frame_tx,subframe,mch_pduP->mcs,
 	    eNB->dlsch_MCH->harq_processes[0]->TBS>>3);
     else {
@@ -97,7 +97,7 @@ void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,PHY_VARS_RN *rn,rel
     
   case multicast_relay:
     if ((mch_pduP->Pdu_size > 0) && ((mch_pduP->mcch_active == 1) || mch_pduP->msi_active==1)) {
-      LOG_I(PHY,"[RN %"PRIu8"] Frame %d subframe %d: Got the MCH PDU for MBSFN  sync area %"PRIu8" (MCS %"PRIu8", TBS %"PRIu16")\n",
+      LOG_D(PHY,"[RN %"PRIu8"] Frame %d subframe %d: Got the MCH PDU for MBSFN  sync area %"PRIu8" (MCS %"PRIu8", TBS %"PRIu16")\n",
 	    rn->Mod_id,rn->frame, subframe,
 	    mch_pduP->sync_area,mch_pduP->mcs,mch_pduP->Pdu_size);
     } else if (rn->mch_avtive[subframe%5] == 1) { // SF2 -> SF7, SF3 -> SF8
@@ -107,7 +107,7 @@ void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,PHY_VARS_RN *rn,rel
 	     rn->dlsch_rn_MCH[subframe%5]->harq_processes[0]->TBS>>3);
       mch_pduP->Pdu_size = (uint16_t) (rn->dlsch_rn_MCH[subframe%5]->harq_processes[0]->TBS>>3);
       mch_pduP->mcs = rn->dlsch_rn_MCH[subframe%5]->harq_processes[0]->mcs;
-      LOG_I(PHY,"[RN %"PRIu8"] Frame %d subframe %d: Forward the MCH PDU for MBSFN received on SF %d sync area %"PRIu8" (MCS %"PRIu8", TBS %"PRIu16")\n",
+      LOG_D(PHY,"[RN %"PRIu8"] Frame %d subframe %d: Forward the MCH PDU for MBSFN received on SF %d sync area %"PRIu8" (MCS %"PRIu8", TBS %"PRIu16")\n",
 	    rn->Mod_id,rn->frame, subframe,subframe%5,
 	    rn->sync_area[subframe%5],mch_pduP->mcs,mch_pduP->Pdu_size);
     } else {
@@ -270,7 +270,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 
   if (frame < 200) {
 
-    LOG_I(PHY,
+    LOG_D(PHY,
 	  "[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", pdsch_start %d, G %d, nb_rb %"PRIu16", rb0 %x, rb1 %x, TBS %"PRIu16", pmi_alloc %"PRIx64", rv %"PRIu8" (round %"PRIu8")\n",
 	  eNB->Mod_id, dlsch->rnti,harq_pid,
 	  frame, subframe, input_buffer_length, dlsch_harq->pdsch_start,
@@ -481,7 +481,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DCI_INFO,(frame*10)+subframe);
 
   if (num_dci > 0)
-    LOG_I(PHY,"[eNB %"PRIu8"] Frame %d, subframe %d: Calling generate_dci_top (pdcch) (num_dci %"PRIu8")\n",eNB->Mod_id,frame, subframe,
+    LOG_D(PHY,"[eNB %"PRIu8"] Frame %d, subframe %d: Calling generate_dci_top (pdcch) (num_dci %"PRIu8")\n",eNB->Mod_id,frame, subframe,
 	  num_dci);
     
   generate_dci_top(num_pdcch_symbols,
@@ -606,7 +606,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 	   );
 
   //#ifdef DEBUG_PHY_PROC
-  LOG_I(PHY,"[RAPROC] Frame %d, subframe %d : Most likely preamble %d, energy %d dB delay %d\n",
+  LOG_D(PHY,"[RAPROC] Frame %d, subframe %d : Most likely preamble %d, energy %d dB delay %d\n",
         frame,subframe,
 	max_preamble[0],
         max_preamble_energy[0]/10,
@@ -642,7 +642,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 	eNB->preamble_list_br[ind].preamble_rel8.rnti                  = 1+subframe+(eNB->prach_vars_br.first_frame[ce_level]%40);  
 	eNB->preamble_list_br[ind].instance_length                     = 0; //don't know exactly what this is
 	eNB->preamble_list_br[ind].preamble_rel13.rach_resource_type   = 1+ce_level;  // CE Level
-	LOG_I(PHY,"Filling NFAPI indication for RACH %d CELevel %d (mask %x) : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
+	LOG_D(PHY,"Filling NFAPI indication for RACH %d CELevel %d (mask %x) : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
 	      ind,
 	      ce_level,
 	      prach_mask,
@@ -690,7 +690,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 	    eNB->preamble_list[0].preamble_rel13.rach_resource_type   = 0;
 	    eNB->preamble_list[0].instance_length                     = 0; //don't know exactly what this is
 	    
-	    LOG_I(PHY,"Filling NFAPI indication for RACH : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
+	    LOG_D(PHY,"Filling NFAPI indication for RACH : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
 		  eNB->preamble_list[0].preamble_rel8.timing_advance,
 		  eNB->preamble_list[0].preamble_rel8.preamble,
 		  eNB->preamble_list[0].preamble_rel8.rnti,
@@ -757,7 +757,6 @@ void fill_sr_indication(PHY_VARS_eNB *eNB,uint16_t rnti,int frame,int subframe) 
   pdu->instance_length                                = 0; // don't know what to do with this
   //  pdu->rx_ue_information.handle                       = handle;
   pdu->rx_ue_information.rnti                         = rnti;
-  pthread_mutex_unlock(&eNB->UL_INFO_mutex);
 
   eNB->UL_INFO.sr_ind.number_of_srs++;
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
@@ -828,7 +827,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 			      frame,
 			      subframe,
 			      PUCCH1_THRES);
-	LOG_I(PHY,"[eNB %d][SR %x] Frame %d subframe %d Checking SR is %d (SR n1pucch is %d)\n",
+	LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Checking SR is %d (SR n1pucch is %d)\n",
 	      eNB->Mod_id,
 	      uci->rnti,
 	      frame,
@@ -846,7 +845,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	}
       case HARQ:
 	if (fp->frame_type == FDD) {
-	  LOG_I(PHY,"Frame %d Subframe %d Demodulating PUCCH (UCI %d) for ACK/NAK (uci->pucch_fmt %d,uci->type %d.uci->frame %d, uci->subframe %d): n1_pucch0 %d SR_payload %d\n",
+	  LOG_D(PHY,"Frame %d Subframe %d Demodulating PUCCH (UCI %d) for ACK/NAK (uci->pucch_fmt %d,uci->type %d.uci->frame %d, uci->subframe %d): n1_pucch0 %d SR_payload %d\n",
 		frame,subframe,i,
 		uci->pucch_fmt,uci->type,
 		uci->frame,uci->subframe,uci->n_pucch_1[0][0],
@@ -1283,7 +1282,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 
     ulsch = eNB->ulsch[i];
     ulsch_harq = ulsch->harq_processes[harq_pid];
-    if (ulsch->rnti>0) LOG_I(PHY,"Frame %d, subframe %d: PUSCH procedures, harq_pid %d, UE %d/%x\n",
+    if (ulsch->rnti>0) LOG_D(PHY,"Frame %d, subframe %d: PUSCH procedures, harq_pid %d, UE %d/%x\n",
 			     frame,subframe,harq_pid,i,ulsch->rnti);
     
     if ((ulsch) &&
@@ -1304,7 +1303,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
       }
 
 
-      LOG_I(PHY,"[eNB %d] frame %d, subframe %d: Scheduling ULSCH Reception for UE %d \n",
+      LOG_D(PHY,"[eNB %d] frame %d, subframe %d: Scheduling ULSCH Reception for UE %d \n",
 	    eNB->Mod_id,
 	    frame,
 	    subframe,
@@ -1317,7 +1316,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 			    fp->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
 			    nPRS)%12;
 
-      LOG_I(PHY,
+      LOG_D(PHY,
             "[eNB %d][PUSCH %d] Frame %d Subframe %d Demodulating PUSCH: dci_alloc %d, rar_alloc %d, round %d, first_rb %d, nb_rb %d, Qm %d, TBS %d, rv %d, cyclic_shift %d (n_DMRS2 %d, cyclicShift_common %d, nprs %d), O_ACK %d \n",
             eNB->Mod_id,harq_pid,frame,subframe,
             ulsch_harq->dci_alloc,
@@ -1355,7 +1354,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 
       stop_meas(&eNB->ulsch_decoding_stats);
 
-      LOG_I(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d RNTI %x RX power (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d\n",
+      LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d RNTI %x RX power (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d\n",
             eNB->Mod_id,harq_pid,
             frame,subframe,
             ulsch->rnti,
@@ -1369,8 +1368,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 
 
       //compute the expected ULSCH RX power (for the stats)
-      eNB->ulsch[(uint32_t)i]->harq_processes[harq_pid]->delta_TF =
-        get_hundred_times_delta_IF_eNB(eNB,i,harq_pid, 0); // 0 means bw_factor is not considered
+      ulsch_harq->delta_TF = get_hundred_times_delta_IF_eNB(eNB,i,harq_pid, 0); // 0 means bw_factor is not considered
 
 
       if (ulsch_harq->cqi_crc_status == 1) {
@@ -1379,22 +1377,19 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
         print_CQI(ulsch_harq->o,ulsch_harq->uci_format,0,fp->N_RB_DL);
 #endif
 
+
+	fill_ulsch_cqi_indication(eNB,frame,subframe,
+				  ulsch_harq,
+				  ulsch->rnti);
       }
-      fill_ulsch_cqi_indication(eNB,frame,subframe,
-				ulsch_harq,
-				ulsch->rnti);
       
       if (ret == (1+MAX_TURBO_ITERATIONS)) {
         T(T_ENB_PHY_ULSCH_UE_NACK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(i), T_INT(ulsch->rnti),
           T_INT(harq_pid));
 
-        ulsch_harq->round++;
-
 	fill_crc_indication(eNB,i,frame,subframe,1); // indicate NAK to MAC
 
-        LOG_I(PHY,"[eNB][PUSCH %d] Increasing to round %d\n",harq_pid,ulsch_harq->round);
-
-	LOG_I(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
+	LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
 	      eNB->Mod_id,harq_pid,
 	      frame,subframe, i,
 	      ulsch_harq->round-1,
@@ -1412,7 +1407,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 				     ulsch_harq->round-1
 				     );
 #endif
-
+	
       }  // ulsch in error
       else {
 	
@@ -1421,6 +1416,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 	fill_rx_indication(eNB,i,frame,subframe);    // indicate SDU to MAC
         T(T_ENB_PHY_ULSCH_UE_ACK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(i), T_INT(ulsch->rnti),
           T_INT(harq_pid));
+	ulsch_harq->status = SCH_IDLE;
 
 #if defined(MESSAGE_CHART_GENERATOR_PHY)
         MSC_LOG_RX_MESSAGE(
@@ -1450,8 +1446,8 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 
       if (ulsch_harq->O_ACK>0) fill_ulsch_harq_indication(eNB,ulsch_harq,ulsch->rnti,frame,subframe,ulsch->bundling);
 
-#ifdef DEBUG_PHY_PROC
-      LOG_D(PHY,"[eNB %d] Frame %d subframe %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ACK %d,%d, ulsch_errors %d/%d\n",
+
+      LOG_I(PHY,"[eNB %d] Frame %d subframe %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ACK %d,%d, ulsch_errors %d/%d\n",
             eNB->Mod_id,frame,subframe,
             harq_pid,
             i,
@@ -1461,7 +1457,6 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
             ulsch_harq->o_ACK[1],
             eNB->UE_stats[i].ulsch_errors[harq_pid],
             eNB->UE_stats[i].ulsch_decoding_attempts[harq_pid][0]);
-#endif
       
     } //     if ((ulsch) &&
       //         (ulsch->rnti>0) &&
@@ -1905,27 +1900,31 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 1 );
 
-  LOG_I(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_uespec_RX(%d)\n",eNB->Mod_id,frame, subframe);
+  LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_uespec_RX(%d)\n",eNB->Mod_id,frame, subframe);
 
   eNB->rb_mask_ul[0]=0;
   eNB->rb_mask_ul[1]=0;
   eNB->rb_mask_ul[2]=0;
   eNB->rb_mask_ul[3]=0;
 
+  // Fix me here, these should be locked
   eNB->UL_INFO.rx_ind.number_of_pdus  = 0;
   eNB->UL_INFO.crc_ind.number_of_crcs = 0;
 
+  // Call SRS first since all others depend on presence of SRS or lack thereof
   srs_procedures(eNB,proc);
-
-  uci_procedures(eNB,proc);
-
-  pusch_procedures(eNB,proc);
 
   lte_eNB_I0_measurements(eNB,
 			  subframe,
 			  0,
 			  eNB->first_run_I0_measurements);
   eNB->first_run_I0_measurements = 0;
+
+  uci_procedures(eNB,proc);
+
+  pusch_procedures(eNB,proc);
+
+
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 0 );
 

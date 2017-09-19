@@ -290,7 +290,7 @@ void schedule_SR(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP) {
 	{
 	  ul_req->ul_config_pdu_list[ul_req->number_of_pdus].uci_sr_pdu.sr_information.sr_information_rel8.pucch_index =  
 	    UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex;
-	  LOG_I(MAC,"Frame %d, Subframe %d : Scheduling SR for UE %d/%x\n",frameP,subframeP,UE_id,UE_list->UE_template[CC_id][UE_id].rnti);
+	  LOG_D(MAC,"Frame %d, Subframe %d : Scheduling SR for UE %d/%x\n",frameP,subframeP,UE_id,UE_list->UE_template[CC_id][UE_id].rnti);
 	}
       RC.mac[module_idP]->UL_req[CC_id].sfn_sf = (frameP<<4)+subframeP;
       ul_req->number_of_pdus++;
@@ -349,7 +349,7 @@ void check_ul_failure(module_id_t module_idP,int CC_id,int UE_id,
     // check threshold
     if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 200) {
       // inform RRC of failure and clear timer
-      LOG_I(MAC,"UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",UE_id,rnti);
+      LOG_D(MAC,"UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",UE_id,rnti);
       mac_eNB_rrc_ul_failure(module_idP,CC_id,frameP,subframeP,rnti);
       UE_list->UE_sched_ctrl[UE_id].ul_failure_timer=0;
       UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync=1;
@@ -438,8 +438,6 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
 #endif
 
   
-  //  LOG_I(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler (UE_list->head %d)\n",module_idP, frameP, subframeP,UE_list->head);
-
   start_meas(&RC.mac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
 
@@ -469,7 +467,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
     eNB_UE_stats = &RC.mac[module_idP]->UE_list.eNB_UE_stats[CC_id][i];
 
     if ((frameP==0)&&(subframeP==0)) {
-      LOG_I(MAC,"UE  rnti %x : %s, PHR %d dB CQI %d\n", rnti,
+      LOG_D(MAC,"UE  rnti %x : %s, PHR %d dB CQI %d\n", rnti,
             UE_list->UE_sched_ctrl[i].ul_out_of_sync==0 ? "in synch" : "out of sync",
             UE_list->UE_template[CC_id][i].phr_info,
             eNB_UE_stats->dl_cqi);
@@ -482,7 +480,9 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
     RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ul_inactivity_timer++;
 
     RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer++;
-
+    LOG_I(MAC,"UE %d/%x : ul_inactivity %d, cqi_req %d\n",i,rnti, 
+	  RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ul_inactivity_timer,
+	  RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer);
     check_ul_failure(module_idP,CC_id,i,frameP,subframeP);
 
   }

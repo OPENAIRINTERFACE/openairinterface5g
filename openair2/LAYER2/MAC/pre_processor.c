@@ -1301,7 +1301,7 @@ void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfra
       // if this UE has UL traffic
       if (UE_template->ul_total_buffer > 0 ) {
 
-        tbs = get_TBS_UL(mcs,3);  // 1 or 2 PRB with cqi enabled does not work well!
+        tbs = get_TBS_UL(mcs,3)<<3;  // 1 or 2 PRB with cqi enabled does not work well!
         // fixme: set use_srs flag
         tx_power= estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,Ncp,0);
 
@@ -1309,7 +1309,7 @@ void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfra
                (mcs > 3)) {
           // LOG_I(MAC,"UE_template->phr_info %d tx_power %d mcs %d\n", UE_template->phr_info,tx_power, mcs);
           mcs--;
-          tbs = get_TBS_UL(mcs,rb_table[rb_table_index]);
+          tbs = get_TBS_UL(mcs,rb_table[rb_table_index])<<3;
           tx_power = estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,Ncp,0); // fixme: set use_srs
         }
 
@@ -1319,7 +1319,7 @@ void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfra
                (rb_table_index < 32 )) {
    
           rb_table_index++;
-          tbs = get_TBS_UL(mcs,rb_table[rb_table_index]);
+          tbs = get_TBS_UL(mcs,rb_table[rb_table_index])<<3;
           tx_power = estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,Ncp,0);
         }
 
@@ -1329,7 +1329,7 @@ void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfra
           rb_table_index--;
         }
 
-        // 1 or 2 PRB with cqi enabled does not work well!
+        // 1 or 2 PRB with cqi enabled does not work well
 	if (rb_table[rb_table_index]<3) {
           rb_table_index=2; //3PRB
         }

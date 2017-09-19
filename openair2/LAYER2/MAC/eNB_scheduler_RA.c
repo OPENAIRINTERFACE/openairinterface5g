@@ -83,10 +83,10 @@ void add_msg3(module_id_t module_idP,int CC_id, RA_TEMPLATE *RA_template, frame_
 
 #ifdef Rel14
   if (RA_template->rach_resource_type>0) {
-    LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA %d CE level %d is active, Msg3 in (%d,%d)\n",
+    LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA %d CE level %d is active, Msg3 in (%d,%d)\n",
 	  module_idP,frameP,subframeP,CC_id,i,RA_template->rach_resource_type-1,
 	  RA_template->Msg3_frame,RA_template->Msg3_subframe);
-    LOG_I(MAC,"Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d)\n",
+    LOG_D(MAC,"Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d)\n",
 	  frameP,subframeP,RA_template->Msg3_frame,RA_template->Msg3_subframe);
 
     ul_config_pdu                                                                  = &ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus]; 
@@ -120,10 +120,10 @@ void add_msg3(module_id_t module_idP,int CC_id, RA_TEMPLATE *RA_template, frame_
   else
 #endif
     {
-      LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA %d is active, Msg3 in (%d,%d)\n",
+      LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA %d is active, Msg3 in (%d,%d)\n",
 	    module_idP,frameP,subframeP,CC_id,i,RA_template->Msg3_frame,RA_template->Msg3_subframe);
 	    
-      LOG_I(MAC,"Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d)\n",
+      LOG_D(MAC,"Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d)\n",
 	    frameP,subframeP,RA_template->Msg3_frame,RA_template->Msg3_subframe);
       
       ul_config_pdu                                                                  = &ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus]; 
@@ -164,7 +164,7 @@ void add_msg3(module_id_t module_idP,int CC_id, RA_TEMPLATE *RA_template, frame_
 	// save UL scheduling information for preprocessor
 	for (j=0;j<RA_template->msg3_nb_rb;j++) cc->vrb_map_UL[RA_template->msg3_first_rb+j]=1;
 	
-	LOG_I(MAC,"[eNB %d][PUSCH-RA %x] CC_id %d Frame %d subframeP %d Scheduled (PHICH) RA %d (mcs %d, first rb %d, nb_rb %d,round %d)\n",
+	LOG_D(MAC,"[eNB %d][PUSCH-RA %x] CC_id %d Frame %d subframeP %d Scheduled (PHICH) RA %d (mcs %d, first rb %d, nb_rb %d,round %d)\n",
 	      module_idP,RA_template->rnti,CC_id,frameP,subframeP,i,10,
 	      1,1,
 	      RA_template->msg3_round-1);
@@ -251,7 +251,7 @@ void generate_Msg2(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
     if ((RA_template->msg2_mpdcch_repetition_cnt == 0) &&
 	(mpdcch_sf_condition(eNB,CC_idP,frameP,subframeP,rmax,TYPE2,-1)>0)){
       // MPDCCH configuration for RAR
-      LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, Programming MPDCCH %d repetitions\n",
+      LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, Programming MPDCCH %d repetitions\n",
 	    module_idP,frameP,subframeP,reps);
       
       
@@ -307,7 +307,7 @@ void generate_Msg2(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 
     } //repetition_count==0 && SF condition met
     if (RA_template->msg2_mpdcch_repetition_cnt>0) { // we're in a stream of repetitions
-      LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, MPDCCH repetition %d\n",
+      LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, MPDCCH repetition %d\n",
 	    module_idP,frameP,subframeP,RA_template->msg2_mpdcch_repetition_cnt);
 
       if (RA_template->msg2_mpdcch_repetition_cnt==reps) { // this is the last mpdcch repetition
@@ -325,7 +325,7 @@ void generate_Msg2(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 
       if ((RA_template->Msg2_frame == frameP) && (RA_template->Msg2_subframe == subframeP)) {
 	// Program PDSCH
-	LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, Programming PDSCH\n",
+	LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, Programming PDSCH\n",
 	      module_idP,frameP,subframeP);
 	RA_template->generate_rar = 0;	      
 	
@@ -387,7 +387,7 @@ void generate_Msg2(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
     {
 
       if ((RA_template->Msg2_frame == frameP) && (RA_template->Msg2_subframe == subframeP)) {
-	LOG_I(MAC,"[eNB %d] CC_id %d Frame %d, subframeP %d: Generating RAR DCI, RA_active %d format 1A (%d,%d))\n",
+	LOG_D(MAC,"[eNB %d] CC_id %d Frame %d, subframeP %d: Generating RAR DCI, RA_active %d format 1A (%d,%d))\n",
 	      module_idP, CC_idP, frameP, subframeP,
 	      RA_template->RA_active,
 	      
@@ -457,7 +457,7 @@ void generate_Msg2(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	  // Program UL processing for Msg3
 	  get_Msg3alloc(&cc[CC_idP],subframeP,frameP,&RA_template->Msg3_frame,&RA_template->Msg3_subframe);
 
-	  LOG_I(MAC,"Frame %d, Subframe %d: Setting Msg3 reception for Frame %d Subframe %d\n",
+	  LOG_D(MAC,"Frame %d, Subframe %d: Setting Msg3 reception for Frame %d Subframe %d\n",
 		frameP,subframeP,RA_template->Msg3_frame,RA_template->Msg3_subframe);
 	  
 	  fill_rar(module_idP,CC_idP,frameP,cc[CC_idP].RAR_pdu.payload,N_RB_DL,7);
@@ -587,7 +587,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	      "[MAC][eNB Scheduler] CCCH not allocated\n");
   
   
-  LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: UE_id %d, rrc_sdu_length %d\n",
+  LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: UE_id %d, rrc_sdu_length %d\n",
 	module_idP, CC_idP, frameP, subframeP,UE_id, rrc_sdu_length);
   
   
@@ -685,7 +685,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	
 	// Program PDSCH
 	
-	LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 BR with RRC Piggyback (ce_level %d RNTI %x)\n",
+	LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 BR with RRC Piggyback (ce_level %d RNTI %x)\n",
 	      module_idP, CC_idP, frameP, subframeP,RA_template->rach_resource_type-1,RA_template->rnti);
 
 	AssertFatal(1==0,"Msg4 generation not finished for BL/CE UE\n");
@@ -740,7 +740,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	  msg4_post_padding = RA_template->msg4_TBsize - rrc_sdu_length - msg4_header -1;
 	}
 	
-	LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d subframeP %d Msg4 : TBS %d, sdu_len %d, msg4_header %d, msg4_padding %d, msg4_post_padding %d\n",
+	LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d subframeP %d Msg4 : TBS %d, sdu_len %d, msg4_header %d, msg4_padding %d, msg4_post_padding %d\n",
 	      module_idP,CC_idP,frameP,subframeP,RA_template->msg4_TBsize,rrc_sdu_length,msg4_header,msg4_padding,msg4_post_padding);
 	DevAssert( UE_id != UE_INDEX_INVALID ); // FIXME not sure how to gracefully return
 	// CHECK THIS: &cc[CC_idP].CCCH_pdu.payload[0]
@@ -814,7 +814,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 #endif
     { // This is normal LTE case
       if ((RA_template->Msg4_frame == frameP) && (RA_template->Msg4_subframe == subframeP)) {	      
-	LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 with RRC Piggyback (RNTI %x)\n",
+	LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 with RRC Piggyback (RNTI %x)\n",
 	      module_idP, CC_idP, frameP, subframeP,RA_template->rnti);
 	
 	/// Choose first 4 RBs for Msg4, should really check that these are free!
@@ -885,7 +885,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	    msg4_post_padding = RA_template->msg4_TBsize - rrc_sdu_length - msg4_header -1;
 	  }
 	  
-	  LOG_I(MAC,"[eNB %d][RAPROC] CC_idP %d Frame %d subframeP %d Msg4 : TBS %d, sdu_len %d, msg4_header %d, msg4_padding %d, msg4_post_padding %d\n",
+	  LOG_D(MAC,"[eNB %d][RAPROC] CC_idP %d Frame %d subframeP %d Msg4 : TBS %d, sdu_len %d, msg4_header %d, msg4_padding %d, msg4_post_padding %d\n",
 		module_idP,CC_idP,frameP,subframeP,RA_template->msg4_TBsize,rrc_sdu_length,msg4_header,msg4_padding,msg4_post_padding);
 	  DevAssert( UE_id != UE_INDEX_INVALID ); // FIXME not sure how to gracefully return
 	  // CHECK THIS: &cc[CC_idP].CCCH_pdu.payload[0]
@@ -1023,7 +1023,7 @@ void check_Msg4_retransmission(module_id_t module_idP,int CC_idP,frame_t frameP,
   dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
   N_RB_DL       = to_prb(cc[CC_idP].mib->message.dl_Bandwidth);
   
-  LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Checking if Msg4 was acknowledged (round %d)\n",
+  LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Checking if Msg4 was acknowledged (round %d)\n",
 	module_idP,CC_idP,frameP,subframeP,round);
 
   if (round!=8) {
@@ -1062,10 +1062,10 @@ void check_Msg4_retransmission(module_id_t module_idP,int CC_idP,frame_t frameP,
 	    dl_req->number_dci++;
 	    dl_req->number_pdu++;
 	    
-	    LOG_I(MAC,"msg4 retransmission for rnti %x (round %d) fsf %d/%d\n", RA_template->rnti, round, frameP, subframeP);
+	    LOG_D(MAC,"msg4 retransmission for rnti %x (round %d) fsf %d/%d\n", RA_template->rnti, round, frameP, subframeP);
 	  }
 	  else
-	    LOG_I(MAC,"msg4 retransmission for rnti %x (round %d) fsf %d/%d CCE allocation failed!\n", RA_template->rnti, round, frameP, subframeP);
+	    LOG_D(MAC,"msg4 retransmission for rnti %x (round %d) fsf %d/%d CCE allocation failed!\n", RA_template->rnti, round, frameP, subframeP);
 	  LOG_W(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Msg4 not acknowledged, adding ue specific dci (rnti %x) for RA (Msg4 Retransmission)\n",
 		module_idP,CC_idP,frameP,subframeP,RA_template->rnti);
 	  
@@ -1084,7 +1084,7 @@ void check_Msg4_retransmission(module_id_t module_idP,int CC_idP,frame_t frameP,
 	} // Msg4 frame/subframe
       } // regular LTE case
   } else {
-    LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d : Msg4 acknowledged\n",module_idP,CC_idP,frameP,subframeP);
+    LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d : Msg4 acknowledged\n",module_idP,CC_idP,frameP,subframeP);
     RA_template->wait_ack_Msg4=0;
     RA_template->RA_active=FALSE;
     UE_id = find_UE_id(module_idP,RA_template->rnti);
@@ -1116,7 +1116,7 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP)
 
       if (RA_template->RA_active == TRUE) {
 
-        LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA %d is active (generate RAR %d, generate_Msg4 %d, wait_ack_Msg4 %d, rnti %x)\n",
+        LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA %d is active (generate RAR %d, generate_Msg4 %d, wait_ack_Msg4 %d, rnti %x)\n",
               module_idP,frameP,subframeP,CC_id,i,RA_template->generate_rar,RA_template->generate_Msg4,RA_template->wait_ack_Msg4, RA_template->rnti);
 
         if      (RA_template->generate_rar == 1)  generate_Msg2(module_idP,CC_id,frameP,subframeP,RA_template);
@@ -1159,9 +1159,9 @@ void initiate_ra_proc(module_id_t module_idP,
     ext4_prach=cc->radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
     prach_ParametersListCE_r13= &ext4_prach->prach_ParametersListCE_r13;
   }
-  LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d\n",module_idP,CC_id,frameP,subframeP,preamble_index);
+  LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d\n",module_idP,CC_id,frameP,subframeP,preamble_index);
 #ifdef Rel14
-  LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  PRACH resource type %d\n",module_idP,CC_id,frameP,subframeP,rach_resource_type);
+  LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  PRACH resource type %d\n",module_idP,CC_id,frameP,subframeP,rach_resource_type);
 #endif
 
   if (prach_ParametersListCE_r13 && 
@@ -1207,7 +1207,7 @@ void initiate_ra_proc(module_id_t module_idP,
       if (loop == 100) { printf("%s:%d:%s: FATAL ERROR! contact the authors\n", __FILE__, __LINE__, __FUNCTION__); abort(); }
       RA_template[i].RA_rnti        = ra_rnti;
       RA_template[i].preamble_index = preamble_index;
-      LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Activating RAR generation in Frame %d, subframe %d for process %d, rnti %x, RA_active %d\n",
+      LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Activating RAR generation in Frame %d, subframe %d for process %d, rnti %x, RA_active %d\n",
             module_idP,CC_id,frameP,
 	    RA_template[i].Msg2_frame,
 	    RA_template[i].Msg2_subframe,

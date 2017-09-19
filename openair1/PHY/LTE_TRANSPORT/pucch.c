@@ -2397,7 +2397,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       T(T_ENB_PHY_PUCCH_1AB_IQ, T_INT(eNB->Mod_id), T_INT(UE_id), T_INT(-1), T_INT(subframe), T_INT(stat_re), T_INT(stat_im));
 
 	  
-      *payload = (stat_re<0) ? 1 : 0;
+      *payload = (stat_re<0) ? 1 : 2; // 1 == ACK, 2 == NAK
 
       if (fmt==pucch_format1b)
         *(1+payload) = (stat_im<0) ? 1 : 0;

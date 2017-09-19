@@ -1687,7 +1687,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 	    *max_preamble_delay   = ((i*fft_size)>>log2_ifft_size)*update_TA/update_TA2;
 	    *max_preamble         = preamble_index;
 	    //#ifdef PRACH_DEBUG
-	    if ((en>60) && (br_flag==1)) LOG_I(PHY,"frame %d, subframe %d : max_preamble_energy %d, max_preamble_delay %d, max_preamble %d (br_flag %d,ce_level %d, levdB %d, lev %d)\n",frame,subframe,*max_preamble_energy,*max_preamble_delay,*max_preamble,br_flag,ce_level,levdB,lev);
+	    if ((en>60) && (br_flag==1)) LOG_D(PHY,"frame %d, subframe %d : max_preamble_energy %d, max_preamble_delay %d, max_preamble %d (br_flag %d,ce_level %d, levdB %d, lev %d)\n",frame,subframe,*max_preamble_energy,*max_preamble_delay,*max_preamble,br_flag,ce_level,levdB,lev);
 	    //#endif
 	  }
 	}

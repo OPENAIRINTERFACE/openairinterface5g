@@ -269,7 +269,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *ue,
 
   ulsch->power_offset = ue_power_offsets[ulsch->harq_processes[harq_pid]->nb_rb];
 
-  AssertFatal(ulsch->harq_processes[harq_pid]->nb_rb > 6,"unlikely rb count for RAR grant : nb_rb > 6\n");
+  AssertFatal(ulsch->harq_processes[harq_pid]->nb_rb <= 6,"unlikely rb count for RAR grant : nb_rb > 6\n");
 
   //  ulsch->harq_processes[harq_pid]->Ndi                                   = 1;
   if (ulsch->harq_processes[harq_pid]->round == 0)

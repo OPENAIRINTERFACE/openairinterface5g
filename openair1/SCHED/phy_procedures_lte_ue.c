@@ -2854,10 +2854,10 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
       }
     } else if( (dci_alloc_rx[i].rnti == ue->pdcch_vars[subframe_rx & 0x1][eNB_id]->crnti) &&
 	       (dci_alloc_rx[i].format == format0)) {
-#ifdef DEBUG_PHY_PROC
-      LOG_D(PHY,"[UE  %d][PUSCH] Frame %d subframe %d: Found rnti %x, format 0, dci_cnt %d\n",
+      //#ifdef DEBUG_PHY_PROC
+      LOG_I(PHY,"[UE  %d][PUSCH] Frame %d subframe %d: Found rnti %x, format 0, dci_cnt %d\n",
 	    ue->Mod_id,frame_rx,subframe_rx,dci_alloc_rx[i].rnti,i);
-#endif
+      //#endif
 
       ue->ulsch_no_allocation_counter[eNB_id] = 0;
       //dump_dci(&ue->frame_parms,&dci_alloc_rx[i]);
