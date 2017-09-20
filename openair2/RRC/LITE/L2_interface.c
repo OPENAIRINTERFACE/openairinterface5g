@@ -111,7 +111,7 @@ mac_rrc_data_req(
                RC.rrc[Mod_idP]->carrier[CC_id].SIB1,
                RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1);
 
-#if defined(ENABLE_ITTI)
+#if 0 //defined(ENABLE_ITTI)
         {
           MessageDef *message_p;
           int sib1_size = RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1;
@@ -152,7 +152,7 @@ mac_rrc_data_req(
                RC.rrc[Mod_idP]->carrier[CC_id].SIB23,
                RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23);
 
-#if defined(ENABLE_ITTI)
+#if 0 //defined(ENABLE_ITTI)
         {
           MessageDef *message_p;
           int sib23_size = RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23;
@@ -220,7 +220,7 @@ mac_rrc_data_req(
       if(Srb_info->Tx_buffer.payload_size>0) { //Fill buffer
         LOG_D(RRC,"[eNB %d] CCCH (%p) has %d bytes (dest: %p, src %p)\n",Mod_idP,Srb_info,Srb_info->Tx_buffer.payload_size,buffer_pP,Srb_info->Tx_buffer.Payload);
 
-#if defined(ENABLE_ITTI)
+#if 0 // defined(ENABLE_ITTI)
         {
           MessageDef *message_p;
           int ccch_size = Srb_info->Tx_buffer.payload_size;
@@ -258,7 +258,7 @@ mac_rrc_data_req(
       }
 
 
-#if defined(ENABLE_ITTI)
+#if 0 // defined(ENABLE_ITTI)
       {
         MessageDef *message_p;
         int mcch_size = RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area];
