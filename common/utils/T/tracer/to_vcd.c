@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <signal.h>
+#include <unistd.h>
 #include "database.h"
 #include "utils.h"
 #include "handler.h"
@@ -181,10 +182,13 @@ void usage(void)
 }
 
 int run = 1;
+static int socket = -1;
 
 void force_stop(int x)
 {
   printf("\ngently quit...\n");
+  close(socket);
+  socket = -1;
   run = 0;
 }
 
@@ -198,7 +202,6 @@ int main(int n, char **v)
   int *is_on;
   int number_of_events;
   int i;
-  int socket;
   vcd_vars vars[n];
   int nvars = 0;
   view *vcd_view;
