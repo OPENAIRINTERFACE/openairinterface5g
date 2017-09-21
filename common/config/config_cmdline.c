@@ -37,43 +37,73 @@
 
 int processoption(paramdef_t *cfgoptions, char *value)
 {
-int ret = 0;
+int optisset=0;
+int noarg=0;
+     if ((cfgoptions->paramflags &PARAMFLAG_BOOL) == 0) {
+        if (value == NULL) {
+	    noarg=1; 
+	} else if ( value[0] == '-') {
+	    noarg = 1;
+	}
+	if (noarg == 1) {
+	    fprintf(stderr,"[CONFIG] command line, option %s requires an argument\n",cfgoptions->optname);
+	    return 0;
+	}
+     } 
 
      switch(cfgoptions->type)
        {
        	case TYPE_STRING:
-           check_valptr(cfgoptions, (char **)(cfgoptions->strptr), sizeof(char *));
-           check_valptr(cfgoptions, cfgoptions->strptr, strlen(value+1));
+           config_check_valptr(cfgoptions, (char **)(cfgoptions->strptr), sizeof(char *));
+           config_check_valptr(cfgoptions, cfgoptions->strptr, strlen(value+1));
            sprintf(*(cfgoptions->strptr), "%s",value);
-           printf_cmdl("[LIBCONFIG] %s set to  %s from command line\n", cfgoptions->optname, value);
-           ret++;
-       break;
-       case TYPE_STRINGLIST:
-
-       break;
+           printf_cmdl("[CONFIG] %s set to  %s from command line\n", cfgoptions->optname, value);
+	   optisset=1;
+        break;
 	
-       	case TYPE_UINT:
-       	case TYPE_INT:
+        case TYPE_STRINGLIST:
+        break;
+        case TYPE_UINT32:
+       	case TYPE_INT32:
+        case TYPE_UINT16:
+       	case TYPE_INT16:
+	case TYPE_UINT8:
+       	case TYPE_INT8:	
+           config_check_valptr(cfgoptions, (char **)&(cfgoptions->iptr),sizeof(int32_t));
+	   config_assign_int(cfgoptions,cfgoptions->optname,(int32_t)strtol(value,NULL,0));  
+	   optisset=1;
+        break;  	
        	case TYPE_UINT64:
        	case TYPE_INT64:
-           check_valptr(cfgoptions, (char **)&(cfgoptions->i64ptr),sizeof(uint64_t)); 
-           *(cfgoptions->uptr) =strtol(value,NULL,0);  
-           printf_cmdl("[LIBCONFIG] %s set to  %lli from command line\n", cfgoptions->optname, (long long)*(cfgoptions->i64ptr));
-           ret++; 
+           config_check_valptr(cfgoptions, (char **)&(cfgoptions->i64ptr),sizeof(uint64_t));
+	   *(cfgoptions->i64ptr)=strtoll(value,NULL,0);  
+           printf_cmdl("[CONFIG] %s set to  %lli from command line\n", cfgoptions->optname, (long long)*(cfgoptions->i64ptr));
+	   optisset=1;
         break;        
        	case TYPE_UINTARRAY:
        	case TYPE_INTARRAY:
 
         break;
+        case TYPE_DOUBLE:
+           config_check_valptr(cfgoptions, (char **)&(cfgoptions->dblptr),sizeof(double)); 
+           *(cfgoptions->dblptr) = strtof(value,NULL);  
+           printf_cmdl("[CONFIG] %s set to  %lf from command line\n", cfgoptions->optname, *(cfgoptions->dblptr));
+	   optisset=1; 
+        break; 
+
        	case TYPE_IPV4ADDR:
 
         break;
 
        default:
-            fprintf(stderr,"[LIBCONFIG] command line, %s type %i  not supported\n",cfgoptions->optname, cfgoptions->type);
+            fprintf(stderr,"[CONFIG] command line, %s type %i  not supported\n",cfgoptions->optname, cfgoptions->type);
        break;
        } /* switch on param type */
-    return ret;
+       if (optisset == 1) {
+          cfgoptions->paramflags = cfgoptions->paramflags |  PARAMFLAG_PARAMSET;
+       }
+       
+    return optisset;
 }
 
 int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix)
@@ -101,9 +131,13 @@ char *cfgpath;
             if ( ( cfgoptions[i].paramflags & PARAMFLAG_DISABLECMDLINE) != 0) {
               continue;
              }
-            sprintf(cfgpath,"%s.%s",prefix,cfgoptions[i].optname);
-            if ( strcmp(*p + 1,cfgoptions[i].shortopt) == 0  || 
-                 strcmp(*p + 2,cfgpath ) == 0 ) {
+	    if (prefix != NULL) {
+               sprintf(cfgpath,"%s.%s",prefix,cfgoptions[i].optname);
+	    } else {
+	       sprintf(cfgpath,"%s",cfgoptions[i].optname);
+	    }
+            if ( ((strlen(*p) > 1) && (strcmp(*p + 1,cfgoptions[i].shortopt) == 0))  || 
+                 ((strlen(*p) > 2) && (strcmp(*p + 2,cfgpath ) == 0 )) ) {
                p++;
                j =+ processoption(&(cfgoptions[i]), *p);
                c--;

@@ -38,12 +38,19 @@
 extern "C"
 {
 #endif
+#define CONFIG_GETSOURCE    ( (config_get_if()==NULL) ? NULL : config_get_if()->cfgmode       )
+#define CONFIG_GETNUMP      ( (config_get_if()==NULL) ? 0    : config_get_if()->num_cfgP      )
+#define CONFIG_GETP(P)      ( (config_get_if()==NULL) ? NULL : config_get_if()->cfgP[P]       )
+#define CONFIG_ISFLAGSET(P) ( (config_get_if()==NULL) ? 0    : !!(config_get_if()->rtflags & P))
 
 extern configmodule_interface_t *config_get_if(void);
-extern char * check_valptr(paramdef_t *cfgoptions, char **ptr, int length) ;
+extern char * config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) ;
 extern void config_printhelp(paramdef_t *,int numparams);
 extern int config_process_cmdline(paramdef_t *params,int numparams, char *prefix);
 extern int config_get(paramdef_t *params,int numparams, char *prefix);
+extern int config_isparamset(paramdef_t *params,int paramidx);
+extern void config_assign_int(paramdef_t *cfgoptions, char *fullname, int val);
+extern int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix);
 #define config_getlist config_get_if()->getlist
 
 

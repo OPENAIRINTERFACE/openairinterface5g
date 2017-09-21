@@ -47,7 +47,7 @@ configmodule_interface_t *config_get_if(void)
     return cfgptr;
 }
 
-char * check_valptr(paramdef_t *cfgoptions, char **ptr, int length) 
+char * config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) 
 {
 
      printf_ptrs("-- %s 0x%08lx %i\n",cfgoptions->optname,(uintptr_t)(*ptr),length);
@@ -60,11 +60,52 @@ char * check_valptr(paramdef_t *cfgoptions, char **ptr, int length)
                  config_get_if()->numptrs++;
              }
         } else {
-             fprintf (stderr,"[LIBCONFIG] %s %d malloc error\n",__FILE__, __LINE__);
+             fprintf (stderr,"[CONFIG] %s %d malloc error\n",__FILE__, __LINE__);
              exit(-1);
         }       
      }
      return *ptr;
+}
+
+void config_assign_int(paramdef_t *cfgoptions, char *fullname, int val)
+{
+int tmpval=val;
+  if ( ((cfgoptions->paramflags &PARAMFLAG_BOOL) != 0) && tmpval >1) {
+      tmpval =1;
+  }
+  switch (cfgoptions->type) {
+       	case TYPE_UINT8:
+	     *(cfgoptions->u8ptr) = (uint8_t)tmpval;
+	     printf_params("[CONFIG] %s: %u\n", fullname, (uint8_t)tmpval);
+	break;
+       	case TYPE_INT8:
+	     *(cfgoptions->i8ptr) = (int8_t)tmpval;
+	     printf_params("[CONFIG] %s: %i\n", fullname, (int8_t)tmpval);
+	break;		
+       	case TYPE_UINT16:
+	     *(cfgoptions->u16ptr) = (uint16_t)tmpval;
+	     printf_params("[CONFIG] %s: %hu\n", fullname, (uint16_t)tmpval);     
+	break;
+       	case TYPE_INT16:
+	     *(cfgoptions->i16ptr) = (int16_t)tmpval;
+	     printf_params("[CONFIG] %s: %hi\n", fullname, (int16_t)tmpval);
+	break;	
+       	case TYPE_UINT32:
+	     *(cfgoptions->uptr) = (uint32_t)tmpval;
+	     printf_params("[CONFIG] %s: %u\n", fullname, (uint32_t)tmpval);
+	break;
+       	case TYPE_MASK:
+	     *(cfgoptions->uptr) = *(cfgoptions->uptr) | (uint32_t)tmpval;
+	     printf_params("[CONFIG] %s: 0x%08x\n", fullname, (uint32_t)tmpval);
+	break;
+       	case TYPE_INT32:
+	     *(cfgoptions->iptr) = (int32_t)tmpval;
+	     printf_params("[CONFIG] %s: %i\n", fullname, (int32_t)tmpval);
+	break;	
+	default:
+	     fprintf (stderr,"[CONFIG] %s %i type %i non integer parameter %s not assigned\n",__FILE__, __LINE__,cfgoptions->type,fullname);
+	break;
+  }
 }
 
 void config_printhelp(paramdef_t *params,int numparams)
@@ -80,12 +121,21 @@ int config_get(paramdef_t *params,int numparams, char *prefix)
 {
 int ret= -1;
 configmodule_interface_t *cfgif = config_get_if();
-if (cfgif != NULL) {
-    ret = config_get_if()->get(params, numparams,prefix);
-    if (ret >= 0) {
-       config_process_cmdline(params,numparams,prefix);
-   }
+  if (cfgif != NULL) {
+      ret = config_get_if()->get(params, numparams,prefix);
+      if (ret >= 0) {
+         config_process_cmdline(params,numparams,prefix);
+     }
+  return ret;
+  }
 return ret;
 }
-return ret;
+
+int config_isparamset(paramdef_t *params,int paramidx)
+{
+  if ((params[paramidx].paramflags & PARAMFLAG_PARAMSET) != 0) {
+      return 1;
+  } else {
+      return 0;
+  }
 }

@@ -30,7 +30,7 @@
  * \warning
  */
 
-#include "lte-softmodem.h"
+
 
 #include "T.h"
 
@@ -46,6 +46,7 @@
 
 #include "PHY/defs.h"
 #include "common/ran_context.h"
+#include "common/config/config_userapi.h"
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
@@ -95,7 +96,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "PHY/TOOLS/lte_phy_scope.h"
 #include "stats.h"
 #endif
-
+#include "lte-softmodem.h"
 
 
 #ifdef XFORMS
@@ -623,14 +624,125 @@ void *l2l1_task(void *arg) {
 }
 #endif
 
+static void get_options(void) {
+  int CC_id;
+  int clock_src;
+  int tddflag;
+  char *loopfile=NULL;
+  int dumpframe;
+  paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
+
+  config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL); 
+  if (tddflag > 0) {
+      for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) 
+	frame_parms[CC_id]->frame_type = TDD;
+  }
+
+  if (strlen(in_path) > 0) {
+      opt_type = OPT_PCAP;
+      opt_enabled=1;
+      printf("Enabling OPT for PCAP  with the following file %s \n",in_path);
+  }
+  if (strlen(in_ip) > 0) {
+      opt_enabled=1;
+      opt_type = OPT_WIRESHARK;
+      printf("Enabling OPT for wireshark for local interface");
+  }
+  if (UE_flag > 0) {
+     paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;
+     paramdef_t cmdline_ueparams[] =CMDLINE_UEPARAMS_DESC;
+     config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
+     config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
+      if (loopfile != NULL) {
+  	  printf("Input file for hardware emulation: %s",loopfile);
+  	  mode=loop_through_memory;
+  	  input_fd = fopen(loopfile,"r");
+  	  AssertFatal(input_fd != NULL,"Please provide a valid input file\n");
+      }
+      if ( (cmdline_uemodeparams[CMDLINE_CALIBUERX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue;
+      if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXMED_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_med;
+      if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXBYP_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_byp;
+      if ( *(cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].uptr) > 0) mode = debug_prach;
+      if ( *(cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].uptr) > 0)  mode = no_L2_connect;
+      if ( *(cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].uptr) > 0) mode = calib_prach_tx; 
+      if (dumpframe  > 0)  mode = rx_dump_frame;
+      
+      if ( downlink_frequency[0][0] > 0) {
+  	  for (CC_id=1; CC_id<MAX_NUM_CCs; CC_id++) {
+  	    downlink_frequency[CC_id][1] = downlink_frequency[0][0];
+  	    downlink_frequency[CC_id][2] = downlink_frequency[0][0];
+  	    downlink_frequency[CC_id][3] = downlink_frequency[0][0];
+  	    printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
+  	  }
+      UE_scan=0;
+      } 
 
 
+      if (frame_parms[0]->N_RB_DL !=0) {
+  	  if ( frame_parms[0]->N_RB_DL < 6 ) {
+  	     frame_parms[0]->N_RB_DL = 6;
+  	     printf ( "%i: Invalid number of ressource blocks, adjusted to 6\n",frame_parms[0]->N_RB_DL);
+  	  }
+  	  if ( frame_parms[0]->N_RB_DL > 100 ) {
+  	     frame_parms[0]->N_RB_DL = 100;
+  	     printf ( "%i: Invalid number of ressource blocks, adjusted to 100\n",frame_parms[0]->N_RB_DL);
+  	  }
+  	  if ( frame_parms[0]->N_RB_DL > 50 && frame_parms[0]->N_RB_DL < 100 ) {
+  	     frame_parms[0]->N_RB_DL = 50;
+  	     printf ( "%i: Invalid number of ressource blocks, adjusted to 50\n",frame_parms[0]->N_RB_DL);
+  	  }
+  	  if ( frame_parms[0]->N_RB_DL > 25 && frame_parms[0]->N_RB_DL < 50 ) {
+  	     frame_parms[0]->N_RB_DL = 25;
+  	     printf ( "%i: Invalid number of ressource blocks, adjusted to 25\n",frame_parms[0]->N_RB_DL);
+  	  }
+  	  UE_scan = 0;
+  	  frame_parms[0]->N_RB_UL=frame_parms[0]->N_RB_DL;
+  	  for (CC_id=1; CC_id<MAX_NUM_CCs; CC_id++) {
+  	      frame_parms[CC_id]->N_RB_DL=frame_parms[0]->N_RB_DL;
+  	      frame_parms[CC_id]->N_RB_UL=frame_parms[0]->N_RB_UL;
+  	  }
+      }
 
-static void get_options (int argc, char **argv) {
+
+      for (CC_id=1;CC_id<MAX_NUM_CCs;CC_id++) {
+  	    tx_max_power[CC_id]=tx_max_power[0];
+	    rx_gain[0][CC_id] = rx_gain[0][0];
+	    tx_gain[0][CC_id] = tx_gain[0][0];
+      }
+  } /* UE_flag > 0 */
+#if T_TRACER
+  paramdef_t cmdline_ttraceparams[] =CMDLINE_TTRACEPARAMS_DESC ;
+  config_process_cmdline( cmdline_ttraceparams,sizeof(cmdline_ttraceparams)/sizeof(paramdef_t),NULL);   
+#endif
+
+
+  if (UE_flag == 0) {
+    memset((void*)&RC,0,sizeof(RC));
+    /* Read RC configuration file */
+    RCConfig(NULL);
+    NB_eNB_INST = RC.nb_inst;
+    NB_RU       = RC.nb_RU;
+    printf("Configuration: nb_inst %d, nb_ru %d\n",NB_eNB_INST,NB_RU);
+
+    
+  } else if (UE_flag == 1) {
+    if (conf_config_file_name != NULL) {
+      
+      // Here the configuration file is the XER encoded UE capabilities
+      // Read it in and store in asn1c data structures
+      strcpy(uecap_xer,conf_config_file_name);
+      uecap_xer_in=1;
+
+    }
+  }
+}
+
+
+static void old_get_options (int argc, char **argv) {
   int c;
   //  char                          line[1000];
   //  int                           l;
-  int k,i;//,j,k;
+  int i;
 #if defined(OAI_USRP) || defined(CPRIGW)
   int clock_src;
 #endif
@@ -1233,7 +1345,7 @@ void init_openair0() {
 }
 
 
-void wait_RUs() {
+void wait_RUs(void) {
 
   LOG_I(PHY,"Waiting for RUs to be configured ...\n");
 
@@ -1249,7 +1361,7 @@ void wait_RUs() {
   LOG_I(PHY,"RUs configured\n");
 }
 
-void wait_eNBs() {
+void wait_eNBs(void) {
 
   int i,j;
   int waiting=1;
@@ -1271,12 +1383,11 @@ void wait_eNBs() {
 
 int main( int argc, char **argv )
 {
-  int i,j,k,aa,re;
+  int i;
 #if defined (XFORMS)
   void *status;
 #endif
 
-  int inst;
   int CC_id;
   int ru_id;
   uint8_t  abstraction_flag=0;
@@ -1287,7 +1398,11 @@ int main( int argc, char **argv )
 #endif
 
   start_background_system();
+  if ( load_configmodule(argc,argv) == NULL) {
+    exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
+  } 
 
+      
 #ifdef DEBUG_CONSOLE
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
@@ -1310,8 +1425,15 @@ int main( int argc, char **argv )
 
   printf("Reading in command-line options\n");
   // get options and fill parameters from configuration file
-  get_options (argc, argv); //Command-line options, enb_properties
-
+  // temporary test to allow legacy config or config module */
+  
+  if ( CONFIG_ISFLAGSET(CONFIG_LEGACY) == 0) {
+      printf("configuration via the configuration module \n");
+      get_options (); //Command-line options, enb_properties
+  } else {
+      printf("Legacy configuration mode \n");
+      old_get_options (argc,argv);
+  }
 
 
 #if T_TRACER
@@ -1738,7 +1860,7 @@ int main( int argc, char **argv )
   sync_var=0;
   pthread_cond_broadcast(&sync_cond);
   pthread_mutex_unlock(&sync_mutex);
-  
+  end_configmodule();
 
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
