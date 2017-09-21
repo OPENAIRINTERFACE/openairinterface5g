@@ -42,7 +42,7 @@
 #include "config_userapi.h"
 #define CONFIG_SHAREDLIBFORMAT "libparams_%s.so"
 
-int load_config_sharedlib(char *cfgmode, char *cfgP[], int numP, configmodule_interface_t *cfgptr)
+int load_config_sharedlib(configmodule_interface_t *cfgptr)
 {
 void *lib_handle;
 char fname[128];
@@ -50,46 +50,46 @@ char libname[FILENAME_MAX];
 int st;
 
    st=0;  
-   sprintf(libname,CONFIG_SHAREDLIBFORMAT,cfgmode);
+   sprintf(libname,CONFIG_SHAREDLIBFORMAT,cfgptr->cfgmode);
 
    lib_handle = dlopen(libname,RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
    if (!lib_handle) {
       fprintf(stderr,"[CONFIG] %s %d Error calling dlopen(%s): %s\n",__FILE__, __LINE__, libname,dlerror());
       st = -1;
    } else { 
-      sprintf (fname,"config_%s_init",cfgmode);
+      sprintf (fname,"config_%s_init",cfgptr->cfgmode);
       cfgptr->init = dlsym(lib_handle,fname);
 
       if (cfgptr->init == NULL ) {
          printf("[CONFIG] %s %d no function %s for config mode %s\n",
-               __FILE__, __LINE__,fname, cfgmode);
+               __FILE__, __LINE__,fname, cfgptr->cfgmode);
       } else {
-         st=cfgptr->init(cfgP,numP); 
+         st=cfgptr->init(cfgptr->cfgP,cfgptr->num_cfgP); 
          printf("[CONFIG] function %s returned %i\n",
                fname, st);	 
       }
 
-      sprintf (fname,"config_%s_get",cfgmode);
+      sprintf (fname,"config_%s_get",cfgptr->cfgmode);
       cfgptr->get = dlsym(lib_handle,fname);
       if (cfgptr->get == NULL ) { 
          printf("[CONFIG] %s %d no function %s for config mode %s\n",
-               __FILE__, __LINE__,fname, cfgmode);
+               __FILE__, __LINE__,fname, cfgptr->cfgmode);
 	 st = -1;
       }
       
-      sprintf (fname,"config_%s_getlist",cfgmode);
+      sprintf (fname,"config_%s_getlist",cfgptr->cfgmode);
       cfgptr->getlist = dlsym(lib_handle,fname);
       if (cfgptr->getlist == NULL ) { 
          printf("[CONFIG] %s %d no function %s for config mode %s\n",
-               __FILE__, __LINE__,fname, cfgmode);
+               __FILE__, __LINE__,fname, cfgptr->cfgmode);
 	 st = -1;
       }
 
-      sprintf (fname,"config_%s_end",cfgmode);
+      sprintf (fname,"config_%s_end",cfgptr->cfgmode);
       cfgptr->end = dlsym(lib_handle,fname);
       if (cfgptr->getlist == NULL ) { 
          printf("[CONFIG] %s %d no function %s for config mode %s\n",
-               __FILE__, __LINE__,fname, cfgmode);
+               __FILE__, __LINE__,fname, cfgptr->cfgmode);
       }      
    } 
    
@@ -105,16 +105,11 @@ char *cfgparam=NULL;
 char *modeparams=NULL;
 char *cfgmode=NULL;
 char *strtokctx=NULL;
-char *cfgP[CONFIG_MAX_OOPT_PARAMS];
+char *atoken;
 
-int i; 
-int p;  
-
+int i;
  
-  for(i=0; i<CONFIG_MAX_OOPT_PARAMS ; i++) {
-      cfgP[i]=NULL;
-  }
-    
+
 /* first parse the command line to look for the -O option */
   opterr=0;
   while ((i = getopt(argc, argv, "O:")) != -1) {
@@ -122,6 +117,8 @@ int p;
           cfgparam = optarg; 
        }      
    }
+   optind=1;
+
 /* look for the OAI_CONFIGMODULE environement variable */
   if ( cfgparam == NULL ) {
      cfgparam = getenv("OAI_CONFIGMODULE");
@@ -138,36 +135,47 @@ int p;
        return NULL;
    }
    else if ( i == 1 ) {
+  /* -O argument doesn't contain ":" separator, legacy -O <conf file> option, default cfgmode to libconfig
+     with one parameter, the path to the configuration file */
        modeparams=cfgmode;
        cfgmode=strdup("libconfig");
    }
 
    cfgptr = malloc(sizeof(configmodule_interface_t));
+   memset(cfgptr,0,sizeof(configmodule_interface_t));
+/* temporary, legacy mode */
+   if (i==1) cfgptr->rtflags = cfgptr->rtflags | CONFIG_LEGACY;
+/*--*/
+   cfgptr->argc   = argc;
+   cfgptr->argv   = argv; 
+   cfgptr->cfgmode=strdup(cfgmode);
 
-   p=0;
-   cfgP[p]=strtok_r(modeparams,":",&strtokctx);     
-   while ( p< CONFIG_MAX_OOPT_PARAMS && cfgP[p] != NULL) {
+   cfgptr->num_cfgP=0;
+   atoken=strtok_r(modeparams,":",&strtokctx);     
+   while ( cfgptr->num_cfgP< CONFIG_MAX_OOPT_PARAMS && atoken != NULL) {
+       /* look for debug level in the config parameters, it is commom to all config mode 
+          and will be removed frome the parameter array passed to the shared module */
        char *aptr;
-       aptr=strcasestr(cfgP[p],"dbgl");
+       aptr=strcasestr(atoken,"dbgl");
        if (aptr != NULL) {
-           cfgptr->rtflags = strtol(aptr+4,NULL,0);
-           Config_Params[CONFIGPARAM_DEBUGFLAGS_IDX].paramflags = Config_Params[CONFIGPARAM_DEBUGFLAGS_IDX].paramflags | PARAMFLAG_DONOTREAD;
-           for (int j=p; j<(CONFIG_MAX_OOPT_PARAMS-1); j++) cfgP[j] = cfgP[j+1];
-           p--;
+           cfgptr->rtflags = cfgptr->rtflags | strtol(aptr+4,NULL,0);
+
+       } else {
+           cfgptr->cfgP[cfgptr->num_cfgP] = strdup(atoken);
+           cfgptr->num_cfgP++;
        }
-       p++;
-       cfgP[p] = strtok_r(NULL,":",&strtokctx);
+       atoken = strtok_r(NULL,":",&strtokctx);
    }
 
    
    printf("[CONFIG] get parameters from %s ",cfgmode);
-   for (i=0;i<p; i++) {
-        printf("%s ",cfgP[i]); 
+   for (i=0;i<cfgptr->num_cfgP; i++) {
+        printf("%s ",cfgptr->cfgP[i]); 
    }
    printf("\n");
 
  
-   i=load_config_sharedlib(cfgmode, cfgP,p,cfgptr);
+   i=load_config_sharedlib(cfgptr);
    if (i< 0) {
       fprintf(stderr,"[CONFIG] %s %d config module %s couldn't be loaded\n", __FILE__, __LINE__,cfgmode);
       return NULL;
@@ -180,26 +188,30 @@ int p;
 
    if (modeparams != NULL) free(modeparams);
    if (cfgmode != NULL) free(cfgmode);
-   optind=1;
-   cfgptr->argc = argc;
-   cfgptr->argv  = argv;    
+   
    return cfgptr;
 }
 
 void end_configmodule()
 { 
   if (cfgptr != NULL) {
-      printf ("[CONFIG] free %u pointers\n",cfgptr->numptrs);  
+      if (cfgptr->end != NULL) {
+         printf ("[CONFIG] calling config module end function...\n"); 
+         cfgptr->end();
+      }
+      if( cfgptr->cfgmode != NULL) free(cfgptr->cfgmode);
+      printf ("[CONFIG] free %u config parameter pointers\n",cfgptr->num_cfgP);  
+      for (int i=0; i<cfgptr->num_cfgP; i++) {
+          if ( cfgptr->cfgP[i] != NULL) free(cfgptr->cfgP[i]);
+          }
+      printf ("[CONFIG] free %u config value pointers\n",cfgptr->numptrs);  
       for(int i=0; i<cfgptr->numptrs ; i++) {
           if (cfgptr->ptrs[i] != NULL) {
              free(cfgptr->ptrs[i]);
           }
           cfgptr->ptrs[i]=NULL;
       }
-      if (cfgptr->end != NULL) {
-      printf ("[CONFIG] calling config module end function...\n"); 
-      cfgptr->end();
-      }
+
   free(cfgptr);
   cfgptr=NULL;
   }
