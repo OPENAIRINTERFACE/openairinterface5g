@@ -673,7 +673,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 	      max_preamble_energy[0]%10,
 	      max_preamble_delay[0]);
 	
-	    T(T_ENB_PHY_INITIATE_RA_PROCEDURE, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), 0,
+	    T(T_ENB_PHY_INITIATE_RA_PROCEDURE, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(-1),
 	      T_INT(max_preamble[0]), T_INT(max_preamble_energy[0]), T_INT(max_preamble_delay[0]));
 	    
 	    prach_vars = &eNB->prach_vars;
