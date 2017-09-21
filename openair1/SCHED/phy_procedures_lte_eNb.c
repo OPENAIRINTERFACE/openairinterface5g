@@ -57,12 +57,14 @@ void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,PHY_VARS_RN *rn,rel
 
 
 #if defined(Rel10) || defined(Rel14)
-  MCH_PDU *mch_pduP;
+  MCH_PDU *mch_pduP=NULL;
   MCH_PDU  mch_pdu;
   //  uint8_t sync_area=255;
 #endif
 
   int subframe = proc->subframe_tx;
+
+  AssertFatal(1==0,"pmch not tested for the moment, exiting\n");
 
   // This is DL-Cell spec pilots in Control region
   generate_pilots_slot(eNB,
@@ -548,10 +550,11 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 #endif
 		      ) {
 
-  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   uint16_t max_preamble[4],max_preamble_energy[4],max_preamble_delay[4];
   uint16_t i;
   int frame,subframe;
+  LTE_eNB_PRACH *prach_vars=NULL;
+
 #ifdef Rel14
   if (br_flag==1) {
     subframe = eNB->proc.subframe_prach_br;
@@ -569,11 +572,9 @@ void prach_procedures(PHY_VARS_eNB *eNB,
       subframe = eNB->proc.subframe_prach;
       frame = eNB->proc.frame_prach;
     }
-  uint8_t CC_id = eNB->CC_id;
   RU_t *ru;
   int aa=0;
   int ru_aa;
-  LTE_eNB_PRACH *prach_vars;
 
  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,1);
@@ -766,11 +767,8 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 {
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   uint8_t SR_payload = 0,pucch_b0b1[4][2]= {{0,0},{0,0},{0,0},{0,0}},harq_ack[4]={0,0,0,0};
-  uint8_t do_SR = 0;
-  uint8_t pucch_sel = 0;
   int32_t metric[4]={0,0,0,0},metric_SR=0,max_metric;
-  ANFBmode_t bundling_flag;
-  PUCCH_FMT_t format;
+  ANFBmode_t bundling_flag=1;
   const int subframe = proc->subframe_rx;
   const int frame = proc->frame_rx;
   int i;
@@ -895,7 +893,9 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 
 	}
 	else { // frame_type == TDD
-	  
+
+	  // This should be retrived from ulsch structure 
+	  bundling_flag = 1;
 
 	  // if SR was detected, use the n1_pucch from SR
 	  if (SR_payload==1) {
@@ -1228,10 +1228,10 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	  }
 	  
 #ifdef DEBUG_PHY_PROC
-	  LOG_D(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d ACK/NAK metric 0 %d, metric 1 %d, sel %d, (%d,%d)\n",eNB->Mod_id,
+	  LOG_D(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d ACK/NAK metric 0 %d, metric 1 %d, (%d,%d)\n",eNB->Mod_id,
 		eNB->dlsch[UE_id][0]->rnti,
 		frame,subframe,
-		metric0,metric1,pucch_sel,pucch_b0b1[0],pucch_b0b1[1]);
+		metric0,metric1,pucch_b0b1[0],pucch_b0b1[1]);
 #endif
 	}
 	break;
@@ -1259,19 +1259,15 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 
 void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 
-  uint32_t ret=0,i,j,k;
-  uint32_t harq_pid, harq_idx, round;
+  uint32_t ret=0,i;
+  uint32_t harq_pid;
   uint8_t nPRS;
-  int sync_pos;
-  uint16_t rnti=0;
-  uint8_t access_mode;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   LTE_eNB_ULSCH_t *ulsch;
   LTE_UL_eNB_HARQ_t *ulsch_harq;
 
   const int subframe = proc->subframe_rx;
   const int frame    = proc->frame_rx;
-  int offset         = eNB->CC_id;//(proc == &eNB->proc.proc_rxtx[0]) ? 0 : 1;
   
   if (fp->frame_type == FDD) harq_pid = ((10*frame) + subframe)&7;
   else                       harq_pid = subframe%10;
@@ -1293,7 +1289,6 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
       
       
       // UE is has ULSCH scheduling
-      round = ulsch_harq->round;
  
       for (int rb=0;
            rb<=ulsch_harq->nb_rb;
@@ -1649,7 +1644,6 @@ void fill_ulsch_cqi_indication(PHY_VARS_eNB *eNB,uint16_t frame,uint8_t subframe
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   nfapi_cqi_indication_pdu_t *pdu         = &eNB->UL_INFO.cqi_ind.cqi_pdu_list[eNB->UL_INFO.cqi_ind.number_of_cqis];
   nfapi_cqi_indication_raw_pdu_t *raw_pdu = &eNB->UL_INFO.cqi_ind.cqi_raw_pdu_list[eNB->UL_INFO.cqi_ind.number_of_cqis];
-  uint8_t O;
 
   pdu->rx_ue_information.rnti = rnti;
   if (ulsch_harq->cqi_crc_status != 1) pdu->cqi_indication_rel9.data_offset = 0;
@@ -1730,7 +1724,7 @@ void fill_ulsch_harq_indication(PHY_VARS_eNB *eNB,LTE_UL_eNB_HARQ_t *ulsch_harq,
 
 void fill_uci_harq_indication(PHY_VARS_eNB *eNB,LTE_eNB_UCI *uci,int frame,int subframe,uint8_t *harq_ack,uint8_t tdd_mapping_mode,uint16_t tdd_multiplexing_mask) {
 
-  int UE_id=find_dlsch(uci->rnti,eNB,SEARCH_EXIST),i;
+  int UE_id=find_dlsch(uci->rnti,eNB,SEARCH_EXIST);
 
 
   pthread_mutex_lock(&eNB->UL_INFO_mutex);

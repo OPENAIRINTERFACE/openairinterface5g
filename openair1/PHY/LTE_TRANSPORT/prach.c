@@ -1092,9 +1092,9 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 
 void rx_prach0(PHY_VARS_eNB *eNB,
 	       RU_t *ru,
-	       int16_t *max_preamble,
-	       int16_t *max_preamble_energy,
-	       int16_t *max_preamble_delay,
+	       uint16_t *max_preamble,
+	       uint16_t *max_preamble_energy,
+	       uint16_t *max_preamble_delay,
 	       uint16_t Nf, 
 	       uint8_t tdd_mapindex
 #ifdef Rel14
