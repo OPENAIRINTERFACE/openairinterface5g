@@ -66,7 +66,7 @@ void add_msg3(module_id_t module_idP,int CC_id, RA_TEMPLATE *RA_template, frame_
 
   eNB_MAC_INST                    *eNB = RC.mac[module_idP];
   COMMON_channels_t               *cc  = &eNB->common_channels[CC_id];
-  uint8_t                         i,j;
+  uint8_t                         j;
   nfapi_ul_config_request_t      *ul_req;
   nfapi_ul_config_request_pdu_t  *ul_config_pdu;
   nfapi_ul_config_request_body_t *ul_req_body;
@@ -83,8 +83,8 @@ void add_msg3(module_id_t module_idP,int CC_id, RA_TEMPLATE *RA_template, frame_
 
 #ifdef Rel14
   if (RA_template->rach_resource_type>0) {
-    LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA %d CE level %d is active, Msg3 in (%d,%d)\n",
-	  module_idP,frameP,subframeP,CC_id,i,RA_template->rach_resource_type-1,
+    LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d CE level %d is active, Msg3 in (%d,%d)\n",
+	  module_idP,frameP,subframeP,CC_id,RA_template->rach_resource_type-1,
 	  RA_template->Msg3_frame,RA_template->Msg3_subframe);
     LOG_D(MAC,"Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d)\n",
 	  frameP,subframeP,RA_template->Msg3_frame,RA_template->Msg3_subframe);
@@ -120,8 +120,8 @@ void add_msg3(module_id_t module_idP,int CC_id, RA_TEMPLATE *RA_template, frame_
   else
 #endif
     {
-      LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA %d is active, Msg3 in (%d,%d)\n",
-	    module_idP,frameP,subframeP,CC_id,i,RA_template->Msg3_frame,RA_template->Msg3_subframe);
+      LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d)\n",
+	    module_idP,frameP,subframeP,CC_id,RA_template->Msg3_frame,RA_template->Msg3_subframe);
 	    
       LOG_D(MAC,"Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d)\n",
 	    frameP,subframeP,RA_template->Msg3_frame,RA_template->Msg3_subframe);
@@ -164,8 +164,8 @@ void add_msg3(module_id_t module_idP,int CC_id, RA_TEMPLATE *RA_template, frame_
 	// save UL scheduling information for preprocessor
 	for (j=0;j<RA_template->msg3_nb_rb;j++) cc->vrb_map_UL[RA_template->msg3_first_rb+j]=1;
 	
-	LOG_D(MAC,"[eNB %d][PUSCH-RA %x] CC_id %d Frame %d subframeP %d Scheduled (PHICH) RA %d (mcs %d, first rb %d, nb_rb %d,round %d)\n",
-	      module_idP,RA_template->rnti,CC_id,frameP,subframeP,i,10,
+	LOG_D(MAC,"[eNB %d][PUSCH-RA %x] CC_id %d Frame %d subframeP %d Scheduled (PHICH) RA (mcs %d, first rb %d, nb_rb %d,round %d)\n",
+	      module_idP,RA_template->rnti,CC_id,frameP,subframeP,10,
 	      1,1,
 	      RA_template->msg3_round-1);
       } //       if (RA_template->msg3_round != 0) { // program HI too

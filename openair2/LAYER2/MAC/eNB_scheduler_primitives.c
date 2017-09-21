@@ -780,7 +780,6 @@ void get_csi_params(COMMON_channels_t *cc,struct CQI_ReportPeriodic *cqi_ReportP
 uint8_t get_dl_cqi_pmi_size_pusch(UE_sched_ctrl *sched_ctl,COMMON_channels_t *cc,uint8_t tmode,uint8_t ri, CQI_ReportModeAperiodic_t *cqi_ReportModeAperiodic) {
 
   int Ntab[6]       = {0,4,7,9,10,13};
-  int Ntab_uesel[6] = {0,8,13,17,19,25};
   int N             = Ntab[cc->p_eNB];
   int Ltab_uesel[6] = {0,6,9,13,15,18};
   int L             = Ltab_uesel[cc->p_eNB];
@@ -847,7 +846,8 @@ uint8_t get_dl_cqi_pmi_size_pusch(UE_sched_ctrl *sched_ctl,COMMON_channels_t *cc
 
     break;
   }
-
+  AssertFatal(1==0,"Shouldn't get here\n");
+  return(0);
 }
 
 uint8_t get_rel8_dl_cqi_pmi_size(UE_sched_ctrl *sched_ctl,int CC_idP,COMMON_channels_t *cc,uint8_t tmode, struct CQI_ReportPeriodic *cqi_ReportPeriodic) {

@@ -1205,7 +1205,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
       frame               = eNB->proc.frame_prach_br;
       subframe            = eNB->proc.subframe_prach_br;
       prachF              = eNB->prach_vars_br.prachF;
-      rxsigF              = eNB->prach_vars_br.rxsigF;
+      rxsigF              = eNB->prach_vars_br.rxsigF[ce_level];
 #ifdef PRACH_DEBUG
       if ((frame&1023) < 20) LOG_I(PHY,"PRACH (eNB) : running rx_prach (br_flag %d, ce_level %d) for frame %d subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d, rootSequenceIndex %d, repetition number %d,numRepetitionsPrePreambleAttempt %d\n",
 				   br_flag,ce_level,frame,subframe,
@@ -1222,7 +1222,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
         frame             = eNB->proc.frame_prach;
         subframe          = eNB->proc.subframe_prach;
         prachF            = eNB->prach_vars.prachF;
-        rxsigF            = eNB->prach_vars.rxsigF;
+        rxsigF            = eNB->prach_vars.rxsigF[0];
 #ifdef PRACH_DEBUG
         if ((frame&1023) < 20) LOG_I(PHY,"PRACH (eNB) : running rx_prach for subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d , rootSequenceIndex %d\n",
 				     subframe,fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset,prach_ConfigIndex,rootSequenceIndex);

@@ -506,7 +506,11 @@ void generate_pucch1x(int32_t **txdataF,
             }
 
             break;
-
+	  case pucch_format1b_csA2:
+	  case pucch_format1b_csA3:
+	  case pucch_format1b_csA4:
+	    AssertFatal(1==0,"PUCCH format 1b_csX not supported yet\n");
+	    break;
           case pucch_format2:
           case pucch_format2a:
           case pucch_format2b:

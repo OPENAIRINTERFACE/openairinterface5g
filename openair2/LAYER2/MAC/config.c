@@ -333,7 +333,7 @@ void config_sib2(int Mod_idP,
     struct PRACH_ConfigSIB_v1310 *ext4_prach=radioResourceConfigCommon_BRP->ext4->prach_ConfigCommon_v1310; 
 
     PRACH_ParametersListCE_r13_t	 *prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
-    int i;
+
     PRACH_ParametersCE_r13_t *p;
     cfg->emtc_config.prach_ce_level_0_enable.value=0;
     cfg->emtc_config.prach_ce_level_1_enable.value=0;

@@ -455,7 +455,6 @@ schedule_ue_spec(
   int                            N_RBG[MAX_NUM_CCs];
   nfapi_dl_config_request_body_t *dl_req;
   nfapi_dl_config_request_pdu_t  *dl_config_pdu;
-  nfapi_tx_request_pdu_t         *TX_req;
   int                            tdd_sfa;
 
 #if 0
@@ -1319,7 +1318,6 @@ fill_DLSCH_dci(
   int               N_RBG;
   int               N_RB_DL;
   COMMON_channels_t *cc;
-  eNB_UE_STATS      *eNB_UE_stats;
 
   start_meas(&eNB->fill_DLSCH_dci);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_FILL_DLSCH_DCI,VCD_FUNCTION_IN);
@@ -1347,7 +1345,6 @@ fill_DLSCH_dci(
 	else harq_pid = ((frameP*10)+subframeP)&7;
         nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
 
-	eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id]; 
 
 	
         /// Synchronizing rballoc with rballoc_sub

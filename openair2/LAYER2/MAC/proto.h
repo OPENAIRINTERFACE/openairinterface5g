@@ -141,9 +141,13 @@ int8_t get_deltaP_rampup(module_id_t module_idP,uint8_t CC_id);
 
 uint16_t mac_computeRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs);
 
+void add_msg3(module_id_t module_idP,int CC_id, RA_TEMPLATE *RA_template, frame_t frameP, sub_frame_t subframeP);
+
 //main.c
 
 int mac_top_init(int eMBMS_active, char *uecap_xer,uint8_t cba_group_active, uint8_t HO_active);
+
+int mac_top_init_eNB(void);
 
 char layer2_init_UE(module_id_t module_idP);
 
@@ -996,6 +1000,8 @@ int get_numnarrowbands(long dl_Bandwidth);
 int narrowband_to_first_rb(COMMON_channels_t *cc, int nb_index);
 
 #endif
+
+int l2_init_eNB(void);
 
 
 

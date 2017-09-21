@@ -420,12 +420,6 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
   int mbsfn_status[MAX_NUM_CCs];
   protocol_ctxt_t   ctxt;
 
-#if defined(ENABLE_ITTI)
-  MessageDef   *msg_p;
-  const char         *msg_name;
-  instance_t    instance;
-  int           result;
-#endif
   int CC_id,i; //,next_i;
   UE_list_t *UE_list=&RC.mac[module_idP]->UE_list;
   rnti_t rnti;

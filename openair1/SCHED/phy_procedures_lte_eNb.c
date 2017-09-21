@@ -768,7 +768,6 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   uint8_t SR_payload = 0,pucch_b0b1[4][2]= {{0,0},{0,0},{0,0},{0,0}},harq_ack[4]={0,0,0,0};
   int32_t metric[4]={0,0,0,0},metric_SR=0,max_metric;
-  ANFBmode_t bundling_flag=1;
   const int subframe = proc->subframe_rx;
   const int frame = proc->frame_rx;
   int i;
@@ -894,8 +893,6 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	}
 	else { // frame_type == TDD
 
-	  // This should be retrived from ulsch structure 
-	  bundling_flag = 1;
 
 	  // if SR was detected, use the n1_pucch from SR
 	  if (SR_payload==1) {
@@ -963,7 +960,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	    }
 	    fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,2,0xffff); // special_bundling mode
 	  } 
-	  else if ((bundling_flag == 0) && (res==2)){ // multiplexing + no SR, implement Table 10.1.3-5 (Rel14) for multiplexing with M=2
+	  else if ((uci->tdd_bundling == 0) && (res==2)){ // multiplexing + no SR, implement Table 10.1.3-5 (Rel14) for multiplexing with M=2
 	    if (pucch_b0b1[0][0] == 4 ||
 		pucch_b0b1[1][0] == 4) { // there isn't a likely transmission
 	      harq_ack[0] = 4; // DTX
@@ -1003,8 +1000,8 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	      }
 	    }
 	    fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
-	  } //else if ((bundling_flag == 0) && (res==2))
-	  else if ((bundling_flag == 0) && (res==3)){ // multiplexing + no SR, implement Table 10.1.3-6 (Rel14) for multiplexing with M=3
+	  } //else if ((uci->tdd_bundling == 0) && (res==2))
+	  else if ((uci->tdd_bundling == 0) && (res==3)){ // multiplexing + no SR, implement Table 10.1.3-6 (Rel14) for multiplexing with M=3
 	    
 	    if (harq_ack[0] == 4 ||
 		harq_ack[1] == 4 ||
@@ -1084,8 +1081,8 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	      }
 	    }
 	    fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
-	  } //else if ((bundling_flag == 0) && (res==3)) 
-	  else if ((bundling_flag == 0) && (res==4)){ // multiplexing + no SR, implement Table 10.1.3-7 (Rel14) for multiplexing with M=4
+	  } //else if ((uci->tdd_bundling == 0) && (res==3)) 
+	  else if ((uci->tdd_bundling == 0) && (res==4)){ // multiplexing + no SR, implement Table 10.1.3-7 (Rel14) for multiplexing with M=4
 	    if (pucch_b0b1[0][0] == 4 ||
 		pucch_b0b1[1][0] == 4 ||
 		pucch_b0b1[2][0] == 4 ||
@@ -1220,7 +1217,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	      }
 	    }
 	    fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
-	  } // else if ((bundling_flag == 0) && (res==4))
+	  } // else if ((uci->tdd_bundling == 0) && (res==4))
 	  else { // bundling
 	    harq_ack[0] = pucch_b0b1[0][0];
 	    harq_ack[1] = pucch_b0b1[0][1];

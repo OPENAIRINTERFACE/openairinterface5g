@@ -1656,12 +1656,12 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                       uint8_t beamforming_mode,
                                       uint16_t tc_rnti);
 
-int fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
+void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
 			eNB_rxtx_proc_t *proc,
 			DCI_ALLOC_t *dci_alloc,
 			nfapi_dl_config_dci_dl_pdu *pdu);
 
-int fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *dci_alloc,nfapi_dl_config_mpdcch_pdu *pdu);
+void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *dci_alloc,nfapi_dl_config_mpdcch_pdu *pdu);
 
 void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
 	      nfapi_hi_dci0_dci_pdu *pdu);

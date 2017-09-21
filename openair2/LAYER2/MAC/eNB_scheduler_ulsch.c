@@ -1178,7 +1178,7 @@ abort();
 		LOG_I(MAC,"Frame %d, Subframe %d: Requesting CQI information for UE %d/%x => O_r1 %d, betaCQI %d\n",
 		      frameP,subframeP,UE_id,rnti,
 		      ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.aperiodic_cqi_pmi_ri_report.cc[0].dl_cqi_pmi_size[0],
-		      UE_template->physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_CQI_Index);
+		      (int)UE_template->physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_CQI_Index);
 	      }
 	    }	
 	    add_ue_ulsch_info(module_idP,
