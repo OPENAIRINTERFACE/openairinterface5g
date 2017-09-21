@@ -147,7 +147,9 @@ void add_msg3(module_id_t module_idP,int CC_id, RA_TEMPLATE *RA_template, frame_
 
 int mac_top_init(int eMBMS_active, char *uecap_xer,uint8_t cba_group_active, uint8_t HO_active);
 
-int mac_top_init_eNB(void);
+void mac_top_init_eNB(void);
+
+void mac_init_cell_params(int Mod_idP,int CC_idP);
 
 char layer2_init_UE(module_id_t module_idP);
 
@@ -160,6 +162,8 @@ int mac_init_global_param(void);
 void mac_top_cleanup(void);
 
 void mac_UE_out_of_sync_ind(module_id_t module_idP,frame_t frameP, uint16_t eNB_index);
+
+void clear_nfapi_information(eNB_MAC_INST *eNB,int CC_idP,frame_t frameP,sub_frame_t subframeP);
 
 void dlsch_scheduler_pre_processor_reset (int module_idP,int UE_id,
     uint8_t  CC_id,
@@ -310,6 +314,27 @@ void SR_indication(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t s
 @param subframe Index of subframe where SR was received
 */
 void UL_failure_indication(module_id_t Mod_id,int CC_id,frame_t frameP,rnti_t rnti,sub_frame_t subframe);
+
+/* \brief Function to indicate an HARQ ACK/NAK.
+@param Mod_id Instance ID of eNB
+@param CC_id Component carrier
+@param frameP Frame index
+@param subframeP subframe index
+@param harq_pdu NFAPI HARQ PDU descriptor
+*/
+void harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP, sub_frame_t subframeP, nfapi_harq_indication_pdu_t *harq_pdu);
+
+/* \brief Function to indicate a received CQI pdu
+@param Mod_id Instance ID of eNB
+@param CC_id Component carrier
+@param frameP Frame index
+@param subframeP subframe index
+@param rntiP RNTI of incoming CQI information
+@param ul_cqi_information NFAPI UL CQI measurement
+*/
+void cqi_indication(module_id_t mod_idP, int CC_idP, frame_t frameP, sub_frame_t subframeP, rnti_t rntiP, 
+		    nfapi_cqi_indication_rel9_t *rel9,uint8_t *pdu,
+		    nfapi_ul_cqi_information_t *ul_cqi_information);
 
 uint8_t *get_dlsch_sdu(module_id_t module_idP,int CC_id,frame_t frameP,rnti_t rnti,uint8_t TBindex);
 

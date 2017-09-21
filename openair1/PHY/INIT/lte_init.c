@@ -106,6 +106,7 @@ void phy_config_request(PHY_Config_t *phy_config) {
 
   fp->phich_config_common.phich_resource = phich_resource_table[cfg->phich_config.phich_resource.value];
   fp->phich_config_common.phich_duration = cfg->phich_config.phich_duration.value;
+  // Note: "from_earfcn" has to be in a common library with MACRLC
   fp->dl_CarrierFreq                     = from_earfcn(eutra_band,dl_CarrierFreq);
   fp->ul_CarrierFreq                     = fp->dl_CarrierFreq - (get_uldl_offset(eutra_band)*100000);
 
@@ -1708,8 +1709,11 @@ int phy_init_RU(RU_t *ru) {
       }
 #endif
     }
+    
+    AssertFatal(RC.nb_L1_inst>NUMBER_OF_eNB_MAX,"eNB instances %d > %d\n",
+		RC.nb_L1_inst,NUMBER_OF_eNB_MAX);
 
-    for (i=0; i<RC.nb_inst; i++) {
+    for (i=0; i<RC.nb_L1_inst; i++) {
       for (p=0;p<15;p++) {
 	if (p<ru->eNB_list[i]->frame_parms.nb_antenna_ports_eNB || p==5) {
 	  ru->beam_weights[i][p] = (int32_t **)malloc16_clear(ru->nb_tx*sizeof(int32_t*));
@@ -1718,11 +1722,11 @@ int phy_init_RU(RU_t *ru) {
 	    // antenna ports 0-3 are mapped on antennas 0-3
 	    // antenna port 4 is mapped on antenna 0
 	    // antenna ports 5-14 are mapped on all antennas 
-	    if (((i<4) && (i==j)) || ((i==4) && (j==0))) {
+	    if (((p<4) && (p==j)) || ((p==4) && (j==0))) {
 	      for (re=0; re<fp->ofdm_symbol_size; re++) 
 		ru->beam_weights[i][p][j][re] = 0x00007fff; 
 	    }
-	    else if (i>4) {
+	    else if (p>4) {
 	      for (re=0; re<fp->ofdm_symbol_size; re++) 
 		ru->beam_weights[i][p][j][re] = 0x00007fff/ru->nb_tx; 
 	    }  
@@ -1753,7 +1757,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 #ifdef Rel14
   LTE_eNB_PRACH* const prach_vars_br = &eNB->prach_vars_br;
 #endif
-  int i,  eNB_id, UE_id; 
+  int i, UE_id; 
 
 
   eNB->total_dlsch_bitrate = 0;

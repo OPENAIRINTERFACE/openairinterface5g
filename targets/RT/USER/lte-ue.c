@@ -713,7 +713,6 @@ void *UE_thread(void *arg) {
     void* rxp[NB_ANTENNAS_RX], *txp[NB_ANTENNAS_TX];
     int start_rx_stream = 0;
     int i;
-    char threadname[128];
 
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);

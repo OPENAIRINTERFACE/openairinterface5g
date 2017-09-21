@@ -698,11 +698,11 @@ typedef struct RU_t_s{
   /// function pointer to TX front-end processing routine (PRECODING)
   void                 (*feptx_prec)(struct RU_t_s *ru);
   /// function pointer to wakeup routine in lte-enb.
-  int (*wakeup_rxtx)(struct PHY_VARS_eNB_s *eNB,int frame_rx,int subframe_rx);
+  int (*wakeup_rxtx)(struct PHY_VARS_eNB_s *eNB, struct RU_t_s *ru);
   /// function pointer to wakeup routine in lte-enb.
-  int (*wakeup_prach_eNB)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
+  void (*wakeup_prach_eNB)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
   /// function pointer to wakeup routine in lte-enb.
-  int (*wakeup_prach_eNB_br)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
+  void (*wakeup_prach_eNB_br)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
   /// function pointer to eNB entry routine
   void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string);
   /// Timing statistics
@@ -710,7 +710,7 @@ typedef struct RU_t_s{
   /// RX and TX buffers for precoder output
   RU_COMMON            common;
   /// beamforming weight vectors per eNB
-  int32_t **beam_weights[NUMBER_OF_eNB_MAX][15];
+  int32_t **beam_weights[NUMBER_OF_eNB_MAX+1][15];
 
   /// received frequency-domain signal for PRACH (IF4p5 RRU) 
   int16_t              **prach_rxsigF;

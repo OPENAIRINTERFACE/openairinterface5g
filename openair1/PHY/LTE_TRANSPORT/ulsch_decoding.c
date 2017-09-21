@@ -226,7 +226,7 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
   LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
   int Q_m = ulsch_harq->Qm;
   int G = ulsch_harq->G;
-  uint32_t E;
+  uint32_t E=0;
   uint32_t Gp,GpmodC,Nl=1;
   uint32_t C = ulsch_harq->C;
 
@@ -273,8 +273,7 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
     else if (Kr_bytes <= 768)
       iind = 123 + ((Kr_bytes-256)>>3);
     else {
-      LOG_E(PHY,"ulsch_decoding: Illegal codeword size %d!!!\n",Kr_bytes);
-      return(-1);
+      AssertFatal(1==0,"ulsch_decoding: Illegal codeword size %d!!!\n",Kr_bytes);
     }
 
     // This is stolen from rate-matching algorithm to get the value of E
@@ -954,7 +953,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   }
 
   AssertFatal(sumKr>0,
-	      "[eNB %d] ulsch_decoding.c: FATAL sumKr is 0! (Nid_cell %d, rnti %x, x2 %x): harq_pid %d round %d, RV %d, O_RI %d, O_ACK %d, G %d, subframe %d\n",
+	      "[eNB] ulsch_decoding.c: FATAL sumKr is 0! (Nid_cell %d, rnti %x, x2 %x): harq_pid %d round %d, RV %d, O_RI %d, O_ACK %d, G %d, subframe %d\n",
 	      frame_parms->Nid_cell,ulsch->rnti,x2,
 	      harq_pid,
 	      ulsch_harq->round,

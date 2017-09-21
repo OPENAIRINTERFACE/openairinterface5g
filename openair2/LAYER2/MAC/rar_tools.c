@@ -137,8 +137,8 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   COMMON_channels_t *cc = &eNB->common_channels[CC_id];
   uint8_t *rar = (uint8_t *)(dlsch_buffer+1);
-  int i;
-  uint8_t nb,rballoc,reps;
+  //  uint8_t nb,reps;
+  uint8_t rballoc;
   uint8_t mcs,TPC,ULdelay,cqireq;
   int input_buffer_length;
 
@@ -168,11 +168,11 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
     rar[4] = (uint8_t)(RA_template->rnti>>8);
     rar[5] = (uint8_t)(RA_template->rnti&0xff);
     //cc->RA_template[ra_idx].timing_offset = 0;
-    nb      = 0;
+    //    nb      = 0;
     rballoc = mac_computeRIV(6,1+ce_level,1); // one PRB only for UL Grant in position 1+ce_level within Narrowband
     rar[1] |= (rballoc&15)<<(4-N_NB_index); // Hopping = 0 (bit 3), 3 MSBs of rballoc
 
-    reps    = 4;
+    //    reps    = 4;
     mcs     = 7;
     TPC     = 3; // no power increase
     ULdelay = 0;

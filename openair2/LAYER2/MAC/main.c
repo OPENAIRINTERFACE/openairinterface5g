@@ -79,9 +79,7 @@ void mac_UE_out_of_sync_ind(module_id_t module_idP, frame_t frameP, uint16_t eNB
 int mac_top_init_ue(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, uint8_t HO_active)
 {
 
-  module_id_t    Mod_id,i;
-  int list_el;
-  UE_list_t *UE_list;
+  int i;
 
   LOG_I(MAC,"[MAIN] Init function start:Nb_UE_INST=%d\n",NB_UE_INST);
 
@@ -114,10 +112,10 @@ int mac_top_init_ue(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active,
 }
 
 
-int mac_top_init_eNB()
+void mac_top_init_eNB()
 {
 
-  module_id_t    Mod_id,i,j;
+  module_id_t    i,j;
   int list_el;
   UE_list_t *UE_list;
   eNB_MAC_INST *mac;
@@ -137,7 +135,7 @@ int mac_top_init_eNB()
 		  RC.nb_macrlc_inst*sizeof(eNB_MAC_INST*),RC.nb_macrlc_inst,sizeof(eNB_MAC_INST));
       LOG_D(MAC,"[MAIN] ALLOCATE %zu Bytes for %d eNB_MAC_INST @ %p\n",sizeof(eNB_MAC_INST),RC.nb_macrlc_inst,RC.mac);
       bzero(RC.mac[i],sizeof(eNB_MAC_INST));
-      RC.mac[i]->Mod_id = Mod_id;
+      RC.mac[i]->Mod_id = i;
       for (j=0;j<MAX_NUM_CCs;j++) {
 	RC.mac[i]->DL_req[j].dl_config_request_body.dl_config_pdu_list      = RC.mac[i]->dl_config_pdu_list[j];
 	RC.mac[i]->UL_req[j].ul_config_request_body.ul_config_pdu_list      = RC.mac[i]->ul_config_pdu_list[j];
@@ -160,11 +158,11 @@ int mac_top_init_eNB()
   }
   
   // Initialize Linked-List for Active UEs
-  for(Mod_id=0; Mod_id<RC.nb_macrlc_inst; Mod_id++) {
-    mac = RC.mac[Mod_id];
+  for(i=0; i<RC.nb_macrlc_inst; i++) {
+    mac = RC.mac[i];
 
 
-    mac->if_inst                = IF_Module_init(Mod_id);
+    mac->if_inst                = IF_Module_init(i);
 
     UE_list = &mac->UE_list;
 

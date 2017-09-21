@@ -127,8 +127,6 @@ init_SI(
 )
 //-----------------------------------------------------------------------------
 {
-  uint8_t                             SIwindowsize = 1;
-  uint16_t                            SIperiod = 8;
 #if defined(Rel10) || defined(Rel14)
   int                                 i;
 #endif
@@ -148,9 +146,9 @@ init_SI(
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].pbch_repetition = configuration->pbch_repetition[CC_id];
 #endif
   LOG_I(RRC, "Configuring MIB (N_RB_DL %d,phich_Resource %d,phich_Duration %d)\n", 
-	configuration->N_RB_DL[CC_id],
-	configuration->phich_resource[CC_id],
-	configuration->phich_duration[CC_id]);
+	(int)configuration->N_RB_DL[CC_id],
+	(int)configuration->phich_resource[CC_id],
+	(int)configuration->phich_duration[CC_id]);
   do_MIB(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],
 #ifdef ENABLE_ITTI
 	 configuration->N_RB_DL[CC_id],
@@ -271,14 +269,16 @@ init_SI(
   if ((RC.rrc[ctxt_pP->module_id]->carrier[CC_id].mib.message.schedulingInfoSIB1_BR_r13>0) && 
       (RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR!=NULL)) {
       AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension!=NULL,
-		  "sib2_br->nonCriticalExtension is null (v9.2)\n");
+		  "sib2_br->nonCriticalExtension is null (v8.9)\n");
       AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension!=NULL,
-		  "sib2_br->nonCriticalExtension is null (v11.3)\n");
+		  "sib2_br->nonCriticalExtension is null (v9.2)\n");
       AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL,
-		  "sib2_br->nonCriticalExtension is null (v12.5)\n");
+		  "sib2_br->nonCriticalExtension is null (v11.3)\n");
       AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL,
+		  "sib2_br->nonCriticalExtension is null (v12.5)\n");
+      AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL,
 		  "sib2_br->nonCriticalExtension is null (v13.10)\n");
-      sib1_v13ext = RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension;
+      sib1_v13ext = RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension;
   }
 #endif
 

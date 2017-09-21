@@ -358,8 +358,6 @@ void check_ul_failure(module_id_t module_idP,int CC_id,int UE_id,
   
 }
 
-void clear_nfapi_information(eNB_MAC_INST *eNB,int CC_idP,frame_t frameP,sub_frame_t subframeP);
-
 void clear_nfapi_information(eNB_MAC_INST *eNB,int CC_idP,frame_t frameP,sub_frame_t subframeP) {
 
   nfapi_dl_config_request_t *DL_req         = &eNB->DL_req[0];

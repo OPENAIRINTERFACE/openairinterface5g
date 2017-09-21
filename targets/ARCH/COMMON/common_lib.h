@@ -359,7 +359,7 @@ struct openair0_device_t {
    * \param idx RU index
    * \param arg pointer to capabilities or configuration
    */
-  int (*configure_rru)(int idx, void* arg);
+  void (*configure_rru)(int idx, void* arg);
 };
 
 /* type of device init function, implemented in shared lib */

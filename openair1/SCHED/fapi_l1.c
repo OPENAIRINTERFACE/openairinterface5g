@@ -80,7 +80,6 @@ void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,  
 				 nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu) {
   
-  nfapi_hi_dci0_hi_pdu *pdu      = &hi_dci0_config_pdu->hi_pdu;
   LTE_eNB_PHICH *phich           = &eNB->phich_vars[proc->subframe_tx&1];
 
   // copy dci configuration in to eNB structure

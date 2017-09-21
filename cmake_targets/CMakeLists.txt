@@ -1769,6 +1769,7 @@ add_executable(lte-softmodem-nos1
   ${XFORMS_SOURCE}
   ${XFORMS_SOURCE_SOFTMODEM}
   ${T_SOURCE}
+  ${CONFIG_SOURCES}
   )
 target_link_libraries (lte-softmodem-nos1
   -Wl,--start-group
@@ -1856,6 +1857,7 @@ add_executable(oaisim
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${XFORMS_SOURCE}
   ${T_SOURCE}
+  ${CONFIG_SOURCES}
 )
 
 

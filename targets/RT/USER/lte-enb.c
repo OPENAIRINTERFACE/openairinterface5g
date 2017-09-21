@@ -30,6 +30,8 @@
  * \warning
  */
 
+#define _GNU_SOURCE
+#include <pthread.h>
 
 #include "time_utils.h"
 
@@ -241,8 +243,8 @@ static void* eNB_thread_rxtx( void* param ) {
 }
 
 
-#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
-/* Wait for eNB application initialization to be complete (eNB registration to MME) */
+#if 0 //defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
+// Wait for eNB application initialization to be complete (eNB registration to MME)
 static void wait_system_ready (char *message, volatile int *start_flag) {
   
   static char *indicator[] = {".    ", "..   ", "...  ", ".... ", ".....",
@@ -280,7 +282,7 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string) {
 
 
     LOG_D(PHY,"eNB_top in %p (proc %p, CC_id %d), frame %d, subframe %d, instance_cnt_prach %d\n",
-	  pthread_self(), proc, eNB->CC_id, proc->frame_rx,proc->subframe_rx,proc->instance_cnt_prach);
+	  (void*)pthread_self(), proc, eNB->CC_id, proc->frame_rx,proc->subframe_rx,proc->instance_cnt_prach);
  
 
 
@@ -295,7 +297,7 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string) {
 
     if (rxtx(eNB,proc_rxtx,string) < 0) LOG_E(PHY,"eNB %d CC_id %d failed during execution\n",eNB->Mod_id,eNB->CC_id);
     LOG_D(PHY,"eNB_top out %p (proc %p, CC_id %d), frame %d, subframe %d, instance_cnt_prach %d\n",
-	  pthread_self(), proc, eNB->CC_id, proc->frame_rx,proc->subframe_rx,proc->instance_cnt_prach);
+	  (void*)pthread_self(), proc, eNB->CC_id, proc->frame_rx,proc->subframe_rx,proc->instance_cnt_prach);
   }
   
 }
@@ -399,7 +401,7 @@ void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
     }
     if (proc->RU_mask_prach != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
       pthread_mutex_unlock(&proc->mutex_RU_PRACH);
-      return(0);
+      return;
     }
     else { // all RUs have provided their information so continue on and wakeup eNB processing
       proc->RU_mask_prach = 0;
@@ -459,7 +461,7 @@ void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
     }
     if (proc->RU_mask_prach_br != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
       pthread_mutex_unlock(&proc->mutex_RU_PRACH_br);
-      return(0);
+      return;
     }
     else { // all RUs have provided their information so continue on and wakeup eNB processing
       proc->RU_mask_prach_br = 0;
@@ -591,7 +593,8 @@ void init_eNB_proc(int inst) {
   PHY_VARS_eNB *eNB;
   eNB_proc_t *proc;
   eNB_rxtx_proc_t *proc_rxtx;
-  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_single=NULL,*attr_fep=NULL,*attr_td=NULL,*attr_te=NULL,*attr_synch=NULL;
+  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_prach=NULL;
+    //*attr_td=NULL,*attr_te=NULL;
 #ifdef Rel14
   pthread_attr_t *attr_prach_br=NULL;
 #endif
@@ -631,9 +634,8 @@ void init_eNB_proc(int inst) {
 
     pthread_attr_init( &proc->attr_prach);
     pthread_attr_init( &proc->attr_asynch_rxtx);
-    pthread_attr_init( &proc->attr_single);
-    pthread_attr_init( &proc->attr_td);
-    pthread_attr_init( &proc->attr_te);
+    //    pthread_attr_init( &proc->attr_td);
+    //    pthread_attr_init( &proc->attr_te);
     pthread_attr_init( &proc_rxtx[0].attr_rxtx);
     pthread_attr_init( &proc_rxtx[1].attr_rxtx);
 #ifdef Rel14
@@ -652,10 +654,8 @@ void init_eNB_proc(int inst) {
     attr_prach_br  = &proc->attr_prach_br;
 #endif
 
-    attr_asynch = &proc->attr_asynch_rxtx;
-    attr_single = &proc->attr_single;
-    attr_td     = &proc->attr_td;
-    attr_te     = &proc->attr_te; 
+    //    attr_td     = &proc->attr_td;
+    //    attr_te     = &proc->attr_te; 
 #endif
 
     if (eNB->single_thread_flag==0) {
@@ -749,9 +749,9 @@ void kill_eNB_proc(int inst) {
     int i;
     if (eNB->single_thread_flag==0) {
       for (i=0;i<2;i++) {
-	LOG_I(PHY, "Joining rxtx[%d] mutex/cond\n");
+	LOG_I(PHY, "Joining rxtx[%d] mutex/cond\n",i);
 	pthread_join( proc_rxtx[i].pthread_rxtx, (void**)&status );
-	LOG_I(PHY, "Destroying rxtx[%d] mutex/cond\n");
+	LOG_I(PHY, "Destroying rxtx[%d] mutex/cond\n",i);
 	pthread_mutex_destroy( &proc_rxtx[i].mutex_rxtx );
 	pthread_cond_destroy( &proc_rxtx[i].cond_rxtx );
       }
@@ -849,7 +849,8 @@ void init_transport(PHY_VARS_eNB *eNB) {
   fp->pucch_config_common.deltaPUCCH_Shift = 1;
     
 } 
-void init_eNB_afterRU() {
+
+void init_eNB_afterRU(void) {
 
   int inst,CC_id,ru_id,i,aa;
   PHY_VARS_eNB *eNB;
@@ -863,10 +864,10 @@ void init_eNB_afterRU() {
       AssertFatal(eNB->num_RU>0,"Number of RU attached to eNB %d is zero\n",eNB->Mod_id);
       LOG_I(PHY,"Mapping RX ports from %d RUs to eNB %d\n",eNB->num_RU,eNB->Mod_id);
       eNB->frame_parms.nb_antennas_rx       = 0;
-      eNB->prach_vars.rxsigF[0] = (int16_t*)malloc16(64*sizeof(int16_t*));
+      eNB->prach_vars.rxsigF[0] = (int16_t**)malloc16(64*sizeof(int16_t*));
 #ifdef Rel14
       for (int ce_level=0;ce_level<4;ce_level++)
-	eNB->prach_vars_br.rxsigF[ce_level] = (int16_t*)malloc16(64*sizeof(int16_t*));
+	eNB->prach_vars_br.rxsigF[ce_level] = (int16_t**)malloc16(64*sizeof(int16_t*));
 #endif
       for (ru_id=0,aa=0;ru_id<eNB->num_RU;ru_id++) {
 	eNB->frame_parms.nb_antennas_rx    += eNB->RU_list[ru_id]->nb_rx;
@@ -881,7 +882,11 @@ void init_eNB_afterRU() {
 
 	for (i=0;i<eNB->RU_list[ru_id]->nb_rx;aa++,i++) { 
 	  LOG_I(PHY,"Attaching RU %d antenna %d to eNB antenna %d\n",eNB->RU_list[ru_id]->idx,i,aa);
-	  eNB->prach_vars.rxsigF[aa]       =  eNB->RU_list[ru_id]->prach_rxsigF[i];
+	  eNB->prach_vars.rxsigF[0][aa]    =  eNB->RU_list[ru_id]->prach_rxsigF[i];
+#ifdef Rel14
+	  for (int ce_level=0;ce_level<4;ce_level++)
+	    eNB->prach_vars_br.rxsigF[ce_level][aa] = eNB->RU_list[ru_id]->prach_rxsigF_br[ce_level][i];
+#endif
 	  eNB->common_vars.rxdataF[aa]     =  eNB->RU_list[ru_id]->common.rxdataF[i];
 	}
       }
@@ -890,7 +895,7 @@ void init_eNB_afterRU() {
       LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,eNB->frame_parms.nb_antennas_rx);
 
       init_transport(eNB);
-      init_precoding_weights(RC.eNB[inst][CC_id]);
+      //init_precoding_weights(RC.eNB[inst][CC_id]);
     }
     init_eNB_proc(inst);
   }
