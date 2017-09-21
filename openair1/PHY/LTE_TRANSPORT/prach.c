@@ -490,13 +490,10 @@ int is_prach_subframe0(LTE_DL_FRAME_PARMS *frame_parms,uint8_t prach_ConfigIndex
     //implement Table 5.7.1-2 from 36.211 (Rel-10, p.41)
     if ((((frame&1) == 1) && (subframe < 9)) ||
         (((frame&1) == 0) && (subframe == 9)))  // This is an odd frame, ignore even-only PRACH frames
-
-      /*
       if (((prach_ConfigIndex&0xf)<3) || // 0,1,2,16,17,18,32,33,34,48,49,50
           ((prach_ConfigIndex&0x1f)==18) || // 18,50
           ((prach_ConfigIndex&0xf)==15))   // 15,47
         return(0);
-      */
 
     switch (prach_ConfigIndex&0x1f) {
     case 0:
