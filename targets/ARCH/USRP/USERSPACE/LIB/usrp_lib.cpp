@@ -145,46 +145,75 @@ static void trx_usrp_end(openair0_device *device) {
       @param flags flags must be set to TRUE if timestamp parameter needs to be applied
 */
 static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
-    int ret=0;
-    usrp_state_t *s = (usrp_state_t*)device->priv;
-
-    s->tx_md.time_spec = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
-    s->tx_md.has_time_spec = flags;
-
-
-    if(flags>0)
-        s->tx_md.has_time_spec = true;
-    else
-        s->tx_md.has_time_spec = false;
-
-    if (flags == 2) { // start of burst
-        s->tx_md.start_of_burst = true;
-        s->tx_md.end_of_burst = false;
-    } else if (flags == 3) { // end of burst
-        s->tx_md.start_of_burst = false;
-        s->tx_md.end_of_burst = true;
-    } else if (flags == 4) { // start and end
-        s->tx_md.start_of_burst = true;
-        s->tx_md.end_of_burst = true;
-    } else if (flags==1) { // middle of burst
-        s->tx_md.start_of_burst = false;
-        s->tx_md.end_of_burst = false;
+  int ret=0;
+  usrp_state_t *s = (usrp_state_t*)device->priv;
+  
+  int nsamps2;  // aligned to upper 32 or 16 byte boundary
+#if defined(__x86_64) || defined(__i386__)
+#ifdef __AVX2__
+  nsamps2 = (nsamps+7)>>3;
+  __m256i buff_tx[2][nsamps2];
+#else
+  nsamps2 = (nsamps+3)>>2;
+  __m128i buff_tx[2][nsamps2];
+#endif
+#elif defined(__arm__)
+  nsamps2 = (nsamps+3)>>2;
+  int16x8_t buff_tx[2][nsamps2];
+#endif
+  
+  // bring RX data into 12 LSBs for softmodem RX
+  for (int i=0; i<cc; i++) {
+    for (int j=0; j<nsamps2; j++) {
+#if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+      buff_tx[i][j] = _mm256_slli_epi16(((__m256i*)buff[i])[j],4);
+#else
+      buff_tx[i][j] = _mm_slli_epi16(((__m128i*)buff128[i])[j],4);
+#endif
+#elif defined(__arm__)
+      buff_tx[i][j] = vshlq_n_s16(((int16x8_t*)buff128[i])[j],4);
+#endif
     }
+  }
 
-    if (cc>1) {
-        std::vector<void *> buff_ptrs;
-        for (int i=0; i<cc; i++)
-            buff_ptrs.push_back(buff[i]);
-        ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md,1e-3);
-    } else
-        ret = (int)s->tx_stream->send(buff[0], nsamps, s->tx_md,1e-3);
+  s->tx_md.time_spec = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
+  s->tx_md.has_time_spec = flags;
+  
+  
+  if(flags>0)
+    s->tx_md.has_time_spec = true;
+  else
+    s->tx_md.has_time_spec = false;
+  
+  if (flags == 2) { // start of burst
+    s->tx_md.start_of_burst = true;
+    s->tx_md.end_of_burst = false;
+  } else if (flags == 3) { // end of burst
+    s->tx_md.start_of_burst = false;
+    s->tx_md.end_of_burst = true;
+  } else if (flags == 4) { // start and end
+    s->tx_md.start_of_burst = true;
+    s->tx_md.end_of_burst = true;
+  } else if (flags==1) { // middle of burst
+    s->tx_md.start_of_burst = false;
+    s->tx_md.end_of_burst = false;
+  }
+  
+  if (cc>1) {
+    std::vector<void *> buff_ptrs;
+    for (int i=0; i<cc; i++)
+      buff_ptrs.push_back(buff_tx[i]);
+    ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md,1e-3);
+  } else
+    ret = (int)s->tx_stream->send(buff_tx[0], nsamps, s->tx_md,1e-3);
+  
+  
+  
+  if (ret != nsamps)
+    LOG_E(PHY,"[xmit] tx samples %d != %d\n",ret,nsamps);
 
-
-
-    if (ret != nsamps)
-        LOG_E(PHY,"[xmit] tx samples %d != %d\n",ret,nsamps);
-
-    return ret;
+  return ret;
 }
 
 /*! \brief Receive samples from hardware.
