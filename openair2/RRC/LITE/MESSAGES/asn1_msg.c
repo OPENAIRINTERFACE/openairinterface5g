@@ -196,7 +196,8 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
   asn_enc_rval_t enc_rval;
   BCCH_BCH_Message_t *mib=&carrier->mib ;
   uint8_t sfn = (uint8_t)((frame>>2)&0xff);
-  uint16_t spare=0;
+  uint16_t *spare= calloc(1, sizeof(uint16_t));
+  if (spare == NULL) abort();
 
   switch (N_RB_DL) {
 
@@ -240,7 +241,7 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
   mib->message.systemFrameNumber.buf = &sfn;
   mib->message.systemFrameNumber.size = 1;
   mib->message.systemFrameNumber.bits_unused=0;
-  mib->message.spare.buf = (uint8_t *)&spare;
+  mib->message.spare.buf = (uint8_t *)spare;
 #ifndef Rel14
   mib->message.spare.size = 2;
   mib->message.spare.bits_unused = 6;  // This makes a spare of 10 bits
@@ -252,8 +253,8 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_BCH_Message,
                                    (void*)mib,
-                                   &carrier->MIB,
-                                   100);
+                                   carrier->MIB,
+                                   24);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
 
