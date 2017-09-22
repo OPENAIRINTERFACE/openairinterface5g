@@ -1710,7 +1710,7 @@ int phy_init_RU(RU_t *ru) {
 #endif
     }
     
-    AssertFatal(RC.nb_L1_inst>NUMBER_OF_eNB_MAX,"eNB instances %d > %d\n",
+    AssertFatal(RC.nb_L1_inst <= NUMBER_OF_eNB_MAX,"eNB instances %d > %d\n",
 		RC.nb_L1_inst,NUMBER_OF_eNB_MAX);
 
     for (i=0; i<RC.nb_L1_inst; i++) {
