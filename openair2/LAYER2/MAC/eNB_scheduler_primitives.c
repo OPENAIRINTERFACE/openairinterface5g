@@ -1229,7 +1229,8 @@ uint16_t fill_nfapi_uci_acknak(module_id_t module_idP,
 			      absSFP,
 			      &ul_config_pdu->uci_harq_pdu.harq_information,
 			      cce_idxP);
-  LOG_D(MAC,"Filled in HARQ for rnti %x, cce_idxP %d-> n1_pucch %d\n",rntiP,cce_idxP,ul_config_pdu->uci_harq_pdu.harq_information.harq_information_rel9_fdd.n_pucch_1_0);
+  LOG_D(MAC,"Filled in HARQ for rnti %x SF %d.%d acknakSF %d.%d, cce_idxP %d-> n1_pucch %d\n",rntiP,
+	absSFP/10,absSFP%10,ackNAK_absSF/10,ackNAK_absSF%10,cce_idxP,ul_config_pdu->uci_harq_pdu.harq_information.harq_information_rel9_fdd.n_pucch_1_0);
 
   ul_req->number_of_pdus++;
 
@@ -2909,7 +2910,7 @@ boolean_t CCE_allocation_infeasible(int module_idP,
     dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti              = rnti;
     dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level = aggregation;
     DL_req->number_pdu++;
-    ret = allocate_CCEs(module_idP,CC_idP,subframe,1);
+    ret = allocate_CCEs(module_idP,CC_idP,subframe,0);
     if (ret==-1)
       res = TRUE;
     DL_req->number_pdu--;
@@ -2918,7 +2919,7 @@ boolean_t CCE_allocation_infeasible(int module_idP,
     hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti             = rnti;
     hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level = aggregation;
     HI_DCI0_req->number_of_dci++;
-    ret = allocate_CCEs(module_idP,CC_idP,subframe,1);
+    ret = allocate_CCEs(module_idP,CC_idP,subframe,0);
     if (ret==-1)
       res = TRUE;
     HI_DCI0_req->number_of_dci--;

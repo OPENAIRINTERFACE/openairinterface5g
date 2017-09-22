@@ -877,6 +877,8 @@ typedef struct {
   uint8_t generate_Msg4;
   /// Flag to indicate that eNB is waiting for ACK that UE has received Msg3.
   uint8_t wait_ack_Msg4;
+  /// harq_pid used for Msg4 transmission
+  uint8_t harq_pid;
   /// UE RNTI allocated during RAR
   rnti_t rnti;
   /// RA RNTI allocated from received PRACH

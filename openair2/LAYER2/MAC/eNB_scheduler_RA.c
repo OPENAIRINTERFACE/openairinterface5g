@@ -499,7 +499,6 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
   nfapi_ul_config_request_body_t *ul_req;
   uint8_t                         lcid;
   uint8_t                         offset;
-  int harq_pid;
 
 
 #ifdef Rel14
@@ -568,8 +567,8 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
   
   // set HARQ process round to 0 for this UE
   
-  if (cc->tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
-  else harq_pid = ((frameP*10)+subframeP)&7;
+  if (cc->tdd_Config) RA_template->harq_pid = ((frameP*10)+subframeP)%10;
+  else RA_template->harq_pid = ((frameP*10)+subframeP)&7;
 
   
   // Get RRCConnectionSetup for Piggyback
@@ -642,7 +641,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pdsch_reptition_levels                        = 4; // fix to 4 for now
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.redundancy_version                            = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.new_data_indicator                            = 0;
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.harq_process                                  = harq_pid;
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.harq_process                                  = RA_template->harq_pid;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.tpmi_length                                   = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.tpmi                                          = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pmi_flag                                      = 0;
@@ -729,7 +728,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 
 	lcid=0;
 	
-	UE_list->UE_sched_ctrl[UE_id].round[CC_idP][harq_pid] = 0;
+	UE_list->UE_sched_ctrl[UE_id].round[CC_idP][RA_template->harq_pid] = 0;
 	msg4_header = 1+6+1;  // CR header, CR CE, SDU header
 	
 	if ((RA_template->msg4_TBsize - rrc_sdu_length - msg4_header) <= 2) {
@@ -853,7 +852,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 			     4,                           // aggregation_level
 			     RA_template->rnti,           // rnti
 			     1,                           // rnti_type, CRNTI
-			     harq_pid,                    // harq_process
+			     RA_template->harq_pid,       // harq_process
 			     1,                           // tpc, none
 			     getRIV(N_RB_DL,first_rb,4),  // resource_block_coding
 			     RA_template->msg4_mcs,       // mcs
@@ -861,7 +860,9 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 			     0,                           // rv
 			     0);                          // vrb_flag
 	
-	if (!CCE_allocation_infeasible(module_idP,CC_idP,0,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,RA_template->rnti)) {
+	if (!CCE_allocation_infeasible(module_idP,CC_idP,0,
+				       subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,
+				       RA_template->rnti)) {
 	  dl_req->number_dci++;
 	  dl_req->number_pdu++;
 	  
@@ -872,10 +873,10 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 
 	  lcid=0;
 	  
-	  // put HARQ process 0 round to IDLE
-	  if (cc->tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
-	  else harq_pid = ((frameP*10)+subframeP)&7;
-	  UE_list->UE_sched_ctrl[UE_id].round[CC_idP][harq_pid] = 0;
+	  // put HARQ process round to 0
+	  if (cc->tdd_Config) RA_template->harq_pid = ((frameP*10)+subframeP)%10;
+	  else RA_template->harq_pid = ((frameP*10)+subframeP)&7;
+	  UE_list->UE_sched_ctrl[UE_id].round[CC_idP][RA_template->harq_pid] = 0;
 	  
 	  if ((RA_template->msg4_TBsize - rrc_sdu_length - msg4_header) <= 2) {
 	    msg4_padding = RA_template->msg4_TBsize - rrc_sdu_length - msg4_header;
@@ -936,6 +937,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 							 &eNB->pdu_index[CC_idP],
 							 eNB->UE_list.DLSCH_pdu[CC_idP][0][(unsigned char)UE_id].payload[0]); 
 
+	  LOG_D(MAC,"Filling UCI ACK/NAK information, cce_idx %d\n",dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.cce_idx);
 	  // Program PUCCH1a for ACK/NAK
 	  // Program ACK/NAK for Msg4 PDSCH
 	  fill_nfapi_uci_acknak(module_idP,
@@ -973,7 +975,7 @@ void check_Msg4_retransmission(module_id_t module_idP,int CC_idP,frame_t frameP,
   UE_list_t                       *UE_list=&eNB->UE_list;
   nfapi_dl_config_request_body_t *dl_req;
 
-  int                             round,harq_pid;
+  int                             round;
   /*
 #ifdef Rel14
   COMMON_channels_t               *cc  = eNB->common_channels;
@@ -1013,18 +1015,16 @@ void check_Msg4_retransmission(module_id_t module_idP,int CC_idP,frame_t frameP,
   
   UE_id = find_UE_id(module_idP,RA_template->rnti);
   AssertFatal(UE_id>=0,"Can't find UE for t-crnti\n");
-  if (cc[CC_idP].tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
-  else harq_pid = ((frameP*10)+subframeP)&7;
 
-  round = UE_list->UE_sched_ctrl[UE_id].round[CC_idP][harq_pid];
+  round = UE_list->UE_sched_ctrl[UE_id].round[CC_idP][RA_template->harq_pid];
   vrb_map       = cc[CC_idP].vrb_map;
   
   dl_req        = &eNB->DL_req[CC_idP].dl_config_request_body;
   dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
   N_RB_DL       = to_prb(cc[CC_idP].mib->message.dl_Bandwidth);
   
-  LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Checking if Msg4 was acknowledged (round %d)\n",
-	module_idP,CC_idP,frameP,subframeP,round);
+  LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Checking if Msg4 for harq_pid %d was acknowledged (round %d)\n",
+	module_idP,CC_idP,frameP,subframeP,RA_template->harq_pid,round);
 
   if (round!=8) {
     

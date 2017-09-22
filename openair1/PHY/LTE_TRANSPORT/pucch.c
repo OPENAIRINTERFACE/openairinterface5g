@@ -2388,14 +2388,14 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
         } //re
       } // aa
 
-#ifdef DEBUG_PUCCH_RX
-      LOG_I(PHY,"PUCCH 1a/b: subframe %d : stat %d,%d (pos %d)\n",subframe,stat_re,stat_im,
-	    (subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe]));
-#endif
 
-	eNB->pucch1ab_stats[UE_id][(subframe<<11) + 2*(eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_re);
-	eNB->pucch1ab_stats[UE_id][(subframe<<11) + 1+2*(eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_im);
-	eNB->pucch1ab_stats_cnt[UE_id][subframe] = (eNB->pucch1ab_stats_cnt[UE_id][subframe]+1)&1023;
+      LOG_D(PHY,"PUCCH 1a/b: subframe %d : stat %d,%d (pos %d)\n",subframe,stat_re,stat_im,
+	    (subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe]));
+      
+      
+      eNB->pucch1ab_stats[UE_id][(subframe<<11) + 2*(eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_re);
+      eNB->pucch1ab_stats[UE_id][(subframe<<11) + 1+2*(eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_im);
+      eNB->pucch1ab_stats_cnt[UE_id][subframe] = (eNB->pucch1ab_stats_cnt[UE_id][subframe]+1)&1023;
 
       /* frame not available here - set to -1 for the moment */
       T(T_ENB_PHY_PUCCH_1AB_IQ, T_INT(eNB->Mod_id), T_INT(UE_id), T_INT(-1), T_INT(subframe), T_INT(stat_re), T_INT(stat_im));
@@ -2406,6 +2406,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       if (fmt==pucch_format1b)
         *(1+payload) = (stat_im<0) ? 1 : 0;
     } else { // insufficient energy on PUCCH so NAK
+      LOG_D(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
       *payload = 4;  // DTX
       ((int16_t*)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[0] = (int16_t)(stat_re);
       ((int16_t*)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[1] = (int16_t)(stat_im);
