@@ -51,6 +51,7 @@ REL="Rel14"
 HW="None"
 TP="None"
 NOS1=0
+HW_LATENCY=0
 EPC=0
 VERBOSE_COMPILE=0
 CFLAGS_PROCESSOR_USER=""
@@ -104,12 +105,14 @@ Options
    Specify conf_nvram_path (default \"$conf_nvram_path\")
 --UE-gen-nvram [output path]
    Specify gen_nvram_path (default \"$gen_nvram_path\")
+--HWLAT
+    Makes test program for haw latency tests
 -r | --3gpp-release
    default is Rel14,
    Rel8 limits the implementation to 3GPP Release 8 version
    Rel10 limits the implementation to 3GPP Release 10 version
 -w | --hardware
-   EXMIMO, USRP, BLADERF, ETHERNET, LMSSDR, None (Default)
+   EXMIMO, USRP, BLADERF, ETHERNET, LMSSDR, ADRV9371_ZC706, None (Default)
    Adds this RF board support (in external packages installation and in compilation)
 -t | --transport protocol
    ETHERNET , None
@@ -234,12 +237,15 @@ function main() {
             shift 2;;
        -w | --hardware)
             HW="$2" #"${i#*=}"
-            # Use OAI_USRP  as the key word USRP is used inside UHD driver           
-	    if [ "$HW" != "BLADERF" -a  "$HW" != "USRP" -a "$HW" != "LMSSDR" -a  "$HW" != "None" -a  "$HW" != "EXMIMO"  ] ; then 
+            # Use OAI_USRP  as the key word USRP is used inside UHD driver
+	    if [ "$HW" != "BLADERF" -a  "$HW" != "USRP" -a "$HW" != "LMSSDR" -a  "$HW" != "None" -a  "$HW" != "EXMIMO" -a  "$HW" != "ADRV9371_ZC706"  ] ; then 
 		echo_fatal "Unknown HW type $HW will exit..."		
 	    else
 		if [ "$HW" == "USRP" ] ; then 
 		    HW="OAI_USRP"
+		fi 
+		if [ "$HW" == "ADRV9371_ZC706" ] ; then 
+		    HW="OAI_ADRV9371_ZC706"
 		fi 
 		if [ "$HW" == "BLADERF" ] ; then 
 		    HW="OAI_BLADERF"
@@ -296,6 +302,14 @@ function main() {
        --noS1)
 	    NOS1=1
             echo_info "Will compile without S1 interface"
+            shift;;
+       --HWLAT)
+            HWLAT=1
+            echo_info "Will compile hw latency test program"
+            shift;;
+       --HWLAT_TEST)
+            HWLAT_TEST=1
+            echo_info "Will compile hw latency test program"
             shift;;
        --verbose-compile)
 	    VERBOSE_COMPILE=1
@@ -397,6 +411,12 @@ function main() {
       fi
   fi
   
+  if [ "$HWLAT" = "1" ] ; then
+      if [ "$HW" = "None" ] ; then
+    echo_info "No radio head has been selected (HW set to $HW)" 
+      fi
+  fi
+
   echo_info "RF HW set to $HW" 
   #Now we set flags to enable deadline scheduler settings
   #By default: USRP: disable, 
@@ -408,6 +428,8 @@ function main() {
      elif [ "$HW" = "ETHERNET" ] ; then 
         DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "OAI_USRP" ] ; then 
+        DEADLINE_SCHEDULER_FLAG_USER="False"
+     elif [ "$HW" = "OAI_ADRV9371_ZC706" ] ; then 
         DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "OAI_BLADERF" ] ; then 
         DEADLINE_SCHEDULER_FLAG_USER="False"
@@ -473,6 +495,10 @@ function main() {
       if [ ! "$DISABLE_HARDWARE_DEPENDENCY" == "True" ]; then
         install_usrp_uhd_driver $UHD_IMAGES_DIR
       fi
+    fi 
+    if [ "$HW" == "OAI_ADRV9371_ZC706" ] ; then
+      echo_info "\nInstalling packages for ADRV9371_ZC706 support"
+      check_install_libiio_driver
     fi 
     if [ "$HW" == "OAI_BLADERF" ] ; then
       echo_info "installing packages for BLADERF support"
@@ -811,9 +837,65 @@ function main() {
                   libtelnetsrv.so $dbin/libtelnetsrv.so
 
   fi  
+  # HWLAT compilation
+  #####################
+  if [ "$HWLAT" = "1" ] ; then
+
+     hwlat_exec=lte-hwlat
+     hwlat_build_dir=lte-hwlat
+     
+     echo_info "Compiling $hwlat_exec ..."
+    
+     [ "$CLEAN" = "1" ] && rm -rf $DIR/lte-hwlat/build 
+     mkdir -p $DIR/$hwlat_build_dir/build
+     cmake_file=$DIR/$hwlat_build_dir/CMakeLists.txt
+     echo "cmake_minimum_required(VERSION 2.8)"   >   $cmake_file
+     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
+     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
+     echo 'set ( PACKAGE_NAME "\"lte-hwlat\"")'        >>  $cmake_file
+     echo "set ( DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )"    >>$cmake_file
+     echo "set ( CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"    >>$cmake_file
+     echo "set ( HWLAT \"${HWLAT}\" )"    >>$cmake_file
+     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file    
+     cd $DIR/$hwlat_build_dir/build
+     cmake ..
+     compilations \
+   lte-hwlat lte-hwlat \
+   lte-hwlat $dbin/lte-hwlat
+
+  fi  
+ 
+  # HWLAT_TEST compilation
+  #####################
+  if [ "$HWLAT_TEST" = "1" ] ; then
+
+     hwlat_test_exec=lte-hwlat-test
+     hwlat_test_build_dir=lte-hwlat-test
+     
+     echo_info "Compiling $hwlat_test_exec ..."
+    
+     [ "$CLEAN" = "1" ] && rm -rf $DIR/lte-hwlat-test/build 
+     mkdir -p $DIR/$hwlat_test_build_dir/build
+     cmake_file=$DIR/$hwlat_test_build_dir/CMakeLists.txt
+     echo "cmake_minimum_required(VERSION 2.8)"   >   $cmake_file
+     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
+     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
+     echo 'set ( PACKAGE_NAME "\"lte-hwlat-test\"")'        >>  $cmake_file
+     echo "set ( DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )"    >>$cmake_file
+     echo "set ( CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"    >>$cmake_file
+     echo "set ( HWLAT \"${HWLAT}\" )"    >>$cmake_file
+     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file    
+     cd $DIR/$hwlat_test_build_dir/build
+     cmake ..
+     compilations \
+   lte-hwlat-test lte-hwlat-test \
+   lte-hwlat-test $dbin/lte-hwlat-test
+
+  fi  
+ 
   # build RF device and transport protocol libraries
   #####################################
-  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" - o "$HWLAT" = "1" ] ; then
 
       build_dir=$build_dir
 
@@ -831,6 +913,11 @@ function main() {
 	      ln -sf liboai_exmimodevif.so liboai_device.so
 	      ln -sf $dbin/liboai_exmimodevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to EXMIMO device library"       
+	  elif [ "$HW" == "OAI_ADRV9371_ZC706" ] ; then
+
+        ln -sf $OPENAIR_DIR/targets/ARCH/ADRV9371_ZC706/slib/libadrv9371_zc706.so liboai_device.so
+
+	      echo_info "liboai_device.so is linked to ADRV9371_ZC706 device library"        
 	  elif [ "$HW" == "OAI_USRP" ] ; then
               compilations \
                   $build_dir oai_usrpdevif \

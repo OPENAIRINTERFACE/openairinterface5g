@@ -42,7 +42,7 @@
 #endif
 
 extern int mac_get_rrc_status(uint8_t Mod_id,uint8_t eNB_flag,uint8_t index);
-#if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
+#if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
 #include "common_lib.h"
 extern openair0_config_t openair0_cfg[];
 #endif
@@ -90,10 +90,10 @@ int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char* buffer, int length
 #ifdef EXMIMO
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (LNA %d, vga %d dB)\n",ue->rx_total_gain_dB, openair0_cfg[0].rxg_mode[0],(int)openair0_cfg[0].rx_gain[0]);
 #endif
-#if defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
+#if defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB\n",ue->rx_total_gain_dB);
 #endif
-#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
     len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz, estimated carrier frequency %f Hz\n",ue->common_vars.freq_offset,openair0_cfg[0].rx_freq[0]-ue->common_vars.freq_offset);
 #endif
     len += sprintf(&buffer[len], "[UE PROC] UE mode = %s (%d)\n",mode_string[ue->UE_mode[0]],ue->UE_mode[0]);

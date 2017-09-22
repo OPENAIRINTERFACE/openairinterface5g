@@ -242,6 +242,36 @@ install_protobuf_c_from_source(){
     ) >& $protobuf_c_install_log
 }
 
+install_libiio_driver_from_source(){
+    libiio_install_log=$OPENAIR_DIR/cmake_targets/log/libiio_install_log.txt
+    echo_info "\nInstalling LibIIO driver from sources. The log file for LibIIO driver installation is here: $libiio_install_log "
+    (
+     cd /tmp
+     echo "Downloading LibIIO driver"
+     rm -rf /tmp/libiio
+     git clone https://github.com/analogdevicesinc/libiio.git
+     cd libiio
+     git checkout 2016_R2
+     cmake ./
+	 make all
+     $SUDO make install
+    ) >& $libiio_install_log
+}
+
+check_install_libiio_driver(){
+    if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+   		$SUDO apt-get install -y --allow-unauthenticated libxml2
+   		$SUDO apt-get install -y --allow-unauthenticated libxml2-dev
+   		$SUDO apt-get install -y --allow-unauthenticated bison
+   		$SUDO apt-get install -y --allow-unauthenticated flex
+   		$SUDO apt-get install -y --allow-unauthenticated libcdk5-dev
+   		$SUDO apt-get install -y --allow-unauthenticated cmake 
+		$SUDO apt-get install -y --allow-unauthenticated libaio-dev
+		$SUDO apt-get install -y --allow-unauthenticated libavahi-client-dev
+		install_libiio_driver_from_source
+    fi
+}
+
 install_usrp_uhd_driver_from_source(){
     uhd_install_log=$OPENAIR_DIR/cmake_targets/log/uhd_install_log.txt
     echo_info "\nInstalling UHD driver from sources. The log file for UHD driver installation is here: $uhd_install_log "

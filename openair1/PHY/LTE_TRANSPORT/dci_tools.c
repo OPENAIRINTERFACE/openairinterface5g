@@ -8118,6 +8118,9 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
   // ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
 
+//printf("Format 0 DCI : ulsch (ue): AbsSubframe  %d.%d nrb %d harq_pid %d round %d mcs %d\n",proc->frame_rx%1024,nr_tti_rx,ulsch->harq_processes[harq_pid]->nb_rb,
+ //       harq_pid,ulsch->harq_processes[harq_pid]->round,ulsch->harq_processes[harq_pid]->mcs);
+
 #ifdef UE_DEBUG_TRACE
 
     LOG_D(PHY,"Format 0 DCI : ulsch (ue): AbsSubframe %d.%d\n",proc->frame_rx%1024,subframe);

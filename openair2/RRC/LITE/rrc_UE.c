@@ -788,7 +788,7 @@ rrc_ue_establish_drb(
                     RADIO_ACCESS_BEARER,Rlc_info_um);
    */
 #ifdef PDCP_USE_NETLINK
-#   if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO) && !defined(OAI_USRP) && !defined(OAI_BLADERF) && !defined(ETHERNET) && !defined(LINK_ENB_PDCP_TO_GTPV1U)
+#   if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO) && !defined(OAI_USRP) && !defined(OAI_BLADERF) && !defined(ETHERNET) && !defined(LINK_ENB_PDCP_TO_GTPV1U) && !defined(OAI_ADRV9371_ZC706)
   ip_addr_offset3 = 0;
   ip_addr_offset4 = 1;
   LOG_I(OIP,"[UE %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", ue_mod_idP, ip_addr_offset3+ue_mod_idP,

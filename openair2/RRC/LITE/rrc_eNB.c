@@ -5401,7 +5401,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                 ctxt_pP->module_id, ctxt_pP->frame, (int)DRB_configList->list.array[i]->drb_Identity);
 #if  defined(PDCP_USE_NETLINK) && !defined(LINK_ENB_PDCP_TO_GTPV1U)
           // can mean also IPV6 since ether -> ipv6 autoconf
-#   if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO) && !defined(OAI_USRP) && !defined(OAI_BLADERF) && !defined(ETHERNET)
+#   if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO) && !defined(OAI_USRP) && !defined(OAI_BLADERF) && !defined(ETHERNET) && !defined(OAI_ADRV9371_ZC706)
           LOG_I(OIP, "[eNB %d] trying to bring up the OAI interface oai%d\n",
                 ctxt_pP->module_id,
                 ctxt_pP->module_id);

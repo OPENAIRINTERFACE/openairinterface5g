@@ -484,7 +484,7 @@ include_directories ("${X2AP_DIR}")
 add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4")
 add_list1_option(NB_ANTENNAS_TX "4" "Number of antennas in transmission" "1" "2" "4")
 
-add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "EXMIMO" "OAI_USRP" "OAI_BLADERF" "CPRIGW" "OAI_LMSSDR")
+add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "EXMIMO" "OAI_USRP" "OAI_BLADERF" "CPRIGW" "OAI_LMSSDR" "OAI_ADRV9371_ZC706")
 
 add_list2_option(TRANSP_PRO "None" "Transport protocol type" "None" "ETHERNET")
 #NOKIA config enhancement
@@ -507,6 +507,11 @@ set (SHLIB_LOADER_SOURCES
 )
 # include RF devices / transport protocols library modules
 ######################################################################
+if (HWLAT)
+  add_definitions(-DHWLAT )
+endif()
+
+
 
 include_directories("${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/")
 include_directories ("${OPENAIR_TARGETS}/ARCH/EXMIMO/DEFS/")
@@ -761,6 +766,9 @@ include_directories("${OPENAIR3_DIR}/UDP")
 include_directories("${OPENAIR3_DIR}/GTPV1-U")
 include_directories("${OPENAIR_DIR}/targets/COMMON")
 include_directories("${OPENAIR_DIR}/targets/ARCH/COMMON")
+include_directories("${OPENAIR_DIR}/targets/ARCH/ADRV9371_ZC706/USERSPACE/LIB/")
+include_directories("${OPENAIR_DIR}/targets/ARCH/ADRV9371_ZC706/USERSPACE/libini/")
+include_directories("${OPENAIR_DIR}/targets/ARCH/ADRV9371_ZC706/DEFS/")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/USERSPACE/LIB/")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/DEFS")
 include_directories("${OPENAIR2_DIR}/ENB_APP")
@@ -2063,6 +2071,38 @@ target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt
 target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 ${T_LIB})
 
+
+# lte-hwlat
+###################################################
+add_executable(lte-hwlat
+  ${HW_SOURCE}
+  ${OPENAIR_TARGETS}/RT/USER/lte-hwlat.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  )
+target_link_libraries (lte-hwlat
+  -Wl,--start-group
+  -Wl,--end-group )
+
+target_link_libraries (lte-hwlat rt pthread m )
+target_link_libraries (lte-hwlat ${CMAKE_DL_LIBS}  )
+target_link_libraries (lte-hwlat ${OPENAIR_TARGETS}/ARCH/ADRV9371_ZC706/slib/libadrv9371_zc706.so )
+
+
+# lte-hwlat-test
+###################################################
+add_executable(lte-hwlat-test
+  ${HW_SOURCE}
+  ${OPENAIR1_DIR}/PHY/TOOLS/time_meas.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-hwlat2.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  )
+target_link_libraries (lte-hwlat-test
+  -Wl,--start-group
+  -Wl,--end-group )
+
+target_link_libraries (lte-hwlat-test rt pthread m )
+target_link_libraries (lte-hwlat-test ${CMAKE_DL_LIBS}  )
+
 # lte-uesoftmodem is  UE implementation
 #######################################
 
@@ -2379,10 +2419,10 @@ if (${T_TRACER})
         #all "add_executable" definitions (except tests, rb_tool, updatefw)
         lte-softmodem lte-softmodem-nos1 oaisim oaisim_nos1
         dlsim_tm4 dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim
-        pdcchsim pucchsim prachsim syncsim
+        pdcchsim pucchsim prachsim syncsim lte-hwlat
         #all "add_library" definitions
         ITTI RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB
-        oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif
+        oai_adrv9371_zc706devif oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif
         oai_eth_transpro
         FLPT_MSG ASYNC_IF FLEXRAN_AGENT HASHTABLE MSC UTIL OMG_SUMO SECU_OSA
         SECU_CN SCHED_LIB PHY L2 default_sched remote_sched RAL CN_UTILS

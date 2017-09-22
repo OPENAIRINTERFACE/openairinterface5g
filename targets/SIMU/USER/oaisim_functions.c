@@ -1704,7 +1704,7 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
   }
 
 #else
-#if 0 //  defined(EXMIMO) || defined(OAI_USRP)
+#if 0 //  defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_ADRV9371_ZC706)
   if (otg_enabled==1) {
     ctime = frame * 100;
 

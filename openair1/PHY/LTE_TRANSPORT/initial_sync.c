@@ -554,7 +554,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
 	  ue->frame_parms.nb_antenna_ports_eNB);
 #endif
 
-#if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
+#if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
 #  if DISABLE_LOG_X
     printf("[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
 	  ue->Mod_id,
@@ -618,7 +618,9 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
 #ifndef OAI_USRP
 #ifndef OAI_BLADERF
 #ifndef OAI_LMSSDR
+#ifndef OAI_ADRV9371_ZC706
   phy_adjust_gain(ue,ue->measurements.rx_power_avg_dB[0],0);
+#endif
 #endif
 #endif
 #endif
@@ -629,7 +631,9 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
 #ifndef OAI_USRP
 #ifndef OAI_BLADERF
 #ifndef OAI_LMSSDR
+#ifndef OAI_ADRV9371_ZC706
   phy_adjust_gain(ue,dB_fixed(ue->measurements.rssi),0);
+#endif
 #endif
 #endif
 #endif
