@@ -11,6 +11,10 @@
 #include "../config_userapi.h"
 #include "errno.h"
 
+#if ( LIBCONFIG_VER_MAJOR == 1 && LIBCONFIG_VER_MINOR < 5)
+#define config_setting_lookup config_lookup_from
+#endif
+
 void config_libconfig_end(void );
 
 int read_strlist(paramdef_t *cfgoptions,config_setting_t *setting, char *cfgpath)
