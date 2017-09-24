@@ -112,7 +112,10 @@ void config_printhelp(paramdef_t *params,int numparams)
 {
    for (int i=0 ; i<numparams ; i++) {
        if ( params[i].helpstr != NULL) {
-           printf("%s", params[i].helpstr);
+           printf("%s%s: %s",
+	           (strlen(params[i].optname) <= 1) ? "-" : "--", 
+	           params[i].optname,
+	           params[i].helpstr);
        }
    }
 }

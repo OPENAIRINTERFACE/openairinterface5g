@@ -44,7 +44,8 @@
 #define CONFIG_PRINTPARAMS    1        // print parameters values while processing
 #define CONFIG_DEBUGPTR       2        // print memory allocation/free debug messages
 #define CONFIG_DEBUGCMDLINE   4        // print command line processing messages
-
+#define CONFIG_HELP           8        // print help message
+#define CONFIG_ABORT          16       // config failed,abort execution 
 /* temporary flag to be able to use legacy config mechanism */
 #define CONFIG_LEGACY             (1 << 10)     
 
@@ -71,17 +72,21 @@ typedef struct configmodule_interface
 #ifdef CONFIG_LOADCONFIG_MAIN
 configmodule_interface_t *cfgptr=NULL;
 
-static char config_helpstr [] =" \
-      config debugflags: mask, 1->print parameters, 2->print memory allocations debug messages \
-                               4->print command line processing debug messages \
-          -O <config mode><:dbg> \
-          debugflags can also be defined in the config_libconfig section of the config file \
-";
+static char config_helpstr [] = "\n lte-softmodem -O [config mode]<:dbg[debugflags]> \n \
+          debugflags can also be defined in the config_libconfig section of the config file\n \
+          debugflags: mask,    1->print parameters, 2->print memory allocations debug messages\n \
+                               4->print command line processing debug messages\n ";
+			       
 #define CONFIG_SECTIONNAME "config"
-
 #define CONFIGPARAM_DEBUGFLAGS_IDX        0
+
+
 static paramdef_t Config_Params[] = {
-{"debugflags",         "",   config_helpstr,   0,   uptr:NULL,   defintval:0,        TYPE_MASK,  0}, 
+/*-----------------------------------------------------------------------------------------------------------------------*/
+/*                                            config parameters for config module                                        */
+/*   optname              helpstr           paramflags     XXXptr       defXXXval            type       numelt           */
+/*-----------------------------------------------------------------------------------------------------------------------*/
+{"debugflags",            config_helpstr,   0,             uptr:NULL,   defintval:0,        TYPE_MASK,  0}, 
 };
 
 #else

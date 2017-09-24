@@ -106,16 +106,19 @@ char *modeparams=NULL;
 char *cfgmode=NULL;
 char *strtokctx=NULL;
 char *atoken;
-
+uint32_t tmpflags=0;
 int i;
  
 
 /* first parse the command line to look for the -O option */
   opterr=0;
-  while ((i = getopt(argc, argv, "O:")) != -1) {
+  while ((i = getopt(argc, argv, "O:h")) != -1) {
        if ( i == 'O' ) {
           cfgparam = optarg; 
-       }      
+       } 
+        if ( i == 'h' ) {
+          tmpflags = CONFIG_HELP; 
+       }            
    }
    optind=1;
 
@@ -132,20 +135,21 @@ int i;
    i = sscanf(cfgparam,"%m[^':']:%ms",&cfgmode,&modeparams);
    if (i< 0) {
        fprintf(stderr,"[CONFIG] %s, %d, sscanf error parsing config source  %s: %s\n", __FILE__, __LINE__,cfgparam, strerror(errno));
-       return NULL;
+       cfgmode=strdup("libconfig");
+       modeparams = strdup("oaisoftmodem.conf");
    }
    else if ( i == 1 ) {
   /* -O argument doesn't contain ":" separator, legacy -O <conf file> option, default cfgmode to libconfig
      with one parameter, the path to the configuration file */
        modeparams=cfgmode;
        cfgmode=strdup("libconfig");
+       tmpflags = tmpflags | CONFIG_LEGACY;/* temporary, legacy mode */
    }
 
    cfgptr = malloc(sizeof(configmodule_interface_t));
    memset(cfgptr,0,sizeof(configmodule_interface_t));
-/* temporary, legacy mode */
-   if (i==1) cfgptr->rtflags = cfgptr->rtflags | CONFIG_LEGACY;
-/*--*/
+
+   cfgptr->rtflags = cfgptr->rtflags | tmpflags;
    cfgptr->argc   = argc;
    cfgptr->argv   = argv; 
    cfgptr->cfgmode=strdup(cfgmode);
@@ -178,17 +182,18 @@ int i;
    i=load_config_sharedlib(cfgptr);
    if (i< 0) {
       fprintf(stderr,"[CONFIG] %s %d config module %s couldn't be loaded\n", __FILE__, __LINE__,cfgmode);
-      return NULL;
+      cfgptr->rtflags = cfgptr->rtflags | CONFIG_HELP | CONFIG_ABORT;
    } else {
       printf("[CONFIG] config module %s loaded\n",cfgmode);
+      Config_Params[CONFIGPARAM_DEBUGFLAGS_IDX].uptr=&(cfgptr->rtflags);
+      config_get(Config_Params,CONFIG_PARAMLENGTH(Config_Params), CONFIG_SECTIONNAME ); 
    }
 
-   Config_Params[CONFIGPARAM_DEBUGFLAGS_IDX].uptr=&(cfgptr->rtflags);
-   config_get(Config_Params,CONFIG_PARAMLENGTH(Config_Params), CONFIG_SECTIONNAME );   
+  
 
    if (modeparams != NULL) free(modeparams);
    if (cfgmode != NULL) free(cfgmode);
-   
+   if (CONFIG_ISFLAGSET(CONFIG_ABORT)) config_printhelp(Config_Params,CONFIG_PARAMLENGTH(Config_Params));
    return cfgptr;
 }
 

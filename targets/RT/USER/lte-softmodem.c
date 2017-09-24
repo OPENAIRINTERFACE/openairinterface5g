@@ -715,26 +715,27 @@ static void get_options(void) {
   config_process_cmdline( cmdline_ttraceparams,sizeof(cmdline_ttraceparams)/sizeof(paramdef_t),NULL);   
 #endif
 
+  if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT)) ) {
+    if (UE_flag == 0) {
+      memset((void*)&RC,0,sizeof(RC));
+      /* Read RC configuration file */
+      RCConfig(NULL);
+      NB_eNB_INST = RC.nb_inst;
+      NB_RU	  = RC.nb_RU;
+      printf("Configuration: nb_inst %d, nb_ru %d\n",NB_eNB_INST,NB_RU);
 
-  if (UE_flag == 0) {
-    memset((void*)&RC,0,sizeof(RC));
-    /* Read RC configuration file */
-    RCConfig(NULL);
-    NB_eNB_INST = RC.nb_inst;
-    NB_RU       = RC.nb_RU;
-    printf("Configuration: nb_inst %d, nb_ru %d\n",NB_eNB_INST,NB_RU);
-
-    
-  } else if (UE_flag == 1) {
-    if (conf_config_file_name != NULL) {
       
-      // Here the configuration file is the XER encoded UE capabilities
-      // Read it in and store in asn1c data structures
-      strcpy(uecap_xer,conf_config_file_name);
-      uecap_xer_in=1;
+    } else if (UE_flag == 1) {
+      if (conf_config_file_name != NULL) {
+  	
+  	// Here the configuration file is the XER encoded UE capabilities
+  	// Read it in and store in asn1c data structures
+  	strcpy(uecap_xer,conf_config_file_name);
+  	uecap_xer_in=1;
 
+      }
     }
-  }
+  } /* CONFIG_ABORT not set */
 }
 
 
@@ -1429,7 +1430,11 @@ int main( int argc, char **argv )
   
   if ( CONFIG_ISFLAGSET(CONFIG_LEGACY) == 0) {
       printf("configuration via the configuration module \n");
-      get_options (); //Command-line options, enb_properties
+      get_options (); 
+       if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
+           fprintf(stderr,"Getting configuration failed\n");
+	   exit(-1);
+       }
   } else {
       printf("Legacy configuration mode \n");
       old_get_options (argc,argv);

@@ -38,7 +38,7 @@
 
 
 #define MAX_OPTNAME_SIZE 64
-#define MAX_SHORTOPT_SIZE 8
+
 
 
 /* parameter flags definitions */
@@ -58,7 +58,6 @@
 typedef struct paramdef
 {
    char optname[MAX_OPTNAME_SIZE];        /* parameter name, can be used as long command line option */
-   char shortopt[MAX_SHORTOPT_SIZE];      /* short command line option */
    char *helpstr;                         /* help string */
    unsigned int paramflags;               /* value is a "ored" combination of above PARAMFLAG_XXXX values */
    union {                                /* pointer to the parameter value, completed by the config module */

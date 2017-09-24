@@ -136,7 +136,7 @@ char *cfgpath;
 	    } else {
 	       sprintf(cfgpath,"%s",cfgoptions[i].optname);
 	    }
-            if ( ((strlen(*p) > 1) && (strcmp(*p + 1,cfgoptions[i].shortopt) == 0))  || 
+            if ( ((strlen(*p) == 2) && (strcmp(*p + 1,cfgpath) == 0))  || 
                  ((strlen(*p) > 2) && (strcmp(*p + 2,cfgpath ) == 0 )) ) {
                p++;
                j =+ processoption(&(cfgoptions[i]), *p);
