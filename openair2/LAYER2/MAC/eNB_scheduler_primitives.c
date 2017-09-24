@@ -777,12 +777,12 @@ void get_csi_params(COMMON_channels_t *cc,struct CQI_ReportPeriodic *cqi_ReportP
 }
 
 
-uint8_t get_dl_cqi_pmi_size_pusch(UE_sched_ctrl *sched_ctl,COMMON_channels_t *cc,uint8_t tmode,uint8_t ri, CQI_ReportModeAperiodic_t *cqi_ReportModeAperiodic) {
+uint8_t get_dl_cqi_pmi_size_pusch(COMMON_channels_t *cc,uint8_t tmode,uint8_t ri, CQI_ReportModeAperiodic_t *cqi_ReportModeAperiodic) {
 
   int Ntab[6]       = {0,4,7,9,10,13};
-  int N             = Ntab[cc->p_eNB];
+  int N             = Ntab[cc->mib->message.dl_Bandwidth];
   int Ltab_uesel[6] = {0,6,9,13,15,18};
-  int L             = Ltab_uesel[cc->p_eNB];
+  int L             = Ltab_uesel[cc->mib->message.dl_Bandwidth];
 
   AssertFatal(cqi_ReportModeAperiodic != NULL,"cqi_ReportPeriodic is null!\n");
 
@@ -1307,7 +1307,103 @@ uint16_t fill_nfapi_tx_req(nfapi_tx_request_body_t *tx_req_body,uint16_t absSF,u
 
   return(((absSF/10)<<4) + (absSF%10));
 }
+
+void fill_nfapi_ulsch_config_request_rel8(nfapi_ul_config_request_pdu_t  *ul_config_pdu,
+					  uint8_t                        cqi_req,
+					  COMMON_channels_t              *cc,
+					  struct PhysicalConfigDedicated  *physicalConfigDedicated,
+					  uint8_t                        tmode,
+					  uint32_t                       handle,
+					  uint16_t                       rnti,
+					  uint8_t                        resource_block_start,
+					  uint8_t                        number_of_resource_blocks,
+					  uint8_t                        mcs,
+					  uint8_t                        cyclic_shift_2_for_drms,
+					  uint8_t                        frequency_hopping_enabled_flag,
+					  uint8_t                        frequency_hopping_bits,
+					  uint8_t                        new_data_indication,
+					  uint8_t                        redundancy_version,
+					  uint8_t                        harq_process_number,
+					  uint8_t                        ul_tx_mode,
+					  uint8_t                        current_tx_nb,
+					  uint8_t                        n_srs,
+					  uint16_t                       size
+					  ) {
+
+
+  memset((void*)ul_config_pdu,0,sizeof(nfapi_ul_config_request_pdu_t));
+  if (cqi_req==0)
+    ul_config_pdu->pdu_type                                                      = NFAPI_UL_CONFIG_ULSCH_PDU_TYPE; 
+  else
+    ul_config_pdu->pdu_type                                                      = NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE; 
+  ul_config_pdu->pdu_size                                                        = (uint8_t)(2+sizeof(nfapi_ul_config_ulsch_pdu));
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.handle                                 = handle;
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.rnti                                   = rnti;
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.resource_block_start                   = resource_block_start;
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.number_of_resource_blocks              = number_of_resource_blocks;
+  if      (mcs<11) ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.modulation_type       = 2;
+  else if (mcs<21) ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.modulation_type       = 4;
+  else             ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.modulation_type       = 6;
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.cyclic_shift_2_for_drms                = cyclic_shift_2_for_drms;
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.frequency_hopping_enabled_flag         = frequency_hopping_enabled_flag;
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.frequency_hopping_bits                 = frequency_hopping_bits;
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.new_data_indication                    = new_data_indication;
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.redundancy_version                     = redundancy_version;
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.harq_process_number                    = harq_process_number;
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.ul_tx_mode                             = ul_tx_mode;
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.current_tx_nb                          = current_tx_nb;
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.n_srs                                  = n_srs;
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.size                                   = size;
+  
+  if (cqi_req == 1) {
+    // Add CQI portion 
+
+    
+    ul_config_pdu->pdu_type                                                           = NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE; 
+    ul_config_pdu->pdu_size                                                           = (uint8_t)(2+sizeof(nfapi_ul_config_ulsch_cqi_ri_pdu));
+    ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.report_type             = 1;
+    ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.aperiodic_cqi_pmi_ri_report.number_of_cc = 1;
+    LOG_D(MAC,"report_type %d\n",ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.report_type);
+    
+    if (cc->p_eNB<=2 && (tmode==3||tmode==4||tmode==8||tmode==9||tmode==10))
+      ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.aperiodic_cqi_pmi_ri_report.cc[0].ri_size = 1;
+    else if (cc->p_eNB<=2) 
+      ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.aperiodic_cqi_pmi_ri_report.cc[0].ri_size = 0;
+    else if (cc->p_eNB==4)
+      ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.aperiodic_cqi_pmi_ri_report.cc[0].ri_size = 2;
+    
+    AssertFatal(physicalConfigDedicated->cqi_ReportConfig!=NULL,"physicalConfigDedicated->cqi_ReportConfig is null!\n");
+    AssertFatal(physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic!=NULL,"physicalConfigDedicated->cqi_ReportModeAperiodic is null!\n");
+    AssertFatal(physicalConfigDedicated->pusch_ConfigDedicated!=NULL,"physicalConfigDedicated->puschConfigDedicated is null!\n");
+    
+    for (int ri=0;
+	 ri<(1<<ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.aperiodic_cqi_pmi_ri_report.cc[0].ri_size);
+	 ri++)
+      ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.aperiodic_cqi_pmi_ri_report.cc[0].dl_cqi_pmi_size[ri] = 
+	get_dl_cqi_pmi_size_pusch(cc,
+				  tmode,
+				  1+ri,
+				  physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic);
+    
+    ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.delta_offset_cqi        = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_CQI_Index;
+    ((nfapi_ul_config_ulsch_cqi_ri_pdu*)ul_config_pdu)->cqi_ri_information.cqi_ri_information_rel9.delta_offset_ri         = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_RI_Index;
+  }
+}
+
 #ifdef Rel14
+void fill_nfapi_ulsch_config_request_emtc(nfapi_ul_config_request_pdu_t  *ul_config_pdu,
+					  uint8_t ue_type,
+					  uint16_t total_number_of_repetitions,
+					  uint16_t repetition_number,
+					  uint16_t initial_transmission_sf_io) {
+  // Re13 fields
+  
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13.ue_type                               = ue_type;
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13.total_number_of_repetitions           = total_number_of_repetitions;
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13.repetition_number                     = repetition_number;
+  ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13.initial_transmission_sf_io            = initial_transmission_sf_io;
+  
+}
 
 int get_numnarrowbands(long dl_Bandwidth) {
   int nb_tab[6] = {1,2,4,8,12,16};
@@ -3288,7 +3384,7 @@ void extract_pusch_csi(module_id_t mod_idP,int CC_idP,int UE_id, frame_t frameP,
   AssertFatal((cqi_ReportModeAperiodic = UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic)!=NULL,
 	      "cqi_ReportModeAperiodic is null for UE %d\n",UE_id);
 
-  int N     = Ntab[cc->p_eNB];
+  int N     = Ntab[cc->mib->message.dl_Bandwidth];
   int tmode = get_tmode(mod_idP,CC_idP,UE_id);
   int ri    = sched_ctl->aperiodic_ri_received[CC_idP];
   int r,diffcqi0=0,diffcqi1=0,pmi_uesel=0;

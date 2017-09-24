@@ -102,41 +102,46 @@ void handle_harq(UL_IND_t *UL_info) {
 
 void handle_ulsch(UL_IND_t *UL_info) {
 
-  int i;
+  int i,j;
 
   for (i=0;i<UL_info->rx_ind.number_of_pdus;i++) {
 
-    LOG_D(MAC,"Frame %d, Subframe %d Calling rx_sdu \n",UL_info->frame,UL_info->subframe);
-    rx_sdu(UL_info->module_id,
-	   UL_info->CC_id,
-	   UL_info->frame,
-	   UL_info->subframe,
-	   UL_info->rx_ind.rx_pdu_list[i].rx_ue_information.rnti,
-	   UL_info->rx_ind.rx_pdu_list[i].data,
-	   UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.length,
-	   UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.timing_advance,
-	   UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.ul_cqi);
-  }
+    for (j=0;j<UL_info->crc_ind.number_of_crcs;j++) {
+      // find crc_indication j corresponding rx_indication i
+      if (UL_info->crc_ind.crc_pdu_list[j].rx_ue_information.rnti ==
+	  UL_info->rx_ind.rx_pdu_list[i].rx_ue_information.rnti) {
+	if (UL_info->crc_ind.crc_pdu_list[j].crc_indication_rel8.crc_flag == 1) { // CRC error indication
+	  LOG_D(MAC,"Frame %d, Subframe %d Calling rx_sdu (CRC error) \n",UL_info->frame,UL_info->subframe);
+	  rx_sdu(UL_info->module_id,
+		 UL_info->CC_id,
+		 UL_info->frame,
+		 UL_info->subframe,
+		 UL_info->rx_ind.rx_pdu_list[i].rx_ue_information.rnti,
+		 (uint8_t *)NULL,
+		 UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.length,
+		 UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.timing_advance,
+		 UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.ul_cqi);
+	}
+	else {
+	  LOG_D(MAC,"Frame %d, Subframe %d Calling rx_sdu (CRC ok) \n",UL_info->frame,UL_info->subframe);
+	  rx_sdu(UL_info->module_id,
+		 UL_info->CC_id,
+		 UL_info->frame,
+		 UL_info->subframe,
+		 UL_info->rx_ind.rx_pdu_list[i].rx_ue_information.rnti,
+		 UL_info->rx_ind.rx_pdu_list[i].data,
+		 UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.length,
+		 UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.timing_advance,
+		 UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.ul_cqi);
+	}
+	break;
+      } //if (UL_info->crc_ind.crc_pdu_list[j].rx_ue_information.rnti ==
+	//    UL_info->rx_ind.rx_pdu_list[i].rx_ue_information.rnti) {
+    } //    for (j=0;j<UL_info->crc_ind.number_of_crcs;j++) {
+    AssertFatal(j<UL_info->crc_ind.number_of_crcs,"Couldn't find matchin CRC indication\n");
+  } //   for (i=0;i<UL_info->rx_ind.number_of_pdus;i++) {
     
   UL_info->rx_ind.number_of_pdus=0;
-  
-  for (i=0;i<UL_info->crc_ind.number_of_crcs;i++) {
-    
-    if (UL_info->crc_ind.crc_pdu_list[i].crc_indication_rel8.crc_flag == 1) { // CRC error indication
-      LOG_D(MAC,"Frame %d, Subframe %d Calling rx_sdu (CRC error) \n",UL_info->frame,UL_info->subframe);
-      rx_sdu(UL_info->module_id,
-	     UL_info->CC_id,
-	     UL_info->frame,
-	     UL_info->subframe,
-	     UL_info->crc_ind.crc_pdu_list[i].rx_ue_information.rnti,
-	     (uint8_t *)NULL,
-	     0,
-	     0,
-	     0);
-    }
-    
-    
-  }
   UL_info->crc_ind.number_of_crcs=0;
 }
 

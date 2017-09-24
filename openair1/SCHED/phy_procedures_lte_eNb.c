@@ -1309,7 +1309,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 			    nPRS)%12;
 
       LOG_D(PHY,
-            "[eNB %d][PUSCH %d] Frame %d Subframe %d Demodulating PUSCH: dci_alloc %d, rar_alloc %d, round %d, first_rb %d, nb_rb %d, Qm %d, TBS %d, rv %d, cyclic_shift %d (n_DMRS2 %d, cyclicShift_common %d, nprs %d), O_ACK %d \n",
+            "[eNB %d][PUSCH %d] Frame %d Subframe %d Demodulating PUSCH: dci_alloc %d, rar_alloc %d, round %d, first_rb %d, nb_rb %d, Qm %d, TBS %d, rv %d, cyclic_shift %d (n_DMRS2 %d, cyclicShift_common %d, nprs %d), O_ACK %d, beta_cqi %d \n",
             eNB->Mod_id,harq_pid,frame,subframe,
             ulsch_harq->dci_alloc,
             ulsch_harq->rar_alloc,
@@ -1323,7 +1323,8 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
             ulsch_harq->n_DMRS2,
             fp->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift,
             nPRS,
-            ulsch_harq->O_ACK);
+            ulsch_harq->O_ACK,
+	    ulsch->beta_offset_cqi_times8);
 
       start_meas(&eNB->ulsch_demodulation_stats);
 
@@ -1380,6 +1381,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
           T_INT(harq_pid));
 
 	fill_crc_indication(eNB,i,frame,subframe,1); // indicate NAK to MAC
+	fill_rx_indication(eNB,i,frame,subframe);  // indicate SDU to MAC
 
 	LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
 	      eNB->Mod_id,harq_pid,
@@ -1389,6 +1391,10 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 	      ulsch_harq->o_ACK[0],
 	      ulsch_harq->o_ACK[1]);
 	
+	if (dB_fixed_times10(eNB->pusch_vars[i]->ulsch_power[0]) > 300) {
+	  dump_ulsch(eNB,frame,subframe,i); exit(-1);
+	}
+
 #if defined(MESSAGE_CHART_GENERATOR_PHY)
 	MSC_LOG_RX_DISCARDED_MESSAGE(
 				     MSC_PHY_ENB,MSC_PHY_UE,
@@ -1405,7 +1411,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 	
 
 	fill_crc_indication(eNB,i,frame,subframe,0); // indicate ACK to MAC
-	fill_rx_indication(eNB,i,frame,subframe);    // indicate SDU to MAC
+	fill_rx_indication(eNB,i,frame,subframe);  // indicate SDU to MAC
         T(T_ENB_PHY_ULSCH_UE_ACK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(i), T_INT(ulsch->rnti),
           T_INT(harq_pid));
 	ulsch_harq->status = SCH_IDLE;
@@ -1516,6 +1522,10 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe) {
   // estimate timing advance for MAC
   sync_pos                               = lte_est_timing_advance_pusch(eNB,UE_id);
   timing_advance_update                  = sync_pos - eNB->frame_parms.nb_prefix_samples/4; //to check
+
+
+  //  if (timing_advance_update > 10) { dump_ulsch(eNB,frame,subframe,UE_id); exit(-1);}
+  //  if (timing_advance_update < -10) { dump_ulsch(eNB,frame,subframe,UE_id); exit(-1);}
   switch (eNB->frame_parms.N_RB_DL) {
   case 6:
     pdu->rx_indication_rel8.timing_advance = timing_advance_update;  
@@ -1544,9 +1554,15 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe) {
   // estimate UL_CQI for MAC (from antenna port 0 only)
   int SNRtimes10 = dB_fixed_times10(eNB->pusch_vars[UE_id]->ulsch_power[0]) - 200;//(10*eNB->measurements.n0_power_dB[0]);
 
+
   if      (SNRtimes10 < -640) pdu->rx_indication_rel8.ul_cqi=0;
   else if (SNRtimes10 >  635) pdu->rx_indication_rel8.ul_cqi=255;
   else                        pdu->rx_indication_rel8.ul_cqi=(640+SNRtimes10)/5;
+
+
+  LOG_D(PHY,"[PUSCH %d] Filling RX_indication with SNR %d (%d), timing_advance %d (update %d)\n",
+	harq_pid,SNRtimes10,pdu->rx_indication_rel8.ul_cqi,pdu->rx_indication_rel8.timing_advance,
+	timing_advance_update);
 
   eNB->UL_INFO.rx_ind.number_of_pdus++;
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);

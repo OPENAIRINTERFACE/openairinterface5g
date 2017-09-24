@@ -1015,6 +1015,8 @@ void phy_config_harq_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
   phy_vars_ue->ulsch[eNB_id]->Mlimit = max_harq_tx;
 }
 
+extern uint16_t beta_cqi[16];
+
 void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
                              struct PhysicalConfigDedicated *physicalConfigDedicated )
 {
@@ -1070,7 +1072,7 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
 
       LOG_D(PHY,"pusch_config_dedicated.betaOffset_ACK_Index %d\n",phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_ACK_Index);
       LOG_D(PHY,"pusch_config_dedicated.betaOffset_RI_Index %d\n",phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_RI_Index);
-      LOG_D(PHY,"pusch_config_dedicated.betaOffset_CQI_Index %d\n",phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index);
+      LOG_D(PHY,"pusch_config_dedicated.betaOffset_CQI_Index %d => %d)\n",phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index,beta_cqi[phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index]);
       LOG_D(PHY,"\n");
 
 
