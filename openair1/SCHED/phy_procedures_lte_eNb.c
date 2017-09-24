@@ -781,6 +781,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
     if ((uci->active == 1) &&
 	(uci->frame == frame) &&
 	(uci->subframe == subframe)) {
+      uci->active=0;
 
       // Null out PUCCH PRBs for noise measurement
       switch(fp->N_RB_UL) {

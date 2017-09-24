@@ -106,7 +106,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
 
   if (UE_id!=-1) {
 
-    LOG_D(MAC,"[eNB %d][PUSCH %d] CC_id %d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",enb_mod_idP,harq_pid,CC_idP,
+    LOG_I(MAC,"[eNB %d][PUSCH %d] CC_id %d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",enb_mod_idP,harq_pid,CC_idP,
 	  UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
 	  rntiP,UE_id,ul_cqi);
 
@@ -128,7 +128,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
       LOG_D(MAC,"[eNB %d][PUSCH %d] CC_id %d ULSCH in error in round %d, ul_cqi %d\n",enb_mod_idP,harq_pid,CC_idP,
 	    UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],ul_cqi);
       //      AssertFatal(1==0,"ulsch in error\n");
-      if (UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] == 7) {
+      if (UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] == 3) {
 	UE_list->UE_sched_ctrl[UE_id].ul_scheduled       &= (~(1<<harq_pid));
 	UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid]=0;
 	// here we increment error statistics
@@ -969,7 +969,7 @@ abort();
 
       RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = UE_template->ul_total_buffer;
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BO,RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP]);	
-      if (((UE_is_to_be_scheduled(module_idP,CC_id,UE_id)>0)) || (round>0))// || ((frameP%10)==0))
+      if (((UE_is_to_be_scheduled(module_idP,CC_id,UE_id)>0) && harq_pid == 0) || (round>0))// || ((frameP%10)==0))
 	// if there is information on bsr of DCCH, DTCH or if there is UL_SR, or if there is a packet to retransmit, or we want to schedule a periodic feedback every 10 frames
         {
 	  LOG_D(MAC,"[eNB %d][PUSCH %d] Frame %d subframe %d Scheduling UE %d/%x in round %d(SR %d,UL_inactivity timer %d,UL_failure timer %d,cqi_req_timer %d)\n",
@@ -1020,7 +1020,7 @@ abort();
 	    } else {
             tpc = 1; //0
           }
-	  
+	  tpc = 1;
 	  if (tpc!=1) {
 	    LOG_D(MAC,"[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
 		  module_idP,frameP,subframeP,harq_pid,tpc,
