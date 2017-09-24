@@ -935,11 +935,11 @@ abort();
       N_RB_UL      = to_prb(cc[CC_id].ul_Bandwidth);
       eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
 
-      
+      /*
       aggregation=get_aggregation(get_bw_index(module_idP,CC_id), 
 				  eNB_UE_stats->dl_cqi,
 				  format0);
-      
+      */
 
       if (CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,aggregation,rnti)) {
         LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: not enough nCCE\n", module_idP,frameP,subframeP,UE_id,rnti,CC_id);
@@ -991,6 +991,8 @@ abort();
 	  else
 	    cqi_req = 0;
 	  
+	  cqi_req = 0;
+
           //power control
           //compute the expected ULSCH RX power (for the stats)
 	  

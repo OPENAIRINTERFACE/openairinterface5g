@@ -1390,10 +1390,10 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 	      ulsch->Mlimit,
 	      ulsch_harq->o_ACK[0],
 	      ulsch_harq->o_ACK[1]);
-	
+	/*	
 	if (dB_fixed_times10(eNB->pusch_vars[i]->ulsch_power[0]) > 300) {
 	  dump_ulsch(eNB,frame,subframe,i); exit(-1);
-	}
+	  }*/
 
 #if defined(MESSAGE_CHART_GENERATOR_PHY)
 	MSC_LOG_RX_DISCARDED_MESSAGE(
