@@ -945,12 +945,42 @@ void get_csi_params(COMMON_channels_t *cc,struct CQI_ReportPeriodic *cqi_PMI_Con
 
 uint8_t get_rel8_dl_cqi_pmi_size(UE_sched_ctrl *sched_ctl,int CC_idP,COMMON_channels_t *cc,uint8_t tmode, struct CQI_ReportPeriodic *cqi_ReportPeriodic);
 
-uint8_t get_dl_cqi_pmi_size_pusch(UE_sched_ctrl *sched_ctl,COMMON_channels_t *cc,uint8_t tmode, uint8_t ri, CQI_ReportModeAperiodic_t *cqi_ReportModeAperiodic);
+uint8_t get_dl_cqi_pmi_size_pusch(COMMON_channels_t *cc,uint8_t tmode, uint8_t ri, CQI_ReportModeAperiodic_t *cqi_ReportModeAperiodic);
 void extract_pucch_csi(module_id_t mod_idP,int CC_idP,int UE_id, frame_t frameP,sub_frame_t subframeP, uint8_t *pdu, uint8_t length);
 
 void extract_pusch_csi(module_id_t mod_idP,int CC_idP,int UE_id, frame_t frameP,sub_frame_t subframeP,uint8_t *pdu, uint8_t length);
 
 uint16_t fill_nfapi_tx_req(nfapi_tx_request_body_t *tx_req_body,uint16_t absSF,uint16_t pdu_length, uint16_t *pdu_index, uint8_t *pdu );
+
+void fill_nfapi_ulsch_config_request_rel8(nfapi_ul_config_request_pdu_t  *ul_config_pdu,
+					  uint8_t                        cqi_req,
+					  COMMON_channels_t              *cc,
+					  struct PhysicalConfigDedicated *physicalConfigDedicated,
+					  uint8_t                        tmode,
+					  uint32_t                       handle,
+					  uint16_t                       rnti,
+					  uint8_t                        resource_block_start,
+					  uint8_t                        number_of_resource_blocks,
+					  uint8_t                        mcs,
+					  uint8_t                        cyclic_shift_2_for_drms,
+					  uint8_t                        frequency_hopping_enabled_flag,
+					  uint8_t                        frequency_hopping_bits,
+					  uint8_t                        new_data_indication,
+					  uint8_t                        redundancy_version,
+					  uint8_t                        harq_process_number,
+					  uint8_t                        ul_tx_mode,
+					  uint8_t                        current_tx_nb,
+					  uint8_t                        n_srs,
+					  uint16_t                       size
+					  );
+
+#ifdef Rel14
+void fill_nfapi_ulsch_config_request_emtc(nfapi_ul_config_request_pdu_t  *ul_config_pdu,
+					  uint8_t ue_type,
+					  uint16_t total_number_of_repetitions,
+					  uint16_t repetition_number,
+					  uint16_t initial_transmission_sf_io);
+#endif
 
 void program_dlsch_acknak(module_id_t module_idP, int CC_idP,int UE_idP, frame_t frameP, sub_frame_t subframeP,uint8_t cce_idx);
 

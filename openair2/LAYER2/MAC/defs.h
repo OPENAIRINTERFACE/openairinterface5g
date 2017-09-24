@@ -648,6 +648,10 @@ typedef struct {
   uint8_t oldmcs2[8];
   /// NDI from last UL scheduling
   uint8_t oldNDI_UL[8];
+  /// mcs from last UL scheduling
+  uint8_t mcs_UL[8];
+  /// TBS from last UL scheduling
+  uint8_t TBS_UL[8];
   /// Flag to indicate UL has been scheduled at least once
   boolean_t ul_active;
   /// Flag to indicate UE has been configured (ACK from RRCConnectionSetup received)
@@ -877,6 +881,8 @@ typedef struct {
   uint8_t generate_Msg4;
   /// Flag to indicate that eNB is waiting for ACK that UE has received Msg3.
   uint8_t wait_ack_Msg4;
+  /// harq_pid used for Msg4 transmission
+  uint8_t harq_pid;
   /// UE RNTI allocated during RAR
   rnti_t rnti;
   /// RA RNTI allocated from received PRACH

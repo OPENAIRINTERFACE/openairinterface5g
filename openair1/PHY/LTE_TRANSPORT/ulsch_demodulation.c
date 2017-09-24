@@ -1329,23 +1329,21 @@ void rx_ulsch_emul(PHY_VARS_eNB *eNB,
 }
 
 
- void dump_ulsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t UE_id)
-{
+ void dump_ulsch(PHY_VARS_eNB *eNB,int frame,int subframe,uint8_t UE_id) {
   
   uint32_t nsymb = (eNB->frame_parms.Ncp == 0) ? 14 : 12;
   uint8_t harq_pid;
-  int subframe = proc->subframe_rx;
 
-  harq_pid = subframe2harq_pid(&eNB->frame_parms,proc->frame_rx,subframe);
+  harq_pid = subframe2harq_pid(&eNB->frame_parms,frame,subframe);
 
-  printf("Dumping ULSCH in subframe %d with harq_pid %d, for NB_rb %d, TBS %d, Qm %d, N_symb %d\n", subframe,harq_pid,eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
+  printf("Dumping ULSCH in subframe %d with harq_pid %d, for NB_rb %d, TBS %d, Qm %d, N_symb %d\n", 
+	 subframe,harq_pid,eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
          eNB->ulsch[UE_id]->harq_processes[harq_pid]->TBS,eNB->ulsch[UE_id]->harq_processes[harq_pid]->Qm,
          eNB->ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_pusch);
   //#ifndef OAI_EMU
   write_output("/tmp/ulsch_d.m","ulsch_dseq",&eNB->ulsch[UE_id]->harq_processes[harq_pid]->d[0][96],
                eNB->ulsch[UE_id]->harq_processes[harq_pid]->Kplus*3,1,0);
   if (eNB->common_vars.rxdata) write_output("/tmp/rxsig0.m","rxs0", &eNB->common_vars.rxdata[0][0],eNB->frame_parms.samples_per_tti*10,1,1);
-
   
   if (eNB->frame_parms.nb_antennas_rx>1)
     if (eNB->common_vars.rxdata) write_output("/tmp/rxsig1.m","rxs1", &eNB->common_vars.rxdata[1][0],eNB->frame_parms.samples_per_tti*10,1,1);
