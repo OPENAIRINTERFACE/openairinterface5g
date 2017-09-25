@@ -963,7 +963,7 @@ abort();
       if (((UE_is_to_be_scheduled(module_idP,CC_id,UE_id)>0) && harq_pid == 0) || (round>0))// || ((frameP%10)==0))
 	// if there is information on bsr of DCCH, DTCH or if there is UL_SR, or if there is a packet to retransmit, or we want to schedule a periodic feedback every 10 frames
         {
-	  LOG_D(MAC,"[eNB %d][PUSCH %d] Frame %d subframe %d Scheduling UE %d/%x in round %d(SR %d,UL_inactivity timer %d,UL_failure timer %d,cqi_req_timer %d)\n",
+	  LOG_I(MAC,"[eNB %d][PUSCH %d] Frame %d subframe %d Scheduling UE %d/%x in round %d(SR %d,UL_inactivity timer %d,UL_failure timer %d,cqi_req_timer %d)\n",
 		module_idP,harq_pid,frameP,subframeP,UE_id,rnti,round,UE_template->ul_SR,
 		UE_sched_ctrl->ul_inactivity_timer,
 
@@ -1053,14 +1053,12 @@ abort();
               T_INT(TBS), T_INT(ndi));
 	    
 	    if (mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED)
-	      LOG_D(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",
+	      LOG_I(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",
 		    module_idP,harq_pid,rnti,CC_id,frameP,subframeP,UE_id,UE_template->mcs_UL[harq_pid],
 		    first_rb[CC_id],rb_table[rb_table_index],
 		    rb_table_index,UE_template->TBS_UL[harq_pid],harq_pid);
 	    
 	    // bad indices : 20 (40 PRB), 21 (45 PRB), 22 (48 PRB)
-            // increment for next UE allocation
-            first_rb[CC_id]+=rb_table[rb_table_index];
             //store for possible retransmission
             UE_template->nb_rb_ul[harq_pid]    = rb_table[rb_table_index];
             UE_template->first_rb_ul[harq_pid] = first_rb[CC_id];
@@ -1149,6 +1147,9 @@ abort();
 			      S_UL_SCHEDULED);
 	    
 	    LOG_D(MAC,"[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for next UE_id %d, format 0\n", module_idP,CC_id,frameP,subframeP,UE_id);
+
+            // increment first rb for next UE allocation
+            first_rb[CC_id]+=rb_table[rb_table_index];
 	    
 	  }
 	  else { // round > 0 => retransmission

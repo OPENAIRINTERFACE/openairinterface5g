@@ -1050,12 +1050,12 @@ void check_Msg4_retransmission(module_id_t module_idP,int CC_idP,frame_t frameP,
 			       4,                           // aggregation_level
 			       RA_template->rnti,           // rnti
 			       1,                           // rnti_type, CRNTI
-			       0,                           // harq_process
+			       RA_template->harq_pid,       // harq_process
 			       1,                           // tpc, none
 			       getRIV(N_RB_DL,first_rb,4),  // resource_block_coding
 			       RA_template->msg4_mcs,       // mcs
 			       1,                           // ndi
-			       round,                       // rv
+			       round&3,                       // rv
 			       0);                          // vrb_flag
 	  
 	  if (!CCE_allocation_infeasible(module_idP,CC_idP,0,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,RA_template->rnti)) {
@@ -1063,11 +1063,36 @@ void check_Msg4_retransmission(module_id_t module_idP,int CC_idP,frame_t frameP,
 	    dl_req->number_pdu++;
 	    
 	    LOG_D(MAC,"msg4 retransmission for rnti %x (round %d) fsf %d/%d\n", RA_template->rnti, round, frameP, subframeP);
+	    	  // DLSCH Config
+	    fill_nfapi_dlsch_config(eNB,
+				    dl_req,
+				    RA_template->msg4_TBsize,
+				    eNB->pdu_index[CC_idP]++,
+				    RA_template->rnti,
+				    2,                           // resource_allocation_type : format 1A/1B/1D
+				    0,                           // virtual_resource_block_assignment_flag : localized
+				    getRIV(N_RB_DL,first_rb,4),  // resource_block_coding : RIV, 4 PRB
+				    2,                           // modulation: QPSK
+				    round&3,                     // redundancy version
+				    1,                           // transport_blocks
+				    0,                           // transport_block_to_codeword_swap_flag (0)
+				    (cc->p_eNB==1 ) ? 0 : 1,     // transmission_scheme
+				    1,                           // number of layers
+				    1,                           // number of subbands
+				    //0,                         // codebook index 
+				    1,                           // ue_category_capacity
+				    4,                           // pa: 0 dB
+				    0,                           // delta_power_offset_index
+				    0,                           // ngap
+				    1,                           // NPRB = 3 like in DCI
+				    (cc->p_eNB==1 ) ? 1 : 2,     // transmission mode
+				    1,                           // num_bf_prb_per_subband
+				    1);                          // num_bf_vector
 	  }
 	  else
 	    LOG_D(MAC,"msg4 retransmission for rnti %x (round %d) fsf %d/%d CCE allocation failed!\n", RA_template->rnti, round, frameP, subframeP);
-	  LOG_W(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Msg4 not acknowledged, adding ue specific dci (rnti %x) for RA (Msg4 Retransmission)\n",
-		module_idP,CC_idP,frameP,subframeP,RA_template->rnti);
+	  LOG_W(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Msg4 not acknowledged, adding ue specific dci (rnti %x) for RA (Msg4 Retransmission round %d)\n",
+		module_idP,CC_idP,frameP,subframeP,RA_template->rnti,round);
 	  
 	  
 	  // Program PUCCH1a for ACK/NAK
@@ -1159,7 +1184,7 @@ void initiate_ra_proc(module_id_t module_idP,
     ext4_prach=cc->radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
     prach_ParametersListCE_r13= &ext4_prach->prach_ParametersListCE_r13;
   }
-  LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d\n",module_idP,CC_id,frameP,subframeP,preamble_index);
+  LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d\n",module_idP,CC_id,frameP,subframeP,preamble_index);
 #ifdef Rel14
   LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  PRACH resource type %d\n",module_idP,CC_id,frameP,subframeP,rach_resource_type);
 #endif

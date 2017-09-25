@@ -268,7 +268,10 @@ void schedule_SR(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP) {
 
       // drop the allocation because ULSCH with handle it with BSR
       if (ul_ulsch_only==1) continue;
-      
+
+      // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
+      if (mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED) continue;
+       
       // if we get here then there is no UL grant so program the SR
       ul_req->ul_config_pdu_list[ul_req->number_of_pdus].pdu_type                                                 = NFAPI_UL_CONFIG_UCI_SR_PDU_TYPE;
       ul_req->ul_config_pdu_list[ul_req->number_of_pdus].uci_sr_pdu.ue_information.ue_information_rel8.rnti = UE_list->UE_template[CC_id][UE_id].rnti;
@@ -472,7 +475,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
     RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ul_inactivity_timer++;
 
     RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer++;
-    LOG_I(MAC,"UE %d/%x : ul_inactivity %d, cqi_req %d\n",i,rnti, 
+    LOG_D(MAC,"UE %d/%x : ul_inactivity %d, cqi_req %d\n",i,rnti, 
 	  RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ul_inactivity_timer,
 	  RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer);
     check_ul_failure(module_idP,CC_id,i,frameP,subframeP);

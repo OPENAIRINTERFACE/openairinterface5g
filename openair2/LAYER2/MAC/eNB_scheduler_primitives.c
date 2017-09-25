@@ -2107,7 +2107,7 @@ uint8_t UE_is_to_be_scheduled(module_id_t module_idP,int CC_id,uint8_t UE_id)
        (mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED))) // every Frame when not RRC_CONNECTED
     { 
 
-      LOG_I(MAC,"[eNB %d][PUSCH] UE %d/%x should be scheduled (BSR0 %d,SR %d)\n",module_idP,UE_id,UE_RNTI(module_idP,UE_id),
+      LOG_D(MAC,"[eNB %d][PUSCH] UE %d/%x should be scheduled (BSR0 %d,SR %d)\n",module_idP,UE_id,UE_RNTI(module_idP,UE_id),
 	    UE_template->bsr_info[LCGID0],
 	    UE_template->ul_SR);
     return(1);
@@ -3594,7 +3594,7 @@ void SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, sub_frame_t 
  
   if (UE_id  != -1) {
     if (mac_eNB_get_rrc_status(mod_idP,UE_RNTI(mod_idP,UE_id)) < RRC_CONNECTED)
-      LOG_D(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
+      LOG_I(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
     UE_list->UE_template[cc_idP][UE_id].ul_SR = 1;
     UE_list->UE_template[cc_idP][UE_id].ul_active = TRUE;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SR_INDICATION,1);
