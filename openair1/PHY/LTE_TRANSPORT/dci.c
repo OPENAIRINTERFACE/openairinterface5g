@@ -2131,8 +2131,10 @@ uint8_t generate_dci_top(uint8_t num_pdcch_symbols,
       if (dci_alloc[i].L == (uint8_t)L) {
 
 	//#ifdef DEBUG_DCI_ENCODING
-        LOG_D(PHY,"Generating DCI %d/%d (nCCE %d) of length %d, aggregation %d (%x)\n",i,num_dci,dci_alloc[i].firstCCE,dci_alloc[i].dci_length,dci_alloc[i].L,
-              *(unsigned int*)dci_alloc[i].dci_pdu);
+	if (dci_alloc[i].rnti!=0xFFFF)
+	  LOG_I(PHY,"Generating DCI %d/%d (nCCE %d) of length %d, aggregation %d (%x), rnti %x\n",i,num_dci,dci_alloc[i].firstCCE,dci_alloc[i].dci_length,dci_alloc[i].L,
+		*(unsigned int*)dci_alloc[i].dci_pdu,
+		dci_alloc[i].rnti);
         //dump_dci(frame_parms,&dci_alloc[i]);
 	//#endif
 

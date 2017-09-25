@@ -146,6 +146,8 @@ typedef struct {
   uint32_t cqi_alloc2;
   /// Current Number of RBs
   uint16_t nb_rb;
+  /// Current NDI
+  uint8_t ndi;
   /// downlink power offset field
   uint8_t dl_power_off;
   /// start symbold of pdsch

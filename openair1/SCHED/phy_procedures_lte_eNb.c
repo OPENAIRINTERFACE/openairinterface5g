@@ -378,6 +378,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
   stop_meas(&eNB->dlsch_modulation_stats);
 
   dlsch->active = 0;
+  dlsch_harq->round++;
 }
 
 
@@ -781,6 +782,8 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
     if ((uci->active == 1) &&
 	(uci->frame == frame) &&
 	(uci->subframe == subframe)) {
+
+      LOG_I(PHY,"Frame %d, subframe %d: Running uci procedures (type %d) for %d \n",frame,subframe,uci->type,i);
       uci->active=0;
 
       // Null out PUCCH PRBs for noise measurement
@@ -843,7 +846,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	}
       case HARQ:
 	if (fp->frame_type == FDD) {
-	  LOG_D(PHY,"Frame %d Subframe %d Demodulating PUCCH (UCI %d) for ACK/NAK (uci->pucch_fmt %d,uci->type %d.uci->frame %d, uci->subframe %d): n1_pucch0 %d SR_payload %d\n",
+	  LOG_I(PHY,"Frame %d Subframe %d Demodulating PUCCH (UCI %d) for ACK/NAK (uci->pucch_fmt %d,uci->type %d.uci->frame %d, uci->subframe %d): n1_pucch0 %d SR_payload %d\n",
 		frame,subframe,i,
 		uci->pucch_fmt,uci->type,
 		uci->frame,uci->subframe,uci->n_pucch_1[0][0],
@@ -881,13 +884,13 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 			       PUCCH1a_THRES);
 	  }
 	  
-#ifdef DEBUG_PHY_PROC
-	  LOG_D(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d pucch1a (FDD) payload %d (metric %d)\n",
+
+	  LOG_I(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d pucch1a (FDD) payload %d (metric %d)\n",
 		eNB->Mod_id,
 		uci->rnti,
 		frame,subframe,
-		pucch_b0b1[0][0],metric0);
-#endif
+		pucch_b0b1[0][0],metric[0]);
+
 	  
 	  fill_uci_harq_indication(eNB,uci,frame,subframe,pucch_b0b1[0],0,0xffff);
 
@@ -1391,7 +1394,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 	      ulsch->Mlimit,
 	      ulsch_harq->o_ACK[0],
 	      ulsch_harq->o_ACK[1]);
-	/*	
+	/*
 	if (dB_fixed_times10(eNB->pusch_vars[i]->ulsch_power[0]) > 300) {
 	  dump_ulsch(eNB,frame,subframe,i); exit(-1);
 	  }*/
