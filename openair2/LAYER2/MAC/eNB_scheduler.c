@@ -504,9 +504,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
   schedule_SI(module_idP,frameP,subframeP);
   // This schedules Random-Access for legacy LTE and eMTC starting in subframeP
   schedule_RA(module_idP,frameP,subframeP);
-
   // copy previously scheduled UL resources (ULSCH + HARQ)
-
   copy_ulreq(module_idP,frameP,subframeP);
   // This schedules SRS in subframeP
   schedule_SRS(module_idP,frameP,subframeP);

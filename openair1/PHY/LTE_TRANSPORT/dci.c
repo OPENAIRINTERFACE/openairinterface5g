@@ -2720,9 +2720,9 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
         printf("dci_decoded_output[%d] => %x\n",i,dci_decoded_output[i]);
       */
       crc = (crc16(&dci_decoded_output[subframe&0x1][0],sizeof_bits)>>16) ^ extract_crc(&dci_decoded_output[subframe&0x1][0],sizeof_bits);
-#ifdef DEBUG_DCI_DECODING
-      printf("crc =>%x\n",crc);
-#endif
+      //#ifdef DEBUG_DCI_DECODING
+      LOG_D(PHY,"crc =>%x\n",crc);
+      //#endif
 
       if (((L>1) && ((crc == si_rnti)||
 		     (crc == p_rnti)||

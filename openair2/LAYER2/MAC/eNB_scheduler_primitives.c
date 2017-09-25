@@ -2713,7 +2713,7 @@ int allocate_CCEs(int module_idP,
   int i,j,idci;
   int nCCE=0;
 
-  LOG_D(MAC,"Allocate CCEs subframe %d, test %d : (DL %d,UL %d)\n",subframeP,test_onlyP,DL_req->number_dci,HI_DCI0_req->number_of_dci);
+  LOG_D(MAC,"Allocate CCEs subframe %d, test %d : (DL PDU %d, DL DCI %d, UL %d)\n",subframeP,test_onlyP,DL_req->number_pdu,DL_req->number_dci,HI_DCI0_req->number_of_dci);
   DL_req->number_pdcch_ofdm_symbols=1;
 
 try_again:
