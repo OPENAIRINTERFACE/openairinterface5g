@@ -144,7 +144,7 @@ void RCconfig_RU(void) {
 
 
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
-	if (RUParamList.paramarray[j][RU_LOCAL_IF_NAME_IDX].strptr == NULL) {
+	if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {
 	  RC.ru[j]->if_south                        = LOCAL_RF;
 	  RC.ru[j]->function                        = eNodeB_3GPP;
 	  printf("Setting function for RU %d to eNodeB_3GPP\n",j);
