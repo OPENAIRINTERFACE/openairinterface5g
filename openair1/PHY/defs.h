@@ -613,7 +613,8 @@ typedef enum {
   REMOTE_IF5      =1,
   REMOTE_MBP_IF5  =2,
   REMOTE_IF4p5    =3,
-  MAX_RU_IF_TYPES =4
+  REMOTE_IF1pp    =4,
+  MAX_RU_IF_TYPES =5
 } RU_if_south_t;
 
 typedef struct RU_t_s{

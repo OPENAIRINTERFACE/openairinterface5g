@@ -39,9 +39,8 @@ int processoption(paramdef_t *cfgoptions, char *value)
 {
 int argok=1;
 char *tmpval = value;
-int ret =0;
 int optisset;
-
+char defbool[2]="1";
      if (value == NULL) {
      	 argok=0; 
      } else if ( value[0] == '-') {
@@ -51,11 +50,11 @@ int optisset;
 	if (argok == 0) {
 	    fprintf(stderr,"[CONFIG] command line, option %s requires an argument\n",cfgoptions->optname);
 	    return 0;
-	} else {        /* boolean value */
-         tmpval = "1";
-        }
-     } 
-
+	} 
+     } else {        /* boolean value */
+         tmpval = defbool;
+     }
+     printf("cc 0x%08x, %i\n",tmpval,argok);
      switch(cfgoptions->type)
        {
        	case TYPE_STRING:
@@ -128,7 +127,7 @@ char *cfgpath;
   j=0;
   p++;
   c--;
-    while (c >= 0 && *p != NULL) {
+    while (c > 0 && *p != NULL) {
         if (strcmp(*p, "-h") == 0 || strcmp(*p, "--help") == 0 ) {
             config_printhelp(cfgoptions,numoptions);
         }
@@ -143,13 +142,19 @@ char *cfgpath;
 	    }
             if ( ((strlen(*p) == 2) && (strcmp(*p + 1,cfgpath) == 0))  || 
                  ((strlen(*p) > 2) && (strcmp(*p + 2,cfgpath ) == 0 )) ) {
-               p++;
-               c--;
-               j = processoption(&(cfgoptions[i]), *p);
-               if ( j== 0) {
-                  c++;
-                  p--;
+
+               if (c > 1) {
+                  p++;
+                  c--;
+                  j = processoption(&(cfgoptions[i]), *p);
+                  if ( j== 0) {
+                      c++;
+                      p--;
+                  }
+               } else {
+                  j = processoption(&(cfgoptions[i]), NULL);
                }
+
             }
          }   	     
    	 p++;

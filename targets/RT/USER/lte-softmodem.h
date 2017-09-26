@@ -155,7 +155,7 @@ extern int16_t dlsch_demod_shift;
 {"A" ,  		  	 CONFIG_HLP_TADV,	0,		  uptr:&timing_advance, 		defintval:0,			   TYPE_UINT,	  0},			   \
 {"C" ,  		  	 CONFIG_HLP_DLF,	0,		  uptr:&(downlink_frequency[0][0]),	defuintval:2680000000,  	   TYPE_UINT,	  0},			   \
 {"a" ,  		  	 CONFIG_HLP_CHOFF,	0,		  iptr:&chain_offset,			defintval:0,			   TYPE_INT,	  0},			   \
-{"d" ,  		  	 CONFIG_HLP_SOFTS,	0,		  i8ptr:&do_forms,			defintval:0,			   TYPE_INT8,	  0},			   \
+{"d" ,  		  	 CONFIG_HLP_SOFTS,	PARAMFLAG_BOOL,	  uptr:(uint32_t *)&do_forms,		defintval:0,			   TYPE_INT8,	  0},			   \
 {"E" ,  		  	 CONFIG_HLP_TQFS,	PARAMFLAG_BOOL,   i8ptr:&threequarter_fs,		defintval:0,			   TYPE_INT8,	  0},			   \
 {"K" ,  		  	 CONFIG_HLP_ITTIL,	PARAMFLAG_NOFREE, strptr:&itti_dump_file,		defstrval:"/tmp/itti.dump",	   TYPE_STRING,   0},			   \
 {"U" ,  		  	 CONFIG_HLP_UE, 	PARAMFLAG_BOOL,   i8ptr:&UE_flag,			defintval:0,			   TYPE_INT8,	  0},			   \

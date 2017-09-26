@@ -625,17 +625,12 @@ void *l2l1_task(void *arg) {
 
 static void get_options(void) {
   int CC_id;
-  int clock_src;
   int tddflag;
   char *loopfile=NULL;
   int dumpframe;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
 
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL); 
-  if (tddflag > 0) {
-      for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) 
-	frame_parms[CC_id]->frame_type = TDD;
-  }
 
   if (strlen(in_path) > 0) {
       opt_type = OPT_PCAP;
@@ -650,6 +645,9 @@ static void get_options(void) {
   if (UE_flag > 0) {
      paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;
      paramdef_t cmdline_ueparams[] =CMDLINE_UEPARAMS_DESC;
+
+
+
      config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
      config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
       if (loopfile != NULL) {
@@ -676,6 +674,10 @@ static void get_options(void) {
       UE_scan=0;
       } 
 
+      if (tddflag > 0) {
+         for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) 
+	     frame_parms[CC_id]->frame_type = TDD;
+      }
 
       if (frame_parms[0]->N_RB_DL !=0) {
   	  if ( frame_parms[0]->N_RB_DL < 6 ) {
