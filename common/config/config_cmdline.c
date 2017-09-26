@@ -37,27 +37,32 @@
 
 int processoption(paramdef_t *cfgoptions, char *value)
 {
-int optisset=0;
-int noarg=0;
-     if ((cfgoptions->paramflags &PARAMFLAG_BOOL) == 0) {
-        if (value == NULL) {
-	    noarg=1; 
-	} else if ( value[0] == '-') {
-	    noarg = 1;
-	}
-	if (noarg == 1) {
+int argok=1;
+char *tmpval = value;
+int ret =0;
+int optisset;
+
+     if (value == NULL) {
+     	 argok=0; 
+     } else if ( value[0] == '-') {
+     	 argok = 0;
+     }
+     if ((cfgoptions->paramflags &PARAMFLAG_BOOL) == 0) { /* not a boolean, argument required */
+	if (argok == 0) {
 	    fprintf(stderr,"[CONFIG] command line, option %s requires an argument\n",cfgoptions->optname);
 	    return 0;
-	}
+	} else {        /* boolean value */
+         tmpval = "1";
+        }
      } 
 
      switch(cfgoptions->type)
        {
        	case TYPE_STRING:
            config_check_valptr(cfgoptions, (char **)(cfgoptions->strptr), sizeof(char *));
-           config_check_valptr(cfgoptions, cfgoptions->strptr, strlen(value+1));
-           sprintf(*(cfgoptions->strptr), "%s",value);
-           printf_cmdl("[CONFIG] %s set to  %s from command line\n", cfgoptions->optname, value);
+           config_check_valptr(cfgoptions, cfgoptions->strptr, strlen(tmpval+1));
+           sprintf(*(cfgoptions->strptr), "%s",tmpval);
+           printf_cmdl("[CONFIG] %s set to  %s from command line\n", cfgoptions->optname, tmpval);
 	   optisset=1;
         break;
 	
@@ -70,13 +75,13 @@ int noarg=0;
 	case TYPE_UINT8:
        	case TYPE_INT8:	
            config_check_valptr(cfgoptions, (char **)&(cfgoptions->iptr),sizeof(int32_t));
-	   config_assign_int(cfgoptions,cfgoptions->optname,(int32_t)strtol(value,NULL,0));  
+	   config_assign_int(cfgoptions,cfgoptions->optname,(int32_t)strtol(tmpval,NULL,0));  
 	   optisset=1;
         break;  	
        	case TYPE_UINT64:
        	case TYPE_INT64:
            config_check_valptr(cfgoptions, (char **)&(cfgoptions->i64ptr),sizeof(uint64_t));
-	   *(cfgoptions->i64ptr)=strtoll(value,NULL,0);  
+	   *(cfgoptions->i64ptr)=strtoll(tmpval,NULL,0);  
            printf_cmdl("[CONFIG] %s set to  %lli from command line\n", cfgoptions->optname, (long long)*(cfgoptions->i64ptr));
 	   optisset=1;
         break;        
@@ -86,7 +91,7 @@ int noarg=0;
         break;
         case TYPE_DOUBLE:
            config_check_valptr(cfgoptions, (char **)&(cfgoptions->dblptr),sizeof(double)); 
-           *(cfgoptions->dblptr) = strtof(value,NULL);  
+           *(cfgoptions->dblptr) = strtof(tmpval,NULL);  
            printf_cmdl("[CONFIG] %s set to  %lf from command line\n", cfgoptions->optname, *(cfgoptions->dblptr));
 	   optisset=1; 
         break; 
@@ -103,7 +108,7 @@ int noarg=0;
           cfgoptions->paramflags = cfgoptions->paramflags |  PARAMFLAG_PARAMSET;
        }
        
-    return optisset;
+    return argok;
 }
 
 int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix)
@@ -139,8 +144,12 @@ char *cfgpath;
             if ( ((strlen(*p) == 2) && (strcmp(*p + 1,cfgpath) == 0))  || 
                  ((strlen(*p) > 2) && (strcmp(*p + 2,cfgpath ) == 0 )) ) {
                p++;
-               j =+ processoption(&(cfgoptions[i]), *p);
                c--;
+               j = processoption(&(cfgoptions[i]), *p);
+               if ( j== 0) {
+                  c++;
+                  p--;
+               }
             }
          }   	     
    	 p++;
