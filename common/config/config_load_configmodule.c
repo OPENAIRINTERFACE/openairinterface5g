@@ -139,11 +139,10 @@ int i;
        modeparams = strdup("oaisoftmodem.conf");
    }
    else if ( i == 1 ) {
-  /* -O argument doesn't contain ":" separator, legacy -O <conf file> option, default cfgmode to libconfig
+  /* -O argument doesn't contain ":" separator, assume -O <conf file> option, default cfgmode to libconfig
      with one parameter, the path to the configuration file */
        modeparams=cfgmode;
        cfgmode=strdup("libconfig");
-       tmpflags = tmpflags | CONFIG_LEGACY;/* temporary, legacy mode */
    }
 
    cfgptr = malloc(sizeof(configmodule_interface_t));
