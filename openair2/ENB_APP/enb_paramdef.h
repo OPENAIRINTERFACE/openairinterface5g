@@ -538,8 +538,8 @@ static int DEFENBS[] = {0};
 /*   optname                                          helpstr   paramflags    XXXptr                             defXXXval         type           numelt     */
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define SCTPPARAMS_DESC {  \
-{ENB_CONFIG_STRING_SCTP_INSTREAMS,                       NULL,   0,   strptr:NULL,   defstrval:ENB_CONFIG_STRING_SCTP_INSTREAMS,    TYPE_STRING,   0},       \
-{ENB_CONFIG_STRING_SCTP_OUTSTREAMS,                      NULL,   0,   strptr:NULL,   defstrval:ENB_CONFIG_STRING_SCTP_OUTSTREAMS,   TYPE_STRING,   0}        \
+{ENB_CONFIG_STRING_SCTP_INSTREAMS,                       NULL,   0,   uptr:NULL,   defintval:-1,    TYPE_UINT,   0},       \
+{ENB_CONFIG_STRING_SCTP_OUTSTREAMS,                      NULL,   0,   uptr:NULL,   defintval:-1,    TYPE_UINT,   0}        \
 }
 
 #define ENB_SCTP_INSTREAMS_IDX          0
