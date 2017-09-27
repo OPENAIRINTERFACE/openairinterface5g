@@ -881,7 +881,6 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
   dci_alloc->harq_pid = rel8->harq_process;
   dci_alloc->ra_flag  = 0;
 
-
   LOG_D(PHY,"NFAPI: DCI format %d, nCCE %d, L %d, rnti %x,harq_pid %d\n",
 	rel8->dci_format,rel8->cce_idx,rel8->aggregation_level,rel8->rnti,rel8->harq_process);
   if ((rel8->rnti_type == 2 ) && (rel8->rnti != SI_RNTI) && (rel8->rnti != P_RNTI)) dci_alloc->ra_flag = 1;
@@ -1987,6 +1986,13 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
     }
     
     
+#if T_TRACER
+  if (dlsch0 != NULL)
+    T(T_ENB_PHY_DLSCH_UE_DCI, T_INT(0), T_INT(proc->frame_tx), T_INT(proc->subframe_tx),
+      T_INT(rel8->rnti), T_INT(rel8->dci_format), T_INT(rel8->harq_process),
+      T_INT(rel8->mcs_1), T_INT(dlsch0_harq->TBS));
+#endif
+
 }
 
 void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *dci_alloc,nfapi_dl_config_mpdcch_pdu *pdu) {
@@ -2230,8 +2236,8 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *d
 }
 
 void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
-	      nfapi_hi_dci0_dci_pdu *pdu) {
-
+               nfapi_hi_dci0_dci_pdu *pdu)
+{
   uint8_t UE_id;
 
   AssertFatal((UE_id=find_ulsch(pdu->dci_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
@@ -2250,6 +2256,15 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
 				pdu->dci_pdu_rel8.number_of_resource_block);
 
   uint32_t ndi     = pdu->dci_pdu_rel8.new_data_indication_1;
+
+  T(T_ENB_PHY_ULSCH_UE_DCI, T_INT(eNB->Mod_id), T_INT(proc->frame_tx), T_INT(proc->subframe_tx),
+    T_INT(pdu->dci_pdu_rel8.rnti), T_INT(((proc->frame_tx*10+proc->subframe_tx+4) % 8) /* TODO: correct harq pid */),
+    T_INT(mcs), T_INT(-1 /* TODO: remove round? */),
+    T_INT(pdu->dci_pdu_rel8.resource_block_start),
+    T_INT(pdu->dci_pdu_rel8.number_of_resource_block),
+    T_INT(-1 /* TODO: get TBS */),
+    T_INT(pdu->dci_pdu_rel8.aggregation_level),
+    T_INT(pdu->dci_pdu_rel8.cce_index));
 
   void *dci_pdu = (void*)dci_alloc->dci_pdu;
 
@@ -6198,16 +6213,16 @@ int generate_ue_dlsch_params_from_dci(int frame,
     }
 #endif
 
-  #if T_TRACER
+#if T_TRACER
     if( (dlsch[0]->rnti != si_rnti) && (dlsch[0]->rnti != ra_rnti) && (dlsch[0]->rnti != p_rnti))
     {
-    T(T_UE_PHY_DLSCH_UE_DCI, T_INT(0), T_INT(frame%1024), T_INT(subframe), T_INT(0),
-            T_INT(dlsch[0]->rnti), T_INT(dci_format),
-            T_INT(harq_pid),
-            T_INT(dlsch0_harq->mcs),
-            T_INT(dlsch0_harq->TBS));
+      T(T_UE_PHY_DLSCH_UE_DCI, T_INT(0), T_INT(frame%1024), T_INT(subframe),
+        T_INT(dlsch[0]->rnti), T_INT(dci_format),
+        T_INT(harq_pid),
+        T_INT(dlsch0_harq->mcs),
+        T_INT(dlsch0_harq->TBS));
     }
-  #endif
+#endif
 
 
     // compute DL power control parameters

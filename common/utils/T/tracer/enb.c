@@ -17,6 +17,40 @@
 #include "openair_logo.h"
 #include "config.h"
 
+/****************************************************************************/
+/* conversion from rnti to "ue_id" (which does not really exists)           */
+/* the idea is to assign an ue_id to an rnti as soon as we get an event     */
+/* for the rnti                                                             */
+/****************************************************************************/
+
+int ue_id[65536];
+int next_ue_id;
+
+void reset_ue_ids(void)
+{
+  int i;
+  printf("resetting known UEs\n");
+  for (i = 0; i < 65536; i++) ue_id[i] = -1;
+  next_ue_id = 0;
+}
+
+int ue_id_from_rnti(void *_priv, int rnti)
+{
+rnti = 0; /* HACK, to be removed */
+  if (rnti < 0 || rnti > 65535) { printf("bad rnti %d\n", rnti); exit(1); }
+  /* rnti not seen yet? give it a new ue_id */
+  if (ue_id[rnti] == -1) {
+    ue_id[rnti] = next_ue_id;
+    next_ue_id++;
+  }
+  return ue_id[rnti];
+}
+
+/****************************************************************************/
+/* end of rnti->ue_id conversion                                            */
+/****************************************************************************/
+
+
 typedef struct {
   view *phyview;
   view *macview;
@@ -25,6 +59,7 @@ typedef struct {
   view *rrcview;
   view *legacy;
   widget *current_ue_label;
+  widget *current_ue_button;
   widget *prev_ue_button;
   widget *next_ue_button;
   widget *pusch_iq_ue_xy_plot;
@@ -116,11 +151,15 @@ static void *gui_thread(void *_g)
 static filter *ticktime_filter(void *database, char *event, int i, int ue)
 {
   /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0" */
+  /* we get the UE_id from the rnti */
   return
     filter_and(
       filter_eq(filter_evarg(database, event, "harq_pid"), filter_int(i)),
       filter_and(
-        filter_eq(filter_evarg(database, event, "UE_id"), filter_int(ue)),
+        filter_eq(
+          filter_evfun(database, ue_id_from_rnti, NULL,
+            filter_evarg(database, event, "rnti")),
+          filter_int(ue)),
         filter_eq(filter_evarg(database, event, "eNB_ID"), filter_int(0))));
 }
 
@@ -148,23 +187,28 @@ static void set_current_ue(gui *g, enb_data *e, int ue)
 
   logger_set_filter(e->e->pusch_iq_ue_logger,
       filter_eq(
-        filter_evarg(e->database, "ENB_PHY_PUSCH_IQ", "UE_ID"),
+        filter_evfun(e->database, ue_id_from_rnti, NULL,
+          filter_evarg(e->database, "ENB_PHY_PUSCH_IQ", "rnti")),
         filter_int(ue)));
   logger_set_filter(e->e->ul_estimate_ue_logger,
       filter_eq(
-        filter_evarg(e->database, "ENB_PHY_UL_CHANNEL_ESTIMATE", "UE_ID"),
+        filter_evfun(e->database, ue_id_from_rnti, NULL,
+          filter_evarg(e->database, "ENB_PHY_UL_CHANNEL_ESTIMATE", "rnti")),
         filter_int(ue)));
   logger_set_filter(e->e->pucch1_energy_ue_threshold_logger,
       filter_eq(
-        filter_evarg(e->database, "ENB_PHY_PUCCH_1_ENERGY", "UE_ID"),
+        filter_evfun(e->database, ue_id_from_rnti, NULL,
+          filter_evarg(e->database, "ENB_PHY_PUCCH_1_ENERGY", "rnti")),
         filter_int(ue)));
   logger_set_filter(e->e->pucch1_energy_ue_energy_logger,
       filter_eq(
-        filter_evarg(e->database, "ENB_PHY_PUCCH_1_ENERGY", "UE_ID"),
+        filter_evfun(e->database, ue_id_from_rnti, NULL,
+          filter_evarg(e->database, "ENB_PHY_PUCCH_1_ENERGY", "rnti")),
         filter_int(ue)));
   logger_set_filter(e->e->pucch_iq_ue_logger,
       filter_eq(
-        filter_evarg(e->database, "ENB_PHY_PUCCH_1AB_IQ", "UE_ID"),
+        filter_evfun(e->database, ue_id_from_rnti, NULL,
+          filter_evarg(e->database, "ENB_PHY_PUCCH_1AB_IQ", "rnti")),
         filter_int(ue)));
   for (i = 0; i < 8; i++) {
     logger_set_filter(e->e->dl_dci_logger[i],
@@ -185,11 +229,13 @@ static void set_current_ue(gui *g, enb_data *e, int ue)
   }
   logger_set_filter(e->e->dl_mcs_logger,
       filter_eq(
-        filter_evarg(e->database, "ENB_PHY_DLSCH_UE_DCI", "UE_id"),
+        filter_evfun(e->database, ue_id_from_rnti, NULL,
+          filter_evarg(e->database, "ENB_PHY_DLSCH_UE_DCI", "rnti")),
         filter_int(ue)));
   logger_set_filter(e->e->ul_mcs_logger,
       filter_eq(
-        filter_evarg(e->database, "ENB_PHY_ULSCH_UE_DCI", "UE_id"),
+        filter_evfun(e->database, ue_id_from_rnti, NULL,
+          filter_evarg(e->database, "ENB_PHY_ULSCH_UE_DCI", "rnti")),
         filter_int(ue)));
 }
 
@@ -205,6 +251,7 @@ static void click(void *private, gui *g,
   if (button != 1) return;
   if (w == e->prev_ue_button) { ue--; if (ue < 0) ue = 0; }
   if (w == e->next_ue_button) ue++;
+  if (w == e->current_ue_button) reset_ue_ids();
 
   if (pthread_mutex_lock(&ed->lock)) abort();
   if (ue != ed->ue) {
@@ -248,10 +295,12 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database,
   widget_add_child(g, col, logo, -1);
   w = new_container(g, HORIZONTAL);
   widget_add_child(g, col, w, -1);
+  /* TODO: use button widget, not label widget */
   w2 = new_label(g, "");
   widget_add_child(g, w, w2, -1);
+  label_set_clickable(g, w2, 1);
+  e->current_ue_button = w2;
   e->current_ue_label = w2;
-  /* TODO: use button widget, not label widget */
   w2 = new_label(g, "  [prev UE]  ");
   widget_add_child(g, w, w2, -1);
   label_set_clickable(g, w2, 1);
@@ -590,6 +639,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database,
   e->legacy = new_view_textlist(10000, 10, g, text);
 
   set_current_ue(g, ed, 0);
+  register_notifier(g, "click", e->current_ue_button, click, ed);
   register_notifier(g, "click", e->prev_ue_button, click, ed);
   register_notifier(g, "click", e->next_ue_button, click, ed);
 }
@@ -627,6 +677,8 @@ int main(int n, char **v)
   gui *g;
   enb_gui eg;
   enb_data enb_data;
+
+  reset_ue_ids();
 
   /* write on a socket fails if the other end is closed and we get SIGPIPE */
   if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) abort();

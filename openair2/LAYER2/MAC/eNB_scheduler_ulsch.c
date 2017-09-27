@@ -1057,7 +1057,7 @@ abort();
             	    
             T(T_ENB_MAC_UE_UL_SCHEDULE, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP),
               T_INT(subframeP), T_INT(harq_pid), T_INT(UE_template->mcs_UL[harq_pid]), T_INT(first_rb[CC_id]), T_INT(rb_table[rb_table_index]),
-              T_INT(TBS), T_INT(ndi));
+              T_INT(UE_template->TBS_UL[harq_pid]), T_INT(ndi));
 	    
 	    if (mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED)
 	      LOG_I(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",

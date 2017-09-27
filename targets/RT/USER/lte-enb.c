@@ -158,6 +158,8 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   // ****************************************
   // Common RX procedures subframe n
 
+  T(T_ENB_PHY_DL_TICK, T_INT(eNB->Mod_id), T_INT(proc->frame_tx), T_INT(proc->subframe_tx));
+
   // if this is IF5 or 3GPP_eNB
   if (eNB->RU_list[0]->function < NGFI_RAU_IF4p5) {
     wakeup_prach_eNB(eNB,NULL,proc->frame_rx,proc->subframe_rx);
@@ -267,25 +269,17 @@ static void wait_system_ready (char *message, volatile int *start_flag) {
 
 
 
-void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string) {
-
-
+void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string)
+{
   eNB_proc_t *proc           = &eNB->proc;
   eNB_rxtx_proc_t *proc_rxtx = &proc->proc_rxtx[0];
 
-
-
-
   proc->frame_rx    = frame_rx;
   proc->subframe_rx = subframe_rx;
-  
+
   if (!oai_exit) {
-
-
     LOG_D(PHY,"eNB_top in %p (proc %p, CC_id %d), frame %d, subframe %d, instance_cnt_prach %d\n",
 	  (void*)pthread_self(), proc, eNB->CC_id, proc->frame_rx,proc->subframe_rx,proc->instance_cnt_prach);
- 
-
 
     T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
 
@@ -300,7 +294,6 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string) {
     LOG_D(PHY,"eNB_top out %p (proc %p, CC_id %d), frame %d, subframe %d, instance_cnt_prach %d\n",
 	  (void*)pthread_self(), proc, eNB->CC_id, proc->frame_rx,proc->subframe_rx,proc->instance_cnt_prach);
   }
-  
 }
 
 

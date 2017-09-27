@@ -409,8 +409,6 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
   if (do_meas==1) start_meas(&eNB->phy_proc_tx);
 
-  T(T_ENB_PHY_DL_TICK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe));
-
   // clear the transmit data array for the current subframe
   for (aa=0; aa<fp->nb_antenna_ports_eNB; aa++) {      
     memset(&eNB->common_vars.txdataF[aa][subframe*fp->ofdm_symbol_size*(fp->symbols_per_tti)],
@@ -678,7 +676,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 	      max_preamble_energy[0]%10,
 	      max_preamble_delay[0]);
 	
-	    T(T_ENB_PHY_INITIATE_RA_PROCEDURE, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(-1),
+	    T(T_ENB_PHY_INITIATE_RA_PROCEDURE, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
 	      T_INT(max_preamble[0]), T_INT(max_preamble_energy[0]), T_INT(max_preamble_delay[0]));
 	    
 	    prach_vars = &eNB->prach_vars;
@@ -1384,7 +1382,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
       }
       
       if (ret == (1+MAX_TURBO_ITERATIONS)) {
-        T(T_ENB_PHY_ULSCH_UE_NACK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(i), T_INT(ulsch->rnti),
+        T(T_ENB_PHY_ULSCH_UE_NACK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(ulsch->rnti),
           T_INT(harq_pid));
 
 	fill_crc_indication(eNB,i,frame,subframe,1); // indicate NAK to MAC
@@ -1419,7 +1417,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 
 	fill_crc_indication(eNB,i,frame,subframe,0); // indicate ACK to MAC
 	fill_rx_indication(eNB,i,frame,subframe);  // indicate SDU to MAC
-        T(T_ENB_PHY_ULSCH_UE_ACK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(i), T_INT(ulsch->rnti),
+        T(T_ENB_PHY_ULSCH_UE_ACK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(ulsch->rnti),
           T_INT(harq_pid));
 	ulsch_harq->status = SCH_IDLE;
 
@@ -1764,6 +1762,15 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,LTE_eNB_UCI *uci,int frame,int s
       pdu->harq_indication_fdd_rel13.harq_tb_n[0] = harq_ack[0];
       // release DLSCH if needed
       if (harq_ack[0] == 1) release_harq(eNB,UE_id,0,frame,subframe,0xffff);
+
+#if T_TRACER
+      if (harq_ack[0] != 1)
+        T(T_ENB_PHY_DLSCH_UE_NACK, T_INT(0), T_INT(frame), T_INT(subframe),
+          T_INT(uci->rnti), T_INT(eNB->dlsch[UE_id][0]->harq_ids[(subframe+6)%10]));
+      else
+        T(T_ENB_PHY_DLSCH_UE_ACK, T_INT(0), T_INT(frame), T_INT(subframe),
+          T_INT(uci->rnti), T_INT(eNB->dlsch[UE_id][0]->harq_ids[(subframe+6)%10]));
+#endif
     }
     else if (uci->pucch_fmt == pucch_format1b) {
       pdu->harq_indication_fdd_rel13.mode = 0;  

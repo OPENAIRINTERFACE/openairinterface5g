@@ -2154,7 +2154,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
     eNB->pucch1_stats_thres[UE_id][(subframe<<10)+eNB->pucch1_stats_cnt[UE_id][subframe]] = sigma2_dB+pucch1_thres;
     eNB->pucch1_stats_cnt[UE_id][subframe] = (eNB->pucch1_stats_cnt[UE_id][subframe]+1)&1023;
 
-    T(T_ENB_PHY_PUCCH_1_ENERGY, T_INT(eNB->Mod_id), T_INT(UE_id), T_INT(frame), T_INT(subframe),
+    T(T_ENB_PHY_PUCCH_1_ENERGY, T_INT(eNB->Mod_id), T_INT(-1 /* TODO: rnti */), T_INT(frame), T_INT(subframe),
       T_INT(stat_max), T_INT(sigma2_dB+pucch1_thres));
 
     /*
@@ -2399,7 +2399,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       eNB->pucch1ab_stats_cnt[UE_id][subframe] = (eNB->pucch1ab_stats_cnt[UE_id][subframe]+1)&1023;
 
       /* frame not available here - set to -1 for the moment */
-      T(T_ENB_PHY_PUCCH_1AB_IQ, T_INT(eNB->Mod_id), T_INT(UE_id), T_INT(-1), T_INT(subframe), T_INT(stat_re), T_INT(stat_im));
+      T(T_ENB_PHY_PUCCH_1AB_IQ, T_INT(eNB->Mod_id), T_INT(-1 /* TODO: rnti */), T_INT(-1), T_INT(subframe), T_INT(stat_re), T_INT(stat_im));
 
 	  
       *payload = (stat_re<0) ? 1 : 2; // 1 == ACK, 2 == NAK

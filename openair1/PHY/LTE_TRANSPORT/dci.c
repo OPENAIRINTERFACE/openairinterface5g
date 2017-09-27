@@ -1765,10 +1765,8 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
   LOG_D(PHY,"subframe %d: pdcch log2_maxh = %d (%d,%d)\n",subframe,log2_maxh,avgP[0],avgs);
 #endif
 
-#if T_TRACER
-  T(T_UE_PHY_PDCCH_ENERGY, T_INT(eNB_id),  T_INT(0), T_INT(frame%1024), T_INT(subframe),
-                           T_INT(avgP[0]), T_INT(avgP[1]),    T_INT(avgP[2]),             T_INT(avgP[3]));
-#endif
+  T(T_UE_PHY_PDCCH_ENERGY, T_INT(eNB_id),  T_INT(frame%1024), T_INT(subframe),
+                           T_INT(avgP[0]), T_INT(avgP[1]),    T_INT(avgP[2]),  T_INT(avgP[3]));
 
   // compute LLRs for ofdm symbol 0 only
   pdcch_channel_compensation(pdcch_vars[eNB_id]->rxdataF_ext,

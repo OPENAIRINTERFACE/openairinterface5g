@@ -1435,8 +1435,6 @@ static void* ru_thread( void* param ) {
     if (ru->feprx) ru->feprx(ru);
     if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 0 ); 
 
-    T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
-
     // At this point, all information for subframe has been received on FH interface
     // If this proc is to provide synchronization, do so
     wakeup_slaves(proc);

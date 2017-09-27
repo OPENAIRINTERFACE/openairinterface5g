@@ -1452,7 +1452,7 @@ void rx_phich(PHY_VARS_UE *ue,
       }
     }
 #if T_TRACER
-    T(T_UE_PHY_ULSCH_UE_NACK, T_INT(eNB_id), T_INT(proc->frame_rx%1024), T_INT(subframe), T_INT(ue->Mod_id), T_INT(ulsch->rnti),
+    T(T_UE_PHY_ULSCH_UE_NACK, T_INT(eNB_id), T_INT(proc->frame_rx%1024), T_INT(subframe), T_INT(ulsch->rnti),
       T_INT(harq_pid));
 #endif
 
@@ -1491,7 +1491,7 @@ void rx_phich(PHY_VARS_UE *ue,
     ue->ulsch_Msg3_active[eNB_id] = 0;
 
 #if T_TRACER
-    T(T_UE_PHY_ULSCH_UE_ACK, T_INT(eNB_id), T_INT(proc->frame_rx%1024), T_INT(subframe), T_INT(ue->Mod_id), T_INT(ulsch->rnti),
+    T(T_UE_PHY_ULSCH_UE_ACK, T_INT(eNB_id), T_INT(proc->frame_rx%1024), T_INT(subframe), T_INT(ulsch->rnti),
       T_INT(harq_pid));
 #endif
 
@@ -1552,7 +1552,7 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
 	  phich->first_rb);
     
     T(T_ENB_PHY_PHICH, T_INT(eNB->Mod_id), T_INT(proc->frame_tx), T_INT(subframe),
-      T_INT(i), T_INT(0), T_INT(harq_pid),
+      T_INT(-1 /* TODO: rnti */), T_INT(harq_pid),
       T_INT(Ngroup_PHICH), T_INT(NSF_PHICH),
       T_INT(ngroup_PHICH), T_INT(nseq_PHICH),
       T_INT(phich->hi),

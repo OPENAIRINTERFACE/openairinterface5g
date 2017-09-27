@@ -1675,13 +1675,13 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
     if(ue->ulsch[eNB_id]->o_ACK[0])
     {
     	LOG_I(PHY,"PUSCH ACK\n");
-        T(T_UE_PHY_DLSCH_UE_ACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(Mod_id), T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti),
+        T(T_UE_PHY_DLSCH_UE_ACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti),
                       T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->current_harq_pid));
     }
     else
     {
     	LOG_I(PHY,"PUSCH NACK\n");
-        T(T_UE_PHY_DLSCH_UE_NACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(Mod_id), T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti),
+        T(T_UE_PHY_DLSCH_UE_NACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti),
                       T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->current_harq_pid));
     }
 #endif
@@ -1862,10 +1862,9 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
 #else
     tx_amp = AMP;
 #endif
-#if T_TRACER
-    T(T_UE_PHY_PUSCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
+
+    T(T_UE_PHY_PUSCH_TX_POWER, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
       T_INT(tx_amp),T_INT(ue->ulsch[eNB_id]->f_pusch),T_INT(get_PL(Mod_id,0,eNB_id)),T_INT(nb_rb));
-#endif
 
 #ifdef UE_DEBUG_TRACE
     LOG_I(PHY,"[UE  %d][PUSCH %d] AbsSubFrame %d.%d, generating PUSCH, Po_PUSCH: %d dBm (max %d dBm), amp %d\n",
@@ -2223,7 +2222,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
       tx_amp = AMP;
 #endif
 #if T_TRACER
-      T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
+      T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
               T_INT(tx_amp),T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->g_pucch),T_INT(get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
 #endif
 
@@ -2273,12 +2272,12 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 #if T_TRACER
       if(pucch_payload[0])
       {
-          T(T_UE_PHY_DLSCH_UE_ACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(Mod_id), T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti),
+          T(T_UE_PHY_DLSCH_UE_ACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti),
                   T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->current_harq_pid));
       }
       else
       {
-          T(T_UE_PHY_DLSCH_UE_NACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(Mod_id), T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti),
+          T(T_UE_PHY_DLSCH_UE_NACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti),
                   T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->current_harq_pid));
       }
 #endif
@@ -2318,7 +2317,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
       tx_amp = AMP;
 #endif
 #if T_TRACER
-      T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
+      T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
               T_INT(tx_amp),T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->g_pucch),T_INT(get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
 #endif
 #ifdef UE_DEBUG_TRACE
@@ -2538,7 +2537,7 @@ void ue_measurement_procedures(
       
 #if T_TRACER
       if(slot == 0)
-	T(T_UE_PHY_MEAS, T_INT(eNB_id),  T_INT(ue->Mod_id), T_INT(proc->frame_rx%1024), T_INT(proc->subframe_rx),
+	T(T_UE_PHY_MEAS, T_INT(eNB_id), T_INT(proc->frame_rx%1024), T_INT(proc->subframe_rx),
 	  T_INT((int)(10*log10(ue->measurements.rsrp[0])-ue->rx_total_gain_dB)),
 	  T_INT((int)ue->measurements.rx_rssi_dBm[0]),
 	  T_INT((int)(ue->measurements.rx_power_avg_dB[0] - ue->measurements.n0_power_avg_dB)),
@@ -3073,7 +3072,7 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
                                  pdcch_alloc2ul_frame(frame_parms,proc->frame_rx,proc->subframe_rx),
                                  pdcch_alloc2ul_subframe(frame_parms,proc->subframe_rx));
 
-    T(T_UE_PHY_ULSCH_UE_DCI, T_INT(eNB_id), T_INT(proc->frame_rx%1024), T_INT(proc->subframe_rx), T_INT(ue->Mod_id),
+    T(T_UE_PHY_ULSCH_UE_DCI, T_INT(eNB_id), T_INT(proc->frame_rx%1024), T_INT(proc->subframe_rx),
       T_INT(dci_alloc_rx[i].rnti), T_INT(harq_pid),
       T_INT(ue->ulsch[eNB_id]->harq_processes[harq_pid]->mcs),
       T_INT(ue->ulsch[eNB_id]->harq_processes[harq_pid]->round),
