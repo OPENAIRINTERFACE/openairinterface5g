@@ -223,6 +223,7 @@ void schedule_SR(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP) {
   int CC_id,UE_id;  
   SchedulingRequestConfig_t      *SRconfig;
 
+
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
     for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
@@ -522,10 +523,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
   schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
 
   // Allocate CCEs for good after scheduling is done
+
   for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) allocate_CCEs(module_idP,CC_id,subframeP,0);
   
 
   stop_meas(&RC.mac[module_idP]->eNB_scheduler);
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_OUT);
 
 }

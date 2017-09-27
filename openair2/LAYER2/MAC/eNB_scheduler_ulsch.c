@@ -812,7 +812,6 @@ void schedule_ulsch(module_id_t module_idP,
 
   schedule_ulsch_rnti(module_idP, frameP, subframeP, sched_subframe,first_rb);
 
-
   stop_meas(&eNB->schedule_ulsch);
 
 }
@@ -946,6 +945,13 @@ abort();
         continue; // break;
       } 
 
+      /* be sure that there are some free RBs */
+      if (first_rb[CC_id] >= N_RB_UL-1) {
+	LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
+	      module_idP,frameP,subframeP,UE_id,rnti,CC_id);
+        continue;
+      }
+
 
 
       //      if (eNB_UE_stats->mode == PUSCH) { // ue has a ulsch channel
@@ -1036,6 +1042,7 @@ abort();
 	    
             UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2=UE_template->mcs_UL[harq_pid];
 	    //            buffer_occupancy = UE_template->ul_total_buffer;
+
 	    
             while (((rb_table[rb_table_index]>(N_RB_UL-1-first_rb[CC_id])) ||
 		    (rb_table[rb_table_index]>45)) &&
@@ -1147,6 +1154,7 @@ abort();
 			      S_UL_SCHEDULED);
 	    
 	    LOG_D(MAC,"[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for next UE_id %d, format 0\n", module_idP,CC_id,frameP,subframeP,UE_id);
+
 
             // increment first rb for next UE allocation
             first_rb[CC_id]+=rb_table[rb_table_index];

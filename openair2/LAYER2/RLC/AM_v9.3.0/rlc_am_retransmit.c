@@ -206,23 +206,28 @@ boolean_t rlc_am_nack_pdu (
 void rlc_am_ack_pdu (
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t *const rlc_pP,
-  const rlc_sn_t snP)
+  const rlc_sn_t snP,
+  boolean_t free_pdu)
 {
   mem_block_t* mb_p         = rlc_pP->tx_data_pdu_buffer[snP % RLC_AM_WINDOW_SIZE].mem_block;
   rlc_am_tx_data_pdu_management_t *tx_data_pdu_buffer = &rlc_pP->tx_data_pdu_buffer[snP % RLC_AM_WINDOW_SIZE];
 
   tx_data_pdu_buffer->flags.retransmit = 0;
 
-  if ((tx_data_pdu_buffer->flags.ack == 0) && (mb_p != NULL)) {
-    //if (mb_pP != NULL) {
+  if (mb_p != NULL) {
+    if (free_pdu) {
     free_mem_block(mb_p, __func__);
     tx_data_pdu_buffer->mem_block = NULL;
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[ACK-PDU] ACK PDU SN %05d previous retx_count %d \n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           snP,
 		  tx_data_pdu_buffer->retx_count);
+    }
 
     if (tx_data_pdu_buffer->retx_payload_size) {
+    	AssertFatal (tx_data_pdu_buffer->flags.ack == 0,
+    			"RLC AM Rx Status Report sn=%d acked twice but is pending for Retx vtA=%d vtS=%d LcId=%d\n",
+				snP, rlc_pP->vt_a,rlc_pP->vt_s,rlc_pP->channel_id);
       rlc_pP->retrans_num_bytes_to_retransmit -= tx_data_pdu_buffer->retx_payload_size;
       tx_data_pdu_buffer->retx_payload_size = 0;
       tx_data_pdu_buffer->num_holes = 0;

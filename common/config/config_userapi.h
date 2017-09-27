@@ -52,6 +52,7 @@ extern int config_isparamset(paramdef_t *params,int paramidx);
 extern void config_assign_int(paramdef_t *cfgoptions, char *fullname, int val);
 extern int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix);
 #define config_getlist config_get_if()->getlist
+#define CONFIG_GETCONFFILE (config_get_if()->cfgP[0])
 
 
 #ifdef __cplusplus

@@ -171,6 +171,9 @@ int chain_offset=0;
 int phy_test = 0;
 uint8_t usim_test = 0;
 
+uint8_t dci_Format = 0;
+uint8_t agregation_Level =0xFF;
+
 uint8_t nb_antenna_tx = 1;
 uint8_t nb_antenna_rx = 1;
 
@@ -240,7 +243,7 @@ extern char uecap_xer[1024];
 char uecap_xer_in=0;
 
 int oaisim_flag=0;
-threads_t threads= {-1,-1,-1};
+threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution
@@ -323,58 +326,6 @@ void signal_handler(int sig) {
 #define KBLU  "\x1B[34m"
 #define RESET "\033[0m"
 
-void help (void) {
-  printf (KGRN "Usage:\n");
-  printf("  sudo -E lte-softmodem [options]\n");
-  printf("  sudo -E ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.openEPC.conf -S -V -m 26 -t 16 -x 1 --ulsch-max-errors 100 -W\n\n");
-  printf("Options:\n");
-  printf("  --rf-config-file Configuration file for front-end (e.g. LMS7002M)\n");
-  printf("  --ulsch-max-errors set the max ULSCH erros\n");
-  printf("  --calib-ue-rx set UE RX calibration\n");
-  printf("  --calib-ue-rx-med \n");
-  printf("  --calib-ue-rxbyp\n");
-  printf("  --debug-ue-prach run normal prach power ramping, but don't continue random-access\n");
-  printf("  --calib-prach-tx run normal prach with maximum power, but don't continue random-access\n");
-  printf("  --no-L2-connect bypass L2 and upper layers\n");
-  printf("  --ue-rxgain set UE RX gain\n");
-  printf("  --ue-rxgain-off external UE amplifier offset\n");
-  printf("  --ue-txgain set UE TX gain\n");
-  printf("  --ue-nb-ant-rx  set UE number of rx antennas\n");
-  printf("  --ue-scan-carrier set UE to scan around carrier\n");
-  printf("  --dlsch-demod-shift dynamic shift for LLR compuation for TM3/4 (default 0)\n");
-  printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
-  printf("  --mmapped-dma sets flag for improved EXMIMO UE performance\n");  
-  printf("  --external-clock tells hardware to use an external clock reference\n");
-  printf("  --usim-test use XOR autentication algo in case of test usim mode\n"); 
-  printf("  --single-thread-disable. Disables single-thread mode in lte-softmodem\n"); 
-  printf("  -A Set timing_advance\n");
-  printf("  -C Set the downlink frequency for all component carriers\n");
-  printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
-  printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
-  printf("  -g Set the global log level, valide options: (9:trace, 8/7:debug, 6:info, 4:warn, 3:error)\n");
-  printf("  -G Set the global log verbosity \n");
-  printf("  -h provides this help message!\n");
-  printf("  -K Generate ITTI analyzser logs (similar to wireshark logs but with more details)\n");
-  printf("  -m Set the maximum downlink MCS\n");
-  printf("  -O eNB configuration file (located in targets/PROJECTS/GENERIC-LTE-EPC/CONF\n");
-  printf("  -q Enable processing timing measurement of lte softmodem on per subframe basis \n");
-  printf("  -r Set the PRB, valid values: 6, 25, 50, 100  \n");    
-  printf("  -S Skip the missed slots/subframes \n");    
-  printf("  -t Set the maximum uplink MCS\n");
-  printf("  -T Set hardware to TDD mode (default: FDD). Used only with -U (otherwise set in config file).\n");
-  printf("  -U Set the lte softmodem as a UE\n");
-  printf("  -W Enable L2 wireshark messages on localhost \n");
-  printf("  -V Enable VCD (generated file will be located atopenair_dump_eNB.vcd, read it with target/RT/USER/eNB.gtkw\n");
-  printf("  -x Set the transmission mode, valid options: 1 \n");
-  printf("  -E Apply three-quarter of sampling frequency, 23.04 Msps to reduce the data rate on USB/PCIe transfers (only valid for 20 MHz)\n");
-#if T_TRACER
-  printf("  --T_port [port]    use given port\n");
-  printf("  --T_nowait         don't wait for tracer, start immediately\n");
-  printf("  --T_dont_fork      to ease debugging with gdb\n");
-#endif
-  printf(RESET);
-  fflush(stdout);
-}
 
 
 void exit_fun(const char* s)
@@ -624,6 +575,7 @@ void *l2l1_task(void *arg) {
 }
 #endif
 
+
 static void get_options(void) {
   int CC_id;
   int clock_src;
@@ -719,491 +671,27 @@ static void get_options(void) {
     if (UE_flag == 0) {
       memset((void*)&RC,0,sizeof(RC));
       /* Read RC configuration file */
-      RCConfig(NULL);
+      RCConfig();
       NB_eNB_INST = RC.nb_inst;
       NB_RU	  = RC.nb_RU;
       printf("Configuration: nb_inst %d, nb_ru %d\n",NB_eNB_INST,NB_RU);
-
-      
-    } else if (UE_flag == 1) {
-      if (conf_config_file_name != NULL) {
-  	
-  	// Here the configuration file is the XER encoded UE capabilities
-  	// Read it in and store in asn1c data structures
-  	strcpy(uecap_xer,conf_config_file_name);
-  	uecap_xer_in=1;
-
-      }
     }
-  } /* CONFIG_ABORT not set */
+  } else if (UE_flag == 1 && (CONFIG_GETCONFFILE != NULL)) {
+    // Here the configuration file is the XER encoded UE capabilities
+    // Read it in and store in asn1c data structures
+    strcpy(uecap_xer,CONFIG_GETCONFFILE);
+    uecap_xer_in=1;
+  } /* UE with config file  */
 }
 
 
-static void old_get_options (int argc, char **argv) {
-  int c;
-  //  char                          line[1000];
-  //  int                           l;
-  int i;
-#if defined(OAI_USRP) || defined(CPRIGW)
-  int clock_src;
-#endif
-  int CC_id;
-
-
-
-  enum long_option_e {
-    LONG_OPTION_START = 0x100, /* Start after regular single char options */
-    LONG_OPTION_RF_CONFIG_FILE,
-    LONG_OPTION_ULSCH_MAX_CONSECUTIVE_ERRORS,
-    LONG_OPTION_CALIB_UE_RX,
-    LONG_OPTION_CALIB_UE_RX_MED,
-    LONG_OPTION_CALIB_UE_RX_BYP,
-    LONG_OPTION_DEBUG_UE_PRACH,
-    LONG_OPTION_NO_L2_CONNECT,
-    LONG_OPTION_CALIB_PRACH_TX,
-    LONG_OPTION_RXGAIN,
-    LONG_OPTION_RXGAINOFF,
-    LONG_OPTION_TXGAIN,
-    LONG_OPTION_NBRXANT,
-    LONG_OPTION_NBTXANT,
-    LONG_OPTION_SCANCARRIER,
-    LONG_OPTION_MAXPOWER,
-    LONG_OPTION_DUMP_FRAME,
-    LONG_OPTION_LOOPMEMORY,
-    LONG_OPTION_PHYTEST,
-    LONG_OPTION_USIMTEST,
-    LONG_OPTION_MMAPPED_DMA,
-    LONG_OPTION_EXTERNAL_CLOCK,
-    LONG_OPTION_WAIT_FOR_SYNC,
-    LONG_OPTION_SINGLE_THREAD_DISABLE,
-    LONG_OPTION_THREADIQ,
-    LONG_OPTION_THREADODDSUBFRAME,
-    LONG_OPTION_THREADEVENSUBFRAME,
-    LONG_OPTION_DEMOD_SHIFT,
-#if T_TRACER
-    LONG_OPTION_T_PORT,
-    LONG_OPTION_T_NOWAIT,
-    LONG_OPTION_T_DONT_FORK,
-#endif
-
-  };
-
-  static const struct option long_options[] = {
-    {"rf-config-file",required_argument,  NULL, LONG_OPTION_RF_CONFIG_FILE},
-    {"ulsch-max-errors",required_argument,  NULL, LONG_OPTION_ULSCH_MAX_CONSECUTIVE_ERRORS},
-    {"calib-ue-rx",     required_argument,  NULL, LONG_OPTION_CALIB_UE_RX},
-    {"calib-ue-rx-med", required_argument,  NULL, LONG_OPTION_CALIB_UE_RX_MED},
-    {"calib-ue-rx-byp", required_argument,  NULL, LONG_OPTION_CALIB_UE_RX_BYP},
-    {"debug-ue-prach",  no_argument,        NULL, LONG_OPTION_DEBUG_UE_PRACH},
-    {"no-L2-connect",   no_argument,        NULL, LONG_OPTION_NO_L2_CONNECT},
-    {"calib-prach-tx",   no_argument,        NULL, LONG_OPTION_CALIB_PRACH_TX},
-    {"ue-rxgain",   required_argument,  NULL, LONG_OPTION_RXGAIN},
-    {"ue-rxgain-off",   required_argument,  NULL, LONG_OPTION_RXGAINOFF},
-    {"ue-txgain",   required_argument,  NULL, LONG_OPTION_TXGAIN},
-    {"ue-nb-ant-rx", required_argument,  NULL, LONG_OPTION_NBRXANT},
-    {"ue-nb-ant-tx", required_argument,  NULL, LONG_OPTION_NBTXANT},
-    {"ue-scan-carrier",   no_argument,  NULL, LONG_OPTION_SCANCARRIER},
-    {"ue-max-power",   required_argument,  NULL, LONG_OPTION_MAXPOWER},
-    {"ue-dump-frame", no_argument, NULL, LONG_OPTION_DUMP_FRAME},
-    {"loop-memory", required_argument, NULL, LONG_OPTION_LOOPMEMORY},
-    {"phy-test", no_argument, NULL, LONG_OPTION_PHYTEST},
-    {"usim-test", no_argument, NULL, LONG_OPTION_USIMTEST},
-    {"mmapped-dma", no_argument, NULL, LONG_OPTION_MMAPPED_DMA},
-    {"external-clock", no_argument, NULL, LONG_OPTION_EXTERNAL_CLOCK},
-    {"wait-for-sync", no_argument, NULL, LONG_OPTION_WAIT_FOR_SYNC},
-    {"single-thread-disable", no_argument, NULL, LONG_OPTION_SINGLE_THREAD_DISABLE},
-    {"threadIQ",  required_argument, NULL, LONG_OPTION_THREADIQ},
-    {"threadOddSubframe",  required_argument, NULL, LONG_OPTION_THREADODDSUBFRAME},
-    {"threadEvenSubframe",  required_argument, NULL, LONG_OPTION_THREADEVENSUBFRAME},
-    {"dlsch-demod-shift", required_argument,  NULL, LONG_OPTION_DEMOD_SHIFT},
-#if T_TRACER
-    {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
-    {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
-    {"T_dont_fork",            no_argument,       0, LONG_OPTION_T_DONT_FORK},
-#endif
-    {NULL, 0, NULL, 0}
-  };
-
-  while ((c = getopt_long (argc, argv, "A:a:C:dEK:g:F:G:hqO:m:SUVRM:r:P:Ws:t:Tx:",long_options,NULL)) != -1) {
-    switch (c) {
-    case LONG_OPTION_RF_CONFIG_FILE:
-      if ((strcmp("null", optarg) == 0) || (strcmp("NULL", optarg) == 0)) {
-	printf("no configuration filename is provided\n");
-      }
-      else if (strlen(optarg)<=1024){
-	strcpy(rf_config_file,optarg);
-      }else {
-	printf("Configuration filename is too long\n");
-	exit(-1);   
-      }
-      break;
-    case LONG_OPTION_MAXPOWER:
-      tx_max_power[0]=atoi(optarg);
-      for (CC_id=1;CC_id<MAX_NUM_CCs;CC_id++)
-	tx_max_power[CC_id]=tx_max_power[0];
-      break;
-    case LONG_OPTION_ULSCH_MAX_CONSECUTIVE_ERRORS:
-      ULSCH_max_consecutive_errors = atoi(optarg);
-      printf("Set ULSCH_max_consecutive_errors = %d\n",ULSCH_max_consecutive_errors);
-      break;
-
-    case LONG_OPTION_CALIB_UE_RX:
-      mode = rx_calib_ue;
-      rx_input_level_dBm = atoi(optarg);
-      printf("Running with UE calibration on (LNA max), input level %d dBm\n",rx_input_level_dBm);
-      break;
-
-    case LONG_OPTION_CALIB_UE_RX_MED:
-      mode = rx_calib_ue_med;
-      rx_input_level_dBm = atoi(optarg);
-      printf("Running with UE calibration on (LNA med), input level %d dBm\n",rx_input_level_dBm);
-      break;
-
-    case LONG_OPTION_CALIB_UE_RX_BYP:
-      mode = rx_calib_ue_byp;
-      rx_input_level_dBm = atoi(optarg);
-      printf("Running with UE calibration on (LNA byp), input level %d dBm\n",rx_input_level_dBm);
-      break;
-
-    case LONG_OPTION_DEBUG_UE_PRACH:
-      mode = debug_prach;
-      break;
-
-    case LONG_OPTION_NO_L2_CONNECT:
-      mode = no_L2_connect;
-      break;
-
-    case LONG_OPTION_CALIB_PRACH_TX:
-      mode = calib_prach_tx;
-      printf("Setting mode to calib_prach_tx (%d)\n",mode);
-      break;
-
-    case LONG_OPTION_RXGAIN:
-      for (i=0; i<4; i++)
-	rx_gain[0][i] = atof(optarg);
-
-      break;
-
-    case LONG_OPTION_RXGAINOFF:
-      rx_gain_off = atof(optarg);
-      break;
-
-    case LONG_OPTION_TXGAIN:
-      for (i=0; i<4; i++)
-	tx_gain[0][i] = atof(optarg);
-
-      break;
-    case LONG_OPTION_NBRXANT:
-      nb_antenna_rx = atof(optarg);
-      break;
-    case LONG_OPTION_NBTXANT:
-      nb_antenna_tx = atof(optarg);
-      break;
-    case LONG_OPTION_SCANCARRIER:
-      UE_scan_carrier=1;
-
-      break;
-
-    case LONG_OPTION_LOOPMEMORY:
-      mode=loop_through_memory;
-      input_fd = fopen(optarg,"r");
-      AssertFatal(input_fd != NULL,"Please provide an input file\n");
-      break;
-
-    case LONG_OPTION_DUMP_FRAME:
-      mode = rx_dump_frame;
-      break;
-      
-    case LONG_OPTION_PHYTEST:
-      phy_test = 1;
-      break;
-
-    case LONG_OPTION_USIMTEST:
-      usim_test = 1;
-      break;
-    case LONG_OPTION_MMAPPED_DMA:
-      mmapped_dma = 1;
-      break;
-
-    case LONG_OPTION_SINGLE_THREAD_DISABLE:
-      single_thread_flag = 0;
-      break;
-
-    case LONG_OPTION_EXTERNAL_CLOCK:
-      clock_source = external;
-      break;
-
-    case LONG_OPTION_WAIT_FOR_SYNC:
-      wait_for_sync = 1;
-      break;
-
-    case LONG_OPTION_THREADIQ:
-      threads.iq=atoi(optarg);
-      break;
-    case LONG_OPTION_THREADODDSUBFRAME:
-      threads.odd=atoi(optarg);
-      break;
-    case LONG_OPTION_THREADEVENSUBFRAME:
-      threads.even=atoi(optarg);
-      break;
-    case LONG_OPTION_DEMOD_SHIFT: {
-      extern int16_t dlsch_demod_shift;
-      dlsch_demod_shift = atof(optarg);
-      break;
-    }
-#if T_TRACER
-    case LONG_OPTION_T_PORT: {
-      extern int T_port;
-      if (optarg == NULL) abort();  /* should not happen */
-      T_port = atoi(optarg);
-      break;
-    }
-
-    case LONG_OPTION_T_NOWAIT: {
-      extern int T_wait;
-      T_wait = 0;
-      break;
-    }
-
-    case LONG_OPTION_T_DONT_FORK: {
-      extern int T_dont_fork;
-      T_dont_fork = 1;
-      break;
-    }
-#endif
-
-    case 'A':
-      timing_advance = atoi (optarg);
-      break;
-
-    case 'C':
-      for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-	downlink_frequency[CC_id][0] = atof(optarg); // Use float to avoid issue with frequency over 2^31.
-	downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
-	downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
-	downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
-	printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
-      }
-
-      UE_scan=0;
-
-      break;
-
-    case 'a':
-      chain_offset = atoi(optarg);
-      break;
-
-    case 'd':
-#ifdef XFORMS
-      do_forms=1;
-      printf("Running with XFORMS!\n");
-#endif
-      break;
-
-    case 'E':
-      threequarter_fs=1;
-      break;
-
-    case 'K':
-#if defined(ENABLE_ITTI)
-      itti_dump_file = strdup(optarg);
-#else
-      printf("-K option is disabled when ENABLE_ITTI is not defined\n");
-#endif
-      break;
-
-    case 'O':
-      conf_config_file_name = optarg;
-      break;
-
-    case 'U':
-      UE_flag = 1;
-      break;
-
-    case 'm':
-      target_dl_mcs = atoi (optarg);
-      break;
-
-    case 't':
-      target_ul_mcs = atoi (optarg);
-      break;
-
-    case 'W':
-      opt_enabled=1;
-      opt_type = OPT_WIRESHARK;
-      strncpy(in_ip, "127.0.0.1", sizeof(in_ip));
-      in_ip[sizeof(in_ip) - 1] = 0; // terminate string
-      printf("Enabling OPT for wireshark for local interface");
-      /*
-	if (optarg == NULL){
-	in_ip[0] =NULL;
-	printf("Enabling OPT for wireshark for local interface");
-	} else {
-	strncpy(in_ip, optarg, sizeof(in_ip));
-	in_ip[sizeof(in_ip) - 1] = 0; // terminate string
-	printf("Enabling OPT for wireshark with %s \n",in_ip);
-	}
-      */
-      break;
-
-    case 'P':
-      opt_type = OPT_PCAP;
-      opt_enabled=1;
-
-      if (optarg == NULL) {
-	strncpy(in_path, "/tmp/oai_opt.pcap", sizeof(in_path));
-	in_path[sizeof(in_path) - 1] = 0; // terminate string
-	printf("Enabling OPT for PCAP with the following path /tmp/oai_opt.pcap");
-      } else {
-	strncpy(in_path, optarg, sizeof(in_path));
-	in_path[sizeof(in_path) - 1] = 0; // terminate string
-	printf("Enabling OPT for PCAP  with the following file %s \n",in_path);
-      }
-
-      break;
-
-    case 'V':
-      ouput_vcd = 1;
-      break;
-
-    case  'q':
-      opp_enabled = 1;
-      break;
-
-    case  'R' :
-      online_log_messages =1;
-      break;
-
-    case 'r':
-      UE_scan = 0;
-
-      for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-	switch(atoi(optarg)) {
-	case 6:
-	  frame_parms[CC_id]->N_RB_DL=6;
-	  frame_parms[CC_id]->N_RB_UL=6;
-	  break;
-
-	case 25:
-	  frame_parms[CC_id]->N_RB_DL=25;
-	  frame_parms[CC_id]->N_RB_UL=25;
-	  break;
-
-	case 50:
-	  frame_parms[CC_id]->N_RB_DL=50;
-	  frame_parms[CC_id]->N_RB_UL=50;
-	  break;
-
-	case 100:
-	  frame_parms[CC_id]->N_RB_DL=100;
-	  frame_parms[CC_id]->N_RB_UL=100;
-	  break;
-
-	default:
-	  printf("Unknown N_RB_DL %d, switching to 25\n",atoi(optarg));
-	  break;
-	}
-      }
-
-      break;
-
-    case 's':
-#if defined(OAI_USRP) || defined(CPRIGW)
-
-      clock_src = atoi(optarg);
-
-      if (clock_src == 0) {
-	//  char ref[128] = "internal";
-	//strncpy(uhd_ref, ref, strlen(ref)+1);
-      } else if (clock_src == 1) {
-	//char ref[128] = "external";
-	//strncpy(uhd_ref, ref, strlen(ref)+1);
-      }
-
-#else
-      printf("Note: -s not defined for ExpressMIMO2\n");
-#endif
-      break;
-
-    case 'g':
-      glog_level=atoi(optarg); // value between 1 - 9
-      break;
-
-    case 'G':
-      glog_verbosity=atoi(optarg);// value from 0, 0x5, 0x15, 0x35, 0x75
-      break;
-
-    case 'S':
-      exit_missed_slots=0;
-      printf("Skip exit for missed slots\n");
-      break;
-
-    case 'F':
-      break;
-
-    case 'x':
-      printf("Transmission mode should be set in config file now\n");
-      exit(-1);
-      /*
-	transmission_mode = atoi(optarg);
-
-	if (transmission_mode > 7) {
-	printf("Transmission mode %d not supported for the moment\n",transmission_mode);
-	exit(-1);
-	}
-      */
-      break;
-
-    case 'T':
-      for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) 
-	frame_parms[CC_id]->frame_type = TDD;
-      break;
-
-    case 'h':
-      help ();
-      exit (-1);
-       
-    default:
-      help ();
-      exit (-1);
-      break;
-    }
-  }
-
-  if (UE_flag == 0)
-    AssertFatal(conf_config_file_name != NULL,"Please provide a configuration file\n");
-
-  if ((UE_flag == 0) && (conf_config_file_name != NULL)) {
-
-
-    memset((void*)&RC,0,sizeof(RC));
-
-    /* Read RC configuration file */
-    RCConfig(conf_config_file_name);
-    
-    NB_eNB_INST = RC.nb_inst;
-    NB_RU       = RC.nb_RU;
-
-    printf("Read in %s : nb_inst %d, nb_ru %d\n",conf_config_file_name,NB_eNB_INST,NB_RU);
-
-    
-  } else if (UE_flag == 1) {
-    if (conf_config_file_name != NULL) {
-      
-      // Here the configuration file is the XER encoded UE capabilities
-      // Read it in and store in asn1c data structures
-      strcpy(uecap_xer,conf_config_file_name);
-      uecap_xer_in=1;
-
-    }
-  }
-}
   
 #if T_TRACER
 int T_wait = 1;       /* by default we wait for the tracer */
 int T_port = 2021;    /* default port to listen to to wait for the tracer */
 int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
+
 
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
@@ -1428,18 +916,8 @@ int main( int argc, char **argv )
   // get options and fill parameters from configuration file
   // temporary test to allow legacy config or config module */
   
-  if ( CONFIG_ISFLAGSET(CONFIG_LEGACY) == 0) {
-      printf("configuration via the configuration module \n");
-      get_options (); 
-       if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
-           fprintf(stderr,"Getting configuration failed\n");
-	   exit(-1);
-       }
-  } else {
-      printf("Legacy configuration mode \n");
-      old_get_options (argc,argv);
-  }
-
+  get_options (); 
+  
 
 #if T_TRACER
   T_init(T_port, T_wait, T_dont_fork);
@@ -1576,7 +1054,9 @@ int main( int argc, char **argv )
 
 
 
+
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+
 
     if (UE_flag==1) {     
       NB_UE_INST=1;     

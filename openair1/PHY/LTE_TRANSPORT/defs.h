@@ -860,7 +860,10 @@ typedef enum {
 } RX_type_t;
 
 
-
+typedef enum {
+  DCI_COMMON_SPACE,
+  DCI_UE_SPACE
+} dci_space_t;
 
 
 /**@}*/

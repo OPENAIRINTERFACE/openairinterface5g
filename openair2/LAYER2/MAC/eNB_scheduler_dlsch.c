@@ -423,6 +423,7 @@ schedule_ue_spec(
 //------------------------------------------------------------------------------
 {
 
+
   uint8_t                        CC_id;
   int                            UE_id;
   unsigned char                  aggregation;
@@ -501,6 +502,7 @@ schedule_ue_spec(
    
     }
   }
+
   //weight = get_ue_weight(module_idP,UE_id);
   aggregation = 2; 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
@@ -533,7 +535,6 @@ schedule_ue_spec(
                                 mbsfn_flag);
   stop_meas(&eNB->schedule_dlsch_preprocessor);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR,VCD_FUNCTION_OUT);
-
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     LOG_D(MAC, "doing schedule_ue_spec for CC_id %d\n",CC_id);
@@ -607,6 +608,21 @@ schedule_ue_spec(
         continue;
       }
 
+#warning RK->CR This old API call has to be revisited for FAPI, or logic must be changed
+#if 0
+      /* add "fake" DCI to have CCE_allocation_infeasible work properly for next allocations */
+      /* if we don't add it, next allocations may succeed but overall allocations may fail */
+      /* will be removed at the end of this function */
+      add_ue_spec_dci(&eNB->common_channels[CC_id].DCI_pdu,
+                      &(char[]){0},
+                      rnti,
+                      1,
+                      aggregation,
+                      1,
+                      format1,
+                      0);
+#endif
+
       nb_available_rb = ue_sched_ctl->pre_nb_available_rbs[CC_id];
 
       if (cc->tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
@@ -670,6 +686,7 @@ schedule_ue_spec(
 
             while((nb_rb_temp > 0) && (j<N_RBG[CC_id])) {
               if(ue_sched_ctl->rballoc_sub_UE[CC_id][j] == 1) {
+                if (UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j]) printf("WARN: rballoc_subband not free for retrans?\n");
                 UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j] = ue_sched_ctl->rballoc_sub_UE[CC_id][j];
 
                 if((j == N_RBG[CC_id]-1) &&
@@ -770,6 +787,7 @@ schedule_ue_spec(
 		    frameP,subframeP,UE_id,rnti);
 	    }
 	  }
+
 
 	  add_ue_dlsch_info(module_idP,
 			    CC_id,
@@ -1282,6 +1300,7 @@ schedule_ue_spec(
     } // UE_id loop
   }  // CC_id loop
 
+
      
   fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_flag);
 
@@ -1423,6 +1442,7 @@ void update_ul_dci(module_id_t module_idP,
   nfapi_hi_dci0_request_pdu_t  *hi_dci0_pdu    = &HI_DCI0_req->hi_dci0_request_body.hi_dci0_pdu_list[0];
   COMMON_channels_t    *cc                     = &RC.mac[module_idP]->common_channels[CC_idP];
   int i;
+
 
   if (cc->tdd_Config != NULL) { // TDD 
     for (i=0; i<HI_DCI0_req->hi_dci0_request_body.number_of_dci + HI_DCI0_req->hi_dci0_request_body.number_of_dci; i++) {

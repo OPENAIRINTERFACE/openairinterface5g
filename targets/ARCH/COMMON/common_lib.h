@@ -140,7 +140,9 @@ typedef enum {
   //! This tells the underlying hardware to use the internal reference
   internal=0,
   //! This tells the underlying hardware to use the external reference
-  external=1
+  external=1,
+  //! This tells the underlying hardware to use the gpsdo reference
+  gpsdo=2
 } clock_source_t;
 
 /*! \brief RF frontend parameters set by application */

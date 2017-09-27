@@ -145,6 +145,7 @@ void exit_fun(const char* s);
 void init_eNB(int,int);
 void stop_eNB(int nb_inst);
 
+
 void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
 #ifdef Rel14
 void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
@@ -519,11 +520,12 @@ static void* eNB_thread_prach( void* param ) {
 
   thread_top_init("eNB_thread_prach",1,500000L,1000000L,20000000L);
 
+
   while (!oai_exit) {
     
     if (oai_exit) break;
-    
 
+    
     if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"eNB_prach_thread") < 0) break;
 
     LOG_D(PHY,"Running eNB prach procedures\n");

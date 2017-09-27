@@ -56,6 +56,8 @@
 # include "intertask_interface.h"
 #endif
 
+#include "T.h"
+
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
 
@@ -2077,8 +2079,6 @@ void swap_UEs(UE_list_t *listP,int nodeiP, int nodejP, int ul_flag)
   #endif
  */
 
-
-
 // This has to be updated to include BSR information
 uint8_t UE_is_to_be_scheduled(module_id_t module_idP,int CC_id,uint8_t UE_id)
 {
@@ -2512,7 +2512,8 @@ int get_nCCE_offset(int *CCE_table,
       search_space_free = 1;
 
       for (l=0; l<L; l++) {
-        if (CCE_table[(((Yk+m)%(nCCE/L))*L) + l] == 1) {
+        int cce = (((Yk+m)%(nCCE/L))*L) + l;
+        if (cce >= nCCE || CCE_table[cce] == 1) {
           search_space_free = 0;
           break;
         }
@@ -2713,12 +2714,14 @@ int allocate_CCEs(int module_idP,
   int i,j,idci;
   int nCCE=0;
 
+
   LOG_D(MAC,"Allocate CCEs subframe %d, test %d : (DL PDU %d, DL DCI %d, UL %d)\n",subframeP,test_onlyP,DL_req->number_pdu,DL_req->number_dci,HI_DCI0_req->number_of_dci);
   DL_req->number_pdcch_ofdm_symbols=1;
 
 try_again:
   init_CCE_table(module_idP,CC_idP);
   nCCE=0;
+
 
   for (i=0,idci=0;i<DL_req->number_pdu;i++) {
     // allocate DL common DCIs first
@@ -2899,6 +2902,7 @@ try_again:
 
   return 0;
 
+
  failed:
   return -1;
 }
@@ -2988,6 +2992,7 @@ nfapi_ul_config_request_pdu_t* has_ul_grant(module_id_t module_idP,int CC_idP,ui
 }
  
 boolean_t CCE_allocation_infeasible(int module_idP,
+
 				    int CC_idP,
 				    int format_flag,
 				    int subframe,
@@ -3001,6 +3006,7 @@ boolean_t CCE_allocation_infeasible(int module_idP,
   //DCI_ALLOC_t *dci_alloc;
   int ret;
   boolean_t res=FALSE;
+
 
   if (format_flag!=2) { // DL DCI
     dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti              = rnti;
@@ -3021,6 +3027,7 @@ boolean_t CCE_allocation_infeasible(int module_idP,
     HI_DCI0_req->number_of_dci--;
   }
   return(res);
+
 }
 
 void extract_harq(module_id_t mod_idP,int CC_idP,int UE_id,frame_t frameP,sub_frame_t subframeP,void *harq_indication,int format) {
@@ -3588,6 +3595,7 @@ void cqi_indication(module_id_t mod_idP, int CC_idP, frame_t frameP, sub_frame_t
 
 void SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, sub_frame_t subframeP, rnti_t rntiP, uint8_t ul_cqi)
 {
+  T(T_ENB_MAC_SCHEDULING_REQUEST, T_INT(mod_idP), T_INT(cc_idP), T_INT(frameP), T_INT(subframeP), T_INT(rntiP));
  
   int UE_id = find_UE_id(mod_idP, rntiP);
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;

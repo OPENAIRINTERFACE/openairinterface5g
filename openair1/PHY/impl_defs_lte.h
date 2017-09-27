@@ -39,6 +39,11 @@
 //#include "defs.h"
 #include "openair2/COMMON/platform_types.h"
 
+#define RX_NB_TH_MAX 2
+#define RX_NB_TH 2
+
+#define LTE_SLOTS_PER_SUBFRAME 2
+
 #define LTE_NUMBER_OF_SUBFRAMES_PER_FRAME 10
 #define LTE_SLOTS_PER_FRAME  20
 #define LTE_CE_FILTER_LENGTH 5
@@ -954,7 +959,7 @@ typedef struct {
   /// - second index: sample [0..FRAME_LENGTH_COMPLEX_SAMPLES+2048[
   int32_t **rxdata;
 
-  LTE_UE_COMMON_PER_THREAD common_vars_rx_data_per_thread[2];
+  LTE_UE_COMMON_PER_THREAD common_vars_rx_data_per_thread[RX_NB_TH_MAX];
 
   /// holds output of the sync correlator
   int32_t *sync_corr;
@@ -1057,6 +1062,10 @@ typedef struct {
   //uint32_t *rb_alloc;
   //uint8_t Qm[2];
   //MIMO_mode_t mimo_mode;
+  // llr offset per ofdm symbol
+  uint32_t llr_offset[14];
+  // llr length per ofdm symbol
+  uint32_t llr_length[14];
 } LTE_UE_PDSCH;
 
 typedef struct {
@@ -1157,6 +1166,9 @@ typedef struct {
   uint32_t dci_missed;
   /// nCCE for PUCCH per subframe
   uint8_t nCCE[10];
+  //Check for specific DCIFormat and AgregationLevel
+  uint8_t dciFormat;
+  uint8_t agregationLevel;
 } LTE_UE_PDCCH;
 
 #define PBCH_A 24

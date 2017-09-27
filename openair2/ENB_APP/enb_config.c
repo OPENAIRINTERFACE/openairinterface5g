@@ -637,20 +637,11 @@ void Eurecom_RCconfig_macrlc() {
 int Eurecom_RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   config_t          cfg;
   config_setting_t *setting                       = NULL;
-  config_setting_t *subsetting                    = NULL;
   config_setting_t *setting_component_carriers    = NULL;
   config_setting_t *component_carrier             = NULL;
   config_setting_t *setting_srb1                  = NULL;
-  config_setting_t *setting_mme_addresses         = NULL;
-  config_setting_t *setting_mme_address           = NULL;
-  config_setting_t *setting_ru                    = NULL;
-  config_setting_t *setting_enb                   = NULL;
-  config_setting_t *setting_otg                   = NULL;
-  config_setting_t *subsetting_otg                = NULL;
-  int               parse_errors                  = 0;
+  config_setting_t *setting_enb                  = NULL;
   int               num_enbs                      = 0;
-  int               num_mme_address               = 0;
-  int               num_otg_elements              = 0;
   int               num_component_carriers        = 0;
   int               j                             = 0;
   libconfig_int     enb_id                        = 0;
@@ -683,10 +674,6 @@ int Eurecom_RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   libconfig_int     Nid_cell_mbsfn                = 0;
   libconfig_int     N_RB_DL                       = 0;
   libconfig_int     nb_antenna_ports              = 0;
-  libconfig_int     nb_antennas_tx                = 0;
-  libconfig_int     nb_antennas_rx                = 0;
-  libconfig_int     tx_gain                       = 0;
-  libconfig_int     rx_gain                       = 0;
   libconfig_int     prach_root                    = 0;
   libconfig_int     prach_config_index            = 0;
   const char*            prach_high_speed         = NULL;
@@ -760,38 +747,8 @@ int Eurecom_RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
 
   const char*       active_enb[MAX_ENB];
-  char*             enb_interface_name_for_S1U    = NULL;
-  char*             enb_ipv4_address_for_S1U      = NULL;
-  libconfig_int     enb_port_for_S1U              = 0;
-  char*             enb_interface_name_for_S1_MME = NULL;
-  char*             enb_ipv4_address_for_S1_MME   = NULL;
-  char             *address                       = NULL;
-  char             *cidr                          = NULL;
   char             *astring                       = NULL;
-  char*             flexran_agent_interface_name      = NULL;
-  char*             flexran_agent_ipv4_address        = NULL;
-  libconfig_int     flexran_agent_port                = 0;
-  char*             flexran_agent_cache               = NULL;
-  libconfig_int     otg_ue_id                     = 0;
-  char*             otg_app_type                  = NULL;
-  char*             otg_bg_traffic                = NULL;
-  char*             glog_level                    = NULL;
-  char*             glog_verbosity                = NULL;
-  char*             hw_log_level                  = NULL;
-  char*             hw_log_verbosity              = NULL;
-  char*             phy_log_level                 = NULL;
-  char*             phy_log_verbosity             = NULL;
-  char*             mac_log_level                 = NULL;
-  char*             mac_log_verbosity             = NULL;
-  char*             rlc_log_level                 = NULL;
-  char*             rlc_log_verbosity             = NULL;
-  char*             pdcp_log_level                = NULL;
-  char*             pdcp_log_verbosity            = NULL;
-  char*             rrc_log_level                 = NULL;
-  char*             rrc_log_verbosity             = NULL;
-  char*             udp_log_verbosity             = NULL;
-  char*             osa_log_level                 = NULL;
-  char*             osa_log_verbosity             = NULL;
+
 
   // for no gcc warnings 
   (void)astring;
@@ -884,6 +841,7 @@ int Eurecom_RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
       printf("RRC %d: Southbound Transport %s\n",j,tr_s_preference);
 	    
       if (strcmp(tr_s_preference, "local_mac") == 0) {
+
 
 
       }
@@ -2429,7 +2387,6 @@ int Eurecom_RCconfig_gtpu() {
   config_setting_t *subsetting                    = NULL;
   config_setting_t *setting_enb                   = NULL;
   int               num_enbs                      = 0;
-  libconfig_int     enb_id                        = 0;
 
 
 
@@ -2513,16 +2470,10 @@ int Eurecom_RCconfig_S1(MessageDef *msg_p, uint32_t i) {
   config_setting_t *setting_mme_addresses         = NULL;
   config_setting_t *setting_mme_address           = NULL;
   config_setting_t *setting_enb                   = NULL;
-  config_setting_t *setting_otg                   = NULL;
-  config_setting_t *subsetting_otg                = NULL;
-  int               parse_errors                  = 0;
-  int               num_enbs                      = 0;
   int               num_mme_address               = 0;
-  int               num_otg_elements              = 0;
-  int               num_component_carriers        = 0;
   int               j                             = 0;
   libconfig_int     enb_id                        = 0;
-
+  int               num_enbs                      = 0;
 
   const char*       cell_type                     = NULL;
   const char*       tac                           = 0;
@@ -2533,17 +2484,10 @@ int Eurecom_RCconfig_S1(MessageDef *msg_p, uint32_t i) {
   libconfig_int     my_int;
 
 
-  char*             if_name                       = NULL;
   char*             ipv4                          = NULL;
-  char*             ipv4_remote                   = NULL;
   char*             ipv6                          = NULL;
-  char*             local_rf                      = NULL;
   char*             preference                    = NULL;
   char*             active                        = NULL;
-
-  char*             tr_preference                 = NULL;
-  libconfig_int     local_port                    = 0;
-  libconfig_int     remote_port                   = 0;
   const char*       active_enb[MAX_ENB];
   char*             enb_interface_name_for_S1U    = NULL;
   char*             enb_ipv4_address_for_S1U      = NULL;

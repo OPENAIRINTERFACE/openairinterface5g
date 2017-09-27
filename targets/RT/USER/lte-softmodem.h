@@ -149,8 +149,11 @@ extern int16_t dlsch_demod_shift;
 {"wait-for-sync",         	 NULL,  		PARAMFLAG_BOOL,   iptr:&wait_for_sync,  		defintval:0,			   TYPE_INT,	  0},			   \
 {"single-thread-disable", 	 CONFIG_HLP_NOSNGLT,	PARAMFLAG_BOOL,   iptr:&single_thread_flag,		defintval:1,			   TYPE_INT,	  0},			   \
 {"threadIQ",              	 NULL,  		0,		  iptr:&(threads.iq),			defintval:1,			   TYPE_INT,	  0},			   \
-{"threadOddSubframe",     	 NULL,  		0,		  iptr:&(threads.odd),  		defintval:1,			   TYPE_INT,	  0},			   \
-{"threadEvenSubframe",    	 NULL,  		0,		  iptr:&(threads.even), 		defintval:1,			   TYPE_INT,	  0},			   \
+{"threadOneSubframe",     	 NULL,  		0,		  iptr:&(threads.one),  		defintval:1,			   TYPE_INT,	  0},			   \
+{"threadTwoSubframe",    	 NULL,  		0,		  iptr:&(threads.two),  		defintval:1,			   TYPE_INT,	  0},			   \
+{"threadThreeSubframe",    	 NULL,  		0,		  iptr:&(threads.three),  		defintval:1,			   TYPE_INT,	  0},			   \
+{"threadSlot1ProcOne",     	 NULL,  		0,		  iptr:&(threads.slot1_proc_one),      	defintval:1,			   TYPE_INT,	  0},			   \
+{"threadSlot1ProcTwo",    	 NULL,  		0,		  iptr:&(threads.slot1_proc_two),      	defintval:1,			   TYPE_INT,	  0},			   \
 {"dlsch-demod-shift",     	 CONFIG_HLP_DLSHIFT,	0,		  iptr:(int32_t *)&dlsch_demod_shift,	defintval:0,			   TYPE_INT,	  0},			   \
 {"A" ,  		  	 CONFIG_HLP_TADV,	0,		  uptr:&timing_advance, 		defintval:0,			   TYPE_UINT,	  0},			   \
 {"C" ,  		  	 CONFIG_HLP_DLF,	0,		  uptr:&(downlink_frequency[0][0]),	defuintval:2680000000,  	   TYPE_UINT,	  0},			   \
@@ -231,7 +234,10 @@ extern void init_RU(const char*);
 // In lte-ue.c
 extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
 extern void fill_ue_band_info(void);
+
 extern void init_UE(int,int,int);
+extern void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_t *cpuset, char * name);
+
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 

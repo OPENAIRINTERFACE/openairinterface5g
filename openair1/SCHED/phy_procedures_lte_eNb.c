@@ -471,6 +471,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   }
 
 
+
   //  num_pdcch_symbols = DCI_pdu->num_pdcch_symbols;
   num_pdcch_symbols = eNB->pdcch_vars[subframe&1].num_pdcch_symbols;
   num_dci           = eNB->pdcch_vars[subframe&1].num_dci;
@@ -486,6 +487,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   if (num_dci > 0)
     LOG_D(PHY,"[eNB %"PRIu8"] Frame %d, subframe %d: Calling generate_dci_top (pdcch) (num_dci %"PRIu8")\n",eNB->Mod_id,frame, subframe,
 	  num_dci);
+
     
   generate_dci_top(num_pdcch_symbols,
 		   num_dci,
@@ -525,6 +527,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
       }
 
+
       else if ((dlsch0)&&
 	       (dlsch0->rnti>0)&&
 	       (dlsch0->active == 0)) {
@@ -545,12 +548,12 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   
 }
 
+
 void prach_procedures(PHY_VARS_eNB *eNB,
 #ifdef Rel14
 		      int br_flag
 #endif
 		      ) {
-
   uint16_t max_preamble[4],max_preamble_energy[4],max_preamble_delay[4];
   uint16_t i;
   int frame,subframe;
