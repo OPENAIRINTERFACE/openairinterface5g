@@ -46,8 +46,7 @@
 #define CONFIG_DEBUGCMDLINE   4        // print command line processing messages
 #define CONFIG_HELP           8        // print help message
 #define CONFIG_ABORT          16       // config failed,abort execution 
-/* temporary flag to be able to use legacy config mechanism */
-#define CONFIG_LEGACY             (1 << 10)     
+
 
 typedef int(*configmodule_initfunc_t)(char *cfgP[],int numP);
 typedef int(*configmodule_getfunc_t)(paramdef_t *,int numparams, char *prefix);

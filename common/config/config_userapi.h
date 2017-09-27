@@ -54,7 +54,6 @@ extern int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *p
 #define config_getlist config_get_if()->getlist
 #define CONFIG_GETCONFFILE (config_get_if()->cfgP[0])
 
-
 #ifdef __cplusplus
 }
 #endif

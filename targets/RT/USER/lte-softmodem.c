@@ -136,7 +136,7 @@ uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
 
-static char                    *conf_config_file_name = NULL;
+
 #if defined(ENABLE_ITTI)
 static char                    *itti_dump_file = NULL;
 #endif
@@ -402,7 +402,6 @@ static void *scope_thread(void *arg) {
 # ifdef ENABLE_XFORMS_WRITE_STATS
   FILE *UE_stats, *eNB_stats;
 # endif
-  int len = 0;
   struct sched_param sched_param;
   int UE_id, CC_id;
   int ue_cnt=0;
@@ -423,7 +422,7 @@ static void *scope_thread(void *arg) {
 
   while (!oai_exit) {
     if (UE_flag==1) {
-      len = dump_ue_stats (PHY_vars_UE_g[0][0], &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0],stats_buffer, 0, mode,rx_input_level_dBm);
+      dump_ue_stats (PHY_vars_UE_g[0][0], &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0],stats_buffer, 0, mode,rx_input_level_dBm);
       //fl_set_object_label(form_stats->stats_text, stats_buffer);
       fl_clear_browser(form_stats->stats_text);
       fl_add_browser_line(form_stats->stats_text, stats_buffer);
@@ -578,17 +577,12 @@ void *l2l1_task(void *arg) {
 
 static void get_options(void) {
   int CC_id;
-  int clock_src;
   int tddflag;
   char *loopfile=NULL;
   int dumpframe;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
 
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL); 
-  if (tddflag > 0) {
-      for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) 
-	frame_parms[CC_id]->frame_type = TDD;
-  }
 
   if (strlen(in_path) > 0) {
       opt_type = OPT_PCAP;
@@ -603,6 +597,9 @@ static void get_options(void) {
   if (UE_flag > 0) {
      paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;
      paramdef_t cmdline_ueparams[] =CMDLINE_UEPARAMS_DESC;
+
+
+
      config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
      config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
       if (loopfile != NULL) {
@@ -629,6 +626,10 @@ static void get_options(void) {
       UE_scan=0;
       } 
 
+      if (tddflag > 0) {
+         for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) 
+	     frame_parms[CC_id]->frame_type = TDD;
+      }
 
       if (frame_parms[0]->N_RB_DL !=0) {
   	  if ( frame_parms[0]->N_RB_DL < 6 ) {
@@ -913,11 +914,14 @@ int main( int argc, char **argv )
   logInit();
 
   printf("Reading in command-line options\n");
-  // get options and fill parameters from configuration file
-  // temporary test to allow legacy config or config module */
-  
+
   get_options (); 
-  
+  if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
+      fprintf(stderr,"Getting configuration failed\n");
+      exit(-1);
+  }
+
+
 
 #if T_TRACER
   T_init(T_port, T_wait, T_dont_fork);
