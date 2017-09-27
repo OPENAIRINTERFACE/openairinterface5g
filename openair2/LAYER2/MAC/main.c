@@ -61,7 +61,7 @@ void dl_phy_sync_success(module_id_t   module_idP,
 #endif
 
   if (first_sync==1 && !(mme_enabled==1)) {
-    layer2_init_UE(module_idP);
+    //layer2_init_UE(module_idP);
     openair_rrc_ue_init(module_idP,eNB_index);
   } else
   {
