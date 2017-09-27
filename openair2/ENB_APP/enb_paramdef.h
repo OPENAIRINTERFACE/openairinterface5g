@@ -573,11 +573,6 @@ static int DEFENBS[] = {0};
 {ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
 {ENB_CONFIG_STRING_ENB_PORT_FOR_S1U,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0}       \
 }   
-#define ENB_INTERFACE_NAME_FOR_S1_MME_IDX          0
-#define ENB_IPV4_ADDRESS_FOR_S1_MME_IDX            1
-#define ENB_INTERFACE_NAME_FOR_S1U_IDX             2
-#define ENB_IPV4_ADDR_FOR_S1U_IDX                  3
-#define ENB_PORT_FOR_S1U_IDX                       4
 
 
 

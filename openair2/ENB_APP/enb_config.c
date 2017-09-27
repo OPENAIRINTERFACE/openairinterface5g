@@ -2539,7 +2539,7 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
             config_get( NETParams,sizeof(NETParams)/sizeof(paramdef_t),aprefix); 
 
 		//		S1AP_REGISTER_ENB_REQ (msg_p).enb_interface_name_for_S1U = strdup(enb_interface_name_for_S1U);
-		cidr = *(NETParams[ENB_INTERFACE_NAME_FOR_S1U_IDX].strptr);
+		cidr = *(NETParams[ENB_IPV4_ADDRESS_FOR_S1_MME_IDX].strptr);
 		address = strtok(cidr, "/");
 
 		S1AP_REGISTER_ENB_REQ (msg_p).enb_ip_address.ipv6 = 0;
