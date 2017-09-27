@@ -362,10 +362,10 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
 #ifdef __AVX2__
       buff_tx[i][j] = _mm256_slli_epi16(((__m256i*)buff[i])[j],4);
 #else
-      buff_tx[i][j] = _mm_slli_epi16(((__m128i*)buff128[i])[j],4);
+      buff_tx[i][j] = _mm_slli_epi16(((__m128i*)buff[i])[j],4);
 #endif
 #elif defined(__arm__)
-      buff_tx[i][j] = vshlq_n_s16(((int16x8_t*)buff128[i])[j],4);
+      buff_tx[i][j] = vshlq_n_s16(((int16x8_t*)buff[i])[j],4);
 #endif
     }
   }
