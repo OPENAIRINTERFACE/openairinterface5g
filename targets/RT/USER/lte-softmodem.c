@@ -184,7 +184,7 @@ char ref[128] = "internal";
 char channels[128] = "0";
 
 int                      rx_input_level_dBm;
-static int                      online_log_messages=0;
+
 #ifdef XFORMS
 extern int                      otg_enabled;
 static char                     do_forms=0;
@@ -207,33 +207,7 @@ extern void print_opp_meas(void);
 
 int transmission_mode=1;
 
-int16_t           glog_level         = LOG_INFO;
-int16_t           glog_verbosity     = LOG_MED;
-int16_t           hw_log_level       = LOG_INFO;
-int16_t           hw_log_verbosity   = LOG_MED;
-int16_t           phy_log_level      = LOG_DEBUG;
-int16_t           phy_log_verbosity  = LOG_MED;
-int16_t           mac_log_level      = LOG_DEBUG;
-int16_t           mac_log_verbosity  = LOG_MED;
-int16_t           rlc_log_level      = LOG_INFO;
-int16_t           rlc_log_verbosity  = LOG_MED;
-int16_t           pdcp_log_level     = LOG_INFO;
-int16_t           pdcp_log_verbosity = LOG_MED;
-int16_t           rrc_log_level      = LOG_INFO;
-int16_t           rrc_log_verbosity  = LOG_MED;
-int16_t           opt_log_level      = LOG_INFO;
-int16_t           opt_log_verbosity  = LOG_MED;
 
-# if defined(ENABLE_USE_MME)
-int16_t           gtpu_log_level     = LOG_DEBUG;
-int16_t           gtpu_log_verbosity = LOG_MED;
-int16_t           udp_log_level      = LOG_DEBUG;
-int16_t           udp_log_verbosity  = LOG_MED;
-#endif
-#if defined (ENABLE_SECURITY)
-int16_t           osa_log_level      = LOG_INFO;
-int16_t           osa_log_verbosity  = LOG_MED;
-#endif
 
 /* struct for ethernet specific parameters given in eNB conf file */
 eth_params_t *eth_params;
@@ -583,7 +557,11 @@ static void get_options(void) {
   int tddflag;
   char *loopfile=NULL;
   int dumpframe;
+  uint32_t online_log_messages;
+  uint32_t glog_level, glog_verbosity;
+
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
+  paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
 
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL); 
 
@@ -597,6 +575,18 @@ static void get_options(void) {
       opt_type = OPT_WIRESHARK;
       printf("Enabling OPT for wireshark for local interface");
   }
+
+  config_process_cmdline( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
+  if(config_isparamset(cmdline_logparams,CMDLINE_ONLINELOG_IDX)) {
+      set_glog_onlinelog(online_log_messages);
+  }
+  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
+      set_glog(glog_level, -1);
+  }
+  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
+      set_glog(-1, glog_verbosity);
+  }
+  
   if (UE_flag > 0) {
      paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;
      paramdef_t cmdline_ueparams[] =CMDLINE_UEPARAMS_DESC;
@@ -930,8 +920,7 @@ int main( int argc, char **argv )
   T_init(T_port, T_wait, T_dont_fork);
 #endif
 
-  // initialize the log (see log.h for details)
-  set_glog(glog_level, glog_verbosity);
+
 
   //randominit (0);
   set_taus_seed (0);
@@ -956,37 +945,6 @@ int main( int argc, char **argv )
   } else {
     printf("configuring for RAU/RRU\n");
 
-    set_comp_log(HW,      hw_log_level, hw_log_verbosity, 1);
-    set_comp_log(PHY,     phy_log_level,   phy_log_verbosity, 1);
-    if (opt_enabled == 1 )
-      set_comp_log(OPT,   opt_log_level,      opt_log_verbosity, 1);
-    set_comp_log(MAC,     mac_log_level,  mac_log_verbosity, 1);
-    set_comp_log(RLC,     rlc_log_level,   rlc_log_verbosity, 1);
-    set_comp_log(PDCP,    pdcp_log_level,  pdcp_log_verbosity, 1);
-    set_comp_log(RRC,     rrc_log_level,  rrc_log_verbosity, 1);
-#if defined(ENABLE_ITTI)
-    set_comp_log(EMU,     LOG_INFO,   LOG_MED, 1);
-# if defined(ENABLE_USE_MME)
-    set_comp_log(UDP_,    udp_log_level,   udp_log_verbosity, 1);
-    set_comp_log(GTPU,    gtpu_log_level,   gtpu_log_verbosity, 1);
-    set_comp_log(S1AP,    LOG_DEBUG,   LOG_HIGH, 1);
-    set_comp_log(SCTP,    LOG_INFO,   LOG_HIGH, 1);
-# endif
-#if defined(ENABLE_SECURITY)
-    set_comp_log(OSA,    osa_log_level,   osa_log_verbosity, 1);
-#endif
-#endif
-#ifdef LOCALIZATION
-    set_comp_log(LOCALIZE, LOG_DEBUG, LOG_LOW, 1);
-    set_component_filelog(LOCALIZE);
-#endif
-    set_comp_log(ENB_APP, LOG_INFO, LOG_HIGH, 1);
-    set_comp_log(OTG,     LOG_INFO,   LOG_HIGH, 1);
-
-    if (online_log_messages == 1) {
-      set_component_filelog(RRC);
-      set_component_filelog(PDCP);
-    }
   }
 
   if (ouput_vcd) {
@@ -1166,7 +1124,7 @@ int main( int argc, char **argv )
   LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
 #endif
   
-  openair0_cfg[0].log_level = glog_level;
+
   
   
 #if defined(ENABLE_ITTI)

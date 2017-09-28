@@ -68,8 +68,6 @@
 #define CONFIG_HLP_CHOFF         "Channel id offset"
 #define CONFIG_HLP_SOFTS         "Enable soft scope and L1 and L2 stats (Xforms)\n"
 #define CONFIG_HLP_EXMCAL        "Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n"
-#define CONFIG_HLP_LOGL          "Set the global log level, valide options: (9:trace, 8/7:debug, 6:info, 4:warn, 3:error)\n"
-#define CONFIG_HLP_LOGV          "Set the global log verbosity \n"
 #define CONFIG_HLP_ITTIL         "Generate ITTI analyzser logs (similar to wireshark logs but with more details)\n"
 #define CONFIG_HLP_DLMCS         "Set the maximum downlink MCS\n"
 #define CONFIG_HLP_STMON         "Enable processing timing measurement of lte softmodem on per subframe basis \n"
@@ -81,7 +79,6 @@
 #define CONFIG_HLP_L2MONW        "Enable L2 wireshark messages on localhost \n"
 #define CONFIG_HLP_L2MONP        "Enable L2 pcap  messages on localhost \n"
 #define CONFIG_HLP_VCD           "Enable VCD (generated file will is named openair_dump_eNB.vcd, read it with target/RT/USER/eNB.gtkw\n"
-#define CONFIG_HLP_FLOG          "Enable PDCP RCP online log file\n"
 #define CONFIG_HLP_TQFS          "Apply three-quarter of sampling frequency, 23.04 Msps to reduce the data rate on USB/PCIe transfers (only valid for 20 MHz)\n"
 #define CONFIG_HLP_TPORT         "tracer port\n"
 #define CONFIG_HLP_NOTWAIT       "don't wait for tracer, start immediately\n"
@@ -168,12 +165,27 @@ extern int16_t dlsch_demod_shift;
 {"P" ,  		  	 CONFIG_HLP_L2MONP,	0,		  strptr:(char **)&in_path,		defstrval:"/tmp/oai_opt.pcap",     TYPE_STRING,   sizeof(in_path)},	   \
 {"V" ,  		  	 CONFIG_HLP_VCD,	PARAMFLAG_BOOL,   iptr:&ouput_vcd,			defintval:0,			   TYPE_INT,	  0},			   \
 {"q" ,  		  	 CONFIG_HLP_STMON,	PARAMFLAG_BOOL,   iptr:&opp_enabled,			defintval:0,			   TYPE_INT,	  0},			   \
-{"R" ,  		  	 CONFIG_HLP_FLOG,	PARAMFLAG_BOOL,   iptr:&online_log_messages,		defintval:0,			   TYPE_INT,	  0},			   \
-{"g" ,  		  	 CONFIG_HLP_LOGL,	0,		  i16ptr:&glog_level,			defintval:1,			   TYPE_INT16,    0},			   \
-{"G" ,  		  	 CONFIG_HLP_LOGV,	0,		  i16ptr:&glog_verbosity,		defintval:0,			   TYPE_INT16,    0},			   \
 {"S" ,  		  	 CONFIG_HLP_MSLOTS,	PARAMFLAG_BOOL,   u8ptr:&exit_missed_slots,		defintval:1,			   TYPE_UINT8,    0},			   \
 {"T" ,  		  	 CONFIG_HLP_TDD,	PARAMFLAG_BOOL,   iptr:&tddflag,			defintval:0,			   TYPE_INT,	  0}			   \
 }
+
+#define CONFIG_HLP_FLOG          "Enable online log \n"
+#define CONFIG_HLP_LOGL          "Set the global log level, valide options: (9:trace, 8/7:debug, 6:info, 4:warn, 3:error)\n"
+#define CONFIG_HLP_LOGV          "Set the global log verbosity \n"
+/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            command line parameters for LOG utility                                                                                        */
+/*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
+/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define CMDLINE_LOGPARAMS_DESC {  \
+{"R" ,  		  	 CONFIG_HLP_FLOG,	0,                uptr:&online_log_messages,		defintval:1,			   TYPE_INT,	  0},			   \
+{"g" ,  		  	 CONFIG_HLP_LOGL,	0,		  uptr:&glog_level,			defintval:0,			   TYPE_UINT,     0},			   \
+{"G" ,  		  	 CONFIG_HLP_LOGV,	0,		  uptr:&glog_verbosity,		        defintval:0,			   TYPE_UINT16,   0},			   \
+}
+#define CMDLINE_ONLINELOG_IDX     0 
+#define CMDLINE_GLOGLEVEL_IDX     1
+#define CMDLINE_GLOGVERBO_IDX     2              
+
+
 
 extern int T_port;
 extern int T_wait;
